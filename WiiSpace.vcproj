@@ -87,6 +87,10 @@
 				>
 			</File>
 			<File
+				RelativePath=".\source\libwiisave.cpp"
+				>
+			</File>
+			<File
 				RelativePath=".\source\z0.cpp"
 				>
 			</File>
@@ -116,6 +120,14 @@
 			</File>
 			<File
 				RelativePath=".\source\ship.h"
+				>
+			</File>
+			<File
+				RelativePath=".\source\stars.cpp"
+				>
+			</File>
+			<File
+				RelativePath=".\source\stars.h"
 				>
 			</File>
 			<File

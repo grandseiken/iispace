@@ -3,6 +3,7 @@
 #include "player.h"
 #include "enemy.h"
 #include "overmind.h"
+#include "stars.h"
 
 z0Game::z0Game( Lib& lib )
 : Game( lib )
@@ -20,13 +21,17 @@ z0Game::z0Game( Lib& lib )
 , _controllersConnected( 0 )
 , _controllersDialog( false )
 , _firstControllersDialog( false )
+, _sendConnect( false )
+, _sendCount( 0 )
 , _overmind( 0 )
 , _bossesKilled( 0 )
 {
     _overmind = new Overmind( *this );
-    Lib::SaveData save = lib.LoadSaveData();
-    _highScores = save._highScores;
+    Lib::SaveData save = lib.LoadSaveData( 0 );
+    _highScores0 = save._highScores;
     _bossesKilled = save._bossesKilled;
+    _highScores1 = lib.LoadSaveData( 1 )._highScores;
+    _mergedScores = GetMergedScores();
 
     // Compliments have a max length of 24
     _compliments.push_back( " is a swell guy!" );
@@ -70,6 +75,8 @@ void z0Game::Update()
     if ( _exitTimer ) {
         _exitTimer--;
         if ( !_exitTimer ) {
+            if ( _sendConnect )
+                lib.Disconnect();
             lib.Exit( Lib::EXIT_TO_LOADER );
             _exitTimer = -1;
         }
@@ -83,9 +90,54 @@ void z0Game::Update()
         }
     }
 
+    // Send high scores
+    //------------------------------
+    if ( _state == STATE_SEND ) {
+        if ( _selection == 0 || _selection == 1 ) {
+            if ( lib.IsKeyPressed( Lib::KEY_LEFT ) && _selection != 0 ) {
+                _selection = 0;
+                lib.PlaySound( Lib::SOUND_MENU_CLICK );
+            }
+            if ( lib.IsKeyPressed( Lib::KEY_RIGHT ) && _selection != 1 ) {
+                _selection = 1;
+                lib.PlaySound( Lib::SOUND_MENU_CLICK );
+            }
+            if ( lib.IsKeyPressed( Lib::KEY_ACCEPT ) || lib.IsKeyPressed( Lib::KEY_MENU ) ) {
+                if ( _selection )
+                    _exitTimer = 2;
+                else
+                    _selection = 2;
+                lib.PlaySound( Lib::SOUND_MENU_ACCEPT );
+            }
+            return;
+        }
+
+        if ( _sendCount < 2 && !_sendConnect ) {
+            _sendCount++;
+            return;
+        }
+
+        if ( !_sendConnect ) {
+            _sendCount = 0;
+            _sendConnect = lib.Connect();
+            if ( !_sendConnect )
+                _exitTimer = 10;
+            return;
+        }
+
+        if ( _sendCount < 2 ) {
+            _sendCount++;
+            return;
+        }
+
+        lib.SendHighScores( _highScores1 );
+        _exitTimer = 10;
+        return;
+
+    }
     // Main menu
     //------------------------------
-    if ( _state == STATE_MENU ) {
+    else if ( _state == STATE_MENU ) {
 
         if ( lib.IsKeyPressed( Lib::KEY_UP ) ) {
             _selection--;
@@ -113,7 +165,8 @@ void z0Game::Update()
                 if ( _players > Lib::PLAYERS ) _players = 1;
             }
             else if ( _selection == 2 ) {
-                _exitTimer = 10;
+                _state = STATE_SEND;
+                _selection = 0;
             }
             else if ( _selection == -1 ) {
                 NewGame( true );
@@ -174,8 +227,7 @@ void z0Game::Update()
 
         int controllers = 0;
         for ( int i = 0; i < CountPlayers(); i++ ) {
-            if ( lib.IsPadConnected( i ) )
-                controllers++;
+            controllers += lib.IsPadConnected( i );
         }
         if ( controllers < _controllersConnected && !_controllersDialog ) {
             _controllersDialog = true;
@@ -291,7 +343,7 @@ void z0Game::Update()
             if ( lib.IsKeyPressed( Lib::KEY_MENU ) ) {
                 GetLib().PlaySound( Lib::SOUND_MENU_ACCEPT );
                 if ( !IsBossMode() ) {
-                    Lib::HighScoreList& list = _highScores[ _players - 1 ];
+                    Lib::HighScoreList& list = _highScores1[ _players - 1 ];
                     list.push_back( Lib::HighScore( _enterName, GetTotalScore() ) );
                     std::sort( list.begin(), list.end(), &Lib::ScoreSort );
                     list.erase( list.begin() + ( list.size() - 1 ) );
@@ -301,8 +353,8 @@ void z0Game::Update()
                     score -= 10 * GetLives();
                     if ( score <= 0 )
                         score = 1;
-                    _highScores[ Lib::PLAYERS ][ _players - 1 ].first = _enterName;
-                    _highScores[ Lib::PLAYERS ][ _players - 1 ].second = score;
+                    _highScores1[ Lib::PLAYERS ][ _players - 1 ].first = _enterName;
+                    _highScores1[ Lib::PLAYERS ][ _players - 1 ].second = score;
                     EndGame();
                 }
             }
@@ -322,6 +374,7 @@ void z0Game::Render()
     _fillHPBar = 0;
 
     if ( !_firstControllersDialog ) {
+        Star::Render();
         for ( unsigned int i = CountPlayers(); i < _shipList.size(); i++ ) {
             _shipList[ i ]->Render();
         }
@@ -330,15 +383,36 @@ void z0Game::Render()
         }
     }
 
+    // Send high-scores
+    //------------------------------
+    if ( _state == STATE_SEND ) {
+        lib.RenderText( Vec2( 3, 3 ),     "http://www.seiken.co.uk/WiiSPACE", PANEL_TEXT );
+        lib.RenderText( Vec2( 3, 4 ),     "Upload high scores?", PANEL_TEXT );
+        if ( _exitTimer && _selection == 1 ) {
+            return;
+        }
+        if ( _selection == 0 || _selection == 1 ) {
+            lib.RenderText( Vec2( 23, 4 ), !_selection ? "[Yes]" : " Yes ", PANEL_TEXT );
+            lib.RenderText( Vec2( 29, 4 ),  _selection ? "[No]" : " No ",   PANEL_TEXT );
+            return;
+        }
+        lib.RenderText( Vec2( 3, 5 ), "Connecting to server...", PANEL_TEXT );
+        if ( _sendConnect )
+            lib.RenderText( Vec2( 3, 6 ), "Sending high scores...", PANEL_TEXT );
+        else if ( _exitTimer && _selection == 2 )
+            lib.RenderText( Vec2( 3, 6 ), "Could not connect.", PANEL_TEXT );
+        if ( _sendConnect && _exitTimer )
+            lib.RenderText( Vec2( 3, 7 ), "Sent high scores.", PANEL_TEXT );
+    }
     // In-game
     //------------------------------
-    if ( _state == STATE_GAME ) {
+    else if ( _state == STATE_GAME ) {
 
         if ( _controllersDialog ) {
 
             RenderPanel( Vec2( 3, 3 ), Vec2( 32, 8 + 2 * CountPlayers() ) );
 
-            lib.RenderText( Vec2( 4, 4 ),  "CONTROLLERS FOUND",   PANEL_TEXT );
+            lib.RenderText( Vec2( 4, 4 ), "CONTROLLERS FOUND", PANEL_TEXT );
 
             for ( int i = 0; i < CountPlayers(); i++ ) {
                 std::stringstream ss;
@@ -349,10 +423,12 @@ void z0Game::Render()
                 int pads = lib.IsPadConnected( i );
                 if ( pads & Lib::PAD_GAMECUBE ) {
                     ss2 << "GAMECUBE";
-                    if ( pads & Lib::PAD_WIIMOTE )
+                    if ( pads & Lib::PAD_WIIMOTE || pads & Lib::PAD_CLASSIC )
                         ss2 << ", ";
                 }
-                if ( pads & Lib::PAD_WIIMOTE )
+                if ( pads & Lib::PAD_CLASSIC )
+                    ss2 << "CLASSIC";
+                else if ( pads & Lib::PAD_WIIMOTE )
                     ss2 << "WIIMOTE";
                 if ( !pads )
                     ss2 << "NONE";
@@ -365,18 +441,18 @@ void z0Game::Render()
 
         std::stringstream ss;
         ss << _lives << " live(s)";
-        lib.RenderText( Vec2( Lib::WIDTH / ( 2 * Lib::TEXT_WIDTH ) - ss.str().length() / 2, Lib::HEIGHT / Lib::TEXT_HEIGHT - 2 ),
+        lib.RenderText( Vec2( Lib::WIDTH / ( 2 * Lib::TEXT_WIDTH ) - ss.str().length() / 2, Lib::HEIGHT / Lib::TEXT_HEIGHT - 2 - lib.LoadSettings()._hudCorrection ),
                         ss.str(), PANEL_TRAN );
         if ( IsBossMode() ) {
             std::stringstream sst;
             sst << ConvertToTime( _overmind->GetElapsedTime() );
-            lib.RenderText( Vec2( Lib::WIDTH / ( 2 * Lib::TEXT_WIDTH ) - sst.str().length() / 2, 1 ),
+            lib.RenderText( Vec2( Lib::WIDTH / ( 2 * Lib::TEXT_WIDTH ) - sst.str().length() / 2, 1 + lib.LoadSettings()._hudCorrection ),
                             sst.str(), PANEL_TRAN );
         } else if ( _showHPBar ) {
-            lib.RenderRect( Vec2( Lib::WIDTH / 2.0f - 48, 16 ),
-                            Vec2( Lib::WIDTH / 2.0f + 48, 32 ), PANEL_TRAN, 2 );
-            lib.RenderRect( Vec2( Lib::WIDTH / 2.0f - 44, 20 ),
-                            Vec2( Lib::WIDTH / 2.0f - 44 + 88 * _fillHPBar, 28 ), PANEL_TRAN );
+            lib.RenderRect( Vec2( Lib::WIDTH / 2.0f - 48, 16 * ( 1 + lib.LoadSettings()._hudCorrection ) ),
+                            Vec2( Lib::WIDTH / 2.0f + 48, 16 * ( 2 + lib.LoadSettings()._hudCorrection ) ), PANEL_TRAN, 2 );
+            lib.RenderRect( Vec2( Lib::WIDTH / 2.0f - 44, 16 * ( 1 + lib.LoadSettings()._hudCorrection ) + 4 ),
+                            Vec2( Lib::WIDTH / 2.0f - 44 + 88 * _fillHPBar, 16 * ( 2 + lib.LoadSettings()._hudCorrection ) - 4 ), PANEL_TRAN );
         }
 
     }
@@ -393,6 +469,7 @@ void z0Game::Render()
         lib.RenderText( Vec2( 37 - 9, 6 ),          "-testers-", PANEL_TEXT );
         lib.RenderText( Vec2( 37 - 9, 7 ),          "MATT BELL", PANEL_TEXT );
         lib.RenderText( Vec2( 37 - 9, 8 ),          "RUFUZZZZZ", PANEL_TEXT );
+        lib.RenderText( Vec2( 37 - 9, 9 ),          "SHADOW1W2", PANEL_TEXT );
 
         std::string b = "BOSSES:  ";
         if ( _bossesKilled & BOSS_1A ) b += "X"; else b += "-";
@@ -441,10 +518,10 @@ void z0Game::Render()
             lib.RenderText( Vec2( 4, 24 ), "FOUR PLAYERS", PANEL_TEXT );
 
             for ( int i = 0; i < Lib::PLAYERS; i++ ) {
-                std::string score = ConvertToTime( _highScores[ Lib::PLAYERS ][ i ].second );
+                std::string score = ConvertToTime( _mergedScores[ Lib::PLAYERS ][ i ].second );
                 if ( score.length() > Lib::MAX_SCORE_LENGTH )
                     score = score.substr( 0, Lib::MAX_SCORE_LENGTH );
-                std::string name = _highScores[ Lib::PLAYERS ][ i ].first;
+                std::string name = _mergedScores[ Lib::PLAYERS ][ i ].first;
                 if ( name.length() > Lib::MAX_NAME_LENGTH )
                     name = name.substr( 0, Lib::MAX_NAME_LENGTH );
 
@@ -458,15 +535,15 @@ void z0Game::Render()
                 ssi << ( i + 1 ) << ".";
                 lib.RenderText( Vec2( 4, 18 + i ), ssi.str(), PANEL_TEXT );
 
-                if ( _highScores[ _players - 1 ][ i ].second <= 0 )
+                if ( _mergedScores[ _players - 1 ][ i ].second <= 0 )
                     continue;
 
                 std::stringstream ss;
-                ss << _highScores[ _players - 1 ][ i ].second;
+                ss << _mergedScores[ _players - 1 ][ i ].second;
                 std::string score = ss.str();
                 if ( score.length() > Lib::MAX_SCORE_LENGTH )
                     score = score.substr( 0, Lib::MAX_SCORE_LENGTH );
-                std::string name = _highScores[ _players - 1 ][ i ].first;
+                std::string name = _mergedScores[ _players - 1 ][ i ].first;
                 if ( name.length() > Lib::MAX_NAME_LENGTH )
                     name = name.substr( 0, Lib::MAX_NAME_LENGTH );
 
@@ -598,6 +675,8 @@ void z0Game::NewGame( bool bossMode )
     _bossMode = bossMode;
     _overmind->Reset();
     _lives = bossMode ? BOSSMODE_LIVES : STARTING_LIVES;
+
+    Star::Clear();
     for ( int i = 0; i < _players; i++ ) {
         Vec2 v( ( 1 + i ) * Lib::WIDTH / ( 1 + _players ), Lib::HEIGHT / 2 );
         Player* p = new Player( v, i );
@@ -615,14 +694,19 @@ void z0Game::EndGame()
         delete _shipList[ i ];
     }
 
+    Star::Clear();
     _shipList.clear();
     _playerList.clear();
     _collisionList.clear();
 
-    Lib::SaveData save;
-    save._highScores = _highScores;
-    save._bossesKilled = _bossesKilled;
-    GetLib().SaveSaveData( save );
+    Lib::SaveData save0;
+    save0._highScores = _highScores0;
+    save0._bossesKilled = _bossesKilled;
+    Lib::SaveData save1;
+    save1._highScores = _highScores1;
+    save1._bossesKilled = 0;
+    GetLib().SaveSaveData( save0, save1 );
+    _mergedScores = GetMergedScores();
     _state = STATE_MENU;
     _selection = ( IsBossModeUnlocked() && IsBossMode() ) ? -1 : 0;
 }
@@ -784,12 +868,43 @@ bool z0Game::IsHighScore() const
 {
     if ( IsBossMode() )
         return _overmind->GetKilledBosses() >= 6 && _overmind->GetElapsedTime() != 0 &&
-        ( _overmind->GetElapsedTime() < _highScores[ Lib::PLAYERS ][ _players - 1 ].second || _highScores[ Lib::PLAYERS ][ _players - 1 ].second == 0 );
+        ( _overmind->GetElapsedTime() < _mergedScores[ Lib::PLAYERS ][ _players - 1 ].second || _mergedScores[ Lib::PLAYERS ][ _players - 1 ].second == 0 );
 
-    const Lib::HighScoreList& list = _highScores[ _players - 1 ];
+    const Lib::HighScoreList& list = _mergedScores[ _players - 1 ];
     for ( unsigned int i = 0; i < list.size(); i++ ) {
         if ( GetTotalScore() > list[ i ].second )
             return true;
     }
     return false;
+}
+
+Lib::HighScoreTable z0Game::GetMergedScores() const
+{
+    Lib::HighScoreTable merged;
+    for ( int i = 0; i < Lib::PLAYERS; i++ ) {
+        merged.push_back( Lib::HighScoreList() );
+        unsigned int n = 0;
+        int i0 = 0;
+        int i1 = 0;
+
+        while ( n < Lib::NUM_HIGH_SCORES ) {
+            if ( _highScores1[ i ][ i1 ].second >= _highScores0[ i ][ i0 ].second ) {
+                merged[ i ].push_back( _highScores1[ i ][ i1 ] );
+                i1++;
+            } else {
+                merged[ i ].push_back( _highScores0[ i ][ i0 ] );
+                i0++;
+            }
+            n++;
+        }
+    }
+    merged.push_back( Lib::HighScoreList() );
+    for ( int i = 0; i < Lib::PLAYERS; i++ ) {
+        if ( _highScores1[ Lib::PLAYERS ][ i ].second <= _highScores0[ Lib::PLAYERS ][ i ].second && _highScores1[ Lib::PLAYERS ][ i ].second > 0 )
+            merged[ Lib::PLAYERS ].push_back( _highScores1[ Lib::PLAYERS ][ i ] );
+        else
+            merged[ Lib::PLAYERS ].push_back( _highScores0[ Lib::PLAYERS ][ i ] );
+    }
+
+    return merged;
 }

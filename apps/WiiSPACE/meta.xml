@@ -1,0 +1,42 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<app version="1">
+	<name>WiiSPACE</name>
+	<coder>Seiken</coder>
+	<version>1.2a</version>
+	<release_date>20090713000000</release_date>
+	<short_description>Shoot-'em-up in space</short_description>
+	<long_description>
+The online high score table can be found at http://www.seiken.co.uk/WiiSPACE.
+For more detailed information and game help, see http://www.wiibrew.org/WiiSPACE.
+
+An original retro-themed spaceship shoot-'em-up supporting up to 4 simultaneous players for co-operative play.
+Features include powerups, bosses, high scores, and an aiming system allowing independent movement and targeting.
+
+Controls (Wiimote and nunchuk)
+				Start, pause - Minus, home or plus
+				Menu navigation - D-pad
+				Menu accept, menu cancel - A, B
+				Control spaceship - Nunchuk analog stick
+				Control targeting crosshair - Wiimote aim
+				Fire - B
+				Use bomb - A or Z
+
+Controls (Gamecube controller)
+				Start, pause - Start
+				Menu navigation - D-pad
+				Menu accept, menu cancel - A, B
+				Control spaceship - Analog stick
+				Control targeting crosshair - C-stick
+				Fire - R or C-stick
+				Use bomb - A or L
+
+Controls (Classic controller)
+				Start, pause - Minus, home or plus
+				Menu navigation - D-pad
+				Menu accept, menu cancel - B, Y
+				Control spaceship - Left analog stick
+				Control targeting crosshair - Right analog stick
+				Fire - R or right analog stick
+				Use bomb - B or L
+	</long_description>
+</app>

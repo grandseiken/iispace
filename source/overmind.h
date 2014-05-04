@@ -83,6 +83,9 @@ private:
     long _elapsedTime;
     bool _timeStopped;
 
+    Vec2 _starDir;
+    int  _starCount;
+
     std::vector< int > _boss1Queue;
     std::vector< int > _boss2Queue;
 

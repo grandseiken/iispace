@@ -3,6 +3,7 @@
 #include "boss.h"
 #include "powerup.h"
 #include "player.h"
+#include "stars.h"
 
 int     Overmind::_tRow;
 z0Game* Overmind::_tz0;
@@ -72,6 +73,9 @@ void Overmind::Reset()
     _elapsedTime = 0;
     _timeStopped = false;
 
+    _starDir = Vec2( 0, 1 );
+    _starCount = 0;
+
     if ( _z0.IsBossMode() ) {
         _power = 0;
         _timer = 0;
@@ -88,6 +92,12 @@ void Overmind::AddFormation( SpawnFormationFunction function )
 }
 
 void Overmind::Update() {
+
+    Star::Update();
+    int r = ( _starCount > 1 && !_z0.GetLib().LoadSettings()._disableBackground ) ? RandInt( _starCount ) : 0;
+    for ( int i = 0; i < r; i++ )
+        Star::CreateStar( _z0 );
+
     if ( _z0.IsBossMode() ) {
         if ( _count <= 0 ) {
             if ( _bossMod < 6 ) {
@@ -117,6 +127,9 @@ void Overmind::Update() {
         }
 
         _timer = 0;
+        _starDir.Rotate( ( _z0.GetLib().RandFloat() - 0.5f ) * M_PI );
+        Star::SetDirection( _starDir );
+        _starCount = RandInt( 3 ) + 2;
 
         if ( _isBossLevel ) {
             _isBossLevel = false;

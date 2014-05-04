@@ -28,8 +28,12 @@ public:
     virtual int   RandInt( int lessThan ) const;
     virtual float RandFloat() const;
 
-    virtual SaveData LoadSaveData();
-    virtual void     SaveSaveData( const SaveData& data );
+    virtual Settings LoadSettings();
+    virtual SaveData LoadSaveData( int version );
+    virtual void     SaveSaveData( const SaveData& version0, const SaveData& version1 );
+    virtual bool     Connect();
+    virtual void     Disconnect();
+    virtual void     SendHighScores( const HighScoreTable& table );
 
     // Input
     //------------------------------
@@ -60,8 +64,10 @@ private:
     // Save path
     //------------------------------
     #define SAVE_PATH "sd:/wiispace.sav"
-    #define ENCRYPTION_KEY "WiiSPACE Encryption Key"
+    #define SETTINGS_PATH "sd:/wiispace.txt"
     #define SCREENSHOT_PATH "sd:/wiispace.png"
+    #define SETTINGS_DISABLEBACKGROUND "DisableBackground"
+    #define SETTINGS_HUDCORRECTION "HUDCorrection"
 
     // Internal
     //------------------------------
@@ -72,8 +78,10 @@ private:
 
     static bool        HasWKey( u32 wPad, Key k );
     static bool        HasGKey( u16 gPad, Key k );
+    static bool        HasNKey( u32 nPad, Key k );
+    static bool        HasCKey( u32 cPad, Key k );
 
-    static std::string Crypt( const std::string& text );
+    static std::string Crypt( const std::string& text, const std::string& key );
 
     void LoadSounds();
     #define USE_SOUND( sound, data ) _sounds.push_back( SoundResource( 0, NamedSound( sound , SoundBuffer( data , data##_len ) ) ) );
@@ -88,15 +96,20 @@ private:
     std::vector< int >        _rumble;
     u32                       _wConnectedPads;
     u32                       _gConnectedPads;
+    u32                       _cConnectedPads;
 
     typedef GRRLIB_texImg     Texture;
     Texture                   _consoleFont;
+
+    Settings                  _settings;
 
     typedef std::pair< u8*, int >           SoundBuffer;
     typedef std::pair< int, SoundBuffer >   NamedSound;
     typedef std::pair< int, NamedSound >    SoundResource;
     typedef std::vector< SoundResource >    SoundList;
     SoundList                               _sounds;
+
+    s32 _server;
 
 };
 

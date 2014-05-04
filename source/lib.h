@@ -48,7 +48,13 @@ public:
     enum PadType {
         PAD_NONE     = 0,
         PAD_GAMECUBE = 1,
-        PAD_WIIMOTE  = 2
+        PAD_WIIMOTE  = 2,
+        PAD_CLASSIC  = 4
+    };
+
+    struct Settings {
+        bool _disableBackground;
+        int  _hudCorrection;
     };
 
     typedef std::pair  < std::string, long > HighScore;
@@ -85,8 +91,12 @@ public:
     virtual int   RandInt( int lessThan ) const { return 0; }
     virtual float RandFloat() const { return 0.0f; }
 
-    virtual SaveData LoadSaveData() = 0;
-    virtual void     SaveSaveData( const SaveData& data ) = 0;
+    virtual Settings LoadSettings() = 0;
+    virtual SaveData LoadSaveData( int version ) = 0;
+    virtual void     SaveSaveData( const SaveData& version0, const SaveData& version1 ) = 0;
+    virtual bool     Connect() = 0;
+    virtual void     Disconnect() = 0;
+    virtual void     SendHighScores( const HighScoreTable& table ) = 0;
 
     // Input
     //------------------------------

@@ -13,7 +13,8 @@ public:
         STATE_MENU,
         STATE_PAUSE,
         STATE_GAME,
-        STATE_HIGHSCORE
+        STATE_HIGHSCORE,
+        STATE_SEND
     };
     enum BossList {
         BOSS_1A = 1,
@@ -89,6 +90,7 @@ private:
     long GetPlayerScore( int playerNumber ) const;
     long GetTotalScore() const;
     bool IsHighScore() const;
+    Lib::HighScoreTable GetMergedScores() const;
 
     void NewGame( bool bossMode = false );
     void EndGame();
@@ -119,9 +121,14 @@ private:
     bool      _controllersDialog;
     bool      _firstControllersDialog;
 
+    bool      _sendConnect;
+    int       _sendCount;
+
     Overmind* _overmind;
     int _bossesKilled;
-    Lib::HighScoreTable _highScores;
+    Lib::HighScoreTable _highScores0;
+    Lib::HighScoreTable _highScores1;
+    Lib::HighScoreTable _mergedScores;
     std::vector< std::string > _compliments;
 };
 

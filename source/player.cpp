@@ -160,10 +160,10 @@ void Player::Render()
 
     Vec2 v;
 
-    v.Set( 1, 1 );
-    if ( n == 1 ) v.Set( Lib::WIDTH / Lib::TEXT_WIDTH - 1 - s.length(), 1 );
-    if ( n == 2 ) v.Set( 1, Lib::HEIGHT / Lib::TEXT_HEIGHT - 2 );
-    if ( n == 3 ) v.Set( Lib::WIDTH / Lib::TEXT_WIDTH - 1 - s.length(), Lib::HEIGHT / Lib::TEXT_HEIGHT - 2 );
+    v.Set( 1 + lib.LoadSettings()._hudCorrection, 1 + lib.LoadSettings()._hudCorrection );
+    if ( n == 1 ) v.Set( Lib::WIDTH / Lib::TEXT_WIDTH - 1 - s.length() - lib.LoadSettings()._hudCorrection, 1 + lib.LoadSettings()._hudCorrection );
+    if ( n == 2 ) v.Set( 1 + lib.LoadSettings()._hudCorrection, Lib::HEIGHT / Lib::TEXT_HEIGHT - 2 - lib.LoadSettings()._hudCorrection );
+    if ( n == 3 ) v.Set( Lib::WIDTH / Lib::TEXT_WIDTH - 1 - s.length() - lib.LoadSettings()._hudCorrection, Lib::HEIGHT / Lib::TEXT_HEIGHT - 2 - lib.LoadSettings()._hudCorrection );
 
     lib.RenderText( v, s, z0Game::PANEL_TEXT );
 
@@ -174,10 +174,10 @@ void Player::Render()
         sss << "   " << _score;
     s = sss.str();
 
-    v.Set( 1, 1 );
-    if ( n == 1 ) v.Set( Lib::WIDTH / Lib::TEXT_WIDTH - 1 - s.length(), 1 );
-    if ( n == 2 ) v.Set( 1, Lib::HEIGHT / Lib::TEXT_HEIGHT - 2 );
-    if ( n == 3 ) v.Set( Lib::WIDTH / Lib::TEXT_WIDTH - 1 - s.length(), Lib::HEIGHT / Lib::TEXT_HEIGHT - 2 );
+    v.Set( 1 + lib.LoadSettings()._hudCorrection, 1 + lib.LoadSettings()._hudCorrection );
+    if ( n == 1 ) v.Set( Lib::WIDTH / Lib::TEXT_WIDTH - 1 - s.length() - lib.LoadSettings()._hudCorrection, 1 + lib.LoadSettings()._hudCorrection );
+    if ( n == 2 ) v.Set( 1 + lib.LoadSettings()._hudCorrection, Lib::HEIGHT / Lib::TEXT_HEIGHT - 2 - lib.LoadSettings()._hudCorrection );
+    if ( n == 3 ) v.Set( Lib::WIDTH / Lib::TEXT_WIDTH - 1 - s.length() - lib.LoadSettings()._hudCorrection, Lib::HEIGHT / Lib::TEXT_HEIGHT - 2 - lib.LoadSettings()._hudCorrection );
 
     lib.RenderText( v, s, GetPlayerColour() );
 }

@@ -60,6 +60,8 @@ void LibWii::Init()
     }
     _wConnectedPads = 0;
     _gConnectedPads = 0;
+    _cConnectedPads = 0;
+    _server = 0;
 
     SYS_SetResetCallback( &OnReset );
     SYS_SetPowerCallback( &OnPower );
@@ -72,6 +74,35 @@ void LibWii::Init()
     ASND_Init();
     ASND_Pause( false );
 
+    _settings._disableBackground = 0;
+    _settings._hudCorrection = 0;
+    std::ifstream file;
+    file.open( SETTINGS_PATH );
+
+    if ( !file ) {
+        std::ofstream out;
+        out.open( SETTINGS_PATH );
+        out << SETTINGS_DISABLEBACKGROUND << " 0\r\n" << SETTINGS_HUDCORRECTION << " 0";
+        out.close();
+    } else {
+        std::string line;
+        while ( getline( file, line ) ) {
+            std::stringstream ss( line );
+            std::string key;
+            int value;
+            ss >> key;
+            ss >> value;
+            if ( key.compare( SETTINGS_DISABLEBACKGROUND ) == 0 )
+                _settings._disableBackground = value;
+            if ( key.compare( SETTINGS_HUDCORRECTION ) == 0 )
+                _settings._hudCorrection = value;
+        }
+    }
+    if ( _settings._hudCorrection < 0 )
+        _settings._hudCorrection = 0;
+    if ( _settings._hudCorrection > 8 )
+        _settings._hudCorrection = 8;
+
     ClearScreen();
     GRRLIB_Render();
 }
@@ -80,11 +111,16 @@ void LibWii::BeginFrame()
 {
     _gConnectedPads = PAD_ScanPads();
     _wConnectedPads = 0;
+    _cConnectedPads = 0;
     WPAD_ScanPads();
 
     for ( int i = 0; i < PLAYERS; i++ ) {
-        if ( WPAD_Probe( i, 0 ) == WPAD_ERR_NONE )
+        u32 type;
+        if ( WPAD_Probe( i, &type ) == WPAD_ERR_NONE ) {
             _wConnectedPads |= ( 1 << i );
+            if ( type == WPAD_EXP_CLASSIC )
+                _cConnectedPads |= ( 1 << i );
+        }
         WPAD_IR( i, _padIR[ i ] );
         WPAD_Expansion( i, _expansion[ i ] );
     }
@@ -129,176 +165,55 @@ float LibWii::RandFloat() const
     return float( rand() ) / float( RAND_MAX );
 }
 
-// SD card I/O
-//------------------------------
-Lib::SaveData LibWii::LoadSaveData()
-{
-    HighScoreTable r;
-    for ( int i = 0; i < PLAYERS + 1; i++ ) {
-        r.push_back( HighScoreList() );
-        for ( unsigned int j = 0; j < ( i < PLAYERS ? NUM_HIGH_SCORES : PLAYERS ); j++ )
-            r[ i ].push_back( HighScore() );
-    }
-
-    std::ifstream file;
-    file.open( SAVE_PATH );
-
-    if ( !file ) {
-        SaveData data;
-        data._bossesKilled = 0;
-        data._highScores = r;
-        return data;
-    }
-    std::string line;
-    std::string in;
-    while ( getline( file, line ) ) {
-        in += line + "\n";
-    }
-    std::stringstream decrypted( Crypt( in ) );
-
-    getline( decrypted, line );
-    if ( line.compare( "WiiSPACE v1.0" ) != 0 ) {
-        SaveData data;
-        data._bossesKilled = 0;
-        data._highScores = r;
-        file.close();
-        return data;
-    }
-
-    int bosses = 0;
-    long total = 0;
-    getline( decrypted, line );
-    std::stringstream ssb( line );
-    ssb >> bosses;
-    ssb >> total;
-
-    long findTotal = 0;
-    int i = 0;
-    unsigned int j = 0;
-    while ( getline( decrypted, line ) ) {
-        unsigned int split = line.find( ' ' );
-        std::stringstream ss( line.substr( 0, split ) );
-        std::string name;
-        if ( line.length() > split + 1 )
-            name = line.substr( split + 1 );
-        long score;
-        ss >> score;
-
-        r[ i ][ j ].first = name;
-        r[ i ][ j ].second = score;
-
-        findTotal += score;
-
-        j++;
-        if ( j >= NUM_HIGH_SCORES || ( i >= PLAYERS && int( j ) >= PLAYERS ) ) {
-            j -= NUM_HIGH_SCORES;
-            i++;
-        }
-        if ( i >= PLAYERS + 1 )
-            break;
-    }
-
-    file.close();
-
-    if ( findTotal != total ) {
-        r.clear();
-        for ( int i = 0; i < PLAYERS + 1; i++ ) {
-            r.push_back( HighScoreList() );
-            for ( unsigned int j = 0; j < ( i < PLAYERS ? NUM_HIGH_SCORES : PLAYERS ); j++ )
-                r[ i ].push_back( HighScore() );
-        }
-    }
-
-    for ( int i = 0; i < PLAYERS; i++ ) {
-        std::sort( r[ i ].begin(), r[ i ].end(), &ScoreSort );
-    }
-    
-    SaveData data;
-    data._bossesKilled = bosses;
-    data._highScores = r;
-    return data;
-}
-
-void LibWii::SaveSaveData( const SaveData& data )
-{
-    long total = 0;
-    for ( int i = 0; i < PLAYERS + 1; i++ ) {
-        for ( unsigned int j = 0; j < ( i < PLAYERS ? NUM_HIGH_SCORES : PLAYERS ); j++ ) {
-            if ( i < int( data._highScores.size() ) && j < data._highScores[ i ].size() )
-                total += data._highScores[ i ][ j ].second;
-        }
-    }
-
-    std::stringstream out;
-    out << "WiiSPACE v1.0\n" << data._bossesKilled << " " << total << "\n";
-
-    for ( int i = 0; i < PLAYERS + 1; i++ ) {
-        for ( unsigned int j = 0; j < ( i < PLAYERS ? NUM_HIGH_SCORES : PLAYERS ); j++ ) {
-            if ( i < int( data._highScores.size() ) && j < data._highScores[ i ].size() )
-                out << data._highScores[ i ][ j ].second << " " << data._highScores[ i ][ j ].first << "\n";
-            else
-                out << "0\n";
-        }
-    }
-
-    std::string encrypted = Crypt( out.str() );
-
-    std::ofstream file;
-    file.open( SAVE_PATH );
-    file << encrypted;
-    file.close();
-}
-
-std::string LibWii::Crypt( const std::string& text )
-{
-    std::string r = "";
-    std::string key( ENCRYPTION_KEY );
-    for ( unsigned int i = 0; i < text.length(); i++ ) {
-        r += text[ i ] ^ key[ i % key.length() ];
-    }
-    return r;
-}
-
 void LibWii::TakeScreenShot()
 {
     GRRLIB_ScrShot( SCREENSHOT_PATH );
+}
+
+LibWii::Settings LibWii::LoadSettings()
+{
+    return _settings;
 }
 
 // Input
 //------------------------------
 LibWii::PadType LibWii::IsPadConnected( int player )
 {
-    return PadType( ( _gConnectedPads & ( 1 << player ) ? PAD_GAMECUBE : PAD_NONE ) + ( _wConnectedPads & ( 1 << player ) ? PAD_WIIMOTE : PAD_NONE ) );
+    return PadType( ( _gConnectedPads & ( 1 << player ) ? PAD_GAMECUBE : PAD_NONE )
+                  + ( _wConnectedPads & ( 1 << player ) ? PAD_WIIMOTE  : PAD_NONE )
+                  + ( _cConnectedPads & ( 1 << player ) ? PAD_CLASSIC  : PAD_NONE ) );
 }
 
 bool LibWii::IsKeyPressed( int player, Key k )
 {
     if ( player < 0 || player >= 4 ) return false;
-    u32 wDown = WPAD_ButtonsDown( player );
+    u32 wDown  = WPAD_ButtonsDown( player );
     u16 gDown  = PAD_ButtonsDown( player );
 
-    return HasWKey( wDown, k ) || HasGKey( gDown, k );
+    return ( _cConnectedPads & ( 1 << player ) ? HasCKey( wDown, k ) : HasNKey( wDown, k ) ) || HasWKey( wDown, k ) || HasGKey( gDown, k );
 }
 
 bool LibWii::IsKeyReleased( int player, Key k )
 {
     if ( player < 0 || player >= 4 ) return false;
-    u32 wUp = WPAD_ButtonsUp( player );
+    u32 wUp  = WPAD_ButtonsUp( player );
     u16 gUp  = PAD_ButtonsUp( player );
 
-    return HasWKey( wUp, k ) || HasGKey( gUp, k );
+    return ( _cConnectedPads & ( 1 << player ) ? HasCKey( wUp, k ) : HasNKey( wUp, k ) ) || HasWKey( wUp, k ) || HasGKey( gUp, k );
 }
 
 bool LibWii::IsKeyHeld( int player, Key k )
 {
     if ( player < 0 || player >= 4 ) return false;
-    if ( k == KEY_FIRE && ( PAD_TriggerR( player ) > 20 || Vec2( PAD_SubStickX( player ), PAD_SubStickY( player ) ).Length() >= 20.0f ) )
+    if ( k == KEY_FIRE && ( PAD_TriggerR( player ) > 20
+                         || Vec2( PAD_SubStickX( player ), PAD_SubStickY( player ) ).Length() >= 20.0f
+                         || _expansion[ player ]->classic.rjs.mag >= 0.5f ) )
         return true;
 
-    u32 wHeld = WPAD_ButtonsHeld( player );
+    u32 wHeld  = WPAD_ButtonsHeld( player );
     u16 gHeld  = PAD_ButtonsHeld( player );
 
-    return HasWKey( wHeld, k ) || HasGKey( gHeld, k );
+    return ( _cConnectedPads & ( 1 << player ) ? HasCKey( wHeld, k ) : HasNKey( wHeld, k ) ) || HasWKey( wHeld, k ) || HasGKey( gHeld, k );
 }
 
 Vec2 LibWii::GetMoveVelocity ( int player )
@@ -320,7 +235,10 @@ Vec2 LibWii::GetMoveVelocity ( int player )
         return v;
 
     Vec2 a;
-    a.SetPolar( M_PI * ( ex.nunchuk.js.ang / 180.0f - 0.5f ), ex.nunchuk.js.mag );
+    if ( _cConnectedPads & ( 1 << player ) )
+        a.SetPolar( M_PI * ( ex.classic.ljs.ang / 180.0f - 0.5f ), ex.classic.ljs.mag );
+    else
+        a.SetPolar( M_PI * ( ex.nunchuk.js.ang / 180.0f - 0.5f ), ex.nunchuk.js.mag );
     Vec2 b;
     b.Set( PAD_StickX( player ), -PAD_StickY( player ) );
     if ( b.Length() < 20.0f ) b.Set( 0, 0 );
@@ -333,19 +251,23 @@ Vec2 LibWii::GetFireTarget( int player, const Vec2& position )
 {
     if ( player < 0 || player >= 4 ) return Vec2();
     PadIR& p = *_padIR[ player ];
-    if ( p.valid ) {
+    if ( p.valid && !( _cConnectedPads & ( 1 << player ) ) ) {
         Vec2 v( p.x, p.y );
         _lastSubStick[ player ] = v - position;
         return v;
     }
+
+    Vec2 c;
+    c.SetPolar( M_PI * ( _expansion[ player ]->classic.rjs.ang / 180.0f - 0.5f ), _expansion[ player ]->classic.rjs.mag );
     Vec2 v( PAD_SubStickX( player ), -PAD_SubStickY( player ) );
-    if ( v.Length() < 20.0f )
-        v = _lastSubStick[ player ];
-    else
+
+    if ( c.Length() >= 0.5f ) {
+        _lastSubStick[ player ] = c;
+    } else if ( v.Length() >= 20.0f )
         _lastSubStick[ player ] = v;
-    v.Normalise();
-    v *= 32.0f;
-    return position + v;
+    _lastSubStick[ player ].Normalise();
+    _lastSubStick[ player ] *= 32.0f;
+    return position + _lastSubStick[ player ];
 }
 
 // Output
@@ -452,7 +374,7 @@ bool LibWii::HasWKey( u32 wPad, Key k )
     if ( k == KEY_FIRE )
         return wPad & WPAD_BUTTON_B;
     else if ( k == KEY_BOMB )
-        return wPad & WPAD_BUTTON_A || wPad & WPAD_NUNCHUK_BUTTON_Z;
+        return wPad & WPAD_BUTTON_A;
     else if ( k == KEY_ACCEPT )
         return wPad & WPAD_BUTTON_A;
     else if ( k == KEY_CANCEL )
@@ -474,9 +396,9 @@ bool LibWii::HasWKey( u32 wPad, Key k )
 bool LibWii::HasGKey( u16 gPad, Key k )
 {
     if ( k == KEY_FIRE )
-        return gPad & PAD_TRIGGER_R;
+        return gPad & PAD_TRIGGER_R || gPad & PAD_BUTTON_X || gPad & PAD_BUTTON_Y;
     else if ( k == KEY_BOMB )
-        return gPad & PAD_TRIGGER_L || gPad & PAD_BUTTON_A;
+        return gPad & PAD_TRIGGER_L || gPad & PAD_BUTTON_A || gPad & PAD_BUTTON_B;
     else if ( k == KEY_ACCEPT )
         return gPad & PAD_BUTTON_A || gPad & PAD_TRIGGER_R;
     else if ( k == KEY_CANCEL )
@@ -491,6 +413,38 @@ bool LibWii::HasGKey( u16 gPad, Key k )
         return gPad & PAD_BUTTON_LEFT;
     else if ( k == KEY_RIGHT )
         return gPad & PAD_BUTTON_RIGHT;
+
+    return false;
+}
+
+bool LibWii::HasNKey( u32 nPad, Key k )
+{
+    if ( k == KEY_BOMB )
+        return nPad & WPAD_NUNCHUK_BUTTON_Z;
+
+    return false;
+}
+
+bool LibWii::HasCKey( u32 cPad, Key k )
+{
+    if ( k == KEY_FIRE )
+        return cPad & WPAD_CLASSIC_BUTTON_ZR || cPad & WPAD_CLASSIC_BUTTON_FULL_R || cPad & WPAD_CLASSIC_BUTTON_X || cPad & WPAD_CLASSIC_BUTTON_A;
+    else if ( k == KEY_BOMB )
+        return cPad & WPAD_CLASSIC_BUTTON_ZL || cPad & WPAD_CLASSIC_BUTTON_FULL_L || cPad & WPAD_CLASSIC_BUTTON_Y || cPad & WPAD_CLASSIC_BUTTON_B;
+    else if ( k == KEY_ACCEPT )
+        return cPad & WPAD_CLASSIC_BUTTON_A || cPad & WPAD_CLASSIC_BUTTON_B || cPad & WPAD_CLASSIC_BUTTON_ZR || cPad & WPAD_CLASSIC_BUTTON_FULL_R;
+    else if ( k == KEY_CANCEL )
+        return cPad & WPAD_CLASSIC_BUTTON_X || cPad & WPAD_CLASSIC_BUTTON_Y || cPad & WPAD_CLASSIC_BUTTON_ZL || cPad & WPAD_CLASSIC_BUTTON_FULL_L;
+    else if ( k == KEY_MENU )
+        return cPad & WPAD_CLASSIC_BUTTON_MINUS || cPad & WPAD_CLASSIC_BUTTON_PLUS || cPad & WPAD_CLASSIC_BUTTON_HOME;
+    else if ( k == KEY_UP )
+        return cPad & WPAD_CLASSIC_BUTTON_UP;
+    else if ( k == KEY_DOWN )
+        return cPad & WPAD_CLASSIC_BUTTON_DOWN;
+    else if ( k == KEY_LEFT )
+        return cPad & WPAD_CLASSIC_BUTTON_LEFT;
+    else if ( k == KEY_RIGHT )
+        return cPad & WPAD_CLASSIC_BUTTON_RIGHT;
 
     return false;
 }
