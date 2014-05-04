@@ -8,13 +8,15 @@
 class Boss : public Ship {
 public:
 
-    static const float HP_PER_EXTRA_PLAYER = 0.2f;
+    static const float HP_PER_EXTRA_PLAYER = 0.1f;
     static const float HP_PER_EXTRA_CYCLE  = 0.5f;
 
     Boss( const Vec2& position, z0Game::BossList boss, int hp, int players, int cycle = 0 );
     virtual ~Boss() { }
 
     virtual bool IsEnemy() const
+    { return true; }
+    virtual bool IsBoss() const
     { return true; }
     void SetKilled()
     { SetBossKilled( _flag ); }
@@ -25,6 +27,7 @@ public:
 
     void SetIgnoreDamageColourIndex( int shapeIndex )
     { _ignoreDamageColour = shapeIndex; }
+    void RenderHPBar();
 
     // Generic behaviour
     //------------------------------
@@ -112,7 +115,7 @@ class ChaserBoss : public Boss
 {
 public:
 
-    static const int   BASE_HP = 256;
+    static const int   BASE_HP = 180;
     static const float SPEED   = 4.0f;
     static const int   TIMER   = 60;
     static const int   MAX_SPLIT = 7;
@@ -210,7 +213,7 @@ class DeathRayBoss : public Boss
 public:
 
     static const int   BASE_HP    = 500;
-    static const int   ARM_HP     = 200;
+    static const int   ARM_HP     = 100;
     static const int   ARM_ATIMER = 300;
     static const int   ARM_RTIMER = 400;
     static const float ARM_SPEED  = 4.0f;

@@ -58,6 +58,8 @@ void LibWii::Init()
         _lastSubStick.push_back( Vec2( 0, -1.f ) );
         _rumble.push_back( 0 );
     }
+    _wConnectedPads = 0;
+    _gConnectedPads = 0;
 
     SYS_SetResetCallback( &OnReset );
     SYS_SetPowerCallback( &OnPower );
@@ -76,12 +78,17 @@ void LibWii::Init()
 
 void LibWii::BeginFrame()
 {
-    PAD_ScanPads();
+    _gConnectedPads = PAD_ScanPads();
+    _wConnectedPads = 0;
     WPAD_ScanPads();
+
     for ( int i = 0; i < PLAYERS; i++ ) {
+        if ( WPAD_Probe( i, 0 ) == WPAD_ERR_NONE )
+            _wConnectedPads |= ( 1 << i );
         WPAD_IR( i, _padIR[ i ] );
         WPAD_Expansion( i, _expansion[ i ] );
     }
+
     for ( unsigned int i = 0; i < _sounds.size(); i++ ) {
         if ( _sounds[ i ].first > 0 )
             _sounds[ i ].first--;
@@ -259,6 +266,11 @@ void LibWii::TakeScreenShot()
 
 // Input
 //------------------------------
+LibWii::PadType LibWii::IsPadConnected( int player )
+{
+    return PadType( ( _gConnectedPads & ( 1 << player ) ? PAD_GAMECUBE : PAD_NONE ) + ( _wConnectedPads & ( 1 << player ) ? PAD_WIIMOTE : PAD_NONE ) );
+}
+
 bool LibWii::IsKeyPressed( int player, Key k )
 {
     if ( player < 0 || player >= 4 ) return false;
@@ -280,7 +292,7 @@ bool LibWii::IsKeyReleased( int player, Key k )
 bool LibWii::IsKeyHeld( int player, Key k )
 {
     if ( player < 0 || player >= 4 ) return false;
-    if ( k == KEY_FIRE && PAD_TriggerR( player ) > 20 )
+    if ( k == KEY_FIRE && ( PAD_TriggerR( player ) > 20 || Vec2( PAD_SubStickX( player ), PAD_SubStickY( player ) ).Length() >= 20.0f ) )
         return true;
 
     u32 wHeld = WPAD_ButtonsHeld( player );

@@ -16,7 +16,7 @@ Boss::Boss( const Vec2& position, z0Game::BossList boss, int hp, int players, in
 {
     SetBoundingWidth( 640 );
     SetIgnoreDamageColourIndex( 100 );
-    _score = 3000 * ( cycle + 1 ) + 1500 * ( boss > z0Game::BOSS_1C );
+    _score = 5000 * ( cycle + 1 ) + 2500 * ( boss > z0Game::BOSS_1C );
     _score = long( float( _score ) * ( 1.0f + float( players - 1 ) * HP_PER_EXTRA_PLAYER ) );
     float fhp = hp * 30;
     fhp *= 1.0f + float( cycle )       * HP_PER_EXTRA_CYCLE;
@@ -32,11 +32,11 @@ void Boss::Damage( int damage, Player* source ) {
 
     if ( damage >= Player::BOMB_DAMAGE ) {
         Explosion();
-        Explosion();
-        Explosion();
+        Explosion( 0xffffffff, 16 );
+        Explosion( 0, 24 );
 
         _damaged = 25;
-    } else {
+    } else if ( _damaged < 1 ) {
         _damaged = 1;
     }
 
@@ -53,12 +53,7 @@ void Boss::Damage( int damage, Player* source ) {
 
 void Boss::Render()
 {
-    if ( !_showHp && IsOnScreen() )
-        _showHp = true;
-
-    if ( _showHp ) {
-        RenderHPBar( float( _hp ) / float( _maxHp ) );
-    }
+    RenderHPBar();
 
     if ( !_damaged ) {
         Ship::Render();
@@ -68,6 +63,16 @@ void Boss::Render()
         GetShape( i ).Render( GetLib(), GetPosition(), GetRotation(), int( i ) < _ignoreDamageColour ? 0xffffffff : 0 );
     }
     _damaged--;
+}
+
+void Boss::RenderHPBar()
+{
+    if ( !_showHp && IsOnScreen() )
+        _showHp = true;
+
+    if ( _showHp ) {
+        Ship::RenderHPBar( float( _hp ) / float( _maxHp ) );
+    }
 }
 
 void Boss::OnDestroy()
@@ -347,7 +352,7 @@ int ShieldBombBoss::GetDamage( int damage )
 int ChaserBoss::_sharedHp;
 
 ChaserBoss::ChaserBoss( int players, int cycle, int split, const Vec2& position, int time )
-: Boss( !split ? Vec2( Lib::WIDTH / 2.0f, -Lib::HEIGHT / 2.0f ) : position, z0Game::BOSS_1C, BASE_HP / pow( 2, split ), players, cycle )
+: Boss( !split ? Vec2( Lib::WIDTH / 2.0f, -Lib::HEIGHT / 2.0f ) : position, z0Game::BOSS_1C, 1 + BASE_HP / pow( 2, split ), players, cycle )
 , _onScreen( split != 0 )
 , _move( false )
 , _timer( time )
@@ -399,14 +404,19 @@ void ChaserBoss::Render()
     int totalHp = 0;
     int hp = 0;
     for ( int i = 0; i < 8; i++ ) {
-        totalHp = 2 * totalHp + pow( 2, i + 1 );
+        float fhp = 1 + BASE_HP / pow( 2, 7 - i );
+
+        fhp *= 1.0f + float( _cycle )       * HP_PER_EXTRA_CYCLE;
+        fhp *= 1.0f + float( _players - 1 ) * HP_PER_EXTRA_PLAYER;
+
+        totalHp = 2 * totalHp + int( fhp );
         if ( i < 7 - _split )
-            hp = 2 * hp + pow( 2, i + 1 );
+            hp = 2 * hp + int( fhp );
     }
     hp = 2 * hp + GetRemainingHP();
     _sharedHp    += hp;
     if ( _onScreen )
-        RenderHPBar( float( _sharedHp ) / float( totalHp ) );
+        Ship::RenderHPBar( float( _sharedHp ) / float( totalHp ) );
 }
 
 int ChaserBoss::GetDamage( int damage )
@@ -841,6 +851,8 @@ void GhostBoss::Render()
         return;
     }
     RenderWithColour( 0x330066ff );
+    if ( !_startTime )
+        RenderHPBar();
 }
 
 int GhostBoss::GetDamage( int damage )
@@ -962,7 +974,7 @@ void DeathRayBoss::Update()
         }
         if ( _armTimer >= ARM_RTIMER ) {
             _armTimer = 0;
-            int hp = int( float( ARM_HP ) * ( 0.5f + 0.5f * ( CountPlayers() - GetLives() ? 0 : Player::CountKilledPlayers() ) ) );
+            int hp = int( float( ARM_HP ) * ( 0.7f + 0.3f * ( GetLives() ? CountPlayers() : CountPlayers() - Player::CountKilledPlayers() ) ) );
             _arms.push_back( new DeathArm( this, true,  hp ) );
             _arms.push_back( new DeathArm( this, false, hp ) );
             PlaySound( Lib::SOUND_ENEMY_SPAWN );

@@ -45,6 +45,12 @@ public:
         SOUND_MENU_ACCEPT
     };
 
+    enum PadType {
+        PAD_NONE     = 0,
+        PAD_GAMECUBE = 1,
+        PAD_WIIMOTE  = 2
+    };
+
     typedef std::pair  < std::string, long > HighScore;
     typedef std::vector< HighScore >         HighScoreList;
     typedef std::vector< HighScoreList >     HighScoreTable;
@@ -84,6 +90,8 @@ public:
 
     // Input
     //------------------------------
+    virtual PadType IsPadConnected( int player ) = 0;
+
     virtual bool IsKeyPressed ( int player, Key k ) = 0;
     virtual bool IsKeyReleased( int player, Key k ) = 0;
     virtual bool IsKeyHeld    ( int player, Key k ) = 0;

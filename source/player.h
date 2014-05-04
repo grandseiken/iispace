@@ -12,6 +12,7 @@ public:
     static const float SHOT_SPEED      = 10.0f;
     static const int   SHOT_TIMER      = 4;
     static const float BOMB_RADIUS     = 180.0f;
+    static const float BOMB_BOSSRADIUS = 280.0f;
     static const int   BOMB_DAMAGE     = 50;
     static const int   REVIVE_TIME     = 100;
     static const int   SHIELD_TIME     = 50;

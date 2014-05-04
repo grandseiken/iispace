@@ -94,9 +94,10 @@ void Player::Update()
         GetLib().Rumble( GetPlayerNumber(), 10 );
         PlaySound( Lib::SOUND_EXPLOSION );
 
-        z0Game::ShipList list = GetShipsInRadius( GetPosition(), BOMB_RADIUS );
+        z0Game::ShipList list = GetShipsInRadius( GetPosition(), BOMB_BOSSRADIUS );
         for ( unsigned int i = 0; i < list.size(); i++ ) {
-            list[ i ]->Damage( BOMB_DAMAGE, 0 );
+            if ( ( list[ i ]->GetPosition() - GetPosition() ).Length() <= BOMB_RADIUS || list[ i ]->IsBoss() )
+                list[ i ]->Damage( BOMB_DAMAGE, 0 );
             AddScore( 0 );
         }
     }

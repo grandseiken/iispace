@@ -33,6 +33,8 @@ public:
 
     // Input
     //------------------------------
+    virtual PadType IsPadConnected( int player );
+
     virtual bool IsKeyPressed ( int player, Key k );
     virtual bool IsKeyReleased( int player, Key k );
     virtual bool IsKeyHeld    ( int player, Key k );
@@ -84,6 +86,8 @@ private:
     std::vector< Expansion* > _expansion;
     std::vector< Vec2 >       _lastSubStick;
     std::vector< int >        _rumble;
+    u32                       _wConnectedPads;
+    u32                       _gConnectedPads;
 
     typedef GRRLIB_texImg     Texture;
     Texture                   _consoleFont;

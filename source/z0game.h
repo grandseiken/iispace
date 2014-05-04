@@ -115,6 +115,10 @@ private:
     ShipList  _playerList;
     ShipList  _collisionList;
 
+    int       _controllersConnected;
+    bool      _controllersDialog;
+    bool      _firstControllersDialog;
+
     Overmind* _overmind;
     int _bossesKilled;
     Lib::HighScoreTable _highScores;

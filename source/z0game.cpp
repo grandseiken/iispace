@@ -17,6 +17,9 @@ z0Game::z0Game( Lib& lib )
 , _exitTimer( 0 )
 , _enterChar( 0 )
 , _enterTime( 0 )
+, _controllersConnected( 0 )
+, _controllersDialog( false )
+, _firstControllersDialog( false )
 , _overmind( 0 )
 , _bossesKilled( 0 )
 {
@@ -169,6 +172,29 @@ void z0Game::Update()
     //------------------------------
     else if ( _state == STATE_GAME ) {
 
+        int controllers = 0;
+        for ( int i = 0; i < CountPlayers(); i++ ) {
+            if ( lib.IsPadConnected( i ) )
+                controllers++;
+        }
+        if ( controllers < _controllersConnected && !_controllersDialog ) {
+            _controllersDialog = true;
+            GetLib().PlaySound( Lib::SOUND_MENU_ACCEPT );
+        }
+        _controllersConnected = controllers;
+
+        if ( _controllersDialog ) {
+            if ( lib.IsKeyPressed( Lib::KEY_MENU ) || lib.IsKeyPressed( Lib::KEY_ACCEPT ) ) {
+                _controllersDialog = false;
+                _firstControllersDialog = false;
+                GetLib().PlaySound( Lib::SOUND_MENU_ACCEPT );
+                for ( int i = 0; i < CountPlayers(); i++ ) {
+                    GetLib().Rumble( i, 10 );
+                }
+            }
+            return;
+        }
+
         if ( lib.IsKeyPressed( Lib::KEY_MENU ) ) {
             _overmind->StopTime();
             _state = STATE_PAUSE;
@@ -295,16 +321,47 @@ void z0Game::Render()
     _showHPBar = false;
     _fillHPBar = 0;
 
-    for ( unsigned int i = CountPlayers(); i < _shipList.size(); i++ ) {
-        _shipList[ i ]->Render();
-    }
-    for ( unsigned int i = 0; i < unsigned( CountPlayers() ) && i < _shipList.size(); i++ ) {
-        _shipList[ i ]->Render();
+    if ( !_firstControllersDialog ) {
+        for ( unsigned int i = CountPlayers(); i < _shipList.size(); i++ ) {
+            _shipList[ i ]->Render();
+        }
+        for ( unsigned int i = 0; i < unsigned( CountPlayers() ) && i < _shipList.size(); i++ ) {
+            _shipList[ i ]->Render();
+        }
     }
 
     // In-game
     //------------------------------
     if ( _state == STATE_GAME ) {
+
+        if ( _controllersDialog ) {
+
+            RenderPanel( Vec2( 3, 3 ), Vec2( 32, 8 + 2 * CountPlayers() ) );
+
+            lib.RenderText( Vec2( 4, 4 ),  "CONTROLLERS FOUND",   PANEL_TEXT );
+
+            for ( int i = 0; i < CountPlayers(); i++ ) {
+                std::stringstream ss;
+                ss << "PLAYER " << ( i + 1 ) << ": ";
+                lib.RenderText( Vec2( 4, 8 + 2 * i ), ss.str(), PANEL_TEXT );
+
+                std::stringstream ss2;
+                int pads = lib.IsPadConnected( i );
+                if ( pads & Lib::PAD_GAMECUBE ) {
+                    ss2 << "GAMECUBE";
+                    if ( pads & Lib::PAD_WIIMOTE )
+                        ss2 << ", ";
+                }
+                if ( pads & Lib::PAD_WIIMOTE )
+                    ss2 << "WIIMOTE";
+                if ( !pads )
+                    ss2 << "NONE";
+
+                lib.RenderText( Vec2( 14, 8 + 2 * i ), ss2.str(), pads ? Player::GetPlayerColour( i ) : PANEL_TEXT );
+            }
+
+            return;
+        }
 
         std::stringstream ss;
         ss << _lives << " live(s)";
@@ -535,6 +592,9 @@ void z0Game::Render()
 //------------------------------
 void z0Game::NewGame( bool bossMode )
 {
+    _controllersDialog = true;
+    _firstControllersDialog = true;
+    _controllersConnected = 0;
     _bossMode = bossMode;
     _overmind->Reset();
     _lives = bossMode ? BOSSMODE_LIVES : STARTING_LIVES;
@@ -543,7 +603,6 @@ void z0Game::NewGame( bool bossMode )
         Player* p = new Player( v, i );
         AddShip( p );
         _playerList.push_back( p );
-        GetLib().Rumble( i, 10 );
     }
     _state = STATE_GAME;
 }

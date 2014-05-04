@@ -34,6 +34,8 @@ public:
     { return false; }
     virtual bool IsEnemy() const
     { return false; }
+    virtual bool IsBoss() const
+    { return false; }
     virtual bool IsPowerup() const
     { return false; }
 
