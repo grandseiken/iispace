@@ -599,10 +599,10 @@ void z0Game::Render()
             if ( score <= 0 )
                 score = 1;
 
-            RenderPanel( Vec2( 3, 3 ), Vec2( 28, b ? 10 : 8 ) );
+            RenderPanel( Vec2( 3, 3 ), Vec2( 37, b ? 10 : 8 ) );
             if ( b ) {
                 std::stringstream ss;
-                ss << ( extraLives * 10 ) << " second bonus for " << extraLives << " extra li" << ( extraLives == 1 ? "fe" : "ves" ) << ".";
+                ss << ( extraLives * 10 ) << " second bonus for extra lives.";
                 lib.RenderText( Vec2( 4, 4 ), ss.str(), PANEL_TEXT );
             }
 
@@ -817,7 +817,7 @@ std::string z0Game::ConvertToTime( long score ) const
     if ( score == 0 )
         return "--:--";
     int mins = 0;
-    while ( score > 60 && mins < 99 ) {
+    while ( score >= 60 && mins < 99 ) {
         score -= 60;
         mins++;
     }
@@ -900,7 +900,7 @@ Lib::HighScoreTable z0Game::GetMergedScores() const
     }
     merged.push_back( Lib::HighScoreList() );
     for ( int i = 0; i < Lib::PLAYERS; i++ ) {
-        if ( _highScores1[ Lib::PLAYERS ][ i ].second <= _highScores0[ Lib::PLAYERS ][ i ].second && _highScores1[ Lib::PLAYERS ][ i ].second > 0 )
+        if ( ( _highScores1[ Lib::PLAYERS ][ i ].second <= _highScores0[ Lib::PLAYERS ][ i ].second || _highScores0[ Lib::PLAYERS ][ i ].second <= 0 ) && _highScores1[ Lib::PLAYERS ][ i ].second > 0 )
             merged[ Lib::PLAYERS ].push_back( _highScores1[ Lib::PLAYERS ][ i ] );
         else
             merged[ Lib::PLAYERS ].push_back( _highScores0[ Lib::PLAYERS ][ i ] );
