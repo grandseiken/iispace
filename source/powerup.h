@@ -9,16 +9,18 @@ class Powerup : public Ship
 {
 public:
     
-    static const float SPEED = 1.0f;
-    static const int   TIME  = 100;
+    static const fixed SPEED;
+    static const int   TIME;
 
     Powerup( const Vec2& position );
     virtual ~Powerup() { }
 
     virtual void Update();
-    virtual void Damage( int damage, Player* source );
+    virtual void Damage( int damage, bool magic, Player* source );
     virtual bool IsPowerup() const
-    { return true; }
+    {
+        return true;
+    }
 
 private:
 

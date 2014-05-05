@@ -1,10 +1,12 @@
+#include "z0.h"
+#ifdef PLATFORM_WII
+
 #include <iostream>
-#include <time.h>
 #include <fat.h>
 #include <fstream.h>
 #include <asndlib.h>
-
 #include "libwii.h"
+
 #include "_Console.h"
 
 LibWii::ExitType LibWii::_exitType;
@@ -67,41 +69,13 @@ void LibWii::Init()
     SYS_SetPowerCallback( &OnPower );
     WPAD_SetPowerButtonCallback( &OnPadPower );
 
-    srand( ( unsigned int )time( 0 ) );
     fatInitDefault();
 
     LoadSounds();
     ASND_Init();
     ASND_Pause( false );
 
-    _settings._disableBackground = 0;
-    _settings._hudCorrection = 0;
-    std::ifstream file;
-    file.open( SETTINGS_PATH );
-
-    if ( !file ) {
-        std::ofstream out;
-        out.open( SETTINGS_PATH );
-        out << SETTINGS_DISABLEBACKGROUND << " 0\r\n" << SETTINGS_HUDCORRECTION << " 0";
-        out.close();
-    } else {
-        std::string line;
-        while ( getline( file, line ) ) {
-            std::stringstream ss( line );
-            std::string key;
-            int value;
-            ss >> key;
-            ss >> value;
-            if ( key.compare( SETTINGS_DISABLEBACKGROUND ) == 0 )
-                _settings._disableBackground = value;
-            if ( key.compare( SETTINGS_HUDCORRECTION ) == 0 )
-                _settings._hudCorrection = value;
-        }
-    }
-    if ( _settings._hudCorrection < 0 )
-        _settings._hudCorrection = 0;
-    if ( _settings._hudCorrection > 8 )
-        _settings._hudCorrection = 8;
+    _settings = LoadSaveSettings();
 
     ClearScreen();
     GRRLIB_Render();
@@ -133,7 +107,6 @@ void LibWii::BeginFrame()
 
 void LibWii::EndFrame()
 {
-    GRRLIB_Render();
     for ( int i = 0; i < PLAYERS; i++ ) {
         if ( _rumble[ i ] ) {
             _rumble[ i ]--;
@@ -155,19 +128,24 @@ Lib::ExitType LibWii::GetExitType() const
     return _exitType;
 }
 
-int LibWii::RandInt( int lessThan ) const
+void LibWii::SystemExit( bool powerOff ) const
 {
-    return rand() % lessThan;
+    SYS_ResetSystem( powerOff ? SYS_POWEROFF : SYS_RETURNTOMENU, 0, 0 );
 }
 
-float LibWii::RandFloat() const
+int LibWii::RandInt( int lessThan )
 {
-    return float( rand() ) / float( RAND_MAX );
+    return z_rand() % lessThan;
+}
+
+fixed LibWii::RandFloat()
+{
+    return fixed( z_rand() ) / fixed( Z_RAND_MAX );
 }
 
 void LibWii::TakeScreenShot()
 {
-    GRRLIB_ScrShot( SCREENSHOT_PATH );
+    GRRLIB_ScrShot( ScreenshotPath() );
 }
 
 LibWii::Settings LibWii::LoadSettings()
@@ -292,6 +270,11 @@ void LibWii::RenderRect( const Vec2& low, const Vec2& hi, Colour c, int lineWidt
     GRRLIB_Rectangle( low._x, low._y, hi._x - low._x, hi._y - low._y, c, lineWidth == 0 );
     if ( lineWidth > 1 )
         RenderRect( low + Vec2( 1, 1 ), hi - Vec2( 1, 1 ), c, lineWidth - 1 );
+}
+
+void LibWii::Render()
+{
+    GRRLIB_Render();
 }
 
 void LibWii::Rumble( int player, int time )
@@ -466,6 +449,7 @@ bool LibWii::HasCKey( u32 cPad, Key k )
 #include "_BossAttack.h"
 #include "_BossFire.h"
 #include "_EnemySpawn.h"
+#define USE_SOUND( sound, data ) _sounds.push_back( SoundResource( 0, NamedSound( sound , SoundBuffer( data , data##_len ) ) ) );
 
 void LibWii::LoadSounds()
 {
@@ -486,3 +470,5 @@ void LibWii::LoadSounds()
     USE_SOUND( SOUND_PLAYER_SHIELD,  PlayerShieldPCM  );
     USE_SOUND( SOUND_EXPLOSION,      ExplosionPCM     );
 }
+
+#endif

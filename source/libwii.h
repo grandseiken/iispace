@@ -18,22 +18,33 @@ public:
     // General
     //------------------------------
     virtual void Init();
+    virtual void Exit( ExitType t );
+    virtual ExitType GetExitType() const;
+    virtual void SystemExit( bool powerOff ) const;
 
     virtual void BeginFrame();
     virtual void EndFrame();
 
-    virtual void Exit( ExitType t );
-    virtual ExitType GetExitType() const;
-
-    virtual int   RandInt( int lessThan ) const;
-    virtual float RandFloat() const;
+    virtual int   RandInt( int lessThan );
+    virtual fixed RandFloat();
 
     virtual Settings LoadSettings();
-    virtual SaveData LoadSaveData( int version );
-    virtual void     SaveSaveData( const SaveData& version0, const SaveData& version1 );
     virtual bool     Connect();
     virtual void     Disconnect();
     virtual void     SendHighScores( const HighScoreTable& table );
+
+    virtual std::string SavePath() const
+    {
+        return "sd:/wiispace.sav";
+    }
+    virtual std::string SettingsPath() const
+    {
+        return "sd:/wiispace.txt";
+    }
+    virtual std::string ScreenshotPath() const
+    {
+        return "sd:/wiispace.png";
+    }
 
     // Input
     //------------------------------
@@ -52,22 +63,15 @@ public:
     virtual void RenderLine( const Vec2& a, const Vec2& b, Colour c );
     virtual void RenderText( const Vec2& v, const std::string& text, Colour c );
     virtual void RenderRect( const Vec2& low, const Vec2& hi, Colour c, int lineWidth = 0 );
+    virtual void Render();
 
     virtual void Rumble( int player, int time );
     virtual void StopRumble();
-    virtual bool PlaySound( Sound sound, float volume = 1.0f, float pan = 0.0f, float repitch = 0.0f );
+    virtual bool PlaySound( Sound sound, float volume = 1.0f, float pan = 0.0f, fixed float = 0.0f );
 
     virtual void TakeScreenShot();
 
 private:
-
-    // Save path
-    //------------------------------
-    #define SAVE_PATH "sd:/wiispace.sav"
-    #define SETTINGS_PATH "sd:/wiispace.txt"
-    #define SCREENSHOT_PATH "sd:/wiispace.png"
-    #define SETTINGS_DISABLEBACKGROUND "DisableBackground"
-    #define SETTINGS_HUDCORRECTION "HUDCorrection"
 
     // Internal
     //------------------------------
@@ -81,10 +85,7 @@ private:
     static bool        HasNKey( u32 nPad, Key k );
     static bool        HasCKey( u32 cPad, Key k );
 
-    static std::string Crypt( const std::string& text, const std::string& key );
-
     void LoadSounds();
-    #define USE_SOUND( sound, data ) _sounds.push_back( SoundResource( 0, NamedSound( sound , SoundBuffer( data , data##_len ) ) ) );
 
     // Data
     //------------------------------

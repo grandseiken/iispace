@@ -1,3 +1,3 @@
-WiiSPACE version 1.2a, first released 13 July 2009, and originally distributed at http://wiibrew.org/wiki/WiiSPACE.
+WiiSPACE version 1.3RC1, first released 23 June 2012, and originally distributed at http://seiken.co.uk/wiispace.
 
-This code runs on the Wii as homebrew only and depends on various homebrew libraries and utilities (devkitPPC, libogc, GRRLIB, perhaps more). These are not included. There is no guarantee WiiSPACE will compile or run correctly with more recent versions of these dependencies.
+This code depends on OIS, SFML (not included) and zlib. It is not guaranteed to compile or run correctly.

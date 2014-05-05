@@ -2,15 +2,17 @@
 #define OVERMIND_H
 
 #include "z0.h"
+#include <time.h>
 
 class Overmind {
 public:
 
     static const int TIMER = 2800;
     static const int POWERUP_TIME = 1200;
+    static const int BOSS_REST_TIME = 240;
 
-    static const int INITIAL_POWER        = 12;
-    static const int INITIAL_TRIGGERVAL   = -1;
+    static const int INITIAL_POWER        = 16;
+    static const int INITIAL_TRIGGERVAL   = 0;
     static const int LEVELS_PER_GROUP     = 4;
     static const int BASE_GROUPS_PER_BOSS = 4;
 
@@ -20,27 +22,39 @@ public:
     // General
     //------------------------------
     int GetPower() const
-    { return _power; }
-    void Reset();
+    {
+        return _power;
+    }
+    void Reset( bool canFaceSecretBoss );
 
     void Update();
     int  GetKilledBosses() const
-    { return _bossMod - 1; }
+    {
+        return _bossModBosses - 1;
+    }
     long GetElapsedTime() const
-    { return _elapsedTime + ( _timeStopped ? 0 : time( 0 ) - _startTime ); }
-    void StopTime()
-    { _elapsedTime += time( 0 ) - _startTime; _timeStopped = true; }
-    void UnstopTime()
-    { _startTime = time( 0 ) - 1; _timeStopped = false; }
+    {
+        return _elapsedTime;
+    }
+    int GetTimer() const
+    {
+        if ( _isBossLevel )
+            return -1;
+        return TIMER - _timer;
+    }
 
     // Enemy-counting
     //------------------------------
-    void OnEnemyDestroy()
-    { _count--; }
-    void OnEnemyCreate()
-    { _count++; }
+    void OnEnemyDestroy( Ship* ship );
+    void OnEnemyCreate( Ship* ship );
     int CountEnemies() const
-    { return _count; }
+    {
+        return _count;
+    }
+    int CountNonWallEnemies() const
+    {
+        return _nonWallCount;
+    }
 
 private:
 
@@ -49,13 +63,13 @@ private:
     void SpawnPowerup();
     void SpawnBossReward();
 
-    static void SpawnFollow   ( int num, int div );
-    static void SpawnChaser   ( int num, int div );
-    static void SpawnSquare   ( int num, int div );
-    static void SpawnWall     ( int num, int div );
-    static void SpawnFollowHub( int num, int div );
-    static void SpawnShielder ( int num, int div );
-    static void SpawnTractor  ( bool top, int num, int div );
+    static void SpawnFollow   ( int num, int div, int side );
+    static void SpawnChaser   ( int num, int div, int side );
+    static void SpawnSquare   ( int num, int div, int side );
+    static void SpawnWall     ( int num, int div, int side, bool dir );
+    static void SpawnFollowHub( int num, int div, int side );
+    static void SpawnShielder ( int num, int div, int side );
+    static void SpawnTractor  ( int num, int div, int side );
 
     // Internals
     //------------------------------
@@ -70,24 +84,34 @@ private:
     void BossModeBoss();
 
     z0Game& _z0;
-    int  _power;
+    static int  _power;
     int  _timer;
     int  _count;
+    int  _nonWallCount;
     int  _countTrigger;
     int  _levelsMod;
     int  _groupsMod;
-    int  _bossMod;
+    int  _bossModBosses;
+    int  _bossModFights;
+    int  _bossModSecret;
+    bool _canFaceSecretBoss;
+    int  _powerupMod;
+    int  _livesTarget;
     bool _isBossNext;
     bool _isBossLevel;
     long _startTime;
     long _elapsedTime;
     bool _timeStopped;
+    int  _bossRestTimer;
+    int  _wavesTotal;
+    static int  _hardAlready;
 
-    Vec2 _starDir;
+    Vec2f _starDir;
     int  _starCount;
 
     std::vector< int > _boss1Queue;
     std::vector< int > _boss2Queue;
+    int _bossesToGo;
 
     typedef std::pair< int, int > FormationCost;
     typedef FormationCost ( * SpawnFormationFunction )( bool query, int row );
@@ -114,18 +138,33 @@ private:
     FORM_DEC( Square1 );
     FORM_DEC( Square2 );
     FORM_DEC( Square3 );
+    FORM_DEC( Square1Side );
+    FORM_DEC( Square2Side );
+    FORM_DEC( Square3Side );
     FORM_DEC( Wall1 );
     FORM_DEC( Wall2 );
     FORM_DEC( Wall3 );
+    FORM_DEC( Wall1Side );
+    FORM_DEC( Wall2Side );
+    FORM_DEC( Wall3Side );
     FORM_DEC( Follow1 );
     FORM_DEC( Follow2 );
     FORM_DEC( Follow3 );
+    FORM_DEC( Follow1Side );
+    FORM_DEC( Follow2Side );
+    FORM_DEC( Follow3Side );
     FORM_DEC( Chaser1 );
     FORM_DEC( Chaser2 );
     FORM_DEC( Chaser3 );
     FORM_DEC( Chaser4 );
+    FORM_DEC( Chaser1Side );
+    FORM_DEC( Chaser2Side );
+    FORM_DEC( Chaser3Side );
+    FORM_DEC( Chaser4Side );
     FORM_DEC( Hub1 );
     FORM_DEC( Hub2 );
+    FORM_DEC( Hub1Side );
+    FORM_DEC( Hub2Side );
     FORM_DEC( Mixed1 );
     FORM_DEC( Mixed2 );
     FORM_DEC( Mixed3 );
@@ -133,9 +172,19 @@ private:
     FORM_DEC( Mixed5 );
     FORM_DEC( Mixed6 );
     FORM_DEC( Mixed7 );
+    FORM_DEC( Mixed1Side );
+    FORM_DEC( Mixed2Side );
+    FORM_DEC( Mixed3Side );
+    FORM_DEC( Mixed4Side );
+    FORM_DEC( Mixed5Side );
+    FORM_DEC( Mixed6Side );
+    FORM_DEC( Mixed7Side );
     FORM_DEC( Tractor1 );
     FORM_DEC( Tractor2 );
+    FORM_DEC( Tractor1Side );
+    FORM_DEC( Tractor2Side );
     FORM_DEC( Shielder1 );
+    FORM_DEC( Shielder1Side );
 
 };
 

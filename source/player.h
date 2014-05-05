@@ -8,30 +8,30 @@ public:
 
     // Constants
     //------------------------------
-    static const float SPEED           = 5.0f;
-    static const float SHOT_SPEED      = 10.0f;
-    static const int   SHOT_TIMER      = 4;
-    static const float BOMB_RADIUS     = 180.0f;
-    static const float BOMB_BOSSRADIUS = 280.0f;
-    static const int   BOMB_DAMAGE     = 50;
-    static const int   REVIVE_TIME     = 100;
-    static const int   SHIELD_TIME     = 50;
-    static const int   MAGICSHOT_COUNT = 120;
+    static const fixed SPEED;
+    static const fixed SHOT_SPEED;
+    static const int   SHOT_TIMER;
+    static const fixed BOMB_RADIUS;
+    static const fixed BOMB_BOSSRADIUS;
+    static const int   BOMB_DAMAGE;
+    static const int   REVIVE_TIME;
+    static const int   SHIELD_TIME;
+    static const int   MAGICSHOT_COUNT;
 
     // Player ship
     //------------------------------
     Player( const Vec2& position, int playerNumber );
     virtual ~Player();
 
-    virtual bool IsPlayer() const
-    { return true; }
     int GetPlayerNumber() const
-    { return _playerNumber; }
+    {
+        return _playerNumber;
+    }
 
     // Player behaviour
     //------------------------------
     virtual void Update();
-    virtual void Render();
+    virtual void Render() const;
     virtual void Damage();
 
     void ActivateMagicShots();
@@ -39,26 +39,57 @@ public:
     void ActivateBomb();
 
     static void UpdateFireTimer()
-    { _fireTimer = ( _fireTimer + 1 ) % SHOT_TIMER; }
+    {
+        _fireTimer = ( _fireTimer + 1 ) % SHOT_TIMER;
+    }
+    static void SetReplay( Lib::Recording replay )
+    {
+        _replay = replay;
+        _replayFrame = 0;
+    }
+    static void DisableReplay()
+    {
+        _replay._okay = false;
+    }
+    static bool IsReplaying()
+    {
+        return _replay._okay;
+    }
+    static std::size_t ReplayFrame()
+    {
+        return _replayFrame;
+    }
 
     // Scoring
     //------------------------------
     long GetScore() const
-    { return _score; }
+    {
+        return _score;
+    }
+    int GetDeaths() const
+    {
+        return _deathCounter;
+    }
     void AddScore( long score );
 
     // Colour
     //------------------------------
     static Colour GetPlayerColour( int playerNumber );
     Colour GetPlayerColour() const
-    { return GetPlayerColour( GetPlayerNumber() ); }
+    { 
+        return GetPlayerColour( GetPlayerNumber() );
+    }
 
     // Temporary death
     //------------------------------
-    static int CountKilledPlayers()
-    { return _killQueue.size(); }
+    static std::size_t CountKilledPlayers()
+    {
+        return _killQueue.size();
+    }
     bool IsKilled()
-    { return _killTimer; }
+    {
+        return _killTimer != 0;
+    }
 
 private:
 
@@ -73,10 +104,14 @@ private:
     int  _magicShotTimer;
     bool _shield;
     bool _bomb;
+    Vec2 _tempTarget;
+    int  _deathCounter;
 
     static int              _fireTimer;
     static z0Game::ShipList _killQueue;
     static z0Game::ShipList _shotSoundQueue;
+    static Lib::Recording   _replay;
+    static std::size_t      _replayFrame;
 
 };
 
@@ -89,7 +124,7 @@ public:
     virtual ~Shot() { }
 
     virtual void Update();
-    virtual void Render();
+    virtual void Render() const;
 
 private:
 

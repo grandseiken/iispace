@@ -1,74 +1,241 @@
-body {
+html {
+    margin: 0;
+    padding: 0;
+    height: 100%;
+}
 
-    background-color: #000000;
-    color: #eeeeee;
+@font-face {
+    font-family: "wiiconsole";
+    font-weight: normal;
+    font-style: normal;
+    src: url('wiiconsole.eot?') format('eot'), url('wiiconsole.woff') format('woff'), url('wiiconsole.ttf') format('truetype');
+}
 
-    font-family: Verdana, Tahoma, Arial, sans-serif;
-    font-size: 12px;
-    
-    margin: 0px;
+#recaptcha_image {
+    position: absolute;
+    left: 50%;
+    width: 300px;
+    margin-left: -150px;
+    height: 57px;
+}
+
+div.recaptcha_image {
+    height: 57px;
+}
+
+table, tr, td {
     padding: 0px;
-}
-
-a:link, a:visited, a:active {
-
-    color: #eeeeee;
-    
-}
-
-a:hover {
-
-    color: #ffffff;
-
-}
-
-div.page {
-
-    
-    border-style: none;
-
-    text-align: left;
-    vertical-align: top;
-        
     margin: 0px;
-    padding: 24px;
-
-
 }
 
-div.box {
-
-    border: 1px solid #999999;
-    margin: 0px;
-    padding: 12px;
-    
-}
-
-table {
-
-    border-style: none;
-    
-    margin: 12px;
-    padding: 0px;
-   
-}
-
-table.big {
-
+table, tr {
     width: 100%;
-    
 }
 
 td {
-
-    border-style: none;
-    margin: 0px;
-    padding: 0px;
-    padding-left: 12px;
-    padding-right: 12px;
-
+    width: 50%;
+    word-wrap: break-word;
 }
 
-td.big {
-    width: 50%;
+td.r, td.autor {
+    text-align: right;
+}
+
+td.auto, td.autor {
+    width: auto;
+}
+
+font.dark {
+    color: #666666;
+}
+
+font.error {
+    color: #ff0000;
+}
+
+font.comments {
+    color: #999999;
+}
+
+font.normal_mode {
+    color: #33ff33;
+}
+
+font.boss_mode {
+    color: #01fffc;
+}
+
+font.hard_mode {
+    color: #cc34ca;
+}
+
+font.fast_mode {
+    color: #ff9833;
+}
+
+div.left {
+    float: left;
+    text-align: left;
+}
+
+div.score {
+    float: right;
+    text-align: right;
+}
+
+font.score {
+    font-size: 32px;
+}
+
+iframe.video {
+    width: 420px;
+    height: 315px;
+    position: absolute;
+    left: 50%;
+    margin-left: -210px;
+}
+
+div.video {
+    height: 315px;
+}
+
+input, textarea {
+    font-family: "wiiconsole", Monospace;
+    font-size: 1em;
+    color: #eeeeee;
+    background: #000000;
+    border: 1px solid #ffffff;
+    width: 254px;
+    padding: 2px;
+}
+
+textarea {
+    width: 588px;
+    height: 6em;
+    color: #999999;
+}
+
+input.button {
+    width: 260px;
+    color: #ffffff;
+}
+
+input.file {
+    padding: 0px;
+}
+
+input.button:hover {
+    background: #222222;
+}
+
+div.bg 
+{
+    position: fixed;
+    width: 640px;
+    height: 480px;
+    overflow: hidden;
+    z-index: -1;
+}
+
+body {
+    margin: 0px;
+    padding: 0px;
+    height: 100%;
+    background: #000000;
+    color: #ffffff;
+    font-family: "wiiconsole", Monospace;
+    min-width: 40em;
+}
+
+div.contain {
+    min-height: 100%;
+    position: relative;
+    background-image: url(a.png);
+}
+
+div.outer {
+    position: relative;
+    left: 50%;
+    top: 0px;
+    border: none;
+    padding: 0px;
+    padding-top: 32px;
+    margin: 0px;
+    width: 40em;
+    margin-left: -20em;
+    padding-bottom: 3em;
+}
+
+div.head {
+    color: #999999;
+    padding: 0px;
+    padding-left: 32px;
+    padding-right: 32px;
+    line-height: 54px;
+    border: none;
+    margin: 0px;
+    font-size: 64px;
+    text-shadow: #222222 0.1em 0.1em 0.02em;
+    z-index: 10;
+}
+
+div.main, div.maindark, div.mainmid, div.first {
+    margin: 0px;
+    margin-bottom: 16px;
+    padding: 16px;
+    border: 6px solid #eeeeee;
+    background-image: url(b.png);
+    -moz-background-clip: padding;
+    -webkit-background-clip: padding;
+    -o-background-clip: padding;
+    background-clip: padding-box;
+    text-shadow: #222222 0.1em 0.1em 0.02em;
+    word-wrap: break-word;
+}
+
+div.maindark {
+    border: 6px solid #333333;
+}
+
+div.mainmid {
+    background-image: url(c.png);
+}
+
+div.first {
+    margin-top: -30px;
+    padding-top: 32px;
+}
+
+font.shade {
+    background-image: url(b.png);
+}
+
+div.footer {
+    position: absolute;
+    color: #cccccc;
+    text-align: center;
+    bottom: 0;
+    width: 100%;
+    height: 3em;
+    text-shadow: #222222 0.1em 0.1em 0.02em;
+}
+
+div.header {
+    margin-top: 16px;
+    margin-bottom: 24px;
+    padding: 0px;
+    color: #cccccc;
+    text-align: center;
+    width: 100%;
+    text-shadow: #222222 0.1em 0.1em 0.02em;
+}
+
+a:link, a:visited, a:active {
+    color: #ff5500;
+    text-decoration: none;
+}
+
+a:hover {
+    color: #ffaa00;
+    text-decoration: none;
 }

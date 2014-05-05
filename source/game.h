@@ -16,12 +16,14 @@ public:
     // Game functions
     //------------------------------
     virtual void Update() = 0;
-    virtual void Render() = 0;
+    virtual void Render() const = 0;
 
     // Library accessor
     //------------------------------
     Lib& GetLib() const
-    { return _lib; }
+    {
+        return _lib;
+    }
 
 private:
 

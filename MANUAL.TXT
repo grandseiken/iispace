@@ -1,0 +1,132 @@
+/----------------------------------------------/
+/                                              /
+/ WiiSPACE v1.3 ~ Manual                       /
+/ June 2012                                    /
+/                             coded by: seiken /
+/                              (Stuart Taylor) /
+/                                              /
+/         ONLiNE HiGH-SCORES & REPLAYS         /
+/         http://seiken.co.uk/wiispace         /
+/                                              /
+/----------------------------------------------/
+;                                              ;
+; WiiSPACE was originally a homebrew game I    ;
+; developed for the Nintendo Wii in 2009.      ;
+; (See here: http://wiibrew.org/wiki/WiiSPACE) ;
+;                                              ;
+; Now I've ported it to Windows with numerous  ;
+; tweaks and improvements. I hope to update    ;
+; the original Wii version with these          ;
+; improvements some day, but as I no longer    ;
+; currently own a Wii it's something that'll   ;
+; have to wait.                                ;
+;                                              ;
+/--< Controls >--------------------------------/
+;                                              ;
+; Using the mouse and keyboard:                ;
+;                                              ;
+; Arrow keys / WASD ..... move, navigate menus ;
+; LMB / Z ....................... accept, fire ;
+; RMB / X ....................... cancel, bomb ;
+; Enter / Esc .................... pause, menu ;
+;                                              ;
+; Using a gamepad:                             ;
+;                                              ;
+; Make sure to set your gamepad to analog      ;
+; mode. The default control scheme should work ;
+; with most gamepads (left stick to move ship, ;
+; right stick to fire, fire and bombs on the   ;
+; other buttons). If it doesn't seem right for ;
+; your gamepad, run the included helper        ;
+; gamepadconfig.exe to set up a custom scheme  ;
+; (or to change the ordering of gamepads).     ;
+;                                              ;
+/--< Gameplay >--------------------------------/
+;                                              ;
+; Up to four ships can play at once, though    ;
+; you'll need gamepads for more than one (hit  ;
+; left/right while `PLAYERS` is selected in    ;
+; the main menu).                              ;
+;                                              ;
+; Defeat each wave of enemies and aim for a    ;
+; high score! The green wall-type enemies can  ;
+; be dispatched easily once all other foes     ;
+; have been dealt with. If the timer runs out  ;
+; before you manage to clear a wave, the next  ;
+; one will appear, even if you're not ready!   ;
+;                                              ;
+; Defeat many enemies in a row without taking  ;
+; damage to build up your score multiplier!    ;
+; You get 2X after destroying 16 enemies, 3X   ;
+; after another 32, 4X after another 64, and   ;
+; so on. Your multiplier resets to 1X when     ;
+; your ship is destroyed.                      ;
+;                                              ;
+; Every once in a while you'll face a boss -   ;
+; perhaps defeating all the bosses will reveal ;
+; a secret?                                    ;
+;                                              ;
+; The game is over when all your extra lives   ;
+; are used up.                                 ;
+;                                              ;
+/--< Powerups >--------------------------------/
+;                                              ;
+; Fly near a powerup to collect it. There are  ;
+; four types.                                  ;
+;                                              ;
+; Extra life (triangle): adds an extra life.   ;
+;                                              ;
+; Shield (ring): grants a moment of            ;
+; invulnerability the next time you are hit.   ;
+;                                              ;
+; Bomb (star): can be used later to destroy    ;
+; all nearby enemies. Enemies hit by the bomb  ;
+; don't increase your score, but do count      ;
+; towards your multiplier.                     ;
+;                                              ;
+; Magic shots (bullet): a limited number of    ;
+; shots pierce through your enemies. Line up   ;
+; your targets for maximum damage!             ;
+;                                              ;
+; Each player can only carry one shield or     ;
+; bomb, and not both at the same time! Choose  ;
+; wisely. Powerups can be left floating around ;
+; until you need them, but if there are four   ;
+; already you won't get any more until you     ;
+; take one.                                    ;
+;                                              ;
+/--< Replays >---------------------------------/
+;                                              ;
+; Each game you play is saved in the `replays` ;
+; subdirectory, with a filename containing the ;
+; date, game mode, player name and final       ;
+; score. To view a replay: right-click it,     ;
+; choose `Open with...`, and open it with the  ;
+; WiiSPACE executable. (If you like you can    ;
+; check the box to associate WiiSPACE with     ;
+; .wrp files, in which case you'll be able to  ;
+; view any replay file simply by double-       ;
+; -clicking it.) Dragging replays onto the     ;
+; WiiSPACE executable will also work.          ;
+;                                              ;
+; While viewing a replay, you can press the    ;
+; bomb key to increase the playback speed, and ;
+; the fire key to slow it down again!          ;
+;                                              ;
+; UPLOAD YOUR REPLAYS to seiken.co.uk/wiispace ;
+; and compete for the best worldwide scores!   ;
+;                                              ;
+/--< Addenda >---------------------------------/
+;                                              ;
+; Some settings can be modified in the file    ;
+; `wiispace.txt`.                              ;
+;                                              ;
+; There are some hidden game modes to unlock!  ;
+; Try to find them all...                      ;
+;                                              ;
+; TROUBLESHOOTING:                             ;
+; WiiSPACE needs the XInput drivers installed. ;
+; This can be obtained stand-alone or as part  ;
+; of any recent DirectX installation.          ;
+;                                              ;
+/----------------------------------------------/

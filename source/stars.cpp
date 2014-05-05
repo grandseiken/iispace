@@ -1,6 +1,6 @@
 #include "stars.h"
 
-Vec2           Star::_direction( 0, 1 );
+Vec2f          Star::_direction( 0, 1 );
 Star::StarList Star::_starList;
 
 Star::Star( z0Game& z0, float speed )
@@ -10,7 +10,7 @@ Star::Star( z0Game& z0, float speed )
 {
     _starList.push_back( this );
     int edge = _z0.GetLib().RandInt( 4 );
-    float ratio = _z0.GetLib().RandFloat();
+    float ratio = z_float( _z0.GetLib().RandFloat() );
     if ( edge < 2 )
         _position._x = ratio * Lib::WIDTH;
     else
@@ -31,7 +31,7 @@ Star::~Star()
 
 void Star::Update()
 {
-    for ( int i = 0; i < int( _starList.size() ); i++ ) {
+    for ( std::size_t i = 0; i < _starList.size(); i++ ) {
         if ( !_starList[ i ]->Move() ) {
             delete _starList[ i ];
             _starList.erase( _starList.begin() + i );
@@ -42,37 +42,40 @@ void Star::Update()
 
 void Star::Render()
 {
-    for ( unsigned int i = 0; i < _starList.size(); i++ ) {
+    for ( std::size_t i = 0; i < _starList.size(); i++ ) {
         _starList[ i ]->RenderStar( _starList[ i ]->_z0.GetLib(), _starList[ i ]->_position );
     }
 }
 
 void Star::CreateStar( z0Game& z0 )
 {
+    Star* s = 0;
     int r = z0.GetLib().RandInt( 12 );
     if ( r <= 0 ) {
         if ( z0.GetLib().RandInt( 4 ) == 0 )
-            new PlanetStar( z0 );
+            s = new PlanetStar( z0 );
     }
     else if ( r <= 3 )
-        new BigStar( z0 );
+        s = new BigStar( z0 );
     else if ( r <= 7 )
-        new FarStar( z0 );
+        s = new FarStar( z0 );
     else
-        new DotStar( z0 );
+        s = new DotStar( z0 );
+    if ( s != 0 && z0.GetLib().LoadSettings()._disableBackground )
+        s->_c = 0;
 }
 
-void Star::SetDirection( const Vec2& direction )
+void Star::SetDirection( const Vec2f& direction )
 {
     _direction = direction;
-    for ( unsigned int i = 0; i < _starList.size(); i++ ) {
+    for ( std::size_t i = 0; i < _starList.size(); i++ ) {
         _starList[ i ]->ResetTimer();
     }
 }
 
 void Star::Clear()
 {
-    for ( unsigned int i = 0; i < _starList.size(); i++ ) {
+    for ( std::size_t i = 0; i < _starList.size(); i++ ) {
         delete _starList[ i ];
     }
     _starList.clear();
