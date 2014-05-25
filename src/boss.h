@@ -1,5 +1,5 @@
-#ifndef BOSS_H
-#define BOSS_H
+#ifndef IISPACE_SRC_BOSS_H
+#define IISPACE_SRC_BOSS_H
 
 #include "ship.h"
 

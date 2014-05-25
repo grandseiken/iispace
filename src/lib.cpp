@@ -325,11 +325,7 @@ Lib::Settings Lib::LoadSaveSettings() const
       if (key.compare(SETTINGS_VOLUME) == 0) {
         float t;
         ss >> t;
-#ifdef USE_FIX32
         settings._volume = int(t);
-#else
-        settings._volume = t;
-#endif
       }
     }
   }
@@ -396,41 +392,12 @@ void Lib::EndRecording(
 
 void fixed_write(std::stringstream& out, const fixed& f)
 {
-#ifdef USE_FLOAT
-  out.write((char*) &f, sizeof(fixed));
-#endif
-#ifdef USE_MPREAL
-  char sign = f.mpfr_srcptr()->_mpfr_sign;
-  long exp = f.mpfr_srcptr()->_mpfr_exp;
-  long d = *f.mpfr_srcptr()->_mpfr_d;
-  out.write((char*) &sign, sizeof(char));
-  out.write((char*) &exp, sizeof(long));
-  out.write((char*) &d, sizeof(long));
-#endif
-#ifdef USE_FIX32
   out.write((char*) &f._value, sizeof(f._value));
-#endif
 }
 
 void fixed_read(fixed& f, std::stringstream& in)
 {
-#ifdef USE_FLOAT
-  in.read((char*) &f, sizeof(fixed));
-#endif
-#ifdef USE_MPREAL
-  char sign = 0;
-  long exp = 0;
-  long d = 0;
-  in.read((char*) &sign, sizeof(char));
-  in.read((char*) &exp, sizeof(long));
-  in.read((char*) &d, sizeof(long));
-  f.mpfr_ptr()->_mpfr_sign = sign;
-  f.mpfr_ptr()->_mpfr_exp = exp;
-  *f.mpfr_ptr()->_mpfr_d = d;
-#endif
-#ifdef USE_FIX32
   in.read((char*) &f._value, sizeof(f._value));
-#endif
 }
 
 void Lib::Record(Vec2 velocity, Vec2 target, int keys)

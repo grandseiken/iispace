@@ -1,5 +1,5 @@
-#ifndef LIBREPSCORE_H
-#define LIBREPSCORE_H
+#ifndef IISPACE_SRC_LIB_SCORE_H
+#define IISPACE_SRC_LIB_SCORE_H
 
 #include "lib.h"
 

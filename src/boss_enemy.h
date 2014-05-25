@@ -1,5 +1,5 @@
-#ifndef BOSSENEMY_H
-#define BOSSENEMY_H
+#ifndef IISPACE_SRC_BOSS_ENEMY_H
+#define IISPACE_SRC_BOSS_ENEMY_H
 
 #include "enemy.h"
 class Boss;

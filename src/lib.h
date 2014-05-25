@@ -1,5 +1,5 @@
-#ifndef LIB_H
-#define LIB_H
+#ifndef IISPACE_SRC_LIB_H
+#define IISPACE_SRC_LIB_H
 
 #include "z0.h"
 #include <map>
@@ -52,11 +52,8 @@ public:
 
   enum PadType {
     PAD_NONE = 0,
-    PAD_GAMECUBE = 1,
-    PAD_WIIMOTE = 2,
-    PAD_CLASSIC = 4,
-    PAD_KEYMOUSE = 8,
-    PAD_GAMEPAD = 16,
+    PAD_KEYMOUSE = 1,
+    PAD_GAMEPAD = 2,
   };
 
   struct Settings {

@@ -1,5 +1,5 @@
-#ifndef z0_H
-#define z0_H
+#ifndef IISPACE_SRC_Z0_H
+#define IISPACE_SRC_Z0_H
 
 #include <string>
 #include <vector>
@@ -7,29 +7,12 @@
 #include <math.h>
 #include <cmath>
 #include <cstdlib>
-
-#define USE_FIX32
-
-#ifdef USE_MPREAL
-#define MPFR_PRECISION 32
-#include "../mpfrc++/mpreal.h"
-#endif
-#ifdef USE_FIX32
 #include "fix32.h"
-#endif
 
 // Forward declarations
 //------------------------------
 typedef unsigned int Colour;
-#ifdef USE_FLOAT
-typedef float fixed;
-#endif
-#ifdef USE_FIX32
 typedef Fix32 fixed;
-#endif
-#ifdef USE_MPREAL
-typedef mpfr::mpreal fixed;
-#endif
 class Lib;
 class Game;
 class z0Game;
@@ -60,28 +43,6 @@ fixed z_atan2(fixed y, fixed x);
 #undef M_PI
 #undef M_2PI
 #undef M_3PI
-#ifdef USE_FLOAT
-
-#define M_PI 3.14159265358979323846264338327f
-#define M_PIf 3.14159265358979323846264338327f
-#define M_2PI ( 2.0f * M_PI )
-#define M_3PI ( 3.0f * M_PI )
-#define M_ZERO ( 0.0f )
-#define M_HALF ( 0.5f )
-#define M_ONE   ( 1.0f )
-#define M_TWO   ( 2.0f )
-#define M_THREE ( 3.0f )
-#define M_FOUR  ( 4.0f )
-#define M_FIVE  ( 5.0f )
-#define M_SIX   ( 6.0f )
-#define M_SEVEN ( 7.0f )
-#define M_EIGHT ( 8.0f )
-#define M_TEN   ( 10.0f )
-#define M_PT_ZERO_ONE ( 0.01f )
-#define M_PT_ONE   ( 0.1f )
-
-#endif
-#ifdef USE_FIX32
 
 const fixed M_PI = F32PI;
 const fixed M_2PI = F32PI * 2;
@@ -100,29 +61,6 @@ const fixed M_TEN = 10;
 const fixed M_PT_ZERO_ONE = fixed(1) / fixed(100);
 const fixed M_PT_ONE = fixed(1) / fixed(10);
 #define M_PIf 3.14159265358979323846264338327f
-
-#endif
-#ifdef USE_MPREAL
-
-const fixed M_PI = 3.14159265358979323846264338327;
-const fixed M_2PI = fixed(2) * M_PI;
-const fixed M_3PI = fixed(3) * M_PI;
-const fixed M_ZERO = fixed(0);
-const fixed M_ONE = fixed(1);
-const fixed M_HALF = fixed(1) / fixed(2);
-const fixed M_TWO = fixed(2);
-const fixed M_THREE = fixed(3);
-const fixed M_FOUR = fixed(4);
-const fixed M_FIVE = fixed(5);
-const fixed M_SIX = fixed(6);
-const fixed M_SEVEN = fixed(7);
-const fixed M_EIGHT = fixed(8);
-const fixed M_TEN = fixed(10);
-const fixed M_PT_ZERO_ONE = fixed(1) / fixed(100);
-const fixed M_PT_ONE = fixed(1) / fixed(10);
-#define M_PIf 3.14159265358979323846264338327f
-
-#endif
 
 class Vec2 {
 public:
@@ -253,9 +191,6 @@ public:
 
 };
 
-#ifdef USE_FLOAT
-typedef Vec2 Vec2f;
-#else
 class Vec2f {
 public:
 
@@ -382,6 +317,5 @@ public:
   }
 
 };
-#endif
 
 #endif

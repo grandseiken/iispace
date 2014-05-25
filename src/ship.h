@@ -1,5 +1,5 @@
-#ifndef SHIP_H
-#define SHIP_H
+#ifndef IISPACE_SRC_SHIP_H
+#define IISPACE_SRC_SHIP_H
 
 #include "shape.h"
 #include "z0_game.h"

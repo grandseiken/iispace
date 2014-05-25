@@ -1,5 +1,5 @@
-#ifndef OVERMIND_H
-#define OVERMIND_H
+#ifndef IISPACE_SRC_OVERMIND_H
+#define IISPACE_SRC_OVERMIND_H
 
 #include "z0.h"
 #include <time.h>

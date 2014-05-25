@@ -1,5 +1,5 @@
-#ifndef PLAYER_H
-#define PLAYER_H
+#ifndef IISPACE_SRC_PLAYER_H
+#define IISPACE_SRC_PLAYER_H
 
 #include "ship.h"
 

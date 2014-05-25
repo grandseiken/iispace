@@ -1,5 +1,5 @@
-#ifndef STARS_H
-#define STARS_H
+#ifndef IISPACE_SRC_STARS_H
+#define IISPACE_SRC_STARS_H
 
 #include "z0_game.h"
 

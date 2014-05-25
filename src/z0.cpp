@@ -31,10 +31,6 @@ int main(int argc, char** argv)
   Lib*    lib = 0;
   z0Game* game = 0;
 
-#ifdef USE_MPREAL
-  mpfr::mpreal::set_default_prec(MPFR_PRECISION);
-#endif
-
   try {
 #ifdef PLATFORM_IISPACE
     lib = new LibWin();

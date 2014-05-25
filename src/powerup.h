@@ -1,5 +1,5 @@
-#ifndef POWERUP_H
-#define POWERUP_H
+#ifndef IISPACE_SRC_POWERUP_H
+#define IISPACE_SRC_POWERUP_H
 
 #include "ship.h"
 

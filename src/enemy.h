@@ -1,5 +1,5 @@
-#ifndef ENEMY_H
-#define ENEMY_H
+#ifndef IISPACE_SRC_ENEMY_H
+#define IISPACE_SRC_ENEMY_H
 
 #include "ship.h"
 

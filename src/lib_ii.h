@@ -1,5 +1,5 @@
-#ifndef LIBWII_H
-#define LIBWII_H
+#ifndef IISPACE_SRC_LIB_II_H
+#define IISPACE_SRC_LIB_II_H
 
 #include "lib.h"
 #include "gamepad/gamepad.h"

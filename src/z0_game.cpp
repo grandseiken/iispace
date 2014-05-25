@@ -25,130 +25,6 @@ int z_rand()
 }
 
 #include "lookup/lookup.h"
-#ifdef USE_FLOAT
-int z_int(fixed x)
-{
-  return int(x);
-}
-
-float z_float(fixed x)
-{
-  return x;
-}
-
-fixed z_abs(fixed x)
-{
-  fixed r = x < 0 ? -x : x;
-  DEBUG_STR("z_abs called on " << x << " and returned " << r);
-  return r;
-}
-
-fixed z_sin(fixed x)
-{
-#ifdef USE_SIN
-  fixed r = (x < 0 ? -1 : 1) *
-      SIN_LOOKUP[z_int(.5f + 65536.f * z_abs(x) / M_2PI) % 65536];
-  DEBUG_STR("z_sin called on " << x << " and returned " << r);
-  return r;
-#else
-  return sin(x);
-#endif
-}
-
-fixed z_cos(fixed x)
-{
-#ifdef USE_COS
-  fixed r = COS_LOOKUP[z_int(.5f + 65536.f * z_abs(x) / M_2PI) % 65536];
-  DEBUG_STR("z_cos called on " << x << " and returned " << r);
-  return r;
-#else
-  return cos(x);
-#endif
-}
-
-fixed z_atan2(fixed y, fixed x)
-{
-#ifdef USE_ATAN
-  float f = .5f + 65536.f * x;
-  fixed r;
-  if (f >= 65536.f) {
-    r = M_PI / M_FOUR;
-  }
-  else {
-    r = ATAN_LOOKUP[z_int(f) % 65536];
-  }
-  DEBUG_STR("z_atan called on " << x << " and returned " << r);
-  return r;
-#else
-  return atan2(y, x);
-#endif
-}
-#endif
-
-#ifdef USE_MPREAL
-int z_int(fixed x)
-{
-  return int(x.toLong());
-}
-
-float z_float(fixed x)
-{
-  return float(x.toDouble());
-}
-
-fixed z_abs(fixed x)
-{
-  return abs(x);
-}
-
-fixed z_sqrt(fixed x)
-{
-  return sqrt(x);
-}
-
-fixed z_sin(fixed x)
-{
-#ifdef USE_SIN
-  fixed r = (x < 0 ? -1 : 1) *
-      SIN_LOOKUP[z_int(M_HALF + fixed(65536) * z_abs(x) / M_2PI) % 65536];
-  DEBUG_STR("z_sin called on " << x << " and returned " << r);
-  return r;
-#else
-  return sin(x);
-#endif
-}
-
-fixed z_cos(fixed x)
-{
-#ifdef USE_COS
-  fixed r = COS_LOOKUP[z_int(M_HALF + fixed(65536) * z_abs(x) / M_2PI) % 65536];
-  DEBUG_STR("z_cos called on " << x << " and returned " << r);
-  return r;
-#else
-  return cos(x);
-#endif
-}
-
-fixed z_atan2(fixed y, fixed x)
-{
-#ifdef USE_ATAN
-  fixed f = M_HALF + fixed(65536) * x;
-  fixed r;
-  if (f >= fixed(65536)) {
-    r = M_PI / M_FOUR;
-  }
-  else {
-    r = ATAN_LOOKUP[z_int(f) % 65536];
-  }
-  DEBUG_STR("z_atan called on " << x << " and returned " << r);
-  return r;
-#else
-  return atan2(y, x);
-#endif
-}
-#endif
-
-#ifdef USE_FIX32
 int z_int(fixed x)
 {
   return x.to_int();
@@ -184,7 +60,6 @@ fixed z_atan2(fixed y, fixed x)
 {
   return y.atan2(x);
 }
-#endif
 
 const int z0Game::STARTING_LIVES = 2;
 const int z0Game::BOSSMODE_LIVES = 1;
@@ -261,9 +136,6 @@ z0Game::z0Game(Lib& lib, std::vector< std::string > args)
 
 z0Game::~z0Game()
 {
-#ifdef DEBUG
-  debug.close();
-#endif
   for (unsigned int i = 0; i < _shipList.size(); i++) {
     if (_shipList[i]->IsEnemy()) {
       _overmind->OnEnemyDestroy(_shipList[i]);
@@ -748,18 +620,6 @@ void z0Game::Render() const
           pads = 1;
         }
         else {
-          if (pads & Lib::PAD_GAMECUBE) {
-            ss2 << "GAMECUBE";
-            if (pads & Lib::PAD_WIIMOTE || pads & Lib::PAD_CLASSIC) {
-              ss2 << ", ";
-            }
-          }
-          if (pads & Lib::PAD_CLASSIC) {
-            ss2 << "CLASSIC";
-          }
-          else if (pads & Lib::PAD_WIIMOTE) {
-            ss2 << "WIIMOTE";
-          }
           if (!pads) {
             ss2 << "NONE";
           }

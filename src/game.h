@@ -1,5 +1,5 @@
-#ifndef GAME_H
-#define GAME_H
+#ifndef IISPACE_SRC_GAME_H
+#define IISPACE_SRC_GAME_H
 
 #include "z0.h"
 #include "lib.h"

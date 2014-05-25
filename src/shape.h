@@ -1,5 +1,5 @@
-#ifndef SHAPE_H
-#define SHAPE_H
+#ifndef IISPACE_SRC_SHAPE_H
+#define IISPACE_SRC_SHAPE_H
 
 #include "z0.h"
 #include "lib.h"

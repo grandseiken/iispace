@@ -1,5 +1,5 @@
-#ifndef FIX32_H
-#define FIX32_H
+#ifndef IISPACE_SRC_FIX32_H
+#define IISPACE_SRC_FIX32_H
 
 #include <cstdint>
 #include <cmath>
