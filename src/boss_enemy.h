@@ -159,7 +159,7 @@ class Snake : public Enemy {
 public:
 
   Snake(const Vec2& position, Colour colour,
-        const Vec2& dir = Vec2(), fixed rot = M_ZERO);
+        const Vec2& dir = Vec2(), fixed rot = 0);
   virtual ~Snake() {}
 
   virtual void Update();

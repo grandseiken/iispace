@@ -7,29 +7,29 @@
 
 std::vector<std::pair<int, std::pair<Vec2, Colour>>> Boss::_fireworks;
 std::vector<Vec2> Boss::_warnings;
-const fixed Boss::HP_PER_EXTRA_PLAYER = M_PT_ONE;
-const fixed Boss::HP_PER_EXTRA_CYCLE = 3 * M_PT_ONE;
+const fixed Boss::HP_PER_EXTRA_PLAYER = fixed(1) / 10;
+const fixed Boss::HP_PER_EXTRA_CYCLE = 3 * fixed(1) / 10;
 
 const int BigSquareBoss::BASE_HP = 400;
-const fixed BigSquareBoss::SPEED = M_TWO + M_HALF;
+const fixed BigSquareBoss::SPEED = 2 + fixed(1) / 2;
 const int BigSquareBoss::TIMER = 100;
 const int BigSquareBoss::STIMER = 80;
-const fixed BigSquareBoss::ATTACK_RADIUS = M_ONE * 120;
+const fixed BigSquareBoss::ATTACK_RADIUS = 120;
 const int BigSquareBoss::ATTACK_TIME = 90;
 
 const int ShieldBombBoss::BASE_HP = 320;
 const int ShieldBombBoss::TIMER = 100;
 const int ShieldBombBoss::UNSHIELD_TIME = 300;
 const int ShieldBombBoss::ATTACK_TIME = 80;
-const fixed ShieldBombBoss::SPEED = M_ONE;
+const fixed ShieldBombBoss::SPEED = 1;
 
 const int ChaserBoss::BASE_HP = 60;
-const fixed ChaserBoss::SPEED = M_FOUR;
+const fixed ChaserBoss::SPEED = 4;
 const int ChaserBoss::TIMER = 60;
 const int ChaserBoss::MAX_SPLIT = 7;
 
 const int TractorBoss::BASE_HP = 900;
-const fixed TractorBoss::SPEED = M_TWO;
+const fixed TractorBoss::SPEED = 2;
 const int TractorBoss::TIMER = 100;
 
 const int GhostBoss::BASE_HP = 700;
@@ -40,10 +40,10 @@ const int DeathRayBoss::BASE_HP = 600;
 const int DeathRayBoss::ARM_HP = 100;
 const int DeathRayBoss::ARM_ATIMER = 300;
 const int DeathRayBoss::ARM_RTIMER = 400;
-const fixed DeathRayBoss::ARM_SPEED = M_FOUR;
+const fixed DeathRayBoss::ARM_SPEED = 4;
 const int DeathRayBoss::RAY_TIMER = 100;
 const int DeathRayBoss::TIMER = 100;
-const fixed DeathRayBoss::SPEED = M_FIVE;
+const fixed DeathRayBoss::SPEED = 5;
 
 const int SuperBoss::BASE_HP = 520;
 const int SuperBoss::ARC_HP = 75;
@@ -52,7 +52,7 @@ const int SuperBoss::ARC_HP = 75;
 //------------------------------
 Boss::Boss(const Vec2& position, z0Game::BossList boss, int hp,
            int players, int cycle, bool explodeOnDamage)
-: Ship(position, false, false, true)
+  : Ship(position, false, false, true)
   , _hp(0)
   , _maxHp(0)
   , _flag(boss)
@@ -71,7 +71,7 @@ Boss::Boss(const Vec2& position, z0Game::BossList boss, int hp,
 
   _score += s;
   for (int i = 0; i < players - 1; ++i) {
-    _score += z_int(int(s) * HP_PER_EXTRA_PLAYER);
+    _score += (int(s) * HP_PER_EXTRA_PLAYER).to_int();
   }
   _hp = CalculateHP(hp, players, cycle);
   _maxHp = _hp;
@@ -82,13 +82,13 @@ int Boss::CalculateHP(int base, int players, int cycle)
   int hp = base * 30;
   int r = hp;
   for (int i = 0; i < cycle; ++i) {
-    r += z_int(hp * HP_PER_EXTRA_CYCLE);
+    r += (hp * HP_PER_EXTRA_CYCLE).to_int();
   }
   for (int i = 0; i < players - 1; ++i) {
-    r += z_int(hp * HP_PER_EXTRA_PLAYER);
+    r += (hp * HP_PER_EXTRA_PLAYER).to_int();
   }
   for (int i = 0; i < cycle * (players - 1); ++i) {
-    r += z_int(hp * HP_PER_EXTRA_CYCLE + HP_PER_EXTRA_PLAYER);
+    r += (hp * HP_PER_EXTRA_CYCLE + HP_PER_EXTRA_PLAYER).to_int();
   }
   return r;
 }
@@ -143,7 +143,7 @@ void Boss::Render(bool hpBar) const
     return;
   }
   for (unsigned int i = 0; i < CountShapes(); i++) {
-    GetShape(i).Render(GetLib(), Vec2f(GetPosition()), z_float(GetRotation()),
+    GetShape(i).Render(GetLib(), Vec2f(GetPosition()), GetRotation().to_float(),
                        int(i) < _ignoreDamageColour ? 0xffffffff : 0);
   }
   _damaged--;
@@ -178,8 +178,8 @@ void Boss::OnDestroy()
   int n = 1;
   for (int i = 0; i < 16; ++i) {
     Vec2 v;
-    v.SetPolar(GetLib().RandFloat() * M_2PI,
-               M_EIGHT + GetLib().RandInt(64) + GetLib().RandInt(64));
+    v.SetPolar(GetLib().RandFloat() * (2 * fixed::pi),
+               8 + GetLib().RandInt(64) + GetLib().RandInt(64));
     _fireworks.push_back(
         std::make_pair(n, std::make_pair(GetPosition() + v,
                                          GetShape(0).GetColour())));
@@ -214,7 +214,7 @@ void Boss::OnDestroy()
 // Big square boss
 //------------------------------
 BigSquareBoss::BigSquareBoss(int players, int cycle)
-  : Boss(Vec2(Lib::WIDTH * M_PT_ZERO_ONE * 75, Lib::HEIGHT * M_TWO),
+  : Boss(Vec2(Lib::WIDTH * fixed::hundredth * 75, Lib::HEIGHT * 2),
          z0Game::BOSS_1A, BASE_HP, players, cycle)
   , _dir(0, -1)
   , _reverse(false)
@@ -243,17 +243,17 @@ BigSquareBoss::BigSquareBoss(int players, int cycle)
 void BigSquareBoss::Update()
 {
   Vec2 pos = GetPosition();
-  if (pos._y < Lib::HEIGHT * M_PT_ZERO_ONE * 25 && _dir._y == -1) {
-    _dir.Set(_reverse ? 1 : -M_ONE, 0);
+  if (pos._y < Lib::HEIGHT * fixed::hundredth * 25 && _dir._y == -1) {
+    _dir.Set(_reverse ? 1 : -1, 0);
   }
-  if (pos._x < Lib::WIDTH * M_PT_ZERO_ONE * 25 && _dir._x == -1) {
-    _dir.Set(0, _reverse ? -M_ONE : M_ONE);
+  if (pos._x < Lib::WIDTH * fixed::hundredth * 25 && _dir._x == -1) {
+    _dir.Set(0, _reverse ? -1 : 1);
   }
-  if (pos._y > Lib::HEIGHT * M_PT_ZERO_ONE * 75 && _dir._y == 1) {
-    _dir.Set(_reverse ? -M_ONE : M_ONE, 0);
+  if (pos._y > Lib::HEIGHT * fixed::hundredth * 75 && _dir._y == 1) {
+    _dir.Set(_reverse ? -1 : 1, 0);
   }
-  if (pos._x > Lib::WIDTH * M_PT_ZERO_ONE * 75 && _dir._x == 1) {
-    _dir.Set(0, _reverse ? M_ONE : -M_ONE);
+  if (pos._x > Lib::WIDTH * fixed::hundredth * 75 && _dir._x == 1) {
+    _dir.Set(0, _reverse ? 1 : -1);
   }
 
   if (_specialAttack) {
@@ -265,14 +265,14 @@ void BigSquareBoss::Update()
     else if (!_specialTimer) {
       Vec2 d(ATTACK_RADIUS, 0);
       if (_specialAttackRotate) {
-        d.Rotate(M_PI / M_TWO);
+        d.Rotate(fixed::pi / 2);
       }
       for (int i = 0; i < 6; i++) {
         Enemy* s = new Follow(_attackPlayer->GetPosition() + d);
-        s->SetRotation(M_PI / M_FOUR);
+        s->SetRotation(fixed::pi / 4);
         s->SetScore(0);
         Spawn(s);
-        d.Rotate(M_TWO * M_PI / M_SIX);
+        d.Rotate(2 * fixed::pi / 6);
       }
       _attackPlayer = 0;
       PlaySound(Lib::SOUND_ENEMY_SPAWN);
@@ -312,32 +312,25 @@ void BigSquareBoss::Update()
   }
 
   Move(_dir * SPEED);
-  GetShape(0).Rotate(M_PT_ZERO_ONE * 5);
-  GetShape(1).Rotate(-M_PT_ZERO_ONE * 10);
-  GetShape(2).Rotate(M_PT_ZERO_ONE * 15);
-  GetShape(3).Rotate(-M_PT_ZERO_ONE * 20);
-  GetShape(4).Rotate(M_PT_ZERO_ONE * 25);
-  GetShape(5).Rotate(-M_PT_ZERO_ONE * 30);
-
-  GetShape(6).SetRotation(GetShape(0).GetRotation());
-  GetShape(7).SetRotation(GetShape(1).GetRotation());
-  GetShape(8).SetRotation(GetShape(2).GetRotation());
-  GetShape(9).SetRotation(GetShape(3).GetRotation());
-  GetShape(10).SetRotation(GetShape(4).GetRotation());
-  GetShape(11).SetRotation(GetShape(5).GetRotation());
+  for (std::size_t i = 0; i < 6; ++i) {
+    GetShape(i).Rotate((i % 2 ? -1 : 1) * fixed::hundredth * ((1 + i) * 5));
+  }
+  for (std::size_t i = 0; i < 6; ++i) {
+    GetShape(i + 6).SetRotation(GetShape(i).GetRotation());
+  }
 }
 
 void BigSquareBoss::Render() const
 {
   Boss::Render();
   if ((_specialTimer / 4) % 2 && _attackPlayer) {
-    Vec2f d(z_float(ATTACK_RADIUS), 0);
+    Vec2f d(ATTACK_RADIUS.to_float(), 0);
     if (_specialAttackRotate) {
       d.Rotate(M_PIf / 2);
     }
     for (int i = 0; i < 6; i++) {
       Vec2f p = Vec2f(_attackPlayer->GetPosition()) + d;
-      Polygon s(Vec2(), 10, 4, 0x9933ffff, M_PI / M_FOUR, 0);
+      Polygon s(Vec2(), 10, 4, 0x9933ffff, fixed::pi / 4, 0);
       s.Render(GetLib(), p, 0);
       d.Rotate(2 * M_PIf / 6);
     }
@@ -352,7 +345,7 @@ int BigSquareBoss::GetDamage(int damage, bool magic)
 // Shield bomb boss
 //------------------------------
 ShieldBombBoss::ShieldBombBoss(int players, int cycle)
-  : Boss(Vec2(-Lib::WIDTH / M_TWO, Lib::HEIGHT / M_TWO),
+  : Boss(Vec2(-Lib::WIDTH / 2, Lib::HEIGHT / 2),
          z0Game::BOSS_1B, BASE_HP, players, cycle)
   , _timer(0)
   , _count(0)
@@ -367,8 +360,8 @@ ShieldBombBoss::ShieldBombBoss(int players, int cycle)
     Vec2 a(120, 0);
     Vec2 b(80, 0);
 
-    a.Rotate(i * M_PI / M_EIGHT);
-    b.Rotate(i * M_PI / M_EIGHT);
+    a.Rotate(i * fixed::pi / 8);
+    b.Rotate(i * fixed::pi / 8);
 
     AddShape(new Line(Vec2(), a, b, 0x999999ff, 0));
   }
@@ -384,15 +377,15 @@ ShieldBombBoss::ShieldBombBoss(int players, int cycle)
 
 void ShieldBombBoss::Update()
 {
-  if (!_side && GetPosition()._x < Lib::WIDTH * M_PT_ONE * 6) {
+  if (!_side && GetPosition()._x < Lib::WIDTH * fixed::tenth * 6) {
     Move(Vec2(1, 0) * SPEED);
   }
-  else if (_side && GetPosition()._x > Lib::WIDTH * M_PT_ONE * 4) {
+  else if (_side && GetPosition()._x > Lib::WIDTH * fixed::tenth * 4) {
     Move(Vec2(-1, 0) * SPEED);
   }
 
-  Rotate(-M_PT_ZERO_ONE * 2);
-  GetShape(0).Rotate(M_PT_ZERO_ONE * 4);
+  Rotate(-fixed::hundredth * 2);
+  GetShape(0).Rotate(-fixed::hundredth * 4);
   GetShape(20).SetRotation(GetShape(0).GetRotation());
 
   if (!IsOnScreen()) {
@@ -431,7 +424,7 @@ void ShieldBombBoss::Update()
 
   if (_attack) {
     Vec2 d(_attackDir);
-    d.Rotate((ATTACK_TIME - _attack) * M_HALF * M_PI / ATTACK_TIME);
+    d.Rotate((ATTACK_TIME - _attack) * fixed::half * fixed::pi / ATTACK_TIME);
     Spawn(new SBBossShot(GetPosition(), d));
     _attack--;
     PlaySoundRandom(Lib::SOUND_BOSS_FIRE);
@@ -472,13 +465,13 @@ void ShieldBombBoss::Update()
       d.Rotate(GetRotation());
       for (int i = 0; i < 12; i++) {
         Spawn(new SBBossShot(GetPosition(), d));
-        d.Rotate(M_TWO * M_PI / (2 * M_SIX));
+        d.Rotate(2 * fixed::pi / 12);
       }
       PlaySound(Lib::SOUND_BOSS_ATTACK);
     }
     else {
       _attack = ATTACK_TIME;
-      _attackDir.SetPolar(GetLib().RandFloat() * M_2PI, 5);
+      _attackDir.SetPolar(GetLib().RandFloat() * (2 * fixed::pi), 5);
     }
   }
 }
@@ -510,67 +503,67 @@ int  ChaserBoss::_count;
 bool ChaserBoss::_hasCounted;
 int  ChaserBoss::_sharedHp;
 
-// power( HP_REDUCE_POWER = 1.7, split )
+// power(HP_REDUCE_POWER = 1.7, split)
 static const fixed HP_REDUCE_POWER_lookup[8] = {
   fixed(1),
-  M_ONE + 7 * M_PT_ONE,
-  M_TWO + 9 * M_PT_ONE,
-  M_FOUR + 9 * M_PT_ONE,
-  M_EIGHT + 4 * M_PT_ONE,
-  M_TEN + M_FOUR + 2 * M_PT_ONE,
-  2 * M_TEN + M_FOUR + 2 * M_PT_ONE,
-  4 * M_TEN + M_ONE
+  1 + 7 * (fixed(1) / 10),
+  2 + 9 * (fixed(1) / 10),
+  4 + 9 * (fixed(1) / 10),
+  8 + 4 * (fixed(1) / 10),
+  14 + 2 * (fixed(1) / 10),
+  24 + 2 * (fixed(1) / 10),
+  41
 };
 
-// power( 1.5, split )
+// power(1.5, split)
 static const fixed ONE_AND_HALF_lookup[8] = {
   fixed(1),
-  M_ONE + M_HALF,
-  M_TWO + M_HALF / 2,
-  M_THREE + 4 * M_PT_ONE,
-  M_FIVE + M_PT_ONE,
-  M_SEVEN + 6 * M_PT_ONE,
-  M_TEN + M_ONE + 4 * M_PT_ONE,
-  M_TEN + M_SEVEN + M_PT_ONE
+  1 + (fixed(1) / 2),
+  2 + (fixed(1) / 4),
+  3 + 4 * (fixed(1) / 10),
+  5 + (fixed(1) / 10),
+  7 + 6 * (fixed(1) / 10),
+  11 + 4 * (fixed(1) / 10),
+  17 + (fixed(1) / 10)
 };
 
-// power( 1.1, split )
+// power(1.1, split)
 static const fixed ONE_PT_ONE_lookup[8] = {
   fixed(1),
-  M_ONE + M_PT_ONE,
-  M_ONE + 2 * M_PT_ONE,
-  M_ONE + 3 * M_PT_ONE,
-  M_ONE + 5 * M_PT_ONE,
-  M_ONE + 6 * M_PT_ONE,
-  M_ONE + 8 * M_PT_ONE,
-  M_ONE + 9 * M_PT_ONE
+  1 + (fixed(1) / 10),
+  1 + 2 * (fixed(1) / 10),
+  1 + 3 * (fixed(1) / 10),
+  1 + 5 * (fixed(1) / 10),
+  1 + 6 * (fixed(1) / 10),
+  1 + 8 * (fixed(1) / 10),
+  1 + 9 * (fixed(1) / 10)
 };
 
-// power( 1.15, split )
+// power(1.15, split)
 static const fixed ONE_PT_ONE_FIVE_lookup[8] = {
   fixed(1),
-  M_ONE + 15 * M_PT_ZERO_ONE,
-  M_ONE + 3 * M_PT_ONE,
-  M_ONE + 5 * M_PT_ONE,
-  M_ONE + 7 * M_PT_ONE,
-  M_TWO,
-  M_TWO + 3 * M_PT_ONE,
-  M_TWO + 7 * M_PT_ONE
+  1 + 15 * (fixed(1) / 100),
+  1 + 3 * (fixed(1) / 10),
+  1 + 5 * (fixed(1) / 10),
+  1 + 7 * (fixed(1) / 10),
+  2,
+  2 + 3 * (fixed(1) / 10),
+  2 + 7 * (fixed(1) / 10)
 };
 
-// power( 1.2, split )
+// power(1.2, split)
 static const fixed ONE_PT_TWO_lookup[8] = {
   fixed(1),
-  M_ONE + 2 * M_PT_ONE,
-  M_ONE + 4 * M_PT_ONE,
-  M_ONE + 7 * M_PT_ONE,
-  M_TWO + M_PT_ONE,
-  M_TWO + M_HALF,
-  M_THREE,
-  M_THREE + 6 * M_PT_ONE
+  1 + 2 * (fixed(1) / 10),
+  1 + 4 * (fixed(1) / 10),
+  1 + 7 * (fixed(1) / 10),
+  2 + (fixed(1) / 10),
+  2 + (fixed(1) / 2),
+  3,
+  3 + 6 * (fixed(1) / 10)
 };
 
-// power( 1.15, remaining )
+// power(1.15, remaining)
 static const int ONE_PT_ONE_FIVE_intLookup[128] = {
   1, 1, 1, 2, 2, 2, 2, 3, 3, 4, 4, 5, 5, 6, 7, 8, 9, 11, 12, 14, 16, 19, 22,
   25, 29, 33, 38, 44, 50, 58, 66, 76, 88, 101, 116, 133, 153, 176, 203, 233,
@@ -587,9 +580,9 @@ static const int ONE_PT_ONE_FIVE_intLookup[128] = {
 
 ChaserBoss::ChaserBoss(int players, int cycle, int split,
                        const Vec2& position, int time, int stagger)
-  : Boss(!split ? Vec2(Lib::WIDTH / M_TWO, -Lib::HEIGHT / M_TWO) : position,
+  : Boss(!split ? Vec2(Lib::WIDTH / 2, -Lib::HEIGHT / 2) : position,
          z0Game::BOSS_1C,
-         1 + BASE_HP / z_int(M_HALF + HP_REDUCE_POWER_lookup[split]),
+         1 + BASE_HP / (fixed::half + HP_REDUCE_POWER_lookup[split]).to_int(),
          players, cycle, split <= 1)
   , _onScreen(split != 0)
   , _move(false)
@@ -621,7 +614,7 @@ ChaserBoss::ChaserBoss(int players, int cycle, int split,
 void ChaserBoss::Update()
 {
   z0Game::ShipList remaining =
-      GetShipsInRadius(Vec2(Lib::WIDTH / M_TWO, Lib::HEIGHT / M_TWO),
+      GetShipsInRadius(Vec2(Lib::WIDTH / 2, Lib::HEIGHT / 2),
                             Lib::WIDTH * Lib::HEIGHT);
   _lastDir = _dir;
   _lastDir.Normalise();
@@ -658,13 +651,13 @@ void ChaserBoss::Update()
     const fixed attract = 256 * ONE_PT_ONE_lookup[MAX_SPLIT - _split];
     const fixed align = 128 * ONE_PT_ONE_FIVE_lookup[MAX_SPLIT - _split];
     const fixed repulse = 64 * ONE_PT_TWO_lookup[MAX_SPLIT - _split];
-    static const fixed c_attract = -(1 + 2 * M_PT_ONE);
+    static const fixed c_attract = -(1 + 2 * fixed::tenth);
     static const fixed c_dir0 = SPEED / 14;
     static const fixed c_dir1 = 8 * SPEED / (14 * 9);
     static const fixed c_dir2 = 8 * SPEED / (14 * 11);
     static const fixed c_dir3 = 8 * SPEED / (14 * 2);
     static const fixed c_dir4 = 8 * SPEED / (14 * 3);
-    static const fixed c_rotate = (M_PT_ZERO_ONE * 5) / fixed(MAX_SPLIT);
+    static const fixed c_rotate = fixed::hundredth * 5 / fixed(MAX_SPLIT);
 
     _dir = _lastDir;
     if (_stagger == _count % (_split == 0 ? 1 :
@@ -691,7 +684,7 @@ void ChaserBoss::Update()
           p = c->_lastDir * pow;
         }
         else {
-          p.SetPolar(((Player*) nearby[i])->GetRotation(), M_ONE);
+          p.SetPolar(((Player*) nearby[i])->GetRotation(), 1);
         }
 
         if (len > attract) {
@@ -708,7 +701,7 @@ void ChaserBoss::Update()
           continue;
         }
         // Repulse
-        _dir += v * M_THREE;
+        _dir += v * 3;
       }
     }
     if (int(remaining.size()) - CountPlayers() < 4 && _split >= MAX_SPLIT - 1) {
@@ -771,7 +764,7 @@ void ChaserBoss::Update()
          _split == 2 ? c_dir2 :
          _split == 3 ? c_dir3 : c_dir4);
     Move(_dir);
-    Rotate((M_PT_ZERO_ONE * 2) + fixed(_split) * c_rotate);
+    Rotate(fixed::hundredth * 2 + fixed(_split) * c_rotate);
   }
   _sharedHp = 0;
   if (!_hasCounted) {
@@ -788,7 +781,7 @@ void ChaserBoss::Render() const
     int hp = 0;
     for (int i = 0; i < 8; i++) {
       hp = 2 * hp + CalculateHP(
-          1 + BASE_HP / z_int(M_HALF + HP_REDUCE_POWER_lookup[7 - i]),
+          1 + BASE_HP / (fixed::half + HP_REDUCE_POWER_lookup[7 - i]).to_int(),
           _players, _cycle);
       hpLookup.push_back(hp);
     }
@@ -811,7 +804,7 @@ void ChaserBoss::OnDestroy()
   if (_split < MAX_SPLIT) {
     for (int i = 0; i < 2; i++) {
       Vec2 d;
-      d.SetPolar(i * M_PI + GetRotation(),
+      d.SetPolar(i * fixed::pi + GetRotation(),
                  8 * ONE_PT_TWO_lookup[MAX_SPLIT - 1 - _split]);
       Ship* s = new ChaserBoss(
           _players, _cycle, _split + 1, GetPosition() + d,
@@ -825,7 +818,7 @@ void ChaserBoss::OnDestroy()
   }
   else {
     z0Game::ShipList remaining =
-        GetShipsInRadius(Vec2(Lib::WIDTH / M_TWO, Lib::HEIGHT / M_TWO),
+        GetShipsInRadius(Vec2(Lib::WIDTH / 2, Lib::HEIGHT / 2),
                          Lib::WIDTH * Lib::HEIGHT);
     last = true;
     for (std::size_t i = 0; i < remaining.size(); ++i) {
@@ -859,8 +852,8 @@ void ChaserBoss::OnDestroy()
       for (int i = 0; i < 16; ++i) {
         Vec2 v;
         v.SetPolar(
-            GetLib().RandFloat() * M_2PI,
-            M_EIGHT + GetLib().RandInt(64) + GetLib().RandInt(64));
+            GetLib().RandFloat() * (2 * fixed::pi),
+            8 + GetLib().RandInt(64) + GetLib().RandInt(64));
 
         _fireworks.push_back(
             std::make_pair(n, std::make_pair(GetPosition() + v,
@@ -897,8 +890,8 @@ void ChaserBoss::OnDestroy()
 // Tractor beam boss
 //------------------------------
 TractorBoss::TractorBoss(int players, int cycle)
-: Boss(Vec2(Lib::WIDTH * (M_ONE + M_HALF), Lib::HEIGHT / M_TWO),
-       z0Game::BOSS_2A, BASE_HP, players, cycle)
+  : Boss(Vec2(Lib::WIDTH * (1 + fixed::half), Lib::HEIGHT / 2),
+         z0Game::BOSS_2A, BASE_HP, players, cycle)
   , _willAttack(false)
   , _stopped(false)
   , _generating(false)
@@ -920,7 +913,7 @@ TractorBoss::TractorBoss(int players, int cycle)
   _s1->AddShape(new Polygon(Vec2(0, 0), 32, 12, 0xcc33ccff, 0, 0));
   for (int i = 0; i < 8; i++) {
     Vec2 d(24, 0);
-    d.Rotate(i * M_PI / M_FOUR);
+    d.Rotate(i * fixed::pi / 4);
     _s1->AddShape(new Polygram(d, 12, 6, 0xcc33ccff, 0, 0));
   }
 
@@ -935,7 +928,7 @@ TractorBoss::TractorBoss(int players, int cycle)
   _s2->AddShape(new Polygon(Vec2(0, 0), 32, 12, 0xcc33ccff, 0, 0));
   for (int i = 0; i < 8; i++) {
     Vec2 d(24, 0);
-    d.Rotate(i * M_PI / M_FOUR);
+    d.Rotate(i * fixed::pi / 4);
     _s2->AddShape(new Polygram(d, 12, 6, 0xcc33ccff, 0, 0));
   }
 
@@ -957,7 +950,7 @@ TractorBoss::TractorBoss(int players, int cycle)
 
 void TractorBoss::Update()
 {
-  if (GetPosition()._x <= Lib::WIDTH / M_TWO &&
+  if (GetPosition()._x <= Lib::WIDTH / 2 &&
       _willAttack && !_stopped && !_continue) {
     _stopped = true;
     _generating = true;
@@ -974,7 +967,7 @@ void TractorBoss::Update()
     }
     _continue = false;
     _sound = !_willAttack;
-    Rotate(GetLib().RandFloat() * 2 * M_PI);
+    Rotate(GetLib().RandFloat() * 2 * fixed::pi);
   }
 
   _timer++;
@@ -990,14 +983,14 @@ void TractorBoss::Update()
         Vec2 v = _s1->ConvertPoint(GetPosition(), GetRotation(), Vec2());
         Vec2 d = p->GetPosition() - v;
         d.Normalise();
-        Spawn(new SBBossShot(v, d * M_FIVE, 0xcc33ccff));
-        Spawn(new SBBossShot(v, d * -M_FIVE, 0xcc33ccff));
+        Spawn(new SBBossShot(v, d * 5, 0xcc33ccff));
+        Spawn(new SBBossShot(v, d * -5, 0xcc33ccff));
 
         v = _s2->ConvertPoint(GetPosition(), GetRotation(), Vec2());
         d = p->GetPosition() - v;
         d.Normalise();
-        Spawn(new SBBossShot(v, d * M_FIVE, 0xcc33ccff));
-        Spawn(new SBBossShot(v, d * -M_FIVE, 0xcc33ccff));
+        Spawn(new SBBossShot(v, d * 5, 0xcc33ccff));
+        Spawn(new SBBossShot(v, d * -5, 0xcc33ccff));
 
         PlaySoundRandom(Lib::SOUND_BOSS_FIRE);
       }
@@ -1007,8 +1000,8 @@ void TractorBoss::Update()
 
         Vec2 d = p->GetPosition() - v;
         d.Normalise();
-        Spawn(new SBBossShot(v, d * M_FIVE, 0xcc33ccff));
-        Spawn(new SBBossShot(v, d * -M_FIVE, 0xcc33ccff));
+        Spawn(new SBBossShot(v, d * 5, 0xcc33ccff));
+        Spawn(new SBBossShot(v, d * -5, 0xcc33ccff));
         PlaySoundRandom(Lib::SOUND_BOSS_FIRE);
       }
     }
@@ -1046,12 +1039,12 @@ void TractorBoss::Update()
           _timer < TIMER * 4) {
         Ship* s = new TBossShot(
             _s1->ConvertPoint(GetPosition(), GetRotation(), Vec2()),
-            _genDir ? GetRotation() + M_PI : GetRotation());
+            _genDir ? GetRotation() + fixed::pi : GetRotation());
         Spawn(s);
 
         s = new TBossShot(
             _s2->ConvertPoint(GetPosition(), GetRotation(), Vec2()),
-            _genDir ? GetRotation() : GetRotation() + M_PI);
+            _genDir ? GetRotation() : GetRotation() + fixed::pi);
         Spawn(s);
         PlaySoundRandom(Lib::SOUND_ENEMY_SPAWN);
       }
@@ -1064,8 +1057,8 @@ void TractorBoss::Update()
 
         Vec2 d = p->GetPosition() - v;
         d.Normalise();
-        Spawn(new SBBossShot(v, d * M_FIVE, 0xcc33ccff));
-        Spawn(new SBBossShot(v, d * -M_FIVE, 0xcc33ccff));
+        Spawn(new SBBossShot(v, d * 5, 0xcc33ccff));
+        Spawn(new SBBossShot(v, d * -5, 0xcc33ccff));
         PlaySoundRandom(Lib::SOUND_BOSS_FIRE);
       }
     }
@@ -1075,26 +1068,26 @@ void TractorBoss::Update()
           _timer = 0;
           _attacking = true;
         }
-        if (_timer % z_int(TIMER / (M_ONE + M_HALF)) == TIMER / 8) {
+        if (_timer % (TIMER / (1 + fixed::half)).to_int() == TIMER / 8) {
           Vec2 v = _s1->ConvertPoint(GetPosition(), GetRotation(), Vec2());
           Vec2 d;
-          d.SetPolar(GetLib().RandFloat() * M_2PI, M_FIVE);
+          d.SetPolar(GetLib().RandFloat() * (2 * fixed::pi), 5);
           Spawn(new SBBossShot(v, d, 0xcc33ccff));
-          d.Rotate(M_PI / M_TWO);
+          d.Rotate(fixed::pi / 2);
           Spawn(new SBBossShot(v, d, 0xcc33ccff));
-          d.Rotate(M_PI / M_TWO);
+          d.Rotate(fixed::pi / 2);
           Spawn(new SBBossShot(v, d, 0xcc33ccff));
-          d.Rotate(M_PI / M_TWO);
+          d.Rotate(fixed::pi / 2);
           Spawn(new SBBossShot(v, d, 0xcc33ccff));
 
           v = _s2->ConvertPoint(GetPosition(), GetRotation(), Vec2());
-          d.SetPolar(GetLib().RandFloat() * M_2PI, M_FIVE);
+          d.SetPolar(GetLib().RandFloat() * (2 * fixed::pi), 5);
           Spawn(new SBBossShot(v, d, 0xcc33ccff));
-          d.Rotate(M_PI / M_TWO);
+          d.Rotate(fixed::pi / 2);
           Spawn(new SBBossShot(v, d, 0xcc33ccff));
-          d.Rotate(M_PI / M_TWO);
+          d.Rotate(fixed::pi / 2);
           Spawn(new SBBossShot(v, d, 0xcc33ccff));
-          d.Rotate(M_PI / M_TWO);
+          d.Rotate(fixed::pi / 2);
           Spawn(new SBBossShot(v, d, 0xcc33ccff));
           PlaySoundRandom(Lib::SOUND_BOSS_FIRE);
         }
@@ -1117,7 +1110,7 @@ void TractorBoss::Update()
             speed = Tractor::TRACTOR_SPEED;
           }
           if (t[i]->IsEnemy()) {
-            speed = M_FOUR + M_HALF;
+            speed = 4 + fixed::half;
           }
           Vec2 d = GetPosition() - pos;
           d.Normalise();
@@ -1127,7 +1120,7 @@ void TractorBoss::Update()
               (t[i]->GetPosition() - GetPosition()).Length() <= 40) {
             t[i]->Destroy();
             _attackSize++;
-            _sAttack->SetRadius(_attackSize / (M_ONE + M_HALF));
+            _sAttack->SetRadius(_attackSize / (1 + fixed::half));
             AddShape(new Polygon(Vec2(), 8, 6, 0xcc33ccff, 0, 0));
           }
         }
@@ -1138,7 +1131,7 @@ void TractorBoss::Update()
         _continue = true;
         for (int i = 0; i < _attackSize; i++) {
           Vec2 d;
-          d.SetPolar(i * M_2PI / _attackSize, M_FIVE);
+          d.SetPolar(i * (2 * fixed::pi) / _attackSize, 5);
           Spawn(new SBBossShot(GetPosition(), d, 0xcc33ccff));
         }
         PlaySound(Lib::SOUND_BOSS_FIRE);
@@ -1154,29 +1147,29 @@ void TractorBoss::Update()
 
   for (unsigned int i = _attackShapes; i < CountShapes(); ++i) {
     Vec2 v;
-    v.SetPolar(GetLib().RandFloat() * M_2PI,
-               2 * (GetLib().RandFloat() - M_HALF) *
-                   fixed(_attackSize) / (M_ONE + M_HALF));
+    v.SetPolar(GetLib().RandFloat() * (2 * fixed::pi),
+               2 * (GetLib().RandFloat() - fixed::half) *
+                   fixed(_attackSize) / (1 + fixed::half));
     GetShape(i).SetCentre(v);
   }
 
   fixed r = 0;
   if (!_willAttack || (_stopped && !_generating && !_attacking)) {
-    r = M_PT_ZERO_ONE;
+    r = fixed::hundredth;
   }
   else if (_stopped && _attacking && !_generating) {
     r = 0;
   }
   else {
-    r = M_PT_ZERO_ONE / 2;
+    r = fixed::hundredth / 2;
   }
   Rotate(r);
 
-  _s1->Rotate(M_PT_ONE / 2);
-  _s2->Rotate(-M_PT_ONE / 2);
+  _s1->Rotate(fixed::tenth / 2);
+  _s2->Rotate(-fixed::tenth / 2);
   for (int i = 0; i < 8; i++) {
-    _s1->GetShape(i + 4).Rotate(-M_PT_ONE);
-    _s2->GetShape(i + 4).Rotate(M_PT_ONE);
+    _s1->GetShape(i + 4).Rotate(-fixed::tenth);
+    _s2->GetShape(i + 4).Rotate(fixed::tenth);
   }
 }
 
@@ -1202,7 +1195,7 @@ int TractorBoss::GetDamage(int damage, bool magic)
 // Ghost boss
 //------------------------------
 GhostBoss::GhostBoss(int players, int cycle)
-  : Boss(Vec2(Lib::WIDTH / M_TWO, Lib::HEIGHT / M_TWO),
+  : Boss(Vec2(Lib::WIDTH / 2, Lib::HEIGHT / 2),
          z0Game::BOSS_2B, BASE_HP, players, cycle)
   , _visible(false)
   , _vTime(0)
@@ -1223,13 +1216,13 @@ GhostBoss::GhostBoss(int players, int cycle)
 
   for (int i = 0; i < 8; i++) {
     Vec2 c;
-    c.SetPolar(i * M_PI / M_FOUR, 48);
+    c.SetPolar(i * fixed::pi / 4, 48);
 
     CompoundShape* s = new CompoundShape(c, 0, 0);
     for (int j = 0; j < 8; j++) {
       Vec2 d;
-      d.SetPolar(j * M_PI / M_FOUR, M_ONE);
-      s->AddShape(new Line(Vec2(), d * M_TEN, d * M_TEN * 2, 0x9933ccff, 0));
+      d.SetPolar(j * fixed::pi / 4, 1);
+      s->AddShape(new Line(Vec2(), d * 10, d * 10 * 2, 0x9933ccff, 0));
     }
     AddShape(s);
   }
@@ -1240,7 +1233,7 @@ GhostBoss::GhostBoss(int players, int cycle)
     CompoundShape* s = new CompoundShape(Vec2(), 0, 0);
     for (int i = 0; i < 16 + n * 6; i++) {
       Vec2 d;
-      d.SetPolar(i * M_TWO * M_PI / (16 + n * 6), fixed(100 + n * 60));
+      d.SetPolar(i * 2 * fixed::pi / (16 + n * 6), fixed(100 + n * 60));
       s->AddShape(new Polystar(d, 16, 8, n ? 0x330066ff : 0x9933ccff));
       s->AddShape(new Polygon(d, 12, 8, n ? 0x330066ff : 0x9933ccff));
     }
@@ -1282,7 +1275,7 @@ void GhostBoss::Update()
         s2.SetColour(0xcc66ffff);
         if (_vTime == 0) {
           Vec2 d;
-          d.SetPolar(i * M_TWO * M_PI / (16 + n * 6), fixed(100 + n * 60));
+          d.SetPolar(i * 2 * fixed::pi / (16 + n * 6), fixed(100 + n * 60));
           c->AddShape(new Polygon(d, 9, 8, 0));
           _warnings.push_back(c->ConvertPoint(GetPosition(), GetRotation(), d));
         }
@@ -1294,34 +1287,34 @@ void GhostBoss::Update()
     }
   }
   if (!(_attack == 2 && _attackTime < ATTACK_TIME * 4 && _attackTime)) {
-    Rotate(-M_PT_ZERO_ONE * 4);
+    Rotate(-fixed::hundredth * 4);
   }
 
   for (int i = 0; i < 8; i++) {
-    GetShape(i + 2).Rotate(M_PT_ZERO_ONE * 4);
+    GetShape(i + 2).Rotate(fixed::hundredth * 4);
   }
-  GetShape(10).Rotate(M_PT_ZERO_ONE * 6);
+  GetShape(10).Rotate(fixed::hundredth * 6);
   for (int n = 0; n < 5; n++) {
     CompoundShape* s = (CompoundShape*) &GetShape(11 + n);
     if (n % 2) {
-      s->Rotate(M_PT_ZERO_ONE * 3 + (M_THREE / 2000) * n);
+      s->Rotate(fixed::hundredth * 3 + (fixed(3) / 2000) * n);
     }
     else {
-      s->Rotate(M_PT_ZERO_ONE * 5 - (M_THREE / 2000) * n);
+      s->Rotate(fixed::hundredth * 5 - (fixed(3) / 2000) * n);
     }
     for (std::size_t i = 0; i < s->CountShapes(); i++) {
-      s->GetShape(i).Rotate(-M_PT_ONE);
+      s->GetShape(i).Rotate(-fixed::tenth);
     }
 
     s = (CompoundShape*) &GetShape(16 + n);
     if (n % 2) {
-      s->Rotate(M_PT_ZERO_ONE * 3 + (M_THREE / 2000) * n);
+      s->Rotate(fixed::hundredth * 3 + (fixed(3) / 2000) * n);
     }
     else {
-      s->Rotate(M_PT_ZERO_ONE * 4 - (M_THREE / 2000) * n);
+      s->Rotate(fixed::hundredth * 4 - (fixed(3) / 2000) * n);
     }
     for (std::size_t i = 0; i < s->CountShapes(); i++) {
-      s->GetShape(i).Rotate(-M_PT_ONE);
+      s->GetShape(i).Rotate(-fixed::tenth);
     }
   }
 
@@ -1338,7 +1331,7 @@ void GhostBoss::Update()
           (_timer % 32 == 0 && _shotType)))) {
       for (int i = 0; i < 8; i++) {
         Vec2 d;
-        d.SetPolar(i * M_PI / M_FOUR + GetRotation(), M_FIVE);
+        d.SetPolar(i * fixed::pi / 4 + GetRotation(), 5);
         Spawn(new SBBossShot(GetPosition(), d, 0xcc66ffff));
       }
       PlaySoundRandom(Lib::SOUND_BOSS_FIRE);
@@ -1350,9 +1343,9 @@ void GhostBoss::Update()
       Vec2 d = p->GetPosition() - GetPosition();
       d.Normalise();
 
-      if (d.Length() > M_HALF) {
-        Spawn(new SBBossShot(GetPosition(), d *    M_FIVE, 0xcc66ffff));
-        Spawn(new SBBossShot(GetPosition(), d * (-M_FIVE), 0xcc66ffff));
+      if (d.Length() > fixed::half) {
+        Spawn(new SBBossShot(GetPosition(), d * 5, 0xcc66ffff));
+        Spawn(new SBBossShot(GetPosition(), d * -5, 0xcc66ffff));
         PlaySoundRandom(Lib::SOUND_BOSS_FIRE);
       }
     }
@@ -1371,26 +1364,26 @@ void GhostBoss::Update()
       else if (_attackTime == ATTACK_TIME * 4 - 1) {
         _visible = true;
         _vTime = 60;
-        AddShape(new Box(Vec2(Lib::WIDTH / M_TWO + M_ONE * 32, 0),
-                              Lib::WIDTH / M_TWO, M_TEN, 0xcc66ffff, 0, 0));
-        AddShape(new Box(Vec2(Lib::WIDTH / M_TWO + M_ONE * 32, 0),
-                              Lib::WIDTH / M_TWO, M_SEVEN, 0xcc66ffff, 0, 0));
-        AddShape(new Box(Vec2(Lib::WIDTH / M_TWO + M_ONE * 32, 0),
-                              Lib::WIDTH / M_TWO, M_FOUR, 0xcc66ffff, 0, 0));
+        AddShape(new Box(Vec2(Lib::WIDTH / 2 + 32, 0),
+                              Lib::WIDTH / 2, 10, 0xcc66ffff, 0, 0));
+        AddShape(new Box(Vec2(Lib::WIDTH / 2 + 32, 0),
+                              Lib::WIDTH / 2, 7, 0xcc66ffff, 0, 0));
+        AddShape(new Box(Vec2(Lib::WIDTH / 2 + 32, 0),
+                              Lib::WIDTH / 2, 4, 0xcc66ffff, 0, 0));
 
-        AddShape(new Box(Vec2(-Lib::WIDTH / M_TWO - M_ONE * 32, 0),
-                              Lib::WIDTH / M_TWO, M_TEN, 0xcc66ffff, 0, 0));
-        AddShape(new Box(Vec2(-Lib::WIDTH / M_TWO - M_ONE * 32, 0),
-                              Lib::WIDTH / M_TWO, M_SEVEN, 0xcc66ffff, 0, 0));
-        AddShape(new Box(Vec2(-Lib::WIDTH / M_TWO - M_ONE * 32, 0),
-                              Lib::WIDTH / M_TWO, M_FOUR, 0xcc66ffff, 0, 0));
+        AddShape(new Box(Vec2(-Lib::WIDTH / 2 - 32, 0),
+                              Lib::WIDTH / 2, 10, 0xcc66ffff, 0, 0));
+        AddShape(new Box(Vec2(-Lib::WIDTH / 2 - 32, 0),
+                              Lib::WIDTH / 2, 7, 0xcc66ffff, 0, 0));
+        AddShape(new Box(Vec2(-Lib::WIDTH / 2 - 32, 0),
+                              Lib::WIDTH / 2, 4, 0xcc66ffff, 0, 0));
         PlaySound(Lib::SOUND_BOSS_FIRE);
       }
       else if (_attackTime < ATTACK_TIME * 3) {
         if (_attackTime == ATTACK_TIME * 3 - 1) {
           PlaySound(Lib::SOUND_BOSS_ATTACK);
         }
-        Rotate((_rDir ? 1 : -1) * M_TWO * M_PI / (ATTACK_TIME * M_SIX));
+        Rotate((_rDir ? 1 : -1) * 2 * fixed::pi / (ATTACK_TIME * 6));
         if (!_attackTime) {
           for (int i = 0; i < 6; i++) {
             DestroyShape(21);
@@ -1525,7 +1518,7 @@ int GhostBoss::GetDamage(int damage, bool magic)
 // Death ray boss
 //------------------------------
 DeathRayBoss::DeathRayBoss(int players, int cycle)
-  : Boss(Vec2(Lib::WIDTH * (M_THREE / 20), -Lib::HEIGHT),
+  : Boss(Vec2(Lib::WIDTH * (fixed(3) / 20), -Lib::HEIGHT),
          z0Game::BOSS_2C, BASE_HP, players, cycle)
   , _timer(TIMER * 2)
   , _laser(false)
@@ -1537,17 +1530,17 @@ DeathRayBoss::DeathRayBoss(int players, int cycle)
   , _raySrc1()
   , _raySrc2()
 {
-  AddShape(new Polystar(Vec2(), 110, 12, 0x228855ff, M_PI / (2 * M_SIX), 0));
-  AddShape(new Polygram(Vec2(), 70, 12, 0x33ff99ff, M_PI / (2 * M_SIX), 0));
+  AddShape(new Polystar(Vec2(), 110, 12, 0x228855ff, fixed::pi / 12, 0));
+  AddShape(new Polygram(Vec2(), 70, 12, 0x33ff99ff, fixed::pi / 12, 0));
   AddShape(new Polygon(
-      Vec2(), 120, 12, 0x33ff99ff, M_PI / (2 * M_SIX), ENEMY | VULNERABLE));
-  AddShape(new Polygon(Vec2(), 115, 12, 0x33ff99ff, M_PI / (2 * M_SIX), 0));
+      Vec2(), 120, 12, 0x33ff99ff, fixed::pi / 12, ENEMY | VULNERABLE));
+  AddShape(new Polygon(Vec2(), 115, 12, 0x33ff99ff, fixed::pi / 12, 0));
   AddShape(new Polygon(
-      Vec2(), 110, 12, 0x33ff99ff, M_PI / (2 * M_SIX), SHIELD));
+      Vec2(), 110, 12, 0x33ff99ff, fixed::pi / 12, SHIELD));
 
   CompoundShape* s1 = new CompoundShape(Vec2(), 0, ENEMY);
   for (int i = 1; i < 12; i++) {
-    CompoundShape* s2 = new CompoundShape(Vec2(), i * M_PI / M_SIX, 0);
+    CompoundShape* s2 = new CompoundShape(Vec2(), i * fixed::pi / 6, 0);
     s2->AddShape(new Box(Vec2(130, 0), 10, 24, 0x33ff99ff, 0, 0));
     s2->AddShape(new Box(Vec2(130, 0), 8, 22, 0x228855ff, 0, 0));
     s1->AddShape(s2);
@@ -1555,23 +1548,23 @@ DeathRayBoss::DeathRayBoss(int players, int cycle)
   AddShape(s1);
 
   SetIgnoreDamageColourIndex(5);
-  Rotate(M_2PI * fixed(z_rand()) / Z_RAND_MAX);
+  Rotate(2 * fixed::pi * fixed(z_rand()) / Z_RAND_MAX);
 }
 
 void DeathRayBoss::Update()
 {
   bool positioned = true;
   fixed d =
-      _pos == 0 ? M_ONE   * Lib::HEIGHT / M_FOUR - GetPosition()._y :
-      _pos == 1 ? M_TWO   * Lib::HEIGHT / M_FOUR - GetPosition()._y :
-      _pos == 2 ? M_THREE * Lib::HEIGHT / M_FOUR - GetPosition()._y :
-      _pos == 3 ? M_ONE   * Lib::HEIGHT / M_EIGHT - GetPosition()._y :
-      _pos == 4 ? M_THREE * Lib::HEIGHT / M_EIGHT - GetPosition()._y :
-      _pos == 5 ? M_FIVE  * Lib::HEIGHT / M_EIGHT - GetPosition()._y :
-      M_SEVEN * Lib::HEIGHT / M_EIGHT - GetPosition()._y;
+      _pos == 0 ? 1 * Lib::HEIGHT / 4 - GetPosition()._y :
+      _pos == 1 ? 2 * Lib::HEIGHT / 4 - GetPosition()._y :
+      _pos == 2 ? 3 * Lib::HEIGHT / 4 - GetPosition()._y :
+      _pos == 3 ? 1 * Lib::HEIGHT / 8 - GetPosition()._y :
+      _pos == 4 ? 3 * Lib::HEIGHT / 8 - GetPosition()._y :
+      _pos == 5 ? 5 * Lib::HEIGHT / 8 - GetPosition()._y :
+      7 * Lib::HEIGHT / 8 - GetPosition()._y;
 
-  if (z_abs(d) > 3) {
-    Move(Vec2(0, d / z_abs(d)) * SPEED);
+  if (d.abs() > 3) {
+    Move(Vec2(0, d / d.abs()) * SPEED);
     positioned = false;
   }
 
@@ -1583,7 +1576,7 @@ void DeathRayBoss::Update()
     if (_rayAttackTimer < 40) {
       Vec2 d = _rayDest - GetPosition();
       d.Normalise();
-      Spawn(new SBBossShot(GetPosition(), d * M_TEN, 0xccccccff));
+      Spawn(new SBBossShot(GetPosition(), d * 10, 0xccccccff));
       PlaySoundRandom(Lib::SOUND_BOSS_ATTACK);
       Explosion();
     }
@@ -1611,17 +1604,17 @@ void DeathRayBoss::Update()
         _timer = TIMER * 2;
       }
 
-      if (r < M_PT_ONE || r > M_TWO * M_PI - M_PT_ONE) {
+      if (r < fixed::tenth || r > 2 * fixed::pi - fixed::tenth) {
         SetRotation(0);
       }
       else {
         goingFast = true;
-        Rotate(_dir ? M_PT_ONE : -M_PT_ONE);
+        Rotate(_dir ? fixed::tenth : -fixed::tenth);
       }
     }
   }
   else {
-    Rotate(_dir ? M_PT_ZERO_ONE * 2 : -M_PT_ZERO_ONE * 2);
+    Rotate(_dir ? fixed::hundredth * 2 : -fixed::hundredth * 2);
     if (IsOnScreen()) {
       _timer--;
       if (_timer % TIMER == 0 && _timer != 0 && !GetLib().RandInt(4)) {
@@ -1671,8 +1664,8 @@ void DeathRayBoss::Update()
     if (_shotTimer % 128 == 0) {
       _rayAttackTimer = RAY_TIMER;
       Vec2 d1, d2;
-      d1.SetPolar(GetLib().RandFloat() * M_2PI, M_ONE * 110);
-      d2.SetPolar(GetLib().RandFloat() * M_2PI, M_ONE * 110);
+      d1.SetPolar(GetLib().RandFloat() * 2 * fixed::pi, 110);
+      d2.SetPolar(GetLib().RandFloat() * 2 * fixed::pi, 110);
       _raySrc1 = GetPosition() + d1;
       _raySrc2 = GetPosition() + d2;
       PlaySound(Lib::SOUND_ENEMY_SPAWN);
@@ -1683,10 +1676,10 @@ void DeathRayBoss::Update()
     if (_armTimer >= ARM_RTIMER) {
       _armTimer = 0;
       if (!IsHPLow()) {
-        int hp = z_int(
-            ARM_HP * (7 * M_PT_ONE + 3 * M_PT_ONE *
-                      int32_t(GetLives() ? CountPlayers() :
-                              CountPlayers() - Player::CountKilledPlayers())));
+        int32_t players = GetLives() ?
+            CountPlayers() : CountPlayers() - Player::CountKilledPlayers();
+        int hp =
+            (ARM_HP * (7 * fixed::tenth + 3 * fixed::tenth * players)).to_int();
         _arms.push_back(new DeathArm(this, true, hp));
         _arms.push_back(new DeathArm(this, false, hp));
         PlaySound(Lib::SOUND_ENEMY_SPAWN);
@@ -1700,8 +1693,8 @@ void DeathRayBoss::Update()
     if (!goingFast || _shotTimer % 2) {
       int n = _shotQueue[i].first;
       Vec2 d(1, 0);
-      d.Rotate(GetRotation() + n * M_PI / 6);
-      Ship* s = new SBBossShot(GetPosition() + d * 120, d * M_FIVE, 0x33ff99ff);
+      d.Rotate(GetRotation() + n * fixed::pi / 6);
+      Ship* s = new SBBossShot(GetPosition() + d * 120, d * 5, 0x33ff99ff);
       Spawn(s);
     }
     _shotQueue[i].second--;
@@ -1758,19 +1751,19 @@ SuperBossArc::SuperBossArc(
   , _timer(timer)
   , _sTimer(0)
 {
-  AddShape(new PolyArc(Vec2(), 140, 32, 2, 0, i * M_TWO * M_PI / 16, 0));
-  AddShape(new PolyArc(Vec2(), 135, 32, 2, 0, i * M_TWO * M_PI / 16, 0));
-  AddShape(new PolyArc(Vec2(), 130, 32, 2, 0, i * M_TWO * M_PI / 16, 0));
-  AddShape(new PolyArc(Vec2(), 125, 32, 2, 0, i * M_TWO * M_PI / 16, SHIELD));
-  AddShape(new PolyArc(Vec2(), 120, 32, 2, 0, i * M_TWO * M_PI / 16, 0));
-  AddShape(new PolyArc(Vec2(), 115, 32, 2, 0, i * M_TWO * M_PI / 16, 0));
-  AddShape(new PolyArc(Vec2(), 110, 32, 2, 0, i * M_TWO * M_PI / 16, 0));
-  AddShape(new PolyArc(Vec2(), 105, 32, 2, 0, i * M_TWO * M_PI / 16, SHIELD));
+  AddShape(new PolyArc(Vec2(), 140, 32, 2, 0, i * 2 * fixed::pi / 16, 0));
+  AddShape(new PolyArc(Vec2(), 135, 32, 2, 0, i * 2 * fixed::pi / 16, 0));
+  AddShape(new PolyArc(Vec2(), 130, 32, 2, 0, i * 2 * fixed::pi / 16, 0));
+  AddShape(new PolyArc(Vec2(), 125, 32, 2, 0, i * 2 * fixed::pi / 16, SHIELD));
+  AddShape(new PolyArc(Vec2(), 120, 32, 2, 0, i * 2 * fixed::pi / 16, 0));
+  AddShape(new PolyArc(Vec2(), 115, 32, 2, 0, i * 2 * fixed::pi / 16, 0));
+  AddShape(new PolyArc(Vec2(), 110, 32, 2, 0, i * 2 * fixed::pi / 16, 0));
+  AddShape(new PolyArc(Vec2(), 105, 32, 2, 0, i * 2 * fixed::pi / 16, SHIELD));
 }
 
 void SuperBossArc::Update()
 {
-  Rotate(M_SIX / 1000);
+  Rotate(fixed(6) / 1000);
   for (int i = 0; i < 8; ++i) {
     GetShape(7 - i).SetColour(
         GetLib().Cycle(IsHPLow() ? 0xff000099 : 0xff0000ff,
@@ -1801,7 +1794,7 @@ int SuperBossArc::GetDamage(int damage, bool magic)
 void SuperBossArc::OnDestroy()
 {
   Vec2 d;
-  d.SetPolar(_i * M_TWO * M_PI / 16 + GetRotation(), 120);
+  d.SetPolar(_i * 2 * fixed::pi / 16 + GetRotation(), 120);
   Move(d);
   Explosion();
   Explosion(0xffffffff, 12);
@@ -1813,7 +1806,7 @@ void SuperBossArc::OnDestroy()
 }
 
 SuperBoss::SuperBoss(int players, int cycle)
-  : Boss(Vec2(Lib::WIDTH * M_HALF, -Lib::HEIGHT / (M_TWO + M_HALF)),
+  : Boss(Vec2(Lib::WIDTH / 2, -Lib::HEIGHT / (2 + fixed::half)),
          z0Game::BOSS_3A, BASE_HP, players, cycle)
   , _players(players)
   , _cycle(cycle)
@@ -1855,7 +1848,7 @@ void SuperBoss::Update()
     }
   }
   Vec2 move;
-  Rotate(M_SIX / 1000);
+  Rotate(fixed(6) / 1000);
   Colour c = GetLib().Cycle(0xff0000ff, 2 * _cTimer);
   for (int i = 0; i < 8; ++i) {
     GetShape(7 - i).SetColour(
@@ -1875,9 +1868,9 @@ void SuperBoss::Update()
     _state = STATE_IDLE;
   }
 
-  static const fixed d5d1000 = fixed(M_FIVE / 1000);
-  static const fixed pi2d64 = M_2PI / 64;
-  static const fixed pi2d32 = M_2PI / 32;
+  static const fixed d5d1000 = fixed(5) / 1000;
+  static const fixed pi2d64 = 2 * fixed::pi / 64;
+  static const fixed pi2d32 = 2 * fixed::pi / 32;
 
   if (_state == STATE_IDLE && IsOnScreen() &&
       _timer != 0 && _timer % 300 == 0) {
@@ -1888,7 +1881,7 @@ void SuperBoss::Update()
     else if (r == 2 || r == 3) {
       _state = STATE_ATTACK;
       _timer = 0;
-      fixed f = GetLib().RandFloat() * M_2PI;
+      fixed f = GetLib().RandFloat() * (2 * fixed::pi);
       fixed rf = d5d1000 * (1 + GetLib().RandInt(2));
       for (int i = 0; i < 32; ++i) {
         Vec2 d;
@@ -1903,7 +1896,7 @@ void SuperBoss::Update()
     else if (r == 5) {
       _state = STATE_ATTACK;
       _timer = 0;
-      fixed f = GetLib().RandFloat() * M_2PI;
+      fixed f = GetLib().RandFloat() * (2 * fixed::pi);
       for (int i = 0; i < 64; ++i) {
         Vec2 d;
         d.SetPolar(f + i * pi2d64, 1);
@@ -1935,14 +1928,14 @@ void SuperBoss::Update()
       int r = GetLib().RandInt(int(wide3.size()));
       SuperBossArc* s = new SuperBossArc(
           GetPosition(), _players, _cycle, wide3[r], this, timer);
-      s->SetRotation(GetRotation() - (M_SIX / 1000));
+      s->SetRotation(GetRotation() - (fixed(6) / 1000));
       Spawn(s);
       _arcs[wide3[r]] = s;
       _destroyed[wide3[r]] = false;
       PlaySound(Lib::SOUND_ENEMY_SPAWN);
     }
   }
-  static const fixed pi2d128 = M_2PI / 128;
+  static const fixed pi2d128 = 2 * fixed::pi / 128;
   if (_state == STATE_IDLE && _timer % 72 == 0) {
     for (int i = 0; i < 128; ++i) {
       Vec2 d;
@@ -1955,8 +1948,8 @@ void SuperBoss::Update()
   if (_snakes) {
     --_snakes;
     Vec2 d;
-    d.SetPolar(GetLib().RandFloat() * M_2PI,
-               fixed(GetLib().RandInt(32)) + GetLib().RandInt(16));
+    d.SetPolar(GetLib().RandFloat() * (2 * fixed::pi),
+               GetLib().RandInt(32) + GetLib().RandInt(16));
     Spawn(new Snake(d + GetPosition(), c));
     PlaySoundRandom(Lib::SOUND_ENEMY_SPAWN);
   }
@@ -1987,8 +1980,8 @@ void SuperBoss::OnDestroy()
   int n = 1;
   for (int i = 0; i < 16; ++i) {
     Vec2 v;
-    v.SetPolar(GetLib().RandFloat() * M_2PI,
-               M_EIGHT + GetLib().RandInt(64) + GetLib().RandInt(64));
+    v.SetPolar(GetLib().RandFloat() * (2 * fixed::pi),
+               8 + GetLib().RandInt(64) + GetLib().RandInt(64));
     Colour c = GetLib().Cycle(GetShape(0).GetColour(), n * 2);
     _fireworks.push_back(
         std::make_pair(n, std::make_pair(GetPosition() + v, c)));

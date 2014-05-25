@@ -124,7 +124,7 @@ void Overmind::Update()
 
   if (_z0.IsBossMode()) {
     if (_count <= 0) {
-      _starDir.Rotate((z_float(_z0.GetLib().RandFloat()) - 0.5f) * M_PIf);
+      _starDir.Rotate((_z0.GetLib().RandFloat().to_float() - 0.5f) * M_PIf);
       Star::SetDirection(_starDir);
       _starCount = RandInt(3) + 2;
       if (_bossModBosses < 6) {
@@ -179,7 +179,7 @@ void Overmind::Update()
     }
 
     _timer = 0;
-    _starDir.Rotate((z_float(_z0.GetLib().RandFloat()) - 0.5f) * M_PIf);
+    _starDir.Rotate((_z0.GetLib().RandFloat().to_float() - 0.5f) * M_PIf);
     Star::SetDirection(_starDir);
     _starCount = RandInt(3) + 2;
 
@@ -468,8 +468,8 @@ Vec2 Overmind::SpawnPoint(bool top, int row, int num, int div)
     num = div - 1;
   }
   fixed _x = fixed(top ? num : div - 1 - num) * Lib::WIDTH / fixed(div - 1);
-  fixed _y = top ? -(row + 1) * (M_PT_ZERO_ONE * 16) * Lib::HEIGHT :
-      Lib::HEIGHT * (1 + (row + 1) * (M_PT_ZERO_ONE * 16));
+  fixed _y = top ? -(row + 1) * (fixed::hundredth * 16) * Lib::HEIGHT :
+      Lib::HEIGHT * (1 + (row + 1) * (fixed::hundredth * 16));
   return Vec2(_x, _y);
 }
 

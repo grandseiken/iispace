@@ -112,8 +112,8 @@ public:
   virtual void SetRotation(fixed rotation)
   {
     _rotation =
-        rotation > M_2PI ? rotation - M_2PI :
-        rotation < 0 ? rotation + M_2PI : rotation;
+        rotation > 2 * fixed::pi ? rotation - 2 * fixed::pi :
+        rotation < 0 ? rotation + 2 * fixed::pi : rotation;
   }
 
   virtual Vec2 ConvertPoint(
@@ -126,7 +126,7 @@ public:
   virtual Vec2f ConvertPointf(
       const Vec2f& position, float rotation, const Vec2f& v) const
   {
-    Vec2f a = v; a.Rotate(z_float(GetRotation()));
+    Vec2f a = v; a.Rotate(GetRotation().to_float());
     return Shape::ConvertPointf(position, rotation, a);
   }
 
@@ -153,7 +153,7 @@ public:
        Colour colour, int category = 0)
     : Shape(centre, colour, category)
     , _width(width)
-    ,_height(height) {}
+    , _height(height) {}
 
   virtual ~Fill() {}
 
@@ -181,7 +181,7 @@ public:
       Lib& lib, const Vec2f& position, float rotation, Colour colour = 0) const
   {
     Vec2f c = ConvertPointf(position, rotation, Vec2f());
-    Vec2f wh = Vec2f(z_float(GetWidth()), z_float(GetHeight()));
+    Vec2f wh = Vec2f(GetWidth().to_float(), GetHeight().to_float());
     Vec2f a = c + wh;
     Vec2f b = c - wh;
     lib.RenderRect(a, b, GetColour(colour));
@@ -191,7 +191,7 @@ private:
 
   virtual bool CheckLocalPoint(const Vec2& v) const
   {
-    return z_abs(v._x) < _width && z_abs(v._y) < _height;
+    return v._x.abs() < _width && v._y.abs() < _height;
   }
 
   fixed _width;
@@ -288,8 +288,8 @@ public:
   virtual void Render(
       Lib& lib, const Vec2f& position, float rotation, Colour colour = 0) const
   {
-    float w = z_float(GetWidth());
-    float h = z_float(GetHeight());
+    float w = GetWidth().to_float();
+    float h = GetHeight().to_float();
 
     Vec2f a = ConvertPointf(position, rotation, Vec2f(w, h));
     Vec2f b = ConvertPointf(position, rotation, Vec2f(-w, h));
@@ -306,7 +306,7 @@ private:
 
   virtual bool CheckRotatedPoint(const Vec2& v) const
   {
-    return z_abs(v._x) < _width && z_abs(v._y) < _height;
+    return v._x.abs() < _width && v._y.abs() < _height;
   }
 
   fixed _width;
@@ -354,7 +354,7 @@ public:
       return;
     }
 
-    float r = z_float(GetRadius());
+    float r = GetRadius().to_float();
     for (int i = 0; i < GetSides(); i++) {
       Vec2f a, b;
       a.SetPolar(i * 2 * M_PIf / float(GetSides()), r);
@@ -423,15 +423,17 @@ public:
   virtual void Render(
       Lib& lib, const Vec2f& position, float rotation, Colour colour = 0) const
   {
-    if (GetSides() < 2) return;
-    float r = z_float(GetRadius());
+    if (GetSides() < 2) {
+      return;
+    }
+    float r = GetRadius().to_float();
 
     for (int i = 0; i < GetSides() && i < _segments; i++) {
       Vec2f a, b;
       a.SetPolar(i * 2 * M_PIf / float(GetSides()), r);
       b.SetPolar((i + 1) * 2 * M_PIf / float(GetSides()), r);
       lib.RenderLine(ConvertPointf(position, rotation, a),
-                     ConvertPointf(position, rotation, b), GetColour(colour));
+          ConvertPointf(position, rotation, b), GetColour(colour));
     }
   }
 
@@ -441,7 +443,7 @@ private:
   {
     fixed angle = v.Angle();
     fixed len = v.Length();
-    bool b = 0 <= angle && v.Angle() <= (M_2PI * _segments) / _sides;
+    bool b = 0 <= angle && v.Angle() <= (2 * fixed::pi * _segments) / _sides;
     return b && len >= GetRadius() - 10 && len < GetRadius();
   }
 
@@ -469,7 +471,7 @@ public:
       return;
     }
 
-    float r = z_float(GetRadius());
+    float r = GetRadius().to_float();
     std::vector<Vec2f> list;
     for (int i = 0; i < GetSides(); i++) {
       Vec2f v;
@@ -506,7 +508,7 @@ public:
       return;
     }
 
-    float r = z_float(GetRadius());
+    float r = GetRadius().to_float();
     for (int i = 0; i < GetSides(); i++) {
       Vec2f v;
       v.SetPolar(i * 2 * M_PIf / float(GetSides()), r);
@@ -555,7 +557,7 @@ public:
   {
     Vec2f c = ConvertPointf(position, rotation, Vec2f());
     for (unsigned int i = 0; i < _children.size(); i++) {
-      _children[i]->Render(lib, c, z_float(GetRotation()) + rotation, colour);
+      _children[i]->Render(lib, c, GetRotation().to_float() + rotation, colour);
     }
   }
 
@@ -585,6 +587,5 @@ private:
   ShapeList _children;
 
 };
-
 
 #endif

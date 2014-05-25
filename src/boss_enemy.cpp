@@ -2,8 +2,8 @@
 #include "boss.h"
 #include "player.h"
 
-const fixed GhostWall::SPEED = M_THREE + M_HALF;
-const fixed DeathRay::SPEED = M_TEN;
+const fixed GhostWall::SPEED = 3 + fixed(1) / 2;
+const fixed DeathRay::SPEED = 10;
 
 // Big follower
 //------------------------------
@@ -30,7 +30,7 @@ void BigFollow::OnDestroy(bool bomb)
       s->SetScore(0);
     }
     Spawn(s);
-    d.Rotate(M_TWO * M_PI / M_THREE);
+    d.Rotate(2 * fixed::pi / 3);
   }
 }
 
@@ -58,7 +58,7 @@ void SBBossShot::Update()
       (p._y > Lib::HEIGHT + 10 && _dir._y > 0)) {
     Destroy();
   }
-  SetRotation(GetRotation() + M_PT_ZERO_ONE * 2);
+  SetRotation(GetRotation() + fixed::hundredth * 2);
 }
 
 // Tractor beam minion
@@ -90,47 +90,47 @@ void TBossShot::Update()
 // Ghost boss wall
 //------------------------------
 GhostWall::GhostWall(bool swap, bool noGap, bool ignored)
-  : Enemy(Vec2(Lib::WIDTH / M_TWO, swap ? -M_TEN : (Lib::HEIGHT + M_TEN)), 0)
-  , _dir(M_ZERO, swap ? M_ONE : -M_ONE)
+  : Enemy(Vec2(Lib::WIDTH / 2, swap ? -10 : 10 + Lib::HEIGHT), 0)
+  , _dir(0, swap ? 1 : -1)
 {
   if (noGap) {
-    AddShape(new Box(Vec2(), fixed(Lib::WIDTH), M_TEN,0xcc66ffff,
+    AddShape(new Box(Vec2(), fixed(Lib::WIDTH), 10, 0xcc66ffff,
                      0, ENEMY | SHIELD));
-    AddShape(new Box(Vec2(), fixed(Lib::WIDTH), M_SEVEN, 0xcc66ffff, 0, 0));
-    AddShape(new Box(Vec2(), fixed(Lib::WIDTH), M_FOUR, 0xcc66ffff, 0, 0));
+    AddShape(new Box(Vec2(), fixed(Lib::WIDTH), 7, 0xcc66ffff, 0, 0));
+    AddShape(new Box(Vec2(), fixed(Lib::WIDTH), 4, 0xcc66ffff, 0, 0));
   }
   else {
-    AddShape(new Box(Vec2(), Lib::HEIGHT / 2, M_TEN, 0xcc66ffff,
+    AddShape(new Box(Vec2(), Lib::HEIGHT / 2, 10, 0xcc66ffff,
                      0, ENEMY | SHIELD));
-    AddShape(new Box(Vec2(), Lib::HEIGHT / 2, M_SEVEN, 0xcc66ffff,
+    AddShape(new Box(Vec2(), Lib::HEIGHT / 2, 7, 0xcc66ffff,
                      0, ENEMY | SHIELD));
-    AddShape(new Box(Vec2(), Lib::HEIGHT / 2, M_FOUR, 0xcc66ffff,
+    AddShape(new Box(Vec2(), Lib::HEIGHT / 2, 4, 0xcc66ffff,
                      0, ENEMY | SHIELD));
   }
   SetBoundingWidth(fixed(Lib::WIDTH));
 }
 
 GhostWall::GhostWall(bool swap, bool swapGap)
-  : Enemy(Vec2(swap ? -M_TEN : (Lib::WIDTH + M_TEN), Lib::HEIGHT / M_TWO), 0)
-  , _dir(swap ? M_ONE : -M_ONE, 0)
+  : Enemy(Vec2(swap ? -10 : 10 + Lib::WIDTH, Lib::HEIGHT / 2), 0)
+  , _dir(swap ? 1 : -1, 0)
 {
   SetBoundingWidth(fixed(Lib::HEIGHT));
-  fixed off = swapGap ? -(M_ONE * 100) : (M_ONE * 100);
+  fixed off = swapGap ? -100 : 100;
 
-  AddShape(new Box(Vec2(0, off - 20 - Lib::HEIGHT / 2), M_TEN,
-                        Lib::HEIGHT / 2, 0xcc66ffff, 0, ENEMY | SHIELD));
-  AddShape(new Box(Vec2(0, off + 20 + Lib::HEIGHT / 2), M_TEN,
-                        Lib::HEIGHT / 2, 0xcc66ffff, 0, ENEMY | SHIELD));
+  AddShape(new Box(Vec2(0, off - 20 - Lib::HEIGHT / 2), 10,
+                   Lib::HEIGHT / 2, 0xcc66ffff, 0, ENEMY | SHIELD));
+  AddShape(new Box(Vec2(0, off + 20 + Lib::HEIGHT / 2), 10,
+                   Lib::HEIGHT / 2, 0xcc66ffff, 0, ENEMY | SHIELD));
 
-  AddShape(new Box(Vec2(0, off - 20 - Lib::HEIGHT / 2), M_SEVEN,
-                        Lib::HEIGHT / 2, 0xcc66ffff, 0, 0));
-  AddShape(new Box(Vec2(0, off + 20 + Lib::HEIGHT / 2), M_SEVEN,
-                        Lib::HEIGHT / 2, 0xcc66ffff, 0, 0));
+  AddShape(new Box(Vec2(0, off - 20 - Lib::HEIGHT / 2), 7,
+                   Lib::HEIGHT / 2, 0xcc66ffff, 0, 0));
+  AddShape(new Box(Vec2(0, off + 20 + Lib::HEIGHT / 2), 7,
+                   Lib::HEIGHT / 2, 0xcc66ffff, 0, 0));
 
-  AddShape(new Box(Vec2(0, off - 20 - Lib::HEIGHT / 2), M_FOUR,
-                        Lib::HEIGHT / 2, 0xcc66ffff, 0, 0));
-  AddShape(new Box(Vec2(0, off + 20 + Lib::HEIGHT / 2), M_FOUR,
-                        Lib::HEIGHT / 2, 0xcc66ffff, 0, 0));
+  AddShape(new Box(Vec2(0, off - 20 - Lib::HEIGHT / 2), 4,
+                   Lib::HEIGHT / 2, 0xcc66ffff, 0, 0));
+  AddShape(new Box(Vec2(0, off + 20 + Lib::HEIGHT / 2), 4,
+                   Lib::HEIGHT / 2, 0xcc66ffff, 0, 0));
 }
 
 void GhostWall::Update()
@@ -139,7 +139,7 @@ void GhostWall::Update()
       (_dir._y > 0 && GetPosition()._y < 16) ||
       (_dir._x < 0 && GetPosition()._x >= Lib::WIDTH - 32) ||
       (_dir._y < 0 && GetPosition()._y >= Lib::HEIGHT - 16)) {
-    Move(_dir * SPEED / M_TWO);
+    Move(_dir * SPEED / 2);
   }
   else {
     Move(_dir * SPEED);
@@ -170,7 +170,7 @@ void GhostMine::Update()
 {
   if (_timer == 80) {
     Explosion();
-    SetRotation(GetLib().RandFloat() * M_2PI);
+    SetRotation(GetLib().RandFloat() * 2 * fixed::pi);
   }
   if (_timer) {
     _timer--;
@@ -248,13 +248,13 @@ void DeathArm::Update()
   if (_shots > 0) {
     Vec2 d = _target - GetPosition();
     d.Normalise();
-    d *= M_FIVE;
+    d *= 5;
     Ship* s = new SBBossShot(GetPosition(), d, 0x33ff99ff);
     Spawn(s);
     --_shots;
   }
 
-  Rotate(M_PT_ZERO_ONE * 5);
+  Rotate(fixed::hundredth * 5);
   if (_attacking) {
     _timer++;
     if (_timer < DeathRayBoss::ARM_ATIMER / 4) {
@@ -271,7 +271,7 @@ void DeathArm::Update()
     }
     else if (_timer < DeathRayBoss::ARM_ATIMER) {
       Vec2 d = _boss->GetPosition() +
-          Vec2(M_ONE * 80, _top ? M_ONE * 80 : -M_ONE * 80) - GetPosition();
+          Vec2(80, _top ? 80 : -80) - GetPosition();
       if (d.Length() > DeathRayBoss::ARM_SPEED) {
         d.Normalise();
         Move(d * DeathRayBoss::ARM_SPEED);
@@ -295,8 +295,7 @@ void DeathArm::Update()
     _dir.Set(0, 0);
     PlaySound(Lib::SOUND_BOSS_ATTACK);
   }
-  SetPosition(_boss->GetPosition() +
-              Vec2(M_ONE * 80, _top ? M_ONE * 80 : -M_ONE * 80));
+  SetPosition(_boss->GetPosition() + Vec2(80, _top ? 80 : -80));
 
   if (_start) {
     if (_start == 30) {
@@ -335,7 +334,7 @@ SnakeTail::SnakeTail(const Vec2& position, Colour colour)
 
 void SnakeTail::Update()
 {
-  static const fixed z15 = M_PT_ZERO_ONE * 15;
+  static const fixed z15 = fixed::hundredth * 15;
   Rotate(z15);
   --_timer;
   if (!_timer) {
@@ -434,14 +433,14 @@ void Snake::Update()
   }
   if (!_shotSnake && _timer % 48 == 0 && GetLib().RandInt(3) == 0) {
     if (GetLib().RandInt(2)) {
-      _dir.Rotate(M_PI / M_TWO);
+      _dir.Rotate(fixed::pi / 2);
     }
     else {
-      _dir.Rotate(-M_PI / M_TWO);
+      _dir.Rotate(-fixed::pi / 2);
     }
     SetRotation(_dir.Angle());
   }
-  Move(_dir * (_shotSnake ? M_FOUR : M_TWO));
+  Move(_dir * (_shotSnake ? 4 : 2));
   if (_timer % 8 == 0) {
     _dir.Rotate(8 * _shotRot);
     SetRotation(_dir.Angle());
@@ -491,7 +490,7 @@ void RainbowShot::Update()
   }
 
   ++_timer;
-  static const fixed r = 6 * (8 * M_PT_ZERO_ONE / 10);
+  static const fixed r = 6 * (8 * fixed::hundredth / 10);
   if (_timer % 8 == 0) {
     _dir.Rotate(r);
   }

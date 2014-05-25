@@ -2,13 +2,9 @@
 #define IISPACE_SRC_FIX32_H
 
 #include <cstdint>
-#include <cmath>
+#include <iomanip>
 #include <ostream>
-
-inline int64_t fixed_abs(int64_t f)
-{
-  return (f ^ (f >> 63)) - (f >> 63);
-}
+#include <sstream>
 
 inline int64_t fixed_sgn(int64_t a, int64_t b)
 {
@@ -94,229 +90,393 @@ inline uint8_t clz(uint64_t x)
 #endif
 }
 
-class Fix32 {
+class fixed {
 public:
 
+  inline fixed();
+  inline fixed(const fixed& f);
+  inline fixed(int32_t v);
+
+  inline static fixed from_internal(int64_t f);
+  inline int64_t to_internal() const;
+  inline int32_t to_int() const;
+  inline float to_float() const;
+  inline explicit operator bool() const;
+
+  // Assignment operators.
+  inline fixed& operator=(const fixed& f);
+  inline fixed& operator+=(const fixed& f);
+  inline fixed& operator-=(const fixed& f);
+  inline fixed& operator*=(const fixed& f);
+  inline fixed& operator/=(const fixed& f);
+
+  // Arithmetic operators.
+  inline fixed operator+(const fixed& f) const;
+  inline fixed operator-(const fixed& f) const;
+  inline fixed operator*(const fixed& f) const;
+  inline fixed operator/(const fixed& f) const;
+  inline fixed operator-() const;
+
+  // Comparison operators.
+  inline bool operator==(const fixed& f) const;
+  inline bool operator!=(const fixed& f) const;
+  inline bool operator<=(const fixed& f) const;
+  inline bool operator>=(const fixed& f) const;
+  inline bool operator<(const fixed& f) const;
+  inline bool operator>(const fixed& f) const;
+
+  // Math functions.
+  inline fixed abs() const;
+  inline fixed sqrt() const;
+  inline fixed sin() const;
+  inline fixed cos() const;
+  inline fixed atan2(const fixed& x) const;
+
+  // Constants.
+  static const fixed pi;
+  static const fixed tenth;
+  static const fixed hundredth;
+  static const fixed half;
+  static const fixed quarter;
+  static const fixed eighth;
+  static const fixed sixteenth;
+
+private:
+
+  friend std::ostream& operator<<(std::ostream& o, const fixed& f);
   int64_t _value;
-
-  Fix32()
-    : _value(0) {}
-
-  Fix32(const Fix32& f)
-  {
-    _value = f._value;
-  }
-
-  static Fix32 from_internal(int64_t f)
-  {
-    Fix32 r;
-    r._value = f;
-    return r;
-  }
-
-  Fix32(int32_t v)
-  {
-    _value = int64_t(v) << 32;
-  }
-
-  inline int32_t to_int() const
-  {
-    return _value >> 32;
-  }
-
-  inline float to_float() const
-  {
-    return float(_value) / (uint64_t(1) << 32);
-  }
-
-  inline Fix32 operator-() const
-  {
-    return Fix32() - *this;
-  }
-
-  inline Fix32& operator=(const Fix32& f)
-  {
-    _value = f._value;
-    return *this;
-  }
-
-  inline Fix32& operator+=(const Fix32& f)
-  {
-    _value = (*this + f)._value;
-    return *this;
-  }
-
-  inline Fix32& operator-=(const Fix32& f)
-  {
-    _value = (*this - f)._value;
-    return *this;
-  }
-
-  inline Fix32& operator*=(const Fix32& f)
-  {
-    _value = (*this * f)._value;
-    return *this;
-  }
-
-  inline Fix32& operator/=(const Fix32& f)
-  {
-    _value = (*this / f)._value;
-    return *this;
-  }
-
-  inline Fix32 operator+(const Fix32& f) const
-  {
-    return from_internal(_value + f._value);
-  }
-
-  inline Fix32 operator-(const Fix32& f) const
-  {
-    return from_internal(_value - f._value);
-  }
-
-  inline Fix32 operator*(const Fix32& f) const
-  {
-    int64_t sign = fixed_sgn(_value, f._value);
-    uint64_t l = fixed_abs(_value);
-    uint64_t r = fixed_abs(f._value);
-    const uint64_t frc = 0xffffffff;
-
-    uint64_t hi = (l >> 32) * (r >> 32);
-    uint64_t lo = (l & frc) * (r & frc);
-    uint64_t lf = (l >> 32) * (r & frc);
-    uint64_t rt = (l & frc) * (r >> 32);
-    uint64_t xy = (hi << 32) + lf + rt + (lo >> 32);
-    return from_internal(sign * xy);
-  }
-
-  inline Fix32 operator/(const Fix32& f) const
-  {
-    int64_t sign = fixed_sgn(_value, f._value);
-    uint64_t r = fixed_abs(_value);
-    uint64_t d = fixed_abs(f._value);
-    uint64_t q = 0;
-
-    uint64_t bit = 33;
-    while (!(d & 0xf) && bit >= 4) {
-      d >>= 4;
-      bit -= 4;
-    }
-    if (d == 0) {
-      return 0;
-    }
-    while (r) {
-      uint64_t shift = clz(r);
-      if (shift > bit)
-        shift = bit;
-      r <<= shift;
-      bit -= shift;
-
-      uint64_t div = r / d;
-      r = r % d;
-      q += div << bit;
-
-      r <<= 1;
-      if (!bit)
-        break;
-      bit--;
-    }
-    return from_internal(sign * (q >> 1));
-  }
-
-  inline bool operator==(const Fix32& f) const
-  {
-    return _value == f._value;
-  }
-
-  inline bool operator!=(const Fix32& f) const
-  {
-    return _value != f._value;
-  }
-
-  inline bool operator<=(const Fix32& f) const
-  {
-    return _value <= f._value;
-  }
-
-  inline bool operator>=(const Fix32& f) const
-  {
-    return _value >= f._value;
-  }
-
-  inline bool operator<(const Fix32& f) const
-  {
-    return _value < f._value;
-  }
-
-  inline bool operator>(const Fix32& f) const
-  {
-    return _value > f._value;
-  }
-
-  Fix32 sqrt() const;
-  Fix32 sin() const;
-  Fix32 cos() const;
-  Fix32 atan2(const Fix32& x) const;
 
 };
 
-#ifdef PLATFORM_LINUX
-const Fix32 F32PI = Fix32::from_internal(0x3243f6a88ULL);
-#else
-const Fix32 F32PI = Fix32::from_internal(0x3243f6a88);
-#endif
-const Fix32 F32ONE = Fix32(1);
-
-inline Fix32 operator+(int v, const Fix32& f)
+inline std::ostream& operator<<(std::ostream& o, const fixed& f)
 {
-  return Fix32(v) + f;
+  if (f._value < 0) {
+    o << "-";
+  }
+
+  uint64_t v = f.abs()._value;
+  o << (v >> 32) << ".";
+  double d = 0;
+  double val = 0.5;
+  for (std::size_t i = 0; i < 32; ++i) {
+    if (v & (int64_t(1) << (31 - i))) {
+      d += val;
+    }
+    val /= 2;
+  }
+
+  std::stringstream ss;
+  ss << std::fixed << std::setprecision(16) << d;
+  o << ss.str().substr(2);
+  return o;
 }
 
-inline Fix32 operator-(int v, const Fix32& f)
+inline fixed operator+(int v, const fixed& f)
 {
-  return Fix32(v) - f;
+  return fixed(v) + f;
 }
 
-inline Fix32 operator*(int v, const Fix32& f)
+inline fixed operator-(int v, const fixed& f)
 {
-  return Fix32(v) * f;
+  return fixed(v) - f;
 }
 
-inline Fix32 operator/(int v, const Fix32& f)
+inline fixed operator*(int v, const fixed& f)
 {
-  return Fix32(v) / f;
+  return fixed(v) * f;
 }
 
-inline bool operator==(int v, const Fix32& f)
+inline fixed operator/(int v, const fixed& f)
 {
-  return Fix32(v) == f;
+  return fixed(v) / f;
 }
 
-inline bool operator!=(int v, const Fix32& f)
+inline bool operator==(int v, const fixed& f)
 {
-  return Fix32(v) != f;
+  return fixed(v) == f;
 }
 
-inline bool operator<=(int v, const Fix32& f)
+inline bool operator!=(int v, const fixed& f)
 {
-  return Fix32(v) <= f;
+  return fixed(v) != f;
 }
 
-inline bool operator>=(int v, const Fix32& f)
+inline bool operator<=(int v, const fixed& f)
 {
-  return Fix32(v) >= f;
+  return fixed(v) <= f;
 }
 
-inline bool operator<(int v, const Fix32& f)
+inline bool operator>=(int v, const fixed& f)
 {
-  return Fix32(v) < f;
+  return fixed(v) >= f;
 }
 
-inline bool operator>(int v, const Fix32& f)
+inline bool operator<(int v, const fixed& f)
 {
-  return Fix32(v) > f;
+  return fixed(v) < f;
 }
 
-std::ostream& operator<<(std::ostream& o, const Fix32& f);
+inline bool operator>(int v, const fixed& f)
+{
+  return fixed(v) > f;
+}
+
+fixed::fixed()
+  : _value(0)
+{
+}
+
+fixed::fixed(const fixed& f)
+  : _value(f._value)
+{
+}
+
+fixed::fixed(int32_t v)
+  : _value(int64_t(v) << 32)
+{
+}
+
+fixed fixed::from_internal(int64_t f)
+{
+  fixed r;
+  r._value = f;
+  return r;
+}
+
+int64_t fixed::to_internal() const
+{
+  return _value;
+}
+
+int32_t fixed::to_int() const
+{
+  return _value >> 32;
+}
+
+float fixed::to_float() const
+{
+  return float(_value) / (uint64_t(1) << 32);
+}
+
+fixed::operator bool() const
+{
+  return _value != 0;
+}
+
+fixed& fixed::operator=(const fixed& f)
+{
+  _value = f._value;
+  return *this;
+}
+
+fixed& fixed::operator+=(const fixed& f)
+{
+  return *this = *this + f;
+}
+
+fixed& fixed::operator-=(const fixed& f)
+{
+  return *this = *this - f;
+}
+
+fixed& fixed::operator*=(const fixed& f)
+{
+  return *this = *this * f;
+}
+
+fixed& fixed::operator/=(const fixed& f)
+{
+  return *this = *this / f;
+}
+
+fixed fixed::operator+(const fixed& f) const
+{
+  return from_internal(_value + f._value);
+}
+
+fixed fixed::operator-(const fixed& f) const
+{
+  return from_internal(_value - f._value);
+}
+
+fixed fixed::operator*(const fixed& f) const
+{
+  int64_t sign = fixed_sgn(_value, f._value);
+  uint64_t l = abs()._value;
+  uint64_t r = f.abs()._value;
+
+  static const uint64_t mask = 0xffffffff;
+  uint64_t hi = (l >> 32) * (r >> 32);
+  uint64_t lo = (l & mask) * (r & mask);
+  uint64_t lf = (l >> 32) * (r & mask);
+  uint64_t rt = (l & mask) * (r >> 32);
+
+  uint64_t combine = (hi << 32) + lf + rt + (lo >> 32);
+  return from_internal(sign * combine);
+}
+
+fixed fixed::operator/(const fixed& f) const
+{
+  int64_t sign = fixed_sgn(_value, f._value);
+  uint64_t r = abs()._value;
+  uint64_t d = f.abs()._value;
+  uint64_t q = 0;
+
+  uint64_t bit = 33;
+  while (!(d & 0xf) && bit >= 4) {
+    d >>= 4;
+    bit -= 4;
+  }
+  if (d == 0) {
+    return 0;
+  }
+  while (r) {
+    uint64_t shift = clz(r);
+    if (shift > bit) {
+      shift = bit;
+    }
+    r <<= shift;
+    bit -= shift;
+
+    uint64_t div = r / d;
+    r = r % d;
+    q += div << bit;
+
+    r <<= 1;
+    if (!bit) {
+      break;
+    }
+    bit--;
+  }
+  return from_internal(sign * (q >> 1));
+}
+
+fixed fixed::operator-() const
+{
+  return fixed() - *this;
+}
+
+bool fixed::operator==(const fixed& f) const
+{
+  return _value == f._value;
+}
+
+bool fixed::operator!=(const fixed& f) const
+{
+  return _value != f._value;
+}
+
+bool fixed::operator<=(const fixed& f) const
+{
+  return _value <= f._value;
+}
+
+bool fixed::operator>=(const fixed& f) const
+{
+  return _value >= f._value;
+}
+
+bool fixed::operator<(const fixed& f) const
+{
+  return _value < f._value;
+}
+
+bool fixed::operator>(const fixed& f) const
+{
+  return _value > f._value;
+}
+
+fixed fixed::abs() const
+{
+  return from_internal((_value ^ (_value >> 63)) - (_value >> 63));
+}
+
+fixed fixed::sqrt() const
+{
+  if (_value <= 0) {
+    return 0;
+  }
+  if (*this < 1) {
+    return 1 / (1 / *this).sqrt();
+  }
+
+  const fixed a = *this / 2;
+  static const fixed half = fixed(1) / 2;
+  static const fixed bound = fixed(1) / 1024;
+
+  fixed f = from_internal(_value >> ((32 - clz(_value)) / 2));
+  for (std::size_t n = 0; n < 8 && f; ++n) {
+    f = f * half + a / f;
+    if (from_internal((f * f).abs()._value - _value) < bound) {
+      break;
+    }
+  }
+  return f;
+}
+
+fixed fixed::sin() const
+{
+  bool negative = _value < 0;
+  fixed angle = from_internal(abs()._value % (2 * pi)._value);
+
+  if (angle > pi) {
+    angle -= 2 * pi;
+  }
+
+  fixed angle2 = angle * angle;
+  fixed out = angle;
+
+  static const fixed r6 = fixed(1) / 6;
+  static const fixed r120 = fixed(1) / 120;
+  static const fixed r5040 = fixed(1) / 5040;
+  static const fixed r362880 = fixed(1) / 362880;
+  static const fixed r39916800 = fixed(1) / 39916800;
+
+  angle *= angle2;
+  out -= angle * r6;
+  angle *= angle2;
+  out += angle * r120;
+  angle *= angle2;
+  out -= angle * r5040;
+  angle *= angle2;
+  out += angle * r362880;
+  angle *= angle2;
+  out -= angle * r39916800;
+
+  return negative ? -out : out;
+}
+
+fixed fixed::cos() const
+{
+  return (*this + pi / 2).sin();
+}
+
+fixed fixed::atan2(const fixed& x) const
+{
+  fixed y = abs();
+  fixed angle;
+
+  if (x._value >= 0) {
+    if (x + y == 0) {
+      return -pi / 4;
+    }
+    fixed r = (x - y) / (x + y);
+    fixed r3 = r * r * r;
+    angle =
+        from_internal(0x32400000) * r3 -
+        from_internal(0xfb500000) * r + pi / 4;
+  }
+  else {
+    if (x - y == 0) {
+      return -3 * pi / 4;
+    }
+    fixed r = (x + y) / (y - x);
+    fixed r3 = r * r * r;
+    angle =
+        from_internal(0x32400000) * r3 -
+        from_internal(0xfb500000) * r + 3 * pi / 4;
+  }
+  return _value < 0 ? -angle : angle;
+}
 
 #endif

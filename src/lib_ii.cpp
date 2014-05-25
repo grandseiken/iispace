@@ -138,8 +138,8 @@ bool LibWin::Handler::axisMoved(const OIS::JoyStickEvent& arg, int axis)
     return true;
   }
 
-  fixed v = std::max(-M_ONE, std::min(
-      M_ONE, fixed(arg.state.mAxes[axis].abs) / OIS::JoyStick::MAX_AXIS));
+  fixed v = std::max(-fixed(1), std::min(
+      fixed(1), fixed(arg.state.mAxes[axis].abs) / OIS::JoyStick::MAX_AXIS));
   PadConfig& config = _lib->_padConfig[p];
 
   for (std::size_t i = 0; i < config._moveSticks.size(); ++i) {
@@ -360,7 +360,7 @@ LibWin::LibWin()
 
     /*if (_ff[i]) {
       OIS::Effect* e =
-        new OIS::Effect(OIS::Effect::ConstantForce, OIS::Effect::Constant);
+          new OIS::Effect(OIS::Effect::ConstantForce, OIS::Effect::Constant);
       e->setNumAxes(1);
       ((OIS::ConstantEffect*) e->getForceEffect())->level = 5000;
       e->direction = OIS::Effect::North;
@@ -466,7 +466,7 @@ void LibWin::Init()
     _padAimDpads[j] = OIS::Pov::Centered;
   }
   sf::Listener::SetGlobalVolume(
-      std::max(0.f, std::min(100.f, z_float(_settings._volume))));
+      std::max(0.f, std::min(100.f, _settings._volume.to_float())));
   for (int i = 0; i < SOUND_MAX; ++i) {
     _voices.push_back(new sf::Sound());
   }
@@ -626,7 +626,7 @@ LibWin::Settings LibWin::LoadSettings() const
 void LibWin::SetVolume(int volume)
 {
   _settings._volume = fixed(std::max(0, std::min(100, volume)));
-  sf::Listener::SetGlobalVolume(z_float(_settings._volume));
+  sf::Listener::SetGlobalVolume(_settings._volume.to_float());
   SaveSaveSettings(_settings);
 }
 
@@ -659,7 +659,7 @@ bool LibWin::IsKeyHeld(int player, Key k) const
 {
   Vec2 v(_padAimHAxes[player], _padAimVAxes[player]);
   if (k == KEY_FIRE && (_padAimDpads[player] != OIS::Pov::Centered ||
-                        v.Length() >= M_PT_ONE * 2)) {
+                        v.Length() >= fixed::tenth * 2)) {
     return true;
   }
   return _keysHeld[k][player];
@@ -694,7 +694,7 @@ Vec2 LibWin::GetMoveVelocity(int player) const
   }
 
   v = Vec2(_padMoveHAxes[player], _padMoveVAxes[player]);
-  if (v.Length() < M_PT_ONE * 2) {
+  if (v.Length() < fixed::tenth * 2) {
     return Vec2();
   }
   return v;
@@ -706,7 +706,7 @@ Vec2 LibWin::GetFireTarget(int player, const Vec2& position) const
       (GetPlayerCount() <= _padCount ? GetPlayerCount() - 1 : _padCount);
   Vec2 v(_padAimHAxes[player], _padAimVAxes[player]);
 
-  if (v.Length() >= M_PT_ONE * 2) {
+  if (v.Length() >= fixed::tenth * 2) {
     v.Normalise();
     v *= 48;
     if (kp) {
@@ -892,7 +892,7 @@ void LibWin::Render() const
       float(Lib::WIDTH + _extraX + 4), float(_extraY - 2),
       sf::Color(128, 128, 128, 255)));
   _window.Draw(sf::Shape::Rectangle(
-      float(Lib::WIDTH + _extraX + 2), float(_extraY - 4), 
+      float(Lib::WIDTH + _extraX + 2), float(_extraY - 4),
       float(Lib::WIDTH + _extraX + 4), float(Lib::HEIGHT + _extraY + 4),
       sf::Color(128, 128, 128, 255)));
   _window.Draw(sf::Shape::Rectangle(
@@ -971,8 +971,8 @@ bool LibWin::PlaySound(Sound sound, float volume, float pan, float repitch)
 // Sounds
 //------------------------------
 #define USE_SOUND(sound, data)\
-    sf::SoundBuffer* t_##sound = new sf::SoundBuffer();\
-    t_##sound->LoadFromFile(data);\
+    sf::SoundBuffer* t_##sound = new sf::SoundBuffer(); \
+    t_##sound->LoadFromFile(data); \
     _sounds.push_back(SoundResource(0, NamedSound(sound, t_##sound)));
 
 void LibWin::LoadSounds()

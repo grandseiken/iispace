@@ -2,14 +2,14 @@
 #include "z0_game.h"
 
 Ship::Ship(const Vec2& position, bool particle, bool player, bool boss)
-: _z0(0)
-, _destroy(false)
-, _position(position)
-, _rotation(0)
-, _boundingWidth(0)
-, _player(player)
-, _boss(boss)
-, _enemyValue(1)
+  : _z0(0)
+  , _destroy(false)
+  , _position(position)
+  , _rotation(0)
+  , _boundingWidth(0)
+  , _player(player)
+  , _boss(boss)
+  , _enemyValue(1)
 {
 }
 
@@ -59,7 +59,8 @@ bool Ship::CheckPoint(const Vec2& v, int category) const
 void Ship::Render() const
 {
   for (std::size_t i = 0; i < CountShapes(); i++) {
-    GetShape(i).Render(GetLib(), Vec2f(GetPosition()), z_float(GetRotation()));
+    GetShape(i).Render(
+        GetLib(), Vec2f(GetPosition()), GetRotation().to_float());
   }
 }
 
@@ -68,7 +69,7 @@ void Ship::RenderWithColour(Colour colour) const
   for (unsigned int i = 0; i < CountShapes(); i++) {
     GetShape(i).Render(
         GetLib(), Vec2f(GetPosition()),
-        z_float(GetRotation()),
+        GetRotation().to_float(),
         colour & (0xffffff00 | (GetShape(i).GetColour() & 0x000000ff)));
   }
 }
@@ -116,16 +117,16 @@ void Ship::Explosion(Colour c, int time, bool towards, const Vec2f& v) const
     int n = towards ? GetLib().RandInt(2) + 1 : GetLib().RandInt(8) + 8;
     for (int j = 0; j < n; j++) {
       Vec2f pos = GetShape(i).ConvertPointf(
-          Vec2f(GetPosition()), z_float(GetRotation()), Vec2f());
+          Vec2f(GetPosition()), GetRotation().to_float(), Vec2f());
 
       Vec2f dir;
-      dir.SetPolar(z_float(GetLib().RandFloat()) * 2 * M_PIf, 6.f);
+      dir.SetPolar(GetLib().RandFloat().to_float() * 2 * M_PIf, 6.f);
 
       if (towards && v - pos != Vec2f()) {
         dir = v - pos;
         dir.Normalise();
         float angle =
-            dir.Angle() + (z_float(GetLib().RandFloat()) - 0.5f) * M_PIf / 4;
+            dir.Angle() + (GetLib().RandFloat().to_float() - 0.5f) * M_PIf / 4;
         dir.SetPolar(angle, 6.f);
       }
 

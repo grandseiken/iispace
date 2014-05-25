@@ -5,19 +5,19 @@
 #include <algorithm>
 
 const int Follow::TIME = 90;
-const fixed Follow::SPEED = M_TWO;
+const fixed Follow::SPEED = 2;
 const int Chaser::TIME = 60;
-const fixed Chaser::SPEED = M_FOUR;
-const fixed Square::SPEED = M_TWO + M_HALF / 2;
+const fixed Chaser::SPEED = 4;
+const fixed Square::SPEED = 2 + fixed(1) / 4;
 const int Wall::TIMER = 80;
-const fixed Wall::SPEED = M_ONE + M_HALF / 2;
+const fixed Wall::SPEED = 1 + fixed(1) / 4;
 const int FollowHub::TIMER = 170;
-const fixed FollowHub::SPEED = M_ONE;
+const fixed FollowHub::SPEED = 1;
 const int Shielder::TIMER = 80;
-const fixed Shielder::SPEED = M_TWO;
+const fixed Shielder::SPEED = 2;
 const int Tractor::TIMER = 50;
-const fixed Tractor::SPEED = 6 * M_PT_ONE;
-const fixed Tractor::TRACTOR_SPEED = M_TWO + M_HALF;
+const fixed Tractor::SPEED = 6 * (fixed(1) / 10);
+const fixed Tractor::TRACTOR_SPEED = 2 + fixed(1) / 2;
 
 // Basic enemy
 //------------------------------
@@ -86,7 +86,7 @@ Follow::Follow(const Vec2& position, fixed radius, int hp)
 
 void Follow::Update()
 {
-  Rotate(M_PT_ONE);
+  Rotate(fixed::tenth);
   if (Player::CountKilledPlayers() >= GetPlayers().size()) {
     return;
   }
@@ -144,7 +144,7 @@ void Chaser::Update()
     }
   }
   else {
-    Rotate(M_PT_ONE);
+    Rotate(fixed::tenth);
   }
 }
 
@@ -156,7 +156,7 @@ Square::Square(const Vec2& position, fixed rotation)
   , _timer(z_rand() % 80 + 40)
 {
   AddShape(new Box(Vec2(), 10, 10, 0x33ff33ff, 0, ENEMY | VULNERABLE));
-  _dir.SetPolar(rotation, M_ONE);
+  _dir.SetPolar(rotation, 1);
   SetScore(25);
   SetBoundingWidth(15);
   SetEnemyValue(2);
@@ -244,14 +244,14 @@ void Wall::Update()
   if (_rotate) {
     Vec2 d(_dir);
     d.Rotate(
-        (_rdir ? _timer - TIMER : TIMER - _timer) * M_PI / (M_FOUR * TIMER));
+        (_rdir ? _timer - TIMER : TIMER - _timer) * fixed::pi / (4 * TIMER));
 
     SetRotation(d.Angle());
     _timer--;
     if (_timer <= 0) {
       _timer = 0;
       _rotate = false;
-      _dir.Rotate(_rdir ? -M_PI / M_FOUR : M_PI / M_FOUR);
+      _dir.Rotate(_rdir ? -fixed::pi / 4 : fixed::pi / 4);
     }
     return;
   }
@@ -269,10 +269,10 @@ void Wall::Update()
   }
 
   Vec2 pos = GetPosition();
-  if ((pos._x < 0 && _dir._x < -M_PT_ZERO_ONE) ||
-      (pos._y < 0 && _dir._y < -M_PT_ZERO_ONE) ||
-      (pos._x > Lib::WIDTH && _dir._x > M_PT_ZERO_ONE) ||
-      (pos._y > Lib::HEIGHT && _dir._y > M_PT_ZERO_ONE)) {
+  if ((pos._x < 0 && _dir._x < -fixed::hundredth) ||
+      (pos._y < 0 && _dir._y < -fixed::hundredth) ||
+      (pos._x > Lib::WIDTH && _dir._x > fixed::hundredth) ||
+      (pos._y > Lib::HEIGHT && _dir._y > fixed::hundredth)) {
     _dir = Vec2() - _dir;
     _dir.Normalise();
   }
@@ -287,14 +287,14 @@ void Wall::OnDestroy(bool bomb)
     return;
   }
   Vec2 d = _dir;
-  d.Rotate(M_PI / M_TWO);
+  d.Rotate(fixed::pi / 2);
 
-  Vec2 v = GetPosition() + d * M_TEN * 3;
+  Vec2 v = GetPosition() + d * 10 * 3;
   if (v._x >= 0 && v._x <= Lib::WIDTH && v._y >= 0 && v._y <= Lib::HEIGHT) {
     Spawn(new Square(v, GetRotation()));
   }
 
-  v = GetPosition() - d * M_TEN * 3;
+  v = GetPosition() - d * 10 * 3;
   if (v._x >= 0 && v._x <= Lib::WIDTH && v._y >= 0 && v._y <= Lib::HEIGHT) {
     Spawn(new Square(v, GetRotation()));
   }
@@ -311,18 +311,18 @@ FollowHub::FollowHub(const Vec2& position, bool powerA, bool powerB)
   , _powerB(powerB)
 {
   AddShape(new Polygram(
-      Vec2(), 16, 4, 0x6666ffff, M_PI / M_FOUR, ENEMY | VULNERABLE));
+      Vec2(), 16, 4, 0x6666ffff, fixed::pi / 4, ENEMY | VULNERABLE));
   if (_powerB) {
-    AddShape(new Polystar(Vec2(16, 0), 8, 4, 0x6666ffff, M_PI / M_FOUR));
-    AddShape(new Polystar(Vec2(-16, 0), 8, 4, 0x6666ffff, M_PI / M_FOUR));
-    AddShape(new Polystar(Vec2(0, 16), 8, 4, 0x6666ffff, M_PI / M_FOUR));
-    AddShape(new Polystar(Vec2(0, -16), 8, 4, 0x6666ffff, M_PI / M_FOUR));
+    AddShape(new Polystar(Vec2(16, 0), 8, 4, 0x6666ffff, fixed::pi / 4));
+    AddShape(new Polystar(Vec2(-16, 0), 8, 4, 0x6666ffff, fixed::pi / 4));
+    AddShape(new Polystar(Vec2(0, 16), 8, 4, 0x6666ffff, fixed::pi / 4));
+    AddShape(new Polystar(Vec2(0, -16), 8, 4, 0x6666ffff, fixed::pi / 4));
   }
 
-  AddShape(new Polygon(Vec2(16, 0), 8, 4, 0x6666ffff, M_PI / M_FOUR));
-  AddShape(new Polygon(Vec2(-16, 0), 8, 4, 0x6666ffff, M_PI / M_FOUR));
-  AddShape(new Polygon(Vec2(0, 16), 8, 4, 0x6666ffff, M_PI / M_FOUR));
-  AddShape(new Polygon(Vec2(0, -16), 8, 4, 0x6666ffff, M_PI / M_FOUR));
+  AddShape(new Polygon(Vec2(16, 0), 8, 4, 0x6666ffff, fixed::pi / 4));
+  AddShape(new Polygon(Vec2(-16, 0), 8, 4, 0x6666ffff, fixed::pi / 4));
+  AddShape(new Polygon(Vec2(0, 16), 8, 4, 0x6666ffff, fixed::pi / 4));
+  AddShape(new Polygon(Vec2(0, -16), 8, 4, 0x6666ffff, fixed::pi / 4));
   SetScore(50 + _powerA * 10 + _powerB * 10);
   SetBoundingWidth(16);
   SetDestroySound(Lib::SOUND_PLAYER_DESTROY);
@@ -359,11 +359,12 @@ void FollowHub::Update()
     _dir.Set(0, -1);
   }
   else if (_count > 3) {
-    _dir.Rotate(-M_PI / M_TWO);
+    _dir.Rotate(-fixed::pi / 2);
     _count = 0;
   }
 
-  fixed s = _powerA ? M_PT_ZERO_ONE * 5 + M_PT_ONE : M_PT_ZERO_ONE * 5;
+  fixed s = _powerA ?
+      fixed::hundredth * 5 + fixed::tenth : fixed::hundredth * 5;
   Rotate(s);
   GetShape(0).Rotate(-s);
 
@@ -394,13 +395,13 @@ Shielder::Shielder(const Vec2& position, bool power)
   AddShape(new Polystar(Vec2(24, 0), 8, 6, 0x006633ff, 0, VULNSHIELD));
   AddShape(new Polystar(Vec2(-24, 0), 8, 6, 0x006633ff, 0, VULNSHIELD));
   AddShape(new Polystar(Vec2(0, 24), 8, 6, 0x006633ff,
-                        M_PI / M_TWO, VULNSHIELD));
+                        fixed::pi / 2, VULNSHIELD));
   AddShape(new Polystar(Vec2(0, -24), 8, 6, 0x006633ff,
-                        M_PI / M_TWO, VULNSHIELD));
+                        fixed::pi / 2, VULNSHIELD));
   AddShape(new Polygon(Vec2(24, 0), 8, 6, 0x33cc99ff, 0, 0));
   AddShape(new Polygon(Vec2(-24, 0), 8, 6, 0x33cc99ff, 0, 0));
-  AddShape(new Polygon(Vec2(0, 24), 8, 6, 0x33cc99ff, M_PI / M_TWO, 0));
-  AddShape(new Polygon(Vec2(0, -24), 8, 6, 0x33cc99ff, M_PI / M_TWO, 0));
+  AddShape(new Polygon(Vec2(0, 24), 8, 6, 0x33cc99ff, fixed::pi / 2, 0));
+  AddShape(new Polygon(Vec2(0, -24), 8, 6, 0x33cc99ff, fixed::pi / 2, 0));
 
   AddShape(new Polystar(Vec2(0, 0), 24, 4, 0x006633ff, 0, 0));
   AddShape(new Polygon(Vec2(0, 0), 14, 8, power ? 0x33cc99ff : 0x006633ff,
@@ -413,7 +414,7 @@ Shielder::Shielder(const Vec2& position, bool power)
 
 void Shielder::Update()
 {
-  fixed s = _power ? M_PT_ZERO_ONE * 12 : M_PT_ZERO_ONE * 4;
+  fixed s = _power ? fixed::hundredth * 12 : fixed::hundredth * 4;
   Rotate(s);
   GetShape(9).Rotate(-2 * s);
   for (int i = 0; i < 8; i++) {
@@ -442,15 +443,16 @@ void Shielder::Update()
     _rotate = false;
   }
 
-  fixed speed = SPEED + (_power ? M_PT_ONE * 3 : M_PT_ONE * 2) * (16 - GetHP());
+  fixed speed = SPEED +
+      (_power ? fixed::tenth * 3 : fixed::tenth * 2) * (16 - GetHP());
   if (_rotate) {
     Vec2 d(_dir);
-    d.Rotate((_rDir ? 1 : -1) * (TIMER - _timer) * M_PI / (M_TWO * TIMER));
+    d.Rotate((_rDir ? 1 : -1) * (TIMER - _timer) * fixed::pi / (2 * TIMER));
     _timer--;
     if (_timer <= 0) {
       _timer = 0;
       _rotate = false;
-      _dir.Rotate((_rDir ? 1 : -1) * M_PI / M_TWO);
+      _dir.Rotate((_rDir ? 1 : -1) * fixed::pi / 2);
     }
     Move(d * speed);
   }
@@ -467,7 +469,7 @@ void Shielder::Update()
 
       Vec2 d = p->GetPosition() - v;
       d.Normalise();
-      Spawn(new SBBossShot(v, d * M_THREE, 0x33cc99ff));
+      Spawn(new SBBossShot(v, d * 3, 0x33cc99ff));
       PlaySoundRandom(Lib::SOUND_BOSS_FIRE);
     }
     Move(_dir * speed);
@@ -502,11 +504,11 @@ Tractor::Tractor(const Vec2& position, bool power)
 
 void Tractor::Update()
 {
-  GetShape(0).Rotate(M_PT_ZERO_ONE * 5);
-  GetShape(1).Rotate(-M_PT_ZERO_ONE * 5);
+  GetShape(0).Rotate(fixed::hundredth * 5);
+  GetShape(1).Rotate(-fixed::hundredth * 5);
   if (_power) {
-    GetShape(3).Rotate(-M_PT_ZERO_ONE * 8);
-    GetShape(4).Rotate(M_PT_ZERO_ONE * 8);
+    GetShape(3).Rotate(-fixed::hundredth * 8);
+    GetShape(4).Rotate(fixed::hundredth * 8);
   }
 
   if (GetPosition()._x < 0) {
@@ -526,7 +528,7 @@ void Tractor::Update()
   }
 
   if (!_ready && !_spinning) {
-    Move(_dir * SPEED * (IsOnScreen() ? M_ONE : M_TWO + M_HALF));
+    Move(_dir * SPEED * (IsOnScreen() ? 1 : 2 + fixed::half));
 
     if (_timer > TIMER * 8) {
       _ready = true;
@@ -543,7 +545,7 @@ void Tractor::Update()
     }
   }
   else if (_spinning) {
-    Rotate(M_PT_ONE * 3);
+    Rotate(fixed::tenth * 3);
     for (unsigned int i = 0; i < _players.size(); i++) {
       if (!((Player*) _players[i])->IsKilled()) {
         Vec2 d = GetPosition() - _players[i]->GetPosition();
@@ -558,7 +560,7 @@ void Tractor::Update()
 
       Vec2 d = p->GetPosition() - v;
       d.Normalise();
-      Spawn(new SBBossShot(v, d * M_FOUR, 0xcc33ccff));
+      Spawn(new SBBossShot(v, d * 4, 0xcc33ccff));
       PlaySoundRandom(Lib::SOUND_BOSS_FIRE);
     }
 

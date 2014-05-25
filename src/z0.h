@@ -12,7 +12,6 @@
 // Forward declarations
 //------------------------------
 typedef unsigned int Colour;
-typedef Fix32 fixed;
 class Lib;
 class Game;
 class z0Game;
@@ -30,36 +29,11 @@ class DeathRayArm;
 void z_srand(int seed);
 int z_rand();
 
-int   z_int(fixed x);
-float z_float(fixed x);
-fixed z_abs(fixed x);
-fixed z_sqrt(fixed x);
-fixed z_sin(fixed x);
-fixed z_cos(fixed x);
-fixed z_atan2(fixed y, fixed x);
-
 // Vector math
 //------------------------------
 #undef M_PI
 #undef M_2PI
 #undef M_3PI
-
-const fixed M_PI = F32PI;
-const fixed M_2PI = F32PI * 2;
-const fixed M_3PI = F32PI * 3;
-const fixed M_ZERO = 0;
-const fixed M_ONE = 1;
-const fixed M_HALF = fixed(1) / fixed(2);
-const fixed M_TWO = 2;
-const fixed M_THREE = 3;
-const fixed M_FOUR = 4;
-const fixed M_FIVE = 5;
-const fixed M_SIX = 6;
-const fixed M_SEVEN = 7;
-const fixed M_EIGHT = 8;
-const fixed M_TEN = 10;
-const fixed M_PT_ZERO_ONE = fixed(1) / fixed(100);
-const fixed M_PT_ONE = fixed(1) / fixed(10);
 #define M_PIf 3.14159265358979323846264338327f
 
 class Vec2 {
@@ -82,12 +56,12 @@ public:
 
   fixed Length() const
   {
-    return z_sqrt(_x * _x + _y * _y);
+    return (_x * _x + _y * _y).sqrt();
   }
 
   fixed Angle() const
   {
-    return z_atan2(_y, _x);
+    return _y.atan2(_x);
   }
 
   void Set(fixed x, fixed y)
@@ -98,14 +72,14 @@ public:
 
   void SetPolar(fixed angle, fixed length)
   {
-    _x = length * z_cos(angle);
-    _y = length * z_sin(angle);
+    _x = length * angle.cos();
+    _y = length * angle.sin();
   }
 
   void Normalise()
   {
     fixed l = Length();
-    if (l <= M_ZERO) {
+    if (l <= 0) {
       return;
     }
     _x /= l;
@@ -206,8 +180,8 @@ public:
     , _y(y) {}
 
   explicit Vec2f(const Vec2& a)
-    : _x(z_float(a._x))
-    , _y(z_float(a._y)) {}
+    : _x(a._x.to_float())
+    , _y(a._y.to_float()) {}
 
   float Length() const
   {

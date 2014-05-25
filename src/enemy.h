@@ -89,7 +89,7 @@ private:
 
   bool _move;
   int _timer;
-  Vec2  _dir;
+  Vec2 _dir;
 
 };
 
@@ -100,7 +100,7 @@ public:
 
   static const fixed SPEED;
 
-  Square(const Vec2& position, fixed rotation = M_PI / M_TWO);
+  Square(const Vec2& position, fixed rotation = fixed::pi / 2);
   virtual ~Square() {}
 
   virtual void Update();

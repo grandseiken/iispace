@@ -54,7 +54,6 @@
     <ClCompile Include="..\src\boss.cpp" />
     <ClCompile Include="..\src\boss_enemy.cpp" />
     <ClCompile Include="..\src\enemy.cpp" />
-    <ClCompile Include="..\src\fix32.cpp" />
     <ClCompile Include="..\src\game.cpp" />
     <ClCompile Include="..\src\lib.cpp" />
     <ClCompile Include="..\src\lib_ii.cpp" />
@@ -66,6 +65,7 @@
     <ClCompile Include="..\src\stars.cpp" />
     <ClCompile Include="..\src\z0.cpp" />
     <ClCompile Include="..\src\z0_game.cpp" />
+    <ClCompile Include="..\src\fix32.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\src\boss.h" />

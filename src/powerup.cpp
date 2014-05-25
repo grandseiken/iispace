@@ -1,7 +1,7 @@
 #include "powerup.h"
 #include "player.h"
 
-const fixed Powerup::SPEED = M_ONE;
+const fixed Powerup::SPEED = 1;
 const int Powerup::TIME = 100;
 
 // Basic powerup
@@ -13,8 +13,8 @@ Powerup::Powerup(const Vec2& position)
   , _rotate(false)
   , _firstFrame(true)
 {
-  AddShape(new Polygon(Vec2(), 13, 5, 0, M_PI / M_TWO, 0));
-  AddShape(new Polygon(Vec2(), 9, 5, 0, M_PI / M_TWO, 0));
+  AddShape(new Polygon(Vec2(), 13, 5, 0, fixed::pi / 2, 0));
+  AddShape(new Polygon(Vec2(), 9, 5, 0, fixed::pi / 2, 0));
 }
 
 void Powerup::Update()
@@ -28,10 +28,10 @@ void Powerup::Update()
   }
   else {
     if (_firstFrame) {
-      _dir.SetPolar(GetLib().RandFloat() * M_2PI, 1);
+      _dir.SetPolar(GetLib().RandFloat() * 2 * fixed::pi, 1);
     }
 
-    _dir.Rotate(2 * M_PT_ZERO_ONE * (_rotate ? 1 : -1));
+    _dir.Rotate(2 * fixed::hundredth * (_rotate ? 1 : -1));
     if (!GetLib().RandInt(TIME)) {
       _rotate = !_rotate;
     }
@@ -45,7 +45,7 @@ void Powerup::Update()
     _dir = pv;
   }
   _dir.Normalise();
-  Move(_dir * SPEED * ((pv.Length() <= 40) ? M_THREE : M_ONE));
+  Move(_dir * SPEED * ((pv.Length() <= 40) ? 3 : 1));
   if (pv.Length() <= 10 && alive) {
     Damage(1, false, (Player*) p);
   }
@@ -61,7 +61,7 @@ void Powerup::Damage(int damage, bool magic, Player* source)
   int r = 5 + GetLib().RandInt(5);
   for (int i = 0; i < r; i++) {
     Vec2 dir;
-    dir.SetPolar(GetLib().RandFloat() * M_2PI, M_SIX);
+    dir.SetPolar(GetLib().RandFloat() * 2 * fixed::pi, 6);
     Spawn(new Particle(
         Vec2f(GetPosition()), 0xffffffff, Vec2f(dir), 4 + GetLib().RandInt(8)));
   }
@@ -73,7 +73,7 @@ void Powerup::Damage(int damage, bool magic, Player* source)
 ExtraLife::ExtraLife(const Vec2& position)
   : Powerup(position)
 {
-  AddShape(new Polygon(Vec2(), 8, 3, 0xffffffff, M_PI / M_TWO));
+  AddShape(new Polygon(Vec2(), 8, 3, 0xffffffff, fixed::pi / 2));
 }
 
 void ExtraLife::OnGet(Player* player)
@@ -101,7 +101,7 @@ void MagicShots::OnGet(Player* player)
 MagicShield::MagicShield(const Vec2& position)
   : Powerup(position)
 {
-  AddShape(new Polygon(Vec2(), 11, 5, 0xffffffff, M_PI / M_TWO));
+  AddShape(new Polygon(Vec2(), 11, 5, 0xffffffff, fixed::pi / 2));
 }
 
 void MagicShield::OnGet(Player* player)
@@ -115,7 +115,7 @@ void MagicShield::OnGet(Player* player)
 Bomb::Bomb(const Vec2& position)
   : Powerup(position)
 {
-  AddShape(new Polystar(Vec2(), 11, 10, 0xffffffff, M_PI / M_TWO));
+  AddShape(new Polystar(Vec2(), 11, 10, 0xffffffff, fixed::pi / 2));
 }
 
 void Bomb::OnGet(Player* player)

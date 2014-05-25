@@ -42,18 +42,22 @@ public:
   {
     return _player;
   }
+
   virtual bool IsWall() const
   {
     return false;
   }
+
   virtual bool IsEnemy() const
   {
     return false;
   }
+
   bool IsBoss() const
   {
     return _boss;
   }
+
   virtual bool IsPowerup() const
   {
     return false;
@@ -65,6 +69,7 @@ public:
   {
     return _position;
   }
+
   void SetPosition(const Vec2& position)
   {
     _position = position;
@@ -74,16 +79,19 @@ public:
   {
     return _rotation;
   }
+
   void SetRotation(fixed rotation)
   {
     _rotation =
-        rotation > M_2PI ? rotation - M_2PI :
-        rotation < 0 ? rotation + M_2PI : rotation;
+        rotation > 2 * fixed::pi ? rotation - 2 * fixed::pi :
+        rotation < 0 ? rotation + 2 * fixed::pi : rotation;
   }
+
   void Rotate(fixed rotation)
   {
     SetRotation(GetRotation() + rotation);
   }
+
   fixed GetBoundingWidth() const
   {
     return _boundingWidth;
@@ -94,6 +102,7 @@ public:
   bool CheckPoint(const Vec2& v, int category = 0) const;
   void Spawn(Ship* ship) const;
   void Spawn(Particle* particle) const;
+
   void RenderHPBar(float fill) const
   {
     _z0->RenderHPBar(fill);
@@ -105,28 +114,33 @@ public:
   {
     SetPosition(GetPosition() + v);
   }
+
   void Explosion(Colour c = 0, int time = 8,
                  bool towards = false, const Vec2f& v = Vec2f()) const;
   void RenderWithColour(Colour colour) const;
+
   bool IsOnScreen() const
   {
     return
         GetPosition()._x >= 0 && GetPosition()._x <= Lib::WIDTH &&
         GetPosition()._y >= 0 && GetPosition()._y <= Lib::HEIGHT;
   }
+
   static Vec2 GetScreenCentre()
   {
-    return Vec2(Lib::WIDTH / M_TWO, Lib::HEIGHT / M_TWO);
+    return Vec2(Lib::WIDTH / 2, Lib::HEIGHT / 2);
   }
 
   void AddLife()
   {
     _z0->AddLife();
   }
+
   void SubLife()
   {
     _z0->SubLife();
   }
+
   int GetLives() const
   {
     return _z0->GetLives();
@@ -136,18 +150,22 @@ public:
   {
     return _z0->GetNonWallCount();
   }
+
   z0Game::ShipList GetCollisionList(const Vec2& point, int category) const
   {
     return _z0->GetCollisionList(point, category);
   }
+
   z0Game::ShipList GetShipsInRadius(const Vec2& point, fixed radius) const
   {
     return _z0->GetShipsInRadius(point, radius);
   }
+
   const z0Game::ShipList& GetShips() const
   {
     return _z0->GetShips();
   }
+
   bool AnyCollisionList(const Vec2& point, int category) const
   {
     return _z0->AnyCollisionList(point, category);
@@ -157,30 +175,37 @@ public:
   {
     return _z0->CountPlayers();
   }
+
   Player* GetNearestPlayer() const
   {
     return _z0->GetNearestPlayer(GetPosition());
   }
+
   z0Game::ShipList GetPlayers() const
   {
     return _z0->GetPlayers();
   }
+
   bool IsBossMode() const
   {
     return _z0->IsBossMode();
   }
+
   bool IsHardMode() const
   {
     return _z0->IsHardMode();
   }
+
   bool IsFastMode() const
   {
     return _z0->IsFastMode();
   }
+
   bool IsWhatMode() const
   {
     return _z0->IsWhatMode();
   }
+
   void SetBossKilled(z0Game::BossList boss)
   {
     _z0->SetBossKilled(boss);
@@ -189,18 +214,21 @@ public:
   bool PlaySound(Lib::Sound sound)
   {
     return GetLib().PlaySound(
-        sound, 1.f, 2.f * z_float(GetPosition()._x) / Lib::WIDTH - 1.f);
+        sound, 1.f, 2.f * GetPosition()._x.to_float() / Lib::WIDTH - 1.f);
   }
+
   bool PlaySoundRandom(Lib::Sound sound, float pitch = 0.f, float volume = 1.f)
   {
     return GetLib().PlaySound(
-        sound, volume * (.5f * z_float(GetLib().RandFloat()) + .5f),
-        2.f * z_float(GetPosition()._x) / Lib::WIDTH - 1.f, pitch);
+        sound, volume * (.5f * GetLib().RandFloat().to_float() + .5f),
+        2.f * GetPosition()._x.to_float() / Lib::WIDTH - 1.f, pitch);
   }
+
   int GetEnemyValue() const
   {
     return _enemyValue;
   }
+
   void SetEnemyValue(int enemyValue)
   {
     _enemyValue = enemyValue;

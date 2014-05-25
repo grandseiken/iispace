@@ -4,13 +4,13 @@ Vec2f Star::_direction(0, 1);
 Star::StarList Star::_starList;
 
 Star::Star(z0Game& z0, float speed)
-: _timer(TIMER)
-, _speed(speed)
-, _z0(z0)
+  : _timer(TIMER)
+  , _speed(speed)
+  , _z0(z0)
 {
   _starList.push_back(this);
   int edge = _z0.GetLib().RandInt(4);
-  float ratio = z_float(_z0.GetLib().RandFloat());
+  float ratio = _z0.GetLib().RandFloat().to_float();
 
   if (edge < 2) {
     _position._x = ratio * Lib::WIDTH;

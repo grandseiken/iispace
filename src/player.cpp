@@ -4,11 +4,11 @@
 
 #include <algorithm>
 
-const fixed Player::SPEED = M_FIVE;
-const fixed Player::SHOT_SPEED = M_TEN;
+const fixed Player::SPEED = 5;
+const fixed Player::SHOT_SPEED = 10;
 const int Player::SHOT_TIMER = 4;
-const fixed Player::BOMB_RADIUS = M_ONE * 180;
-const fixed Player::BOMB_BOSSRADIUS = M_ONE * 280;
+const fixed Player::BOMB_RADIUS = 180;
+const fixed Player::BOMB_BOSSRADIUS = 280;
 const int Player::BOMB_DAMAGE = 50;
 const int Player::REVIVE_TIME = 100;
 const int Player::SHIELD_TIME = 50;
@@ -37,7 +37,7 @@ Player::Player(const Vec2& position, int playerNumber)
   AddShape(new Fill(Vec2(8, 0), 2, 2, GetPlayerColour()));
   AddShape(new Fill(Vec2(8, 0), 1, 1, GetPlayerColour() & 0xffffff33));
   AddShape(new Fill(Vec2(8, 0), 3, 3, GetPlayerColour() & 0xffffff33));
-  AddShape(new Polygon(Vec2(), 8, 3, GetPlayerColour(), M_PI));
+  AddShape(new Polygon(Vec2(), 8, 3, GetPlayerColour(), fixed::pi));
   _killQueue.clear();
   _shotSoundQueue.clear();
   _fireTimer = 0;
@@ -110,7 +110,7 @@ void Player::Update()
 
   // Movement
   Vec2 move = velocity;
-  if (move.Length() > M_PT_ZERO_ONE) {
+  if (move.Length() > fixed::hundredth) {
     if (move.Length() > 1) {
       move.Normalise();
     }
@@ -149,7 +149,7 @@ void Player::Update()
     Vec2f tf = Vec2f(t);
     for (int i = 0; i < 64; ++i) {
       Vec2 p;
-      p.SetPolar(2 * i * M_PI / 64, BOMB_RADIUS);
+      p.SetPolar(2 * i * fixed::pi / 64, BOMB_RADIUS);
       p += t;
       SetPosition(p);
       Explosion((i % 2) ? GetPlayerColour() : 0xffffffff,
@@ -186,12 +186,12 @@ void Player::Update()
 
       bool couldPlay = false;
       // Avoid randomness errors due to sound timings
-      float volume = .5f * z_float(GetLib().RandFloat()) + .5f;
-      float pitch = (z_float(GetLib().RandFloat()) - 1.f) / 12.f;
+      float volume = .5f * GetLib().RandFloat().to_float() + .5f;
+      float pitch = (GetLib().RandFloat().to_float() - 1.f) / 12.f;
       if (_shotSoundQueue.empty() || _shotSoundQueue[0] == this) {
         couldPlay = lib.PlaySound(
             Lib::SOUND_PLAYER_FIRE, volume,
-            2.f * z_float(GetPosition()._x) / Lib::WIDTH - 1.f, pitch);
+            2.f * GetPosition()._x.to_float() / Lib::WIDTH - 1.f, pitch);
       }
       if (couldPlay && !_shotSoundQueue.empty()) {
         _shotSoundQueue.erase(_shotSoundQueue.begin());
@@ -405,7 +405,7 @@ void Player::ActivateBomb()
     _shield = false;
   }
   _bomb = true;
-  AddShape(new Polystar(Vec2(-8, 0), 6, 5, 0xffffffff, M_PI));
+  AddShape(new Polystar(Vec2(-8, 0), 6, 5, 0xffffffff, fixed::pi));
 }
 
 // Player projectiles
@@ -420,11 +420,9 @@ Shot::Shot(const Vec2& position, Player* player,
 {
   _velocity.Normalise();
   _velocity *= Player::SHOT_SPEED;
-  AddShape(new Fill(Vec2(), M_TWO, M_TWO, _player->GetPlayerColour()));
-  AddShape(new Fill(Vec2(), M_ONE, M_ONE,
-           _player->GetPlayerColour() & 0xffffff33));
-  AddShape(new Fill(Vec2(), M_THREE, M_THREE,
-           _player->GetPlayerColour() & 0xffffff33));
+  AddShape(new Fill(Vec2(), 2, 2, _player->GetPlayerColour()));
+  AddShape(new Fill(Vec2(), 1, 1, _player->GetPlayerColour() & 0xffffff33));
+  AddShape(new Fill(Vec2(), 3, 3, _player->GetPlayerColour() & 0xffffff33));
 }
 
 void Shot::Render() const

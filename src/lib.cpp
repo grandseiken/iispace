@@ -246,9 +246,9 @@ void Lib::SaveSaveData(const SaveData& version2)
 
   std::stringstream out;
   out << "WiiSPACE v1.3\n" << version2._bossesKilled << " " <<
-    version2._hardModeBossesKilled << " " << total << " " <<
-    (total % 17) << " " << (total % 701) << " " <<
-    (total % 1171) << " " << (total % 1777) << "\n";
+      version2._hardModeBossesKilled << " " << total << " " <<
+      (total % 17) << " " << (total % 701) << " " <<
+      (total % 1171) << " " << (total % 1777) << "\n";
 
   for (int i = 0; i < 4 * PLAYERS + 1; ++i) {
     for (unsigned int j = 0;
@@ -347,7 +347,7 @@ void Lib::SaveSaveSettings(const Settings& settings)
       (settings._disableBackground ? "1" : "0") << "\n" <<
       SETTINGS_HUDCORRECTION << " " << settings._hudCorrection << "\n" <<
       SETTINGS_WINDOWED << " " << (settings._windowed ? "1" : "0") << "\n" <<
-      SETTINGS_VOLUME << " " << z_int(settings._volume);
+      SETTINGS_VOLUME << " " << settings._volume.to_int();
   out.close();
 }
 
@@ -392,12 +392,15 @@ void Lib::EndRecording(
 
 void fixed_write(std::stringstream& out, const fixed& f)
 {
-  out.write((char*) &f._value, sizeof(f._value));
+  auto t = f.to_internal();
+  out.write((char*) &t, sizeof(t));
 }
 
 void fixed_read(fixed& f, std::stringstream& in)
 {
-  in.read((char*) &f._value, sizeof(f._value));
+  auto t = f.to_internal();
+  in.read((char*) &t, sizeof(t));
+  f = fixed::from_internal(t);
 }
 
 void Lib::Record(Vec2 velocity, Vec2 target, int keys)
@@ -515,12 +518,15 @@ Colour Lib::RgbToHsl(Colour rgb) const
   r2 = (v - r) / vm;
   g2 = (v - g) / vm;
   b2 = (v - b) / vm;
-  if (r == v)
+  if (r == v) {
     h = (g == m ? 5.0 + b2 : 1.0 - g2);
-  else if (g == v)
+  }
+  else if (g == v) {
     h = (b == m ? 1.0 + r2 : 3.0 - b2);
-  else
+  }
+  else {
     h = (r == m ? 3.0 + g2 : 5.0 - r2);
+  }
   h /= 6.0;
   return
       ((int(0.5 + h * 255) & 0xff) << 24) |

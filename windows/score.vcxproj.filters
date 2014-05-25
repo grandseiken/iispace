@@ -4,7 +4,6 @@
     <ClCompile Include="..\src\boss.cpp" />
     <ClCompile Include="..\src\boss_enemy.cpp" />
     <ClCompile Include="..\src\enemy.cpp" />
-    <ClCompile Include="..\src\fix32.cpp" />
     <ClCompile Include="..\src\game.cpp" />
     <ClCompile Include="..\src\lib_ii.cpp" />
     <ClCompile Include="..\src\lib_score.cpp" />
@@ -61,12 +60,12 @@
       <Filter>zlib</Filter>
     </ClCompile>
     <ClCompile Include="..\src\lib.cpp" />
+    <ClCompile Include="..\src\fix32.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\src\boss.h" />
     <ClInclude Include="..\src\boss_enemy.h" />
     <ClInclude Include="..\src\enemy.h" />
-    <ClInclude Include="..\src\fix32.h" />
     <ClInclude Include="..\src\game.h" />
     <ClInclude Include="..\src\lib.h" />
     <ClInclude Include="..\src\lib_ii.h" />
@@ -79,6 +78,7 @@
     <ClInclude Include="..\src\stars.h" />
     <ClInclude Include="..\src\z0.h" />
     <ClInclude Include="..\src\z0_game.h" />
+    <ClInclude Include="..\src\fix32.h" />
   </ItemGroup>
   <ItemGroup>
     <Filter Include="zlib">

@@ -24,43 +24,6 @@ int z_rand()
   return (state >> 16) & 0x7fff;
 }
 
-#include "util/lookup.h"
-int z_int(fixed x)
-{
-  return x.to_int();
-}
-
-float z_float(fixed x)
-{
-  return x.to_float();
-}
-
-fixed z_abs(fixed x)
-{
-  fixed r = x < 0 ? -x : x;
-  return r;
-}
-
-fixed z_sqrt(fixed x)
-{
-  return x.sqrt();
-}
-
-fixed z_sin(fixed x)
-{
-  return x.sin();
-}
-
-fixed z_cos(fixed x)
-{
-  return x.cos();
-}
-
-fixed z_atan2(fixed y, fixed x)
-{
-  return y.atan2(x);
-}
-
 const int z0Game::STARTING_LIVES = 2;
 const int z0Game::BOSSMODE_LIVES = 1;
 
@@ -292,21 +255,21 @@ void z0Game::Update()
         _killTimer = 0;
       }
       else if (_selection == 2) {
-        lib.SetVolume(std::min(100, z_int(lib.LoadSettings()._volume) + 1));
+        lib.SetVolume(std::min(100, lib.LoadSettings()._volume.to_int() + 1));
       }
       GetLib().PlaySound(Lib::SOUND_MENU_ACCEPT);
     }
     if (lib.IsKeyPressed(Lib::KEY_LEFT) && _selection == 2) {
-      int t = z_int(lib.LoadSettings()._volume);
+      int t = lib.LoadSettings()._volume.to_int();
       lib.SetVolume(std::max(0, t - 1));
-      if (z_int(lib.LoadSettings()._volume) != t) {
+      if (lib.LoadSettings()._volume.to_int() != t) {
         GetLib().PlaySound(Lib::SOUND_MENU_CLICK);
       }
     }
     if (lib.IsKeyPressed(Lib::KEY_RIGHT) && _selection == 2) {
-      int t = z_int(lib.LoadSettings()._volume);
+      int t = lib.LoadSettings()._volume.to_int();
       lib.SetVolume(std::min(100, t + 1));
-      if (z_int(lib.LoadSettings()._volume) != t) {
+      if (lib.LoadSettings()._volume.to_int() != t) {
         GetLib().PlaySound(Lib::SOUND_MENU_CLICK);
       }
     }
@@ -902,13 +865,13 @@ void z0Game::Render() const
     lib.RenderText(Vec2f(6.f, 10.f), "END GAME", PANEL_TEXT);
     lib.RenderText(Vec2f(6.f, 12.f), "VOL.", PANEL_TEXT);
     std::stringstream vol;
-    int v = z_int(lib.LoadSettings()._volume);
+    int v = lib.LoadSettings()._volume.to_int();
     vol << " " << (v < 10 ? " " : "") << v;
     lib.RenderText(Vec2f(10.f, 12.f), vol.str(), PANEL_TEXT);
-    if (_selection == 2 && z_int(lib.LoadSettings()._volume) > 0) {
+    if (_selection == 2 && lib.LoadSettings()._volume.to_int() > 0) {
       lib.RenderText(Vec2f(5.f, 12.f), "<", PANEL_TRAN);
     }
-    if (_selection == 2 && z_int(lib.LoadSettings()._volume) < 100) {
+    if (_selection == 2 && lib.LoadSettings()._volume.to_int() < 100) {
       lib.RenderText(Vec2f(13.f, 12.f), ">", PANEL_TRAN);
     }
 
