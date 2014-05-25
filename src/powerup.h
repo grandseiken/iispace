@@ -5,91 +5,87 @@
 
 // Basic powerup
 //------------------------------
-class Powerup : public Ship 
-{
+class Powerup : public Ship {
 public:
-    
-    static const fixed SPEED;
-    static const int   TIME;
 
-    Powerup( const Vec2& position );
-    virtual ~Powerup() { }
+  static const fixed SPEED;
+  static const int TIME;
 
-    virtual void Update();
-    virtual void Damage( int damage, bool magic, Player* source );
-    virtual bool IsPowerup() const
-    {
-        return true;
-    }
+  Powerup(const Vec2& position);
+  virtual ~Powerup() {}
+
+  virtual void Update();
+  virtual void Damage(int damage, bool magic, Player* source);
+
+  virtual bool IsPowerup() const
+  {
+    return true;
+  }
 
 private:
 
-    virtual void OnGet( Player* player ) = 0;
+  virtual void OnGet(Player* player) = 0;
 
-    int  _frame;
-    Vec2 _dir;
-    bool _rotate;
-    bool _firstFrame;
+  int _frame;
+  Vec2 _dir;
+  bool _rotate;
+  bool _firstFrame;
 
 };
 
 // Extra life
 //------------------------------
-class ExtraLife : public Powerup
-{
+class ExtraLife : public Powerup {
 public:
 
-    ExtraLife( const Vec2& position );
-    virtual ~ExtraLife() { }
+  ExtraLife(const Vec2& position);
+  virtual ~ExtraLife() {}
 
 private:
 
-    virtual void OnGet( Player* player );
+  virtual void OnGet(Player* player);
 
 };
 
 // Magic shots
 //------------------------------
-class MagicShots : public Powerup
-{
+class MagicShots : public Powerup {
 public:
 
-    MagicShots( const Vec2& position );
-    virtual ~MagicShots() { }
+  MagicShots(const Vec2& position);
+  virtual ~MagicShots() {}
 
 private:
 
-    virtual void OnGet( Player* player );
+  virtual void OnGet(Player* player);
 
 };
 
 // Magic shield
 //------------------------------
-class MagicShield : public Powerup
-{
+class MagicShield : public Powerup {
 public:
 
-    MagicShield( const Vec2& position );
-    virtual ~MagicShield() { }
+  MagicShield(const Vec2& position);
+  virtual ~MagicShield() {}
 
 private:
 
-    virtual void OnGet( Player* player );
+  virtual void OnGet(Player* player);
 
 };
 
 // Bomb
 //------------------------------
-class Bomb : public Powerup
-{
+class Bomb : public Powerup {
 public:
 
-    Bomb( const Vec2& position );
-    virtual ~Bomb() { }
+  Bomb(const Vec2& position);
+  virtual ~Bomb() {}
 
 private:
 
-    virtual void OnGet( Player* player );
+  virtual void OnGet(Player* player);
 
 };
 

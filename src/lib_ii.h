@@ -14,132 +14,139 @@
 class LibWin : public Lib {
 public:
 
-    LibWin();
-    virtual ~LibWin();
+  LibWin();
+  virtual ~LibWin();
 
-    // General
-    //------------------------------
-    virtual void Init();
-    virtual void SetWorkingDirectory( bool original );
-    virtual void BeginFrame();
-    virtual void EndFrame();
-    virtual void CaptureMouse( bool enabled );
-    virtual void NewGame();
+  // General
+  //------------------------------
+  virtual void Init();
+  virtual void SetWorkingDirectory(bool original);
+  virtual void BeginFrame();
+  virtual void EndFrame();
+  virtual void CaptureMouse(bool enabled);
+  virtual void NewGame();
 
-    virtual void Exit( ExitType t );
-    virtual ExitType GetExitType() const;
-    virtual void SystemExit( bool powerOff ) const;
+  virtual void Exit(ExitType t);
+  virtual ExitType GetExitType() const;
+  virtual void SystemExit(bool powerOff) const;
 
-    virtual int   RandInt( int lessThan );
-    virtual fixed RandFloat();
+  virtual int RandInt(int lessThan);
+  virtual fixed RandFloat();
 
-    virtual Settings LoadSettings() const;
-    virtual void     SetVolume( int volume );
+  virtual Settings LoadSettings() const;
+  virtual void SetVolume(int volume);
 
-    virtual std::string SavePath() const
-    {
-        return "wiispace.sav";
-    }
-    virtual std::string SettingsPath() const
-    {
-        return "wiispace.txt";
-    }
-    virtual std::string ScreenshotPath() const
-    {
-        std::stringstream ss;
-        ss << "screenshot" << time( 0 ) % 10000000 << ".png";
-        return ss.str();
-    }
+  virtual std::string SavePath() const
+  {
+    return "wiispace.sav";
+  }
 
-    // Input
-    //------------------------------
-    virtual PadType IsPadConnected( int player ) const;
+  virtual std::string SettingsPath() const
+  {
+    return "wiispace.txt";
+  }
 
-    virtual bool IsKeyPressed ( int player, Key k ) const;
-    virtual bool IsKeyReleased( int player, Key k ) const;
-    virtual bool IsKeyHeld    ( int player, Key k ) const;
+  virtual std::string ScreenshotPath() const
+  {
+    std::stringstream ss;
+    ss << "screenshot" << time(0) % 10000000 << ".png";
+    return ss.str();
+  }
 
-    virtual Vec2 GetMoveVelocity ( int player ) const;
-    virtual Vec2 GetFireTarget   ( int player, const Vec2& position ) const;
+  // Input
+  //------------------------------
+  virtual PadType IsPadConnected(int player) const;
 
-    // Output
-    //------------------------------
-	virtual void ClearScreen() const;
-    virtual void RenderLine( const Vec2f& a, const Vec2f& b, Colour c ) const;
-    virtual void RenderText( const Vec2f& v, const std::string& text, Colour c ) const;
-    virtual void RenderRect( const Vec2f& low, const Vec2f& hi, Colour c, int lineWidth = 0 ) const;
-    virtual void Render() const;
+  virtual bool IsKeyPressed(int player, Key k) const;
+  virtual bool IsKeyReleased(int player, Key k) const;
+  virtual bool IsKeyHeld(int player, Key k) const;
 
-    virtual void Rumble( int player, int time );
-    virtual void StopRumble();
-    virtual bool PlaySound( Sound sound, float volume = 1.f, float pan = 0.f, float repitch = 0.f );
+  virtual Vec2 GetMoveVelocity(int player) const;
+  virtual Vec2 GetFireTarget(int player, const Vec2& position) const;
 
-    virtual void TakeScreenShot();
+  // Output
+  //------------------------------
+  virtual void ClearScreen() const;
+  virtual void RenderLine(const Vec2f& a, const Vec2f& b, Colour c) const;
+  virtual void RenderText(
+      const Vec2f& v, const std::string& text, Colour c) const;
+  virtual void RenderRect(
+      const Vec2f& low, const Vec2f& hi, Colour c, int lineWidth = 0) const;
+  virtual void Render() const;
+
+  virtual void Rumble(int player, int time);
+  virtual void StopRumble();
+  virtual bool PlaySound(
+      Sound sound, float volume = 1.f, float pan = 0.f, float repitch = 0.f);
+
+  virtual void TakeScreenShot();
 
 private:
 
-    // Internal
-    //------------------------------
-    mutable sf::RenderWindow _window;
-    sf::Image                _image;
-    mutable sf::Sprite       _font;
-    ExitType                 _exitType;
-    char*                    _cwd;
-    std::vector< char >      _exe;
+  // Internal
+  //------------------------------
+  mutable sf::RenderWindow _window;
+  sf::Image _image;
+  mutable sf::Sprite _font;
+  ExitType _exitType;
+  char* _cwd;
+  std::vector<char>  _exe;
 
-    std::vector< std::vector< bool > > _keysPressed;
-    std::vector< std::vector< bool > > _keysHeld;
-    std::vector< std::vector< bool > > _keysReleased;
-    bool                _captureMouse;
-    int                 _mousePosX;
-    int                 _mousePosY;
-    int                 _extraX;
-    int                 _extraY;
-    mutable bool        _mouseMoving;
+  std::vector<std::vector<bool>> _keysPressed;
+  std::vector<std::vector<bool>> _keysHeld;
+  std::vector<std::vector<bool>> _keysReleased;
 
-    class Handler : public OIS::JoyStickListener {
-    public:
+  bool _captureMouse;
+  int _mousePosX;
+  int _mousePosY;
+  int _extraX;
+  int _extraY;
+  mutable bool _mouseMoving;
 
-        void SetLib( LibWin* lib )
-        {
-            _lib = lib;
-        }
+  class Handler : public OIS::JoyStickListener {
+  public:
 
-        bool buttonPressed( const OIS::JoyStickEvent& arg, int button );
-        bool buttonReleased( const OIS::JoyStickEvent& arg, int button );
-        bool axisMoved( const OIS::JoyStickEvent& arg, int axis );
-        bool povMoved( const OIS::JoyStickEvent& arg, int pov );
+    void SetLib(LibWin* lib)
+    {
+      _lib = lib;
+    }
 
-    private:
+    bool buttonPressed(const OIS::JoyStickEvent& arg, int button);
+    bool buttonReleased(const OIS::JoyStickEvent& arg, int button);
+    bool axisMoved(const OIS::JoyStickEvent& arg, int axis);
+    bool povMoved(const OIS::JoyStickEvent& arg, int pov);
 
-        LibWin* _lib;
+  private:
 
-    };
-    OIS::InputManager*  _manager;
-    Handler             _padHandler;
-    int                 _padCount;
-    PadConfig           _padConfig[ PLAYERS ];
-    OIS::JoyStick*      _pads[ PLAYERS ];
-    OIS::ForceFeedback* _ff[ PLAYERS ];
-    fixed               _padMoveVAxes[ PLAYERS ];
-    fixed               _padMoveHAxes[ PLAYERS ];
-    fixed               _padAimVAxes[ PLAYERS ];
-    fixed               _padAimHAxes[ PLAYERS ];
-    int                 _padMoveDpads[ PLAYERS ];
-    int                 _padAimDpads[ PLAYERS ];
-    mutable Vec2        _padLastAim[ PLAYERS ];
+    LibWin* _lib;
 
-    typedef std::pair< int, sf::SoundBuffer* > NamedSound;
-    typedef std::pair< int, NamedSound >       SoundResource;
-    typedef std::vector< SoundResource >       SoundList;
-    SoundList                                  _sounds;
-    std::vector< sf::Sound* >                  _voices;
+  };
 
-    void LoadSounds();
+  OIS::InputManager*  _manager;
+  Handler _padHandler;
+  int _padCount;
+  PadConfig _padConfig[PLAYERS];
+  OIS::JoyStick* _pads[PLAYERS];
+  OIS::ForceFeedback* _ff[PLAYERS];
+  fixed _padMoveVAxes[PLAYERS];
+  fixed _padMoveHAxes[PLAYERS];
+  fixed _padAimVAxes[PLAYERS];
+  fixed _padAimHAxes[PLAYERS];
+  int _padMoveDpads[PLAYERS];
+  int _padAimDpads[PLAYERS];
+  mutable Vec2 _padLastAim[PLAYERS];
 
-    // Data
-    //------------------------------
-    Settings                  _settings;
+  typedef std::pair<int, sf::SoundBuffer*> NamedSound;
+  typedef std::pair<int, NamedSound> SoundResource;
+  typedef std::vector<SoundResource> SoundList;
+  SoundList _sounds;
+  std::vector<sf::Sound*> _voices;
+
+  void LoadSounds();
+
+  // Data
+  //------------------------------
+  Settings _settings;
 
 };
 

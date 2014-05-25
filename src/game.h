@@ -7,27 +7,27 @@
 class Game {
 public:
 
-    // General
-    //------------------------------
-    Game( Lib& lib );
-    virtual ~Game();
-    Lib::ExitType Run();
+  // General
+  //------------------------------
+  Game(Lib& lib);
+  virtual ~Game();
+  Lib::ExitType Run();
 
-    // Game functions
-    //------------------------------
-    virtual void Update() = 0;
-    virtual void Render() const = 0;
+  // Game functions
+  //------------------------------
+  virtual void Update() = 0;
+  virtual void Render() const = 0;
 
-    // Library accessor
-    //------------------------------
-    Lib& GetLib() const
-    {
-        return _lib;
-    }
+  // Library accessor
+  //------------------------------
+  Lib& GetLib() const
+  {
+    return _lib;
+  }
 
 private:
 
-    Lib&      _lib;
+  Lib& _lib;
 
 };
 
