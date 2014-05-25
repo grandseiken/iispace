@@ -3,6 +3,7 @@
 
 #include "z0.h"
 #include <map>
+struct score_finished {};
 
 class Lib {
 public:

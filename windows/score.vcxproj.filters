@@ -6,7 +6,6 @@
     <ClCompile Include="..\src\enemy.cpp" />
     <ClCompile Include="..\src\fix32.cpp" />
     <ClCompile Include="..\src\game.cpp" />
-    <ClCompile Include="..\src\lib.cpp" />
     <ClCompile Include="..\src\lib_ii.cpp" />
     <ClCompile Include="..\src\lib_score.cpp" />
     <ClCompile Include="..\src\overmind.cpp" />
@@ -19,13 +18,13 @@
     <ClCompile Include="..\dependencies\zlib_1_2_8\adler32.c">
       <Filter>zlib</Filter>
     </ClCompile>
+    <ClCompile Include="..\dependencies\zlib_1_2_8\compress.c">
+      <Filter>zlib</Filter>
+    </ClCompile>
     <ClCompile Include="..\dependencies\zlib_1_2_8\crc32.c">
       <Filter>zlib</Filter>
     </ClCompile>
     <ClCompile Include="..\dependencies\zlib_1_2_8\deflate.c">
-      <Filter>zlib</Filter>
-    </ClCompile>
-    <ClCompile Include="..\dependencies\zlib_1_2_8\compress.c">
       <Filter>zlib</Filter>
     </ClCompile>
     <ClCompile Include="..\dependencies\zlib_1_2_8\gzclose.c">
@@ -52,15 +51,16 @@
     <ClCompile Include="..\dependencies\zlib_1_2_8\inftrees.c">
       <Filter>zlib</Filter>
     </ClCompile>
-    <ClCompile Include="..\dependencies\zlib_1_2_8\uncompr.c">
+    <ClCompile Include="..\dependencies\zlib_1_2_8\trees.c">
       <Filter>zlib</Filter>
     </ClCompile>
-    <ClCompile Include="..\dependencies\zlib_1_2_8\trees.c">
+    <ClCompile Include="..\dependencies\zlib_1_2_8\uncompr.c">
       <Filter>zlib</Filter>
     </ClCompile>
     <ClCompile Include="..\dependencies\zlib_1_2_8\zutil.c">
       <Filter>zlib</Filter>
     </ClCompile>
+    <ClCompile Include="..\src\lib.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\src\boss.h" />
@@ -82,7 +82,7 @@
   </ItemGroup>
   <ItemGroup>
     <Filter Include="zlib">
-      <UniqueIdentifier>{6f7bae9d-738c-427d-8967-174f3ee11b47}</UniqueIdentifier>
+      <UniqueIdentifier>{f8a143b3-0a8e-4152-8590-37c39420b2e9}</UniqueIdentifier>
     </Filter>
   </ItemGroup>
 </Project>

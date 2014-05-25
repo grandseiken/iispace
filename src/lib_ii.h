@@ -2,7 +2,7 @@
 #define IISPACE_SRC_LIB_II_H
 
 #include "lib.h"
-#include "gamepad/gamepad.h"
+#include "util/gamepad.h"
 #include <stdio.h>
 #include <stdlib.h>
 #include <SFML/Graphics.hpp>

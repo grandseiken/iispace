@@ -18,7 +18,7 @@ void LibRepScore::OnScore(long seed, int players, bool bossMode, long score,
   std::cout << seed << "\n" << players << "\n" << bossMode << "\n" <<
       hardMode << "\n" << fastMode << "\n" << whatMode << "\n" <<
       score << "\n" << std::flush;
-  exit(0);
+  throw score_finished{};
 }
 
 // General

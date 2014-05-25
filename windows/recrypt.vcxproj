@@ -18,59 +18,9 @@
       <Platform>x64</Platform>
     </ProjectConfiguration>
   </ItemGroup>
-  <ItemGroup>
-    <ClInclude Include="..\src\boss.h" />
-    <ClInclude Include="..\src\boss_enemy.h" />
-    <ClInclude Include="..\src\enemy.h" />
-    <ClInclude Include="..\src\fix32.h" />
-    <ClInclude Include="..\src\game.h" />
-    <ClInclude Include="..\src\lib.h" />
-    <ClInclude Include="..\src\lib_ii.h" />
-    <ClInclude Include="..\src\lib_score.h" />
-    <ClInclude Include="..\src\overmind.h" />
-    <ClInclude Include="..\src\player.h" />
-    <ClInclude Include="..\src\powerup.h" />
-    <ClInclude Include="..\src\shape.h" />
-    <ClInclude Include="..\src\ship.h" />
-    <ClInclude Include="..\src\stars.h" />
-    <ClInclude Include="..\src\z0.h" />
-    <ClInclude Include="..\src\z0_game.h" />
-  </ItemGroup>
-  <ItemGroup>
-    <ClCompile Include="..\dependencies\zlib_1_2_8\adler32.c" />
-    <ClCompile Include="..\dependencies\zlib_1_2_8\compress.c" />
-    <ClCompile Include="..\dependencies\zlib_1_2_8\crc32.c" />
-    <ClCompile Include="..\dependencies\zlib_1_2_8\deflate.c" />
-    <ClCompile Include="..\dependencies\zlib_1_2_8\gzclose.c" />
-    <ClCompile Include="..\dependencies\zlib_1_2_8\gzlib.c" />
-    <ClCompile Include="..\dependencies\zlib_1_2_8\gzread.c" />
-    <ClCompile Include="..\dependencies\zlib_1_2_8\gzwrite.c" />
-    <ClCompile Include="..\dependencies\zlib_1_2_8\infback.c" />
-    <ClCompile Include="..\dependencies\zlib_1_2_8\inffast.c" />
-    <ClCompile Include="..\dependencies\zlib_1_2_8\inflate.c" />
-    <ClCompile Include="..\dependencies\zlib_1_2_8\inftrees.c" />
-    <ClCompile Include="..\dependencies\zlib_1_2_8\trees.c" />
-    <ClCompile Include="..\dependencies\zlib_1_2_8\uncompr.c" />
-    <ClCompile Include="..\dependencies\zlib_1_2_8\zutil.c" />
-    <ClCompile Include="..\src\boss.cpp" />
-    <ClCompile Include="..\src\boss_enemy.cpp" />
-    <ClCompile Include="..\src\enemy.cpp" />
-    <ClCompile Include="..\src\fix32.cpp" />
-    <ClCompile Include="..\src\game.cpp" />
-    <ClCompile Include="..\src\lib.cpp" />
-    <ClCompile Include="..\src\lib_ii.cpp" />
-    <ClCompile Include="..\src\lib_score.cpp" />
-    <ClCompile Include="..\src\overmind.cpp" />
-    <ClCompile Include="..\src\player.cpp" />
-    <ClCompile Include="..\src\powerup.cpp" />
-    <ClCompile Include="..\src\ship.cpp" />
-    <ClCompile Include="..\src\stars.cpp" />
-    <ClCompile Include="..\src\z0.cpp" />
-    <ClCompile Include="..\src\z0_game.cpp" />
-  </ItemGroup>
   <PropertyGroup Label="Globals">
-    <ProjectGuid>{F900F8BE-6839-4F7A-B28E-448A1802DC29}</ProjectGuid>
-    <RootNamespace>gamepad</RootNamespace>
+    <ProjectGuid>{2372DED9-61BE-414A-81FA-D46A5E8F7F0A}</ProjectGuid>
+    <RootNamespace>recrypt</RootNamespace>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" Label="Configuration">
@@ -117,31 +67,28 @@
   <PropertyGroup Label="UserMacros" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <OutDir>$(SolutionDir)$(Platform)\$(Configuration)\</OutDir>
-    <IntDir>$(Platform)\$(Configuration)\iispace\</IntDir>
+    <IntDir>$(Platform)\$(Configuration)\recrypt\</IntDir>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
-    <IntDir>$(Platform)\$(Configuration)\iispace\</IntDir>
     <OutDir>$(SolutionDir)$(Platform)\$(Configuration)\</OutDir>
-  </PropertyGroup>
-  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
-    <IntDir>$(Platform)\$(Configuration)\iispace\</IntDir>
+    <IntDir>$(Platform)\$(Configuration)\recrypt\</IntDir>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
-    <IntDir>$(Platform)\$(Configuration)\iispace\</IntDir>
+    <IntDir>$(Platform)\$(Configuration)\recrypt\</IntDir>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
+    <IntDir>$(Platform)\$(Configuration)\recrypt\</IntDir>
   </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <ClCompile>
       <WarningLevel>Level3</WarningLevel>
       <Optimization>Disabled</Optimization>
       <SDLCheck>true</SDLCheck>
-      <AdditionalIncludeDirectories>..\dependencies\ois_1_3\includes;..\dependencies\zlib_1_2_8;..\dependencies\sfml_1_6\include</AdditionalIncludeDirectories>
-      <PreprocessorDefinitions>_CRT_SECURE_NO_WARNINGS;_CRT_NONSTDC_NO_DEPRECATE;PLATFORM_IISPACE</PreprocessorDefinitions>
+      <PreprocessorDefinitions>_CRT_SECURE_NO_WARNINGS;_CRT_NONSTDC_NO_DEPRECATE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <AdditionalIncludeDirectories>..\dependencies\zlib_1_2_8;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
       <GenerateDebugInformation>true</GenerateDebugInformation>
-      <AdditionalLibraryDirectories>..\dependencies\ois_1_3\lib;..\dependencies\sfml_1_6\lib;..\dependencies\sfml_1_6\extlibs\libs-vc2005</AdditionalLibraryDirectories>
-      <AdditionalDependencies>OIS_static_d.lib;sfml-audio-s-d.lib;sfml-graphics-s-d.lib;sfml-main-d.lib;sfml-system-s-d.lib;sfml-window-s-d.lib;freetype.lib;OpenAL32.lib;sndfile.lib;%(AdditionalDependencies)</AdditionalDependencies>
-      <SubSystem>Console</SubSystem>
     </Link>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
@@ -149,14 +96,11 @@
       <WarningLevel>Level3</WarningLevel>
       <Optimization>Disabled</Optimization>
       <SDLCheck>true</SDLCheck>
-      <AdditionalIncludeDirectories>..\dependencies\ois_1_3\includes;..\dependencies\zlib_1_2_8;..\dependencies\sfml_1_6\include</AdditionalIncludeDirectories>
-      <PreprocessorDefinitions>_CRT_SECURE_NO_WARNINGS;_CRT_NONSTDC_NO_DEPRECATE;PLATFORM_IISPACE;PLATFORM_64</PreprocessorDefinitions>
+      <PreprocessorDefinitions>_CRT_SECURE_NO_WARNINGS;_CRT_NONSTDC_NO_DEPRECATE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <AdditionalIncludeDirectories>..\dependencies\zlib_1_2_8;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
       <GenerateDebugInformation>true</GenerateDebugInformation>
-      <AdditionalLibraryDirectories>..\dependencies\ois_1_3\lib64;..\dependencies\sfml_1_6\lib64;..\dependencies\sfml_1_6\extlibs\libs-vc2005</AdditionalLibraryDirectories>
-      <AdditionalDependencies>OIS_d.lib;sfml-audio-s-d.lib;sfml-graphics-s-d.lib;sfml-main-d.lib;sfml-system-s-d.lib;sfml-window-s-d.lib;freetype.lib;OpenAL32.lib;sndfile.lib;%(AdditionalDependencies)</AdditionalDependencies>
-      <SubSystem>Console</SubSystem>
     </Link>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
@@ -166,16 +110,13 @@
       <FunctionLevelLinking>true</FunctionLevelLinking>
       <IntrinsicFunctions>true</IntrinsicFunctions>
       <SDLCheck>true</SDLCheck>
-      <AdditionalIncludeDirectories>..\dependencies\ois_1_3\includes;..\dependencies\zlib_1_2_8;..\dependencies\sfml_1_6\include</AdditionalIncludeDirectories>
-      <PreprocessorDefinitions>_CRT_SECURE_NO_WARNINGS;_CRT_NONSTDC_NO_DEPRECATE;PLATFORM_IISPACE</PreprocessorDefinitions>
+      <PreprocessorDefinitions>_CRT_SECURE_NO_WARNINGS;_CRT_NONSTDC_NO_DEPRECATE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <AdditionalIncludeDirectories>..\dependencies\zlib_1_2_8;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
       <OptimizeReferences>true</OptimizeReferences>
-      <AdditionalLibraryDirectories>..\dependencies\ois_1_3\lib;..\dependencies\sfml_1_6\lib;..\dependencies\sfml_1_6\extlibs\libs-vc2005</AdditionalLibraryDirectories>
-      <AdditionalDependencies>OIS_static.lib;sfml-audio-s.lib;sfml-graphics-s.lib;sfml-main.lib;sfml-system-s.lib;sfml-window-s.lib;freetype.lib;OpenAL32.lib;sndfile.lib;%(AdditionalDependencies)</AdditionalDependencies>
-      <SubSystem>Console</SubSystem>
     </Link>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
@@ -185,18 +126,33 @@
       <FunctionLevelLinking>true</FunctionLevelLinking>
       <IntrinsicFunctions>true</IntrinsicFunctions>
       <SDLCheck>true</SDLCheck>
-      <AdditionalIncludeDirectories>..\dependencies\ois_1_3\includes;..\dependencies\zlib_1_2_8;..\dependencies\sfml_1_6\include</AdditionalIncludeDirectories>
-      <PreprocessorDefinitions>_CRT_SECURE_NO_WARNINGS;_CRT_NONSTDC_NO_DEPRECATE;PLATFORM_IISPACE;PLATFORM_64</PreprocessorDefinitions>
+      <PreprocessorDefinitions>_CRT_SECURE_NO_WARNINGS;_CRT_NONSTDC_NO_DEPRECATE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <AdditionalIncludeDirectories>..\dependencies\zlib_1_2_8;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
       <OptimizeReferences>true</OptimizeReferences>
-      <AdditionalLibraryDirectories>..\dependencies\ois_1_3\lib64;..\dependencies\sfml_1_6\lib64;..\dependencies\sfml_1_6\extlibs\libs-vc2005</AdditionalLibraryDirectories>
-      <AdditionalDependencies>OIS.lib;sfml-audio-s.lib;sfml-graphics-s.lib;sfml-main.lib;sfml-system-s.lib;sfml-window-s.lib;freetype.lib;OpenAL32.lib;sndfile.lib;%(AdditionalDependencies)</AdditionalDependencies>
-      <SubSystem>Console</SubSystem>
     </Link>
   </ItemDefinitionGroup>
+  <ItemGroup>
+    <ClCompile Include="..\dependencies\zlib_1_2_8\adler32.c" />
+    <ClCompile Include="..\dependencies\zlib_1_2_8\compress.c" />
+    <ClCompile Include="..\dependencies\zlib_1_2_8\crc32.c" />
+    <ClCompile Include="..\dependencies\zlib_1_2_8\deflate.c" />
+    <ClCompile Include="..\dependencies\zlib_1_2_8\gzclose.c" />
+    <ClCompile Include="..\dependencies\zlib_1_2_8\gzlib.c" />
+    <ClCompile Include="..\dependencies\zlib_1_2_8\gzread.c" />
+    <ClCompile Include="..\dependencies\zlib_1_2_8\gzwrite.c" />
+    <ClCompile Include="..\dependencies\zlib_1_2_8\infback.c" />
+    <ClCompile Include="..\dependencies\zlib_1_2_8\inffast.c" />
+    <ClCompile Include="..\dependencies\zlib_1_2_8\inflate.c" />
+    <ClCompile Include="..\dependencies\zlib_1_2_8\inftrees.c" />
+    <ClCompile Include="..\dependencies\zlib_1_2_8\trees.c" />
+    <ClCompile Include="..\dependencies\zlib_1_2_8\uncompr.c" />
+    <ClCompile Include="..\dependencies\zlib_1_2_8\zutil.c" />
+    <ClCompile Include="..\src\util\recrypt.cpp" />
+  </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
   </ImportGroup>

@@ -27,7 +27,6 @@
     <ClInclude Include="..\src\lib.h" />
     <ClInclude Include="..\src\lib_ii.h" />
     <ClInclude Include="..\src\lib_score.h" />
-    <ClInclude Include="..\src\lookup.h" />
     <ClInclude Include="..\src\overmind.h" />
     <ClInclude Include="..\src\player.h" />
     <ClInclude Include="..\src\powerup.h" />
@@ -53,7 +52,6 @@
     <ClCompile Include="..\dependencies\zlib_1_2_8\trees.c" />
     <ClCompile Include="..\dependencies\zlib_1_2_8\uncompr.c" />
     <ClCompile Include="..\dependencies\zlib_1_2_8\zutil.c" />
-    <ClCompile Include="..\src\aliasing.cpp" />
     <ClCompile Include="..\src\boss.cpp" />
     <ClCompile Include="..\src\boss_enemy.cpp" />
     <ClCompile Include="..\src\enemy.cpp" />

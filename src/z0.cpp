@@ -7,30 +7,12 @@
 #include "lib_score.h"
 #include <cstdlib>
 #include <vector>
-
-int main(int argc, char** argv)
-{
-  std::vector< std::string > args;
-  char* s = getenv("QUERY_STRING");
-  if (s) {
-    args.push_back(std::string(s));
-  }
-  else for (int i = 1; i < argc; ++i) {
-    args.push_back(std::string(argv[i]));
-  }
-  std::cout << "Content-type: text/plain" << std::endl << std::endl;
-#else
-int main(int argc, char** argv)
-{
-  std::vector< std::string > args;
-  for (int i = 1; i < argc; ++i) {
-    args.push_back(std::string(argv[i]));
-  }
 #endif
 
-  Lib*    lib = 0;
+int run(const std::vector<std::string>& args)
+{
+  Lib* lib = 0;
   z0Game* game = 0;
-
   try {
 #ifdef PLATFORM_IISPACE
     lib = new LibWin();
@@ -58,10 +40,10 @@ int main(int argc, char** argv)
 
     delete lib;
     lib = 0;
-
+    return 0;
   }
-  catch (std::exception& e) {
-    std::cout << e.what() << std::endl;
+  catch (const score_finished&) {
+    return 0;
     if (game) {
       delete game;
     }
@@ -69,6 +51,59 @@ int main(int argc, char** argv)
       delete lib;
     }
   }
+  catch (const std::exception& e) {
+    std::cout << e.what() << std::endl;
+    if (game) {
+      delete game;
+    }
+    if (lib) {
+      delete lib;
+    }
+    return 1;
+  }
+}
 
-  return 0;
+int test(const std::string& replay)
+{
+  std::vector<std::string> args;
+  args.push_back(replay);
+  std::cout << "testing " << replay << std::endl;
+  return run(args);
+}
+
+int main(int argc, char** argv)
+{
+  std::vector<std::string> args;
+  bool is_test = false;
+
+#ifdef PLATFORM_SCORE
+  char* s = getenv("QUERY_STRING");
+  if (s) {
+    args.push_back(std::string(s));
+  }
+  else for (int i = 1; i < argc; ++i) {
+    if (argv[i] == std::string("--test") ||
+        argv[i] == std::string("-test")) {
+      is_test = true;
+      continue;
+    }
+    args.push_back(std::string(argv[i]));
+  }
+  std::cout << "Content-type: text/plain" << std::endl << std::endl;
+#else
+  for (int i = 1; i < argc; ++i) {
+    args.push_back(std::string(argv[i]));
+  }
+#endif
+
+  if (is_test) {
+    test("tests/Darb_2p__Graves  Darb_553403.wrp");
+    test("tests/Darb_4p__Team Graves_430987.wrp");
+    test("tests/seiken_1p__crikey_641530.wrp");
+    test("tests/seiken_2p__RAB  STU Yo_477833.wrp");
+    test("tests/seiken_3p__3 OF US_219110.wrp");
+  }
+  else {
+    return run(args);
+  }
 }

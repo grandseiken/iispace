@@ -24,7 +24,7 @@ int z_rand()
   return (state >> 16) & 0x7fff;
 }
 
-#include "lookup/lookup.h"
+#include "util/lookup.h"
 int z_int(fixed x)
 {
   return x.to_int();

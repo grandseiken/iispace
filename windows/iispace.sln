@@ -10,6 +10,8 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "iispace", "iispace.vcxproj"
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "score", "score.vcxproj", "{B62010E9-1F96-4403-A4B4-3C841309BE3E}"
 EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "recrypt", "recrypt.vcxproj", "{2372DED9-61BE-414A-81FA-D46A5E8F7F0A}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Mixed Platforms = Debug|Mixed Platforms
@@ -68,6 +70,18 @@ Global
 		{B62010E9-1F96-4403-A4B4-3C841309BE3E}.Release|Win32.Build.0 = Release|Win32
 		{B62010E9-1F96-4403-A4B4-3C841309BE3E}.Release|x64.ActiveCfg = Release|x64
 		{B62010E9-1F96-4403-A4B4-3C841309BE3E}.Release|x64.Build.0 = Release|x64
+		{2372DED9-61BE-414A-81FA-D46A5E8F7F0A}.Debug|Mixed Platforms.ActiveCfg = Debug|Win32
+		{2372DED9-61BE-414A-81FA-D46A5E8F7F0A}.Debug|Mixed Platforms.Build.0 = Debug|Win32
+		{2372DED9-61BE-414A-81FA-D46A5E8F7F0A}.Debug|Win32.ActiveCfg = Debug|Win32
+		{2372DED9-61BE-414A-81FA-D46A5E8F7F0A}.Debug|Win32.Build.0 = Debug|Win32
+		{2372DED9-61BE-414A-81FA-D46A5E8F7F0A}.Debug|x64.ActiveCfg = Debug|x64
+		{2372DED9-61BE-414A-81FA-D46A5E8F7F0A}.Debug|x64.Build.0 = Debug|x64
+		{2372DED9-61BE-414A-81FA-D46A5E8F7F0A}.Release|Mixed Platforms.ActiveCfg = Release|Win32
+		{2372DED9-61BE-414A-81FA-D46A5E8F7F0A}.Release|Mixed Platforms.Build.0 = Release|Win32
+		{2372DED9-61BE-414A-81FA-D46A5E8F7F0A}.Release|Win32.ActiveCfg = Release|Win32
+		{2372DED9-61BE-414A-81FA-D46A5E8F7F0A}.Release|Win32.Build.0 = Release|Win32
+		{2372DED9-61BE-414A-81FA-D46A5E8F7F0A}.Release|x64.ActiveCfg = Release|x64
+		{2372DED9-61BE-414A-81FA-D46A5E8F7F0A}.Release|x64.Build.0 = Release|x64
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
