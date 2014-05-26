@@ -153,7 +153,7 @@ void Chaser::Update()
 Square::Square(const Vec2& position, fixed rotation)
   : Enemy(position, 4)
   , _dir()
-  , _timer(z_rand() % 80 + 40)
+  , _timer(z::rand_int(80) + 40)
 {
   AddShape(new Box(Vec2(), 10, 10, 0x33ff33ff, 0, ENEMY | VULNERABLE));
   _dir.SetPolar(rotation, 1);
@@ -168,7 +168,7 @@ void Square::Update()
     _timer--;
   }
   else {
-    _timer = GetLib().RandInt(80) + 40;
+    _timer = z::rand_int(80) + 40;
   }
 
   if (_timer == 0) {
@@ -461,7 +461,7 @@ void Shielder::Update()
     if (_timer > TIMER * 2) {
       _timer = TIMER;
       _rotate = true;
-      _rDir = GetLib().RandInt(2) != 0;
+      _rDir = z::rand_int(2) != 0;
     }
     if (IsOnScreen() && _timer % TIMER == TIMER / 2 && _power) {
       Player* p = GetNearestPlayer();

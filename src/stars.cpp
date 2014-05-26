@@ -3,14 +3,13 @@
 Vec2f Star::_direction(0, 1);
 Star::StarList Star::_starList;
 
-Star::Star(z0Game& z0, float speed)
+Star::Star(float speed)
   : _timer(TIMER)
   , _speed(speed)
-  , _z0(z0)
 {
   _starList.push_back(this);
-  int edge = _z0.GetLib().RandInt(4);
-  float ratio = _z0.GetLib().RandFloat().to_float();
+  int edge = z::rand_int(4);
+  float ratio = z::rand_fixed().to_float();
 
   if (edge < 2) {
     _position._x = ratio * Lib::WIDTH;
@@ -48,36 +47,31 @@ void Star::Update()
   }
 }
 
-void Star::Render()
+void Star::Render(Lib& lib)
 {
   for (std::size_t i = 0; i < _starList.size(); i++) {
-    _starList[i]->RenderStar(
-        _starList[i]->_z0.GetLib(), _starList[i]->_position);
+    _starList[i]->RenderStar(lib, _starList[i]->_position);
   }
 }
 
-void Star::CreateStar(z0Game& z0)
+void Star::CreateStar()
 {
   Star* s = 0;
-  int r = z0.GetLib().RandInt(12);
+  int r = z::rand_int(12);
 
   if (r <= 0) {
-    if (z0.GetLib().RandInt(4) == 0) {
-      s = new PlanetStar(z0);
+    if (z::rand_int(4) == 0) {
+      s = new PlanetStar();
     }
   }
   else if (r <= 3) {
-    s = new BigStar(z0);
+    s = new BigStar();
   }
   else if (r <= 7) {
-    s = new FarStar(z0);
+    s = new FarStar();
   }
   else {
-    s = new DotStar(z0);
-  }
-
-  if (s != 0 && z0.GetLib().LoadSettings()._disableBackground) {
-    s->_c = 0;
+    s = new DotStar();
   }
 }
 

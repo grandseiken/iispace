@@ -18,9 +18,21 @@ class Overmind;
 class DeathRayBoss;
 class DeathRayArm;
 
-#define Z_RAND_MAX 0x7fff
-void z_srand(int seed);
-int z_rand();
+namespace z {
+  static const int32_t rand_max = 0x7fff;
+  void seed(int32_t seed);
+  int32_t rand_int();
+
+  inline int32_t rand_int(int32_t max)
+  {
+    return rand_int() % max;
+  }
+
+  inline fixed rand_fixed()
+  {
+    return fixed(rand_int()) / rand_max;
+  }
+}
 
 // Vector math
 //------------------------------

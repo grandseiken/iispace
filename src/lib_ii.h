@@ -29,9 +29,6 @@ public:
   virtual void Exit(bool exit);
   virtual bool Exit() const;
 
-  virtual int RandInt(int lessThan);
-  virtual fixed RandFloat();
-
   virtual Settings LoadSettings() const;
   virtual void SetVolume(int volume);
 

@@ -28,11 +28,11 @@ void Powerup::Update()
   }
   else {
     if (_firstFrame) {
-      _dir.SetPolar(GetLib().RandFloat() * 2 * fixed::pi, 1);
+      _dir.SetPolar(z::rand_fixed() * 2 * fixed::pi, 1);
     }
 
     _dir.Rotate(2 * fixed::hundredth * (_rotate ? 1 : -1));
-    if (!GetLib().RandInt(TIME)) {
+    if (!z::rand_int(TIME)) {
       _rotate = !_rotate;
     }
   }
@@ -58,12 +58,12 @@ void Powerup::Damage(int damage, bool magic, Player* source)
     GetLib().Rumble(source->GetPlayerNumber(), 6);
   }
 
-  int r = 5 + GetLib().RandInt(5);
+  int r = 5 + z::rand_int(5);
   for (int i = 0; i < r; i++) {
     Vec2 dir;
-    dir.SetPolar(GetLib().RandFloat() * 2 * fixed::pi, 6);
+    dir.SetPolar(z::rand_fixed() * 2 * fixed::pi, 6);
     Spawn(new Particle(
-        Vec2f(GetPosition()), 0xffffffff, Vec2f(dir), 4 + GetLib().RandInt(8)));
+        Vec2f(GetPosition()), 0xffffffff, Vec2f(dir), 4 + z::rand_int(8)));
   }
   Destroy();
 }

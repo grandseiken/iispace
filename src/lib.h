@@ -51,8 +51,6 @@ public:
   };
 
   struct Settings {
-    bool _disableBackground;
-    int _hudCorrection;
     bool _windowed;
     fixed _volume;
   };
@@ -115,9 +113,6 @@ public:
 
   virtual void Exit(bool exit) = 0;
   virtual bool Exit() const = 0;
-
-  virtual int RandInt(int lessThan) = 0;
-  virtual fixed RandFloat() = 0;
 
   virtual Settings LoadSettings() const = 0;
   virtual void SetVolume(int volume) = 0;

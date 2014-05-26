@@ -51,16 +51,6 @@ bool LibRepScore::Exit() const
   return _exit;
 }
 
-int LibRepScore::RandInt(int lessThan)
-{
-  return z_rand() % lessThan;
-}
-
-fixed LibRepScore::RandFloat()
-{
-  return fixed(z_rand()) / fixed(Z_RAND_MAX);
-}
-
 void LibRepScore::TakeScreenShot()
 {
 }

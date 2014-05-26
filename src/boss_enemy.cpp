@@ -170,7 +170,7 @@ void GhostMine::Update()
 {
   if (_timer == 80) {
     Explosion();
-    SetRotation(GetLib().RandFloat() * 2 * fixed::pi);
+    SetRotation(z::rand_fixed() * 2 * fixed::pi);
   }
   if (_timer) {
     _timer--;
@@ -181,8 +181,8 @@ void GhostMine::Update()
   z0Game::ShipList s = GetCollisionList(GetPosition(), ENEMY);
   for (unsigned int i = 0; i < s.size(); i++) {
     if (s[i] == _ghost) {
-      Enemy* e = GetLib().RandInt(6) == 0 ||
-          (_ghost->IsHPLow() && GetLib().RandInt(5) == 0) ?
+      Enemy* e = z::rand_int(6) == 0 ||
+          (_ghost->IsHPLow() && z::rand_int(5) == 0) ?
               new BigFollow(GetPosition(), false) : new Follow(GetPosition());
       e->SetScore(0);
       Spawn(e);
@@ -387,7 +387,7 @@ Snake::Snake(const Vec2& position, Colour colour, const Vec2& dir, fixed rot)
   SetEnemyValue(5);
   SetDestroySound(Lib::SOUND_PLAYER_DESTROY);
   if (dir == Vec2()) {
-    int r = z_rand() % 4;
+    int r = z::rand_int(4);
     if (r == 0) {
       _dir = Vec2(1, 0);
     }
@@ -431,13 +431,8 @@ void Snake::Update()
     _tail = t;
     Spawn(t);
   }
-  if (!_shotSnake && _timer % 48 == 0 && GetLib().RandInt(3) == 0) {
-    if (GetLib().RandInt(2)) {
-      _dir.Rotate(fixed::pi / 2);
-    }
-    else {
-      _dir.Rotate(-fixed::pi / 2);
-    }
+  if (!_shotSnake && _timer % 48 == 0 && !z::rand_int(3)) {
+    _dir.Rotate((z::rand_int(2) ? 1 : -1) * fixed::pi / 2);
     SetRotation(_dir.Angle());
   }
   Move(_dir * (_shotSnake ? 4 : 2));

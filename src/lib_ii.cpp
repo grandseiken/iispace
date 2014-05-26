@@ -591,16 +591,6 @@ bool LibWin::Exit() const
   return _exit;
 }
 
-int LibWin::RandInt(int lessThan)
-{
-  return z_rand() % lessThan;
-}
-
-fixed LibWin::RandFloat()
-{
-  return fixed(z_rand()) / fixed(Z_RAND_MAX);
-}
-
 void LibWin::TakeScreenShot()
 {
   sf::Image image = _window.Capture();

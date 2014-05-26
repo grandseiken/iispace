@@ -114,25 +114,25 @@ void Ship::Spawn(Particle* particle) const
 void Ship::Explosion(Colour c, int time, bool towards, const Vec2f& v) const
 {
   for (unsigned int i = 0; i < CountShapes(); i++) {
-    int n = towards ? GetLib().RandInt(2) + 1 : GetLib().RandInt(8) + 8;
+    int n = towards ? z::rand_int(2) + 1 : z::rand_int(8) + 8;
     for (int j = 0; j < n; j++) {
       Vec2f pos = GetShape(i).ConvertPointf(
           Vec2f(GetPosition()), GetRotation().to_float(), Vec2f());
 
       Vec2f dir;
-      dir.SetPolar(GetLib().RandFloat().to_float() * 2 * M_PIf, 6.f);
+      dir.SetPolar(z::rand_fixed().to_float() * 2 * M_PIf, 6.f);
 
       if (towards && v - pos != Vec2f()) {
         dir = v - pos;
         dir.Normalise();
         float angle =
-            dir.Angle() + (GetLib().RandFloat().to_float() - 0.5f) * M_PIf / 4;
+            dir.Angle() + (z::rand_fixed().to_float() - 0.5f) * M_PIf / 4;
         dir.SetPolar(angle, 6.f);
       }
 
       Spawn(new Particle(
           pos, c ? c : GetShape(i).GetColour(),
-          dir, time + GetLib().RandInt(8)));
+          dir, time + z::rand_int(8)));
     }
   }
 }

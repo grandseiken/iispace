@@ -153,7 +153,7 @@ void Player::Update()
       p += t;
       SetPosition(p);
       Explosion((i % 2) ? GetPlayerColour() : 0xffffffff,
-                8 + GetLib().RandInt(8) + GetLib().RandInt(8), true, tf);
+                8 + z::rand_int(8) + z::rand_int(8), true, tf);
     }
     SetPosition(t);
 
@@ -186,8 +186,8 @@ void Player::Update()
 
       bool couldPlay = false;
       // Avoid randomness errors due to sound timings
-      float volume = .5f * GetLib().RandFloat().to_float() + .5f;
-      float pitch = (GetLib().RandFloat().to_float() - 1.f) / 12.f;
+      float volume = .5f * z::rand_fixed().to_float() + .5f;
+      float pitch = (z::rand_fixed().to_float() - 1.f) / 12.f;
       if (_shotSoundQueue.empty() || _shotSoundQueue[0] == this) {
         couldPlay = lib.PlaySound(
             Lib::SOUND_PLAYER_FIRE, volume,
@@ -244,24 +244,16 @@ void Player::Render() const
   std::string s = ss.str();
 
   Vec2f v;
-
-  v.Set(1.f + lib.LoadSettings()._hudCorrection,
-        1.f + lib.LoadSettings()._hudCorrection);
+  v.Set(1.f, 1.f);
   if (n == 1) {
-    v.Set(Lib::WIDTH / Lib::TEXT_WIDTH - 1.f -
-              s.length() - lib.LoadSettings()._hudCorrection,
-          1.f + lib.LoadSettings()._hudCorrection);
+    v.Set(Lib::WIDTH / Lib::TEXT_WIDTH - 1.f - s.length(), 1.f);
   }
   if (n == 2) {
-    v.Set(1.f + lib.LoadSettings()._hudCorrection,
-          Lib::HEIGHT / Lib::TEXT_HEIGHT - 2.f -
-              lib.LoadSettings()._hudCorrection);
+    v.Set(1.f, Lib::HEIGHT / Lib::TEXT_HEIGHT - 2.f);
   }
   if (n == 3) {
-    v.Set(Lib::WIDTH / Lib::TEXT_WIDTH - 1.f -
-              s.length() - lib.LoadSettings()._hudCorrection,
-          Lib::HEIGHT / Lib::TEXT_HEIGHT -
-              2.f - lib.LoadSettings()._hudCorrection);
+    v.Set(Lib::WIDTH / Lib::TEXT_WIDTH - 1.f - s.length(),
+          Lib::HEIGHT / Lib::TEXT_HEIGHT - 2.f);
   }
 
   lib.RenderText(v, s, z0Game::PANEL_TEXT);
@@ -287,24 +279,17 @@ void Player::Render() const
     sss << "   " << _score;
   }
   s = sss.str();
-
-  v.Set(1.f + lib.LoadSettings()._hudCorrection,
-        1.f + lib.LoadSettings()._hudCorrection);
+  
+  v.Set(1.f, 1.f);
   if (n == 1) {
-    v.Set(Lib::WIDTH / Lib::TEXT_WIDTH - 1.f -
-              s.length() - lib.LoadSettings()._hudCorrection,
-          1.f + lib.LoadSettings()._hudCorrection);
+    v.Set(Lib::WIDTH / Lib::TEXT_WIDTH - 1.f - s.length(), 1.f);
   }
   if (n == 2) {
-    v.Set(1.f + lib.LoadSettings()._hudCorrection,
-          Lib::HEIGHT / Lib::TEXT_HEIGHT - 2.f -
-              lib.LoadSettings()._hudCorrection);
+    v.Set(1.f, Lib::HEIGHT / Lib::TEXT_HEIGHT - 2.f);
   }
   if (n == 3) {
-    v.Set(Lib::WIDTH / Lib::TEXT_WIDTH - 1.f -
-              s.length() - lib.LoadSettings()._hudCorrection,
-          Lib::HEIGHT / Lib::TEXT_HEIGHT -
-              2.f - lib.LoadSettings()._hudCorrection);
+    v.Set(Lib::WIDTH / Lib::TEXT_WIDTH - 1.f - s.length(),
+          Lib::HEIGHT / Lib::TEXT_HEIGHT - 2.f);
   }
 
   lib.RenderText(v, s, GetPlayerColour());
@@ -441,7 +426,7 @@ void Shot::Render() const
 void Shot::Update()
 {
   if (_magic) {
-    _flash = GetLib().RandInt(2) != 0;
+    _flash = z::rand_int(2) != 0;
   }
 
   Move(_velocity);

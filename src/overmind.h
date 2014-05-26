@@ -83,9 +83,6 @@ private:
   static void Spawn(Ship* ship);
   static Vec2 SpawnPoint(bool top, int row, int num, int div);
 
-  int RandInt(int lessThan) const;
-  static int HackRandInt(int lessThan);
-
   void Wave();
   void Boss();
   void BossModeBoss();

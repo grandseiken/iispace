@@ -220,7 +220,7 @@ public:
   bool PlaySoundRandom(Lib::Sound sound, float pitch = 0.f, float volume = 1.f)
   {
     return GetLib().PlaySound(
-        sound, volume * (.5f * GetLib().RandFloat().to_float() + .5f),
+        sound, volume * (.5f * z::rand_fixed().to_float() + .5f),
         2.f * GetPosition()._x.to_float() / Lib::WIDTH - 1.f, pitch);
   }
 

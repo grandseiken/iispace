@@ -6,13 +6,13 @@
 class Star {
 public:
 
-  static const int TIMER = 500;
-  Star(z0Game& z0, float speed);
+  static const std::size_t TIMER = 500;
+  Star(float speed);
   virtual ~Star();
 
   static void Update();
-  static void Render();
-  static void CreateStar(z0Game& z0);
+  static void Render(Lib& lib);
+  static void CreateStar();
   static void SetDirection(const Vec2f& direction);
   static void Clear();
 
@@ -29,7 +29,6 @@ private:
   int _timer;
   Vec2f _position;
   float _speed;
-  z0Game& _z0;
 
   static Vec2f _direction;
   typedef std::vector<Star*> StarList;
@@ -40,9 +39,10 @@ private:
 class DotStar : public Star {
 public:
 
-  DotStar(z0Game& z0) : Star(z0, 18)
+  DotStar()
+    : Star(18)
   {
-    _c = z0.GetLib().RandInt(2) ? 0x222222ff : 0x333333ff;
+    _c = z::rand_int(2) ? 0x222222ff : 0x333333ff;
   }
   virtual ~DotStar() {}
 
@@ -58,9 +58,10 @@ private:
 class FarStar : public Star {
 public:
 
-  FarStar(z0Game& z0) : Star(z0, 10)
+  FarStar()
+    : Star(10)
   {
-    _c = z0.GetLib().RandInt(2) ? 0x222222ff : 0x111111ff;
+    _c = z::rand_int(2) ? 0x222222ff : 0x111111ff;
   }
   virtual ~FarStar() {}
 
@@ -76,9 +77,10 @@ private:
 class BigStar : public Star {
 public:
 
-  BigStar(z0Game& z0) : Star(z0, 14)
+  BigStar()
+    : Star(14)
   {
-    _c = z0.GetLib().RandInt(2) ? 0x111111ff : 0x222222ff;
+    _c = z::rand_int(2) ? 0x111111ff : 0x222222ff;
   }
   virtual ~BigStar() {}
 
@@ -94,10 +96,10 @@ private:
 class PlanetStar : public Star {
 public:
 
-  PlanetStar(z0Game& z0)
-    : Star(z0, 10)
+  PlanetStar()
+    : Star(10)
   {
-    _n = z0.GetLib().RandInt(4) + 4;
+    _n = z::rand_int(4) + 4;
     _c = 0x111111ff;
   }
   virtual ~PlanetStar() {}

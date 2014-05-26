@@ -31,27 +31,14 @@ Overmind::Overmind(z0Game& z0)
   AddFormations();
 }
 
-int Overmind::RandInt(int lessThan) const
-{
-  return _z0.GetLib().RandInt(lessThan);
-}
-
-int Overmind::HackRandInt(int lessThan)
-{
-  if (_tz0) {
-    return _tz0->GetLib().RandInt(lessThan);
-  }
-  return 0;
-}
-
 void Overmind::Reset(bool canFaceSecretBoss)
 {
   int a, b, c;
   _boss1Queue.clear();
   _boss2Queue.clear();
 
-  a = RandInt(3);
-  b = RandInt(2);
+  a = z::rand_int(3);
+  b = z::rand_int(2);
   if (a == 0 || (a == 1 && b == 1)) {
     b++;
   }
@@ -61,8 +48,8 @@ void Overmind::Reset(bool canFaceSecretBoss)
   _boss1Queue.push_back(b);
   _boss1Queue.push_back(c);
 
-  a = RandInt(3);
-  b = RandInt(2);
+  a = z::rand_int(3);
+  b = z::rand_int(2);
   if (a == 0 || (a == 1 && b == 1)) {
     b++;
   }
@@ -117,16 +104,16 @@ void Overmind::Update()
 {
   ++_elapsedTime;
   Star::Update();
-  int r = _starCount > 1 ? RandInt(_starCount) : 0;
+  int r = _starCount > 1 ? z::rand_int(_starCount) : 0;
   for (int i = 0; i < r; i++) {
-    Star::CreateStar(_z0);
+    Star::CreateStar();
   }
 
   if (_z0.IsBossMode()) {
     if (_count <= 0) {
-      _starDir.Rotate((_z0.GetLib().RandFloat().to_float() - 0.5f) * M_PIf);
+      _starDir.Rotate((z::rand_fixed().to_float() - 0.5f) * M_PIf);
       Star::SetDirection(_starDir);
-      _starCount = RandInt(3) + 2;
+      _starCount = z::rand_int(3) + 2;
       if (_bossModBosses < 6) {
         if (_bossModBosses)
         for (int32_t i = 0; i < _z0.CountPlayers(); ++i) {
@@ -179,9 +166,9 @@ void Overmind::Update()
     }
 
     _timer = 0;
-    _starDir.Rotate((_z0.GetLib().RandFloat().to_float() - 0.5f) * M_PIf);
+    _starDir.Rotate((z::rand_fixed().to_float() - 0.5f) * M_PIf);
     Star::SetDirection(_starDir);
-    _starCount = RandInt(3) + 2;
+    _starCount = z::rand_int(3) + 2;
 
     if (_isBossLevel) {
       ++_bossModBosses;
@@ -266,7 +253,7 @@ void Overmind::SpawnPowerup()
     ++_livesTarget;
   }
 
-  int r = RandInt(4);
+  int r = z::rand_int(4);
   Vec2 v;
 
   if (r == 0) {
@@ -297,7 +284,7 @@ void Overmind::SpawnPowerup()
   if (Player::CountKilledPlayers() == 0 && _livesTarget < -1) {
     m = 3;
   }
-  r = RandInt(m);
+  r = z::rand_int(m);
   _tz0 = &_z0;
 
   if (r == 0) {
@@ -320,7 +307,7 @@ void Overmind::SpawnPowerup()
 void Overmind::SpawnBossReward()
 {
   _tz0 = &_z0;
-  int r = RandInt(4);
+  int r = z::rand_int(4);
   Vec2 v;
 
   if (r == 0) {
@@ -387,22 +374,22 @@ void Overmind::SpawnWall(int num, int div, int side, bool dir)
 void Overmind::SpawnFollowHub(int num, int div, int side)
 {
   if (side == 0 || side == 1) {
-    bool p1 = HackRandInt(64) < std::min(32, _power - 32) - _hardAlready;
+    bool p1 = z::rand_int(64) < std::min(32, _power - 32) - _hardAlready;
     if (p1) {
       _hardAlready += 2;
     }
-    bool p2 = HackRandInt(64) < std::min(32, _power - 40) - _hardAlready;
+    bool p2 = z::rand_int(64) < std::min(32, _power - 40) - _hardAlready;
     if (p2) {
       _hardAlready += 2;
     }
     Spawn(new FollowHub(SpawnPoint(false, _tRow, num, div), p1, p2));
   }
   if (side == 0 || side == 2) {
-    bool p1 = HackRandInt(64) < std::min(32, _power - 32) - _hardAlready;
+    bool p1 = z::rand_int(64) < std::min(32, _power - 32) - _hardAlready;
     if (p1) {
       _hardAlready += 2;
     }
-    bool p2 = HackRandInt(64) < std::min(32, _power - 40) - _hardAlready;
+    bool p2 = z::rand_int(64) < std::min(32, _power - 40) - _hardAlready;
     if (p2) {
       _hardAlready += 2;
     }
@@ -413,14 +400,14 @@ void Overmind::SpawnFollowHub(int num, int div, int side)
 void Overmind::SpawnShielder(int num, int div, int side)
 {
   if (side == 0 || side == 1) {
-    bool p = HackRandInt(64) < std::min(32, _power - 36) - _hardAlready;
+    bool p = z::rand_int(64) < std::min(32, _power - 36) - _hardAlready;
     if (p) {
       _hardAlready += 3;
     }
     Spawn(new Shielder(SpawnPoint(false, _tRow, num, div), p));
   }
   if (side == 0 || side == 2) {
-    bool p = HackRandInt(64) < std::min(32, _power - 36) - _hardAlready;
+    bool p = z::rand_int(64) < std::min(32, _power - 36) - _hardAlready;
     if (p) {
       _hardAlready += 3;
     }
@@ -431,14 +418,14 @@ void Overmind::SpawnShielder(int num, int div, int side)
 void Overmind::SpawnTractor(int num, int div, int side)
 {
   if (side == 0 || side == 1) {
-    bool p = HackRandInt(64) < std::min(32, _power - 46) - _hardAlready;
+    bool p = z::rand_int(64) < std::min(32, _power - 46) - _hardAlready;
     if (p) {
       _hardAlready += 4;
     }
     Spawn(new Tractor(SpawnPoint(false, _tRow, num, div), p));
   }
   if (side == 0 || side == 2) {
-    bool p = HackRandInt(64) < std::min(32, _power - 46) - _hardAlready;
+    bool p = z::rand_int(64) < std::min(32, _power - 46) - _hardAlready;
     if (p) {
       _hardAlready += 4;
     }
@@ -477,13 +464,13 @@ Vec2 Overmind::SpawnPoint(bool top, int row, int num, int div)
 void Overmind::Wave()
 {
   if (_z0.IsFastMode()) {
-    for (int i = 0; i < RandInt(7); ++i) {
-      RandInt(1);
+    for (int i = 0; i < z::rand_int(7); ++i) {
+      z::rand_int(1);
     }
   }
   if (_z0.IsWhatMode()) {
-    for (int i = 0; i < RandInt(11); ++i) {
-      RandInt(1);
+    for (int i = 0; i < z::rand_int(11); ++i) {
+      z::rand_int(1);
     }
   }
 
@@ -514,11 +501,11 @@ void Overmind::Wave()
       n = 0;
     }
     else {
-      n = RandInt(max);
+      n = z::rand_int(max);
     }
 
     chosenFormations.insert(
-        chosenFormations.begin() + RandInt(int(chosenFormations.size()) + 1),
+        chosenFormations.begin() + z::rand_int(chosenFormations.size() + 1),
         validFormations[n]);
     resources -= validFormations[n].first;
   }
@@ -528,7 +515,7 @@ void Overmind::Wave()
     perm.push_back(i);
   }
   for (std::size_t i = 0; i < chosenFormations.size() - 1; ++i) {
-    std::swap(perm[i], perm[i + RandInt(int(chosenFormations.size() - i))]);
+    std::swap(perm[i], perm[i + z::rand_int(chosenFormations.size() - i)]);
   }
   _hardAlready = 0;
   for (std::size_t row = 0; row < chosenFormations.size(); ++row) {
@@ -544,10 +531,10 @@ void Overmind::Boss()
   int cycle = (_z0.IsHardMode() ? 1 : 0) + _bossModBosses / 2;
   bool secretChance =
       (_z0.IsFastMode() || _z0.IsHardMode() || _z0.IsWhatMode()) ?
-      (_bossModFights > 1 ? RandInt(4) == 0 :
-       _bossModFights > 0 ? RandInt(8) == 0 : false) :
-      (_bossModFights > 2 ? RandInt(4) == 0 :
-       _bossModFights > 1 ? RandInt(6) == 0 : false);
+      (_bossModFights > 1 ? z::rand_int(4) == 0 :
+       _bossModFights > 0 ? z::rand_int(8) == 0 : false) :
+      (_bossModFights > 2 ? z::rand_int(4) == 0 :
+       _bossModFights > 1 ? z::rand_int(6) == 0 : false);
 
   if (_canFaceSecretBoss && _bossesToGo == 0 &&
       _bossModSecret == 0 && secretChance) {
@@ -686,9 +673,9 @@ FORM_DEF(Square1, 4, 0)
 
 FORM_DEF(Square2, 11, 0)
 {
-  int r = HackRandInt(4);
-  int p1 = 2 + HackRandInt(8);
-  int p2 = 2 + HackRandInt(8);
+  int r = z::rand_int(4);
+  int p1 = 2 + z::rand_int(8);
+  int p2 = 2 + z::rand_int(8);
   for (int i = 1; i < 11; ++i) {
     if (r < 2 || i != p1) {
       SpawnSquare(i, 12, 1);
@@ -701,12 +688,12 @@ FORM_DEF(Square2, 11, 0)
 
 FORM_DEF(Square3, 20, 24)
 {
-  int r1 = HackRandInt(4);
-  int r2 = HackRandInt(4);
-  int p11 = 2 + HackRandInt(14);
-  int p12 = 2 + HackRandInt(14);
-  int p21 = 2 + HackRandInt(14);
-  int p22 = 2 + HackRandInt(14);
+  int r1 = z::rand_int(4);
+  int r2 = z::rand_int(4);
+  int p11 = 2 + z::rand_int(14);
+  int p12 = 2 + z::rand_int(14);
+  int p21 = 2 + z::rand_int(14);
+  int p22 = 2 + z::rand_int(14);
 
   for (int i = 0; i < 18; i++) {
     if (r1 < 2 || i != p11) {
@@ -724,8 +711,8 @@ FORM_DEF(Square3, 20, 24)
 
 FORM_DEF(Square1Side, 2, 0)
 {
-  int r = HackRandInt(2);
-  int p = HackRandInt(4);
+  int r = z::rand_int(2);
+  int p = z::rand_int(4);
 
   if (p < 2) {
     for (int i = 1; i < 5; ++i) {
@@ -744,8 +731,8 @@ FORM_DEF(Square1Side, 2, 0)
 
 FORM_DEF(Square2Side, 5, 0)
 {
-  int r = HackRandInt(2);
-  int p = HackRandInt(4);
+  int r = z::rand_int(2);
+  int p = z::rand_int(4);
 
   if (p < 2) {
     for (int i = 1; i < 11; ++i) {
@@ -764,10 +751,10 @@ FORM_DEF(Square2Side, 5, 0)
 
 FORM_DEF(Square3Side, 10, 12)
 {
-  int r = HackRandInt(2);
-  int p = HackRandInt(4);
-  int r2 = HackRandInt(2);
-  int p2 = 1 + HackRandInt(16);
+  int r = z::rand_int(2);
+  int p = z::rand_int(4);
+  int r2 = z::rand_int(2);
+  int p2 = 1 + z::rand_int(16);
 
   if (p < 2) {
     for (int i = 0; i < 18; ++i) {
@@ -788,7 +775,7 @@ FORM_DEF(Square3Side, 10, 12)
 
 FORM_DEF(Wall1, 5, 0)
 {
-  bool dir = HackRandInt(2) != 0;
+  bool dir = z::rand_int(2) != 0;
   for (int i = 1; i < 3; ++i) {
     SpawnWall(i, 4, 0, dir);
   }
@@ -796,10 +783,10 @@ FORM_DEF(Wall1, 5, 0)
 
 FORM_DEF(Wall2, 12, 0)
 {
-  bool dir = HackRandInt(2) != 0;
-  int r = HackRandInt(4);
-  int p1 = 2 + HackRandInt(5);
-  int p2 = 2 + HackRandInt(5);
+  bool dir = z::rand_int(2) != 0;
+  int r = z::rand_int(4);
+  int p1 = 2 + z::rand_int(5);
+  int p2 = 2 + z::rand_int(5);
   for (int i = 1; i < 8; ++i) {
     if (r < 2 || i != p1) {
       SpawnWall(i, 9, 1, dir);
@@ -812,13 +799,13 @@ FORM_DEF(Wall2, 12, 0)
 
 FORM_DEF(Wall3, 22, 26)
 {
-  bool dir = HackRandInt(2) != 0;
-  int r1 = HackRandInt(4);
-  int r2 = HackRandInt(4);
-  int p11 = 1 + HackRandInt(10);
-  int p12 = 1 + HackRandInt(10);
-  int p21 = 1 + HackRandInt(10);
-  int p22 = 1 + HackRandInt(10);
+  bool dir = z::rand_int(2) != 0;
+  int r1 = z::rand_int(4);
+  int r2 = z::rand_int(4);
+  int p11 = 1 + z::rand_int(10);
+  int p12 = 1 + z::rand_int(10);
+  int p21 = 1 + z::rand_int(10);
+  int p22 = 1 + z::rand_int(10);
 
   for (int i = 0; i < 12; ++i) {
     if (r1 < 2 || i != p11) {
@@ -836,9 +823,9 @@ FORM_DEF(Wall3, 22, 26)
 
 FORM_DEF(Wall1Side, 3, 0)
 {
-  bool dir = HackRandInt(2) != 0;
-  int r = HackRandInt(2);
-  int p = HackRandInt(4);
+  bool dir = z::rand_int(2) != 0;
+  int r = z::rand_int(2);
+  int p = z::rand_int(4);
 
   if (p < 2) {
     for (int i = 1; i < 3; ++i) {
@@ -857,9 +844,9 @@ FORM_DEF(Wall1Side, 3, 0)
 
 FORM_DEF(Wall2Side, 6, 0)
 {
-  bool dir = HackRandInt(2) != 0;
-  int r = HackRandInt(2);
-  int p = HackRandInt(4);
+  bool dir = z::rand_int(2) != 0;
+  int r = z::rand_int(2);
+  int p = z::rand_int(4);
 
   if (p < 2) {
     for (int i = 1; i < 8; ++i) {
@@ -878,11 +865,11 @@ FORM_DEF(Wall2Side, 6, 0)
 
 FORM_DEF(Wall3Side, 11, 13)
 {
-  bool dir = HackRandInt(2) != 0;
-  int r = HackRandInt(2);
-  int p = HackRandInt(4);
-  int r2 = HackRandInt(2);
-  int p2 = 1 + HackRandInt(10);
+  bool dir = z::rand_int(2) != 0;
+  int r = z::rand_int(2);
+  int p = z::rand_int(4);
+  int r2 = z::rand_int(2);
+  int p2 = 1 + z::rand_int(10);
 
   if (p < 2) {
     for (int i = 0; i < 12; ++i) {
@@ -903,7 +890,7 @@ FORM_DEF(Wall3Side, 11, 13)
 
 FORM_DEF(Follow1, 3, 0)
 {
-  int p = HackRandInt(3);
+  int p = z::rand_int(3);
   if (p == 0) {
     SpawnFollow(0, 3, 0);
     SpawnFollow(2, 3, 0);
@@ -920,7 +907,7 @@ FORM_DEF(Follow1, 3, 0)
 
 FORM_DEF(Follow2, 7, 0)
 {
-  int p = HackRandInt(2);
+  int p = z::rand_int(2);
   if (p == 0) {
     for (int i = 0; i < 8; i++) {
       SpawnFollow(i, 8, 0);
@@ -933,7 +920,7 @@ FORM_DEF(Follow2, 7, 0)
 
 FORM_DEF(Follow3, 14, 0)
 {
-  int p = HackRandInt(2);
+  int p = z::rand_int(2);
   if (p == 0) {
     for (int i = 0; i < 16; ++i) {
       SpawnFollow(i, 16, 0);
@@ -947,8 +934,8 @@ FORM_DEF(Follow3, 14, 0)
 
 FORM_DEF(Follow1Side, 2, 0)
 {
-  int r = 1 + HackRandInt(2);
-  int p = HackRandInt(3);
+  int r = 1 + z::rand_int(2);
+  int p = z::rand_int(3);
   if (p == 0) {
     SpawnFollow(0, 3, r);
     SpawnFollow(2, 3, r);
@@ -965,8 +952,8 @@ FORM_DEF(Follow1Side, 2, 0)
 
 FORM_DEF(Follow2Side, 3, 0)
 {
-  int r = 1 + HackRandInt(2);
-  int p = HackRandInt(2);
+  int r = 1 + z::rand_int(2);
+  int p = z::rand_int(2);
   if (p == 0) {
     for (int i = 0; i < 8; i++) {
       SpawnFollow(i, 8, r);
@@ -979,8 +966,8 @@ FORM_DEF(Follow2Side, 3, 0)
 
 FORM_DEF(Follow3Side, 7, 0)
 {
-  int r = 1 + HackRandInt(2);
-  int p = HackRandInt(2);
+  int r = 1 + z::rand_int(2);
+  int p = z::rand_int(2);
   if (p == 0) {
     for (int i = 0; i < 16; ++i) {
       SpawnFollow(i, 16, r);
@@ -994,7 +981,7 @@ FORM_DEF(Follow3Side, 7, 0)
 
 FORM_DEF(Chaser1, 4, 0)
 {
-  int p = HackRandInt(3);
+  int p = z::rand_int(3);
   if (p == 0) {
     SpawnChaser(0, 3, 0);
     SpawnChaser(2, 3, 0);
@@ -1011,7 +998,7 @@ FORM_DEF(Chaser1, 4, 0)
 
 FORM_DEF(Chaser2, 8, 0)
 {
-  int p = HackRandInt(2);
+  int p = z::rand_int(2);
   if (p == 0) {
     for (int i = 0; i < 8; i++) {
       SpawnChaser(i, 8, 0);
@@ -1024,7 +1011,7 @@ FORM_DEF(Chaser2, 8, 0)
 
 FORM_DEF(Chaser3, 16, 0)
 {
-  int p = HackRandInt(2);
+  int p = z::rand_int(2);
   if (p == 0) {
     for (int i = 0; i < 16; ++i) {
       SpawnChaser(i, 16, 0);
@@ -1045,8 +1032,8 @@ FORM_DEF(Chaser4, 20, 0)
 
 FORM_DEF(Chaser1Side, 2, 0)
 {
-  int r = 1 + HackRandInt(2);
-  int p = HackRandInt(3);
+  int r = 1 + z::rand_int(2);
+  int p = z::rand_int(3);
   if (p == 0) {
     SpawnChaser(0, 3, r);
     SpawnChaser(2, 3, r);
@@ -1063,8 +1050,8 @@ FORM_DEF(Chaser1Side, 2, 0)
 
 FORM_DEF(Chaser2Side, 4, 0)
 {
-  int r = 1 + HackRandInt(2);
-  int p = HackRandInt(2);
+  int r = 1 + z::rand_int(2);
+  int p = z::rand_int(2);
   if (p == 0) {
     for (int i = 0; i < 8; i++) {
       SpawnChaser(i, 8, r);
@@ -1077,8 +1064,8 @@ FORM_DEF(Chaser2Side, 4, 0)
 
 FORM_DEF(Chaser3Side, 8, 0)
 {
-  int r = 1 + HackRandInt(2);
-  int p = HackRandInt(2);
+  int r = 1 + z::rand_int(2);
+  int p = z::rand_int(2);
   if (p == 0) {
     for (int i = 0; i < 16; ++i) {
       SpawnChaser(i, 16, r);
@@ -1092,7 +1079,7 @@ FORM_DEF(Chaser3Side, 8, 0)
 
 FORM_DEF(Chaser4Side, 10, 0)
 {
-  int r = 1 + HackRandInt(2);
+  int r = 1 + z::rand_int(2);
   for (int i = 0; i < 22; i++) {
     SpawnChaser(i, 22, r);
   }
@@ -1100,32 +1087,32 @@ FORM_DEF(Chaser4Side, 10, 0)
 
 FORM_DEF(Hub1, 6, 0)
 {
-  SpawnFollowHub(1 + HackRandInt(3), 5, 0);
+  SpawnFollowHub(1 + z::rand_int(3), 5, 0);
 } FORM_END;
 
 FORM_DEF(Hub2, 12, 0)
 {
-  int p = HackRandInt(3);
+  int p = z::rand_int(3);
   SpawnFollowHub(p == 1 ? 2 : 1, 5, 0);
   SpawnFollowHub(p == 2 ? 2 : 3, 5, 0);
 } FORM_END;
 
 FORM_DEF(Hub1Side, 3, 0)
 {
-  SpawnFollowHub(1 + HackRandInt(3), 5, 1 + HackRandInt(2));
+  SpawnFollowHub(1 + z::rand_int(3), 5, 1 + z::rand_int(2));
 } FORM_END;
 
 FORM_DEF(Hub2Side, 6, 0)
 {
-  int r = 1 + HackRandInt(2);
-  int p = HackRandInt(3);
+  int r = 1 + z::rand_int(2);
+  int p = z::rand_int(3);
   SpawnFollowHub(p == 1 ? 2 : 1, 5, r);
   SpawnFollowHub(p == 2 ? 2 : 3, 5, r);
 } FORM_END;
 
 FORM_DEF(Mixed1, 6, 0)
 {
-  int p = HackRandInt(2);
+  int p = z::rand_int(2);
   SpawnFollow(p == 0 ? 0 : 2, 4, 0);
   SpawnFollow(p == 0 ? 1 : 3, 4, 0);
   SpawnChaser(p == 0 ? 2 : 0, 4, 0);
@@ -1146,7 +1133,7 @@ FORM_DEF(Mixed2, 12, 0)
 
 FORM_DEF(Mixed3, 16, 0)
 {
-  bool dir = HackRandInt(2) != 0;
+  bool dir = z::rand_int(2) != 0;
   SpawnWall(3, 7, 0, dir);
   SpawnFollowHub(1, 7, 0);
   SpawnFollowHub(5, 7, 0);
@@ -1168,7 +1155,7 @@ FORM_DEF(Mixed4, 18, 0)
 FORM_DEF(Mixed5, 22, 38)
 {
   SpawnFollowHub(1, 7, 0);
-  SpawnTractor(3, 7, 1 + HackRandInt(2));
+  SpawnTractor(3, 7, 1 + z::rand_int(2));
 } FORM_END;
 
 FORM_DEF(Mixed6, 16, 30)
@@ -1179,7 +1166,7 @@ FORM_DEF(Mixed6, 16, 30)
 
 FORM_DEF(Mixed7, 18, 16)
 {
-  bool dir = HackRandInt(2) != 0;
+  bool dir = z::rand_int(2) != 0;
   SpawnShielder(2, 5, 0);
   SpawnWall(1, 10, 0, dir);
   SpawnWall(8, 10, 0, dir);
@@ -1191,8 +1178,8 @@ FORM_DEF(Mixed7, 18, 16)
 
 FORM_DEF(Mixed1Side, 3, 0)
 {
-  int r = 1 + HackRandInt(2);
-  int p = HackRandInt(2);
+  int r = 1 + z::rand_int(2);
+  int p = z::rand_int(2);
   SpawnFollow(p == 0 ? 0 : 2, 4, r);
   SpawnFollow(p == 0 ? 1 : 3, 4, r);
   SpawnChaser(p == 0 ? 2 : 0, 4, r);
@@ -1201,8 +1188,8 @@ FORM_DEF(Mixed1Side, 3, 0)
 
 FORM_DEF(Mixed2Side, 6, 0)
 {
-  int r = HackRandInt(2);
-  int p = HackRandInt(2);
+  int r = z::rand_int(2);
+  int p = z::rand_int(2);
   for (int i = 0; i < 13; i++) {
     if (i % 2) {
       SpawnFollow(i, 13, 1 + r);
@@ -1215,8 +1202,8 @@ FORM_DEF(Mixed2Side, 6, 0)
 
 FORM_DEF(Mixed3Side, 8, 0)
 {
-  bool dir = HackRandInt(2) != 0;
-  int r = 1 + HackRandInt(2);
+  bool dir = z::rand_int(2) != 0;
+  int r = 1 + z::rand_int(2);
   SpawnWall(3, 7, r, dir);
   SpawnFollowHub(1, 7, r);
   SpawnFollowHub(5, 7, r);
@@ -1226,7 +1213,7 @@ FORM_DEF(Mixed3Side, 8, 0)
 
 FORM_DEF(Mixed4Side, 9, 0)
 {
-  int r = 1 + HackRandInt(2);
+  int r = 1 + z::rand_int(2);
   SpawnSquare(1, 7, r);
   SpawnSquare(5, 7, r);
   SpawnFollowHub(3, 7, r);
@@ -1238,22 +1225,22 @@ FORM_DEF(Mixed4Side, 9, 0)
 
 FORM_DEF(Mixed5Side, 19, 36)
 {
-  int r = 1 + HackRandInt(2);
+  int r = 1 + z::rand_int(2);
   SpawnFollowHub(1, 7, r);
   SpawnTractor(3, 7, r);
 } FORM_END;
 
 FORM_DEF(Mixed6Side, 8, 20)
 {
-  int r = 1 + HackRandInt(2);
+  int r = 1 + z::rand_int(2);
   SpawnFollowHub(1, 5, r);
   SpawnShielder(3, 5, r);
 } FORM_END;
 
 FORM_DEF(Mixed7Side, 9, 16)
 {
-  bool dir = HackRandInt(2) != 0;
-  int r = 1 + HackRandInt(2);
+  bool dir = z::rand_int(2) != 0;
+  int r = 1 + z::rand_int(2);
   SpawnShielder(2, 5, r);
   SpawnWall(1, 10, r, dir);
   SpawnWall(8, 10, r, dir);
@@ -1265,31 +1252,31 @@ FORM_DEF(Mixed7Side, 9, 16)
 
 FORM_DEF(Tractor1, 16, 30)
 {
-  SpawnTractor(HackRandInt(3) + 1, 5, 1 + HackRandInt(2));
+  SpawnTractor(z::rand_int(3) + 1, 5, 1 + z::rand_int(2));
 } FORM_END;
 
 FORM_DEF(Tractor2, 28, 46)
 {
-  SpawnTractor(HackRandInt(3) + 1, 5, 2);
-  SpawnTractor(HackRandInt(3) + 1, 5, 1);
+  SpawnTractor(z::rand_int(3) + 1, 5, 2);
+  SpawnTractor(z::rand_int(3) + 1, 5, 1);
 } FORM_END;
 
 FORM_DEF(Tractor1Side, 16, 36)
 {
-  SpawnTractor(HackRandInt(7) + 1, 9, 1 + HackRandInt(2));
+  SpawnTractor(z::rand_int(7) + 1, 9, 1 + z::rand_int(2));
 } FORM_END;
 
 FORM_DEF(Tractor2Side, 14, 32)
 {
-  SpawnTractor(HackRandInt(5) + 1, 7, 1 + HackRandInt(2));
+  SpawnTractor(z::rand_int(5) + 1, 7, 1 + z::rand_int(2));
 } FORM_END;
 
 FORM_DEF(Shielder1, 10, 28)
 {
-  SpawnShielder(HackRandInt(3) + 1, 5, 0);
+  SpawnShielder(z::rand_int(3) + 1, 5, 0);
 } FORM_END;
 
 FORM_DEF(Shielder1Side, 5, 22)
 {
-  SpawnShielder(HackRandInt(3) + 1, 5, 1 + HackRandInt(2));
+  SpawnShielder(z::rand_int(3) + 1, 5, 1 + z::rand_int(2));
 } FORM_END;

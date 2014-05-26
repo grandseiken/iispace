@@ -9,19 +9,21 @@
 #include <cstdint>
 #include <cstring>
 
-static int32_t state = 0;
+namespace z {
+  int32_t state = 0;
 
-void z_srand(int seed)
-{
-  state = seed;
-}
+  void seed(int32_t seed)
+  {
+    state = seed;
+  }
 
-int z_rand()
-{
-  int32_t const a = 1103515245;
-  int32_t const c = 12345;
-  state = a * state + c;
-  return (state >> 16) & 0x7fff;
+  int32_t rand_int()
+  {
+    int32_t const a = 1103515245;
+    int32_t const c = 12345;
+    state = a * state + c;
+    return (state >> 16) & 0x7fff;
+  }
 }
 
 const int z0Game::STARTING_LIVES = 2;
@@ -280,7 +282,7 @@ void z0Game::Update()
       else if (_selection == 1) {
         _state = STATE_HIGHSCORE;
         _enterChar = 0;
-        _compliment = lib.RandInt(int(_compliments.size()));
+        _compliment = z::rand_int(_compliments.size());
         _killTimer = 0;
       }
       else if (_selection == 2) {
@@ -442,7 +444,7 @@ void z0Game::Update()
         _state = STATE_HIGHSCORE;
         _scoreScreenTimer = 0;
         _enterChar = 0;
-        _compliment = lib.RandInt(int(_compliments.size()));
+        _compliment = z::rand_int(_compliments.size());
         GetLib().PlaySound(Lib::SOUND_MENU_ACCEPT);
       }
     }
@@ -584,7 +586,7 @@ void z0Game::Render() const
   _showHPBar = false;
   _fillHPBar = 0;
   if (!_firstControllersDialog) {
-    Star::Render();
+    Star::Render(_lib);
     for (const auto& particle : _particles) {
       particle->Render();
     }
@@ -645,8 +647,7 @@ void z0Game::Render() const
 
     lib.RenderText(
         Vec2f(Lib::WIDTH / (2.f * Lib::TEXT_WIDTH) - ss.str().length() / 2,
-              Lib::HEIGHT / Lib::TEXT_HEIGHT - 2.f -
-                  lib.LoadSettings()._hudCorrection),
+              Lib::HEIGHT / Lib::TEXT_HEIGHT - 2.f),
         ss.str(), PANEL_TRAN);
 
     for (std::size_t i = 0; i < _ships.size() + Boss::_warnings.size(); ++i) {
@@ -703,25 +704,21 @@ void z0Game::Render() const
       std::stringstream sst;
       sst << ConvertToTime(_overmind->GetElapsedTime());
       lib.RenderText(
-        Vec2f(Lib::WIDTH / (2 * Lib::TEXT_WIDTH) - sst.str().length() - 1.f,
-              1.f + lib.LoadSettings()._hudCorrection),
+        Vec2f(Lib::WIDTH / (2 * Lib::TEXT_WIDTH) -
+              sst.str().length() - 1.f, 1.f),
         sst.str(), PANEL_TRAN);
     }
 
     if (_showHPBar) {
       int x = IsBossMode() ? 48 : 0;
       lib.RenderRect(
-          Vec2f(x + Lib::WIDTH / 2 - 48.f,
-               16.f * (1 + lib.LoadSettings()._hudCorrection)),
-          Vec2f(x + Lib::WIDTH / 2 + 48.f,
-                16.f * (2 + lib.LoadSettings()._hudCorrection)),
+          Vec2f(x + Lib::WIDTH / 2 - 48.f, 16.f),
+          Vec2f(x + Lib::WIDTH / 2 + 48.f, 32.f),
           PANEL_TRAN, 2);
 
       lib.RenderRect(
-          Vec2f(x + Lib::WIDTH / 2 - 44.f,
-                16.f * (1 + lib.LoadSettings()._hudCorrection) + 4),
-          Vec2f(x + Lib::WIDTH / 2 - 44.f + 88.f * _fillHPBar,
-                16.f * (2 + lib.LoadSettings()._hudCorrection) - 4),
+          Vec2f(x + Lib::WIDTH / 2 - 44.f, 16.f + 4),
+          Vec2f(x + Lib::WIDTH / 2 - 44.f + 88.f * _fillHPBar, 32.f - 4),
           PANEL_TRAN);
     }
 
@@ -734,8 +731,7 @@ void z0Game::Render() const
 
       lib.RenderText(
           Vec2f(Lib::WIDTH / (2.f * Lib::TEXT_WIDTH) - ss.str().length() / 2,
-                Lib::HEIGHT / Lib::TEXT_HEIGHT - 3.f -
-                    lib.LoadSettings()._hudCorrection),
+                Lib::HEIGHT / Lib::TEXT_HEIGHT - 3.f),
           ss.str(), PANEL_TRAN);
     }
 

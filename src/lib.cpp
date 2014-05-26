@@ -5,8 +5,6 @@
 #include <cstring>
 
 const std::string Lib::SUPER_ENCRYPTION_KEY = "<>";
-#define SETTINGS_DISABLEBACKGROUND "DisableBackground"
-#define SETTINGS_HUDCORRECTION "HUDCorrection"
 #define SETTINGS_WINDOWED "Windowed"
 #define SETTINGS_VOLUME "Volume"
 
@@ -290,8 +288,6 @@ std::string Lib::Crypt(const std::string& text, const std::string& key)
 Lib::Settings Lib::LoadSaveSettings() const
 {
   Settings settings;
-  settings._disableBackground = 0;
-  settings._hudCorrection = 0;
   settings._windowed = 0;
   settings._volume = 100;
   std::ifstream file;
@@ -301,8 +297,6 @@ Lib::Settings Lib::LoadSaveSettings() const
     std::ofstream out;
     out.open(SettingsPath().c_str());
     out <<
-        SETTINGS_DISABLEBACKGROUND << " 0\n" <<
-        SETTINGS_HUDCORRECTION << " 0\n" <<
         SETTINGS_WINDOWED << " 0\n" <<
         SETTINGS_VOLUME << " 100.0";
     out.close();
@@ -313,12 +307,6 @@ Lib::Settings Lib::LoadSaveSettings() const
       std::stringstream ss(line);
       std::string key;
       ss >> key;
-      if (key.compare(SETTINGS_DISABLEBACKGROUND) == 0) {
-        ss >> settings._disableBackground;
-      }
-      if (key.compare(SETTINGS_HUDCORRECTION) == 0) {
-        ss >> settings._hudCorrection;
-      }
       if (key.compare(SETTINGS_WINDOWED) == 0) {
         ss >> settings._windowed;
       }
@@ -329,12 +317,6 @@ Lib::Settings Lib::LoadSaveSettings() const
       }
     }
   }
-  if (settings._hudCorrection < 0) {
-    settings._hudCorrection = 0;
-  }
-  if (settings._hudCorrection > 8) {
-    settings._hudCorrection = 8;
-  }
   return settings;
 }
 
@@ -343,9 +325,6 @@ void Lib::SaveSaveSettings(const Settings& settings)
   std::ofstream out;
   out.open(SettingsPath().c_str());
   out <<
-      SETTINGS_DISABLEBACKGROUND << " " <<
-      (settings._disableBackground ? "1" : "0") << "\n" <<
-      SETTINGS_HUDCORRECTION << " " << settings._hudCorrection << "\n" <<
       SETTINGS_WINDOWED << " " << (settings._windowed ? "1" : "0") << "\n" <<
       SETTINGS_VOLUME << " " << settings._volume.to_int();
   out.close();
@@ -358,7 +337,7 @@ void Lib::StartRecording(int32_t players, bool canFaceSecretBoss, bool isBossMod
   _record.str(std::string());
   _record.clear();
   _recordSeed = (unsigned int) time(0);
-  z_srand(_recordSeed);
+  z::seed(_recordSeed);
 
   _record << "WiiSPACE v1.3 replay\n" << players << " " <<
       canFaceSecretBoss << " " << isBossMode << " " <<
@@ -462,7 +441,7 @@ const Lib::Recording& Lib::PlayRecording(const std::string& path)
   ss >> _replay._isFastMode;
   ss >> _replay._isWhatMode;
   ss >> _replay._seed;
-  z_srand(_replay._seed);
+  z::seed(_replay._seed);
   _replay._players = std::max(std::min(4, _replay._players), 1);
 
   _replay._playerFrames.clear();

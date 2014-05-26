@@ -23,9 +23,6 @@ public:
   virtual bool Exit() const;
   virtual void SetWorkingDirectory(bool original) {}
 
-  virtual int RandInt(int lessThan);
-  virtual fixed RandFloat();
-
   virtual Settings LoadSettings() const;
   virtual bool Connect();
   virtual void Disconnect();

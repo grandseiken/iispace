@@ -177,8 +177,8 @@ void Boss::OnDestroy()
   int n = 1;
   for (int i = 0; i < 16; ++i) {
     Vec2 v;
-    v.SetPolar(GetLib().RandFloat() * (2 * fixed::pi),
-               8 + GetLib().RandInt(64) + GetLib().RandInt(64));
+    v.SetPolar(z::rand_fixed() * (2 * fixed::pi),
+               8 + z::rand_int(64) + z::rand_int(64));
     _fireworks.push_back(
         std::make_pair(n, std::make_pair(GetPosition() + v,
                                          GetShape(0).GetColour())));
@@ -283,7 +283,7 @@ void BigSquareBoss::Update()
   else if (IsOnScreen()) {
     _timer--;
     if (_timer <= 0) {
-      _timer = (GetLib().RandInt(6) + 1) * TIMER;
+      _timer = (z::rand_int(6) + 1) * TIMER;
       _dir = Vec2() - _dir;
       _reverse = !_reverse;
     }
@@ -296,8 +296,8 @@ void BigSquareBoss::Update()
       Spawn(new BigFollow(GetPosition(), false));
       PlaySoundRandom(Lib::SOUND_BOSS_FIRE);
     }
-    if (_specialTimer >= 8 && GetLib().RandInt(4)) {
-      int r = GetLib().RandInt(2);
+    if (_specialTimer >= 8 && z::rand_int(4)) {
+      int r = z::rand_int(2);
       _specialTimer = ATTACK_TIME;
       _specialAttack = true;
       _specialAttackRotate = r != 0;
@@ -434,7 +434,7 @@ void ShieldBombBoss::Update()
     _count++;
     _timer = 0;
 
-    if (_count >= 4 && (!GetLib().RandInt(4) || _count >= 8)) {
+    if (_count >= 4 && (!z::rand_int(4) || _count >= 8)) {
       _count = 0;
       if (!_unshielded) {
         z0Game::ShipList list = GetShips();
@@ -454,11 +454,11 @@ void ShieldBombBoss::Update()
       }
     }
 
-    if (!GetLib().RandInt(3)) {
+    if (!z::rand_int(3)) {
       _side = !_side;
     }
 
-    if (GetLib().RandInt(2)) {
+    if (z::rand_int(2)) {
       Vec2 d(5, 0);
       d.Rotate(GetRotation());
       for (int i = 0; i < 12; i++) {
@@ -469,7 +469,7 @@ void ShieldBombBoss::Update()
     }
     else {
       _attack = ATTACK_TIME;
-      _attackDir.SetPolar(GetLib().RandFloat() * (2 * fixed::pi), 5);
+      _attackDir.SetPolar(z::rand_fixed() * (2 * fixed::pi), 5);
     }
   }
 }
@@ -624,12 +624,11 @@ void ChaserBoss::Update()
   if (_timer <= 0) {
     _timer = TIMER * (_move + 1);
     if (_split != 0 &&
-        (_move || GetLib().RandInt(8 + _split) == 0 ||
+        (_move || z::rand_int(8 + _split) == 0 ||
          int(remaining.size()) - CountPlayers() <= 4 ||
-         GetLib().RandInt(
-             ONE_PT_ONE_FIVE_intLookup[
-                 std::max(0, std::min(127, int(remaining.size()) -
-                                           CountPlayers()))]) == 0)) {
+         !z::rand_int(ONE_PT_ONE_FIVE_intLookup[
+             std::max(0, std::min(127, int(remaining.size()) -
+                                       CountPlayers()))]))) {
       _move = !_move;
     }
     if (_move) {
@@ -805,9 +804,9 @@ void ChaserBoss::OnDestroy()
       Ship* s = new ChaserBoss(
           _players, _cycle, _split + 1, GetPosition() + d,
           (i + 1) * TIMER / 2,
-          GetLib().RandInt(_split + 1 == 1 ? 2 :
-                           _split + 1 == 2 ? 4 :
-                           _split + 1 == 3 ? 8 : 16));
+          z::rand_int(_split + 1 == 1 ? 2 :
+                      _split + 1 == 2 ? 4 :
+                      _split + 1 == 3 ? 8 : 16));
       Spawn(s);
       s->SetRotation(GetRotation());
     }
@@ -846,8 +845,8 @@ void ChaserBoss::OnDestroy()
       for (int i = 0; i < 16; ++i) {
         Vec2 v;
         v.SetPolar(
-            GetLib().RandFloat() * (2 * fixed::pi),
-            8 + GetLib().RandInt(64) + GetLib().RandInt(64));
+            z::rand_fixed() * (2 * fixed::pi),
+            8 + z::rand_int(64) + z::rand_int(64));
 
         _fireworks.push_back(
             std::make_pair(n, std::make_pair(GetPosition() + v,
@@ -892,7 +891,7 @@ TractorBoss::TractorBoss(int players, int cycle)
   , _attacking(false)
   , _continue(false)
   , _genDir(0)
-  , _shootType(z_rand() % 2)
+  , _shootType(z::rand_int(2))
   , _sound(true)
   , _timer(0)
   , _attackSize(0)
@@ -948,20 +947,20 @@ void TractorBoss::Update()
       _willAttack && !_stopped && !_continue) {
     _stopped = true;
     _generating = true;
-    _genDir = GetLib().RandInt(2) == 0;
+    _genDir = z::rand_int(2) == 0;
     _timer = 0;
   }
 
   if (GetPosition()._x < -150) {
     SetPosition(Vec2(Lib::WIDTH + 150, GetPosition()._y));
     _willAttack = !_willAttack;
-    _shootType = GetLib().RandInt(2);
+    _shootType = z::rand_int(2);
     if (_willAttack) {
       _shootType = 0;
     }
     _continue = false;
     _sound = !_willAttack;
-    Rotate(GetLib().RandFloat() * 2 * fixed::pi);
+    Rotate(z::rand_fixed() * 2 * fixed::pi);
   }
 
   _timer++;
@@ -1065,7 +1064,7 @@ void TractorBoss::Update()
         if (_timer % (TIMER / (1 + fixed::half)).to_int() == TIMER / 8) {
           Vec2 v = _s1->ConvertPoint(GetPosition(), GetRotation(), Vec2());
           Vec2 d;
-          d.SetPolar(GetLib().RandFloat() * (2 * fixed::pi), 5);
+          d.SetPolar(z::rand_fixed() * (2 * fixed::pi), 5);
           Spawn(new SBBossShot(v, d, 0xcc33ccff));
           d.Rotate(fixed::pi / 2);
           Spawn(new SBBossShot(v, d, 0xcc33ccff));
@@ -1075,7 +1074,7 @@ void TractorBoss::Update()
           Spawn(new SBBossShot(v, d, 0xcc33ccff));
 
           v = _s2->ConvertPoint(GetPosition(), GetRotation(), Vec2());
-          d.SetPolar(GetLib().RandFloat() * (2 * fixed::pi), 5);
+          d.SetPolar(z::rand_fixed() * (2 * fixed::pi), 5);
           Spawn(new SBBossShot(v, d, 0xcc33ccff));
           d.Rotate(fixed::pi / 2);
           Spawn(new SBBossShot(v, d, 0xcc33ccff));
@@ -1141,8 +1140,8 @@ void TractorBoss::Update()
 
   for (unsigned int i = _attackShapes; i < CountShapes(); ++i) {
     Vec2 v;
-    v.SetPolar(GetLib().RandFloat() * (2 * fixed::pi),
-               2 * (GetLib().RandFloat() - fixed::half) *
+    v.SetPolar(z::rand_fixed() * (2 * fixed::pi),
+               2 * (z::rand_fixed() - fixed::half) *
                    fixed(_attackSize) / (1 + fixed::half));
     GetShape(i).SetCentre(v);
   }
@@ -1349,8 +1348,7 @@ void GhostBoss::Update()
 
     if (_attack == 2) {
       if (_attackTime >= ATTACK_TIME * 4 && _attackTime % 8 == 0) {
-        Vec2 pos(fixed(GetLib().RandInt(Lib::WIDTH + 1)),
-                 fixed(GetLib().RandInt(Lib::HEIGHT + 1)));
+        Vec2 pos(z::rand_int(Lib::WIDTH + 1), z::rand_int(Lib::HEIGHT + 1));
         Spawn(new GhostMine(pos, this));
         PlaySoundRandom(Lib::SOUND_ENEMY_SPAWN);
         _dangerCircle = 0;
@@ -1383,20 +1381,20 @@ void GhostBoss::Update()
             DestroyShape(21);
           }
         }
-        _dangerOffset1 = GetLib().RandInt(11);
-        _dangerOffset2 = GetLib().RandInt(7);
-        _dangerOffset3 = GetLib().RandInt(17);
-        _dangerOffset3 = GetLib().RandInt(10);
+        _dangerOffset1 = z::rand_int(11);
+        _dangerOffset2 = z::rand_int(7);
+        _dangerOffset3 = z::rand_int(17);
+        _dangerOffset3 = z::rand_int(10);
       }
     }
 
     if (_attack == 0 && _attackTime == ATTACK_TIME * 2) {
-      bool r = GetLib().RandInt(2) != 0;
+      bool r = z::rand_int(2) != 0;
       Spawn(new GhostWall(r, true));
       Spawn(new GhostWall(!r, false));
     }
     if (_attack == 1 && _attackTime == ATTACK_TIME * 2) {
-      _rDir = GetLib().RandInt(2) != 0;
+      _rDir = z::rand_int(2) != 0;
       Spawn(new GhostWall(!_rDir, false, 0));
     }
     if (_attack == 1 && _attackTime == ATTACK_TIME * 1) {
@@ -1406,7 +1404,7 @@ void GhostBoss::Update()
     if ((_attack == 0 || _attack == 1) && IsHPLow() &&
         _attackTime == ATTACK_TIME * 1) {
       Vec2 v;
-      int r = GetLib().RandInt(4);
+      int r = z::rand_int(4);
       if (r == 0) {
         v.Set(-Lib::WIDTH / 4, Lib::HEIGHT / 2);
       }
@@ -1426,14 +1424,14 @@ void GhostBoss::Update()
       _vTime = 60;
     }
     if (_attackTime == 0 && _attack != 2) {
-      int r = GetLib().RandInt(3);
+      int r = z::rand_int(3);
       _dangerCircle |= 1 + (r == 2 ? 3 : r);
-      if (GetLib().RandInt(2) || IsHPLow()) {
-        r = GetLib().RandInt(3);
+      if (z::rand_int(2) || IsHPLow()) {
+        r = z::rand_int(3);
         _dangerCircle |= 1 + (r == 2 ? 3 : r);
       }
-      if (GetLib().RandInt(2) || IsHPLow()) {
-        r = GetLib().RandInt(3);
+      if (z::rand_int(2) || IsHPLow()) {
+        r = z::rand_int(3);
         _dangerCircle |= 1 + (r == 2 ? 3 : r);
       }
     }
@@ -1446,8 +1444,8 @@ void GhostBoss::Update()
     _timer = 0;
     _visible = false;
     _vTime = 60;
-    _attack = GetLib().RandInt(3);
-    _shotType = GetLib().RandInt(2) == 0;
+    _attack = z::rand_int(3);
+    _shotType = z::rand_int(2) == 0;
     GetShape(0).SetCategory(0);
     GetShape(1).SetCategory(0);
     GetShape(11).SetCategory(0);
@@ -1468,7 +1466,7 @@ void GhostBoss::Update()
     }
     if (_attack == 2) {
       _attackTime = ATTACK_TIME * 6;
-      _rDir = GetLib().RandInt(2) != 0;
+      _rDir = z::rand_int(2) != 0;
     }
   }
 
@@ -1542,7 +1540,7 @@ DeathRayBoss::DeathRayBoss(int players, int cycle)
   AddShape(s1);
 
   SetIgnoreDamageColourIndex(5);
-  Rotate(2 * fixed::pi * fixed(z_rand()) / Z_RAND_MAX);
+  Rotate(2 * fixed::pi * fixed(z::rand_int()) / z::rand_max);
 }
 
 void DeathRayBoss::Update()
@@ -1589,7 +1587,7 @@ void DeathRayBoss::Update()
       }
       if (!_timer) {
         _laser = false;
-        _timer = TIMER * (2 + GetLib().RandInt(3));
+        _timer = TIMER * (2 + z::rand_int(3));
       }
     }
     else {
@@ -1611,9 +1609,9 @@ void DeathRayBoss::Update()
     Rotate(_dir ? fixed::hundredth * 2 : -fixed::hundredth * 2);
     if (IsOnScreen()) {
       _timer--;
-      if (_timer % TIMER == 0 && _timer != 0 && !GetLib().RandInt(4)) {
-        _dir = GetLib().RandInt(2) != 0;
-        _pos = GetLib().RandInt(7);
+      if (_timer % TIMER == 0 && _timer != 0 && !z::rand_int(4)) {
+        _dir = z::rand_int(2) != 0;
+        _pos = z::rand_int(7);
       }
       if (_timer == TIMER * 2 + 50 && _arms.size() == 2) {
         _rayAttackTimer = RAY_TIMER;
@@ -1625,7 +1623,7 @@ void DeathRayBoss::Update()
     if (_timer <= 0) {
       _laser = true;
       _timer = 0;
-      _pos = GetLib().RandInt(7);
+      _pos = z::rand_int(7);
     }
   }
 
@@ -1658,8 +1656,8 @@ void DeathRayBoss::Update()
     if (_shotTimer % 128 == 0) {
       _rayAttackTimer = RAY_TIMER;
       Vec2 d1, d2;
-      d1.SetPolar(GetLib().RandFloat() * 2 * fixed::pi, 110);
-      d2.SetPolar(GetLib().RandFloat() * 2 * fixed::pi, 110);
+      d1.SetPolar(z::rand_fixed() * 2 * fixed::pi, 110);
+      d2.SetPolar(z::rand_fixed() * 2 * fixed::pi, 110);
       _raySrc1 = GetPosition() + d1;
       _raySrc2 = GetPosition() + d2;
       PlaySound(Lib::SOUND_ENEMY_SPAWN);
@@ -1868,20 +1866,20 @@ void SuperBoss::Update()
 
   if (_state == STATE_IDLE && IsOnScreen() &&
       _timer != 0 && _timer % 300 == 0) {
-    int r = GetLib().RandInt(6);
+    int r = z::rand_int(6);
     if (r == 0 || r == 1) {
       _snakes = 16;
     }
     else if (r == 2 || r == 3) {
       _state = STATE_ATTACK;
       _timer = 0;
-      fixed f = GetLib().RandFloat() * (2 * fixed::pi);
-      fixed rf = d5d1000 * (1 + GetLib().RandInt(2));
+      fixed f = z::rand_fixed() * (2 * fixed::pi);
+      fixed rf = d5d1000 * (1 + z::rand_int(2));
       for (int i = 0; i < 32; ++i) {
         Vec2 d;
         d.SetPolar(f + i * pi2d32, 1);
         if (r == 2) {
-          rf = d5d1000 * (1 + GetLib().RandInt(4));
+          rf = d5d1000 * (1 + z::rand_int(4));
         }
         Spawn(new Snake(GetPosition() + d * 16, c, d, rf));
         PlaySoundRandom(Lib::SOUND_BOSS_ATTACK);
@@ -1890,7 +1888,7 @@ void SuperBoss::Update()
     else if (r == 5) {
       _state = STATE_ATTACK;
       _timer = 0;
-      fixed f = GetLib().RandFloat() * (2 * fixed::pi);
+      fixed f = z::rand_fixed() * (2 * fixed::pi);
       for (int i = 0; i < 64; ++i) {
         Vec2 d;
         d.SetPolar(f + i * pi2d64, 1);
@@ -1919,7 +1917,7 @@ void SuperBoss::Update()
       }
     }
     if (!wide3.empty()) {
-      int r = GetLib().RandInt(int(wide3.size()));
+      int r = z::rand_int(int(wide3.size()));
       SuperBossArc* s = new SuperBossArc(
           GetPosition(), _players, _cycle, wide3[r], this, timer);
       s->SetRotation(GetRotation() - (fixed(6) / 1000));
@@ -1942,8 +1940,8 @@ void SuperBoss::Update()
   if (_snakes) {
     --_snakes;
     Vec2 d;
-    d.SetPolar(GetLib().RandFloat() * (2 * fixed::pi),
-               GetLib().RandInt(32) + GetLib().RandInt(16));
+    d.SetPolar(z::rand_fixed() * (2 * fixed::pi),
+               z::rand_int(32) + z::rand_int(16));
     Spawn(new Snake(d + GetPosition(), c));
     PlaySoundRandom(Lib::SOUND_ENEMY_SPAWN);
   }
@@ -1973,8 +1971,8 @@ void SuperBoss::OnDestroy()
   int n = 1;
   for (int i = 0; i < 16; ++i) {
     Vec2 v;
-    v.SetPolar(GetLib().RandFloat() * (2 * fixed::pi),
-               8 + GetLib().RandInt(64) + GetLib().RandInt(64));
+    v.SetPolar(z::rand_fixed() * (2 * fixed::pi),
+               8 + z::rand_int(64) + z::rand_int(64));
     Colour c = GetLib().Cycle(GetShape(0).GetColour(), n * 2);
     _fireworks.push_back(
         std::make_pair(n, std::make_pair(GetPosition() + v, c)));
