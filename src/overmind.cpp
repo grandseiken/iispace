@@ -276,19 +276,10 @@ void Overmind::SpawnPowerup()
   r = z::rand_int(m);
   _tz0 = &_z0;
 
-  if (r == 0) {
-    Spawn(new Bomb(v));
-  }
-  else if (r == 1) {
-    Spawn(new MagicShots(v));
-  }
-  else if (r == 2) {
-    Spawn(new MagicShield(v));
-  }
-  else {
-    Spawn(new ExtraLife(v));
-    --_livesTarget;
-  }
+  Spawn(new Powerup(v, r == 0 ? Powerup::BOMB :
+                       r == 1 ? Powerup::MAGIC_SHOTS :
+                       r == 2 ? Powerup::SHIELD :
+                       (--_livesTarget, Powerup::EXTRA_LIFE)));
 
   _tz0 = 0;
 }
@@ -312,7 +303,7 @@ void Overmind::SpawnBossReward()
     v.set(Lib::WIDTH / 2, Lib::HEIGHT + Lib::HEIGHT / 4);
   }
 
-  Spawn(new ExtraLife(v));
+  Spawn(new Powerup(v, Powerup::EXTRA_LIFE));
 
   _tz0 = 0;
   if (!_z0.IsBossMode()) {

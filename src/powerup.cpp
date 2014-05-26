@@ -1,20 +1,34 @@
 #include "powerup.h"
 #include "player.h"
 
-const fixed Powerup::SPEED = 1;
-const int Powerup::TIME = 100;
-
-// Basic powerup
-//------------------------------
-Powerup::Powerup(const Vec2& position)
+Powerup::Powerup(const Vec2& position, type_t type)
   : Ship(position)
+  , _type(type)
   , _frame(0)
   , _dir(0, 1)
   , _rotate(false)
-  , _firstFrame(true)
+  , _first_frame(true)
 {
   AddShape(new Polygon(Vec2(), 13, 5, 0, fixed::pi / 2, 0));
   AddShape(new Polygon(Vec2(), 9, 5, 0, fixed::pi / 2, 0));
+
+  switch (type) {
+  case EXTRA_LIFE:
+    AddShape(new Polygon(Vec2(), 8, 3, 0xffffffff, fixed::pi / 2));
+    break;
+
+  case MAGIC_SHOTS:
+    AddShape(new Fill(Vec2(), 3, 3, 0xffffffff));
+    break;
+
+  case SHIELD:
+    AddShape(new Polygon(Vec2(), 11, 5, 0xffffffff, fixed::pi / 2));
+    break;
+
+  case BOMB:
+    AddShape(new Polystar(Vec2(), 11, 10, 0xffffffff, fixed::pi / 2));
+    break;
+  }
 }
 
 void Powerup::Update()
@@ -23,20 +37,21 @@ void Powerup::Update()
   _frame = (_frame + 1) % (Lib::PLAYERS * 2);
   GetShape(1).SetColour(Player::GetPlayerColour(_frame / 2));
 
+  static const int32_t rotate_time = 100;
   if (!IsOnScreen()) {
     _dir = GetScreenCentre() - GetPosition();
   }
   else {
-    if (_firstFrame) {
+    if (_first_frame) {
       _dir.set_polar(z::rand_fixed() * 2 * fixed::pi, 1);
     }
 
     _dir.rotate(2 * fixed::hundredth * (_rotate ? 1 : -1));
-    if (!z::rand_int(TIME)) {
+    if (!z::rand_int(rotate_time)) {
       _rotate = !_rotate;
     }
   }
-  _firstFrame = false;
+  _first_frame = false;
 
   Player* p = GetNearestPlayer();
   bool alive = !p->IsKilled();
@@ -45,7 +60,9 @@ void Powerup::Update()
     _dir = pv;
   }
   _dir.normalise();
-  Move(_dir * SPEED * ((pv.length() <= 40) ? 3 : 1));
+
+  static const fixed speed = 1;
+  Move(_dir * speed * ((pv.length() <= 40) ? 3 : 1));
   if (pv.length() <= 10 && alive) {
     Damage(1, false, (Player*) p);
   }
@@ -54,7 +71,27 @@ void Powerup::Update()
 void Powerup::Damage(int damage, bool magic, Player* source)
 {
   if (source) {
-    OnGet(source);
+    switch (_type) {
+    case EXTRA_LIFE:
+      AddLife();
+      PlaySound(Lib::SOUND_POWERUP_LIFE);
+      break;
+
+    case MAGIC_SHOTS:
+      source->ActivateMagicShots();
+      PlaySound(Lib::SOUND_POWERUP_OTHER);
+      break;
+
+    case SHIELD:
+      source->ActivateMagicShield();
+      PlaySound(Lib::SOUND_POWERUP_OTHER);
+      break;
+
+    case BOMB:
+      source->ActivateBomb();
+      PlaySound(Lib::SOUND_POWERUP_OTHER);
+      break;
+    }
     GetLib().Rumble(source->GetPlayerNumber(), 6);
   }
 
@@ -66,60 +103,4 @@ void Powerup::Damage(int damage, bool magic, Player* source)
                        to_float(dir), 4 + z::rand_int(8)));
   }
   Destroy();
-}
-
-// Extra life
-//------------------------------
-ExtraLife::ExtraLife(const Vec2& position)
-  : Powerup(position)
-{
-  AddShape(new Polygon(Vec2(), 8, 3, 0xffffffff, fixed::pi / 2));
-}
-
-void ExtraLife::OnGet(Player* player)
-{
-  AddLife();
-  PlaySound(Lib::SOUND_POWERUP_LIFE);
-}
-
-// Magic shots
-//------------------------------
-MagicShots::MagicShots(const Vec2& position)
-  : Powerup(position)
-{
-  AddShape(new Fill(Vec2(), 3, 3, 0xffffffff));
-}
-
-void MagicShots::OnGet(Player* player)
-{
-  player->ActivateMagicShots();
-  PlaySound(Lib::SOUND_POWERUP_OTHER);
-}
-
-// Magic shield
-//------------------------------
-MagicShield::MagicShield(const Vec2& position)
-  : Powerup(position)
-{
-  AddShape(new Polygon(Vec2(), 11, 5, 0xffffffff, fixed::pi / 2));
-}
-
-void MagicShield::OnGet(Player* player)
-{
-  player->ActivateMagicShield();
-  PlaySound(Lib::SOUND_POWERUP_OTHER);
-}
-
-// Bomb
-//------------------------------
-Bomb::Bomb(const Vec2& position)
-  : Powerup(position)
-{
-  AddShape(new Polystar(Vec2(), 11, 10, 0xffffffff, fixed::pi / 2));
-}
-
-void Bomb::OnGet(Player* player)
-{
-  player->ActivateBomb();
-  PlaySound(Lib::SOUND_POWERUP_OTHER);
 }

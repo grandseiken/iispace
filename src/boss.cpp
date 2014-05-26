@@ -450,7 +450,7 @@ void ShieldBombBoss::Update()
           }
         }
         if (p < 5) {
-          Spawn(new Bomb(GetPosition()));
+          Spawn(new Powerup(GetPosition(), Powerup::BOMB));
         }
       }
     }
@@ -1462,7 +1462,7 @@ void GhostBoss::Update()
     if (_attack == 1) {
       _attackTime = ATTACK_TIME * 3;
       for (int i = 0; i < CountPlayers(); i++) {
-        Spawn(new MagicShield(GetPosition()));
+        Spawn(new Powerup(GetPosition(), Powerup::SHIELD));
       }
     }
     if (_attack == 2) {
@@ -2002,6 +2002,6 @@ void SuperBoss::OnDestroy()
   }
 
   for (int i = 0; i < 8; ++i) {
-    Spawn(new Bomb(GetPosition()));
+    Spawn(new Powerup(GetPosition(), Powerup::BOMB));
   }
 }
