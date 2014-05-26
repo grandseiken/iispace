@@ -1,15 +1,17 @@
 #ifndef IISPACE_SRC_LIB_H
 #define IISPACE_SRC_LIB_H
 
-#include "z0.h"
+#include "z.h"
 #include <map>
+#include <memory>
 struct score_finished {};
+struct Internals;
 
 class Lib {
 public:
 
   Lib();
-  virtual ~Lib() {}
+  ~Lib();
 
   // Constants
   //------------------------------
@@ -45,9 +47,9 @@ public:
   };
 
   enum PadType {
-    PAD_NONE = 0,
-    PAD_KEYMOUSE = 1,
-    PAD_GAMEPAD = 2,
+    PAD_NONE,
+    PAD_KEYMOUSE,
+    PAD_GAMEPAD,
   };
 
   struct Settings {
@@ -104,21 +106,18 @@ public:
     _players = players;
   }
 
-  virtual void Init() = 0;
-  virtual void BeginFrame() = 0;
-  virtual void EndFrame() = 0;
-  virtual void CaptureMouse(bool enabled) {}
-  virtual void NewGame() {}
-  virtual void SetWorkingDirectory(bool original) = 0;
+  void Init();
+  void BeginFrame();
+  void EndFrame();
+  void CaptureMouse(bool enabled);
+  void NewGame();
+  void SetWorkingDirectory(bool original);
 
-  virtual void Exit(bool exit) = 0;
-  virtual bool Exit() const = 0;
+  void Exit(bool exit);
+  bool Exit() const;
 
-  virtual Settings LoadSettings() const = 0;
-  virtual void SetVolume(int volume) = 0;
-
-  virtual std::string SavePath() const = 0;
-  virtual std::string SettingsPath() const = 0;
+  Settings LoadSettings() const;
+  void SetVolume(int volume);
 
   SaveData LoadSaveData();
   void SaveSaveData(const SaveData& version2);
@@ -128,37 +127,34 @@ public:
 
   // Input
   //------------------------------
-  virtual PadType IsPadConnected(int32_t player) const = 0;
+  PadType IsPadConnected(int32_t player) const;
 
-  virtual bool IsKeyPressed(int32_t player, Key k) const = 0;
-  virtual bool IsKeyReleased(int32_t player, Key k) const = 0;
-  virtual bool IsKeyHeld(int32_t player, Key k) const = 0;
+  bool IsKeyPressed(int32_t player, Key k) const;
+  bool IsKeyReleased(int32_t player, Key k) const;
+  bool IsKeyHeld(int32_t player, Key k) const;
 
-  virtual bool IsKeyPressed(Key k) const;
-  virtual bool IsKeyReleased(Key k) const;
-  virtual bool IsKeyHeld(Key k) const;
+  bool IsKeyPressed(Key k) const;
+  bool IsKeyReleased(Key k) const;
+  bool IsKeyHeld(Key k) const;
 
-  virtual Vec2 GetMoveVelocity(int32_t player) const = 0;
-  virtual Vec2 GetFireTarget(int32_t player, const Vec2& position) const = 0;
+  Vec2 GetMoveVelocity(int32_t player) const;
+  Vec2 GetFireTarget(int32_t player, const Vec2& position) const;
 
   // Output
   //------------------------------
-  virtual void ClearScreen() const = 0;
-  virtual void RenderLine(
-      const Vec2f& a, const Vec2f& b, Colour c) const = 0;
-  virtual void RenderText(
-      const Vec2f& v, const std::string& text, Colour c) const = 0;
-  virtual void RenderRect(
-      const Vec2f& low, const Vec2f& hi, Colour c, int lineWidth = 0) const = 0;
-  virtual void Render() const = 0;
+  void ClearScreen() const;
+  void RenderLine(const Vec2f& a, const Vec2f& b, Colour c) const;
+  void RenderText(const Vec2f& v, const std::string& text, Colour c) const;
+  void RenderRect(const Vec2f& low, const Vec2f& hi,
+                  Colour c, int lineWidth = 0) const;
+  void Render() const;
 
-  virtual void Rumble(int player, int time) = 0;
-  virtual void StopRumble() = 0;
-  virtual bool PlaySound(
-      Sound sound,
-      float volume = 1.f, float pan = 0.f, float repitch = 0.f) = 0;
+  void Rumble(int player, int time);
+  void StopRumble();
+  bool PlaySound(
+      Sound sound, float volume = 1.f, float pan = 0.f, float repitch = 0.f);
 
-  virtual void TakeScreenShot() = 0;
+  void TakeScreenShot();
 
   // Recording
   //------------------------------
@@ -168,8 +164,8 @@ public:
   void EndRecording(const std::string& name, uint64_t score, int32_t players,
                     bool bossMode, bool hardMode, bool fastMode, bool whatMode);
 
-  virtual void OnScore(long seed, int32_t players, bool bossMode, uint64_t score,
-                       bool hardMode, bool fastMode, bool whatMode) {}
+  void OnScore(long seed, int32_t players, bool bossMode, uint64_t score,
+               bool hardMode, bool fastMode, bool whatMode);
 
   struct PlayerFrame {
     Vec2 _velocity;
@@ -212,6 +208,32 @@ private:
   std::size_t _players;
   std::stringstream _record;
   mutable std::map<std::pair<Colour, int>, Colour> _cycleMap;
+
+  // Internal
+  //------------------------------
+  bool _exit;
+  char* _cwd;
+  std::vector<char> _exe;
+
+  std::vector<std::vector<bool>> _keysPressed;
+  std::vector<std::vector<bool>> _keysHeld;
+  std::vector<std::vector<bool>> _keysReleased;
+
+  bool _captureMouse;
+  int _mousePosX;
+  int _mousePosY;
+  int _extraX;
+  int _extraY;
+  mutable bool _mouseMoving;
+
+  void LoadSounds();
+
+  // Data
+  //------------------------------
+  Settings _settings;
+  std::unique_ptr<Internals> _internals;
+  std::size_t _scoreFrame;
+  friend class Handler;
 
 };
 

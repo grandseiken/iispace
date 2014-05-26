@@ -9,23 +9,6 @@
 #include <cstdint>
 #include <cstring>
 
-namespace z {
-  int32_t state = 0;
-
-  void seed(int32_t seed)
-  {
-    state = seed;
-  }
-
-  int32_t rand_int()
-  {
-    int32_t const a = 1103515245;
-    int32_t const c = 12345;
-    state = a * state + c;
-    return (state >> 16) & 0x7fff;
-  }
-}
-
 const int z0Game::STARTING_LIVES = 2;
 const int z0Game::BOSSMODE_LIVES = 1;
 

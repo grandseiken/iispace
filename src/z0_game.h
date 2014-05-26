@@ -4,7 +4,8 @@
 #include <memory>
 
 #include "lib.h"
-#include "z0.h"
+#include "z.h"
+class Overmind;
 class Particle;
 
 #define ALLOWED_CHARS "ABCDEFGHiJKLMNOPQRSTUVWXYZ 1234567890! "

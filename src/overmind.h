@@ -1,7 +1,7 @@
 #ifndef IISPACE_SRC_OVERMIND_H
 #define IISPACE_SRC_OVERMIND_H
 
-#include "z0.h"
+#include "z.h"
 #include <time.h>
 
 class Overmind {

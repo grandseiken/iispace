@@ -1,20 +1,14 @@
 #include "z0_game.h"
+#include "lib.h"
 
 #include <iostream>
 #include <string>
 #include <vector>
 
-#include "lib_ii.h"
-#include "lib_score.h"
-
 int run(const std::vector<std::string>& args)
 {
   try {
-#ifdef PLATFORM_SCORE
-    LibRepScore lib;
-#else
-    LibWin lib;
-#endif
+    Lib lib;
     lib.Init();
 
     z0Game game(lib, args);

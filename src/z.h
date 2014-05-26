@@ -1,37 +1,43 @@
 #ifndef IISPACE_SRC_Z0_H
 #define IISPACE_SRC_Z0_H
 
+#include <string>
 #include <vector>
 #include "fix32.h"
 
 // Forward declarations
 //------------------------------
 typedef unsigned int Colour;
-class Lib;
-class Game;
 class z0Game;
 class Shape;
 class Ship;
 class Enemy;
 class Player;
-class Overmind;
 class DeathRayBoss;
 class DeathRayArm;
 
 namespace z {
-  static const int32_t rand_max = 0x7fff;
-  void seed(int32_t seed);
-  int32_t rand_int();
 
-  inline int32_t rand_int(int32_t max)
-  {
-    return rand_int() % max;
-  }
+static const int32_t rand_max = 0x7fff;
+void seed(int32_t seed);
+int32_t rand_int();
 
-  inline fixed rand_fixed()
-  {
-    return fixed(rand_int()) / rand_max;
-  }
+inline int32_t rand_int(int32_t max)
+{
+  return rand_int() % max;
+}
+
+inline fixed rand_fixed()
+{
+  return fixed(rand_int()) / rand_max;
+}
+
+std::string compress_string(const std::string& str);
+std::string decompress_string(const std::string& str);
+
+Colour colour_cycle(Colour rgb, int cycle);
+
+// End namespace z.
 }
 
 // Vector math

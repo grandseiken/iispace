@@ -1,7 +1,7 @@
 #ifndef IISPACE_SRC_SHAPE_H
 #define IISPACE_SRC_SHAPE_H
 
-#include "z0.h"
+#include "z.h"
 #include "lib.h"
 
 // Basic shape
