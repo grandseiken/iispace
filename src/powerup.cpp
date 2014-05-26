@@ -2,7 +2,7 @@
 #include "player.h"
 
 Powerup::Powerup(const vec2& position, type_t type)
-  : Ship(position)
+  : Ship(position, Ship::SHIP_POWERUP)
   , _type(type)
   , _frame(0)
   , _dir(0, 1)
@@ -102,5 +102,5 @@ void Powerup::Damage(int damage, bool magic, Player* source)
     Spawn(new Particle(to_float(GetPosition()), 0xffffffff,
                        to_float(dir), 4 + z::rand_int(8)));
   }
-  Destroy();
+  destroy();
 }

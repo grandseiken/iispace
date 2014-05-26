@@ -37,12 +37,12 @@ void BigFollow::OnDestroy(bool bomb)
 // Generic boss projectile
 //------------------------------
 SBBossShot::SBBossShot(const vec2& position, const vec2& velocity, colour c)
-  : Enemy(position, 0)
+  : Enemy(position, Ship::SHIP_WALL, 0)
   , _dir(velocity)
 {
   AddShape(new Polystar(vec2(), 16, 8, c, 0, 0));
   AddShape(new Polygon(vec2(), 10, 8, c, 0, 0));
-  AddShape(new Polygon(vec2(), 12, 8, 0, 0, ENEMY));
+  AddShape(new Polygon(vec2(), 12, 8, 0, 0, DANGEROUS));
   SetBoundingWidth(12);
   SetScore(0);
   SetEnemyValue(1);
@@ -56,7 +56,7 @@ void SBBossShot::Update()
       (p.x > Lib::WIDTH + 10 && _dir.x > 0) ||
       (p.y < -10 && _dir.y < 0) ||
       (p.y > Lib::HEIGHT + 10 && _dir.y > 0)) {
-    Destroy();
+    destroy();
   }
   SetRotation(GetRotation() + fixed::hundredth * 2);
 }
@@ -64,9 +64,9 @@ void SBBossShot::Update()
 // Tractor beam minion
 //------------------------------
 TBossShot::TBossShot(const vec2& position, fixed angle)
-  : Enemy(position, 1)
+  : Enemy(position, Ship::SHIP_NONE, 1)
 {
-  AddShape(new Polygon(vec2(), 8, 6, 0xcc33ccff, 0, ENEMY | VULNERABLE));
+  AddShape(new Polygon(vec2(), 8, 6, 0xcc33ccff, 0, DANGEROUS | VULNERABLE));
   _dir.set_polar(angle, 3);
   SetBoundingWidth(8);
   SetScore(0);
@@ -90,37 +90,39 @@ void TBossShot::Update()
 // Ghost boss wall
 //------------------------------
 GhostWall::GhostWall(bool swap, bool noGap, bool ignored)
-  : Enemy(vec2(Lib::WIDTH / 2, swap ? -10 : 10 + Lib::HEIGHT), 0)
+  : Enemy(vec2(Lib::WIDTH / 2, swap ? -10 : 10 + Lib::HEIGHT),
+          Ship::SHIP_NONE, 0)
   , _dir(0, swap ? 1 : -1)
 {
   if (noGap) {
     AddShape(new Box(vec2(), fixed(Lib::WIDTH), 10, 0xcc66ffff,
-                     0, ENEMY | SHIELD));
+                     0, DANGEROUS | SHIELD));
     AddShape(new Box(vec2(), fixed(Lib::WIDTH), 7, 0xcc66ffff, 0, 0));
     AddShape(new Box(vec2(), fixed(Lib::WIDTH), 4, 0xcc66ffff, 0, 0));
   }
   else {
     AddShape(new Box(vec2(), Lib::HEIGHT / 2, 10, 0xcc66ffff,
-                     0, ENEMY | SHIELD));
+                     0, DANGEROUS | SHIELD));
     AddShape(new Box(vec2(), Lib::HEIGHT / 2, 7, 0xcc66ffff,
-                     0, ENEMY | SHIELD));
+                     0, DANGEROUS | SHIELD));
     AddShape(new Box(vec2(), Lib::HEIGHT / 2, 4, 0xcc66ffff,
-                     0, ENEMY | SHIELD));
+                     0, DANGEROUS | SHIELD));
   }
   SetBoundingWidth(fixed(Lib::WIDTH));
 }
 
 GhostWall::GhostWall(bool swap, bool swapGap)
-  : Enemy(vec2(swap ? -10 : 10 + Lib::WIDTH, Lib::HEIGHT / 2), 0)
+  : Enemy(vec2(swap ? -10 : 10 + Lib::WIDTH, Lib::HEIGHT / 2),
+          Ship::SHIP_NONE, 0)
   , _dir(swap ? 1 : -1, 0)
 {
   SetBoundingWidth(fixed(Lib::HEIGHT));
   fixed off = swapGap ? -100 : 100;
 
   AddShape(new Box(vec2(0, off - 20 - Lib::HEIGHT / 2), 10,
-                   Lib::HEIGHT / 2, 0xcc66ffff, 0, ENEMY | SHIELD));
+                   Lib::HEIGHT / 2, 0xcc66ffff, 0, DANGEROUS | SHIELD));
   AddShape(new Box(vec2(0, off + 20 + Lib::HEIGHT / 2), 10,
-                   Lib::HEIGHT / 2, 0xcc66ffff, 0, ENEMY | SHIELD));
+                   Lib::HEIGHT / 2, 0xcc66ffff, 0, DANGEROUS | SHIELD));
 
   AddShape(new Box(vec2(0, off - 20 - Lib::HEIGHT / 2), 7,
                    Lib::HEIGHT / 2, 0xcc66ffff, 0, 0));
@@ -149,14 +151,14 @@ void GhostWall::Update()
       (_dir.y > 0 && GetPosition().y > Lib::HEIGHT + 10) ||
       (_dir.x < 0 && GetPosition().x < -10) ||
       (_dir.y < 0 && GetPosition().y < -10)) {
-    Destroy();
+    destroy();
   }
 }
 
 // Ghost boss mine
 //------------------------------
 GhostMine::GhostMine(const vec2& position, Boss* ghost)
-  : Enemy(position, 0)
+  : Enemy(position, Ship::SHIP_NONE, 0)
   , _timer(80)
   , _ghost(ghost)
 {
@@ -175,10 +177,10 @@ void GhostMine::Update()
   if (_timer) {
     _timer--;
     if (!_timer) {
-      GetShape(0).SetCategory(ENEMY | SHIELD | VULNSHIELD);
+      GetShape(0).SetCategory(DANGEROUS | SHIELD | VULNSHIELD);
     }
   }
-  z0Game::ShipList s = GetCollisionList(GetPosition(), ENEMY);
+  z0Game::ShipList s = GetCollisionList(GetPosition(), DANGEROUS);
   for (unsigned int i = 0; i < s.size(); i++) {
     if (s[i] == _ghost) {
       Enemy* e = z::rand_int(6) == 0 ||
@@ -202,9 +204,9 @@ void GhostMine::Render() const
 // Death ray
 //------------------------------
 DeathRay::DeathRay(const vec2& position)
-  : Enemy(position, 0)
+  : Enemy(position, Ship::SHIP_NONE, 0)
 {
-  AddShape(new Box(vec2(), 10, 48, 0, 0, ENEMY));
+  AddShape(new Box(vec2(), 10, 48, 0, 0, DANGEROUS));
   AddShape(new Line(vec2(), vec2(0, -48), vec2(0, 48), 0xffffffff, 0));
   SetBoundingWidth(48);
 }
@@ -213,14 +215,14 @@ void DeathRay::Update()
 {
   Move(vec2(1, 0) * SPEED);
   if (GetPosition().x > Lib::WIDTH + 20) {
-    Destroy();
+    destroy();
   }
 }
 
 // Death arm
 //------------------------------
 DeathArm::DeathArm(DeathRayBoss* boss, bool top, int hp)
-  : Enemy(vec2(), hp)
+  : Enemy(vec2(), Ship::SHIP_NONE, hp)
   , _boss(boss)
   , _top(top)
   , _timer(top ? 2 * DeathRayBoss::ARM_ATIMER / 3 : 0)
@@ -304,7 +306,7 @@ void DeathArm::Update()
     }
     _start--;
     if (!_start) {
-      GetShape(1).SetCategory(ENEMY | VULNERABLE);
+      GetShape(1).SetCategory(DANGEROUS | VULNERABLE);
     }
   }
 }
@@ -320,14 +322,14 @@ void DeathArm::OnDestroy(bool bomb)
 // Snake tail
 //------------------------------
 SnakeTail::SnakeTail(const vec2& position, colour colour)
-  : Enemy(position, 1)
+  : Enemy(position, Ship::SHIP_NONE, 1)
   , _tail(0)
   , _head(0)
   , _timer(150)
   , _dTimer(0)
 {
   AddShape(
-      new Polygon(vec2(), 10, 4, colour, 0, ENEMY | SHIELD | VULNSHIELD));
+      new Polygon(vec2(), 10, 4, colour, 0, DANGEROUS | SHIELD | VULNSHIELD));
   SetBoundingWidth(22);
   SetScore(0);
 }
@@ -339,7 +341,7 @@ void SnakeTail::Update()
   --_timer;
   if (!_timer) {
     OnDestroy(false);
-    Destroy();
+    destroy();
     Explosion();
   }
   if (_dTimer) {
@@ -349,7 +351,7 @@ void SnakeTail::Update()
         _tail->_dTimer = 4;
       }
       OnDestroy(false);
-      Destroy();
+      destroy();
       Explosion();
       PlaySoundRandom(Lib::SOUND_ENEMY_DESTROY);
     }
@@ -371,7 +373,7 @@ void SnakeTail::OnDestroy(bool bomb)
 // Snake
 //------------------------------
 Snake::Snake(const vec2& position, colour colour, const vec2& dir, fixed rot)
-  : Enemy(position, 5)
+  : Enemy(position, Ship::SHIP_NONE, 5)
   , _tail(0)
   , _timer(0)
   , _dir(0, 0)
@@ -381,7 +383,7 @@ Snake::Snake(const vec2& position, colour colour, const vec2& dir, fixed rot)
   , _shotRot(rot)
 {
   AddShape(new Polygon(vec2(), 14, 3, colour, 0, VULNERABLE));
-  AddShape(new Polygon(vec2(), 10, 3, 0, 0, ENEMY));
+  AddShape(new Polygon(vec2(), 10, 3, 0, 0, DANGEROUS));
   SetScore(0);
   SetBoundingWidth(32);
   SetEnemyValue(5);
@@ -414,7 +416,7 @@ void Snake::Update()
   if (!(GetPosition().x >= -8 && GetPosition().x <= Lib::WIDTH + 8 &&
         GetPosition().y >= -8 && GetPosition().y <= Lib::HEIGHT + 8)) {
     _tail = 0;
-    Destroy();
+    destroy();
     return;
   }
 
@@ -479,7 +481,7 @@ void RainbowShot::Update()
       }
 
       Explosion(0, 4, true, to_float(GetPosition() - _dir));
-      Destroy();
+      destroy();
       return;
     }
   }

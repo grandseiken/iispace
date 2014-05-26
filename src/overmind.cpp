@@ -208,7 +208,7 @@ void Overmind::Update()
 void Overmind::OnEnemyDestroy(const Ship& ship)
 {
   _count -= ship.GetEnemyValue();
-  if (!ship.IsWall()) {
+  if (!ship.is_wall()) {
     _nonWallCount--;
   }
 }
@@ -216,7 +216,7 @@ void Overmind::OnEnemyDestroy(const Ship& ship)
 void Overmind::OnEnemyCreate(const Ship& ship)
 {
   _count += ship.GetEnemyValue();
-  if (!ship.IsWall()) {
+  if (!ship.is_wall()) {
     _nonWallCount++;
   }
 }
@@ -228,7 +228,7 @@ void Overmind::SpawnPowerup()
   z0Game::ShipList existing = _z0.GetShips();
   int count = 0;
   for (unsigned int i = 0; i < existing.size(); i++) {
-    if (existing[i]->IsPowerup()) {
+    if (existing[i]->is_powerup()) {
       count++;
     }
     if (count >= 4) {

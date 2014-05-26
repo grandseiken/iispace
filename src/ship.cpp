@@ -1,14 +1,13 @@
 #include "ship.h"
 #include "z0_game.h"
 
-Ship::Ship(const vec2& position, bool particle, bool player, bool boss)
-  : _z0(0)
+Ship::Ship(const vec2& position, ship_category type)
+  : _z0(nullptr)
+  , _type(type)
   , _destroy(false)
   , _position(position)
   , _rotation(0)
   , _boundingWidth(0)
-  , _player(player)
-  , _boss(boss)
   , _enemyValue(1)
 {
 }
@@ -89,14 +88,14 @@ Lib& Ship::GetLib() const
   return _z0->GetLib();
 }
 
-void Ship::Destroy()
+void Ship::destroy()
 {
-  if (IsDestroyed()) {
+  if (is_destroyed()) {
     return;
   }
 
   _destroy = true;
-  for (unsigned int i = 0; i < CountShapes(); i++) {
+  for (std::size_t i = 0; i < CountShapes(); i++) {
     GetShape(i).SetCategory(0);
   }
 }

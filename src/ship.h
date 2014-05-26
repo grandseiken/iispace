@@ -9,15 +9,23 @@ class Particle;
 class Ship {
 public:
 
-  enum Category {
+  enum shape_category {
     VULNERABLE = 1,
-    ENEMY = 2,
+    DANGEROUS = 2,
     SHIELD = 4,
     VULNSHIELD = 8
   };
 
-  Ship(const vec2& position, bool particle = false,
-       bool player = false, bool boss = false);
+  enum ship_category {
+    SHIP_NONE = 0,
+    SHIP_PLAYER = 1,
+    SHIP_WALL = 2,
+    SHIP_ENEMY = 4,
+    SHIP_BOSS = 8,
+    SHIP_POWERUP = 16,
+  };
+
+  Ship(const vec2& position, ship_category type);
   virtual ~Ship();
 
   void SetGame(z0Game& game)
@@ -26,37 +34,37 @@ public:
   }
   Lib& GetLib() const;
 
-  void Destroy();
-  bool IsDestroyed() const
+  void destroy();
+  bool is_destroyed() const
   {
     return _destroy;
   }
 
-  // Type-checking overrides
+  // Type-checking
   //------------------------------
-  bool IsPlayer() const
+  bool is_player() const
   {
-    return _player;
+    return (_type & SHIP_PLAYER) != 0;
   }
 
-  virtual bool IsWall() const
+  bool is_wall() const
   {
-    return false;
+    return (_type & SHIP_WALL) != 0;
   }
 
-  virtual bool IsEnemy() const
+  bool is_enemy() const
   {
-    return false;
+    return (_type & SHIP_ENEMY) != 0;
   }
 
-  bool IsBoss() const
+  bool is_boss() const
   {
-    return _boss;
+    return (_type & SHIP_BOSS) != 0;
   }
 
-  virtual bool IsPowerup() const
+  bool is_powerup() const
   {
-    return false;
+    return (_type & SHIP_POWERUP) != 0;
   }
 
   // Position and rotation
@@ -252,16 +260,14 @@ protected:
 
 private:
 
-  // Internals
-  //------------------------------
   z0Game* _z0;
 
+  ship_category _type;
   bool _destroy;
+
   vec2 _position;
   fixed _rotation;
   fixed _boundingWidth;
-  bool _player;
-  bool _boss;
   int _enemyValue;
 
   typedef std::vector< Shape* > ShapeList;

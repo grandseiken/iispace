@@ -16,11 +16,6 @@ public:
 
   virtual ~Boss() {}
 
-  virtual bool IsEnemy() const
-  {
-    return true;
-  }
-
   void SetKilled()
   {
     SetBossKilled(_flag);

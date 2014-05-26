@@ -21,7 +21,7 @@ Lib::Recording Player::_replay;
 std::size_t Player::_replayFrame;
 
 Player::Player(const vec2& position, int playerNumber)
-  : Ship(position, false, true, false)
+  : Ship(position, Ship::SHIP_PLAYER)
   , _playerNumber(playerNumber)
   , _score(0)
   , _multiplier(1)
@@ -152,14 +152,14 @@ void Player::Update()
 
     z0Game::ShipList list = GetShipsInRadius(GetPosition(), BOMB_BOSSRADIUS);
     for (unsigned int i = 0; i < list.size(); i++) {
-      if (!list[i]->IsEnemy()) {
+      if (!list[i]->is_enemy()) {
         continue;
       }
       if ((list[i]->GetPosition() - GetPosition()).length() <= BOMB_RADIUS ||
-          list[i]->IsBoss()) {
+          list[i]->is_boss()) {
         list[i]->Damage(BOMB_DAMAGE, false, 0);
       }
-      if (!list[i]->IsBoss() && ((Enemy*) list[i])->GetScore() > 0) {
+      if (!list[i]->is_boss() && ((Enemy*) list[i])->GetScore() > 0) {
         AddScore(0);
       }
     }
@@ -201,7 +201,7 @@ void Player::Update()
   }
 
   // Damage
-  if (AnyCollisionList(GetPosition(), ENEMY)) {
+  if (AnyCollisionList(GetPosition(), DANGEROUS)) {
     Damage();
   }
 }
@@ -387,7 +387,7 @@ void Player::ActivateBomb()
 //------------------------------
 Shot::Shot(const vec2& position, Player* player,
            const vec2& direction, bool magic)
-  : Ship(position)
+  : Ship(position, Ship::SHIP_NONE)
   , _player(player)
   , _velocity(direction)
   , _magic(magic)
@@ -424,7 +424,7 @@ void Shot::Update()
       GetPosition().x >= -4 && GetPosition().x < 4 + Lib::WIDTH &&
       GetPosition().y >= -4 && GetPosition().y < 4 + Lib::HEIGHT;
   if (!onScreen) {
-    Destroy();
+    destroy();
     return;
   }
 
@@ -432,14 +432,14 @@ void Shot::Update()
   for (unsigned int i = 0; i < kill.size(); i++) {
     kill[i]->Damage(1, _magic, _player);
     if (!_magic) {
-      Destroy();
+      destroy();
     }
   }
 
   if (AnyCollisionList(GetPosition(), SHIELD)) {
-    Destroy();
+    destroy();
   }
   if (!_magic && AnyCollisionList(GetPosition(), VULNSHIELD)) {
-    Destroy();
+    destroy();
   }
 }

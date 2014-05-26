@@ -82,7 +82,7 @@ z0Game::z0Game(Lib& lib, std::vector< std::string > args)
 z0Game::~z0Game()
 {
   for (const auto& ship : _ships) {
-    if (ship->IsEnemy()) {
+    if (ship->is_enemy()) {
       _overmind->OnEnemyDestroy(*ship);
     }
   }
@@ -360,7 +360,7 @@ void z0Game::Update()
     ChaserBoss::_hasCounted = false;
     std::stable_sort(_collisions.begin(), _collisions.end(), &SortShips);
     for (std::size_t i = 0; i < _ships.size(); ++i) {
-      if (!_ships[i]->IsDestroyed()) {
+      if (!_ships[i]->is_destroyed()) {
         _ships[i]->Update();
       }
     }
@@ -387,12 +387,12 @@ void z0Game::Update()
     }
 
     for (auto it = _ships.begin(); it != _ships.end();) {
-      if (!(*it)->IsDestroyed()) {
+      if (!(*it)->is_destroyed()) {
         ++it;
         continue;
       }
 
-      if ((*it)->IsEnemy()) {
+      if ((*it)->is_enemy()) {
         _overmind->OnEnemyDestroy(**it);
       }
       for (auto jt = _collisions.begin(); jt != _collisions.end();) {
@@ -632,7 +632,7 @@ void z0Game::Render() const
         ss.str(), PANEL_TRAN);
 
     for (std::size_t i = 0; i < _ships.size() + Boss::_warnings.size(); ++i) {
-      if (i < _ships.size() && !_ships[i]->IsEnemy()) {
+      if (i < _ships.size() && !_ships[i]->is_enemy()) {
         continue;
       }
       flvec2 v = to_float(
@@ -1045,7 +1045,7 @@ void z0Game::NewGame(bool canFaceSecretBoss, bool bossMode, bool replay,
 void z0Game::EndGame()
 {
   for (const auto& ship : _ships) {
-    if (ship->IsEnemy()) {
+    if (ship->is_enemy()) {
       _overmind->OnEnemyDestroy(*ship);
     }
   }
@@ -1082,7 +1082,7 @@ void z0Game::EndGame()
 void z0Game::AddShip(Ship* ship)
 {
   ship->SetGame(*this);
-  if (ship->IsEnemy()) {
+  if (ship->is_enemy()) {
     _overmind->OnEnemyCreate(*ship);
   }
   _ships.emplace_back(ship);
@@ -1254,7 +1254,7 @@ std::string z0Game::ConvertToTime(uint64_t score) const
 uint64_t z0Game::GetPlayerScore(int32_t playerNumber) const
 {
   for (const auto& ship : _ships) {
-    if (ship->IsPlayer()) {
+    if (ship->is_player()) {
       Player* p = (Player*) ship.get();
       if (p->GetPlayerNumber() == playerNumber) {
         return p->GetScore();
@@ -1267,7 +1267,7 @@ uint64_t z0Game::GetPlayerScore(int32_t playerNumber) const
 uint64_t z0Game::GetPlayerDeaths(int32_t playerNumber) const
 {
   for (const auto& ship : _ships) {
-    if (ship->IsPlayer()) {
+    if (ship->is_player()) {
       Player* p = (Player*) ship.get();
       if (p->GetPlayerNumber() == playerNumber) {
         return p->GetDeaths();
@@ -1281,7 +1281,7 @@ uint64_t z0Game::GetTotalScore() const
 {
   uint64_t total = 0;
   for (const auto& ship : _ships) {
-    if (ship->IsPlayer()) {
+    if (ship->is_player()) {
       Player* p = (Player*) ship.get();
       total += p->GetScore();
     }

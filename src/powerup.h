@@ -19,11 +19,6 @@ public:
   void Update() override;
   void Damage(int damage, bool magic, Player* source) override;
 
-  bool IsPowerup() const override
-  {
-    return true;
-  }
-
 private:
 
   type_t _type;

@@ -8,13 +8,9 @@
 class Enemy : public Ship {
 public:
 
-  Enemy(const vec2& position, int hp, bool explodeOnDestroy = true);
+  Enemy(const vec2& position, Ship::ship_category type,
+        int hp, bool explodeOnDestroy = true);
   virtual ~Enemy() {}
-
-  virtual bool IsEnemy() const
-  {
-    return true;
-  }
 
   long GetScore() const
   {
@@ -106,11 +102,6 @@ public:
   virtual void Update();
   virtual void Render() const;
 
-  virtual bool IsWall() const
-  {
-    return true;
-  }
-
 private:
 
   vec2 _dir;
@@ -131,11 +122,6 @@ public:
 
   virtual void Update();
   virtual void OnDestroy(bool bomb);
-
-  virtual bool IsWall() const
-  {
-    return true;
-  }
 
 private:
 

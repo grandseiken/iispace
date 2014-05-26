@@ -29,11 +29,6 @@ public:
 
   virtual void Update();
 
-  virtual bool IsWall() const
-  {
-    return true;
-  }
-
 protected:
 
   vec2 _dir;

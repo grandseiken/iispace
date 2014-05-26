@@ -52,7 +52,7 @@ const int SuperBoss::ARC_HP = 75;
 //------------------------------
 Boss::Boss(const vec2& position, z0Game::BossList boss, int hp,
            int players, int cycle, bool explodeOnDamage)
-  : Ship(position, false, false, true)
+  : Ship(position, Ship::ship_category(Ship::SHIP_BOSS | Ship::SHIP_ENEMY))
   , _hp(0)
   , _maxHp(0)
   , _flag(boss)
@@ -118,11 +118,11 @@ void Boss::Damage(int damage, bool magic, Player* source)
           GetLives() == 0 ? Player::CountKilledPlayers() : 0)));
   _hp -= actualDamage;
 
-  if (_hp <= 0 && !IsDestroyed()) {
-    Destroy();
+  if (_hp <= 0 && !is_destroyed()) {
+    destroy();
     OnDestroy();
   }
-  else if (!IsDestroyed()) {
+  else if (!is_destroyed()) {
     PlaySoundRandom(Lib::SOUND_ENEMY_SHATTER);
   }
 }
@@ -164,10 +164,9 @@ void Boss::RenderHPBar() const
 void Boss::OnDestroy()
 {
   SetKilled();
-  z0Game::ShipList s = GetShips();
-  for (unsigned int i = 0; i < s.size(); i++) {
-    if (s[i]->IsEnemy() && s[i] != this) {
-      s[i]->Damage(Player::BOMB_DAMAGE, false, 0);
+  for (const auto& ship : GetShips()) {
+    if (ship->is_enemy() && ship != this) {
+      ship->Damage(Player::BOMB_DAMAGE, false, 0);
     }
   }
   Explosion();
@@ -226,8 +225,8 @@ BigSquareBoss::BigSquareBoss(int players, int cycle)
   , _attackPlayer(0)
 {
   AddShape(new Polygon(vec2(), 160, 4, 0x9933ffff, 0, 0));
-  AddShape(new Polygon(vec2(), 140, 4, 0x9933ffff, 0, ENEMY));
-  AddShape(new Polygon(vec2(), 120, 4, 0x9933ffff, 0, ENEMY));
+  AddShape(new Polygon(vec2(), 140, 4, 0x9933ffff, 0, DANGEROUS));
+  AddShape(new Polygon(vec2(), 120, 4, 0x9933ffff, 0, DANGEROUS));
   AddShape(new Polygon(vec2(), 100, 4, 0x9933ffff, 0, 0));
   AddShape(new Polygon(vec2(), 80, 4, 0x9933ffff, 0, 0));
   AddShape(new Polygon(vec2(), 60, 4, 0x9933ffff, 0, VULNERABLE));
@@ -354,7 +353,7 @@ ShieldBombBoss::ShieldBombBoss(int players, int cycle)
   , _side(false)
   , _shotAlternate(false)
 {
-  AddShape(new Polygram(vec2(), 48, 8, 0x339966ff, 0, ENEMY | VULNERABLE));
+  AddShape(new Polygram(vec2(), 48, 8, 0x339966ff, 0, DANGEROUS | VULNERABLE));
 
   for (int i = 0; i < 16; i++) {
     vec2 a(120, 0);
@@ -366,7 +365,7 @@ ShieldBombBoss::ShieldBombBoss(int players, int cycle)
     AddShape(new Line(vec2(), a, b, 0x999999ff, 0));
   }
 
-  AddShape(new Polygon(vec2(), 130, 16, 0xccccccff, 0, VULNSHIELD | ENEMY));
+  AddShape(new Polygon(vec2(), 130, 16, 0xccccccff, 0, VULNSHIELD | DANGEROUS));
   AddShape(new Polygon(vec2(), 125, 16, 0xccccccff, 0, 0));
   AddShape(new Polygon(vec2(), 120, 16, 0xccccccff, 0, 0));
 
@@ -410,8 +409,8 @@ void ShieldBombBoss::Update()
     }
 
     if (!_unshielded) {
-      GetShape(0).SetCategory(ENEMY | VULNERABLE);
-      GetShape(17).SetCategory(VULNSHIELD | ENEMY);
+      GetShape(0).SetCategory(DANGEROUS | VULNERABLE);
+      GetShape(17).SetCategory(VULNSHIELD | DANGEROUS);
 
       for (int i = 0; i < 3; i++) {
         GetShape(i + 17).SetColour(0xccccccff);
@@ -442,7 +441,7 @@ void ShieldBombBoss::Update()
 
         int p = 0;
         for (std::size_t i = 0; i < list.size(); ++i) {
-          if (list[i]->IsPowerup()) {
+          if (list[i]->is_powerup()) {
             p++;
           }
           if (p == 5) {
@@ -482,7 +481,7 @@ int ShieldBombBoss::GetDamage(int damage, bool magic)
   }
   if (damage >= Player::BOMB_DAMAGE && !_unshielded) {
     _unshielded = UNSHIELD_TIME;
-    GetShape(0).SetCategory(VULNERABLE | ENEMY);
+    GetShape(0).SetCategory(VULNERABLE | DANGEROUS);
     GetShape(17).SetCategory(0);
   }
   if (!magic) {
@@ -598,7 +597,7 @@ ChaserBoss::ChaserBoss(int players, int cycle, int split,
   AddShape(new Polygram(vec2(), 9 * ONE_AND_HALF_lookup[MAX_SPLIT - _split],
                         5, 0x3399ffff, 0, 0));
   AddShape(new Polygram(vec2(), 8 * ONE_AND_HALF_lookup[MAX_SPLIT - _split],
-                        5, 0, 0, ENEMY | VULNERABLE));
+                        5, 0, 0, DANGEROUS | VULNERABLE));
   AddShape(new Polygram(vec2(), 7 * ONE_AND_HALF_lookup[MAX_SPLIT - _split],
                         5, 0, 0, SHIELD));
 
@@ -663,7 +662,7 @@ void ChaserBoss::Update()
       _dir.x = _dir.y = 0;
       for (std::size_t i = 0; i < nearby.size(); ++i) {
         if (nearby[i] == this ||
-            !(nearby[i]->IsBoss() || nearby[i]->IsPlayer())) {
+            !(nearby[i]->is_boss() || nearby[i]->is_player())) {
           continue;
         }
 
@@ -673,7 +672,7 @@ void ChaserBoss::Update()
           v /= len;
         }
         vec2 p;
-        if (nearby[i]->IsBoss()) {
+        if (nearby[i]->is_boss()) {
           ChaserBoss* c = (ChaserBoss*) nearby[i];
           fixed pow = ONE_PT_ONE_FIVE_lookup[MAX_SPLIT - c->_split];
           v *= pow;
@@ -813,11 +812,9 @@ void ChaserBoss::OnDestroy()
     }
   }
   else {
-    z0Game::ShipList remaining = GetShips();
     last = true;
-    for (std::size_t i = 0; i < remaining.size(); ++i) {
-      if (remaining[i]->IsEnemy() &&
-          !remaining[i]->IsDestroyed() && remaining[i] != this) {
+    for (const auto& ship : GetShips()) {
+      if (ship->is_enemy() && !ship->is_destroyed() && ship != this) {
         last = false;
         break;
       }
@@ -897,7 +894,7 @@ TractorBoss::TractorBoss(int players, int cycle)
   , _timer(0)
   , _attackSize(0)
 {
-  _s1 = new CompoundShape(vec2(0, -96), 0, ENEMY | VULNERABLE, 0xcc33ccff);
+  _s1 = new CompoundShape(vec2(0, -96), 0, DANGEROUS | VULNERABLE, 0xcc33ccff);
 
   _s1->AddShape(new Polygram(vec2(), 12, 6, 0x882288ff, 0, 0));
   _s1->AddShape(new Polygon(vec2(), 12, 12, 0x882288ff, 0, 0));
@@ -911,7 +908,7 @@ TractorBoss::TractorBoss(int players, int cycle)
     _s1->AddShape(new Polygram(d, 12, 6, 0xcc33ccff, 0, 0));
   }
 
-  _s2 = new CompoundShape(vec2(0, 96), 0, ENEMY | VULNERABLE, 0xcc33ccff);
+  _s2 = new CompoundShape(vec2(0, 96), 0, DANGEROUS | VULNERABLE, 0xcc33ccff);
 
   _s2->AddShape(new Polygram(vec2(), 12, 6, 0x882288ff, 0, 0));
   _s2->AddShape(new Polygon(vec2(), 12, 12, 0x882288ff, 0, 0));
@@ -1005,16 +1002,15 @@ void TractorBoss::Update()
         _sound = false;
       }
       _targets.clear();
-      z0Game::ShipList t = GetShips();
-      for (unsigned int i = 0; i < t.size(); ++i) {
-        if (!t[i]->IsPlayer() || ((Player*) t[i])->IsKilled()) {
+      for (const auto& ship : GetShips()) {
+        if (!ship->is_player() || ((Player*) ship)->IsKilled()) {
           continue;
         }
-        vec2 pos = t[i]->GetPosition();
+        vec2 pos = ship->GetPosition();
         _targets.push_back(pos);
         vec2 d = GetPosition() - pos;
         d.normalise();
-        t[i]->Move(d * Tractor::TRACTOR_SPEED);
+        ship->Move(d * Tractor::TRACTOR_SPEED);
       }
     }
   }
@@ -1086,33 +1082,32 @@ void TractorBoss::Update()
           PlaySoundRandom(Lib::SOUND_BOSS_FIRE);
         }
         _targets.clear();
-        z0Game::ShipList t = GetShips();
-        for (unsigned int i = 0; i < t.size(); i++) {
-          if (t[i] == this ||
-              (t[i]->IsPlayer() && ((Player*) t[i])->IsKilled()) ||
-              !(t[i]->IsPlayer() || t[i]->IsEnemy())) {
+        for (const auto& ship : GetShips()) {
+          if (ship == this ||
+              (ship->is_player() && ((Player*) ship)->IsKilled()) ||
+              !(ship->is_player() || ship->is_enemy())) {
             continue;
           }
 
-          if (t[i]->IsEnemy()) {
+          if (ship->is_enemy()) {
             PlaySoundRandom(Lib::SOUND_BOSS_ATTACK, 0, 0.3f);
           }
-          vec2 pos = t[i]->GetPosition();
+          vec2 pos = ship->GetPosition();
           _targets.push_back(pos);
           fixed speed = 0;
-          if (t[i]->IsPlayer()) {
+          if (ship->is_player()) {
             speed = Tractor::TRACTOR_SPEED;
           }
-          if (t[i]->IsEnemy()) {
+          if (ship->is_enemy()) {
             speed = 4 + fixed::half;
           }
           vec2 d = GetPosition() - pos;
           d.normalise();
-          t[i]->Move(d * speed);
+          ship->Move(d * speed);
 
-          if (t[i]->IsEnemy() && !t[i]->IsWall() &&
-              (t[i]->GetPosition() - GetPosition()).length() <= 40) {
-            t[i]->Destroy();
+          if (ship->is_enemy() && !ship->is_wall() &&
+              (ship->GetPosition() - GetPosition()).length() <= 40) {
+            ship->destroy();
             _attackSize++;
             _sAttack->SetRadius(_attackSize / (1 + fixed::half));
             AddShape(new Polygon(vec2(), 8, 6, 0xcc33ccff, 0, 0));
@@ -1235,7 +1230,7 @@ GhostBoss::GhostBoss(int players, int cycle)
   }
 
   for (int n = 0; n < 5; n++) {
-    CompoundShape* s = new CompoundShape(vec2(), 0, ENEMY);
+    CompoundShape* s = new CompoundShape(vec2(), 0, DANGEROUS);
     AddShape(s);
   }
 
@@ -1475,11 +1470,11 @@ void GhostBoss::Update()
     _vTime--;
     if (!_vTime && _visible) {
       GetShape(0).SetCategory(SHIELD);
-      GetShape(1).SetCategory(ENEMY | VULNERABLE);
-      GetShape(11).SetCategory(ENEMY);
+      GetShape(1).SetCategory(DANGEROUS | VULNERABLE);
+      GetShape(11).SetCategory(DANGEROUS);
       if (CountShapes() >= 22) {
-        GetShape(21).SetCategory(ENEMY);
-        GetShape(24).SetCategory(ENEMY);
+        GetShape(21).SetCategory(DANGEROUS);
+        GetShape(24).SetCategory(DANGEROUS);
       }
     }
   }
@@ -1526,12 +1521,12 @@ DeathRayBoss::DeathRayBoss(int players, int cycle)
   AddShape(new Polystar(vec2(), 110, 12, 0x228855ff, fixed::pi / 12, 0));
   AddShape(new Polygram(vec2(), 70, 12, 0x33ff99ff, fixed::pi / 12, 0));
   AddShape(new Polygon(
-      vec2(), 120, 12, 0x33ff99ff, fixed::pi / 12, ENEMY | VULNERABLE));
+      vec2(), 120, 12, 0x33ff99ff, fixed::pi / 12, DANGEROUS | VULNERABLE));
   AddShape(new Polygon(vec2(), 115, 12, 0x33ff99ff, fixed::pi / 12, 0));
   AddShape(new Polygon(
       vec2(), 110, 12, 0x33ff99ff, fixed::pi / 12, SHIELD));
 
-  CompoundShape* s1 = new CompoundShape(vec2(), 0, ENEMY);
+  CompoundShape* s1 = new CompoundShape(vec2(), 0, DANGEROUS);
   for (int i = 1; i < 12; i++) {
     CompoundShape* s2 = new CompoundShape(vec2(), i * fixed::pi / 6, 0);
     s2->AddShape(new Box(vec2(130, 0), 10, 24, 0x33ff99ff, 0, 0));
@@ -1765,7 +1760,7 @@ void SuperBossArc::Update()
   ++_timer;
   ++_sTimer;
   if (_sTimer == 64) {
-    GetShape(0).SetCategory(ENEMY | VULNERABLE);
+    GetShape(0).SetCategory(DANGEROUS | VULNERABLE);
   }
 }
 
@@ -1808,7 +1803,7 @@ SuperBoss::SuperBoss(int players, int cycle)
   , _state(STATE_ARRIVE)
   , _snakes(0)
 {
-  AddShape(new Polygon(vec2(), 40, 32, 0, 0, ENEMY | VULNERABLE));
+  AddShape(new Polygon(vec2(), 40, 32, 0, 0, DANGEROUS | VULNERABLE));
   AddShape(new Polygon(vec2(), 35, 32, 0, 0, 0));
   AddShape(new Polygon(vec2(), 30, 32, 0, 0, SHIELD));
   AddShape(new Polygon(vec2(), 25, 32, 0, 0, 0));
@@ -1905,7 +1900,7 @@ void SuperBoss::Update()
   }
 
   if (_state == STATE_IDLE && IsOnScreen() &&
-      _timer % 300 == 200 && !IsDestroyed()) {
+      _timer % 300 == 200 && !is_destroyed()) {
     std::vector< int > wide3;
     int timer = 0;
     for (int i = 0; i < 16; ++i) {
@@ -1957,10 +1952,9 @@ int SuperBoss::GetDamage(int damage, bool magic)
 void SuperBoss::OnDestroy()
 {
   SetKilled();
-  z0Game::ShipList s = GetShips();
-  for (unsigned int i = 0; i < s.size(); i++) {
-    if (s[i]->IsEnemy() && s[i] != this) {
-      s[i]->Damage(Player::BOMB_DAMAGE * 100, false, 0);
+  for (const auto& ship : GetShips()) {
+    if (ship->is_enemy() && ship != this) {
+      ship->Damage(Player::BOMB_DAMAGE * 100, false, 0);
     }
   }
   Explosion();

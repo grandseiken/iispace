@@ -21,8 +21,9 @@ const fixed Tractor::TRACTOR_SPEED = 2 + fixed(1) / 2;
 
 // Basic enemy
 //------------------------------
-Enemy::Enemy(const vec2& position, int hp, bool explodeOnDestroy)
-  : Ship(position)
+Enemy::Enemy(const vec2& position, Ship::ship_category type,
+             int hp, bool explodeOnDestroy)
+  : Ship(position, Ship::ship_category(type | Ship::SHIP_ENEMY))
   , _hp(hp)
   , _score(0)
   , _damaged(false)
@@ -38,7 +39,7 @@ void Enemy::Damage(int damage, bool magic, Player* source)
     PlaySoundRandom(Lib::SOUND_ENEMY_HIT);
   }
 
-  if (_hp <= 0 && !IsDestroyed()) {
+  if (_hp <= 0 && !is_destroyed()) {
     PlaySoundRandom(_destroySound);
     if (source && GetScore() > 0) {
       source->AddScore(GetScore());
@@ -50,9 +51,9 @@ void Enemy::Damage(int damage, bool magic, Player* source)
       Explosion(0, 4, true, to_float(GetPosition()));
     }
     OnDestroy(damage >= Player::BOMB_DAMAGE);
-    Destroy();
+    destroy();
   }
-  else if (!IsDestroyed()) {
+  else if (!is_destroyed()) {
     if (damage > 0) {
       PlaySoundRandom(Lib::SOUND_ENEMY_HIT);
     }
@@ -73,11 +74,12 @@ void Enemy::Render() const
 // Follower enemy
 //------------------------------
 Follow::Follow(const vec2& position, fixed radius, int hp)
-  : Enemy(position, hp)
+  : Enemy(position, Ship::SHIP_NONE, hp)
   , _timer(0)
   , _target(0)
 {
-  AddShape(new Polygon(vec2(), radius, 4, 0x9933ffff, 0, ENEMY | VULNERABLE));
+  AddShape(
+      new Polygon(vec2(), radius, 4, 0x9933ffff, 0, DANGEROUS | VULNERABLE));
   SetScore(15);
   SetBoundingWidth(10);
   SetDestroySound(Lib::SOUND_ENEMY_SHATTER);
@@ -108,12 +110,12 @@ void Follow::Update()
 // Chaser enemy
 //------------------------------
 Chaser::Chaser(const vec2& position)
-  : Enemy(position, 2)
+  : Enemy(position, Ship::SHIP_NONE, 2)
   , _move(false)
   , _timer(TIME)
   , _dir()
 {
-  AddShape(new Polygram(vec2(), 10, 4, 0x3399ffff, 0, ENEMY | VULNERABLE));
+  AddShape(new Polygram(vec2(), 10, 4, 0x3399ffff, 0, DANGEROUS | VULNERABLE));
   SetScore(30);
   SetBoundingWidth(10);
   SetDestroySound(Lib::SOUND_ENEMY_SHATTER);
@@ -151,11 +153,11 @@ void Chaser::Update()
 // Square enemy
 //------------------------------
 Square::Square(const vec2& position, fixed rotation)
-  : Enemy(position, 4)
+  : Enemy(position, Ship::SHIP_WALL, 4)
   , _dir()
   , _timer(z::rand_int(80) + 40)
 {
-  AddShape(new Box(vec2(), 10, 10, 0x33ff33ff, 0, ENEMY | VULNERABLE));
+  AddShape(new Box(vec2(), 10, 10, 0x33ff33ff, 0, DANGEROUS | VULNERABLE));
   _dir.set_polar(rotation, 1);
   SetScore(25);
   SetBoundingWidth(15);
@@ -220,13 +222,13 @@ void Square::Render() const
 // Wall enemy
 //------------------------------
 Wall::Wall(const vec2& position, bool rdir)
-  : Enemy(position, 10)
+  : Enemy(position, Ship::SHIP_WALL, 10)
   , _dir(0, 1)
   , _timer(0)
   , _rotate(false)
   , _rdir(rdir)
 {
-  AddShape(new Box(vec2(), 10, 40, 0x33cc33ff, 0, ENEMY | VULNERABLE));
+  AddShape(new Box(vec2(), 10, 40, 0x33cc33ff, 0, DANGEROUS | VULNERABLE));
   SetScore(20);
   SetBoundingWidth(50);
   SetEnemyValue(4);
@@ -303,7 +305,7 @@ void Wall::OnDestroy(bool bomb)
 // Follow spawner enemy
 //------------------------------
 FollowHub::FollowHub(const vec2& position, bool powerA, bool powerB)
-  : Enemy(position, 14)
+  : Enemy(position, Ship::SHIP_NONE, 14)
   , _timer(0)
   , _dir(0, 0)
   , _count(0)
@@ -311,7 +313,7 @@ FollowHub::FollowHub(const vec2& position, bool powerA, bool powerB)
   , _powerB(powerB)
 {
   AddShape(new Polygram(
-      vec2(), 16, 4, 0x6666ffff, fixed::pi / 4, ENEMY | VULNERABLE));
+      vec2(), 16, 4, 0x6666ffff, fixed::pi / 4, DANGEROUS | VULNERABLE));
   if (_powerB) {
     AddShape(new Polystar(vec2(16, 0), 8, 4, 0x6666ffff, fixed::pi / 4));
     AddShape(new Polystar(vec2(-16, 0), 8, 4, 0x6666ffff, fixed::pi / 4));
@@ -385,7 +387,7 @@ void FollowHub::OnDestroy(bool bomb)
 // Shielder enemy
 //------------------------------
 Shielder::Shielder(const vec2& position, bool power)
-  : Enemy(position, 16)
+  : Enemy(position, Ship::SHIP_NONE, 16)
   , _dir(0, 1)
   , _timer(0)
   , _rotate(false)
@@ -405,7 +407,7 @@ Shielder::Shielder(const vec2& position, bool power)
 
   AddShape(new Polystar(vec2(0, 0), 24, 4, 0x006633ff, 0, 0));
   AddShape(new Polygon(vec2(0, 0), 14, 8, power ? 0x33cc99ff : 0x006633ff,
-                       0, ENEMY | VULNERABLE));
+                       0, DANGEROUS | VULNERABLE));
   SetScore(60 + _power * 40);
   SetBoundingWidth(36);
   SetDestroySound(Lib::SOUND_PLAYER_DESTROY);
@@ -481,16 +483,17 @@ void Shielder::Update()
 // Tractor beam enemy
 //------------------------------
 Tractor::Tractor(const vec2& position, bool power)
-  : Enemy(position, 50)
+  : Enemy(position, Ship::SHIP_NONE, 50)
   , _timer(TIMER * 4)
   , _dir(0, 0)
   , _power(power)
   , _ready(false)
   , _spinning(false)
 {
-  AddShape(new Polygram(vec2(24, 0), 12, 6, 0xcc33ccff, 0, ENEMY | VULNERABLE));
+  AddShape(new Polygram(vec2(24, 0), 12, 6,
+                        0xcc33ccff, 0, DANGEROUS | VULNERABLE));
   AddShape(new Polygram(vec2(-24, 0), 12, 6,
-                        0xcc33ccff, 0, ENEMY | VULNERABLE));
+                        0xcc33ccff, 0, DANGEROUS | VULNERABLE));
   AddShape(new Line(vec2(0, 0), vec2(24, 0), vec2(-24, 0), 0xcc33ccff));
   if (power) {
     AddShape(new Polystar(vec2(24, 0), 16, 6, 0xcc33ccff, 0, 0));
