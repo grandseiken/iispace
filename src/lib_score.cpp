@@ -4,7 +4,7 @@
 
 LibRepScore::LibRepScore()
   : _frame(0)
-  , _exitType(NO_EXIT)
+  , _exit(false)
 {
 }
 
@@ -12,8 +12,9 @@ LibRepScore::~LibRepScore()
 {
 }
 
-void LibRepScore::OnScore(long seed, int players, bool bossMode, long score,
-                          bool hardMode, bool fastMode, bool whatMode)
+void LibRepScore::OnScore(
+    long seed, int32_t players, bool bossMode, uint64_t score,
+    bool hardMode, bool fastMode, bool whatMode)
 {
   std::cout << seed << "\n" << players << "\n" << bossMode << "\n" <<
       hardMode << "\n" << fastMode << "\n" << whatMode << "\n" <<
@@ -40,18 +41,14 @@ void LibRepScore::EndFrame()
   SetFrameCount(16384);
 }
 
-void LibRepScore::Exit(ExitType t)
+void LibRepScore::Exit(bool exit)
 {
-  _exitType = t;
+  _exit = exit;
 }
 
-Lib::ExitType LibRepScore::GetExitType() const
+bool LibRepScore::Exit() const
 {
-  return _exitType;
-}
-
-void LibRepScore::SystemExit(bool powerOff) const
-{
+  return _exit;
 }
 
 int LibRepScore::RandInt(int lessThan)
@@ -75,12 +72,12 @@ LibRepScore::Settings LibRepScore::LoadSettings() const
 
 // Input
 //------------------------------
-LibRepScore::PadType LibRepScore::IsPadConnected(int player) const
+LibRepScore::PadType LibRepScore::IsPadConnected(int32_t player) const
 {
   return PAD_NONE;
 }
 
-bool LibRepScore::IsKeyPressed(int player, Key k) const
+bool LibRepScore::IsKeyPressed(int32_t player, Key k) const
 {
   if (player != 0) {
     return false;
@@ -94,22 +91,22 @@ bool LibRepScore::IsKeyPressed(int player, Key k) const
   return false;
 }
 
-bool LibRepScore::IsKeyReleased(int player, Key k) const
+bool LibRepScore::IsKeyReleased(int32_t player, Key k) const
 {
   return false;
 }
 
-bool LibRepScore::IsKeyHeld(int player, Key k) const
+bool LibRepScore::IsKeyHeld(int32_t player, Key k) const
 {
   return false;
 }
 
-Vec2 LibRepScore::GetMoveVelocity(int player) const
+Vec2 LibRepScore::GetMoveVelocity(int32_t player) const
 {
   return Vec2();
 }
 
-Vec2 LibRepScore::GetFireTarget(int player, const Vec2& position) const
+Vec2 LibRepScore::GetFireTarget(int32_t player, const Vec2& position) const
 {
   return Vec2();
 }

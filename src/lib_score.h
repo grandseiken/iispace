@@ -9,8 +9,9 @@ public:
   LibRepScore();
   virtual ~LibRepScore();
 
-  virtual void OnScore(long seed, int players, bool bossMode, long score,
-                       bool hardMode, bool fastMode, bool whatMode);
+  virtual void OnScore(
+      long seed, int32_t players, bool bossMode, uint64_t score,
+      bool hardMode, bool fastMode, bool whatMode);
 
   // General
   //------------------------------
@@ -18,9 +19,8 @@ public:
   virtual void BeginFrame();
   virtual void EndFrame();
 
-  virtual void Exit(ExitType t);
-  virtual ExitType GetExitType() const;
-  virtual void SystemExit(bool powerOff) const;
+  virtual void Exit(bool exit);
+  virtual bool Exit() const;
   virtual void SetWorkingDirectory(bool original) {}
 
   virtual int RandInt(int lessThan);
@@ -50,14 +50,14 @@ public:
 
   // Input
   //------------------------------
-  virtual PadType IsPadConnected(int player) const;
+  virtual PadType IsPadConnected(int32_t player) const;
 
-  virtual bool IsKeyPressed(int player, Key k) const;
-  virtual bool IsKeyReleased(int player, Key k) const;
-  virtual bool IsKeyHeld(int player, Key k) const;
+  virtual bool IsKeyPressed(int32_t player, Key k) const;
+  virtual bool IsKeyReleased(int32_t player, Key k) const;
+  virtual bool IsKeyHeld(int32_t player, Key k) const;
 
-  virtual Vec2 GetMoveVelocity(int player) const;
-  virtual Vec2 GetFireTarget(int player, const Vec2& position) const;
+  virtual Vec2 GetMoveVelocity(int32_t player) const;
+  virtual Vec2 GetFireTarget(int32_t player, const Vec2& position) const;
 
   // Output
   //------------------------------
@@ -79,7 +79,7 @@ public:
 private:
 
   int _frame;
-  ExitType _exitType;
+  bool _exit;
 
 };
 

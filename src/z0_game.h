@@ -1,11 +1,15 @@
 #ifndef IISPACE_SRC_Z0_GAME_H
 #define IISPACE_SRC_Z0_GAME_H
 
-#include "game.h"
+#include <memory>
+
 #include "lib.h"
+#include "z0.h"
 class Particle;
 
-class z0Game : public Game {
+#define ALLOWED_CHARS "ABCDEFGHiJKLMNOPQRSTUVWXYZ 1234567890! "
+
+class z0Game {
 public:
 
   // Constants
@@ -16,6 +20,7 @@ public:
     STATE_GAME,
     STATE_HIGHSCORE,
   };
+
   enum BossList {
     BOSS_1A = 1,
     BOSS_1B = 2,
@@ -32,21 +37,20 @@ public:
   static const int STARTING_LIVES;
   static const int BOSSMODE_LIVES;
 
-#define ALLOWED_CHARS "ABCDEFGHiJKLMNOPQRSTUVWXYZ 1234567890! "
-
   typedef std::vector<Ship*> ShipList;
 
   z0Game(Lib& lib, std::vector<std::string> args);
-  virtual ~z0Game();
+  ~z0Game();
 
   // Main functions
   //------------------------------
-  virtual void Update();
-  virtual void Render() const;
+  void Run();
+  void Update();
+  void Render() const;
 
-  GameState GetState() const
+  Lib& GetLib() const
   {
-    return _state;
+    return _lib;
   }
 
   // Ships
@@ -56,12 +60,12 @@ public:
   int GetNonWallCount() const;
   ShipList GetCollisionList(const Vec2& point, int category) const;
   ShipList GetShipsInRadius(const Vec2& point, fixed radius) const;
+  ShipList GetShips() const;
   bool AnyCollisionList(const Vec2& point, int category) const;
-  const ShipList& GetShips() const;
 
   // Players
   //------------------------------
-  int CountPlayers() const
+  int32_t CountPlayers() const
   {
     return _players;
   }
@@ -114,7 +118,7 @@ public:
     }
   }
 
-  int GetLives() const
+  int32_t GetLives() const
   {
     return _lives;
   }
@@ -150,13 +154,13 @@ private:
     return IsFastModeUnlocked() && ((_hardModeBossesKilled & 64) == 64);
   }
 
-  std::string ConvertToTime(long score) const;
+  std::string ConvertToTime(uint64_t score) const;
 
   // Scores
   //------------------------------
-  long GetPlayerScore(int playerNumber) const;
-  int  GetPlayerDeaths(int playerNumber) const;
-  long GetTotalScore() const;
+  uint64_t GetPlayerScore(int32_t playerNumber) const;
+  uint64_t GetPlayerDeaths(int32_t playerNumber) const;
+  uint64_t GetTotalScore() const;
   bool IsHighScore() const;
 
   void NewGame(bool canFaceSecretBoss, bool bossMode = false,
@@ -164,9 +168,10 @@ private:
                bool fastMode = false, bool whatMode = false);
   void EndGame();
 
+  Lib& _lib;
   GameState _state;
-  int _players;
-  int _lives;
+  int32_t _players;
+  int32_t _lives;
   bool _bossMode;
   bool _hardMode;
   bool _fastMode;
@@ -187,16 +192,16 @@ private:
   int _compliment;
   int _scoreScreenTimer;
 
-  std::vector<Particle*> _particleList;
-  ShipList _shipList;
+  std::vector<std::unique_ptr<Particle>> _particles;
+  std::vector<std::unique_ptr<Ship>> _ships;
   ShipList _playerList;
-  ShipList _collisionList;
+  ShipList _collisions;
 
   int _controllersConnected;
   bool _controllersDialog;
   bool _firstControllersDialog;
 
-  Overmind* _overmind;
+  std::unique_ptr<Overmind> _overmind;
   int _bossesKilled;
   int _hardModeBossesKilled;
   Lib::HighScoreTable _highScores;

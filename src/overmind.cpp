@@ -129,7 +129,7 @@ void Overmind::Update()
       _starCount = RandInt(3) + 2;
       if (_bossModBosses < 6) {
         if (_bossModBosses)
-        for (int i = 0; i < _z0.CountPlayers(); ++i) {
+        for (int32_t i = 0; i < _z0.CountPlayers(); ++i) {
           SpawnBossReward();
         }
         BossModeBoss();
@@ -229,17 +229,18 @@ void Overmind::Update()
   }
 }
 
-void Overmind::OnEnemyDestroy(Ship* ship)
+void Overmind::OnEnemyDestroy(const Ship& ship)
 {
-  _count -= ship->GetEnemyValue();
-  if (!ship->IsWall()) {
+  _count -= ship.GetEnemyValue();
+  if (!ship.IsWall()) {
     _nonWallCount--;
   }
 }
-void Overmind::OnEnemyCreate(Ship* ship)
+
+void Overmind::OnEnemyCreate(const Ship& ship)
 {
-  _count += ship->GetEnemyValue();
-  if (!ship->IsWall()) {
+  _count += ship.GetEnemyValue();
+  if (!ship.IsWall()) {
     _nonWallCount++;
   }
 }
@@ -248,9 +249,7 @@ void Overmind::OnEnemyCreate(Ship* ship)
 //------------------------------
 void Overmind::SpawnPowerup()
 {
-  z0Game::ShipList existing =
-      _z0.GetShipsInRadius(Vec2(Lib::WIDTH / 2, Lib::HEIGHT / 2),
-                           Lib::WIDTH * Lib::HEIGHT);
+  z0Game::ShipList existing = _z0.GetShips();
   int count = 0;
   for (unsigned int i = 0; i < existing.size(); i++) {
     if (existing[i]->IsPowerup()) {

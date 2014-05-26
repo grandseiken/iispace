@@ -87,7 +87,7 @@ bool PadToKey(PadConfig config, int button, Lib::Key key)
 bool LibWin::Handler::buttonPressed(const OIS::JoyStickEvent& arg, int button)
 {
   int p = -1;
-  for (int i = 0; i < PLAYERS && i < _lib->_padCount; ++i) {
+  for (int32_t i = 0; i < PLAYERS && i < _lib->_padCount; ++i) {
     if (_lib->_pads[i] == arg.device) {
       p = i;
     }
@@ -108,7 +108,7 @@ bool LibWin::Handler::buttonPressed(const OIS::JoyStickEvent& arg, int button)
 bool LibWin::Handler::buttonReleased(const OIS::JoyStickEvent& arg, int button)
 {
   int p = -1;
-  for (int i = 0; i < PLAYERS && i < _lib->_padCount; ++i) {
+  for (int32_t i = 0; i < PLAYERS && i < _lib->_padCount; ++i) {
     if (_lib->_pads[i] == arg.device) {
       p = i;
     }
@@ -129,7 +129,7 @@ bool LibWin::Handler::buttonReleased(const OIS::JoyStickEvent& arg, int button)
 bool LibWin::Handler::axisMoved(const OIS::JoyStickEvent& arg, int axis)
 {
   int p = -1;
-  for (int i = 0; i < PLAYERS && i < _lib->_padCount; ++i) {
+  for (int32_t i = 0; i < PLAYERS && i < _lib->_padCount; ++i) {
     if (_lib->_pads[i] == arg.device) {
       p = i;
     }
@@ -164,7 +164,7 @@ bool LibWin::Handler::axisMoved(const OIS::JoyStickEvent& arg, int axis)
 bool LibWin::Handler::povMoved(const OIS::JoyStickEvent& arg, int pov)
 {
   int p = -1;
-  for (int i = 0; i < PLAYERS && i < _lib->_padCount; ++i) {
+  for (int32_t i = 0; i < PLAYERS && i < _lib->_padCount; ++i) {
     if (_lib->_pads[i] == arg.device) {
       p = i;
     }
@@ -229,7 +229,7 @@ bool LibWin::Handler::povMoved(const OIS::JoyStickEvent& arg, int pov)
 }
 
 LibWin::LibWin()
-  : _exitType(NO_EXIT)
+  : _exit(false)
   , _cwd(0)
   , _captureMouse(false)
   , _mousePosX(0)
@@ -284,7 +284,7 @@ LibWin::LibWin()
   OIS::JoyStick* tpads[4];
   tpads[0] = tpads[1] = tpads[2] = tpads[3] = 0;
   _pads[0] = _pads[1] = _pads[2] = _pads[3] = 0;
-  for (int i = 0; i < _padCount; ++i) {
+  for (int32_t i = 0; i < _padCount; ++i) {
     try {
       tpads[i] = (OIS::JoyStick*)
           _manager->createInputObject(OIS::OISJoyStick, true);
@@ -481,7 +481,7 @@ void LibWin::BeginFrame()
   while (_window.GetEvent(e))
   {
     if (e.Type == sf::Event::Closed) {
-      _exitType = EXIT_TO_LOADER;
+      _exit = true;
       return;
     }
 
@@ -529,7 +529,7 @@ void LibWin::BeginFrame()
     _window.SetCursorPosition(_mousePosX, _mousePosY);
   }
 
-  for (int i = 0; i < _padCount; ++i) {
+  for (int32_t i = 0; i < _padCount; ++i) {
     _pads[i]->capture();
     const OIS::JoyStickState& s = _pads[i]->getJoyStickState();
     for (std::size_t j = 0; j < s.mAxes.size(); ++j) {
@@ -542,7 +542,7 @@ void LibWin::BeginFrame()
 void LibWin::EndFrame()
 {
   if (!_window.IsOpened()) {
-    _exitType = EXIT_TO_SYSTEM;
+    _exit = true;
   }
 
   for (int i = 0; i < KEY_MAX; ++i) {
@@ -577,22 +577,18 @@ void LibWin::NewGame()
   }
 }
 
-void LibWin::Exit(ExitType t)
+void LibWin::Exit(bool exit)
 {
   if (!LoadSaveSettings()._windowed) {
     _window.Create(sf::VideoMode(640, 480, 32), "WiiSPACE",
                    sf::Style::Close | sf::Style::Titlebar);
   }
-  _exitType = t;
+  _exit = exit;
 }
 
-Lib::ExitType LibWin::GetExitType() const
+bool LibWin::Exit() const
 {
-  return _exitType;
-}
-
-void LibWin::SystemExit(bool powerOff) const
-{
+  return _exit;
 }
 
 int LibWin::RandInt(int lessThan)
@@ -632,7 +628,7 @@ void LibWin::SetVolume(int volume)
 
 // Input
 //------------------------------
-LibWin::PadType LibWin::IsPadConnected(int player) const
+LibWin::PadType LibWin::IsPadConnected(int32_t player) const
 {
   PadType r = PAD_NONE;
   if (player < _padCount) {
@@ -645,17 +641,17 @@ LibWin::PadType LibWin::IsPadConnected(int player) const
   return r;
 }
 
-bool LibWin::IsKeyPressed(int player, Key k) const
+bool LibWin::IsKeyPressed(int32_t player, Key k) const
 {
   return _keysPressed[k][player];
 }
 
-bool LibWin::IsKeyReleased(int player, Key k) const
+bool LibWin::IsKeyReleased(int32_t player, Key k) const
 {
   return _keysReleased[k][player];
 }
 
-bool LibWin::IsKeyHeld(int player, Key k) const
+bool LibWin::IsKeyHeld(int32_t player, Key k) const
 {
   Vec2 v(_padAimHAxes[player], _padAimVAxes[player]);
   if (k == KEY_FIRE && (_padAimDpads[player] != OIS::Pov::Centered ||
@@ -665,7 +661,7 @@ bool LibWin::IsKeyHeld(int player, Key k) const
   return _keysHeld[k][player];
 }
 
-Vec2 LibWin::GetMoveVelocity(int player) const
+Vec2 LibWin::GetMoveVelocity(int32_t player) const
 {
   bool kU = IsKeyHeld(player, KEY_UP) ||
       _padMoveDpads[player] & OIS::Pov::North;
@@ -700,7 +696,7 @@ Vec2 LibWin::GetMoveVelocity(int player) const
   return v;
 }
 
-Vec2 LibWin::GetFireTarget(int player, const Vec2& position) const
+Vec2 LibWin::GetFireTarget(int32_t player, const Vec2& position) const
 {
   bool kp = player ==
       (GetPlayerCount() <= _padCount ? GetPlayerCount() - 1 : _padCount);

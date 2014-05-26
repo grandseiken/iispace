@@ -161,7 +161,7 @@ public:
     return _z0->GetShipsInRadius(point, radius);
   }
 
-  const z0Game::ShipList& GetShips() const
+  z0Game::ShipList GetShips() const
   {
     return _z0->GetShips();
   }

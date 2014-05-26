@@ -13,13 +13,6 @@ public:
 
   // Constants
   //------------------------------
-  enum ExitType {
-    NO_EXIT,
-    EXIT_TO_LOADER,
-    EXIT_TO_SYSTEM,
-    EXIT_POWER_OFF,
-  };
-
   enum Key {
     KEY_FIRE,
     KEY_BOMB,
@@ -64,7 +57,7 @@ public:
     fixed _volume;
   };
 
-  typedef std::pair<std::string, long> HighScore;
+  typedef std::pair<std::string, uint64_t> HighScore;
   typedef std::vector<HighScore> HighScoreList;
   typedef std::vector<HighScoreList> HighScoreTable;
   struct SaveData {
@@ -72,16 +65,16 @@ public:
     int _hardModeBossesKilled;
     HighScoreTable _highScores;
   };
-  static const unsigned int MAX_NAME_LENGTH = 17;
-  static const unsigned int MAX_SCORE_LENGTH = 10;
-  static const unsigned int NUM_HIGH_SCORES = 8;
+  static const std::size_t MAX_NAME_LENGTH = 17;
+  static const std::size_t MAX_SCORE_LENGTH = 10;
+  static const std::size_t NUM_HIGH_SCORES = 8;
 
-  static const int PLAYERS = 4;
-  static const int WIDTH = 640;
-  static const int HEIGHT = 480;
-  static const int TEXT_WIDTH = 16;
-  static const int TEXT_HEIGHT = 16;
-  static const int SOUND_TIMER = 4;
+  static const int32_t PLAYERS = 4;
+  static const int32_t WIDTH = 640;
+  static const int32_t HEIGHT = 480;
+  static const int32_t TEXT_WIDTH = 16;
+  static const int32_t TEXT_HEIGHT = 16;
+  static const int32_t SOUND_TIMER = 4;
 
   static const std::string ENCRYPTION_KEY;
   static const std::string SUPER_ENCRYPTION_KEY;
@@ -93,22 +86,22 @@ public:
 
   // General
   //------------------------------
-  int GetFrameCount() const
+  std::size_t GetFrameCount() const
   {
     return _frameCount;
   }
 
-  void SetFrameCount(int fc)
+  void SetFrameCount(std::size_t fc)
   {
     _frameCount = fc;
   }
 
-  int GetPlayerCount() const
+  int32_t GetPlayerCount() const
   {
     return _players;
   }
 
-  void SetPlayerCount(int players)
+  void SetPlayerCount(int32_t players)
   {
     _players = players;
   }
@@ -120,9 +113,8 @@ public:
   virtual void NewGame() {}
   virtual void SetWorkingDirectory(bool original) = 0;
 
-  virtual void Exit(ExitType t) = 0;
-  virtual ExitType GetExitType() const = 0;
-  virtual void SystemExit(bool powerOff) const = 0;
+  virtual void Exit(bool exit) = 0;
+  virtual bool Exit() const = 0;
 
   virtual int RandInt(int lessThan) = 0;
   virtual fixed RandFloat() = 0;
@@ -141,18 +133,18 @@ public:
 
   // Input
   //------------------------------
-  virtual PadType IsPadConnected(int player) const = 0;
+  virtual PadType IsPadConnected(int32_t player) const = 0;
 
-  virtual bool IsKeyPressed(int player, Key k) const = 0;
-  virtual bool IsKeyReleased(int player, Key k) const = 0;
-  virtual bool IsKeyHeld(int player, Key k) const = 0;
+  virtual bool IsKeyPressed(int32_t player, Key k) const = 0;
+  virtual bool IsKeyReleased(int32_t player, Key k) const = 0;
+  virtual bool IsKeyHeld(int32_t player, Key k) const = 0;
 
   virtual bool IsKeyPressed(Key k) const;
   virtual bool IsKeyReleased(Key k) const;
   virtual bool IsKeyHeld(Key k) const;
 
-  virtual Vec2 GetMoveVelocity(int player) const = 0;
-  virtual Vec2 GetFireTarget(int player, const Vec2& position) const = 0;
+  virtual Vec2 GetMoveVelocity(int32_t player) const = 0;
+  virtual Vec2 GetFireTarget(int32_t player, const Vec2& position) const = 0;
 
   // Output
   //------------------------------
@@ -175,19 +167,19 @@ public:
 
   // Recording
   //------------------------------
-  void StartRecording(int players, bool canFaceSecretBoss, bool isBossMode,
+  void StartRecording(int32_t players, bool canFaceSecretBoss, bool isBossMode,
                       bool isHardMode, bool isFastMode, bool isWhatMode);
   void Record(Vec2 velocity, Vec2 target, int keys);
-  void EndRecording(const std::string& name, long score, int players,
+  void EndRecording(const std::string& name, uint64_t score, int32_t players,
                     bool bossMode, bool hardMode, bool fastMode, bool whatMode);
 
-  virtual void OnScore(long seed, int players, bool bossMode, long score,
+  virtual void OnScore(long seed, int32_t players, bool bossMode, uint64_t score,
                        bool hardMode, bool fastMode, bool whatMode) {}
 
   struct PlayerFrame {
     Vec2 _velocity;
     Vec2 _target;
-    int  _keys;
+    int _keys;
   };
   struct Recording {
     bool _okay;
@@ -199,7 +191,7 @@ public:
     bool _isHardMode;
     bool _isFastMode;
     bool _isWhatMode;
-    std::vector< PlayerFrame > _playerFrames;
+    std::vector<PlayerFrame> _playerFrames;
   };
   const Recording& PlayRecording(const std::string& path);
 
@@ -218,11 +210,11 @@ protected:
 private:
 
   bool _recording;
-  int _frameCount;
+  std::size_t _frameCount;
   int _cycle;
   Recording _replay;
   long _recordSeed;
-  int _players;
+  std::size_t _players;
   std::stringstream _record;
   mutable std::map<std::pair<Colour, int>, Colour> _cycleMap;
 

@@ -28,7 +28,7 @@ const int z0Game::STARTING_LIVES = 2;
 const int z0Game::BOSSMODE_LIVES = 1;
 
 z0Game::z0Game(Lib& lib, std::vector< std::string > args)
-  : Game(lib)
+  : _lib(lib)
   , _state(STATE_MENU)
   , _players(1)
   , _lives(0)
@@ -48,11 +48,10 @@ z0Game::z0Game(Lib& lib, std::vector< std::string > args)
   , _controllersConnected(0)
   , _controllersDialog(false)
   , _firstControllersDialog(false)
-  , _overmind(0)
+  , _overmind(new Overmind(*this))
   , _bossesKilled(0)
   , _hardModeBossesKilled(0)
 {
-  _overmind = new Overmind(*this);
   Lib::SaveData save = lib.LoadSaveData();
   _highScores = save._highScores;
   _bossesKilled = save._bossesKilled;
@@ -99,17 +98,47 @@ z0Game::z0Game(Lib& lib, std::vector< std::string > args)
 
 z0Game::~z0Game()
 {
-  for (unsigned int i = 0; i < _shipList.size(); i++) {
-    if (_shipList[i]->IsEnemy()) {
-      _overmind->OnEnemyDestroy(_shipList[i]);
+  for (const auto& ship : _ships) {
+    if (ship->IsEnemy()) {
+      _overmind->OnEnemyDestroy(*ship);
     }
-    delete _shipList[i];
   }
-  for (unsigned int i = 0; i < _particleList.size(); i++) {
-    delete _particleList[i];
-  }
+}
 
-  delete _overmind;
+void z0Game::Run()
+{
+  while (true) {
+    std::size_t f = _lib.GetFrameCount();
+    if (!f) {
+      if (_lib.Exit()) {
+        return;
+      }
+      continue;
+    }
+
+    for (std::size_t i = 0; i < f; ++i) {
+      _lib.BeginFrame();
+      if (_lib.Exit()) {
+        _lib.EndFrame();
+        return;
+      }
+
+      Update();
+      if (_lib.Exit()) {
+        _lib.EndFrame();
+        return;
+      }
+
+      _lib.EndFrame();
+      if (_lib.Exit()) {
+        return;
+      }
+    }
+
+    _lib.ClearScreen();
+    Render();
+    _lib.Render();
+  }
 }
 
 void z0Game::Update()
@@ -118,13 +147,13 @@ void z0Game::Update()
   if (_exitTimer) {
     _exitTimer--;
     if (!_exitTimer) {
-      lib.Exit(Lib::EXIT_TO_LOADER);
+      lib.Exit(true);
       _exitTimer = -1;
     }
     return;
   }
 
-  for (int i = 0; i < Lib::PLAYERS; i++) {
+  for (int32_t i = 0; i < Lib::PLAYERS; i++) {
     if (lib.IsKeyHeld(i, Lib::KEY_FIRE) &&
         lib.IsKeyHeld(i, Lib::KEY_BOMB) &&lib.IsKeyPressed(Lib::KEY_MENU)) {
       lib.TakeScreenShot();
@@ -305,7 +334,7 @@ void z0Game::Update()
     }
 
     int controllers = 0;
-    for (int i = 0; i < CountPlayers(); i++) {
+    for (int32_t i = 0; i < CountPlayers(); i++) {
       controllers += lib.IsPadConnected(i);
     }
     if (controllers < _controllersConnected &&
@@ -321,7 +350,7 @@ void z0Game::Update()
         _controllersDialog = false;
         _firstControllersDialog = false;
         GetLib().PlaySound(Lib::SOUND_MENU_ACCEPT);
-        for (int i = 0; i < CountPlayers(); i++) {
+        for (int32_t i = 0; i < CountPlayers(); i++) {
           GetLib().Rumble(i, 10);
         }
       }
@@ -339,33 +368,33 @@ void z0Game::Update()
         lib.SetFrameCount(lib.GetFrameCount() * 2);
       }
       if (lib.IsKeyPressed(Lib::KEY_FIRE) &&
-          lib.GetFrameCount() > (IsFastMode() ? 2 : 1)) {
+          lib.GetFrameCount() > std::size_t(IsFastMode() ? 2 : 1)) {
         lib.SetFrameCount(lib.GetFrameCount() / 2);
       }
     }
 
     Player::UpdateFireTimer();
     ChaserBoss::_hasCounted = false;
-    std::stable_sort(_collisionList.begin(), _collisionList.end(), &SortShips);
-    for (std::size_t i = 0; i < _shipList.size(); ++i) {
-      if (!_shipList[i]->IsDestroyed()) {
-        _shipList[i]->Update();
+    std::stable_sort(_collisions.begin(), _collisions.end(), &SortShips);
+    for (std::size_t i = 0; i < _ships.size(); ++i) {
+      if (!_ships[i]->IsDestroyed()) {
+        _ships[i]->Update();
       }
     }
-    for (std::size_t i = 0; i < _particleList.size(); ++i) {
-      if (!_particleList[i]->IsDestroyed()) {
-        _particleList[i]->Update();
+    for (const auto& particle : _particles) {
+      if (!particle->IsDestroyed()) {
+        particle->Update();
       }
     }
     for (std::size_t i = 0; i < Boss::_fireworks.size(); ++i) {
       if (Boss::_fireworks[i].first <= 0) {
-        Vec2 v = _shipList[0]->GetPosition();
-        _shipList[0]->SetPosition(Boss::_fireworks[i].second.first);
-        _shipList[0]->Explosion(0xffffffff);
-        _shipList[0]->Explosion(Boss::_fireworks[i].second.second, 16);
-        _shipList[0]->Explosion(0xffffffff, 24);
-        _shipList[0]->Explosion(Boss::_fireworks[i].second.second, 32);
-        _shipList[0]->SetPosition(v);
+        Vec2 v = _ships[0]->GetPosition();
+        _ships[0]->SetPosition(Boss::_fireworks[i].second.first);
+        _ships[0]->Explosion(0xffffffff);
+        _ships[0]->Explosion(Boss::_fireworks[i].second.second, 16);
+        _ships[0]->Explosion(0xffffffff, 24);
+        _ships[0]->Explosion(Boss::_fireworks[i].second.second, 32);
+        _ships[0]->SetPosition(v);
         Boss::_fireworks.erase(Boss::_fireworks.begin() + i);
         --i;
       }
@@ -374,28 +403,32 @@ void z0Game::Update()
       }
     }
 
-    for (std::size_t i = 0; i < _shipList.size(); ++i) {
-      if (_shipList[i]->IsDestroyed()) {
-        if (_shipList[i]->IsEnemy()) {
-          _overmind->OnEnemyDestroy(_shipList[i]);
-        }
-
-        for (unsigned int j = 0; j < _collisionList.size(); j++)
-        if (_collisionList[j] == _shipList[i]) {
-          _collisionList.erase(_collisionList.begin() + j);
-        }
-
-        delete _shipList[i];
-        _shipList.erase(_shipList.begin() + i);
-        i--;
+    for (auto it = _ships.begin(); it != _ships.end();) {
+      if (!(*it)->IsDestroyed()) {
+        ++it;
+        continue;
       }
+
+      if ((*it)->IsEnemy()) {
+        _overmind->OnEnemyDestroy(**it);
+      }
+      for (auto jt = _collisions.begin(); jt != _collisions.end();) {
+        if (it->get() == *jt) {
+          jt = _collisions.erase(jt);
+          continue;
+        }
+        ++jt;
+      }
+
+      it = _ships.erase(it);
     }
-    for (std::size_t i = 0; i < _particleList.size(); ++i) {
-      if (_particleList[i]->IsDestroyed()) {
-        delete _particleList[i];
-        _particleList.erase(_particleList.begin() + i);
-        i--;
+
+    for (auto it = _particles.begin(); it != _particles.end();) {
+      if ((*it)->IsDestroyed()) {
+        it = _particles.erase(it);
+        continue;
       }
+      ++it;
     }
     _overmind->Update();
 
@@ -552,15 +585,15 @@ void z0Game::Render() const
   _fillHPBar = 0;
   if (!_firstControllersDialog) {
     Star::Render();
-    for (std::size_t i = 0; i < _particleList.size(); ++i) {
-      _particleList[i]->Render();
+    for (const auto& particle : _particles) {
+      particle->Render();
     }
-    for (std::size_t i = CountPlayers(); i < _shipList.size(); ++i) {
-      _shipList[i]->Render();
+    for (std::size_t i = _players; i < _ships.size(); ++i) {
+      _ships[i]->Render();
     }
     for (std::size_t i = 0;
-         i < unsigned(CountPlayers()) && i < _shipList.size(); ++i) {
-      _shipList[i]->Render();
+         i < std::size_t(_players) && i < _ships.size(); ++i) {
+      _ships[i]->Render();
     }
   }
 
@@ -568,10 +601,10 @@ void z0Game::Render() const
   //------------------------------
   if (_state == STATE_GAME) {
     if (_controllersDialog) {
-      RenderPanel(Vec2f(3.f, 3.f), Vec2f(32.f, 8.f + 2 * CountPlayers()));
+      RenderPanel(Vec2f(3.f, 3.f), Vec2f(32.f, 8.f + 2 * _players));
       lib.RenderText(Vec2f(4.f, 4.f), "CONTROLLERS FOUND", PANEL_TEXT);
 
-      for (int i = 0; i < CountPlayers(); i++) {
+      for (int32_t i = 0; i < _players; i++) {
         std::stringstream ss;
         ss << "PLAYER " << (i + 1) << ": ";
         lib.RenderText(Vec2f(4.f, 8.f + 2 * i), ss.str(), PANEL_TEXT);
@@ -616,13 +649,12 @@ void z0Game::Render() const
                   lib.LoadSettings()._hudCorrection),
         ss.str(), PANEL_TRAN);
 
-    ShipList list = GetShipsInRadius(Vec2(), Lib::WIDTH * 100);
-    for (std::size_t i = 0; i < list.size() + Boss::_warnings.size(); ++i) {
-      if (i < list.size() && !list[i]->IsEnemy()) {
+    for (std::size_t i = 0; i < _ships.size() + Boss::_warnings.size(); ++i) {
+      if (i < _ships.size() && !_ships[i]->IsEnemy()) {
         continue;
       }
-      Vec2f v = Vec2f(i < list.size() ? list[i]->GetPosition() :
-                                        Boss::_warnings[i - list.size()]);
+      Vec2f v = Vec2f(i < _ships.size() ? _ships[i]->GetPosition() :
+                                          Boss::_warnings[i - _ships.size()]);
 
       if (v._x < -4) {
         int a = int(.5f + float(0x1) + float(0x9) *
@@ -781,7 +813,7 @@ void z0Game::Render() const
     if (_players < 4 && _selection == 1) {
       lib.RenderText(Vec2f(14.f + _players, 10.f), ">", PANEL_TRAN);
     }
-    for (int i = 0; i < _players; i++) {
+    for (int32_t i = 0; i < _players; ++i) {
       std::stringstream ss;
       ss << (i + 1);
       lib.RenderText(Vec2f(14.f + i, 10.f), ss.str(),
@@ -812,7 +844,7 @@ void z0Game::Render() const
       lib.RenderText(Vec2f(4.f, 22.f), "THREE PLAYERS", PANEL_TEXT);
       lib.RenderText(Vec2f(4.f, 24.f), "FOUR PLAYERS", PANEL_TEXT);
 
-      for (int i = 0; i < Lib::PLAYERS; i++) {
+      for (std::size_t i = 0; i < Lib::PLAYERS; i++) {
         std::string score = ConvertToTime(_highScores[Lib::PLAYERS][i].second);
         if (score.length() > Lib::MAX_SCORE_LENGTH) {
           score = score.substr(0, Lib::MAX_SCORE_LENGTH);
@@ -827,7 +859,7 @@ void z0Game::Render() const
       }
     }
     else {
-      for (unsigned int i = 0; i < Lib::NUM_HIGH_SCORES; i++) {
+      for (std::size_t i = 0; i < Lib::NUM_HIGH_SCORES; i++) {
         std::stringstream ssi;
         ssi << (i + 1) << ".";
         lib.RenderText(Vec2f(4.f, 18.f + i), ssi.str(), PANEL_TEXT);
@@ -950,7 +982,7 @@ void z0Game::Render() const
     }
     lib.RenderText(Vec2f(4.f, 4.f), "TOTAL SCORE: " + score, PANEL_TEXT);
 
-    for (int i = 0; i < _players; i++) {
+    for (int32_t i = 0; i < _players; ++i) {
       std::stringstream sss;
       if (_scoreScreenTimer % 600 < 300) {
         sss << GetPlayerScore(i);
@@ -974,13 +1006,15 @@ void z0Game::Render() const
     // Top-ranked player
     //------------------------------
     if (_players > 1) {
-      long max = -1;
-      int best = -1;
-      for (int i = 0; i < _players; i++) {
-        if (GetPlayerScore(i) > max) {
+      bool first = true;
+      uint64_t max = 0;
+      std::size_t best = 0;
+      for (int32_t i = 0; i < _players; ++i) {
+        if (first || GetPlayerScore(i) > max) {
           max = GetPlayerScore(i);
           best = i;
         }
+        first = false;
       }
 
       if (GetTotalScore() > 0) {
@@ -1021,7 +1055,7 @@ void z0Game::NewGame(bool canFaceSecretBoss, bool bossMode, bool replay,
   GetLib().SetFrameCount(IsFastMode() ? 2 : 1);
 
   Star::Clear();
-  for (int i = 0; i < _players; i++) {
+  for (int32_t i = 0; i < _players; ++i) {
     Vec2 v((1 + i) * Lib::WIDTH / (1 + _players), Lib::HEIGHT / 2);
     Player* p = new Player(v, i);
     AddShip(p);
@@ -1032,21 +1066,17 @@ void z0Game::NewGame(bool canFaceSecretBoss, bool bossMode, bool replay,
 
 void z0Game::EndGame()
 {
-  for (std::size_t i = 0; i < _shipList.size(); ++i) {
-    if (_shipList[i]->IsEnemy()) {
-      _overmind->OnEnemyDestroy(_shipList[i]);
+  for (const auto& ship : _ships) {
+    if (ship->IsEnemy()) {
+      _overmind->OnEnemyDestroy(*ship);
     }
-    delete _shipList[i];
-  }
-  for (std::size_t i = 0; i < _particleList.size(); ++i) {
-    delete _particleList[i];
   }
 
   Star::Clear();
-  _particleList.clear();
-  _shipList.clear();
+  _ships.clear();
+  _particles.clear();
   _playerList.clear();
-  _collisionList.clear();
+  _collisions.clear();
   Boss::_fireworks.clear();
   Boss::_warnings.clear();
 
@@ -1075,19 +1105,19 @@ void z0Game::AddShip(Ship* ship)
 {
   ship->SetGame(*this);
   if (ship->IsEnemy()) {
-    _overmind->OnEnemyCreate(ship);
+    _overmind->OnEnemyCreate(*ship);
   }
-  _shipList.push_back(ship);
+  _ships.emplace_back(ship);
 
   if (ship->GetBoundingWidth() > 1) {
-    _collisionList.push_back(ship);
+    _collisions.push_back(ship);
   }
 }
 
 void z0Game::AddParticle(Particle* particle)
 {
   particle->SetGame(*this);
-  _particleList.push_back(particle);
+  _particles.emplace_back(particle);
 }
 
 // Ship info
@@ -1103,10 +1133,10 @@ z0Game::ShipList z0Game::GetCollisionList(const Vec2& point, int category) const
   fixed x = point._x;
   fixed y = point._y;
 
-  for (unsigned int i = 0; i < _collisionList.size(); i++) {
-    fixed sx = _collisionList[i]->GetPosition()._x;
-    fixed sy = _collisionList[i]->GetPosition()._y;
-    fixed w = _collisionList[i]->GetBoundingWidth();
+  for (const auto& collision : _collisions) {
+    fixed sx = collision->GetPosition()._x;
+    fixed sy = collision->GetPosition()._y;
+    fixed w = collision->GetBoundingWidth();
 
     if (sx - w > x) {
       break;
@@ -1115,8 +1145,8 @@ z0Game::ShipList z0Game::GetCollisionList(const Vec2& point, int category) const
       continue;
     }
 
-    if (_collisionList[i]->CheckPoint(point, category)) {
-      r.push_back(_collisionList[i]);
+    if (collision->CheckPoint(point, category)) {
+      r.push_back(collision);
     }
   }
   return r;
@@ -1125,17 +1155,21 @@ z0Game::ShipList z0Game::GetCollisionList(const Vec2& point, int category) const
 z0Game::ShipList z0Game::GetShipsInRadius(const Vec2& point, fixed radius) const
 {
   ShipList r;
-  for (std::size_t i = 0; i < _shipList.size(); ++i) {
-    if ((_shipList[i]->GetPosition() - point).Length() <= radius) {
-      r.push_back(_shipList[i]);
+  for (auto& ship : _ships) {
+    if ((ship->GetPosition() - point).Length() <= radius) {
+      r.push_back(ship.get());
     }
   }
   return r;
 }
 
-const z0Game::ShipList& z0Game::GetShips() const
+z0Game::ShipList z0Game::GetShips() const
 {
-  return _shipList;
+  ShipList r;
+  for (auto& ship : _ships) {
+    r.push_back(ship.get());
+  }
+  return r;
 }
 
 bool z0Game::AnyCollisionList(const Vec2& point, int category) const
@@ -1143,10 +1177,10 @@ bool z0Game::AnyCollisionList(const Vec2& point, int category) const
   fixed x = point._x;
   fixed y = point._y;
 
-  for (unsigned int i = 0; i < _collisionList.size(); i++) {
-    fixed sx = _collisionList[i]->GetPosition()._x;
-    fixed sy = _collisionList[i]->GetPosition()._y;
-    fixed w = _collisionList[i]->GetBoundingWidth();
+  for (unsigned int i = 0; i < _collisions.size(); i++) {
+    fixed sx = _collisions[i]->GetPosition()._x;
+    fixed sy = _collisions[i]->GetPosition()._y;
+    fixed w = _collisions[i]->GetBoundingWidth();
 
     if (sx - w > x) {
       break;
@@ -1155,7 +1189,7 @@ bool z0Game::AnyCollisionList(const Vec2& point, int category) const
       continue;
     }
 
-    if (_collisionList[i]->CheckPoint(point, category)) {
+    if (_collisions[i]->CheckPoint(point, category)) {
       return true;
     }
   }
@@ -1169,15 +1203,15 @@ Player* z0Game::GetNearestPlayer(const Vec2& point) const
   fixed d = Lib::WIDTH * Lib::HEIGHT;
   fixed deadD = Lib::WIDTH * Lib::HEIGHT;
 
-  for (unsigned int i = 0; i < _playerList.size(); i++) {
-    if (!((Player*) _playerList[i])->IsKilled() &&
-        (_playerList[i]->GetPosition() - point).Length() < d) {
-      d = (_playerList[i]->GetPosition() - point).Length();
-      r = _playerList[i];
+  for (Ship* ship : _playerList) {
+    if (!((Player*) ship)->IsKilled() &&
+        (ship->GetPosition() - point).Length() < d) {
+      d = (ship->GetPosition() - point).Length();
+      r = ship;
     }
-    if ((_playerList[i]->GetPosition() - point).Length() < deadD) {
-      deadD = (_playerList[i]->GetPosition() - point).Length();
-      deadR = _playerList[i];
+    if ((ship->GetPosition() - point).Length() < deadD) {
+      deadD = (ship->GetPosition() - point).Length();
+      deadR = ship;
     }
   }
   return (Player*) (r != 0 ? r : deadR);
@@ -1213,17 +1247,17 @@ void z0Game::RenderPanel(const Vec2f& low, const Vec2f& hi) const
   GetLib().RenderRect(tlow, thi, PANEL_TEXT, 4);
 }
 
-std::string z0Game::ConvertToTime(long score) const
+std::string z0Game::ConvertToTime(uint64_t score) const
 {
   if (score == 0) {
     return "--:--";
   }
-  int mins = 0;
+  uint64_t mins = 0;
   while (score >= 60 * 60 && mins < 99) {
     score -= 60 * 60;
-    mins++;
+    ++mins;
   }
-  int secs = score / 60;
+  uint64_t secs = score / 60;
 
   std::stringstream r;
   if (mins < 10) {
@@ -1239,11 +1273,11 @@ std::string z0Game::ConvertToTime(long score) const
 
 // Score calculation
 //------------------------------
-long z0Game::GetPlayerScore(int playerNumber) const
+uint64_t z0Game::GetPlayerScore(int32_t playerNumber) const
 {
-  for (std::size_t i = 0; i < _shipList.size(); ++i) {
-    if (_shipList[i]->IsPlayer()) {
-      Player* p = (Player*) _shipList[i];
+  for (const auto& ship : _ships) {
+    if (ship->IsPlayer()) {
+      Player* p = (Player*) ship.get();
       if (p->GetPlayerNumber() == playerNumber) {
         return p->GetScore();
       }
@@ -1252,11 +1286,11 @@ long z0Game::GetPlayerScore(int playerNumber) const
   return 0;
 }
 
-int z0Game::GetPlayerDeaths(int playerNumber) const
+uint64_t z0Game::GetPlayerDeaths(int32_t playerNumber) const
 {
-  for (std::size_t i = 0; i < _shipList.size(); ++i) {
-    if (_shipList[i]->IsPlayer()) {
-      Player* p = (Player*) _shipList[i];
+  for (const auto& ship : _ships) {
+    if (ship->IsPlayer()) {
+      Player* p = (Player*) ship.get();
       if (p->GetPlayerNumber() == playerNumber) {
         return p->GetDeaths();
       }
@@ -1265,21 +1299,14 @@ int z0Game::GetPlayerDeaths(int playerNumber) const
   return 0;
 }
 
-long z0Game::GetTotalScore() const
+uint64_t z0Game::GetTotalScore() const
 {
-  std::vector< long > scores;
-  for (int i = 0; i < _players; i++) {
-    scores.push_back(0);
-  }
-  for (std::size_t i = 0; i < _shipList.size(); ++i) {
-    if (_shipList[i]->IsPlayer()) {
-      Player* p = (Player*) _shipList[i];
-      scores[p->GetPlayerNumber()] = p->GetScore();
+  uint64_t total = 0;
+  for (const auto& ship : _ships) {
+    if (ship->IsPlayer()) {
+      Player* p = (Player*) ship.get();
+      total += p->GetScore();
     }
-  }
-  long total = 0;
-  for (int i = 0; i < _players; i++) {
-    total += scores[i];
   }
   return total;
 }

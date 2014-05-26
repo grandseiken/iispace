@@ -23,7 +23,6 @@
     <ClInclude Include="..\src\boss_enemy.h" />
     <ClInclude Include="..\src\enemy.h" />
     <ClInclude Include="..\src\fix32.h" />
-    <ClInclude Include="..\src\game.h" />
     <ClInclude Include="..\src\lib.h" />
     <ClInclude Include="..\src\lib_ii.h" />
     <ClInclude Include="..\src\lib_score.h" />
@@ -56,7 +55,6 @@
     <ClCompile Include="..\src\boss_enemy.cpp" />
     <ClCompile Include="..\src\enemy.cpp" />
     <ClCompile Include="..\src\fix32.cpp" />
-    <ClCompile Include="..\src\game.cpp" />
     <ClCompile Include="..\src\lib.cpp" />
     <ClCompile Include="..\src\lib_ii.cpp" />
     <ClCompile Include="..\src\lib_score.cpp" />

@@ -1,12 +1,7 @@
 #ifndef IISPACE_SRC_Z0_H
 #define IISPACE_SRC_Z0_H
 
-#include <string>
 #include <vector>
-#include <sstream>
-#include <math.h>
-#include <cmath>
-#include <cstdlib>
 #include "fix32.h"
 
 // Forward declarations
@@ -23,17 +18,12 @@ class Overmind;
 class DeathRayBoss;
 class DeathRayArm;
 
-// Deterministic math
-//------------------------------
 #define Z_RAND_MAX 0x7fff
 void z_srand(int seed);
 int z_rand();
 
 // Vector math
 //------------------------------
-#undef M_PI
-#undef M_2PI
-#undef M_3PI
 #define M_PIf 3.14159265358979323846264338327f
 
 class Vec2 {
@@ -175,7 +165,7 @@ public:
     : _x(0)
     , _y(0) {}
 
-  explicit Vec2f(float x, float y)
+  Vec2f(float x, float y)
     : _x(x)
     , _y(y) {}
 

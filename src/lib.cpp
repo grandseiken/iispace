@@ -234,7 +234,7 @@ Lib::SaveData Lib::LoadSaveData()
 
 void Lib::SaveSaveData(const SaveData& version2)
 {
-  long total = 0;
+  uint64_t total = 0;
   for (int i = 0; i < 4 * PLAYERS + 1; ++i) {
     for (unsigned int j = 0;
          j < (i != PLAYERS ? NUM_HIGH_SCORES : PLAYERS); ++j) {
@@ -351,7 +351,7 @@ void Lib::SaveSaveSettings(const Settings& settings)
   out.close();
 }
 
-void Lib::StartRecording(int players, bool canFaceSecretBoss, bool isBossMode,
+void Lib::StartRecording(int32_t players, bool canFaceSecretBoss, bool isBossMode,
                          bool isHardMode, bool isFastMode, bool isWhatMode)
 {
   NewGame();
@@ -368,7 +368,7 @@ void Lib::StartRecording(int players, bool canFaceSecretBoss, bool isBossMode,
 }
 
 void Lib::EndRecording(
-    const std::string& name, long score, int players,
+    const std::string& name, uint64_t score, int32_t players,
     bool bossMode, bool hardMode, bool fastMode, bool whatMode)
 {
   if (!_recording) {

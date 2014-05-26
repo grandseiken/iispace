@@ -366,13 +366,13 @@ void Player::AddScore(long score)
   }
 }
 
-Colour Player::GetPlayerColour(int playerNumber)
+Colour Player::GetPlayerColour(std::size_t playerNumber)
 {
-  return playerNumber == 0 ? 0xff0000ff :
-    playerNumber == 1 ? 0xff5500ff :
-    playerNumber == 2 ? 0xffaa00ff :
-    playerNumber == 3 ? 0xffff00ff :
-    0x00ff00ff;
+  return
+      playerNumber == 0 ? 0xff0000ff :
+      playerNumber == 1 ? 0xff5500ff :
+      playerNumber == 2 ? 0xffaa00ff :
+      playerNumber == 3 ? 0xffff00ff : 0x00ff00ff;
 }
 
 void Player::ActivateMagicShots()

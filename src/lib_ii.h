@@ -26,9 +26,8 @@ public:
   virtual void CaptureMouse(bool enabled);
   virtual void NewGame();
 
-  virtual void Exit(ExitType t);
-  virtual ExitType GetExitType() const;
-  virtual void SystemExit(bool powerOff) const;
+  virtual void Exit(bool exit);
+  virtual bool Exit() const;
 
   virtual int RandInt(int lessThan);
   virtual fixed RandFloat();
@@ -55,14 +54,14 @@ public:
 
   // Input
   //------------------------------
-  virtual PadType IsPadConnected(int player) const;
+  virtual PadType IsPadConnected(int32_t player) const;
 
-  virtual bool IsKeyPressed(int player, Key k) const;
-  virtual bool IsKeyReleased(int player, Key k) const;
-  virtual bool IsKeyHeld(int player, Key k) const;
+  virtual bool IsKeyPressed(int32_t player, Key k) const;
+  virtual bool IsKeyReleased(int32_t player, Key k) const;
+  virtual bool IsKeyHeld(int32_t player, Key k) const;
 
-  virtual Vec2 GetMoveVelocity(int player) const;
-  virtual Vec2 GetFireTarget(int player, const Vec2& position) const;
+  virtual Vec2 GetMoveVelocity(int32_t player) const;
+  virtual Vec2 GetFireTarget(int32_t player, const Vec2& position) const;
 
   // Output
   //------------------------------
@@ -88,7 +87,7 @@ private:
   mutable sf::RenderWindow _window;
   sf::Image _image;
   mutable sf::Sprite _font;
-  ExitType _exitType;
+  bool _exit;
   char* _cwd;
   std::vector<char>  _exe;
 
@@ -124,7 +123,7 @@ private:
 
   OIS::InputManager*  _manager;
   Handler _padHandler;
-  int _padCount;
+  int32_t _padCount;
   PadConfig _padConfig[PLAYERS];
   OIS::JoyStick* _pads[PLAYERS];
   OIS::ForceFeedback* _ff[PLAYERS];

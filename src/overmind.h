@@ -50,8 +50,8 @@ public:
 
   // Enemy-counting
   //------------------------------
-  void OnEnemyDestroy(Ship* ship);
-  void OnEnemyCreate(Ship* ship);
+  void OnEnemyDestroy(const Ship& ship);
+  void OnEnemyCreate(const Ship& ship);
 
   int CountEnemies() const
   {

@@ -163,8 +163,7 @@ void Boss::RenderHPBar() const
 void Boss::OnDestroy()
 {
   SetKilled();
-  z0Game::ShipList s =
-      GetShipsInRadius(GetPosition(), Lib::WIDTH * Lib::HEIGHT);
+  z0Game::ShipList s = GetShips();
   for (unsigned int i = 0; i < s.size(); i++) {
     if (s[i]->IsEnemy() && s[i] != this) {
       s[i]->Damage(Player::BOMB_DAMAGE, false, 0);
@@ -438,8 +437,7 @@ void ShieldBombBoss::Update()
     if (_count >= 4 && (!GetLib().RandInt(4) || _count >= 8)) {
       _count = 0;
       if (!_unshielded) {
-        z0Game::ShipList list =
-            GetShipsInRadius(GetPosition(), Lib::WIDTH * 2);
+        z0Game::ShipList list = GetShips();
 
         int p = 0;
         for (std::size_t i = 0; i < list.size(); ++i) {
@@ -613,9 +611,7 @@ ChaserBoss::ChaserBoss(int players, int cycle, int split,
 
 void ChaserBoss::Update()
 {
-  z0Game::ShipList remaining =
-      GetShipsInRadius(Vec2(Lib::WIDTH / 2, Lib::HEIGHT / 2),
-                            Lib::WIDTH * Lib::HEIGHT);
+  z0Game::ShipList remaining = GetShips();
   _lastDir = _dir;
   _lastDir.Normalise();
   if (IsOnScreen()) {
@@ -817,9 +813,7 @@ void ChaserBoss::OnDestroy()
     }
   }
   else {
-    z0Game::ShipList remaining =
-        GetShipsInRadius(Vec2(Lib::WIDTH / 2, Lib::HEIGHT / 2),
-                         Lib::WIDTH * Lib::HEIGHT);
+    z0Game::ShipList remaining = GetShips();
     last = true;
     for (std::size_t i = 0; i < remaining.size(); ++i) {
       if (remaining[i]->IsEnemy() &&
@@ -1011,7 +1005,7 @@ void TractorBoss::Update()
         _sound = false;
       }
       _targets.clear();
-      z0Game::ShipList t = GetShipsInRadius(GetPosition(), 640);
+      z0Game::ShipList t = GetShips();
       for (unsigned int i = 0; i < t.size(); ++i) {
         if (!t[i]->IsPlayer() || ((Player*) t[i])->IsKilled()) {
           continue;
@@ -1092,7 +1086,7 @@ void TractorBoss::Update()
           PlaySoundRandom(Lib::SOUND_BOSS_FIRE);
         }
         _targets.clear();
-        z0Game::ShipList t = GetShipsInRadius(GetPosition(), 640);
+        z0Game::ShipList t = GetShips();
         for (unsigned int i = 0; i < t.size(); i++) {
           if (t[i] == this ||
               (t[i]->IsPlayer() && ((Player*) t[i])->IsKilled()) ||
@@ -1964,8 +1958,7 @@ int SuperBoss::GetDamage(int damage, bool magic)
 void SuperBoss::OnDestroy()
 {
   SetKilled();
-  z0Game::ShipList s =
-      GetShipsInRadius(GetPosition(), Lib::WIDTH * Lib::HEIGHT);
+  z0Game::ShipList s = GetShips();
   for (unsigned int i = 0; i < s.size(); i++) {
     if (s[i]->IsEnemy() && s[i] != this) {
       s[i]->Damage(Player::BOMB_DAMAGE * 100, false, 0);

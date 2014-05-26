@@ -1,66 +1,31 @@
 #include "z0_game.h"
+
 #include <iostream>
-#ifdef PLATFORM_IISPACE
-#include "lib_ii.h"
-#endif
-#ifdef PLATFORM_SCORE
-#include "lib_score.h"
-#include <cstdlib>
+#include <string>
 #include <vector>
-#endif
+
+#include "lib_ii.h"
+#include "lib_score.h"
 
 int run(const std::vector<std::string>& args)
 {
-  Lib* lib = 0;
-  z0Game* game = 0;
   try {
-#ifdef PLATFORM_IISPACE
-    lib = new LibWin();
-#endif
 #ifdef PLATFORM_SCORE
-    lib = new LibRepScore();
+    LibRepScore lib;
+#else
+    LibWin lib;
 #endif
-    lib->Init();
+    lib.Init();
 
-    game = new z0Game(*lib, args);
-    Lib::ExitType t = game->Run();
-
-    delete game;
-    game = 0;
-
-    if (t == Lib::EXIT_TO_SYSTEM) {
-      lib->SystemExit(false);
-    }
-    else if (t == Lib::EXIT_POWER_OFF) {
-      lib->SystemExit(true);
-    }
-    else {
-      exit(0);
-    }
-
-    delete lib;
-    lib = 0;
-    return 0;
+    z0Game game(lib, args);
+    game.Run();
   }
-  catch (const score_finished&) {
-    return 0;
-    if (game) {
-      delete game;
-    }
-    if (lib) {
-      delete lib;
-    }
-  }
+  catch (const score_finished&) {}
   catch (const std::exception& e) {
     std::cout << e.what() << std::endl;
-    if (game) {
-      delete game;
-    }
-    if (lib) {
-      delete lib;
-    }
     return 1;
   }
+  return 0;
 }
 
 int test(const std::string& replay)
