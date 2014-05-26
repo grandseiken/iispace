@@ -44,7 +44,7 @@ bool Ship::CheckPoint(const Vec2& v, int category) const
         (!category || (GetShape(i).GetCategory() & category) == category)) {
       if (!aa) {
         a = v - GetPosition();
-        a.Rotate(-GetRotation());
+        a.rotate(-GetRotation());
         aa = true;
       }
 
@@ -60,15 +60,15 @@ void Ship::Render() const
 {
   for (std::size_t i = 0; i < CountShapes(); i++) {
     GetShape(i).Render(
-        GetLib(), Vec2f(GetPosition()), GetRotation().to_float());
+        GetLib(), to_float(GetPosition()), GetRotation().to_float());
   }
 }
 
-void Ship::RenderWithColour(Colour colour) const
+void Ship::RenderWithColour(colour colour) const
 {
   for (unsigned int i = 0; i < CountShapes(); i++) {
     GetShape(i).Render(
-        GetLib(), Vec2f(GetPosition()),
+        GetLib(), to_float(GetPosition()),
         GetRotation().to_float(),
         colour & (0xffffff00 | (GetShape(i).GetColour() & 0x000000ff)));
   }
@@ -111,23 +111,23 @@ void Ship::Spawn(Particle* particle) const
   _z0->AddParticle(particle);
 }
 
-void Ship::Explosion(Colour c, int time, bool towards, const Vec2f& v) const
+void Ship::Explosion(colour c, int time, bool towards, const Vec2f& v) const
 {
   for (unsigned int i = 0; i < CountShapes(); i++) {
     int n = towards ? z::rand_int(2) + 1 : z::rand_int(8) + 8;
     for (int j = 0; j < n; j++) {
       Vec2f pos = GetShape(i).ConvertPointf(
-          Vec2f(GetPosition()), GetRotation().to_float(), Vec2f());
+          to_float(GetPosition()), GetRotation().to_float(), Vec2f());
 
       Vec2f dir;
-      dir.SetPolar(z::rand_fixed().to_float() * 2 * M_PIf, 6.f);
+      dir.set_polar(z::rand_fixed().to_float() * 2 * M_PIf, 6.f);
 
       if (towards && v - pos != Vec2f()) {
         dir = v - pos;
-        dir.Normalise();
+        dir.normalise();
         float angle =
-            dir.Angle() + (z::rand_fixed().to_float() - 0.5f) * M_PIf / 4;
-        dir.SetPolar(angle, 6.f);
+            dir.angle() + (z::rand_fixed().to_float() - 0.5f) * M_PIf / 4;
+        dir.set_polar(angle, 6.f);
       }
 
       Spawn(new Particle(

@@ -28,10 +28,10 @@ void Powerup::Update()
   }
   else {
     if (_firstFrame) {
-      _dir.SetPolar(z::rand_fixed() * 2 * fixed::pi, 1);
+      _dir.set_polar(z::rand_fixed() * 2 * fixed::pi, 1);
     }
 
-    _dir.Rotate(2 * fixed::hundredth * (_rotate ? 1 : -1));
+    _dir.rotate(2 * fixed::hundredth * (_rotate ? 1 : -1));
     if (!z::rand_int(TIME)) {
       _rotate = !_rotate;
     }
@@ -41,12 +41,12 @@ void Powerup::Update()
   Player* p = GetNearestPlayer();
   bool alive = !p->IsKilled();
   Vec2 pv = p->GetPosition() - GetPosition();
-  if (pv.Length() <= 40 && alive) {
+  if (pv.length() <= 40 && alive) {
     _dir = pv;
   }
-  _dir.Normalise();
-  Move(_dir * SPEED * ((pv.Length() <= 40) ? 3 : 1));
-  if (pv.Length() <= 10 && alive) {
+  _dir.normalise();
+  Move(_dir * SPEED * ((pv.length() <= 40) ? 3 : 1));
+  if (pv.length() <= 10 && alive) {
     Damage(1, false, (Player*) p);
   }
 }
@@ -61,9 +61,9 @@ void Powerup::Damage(int damage, bool magic, Player* source)
   int r = 5 + z::rand_int(5);
   for (int i = 0; i < r; i++) {
     Vec2 dir;
-    dir.SetPolar(z::rand_fixed() * 2 * fixed::pi, 6);
-    Spawn(new Particle(
-        Vec2f(GetPosition()), 0xffffffff, Vec2f(dir), 4 + z::rand_int(8)));
+    dir.set_polar(z::rand_fixed() * 2 * fixed::pi, 6);
+    Spawn(new Particle(to_float(GetPosition()), 0xffffffff,
+                       to_float(dir), 4 + z::rand_int(8)));
   }
   Destroy();
 }

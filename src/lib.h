@@ -143,10 +143,10 @@ public:
   // Output
   //------------------------------
   void ClearScreen() const;
-  void RenderLine(const Vec2f& a, const Vec2f& b, Colour c) const;
-  void RenderText(const Vec2f& v, const std::string& text, Colour c) const;
+  void RenderLine(const Vec2f& a, const Vec2f& b, colour c) const;
+  void RenderText(const Vec2f& v, const std::string& text, colour c) const;
   void RenderRect(const Vec2f& low, const Vec2f& hi,
-                  Colour c, int lineWidth = 0) const;
+                  colour c, int lineWidth = 0) const;
   void Render() const;
 
   void Rumble(int player, int time);
@@ -190,13 +190,7 @@ public:
   //------------------------------
   void SetColourCycle(int cycle);
   int GetColourCycle() const;
-  Colour Cycle(Colour c, int cycle) const;
-
-protected:
-
-  Colour RgbToHsl(Colour rgb) const;
-  Colour HslToRgb(Colour hsl) const;
-  Colour Cycle(Colour rgb) const;
+  colour Cycle(colour c) const;
 
 private:
 
@@ -207,7 +201,6 @@ private:
   long _recordSeed;
   std::size_t _players;
   std::stringstream _record;
-  mutable std::map<std::pair<Colour, int>, Colour> _cycleMap;
 
   // Internal
   //------------------------------

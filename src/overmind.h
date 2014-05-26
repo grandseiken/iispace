@@ -2,7 +2,8 @@
 #define IISPACE_SRC_OVERMIND_H
 
 #include "z.h"
-#include <time.h>
+class Ship;
+class z0Game;
 
 class Overmind {
 public:

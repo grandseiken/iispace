@@ -246,16 +246,16 @@ void Overmind::SpawnPowerup()
   Vec2 v;
 
   if (r == 0) {
-    v.Set(-Lib::WIDTH, Lib::HEIGHT / 2);
+    v.set(-Lib::WIDTH, Lib::HEIGHT / 2);
   }
   else if (r == 1) {
-    v.Set(Lib::WIDTH * 2, Lib::HEIGHT / 2);
+    v.set(Lib::WIDTH * 2, Lib::HEIGHT / 2);
   }
   else if (r == 2) {
-    v.Set(Lib::WIDTH / 2, -Lib::HEIGHT);
+    v.set(Lib::WIDTH / 2, -Lib::HEIGHT);
   }
   else {
-    v.Set(Lib::WIDTH / 2, Lib::HEIGHT * 2);
+    v.set(Lib::WIDTH / 2, Lib::HEIGHT * 2);
   }
 
   int m = 4;
@@ -300,16 +300,16 @@ void Overmind::SpawnBossReward()
   Vec2 v;
 
   if (r == 0) {
-    v.Set(-Lib::WIDTH / 4, Lib::HEIGHT / 2);
+    v.set(-Lib::WIDTH / 4, Lib::HEIGHT / 2);
   }
   else if (r == 1) {
-    v.Set(Lib::WIDTH + Lib::WIDTH / 4, Lib::HEIGHT / 2);
+    v.set(Lib::WIDTH + Lib::WIDTH / 4, Lib::HEIGHT / 2);
   }
   else if (r == 2) {
-    v.Set(Lib::WIDTH / 2, -Lib::HEIGHT / 4);
+    v.set(Lib::WIDTH / 2, -Lib::HEIGHT / 4);
   }
   else {
-    v.Set(Lib::WIDTH / 2, Lib::HEIGHT + Lib::HEIGHT / 4);
+    v.set(Lib::WIDTH / 2, Lib::HEIGHT + Lib::HEIGHT / 4);
   }
 
   Spawn(new ExtraLife(v));

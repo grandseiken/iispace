@@ -24,7 +24,7 @@ private:
 class SBBossShot : public Enemy {
 public:
 
-  SBBossShot(const Vec2& position, const Vec2& velocity, Colour c = 0x999999ff);
+  SBBossShot(const Vec2& position, const Vec2& velocity, colour c = 0x999999ff);
   virtual ~SBBossShot() {}
 
   virtual void Update();
@@ -109,6 +109,7 @@ public:
 
 // Death ray boss arm
 //------------------------------
+class DeathRayBoss;
 class DeathArm : public Enemy {
 public:
 
@@ -138,7 +139,7 @@ class SnakeTail : public Enemy {
   friend class Snake;
 public:
 
-  SnakeTail(const Vec2& position, Colour colour);
+  SnakeTail(const Vec2& position, colour colour);
   virtual ~SnakeTail() {}
 
   virtual void Update();
@@ -158,7 +159,7 @@ private:
 class Snake : public Enemy {
 public:
 
-  Snake(const Vec2& position, Colour colour,
+  Snake(const Vec2& position, colour colour,
         const Vec2& dir = Vec2(), fixed rot = 0);
   virtual ~Snake() {}
 
@@ -171,7 +172,7 @@ private:
   int _timer;
   Vec2 _dir;
   int _count;
-  Colour _colour;
+  colour _colour;
   bool _shotSnake;
   fixed _shotRot;
 

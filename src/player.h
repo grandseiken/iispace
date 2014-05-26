@@ -80,8 +80,8 @@ public:
 
   // Colour
   //------------------------------
-  static Colour GetPlayerColour(std::size_t playerNumber);
-  Colour GetPlayerColour() const
+  static colour GetPlayerColour(std::size_t playerNumber);
+  colour GetPlayerColour() const
   {
     return GetPlayerColour(GetPlayerNumber());
   }

@@ -6,8 +6,6 @@
 #include "overmind.h"
 #include "stars.h"
 #include <algorithm>
-#include <cstdint>
-#include <cstring>
 
 const int z0Game::STARTING_LIVES = 2;
 const int z0Game::BOSSMODE_LIVES = 1;
@@ -637,50 +635,51 @@ void z0Game::Render() const
       if (i < _ships.size() && !_ships[i]->IsEnemy()) {
         continue;
       }
-      Vec2f v = Vec2f(i < _ships.size() ? _ships[i]->GetPosition() :
-                                          Boss::_warnings[i - _ships.size()]);
+      Vec2f v = to_float(
+          i < _ships.size() ? _ships[i]->GetPosition() :
+                              Boss::_warnings[i - _ships.size()]);
 
-      if (v._x < -4) {
+      if (v.x < -4) {
         int a = int(.5f + float(0x1) + float(0x9) *
-                    std::max(v._x + Lib::WIDTH, 0.f) / Lib::WIDTH);
+                    std::max(v.x + Lib::WIDTH, 0.f) / Lib::WIDTH);
         a |= a << 4;
         a = (a << 8) | (a << 16) | (a << 24) | 0x66;
-        lib.RenderLine(Vec2f(0.f, v._y), Vec2f(6, v._y - 3), a);
-        lib.RenderLine(Vec2f(6.f, v._y - 3), Vec2f(6, v._y + 3), a);
-        lib.RenderLine(Vec2f(6.f, v._y + 3), Vec2f(0, v._y), a);
+        lib.RenderLine(Vec2f(0.f, v.y), Vec2f(6, v.y - 3), a);
+        lib.RenderLine(Vec2f(6.f, v.y - 3), Vec2f(6, v.y + 3), a);
+        lib.RenderLine(Vec2f(6.f, v.y + 3), Vec2f(0, v.y), a);
       }
-      if (v._x >= Lib::WIDTH + 4) {
+      if (v.x >= Lib::WIDTH + 4) {
         int a = int(.5f + float(0x1) + float(0x9) *
-                    std::max(2 * Lib::WIDTH - v._x, 0.f) / Lib::WIDTH);
+                    std::max(2 * Lib::WIDTH - v.x, 0.f) / Lib::WIDTH);
         a |= a << 4;
         a = (a << 8) | (a << 16) | (a << 24) | 0x66;
-        lib.RenderLine(Vec2f(float(Lib::WIDTH), v._y),
-                       Vec2f(Lib::WIDTH - 6.f, v._y - 3), a);
-        lib.RenderLine(Vec2f(Lib::WIDTH - 6, v._y - 3),
-                       Vec2f(Lib::WIDTH - 6.f, v._y + 3), a);
-        lib.RenderLine(Vec2f(Lib::WIDTH - 6, v._y + 3),
-                       Vec2f(float(Lib::WIDTH), v._y), a);
+        lib.RenderLine(Vec2f(float(Lib::WIDTH), v.y),
+                       Vec2f(Lib::WIDTH - 6.f, v.y - 3), a);
+        lib.RenderLine(Vec2f(Lib::WIDTH - 6, v.y - 3),
+                       Vec2f(Lib::WIDTH - 6.f, v.y + 3), a);
+        lib.RenderLine(Vec2f(Lib::WIDTH - 6, v.y + 3),
+                       Vec2f(float(Lib::WIDTH), v.y), a);
       }
-      if (v._y < -4) {
+      if (v.y < -4) {
         int a = int(.5f + float(0x1) + float(0x9) *
-                    std::max(v._y + Lib::HEIGHT, 0.f) / Lib::HEIGHT);
+                    std::max(v.y + Lib::HEIGHT, 0.f) / Lib::HEIGHT);
         a |= a << 4;
         a = (a << 8) | (a << 16) | (a << 24) | 0x66;
-        lib.RenderLine(Vec2f(v._x, 0.f), Vec2f(v._x - 3, 6.f), a);
-        lib.RenderLine(Vec2f(v._x - 3, 6.f), Vec2f(v._x + 3, 6.f), a);
-        lib.RenderLine(Vec2f(v._x + 3, 6.f), Vec2f(v._x, 0.f), a);
+        lib.RenderLine(Vec2f(v.x, 0.f), Vec2f(v.x - 3, 6.f), a);
+        lib.RenderLine(Vec2f(v.x - 3, 6.f), Vec2f(v.x + 3, 6.f), a);
+        lib.RenderLine(Vec2f(v.x + 3, 6.f), Vec2f(v.x, 0.f), a);
       }
-      if (v._y >= Lib::HEIGHT + 4) {
+      if (v.y >= Lib::HEIGHT + 4) {
         int a = int(.5f + float(0x1) + float(0x9) *
-                    std::max(2 * Lib::HEIGHT - v._y, 0.f) / Lib::HEIGHT);
+                    std::max(2 * Lib::HEIGHT - v.y, 0.f) / Lib::HEIGHT);
         a |= a << 4;
         a = (a << 8) | (a << 16) | (a << 24) | 0x66;
-        lib.RenderLine(Vec2f(v._x, float(Lib::HEIGHT)),
-                       Vec2f(v._x - 3, Lib::HEIGHT - 6.f), a);
-        lib.RenderLine(Vec2f(v._x - 3, Lib::HEIGHT - 6.f),
-                       Vec2f(v._x + 3, Lib::HEIGHT - 6.f), a);
-        lib.RenderLine(Vec2f(v._x + 3, Lib::HEIGHT - 6.f),
-                       Vec2f(v._x, float(Lib::HEIGHT)), a);
+        lib.RenderLine(Vec2f(v.x, float(Lib::HEIGHT)),
+                       Vec2f(v.x - 3, Lib::HEIGHT - 6.f), a);
+        lib.RenderLine(Vec2f(v.x - 3, Lib::HEIGHT - 6.f),
+                       Vec2f(v.x + 3, Lib::HEIGHT - 6.f), a);
+        lib.RenderLine(Vec2f(v.x + 3, Lib::HEIGHT - 6.f),
+                       Vec2f(v.x, float(Lib::HEIGHT)), a);
       }
     }
     if (IsBossMode()) {
@@ -1109,12 +1108,12 @@ int z0Game::GetNonWallCount() const
 z0Game::ShipList z0Game::GetCollisionList(const Vec2& point, int category) const
 {
   ShipList r;
-  fixed x = point._x;
-  fixed y = point._y;
+  fixed x = point.x;
+  fixed y = point.y;
 
   for (const auto& collision : _collisions) {
-    fixed sx = collision->GetPosition()._x;
-    fixed sy = collision->GetPosition()._y;
+    fixed sx = collision->GetPosition().x;
+    fixed sy = collision->GetPosition().y;
     fixed w = collision->GetBoundingWidth();
 
     if (sx - w > x) {
@@ -1135,7 +1134,7 @@ z0Game::ShipList z0Game::GetShipsInRadius(const Vec2& point, fixed radius) const
 {
   ShipList r;
   for (auto& ship : _ships) {
-    if ((ship->GetPosition() - point).Length() <= radius) {
+    if ((ship->GetPosition() - point).length() <= radius) {
       r.push_back(ship.get());
     }
   }
@@ -1153,12 +1152,12 @@ z0Game::ShipList z0Game::GetShips() const
 
 bool z0Game::AnyCollisionList(const Vec2& point, int category) const
 {
-  fixed x = point._x;
-  fixed y = point._y;
+  fixed x = point.x;
+  fixed y = point.y;
 
   for (unsigned int i = 0; i < _collisions.size(); i++) {
-    fixed sx = _collisions[i]->GetPosition()._x;
-    fixed sy = _collisions[i]->GetPosition()._y;
+    fixed sx = _collisions[i]->GetPosition().x;
+    fixed sy = _collisions[i]->GetPosition().y;
     fixed w = _collisions[i]->GetBoundingWidth();
 
     if (sx - w > x) {
@@ -1184,12 +1183,12 @@ Player* z0Game::GetNearestPlayer(const Vec2& point) const
 
   for (Ship* ship : _playerList) {
     if (!((Player*) ship)->IsKilled() &&
-        (ship->GetPosition() - point).Length() < d) {
-      d = (ship->GetPosition() - point).Length();
+        (ship->GetPosition() - point).length() < d) {
+      d = (ship->GetPosition() - point).length();
       r = ship;
     }
-    if ((ship->GetPosition() - point).Length() < deadD) {
-      deadD = (ship->GetPosition() - point).Length();
+    if ((ship->GetPosition() - point).length() < deadD) {
+      deadD = (ship->GetPosition() - point).length();
       deadR = ship;
     }
   }
@@ -1212,16 +1211,16 @@ void z0Game::SetBossKilled(BossList boss)
 bool z0Game::SortShips(Ship* const& a, Ship* const& b)
 {
   return
-      a->GetPosition()._x - a->GetBoundingWidth() <
-      b->GetPosition()._x - b->GetBoundingWidth();
+      a->GetPosition().x - a->GetBoundingWidth() <
+      b->GetPosition().x - b->GetBoundingWidth();
 }
 
 // UI layout
 //------------------------------
 void z0Game::RenderPanel(const Vec2f& low, const Vec2f& hi) const
 {
-  Vec2f tlow(low._x * Lib::TEXT_WIDTH, low._y * Lib::TEXT_HEIGHT);
-  Vec2f  thi(hi._x * Lib::TEXT_WIDTH, hi._y * Lib::TEXT_HEIGHT);
+  Vec2f tlow(low.x * Lib::TEXT_WIDTH, low.y * Lib::TEXT_HEIGHT);
+  Vec2f  thi(hi.x * Lib::TEXT_WIDTH, hi.y * Lib::TEXT_HEIGHT);
   GetLib().RenderRect(tlow, thi, PANEL_BACK);
   GetLib().RenderRect(tlow, thi, PANEL_TEXT, 4);
 }

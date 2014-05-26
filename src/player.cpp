@@ -110,30 +110,20 @@ void Player::Update()
 
   // Movement
   Vec2 move = velocity;
-  if (move.Length() > fixed::hundredth) {
-    if (move.Length() > 1) {
-      move.Normalise();
+  if (move.length() > fixed::hundredth) {
+    if (move.length() > 1) {
+      move.normalise();
     }
     move *= SPEED;
 
     Vec2 pos = GetPosition();
     pos += move;
 
-    if (pos._x < 0) {
-      pos._x = 0;
-    }
-    if (pos._x > Lib::WIDTH) {
-      pos._x = Lib::WIDTH;
-    }
-    if (pos._y < 0) {
-      pos._y = 0;
-    }
-    if (pos._y > Lib::HEIGHT) {
-      pos._y = Lib::HEIGHT;
-    }
+    pos.x = std::max(fixed(0), std::min(fixed(Lib::WIDTH), pos.x));
+    pos.y = std::max(fixed(0), std::min(fixed(Lib::HEIGHT), pos.y));
 
     SetPosition(pos);
-    SetRotation(move.Angle());
+    SetRotation(move.angle());
   }
 
   // Bombs
@@ -146,10 +136,10 @@ void Player::Update()
     Explosion(0xffffffff, 48);
 
     Vec2 t = GetPosition();
-    Vec2f tf = Vec2f(t);
+    Vec2f tf = to_float(t);
     for (int i = 0; i < 64; ++i) {
       Vec2 p;
-      p.SetPolar(2 * i * fixed::pi / 64, BOMB_RADIUS);
+      p.set_polar(2 * i * fixed::pi / 64, BOMB_RADIUS);
       p += t;
       SetPosition(p);
       Explosion((i % 2) ? GetPlayerColour() : 0xffffffff,
@@ -165,7 +155,7 @@ void Player::Update()
       if (!list[i]->IsEnemy()) {
         continue;
       }
-      if ((list[i]->GetPosition() - GetPosition()).Length() <= BOMB_RADIUS ||
+      if ((list[i]->GetPosition() - GetPosition()).length() <= BOMB_RADIUS ||
           list[i]->IsBoss()) {
         list[i]->Damage(BOMB_DAMAGE, false, 0);
       }
@@ -178,7 +168,7 @@ void Player::Update()
   // Shots
   if (!_fireTimer && keys & 1) {
     Vec2 v = fireTarget - GetPosition();
-    if (v.Length() > 0) {
+    if (v.length() > 0) {
       Spawn(new Shot(GetPosition(), this, v, _magicShotTimer != 0));
       if (_magicShotTimer) {
         _magicShotTimer--;
@@ -191,7 +181,7 @@ void Player::Update()
       if (_shotSoundQueue.empty() || _shotSoundQueue[0] == this) {
         couldPlay = lib.PlaySound(
             Lib::SOUND_PLAYER_FIRE, volume,
-            2.f * GetPosition()._x.to_float() / Lib::WIDTH - 1.f, pitch);
+            2.f * GetPosition().x.to_float() / Lib::WIDTH - 1.f, pitch);
       }
       if (couldPlay && !_shotSoundQueue.empty()) {
         _shotSoundQueue.erase(_shotSoundQueue.begin());
@@ -222,8 +212,8 @@ void Player::Render() const
   int n = GetPlayerNumber();
 
   if (!_killTimer && (!IsWhatMode() || _reviveTimer > 0)) {
-    Vec2f t = Vec2f(_tempTarget);
-    if (t._x >= 0 && t._x <= Lib::WIDTH && t._y >= 0 && t._y <= Lib::HEIGHT) {
+    Vec2f t = to_float(_tempTarget);
+    if (t.x >= 0 && t.x <= Lib::WIDTH && t.y >= 0 && t.y <= Lib::HEIGHT) {
       lib.RenderLine(t + Vec2f(0, 9), t - Vec2f(0, 8), GetPlayerColour());
       lib.RenderLine(t + Vec2f(9, 1), t - Vec2f(8, -1), GetPlayerColour());
     }
@@ -244,15 +234,15 @@ void Player::Render() const
   std::string s = ss.str();
 
   Vec2f v;
-  v.Set(1.f, 1.f);
+  v.set(1.f, 1.f);
   if (n == 1) {
-    v.Set(Lib::WIDTH / Lib::TEXT_WIDTH - 1.f - s.length(), 1.f);
+    v.set(Lib::WIDTH / Lib::TEXT_WIDTH - 1.f - s.length(), 1.f);
   }
   if (n == 2) {
-    v.Set(1.f, Lib::HEIGHT / Lib::TEXT_HEIGHT - 2.f);
+    v.set(1.f, Lib::HEIGHT / Lib::TEXT_HEIGHT - 2.f);
   }
   if (n == 3) {
-    v.Set(Lib::WIDTH / Lib::TEXT_WIDTH - 1.f - s.length(),
+    v.set(Lib::WIDTH / Lib::TEXT_WIDTH - 1.f - s.length(),
           Lib::HEIGHT / Lib::TEXT_HEIGHT - 2.f);
   }
 
@@ -260,10 +250,10 @@ void Player::Render() const
 
   if (_magicShotTimer != 0) {
     if (n == 0 || n == 2) {
-      v._x += int(s.length());
+      v.x += int(s.length());
     }
     else {
-      v._x -= 1;
+      v.x -= 1;
     }
     v *= 16;
     lib.RenderRect(
@@ -280,15 +270,15 @@ void Player::Render() const
   }
   s = sss.str();
   
-  v.Set(1.f, 1.f);
+  v.set(1.f, 1.f);
   if (n == 1) {
-    v.Set(Lib::WIDTH / Lib::TEXT_WIDTH - 1.f - s.length(), 1.f);
+    v.set(Lib::WIDTH / Lib::TEXT_WIDTH - 1.f - s.length(), 1.f);
   }
   if (n == 2) {
-    v.Set(1.f, Lib::HEIGHT / Lib::TEXT_HEIGHT - 2.f);
+    v.set(1.f, Lib::HEIGHT / Lib::TEXT_HEIGHT - 2.f);
   }
   if (n == 3) {
-    v.Set(Lib::WIDTH / Lib::TEXT_WIDTH - 1.f - s.length(),
+    v.set(Lib::WIDTH / Lib::TEXT_WIDTH - 1.f - s.length(),
           Lib::HEIGHT / Lib::TEXT_HEIGHT - 2.f);
   }
 
@@ -351,7 +341,7 @@ void Player::AddScore(long score)
   }
 }
 
-Colour Player::GetPlayerColour(std::size_t playerNumber)
+colour Player::GetPlayerColour(std::size_t playerNumber)
 {
   return
       playerNumber == 0 ? 0xff0000ff :
@@ -403,7 +393,7 @@ Shot::Shot(const Vec2& position, Player* player,
   , _magic(magic)
   , _flash(false)
 {
-  _velocity.Normalise();
+  _velocity.normalise();
   _velocity *= Player::SHOT_SPEED;
   AddShape(new Fill(Vec2(), 2, 2, _player->GetPlayerColour()));
   AddShape(new Fill(Vec2(), 1, 1, _player->GetPlayerColour() & 0xffffff33));
@@ -431,8 +421,8 @@ void Shot::Update()
 
   Move(_velocity);
   bool onScreen =
-      GetPosition()._x >= -4 && GetPosition()._x < 4 + Lib::WIDTH &&
-      GetPosition()._y >= -4 && GetPosition()._y < 4 + Lib::HEIGHT;
+      GetPosition().x >= -4 && GetPosition().x < 4 + Lib::WIDTH &&
+      GetPosition().y >= -4 && GetPosition().y < 4 + Lib::HEIGHT;
   if (!onScreen) {
     Destroy();
     return;

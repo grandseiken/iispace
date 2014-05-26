@@ -5,16 +5,7 @@
 #include <vector>
 #include "fix32.h"
 
-// Forward declarations
-//------------------------------
-typedef unsigned int Colour;
-class z0Game;
-class Shape;
-class Ship;
-class Enemy;
-class Player;
-class DeathRayBoss;
-class DeathRayArm;
+typedef uint32_t colour;
 
 namespace z {
 
@@ -35,7 +26,7 @@ inline fixed rand_fixed()
 std::string compress_string(const std::string& str);
 std::string decompress_string(const std::string& str);
 
-Colour colour_cycle(Colour rgb, int cycle);
+colour colour_cycle(colour rgb, int32_t cycle);
 
 // End namespace z.
 }
@@ -44,260 +35,155 @@ Colour colour_cycle(Colour rgb, int cycle);
 //------------------------------
 #define M_PIf 3.14159265358979323846264338327f
 
-class Vec2 {
+inline fixed sqrt(fixed f)
+{
+  return f.sqrt();
+}
+
+inline fixed cos(fixed f)
+{
+  return f.cos();
+}
+
+inline fixed sin(fixed f)
+{
+  return f.sin();
+}
+
+inline fixed atan2(fixed y, fixed x)
+{
+  return y.atan2(x);
+}
+
+template<typename T>
+class vec2_t {
 public:
 
-  fixed _x;
-  fixed _y;
+  T x;
+  T y;
 
-  Vec2()
-    : _x(0)
-    , _y(0) {}
+  vec2_t()
+    : x(0)
+    , y(0) {}
 
-  Vec2(fixed x, fixed y)
-    : _x(x)
-    , _y(y) {}
+  vec2_t(const T& x, const T& y)
+    : x(x)
+    , y(y) {}
 
-  Vec2(const Vec2& a)
-    : _x(a._x)
-    , _y(a._y) {}
-
-  fixed Length() const
+  T length_squared() const
   {
-    return (_x * _x + _y * _y).sqrt();
+    return dot(*this);
   }
 
-  fixed Angle() const
+  T length() const
   {
-    return _y.atan2(_x);
+    return sqrt(length_squared());
   }
 
-  void Set(fixed x, fixed y)
+  T angle() const
   {
-    _x = x;
-    _y = y;
+    return atan2(y, x);
   }
 
-  void SetPolar(fixed angle, fixed length)
+  void set(const T& x, const T& y)
   {
-    _x = length * angle.cos();
-    _y = length * angle.sin();
+    this->x = x;
+    this->y = y;
   }
 
-  void Normalise()
+  void set_polar(const T& angle, const T& length)
   {
-    fixed l = Length();
-    if (l <= 0) {
+    x = length * cos(angle);
+    y = length * sin(angle);
+  }
+
+  void normalise()
+  {
+    T len = length();
+    if (len <= 0) {
       return;
     }
-    _x /= l;
-    _y /= l;
+    x /= len;
+    y /= len;
   }
 
-  void Rotate(fixed angle)
+  void rotate(const T& a)
   {
-    if (angle != 0) {
-      SetPolar(Angle() + angle, Length());
+    if (a != 0) {
+      set_polar(angle() + a, length());
     }
   }
 
-  fixed DotProduct(const Vec2& a) const
+  T dot(const vec2_t& a) const
   {
-    return _x * a._x + _y * a._y;
+    return x * a.x + y * a.y;
   }
 
-  Vec2 operator+(const Vec2& a) const
+  vec2_t operator+(const vec2_t& a) const
   {
-    return Vec2(_x + a._x, _y + a._y);
+    return vec2_t(x + a.x, y + a.y);
   }
 
-  Vec2 operator-(const Vec2& a) const
+  vec2_t operator-(const vec2_t& a) const
   {
-    return Vec2(_x - a._x, _y - a._y);
+    return vec2_t(x - a.x, y - a.y);
   }
 
-  Vec2 operator+=(const Vec2& a)
+  vec2_t operator+=(const vec2_t& a)
   {
-    _x += a._x;
-    _y += a._y;
-    return *this;
+    return *this = *this + a;
   }
 
-  Vec2 operator-=(const Vec2& a)
+  vec2_t operator-=(const vec2_t& a)
   {
-    _x -= a._x;
-    _y -= a._y;
-    return *this;
+    return *this = *this - a;
   }
 
-  Vec2 operator*(fixed a) const
+  vec2_t operator*(const T& a) const
   {
-    return Vec2(_x * a, _y * a);
+    return vec2_t(x * a, y * a);
   }
 
-  Vec2 operator/(fixed a) const
+  vec2_t operator/(const T& a) const
   {
-    return Vec2(_x / a, _y / a);
+    return vec2_t(x / a, y / a);
   }
 
-  Vec2 operator*=(fixed a)
+  vec2_t operator*=(const T& a)
   {
-    _x *= a;
-    _y *= a;
-    return *this;
+    return *this = *this * a;
   }
 
-  Vec2 operator/=(fixed a)
+  vec2_t operator/=(const T& a)
   {
-    _x /= a;
-    _y /= a;
-    return *this;
+    return *this = *this / a;
   }
 
-  bool operator==(const Vec2& a) const
+  bool operator==(const vec2_t& a) const
   {
-    return _x == a._x && _y == a._y;
+    return x == a.x && y == a.y;
   }
 
-  bool operator!=(const Vec2& a) const
+  bool operator!=(const vec2_t& a) const
   {
-    return _x != a._x || _y != a._y;
+    return !(*this == a);
   }
 
-  Vec2& operator=(const Vec2& a)
+  vec2_t& operator=(const vec2_t& a)
   {
-    _x = a._x;
-    _y = a._y;
+    x = a.x;
+    y = a.y;
     return *this;
   }
 
 };
 
-class Vec2f {
-public:
+typedef vec2_t<fixed> Vec2;
+typedef vec2_t<float> Vec2f;
 
-  float _x;
-  float _y;
-
-  Vec2f()
-    : _x(0)
-    , _y(0) {}
-
-  Vec2f(float x, float y)
-    : _x(x)
-    , _y(y) {}
-
-  explicit Vec2f(const Vec2& a)
-    : _x(a._x.to_float())
-    , _y(a._y.to_float()) {}
-
-  float Length() const
-  {
-    return sqrt(_x * _x + _y * _y);
-  }
-
-  float Angle() const
-  {
-    return atan2(_y, _x);
-  }
-
-  void Set(float x, float y)
-  {
-    _x = x;
-    _y = y;
-  }
-
-  void SetPolar(float angle, float length)
-  {
-    _x = length * cos(angle);
-    _y = length * sin(angle);
-  }
-
-  void Normalise()
-  {
-    float l = Length();
-    if (l <= 0) {
-      return;
-    }
-    _x /= l;
-    _y /= l;
-  }
-
-  void Rotate(float angle)
-  {
-    SetPolar(Angle() + angle, Length());
-  }
-
-  float DotProduct(const Vec2f& a) const
-  {
-    return _x * a._x + _y * a._y;
-  }
-
-  Vec2f operator+(const Vec2f& a) const
-  {
-    return Vec2f(_x + a._x, _y + a._y);
-  }
-
-  Vec2f operator-(const Vec2f& a) const
-  {
-    return Vec2f(_x - a._x, _y - a._y);
-  }
-
-  Vec2f operator+=(const Vec2f& a)
-  {
-    _x += a._x;
-    _y += a._y;
-    return *this;
-  }
-
-  Vec2f operator-=(const Vec2f& a)
-  {
-    _x -= a._x;
-    _y -= a._y;
-    return *this;
-  }
-
-  Vec2f operator*(float a) const
-  {
-    return Vec2f(_x * a, _y * a);
-  }
-
-  Vec2f operator/(float a) const
-  {
-    return Vec2f(_x / a, _y / a);
-  }
-
-  Vec2f operator*=(float a)
-  {
-    _x *= a;
-    _y *= a;
-    return *this;
-  }
-
-  Vec2f operator/=(float a)
-  {
-    _x /= a;
-    _y /= a;
-    return *this;
-  }
-
-  bool operator==(const Vec2f& a) const
-  {
-    return _x == a._x && _y == a._y;
-  }
-
-  bool operator!=(const Vec2f& a) const
-  {
-    return _x != a._x || _y != a._y;
-  }
-
-  Vec2f& operator=(const Vec2f& a)
-  {
-    _x = a._x;
-    _y = a._y;
-    return *this;
-  }
-
-};
+inline Vec2f to_float(const Vec2& a)
+{
+  return Vec2f(a.x.to_float(), a.y.to_float());
+}
 
 #endif

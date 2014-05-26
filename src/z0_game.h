@@ -7,6 +7,8 @@
 #include "z.h"
 class Overmind;
 class Particle;
+class Player;
+class Ship;
 
 #define ALLOWED_CHARS "ABCDEFGHiJKLMNOPQRSTUVWXYZ 1234567890! "
 
@@ -32,9 +34,9 @@ public:
     BOSS_3A = 64
   };
 
-  static const Colour PANEL_TEXT = 0xeeeeeeff;
-  static const Colour PANEL_TRAN = 0xeeeeee99;
-  static const Colour PANEL_BACK = 0x000000ff;
+  static const colour PANEL_TEXT = 0xeeeeeeff;
+  static const colour PANEL_TRAN = 0xeeeeee99;
+  static const colour PANEL_BACK = 0x000000ff;
   static const int STARTING_LIVES;
   static const int BOSSMODE_LIVES;
 

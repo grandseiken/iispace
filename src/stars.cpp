@@ -25,7 +25,7 @@ void Stars::update()
 }
 
 void Stars::change() {
-  _direction.Rotate((z::rand_fixed().to_float() - 0.5f) * M_PIf);
+  _direction.rotate((z::rand_fixed().to_float() - 0.5f) * M_PIf);
   for (const auto& star : _stars) {
     star->timer = TIMER;
   }
@@ -50,8 +50,8 @@ void Stars::render(Lib& lib)
     case PLANET:
       for (int32_t i = 0; i < 8; i++) {
         Vec2f a, b;
-        a.SetPolar(i * M_PIf / 4, star->size);
-        b.SetPolar((i + 1) * M_PIf / 4, star->size);
+        a.set_polar(i * M_PIf / 4, star->size);
+        b.set_polar((i + 1) * M_PIf / 4, star->size);
         lib.RenderLine(star->position + a, star->position + b, star->colour);
       }
     }
@@ -76,9 +76,9 @@ void Stars::create_star()
   int32_t edge = z::rand_int(4);
   float ratio = z::rand_fixed().to_float();
 
-  star->position._x = edge < 2 ? ratio * Lib::WIDTH :
+  star->position.x = edge < 2 ? ratio * Lib::WIDTH :
       edge == 2 ? -16 : 16 + Lib::WIDTH;
-  star->position._y = edge >= 2 ? ratio * Lib::HEIGHT :
+  star->position.y = edge >= 2 ? ratio * Lib::HEIGHT :
       edge == 0 ? -16 : 16 + Lib::HEIGHT;
 
   star->colour =
@@ -94,6 +94,6 @@ void Stars::create_star()
 void Stars::clear()
 {
   _stars.clear();
-  _direction.Set(1, 0);
+  _direction.set(1, 0);
   _star_rate = 0;
 }

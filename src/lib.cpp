@@ -784,10 +784,10 @@ void Lib::Record(Vec2 velocity, Vec2 target, int keys)
 {
   char k = keys;
   std::stringstream binary(std::ios::in | std::ios::out | std::ios::binary);
-  fixed_write(binary, velocity._x);
-  fixed_write(binary, velocity._y);
-  fixed_write(binary, target._x);
-  fixed_write(binary, target._y);
+  fixed_write(binary, velocity.x);
+  fixed_write(binary, velocity.y);
+  fixed_write(binary, target.x);
+  fixed_write(binary, target.y);
   binary.write(&k, sizeof(char));
   _record << binary.str();
 }
@@ -846,10 +846,10 @@ const Lib::Recording& Lib::PlayRecording(const std::string& path)
   while (!decrypted.eof()){
     PlayerFrame pf;
     char k;
-    fixed_read(pf._velocity._x, decrypted);
-    fixed_read(pf._velocity._y, decrypted);
-    fixed_read(pf._target._x, decrypted);
-    fixed_read(pf._target._y, decrypted);
+    fixed_read(pf._velocity.x, decrypted);
+    fixed_read(pf._velocity.y, decrypted);
+    fixed_read(pf._target.x, decrypted);
+    fixed_read(pf._target.y, decrypted);
     decrypted.read(&k, sizeof(char));
     pf._keys = k;
     _replay._playerFrames.push_back(pf);
@@ -871,122 +871,9 @@ int Lib::GetColourCycle() const
   return _cycle;
 }
 
-Colour Lib::RgbToHsl(Colour rgb) const
+colour Lib::Cycle(colour rgb) const
 {
-  double r = ((rgb >> 24) & 0xff) / 255.0;
-  double g = ((rgb >> 16) & 0xff) / 255.0;
-  double b = ((rgb >> 8) & 0xff) / 255.0;
-
-  double vm, r2, g2, b2;
-  double h = 0, s = 0, l = 0;
-
-  double v = std::max(r, std::max(b, g));
-  double m = std::min(r, std::min(b, g));
-  l = (m + v) / 2.0;
-  if (l <= 0.0) {
-    return 0;
-  }
-  s = vm = v - m;
-  if (s > 0.0) {
-    s /= (l <= 0.5) ? (v + m) : (2.0 - v - m);
-  }
-  else
-    return ((int(0.5 + l * 255) & 0xff) << 8);
-  r2 = (v - r) / vm;
-  g2 = (v - g) / vm;
-  b2 = (v - b) / vm;
-  if (r == v) {
-    h = (g == m ? 5.0 + b2 : 1.0 - g2);
-  }
-  else if (g == v) {
-    h = (b == m ? 1.0 + r2 : 3.0 - b2);
-  }
-  else {
-    h = (r == m ? 3.0 + g2 : 5.0 - r2);
-  }
-  h /= 6.0;
-  return
-      ((int(0.5 + h * 255) & 0xff) << 24) |
-      ((int(0.5 + s * 255) & 0xff) << 16) |
-      ((int(0.5 + l * 255) & 0xff) << 8);
-}
-
-Colour Lib::HslToRgb(Colour hsl) const
-{
-  double h = ((hsl >> 24) & 0xff) / 255.0;
-  double s = ((hsl >> 16) & 0xff) / 255.0;
-  double l = ((hsl >> 8) & 0xff) / 255.0;
-
-  double r = l, g = l, b = l;
-  double v = (l <= 0.5) ? (l * (1.0 + s)) : (l + s - l * s);
-  if (v > 0) {
-    h *= 6.0;
-    double m = l + l - v;
-    double sv = (v - m) / v;;
-    int sextant = int(h);
-    double vsf = v * sv * (h - sextant);
-    double mid1 = m + vsf, mid2 = v - vsf;
-    sextant %= 6;
-
-    switch (sextant) {
-    case 0:
-      r = v;
-      g = mid1;
-      b = m;
-      break;
-    case 1:
-      r = mid2;
-      g = v;
-      b = m;
-      break;
-    case 2:
-      r = m;
-      g = v;
-      b = mid1;
-      break;
-    case 3:
-      r = m;
-      g = mid2;
-      b = v;
-      break;
-    case 4:
-      r = mid1;
-      g = m;
-      b = v;
-      break;
-    case 5:
-      r = v;
-      g = m;
-      b = mid2;
-      break;
-    }
-  }
-  return
-      ((int(0.5 + r * 255) & 0xff) << 24) |
-      ((int(0.5 + g * 255) & 0xff) << 16) |
-      ((int(0.5 + b * 255) & 0xff) << 8);
-}
-
-Colour Lib::Cycle(Colour rgb, int cycle) const
-{
-  if (cycle == 0)
-    return rgb;
-  int a = rgb & 0x000000ff;
-  std::pair<Colour, int> key = std::make_pair(rgb & 0xffffff00, cycle);
-  if (_cycleMap.find(key) != _cycleMap.end()) {
-    return _cycleMap[key] | a;
-  }
-
-  Colour hsl = RgbToHsl(rgb & 0xffffff00);
-  char c = ((hsl >> 24) & 0xff) + cycle;
-  Colour result = HslToRgb((hsl & 0x00ffffff) | (c << 24));
-  _cycleMap[key] = result;
-  return result | a;
-}
-
-Colour Lib::Cycle(Colour rgb) const
-{
-  return Cycle(rgb, _cycle);
+  return z::colour_cycle(rgb, _cycle);
 }
 
 void Lib::SetWorkingDirectory(bool original)
@@ -1286,7 +1173,7 @@ bool Lib::IsKeyHeld(int32_t player, Key k) const
   Vec2 v(_internals->_padAimHAxes[player], _internals->_padAimVAxes[player]);
   if (k == KEY_FIRE &&
       (_internals->_padAimDpads[player] != OIS::Pov::Centered ||
-       v.Length() >= fixed::tenth * 2)) {
+       v.length() >= fixed::tenth * 2)) {
     return true;
   }
   return _keysHeld[k][player];
@@ -1326,7 +1213,7 @@ Vec2 Lib::GetMoveVelocity(int32_t player) const
 
   v = Vec2(_internals->_padMoveHAxes[player],
            _internals->_padMoveVAxes[player]);
-  if (v.Length() < fixed::tenth * 2) {
+  if (v.length() < fixed::tenth * 2) {
     return Vec2();
   }
   return v;
@@ -1343,8 +1230,8 @@ Vec2 Lib::GetFireTarget(int32_t player, const Vec2& position) const
        GetPlayerCount() - 1 : _internals->_padCount);
   Vec2 v(_internals->_padAimHAxes[player], _internals->_padAimVAxes[player]);
 
-  if (v.Length() >= fixed::tenth * 2) {
-    v.Normalise();
+  if (v.length() >= fixed::tenth * 2) {
+    v.normalise();
     v *= 48;
     if (kp) {
       _mouseMoving = false;
@@ -1374,7 +1261,7 @@ Vec2 Lib::GetFireTarget(int32_t player, const Vec2& position) const
     }
 
     if (v != Vec2()) {
-      v.Normalise();
+      v.normalise();
       v *= 48;
       if (kp) {
         _mouseMoving = false;
@@ -1407,34 +1294,34 @@ void Lib::ClearScreen() const
 #endif
 }
 
-void Lib::RenderLine(const Vec2f& a, const Vec2f& b, Colour c) const
+void Lib::RenderLine(const Vec2f& a, const Vec2f& b, colour c) const
 {
 #ifndef PLATFORM_SCORE
   c = Cycle(c);
   glBegin(GL_LINES);
   glColor4ub(c >> 24, c >> 16, c >> 8, c);
-  glVertex3f(a._x + _extraX, a._y + _extraY, 0);
-  glVertex3f(b._x + _extraX, b._y + _extraY, 0);
+  glVertex3f(a.x + _extraX, a.y + _extraY, 0);
+  glVertex3f(b.x + _extraX, b.y + _extraY, 0);
   glColor4ub(c >> 24, c >> 16, c >> 8, c & 0xffffff33);
-  glVertex3f(a._x + _extraX + 1, a._y + _extraY, 0);
-  glVertex3f(b._x + _extraX + 1, b._y + _extraY, 0);
-  glVertex3f(a._x + _extraX - 1, a._y + _extraY, 0);
-  glVertex3f(b._x + _extraX - 1, b._y + _extraY, 0);
-  glVertex3f(a._x + _extraX, a._y + _extraY + 1, 0);
-  glVertex3f(b._x + _extraX, b._y + _extraY + 1, 0);
-  glVertex3f(a._x + _extraX, a._y + _extraY - 1, 0);
-  glVertex3f(b._x + _extraX, b._y + _extraY - 1, 0);
+  glVertex3f(a.x + _extraX + 1, a.y + _extraY, 0);
+  glVertex3f(b.x + _extraX + 1, b.y + _extraY, 0);
+  glVertex3f(a.x + _extraX - 1, a.y + _extraY, 0);
+  glVertex3f(b.x + _extraX - 1, b.y + _extraY, 0);
+  glVertex3f(a.x + _extraX, a.y + _extraY + 1, 0);
+  glVertex3f(b.x + _extraX, b.y + _extraY + 1, 0);
+  glVertex3f(a.x + _extraX, a.y + _extraY - 1, 0);
+  glVertex3f(b.x + _extraX, b.y + _extraY - 1, 0);
   glEnd();
 #endif
 }
 
-void Lib::RenderText(const Vec2f& v, const std::string& text, Colour c) const
+void Lib::RenderText(const Vec2f& v, const std::string& text, colour c) const
 {
 #ifndef PLATFORM_SCORE
   _internals->_font.SetColor(RgbaToColor(Cycle(c)));
   for (std::size_t i = 0; i < text.length(); ++i) {
     _internals->_font.SetPosition(
-        (int(i) + v._x) * TEXT_WIDTH + _extraX, v._y * TEXT_HEIGHT + _extraY);
+        (int(i) + v.x) * TEXT_WIDTH + _extraX, v.y * TEXT_HEIGHT + _extraY);
     _internals->_font.SetSubRect(sf::IntRect(TEXT_WIDTH * text[i], 0,
                                  TEXT_WIDTH * (1 + text[i]), TEXT_HEIGHT));
     _internals->_window.Draw(_internals->_font);
@@ -1444,12 +1331,12 @@ void Lib::RenderText(const Vec2f& v, const std::string& text, Colour c) const
 }
 
 void Lib::RenderRect(
-    const Vec2f& low, const Vec2f& hi, Colour c, int lineWidth) const
+    const Vec2f& low, const Vec2f& hi, colour c, int lineWidth) const
 {
 #ifndef PLATFORM_SCORE
   c = Cycle(c);
-  Vec2f ab(low._x, hi._y);
-  Vec2f ba(hi._x, low._y);
+  Vec2f ab(low.x, hi.y);
+  Vec2f ba(hi.x, low.y);
   const Vec2f* list[4];
   Vec2f normals[4];
   list[0] = &low;
@@ -1463,17 +1350,17 @@ void Lib::RenderRect(
     const Vec2f& v1 = *list[i];
     const Vec2f& v2 = *list[(i + 1) % 4];
 
-    Vec2f n1(v0._y - v1._y, v1._x - v0._x);
-    Vec2f n2(v1._y - v2._y, v2._x - v1._x);
+    Vec2f n1(v0.y - v1.y, v1.x - v0.x);
+    Vec2f n2(v1.y - v2.y, v2.x - v1.x);
 
-    n1.Normalise();
-    n2.Normalise();
+    n1.normalise();
+    n2.normalise();
 
-    float f = 1 + n1._x * n2._x + n1._y * n2._y;
+    float f = 1 + n1.x * n2.x + n1.y * n2.y;
     normals[i] = (n1 + n2) / f;
     float dot =
-        (v1._x - centre._x) * normals[i]._x +
-        (v1._y - centre._y) * normals[i]._y;
+        (v1.x - centre.x) * normals[i].x +
+        (v1.y - centre.y) * normals[i].y;
 
     if (dot < 0) {
       normals[i] = Vec2f() - normals[i];
@@ -1484,9 +1371,9 @@ void Lib::RenderRect(
   glColor4ub(c >> 24, c >> 16, c >> 8, c);
   for (std::size_t i = 0; i < 5; ++i)
   {
-    glVertex3f(list[i % 4]->_x, list[i % 4]->_y, 0);
-    glVertex3f(list[i % 4]->_x + normals[i % 4]._x,
-               list[i % 4]->_y + normals[i % 4]._y, 0);
+    glVertex3f(list[i % 4]->x, list[i % 4]->y, 0);
+    glVertex3f(list[i % 4]->x + normals[i % 4].x,
+               list[i % 4]->y + normals[i % 4].y, 0);
   }
   glEnd();
 

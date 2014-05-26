@@ -115,15 +115,15 @@ public:
     SetPosition(GetPosition() + v);
   }
 
-  void Explosion(Colour c = 0, int time = 8,
+  void Explosion(colour c = 0, int time = 8,
                  bool towards = false, const Vec2f& v = Vec2f()) const;
-  void RenderWithColour(Colour colour) const;
+  void RenderWithColour(colour colour) const;
 
   bool IsOnScreen() const
   {
     return
-        GetPosition()._x >= 0 && GetPosition()._x <= Lib::WIDTH &&
-        GetPosition()._y >= 0 && GetPosition()._y <= Lib::HEIGHT;
+        GetPosition().x >= 0 && GetPosition().x <= Lib::WIDTH &&
+        GetPosition().y >= 0 && GetPosition().y <= Lib::HEIGHT;
   }
 
   static Vec2 GetScreenCentre()
@@ -214,14 +214,14 @@ public:
   bool PlaySound(Lib::Sound sound)
   {
     return GetLib().PlaySound(
-        sound, 1.f, 2.f * GetPosition()._x.to_float() / Lib::WIDTH - 1.f);
+        sound, 1.f, 2.f * GetPosition().x.to_float() / Lib::WIDTH - 1.f);
   }
 
   bool PlaySoundRandom(Lib::Sound sound, float pitch = 0.f, float volume = 1.f)
   {
     return GetLib().PlaySound(
         sound, volume * (.5f * z::rand_fixed().to_float() + .5f),
-        2.f * GetPosition()._x.to_float() / Lib::WIDTH - 1.f, pitch);
+        2.f * GetPosition().x.to_float() / Lib::WIDTH - 1.f, pitch);
   }
 
   int GetEnemyValue() const
@@ -278,7 +278,7 @@ private:
 class Particle {
 public:
 
-  Particle(const Vec2f& position, Colour colour,
+  Particle(const Vec2f& position, colour colour,
            const Vec2f& velocity, int time)
     : _destroy(false)
     , _position(position)
@@ -322,7 +322,7 @@ private:
   Vec2f _position;
   Vec2f _velocity;
   int _timer;
-  Colour _colour;
+  colour _colour;
   z0Game* _z0;
 
 };

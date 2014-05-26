@@ -47,7 +47,7 @@ void Enemy::Damage(int damage, bool magic, Player* source)
       Explosion();
     }
     else {
-      Explosion(0, 4, true, Vec2f(GetPosition()));
+      Explosion(0, 4, true, to_float(GetPosition()));
     }
     OnDestroy(damage >= Player::BOMB_DAMAGE);
     Destroy();
@@ -97,8 +97,8 @@ void Follow::Update()
     _timer = 0;
   }
   Vec2 d = _target->GetPosition() - GetPosition();
-  if (d.Length() > 0) {
-    d.Normalise();
+  if (d.length() > 0) {
+    d.normalise();
     d *= SPEED;
 
     Move(d);
@@ -133,7 +133,7 @@ void Chaser::Update()
     if (_move) {
       Ship* p = GetNearestPlayer();
       _dir = p->GetPosition() - GetPosition();
-      _dir.Normalise();
+      _dir.normalise();
       _dir *= SPEED;
     }
   }
@@ -156,7 +156,7 @@ Square::Square(const Vec2& position, fixed rotation)
   , _timer(z::rand_int(80) + 40)
 {
   AddShape(new Box(Vec2(), 10, 10, 0x33ff33ff, 0, ENEMY | VULNERABLE));
-  _dir.SetPolar(rotation, 1);
+  _dir.set_polar(rotation, 1);
   SetScore(25);
   SetBoundingWidth(15);
   SetEnemyValue(2);
@@ -176,35 +176,35 @@ void Square::Update()
   }
 
   Vec2 pos = GetPosition();
-  if (pos._x < 0 && _dir._x <= 0) {
-    _dir._x = -_dir._x;
-    if (_dir._x <= 0) {
-      _dir._x = 1;
+  if (pos.x < 0 && _dir.x <= 0) {
+    _dir.x = -_dir.x;
+    if (_dir.x <= 0) {
+      _dir.x = 1;
     }
   }
-  if (pos._y < 0 && _dir._y <= 0) {
-    _dir._y = -_dir._y;
-    if (_dir._y <= 0) {
-      _dir._y = 1;
+  if (pos.y < 0 && _dir.y <= 0) {
+    _dir.y = -_dir.y;
+    if (_dir.y <= 0) {
+      _dir.y = 1;
     }
   }
 
-  if (pos._x > Lib::WIDTH && _dir._x >= 0) {
-    _dir._x = -_dir._x;
-    if (_dir._x >= 0) {
-      _dir._x = -1;
+  if (pos.x > Lib::WIDTH && _dir.x >= 0) {
+    _dir.x = -_dir.x;
+    if (_dir.x >= 0) {
+      _dir.x = -1;
     }
   }
-  if (pos._y > Lib::HEIGHT && _dir._y >= 0) {
-    _dir._y = -_dir._y;
-    if (_dir._y >= 0) {
-      _dir._y = -1;
+  if (pos.y > Lib::HEIGHT && _dir.y >= 0) {
+    _dir.y = -_dir.y;
+    if (_dir.y >= 0) {
+      _dir.y = -1;
     }
   }
-  _dir.Normalise();
+  _dir.normalise();
 
   Move(_dir * SPEED);
-  SetRotation(_dir.Angle());
+  SetRotation(_dir.angle());
 }
 
 void Square::Render() const
@@ -243,15 +243,15 @@ void Wall::Update()
 
   if (_rotate) {
     Vec2 d(_dir);
-    d.Rotate(
+    d.rotate(
         (_rdir ? _timer - TIMER : TIMER - _timer) * fixed::pi / (4 * TIMER));
 
-    SetRotation(d.Angle());
+    SetRotation(d.angle());
     _timer--;
     if (_timer <= 0) {
       _timer = 0;
       _rotate = false;
-      _dir.Rotate(_rdir ? -fixed::pi / 4 : fixed::pi / 4);
+      _dir.rotate(_rdir ? -fixed::pi / 4 : fixed::pi / 4);
     }
     return;
   }
@@ -269,16 +269,16 @@ void Wall::Update()
   }
 
   Vec2 pos = GetPosition();
-  if ((pos._x < 0 && _dir._x < -fixed::hundredth) ||
-      (pos._y < 0 && _dir._y < -fixed::hundredth) ||
-      (pos._x > Lib::WIDTH && _dir._x > fixed::hundredth) ||
-      (pos._y > Lib::HEIGHT && _dir._y > fixed::hundredth)) {
+  if ((pos.x < 0 && _dir.x < -fixed::hundredth) ||
+      (pos.y < 0 && _dir.y < -fixed::hundredth) ||
+      (pos.x > Lib::WIDTH && _dir.x > fixed::hundredth) ||
+      (pos.y > Lib::HEIGHT && _dir.y > fixed::hundredth)) {
     _dir = Vec2() - _dir;
-    _dir.Normalise();
+    _dir.normalise();
   }
 
   Move(_dir * SPEED);
-  SetRotation(_dir.Angle());
+  SetRotation(_dir.angle());
 }
 
 void Wall::OnDestroy(bool bomb)
@@ -287,15 +287,15 @@ void Wall::OnDestroy(bool bomb)
     return;
   }
   Vec2 d = _dir;
-  d.Rotate(fixed::pi / 2);
+  d.rotate(fixed::pi / 2);
 
   Vec2 v = GetPosition() + d * 10 * 3;
-  if (v._x >= 0 && v._x <= Lib::WIDTH && v._y >= 0 && v._y <= Lib::HEIGHT) {
+  if (v.x >= 0 && v.x <= Lib::WIDTH && v.y >= 0 && v.y <= Lib::HEIGHT) {
     Spawn(new Square(v, GetRotation()));
   }
 
   v = GetPosition() - d * 10 * 3;
-  if (v._x >= 0 && v._x <= Lib::WIDTH && v._y >= 0 && v._y <= Lib::HEIGHT) {
+  if (v.x >= 0 && v.x <= Lib::WIDTH && v.y >= 0 && v.y <= Lib::HEIGHT) {
     Spawn(new Square(v, GetRotation()));
   }
 }
@@ -346,20 +346,20 @@ void FollowHub::Update()
     }
   }
 
-  if (GetPosition()._x < 0) {
-    _dir.Set(1, 0);
+  if (GetPosition().x < 0) {
+    _dir.set(1, 0);
   }
-  else if (GetPosition()._x > Lib::WIDTH) {
-    _dir.Set(-1, 0);
+  else if (GetPosition().x > Lib::WIDTH) {
+    _dir.set(-1, 0);
   }
-  else if (GetPosition()._y < 0) {
-    _dir.Set(0, 1);
+  else if (GetPosition().y < 0) {
+    _dir.set(0, 1);
   }
-  else if (GetPosition()._y > Lib::HEIGHT) {
-    _dir.Set(0, -1);
+  else if (GetPosition().y > Lib::HEIGHT) {
+    _dir.set(0, -1);
   }
   else if (_count > 3) {
-    _dir.Rotate(-fixed::pi / 2);
+    _dir.rotate(-fixed::pi / 2);
     _count = 0;
   }
 
@@ -422,17 +422,17 @@ void Shielder::Update()
   }
 
   bool onScreen = false;
-  if (GetPosition()._x < 0) {
-    _dir.Set(1, 0);
+  if (GetPosition().x < 0) {
+    _dir.set(1, 0);
   }
-  else if (GetPosition()._x > Lib::WIDTH) {
-    _dir.Set(-1, 0);
+  else if (GetPosition().x > Lib::WIDTH) {
+    _dir.set(-1, 0);
   }
-  else if (GetPosition()._y < 0) {
-    _dir.Set(0, 1);
+  else if (GetPosition().y < 0) {
+    _dir.set(0, 1);
   }
-  else if (GetPosition()._y > Lib::HEIGHT) {
-    _dir.Set(0, -1);
+  else if (GetPosition().y > Lib::HEIGHT) {
+    _dir.set(0, -1);
   }
   else {
     onScreen = true;
@@ -447,12 +447,12 @@ void Shielder::Update()
       (_power ? fixed::tenth * 3 : fixed::tenth * 2) * (16 - GetHP());
   if (_rotate) {
     Vec2 d(_dir);
-    d.Rotate((_rDir ? 1 : -1) * (TIMER - _timer) * fixed::pi / (2 * TIMER));
+    d.rotate((_rDir ? 1 : -1) * (TIMER - _timer) * fixed::pi / (2 * TIMER));
     _timer--;
     if (_timer <= 0) {
       _timer = 0;
       _rotate = false;
-      _dir.Rotate((_rDir ? 1 : -1) * fixed::pi / 2);
+      _dir.rotate((_rDir ? 1 : -1) * fixed::pi / 2);
     }
     Move(d * speed);
   }
@@ -468,13 +468,13 @@ void Shielder::Update()
       Vec2 v = GetPosition();
 
       Vec2 d = p->GetPosition() - v;
-      d.Normalise();
+      d.normalise();
       Spawn(new SBBossShot(v, d * 3, 0x33cc99ff));
       PlaySoundRandom(Lib::SOUND_BOSS_FIRE);
     }
     Move(_dir * speed);
   }
-  _dir.Normalise();
+  _dir.normalise();
 
 }
 
@@ -511,17 +511,17 @@ void Tractor::Update()
     GetShape(4).Rotate(fixed::hundredth * 8);
   }
 
-  if (GetPosition()._x < 0) {
-    _dir.Set(1, 0);
+  if (GetPosition().x < 0) {
+    _dir.set(1, 0);
   }
-  else if (GetPosition()._x > Lib::WIDTH) {
-    _dir.Set(-1, 0);
+  else if (GetPosition().x > Lib::WIDTH) {
+    _dir.set(-1, 0);
   }
-  else if (GetPosition()._y < 0) {
-    _dir.Set(0, 1);
+  else if (GetPosition().y < 0) {
+    _dir.set(0, 1);
   }
-  else if (GetPosition()._y > Lib::HEIGHT) {
-    _dir.Set(0, -1);
+  else if (GetPosition().y > Lib::HEIGHT) {
+    _dir.set(0, -1);
   }
   else {
     _timer++;
@@ -549,7 +549,7 @@ void Tractor::Update()
     for (unsigned int i = 0; i < _players.size(); i++) {
       if (!((Player*) _players[i])->IsKilled()) {
         Vec2 d = GetPosition() - _players[i]->GetPosition();
-        d.Normalise();
+        d.normalise();
         _players[i]->Move(d * TRACTOR_SPEED);
       }
     }
@@ -559,7 +559,7 @@ void Tractor::Update()
       Vec2 v = GetPosition();
 
       Vec2 d = p->GetPosition() - v;
-      d.Normalise();
+      d.normalise();
       Spawn(new SBBossShot(v, d * 4, 0xcc33ccff));
       PlaySoundRandom(Lib::SOUND_BOSS_FIRE);
     }
@@ -577,8 +577,8 @@ void Tractor::Render() const
   if (_spinning) {
     for (unsigned int i = 0; i < _players.size(); i++) {
       if (((_timer + i * 4) / 4) % 2 && !((Player*) _players[i])->IsKilled()) {
-        GetLib().RenderLine(Vec2f(GetPosition()),
-                            Vec2f(_players[i]->GetPosition()), 0xcc33ccff);
+        GetLib().RenderLine(to_float(GetPosition()),
+                            to_float(_players[i]->GetPosition()), 0xcc33ccff);
       }
     }
   }

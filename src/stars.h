@@ -30,7 +30,7 @@ private:
     Vec2f position;
     float speed;
     float size;
-    Colour colour;
+    colour colour;
   };
 
   static Vec2f _direction;

@@ -23,20 +23,20 @@ void BigFollow::OnDestroy(bool bomb)
   }
 
   Vec2 d(10, 0);
-  d.Rotate(GetRotation());
+  d.rotate(GetRotation());
   for (int i = 0; i < 3; i++) {
     Follow* s = new Follow(GetPosition() + d);
     if (!_hasScore) {
       s->SetScore(0);
     }
     Spawn(s);
-    d.Rotate(2 * fixed::pi / 3);
+    d.rotate(2 * fixed::pi / 3);
   }
 }
 
 // Generic boss projectile
 //------------------------------
-SBBossShot::SBBossShot(const Vec2& position, const Vec2& velocity, Colour c)
+SBBossShot::SBBossShot(const Vec2& position, const Vec2& velocity, colour c)
   : Enemy(position, 0)
   , _dir(velocity)
 {
@@ -52,10 +52,10 @@ void SBBossShot::Update()
 {
   Move(_dir);
   Vec2 p = GetPosition();
-  if ((p._x < -10 && _dir._x < 0) ||
-      (p._x > Lib::WIDTH + 10 && _dir._x > 0) ||
-      (p._y < -10 && _dir._y < 0) ||
-      (p._y > Lib::HEIGHT + 10 && _dir._y > 0)) {
+  if ((p.x < -10 && _dir.x < 0) ||
+      (p.x > Lib::WIDTH + 10 && _dir.x > 0) ||
+      (p.y < -10 && _dir.y < 0) ||
+      (p.y > Lib::HEIGHT + 10 && _dir.y > 0)) {
     Destroy();
   }
   SetRotation(GetRotation() + fixed::hundredth * 2);
@@ -67,7 +67,7 @@ TBossShot::TBossShot(const Vec2& position, fixed angle)
   : Enemy(position, 1)
 {
   AddShape(new Polygon(Vec2(), 8, 6, 0xcc33ccff, 0, ENEMY | VULNERABLE));
-  _dir.SetPolar(angle, 3);
+  _dir.set_polar(angle, 3);
   SetBoundingWidth(8);
   SetScore(0);
   SetDestroySound(Lib::SOUND_ENEMY_SHATTER);
@@ -75,13 +75,13 @@ TBossShot::TBossShot(const Vec2& position, fixed angle)
 
 void TBossShot::Update()
 {
-  if ((GetPosition()._x > Lib::WIDTH && _dir._x > 0) ||
-      (GetPosition()._x < 0 && _dir._x < 0)) {
-    _dir._x = -_dir._x;
+  if ((GetPosition().x > Lib::WIDTH && _dir.x > 0) ||
+      (GetPosition().x < 0 && _dir.x < 0)) {
+    _dir.x = -_dir.x;
   }
-  if ((GetPosition()._y > Lib::HEIGHT && _dir._y > 0) ||
-      (GetPosition()._y < 0 && _dir._y < 0)) {
-    _dir._y = -_dir._y;
+  if ((GetPosition().y > Lib::HEIGHT && _dir.y > 0) ||
+      (GetPosition().y < 0 && _dir.y < 0)) {
+    _dir.y = -_dir.y;
   }
 
   Move(_dir);
@@ -135,20 +135,20 @@ GhostWall::GhostWall(bool swap, bool swapGap)
 
 void GhostWall::Update()
 {
-  if ((_dir._x > 0 && GetPosition()._x < 32) ||
-      (_dir._y > 0 && GetPosition()._y < 16) ||
-      (_dir._x < 0 && GetPosition()._x >= Lib::WIDTH - 32) ||
-      (_dir._y < 0 && GetPosition()._y >= Lib::HEIGHT - 16)) {
+  if ((_dir.x > 0 && GetPosition().x < 32) ||
+      (_dir.y > 0 && GetPosition().y < 16) ||
+      (_dir.x < 0 && GetPosition().x >= Lib::WIDTH - 32) ||
+      (_dir.y < 0 && GetPosition().y >= Lib::HEIGHT - 16)) {
     Move(_dir * SPEED / 2);
   }
   else {
     Move(_dir * SPEED);
   }
 
-  if ((_dir._x > 0 && GetPosition()._x > Lib::WIDTH + 10) ||
-      (_dir._y > 0 && GetPosition()._y > Lib::HEIGHT + 10) ||
-      (_dir._x < 0 && GetPosition()._x < -10) ||
-      (_dir._y < 0 && GetPosition()._y < -10)) {
+  if ((_dir.x > 0 && GetPosition().x > Lib::WIDTH + 10) ||
+      (_dir.y > 0 && GetPosition().y > Lib::HEIGHT + 10) ||
+      (_dir.x < 0 && GetPosition().x < -10) ||
+      (_dir.y < 0 && GetPosition().y < -10)) {
     Destroy();
   }
 }
@@ -212,7 +212,7 @@ DeathRay::DeathRay(const Vec2& position)
 void DeathRay::Update()
 {
   Move(Vec2(1, 0) * SPEED);
-  if (GetPosition()._x > Lib::WIDTH + 20) {
+  if (GetPosition().x > Lib::WIDTH + 20) {
     Destroy();
   }
 }
@@ -247,7 +247,7 @@ void DeathArm::Update()
   }
   if (_shots > 0) {
     Vec2 d = _target - GetPosition();
-    d.Normalise();
+    d.normalise();
     d *= 5;
     Ship* s = new SBBossShot(GetPosition(), d, 0x33ff99ff);
     Spawn(s);
@@ -260,9 +260,9 @@ void DeathArm::Update()
     if (_timer < DeathRayBoss::ARM_ATIMER / 4) {
       Player* p = GetNearestPlayer();
       Vec2 d = p->GetPosition() - GetPosition();
-      if (d.Length() != 0) {
+      if (d.length() != 0) {
         _dir = d;
-        _dir.Normalise();
+        _dir.normalise();
         Move(_dir * DeathRayBoss::ARM_SPEED);
       }
     }
@@ -272,8 +272,8 @@ void DeathArm::Update()
     else if (_timer < DeathRayBoss::ARM_ATIMER) {
       Vec2 d = _boss->GetPosition() +
           Vec2(80, _top ? 80 : -80) - GetPosition();
-      if (d.Length() > DeathRayBoss::ARM_SPEED) {
-        d.Normalise();
+      if (d.length() > DeathRayBoss::ARM_SPEED) {
+        d.normalise();
         Move(d * DeathRayBoss::ARM_SPEED);
       }
       else {
@@ -292,7 +292,7 @@ void DeathArm::Update()
   if (_timer >= DeathRayBoss::ARM_ATIMER) {
     _timer = 0;
     _attacking = true;
-    _dir.Set(0, 0);
+    _dir.set(0, 0);
     PlaySound(Lib::SOUND_BOSS_ATTACK);
   }
   SetPosition(_boss->GetPosition() + Vec2(80, _top ? 80 : -80));
@@ -319,7 +319,7 @@ void DeathArm::OnDestroy(bool bomb)
 
 // Snake tail
 //------------------------------
-SnakeTail::SnakeTail(const Vec2& position, Colour colour)
+SnakeTail::SnakeTail(const Vec2& position, colour colour)
   : Enemy(position, 1)
   , _tail(0)
   , _head(0)
@@ -370,7 +370,7 @@ void SnakeTail::OnDestroy(bool bomb)
 
 // Snake
 //------------------------------
-Snake::Snake(const Vec2& position, Colour colour, const Vec2& dir, fixed rot)
+Snake::Snake(const Vec2& position, colour colour, const Vec2& dir, fixed rot)
   : Enemy(position, 5)
   , _tail(0)
   , _timer(0)
@@ -403,22 +403,22 @@ Snake::Snake(const Vec2& position, Colour colour, const Vec2& dir, fixed rot)
   }
   else {
     _dir = dir;
-    _dir.Normalise();
+    _dir.normalise();
     _shotSnake = true;
   }
-  SetRotation(_dir.Angle());
+  SetRotation(_dir.angle());
 }
 
 void Snake::Update()
 {
-  if (!(GetPosition()._x >= -8 && GetPosition()._x <= Lib::WIDTH + 8 &&
-        GetPosition()._y >= -8 && GetPosition()._y <= Lib::HEIGHT + 8)) {
+  if (!(GetPosition().x >= -8 && GetPosition().x <= Lib::WIDTH + 8 &&
+        GetPosition().y >= -8 && GetPosition().y <= Lib::HEIGHT + 8)) {
     _tail = 0;
     Destroy();
     return;
   }
 
-  Colour c = GetLib().Cycle(_colour, _timer % 256);
+  colour c = z::colour_cycle(_colour, _timer % 256);
   GetShape(0).SetColour(c);
   _timer++;
   if (_timer % (_shotSnake ? 4 : 8) == 0) {
@@ -432,13 +432,13 @@ void Snake::Update()
     Spawn(t);
   }
   if (!_shotSnake && _timer % 48 == 0 && !z::rand_int(3)) {
-    _dir.Rotate((z::rand_int(2) ? 1 : -1) * fixed::pi / 2);
-    SetRotation(_dir.Angle());
+    _dir.rotate((z::rand_int(2) ? 1 : -1) * fixed::pi / 2);
+    SetRotation(_dir.angle());
   }
   Move(_dir * (_shotSnake ? 4 : 2));
   if (_timer % 8 == 0) {
-    _dir.Rotate(8 * _shotRot);
-    SetRotation(_dir.Angle());
+    _dir.rotate(8 * _shotRot);
+    SetRotation(_dir.angle());
   }
 }
 
@@ -463,7 +463,7 @@ void RainbowShot::Update()
   SBBossShot::Update();
   static const Vec2 center = Vec2(Lib::WIDTH / 2, Lib::HEIGHT / 2);
 
-  if ((GetPosition() - center).Length() > 100 && _timer % 2 == 0) {
+  if ((GetPosition() - center).length() > 100 && _timer % 2 == 0) {
     z0Game::ShipList list = GetCollisionList(GetPosition(), SHIELD);
     SuperBoss* s = (SuperBoss*) _boss;
     for (std::size_t i = 0; i < list.size(); ++i) {
@@ -478,7 +478,7 @@ void RainbowShot::Update()
         continue;
       }
 
-      Explosion(0, 4, true, Vec2f(GetPosition() - _dir));
+      Explosion(0, 4, true, to_float(GetPosition() - _dir));
       Destroy();
       return;
     }
@@ -487,6 +487,6 @@ void RainbowShot::Update()
   ++_timer;
   static const fixed r = 6 * (8 * fixed::hundredth / 10);
   if (_timer % 8 == 0) {
-    _dir.Rotate(r);
+    _dir.rotate(r);
   }
 }
