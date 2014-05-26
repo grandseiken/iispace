@@ -75,9 +75,6 @@ void Overmind::Reset(bool canFaceSecretBoss)
   _bossesToGo = 0;
   _wavesTotal = 0;
 
-  _starDir = Vec2f(0, 1);
-  _starCount = 0;
-
   if (_z0.IsBossMode()) {
     _power = 0;
     _timer = 0;
@@ -91,7 +88,7 @@ void Overmind::Reset(bool canFaceSecretBoss)
   _timer = POWERUP_TIME;
   _bossRestTimer = BOSS_REST_TIME / 8;
 
-  Star::SetDirection(_starDir);
+  Stars::clear();
 }
 
 void Overmind::AddFormation(SpawnFormationFunction function)
@@ -103,17 +100,11 @@ void Overmind::AddFormation(SpawnFormationFunction function)
 void Overmind::Update()
 {
   ++_elapsedTime;
-  Star::Update();
-  int r = _starCount > 1 ? z::rand_int(_starCount) : 0;
-  for (int i = 0; i < r; i++) {
-    Star::CreateStar();
-  }
+  Stars::update();
 
   if (_z0.IsBossMode()) {
     if (_count <= 0) {
-      _starDir.Rotate((z::rand_fixed().to_float() - 0.5f) * M_PIf);
-      Star::SetDirection(_starDir);
-      _starCount = z::rand_int(3) + 2;
+      Stars::change();
       if (_bossModBosses < 6) {
         if (_bossModBosses)
         for (int32_t i = 0; i < _z0.CountPlayers(); ++i) {
@@ -166,9 +157,7 @@ void Overmind::Update()
     }
 
     _timer = 0;
-    _starDir.Rotate((z::rand_fixed().to_float() - 0.5f) * M_PIf);
-    Star::SetDirection(_starDir);
-    _starCount = z::rand_int(3) + 2;
+    Stars::change();
 
     if (_isBossLevel) {
       ++_bossModBosses;

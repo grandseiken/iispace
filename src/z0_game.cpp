@@ -569,7 +569,7 @@ void z0Game::Render() const
   _showHPBar = false;
   _fillHPBar = 0;
   if (!_firstControllersDialog) {
-    Star::Render(_lib);
+    Stars::render(_lib);
     for (const auto& particle : _particles) {
       particle->Render();
     }
@@ -1033,7 +1033,7 @@ void z0Game::NewGame(bool canFaceSecretBoss, bool bossMode, bool replay,
   _lives = bossMode ? _players * BOSSMODE_LIVES : STARTING_LIVES;
   GetLib().SetFrameCount(IsFastMode() ? 2 : 1);
 
-  Star::Clear();
+  Stars::clear();
   for (int32_t i = 0; i < _players; ++i) {
     Vec2 v((1 + i) * Lib::WIDTH / (1 + _players), Lib::HEIGHT / 2);
     Player* p = new Player(v, i);
@@ -1051,7 +1051,7 @@ void z0Game::EndGame()
     }
   }
 
-  Star::Clear();
+  Stars::clear();
   _ships.clear();
   _particles.clear();
   _playerList.clear();

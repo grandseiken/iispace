@@ -1,104 +1,99 @@
 #include "stars.h"
+#include "lib.h"
 
-Vec2f Star::_direction(0, 1);
-Star::StarList Star::_starList;
+Vec2f Stars::_direction(0, 1);
+int32_t Stars::_star_rate = 0;
+std::vector<std::unique_ptr<Stars::data>> Stars::_stars;
+static const uint32_t TIMER = 500;
 
-Star::Star(float speed)
-  : _timer(TIMER)
-  , _speed(speed)
+void Stars::update()
 {
-  _starList.push_back(this);
-  int edge = z::rand_int(4);
+  for (auto it = _stars.begin(); it != _stars.end();) {
+    (*it)->position += _direction * (*it)->speed;
+    (*it)->timer--;
+    if ((*it)->timer <= 0) {
+      it = _stars.erase(it);
+      continue;
+    }
+    ++it;
+  }
+
+  int32_t r = _star_rate > 1 ? z::rand_int(_star_rate) : 0;
+  for (int32_t i = 0; i < r; i++) {
+    create_star();
+  }
+}
+
+void Stars::change() {
+  _direction.Rotate((z::rand_fixed().to_float() - 0.5f) * M_PIf);
+  for (const auto& star : _stars) {
+    star->timer = TIMER;
+  }
+  _star_rate = z::rand_int(3) + 2;
+}
+
+void Stars::render(Lib& lib)
+{
+  for (const auto& star : _stars) {
+    switch (star->type) {
+    case DOT_STAR:
+    case FAR_STAR:
+      lib.RenderRect(star->position - Vec2f(1, 1),
+                     star->position + Vec2f(1, 1), star->colour);
+      break;
+
+    case BIG_STAR:
+      lib.RenderRect(star->position - Vec2f(2, 2),
+                     star->position + Vec2f(2, 2), star->colour);
+      break;
+
+    case PLANET:
+      for (int32_t i = 0; i < 8; i++) {
+        Vec2f a, b;
+        a.SetPolar(i * M_PIf / 4, star->size);
+        b.SetPolar((i + 1) * M_PIf / 4, star->size);
+        lib.RenderLine(star->position + a, star->position + b, star->colour);
+      }
+    }
+  }
+}
+void Stars::create_star()
+{
+  int32_t r = z::rand_int(12);
+  if (r <= 0 && z::rand_int(4) != 0) {
+    return;
+  }
+
+  type_t type = r <= 0 ? PLANET :
+                r <= 3 ? BIG_STAR :
+                r <= 7 ? FAR_STAR : DOT_STAR;
+  float speed = type == DOT_STAR ? 18.f :
+                type == BIG_STAR ? 14.f : 10.f;
+
+  data* star = new data{TIMER, type, {}, speed, 0, 0};
+  _stars.emplace_back(star);
+
+  int32_t edge = z::rand_int(4);
   float ratio = z::rand_fixed().to_float();
 
-  if (edge < 2) {
-    _position._x = ratio * Lib::WIDTH;
-  }
-  else {
-    _position._y = ratio * Lib::HEIGHT;
-  }
+  star->position._x = edge < 2 ? ratio * Lib::WIDTH :
+      edge == 2 ? -16 : 16 + Lib::WIDTH;
+  star->position._y = edge >= 2 ? ratio * Lib::HEIGHT :
+      edge == 0 ? -16 : 16 + Lib::HEIGHT;
 
-  if (edge == 0) {
-    _position._y = -16;
-  }
-  if (edge == 1) {
-    _position._y = Lib::HEIGHT + 16;
-  }
-  if (edge == 2) {
-    _position._x = -16;
-  }
-  if (edge == 3) {
-    _position._x = Lib::WIDTH + 16;
+  star->colour =
+      type == DOT_STAR ? (z::rand_int(2) ? 0x222222ff : 0x333333ff) :
+      type == FAR_STAR ? (z::rand_int(2) ? 0x222222ff : 0x111111ff) :
+      type == BIG_STAR ? (z::rand_int(2) ? 0x111111ff : 0x222222ff) :
+      0x111111ff;
+  if (type == PLANET) {
+    star->size = 4.f + z::rand_int(4);
   }
 }
 
-Star::~Star()
+void Stars::clear()
 {
-}
-
-void Star::Update()
-{
-  for (std::size_t i = 0; i < _starList.size(); i++) {
-    if (!_starList[i]->Move()) {
-      delete _starList[i];
-      _starList.erase(_starList.begin() + i);
-      i--;
-    }
-  }
-}
-
-void Star::Render(Lib& lib)
-{
-  for (std::size_t i = 0; i < _starList.size(); i++) {
-    _starList[i]->RenderStar(lib, _starList[i]->_position);
-  }
-}
-
-void Star::CreateStar()
-{
-  Star* s = 0;
-  int r = z::rand_int(12);
-
-  if (r <= 0) {
-    if (z::rand_int(4) == 0) {
-      s = new PlanetStar();
-    }
-  }
-  else if (r <= 3) {
-    s = new BigStar();
-  }
-  else if (r <= 7) {
-    s = new FarStar();
-  }
-  else {
-    s = new DotStar();
-  }
-}
-
-void Star::SetDirection(const Vec2f& direction)
-{
-  _direction = direction;
-  for (std::size_t i = 0; i < _starList.size(); i++) {
-    _starList[i]->ResetTimer();
-  }
-}
-
-void Star::Clear()
-{
-  for (std::size_t i = 0; i < _starList.size(); i++) {
-    delete _starList[i];
-  }
-  _starList.clear();
-}
-
-bool Star::Move()
-{
-  _position += _direction * _speed;
-  _timer--;
-  return _timer > 0;
-}
-
-void Star::ResetTimer()
-{
-  _timer = TIMER;
+  _stars.clear();
+  _direction.Set(1, 0);
+  _star_rate = 0;
 }

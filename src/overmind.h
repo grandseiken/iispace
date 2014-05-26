@@ -110,9 +110,6 @@ private:
   int _wavesTotal;
   static int _hardAlready;
 
-  Vec2f _starDir;
-  int _starCount;
-
   std::vector<int> _boss1Queue;
   std::vector<int> _boss2Queue;
   int _bossesToGo;
