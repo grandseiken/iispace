@@ -9,8 +9,6 @@ class Particle;
 class Ship {
 public:
 
-  // Collision masks
-  //------------------------------
   enum Category {
     VULNERABLE = 1,
     ENEMY = 2,
@@ -18,9 +16,7 @@ public:
     VULNSHIELD = 8
   };
 
-  // Creation and destruction
-  //------------------------------
-  Ship(const Vec2& position, bool particle = false,
+  Ship(const vec2& position, bool particle = false,
        bool player = false, bool boss = false);
   virtual ~Ship();
 
@@ -65,12 +61,12 @@ public:
 
   // Position and rotation
   //------------------------------
-  const Vec2& GetPosition() const
+  const vec2& GetPosition() const
   {
     return _position;
   }
 
-  void SetPosition(const Vec2& position)
+  void SetPosition(const vec2& position)
   {
     _position = position;
   }
@@ -99,7 +95,7 @@ public:
 
   // Operations
   //------------------------------
-  bool CheckPoint(const Vec2& v, int category = 0) const;
+  bool CheckPoint(const vec2& v, int category = 0) const;
   void Spawn(Ship* ship) const;
   void Spawn(Particle* particle) const;
 
@@ -110,13 +106,13 @@ public:
 
   // Helpful functions
   //------------------------------
-  void Move(const Vec2& v)
+  void Move(const vec2& v)
   {
     SetPosition(GetPosition() + v);
   }
 
   void Explosion(colour c = 0, int time = 8,
-                 bool towards = false, const Vec2f& v = Vec2f()) const;
+                 bool towards = false, const flvec2& v = flvec2()) const;
   void RenderWithColour(colour colour) const;
 
   bool IsOnScreen() const
@@ -126,9 +122,9 @@ public:
         GetPosition().y >= 0 && GetPosition().y <= Lib::HEIGHT;
   }
 
-  static Vec2 GetScreenCentre()
+  static vec2 GetScreenCentre()
   {
-    return Vec2(Lib::WIDTH / 2, Lib::HEIGHT / 2);
+    return vec2(Lib::WIDTH / 2, Lib::HEIGHT / 2);
   }
 
   void AddLife()
@@ -151,12 +147,12 @@ public:
     return _z0->GetNonWallCount();
   }
 
-  z0Game::ShipList GetCollisionList(const Vec2& point, int category) const
+  z0Game::ShipList GetCollisionList(const vec2& point, int category) const
   {
     return _z0->GetCollisionList(point, category);
   }
 
-  z0Game::ShipList GetShipsInRadius(const Vec2& point, fixed radius) const
+  z0Game::ShipList GetShipsInRadius(const vec2& point, fixed radius) const
   {
     return _z0->GetShipsInRadius(point, radius);
   }
@@ -166,7 +162,7 @@ public:
     return _z0->GetShips();
   }
 
-  bool AnyCollisionList(const Vec2& point, int category) const
+  bool AnyCollisionList(const vec2& point, int category) const
   {
     return _z0->AnyCollisionList(point, category);
   }
@@ -261,7 +257,7 @@ private:
   z0Game* _z0;
 
   bool _destroy;
-  Vec2 _position;
+  vec2 _position;
   fixed _rotation;
   fixed _boundingWidth;
   bool _player;
@@ -278,8 +274,8 @@ private:
 class Particle {
 public:
 
-  Particle(const Vec2f& position, colour colour,
-           const Vec2f& velocity, int time)
+  Particle(const flvec2& position, colour colour,
+           const flvec2& velocity, int time)
     : _destroy(false)
     , _position(position)
     , _velocity(velocity)
@@ -311,16 +307,16 @@ public:
 
   void Render() const
   {
-    Vec2f a = _position + Vec2f(1, 1);
-    Vec2f b = _position - Vec2f(1, 1);
+    flvec2 a = _position + flvec2(1, 1);
+    flvec2 b = _position - flvec2(1, 1);
     _z0->GetLib().RenderRect(a, b, _colour);
   }
 
 private:
 
   bool _destroy;
-  Vec2f _position;
-  Vec2f _velocity;
+  flvec2 _position;
+  flvec2 _velocity;
   int _timer;
   colour _colour;
   z0Game* _z0;

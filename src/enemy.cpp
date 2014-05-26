@@ -21,7 +21,7 @@ const fixed Tractor::TRACTOR_SPEED = 2 + fixed(1) / 2;
 
 // Basic enemy
 //------------------------------
-Enemy::Enemy(const Vec2& position, int hp, bool explodeOnDestroy)
+Enemy::Enemy(const vec2& position, int hp, bool explodeOnDestroy)
   : Ship(position)
   , _hp(hp)
   , _score(0)
@@ -72,12 +72,12 @@ void Enemy::Render() const
 
 // Follower enemy
 //------------------------------
-Follow::Follow(const Vec2& position, fixed radius, int hp)
+Follow::Follow(const vec2& position, fixed radius, int hp)
   : Enemy(position, hp)
   , _timer(0)
   , _target(0)
 {
-  AddShape(new Polygon(Vec2(), radius, 4, 0x9933ffff, 0, ENEMY | VULNERABLE));
+  AddShape(new Polygon(vec2(), radius, 4, 0x9933ffff, 0, ENEMY | VULNERABLE));
   SetScore(15);
   SetBoundingWidth(10);
   SetDestroySound(Lib::SOUND_ENEMY_SHATTER);
@@ -96,7 +96,7 @@ void Follow::Update()
     _target = GetNearestPlayer();
     _timer = 0;
   }
-  Vec2 d = _target->GetPosition() - GetPosition();
+  vec2 d = _target->GetPosition() - GetPosition();
   if (d.length() > 0) {
     d.normalise();
     d *= SPEED;
@@ -107,13 +107,13 @@ void Follow::Update()
 
 // Chaser enemy
 //------------------------------
-Chaser::Chaser(const Vec2& position)
+Chaser::Chaser(const vec2& position)
   : Enemy(position, 2)
   , _move(false)
   , _timer(TIME)
   , _dir()
 {
-  AddShape(new Polygram(Vec2(), 10, 4, 0x3399ffff, 0, ENEMY | VULNERABLE));
+  AddShape(new Polygram(vec2(), 10, 4, 0x3399ffff, 0, ENEMY | VULNERABLE));
   SetScore(30);
   SetBoundingWidth(10);
   SetDestroySound(Lib::SOUND_ENEMY_SHATTER);
@@ -150,12 +150,12 @@ void Chaser::Update()
 
 // Square enemy
 //------------------------------
-Square::Square(const Vec2& position, fixed rotation)
+Square::Square(const vec2& position, fixed rotation)
   : Enemy(position, 4)
   , _dir()
   , _timer(z::rand_int(80) + 40)
 {
-  AddShape(new Box(Vec2(), 10, 10, 0x33ff33ff, 0, ENEMY | VULNERABLE));
+  AddShape(new Box(vec2(), 10, 10, 0x33ff33ff, 0, ENEMY | VULNERABLE));
   _dir.set_polar(rotation, 1);
   SetScore(25);
   SetBoundingWidth(15);
@@ -175,7 +175,7 @@ void Square::Update()
     Damage(4, false, 0);
   }
 
-  Vec2 pos = GetPosition();
+  vec2 pos = GetPosition();
   if (pos.x < 0 && _dir.x <= 0) {
     _dir.x = -_dir.x;
     if (_dir.x <= 0) {
@@ -219,14 +219,14 @@ void Square::Render() const
 
 // Wall enemy
 //------------------------------
-Wall::Wall(const Vec2& position, bool rdir)
+Wall::Wall(const vec2& position, bool rdir)
   : Enemy(position, 10)
   , _dir(0, 1)
   , _timer(0)
   , _rotate(false)
   , _rdir(rdir)
 {
-  AddShape(new Box(Vec2(), 10, 40, 0x33cc33ff, 0, ENEMY | VULNERABLE));
+  AddShape(new Box(vec2(), 10, 40, 0x33cc33ff, 0, ENEMY | VULNERABLE));
   SetScore(20);
   SetBoundingWidth(50);
   SetEnemyValue(4);
@@ -242,7 +242,7 @@ void Wall::Update()
   }
 
   if (_rotate) {
-    Vec2 d(_dir);
+    vec2 d(_dir);
     d.rotate(
         (_rdir ? _timer - TIMER : TIMER - _timer) * fixed::pi / (4 * TIMER));
 
@@ -268,12 +268,12 @@ void Wall::Update()
     }
   }
 
-  Vec2 pos = GetPosition();
+  vec2 pos = GetPosition();
   if ((pos.x < 0 && _dir.x < -fixed::hundredth) ||
       (pos.y < 0 && _dir.y < -fixed::hundredth) ||
       (pos.x > Lib::WIDTH && _dir.x > fixed::hundredth) ||
       (pos.y > Lib::HEIGHT && _dir.y > fixed::hundredth)) {
-    _dir = Vec2() - _dir;
+    _dir = vec2() - _dir;
     _dir.normalise();
   }
 
@@ -286,10 +286,10 @@ void Wall::OnDestroy(bool bomb)
   if (bomb) {
     return;
   }
-  Vec2 d = _dir;
+  vec2 d = _dir;
   d.rotate(fixed::pi / 2);
 
-  Vec2 v = GetPosition() + d * 10 * 3;
+  vec2 v = GetPosition() + d * 10 * 3;
   if (v.x >= 0 && v.x <= Lib::WIDTH && v.y >= 0 && v.y <= Lib::HEIGHT) {
     Spawn(new Square(v, GetRotation()));
   }
@@ -302,7 +302,7 @@ void Wall::OnDestroy(bool bomb)
 
 // Follow spawner enemy
 //------------------------------
-FollowHub::FollowHub(const Vec2& position, bool powerA, bool powerB)
+FollowHub::FollowHub(const vec2& position, bool powerA, bool powerB)
   : Enemy(position, 14)
   , _timer(0)
   , _dir(0, 0)
@@ -311,18 +311,18 @@ FollowHub::FollowHub(const Vec2& position, bool powerA, bool powerB)
   , _powerB(powerB)
 {
   AddShape(new Polygram(
-      Vec2(), 16, 4, 0x6666ffff, fixed::pi / 4, ENEMY | VULNERABLE));
+      vec2(), 16, 4, 0x6666ffff, fixed::pi / 4, ENEMY | VULNERABLE));
   if (_powerB) {
-    AddShape(new Polystar(Vec2(16, 0), 8, 4, 0x6666ffff, fixed::pi / 4));
-    AddShape(new Polystar(Vec2(-16, 0), 8, 4, 0x6666ffff, fixed::pi / 4));
-    AddShape(new Polystar(Vec2(0, 16), 8, 4, 0x6666ffff, fixed::pi / 4));
-    AddShape(new Polystar(Vec2(0, -16), 8, 4, 0x6666ffff, fixed::pi / 4));
+    AddShape(new Polystar(vec2(16, 0), 8, 4, 0x6666ffff, fixed::pi / 4));
+    AddShape(new Polystar(vec2(-16, 0), 8, 4, 0x6666ffff, fixed::pi / 4));
+    AddShape(new Polystar(vec2(0, 16), 8, 4, 0x6666ffff, fixed::pi / 4));
+    AddShape(new Polystar(vec2(0, -16), 8, 4, 0x6666ffff, fixed::pi / 4));
   }
 
-  AddShape(new Polygon(Vec2(16, 0), 8, 4, 0x6666ffff, fixed::pi / 4));
-  AddShape(new Polygon(Vec2(-16, 0), 8, 4, 0x6666ffff, fixed::pi / 4));
-  AddShape(new Polygon(Vec2(0, 16), 8, 4, 0x6666ffff, fixed::pi / 4));
-  AddShape(new Polygon(Vec2(0, -16), 8, 4, 0x6666ffff, fixed::pi / 4));
+  AddShape(new Polygon(vec2(16, 0), 8, 4, 0x6666ffff, fixed::pi / 4));
+  AddShape(new Polygon(vec2(-16, 0), 8, 4, 0x6666ffff, fixed::pi / 4));
+  AddShape(new Polygon(vec2(0, 16), 8, 4, 0x6666ffff, fixed::pi / 4));
+  AddShape(new Polygon(vec2(0, -16), 8, 4, 0x6666ffff, fixed::pi / 4));
   SetScore(50 + _powerA * 10 + _powerB * 10);
   SetBoundingWidth(16);
   SetDestroySound(Lib::SOUND_PLAYER_DESTROY);
@@ -384,7 +384,7 @@ void FollowHub::OnDestroy(bool bomb)
 
 // Shielder enemy
 //------------------------------
-Shielder::Shielder(const Vec2& position, bool power)
+Shielder::Shielder(const vec2& position, bool power)
   : Enemy(position, 16)
   , _dir(0, 1)
   , _timer(0)
@@ -392,19 +392,19 @@ Shielder::Shielder(const Vec2& position, bool power)
   , _rDir(false)
   , _power(power)
 {
-  AddShape(new Polystar(Vec2(24, 0), 8, 6, 0x006633ff, 0, VULNSHIELD));
-  AddShape(new Polystar(Vec2(-24, 0), 8, 6, 0x006633ff, 0, VULNSHIELD));
-  AddShape(new Polystar(Vec2(0, 24), 8, 6, 0x006633ff,
+  AddShape(new Polystar(vec2(24, 0), 8, 6, 0x006633ff, 0, VULNSHIELD));
+  AddShape(new Polystar(vec2(-24, 0), 8, 6, 0x006633ff, 0, VULNSHIELD));
+  AddShape(new Polystar(vec2(0, 24), 8, 6, 0x006633ff,
                         fixed::pi / 2, VULNSHIELD));
-  AddShape(new Polystar(Vec2(0, -24), 8, 6, 0x006633ff,
+  AddShape(new Polystar(vec2(0, -24), 8, 6, 0x006633ff,
                         fixed::pi / 2, VULNSHIELD));
-  AddShape(new Polygon(Vec2(24, 0), 8, 6, 0x33cc99ff, 0, 0));
-  AddShape(new Polygon(Vec2(-24, 0), 8, 6, 0x33cc99ff, 0, 0));
-  AddShape(new Polygon(Vec2(0, 24), 8, 6, 0x33cc99ff, fixed::pi / 2, 0));
-  AddShape(new Polygon(Vec2(0, -24), 8, 6, 0x33cc99ff, fixed::pi / 2, 0));
+  AddShape(new Polygon(vec2(24, 0), 8, 6, 0x33cc99ff, 0, 0));
+  AddShape(new Polygon(vec2(-24, 0), 8, 6, 0x33cc99ff, 0, 0));
+  AddShape(new Polygon(vec2(0, 24), 8, 6, 0x33cc99ff, fixed::pi / 2, 0));
+  AddShape(new Polygon(vec2(0, -24), 8, 6, 0x33cc99ff, fixed::pi / 2, 0));
 
-  AddShape(new Polystar(Vec2(0, 0), 24, 4, 0x006633ff, 0, 0));
-  AddShape(new Polygon(Vec2(0, 0), 14, 8, power ? 0x33cc99ff : 0x006633ff,
+  AddShape(new Polystar(vec2(0, 0), 24, 4, 0x006633ff, 0, 0));
+  AddShape(new Polygon(vec2(0, 0), 14, 8, power ? 0x33cc99ff : 0x006633ff,
                        0, ENEMY | VULNERABLE));
   SetScore(60 + _power * 40);
   SetBoundingWidth(36);
@@ -446,7 +446,7 @@ void Shielder::Update()
   fixed speed = SPEED +
       (_power ? fixed::tenth * 3 : fixed::tenth * 2) * (16 - GetHP());
   if (_rotate) {
-    Vec2 d(_dir);
+    vec2 d(_dir);
     d.rotate((_rDir ? 1 : -1) * (TIMER - _timer) * fixed::pi / (2 * TIMER));
     _timer--;
     if (_timer <= 0) {
@@ -465,9 +465,9 @@ void Shielder::Update()
     }
     if (IsOnScreen() && _timer % TIMER == TIMER / 2 && _power) {
       Player* p = GetNearestPlayer();
-      Vec2 v = GetPosition();
+      vec2 v = GetPosition();
 
-      Vec2 d = p->GetPosition() - v;
+      vec2 d = p->GetPosition() - v;
       d.normalise();
       Spawn(new SBBossShot(v, d * 3, 0x33cc99ff));
       PlaySoundRandom(Lib::SOUND_BOSS_FIRE);
@@ -480,7 +480,7 @@ void Shielder::Update()
 
 // Tractor beam enemy
 //------------------------------
-Tractor::Tractor(const Vec2& position, bool power)
+Tractor::Tractor(const vec2& position, bool power)
   : Enemy(position, 50)
   , _timer(TIMER * 4)
   , _dir(0, 0)
@@ -488,13 +488,13 @@ Tractor::Tractor(const Vec2& position, bool power)
   , _ready(false)
   , _spinning(false)
 {
-  AddShape(new Polygram(Vec2(24, 0), 12, 6, 0xcc33ccff, 0, ENEMY | VULNERABLE));
-  AddShape(new Polygram(Vec2(-24, 0), 12, 6,
+  AddShape(new Polygram(vec2(24, 0), 12, 6, 0xcc33ccff, 0, ENEMY | VULNERABLE));
+  AddShape(new Polygram(vec2(-24, 0), 12, 6,
                         0xcc33ccff, 0, ENEMY | VULNERABLE));
-  AddShape(new Line(Vec2(0, 0), Vec2(24, 0), Vec2(-24, 0), 0xcc33ccff));
+  AddShape(new Line(vec2(0, 0), vec2(24, 0), vec2(-24, 0), 0xcc33ccff));
   if (power) {
-    AddShape(new Polystar(Vec2(24, 0), 16, 6, 0xcc33ccff, 0, 0));
-    AddShape(new Polystar(Vec2(-24, 0), 16, 6, 0xcc33ccff, 0, 0));
+    AddShape(new Polystar(vec2(24, 0), 16, 6, 0xcc33ccff, 0, 0));
+    AddShape(new Polystar(vec2(-24, 0), 16, 6, 0xcc33ccff, 0, 0));
   }
   SetScore(85 + power * 40);
   SetBoundingWidth(36);
@@ -548,7 +548,7 @@ void Tractor::Update()
     Rotate(fixed::tenth * 3);
     for (unsigned int i = 0; i < _players.size(); i++) {
       if (!((Player*) _players[i])->IsKilled()) {
-        Vec2 d = GetPosition() - _players[i]->GetPosition();
+        vec2 d = GetPosition() - _players[i]->GetPosition();
         d.normalise();
         _players[i]->Move(d * TRACTOR_SPEED);
       }
@@ -556,9 +556,9 @@ void Tractor::Update()
 
     if (_timer % (TIMER / 2) == 0 && IsOnScreen() && _power) {
       Player* p = GetNearestPlayer();
-      Vec2 v = GetPosition();
+      vec2 v = GetPosition();
 
-      Vec2 d = p->GetPosition() - v;
+      vec2 d = p->GetPosition() - v;
       d.normalise();
       Spawn(new SBBossShot(v, d * 4, 0xcc33ccff));
       PlaySoundRandom(Lib::SOUND_BOSS_FIRE);

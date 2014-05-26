@@ -82,7 +82,7 @@ private:
   // Internals
   //------------------------------
   static void Spawn(Ship* ship);
-  static Vec2 SpawnPoint(bool top, int row, int num, int div);
+  static vec2 SpawnPoint(bool top, int row, int num, int div);
 
   void Wave();
   void Boss();

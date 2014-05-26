@@ -11,7 +11,7 @@ public:
   static const fixed HP_PER_EXTRA_PLAYER;
   static const fixed HP_PER_EXTRA_CYCLE;
 
-  Boss(const Vec2& position, z0Game::BossList boss,
+  Boss(const vec2& position, z0Game::BossList boss,
        int hp, int players, int cycle = 0, bool explodeOnDamage = true);
 
   virtual ~Boss() {}
@@ -66,8 +66,8 @@ public:
   virtual int GetDamage(int damage, bool magic) = 0;
   virtual void OnDestroy();
 
-  static std::vector<std::pair<int, std::pair<Vec2, colour>>> _fireworks;
-  static std::vector<Vec2> _warnings;
+  static std::vector<std::pair<int, std::pair<vec2, colour>>> _fireworks;
+  static std::vector<vec2> _warnings;
 
 protected:
 
@@ -107,7 +107,7 @@ public:
 
 private:
 
-  Vec2 _dir;
+  vec2 _dir;
   bool _reverse;
   int _timer;
   int _spawnTimer;
@@ -142,7 +142,7 @@ private:
   int _unshielded;
   int _attack;
   bool _side;
-  Vec2 _attackDir;
+  vec2 _attackDir;
   bool _shotAlternate;
 
 };
@@ -158,7 +158,7 @@ public:
   static const int MAX_SPLIT;
 
   ChaserBoss(int players, int cycle, int split = 0,
-             const Vec2& position = Vec2(), int time = TIMER, int stagger = 0);
+             const vec2& position = vec2(), int time = TIMER, int stagger = 0);
   virtual ~ChaserBoss() {}
 
   virtual void Update();
@@ -173,8 +173,8 @@ private:
   bool _onScreen;
   bool _move;
   int _timer;
-  Vec2 _dir;
-  Vec2 _lastDir;
+  vec2 _dir;
+  vec2 _lastDir;
 
   int _players;
   int _cycle;
@@ -219,7 +219,7 @@ private:
   int _attackSize;
   int _attackShapes;
 
-  std::vector<Vec2> _targets;
+  std::vector<vec2> _targets;
 
 };
 
@@ -290,9 +290,9 @@ private:
   int _shotTimer;
 
   int _rayAttackTimer;
-  Vec2 _raySrc1;
-  Vec2 _raySrc2;
-  Vec2 _rayDest;
+  vec2 _raySrc1;
+  vec2 _raySrc2;
+  vec2 _rayDest;
 
   std::vector<std::pair<int, int>> _shotQueue;
 
@@ -303,7 +303,7 @@ private:
 class SuperBossArc : public Boss {
 public:
 
-  SuperBossArc(const Vec2& position, int players, int cycle,
+  SuperBossArc(const vec2& position, int players, int cycle,
                int i, Ship* boss, int timer = 0);
   virtual ~SuperBossArc() {}
 

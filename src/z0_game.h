@@ -61,10 +61,10 @@ public:
   void AddShip(Ship* ship);
   void AddParticle(Particle* particle);
   int GetNonWallCount() const;
-  ShipList GetCollisionList(const Vec2& point, int category) const;
-  ShipList GetShipsInRadius(const Vec2& point, fixed radius) const;
+  ShipList GetCollisionList(const vec2& point, int category) const;
+  ShipList GetShipsInRadius(const vec2& point, fixed radius) const;
   ShipList GetShips() const;
-  bool AnyCollisionList(const Vec2& point, int category) const;
+  bool AnyCollisionList(const vec2& point, int category) const;
 
   // Players
   //------------------------------
@@ -73,7 +73,7 @@ public:
     return _players;
   }
 
-  Player* GetNearestPlayer(const Vec2& point) const;
+  Player* GetNearestPlayer(const vec2& point) const;
 
   ShipList GetPlayers() const
   {
@@ -130,7 +130,7 @@ private:
 
   // Internals
   //------------------------------
-  void RenderPanel(const Vec2f& low, const Vec2f& hi) const;
+  void RenderPanel(const flvec2& low, const flvec2& hi) const;
   static bool SortShips(Ship* const& a, Ship* const& b);
 
   bool IsBossModeUnlocked() const

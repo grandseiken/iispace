@@ -137,7 +137,7 @@ struct Internals {
   fixed _padAimHAxes[Lib::PLAYERS];
   int _padMoveDpads[Lib::PLAYERS];
   int _padAimDpads[Lib::PLAYERS];
-  mutable Vec2 _padLastAim[Lib::PLAYERS];
+  mutable vec2 _padLastAim[Lib::PLAYERS];
 
   typedef std::pair<int, sf::SoundBuffer*> NamedSound;
   typedef std::pair<int, NamedSound> SoundResource;
@@ -780,7 +780,7 @@ void Lib::OnScore(
 #endif
 }
 
-void Lib::Record(Vec2 velocity, Vec2 target, int keys)
+void Lib::Record(vec2 velocity, const vec2& target, int keys)
 {
   char k = keys;
   std::stringstream binary(std::ios::in | std::ios::out | std::ios::binary);
@@ -1170,7 +1170,7 @@ bool Lib::IsKeyReleased(int32_t player, Key k) const
 bool Lib::IsKeyHeld(int32_t player, Key k) const
 {
 #ifndef PLATFORM_SCORE
-  Vec2 v(_internals->_padAimHAxes[player], _internals->_padAimVAxes[player]);
+  vec2 v(_internals->_padAimHAxes[player], _internals->_padAimVAxes[player]);
   if (k == KEY_FIRE &&
       (_internals->_padAimDpads[player] != OIS::Pov::Centered ||
        v.length() >= fixed::tenth * 2)) {
@@ -1182,7 +1182,7 @@ bool Lib::IsKeyHeld(int32_t player, Key k) const
 #endif
 }
 
-Vec2 Lib::GetMoveVelocity(int32_t player) const
+vec2 Lib::GetMoveVelocity(int32_t player) const
 {
 #ifndef PLATFORM_SCORE
   bool kU = IsKeyHeld(player, KEY_UP) ||
@@ -1194,41 +1194,41 @@ Vec2 Lib::GetMoveVelocity(int32_t player) const
   bool kR = IsKeyHeld(player, KEY_RIGHT) ||
       _internals->_padMoveDpads[player] & OIS::Pov::East;
 
-  Vec2 v;
+  vec2 v;
   if (kU) {
-    v += Vec2(0, -1);
+    v += vec2(0, -1);
   }
   if (kD) {
-    v += Vec2(0, 1);
+    v += vec2(0, 1);
   }
   if (kL) {
-    v += Vec2(-1, 0);
+    v += vec2(-1, 0);
   }
   if (kR) {
-    v += Vec2(1, 0);
+    v += vec2(1, 0);
   }
-  if (v != Vec2()) {
+  if (v != vec2()) {
     return v;
   }
 
-  v = Vec2(_internals->_padMoveHAxes[player],
+  v = vec2(_internals->_padMoveHAxes[player],
            _internals->_padMoveVAxes[player]);
   if (v.length() < fixed::tenth * 2) {
-    return Vec2();
+    return vec2();
   }
   return v;
 #else
-  return Vec2();
+  return vec2();
 #endif
 }
 
-Vec2 Lib::GetFireTarget(int32_t player, const Vec2& position) const
+vec2 Lib::GetFireTarget(int32_t player, const vec2& position) const
 {
 #ifndef PLATFORM_SCORE
   bool kp = player ==
       (GetPlayerCount() <= _internals->_padCount ?
        GetPlayerCount() - 1 : _internals->_padCount);
-  Vec2 v(_internals->_padAimHAxes[player], _internals->_padAimVAxes[player]);
+  vec2 v(_internals->_padAimHAxes[player], _internals->_padAimVAxes[player]);
 
   if (v.length() >= fixed::tenth * 2) {
     v.normalise();
@@ -1246,21 +1246,21 @@ Vec2 Lib::GetFireTarget(int32_t player, const Vec2& position) const
     bool kL = (_internals->_padAimDpads[player] & OIS::Pov::West) != 0;
     bool kR = (_internals->_padAimDpads[player] & OIS::Pov::East) != 0;
 
-    Vec2 v;
+    vec2 v;
     if (kU) {
-      v += Vec2(0, -1);
+      v += vec2(0, -1);
     }
     if (kD) {
-      v += Vec2(0, 1);
+      v += vec2(0, 1);
     }
     if (kL) {
-      v += Vec2(-1, 0);
+      v += vec2(-1, 0);
     }
     if (kR) {
-      v += Vec2(1, 0);
+      v += vec2(1, 0);
     }
 
-    if (v != Vec2()) {
+    if (v != vec2()) {
       v.normalise();
       v *= 48;
       if (kp) {
@@ -1272,14 +1272,14 @@ Vec2 Lib::GetFireTarget(int32_t player, const Vec2& position) const
   }
 
   if (_mouseMoving && kp) {
-    return Vec2(fixed(_mousePosX), fixed(_mousePosY));
+    return vec2(fixed(_mousePosX), fixed(_mousePosY));
   }
-  if (_internals->_padLastAim[player] != Vec2()) {
+  if (_internals->_padLastAim[player] != vec2()) {
     return position + _internals->_padLastAim[player];
   }
-  return position + Vec2(48, 0);
+  return position + vec2(48, 0);
 #else
-  return Vec2();
+  return vec2();
 #endif
 }
 
@@ -1294,7 +1294,7 @@ void Lib::ClearScreen() const
 #endif
 }
 
-void Lib::RenderLine(const Vec2f& a, const Vec2f& b, colour c) const
+void Lib::RenderLine(const flvec2& a, const flvec2& b, colour c) const
 {
 #ifndef PLATFORM_SCORE
   c = Cycle(c);
@@ -1315,7 +1315,7 @@ void Lib::RenderLine(const Vec2f& a, const Vec2f& b, colour c) const
 #endif
 }
 
-void Lib::RenderText(const Vec2f& v, const std::string& text, colour c) const
+void Lib::RenderText(const flvec2& v, const std::string& text, colour c) const
 {
 #ifndef PLATFORM_SCORE
   _internals->_font.SetColor(RgbaToColor(Cycle(c)));
@@ -1331,27 +1331,27 @@ void Lib::RenderText(const Vec2f& v, const std::string& text, colour c) const
 }
 
 void Lib::RenderRect(
-    const Vec2f& low, const Vec2f& hi, colour c, int lineWidth) const
+    const flvec2& low, const flvec2& hi, colour c, int lineWidth) const
 {
 #ifndef PLATFORM_SCORE
   c = Cycle(c);
-  Vec2f ab(low.x, hi.y);
-  Vec2f ba(hi.x, low.y);
-  const Vec2f* list[4];
-  Vec2f normals[4];
+  flvec2 ab(low.x, hi.y);
+  flvec2 ba(hi.x, low.y);
+  const flvec2* list[4];
+  flvec2 normals[4];
   list[0] = &low;
   list[1] = &ab;
   list[2] = &hi;
   list[3] = &ba;
 
-  Vec2f centre = (low + hi) / 2;
+  flvec2 centre = (low + hi) / 2;
   for (std::size_t i = 0; i < 4; ++i) {
-    const Vec2f& v0 = *list[(i + 3) % 4];
-    const Vec2f& v1 = *list[i];
-    const Vec2f& v2 = *list[(i + 1) % 4];
+    const flvec2& v0 = *list[(i + 3) % 4];
+    const flvec2& v1 = *list[i];
+    const flvec2& v2 = *list[(i + 1) % 4];
 
-    Vec2f n1(v0.y - v1.y, v1.x - v0.x);
-    Vec2f n2(v1.y - v2.y, v2.x - v1.x);
+    flvec2 n1(v0.y - v1.y, v1.x - v0.x);
+    flvec2 n2(v1.y - v2.y, v2.x - v1.x);
 
     n1.normalise();
     n2.normalise();
@@ -1363,7 +1363,7 @@ void Lib::RenderRect(
         (v1.y - centre.y) * normals[i].y;
 
     if (dot < 0) {
-      normals[i] = Vec2f() - normals[i];
+      normals[i] = flvec2() - normals[i];
     }
   }
 
@@ -1378,8 +1378,8 @@ void Lib::RenderRect(
   glEnd();
 
   if (lineWidth > 1) {
-    RenderRect(low + Vec2f(1.f, 1.f),
-               hi - Vec2f(1.f, 1.f), Cycle(c), lineWidth - 1);
+    RenderRect(low + flvec2(1.f, 1.f),
+               hi - flvec2(1.f, 1.f), Cycle(c), lineWidth - 1);
   }
 #endif
 }

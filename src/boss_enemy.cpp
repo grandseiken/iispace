@@ -7,7 +7,7 @@ const fixed DeathRay::SPEED = 10;
 
 // Big follower
 //------------------------------
-BigFollow::BigFollow(const Vec2& position, bool hasScore)
+BigFollow::BigFollow(const vec2& position, bool hasScore)
   : Follow(position, 20, 3)
   , _hasScore(hasScore)
 {
@@ -22,7 +22,7 @@ void BigFollow::OnDestroy(bool bomb)
     return;
   }
 
-  Vec2 d(10, 0);
+  vec2 d(10, 0);
   d.rotate(GetRotation());
   for (int i = 0; i < 3; i++) {
     Follow* s = new Follow(GetPosition() + d);
@@ -36,13 +36,13 @@ void BigFollow::OnDestroy(bool bomb)
 
 // Generic boss projectile
 //------------------------------
-SBBossShot::SBBossShot(const Vec2& position, const Vec2& velocity, colour c)
+SBBossShot::SBBossShot(const vec2& position, const vec2& velocity, colour c)
   : Enemy(position, 0)
   , _dir(velocity)
 {
-  AddShape(new Polystar(Vec2(), 16, 8, c, 0, 0));
-  AddShape(new Polygon(Vec2(), 10, 8, c, 0, 0));
-  AddShape(new Polygon(Vec2(), 12, 8, 0, 0, ENEMY));
+  AddShape(new Polystar(vec2(), 16, 8, c, 0, 0));
+  AddShape(new Polygon(vec2(), 10, 8, c, 0, 0));
+  AddShape(new Polygon(vec2(), 12, 8, 0, 0, ENEMY));
   SetBoundingWidth(12);
   SetScore(0);
   SetEnemyValue(1);
@@ -51,7 +51,7 @@ SBBossShot::SBBossShot(const Vec2& position, const Vec2& velocity, colour c)
 void SBBossShot::Update()
 {
   Move(_dir);
-  Vec2 p = GetPosition();
+  vec2 p = GetPosition();
   if ((p.x < -10 && _dir.x < 0) ||
       (p.x > Lib::WIDTH + 10 && _dir.x > 0) ||
       (p.y < -10 && _dir.y < 0) ||
@@ -63,10 +63,10 @@ void SBBossShot::Update()
 
 // Tractor beam minion
 //------------------------------
-TBossShot::TBossShot(const Vec2& position, fixed angle)
+TBossShot::TBossShot(const vec2& position, fixed angle)
   : Enemy(position, 1)
 {
-  AddShape(new Polygon(Vec2(), 8, 6, 0xcc33ccff, 0, ENEMY | VULNERABLE));
+  AddShape(new Polygon(vec2(), 8, 6, 0xcc33ccff, 0, ENEMY | VULNERABLE));
   _dir.set_polar(angle, 3);
   SetBoundingWidth(8);
   SetScore(0);
@@ -90,46 +90,46 @@ void TBossShot::Update()
 // Ghost boss wall
 //------------------------------
 GhostWall::GhostWall(bool swap, bool noGap, bool ignored)
-  : Enemy(Vec2(Lib::WIDTH / 2, swap ? -10 : 10 + Lib::HEIGHT), 0)
+  : Enemy(vec2(Lib::WIDTH / 2, swap ? -10 : 10 + Lib::HEIGHT), 0)
   , _dir(0, swap ? 1 : -1)
 {
   if (noGap) {
-    AddShape(new Box(Vec2(), fixed(Lib::WIDTH), 10, 0xcc66ffff,
+    AddShape(new Box(vec2(), fixed(Lib::WIDTH), 10, 0xcc66ffff,
                      0, ENEMY | SHIELD));
-    AddShape(new Box(Vec2(), fixed(Lib::WIDTH), 7, 0xcc66ffff, 0, 0));
-    AddShape(new Box(Vec2(), fixed(Lib::WIDTH), 4, 0xcc66ffff, 0, 0));
+    AddShape(new Box(vec2(), fixed(Lib::WIDTH), 7, 0xcc66ffff, 0, 0));
+    AddShape(new Box(vec2(), fixed(Lib::WIDTH), 4, 0xcc66ffff, 0, 0));
   }
   else {
-    AddShape(new Box(Vec2(), Lib::HEIGHT / 2, 10, 0xcc66ffff,
+    AddShape(new Box(vec2(), Lib::HEIGHT / 2, 10, 0xcc66ffff,
                      0, ENEMY | SHIELD));
-    AddShape(new Box(Vec2(), Lib::HEIGHT / 2, 7, 0xcc66ffff,
+    AddShape(new Box(vec2(), Lib::HEIGHT / 2, 7, 0xcc66ffff,
                      0, ENEMY | SHIELD));
-    AddShape(new Box(Vec2(), Lib::HEIGHT / 2, 4, 0xcc66ffff,
+    AddShape(new Box(vec2(), Lib::HEIGHT / 2, 4, 0xcc66ffff,
                      0, ENEMY | SHIELD));
   }
   SetBoundingWidth(fixed(Lib::WIDTH));
 }
 
 GhostWall::GhostWall(bool swap, bool swapGap)
-  : Enemy(Vec2(swap ? -10 : 10 + Lib::WIDTH, Lib::HEIGHT / 2), 0)
+  : Enemy(vec2(swap ? -10 : 10 + Lib::WIDTH, Lib::HEIGHT / 2), 0)
   , _dir(swap ? 1 : -1, 0)
 {
   SetBoundingWidth(fixed(Lib::HEIGHT));
   fixed off = swapGap ? -100 : 100;
 
-  AddShape(new Box(Vec2(0, off - 20 - Lib::HEIGHT / 2), 10,
+  AddShape(new Box(vec2(0, off - 20 - Lib::HEIGHT / 2), 10,
                    Lib::HEIGHT / 2, 0xcc66ffff, 0, ENEMY | SHIELD));
-  AddShape(new Box(Vec2(0, off + 20 + Lib::HEIGHT / 2), 10,
+  AddShape(new Box(vec2(0, off + 20 + Lib::HEIGHT / 2), 10,
                    Lib::HEIGHT / 2, 0xcc66ffff, 0, ENEMY | SHIELD));
 
-  AddShape(new Box(Vec2(0, off - 20 - Lib::HEIGHT / 2), 7,
+  AddShape(new Box(vec2(0, off - 20 - Lib::HEIGHT / 2), 7,
                    Lib::HEIGHT / 2, 0xcc66ffff, 0, 0));
-  AddShape(new Box(Vec2(0, off + 20 + Lib::HEIGHT / 2), 7,
+  AddShape(new Box(vec2(0, off + 20 + Lib::HEIGHT / 2), 7,
                    Lib::HEIGHT / 2, 0xcc66ffff, 0, 0));
 
-  AddShape(new Box(Vec2(0, off - 20 - Lib::HEIGHT / 2), 4,
+  AddShape(new Box(vec2(0, off - 20 - Lib::HEIGHT / 2), 4,
                    Lib::HEIGHT / 2, 0xcc66ffff, 0, 0));
-  AddShape(new Box(Vec2(0, off + 20 + Lib::HEIGHT / 2), 4,
+  AddShape(new Box(vec2(0, off + 20 + Lib::HEIGHT / 2), 4,
                    Lib::HEIGHT / 2, 0xcc66ffff, 0, 0));
 }
 
@@ -155,13 +155,13 @@ void GhostWall::Update()
 
 // Ghost boss mine
 //------------------------------
-GhostMine::GhostMine(const Vec2& position, Boss* ghost)
+GhostMine::GhostMine(const vec2& position, Boss* ghost)
   : Enemy(position, 0)
   , _timer(80)
   , _ghost(ghost)
 {
-  AddShape(new Polygon(Vec2(), 24, 8, 0x9933ccff, 0, 0));
-  AddShape(new Polygon(Vec2(), 20, 8, 0x9933ccff, 0, 0));
+  AddShape(new Polygon(vec2(), 24, 8, 0x9933ccff, 0, 0));
+  AddShape(new Polygon(vec2(), 20, 8, 0x9933ccff, 0, 0));
   SetBoundingWidth(24);
   SetScore(0);
 }
@@ -201,17 +201,17 @@ void GhostMine::Render() const
 
 // Death ray
 //------------------------------
-DeathRay::DeathRay(const Vec2& position)
+DeathRay::DeathRay(const vec2& position)
   : Enemy(position, 0)
 {
-  AddShape(new Box(Vec2(), 10, 48, 0, 0, ENEMY));
-  AddShape(new Line(Vec2(), Vec2(0, -48), Vec2(0, 48), 0xffffffff, 0));
+  AddShape(new Box(vec2(), 10, 48, 0, 0, ENEMY));
+  AddShape(new Line(vec2(), vec2(0, -48), vec2(0, 48), 0xffffffff, 0));
   SetBoundingWidth(48);
 }
 
 void DeathRay::Update()
 {
-  Move(Vec2(1, 0) * SPEED);
+  Move(vec2(1, 0) * SPEED);
   if (GetPosition().x > Lib::WIDTH + 20) {
     Destroy();
   }
@@ -220,7 +220,7 @@ void DeathRay::Update()
 // Death arm
 //------------------------------
 DeathArm::DeathArm(DeathRayBoss* boss, bool top, int hp)
-  : Enemy(Vec2(), hp)
+  : Enemy(vec2(), hp)
   , _boss(boss)
   , _top(top)
   , _timer(top ? 2 * DeathRayBoss::ARM_ATIMER / 3 : 0)
@@ -229,11 +229,11 @@ DeathArm::DeathArm(DeathRayBoss* boss, bool top, int hp)
   , _start(30)
   , _shots(0)
 {
-  AddShape(new Polygon(Vec2(), 60, 4, 0x33ff99ff, 0, 0));
-  AddShape(new Polygram(Vec2(), 50, 4, 0x228855ff, 0, VULNERABLE));
-  AddShape(new Polygon(Vec2(), 40, 4, 0, 0, SHIELD));
-  AddShape(new Polygon(Vec2(), 20, 4, 0x33ff99ff, 0, 0));
-  AddShape(new Polygon(Vec2(), 18, 4, 0x228855ff, 0, 0));
+  AddShape(new Polygon(vec2(), 60, 4, 0x33ff99ff, 0, 0));
+  AddShape(new Polygram(vec2(), 50, 4, 0x228855ff, 0, VULNERABLE));
+  AddShape(new Polygon(vec2(), 40, 4, 0, 0, SHIELD));
+  AddShape(new Polygon(vec2(), 20, 4, 0x33ff99ff, 0, 0));
+  AddShape(new Polygon(vec2(), 18, 4, 0x228855ff, 0, 0));
   SetBoundingWidth(60);
   SetDestroySound(Lib::SOUND_PLAYER_DESTROY);
 }
@@ -246,7 +246,7 @@ void DeathArm::Update()
     _shots = 16;
   }
   if (_shots > 0) {
-    Vec2 d = _target - GetPosition();
+    vec2 d = _target - GetPosition();
     d.normalise();
     d *= 5;
     Ship* s = new SBBossShot(GetPosition(), d, 0x33ff99ff);
@@ -259,7 +259,7 @@ void DeathArm::Update()
     _timer++;
     if (_timer < DeathRayBoss::ARM_ATIMER / 4) {
       Player* p = GetNearestPlayer();
-      Vec2 d = p->GetPosition() - GetPosition();
+      vec2 d = p->GetPosition() - GetPosition();
       if (d.length() != 0) {
         _dir = d;
         _dir.normalise();
@@ -270,8 +270,8 @@ void DeathArm::Update()
       Move(_dir * DeathRayBoss::ARM_SPEED);
     }
     else if (_timer < DeathRayBoss::ARM_ATIMER) {
-      Vec2 d = _boss->GetPosition() +
-          Vec2(80, _top ? 80 : -80) - GetPosition();
+      vec2 d = _boss->GetPosition() +
+          vec2(80, _top ? 80 : -80) - GetPosition();
       if (d.length() > DeathRayBoss::ARM_SPEED) {
         d.normalise();
         Move(d * DeathRayBoss::ARM_SPEED);
@@ -295,7 +295,7 @@ void DeathArm::Update()
     _dir.set(0, 0);
     PlaySound(Lib::SOUND_BOSS_ATTACK);
   }
-  SetPosition(_boss->GetPosition() + Vec2(80, _top ? 80 : -80));
+  SetPosition(_boss->GetPosition() + vec2(80, _top ? 80 : -80));
 
   if (_start) {
     if (_start == 30) {
@@ -319,7 +319,7 @@ void DeathArm::OnDestroy(bool bomb)
 
 // Snake tail
 //------------------------------
-SnakeTail::SnakeTail(const Vec2& position, colour colour)
+SnakeTail::SnakeTail(const vec2& position, colour colour)
   : Enemy(position, 1)
   , _tail(0)
   , _head(0)
@@ -327,7 +327,7 @@ SnakeTail::SnakeTail(const Vec2& position, colour colour)
   , _dTimer(0)
 {
   AddShape(
-      new Polygon(Vec2(), 10, 4, colour, 0, ENEMY | SHIELD | VULNSHIELD));
+      new Polygon(vec2(), 10, 4, colour, 0, ENEMY | SHIELD | VULNSHIELD));
   SetBoundingWidth(22);
   SetScore(0);
 }
@@ -370,7 +370,7 @@ void SnakeTail::OnDestroy(bool bomb)
 
 // Snake
 //------------------------------
-Snake::Snake(const Vec2& position, colour colour, const Vec2& dir, fixed rot)
+Snake::Snake(const vec2& position, colour colour, const vec2& dir, fixed rot)
   : Enemy(position, 5)
   , _tail(0)
   , _timer(0)
@@ -380,25 +380,25 @@ Snake::Snake(const Vec2& position, colour colour, const Vec2& dir, fixed rot)
   , _shotSnake(false)
   , _shotRot(rot)
 {
-  AddShape(new Polygon(Vec2(), 14, 3, colour, 0, VULNERABLE));
-  AddShape(new Polygon(Vec2(), 10, 3, 0, 0, ENEMY));
+  AddShape(new Polygon(vec2(), 14, 3, colour, 0, VULNERABLE));
+  AddShape(new Polygon(vec2(), 10, 3, 0, 0, ENEMY));
   SetScore(0);
   SetBoundingWidth(32);
   SetEnemyValue(5);
   SetDestroySound(Lib::SOUND_PLAYER_DESTROY);
-  if (dir == Vec2()) {
+  if (dir == vec2()) {
     int r = z::rand_int(4);
     if (r == 0) {
-      _dir = Vec2(1, 0);
+      _dir = vec2(1, 0);
     }
     else if (r == 1) {
-      _dir = Vec2(-1, 0);
+      _dir = vec2(-1, 0);
     }
     else if (r == 2) {
-      _dir = Vec2(0, 1);
+      _dir = vec2(0, 1);
     }
     else {
-      _dir = Vec2(0, -1);
+      _dir = vec2(0, -1);
     }
   }
   else {
@@ -451,7 +451,7 @@ void Snake::OnDestroy(bool bomb)
 
 // Rainbow projectile
 //------------------------------
-RainbowShot::RainbowShot(const Vec2& position, const Vec2& velocity, Ship* boss)
+RainbowShot::RainbowShot(const vec2& position, const vec2& velocity, Ship* boss)
   : SBBossShot(position, velocity)
   , _boss(boss)
   , _timer(0)
@@ -461,7 +461,7 @@ RainbowShot::RainbowShot(const Vec2& position, const Vec2& velocity, Ship* boss)
 void RainbowShot::Update()
 {
   SBBossShot::Update();
-  static const Vec2 center = Vec2(Lib::WIDTH / 2, Lib::HEIGHT / 2);
+  static const vec2 center = vec2(Lib::WIDTH / 2, Lib::HEIGHT / 2);
 
   if ((GetPosition() - center).length() > 100 && _timer % 2 == 0) {
     z0Game::ShipList list = GetCollisionList(GetPosition(), SHIELD);

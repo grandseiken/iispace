@@ -1,7 +1,7 @@
 #include "ship.h"
 #include "z0_game.h"
 
-Ship::Ship(const Vec2& position, bool particle, bool player, bool boss)
+Ship::Ship(const vec2& position, bool particle, bool player, bool boss)
   : _z0(0)
   , _destroy(false)
   , _position(position)
@@ -35,10 +35,10 @@ void Ship::DestroyShape(std::size_t i)
   _shapeList.erase(_shapeList.begin() + i);
 }
 
-bool Ship::CheckPoint(const Vec2& v, int category) const
+bool Ship::CheckPoint(const vec2& v, int category) const
 {
   bool aa = false;
-  Vec2 a;
+  vec2 a;
   for (unsigned int i = 0; i < CountShapes(); i++) {
     if (GetShape(i).GetCategory() &&
         (!category || (GetShape(i).GetCategory() & category) == category)) {
@@ -111,18 +111,18 @@ void Ship::Spawn(Particle* particle) const
   _z0->AddParticle(particle);
 }
 
-void Ship::Explosion(colour c, int time, bool towards, const Vec2f& v) const
+void Ship::Explosion(colour c, int time, bool towards, const flvec2& v) const
 {
   for (unsigned int i = 0; i < CountShapes(); i++) {
     int n = towards ? z::rand_int(2) + 1 : z::rand_int(8) + 8;
     for (int j = 0; j < n; j++) {
-      Vec2f pos = GetShape(i).ConvertPointf(
-          to_float(GetPosition()), GetRotation().to_float(), Vec2f());
+      flvec2 pos = GetShape(i).ConvertPointf(
+          to_float(GetPosition()), GetRotation().to_float(), flvec2());
 
-      Vec2f dir;
+      flvec2 dir;
       dir.set_polar(z::rand_fixed().to_float() * 2 * M_PIf, 6.f);
 
-      if (towards && v - pos != Vec2f()) {
+      if (towards && v - pos != flvec2()) {
         dir = v - pos;
         dir.normalise();
         float angle =

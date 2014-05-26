@@ -9,19 +9,19 @@
 class Shape {
 public:
 
-  Shape(const Vec2& centre, colour colour, int category)
+  Shape(const vec2& centre, colour colour, int category)
     : _centre(centre)
     , _colour(colour)
     , _category(category) {}
 
   virtual ~Shape() {}
 
-  const Vec2& GetCentre() const
+  const vec2& GetCentre() const
   {
     return _centre;
   }
 
-  void SetCentre(const Vec2& centre)
+  void SetCentre(const vec2& centre)
   {
     _centre = centre;
   }
@@ -46,30 +46,30 @@ public:
     _colour = colour;
   }
 
-  bool CheckPoint(const Vec2& v) const
+  bool CheckPoint(const vec2& v) const
   {
     return CheckLocalPoint(v - GetCentre());
   }
 
-  virtual Vec2 ConvertPoint(
-      const Vec2& position, fixed rotation, const Vec2& v) const
+  virtual vec2 ConvertPoint(
+      const vec2& position, fixed rotation, const vec2& v) const
   {
-    Vec2 a = GetCentre() + v;
+    vec2 a = GetCentre() + v;
     a.rotate(rotation);
     return position + a;
   }
 
-  virtual Vec2f ConvertPointf(
-      const Vec2f& position, float rotation, const Vec2f& v) const
+  virtual flvec2 ConvertPointf(
+      const flvec2& position, float rotation, const flvec2& v) const
   {
-    Vec2f a = to_float(GetCentre()) + v;
+    flvec2 a = to_float(GetCentre()) + v;
     a.rotate(rotation);
     return position + a;
   }
 
   virtual void Render(
       Lib& lib,
-      const Vec2f& position, float rotation, colour colour = 0) const = 0;
+      const flvec2& position, float rotation, colour colour = 0) const = 0;
 
   virtual fixed GetRotation() const
   {
@@ -85,9 +85,9 @@ public:
 
 private:
 
-  virtual bool CheckLocalPoint(const Vec2& v) const = 0;
+  virtual bool CheckLocalPoint(const vec2& v) const = 0;
 
-  Vec2 _centre;
+  vec2 _centre;
   colour _colour;
   int _category;
 
@@ -98,7 +98,7 @@ private:
 class RotateShape : public Shape {
 public:
 
-  RotateShape(const Vec2& centre, fixed rotation, colour colour, int category)
+  RotateShape(const vec2& centre, fixed rotation, colour colour, int category)
     : Shape(centre, colour, category)
     , _rotation(rotation) {}
 
@@ -116,29 +116,29 @@ public:
         rotation < 0 ? rotation + 2 * fixed::pi : rotation;
   }
 
-  virtual Vec2 ConvertPoint(
-      const Vec2& position, fixed rotation, const Vec2& v) const
+  virtual vec2 ConvertPoint(
+      const vec2& position, fixed rotation, const vec2& v) const
   {
-    Vec2 a = v; a.rotate(GetRotation());
+    vec2 a = v; a.rotate(GetRotation());
     return Shape::ConvertPoint(position, rotation, a);
   }
 
-  virtual Vec2f ConvertPointf(
-      const Vec2f& position, float rotation, const Vec2f& v) const
+  virtual flvec2 ConvertPointf(
+      const flvec2& position, float rotation, const flvec2& v) const
   {
-    Vec2f a = v; a.rotate(GetRotation().to_float());
+    flvec2 a = v; a.rotate(GetRotation().to_float());
     return Shape::ConvertPointf(position, rotation, a);
   }
 
 private:
 
-  virtual bool CheckLocalPoint(const Vec2& v) const
+  virtual bool CheckLocalPoint(const vec2& v) const
   {
-    Vec2 a = v; a.rotate(-GetRotation());
+    vec2 a = v; a.rotate(-GetRotation());
     return CheckRotatedPoint(a);
   }
 
-  virtual bool CheckRotatedPoint(const Vec2& v) const = 0;
+  virtual bool CheckRotatedPoint(const vec2& v) const = 0;
 
   fixed _rotation;
 
@@ -149,7 +149,7 @@ private:
 class Fill : public Shape {
 public:
 
-  Fill(const Vec2& centre, fixed width, fixed height,
+  Fill(const vec2& centre, fixed width, fixed height,
        colour colour, int category = 0)
     : Shape(centre, colour, category)
     , _width(width)
@@ -178,18 +178,18 @@ public:
   }
 
   virtual void Render(
-      Lib& lib, const Vec2f& position, float rotation, colour colour = 0) const
+      Lib& lib, const flvec2& position, float rotation, colour colour = 0) const
   {
-    Vec2f c = ConvertPointf(position, rotation, Vec2f());
-    Vec2f wh = Vec2f(GetWidth().to_float(), GetHeight().to_float());
-    Vec2f a = c + wh;
-    Vec2f b = c - wh;
+    flvec2 c = ConvertPointf(position, rotation, flvec2());
+    flvec2 wh = flvec2(GetWidth().to_float(), GetHeight().to_float());
+    flvec2 a = c + wh;
+    flvec2 b = c - wh;
     lib.RenderRect(a, b, GetColour(colour));
   }
 
 private:
 
-  virtual bool CheckLocalPoint(const Vec2& v) const
+  virtual bool CheckLocalPoint(const vec2& v) const
   {
     return v.x.abs() < _width && v.y.abs() < _height;
   }
@@ -204,7 +204,7 @@ private:
 class Line : public RotateShape {
 public:
 
-  Line(const Vec2& centre, const Vec2& a, const Vec2& b,
+  Line(const vec2& centre, const vec2& a, const vec2& b,
        colour colour, fixed rotation = 0)
     : RotateShape(centre, rotation, colour, 0)
     , _a(a)
@@ -212,43 +212,43 @@ public:
 
   virtual ~Line() {}
 
-  Vec2 GetA() const
+  vec2 GetA() const
   {
     return _a;
   }
 
-  Vec2 GetB() const
+  vec2 GetB() const
   {
     return _b;
   }
 
-  void SetA(const Vec2& a)
+  void SetA(const vec2& a)
   {
     _a = a;
   }
 
-  void SetB(const Vec2& b)
+  void SetB(const vec2& b)
   {
     _b = b;
   }
 
-  virtual void Render(Lib& lib, const Vec2f& position, float rotation,
+  virtual void Render(Lib& lib, const flvec2& position, float rotation,
                       colour colour = 0) const
   {
-    Vec2f a = ConvertPointf(position, rotation, to_float(_a));
-    Vec2f b = ConvertPointf(position, rotation, to_float(_b));
+    flvec2 a = ConvertPointf(position, rotation, to_float(_a));
+    flvec2 b = ConvertPointf(position, rotation, to_float(_b));
     lib.RenderLine(a, b, GetColour(colour));
   }
 
 private:
 
-  virtual bool CheckRotatedPoint(const Vec2& v) const
+  virtual bool CheckRotatedPoint(const vec2& v) const
   {
     return false;
   }
 
-  Vec2 _a;
-  Vec2 _b;
+  vec2 _a;
+  vec2 _b;
 
 };
 
@@ -257,7 +257,7 @@ private:
 class Box : public RotateShape {
 public:
 
-  Box(const Vec2& centre, fixed width, fixed height,
+  Box(const vec2& centre, fixed width, fixed height,
       colour colour, fixed rotation = 0, int category = 0)
     : RotateShape(centre, rotation, colour, category)
     , _width(width)
@@ -286,15 +286,15 @@ public:
   }
 
   virtual void Render(
-      Lib& lib, const Vec2f& position, float rotation, colour colour = 0) const
+      Lib& lib, const flvec2& position, float rotation, colour colour = 0) const
   {
     float w = GetWidth().to_float();
     float h = GetHeight().to_float();
 
-    Vec2f a = ConvertPointf(position, rotation, Vec2f(w, h));
-    Vec2f b = ConvertPointf(position, rotation, Vec2f(-w, h));
-    Vec2f c = ConvertPointf(position, rotation, Vec2f(-w, -h));
-    Vec2f d = ConvertPointf(position, rotation, Vec2f(w, -h));
+    flvec2 a = ConvertPointf(position, rotation, flvec2(w, h));
+    flvec2 b = ConvertPointf(position, rotation, flvec2(-w, h));
+    flvec2 c = ConvertPointf(position, rotation, flvec2(-w, -h));
+    flvec2 d = ConvertPointf(position, rotation, flvec2(w, -h));
 
     lib.RenderLine(a, b, GetColour(colour));
     lib.RenderLine(b, c, GetColour(colour));
@@ -304,7 +304,7 @@ public:
 
 private:
 
-  virtual bool CheckRotatedPoint(const Vec2& v) const
+  virtual bool CheckRotatedPoint(const vec2& v) const
   {
     return v.x.abs() < _width && v.y.abs() < _height;
   }
@@ -319,7 +319,7 @@ private:
 class Polygon : public RotateShape {
 public:
 
-  Polygon(const Vec2& centre, fixed radius, int sides,
+  Polygon(const vec2& centre, fixed radius, int sides,
           colour colour, fixed rotation = 0, int category = 0)
     : RotateShape(centre, rotation, colour, category)
     , _radius(radius)
@@ -348,7 +348,7 @@ public:
   }
 
   virtual void Render(
-      Lib& lib, const Vec2f& position, float rotation, colour colour = 0) const
+      Lib& lib, const flvec2& position, float rotation, colour colour = 0) const
   {
     if (GetSides() < 2) {
       return;
@@ -356,7 +356,7 @@ public:
 
     float r = GetRadius().to_float();
     for (int i = 0; i < GetSides(); i++) {
-      Vec2f a, b;
+      flvec2 a, b;
       a.set_polar(i * 2 * M_PIf / float(GetSides()), r);
       b.set_polar((i + 1) * 2 * M_PIf / float(GetSides()), r);
       lib.RenderLine(ConvertPointf(position, rotation, a),
@@ -366,7 +366,7 @@ public:
 
 private:
 
-  virtual bool CheckRotatedPoint(const Vec2& v) const
+  virtual bool CheckRotatedPoint(const vec2& v) const
   {
     return v.length() < GetRadius();
   }
@@ -381,7 +381,7 @@ private:
 class PolyArc : public RotateShape {
 public:
 
-  PolyArc(const Vec2& centre, fixed radius, int sides, int segments,
+  PolyArc(const vec2& centre, fixed radius, int sides, int segments,
           colour colour, fixed rotation = 0, int category = 0)
     : RotateShape(centre, rotation, colour, category)
     , _radius(radius)
@@ -421,7 +421,7 @@ public:
   }
 
   virtual void Render(
-      Lib& lib, const Vec2f& position, float rotation, colour colour = 0) const
+      Lib& lib, const flvec2& position, float rotation, colour colour = 0) const
   {
     if (GetSides() < 2) {
       return;
@@ -429,7 +429,7 @@ public:
     float r = GetRadius().to_float();
 
     for (int i = 0; i < GetSides() && i < _segments; i++) {
-      Vec2f a, b;
+      flvec2 a, b;
       a.set_polar(i * 2 * M_PIf / float(GetSides()), r);
       b.set_polar((i + 1) * 2 * M_PIf / float(GetSides()), r);
       lib.RenderLine(ConvertPointf(position, rotation, a),
@@ -439,7 +439,7 @@ public:
 
 private:
 
-  virtual bool CheckRotatedPoint(const Vec2& v) const
+  virtual bool CheckRotatedPoint(const vec2& v) const
   {
     fixed angle = v.angle();
     fixed len = v.length();
@@ -458,23 +458,23 @@ private:
 class Polygram : public Polygon {
 public:
 
-  Polygram(const Vec2& centre, fixed radius, int sides,
+  Polygram(const vec2& centre, fixed radius, int sides,
            colour colour, fixed rotation = 0, int category = 0)
     : Polygon(centre, radius, sides, colour, rotation, category) {}
 
   virtual ~Polygram() {}
 
   virtual void Render(
-      Lib& lib, const Vec2f& position, float rotation, colour colour = 0) const
+      Lib& lib, const flvec2& position, float rotation, colour colour = 0) const
   {
     if (GetSides() < 2) {
       return;
     }
 
     float r = GetRadius().to_float();
-    std::vector<Vec2f> list;
+    std::vector<flvec2> list;
     for (int i = 0; i < GetSides(); i++) {
-      Vec2f v;
+      flvec2 v;
       v.set_polar(i * 2 * M_PIf / float(GetSides()), r);
       list.push_back(v);
     }
@@ -495,14 +495,14 @@ public:
 class Polystar : public Polygon {
 public:
 
-  Polystar(const Vec2& centre, fixed radius, int sides,
+  Polystar(const vec2& centre, fixed radius, int sides,
            colour colour, fixed rotation = 0, int category = 0)
     : Polygon(centre, radius, sides, colour, rotation, category) {}
 
   virtual ~Polystar() {}
 
   virtual void Render(
-      Lib& lib, const Vec2f& position, float rotation, colour colour = 0) const
+      Lib& lib, const flvec2& position, float rotation, colour colour = 0) const
   {
     if (GetSides() < 2) {
       return;
@@ -510,9 +510,9 @@ public:
 
     float r = GetRadius().to_float();
     for (int i = 0; i < GetSides(); i++) {
-      Vec2f v;
+      flvec2 v;
       v.set_polar(i * 2 * M_PIf / float(GetSides()), r);
-      lib.RenderLine(ConvertPointf(position, rotation, Vec2f()),
+      lib.RenderLine(ConvertPointf(position, rotation, flvec2()),
                      ConvertPointf(position, rotation, v), GetColour(colour));
     }
   }
@@ -525,7 +525,7 @@ class CompoundShape : public RotateShape {
 public:
 
   // Child shapes take the top-level category
-  CompoundShape(const Vec2& centre, fixed rotation = 0,
+  CompoundShape(const vec2& centre, fixed rotation = 0,
                 int category = 0, colour colour = 0)
     : RotateShape(centre, rotation, 0, category)
   {
@@ -553,9 +553,9 @@ public:
   }
 
   virtual void Render(
-      Lib& lib, const Vec2f& position, float rotation, colour colour = 0) const
+      Lib& lib, const flvec2& position, float rotation, colour colour = 0) const
   {
-    Vec2f c = ConvertPointf(position, rotation, Vec2f());
+    flvec2 c = ConvertPointf(position, rotation, flvec2());
     for (unsigned int i = 0; i < _children.size(); i++) {
       _children[i]->Render(lib, c, GetRotation().to_float() + rotation, colour);
     }
@@ -573,7 +573,7 @@ public:
 
 private:
 
-  virtual bool CheckRotatedPoint(const Vec2& v) const
+  virtual bool CheckRotatedPoint(const vec2& v) const
   {
     for (unsigned int i = 0; i < _children.size(); i++) {
       if (_children[i]->CheckPoint(v)) {

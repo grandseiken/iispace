@@ -107,83 +107,95 @@ public:
     y /= len;
   }
 
-  void rotate(const T& a)
+  void rotate(const T& r_angle)
   {
-    if (a != 0) {
-      set_polar(angle() + a, length());
+    if (r_angle != 0) {
+      set_polar(angle() + r_angle, length());
     }
   }
 
-  T dot(const vec2_t& a) const
+  T dot(const vec2_t& v) const
   {
-    return x * a.x + y * a.y;
+    return x * v.x + y * v.y;
   }
 
-  vec2_t operator+(const vec2_t& a) const
+  vec2_t operator+(const vec2_t& v) const
   {
-    return vec2_t(x + a.x, y + a.y);
+    return vec2_t(x + v.x, y + v.y);
   }
 
-  vec2_t operator-(const vec2_t& a) const
+  vec2_t operator-(const vec2_t& v) const
   {
-    return vec2_t(x - a.x, y - a.y);
+    return vec2_t(x - v.x, y - v.y);
   }
 
-  vec2_t operator+=(const vec2_t& a)
+  vec2_t operator+=(const vec2_t& v)
   {
-    return *this = *this + a;
+    return *this = *this + v;
   }
 
-  vec2_t operator-=(const vec2_t& a)
+  vec2_t operator-=(const vec2_t& v)
   {
-    return *this = *this - a;
+    return *this = *this - v;
   }
 
-  vec2_t operator*(const T& a) const
+  vec2_t operator*(const T& t) const
   {
-    return vec2_t(x * a, y * a);
+    return vec2_t(x * t, y * t);
   }
 
-  vec2_t operator/(const T& a) const
+  vec2_t operator/(const T& t) const
   {
-    return vec2_t(x / a, y / a);
+    return vec2_t(x / t, y / t);
   }
 
-  vec2_t operator*=(const T& a)
+  vec2_t operator*=(const T& t)
   {
-    return *this = *this * a;
+    return *this = *this * t;
   }
 
-  vec2_t operator/=(const T& a)
+  vec2_t operator/=(const T& t)
   {
-    return *this = *this / a;
+    return *this = *this / t;
   }
 
-  bool operator==(const vec2_t& a) const
+  bool operator==(const vec2_t& v) const
   {
-    return x == a.x && y == a.y;
+    return x == v.x && y == v.y;
   }
 
-  bool operator!=(const vec2_t& a) const
+  bool operator!=(const vec2_t& v) const
   {
-    return !(*this == a);
+    return !(*this == v);
   }
 
-  vec2_t& operator=(const vec2_t& a)
+  vec2_t& operator=(const vec2_t& v)
   {
-    x = a.x;
-    y = a.y;
+    x = v.x;
+    y = v.y;
     return *this;
   }
 
 };
 
-typedef vec2_t<fixed> Vec2;
-typedef vec2_t<float> Vec2f;
-
-inline Vec2f to_float(const Vec2& a)
+template<typename T>
+vec2_t<T> operator*(const T& t, const vec2_t<T>& v)
 {
-  return Vec2f(a.x.to_float(), a.y.to_float());
+  return vec2_t<T>(t * v.x, t * v.y);
+}
+
+template<typename T>
+vec2_t<T> operator/(const T& t, const vec2_t<T>& v)
+{
+  return vec2_t<T>(t / v.x, t / v.y);
+}
+
+typedef vec2_t<fixed> vec2;
+typedef vec2_t<float> flvec2;
+
+inline flvec2 to_float(const vec2& a)
+{
+  return flvec2(a.x.to_float(), a.y.to_float());
 }
 
 #endif

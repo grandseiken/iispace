@@ -371,7 +371,7 @@ void z0Game::Update()
     }
     for (std::size_t i = 0; i < Boss::_fireworks.size(); ++i) {
       if (Boss::_fireworks[i].first <= 0) {
-        Vec2 v = _ships[0]->GetPosition();
+        vec2 v = _ships[0]->GetPosition();
         _ships[0]->SetPosition(Boss::_fireworks[i].second.first);
         _ships[0]->Explosion(0xffffffff);
         _ships[0]->Explosion(Boss::_fireworks[i].second.second, 16);
@@ -557,10 +557,10 @@ void z0Game::Render() const
     while ((i = s.find_first_of("\n")) != std::string::npos) {
       std::string t = s.substr(0, i);
       s = s.substr(i + 1);
-      lib.RenderText(Vec2f(2, float(y)), t, PANEL_TEXT);
+      lib.RenderText(flvec2(2, float(y)), t, PANEL_TEXT);
       ++y;
     }
-    lib.RenderText(Vec2f(2, float(y)), s, PANEL_TEXT);
+    lib.RenderText(flvec2(2, float(y)), s, PANEL_TEXT);
     return;
   }
 
@@ -584,13 +584,13 @@ void z0Game::Render() const
   //------------------------------
   if (_state == STATE_GAME) {
     if (_controllersDialog) {
-      RenderPanel(Vec2f(3.f, 3.f), Vec2f(32.f, 8.f + 2 * _players));
-      lib.RenderText(Vec2f(4.f, 4.f), "CONTROLLERS FOUND", PANEL_TEXT);
+      RenderPanel(flvec2(3.f, 3.f), flvec2(32.f, 8.f + 2 * _players));
+      lib.RenderText(flvec2(4.f, 4.f), "CONTROLLERS FOUND", PANEL_TEXT);
 
       for (int32_t i = 0; i < _players; i++) {
         std::stringstream ss;
         ss << "PLAYER " << (i + 1) << ": ";
-        lib.RenderText(Vec2f(4.f, 8.f + 2 * i), ss.str(), PANEL_TEXT);
+        lib.RenderText(flvec2(4.f, 8.f + 2 * i), ss.str(), PANEL_TEXT);
 
         std::stringstream ss2;
         int pads = lib.IsPadConnected(i);
@@ -613,7 +613,7 @@ void z0Game::Render() const
           }
         }
 
-        lib.RenderText(Vec2f(14.f, 8.f + 2 * i), ss2.str(),
+        lib.RenderText(flvec2(14.f, 8.f + 2 * i), ss2.str(),
                        pads ? Player::GetPlayerColour(i) : PANEL_TEXT);
       }
       return;
@@ -627,15 +627,15 @@ void z0Game::Render() const
     }
 
     lib.RenderText(
-        Vec2f(Lib::WIDTH / (2.f * Lib::TEXT_WIDTH) - ss.str().length() / 2,
-              Lib::HEIGHT / Lib::TEXT_HEIGHT - 2.f),
+        flvec2(Lib::WIDTH / (2.f * Lib::TEXT_WIDTH) - ss.str().length() / 2,
+               Lib::HEIGHT / Lib::TEXT_HEIGHT - 2.f),
         ss.str(), PANEL_TRAN);
 
     for (std::size_t i = 0; i < _ships.size() + Boss::_warnings.size(); ++i) {
       if (i < _ships.size() && !_ships[i]->IsEnemy()) {
         continue;
       }
-      Vec2f v = to_float(
+      flvec2 v = to_float(
           i < _ships.size() ? _ships[i]->GetPosition() :
                               Boss::_warnings[i - _ships.size()]);
 
@@ -644,63 +644,63 @@ void z0Game::Render() const
                     std::max(v.x + Lib::WIDTH, 0.f) / Lib::WIDTH);
         a |= a << 4;
         a = (a << 8) | (a << 16) | (a << 24) | 0x66;
-        lib.RenderLine(Vec2f(0.f, v.y), Vec2f(6, v.y - 3), a);
-        lib.RenderLine(Vec2f(6.f, v.y - 3), Vec2f(6, v.y + 3), a);
-        lib.RenderLine(Vec2f(6.f, v.y + 3), Vec2f(0, v.y), a);
+        lib.RenderLine(flvec2(0.f, v.y), flvec2(6, v.y - 3), a);
+        lib.RenderLine(flvec2(6.f, v.y - 3), flvec2(6, v.y + 3), a);
+        lib.RenderLine(flvec2(6.f, v.y + 3), flvec2(0, v.y), a);
       }
       if (v.x >= Lib::WIDTH + 4) {
         int a = int(.5f + float(0x1) + float(0x9) *
                     std::max(2 * Lib::WIDTH - v.x, 0.f) / Lib::WIDTH);
         a |= a << 4;
         a = (a << 8) | (a << 16) | (a << 24) | 0x66;
-        lib.RenderLine(Vec2f(float(Lib::WIDTH), v.y),
-                       Vec2f(Lib::WIDTH - 6.f, v.y - 3), a);
-        lib.RenderLine(Vec2f(Lib::WIDTH - 6, v.y - 3),
-                       Vec2f(Lib::WIDTH - 6.f, v.y + 3), a);
-        lib.RenderLine(Vec2f(Lib::WIDTH - 6, v.y + 3),
-                       Vec2f(float(Lib::WIDTH), v.y), a);
+        lib.RenderLine(flvec2(float(Lib::WIDTH), v.y),
+                       flvec2(Lib::WIDTH - 6.f, v.y - 3), a);
+        lib.RenderLine(flvec2(Lib::WIDTH - 6, v.y - 3),
+                       flvec2(Lib::WIDTH - 6.f, v.y + 3), a);
+        lib.RenderLine(flvec2(Lib::WIDTH - 6, v.y + 3),
+                       flvec2(float(Lib::WIDTH), v.y), a);
       }
       if (v.y < -4) {
         int a = int(.5f + float(0x1) + float(0x9) *
                     std::max(v.y + Lib::HEIGHT, 0.f) / Lib::HEIGHT);
         a |= a << 4;
         a = (a << 8) | (a << 16) | (a << 24) | 0x66;
-        lib.RenderLine(Vec2f(v.x, 0.f), Vec2f(v.x - 3, 6.f), a);
-        lib.RenderLine(Vec2f(v.x - 3, 6.f), Vec2f(v.x + 3, 6.f), a);
-        lib.RenderLine(Vec2f(v.x + 3, 6.f), Vec2f(v.x, 0.f), a);
+        lib.RenderLine(flvec2(v.x, 0.f), flvec2(v.x - 3, 6.f), a);
+        lib.RenderLine(flvec2(v.x - 3, 6.f), flvec2(v.x + 3, 6.f), a);
+        lib.RenderLine(flvec2(v.x + 3, 6.f), flvec2(v.x, 0.f), a);
       }
       if (v.y >= Lib::HEIGHT + 4) {
         int a = int(.5f + float(0x1) + float(0x9) *
                     std::max(2 * Lib::HEIGHT - v.y, 0.f) / Lib::HEIGHT);
         a |= a << 4;
         a = (a << 8) | (a << 16) | (a << 24) | 0x66;
-        lib.RenderLine(Vec2f(v.x, float(Lib::HEIGHT)),
-                       Vec2f(v.x - 3, Lib::HEIGHT - 6.f), a);
-        lib.RenderLine(Vec2f(v.x - 3, Lib::HEIGHT - 6.f),
-                       Vec2f(v.x + 3, Lib::HEIGHT - 6.f), a);
-        lib.RenderLine(Vec2f(v.x + 3, Lib::HEIGHT - 6.f),
-                       Vec2f(v.x, float(Lib::HEIGHT)), a);
+        lib.RenderLine(flvec2(v.x, float(Lib::HEIGHT)),
+                       flvec2(v.x - 3, Lib::HEIGHT - 6.f), a);
+        lib.RenderLine(flvec2(v.x - 3, Lib::HEIGHT - 6.f),
+                       flvec2(v.x + 3, Lib::HEIGHT - 6.f), a);
+        lib.RenderLine(flvec2(v.x + 3, Lib::HEIGHT - 6.f),
+                       flvec2(v.x, float(Lib::HEIGHT)), a);
       }
     }
     if (IsBossMode()) {
       std::stringstream sst;
       sst << ConvertToTime(_overmind->GetElapsedTime());
       lib.RenderText(
-        Vec2f(Lib::WIDTH / (2 * Lib::TEXT_WIDTH) -
-              sst.str().length() - 1.f, 1.f),
+        flvec2(Lib::WIDTH / (2 * Lib::TEXT_WIDTH) -
+               sst.str().length() - 1.f, 1.f),
         sst.str(), PANEL_TRAN);
     }
 
     if (_showHPBar) {
       int x = IsBossMode() ? 48 : 0;
       lib.RenderRect(
-          Vec2f(x + Lib::WIDTH / 2 - 48.f, 16.f),
-          Vec2f(x + Lib::WIDTH / 2 + 48.f, 32.f),
+          flvec2(x + Lib::WIDTH / 2 - 48.f, 16.f),
+          flvec2(x + Lib::WIDTH / 2 + 48.f, 32.f),
           PANEL_TRAN, 2);
 
       lib.RenderRect(
-          Vec2f(x + Lib::WIDTH / 2 - 44.f, 16.f + 4),
-          Vec2f(x + Lib::WIDTH / 2 - 44.f + 88.f * _fillHPBar, 32.f - 4),
+          flvec2(x + Lib::WIDTH / 2 - 44.f, 16.f + 4),
+          flvec2(x + Lib::WIDTH / 2 - 44.f + 88.f * _fillHPBar, 32.f - 4),
           PANEL_TRAN);
     }
 
@@ -712,8 +712,8 @@ void z0Game::Render() const
           _replay._playerFrames.size()) << "%";
 
       lib.RenderText(
-          Vec2f(Lib::WIDTH / (2.f * Lib::TEXT_WIDTH) - ss.str().length() / 2,
-                Lib::HEIGHT / Lib::TEXT_HEIGHT - 3.f),
+          flvec2(Lib::WIDTH / (2.f * Lib::TEXT_WIDTH) - ss.str().length() / 2,
+                 Lib::HEIGHT / Lib::TEXT_HEIGHT - 3.f),
           ss.str(), PANEL_TRAN);
     }
 
@@ -723,14 +723,14 @@ void z0Game::Render() const
   else if (_state == STATE_MENU) {
     // Main menu
     //------------------------------
-    RenderPanel(Vec2f(3.f, 3.f), Vec2f(19.f, 14.f));
+    RenderPanel(flvec2(3.f, 3.f), flvec2(19.f, 14.f));
 
-    lib.RenderText(Vec2f(37.f - 16, 3.f), "coded by: SEiKEN", PANEL_TEXT);
-    lib.RenderText(Vec2f(37.f - 16, 4.f), "stu@seiken.co.uk", PANEL_TEXT);
-    lib.RenderText(Vec2f(37.f - 9, 6.f), "-testers-", PANEL_TEXT);
-    lib.RenderText(Vec2f(37.f - 9, 7.f), "MATT BELL", PANEL_TEXT);
-    lib.RenderText(Vec2f(37.f - 9, 8.f), "RUFUZZZZZ", PANEL_TEXT);
-    lib.RenderText(Vec2f(37.f - 9, 9.f), "SHADOW1W2", PANEL_TEXT);
+    lib.RenderText(flvec2(37.f - 16, 3.f), "coded by: SEiKEN", PANEL_TEXT);
+    lib.RenderText(flvec2(37.f - 16, 4.f), "stu@seiken.co.uk", PANEL_TEXT);
+    lib.RenderText(flvec2(37.f - 9, 6.f), "-testers-", PANEL_TEXT);
+    lib.RenderText(flvec2(37.f - 9, 7.f), "MATT BELL", PANEL_TEXT);
+    lib.RenderText(flvec2(37.f - 9, 8.f), "RUFUZZZZZ", PANEL_TEXT);
+    lib.RenderText(flvec2(37.f - 9, 9.f), "SHADOW1W2", PANEL_TEXT);
 
     std::string b = "BOSSES:  ";
     int bb = IsHardModeUnlocked() ? _hardModeBossesKilled : _bossesKilled;
@@ -741,66 +741,66 @@ void z0Game::Render() const
     if (bb & BOSS_2A) b += "X"; else b += "-";
     if (bb & BOSS_2B) b += "X"; else b += "-";
     if (bb & BOSS_2C) b += "X"; else b += "-";
-    lib.RenderText(Vec2f(37.f - 16, 13.f), b, PANEL_TEXT);
+    lib.RenderText(flvec2(37.f - 16, 13.f), b, PANEL_TEXT);
 
-    lib.RenderText(Vec2f(4.f, 4.f), "WiiSPACE", PANEL_TEXT);
-    lib.RenderText(Vec2f(6.f, 8.f), "START GAME", PANEL_TEXT);
-    lib.RenderText(Vec2f(6.f, 10.f), "PLAYERS", PANEL_TEXT);
-    lib.RenderText(Vec2f(6.f, 12.f), "EXiT", PANEL_TEXT);
+    lib.RenderText(flvec2(4.f, 4.f), "WiiSPACE", PANEL_TEXT);
+    lib.RenderText(flvec2(6.f, 8.f), "START GAME", PANEL_TEXT);
+    lib.RenderText(flvec2(6.f, 10.f), "PLAYERS", PANEL_TEXT);
+    lib.RenderText(flvec2(6.f, 12.f), "EXiT", PANEL_TEXT);
 
     if (_specialSelection == 0 && IsBossModeUnlocked()) {
-      lib.RenderText(Vec2f(6.f, 6.f), "BOSS MODE", PANEL_TEXT);
+      lib.RenderText(flvec2(6.f, 6.f), "BOSS MODE", PANEL_TEXT);
       if (IsHardModeUnlocked() && _selection == -1) {
-        lib.RenderText(Vec2f(6.f, 6.f), "         >", PANEL_TRAN);
+        lib.RenderText(flvec2(6.f, 6.f), "         >", PANEL_TRAN);
       }
     }
     if (_specialSelection == 1 && IsHardModeUnlocked()) {
-      lib.RenderText(Vec2f(6.f, 6.f), "HARD MODE", PANEL_TEXT);
+      lib.RenderText(flvec2(6.f, 6.f), "HARD MODE", PANEL_TEXT);
       if (_selection == -1) {
-        lib.RenderText(Vec2f(5.f, 6.f), "<", PANEL_TRAN);
+        lib.RenderText(flvec2(5.f, 6.f), "<", PANEL_TRAN);
       }
       if (IsFastModeUnlocked() && _selection == -1) {
-        lib.RenderText(Vec2f(6.f, 6.f), "         >", PANEL_TRAN);
+        lib.RenderText(flvec2(6.f, 6.f), "         >", PANEL_TRAN);
       }
     }
     if (_specialSelection == 2 && IsFastModeUnlocked()) {
-      lib.RenderText(Vec2f(6.f, 6.f), "FAST MODE", PANEL_TEXT);
+      lib.RenderText(flvec2(6.f, 6.f), "FAST MODE", PANEL_TEXT);
       if (_selection == -1) {
-        lib.RenderText(Vec2f(5.f, 6.f), "<", PANEL_TRAN);
+        lib.RenderText(flvec2(5.f, 6.f), "<", PANEL_TRAN);
       }
       if (IsWhatModeUnlocked() && _selection == -1) {
-        lib.RenderText(Vec2f(6.f, 6.f), "         >", PANEL_TRAN);
+        lib.RenderText(flvec2(6.f, 6.f), "         >", PANEL_TRAN);
       }
     }
     if (_specialSelection == 3 && IsWhatModeUnlocked()) {
-      lib.RenderText(Vec2f(6.f, 6.f), "W-HAT MODE", PANEL_TEXT);
+      lib.RenderText(flvec2(6.f, 6.f), "W-HAT MODE", PANEL_TEXT);
       if (_selection == -1) {
-        lib.RenderText(Vec2f(5.f, 6.f), "<", PANEL_TRAN);
+        lib.RenderText(flvec2(5.f, 6.f), "<", PANEL_TRAN);
       }
     }
 
-    Vec2f low(float(4 * Lib::TEXT_WIDTH + 4),
-              float((8 + 2 * _selection) * Lib::TEXT_HEIGHT + 4));
-    Vec2f hi(float(5 * Lib::TEXT_WIDTH - 4),
-             float((9 + 2 * _selection) * Lib::TEXT_HEIGHT - 4));
+    flvec2 low(float(4 * Lib::TEXT_WIDTH + 4),
+               float((8 + 2 * _selection) * Lib::TEXT_HEIGHT + 4));
+    flvec2 hi(float(5 * Lib::TEXT_WIDTH - 4),
+              float((9 + 2 * _selection) * Lib::TEXT_HEIGHT - 4));
     lib.RenderRect(low, hi, PANEL_TEXT, 1);
 
     if (_players > 1 && _selection == 1) {
-      lib.RenderText(Vec2f(5.f, 10.f), "<", PANEL_TRAN);
+      lib.RenderText(flvec2(5.f, 10.f), "<", PANEL_TRAN);
     }
     if (_players < 4 && _selection == 1) {
-      lib.RenderText(Vec2f(14.f + _players, 10.f), ">", PANEL_TRAN);
+      lib.RenderText(flvec2(14.f + _players, 10.f), ">", PANEL_TRAN);
     }
     for (int32_t i = 0; i < _players; ++i) {
       std::stringstream ss;
       ss << (i + 1);
-      lib.RenderText(Vec2f(14.f + i, 10.f), ss.str(),
+      lib.RenderText(flvec2(14.f + i, 10.f), ss.str(),
                      Player::GetPlayerColour(i));
     }
 
     // High score table
     //------------------------------
-    RenderPanel(Vec2f(3.f, 15.f), Vec2f(37.f, 27.f));
+    RenderPanel(flvec2(3.f, 15.f), flvec2(37.f, 27.f));
 
     std::stringstream ss;
     ss << _players;
@@ -814,13 +814,13 @@ void z0Game::Render() const
         _players == 2 ? "TWO PLAYERS" :
         _players == 3 ? "THREE PLAYERS" :
         _players == 4 ? "FOUR PLAYERS" : "";
-    lib.RenderText(Vec2f(4.f, 16.f), s, PANEL_TEXT);
+    lib.RenderText(flvec2(4.f, 16.f), s, PANEL_TEXT);
 
     if (_selection == -1 && _specialSelection == 0) {
-      lib.RenderText(Vec2f(4.f, 18.f), "ONE PLAYER", PANEL_TEXT);
-      lib.RenderText(Vec2f(4.f, 20.f), "TWO PLAYERS", PANEL_TEXT);
-      lib.RenderText(Vec2f(4.f, 22.f), "THREE PLAYERS", PANEL_TEXT);
-      lib.RenderText(Vec2f(4.f, 24.f), "FOUR PLAYERS", PANEL_TEXT);
+      lib.RenderText(flvec2(4.f, 18.f), "ONE PLAYER", PANEL_TEXT);
+      lib.RenderText(flvec2(4.f, 20.f), "TWO PLAYERS", PANEL_TEXT);
+      lib.RenderText(flvec2(4.f, 22.f), "THREE PLAYERS", PANEL_TEXT);
+      lib.RenderText(flvec2(4.f, 24.f), "FOUR PLAYERS", PANEL_TEXT);
 
       for (std::size_t i = 0; i < Lib::PLAYERS; i++) {
         std::string score = ConvertToTime(_highScores[Lib::PLAYERS][i].second);
@@ -832,15 +832,15 @@ void z0Game::Render() const
           name = name.substr(0, Lib::MAX_NAME_LENGTH);
         }
 
-        lib.RenderText(Vec2f(19.f, 18.f + i * 2), score, PANEL_TEXT);
-        lib.RenderText(Vec2f(19.f, 19.f + i * 2), name, PANEL_TEXT);
+        lib.RenderText(flvec2(19.f, 18.f + i * 2), score, PANEL_TEXT);
+        lib.RenderText(flvec2(19.f, 19.f + i * 2), name, PANEL_TEXT);
       }
     }
     else {
       for (std::size_t i = 0; i < Lib::NUM_HIGH_SCORES; i++) {
         std::stringstream ssi;
         ssi << (i + 1) << ".";
-        lib.RenderText(Vec2f(4.f, 18.f + i), ssi.str(), PANEL_TEXT);
+        lib.RenderText(flvec2(4.f, 18.f + i), ssi.str(), PANEL_TEXT);
 
         int n = _selection != -1 ? _players - 1 :
             _specialSelection * Lib::PLAYERS + _players;
@@ -860,35 +860,35 @@ void z0Game::Render() const
           name = name.substr(0, Lib::MAX_NAME_LENGTH);
         }
 
-        lib.RenderText(Vec2f(7.f, 18.f + i), score, PANEL_TEXT);
-        lib.RenderText(Vec2f(19.f, 18.f + i), name, PANEL_TEXT);
+        lib.RenderText(flvec2(7.f, 18.f + i), score, PANEL_TEXT);
+        lib.RenderText(flvec2(19.f, 18.f + i), name, PANEL_TEXT);
       }
     }
   }
   // Pause menu
   //------------------------------
   else if (_state == STATE_PAUSE) {
-    RenderPanel(Vec2f(3.f, 3.f), Vec2f(15.f, 14.f));
+    RenderPanel(flvec2(3.f, 3.f), flvec2(15.f, 14.f));
 
-    lib.RenderText(Vec2f(4.f, 4.f), "PAUSED", PANEL_TEXT);
-    lib.RenderText(Vec2f(6.f, 8.f), "CONTINUE", PANEL_TEXT);
-    lib.RenderText(Vec2f(6.f, 10.f), "END GAME", PANEL_TEXT);
-    lib.RenderText(Vec2f(6.f, 12.f), "VOL.", PANEL_TEXT);
+    lib.RenderText(flvec2(4.f, 4.f), "PAUSED", PANEL_TEXT);
+    lib.RenderText(flvec2(6.f, 8.f), "CONTINUE", PANEL_TEXT);
+    lib.RenderText(flvec2(6.f, 10.f), "END GAME", PANEL_TEXT);
+    lib.RenderText(flvec2(6.f, 12.f), "VOL.", PANEL_TEXT);
     std::stringstream vol;
     int v = lib.LoadSettings()._volume.to_int();
     vol << " " << (v < 10 ? " " : "") << v;
-    lib.RenderText(Vec2f(10.f, 12.f), vol.str(), PANEL_TEXT);
+    lib.RenderText(flvec2(10.f, 12.f), vol.str(), PANEL_TEXT);
     if (_selection == 2 && lib.LoadSettings()._volume.to_int() > 0) {
-      lib.RenderText(Vec2f(5.f, 12.f), "<", PANEL_TRAN);
+      lib.RenderText(flvec2(5.f, 12.f), "<", PANEL_TRAN);
     }
     if (_selection == 2 && lib.LoadSettings()._volume.to_int() < 100) {
-      lib.RenderText(Vec2f(13.f, 12.f), ">", PANEL_TRAN);
+      lib.RenderText(flvec2(13.f, 12.f), ">", PANEL_TRAN);
     }
 
-    Vec2f low(float(4 * Lib::TEXT_WIDTH + 4),
-              float((8 + 2 * _selection) * Lib::TEXT_HEIGHT + 4));
-    Vec2f hi(float(5 * Lib::TEXT_WIDTH - 4),
-             float((9 + 2 * _selection) * Lib::TEXT_HEIGHT - 4));
+    flvec2 low(float(4 * Lib::TEXT_WIDTH + 4),
+               float((8 + 2 * _selection) * Lib::TEXT_HEIGHT + 4));
+    flvec2 hi(float(5 * Lib::TEXT_WIDTH - 4),
+              float((9 + 2 * _selection) * Lib::TEXT_HEIGHT - 4));
     lib.RenderRect(low, hi, PANEL_TEXT, 1);
   }
   // Score screen
@@ -901,20 +901,20 @@ void z0Game::Render() const
     if (IsHighScore()) {
       std::string chars = ALLOWED_CHARS;
 
-      RenderPanel(Vec2f(3.f, 20.f), Vec2f(28.f, 27.f));
-      lib.RenderText(Vec2f(4.f, 21.f), "It's a high score!", PANEL_TEXT);
-      lib.RenderText(Vec2f(4.f, 23.f),
+      RenderPanel(flvec2(3.f, 20.f), flvec2(28.f, 27.f));
+      lib.RenderText(flvec2(4.f, 21.f), "It's a high score!", PANEL_TEXT);
+      lib.RenderText(flvec2(4.f, 23.f),
                      _players == 1 ? "Enter name:" : "Enter team name:",
                      PANEL_TEXT);
-      lib.RenderText(Vec2f(6.f, 25.f), _enterName, PANEL_TEXT);
+      lib.RenderText(flvec2(6.f, 25.f), _enterName, PANEL_TEXT);
       if ((_enterTime / 16) % 2 && _enterName.length() < Lib::MAX_NAME_LENGTH) {
-        lib.RenderText(Vec2f(6.f + _enterName.length(), 25.f),
+        lib.RenderText(flvec2(6.f + _enterName.length(), 25.f),
                        chars.substr(_enterChar, 1), 0xbbbbbbff);
       }
-      Vec2f low(float(4 * Lib::TEXT_WIDTH + 4),
-                float((25 + 2 * _selection) * Lib::TEXT_HEIGHT + 4));
-      Vec2f hi(float(5 * Lib::TEXT_WIDTH - 4),
-               float((26 + 2 * _selection) * Lib::TEXT_HEIGHT - 4));
+      flvec2 low(float(4 * Lib::TEXT_WIDTH + 4),
+                 float((25 + 2 * _selection) * Lib::TEXT_HEIGHT + 4));
+      flvec2 hi(float(5 * Lib::TEXT_WIDTH - 4),
+                float((26 + 2 * _selection) * Lib::TEXT_HEIGHT - 4));
       lib.RenderRect(low, hi, PANEL_TEXT, 1);
     }
 
@@ -932,25 +932,25 @@ void z0Game::Render() const
         score = 1;
       }
 
-      RenderPanel(Vec2f(3.f, 3.f), Vec2f(37.f, b ? 10.f : 8.f));
+      RenderPanel(flvec2(3.f, 3.f), flvec2(37.f, b ? 10.f : 8.f));
       if (b) {
         std::stringstream ss;
         ss << (extraLives * 10) << "-second extra-life bonus!";
-        lib.RenderText(Vec2f(4.f, 4.f), ss.str(), PANEL_TEXT);
+        lib.RenderText(flvec2(4.f, 4.f), ss.str(), PANEL_TEXT);
       }
 
-      lib.RenderText(Vec2f(4.f, b ? 6.f : 4.f),
+      lib.RenderText(flvec2(4.f, b ? 6.f : 4.f),
                      "TIME ELAPSED: " + ConvertToTime(score), PANEL_TEXT);
       std::stringstream ss;
       ss << "BOSS DESTROY: " << _overmind->GetKilledBosses();
-      lib.RenderText(Vec2f(4.f, b ? 8.f : 6.f), ss.str(), PANEL_TEXT);
+      lib.RenderText(flvec2(4.f, b ? 8.f : 6.f), ss.str(), PANEL_TEXT);
       return;
     }
 
     // Score listing
     //------------------------------
-    RenderPanel(Vec2f(3.f, 3.f),
-                Vec2f(37.f, 8.f + 2 * _players + (_players > 1 ? 2 : 0)));
+    RenderPanel(flvec2(3.f, 3.f),
+                flvec2(37.f, 8.f + 2 * _players + (_players > 1 ? 2 : 0)));
 
     std::stringstream ss;
     ss << GetTotalScore();
@@ -958,7 +958,7 @@ void z0Game::Render() const
     if (score.length() > Lib::MAX_SCORE_LENGTH) {
       score = score.substr(0, Lib::MAX_SCORE_LENGTH);
     }
-    lib.RenderText(Vec2f(4.f, 4.f), "TOTAL SCORE: " + score, PANEL_TEXT);
+    lib.RenderText(flvec2(4.f, 4.f), "TOTAL SCORE: " + score, PANEL_TEXT);
 
     for (int32_t i = 0; i < _players; ++i) {
       std::stringstream sss;
@@ -976,8 +976,8 @@ void z0Game::Render() const
 
       std::stringstream ssp;
       ssp << "PLAYER " << (i + 1) << ":";
-      lib.RenderText(Vec2f(4.f, 8.f + 2 * i), ssp.str(), PANEL_TEXT);
-      lib.RenderText(Vec2f(14.f, 8.f + 2 * i), score,
+      lib.RenderText(flvec2(4.f, 8.f + 2 * i), ssp.str(), PANEL_TEXT);
+      lib.RenderText(flvec2(14.f, 8.f + 2 * i), score,
                      Player::GetPlayerColour(i));
     }
 
@@ -998,14 +998,14 @@ void z0Game::Render() const
       if (GetTotalScore() > 0) {
         std::stringstream s;
         s << "PLAYER " << (best + 1);
-        lib.RenderText(Vec2f(4.f, 8.f + 2 * _players), s.str(),
+        lib.RenderText(flvec2(4.f, 8.f + 2 * _players), s.str(),
                        Player::GetPlayerColour(best));
 
         std::string compliment = _compliments[_compliment];
-        lib.RenderText(Vec2f(12.f, 8.f + 2 * _players), compliment, PANEL_TEXT);
+        lib.RenderText(flvec2(12.f, 8.f + 2 * _players), compliment, PANEL_TEXT);
       }
       else {
-        lib.RenderText(Vec2f(4.f, 8.f + 2 * _players), "Oh dear!", PANEL_TEXT);
+        lib.RenderText(flvec2(4.f, 8.f + 2 * _players), "Oh dear!", PANEL_TEXT);
       }
     }
   }
@@ -1034,7 +1034,7 @@ void z0Game::NewGame(bool canFaceSecretBoss, bool bossMode, bool replay,
 
   Stars::clear();
   for (int32_t i = 0; i < _players; ++i) {
-    Vec2 v((1 + i) * Lib::WIDTH / (1 + _players), Lib::HEIGHT / 2);
+    vec2 v((1 + i) * Lib::WIDTH / (1 + _players), Lib::HEIGHT / 2);
     Player* p = new Player(v, i);
     AddShip(p);
     _playerList.push_back(p);
@@ -1105,7 +1105,7 @@ int z0Game::GetNonWallCount() const
   return _overmind->CountNonWallEnemies();
 }
 
-z0Game::ShipList z0Game::GetCollisionList(const Vec2& point, int category) const
+z0Game::ShipList z0Game::GetCollisionList(const vec2& point, int category) const
 {
   ShipList r;
   fixed x = point.x;
@@ -1130,7 +1130,7 @@ z0Game::ShipList z0Game::GetCollisionList(const Vec2& point, int category) const
   return r;
 }
 
-z0Game::ShipList z0Game::GetShipsInRadius(const Vec2& point, fixed radius) const
+z0Game::ShipList z0Game::GetShipsInRadius(const vec2& point, fixed radius) const
 {
   ShipList r;
   for (auto& ship : _ships) {
@@ -1150,7 +1150,7 @@ z0Game::ShipList z0Game::GetShips() const
   return r;
 }
 
-bool z0Game::AnyCollisionList(const Vec2& point, int category) const
+bool z0Game::AnyCollisionList(const vec2& point, int category) const
 {
   fixed x = point.x;
   fixed y = point.y;
@@ -1174,7 +1174,7 @@ bool z0Game::AnyCollisionList(const Vec2& point, int category) const
   return false;
 }
 
-Player* z0Game::GetNearestPlayer(const Vec2& point) const
+Player* z0Game::GetNearestPlayer(const vec2& point) const
 {
   Ship* r = 0;
   Ship* deadR = 0;
@@ -1217,10 +1217,10 @@ bool z0Game::SortShips(Ship* const& a, Ship* const& b)
 
 // UI layout
 //------------------------------
-void z0Game::RenderPanel(const Vec2f& low, const Vec2f& hi) const
+void z0Game::RenderPanel(const flvec2& low, const flvec2& hi) const
 {
-  Vec2f tlow(low.x * Lib::TEXT_WIDTH, low.y * Lib::TEXT_HEIGHT);
-  Vec2f  thi(hi.x * Lib::TEXT_WIDTH, hi.y * Lib::TEXT_HEIGHT);
+  flvec2 tlow(low.x * Lib::TEXT_WIDTH, low.y * Lib::TEXT_HEIGHT);
+  flvec2 thi(hi.x * Lib::TEXT_WIDTH, hi.y * Lib::TEXT_HEIGHT);
   GetLib().RenderRect(tlow, thi, PANEL_BACK);
   GetLib().RenderRect(tlow, thi, PANEL_TEXT, 4);
 }

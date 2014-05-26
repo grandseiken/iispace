@@ -13,7 +13,7 @@ public:
     BOMB,
   };
 
-  Powerup(const Vec2& position, type_t type);
+  Powerup(const vec2& position, type_t type);
   virtual ~Powerup() {}
 
   void Update() override;
@@ -27,8 +27,8 @@ public:
 private:
 
   type_t _type;
-  int _frame;
-  Vec2 _dir;
+  int32_t _frame;
+  vec2 _dir;
   bool _rotate;
   bool _first_frame;
 

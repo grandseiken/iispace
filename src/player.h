@@ -20,7 +20,7 @@ public:
 
   // Player ship
   //------------------------------
-  Player(const Vec2& position, int playerNumber);
+  Player(const vec2& position, int playerNumber);
   virtual ~Player();
 
   int GetPlayerNumber() const
@@ -111,7 +111,7 @@ private:
   int _magicShotTimer;
   bool _shield;
   bool _bomb;
-  Vec2 _tempTarget;
+  vec2 _tempTarget;
   int _deathCounter;
 
   static int _fireTimer;
@@ -127,8 +127,8 @@ private:
 class Shot : public Ship {
 public:
 
-  Shot(const Vec2& position, Player* player,
-       const Vec2& direction, bool magic = false);
+  Shot(const vec2& position, Player* player,
+       const vec2& direction, bool magic = false);
   virtual ~Shot() {}
 
   virtual void Update();
@@ -137,7 +137,7 @@ public:
 private:
 
   Player* _player;
-  Vec2 _velocity;
+  vec2 _velocity;
   bool _magic;
   bool _flash;
 

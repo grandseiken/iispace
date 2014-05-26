@@ -137,15 +137,15 @@ public:
   bool IsKeyReleased(Key k) const;
   bool IsKeyHeld(Key k) const;
 
-  Vec2 GetMoveVelocity(int32_t player) const;
-  Vec2 GetFireTarget(int32_t player, const Vec2& position) const;
+  vec2 GetMoveVelocity(int32_t player) const;
+  vec2 GetFireTarget(int32_t player, const vec2& position) const;
 
   // Output
   //------------------------------
   void ClearScreen() const;
-  void RenderLine(const Vec2f& a, const Vec2f& b, colour c) const;
-  void RenderText(const Vec2f& v, const std::string& text, colour c) const;
-  void RenderRect(const Vec2f& low, const Vec2f& hi,
+  void RenderLine(const flvec2& a, const flvec2& b, colour c) const;
+  void RenderText(const flvec2& v, const std::string& text, colour c) const;
+  void RenderRect(const flvec2& low, const flvec2& hi,
                   colour c, int lineWidth = 0) const;
   void Render() const;
 
@@ -160,7 +160,7 @@ public:
   //------------------------------
   void StartRecording(int32_t players, bool canFaceSecretBoss, bool isBossMode,
                       bool isHardMode, bool isFastMode, bool isWhatMode);
-  void Record(Vec2 velocity, Vec2 target, int keys);
+  void Record(vec2 velocity, const vec2& target, int keys);
   void EndRecording(const std::string& name, uint64_t score, int32_t players,
                     bool bossMode, bool hardMode, bool fastMode, bool whatMode);
 
@@ -168,8 +168,8 @@ public:
                bool hardMode, bool fastMode, bool whatMode);
 
   struct PlayerFrame {
-    Vec2 _velocity;
-    Vec2 _target;
+    vec2 _velocity;
+    vec2 _target;
     int _keys;
   };
   struct Recording {

@@ -20,7 +20,7 @@ int Player::_fireTimer;
 Lib::Recording Player::_replay;
 std::size_t Player::_replayFrame;
 
-Player::Player(const Vec2& position, int playerNumber)
+Player::Player(const vec2& position, int playerNumber)
   : Ship(position, false, true, false)
   , _playerNumber(playerNumber)
   , _score(0)
@@ -33,11 +33,11 @@ Player::Player(const Vec2& position, int playerNumber)
   , _bomb(false)
   , _deathCounter(0)
 {
-  AddShape(new Polygon(Vec2(), 16, 3, GetPlayerColour()));
-  AddShape(new Fill(Vec2(8, 0), 2, 2, GetPlayerColour()));
-  AddShape(new Fill(Vec2(8, 0), 1, 1, GetPlayerColour() & 0xffffff33));
-  AddShape(new Fill(Vec2(8, 0), 3, 3, GetPlayerColour() & 0xffffff33));
-  AddShape(new Polygon(Vec2(), 8, 3, GetPlayerColour(), fixed::pi));
+  AddShape(new Polygon(vec2(), 16, 3, GetPlayerColour()));
+  AddShape(new Fill(vec2(8, 0), 2, 2, GetPlayerColour()));
+  AddShape(new Fill(vec2(8, 0), 1, 1, GetPlayerColour() & 0xffffff33));
+  AddShape(new Fill(vec2(8, 0), 3, 3, GetPlayerColour() & 0xffffff33));
+  AddShape(new Polygon(vec2(), 8, 3, GetPlayerColour(), fixed::pi));
   _killQueue.clear();
   _shotSoundQueue.clear();
   _fireTimer = 0;
@@ -50,8 +50,8 @@ Player::~Player()
 void Player::Update()
 {
   Lib& lib = GetLib();
-  Vec2 velocity = lib.GetMoveVelocity(GetPlayerNumber());
-  Vec2 fireTarget = lib.GetFireTarget(GetPlayerNumber(), GetPosition());
+  vec2 velocity = lib.GetMoveVelocity(GetPlayerNumber());
+  vec2 fireTarget = lib.GetFireTarget(GetPlayerNumber(), GetPosition());
   int keys =
       int(lib.IsKeyHeld(GetPlayerNumber(), Lib::KEY_FIRE)) |
       (lib.IsKeyPressed(GetPlayerNumber(), Lib::KEY_BOMB) << 1);
@@ -65,7 +65,7 @@ void Player::Update()
       ++_replayFrame;
     }
     else {
-      velocity = Vec2();
+      velocity = vec2();
       fireTarget = _tempTarget;
       keys = 0;
     }
@@ -91,7 +91,7 @@ void Player::Update()
       if (GetLives() && _killQueue[0] == this) {
         _killQueue.erase(_killQueue.begin());
         _reviveTimer = REVIVE_TIME;
-        Vec2 v((1 + GetPlayerNumber()) * Lib::WIDTH / (1 + CountPlayers()),
+        vec2 v((1 + GetPlayerNumber()) * Lib::WIDTH / (1 + CountPlayers()),
                Lib::HEIGHT / 2);
         SetPosition(v);
         SubLife();
@@ -109,14 +109,14 @@ void Player::Update()
   }
 
   // Movement
-  Vec2 move = velocity;
+  vec2 move = velocity;
   if (move.length() > fixed::hundredth) {
     if (move.length() > 1) {
       move.normalise();
     }
     move *= SPEED;
 
-    Vec2 pos = GetPosition();
+    vec2 pos = GetPosition();
     pos += move;
 
     pos.x = std::max(fixed(0), std::min(fixed(Lib::WIDTH), pos.x));
@@ -135,10 +135,10 @@ void Player::Update()
     Explosion(GetPlayerColour(), 32);
     Explosion(0xffffffff, 48);
 
-    Vec2 t = GetPosition();
-    Vec2f tf = to_float(t);
+    vec2 t = GetPosition();
+    flvec2 tf = to_float(t);
     for (int i = 0; i < 64; ++i) {
-      Vec2 p;
+      vec2 p;
       p.set_polar(2 * i * fixed::pi / 64, BOMB_RADIUS);
       p += t;
       SetPosition(p);
@@ -167,7 +167,7 @@ void Player::Update()
 
   // Shots
   if (!_fireTimer && keys & 1) {
-    Vec2 v = fireTarget - GetPosition();
+    vec2 v = fireTarget - GetPosition();
     if (v.length() > 0) {
       Spawn(new Shot(GetPosition(), this, v, _magicShotTimer != 0));
       if (_magicShotTimer) {
@@ -212,10 +212,10 @@ void Player::Render() const
   int n = GetPlayerNumber();
 
   if (!_killTimer && (!IsWhatMode() || _reviveTimer > 0)) {
-    Vec2f t = to_float(_tempTarget);
+    flvec2 t = to_float(_tempTarget);
     if (t.x >= 0 && t.x <= Lib::WIDTH && t.y >= 0 && t.y <= Lib::HEIGHT) {
-      lib.RenderLine(t + Vec2f(0, 9), t - Vec2f(0, 8), GetPlayerColour());
-      lib.RenderLine(t + Vec2f(9, 1), t - Vec2f(8, -1), GetPlayerColour());
+      lib.RenderLine(t + flvec2(0, 9), t - flvec2(0, 8), GetPlayerColour());
+      lib.RenderLine(t + flvec2(9, 1), t - flvec2(8, -1), GetPlayerColour());
     }
     if (_reviveTimer % 2) {
       RenderWithColour(0xffffffff);
@@ -233,7 +233,7 @@ void Player::Render() const
   ss << _multiplier << "X";
   std::string s = ss.str();
 
-  Vec2f v;
+  flvec2 v;
   v.set(1.f, 1.f);
   if (n == 1) {
     v.set(Lib::WIDTH / Lib::TEXT_WIDTH - 1.f - s.length(), 1.f);
@@ -257,8 +257,8 @@ void Player::Render() const
     }
     v *= 16;
     lib.RenderRect(
-        v + Vec2f(5.f, 11.f - (10 * _magicShotTimer) / MAGICSHOT_COUNT),
-        v + Vec2f(9.f, 13.f), 0xffffffff, 2);
+        v + flvec2(5.f, 11.f - (10 * _magicShotTimer) / MAGICSHOT_COUNT),
+        v + flvec2(9.f, 13.f), 0xffffffff, 2);
   }
 
   std::stringstream sss;
@@ -366,7 +366,7 @@ void Player::ActivateMagicShield()
     _bomb = false;
   }
   _shield = true;
-  AddShape(new Polygon(Vec2(), 16, 10, 0xffffffff));
+  AddShape(new Polygon(vec2(), 16, 10, 0xffffffff));
 }
 
 void Player::ActivateBomb()
@@ -380,13 +380,13 @@ void Player::ActivateBomb()
     _shield = false;
   }
   _bomb = true;
-  AddShape(new Polystar(Vec2(-8, 0), 6, 5, 0xffffffff, fixed::pi));
+  AddShape(new Polystar(vec2(-8, 0), 6, 5, 0xffffffff, fixed::pi));
 }
 
 // Player projectiles
 //------------------------------
-Shot::Shot(const Vec2& position, Player* player,
-           const Vec2& direction, bool magic)
+Shot::Shot(const vec2& position, Player* player,
+           const vec2& direction, bool magic)
   : Ship(position)
   , _player(player)
   , _velocity(direction)
@@ -395,9 +395,9 @@ Shot::Shot(const Vec2& position, Player* player,
 {
   _velocity.normalise();
   _velocity *= Player::SHOT_SPEED;
-  AddShape(new Fill(Vec2(), 2, 2, _player->GetPlayerColour()));
-  AddShape(new Fill(Vec2(), 1, 1, _player->GetPlayerColour() & 0xffffff33));
-  AddShape(new Fill(Vec2(), 3, 3, _player->GetPlayerColour() & 0xffffff33));
+  AddShape(new Fill(vec2(), 2, 2, _player->GetPlayerColour()));
+  AddShape(new Fill(vec2(), 1, 1, _player->GetPlayerColour() & 0xffffff33));
+  AddShape(new Fill(vec2(), 3, 3, _player->GetPlayerColour() & 0xffffff33));
 }
 
 void Shot::Render() const

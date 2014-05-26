@@ -9,7 +9,7 @@ class Boss;
 class BigFollow : public Follow {
 public:
 
-  BigFollow(const Vec2& position, bool hasScore);
+  BigFollow(const vec2& position, bool hasScore);
   virtual ~BigFollow() {}
   virtual void OnDestroy(bool bomb);
 
@@ -24,7 +24,7 @@ private:
 class SBBossShot : public Enemy {
 public:
 
-  SBBossShot(const Vec2& position, const Vec2& velocity, colour c = 0x999999ff);
+  SBBossShot(const vec2& position, const vec2& velocity, colour c = 0x999999ff);
   virtual ~SBBossShot() {}
 
   virtual void Update();
@@ -36,7 +36,7 @@ public:
 
 protected:
 
-  Vec2 _dir;
+  vec2 _dir;
 
 };
 
@@ -45,14 +45,14 @@ protected:
 class TBossShot : public Enemy {
 public:
 
-  TBossShot(const Vec2& position, fixed angle);
+  TBossShot(const vec2& position, fixed angle);
   virtual ~TBossShot() {}
 
   virtual void Update();
 
 private:
 
-  Vec2 _dir;
+  vec2 _dir;
 
 };
 
@@ -71,7 +71,7 @@ public:
 
 private:
 
-  Vec2 _dir;
+  vec2 _dir;
 
 };
 
@@ -80,7 +80,7 @@ private:
 class GhostMine : public Enemy {
 public:
 
-  GhostMine(const Vec2& position, Boss* ghost);
+  GhostMine(const vec2& position, Boss* ghost);
   virtual ~GhostMine() {}
 
   virtual void Update();
@@ -100,7 +100,7 @@ public:
 
   static const fixed SPEED;
 
-  DeathRay(const Vec2& position);
+  DeathRay(const vec2& position);
   virtual ~DeathRay() {}
 
   virtual void Update();
@@ -125,10 +125,10 @@ private:
   bool _top;
   int _timer;
   bool _attacking;
-  Vec2 _dir;
+  vec2 _dir;
   int _start;
 
-  Vec2 _target;
+  vec2 _target;
   int _shots;
 
 };
@@ -139,7 +139,7 @@ class SnakeTail : public Enemy {
   friend class Snake;
 public:
 
-  SnakeTail(const Vec2& position, colour colour);
+  SnakeTail(const vec2& position, colour colour);
   virtual ~SnakeTail() {}
 
   virtual void Update();
@@ -159,8 +159,8 @@ private:
 class Snake : public Enemy {
 public:
 
-  Snake(const Vec2& position, colour colour,
-        const Vec2& dir = Vec2(), fixed rot = 0);
+  Snake(const vec2& position, colour colour,
+        const vec2& dir = vec2(), fixed rot = 0);
   virtual ~Snake() {}
 
   virtual void Update();
@@ -170,7 +170,7 @@ private:
 
   SnakeTail* _tail;
   int _timer;
-  Vec2 _dir;
+  vec2 _dir;
   int _count;
   colour _colour;
   bool _shotSnake;
@@ -183,7 +183,7 @@ private:
 class RainbowShot : public SBBossShot {
 public:
 
-  RainbowShot(const Vec2& position, const Vec2& velocity, Ship* boss);
+  RainbowShot(const vec2& position, const vec2& velocity, Ship* boss);
   virtual ~RainbowShot() {}
 
   virtual void Update();

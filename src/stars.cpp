@@ -1,7 +1,7 @@
 #include "stars.h"
 #include "lib.h"
 
-Vec2f Stars::_direction(0, 1);
+flvec2 Stars::_direction(0, 1);
 int32_t Stars::_star_rate = 0;
 std::vector<std::unique_ptr<Stars::data>> Stars::_stars;
 static const uint32_t TIMER = 500;
@@ -38,18 +38,18 @@ void Stars::render(Lib& lib)
     switch (star->type) {
     case DOT_STAR:
     case FAR_STAR:
-      lib.RenderRect(star->position - Vec2f(1, 1),
-                     star->position + Vec2f(1, 1), star->colour);
+      lib.RenderRect(star->position - flvec2(1, 1),
+                     star->position + flvec2(1, 1), star->colour);
       break;
 
     case BIG_STAR:
-      lib.RenderRect(star->position - Vec2f(2, 2),
-                     star->position + Vec2f(2, 2), star->colour);
+      lib.RenderRect(star->position - flvec2(2, 2),
+                     star->position + flvec2(2, 2), star->colour);
       break;
 
     case PLANET:
       for (int32_t i = 0; i < 8; i++) {
-        Vec2f a, b;
+        flvec2 a, b;
         a.set_polar(i * M_PIf / 4, star->size);
         b.set_polar((i + 1) * M_PIf / 4, star->size);
         lib.RenderLine(star->position + a, star->position + b, star->colour);

@@ -1,7 +1,7 @@
 #include "powerup.h"
 #include "player.h"
 
-Powerup::Powerup(const Vec2& position, type_t type)
+Powerup::Powerup(const vec2& position, type_t type)
   : Ship(position)
   , _type(type)
   , _frame(0)
@@ -9,24 +9,24 @@ Powerup::Powerup(const Vec2& position, type_t type)
   , _rotate(false)
   , _first_frame(true)
 {
-  AddShape(new Polygon(Vec2(), 13, 5, 0, fixed::pi / 2, 0));
-  AddShape(new Polygon(Vec2(), 9, 5, 0, fixed::pi / 2, 0));
+  AddShape(new Polygon(vec2(), 13, 5, 0, fixed::pi / 2, 0));
+  AddShape(new Polygon(vec2(), 9, 5, 0, fixed::pi / 2, 0));
 
   switch (type) {
   case EXTRA_LIFE:
-    AddShape(new Polygon(Vec2(), 8, 3, 0xffffffff, fixed::pi / 2));
+    AddShape(new Polygon(vec2(), 8, 3, 0xffffffff, fixed::pi / 2));
     break;
 
   case MAGIC_SHOTS:
-    AddShape(new Fill(Vec2(), 3, 3, 0xffffffff));
+    AddShape(new Fill(vec2(), 3, 3, 0xffffffff));
     break;
 
   case SHIELD:
-    AddShape(new Polygon(Vec2(), 11, 5, 0xffffffff, fixed::pi / 2));
+    AddShape(new Polygon(vec2(), 11, 5, 0xffffffff, fixed::pi / 2));
     break;
 
   case BOMB:
-    AddShape(new Polystar(Vec2(), 11, 10, 0xffffffff, fixed::pi / 2));
+    AddShape(new Polystar(vec2(), 11, 10, 0xffffffff, fixed::pi / 2));
     break;
   }
 }
@@ -55,7 +55,7 @@ void Powerup::Update()
 
   Player* p = GetNearestPlayer();
   bool alive = !p->IsKilled();
-  Vec2 pv = p->GetPosition() - GetPosition();
+  vec2 pv = p->GetPosition() - GetPosition();
   if (pv.length() <= 40 && alive) {
     _dir = pv;
   }
@@ -97,7 +97,7 @@ void Powerup::Damage(int damage, bool magic, Player* source)
 
   int r = 5 + z::rand_int(5);
   for (int i = 0; i < r; i++) {
-    Vec2 dir;
+    vec2 dir;
     dir.set_polar(z::rand_fixed() * 2 * fixed::pi, 6);
     Spawn(new Particle(to_float(GetPosition()), 0xffffffff,
                        to_float(dir), 4 + z::rand_int(8)));

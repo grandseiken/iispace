@@ -243,7 +243,7 @@ void Overmind::SpawnPowerup()
   }
 
   int r = z::rand_int(4);
-  Vec2 v;
+  vec2 v;
 
   if (r == 0) {
     v.set(-Lib::WIDTH, Lib::HEIGHT / 2);
@@ -288,7 +288,7 @@ void Overmind::SpawnBossReward()
 {
   _tz0 = &_z0;
   int r = z::rand_int(4);
-  Vec2 v;
+  vec2 v;
 
   if (r == 0) {
     v.set(-Lib::WIDTH / 4, Lib::HEIGHT / 2);
@@ -422,7 +422,7 @@ void Overmind::Spawn(Ship* ship)
   }
 }
 
-Vec2 Overmind::SpawnPoint(bool top, int row, int num, int div)
+vec2 Overmind::SpawnPoint(bool top, int row, int num, int div)
 {
   if (div < 2) {
     div = 2;
@@ -436,7 +436,7 @@ Vec2 Overmind::SpawnPoint(bool top, int row, int num, int div)
   fixed _x = fixed(top ? num : div - 1 - num) * Lib::WIDTH / fixed(div - 1);
   fixed _y = top ? -(row + 1) * (fixed::hundredth * 16) * Lib::HEIGHT :
       Lib::HEIGHT * (1 + (row + 1) * (fixed::hundredth * 16));
-  return Vec2(_x, _y);
+  return vec2(_x, _y);
 }
 
 // Spawn logic
