@@ -10,8 +10,7 @@ class BigFollow : public Follow {
 public:
 
   BigFollow(const vec2& position, bool hasScore);
-  virtual ~BigFollow() {}
-  virtual void OnDestroy(bool bomb);
+  void OnDestroy(bool bomb) override;
 
 private:
 
@@ -25,9 +24,7 @@ class SBBossShot : public Enemy {
 public:
 
   SBBossShot(const vec2& position, const vec2& velocity, colour c = 0x999999ff);
-  virtual ~SBBossShot() {}
-
-  virtual void Update();
+  void Update() override;
 
 protected:
 
@@ -41,9 +38,7 @@ class TBossShot : public Enemy {
 public:
 
   TBossShot(const vec2& position, fixed angle);
-  virtual ~TBossShot() {}
-
-  virtual void Update();
+  void Update() override;
 
 private:
 
@@ -60,9 +55,7 @@ public:
 
   GhostWall(bool swap, bool noGap, bool ignored);
   GhostWall(bool swap, bool swapGap);
-  virtual ~GhostWall() {}
-
-  virtual void Update();
+  void Update() override;
 
 private:
 
@@ -76,10 +69,8 @@ class GhostMine : public Enemy {
 public:
 
   GhostMine(const vec2& position, Boss* ghost);
-  virtual ~GhostMine() {}
-
-  virtual void Update();
-  virtual void Render() const;
+  void Update() override;
+  void Render() const override;
 
 private:
 
@@ -96,9 +87,7 @@ public:
   static const fixed SPEED;
 
   DeathRay(const vec2& position);
-  virtual ~DeathRay() {}
-
-  virtual void Update();
+  void Update() override;
 
 };
 
@@ -109,10 +98,8 @@ class DeathArm : public Enemy {
 public:
 
   DeathArm(DeathRayBoss* boss, bool top, int hp);
-  virtual ~DeathArm() {}
-
-  virtual void Update();
-  virtual void OnDestroy(bool bomb);
+  void Update() override;
+  void OnDestroy(bool bomb) override;
 
 private:
 
@@ -135,10 +122,8 @@ class SnakeTail : public Enemy {
 public:
 
   SnakeTail(const vec2& position, colour colour);
-  virtual ~SnakeTail() {}
-
-  virtual void Update();
-  virtual void OnDestroy(bool bomb);
+  void Update() override;
+  void OnDestroy(bool bomb) override;
 
 private:
 
@@ -156,10 +141,8 @@ public:
 
   Snake(const vec2& position, colour colour,
         const vec2& dir = vec2(), fixed rot = 0);
-  virtual ~Snake() {}
-
-  virtual void Update();
-  virtual void OnDestroy(bool bomb);
+  void Update() override;
+  void OnDestroy(bool bomb) override;
 
 private:
 
@@ -179,9 +162,7 @@ class RainbowShot : public SBBossShot {
 public:
 
   RainbowShot(const vec2& position, const vec2& velocity, Ship* boss);
-  virtual ~RainbowShot() {}
-
-  virtual void Update();
+  void Update() override;
 
 private:
 

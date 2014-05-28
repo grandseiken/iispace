@@ -22,7 +22,7 @@ public:
   // Player ship
   //------------------------------
   Player(const vec2& position, int playerNumber);
-  virtual ~Player();
+  ~Player() override;
 
   int GetPlayerNumber() const
   {
@@ -34,9 +34,9 @@ public:
 
   // Player behaviour
   //------------------------------
-  virtual void Update();
-  virtual void Render() const;
-  virtual void Damage();
+  void Update() override;
+  void Render() const override;
+  void Damage();
 
   void ActivateMagicShots();
   void ActivateMagicShield();
@@ -110,10 +110,10 @@ public:
 
   Shot(const vec2& position, Player* player,
        const vec2& direction, bool magic = false);
-  virtual ~Shot() {}
+  ~Shot() override {}
 
-  virtual void Update();
-  virtual void Render() const;
+  void Update() override;
+  void Render() const override;
 
 private:
 

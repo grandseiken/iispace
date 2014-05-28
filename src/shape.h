@@ -13,7 +13,6 @@ public:
     : _centre(centre)
     , _colour(colour)
     , _category(category) {}
-
   virtual ~Shape() {}
 
   const vec2& GetCentre() const
@@ -102,29 +101,29 @@ public:
     : Shape(centre, colour, category)
     , _rotation(rotation) {}
 
-  virtual ~RotateShape() {}
+  ~RotateShape() override {}
 
-  virtual fixed rotation() const
+  fixed rotation() const override
   {
     return _rotation;
   }
 
-  virtual void set_rotation(fixed rotation)
+  void set_rotation(fixed rotation) override
   {
     _rotation =
         rotation > 2 * fixed::pi ? rotation - 2 * fixed::pi :
         rotation < 0 ? rotation + 2 * fixed::pi : rotation;
   }
 
-  virtual vec2 ConvertPoint(
-      const vec2& position, fixed rot, const vec2& v) const
+  vec2 ConvertPoint(
+      const vec2& position, fixed rot, const vec2& v) const override
   {
     vec2 a = v; a.rotate(rotation());
     return Shape::ConvertPoint(position, rot, a);
   }
 
-  virtual flvec2 ConvertPointf(
-      const flvec2& position, float rot, const flvec2& v) const
+  flvec2 ConvertPointf(
+      const flvec2& position, float rot, const flvec2& v) const override
   {
     flvec2 a = v; a.rotate(rotation().to_float());
     return Shape::ConvertPointf(position, rot, a);
@@ -132,7 +131,7 @@ public:
 
 private:
 
-  virtual bool CheckLocalPoint(const vec2& v) const
+  bool CheckLocalPoint(const vec2& v) const override
   {
     vec2 a = v; a.rotate(-rotation());
     return CheckRotatedPoint(a);
@@ -155,7 +154,7 @@ public:
     , _width(width)
     , _height(height) {}
 
-  virtual ~Fill() {}
+  ~Fill() override {}
 
   fixed GetWidth() const
   {
@@ -177,8 +176,8 @@ public:
     _height = height;
   }
 
-  virtual void Render(
-      Lib& lib, const flvec2& position, float rotation, colour colour = 0) const
+  void Render(Lib& lib, const flvec2& position, float rotation,
+              colour colour = 0) const override
   {
     flvec2 c = ConvertPointf(position, rotation, flvec2());
     flvec2 wh = flvec2(GetWidth().to_float(), GetHeight().to_float());
@@ -189,7 +188,7 @@ public:
 
 private:
 
-  virtual bool CheckLocalPoint(const vec2& v) const
+  bool CheckLocalPoint(const vec2& v) const override
   {
     return v.x.abs() < _width && v.y.abs() < _height;
   }
@@ -210,7 +209,7 @@ public:
     , _a(a)
     , _b(b) {}
 
-  virtual ~Line() {}
+  ~Line() override {}
 
   vec2 GetA() const
   {
@@ -232,8 +231,8 @@ public:
     _b = b;
   }
 
-  virtual void Render(Lib& lib, const flvec2& position, float rotation,
-                      colour colour = 0) const
+  void Render(Lib& lib, const flvec2& position, float rotation,
+              colour colour = 0) const override
   {
     flvec2 a = ConvertPointf(position, rotation, to_float(_a));
     flvec2 b = ConvertPointf(position, rotation, to_float(_b));
@@ -242,7 +241,7 @@ public:
 
 private:
 
-  virtual bool CheckRotatedPoint(const vec2& v) const
+  bool CheckRotatedPoint(const vec2& v) const override
   {
     return false;
   }
@@ -263,7 +262,7 @@ public:
     , _width(width)
     , _height(height) {}
 
-  virtual ~Box() {}
+  ~Box() override {}
 
   fixed GetWidth() const
   {
@@ -285,8 +284,8 @@ public:
     _height = height;
   }
 
-  virtual void Render(
-      Lib& lib, const flvec2& position, float rotation, colour colour = 0) const
+  void Render(Lib& lib, const flvec2& position, float rotation,
+              colour colour = 0) const override
   {
     float w = GetWidth().to_float();
     float h = GetHeight().to_float();
@@ -304,7 +303,7 @@ public:
 
 private:
 
-  virtual bool CheckRotatedPoint(const vec2& v) const
+  bool CheckRotatedPoint(const vec2& v) const override
   {
     return v.x.abs() < _width && v.y.abs() < _height;
   }
@@ -325,7 +324,7 @@ public:
     , _radius(radius)
     , _sides(sides) {}
 
-  virtual ~Polygon() {}
+  ~Polygon() override {}
 
   fixed GetRadius() const
   {
@@ -347,8 +346,8 @@ public:
     _sides = sides;
   }
 
-  virtual void Render(
-      Lib& lib, const flvec2& position, float rotation, colour colour = 0) const
+  void Render(Lib& lib, const flvec2& position, float rotation,
+              colour colour = 0) const override
   {
     if (GetSides() < 2) {
       return;
@@ -366,7 +365,7 @@ public:
 
 private:
 
-  virtual bool CheckRotatedPoint(const vec2& v) const
+  bool CheckRotatedPoint(const vec2& v) const override
   {
     return v.length() < GetRadius();
   }
@@ -388,7 +387,7 @@ public:
     , _sides(sides)
     , _segments(segments) {}
 
-  virtual ~PolyArc() {}
+  ~PolyArc() override {}
 
   fixed GetRadius() const
   {
@@ -420,8 +419,8 @@ public:
     _segments = segments;
   }
 
-  virtual void Render(
-      Lib& lib, const flvec2& position, float rotation, colour colour = 0) const
+  void Render(Lib& lib, const flvec2& position, float rotation,
+              colour colour = 0) const override
   {
     if (GetSides() < 2) {
       return;
@@ -439,7 +438,7 @@ public:
 
 private:
 
-  virtual bool CheckRotatedPoint(const vec2& v) const
+  bool CheckRotatedPoint(const vec2& v) const override
   {
     fixed angle = v.angle();
     fixed len = v.length();
@@ -462,10 +461,10 @@ public:
            colour colour, fixed rotation = 0, int category = 0)
     : Polygon(centre, radius, sides, colour, rotation, category) {}
 
-  virtual ~Polygram() {}
+  ~Polygram() override {}
 
-  virtual void Render(
-      Lib& lib, const flvec2& position, float rotation, colour colour = 0) const
+  void Render(Lib& lib, const flvec2& position, float rotation,
+              colour colour = 0) const override
   {
     if (GetSides() < 2) {
       return;
@@ -499,10 +498,10 @@ public:
            colour colour, fixed rotation = 0, int category = 0)
     : Polygon(centre, radius, sides, colour, rotation, category) {}
 
-  virtual ~Polystar() {}
+  ~Polystar() override {}
 
-  virtual void Render(
-      Lib& lib, const flvec2& position, float rotation, colour colour = 0) const
+  void Render(Lib& lib, const flvec2& position, float rotation,
+              colour colour = 0) const override
   {
     if (GetSides() < 2) {
       return;
@@ -532,7 +531,7 @@ public:
     SetColour(colour);
   }
 
-  virtual ~CompoundShape()
+  ~CompoundShape() override
   {
     for (unsigned int i = 0; i < _children.size(); i++) {
       delete _children[i];
@@ -552,8 +551,8 @@ public:
     _children.clear();
   }
 
-  virtual void Render(
-      Lib& lib, const flvec2& position, float rot, colour colour = 0) const
+  void Render(Lib& lib, const flvec2& position, float rot,
+              colour colour = 0) const override
   {
     flvec2 c = ConvertPointf(position, rot, flvec2());
     for (unsigned int i = 0; i < _children.size(); i++) {
@@ -573,7 +572,7 @@ public:
 
 private:
 
-  virtual bool CheckRotatedPoint(const vec2& v) const
+  bool CheckRotatedPoint(const vec2& v) const override
   {
     for (unsigned int i = 0; i < _children.size(); i++) {
       if (_children[i]->CheckPoint(v)) {

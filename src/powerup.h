@@ -14,8 +14,6 @@ public:
   };
 
   Powerup(const vec2& position, type_t type);
-  virtual ~Powerup() {}
-
   void Update() override;
   void Damage(int damage, bool magic, Player* source) override;
 

@@ -154,7 +154,7 @@ public:
   //------------------------------
   virtual void Update() = 0;
   virtual void Render() const;
-  // Player can be 0
+  // Player can be null
   virtual void Damage(int32_t damage, bool magic, Player* source) {}
 
 protected:

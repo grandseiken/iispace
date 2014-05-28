@@ -14,8 +14,6 @@ public:
   Boss(const vec2& position, z0Game::boss_list boss,
        int hp, int players, int cycle = 0, bool explodeOnDamage = true);
 
-  virtual ~Boss() {}
-
   void SetKilled()
   {
     z0().set_boss_killed(_flag);
@@ -55,8 +53,8 @@ public:
 
   // Generic behaviour
   //------------------------------
-  virtual void Damage(int damage, bool magic, Player* source);
-  virtual void Render() const;
+  void Damage(int damage, bool magic, Player* source) override;
+  void Render() const override;
   void Render(bool hpBar) const;
   virtual int GetDamage(int damage, bool magic) = 0;
   virtual void OnDestroy();
@@ -94,11 +92,10 @@ public:
   static const int ATTACK_TIME;
 
   BigSquareBoss(int players, int cycle);
-  virtual ~BigSquareBoss() {}
 
-  virtual void Update();
-  virtual void Render() const;
-  virtual int GetDamage(int damage, bool magic);
+  void Update() override;
+  void Render() const override;
+  int GetDamage(int damage, bool magic) override;
 
 private:
 
@@ -125,10 +122,9 @@ public:
   static const fixed SPEED;
 
   ShieldBombBoss(int players, int cycle);
-  virtual ~ShieldBombBoss() {}
 
-  virtual void Update();
-  virtual int GetDamage(int damage, bool magic);
+  void Update() override;
+  int GetDamage(int damage, bool magic) override;
 
 private:
 
@@ -154,12 +150,11 @@ public:
 
   ChaserBoss(int players, int cycle, int split = 0,
              const vec2& position = vec2(), int time = TIMER, int stagger = 0);
-  virtual ~ChaserBoss() {}
 
-  virtual void Update();
-  virtual void Render() const;
-  virtual int  GetDamage(int damage, bool magic);
-  virtual void OnDestroy();
+  void Update() override;
+  void Render() const override;
+  int GetDamage(int damage, bool magic) override;
+  void OnDestroy() override;
 
   static bool _hasCounted;
 
@@ -191,11 +186,10 @@ public:
   static const int TIMER;
 
   TractorBoss(int players, int cycle);
-  virtual ~TractorBoss() {}
 
-  virtual void Update();
-  virtual void Render() const;
-  virtual int GetDamage(int damage, bool magic);
+  void Update() override;
+  void Render() const override;
+  int GetDamage(int damage, bool magic) override;
 
 private:
 
@@ -228,11 +222,10 @@ public:
   static const int ATTACK_TIME;
 
   GhostBoss(int players, int cycle);
-  virtual ~GhostBoss() {}
 
-  virtual void Update();
-  virtual void Render() const;
-  virtual int GetDamage(int damage, bool magic);
+  void Update() override;
+  void Render() const override;
+  int GetDamage(int damage, bool magic) override;
 
 private:
 
@@ -266,11 +259,10 @@ public:
   static const fixed SPEED;
 
   DeathRayBoss(int players, int cycle);
-  virtual ~DeathRayBoss() {}
 
-  virtual void Update();
-  virtual void Render() const;
-  virtual int GetDamage(int damage, bool magic);
+  void Update() override;
+  void Render() const override;
+  int GetDamage(int damage, bool magic) override;
 
   void OnArmDeath(Ship* arm);
 
@@ -300,12 +292,11 @@ public:
 
   SuperBossArc(const vec2& position, int players, int cycle,
                int i, Ship* boss, int timer = 0);
-  virtual ~SuperBossArc() {}
 
-  virtual void Update();
-  virtual int GetDamage(int damage, bool magic);
-  virtual void OnDestroy();
-  virtual void Render() const;
+  void Update() override;
+  int GetDamage(int damage, bool magic) override;
+  void OnDestroy() override;
+  void Render() const override;
 
   int GetTimer() const
   {
@@ -336,11 +327,10 @@ public:
   static const int ARC_HP;
 
   SuperBoss(int players, int cycle);
-  virtual ~SuperBoss() {}
 
-  virtual void Update();
-  virtual int GetDamage(int damage, bool magic);
-  virtual void OnDestroy();
+  void Update() override;
+  int GetDamage(int damage, bool magic) override;
+  void OnDestroy() override;
 
 private:
 
