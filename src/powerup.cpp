@@ -2,44 +2,44 @@
 #include "player.h"
 
 Powerup::Powerup(const vec2& position, type_t type)
-  : Ship(position, Ship::SHIP_POWERUP)
+  : Ship(position, SHIP_POWERUP)
   , _type(type)
   , _frame(0)
   , _dir(0, 1)
   , _rotate(false)
   , _first_frame(true)
 {
-  AddShape(new Polygon(vec2(), 13, 5, 0, fixed::pi / 2, 0));
-  AddShape(new Polygon(vec2(), 9, 5, 0, fixed::pi / 2, 0));
+  add_shape(new Polygon(vec2(), 13, 5, 0, fixed::pi / 2, 0));
+  add_shape(new Polygon(vec2(), 9, 5, 0, fixed::pi / 2, 0));
 
   switch (type) {
   case EXTRA_LIFE:
-    AddShape(new Polygon(vec2(), 8, 3, 0xffffffff, fixed::pi / 2));
+    add_shape(new Polygon(vec2(), 8, 3, 0xffffffff, fixed::pi / 2));
     break;
 
   case MAGIC_SHOTS:
-    AddShape(new Fill(vec2(), 3, 3, 0xffffffff));
+    add_shape(new Fill(vec2(), 3, 3, 0xffffffff));
     break;
 
   case SHIELD:
-    AddShape(new Polygon(vec2(), 11, 5, 0xffffffff, fixed::pi / 2));
+    add_shape(new Polygon(vec2(), 11, 5, 0xffffffff, fixed::pi / 2));
     break;
 
   case BOMB:
-    AddShape(new Polystar(vec2(), 11, 10, 0xffffffff, fixed::pi / 2));
+    add_shape(new Polystar(vec2(), 11, 10, 0xffffffff, fixed::pi / 2));
     break;
   }
 }
 
 void Powerup::Update()
 {
-  GetShape(0).SetColour(Player::GetPlayerColour(_frame / 2));
+  get_shape(0).SetColour(Player::GetPlayerColour(_frame / 2));
   _frame = (_frame + 1) % (Lib::PLAYERS * 2);
-  GetShape(1).SetColour(Player::GetPlayerColour(_frame / 2));
+  get_shape(1).SetColour(Player::GetPlayerColour(_frame / 2));
 
   static const int32_t rotate_time = 100;
-  if (!IsOnScreen()) {
-    _dir = GetScreenCentre() - GetPosition();
+  if (!is_on_screen()) {
+    _dir = get_screen_centre() - position();
   }
   else {
     if (_first_frame) {
@@ -53,16 +53,16 @@ void Powerup::Update()
   }
   _first_frame = false;
 
-  Player* p = GetNearestPlayer();
+  Player* p = nearest_player();
   bool alive = !p->IsKilled();
-  vec2 pv = p->GetPosition() - GetPosition();
+  vec2 pv = p->position() - position();
   if (pv.length() <= 40 && alive) {
     _dir = pv;
   }
   _dir.normalise();
 
   static const fixed speed = 1;
-  Move(_dir * speed * ((pv.length() <= 40) ? 3 : 1));
+  move(_dir * speed * ((pv.length() <= 40) ? 3 : 1));
   if (pv.length() <= 10 && alive) {
     Damage(1, false, (Player*) p);
   }
@@ -73,33 +73,33 @@ void Powerup::Damage(int damage, bool magic, Player* source)
   if (source) {
     switch (_type) {
     case EXTRA_LIFE:
-      AddLife();
-      PlaySound(Lib::SOUND_POWERUP_LIFE);
+      z0().add_life();
+      play_sound(Lib::SOUND_POWERUP_LIFE);
       break;
 
     case MAGIC_SHOTS:
       source->ActivateMagicShots();
-      PlaySound(Lib::SOUND_POWERUP_OTHER);
+      play_sound(Lib::SOUND_POWERUP_OTHER);
       break;
 
     case SHIELD:
       source->ActivateMagicShield();
-      PlaySound(Lib::SOUND_POWERUP_OTHER);
+      play_sound(Lib::SOUND_POWERUP_OTHER);
       break;
 
     case BOMB:
       source->ActivateBomb();
-      PlaySound(Lib::SOUND_POWERUP_OTHER);
+      play_sound(Lib::SOUND_POWERUP_OTHER);
       break;
     }
-    GetLib().Rumble(source->GetPlayerNumber(), 6);
+    lib().Rumble(source->GetPlayerNumber(), 6);
   }
 
   int r = 5 + z::rand_int(5);
   for (int i = 0; i < r; i++) {
     vec2 dir;
     dir.set_polar(z::rand_fixed() * 2 * fixed::pi, 6);
-    Spawn(new Particle(to_float(GetPosition()), 0xffffffff,
+    spawn(new Particle(to_float(position()), 0xffffffff,
                        to_float(dir), 4 + z::rand_int(8)));
   }
   destroy();

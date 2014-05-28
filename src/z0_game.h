@@ -51,7 +51,7 @@ public:
   void Update();
   void Render() const;
 
-  Lib& GetLib() const
+  Lib& lib() const
   {
     return _lib;
   }
@@ -60,47 +60,52 @@ public:
   //------------------------------
   void AddShip(Ship* ship);
   void AddParticle(Particle* particle);
-  int GetNonWallCount() const;
-  ShipList GetCollisionList(const vec2& point, int category) const;
-  ShipList GetShipsInRadius(const vec2& point, fixed radius) const;
-  ShipList GetShips() const;
-  bool AnyCollisionList(const vec2& point, int category) const;
+  int32_t get_non_wall_count() const;
+
+  ShipList all_ships(int32_t ship_mask = 0) const;
+  ShipList ships_in_radius(const vec2& point, fixed radius,
+                           int32_t ship_mask = 0) const;
+  ShipList collision_list(const vec2& point, int32_t category) const;
+  bool any_collision(const vec2& point, int32_t category) const;
 
   // Players
   //------------------------------
-  int32_t CountPlayers() const
+  int32_t count_players() const
   {
     return _players;
   }
 
-  Player* GetNearestPlayer(const vec2& point) const;
+  int32_t alive_players() const;
+  int32_t killed_players() const;
 
-  ShipList GetPlayers() const
+  Player* nearest_player(const vec2& point) const;
+
+  ShipList get_players() const
   {
     return _playerList;
   }
 
-  bool IsBossMode() const
+  bool is_boss_mode() const
   {
     return _bossMode;
   }
 
-  bool IsHardMode() const
+  bool is_hard_mode() const
   {
     return _hardMode;
   }
 
-  bool IsFastMode() const
+  bool is_fast_mode() const
   {
     return _fastMode;
   }
 
-  bool IsWhatMode() const
+  bool is_what_mode() const
   {
     return _whatMode;
   }
 
-  void SetBossKilled(BossList boss);
+  void set_boss_killed(BossList boss);
 
   void RenderHPBar(float fill)
   {
@@ -109,19 +114,19 @@ public:
 
   // Lives
   //------------------------------
-  void AddLife()
+  void add_life()
   {
     _lives++;
   }
 
-  void SubLife()
+  void sub_life()
   {
     if (_lives) {
       _lives--;
     }
   }
 
-  int32_t GetLives() const
+  int32_t get_lives() const
   {
     return _lives;
   }

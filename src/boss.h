@@ -18,7 +18,7 @@ public:
 
   void SetKilled()
   {
-    SetBossKilled(_flag);
+    z0().set_boss_killed(_flag);
   }
 
   long GetScore()

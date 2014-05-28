@@ -75,13 +75,13 @@ void Overmind::Reset(bool canFaceSecretBoss)
   _bossesToGo = 0;
   _wavesTotal = 0;
 
-  if (_z0.IsBossMode()) {
+  if (_z0.is_boss_mode()) {
     _power = 0;
     _timer = 0;
     return;
   }
-  _power = INITIAL_POWER + 2 - _z0.CountPlayers() * 2;
-  if (_z0.IsHardMode()) {
+  _power = INITIAL_POWER + 2 - _z0.count_players() * 2;
+  if (_z0.is_hard_mode()) {
     _power += 20;
     _wavesTotal = 15;
   }
@@ -102,12 +102,12 @@ void Overmind::Update()
   ++_elapsedTime;
   Stars::update();
 
-  if (_z0.IsBossMode()) {
+  if (_z0.is_boss_mode()) {
     if (_count <= 0) {
       Stars::change();
       if (_bossModBosses < 6) {
         if (_bossModBosses)
-        for (int32_t i = 0; i < _z0.CountPlayers(); ++i) {
+        for (int32_t i = 0; i < _z0.count_players(); ++i) {
           SpawnBossReward();
         }
         BossModeBoss();
@@ -130,14 +130,14 @@ void Overmind::Update()
   }
 
   int bossCycles = _bossModFights;
-  int triggerStage = _groupsMod + bossCycles + 2 * (_z0.IsHardMode() ? 1 : 0);
+  int triggerStage = _groupsMod + bossCycles + 2 * (_z0.is_hard_mode() ? 1 : 0);
   int triggerVal = INITIAL_TRIGGERVAL;
   int i = 0;
   while (triggerStage > 0) {
     if (i < 2) {
       triggerVal += 4;
     }
-    else if (i < 7 - _z0.CountPlayers()) {
+    else if (i < 7 - _z0.count_players()) {
       triggerVal += 3;
     }
     else {
@@ -165,7 +165,7 @@ void Overmind::Update()
       if (_bossesToGo <= 0) {
         SpawnBossReward();
         ++_bossModFights;
-        _power += 2 - 2 * _z0.CountPlayers();
+        _power += 2 - 2 * _z0.count_players();
         _bossRestTimer = BOSS_REST_TIME;
         _bossesToGo = 0;
       }
@@ -197,7 +197,7 @@ void Overmind::Update()
       _levelsMod = 0;
       _groupsMod++;
     }
-    if (_groupsMod >= BASE_GROUPS_PER_BOSS + _z0.CountPlayers()) {
+    if (_groupsMod >= BASE_GROUPS_PER_BOSS + _z0.count_players()) {
       _groupsMod = 0;
       _isBossNext = true;
       _bossesToGo = _bossModFights >= 4 ? 3 : _bossModFights >= 2 ? 2 : 1;
@@ -207,16 +207,16 @@ void Overmind::Update()
 
 void Overmind::OnEnemyDestroy(const Ship& ship)
 {
-  _count -= ship.GetEnemyValue();
-  if (!ship.is_wall()) {
+  _count -= ship.enemy_value();
+  if (!(ship.type() & Ship::SHIP_WALL)) {
     _nonWallCount--;
   }
 }
 
 void Overmind::OnEnemyCreate(const Ship& ship)
 {
-  _count += ship.GetEnemyValue();
-  if (!ship.is_wall()) {
+  _count += ship.enemy_value();
+  if (!(ship.type() & Ship::SHIP_WALL)) {
     _nonWallCount++;
   }
 }
@@ -225,15 +225,8 @@ void Overmind::OnEnemyCreate(const Ship& ship)
 //------------------------------
 void Overmind::SpawnPowerup()
 {
-  z0Game::ShipList existing = _z0.GetShips();
-  int count = 0;
-  for (unsigned int i = 0; i < existing.size(); i++) {
-    if (existing[i]->is_powerup()) {
-      count++;
-    }
-    if (count >= 4) {
-      return;
-    }
+  if (_z0.all_ships(Ship::SHIP_POWERUP).size() >= 4) {
+    return;
   }
 
   ++_powerupMod;
@@ -242,7 +235,7 @@ void Overmind::SpawnPowerup()
     ++_livesTarget;
   }
 
-  int r = z::rand_int(4);
+  int32_t r = z::rand_int(4);
   vec2 v;
 
   if (r == 0) {
@@ -258,25 +251,25 @@ void Overmind::SpawnPowerup()
     v.set(Lib::WIDTH / 2, Lib::HEIGHT * 2);
   }
 
-  int m = 4;
-  for (int i = 1; i <= Lib::PLAYERS; i++) {
-    if (_z0.GetLives() <= _z0.CountPlayers() - i) {
+  int32_t m = 4;
+  for (int32_t i = 1; i <= Lib::PLAYERS; i++) {
+    if (_z0.get_lives() <= _z0.count_players() - i) {
       m++;
     }
   }
-  if (!_z0.GetLives()) {
-    m += int(Player::CountKilledPlayers());
+  if (!_z0.get_lives()) {
+    m += _z0.killed_players();
   }
   if (_livesTarget > 0) {
     m += _livesTarget;
   }
-  if (Player::CountKilledPlayers() == 0 && _livesTarget < -1) {
+  if (_z0.killed_players() == 0 && _livesTarget < -1) {
     m = 3;
   }
   r = z::rand_int(m);
   _tz0 = &_z0;
 
-  Spawn(new Powerup(v, r == 0 ? Powerup::BOMB :
+  spawn(new Powerup(v, r == 0 ? Powerup::BOMB :
                        r == 1 ? Powerup::MAGIC_SHOTS :
                        r == 2 ? Powerup::SHIELD :
                        (--_livesTarget, Powerup::EXTRA_LIFE)));
@@ -303,10 +296,10 @@ void Overmind::SpawnBossReward()
     v.set(Lib::WIDTH / 2, Lib::HEIGHT + Lib::HEIGHT / 4);
   }
 
-  Spawn(new Powerup(v, Powerup::EXTRA_LIFE));
+  spawn(new Powerup(v, Powerup::EXTRA_LIFE));
 
   _tz0 = 0;
-  if (!_z0.IsBossMode()) {
+  if (!_z0.is_boss_mode()) {
     SpawnPowerup();
   }
 }
@@ -314,40 +307,40 @@ void Overmind::SpawnBossReward()
 void Overmind::SpawnFollow(int num, int div, int side)
 {
   if (side == 0 || side == 1) {
-    Spawn(new Follow(SpawnPoint(false, _tRow, num, div)));
+    spawn(new Follow(SpawnPoint(false, _tRow, num, div)));
   }
   if (side == 0 || side == 2) {
-    Spawn(new Follow(SpawnPoint(true, _tRow, num, div)));
+    spawn(new Follow(SpawnPoint(true, _tRow, num, div)));
   }
 }
 
 void Overmind::SpawnChaser(int num, int div, int side)
 {
   if (side == 0 || side == 1) {
-    Spawn(new Chaser(SpawnPoint(false, _tRow, num, div)));
+    spawn(new Chaser(SpawnPoint(false, _tRow, num, div)));
   }
   if (side == 0 || side == 2) {
-    Spawn(new Chaser(SpawnPoint(true, _tRow, num, div)));
+    spawn(new Chaser(SpawnPoint(true, _tRow, num, div)));
   }
 }
 
 void Overmind::SpawnSquare(int num, int div, int side)
 {
   if (side == 0 || side == 1) {
-    Spawn(new Square(SpawnPoint(false, _tRow, num, div)));
+    spawn(new Square(SpawnPoint(false, _tRow, num, div)));
   }
   if (side == 0 || side == 2) {
-    Spawn(new Square(SpawnPoint(true, _tRow, num, div)));
+    spawn(new Square(SpawnPoint(true, _tRow, num, div)));
   }
 }
 
 void Overmind::SpawnWall(int num, int div, int side, bool dir)
 {
   if (side == 0 || side == 1) {
-    Spawn(new Wall(SpawnPoint(false, _tRow, num, div), dir));
+    spawn(new Wall(SpawnPoint(false, _tRow, num, div), dir));
   }
   if (side == 0 || side == 2) {
-    Spawn(new Wall(SpawnPoint(true, _tRow, num, div), dir));
+    spawn(new Wall(SpawnPoint(true, _tRow, num, div), dir));
   }
 }
 
@@ -362,7 +355,7 @@ void Overmind::SpawnFollowHub(int num, int div, int side)
     if (p2) {
       _hardAlready += 2;
     }
-    Spawn(new FollowHub(SpawnPoint(false, _tRow, num, div), p1, p2));
+    spawn(new FollowHub(SpawnPoint(false, _tRow, num, div), p1, p2));
   }
   if (side == 0 || side == 2) {
     bool p1 = z::rand_int(64) < std::min(32, _power - 32) - _hardAlready;
@@ -373,7 +366,7 @@ void Overmind::SpawnFollowHub(int num, int div, int side)
     if (p2) {
       _hardAlready += 2;
     }
-    Spawn(new FollowHub(SpawnPoint(true, _tRow, num, div), p1, p2));
+    spawn(new FollowHub(SpawnPoint(true, _tRow, num, div), p1, p2));
   }
 }
 
@@ -384,14 +377,14 @@ void Overmind::SpawnShielder(int num, int div, int side)
     if (p) {
       _hardAlready += 3;
     }
-    Spawn(new Shielder(SpawnPoint(false, _tRow, num, div), p));
+    spawn(new Shielder(SpawnPoint(false, _tRow, num, div), p));
   }
   if (side == 0 || side == 2) {
     bool p = z::rand_int(64) < std::min(32, _power - 36) - _hardAlready;
     if (p) {
       _hardAlready += 3;
     }
-    Spawn(new Shielder(SpawnPoint(true, _tRow, num, div), p));
+    spawn(new Shielder(SpawnPoint(true, _tRow, num, div), p));
   }
 }
 
@@ -402,20 +395,20 @@ void Overmind::SpawnTractor(int num, int div, int side)
     if (p) {
       _hardAlready += 4;
     }
-    Spawn(new Tractor(SpawnPoint(false, _tRow, num, div), p));
+    spawn(new Tractor(SpawnPoint(false, _tRow, num, div), p));
   }
   if (side == 0 || side == 2) {
     bool p = z::rand_int(64) < std::min(32, _power - 46) - _hardAlready;
     if (p) {
       _hardAlready += 4;
     }
-    Spawn(new Tractor(SpawnPoint(true, _tRow, num, div), p));
+    spawn(new Tractor(SpawnPoint(true, _tRow, num, div), p));
   }
 }
 
-// Spawn formation coordinates
+// spawn formation coordinates
 //------------------------------
-void Overmind::Spawn(Ship* ship)
+void Overmind::spawn(Ship* ship)
 {
   if (_tz0) {
     _tz0->AddShip(ship);
@@ -443,12 +436,12 @@ vec2 Overmind::SpawnPoint(bool top, int row, int num, int div)
 //------------------------------
 void Overmind::Wave()
 {
-  if (_z0.IsFastMode()) {
+  if (_z0.is_fast_mode()) {
     for (int i = 0; i < z::rand_int(7); ++i) {
       z::rand_int(1);
     }
   }
-  if (_z0.IsWhatMode()) {
+  if (_z0.is_what_mode()) {
     for (int i = 0; i < z::rand_int(11); ++i) {
       z::rand_int(1);
     }
@@ -508,9 +501,9 @@ void Overmind::Boss()
 {
   _tz0 = &_z0;
   _tRow = 0;
-  int cycle = (_z0.IsHardMode() ? 1 : 0) + _bossModBosses / 2;
+  int cycle = (_z0.is_hard_mode() ? 1 : 0) + _bossModBosses / 2;
   bool secretChance =
-      (_z0.IsFastMode() || _z0.IsHardMode() || _z0.IsWhatMode()) ?
+      (_z0.is_fast_mode() || _z0.is_hard_mode() || _z0.is_what_mode()) ?
       (_bossModFights > 1 ? z::rand_int(4) == 0 :
        _bossModFights > 0 ? z::rand_int(8) == 0 : false) :
       (_bossModFights > 2 ? z::rand_int(4) == 0 :
@@ -519,20 +512,20 @@ void Overmind::Boss()
   if (_canFaceSecretBoss && _bossesToGo == 0 &&
       _bossModSecret == 0 && secretChance) {
     int secretCycle =
-        std::max(0, (_bossModBosses + (_z0.IsHardMode() ? 1 : 0) - 2) / 2);
-    Spawn(new SuperBoss(_z0.CountPlayers(), secretCycle));
+        std::max(0, (_bossModBosses + (_z0.is_hard_mode() ? 1 : 0) - 2) / 2);
+    spawn(new SuperBoss(_z0.count_players(), secretCycle));
     _bossModSecret = 2;
   }
 
   else if (_bossModBosses % 2 == 0) {
     if (_boss1Queue[0] == 0) {
-      Spawn(new BigSquareBoss(_z0.CountPlayers(), cycle));
+      spawn(new BigSquareBoss(_z0.count_players(), cycle));
     }
     if (_boss1Queue[0] == 1) {
-      Spawn(new ShieldBombBoss(_z0.CountPlayers(), cycle));
+      spawn(new ShieldBombBoss(_z0.count_players(), cycle));
     }
     if (_boss1Queue[0] == 2) {
-      Spawn(new ChaserBoss(_z0.CountPlayers(), cycle));
+      spawn(new ChaserBoss(_z0.count_players(), cycle));
     }
 
     _boss1Queue.push_back(_boss1Queue[0]);
@@ -544,13 +537,13 @@ void Overmind::Boss()
     }
 
     if (_boss2Queue[0] == 0) {
-      Spawn(new TractorBoss(_z0.CountPlayers(), cycle));
+      spawn(new TractorBoss(_z0.count_players(), cycle));
     }
     if (_boss2Queue[0] == 1) {
-      Spawn(new GhostBoss(_z0.CountPlayers(), cycle));
+      spawn(new GhostBoss(_z0.count_players(), cycle));
     }
     if (_boss2Queue[0] == 2) {
-      Spawn(new DeathRayBoss(_z0.CountPlayers(), cycle));
+      spawn(new DeathRayBoss(_z0.count_players(), cycle));
     }
 
     _boss2Queue.push_back(_boss2Queue[0]);
@@ -565,24 +558,24 @@ void Overmind::BossModeBoss()
   _tRow = 0;
   if (_bossModBosses < 3) {
     if (_boss1Queue[_bossModBosses] == 0) {
-      Spawn(new BigSquareBoss(_z0.CountPlayers(), 0));
+      spawn(new BigSquareBoss(_z0.count_players(), 0));
     }
     if (_boss1Queue[_bossModBosses] == 1) {
-      Spawn(new ShieldBombBoss(_z0.CountPlayers(), 0));
+      spawn(new ShieldBombBoss(_z0.count_players(), 0));
     }
     if (_boss1Queue[_bossModBosses] == 2) {
-      Spawn(new ChaserBoss(_z0.CountPlayers(), 0));
+      spawn(new ChaserBoss(_z0.count_players(), 0));
     }
   }
   else {
     if (_boss2Queue[_bossModBosses - 3] == 0) {
-      Spawn(new TractorBoss(_z0.CountPlayers(), 0));
+      spawn(new TractorBoss(_z0.count_players(), 0));
     }
     if (_boss2Queue[_bossModBosses - 3] == 1) {
-      Spawn(new GhostBoss(_z0.CountPlayers(), 0));
+      spawn(new GhostBoss(_z0.count_players(), 0));
     }
     if (_boss2Queue[_bossModBosses - 3] == 2) {
-      Spawn(new DeathRayBoss(_z0.CountPlayers(), 0));
+      spawn(new DeathRayBoss(_z0.count_players(), 0));
     }
   }
   _tz0 = 0;

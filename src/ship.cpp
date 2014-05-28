@@ -7,47 +7,42 @@ Ship::Ship(const vec2& position, ship_category type)
   , _destroy(false)
   , _position(position)
   , _rotation(0)
-  , _boundingWidth(0)
-  , _enemyValue(1)
+  , _bounding_width(0)
+  , _enemy_value(1)
 {
 }
 
 Ship::~Ship()
 {
-  for (unsigned int i = 0; i < CountShapes(); i++) {
-    delete _shapeList[i];
-  }
 }
 
-void Ship::AddShape(Shape* shape)
+void Ship::add_shape(Shape* shape)
 {
-  _shapeList.push_back(shape);
+  _shapes.emplace_back(shape);
 }
 
-void Ship::DestroyShape(std::size_t i)
+void Ship::destroy_shape(std::size_t i)
 {
-  if (i >= CountShapes()) {
+  if (i >= count_shapes()) {
     return;
   }
-
-  delete _shapeList[i];
-  _shapeList.erase(_shapeList.begin() + i);
+  _shapes.erase(_shapes.begin() + i);
 }
 
-bool Ship::CheckPoint(const vec2& v, int category) const
+bool Ship::check_point(const vec2& v, int category) const
 {
   bool aa = false;
   vec2 a;
-  for (unsigned int i = 0; i < CountShapes(); i++) {
-    if (GetShape(i).GetCategory() &&
-        (!category || (GetShape(i).GetCategory() & category) == category)) {
+  for (const auto& shape : _shapes) {
+    if (shape->GetCategory() &&
+        (!category || (shape->GetCategory() & category) == category)) {
       if (!aa) {
-        a = v - GetPosition();
-        a.rotate(-GetRotation());
+        a = v - position();
+        a.rotate(-rotation());
         aa = true;
       }
 
-      if (GetShape(i).CheckPoint(a)) {
+      if (shape->CheckPoint(a)) {
         return true;
       }
     }
@@ -57,35 +52,28 @@ bool Ship::CheckPoint(const vec2& v, int category) const
 
 void Ship::Render() const
 {
-  for (std::size_t i = 0; i < CountShapes(); i++) {
-    GetShape(i).Render(
-        GetLib(), to_float(GetPosition()), GetRotation().to_float());
+  for (const auto& shape : _shapes) {
+    shape->Render(lib(), to_float(position()), rotation().to_float());
   }
 }
 
-void Ship::RenderWithColour(colour colour) const
+void Ship::render_with_colour(colour colour) const
 {
-  for (unsigned int i = 0; i < CountShapes(); i++) {
-    GetShape(i).Render(
-        GetLib(), to_float(GetPosition()),
-        GetRotation().to_float(),
-        colour & (0xffffff00 | (GetShape(i).GetColour() & 0x000000ff)));
+  for (const auto& shape : _shapes) {
+    shape->Render(
+        lib(), to_float(position()), rotation().to_float(),
+        colour & (0xffffff00 | (shape->GetColour() & 0x000000ff)));
   }
 }
 
-Shape& Ship::GetShape(std::size_t i) const
+Shape& Ship::get_shape(std::size_t i) const
 {
-  return *_shapeList[i];
+  return *_shapes[i];
 }
 
-std::size_t Ship::CountShapes() const
+std::size_t Ship::count_shapes() const
 {
-  return _shapeList.size();
-}
-
-Lib& Ship::GetLib() const
-{
-  return _z0->GetLib();
+  return _shapes.size();
 }
 
 void Ship::destroy()
@@ -95,28 +83,28 @@ void Ship::destroy()
   }
 
   _destroy = true;
-  for (std::size_t i = 0; i < CountShapes(); i++) {
-    GetShape(i).SetCategory(0);
+  for (const auto& shape : _shapes) {
+    shape->SetCategory(0);
   }
 }
 
-void Ship::Spawn(Ship* ship) const
+void Ship::spawn(Ship* ship) const
 {
   _z0->AddShip(ship);
 }
 
-void Ship::Spawn(Particle* particle) const
+void Ship::spawn(Particle* particle) const
 {
   _z0->AddParticle(particle);
 }
 
-void Ship::Explosion(colour c, int time, bool towards, const flvec2& v) const
+void Ship::explosion(colour c, int time, bool towards, const flvec2& v) const
 {
-  for (unsigned int i = 0; i < CountShapes(); i++) {
+  for (const auto& shape : _shapes) {
     int n = towards ? z::rand_int(2) + 1 : z::rand_int(8) + 8;
     for (int j = 0; j < n; j++) {
-      flvec2 pos = GetShape(i).ConvertPointf(
-          to_float(GetPosition()), GetRotation().to_float(), flvec2());
+      flvec2 pos = shape->ConvertPointf(
+          to_float(position()), rotation().to_float(), flvec2());
 
       flvec2 dir;
       dir.set_polar(z::rand_fixed().to_float() * 2 * M_PIf, 6.f);
@@ -129,9 +117,8 @@ void Ship::Explosion(colour c, int time, bool towards, const flvec2& v) const
         dir.set_polar(angle, 6.f);
       }
 
-      Spawn(new Particle(
-          pos, c ? c : GetShape(i).GetColour(),
-          dir, time + z::rand_int(8)));
+      spawn(new Particle(
+          pos, c ? c : shape->GetColour(), dir, time + z::rand_int(8)));
     }
   }
 }

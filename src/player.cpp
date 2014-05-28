@@ -21,7 +21,7 @@ Lib::Recording Player::_replay;
 std::size_t Player::_replayFrame;
 
 Player::Player(const vec2& position, int playerNumber)
-  : Ship(position, Ship::SHIP_PLAYER)
+  : Ship(position, SHIP_PLAYER)
   , _playerNumber(playerNumber)
   , _score(0)
   , _multiplier(1)
@@ -33,11 +33,11 @@ Player::Player(const vec2& position, int playerNumber)
   , _bomb(false)
   , _deathCounter(0)
 {
-  AddShape(new Polygon(vec2(), 16, 3, GetPlayerColour()));
-  AddShape(new Fill(vec2(8, 0), 2, 2, GetPlayerColour()));
-  AddShape(new Fill(vec2(8, 0), 1, 1, GetPlayerColour() & 0xffffff33));
-  AddShape(new Fill(vec2(8, 0), 3, 3, GetPlayerColour() & 0xffffff33));
-  AddShape(new Polygon(vec2(), 8, 3, GetPlayerColour(), fixed::pi));
+  add_shape(new Polygon(vec2(), 16, 3, GetPlayerColour()));
+  add_shape(new Fill(vec2(8, 0), 2, 2, GetPlayerColour()));
+  add_shape(new Fill(vec2(8, 0), 1, 1, GetPlayerColour() & 0xffffff33));
+  add_shape(new Fill(vec2(8, 0), 3, 3, GetPlayerColour() & 0xffffff33));
+  add_shape(new Polygon(vec2(), 8, 3, GetPlayerColour(), fixed::pi));
   _killQueue.clear();
   _shotSoundQueue.clear();
   _fireTimer = 0;
@@ -49,12 +49,11 @@ Player::~Player()
 
 void Player::Update()
 {
-  Lib& lib = GetLib();
-  vec2 velocity = lib.GetMoveVelocity(GetPlayerNumber());
-  vec2 fireTarget = lib.GetFireTarget(GetPlayerNumber(), GetPosition());
+  vec2 velocity = lib().GetMoveVelocity(GetPlayerNumber());
+  vec2 fireTarget = lib().GetFireTarget(GetPlayerNumber(), position());
   int keys =
-      int(lib.IsKeyHeld(GetPlayerNumber(), Lib::KEY_FIRE)) |
-      (lib.IsKeyPressed(GetPlayerNumber(), Lib::KEY_BOMB) << 1);
+      int(lib().IsKeyHeld(GetPlayerNumber(), Lib::KEY_FIRE)) |
+      (lib().IsKeyPressed(GetPlayerNumber(), Lib::KEY_BOMB) << 1);
 
   if (_replay._okay) {
     if (_replayFrame < _replay._playerFrames.size()) {
@@ -71,7 +70,7 @@ void Player::Update()
     }
   }
   else {
-    lib.Record(velocity, fireTarget, keys);
+    lib().Record(velocity, fireTarget, keys);
   }
   _tempTarget = fireTarget;
 
@@ -88,15 +87,15 @@ void Player::Update()
   if (_killTimer) {
     _killTimer--;
     if (!_killTimer && !_killQueue.empty()) {
-      if (GetLives() && _killQueue[0] == this) {
+      if (z0().get_lives() && _killQueue[0] == this) {
         _killQueue.erase(_killQueue.begin());
         _reviveTimer = REVIVE_TIME;
-        vec2 v((1 + GetPlayerNumber()) * Lib::WIDTH / (1 + CountPlayers()),
+        vec2 v((1 + GetPlayerNumber()) * Lib::WIDTH / (1 + z0().count_players()),
                Lib::HEIGHT / 2);
-        SetPosition(v);
-        SubLife();
-        lib.Rumble(GetPlayerNumber(), 10);
-        PlaySound(Lib::SOUND_PLAYER_RESPAWN);
+        set_position(v);
+        z0().sub_life();
+        lib().Rumble(GetPlayerNumber(), 10);
+        play_sound(Lib::SOUND_PLAYER_RESPAWN);
       }
       else {
         _killTimer++;
@@ -116,50 +115,49 @@ void Player::Update()
     }
     move *= SPEED;
 
-    vec2 pos = GetPosition();
+    vec2 pos = position();
     pos += move;
 
     pos.x = std::max(fixed(0), std::min(fixed(Lib::WIDTH), pos.x));
     pos.y = std::max(fixed(0), std::min(fixed(Lib::HEIGHT), pos.y));
 
-    SetPosition(pos);
-    SetRotation(move.angle());
+    set_position(pos);
+    set_rotation(move.angle());
   }
 
   // Bombs
   if (_bomb && keys & 2) {
     _bomb = false;
-    DestroyShape(5);
+    destroy_shape(5);
 
-    Explosion(0xffffffff, 16);
-    Explosion(GetPlayerColour(), 32);
-    Explosion(0xffffffff, 48);
+    explosion(0xffffffff, 16);
+    explosion(GetPlayerColour(), 32);
+    explosion(0xffffffff, 48);
 
-    vec2 t = GetPosition();
+    vec2 t = position();
     flvec2 tf = to_float(t);
     for (int i = 0; i < 64; ++i) {
       vec2 p;
       p.set_polar(2 * i * fixed::pi / 64, BOMB_RADIUS);
       p += t;
-      SetPosition(p);
-      Explosion((i % 2) ? GetPlayerColour() : 0xffffffff,
+      set_position(p);
+      explosion((i % 2) ? GetPlayerColour() : 0xffffffff,
                 8 + z::rand_int(8) + z::rand_int(8), true, tf);
     }
-    SetPosition(t);
+    set_position(t);
 
-    GetLib().Rumble(GetPlayerNumber(), 10);
-    PlaySound(Lib::SOUND_EXPLOSION);
+    lib().Rumble(GetPlayerNumber(), 10);
+    play_sound(Lib::SOUND_EXPLOSION);
 
-    z0Game::ShipList list = GetShipsInRadius(GetPosition(), BOMB_BOSSRADIUS);
+    z0Game::ShipList list =
+        z0().ships_in_radius(position(), BOMB_BOSSRADIUS, SHIP_ENEMY);
     for (unsigned int i = 0; i < list.size(); i++) {
-      if (!list[i]->is_enemy()) {
-        continue;
-      }
-      if ((list[i]->GetPosition() - GetPosition()).length() <= BOMB_RADIUS ||
-          list[i]->is_boss()) {
+      if ((list[i]->position() - position()).length() <= BOMB_RADIUS ||
+          (list[i]->type() & SHIP_BOSS)) {
         list[i]->Damage(BOMB_DAMAGE, false, 0);
       }
-      if (!list[i]->is_boss() && ((Enemy*) list[i])->GetScore() > 0) {
+      if (!(list[i]->type() & SHIP_BOSS) &&
+          ((Enemy*) list[i])->GetScore() > 0) {
         AddScore(0);
       }
     }
@@ -167,9 +165,9 @@ void Player::Update()
 
   // Shots
   if (!_fireTimer && keys & 1) {
-    vec2 v = fireTarget - GetPosition();
+    vec2 v = fireTarget - position();
     if (v.length() > 0) {
-      Spawn(new Shot(GetPosition(), this, v, _magicShotTimer != 0));
+      spawn(new Shot(position(), this, v, _magicShotTimer != 0));
       if (_magicShotTimer) {
         _magicShotTimer--;
       }
@@ -179,9 +177,9 @@ void Player::Update()
       float volume = .5f * z::rand_fixed().to_float() + .5f;
       float pitch = (z::rand_fixed().to_float() - 1.f) / 12.f;
       if (_shotSoundQueue.empty() || _shotSoundQueue[0] == this) {
-        couldPlay = lib.PlaySound(
+        couldPlay = lib().PlaySound(
             Lib::SOUND_PLAYER_FIRE, volume,
-            2.f * GetPosition().x.to_float() / Lib::WIDTH - 1.f, pitch);
+            2.f * position().x.to_float() / Lib::WIDTH - 1.f, pitch);
       }
       if (couldPlay && !_shotSoundQueue.empty()) {
         _shotSoundQueue.erase(_shotSoundQueue.begin());
@@ -201,31 +199,30 @@ void Player::Update()
   }
 
   // Damage
-  if (AnyCollisionList(GetPosition(), DANGEROUS)) {
+  if (z0().any_collision(position(), DANGEROUS)) {
     Damage();
   }
 }
 
 void Player::Render() const
 {
-  const Lib& lib = GetLib();
   int n = GetPlayerNumber();
 
-  if (!_killTimer && (!IsWhatMode() || _reviveTimer > 0)) {
+  if (!_killTimer && (!z0().is_what_mode() || _reviveTimer > 0)) {
     flvec2 t = to_float(_tempTarget);
     if (t.x >= 0 && t.x <= Lib::WIDTH && t.y >= 0 && t.y <= Lib::HEIGHT) {
-      lib.RenderLine(t + flvec2(0, 9), t - flvec2(0, 8), GetPlayerColour());
-      lib.RenderLine(t + flvec2(9, 1), t - flvec2(8, -1), GetPlayerColour());
+      lib().RenderLine(t + flvec2(0, 9), t - flvec2(0, 8), GetPlayerColour());
+      lib().RenderLine(t + flvec2(9, 1), t - flvec2(8, -1), GetPlayerColour());
     }
     if (_reviveTimer % 2) {
-      RenderWithColour(0xffffffff);
+      render_with_colour(0xffffffff);
     }
     else {
       Ship::Render();
     }
   }
 
-  if (IsBossMode()) {
+  if (z0().is_boss_mode()) {
     return;
   }
 
@@ -246,7 +243,7 @@ void Player::Render() const
           Lib::HEIGHT / Lib::TEXT_HEIGHT - 2.f);
   }
 
-  lib.RenderText(v, s, z0Game::PANEL_TEXT);
+  lib().RenderText(v, s, z0Game::PANEL_TEXT);
 
   if (_magicShotTimer != 0) {
     if (n == 0 || n == 2) {
@@ -256,7 +253,7 @@ void Player::Render() const
       v.x -= 1;
     }
     v *= 16;
-    lib.RenderRect(
+    lib().RenderRect(
         v + flvec2(5.f, 11.f - (10 * _magicShotTimer) / MAGICSHOT_COUNT),
         v + flvec2(9.f, 13.f), 0xffffffff, 2);
   }
@@ -282,7 +279,7 @@ void Player::Render() const
           Lib::HEIGHT / Lib::TEXT_HEIGHT - 2.f);
   }
 
-  lib.RenderText(v, s, GetPlayerColour());
+  lib().RenderText(v, s, GetPlayerColour());
 }
 
 void Player::Damage()
@@ -297,18 +294,18 @@ void Player::Damage()
   }
 
   if (_shield) {
-    GetLib().Rumble(GetPlayerNumber(), 10);
-    PlaySound(Lib::SOUND_PLAYER_SHIELD);
-    DestroyShape(5);
+    lib().Rumble(GetPlayerNumber(), 10);
+    play_sound(Lib::SOUND_PLAYER_SHIELD);
+    destroy_shape(5);
     _shield = false;
 
     _reviveTimer = SHIELD_TIME;
     return;
   }
 
-  Explosion();
-  Explosion(0xffffffff, 14);
-  Explosion(0, 20);
+  explosion();
+  explosion(0xffffffff, 14);
+  explosion(0, 20);
 
   _magicShotTimer = 0;
   _multiplier = 1;
@@ -316,13 +313,13 @@ void Player::Damage()
   _killTimer = REVIVE_TIME;
   ++_deathCounter;
   if (_shield || _bomb) {
-    DestroyShape(5);
+    destroy_shape(5);
     _shield = false;
     _bomb = false;
   }
   _killQueue.push_back(this);
-  GetLib().Rumble(GetPlayerNumber(), 25);
-  PlaySound(Lib::SOUND_PLAYER_DESTROY);
+  lib().Rumble(GetPlayerNumber(), 25);
+  play_sound(Lib::SOUND_PLAYER_DESTROY);
 }
 
 static const int MULTIPLIER_lookup[24] = {
@@ -332,7 +329,7 @@ static const int MULTIPLIER_lookup[24] = {
 
 void Player::AddScore(long score)
 {
-  GetLib().Rumble(GetPlayerNumber(), 3);
+  lib().Rumble(GetPlayerNumber(), 3);
   _score += score * _multiplier;
   _mulCount++;
   if (MULTIPLIER_lookup[std::min(_multiplier + 3, 23)] <= _mulCount) {
@@ -362,11 +359,11 @@ void Player::ActivateMagicShield()
   }
 
   if (_bomb) {
-    DestroyShape(5);
+    destroy_shape(5);
     _bomb = false;
   }
   _shield = true;
-  AddShape(new Polygon(vec2(), 16, 10, 0xffffffff));
+  add_shape(new Polygon(vec2(), 16, 10, 0xffffffff));
 }
 
 void Player::ActivateBomb()
@@ -376,18 +373,18 @@ void Player::ActivateBomb()
   }
 
   if (_shield) {
-    DestroyShape(5);
+    destroy_shape(5);
     _shield = false;
   }
   _bomb = true;
-  AddShape(new Polystar(vec2(-8, 0), 6, 5, 0xffffffff, fixed::pi));
+  add_shape(new Polystar(vec2(-8, 0), 6, 5, 0xffffffff, fixed::pi));
 }
 
 // Player projectiles
 //------------------------------
 Shot::Shot(const vec2& position, Player* player,
            const vec2& direction, bool magic)
-  : Ship(position, Ship::SHIP_NONE)
+  : Ship(position, SHIP_NONE)
   , _player(player)
   , _velocity(direction)
   , _magic(magic)
@@ -395,18 +392,18 @@ Shot::Shot(const vec2& position, Player* player,
 {
   _velocity.normalise();
   _velocity *= Player::SHOT_SPEED;
-  AddShape(new Fill(vec2(), 2, 2, _player->GetPlayerColour()));
-  AddShape(new Fill(vec2(), 1, 1, _player->GetPlayerColour() & 0xffffff33));
-  AddShape(new Fill(vec2(), 3, 3, _player->GetPlayerColour() & 0xffffff33));
+  add_shape(new Fill(vec2(), 2, 2, _player->GetPlayerColour()));
+  add_shape(new Fill(vec2(), 1, 1, _player->GetPlayerColour() & 0xffffff33));
+  add_shape(new Fill(vec2(), 3, 3, _player->GetPlayerColour() & 0xffffff33));
 }
 
 void Shot::Render() const
 {
-  if (IsWhatMode()) {
+  if (z0().is_what_mode()) {
     return;
   }
   if (_flash) {
-    RenderWithColour(0xffffffff);
+    render_with_colour(0xffffffff);
   }
   else {
     Ship::Render();
@@ -419,16 +416,16 @@ void Shot::Update()
     _flash = z::rand_int(2) != 0;
   }
 
-  Move(_velocity);
+  move(_velocity);
   bool onScreen =
-      GetPosition().x >= -4 && GetPosition().x < 4 + Lib::WIDTH &&
-      GetPosition().y >= -4 && GetPosition().y < 4 + Lib::HEIGHT;
+      position().x >= -4 && position().x < 4 + Lib::WIDTH &&
+      position().y >= -4 && position().y < 4 + Lib::HEIGHT;
   if (!onScreen) {
     destroy();
     return;
   }
 
-  z0Game::ShipList kill = GetCollisionList(GetPosition(), VULNERABLE);
+  z0Game::ShipList kill = z0().collision_list(position(), VULNERABLE);
   for (unsigned int i = 0; i < kill.size(); i++) {
     kill[i]->Damage(1, _magic, _player);
     if (!_magic) {
@@ -436,10 +433,8 @@ void Shot::Update()
     }
   }
 
-  if (AnyCollisionList(GetPosition(), SHIELD)) {
-    destroy();
-  }
-  if (!_magic && AnyCollisionList(GetPosition(), VULNSHIELD)) {
+  if (z0().any_collision(position(), SHIELD) ||
+      (!_magic && z0().any_collision(position(), VULNSHIELD))) {
     destroy();
   }
 }

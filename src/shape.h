@@ -71,16 +71,16 @@ public:
       Lib& lib,
       const flvec2& position, float rotation, colour colour = 0) const = 0;
 
-  virtual fixed GetRotation() const
+  virtual fixed rotation() const
   {
     return 0;
   }
 
-  virtual void SetRotation(fixed rotation) {}
+  virtual void set_rotation(fixed rot) {}
 
-  void Rotate(fixed rotation)
+  void rotate(fixed rotation_amount)
   {
-    SetRotation(GetRotation() + rotation);
+    set_rotation(rotation() + rotation_amount);
   }
 
 private:
@@ -104,12 +104,12 @@ public:
 
   virtual ~RotateShape() {}
 
-  virtual fixed GetRotation() const
+  virtual fixed rotation() const
   {
     return _rotation;
   }
 
-  virtual void SetRotation(fixed rotation)
+  virtual void set_rotation(fixed rotation)
   {
     _rotation =
         rotation > 2 * fixed::pi ? rotation - 2 * fixed::pi :
@@ -117,24 +117,24 @@ public:
   }
 
   virtual vec2 ConvertPoint(
-      const vec2& position, fixed rotation, const vec2& v) const
+      const vec2& position, fixed rot, const vec2& v) const
   {
-    vec2 a = v; a.rotate(GetRotation());
-    return Shape::ConvertPoint(position, rotation, a);
+    vec2 a = v; a.rotate(rotation());
+    return Shape::ConvertPoint(position, rot, a);
   }
 
   virtual flvec2 ConvertPointf(
-      const flvec2& position, float rotation, const flvec2& v) const
+      const flvec2& position, float rot, const flvec2& v) const
   {
-    flvec2 a = v; a.rotate(GetRotation().to_float());
-    return Shape::ConvertPointf(position, rotation, a);
+    flvec2 a = v; a.rotate(rotation().to_float());
+    return Shape::ConvertPointf(position, rot, a);
   }
 
 private:
 
   virtual bool CheckLocalPoint(const vec2& v) const
   {
-    vec2 a = v; a.rotate(-GetRotation());
+    vec2 a = v; a.rotate(-rotation());
     return CheckRotatedPoint(a);
   }
 
@@ -539,7 +539,7 @@ public:
     }
   }
 
-  void AddShape(Shape* shape)
+  void add_shape(Shape* shape)
   {
     _children.push_back(shape);
   }
@@ -553,11 +553,11 @@ public:
   }
 
   virtual void Render(
-      Lib& lib, const flvec2& position, float rotation, colour colour = 0) const
+      Lib& lib, const flvec2& position, float rot, colour colour = 0) const
   {
-    flvec2 c = ConvertPointf(position, rotation, flvec2());
+    flvec2 c = ConvertPointf(position, rot, flvec2());
     for (unsigned int i = 0; i < _children.size(); i++) {
-      _children[i]->Render(lib, c, GetRotation().to_float() + rotation, colour);
+      _children[i]->Render(lib, c, rotation().to_float() + rot, colour);
     }
   }
 
@@ -566,7 +566,7 @@ public:
     return _children.size();
   }
 
-  Shape& GetShape(std::size_t i) const
+  Shape& get_shape(std::size_t i) const
   {
     return *_children[i];
   }
