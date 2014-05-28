@@ -11,7 +11,7 @@ public:
   static const fixed HP_PER_EXTRA_PLAYER;
   static const fixed HP_PER_EXTRA_CYCLE;
 
-  Boss(const vec2& position, z0Game::BossList boss,
+  Boss(const vec2& position, z0Game::boss_list boss,
        int hp, int players, int cycle = 0, bool explodeOnDamage = true);
 
   virtual ~Boss() {}
@@ -72,7 +72,7 @@ private:
 
   int _hp;
   int _maxHp;
-  z0Game::BossList _flag;
+  z0Game::boss_list _flag;
   long _score;
   int _ignoreDamageColour;
   mutable int _damaged;

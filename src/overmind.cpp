@@ -75,13 +75,13 @@ void Overmind::Reset(bool canFaceSecretBoss)
   _bossesToGo = 0;
   _wavesTotal = 0;
 
-  if (_z0.is_boss_mode()) {
+  if (_z0.mode() == z0Game::BOSS_MODE) {
     _power = 0;
     _timer = 0;
     return;
   }
   _power = INITIAL_POWER + 2 - _z0.count_players() * 2;
-  if (_z0.is_hard_mode()) {
+  if (_z0.mode() == z0Game::HARD_MODE) {
     _power += 20;
     _wavesTotal = 15;
   }
@@ -102,7 +102,7 @@ void Overmind::Update()
   ++_elapsedTime;
   Stars::update();
 
-  if (_z0.is_boss_mode()) {
+  if (_z0.mode() == z0Game::BOSS_MODE) {
     if (_count <= 0) {
       Stars::change();
       if (_bossModBosses < 6) {
@@ -130,7 +130,7 @@ void Overmind::Update()
   }
 
   int bossCycles = _bossModFights;
-  int triggerStage = _groupsMod + bossCycles + 2 * (_z0.is_hard_mode() ? 1 : 0);
+  int triggerStage = _groupsMod + bossCycles + 2 * (_z0.mode() == z0Game::HARD_MODE);
   int triggerVal = INITIAL_TRIGGERVAL;
   int i = 0;
   while (triggerStage > 0) {
@@ -299,7 +299,7 @@ void Overmind::SpawnBossReward()
   spawn(new Powerup(v, Powerup::EXTRA_LIFE));
 
   _tz0 = 0;
-  if (!_z0.is_boss_mode()) {
+  if (_z0.mode() != z0Game::BOSS_MODE) {
     SpawnPowerup();
   }
 }
@@ -436,12 +436,12 @@ vec2 Overmind::SpawnPoint(bool top, int row, int num, int div)
 //------------------------------
 void Overmind::Wave()
 {
-  if (_z0.is_fast_mode()) {
+  if (_z0.mode() == z0Game::FAST_MODE) {
     for (int i = 0; i < z::rand_int(7); ++i) {
       z::rand_int(1);
     }
   }
-  if (_z0.is_what_mode()) {
+  if (_z0.mode() == z0Game::WHAT_MODE) {
     for (int i = 0; i < z::rand_int(11); ++i) {
       z::rand_int(1);
     }
@@ -501,9 +501,9 @@ void Overmind::Boss()
 {
   _tz0 = &_z0;
   _tRow = 0;
-  int cycle = (_z0.is_hard_mode() ? 1 : 0) + _bossModBosses / 2;
+  int cycle = (_z0.mode() == z0Game::HARD_MODE) + _bossModBosses / 2;
   bool secretChance =
-      (_z0.is_fast_mode() || _z0.is_hard_mode() || _z0.is_what_mode()) ?
+      (_z0.mode() != z0Game::NORMAL_MODE && _z0.mode() != z0Game::BOSS_MODE) ?
       (_bossModFights > 1 ? z::rand_int(4) == 0 :
        _bossModFights > 0 ? z::rand_int(8) == 0 : false) :
       (_bossModFights > 2 ? z::rand_int(4) == 0 :
@@ -511,8 +511,8 @@ void Overmind::Boss()
 
   if (_canFaceSecretBoss && _bossesToGo == 0 &&
       _bossModSecret == 0 && secretChance) {
-    int secretCycle =
-        std::max(0, (_bossModBosses + (_z0.is_hard_mode() ? 1 : 0) - 2) / 2);
+    int secretCycle = std::max(
+        0, (_bossModBosses + (_z0.mode() == z0Game::HARD_MODE) - 2) / 2);
     spawn(new SuperBoss(_z0.count_players(), secretCycle));
     _bossModSecret = 2;
   }

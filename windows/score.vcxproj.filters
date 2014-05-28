@@ -59,6 +59,7 @@
     <ClCompile Include="..\src\fix32.cpp" />
     <ClCompile Include="..\src\main.cpp" />
     <ClCompile Include="..\src\z.cpp" />
+    <ClCompile Include="..\src\replay.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\src\boss.h" />
@@ -74,6 +75,7 @@
     <ClInclude Include="..\src\z0_game.h" />
     <ClInclude Include="..\src\fix32.h" />
     <ClInclude Include="..\src\z.h" />
+    <ClInclude Include="..\src\replay.h" />
   </ItemGroup>
   <ItemGroup>
     <Filter Include="zlib">

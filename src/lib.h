@@ -4,7 +4,6 @@
 #include "z.h"
 #include <map>
 #include <memory>
-struct score_finished {};
 struct Internals;
 
 class Lib {
@@ -57,7 +56,7 @@ public:
     fixed _volume;
   };
 
-  typedef std::pair<std::string, uint64_t> HighScore;
+  typedef std::pair<std::string, int64_t> HighScore;
   typedef std::vector<HighScore> HighScoreList;
   typedef std::vector<HighScoreList> HighScoreTable;
   struct SaveData {
@@ -111,7 +110,7 @@ public:
   void EndFrame();
   void CaptureMouse(bool enabled);
   void NewGame();
-  void SetWorkingDirectory(bool original);
+  static void SetWorkingDirectory(bool original);
 
   void Exit(bool exit);
   bool Exit() const;
@@ -123,7 +122,6 @@ public:
   void SaveSaveData(const SaveData& version2);
   Settings LoadSaveSettings() const;
   void SaveSaveSettings(const Settings& settings);
-  static std::string Crypt(const std::string& text, const std::string& key);
 
   // Input
   //------------------------------
@@ -156,36 +154,6 @@ public:
 
   void TakeScreenShot();
 
-  // Recording
-  //------------------------------
-  void StartRecording(int32_t players, bool canFaceSecretBoss, bool isBossMode,
-                      bool isHardMode, bool isFastMode, bool isWhatMode);
-  void Record(vec2 velocity, const vec2& target, int keys);
-  void EndRecording(const std::string& name, uint64_t score, int32_t players,
-                    bool bossMode, bool hardMode, bool fastMode, bool whatMode);
-
-  void OnScore(long seed, int32_t players, bool bossMode, uint64_t score,
-               bool hardMode, bool fastMode, bool whatMode);
-
-  struct PlayerFrame {
-    vec2 _velocity;
-    vec2 _target;
-    int _keys;
-  };
-  struct Recording {
-    bool _okay;
-    std::string _error;
-    long _seed;
-    int _players;
-    bool _canFaceSecretBoss;
-    bool _isBossMode;
-    bool _isHardMode;
-    bool _isFastMode;
-    bool _isWhatMode;
-    std::vector<PlayerFrame> _playerFrames;
-  };
-  const Recording& PlayRecording(const std::string& path);
-
   // Wacky colours
   //------------------------------
   void SetColourCycle(int cycle);
@@ -194,20 +162,13 @@ public:
 
 private:
 
-  bool _recording;
   std::size_t _frameCount;
-  int _cycle;
-  Recording _replay;
-  long _recordSeed;
+  int32_t _cycle;
   std::size_t _players;
-  std::stringstream _record;
 
   // Internal
   //------------------------------
   bool _exit;
-  char* _cwd;
-  std::vector<char> _exe;
-
   std::vector<std::vector<bool>> _keysPressed;
   std::vector<std::vector<bool>> _keysHeld;
   std::vector<std::vector<bool>> _keysReleased;

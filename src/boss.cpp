@@ -50,7 +50,7 @@ const int SuperBoss::ARC_HP = 75;
 
 // Generic boss
 //------------------------------
-Boss::Boss(const vec2& position, z0Game::BossList boss, int hp,
+Boss::Boss(const vec2& position, z0Game::boss_list boss, int hp,
            int players, int cycle, bool explodeOnDamage)
   : Ship(position, Ship::ship_category(SHIP_BOSS | SHIP_ENEMY))
   , _hp(0)
@@ -1712,7 +1712,7 @@ void DeathRayBoss::OnArmDeath(Ship* arm)
 //------------------------------
 SuperBossArc::SuperBossArc(
     const vec2& position, int players, int cycle, int i, Ship* boss, int timer)
-  : Boss(position, z0Game::BossList(0), SuperBoss::ARC_HP, players, cycle)
+  : Boss(position, z0Game::boss_list(0), SuperBoss::ARC_HP, players, cycle)
   , _boss(boss)
   , _i(i)
   , _timer(timer)

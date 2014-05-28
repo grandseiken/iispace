@@ -299,79 +299,25 @@ bool Handler::povMoved(const OIS::JoyStickEvent& arg, int pov)
 struct Internals {};
 #endif
 
-void fixed_write(std::stringstream& out, const fixed& f)
-{
-  auto t = f.to_internal();
-  out.write((char*) &t, sizeof(t));
-}
-
-void fixed_read(fixed& f, std::stringstream& in)
-{
-  auto t = f.to_internal();
-  in.read((char*) &t, sizeof(t));
-  f = fixed::from_internal(t);
-}
-
 Lib::Lib()
-  : _recording(false)
-  , _frameCount(1)
+  : _frameCount(1)
   , _scoreFrame(0)
   , _cycle(0)
-  , _replay()
-  , _recordSeed(0)
   , _players(1)
-  , _record(std::ios::in | std::ios::out | std::ios::binary)
   , _exit(false)
-  , _cwd(0)
   , _captureMouse(false)
   , _mousePosX(0)
   , _mousePosY(0)
   , _mouseMoving(true)
 {
 #ifndef PLATFORM_SCORE
-  _internals.reset(new Internals());
+  SetWorkingDirectory(false);
 #ifdef PLATFORM_LINUX
-  _cwd = get_current_dir_name();
-  char temp[256];
-  sprintf(temp, "/proc/%d/exe", getpid());
-  _exe.resize(256);
-  std::size_t bytes = 0;
-  while ((bytes = readlink(temp, &_exe[0], _exe.size())) == _exe.size()) {
-    _exe.resize(_exe.size() * 2);
-  }
-  if (bytes >= 0) {
-    while (_exe[bytes] != '/') {
-      --bytes;
-    }
-    _exe[bytes] = '\0';
-    if (chdir(&_exe[0]) == 0) {
-      mkdir("replays", 0777);
-    }
-  }
+  mkdir("replays", 0777);
 #else
-  DWORD length = MAX_PATH;
-  _cwd = new char[MAX_PATH + 1];
-  GetCurrentDirectory(length, _cwd);
-  _cwd[MAX_PATH + 1] = '\0';
-
-  _exe.resize(MAX_PATH);
-  DWORD result =
-      GetModuleFileName(0, &_exe[0], static_cast< DWORD >(_exe.size()));
-  while (result == _exe.size()) {
-    _exe.resize(_exe.size() * 2);
-    result = GetModuleFileName(0, &_exe[0], static_cast< DWORD >(_exe.size()));
-  }
-
-  if (result != 0) {
-    --result;
-    while (_exe[result] != '\\') {
-      --result;
-    }
-    _exe[result] = '\0';
-    SetCurrentDirectory(&_exe[0]);
-  }
   CreateDirectory("replays", 0);
 #endif
+  _internals.reset(new Internals());
 
   _internals->_manager = OIS::InputManager::createInputSystem(0);
   _internals->_padCount =
@@ -490,11 +436,6 @@ Lib::Lib()
 Lib::~Lib()
 {
 #ifndef PLATFORM_SCORE
-#ifdef PLATFORM_LINUX
-  free(_cwd);
-#else
-  delete _cwd;
-#endif
   OIS::InputManager::destroyInputSystem(_internals->_manager);
   for (int i = 0; i < SOUND_MAX; ++i) {
     delete _internals->_sounds[i].second.second;
@@ -553,7 +494,7 @@ Lib::SaveData Lib::LoadSaveData()
   }
   std::stringstream b;
   b << file.rdbuf();
-  std::stringstream decrypted(Crypt(b.str(), SUPER_ENCRYPTION_KEY));
+  std::stringstream decrypted(z::crypt(b.str(), SUPER_ENCRYPTION_KEY));
 
   std::string line;
   getline(decrypted, line);
@@ -631,7 +572,7 @@ Lib::SaveData Lib::LoadSaveData()
 
 void Lib::SaveSaveData(const SaveData& version2)
 {
-  uint64_t total = 0;
+  int64_t total = 0;
   for (int i = 0; i < 4 * PLAYERS + 1; ++i) {
     for (unsigned int j = 0;
          j < (i != PLAYERS ? NUM_HIGH_SCORES : PLAYERS); ++j) {
@@ -661,27 +602,12 @@ void Lib::SaveSaveData(const SaveData& version2)
     }
   }
 
-  std::string encrypted = Crypt(out.str(), SUPER_ENCRYPTION_KEY);
+  std::string encrypted = z::crypt(out.str(), SUPER_ENCRYPTION_KEY);
 
   std::ofstream file;
   file.open(SAVE_PATH, std::ios::binary);
   file << encrypted;
   file.close();
-}
-
-std::string Lib::Crypt(const std::string& text, const std::string& key)
-{
-  std::string r = "";
-  for (unsigned int i = 0; i < text.length(); i++) {
-    char c = text[i] ^ key[i % key.length()];
-    if (text[i] == '\0' || c == '\0') {
-      r += text[i];
-    }
-    else {
-      r += c;
-    }
-  }
-  return r;
 }
 
 Lib::Settings Lib::LoadSaveSettings() const
@@ -729,138 +655,6 @@ void Lib::SaveSaveSettings(const Settings& settings)
   out.close();
 }
 
-void Lib::StartRecording(int32_t players, bool canFaceSecretBoss, bool isBossMode,
-                         bool isHardMode, bool isFastMode, bool isWhatMode)
-{
-  NewGame();
-  _record.str(std::string());
-  _record.clear();
-  _recordSeed = (unsigned int) time(0);
-  z::seed(_recordSeed);
-
-  _record << "WiiSPACE v1.3 replay\n" << players << " " <<
-      canFaceSecretBoss << " " << isBossMode << " " <<
-      isHardMode << " " << isFastMode << " " << isWhatMode << " " <<
-      _recordSeed << "\n";
-  _recording = true;
-}
-
-void Lib::EndRecording(
-    const std::string& name, uint64_t score, int32_t players,
-    bool bossMode, bool hardMode, bool fastMode, bool whatMode)
-{
-  if (!_recording) {
-    return;
-  }
-  _recording = false;
-  std::stringstream ss;
-  ss << "replays/" << _recordSeed << "_" <<
-      players << "p_" <<
-      (bossMode ? "bossmode_" :
-       hardMode ? "hardmode_" :
-       fastMode ? "fastmode_" :
-       whatMode ? "w-hatmode_" : "") <<
-      name << "_" << score << ".wrp";
-
-  std::ofstream file;
-  file.open(ss.str().c_str(), std::ios::binary);
-  file << Crypt(z::compress_string(_record.str()), SUPER_ENCRYPTION_KEY);
-  file.close();
-}
-
-void Lib::OnScore(
-    long seed, int32_t players, bool bossMode, uint64_t score,
-    bool hardMode, bool fastMode, bool whatMode)
-{
-#ifdef PLATFORM_SCORE
-  std::cout << seed << "\n" << players << "\n" << bossMode << "\n" <<
-      hardMode << "\n" << fastMode << "\n" << whatMode << "\n" <<
-      score << "\n" << std::flush;
-  throw score_finished{};
-#endif
-}
-
-void Lib::Record(vec2 velocity, const vec2& target, int keys)
-{
-  char k = keys;
-  std::stringstream binary(std::ios::in | std::ios::out | std::ios::binary);
-  fixed_write(binary, velocity.x);
-  fixed_write(binary, velocity.y);
-  fixed_write(binary, target.x);
-  fixed_write(binary, target.y);
-  binary.write(&k, sizeof(char));
-  _record << binary.str();
-}
-
-const Lib::Recording& Lib::PlayRecording(const std::string& path)
-{
-  SetWorkingDirectory(true);
-  std::ifstream file;
-  file.open(path.c_str(), std::ios::binary);
-  std::string line;
-
-  if (!file) {
-    _replay._okay = false;
-    _replay._error = "Cannot open:\n" + path;
-    SetWorkingDirectory(false);
-    return _replay;
-  }
-  std::stringstream b;
-  b << file.rdbuf();
-  std::string temp;
-  try {
-    temp = z::decompress_string(Crypt(b.str(), SUPER_ENCRYPTION_KEY));
-  }
-  catch (std::exception& e) {
-    _replay._okay = false;
-    _replay._error = e.what();
-    SetWorkingDirectory(false);
-    return _replay;
-  }
-  std::stringstream decrypted(
-      temp, std::ios::in | std::ios::out | std::ios::binary);
-
-  getline(decrypted, line);
-  std::cout << line << std::endl;
-  if (line.compare("WiiSPACE v1.3 replay") != 0) {
-    file.close();
-    _replay._okay = false;
-    _replay._error = "Cannot play:\n" + line + "\nusing WiiSPACE v1.3";
-    SetWorkingDirectory(false);
-    return _replay;
-  }
-
-  getline(decrypted, line);
-  std::stringstream ss(line);
-  ss >> _replay._players;
-  ss >> _replay._canFaceSecretBoss;
-  ss >> _replay._isBossMode;
-  ss >> _replay._isHardMode;
-  ss >> _replay._isFastMode;
-  ss >> _replay._isWhatMode;
-  ss >> _replay._seed;
-  z::seed(_replay._seed);
-  _replay._players = std::max(std::min(4, _replay._players), 1);
-
-  _replay._playerFrames.clear();
-  while (!decrypted.eof()){
-    PlayerFrame pf;
-    char k;
-    fixed_read(pf._velocity.x, decrypted);
-    fixed_read(pf._velocity.y, decrypted);
-    fixed_read(pf._target.x, decrypted);
-    fixed_read(pf._target.y, decrypted);
-    decrypted.read(&k, sizeof(char));
-    pf._keys = k;
-    _replay._playerFrames.push_back(pf);
-  }
-
-  file.close();
-  _replay._okay = true;
-  SetWorkingDirectory(false);
-  return _replay;
-}
-
 void Lib::SetColourCycle(int cycle)
 {
   _cycle = cycle % 256;
@@ -879,24 +673,56 @@ colour Lib::Cycle(colour rgb) const
 void Lib::SetWorkingDirectory(bool original)
 {
 #ifndef PLATFORM_SCORE
-  if (original) {
+  static bool initialised = false;
+  static char* cwd = nullptr;
+  static std::vector<char> exe;
+
+  if (!initialised) {
 #ifdef PLATFORM_LINUX
-    if (chdir(_cwd) == 0) {
-      (void) _cwd;
+    cwd = get_current_dir_name();
+    char temp[256];
+    sprintf(temp, "/proc/%d/exe", getpid());
+    exe.resize(256);
+    std::size_t bytes = 0;
+    while ((bytes = readlink(temp, &_exe[0], exe.size())) == exe.size()) {
+      exe.resize(exe.size() * 2);
+    }
+    if (bytes >= 0) {
+      while (exe[bytes] != '/') {
+        --bytes;
+      }
+      exe[bytes] = '\0';
     }
 #else
-    SetCurrentDirectory(_cwd);
-#endif
-  }
-  else {
-#ifdef PLATFORM_LINUX
-    if (chdir(&_exe[0]) == 0) {
-      (void) 0;
+    DWORD length = MAX_PATH;
+    cwd = new char[MAX_PATH + 1];
+    GetCurrentDirectory(length, cwd);
+    cwd[MAX_PATH + 1] = '\0';
+
+    exe.resize(MAX_PATH);
+    DWORD result =
+        GetModuleFileName(0, &exe[0], (DWORD) exe.size());
+    while (result == exe.size()) {
+      exe.resize(exe.size() * 2);
+      result = GetModuleFileName(0, &exe[0], (DWORD) exe.size());
     }
-#else
-    SetCurrentDirectory(&_exe[0]);
+
+    if (result != 0) {
+      --result;
+      while (exe[result] != '\\') {
+        --result;
+      }
+      exe[result] = '\0';
+    }
 #endif
+    initialised = true;
   }
+
+#ifdef PLATFORM_LINUX
+  chdir(original ? cwd : exe.data());
+#else
+  SetCurrentDirectory(original ? cwd : exe.data());
+#endif
 #endif
 }
 

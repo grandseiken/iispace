@@ -23,6 +23,7 @@ inline fixed rand_fixed()
   return fixed(rand_int()) / rand_max;
 }
 
+std::string crypt(const std::string& text, const std::string& key);
 std::string compress_string(const std::string& str);
 std::string decompress_string(const std::string& str);
 

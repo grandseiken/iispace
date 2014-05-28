@@ -6,6 +6,7 @@
 #include "overmind.h"
 #include "stars.h"
 #include <algorithm>
+#include <iostream>
 
 const int z0Game::STARTING_LIVES = 2;
 const int z0Game::BOSSMODE_LIVES = 1;
@@ -15,10 +16,7 @@ z0Game::z0Game(Lib& lib, std::vector< std::string > args)
   , _state(STATE_MENU)
   , _players(1)
   , _lives(0)
-  , _bossMode(false)
-  , _hardMode(false)
-  , _fastMode(false)
-  , _whatMode(false)
+  , _mode(NORMAL_MODE)
   , _showHPBar(false)
   , _fillHPBar(0)
   , _selection(0)
@@ -65,13 +63,13 @@ z0Game::z0Game(Lib& lib, std::vector< std::string > args)
   _compliments.push_back("... that's is a puzzle!");
 
   if (!args.empty()) {
-    _replay = lib.PlayRecording(args[0]);
-    if (_replay._okay) {
-      _players = _replay._players;
+    Player::replay = Replay(args[0]);
+    Player::replay_frame = 0;
+    if (Player::replay.okay) {
+      _players = Player::replay.players;
       lib.SetPlayerCount(_players);
-      Player::SetReplay(_replay);
-      NewGame(_replay._canFaceSecretBoss, _replay._isBossMode, true,
-              _replay._isHardMode, _replay._isFastMode, _replay._isWhatMode);
+      NewGame(Player::replay.can_face_secret_boss,
+              true, game_mode(Player::replay.game_mode));
     }
     else {
       _exitTimer = 256;
@@ -173,7 +171,7 @@ void z0Game::Update()
     if (lib().IsKeyPressed(Lib::KEY_ACCEPT) ||
         lib().IsKeyPressed(Lib::KEY_MENU)) {
       if (_selection == 0) {
-        NewGame(IsFastModeUnlocked());
+        NewGame(IsFastModeUnlocked(), false, NORMAL_MODE);
       }
       else if (_selection == 1) {
         _players++;
@@ -186,9 +184,11 @@ void z0Game::Update()
         _exitTimer = 2;
       }
       else if (_selection == -1) {
-        NewGame(IsFastModeUnlocked(), _specialSelection == 0, false,
-                _specialSelection == 1, _specialSelection == 2,
-                _specialSelection == 3);
+        NewGame(IsFastModeUnlocked(), false,
+                _specialSelection == 0 ? BOSS_MODE :
+                _specialSelection == 1 ? HARD_MODE :
+                _specialSelection == 2 ? FAST_MODE :
+                _specialSelection == 3 ? WHAT_MODE : NORMAL_MODE);
       }
 
       if (_selection == 1) {
@@ -298,23 +298,23 @@ void z0Game::Update()
     Boss::_warnings.clear();
     lib().CaptureMouse(true);
 
-    if (is_hard_mode()) {
+    if (_mode == HARD_MODE) {
       lib().SetColourCycle(128);
     }
-    else if (is_fast_mode()) {
+    else if (_mode == FAST_MODE) {
       lib().SetColourCycle(192);
     }
-    else if (is_what_mode()) {
+    else if (_mode == WHAT_MODE) {
       lib().SetColourCycle((lib().GetColourCycle() + 1) % 256);
     }
     else {
       lib().SetColourCycle(0);
     }
 
-    if (!Player::IsReplaying() && is_fast_mode()) {
+    if (Player::replay.recording && _mode == FAST_MODE) {
       lib().SetFrameCount(2);
     }
-    else if (!Player::IsReplaying()) {
+    else if (Player::replay.recording) {
       lib().SetFrameCount(1);
     }
 
@@ -323,7 +323,7 @@ void z0Game::Update()
       controllers += lib().IsPadConnected(i);
     }
     if (controllers < _controllersConnected &&
-        !_controllersDialog && !Player::IsReplaying()) {
+        !_controllersDialog && Player::replay.recording) {
       _controllersDialog = true;
       lib().PlaySound(Lib::SOUND_MENU_ACCEPT);
     }
@@ -348,12 +348,12 @@ void z0Game::Update()
       lib().PlaySound(Lib::SOUND_MENU_ACCEPT);
     }
 
-    if (Player::IsReplaying()) {
+    if (!Player::replay.recording) {
       if (lib().IsKeyPressed(Lib::KEY_BOMB)) {
         lib().SetFrameCount(lib().GetFrameCount() * 2);
       }
       if (lib().IsKeyPressed(Lib::KEY_FIRE) &&
-          lib().GetFrameCount() > std::size_t(is_fast_mode() ? 2 : 1)) {
+          lib().GetFrameCount() > std::size_t(_mode == FAST_MODE ? 2 : 1)) {
         lib().SetFrameCount(lib().GetFrameCount() / 2);
       }
     }
@@ -417,8 +417,9 @@ void z0Game::Update()
     }
     _overmind->Update();
 
-    if (((killed_players() == _players && !get_lives()) ||
-         (is_boss_mode() && _overmind->GetKilledBosses() >= 6)) && !_killTimer) {
+    if (!_killTimer && ((killed_players() == _players && !get_lives()) ||
+                        (_mode == BOSS_MODE &&
+                         _overmind->GetKilledBosses() >= 6))) {
       _killTimer = 100;
     }
     if (_killTimer) {
@@ -436,15 +437,20 @@ void z0Game::Update()
   //------------------------------
   else if (_state == STATE_HIGHSCORE) {
     ++_scoreScreenTimer;
-    lib().OnScore(
-        _replay._seed, _players, is_boss_mode(),
-        is_boss_mode() ?
-            (_overmind->GetKilledBosses() >= 6 &&
-             _overmind->GetElapsedTime() != 0 ?
-                 std::max(_overmind->GetElapsedTime() -
-                          600l * get_lives(), 1l) : 0l) :
-            GetTotalScore(),
-        is_hard_mode(), is_fast_mode(), is_what_mode());
+#ifdef PLATFORM_SCORE
+    int64_t score = GetTotalScore();
+    if (_mode == BOSS_MODE) {
+      score =
+          _overmind->GetKilledBosses() >= 6 &&
+          _overmind->GetElapsedTime() != 0 ?
+              std::max(_overmind->GetElapsedTime() - 600l * get_lives(), 1l) : 0l;
+    }
+    std::cout << Player::replay.seed << "\n" << _players << "\n" <<
+        (_mode == BOSS_MODE) << "\n" << (_mode == HARD_MODE) << "\n" <<
+        (_mode == FAST_MODE) << "\n" << (_mode == WHAT_MODE) << "\n" <<
+        score << "\n" << std::flush;
+    throw score_finished{};
+#endif
 
     if (IsHighScore()) {
       _enterTime++;
@@ -501,48 +507,42 @@ void z0Game::Update()
 
       if (lib().IsKeyPressed(Lib::KEY_MENU)) {
         lib().PlaySound(Lib::SOUND_MENU_ACCEPT);
-        if (!is_boss_mode()) {
-          int n =
-              is_what_mode() ? 3 * Lib::PLAYERS + _players :
-              is_fast_mode() ? 2 * Lib::PLAYERS + _players :
-              is_hard_mode() ? Lib::PLAYERS + _players : _players - 1;
+        if (_mode != BOSS_MODE) {
+          int32_t n =
+              _mode == WHAT_MODE ? 3 * Lib::PLAYERS + _players :
+              _mode == FAST_MODE ? 2 * Lib::PLAYERS + _players :
+              _mode == HARD_MODE ? Lib::PLAYERS + _players : _players - 1;
 
           Lib::HighScoreList& list = _highScores[n];
           list.push_back(Lib::HighScore(_enterName, GetTotalScore()));
           std::stable_sort(list.begin(), list.end(), &Lib::ScoreSort);
           list.erase(list.begin() + (list.size() - 1));
 
-          lib().EndRecording(
-              _enterName, GetTotalScore(), _players, false,
-              is_hard_mode(), is_fast_mode(), is_what_mode());
+          Player::replay.end_recording(_enterName, GetTotalScore());
           EndGame();
         }
         else {
-          long score = _overmind->GetElapsedTime();
+          int64_t score = _overmind->GetElapsedTime();
           score -= 600l * get_lives();
           if (score <= 0)
             score = 1;
           _highScores[Lib::PLAYERS][_players - 1].first = _enterName;
           _highScores[Lib::PLAYERS][_players - 1].second = score;
 
-          lib().EndRecording(_enterName, score, _players, true,
-                             is_hard_mode(), is_fast_mode(), is_what_mode());
+          Player::replay.end_recording(_enterName, score);
           EndGame();
         }
       }
     }
     else if (lib().IsKeyPressed(Lib::KEY_MENU)) {
-      lib().EndRecording(
+      Player::replay.end_recording(
           "untitled",
-          is_boss_mode() ?
+          _mode == BOSS_MODE ?
               (_overmind->GetKilledBosses() >= 6 &&
                _overmind->GetElapsedTime() != 0 ?
                    std::max(_overmind->GetElapsedTime() -
                             600l * get_lives(), 1l)
-               : 0l) :
-              GetTotalScore(),
-          _players,
-          is_boss_mode(), is_hard_mode(), is_fast_mode(), is_what_mode());
+               : 0l) : GetTotalScore());
 
       EndGame();
       lib().PlaySound(Lib::SOUND_MENU_ACCEPT);
@@ -552,9 +552,9 @@ void z0Game::Update()
 
 void z0Game::Render() const
 {
-  if (_exitTimer > 0 && !_replay._okay && _replay._error.size() > 0) {
+  if (_exitTimer > 0 && !Player::replay.okay && !Player::replay.error.empty()) {
     int y = 2;
-    std::string s = _replay._error;
+    std::string s = Player::replay.error;
     std::size_t i;
     while ((i = s.find_first_of("\n")) != std::string::npos) {
       std::string t = s.substr(0, i);
@@ -596,7 +596,7 @@ void z0Game::Render() const
 
         std::stringstream ss2;
         int pads = lib().IsPadConnected(i);
-        if (Player::IsReplaying()) {
+        if (!Player::replay.recording) {
           ss2 << "REPLAY";
           pads = 1;
         }
@@ -623,7 +623,7 @@ void z0Game::Render() const
 
     std::stringstream ss;
     ss << _lives << " live(s)";
-    if (!is_boss_mode() && _overmind->GetTimer() >= 0) {
+    if (_mode != BOSS_MODE && _overmind->GetTimer() >= 0) {
       int t = int(0.5f + _overmind->GetTimer() / 60);
       ss << " " << (t < 10 ? "0" : "") << t;
     }
@@ -684,7 +684,7 @@ void z0Game::Render() const
                          flvec2(v.x, float(Lib::HEIGHT)), a);
       }
     }
-    if (is_boss_mode()) {
+    if (_mode == BOSS_MODE) {
       std::stringstream sst;
       sst << ConvertToTime(_overmind->GetElapsedTime());
       lib().RenderText(
@@ -694,7 +694,7 @@ void z0Game::Render() const
     }
 
     if (_showHPBar) {
-      int x = is_boss_mode() ? 48 : 0;
+      int x = _mode == BOSS_MODE ? 48 : 0;
       lib().RenderRect(
           flvec2(x + Lib::WIDTH / 2 - 48.f, 16.f),
           flvec2(x + Lib::WIDTH / 2 + 48.f, 32.f),
@@ -706,12 +706,12 @@ void z0Game::Render() const
           PANEL_TRAN);
     }
 
-    if (Player::IsReplaying()) {
-      int x = is_fast_mode() ? lib().GetFrameCount() / 2 : lib().GetFrameCount();
+    if (!Player::replay.recording) {
+      int x = _mode == FAST_MODE ? lib().GetFrameCount() / 2 : lib().GetFrameCount();
       std::stringstream ss;
       ss << x << "X " <<
-          int(100 * float(Player::ReplayFrame()) /
-          _replay._playerFrames.size()) << "%";
+          int(100 * float(Player::replay_frame) /
+          Player::replay.player_frames.size()) << "%";
 
       lib().RenderText(
           flvec2(Lib::WIDTH / (2.f * Lib::TEXT_WIDTH) - ss.str().length() / 2,
@@ -922,7 +922,7 @@ void z0Game::Render() const
 
     // Boss mode score listing
     //------------------------------
-    if (is_boss_mode()) {
+    if (_mode == BOSS_MODE) {
       int extraLives = get_lives();
       bool b = extraLives > 0 && _overmind->GetKilledBosses() >= 6;
 
@@ -987,7 +987,7 @@ void z0Game::Render() const
     //------------------------------
     if (_players > 1) {
       bool first = true;
-      uint64_t max = 0;
+      int64_t max = 0;
       std::size_t best = 0;
       for (int32_t i = 0; i < _players; ++i) {
         if (first || GetPlayerScore(i) > max) {
@@ -1017,24 +1017,19 @@ void z0Game::Render() const
 
 // Game control
 //------------------------------
-void z0Game::NewGame(bool canFaceSecretBoss, bool bossMode, bool replay,
-                     bool hardMode, bool fastMode, bool whatMode)
+void z0Game::NewGame(bool canFaceSecretBoss, bool replay, game_mode mode)
 {
   if (!replay) {
-    Player::DisableReplay();
-    lib().StartRecording(_players, canFaceSecretBoss,
-                         bossMode, hardMode, fastMode, whatMode);
+    Player::replay = Replay(_players, mode, canFaceSecretBoss);
+    lib().NewGame();
   }
   _controllersDialog = true;
   _firstControllersDialog = true;
   _controllersConnected = 0;
-  _bossMode = bossMode;
-  _hardMode = hardMode;
-  _fastMode = fastMode;
-  _whatMode = whatMode;
+  _mode = mode;
   _overmind->Reset(canFaceSecretBoss);
-  _lives = bossMode ? _players * BOSSMODE_LIVES : STARTING_LIVES;
-  lib().SetFrameCount(is_fast_mode() ? 2 : 1);
+  _lives = mode == BOSS_MODE ? _players * BOSSMODE_LIVES : STARTING_LIVES;
+  lib().SetFrameCount(_mode == FAST_MODE ? 2 : 1);
 
   Stars::clear();
   for (int32_t i = 0; i < _players; ++i) {
@@ -1067,21 +1062,18 @@ void z0Game::EndGame()
   save2._bossesKilled = _bossesKilled;
   save2._hardModeBossesKilled = _hardModeBossesKilled;
   lib().SaveSaveData(save2);
-  lib().EndRecording("untitled", 0, _players,
-                     is_boss_mode(), is_hard_mode(),
-                     is_fast_mode(), is_what_mode());
   lib().SetFrameCount(1);
   _state = STATE_MENU;
   _selection =
-      ((IsBossModeUnlocked() && is_boss_mode()) ||
-      (is_hard_mode() && IsHardModeUnlocked()) ||
-      (is_fast_mode() && IsFastModeUnlocked()) ||
-      (is_what_mode() && IsWhatModeUnlocked())) ? -1 : 0;
+      (_mode == BOSS_MODE && IsBossModeUnlocked()) ||
+      (_mode == HARD_MODE && IsHardModeUnlocked()) ||
+      (_mode == FAST_MODE && IsFastModeUnlocked()) ||
+      (_mode == WHAT_MODE && IsWhatModeUnlocked()) ? -1 : 0;
   _specialSelection =
-      (IsBossModeUnlocked() && is_boss_mode()) ? 0 :
-      (is_hard_mode() && IsHardModeUnlocked()) ? 1 :
-      (is_fast_mode() && IsFastModeUnlocked()) ? 2 :
-      (is_what_mode() && IsWhatModeUnlocked()) ? 3 : 0;
+      (_mode == BOSS_MODE && IsBossModeUnlocked()) ? 0 :
+      (_mode == HARD_MODE && IsHardModeUnlocked()) ? 1 :
+      (_mode == FAST_MODE && IsFastModeUnlocked()) ? 2 :
+      (_mode == WHAT_MODE && IsWhatModeUnlocked()) ? 3 : 0;
 }
 
 void z0Game::AddShip(Ship* ship)
@@ -1214,12 +1206,12 @@ Player* z0Game::nearest_player(const vec2& point) const
   return (Player*) (r != 0 ? r : deadR);
 }
 
-void z0Game::set_boss_killed(BossList boss)
+void z0Game::set_boss_killed(boss_list boss)
 {
-  if (Player::IsReplaying()) {
+  if (!Player::replay.recording) {
     return;
   }
-  if (is_hard_mode() || is_fast_mode() || is_what_mode() || boss == BOSS_3A) {
+  if (boss == BOSS_3A || (_mode != BOSS_MODE && _mode != NORMAL_MODE)) {
     _hardModeBossesKilled |= boss;
   }
   else {
@@ -1244,17 +1236,17 @@ void z0Game::RenderPanel(const flvec2& low, const flvec2& hi) const
   lib().RenderRect(tlow, thi, PANEL_TEXT, 4);
 }
 
-std::string z0Game::ConvertToTime(uint64_t score) const
+std::string z0Game::ConvertToTime(int64_t score) const
 {
   if (score == 0) {
     return "--:--";
   }
-  uint64_t mins = 0;
+  int64_t mins = 0;
   while (score >= 60 * 60 && mins < 99) {
     score -= 60 * 60;
     ++mins;
   }
-  uint64_t secs = score / 60;
+  int64_t secs = score / 60;
 
   std::stringstream r;
   if (mins < 10) {
@@ -1270,7 +1262,7 @@ std::string z0Game::ConvertToTime(uint64_t score) const
 
 // Score calculation
 //------------------------------
-uint64_t z0Game::GetPlayerScore(int32_t playerNumber) const
+int64_t z0Game::GetPlayerScore(int32_t playerNumber) const
 {
   for (Ship* ship : _playerList) {
     Player* p = (Player*) ship;
@@ -1281,7 +1273,7 @@ uint64_t z0Game::GetPlayerScore(int32_t playerNumber) const
   return 0;
 }
 
-uint64_t z0Game::GetPlayerDeaths(int32_t playerNumber) const
+int64_t z0Game::GetPlayerDeaths(int32_t playerNumber) const
 {
   for (Ship* ship : _playerList) {
     Player* p = (Player*) ship;
@@ -1292,9 +1284,9 @@ uint64_t z0Game::GetPlayerDeaths(int32_t playerNumber) const
   return 0;
 }
 
-uint64_t z0Game::GetTotalScore() const
+int64_t z0Game::GetTotalScore() const
 {
-  uint64_t total = 0;
+  int64_t total = 0;
   for (Ship* ship : _playerList) {
     Player* p = (Player*) ship;
     total += p->GetScore();
@@ -1304,11 +1296,11 @@ uint64_t z0Game::GetTotalScore() const
 
 bool z0Game::IsHighScore() const
 {
-  if (Player::IsReplaying()) {
+  if (!Player::replay.recording) {
     return false;
   }
 
-  if (is_boss_mode()) {
+  if (_mode == BOSS_MODE) {
     return
         _overmind->GetKilledBosses() >= 6 && _overmind->GetElapsedTime() != 0 &&
         (_overmind->GetElapsedTime() <
@@ -1317,9 +1309,9 @@ bool z0Game::IsHighScore() const
   }
 
   int n =
-      is_what_mode() ? 3 * Lib::PLAYERS + _players :
-      is_fast_mode() ? 2 * Lib::PLAYERS + _players :
-      is_hard_mode() ? Lib::PLAYERS + _players : _players - 1;
+      _mode == WHAT_MODE ? 3 * Lib::PLAYERS + _players :
+      _mode == FAST_MODE ? 2 * Lib::PLAYERS + _players :
+      _mode == HARD_MODE ? Lib::PLAYERS + _players : _players - 1;
 
   const Lib::HighScoreList& list = _highScores[n];
   for (unsigned int i = 0; i < list.size(); i++) {

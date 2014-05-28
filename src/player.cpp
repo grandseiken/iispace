@@ -17,8 +17,8 @@ const int Player::MAGICSHOT_COUNT = 120;
 z0Game::ShipList Player::_killQueue;
 z0Game::ShipList Player::_shotSoundQueue;
 int Player::_fireTimer;
-Lib::Recording Player::_replay;
-std::size_t Player::_replayFrame;
+Replay Player::replay(0, 0, false);
+std::size_t Player::replay_frame;
 
 Player::Player(const vec2& position, int playerNumber)
   : Ship(position, SHIP_PLAYER)
@@ -55,22 +55,22 @@ void Player::Update()
       int(lib().IsKeyHeld(GetPlayerNumber(), Lib::KEY_FIRE)) |
       (lib().IsKeyPressed(GetPlayerNumber(), Lib::KEY_BOMB) << 1);
 
-  if (_replay._okay) {
-    if (_replayFrame < _replay._playerFrames.size()) {
-      const Lib::PlayerFrame& pf = _replay._playerFrames[_replayFrame];
-      velocity = pf._velocity;
-      fireTarget = pf._target;
-      keys = pf._keys;
-      ++_replayFrame;
+  if (replay.recording) {
+    replay.record(velocity, fireTarget, keys);
+  }
+  else {
+    if (replay_frame < replay.player_frames.size()) {
+      const PlayerFrame& pf = replay.player_frames[replay_frame];
+      velocity = pf.velocity;
+      fireTarget = pf.target;
+      keys = pf.keys;
+      ++replay_frame;
     }
     else {
       velocity = vec2();
       fireTarget = _tempTarget;
       keys = 0;
     }
-  }
-  else {
-    lib().Record(velocity, fireTarget, keys);
   }
   _tempTarget = fireTarget;
 
@@ -208,7 +208,7 @@ void Player::Render() const
 {
   int n = GetPlayerNumber();
 
-  if (!_killTimer && (!z0().is_what_mode() || _reviveTimer > 0)) {
+  if (!_killTimer && (z0().mode() != z0Game::WHAT_MODE || _reviveTimer > 0)) {
     flvec2 t = to_float(_tempTarget);
     if (t.x >= 0 && t.x <= Lib::WIDTH && t.y >= 0 && t.y <= Lib::HEIGHT) {
       lib().RenderLine(t + flvec2(0, 9), t - flvec2(0, 8), GetPlayerColour());
@@ -222,7 +222,7 @@ void Player::Render() const
     }
   }
 
-  if (z0().is_boss_mode()) {
+  if (z0().mode() == z0Game::BOSS_MODE) {
     return;
   }
 
@@ -399,7 +399,7 @@ Shot::Shot(const vec2& position, Player* player,
 
 void Shot::Render() const
 {
-  if (z0().is_what_mode()) {
+  if (z0().mode() == z0Game::WHAT_MODE) {
     return;
   }
   if (_flash) {

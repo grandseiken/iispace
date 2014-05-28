@@ -124,6 +124,21 @@ int32_t rand_int()
   return (state >> 16) & 0x7fff;
 }
 
+std::string crypt(const std::string& text, const std::string& key)
+{
+  std::string r = "";
+  for (unsigned int i = 0; i < text.length(); i++) {
+    char c = text[i] ^ key[i % key.length()];
+    if (text[i] == '\0' || c == '\0') {
+      r += text[i];
+    }
+    else {
+      r += c;
+    }
+  }
+  return r;
+}
+
 std::string compress_string(const std::string& str)
 {
   const int compressionLevel = Z_BEST_COMPRESSION;

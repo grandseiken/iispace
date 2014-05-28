@@ -5,6 +5,7 @@
 
 #include "lib.h"
 #include "z.h"
+#include "replay.h"
 class Overmind;
 class Particle;
 class Player;
@@ -12,26 +13,35 @@ class Ship;
 
 #define ALLOWED_CHARS "ABCDEFGHiJKLMNOPQRSTUVWXYZ 1234567890! "
 
+struct score_finished {};
 class z0Game {
 public:
 
   // Constants
   //------------------------------
-  enum GameState {
+  enum game_state {
     STATE_MENU,
     STATE_PAUSE,
     STATE_GAME,
     STATE_HIGHSCORE,
   };
 
-  enum BossList {
+  enum game_mode {
+    NORMAL_MODE,
+    BOSS_MODE,
+    HARD_MODE,
+    FAST_MODE,
+    WHAT_MODE,
+  };
+
+  enum boss_list {
     BOSS_1A = 1,
     BOSS_1B = 2,
     BOSS_1C = 4,
     BOSS_2A = 8,
     BOSS_2B = 16,
     BOSS_2C = 32,
-    BOSS_3A = 64
+    BOSS_3A = 64,
   };
 
   static const colour PANEL_TEXT = 0xeeeeeeff;
@@ -54,6 +64,11 @@ public:
   Lib& lib() const
   {
     return _lib;
+  }
+
+  game_mode mode() const
+  {
+    return _mode;
   }
 
   // Ships
@@ -85,27 +100,7 @@ public:
     return _playerList;
   }
 
-  bool is_boss_mode() const
-  {
-    return _bossMode;
-  }
-
-  bool is_hard_mode() const
-  {
-    return _hardMode;
-  }
-
-  bool is_fast_mode() const
-  {
-    return _fastMode;
-  }
-
-  bool is_what_mode() const
-  {
-    return _whatMode;
-  }
-
-  void set_boss_killed(BossList boss);
+  void set_boss_killed(boss_list boss);
 
   void RenderHPBar(float fill)
   {
@@ -162,28 +157,23 @@ private:
     return IsFastModeUnlocked() && ((_hardModeBossesKilled & 64) == 64);
   }
 
-  std::string ConvertToTime(uint64_t score) const;
+  std::string ConvertToTime(int64_t score) const;
 
   // Scores
   //------------------------------
-  uint64_t GetPlayerScore(int32_t playerNumber) const;
-  uint64_t GetPlayerDeaths(int32_t playerNumber) const;
-  uint64_t GetTotalScore() const;
+  int64_t GetPlayerScore(int32_t playerNumber) const;
+  int64_t GetPlayerDeaths(int32_t playerNumber) const;
+  int64_t GetTotalScore() const;
   bool IsHighScore() const;
 
-  void NewGame(bool canFaceSecretBoss, bool bossMode = false,
-               bool replay = false, bool hardMode = false,
-               bool fastMode = false, bool whatMode = false);
+  void NewGame(bool canFaceSecretBoss, bool replay, game_mode mode);
   void EndGame();
 
   Lib& _lib;
-  GameState _state;
+  game_state _state;
   int32_t _players;
   int32_t _lives;
-  bool _bossMode;
-  bool _hardMode;
-  bool _fastMode;
-  bool _whatMode;
+  game_mode _mode;
 
   mutable bool _showHPBar;
   mutable float _fillHPBar;
@@ -214,7 +204,6 @@ private:
   int _hardModeBossesKilled;
   Lib::HighScoreTable _highScores;
   std::vector<std::string> _compliments;
-  Lib::Recording _replay;
 
 };
 

@@ -2,6 +2,7 @@
 #define IISPACE_SRC_PLAYER_H
 
 #include "ship.h"
+#include "replay.h"
 
 class Player : public Ship {
 public:
@@ -28,6 +29,9 @@ public:
     return _playerNumber;
   }
 
+  static Replay replay;
+  static std::size_t replay_frame;
+
   // Player behaviour
   //------------------------------
   virtual void Update();
@@ -41,27 +45,6 @@ public:
   static void UpdateFireTimer()
   {
     _fireTimer = (_fireTimer + 1) % SHOT_TIMER;
-  }
-
-  static void SetReplay(Lib::Recording replay)
-  {
-    _replay = replay;
-    _replayFrame = 0;
-  }
-
-  static void DisableReplay()
-  {
-    _replay._okay = false;
-  }
-
-  static bool IsReplaying()
-  {
-    return _replay._okay;
-  }
-
-  static std::size_t ReplayFrame()
-  {
-    return _replayFrame;
   }
 
   // Scoring
@@ -117,8 +100,6 @@ private:
   static int _fireTimer;
   static z0Game::ShipList _killQueue;
   static z0Game::ShipList _shotSoundQueue;
-  static Lib::Recording _replay;
-  static std::size_t _replayFrame;
 
 };
 
