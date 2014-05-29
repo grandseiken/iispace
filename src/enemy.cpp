@@ -499,7 +499,7 @@ Tractor::Tractor(const vec2& position, bool power)
   , _spinning(false)
 {
   add_shape(new Polygon(vec2(24, 0), 12, 6, 0xcc33ccff, 0,
-                        DANGEROUS | VULNERABLE, Polygon::T::POLYSTAR));
+                        DANGEROUS | VULNERABLE, Polygon::T::POLYGRAM));
   add_shape(new Polygon(vec2(-24, 0), 12, 6, 0xcc33ccff, 0,
                         DANGEROUS | VULNERABLE, Polygon::T::POLYGRAM));
   add_shape(new Line(vec2(0, 0), vec2(24, 0), vec2(-24, 0), 0xcc33ccff));

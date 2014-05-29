@@ -60,6 +60,7 @@
     <ClCompile Include="..\src\player.cpp" />
     <ClCompile Include="..\src\powerup.cpp" />
     <ClCompile Include="..\src\replay.cpp" />
+    <ClCompile Include="..\src\shape.cpp" />
     <ClCompile Include="..\src\ship.cpp" />
     <ClCompile Include="..\src\stars.cpp" />
     <ClCompile Include="..\src\z.cpp" />
