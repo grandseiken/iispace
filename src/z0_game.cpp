@@ -363,7 +363,7 @@ void z0Game::Update()
     std::stable_sort(_collisions.begin(), _collisions.end(), &SortShips);
     for (std::size_t i = 0; i < _ships.size(); ++i) {
       if (!_ships[i]->is_destroyed()) {
-        _ships[i]->Update();
+        _ships[i]->update();
       }
     }
     for (const auto& particle : _particles) {
@@ -571,14 +571,14 @@ void z0Game::Render() const
   if (!_firstControllersDialog) {
     Stars::render(_lib);
     for (const auto& particle : _particles) {
-      particle->render();
+      particle->render(lib());
     }
     for (std::size_t i = _players; i < _ships.size(); ++i) {
-      _ships[i]->Render();
+      _ships[i]->render();
     }
     for (std::size_t i = 0;
          i < std::size_t(_players) && i < _ships.size(); ++i) {
-      _ships[i]->Render();
+      _ships[i]->render();
     }
   }
 
@@ -1091,7 +1091,6 @@ void z0Game::AddShip(Ship* ship)
 
 void z0Game::AddParticle(Particle* particle)
 {
-  particle->set_game(*this);
   _particles.emplace_back(particle);
 }
 

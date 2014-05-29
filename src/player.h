@@ -34,9 +34,9 @@ public:
 
   // Player behaviour
   //------------------------------
-  void Update() override;
-  void Render() const override;
-  void Damage();
+  void update() override;
+  void render() const override;
+  void damage();
 
   void ActivateMagicShots();
   void ActivateMagicShield();
@@ -112,8 +112,8 @@ public:
        const vec2& direction, bool magic = false);
   ~Shot() override {}
 
-  void Update() override;
-  void Render() const override;
+  void update() override;
+  void render() const override;
 
 private:
 

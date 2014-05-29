@@ -304,7 +304,7 @@ void Overmind::SpawnBossReward()
   }
 }
 
-void Overmind::SpawnFollow(int num, int div, int side)
+void Overmind::SpawnFollow(int32_t num, int32_t div, int32_t side)
 {
   if (side == 0 || side == 1) {
     spawn(new Follow(SpawnPoint(false, _tRow, num, div)));
@@ -314,7 +314,7 @@ void Overmind::SpawnFollow(int num, int div, int side)
   }
 }
 
-void Overmind::SpawnChaser(int num, int div, int side)
+void Overmind::SpawnChaser(int32_t num, int32_t div, int32_t side)
 {
   if (side == 0 || side == 1) {
     spawn(new Chaser(SpawnPoint(false, _tRow, num, div)));
@@ -324,7 +324,7 @@ void Overmind::SpawnChaser(int num, int div, int side)
   }
 }
 
-void Overmind::SpawnSquare(int num, int div, int side)
+void Overmind::SpawnSquare(int32_t num, int32_t div, int32_t side)
 {
   if (side == 0 || side == 1) {
     spawn(new Square(SpawnPoint(false, _tRow, num, div)));
@@ -334,7 +334,7 @@ void Overmind::SpawnSquare(int num, int div, int side)
   }
 }
 
-void Overmind::SpawnWall(int num, int div, int side, bool dir)
+void Overmind::SpawnWall(int32_t num, int32_t div, int32_t side, bool dir)
 {
   if (side == 0 || side == 1) {
     spawn(new Wall(SpawnPoint(false, _tRow, num, div), dir));
@@ -344,7 +344,7 @@ void Overmind::SpawnWall(int num, int div, int side, bool dir)
   }
 }
 
-void Overmind::SpawnFollowHub(int num, int div, int side)
+void Overmind::SpawnFollowHub(int32_t num, int32_t div, int32_t side)
 {
   if (side == 0 || side == 1) {
     bool p1 = z::rand_int(64) < std::min(32, _power - 32) - _hardAlready;
@@ -370,7 +370,7 @@ void Overmind::SpawnFollowHub(int num, int div, int side)
   }
 }
 
-void Overmind::SpawnShielder(int num, int div, int side)
+void Overmind::SpawnShielder(int32_t num, int32_t div, int32_t side)
 {
   if (side == 0 || side == 1) {
     bool p = z::rand_int(64) < std::min(32, _power - 36) - _hardAlready;
@@ -388,7 +388,7 @@ void Overmind::SpawnShielder(int num, int div, int side)
   }
 }
 
-void Overmind::SpawnTractor(int num, int div, int side)
+void Overmind::SpawnTractor(int32_t num, int32_t div, int32_t side)
 {
   if (side == 0 || side == 1) {
     bool p = z::rand_int(64) < std::min(32, _power - 46) - _hardAlready;
@@ -415,7 +415,7 @@ void Overmind::spawn(Ship* ship)
   }
 }
 
-vec2 Overmind::SpawnPoint(bool top, int row, int num, int div)
+vec2 Overmind::SpawnPoint(bool top, int32_t row, int32_t num, int32_t div)
 {
   if (div < 2) {
     div = 2;
@@ -437,28 +437,28 @@ vec2 Overmind::SpawnPoint(bool top, int row, int num, int div)
 void Overmind::Wave()
 {
   if (_z0.mode() == z0Game::FAST_MODE) {
-    for (int i = 0; i < z::rand_int(7); ++i) {
+    for (int32_t i = 0; i < z::rand_int(7); ++i) {
       z::rand_int(1);
     }
   }
   if (_z0.mode() == z0Game::WHAT_MODE) {
-    for (int i = 0; i < z::rand_int(11); ++i) {
+    for (int32_t i = 0; i < z::rand_int(11); ++i) {
       z::rand_int(1);
     }
   }
 
   _tz0 = &_z0;
-  int resources = GetPower();
+  int resources = _power;
 
-  std::vector<std::pair<int, SpawnFormationFunction>> validFormations;
-  for (unsigned int i = 0; i < _formations.size(); i++) {
+  std::vector<std::pair<int32_t, SpawnFormationFunction>> validFormations;
+  for (std::size_t i = 0; i < _formations.size(); i++) {
     if (resources >= _formations[i].first.second) {
-      validFormations.push_back(std::pair<int, SpawnFormationFunction>(
+      validFormations.push_back(std::pair<int32_t, SpawnFormationFunction>(
           _formations[i].first.first, _formations[i].second));
     }
   }
 
-  std::vector<std::pair<int, SpawnFormationFunction>> chosenFormations;
+  std::vector<std::pair<int32_t, SpawnFormationFunction>> chosenFormations;
   while (resources > 0) {
     unsigned int max = 0;
     while (max < validFormations.size() &&

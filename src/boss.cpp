@@ -93,7 +93,7 @@ int Boss::CalculateHP(int base, int players, int cycle)
   return r;
 }
 
-void Boss::Damage(int damage, bool magic, Player* source)
+void Boss::damage(int damage, bool magic, Player* source)
 {
   int actualDamage = GetDamage(damage, magic);
   if (actualDamage <= 0) {
@@ -126,19 +126,19 @@ void Boss::Damage(int damage, bool magic, Player* source)
   }
 }
 
-void Boss::Render() const
+void Boss::render() const
 {
-  Render(true);
+  render(true);
 }
 
-void Boss::Render(bool hpBar) const
+void Boss::render(bool hpBar) const
 {
   if (hpBar) {
     RenderHPBar();
   }
 
   if (!_damaged) {
-    Ship::Render();
+    Ship::render();
     return;
   }
   for (unsigned int i = 0; i < count_shapes(); i++) {
@@ -165,7 +165,7 @@ void Boss::OnDestroy()
   SetKilled();
   for (const auto& ship : z0().all_ships(SHIP_ENEMY)) {
     if (ship != this) {
-      ship->Damage(Player::BOMB_DAMAGE, false, 0);
+      ship->damage(Player::BOMB_DAMAGE, false, 0);
     }
   }
   explosion();
@@ -238,7 +238,7 @@ BigSquareBoss::BigSquareBoss(int players, int cycle)
   add_shape(new Polygon(vec2(), 55, 4, 0x330099ff, 0, SHIELD));
 }
 
-void BigSquareBoss::Update()
+void BigSquareBoss::update()
 {
   vec2 pos = position();
   if (pos.y < Lib::HEIGHT * fixed::hundredth * 25 && _dir.y == -1) {
@@ -317,9 +317,9 @@ void BigSquareBoss::Update()
   }
 }
 
-void BigSquareBoss::Render() const
+void BigSquareBoss::render() const
 {
-  Boss::Render();
+  Boss::render();
   if ((_specialTimer / 4) % 2 && _attackPlayer) {
     flvec2 d(ATTACK_RADIUS.to_float(), 0);
     if (_specialAttackRotate) {
@@ -372,7 +372,7 @@ ShieldBombBoss::ShieldBombBoss(int players, int cycle)
   SetIgnoreDamageColourIndex(1);
 }
 
-void ShieldBombBoss::Update()
+void ShieldBombBoss::update()
 {
   if (!_side && position().x < Lib::WIDTH * fixed::tenth * 6) {
     move(vec2(1, 0) * SPEED);
@@ -596,7 +596,7 @@ ChaserBoss::ChaserBoss(int players, int cycle, int split,
   }
 }
 
-void ChaserBoss::Update()
+void ChaserBoss::update()
 {
   z0Game::ShipList remaining = z0().all_ships();
   _lastDir = _dir;
@@ -754,9 +754,9 @@ void ChaserBoss::Update()
   }
 }
 
-void ChaserBoss::Render() const
+void ChaserBoss::render() const
 {
-  Boss::Render();
+  Boss::render();
   static std::vector< int > hpLookup;
   if (hpLookup.empty()) {
     int hp = 0;
@@ -924,7 +924,7 @@ TractorBoss::TractorBoss(int players, int cycle)
   _attackShapes = int(count_shapes());
 }
 
-void TractorBoss::Update()
+void TractorBoss::update()
 {
   if (position().x <= Lib::WIDTH / 2 &&
       _willAttack && !_stopped && !_continue) {
@@ -1141,9 +1141,9 @@ void TractorBoss::Update()
   }
 }
 
-void TractorBoss::Render() const
+void TractorBoss::render() const
 {
-  Boss::Render();
+  Boss::render();
   if ((_stopped && !_generating && !_attacking) ||
       (!_stopped && (_continue || !_willAttack) && is_on_screen())) {
     for (std::size_t i = 0; i < _targets.size(); ++i) {
@@ -1216,7 +1216,7 @@ GhostBoss::GhostBoss(int players, int cycle)
   SetIgnoreDamageColourIndex(12);
 }
 
-void GhostBoss::Update()
+void GhostBoss::update()
 {
   for (int n = 1; n < 5; ++n) {
     CompoundShape* s = (CompoundShape*) &get_shape(11 + n);
@@ -1459,7 +1459,7 @@ void GhostBoss::Update()
   }
 }
 
-void GhostBoss::Render() const
+void GhostBoss::render() const
 {
   if ((_startTime / 4) % 2 == 1) {
     render_with_colour(1);
@@ -1467,7 +1467,7 @@ void GhostBoss::Render() const
   }
   if ((_visible && ((_vTime / 4) % 2 == 0)) ||
       (!_visible && ((_vTime / 4) % 2 == 1))) {
-    Boss::Render();
+    Boss::render();
     return;
   }
 
@@ -1518,7 +1518,7 @@ DeathRayBoss::DeathRayBoss(int players, int cycle)
   rotate(2 * fixed::pi * fixed(z::rand_int()) / z::rand_max);
 }
 
-void DeathRayBoss::Update()
+void DeathRayBoss::update()
 {
   bool positioned = true;
   fixed d =
@@ -1672,9 +1672,9 @@ void DeathRayBoss::Update()
   }
 }
 
-void DeathRayBoss::Render() const
+void DeathRayBoss::render() const
 {
-  Boss::Render();
+  Boss::render();
   for (int i = _rayAttackTimer - 8; i <= _rayAttackTimer + 8; i++) {
     if (i < 40 || i > RAY_TIMER) {
       continue;
@@ -1728,7 +1728,7 @@ SuperBossArc::SuperBossArc(
   add_shape(new PolyArc(vec2(), 105, 32, 2, 0, i * 2 * fixed::pi / 16, SHIELD));
 }
 
-void SuperBossArc::Update()
+void SuperBossArc::update()
 {
   rotate(fixed(6) / 1000);
   for (int i = 0; i < 8; ++i) {
@@ -1743,10 +1743,10 @@ void SuperBossArc::Update()
   }
 }
 
-void SuperBossArc::Render() const
+void SuperBossArc::render() const
 {
   if (_sTimer >= 64 || _sTimer % 4 < 2) {
-    Boss::Render(false);
+    Boss::render(false);
   }
 }
 
@@ -1796,7 +1796,7 @@ SuperBoss::SuperBoss(int players, int cycle)
   SetIgnoreDamageColourIndex(8);
 }
 
-void SuperBoss::Update()
+void SuperBoss::update()
 {
   if (_arcs.empty()) {
     for (int i = 0; i < 16; ++i) {
@@ -1933,7 +1933,7 @@ void SuperBoss::OnDestroy()
   SetKilled();
   for (const auto& ship : z0().all_ships(SHIP_ENEMY)) {
     if (ship != this) {
-      ship->Damage(Player::BOMB_DAMAGE * 100, false, 0);
+      ship->damage(Player::BOMB_DAMAGE * 100, false, 0);
     }
   }
   explosion();

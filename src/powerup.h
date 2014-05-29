@@ -14,8 +14,8 @@ public:
   };
 
   Powerup(const vec2& position, type_t type);
-  void Update() override;
-  void Damage(int damage, bool magic, Player* source) override;
+  void update() override;
+  void damage(int damage, bool magic, Player* source) override;
 
 private:
 

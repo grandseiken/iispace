@@ -47,7 +47,7 @@ Player::~Player()
 {
 }
 
-void Player::Update()
+void Player::update()
 {
   vec2 velocity = lib().GetMoveVelocity(GetPlayerNumber());
   vec2 fireTarget = lib().GetFireTarget(GetPlayerNumber(), position());
@@ -154,7 +154,7 @@ void Player::Update()
     for (unsigned int i = 0; i < list.size(); i++) {
       if ((list[i]->position() - position()).length() <= BOMB_RADIUS ||
           (list[i]->type() & SHIP_BOSS)) {
-        list[i]->Damage(BOMB_DAMAGE, false, 0);
+        list[i]->damage(BOMB_DAMAGE, false, 0);
       }
       if (!(list[i]->type() & SHIP_BOSS) &&
           ((Enemy*) list[i])->GetScore() > 0) {
@@ -200,11 +200,11 @@ void Player::Update()
 
   // Damage
   if (z0().any_collision(position(), DANGEROUS)) {
-    Damage();
+    damage();
   }
 }
 
-void Player::Render() const
+void Player::render() const
 {
   int n = GetPlayerNumber();
 
@@ -218,7 +218,7 @@ void Player::Render() const
       render_with_colour(0xffffffff);
     }
     else {
-      Ship::Render();
+      Ship::render();
     }
   }
 
@@ -282,7 +282,7 @@ void Player::Render() const
   lib().RenderText(v, s, GetPlayerColour());
 }
 
-void Player::Damage()
+void Player::damage()
 {
   if (_killTimer || _reviveTimer) {
     return;
@@ -397,7 +397,7 @@ Shot::Shot(const vec2& position, Player* player,
   add_shape(new Fill(vec2(), 3, 3, _player->GetPlayerColour() & 0xffffff33));
 }
 
-void Shot::Render() const
+void Shot::render() const
 {
   if (z0().mode() == z0Game::WHAT_MODE) {
     return;
@@ -406,11 +406,11 @@ void Shot::Render() const
     render_with_colour(0xffffffff);
   }
   else {
-    Ship::Render();
+    Ship::render();
   }
 }
 
-void Shot::Update()
+void Shot::update()
 {
   if (_magic) {
     _flash = z::rand_int(2) != 0;
@@ -427,7 +427,7 @@ void Shot::Update()
 
   z0Game::ShipList kill = z0().collision_list(position(), VULNERABLE);
   for (unsigned int i = 0; i < kill.size(); i++) {
-    kill[i]->Damage(1, _magic, _player);
+    kill[i]->damage(1, _magic, _player);
     if (!_magic) {
       destroy();
     }

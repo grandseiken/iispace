@@ -33,8 +33,8 @@ public:
 
   // Generic behaviour
   //------------------------------
-  void Damage(int damage, bool magic, Player* source) override;
-  void Render() const override;
+  void damage(int damage, bool magic, Player* source) override;
+  void render() const override;
   virtual void OnDestroy(bool bomb) {}
 
 private:
@@ -56,7 +56,7 @@ public:
   static const fixed SPEED;
 
   Follow(const vec2& position, fixed radius = 10, int hp = 1);
-  void Update() override;
+  void update() override;
 
 private:
 
@@ -74,7 +74,7 @@ public:
   static const fixed SPEED;
 
   Chaser(const vec2& position);
-  void Update() override;
+  void update() override;
 
 private:
 
@@ -92,8 +92,8 @@ public:
   static const fixed SPEED;
 
   Square(const vec2& position, fixed rotation = fixed::pi / 2);
-  void Update() override;
-  void Render() const override;
+  void update() override;
+  void render() const override;
 
 private:
 
@@ -111,7 +111,7 @@ public:
   static const fixed SPEED;
 
   Wall(const vec2& position, bool rdir);
-  void Update() override;
+  void update() override;
   void OnDestroy(bool bomb) override;
 
 private:
@@ -132,7 +132,7 @@ public:
   static const fixed SPEED;
 
   FollowHub(const vec2& position, bool powerA = false, bool powerB = false);
-  void Update() override;
+  void update() override;
   void OnDestroy(bool bomb) override;
 
 private:
@@ -154,7 +154,7 @@ public:
   static const int TIMER;
 
   Shielder(const vec2& position, bool power = false);
-  void Update() override;
+  void update() override;
 
 private:
 
@@ -176,8 +176,8 @@ public:
   static const fixed TRACTOR_SPEED;
 
   Tractor(const vec2& position, bool power = false);
-  void Update() override;
-  void Render() const override;
+  void update() override;
+  void render() const override;
 
 private:
 

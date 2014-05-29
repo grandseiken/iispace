@@ -152,10 +152,10 @@ public:
 
   // Generic behaviour
   //------------------------------
-  virtual void Update() = 0;
-  virtual void Render() const;
+  virtual void update() = 0;
+  virtual void render() const;
   // Player can be null
-  virtual void Damage(int32_t damage, bool magic, Player* source) {}
+  virtual void damage(int32_t damage, bool magic, Player* source) {}
 
 protected:
 
@@ -198,15 +198,7 @@ public:
     , _position(position)
     , _velocity(velocity)
     , _timer(time)
-    , _colour(colour)
-    , _z0(0)
-  {
-  }
-
-  void set_game(z0Game& game)
-  {
-    _z0 = &game;
-  }
+    , _colour(colour) {}
 
   bool is_destroyed() const
   {
@@ -223,11 +215,11 @@ public:
     }
   }
 
-  void render() const
+  void render(Lib& lib) const
   {
     flvec2 a = _position + flvec2(1, 1);
     flvec2 b = _position - flvec2(1, 1);
-    _z0->lib().RenderRect(a, b, _colour);
+    lib.RenderRect(a, b, _colour);
   }
 
 private:
@@ -237,7 +229,6 @@ private:
   flvec2 _velocity;
   int32_t _timer;
   colour _colour;
-  z0Game* _z0;
 
 };
 

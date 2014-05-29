@@ -32,7 +32,7 @@ Enemy::Enemy(const vec2& position, Ship::ship_category type,
 {
 }
 
-void Enemy::Damage(int damage, bool magic, Player* source)
+void Enemy::damage(int damage, bool magic, Player* source)
 {
   _hp -= std::max(damage, 0);
   if (damage > 0) {
@@ -61,10 +61,10 @@ void Enemy::Damage(int damage, bool magic, Player* source)
   }
 }
 
-void Enemy::Render() const
+void Enemy::render() const
 {
   if (!_damaged) {
-    Ship::Render();
+    Ship::render();
     return;
   }
   render_with_colour(0xffffffff);
@@ -86,7 +86,7 @@ Follow::Follow(const vec2& position, fixed radius, int hp)
   set_enemy_value(1);
 }
 
-void Follow::Update()
+void Follow::update()
 {
   rotate(fixed::tenth);
   if (!z0().alive_players()) {
@@ -122,7 +122,7 @@ Chaser::Chaser(const vec2& position)
   set_enemy_value(2);
 }
 
-void Chaser::Update()
+void Chaser::update()
 {
   bool before = is_on_screen();
 
@@ -164,9 +164,9 @@ Square::Square(const vec2& position, fixed rotation)
   set_enemy_value(2);
 }
 
-void Square::Update()
+void Square::update()
 {
-  if (z0().get_non_wall_count() == 0 && is_on_screen()) {
+  if (is_on_screen() && z0().get_non_wall_count() == 0) {
     _timer--;
   }
   else {
@@ -174,7 +174,7 @@ void Square::Update()
   }
 
   if (_timer == 0) {
-    Damage(4, false, 0);
+    damage(4, false, 0);
   }
 
   vec2 pos = position();
@@ -209,13 +209,13 @@ void Square::Update()
   set_rotation(_dir.angle());
 }
 
-void Square::Render() const
+void Square::render() const
 {
   if (z0().get_non_wall_count() == 0 && (_timer % 4 == 1 || _timer % 4 == 2)) {
     render_with_colour(0x33333300);
   }
   else {
-    Enemy::Render();
+    Enemy::render();
   }
 }
 
@@ -234,13 +234,13 @@ Wall::Wall(const vec2& position, bool rdir)
   set_enemy_value(4);
 }
 
-void Wall::Update()
+void Wall::update()
 {
   if (z0().get_non_wall_count() == 0 && _timer % 8 < 2) {
     if (GetHP() > 2) {
       play_sound(Lib::SOUND_ENEMY_SPAWN);
     }
-    Damage(GetHP() - 2, false, 0);
+    damage(GetHP() - 2, false, 0);
   }
 
   if (_rotate) {
@@ -331,7 +331,7 @@ FollowHub::FollowHub(const vec2& position, bool powerA, bool powerB)
   set_enemy_value(6 + (powerA ? 2 : 0) + (powerB ? 2 : 0));
 }
 
-void FollowHub::Update()
+void FollowHub::update()
 {
   _timer++;
   if (_timer > (_powerA ? TIMER / 2 : TIMER)) {
@@ -414,7 +414,7 @@ Shielder::Shielder(const vec2& position, bool power)
   set_enemy_value(8 + (power ? 2 : 0));
 }
 
-void Shielder::Update()
+void Shielder::update()
 {
   fixed s = _power ? fixed::hundredth * 12 : fixed::hundredth * 4;
   rotate(s);
@@ -505,7 +505,7 @@ Tractor::Tractor(const vec2& position, bool power)
   set_enemy_value(10 + (power ? 2 : 0));
 }
 
-void Tractor::Update()
+void Tractor::update()
 {
   get_shape(0).rotate(fixed::hundredth * 5);
   get_shape(1).rotate(-fixed::hundredth * 5);
@@ -574,9 +574,9 @@ void Tractor::Update()
   }
 }
 
-void Tractor::Render() const
+void Tractor::render() const
 {
-  Enemy::Render();
+  Enemy::render();
   if (_spinning) {
     for (unsigned int i = 0; i < _players.size(); i++) {
       if (((_timer + i * 4) / 4) % 2 && !((Player*) _players[i])->IsKilled()) {

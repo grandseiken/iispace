@@ -50,7 +50,7 @@ bool Ship::check_point(const vec2& v, int category) const
   return false;
 }
 
-void Ship::Render() const
+void Ship::render() const
 {
   for (const auto& shape : _shapes) {
     shape->Render(lib(), to_float(position()), rotation().to_float());

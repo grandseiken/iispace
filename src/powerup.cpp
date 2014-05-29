@@ -31,7 +31,7 @@ Powerup::Powerup(const vec2& position, type_t type)
   }
 }
 
-void Powerup::Update()
+void Powerup::update()
 {
   get_shape(0).SetColour(Player::GetPlayerColour(_frame / 2));
   _frame = (_frame + 1) % (Lib::PLAYERS * 2);
@@ -64,11 +64,11 @@ void Powerup::Update()
   static const fixed speed = 1;
   move(_dir * speed * ((pv.length() <= 40) ? 3 : 1));
   if (pv.length() <= 10 && alive) {
-    Damage(1, false, (Player*) p);
+    damage(1, false, (Player*) p);
   }
 }
 
-void Powerup::Damage(int damage, bool magic, Player* source)
+void Powerup::damage(int damage, bool magic, Player* source)
 {
   if (source) {
     switch (_type) {

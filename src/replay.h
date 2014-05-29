@@ -13,7 +13,7 @@ struct Replay {
   Replay(const std::string& path);
   Replay(int32_t players, int32_t game_mode, bool can_face_secret_boss);
   void record(const vec2& velocity, const vec2& target, int32_t keys);
-  void end_recording(const std::string& name, int64_t score);
+  void end_recording(const std::string& name, int64_t score) const;
 
   bool recording;
   bool okay;

@@ -111,7 +111,7 @@ void Replay::record(const vec2& velocity, const vec2& target, int32_t keys)
   player_frames.push_back(PlayerFrame{velocity, target, keys});
 }
 
-void Replay::end_recording(const std::string& name, int64_t score)
+void Replay::end_recording(const std::string& name, int64_t score) const
 {
   if (!recording) {
     return;

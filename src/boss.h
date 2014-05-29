@@ -53,9 +53,9 @@ public:
 
   // Generic behaviour
   //------------------------------
-  void Damage(int damage, bool magic, Player* source) override;
-  void Render() const override;
-  void Render(bool hpBar) const;
+  void damage(int damage, bool magic, Player* source) override;
+  void render() const override;
+  void render(bool hpBar) const;
   virtual int GetDamage(int damage, bool magic) = 0;
   virtual void OnDestroy();
 
@@ -93,8 +93,8 @@ public:
 
   BigSquareBoss(int players, int cycle);
 
-  void Update() override;
-  void Render() const override;
+  void update() override;
+  void render() const override;
   int GetDamage(int damage, bool magic) override;
 
 private:
@@ -123,7 +123,7 @@ public:
 
   ShieldBombBoss(int players, int cycle);
 
-  void Update() override;
+  void update() override;
   int GetDamage(int damage, bool magic) override;
 
 private:
@@ -151,8 +151,8 @@ public:
   ChaserBoss(int players, int cycle, int split = 0,
              const vec2& position = vec2(), int time = TIMER, int stagger = 0);
 
-  void Update() override;
-  void Render() const override;
+  void update() override;
+  void render() const override;
   int GetDamage(int damage, bool magic) override;
   void OnDestroy() override;
 
@@ -187,8 +187,8 @@ public:
 
   TractorBoss(int players, int cycle);
 
-  void Update() override;
-  void Render() const override;
+  void update() override;
+  void render() const override;
   int GetDamage(int damage, bool magic) override;
 
 private:
@@ -223,8 +223,8 @@ public:
 
   GhostBoss(int players, int cycle);
 
-  void Update() override;
-  void Render() const override;
+  void update() override;
+  void render() const override;
   int GetDamage(int damage, bool magic) override;
 
 private:
@@ -260,8 +260,8 @@ public:
 
   DeathRayBoss(int players, int cycle);
 
-  void Update() override;
-  void Render() const override;
+  void update() override;
+  void render() const override;
   int GetDamage(int damage, bool magic) override;
 
   void OnArmDeath(Ship* arm);
@@ -293,10 +293,10 @@ public:
   SuperBossArc(const vec2& position, int players, int cycle,
                int i, Ship* boss, int timer = 0);
 
-  void Update() override;
+  void update() override;
   int GetDamage(int damage, bool magic) override;
   void OnDestroy() override;
-  void Render() const override;
+  void render() const override;
 
   int GetTimer() const
   {
@@ -328,7 +328,7 @@ public:
 
   SuperBoss(int players, int cycle);
 
-  void Update() override;
+  void update() override;
   int GetDamage(int damage, bool magic) override;
   void OnDestroy() override;
 

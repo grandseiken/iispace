@@ -48,7 +48,7 @@ SBBossShot::SBBossShot(const vec2& position, const vec2& velocity, colour c)
   set_enemy_value(1);
 }
 
-void SBBossShot::Update()
+void SBBossShot::update()
 {
   move(_dir);
   vec2 p = position();
@@ -73,7 +73,7 @@ TBossShot::TBossShot(const vec2& position, fixed angle)
   SetDestroySound(Lib::SOUND_ENEMY_SHATTER);
 }
 
-void TBossShot::Update()
+void TBossShot::update()
 {
   if ((position().x > Lib::WIDTH && _dir.x > 0) ||
       (position().x < 0 && _dir.x < 0)) {
@@ -133,7 +133,7 @@ GhostWall::GhostWall(bool swap, bool swapGap)
                     Lib::HEIGHT / 2, 0xcc66ffff, 0, 0));
 }
 
-void GhostWall::Update()
+void GhostWall::update()
 {
   if ((_dir.x > 0 && position().x < 32) ||
       (_dir.y > 0 && position().y < 16) ||
@@ -166,7 +166,7 @@ GhostMine::GhostMine(const vec2& position, Boss* ghost)
   SetScore(0);
 }
 
-void GhostMine::Update()
+void GhostMine::update()
 {
   if (_timer == 80) {
     explosion();
@@ -186,16 +186,16 @@ void GhostMine::Update()
               new BigFollow(position(), false) : new Follow(position());
       e->SetScore(0);
       spawn(e);
-      Damage(1, false, 0);
+      damage(1, false, 0);
       break;
     }
   }
 }
 
-void GhostMine::Render() const
+void GhostMine::render() const
 {
   if (!((_timer / 4) % 2)) {
-    Enemy::Render();
+    Enemy::render();
   }
 }
 
@@ -209,7 +209,7 @@ DeathRay::DeathRay(const vec2& position)
   set_bounding_width(48);
 }
 
-void DeathRay::Update()
+void DeathRay::update()
 {
   move(vec2(1, 0) * SPEED);
   if (position().x > Lib::WIDTH + 20) {
@@ -238,7 +238,7 @@ DeathArm::DeathArm(DeathRayBoss* boss, bool top, int hp)
   SetDestroySound(Lib::SOUND_PLAYER_DESTROY);
 }
 
-void DeathArm::Update()
+void DeathArm::update()
 {
   if (_timer % (DeathRayBoss::ARM_ATIMER / 2) == DeathRayBoss::ARM_ATIMER / 4) {
     play_sound_random(Lib::SOUND_BOSS_FIRE);
@@ -332,7 +332,7 @@ SnakeTail::SnakeTail(const vec2& position, colour colour)
   SetScore(0);
 }
 
-void SnakeTail::Update()
+void SnakeTail::update()
 {
   static const fixed z15 = fixed::hundredth * 15;
   rotate(z15);
@@ -409,7 +409,7 @@ Snake::Snake(const vec2& position, colour colour, const vec2& dir, fixed rot)
   set_rotation(_dir.angle());
 }
 
-void Snake::Update()
+void Snake::update()
 {
   if (!(position().x >= -8 && position().x <= Lib::WIDTH + 8 &&
         position().y >= -8 && position().y <= Lib::HEIGHT + 8)) {
@@ -458,9 +458,9 @@ RainbowShot::RainbowShot(const vec2& position, const vec2& velocity, Ship* boss)
 {
 }
 
-void RainbowShot::Update()
+void RainbowShot::update()
 {
-  SBBossShot::Update();
+  SBBossShot::update();
   static const vec2 center = vec2(Lib::WIDTH / 2, Lib::HEIGHT / 2);
 
   if ((position() - center).length() > 100 && _timer % 2 == 0) {

@@ -8,40 +8,35 @@ class z0Game;
 class Overmind {
 public:
 
-  static const int TIMER = 2800;
-  static const int POWERUP_TIME = 1200;
-  static const int BOSS_REST_TIME = 240;
+  static const int32_t TIMER = 2800;
+  static const int32_t POWERUP_TIME = 1200;
+  static const int32_t BOSS_REST_TIME = 240;
 
-  static const int INITIAL_POWER = 16;
-  static const int INITIAL_TRIGGERVAL = 0;
-  static const int LEVELS_PER_GROUP = 4;
-  static const int BASE_GROUPS_PER_BOSS = 4;
+  static const int32_t INITIAL_POWER = 16;
+  static const int32_t INITIAL_TRIGGERVAL = 0;
+  static const int32_t LEVELS_PER_GROUP = 4;
+  static const int32_t BASE_GROUPS_PER_BOSS = 4;
 
   Overmind(z0Game& z0);
   ~Overmind() {}
 
   // General
   //------------------------------
-  int GetPower() const
-  {
-    return _power;
-  }
-
   void Reset(bool canFaceSecretBoss);
 
   void Update();
 
-  int  GetKilledBosses() const
+  int32_t  GetKilledBosses() const
   {
     return _bossModBosses - 1;
   }
 
-  long GetElapsedTime() const
+  int32_t GetElapsedTime() const
   {
     return _elapsedTime;
   }
 
-  int GetTimer() const
+  int32_t GetTimer() const
   {
     if (_isBossLevel) {
       return -1;
@@ -54,12 +49,7 @@ public:
   void OnEnemyDestroy(const Ship& ship);
   void OnEnemyCreate(const Ship& ship);
 
-  int CountEnemies() const
-  {
-    return _count;
-  }
-
-  int CountNonWallEnemies() const
+  int32_t CountNonWallEnemies() const
   {
     return _nonWallCount;
   }
@@ -71,52 +61,52 @@ private:
   void SpawnPowerup();
   void SpawnBossReward();
 
-  static void SpawnFollow(int num, int div, int side);
-  static void SpawnChaser(int num, int div, int side);
-  static void SpawnSquare(int num, int div, int side);
-  static void SpawnWall(int num, int div, int side, bool dir);
-  static void SpawnFollowHub(int num, int div, int side);
-  static void SpawnShielder(int num, int div, int side);
-  static void SpawnTractor(int num, int div, int side);
+  static void SpawnFollow(int32_t num, int32_t div, int32_t side);
+  static void SpawnChaser(int32_t num, int32_t div, int32_t side);
+  static void SpawnSquare(int32_t num, int32_t div, int32_t side);
+  static void SpawnWall(int32_t num, int32_t div, int32_t side, bool dir);
+  static void SpawnFollowHub(int32_t num, int32_t div, int32_t side);
+  static void SpawnShielder(int32_t num, int32_t div, int32_t side);
+  static void SpawnTractor(int32_t num, int32_t div, int32_t side);
 
   // Internals
   //------------------------------
   static void spawn(Ship* ship);
-  static vec2 SpawnPoint(bool top, int row, int num, int div);
+  static vec2 SpawnPoint(bool top, int32_t row, int32_t num, int32_t div);
 
   void Wave();
   void Boss();
   void BossModeBoss();
 
   z0Game& _z0;
-  static int _power;
-  int _timer;
-  int _count;
-  int _nonWallCount;
-  int _countTrigger;
-  int _levelsMod;
-  int _groupsMod;
-  int _bossModBosses;
-  int _bossModFights;
-  int _bossModSecret;
+  static int32_t _power;
+  int32_t _timer;
+  int32_t _count;
+  int32_t _nonWallCount;
+  int32_t _countTrigger;
+  int32_t _levelsMod;
+  int32_t _groupsMod;
+  int32_t _bossModBosses;
+  int32_t _bossModFights;
+  int32_t _bossModSecret;
   bool _canFaceSecretBoss;
-  int _powerupMod;
-  int _livesTarget;
+  int32_t _powerupMod;
+  int32_t _livesTarget;
   bool _isBossNext;
   bool _isBossLevel;
-  long _startTime;
-  long _elapsedTime;
+  int32_t _startTime;
+  int32_t _elapsedTime;
   bool _timeStopped;
-  int _bossRestTimer;
-  int _wavesTotal;
-  static int _hardAlready;
+  int32_t _bossRestTimer;
+  int32_t _wavesTotal;
+  static int32_t _hardAlready;
 
-  std::vector<int> _boss1Queue;
-  std::vector<int> _boss2Queue;
-  int _bossesToGo;
+  std::vector<int32_t> _boss1Queue;
+  std::vector<int32_t> _boss2Queue;
+  int32_t _bossesToGo;
 
-  typedef std::pair<int, int> FormationCost;
-  typedef FormationCost(*SpawnFormationFunction)(bool query, int row);
+  typedef std::pair<int32_t, int32_t> FormationCost;
+  typedef FormationCost(*SpawnFormationFunction)(bool query, int32_t row);
   typedef std::pair<FormationCost, SpawnFormationFunction> Formation;
   typedef std::vector<Formation> FormationList;
 
@@ -130,14 +120,14 @@ private:
 
   // Formation hacks
   //------------------------------
-  static int _tRow;
+  static int32_t _tRow;
   static z0Game* _tz0;
   void AddFormations();
 
-#define FORM_DEC(name) static FormationCost name (bool query, int row)
+#define FORM_DEC(name) static FormationCost name (bool query, int32_t row)
 #define FORM_USE(name) AddFormation(&name)
 #define FORM_DEF(name, cost, minResource)\
-    Overmind::FormationCost Overmind:: name(bool query, int row) {\
+    Overmind::FormationCost Overmind:: name(bool query, int32_t row) {\
       if (query) {\
         return FormationCost(cost, minResource);\
       }\
