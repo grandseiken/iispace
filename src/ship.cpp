@@ -93,7 +93,7 @@ void Ship::spawn(Ship* ship) const
   _z0->AddShip(ship);
 }
 
-void Ship::spawn(Particle* particle) const
+void Ship::spawn(const Particle& particle) const
 {
   _z0->AddParticle(particle);
 }
@@ -117,7 +117,7 @@ void Ship::explosion(colour c, int time, bool towards, const flvec2& v) const
         dir.set_polar(angle, 6.f);
       }
 
-      spawn(new Particle(
+      spawn(Particle(
           pos, c ? c : shape->GetColour(), dir, time + z::rand_int(8)));
     }
   }

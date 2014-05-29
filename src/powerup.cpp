@@ -99,8 +99,8 @@ void Powerup::damage(int damage, bool magic, Player* source)
   for (int i = 0; i < r; i++) {
     vec2 dir;
     dir.set_polar(z::rand_fixed() * 2 * fixed::pi, 6);
-    spawn(new Particle(to_float(position()), 0xffffffff,
-                       to_float(dir), 4 + z::rand_int(8)));
+    spawn(Particle(to_float(position()), 0xffffffff,
+                   to_float(dir), 4 + z::rand_int(8)));
   }
   destroy();
 }

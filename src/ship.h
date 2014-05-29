@@ -4,7 +4,23 @@
 #include "shape.h"
 #include "z0_game.h"
 
-class Particle;
+struct Particle {
+
+  Particle(const flvec2& position, colour colour,
+           const flvec2& velocity, int32_t time)
+    : destroy(false)
+    , position(position)
+    , velocity(velocity)
+    , timer(time)
+    , colour(colour) {}
+
+  bool destroy;
+  flvec2 position;
+  flvec2 velocity;
+  int32_t timer;
+  colour colour;
+
+};
 
 class Ship {
 public:
@@ -97,7 +113,7 @@ public:
   //------------------------------
   bool check_point(const vec2& v, int category = 0) const;
   void spawn(Ship* ship) const;
-  void spawn(Particle* particle) const;
+  void spawn(const Particle& particle) const;
 
   void render_hp_bar(float fill) const
   {
@@ -184,51 +200,6 @@ private:
   int32_t _enemy_value;
 
   std::vector<std::unique_ptr<Shape>> _shapes;
-
-};
-
-// Particle effects
-//------------------------------
-class Particle {
-public:
-
-  Particle(const flvec2& position, colour colour,
-           const flvec2& velocity, int32_t time)
-    : _destroy(false)
-    , _position(position)
-    , _velocity(velocity)
-    , _timer(time)
-    , _colour(colour) {}
-
-  bool is_destroyed() const
-  {
-    return _destroy;
-  }
-
-  void update()
-  {
-    _position += _velocity;
-    --_timer;
-    if (_timer <= 0) {
-      _destroy = true;
-      return;
-    }
-  }
-
-  void render(Lib& lib) const
-  {
-    flvec2 a = _position + flvec2(1, 1);
-    flvec2 b = _position - flvec2(1, 1);
-    lib.RenderRect(a, b, _colour);
-  }
-
-private:
-
-  bool _destroy;
-  flvec2 _position;
-  flvec2 _velocity;
-  int32_t _timer;
-  colour _colour;
 
 };
 

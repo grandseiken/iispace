@@ -7,7 +7,7 @@
 #include "z.h"
 #include "replay.h"
 class Overmind;
-class Particle;
+struct Particle;
 class Player;
 class Ship;
 
@@ -74,7 +74,7 @@ public:
   // Ships
   //------------------------------
   void AddShip(Ship* ship);
-  void AddParticle(Particle* particle);
+  void AddParticle(const Particle& particle);
   int32_t get_non_wall_count() const;
 
   ShipList all_ships(int32_t ship_mask = 0) const;
@@ -190,7 +190,7 @@ private:
   int _compliment;
   int _scoreScreenTimer;
 
-  std::vector<std::unique_ptr<Particle>> _particles;
+  std::vector<Particle> _particles;
   std::vector<std::unique_ptr<Ship>> _ships;
   ShipList _playerList;
   ShipList _collisions;
