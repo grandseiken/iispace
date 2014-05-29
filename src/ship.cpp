@@ -34,15 +34,15 @@ bool Ship::check_point(const vec2& v, int category) const
   bool aa = false;
   vec2 a;
   for (const auto& shape : _shapes) {
-    if (shape->GetCategory() &&
-        (!category || (shape->GetCategory() & category) == category)) {
+    if (shape->category &&
+        (!category || (shape->category & category) == category)) {
       if (!aa) {
         a = v - position();
         a.rotate(-rotation());
         aa = true;
       }
 
-      if (shape->CheckPoint(a)) {
+      if (shape->check_point(a)) {
         return true;
       }
     }
@@ -53,16 +53,16 @@ bool Ship::check_point(const vec2& v, int category) const
 void Ship::render() const
 {
   for (const auto& shape : _shapes) {
-    shape->Render(lib(), to_float(position()), rotation().to_float());
+    shape->render(lib(), to_float(position()), rotation().to_float());
   }
 }
 
-void Ship::render_with_colour(colour colour) const
+void Ship::render_with_colour(colour_t colour) const
 {
   for (const auto& shape : _shapes) {
-    shape->Render(
+    shape->render(
         lib(), to_float(position()), rotation().to_float(),
-        colour & (0xffffff00 | (shape->GetColour() & 0x000000ff)));
+        colour & (0xffffff00 | (shape->colour & 0x000000ff)));
   }
 }
 
@@ -84,7 +84,7 @@ void Ship::destroy()
 
   _destroy = true;
   for (const auto& shape : _shapes) {
-    shape->SetCategory(0);
+    shape->category = 0;
   }
 }
 
@@ -98,12 +98,12 @@ void Ship::spawn(const Particle& particle) const
   _z0->AddParticle(particle);
 }
 
-void Ship::explosion(colour c, int time, bool towards, const flvec2& v) const
+void Ship::explosion(colour_t c, int time, bool towards, const flvec2& v) const
 {
   for (const auto& shape : _shapes) {
     int n = towards ? z::rand_int(2) + 1 : z::rand_int(8) + 8;
     for (int j = 0; j < n; j++) {
-      flvec2 pos = shape->ConvertPointf(
+      flvec2 pos = shape->convert_fl_point(
           to_float(position()), rotation().to_float(), flvec2());
 
       flvec2 dir;
@@ -117,8 +117,7 @@ void Ship::explosion(colour c, int time, bool towards, const flvec2& v) const
         dir.set_polar(angle, 6.f);
       }
 
-      spawn(Particle(
-          pos, c ? c : shape->GetColour(), dir, time + z::rand_int(8)));
+      spawn(Particle(pos, c ? c : shape->colour, dir, time + z::rand_int(8)));
     }
   }
 }

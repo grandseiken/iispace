@@ -5,7 +5,7 @@
 
 #include <algorithm>
 
-std::vector<std::pair<int, std::pair<vec2, colour>>> Boss::_fireworks;
+std::vector<std::pair<int, std::pair<vec2, colour_t>>> Boss::_fireworks;
 std::vector<vec2> Boss::_warnings;
 const fixed Boss::HP_PER_EXTRA_PLAYER = fixed(1) / 10;
 const fixed Boss::HP_PER_EXTRA_CYCLE = 3 * fixed(1) / 10;
@@ -142,7 +142,7 @@ void Boss::render(bool hpBar) const
     return;
   }
   for (unsigned int i = 0; i < count_shapes(); i++) {
-    get_shape(i).Render(
+    get_shape(i).render(
         lib(), to_float(position()), rotation().to_float(),
         int(i) < _ignoreDamageColour ? 0xffffffff : 0);
   }
@@ -170,17 +170,16 @@ void Boss::OnDestroy()
   }
   explosion();
   explosion(0xffffffff, 12);
-  explosion(get_shape(0).GetColour(), 24);
+  explosion(get_shape(0).colour, 24);
   explosion(0xffffffff, 36);
-  explosion(get_shape(0).GetColour(), 48);
+  explosion(get_shape(0).colour, 48);
   int n = 1;
   for (int i = 0; i < 16; ++i) {
     vec2 v;
     v.set_polar(z::rand_fixed() * (2 * fixed::pi),
                 8 + z::rand_int(64) + z::rand_int(64));
     _fireworks.push_back(
-        std::make_pair(n, std::make_pair(position() + v,
-                                         get_shape(0).GetColour())));
+        std::make_pair(n, std::make_pair(position() + v, get_shape(0).colour)));
     n += i;
   }
   for (int i = 0; i < Lib::PLAYERS; i++) {
@@ -328,7 +327,7 @@ void BigSquareBoss::render() const
     for (int i = 0; i < 6; i++) {
       flvec2 p = to_float(_attackPlayer->position()) + d;
       Polygon s(vec2(), 10, 4, 0x9933ffff, fixed::pi / 4, 0);
-      s.Render(lib(), p, 0);
+      s.render(lib(), p, 0);
       d.rotate(2 * M_PIf / 6);
     }
   }
@@ -351,7 +350,8 @@ ShieldBombBoss::ShieldBombBoss(int players, int cycle)
   , _side(false)
   , _shotAlternate(false)
 {
-  add_shape(new Polygram(vec2(), 48, 8, 0x339966ff, 0, DANGEROUS | VULNERABLE));
+  add_shape(new Polygon(vec2(), 48, 8, 0x339966ff, 0,
+                        DANGEROUS | VULNERABLE, Polygon::T::POLYGRAM));
 
   for (int i = 0; i < 16; i++) {
     vec2 a(120, 0);
@@ -398,23 +398,23 @@ void ShieldBombBoss::update()
 
     _unshielded--;
     for (int i = 0; i < 3; i++) {
-      get_shape(i + 17).SetColour(
-          (_unshielded / 2) % 4 ? 0x00000000 : 0x666666ff);
+      get_shape(i + 17).colour =
+          (_unshielded / 2) % 4 ? 0x00000000 : 0x666666ff;
     }
     for (int i = 0; i < 16; i++) {
-      get_shape(i + 1).SetColour(
-          (_unshielded / 2) % 4 ? 0x00000000 : 0x333333ff);
+      get_shape(i + 1).colour = 
+          (_unshielded / 2) % 4 ? 0x00000000 : 0x333333ff;
     }
 
     if (!_unshielded) {
-      get_shape(0).SetCategory(DANGEROUS | VULNERABLE);
-      get_shape(17).SetCategory(VULNSHIELD | DANGEROUS);
+      get_shape(0).category = DANGEROUS | VULNERABLE;
+      get_shape(17).category = VULNSHIELD | DANGEROUS;
 
       for (int i = 0; i < 3; i++) {
-        get_shape(i + 17).SetColour(0xccccccff);
+        get_shape(i + 17).colour = 0xccccccff;
       }
       for (int i = 0; i < 16; i++) {
-        get_shape(i + 1).SetColour(0x999999ff);
+        get_shape(i + 1).colour = 0x999999ff;
       }
     }
   }
@@ -468,8 +468,8 @@ int ShieldBombBoss::GetDamage(int damage, bool magic)
   }
   if (damage >= Player::BOMB_DAMAGE && !_unshielded) {
     _unshielded = UNSHIELD_TIME;
-    get_shape(0).SetCategory(VULNERABLE | DANGEROUS);
-    get_shape(17).SetCategory(0);
+    get_shape(0).category = VULNERABLE | DANGEROUS;
+    get_shape(17).category = 0;
   }
   if (!magic) {
     return 0;
@@ -579,14 +579,14 @@ ChaserBoss::ChaserBoss(int players, int cycle, int split,
   , _split(split)
   , _stagger(stagger)
 {
-  add_shape(new Polygram(vec2(), 10 * ONE_AND_HALF_lookup[MAX_SPLIT - _split],
-                         5, 0x3399ffff, 0, 0));
-  add_shape(new Polygram(vec2(), 9 * ONE_AND_HALF_lookup[MAX_SPLIT - _split],
-                         5, 0x3399ffff, 0, 0));
-  add_shape(new Polygram(vec2(), 8 * ONE_AND_HALF_lookup[MAX_SPLIT - _split],
-                         5, 0, 0, DANGEROUS | VULNERABLE));
-  add_shape(new Polygram(vec2(), 7 * ONE_AND_HALF_lookup[MAX_SPLIT - _split],
-                         5, 0, 0, SHIELD));
+  add_shape(new Polygon(vec2(), 10 * ONE_AND_HALF_lookup[MAX_SPLIT - _split],
+                        5, 0x3399ffff, 0, 0, Polygon::T::POLYGRAM));
+  add_shape(new Polygon(vec2(), 9 * ONE_AND_HALF_lookup[MAX_SPLIT - _split],
+                        5, 0x3399ffff, 0, 0, Polygon::T::POLYGRAM));
+  add_shape(new Polygon(vec2(), 8 * ONE_AND_HALF_lookup[MAX_SPLIT - _split],
+                        5, 0, 0, DANGEROUS | VULNERABLE, Polygon::T::POLYGRAM));
+  add_shape(new Polygon(vec2(), 7 * ONE_AND_HALF_lookup[MAX_SPLIT - _split],
+                        5, 0, 0, SHIELD, Polygon::T::POLYGRAM));
 
   SetIgnoreDamageColourIndex(2);
   set_bounding_width(10 * ONE_AND_HALF_lookup[MAX_SPLIT - _split]);
@@ -831,9 +831,8 @@ void ChaserBoss::OnDestroy()
         v.set_polar(z::rand_fixed() * (2 * fixed::pi),
                     8 + z::rand_int(64) + z::rand_int(64));
 
-        _fireworks.push_back(
-            std::make_pair(n, std::make_pair(position() + v,
-                                             get_shape(0).GetColour())));
+        _fireworks.push_back(std::make_pair(
+            n, std::make_pair(position() + v, get_shape(0).colour)));
         n += i;
       }
     }
@@ -846,13 +845,13 @@ void ChaserBoss::OnDestroy()
   explosion();
   explosion(0xffffffff, 12);
   if (_split < 3 || last) {
-    explosion(get_shape(0).GetColour(), 24);
+    explosion(get_shape(0).colour, 24);
   }
   if (_split < 2 || last) {
     explosion(0xffffffff, 36);
   }
   if (_split < 1 || last) {
-    explosion(get_shape(0).GetColour(), 48);
+    explosion(get_shape(0).colour, 48);
   }
 
   if (_split < 3 || last) {
@@ -879,9 +878,10 @@ TractorBoss::TractorBoss(int players, int cycle)
   , _timer(0)
   , _attackSize(0)
 {
-  _s1 = new CompoundShape(vec2(0, -96), 0, DANGEROUS | VULNERABLE, 0xcc33ccff);
+  _s1 = new CompoundShape(vec2(0, -96), 0, DANGEROUS | VULNERABLE);
 
-  _s1->add_shape(new Polygram(vec2(), 12, 6, 0x882288ff, 0, 0));
+  _s1->add_shape(
+      new Polygon(vec2(), 12, 6, 0x882288ff, 0, 0, Polygon::T::POLYGRAM));
   _s1->add_shape(new Polygon(vec2(), 12, 12, 0x882288ff, 0, 0));
   _s1->add_shape(new Polygon(vec2(), 2, 6, 0x882288ff, 0, 0));
   _s1->add_shape(new Polygon(vec2(), 36, 12, 0xcc33ccff, 0, 0));
@@ -890,12 +890,14 @@ TractorBoss::TractorBoss(int players, int cycle)
   for (int i = 0; i < 8; i++) {
     vec2 d(24, 0);
     d.rotate(i * fixed::pi / 4);
-    _s1->add_shape(new Polygram(d, 12, 6, 0xcc33ccff, 0, 0));
+    _s1->add_shape(
+        new Polygon(d, 12, 6, 0xcc33ccff, 0, 0, Polygon::T::POLYGRAM));
   }
 
-  _s2 = new CompoundShape(vec2(0, 96), 0, DANGEROUS | VULNERABLE, 0xcc33ccff);
+  _s2 = new CompoundShape(vec2(0, 96), 0, DANGEROUS | VULNERABLE);
 
-  _s2->add_shape(new Polygram(vec2(), 12, 6, 0x882288ff, 0, 0));
+  _s2->add_shape(
+      new Polygon(vec2(), 12, 6, 0x882288ff, 0, 0, Polygon::T::POLYGRAM));
   _s2->add_shape(new Polygon(vec2(), 12, 12, 0x882288ff, 0, 0));
   _s2->add_shape(new Polygon(vec2(), 2, 6, 0x882288ff, 0, 0));
 
@@ -905,7 +907,8 @@ TractorBoss::TractorBoss(int players, int cycle)
   for (int i = 0; i < 8; i++) {
     vec2 d(24, 0);
     d.rotate(i * fixed::pi / 4);
-    _s2->add_shape(new Polygram(d, 12, 6, 0xcc33ccff, 0, 0));
+    _s2->add_shape(
+        new Polygon(d, 12, 6, 0xcc33ccff, 0, 0, Polygon::T::POLYGRAM));
   }
 
   add_shape(_s1);
@@ -954,13 +957,13 @@ void TractorBoss::update()
       if (_shootType == 0 || (IsHPLow() && _shootType == 1)) {
         Player* p = nearest_player();
 
-        vec2 v = _s1->ConvertPoint(position(), rotation(), vec2());
+        vec2 v = _s1->convert_point(position(), rotation(), vec2());
         vec2 d = p->position() - v;
         d.normalise();
         spawn(new SBBossShot(v, d * 5, 0xcc33ccff));
         spawn(new SBBossShot(v, d * -5, 0xcc33ccff));
 
-        v = _s2->ConvertPoint(position(), rotation(), vec2());
+        v = _s2->convert_point(position(), rotation(), vec2());
         d = p->position() - v;
         d.normalise();
         spawn(new SBBossShot(v, d * 5, 0xcc33ccff));
@@ -1009,12 +1012,12 @@ void TractorBoss::update()
 
       if (_timer % (10 - 2 * z0().alive_players()) == 0 && _timer < TIMER * 4) {
         Ship* s = new TBossShot(
-            _s1->ConvertPoint(position(), rotation(), vec2()),
+            _s1->convert_point(position(), rotation(), vec2()),
             _genDir ? rotation() + fixed::pi : rotation());
         spawn(s);
 
         s = new TBossShot(
-            _s2->ConvertPoint(position(), rotation(), vec2()),
+            _s2->convert_point(position(), rotation(), vec2()),
             _genDir ? rotation() : rotation() + fixed::pi);
         spawn(s);
         play_sound_random(Lib::SOUND_ENEMY_SPAWN);
@@ -1038,7 +1041,7 @@ void TractorBoss::update()
           _attacking = true;
         }
         if (_timer % (TIMER / (1 + fixed::half)).to_int() == TIMER / 8) {
-          vec2 v = _s1->ConvertPoint(position(), rotation(), vec2());
+          vec2 v = _s1->convert_point(position(), rotation(), vec2());
           vec2 d;
           d.set_polar(z::rand_fixed() * (2 * fixed::pi), 5);
           spawn(new SBBossShot(v, d, 0xcc33ccff));
@@ -1049,7 +1052,7 @@ void TractorBoss::update()
           d.rotate(fixed::pi / 2);
           spawn(new SBBossShot(v, d, 0xcc33ccff));
 
-          v = _s2->ConvertPoint(position(), rotation(), vec2());
+          v = _s2->convert_point(position(), rotation(), vec2());
           d.set_polar(z::rand_fixed() * (2 * fixed::pi), 5);
           spawn(new SBBossShot(v, d, 0xcc33ccff));
           d.rotate(fixed::pi / 2);
@@ -1088,7 +1091,7 @@ void TractorBoss::update()
               (ship->position() - position()).length() <= 40) {
             ship->destroy();
             _attackSize++;
-            _sAttack->SetRadius(_attackSize / (1 + fixed::half));
+            _sAttack->radius = _attackSize / (1 + fixed::half);
             add_shape(new Polygon(vec2(), 8, 6, 0xcc33ccff, 0, 0));
           }
         }
@@ -1105,7 +1108,7 @@ void TractorBoss::update()
         play_sound(Lib::SOUND_BOSS_FIRE);
         play_sound_random(Lib::SOUND_EXPLOSION);
         _attackSize = 0;
-        _sAttack->SetRadius(0);
+        _sAttack->radius = 0;
         while (_attackShapes < int(count_shapes())) {
           destroy_shape(_attackShapes);
         }
@@ -1118,7 +1121,7 @@ void TractorBoss::update()
     v.set_polar(z::rand_fixed() * (2 * fixed::pi),
                 2 * (z::rand_fixed() - fixed::half) *
                     fixed(_attackSize) / (1 + fixed::half));
-    get_shape(i).SetCentre(v);
+    get_shape(i).centre = v;
   }
 
   fixed r = 0;
@@ -1135,9 +1138,9 @@ void TractorBoss::update()
 
   _s1->rotate(fixed::tenth / 2);
   _s2->rotate(-fixed::tenth / 2);
-  for (int i = 0; i < 8; i++) {
-    _s1->get_shape(i + 4).rotate(-fixed::tenth);
-    _s2->get_shape(i + 4).rotate(fixed::tenth);
+  for (std::size_t i = 0; i < 8; i++) {
+    _s1->shapes()[4 + i]->rotate(-fixed::tenth);
+    _s2->shapes()[4 + i]->rotate(fixed::tenth);
   }
 }
 
@@ -1195,14 +1198,15 @@ GhostBoss::GhostBoss(int players, int cycle)
     add_shape(s);
   }
 
-  add_shape(new Polygram(vec2(), 24, 8, 0xcc66ffff, 0, 0));
+  add_shape(new Polygon(vec2(), 24, 8, 0xcc66ffff, 0, 0, Polygon::T::POLYGRAM));
 
   for (int n = 0; n < 5; n++) {
     CompoundShape* s = new CompoundShape(vec2(), 0, 0);
     for (int i = 0; i < 16 + n * 6; i++) {
       vec2 d;
       d.set_polar(i * 2 * fixed::pi / (16 + n * 6), fixed(100 + n * 60));
-      s->add_shape(new Polystar(d, 16, 8, n ? 0x330066ff : 0x9933ccff));
+      s->add_shape(new Polygon(d, 16, 8, n ? 0x330066ff : 0x9933ccff,
+                               0, 0, Polygon::T::POLYSTAR));
       s->add_shape(new Polygon(d, 12, 8, n ? 0x330066ff : 0x9933ccff));
     }
     add_shape(s);
@@ -1221,11 +1225,11 @@ void GhostBoss::update()
   for (int n = 1; n < 5; ++n) {
     CompoundShape* s = (CompoundShape*) &get_shape(11 + n);
     CompoundShape* c = (CompoundShape*) &get_shape(16 + n);
-    c->ClearShapes();
+    c->clear_shapes();
 
     for (int i = 0; i < 16 + n * 6; ++i) {
-      Shape& s1 = s->get_shape(i * 2);
-      Shape& s2 = s->get_shape(1 + i * 2);
+      Shape& s1 = *s->shapes()[2 * i];
+      Shape& s2 = *s->shapes()[1 + 2 * i];
       int t =
           n == 1 ? (i + _dangerOffset1) % 11 :
           n == 2 ? (i + _dangerOffset2) % 7 :
@@ -1239,18 +1243,18 @@ void GhostBoss::update()
       if (((n == 4 && _attack != 2) ||
            (n + (n == 3)) & _dangerCircle) &&
           _visible && b) {
-        s1.SetColour(0xcc66ffff);
-        s2.SetColour(0xcc66ffff);
+        s1.colour = 0xcc66ffff;
+        s2.colour = 0xcc66ffff;
         if (_vTime == 0) {
           vec2 d;
           d.set_polar(i * 2 * fixed::pi / (16 + n * 6), fixed(100 + n * 60));
           c->add_shape(new Polygon(d, 9, 8, 0));
-          _warnings.push_back(c->ConvertPoint(position(), rotation(), d));
+          _warnings.push_back(c->convert_point(position(), rotation(), d));
         }
       }
       else {
-        s1.SetColour(0x330066ff);
-        s2.SetColour(0x330066ff);
+        s1.colour = 0x330066ff;
+        s2.colour = 0x330066ff;
       }
     }
   }
@@ -1270,8 +1274,8 @@ void GhostBoss::update()
     else {
       s->rotate(fixed::hundredth * 5 - (fixed(3) / 2000) * n);
     }
-    for (std::size_t i = 0; i < s->CountShapes(); i++) {
-      s->get_shape(i).rotate(-fixed::tenth);
+    for (const auto& t : s->shapes()) {
+      t->rotate(-fixed::tenth);
     }
 
     s = (CompoundShape*) &get_shape(16 + n);
@@ -1281,8 +1285,8 @@ void GhostBoss::update()
     else {
       s->rotate(fixed::hundredth * 4 - (fixed(3) / 2000) * n);
     }
-    for (std::size_t i = 0; i < s->CountShapes(); i++) {
-      s->get_shape(i).rotate(-fixed::tenth);
+    for (const auto& t : s->shapes()) {
+      t->rotate(-fixed::tenth);
     }
   }
 
@@ -1421,12 +1425,12 @@ void GhostBoss::update()
     _vTime = 60;
     _attack = z::rand_int(3);
     _shotType = z::rand_int(2) == 0;
-    get_shape(0).SetCategory(0);
-    get_shape(1).SetCategory(0);
-    get_shape(11).SetCategory(0);
+    get_shape(0).category = 0;
+    get_shape(1).category = 0;
+    get_shape(11).category = 0;
     if (count_shapes() >= 22) {
-      get_shape(21).SetCategory(0);
-      get_shape(24).SetCategory(0);
+      get_shape(21).category = 0;
+      get_shape(24).category = 0;
     }
     play_sound(Lib::SOUND_BOSS_ATTACK);
 
@@ -1448,12 +1452,12 @@ void GhostBoss::update()
   if (_vTime) {
     _vTime--;
     if (!_vTime && _visible) {
-      get_shape(0).SetCategory(SHIELD);
-      get_shape(1).SetCategory(DANGEROUS | VULNERABLE);
-      get_shape(11).SetCategory(DANGEROUS);
+      get_shape(0).category = SHIELD;
+      get_shape(1).category = DANGEROUS | VULNERABLE;
+      get_shape(11).category = DANGEROUS;
       if (count_shapes() >= 22) {
-        get_shape(21).SetCategory(DANGEROUS);
-        get_shape(24).SetCategory(DANGEROUS);
+        get_shape(21).category = DANGEROUS;
+        get_shape(24).category = DANGEROUS;
       }
     }
   }
@@ -1497,8 +1501,10 @@ DeathRayBoss::DeathRayBoss(int players, int cycle)
   , _raySrc1()
   , _raySrc2()
 {
-  add_shape(new Polystar(vec2(), 110, 12, 0x228855ff, fixed::pi / 12, 0));
-  add_shape(new Polygram(vec2(), 70, 12, 0x33ff99ff, fixed::pi / 12, 0));
+  add_shape(new Polygon(
+      vec2(), 110, 12, 0x228855ff, fixed::pi / 12, 0, Polygon::T::POLYSTAR));
+  add_shape(new Polygon(
+      vec2(), 70, 12, 0x33ff99ff, fixed::pi / 12, 0, Polygon::T::POLYGRAM));
   add_shape(new Polygon(
       vec2(), 120, 12, 0x33ff99ff, fixed::pi / 12, DANGEROUS | VULNERABLE));
   add_shape(new Polygon(vec2(), 115, 12, 0x33ff99ff, fixed::pi / 12, 0));
@@ -1683,13 +1689,13 @@ void DeathRayBoss::render() const
     flvec2 pos = to_float(position());
     flvec2 d = to_float(_raySrc1) - pos;
     d *= float(i - 40) / float(RAY_TIMER - 40);
-    Polystar s(vec2(), 10, 6, 0x999999ff, 0, 0);
-    s.Render(lib(), d + pos, 0);
+    Polygon s(vec2(), 10, 6, 0x999999ff, 0, 0, Polygon::T::POLYSTAR);
+    s.render(lib(), d + pos, 0);
 
     d = to_float(_raySrc2) - pos;
     d *= float(i - 40) / float(RAY_TIMER - 40);
-    Polystar s2(vec2(), 10, 6, 0x999999ff, 0, 0);
-    s2.Render(lib(), d + pos, 0);
+    Polygon s2(vec2(), 10, 6, 0x999999ff, 0, 0, Polygon::T::POLYSTAR);
+    s2.render(lib(), d + pos, 0);
   }
 }
 
@@ -1732,14 +1738,14 @@ void SuperBossArc::update()
 {
   rotate(fixed(6) / 1000);
   for (int i = 0; i < 8; ++i) {
-    get_shape(7 - i).SetColour(
+    get_shape(7 - i).colour =
         z::colour_cycle(IsHPLow() ? 0xff000099 : 0xff0000ff,
-                        (i * 32 + 2 * _timer) % 256));
+                        (i * 32 + 2 * _timer) % 256);
   }
   ++_timer;
   ++_sTimer;
   if (_sTimer == 64) {
-    get_shape(0).SetCategory(DANGEROUS | VULNERABLE);
+    get_shape(0).category = DANGEROUS | VULNERABLE;
   }
 }
 
@@ -1765,9 +1771,9 @@ void SuperBossArc::OnDestroy()
   move(d);
   explosion();
   explosion(0xffffffff, 12);
-  explosion(get_shape(0).GetColour(), 24);
+  explosion(get_shape(0).colour, 24);
   explosion(0xffffffff, 36);
-  explosion(get_shape(0).GetColour(), 48);
+  explosion(get_shape(0).colour, 48);
   play_sound_random(Lib::SOUND_EXPLOSION);
   ((SuperBoss*) _boss)->_destroyed[_i] = true;
 }
@@ -1816,10 +1822,10 @@ void SuperBoss::update()
   }
   vec2 move_vec;
   rotate(fixed(6) / 1000);
-  colour c = z::colour_cycle(0xff0000ff, 2 * _cTimer);
+  colour_t c = z::colour_cycle(0xff0000ff, 2 * _cTimer);
   for (int i = 0; i < 8; ++i) {
-    get_shape(7 - i).SetColour(
-        z::colour_cycle(0xff0000ff, (i * 32 + 2 * _cTimer) % 256));
+    get_shape(7 - i).colour = 
+        z::colour_cycle(0xff0000ff, (i * 32 + 2 * _cTimer) % 256);
   }
   ++_cTimer;
   if (position().y < Lib::HEIGHT / 2) {
@@ -1938,16 +1944,16 @@ void SuperBoss::OnDestroy()
   }
   explosion();
   explosion(0xffffffff, 12);
-  explosion(get_shape(0).GetColour(), 24);
+  explosion(get_shape(0).colour, 24);
   explosion(0xffffffff, 36);
-  explosion(get_shape(0).GetColour(), 48);
+  explosion(get_shape(0).colour, 48);
 
   int n = 1;
   for (int i = 0; i < 16; ++i) {
     vec2 v;
     v.set_polar(z::rand_fixed() * (2 * fixed::pi),
                 8 + z::rand_int(64) + z::rand_int(64));
-    colour c = z::colour_cycle(get_shape(0).GetColour(), n * 2);
+    colour_t c = z::colour_cycle(get_shape(0).colour, n * 2);
     _fireworks.push_back(
         std::make_pair(n, std::make_pair(position() + v, c)));
     n += i;

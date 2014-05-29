@@ -141,10 +141,10 @@ public:
   // Output
   //------------------------------
   void ClearScreen() const;
-  void RenderLine(const flvec2& a, const flvec2& b, colour c) const;
-  void RenderText(const flvec2& v, const std::string& text, colour c) const;
+  void RenderLine(const flvec2& a, const flvec2& b, colour_t c) const;
+  void RenderText(const flvec2& v, const std::string& text, colour_t c) const;
   void RenderRect(const flvec2& low, const flvec2& hi,
-                  colour c, int lineWidth = 0) const;
+                  colour_t c, int lineWidth = 0) const;
   void Render() const;
 
   void Rumble(int player, int time);
@@ -158,7 +158,7 @@ public:
   //------------------------------
   void SetColourCycle(int cycle);
   int GetColourCycle() const;
-  colour Cycle(colour c) const;
+  colour_t Cycle(colour_t c) const;
 
 private:
 

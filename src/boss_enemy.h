@@ -23,7 +23,8 @@ private:
 class SBBossShot : public Enemy {
 public:
 
-  SBBossShot(const vec2& position, const vec2& velocity, colour c = 0x999999ff);
+  SBBossShot(const vec2& position, const vec2& velocity,
+             colour_t c = 0x999999ff);
   void update() override;
 
 protected:
@@ -121,7 +122,7 @@ class SnakeTail : public Enemy {
   friend class Snake;
 public:
 
-  SnakeTail(const vec2& position, colour colour);
+  SnakeTail(const vec2& position, colour_t colour);
   void update() override;
   void OnDestroy(bool bomb) override;
 
@@ -139,7 +140,7 @@ private:
 class Snake : public Enemy {
 public:
 
-  Snake(const vec2& position, colour colour,
+  Snake(const vec2& position, colour_t colour,
         const vec2& dir = vec2(), fixed rot = 0);
   void update() override;
   void OnDestroy(bool bomb) override;
@@ -150,7 +151,7 @@ private:
   int _timer;
   vec2 _dir;
   int _count;
-  colour _colour;
+  colour_t _colour;
   bool _shotSnake;
   fixed _shotRot;
 

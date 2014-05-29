@@ -59,7 +59,7 @@ public:
   virtual int GetDamage(int damage, bool magic) = 0;
   virtual void OnDestroy();
 
-  static std::vector<std::pair<int, std::pair<vec2, colour>>> _fireworks;
+  static std::vector<std::pair<int, std::pair<vec2, colour_t>>> _fireworks;
   static std::vector<vec2> _warnings;
 
 protected:

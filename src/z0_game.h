@@ -44,9 +44,9 @@ public:
     BOSS_3A = 64,
   };
 
-  static const colour PANEL_TEXT = 0xeeeeeeff;
-  static const colour PANEL_TRAN = 0xeeeeee99;
-  static const colour PANEL_BACK = 0x000000ff;
+  static const colour_t PANEL_TEXT = 0xeeeeeeff;
+  static const colour_t PANEL_TRAN = 0xeeeeee99;
+  static const colour_t PANEL_BACK = 0x000000ff;
   static const int STARTING_LIVES;
   static const int BOSSMODE_LIVES;
 

@@ -36,11 +36,11 @@ void BigFollow::OnDestroy(bool bomb)
 
 // Generic boss projectile
 //------------------------------
-SBBossShot::SBBossShot(const vec2& position, const vec2& velocity, colour c)
+SBBossShot::SBBossShot(const vec2& position, const vec2& velocity, colour_t c)
   : Enemy(position, SHIP_WALL, 0)
   , _dir(velocity)
 {
-  add_shape(new Polystar(vec2(), 16, 8, c, 0, 0));
+  add_shape(new Polygon(vec2(), 16, 8, c, 0, 0, Polygon::T::POLYSTAR));
   add_shape(new Polygon(vec2(), 10, 8, c, 0, 0));
   add_shape(new Polygon(vec2(), 12, 8, 0, 0, DANGEROUS));
   set_bounding_width(12);
@@ -175,7 +175,7 @@ void GhostMine::update()
   if (_timer) {
     _timer--;
     if (!_timer) {
-      get_shape(0).SetCategory(DANGEROUS | SHIELD | VULNSHIELD);
+      get_shape(0).category = DANGEROUS | SHIELD | VULNSHIELD;
     }
   }
   z0Game::ShipList s = z0().collision_list(position(), DANGEROUS);
@@ -230,7 +230,8 @@ DeathArm::DeathArm(DeathRayBoss* boss, bool top, int hp)
   , _shots(0)
 {
   add_shape(new Polygon(vec2(), 60, 4, 0x33ff99ff, 0, 0));
-  add_shape(new Polygram(vec2(), 50, 4, 0x228855ff, 0, VULNERABLE));
+  add_shape(new Polygon(vec2(), 50, 4, 0x228855ff,
+                        0, VULNERABLE, Polygon::T::POLYGRAM));
   add_shape(new Polygon(vec2(), 40, 4, 0, 0, SHIELD));
   add_shape(new Polygon(vec2(), 20, 4, 0x33ff99ff, 0, 0));
   add_shape(new Polygon(vec2(), 18, 4, 0x228855ff, 0, 0));
@@ -304,7 +305,7 @@ void DeathArm::update()
     }
     _start--;
     if (!_start) {
-      get_shape(1).SetCategory(DANGEROUS | VULNERABLE);
+      get_shape(1).category = DANGEROUS | VULNERABLE;
     }
   }
 }
@@ -314,12 +315,12 @@ void DeathArm::OnDestroy(bool bomb)
   _boss->OnArmDeath(this);
   explosion();
   explosion(0xffffffff, 12);
-  explosion(get_shape(0).GetColour(), 24);
+  explosion(get_shape(0).colour, 24);
 }
 
 // Snake tail
 //------------------------------
-SnakeTail::SnakeTail(const vec2& position, colour colour)
+SnakeTail::SnakeTail(const vec2& position, colour_t colour)
   : Enemy(position, SHIP_NONE, 1)
   , _tail(0)
   , _head(0)
@@ -370,7 +371,7 @@ void SnakeTail::OnDestroy(bool bomb)
 
 // Snake
 //------------------------------
-Snake::Snake(const vec2& position, colour colour, const vec2& dir, fixed rot)
+Snake::Snake(const vec2& position, colour_t colour, const vec2& dir, fixed rot)
   : Enemy(position, SHIP_NONE, 5)
   , _tail(0)
   , _timer(0)
@@ -418,8 +419,8 @@ void Snake::update()
     return;
   }
 
-  colour c = z::colour_cycle(_colour, _timer % 256);
-  get_shape(0).SetColour(c);
+  colour_t c = z::colour_cycle(_colour, _timer % 256);
+  get_shape(0).colour = c;
   _timer++;
   if (_timer % (_shotSnake ? 4 : 8) == 0) {
     SnakeTail* t = new SnakeTail(position(), (c & 0xffffff00) | 0x00000099);

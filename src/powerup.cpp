@@ -26,16 +26,17 @@ Powerup::Powerup(const vec2& position, type_t type)
     break;
 
   case BOMB:
-    add_shape(new Polystar(vec2(), 11, 10, 0xffffffff, fixed::pi / 2));
+    add_shape(new Polygon(vec2(), 11, 10, 0xffffffff,
+                          fixed::pi / 2, 0, Polygon::T::POLYSTAR));
     break;
   }
 }
 
 void Powerup::update()
 {
-  get_shape(0).SetColour(Player::GetPlayerColour(_frame / 2));
+  get_shape(0).colour = Player::GetPlayerColour(_frame / 2);
   _frame = (_frame + 1) % (Lib::PLAYERS * 2);
-  get_shape(1).SetColour(Player::GetPlayerColour(_frame / 2));
+  get_shape(1).colour = Player::GetPlayerColour(_frame / 2);
 
   static const int32_t rotate_time = 100;
   if (!is_on_screen()) {

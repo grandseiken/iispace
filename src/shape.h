@@ -9,137 +9,80 @@
 class Shape {
 public:
 
-  Shape(const vec2& centre, colour colour, int category)
-    : _centre(centre)
-    , _colour(colour)
-    , _category(category) {}
+  Shape(const vec2& centre, fixed rotation, colour_t colour,
+        int32_t category, bool can_rotate = true)
+    : centre(centre)
+    , colour(colour)
+    , category(category)
+    , _rotation(can_rotate ? rotation : 0)
+    , _can_rotate(can_rotate) {}
   virtual ~Shape() {}
 
-  const vec2& GetCentre() const
+  bool check_point(const vec2& v) const
   {
-    return _centre;
+    vec2 a = v - centre;
+    if (_can_rotate) {
+      a.rotate(-_rotation);
+    }
+    return check_local_point(a);
   }
 
-  void SetCentre(const vec2& centre)
-  {
-    _centre = centre;
-  }
-
-  int GetCategory() const
-  {
-    return _category;
-  }
-
-  void SetCategory(int category)
-  {
-    _category = category;
-  }
-
-  colour GetColour(colour colour = 0) const
-  {
-    return colour ? colour : _colour;
-  }
-
-  void SetColour(colour colour)
-  {
-    _colour = colour;
-  }
-
-  bool CheckPoint(const vec2& v) const
-  {
-    return CheckLocalPoint(v - GetCentre());
-  }
-
-  virtual vec2 ConvertPoint(
+  vec2 convert_point(
       const vec2& position, fixed rotation, const vec2& v) const
   {
-    vec2 a = GetCentre() + v;
+    vec2 a = v;
+    if (_can_rotate) {
+      a.rotate(_rotation);
+    }
+    a += centre;
     a.rotate(rotation);
     return position + a;
   }
 
-  virtual flvec2 ConvertPointf(
+  flvec2 convert_fl_point(
       const flvec2& position, float rotation, const flvec2& v) const
   {
-    flvec2 a = to_float(GetCentre()) + v;
+    flvec2 a = v;
+    if (_can_rotate) {
+      a.rotate(_rotation.to_float());
+    }
+    a += to_float(centre);
     a.rotate(rotation);
     return position + a;
   }
 
-  virtual void Render(
-      Lib& lib,
-      const flvec2& position, float rotation, colour colour = 0) const = 0;
-
-  virtual fixed rotation() const
+  fixed rotation() const
   {
-    return 0;
+    return _can_rotate ? _rotation : 0;
   }
 
-  virtual void set_rotation(fixed rot) {}
+  void set_rotation(fixed rotation)
+  {
+    if (_can_rotate) {
+      _rotation =
+          rotation > 2 * fixed::pi ? rotation - 2 * fixed::pi :
+          rotation < 0 ? rotation + 2 * fixed::pi : rotation;
+    }
+  }
 
   void rotate(fixed rotation_amount)
   {
-    set_rotation(rotation() + rotation_amount);
+    set_rotation(_rotation + rotation_amount);
   }
+
+  virtual void render(Lib& lib, const flvec2& position, float rotation,
+                      colour_t colour_override = 0) const = 0;
+
+  vec2 centre;
+  colour_t colour;
+  int32_t category;
 
 private:
 
-  virtual bool CheckLocalPoint(const vec2& v) const = 0;
-
-  vec2 _centre;
-  colour _colour;
-  int _category;
-
-};
-
-// Shape with independent rotation
-//------------------------------
-class RotateShape : public Shape {
-public:
-
-  RotateShape(const vec2& centre, fixed rotation, colour colour, int category)
-    : Shape(centre, colour, category)
-    , _rotation(rotation) {}
-
-  ~RotateShape() override {}
-
-  fixed rotation() const override
-  {
-    return _rotation;
-  }
-
-  void set_rotation(fixed rotation) override
-  {
-    _rotation =
-        rotation > 2 * fixed::pi ? rotation - 2 * fixed::pi :
-        rotation < 0 ? rotation + 2 * fixed::pi : rotation;
-  }
-
-  vec2 ConvertPoint(
-      const vec2& position, fixed rot, const vec2& v) const override
-  {
-    vec2 a = v; a.rotate(rotation());
-    return Shape::ConvertPoint(position, rot, a);
-  }
-
-  flvec2 ConvertPointf(
-      const flvec2& position, float rot, const flvec2& v) const override
-  {
-    flvec2 a = v; a.rotate(rotation().to_float());
-    return Shape::ConvertPointf(position, rot, a);
-  }
-
-private:
-
-  bool CheckLocalPoint(const vec2& v) const override
-  {
-    vec2 a = v; a.rotate(-rotation());
-    return CheckRotatedPoint(a);
-  }
-
-  virtual bool CheckRotatedPoint(const vec2& v) const = 0;
-
+  virtual bool check_local_point(const vec2& v) const = 0;
+  
   fixed _rotation;
+  bool _can_rotate;
 
 };
 
@@ -149,441 +92,278 @@ class Fill : public Shape {
 public:
 
   Fill(const vec2& centre, fixed width, fixed height,
-       colour colour, int category = 0)
-    : Shape(centre, colour, category)
-    , _width(width)
-    , _height(height) {}
+       colour_t colour, int32_t category = 0)
+    : Shape(centre, 0, colour, category, false)
+    , width(width)
+    , height(height) {}
 
-  ~Fill() override {}
-
-  fixed GetWidth() const
+  void render(Lib& lib, const flvec2& position, float rotation,
+              colour_t colour_override = 0) const override
   {
-    return _width;
-  }
-
-  fixed GetHeight() const
-  {
-    return _height;
-  }
-
-  void SetWidth(fixed width)
-  {
-    _width = width;
-  }
-
-  void SetHeight(fixed height)
-  {
-    _height = height;
-  }
-
-  void Render(Lib& lib, const flvec2& position, float rotation,
-              colour colour = 0) const override
-  {
-    flvec2 c = ConvertPointf(position, rotation, flvec2());
-    flvec2 wh = flvec2(GetWidth().to_float(), GetHeight().to_float());
+    flvec2 c = convert_fl_point(position, rotation, flvec2());
+    flvec2 wh = flvec2(width.to_float(), height.to_float());
     flvec2 a = c + wh;
     flvec2 b = c - wh;
-    lib.RenderRect(a, b, GetColour(colour));
+    lib.RenderRect(a, b, colour_override ? colour_override : colour);
   }
+
+  fixed width;
+  fixed height;
 
 private:
 
-  bool CheckLocalPoint(const vec2& v) const override
+  bool check_local_point(const vec2& v) const override
   {
-    return v.x.abs() < _width && v.y.abs() < _height;
+    return v.x.abs() < width && v.y.abs() < height;
   }
-
-  fixed _width;
-  fixed _height;
 
 };
 
 // Line between two points
 //------------------------------
-class Line : public RotateShape {
+class Line : public Shape {
 public:
 
   Line(const vec2& centre, const vec2& a, const vec2& b,
-       colour colour, fixed rotation = 0)
-    : RotateShape(centre, rotation, colour, 0)
-    , _a(a)
-    , _b(b) {}
+       colour_t colour, fixed rotation = 0)
+    : Shape(centre, rotation, colour, 0)
+    , a(a)
+    , b(b) {}
 
-  ~Line() override {}
-
-  vec2 GetA() const
+  void render(Lib& lib, const flvec2& position, float rotation,
+              colour_t colour_override = 0) const override
   {
-    return _a;
+    flvec2 aa = convert_fl_point(position, rotation, to_float(a));
+    flvec2 bb = convert_fl_point(position, rotation, to_float(b));
+    lib.RenderLine(aa, bb, colour_override ? colour_override : colour);
   }
 
-  vec2 GetB() const
-  {
-    return _b;
-  }
-
-  void SetA(const vec2& a)
-  {
-    _a = a;
-  }
-
-  void SetB(const vec2& b)
-  {
-    _b = b;
-  }
-
-  void Render(Lib& lib, const flvec2& position, float rotation,
-              colour colour = 0) const override
-  {
-    flvec2 a = ConvertPointf(position, rotation, to_float(_a));
-    flvec2 b = ConvertPointf(position, rotation, to_float(_b));
-    lib.RenderLine(a, b, GetColour(colour));
-  }
+  vec2 a;
+  vec2 b;
 
 private:
 
-  bool CheckRotatedPoint(const vec2& v) const override
+  bool check_local_point(const vec2& v) const override
   {
     return false;
   }
-
-  vec2 _a;
-  vec2 _b;
 
 };
 
 // Box with width and height
 //------------------------------
-class Box : public RotateShape {
+class Box : public Shape {
 public:
 
   Box(const vec2& centre, fixed width, fixed height,
-      colour colour, fixed rotation = 0, int category = 0)
-    : RotateShape(centre, rotation, colour, category)
-    , _width(width)
-    , _height(height) {}
+      colour_t colour, fixed rotation = 0, int32_t category = 0)
+    : Shape(centre, rotation, colour, category)
+    , width(width)
+    , height(height) {}
 
-  ~Box() override {}
-
-  fixed GetWidth() const
+  void render(Lib& lib, const flvec2& position, float rotation,
+              colour_t colour_override = 0) const override
   {
-    return _width;
+    float w = width.to_float();
+    float h = height.to_float();
+
+    flvec2 a = convert_fl_point(position, rotation, flvec2(w, h));
+    flvec2 b = convert_fl_point(position, rotation, flvec2(-w, h));
+    flvec2 c = convert_fl_point(position, rotation, flvec2(-w, -h));
+    flvec2 d = convert_fl_point(position, rotation, flvec2(w, -h));
+
+    lib.RenderLine(a, b, colour_override ? colour_override : colour);
+    lib.RenderLine(b, c, colour_override ? colour_override : colour);
+    lib.RenderLine(c, d, colour_override ? colour_override : colour);
+    lib.RenderLine(d, a, colour_override ? colour_override : colour);
   }
 
-  fixed GetHeight() const
-  {
-    return _height;
-  }
-
-  void SetWidth(fixed width)
-  {
-    _width = width;
-  }
-
-  void SetHeight(fixed height)
-  {
-    _height = height;
-  }
-
-  void Render(Lib& lib, const flvec2& position, float rotation,
-              colour colour = 0) const override
-  {
-    float w = GetWidth().to_float();
-    float h = GetHeight().to_float();
-
-    flvec2 a = ConvertPointf(position, rotation, flvec2(w, h));
-    flvec2 b = ConvertPointf(position, rotation, flvec2(-w, h));
-    flvec2 c = ConvertPointf(position, rotation, flvec2(-w, -h));
-    flvec2 d = ConvertPointf(position, rotation, flvec2(w, -h));
-
-    lib.RenderLine(a, b, GetColour(colour));
-    lib.RenderLine(b, c, GetColour(colour));
-    lib.RenderLine(c, d, GetColour(colour));
-    lib.RenderLine(d, a, GetColour(colour));
-  }
+  fixed width;
+  fixed height;
 
 private:
 
-  bool CheckRotatedPoint(const vec2& v) const override
+  bool check_local_point(const vec2& v) const override
   {
-    return v.x.abs() < _width && v.y.abs() < _height;
+    return v.x.abs() < width && v.y.abs() < height;
   }
-
-  fixed _width;
-  fixed _height;
 
 };
 
-// Outlined regular polygon
+// Outlined/spoked/complete regular polygon
 //------------------------------
-class Polygon : public RotateShape {
+class Polygon : public Shape {
 public:
 
-  Polygon(const vec2& centre, fixed radius, int sides,
-          colour colour, fixed rotation = 0, int category = 0)
-    : RotateShape(centre, rotation, colour, category)
-    , _radius(radius)
-    , _sides(sides) {}
+  enum class T {
+    POLYGON,
+    POLYSTAR,
+    POLYGRAM,
+  };
 
-  ~Polygon() override {}
+  Polygon(const vec2& centre, fixed radius, int32_t sides, colour_t colour,
+          fixed rotation = 0, int32_t category = 0, T type = T::POLYGON)
+    : Shape(centre, rotation, colour, category)
+    , radius(radius)
+    , sides(sides)
+    , type(type) {}
 
-  fixed GetRadius() const
+  void render(Lib& lib, const flvec2& position, float rotation,
+              colour_t colour_override = 0) const override
   {
-    return _radius;
-  }
-
-  void SetRadius(fixed radius)
-  {
-    _radius = radius;
-  }
-
-  int GetSides() const
-  {
-    return _sides;
-  }
-
-  void SetSides(int sides)
-  {
-    _sides = sides;
-  }
-
-  void Render(Lib& lib, const flvec2& position, float rotation,
-              colour colour = 0) const override
-  {
-    if (GetSides() < 2) {
+    if (sides < 2) {
       return;
     }
 
-    float r = GetRadius().to_float();
-    for (int i = 0; i < GetSides(); i++) {
-      flvec2 a, b;
-      a.set_polar(i * 2 * M_PIf / float(GetSides()), r);
-      b.set_polar((i + 1) * 2 * M_PIf / float(GetSides()), r);
-      lib.RenderLine(ConvertPointf(position, rotation, a),
-                     ConvertPointf(position, rotation, b), GetColour(colour));
+    float r = radius.to_float();
+    std::vector<flvec2> lines;
+    if (type == T::POLYGON) {
+      for (int32_t i = 0; i < sides; i++) {
+        flvec2 a, b;
+        a.set_polar(i * 2 * M_PIf / float(sides), r);
+        b.set_polar((i + 1) * 2 * M_PIf / float(sides), r);
+        lines.push_back(a);
+        lines.push_back(b);
+      }
+    }
+    else if (type == T::POLYGRAM) {
+      std::vector<flvec2> list;
+      for (int32_t i = 0; i < sides; i++) {
+        flvec2 v;
+        v.set_polar(i * 2 * M_PIf / float(sides), r);
+        list.push_back(v);
+      }
+
+      for (std::size_t i = 0; i < list.size(); i++) {
+        for (std::size_t j = i + 1; j < list.size(); j++) {
+          lines.push_back(list[i]);
+          lines.push_back(list[j]);
+        }
+      }
+    } else if (type == T::POLYSTAR) {
+      for (int32_t i = 0; i < sides; i++) {
+        flvec2 v;
+        v.set_polar(i * 2 * M_PIf / float(sides), r);
+        lines.push_back(flvec2());
+        lines.push_back(v);
+      }
+    }
+    for (std::size_t i = 0; i < lines.size(); ++i) {
+      lib.RenderLine(convert_fl_point(position, rotation, lines[i]),
+                     convert_fl_point(position, rotation, lines[i + 1]),
+                     colour_override ? colour_override : colour);
     }
   }
 
+  fixed radius;
+  int32_t sides;
+  T type;
+
 private:
 
-  bool CheckRotatedPoint(const vec2& v) const override
+  bool check_local_point(const vec2& v) const override
   {
-    return v.length() < GetRadius();
+    return v.length() < radius;
   }
-
-  fixed _radius;
-  int _sides;
 
 };
 
 // Polygon segment
 //------------------------------
-class PolyArc : public RotateShape {
+class PolyArc : public Shape {
 public:
 
-  PolyArc(const vec2& centre, fixed radius, int sides, int segments,
-          colour colour, fixed rotation = 0, int category = 0)
-    : RotateShape(centre, rotation, colour, category)
-    , _radius(radius)
-    , _sides(sides)
-    , _segments(segments) {}
+  PolyArc(const vec2& centre, fixed radius, int32_t sides, int32_t segments,
+          colour_t colour, fixed rotation = 0, int32_t category = 0)
+    : Shape(centre, rotation, colour, category)
+    , radius(radius)
+    , sides(sides)
+    , segments(segments) {}
 
-  ~PolyArc() override {}
-
-  fixed GetRadius() const
+  void render(Lib& lib, const flvec2& position, float rotation,
+              colour_t colour_override = 0) const override
   {
-    return _radius;
-  }
-
-  void SetRadius(fixed radius)
-  {
-    _radius = radius;
-  }
-
-  int GetSides() const
-  {
-    return _sides;
-  }
-
-  void SetSides(int sides)
-  {
-    _sides = sides;
-  }
-
-  int GetSegments() const
-  {
-    return _segments;
-  }
-
-  void SetSegments(int segments)
-  {
-    _segments = segments;
-  }
-
-  void Render(Lib& lib, const flvec2& position, float rotation,
-              colour colour = 0) const override
-  {
-    if (GetSides() < 2) {
+    if (sides < 2) {
       return;
     }
-    float r = GetRadius().to_float();
+    float r = radius.to_float();
 
-    for (int i = 0; i < GetSides() && i < _segments; i++) {
+    for (int32_t i = 0; i < sides && i < segments; i++) {
       flvec2 a, b;
-      a.set_polar(i * 2 * M_PIf / float(GetSides()), r);
-      b.set_polar((i + 1) * 2 * M_PIf / float(GetSides()), r);
-      lib.RenderLine(ConvertPointf(position, rotation, a),
-          ConvertPointf(position, rotation, b), GetColour(colour));
+      a.set_polar(i * 2 * M_PIf / float(sides), r);
+      b.set_polar((i + 1) * 2 * M_PIf / float(sides), r);
+      lib.RenderLine(convert_fl_point(position, rotation, a),
+                     convert_fl_point(position, rotation, b),
+                     colour_override ? colour_override : colour);
     }
   }
+
+  fixed radius;
+  int32_t sides;
+  int32_t segments;
 
 private:
 
-  bool CheckRotatedPoint(const vec2& v) const override
+  bool check_local_point(const vec2& v) const override
   {
     fixed angle = v.angle();
     fixed len = v.length();
-    bool b = 0 <= angle && v.angle() <= (2 * fixed::pi * _segments) / _sides;
-    return b && len >= GetRadius() - 10 && len < GetRadius();
-  }
-
-  fixed _radius;
-  int _sides;
-  int _segments;
-
-};
-
-// Complete regular polygon
-//------------------------------
-class Polygram : public Polygon {
-public:
-
-  Polygram(const vec2& centre, fixed radius, int sides,
-           colour colour, fixed rotation = 0, int category = 0)
-    : Polygon(centre, radius, sides, colour, rotation, category) {}
-
-  ~Polygram() override {}
-
-  void Render(Lib& lib, const flvec2& position, float rotation,
-              colour colour = 0) const override
-  {
-    if (GetSides() < 2) {
-      return;
-    }
-
-    float r = GetRadius().to_float();
-    std::vector<flvec2> list;
-    for (int i = 0; i < GetSides(); i++) {
-      flvec2 v;
-      v.set_polar(i * 2 * M_PIf / float(GetSides()), r);
-      list.push_back(v);
-    }
-
-    for (unsigned int i = 0; i < list.size(); i++) {
-      for (unsigned int j = i + 1; j < list.size(); j++) {
-        lib.RenderLine(
-            ConvertPointf(position, rotation, list[i]),
-            ConvertPointf(position, rotation, list[j]), GetColour(colour));
-      }
-    }
-  }
-
-};
-
-// Spoked regular polygon
-//------------------------------
-class Polystar : public Polygon {
-public:
-
-  Polystar(const vec2& centre, fixed radius, int sides,
-           colour colour, fixed rotation = 0, int category = 0)
-    : Polygon(centre, radius, sides, colour, rotation, category) {}
-
-  ~Polystar() override {}
-
-  void Render(Lib& lib, const flvec2& position, float rotation,
-              colour colour = 0) const override
-  {
-    if (GetSides() < 2) {
-      return;
-    }
-
-    float r = GetRadius().to_float();
-    for (int i = 0; i < GetSides(); i++) {
-      flvec2 v;
-      v.set_polar(i * 2 * M_PIf / float(GetSides()), r);
-      lib.RenderLine(ConvertPointf(position, rotation, flvec2()),
-                     ConvertPointf(position, rotation, v), GetColour(colour));
-    }
+    bool b = 0 <= angle && v.angle() <= (2 * fixed::pi * segments) / sides;
+    return b && len >= radius - 10 && len < radius;
   }
 
 };
 
 // Group of lesser shapes
 //------------------------------
-class CompoundShape : public RotateShape {
+class CompoundShape : public Shape {
 public:
 
   // Child shapes take the top-level category
   CompoundShape(const vec2& centre, fixed rotation = 0,
-                int category = 0, colour colour = 0)
-    : RotateShape(centre, rotation, 0, category)
+                int32_t category = 0)
+    : Shape(centre, rotation, 0, category)
   {
-    SetColour(colour);
   }
 
-  ~CompoundShape() override
+  typedef std::vector<std::unique_ptr<Shape>> shape_list;
+  const shape_list& shapes() const
   {
-    for (unsigned int i = 0; i < _children.size(); i++) {
-      delete _children[i];
-    }
+    return _children;
   }
 
   void add_shape(Shape* shape)
   {
-    _children.push_back(shape);
+    _children.emplace_back(shape);
   }
 
-  void ClearShapes()
+  void clear_shapes()
   {
-    for (unsigned int i = 0; i < _children.size(); i++) {
-      delete _children[i];
-    }
     _children.clear();
   }
 
-  void Render(Lib& lib, const flvec2& position, float rot,
-              colour colour = 0) const override
+  void render(Lib& lib, const flvec2& position, float rot,
+              colour_t colour = 0) const override
   {
-    flvec2 c = ConvertPointf(position, rot, flvec2());
-    for (unsigned int i = 0; i < _children.size(); i++) {
-      _children[i]->Render(lib, c, rotation().to_float() + rot, colour);
+    flvec2 c = convert_fl_point(position, rot, flvec2());
+    for (const auto& child : _children) {
+      child->render(lib, c, rotation().to_float() + rot, colour);
     }
-  }
-
-  std::size_t CountShapes() const
-  {
-    return _children.size();
-  }
-
-  Shape& get_shape(std::size_t i) const
-  {
-    return *_children[i];
   }
 
 private:
 
-  bool CheckRotatedPoint(const vec2& v) const override
+  bool check_local_point(const vec2& v) const override
   {
-    for (unsigned int i = 0; i < _children.size(); i++) {
-      if (_children[i]->CheckPoint(v)) {
+    for (const auto& child : _children) {
+      if (child->check_point(v)) {
         return true;
       }
     }
     return false;
   }
 
-  typedef std::vector<Shape*> ShapeList;
-  ShapeList _children;
+  shape_list _children;
 
 };
 

@@ -5,9 +5,9 @@
 
 namespace {
 
-static std::map<std::pair<colour, int32_t>, colour> cycle_map;
+static std::map<std::pair<colour_t, int32_t>, colour_t> cycle_map;
 
-colour rgb_to_hsl(colour rgb)
+colour_t rgb_to_hsl(colour_t rgb)
 {
   double r = ((rgb >> 24) & 0xff) / 255.0;
   double g = ((rgb >> 16) & 0xff) / 255.0;
@@ -48,7 +48,7 @@ colour rgb_to_hsl(colour rgb)
       ((int(0.5 + l * 255) & 0xff) << 8);
 }
 
-colour hsl_to_rgb(colour hsl)
+colour_t hsl_to_rgb(colour_t hsl)
 {
   double h = ((hsl >> 24) & 0xff) / 255.0;
   double s = ((hsl >> 16) & 0xff) / 255.0;
@@ -216,19 +216,19 @@ std::string decompress_string(const std::string& str)
   return outstring;
 }
 
-colour colour_cycle(colour rgb, int32_t cycle)
+colour_t colour_cycle(colour_t rgb, int32_t cycle)
 {
   if (cycle == 0)
     return rgb;
   int a = rgb & 0x000000ff;
-  std::pair<colour, int> key = std::make_pair(rgb & 0xffffff00, cycle);
+  std::pair<colour_t, int> key = std::make_pair(rgb & 0xffffff00, cycle);
   if (cycle_map.find(key) != cycle_map.end()) {
     return cycle_map[key] | a;
   }
 
-  colour hsl = rgb_to_hsl(rgb & 0xffffff00);
+  colour_t hsl = rgb_to_hsl(rgb & 0xffffff00);
   char c = ((hsl >> 24) & 0xff) + cycle;
-  colour result = hsl_to_rgb((hsl & 0x00ffffff) | (c << 24));
+  colour_t result = hsl_to_rgb((hsl & 0x00ffffff) | (c << 24));
   cycle_map[key] = result;
   return result | a;
 }

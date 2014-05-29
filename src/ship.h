@@ -6,7 +6,7 @@
 
 struct Particle {
 
-  Particle(const flvec2& position, colour colour,
+  Particle(const flvec2& position, colour_t colour,
            const flvec2& velocity, int32_t time)
     : destroy(false)
     , position(position)
@@ -18,7 +18,7 @@ struct Particle {
   flvec2 position;
   flvec2 velocity;
   int32_t timer;
-  colour colour;
+  colour_t colour;
 
 };
 
@@ -122,9 +122,9 @@ public:
 
   // Helpful functions
   //------------------------------
-  void explosion(colour c = 0, int time = 8,
+  void explosion(colour_t c = 0, int time = 8,
                  bool towards = false, const flvec2& v = flvec2()) const;
-  void render_with_colour(colour colour) const;
+  void render_with_colour(colour_t colour) const;
 
   bool is_on_screen() const
   {

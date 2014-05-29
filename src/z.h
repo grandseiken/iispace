@@ -5,7 +5,7 @@
 #include <vector>
 #include "fix32.h"
 
-typedef uint32_t colour;
+typedef uint32_t colour_t;
 
 namespace z {
 
@@ -27,7 +27,7 @@ std::string crypt(const std::string& text, const std::string& key);
 std::string compress_string(const std::string& str);
 std::string decompress_string(const std::string& str);
 
-colour colour_cycle(colour rgb, int32_t cycle);
+colour_t colour_cycle(colour_t rgb, int32_t cycle);
 
 // End namespace z.
 }

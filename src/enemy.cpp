@@ -115,7 +115,8 @@ Chaser::Chaser(const vec2& position)
   , _timer(TIME)
   , _dir()
 {
-  add_shape(new Polygram(vec2(), 10, 4, 0x3399ffff, 0, DANGEROUS | VULNERABLE));
+  add_shape(new Polygon(vec2(), 10, 4, 0x3399ffff,
+                        0, DANGEROUS | VULNERABLE, Polygon::T::POLYGRAM));
   SetScore(30);
   set_bounding_width(10);
   SetDestroySound(Lib::SOUND_ENEMY_SHATTER);
@@ -312,13 +313,17 @@ FollowHub::FollowHub(const vec2& position, bool powerA, bool powerB)
   , _powerA(powerA)
   , _powerB(powerB)
 {
-  add_shape(new Polygram(
-      vec2(), 16, 4, 0x6666ffff, fixed::pi / 4, DANGEROUS | VULNERABLE));
+  add_shape(new Polygon(vec2(), 16, 4, 0x6666ffff, fixed::pi / 4,
+                        DANGEROUS | VULNERABLE, Polygon::T::POLYGRAM));
   if (_powerB) {
-    add_shape(new Polystar(vec2(16, 0), 8, 4, 0x6666ffff, fixed::pi / 4));
-    add_shape(new Polystar(vec2(-16, 0), 8, 4, 0x6666ffff, fixed::pi / 4));
-    add_shape(new Polystar(vec2(0, 16), 8, 4, 0x6666ffff, fixed::pi / 4));
-    add_shape(new Polystar(vec2(0, -16), 8, 4, 0x6666ffff, fixed::pi / 4));
+    add_shape(new Polygon(vec2(16, 0), 8, 4, 0x6666ffff,
+                          fixed::pi / 4, 0, Polygon::T::POLYSTAR));
+    add_shape(new Polygon(vec2(-16, 0), 8, 4, 0x6666ffff,
+                          fixed::pi / 4, 0, Polygon::T::POLYSTAR));
+    add_shape(new Polygon(vec2(0, 16), 8, 4, 0x6666ffff,
+                          fixed::pi / 4, 0, Polygon::T::POLYSTAR));
+    add_shape(new Polygon(vec2(0, -16), 8, 4, 0x6666ffff,
+                          fixed::pi / 4, 0, Polygon::T::POLYSTAR));
   }
 
   add_shape(new Polygon(vec2(16, 0), 8, 4, 0x6666ffff, fixed::pi / 4));
@@ -394,18 +399,21 @@ Shielder::Shielder(const vec2& position, bool power)
   , _rDir(false)
   , _power(power)
 {
-  add_shape(new Polystar(vec2(24, 0), 8, 6, 0x006633ff, 0, VULNSHIELD));
-  add_shape(new Polystar(vec2(-24, 0), 8, 6, 0x006633ff, 0, VULNSHIELD));
-  add_shape(new Polystar(vec2(0, 24), 8, 6, 0x006633ff,
-                         fixed::pi / 2, VULNSHIELD));
-  add_shape(new Polystar(vec2(0, -24), 8, 6, 0x006633ff,
-                         fixed::pi / 2, VULNSHIELD));
+  add_shape(new Polygon(vec2(24, 0), 8, 6, 0x006633ff,
+                        0, VULNSHIELD, Polygon::T::POLYSTAR));
+  add_shape(new Polygon(vec2(-24, 0), 8, 6, 0x006633ff,
+                        0, VULNSHIELD, Polygon::T::POLYSTAR));
+  add_shape(new Polygon(vec2(0, 24), 8, 6, 0x006633ff,
+                        fixed::pi / 2, VULNSHIELD, Polygon::T::POLYSTAR));
+  add_shape(new Polygon(vec2(0, -24), 8, 6, 0x006633ff,
+                        fixed::pi / 2, VULNSHIELD, Polygon::T::POLYSTAR));
   add_shape(new Polygon(vec2(24, 0), 8, 6, 0x33cc99ff, 0, 0));
   add_shape(new Polygon(vec2(-24, 0), 8, 6, 0x33cc99ff, 0, 0));
   add_shape(new Polygon(vec2(0, 24), 8, 6, 0x33cc99ff, fixed::pi / 2, 0));
   add_shape(new Polygon(vec2(0, -24), 8, 6, 0x33cc99ff, fixed::pi / 2, 0));
 
-  add_shape(new Polystar(vec2(0, 0), 24, 4, 0x006633ff, 0, 0));
+  add_shape(new Polygon(vec2(0, 0), 24, 4, 0x006633ff,
+                        0, 0, Polygon::T::POLYSTAR));
   add_shape(new Polygon(vec2(0, 0), 14, 8, power ? 0x33cc99ff : 0x006633ff,
                         0, DANGEROUS | VULNERABLE));
   SetScore(60 + _power * 40);
@@ -490,14 +498,16 @@ Tractor::Tractor(const vec2& position, bool power)
   , _ready(false)
   , _spinning(false)
 {
-  add_shape(new Polygram(vec2(24, 0), 12, 6,
-                         0xcc33ccff, 0, DANGEROUS | VULNERABLE));
-  add_shape(new Polygram(vec2(-24, 0), 12, 6,
-                         0xcc33ccff, 0, DANGEROUS | VULNERABLE));
+  add_shape(new Polygon(vec2(24, 0), 12, 6, 0xcc33ccff, 0,
+                        DANGEROUS | VULNERABLE, Polygon::T::POLYSTAR));
+  add_shape(new Polygon(vec2(-24, 0), 12, 6, 0xcc33ccff, 0,
+                        DANGEROUS | VULNERABLE, Polygon::T::POLYGRAM));
   add_shape(new Line(vec2(0, 0), vec2(24, 0), vec2(-24, 0), 0xcc33ccff));
   if (power) {
-    add_shape(new Polystar(vec2(24, 0), 16, 6, 0xcc33ccff, 0, 0));
-    add_shape(new Polystar(vec2(-24, 0), 16, 6, 0xcc33ccff, 0, 0));
+    add_shape(new Polygon(vec2(24, 0), 16, 6,
+                         0xcc33ccff, 0, 0, Polygon::T::POLYSTAR));
+    add_shape(new Polygon(vec2(-24, 0), 16, 6,
+                          0xcc33ccff, 0, 0, Polygon::T::POLYSTAR));
   }
   SetScore(85 + power * 40);
   set_bounding_width(36);

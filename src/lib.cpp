@@ -665,7 +665,7 @@ int Lib::GetColourCycle() const
   return _cycle;
 }
 
-colour Lib::Cycle(colour rgb) const
+colour_t Lib::Cycle(colour_t rgb) const
 {
   return z::colour_cycle(rgb, _cycle);
 }
@@ -1120,7 +1120,7 @@ void Lib::ClearScreen() const
 #endif
 }
 
-void Lib::RenderLine(const flvec2& a, const flvec2& b, colour c) const
+void Lib::RenderLine(const flvec2& a, const flvec2& b, colour_t c) const
 {
 #ifndef PLATFORM_SCORE
   c = Cycle(c);
@@ -1141,7 +1141,7 @@ void Lib::RenderLine(const flvec2& a, const flvec2& b, colour c) const
 #endif
 }
 
-void Lib::RenderText(const flvec2& v, const std::string& text, colour c) const
+void Lib::RenderText(const flvec2& v, const std::string& text, colour_t c) const
 {
 #ifndef PLATFORM_SCORE
   _internals->_font.SetColor(RgbaToColor(Cycle(c)));
@@ -1157,7 +1157,7 @@ void Lib::RenderText(const flvec2& v, const std::string& text, colour c) const
 }
 
 void Lib::RenderRect(
-    const flvec2& low, const flvec2& hi, colour c, int lineWidth) const
+    const flvec2& low, const flvec2& hi, colour_t c, int lineWidth) const
 {
 #ifndef PLATFORM_SCORE
   c = Cycle(c);

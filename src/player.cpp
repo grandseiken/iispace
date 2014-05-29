@@ -338,7 +338,7 @@ void Player::AddScore(long score)
   }
 }
 
-colour Player::GetPlayerColour(std::size_t playerNumber)
+colour_t Player::GetPlayerColour(std::size_t playerNumber)
 {
   return
       playerNumber == 0 ? 0xff0000ff :
@@ -377,7 +377,8 @@ void Player::ActivateBomb()
     _shield = false;
   }
   _bomb = true;
-  add_shape(new Polystar(vec2(-8, 0), 6, 5, 0xffffffff, fixed::pi));
+  add_shape(new Polygon(vec2(-8, 0), 6, 5, 0xffffffff,
+                        fixed::pi, 0, Polygon::T::POLYSTAR));
 }
 
 // Player projectiles

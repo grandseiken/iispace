@@ -30,7 +30,7 @@ private:
     flvec2 position;
     float speed;
     float size;
-    colour colour;
+    colour_t colour;
   };
 
   static flvec2 _direction;
