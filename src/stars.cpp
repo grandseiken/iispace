@@ -25,7 +25,7 @@ void Stars::update()
 }
 
 void Stars::change() {
-  _direction.rotate((z::rand_fixed().to_float() - 0.5f) * M_PIf);
+  _direction = _direction.rotated((z::rand_fixed().to_float() - 0.5f) * M_PIf);
   for (const auto& star : _stars) {
     star->timer = TIMER;
   }
@@ -49,9 +49,8 @@ void Stars::render(Lib& lib)
 
     case PLANET:
       for (int32_t i = 0; i < 8; i++) {
-        flvec2 a, b;
-        a.set_polar(i * M_PIf / 4, star->size);
-        b.set_polar((i + 1) * M_PIf / 4, star->size);
+        flvec2 a = flvec2::from_polar(i * M_PIf / 4, star->size);
+        flvec2 b = flvec2::from_polar((i + 1) * M_PIf / 4, star->size);
         lib.RenderLine(star->position + a, star->position + b, star->colour);
       }
     }
@@ -94,6 +93,6 @@ void Stars::create_star()
 void Stars::clear()
 {
   _stars.clear();
-  _direction.set(1, 0);
+  _direction = flvec2(1, 0);
   _star_rate = 0;
 }

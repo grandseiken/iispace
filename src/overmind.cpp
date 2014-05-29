@@ -236,20 +236,10 @@ void Overmind::SpawnPowerup()
   }
 
   int32_t r = z::rand_int(4);
-  vec2 v;
-
-  if (r == 0) {
-    v.set(-Lib::WIDTH, Lib::HEIGHT / 2);
-  }
-  else if (r == 1) {
-    v.set(Lib::WIDTH * 2, Lib::HEIGHT / 2);
-  }
-  else if (r == 2) {
-    v.set(Lib::WIDTH / 2, -Lib::HEIGHT);
-  }
-  else {
-    v.set(Lib::WIDTH / 2, Lib::HEIGHT * 2);
-  }
+  vec2 v = r == 0 ? vec2(-Lib::WIDTH, Lib::HEIGHT / 2) :
+           r == 1 ? vec2(Lib::WIDTH * 2, Lib::HEIGHT / 2) :
+           r == 2 ? vec2(Lib::WIDTH / 2, -Lib::HEIGHT) :
+                    vec2(Lib::WIDTH / 2, Lib::HEIGHT * 2);
 
   int32_t m = 4;
   for (int32_t i = 1; i <= Lib::PLAYERS; i++) {
@@ -281,21 +271,10 @@ void Overmind::SpawnBossReward()
 {
   _tz0 = &_z0;
   int r = z::rand_int(4);
-  vec2 v;
-
-  if (r == 0) {
-    v.set(-Lib::WIDTH / 4, Lib::HEIGHT / 2);
-  }
-  else if (r == 1) {
-    v.set(Lib::WIDTH + Lib::WIDTH / 4, Lib::HEIGHT / 2);
-  }
-  else if (r == 2) {
-    v.set(Lib::WIDTH / 2, -Lib::HEIGHT / 4);
-  }
-  else {
-    v.set(Lib::WIDTH / 2, Lib::HEIGHT + Lib::HEIGHT / 4);
-  }
-
+  vec2 v = r == 0 ? vec2(-Lib::WIDTH / 4, Lib::HEIGHT / 2) :
+           r == 1 ? vec2(Lib::WIDTH + Lib::WIDTH / 4, Lib::HEIGHT / 2) :
+           r == 2 ? vec2(Lib::WIDTH / 2, -Lib::HEIGHT / 4) :
+                    vec2(Lib::WIDTH / 2, Lib::HEIGHT + Lib::HEIGHT / 4);
   spawn(new Powerup(v, Powerup::EXTRA_LIFE));
 
   _tz0 = 0;

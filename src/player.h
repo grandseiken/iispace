@@ -11,20 +11,20 @@ public:
   //------------------------------
   static const fixed SPEED;
   static const fixed SHOT_SPEED;
-  static const int SHOT_TIMER;
+  static const int32_t SHOT_TIMER;
   static const fixed BOMB_RADIUS;
   static const fixed BOMB_BOSSRADIUS;
-  static const int BOMB_DAMAGE;
-  static const int REVIVE_TIME;
-  static const int SHIELD_TIME;
-  static const int MAGICSHOT_COUNT;
+  static const int32_t BOMB_DAMAGE;
+  static const int32_t REVIVE_TIME;
+  static const int32_t SHIELD_TIME;
+  static const int32_t MAGICSHOT_COUNT;
 
   // Player ship
   //------------------------------
-  Player(const vec2& position, int playerNumber);
+  Player(const vec2& position, int32_t playerNumber);
   ~Player() override;
 
-  int GetPlayerNumber() const
+  int32_t GetPlayerNumber() const
   {
     return _playerNumber;
   }
@@ -49,17 +49,17 @@ public:
 
   // Scoring
   //------------------------------
-  long GetScore() const
+  int64_t GetScore() const
   {
     return _score;
   }
 
-  int GetDeaths() const
+  int32_t GetDeaths() const
   {
     return _deathCounter;
   }
 
-  void AddScore(long score);
+  void AddScore(int64_t score);
 
   // Colour
   //------------------------------
@@ -85,19 +85,19 @@ private:
 
   // Internals
   //------------------------------
-  int _playerNumber;
-  long _score;
-  int _multiplier;
-  int _mulCount;
-  int _killTimer;
-  int _reviveTimer;
-  int _magicShotTimer;
+  int32_t _playerNumber;
+  int64_t _score;
+  int32_t _multiplier;
+  int32_t _mulCount;
+  int32_t _killTimer;
+  int32_t _reviveTimer;
+  int32_t _magicShotTimer;
   bool _shield;
   bool _bomb;
   vec2 _tempTarget;
-  int _deathCounter;
+  int32_t _deathCounter;
 
-  static int _fireTimer;
+  static int32_t _fireTimer;
   static z0Game::ShipList _killQueue;
   static z0Game::ShipList _shotSoundQueue;
 

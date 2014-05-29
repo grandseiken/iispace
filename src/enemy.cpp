@@ -48,7 +48,7 @@ void Enemy::damage(int damage, bool magic, Player* source)
       explosion();
     }
     else {
-      explosion(0, 4, true, to_float(position()));
+      explosion(0, 4, true, to_float(shape().centre));
     }
     OnDestroy(damage >= Player::BOMB_DAMAGE);
     destroy();
@@ -88,7 +88,7 @@ Follow::Follow(const vec2& position, fixed radius, int hp)
 
 void Follow::update()
 {
-  rotate(fixed::tenth);
+  shape().rotate(fixed::tenth);
   if (!z0().alive_players()) {
     return;
   }
@@ -98,12 +98,9 @@ void Follow::update()
     _target = nearest_player();
     _timer = 0;
   }
-  vec2 d = _target->position() - position();
+  vec2 d = _target->shape().centre - shape().centre;
   if (d.length() > 0) {
-    d.normalise();
-    d *= SPEED;
-
-    move(d);
+    move(d.normalised() * SPEED);
   }
 }
 
@@ -134,10 +131,8 @@ void Chaser::update()
     _timer = TIME * (_move + 1);
     _move = !_move;
     if (_move) {
-      Ship* p = nearest_player();
-      _dir = p->position() - position();
-      _dir.normalise();
-      _dir *= SPEED;
+      _dir = SPEED *
+          (nearest_player()->shape().centre - shape().centre).normalised();
     }
   }
   if (_move) {
@@ -147,7 +142,7 @@ void Chaser::update()
     }
   }
   else {
-    rotate(fixed::tenth);
+    shape().rotate(fixed::tenth);
   }
 }
 
@@ -159,7 +154,7 @@ Square::Square(const vec2& position, fixed rotation)
   , _timer(z::rand_int(80) + 40)
 {
   add_shape(new Box(vec2(), 10, 10, 0x33ff33ff, 0, DANGEROUS | VULNERABLE));
-  _dir.set_polar(rotation, 1);
+  _dir = vec2::from_polar(rotation, 1);
   SetScore(25);
   set_bounding_width(15);
   set_enemy_value(2);
@@ -178,7 +173,7 @@ void Square::update()
     damage(4, false, 0);
   }
 
-  vec2 pos = position();
+  const vec2& pos = shape().centre;
   if (pos.x < 0 && _dir.x <= 0) {
     _dir.x = -_dir.x;
     if (_dir.x <= 0) {
@@ -204,10 +199,9 @@ void Square::update()
       _dir.y = -1;
     }
   }
-  _dir.normalise();
-
+  _dir = _dir.normalised();
   move(_dir * SPEED);
-  set_rotation(_dir.angle());
+  shape().set_rotation(_dir.angle());
 }
 
 void Square::render() const
@@ -245,16 +239,15 @@ void Wall::update()
   }
 
   if (_rotate) {
-    vec2 d(_dir);
-    d.rotate(
+    vec2 d = _dir.rotated(
         (_rdir ? _timer - TIMER : TIMER - _timer) * fixed::pi / (4 * TIMER));
 
-    set_rotation(d.angle());
+    shape().set_rotation(d.angle());
     _timer--;
     if (_timer <= 0) {
       _timer = 0;
       _rotate = false;
-      _dir.rotate(_rdir ? -fixed::pi / 4 : fixed::pi / 4);
+      _dir = _dir.rotated(_rdir ? -fixed::pi / 4 : fixed::pi / 4);
     }
     return;
   }
@@ -271,17 +264,16 @@ void Wall::update()
     }
   }
 
-  vec2 pos = position();
+  vec2 pos = shape().centre;
   if ((pos.x < 0 && _dir.x < -fixed::hundredth) ||
       (pos.y < 0 && _dir.y < -fixed::hundredth) ||
       (pos.x > Lib::WIDTH && _dir.x > fixed::hundredth) ||
       (pos.y > Lib::HEIGHT && _dir.y > fixed::hundredth)) {
-    _dir = vec2() - _dir;
-    _dir.normalise();
+    _dir = -_dir.normalised();
   }
 
   move(_dir * SPEED);
-  set_rotation(_dir.angle());
+  shape().set_rotation(_dir.angle());
 }
 
 void Wall::OnDestroy(bool bomb)
@@ -289,17 +281,16 @@ void Wall::OnDestroy(bool bomb)
   if (bomb) {
     return;
   }
-  vec2 d = _dir;
-  d.rotate(fixed::pi / 2);
+  vec2 d = _dir.rotated(fixed::pi / 2);
 
-  vec2 v = position() + d * 10 * 3;
+  vec2 v = shape().centre + d * 10 * 3;
   if (v.x >= 0 && v.x <= Lib::WIDTH && v.y >= 0 && v.y <= Lib::HEIGHT) {
-    spawn(new Square(v, rotation()));
+    spawn(new Square(v, shape().rotation()));
   }
 
-  v = position() - d * 10 * 3;
+  v = shape().centre - d * 10 * 3;
   if (v.x >= 0 && v.x <= Lib::WIDTH && v.y >= 0 && v.y <= Lib::HEIGHT) {
-    spawn(new Square(v, rotation()));
+    spawn(new Square(v, shape().rotation()));
   }
 }
 
@@ -344,36 +335,25 @@ void FollowHub::update()
     _count++;
     if (is_on_screen()) {
       if (_powerB) {
-        spawn(new Chaser(position()));
+        spawn(new Chaser(shape().centre));
       }
       else {
-        spawn(new Follow(position()));
+        spawn(new Follow(shape().centre));
       }
       play_sound_random(Lib::SOUND_ENEMY_SPAWN);
     }
   }
 
-  if (position().x < 0) {
-    _dir.set(1, 0);
-  }
-  else if (position().x > Lib::WIDTH) {
-    _dir.set(-1, 0);
-  }
-  else if (position().y < 0) {
-    _dir.set(0, 1);
-  }
-  else if (position().y > Lib::HEIGHT) {
-    _dir.set(0, -1);
-  }
-  else if (_count > 3) {
-    _dir.rotate(-fixed::pi / 2);
-    _count = 0;
-  }
+  _dir = shape().centre.x < 0 ? vec2(1, 0) :
+         shape().centre.x > Lib::WIDTH ? vec2(-1, 0) :
+         shape().centre.y < 0 ? vec2(0, 1) :
+         shape().centre.y > Lib::HEIGHT ? vec2(0, -1) :
+         _count > 3 ? (_count = 0, _dir.rotated(-fixed::pi / 2)) : _dir;
 
   fixed s = _powerA ?
       fixed::hundredth * 5 + fixed::tenth : fixed::hundredth * 5;
-  rotate(s);
-  get_shape(0).rotate(-s);
+  shape().rotate(s);
+  shapes()[0]->rotate(-s);
 
   move(_dir * SPEED);
 }
@@ -384,9 +364,9 @@ void FollowHub::OnDestroy(bool bomb)
     return;
   }
   if (_powerB) {
-    spawn(new BigFollow(position(), true));
+    spawn(new BigFollow(shape().centre, true));
   }
-  spawn(new Chaser(position()));
+  spawn(new Chaser(shape().centre));
 }
 
 // Shielder enemy
@@ -425,28 +405,18 @@ Shielder::Shielder(const vec2& position, bool power)
 void Shielder::update()
 {
   fixed s = _power ? fixed::hundredth * 12 : fixed::hundredth * 4;
-  rotate(s);
-  get_shape(9).rotate(-2 * s);
+  shape().rotate(s);
+  shapes()[9]->rotate(-2 * s);
   for (int i = 0; i < 8; i++) {
-    get_shape(i).rotate(-s);
+    shapes()[i]->rotate(-s);
   }
 
   bool onScreen = false;
-  if (position().x < 0) {
-    _dir.set(1, 0);
-  }
-  else if (position().x > Lib::WIDTH) {
-    _dir.set(-1, 0);
-  }
-  else if (position().y < 0) {
-    _dir.set(0, 1);
-  }
-  else if (position().y > Lib::HEIGHT) {
-    _dir.set(0, -1);
-  }
-  else {
-    onScreen = true;
-  }
+  _dir = shape().centre.x < 0 ? vec2(1, 0) :
+         shape().centre.x > Lib::WIDTH ? vec2(-1, 0) :
+         shape().centre.y < 0 ? vec2(0, 1) :
+         shape().centre.y > Lib::HEIGHT ? vec2(0, -1) :
+         (onScreen = true, _dir);
 
   if (!onScreen && _rotate) {
     _timer = 0;
@@ -456,13 +426,13 @@ void Shielder::update()
   fixed speed = SPEED +
       (_power ? fixed::tenth * 3 : fixed::tenth * 2) * (16 - GetHP());
   if (_rotate) {
-    vec2 d(_dir);
-    d.rotate((_rDir ? 1 : -1) * (TIMER - _timer) * fixed::pi / (2 * TIMER));
+    vec2 d = _dir.rotated(
+        (_rDir ? 1 : -1) * (TIMER - _timer) * fixed::pi / (2 * TIMER));
     _timer--;
     if (_timer <= 0) {
       _timer = 0;
       _rotate = false;
-      _dir.rotate((_rDir ? 1 : -1) * fixed::pi / 2);
+      _dir = _dir.rotated((_rDir ? 1 : -1) * fixed::pi / 2);
     }
     move(d * speed);
   }
@@ -475,17 +445,15 @@ void Shielder::update()
     }
     if (is_on_screen() && _timer % TIMER == TIMER / 2 && _power) {
       Player* p = nearest_player();
-      vec2 v = position();
+      vec2 v = shape().centre;
 
-      vec2 d = p->position() - v;
-      d.normalise();
+      vec2 d = (p->shape().centre - v).normalised();
       spawn(new SBBossShot(v, d * 3, 0x33cc99ff));
       play_sound_random(Lib::SOUND_BOSS_FIRE);
     }
     move(_dir * speed);
   }
-  _dir.normalise();
-
+  _dir = _dir.normalised();
 }
 
 // Tractor beam enemy
@@ -517,24 +485,24 @@ Tractor::Tractor(const vec2& position, bool power)
 
 void Tractor::update()
 {
-  get_shape(0).rotate(fixed::hundredth * 5);
-  get_shape(1).rotate(-fixed::hundredth * 5);
+  shapes()[0]->rotate(fixed::hundredth * 5);
+  shapes()[1]->rotate(-fixed::hundredth * 5);
   if (_power) {
-    get_shape(3).rotate(-fixed::hundredth * 8);
-    get_shape(4).rotate(fixed::hundredth * 8);
+    shapes()[3]->rotate(-fixed::hundredth * 8);
+    shapes()[4]->rotate(fixed::hundredth * 8);
   }
 
-  if (position().x < 0) {
-    _dir.set(1, 0);
+  if (shape().centre.x < 0) {
+    _dir = vec2(1, 0);
   }
-  else if (position().x > Lib::WIDTH) {
-    _dir.set(-1, 0);
+  else if (shape().centre.x > Lib::WIDTH) {
+    _dir = vec2(-1, 0);
   }
-  else if (position().y < 0) {
-    _dir.set(0, 1);
+  else if (shape().centre.y < 0) {
+    _dir = vec2(0, 1);
   }
-  else if (position().y > Lib::HEIGHT) {
-    _dir.set(0, -1);
+  else if (shape().centre.y > Lib::HEIGHT) {
+    _dir = vec2(0, -1);
   }
   else {
     _timer++;
@@ -558,22 +526,18 @@ void Tractor::update()
     }
   }
   else if (_spinning) {
-    rotate(fixed::tenth * 3);
+    shape().rotate(fixed::tenth * 3);
     for (unsigned int i = 0; i < _players.size(); i++) {
       if (!((Player*) _players[i])->IsKilled()) {
-        vec2 d = position() - _players[i]->position();
-        d.normalise();
+        vec2 d = (shape().centre - _players[i]->shape().centre).normalised();
         _players[i]->move(d * TRACTOR_SPEED);
       }
     }
 
     if (_timer % (TIMER / 2) == 0 && is_on_screen() && _power) {
       Player* p = nearest_player();
-      vec2 v = position();
-
-      vec2 d = p->position() - v;
-      d.normalise();
-      spawn(new SBBossShot(v, d * 4, 0xcc33ccff));
+      vec2 d = (p->shape().centre - shape().centre).normalised();
+      spawn(new SBBossShot(shape().centre, d * 4, 0xcc33ccff));
       play_sound_random(Lib::SOUND_BOSS_FIRE);
     }
 
@@ -590,8 +554,8 @@ void Tractor::render() const
   if (_spinning) {
     for (unsigned int i = 0; i < _players.size(); i++) {
       if (((_timer + i * 4) / 4) % 2 && !((Player*) _players[i])->IsKilled()) {
-        lib().RenderLine(to_float(position()),
-                         to_float(_players[i]->position()), 0xcc33ccff);
+        lib().RenderLine(to_float(shape().centre),
+                         to_float(_players[i]->shape().centre), 0xcc33ccff);
       }
     }
   }

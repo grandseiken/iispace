@@ -22,15 +22,14 @@ void BigFollow::OnDestroy(bool bomb)
     return;
   }
 
-  vec2 d(10, 0);
-  d.rotate(rotation());
+  vec2 d = vec2(10, 0).rotated(shape().rotation());
   for (int i = 0; i < 3; i++) {
-    Follow* s = new Follow(position() + d);
+    Follow* s = new Follow(shape().centre + d);
     if (!_hasScore) {
       s->SetScore(0);
     }
     spawn(s);
-    d.rotate(2 * fixed::pi / 3);
+    d = d.rotated(2 * fixed::pi / 3);
   }
 }
 
@@ -51,14 +50,14 @@ SBBossShot::SBBossShot(const vec2& position, const vec2& velocity, colour_t c)
 void SBBossShot::update()
 {
   move(_dir);
-  vec2 p = position();
+  vec2 p = shape().centre;
   if ((p.x < -10 && _dir.x < 0) ||
       (p.x > Lib::WIDTH + 10 && _dir.x > 0) ||
       (p.y < -10 && _dir.y < 0) ||
       (p.y > Lib::HEIGHT + 10 && _dir.y > 0)) {
     destroy();
   }
-  set_rotation(rotation() + fixed::hundredth * 2);
+  shape().set_rotation(shape().rotation() + fixed::hundredth * 2);
 }
 
 // Tractor beam minion
@@ -67,7 +66,7 @@ TBossShot::TBossShot(const vec2& position, fixed angle)
   : Enemy(position, SHIP_NONE, 1)
 {
   add_shape(new Polygon(vec2(), 8, 6, 0xcc33ccff, 0, DANGEROUS | VULNERABLE));
-  _dir.set_polar(angle, 3);
+  _dir = vec2::from_polar(angle, 3);
   set_bounding_width(8);
   SetScore(0);
   SetDestroySound(Lib::SOUND_ENEMY_SHATTER);
@@ -75,12 +74,12 @@ TBossShot::TBossShot(const vec2& position, fixed angle)
 
 void TBossShot::update()
 {
-  if ((position().x > Lib::WIDTH && _dir.x > 0) ||
-      (position().x < 0 && _dir.x < 0)) {
+  if ((shape().centre.x > Lib::WIDTH && _dir.x > 0) ||
+      (shape().centre.x < 0 && _dir.x < 0)) {
     _dir.x = -_dir.x;
   }
-  if ((position().y > Lib::HEIGHT && _dir.y > 0) ||
-      (position().y < 0 && _dir.y < 0)) {
+  if ((shape().centre.y > Lib::HEIGHT && _dir.y > 0) ||
+      (shape().centre.y < 0 && _dir.y < 0)) {
     _dir.y = -_dir.y;
   }
 
@@ -135,20 +134,20 @@ GhostWall::GhostWall(bool swap, bool swapGap)
 
 void GhostWall::update()
 {
-  if ((_dir.x > 0 && position().x < 32) ||
-      (_dir.y > 0 && position().y < 16) ||
-      (_dir.x < 0 && position().x >= Lib::WIDTH - 32) ||
-      (_dir.y < 0 && position().y >= Lib::HEIGHT - 16)) {
+  if ((_dir.x > 0 && shape().centre.x < 32) ||
+      (_dir.y > 0 && shape().centre.y < 16) ||
+      (_dir.x < 0 && shape().centre.x >= Lib::WIDTH - 32) ||
+      (_dir.y < 0 && shape().centre.y >= Lib::HEIGHT - 16)) {
     move(_dir * SPEED / 2);
   }
   else {
     move(_dir * SPEED);
   }
 
-  if ((_dir.x > 0 && position().x > Lib::WIDTH + 10) ||
-      (_dir.y > 0 && position().y > Lib::HEIGHT + 10) ||
-      (_dir.x < 0 && position().x < -10) ||
-      (_dir.y < 0 && position().y < -10)) {
+  if ((_dir.x > 0 && shape().centre.x > Lib::WIDTH + 10) ||
+      (_dir.y > 0 && shape().centre.y > Lib::HEIGHT + 10) ||
+      (_dir.x < 0 && shape().centre.x < -10) ||
+      (_dir.y < 0 && shape().centre.y < -10)) {
     destroy();
   }
 }
@@ -170,20 +169,20 @@ void GhostMine::update()
 {
   if (_timer == 80) {
     explosion();
-    set_rotation(z::rand_fixed() * 2 * fixed::pi);
+    shape().set_rotation(z::rand_fixed() * 2 * fixed::pi);
   }
   if (_timer) {
     _timer--;
     if (!_timer) {
-      get_shape(0).category = DANGEROUS | SHIELD | VULNSHIELD;
+      shapes()[0]->category = DANGEROUS | SHIELD | VULNSHIELD;
     }
   }
-  z0Game::ShipList s = z0().collision_list(position(), DANGEROUS);
+  z0Game::ShipList s = z0().collision_list(shape().centre, DANGEROUS);
   for (unsigned int i = 0; i < s.size(); i++) {
     if (s[i] == _ghost) {
       Enemy* e = z::rand_int(6) == 0 ||
           (_ghost->IsHPLow() && z::rand_int(5) == 0) ?
-              new BigFollow(position(), false) : new Follow(position());
+              new BigFollow(shape().centre, false) : new Follow(shape().centre);
       e->SetScore(0);
       spawn(e);
       damage(1, false, 0);
@@ -212,7 +211,7 @@ DeathRay::DeathRay(const vec2& position)
 void DeathRay::update()
 {
   move(vec2(1, 0) * SPEED);
-  if (position().x > Lib::WIDTH + 20) {
+  if (shape().centre.x > Lib::WIDTH + 20) {
     destroy();
   }
 }
@@ -243,27 +242,24 @@ void DeathArm::update()
 {
   if (_timer % (DeathRayBoss::ARM_ATIMER / 2) == DeathRayBoss::ARM_ATIMER / 4) {
     play_sound_random(Lib::SOUND_BOSS_FIRE);
-    _target = nearest_player()->position();
+    _target = nearest_player()->shape().centre;
     _shots = 16;
   }
   if (_shots > 0) {
-    vec2 d = _target - position();
-    d.normalise();
-    d *= 5;
-    Ship* s = new SBBossShot(position(), d, 0x33ff99ff);
+    vec2 d = (_target - shape().centre).normalised() * 5;
+    Ship* s = new SBBossShot(shape().centre, d, 0x33ff99ff);
     spawn(s);
     --_shots;
   }
 
-  rotate(fixed::hundredth * 5);
+  shape().rotate(fixed::hundredth * 5);
   if (_attacking) {
     _timer++;
     if (_timer < DeathRayBoss::ARM_ATIMER / 4) {
       Player* p = nearest_player();
-      vec2 d = p->position() - position();
+      vec2 d = p->shape().centre - shape().centre;
       if (d.length() != 0) {
-        _dir = d;
-        _dir.normalise();
+        _dir = d.normalised();
         move(_dir * DeathRayBoss::ARM_SPEED);
       }
     }
@@ -271,11 +267,10 @@ void DeathArm::update()
       move(_dir * DeathRayBoss::ARM_SPEED);
     }
     else if (_timer < DeathRayBoss::ARM_ATIMER) {
-      vec2 d = _boss->position() +
-          vec2(80, _top ? 80 : -80) - position();
+      vec2 d = _boss->shape().centre +
+          vec2(80, _top ? 80 : -80) - shape().centre;
       if (d.length() > DeathRayBoss::ARM_SPEED) {
-        d.normalise();
-        move(d * DeathRayBoss::ARM_SPEED);
+        move(d.normalised() * DeathRayBoss::ARM_SPEED);
       }
       else {
         _attacking = false;
@@ -293,10 +288,10 @@ void DeathArm::update()
   if (_timer >= DeathRayBoss::ARM_ATIMER) {
     _timer = 0;
     _attacking = true;
-    _dir.set(0, 0);
+    _dir = vec2();
     play_sound(Lib::SOUND_BOSS_ATTACK);
   }
-  set_position(_boss->position() + vec2(80, _top ? 80 : -80));
+  shape().centre = _boss->shape().centre + vec2(80, _top ? 80 : -80);
 
   if (_start) {
     if (_start == 30) {
@@ -305,7 +300,7 @@ void DeathArm::update()
     }
     _start--;
     if (!_start) {
-      get_shape(1).category = DANGEROUS | VULNERABLE;
+      shapes()[1]->category = DANGEROUS | VULNERABLE;
     }
   }
 }
@@ -315,7 +310,7 @@ void DeathArm::OnDestroy(bool bomb)
   _boss->OnArmDeath(this);
   explosion();
   explosion(0xffffffff, 12);
-  explosion(get_shape(0).colour, 24);
+  explosion(shapes()[0]->colour, 24);
 }
 
 // Snake tail
@@ -336,7 +331,7 @@ SnakeTail::SnakeTail(const vec2& position, colour_t colour)
 void SnakeTail::update()
 {
   static const fixed z15 = fixed::hundredth * 15;
-  rotate(z15);
+  shape().rotate(z15);
   --_timer;
   if (!_timer) {
     OnDestroy(false);
@@ -403,27 +398,26 @@ Snake::Snake(const vec2& position, colour_t colour, const vec2& dir, fixed rot)
     }
   }
   else {
-    _dir = dir;
-    _dir.normalise();
+    _dir = dir.normalised();
     _shotSnake = true;
   }
-  set_rotation(_dir.angle());
+  shape().set_rotation(_dir.angle());
 }
 
 void Snake::update()
 {
-  if (!(position().x >= -8 && position().x <= Lib::WIDTH + 8 &&
-        position().y >= -8 && position().y <= Lib::HEIGHT + 8)) {
+  if (!(shape().centre.x >= -8 && shape().centre.x <= Lib::WIDTH + 8 &&
+        shape().centre.y >= -8 && shape().centre.y <= Lib::HEIGHT + 8)) {
     _tail = 0;
     destroy();
     return;
   }
 
   colour_t c = z::colour_cycle(_colour, _timer % 256);
-  get_shape(0).colour = c;
+  shapes()[0]->colour = c;
   _timer++;
   if (_timer % (_shotSnake ? 4 : 8) == 0) {
-    SnakeTail* t = new SnakeTail(position(), (c & 0xffffff00) | 0x00000099);
+    SnakeTail* t = new SnakeTail(shape().centre, (c & 0xffffff00) | 0x00000099);
     if (_tail != 0) {
       _tail->_head = t;
       t->_tail = _tail;
@@ -433,13 +427,13 @@ void Snake::update()
     spawn(t);
   }
   if (!_shotSnake && _timer % 48 == 0 && !z::rand_int(3)) {
-    _dir.rotate((z::rand_int(2) ? 1 : -1) * fixed::pi / 2);
-    set_rotation(_dir.angle());
+    _dir = _dir.rotated((z::rand_int(2) ? 1 : -1) * fixed::pi / 2);
+    shape().set_rotation(_dir.angle());
   }
   move(_dir * (_shotSnake ? 4 : 2));
   if (_timer % 8 == 0) {
-    _dir.rotate(8 * _shotRot);
-    set_rotation(_dir.angle());
+    _dir = _dir.rotated(8 * _shotRot);
+    shape().set_rotation(_dir.angle());
   }
 }
 
@@ -464,8 +458,8 @@ void RainbowShot::update()
   SBBossShot::update();
   static const vec2 center = vec2(Lib::WIDTH / 2, Lib::HEIGHT / 2);
 
-  if ((position() - center).length() > 100 && _timer % 2 == 0) {
-    z0Game::ShipList list = z0().collision_list(position(), SHIELD);
+  if ((shape().centre - center).length() > 100 && _timer % 2 == 0) {
+    z0Game::ShipList list = z0().collision_list(shape().centre, SHIELD);
     SuperBoss* s = (SuperBoss*) _boss;
     for (std::size_t i = 0; i < list.size(); ++i) {
       bool boss = false;
@@ -479,7 +473,7 @@ void RainbowShot::update()
         continue;
       }
 
-      explosion(0, 4, true, to_float(position() - _dir));
+      explosion(0, 4, true, to_float(shape().centre - _dir));
       destroy();
       return;
     }
@@ -488,6 +482,6 @@ void RainbowShot::update()
   ++_timer;
   static const fixed r = 6 * (8 * fixed::hundredth / 10);
   if (_timer % 8 == 0) {
-    _dir.rotate(r);
+    _dir = _dir.rotated(r);
   }
 }

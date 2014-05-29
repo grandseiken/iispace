@@ -2,7 +2,6 @@
 #define IISPACE_SRC_Z0_H
 
 #include <string>
-#include <vector>
 #include "fix32.h"
 
 typedef uint32_t colour_t;
@@ -32,8 +31,6 @@ colour_t colour_cycle(colour_t rgb, int32_t cycle);
 // End namespace z.
 }
 
-// Vector math
-//------------------------------
 #define M_PIf 3.14159265358979323846264338327f
 
 inline fixed sqrt(fixed f)
@@ -86,38 +83,30 @@ public:
     return atan2(y, x);
   }
 
-  void set(const T& x, const T& y)
+  static vec2_t from_polar(const T& angle, const T& length)
   {
-    this->x = x;
-    this->y = y;
+    return length * vec2_t(cos(angle), sin(angle));
   }
 
-  void set_polar(const T& angle, const T& length)
-  {
-    x = length * cos(angle);
-    y = length * sin(angle);
-  }
-
-  void normalise()
+  vec2_t normalised() const
   {
     T len = length();
-    if (len <= 0) {
-      return;
-    }
-    x /= len;
-    y /= len;
+    return len <= 0 ? *this : *this / len;
   }
 
-  void rotate(const T& r_angle)
+  vec2_t rotated(const T& r_angle) const
   {
-    if (r_angle != 0) {
-      set_polar(angle() + r_angle, length());
-    }
+    return r_angle ? from_polar(angle() + r_angle, length()) : *this;
   }
 
   T dot(const vec2_t& v) const
   {
     return x * v.x + y * v.y;
+  }
+
+  vec2_t operator-() const
+  {
+    return vec2_t() - *this;
   }
 
   vec2_t operator+(const vec2_t& v) const

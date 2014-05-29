@@ -50,7 +50,7 @@ Player::~Player()
 void Player::update()
 {
   vec2 velocity = lib().GetMoveVelocity(GetPlayerNumber());
-  vec2 fireTarget = lib().GetFireTarget(GetPlayerNumber(), position());
+  vec2 fireTarget = lib().GetFireTarget(GetPlayerNumber(), shape().centre);
   int keys =
       int(lib().IsKeyHeld(GetPlayerNumber(), Lib::KEY_FIRE)) |
       (lib().IsKeyPressed(GetPlayerNumber(), Lib::KEY_BOMB) << 1);
@@ -90,9 +90,9 @@ void Player::update()
       if (z0().get_lives() && _killQueue[0] == this) {
         _killQueue.erase(_killQueue.begin());
         _reviveTimer = REVIVE_TIME;
-        vec2 v((1 + GetPlayerNumber()) * Lib::WIDTH / (1 + z0().count_players()),
-               Lib::HEIGHT / 2);
-        set_position(v);
+        shape().centre = vec2(
+            (1 + GetPlayerNumber()) * Lib::WIDTH / (1 + z0().count_players()),
+            Lib::HEIGHT / 2);
         z0().sub_life();
         lib().Rumble(GetPlayerNumber(), 10);
         play_sound(Lib::SOUND_PLAYER_RESPAWN);
@@ -110,19 +110,14 @@ void Player::update()
   // Movement
   vec2 move = velocity;
   if (move.length() > fixed::hundredth) {
-    if (move.length() > 1) {
-      move.normalise();
-    }
-    move *= SPEED;
-
-    vec2 pos = position();
-    pos += move;
+    move = (move.length() > 1 ? move.normalised() : move) * SPEED;
+    vec2 pos = move + shape().centre;
 
     pos.x = std::max(fixed(0), std::min(fixed(Lib::WIDTH), pos.x));
     pos.y = std::max(fixed(0), std::min(fixed(Lib::HEIGHT), pos.y));
 
-    set_position(pos);
-    set_rotation(move.angle());
+    shape().centre = pos;
+    shape().set_rotation(move.angle());
   }
 
   // Bombs
@@ -134,25 +129,23 @@ void Player::update()
     explosion(GetPlayerColour(), 32);
     explosion(0xffffffff, 48);
 
-    vec2 t = position();
+    vec2 t = shape().centre;
     flvec2 tf = to_float(t);
     for (int i = 0; i < 64; ++i) {
-      vec2 p;
-      p.set_polar(2 * i * fixed::pi / 64, BOMB_RADIUS);
-      p += t;
-      set_position(p);
+      shape().centre =
+          t + vec2::from_polar(2 * i * fixed::pi / 64, BOMB_RADIUS);
       explosion((i % 2) ? GetPlayerColour() : 0xffffffff,
                 8 + z::rand_int(8) + z::rand_int(8), true, tf);
     }
-    set_position(t);
+    shape().centre = t;
 
     lib().Rumble(GetPlayerNumber(), 10);
     play_sound(Lib::SOUND_EXPLOSION);
 
     z0Game::ShipList list =
-        z0().ships_in_radius(position(), BOMB_BOSSRADIUS, SHIP_ENEMY);
+        z0().ships_in_radius(shape().centre, BOMB_BOSSRADIUS, SHIP_ENEMY);
     for (unsigned int i = 0; i < list.size(); i++) {
-      if ((list[i]->position() - position()).length() <= BOMB_RADIUS ||
+      if ((list[i]->shape().centre - shape().centre).length() <= BOMB_RADIUS ||
           (list[i]->type() & SHIP_BOSS)) {
         list[i]->damage(BOMB_DAMAGE, false, 0);
       }
@@ -165,9 +158,9 @@ void Player::update()
 
   // Shots
   if (!_fireTimer && keys & 1) {
-    vec2 v = fireTarget - position();
+    vec2 v = fireTarget - shape().centre;
     if (v.length() > 0) {
-      spawn(new Shot(position(), this, v, _magicShotTimer != 0));
+      spawn(new Shot(shape().centre, this, v, _magicShotTimer != 0));
       if (_magicShotTimer) {
         _magicShotTimer--;
       }
@@ -179,7 +172,7 @@ void Player::update()
       if (_shotSoundQueue.empty() || _shotSoundQueue[0] == this) {
         couldPlay = lib().PlaySound(
             Lib::SOUND_PLAYER_FIRE, volume,
-            2.f * position().x.to_float() / Lib::WIDTH - 1.f, pitch);
+            2.f * shape().centre.x.to_float() / Lib::WIDTH - 1.f, pitch);
       }
       if (couldPlay && !_shotSoundQueue.empty()) {
         _shotSoundQueue.erase(_shotSoundQueue.begin());
@@ -199,7 +192,7 @@ void Player::update()
   }
 
   // Damage
-  if (z0().any_collision(position(), DANGEROUS)) {
+  if (z0().any_collision(shape().centre, DANGEROUS)) {
     damage();
   }
 }
@@ -230,20 +223,22 @@ void Player::render() const
   ss << _multiplier << "X";
   std::string s = ss.str();
 
-  flvec2 v;
-  v.set(1.f, 1.f);
-  if (n == 1) {
-    v.set(Lib::WIDTH / Lib::TEXT_WIDTH - 1.f - s.length(), 1.f);
-  }
-  if (n == 2) {
-    v.set(1.f, Lib::HEIGHT / Lib::TEXT_HEIGHT - 2.f);
-  }
-  if (n == 3) {
-    v.set(Lib::WIDTH / Lib::TEXT_WIDTH - 1.f - s.length(),
-          Lib::HEIGHT / Lib::TEXT_HEIGHT - 2.f);
-  }
-
+  flvec2 v =
+      n == 1 ? flvec2(Lib::WIDTH / Lib::TEXT_WIDTH - 1.f - s.length(), 1.f) :
+      n == 2 ? flvec2(1.f, Lib::HEIGHT / Lib::TEXT_HEIGHT - 2.f) :
+      n == 3 ? flvec2(Lib::WIDTH / Lib::TEXT_WIDTH - 1.f - s.length(),
+                      Lib::HEIGHT / Lib::TEXT_HEIGHT - 2.f) : flvec2(1.f, 1.f);
   lib().RenderText(v, s, z0Game::PANEL_TEXT);
+
+  std::stringstream sss;
+  if (n % 2 == 1) {
+    sss << _score << "   ";
+  }
+  else {
+    sss << "   " << _score;
+  }
+  s = sss.str();
+  lib().RenderText(v, s, GetPlayerColour());
 
   if (_magicShotTimer != 0) {
     if (n == 0 || n == 2) {
@@ -257,29 +252,6 @@ void Player::render() const
         v + flvec2(5.f, 11.f - (10 * _magicShotTimer) / MAGICSHOT_COUNT),
         v + flvec2(9.f, 13.f), 0xffffffff, 2);
   }
-
-  std::stringstream sss;
-  if (n % 2 == 1) {
-    sss << _score << "   ";
-  }
-  else {
-    sss << "   " << _score;
-  }
-  s = sss.str();
-  
-  v.set(1.f, 1.f);
-  if (n == 1) {
-    v.set(Lib::WIDTH / Lib::TEXT_WIDTH - 1.f - s.length(), 1.f);
-  }
-  if (n == 2) {
-    v.set(1.f, Lib::HEIGHT / Lib::TEXT_HEIGHT - 2.f);
-  }
-  if (n == 3) {
-    v.set(Lib::WIDTH / Lib::TEXT_WIDTH - 1.f - s.length(),
-          Lib::HEIGHT / Lib::TEXT_HEIGHT - 2.f);
-  }
-
-  lib().RenderText(v, s, GetPlayerColour());
 }
 
 void Player::damage()
@@ -327,7 +299,7 @@ static const int MULTIPLIER_lookup[24] = {
   65536, 131072, 262144, 524288, 1048576, 2097152, 4194304, 8388608
 };
 
-void Player::AddScore(long score)
+void Player::AddScore(int64_t score)
 {
   lib().Rumble(GetPlayerNumber(), 3);
   _score += score * _multiplier;
@@ -391,8 +363,7 @@ Shot::Shot(const vec2& position, Player* player,
   , _magic(magic)
   , _flash(false)
 {
-  _velocity.normalise();
-  _velocity *= Player::SHOT_SPEED;
+  _velocity = _velocity.normalised() * Player::SHOT_SPEED;
   add_shape(new Fill(vec2(), 2, 2, _player->GetPlayerColour()));
   add_shape(new Fill(vec2(), 1, 1, _player->GetPlayerColour() & 0xffffff33));
   add_shape(new Fill(vec2(), 3, 3, _player->GetPlayerColour() & 0xffffff33));
@@ -419,14 +390,14 @@ void Shot::update()
 
   move(_velocity);
   bool onScreen =
-      position().x >= -4 && position().x < 4 + Lib::WIDTH &&
-      position().y >= -4 && position().y < 4 + Lib::HEIGHT;
+      shape().centre.x >= -4 && shape().centre.x < 4 + Lib::WIDTH &&
+      shape().centre.y >= -4 && shape().centre.y < 4 + Lib::HEIGHT;
   if (!onScreen) {
     destroy();
     return;
   }
 
-  z0Game::ShipList kill = z0().collision_list(position(), VULNERABLE);
+  z0Game::ShipList kill = z0().collision_list(shape().centre, VULNERABLE);
   for (unsigned int i = 0; i < kill.size(); i++) {
     kill[i]->damage(1, _magic, _player);
     if (!_magic) {
@@ -434,8 +405,8 @@ void Shot::update()
     }
   }
 
-  if (z0().any_collision(position(), SHIELD) ||
-      (!_magic && z0().any_collision(position(), VULNSHIELD))) {
+  if (z0().any_collision(shape().centre, SHIELD) ||
+      (!_magic && z0().any_collision(shape().centre, VULNSHIELD))) {
     destroy();
   }
 }

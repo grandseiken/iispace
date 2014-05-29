@@ -3,6 +3,7 @@
 
 #include "z.h"
 #include <memory>
+#include <vector>
 class Lib;
 
 class Stars {

@@ -19,7 +19,7 @@ public:
     z0().set_boss_killed(_flag);
   }
 
-  long GetScore()
+  int64_t GetScore()
   {
     return _score;
   }
@@ -68,11 +68,11 @@ protected:
 
 private:
 
-  int _hp;
-  int _maxHp;
+  int32_t _hp;
+  int32_t _maxHp;
   z0Game::boss_list _flag;
-  long _score;
-  int _ignoreDamageColour;
+  int64_t _score;
+  int32_t _ignoreDamageColour;
   mutable int _damaged;
   mutable bool _showHp;
   bool _explodeOnDamage;
@@ -84,12 +84,12 @@ private:
 class BigSquareBoss : public Boss {
 public:
 
-  static const int BASE_HP;
+  static const int32_t BASE_HP;
   static const fixed SPEED;
-  static const int TIMER;
-  static const int STIMER;
+  static const int32_t TIMER;
+  static const int32_t STIMER;
   static const fixed ATTACK_RADIUS;
-  static const int ATTACK_TIME;
+  static const int32_t ATTACK_TIME;
 
   BigSquareBoss(int players, int cycle);
 
@@ -101,9 +101,9 @@ private:
 
   vec2 _dir;
   bool _reverse;
-  int _timer;
-  int _spawnTimer;
-  int _specialTimer;
+  int32_t _timer;
+  int32_t _spawnTimer;
+  int32_t _specialTimer;
   bool _specialAttack;
   bool _specialAttackRotate;
   Player* _attackPlayer;
@@ -115,10 +115,10 @@ private:
 class ShieldBombBoss : public Boss {
 public:
 
-  static const int BASE_HP;
-  static const int TIMER;
-  static const int UNSHIELD_TIME;
-  static const int ATTACK_TIME;
+  static const int32_t BASE_HP;
+  static const int32_t TIMER;
+  static const int32_t UNSHIELD_TIME;
+  static const int32_t ATTACK_TIME;
   static const fixed SPEED;
 
   ShieldBombBoss(int players, int cycle);
@@ -128,10 +128,10 @@ public:
 
 private:
 
-  int _timer;
-  int _count;
-  int _unshielded;
-  int _attack;
+  int32_t _timer;
+  int32_t _count;
+  int32_t _unshielded;
+  int32_t _attack;
   bool _side;
   vec2 _attackDir;
   bool _shotAlternate;
@@ -143,10 +143,10 @@ private:
 class ChaserBoss : public Boss {
 public:
 
-  static const int BASE_HP;
+  static const int32_t BASE_HP;
   static const fixed SPEED;
-  static const int TIMER;
-  static const int MAX_SPLIT;
+  static const int32_t TIMER;
+  static const int32_t MAX_SPLIT;
 
   ChaserBoss(int players, int cycle, int split = 0,
              const vec2& position = vec2(), int time = TIMER, int stagger = 0);
@@ -162,17 +162,17 @@ private:
 
   bool _onScreen;
   bool _move;
-  int _timer;
+  int32_t _timer;
   vec2 _dir;
   vec2 _lastDir;
 
-  int _players;
-  int _cycle;
-  int _split;
+  int32_t _players;
+  int32_t _cycle;
+  int32_t _split;
 
-  int _stagger;
-  static int _count;
-  static int _sharedHp;
+  int32_t _stagger;
+  static int32_t _count;
+  static int32_t _sharedHp;
 
 };
 
@@ -181,9 +181,9 @@ private:
 class TractorBoss : public Boss {
 public:
 
-  static const int BASE_HP;
+  static const int32_t BASE_HP;
   static const fixed SPEED;
-  static const int TIMER;
+  static const int32_t TIMER;
 
   TractorBoss(int players, int cycle);
 
@@ -202,11 +202,11 @@ private:
   bool _attacking;
   bool _continue;
   bool _genDir;
-  int _shootType;
+  int32_t _shootType;
   bool _sound;
-  int _timer;
-  int _attackSize;
-  int _attackShapes;
+  int32_t _timer;
+  int32_t _attackSize;
+  std::size_t _attackShapes;
 
   std::vector<vec2> _targets;
 
@@ -217,9 +217,9 @@ private:
 class GhostBoss : public Boss {
 public:
 
-  static const int BASE_HP;
-  static const int TIMER;
-  static const int ATTACK_TIME;
+  static const int32_t BASE_HP;
+  static const int32_t TIMER;
+  static const int32_t ATTACK_TIME;
 
   GhostBoss(int players, int cycle);
 
@@ -230,17 +230,17 @@ public:
 private:
 
   bool _visible;
-  int _vTime;
-  int _timer;
-  int _attackTime;
-  int _attack;
+  int32_t _vTime;
+  int32_t _timer;
+  int32_t _attackTime;
+  int32_t _attack;
   bool _rDir;
-  int _startTime;
-  int _dangerCircle;
-  int _dangerOffset1;
-  int _dangerOffset2;
-  int _dangerOffset3;
-  int _dangerOffset4;
+  int32_t _startTime;
+  int32_t _dangerCircle;
+  int32_t _dangerOffset1;
+  int32_t _dangerOffset2;
+  int32_t _dangerOffset3;
+  int32_t _dangerOffset4;
   bool _shotType;
 };
 
@@ -249,13 +249,13 @@ private:
 class DeathRayBoss : public Boss {
 public:
 
-  static const int BASE_HP;
-  static const int ARM_HP;
-  static const int ARM_ATIMER;
-  static const int ARM_RTIMER;
+  static const int32_t BASE_HP;
+  static const int32_t ARM_HP;
+  static const int32_t ARM_ATIMER;
+  static const int32_t ARM_RTIMER;
   static const fixed ARM_SPEED;
-  static const int RAY_TIMER;
-  static const int TIMER;
+  static const int32_t RAY_TIMER;
+  static const int32_t TIMER;
   static const fixed SPEED;
 
   DeathRayBoss(int players, int cycle);
@@ -268,20 +268,20 @@ public:
 
 private:
 
-  int _timer;
+  int32_t _timer;
   bool _laser;
   bool _dir;
   int _pos;
   z0Game::ShipList _arms;
-  int _armTimer;
-  int _shotTimer;
+  int32_t _armTimer;
+  int32_t _shotTimer;
 
-  int _rayAttackTimer;
+  int32_t _rayAttackTimer;
   vec2 _raySrc1;
   vec2 _raySrc2;
   vec2 _rayDest;
 
-  std::vector<std::pair<int, int>> _shotQueue;
+  std::vector<std::pair<int32_t, int32_t>> _shotQueue;
 
 };
 
@@ -306,9 +306,9 @@ public:
 private:
 
   Ship* _boss;
-  int _i;
-  int _timer;
-  int _sTimer;
+  int32_t _i;
+  int32_t _timer;
+  int32_t _sTimer;
 
 };
 
@@ -323,8 +323,8 @@ public:
     STATE_ATTACK
   };
 
-  static const int BASE_HP;
-  static const int ARC_HP;
+  static const int32_t BASE_HP;
+  static const int32_t ARC_HP;
 
   SuperBoss(int players, int cycle);
 
@@ -334,14 +334,14 @@ public:
 
 private:
 
-  int _players;
-  int _cycle;
-  int _cTimer;
-  int _timer;
+  int32_t _players;
+  int32_t _cycle;
+  int32_t _cTimer;
+  int32_t _timer;
   std::vector<bool> _destroyed;
   std::vector<SuperBossArc*> _arcs;
   State _state;
-  int _snakes;
+  int32_t _snakes;
 
 };
 

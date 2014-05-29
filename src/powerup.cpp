@@ -34,20 +34,20 @@ Powerup::Powerup(const vec2& position, type_t type)
 
 void Powerup::update()
 {
-  get_shape(0).colour = Player::GetPlayerColour(_frame / 2);
+  shapes()[0]->colour = Player::GetPlayerColour(_frame / 2);
   _frame = (_frame + 1) % (Lib::PLAYERS * 2);
-  get_shape(1).colour = Player::GetPlayerColour(_frame / 2);
+  shapes()[1]->colour = Player::GetPlayerColour(_frame / 2);
 
   static const int32_t rotate_time = 100;
   if (!is_on_screen()) {
-    _dir = get_screen_centre() - position();
+    _dir = get_screen_centre() - shape().centre;
   }
   else {
     if (_first_frame) {
-      _dir.set_polar(z::rand_fixed() * 2 * fixed::pi, 1);
+      _dir = vec2::from_polar(z::rand_fixed() * 2 * fixed::pi, 1);
     }
 
-    _dir.rotate(2 * fixed::hundredth * (_rotate ? 1 : -1));
+    _dir = _dir.rotated(2 * fixed::hundredth * (_rotate ? 1 : -1));
     if (!z::rand_int(rotate_time)) {
       _rotate = !_rotate;
     }
@@ -56,11 +56,11 @@ void Powerup::update()
 
   Player* p = nearest_player();
   bool alive = !p->IsKilled();
-  vec2 pv = p->position() - position();
+  vec2 pv = p->shape().centre - shape().centre;
   if (pv.length() <= 40 && alive) {
     _dir = pv;
   }
-  _dir.normalise();
+  _dir = _dir.normalised();
 
   static const fixed speed = 1;
   move(_dir * speed * ((pv.length() <= 40) ? 3 : 1));
@@ -98,9 +98,8 @@ void Powerup::damage(int damage, bool magic, Player* source)
 
   int r = 5 + z::rand_int(5);
   for (int i = 0; i < r; i++) {
-    vec2 dir;
-    dir.set_polar(z::rand_fixed() * 2 * fixed::pi, 6);
-    spawn(Particle(to_float(position()), 0xffffffff,
+    vec2 dir = vec2::from_polar(z::rand_fixed() * 2 * fixed::pi, 6);
+    spawn(Particle(to_float(shape().centre), 0xffffffff,
                    to_float(dir), 4 + z::rand_int(8)));
   }
   destroy();

@@ -1,4 +1,5 @@
 #include "shape.h"
+#include "lib.h"
 
 Shape::Shape(const vec2& centre, fixed rotation, colour_t colour,
              int32_t category, bool can_rotate)
@@ -14,7 +15,7 @@ bool Shape::check_point(const vec2& v) const
 {
   vec2 a = v - centre;
   if (_can_rotate) {
-    a.rotate(-_rotation);
+    a = a.rotated(-_rotation);
   }
   return check_local_point(a);
 }
@@ -24,10 +25,9 @@ vec2 Shape::convert_point(
 {
   vec2 a = v;
   if (_can_rotate) {
-    a.rotate(_rotation);
+    a = a.rotated(_rotation);
   }
-  a += centre;
-  a.rotate(rotation);
+  a = (a + centre).rotated(rotation);
   return position + a;
 }
 
@@ -36,10 +36,9 @@ flvec2 Shape::convert_fl_point(
 {
   flvec2 a = v;
   if (_can_rotate) {
-    a.rotate(_rotation.to_float());
+    a = a.rotated(_rotation.to_float());
   }
-  a += to_float(centre);
-  a.rotate(rotation);
+  a = (a + to_float(centre)).rotated(rotation);
   return position + a;
 }
 
@@ -158,8 +157,7 @@ void Polygon::render(Lib& lib, const flvec2& position, float rotation,
   if (type == T::POLYGRAM) {
     std::vector<flvec2> list;
     for (int32_t i = 0; i < sides; i++) {
-      flvec2 v;
-      v.set_polar(i * 2 * M_PIf / float(sides), r);
+      flvec2 v = flvec2::from_polar(i * 2 * M_PIf / float(sides), r);
       list.push_back(v);
     }
 
@@ -171,9 +169,8 @@ void Polygon::render(Lib& lib, const flvec2& position, float rotation,
     }
   } else {
     for (int32_t i = 0; i < sides; i++) {
-      flvec2 a, b;
-      a.set_polar(i * 2 * M_PIf / float(sides), r);
-      b.set_polar((i + 1) * 2 * M_PIf / float(sides), r);
+      flvec2 a = flvec2::from_polar(i * 2 * M_PIf / float(sides), r);
+      flvec2 b = flvec2::from_polar((i + 1) * 2 * M_PIf / float(sides), r);
       lines.push_back(a);
       lines.push_back(type == T::POLYGON ? b : flvec2());
     }
@@ -209,9 +206,8 @@ void PolyArc::render(Lib& lib, const flvec2& position, float rotation,
   float r = radius.to_float();
 
   for (int32_t i = 0; i < sides && i < segments; i++) {
-    flvec2 a, b;
-    a.set_polar(i * 2 * M_PIf / float(sides), r);
-    b.set_polar((i + 1) * 2 * M_PIf / float(sides), r);
+    flvec2 a = flvec2::from_polar(i * 2 * M_PIf / float(sides), r);
+    flvec2 b = flvec2::from_polar((i + 1) * 2 * M_PIf / float(sides), r);
     lib.RenderLine(convert_fl_point(position, rotation, a),
                     convert_fl_point(position, rotation, b),
                     colour_override ? colour_override : colour);
@@ -240,6 +236,13 @@ const CompoundShape::shape_list& CompoundShape::shapes() const
 void CompoundShape::add_shape(Shape* shape)
 {
   _children.emplace_back(shape);
+}
+
+void CompoundShape::destroy_shape(std::size_t index)
+{
+  if (index < _children.size()) {
+    _children.erase(index + _children.begin());
+  }
 }
 
 void CompoundShape::clear_shapes()

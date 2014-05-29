@@ -1057,8 +1057,7 @@ vec2 Lib::GetFireTarget(int32_t player, const vec2& position) const
   vec2 v(_internals->_padAimHAxes[player], _internals->_padAimVAxes[player]);
 
   if (v.length() >= fixed::tenth * 2) {
-    v.normalise();
-    v *= 48;
+    v = v.normalised() * 48;
     if (kp) {
       _mouseMoving = false;
     }
@@ -1087,8 +1086,7 @@ vec2 Lib::GetFireTarget(int32_t player, const vec2& position) const
     }
 
     if (v != vec2()) {
-      v.normalise();
-      v *= 48;
+      v = v.normalised() * 48;
       if (kp) {
         _mouseMoving = false;
       }
@@ -1176,11 +1174,8 @@ void Lib::RenderRect(
     const flvec2& v1 = *list[i];
     const flvec2& v2 = *list[(i + 1) % 4];
 
-    flvec2 n1(v0.y - v1.y, v1.x - v0.x);
-    flvec2 n2(v1.y - v2.y, v2.x - v1.x);
-
-    n1.normalise();
-    n2.normalise();
+    flvec2 n1 = flvec2(v0.y - v1.y, v1.x - v0.x).normalised();
+    flvec2 n2 = flvec2(v1.y - v2.y, v2.x - v1.x).normalised();
 
     float f = 1 + n1.x * n2.x + n1.y * n2.y;
     normals[i] = (n1 + n2) / f;

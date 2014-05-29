@@ -376,13 +376,13 @@ void z0Game::Update()
     }
     for (std::size_t i = 0; i < Boss::_fireworks.size(); ++i) {
       if (Boss::_fireworks[i].first <= 0) {
-        vec2 v = _ships[0]->position();
-        _ships[0]->set_position(Boss::_fireworks[i].second.first);
+        vec2 v = _ships[0]->shape().centre;
+        _ships[0]->shape().centre = Boss::_fireworks[i].second.first;
         _ships[0]->explosion(0xffffffff);
         _ships[0]->explosion(Boss::_fireworks[i].second.second, 16);
         _ships[0]->explosion(0xffffffff, 24);
         _ships[0]->explosion(Boss::_fireworks[i].second.second, 32);
-        _ships[0]->set_position(v);
+        _ships[0]->shape().centre = v;
         Boss::_fireworks.erase(Boss::_fireworks.begin() + i);
         --i;
       }
@@ -642,7 +642,7 @@ void z0Game::Render() const
         continue;
       }
       flvec2 v = to_float(
-          i < _ships.size() ? _ships[i]->position() :
+          i < _ships.size() ? _ships[i]->shape().centre :
                               Boss::_warnings[i - _ships.size()]);
 
       if (v.x < -4) {
@@ -1122,7 +1122,7 @@ z0Game::ShipList z0Game::ships_in_radius(const vec2& point, fixed radius,
   ShipList r;
   for (auto& ship : _ships) {
     if ((!ship_mask || (ship->type() & ship_mask)) &&
-        (ship->position() - point).length() <= radius) {
+        (ship->shape().centre - point).length() <= radius) {
       r.push_back(ship.get());
     }
   }
@@ -1135,8 +1135,8 @@ bool z0Game::any_collision(const vec2& point, int32_t category) const
   fixed y = point.y;
 
   for (unsigned int i = 0; i < _collisions.size(); i++) {
-    fixed sx = _collisions[i]->position().x;
-    fixed sy = _collisions[i]->position().y;
+    fixed sx = _collisions[i]->shape().centre.x;
+    fixed sy = _collisions[i]->shape().centre.y;
     fixed w = _collisions[i]->bounding_width();
 
     if (sx - w > x) {
@@ -1160,8 +1160,8 @@ z0Game::ShipList z0Game::collision_list(const vec2& point, int32_t category) con
   fixed y = point.y;
 
   for (const auto& collision : _collisions) {
-    fixed sx = collision->position().x;
-    fixed sy = collision->position().y;
+    fixed sx = collision->shape().centre.x;
+    fixed sy = collision->shape().centre.y;
     fixed w = collision->bounding_width();
 
     if (sx - w > x) {
@@ -1197,12 +1197,12 @@ Player* z0Game::nearest_player(const vec2& point) const
 
   for (Ship* ship : _playerList) {
     if (!((Player*) ship)->IsKilled() &&
-        (ship->position() - point).length() < d) {
-      d = (ship->position() - point).length();
+        (ship->shape().centre - point).length() < d) {
+      d = (ship->shape().centre - point).length();
       r = ship;
     }
-    if ((ship->position() - point).length() < deadD) {
-      deadD = (ship->position() - point).length();
+    if ((ship->shape().centre - point).length() < deadD) {
+      deadD = (ship->shape().centre - point).length();
       deadR = ship;
     }
   }
@@ -1225,8 +1225,8 @@ void z0Game::set_boss_killed(boss_list boss)
 bool z0Game::SortShips(Ship* const& a, Ship* const& b)
 {
   return
-      a->position().x - a->bounding_width() <
-      b->position().x - b->bounding_width();
+      a->shape().centre.x - a->bounding_width() <
+      b->shape().centre.x - b->bounding_width();
 }
 
 // UI layout

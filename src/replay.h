@@ -2,6 +2,7 @@
 #define IISPACE_SRC_REPLAY_H
 
 #include "z.h"
+#include <vector>
 
 struct PlayerFrame {
   vec2 velocity;

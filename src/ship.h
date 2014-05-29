@@ -70,38 +70,19 @@ public:
     return _type;
   }
 
-  // Position and rotation
-  //------------------------------
-  const vec2& position() const
+  const CompoundShape& shape() const
   {
-    return _position;
+    return _shape;
   }
 
-  void set_position(const vec2& position)
+  CompoundShape& shape()
   {
-    _position = position;
+    return _shape;
   }
 
-  void move(const vec2& v)
+  void move(const vec2& move_amount)
   {
-    set_position(position() + v);
-  }
-
-  fixed rotation() const
-  {
-    return _rotation;
-  }
-
-  void set_rotation(fixed rotation)
-  {
-    _rotation =
-        rotation > 2 * fixed::pi ? rotation - 2 * fixed::pi :
-        rotation < 0 ? rotation + 2 * fixed::pi : rotation;
-  }
-
-  void rotate(fixed rotation_amount)
-  {
-    set_rotation(rotation() + rotation_amount);
+    _shape.centre += move_amount;
   }
 
   fixed bounding_width() const
@@ -111,7 +92,7 @@ public:
 
   // Operations
   //------------------------------
-  bool check_point(const vec2& v, int category = 0) const;
+  bool check_point(const vec2& v, int32_t category = 0) const;
   void spawn(Ship* ship) const;
   void spawn(const Particle& particle) const;
 
@@ -129,8 +110,8 @@ public:
   bool is_on_screen() const
   {
     return
-        position().x >= 0 && position().x <= Lib::WIDTH &&
-        position().y >= 0 && position().y <= Lib::HEIGHT;
+        _shape.centre.x >= 0 && _shape.centre.x <= Lib::WIDTH &&
+        _shape.centre.y >= 0 && _shape.centre.y <= Lib::HEIGHT;
   }
 
   static vec2 get_screen_centre()
@@ -140,20 +121,20 @@ public:
 
   Player* nearest_player() const
   {
-    return _z0->nearest_player(position());
+    return _z0->nearest_player(_shape.centre);
   }
 
   bool play_sound(Lib::Sound sound)
   {
     return lib().PlaySound(
-        sound, 1.f, 2.f * position().x.to_float() / Lib::WIDTH - 1.f);
+        sound, 1.f, 2.f * _shape.centre.x.to_float() / Lib::WIDTH - 1.f);
   }
 
   bool play_sound_random(Lib::Sound sound, float pitch = 0.f, float volume = 1.f)
   {
     return lib().PlaySound(
         sound, volume * (.5f * z::rand_fixed().to_float() + .5f),
-        2.f * position().x.to_float() / Lib::WIDTH - 1.f, pitch);
+        2.f * _shape.centre.x.to_float() / Lib::WIDTH - 1.f, pitch);
   }
 
   int32_t enemy_value() const
@@ -175,12 +156,10 @@ public:
 
 protected:
 
-  // Shape control
-  //------------------------------
+  const CompoundShape::shape_list& shapes() const;
   void add_shape(Shape* shape);
-  void destroy_shape(std::size_t i);
-  Shape& get_shape(std::size_t i) const;
-  std::size_t count_shapes() const;
+  void destroy_shape(std::size_t index);
+  void clear_shapes();
 
   void set_bounding_width(fixed width)
   {
@@ -190,16 +169,11 @@ protected:
 private:
 
   z0Game* _z0;
-
   ship_category _type;
   bool _destroy;
-
-  vec2 _position;
-  fixed _rotation;
+  CompoundShape _shape;
   fixed _bounding_width;
   int32_t _enemy_value;
-
-  std::vector<std::unique_ptr<Shape>> _shapes;
 
 };
 

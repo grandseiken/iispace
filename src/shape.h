@@ -2,8 +2,10 @@
 #define IISPACE_SRC_SHAPE_H
 
 #include "z.h"
-#include "lib.h"
+#include <memory>
+#include <vector>
 
+class Lib;
 class Shape {
 public:
 
@@ -144,6 +146,7 @@ public:
   typedef std::vector<std::unique_ptr<Shape>> shape_list;
   const shape_list& shapes() const;
   void add_shape(Shape* shape);
+  void destroy_shape(std::size_t index);
   void clear_shapes();
 
   void render(Lib& lib, const flvec2& position, float rot,

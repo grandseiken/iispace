@@ -4,6 +4,7 @@
 #include "z.h"
 #include <map>
 #include <memory>
+#include <vector>
 struct Internals;
 
 class Lib {

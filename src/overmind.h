@@ -2,6 +2,7 @@
 #define IISPACE_SRC_OVERMIND_H
 
 #include "z.h"
+#include <vector>
 class Ship;
 class z0Game;
 
