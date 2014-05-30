@@ -28,6 +28,7 @@
     <ClInclude Include="..\src\player.h" />
     <ClInclude Include="..\src\powerup.h" />
     <ClInclude Include="..\src\replay.h" />
+    <ClInclude Include="..\src\save.h" />
     <ClInclude Include="..\src\shape.h" />
     <ClInclude Include="..\src\ship.h" />
     <ClInclude Include="..\src\stars.h" />
@@ -60,6 +61,7 @@
     <ClCompile Include="..\src\player.cpp" />
     <ClCompile Include="..\src\powerup.cpp" />
     <ClCompile Include="..\src\replay.cpp" />
+    <ClCompile Include="..\src\save.cpp" />
     <ClCompile Include="..\src\shape.cpp" />
     <ClCompile Include="..\src\ship.cpp" />
     <ClCompile Include="..\src\stars.cpp" />

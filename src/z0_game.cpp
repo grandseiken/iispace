@@ -30,14 +30,8 @@ z0Game::z0Game(Lib& lib, std::vector< std::string > args)
   , _controllersDialog(false)
   , _firstControllersDialog(false)
   , _overmind(new Overmind(*this))
-  , _bossesKilled(0)
-  , _hardModeBossesKilled(0)
 {
-  Lib::SaveData save = lib.LoadSaveData();
-  _highScores = save._highScores;
-  _bossesKilled = save._bossesKilled;
-  _hardModeBossesKilled = save._hardModeBossesKilled;
-
+  lib.SetVolume(_settings.volume.to_int());
   // Compliments have a max length of 24
   _compliments.push_back(" is a swell guy!");
   _compliments.push_back(" went absolutely mental!");
@@ -67,7 +61,7 @@ z0Game::z0Game(Lib& lib, std::vector< std::string > args)
     Player::replay_frame = 0;
     if (Player::replay.okay) {
       _players = Player::replay.players;
-      lib.SetPlayerCount(_players);
+      lib.set_player_count(_players);
       NewGame(Player::replay.can_face_secret_boss,
               true, game_mode(Player::replay.game_mode));
     }
@@ -89,7 +83,7 @@ z0Game::~z0Game()
 void z0Game::Run()
 {
   while (true) {
-    std::size_t f = _lib.GetFrameCount();
+    std::size_t f = _lib.get_frame_count();
     if (!f) {
       if (_lib.Exit()) {
         return;
@@ -178,7 +172,7 @@ void z0Game::Update()
         if (_players > Lib::PLAYERS) {
           _players = 1;
         }
-        lib().SetPlayerCount(_players);
+        lib().set_player_count(_players);
       }
       else if (_selection == 2) {
         _exitTimer = 2;
@@ -210,7 +204,7 @@ void z0Game::Update()
       if (t != _players){
         lib().PlaySound(Lib::SOUND_MENU_CLICK);
       }
-      lib().SetPlayerCount(_players);
+      lib().set_player_count(_players);
     }
 
     if (_selection == -1) {
@@ -269,21 +263,25 @@ void z0Game::Update()
         _killTimer = 0;
       }
       else if (_selection == 2) {
-        lib().SetVolume(std::min(100, lib().LoadSettings()._volume.to_int() + 1));
+        _settings.volume = std::min(fixed(100), 1 + _settings.volume);
+        _settings.save();
+        lib().SetVolume(_settings.volume.to_int());
       }
       lib().PlaySound(Lib::SOUND_MENU_ACCEPT);
     }
     if (lib().IsKeyPressed(Lib::KEY_LEFT) && _selection == 2) {
-      int t = lib().LoadSettings()._volume.to_int();
-      lib().SetVolume(std::max(0, t - 1));
-      if (lib().LoadSettings()._volume.to_int() != t) {
+      if (_settings.volume > 0) {
+        _settings.volume -= 1;
+        lib().SetVolume(_settings.volume.to_int());
+        _settings.save();
         lib().PlaySound(Lib::SOUND_MENU_CLICK);
       }
     }
     if (lib().IsKeyPressed(Lib::KEY_RIGHT) && _selection == 2) {
-      int t = lib().LoadSettings()._volume.to_int();
-      lib().SetVolume(std::min(100, t + 1));
-      if (lib().LoadSettings()._volume.to_int() != t) {
+      if (_settings.volume < 100) {
+        _settings.volume += 1;
+        lib().SetVolume(_settings.volume.to_int());
+        _settings.save();
         lib().PlaySound(Lib::SOUND_MENU_CLICK);
       }
     }
@@ -312,10 +310,10 @@ void z0Game::Update()
     }
 
     if (Player::replay.recording && _mode == FAST_MODE) {
-      lib().SetFrameCount(2);
+      lib().set_frame_count(2);
     }
     else if (Player::replay.recording) {
-      lib().SetFrameCount(1);
+      lib().set_frame_count(1);
     }
 
     int controllers = 0;
@@ -350,11 +348,11 @@ void z0Game::Update()
 
     if (!Player::replay.recording) {
       if (lib().IsKeyPressed(Lib::KEY_BOMB)) {
-        lib().SetFrameCount(lib().GetFrameCount() * 2);
+        lib().set_frame_count(lib().get_frame_count() * 2);
       }
       if (lib().IsKeyPressed(Lib::KEY_FIRE) &&
-          lib().GetFrameCount() > std::size_t(_mode == FAST_MODE ? 2 : 1)) {
-        lib().SetFrameCount(lib().GetFrameCount() / 2);
+          lib().get_frame_count() > std::size_t(_mode == FAST_MODE ? 2 : 1)) {
+        lib().set_frame_count(lib().get_frame_count() / 2);
       }
     }
 
@@ -459,7 +457,7 @@ void z0Game::Update()
       _enterTime++;
       std::string chars = ALLOWED_CHARS;
       if (lib().IsKeyPressed(Lib::KEY_ACCEPT) &&
-          _enterName.length() < Lib::MAX_NAME_LENGTH) {
+          _enterName.length() < SaveData::MAX_NAME_LENGTH) {
         _enterName += chars.substr(_enterChar, 1);
         _enterTime = 0;
         lib().PlaySound(Lib::SOUND_MENU_CLICK);
@@ -511,14 +509,14 @@ void z0Game::Update()
       if (lib().IsKeyPressed(Lib::KEY_MENU)) {
         lib().PlaySound(Lib::SOUND_MENU_ACCEPT);
         if (_mode != BOSS_MODE) {
-          int32_t n =
+          int32_t index =
               _mode == WHAT_MODE ? 3 * Lib::PLAYERS + _players :
               _mode == FAST_MODE ? 2 * Lib::PLAYERS + _players :
               _mode == HARD_MODE ? Lib::PLAYERS + _players : _players - 1;
 
-          Lib::HighScoreList& list = _highScores[n];
-          list.push_back(Lib::HighScore(_enterName, GetTotalScore()));
-          std::stable_sort(list.begin(), list.end(), &Lib::ScoreSort);
+          HighScoreList& list = _save.high_scores[index];
+          list.push_back(HighScore{_enterName, GetTotalScore()});
+          std::stable_sort(list.begin(), list.end(), &score_sort);
           list.erase(list.begin() + (list.size() - 1));
 
           Player::replay.end_recording(_enterName, GetTotalScore());
@@ -529,8 +527,8 @@ void z0Game::Update()
           score -= 600l * get_lives();
           if (score <= 0)
             score = 1;
-          _highScores[Lib::PLAYERS][_players - 1].first = _enterName;
-          _highScores[Lib::PLAYERS][_players - 1].second = score;
+          _save.high_scores[Lib::PLAYERS][_players - 1].name = _enterName;
+          _save.high_scores[Lib::PLAYERS][_players - 1].score = score;
 
           Player::replay.end_recording(_enterName, score);
           EndGame();
@@ -711,7 +709,8 @@ void z0Game::Render() const
     }
 
     if (!Player::replay.recording) {
-      int x = _mode == FAST_MODE ? lib().GetFrameCount() / 2 : lib().GetFrameCount();
+      int x = _mode == FAST_MODE ?
+          lib().get_frame_count() / 2 : lib().get_frame_count();
       std::stringstream ss;
       ss << x << "X " <<
           int(100 * float(Player::replay_frame) /
@@ -739,7 +738,8 @@ void z0Game::Render() const
     lib().RenderText(flvec2(37.f - 9, 9.f), "SHADOW1W2", PANEL_TEXT);
 
     std::string b = "BOSSES:  ";
-    int bb = IsHardModeUnlocked() ? _hardModeBossesKilled : _bossesKilled;
+    int bb = IsHardModeUnlocked() ?
+        _save.hard_mode_bosses_killed : _save.bosses_killed;
     if (bb & BOSS_1A) b += "X"; else b += "-";
     if (bb & BOSS_1B) b += "X"; else b += "-";
     if (bb & BOSS_1C) b += "X"; else b += "-";
@@ -829,13 +829,14 @@ void z0Game::Render() const
       lib().RenderText(flvec2(4.f, 24.f), "FOUR PLAYERS", PANEL_TEXT);
 
       for (std::size_t i = 0; i < Lib::PLAYERS; i++) {
-        std::string score = ConvertToTime(_highScores[Lib::PLAYERS][i].second);
-        if (score.length() > Lib::MAX_SCORE_LENGTH) {
-          score = score.substr(0, Lib::MAX_SCORE_LENGTH);
+        std::string score =
+            ConvertToTime(_save.high_scores[Lib::PLAYERS][i].score);
+        if (score.length() > SaveData::MAX_SCORE_LENGTH) {
+          score = score.substr(0, SaveData::MAX_SCORE_LENGTH);
         }
-        std::string name = _highScores[Lib::PLAYERS][i].first;
-        if (name.length() > Lib::MAX_NAME_LENGTH) {
-          name = name.substr(0, Lib::MAX_NAME_LENGTH);
+        std::string name = _save.high_scores[Lib::PLAYERS][i].name;
+        if (name.length() > SaveData::MAX_NAME_LENGTH) {
+          name = name.substr(0, SaveData::MAX_NAME_LENGTH);
         }
 
         lib().RenderText(flvec2(19.f, 18.f + i * 2), score, PANEL_TEXT);
@@ -843,7 +844,7 @@ void z0Game::Render() const
       }
     }
     else {
-      for (std::size_t i = 0; i < Lib::NUM_HIGH_SCORES; i++) {
+      for (std::size_t i = 0; i < SaveData::NUM_HIGH_SCORES; i++) {
         std::stringstream ssi;
         ssi << (i + 1) << ".";
         lib().RenderText(flvec2(4.f, 18.f + i), ssi.str(), PANEL_TEXT);
@@ -851,19 +852,19 @@ void z0Game::Render() const
         int n = _selection != -1 ? _players - 1 :
             _specialSelection * Lib::PLAYERS + _players;
 
-        if (_highScores[n][i].second <= 0) {
+        if (_save.high_scores[n][i].score <= 0) {
           continue;
         }
 
         std::stringstream ss;
-        ss << _highScores[n][i].second;
+        ss << _save.high_scores[n][i].score;
         std::string score = ss.str();
-        if (score.length() > Lib::MAX_SCORE_LENGTH) {
-          score = score.substr(0, Lib::MAX_SCORE_LENGTH);
+        if (score.length() > SaveData::MAX_SCORE_LENGTH) {
+          score = score.substr(0, SaveData::MAX_SCORE_LENGTH);
         }
-        std::string name = _highScores[n][i].first;
-        if (name.length() > Lib::MAX_NAME_LENGTH) {
-          name = name.substr(0, Lib::MAX_NAME_LENGTH);
+        std::string name = _save.high_scores[n][i].name;
+        if (name.length() > SaveData::MAX_NAME_LENGTH) {
+          name = name.substr(0, SaveData::MAX_NAME_LENGTH);
         }
 
         lib().RenderText(flvec2(7.f, 18.f + i), score, PANEL_TEXT);
@@ -881,13 +882,13 @@ void z0Game::Render() const
     lib().RenderText(flvec2(6.f, 10.f), "END GAME", PANEL_TEXT);
     lib().RenderText(flvec2(6.f, 12.f), "VOL.", PANEL_TEXT);
     std::stringstream vol;
-    int v = lib().LoadSettings()._volume.to_int();
+    int32_t v = _settings.volume.to_int();
     vol << " " << (v < 10 ? " " : "") << v;
     lib().RenderText(flvec2(10.f, 12.f), vol.str(), PANEL_TEXT);
-    if (_selection == 2 && lib().LoadSettings()._volume.to_int() > 0) {
+    if (_selection == 2 && v > 0) {
       lib().RenderText(flvec2(5.f, 12.f), "<", PANEL_TRAN);
     }
-    if (_selection == 2 && lib().LoadSettings()._volume.to_int() < 100) {
+    if (_selection == 2 && v < 100) {
       lib().RenderText(flvec2(13.f, 12.f), ">", PANEL_TRAN);
     }
 
@@ -900,7 +901,7 @@ void z0Game::Render() const
   // Score screen
   //------------------------------
   else if (_state == STATE_HIGHSCORE) {
-    lib().SetFrameCount(1);
+    lib().set_frame_count(1);
 
     // Name enter
     //------------------------------
@@ -913,7 +914,8 @@ void z0Game::Render() const
                        _players == 1 ? "Enter name:" : "Enter team name:",
                        PANEL_TEXT);
       lib().RenderText(flvec2(6.f, 25.f), _enterName, PANEL_TEXT);
-      if ((_enterTime / 16) % 2 && _enterName.length() < Lib::MAX_NAME_LENGTH) {
+      if ((_enterTime / 16) % 2 &&
+          _enterName.length() < SaveData::MAX_NAME_LENGTH) {
         lib().RenderText(flvec2(6.f + _enterName.length(), 25.f),
                          chars.substr(_enterChar, 1), 0xbbbbbbff);
       }
@@ -961,8 +963,8 @@ void z0Game::Render() const
     std::stringstream ss;
     ss << GetTotalScore();
     std::string score = ss.str();
-    if (score.length() > Lib::MAX_SCORE_LENGTH) {
-      score = score.substr(0, Lib::MAX_SCORE_LENGTH);
+    if (score.length() > SaveData::MAX_SCORE_LENGTH) {
+      score = score.substr(0, SaveData::MAX_SCORE_LENGTH);
     }
     lib().RenderText(flvec2(4.f, 4.f), "TOTAL SCORE: " + score, PANEL_TEXT);
 
@@ -976,8 +978,8 @@ void z0Game::Render() const
             (GetPlayerDeaths(i) != 1 ? "s" : "");
       }
       score = sss.str();
-      if (score.length() > Lib::MAX_SCORE_LENGTH) {
-        score = score.substr(0, Lib::MAX_SCORE_LENGTH);
+      if (score.length() > SaveData::MAX_SCORE_LENGTH) {
+        score = score.substr(0, SaveData::MAX_SCORE_LENGTH);
       }
 
       std::stringstream ssp;
@@ -1033,7 +1035,7 @@ void z0Game::NewGame(bool canFaceSecretBoss, bool replay, game_mode mode)
   _mode = mode;
   _overmind->Reset(canFaceSecretBoss);
   _lives = mode == BOSS_MODE ? _players * BOSSMODE_LIVES : STARTING_LIVES;
-  lib().SetFrameCount(_mode == FAST_MODE ? 2 : 1);
+  lib().set_frame_count(_mode == FAST_MODE ? 2 : 1);
 
   Stars::clear();
   for (int32_t i = 0; i < _players; ++i) {
@@ -1061,12 +1063,8 @@ void z0Game::EndGame()
   Boss::_fireworks.clear();
   Boss::_warnings.clear();
 
-  Lib::SaveData save2;
-  save2._highScores = _highScores;
-  save2._bossesKilled = _bossesKilled;
-  save2._hardModeBossesKilled = _hardModeBossesKilled;
-  lib().SaveSaveData(save2);
-  lib().SetFrameCount(1);
+  _save.save();
+  lib().set_frame_count(1);
   _state = STATE_MENU;
   _selection =
       (_mode == BOSS_MODE && IsBossModeUnlocked()) ||
@@ -1215,10 +1213,10 @@ void z0Game::set_boss_killed(boss_list boss)
     return;
   }
   if (boss == BOSS_3A || (_mode != BOSS_MODE && _mode != NORMAL_MODE)) {
-    _hardModeBossesKilled |= boss;
+    _save.hard_mode_bosses_killed |= boss;
   }
   else {
-    _bossesKilled |= boss;
+    _save.bosses_killed |= boss;
   }
 }
 
@@ -1307,8 +1305,8 @@ bool z0Game::IsHighScore() const
     return
         _overmind->GetKilledBosses() >= 6 && _overmind->GetElapsedTime() != 0 &&
         (_overmind->GetElapsedTime() <
-             _highScores[Lib::PLAYERS][_players - 1].second ||
-         _highScores[Lib::PLAYERS][_players - 1].second == 0);
+         _save.high_scores[Lib::PLAYERS][_players - 1].score ||
+         _save.high_scores[Lib::PLAYERS][_players - 1].score == 0);
   }
 
   int n =
@@ -1316,9 +1314,9 @@ bool z0Game::IsHighScore() const
       _mode == FAST_MODE ? 2 * Lib::PLAYERS + _players :
       _mode == HARD_MODE ? Lib::PLAYERS + _players : _players - 1;
 
-  const Lib::HighScoreList& list = _highScores[n];
+  const HighScoreList& list = _save.high_scores[n];
   for (unsigned int i = 0; i < list.size(); i++) {
-    if (GetTotalScore() > list[i].second) {
+    if (GetTotalScore() > list[i].score) {
       return true;
     }
   }

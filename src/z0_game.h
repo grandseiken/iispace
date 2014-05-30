@@ -4,8 +4,9 @@
 #include <memory>
 
 #include "lib.h"
-#include "z.h"
 #include "replay.h"
+#include "save.h"
+#include "z.h"
 class Overmind;
 struct Particle;
 class Player;
@@ -135,26 +136,26 @@ private:
 
   bool IsBossModeUnlocked() const
   {
-    return (_bossesKilled & 63) == 63;
+    return (_save.bosses_killed & 63) == 63;
   }
 
   bool IsHardModeUnlocked() const
   {
     return IsBossModeUnlocked() &&
-        (_highScores[Lib::PLAYERS][0].second > 0 ||
-         _highScores[Lib::PLAYERS][1].second > 0 ||
-         _highScores[Lib::PLAYERS][2].second > 0 ||
-         _highScores[Lib::PLAYERS][3].second > 0);
+        (_save.high_scores[Lib::PLAYERS][0].score > 0 ||
+         _save.high_scores[Lib::PLAYERS][1].score > 0 ||
+         _save.high_scores[Lib::PLAYERS][2].score > 0 ||
+         _save.high_scores[Lib::PLAYERS][3].score > 0);
   }
 
   bool IsFastModeUnlocked() const
   {
-    return IsHardModeUnlocked() && ((_hardModeBossesKilled & 63) == 63);
+    return IsHardModeUnlocked() && ((_save.hard_mode_bosses_killed & 63) == 63);
   }
 
   bool IsWhatModeUnlocked() const
   {
-    return IsFastModeUnlocked() && ((_hardModeBossesKilled & 64) == 64);
+    return IsHardModeUnlocked() && ((_save.hard_mode_bosses_killed & 64) == 64);
   }
 
   std::string ConvertToTime(int64_t score) const;
@@ -200,10 +201,9 @@ private:
   bool _firstControllersDialog;
 
   std::unique_ptr<Overmind> _overmind;
-  int _bossesKilled;
-  int _hardModeBossesKilled;
-  Lib::HighScoreTable _highScores;
   std::vector<std::string> _compliments;
+  SaveData _save;
+  Settings _settings;
 
 };
 

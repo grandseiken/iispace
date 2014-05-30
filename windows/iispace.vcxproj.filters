@@ -66,6 +66,7 @@
     <ClCompile Include="..\src\z.cpp" />
     <ClCompile Include="..\src\replay.cpp" />
     <ClCompile Include="..\src\shape.cpp" />
+    <ClCompile Include="..\src\save.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\src\boss.h" />
@@ -82,5 +83,6 @@
     <ClInclude Include="..\src\z0_game.h" />
     <ClInclude Include="..\src\z.h" />
     <ClInclude Include="..\src\replay.h" />
+    <ClInclude Include="..\src\save.h" />
   </ItemGroup>
 </Project>

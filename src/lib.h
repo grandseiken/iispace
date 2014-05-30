@@ -52,23 +52,6 @@ public:
     PAD_GAMEPAD,
   };
 
-  struct Settings {
-    bool _windowed;
-    fixed _volume;
-  };
-
-  typedef std::pair<std::string, int64_t> HighScore;
-  typedef std::vector<HighScore> HighScoreList;
-  typedef std::vector<HighScoreList> HighScoreTable;
-  struct SaveData {
-    int _bossesKilled;
-    int _hardModeBossesKilled;
-    HighScoreTable _highScores;
-  };
-  static const std::size_t MAX_NAME_LENGTH = 17;
-  static const std::size_t MAX_SCORE_LENGTH = 10;
-  static const std::size_t NUM_HIGH_SCORES = 8;
-
   static const int32_t PLAYERS = 4;
   static const int32_t WIDTH = 640;
   static const int32_t HEIGHT = 480;
@@ -79,29 +62,19 @@ public:
   static const std::string ENCRYPTION_KEY;
   static const std::string SUPER_ENCRYPTION_KEY;
 
-  static bool ScoreSort(const HighScore& a, const HighScore& b)
-  {
-    return a.second > b.second;
-  }
-
   // General
   //------------------------------
-  std::size_t GetFrameCount() const
+  std::size_t get_frame_count() const
   {
-    return _frameCount;
+    return _frame_count;
   }
 
-  void SetFrameCount(std::size_t fc)
+  void set_frame_count(std::size_t fc)
   {
-    _frameCount = fc;
+    _frame_count = fc;
   }
 
-  int32_t GetPlayerCount() const
-  {
-    return _players;
-  }
-
-  void SetPlayerCount(int32_t players)
+  void set_player_count(int32_t players)
   {
     _players = players;
   }
@@ -115,14 +88,6 @@ public:
 
   void Exit(bool exit);
   bool Exit() const;
-
-  Settings LoadSettings() const;
-  void SetVolume(int volume);
-
-  SaveData LoadSaveData();
-  void SaveSaveData(const SaveData& version2);
-  Settings LoadSaveSettings() const;
-  void SaveSaveSettings(const Settings& settings);
 
   // Input
   //------------------------------
@@ -152,6 +117,7 @@ public:
   void StopRumble();
   bool PlaySound(
       Sound sound, float volume = 1.f, float pan = 0.f, float repitch = 0.f);
+  void SetVolume(int volume);
 
   void TakeScreenShot();
 
@@ -163,9 +129,9 @@ public:
 
 private:
 
-  std::size_t _frameCount;
+  int32_t _frame_count;
   int32_t _cycle;
-  std::size_t _players;
+  int32_t _players;
 
   // Internal
   //------------------------------
@@ -185,9 +151,8 @@ private:
 
   // Data
   //------------------------------
-  Settings _settings;
   std::unique_ptr<Internals> _internals;
-  std::size_t _scoreFrame;
+  std::size_t _score_frame;
   friend class Handler;
 
 };

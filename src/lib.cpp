@@ -7,12 +7,9 @@
 #include <iostream>
 #include <sstream>
 #include <string>
+#include "save.h"
 
 const std::string Lib::SUPER_ENCRYPTION_KEY = "<>";
-#define SETTINGS_WINDOWED "Windowed"
-#define SETTINGS_VOLUME "Volume"
-#define SETTINGS_PATH "wiispace.txt"
-#define SAVE_PATH "wiispace.sav"
 #define SOUND_MAX 16
 
 #ifdef PLATFORM_LINUX
@@ -300,8 +297,8 @@ struct Internals {};
 #endif
 
 Lib::Lib()
-  : _frameCount(1)
-  , _scoreFrame(0)
+  : _frame_count(1)
+  , _score_frame(0)
   , _cycle(0)
   , _players(1)
   , _exit(false)
@@ -415,7 +412,7 @@ Lib::Lib()
   }
 
   for (int i = int(sf::VideoMode::GetModesCount()) - 1;
-       i >= 0 && !LoadSaveSettings()._windowed; --i) {
+       i >= 0 && !Settings().windowed; --i) {
     sf::VideoMode m = sf::VideoMode::GetMode(i);
     if (m.Width >= unsigned(Lib::WIDTH) &&
         m.Height >= unsigned(Lib::HEIGHT) && m.BitsPerPixel == 32) {
@@ -468,191 +465,6 @@ bool Lib::IsKeyHeld(Key k) const
     return true;
   }
   return false;
-}
-
-Lib::SaveData Lib::LoadSaveData()
-{
-  HighScoreTable r;
-  for (int i = 0; i < 4 * PLAYERS + 1; ++i) {
-    r.push_back(HighScoreList());
-    for (unsigned int j = 0;
-         j < (i != PLAYERS ? NUM_HIGH_SCORES : PLAYERS); ++j) {
-      r[i].push_back(HighScore());
-    }
-  }
-
-  SaveData data;
-  data._bossesKilled = 0;
-  data._hardModeBossesKilled = 0;
-  data._highScores = r;
-
-  std::ifstream file;
-  file.open(SAVE_PATH, std::ios::binary);
-
-  if (!file) {
-    return data;
-  }
-  std::stringstream b;
-  b << file.rdbuf();
-  std::stringstream decrypted(z::crypt(b.str(), SUPER_ENCRYPTION_KEY));
-
-  std::string line;
-  getline(decrypted, line);
-  if (line.compare("WiiSPACE v1.3") != 0) {
-    file.close();
-    return data;
-  }
-
-  long total = 0;
-  long t17 = 0;
-  long t701 = 0;
-  long t1171 = 0;
-  long t1777 = 0;
-  getline(decrypted, line);
-  std::stringstream ssb(line);
-  ssb >> data._bossesKilled;
-  ssb >> data._hardModeBossesKilled;
-  ssb >> total;
-  ssb >> t17;
-  ssb >> t701;
-  ssb >> t1171;
-  ssb >> t1777;
-
-  long findTotal = 0;
-  int i = 0;
-  unsigned int j = 0;
-  while (getline(decrypted, line)) {
-    std::size_t split = line.find(' ');
-    std::stringstream ss(line.substr(0, split));
-    std::string name;
-    if (line.length() > split + 1)
-      name = line.substr(split + 1);
-    long score;
-    ss >> score;
-
-    r[i][j].first = name;
-    r[i][j].second = score;
-
-    findTotal += score;
-
-    j++;
-    if (j >= NUM_HIGH_SCORES || (i == PLAYERS && int(j) >= PLAYERS)) {
-      j = 0;
-      i++;
-    }
-    if (i >= 4 * PLAYERS + 1) {
-      break;
-    }
-  }
-
-  if (findTotal != total || findTotal % 17 != t17 ||
-      findTotal % 701 != t701 || findTotal % 1171 != t1171 ||
-      findTotal % 1777 != t1777) {
-    r.clear();
-    for (int i = 0; i < 4 * PLAYERS + 1; i++) {
-      r.push_back(HighScoreList());
-      for (unsigned int j = 0;
-           j < (i != PLAYERS ? NUM_HIGH_SCORES : PLAYERS); j++) {
-        r[i].push_back(HighScore());
-      }
-    }
-  }
-
-  for (int i = 0; i < 4 * PLAYERS + 1; i++) {
-    if (i != PLAYERS) {
-      std::sort(r[i].begin(), r[i].end(), &ScoreSort);
-    }
-  }
-
-  data._highScores = r;
-  file.close();
-  return data;
-
-}
-
-void Lib::SaveSaveData(const SaveData& version2)
-{
-  int64_t total = 0;
-  for (int i = 0; i < 4 * PLAYERS + 1; ++i) {
-    for (unsigned int j = 0;
-         j < (i != PLAYERS ? NUM_HIGH_SCORES : PLAYERS); ++j) {
-      if (i < int(version2._highScores.size()) &&
-          j < version2._highScores[i].size())
-        total += version2._highScores[i][j].second;
-    }
-  }
-
-  std::stringstream out;
-  out << "WiiSPACE v1.3\n" << version2._bossesKilled << " " <<
-      version2._hardModeBossesKilled << " " << total << " " <<
-      (total % 17) << " " << (total % 701) << " " <<
-      (total % 1171) << " " << (total % 1777) << "\n";
-
-  for (int i = 0; i < 4 * PLAYERS + 1; ++i) {
-    for (unsigned int j = 0;
-         j < (i != PLAYERS ? NUM_HIGH_SCORES : PLAYERS); ++j) {
-      if (i < int(version2._highScores.size()) &&
-          j < version2._highScores[i].size()) {
-        out << version2._highScores[i][j].second << " " <<
-            version2._highScores[i][j].first << "\n";
-      }
-      else {
-        out << "0\n";
-      }
-    }
-  }
-
-  std::string encrypted = z::crypt(out.str(), SUPER_ENCRYPTION_KEY);
-
-  std::ofstream file;
-  file.open(SAVE_PATH, std::ios::binary);
-  file << encrypted;
-  file.close();
-}
-
-Lib::Settings Lib::LoadSaveSettings() const
-{
-  Settings settings;
-  settings._windowed = 0;
-  settings._volume = 100;
-  std::ifstream file;
-  file.open(SETTINGS_PATH);
-
-  if (!file) {
-    std::ofstream out;
-    out.open(SETTINGS_PATH);
-    out <<
-        SETTINGS_WINDOWED << " 0\n" <<
-        SETTINGS_VOLUME << " 100.0";
-    out.close();
-  }
-  else {
-    std::string line;
-    while (getline(file, line)) {
-      std::stringstream ss(line);
-      std::string key;
-      ss >> key;
-      if (key.compare(SETTINGS_WINDOWED) == 0) {
-        ss >> settings._windowed;
-      }
-      if (key.compare(SETTINGS_VOLUME) == 0) {
-        float t;
-        ss >> t;
-        settings._volume = int(t);
-      }
-    }
-  }
-  return settings;
-}
-
-void Lib::SaveSaveSettings(const Settings& settings)
-{
-  std::ofstream out;
-  out.open(SETTINGS_PATH);
-  out <<
-      SETTINGS_WINDOWED << " " << (settings._windowed ? "1" : "0") << "\n" <<
-      SETTINGS_VOLUME << " " << settings._volume.to_int();
-  out.close();
 }
 
 void Lib::SetColourCycle(int cycle)
@@ -731,7 +543,6 @@ void Lib::SetWorkingDirectory(bool original)
 void Lib::Init()
 {
 #ifndef PLATFORM_SCORE
-  _settings = LoadSaveSettings();
   _internals->_image.LoadFromFile("console.png");
   _internals->_image.CreateMaskFromColor(RgbaToColor(0x000000ff));
   _internals->_image.SetSmooth(false);
@@ -767,8 +578,6 @@ void Lib::Init()
     _internals->_padMoveDpads[j] = OIS::Pov::Centered;
     _internals->_padAimDpads[j] = OIS::Pov::Centered;
   }
-  sf::Listener::SetGlobalVolume(
-      std::max(0.f, std::min(100.f, _settings._volume.to_float())));
   for (int i = 0; i < SOUND_MAX; ++i) {
     _internals->_voices.push_back(new sf::Sound());
   }
@@ -781,8 +590,8 @@ void Lib::BeginFrame()
   int t = _mousePosX;
   int u = _mousePosY;
   sf::Event e;
-  int kp = GetPlayerCount() <= _internals->_padCount ?
-      GetPlayerCount() - 1 : _internals->_padCount;
+  int kp = _players <= _internals->_padCount ?
+      _players - 1 : _internals->_padCount;
   while (_internals->_window.GetEvent(e))
   {
     if (e.Type == sf::Event::Closed) {
@@ -843,10 +652,10 @@ void Lib::BeginFrame()
     }
   }
 #else
-  if (_scoreFrame < 5) {
-    ++_scoreFrame;
+  if (_score_frame < 5) {
+    ++_score_frame;
   }
-  SetFrameCount(16384);
+  set_frame_count(16384);
 #endif
 }
 
@@ -864,7 +673,7 @@ void Lib::EndFrame()
     }
   }
 #else
-  SetFrameCount(16384);
+  set_frame_count(16384);
 #endif
   /*for (int i = 0; i < PLAYERS; i++) {
     if (_rumble[i]) {
@@ -894,13 +703,6 @@ void Lib::NewGame()
 
 void Lib::Exit(bool exit)
 {
-#ifndef PLATFORM_SCORE
-  if (!LoadSaveSettings()._windowed) {
-    _internals->_window.Create(
-        sf::VideoMode(640, 480, 32), "WiiSPACE",
-        sf::Style::Close | sf::Style::Titlebar);
-  }
-#endif
   _exit = exit;
 }
 
@@ -927,24 +729,6 @@ void Lib::TakeScreenShot()
 #endif
 }
 
-Lib::Settings Lib::LoadSettings() const
-{
-#ifndef PLATFORM_SCORE
-  return _settings;
-#else
-  return Settings();
-#endif
-}
-
-void Lib::SetVolume(int volume)
-{
-#ifndef PLATFORM_SCORE
-  _settings._volume = fixed(std::max(0, std::min(100, volume)));
-  sf::Listener::SetGlobalVolume(_settings._volume.to_float());
-  SaveSaveSettings(_settings);
-#endif
-}
-
 // Input
 //------------------------------
 Lib::PadType Lib::IsPadConnected(int32_t player) const
@@ -954,10 +738,8 @@ Lib::PadType Lib::IsPadConnected(int32_t player) const
   if (player < _internals->_padCount) {
     r = PAD_GAMEPAD;
   }
-  if ((GetPlayerCount() <= _internals->_padCount &&
-       player == GetPlayerCount() - 1) ||
-      (GetPlayerCount() > _internals->_padCount &&
-       player == _internals->_padCount)) {
+  if ((_players <= _internals->_padCount && player == _players - 1) ||
+      (_players > _internals->_padCount && player == _internals->_padCount)) {
     r = PadType(r | PAD_KEYMOUSE);
   }
   return r;
@@ -974,10 +756,10 @@ bool Lib::IsKeyPressed(int32_t player, Key k) const
   if (player != 0) {
     return false;
   }
-  if (k == KEY_DOWN && _scoreFrame < 4) {
+  if (k == KEY_DOWN && _score_frame < 4) {
     return true;
   }
-  if (k == KEY_ACCEPT && _scoreFrame == 5) {
+  if (k == KEY_ACCEPT && _score_frame == 5) {
     return true;
   }
   return false;
@@ -1052,8 +834,8 @@ vec2 Lib::GetFireTarget(int32_t player, const vec2& position) const
 {
 #ifndef PLATFORM_SCORE
   bool kp = player ==
-      (GetPlayerCount() <= _internals->_padCount ?
-       GetPlayerCount() - 1 : _internals->_padCount);
+      (_players <= _internals->_padCount ?
+       _players - 1 : _internals->_padCount);
   vec2 v(_internals->_padAimHAxes[player], _internals->_padAimVAxes[player]);
 
   if (v.length() >= fixed::tenth * 2) {
@@ -1326,6 +1108,13 @@ bool Lib::PlaySound(Sound sound, float volume, float pan, float repitch)
   }
 #endif
   return false;
+}
+
+void Lib::SetVolume(int volume)
+{
+#ifndef PLATFORM_SCORE
+  sf::Listener::SetGlobalVolume(float(std::max(0, std::min(100, volume))));
+#endif
 }
 
 // Sounds
