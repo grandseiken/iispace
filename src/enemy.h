@@ -9,41 +9,41 @@ class Enemy : public Ship {
 public:
 
   Enemy(const vec2& position, Ship::ship_category type,
-        int hp, bool explodeOnDestroy = true);
+        int hp, bool explode_on_destroy = true);
 
-  long GetScore() const
+  int64_t get_score() const
   {
     return _score;
   }
 
-  void SetScore(long score)
+  void set_score(long score)
   {
     _score = score;
   }
 
-  int GetHP() const
+  int get_hp() const
   {
     return _hp;
   }
 
-  void SetDestroySound(Lib::Sound sound)
+  void set_destroy_sound(Lib::Sound sound)
   {
-    _destroySound = sound;
+    _destroy_sound = sound;
   }
 
   // Generic behaviour
   //------------------------------
   void damage(int damage, bool magic, Player* source) override;
   void render() const override;
-  virtual void OnDestroy(bool bomb) {}
+  virtual void on_destroy(bool bomb) {}
 
 private:
 
-  int _hp;
-  long _score;
-  mutable int _damaged;
-  Lib::Sound _destroySound;
-  bool _explodeOnDestroy;
+  int32_t _hp;
+  int64_t _score;
+  mutable int32_t _damaged;
+  Lib::Sound _destroy_sound;
+  bool _explode_on_destroy;
 
 };
 
@@ -112,7 +112,7 @@ public:
 
   Wall(const vec2& position, bool rdir);
   void update() override;
-  void OnDestroy(bool bomb) override;
+  void on_destroy(bool bomb) override;
 
 private:
 
@@ -133,15 +133,15 @@ public:
 
   FollowHub(const vec2& position, bool powerA = false, bool powerB = false);
   void update() override;
-  void OnDestroy(bool bomb) override;
+  void on_destroy(bool bomb) override;
 
 private:
 
   int _timer;
   vec2 _dir;
   int _count;
-  bool _powerA;
-  bool _powerB;
+  bool _powera;
+  bool _powerb;
 
 };
 
@@ -161,7 +161,7 @@ private:
   vec2 _dir;
   int _timer;
   bool _rotate;
-  bool _rDir;
+  bool _rdir;
   bool _power;
 
 };

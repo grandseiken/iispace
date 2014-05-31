@@ -10,11 +10,11 @@ class BigFollow : public Follow {
 public:
 
   BigFollow(const vec2& position, bool hasScore);
-  void OnDestroy(bool bomb) override;
+  void on_destroy(bool bomb) override;
 
 private:
 
-  bool _hasScore;
+  bool _has_score;
 
 };
 
@@ -100,7 +100,7 @@ public:
 
   DeathArm(DeathRayBoss* boss, bool top, int hp);
   void update() override;
-  void OnDestroy(bool bomb) override;
+  void on_destroy(bool bomb) override;
 
 private:
 
@@ -124,14 +124,14 @@ public:
 
   SnakeTail(const vec2& position, colour_t colour);
   void update() override;
-  void OnDestroy(bool bomb) override;
+  void on_destroy(bool bomb) override;
 
 private:
 
   SnakeTail* _tail;
   SnakeTail* _head;
   int _timer;
-  int _dTimer;
+  int _dtimer;
 
 };
 
@@ -143,7 +143,7 @@ public:
   Snake(const vec2& position, colour_t colour,
         const vec2& dir = vec2(), fixed rot = 0);
   void update() override;
-  void OnDestroy(bool bomb) override;
+  void on_destroy(bool bomb) override;
 
 private:
 
@@ -152,8 +152,8 @@ private:
   vec2 _dir;
   int _count;
   colour_t _colour;
-  bool _shotSnake;
-  fixed _shotRot;
+  bool _shot_snake;
+  fixed _shot_rot;
 
 };
 

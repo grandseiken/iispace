@@ -4,103 +4,102 @@
 
 #include <algorithm>
 
-std::vector<std::pair<int, std::pair<vec2, colour_t>>> Boss::_fireworks;
+std::vector<std::pair<int32_t, std::pair<vec2, colour_t>>> Boss::_fireworks;
 std::vector<vec2> Boss::_warnings;
 const fixed Boss::HP_PER_EXTRA_PLAYER = fixed(1) / 10;
 const fixed Boss::HP_PER_EXTRA_CYCLE = 3 * fixed(1) / 10;
 
-const int BigSquareBoss::BASE_HP = 400;
+const int32_t BigSquareBoss::BASE_HP = 400;
 const fixed BigSquareBoss::SPEED = 2 + fixed(1) / 2;
-const int BigSquareBoss::TIMER = 100;
-const int BigSquareBoss::STIMER = 80;
+const int32_t BigSquareBoss::TIMER = 100;
+const int32_t BigSquareBoss::STIMER = 80;
 const fixed BigSquareBoss::ATTACK_RADIUS = 120;
-const int BigSquareBoss::ATTACK_TIME = 90;
+const int32_t BigSquareBoss::ATTACK_TIME = 90;
 
-const int ShieldBombBoss::BASE_HP = 320;
-const int ShieldBombBoss::TIMER = 100;
-const int ShieldBombBoss::UNSHIELD_TIME = 300;
-const int ShieldBombBoss::ATTACK_TIME = 80;
+const int32_t ShieldBombBoss::BASE_HP = 320;
+const int32_t ShieldBombBoss::TIMER = 100;
+const int32_t ShieldBombBoss::UNSHIELD_TIME = 300;
+const int32_t ShieldBombBoss::ATTACK_TIME = 80;
 const fixed ShieldBombBoss::SPEED = 1;
 
-const int ChaserBoss::BASE_HP = 60;
+const int32_t ChaserBoss::BASE_HP = 60;
 const fixed ChaserBoss::SPEED = 4;
-const int ChaserBoss::TIMER = 60;
-const int ChaserBoss::MAX_SPLIT = 7;
+const int32_t ChaserBoss::TIMER = 60;
+const int32_t ChaserBoss::MAX_SPLIT = 7;
 
-const int TractorBoss::BASE_HP = 900;
+const int32_t TractorBoss::BASE_HP = 900;
 const fixed TractorBoss::SPEED = 2;
-const int TractorBoss::TIMER = 100;
+const int32_t TractorBoss::TIMER = 100;
 
-const int GhostBoss::BASE_HP = 700;
-const int GhostBoss::TIMER = 250;
-const int GhostBoss::ATTACK_TIME = 100;
+const int32_t GhostBoss::BASE_HP = 700;
+const int32_t GhostBoss::TIMER = 250;
+const int32_t GhostBoss::ATTACK_TIME = 100;
 
-const int DeathRayBoss::BASE_HP = 600;
-const int DeathRayBoss::ARM_HP = 100;
-const int DeathRayBoss::ARM_ATIMER = 300;
-const int DeathRayBoss::ARM_RTIMER = 400;
+const int32_t DeathRayBoss::BASE_HP = 600;
+const int32_t DeathRayBoss::ARM_HP = 100;
+const int32_t DeathRayBoss::ARM_ATIMER = 300;
+const int32_t DeathRayBoss::ARM_RTIMER = 400;
 const fixed DeathRayBoss::ARM_SPEED = 4;
-const int DeathRayBoss::RAY_TIMER = 100;
-const int DeathRayBoss::TIMER = 100;
+const int32_t DeathRayBoss::RAY_TIMER = 100;
+const int32_t DeathRayBoss::TIMER = 100;
 const fixed DeathRayBoss::SPEED = 5;
 
-const int SuperBoss::BASE_HP = 520;
-const int SuperBoss::ARC_HP = 75;
+const int32_t SuperBoss::BASE_HP = 520;
+const int32_t SuperBoss::ARC_HP = 75;
 
 // Generic boss
 //------------------------------
-Boss::Boss(const vec2& position, z0Game::boss_list boss, int hp,
-           int players, int cycle, bool explodeOnDamage)
+Boss::Boss(const vec2& position, z0Game::boss_list boss, int32_t hp,
+           int32_t players, int32_t cycle, bool explode_on_damage)
   : Ship(position, Ship::ship_category(SHIP_BOSS | SHIP_ENEMY))
   , _hp(0)
-  , _maxHp(0)
+  , _max_hp(0)
   , _flag(boss)
   , _score(0)
-  , _ignoreDamageColour(256)
+  , _ignore_damage_colour(256)
   , _damaged(0)
-  , _showHp(false)
-  , _explodeOnDamage(explodeOnDamage)
+  , _show_hp(false)
+  , _explode_on_damage(explode_on_damage)
 {
   set_bounding_width(640);
-  SetIgnoreDamageColourIndex(100);
-  long s =
-      5000 * (cycle + 1) +
-      2500 * (boss > z0Game::BOSS_1C) +
-      2500 * (boss > z0Game::BOSS_2C);
+  set_ignore_damage_colour_index(100);
+  long s = 5000 * (cycle + 1) +
+           2500 * (boss > z0Game::BOSS_1C) +
+           2500 * (boss > z0Game::BOSS_2C);
 
   _score += s;
-  for (int i = 0; i < players - 1; ++i) {
-    _score += (int(s) * HP_PER_EXTRA_PLAYER).to_int();
+  for (int32_t i = 0; i < players - 1; ++i) {
+    _score += (int32_t(s) * HP_PER_EXTRA_PLAYER).to_int();
   }
   _hp = CalculateHP(hp, players, cycle);
-  _maxHp = _hp;
+  _max_hp = _hp;
 }
 
-int Boss::CalculateHP(int base, int players, int cycle)
+int32_t Boss::CalculateHP(int32_t base, int32_t players, int32_t cycle)
 {
-  int hp = base * 30;
-  int r = hp;
-  for (int i = 0; i < cycle; ++i) {
+  int32_t hp = base * 30;
+  int32_t r = hp;
+  for (int32_t i = 0; i < cycle; ++i) {
     r += (hp * HP_PER_EXTRA_CYCLE).to_int();
   }
-  for (int i = 0; i < players - 1; ++i) {
+  for (int32_t i = 0; i < players - 1; ++i) {
     r += (hp * HP_PER_EXTRA_PLAYER).to_int();
   }
-  for (int i = 0; i < cycle * (players - 1); ++i) {
+  for (int32_t i = 0; i < cycle * (players - 1); ++i) {
     r += (hp * HP_PER_EXTRA_CYCLE + HP_PER_EXTRA_PLAYER).to_int();
   }
   return r;
 }
 
-void Boss::damage(int damage, bool magic, Player* source)
+void Boss::damage(int32_t damage, bool magic, Player* source)
 {
-  int actualDamage = GetDamage(damage, magic);
+  int32_t actualDamage = get_damage(damage, magic);
   if (actualDamage <= 0) {
     return;
   }
 
   if (damage >= Player::bomb_damage) {
-    if (_explodeOnDamage) {
+    if (_explode_on_damage) {
       explosion();
       explosion(0xffffffff, 16);
       explosion(0, 24);
@@ -118,7 +117,7 @@ void Boss::damage(int damage, bool magic, Player* source)
 
   if (_hp <= 0 && !is_destroyed()) {
     destroy();
-    OnDestroy();
+    on_destroy();
   }
   else if (!is_destroyed()) {
     play_sound_random(Lib::SOUND_ENEMY_SHATTER);
@@ -133,7 +132,7 @@ void Boss::render() const
 void Boss::render(bool hpBar) const
 {
   if (hpBar) {
-    RenderHPBar();
+    render_hp_bar();
   }
 
   if (!_damaged) {
@@ -143,25 +142,25 @@ void Boss::render(bool hpBar) const
   for (std::size_t i = 0; i < shapes().size(); i++) {
     shapes()[i]->render(
         lib(), to_float(shape().centre), shape().rotation().to_float(),
-        int(i) < _ignoreDamageColour ? 0xffffffff : 0);
+        int32_t(i) < _ignore_damage_colour ? 0xffffffff : 0);
   }
   _damaged--;
 }
 
-void Boss::RenderHPBar() const
+void Boss::render_hp_bar() const
 {
-  if (!_showHp && is_on_screen()) {
-    _showHp = true;
+  if (!_show_hp && is_on_screen()) {
+    _show_hp = true;
   }
 
-  if (_showHp) {
-    Ship::render_hp_bar(float(_hp) / float(_maxHp));
+  if (_show_hp) {
+    Ship::render_hp_bar(float(_hp) / float(_max_hp));
   }
 }
 
-void Boss::OnDestroy()
+void Boss::on_destroy()
 {
-  SetKilled();
+  set_killed();
   for (const auto& ship : z0().all_ships(SHIP_ENEMY)) {
     if (ship != this) {
       ship->damage(Player::bomb_damage, false, 0);
@@ -172,23 +171,23 @@ void Boss::OnDestroy()
   explosion(shapes()[0]->colour, 24);
   explosion(0xffffffff, 36);
   explosion(shapes()[0]->colour, 48);
-  int n = 1;
-  for (int i = 0; i < 16; ++i) {
+  int32_t n = 1;
+  for (int32_t i = 0; i < 16; ++i) {
     vec2 v = vec2::from_polar(z::rand_fixed() * (2 * fixed::pi),
                               8 + z::rand_int(64) + z::rand_int(64));
     _fireworks.push_back(
         std::make_pair(n, std::make_pair(shape().centre + v, shapes()[0]->colour)));
     n += i;
   }
-  for (int i = 0; i < Lib::PLAYERS; i++) {
+  for (int32_t i = 0; i < Lib::PLAYERS; i++) {
     lib().rumble(i, 25);
   }
   play_sound(Lib::SOUND_EXPLOSION);
 
   for (const auto& player : z0().get_players()) {
     Player* p = (Player*) player;
-    if (!p->is_killed() && GetScore() > 0) {
-      p->add_score(GetScore() / z0().alive_players());
+    if (!p->is_killed() && get_score() > 0) {
+      p->add_score(get_score() / z0().alive_players());
     }
   }
 }
@@ -196,17 +195,17 @@ void Boss::OnDestroy()
 
 // Big square boss
 //------------------------------
-BigSquareBoss::BigSquareBoss(int players, int cycle)
+BigSquareBoss::BigSquareBoss(int32_t players, int32_t cycle)
   : Boss(vec2(Lib::WIDTH * fixed::hundredth * 75, Lib::HEIGHT * 2),
          z0Game::BOSS_1A, BASE_HP, players, cycle)
   , _dir(0, -1)
   , _reverse(false)
   , _timer(TIMER * 6)
-  , _spawnTimer(0)
-  , _specialTimer(0)
-  , _specialAttack(false)
-  , _specialAttackRotate(false)
-  , _attackPlayer(0)
+  , _spawn_timer(0)
+  , _special_timer(0)
+  , _special_attack(false)
+  , _special_attack_rotate(false)
+  , _attack_player(0)
 {
   add_shape(new Polygon(vec2(), 160, 4, 0x9933ffff, 0, 0));
   add_shape(new Polygon(vec2(), 140, 4, 0x9933ffff, 0, DANGEROUS));
@@ -239,29 +238,29 @@ void BigSquareBoss::update()
     _dir = vec2(0, _reverse ? 1 : -1);
   }
 
-  if (_specialAttack) {
-    _specialTimer--;
-    if (_attackPlayer->is_killed()) {
-      _specialTimer = 0;
-      _attackPlayer = 0;
+  if (_special_attack) {
+    _special_timer--;
+    if (_attack_player->is_killed()) {
+      _special_timer = 0;
+      _attack_player = 0;
     }
-    else if (!_specialTimer) {
+    else if (!_special_timer) {
       vec2 d(ATTACK_RADIUS, 0);
-      if (_specialAttackRotate) {
+      if (_special_attack_rotate) {
         d = d.rotated(fixed::pi / 2);
       }
-      for (int i = 0; i < 6; i++) {
-        Enemy* s = new Follow(_attackPlayer->shape().centre + d);
+      for (int32_t i = 0; i < 6; i++) {
+        Enemy* s = new Follow(_attack_player->shape().centre + d);
         s->shape().set_rotation(fixed::pi / 4);
-        s->SetScore(0);
+        s->set_score(0);
         spawn(s);
         d = d.rotated(2 * fixed::pi / 6);
       }
-      _attackPlayer = 0;
+      _attack_player = 0;
       play_sound(Lib::SOUND_ENEMY_SPAWN);
     }
-    if (!_attackPlayer) {
-      _specialAttack = false;
+    if (!_attack_player) {
+      _special_attack = false;
     }
   }
   else if (is_on_screen()) {
@@ -271,25 +270,24 @@ void BigSquareBoss::update()
       _dir = vec2() - _dir;
       _reverse = !_reverse;
     }
-    _spawnTimer++;
-    if (_spawnTimer >=
-        int(STIMER - z0().alive_players() * 10) / (IsHPLow() ? 2 : 1)) {
-      _spawnTimer = 0;
-      _specialTimer++;
+    _spawn_timer++;
+    if (_spawn_timer >=
+        int32_t(STIMER - z0().alive_players() * 10) / (is_hp_low() ? 2 : 1)) {
+      _spawn_timer = 0;
+      _special_timer++;
       spawn(new BigFollow(shape().centre, false));
       play_sound_random(Lib::SOUND_BOSS_FIRE);
     }
-    if (_specialTimer >= 8 && z::rand_int(4)) {
-      int r = z::rand_int(2);
-      _specialTimer = ATTACK_TIME;
-      _specialAttack = true;
-      _specialAttackRotate = r != 0;
-      _attackPlayer = nearest_player();
+    if (_special_timer >= 8 && z::rand_int(4)) {
+      _special_timer = ATTACK_TIME;
+      _special_attack = true;
+      _special_attack_rotate = z::rand_int(2) != 0;
+      _attack_player = nearest_player();
       play_sound(Lib::SOUND_BOSS_ATTACK);
     }
   }
 
-  if (_specialAttack) {
+  if (_special_attack) {
     return;
   }
 
@@ -305,13 +303,13 @@ void BigSquareBoss::update()
 void BigSquareBoss::render() const
 {
   Boss::render();
-  if ((_specialTimer / 4) % 2 && _attackPlayer) {
+  if ((_special_timer / 4) % 2 && _attack_player) {
     flvec2 d(ATTACK_RADIUS.to_float(), 0);
-    if (_specialAttackRotate) {
+    if (_special_attack_rotate) {
       d = d.rotated(M_PIf / 2);
     }
-    for (int i = 0; i < 6; i++) {
-      flvec2 p = to_float(_attackPlayer->shape().centre) + d;
+    for (int32_t i = 0; i < 6; i++) {
+      flvec2 p = to_float(_attack_player->shape().centre) + d;
       Polygon s(vec2(), 10, 4, 0x9933ffff, fixed::pi / 4, 0);
       s.render(lib(), p, 0);
       d = d.rotated(2 * M_PIf / 6);
@@ -319,14 +317,14 @@ void BigSquareBoss::render() const
   }
 }
 
-int BigSquareBoss::GetDamage(int damage, bool magic)
+int32_t BigSquareBoss::get_damage(int32_t damage, bool magic)
 {
   return damage;
 }
 
 // Shield bomb boss
 //------------------------------
-ShieldBombBoss::ShieldBombBoss(int players, int cycle)
+ShieldBombBoss::ShieldBombBoss(int32_t players, int32_t cycle)
   : Boss(vec2(-Lib::WIDTH / 2, Lib::HEIGHT / 2),
          z0Game::BOSS_1B, BASE_HP, players, cycle)
   , _timer(0)
@@ -334,12 +332,12 @@ ShieldBombBoss::ShieldBombBoss(int players, int cycle)
   , _unshielded(0)
   , _attack(0)
   , _side(false)
-  , _shotAlternate(false)
+  , _shot_alternate(false)
 {
   add_shape(new Polygon(vec2(), 48, 8, 0x339966ff, 0,
                         DANGEROUS | VULNERABLE, Polygon::T::POLYGRAM));
 
-  for (int i = 0; i < 16; i++) {
+  for (int32_t i = 0; i < 16; i++) {
     vec2 a = vec2(120, 0).rotated(i * fixed::pi / 8);
     vec2 b = vec2(80, 0).rotated(i * fixed::pi / 8);
 
@@ -352,7 +350,7 @@ ShieldBombBoss::ShieldBombBoss(int players, int cycle)
 
   add_shape(new Polygon(vec2(), 42, 16, 0, 0, SHIELD));
 
-  SetIgnoreDamageColourIndex(1);
+  set_ignore_damage_colour_index(1);
 }
 
 void ShieldBombBoss::update()
@@ -372,7 +370,7 @@ void ShieldBombBoss::update()
     return;
   }
 
-  if (IsHPLow()) {
+  if (is_hp_low()) {
     _timer++;
   }
 
@@ -403,7 +401,7 @@ void ShieldBombBoss::update()
   }
 
   if (_attack) {
-    vec2 d = _attackDir.rotated(
+    vec2 d = _attack_dir.rotated(
         (ATTACK_TIME - _attack) * fixed::half * fixed::pi / ATTACK_TIME);
     spawn(new SBBossShot(shape().centre, d));
     _attack--;
@@ -430,7 +428,7 @@ void ShieldBombBoss::update()
 
     if (z::rand_int(2)) {
       vec2 d = vec2(5, 0).rotated(shape().rotation());
-      for (int i = 0; i < 12; i++) {
+      for (int32_t i = 0; i < 12; i++) {
         spawn(new SBBossShot(shape().centre, d));
         d = d.rotated(2 * fixed::pi / 12);
       }
@@ -438,12 +436,12 @@ void ShieldBombBoss::update()
     }
     else {
       _attack = ATTACK_TIME;
-      _attackDir = vec2::from_polar(z::rand_fixed() * (2 * fixed::pi), 5);
+      _attack_dir = vec2::from_polar(z::rand_fixed() * (2 * fixed::pi), 5);
     }
   }
 }
 
-int ShieldBombBoss::GetDamage(int damage, bool magic)
+int32_t ShieldBombBoss::get_damage(int32_t damage, bool magic)
 {
   if (_unshielded) {
     return damage;
@@ -456,9 +454,9 @@ int ShieldBombBoss::GetDamage(int damage, bool magic)
   if (!magic) {
     return 0;
   }
-  _shotAlternate = !_shotAlternate;
-  if (_shotAlternate) {
-    RestoreHP(60 /
+  _shot_alternate = !_shot_alternate;
+  if (_shot_alternate) {
+    restore_hp(60 /
         (1 + (z0().get_lives() ? z0().count_players() : z0().alive_players())));
   }
   return damage;
@@ -466,9 +464,9 @@ int ShieldBombBoss::GetDamage(int damage, bool magic)
 
 // Chaser boss
 //------------------------------
-int  ChaserBoss::_count;
+int32_t  ChaserBoss::_count;
 bool ChaserBoss::_hasCounted;
-int  ChaserBoss::_sharedHp;
+int32_t  ChaserBoss::_shared_hp;
 
 // power(HP_REDUCE_POWER = 1.7, split)
 static const fixed HP_REDUCE_POWER_lookup[8] = {
@@ -531,7 +529,7 @@ static const fixed ONE_PT_TWO_lookup[8] = {
 };
 
 // power(1.15, remaining)
-static const int ONE_PT_ONE_FIVE_intLookup[128] = {
+static const int32_t ONE_PT_ONE_FIVE_intLookup[128] = {
   1, 1, 1, 2, 2, 2, 2, 3, 3, 4, 4, 5, 5, 6, 7, 8, 9, 11, 12, 14, 16, 19, 22,
   25, 29, 33, 38, 44, 50, 58, 66, 76, 88, 101, 116, 133, 153, 176, 203, 233,
   268, 308, 354, 407, 468, 539, 620, 713, 819, 942, 1084, 1246, 1433, 1648,
@@ -545,17 +543,17 @@ static const int ONE_PT_ONE_FIVE_intLookup[128] = {
   25417652, 29230299, 33614843, 38657069, 44455628, 51123971
 };
 
-ChaserBoss::ChaserBoss(int players, int cycle, int split,
-                       const vec2& position, int time, int stagger)
+ChaserBoss::ChaserBoss(int32_t players, int32_t cycle, int32_t split,
+                       const vec2& position, int32_t time, int32_t stagger)
   : Boss(!split ? vec2(Lib::WIDTH / 2, -Lib::HEIGHT / 2) : position,
          z0Game::BOSS_1C,
          1 + BASE_HP / (fixed::half + HP_REDUCE_POWER_lookup[split]).to_int(),
          players, cycle, split <= 1)
-  , _onScreen(split != 0)
+  , _on_screen(split != 0)
   , _move(false)
   , _timer(time)
   , _dir()
-  , _lastDir()
+  , _last_dir()
   , _players(players)
   , _cycle(cycle)
   , _split(split)
@@ -570,10 +568,10 @@ ChaserBoss::ChaserBoss(int players, int cycle, int split,
   add_shape(new Polygon(vec2(), 7 * ONE_AND_HALF_lookup[MAX_SPLIT - _split],
                         5, 0, 0, SHIELD, Polygon::T::POLYGRAM));
 
-  SetIgnoreDamageColourIndex(2);
+  set_ignore_damage_colour_index(2);
   set_bounding_width(10 * ONE_AND_HALF_lookup[MAX_SPLIT - _split]);
   if (!_split) {
-    _sharedHp = 0;
+    _shared_hp = 0;
     _count = 0;
   }
 }
@@ -581,9 +579,9 @@ ChaserBoss::ChaserBoss(int players, int cycle, int split,
 void ChaserBoss::update()
 {
   z0Game::ShipList remaining = z0().all_ships();
-  _lastDir = _dir.normalised();
+  _last_dir = _dir.normalised();
   if (is_on_screen()) {
-    _onScreen = true;
+    _on_screen = true;
   }
 
   if (_timer) {
@@ -593,7 +591,7 @@ void ChaserBoss::update()
     _timer = TIMER * (_move + 1);
     if (_split != 0 &&
         (_move || z::rand_int(8 + _split) == 0 ||
-         int(remaining.size()) - z0().count_players() <= 4 ||
+         int32_t(remaining.size()) - z0().count_players() <= 4 ||
          !z::rand_int(ONE_PT_ONE_FIVE_intLookup[
              std::max(0, std::min(127, int32_t(remaining.size()) -
                                        z0().count_players()))]))) {
@@ -620,7 +618,7 @@ void ChaserBoss::update()
     static const fixed c_dir4 = 8 * SPEED / (14 * 3);
     static const fixed c_rotate = fixed::hundredth * 5 / fixed(MAX_SPLIT);
 
-    _dir = _lastDir;
+    _dir = _last_dir;
     if (_stagger == _count % (_split == 0 ? 1 :
                               _split == 1 ? 2 :
                               _split == 2 ? 4 :
@@ -641,7 +639,7 @@ void ChaserBoss::update()
           ChaserBoss* c = (ChaserBoss*) ship;
           fixed pow = ONE_PT_ONE_FIVE_lookup[MAX_SPLIT - c->_split];
           v *= pow;
-          p = c->_lastDir * pow;
+          p = c->_last_dir * pow;
         }
         else {
           p = vec2::from_polar(ship->shape().rotation(), 1);
@@ -664,7 +662,8 @@ void ChaserBoss::update()
         _dir += v * 3;
       }
     }
-    if (int(remaining.size()) - z0().count_players() < 4 && _split >= MAX_SPLIT - 1) {
+    if (int32_t(remaining.size()) - z0().count_players() < 4 &&
+        _split >= MAX_SPLIT - 1) {
       if ((shape().centre.x < 32 && _dir.x < 0) ||
           (shape().centre.x >= Lib::WIDTH - 32 && _dir.x > 0)) {
         _dir.x = -_dir.x;
@@ -674,7 +673,7 @@ void ChaserBoss::update()
         _dir.y = -_dir.y;
       }
     }
-    else if (int(remaining.size()) - z0().count_players() < 8 &&
+    else if (int32_t(remaining.size()) - z0().count_players() < 8 &&
              _split >= MAX_SPLIT - 1) {
       if ((shape().centre.x < 0 && _dir.x < 0) ||
           (shape().centre.x >= Lib::WIDTH && _dir.x > 0)) {
@@ -713,10 +712,10 @@ void ChaserBoss::update()
     }
 
     _dir =
-        _split == 0 ? _dir + _lastDir * 7 :
-        _split == 1 ? _dir * 2 + _lastDir * 7 :
-        _split == 2 ? _dir * 4 + _lastDir * 7 :
-        _split == 3 ? _dir + _lastDir : _dir * 2 + _lastDir;
+        _split == 0 ? _dir + _last_dir * 7 :
+        _split == 1 ? _dir * 2 + _last_dir * 7 :
+        _split == 2 ? _dir * 4 + _last_dir * 7 :
+        _split == 3 ? _dir + _last_dir : _dir * 2 + _last_dir;
 
     _dir *= ONE_PT_ONE_lookup[_split] *
         (_split == 0 ? c_dir0 :
@@ -726,7 +725,7 @@ void ChaserBoss::update()
     move(_dir);
     shape().rotate(fixed::hundredth * 2 + fixed(_split) * c_rotate);
   }
-  _sharedHp = 0;
+  _shared_hp = 0;
   if (!_hasCounted) {
     _hasCounted = true;
     ++_count;
@@ -736,33 +735,33 @@ void ChaserBoss::update()
 void ChaserBoss::render() const
 {
   Boss::render();
-  static std::vector< int > hpLookup;
+  static std::vector<int32_t> hpLookup;
   if (hpLookup.empty()) {
-    int hp = 0;
-    for (int i = 0; i < 8; i++) {
+    int32_t hp = 0;
+    for (int32_t i = 0; i < 8; i++) {
       hp = 2 * hp + CalculateHP(
           1 + BASE_HP / (fixed::half + HP_REDUCE_POWER_lookup[7 - i]).to_int(),
           _players, _cycle);
       hpLookup.push_back(hp);
     }
   }
-  _sharedHp += (_split == 7 ? 0 : 2 * hpLookup[6 - _split]) +
-      GetRemainingHP() * 30;
-  if (_onScreen) {
-    Ship::render_hp_bar(float(_sharedHp) / float(hpLookup[MAX_SPLIT]));
+  _shared_hp += (_split == 7 ? 0 : 2 * hpLookup[6 - _split]) +
+      get_remaining_hp() * 30;
+  if (_on_screen) {
+    Ship::render_hp_bar(float(_shared_hp) / float(hpLookup[MAX_SPLIT]));
   }
 }
 
-int ChaserBoss::GetDamage(int damage, bool magic)
+int32_t ChaserBoss::get_damage(int32_t damage, bool magic)
 {
   return damage;
 }
 
-void ChaserBoss::OnDestroy()
+void ChaserBoss::on_destroy()
 {
   bool last = false;
   if (_split < MAX_SPLIT) {
-    for (int i = 0; i < 2; i++) {
+    for (int32_t i = 0; i < 2; i++) {
       vec2 d = vec2::from_polar(i * fixed::pi + shape().rotation(),
                                 8 * ONE_PT_TWO_lookup[MAX_SPLIT - 1 - _split]);
       Ship* s = new ChaserBoss(
@@ -785,12 +784,12 @@ void ChaserBoss::OnDestroy()
     }
 
     if (last) {
-      SetKilled();
-      for (int i = 0; i < Lib::PLAYERS; i++) {
+      set_killed();
+      for (int32_t i = 0; i < Lib::PLAYERS; i++) {
         lib().rumble(i, 25);
       }
       z0Game::ShipList players = z0().get_players();
-      int n = 0;
+      int32_t n = 0;
       for (std::size_t i = 0; i < players.size(); i++) {
         Player* p = (Player*) players[i];
         if (!p->is_killed()) {
@@ -800,11 +799,11 @@ void ChaserBoss::OnDestroy()
       for (std::size_t i = 0; i < players.size(); i++) {
         Player* p = (Player*) players[i];
         if (!p->is_killed()) {
-          p->add_score(GetScore() / n);
+          p->add_score(get_score() / n);
         }
       }
       n = 1;
-      for (int i = 0; i < 16; ++i) {
+      for (int32_t i = 0; i < 16; ++i) {
         vec2 v = vec2::from_polar(z::rand_fixed() * (2 * fixed::pi),
                                   8 + z::rand_int(64) + z::rand_int(64));
         _fireworks.push_back(std::make_pair(
@@ -814,7 +813,7 @@ void ChaserBoss::OnDestroy()
     }
   }
 
-  for (int i = 0; i < Lib::PLAYERS; i++) {
+  for (int32_t i = 0; i < Lib::PLAYERS; i++) {
     lib().rumble(i, _split < 3 ? 10 : 3);
   }
 
@@ -840,19 +839,19 @@ void ChaserBoss::OnDestroy()
 
 // Tractor beam boss
 //------------------------------
-TractorBoss::TractorBoss(int players, int cycle)
+TractorBoss::TractorBoss(int32_t players, int32_t cycle)
   : Boss(vec2(Lib::WIDTH * (1 + fixed::half), Lib::HEIGHT / 2),
          z0Game::BOSS_2A, BASE_HP, players, cycle)
-  , _willAttack(false)
+  , _will_attack(false)
   , _stopped(false)
   , _generating(false)
   , _attacking(false)
   , _continue(false)
-  , _genDir(0)
-  , _shootType(z::rand_int(2))
+  , _gen_dir(0)
+  , _shoot_type(z::rand_int(2))
   , _sound(true)
   , _timer(0)
-  , _attackSize(0)
+  , _attack_size(0)
 {
   _s1 = new CompoundShape(vec2(0, -96), 0, DANGEROUS | VULNERABLE);
 
@@ -863,7 +862,7 @@ TractorBoss::TractorBoss(int players, int cycle)
   _s1->add_shape(new Polygon(vec2(), 36, 12, 0xcc33ccff, 0, 0));
   _s1->add_shape(new Polygon(vec2(), 34, 12, 0xcc33ccff, 0, 0));
   _s1->add_shape(new Polygon(vec2(), 32, 12, 0xcc33ccff, 0, 0));
-  for (int i = 0; i < 8; i++) {
+  for (int32_t i = 0; i < 8; i++) {
     vec2 d = vec2(24, 0).rotated(i * fixed::pi / 4);
     _s1->add_shape(
         new Polygon(d, 12, 6, 0xcc33ccff, 0, 0, Polygon::T::POLYGRAM));
@@ -879,7 +878,7 @@ TractorBoss::TractorBoss(int players, int cycle)
   _s2->add_shape(new Polygon(vec2(), 36, 12, 0xcc33ccff, 0, 0));
   _s2->add_shape(new Polygon(vec2(), 34, 12, 0xcc33ccff, 0, 0));
   _s2->add_shape(new Polygon(vec2(), 32, 12, 0xcc33ccff, 0, 0));
-  for (int i = 0; i < 8; i++) {
+  for (int32_t i = 0; i < 8; i++) {
     vec2 d = vec2(24, 0).rotated(i * fixed::pi / 4);
     _s2->add_shape(
         new Polygon(d, 12, 6, 0xcc33ccff, 0, 0, Polygon::T::POLYGRAM));
@@ -888,8 +887,8 @@ TractorBoss::TractorBoss(int players, int cycle)
   add_shape(_s1);
   add_shape(_s2);
 
-  _sAttack = new Polygon(vec2(), 0, 16, 0x993399ff);
-  add_shape(_sAttack);
+  _sattack = new Polygon(vec2(), 0, 16, 0x993399ff);
+  add_shape(_sattack);
 
   add_shape(new Line(vec2(), vec2(-2, -96), vec2(-2, 96), 0xcc33ccff, 0));
   add_shape(new Line(vec2(), vec2(0, -96), vec2(0, 96), 0x882288ff, 0));
@@ -898,37 +897,37 @@ TractorBoss::TractorBoss(int players, int cycle)
   add_shape(new Polygon(vec2(0, 96), 30, 12, 0, 0, SHIELD));
   add_shape(new Polygon(vec2(0, -96), 30, 12, 0, 0, SHIELD));
 
-  _attackShapes = shapes().size();
+  _attack_shapes = shapes().size();
 }
 
 void TractorBoss::update()
 {
   if (shape().centre.x <= Lib::WIDTH / 2 &&
-      _willAttack && !_stopped && !_continue) {
+      _will_attack && !_stopped && !_continue) {
     _stopped = true;
     _generating = true;
-    _genDir = z::rand_int(2) == 0;
+    _gen_dir = z::rand_int(2) == 0;
     _timer = 0;
   }
 
   if (shape().centre.x < -150) {
     shape().centre.x = Lib::WIDTH + 150;
-    _willAttack = !_willAttack;
-    _shootType = z::rand_int(2);
-    if (_willAttack) {
-      _shootType = 0;
+    _will_attack = !_will_attack;
+    _shoot_type = z::rand_int(2);
+    if (_will_attack) {
+      _shoot_type = 0;
     }
     _continue = false;
-    _sound = !_willAttack;
+    _sound = !_will_attack;
     shape().rotate(z::rand_fixed() * 2 * fixed::pi);
   }
 
   _timer++;
   if (!_stopped) {
     move(SPEED * vec2(-1, 0));
-    if (!_willAttack && is_on_screen() &&
+    if (!_will_attack && is_on_screen() &&
         _timer % (16 - z0().alive_players() * 2) == 0) {
-      if (_shootType == 0 || (IsHPLow() && _shootType == 1)) {
+      if (_shoot_type == 0 || (is_hp_low() && _shoot_type == 1)) {
         Player* p = nearest_player();
 
         vec2 v = _s1->convert_point(shape().centre, shape().rotation(), vec2());
@@ -943,7 +942,7 @@ void TractorBoss::update()
 
         play_sound_random(Lib::SOUND_BOSS_FIRE);
       }
-      if (_shootType == 1 || IsHPLow()) {
+      if (_shoot_type == 1 || is_hp_low()) {
         Player* p = nearest_player();
         vec2 v = shape().centre;
 
@@ -953,7 +952,7 @@ void TractorBoss::update()
         play_sound_random(Lib::SOUND_BOSS_FIRE);
       }
     }
-    if ((!_willAttack || _continue) && is_on_screen()) {
+    if ((!_will_attack || _continue) && is_on_screen()) {
       if (_sound) {
         play_sound(Lib::SOUND_BOSS_ATTACK);
         _sound = false;
@@ -976,24 +975,24 @@ void TractorBoss::update()
         _timer = 0;
         _generating = false;
         _attacking = false;
-        _attackSize = 0;
+        _attack_size = 0;
         play_sound(Lib::SOUND_BOSS_ATTACK);
       }
 
       if (_timer % (10 - 2 * z0().alive_players()) == 0 && _timer < TIMER * 4) {
         Ship* s = new TBossShot(
             _s1->convert_point(shape().centre, shape().rotation(), vec2()),
-            _genDir ? shape().rotation() + fixed::pi : shape().rotation());
+            _gen_dir ? shape().rotation() + fixed::pi : shape().rotation());
         spawn(s);
 
         s = new TBossShot(
             _s2->convert_point(shape().centre, shape().rotation(), vec2()),
-            shape().rotation() + (_genDir ? 0 : fixed::pi));
+            shape().rotation() + (_gen_dir ? 0 : fixed::pi));
         spawn(s);
         play_sound_random(Lib::SOUND_ENEMY_SPAWN);
       }
 
-      if (IsHPLow() && _timer % (20 - z0().alive_players() * 2) == 0) {
+      if (is_hp_low() && _timer % (20 - z0().alive_players() * 2) == 0) {
         Player* p = nearest_player();
         vec2 v = shape().centre;
 
@@ -1058,8 +1057,8 @@ void TractorBoss::update()
               !(ship->type() & SHIP_WALL) &&
               (ship->shape().centre - shape().centre).length() <= 40) {
             ship->destroy();
-            _attackSize++;
-            _sAttack->radius = _attackSize / (1 + fixed::half);
+            _attack_size++;
+            _sattack->radius = _attack_size / (1 + fixed::half);
             add_shape(new Polygon(vec2(), 8, 6, 0xcc33ccff, 0, 0));
           }
         }
@@ -1068,30 +1067,30 @@ void TractorBoss::update()
         _timer = 0;
         _stopped = false;
         _continue = true;
-        for (int i = 0; i < _attackSize; i++) {
-          vec2 d = vec2::from_polar(i * (2 * fixed::pi) / _attackSize, 5);
+        for (int32_t i = 0; i < _attack_size; i++) {
+          vec2 d = vec2::from_polar(i * (2 * fixed::pi) / _attack_size, 5);
           spawn(new SBBossShot(shape().centre, d, 0xcc33ccff));
         }
         play_sound(Lib::SOUND_BOSS_FIRE);
         play_sound_random(Lib::SOUND_EXPLOSION);
-        _attackSize = 0;
-        _sAttack->radius = 0;
-        while (_attackShapes < shapes().size()) {
-          destroy_shape(_attackShapes);
+        _attack_size = 0;
+        _sattack->radius = 0;
+        while (_attack_shapes < shapes().size()) {
+          destroy_shape(_attack_shapes);
         }
       }
     }
   }
 
-  for (std::size_t i = _attackShapes; i < shapes().size(); ++i) {
+  for (std::size_t i = _attack_shapes; i < shapes().size(); ++i) {
     vec2 v = vec2::from_polar(z::rand_fixed() * (2 * fixed::pi),
                               2 * (z::rand_fixed() - fixed::half) *
-                                  fixed(_attackSize) / (1 + fixed::half));
+                                  fixed(_attack_size) / (1 + fixed::half));
     shapes()[i]->centre = v;
   }
 
   fixed r = 0;
-  if (!_willAttack || (_stopped && !_generating && !_attacking)) {
+  if (!_will_attack || (_stopped && !_generating && !_attacking)) {
     r = fixed::hundredth;
   }
   else if (_stopped && _attacking && !_generating) {
@@ -1114,7 +1113,7 @@ void TractorBoss::render() const
 {
   Boss::render();
   if ((_stopped && !_generating && !_attacking) ||
-      (!_stopped && (_continue || !_willAttack) && is_on_screen())) {
+      (!_stopped && (_continue || !_will_attack) && is_on_screen())) {
     for (std::size_t i = 0; i < _targets.size(); ++i) {
       if (((_timer + i * 4) / 4) % 2) {
         lib().render_line(to_float(shape().centre),
@@ -1124,38 +1123,38 @@ void TractorBoss::render() const
   }
 }
 
-int TractorBoss::GetDamage(int damage, bool magic)
+int32_t TractorBoss::get_damage(int32_t damage, bool magic)
 {
   return damage;
 }
 
 // Ghost boss
 //------------------------------
-GhostBoss::GhostBoss(int players, int cycle)
+GhostBoss::GhostBoss(int32_t players, int32_t cycle)
   : Boss(vec2(Lib::WIDTH / 2, Lib::HEIGHT / 2),
          z0Game::BOSS_2B, BASE_HP, players, cycle)
   , _visible(false)
-  , _vTime(0)
+  , _vtime(0)
   , _timer(0)
-  , _attackTime(ATTACK_TIME)
+  , _attack_time(ATTACK_TIME)
   , _attack(0)
   , _rDir(false)
-  , _startTime(120)
-  , _dangerCircle(0)
-  , _dangerOffset1(0)
-  , _dangerOffset2(0)
-  , _dangerOffset3(0)
-  , _dangerOffset4(0)
-  , _shotType(false)
+  , _start_time(120)
+  , _danger_circle(0)
+  , _danger_offset1(0)
+  , _danger_offset2(0)
+  , _danger_offset3(0)
+  , _danger_offset4(0)
+  , _shot_type(false)
 {
   add_shape(new Polygon(vec2(), 32, 8, 0x9933ccff, 0, 0));
   add_shape(new Polygon(vec2(), 48, 8, 0xcc66ffff, 0, 0));
 
-  for (int i = 0; i < 8; i++) {
+  for (int32_t i = 0; i < 8; i++) {
     vec2 c = vec2::from_polar(i * fixed::pi / 4, 48);
 
     CompoundShape* s = new CompoundShape(c, 0, 0);
-    for (int j = 0; j < 8; j++) {
+    for (int32_t j = 0; j < 8; j++) {
       vec2 d = vec2::from_polar(j * fixed::pi / 4, 1);
       s->add_shape(new Line(vec2(), d * 10, d * 10 * 2, 0x9933ccff, 0));
     }
@@ -1164,9 +1163,9 @@ GhostBoss::GhostBoss(int players, int cycle)
 
   add_shape(new Polygon(vec2(), 24, 8, 0xcc66ffff, 0, 0, Polygon::T::POLYGRAM));
 
-  for (int n = 0; n < 5; n++) {
+  for (int32_t n = 0; n < 5; n++) {
     CompoundShape* s = new CompoundShape(vec2(), 0, 0);
-    for (int i = 0; i < 16 + n * 6; i++) {
+    for (int32_t i = 0; i < 16 + n * 6; i++) {
       vec2 d = vec2::from_polar(i * 2 * fixed::pi / (16 + n * 6), 100 + n * 60);
       s->add_shape(new Polygon(d, 16, 8, n ? 0x330066ff : 0x9933ccff,
                                0, 0, Polygon::T::POLYSTAR));
@@ -1175,28 +1174,28 @@ GhostBoss::GhostBoss(int players, int cycle)
     add_shape(s);
   }
 
-  for (int n = 0; n < 5; n++) {
+  for (int32_t n = 0; n < 5; n++) {
     CompoundShape* s = new CompoundShape(vec2(), 0, DANGEROUS);
     add_shape(s);
   }
 
-  SetIgnoreDamageColourIndex(12);
+  set_ignore_damage_colour_index(12);
 }
 
 void GhostBoss::update()
 {
-  for (int n = 1; n < 5; ++n) {
+  for (int32_t n = 1; n < 5; ++n) {
     CompoundShape* s = (CompoundShape*) shapes()[11 + n].get();
     CompoundShape* c = (CompoundShape*) shapes()[16 + n].get();
     c->clear_shapes();
 
-    for (int i = 0; i < 16 + n * 6; ++i) {
+    for (int32_t i = 0; i < 16 + n * 6; ++i) {
       Shape& s1 = *s->shapes()[2 * i];
       Shape& s2 = *s->shapes()[1 + 2 * i];
-      int t =
-          n == 1 ? (i + _dangerOffset1) % 11 :
-          n == 2 ? (i + _dangerOffset2) % 7 :
-          n == 3 ? (i + _dangerOffset3) % 17 : (i + _dangerOffset4) % 10;
+      int32_t t =
+          n == 1 ? (i + _danger_offset1) % 11 :
+          n == 2 ? (i + _danger_offset2) % 7 :
+          n == 3 ? (i + _danger_offset3) % 17 : (i + _danger_offset4) % 10;
 
       bool b =
           n == 1 ? (t % 11 == 0 || t % 11 == 5) :
@@ -1204,11 +1203,11 @@ void GhostBoss::update()
           n == 3 ? (t % 17 == 0 || t % 17 == 8) : (t % 10 == 0);
 
       if (((n == 4 && _attack != 2) ||
-           (n + (n == 3)) & _dangerCircle) &&
+           (n + (n == 3)) & _danger_circle) &&
           _visible && b) {
         s1.colour = 0xcc66ffff;
         s2.colour = 0xcc66ffff;
-        if (_vTime == 0) {
+        if (_vtime == 0) {
           vec2 d = vec2::from_polar(
               i * 2 * fixed::pi / (16 + n * 6), 100 + n * 60);
           c->add_shape(new Polygon(d, 9, 8, 0));
@@ -1222,7 +1221,7 @@ void GhostBoss::update()
       }
     }
   }
-  if (!(_attack == 2 && _attackTime < ATTACK_TIME * 4 && _attackTime)) {
+  if (!(_attack == 2 && _attack_time < ATTACK_TIME * 4 && _attack_time)) {
     shape().rotate(-fixed::hundredth * 4);
   }
 
@@ -1230,7 +1229,7 @@ void GhostBoss::update()
     shapes()[i + 2]->rotate(fixed::hundredth * 4);
   }
   shapes()[10]->rotate(fixed::hundredth * 6);
-  for (int n = 0; n < 5; n++) {
+  for (int32_t n = 0; n < 5; n++) {
     CompoundShape* s = (CompoundShape*) shapes()[11 + n].get();
     if (n % 2) {
       s->rotate(fixed::hundredth * 3 + (fixed(3) / 2000) * n);
@@ -1254,18 +1253,18 @@ void GhostBoss::update()
     }
   }
 
-  if (_startTime) {
-    _startTime--;
+  if (_start_time) {
+    _start_time--;
     return;
   }
 
-  if (!_attackTime) {
+  if (!_attack_time) {
     _timer++;
     if (_timer == 9 * TIMER / 10 ||
         (_timer >= TIMER / 10 && _timer < 9 * TIMER / 10 - 16 &&
          ((_timer % 16 == 0 && _attack == 2) ||
-          (_timer % 32 == 0 && _shotType)))) {
-      for (int i = 0; i < 8; i++) {
+          (_timer % 32 == 0 && _shot_type)))) {
+      for (int32_t i = 0; i < 8; i++) {
         vec2 d = vec2::from_polar(i * fixed::pi / 4 + shape().rotation(), 5);
         spawn(new SBBossShot(shape().centre, d, 0xcc66ffff));
       }
@@ -1273,7 +1272,7 @@ void GhostBoss::update()
     }
     if (_timer != 9 * TIMER / 10 && _timer >= TIMER / 10 &&
         _timer < 9 * TIMER / 10 - 16 && _timer % 16 == 0 &&
-        (!_shotType || _attack == 2)) {
+        (!_shot_type || _attack == 2)) {
       Player* p = nearest_player();
       vec2 d = (p->shape().centre - shape().centre).normalised();
 
@@ -1285,18 +1284,18 @@ void GhostBoss::update()
     }
   }
   else {
-    _attackTime--;
+    _attack_time--;
 
     if (_attack == 2) {
-      if (_attackTime >= ATTACK_TIME * 4 && _attackTime % 8 == 0) {
+      if (_attack_time >= ATTACK_TIME * 4 && _attack_time % 8 == 0) {
         vec2 pos(z::rand_int(Lib::WIDTH + 1), z::rand_int(Lib::HEIGHT + 1));
         spawn(new GhostMine(pos, this));
         play_sound_random(Lib::SOUND_ENEMY_SPAWN);
-        _dangerCircle = 0;
+        _danger_circle = 0;
       }
-      else if (_attackTime == ATTACK_TIME * 4 - 1) {
+      else if (_attack_time == ATTACK_TIME * 4 - 1) {
         _visible = true;
-        _vTime = 60;
+        _vtime = 60;
         add_shape(new Box(vec2(Lib::WIDTH / 2 + 32, 0),
                                Lib::WIDTH / 2, 10, 0xcc66ffff, 0, 0));
         add_shape(new Box(vec2(Lib::WIDTH / 2 + 32, 0),
@@ -1312,81 +1311,72 @@ void GhostBoss::update()
                                Lib::WIDTH / 2, 4, 0xcc66ffff, 0, 0));
         play_sound(Lib::SOUND_BOSS_FIRE);
       }
-      else if (_attackTime < ATTACK_TIME * 3) {
-        if (_attackTime == ATTACK_TIME * 3 - 1) {
+      else if (_attack_time < ATTACK_TIME * 3) {
+        if (_attack_time == ATTACK_TIME * 3 - 1) {
           play_sound(Lib::SOUND_BOSS_ATTACK);
         }
         shape().rotate((_rDir ? 1 : -1) * 2 * fixed::pi / (ATTACK_TIME * 6));
-        if (!_attackTime) {
-          for (int i = 0; i < 6; i++) {
+        if (!_attack_time) {
+          for (int32_t i = 0; i < 6; i++) {
             destroy_shape(21);
           }
         }
-        _dangerOffset1 = z::rand_int(11);
-        _dangerOffset2 = z::rand_int(7);
-        _dangerOffset3 = z::rand_int(17);
-        _dangerOffset3 = z::rand_int(10);
+        _danger_offset1 = z::rand_int(11);
+        _danger_offset2 = z::rand_int(7);
+        _danger_offset3 = z::rand_int(17);
+        _danger_offset3 = z::rand_int(10);
       }
     }
 
-    if (_attack == 0 && _attackTime == ATTACK_TIME * 2) {
+    if (_attack == 0 && _attack_time == ATTACK_TIME * 2) {
       bool r = z::rand_int(2) != 0;
       spawn(new GhostWall(r, true));
       spawn(new GhostWall(!r, false));
     }
-    if (_attack == 1 && _attackTime == ATTACK_TIME * 2) {
+    if (_attack == 1 && _attack_time == ATTACK_TIME * 2) {
       _rDir = z::rand_int(2) != 0;
       spawn(new GhostWall(!_rDir, false, 0));
     }
-    if (_attack == 1 && _attackTime == ATTACK_TIME * 1) {
+    if (_attack == 1 && _attack_time == ATTACK_TIME * 1) {
       spawn(new GhostWall(_rDir, true, 0));
     }
 
-    if ((_attack == 0 || _attack == 1) && IsHPLow() &&
-        _attackTime == ATTACK_TIME * 1) {
-      vec2 v;
-      int r = z::rand_int(4);
-      if (r == 0) {
-        v = vec2(-Lib::WIDTH / 4, Lib::HEIGHT / 2);
-      }
-      else if (r == 1) {
-        v = vec2(Lib::WIDTH + Lib::WIDTH / 4, Lib::HEIGHT / 2);
-      }
-      else if (r == 2) {
-        v = vec2(Lib::WIDTH / 2, -Lib::HEIGHT / 4);
-      }
-      else {
-        v = vec2(Lib::WIDTH / 2, Lib::HEIGHT + Lib::HEIGHT / 4);
-      }
+    if ((_attack == 0 || _attack == 1) && is_hp_low() &&
+        _attack_time == ATTACK_TIME * 1) {
+      int32_t r = z::rand_int(4);
+      vec2 v = r == 0 ? vec2(-Lib::WIDTH / 4, Lib::HEIGHT / 2) :
+               r == 1 ? vec2(Lib::WIDTH + Lib::WIDTH / 4, Lib::HEIGHT / 2) :
+               r == 2 ? vec2(Lib::WIDTH / 2, -Lib::HEIGHT / 4) :
+                        vec2(Lib::WIDTH / 2, Lib::HEIGHT + Lib::HEIGHT / 4);
       spawn(new BigFollow(v, false));
     }
-    if (!_attackTime && !_visible) {
+    if (!_attack_time && !_visible) {
       _visible = true;
-      _vTime = 60;
+      _vtime = 60;
     }
-    if (_attackTime == 0 && _attack != 2) {
-      int r = z::rand_int(3);
-      _dangerCircle |= 1 + (r == 2 ? 3 : r);
-      if (z::rand_int(2) || IsHPLow()) {
+    if (_attack_time == 0 && _attack != 2) {
+      int32_t r = z::rand_int(3);
+      _danger_circle |= 1 + (r == 2 ? 3 : r);
+      if (z::rand_int(2) || is_hp_low()) {
         r = z::rand_int(3);
-        _dangerCircle |= 1 + (r == 2 ? 3 : r);
+        _danger_circle |= 1 + (r == 2 ? 3 : r);
       }
-      if (z::rand_int(2) || IsHPLow()) {
+      if (z::rand_int(2) || is_hp_low()) {
         r = z::rand_int(3);
-        _dangerCircle |= 1 + (r == 2 ? 3 : r);
+        _danger_circle |= 1 + (r == 2 ? 3 : r);
       }
     }
     else {
-      _dangerCircle = 0;
+      _danger_circle = 0;
     }
   }
 
   if (_timer >= TIMER) {
     _timer = 0;
     _visible = false;
-    _vTime = 60;
+    _vtime = 60;
     _attack = z::rand_int(3);
-    _shotType = z::rand_int(2) == 0;
+    _shot_type = z::rand_int(2) == 0;
     shapes()[0]->category = 0;
     shapes()[1]->category = 0;
     shapes()[11]->category = 0;
@@ -1397,23 +1387,23 @@ void GhostBoss::update()
     play_sound(Lib::SOUND_BOSS_ATTACK);
 
     if (_attack == 0) {
-      _attackTime = ATTACK_TIME * 2 + 50;
+      _attack_time = ATTACK_TIME * 2 + 50;
     }
     if (_attack == 1) {
-      _attackTime = ATTACK_TIME * 3;
-      for (int i = 0; i < z0().count_players(); i++) {
+      _attack_time = ATTACK_TIME * 3;
+      for (int32_t i = 0; i < z0().count_players(); i++) {
         spawn(new Powerup(shape().centre, Powerup::SHIELD));
       }
     }
     if (_attack == 2) {
-      _attackTime = ATTACK_TIME * 6;
+      _attack_time = ATTACK_TIME * 6;
       _rDir = z::rand_int(2) != 0;
     }
   }
 
-  if (_vTime) {
-    _vTime--;
-    if (!_vTime && _visible) {
+  if (_vtime) {
+    _vtime--;
+    if (!_vtime && _visible) {
       shapes()[0]->category = SHIELD;
       shapes()[1]->category = DANGEROUS | VULNERABLE;
       shapes()[11]->category = DANGEROUS;
@@ -1427,41 +1417,41 @@ void GhostBoss::update()
 
 void GhostBoss::render() const
 {
-  if ((_startTime / 4) % 2 == 1) {
+  if ((_start_time / 4) % 2 == 1) {
     render_with_colour(1);
     return;
   }
-  if ((_visible && ((_vTime / 4) % 2 == 0)) ||
-      (!_visible && ((_vTime / 4) % 2 == 1))) {
+  if ((_visible && ((_vtime / 4) % 2 == 0)) ||
+      (!_visible && ((_vtime / 4) % 2 == 1))) {
     Boss::render();
     return;
   }
 
   render_with_colour(0x330066ff);
-  if (!_startTime) {
-    RenderHPBar();
+  if (!_start_time) {
+    render_hp_bar();
   }
 }
 
-int GhostBoss::GetDamage(int damage, bool magic)
+int32_t GhostBoss::get_damage(int32_t damage, bool magic)
 {
   return damage;
 }
 
 // Death ray boss
 //------------------------------
-DeathRayBoss::DeathRayBoss(int players, int cycle)
+DeathRayBoss::DeathRayBoss(int32_t players, int32_t cycle)
   : Boss(vec2(Lib::WIDTH * (fixed(3) / 20), -Lib::HEIGHT),
          z0Game::BOSS_2C, BASE_HP, players, cycle)
   , _timer(TIMER * 2)
   , _laser(false)
   , _dir(true)
   , _pos(1)
-  , _armTimer(0)
-  , _shotTimer(0)
-  , _rayAttackTimer(0)
-  , _raySrc1()
-  , _raySrc2()
+  , _arm_timer(0)
+  , _shot_timer(0)
+  , _ray_attack_timer(0)
+  , _ray_src1()
+  , _ray_src2()
 {
   add_shape(new Polygon(
       vec2(), 110, 12, 0x228855ff, fixed::pi / 12, 0, Polygon::T::POLYSTAR));
@@ -1474,7 +1464,7 @@ DeathRayBoss::DeathRayBoss(int players, int cycle)
       vec2(), 110, 12, 0x33ff99ff, fixed::pi / 12, SHIELD));
 
   CompoundShape* s1 = new CompoundShape(vec2(), 0, DANGEROUS);
-  for (int i = 1; i < 12; i++) {
+  for (int32_t i = 1; i < 12; i++) {
     CompoundShape* s2 = new CompoundShape(vec2(), i * fixed::pi / 6, 0);
     s2->add_shape(new Box(vec2(130, 0), 10, 24, 0x33ff99ff, 0, 0));
     s2->add_shape(new Box(vec2(130, 0), 8, 22, 0x228855ff, 0, 0));
@@ -1482,7 +1472,7 @@ DeathRayBoss::DeathRayBoss(int players, int cycle)
   }
   add_shape(s1);
 
-  SetIgnoreDamageColourIndex(5);
+  set_ignore_damage_colour_index(5);
   shape().rotate(2 * fixed::pi * fixed(z::rand_int()) / z::rand_max);
 }
 
@@ -1503,13 +1493,13 @@ void DeathRayBoss::update()
     positioned = false;
   }
 
-  if (_rayAttackTimer) {
-    _rayAttackTimer--;
-    if (_rayAttackTimer == 40) {
-      _rayDest = nearest_player()->shape().centre;
+  if (_ray_attack_timer) {
+    _ray_attack_timer--;
+    if (_ray_attack_timer == 40) {
+      _ray_dest = nearest_player()->shape().centre;
     }
-    if (_rayAttackTimer < 40) {
-      vec2 d = (_rayDest - shape().centre).normalised();
+    if (_ray_attack_timer < 40) {
+      vec2 d = (_ray_dest - shape().centre).normalised();
       spawn(new SBBossShot(shape().centre, d * 10, 0xccccccff));
       play_sound_random(Lib::SOUND_BOSS_ATTACK);
       explosion();
@@ -1556,9 +1546,9 @@ void DeathRayBoss::update()
         _pos = z::rand_int(7);
       }
       if (_timer == TIMER * 2 + 50 && _arms.size() == 2) {
-        _rayAttackTimer = RAY_TIMER;
-        _raySrc1 = _arms[0]->shape().centre;
-        _raySrc2 = _arms[1]->shape().centre;
+        _ray_attack_timer = RAY_TIMER;
+        _ray_src1 = _arms[0]->shape().centre;
+        _ray_src2 = _arms[1]->shape().centre;
         play_sound(Lib::SOUND_ENEMY_SPAWN);
       }
     }
@@ -1569,49 +1559,49 @@ void DeathRayBoss::update()
     }
   }
 
-  ++_shotTimer;
-  if (_arms.empty() && !IsHPLow()) {
-    if (_shotTimer % 8 == 0) {
-      _shotQueue.push_back(std::pair<int, int>((_shotTimer / 8) % 12, 16));
+  ++_shot_timer;
+  if (_arms.empty() && !is_hp_low()) {
+    if (_shot_timer % 8 == 0) {
+      _shot_queue.push_back(std::pair<int32_t, int32_t>((_shot_timer / 8) % 12, 16));
       play_sound_random(Lib::SOUND_BOSS_FIRE);
     }
   }
-  if (_arms.empty() && IsHPLow()) {
-    if (_shotTimer % 48 == 0) {
-      for (int i = 1; i < 16; i += 3) {
-        _shotQueue.push_back(std::pair<int, int>(i, 16));
+  if (_arms.empty() && is_hp_low()) {
+    if (_shot_timer % 48 == 0) {
+      for (int32_t i = 1; i < 16; i += 3) {
+        _shot_queue.push_back(std::pair<int32_t, int32_t>(i, 16));
       }
       play_sound_random(Lib::SOUND_BOSS_FIRE);
     }
-    if (_shotTimer % 48 == 16) {
-      for (int i = 2; i < 12; i += 3) {
-        _shotQueue.push_back(std::pair<int, int>(i, 16));
+    if (_shot_timer % 48 == 16) {
+      for (int32_t i = 2; i < 12; i += 3) {
+        _shot_queue.push_back(std::pair<int32_t, int32_t>(i, 16));
       }
       play_sound_random(Lib::SOUND_BOSS_FIRE);
     }
-    if (_shotTimer % 48 == 32) {
-      for (int i = 3; i < 12; i += 3) {
-        _shotQueue.push_back(std::pair<int, int>(i, 16));
+    if (_shot_timer % 48 == 32) {
+      for (int32_t i = 3; i < 12; i += 3) {
+        _shot_queue.push_back(std::pair<int32_t, int32_t>(i, 16));
       }
       play_sound_random(Lib::SOUND_BOSS_FIRE);
     }
-    if (_shotTimer % 128 == 0) {
-      _rayAttackTimer = RAY_TIMER;
+    if (_shot_timer % 128 == 0) {
+      _ray_attack_timer = RAY_TIMER;
       vec2 d1 = vec2::from_polar(z::rand_fixed() * 2 * fixed::pi, 110);
       vec2 d2 = vec2::from_polar(z::rand_fixed() * 2 * fixed::pi, 110);
-      _raySrc1 = shape().centre + d1;
-      _raySrc2 = shape().centre + d2;
+      _ray_src1 = shape().centre + d1;
+      _ray_src2 = shape().centre + d2;
       play_sound(Lib::SOUND_ENEMY_SPAWN);
     }
   }
   if (_arms.empty()) {
-    _armTimer++;
-    if (_armTimer >= ARM_RTIMER) {
-      _armTimer = 0;
-      if (!IsHPLow()) {
+    _arm_timer++;
+    if (_arm_timer >= ARM_RTIMER) {
+      _arm_timer = 0;
+      if (!is_hp_low()) {
         int32_t players = z0().get_lives() ?
             z0().count_players() : z0().alive_players();
-        int hp =
+        int32_t hp =
             (ARM_HP * (7 * fixed::tenth + 3 * fixed::tenth * players)).to_int();
         _arms.push_back(new DeathArm(this, true, hp));
         _arms.push_back(new DeathArm(this, false, hp));
@@ -1622,16 +1612,16 @@ void DeathRayBoss::update()
     }
   }
 
-  for (std::size_t i = 0; i < _shotQueue.size(); ++i) {
-    if (!goingFast || _shotTimer % 2) {
-      int n = _shotQueue[i].first;
+  for (std::size_t i = 0; i < _shot_queue.size(); ++i) {
+    if (!goingFast || _shot_timer % 2) {
+      int32_t n = _shot_queue[i].first;
       vec2 d = vec2(1, 0).rotated(shape().rotation() + n * fixed::pi / 6);
       Ship* s = new SBBossShot(shape().centre + d * 120, d * 5, 0x33ff99ff);
       spawn(s);
     }
-    _shotQueue[i].second--;
-    if (!_shotQueue[i].second) {
-      _shotQueue.erase(_shotQueue.begin() + i);
+    _shot_queue[i].second--;
+    if (!_shot_queue[i].second) {
+      _shot_queue.erase(_shot_queue.begin() + i);
       --i;
     }
   }
@@ -1640,34 +1630,34 @@ void DeathRayBoss::update()
 void DeathRayBoss::render() const
 {
   Boss::render();
-  for (int i = _rayAttackTimer - 8; i <= _rayAttackTimer + 8; i++) {
+  for (int32_t i = _ray_attack_timer - 8; i <= _ray_attack_timer + 8; i++) {
     if (i < 40 || i > RAY_TIMER) {
       continue;
     }
 
     flvec2 pos = to_float(shape().centre);
-    flvec2 d = to_float(_raySrc1) - pos;
+    flvec2 d = to_float(_ray_src1) - pos;
     d *= float(i - 40) / float(RAY_TIMER - 40);
     Polygon s(vec2(), 10, 6, 0x999999ff, 0, 0, Polygon::T::POLYSTAR);
     s.render(lib(), d + pos, 0);
 
-    d = to_float(_raySrc2) - pos;
+    d = to_float(_ray_src2) - pos;
     d *= float(i - 40) / float(RAY_TIMER - 40);
     Polygon s2(vec2(), 10, 6, 0x999999ff, 0, 0, Polygon::T::POLYSTAR);
     s2.render(lib(), d + pos, 0);
   }
 }
 
-int DeathRayBoss::GetDamage(int damage, bool magic)
+int32_t DeathRayBoss::get_damage(int32_t damage, bool magic)
 {
   return _arms.size() ? 0 : damage;
 }
 
-void DeathRayBoss::OnArmDeath(Ship* arm)
+void DeathRayBoss::on_arm_death(Ship* arm)
 {
-  for (unsigned int i = 0; i < _arms.size(); i++) {
-    if (_arms[i] == arm) {
-      _arms.erase(_arms.begin() + i);
+  for (auto it = _arms.begin(); it != _arms.end(); ++it) {
+    if (*it == arm) {
+      _arms.erase(it);
       break;
     }
   }
@@ -1676,12 +1666,13 @@ void DeathRayBoss::OnArmDeath(Ship* arm)
 // Super boss
 //------------------------------
 SuperBossArc::SuperBossArc(
-    const vec2& position, int players, int cycle, int i, Ship* boss, int timer)
+    const vec2& position,
+    int32_t players, int32_t cycle, int32_t i, Ship* boss, int32_t timer)
   : Boss(position, z0Game::boss_list(0), SuperBoss::ARC_HP, players, cycle)
   , _boss(boss)
   , _i(i)
   , _timer(timer)
-  , _sTimer(0)
+  , _stimer(0)
 {
   add_shape(new PolyArc(vec2(), 140, 32, 2, 0, i * 2 * fixed::pi / 16, 0));
   add_shape(new PolyArc(vec2(), 135, 32, 2, 0, i * 2 * fixed::pi / 16, 0));
@@ -1696,25 +1687,25 @@ SuperBossArc::SuperBossArc(
 void SuperBossArc::update()
 {
   shape().rotate(fixed(6) / 1000);
-  for (int i = 0; i < 8; ++i) {
+  for (int32_t i = 0; i < 8; ++i) {
     shapes()[7 - i]->colour = z::colour_cycle(
-        IsHPLow() ? 0xff000099 : 0xff0000ff, (i * 32 + 2 * _timer) % 256);
+        is_hp_low() ? 0xff000099 : 0xff0000ff, (i * 32 + 2 * _timer) % 256);
   }
   ++_timer;
-  ++_sTimer;
-  if (_sTimer == 64) {
+  ++_stimer;
+  if (_stimer == 64) {
     shapes()[0]->category = DANGEROUS | VULNERABLE;
   }
 }
 
 void SuperBossArc::render() const
 {
-  if (_sTimer >= 64 || _sTimer % 4 < 2) {
+  if (_stimer >= 64 || _stimer % 4 < 2) {
     Boss::render(false);
   }
 }
 
-int SuperBossArc::GetDamage(int damage, bool magic)
+int32_t SuperBossArc::get_damage(int32_t damage, bool magic)
 {
   if (damage >= Player::bomb_damage) {
     return damage / 2;
@@ -1722,7 +1713,7 @@ int SuperBossArc::GetDamage(int damage, bool magic)
   return damage;
 }
 
-void SuperBossArc::OnDestroy()
+void SuperBossArc::on_destroy()
 {
   vec2 d = vec2::from_polar(_i * 2 * fixed::pi / 16 + shape().rotation(), 120);
   move(d);
@@ -1735,12 +1726,12 @@ void SuperBossArc::OnDestroy()
   ((SuperBoss*) _boss)->_destroyed[_i] = true;
 }
 
-SuperBoss::SuperBoss(int players, int cycle)
+SuperBoss::SuperBoss(int32_t players, int32_t cycle)
   : Boss(vec2(Lib::WIDTH / 2, -Lib::HEIGHT / (2 + fixed::half)),
          z0Game::BOSS_3A, BASE_HP, players, cycle)
   , _players(players)
   , _cycle(cycle)
-  , _cTimer(0)
+  , _ctimer(0)
   , _timer(0)
   , _state(STATE_ARRIVE)
   , _snakes(0)
@@ -1753,16 +1744,16 @@ SuperBoss::SuperBoss(int players, int cycle)
   add_shape(new Polygon(vec2(), 15, 32, 0, 0, 0));
   add_shape(new Polygon(vec2(), 10, 32, 0, 0, 0));
   add_shape(new Polygon(vec2(), 5, 32, 0, 0, 0));
-  for (int i = 0; i < 16; ++i) {
+  for (int32_t i = 0; i < 16; ++i) {
     _destroyed.push_back(false);
   }
-  SetIgnoreDamageColourIndex(8);
+  set_ignore_damage_colour_index(8);
 }
 
 void SuperBoss::update()
 {
   if (_arcs.empty()) {
-    for (int i = 0; i < 16; ++i) {
+    for (int32_t i = 0; i < 16; ++i) {
       SuperBossArc* s =
           new SuperBossArc(shape().centre, _players, _cycle, i, this);
       spawn(s);
@@ -1770,7 +1761,7 @@ void SuperBoss::update()
     }
   }
   else {
-    for (int i = 0; i < 16; ++i) {
+    for (int32_t i = 0; i < 16; ++i) {
       if (_destroyed[i]) {
         continue;
       }
@@ -1779,12 +1770,12 @@ void SuperBoss::update()
   }
   vec2 move_vec;
   shape().rotate(fixed(6) / 1000);
-  colour_t c = z::colour_cycle(0xff0000ff, 2 * _cTimer);
-  for (int i = 0; i < 8; ++i) {
+  colour_t c = z::colour_cycle(0xff0000ff, 2 * _ctimer);
+  for (int32_t i = 0; i < 8; ++i) {
     shapes()[7 - i]->colour = 
-        z::colour_cycle(0xff0000ff, (i * 32 + 2 * _cTimer) % 256);
+        z::colour_cycle(0xff0000ff, (i * 32 + 2 * _ctimer) % 256);
   }
-  ++_cTimer;
+  ++_ctimer;
   if (shape().centre.y < Lib::HEIGHT / 2) {
     move_vec = vec2(0, 1);
   }
@@ -1804,7 +1795,7 @@ void SuperBoss::update()
 
   if (_state == STATE_IDLE && is_on_screen() &&
       _timer != 0 && _timer % 300 == 0) {
-    int r = z::rand_int(6);
+    int32_t r = z::rand_int(6);
     if (r == 0 || r == 1) {
       _snakes = 16;
     }
@@ -1813,7 +1804,7 @@ void SuperBoss::update()
       _timer = 0;
       fixed f = z::rand_fixed() * (2 * fixed::pi);
       fixed rf = d5d1000 * (1 + z::rand_int(2));
-      for (int i = 0; i < 32; ++i) {
+      for (int32_t i = 0; i < 32; ++i) {
         vec2 d = vec2::from_polar(f + i * pi2d32, 1);
         if (r == 2) {
           rf = d5d1000 * (1 + z::rand_int(4));
@@ -1826,7 +1817,7 @@ void SuperBoss::update()
       _state = STATE_ATTACK;
       _timer = 0;
       fixed f = z::rand_fixed() * (2 * fixed::pi);
-      for (int i = 0; i < 64; ++i) {
+      for (int32_t i = 0; i < 64; ++i) {
         vec2 d = vec2::from_polar(f + i * pi2d64, 1);
         spawn(new Snake(shape().centre + d * 16, c, d));
         play_sound_random(Lib::SOUND_BOSS_ATTACK);
@@ -1841,9 +1832,9 @@ void SuperBoss::update()
 
   if (_state == STATE_IDLE && is_on_screen() &&
       _timer % 300 == 200 && !is_destroyed()) {
-    std::vector< int > wide3;
-    int timer = 0;
-    for (int i = 0; i < 16; ++i) {
+    std::vector<int32_t> wide3;
+    int32_t timer = 0;
+    for (int32_t i = 0; i < 16; ++i) {
       if (_destroyed[(i + 15) % 16] &&
           _destroyed[i] && _destroyed[(i + 1) % 16]) {
         wide3.push_back(i);
@@ -1853,7 +1844,7 @@ void SuperBoss::update()
       }
     }
     if (!wide3.empty()) {
-      int r = z::rand_int(int(wide3.size()));
+      int32_t r = z::rand_int(int32_t(wide3.size()));
       SuperBossArc* s = new SuperBossArc(
           shape().centre, _players, _cycle, wide3[r], this, timer);
       s->shape().set_rotation(shape().rotation() - (fixed(6) / 1000));
@@ -1865,7 +1856,7 @@ void SuperBoss::update()
   }
   static const fixed pi2d128 = 2 * fixed::pi / 128;
   if (_state == STATE_IDLE && _timer % 72 == 0) {
-    for (int i = 0; i < 128; ++i) {
+    for (int32_t i = 0; i < 128; ++i) {
       vec2 d = vec2::from_polar(i * pi2d128, 1);
       spawn(new RainbowShot(shape().centre + d * 42, move_vec + d * 3, this));
       play_sound_random(Lib::SOUND_BOSS_FIRE);
@@ -1882,14 +1873,14 @@ void SuperBoss::update()
   move(move_vec);
 }
 
-int SuperBoss::GetDamage(int damage, bool magic)
+int32_t SuperBoss::get_damage(int32_t damage, bool magic)
 {
   return damage;
 }
 
-void SuperBoss::OnDestroy()
+void SuperBoss::on_destroy()
 {
-  SetKilled();
+  set_killed();
   for (const auto& ship : z0().all_ships(SHIP_ENEMY)) {
     if (ship != this) {
       ship->damage(Player::bomb_damage * 100, false, 0);
@@ -1901,8 +1892,8 @@ void SuperBoss::OnDestroy()
   explosion(0xffffffff, 36);
   explosion(shapes()[0]->colour, 48);
 
-  int n = 1;
-  for (int i = 0; i < 16; ++i) {
+  int32_t n = 1;
+  for (int32_t i = 0; i < 16; ++i) {
     vec2 v = vec2::from_polar(z::rand_fixed() * (2 * fixed::pi),
                               8 + z::rand_int(64) + z::rand_int(64));
     colour_t c = z::colour_cycle(shapes()[0]->colour, n * 2);
@@ -1910,13 +1901,12 @@ void SuperBoss::OnDestroy()
         std::make_pair(n, std::make_pair(shape().centre + v, c)));
     n += i;
   }
-  for (int i = 0; i < Lib::PLAYERS; i++) {
+  for (int32_t i = 0; i < Lib::PLAYERS; i++) {
     lib().rumble(i, 25);
   }
   play_sound(Lib::SOUND_EXPLOSION);
 
   z0Game::ShipList players = z0().get_players();
-
   n = 0;
   for (std::size_t i = 0; i < players.size(); i++) {
     Player* p = (Player*) players[i];
@@ -1928,11 +1918,11 @@ void SuperBoss::OnDestroy()
   for (std::size_t i = 0; i < players.size(); i++) {
     Player* p = (Player*) players[i];
     if (!p->is_killed()) {
-      p->add_score(GetScore() / n);
+      p->add_score(get_score() / n);
     }
   }
 
-  for (int i = 0; i < 8; ++i) {
+  for (int32_t i = 0; i < 8; ++i) {
     spawn(new Powerup(shape().centre, Powerup::BOMB));
   }
 }

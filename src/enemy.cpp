@@ -22,13 +22,13 @@ const fixed Tractor::TRACTOR_SPEED = 2 + fixed(1) / 2;
 // Basic enemy
 //------------------------------
 Enemy::Enemy(const vec2& position, Ship::ship_category type,
-             int hp, bool explodeOnDestroy)
+             int hp, bool explode_on_destroy)
   : Ship(position, Ship::ship_category(type | SHIP_ENEMY))
   , _hp(hp)
   , _score(0)
   , _damaged(false)
-  , _destroySound(Lib::SOUND_ENEMY_DESTROY)
-  , _explodeOnDestroy(explodeOnDestroy)
+  , _destroy_sound(Lib::SOUND_ENEMY_DESTROY)
+  , _explode_on_destroy(explode_on_destroy)
 {
 }
 
@@ -40,17 +40,17 @@ void Enemy::damage(int damage, bool magic, Player* source)
   }
 
   if (_hp <= 0 && !is_destroyed()) {
-    play_sound_random(_destroySound);
-    if (source && GetScore() > 0) {
-      source->add_score(GetScore());
+    play_sound_random(_destroy_sound);
+    if (source && get_score() > 0) {
+      source->add_score(get_score());
     }
-    if (_explodeOnDestroy) {
+    if (_explode_on_destroy) {
       explosion();
     }
     else {
       explosion(0, 4, true, to_float(shape().centre));
     }
-    OnDestroy(damage >= Player::bomb_damage);
+    on_destroy(damage >= Player::bomb_damage);
     destroy();
   }
   else if (!is_destroyed()) {
@@ -80,9 +80,9 @@ Follow::Follow(const vec2& position, fixed radius, int hp)
 {
   add_shape(
       new Polygon(vec2(), radius, 4, 0x9933ffff, 0, DANGEROUS | VULNERABLE));
-  SetScore(15);
+  set_score(15);
   set_bounding_width(10);
-  SetDestroySound(Lib::SOUND_ENEMY_SHATTER);
+  set_destroy_sound(Lib::SOUND_ENEMY_SHATTER);
   set_enemy_value(1);
 }
 
@@ -99,9 +99,7 @@ void Follow::update()
     _timer = 0;
   }
   vec2 d = _target->shape().centre - shape().centre;
-  if (d.length() > 0) {
-    move(d.normalised() * SPEED);
-  }
+  move(d.normalised() * SPEED);
 }
 
 // Chaser enemy
@@ -114,9 +112,9 @@ Chaser::Chaser(const vec2& position)
 {
   add_shape(new Polygon(vec2(), 10, 4, 0x3399ffff,
                         0, DANGEROUS | VULNERABLE, Polygon::T::POLYGRAM));
-  SetScore(30);
+  set_score(30);
   set_bounding_width(10);
-  SetDestroySound(Lib::SOUND_ENEMY_SHATTER);
+  set_destroy_sound(Lib::SOUND_ENEMY_SHATTER);
   set_enemy_value(2);
 }
 
@@ -155,7 +153,7 @@ Square::Square(const vec2& position, fixed rotation)
 {
   add_shape(new Box(vec2(), 10, 10, 0x33ff33ff, 0, DANGEROUS | VULNERABLE));
   _dir = vec2::from_polar(rotation, 1);
-  SetScore(25);
+  set_score(25);
   set_bounding_width(15);
   set_enemy_value(2);
 }
@@ -224,7 +222,7 @@ Wall::Wall(const vec2& position, bool rdir)
   , _rdir(rdir)
 {
   add_shape(new Box(vec2(), 10, 40, 0x33cc33ff, 0, DANGEROUS | VULNERABLE));
-  SetScore(20);
+  set_score(20);
   set_bounding_width(50);
   set_enemy_value(4);
 }
@@ -232,10 +230,10 @@ Wall::Wall(const vec2& position, bool rdir)
 void Wall::update()
 {
   if (z0().get_non_wall_count() == 0 && _timer % 8 < 2) {
-    if (GetHP() > 2) {
+    if (get_hp() > 2) {
       play_sound(Lib::SOUND_ENEMY_SPAWN);
     }
-    damage(GetHP() - 2, false, 0);
+    damage(get_hp() - 2, false, 0);
   }
 
   if (_rotate) {
@@ -276,7 +274,7 @@ void Wall::update()
   shape().set_rotation(_dir.angle());
 }
 
-void Wall::OnDestroy(bool bomb)
+void Wall::on_destroy(bool bomb)
 {
   if (bomb) {
     return;
@@ -296,17 +294,17 @@ void Wall::OnDestroy(bool bomb)
 
 // Follow spawner enemy
 //------------------------------
-FollowHub::FollowHub(const vec2& position, bool powerA, bool powerB)
+FollowHub::FollowHub(const vec2& position, bool powera, bool powerb)
   : Enemy(position, SHIP_NONE, 14)
   , _timer(0)
   , _dir(0, 0)
   , _count(0)
-  , _powerA(powerA)
-  , _powerB(powerB)
+  , _powera(powera)
+  , _powerb(powerb)
 {
   add_shape(new Polygon(vec2(), 16, 4, 0x6666ffff, fixed::pi / 4,
                         DANGEROUS | VULNERABLE, Polygon::T::POLYGRAM));
-  if (_powerB) {
+  if (_powerb) {
     add_shape(new Polygon(vec2(16, 0), 8, 4, 0x6666ffff,
                           fixed::pi / 4, 0, Polygon::T::POLYSTAR));
     add_shape(new Polygon(vec2(-16, 0), 8, 4, 0x6666ffff,
@@ -321,20 +319,20 @@ FollowHub::FollowHub(const vec2& position, bool powerA, bool powerB)
   add_shape(new Polygon(vec2(-16, 0), 8, 4, 0x6666ffff, fixed::pi / 4));
   add_shape(new Polygon(vec2(0, 16), 8, 4, 0x6666ffff, fixed::pi / 4));
   add_shape(new Polygon(vec2(0, -16), 8, 4, 0x6666ffff, fixed::pi / 4));
-  SetScore(50 + _powerA * 10 + _powerB * 10);
+  set_score(50 + _powera * 10 + _powerb * 10);
   set_bounding_width(16);
-  SetDestroySound(Lib::SOUND_PLAYER_DESTROY);
-  set_enemy_value(6 + (powerA ? 2 : 0) + (powerB ? 2 : 0));
+  set_destroy_sound(Lib::SOUND_PLAYER_DESTROY);
+  set_enemy_value(6 + (powera ? 2 : 0) + (powerb ? 2 : 0));
 }
 
 void FollowHub::update()
 {
   _timer++;
-  if (_timer > (_powerA ? TIMER / 2 : TIMER)) {
+  if (_timer > (_powera ? TIMER / 2 : TIMER)) {
     _timer = 0;
     _count++;
     if (is_on_screen()) {
-      if (_powerB) {
+      if (_powerb) {
         spawn(new Chaser(shape().centre));
       }
       else {
@@ -350,7 +348,7 @@ void FollowHub::update()
          shape().centre.y > Lib::HEIGHT ? vec2(0, -1) :
          _count > 3 ? (_count = 0, _dir.rotated(-fixed::pi / 2)) : _dir;
 
-  fixed s = _powerA ?
+  fixed s = _powera ?
       fixed::hundredth * 5 + fixed::tenth : fixed::hundredth * 5;
   shape().rotate(s);
   shapes()[0]->rotate(-s);
@@ -358,12 +356,12 @@ void FollowHub::update()
   move(_dir * SPEED);
 }
 
-void FollowHub::OnDestroy(bool bomb)
+void FollowHub::on_destroy(bool bomb)
 {
   if (bomb) {
     return;
   }
-  if (_powerB) {
+  if (_powerb) {
     spawn(new BigFollow(shape().centre, true));
   }
   spawn(new Chaser(shape().centre));
@@ -376,7 +374,7 @@ Shielder::Shielder(const vec2& position, bool power)
   , _dir(0, 1)
   , _timer(0)
   , _rotate(false)
-  , _rDir(false)
+  , _rdir(false)
   , _power(power)
 {
   add_shape(new Polygon(vec2(24, 0), 8, 6, 0x006633ff,
@@ -396,9 +394,9 @@ Shielder::Shielder(const vec2& position, bool power)
                         0, 0, Polygon::T::POLYSTAR));
   add_shape(new Polygon(vec2(0, 0), 14, 8, power ? 0x33cc99ff : 0x006633ff,
                         0, DANGEROUS | VULNERABLE));
-  SetScore(60 + _power * 40);
+  set_score(60 + _power * 40);
   set_bounding_width(36);
-  SetDestroySound(Lib::SOUND_PLAYER_DESTROY);
+  set_destroy_sound(Lib::SOUND_PLAYER_DESTROY);
   set_enemy_value(8 + (power ? 2 : 0));
 }
 
@@ -424,15 +422,15 @@ void Shielder::update()
   }
 
   fixed speed = SPEED +
-      (_power ? fixed::tenth * 3 : fixed::tenth * 2) * (16 - GetHP());
+      (_power ? fixed::tenth * 3 : fixed::tenth * 2) * (16 - get_hp());
   if (_rotate) {
     vec2 d = _dir.rotated(
-        (_rDir ? 1 : -1) * (TIMER - _timer) * fixed::pi / (2 * TIMER));
+        (_rdir ? 1 : -1) * (TIMER - _timer) * fixed::pi / (2 * TIMER));
     _timer--;
     if (_timer <= 0) {
       _timer = 0;
       _rotate = false;
-      _dir = _dir.rotated((_rDir ? 1 : -1) * fixed::pi / 2);
+      _dir = _dir.rotated((_rdir ? 1 : -1) * fixed::pi / 2);
     }
     move(d * speed);
   }
@@ -441,7 +439,7 @@ void Shielder::update()
     if (_timer > TIMER * 2) {
       _timer = TIMER;
       _rotate = true;
-      _rDir = z::rand_int(2) != 0;
+      _rdir = z::rand_int(2) != 0;
     }
     if (is_on_screen() && _timer % TIMER == TIMER / 2 && _power) {
       Player* p = nearest_player();
@@ -477,9 +475,9 @@ Tractor::Tractor(const vec2& position, bool power)
     add_shape(new Polygon(vec2(-24, 0), 16, 6,
                           0xcc33ccff, 0, 0, Polygon::T::POLYSTAR));
   }
-  SetScore(85 + power * 40);
+  set_score(85 + power * 40);
   set_bounding_width(36);
-  SetDestroySound(Lib::SOUND_PLAYER_DESTROY);
+  set_destroy_sound(Lib::SOUND_PLAYER_DESTROY);
   set_enemy_value(10 + (power ? 2 : 0));
 }
 

@@ -23,117 +23,105 @@ public:
 
   // General
   //------------------------------
-  void Reset(bool canFaceSecretBoss);
+  void reset(bool can_face_secret_boss);
+  void update();
 
-  void Update();
-
-  int32_t  GetKilledBosses() const
+  int32_t get_killed_bosses() const
   {
-    return _bossModBosses - 1;
+    return _boss_mod_bosses - 1;
   }
 
-  int32_t GetElapsedTime() const
+  int32_t get_elapsed_time() const
   {
-    return _elapsedTime;
+    return _elapsed_time;
   }
 
-  int32_t GetTimer() const
+  int32_t get_timer() const
   {
-    if (_isBossLevel) {
-      return -1;
-    }
-    return TIMER - _timer;
+    return _is_boss_level ? -1 : TIMER - _timer;
   }
 
   // Enemy-counting
   //------------------------------
-  void OnEnemyDestroy(const Ship& ship);
-  void OnEnemyCreate(const Ship& ship);
+  void on_enemy_destroy(const Ship& ship);
+  void on_enemy_create(const Ship& ship);
 
-  int32_t CountNonWallEnemies() const
+  int32_t count_non_wall_enemies() const
   {
-    return _nonWallCount;
+    return _non_wall_count;
   }
 
 private:
 
-  // Individual functions
-  //------------------------------
-  void SpawnPowerup();
-  void SpawnBossReward();
+  void spawn_powerup();
+  void spawn_boss_reward();
+  static void spawn_follow(int32_t num, int32_t div, int32_t side);
+  static void spawn_chaser(int32_t num, int32_t div, int32_t side);
+  static void spawn_square(int32_t num, int32_t div, int32_t side);
+  static void spawn_wall(int32_t num, int32_t div, int32_t side, bool dir);
+  static void spawn_follow_hub(int32_t num, int32_t div, int32_t side);
+  static void spawn_shielder(int32_t num, int32_t div, int32_t side);
+  static void spawn_tractor(int32_t num, int32_t div, int32_t side);
 
-  static void SpawnFollow(int32_t num, int32_t div, int32_t side);
-  static void SpawnChaser(int32_t num, int32_t div, int32_t side);
-  static void SpawnSquare(int32_t num, int32_t div, int32_t side);
-  static void SpawnWall(int32_t num, int32_t div, int32_t side, bool dir);
-  static void SpawnFollowHub(int32_t num, int32_t div, int32_t side);
-  static void SpawnShielder(int32_t num, int32_t div, int32_t side);
-  static void SpawnTractor(int32_t num, int32_t div, int32_t side);
-
-  // Internals
-  //------------------------------
   static void spawn(Ship* ship);
-  static vec2 SpawnPoint(bool top, int32_t row, int32_t num, int32_t div);
+  static vec2 spawn_point(bool top, int32_t row, int32_t num, int32_t div);
 
-  void Wave();
-  void Boss();
-  void BossModeBoss();
+  void wave();
+  void boss();
+  void boss_mode_boss();
 
   z0Game& _z0;
   static int32_t _power;
   int32_t _timer;
   int32_t _count;
-  int32_t _nonWallCount;
-  int32_t _countTrigger;
-  int32_t _levelsMod;
-  int32_t _groupsMod;
-  int32_t _bossModBosses;
-  int32_t _bossModFights;
-  int32_t _bossModSecret;
-  bool _canFaceSecretBoss;
-  int32_t _powerupMod;
-  int32_t _livesTarget;
-  bool _isBossNext;
-  bool _isBossLevel;
-  int32_t _startTime;
-  int32_t _elapsedTime;
-  bool _timeStopped;
-  int32_t _bossRestTimer;
-  int32_t _wavesTotal;
-  static int32_t _hardAlready;
+  int32_t _non_wall_count;
+  int32_t _levels_mod;
+  int32_t _groups_mod;
+  int32_t _boss_mod_bosses;
+  int32_t _boss_mod_fights;
+  int32_t _boss_mod_secret;
+  bool _can_face_secret_boss;
+  int32_t _powerup_mod;
+  int32_t _lives_target;
+  bool _is_boss_next;
+  bool _is_boss_level;
+  int32_t _elapsed_time;
+  int32_t _boss_rest_timer;
+  int32_t _waves_total;
+  static int32_t _hard_already;
 
-  std::vector<int32_t> _boss1Queue;
-  std::vector<int32_t> _boss2Queue;
-  int32_t _bossesToGo;
+  std::vector<int32_t> _boss1_queue;
+  std::vector<int32_t> _boss2_queue;
+  int32_t _bosses_to_go;
 
-  typedef std::pair<int32_t, int32_t> FormationCost;
-  typedef FormationCost(*SpawnFormationFunction)(bool query, int32_t row);
-  typedef std::pair<FormationCost, SpawnFormationFunction> Formation;
-  typedef std::vector<Formation> FormationList;
+  typedef std::pair<int32_t, int32_t> formation_cost;
+  typedef formation_cost(*spawn_formation_function)(bool query, int32_t row);
+  typedef std::pair<formation_cost, spawn_formation_function> formation;
+  typedef std::vector<formation> formation_list;
 
-  FormationList _formations;
-  void AddFormation(SpawnFormationFunction function);
+  formation_list _formations;
+  void add_formation(spawn_formation_function function);
 
-  static bool SortFormations(const Formation& a, const Formation& b)
+  static bool sort_formations(const formation& a, const formation& b)
   {
     return a.first.first < b.first.first;
   }
 
   // Formation hacks
   //------------------------------
-  static int32_t _tRow;
+  static int32_t _trow;
   static z0Game* _tz0;
-  void AddFormations();
+  void add_formations();
 
-#define FORM_DEC(name) static FormationCost name (bool query, int32_t row)
-#define FORM_USE(name) AddFormation(&name)
+#define FORM_DEC(name) static formation_cost name (bool query, int32_t row)
+#define FORM_USE(name) add_formation(&name)
 #define FORM_DEF(name, cost, minResource)\
-    Overmind::FormationCost Overmind:: name(bool query, int32_t row) {\
+    Overmind::formation_cost Overmind:: name(bool query, int32_t row) {\
       if (query) {\
-        return FormationCost(cost, minResource);\
+        return formation_cost(cost, minResource);\
       }\
-      _tRow = row;
-#define FORM_END return FormationCost(0, 0); }
+      _trow = row;
+#define FORM_END return formation_cost(0, 0); }
 
   // Formations
   //------------------------------

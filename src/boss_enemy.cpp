@@ -9,14 +9,14 @@ const fixed DeathRay::SPEED = 10;
 //------------------------------
 BigFollow::BigFollow(const vec2& position, bool hasScore)
   : Follow(position, 20, 3)
-  , _hasScore(hasScore)
+  , _has_score(hasScore)
 {
-  SetScore(hasScore ? 20 : 0);
-  SetDestroySound(Lib::SOUND_PLAYER_DESTROY);
+  set_score(hasScore ? 20 : 0);
+  set_destroy_sound(Lib::SOUND_PLAYER_DESTROY);
   set_enemy_value(3);
 }
 
-void BigFollow::OnDestroy(bool bomb)
+void BigFollow::on_destroy(bool bomb)
 {
   if (bomb) {
     return;
@@ -25,8 +25,8 @@ void BigFollow::OnDestroy(bool bomb)
   vec2 d = vec2(10, 0).rotated(shape().rotation());
   for (int i = 0; i < 3; i++) {
     Follow* s = new Follow(shape().centre + d);
-    if (!_hasScore) {
-      s->SetScore(0);
+    if (!_has_score) {
+      s->set_score(0);
     }
     spawn(s);
     d = d.rotated(2 * fixed::pi / 3);
@@ -43,7 +43,7 @@ SBBossShot::SBBossShot(const vec2& position, const vec2& velocity, colour_t c)
   add_shape(new Polygon(vec2(), 10, 8, c, 0, 0));
   add_shape(new Polygon(vec2(), 12, 8, 0, 0, DANGEROUS));
   set_bounding_width(12);
-  SetScore(0);
+  set_score(0);
   set_enemy_value(1);
 }
 
@@ -68,8 +68,8 @@ TBossShot::TBossShot(const vec2& position, fixed angle)
   add_shape(new Polygon(vec2(), 8, 6, 0xcc33ccff, 0, DANGEROUS | VULNERABLE));
   _dir = vec2::from_polar(angle, 3);
   set_bounding_width(8);
-  SetScore(0);
-  SetDestroySound(Lib::SOUND_ENEMY_SHATTER);
+  set_score(0);
+  set_destroy_sound(Lib::SOUND_ENEMY_SHATTER);
 }
 
 void TBossShot::update()
@@ -162,7 +162,7 @@ GhostMine::GhostMine(const vec2& position, Boss* ghost)
   add_shape(new Polygon(vec2(), 24, 8, 0x9933ccff, 0, 0));
   add_shape(new Polygon(vec2(), 20, 8, 0x9933ccff, 0, 0));
   set_bounding_width(24);
-  SetScore(0);
+  set_score(0);
 }
 
 void GhostMine::update()
@@ -181,9 +181,9 @@ void GhostMine::update()
   for (unsigned int i = 0; i < s.size(); i++) {
     if (s[i] == _ghost) {
       Enemy* e = z::rand_int(6) == 0 ||
-          (_ghost->IsHPLow() && z::rand_int(5) == 0) ?
+          (_ghost->is_hp_low() && z::rand_int(5) == 0) ?
               new BigFollow(shape().centre, false) : new Follow(shape().centre);
-      e->SetScore(0);
+      e->set_score(0);
       spawn(e);
       damage(1, false, 0);
       break;
@@ -235,7 +235,7 @@ DeathArm::DeathArm(DeathRayBoss* boss, bool top, int hp)
   add_shape(new Polygon(vec2(), 20, 4, 0x33ff99ff, 0, 0));
   add_shape(new Polygon(vec2(), 18, 4, 0x228855ff, 0, 0));
   set_bounding_width(60);
-  SetDestroySound(Lib::SOUND_PLAYER_DESTROY);
+  set_destroy_sound(Lib::SOUND_PLAYER_DESTROY);
 }
 
 void DeathArm::update()
@@ -305,9 +305,9 @@ void DeathArm::update()
   }
 }
 
-void DeathArm::OnDestroy(bool bomb)
+void DeathArm::on_destroy(bool bomb)
 {
-  _boss->OnArmDeath(this);
+  _boss->on_arm_death(this);
   explosion();
   explosion(0xffffffff, 12);
   explosion(shapes()[0]->colour, 24);
@@ -320,12 +320,12 @@ SnakeTail::SnakeTail(const vec2& position, colour_t colour)
   , _tail(0)
   , _head(0)
   , _timer(150)
-  , _dTimer(0)
+  , _dtimer(0)
 {
   add_shape(
       new Polygon(vec2(), 10, 4, colour, 0, DANGEROUS | SHIELD | VULNSHIELD));
   set_bounding_width(22);
-  SetScore(0);
+  set_score(0);
 }
 
 void SnakeTail::update()
@@ -334,17 +334,17 @@ void SnakeTail::update()
   shape().rotate(z15);
   --_timer;
   if (!_timer) {
-    OnDestroy(false);
+    on_destroy(false);
     destroy();
     explosion();
   }
-  if (_dTimer) {
-    --_dTimer;
-    if (!_dTimer) {
+  if (_dtimer) {
+    --_dtimer;
+    if (!_dtimer) {
       if (_tail) {
-        _tail->_dTimer = 4;
+        _tail->_dtimer = 4;
       }
-      OnDestroy(false);
+      on_destroy(false);
       destroy();
       explosion();
       play_sound_random(Lib::SOUND_ENEMY_DESTROY);
@@ -352,7 +352,7 @@ void SnakeTail::update()
   }
 }
 
-void SnakeTail::OnDestroy(bool bomb)
+void SnakeTail::on_destroy(bool bomb)
 {
   if (_head) {
     _head->_tail = 0;
@@ -373,15 +373,15 @@ Snake::Snake(const vec2& position, colour_t colour, const vec2& dir, fixed rot)
   , _dir(0, 0)
   , _count(0)
   , _colour(colour)
-  , _shotSnake(false)
-  , _shotRot(rot)
+  , _shot_snake(false)
+  , _shot_rot(rot)
 {
   add_shape(new Polygon(vec2(), 14, 3, colour, 0, VULNERABLE));
   add_shape(new Polygon(vec2(), 10, 3, 0, 0, DANGEROUS));
-  SetScore(0);
+  set_score(0);
   set_bounding_width(32);
   set_enemy_value(5);
-  SetDestroySound(Lib::SOUND_PLAYER_DESTROY);
+  set_destroy_sound(Lib::SOUND_PLAYER_DESTROY);
   if (dir == vec2()) {
     int r = z::rand_int(4);
     if (r == 0) {
@@ -399,7 +399,7 @@ Snake::Snake(const vec2& position, colour_t colour, const vec2& dir, fixed rot)
   }
   else {
     _dir = dir.normalised();
-    _shotSnake = true;
+    _shot_snake = true;
   }
   shape().set_rotation(_dir.angle());
 }
@@ -416,7 +416,7 @@ void Snake::update()
   colour_t c = z::colour_cycle(_colour, _timer % 256);
   shapes()[0]->colour = c;
   _timer++;
-  if (_timer % (_shotSnake ? 4 : 8) == 0) {
+  if (_timer % (_shot_snake ? 4 : 8) == 0) {
     SnakeTail* t = new SnakeTail(shape().centre, (c & 0xffffff00) | 0x00000099);
     if (_tail != 0) {
       _tail->_head = t;
@@ -426,21 +426,21 @@ void Snake::update()
     _tail = t;
     spawn(t);
   }
-  if (!_shotSnake && _timer % 48 == 0 && !z::rand_int(3)) {
+  if (!_shot_snake && _timer % 48 == 0 && !z::rand_int(3)) {
     _dir = _dir.rotated((z::rand_int(2) ? 1 : -1) * fixed::pi / 2);
     shape().set_rotation(_dir.angle());
   }
-  move(_dir * (_shotSnake ? 4 : 2));
+  move(_dir * (_shot_snake ? 4 : 2));
   if (_timer % 8 == 0) {
-    _dir = _dir.rotated(8 * _shotRot);
+    _dir = _dir.rotated(8 * _shot_rot);
     shape().set_rotation(_dir.angle());
   }
 }
 
-void Snake::OnDestroy(bool bomb)
+void Snake::on_destroy(bool bomb)
 {
   if (_tail) {
-    _tail->_dTimer = 4;
+    _tail->_dtimer = 4;
   }
 }
 

@@ -76,7 +76,7 @@ z0Game::~z0Game()
 {
   for (const auto& ship : _ships) {
     if (ship->type() & Ship::SHIP_ENEMY) {
-      _overmind->OnEnemyDestroy(*ship);
+      _overmind->on_enemy_destroy(*ship);
     }
   }
 }
@@ -370,7 +370,7 @@ bool z0Game::Update()
       }
 
       if ((*it)->type() & Ship::SHIP_ENEMY) {
-        _overmind->OnEnemyDestroy(**it);
+        _overmind->on_enemy_destroy(**it);
       }
       for (auto jt = _collisions.begin(); jt != _collisions.end();) {
         if (it->get() == *jt) {
@@ -390,11 +390,11 @@ bool z0Game::Update()
       }
       ++it;
     }
-    _overmind->Update();
+    _overmind->update();
 
     if (!_killTimer && ((killed_players() == _players && !get_lives()) ||
                         (_mode == BOSS_MODE &&
-                         _overmind->GetKilledBosses() >= 6))) {
+                         _overmind->get_killed_bosses() >= 6))) {
       _killTimer = 100;
     }
     if (_killTimer) {
@@ -417,9 +417,9 @@ bool z0Game::Update()
     int64_t score = GetTotalScore();
     if (_mode == BOSS_MODE) {
       score =
-          _overmind->GetKilledBosses() >= 6 &&
-          _overmind->GetElapsedTime() != 0 ?
-              std::max(_overmind->GetElapsedTime() - 600l * get_lives(), 1l) : 0l;
+          _overmind->get_killed_bosses() >= 6 &&
+          _overmind->get_elapsed_time() != 0 ?
+              std::max(_overmind->get_elapsed_time() - 600l * get_lives(), 1l) : 0l;
     }
     std::cout << Player::replay.seed << "\n" << _players << "\n" <<
         (_mode == BOSS_MODE) << "\n" << (_mode == HARD_MODE) << "\n" <<
@@ -498,7 +498,7 @@ bool z0Game::Update()
           EndGame();
         }
         else {
-          int64_t score = _overmind->GetElapsedTime();
+          int64_t score = _overmind->get_elapsed_time();
           score -= 600l * get_lives();
           if (score <= 0)
             score = 1;
@@ -514,9 +514,9 @@ bool z0Game::Update()
       Player::replay.end_recording(
           "untitled",
           _mode == BOSS_MODE ?
-              (_overmind->GetKilledBosses() >= 6 &&
-               _overmind->GetElapsedTime() != 0 ?
-                   std::max(_overmind->GetElapsedTime() -
+              (_overmind->get_killed_bosses() >= 6 &&
+               _overmind->get_elapsed_time() != 0 ?
+                   std::max(_overmind->get_elapsed_time() -
                             600l * get_lives(), 1l)
                : 0l) : GetTotalScore());
 
@@ -601,8 +601,8 @@ void z0Game::Render() const
 
     std::stringstream ss;
     ss << _lives << " live(s)";
-    if (_mode != BOSS_MODE && _overmind->GetTimer() >= 0) {
-      int t = int(0.5f + _overmind->GetTimer() / 60);
+    if (_mode != BOSS_MODE && _overmind->get_timer() >= 0) {
+      int t = int(0.5f + _overmind->get_timer() / 60);
       ss << " " << (t < 10 ? "0" : "") << t;
     }
 
@@ -664,7 +664,7 @@ void z0Game::Render() const
     }
     if (_mode == BOSS_MODE) {
       std::stringstream sst;
-      sst << ConvertToTime(_overmind->GetElapsedTime());
+      sst << ConvertToTime(_overmind->get_elapsed_time());
       lib().render_text(
         flvec2(Lib::WIDTH / (2 * Lib::TEXT_WIDTH) -
                sst.str().length() - 1.f, 1.f),
@@ -903,9 +903,9 @@ void z0Game::Render() const
     //------------------------------
     if (_mode == BOSS_MODE) {
       int extraLives = get_lives();
-      bool b = extraLives > 0 && _overmind->GetKilledBosses() >= 6;
+      bool b = extraLives > 0 && _overmind->get_killed_bosses() >= 6;
 
-      long score = _overmind->GetElapsedTime();
+      long score = _overmind->get_elapsed_time();
       if (b) {
         score -= 10 * extraLives;
       }
@@ -923,7 +923,7 @@ void z0Game::Render() const
       lib().render_text(flvec2(4.f, b ? 6.f : 4.f),
                         "TIME ELAPSED: " + ConvertToTime(score), PANEL_TEXT);
       std::stringstream ss;
-      ss << "BOSS DESTROY: " << _overmind->GetKilledBosses();
+      ss << "BOSS DESTROY: " << _overmind->get_killed_bosses();
       lib().render_text(flvec2(4.f, b ? 8.f : 6.f), ss.str(), PANEL_TEXT);
       return;
     }
@@ -1006,7 +1006,7 @@ void z0Game::NewGame(bool canFaceSecretBoss, bool replay, game_mode mode)
   _firstControllersDialog = true;
   _controllersConnected = 0;
   _mode = mode;
-  _overmind->Reset(canFaceSecretBoss);
+  _overmind->reset(canFaceSecretBoss);
   _lives = mode == BOSS_MODE ? _players * BOSSMODE_LIVES : STARTING_LIVES;
   _frame_count = _mode == FAST_MODE ? 2 : 1;
 
@@ -1024,7 +1024,7 @@ void z0Game::EndGame()
 {
   for (const auto& ship : _ships) {
     if (ship->type() & Ship::SHIP_ENEMY) {
-      _overmind->OnEnemyDestroy(*ship);
+      _overmind->on_enemy_destroy(*ship);
     }
   }
 
@@ -1055,7 +1055,7 @@ void z0Game::AddShip(Ship* ship)
 {
   ship->set_game(*this);
   if (ship->type() & Ship::SHIP_ENEMY) {
-    _overmind->OnEnemyCreate(*ship);
+    _overmind->on_enemy_create(*ship);
   }
   _ships.emplace_back(ship);
 
@@ -1073,7 +1073,7 @@ void z0Game::AddParticle(const Particle& particle)
 //------------------------------
 int z0Game::get_non_wall_count() const
 {
-  return _overmind->CountNonWallEnemies();
+  return _overmind->count_non_wall_enemies();
 }
 
 z0Game::ShipList z0Game::all_ships(int32_t ship_mask) const
@@ -1275,11 +1275,11 @@ bool z0Game::IsHighScore() const
   }
 
   if (_mode == BOSS_MODE) {
-    return
-        _overmind->GetKilledBosses() >= 6 && _overmind->GetElapsedTime() != 0 &&
-        (_overmind->GetElapsedTime() <
-         _save.high_scores[Lib::PLAYERS][_players - 1].score ||
-         _save.high_scores[Lib::PLAYERS][_players - 1].score == 0);
+    return _overmind->get_killed_bosses() >= 6 &&
+           _overmind->get_elapsed_time() != 0 &&
+          (_overmind->get_elapsed_time() <
+           _save.high_scores[Lib::PLAYERS][_players - 1].score ||
+           _save.high_scores[Lib::PLAYERS][_players - 1].score == 0);
   }
 
   int n =

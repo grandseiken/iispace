@@ -12,70 +12,71 @@ public:
   static const fixed HP_PER_EXTRA_CYCLE;
 
   Boss(const vec2& position, z0Game::boss_list boss,
-       int hp, int players, int cycle = 0, bool explodeOnDamage = true);
+       int32_t hp, int32_t players, int32_t cycle = 0,
+       bool explode_on_damage = true);
 
-  void SetKilled()
+  void set_killed()
   {
     z0().set_boss_killed(_flag);
   }
 
-  int64_t GetScore()
+  int64_t get_score()
   {
     return _score;
   }
 
-  int GetRemainingHP() const
+  int32_t get_remaining_hp() const
   {
     return _hp / 30;
   }
 
-  int GetMaxHP() const
+  int32_t get_max_hp() const
   {
-    return _maxHp / 30;
+    return _max_hp / 30;
   }
 
-  void RestoreHP(int hp)
+  void restore_hp(int32_t hp)
   {
     _hp += hp;
   }
 
-  bool IsHPLow() const
+  bool is_hp_low() const
   {
-    return (_maxHp * 1.2f) / _hp >= 3;
+    return (_max_hp * 1.2f) / _hp >= 3;
   }
 
-  void SetIgnoreDamageColourIndex(int shapeIndex)
+  void set_ignore_damage_colour_index(int32_t shapeIndex)
   {
-    _ignoreDamageColour = shapeIndex;
+    _ignore_damage_colour = shapeIndex;
   }
 
-  void RenderHPBar() const;
+  void render_hp_bar() const;
 
   // Generic behaviour
   //------------------------------
-  void damage(int damage, bool magic, Player* source) override;
+  void damage(int32_t damage, bool magic, Player* source) override;
   void render() const override;
-  void render(bool hpBar) const;
-  virtual int GetDamage(int damage, bool magic) = 0;
-  virtual void OnDestroy();
+  void render(bool hp_bar) const;
+  virtual int32_t get_damage(int32_t damage, bool magic) = 0;
+  virtual void on_destroy();
 
-  static std::vector<std::pair<int, std::pair<vec2, colour_t>>> _fireworks;
+  static std::vector<std::pair<int32_t, std::pair<vec2, colour_t>>> _fireworks;
   static std::vector<vec2> _warnings;
 
 protected:
 
-  static int CalculateHP(int base, int players, int cycle);
+  static int32_t CalculateHP(int32_t base, int32_t players, int32_t cycle);
 
 private:
 
   int32_t _hp;
-  int32_t _maxHp;
+  int32_t _max_hp;
   z0Game::boss_list _flag;
   int64_t _score;
-  int32_t _ignoreDamageColour;
+  int32_t _ignore_damage_colour;
   mutable int _damaged;
-  mutable bool _showHp;
-  bool _explodeOnDamage;
+  mutable bool _show_hp;
+  bool _explode_on_damage;
 
 };
 
@@ -91,22 +92,22 @@ public:
   static const fixed ATTACK_RADIUS;
   static const int32_t ATTACK_TIME;
 
-  BigSquareBoss(int players, int cycle);
+  BigSquareBoss(int32_t players, int32_t cycle);
 
   void update() override;
   void render() const override;
-  int GetDamage(int damage, bool magic) override;
+  int32_t get_damage(int32_t damage, bool magic) override;
 
 private:
 
   vec2 _dir;
   bool _reverse;
   int32_t _timer;
-  int32_t _spawnTimer;
-  int32_t _specialTimer;
-  bool _specialAttack;
-  bool _specialAttackRotate;
-  Player* _attackPlayer;
+  int32_t _spawn_timer;
+  int32_t _special_timer;
+  bool _special_attack;
+  bool _special_attack_rotate;
+  Player* _attack_player;
 
 };
 
@@ -121,10 +122,10 @@ public:
   static const int32_t ATTACK_TIME;
   static const fixed SPEED;
 
-  ShieldBombBoss(int players, int cycle);
+  ShieldBombBoss(int32_t players, int32_t cycle);
 
   void update() override;
-  int GetDamage(int damage, bool magic) override;
+  int32_t get_damage(int32_t damage, bool magic) override;
 
 private:
 
@@ -133,8 +134,8 @@ private:
   int32_t _unshielded;
   int32_t _attack;
   bool _side;
-  vec2 _attackDir;
-  bool _shotAlternate;
+  vec2 _attack_dir;
+  bool _shot_alternate;
 
 };
 
@@ -148,23 +149,24 @@ public:
   static const int32_t TIMER;
   static const int32_t MAX_SPLIT;
 
-  ChaserBoss(int players, int cycle, int split = 0,
-             const vec2& position = vec2(), int time = TIMER, int stagger = 0);
+  ChaserBoss(int32_t players, int32_t cycle, int32_t split = 0,
+             const vec2& position = vec2(),
+             int32_t time = TIMER, int32_t stagger = 0);
 
   void update() override;
   void render() const override;
-  int GetDamage(int damage, bool magic) override;
-  void OnDestroy() override;
+  int32_t get_damage(int32_t damage, bool magic) override;
+  void on_destroy() override;
 
   static bool _hasCounted;
 
 private:
 
-  bool _onScreen;
+  bool _on_screen;
   bool _move;
   int32_t _timer;
   vec2 _dir;
-  vec2 _lastDir;
+  vec2 _last_dir;
 
   int32_t _players;
   int32_t _cycle;
@@ -172,7 +174,7 @@ private:
 
   int32_t _stagger;
   static int32_t _count;
-  static int32_t _sharedHp;
+  static int32_t _shared_hp;
 
 };
 
@@ -185,28 +187,28 @@ public:
   static const fixed SPEED;
   static const int32_t TIMER;
 
-  TractorBoss(int players, int cycle);
+  TractorBoss(int32_t players, int32_t cycle);
 
   void update() override;
   void render() const override;
-  int GetDamage(int damage, bool magic) override;
+  int get_damage(int32_t damage, bool magic) override;
 
 private:
 
   CompoundShape* _s1;
   CompoundShape* _s2;
-  Polygon* _sAttack;
-  bool _willAttack;
+  Polygon* _sattack;
+  bool _will_attack;
   bool _stopped;
   bool _generating;
   bool _attacking;
   bool _continue;
-  bool _genDir;
-  int32_t _shootType;
+  bool _gen_dir;
+  int32_t _shoot_type;
   bool _sound;
   int32_t _timer;
-  int32_t _attackSize;
-  std::size_t _attackShapes;
+  int32_t _attack_size;
+  std::size_t _attack_shapes;
 
   std::vector<vec2> _targets;
 
@@ -221,27 +223,27 @@ public:
   static const int32_t TIMER;
   static const int32_t ATTACK_TIME;
 
-  GhostBoss(int players, int cycle);
+  GhostBoss(int32_t players, int32_t cycle);
 
   void update() override;
   void render() const override;
-  int GetDamage(int damage, bool magic) override;
+  int32_t get_damage(int32_t damage, bool magic) override;
 
 private:
 
   bool _visible;
-  int32_t _vTime;
+  int32_t _vtime;
   int32_t _timer;
-  int32_t _attackTime;
+  int32_t _attack_time;
   int32_t _attack;
   bool _rDir;
-  int32_t _startTime;
-  int32_t _dangerCircle;
-  int32_t _dangerOffset1;
-  int32_t _dangerOffset2;
-  int32_t _dangerOffset3;
-  int32_t _dangerOffset4;
-  bool _shotType;
+  int32_t _start_time;
+  int32_t _danger_circle;
+  int32_t _danger_offset1;
+  int32_t _danger_offset2;
+  int32_t _danger_offset3;
+  int32_t _danger_offset4;
+  bool _shot_type;
 };
 
 // Death ray boss
@@ -258,30 +260,30 @@ public:
   static const int32_t TIMER;
   static const fixed SPEED;
 
-  DeathRayBoss(int players, int cycle);
+  DeathRayBoss(int32_t players, int32_t cycle);
 
   void update() override;
   void render() const override;
-  int GetDamage(int damage, bool magic) override;
+  int32_t get_damage(int32_t damage, bool magic) override;
 
-  void OnArmDeath(Ship* arm);
+  void on_arm_death(Ship* arm);
 
 private:
 
   int32_t _timer;
   bool _laser;
   bool _dir;
-  int _pos;
+  int32_t _pos;
   z0Game::ShipList _arms;
-  int32_t _armTimer;
-  int32_t _shotTimer;
+  int32_t _arm_timer;
+  int32_t _shot_timer;
 
-  int32_t _rayAttackTimer;
-  vec2 _raySrc1;
-  vec2 _raySrc2;
-  vec2 _rayDest;
+  int32_t _ray_attack_timer;
+  vec2 _ray_src1;
+  vec2 _ray_src2;
+  vec2 _ray_dest;
 
-  std::vector<std::pair<int32_t, int32_t>> _shotQueue;
+  std::vector<std::pair<int32_t, int32_t>> _shot_queue;
 
 };
 
@@ -290,15 +292,15 @@ private:
 class SuperBossArc : public Boss {
 public:
 
-  SuperBossArc(const vec2& position, int players, int cycle,
-               int i, Ship* boss, int timer = 0);
+  SuperBossArc(const vec2& position, int32_t players, int32_t cycle,
+               int32_t i, Ship* boss, int32_t timer = 0);
 
   void update() override;
-  int GetDamage(int damage, bool magic) override;
-  void OnDestroy() override;
+  int32_t get_damage(int32_t damage, bool magic) override;
+  void on_destroy() override;
   void render() const override;
 
-  int GetTimer() const
+  int32_t GetTimer() const
   {
     return _timer;
   }
@@ -308,7 +310,7 @@ private:
   Ship* _boss;
   int32_t _i;
   int32_t _timer;
-  int32_t _sTimer;
+  int32_t _stimer;
 
 };
 
@@ -326,17 +328,17 @@ public:
   static const int32_t BASE_HP;
   static const int32_t ARC_HP;
 
-  SuperBoss(int players, int cycle);
+  SuperBoss(int32_t players, int32_t cycle);
 
   void update() override;
-  int GetDamage(int damage, bool magic) override;
-  void OnDestroy() override;
+  int32_t get_damage(int32_t damage, bool magic) override;
+  void on_destroy() override;
 
 private:
 
   int32_t _players;
   int32_t _cycle;
-  int32_t _cTimer;
+  int32_t _ctimer;
   int32_t _timer;
   std::vector<bool> _destroyed;
   std::vector<SuperBossArc*> _arcs;

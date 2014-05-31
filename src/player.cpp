@@ -136,7 +136,7 @@ void Player::update()
           (ship->shape().centre - shape().centre).length() <= bomb_radius) {
         ship->damage(bomb_damage, false, 0);
       }
-      if (!(ship->type() & SHIP_BOSS) && ((Enemy*) ship)->GetScore() > 0) {
+      if (!(ship->type() & SHIP_BOSS) && ((Enemy*) ship)->get_score() > 0) {
         add_score(0);
       }
     }
