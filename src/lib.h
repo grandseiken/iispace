@@ -64,16 +64,6 @@ public:
 
   // General
   //------------------------------
-  std::size_t get_frame_count() const
-  {
-    return _frame_count;
-  }
-
-  void set_frame_count(std::size_t fc)
-  {
-    _frame_count = fc;
-  }
-
   void set_player_count(int32_t players)
   {
     _players = players;
@@ -129,7 +119,6 @@ public:
 
 private:
 
-  int32_t _frame_count;
   int32_t _cycle;
   int32_t _players;
 

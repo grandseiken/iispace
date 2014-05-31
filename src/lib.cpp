@@ -296,8 +296,7 @@ struct Internals {};
 #endif
 
 Lib::Lib()
-  : _frame_count(1)
-  , _score_frame(0)
+  : _score_frame(0)
   , _cycle(0)
   , _players(1)
   , _exit(false)
@@ -654,7 +653,6 @@ void Lib::begin_frame()
   if (_score_frame < 5) {
     ++_score_frame;
   }
-  set_frame_count(16384);
 #endif
 }
 
@@ -671,8 +669,6 @@ void Lib::end_frame()
       _keys_released[i][j] = false;
     }
   }
-#else
-  set_frame_count(16384);
 #endif
   /*for (int32_t i = 0; i < PLAYERS; i++) {
     if (_rumble[i]) {

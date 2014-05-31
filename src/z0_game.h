@@ -175,28 +175,29 @@ private:
   int32_t _players;
   int32_t _lives;
   game_mode _mode;
+  int32_t _frame_count;
 
   mutable bool _showHPBar;
   mutable float _fillHPBar;
 
-  int _selection;
-  int _specialSelection;
-  int _killTimer;
-  int _exitTimer;
+  int32_t _selection;
+  int32_t _specialSelection;
+  int32_t _killTimer;
+  int32_t _exitTimer;
 
   std::string _enterName;
-  int _enterChar;
-  int _enterR;
-  int _enterTime;
-  int _compliment;
-  int _scoreScreenTimer;
+  int32_t _enterChar;
+  int32_t _enterR;
+  int32_t _enterTime;
+  int32_t _compliment;
+  int32_t _scoreScreenTimer;
 
   std::vector<Particle> _particles;
   std::vector<std::unique_ptr<Ship>> _ships;
   ShipList _playerList;
   ShipList _collisions;
 
-  int _controllersConnected;
+  int32_t _controllersConnected;
   bool _controllersDialog;
   bool _firstControllersDialog;
 

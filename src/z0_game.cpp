@@ -17,6 +17,7 @@ z0Game::z0Game(Lib& lib, std::vector< std::string > args)
   , _players(1)
   , _lives(0)
   , _mode(NORMAL_MODE)
+  , _frame_count(1)
   , _showHPBar(false)
   , _fillHPBar(0)
   , _selection(0)
@@ -83,7 +84,7 @@ z0Game::~z0Game()
 void z0Game::Run()
 {
   while (true) {
-    std::size_t f = _lib.get_frame_count();
+    std::size_t f = _frame_count;
     if (!f) {
       if (_lib.exit()) {
         return;
@@ -92,7 +93,11 @@ void z0Game::Run()
     }
 
     for (std::size_t i = 0; i < f; ++i) {
+#ifdef PLATFORM_SCORE
+      _frame_count = 16384;
+#endif
       _lib.begin_frame();
+
       if (_lib.exit()) {
         _lib.end_frame();
         return;
@@ -296,24 +301,12 @@ void z0Game::Update()
     Boss::_warnings.clear();
     lib().capture_mouse(true);
 
-    if (_mode == HARD_MODE) {
-      lib().set_colour_cycle(128);
-    }
-    else if (_mode == FAST_MODE) {
-      lib().set_colour_cycle(192);
-    }
-    else if (_mode == WHAT_MODE) {
-      lib().set_colour_cycle((lib().get_colour_cycle() + 1) % 256);
-    }
-    else {
-      lib().set_colour_cycle(0);
-    }
-
-    if (Player::replay.recording && _mode == FAST_MODE) {
-      lib().set_frame_count(2);
-    }
-    else if (Player::replay.recording) {
-      lib().set_frame_count(1);
+    lib().set_colour_cycle(
+        _mode == HARD_MODE ? 128 :
+        _mode == FAST_MODE ? 192 :
+        _mode == WHAT_MODE ? (lib().get_colour_cycle() + 1) % 256 : 0);
+    if (Player::replay.recording) {
+      _frame_count = _mode == FAST_MODE ? 2 : 1;
     }
 
     int controllers = 0;
@@ -348,11 +341,11 @@ void z0Game::Update()
 
     if (!Player::replay.recording) {
       if (lib().is_key_pressed(Lib::KEY_BOMB)) {
-        lib().set_frame_count(lib().get_frame_count() * 2);
+        _frame_count *= 2;
       }
       if (lib().is_key_pressed(Lib::KEY_FIRE) &&
-          lib().get_frame_count() > std::size_t(_mode == FAST_MODE ? 2 : 1)) {
-        lib().set_frame_count(lib().get_frame_count() / 2);
+          _frame_count > (_mode == FAST_MODE ? 2 : 1)) {
+        _frame_count /= 2;
       }
     }
 
@@ -438,6 +431,7 @@ void z0Game::Update()
   //------------------------------
   else if (_state == STATE_HIGHSCORE) {
     ++_scoreScreenTimer;
+    _frame_count = 1;
 #ifdef PLATFORM_SCORE
     int64_t score = GetTotalScore();
     if (_mode == BOSS_MODE) {
@@ -696,7 +690,7 @@ void z0Game::Render() const
     }
 
     if (_showHPBar) {
-      int x = _mode == BOSS_MODE ? 48 : 0;
+      int32_t x = _mode == BOSS_MODE ? 48 : 0;
       lib().render_rect(
           flvec2(x + Lib::WIDTH / 2 - 48.f, 16.f),
           flvec2(x + Lib::WIDTH / 2 + 48.f, 32.f),
@@ -709,11 +703,10 @@ void z0Game::Render() const
     }
 
     if (!Player::replay.recording) {
-      int x = _mode == FAST_MODE ?
-          lib().get_frame_count() / 2 : lib().get_frame_count();
+      int32_t x = _mode == FAST_MODE ? _frame_count / 2 : _frame_count;
       std::stringstream ss;
       ss << x << "X " <<
-          int(100 * float(Player::replay_frame) /
+          int32_t(100 * float(Player::replay_frame) /
           Player::replay.player_frames.size()) << "%";
 
       lib().render_text(
@@ -901,8 +894,6 @@ void z0Game::Render() const
   // Score screen
   //------------------------------
   else if (_state == STATE_HIGHSCORE) {
-    lib().set_frame_count(1);
-
     // Name enter
     //------------------------------
     if (IsHighScore()) {
@@ -1035,7 +1026,7 @@ void z0Game::NewGame(bool canFaceSecretBoss, bool replay, game_mode mode)
   _mode = mode;
   _overmind->Reset(canFaceSecretBoss);
   _lives = mode == BOSS_MODE ? _players * BOSSMODE_LIVES : STARTING_LIVES;
-  lib().set_frame_count(_mode == FAST_MODE ? 2 : 1);
+  _frame_count = _mode == FAST_MODE ? 2 : 1;
 
   Stars::clear();
   for (int32_t i = 0; i < _players; ++i) {
@@ -1064,7 +1055,7 @@ void z0Game::EndGame()
   Boss::_warnings.clear();
 
   _save.save();
-  lib().set_frame_count(1);
+  _frame_count = 1;
   _state = STATE_MENU;
   _selection =
       (_mode == BOSS_MODE && IsBossModeUnlocked()) ||
