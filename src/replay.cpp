@@ -24,7 +24,7 @@ Replay::Replay(const std::string& path)
   , game_mode(0)
   , can_face_secret_boss(false)
 {
-  Lib::SetWorkingDirectory(true);
+  Lib::set_working_directory(true);
   std::ifstream file;
   file.open(path.c_str(), std::ios::binary);
   std::string line;
@@ -32,7 +32,7 @@ Replay::Replay(const std::string& path)
   if (!file) {
     okay = false;
     error = "Cannot open:\n" + path;
-    Lib::SetWorkingDirectory(false);
+    Lib::set_working_directory(false);
     return;
   }
 
@@ -45,7 +45,7 @@ Replay::Replay(const std::string& path)
   catch (std::exception& e) {
     okay = false;
     error = e.what();
-    Lib::SetWorkingDirectory(false);
+    Lib::set_working_directory(false);
     return;
   }
   std::stringstream decrypted(
@@ -56,7 +56,7 @@ Replay::Replay(const std::string& path)
     file.close();
     okay = false;
     error = "Cannot play:\n" + line + "\nusing WiiSPACE v1.3";
-    Lib::SetWorkingDirectory(false);
+    Lib::set_working_directory(false);
     return;
   }
 
@@ -92,7 +92,7 @@ Replay::Replay(const std::string& path)
   }
 
   file.close();
-  Lib::SetWorkingDirectory(false);
+  Lib::set_working_directory(false);
 }
 
 Replay::Replay(int32_t players, int32_t game_mode, bool can_face_secret_boss)

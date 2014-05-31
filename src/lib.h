@@ -79,53 +79,53 @@ public:
     _players = players;
   }
 
-  void Init();
-  void BeginFrame();
-  void EndFrame();
-  void CaptureMouse(bool enabled);
-  void NewGame();
-  static void SetWorkingDirectory(bool original);
+  void init();
+  void begin_frame();
+  void end_frame();
+  void capture_mouse(bool enabled);
+  void new_game();
+  static void set_working_directory(bool original);
 
-  void Exit(bool exit);
-  bool Exit() const;
+  void exit(bool exit);
+  bool exit() const;
 
   // Input
   //------------------------------
-  PadType IsPadConnected(int32_t player) const;
+  PadType get_pad_type(int32_t player) const;
 
-  bool IsKeyPressed(int32_t player, Key k) const;
-  bool IsKeyReleased(int32_t player, Key k) const;
-  bool IsKeyHeld(int32_t player, Key k) const;
+  bool is_key_pressed(int32_t player, Key k) const;
+  bool is_key_released(int32_t player, Key k) const;
+  bool is_key_held(int32_t player, Key k) const;
 
-  bool IsKeyPressed(Key k) const;
-  bool IsKeyReleased(Key k) const;
-  bool IsKeyHeld(Key k) const;
+  bool is_key_pressed(Key k) const;
+  bool is_key_released(Key k) const;
+  bool is_key_held(Key k) const;
 
-  vec2 GetMoveVelocity(int32_t player) const;
-  vec2 GetFireTarget(int32_t player, const vec2& position) const;
+  vec2 get_move_velocity(int32_t player) const;
+  vec2 get_fire_target(int32_t player, const vec2& position) const;
 
   // Output
   //------------------------------
-  void ClearScreen() const;
-  void RenderLine(const flvec2& a, const flvec2& b, colour_t c) const;
-  void RenderText(const flvec2& v, const std::string& text, colour_t c) const;
-  void RenderRect(const flvec2& low, const flvec2& hi,
-                  colour_t c, int lineWidth = 0) const;
-  void Render() const;
+  void clear_screen() const;
+  void render_line(const flvec2& a, const flvec2& b, colour_t c) const;
+  void render_text(const flvec2& v, const std::string& text, colour_t c) const;
+  void render_rect(const flvec2& low, const flvec2& hi,
+                   colour_t c, int32_t lineWidth = 0) const;
+  void render() const;
 
-  void Rumble(int player, int time);
-  void StopRumble();
-  bool PlaySound(
+  void rumble(int32_t player, int32_t time);
+  void stop_rumble();
+  bool play_sound(
       Sound sound, float volume = 1.f, float pan = 0.f, float repitch = 0.f);
-  void SetVolume(int volume);
+  void set_volume(int32_t volume);
 
-  void TakeScreenShot();
+  void take_screenshot();
 
   // Wacky colours
   //------------------------------
-  void SetColourCycle(int cycle);
-  int GetColourCycle() const;
-  colour_t Cycle(colour_t c) const;
+  void set_colour_cycle(int32_t cycle);
+  int get_colour_cycle() const;
+  colour_t cycle(colour_t c) const;
 
 private:
 
@@ -136,16 +136,16 @@ private:
   // Internal
   //------------------------------
   bool _exit;
-  std::vector<std::vector<bool>> _keysPressed;
-  std::vector<std::vector<bool>> _keysHeld;
-  std::vector<std::vector<bool>> _keysReleased;
+  std::vector<std::vector<bool>> _keys_pressed;
+  std::vector<std::vector<bool>> _keys_held;
+  std::vector<std::vector<bool>> _keys_released;
 
-  bool _captureMouse;
-  int _mousePosX;
-  int _mousePosY;
-  int _extraX;
-  int _extraY;
-  mutable bool _mouseMoving;
+  bool _capture_mouse;
+  int32_t _mouse_pos_x;
+  int32_t _mouse_pos_y;
+  int32_t _extra_x;
+  int32_t _extra_y;
+  mutable bool _mouse_moving;
 
   void LoadSounds();
 

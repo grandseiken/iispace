@@ -182,7 +182,7 @@ void Boss::OnDestroy()
     n += i;
   }
   for (int i = 0; i < Lib::PLAYERS; i++) {
-    lib().Rumble(i, 25);
+    lib().rumble(i, 25);
   }
   play_sound(Lib::SOUND_EXPLOSION);
 
@@ -788,7 +788,7 @@ void ChaserBoss::OnDestroy()
     if (last) {
       SetKilled();
       for (int i = 0; i < Lib::PLAYERS; i++) {
-        lib().Rumble(i, 25);
+        lib().rumble(i, 25);
       }
       z0Game::ShipList players = z0().get_players();
       int n = 0;
@@ -816,7 +816,7 @@ void ChaserBoss::OnDestroy()
   }
 
   for (int i = 0; i < Lib::PLAYERS; i++) {
-    lib().Rumble(i, _split < 3 ? 10 : 3);
+    lib().rumble(i, _split < 3 ? 10 : 3);
   }
 
   explosion();
@@ -1118,8 +1118,8 @@ void TractorBoss::render() const
       (!_stopped && (_continue || !_willAttack) && is_on_screen())) {
     for (std::size_t i = 0; i < _targets.size(); ++i) {
       if (((_timer + i * 4) / 4) % 2) {
-        lib().RenderLine(to_float(shape().centre),
-                         to_float(_targets[i]), 0xcc33ccff);
+        lib().render_line(to_float(shape().centre),
+                          to_float(_targets[i]), 0xcc33ccff);
       }
     }
   }
@@ -1912,7 +1912,7 @@ void SuperBoss::OnDestroy()
     n += i;
   }
   for (int i = 0; i < Lib::PLAYERS; i++) {
-    lib().Rumble(i, 25);
+    lib().rumble(i, 25);
   }
   play_sound(Lib::SOUND_EXPLOSION);
 

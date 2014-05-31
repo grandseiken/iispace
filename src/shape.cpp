@@ -76,7 +76,7 @@ void Fill::render(Lib& lib, const flvec2& position, float rotation,
   flvec2 wh = flvec2(width.to_float(), height.to_float());
   flvec2 a = c + wh;
   flvec2 b = c - wh;
-  lib.RenderRect(a, b, colour_override ? colour_override : colour);
+  lib.render_rect(a, b, colour_override ? colour_override : colour);
 }
 
 bool Fill::check_local_point(const vec2& v) const
@@ -97,7 +97,7 @@ void Line::render(Lib& lib, const flvec2& position, float rotation,
 {
   flvec2 aa = convert_fl_point(position, rotation, to_float(a));
   flvec2 bb = convert_fl_point(position, rotation, to_float(b));
-  lib.RenderLine(aa, bb, colour_override ? colour_override : colour);
+  lib.render_line(aa, bb, colour_override ? colour_override : colour);
 }
 
 bool Line::check_local_point(const vec2& v) const
@@ -124,10 +124,10 @@ void Box::render(Lib& lib, const flvec2& position, float rotation,
   flvec2 c = convert_fl_point(position, rotation, flvec2(-w, -h));
   flvec2 d = convert_fl_point(position, rotation, flvec2(w, -h));
 
-  lib.RenderLine(a, b, colour_override ? colour_override : colour);
-  lib.RenderLine(b, c, colour_override ? colour_override : colour);
-  lib.RenderLine(c, d, colour_override ? colour_override : colour);
-  lib.RenderLine(d, a, colour_override ? colour_override : colour);
+  lib.render_line(a, b, colour_override ? colour_override : colour);
+  lib.render_line(b, c, colour_override ? colour_override : colour);
+  lib.render_line(c, d, colour_override ? colour_override : colour);
+  lib.render_line(d, a, colour_override ? colour_override : colour);
 }
 
 bool Box::check_local_point(const vec2& v) const
@@ -176,7 +176,7 @@ void Polygon::render(Lib& lib, const flvec2& position, float rotation,
     }
   }
   for (std::size_t i = 0; i < lines.size(); i += 2) {
-    lib.RenderLine(convert_fl_point(position, rotation, lines[i]),
+    lib.render_line(convert_fl_point(position, rotation, lines[i]),
                     convert_fl_point(position, rotation, lines[i + 1]),
                     colour_override ? colour_override : colour);
   }
@@ -208,7 +208,7 @@ void PolyArc::render(Lib& lib, const flvec2& position, float rotation,
   for (int32_t i = 0; i < sides && i < segments; i++) {
     flvec2 a = flvec2::from_polar(i * 2 * M_PIf / float(sides), r);
     flvec2 b = flvec2::from_polar((i + 1) * 2 * M_PIf / float(sides), r);
-    lib.RenderLine(convert_fl_point(position, rotation, a),
+    lib.render_line(convert_fl_point(position, rotation, a),
                     convert_fl_point(position, rotation, b),
                     colour_override ? colour_override : colour);
   }

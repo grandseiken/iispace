@@ -554,8 +554,8 @@ void Tractor::render() const
   if (_spinning) {
     for (unsigned int i = 0; i < _players.size(); i++) {
       if (((_timer + i * 4) / 4) % 2 && !((Player*) _players[i])->IsKilled()) {
-        lib().RenderLine(to_float(shape().centre),
-                         to_float(_players[i]->shape().centre), 0xcc33ccff);
+        lib().render_line(to_float(shape().centre),
+                          to_float(_players[i]->shape().centre), 0xcc33ccff);
       }
     }
   }

@@ -93,7 +93,7 @@ void Powerup::damage(int damage, bool magic, Player* source)
       play_sound(Lib::SOUND_POWERUP_OTHER);
       break;
     }
-    lib().Rumble(source->GetPlayerNumber(), 6);
+    lib().rumble(source->GetPlayerNumber(), 6);
   }
 
   int r = 5 + z::rand_int(5);

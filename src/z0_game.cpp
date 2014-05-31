@@ -31,7 +31,7 @@ z0Game::z0Game(Lib& lib, std::vector< std::string > args)
   , _firstControllersDialog(false)
   , _overmind(new Overmind(*this))
 {
-  lib.SetVolume(_settings.volume.to_int());
+  lib.set_volume(_settings.volume.to_int());
   // Compliments have a max length of 24
   _compliments.push_back(" is a swell guy!");
   _compliments.push_back(" went absolutely mental!");
@@ -85,34 +85,34 @@ void z0Game::Run()
   while (true) {
     std::size_t f = _lib.get_frame_count();
     if (!f) {
-      if (_lib.Exit()) {
+      if (_lib.exit()) {
         return;
       }
       continue;
     }
 
     for (std::size_t i = 0; i < f; ++i) {
-      _lib.BeginFrame();
-      if (_lib.Exit()) {
-        _lib.EndFrame();
+      _lib.begin_frame();
+      if (_lib.exit()) {
+        _lib.end_frame();
         return;
       }
 
       Update();
-      if (_lib.Exit()) {
-        _lib.EndFrame();
+      if (_lib.exit()) {
+        _lib.end_frame();
         return;
       }
 
-      _lib.EndFrame();
-      if (_lib.Exit()) {
+      _lib.end_frame();
+      if (_lib.exit()) {
         return;
       }
     }
 
-    _lib.ClearScreen();
+    _lib.clear_screen();
     Render();
-    _lib.Render();
+    _lib.render();
   }
 }
 
@@ -121,26 +121,26 @@ void z0Game::Update()
   if (_exitTimer) {
     _exitTimer--;
     if (!_exitTimer) {
-      lib().Exit(true);
+      lib().exit(true);
       _exitTimer = -1;
     }
     return;
   }
 
   for (int32_t i = 0; i < Lib::PLAYERS; i++) {
-    if (lib().IsKeyHeld(i, Lib::KEY_FIRE) &&
-        lib().IsKeyHeld(i, Lib::KEY_BOMB) &&
-        lib().IsKeyPressed(Lib::KEY_MENU)) {
-      lib().TakeScreenShot();
+    if (lib().is_key_held(i, Lib::KEY_FIRE) &&
+        lib().is_key_held(i, Lib::KEY_BOMB) &&
+        lib().is_key_pressed(Lib::KEY_MENU)) {
+      lib().take_screenshot();
       break;
     }
   }
-  lib().CaptureMouse(false);
+  lib().capture_mouse(false);
 
   // Main menu
   //------------------------------
   if (_state == STATE_MENU) {
-    if (lib().IsKeyPressed(Lib::KEY_UP)) {
+    if (lib().is_key_pressed(Lib::KEY_UP)) {
       _selection--;
       if (_selection < 0 && !IsBossModeUnlocked()) {
         _selection = 0;
@@ -149,21 +149,21 @@ void z0Game::Update()
         _selection = -1;
       }
       else {
-        lib().PlaySound(Lib::SOUND_MENU_CLICK);
+        lib().play_sound(Lib::SOUND_MENU_CLICK);
       }
     }
-    if (lib().IsKeyPressed(Lib::KEY_DOWN)) {
+    if (lib().is_key_pressed(Lib::KEY_DOWN)) {
       _selection++;
       if (_selection > 2) {
         _selection = 2;
       }
       else {
-        lib().PlaySound(Lib::SOUND_MENU_CLICK);
+        lib().play_sound(Lib::SOUND_MENU_CLICK);
       }
     }
 
-    if (lib().IsKeyPressed(Lib::KEY_ACCEPT) ||
-        lib().IsKeyPressed(Lib::KEY_MENU)) {
+    if (lib().is_key_pressed(Lib::KEY_ACCEPT) ||
+        lib().is_key_pressed(Lib::KEY_MENU)) {
       if (_selection == 0) {
         NewGame(IsFastModeUnlocked(), false, NORMAL_MODE);
       }
@@ -186,33 +186,33 @@ void z0Game::Update()
       }
 
       if (_selection == 1) {
-        lib().PlaySound(Lib::SOUND_MENU_CLICK);
+        lib().play_sound(Lib::SOUND_MENU_CLICK);
       }
       else {
-        lib().PlaySound(Lib::SOUND_MENU_ACCEPT);
+        lib().play_sound(Lib::SOUND_MENU_ACCEPT);
       }
     }
 
     if (_selection == 1) {
       int t = _players;
-      if (lib().IsKeyPressed(Lib::KEY_LEFT) && _players > 1) {
+      if (lib().is_key_pressed(Lib::KEY_LEFT) && _players > 1) {
         _players--;
       }
-      else if (lib().IsKeyPressed(Lib::KEY_RIGHT) && _players < Lib::PLAYERS) {
+      else if (lib().is_key_pressed(Lib::KEY_RIGHT) && _players < Lib::PLAYERS) {
         _players++;
       }
       if (t != _players){
-        lib().PlaySound(Lib::SOUND_MENU_CLICK);
+        lib().play_sound(Lib::SOUND_MENU_CLICK);
       }
       lib().set_player_count(_players);
     }
 
     if (_selection == -1) {
       int t = _specialSelection;
-      if (lib().IsKeyPressed(Lib::KEY_LEFT) && _specialSelection > 0) {
+      if (lib().is_key_pressed(Lib::KEY_LEFT) && _specialSelection > 0) {
         _specialSelection--;
       }
-      else if (lib().IsKeyPressed(Lib::KEY_RIGHT)) {
+      else if (lib().is_key_pressed(Lib::KEY_RIGHT)) {
         if ((t == 0 && IsHardModeUnlocked()) ||
             (t == 1 && IsFastModeUnlocked()) ||
             (t == 2 && IsWhatModeUnlocked())) {
@@ -220,39 +220,39 @@ void z0Game::Update()
         }
       }
       if (t != _specialSelection) {
-        lib().PlaySound(Lib::SOUND_MENU_CLICK);
+        lib().play_sound(Lib::SOUND_MENU_CLICK);
       }
     }
 
     if (_selection >= 0 || _specialSelection == 0) {
-      lib().SetColourCycle(0);
+      lib().set_colour_cycle(0);
     }
     else if (_specialSelection == 1) {
-      lib().SetColourCycle(128);
+      lib().set_colour_cycle(128);
     }
     else if (_specialSelection == 2) {
-      lib().SetColourCycle(192);
+      lib().set_colour_cycle(192);
     }
     else if (_specialSelection == 3) {
-      lib().SetColourCycle((lib().GetColourCycle() + 1) % 256);
+      lib().set_colour_cycle((lib().get_colour_cycle() + 1) % 256);
     }
   }
   // Paused
   //------------------------------
   else if (_state == STATE_PAUSE) {
     int t = _selection;
-    if (lib().IsKeyPressed(Lib::KEY_UP) && _selection > 0) {
+    if (lib().is_key_pressed(Lib::KEY_UP) && _selection > 0) {
       _selection--;
     }
-    if (lib().IsKeyPressed(Lib::KEY_DOWN) && _selection < 2) {
+    if (lib().is_key_pressed(Lib::KEY_DOWN) && _selection < 2) {
       _selection++;
     }
     if (t != _selection) {
-      lib().PlaySound(Lib::SOUND_MENU_CLICK);
+      lib().play_sound(Lib::SOUND_MENU_CLICK);
     }
 
-    if (lib().IsKeyPressed(Lib::KEY_ACCEPT) ||
-        lib().IsKeyPressed(Lib::KEY_MENU)) {
+    if (lib().is_key_pressed(Lib::KEY_ACCEPT) ||
+        lib().is_key_pressed(Lib::KEY_MENU)) {
       if (_selection == 0) {
         _state = STATE_GAME;
       }
@@ -265,48 +265,48 @@ void z0Game::Update()
       else if (_selection == 2) {
         _settings.volume = std::min(fixed(100), 1 + _settings.volume);
         _settings.save();
-        lib().SetVolume(_settings.volume.to_int());
+        lib().set_volume(_settings.volume.to_int());
       }
-      lib().PlaySound(Lib::SOUND_MENU_ACCEPT);
+      lib().play_sound(Lib::SOUND_MENU_ACCEPT);
     }
-    if (lib().IsKeyPressed(Lib::KEY_LEFT) && _selection == 2) {
+    if (lib().is_key_pressed(Lib::KEY_LEFT) && _selection == 2) {
       if (_settings.volume > 0) {
         _settings.volume -= 1;
-        lib().SetVolume(_settings.volume.to_int());
+        lib().set_volume(_settings.volume.to_int());
         _settings.save();
-        lib().PlaySound(Lib::SOUND_MENU_CLICK);
+        lib().play_sound(Lib::SOUND_MENU_CLICK);
       }
     }
-    if (lib().IsKeyPressed(Lib::KEY_RIGHT) && _selection == 2) {
+    if (lib().is_key_pressed(Lib::KEY_RIGHT) && _selection == 2) {
       if (_settings.volume < 100) {
         _settings.volume += 1;
-        lib().SetVolume(_settings.volume.to_int());
+        lib().set_volume(_settings.volume.to_int());
         _settings.save();
-        lib().PlaySound(Lib::SOUND_MENU_CLICK);
+        lib().play_sound(Lib::SOUND_MENU_CLICK);
       }
     }
-    if (lib().IsKeyPressed(Lib::KEY_CANCEL)) {
+    if (lib().is_key_pressed(Lib::KEY_CANCEL)) {
       _state = STATE_GAME;
-      lib().PlaySound(Lib::SOUND_MENU_ACCEPT);
+      lib().play_sound(Lib::SOUND_MENU_ACCEPT);
     }
   }
   // In-game
   //------------------------------
   else if (_state == STATE_GAME) {
     Boss::_warnings.clear();
-    lib().CaptureMouse(true);
+    lib().capture_mouse(true);
 
     if (_mode == HARD_MODE) {
-      lib().SetColourCycle(128);
+      lib().set_colour_cycle(128);
     }
     else if (_mode == FAST_MODE) {
-      lib().SetColourCycle(192);
+      lib().set_colour_cycle(192);
     }
     else if (_mode == WHAT_MODE) {
-      lib().SetColourCycle((lib().GetColourCycle() + 1) % 256);
+      lib().set_colour_cycle((lib().get_colour_cycle() + 1) % 256);
     }
     else {
-      lib().SetColourCycle(0);
+      lib().set_colour_cycle(0);
     }
 
     if (Player::replay.recording && _mode == FAST_MODE) {
@@ -318,39 +318,39 @@ void z0Game::Update()
 
     int controllers = 0;
     for (int32_t i = 0; i < count_players(); i++) {
-      controllers += lib().IsPadConnected(i);
+      controllers += lib().get_pad_type(i);
     }
     if (controllers < _controllersConnected &&
         !_controllersDialog && Player::replay.recording) {
       _controllersDialog = true;
-      lib().PlaySound(Lib::SOUND_MENU_ACCEPT);
+      lib().play_sound(Lib::SOUND_MENU_ACCEPT);
     }
     _controllersConnected = controllers;
 
     if (_controllersDialog) {
-      if (lib().IsKeyPressed(Lib::KEY_MENU) ||
-          lib().IsKeyPressed(Lib::KEY_ACCEPT)) {
+      if (lib().is_key_pressed(Lib::KEY_MENU) ||
+          lib().is_key_pressed(Lib::KEY_ACCEPT)) {
         _controllersDialog = false;
         _firstControllersDialog = false;
-        lib().PlaySound(Lib::SOUND_MENU_ACCEPT);
+        lib().play_sound(Lib::SOUND_MENU_ACCEPT);
         for (int32_t i = 0; i < count_players(); i++) {
-          lib().Rumble(i, 10);
+          lib().rumble(i, 10);
         }
       }
       return;
     }
 
-    if (lib().IsKeyPressed(Lib::KEY_MENU)) {
+    if (lib().is_key_pressed(Lib::KEY_MENU)) {
       _state = STATE_PAUSE;
       _selection = 0;
-      lib().PlaySound(Lib::SOUND_MENU_ACCEPT);
+      lib().play_sound(Lib::SOUND_MENU_ACCEPT);
     }
 
     if (!Player::replay.recording) {
-      if (lib().IsKeyPressed(Lib::KEY_BOMB)) {
+      if (lib().is_key_pressed(Lib::KEY_BOMB)) {
         lib().set_frame_count(lib().get_frame_count() * 2);
       }
-      if (lib().IsKeyPressed(Lib::KEY_FIRE) &&
+      if (lib().is_key_pressed(Lib::KEY_FIRE) &&
           lib().get_frame_count() > std::size_t(_mode == FAST_MODE ? 2 : 1)) {
         lib().set_frame_count(lib().get_frame_count() / 2);
       }
@@ -430,7 +430,7 @@ void z0Game::Update()
         _scoreScreenTimer = 0;
         _enterChar = 0;
         _compliment = z::rand_int(_compliments.size());
-        lib().PlaySound(Lib::SOUND_MENU_ACCEPT);
+        lib().play_sound(Lib::SOUND_MENU_ACCEPT);
       }
     }
   }
@@ -456,26 +456,26 @@ void z0Game::Update()
     if (IsHighScore()) {
       _enterTime++;
       std::string chars = ALLOWED_CHARS;
-      if (lib().IsKeyPressed(Lib::KEY_ACCEPT) &&
+      if (lib().is_key_pressed(Lib::KEY_ACCEPT) &&
           _enterName.length() < SaveData::MAX_NAME_LENGTH) {
         _enterName += chars.substr(_enterChar, 1);
         _enterTime = 0;
-        lib().PlaySound(Lib::SOUND_MENU_CLICK);
+        lib().play_sound(Lib::SOUND_MENU_CLICK);
       }
-      if (lib().IsKeyPressed(Lib::KEY_CANCEL) && _enterName.length() > 0) {
+      if (lib().is_key_pressed(Lib::KEY_CANCEL) && _enterName.length() > 0) {
         _enterName = _enterName.substr(0, _enterName.length() - 1);
         _enterTime = 0;
-        lib().PlaySound(Lib::SOUND_MENU_CLICK);
+        lib().play_sound(Lib::SOUND_MENU_CLICK);
       }
-      if (lib().IsKeyPressed(Lib::KEY_RIGHT)) {
+      if (lib().is_key_pressed(Lib::KEY_RIGHT)) {
         _enterR = 0;
         _enterChar++;
         if (_enterChar >= int(chars.length())) {
           _enterChar -= int(chars.length());
         }
-        lib().PlaySound(Lib::SOUND_MENU_CLICK);
+        lib().play_sound(Lib::SOUND_MENU_CLICK);
       }
-      if (lib().IsKeyHeld(Lib::KEY_RIGHT)) {
+      if (lib().is_key_held(Lib::KEY_RIGHT)) {
         _enterR++;
         _enterTime = 16;
         if (_enterR % 5 == 0 && _enterR > 5) {
@@ -483,18 +483,18 @@ void z0Game::Update()
           if (_enterChar >= int(chars.length())) {
             _enterChar -= int(chars.length());
           }
-          lib().PlaySound(Lib::SOUND_MENU_CLICK);
+          lib().play_sound(Lib::SOUND_MENU_CLICK);
         }
       }
-      if (lib().IsKeyPressed(Lib::KEY_LEFT)) {
+      if (lib().is_key_pressed(Lib::KEY_LEFT)) {
         _enterR = 0;
         _enterChar--;
         if (_enterChar < 0) {
           _enterChar += int(chars.length());
         }
-        lib().PlaySound(Lib::SOUND_MENU_CLICK);
+        lib().play_sound(Lib::SOUND_MENU_CLICK);
       }
-      if (lib().IsKeyHeld(Lib::KEY_LEFT)) {
+      if (lib().is_key_held(Lib::KEY_LEFT)) {
         _enterR++;
         _enterTime = 16;
         if (_enterR % 5 == 0 && _enterR > 5) {
@@ -502,12 +502,12 @@ void z0Game::Update()
           if (_enterChar < 0) {
             _enterChar += int(chars.length());
           }
-          lib().PlaySound(Lib::SOUND_MENU_CLICK);
+          lib().play_sound(Lib::SOUND_MENU_CLICK);
         }
       }
 
-      if (lib().IsKeyPressed(Lib::KEY_MENU)) {
-        lib().PlaySound(Lib::SOUND_MENU_ACCEPT);
+      if (lib().is_key_pressed(Lib::KEY_MENU)) {
+        lib().play_sound(Lib::SOUND_MENU_ACCEPT);
         if (_mode != BOSS_MODE) {
           int32_t index =
               _mode == WHAT_MODE ? 3 * Lib::PLAYERS + _players :
@@ -535,7 +535,7 @@ void z0Game::Update()
         }
       }
     }
-    else if (lib().IsKeyPressed(Lib::KEY_MENU)) {
+    else if (lib().is_key_pressed(Lib::KEY_MENU)) {
       Player::replay.end_recording(
           "untitled",
           _mode == BOSS_MODE ?
@@ -546,7 +546,7 @@ void z0Game::Update()
                : 0l) : GetTotalScore());
 
       EndGame();
-      lib().PlaySound(Lib::SOUND_MENU_ACCEPT);
+      lib().play_sound(Lib::SOUND_MENU_ACCEPT);
     }
   }
 }
@@ -560,10 +560,10 @@ void z0Game::Render() const
     while ((i = s.find_first_of("\n")) != std::string::npos) {
       std::string t = s.substr(0, i);
       s = s.substr(i + 1);
-      lib().RenderText(flvec2(2, float(y)), t, PANEL_TEXT);
+      lib().render_text(flvec2(2, float(y)), t, PANEL_TEXT);
       ++y;
     }
-    lib().RenderText(flvec2(2, float(y)), s, PANEL_TEXT);
+    lib().render_text(flvec2(2, float(y)), s, PANEL_TEXT);
     return;
   }
 
@@ -572,7 +572,7 @@ void z0Game::Render() const
   if (!_firstControllersDialog) {
     Stars::render(_lib);
     for (const auto& particle : _particles) {
-      lib().RenderRect(particle.position + flvec2(1, 1),
+      lib().render_rect(particle.position + flvec2(1, 1),
                        particle.position - flvec2(1, 1), particle.colour);
     }
     for (std::size_t i = _players; i < _ships.size(); ++i) {
@@ -589,15 +589,15 @@ void z0Game::Render() const
   if (_state == STATE_GAME) {
     if (_controllersDialog) {
       RenderPanel(flvec2(3.f, 3.f), flvec2(32.f, 8.f + 2 * _players));
-      lib().RenderText(flvec2(4.f, 4.f), "CONTROLLERS FOUND", PANEL_TEXT);
+      lib().render_text(flvec2(4.f, 4.f), "CONTROLLERS FOUND", PANEL_TEXT);
 
       for (int32_t i = 0; i < _players; i++) {
         std::stringstream ss;
         ss << "PLAYER " << (i + 1) << ": ";
-        lib().RenderText(flvec2(4.f, 8.f + 2 * i), ss.str(), PANEL_TEXT);
+        lib().render_text(flvec2(4.f, 8.f + 2 * i), ss.str(), PANEL_TEXT);
 
         std::stringstream ss2;
-        int pads = lib().IsPadConnected(i);
+        int pads = lib().get_pad_type(i);
         if (!Player::replay.recording) {
           ss2 << "REPLAY";
           pads = 1;
@@ -617,8 +617,8 @@ void z0Game::Render() const
           }
         }
 
-        lib().RenderText(flvec2(14.f, 8.f + 2 * i), ss2.str(),
-                         pads ? Player::GetPlayerColour(i) : PANEL_TEXT);
+        lib().render_text(flvec2(14.f, 8.f + 2 * i), ss2.str(),
+                          pads ? Player::GetPlayerColour(i) : PANEL_TEXT);
       }
       return;
     }
@@ -630,7 +630,7 @@ void z0Game::Render() const
       ss << " " << (t < 10 ? "0" : "") << t;
     }
 
-    lib().RenderText(
+    lib().render_text(
         flvec2(Lib::WIDTH / (2.f * Lib::TEXT_WIDTH) - ss.str().length() / 2,
                Lib::HEIGHT / Lib::TEXT_HEIGHT - 2.f),
         ss.str(), PANEL_TRAN);
@@ -648,48 +648,48 @@ void z0Game::Render() const
                     std::max(v.x + Lib::WIDTH, 0.f) / Lib::WIDTH);
         a |= a << 4;
         a = (a << 8) | (a << 16) | (a << 24) | 0x66;
-        lib().RenderLine(flvec2(0.f, v.y), flvec2(6, v.y - 3), a);
-        lib().RenderLine(flvec2(6.f, v.y - 3), flvec2(6, v.y + 3), a);
-        lib().RenderLine(flvec2(6.f, v.y + 3), flvec2(0, v.y), a);
+        lib().render_line(flvec2(0.f, v.y), flvec2(6, v.y - 3), a);
+        lib().render_line(flvec2(6.f, v.y - 3), flvec2(6, v.y + 3), a);
+        lib().render_line(flvec2(6.f, v.y + 3), flvec2(0, v.y), a);
       }
       if (v.x >= Lib::WIDTH + 4) {
         int a = int(.5f + float(0x1) + float(0x9) *
                     std::max(2 * Lib::WIDTH - v.x, 0.f) / Lib::WIDTH);
         a |= a << 4;
         a = (a << 8) | (a << 16) | (a << 24) | 0x66;
-        lib().RenderLine(flvec2(float(Lib::WIDTH), v.y),
-                         flvec2(Lib::WIDTH - 6.f, v.y - 3), a);
-        lib().RenderLine(flvec2(Lib::WIDTH - 6, v.y - 3),
-                         flvec2(Lib::WIDTH - 6.f, v.y + 3), a);
-        lib().RenderLine(flvec2(Lib::WIDTH - 6, v.y + 3),
-                         flvec2(float(Lib::WIDTH), v.y), a);
+        lib().render_line(flvec2(float(Lib::WIDTH), v.y),
+                          flvec2(Lib::WIDTH - 6.f, v.y - 3), a);
+        lib().render_line(flvec2(Lib::WIDTH - 6, v.y - 3),
+                          flvec2(Lib::WIDTH - 6.f, v.y + 3), a);
+        lib().render_line(flvec2(Lib::WIDTH - 6, v.y + 3),
+                          flvec2(float(Lib::WIDTH), v.y), a);
       }
       if (v.y < -4) {
         int a = int(.5f + float(0x1) + float(0x9) *
                     std::max(v.y + Lib::HEIGHT, 0.f) / Lib::HEIGHT);
         a |= a << 4;
         a = (a << 8) | (a << 16) | (a << 24) | 0x66;
-        lib().RenderLine(flvec2(v.x, 0.f), flvec2(v.x - 3, 6.f), a);
-        lib().RenderLine(flvec2(v.x - 3, 6.f), flvec2(v.x + 3, 6.f), a);
-        lib().RenderLine(flvec2(v.x + 3, 6.f), flvec2(v.x, 0.f), a);
+        lib().render_line(flvec2(v.x, 0.f), flvec2(v.x - 3, 6.f), a);
+        lib().render_line(flvec2(v.x - 3, 6.f), flvec2(v.x + 3, 6.f), a);
+        lib().render_line(flvec2(v.x + 3, 6.f), flvec2(v.x, 0.f), a);
       }
       if (v.y >= Lib::HEIGHT + 4) {
         int a = int(.5f + float(0x1) + float(0x9) *
                     std::max(2 * Lib::HEIGHT - v.y, 0.f) / Lib::HEIGHT);
         a |= a << 4;
         a = (a << 8) | (a << 16) | (a << 24) | 0x66;
-        lib().RenderLine(flvec2(v.x, float(Lib::HEIGHT)),
-                         flvec2(v.x - 3, Lib::HEIGHT - 6.f), a);
-        lib().RenderLine(flvec2(v.x - 3, Lib::HEIGHT - 6.f),
-                         flvec2(v.x + 3, Lib::HEIGHT - 6.f), a);
-        lib().RenderLine(flvec2(v.x + 3, Lib::HEIGHT - 6.f),
-                         flvec2(v.x, float(Lib::HEIGHT)), a);
+        lib().render_line(flvec2(v.x, float(Lib::HEIGHT)),
+                          flvec2(v.x - 3, Lib::HEIGHT - 6.f), a);
+        lib().render_line(flvec2(v.x - 3, Lib::HEIGHT - 6.f),
+                          flvec2(v.x + 3, Lib::HEIGHT - 6.f), a);
+        lib().render_line(flvec2(v.x + 3, Lib::HEIGHT - 6.f),
+                          flvec2(v.x, float(Lib::HEIGHT)), a);
       }
     }
     if (_mode == BOSS_MODE) {
       std::stringstream sst;
       sst << ConvertToTime(_overmind->GetElapsedTime());
-      lib().RenderText(
+      lib().render_text(
         flvec2(Lib::WIDTH / (2 * Lib::TEXT_WIDTH) -
                sst.str().length() - 1.f, 1.f),
         sst.str(), PANEL_TRAN);
@@ -697,12 +697,12 @@ void z0Game::Render() const
 
     if (_showHPBar) {
       int x = _mode == BOSS_MODE ? 48 : 0;
-      lib().RenderRect(
+      lib().render_rect(
           flvec2(x + Lib::WIDTH / 2 - 48.f, 16.f),
           flvec2(x + Lib::WIDTH / 2 + 48.f, 32.f),
           PANEL_TRAN, 2);
 
-      lib().RenderRect(
+      lib().render_rect(
           flvec2(x + Lib::WIDTH / 2 - 44.f, 16.f + 4),
           flvec2(x + Lib::WIDTH / 2 - 44.f + 88.f * _fillHPBar, 32.f - 4),
           PANEL_TRAN);
@@ -716,7 +716,7 @@ void z0Game::Render() const
           int(100 * float(Player::replay_frame) /
           Player::replay.player_frames.size()) << "%";
 
-      lib().RenderText(
+      lib().render_text(
           flvec2(Lib::WIDTH / (2.f * Lib::TEXT_WIDTH) - ss.str().length() / 2,
                  Lib::HEIGHT / Lib::TEXT_HEIGHT - 3.f),
           ss.str(), PANEL_TRAN);
@@ -730,12 +730,12 @@ void z0Game::Render() const
     //------------------------------
     RenderPanel(flvec2(3.f, 3.f), flvec2(19.f, 14.f));
 
-    lib().RenderText(flvec2(37.f - 16, 3.f), "coded by: SEiKEN", PANEL_TEXT);
-    lib().RenderText(flvec2(37.f - 16, 4.f), "stu@seiken.co.uk", PANEL_TEXT);
-    lib().RenderText(flvec2(37.f - 9, 6.f), "-testers-", PANEL_TEXT);
-    lib().RenderText(flvec2(37.f - 9, 7.f), "MATT BELL", PANEL_TEXT);
-    lib().RenderText(flvec2(37.f - 9, 8.f), "RUFUZZZZZ", PANEL_TEXT);
-    lib().RenderText(flvec2(37.f - 9, 9.f), "SHADOW1W2", PANEL_TEXT);
+    lib().render_text(flvec2(37.f - 16, 3.f), "coded by: SEiKEN", PANEL_TEXT);
+    lib().render_text(flvec2(37.f - 16, 4.f), "stu@seiken.co.uk", PANEL_TEXT);
+    lib().render_text(flvec2(37.f - 9, 6.f), "-testers-", PANEL_TEXT);
+    lib().render_text(flvec2(37.f - 9, 7.f), "MATT BELL", PANEL_TEXT);
+    lib().render_text(flvec2(37.f - 9, 8.f), "RUFUZZZZZ", PANEL_TEXT);
+    lib().render_text(flvec2(37.f - 9, 9.f), "SHADOW1W2", PANEL_TEXT);
 
     std::string b = "BOSSES:  ";
     int bb = IsHardModeUnlocked() ?
@@ -747,41 +747,41 @@ void z0Game::Render() const
     if (bb & BOSS_2A) b += "X"; else b += "-";
     if (bb & BOSS_2B) b += "X"; else b += "-";
     if (bb & BOSS_2C) b += "X"; else b += "-";
-    lib().RenderText(flvec2(37.f - 16, 13.f), b, PANEL_TEXT);
+    lib().render_text(flvec2(37.f - 16, 13.f), b, PANEL_TEXT);
 
-    lib().RenderText(flvec2(4.f, 4.f), "WiiSPACE", PANEL_TEXT);
-    lib().RenderText(flvec2(6.f, 8.f), "START GAME", PANEL_TEXT);
-    lib().RenderText(flvec2(6.f, 10.f), "PLAYERS", PANEL_TEXT);
-    lib().RenderText(flvec2(6.f, 12.f), "EXiT", PANEL_TEXT);
+    lib().render_text(flvec2(4.f, 4.f), "WiiSPACE", PANEL_TEXT);
+    lib().render_text(flvec2(6.f, 8.f), "START GAME", PANEL_TEXT);
+    lib().render_text(flvec2(6.f, 10.f), "PLAYERS", PANEL_TEXT);
+    lib().render_text(flvec2(6.f, 12.f), "EXiT", PANEL_TEXT);
 
     if (_specialSelection == 0 && IsBossModeUnlocked()) {
-      lib().RenderText(flvec2(6.f, 6.f), "BOSS MODE", PANEL_TEXT);
+      lib().render_text(flvec2(6.f, 6.f), "BOSS MODE", PANEL_TEXT);
       if (IsHardModeUnlocked() && _selection == -1) {
-        lib().RenderText(flvec2(6.f, 6.f), "         >", PANEL_TRAN);
+        lib().render_text(flvec2(6.f, 6.f), "         >", PANEL_TRAN);
       }
     }
     if (_specialSelection == 1 && IsHardModeUnlocked()) {
-      lib().RenderText(flvec2(6.f, 6.f), "HARD MODE", PANEL_TEXT);
+      lib().render_text(flvec2(6.f, 6.f), "HARD MODE", PANEL_TEXT);
       if (_selection == -1) {
-        lib().RenderText(flvec2(5.f, 6.f), "<", PANEL_TRAN);
+        lib().render_text(flvec2(5.f, 6.f), "<", PANEL_TRAN);
       }
       if (IsFastModeUnlocked() && _selection == -1) {
-        lib().RenderText(flvec2(6.f, 6.f), "         >", PANEL_TRAN);
+        lib().render_text(flvec2(6.f, 6.f), "         >", PANEL_TRAN);
       }
     }
     if (_specialSelection == 2 && IsFastModeUnlocked()) {
-      lib().RenderText(flvec2(6.f, 6.f), "FAST MODE", PANEL_TEXT);
+      lib().render_text(flvec2(6.f, 6.f), "FAST MODE", PANEL_TEXT);
       if (_selection == -1) {
-        lib().RenderText(flvec2(5.f, 6.f), "<", PANEL_TRAN);
+        lib().render_text(flvec2(5.f, 6.f), "<", PANEL_TRAN);
       }
       if (IsWhatModeUnlocked() && _selection == -1) {
-        lib().RenderText(flvec2(6.f, 6.f), "         >", PANEL_TRAN);
+        lib().render_text(flvec2(6.f, 6.f), "         >", PANEL_TRAN);
       }
     }
     if (_specialSelection == 3 && IsWhatModeUnlocked()) {
-      lib().RenderText(flvec2(6.f, 6.f), "W-HAT MODE", PANEL_TEXT);
+      lib().render_text(flvec2(6.f, 6.f), "W-HAT MODE", PANEL_TEXT);
       if (_selection == -1) {
-        lib().RenderText(flvec2(5.f, 6.f), "<", PANEL_TRAN);
+        lib().render_text(flvec2(5.f, 6.f), "<", PANEL_TRAN);
       }
     }
 
@@ -789,19 +789,19 @@ void z0Game::Render() const
                float((8 + 2 * _selection) * Lib::TEXT_HEIGHT + 4));
     flvec2 hi(float(5 * Lib::TEXT_WIDTH - 4),
               float((9 + 2 * _selection) * Lib::TEXT_HEIGHT - 4));
-    lib().RenderRect(low, hi, PANEL_TEXT, 1);
+    lib().render_rect(low, hi, PANEL_TEXT, 1);
 
     if (_players > 1 && _selection == 1) {
-      lib().RenderText(flvec2(5.f, 10.f), "<", PANEL_TRAN);
+      lib().render_text(flvec2(5.f, 10.f), "<", PANEL_TRAN);
     }
     if (_players < 4 && _selection == 1) {
-      lib().RenderText(flvec2(14.f + _players, 10.f), ">", PANEL_TRAN);
+      lib().render_text(flvec2(14.f + _players, 10.f), ">", PANEL_TRAN);
     }
     for (int32_t i = 0; i < _players; ++i) {
       std::stringstream ss;
       ss << (i + 1);
-      lib().RenderText(flvec2(14.f + i, 10.f), ss.str(),
-                       Player::GetPlayerColour(i));
+      lib().render_text(flvec2(14.f + i, 10.f), ss.str(),
+                        Player::GetPlayerColour(i));
     }
 
     // High score table
@@ -820,13 +820,13 @@ void z0Game::Render() const
         _players == 2 ? "TWO PLAYERS" :
         _players == 3 ? "THREE PLAYERS" :
         _players == 4 ? "FOUR PLAYERS" : "";
-    lib().RenderText(flvec2(4.f, 16.f), s, PANEL_TEXT);
+    lib().render_text(flvec2(4.f, 16.f), s, PANEL_TEXT);
 
     if (_selection == -1 && _specialSelection == 0) {
-      lib().RenderText(flvec2(4.f, 18.f), "ONE PLAYER", PANEL_TEXT);
-      lib().RenderText(flvec2(4.f, 20.f), "TWO PLAYERS", PANEL_TEXT);
-      lib().RenderText(flvec2(4.f, 22.f), "THREE PLAYERS", PANEL_TEXT);
-      lib().RenderText(flvec2(4.f, 24.f), "FOUR PLAYERS", PANEL_TEXT);
+      lib().render_text(flvec2(4.f, 18.f), "ONE PLAYER", PANEL_TEXT);
+      lib().render_text(flvec2(4.f, 20.f), "TWO PLAYERS", PANEL_TEXT);
+      lib().render_text(flvec2(4.f, 22.f), "THREE PLAYERS", PANEL_TEXT);
+      lib().render_text(flvec2(4.f, 24.f), "FOUR PLAYERS", PANEL_TEXT);
 
       for (std::size_t i = 0; i < Lib::PLAYERS; i++) {
         std::string score =
@@ -839,15 +839,15 @@ void z0Game::Render() const
           name = name.substr(0, SaveData::MAX_NAME_LENGTH);
         }
 
-        lib().RenderText(flvec2(19.f, 18.f + i * 2), score, PANEL_TEXT);
-        lib().RenderText(flvec2(19.f, 19.f + i * 2), name, PANEL_TEXT);
+        lib().render_text(flvec2(19.f, 18.f + i * 2), score, PANEL_TEXT);
+        lib().render_text(flvec2(19.f, 19.f + i * 2), name, PANEL_TEXT);
       }
     }
     else {
       for (std::size_t i = 0; i < SaveData::NUM_HIGH_SCORES; i++) {
         std::stringstream ssi;
         ssi << (i + 1) << ".";
-        lib().RenderText(flvec2(4.f, 18.f + i), ssi.str(), PANEL_TEXT);
+        lib().render_text(flvec2(4.f, 18.f + i), ssi.str(), PANEL_TEXT);
 
         int n = _selection != -1 ? _players - 1 :
             _specialSelection * Lib::PLAYERS + _players;
@@ -867,8 +867,8 @@ void z0Game::Render() const
           name = name.substr(0, SaveData::MAX_NAME_LENGTH);
         }
 
-        lib().RenderText(flvec2(7.f, 18.f + i), score, PANEL_TEXT);
-        lib().RenderText(flvec2(19.f, 18.f + i), name, PANEL_TEXT);
+        lib().render_text(flvec2(7.f, 18.f + i), score, PANEL_TEXT);
+        lib().render_text(flvec2(19.f, 18.f + i), name, PANEL_TEXT);
       }
     }
   }
@@ -877,26 +877,26 @@ void z0Game::Render() const
   else if (_state == STATE_PAUSE) {
     RenderPanel(flvec2(3.f, 3.f), flvec2(15.f, 14.f));
 
-    lib().RenderText(flvec2(4.f, 4.f), "PAUSED", PANEL_TEXT);
-    lib().RenderText(flvec2(6.f, 8.f), "CONTINUE", PANEL_TEXT);
-    lib().RenderText(flvec2(6.f, 10.f), "END GAME", PANEL_TEXT);
-    lib().RenderText(flvec2(6.f, 12.f), "VOL.", PANEL_TEXT);
+    lib().render_text(flvec2(4.f, 4.f), "PAUSED", PANEL_TEXT);
+    lib().render_text(flvec2(6.f, 8.f), "CONTINUE", PANEL_TEXT);
+    lib().render_text(flvec2(6.f, 10.f), "END GAME", PANEL_TEXT);
+    lib().render_text(flvec2(6.f, 12.f), "VOL.", PANEL_TEXT);
     std::stringstream vol;
     int32_t v = _settings.volume.to_int();
     vol << " " << (v < 10 ? " " : "") << v;
-    lib().RenderText(flvec2(10.f, 12.f), vol.str(), PANEL_TEXT);
+    lib().render_text(flvec2(10.f, 12.f), vol.str(), PANEL_TEXT);
     if (_selection == 2 && v > 0) {
-      lib().RenderText(flvec2(5.f, 12.f), "<", PANEL_TRAN);
+      lib().render_text(flvec2(5.f, 12.f), "<", PANEL_TRAN);
     }
     if (_selection == 2 && v < 100) {
-      lib().RenderText(flvec2(13.f, 12.f), ">", PANEL_TRAN);
+      lib().render_text(flvec2(13.f, 12.f), ">", PANEL_TRAN);
     }
 
     flvec2 low(float(4 * Lib::TEXT_WIDTH + 4),
                float((8 + 2 * _selection) * Lib::TEXT_HEIGHT + 4));
     flvec2 hi(float(5 * Lib::TEXT_WIDTH - 4),
               float((9 + 2 * _selection) * Lib::TEXT_HEIGHT - 4));
-    lib().RenderRect(low, hi, PANEL_TEXT, 1);
+    lib().render_rect(low, hi, PANEL_TEXT, 1);
   }
   // Score screen
   //------------------------------
@@ -909,21 +909,21 @@ void z0Game::Render() const
       std::string chars = ALLOWED_CHARS;
 
       RenderPanel(flvec2(3.f, 20.f), flvec2(28.f, 27.f));
-      lib().RenderText(flvec2(4.f, 21.f), "It's a high score!", PANEL_TEXT);
-      lib().RenderText(flvec2(4.f, 23.f),
+      lib().render_text(flvec2(4.f, 21.f), "It's a high score!", PANEL_TEXT);
+      lib().render_text(flvec2(4.f, 23.f),
                        _players == 1 ? "Enter name:" : "Enter team name:",
                        PANEL_TEXT);
-      lib().RenderText(flvec2(6.f, 25.f), _enterName, PANEL_TEXT);
+      lib().render_text(flvec2(6.f, 25.f), _enterName, PANEL_TEXT);
       if ((_enterTime / 16) % 2 &&
           _enterName.length() < SaveData::MAX_NAME_LENGTH) {
-        lib().RenderText(flvec2(6.f + _enterName.length(), 25.f),
-                         chars.substr(_enterChar, 1), 0xbbbbbbff);
+        lib().render_text(flvec2(6.f + _enterName.length(), 25.f),
+                          chars.substr(_enterChar, 1), 0xbbbbbbff);
       }
       flvec2 low(float(4 * Lib::TEXT_WIDTH + 4),
                  float((25 + 2 * _selection) * Lib::TEXT_HEIGHT + 4));
       flvec2 hi(float(5 * Lib::TEXT_WIDTH - 4),
                 float((26 + 2 * _selection) * Lib::TEXT_HEIGHT - 4));
-      lib().RenderRect(low, hi, PANEL_TEXT, 1);
+      lib().render_rect(low, hi, PANEL_TEXT, 1);
     }
 
     // Boss mode score listing
@@ -944,14 +944,14 @@ void z0Game::Render() const
       if (b) {
         std::stringstream ss;
         ss << (extraLives * 10) << "-second extra-life bonus!";
-        lib().RenderText(flvec2(4.f, 4.f), ss.str(), PANEL_TEXT);
+        lib().render_text(flvec2(4.f, 4.f), ss.str(), PANEL_TEXT);
       }
 
-      lib().RenderText(flvec2(4.f, b ? 6.f : 4.f),
-                       "TIME ELAPSED: " + ConvertToTime(score), PANEL_TEXT);
+      lib().render_text(flvec2(4.f, b ? 6.f : 4.f),
+                        "TIME ELAPSED: " + ConvertToTime(score), PANEL_TEXT);
       std::stringstream ss;
       ss << "BOSS DESTROY: " << _overmind->GetKilledBosses();
-      lib().RenderText(flvec2(4.f, b ? 8.f : 6.f), ss.str(), PANEL_TEXT);
+      lib().render_text(flvec2(4.f, b ? 8.f : 6.f), ss.str(), PANEL_TEXT);
       return;
     }
 
@@ -966,7 +966,7 @@ void z0Game::Render() const
     if (score.length() > SaveData::MAX_SCORE_LENGTH) {
       score = score.substr(0, SaveData::MAX_SCORE_LENGTH);
     }
-    lib().RenderText(flvec2(4.f, 4.f), "TOTAL SCORE: " + score, PANEL_TEXT);
+    lib().render_text(flvec2(4.f, 4.f), "TOTAL SCORE: " + score, PANEL_TEXT);
 
     for (int32_t i = 0; i < _players; ++i) {
       std::stringstream sss;
@@ -984,9 +984,9 @@ void z0Game::Render() const
 
       std::stringstream ssp;
       ssp << "PLAYER " << (i + 1) << ":";
-      lib().RenderText(flvec2(4.f, 8.f + 2 * i), ssp.str(), PANEL_TEXT);
-      lib().RenderText(flvec2(14.f, 8.f + 2 * i), score,
-                       Player::GetPlayerColour(i));
+      lib().render_text(flvec2(4.f, 8.f + 2 * i), ssp.str(), PANEL_TEXT);
+      lib().render_text(flvec2(14.f, 8.f + 2 * i), score,
+                        Player::GetPlayerColour(i));
     }
 
     // Top-ranked player
@@ -1006,15 +1006,15 @@ void z0Game::Render() const
       if (GetTotalScore() > 0) {
         std::stringstream s;
         s << "PLAYER " << (best + 1);
-        lib().RenderText(flvec2(4.f, 8.f + 2 * _players), s.str(),
-                       Player::GetPlayerColour(best));
+        lib().render_text(flvec2(4.f, 8.f + 2 * _players), s.str(),
+                          Player::GetPlayerColour(best));
 
         std::string compliment = _compliments[_compliment];
-        lib().RenderText(
+        lib().render_text(
             flvec2(12.f, 8.f + 2 * _players), compliment, PANEL_TEXT);
       }
       else {
-        lib().RenderText(
+        lib().render_text(
             flvec2(4.f, 8.f + 2 * _players), "Oh dear!", PANEL_TEXT);
       }
     }
@@ -1027,7 +1027,7 @@ void z0Game::NewGame(bool canFaceSecretBoss, bool replay, game_mode mode)
 {
   if (!replay) {
     Player::replay = Replay(_players, mode, canFaceSecretBoss);
-    lib().NewGame();
+    lib().new_game();
   }
   _controllersDialog = true;
   _firstControllersDialog = true;
@@ -1233,8 +1233,8 @@ void z0Game::RenderPanel(const flvec2& low, const flvec2& hi) const
 {
   flvec2 tlow(low.x * Lib::TEXT_WIDTH, low.y * Lib::TEXT_HEIGHT);
   flvec2 thi(hi.x * Lib::TEXT_WIDTH, hi.y * Lib::TEXT_HEIGHT);
-  lib().RenderRect(tlow, thi, PANEL_BACK);
-  lib().RenderRect(tlow, thi, PANEL_TEXT, 4);
+  lib().render_rect(tlow, thi, PANEL_BACK);
+  lib().render_rect(tlow, thi, PANEL_TEXT, 4);
 }
 
 std::string z0Game::ConvertToTime(int64_t score) const

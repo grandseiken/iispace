@@ -49,11 +49,11 @@ Player::~Player()
 
 void Player::update()
 {
-  vec2 velocity = lib().GetMoveVelocity(GetPlayerNumber());
-  vec2 fireTarget = lib().GetFireTarget(GetPlayerNumber(), shape().centre);
+  vec2 velocity = lib().get_move_velocity(GetPlayerNumber());
+  vec2 fireTarget = lib().get_fire_target(GetPlayerNumber(), shape().centre);
   int keys =
-      int(lib().IsKeyHeld(GetPlayerNumber(), Lib::KEY_FIRE)) |
-      (lib().IsKeyPressed(GetPlayerNumber(), Lib::KEY_BOMB) << 1);
+      int(lib().is_key_held(GetPlayerNumber(), Lib::KEY_FIRE)) |
+      (lib().is_key_pressed(GetPlayerNumber(), Lib::KEY_BOMB) << 1);
 
   if (replay.recording) {
     replay.record(velocity, fireTarget, keys);
@@ -94,7 +94,7 @@ void Player::update()
             (1 + GetPlayerNumber()) * Lib::WIDTH / (1 + z0().count_players()),
             Lib::HEIGHT / 2);
         z0().sub_life();
-        lib().Rumble(GetPlayerNumber(), 10);
+        lib().rumble(GetPlayerNumber(), 10);
         play_sound(Lib::SOUND_PLAYER_RESPAWN);
       }
       else {
@@ -139,7 +139,7 @@ void Player::update()
     }
     shape().centre = t;
 
-    lib().Rumble(GetPlayerNumber(), 10);
+    lib().rumble(GetPlayerNumber(), 10);
     play_sound(Lib::SOUND_EXPLOSION);
 
     z0Game::ShipList list =
@@ -170,7 +170,7 @@ void Player::update()
       float volume = .5f * z::rand_fixed().to_float() + .5f;
       float pitch = (z::rand_fixed().to_float() - 1.f) / 12.f;
       if (_shotSoundQueue.empty() || _shotSoundQueue[0] == this) {
-        couldPlay = lib().PlaySound(
+        couldPlay = lib().play_sound(
             Lib::SOUND_PLAYER_FIRE, volume,
             2.f * shape().centre.x.to_float() / Lib::WIDTH - 1.f, pitch);
       }
@@ -204,8 +204,8 @@ void Player::render() const
   if (!_killTimer && (z0().mode() != z0Game::WHAT_MODE || _reviveTimer > 0)) {
     flvec2 t = to_float(_tempTarget);
     if (t.x >= 0 && t.x <= Lib::WIDTH && t.y >= 0 && t.y <= Lib::HEIGHT) {
-      lib().RenderLine(t + flvec2(0, 9), t - flvec2(0, 8), GetPlayerColour());
-      lib().RenderLine(t + flvec2(9, 1), t - flvec2(8, -1), GetPlayerColour());
+      lib().render_line(t + flvec2(0, 9), t - flvec2(0, 8), GetPlayerColour());
+      lib().render_line(t + flvec2(9, 1), t - flvec2(8, -1), GetPlayerColour());
     }
     if (_reviveTimer % 2) {
       render_with_colour(0xffffffff);
@@ -228,7 +228,7 @@ void Player::render() const
       n == 2 ? flvec2(1.f, Lib::HEIGHT / Lib::TEXT_HEIGHT - 2.f) :
       n == 3 ? flvec2(Lib::WIDTH / Lib::TEXT_WIDTH - 1.f - s.length(),
                       Lib::HEIGHT / Lib::TEXT_HEIGHT - 2.f) : flvec2(1.f, 1.f);
-  lib().RenderText(v, s, z0Game::PANEL_TEXT);
+  lib().render_text(v, s, z0Game::PANEL_TEXT);
 
   std::stringstream sss;
   if (n % 2 == 1) {
@@ -238,7 +238,7 @@ void Player::render() const
     sss << "   " << _score;
   }
   s = sss.str();
-  lib().RenderText(v, s, GetPlayerColour());
+  lib().render_text(v, s, GetPlayerColour());
 
   if (_magicShotTimer != 0) {
     if (n == 0 || n == 2) {
@@ -248,7 +248,7 @@ void Player::render() const
       v.x -= 1;
     }
     v *= 16;
-    lib().RenderRect(
+    lib().render_rect(
         v + flvec2(5.f, 11.f - (10 * _magicShotTimer) / MAGICSHOT_COUNT),
         v + flvec2(9.f, 13.f), 0xffffffff, 2);
   }
@@ -266,7 +266,7 @@ void Player::damage()
   }
 
   if (_shield) {
-    lib().Rumble(GetPlayerNumber(), 10);
+    lib().rumble(GetPlayerNumber(), 10);
     play_sound(Lib::SOUND_PLAYER_SHIELD);
     destroy_shape(5);
     _shield = false;
@@ -290,7 +290,7 @@ void Player::damage()
     _bomb = false;
   }
   _killQueue.push_back(this);
-  lib().Rumble(GetPlayerNumber(), 25);
+  lib().rumble(GetPlayerNumber(), 25);
   play_sound(Lib::SOUND_PLAYER_DESTROY);
 }
 
@@ -301,7 +301,7 @@ static const int MULTIPLIER_lookup[24] = {
 
 void Player::AddScore(int64_t score)
 {
-  lib().Rumble(GetPlayerNumber(), 3);
+  lib().rumble(GetPlayerNumber(), 3);
   _score += score * _multiplier;
   _mulCount++;
   if (MULTIPLIER_lookup[std::min(_multiplier + 3, 23)] <= _mulCount) {

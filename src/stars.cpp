@@ -38,20 +38,20 @@ void Stars::render(Lib& lib)
     switch (star->type) {
     case DOT_STAR:
     case FAR_STAR:
-      lib.RenderRect(star->position - flvec2(1, 1),
-                     star->position + flvec2(1, 1), star->colour);
+      lib.render_rect(star->position - flvec2(1, 1),
+                      star->position + flvec2(1, 1), star->colour);
       break;
 
     case BIG_STAR:
-      lib.RenderRect(star->position - flvec2(2, 2),
-                     star->position + flvec2(2, 2), star->colour);
+      lib.render_rect(star->position - flvec2(2, 2),
+                      star->position + flvec2(2, 2), star->colour);
       break;
 
     case PLANET:
       for (int32_t i = 0; i < 8; i++) {
         flvec2 a = flvec2::from_polar(i * M_PIf / 4, star->size);
         flvec2 b = flvec2::from_polar((i + 1) * M_PIf / 4, star->size);
-        lib.RenderLine(star->position + a, star->position + b, star->colour);
+        lib.render_line(star->position + a, star->position + b, star->colour);
       }
     }
   }

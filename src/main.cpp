@@ -9,7 +9,7 @@ int run(const std::vector<std::string>& args)
 {
   try {
     Lib lib;
-    lib.Init();
+    lib.init();
 
     z0Game game(lib, args);
     game.Run();
