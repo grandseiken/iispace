@@ -141,11 +141,11 @@ std::string crypt(const std::string& text, const std::string& key)
 
 std::string compress_string(const std::string& str)
 {
-  const int compressionLevel = Z_BEST_COMPRESSION;
+  const int compression_level = Z_BEST_COMPRESSION;
   z_stream zs;
   memset(&zs, 0, sizeof(zs));
 
-  if (deflateInit(&zs, compressionLevel) != Z_OK) {
+  if (deflateInit(&zs, compression_level) != Z_OK) {
     throw std::runtime_error("deflateInit failed while compressing.");
   }
 

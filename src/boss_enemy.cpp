@@ -7,11 +7,11 @@ const fixed DeathRay::SPEED = 10;
 
 // Big follower
 //------------------------------
-BigFollow::BigFollow(const vec2& position, bool hasScore)
+BigFollow::BigFollow(const vec2& position, bool has_score)
   : Follow(position, 20, 3)
-  , _has_score(hasScore)
+  , _has_score(has_score)
 {
-  set_score(hasScore ? 20 : 0);
+  set_score(has_score ? 20 : 0);
   set_destroy_sound(Lib::SOUND_PLAYER_DESTROY);
   set_enemy_value(3);
 }
@@ -88,11 +88,11 @@ void TBossShot::update()
 
 // Ghost boss wall
 //------------------------------
-GhostWall::GhostWall(bool swap, bool noGap, bool ignored)
+GhostWall::GhostWall(bool swap, bool no_gap, bool ignored)
   : Enemy(vec2(Lib::WIDTH / 2, swap ? -10 : 10 + Lib::HEIGHT), SHIP_NONE, 0)
   , _dir(0, swap ? 1 : -1)
 {
-  if (noGap) {
+  if (no_gap) {
     add_shape(new Box(vec2(), fixed(Lib::WIDTH), 10, 0xcc66ffff,
                       0, DANGEROUS | SHIELD));
     add_shape(new Box(vec2(), fixed(Lib::WIDTH), 7, 0xcc66ffff, 0, 0));
@@ -109,12 +109,12 @@ GhostWall::GhostWall(bool swap, bool noGap, bool ignored)
   set_bounding_width(fixed(Lib::WIDTH));
 }
 
-GhostWall::GhostWall(bool swap, bool swapGap)
+GhostWall::GhostWall(bool swap, bool swap_gap)
   : Enemy(vec2(swap ? -10 : 10 + Lib::WIDTH, Lib::HEIGHT / 2), SHIP_NONE, 0)
   , _dir(swap ? 1 : -1, 0)
 {
   set_bounding_width(fixed(Lib::HEIGHT));
-  fixed off = swapGap ? -100 : 100;
+  fixed off = swap_gap ? -100 : 100;
 
   add_shape(new Box(vec2(0, off - 20 - Lib::HEIGHT / 2), 10,
                     Lib::HEIGHT / 2, 0xcc66ffff, 0, DANGEROUS | SHIELD));

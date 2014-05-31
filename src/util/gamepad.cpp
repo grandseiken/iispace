@@ -59,19 +59,19 @@ public:
     return t;
   }
 
-  bool buttonPressed(const OIS::JoyStickEvent& arg, int button)
+  bool buttonPressed(const OIS::JoyStickEvent& arg, int button) override
   {
     _arg = arg.device;
     _button = button;
     return true;
   }
 
-  bool buttonReleased(const OIS::JoyStickEvent& arg, int button)
+  bool buttonReleased(const OIS::JoyStickEvent& arg, int button) override
   {
     return true;
   }
 
-  bool axisMoved(const OIS::JoyStickEvent& arg, int axis)
+  bool axisMoved(const OIS::JoyStickEvent& arg, int axis) override
   {
     if ((_axis1 == -1 || _axis1 != axis) &&
         (arg.state.mAxes[axis].abs > 20000 ||
@@ -88,12 +88,12 @@ public:
     return true;
   }
 
-  bool sliderMoved(const OIS::JoyStickEvent& arg, int slider)
+  bool sliderMoved(const OIS::JoyStickEvent& arg, int slider) override
   {
     return true;
   }
 
-  bool povMoved(const OIS::JoyStickEvent& arg, int pov)
+  bool povMoved(const OIS::JoyStickEvent& arg, int pov) override
   {
     if (arg.state.mPOV[pov].direction != OIS::Pov::Centered) {
       _pov = pov;
@@ -101,7 +101,7 @@ public:
     return true;
   }
 
-  bool vector3Moved(const OIS::JoyStickEvent& arg, int index)
+  bool vector3Moved(const OIS::JoyStickEvent& arg, int index) override
   {
     return true;
   }
@@ -118,10 +118,10 @@ private:
 
 };
 
-int assignStart(Handler& handler, OIS::JoyStick** pads,
-                int& i, const std::string& name,
-                PadConfig::Buttons& buttons, std::string& devName,
-                const std::vector<int>& done)
+int assign_start(Handler& handler, OIS::JoyStick** pads,
+                 int& i, const std::string& name,
+                 PadConfig::Buttons& buttons, std::string& dev_name,
+                 const std::vector<int>& done)
 {
   std::cout <<
       "Press the [" << name << "] button on the gamepad for PLAYER " <<
@@ -165,10 +165,10 @@ int assignStart(Handler& handler, OIS::JoyStick** pads,
       if (!found) {
         i = p;
         buttons.push_back(t);
-        devName = handler.arg()->vendor();
+        dev_name = handler.arg()->vendor();
         std::cout <<
             "\tAssigned button " << t << " to " <<
-            name << " on " << devName << "\n";
+            name << " on " << dev_name << "\n";
         return t;
       }
     }
@@ -177,7 +177,7 @@ int assignStart(Handler& handler, OIS::JoyStick** pads,
 
 void assign(Handler& handler, OIS::JoyStick** pads, int p, int i,
             const std::string& name, PadConfig::Sticks& sticks,
-            PadConfig::Buttons& dpads, int start, const std::string& devName)
+            PadConfig::Buttons& dpads, int start, const std::string& dev_name)
 {
   std::cout <<
       "Tilt any [" << name <<
@@ -200,7 +200,7 @@ void assign(Handler& handler, OIS::JoyStick** pads, int p, int i,
         dpads.push_back(t);
         std::cout <<
             "\tAssigned D-pad " << t << " to " <<
-            name << " on " << devName << "\n";
+            name << " on " << dev_name << "\n";
       }
     }
     std::pair<std::pair<int, bool>, std::pair<int, bool>> u = handler.axis();
@@ -225,7 +225,7 @@ void assign(Handler& handler, OIS::JoyStick** pads, int p, int i,
         std::cout <<
             "\tAssigned stick " <<
             stick._axis1 << ", " << stick._axis2 << " to " <<
-            name << " on " << devName << "\n";
+            name << " on " << dev_name << "\n";
       }
     }
     if (handler.button() == start) {
@@ -236,7 +236,7 @@ void assign(Handler& handler, OIS::JoyStick** pads, int p, int i,
 
 void assign(Handler& handler, OIS::JoyStick** pads, int p, int i,
             const std::string& name, PadConfig::Buttons& buttons,
-            int start, const std::string& devName)
+            int start, const std::string& dev_name)
 {
   std::cout <<
       "Press any [" << name << "] buttons on gamepad #" << i + 1 <<
@@ -260,7 +260,7 @@ void assign(Handler& handler, OIS::JoyStick** pads, int p, int i,
         buttons.push_back(t);
         std::cout <<
             "\tAssigned button " << t << " to " <<
-            name << " on " << devName << "\n";
+            name << " on " << dev_name << "\n";
       }
     }
   }
@@ -296,8 +296,8 @@ int main(int argc, char** argv)
   for (int i = 0; i < n; ++i) {
     handler.clear();
     int p = i;
-    int start = assignStart(handler, pads, p, "START/MENU",
-                            config[i]._startButtons, config[i]._name, done);
+    int start = assign_start(handler, pads, p, "START/MENU",
+                             config[i]._startButtons, config[i]._name, done);
     done.push_back(p);
 
     assign(handler, pads, p, i, "MOVEMENT",

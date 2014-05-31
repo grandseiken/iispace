@@ -409,14 +409,14 @@ void Shielder::update()
     shapes()[i]->rotate(-s);
   }
 
-  bool onScreen = false;
+  bool on_screen = false;
   _dir = shape().centre.x < 0 ? vec2(1, 0) :
          shape().centre.x > Lib::WIDTH ? vec2(-1, 0) :
          shape().centre.y < 0 ? vec2(0, 1) :
          shape().centre.y > Lib::HEIGHT ? vec2(0, -1) :
-         (onScreen = true, _dir);
+         (on_screen = true, _dir);
 
-  if (!onScreen && _rotate) {
+  if (!on_screen && _rotate) {
     _timer = 0;
     _rotate = false;
   }

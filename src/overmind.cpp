@@ -409,19 +409,19 @@ void Overmind::wave()
   _tz0 = &_z0;
   int32_t resources = _power;
 
-  std::vector<std::pair<int32_t, spawn_formation_function>> validFormations;
+  std::vector<std::pair<int32_t, spawn_formation_function>> valid_formations;
   for (std::size_t i = 0; i < _formations.size(); i++) {
     if (resources >= _formations[i].first.second) {
-      validFormations.push_back(std::pair<int32_t, spawn_formation_function>(
+      valid_formations.push_back(std::pair<int32_t, spawn_formation_function>(
           _formations[i].first.first, _formations[i].second));
     }
   }
 
-  std::vector<std::pair<int32_t, spawn_formation_function>> chosenFormations;
+  std::vector<std::pair<int32_t, spawn_formation_function>> chosen_formations;
   while (resources > 0) {
     std::size_t max = 0;
-    while (max < validFormations.size() &&
-           validFormations[max].first <= resources) {
+    while (max < valid_formations.size() &&
+           valid_formations[max].first <= resources) {
       max++;
     }
 
@@ -436,22 +436,22 @@ void Overmind::wave()
       n = z::rand_int(max);
     }
 
-    chosenFormations.insert(
-        chosenFormations.begin() + z::rand_int(chosenFormations.size() + 1),
-        validFormations[n]);
-    resources -= validFormations[n].first;
+    chosen_formations.insert(
+        chosen_formations.begin() + z::rand_int(chosen_formations.size() + 1),
+        valid_formations[n]);
+    resources -= valid_formations[n].first;
   }
 
   std::vector<std::size_t> perm;
-  for (std::size_t i = 0; i < chosenFormations.size(); ++i) {
+  for (std::size_t i = 0; i < chosen_formations.size(); ++i) {
     perm.push_back(i);
   }
-  for (std::size_t i = 0; i < chosenFormations.size() - 1; ++i) {
-    std::swap(perm[i], perm[i + z::rand_int(chosenFormations.size() - i)]);
+  for (std::size_t i = 0; i < chosen_formations.size() - 1; ++i) {
+    std::swap(perm[i], perm[i + z::rand_int(chosen_formations.size() - i)]);
   }
   _hard_already = 0;
-  for (std::size_t row = 0; row < chosenFormations.size(); ++row) {
-    chosenFormations[perm[row]].second(false, int32_t(perm[row]));
+  for (std::size_t row = 0; row < chosen_formations.size(); ++row) {
+    chosen_formations[perm[row]].second(false, int32_t(perm[row]));
   }
   _tz0 = 0;
 }

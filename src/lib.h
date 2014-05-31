@@ -97,7 +97,7 @@ public:
   void render_line(const flvec2& a, const flvec2& b, colour_t c) const;
   void render_text(const flvec2& v, const std::string& text, colour_t c) const;
   void render_rect(const flvec2& low, const flvec2& hi,
-                   colour_t c, int32_t lineWidth = 0) const;
+                   colour_t c, int32_t line_width = 0) const;
   void render() const;
 
   void rumble(int32_t player, int32_t time);

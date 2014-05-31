@@ -93,8 +93,8 @@ int32_t Boss::CalculateHP(int32_t base, int32_t players, int32_t cycle)
 
 void Boss::damage(int32_t damage, bool magic, Player* source)
 {
-  int32_t actualDamage = get_damage(damage, magic);
-  if (actualDamage <= 0) {
+  int32_t actual_damage = get_damage(damage, magic);
+  if (actual_damage <= 0) {
     return;
   }
 
@@ -111,9 +111,9 @@ void Boss::damage(int32_t damage, bool magic, Player* source)
     _damaged = 1;
   }
 
-  actualDamage *= 60 /
+  actual_damage *= 60 /
       (1 + (z0().get_lives() ? z0().count_players() : z0().alive_players()));
-  _hp -= actualDamage;
+  _hp -= actual_damage;
 
   if (_hp <= 0 && !is_destroyed()) {
     destroy();
@@ -129,9 +129,9 @@ void Boss::render() const
   render(true);
 }
 
-void Boss::render(bool hpBar) const
+void Boss::render(bool hp_bar) const
 {
-  if (hpBar) {
+  if (hp_bar) {
     render_hp_bar();
   }
 
@@ -735,20 +735,20 @@ void ChaserBoss::update()
 void ChaserBoss::render() const
 {
   Boss::render();
-  static std::vector<int32_t> hpLookup;
-  if (hpLookup.empty()) {
+  static std::vector<int32_t> hp_lookup;
+  if (hp_lookup.empty()) {
     int32_t hp = 0;
     for (int32_t i = 0; i < 8; i++) {
       hp = 2 * hp + CalculateHP(
           1 + BASE_HP / (fixed::half + HP_REDUCE_POWER_lookup[7 - i]).to_int(),
           _players, _cycle);
-      hpLookup.push_back(hp);
+      hp_lookup.push_back(hp);
     }
   }
-  _shared_hp += (_split == 7 ? 0 : 2 * hpLookup[6 - _split]) +
+  _shared_hp += (_split == 7 ? 0 : 2 * hp_lookup[6 - _split]) +
       get_remaining_hp() * 30;
   if (_on_screen) {
-    z0().render_hp_bar(float(_shared_hp) / float(hpLookup[MAX_SPLIT]));
+    z0().render_hp_bar(float(_shared_hp) / float(hp_lookup[MAX_SPLIT]));
   }
 }
 
@@ -1506,7 +1506,7 @@ void DeathRayBoss::update()
     }
   }
 
-  bool goingFast = false;
+  bool going_fast = false;
   if (_laser) {
     if (_timer) {
       if (positioned) {
@@ -1532,7 +1532,7 @@ void DeathRayBoss::update()
         shape().set_rotation(0);
       }
       else {
-        goingFast = true;
+        going_fast = true;
         shape().rotate(_dir ? fixed::tenth : -fixed::tenth);
       }
     }
@@ -1613,7 +1613,7 @@ void DeathRayBoss::update()
   }
 
   for (std::size_t i = 0; i < _shot_queue.size(); ++i) {
-    if (!goingFast || _shot_timer % 2) {
+    if (!going_fast || _shot_timer % 2) {
       int32_t n = _shot_queue[i].first;
       vec2 d = vec2(1, 0).rotated(shape().rotation() + n * fixed::pi / 6);
       Ship* s = new SBBossShot(shape().centre + d * 120, d * 5, 0x33ff99ff);

@@ -106,10 +106,10 @@ public:
     _lib = lib;
   }
 
-  bool buttonPressed(const OIS::JoyStickEvent& arg, int32_t button);
-  bool buttonReleased(const OIS::JoyStickEvent& arg, int32_t button);
-  bool axisMoved(const OIS::JoyStickEvent& arg, int32_t axis);
-  bool povMoved(const OIS::JoyStickEvent& arg, int32_t pov);
+  bool buttonPressed(const OIS::JoyStickEvent& arg, int32_t button) override;
+  bool buttonReleased(const OIS::JoyStickEvent& arg, int32_t button) override;
+  bool axisMoved(const OIS::JoyStickEvent& arg, int32_t axis) override;
+  bool povMoved(const OIS::JoyStickEvent& arg, int32_t pov) override;
 
 private:
 
@@ -808,25 +808,13 @@ vec2 Lib::get_fire_target(int32_t player, const vec2& position) const
   }
 
   if (_internals->pad_aim_dpads[player] != OIS::Pov::Centered) {
-    bool kU = (_internals->pad_aim_dpads[player] & OIS::Pov::North) != 0;
-    bool kD = (_internals->pad_aim_dpads[player] & OIS::Pov::South) != 0;
-    bool kL = (_internals->pad_aim_dpads[player] & OIS::Pov::West) != 0;
-    bool kR = (_internals->pad_aim_dpads[player] & OIS::Pov::East) != 0;
+    bool ku = (_internals->pad_aim_dpads[player] & OIS::Pov::North) != 0;
+    bool kd = (_internals->pad_aim_dpads[player] & OIS::Pov::South) != 0;
+    bool kl = (_internals->pad_aim_dpads[player] & OIS::Pov::West) != 0;
+    bool kr = (_internals->pad_aim_dpads[player] & OIS::Pov::East) != 0;
 
-    vec2 v;
-    if (kU) {
-      v += vec2(0, -1);
-    }
-    if (kD) {
-      v += vec2(0, 1);
-    }
-    if (kL) {
-      v += vec2(-1, 0);
-    }
-    if (kR) {
-      v += vec2(1, 0);
-    }
-
+    vec2 v=
+        vec2(0, -1) * ku + vec2(0, 1) * kd + vec2(-1, 0) * kl + vec2(1, 0) * kr;
     if (v != vec2()) {
       v = v.normalised() * 48;
       if (kp) {
@@ -897,7 +885,7 @@ void Lib::render_text(const flvec2& v, const std::string& text, colour_t c) cons
 }
 
 void Lib::render_rect(
-    const flvec2& low, const flvec2& hi, colour_t c, int lineWidth) const
+    const flvec2& low, const flvec2& hi, colour_t c, int line_width) const
 {
 #ifndef PLATFORM_SCORE
   c = z::colour_cycle(c, _cycle);
@@ -940,9 +928,9 @@ void Lib::render_rect(
   }
   glEnd();
 
-  if (lineWidth > 1) {
+  if (line_width > 1) {
     render_rect(low + flvec2(1.f, 1.f), hi - flvec2(1.f, 1.f),
-                z::colour_cycle(c, _cycle), lineWidth - 1);
+                z::colour_cycle(c, _cycle), line_width - 1);
   }
 #endif
 }

@@ -903,12 +903,12 @@ void z0Game::render() const
     // Boss mode score listing
     //------------------------------
     if (_mode == BOSS_MODE) {
-      int extraLives = get_lives();
-      bool b = extraLives > 0 && _overmind->get_killed_bosses() >= 6;
+      int32_t extra_lives = get_lives();
+      bool b = extra_lives > 0 && _overmind->get_killed_bosses() >= 6;
 
       long score = _overmind->get_elapsed_time();
       if (b) {
-        score -= 10 * extraLives;
+        score -= 10 * extra_lives;
       }
       if (score <= 0) {
         score = 1;
@@ -917,7 +917,7 @@ void z0Game::render() const
       render_panel(flvec2(3.f, 3.f), flvec2(37.f, b ? 10.f : 8.f));
       if (b) {
         std::stringstream ss;
-        ss << (extraLives * 10) << "-second extra-life bonus!";
+        ss << (extra_lives * 10) << "-second extra-life bonus!";
         lib().render_text(flvec2(4.f, 4.f), ss.str(), PANEL_TEXT);
       }
 
@@ -997,17 +997,17 @@ void z0Game::render() const
 
 // Game control
 //------------------------------
-void z0Game::new_game(bool canFaceSecretBoss, bool replay, game_mode mode)
+void z0Game::new_game(bool can_face_secret_boss, bool replay, game_mode mode)
 {
   if (!replay) {
-    Player::replay = Replay(_players, mode, canFaceSecretBoss);
+    Player::replay = Replay(_players, mode, can_face_secret_boss);
     lib().new_game();
   }
   _controllers_dialog = true;
   _first_controllers_dialog = true;
   _controllers_connected = 0;
   _mode = mode;
-  _overmind->reset(canFaceSecretBoss);
+  _overmind->reset(can_face_secret_boss);
   _lives = mode == BOSS_MODE ? _players * BOSSMODE_LIVES : STARTING_LIVES;
   _frame_count = _mode == FAST_MODE ? 2 : 1;
 
@@ -1163,9 +1163,9 @@ int32_t z0Game::killed_players() const
 Player* z0Game::nearest_player(const vec2& point) const
 {
   Ship* r = 0;
-  Ship* deadR = 0;
+  Ship* deadr = 0;
   fixed d = Lib::WIDTH * Lib::HEIGHT;
-  fixed deadD = Lib::WIDTH * Lib::HEIGHT;
+  fixed deadd = Lib::WIDTH * Lib::HEIGHT;
 
   for (Ship* ship : _player_list) {
     if (!((Player*) ship)->is_killed() &&
@@ -1173,12 +1173,12 @@ Player* z0Game::nearest_player(const vec2& point) const
       d = (ship->shape().centre - point).length();
       r = ship;
     }
-    if ((ship->shape().centre - point).length() < deadD) {
-      deadD = (ship->shape().centre - point).length();
-      deadR = ship;
+    if ((ship->shape().centre - point).length() < deadd) {
+      deadd = (ship->shape().centre - point).length();
+      deadr = ship;
     }
   }
-  return (Player*) (r != 0 ? r : deadR);
+  return (Player*) (r != 0 ? r : deadr);
 }
 
 void z0Game::set_boss_killed(boss_list boss)
@@ -1236,22 +1236,22 @@ std::string z0Game::convert_to_time(int64_t score) const
 
 // Score calculation
 //------------------------------
-int64_t z0Game::get_player_score(int32_t playerNumber) const
+int64_t z0Game::get_player_score(int32_t player_number) const
 {
   for (Ship* ship : _player_list) {
     Player* p = (Player*) ship;
-    if (p->player_number() == playerNumber) {
+    if (p->player_number() == player_number) {
       return p->score();
     }
   }
   return 0;
 }
 
-int64_t z0Game::get_player_deaths(int32_t playerNumber) const
+int64_t z0Game::get_player_deaths(int32_t player_number) const
 {
   for (Ship* ship : _player_list) {
     Player* p = (Player*) ship;
-    if (p->player_number() == playerNumber) {
+    if (p->player_number() == player_number) {
       return p->deaths();
     }
   }

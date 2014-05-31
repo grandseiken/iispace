@@ -45,9 +45,9 @@ public:
     return (_max_hp * 1.2f) / _hp >= 3;
   }
 
-  void set_ignore_damage_colour_index(int32_t shapeIndex)
+  void set_ignore_damage_colour_index(int32_t shape_index)
   {
-    _ignore_damage_colour = shapeIndex;
+    _ignore_damage_colour = shape_index;
   }
 
   void render_hp_bar() const;

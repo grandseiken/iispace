@@ -131,7 +131,7 @@ public:
   static const int TIMER;
   static const fixed SPEED;
 
-  FollowHub(const vec2& position, bool powerA = false, bool powerB = false);
+  FollowHub(const vec2& position, bool powera = false, bool powerb = false);
   void update() override;
   void on_destroy(bool bomb) override;
 

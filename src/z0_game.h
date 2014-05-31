@@ -170,7 +170,7 @@ private:
   int64_t get_total_score() const;
   bool is_high_score() const;
 
-  void new_game(bool canFaceSecretBoss, bool replay, game_mode mode);
+  void new_game(bool can_face_secret_boss, bool replay, game_mode mode);
   void end_game();
 
   Lib& _lib;

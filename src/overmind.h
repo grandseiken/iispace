@@ -115,10 +115,10 @@ private:
 
 #define FORM_DEC(name) static formation_cost name (bool query, int32_t row)
 #define FORM_USE(name) add_formation(&name)
-#define FORM_DEF(name, cost, minResource)\
+#define FORM_DEF(name, cost, min_resource)\
     Overmind::formation_cost Overmind:: name(bool query, int32_t row) {\
       if (query) {\
-        return formation_cost(cost, minResource);\
+        return formation_cost(cost, min_resource);\
       }\
       _trow = row;
 #define FORM_END return formation_cost(0, 0); }

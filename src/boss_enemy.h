@@ -9,7 +9,7 @@ class Boss;
 class BigFollow : public Follow {
 public:
 
-  BigFollow(const vec2& position, bool hasScore);
+  BigFollow(const vec2& position, bool has_score);
   void on_destroy(bool bomb) override;
 
 private:
@@ -54,8 +54,8 @@ public:
 
   static const fixed SPEED;
 
-  GhostWall(bool swap, bool noGap, bool ignored);
-  GhostWall(bool swap, bool swapGap);
+  GhostWall(bool swap, bool no_gap, bool ignored);
+  GhostWall(bool swap, bool swap_gap);
   void update() override;
 
 private:
