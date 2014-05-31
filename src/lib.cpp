@@ -621,8 +621,8 @@ bool Lib::begin_frame()
     }
   }
 
-  _mouse.x = std::max(0, std::min(Lib::WIDTH - 1, _mouse.x));
-  _mouse.y = std::max(0, std::min(Lib::HEIGHT - 1, _mouse.y));
+  _mouse = std::max(
+      ivec2(), std::min(ivec2(Lib::WIDTH - 1, Lib::HEIGHT - 1), _mouse));
   if (t != _mouse) {
     _mouse_moving = true;
   }

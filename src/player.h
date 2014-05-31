@@ -7,17 +7,7 @@
 class Player : public Ship {
 public:
 
-  // Constants
-  //------------------------------
-  static const fixed SPEED;
-  static const fixed SHOT_SPEED;
-  static const int32_t SHOT_TIMER;
-  static const fixed BOMB_RADIUS;
-  static const fixed BOMB_BOSSRADIUS;
-  static const int32_t BOMB_DAMAGE;
-  static const int32_t REVIVE_TIME;
-  static const int32_t SHIELD_TIME;
-  static const int32_t MAGICSHOT_COUNT;
+  static const int32_t bomb_damage = 50;
 
   // Player ship
   //------------------------------
@@ -41,11 +31,7 @@ public:
   void activate_magic_shots();
   void activate_magic_shield();
   void activate_bomb();
-
-  static void update_fire_timer()
-  {
-    _fire_timer = (_fire_timer + 1) % SHOT_TIMER;
-  }
+  static void update_fire_timer();
 
   // Scoring
   //------------------------------

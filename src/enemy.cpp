@@ -50,14 +50,14 @@ void Enemy::damage(int damage, bool magic, Player* source)
     else {
       explosion(0, 4, true, to_float(shape().centre));
     }
-    OnDestroy(damage >= Player::BOMB_DAMAGE);
+    OnDestroy(damage >= Player::bomb_damage);
     destroy();
   }
   else if (!is_destroyed()) {
     if (damage > 0) {
       play_sound_random(Lib::SOUND_ENEMY_HIT);
     }
-    _damaged = damage >= Player::BOMB_DAMAGE ? 25 : 1;
+    _damaged = damage >= Player::bomb_damage ? 25 : 1;
   }
 }
 

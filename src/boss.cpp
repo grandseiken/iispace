@@ -99,7 +99,7 @@ void Boss::damage(int damage, bool magic, Player* source)
     return;
   }
 
-  if (damage >= Player::BOMB_DAMAGE) {
+  if (damage >= Player::bomb_damage) {
     if (_explodeOnDamage) {
       explosion();
       explosion(0xffffffff, 16);
@@ -164,7 +164,7 @@ void Boss::OnDestroy()
   SetKilled();
   for (const auto& ship : z0().all_ships(SHIP_ENEMY)) {
     if (ship != this) {
-      ship->damage(Player::BOMB_DAMAGE, false, 0);
+      ship->damage(Player::bomb_damage, false, 0);
     }
   }
   explosion();
@@ -448,7 +448,7 @@ int ShieldBombBoss::GetDamage(int damage, bool magic)
   if (_unshielded) {
     return damage;
   }
-  if (damage >= Player::BOMB_DAMAGE && !_unshielded) {
+  if (damage >= Player::bomb_damage && !_unshielded) {
     _unshielded = UNSHIELD_TIME;
     shapes()[0]->category = VULNERABLE | DANGEROUS;
     shapes()[17]->category = 0;
@@ -1716,7 +1716,7 @@ void SuperBossArc::render() const
 
 int SuperBossArc::GetDamage(int damage, bool magic)
 {
-  if (damage >= Player::BOMB_DAMAGE) {
+  if (damage >= Player::bomb_damage) {
     return damage / 2;
   }
   return damage;
@@ -1892,7 +1892,7 @@ void SuperBoss::OnDestroy()
   SetKilled();
   for (const auto& ship : z0().all_ships(SHIP_ENEMY)) {
     if (ship != this) {
-      ship->damage(Player::BOMB_DAMAGE * 100, false, 0);
+      ship->damage(Player::bomb_damage * 100, false, 0);
     }
   }
   explosion();

@@ -4,19 +4,20 @@
 
 #include <algorithm>
 
-const fixed Player::SPEED = 5;
-const fixed Player::SHOT_SPEED = 10;
-const int Player::SHOT_TIMER = 4;
-const fixed Player::BOMB_RADIUS = 180;
-const fixed Player::BOMB_BOSSRADIUS = 280;
-const int Player::BOMB_DAMAGE = 50;
-const int Player::REVIVE_TIME = 100;
-const int Player::SHIELD_TIME = 50;
-const int Player::MAGICSHOT_COUNT = 120;
+static const int32_t revive_time = 100;
+static const int32_t shield_time = 50;
+static const fixed speed = 5;
+static const int32_t shot_timer = 4;
+static const fixed shot_speed = 10;
+static const fixed bomb_radius = 180;
+static const fixed bomb_boss_radius = 280;
+static const int32_t magic_shot_count = 120;
+static const int32_t powerup_rotate_time = 100;
+static const fixed powerup_speed = 1;
 
 z0Game::ShipList Player::_kill_queue;
 z0Game::ShipList Player::_shot_sound_queue;
-int Player::_fire_timer;
+int32_t Player::_fire_timer;
 Replay Player::replay(0, 0, false);
 std::size_t Player::replay_frame;
 
@@ -27,7 +28,7 @@ Player::Player(const vec2& position, int player_number)
   , _multiplier(1)
   , _multiplier_count(0)
   , _kill_timer(0)
-  , _revive_timer(REVIVE_TIME)
+  , _revive_timer(revive_time)
   , _magic_shot_timer(0)
   , _shield(false)
   , _bomb(false)
@@ -50,29 +51,29 @@ Player::~Player()
 void Player::update()
 {
   vec2 velocity = lib().get_move_velocity(_player_number);
-  vec2 fireTarget = lib().get_fire_target(_player_number, shape().centre);
-  int keys =
-      int(lib().is_key_held(_player_number, Lib::KEY_FIRE)) |
+  vec2 fire_target = lib().get_fire_target(_player_number, shape().centre);
+  int32_t keys =
+      int32_t(lib().is_key_held(_player_number, Lib::KEY_FIRE)) |
       (lib().is_key_pressed(_player_number, Lib::KEY_BOMB) << 1);
 
   if (replay.recording) {
-    replay.record(velocity, fireTarget, keys);
+    replay.record(velocity, fire_target, keys);
   }
   else {
     if (replay_frame < replay.player_frames.size()) {
       const PlayerFrame& pf = replay.player_frames[replay_frame];
       velocity = pf.velocity;
-      fireTarget = pf.target;
+      fire_target = pf.target;
       keys = pf.keys;
       ++replay_frame;
     }
     else {
       velocity = vec2();
-      fireTarget = _temp_target;
+      fire_target = _temp_target;
       keys = 0;
     }
   }
-  _temp_target = fireTarget;
+  _temp_target = fire_target;
 
   if (!(keys & 1) || _kill_timer) {
     for (unsigned int i = 0; i < _shot_sound_queue.size(); i++) {
@@ -89,7 +90,7 @@ void Player::update()
     if (!_kill_timer && !_kill_queue.empty()) {
       if (z0().get_lives() && _kill_queue[0] == this) {
         _kill_queue.erase(_kill_queue.begin());
-        _revive_timer = REVIVE_TIME;
+        _revive_timer = revive_time;
         shape().centre = vec2(
             (1 + _player_number) * Lib::WIDTH / (1 + z0().count_players()),
             Lib::HEIGHT / 2);
@@ -110,13 +111,10 @@ void Player::update()
   // Movement
   vec2 move = velocity;
   if (move.length() > fixed::hundredth) {
-    move = (move.length() > 1 ? move.normalised() : move) * SPEED;
+    move = (move.length() > 1 ? move.normalised() : move) * speed;
     vec2 pos = move + shape().centre;
-
-    pos.x = std::max(fixed(0), std::min(fixed(Lib::WIDTH), pos.x));
-    pos.y = std::max(fixed(0), std::min(fixed(Lib::HEIGHT), pos.y));
-
-    shape().centre = pos;
+    shape().centre =
+        std::max(vec2(), std::min(vec2(Lib::WIDTH, Lib::HEIGHT), pos));
     shape().set_rotation(move.angle());
   }
 
@@ -131,9 +129,9 @@ void Player::update()
 
     vec2 t = shape().centre;
     flvec2 tf = to_float(t);
-    for (int i = 0; i < 64; ++i) {
+    for (int32_t i = 0; i < 64; ++i) {
       shape().centre =
-          t + vec2::from_polar(2 * i * fixed::pi / 64, BOMB_RADIUS);
+          t + vec2::from_polar(2 * i * fixed::pi / 64, bomb_radius);
       explosion((i % 2) ? colour() : 0xffffffff,
                 8 + z::rand_int(8) + z::rand_int(8), true, tf);
     }
@@ -143,14 +141,13 @@ void Player::update()
     play_sound(Lib::SOUND_EXPLOSION);
 
     z0Game::ShipList list =
-        z0().ships_in_radius(shape().centre, BOMB_BOSSRADIUS, SHIP_ENEMY);
-    for (unsigned int i = 0; i < list.size(); i++) {
-      if ((list[i]->shape().centre - shape().centre).length() <= BOMB_RADIUS ||
-          (list[i]->type() & SHIP_BOSS)) {
-        list[i]->damage(BOMB_DAMAGE, false, 0);
+        z0().ships_in_radius(shape().centre, bomb_boss_radius, SHIP_ENEMY);
+    for (const auto& ship : list) {
+      if ((ship->shape().centre - shape().centre).length() <= bomb_radius ||
+          (ship->type() & SHIP_BOSS)) {
+        ship->damage(bomb_damage, false, 0);
       }
-      if (!(list[i]->type() & SHIP_BOSS) &&
-          ((Enemy*) list[i])->GetScore() > 0) {
+      if (!(ship->type() & SHIP_BOSS) && ((Enemy*) ship)->GetScore() > 0) {
         add_score(0);
       }
     }
@@ -158,33 +155,33 @@ void Player::update()
 
   // Shots
   if (!_fire_timer && keys & 1) {
-    vec2 v = fireTarget - shape().centre;
+    vec2 v = fire_target - shape().centre;
     if (v.length() > 0) {
       spawn(new Shot(shape().centre, this, v, _magic_shot_timer != 0));
       if (_magic_shot_timer) {
-        _magic_shot_timer--;
+        --_magic_shot_timer;
       }
 
-      bool couldPlay = false;
-      // Avoid randomness errors due to sound timings
+      bool could_play = false;
+      // Avoid randomness errors due to sound timings.
       float volume = .5f * z::rand_fixed().to_float() + .5f;
       float pitch = (z::rand_fixed().to_float() - 1.f) / 12.f;
       if (_shot_sound_queue.empty() || _shot_sound_queue[0] == this) {
-        couldPlay = lib().play_sound(
+        could_play = lib().play_sound(
             Lib::SOUND_PLAYER_FIRE, volume,
             2.f * shape().centre.x.to_float() / Lib::WIDTH - 1.f, pitch);
       }
-      if (couldPlay && !_shot_sound_queue.empty()) {
+      if (could_play && !_shot_sound_queue.empty()) {
         _shot_sound_queue.erase(_shot_sound_queue.begin());
       }
-      if (!couldPlay) {
-        bool inQueue = false;
-        for (unsigned int i = 0; i < _shot_sound_queue.size(); i++) {
-          if (_shot_sound_queue[i] == this) {
-            inQueue = true;
+      if (!could_play) {
+        bool in_queue = false;
+        for (const auto& ship : _shot_sound_queue) {
+          if (ship == this) {
+            in_queue = true;
           }
         }
-        if (!inQueue) {
+        if (!in_queue) {
           _shot_sound_queue.push_back(this);
         }
       }
@@ -248,7 +245,7 @@ void Player::render() const
     }
     v *= 16;
     lib().render_rect(
-        v + flvec2(5.f, 11.f - (10 * _magic_shot_timer) / MAGICSHOT_COUNT),
+        v + flvec2(5.f, 11.f - (10 * _magic_shot_timer) / magic_shot_count),
         v + flvec2(9.f, 13.f), 0xffffffff, 2);
   }
 }
@@ -258,8 +255,8 @@ void Player::damage()
   if (_kill_timer || _revive_timer) {
     return;
   }
-  for (unsigned int i = 0; i < _kill_queue.size(); i++) {
-    if (_kill_queue[i] == this) {
+  for (const auto& player : _kill_queue) {
+    if (player == this) {
       return;
     }
   }
@@ -270,7 +267,7 @@ void Player::damage()
     destroy_shape(5);
     _shield = false;
 
-    _revive_timer = SHIELD_TIME;
+    _revive_timer = shield_time;
     return;
   }
 
@@ -281,7 +278,7 @@ void Player::damage()
   _magic_shot_timer = 0;
   _multiplier = 1;
   _multiplier_count = 0;
-  _kill_timer = REVIVE_TIME;
+  _kill_timer = revive_time;
   ++_death_count;
   if (_shield || _bomb) {
     destroy_shape(5);
@@ -293,19 +290,19 @@ void Player::damage()
   play_sound(Lib::SOUND_PLAYER_DESTROY);
 }
 
-static const int MULTIPLIER_lookup[24] = {
-  1, 2, 4, 8, 16, 32, 64, 128, 256, 512, 1024, 2048, 4096, 8192, 16384, 32768,
-  65536, 131072, 262144, 524288, 1048576, 2097152, 4194304, 8388608
-};
-
 void Player::add_score(int64_t score)
 {
+  static const int32_t multiplier_lookup[24] = {
+    1, 2, 4, 8, 16, 32, 64, 128, 256, 512, 1024, 2048, 4096, 8192, 16384, 32768,
+    65536, 131072, 262144, 524288, 1048576, 2097152, 4194304, 8388608,
+  };
+
   lib().rumble(_player_number, 3);
   _score += score * _multiplier;
-  _multiplier_count++;
-  if (MULTIPLIER_lookup[std::min(_multiplier + 3, 23)] <= _multiplier_count) {
+  ++_multiplier_count;
+  if (multiplier_lookup[std::min(_multiplier + 3, 23)] <= _multiplier_count) {
     _multiplier_count = 0;
-    _multiplier++;
+    ++_multiplier;
   }
 }
 
@@ -320,7 +317,7 @@ colour_t Player::player_colour(std::size_t player_number)
 
 void Player::activate_magic_shots()
 {
-  _magic_shot_timer = MAGICSHOT_COUNT;
+  _magic_shot_timer = magic_shot_count;
 }
 
 void Player::activate_magic_shield()
@@ -352,6 +349,11 @@ void Player::activate_bomb()
                         fixed::pi, 0, Polygon::T::POLYSTAR));
 }
 
+void Player::update_fire_timer()
+{
+  _fire_timer = (_fire_timer + 1) % shot_timer;
+}
+
 Shot::Shot(const vec2& position, Player* player,
            const vec2& direction, bool magic)
   : Ship(position, SHIP_NONE)
@@ -360,7 +362,7 @@ Shot::Shot(const vec2& position, Player* player,
   , _magic(magic)
   , _flash(false)
 {
-  _velocity = _velocity.normalised() * Player::SHOT_SPEED;
+  _velocity = _velocity.normalised() * shot_speed;
   add_shape(new Fill(vec2(), 2, 2, _player->colour()));
   add_shape(new Fill(vec2(), 1, 1, _player->colour() & 0xffffff33));
   add_shape(new Fill(vec2(), 3, 3, _player->colour() & 0xffffff33));
@@ -445,7 +447,6 @@ void Powerup::update()
   _frame = (_frame + 1) % (Lib::PLAYERS * 2);
   shapes()[1]->colour = Player::player_colour(_frame / 2);
 
-  static const int32_t rotate_time = 100;
   if (!is_on_screen()) {
     _dir = get_screen_centre() - shape().centre;
   }
@@ -455,24 +456,20 @@ void Powerup::update()
     }
 
     _dir = _dir.rotated(2 * fixed::hundredth * (_rotate ? 1 : -1));
-    if (!z::rand_int(rotate_time)) {
-      _rotate = !_rotate;
-    }
+    _rotate = z::rand_int(powerup_rotate_time) ? _rotate : !_rotate;
   }
   _first_frame = false;
 
   Player* p = nearest_player();
-  bool alive = !p->is_killed();
   vec2 pv = p->shape().centre - shape().centre;
-  if (pv.length() <= 40 && alive) {
+  if (pv.length() <= 40 && !p->is_killed()) {
     _dir = pv;
   }
   _dir = _dir.normalised();
 
-  static const fixed speed = 1;
-  move(_dir * speed * ((pv.length() <= 40) ? 3 : 1));
-  if (pv.length() <= 10 && alive) {
-    damage(1, false, (Player*) p);
+  move(_dir * powerup_speed * ((pv.length() <= 40) ? 3 : 1));
+  if (pv.length() <= 10 && !p->is_killed()) {
+    damage(1, false, p);
   }
 }
 
@@ -482,24 +479,22 @@ void Powerup::damage(int damage, bool magic, Player* source)
     switch (_type) {
     case EXTRA_LIFE:
       z0().add_life();
-      play_sound(Lib::SOUND_POWERUP_LIFE);
       break;
 
     case MAGIC_SHOTS:
       source->activate_magic_shots();
-      play_sound(Lib::SOUND_POWERUP_OTHER);
       break;
 
     case SHIELD:
       source->activate_magic_shield();
-      play_sound(Lib::SOUND_POWERUP_OTHER);
       break;
 
     case BOMB:
       source->activate_bomb();
-      play_sound(Lib::SOUND_POWERUP_OTHER);
       break;
     }
+    play_sound(_type == EXTRA_LIFE ? Lib::SOUND_POWERUP_LIFE :
+                                     Lib::SOUND_POWERUP_OTHER);
     lib().rumble(source->player_number(), 6);
   }
 

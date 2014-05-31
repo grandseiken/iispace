@@ -438,7 +438,7 @@ void Overmind::Wave()
 
   std::vector<std::pair<int32_t, SpawnFormationFunction>> chosenFormations;
   while (resources > 0) {
-    unsigned int max = 0;
+    std::size_t max = 0;
     while (max < validFormations.size() &&
            validFormations[max].first <= resources) {
       max++;

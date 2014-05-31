@@ -168,6 +168,20 @@ public:
 
 };
 
+namespace std {
+  template<typename T>
+  vec2_t<T> max(const vec2_t<T>& a, const vec2_t<T>& b)
+  {
+    return vec2_t<T>(std::max(a.x, b.x), std::max(a.y, b.y));
+  }
+
+  template<typename T>
+  vec2_t<T> min(const vec2_t<T>& a, const vec2_t<T>& b)
+  {
+    return vec2_t<T>(std::min(a.x, b.x), std::min(a.y, b.y));
+  }
+}
+
 template<typename T>
 vec2_t<T> operator*(const T& t, const vec2_t<T>& v)
 {
