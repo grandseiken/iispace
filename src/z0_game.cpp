@@ -330,7 +330,7 @@ bool z0Game::Update()
       }
     }
 
-    Player::UpdateFireTimer();
+    Player::update_fire_timer();
     ChaserBoss::_hasCounted = false;
     std::stable_sort(_collisions.begin(), _collisions.end(), &SortShips);
     for (std::size_t i = 0; i < _ships.size(); ++i) {
@@ -594,7 +594,7 @@ void z0Game::Render() const
         }
 
         lib().render_text(flvec2(14.f, 8.f + 2 * i), ss2.str(),
-                          pads ? Player::GetPlayerColour(i) : PANEL_TEXT);
+                          pads ? Player::player_colour(i) : PANEL_TEXT);
       }
       return;
     }
@@ -776,7 +776,7 @@ void z0Game::Render() const
       std::stringstream ss;
       ss << (i + 1);
       lib().render_text(flvec2(14.f + i, 10.f), ss.str(),
-                        Player::GetPlayerColour(i));
+                        Player::player_colour(i));
     }
 
     // High score table
@@ -959,7 +959,7 @@ void z0Game::Render() const
       ssp << "PLAYER " << (i + 1) << ":";
       lib().render_text(flvec2(4.f, 8.f + 2 * i), ssp.str(), PANEL_TEXT);
       lib().render_text(flvec2(14.f, 8.f + 2 * i), score,
-                        Player::GetPlayerColour(i));
+                        Player::player_colour(i));
     }
 
     // Top-ranked player
@@ -980,7 +980,7 @@ void z0Game::Render() const
         std::stringstream s;
         s << "PLAYER " << (best + 1);
         lib().render_text(flvec2(4.f, 8.f + 2 * _players), s.str(),
-                          Player::GetPlayerColour(best));
+                          Player::player_colour(best));
 
         std::string compliment = _compliments[_compliment];
         lib().render_text(
@@ -1156,7 +1156,7 @@ int32_t z0Game::alive_players() const
 
 int32_t z0Game::killed_players() const
 {
-  return Player::CountKilledPlayers();
+  return Player::killed_players();
 }
 
 Player* z0Game::nearest_player(const vec2& point) const
@@ -1167,7 +1167,7 @@ Player* z0Game::nearest_player(const vec2& point) const
   fixed deadD = Lib::WIDTH * Lib::HEIGHT;
 
   for (Ship* ship : _playerList) {
-    if (!((Player*) ship)->IsKilled() &&
+    if (!((Player*) ship)->is_killed() &&
         (ship->shape().centre - point).length() < d) {
       d = (ship->shape().centre - point).length();
       r = ship;
@@ -1240,8 +1240,8 @@ int64_t z0Game::GetPlayerScore(int32_t playerNumber) const
 {
   for (Ship* ship : _playerList) {
     Player* p = (Player*) ship;
-    if (p->GetPlayerNumber() == playerNumber) {
-      return p->GetScore();
+    if (p->player_number() == playerNumber) {
+      return p->score();
     }
   }
   return 0;
@@ -1251,8 +1251,8 @@ int64_t z0Game::GetPlayerDeaths(int32_t playerNumber) const
 {
   for (Ship* ship : _playerList) {
     Player* p = (Player*) ship;
-    if (p->GetPlayerNumber() == playerNumber) {
-      return p->GetDeaths();
+    if (p->player_number() == playerNumber) {
+      return p->deaths();
     }
   }
   return 0;
@@ -1263,7 +1263,7 @@ int64_t z0Game::GetTotalScore() const
   int64_t total = 0;
   for (Ship* ship : _playerList) {
     Player* p = (Player*) ship;
-    total += p->GetScore();
+    total += p->score();
   }
   return total;
 }

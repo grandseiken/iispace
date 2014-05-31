@@ -1,7 +1,6 @@
 #include "overmind.h"
 #include "enemy.h"
 #include "boss.h"
-#include "powerup.h"
 #include "player.h"
 #include "stars.h"
 #include <algorithm>

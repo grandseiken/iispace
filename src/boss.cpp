@@ -1,5 +1,4 @@
 #include "boss.h"
-#include "powerup.h"
 #include "boss_enemy.h"
 #include "player.h"
 
@@ -188,8 +187,8 @@ void Boss::OnDestroy()
 
   for (const auto& player : z0().get_players()) {
     Player* p = (Player*) player;
-    if (!p->IsKilled() && GetScore() > 0) {
-      p->AddScore(GetScore() / z0().alive_players());
+    if (!p->is_killed() && GetScore() > 0) {
+      p->add_score(GetScore() / z0().alive_players());
     }
   }
 }
@@ -242,7 +241,7 @@ void BigSquareBoss::update()
 
   if (_specialAttack) {
     _specialTimer--;
-    if (_attackPlayer->IsKilled()) {
+    if (_attackPlayer->is_killed()) {
       _specialTimer = 0;
       _attackPlayer = 0;
     }
@@ -794,14 +793,14 @@ void ChaserBoss::OnDestroy()
       int n = 0;
       for (std::size_t i = 0; i < players.size(); i++) {
         Player* p = (Player*) players[i];
-        if (!p->IsKilled()) {
+        if (!p->is_killed()) {
           n++;
         }
       }
       for (std::size_t i = 0; i < players.size(); i++) {
         Player* p = (Player*) players[i];
-        if (!p->IsKilled()) {
-          p->AddScore(GetScore() / n);
+        if (!p->is_killed()) {
+          p->add_score(GetScore() / n);
         }
       }
       n = 1;
@@ -961,7 +960,7 @@ void TractorBoss::update()
       }
       _targets.clear();
       for (const auto& ship : z0().all_ships(SHIP_PLAYER)) {
-        if (((Player*) ship)->IsKilled()) {
+        if (((Player*) ship)->is_killed()) {
           continue;
         }
         vec2 pos = ship->shape().centre;
@@ -1036,7 +1035,7 @@ void TractorBoss::update()
         _targets.clear();
         for (const auto& ship : z0().all_ships(SHIP_PLAYER | SHIP_ENEMY)) {
           if (ship == this || ((ship->type() & SHIP_PLAYER) &&
-                               ((Player*) ship)->IsKilled())) {
+                               ((Player*) ship)->is_killed())) {
             continue;
           }
 
@@ -1921,15 +1920,15 @@ void SuperBoss::OnDestroy()
   n = 0;
   for (std::size_t i = 0; i < players.size(); i++) {
     Player* p = (Player*) players[i];
-    if (!p->IsKilled()) {
+    if (!p->is_killed()) {
       n++;
     }
   }
 
   for (std::size_t i = 0; i < players.size(); i++) {
     Player* p = (Player*) players[i];
-    if (!p->IsKilled()) {
-      p->AddScore(GetScore() / n);
+    if (!p->is_killed()) {
+      p->add_score(GetScore() / n);
     }
   }
 

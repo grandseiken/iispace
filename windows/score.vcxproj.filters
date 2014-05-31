@@ -6,7 +6,6 @@
     <ClCompile Include="..\src\enemy.cpp" />
     <ClCompile Include="..\src\overmind.cpp" />
     <ClCompile Include="..\src\player.cpp" />
-    <ClCompile Include="..\src\powerup.cpp" />
     <ClCompile Include="..\src\ship.cpp" />
     <ClCompile Include="..\src\stars.cpp" />
     <ClCompile Include="..\src\z0_game.cpp" />
@@ -70,7 +69,6 @@
     <ClInclude Include="..\src\lib.h" />
     <ClInclude Include="..\src\overmind.h" />
     <ClInclude Include="..\src\player.h" />
-    <ClInclude Include="..\src\powerup.h" />
     <ClInclude Include="..\src\shape.h" />
     <ClInclude Include="..\src\ship.h" />
     <ClInclude Include="..\src\stars.h" />

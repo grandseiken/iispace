@@ -136,7 +136,6 @@ private:
 
 };
 
-// Only the top-level category is taken into account.
 class CompoundShape : public Shape {
 public:
 

@@ -42,7 +42,7 @@ void Enemy::damage(int damage, bool magic, Player* source)
   if (_hp <= 0 && !is_destroyed()) {
     play_sound_random(_destroySound);
     if (source && GetScore() > 0) {
-      source->AddScore(GetScore());
+      source->add_score(GetScore());
     }
     if (_explodeOnDestroy) {
       explosion();
@@ -528,7 +528,7 @@ void Tractor::update()
   else if (_spinning) {
     shape().rotate(fixed::tenth * 3);
     for (unsigned int i = 0; i < _players.size(); i++) {
-      if (!((Player*) _players[i])->IsKilled()) {
+      if (!((Player*) _players[i])->is_killed()) {
         vec2 d = (shape().centre - _players[i]->shape().centre).normalised();
         _players[i]->move(d * TRACTOR_SPEED);
       }
@@ -553,7 +553,7 @@ void Tractor::render() const
   Enemy::render();
   if (_spinning) {
     for (unsigned int i = 0; i < _players.size(); i++) {
-      if (((_timer + i * 4) / 4) % 2 && !((Player*) _players[i])->IsKilled()) {
+      if (((_timer + i * 4) / 4) % 2 && !((Player*) _players[i])->is_killed()) {
         lib().render_line(to_float(shape().centre),
                           to_float(_players[i]->shape().centre), 0xcc33ccff);
       }

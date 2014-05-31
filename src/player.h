@@ -21,12 +21,12 @@ public:
 
   // Player ship
   //------------------------------
-  Player(const vec2& position, int32_t playerNumber);
+  Player(const vec2& position, int32_t player_number);
   ~Player() override;
 
-  int32_t GetPlayerNumber() const
+  int32_t player_number() const
   {
-    return _playerNumber;
+    return _player_number;
   }
 
   static Replay replay;
@@ -38,73 +38,71 @@ public:
   void render() const override;
   void damage();
 
-  void ActivateMagicShots();
-  void ActivateMagicShield();
-  void ActivateBomb();
+  void activate_magic_shots();
+  void activate_magic_shield();
+  void activate_bomb();
 
-  static void UpdateFireTimer()
+  static void update_fire_timer()
   {
-    _fireTimer = (_fireTimer + 1) % SHOT_TIMER;
+    _fire_timer = (_fire_timer + 1) % SHOT_TIMER;
   }
 
   // Scoring
   //------------------------------
-  int64_t GetScore() const
+  int64_t score() const
   {
     return _score;
   }
 
-  int32_t GetDeaths() const
+  int32_t deaths() const
   {
-    return _deathCounter;
+    return _death_count;
   }
 
-  void AddScore(int64_t score);
+  void add_score(int64_t score);
 
   // Colour
   //------------------------------
-  static colour_t GetPlayerColour(std::size_t playerNumber);
-  colour_t GetPlayerColour() const
+  static colour_t player_colour(std::size_t player_number);
+  colour_t colour() const
   {
-    return GetPlayerColour(GetPlayerNumber());
+    return player_colour(_player_number);
   }
 
   // Temporary death
   //------------------------------
-  static std::size_t CountKilledPlayers()
+  static std::size_t killed_players()
   {
-    return _killQueue.size();
+    return _kill_queue.size();
   }
 
-  bool IsKilled()
+  bool is_killed()
   {
-    return _killTimer != 0;
+    return _kill_timer != 0;
   }
 
 private:
 
   // Internals
   //------------------------------
-  int32_t _playerNumber;
+  int32_t _player_number;
   int64_t _score;
   int32_t _multiplier;
-  int32_t _mulCount;
-  int32_t _killTimer;
-  int32_t _reviveTimer;
-  int32_t _magicShotTimer;
+  int32_t _multiplier_count;
+  int32_t _kill_timer;
+  int32_t _revive_timer;
+  int32_t _magic_shot_timer;
   bool _shield;
   bool _bomb;
-  vec2 _tempTarget;
-  int32_t _deathCounter;
+  vec2 _temp_target;
+  int32_t _death_count;
 
-  static int32_t _fireTimer;
-  static z0Game::ShipList _killQueue;
-  static z0Game::ShipList _shotSoundQueue;
+  static int32_t _fire_timer;
+  static z0Game::ShipList _kill_queue;
+  static z0Game::ShipList _shot_sound_queue;
 
 };
 
-// Player projectile
-//------------------------------
 class Shot : public Ship {
 public:
 
@@ -121,6 +119,30 @@ private:
   vec2 _velocity;
   bool _magic;
   bool _flash;
+
+};
+
+class Powerup : public Ship {
+public:
+
+  enum type_t {
+    EXTRA_LIFE,
+    MAGIC_SHOTS,
+    SHIELD,
+    BOMB,
+  };
+
+  Powerup(const vec2& position, type_t type);
+  void update() override;
+  void damage(int damage, bool magic, Player* source) override;
+
+private:
+
+  type_t _type;
+  int32_t _frame;
+  vec2 _dir;
+  bool _rotate;
+  bool _first_frame;
 
 };
 
