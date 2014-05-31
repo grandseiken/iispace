@@ -32,6 +32,7 @@ Player::Player(const vec2& position, int player_number)
   , _magic_shot_timer(0)
   , _shield(false)
   , _bomb(false)
+  , _fire_target(get_screen_centre())
   , _death_count(0)
 {
   add_shape(new Polygon(vec2(), 16, 3, colour()));
@@ -50,75 +51,64 @@ Player::~Player()
 
 void Player::update()
 {
-  vec2 velocity = lib().get_move_velocity(_player_number);
-  vec2 fire_target = lib().get_fire_target(_player_number, shape().centre);
-  int32_t keys =
-      int32_t(lib().is_key_held(_player_number, Lib::KEY_FIRE)) |
-      (lib().is_key_pressed(_player_number, Lib::KEY_BOMB) << 1);
+  vec2 velocity;
+  int32_t keys = 0;
 
   if (replay.recording) {
-    replay.record(velocity, fire_target, keys);
+    vec2 velocity = lib().get_move_velocity(_player_number);
+    _fire_target = lib().get_fire_target(_player_number, shape().centre);
+    keys = int32_t(lib().is_key_held(_player_number, Lib::KEY_FIRE)) |
+           (lib().is_key_pressed(_player_number, Lib::KEY_BOMB) << 1);
+    replay.record(velocity, _fire_target, keys);
   }
-  else {
-    if (replay_frame < replay.player_frames.size()) {
-      const PlayerFrame& pf = replay.player_frames[replay_frame];
-      velocity = pf.velocity;
-      fire_target = pf.target;
-      keys = pf.keys;
-      ++replay_frame;
-    }
-    else {
-      velocity = vec2();
-      fire_target = _temp_target;
-      keys = 0;
-    }
+  else if (replay_frame < replay.player_frames.size()) {
+    const PlayerFrame& pf = replay.player_frames[replay_frame];
+    velocity = pf.velocity;
+    _fire_target = pf.target;
+    keys = pf.keys;
+    ++replay_frame;
   }
-  _temp_target = fire_target;
 
-  if (!(keys & 1) || _kill_timer) {
-    for (unsigned int i = 0; i < _shot_sound_queue.size(); i++) {
-      if (_shot_sound_queue[i] == this) {
-        _shot_sound_queue.erase(_shot_sound_queue.begin() + i);
-        break;
-      }
+  for (auto it = _shot_sound_queue.begin();
+        it != _shot_sound_queue.end(); ++it) {
+    if ((!(keys & 1) || _kill_timer) && *it == this) {
+      _shot_sound_queue.erase(it);
+      break;
     }
   }
 
-  // Temporary death
-  if (_kill_timer) {
-    _kill_timer--;
-    if (!_kill_timer && !_kill_queue.empty()) {
-      if (z0().get_lives() && _kill_queue[0] == this) {
-        _kill_queue.erase(_kill_queue.begin());
-        _revive_timer = revive_time;
-        shape().centre = vec2(
-            (1 + _player_number) * Lib::WIDTH / (1 + z0().count_players()),
-            Lib::HEIGHT / 2);
-        z0().sub_life();
-        lib().rumble(_player_number, 10);
-        play_sound(Lib::SOUND_PLAYER_RESPAWN);
-      }
-      else {
-        _kill_timer++;
-      }
+  // Temporary death.
+  if (_kill_timer > 1) {
+    --_kill_timer;
+    return;
+  }
+  else if (_kill_timer) {
+    if (z0().get_lives() && _kill_queue[0] == this) {
+      z0().sub_life();
+      _kill_timer = 0;
+      _kill_queue.erase(_kill_queue.begin());
+      _revive_timer = revive_time;
+      shape().centre = vec2(
+          (1 + _player_number) * Lib::WIDTH / (1 + z0().count_players()),
+          Lib::HEIGHT / 2);
+      lib().rumble(_player_number, 10);
+      play_sound(Lib::SOUND_PLAYER_RESPAWN);
     }
     return;
   }
   if (_revive_timer) {
-    _revive_timer--;
+    --_revive_timer;
   }
 
-  // Movement
-  vec2 move = velocity;
-  if (move.length() > fixed::hundredth) {
-    move = (move.length() > 1 ? move.normalised() : move) * speed;
-    vec2 pos = move + shape().centre;
-    shape().centre =
-        std::max(vec2(), std::min(vec2(Lib::WIDTH, Lib::HEIGHT), pos));
-    shape().set_rotation(move.angle());
+  // Movement.
+  if (velocity.length() > fixed::hundredth) {
+    vec2 v = (velocity.length() > 1 ? velocity.normalised() : velocity) * speed;
+    shape().set_rotation(v.angle());
+    shape().centre = std::max(
+        vec2(), std::min(vec2(Lib::WIDTH, Lib::HEIGHT), v + shape().centre));
   }
 
-  // Bombs
+  // Bombs.
   if (_bomb && keys & 2) {
     _bomb = false;
     destroy_shape(5);
@@ -128,12 +118,11 @@ void Player::update()
     explosion(0xffffffff, 48);
 
     vec2 t = shape().centre;
-    flvec2 tf = to_float(t);
     for (int32_t i = 0; i < 64; ++i) {
       shape().centre =
           t + vec2::from_polar(2 * i * fixed::pi / 64, bomb_radius);
       explosion((i % 2) ? colour() : 0xffffffff,
-                8 + z::rand_int(8) + z::rand_int(8), true, tf);
+                8 + z::rand_int(8) + z::rand_int(8), true, to_float(t));
     }
     shape().centre = t;
 
@@ -143,8 +132,8 @@ void Player::update()
     z0Game::ShipList list =
         z0().ships_in_radius(shape().centre, bomb_boss_radius, SHIP_ENEMY);
     for (const auto& ship : list) {
-      if ((ship->shape().centre - shape().centre).length() <= bomb_radius ||
-          (ship->type() & SHIP_BOSS)) {
+      if ((ship->type() & SHIP_BOSS) ||
+          (ship->shape().centre - shape().centre).length() <= bomb_radius) {
         ship->damage(bomb_damage, false, 0);
       }
       if (!(ship->type() & SHIP_BOSS) && ((Enemy*) ship)->GetScore() > 0) {
@@ -154,36 +143,34 @@ void Player::update()
   }
 
   // Shots
-  if (!_fire_timer && keys & 1) {
-    vec2 v = fire_target - shape().centre;
-    if (v.length() > 0) {
-      spawn(new Shot(shape().centre, this, v, _magic_shot_timer != 0));
-      if (_magic_shot_timer) {
-        --_magic_shot_timer;
-      }
+  vec2 shot = _fire_target - shape().centre;
+  if (shot.length() > 0 && !_fire_timer && keys & 1) {
+    spawn(new Shot(shape().centre, this, shot, _magic_shot_timer != 0));
+    if (_magic_shot_timer) {
+      --_magic_shot_timer;
+    }
 
-      bool could_play = false;
-      // Avoid randomness errors due to sound timings.
-      float volume = .5f * z::rand_fixed().to_float() + .5f;
-      float pitch = (z::rand_fixed().to_float() - 1.f) / 12.f;
-      if (_shot_sound_queue.empty() || _shot_sound_queue[0] == this) {
-        could_play = lib().play_sound(
-            Lib::SOUND_PLAYER_FIRE, volume,
-            2.f * shape().centre.x.to_float() / Lib::WIDTH - 1.f, pitch);
-      }
+    bool could_play = false;
+    // Avoid randomness errors due to sound timings.
+    float volume = .5f * z::rand_fixed().to_float() + .5f;
+    float pitch = (z::rand_fixed().to_float() - 1.f) / 12.f;
+    if (_shot_sound_queue.empty() || _shot_sound_queue[0] == this) {
+      could_play = lib().play_sound(
+          Lib::SOUND_PLAYER_FIRE, volume,
+          2.f * shape().centre.x.to_float() / Lib::WIDTH - 1.f, pitch);
       if (could_play && !_shot_sound_queue.empty()) {
         _shot_sound_queue.erase(_shot_sound_queue.begin());
       }
-      if (!could_play) {
-        bool in_queue = false;
-        for (const auto& ship : _shot_sound_queue) {
-          if (ship == this) {
-            in_queue = true;
-          }
+    }
+    if (!could_play) {
+      bool in_queue = false;
+      for (const auto& ship : _shot_sound_queue) {
+        if (ship == this) {
+          in_queue = true;
         }
-        if (!in_queue) {
-          _shot_sound_queue.push_back(this);
-        }
+      }
+      if (!in_queue) {
+        _shot_sound_queue.push_back(this);
       }
     }
   }
@@ -196,10 +183,9 @@ void Player::update()
 
 void Player::render() const
 {
-  int n = _player_number;
   if (!_kill_timer && (z0().mode() != z0Game::WHAT_MODE || _revive_timer > 0)) {
-    flvec2 t = to_float(_temp_target);
-    if (t.x >= 0 && t.x <= Lib::WIDTH && t.y >= 0 && t.y <= Lib::HEIGHT) {
+    flvec2 t = to_float(_fire_target);
+    if (t >= flvec2() && t <= flvec2((float) Lib::WIDTH, (float) Lib::HEIGHT)) {
       lib().render_line(t + flvec2(0, 9), t - flvec2(0, 8), colour());
       lib().render_line(t + flvec2(9, 1), t - flvec2(8, -1), colour());
     }
@@ -219,6 +205,7 @@ void Player::render() const
   ss << _multiplier << "X";
   std::string s = ss.str();
 
+  int32_t n = _player_number;
   flvec2 v =
       n == 1 ? flvec2(Lib::WIDTH / Lib::TEXT_WIDTH - 1.f - s.length(), 1.f) :
       n == 2 ? flvec2(1.f, Lib::HEIGHT / Lib::TEXT_HEIGHT - 2.f) :
@@ -226,23 +213,12 @@ void Player::render() const
                       Lib::HEIGHT / Lib::TEXT_HEIGHT - 2.f) : flvec2(1.f, 1.f);
   lib().render_text(v, s, z0Game::PANEL_TEXT);
 
-  std::stringstream sss;
-  if (n % 2 == 1) {
-    sss << _score << "   ";
-  }
-  else {
-    sss << "   " << _score;
-  }
-  s = sss.str();
-  lib().render_text(v, s, colour());
+  ss.clear();
+  n % 2 ? ss << _score << "   " : ss << "   " << _score;
+  lib().render_text(v, ss.str(), colour());
 
   if (_magic_shot_timer != 0) {
-    if (n == 0 || n == 2) {
-      v.x += int(s.length());
-    }
-    else {
-      v.x -= 1;
-    }
+    v.x += n % 2 ? -1 : ss.str().length();
     v *= 16;
     lib().render_rect(
         v + flvec2(5.f, 11.f - (10 * _magic_shot_timer) / magic_shot_count),
@@ -266,7 +242,6 @@ void Player::damage()
     play_sound(Lib::SOUND_PLAYER_SHIELD);
     destroy_shape(5);
     _shield = false;
-
     _revive_timer = shield_time;
     return;
   }
@@ -383,21 +358,16 @@ void Shot::render() const
 
 void Shot::update()
 {
-  if (_magic) {
-    _flash = z::rand_int(2) != 0;
-  }
-
+  _flash = _magic ? z::rand_int(2) != 0 : false;
   move(_velocity);
-  bool onScreen =
-      shape().centre.x >= -4 && shape().centre.x < 4 + Lib::WIDTH &&
-      shape().centre.y >= -4 && shape().centre.y < 4 + Lib::HEIGHT;
-  if (!onScreen) {
+  bool on_screen = shape().centre >= vec2(-4, -4) &&
+      shape().centre < vec2(4 + Lib::WIDTH, 4 + Lib::HEIGHT);
+  if (!on_screen) {
     destroy();
     return;
   }
 
-  z0Game::ShipList kill = z0().collision_list(shape().centre, VULNERABLE);
-  for (const auto& ship : kill) {
+  for (const auto& ship : z0().collision_list(shape().centre, VULNERABLE)) {
     ship->damage(1, _magic, _player);
     if (!_magic) {
       destroy();

@@ -109,9 +109,8 @@ public:
 
   bool is_on_screen() const
   {
-    return
-        _shape.centre.x >= 0 && _shape.centre.x <= Lib::WIDTH &&
-        _shape.centre.y >= 0 && _shape.centre.y <= Lib::HEIGHT;
+    return _shape.centre >= vec2() &&
+           _shape.centre <= vec2(Lib::WIDTH, Lib::HEIGHT);
   }
 
   static vec2 get_screen_centre()

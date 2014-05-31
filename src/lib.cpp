@@ -764,28 +764,17 @@ bool Lib::is_key_held(int32_t player, Key k) const
 vec2 Lib::get_move_velocity(int32_t player) const
 {
 #ifndef PLATFORM_SCORE
-  bool kU = is_key_held(player, KEY_UP) ||
+  bool ku = is_key_held(player, KEY_UP) ||
       _internals->pad_move_dpads[player] & OIS::Pov::North;
-  bool kD = is_key_held(player, KEY_DOWN) ||
+  bool kd = is_key_held(player, KEY_DOWN) ||
       _internals->pad_move_dpads[player] & OIS::Pov::South;
-  bool kL = is_key_held(player, KEY_LEFT) ||
+  bool kl = is_key_held(player, KEY_LEFT) ||
       _internals->pad_move_dpads[player] & OIS::Pov::West;
-  bool kR = is_key_held(player, KEY_RIGHT) ||
+  bool kr = is_key_held(player, KEY_RIGHT) ||
       _internals->pad_move_dpads[player] & OIS::Pov::East;
 
-  vec2 v;
-  if (kU) {
-    v += vec2(0, -1);
-  }
-  if (kD) {
-    v += vec2(0, 1);
-  }
-  if (kL) {
-    v += vec2(-1, 0);
-  }
-  if (kR) {
-    v += vec2(1, 0);
-  }
+  vec2 v =
+      vec2(0, -1) * ku + vec2(0, 1) * kd + vec2(-1, 0) * kl + vec2(1, 0) * kr;
   if (v != vec2()) {
     return v;
   }

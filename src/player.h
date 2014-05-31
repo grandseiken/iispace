@@ -80,7 +80,7 @@ private:
   int32_t _magic_shot_timer;
   bool _shield;
   bool _bomb;
-  vec2 _temp_target;
+  vec2 _fire_target;
   int32_t _death_count;
 
   static int32_t _fire_timer;

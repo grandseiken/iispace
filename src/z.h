@@ -159,6 +159,26 @@ public:
     return !(*this == v);
   }
 
+  bool operator<(const vec2_t& v) const
+  {
+    return x < v.x && y < v.y;
+  }
+
+  bool operator>(const vec2_t& v) const
+  {
+    return x > v.x && y > v.y;
+  }
+
+  bool operator<=(const vec2_t& v) const
+  {
+    return x <= v.x && y <= v.y;
+  }
+
+  bool operator>=(const vec2_t& v) const
+  {
+    return x >= v.x && y >= v.y;
+  }
+
   vec2_t& operator=(const vec2_t& v)
   {
     x = v.x;
