@@ -53,14 +53,14 @@ public:
 
   typedef std::vector<Ship*> ShipList;
 
-  z0Game(Lib& lib, std::vector<std::string> args);
+  z0Game(Lib& lib, const std::vector<std::string>& args);
   ~z0Game();
 
   // Main functions
   //------------------------------
-  void Run();
-  bool Update();
-  void Render() const;
+  void run();
+  bool update();
+  void render() const;
 
   Lib& lib() const
   {
@@ -74,8 +74,8 @@ public:
 
   // Ships
   //------------------------------
-  void AddShip(Ship* ship);
-  void AddParticle(const Particle& particle);
+  void add_ship(Ship* ship);
+  void add_particle(const Particle& particle);
   int32_t get_non_wall_count() const;
 
   ShipList all_ships(int32_t ship_mask = 0) const;
@@ -98,14 +98,15 @@ public:
 
   ShipList get_players() const
   {
-    return _playerList;
+    return _player_list;
   }
 
   void set_boss_killed(boss_list boss);
 
-  void RenderHPBar(float fill)
+  void render_hp_bar(float fill)
   {
-    _showHPBar = true; _fillHPBar = fill;
+    _show_hp_bar = true;
+    _fill_hp_bar = fill;
   }
 
   // Lives
@@ -131,44 +132,46 @@ private:
 
   // Internals
   //------------------------------
-  void RenderPanel(const flvec2& low, const flvec2& hi) const;
-  static bool SortShips(Ship* const& a, Ship* const& b);
+  void render_panel(const flvec2& low, const flvec2& hi) const;
+  static bool sort_ships(Ship* const& a, Ship* const& b);
 
-  bool IsBossModeUnlocked() const
+  bool is_boss_mode_unlocked() const
   {
     return (_save.bosses_killed & 63) == 63;
   }
 
-  bool IsHardModeUnlocked() const
+  bool is_hard_mode_unlocked() const
   {
-    return IsBossModeUnlocked() &&
+    return is_boss_mode_unlocked() &&
         (_save.high_scores[Lib::PLAYERS][0].score > 0 ||
          _save.high_scores[Lib::PLAYERS][1].score > 0 ||
          _save.high_scores[Lib::PLAYERS][2].score > 0 ||
          _save.high_scores[Lib::PLAYERS][3].score > 0);
   }
 
-  bool IsFastModeUnlocked() const
+  bool is_fast_mode_unlocked() const
   {
-    return IsHardModeUnlocked() && ((_save.hard_mode_bosses_killed & 63) == 63);
+    return is_hard_mode_unlocked() &&
+        ((_save.hard_mode_bosses_killed & 63) == 63);
   }
 
-  bool IsWhatModeUnlocked() const
+  bool is_what_mode_unlocked() const
   {
-    return IsHardModeUnlocked() && ((_save.hard_mode_bosses_killed & 64) == 64);
+    return is_hard_mode_unlocked() &&
+        ((_save.hard_mode_bosses_killed & 64) == 64);
   }
 
-  std::string ConvertToTime(int64_t score) const;
+  std::string convert_to_time(int64_t score) const;
 
   // Scores
   //------------------------------
-  int64_t GetPlayerScore(int32_t playerNumber) const;
-  int64_t GetPlayerDeaths(int32_t playerNumber) const;
-  int64_t GetTotalScore() const;
-  bool IsHighScore() const;
+  int64_t get_player_score(int32_t player_number) const;
+  int64_t get_player_deaths(int32_t player_number) const;
+  int64_t get_total_score() const;
+  bool is_high_score() const;
 
-  void NewGame(bool canFaceSecretBoss, bool replay, game_mode mode);
-  void EndGame();
+  void new_game(bool canFaceSecretBoss, bool replay, game_mode mode);
+  void end_game();
 
   Lib& _lib;
   game_state _state;
@@ -178,29 +181,29 @@ private:
   bool _exit;
   int32_t _frame_count;
 
-  mutable bool _showHPBar;
-  mutable float _fillHPBar;
+  mutable bool _show_hp_bar;
+  mutable float _fill_hp_bar;
 
   int32_t _selection;
-  int32_t _specialSelection;
-  int32_t _killTimer;
-  int32_t _exitTimer;
+  int32_t _special_selection;
+  int32_t _kill_timer;
+  int32_t _exit_timer;
 
-  std::string _enterName;
-  int32_t _enterChar;
-  int32_t _enterR;
-  int32_t _enterTime;
+  std::string _enter_name;
+  int32_t _enter_char;
+  int32_t _enter_r;
+  int32_t _enter_time;
   int32_t _compliment;
-  int32_t _scoreScreenTimer;
+  int32_t _score_screen_timer;
 
   std::vector<Particle> _particles;
   std::vector<std::unique_ptr<Ship>> _ships;
-  ShipList _playerList;
+  ShipList _player_list;
   ShipList _collisions;
 
-  int32_t _controllersConnected;
-  bool _controllersDialog;
-  bool _firstControllersDialog;
+  int32_t _controllers_connected;
+  bool _controllers_dialog;
+  bool _first_controllers_dialog;
 
   std::unique_ptr<Overmind> _overmind;
   std::vector<std::string> _compliments;

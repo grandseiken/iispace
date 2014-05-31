@@ -96,11 +96,6 @@ public:
   void spawn(Ship* ship) const;
   void spawn(const Particle& particle) const;
 
-  void render_hp_bar(float fill) const
-  {
-    _z0->RenderHPBar(fill);
-  }
-
   // Helpful functions
   //------------------------------
   void explosion(colour_t c = 0, int time = 8,

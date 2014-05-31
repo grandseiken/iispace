@@ -154,7 +154,7 @@ void Boss::render_hp_bar() const
   }
 
   if (_show_hp) {
-    Ship::render_hp_bar(float(_hp) / float(_max_hp));
+    z0().render_hp_bar(float(_hp) / float(_max_hp));
   }
 }
 
@@ -748,7 +748,7 @@ void ChaserBoss::render() const
   _shared_hp += (_split == 7 ? 0 : 2 * hpLookup[6 - _split]) +
       get_remaining_hp() * 30;
   if (_on_screen) {
-    Ship::render_hp_bar(float(_shared_hp) / float(hpLookup[MAX_SPLIT]));
+    z0().render_hp_bar(float(_shared_hp) / float(hpLookup[MAX_SPLIT]));
   }
 }
 

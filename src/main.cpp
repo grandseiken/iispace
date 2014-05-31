@@ -12,7 +12,7 @@ int run(const std::vector<std::string>& args)
     lib.init();
 
     z0Game game(lib, args);
-    game.Run();
+    game.run();
   }
   catch (const score_finished&) {}
   catch (const std::exception& e) {

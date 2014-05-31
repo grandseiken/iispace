@@ -376,7 +376,7 @@ void Overmind::spawn_tractor(int32_t num, int32_t div, int32_t side)
 void Overmind::spawn(Ship* ship)
 {
   if (_tz0) {
-    _tz0->AddShip(ship);
+    _tz0->add_ship(ship);
   }
 }
 

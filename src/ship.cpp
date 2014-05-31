@@ -65,12 +65,12 @@ void Ship::destroy()
 
 void Ship::spawn(Ship* ship) const
 {
-  _z0->AddShip(ship);
+  _z0->add_ship(ship);
 }
 
 void Ship::spawn(const Particle& particle) const
 {
-  _z0->AddParticle(particle);
+  _z0->add_particle(particle);
 }
 
 void Ship::explosion(colour_t c, int time, bool towards, const flvec2& v) const
