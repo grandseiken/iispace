@@ -301,8 +301,6 @@ Lib::Lib()
   , _players(1)
   , _exit(false)
   , _capture_mouse(false)
-  , _mouse_pos_x(0)
-  , _mouse_pos_y(0)
   , _mouse_moving(true)
 {
 #ifndef PLATFORM_SCORE
@@ -416,15 +414,13 @@ Lib::Lib()
         m.Height >= unsigned(Lib::HEIGHT) && m.BitsPerPixel == 32) {
       _internals->window.Create(
           m, "WiiSPACE", sf::Style::Fullscreen, sf::WindowSettings(0, 0, 0));
-      _extra_x = (m.Width - Lib::WIDTH) / 2;
-      _extra_y = (m.Height - Lib::HEIGHT) / 2;
+      _extra.x = (m.Width - Lib::WIDTH) / 2;
+      _extra.y = (m.Height - Lib::HEIGHT) / 2;
       return;
     }
   }
   _internals->window.Create(sf::VideoMode(640, 480, 32), "WiiSPACE",
                              sf::Style::Close | sf::Style::Titlebar);
-  _extra_x = 0;
-  _extra_y = 0;
 #endif
 }
 
@@ -585,8 +581,7 @@ void Lib::init()
 void Lib::begin_frame()
 {
 #ifndef PLATFORM_SCORE
-  int32_t t = _mouse_pos_x;
-  int32_t u = _mouse_pos_y;
+  ivec2 t = _mouse;
   sf::Event e;
   int32_t kp = _players <= _internals->pad_count ?
       _players - 1 : _internals->pad_count;
@@ -621,8 +616,8 @@ void Lib::begin_frame()
     }
 
     if (e.Type == sf::Event::MouseMoved) {
-      _mouse_pos_x = e.MouseMove.X;
-      _mouse_pos_y = e.MouseMove.Y;
+      _mouse.x = e.MouseMove.X;
+      _mouse.y = e.MouseMove.Y;
     }
   }
 
@@ -632,13 +627,13 @@ void Lib::begin_frame()
     }
   }
 
-  _mouse_pos_x = std::max(0, std::min(Lib::WIDTH - 1, _mouse_pos_x));
-  _mouse_pos_y = std::max(0, std::min(Lib::HEIGHT - 1, _mouse_pos_y));
-  if (t != _mouse_pos_x || u != _mouse_pos_y) {
+  _mouse.x = std::max(0, std::min(Lib::WIDTH - 1, _mouse.x));
+  _mouse.y = std::max(0, std::min(Lib::HEIGHT - 1, _mouse.y));
+  if (t != _mouse) {
     _mouse_moving = true;
   }
   if (_capture_mouse) {
-    _internals->window.SetCursorPosition(_mouse_pos_x, _mouse_pos_y);
+    _internals->window.SetCursorPosition(_mouse.x, _mouse.y);
   }
 
   for (int32_t i = 0; i < _internals->pad_count; ++i) {
@@ -873,7 +868,7 @@ vec2 Lib::get_fire_target(int32_t player, const vec2& position) const
   }
 
   if (_mouse_moving && kp) {
-    return vec2(fixed(_mouse_pos_x), fixed(_mouse_pos_y));
+    return vec2(_mouse.x, _mouse.y);
   }
   if (_internals->pad_last_aim[player] != vec2()) {
     return position + _internals->pad_last_aim[player];
@@ -901,17 +896,17 @@ void Lib::render_line(const flvec2& a, const flvec2& b, colour_t c) const
   c = cycle(c);
   glBegin(GL_LINES);
   glColor4ub(c >> 24, c >> 16, c >> 8, c);
-  glVertex3f(a.x + _extra_x, a.y + _extra_y, 0);
-  glVertex3f(b.x + _extra_x, b.y + _extra_y, 0);
+  glVertex3f(a.x + _extra.x, a.y + _extra.y, 0);
+  glVertex3f(b.x + _extra.x, b.y + _extra.y, 0);
   glColor4ub(c >> 24, c >> 16, c >> 8, c & 0xffffff33);
-  glVertex3f(a.x + _extra_x + 1, a.y + _extra_y, 0);
-  glVertex3f(b.x + _extra_x + 1, b.y + _extra_y, 0);
-  glVertex3f(a.x + _extra_x - 1, a.y + _extra_y, 0);
-  glVertex3f(b.x + _extra_x - 1, b.y + _extra_y, 0);
-  glVertex3f(a.x + _extra_x, a.y + _extra_y + 1, 0);
-  glVertex3f(b.x + _extra_x, b.y + _extra_y + 1, 0);
-  glVertex3f(a.x + _extra_x, a.y + _extra_y - 1, 0);
-  glVertex3f(b.x + _extra_x, b.y + _extra_y - 1, 0);
+  glVertex3f(a.x + _extra.x + 1, a.y + _extra.y, 0);
+  glVertex3f(b.x + _extra.x + 1, b.y + _extra.y, 0);
+  glVertex3f(a.x + _extra.x - 1, a.y + _extra.y, 0);
+  glVertex3f(b.x + _extra.x - 1, b.y + _extra.y, 0);
+  glVertex3f(a.x + _extra.x, a.y + _extra.y + 1, 0);
+  glVertex3f(b.x + _extra.x, b.y + _extra.y + 1, 0);
+  glVertex3f(a.x + _extra.x, a.y + _extra.y - 1, 0);
+  glVertex3f(b.x + _extra.x, b.y + _extra.y - 1, 0);
   glEnd();
 #endif
 }
@@ -922,7 +917,7 @@ void Lib::render_text(const flvec2& v, const std::string& text, colour_t c) cons
   _internals->font.SetColor(RgbaToColor(cycle(c)));
   for (std::size_t i = 0; i < text.length(); ++i) {
     _internals->font.SetPosition(
-        (int(i) + v.x) * TEXT_WIDTH + _extra_x, v.y * TEXT_HEIGHT + _extra_y);
+        (int(i) + v.x) * TEXT_WIDTH + _extra.x, v.y * TEXT_HEIGHT + _extra.y);
     _internals->font.SetSubRect(sf::IntRect(TEXT_WIDTH * text[i], 0,
                                  TEXT_WIDTH * (1 + text[i]), TEXT_HEIGHT));
     _internals->window.Draw(_internals->font);
@@ -987,51 +982,51 @@ void Lib::render() const
 #ifndef PLATFORM_SCORE
   _internals->window.Draw(sf::Shape::Rectangle(
       0.f, 0.f,
-      float(_extra_x), float(Lib::HEIGHT + _extra_y * 2),
+      float(_extra.x), float(Lib::HEIGHT + _extra.y * 2),
       sf::Color(0, 0, 0, 255)));
   _internals->window.Draw(sf::Shape::Rectangle(
       0.f, 0.f,
-      float(Lib::WIDTH + _extra_x * 2), float(_extra_y),
+      float(Lib::WIDTH + _extra.x * 2), float(_extra.y),
       sf::Color(0, 0, 0, 255)));
   _internals->window.Draw(sf::Shape::Rectangle(
-      float(Lib::WIDTH + _extra_x), 0,
-      float(Lib::WIDTH + _extra_x * 2), float(Lib::HEIGHT + _extra_y * 2),
+      float(Lib::WIDTH + _extra.x), 0,
+      float(Lib::WIDTH + _extra.x * 2), float(Lib::HEIGHT + _extra.y * 2),
       sf::Color(0, 0, 0, 255)));
   _internals->window.Draw(sf::Shape::Rectangle(
-      0.f, float(Lib::HEIGHT + _extra_y),
-      float(Lib::WIDTH + _extra_x * 2), float(Lib::HEIGHT + _extra_y * 2),
+      0.f, float(Lib::HEIGHT + _extra.y),
+      float(Lib::WIDTH + _extra.x * 2), float(Lib::HEIGHT + _extra.y * 2),
       sf::Color(0, 0, 0, 255)));
   _internals->window.Draw(sf::Shape::Rectangle(
       0.f, 0.f,
-      float(_extra_x - 2), float(Lib::HEIGHT + _extra_y * 2),
+      float(_extra.x - 2), float(Lib::HEIGHT + _extra.y * 2),
       sf::Color(32, 32, 32, 255)));
   _internals->window.Draw(sf::Shape::Rectangle(
       0.f, 0.f,
-      float(Lib::WIDTH + _extra_x * 2), float(_extra_y - 2),
+      float(Lib::WIDTH + _extra.x * 2), float(_extra.y - 2),
       sf::Color(32, 32, 32, 255)));
   _internals->window.Draw(sf::Shape::Rectangle(
-      float(Lib::WIDTH + _extra_x + 2), float(_extra_y - 4),
-      float(Lib::WIDTH + _extra_x * 2), float(Lib::HEIGHT + _extra_y * 2),
+      float(Lib::WIDTH + _extra.x + 2), float(_extra.y - 4),
+      float(Lib::WIDTH + _extra.x * 2), float(Lib::HEIGHT + _extra.y * 2),
       sf::Color(32, 32, 32, 255)));
   _internals->window.Draw(sf::Shape::Rectangle(
-      float(_extra_x - 2), float(Lib::HEIGHT + _extra_y + 2),
-      float(Lib::WIDTH + _extra_x * 2), float(Lib::HEIGHT + _extra_y * 2),
+      float(_extra.x - 2), float(Lib::HEIGHT + _extra.y + 2),
+      float(Lib::WIDTH + _extra.x * 2), float(Lib::HEIGHT + _extra.y * 2),
       sf::Color(32, 32, 32, 255)));
   _internals->window.Draw(sf::Shape::Rectangle(
-      float(_extra_x - 4), float(_extra_y - 4),
-      float(_extra_x - 2), float(Lib::HEIGHT + _extra_y + 4),
+      float(_extra.x - 4), float(_extra.y - 4),
+      float(_extra.x - 2), float(Lib::HEIGHT + _extra.y + 4),
       sf::Color(128, 128, 128, 255)));
   _internals->window.Draw(sf::Shape::Rectangle(
-      float(_extra_x - 4), float(_extra_y - 4),
-      float(Lib::WIDTH + _extra_x + 4), float(_extra_y - 2),
+      float(_extra.x - 4), float(_extra.y - 4),
+      float(Lib::WIDTH + _extra.x + 4), float(_extra.y - 2),
       sf::Color(128, 128, 128, 255)));
   _internals->window.Draw(sf::Shape::Rectangle(
-      float(Lib::WIDTH + _extra_x + 2), float(_extra_y - 4),
-      float(Lib::WIDTH + _extra_x + 4), float(Lib::HEIGHT + _extra_y + 4),
+      float(Lib::WIDTH + _extra.x + 2), float(_extra.y - 4),
+      float(Lib::WIDTH + _extra.x + 4), float(Lib::HEIGHT + _extra.y + 4),
       sf::Color(128, 128, 128, 255)));
   _internals->window.Draw(sf::Shape::Rectangle(
-      float(_extra_x - 2), float(Lib::HEIGHT + _extra_y + 2),
-      float(Lib::WIDTH + _extra_x + 4), float(Lib::HEIGHT + _extra_y + 4),
+      float(_extra.x - 2), float(Lib::HEIGHT + _extra.y + 2),
+      float(Lib::WIDTH + _extra.x + 4), float(Lib::HEIGHT + _extra.y + 4),
       sf::Color(128, 128, 128, 255)));
   _internals->window.Display();
 #endif

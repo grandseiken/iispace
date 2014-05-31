@@ -181,6 +181,7 @@ vec2_t<T> operator/(const T& t, const vec2_t<T>& v)
 }
 
 typedef vec2_t<fixed> vec2;
+typedef vec2_t<int32_t> ivec2;
 typedef vec2_t<float> flvec2;
 
 inline flvec2 to_float(const vec2& a)

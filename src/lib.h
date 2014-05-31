@@ -130,10 +130,8 @@ private:
   std::vector<std::vector<bool>> _keys_released;
 
   bool _capture_mouse;
-  int32_t _mouse_pos_x;
-  int32_t _mouse_pos_y;
-  int32_t _extra_x;
-  int32_t _extra_y;
+  ivec2 _mouse;
+  ivec2 _extra;
   mutable bool _mouse_moving;
 
   void LoadSounds();
