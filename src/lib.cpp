@@ -299,7 +299,6 @@ Lib::Lib()
   : _score_frame(0)
   , _cycle(0)
   , _players(1)
-  , _exit(false)
   , _capture_mouse(false)
   , _mouse_moving(true)
 {
@@ -471,11 +470,6 @@ int32_t Lib::get_colour_cycle() const
   return _cycle;
 }
 
-colour_t Lib::cycle(colour_t rgb) const
-{
-  return z::colour_cycle(rgb, _cycle);
-}
-
 void Lib::set_working_directory(bool original)
 {
 #ifndef PLATFORM_SCORE
@@ -578,7 +572,7 @@ void Lib::init()
 #endif
 }
 
-void Lib::begin_frame()
+bool Lib::begin_frame()
 {
 #ifndef PLATFORM_SCORE
   ivec2 t = _mouse;
@@ -587,9 +581,9 @@ void Lib::begin_frame()
       _players - 1 : _internals->pad_count;
   while (_internals->window.GetEvent(e))
   {
-    if (e.Type == sf::Event::Closed) {
-      _exit = true;
-      return;
+    if (e.Type == sf::Event::Closed ||
+        !_internals->window.IsOpened()) {
+      return true;
     }
 
     for (int32_t i = 0; i < KEY_MAX; ++i) {
@@ -649,15 +643,12 @@ void Lib::begin_frame()
     ++_score_frame;
   }
 #endif
+  return false;
 }
 
 void Lib::end_frame()
 {
 #ifndef PLATFORM_SCORE
-  if (!_internals->window.IsOpened()) {
-    _exit = true;
-  }
-
   for (int32_t i = 0; i < KEY_MAX; ++i) {
     for (int32_t j = 0; j < PLAYERS; ++j) {
       _keys_pressed[i][j] = false;
@@ -689,16 +680,6 @@ void Lib::new_game()
       _keys_held[i][j] = false;
     }
   }
-}
-
-void Lib::exit(bool exit)
-{
-  _exit = exit;
-}
-
-bool Lib::exit() const
-{
-  return _exit;
 }
 
 void Lib::take_screenshot()
@@ -893,7 +874,7 @@ void Lib::clear_screen() const
 void Lib::render_line(const flvec2& a, const flvec2& b, colour_t c) const
 {
 #ifndef PLATFORM_SCORE
-  c = cycle(c);
+  c = z::colour_cycle(c, _cycle);
   glBegin(GL_LINES);
   glColor4ub(c >> 24, c >> 16, c >> 8, c);
   glVertex3f(a.x + _extra.x, a.y + _extra.y, 0);
@@ -914,7 +895,7 @@ void Lib::render_line(const flvec2& a, const flvec2& b, colour_t c) const
 void Lib::render_text(const flvec2& v, const std::string& text, colour_t c) const
 {
 #ifndef PLATFORM_SCORE
-  _internals->font.SetColor(RgbaToColor(cycle(c)));
+  _internals->font.SetColor(RgbaToColor(z::colour_cycle(c, _cycle)));
   for (std::size_t i = 0; i < text.length(); ++i) {
     _internals->font.SetPosition(
         (int(i) + v.x) * TEXT_WIDTH + _extra.x, v.y * TEXT_HEIGHT + _extra.y);
@@ -930,7 +911,7 @@ void Lib::render_rect(
     const flvec2& low, const flvec2& hi, colour_t c, int lineWidth) const
 {
 #ifndef PLATFORM_SCORE
-  c = cycle(c);
+  c = z::colour_cycle(c, _cycle);
   flvec2 ab(low.x, hi.y);
   flvec2 ba(hi.x, low.y);
   const flvec2* list[4];
@@ -971,8 +952,8 @@ void Lib::render_rect(
   glEnd();
 
   if (lineWidth > 1) {
-    render_rect(low + flvec2(1.f, 1.f),
-                hi - flvec2(1.f, 1.f), cycle(c), lineWidth - 1);
+    render_rect(low + flvec2(1.f, 1.f), hi - flvec2(1.f, 1.f),
+                z::colour_cycle(c, _cycle), lineWidth - 1);
   }
 #endif
 }

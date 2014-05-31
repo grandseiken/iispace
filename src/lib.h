@@ -70,14 +70,11 @@ public:
   }
 
   void init();
-  void begin_frame();
+  bool begin_frame();
   void end_frame();
   void capture_mouse(bool enabled);
   void new_game();
   static void set_working_directory(bool original);
-
-  void exit(bool exit);
-  bool exit() const;
 
   // Input
   //------------------------------
@@ -115,7 +112,6 @@ public:
   //------------------------------
   void set_colour_cycle(int32_t cycle);
   int get_colour_cycle() const;
-  colour_t cycle(colour_t c) const;
 
 private:
 
@@ -124,7 +120,6 @@ private:
 
   // Internal
   //------------------------------
-  bool _exit;
   std::vector<std::vector<bool>> _keys_pressed;
   std::vector<std::vector<bool>> _keys_held;
   std::vector<std::vector<bool>> _keys_released;

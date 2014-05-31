@@ -86,9 +86,6 @@ void z0Game::Run()
   while (true) {
     std::size_t f = _frame_count;
     if (!f) {
-      if (_lib.exit()) {
-        return;
-      }
       continue;
     }
 
@@ -96,23 +93,11 @@ void z0Game::Run()
 #ifdef PLATFORM_SCORE
       _frame_count = 16384;
 #endif
-      _lib.begin_frame();
-
-      if (_lib.exit()) {
+      if (_lib.begin_frame() || Update()) {
         _lib.end_frame();
         return;
       }
-
-      Update();
-      if (_lib.exit()) {
-        _lib.end_frame();
-        return;
-      }
-
       _lib.end_frame();
-      if (_lib.exit()) {
-        return;
-      }
     }
 
     _lib.clear_screen();
@@ -121,15 +106,11 @@ void z0Game::Run()
   }
 }
 
-void z0Game::Update()
+bool z0Game::Update()
 {
   if (_exitTimer) {
     _exitTimer--;
-    if (!_exitTimer) {
-      lib().exit(true);
-      _exitTimer = -1;
-    }
-    return;
+    return !_exitTimer;
   }
 
   for (int32_t i = 0; i < Lib::PLAYERS; i++) {
@@ -330,7 +311,7 @@ void z0Game::Update()
           lib().rumble(i, 10);
         }
       }
-      return;
+      return false;
     }
 
     if (lib().is_key_pressed(Lib::KEY_MENU)) {
@@ -543,6 +524,7 @@ void z0Game::Update()
       lib().play_sound(Lib::SOUND_MENU_ACCEPT);
     }
   }
+  return false;
 }
 
 void z0Game::Render() const

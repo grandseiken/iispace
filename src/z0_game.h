@@ -59,7 +59,7 @@ public:
   // Main functions
   //------------------------------
   void Run();
-  void Update();
+  bool Update();
   void Render() const;
 
   Lib& lib() const
@@ -175,6 +175,7 @@ private:
   int32_t _players;
   int32_t _lives;
   game_mode _mode;
+  bool _exit;
   int32_t _frame_count;
 
   mutable bool _showHPBar;
