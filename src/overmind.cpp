@@ -5,20 +5,25 @@
 #include "stars.h"
 #include <algorithm>
 
-struct formation_base {
+class formation_base {
+public:
+
+  static std::vector<Overmind::entry> static_formations;
+
   virtual void operator()() = 0;
+
   void operator()(z0Game* game, int32_t row, int32_t power, int32_t* hard_already)
   {
-    this->game = game;
-    this->row = row;
-    this->power = power;
-    this->hard_already = hard_already;
+    _game = game;
+    _row = row;
+    _power = power;
+    _hard_already = hard_already;
     operator()();
   }
 
   void spawn(Ship* ship)
   {
-    game->add_ship(ship);
+    _game->add_ship(ship);
   }
 
   vec2 spawn_point(bool top, int32_t num, int32_t div)
@@ -27,121 +32,97 @@ struct formation_base {
     num = std::max(0, std::min(div - 1, num));
 
     fixed x = fixed(top ? num : div - 1 - num) * Lib::WIDTH / fixed(div - 1);
-    fixed y = top ? -(row + 1) * (fixed::hundredth * 16) * Lib::HEIGHT :
-        Lib::HEIGHT * (1 + (row + 1) * (fixed::hundredth * 16));
+    fixed y = top ? -(_row + 1) * (fixed::hundredth * 16) * Lib::HEIGHT :
+        Lib::HEIGHT * (1 + (_row + 1) * (fixed::hundredth * 16));
     return vec2(x, y);
   }
 
   void spawn_follow(int32_t num, int32_t div, int32_t side)
   {
-    if (side == 0 || side == 1) {
-      spawn(new Follow(spawn_point(false, num, div)));
-    }
-    if (side == 0 || side == 2) {
-      spawn(new Follow(spawn_point(true, num, div)));
-    }
+    do_sides(side, [&](bool b) {
+      spawn(new Follow(spawn_point(b, num, div)));
+    });
   }
 
   void spawn_chaser(int32_t num, int32_t div, int32_t side)
   {
-    if (side == 0 || side == 1) {
-      spawn(new Chaser(spawn_point(false, num, div)));
-    }
-    if (side == 0 || side == 2) {
-      spawn(new Chaser(spawn_point(true, num, div)));
-    }
+    do_sides(side, [&](bool b) {
+      spawn(new Chaser(spawn_point(b, num, div)));
+    });
   }
 
   void spawn_square(int32_t num, int32_t div, int32_t side)
   {
-    if (side == 0 || side == 1) {
-      spawn(new Square(spawn_point(false, num, div)));
-    }
-    if (side == 0 || side == 2) {
-      spawn(new Square(spawn_point(true, num, div)));
-    }
+    do_sides(side, [&](bool b) {
+      spawn(new Square(spawn_point(b, num, div)));
+    });
   }
 
   void spawn_wall(int32_t num, int32_t div, int32_t side, bool dir)
   {
-    if (side == 0 || side == 1) {
-      spawn(new Wall(spawn_point(false, num, div), dir));
-    }
-    if (side == 0 || side == 2) {
-      spawn(new Wall(spawn_point(true, num, div), dir));
-    }
+    do_sides(side, [&](bool b) {
+      spawn(new Wall(spawn_point(b, num, div), dir));
+    });
   }
 
   void spawn_follow_hub(int32_t num, int32_t div, int32_t side)
   {
-    if (side == 0 || side == 1) {
-      bool p1 = z::rand_int(64) < std::min(32, power - 32) - *hard_already;
+    do_sides(side, [&](bool b) {
+      bool p1 = z::rand_int(64) < std::min(32, _power - 32) - *_hard_already;
       if (p1) {
-        *hard_already += 2;
+        *_hard_already += 2;
       }
-      bool p2 = z::rand_int(64) < std::min(32, power - 40) - *hard_already;
+      bool p2 = z::rand_int(64) < std::min(32, _power - 40) - *_hard_already;
       if (p2) {
-        *hard_already += 2;
+        *_hard_already += 2;
       }
-      spawn(new FollowHub(spawn_point(false, num, div), p1, p2));
-    }
-    if (side == 0 || side == 2) {
-      bool p1 = z::rand_int(64) < std::min(32, power - 32) - *hard_already;
-      if (p1) {
-        *hard_already += 2;
-      }
-      bool p2 = z::rand_int(64) < std::min(32, power - 40) - *hard_already;
-      if (p2) {
-        *hard_already += 2;
-      }
-      spawn(new FollowHub(spawn_point(true, num, div), p1, p2));
-    }
+      spawn(new FollowHub(spawn_point(b, num, div), p1, p2));
+    });
   }
 
   void spawn_shielder(int32_t num, int32_t div, int32_t side)
   {
-    if (side == 0 || side == 1) {
-      bool p = z::rand_int(64) < std::min(32, power - 36) - *hard_already;
+    do_sides(side, [&](bool b) {
+      bool p = z::rand_int(64) < std::min(32, _power - 36) - *_hard_already;
       if (p) {
-        *hard_already += 3;
+        *_hard_already += 3;
       }
-      spawn(new Shielder(spawn_point(false, num, div), p));
-    }
-    if (side == 0 || side == 2) {
-      bool p = z::rand_int(64) < std::min(32, power - 36) - *hard_already;
-      if (p) {
-        *hard_already += 3;
-      }
-      spawn(new Shielder(spawn_point(true, num, div), p));
-    }
+      spawn(new Shielder(spawn_point(b, num, div), p));
+    });
   }
 
   void spawn_tractor(int32_t num, int32_t div, int32_t side)
   {
-    if (side == 0 || side == 1) {
-      bool p = z::rand_int(64) < std::min(32, power - 46) - *hard_already;
+    do_sides(side, [&](bool b) {
+      bool p = z::rand_int(64) < std::min(32, _power - 46) - *_hard_already;
       if (p) {
-        *hard_already += 4;
+        *_hard_already += 4;
       }
-      spawn(new Tractor(spawn_point(false, num, div), p));
-    }
-    if (side == 0 || side == 2) {
-      bool p = z::rand_int(64) < std::min(32, power - 46) - *hard_already;
-      if (p) {
-        *hard_already += 4;
-      }
-      spawn(new Tractor(spawn_point(true, num, div), p));
-    }
+      spawn(new Tractor(spawn_point(b, num, div), p));
+    });
   }
 
 private:
 
-  z0Game* game;
-  int32_t row;
-  int32_t power;
-  int32_t* hard_already;
+  template<typename F>
+  void do_sides(int32_t side, const F& f)
+  {
+    if (side == 0 || side == 1) {
+      f(false);
+    }
+    if (side == 0 || side == 2) {
+      f(true);
+    }
+  }
+
+  z0Game* _game;
+  int32_t _row;
+  int32_t _power;
+  int32_t* _hard_already;
 
 };
+
+std::vector<Overmind::entry> formation_base::static_formations;
 
 Overmind::Overmind(z0Game& z0)
   : _z0(z0)
@@ -165,9 +146,6 @@ Overmind::Overmind(z0Game& z0)
 
 Overmind::~Overmind()
 {
-  for (const auto& f : _formations) {
-    delete f.function;
-  }
 }
 
 void Overmind::reset(bool can_face_secret_boss)
@@ -342,8 +320,6 @@ void Overmind::on_enemy_create(const Ship& ship)
   }
 }
 
-// Individual spawns
-//------------------------------
 void Overmind::spawn(Ship* ship)
 {
   _z0.add_ship(ship);
@@ -355,9 +331,8 @@ void Overmind::spawn_powerup()
     return;
   }
 
-  ++_powerup_mod;
-  if (_powerup_mod == 4) {
-    _powerup_mod = 0;
+  _powerup_mod = (1 + _powerup_mod) % 4;
+  if (_powerup_mod == 0) {
     ++_lives_target;
   }
 
@@ -404,8 +379,6 @@ void Overmind::spawn_boss_reward()
   }
 }
 
-// Spawn logic
-//------------------------------
 void Overmind::wave()
 {
   if (_z0.mode() == z0Game::FAST_MODE) {
@@ -420,35 +393,29 @@ void Overmind::wave()
   }
 
   int32_t resources = _power;
-  std::vector<std::pair<int32_t, formation_base*>> valid;
+  std::vector<const entry*> valid;
   for (const auto& f : _formations) {
     if (resources >= f.min_resource) {
-      valid.emplace_back(f.cost, f.function);
+      valid.emplace_back(&f);
     }
   }
 
-  std::vector<std::pair<int32_t, formation_base*>> chosen;
+  std::vector<const entry*> chosen;
   while (resources > 0) {
     std::size_t max = 0;
-    while (max < valid.size() && valid[max].first <= resources) {
-      max++;
+    while (max < valid.size() && valid[max]->cost <= resources) {
+      ++max;
     }
-
-    int32_t n;
     if (max == 0) {
       break;
     }
-    else if (max == 1) {
-      n = 0;
-    }
-    else {
-      n = z::rand_int(max);
-    }
+    int32_t n = max == 1 ? 0 : z::rand_int(max);
 
     chosen.insert(chosen.begin() + z::rand_int(chosen.size() + 1), valid[n]);
-    resources -= valid[n].first;
+    resources -= valid[n]->cost;
   }
 
+  // This permutation is bugged and does nothing but backwards compatibility.
   std::vector<std::size_t> perm;
   for (std::size_t i = 0; i < chosen.size(); ++i) {
     perm.push_back(i);
@@ -458,7 +425,7 @@ void Overmind::wave()
   }
   _hard_already = 0;
   for (std::size_t row = 0; row < chosen.size(); ++row) {
-    chosen[perm[row]].second->operator()(
+    chosen[perm[row]]->function->operator()(
         &_z0, perm[row], _power, &_hard_already);
   }
 }
@@ -487,7 +454,7 @@ void Overmind::boss()
           _boss1_queue[0] == 1 ? (Boss*)new ShieldBombBoss(count, cycle) :
                                  (Boss*)new ChaserBoss(count, cycle));
 
-    _boss1_queue.push_back(_boss1_queue[0]);
+    _boss1_queue.push_back(_boss1_queue.front());
     _boss1_queue.erase(_boss1_queue.begin());
   }
   else {
@@ -498,7 +465,7 @@ void Overmind::boss()
           _boss2_queue[0] == 1 ? (Boss*)new GhostBoss(count, cycle) :
                                  (Boss*)new DeathRayBoss(count, cycle));
 
-    _boss2_queue.push_back(_boss2_queue[0]);
+    _boss2_queue.push_back(_boss2_queue.front());
     _boss2_queue.erase(_boss2_queue.begin());
   }
 }
@@ -521,13 +488,31 @@ void Overmind::boss_mode_boss()
 
 // Formations
 //------------------------------
-template<int32_t C, int32_t R>
+template<int32_t I, typename F, int32_t C, int32_t R = 0>
 struct formation : formation_base {
-  static const int32_t cost = C;
-  static const int32_t min_resource = R;
-};
+  static std::unique_ptr<F> function;
+  struct init_t {
+    init_t()
+    {
+      function.reset(new F());
+      static_formations.emplace_back(Overmind::entry{I, C, R, function.get()});
+    }
+    // Ensure static initialisation.
+    void operator()() {}
+  };
 
-struct square1 : formation<4, 0> {
+  void operator()() override
+  {
+    init();
+  }
+  static init_t init;
+};
+template<int32_t I, typename F, int32_t C, int32_t R>
+std::unique_ptr<F> formation<I, F, C, R>::function;
+template<int32_t I, typename F, int32_t C, int32_t R>
+typename formation<I, F, C, R>::init_t formation<I, F, C, R>::init;
+
+struct square1 : formation<0, square1, 4> {
   void operator()() override
   {
     for (int32_t i = 1; i < 5; i++) {
@@ -535,7 +520,7 @@ struct square1 : formation<4, 0> {
     }
   }
 };
-struct square2 : formation<11, 0> {
+struct square2 : formation<1, square2, 11> {
   void operator()() override
   {
     int32_t r = z::rand_int(4);
@@ -551,7 +536,7 @@ struct square2 : formation<11, 0> {
     }
   }
 };
-struct square3 : formation<20, 24> {
+struct square3 : formation<2, square3, 20, 24> {
   void operator()() override
   {
     int32_t r1 = z::rand_int(4);
@@ -575,7 +560,7 @@ struct square3 : formation<20, 24> {
     }
   }
 };
-struct square1side : formation<2, 0> {
+struct square1side : formation<3, square1side, 2> {
   void operator()() override
   {
     int32_t r = z::rand_int(2);
@@ -596,7 +581,7 @@ struct square1side : formation<2, 0> {
     }
   }
 };
-struct square2side : formation<5, 0> {
+struct square2side : formation<4, square2side, 5> {
   void operator()() override
   {
     int32_t r = z::rand_int(2);
@@ -617,7 +602,7 @@ struct square2side : formation<5, 0> {
     }
   }
 };
-struct square3side : formation<10, 12> {
+struct square3side : formation<5, square3side, 10, 12> {
   void operator()() override
   {
     int32_t r = z::rand_int(2);
@@ -642,7 +627,7 @@ struct square3side : formation<10, 12> {
     }
   }
 };
-struct wall1 : formation<5, 0> {
+struct wall1 : formation<6, wall1, 5> {
   void operator()() override
   {
     bool dir = z::rand_int(2) != 0;
@@ -651,7 +636,7 @@ struct wall1 : formation<5, 0> {
     }
   }
 };
-struct wall2 : formation<12, 0> {
+struct wall2 : formation<7, wall2, 12> {
   void operator()() override
   {
     bool dir = z::rand_int(2) != 0;
@@ -668,7 +653,7 @@ struct wall2 : formation<12, 0> {
     }
   }
 };
-struct wall3 : formation<22, 26> {
+struct wall3 : formation<8, wall3, 22, 26> {
   void operator()() override
   {
     bool dir = z::rand_int(2) != 0;
@@ -693,7 +678,7 @@ struct wall3 : formation<22, 26> {
     }
   }
 };
-struct wall1side : formation<3, 0> {
+struct wall1side : formation<9, wall1side, 3> {
   void operator()() override
   {
     bool dir = z::rand_int(2) != 0;
@@ -715,7 +700,7 @@ struct wall1side : formation<3, 0> {
     }
   }
 };
-struct wall2side : formation<6, 0> {
+struct wall2side : formation<10, wall2side, 6> {
   void operator()() override
   {
     bool dir = z::rand_int(2) != 0;
@@ -737,7 +722,7 @@ struct wall2side : formation<6, 0> {
     }
   }
 };
-struct wall3side : formation<11, 13> {
+struct wall3side : formation<11, wall3side, 11, 13> {
   void operator()() override
   {
     bool dir = z::rand_int(2) != 0;
@@ -763,7 +748,7 @@ struct wall3side : formation<11, 13> {
     }
   }
 };
-struct follow1 : formation<3, 0> {
+struct follow1 : formation<12, follow1, 3> {
   void operator()() override
   {
     int32_t p = z::rand_int(3);
@@ -781,7 +766,7 @@ struct follow1 : formation<3, 0> {
     }
   }
 };
-struct follow2 : formation<7, 0> {
+struct follow2 : formation<13, follow2, 7> {
   void operator()() override
   {
     int32_t p = z::rand_int(2);
@@ -795,7 +780,7 @@ struct follow2 : formation<7, 0> {
     }
   }
 };
-struct follow3 : formation<14, 0> {
+struct follow3 : formation<14, follow3, 14> {
   void operator()() override
   {
     int32_t p = z::rand_int(2);
@@ -810,7 +795,7 @@ struct follow3 : formation<14, 0> {
     }
   }
 };
-struct follow1side : formation<2, 0> {
+struct follow1side : formation<15, follow1side, 2> {
   void operator()() override
   {
     int32_t r = 1 + z::rand_int(2);
@@ -829,7 +814,7 @@ struct follow1side : formation<2, 0> {
     }
   }
 };
-struct follow2side : formation<3, 0> {
+struct follow2side : formation<16, follow2side, 3> {
   void operator()() override
   {
     int32_t r = 1 + z::rand_int(2);
@@ -844,7 +829,7 @@ struct follow2side : formation<3, 0> {
     }
   }
 };
-struct follow3side : formation<7, 0> {
+struct follow3side : formation<17, follow3side, 7> {
   void operator()() override
   {
     int32_t r = 1 + z::rand_int(2);
@@ -860,7 +845,7 @@ struct follow3side : formation<7, 0> {
     }
   }
 };
-struct chaser1 : formation<4, 0> {
+struct chaser1 : formation<18, chaser1, 4> {
   void operator()() override
   {
     int32_t p = z::rand_int(3);
@@ -878,7 +863,7 @@ struct chaser1 : formation<4, 0> {
     }
   }
 };
-struct chaser2 : formation<8, 0> {
+struct chaser2 : formation<19, chaser2, 8> {
   void operator()() override
   {
     int32_t p = z::rand_int(2);
@@ -892,7 +877,7 @@ struct chaser2 : formation<8, 0> {
     }
   }
 };
-struct chaser3 : formation<16, 0> {
+struct chaser3 : formation<20, chaser3, 16> {
   void operator()() override
   {
     int32_t p = z::rand_int(2);
@@ -907,7 +892,7 @@ struct chaser3 : formation<16, 0> {
     }
   }
 };
-struct chaser4 : formation<20, 0> {
+struct chaser4 : formation<21, chaser4, 20> {
   void operator()() override
   {
     for (int32_t i = 0; i < 22; i++) {
@@ -915,7 +900,7 @@ struct chaser4 : formation<20, 0> {
     }
   }
 };
-struct chaser1side : formation<2, 0> {
+struct chaser1side : formation<22, chaser1side, 2> {
   void operator()() override
   {
     int32_t r = 1 + z::rand_int(2);
@@ -934,7 +919,7 @@ struct chaser1side : formation<2, 0> {
     }
   }
 };
-struct chaser2side : formation<4, 0> {
+struct chaser2side : formation<23, chaser2side, 4> {
   void operator()() override
   {
     int32_t r = 1 + z::rand_int(2);
@@ -949,7 +934,7 @@ struct chaser2side : formation<4, 0> {
     }
   }
 };
-struct chaser3side : formation<8, 0> {
+struct chaser3side : formation<24, chaser3side, 8> {
   void operator()() override
   {
     int32_t r = 1 + z::rand_int(2);
@@ -965,7 +950,7 @@ struct chaser3side : formation<8, 0> {
     }
   }
 };
-struct chaser4side : formation<10, 0> {
+struct chaser4side : formation<25, chaser4side, 10> {
   void operator()() override
   {
     int32_t r = 1 + z::rand_int(2);
@@ -974,13 +959,13 @@ struct chaser4side : formation<10, 0> {
     }
   }
 };
-struct hub1 : formation<6, 0> {
+struct hub1 : formation<26, hub1, 6> {
   void operator()() override
   {
     spawn_follow_hub(1 + z::rand_int(3), 5, 0);
   }
 };
-struct hub2 : formation<12, 0> {
+struct hub2 : formation<27, hub2, 12> {
   void operator()() override
   {
     int32_t p = z::rand_int(3);
@@ -988,13 +973,13 @@ struct hub2 : formation<12, 0> {
     spawn_follow_hub(p == 2 ? 2 : 3, 5, 0);
   }
 };
-struct hub1side : formation<3, 0> {
+struct hub1side : formation<28, hub1side, 3> {
   void operator()() override
   {
     spawn_follow_hub(1 + z::rand_int(3), 5, 1 + z::rand_int(2));
   }
 };
-struct hub2side : formation<6, 0> {
+struct hub2side : formation<29, hub2side, 6> {
   void operator()() override
   {
     int32_t r = 1 + z::rand_int(2);
@@ -1003,7 +988,7 @@ struct hub2side : formation<6, 0> {
     spawn_follow_hub(p == 2 ? 2 : 3, 5, r);
   }
 };
-struct mixed1 : formation<6, 0> {
+struct mixed1 : formation<30, mixed1, 6> {
   void operator()() override
   {
     int32_t p = z::rand_int(2);
@@ -1013,7 +998,7 @@ struct mixed1 : formation<6, 0> {
     spawn_chaser(p == 0 ? 3 : 1, 4, 0);
   }
 };
-struct mixed2 : formation<12, 0> {
+struct mixed2 : formation<31, mixed2, 12> {
   void operator()() override
   {
     for (int32_t i = 0; i < 13; i++) {
@@ -1026,7 +1011,7 @@ struct mixed2 : formation<12, 0> {
     }
   }
 };
-struct mixed3 : formation<16, 0> {
+struct mixed3 : formation<32, mixed3, 16> {
   void operator()() override
   {
     bool dir = z::rand_int(2) != 0;
@@ -1037,7 +1022,7 @@ struct mixed3 : formation<16, 0> {
     spawn_chaser(4, 7, 0);
   }
 };
-struct mixed4 : formation<18, 0> {
+struct mixed4 : formation<33, mixed4, 18> {
   void operator()() override
   {
     spawn_square(1, 7, 0);
@@ -1049,21 +1034,21 @@ struct mixed4 : formation<18, 0> {
     spawn_chaser(6, 9, 0);
   }
 };
-struct mixed5 : formation<22, 38> {
+struct mixed5 : formation<34, mixed5, 22, 38> {
   void operator()() override
   {
     spawn_follow_hub(1, 7, 0);
     spawn_tractor(3, 7, 1 + z::rand_int(2));
   }
 };
-struct mixed6 : formation<16, 30> {
+struct mixed6 : formation<35, mixed6, 16, 30> {
   void operator()() override
   {
     spawn_follow_hub(1, 5, 0);
     spawn_shielder(3, 5, 0);
   }
 };
-struct mixed7 : formation<18, 16> {
+struct mixed7 : formation<36, mixed7, 18, 16> {
   void operator()() override
   {
     bool dir = z::rand_int(2) != 0;
@@ -1076,7 +1061,7 @@ struct mixed7 : formation<18, 16> {
     spawn_chaser(5, 10, 0);
   }
 };
-struct mixed1side : formation<3, 0> {
+struct mixed1side : formation<37, mixed1side, 3> {
   void operator()() override
   {
     int32_t r = 1 + z::rand_int(2);
@@ -1087,7 +1072,7 @@ struct mixed1side : formation<3, 0> {
     spawn_chaser(p == 0 ? 3 : 1, 4, r);
   }
 };
-struct mixed2side : formation<6, 0> {
+struct mixed2side : formation<38, mixed2side, 6> {
   void operator()() override
   {
     int32_t r = z::rand_int(2);
@@ -1102,7 +1087,7 @@ struct mixed2side : formation<6, 0> {
     }
   }
 };
-struct mixed3side : formation<8, 0> {
+struct mixed3side : formation<39, mixed3side, 8> {
   void operator()() override
   {
     bool dir = z::rand_int(2) != 0;
@@ -1114,7 +1099,7 @@ struct mixed3side : formation<8, 0> {
     spawn_chaser(4, 7, r);
   }
 };
-struct mixed4side : formation<9, 0> {
+struct mixed4side : formation<40, mixed4side, 9> {
   void operator()() override
   {
     int32_t r = 1 + z::rand_int(2);
@@ -1127,7 +1112,7 @@ struct mixed4side : formation<9, 0> {
     spawn_chaser(6, 9, r);
   }
 };
-struct mixed5side : formation<19, 36> {
+struct mixed5side : formation<41, mixed5side, 19, 36> {
   void operator()() override
   {
     int32_t r = 1 + z::rand_int(2);
@@ -1135,7 +1120,7 @@ struct mixed5side : formation<19, 36> {
     spawn_tractor(3, 7, r);
   }
 };
-struct mixed6side : formation<8, 20> {
+struct mixed6side : formation<42, mixed6side, 8, 20> {
   void operator()() override
   {
     int32_t r = 1 + z::rand_int(2);
@@ -1143,7 +1128,7 @@ struct mixed6side : formation<8, 20> {
     spawn_shielder(3, 5, r);
   }
 };
-struct mixed7side : formation<9, 16> {
+struct mixed7side : formation<43, mixed7side, 9, 16> {
   void operator()() override
   {
     bool dir = z::rand_int(2) != 0;
@@ -1157,38 +1142,38 @@ struct mixed7side : formation<9, 16> {
     spawn_chaser(5, 10, r);
   }
 };
-struct tractor1 : formation<16, 30> {
+struct tractor1 : formation<44, tractor1, 16, 30> {
   void operator()() override
   {
     spawn_tractor(z::rand_int(3) + 1, 5, 1 + z::rand_int(2));
   }
 };
-struct tractor2 : formation<28, 46> {
+struct tractor2 : formation<45, tractor2, 28, 46> {
   void operator()() override
   {
     spawn_tractor(z::rand_int(3) + 1, 5, 2);
     spawn_tractor(z::rand_int(3) + 1, 5, 1);
   }
 };
-struct tractor1side : formation<16, 36> {
+struct tractor1side : formation<46, tractor1side, 16, 36> {
   void operator()() override
   {
     spawn_tractor(z::rand_int(7) + 1, 9, 1 + z::rand_int(2));
   }
 };
-struct tractor2side : formation<14, 32> {
+struct tractor2side : formation<47, tractor2side, 14, 32> {
   void operator()() override
   {
     spawn_tractor(z::rand_int(5) + 1, 7, 1 + z::rand_int(2));
   }
 };
-struct shielder1 : formation<10, 28> {
+struct shielder1 : formation<48, shielder1, 10, 28> {
   void operator()() override
   {
     spawn_shielder(z::rand_int(3) + 1, 5, 0);
   }
 };
-struct shielder1side : formation<5, 22> {
+struct shielder1side : formation<49, shielder1side, 5, 22> {
   void operator()() override
   {
     spawn_shielder(z::rand_int(3) + 1, 5, 1 + z::rand_int(2));
@@ -1203,60 +1188,16 @@ void Overmind::add_formation()
 
 void Overmind::add_formations()
 {
-  add_formation<square1>();
-  add_formation<square2>();
-  add_formation<square3>();
-  add_formation<square1side>();
-  add_formation<square2side>();
-  add_formation<square3side>();
-  add_formation<wall1>();
-  add_formation<wall2>();
-  add_formation<wall3>();
-  add_formation<wall1side>();
-  add_formation<wall2side>();
-  add_formation<wall3side>();
-  add_formation<follow1>();
-  add_formation<follow2>();
-  add_formation<follow3>();
-  add_formation<follow1side>();
-  add_formation<follow2side>();
-  add_formation<follow3side>();
-  add_formation<chaser1>();
-  add_formation<chaser2>();
-  add_formation<chaser3>();
-  add_formation<chaser4>();
-  add_formation<chaser1side>();
-  add_formation<chaser2side>();
-  add_formation<chaser3side>();
-  add_formation<chaser4side>();
-  add_formation<hub1>();
-  add_formation<hub2>();
-  add_formation<hub1side>();
-  add_formation<hub2side>();
-  add_formation<mixed1>();
-  add_formation<mixed2>();
-  add_formation<mixed3>();
-  add_formation<mixed4>();
-  add_formation<mixed5>();
-  add_formation<mixed6>();
-  add_formation<mixed7>();
-  add_formation<mixed1side>();
-  add_formation<mixed2side>();
-  add_formation<mixed3side>();
-  add_formation<mixed4side>();
-  add_formation<mixed5side>();
-  add_formation<mixed6side>();
-  add_formation<mixed7side>();
-  add_formation<tractor1>();
-  add_formation<tractor2>();
-  add_formation<tractor1side>();
-  add_formation<tractor2side>();
-  add_formation<shielder1>();
-  add_formation<shielder1side>();
-
-  auto sort = [](const entry& a, const entry& b)
-  {
+  for (const auto& f : formation_base::static_formations) {
+    _formations.emplace_back(f);
+  }
+  auto id_sort = [](const entry& a, const entry& b) {
+    return a.id < b.id;
+  };
+  auto cost_sort = [](const entry& a, const entry& b) {
     return a.cost < b.cost;
   };
-  std::stable_sort(_formations.begin(), _formations.end(), sort);
+  // Sort by ID first for backwards compatibility.
+  std::sort(_formations.begin(), _formations.end(), id_sort);
+  std::stable_sort(_formations.begin(), _formations.end(), cost_sort);
 }

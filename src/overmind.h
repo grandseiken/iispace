@@ -6,7 +6,7 @@
 class Ship;
 class z0Game;
 
-struct formation_base;
+class formation_base;
 class Overmind {
 public:
 
@@ -52,6 +52,13 @@ public:
     return _non_wall_count;
   }
 
+  struct entry {
+    int32_t id;
+    int32_t cost;
+    int32_t min_resource;
+    formation_base* function;
+  };
+
 private:
 
   void spawn(Ship* ship);
@@ -85,12 +92,6 @@ private:
   std::vector<int32_t> _boss1_queue;
   std::vector<int32_t> _boss2_queue;
   int32_t _bosses_to_go;
-
-  struct entry {
-    int32_t cost;
-    int32_t min_resource;
-    formation_base* function;
-  };
   std::vector<entry> _formations;
 
   template<typename F>
