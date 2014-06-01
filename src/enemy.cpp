@@ -1,5 +1,4 @@
 #include "enemy.h"
-#include "boss_enemy.h"
 #include "player.h"
 
 #include <algorithm>
@@ -25,14 +24,12 @@ static const int32_t TRACTOR_TIMER = 50;
 static const fixed TRACTOR_SPEED = 6 * (fixed(1) / 10);
 const fixed Tractor::TRACTOR_BEAM_SPEED = 2 + fixed(1) / 2;
 
-Enemy::Enemy(const vec2& position, Ship::ship_category type,
-             int32_t hp, bool explode_on_destroy)
+Enemy::Enemy(const vec2& position, Ship::ship_category type, int32_t hp)
   : Ship(position, Ship::ship_category(type | SHIP_ENEMY))
   , _hp(hp)
   , _score(0)
   , _damaged(false)
   , _destroy_sound(Lib::SOUND_ENEMY_DESTROY)
-  , _explode_on_destroy(explode_on_destroy)
 {
 }
 
@@ -48,12 +45,7 @@ void Enemy::damage(int32_t damage, bool magic, Player* source)
     if (source && get_score() > 0) {
       source->add_score(get_score());
     }
-    if (_explode_on_destroy) {
-      explosion();
-    }
-    else {
-      explosion(0, 4, true, to_float(shape().centre));
-    }
+    explosion();
     on_destroy(damage >= Player::BOMB_DAMAGE);
     destroy();
   }

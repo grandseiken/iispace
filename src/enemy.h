@@ -6,8 +6,7 @@
 class Enemy : public Ship {
 public:
 
-  Enemy(const vec2& position, Ship::ship_category type,
-        int32_t hp, bool explode_on_destroy = true);
+  Enemy(const vec2& position, Ship::ship_category type, int32_t hp);
 
   int64_t get_score() const
   {
@@ -39,7 +38,6 @@ private:
   int64_t _score;
   mutable int32_t _damaged;
   Lib::Sound _destroy_sound;
-  bool _explode_on_destroy;
 
 };
 

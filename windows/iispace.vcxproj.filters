@@ -64,7 +64,6 @@
     <ClCompile Include="..\src\shape.cpp" />
     <ClCompile Include="..\src\save.cpp" />
     <ClCompile Include="..\src\boss.cpp" />
-    <ClCompile Include="..\src\boss_enemy.cpp" />
     <ClCompile Include="..\src\boss_square.cpp" />
     <ClCompile Include="..\src\enemy.cpp" />
     <ClCompile Include="..\src\boss_shield.cpp" />
@@ -73,6 +72,7 @@
     <ClCompile Include="..\src\boss_ghost.cpp" />
     <ClCompile Include="..\src\boss_deathray.cpp" />
     <ClCompile Include="..\src\boss_super.cpp" />
+    <ClCompile Include="..\src\modal.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\src\fix32.h" />
@@ -87,7 +87,6 @@
     <ClInclude Include="..\src\replay.h" />
     <ClInclude Include="..\src\save.h" />
     <ClInclude Include="..\src\boss.h" />
-    <ClInclude Include="..\src\boss_enemy.h" />
     <ClInclude Include="..\src\boss_square.h" />
     <ClInclude Include="..\src\enemy.h" />
     <ClInclude Include="..\src\boss_shield.h" />
@@ -96,5 +95,6 @@
     <ClInclude Include="..\src\boss_ghost.h" />
     <ClInclude Include="..\src\boss_deathray.h" />
     <ClInclude Include="..\src\boss_super.h" />
+    <ClInclude Include="..\src\modal.h" />
   </ItemGroup>
 </Project>

@@ -4,6 +4,7 @@
 #include <memory>
 
 #include "lib.h"
+#include "modal.h"
 #include "replay.h"
 #include "save.h"
 #include "z.h"
@@ -12,7 +13,25 @@ struct Particle;
 class Player;
 class Ship;
 
-#define ALLOWED_CHARS "ABCDEFGHiJKLMNOPQRSTUVWXYZ 1234567890! "
+class PauseModal : public Modal {
+public:
+
+  enum output_t {
+    CONTINUE,
+    END_GAME,
+  };
+  PauseModal(output_t* output, Settings& settings);
+
+  void update(Lib& lib) override;
+  void render(Lib& lib) const override;
+
+private:
+
+  output_t* _output;
+  Settings& _settings;
+  int32_t _selection;
+
+};
 
 struct score_finished {};
 class z0Game {
@@ -22,7 +41,6 @@ public:
   //------------------------------
   enum game_state {
     STATE_MENU,
-    STATE_PAUSE,
     STATE_GAME,
     STATE_HIGHSCORE,
   };
@@ -130,11 +148,6 @@ public:
 
 private:
 
-  // Internals
-  //------------------------------
-  void render_panel(const flvec2& low, const flvec2& hi) const;
-  static bool sort_ships(Ship* const& a, Ship* const& b);
-
   bool is_boss_mode_unlocked() const
   {
     return (_save.bosses_killed & 63) == 63;
@@ -209,6 +222,8 @@ private:
   std::vector<std::string> _compliments;
   SaveData _save;
   Settings _settings;
+  ModalStack _modals;
+  PauseModal::output_t _pause_output;
 
 };
 

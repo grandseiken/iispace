@@ -205,7 +205,6 @@ void Player::render() const
   std::stringstream ss;
   ss << _multiplier << "X";
   std::string s = ss.str();
-
   int32_t n = _player_number;
   flvec2 v =
       n == 1 ? flvec2(Lib::WIDTH / Lib::TEXT_WIDTH - 1.f - s.length(), 1.f) :
@@ -214,7 +213,7 @@ void Player::render() const
                       Lib::HEIGHT / Lib::TEXT_HEIGHT - 2.f) : flvec2(1.f, 1.f);
   lib().render_text(v, s, z0Game::PANEL_TEXT);
 
-  ss.clear();
+  ss = std::stringstream();
   n % 2 ? ss << _score << "   " : ss << "   " << _score;
   lib().render_text(v, ss.str(), colour());
 

@@ -8,6 +8,107 @@
 #include <algorithm>
 #include <iostream>
 
+namespace {
+
+void render_panel(Lib& lib, const flvec2& low, const flvec2& hi)
+{
+  flvec2 tlow(low.x * Lib::TEXT_WIDTH, low.y * Lib::TEXT_HEIGHT);
+  flvec2 thi(hi.x * Lib::TEXT_WIDTH, hi.y * Lib::TEXT_HEIGHT);
+  lib.render_rect(tlow, thi, z0Game::PANEL_BACK);
+  lib.render_rect(tlow, thi, z0Game::PANEL_TEXT, 4);
+}
+
+// End anonymous namespace.
+}
+
+PauseModal::PauseModal(output_t* output, Settings& settings)
+  : Modal(true, false)
+  , _output(output)
+  , _settings(settings)
+  , _selection(0)
+{
+  *output = CONTINUE;
+}
+
+void PauseModal::update(Lib& lib)
+{
+  int32_t t = _selection;
+  if (lib.is_key_pressed(Lib::KEY_UP) && _selection > 0) {
+    _selection--;
+  }
+  if (lib.is_key_pressed(Lib::KEY_DOWN) && _selection < 2) {
+    _selection++;
+  }
+  if (t != _selection) {
+    lib.play_sound(Lib::SOUND_MENU_CLICK);
+  }
+
+  if (lib.is_key_pressed(Lib::KEY_ACCEPT) ||
+      lib.is_key_pressed(Lib::KEY_MENU)) {
+    if (_selection == 0) {
+      quit();
+    }
+    else if (_selection == 1) {
+      *_output = END_GAME;
+      quit();
+    }
+    else if (_selection == 2) {
+      _settings.volume = std::min(fixed(100), 1 + _settings.volume);
+      _settings.save();
+      lib.set_volume(_settings.volume.to_int());
+    }
+    lib.play_sound(Lib::SOUND_MENU_ACCEPT);
+  }
+  if (lib.is_key_pressed(Lib::KEY_LEFT) && _selection == 2) {
+    if (_settings.volume > 0) {
+      _settings.volume -= 1;
+      lib.set_volume(_settings.volume.to_int());
+      _settings.save();
+      lib.play_sound(Lib::SOUND_MENU_CLICK);
+    }
+  }
+  if (lib.is_key_pressed(Lib::KEY_RIGHT) && _selection == 2) {
+    if (_settings.volume < 100) {
+      _settings.volume += 1;
+      lib.set_volume(_settings.volume.to_int());
+      _settings.save();
+      lib.play_sound(Lib::SOUND_MENU_CLICK);
+    }
+  }
+  if (lib.is_key_pressed(Lib::KEY_CANCEL)) {
+    quit();
+    lib.play_sound(Lib::SOUND_MENU_ACCEPT);
+  }
+}
+
+void PauseModal::render(Lib& lib) const
+{
+  render_panel(lib, flvec2(3.f, 3.f), flvec2(15.f, 14.f));
+
+  lib.render_text(flvec2(4.f, 4.f), "PAUSED", z0Game::PANEL_TEXT);
+  lib.render_text(flvec2(6.f, 8.f), "CONTINUE", z0Game::PANEL_TEXT);
+  lib.render_text(flvec2(6.f, 10.f), "END GAME", z0Game::PANEL_TEXT);
+  lib.render_text(flvec2(6.f, 12.f), "VOL.", z0Game::PANEL_TEXT);
+  std::stringstream vol;
+  int32_t v = _settings.volume.to_int();
+  vol << " " << (v < 10 ? " " : "") << v;
+  lib.render_text(flvec2(10.f, 12.f), vol.str(), z0Game::PANEL_TEXT);
+  if (_selection == 2 && v > 0) {
+    lib.render_text(flvec2(5.f, 12.f), "<", z0Game::PANEL_TRAN);
+  }
+  if (_selection == 2 && v < 100) {
+    lib.render_text(flvec2(13.f, 12.f), ">", z0Game::PANEL_TRAN);
+  }
+
+  flvec2 low(float(4 * Lib::TEXT_WIDTH + 4),
+              float((8 + 2 * _selection) * Lib::TEXT_HEIGHT + 4));
+  flvec2 hi(float(5 * Lib::TEXT_WIDTH - 4),
+            float((9 + 2 * _selection) * Lib::TEXT_HEIGHT - 4));
+  lib.render_rect(low, hi, z0Game::PANEL_TEXT, 1);
+}
+
+static const std::string ALLOWED_CHARS =
+    "ABCDEFGHiJKLMNOPQRSTUVWXYZ 1234567890! ";
 const int32_t z0Game::STARTING_LIVES = 2;
 const int32_t z0Game::BOSSMODE_LIVES = 1;
 
@@ -31,6 +132,7 @@ z0Game::z0Game(Lib& lib, const std::vector<std::string>& args)
   , _controllers_dialog(false)
   , _first_controllers_dialog(false)
   , _overmind(new Overmind(*this))
+  , _pause_output(PauseModal::CONTINUE)
 {
   lib.set_volume(_settings.volume.to_int());
   // Compliments have a max length of 24
@@ -122,6 +224,11 @@ bool z0Game::update()
     }
   }
   lib().capture_mouse(false);
+
+  // Temporary.
+  if (_modals.update(_lib)) {
+    return false;
+  }
 
   // Main menu
   //------------------------------
@@ -223,62 +330,16 @@ bool z0Game::update()
       lib().set_colour_cycle((lib().get_colour_cycle() + 1) % 256);
     }
   }
-  // Paused
-  //------------------------------
-  else if (_state == STATE_PAUSE) {
-    int32_t t = _selection;
-    if (lib().is_key_pressed(Lib::KEY_UP) && _selection > 0) {
-      _selection--;
-    }
-    if (lib().is_key_pressed(Lib::KEY_DOWN) && _selection < 2) {
-      _selection++;
-    }
-    if (t != _selection) {
-      lib().play_sound(Lib::SOUND_MENU_CLICK);
-    }
-
-    if (lib().is_key_pressed(Lib::KEY_ACCEPT) ||
-        lib().is_key_pressed(Lib::KEY_MENU)) {
-      if (_selection == 0) {
-        _state = STATE_GAME;
-      }
-      else if (_selection == 1) {
-        _state = STATE_HIGHSCORE;
-        _enter_char = 0;
-        _compliment = z::rand_int(_compliments.size());
-        _kill_timer = 0;
-      }
-      else if (_selection == 2) {
-        _settings.volume = std::min(fixed(100), 1 + _settings.volume);
-        _settings.save();
-        lib().set_volume(_settings.volume.to_int());
-      }
-      lib().play_sound(Lib::SOUND_MENU_ACCEPT);
-    }
-    if (lib().is_key_pressed(Lib::KEY_LEFT) && _selection == 2) {
-      if (_settings.volume > 0) {
-        _settings.volume -= 1;
-        lib().set_volume(_settings.volume.to_int());
-        _settings.save();
-        lib().play_sound(Lib::SOUND_MENU_CLICK);
-      }
-    }
-    if (lib().is_key_pressed(Lib::KEY_RIGHT) && _selection == 2) {
-      if (_settings.volume < 100) {
-        _settings.volume += 1;
-        lib().set_volume(_settings.volume.to_int());
-        _settings.save();
-        lib().play_sound(Lib::SOUND_MENU_CLICK);
-      }
-    }
-    if (lib().is_key_pressed(Lib::KEY_CANCEL)) {
-      _state = STATE_GAME;
-      lib().play_sound(Lib::SOUND_MENU_ACCEPT);
-    }
-  }
   // In-game
   //------------------------------
   else if (_state == STATE_GAME) {
+    if (_pause_output == PauseModal::END_GAME) {
+      _state = STATE_HIGHSCORE;
+      _enter_char = 0;
+      _compliment = z::rand_int(_compliments.size());
+      _kill_timer = 0;
+      return false;
+    }
     Boss::_warnings.clear();
     lib().capture_mouse(true);
 
@@ -315,7 +376,7 @@ bool z0Game::update()
     }
 
     if (lib().is_key_pressed(Lib::KEY_MENU)) {
-      _state = STATE_PAUSE;
+      _modals.add(new PauseModal(&_pause_output, _settings));
       _selection = 0;
       lib().play_sound(Lib::SOUND_MENU_ACCEPT);
     }
@@ -332,7 +393,12 @@ bool z0Game::update()
 
     Player::update_fire_timer();
     ChaserBoss::_has_counted = false;
-    std::stable_sort(_collisions.begin(), _collisions.end(), &sort_ships);
+    auto sort_ships = [](const Ship* a, const Ship* b)
+    {
+      return a->shape().centre.x - a->bounding_width() <
+             b->shape().centre.x - b->bounding_width();
+    };
+    std::stable_sort(_collisions.begin(), _collisions.end(), sort_ships);
     for (std::size_t i = 0; i < _ships.size(); ++i) {
       if (!_ships[i]->is_destroyed()) {
         _ships[i]->update();
@@ -430,10 +496,9 @@ bool z0Game::update()
 
     if (is_high_score()) {
       _enter_time++;
-      std::string chars = ALLOWED_CHARS;
       if (lib().is_key_pressed(Lib::KEY_ACCEPT) &&
           _enter_name.length() < SaveData::MAX_NAME_LENGTH) {
-        _enter_name += chars.substr(_enter_char, 1);
+        _enter_name += ALLOWED_CHARS.substr(_enter_char, 1);
         _enter_time = 0;
         lib().play_sound(Lib::SOUND_MENU_CLICK);
       }
@@ -445,8 +510,8 @@ bool z0Game::update()
       if (lib().is_key_pressed(Lib::KEY_RIGHT)) {
         _enter_r = 0;
         _enter_char++;
-        if (_enter_char >= int32_t(chars.length())) {
-          _enter_char -= int32_t(chars.length());
+        if (_enter_char >= int32_t(ALLOWED_CHARS.length())) {
+          _enter_char -= int32_t(ALLOWED_CHARS.length());
         }
         lib().play_sound(Lib::SOUND_MENU_CLICK);
       }
@@ -455,8 +520,8 @@ bool z0Game::update()
         _enter_time = 16;
         if (_enter_r % 5 == 0 && _enter_r > 5) {
           _enter_char++;
-          if (_enter_char >= int32_t(chars.length())) {
-            _enter_char -= int32_t(chars.length());
+          if (_enter_char >= int32_t(ALLOWED_CHARS.length())) {
+            _enter_char -= int32_t(ALLOWED_CHARS.length());
           }
           lib().play_sound(Lib::SOUND_MENU_CLICK);
         }
@@ -465,7 +530,7 @@ bool z0Game::update()
         _enter_r = 0;
         _enter_char--;
         if (_enter_char < 0) {
-          _enter_char += int32_t(chars.length());
+          _enter_char += int32_t(ALLOWED_CHARS.length());
         }
         lib().play_sound(Lib::SOUND_MENU_CLICK);
       }
@@ -475,7 +540,7 @@ bool z0Game::update()
         if (_enter_r % 5 == 0 && _enter_r > 5) {
           _enter_char--;
           if (_enter_char < 0) {
-            _enter_char += int32_t(chars.length());
+            _enter_char += int32_t(ALLOWED_CHARS.length());
           }
           lib().play_sound(Lib::SOUND_MENU_CLICK);
         }
@@ -544,6 +609,10 @@ void z0Game::render() const
     return;
   }
 
+  if (_modals.render(_lib)) {
+    return;
+  }
+
   _show_hp_bar = false;
   _fill_hp_bar = 0;
   if (!_first_controllers_dialog) {
@@ -565,7 +634,7 @@ void z0Game::render() const
   //------------------------------
   if (_state == STATE_GAME) {
     if (_controllers_dialog) {
-      render_panel(flvec2(3.f, 3.f), flvec2(32.f, 8.f + 2 * _players));
+      render_panel(lib(), flvec2(3.f, 3.f), flvec2(32.f, 8.f + 2 * _players));
       lib().render_text(flvec2(4.f, 4.f), "CONTROLLERS FOUND", PANEL_TEXT);
 
       for (int32_t i = 0; i < _players; i++) {
@@ -704,7 +773,7 @@ void z0Game::render() const
   else if (_state == STATE_MENU) {
     // Main menu
     //------------------------------
-    render_panel(flvec2(3.f, 3.f), flvec2(19.f, 14.f));
+    render_panel(lib(), flvec2(3.f, 3.f), flvec2(19.f, 14.f));
 
     lib().render_text(flvec2(37.f - 16, 3.f), "coded by: SEiKEN", PANEL_TEXT);
     lib().render_text(flvec2(37.f - 16, 4.f), "stu@seiken.co.uk", PANEL_TEXT);
@@ -782,7 +851,7 @@ void z0Game::render() const
 
     // High score table
     //------------------------------
-    render_panel(flvec2(3.f, 15.f), flvec2(37.f, 27.f));
+    render_panel(lib(), flvec2(3.f, 15.f), flvec2(37.f, 27.f));
 
     std::stringstream ss;
     ss << _players;
@@ -848,41 +917,13 @@ void z0Game::render() const
       }
     }
   }
-  // Pause menu
-  //------------------------------
-  else if (_state == STATE_PAUSE) {
-    render_panel(flvec2(3.f, 3.f), flvec2(15.f, 14.f));
-
-    lib().render_text(flvec2(4.f, 4.f), "PAUSED", PANEL_TEXT);
-    lib().render_text(flvec2(6.f, 8.f), "CONTINUE", PANEL_TEXT);
-    lib().render_text(flvec2(6.f, 10.f), "END GAME", PANEL_TEXT);
-    lib().render_text(flvec2(6.f, 12.f), "VOL.", PANEL_TEXT);
-    std::stringstream vol;
-    int32_t v = _settings.volume.to_int();
-    vol << " " << (v < 10 ? " " : "") << v;
-    lib().render_text(flvec2(10.f, 12.f), vol.str(), PANEL_TEXT);
-    if (_selection == 2 && v > 0) {
-      lib().render_text(flvec2(5.f, 12.f), "<", PANEL_TRAN);
-    }
-    if (_selection == 2 && v < 100) {
-      lib().render_text(flvec2(13.f, 12.f), ">", PANEL_TRAN);
-    }
-
-    flvec2 low(float(4 * Lib::TEXT_WIDTH + 4),
-               float((8 + 2 * _selection) * Lib::TEXT_HEIGHT + 4));
-    flvec2 hi(float(5 * Lib::TEXT_WIDTH - 4),
-              float((9 + 2 * _selection) * Lib::TEXT_HEIGHT - 4));
-    lib().render_rect(low, hi, PANEL_TEXT, 1);
-  }
   // Score screen
   //------------------------------
   else if (_state == STATE_HIGHSCORE) {
     // Name enter
     //------------------------------
     if (is_high_score()) {
-      std::string chars = ALLOWED_CHARS;
-
-      render_panel(flvec2(3.f, 20.f), flvec2(28.f, 27.f));
+      render_panel(lib(), flvec2(3.f, 20.f), flvec2(28.f, 27.f));
       lib().render_text(flvec2(4.f, 21.f), "It's a high score!", PANEL_TEXT);
       lib().render_text(flvec2(4.f, 23.f),
                        _players == 1 ? "Enter name:" : "Enter team name:",
@@ -891,7 +932,7 @@ void z0Game::render() const
       if ((_enter_time / 16) % 2 &&
           _enter_name.length() < SaveData::MAX_NAME_LENGTH) {
         lib().render_text(flvec2(6.f + _enter_name.length(), 25.f),
-                          chars.substr(_enter_char, 1), 0xbbbbbbff);
+                          ALLOWED_CHARS.substr(_enter_char, 1), 0xbbbbbbff);
       }
       flvec2 low(float(4 * Lib::TEXT_WIDTH + 4),
                  float((25 + 2 * _selection) * Lib::TEXT_HEIGHT + 4));
@@ -914,7 +955,7 @@ void z0Game::render() const
         score = 1;
       }
 
-      render_panel(flvec2(3.f, 3.f), flvec2(37.f, b ? 10.f : 8.f));
+      render_panel(lib(), flvec2(3.f, 3.f), flvec2(37.f, b ? 10.f : 8.f));
       if (b) {
         std::stringstream ss;
         ss << (extra_lives * 10) << "-second extra-life bonus!";
@@ -931,7 +972,7 @@ void z0Game::render() const
 
     // Score listing
     //------------------------------
-    render_panel(flvec2(3.f, 3.f),
+    render_panel(lib(), flvec2(3.f, 3.f),
                  flvec2(37.f, 8.f + 2 * _players + (_players > 1 ? 2 : 0)));
 
     std::stringstream ss;
@@ -1019,6 +1060,7 @@ void z0Game::new_game(bool can_face_secret_boss, bool replay, game_mode mode)
     _player_list.push_back(p);
   }
   _state = STATE_GAME;
+  _pause_output = PauseModal::CONTINUE;
 }
 
 void z0Game::end_game()
@@ -1192,22 +1234,6 @@ void z0Game::set_boss_killed(boss_list boss)
   else {
     _save.bosses_killed |= boss;
   }
-}
-
-bool z0Game::sort_ships(Ship* const& a, Ship* const& b)
-{
-  return a->shape().centre.x - a->bounding_width() <
-         b->shape().centre.x - b->bounding_width();
-}
-
-// UI layout
-//------------------------------
-void z0Game::render_panel(const flvec2& low, const flvec2& hi) const
-{
-  flvec2 tlow(low.x * Lib::TEXT_WIDTH, low.y * Lib::TEXT_HEIGHT);
-  flvec2 thi(hi.x * Lib::TEXT_WIDTH, hi.y * Lib::TEXT_HEIGHT);
-  lib().render_rect(tlow, thi, PANEL_BACK);
-  lib().render_rect(tlow, thi, PANEL_TEXT, 4);
 }
 
 std::string z0Game::convert_to_time(int64_t score) const
