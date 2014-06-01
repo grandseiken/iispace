@@ -1,7 +1,7 @@
 #include "z0_game.h"
 #include "lib.h"
 #include "player.h"
-#include "boss.h"
+#include "boss_chaser.h"
 #include "enemy.h"
 #include "overmind.h"
 #include "stars.h"

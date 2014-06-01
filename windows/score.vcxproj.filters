@@ -1,9 +1,6 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
 <Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <ItemGroup>
-    <ClCompile Include="..\src\boss.cpp" />
-    <ClCompile Include="..\src\boss_enemy.cpp" />
-    <ClCompile Include="..\src\enemy.cpp" />
     <ClCompile Include="..\src\overmind.cpp" />
     <ClCompile Include="..\src\player.cpp" />
     <ClCompile Include="..\src\ship.cpp" />
@@ -61,11 +58,18 @@
     <ClCompile Include="..\src\replay.cpp" />
     <ClCompile Include="..\src\shape.cpp" />
     <ClCompile Include="..\src\save.cpp" />
+    <ClCompile Include="..\src\boss.cpp" />
+    <ClCompile Include="..\src\boss_enemy.cpp" />
+    <ClCompile Include="..\src\boss_square.cpp" />
+    <ClCompile Include="..\src\enemy.cpp" />
+    <ClCompile Include="..\src\boss_shield.cpp" />
+    <ClCompile Include="..\src\boss_chaser.cpp" />
+    <ClCompile Include="..\src\boss_tractor.cpp" />
+    <ClCompile Include="..\src\boss_ghost.cpp" />
+    <ClCompile Include="..\src\boss_deathray.cpp" />
+    <ClCompile Include="..\src\boss_super.cpp" />
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="..\src\boss.h" />
-    <ClInclude Include="..\src\boss_enemy.h" />
-    <ClInclude Include="..\src\enemy.h" />
     <ClInclude Include="..\src\lib.h" />
     <ClInclude Include="..\src\overmind.h" />
     <ClInclude Include="..\src\player.h" />
@@ -77,6 +81,16 @@
     <ClInclude Include="..\src\z.h" />
     <ClInclude Include="..\src\replay.h" />
     <ClInclude Include="..\src\save.h" />
+    <ClInclude Include="..\src\boss.h" />
+    <ClInclude Include="..\src\boss_enemy.h" />
+    <ClInclude Include="..\src\boss_square.h" />
+    <ClInclude Include="..\src\enemy.h" />
+    <ClInclude Include="..\src\boss_shield.h" />
+    <ClInclude Include="..\src\boss_chaser.h" />
+    <ClInclude Include="..\src\boss_tractor.h" />
+    <ClInclude Include="..\src\boss_ghost.h" />
+    <ClInclude Include="..\src\boss_deathray.h" />
+    <ClInclude Include="..\src\boss_super.h" />
   </ItemGroup>
   <ItemGroup>
     <Filter Include="zlib">

@@ -56,7 +56,7 @@ void Player::update()
   int32_t keys = 0;
 
   if (replay.recording) {
-    vec2 velocity = lib().get_move_velocity(_player_number);
+    velocity = lib().get_move_velocity(_player_number);
     _fire_target = lib().get_fire_target(_player_number, shape().centre);
     keys = int32_t(lib().is_key_held(_player_number, Lib::KEY_FIRE)) |
            (lib().is_key_pressed(_player_number, Lib::KEY_BOMB) << 1);

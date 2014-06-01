@@ -104,6 +104,32 @@ void Follow::update()
   move(d.normalised() * FOLLOW_SPEED);
 }
 
+BigFollow::BigFollow(const vec2& position, bool has_score)
+  : Follow(position, 20, 3)
+  , _has_score(has_score)
+{
+  set_score(has_score ? 20 : 0);
+  set_destroy_sound(Lib::SOUND_PLAYER_DESTROY);
+  set_enemy_value(3);
+}
+
+void BigFollow::on_destroy(bool bomb)
+{
+  if (bomb) {
+    return;
+  }
+
+  vec2 d = vec2(10, 0).rotated(shape().rotation());
+  for (int32_t i = 0; i < 3; i++) {
+    Follow* s = new Follow(shape().centre + d);
+    if (!_has_score) {
+      s->set_score(0);
+    }
+    spawn(s);
+    d = d.rotated(2 * fixed::pi / 3);
+  }
+}
+
 Chaser::Chaser(const vec2& position)
   : Enemy(position, SHIP_NONE, 2)
   , _move(false)
@@ -439,7 +465,7 @@ void Shielder::update()
       vec2 v = shape().centre;
 
       vec2 d = (p->shape().centre - v).normalised();
-      spawn(new SBBossShot(v, d * 3, 0x33cc99ff));
+      spawn(new BossShot(v, d * 3, 0x33cc99ff));
       play_sound_random(Lib::SOUND_BOSS_FIRE);
     }
     move(_dir * speed);
@@ -526,7 +552,7 @@ void Tractor::update()
     if (_timer % (TRACTOR_TIMER / 2) == 0 && is_on_screen() && _power) {
       Player* p = nearest_player();
       vec2 d = (p->shape().centre - shape().centre).normalised();
-      spawn(new SBBossShot(shape().centre, d * 4, 0xcc33ccff));
+      spawn(new BossShot(shape().centre, d * 4, 0xcc33ccff));
       play_sound_random(Lib::SOUND_BOSS_FIRE);
     }
 
@@ -548,4 +574,29 @@ void Tractor::render() const
       }
     }
   }
+}
+
+BossShot::BossShot(const vec2& position, const vec2& velocity, colour_t c)
+  : Enemy(position, SHIP_WALL, 0)
+  , _dir(velocity)
+{
+  add_shape(new Polygon(vec2(), 16, 8, c, 0, 0, Polygon::T::POLYSTAR));
+  add_shape(new Polygon(vec2(), 10, 8, c, 0, 0));
+  add_shape(new Polygon(vec2(), 12, 8, 0, 0, DANGEROUS));
+  set_bounding_width(12);
+  set_score(0);
+  set_enemy_value(1);
+}
+
+void BossShot::update()
+{
+  move(_dir);
+  vec2 p = shape().centre;
+  if ((p.x < -10 && _dir.x < 0) ||
+      (p.x > Lib::WIDTH + 10 && _dir.x > 0) ||
+      (p.y < -10 && _dir.y < 0) ||
+      (p.y > Lib::HEIGHT + 10 && _dir.y > 0)) {
+    destroy();
+  }
+  shape().set_rotation(shape().rotation() + fixed::hundredth * 2);
 }

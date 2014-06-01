@@ -56,6 +56,18 @@ private:
 
 };
 
+class BigFollow : public Follow {
+public:
+
+  BigFollow(const vec2& position, bool has_score);
+  void on_destroy(bool bomb) override;
+
+private:
+
+  bool _has_score;
+
+};
+
 class Chaser : public Enemy {
 public:
 
@@ -150,6 +162,19 @@ private:
   bool _ready;
   bool _spinning;
   z0Game::ShipList _players;
+
+};
+
+class BossShot : public Enemy {
+public:
+
+  BossShot(const vec2& position, const vec2& velocity,
+           colour_t c = 0x999999ff);
+  void update() override;
+
+protected:
+
+  vec2 _dir;
 
 };
 

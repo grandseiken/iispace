@@ -20,7 +20,14 @@
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\src\boss.h" />
+    <ClInclude Include="..\src\boss_chaser.h" />
+    <ClInclude Include="..\src\boss_deathray.h" />
     <ClInclude Include="..\src\boss_enemy.h" />
+    <ClInclude Include="..\src\boss_ghost.h" />
+    <ClInclude Include="..\src\boss_shield.h" />
+    <ClInclude Include="..\src\boss_square.h" />
+    <ClInclude Include="..\src\boss_super.h" />
+    <ClInclude Include="..\src\boss_tractor.h" />
     <ClInclude Include="..\src\enemy.h" />
     <ClInclude Include="..\src\fix32.h" />
     <ClInclude Include="..\src\lib.h" />
@@ -51,7 +58,14 @@
     <ClCompile Include="..\dependencies\zlib_1_2_8\uncompr.c" />
     <ClCompile Include="..\dependencies\zlib_1_2_8\zutil.c" />
     <ClCompile Include="..\src\boss.cpp" />
+    <ClCompile Include="..\src\boss_chaser.cpp" />
+    <ClCompile Include="..\src\boss_deathray.cpp" />
     <ClCompile Include="..\src\boss_enemy.cpp" />
+    <ClCompile Include="..\src\boss_ghost.cpp" />
+    <ClCompile Include="..\src\boss_shield.cpp" />
+    <ClCompile Include="..\src\boss_square.cpp" />
+    <ClCompile Include="..\src\boss_super.cpp" />
+    <ClCompile Include="..\src\boss_tractor.cpp" />
     <ClCompile Include="..\src\enemy.cpp" />
     <ClCompile Include="..\src\fix32.cpp" />
     <ClCompile Include="..\src\lib.cpp" />

@@ -1,6 +1,12 @@
 #include "overmind.h"
 #include "enemy.h"
-#include "boss.h"
+#include "boss_chaser.h"
+#include "boss_deathray.h"
+#include "boss_ghost.h"
+#include "boss_shield.h"
+#include "boss_square.h"
+#include "boss_super.h"
+#include "boss_tractor.h"
 #include "player.h"
 #include "stars.h"
 #include <algorithm>
@@ -150,31 +156,17 @@ Overmind::~Overmind()
 
 void Overmind::reset(bool can_face_secret_boss)
 {
-  int32_t a, b, c;
-  _boss1_queue.clear();
-  _boss2_queue.clear();
-
-  a = z::rand_int(3);
-  b = z::rand_int(2);
-  if (a == 0 || (a == 1 && b == 1)) {
-    b++;
-  }
-  c = (a + b == 3) ? 0 : (a + b == 2) ? 1 : 2;
-
-  _boss1_queue.push_back(a);
-  _boss1_queue.push_back(b);
-  _boss1_queue.push_back(c);
-
-  a = z::rand_int(3);
-  b = z::rand_int(2);
-  if (a == 0 || (a == 1 && b == 1)) {
-    b++;
-  }
-  c = (a + b == 3) ? 0 : (a + b == 2) ? 1 : 2;
-
-  _boss2_queue.push_back(a);
-  _boss2_queue.push_back(b);
-  _boss2_queue.push_back(c);
+  auto queue = [] {
+    int32_t a = z::rand_int(3);
+    int32_t b = z::rand_int(2);
+    if (a == 0 || (a == 1 && b == 1)) {
+      ++b;
+    }
+    int32_t c = (a + b == 3) ? 0 : (a + b == 2) ? 1 : 2;
+    return std::vector<int32_t>{a, b, c};
+  };
+  _boss1_queue = queue();
+  _boss2_queue = queue();
 
   _is_boss_next = false;
   _is_boss_level = false;
