@@ -98,7 +98,7 @@ public:
 
   // Helpful functions
   //------------------------------
-  void explosion(colour_t c = 0, int time = 8,
+  void explosion(colour_t c = 0, int32_t time = 8,
                  bool towards = false, const flvec2& v = flvec2()) const;
   void render_with_colour(colour_t colour) const;
 

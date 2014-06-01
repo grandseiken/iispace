@@ -48,8 +48,8 @@ public:
   static const colour_t PANEL_TEXT = 0xeeeeeeff;
   static const colour_t PANEL_TRAN = 0xeeeeee99;
   static const colour_t PANEL_BACK = 0x000000ff;
-  static const int STARTING_LIVES;
-  static const int BOSSMODE_LIVES;
+  static const int32_t STARTING_LIVES;
+  static const int32_t BOSSMODE_LIVES;
 
   typedef std::vector<Ship*> ShipList;
 

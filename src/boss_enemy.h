@@ -4,8 +4,6 @@
 #include "enemy.h"
 class Boss;
 
-// Big follow
-//------------------------------
 class BigFollow : public Follow {
 public:
 
@@ -18,8 +16,6 @@ private:
 
 };
 
-// Generic boss shot
-//------------------------------
 class SBBossShot : public Enemy {
 public:
 
@@ -33,8 +29,6 @@ protected:
 
 };
 
-// Tractor beam shot
-//------------------------------
 class TBossShot : public Enemy {
 public:
 
@@ -47,12 +41,8 @@ private:
 
 };
 
-// Ghost boss wall
-//------------------------------
 class GhostWall : public Enemy {
 public:
-
-  static const fixed SPEED;
 
   GhostWall(bool swap, bool no_gap, bool ignored);
   GhostWall(bool swap, bool swap_gap);
@@ -64,8 +54,6 @@ private:
 
 };
 
-// Ghost boss mine
-//------------------------------
 class GhostMine : public Enemy {
 public:
 
@@ -75,30 +63,24 @@ public:
 
 private:
 
-  int _timer;
+  int32_t _timer;
   Boss* _ghost;
 
 };
 
-// Death ray
-//------------------------------
 class DeathRay : public Enemy {
 public:
-
-  static const fixed SPEED;
 
   DeathRay(const vec2& position);
   void update() override;
 
 };
 
-// Death ray boss arm
-//------------------------------
 class DeathRayBoss;
 class DeathArm : public Enemy {
 public:
 
-  DeathArm(DeathRayBoss* boss, bool top, int hp);
+  DeathArm(DeathRayBoss* boss, bool top, int32_t hp);
   void update() override;
   void on_destroy(bool bomb) override;
 
@@ -106,18 +88,16 @@ private:
 
   DeathRayBoss* _boss;
   bool _top;
-  int _timer;
+  int32_t _timer;
   bool _attacking;
   vec2 _dir;
-  int _start;
+  int32_t _start;
 
   vec2 _target;
-  int _shots;
+  int32_t _shots;
 
 };
 
-// Snake tail
-//------------------------------
 class SnakeTail : public Enemy {
   friend class Snake;
 public:
@@ -130,13 +110,11 @@ private:
 
   SnakeTail* _tail;
   SnakeTail* _head;
-  int _timer;
-  int _dtimer;
+  int32_t _timer;
+  int32_t _dtimer;
 
 };
 
-// Snake
-//------------------------------
 class Snake : public Enemy {
 public:
 
@@ -148,17 +126,15 @@ public:
 private:
 
   SnakeTail* _tail;
-  int _timer;
+  int32_t _timer;
   vec2 _dir;
-  int _count;
+  int32_t _count;
   colour_t _colour;
   bool _shot_snake;
   fixed _shot_rot;
 
 };
 
-// Rainbow shot
-//------------------------------
 class RainbowShot : public SBBossShot {
 public:
 
@@ -168,7 +144,7 @@ public:
 private:
 
   Ship* _boss;
-  int _timer;
+  int32_t _timer;
 
 };
 

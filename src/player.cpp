@@ -4,16 +4,17 @@
 
 #include <algorithm>
 
-static const int32_t revive_time = 100;
-static const int32_t shield_time = 50;
-static const fixed speed = 5;
-static const int32_t shot_timer = 4;
-static const fixed shot_speed = 10;
-static const fixed bomb_radius = 180;
-static const fixed bomb_boss_radius = 280;
-static const int32_t magic_shot_count = 120;
-static const int32_t powerup_rotate_time = 100;
-static const fixed powerup_speed = 1;
+static const fixed PLAYER_SPEED = 5;
+static const fixed SHOT_SPEED = 10;
+static const fixed BOMB_RADIUS = 180;
+static const fixed BOMB_BOSS_RADIUS = 280;
+static const fixed POWERUP_SPEED = 1;
+
+static const int32_t REVIVE_TIME = 100;
+static const int32_t SHIELD_TIME = 50;
+static const int32_t SHOT_TIMER = 4;
+static const int32_t MAGIC_SHOT_COUNT = 120;
+static const int32_t POWERUP_ROTATE_TIME = 100;
 
 z0Game::ShipList Player::_kill_queue;
 z0Game::ShipList Player::_shot_sound_queue;
@@ -21,14 +22,14 @@ int32_t Player::_fire_timer;
 Replay Player::replay(0, 0, false);
 std::size_t Player::replay_frame;
 
-Player::Player(const vec2& position, int player_number)
+Player::Player(const vec2& position, int32_t player_number)
   : Ship(position, SHIP_PLAYER)
   , _player_number(player_number)
   , _score(0)
   , _multiplier(1)
   , _multiplier_count(0)
   , _kill_timer(0)
-  , _revive_timer(revive_time)
+  , _revive_timer(REVIVE_TIME)
   , _magic_shot_timer(0)
   , _shield(false)
   , _bomb(false)
@@ -87,7 +88,7 @@ void Player::update()
       z0().sub_life();
       _kill_timer = 0;
       _kill_queue.erase(_kill_queue.begin());
-      _revive_timer = revive_time;
+      _revive_timer = REVIVE_TIME;
       shape().centre = vec2(
           (1 + _player_number) * Lib::WIDTH / (1 + z0().count_players()),
           Lib::HEIGHT / 2);
@@ -102,10 +103,10 @@ void Player::update()
 
   // Movement.
   if (velocity.length() > fixed::hundredth) {
-    vec2 v = (velocity.length() > 1 ? velocity.normalised() : velocity) * speed;
+    vec2 v = velocity.length() > 1 ? velocity.normalised() : velocity;
     shape().set_rotation(v.angle());
-    shape().centre = std::max(
-        vec2(), std::min(vec2(Lib::WIDTH, Lib::HEIGHT), v + shape().centre));
+    shape().centre = std::max(vec2(), std::min(
+        vec2(Lib::WIDTH, Lib::HEIGHT), PLAYER_SPEED * v + shape().centre));
   }
 
   // Bombs.
@@ -120,7 +121,7 @@ void Player::update()
     vec2 t = shape().centre;
     for (int32_t i = 0; i < 64; ++i) {
       shape().centre =
-          t + vec2::from_polar(2 * i * fixed::pi / 64, bomb_radius);
+          t + vec2::from_polar(2 * i * fixed::pi / 64, BOMB_RADIUS);
       explosion((i % 2) ? colour() : 0xffffffff,
                 8 + z::rand_int(8) + z::rand_int(8), true, to_float(t));
     }
@@ -130,11 +131,11 @@ void Player::update()
     play_sound(Lib::SOUND_EXPLOSION);
 
     z0Game::ShipList list =
-        z0().ships_in_radius(shape().centre, bomb_boss_radius, SHIP_ENEMY);
+        z0().ships_in_radius(shape().centre, BOMB_BOSS_RADIUS, SHIP_ENEMY);
     for (const auto& ship : list) {
       if ((ship->type() & SHIP_BOSS) ||
-          (ship->shape().centre - shape().centre).length() <= bomb_radius) {
-        ship->damage(bomb_damage, false, 0);
+          (ship->shape().centre - shape().centre).length() <= BOMB_RADIUS) {
+        ship->damage(BOMB_DAMAGE, false, 0);
       }
       if (!(ship->type() & SHIP_BOSS) && ((Enemy*) ship)->get_score() > 0) {
         add_score(0);
@@ -221,7 +222,7 @@ void Player::render() const
     v.x += n % 2 ? -1 : ss.str().length();
     v *= 16;
     lib().render_rect(
-        v + flvec2(5.f, 11.f - (10 * _magic_shot_timer) / magic_shot_count),
+        v + flvec2(5.f, 11.f - (10 * _magic_shot_timer) / MAGIC_SHOT_COUNT),
         v + flvec2(9.f, 13.f), 0xffffffff, 2);
   }
 }
@@ -242,7 +243,7 @@ void Player::damage()
     play_sound(Lib::SOUND_PLAYER_SHIELD);
     destroy_shape(5);
     _shield = false;
-    _revive_timer = shield_time;
+    _revive_timer = SHIELD_TIME;
     return;
   }
 
@@ -253,7 +254,7 @@ void Player::damage()
   _magic_shot_timer = 0;
   _multiplier = 1;
   _multiplier_count = 0;
-  _kill_timer = revive_time;
+  _kill_timer = REVIVE_TIME;
   ++_death_count;
   if (_shield || _bomb) {
     destroy_shape(5);
@@ -292,7 +293,7 @@ colour_t Player::player_colour(std::size_t player_number)
 
 void Player::activate_magic_shots()
 {
-  _magic_shot_timer = magic_shot_count;
+  _magic_shot_timer = MAGIC_SHOT_COUNT;
 }
 
 void Player::activate_magic_shield()
@@ -326,7 +327,7 @@ void Player::activate_bomb()
 
 void Player::update_fire_timer()
 {
-  _fire_timer = (_fire_timer + 1) % shot_timer;
+  _fire_timer = (_fire_timer + 1) % SHOT_TIMER;
 }
 
 Shot::Shot(const vec2& position, Player* player,
@@ -337,7 +338,7 @@ Shot::Shot(const vec2& position, Player* player,
   , _magic(magic)
   , _flash(false)
 {
-  _velocity = _velocity.normalised() * shot_speed;
+  _velocity = _velocity.normalised() * SHOT_SPEED;
   add_shape(new Fill(vec2(), 2, 2, _player->colour()));
   add_shape(new Fill(vec2(), 1, 1, _player->colour() & 0xffffff33));
   add_shape(new Fill(vec2(), 3, 3, _player->colour() & 0xffffff33));
@@ -426,7 +427,7 @@ void Powerup::update()
     }
 
     _dir = _dir.rotated(2 * fixed::hundredth * (_rotate ? 1 : -1));
-    _rotate = z::rand_int(powerup_rotate_time) ? _rotate : !_rotate;
+    _rotate = z::rand_int(POWERUP_ROTATE_TIME) ? _rotate : !_rotate;
   }
   _first_frame = false;
 
@@ -437,13 +438,13 @@ void Powerup::update()
   }
   _dir = _dir.normalised();
 
-  move(_dir * powerup_speed * ((pv.length() <= 40) ? 3 : 1));
+  move(_dir * POWERUP_SPEED * ((pv.length() <= 40) ? 3 : 1));
   if (pv.length() <= 10 && !p->is_killed()) {
     damage(1, false, p);
   }
 }
 
-void Powerup::damage(int damage, bool magic, Player* source)
+void Powerup::damage(int32_t damage, bool magic, Player* source)
 {
   if (source) {
     switch (_type) {
@@ -468,8 +469,8 @@ void Powerup::damage(int damage, bool magic, Player* source)
     lib().rumble(source->player_number(), 6);
   }
 
-  int r = 5 + z::rand_int(5);
-  for (int i = 0; i < r; i++) {
+  int32_t r = 5 + z::rand_int(5);
+  for (int32_t i = 0; i < r; i++) {
     vec2 dir = vec2::from_polar(z::rand_fixed() * 2 * fixed::pi, 6);
     spawn(Particle(to_float(shape().centre), 0xffffffff,
                    to_float(dir), 4 + z::rand_int(8)));

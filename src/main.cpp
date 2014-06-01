@@ -5,7 +5,7 @@
 #include <string>
 #include <vector>
 
-int run(const std::vector<std::string>& args)
+int32_t run(const std::vector<std::string>& args)
 {
   try {
     Lib lib;
@@ -22,7 +22,7 @@ int run(const std::vector<std::string>& args)
   return 0;
 }
 
-int test(const std::string& replay)
+int32_t test(const std::string& replay)
 {
   std::vector<std::string> args;
   args.push_back(replay);
@@ -30,7 +30,7 @@ int test(const std::string& replay)
   return run(args);
 }
 
-int main(int argc, char** argv)
+int32_t main(int32_t argc, char** argv)
 {
   std::vector<std::string> args;
   bool is_test = false;
@@ -40,7 +40,7 @@ int main(int argc, char** argv)
   if (s) {
     args.push_back(std::string(s));
   }
-  else for (int i = 1; i < argc; ++i) {
+  else for (int32_t i = 1; i < argc; ++i) {
     if (argv[i] == std::string("--test") ||
         argv[i] == std::string("-test")) {
       is_test = true;
@@ -50,7 +50,7 @@ int main(int argc, char** argv)
   }
   std::cout << "Content-type: text/plain" << std::endl << std::endl;
 #else
-  for (int i = 1; i < argc; ++i) {
+  for (int32_t i = 1; i < argc; ++i) {
     args.push_back(std::string(argv[i]));
   }
 #endif

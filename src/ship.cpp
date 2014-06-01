@@ -73,11 +73,12 @@ void Ship::spawn(const Particle& particle) const
   _z0->add_particle(particle);
 }
 
-void Ship::explosion(colour_t c, int time, bool towards, const flvec2& v) const
+void Ship::explosion(
+    colour_t c, int32_t time, bool towards, const flvec2& v) const
 {
   for (const auto& shape : _shape.shapes()) {
-    int n = towards ? z::rand_int(2) + 1 : z::rand_int(8) + 8;
-    for (int j = 0; j < n; j++) {
+    int32_t n = towards ? z::rand_int(2) + 1 : z::rand_int(8) + 8;
+    for (int32_t j = 0; j < n; j++) {
       flvec2 pos = shape->convert_fl_point(
           to_float(_shape.centre), _shape.rotation().to_float(), flvec2());
 

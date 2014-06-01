@@ -4,25 +4,29 @@
 
 #include <algorithm>
 
-const int Follow::TIME = 90;
-const fixed Follow::SPEED = 2;
-const int Chaser::TIME = 60;
-const fixed Chaser::SPEED = 4;
-const fixed Square::SPEED = 2 + fixed(1) / 4;
-const int Wall::TIMER = 80;
-const fixed Wall::SPEED = 1 + fixed(1) / 4;
-const int FollowHub::TIMER = 170;
-const fixed FollowHub::SPEED = 1;
-const int Shielder::TIMER = 80;
-const fixed Shielder::SPEED = 2;
-const int Tractor::TIMER = 50;
-const fixed Tractor::SPEED = 6 * (fixed(1) / 10);
-const fixed Tractor::TRACTOR_SPEED = 2 + fixed(1) / 2;
+static const int32_t FOLLOW_TIME = 90;
+static const fixed FOLLOW_SPEED = 2;
 
-// Basic enemy
-//------------------------------
+static const int32_t CHASER_TIME = 60;
+static const fixed CHASER_SPEED = 4;
+
+static const fixed SQUARE_SPEED = 2 + fixed(1) / 4;
+
+static const int32_t WALL_TIMER = 80;
+static const fixed WALL_SPEED = 1 + fixed(1) / 4;
+
+static const int32_t FOLLOW_HUB_TIMER = 170;
+static const fixed FOLLOW_HUB_SPEED = 1;
+
+static const int32_t SHIELDER_TIMER = 80;
+static const fixed SHIELDER_SPEED = 2;
+
+static const int32_t TRACTOR_TIMER = 50;
+static const fixed TRACTOR_SPEED = 6 * (fixed(1) / 10);
+const fixed Tractor::TRACTOR_BEAM_SPEED = 2 + fixed(1) / 2;
+
 Enemy::Enemy(const vec2& position, Ship::ship_category type,
-             int hp, bool explode_on_destroy)
+             int32_t hp, bool explode_on_destroy)
   : Ship(position, Ship::ship_category(type | SHIP_ENEMY))
   , _hp(hp)
   , _score(0)
@@ -32,7 +36,7 @@ Enemy::Enemy(const vec2& position, Ship::ship_category type,
 {
 }
 
-void Enemy::damage(int damage, bool magic, Player* source)
+void Enemy::damage(int32_t damage, bool magic, Player* source)
 {
   _hp -= std::max(damage, 0);
   if (damage > 0) {
@@ -50,14 +54,14 @@ void Enemy::damage(int damage, bool magic, Player* source)
     else {
       explosion(0, 4, true, to_float(shape().centre));
     }
-    on_destroy(damage >= Player::bomb_damage);
+    on_destroy(damage >= Player::BOMB_DAMAGE);
     destroy();
   }
   else if (!is_destroyed()) {
     if (damage > 0) {
       play_sound_random(Lib::SOUND_ENEMY_HIT);
     }
-    _damaged = damage >= Player::bomb_damage ? 25 : 1;
+    _damaged = damage >= Player::BOMB_DAMAGE ? 25 : 1;
   }
 }
 
@@ -71,9 +75,7 @@ void Enemy::render() const
   --_damaged;
 }
 
-// Follower enemy
-//------------------------------
-Follow::Follow(const vec2& position, fixed radius, int hp)
+Follow::Follow(const vec2& position, fixed radius, int32_t hp)
   : Enemy(position, SHIP_NONE, hp)
   , _timer(0)
   , _target(0)
@@ -94,20 +96,18 @@ void Follow::update()
   }
 
   _timer++;
-  if (!_target || _timer > TIME) {
+  if (!_target || _timer > FOLLOW_TIME) {
     _target = nearest_player();
     _timer = 0;
   }
   vec2 d = _target->shape().centre - shape().centre;
-  move(d.normalised() * SPEED);
+  move(d.normalised() * FOLLOW_SPEED);
 }
 
-// Chaser enemy
-//------------------------------
 Chaser::Chaser(const vec2& position)
   : Enemy(position, SHIP_NONE, 2)
   , _move(false)
-  , _timer(TIME)
+  , _timer(CHASER_TIME)
   , _dir()
 {
   add_shape(new Polygon(vec2(), 10, 4, 0x3399ffff,
@@ -126,10 +126,10 @@ void Chaser::update()
     _timer--;
   }
   if (_timer <= 0) {
-    _timer = TIME * (_move + 1);
+    _timer = CHASER_TIME * (_move + 1);
     _move = !_move;
     if (_move) {
-      _dir = SPEED *
+      _dir = CHASER_SPEED *
           (nearest_player()->shape().centre - shape().centre).normalised();
     }
   }
@@ -144,8 +144,6 @@ void Chaser::update()
   }
 }
 
-// Square enemy
-//------------------------------
 Square::Square(const vec2& position, fixed rotation)
   : Enemy(position, SHIP_WALL, 4)
   , _dir()
@@ -198,7 +196,7 @@ void Square::update()
     }
   }
   _dir = _dir.normalised();
-  move(_dir * SPEED);
+  move(_dir * SQUARE_SPEED);
   shape().set_rotation(_dir.angle());
 }
 
@@ -212,8 +210,6 @@ void Square::render() const
   }
 }
 
-// Wall enemy
-//------------------------------
 Wall::Wall(const vec2& position, bool rdir)
   : Enemy(position, SHIP_WALL, 10)
   , _dir(0, 1)
@@ -237,8 +233,8 @@ void Wall::update()
   }
 
   if (_rotate) {
-    vec2 d = _dir.rotated(
-        (_rdir ? _timer - TIMER : TIMER - _timer) * fixed::pi / (4 * TIMER));
+    vec2 d = _dir.rotated((_rdir ? 1 : -1) * (_timer - WALL_TIMER) *
+                          fixed::pi / (4 * WALL_TIMER));
 
     shape().set_rotation(d.angle());
     _timer--;
@@ -251,9 +247,9 @@ void Wall::update()
   }
   else {
     _timer++;
-    if (_timer > TIMER * 6) {
+    if (_timer > WALL_TIMER * 6) {
       if (is_on_screen()) {
-        _timer = TIMER;
+        _timer = WALL_TIMER;
         _rotate = true;
       }
       else {
@@ -270,7 +266,7 @@ void Wall::update()
     _dir = -_dir.normalised();
   }
 
-  move(_dir * SPEED);
+  move(_dir * WALL_SPEED);
   shape().set_rotation(_dir.angle());
 }
 
@@ -292,8 +288,6 @@ void Wall::on_destroy(bool bomb)
   }
 }
 
-// Follow spawner enemy
-//------------------------------
 FollowHub::FollowHub(const vec2& position, bool powera, bool powerb)
   : Enemy(position, SHIP_NONE, 14)
   , _timer(0)
@@ -328,7 +322,7 @@ FollowHub::FollowHub(const vec2& position, bool powera, bool powerb)
 void FollowHub::update()
 {
   _timer++;
-  if (_timer > (_powera ? TIMER / 2 : TIMER)) {
+  if (_timer > (_powera ? FOLLOW_HUB_TIMER / 2 : FOLLOW_HUB_TIMER)) {
     _timer = 0;
     _count++;
     if (is_on_screen()) {
@@ -353,7 +347,7 @@ void FollowHub::update()
   shape().rotate(s);
   shapes()[0]->rotate(-s);
 
-  move(_dir * SPEED);
+  move(_dir * FOLLOW_HUB_SPEED);
 }
 
 void FollowHub::on_destroy(bool bomb)
@@ -367,8 +361,6 @@ void FollowHub::on_destroy(bool bomb)
   spawn(new Chaser(shape().centre));
 }
 
-// Shielder enemy
-//------------------------------
 Shielder::Shielder(const vec2& position, bool power)
   : Enemy(position, SHIP_NONE, 16)
   , _dir(0, 1)
@@ -405,7 +397,7 @@ void Shielder::update()
   fixed s = _power ? fixed::hundredth * 12 : fixed::hundredth * 4;
   shape().rotate(s);
   shapes()[9]->rotate(-2 * s);
-  for (int i = 0; i < 8; i++) {
+  for (int32_t i = 0; i < 8; i++) {
     shapes()[i]->rotate(-s);
   }
 
@@ -421,11 +413,11 @@ void Shielder::update()
     _rotate = false;
   }
 
-  fixed speed = SPEED +
+  fixed speed = SHIELDER_SPEED +
       (_power ? fixed::tenth * 3 : fixed::tenth * 2) * (16 - get_hp());
   if (_rotate) {
-    vec2 d = _dir.rotated(
-        (_rdir ? 1 : -1) * (TIMER - _timer) * fixed::pi / (2 * TIMER));
+    vec2 d = _dir.rotated((_rdir ? 1 : -1) * (SHIELDER_TIMER - _timer) *
+                          fixed::pi / (2 * SHIELDER_TIMER));
     _timer--;
     if (_timer <= 0) {
       _timer = 0;
@@ -436,12 +428,13 @@ void Shielder::update()
   }
   else {
     _timer++;
-    if (_timer > TIMER * 2) {
-      _timer = TIMER;
+    if (_timer > SHIELDER_TIMER * 2) {
+      _timer = SHIELDER_TIMER;
       _rotate = true;
       _rdir = z::rand_int(2) != 0;
     }
-    if (is_on_screen() && _timer % TIMER == TIMER / 2 && _power) {
+    if (is_on_screen() && _power &&
+        _timer % SHIELDER_TIMER == SHIELDER_TIMER / 2) {
       Player* p = nearest_player();
       vec2 v = shape().centre;
 
@@ -454,11 +447,9 @@ void Shielder::update()
   _dir = _dir.normalised();
 }
 
-// Tractor beam enemy
-//------------------------------
 Tractor::Tractor(const vec2& position, bool power)
   : Enemy(position, SHIP_NONE, 50)
-  , _timer(TIMER * 4)
+  , _timer(TRACTOR_TIMER * 4)
   , _dir(0, 0)
   , _power(power)
   , _ready(false)
@@ -507,15 +498,15 @@ void Tractor::update()
   }
 
   if (!_ready && !_spinning) {
-    move(_dir * SPEED * (is_on_screen() ? 1 : 2 + fixed::half));
+    move(_dir * TRACTOR_SPEED * (is_on_screen() ? 1 : 2 + fixed::half));
 
-    if (_timer > TIMER * 8) {
+    if (_timer > TRACTOR_TIMER * 8) {
       _ready = true;
       _timer = 0;
     }
   }
   else if (_ready) {
-    if (_timer > TIMER) {
+    if (_timer > TRACTOR_TIMER) {
       _ready = false;
       _spinning = true;
       _timer = 0;
@@ -525,21 +516,21 @@ void Tractor::update()
   }
   else if (_spinning) {
     shape().rotate(fixed::tenth * 3);
-    for (unsigned int i = 0; i < _players.size(); i++) {
-      if (!((Player*) _players[i])->is_killed()) {
-        vec2 d = (shape().centre - _players[i]->shape().centre).normalised();
-        _players[i]->move(d * TRACTOR_SPEED);
+    for (const auto& ship : _players) {
+      if (!((Player*) ship)->is_killed()) {
+        vec2 d = (shape().centre - ship->shape().centre).normalised();
+        ship->move(d * TRACTOR_BEAM_SPEED);
       }
     }
 
-    if (_timer % (TIMER / 2) == 0 && is_on_screen() && _power) {
+    if (_timer % (TRACTOR_TIMER / 2) == 0 && is_on_screen() && _power) {
       Player* p = nearest_player();
       vec2 d = (p->shape().centre - shape().centre).normalised();
       spawn(new SBBossShot(shape().centre, d * 4, 0xcc33ccff));
       play_sound_random(Lib::SOUND_BOSS_FIRE);
     }
 
-    if (_timer > TIMER * 5) {
+    if (_timer > TRACTOR_TIMER * 5) {
       _spinning = false;
       _timer = 0;
     }
@@ -550,7 +541,7 @@ void Tractor::render() const
 {
   Enemy::render();
   if (_spinning) {
-    for (unsigned int i = 0; i < _players.size(); i++) {
+    for (std::size_t i = 0; i < _players.size(); ++i) {
       if (((_timer + i * 4) / 4) % 2 && !((Player*) _players[i])->is_killed()) {
         lib().render_line(to_float(shape().centre),
                           to_float(_players[i]->shape().centre), 0xcc33ccff);

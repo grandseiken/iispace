@@ -6,49 +6,44 @@
 
 std::vector<std::pair<int32_t, std::pair<vec2, colour_t>>> Boss::_fireworks;
 std::vector<vec2> Boss::_warnings;
-const fixed Boss::HP_PER_EXTRA_PLAYER = fixed(1) / 10;
-const fixed Boss::HP_PER_EXTRA_CYCLE = 3 * fixed(1) / 10;
 
-const int32_t BigSquareBoss::BASE_HP = 400;
-const fixed BigSquareBoss::SPEED = 2 + fixed(1) / 2;
-const int32_t BigSquareBoss::TIMER = 100;
-const int32_t BigSquareBoss::STIMER = 80;
-const fixed BigSquareBoss::ATTACK_RADIUS = 120;
-const int32_t BigSquareBoss::ATTACK_TIME = 90;
+static const fixed HP_PER_EXTRA_PLAYER = fixed(1) / 10;
+static const fixed HP_PER_EXTRA_CYCLE = 3 * fixed(1) / 10;
 
-const int32_t ShieldBombBoss::BASE_HP = 320;
-const int32_t ShieldBombBoss::TIMER = 100;
-const int32_t ShieldBombBoss::UNSHIELD_TIME = 300;
-const int32_t ShieldBombBoss::ATTACK_TIME = 80;
-const fixed ShieldBombBoss::SPEED = 1;
+static const int32_t BSB_BASE_HP = 400;
+static const int32_t BSB_TIMER = 100;
+static const int32_t BSB_STIMER = 80;
+static const int32_t BSB_ATTACK_TIME = 90;
+static const fixed BSB_SPEED = 2 + fixed(1) / 2;
+static const fixed BSB_ATTACK_RADIUS = 120;
 
-const int32_t ChaserBoss::BASE_HP = 60;
-const fixed ChaserBoss::SPEED = 4;
-const int32_t ChaserBoss::TIMER = 60;
-const int32_t ChaserBoss::MAX_SPLIT = 7;
+static const int32_t SBB_BASE_HP = 320;
+static const int32_t SBB_TIMER = 100;
+static const int32_t SBB_UNSHIELD_TIME = 300;
+static const int32_t SBB_ATTACK_TIME = 80;
+static const fixed SBB_SPEED = 1;
 
-const int32_t TractorBoss::BASE_HP = 900;
-const fixed TractorBoss::SPEED = 2;
-const int32_t TractorBoss::TIMER = 100;
+static const int32_t CB_BASE_HP = 60;
+static const int32_t CB_MAX_SPLIT = 7;
+static const fixed CB_SPEED = 4;
 
-const int32_t GhostBoss::BASE_HP = 700;
-const int32_t GhostBoss::TIMER = 250;
-const int32_t GhostBoss::ATTACK_TIME = 100;
+static const int32_t TB_BASE_HP = 900;
+static const int32_t TB_TIMER = 100;
+static const fixed TB_SPEED = 2;
 
-const int32_t DeathRayBoss::BASE_HP = 600;
-const int32_t DeathRayBoss::ARM_HP = 100;
-const int32_t DeathRayBoss::ARM_ATIMER = 300;
-const int32_t DeathRayBoss::ARM_RTIMER = 400;
-const fixed DeathRayBoss::ARM_SPEED = 4;
-const int32_t DeathRayBoss::RAY_TIMER = 100;
-const int32_t DeathRayBoss::TIMER = 100;
-const fixed DeathRayBoss::SPEED = 5;
+static const int32_t GB_BASE_HP = 700;
+static const int32_t GB_TIMER = 250;
+static const int32_t GB_ATTACK_TIME = 100;
 
-const int32_t SuperBoss::BASE_HP = 520;
-const int32_t SuperBoss::ARC_HP = 75;
+static const int32_t DRB_BASE_HP = 600;
+static const int32_t DRB_ARM_HP = 100;
+static const int32_t DRB_RAY_TIMER = 100;
+static const int32_t DRB_TIMER = 100;
+static const fixed DRB_SPEED = 5;
 
-// Generic boss
-//------------------------------
+static const int32_t SB_BASE_HP = 520;
+static const int32_t SB_ARC_HP = 75;
+
 Boss::Boss(const vec2& position, z0Game::boss_list boss, int32_t hp,
            int32_t players, int32_t cycle, bool explode_on_damage)
   : Ship(position, Ship::ship_category(SHIP_BOSS | SHIP_ENEMY))
@@ -98,7 +93,7 @@ void Boss::damage(int32_t damage, bool magic, Player* source)
     return;
   }
 
-  if (damage >= Player::bomb_damage) {
+  if (damage >= Player::BOMB_DAMAGE) {
     if (_explode_on_damage) {
       explosion();
       explosion(0xffffffff, 16);
@@ -163,7 +158,7 @@ void Boss::on_destroy()
   set_killed();
   for (const auto& ship : z0().all_ships(SHIP_ENEMY)) {
     if (ship != this) {
-      ship->damage(Player::bomb_damage, false, 0);
+      ship->damage(Player::BOMB_DAMAGE, false, 0);
     }
   }
   explosion();
@@ -192,15 +187,12 @@ void Boss::on_destroy()
   }
 }
 
-
-// Big square boss
-//------------------------------
 BigSquareBoss::BigSquareBoss(int32_t players, int32_t cycle)
   : Boss(vec2(Lib::WIDTH * fixed::hundredth * 75, Lib::HEIGHT * 2),
-         z0Game::BOSS_1A, BASE_HP, players, cycle)
+         z0Game::BOSS_1A, BSB_BASE_HP, players, cycle)
   , _dir(0, -1)
   , _reverse(false)
-  , _timer(TIMER * 6)
+  , _timer(BSB_TIMER * 6)
   , _spawn_timer(0)
   , _special_timer(0)
   , _special_attack(false)
@@ -245,7 +237,7 @@ void BigSquareBoss::update()
       _attack_player = 0;
     }
     else if (!_special_timer) {
-      vec2 d(ATTACK_RADIUS, 0);
+      vec2 d(BSB_ATTACK_RADIUS, 0);
       if (_special_attack_rotate) {
         d = d.rotated(fixed::pi / 2);
       }
@@ -266,20 +258,20 @@ void BigSquareBoss::update()
   else if (is_on_screen()) {
     _timer--;
     if (_timer <= 0) {
-      _timer = (z::rand_int(6) + 1) * TIMER;
+      _timer = (z::rand_int(6) + 1) * BSB_TIMER;
       _dir = vec2() - _dir;
       _reverse = !_reverse;
     }
     _spawn_timer++;
     if (_spawn_timer >=
-        int32_t(STIMER - z0().alive_players() * 10) / (is_hp_low() ? 2 : 1)) {
+        int32_t(BSB_STIMER - z0().alive_players() * 10) / (is_hp_low() ? 2 : 1)) {
       _spawn_timer = 0;
       _special_timer++;
       spawn(new BigFollow(shape().centre, false));
       play_sound_random(Lib::SOUND_BOSS_FIRE);
     }
     if (_special_timer >= 8 && z::rand_int(4)) {
-      _special_timer = ATTACK_TIME;
+      _special_timer = BSB_ATTACK_TIME;
       _special_attack = true;
       _special_attack_rotate = z::rand_int(2) != 0;
       _attack_player = nearest_player();
@@ -291,7 +283,7 @@ void BigSquareBoss::update()
     return;
   }
 
-  move(_dir * SPEED);
+  move(_dir * BSB_SPEED);
   for (std::size_t i = 0; i < 6; ++i) {
     shapes()[i]->rotate((i % 2 ? -1 : 1) * fixed::hundredth * ((1 + i) * 5));
   }
@@ -304,7 +296,7 @@ void BigSquareBoss::render() const
 {
   Boss::render();
   if ((_special_timer / 4) % 2 && _attack_player) {
-    flvec2 d(ATTACK_RADIUS.to_float(), 0);
+    flvec2 d(BSB_ATTACK_RADIUS.to_float(), 0);
     if (_special_attack_rotate) {
       d = d.rotated(M_PIf / 2);
     }
@@ -322,11 +314,9 @@ int32_t BigSquareBoss::get_damage(int32_t damage, bool magic)
   return damage;
 }
 
-// Shield bomb boss
-//------------------------------
 ShieldBombBoss::ShieldBombBoss(int32_t players, int32_t cycle)
   : Boss(vec2(-Lib::WIDTH / 2, Lib::HEIGHT / 2),
-         z0Game::BOSS_1B, BASE_HP, players, cycle)
+         z0Game::BOSS_1B, SBB_BASE_HP, players, cycle)
   , _timer(0)
   , _count(0)
   , _unshielded(0)
@@ -356,10 +346,10 @@ ShieldBombBoss::ShieldBombBoss(int32_t players, int32_t cycle)
 void ShieldBombBoss::update()
 {
   if (!_side && shape().centre.x < Lib::WIDTH * fixed::tenth * 6) {
-    move(vec2(1, 0) * SPEED);
+    move(vec2(1, 0) * SBB_SPEED);
   }
   else if (_side && shape().centre.x > Lib::WIDTH * fixed::tenth * 4) {
-    move(vec2(-1, 0) * SPEED);
+    move(vec2(-1, 0) * SBB_SPEED);
   }
 
   shape().rotate(-fixed::hundredth * 2);
@@ -401,15 +391,15 @@ void ShieldBombBoss::update()
   }
 
   if (_attack) {
-    vec2 d = _attack_dir.rotated(
-        (ATTACK_TIME - _attack) * fixed::half * fixed::pi / ATTACK_TIME);
+    vec2 d = _attack_dir.rotated((SBB_ATTACK_TIME - _attack) *
+                                 fixed::half * fixed::pi / SBB_ATTACK_TIME);
     spawn(new SBBossShot(shape().centre, d));
     _attack--;
     play_sound_random(Lib::SOUND_BOSS_FIRE);
   }
 
   _timer++;
-  if (_timer > TIMER) {
+  if (_timer > SBB_TIMER) {
     _count++;
     _timer = 0;
 
@@ -435,7 +425,7 @@ void ShieldBombBoss::update()
       play_sound(Lib::SOUND_BOSS_ATTACK);
     }
     else {
-      _attack = ATTACK_TIME;
+      _attack = SBB_ATTACK_TIME;
       _attack_dir = vec2::from_polar(z::rand_fixed() * (2 * fixed::pi), 5);
     }
   }
@@ -446,8 +436,8 @@ int32_t ShieldBombBoss::get_damage(int32_t damage, bool magic)
   if (_unshielded) {
     return damage;
   }
-  if (damage >= Player::bomb_damage && !_unshielded) {
-    _unshielded = UNSHIELD_TIME;
+  if (damage >= Player::BOMB_DAMAGE && !_unshielded) {
+    _unshielded = SBB_UNSHIELD_TIME;
     shapes()[0]->category = VULNERABLE | DANGEROUS;
     shapes()[17]->category = 0;
   }
@@ -462,13 +452,11 @@ int32_t ShieldBombBoss::get_damage(int32_t damage, bool magic)
   return damage;
 }
 
-// Chaser boss
-//------------------------------
-int32_t  ChaserBoss::_count;
-bool ChaserBoss::_hasCounted;
-int32_t  ChaserBoss::_shared_hp;
+int32_t ChaserBoss::_count;
+bool ChaserBoss::_has_counted;
+int32_t ChaserBoss::_shared_hp;
 
-// power(HP_REDUCE_POWER = 1.7, split)
+// power(HP_REDUCE_POWER = 1.7, split).
 static const fixed HP_REDUCE_POWER_lookup[8] = {
   fixed(1),
   1 + 7 * (fixed(1) / 10),
@@ -480,7 +468,7 @@ static const fixed HP_REDUCE_POWER_lookup[8] = {
   41
 };
 
-// power(1.5, split)
+// power(1.5, split).
 static const fixed ONE_AND_HALF_lookup[8] = {
   fixed(1),
   1 + (fixed(1) / 2),
@@ -492,7 +480,7 @@ static const fixed ONE_AND_HALF_lookup[8] = {
   17 + (fixed(1) / 10)
 };
 
-// power(1.1, split)
+// power(1.1, split).
 static const fixed ONE_PT_ONE_lookup[8] = {
   fixed(1),
   1 + (fixed(1) / 10),
@@ -504,7 +492,7 @@ static const fixed ONE_PT_ONE_lookup[8] = {
   1 + 9 * (fixed(1) / 10)
 };
 
-// power(1.15, split)
+// power(1.15, split).
 static const fixed ONE_PT_ONE_FIVE_lookup[8] = {
   fixed(1),
   1 + 15 * (fixed(1) / 100),
@@ -516,7 +504,7 @@ static const fixed ONE_PT_ONE_FIVE_lookup[8] = {
   2 + 7 * (fixed(1) / 10)
 };
 
-// power(1.2, split)
+// power(1.2, split).
 static const fixed ONE_PT_TWO_lookup[8] = {
   fixed(1),
   1 + 2 * (fixed(1) / 10),
@@ -528,7 +516,7 @@ static const fixed ONE_PT_TWO_lookup[8] = {
   3 + 6 * (fixed(1) / 10)
 };
 
-// power(1.15, remaining)
+// power(1.15, remaining).
 static const int32_t ONE_PT_ONE_FIVE_intLookup[128] = {
   1, 1, 1, 2, 2, 2, 2, 3, 3, 4, 4, 5, 5, 6, 7, 8, 9, 11, 12, 14, 16, 19, 22,
   25, 29, 33, 38, 44, 50, 58, 66, 76, 88, 101, 116, 133, 153, 176, 203, 233,
@@ -545,10 +533,11 @@ static const int32_t ONE_PT_ONE_FIVE_intLookup[128] = {
 
 ChaserBoss::ChaserBoss(int32_t players, int32_t cycle, int32_t split,
                        const vec2& position, int32_t time, int32_t stagger)
-  : Boss(!split ? vec2(Lib::WIDTH / 2, -Lib::HEIGHT / 2) : position,
-         z0Game::BOSS_1C,
-         1 + BASE_HP / (fixed::half + HP_REDUCE_POWER_lookup[split]).to_int(),
-         players, cycle, split <= 1)
+  : Boss(
+      !split ? vec2(Lib::WIDTH / 2, -Lib::HEIGHT / 2) : position,
+      z0Game::BOSS_1C,
+      1 + CB_BASE_HP / (fixed::half + HP_REDUCE_POWER_lookup[split]).to_int(),
+      players, cycle, split <= 1)
   , _on_screen(split != 0)
   , _move(false)
   , _timer(time)
@@ -559,17 +548,17 @@ ChaserBoss::ChaserBoss(int32_t players, int32_t cycle, int32_t split,
   , _split(split)
   , _stagger(stagger)
 {
-  add_shape(new Polygon(vec2(), 10 * ONE_AND_HALF_lookup[MAX_SPLIT - _split],
+  add_shape(new Polygon(vec2(), 10 * ONE_AND_HALF_lookup[CB_MAX_SPLIT - _split],
                         5, 0x3399ffff, 0, 0, Polygon::T::POLYGRAM));
-  add_shape(new Polygon(vec2(), 9 * ONE_AND_HALF_lookup[MAX_SPLIT - _split],
+  add_shape(new Polygon(vec2(), 9 * ONE_AND_HALF_lookup[CB_MAX_SPLIT - _split],
                         5, 0x3399ffff, 0, 0, Polygon::T::POLYGRAM));
-  add_shape(new Polygon(vec2(), 8 * ONE_AND_HALF_lookup[MAX_SPLIT - _split],
+  add_shape(new Polygon(vec2(), 8 * ONE_AND_HALF_lookup[CB_MAX_SPLIT - _split],
                         5, 0, 0, DANGEROUS | VULNERABLE, Polygon::T::POLYGRAM));
-  add_shape(new Polygon(vec2(), 7 * ONE_AND_HALF_lookup[MAX_SPLIT - _split],
+  add_shape(new Polygon(vec2(), 7 * ONE_AND_HALF_lookup[CB_MAX_SPLIT - _split],
                         5, 0, 0, SHIELD, Polygon::T::POLYGRAM));
 
   set_ignore_damage_colour_index(2);
-  set_bounding_width(10 * ONE_AND_HALF_lookup[MAX_SPLIT - _split]);
+  set_bounding_width(10 * ONE_AND_HALF_lookup[CB_MAX_SPLIT - _split]);
   if (!_split) {
     _shared_hp = 0;
     _count = 0;
@@ -598,7 +587,7 @@ void ChaserBoss::update()
       _move = !_move;
     }
     if (_move) {
-      _dir = SPEED * ONE_PT_ONE_lookup[_split] *
+      _dir = CB_SPEED * ONE_PT_ONE_lookup[_split] *
           (nearest_player()->shape().centre - shape().centre).normalised();
     }
   }
@@ -607,16 +596,16 @@ void ChaserBoss::update()
   }
   else {
     const z0Game::ShipList& nearby = z0().all_ships(SHIP_PLAYER | SHIP_BOSS);
-    const fixed attract = 256 * ONE_PT_ONE_lookup[MAX_SPLIT - _split];
-    const fixed align = 128 * ONE_PT_ONE_FIVE_lookup[MAX_SPLIT - _split];
-    const fixed repulse = 64 * ONE_PT_TWO_lookup[MAX_SPLIT - _split];
+    const fixed attract = 256 * ONE_PT_ONE_lookup[CB_MAX_SPLIT - _split];
+    const fixed align = 128 * ONE_PT_ONE_FIVE_lookup[CB_MAX_SPLIT - _split];
+    const fixed repulse = 64 * ONE_PT_TWO_lookup[CB_MAX_SPLIT - _split];
     static const fixed c_attract = -(1 + 2 * fixed::tenth);
-    static const fixed c_dir0 = SPEED / 14;
-    static const fixed c_dir1 = 8 * SPEED / (14 * 9);
-    static const fixed c_dir2 = 8 * SPEED / (14 * 11);
-    static const fixed c_dir3 = 8 * SPEED / (14 * 2);
-    static const fixed c_dir4 = 8 * SPEED / (14 * 3);
-    static const fixed c_rotate = fixed::hundredth * 5 / fixed(MAX_SPLIT);
+    static const fixed c_dir0 = CB_SPEED / 14;
+    static const fixed c_dir1 = 8 * CB_SPEED / (14 * 9);
+    static const fixed c_dir2 = 8 * CB_SPEED / (14 * 11);
+    static const fixed c_dir3 = 8 * CB_SPEED / (14 * 2);
+    static const fixed c_dir4 = 8 * CB_SPEED / (14 * 3);
+    static const fixed c_rotate = fixed::hundredth * 5 / fixed(CB_MAX_SPLIT);
 
     _dir = _last_dir;
     if (_stagger == _count % (_split == 0 ? 1 :
@@ -637,7 +626,7 @@ void ChaserBoss::update()
         vec2 p;
         if (ship->type() & SHIP_BOSS) {
           ChaserBoss* c = (ChaserBoss*) ship;
-          fixed pow = ONE_PT_ONE_FIVE_lookup[MAX_SPLIT - c->_split];
+          fixed pow = ONE_PT_ONE_FIVE_lookup[CB_MAX_SPLIT - c->_split];
           v *= pow;
           p = c->_last_dir * pow;
         }
@@ -663,7 +652,7 @@ void ChaserBoss::update()
       }
     }
     if (int32_t(remaining.size()) - z0().count_players() < 4 &&
-        _split >= MAX_SPLIT - 1) {
+        _split >= CB_MAX_SPLIT - 1) {
       if ((shape().centre.x < 32 && _dir.x < 0) ||
           (shape().centre.x >= Lib::WIDTH - 32 && _dir.x > 0)) {
         _dir.x = -_dir.x;
@@ -674,7 +663,7 @@ void ChaserBoss::update()
       }
     }
     else if (int32_t(remaining.size()) - z0().count_players() < 8 &&
-             _split >= MAX_SPLIT - 1) {
+             _split >= CB_MAX_SPLIT - 1) {
       if ((shape().centre.x < 0 && _dir.x < 0) ||
           (shape().centre.x >= Lib::WIDTH && _dir.x > 0)) {
         _dir.x = -_dir.x;
@@ -726,8 +715,8 @@ void ChaserBoss::update()
     shape().rotate(fixed::hundredth * 2 + fixed(_split) * c_rotate);
   }
   _shared_hp = 0;
-  if (!_hasCounted) {
-    _hasCounted = true;
+  if (!_has_counted) {
+    _has_counted = true;
     ++_count;
   }
 }
@@ -740,7 +729,7 @@ void ChaserBoss::render() const
     int32_t hp = 0;
     for (int32_t i = 0; i < 8; i++) {
       hp = 2 * hp + CalculateHP(
-          1 + BASE_HP / (fixed::half + HP_REDUCE_POWER_lookup[7 - i]).to_int(),
+          1 + CB_BASE_HP / (fixed::half + HP_REDUCE_POWER_lookup[7 - i]).to_int(),
           _players, _cycle);
       hp_lookup.push_back(hp);
     }
@@ -748,7 +737,7 @@ void ChaserBoss::render() const
   _shared_hp += (_split == 7 ? 0 : 2 * hp_lookup[6 - _split]) +
       get_remaining_hp() * 30;
   if (_on_screen) {
-    z0().render_hp_bar(float(_shared_hp) / float(hp_lookup[MAX_SPLIT]));
+    z0().render_hp_bar(float(_shared_hp) / float(hp_lookup[CB_MAX_SPLIT]));
   }
 }
 
@@ -760,10 +749,11 @@ int32_t ChaserBoss::get_damage(int32_t damage, bool magic)
 void ChaserBoss::on_destroy()
 {
   bool last = false;
-  if (_split < MAX_SPLIT) {
+  if (_split < CB_MAX_SPLIT) {
     for (int32_t i = 0; i < 2; i++) {
-      vec2 d = vec2::from_polar(i * fixed::pi + shape().rotation(),
-                                8 * ONE_PT_TWO_lookup[MAX_SPLIT - 1 - _split]);
+      vec2 d = vec2::from_polar(
+          i * fixed::pi + shape().rotation(),
+          8 * ONE_PT_TWO_lookup[CB_MAX_SPLIT - 1 - _split]);
       Ship* s = new ChaserBoss(
           _players, _cycle, _split + 1, shape().centre + d,
           (i + 1) * TIMER / 2,
@@ -837,11 +827,9 @@ void ChaserBoss::on_destroy()
   }
 }
 
-// Tractor beam boss
-//------------------------------
 TractorBoss::TractorBoss(int32_t players, int32_t cycle)
   : Boss(vec2(Lib::WIDTH * (1 + fixed::half), Lib::HEIGHT / 2),
-         z0Game::BOSS_2A, BASE_HP, players, cycle)
+         z0Game::BOSS_2A, TB_BASE_HP, players, cycle)
   , _will_attack(false)
   , _stopped(false)
   , _generating(false)
@@ -924,7 +912,7 @@ void TractorBoss::update()
 
   _timer++;
   if (!_stopped) {
-    move(SPEED * vec2(-1, 0));
+    move(TB_SPEED * vec2(-1, 0));
     if (!_will_attack && is_on_screen() &&
         _timer % (16 - z0().alive_players() * 2) == 0) {
       if (_shoot_type == 0 || (is_hp_low() && _shoot_type == 1)) {
@@ -965,13 +953,13 @@ void TractorBoss::update()
         vec2 pos = ship->shape().centre;
         _targets.push_back(pos);
         vec2 d = (shape().centre - pos).normalised();
-        ship->move(d * Tractor::TRACTOR_SPEED);
+        ship->move(d * Tractor::TRACTOR_BEAM_SPEED);
       }
     }
   }
   else {
     if (_generating) {
-      if (_timer >= TIMER * 5) {
+      if (_timer >= TB_TIMER * 5) {
         _timer = 0;
         _generating = false;
         _attacking = false;
@@ -979,7 +967,8 @@ void TractorBoss::update()
         play_sound(Lib::SOUND_BOSS_ATTACK);
       }
 
-      if (_timer % (10 - 2 * z0().alive_players()) == 0 && _timer < TIMER * 4) {
+      if (_timer < TB_TIMER * 4 &&
+          _timer % (10 - 2 * z0().alive_players()) == 0) {
         Ship* s = new TBossShot(
             _s1->convert_point(shape().centre, shape().rotation(), vec2()),
             _gen_dir ? shape().rotation() + fixed::pi : shape().rotation());
@@ -1004,11 +993,11 @@ void TractorBoss::update()
     }
     else {
       if (!_attacking) {
-        if (_timer >= TIMER * 4) {
+        if (_timer >= TB_TIMER * 4) {
           _timer = 0;
           _attacking = true;
         }
-        if (_timer % (TIMER / (1 + fixed::half)).to_int() == TIMER / 8) {
+        if (_timer % (TB_TIMER / (1 + fixed::half)).to_int() == TB_TIMER / 8) {
           vec2 v = _s1->convert_point(
               shape().centre, shape().rotation(), vec2());
           vec2 d = vec2::from_polar(z::rand_fixed() * (2 * fixed::pi), 5);
@@ -1045,7 +1034,7 @@ void TractorBoss::update()
           _targets.push_back(pos);
           fixed speed = 0;
           if (ship->type() & SHIP_PLAYER) {
-            speed = Tractor::TRACTOR_SPEED;
+            speed = Tractor::TRACTOR_BEAM_SPEED;
           }
           if (ship->type() & SHIP_ENEMY) {
             speed = 4 + fixed::half;
@@ -1128,15 +1117,13 @@ int32_t TractorBoss::get_damage(int32_t damage, bool magic)
   return damage;
 }
 
-// Ghost boss
-//------------------------------
 GhostBoss::GhostBoss(int32_t players, int32_t cycle)
   : Boss(vec2(Lib::WIDTH / 2, Lib::HEIGHT / 2),
-         z0Game::BOSS_2B, BASE_HP, players, cycle)
+         z0Game::BOSS_2B, GB_BASE_HP, players, cycle)
   , _visible(false)
   , _vtime(0)
   , _timer(0)
-  , _attack_time(ATTACK_TIME)
+  , _attack_time(GB_ATTACK_TIME)
   , _attack(0)
   , _rDir(false)
   , _start_time(120)
@@ -1221,7 +1208,7 @@ void GhostBoss::update()
       }
     }
   }
-  if (!(_attack == 2 && _attack_time < ATTACK_TIME * 4 && _attack_time)) {
+  if (!(_attack == 2 && _attack_time < GB_ATTACK_TIME * 4 && _attack_time)) {
     shape().rotate(-fixed::hundredth * 4);
   }
 
@@ -1260,8 +1247,8 @@ void GhostBoss::update()
 
   if (!_attack_time) {
     _timer++;
-    if (_timer == 9 * TIMER / 10 ||
-        (_timer >= TIMER / 10 && _timer < 9 * TIMER / 10 - 16 &&
+    if (_timer == 9 * GB_TIMER / 10 ||
+        (_timer >= GB_TIMER / 10 && _timer < 9 * GB_TIMER / 10 - 16 &&
          ((_timer % 16 == 0 && _attack == 2) ||
           (_timer % 32 == 0 && _shot_type)))) {
       for (int32_t i = 0; i < 8; i++) {
@@ -1270,8 +1257,8 @@ void GhostBoss::update()
       }
       play_sound_random(Lib::SOUND_BOSS_FIRE);
     }
-    if (_timer != 9 * TIMER / 10 && _timer >= TIMER / 10 &&
-        _timer < 9 * TIMER / 10 - 16 && _timer % 16 == 0 &&
+    if (_timer != 9 * GB_TIMER / 10 && _timer >= GB_TIMER / 10 &&
+        _timer < 9 * GB_TIMER / 10 - 16 && _timer % 16 == 0 &&
         (!_shot_type || _attack == 2)) {
       Player* p = nearest_player();
       vec2 d = (p->shape().centre - shape().centre).normalised();
@@ -1287,13 +1274,13 @@ void GhostBoss::update()
     _attack_time--;
 
     if (_attack == 2) {
-      if (_attack_time >= ATTACK_TIME * 4 && _attack_time % 8 == 0) {
+      if (_attack_time >= GB_ATTACK_TIME * 4 && _attack_time % 8 == 0) {
         vec2 pos(z::rand_int(Lib::WIDTH + 1), z::rand_int(Lib::HEIGHT + 1));
         spawn(new GhostMine(pos, this));
         play_sound_random(Lib::SOUND_ENEMY_SPAWN);
         _danger_circle = 0;
       }
-      else if (_attack_time == ATTACK_TIME * 4 - 1) {
+      else if (_attack_time == GB_ATTACK_TIME * 4 - 1) {
         _visible = true;
         _vtime = 60;
         add_shape(new Box(vec2(Lib::WIDTH / 2 + 32, 0),
@@ -1311,11 +1298,11 @@ void GhostBoss::update()
                                Lib::WIDTH / 2, 4, 0xcc66ffff, 0, 0));
         play_sound(Lib::SOUND_BOSS_FIRE);
       }
-      else if (_attack_time < ATTACK_TIME * 3) {
-        if (_attack_time == ATTACK_TIME * 3 - 1) {
+      else if (_attack_time < GB_ATTACK_TIME * 3) {
+        if (_attack_time == GB_ATTACK_TIME * 3 - 1) {
           play_sound(Lib::SOUND_BOSS_ATTACK);
         }
-        shape().rotate((_rDir ? 1 : -1) * 2 * fixed::pi / (ATTACK_TIME * 6));
+        shape().rotate((_rDir ? 1 : -1) * 2 * fixed::pi / (GB_ATTACK_TIME * 6));
         if (!_attack_time) {
           for (int32_t i = 0; i < 6; i++) {
             destroy_shape(21);
@@ -1328,21 +1315,21 @@ void GhostBoss::update()
       }
     }
 
-    if (_attack == 0 && _attack_time == ATTACK_TIME * 2) {
+    if (_attack == 0 && _attack_time == GB_ATTACK_TIME * 2) {
       bool r = z::rand_int(2) != 0;
       spawn(new GhostWall(r, true));
       spawn(new GhostWall(!r, false));
     }
-    if (_attack == 1 && _attack_time == ATTACK_TIME * 2) {
+    if (_attack == 1 && _attack_time == GB_ATTACK_TIME * 2) {
       _rDir = z::rand_int(2) != 0;
       spawn(new GhostWall(!_rDir, false, 0));
     }
-    if (_attack == 1 && _attack_time == ATTACK_TIME * 1) {
+    if (_attack == 1 && _attack_time == GB_ATTACK_TIME * 1) {
       spawn(new GhostWall(_rDir, true, 0));
     }
 
     if ((_attack == 0 || _attack == 1) && is_hp_low() &&
-        _attack_time == ATTACK_TIME * 1) {
+        _attack_time == GB_ATTACK_TIME * 1) {
       int32_t r = z::rand_int(4);
       vec2 v = r == 0 ? vec2(-Lib::WIDTH / 4, Lib::HEIGHT / 2) :
                r == 1 ? vec2(Lib::WIDTH + Lib::WIDTH / 4, Lib::HEIGHT / 2) :
@@ -1371,7 +1358,7 @@ void GhostBoss::update()
     }
   }
 
-  if (_timer >= TIMER) {
+  if (_timer >= GB_TIMER) {
     _timer = 0;
     _visible = false;
     _vtime = 60;
@@ -1387,16 +1374,16 @@ void GhostBoss::update()
     play_sound(Lib::SOUND_BOSS_ATTACK);
 
     if (_attack == 0) {
-      _attack_time = ATTACK_TIME * 2 + 50;
+      _attack_time = GB_ATTACK_TIME * 2 + 50;
     }
     if (_attack == 1) {
-      _attack_time = ATTACK_TIME * 3;
+      _attack_time = GB_ATTACK_TIME * 3;
       for (int32_t i = 0; i < z0().count_players(); i++) {
         spawn(new Powerup(shape().centre, Powerup::SHIELD));
       }
     }
     if (_attack == 2) {
-      _attack_time = ATTACK_TIME * 6;
+      _attack_time = GB_ATTACK_TIME * 6;
       _rDir = z::rand_int(2) != 0;
     }
   }
@@ -1438,12 +1425,10 @@ int32_t GhostBoss::get_damage(int32_t damage, bool magic)
   return damage;
 }
 
-// Death ray boss
-//------------------------------
 DeathRayBoss::DeathRayBoss(int32_t players, int32_t cycle)
   : Boss(vec2(Lib::WIDTH * (fixed(3) / 20), -Lib::HEIGHT),
-         z0Game::BOSS_2C, BASE_HP, players, cycle)
-  , _timer(TIMER * 2)
+         z0Game::BOSS_2C, DRB_BASE_HP, players, cycle)
+  , _timer(DRB_TIMER * 2)
   , _laser(false)
   , _dir(true)
   , _pos(1)
@@ -1489,7 +1474,7 @@ void DeathRayBoss::update()
       7 * Lib::HEIGHT / 8 - shape().centre.y;
 
   if (d.abs() > 3) {
-    move(vec2(0, d / d.abs()) * SPEED);
+    move(vec2(0, d / d.abs()) * DRB_SPEED);
     positioned = false;
   }
 
@@ -1513,19 +1498,19 @@ void DeathRayBoss::update()
         _timer--;
       }
 
-      if (_timer < TIMER * 2 && !(_timer % 3)) {
+      if (_timer < DRB_TIMER * 2 && !(_timer % 3)) {
         spawn(new DeathRay(shape().centre + vec2(100, 0)));
         play_sound_random(Lib::SOUND_BOSS_FIRE);
       }
       if (!_timer) {
         _laser = false;
-        _timer = TIMER * (2 + z::rand_int(3));
+        _timer = DRB_TIMER * (2 + z::rand_int(3));
       }
     }
     else {
       fixed r = shape().rotation();
       if (r == 0) {
-        _timer = TIMER * 2;
+        _timer = DRB_TIMER * 2;
       }
 
       if (r < fixed::tenth || r > 2 * fixed::pi - fixed::tenth) {
@@ -1541,12 +1526,12 @@ void DeathRayBoss::update()
     shape().rotate(_dir ? fixed::hundredth * 2 : -fixed::hundredth * 2);
     if (is_on_screen()) {
       _timer--;
-      if (_timer % TIMER == 0 && _timer != 0 && !z::rand_int(4)) {
+      if (_timer % DRB_TIMER == 0 && _timer != 0 && !z::rand_int(4)) {
         _dir = z::rand_int(2) != 0;
         _pos = z::rand_int(7);
       }
-      if (_timer == TIMER * 2 + 50 && _arms.size() == 2) {
-        _ray_attack_timer = RAY_TIMER;
+      if (_timer == DRB_TIMER * 2 + 50 && _arms.size() == 2) {
+        _ray_attack_timer = DRB_RAY_TIMER;
         _ray_src1 = _arms[0]->shape().centre;
         _ray_src2 = _arms[1]->shape().centre;
         play_sound(Lib::SOUND_ENEMY_SPAWN);
@@ -1586,7 +1571,7 @@ void DeathRayBoss::update()
       play_sound_random(Lib::SOUND_BOSS_FIRE);
     }
     if (_shot_timer % 128 == 0) {
-      _ray_attack_timer = RAY_TIMER;
+      _ray_attack_timer = DRB_RAY_TIMER;
       vec2 d1 = vec2::from_polar(z::rand_fixed() * 2 * fixed::pi, 110);
       vec2 d2 = vec2::from_polar(z::rand_fixed() * 2 * fixed::pi, 110);
       _ray_src1 = shape().centre + d1;
@@ -1601,8 +1586,8 @@ void DeathRayBoss::update()
       if (!is_hp_low()) {
         int32_t players = z0().get_lives() ?
             z0().count_players() : z0().alive_players();
-        int32_t hp =
-            (ARM_HP * (7 * fixed::tenth + 3 * fixed::tenth * players)).to_int();
+        int32_t hp = (DRB_ARM_HP *
+                      (7 * fixed::tenth + 3 * fixed::tenth * players)).to_int();
         _arms.push_back(new DeathArm(this, true, hp));
         _arms.push_back(new DeathArm(this, false, hp));
         play_sound(Lib::SOUND_ENEMY_SPAWN);
@@ -1631,18 +1616,18 @@ void DeathRayBoss::render() const
 {
   Boss::render();
   for (int32_t i = _ray_attack_timer - 8; i <= _ray_attack_timer + 8; i++) {
-    if (i < 40 || i > RAY_TIMER) {
+    if (i < 40 || i > DRB_RAY_TIMER) {
       continue;
     }
 
     flvec2 pos = to_float(shape().centre);
     flvec2 d = to_float(_ray_src1) - pos;
-    d *= float(i - 40) / float(RAY_TIMER - 40);
+    d *= float(i - 40) / float(DRB_RAY_TIMER - 40);
     Polygon s(vec2(), 10, 6, 0x999999ff, 0, 0, Polygon::T::POLYSTAR);
     s.render(lib(), d + pos, 0);
 
     d = to_float(_ray_src2) - pos;
-    d *= float(i - 40) / float(RAY_TIMER - 40);
+    d *= float(i - 40) / float(DRB_RAY_TIMER - 40);
     Polygon s2(vec2(), 10, 6, 0x999999ff, 0, 0, Polygon::T::POLYSTAR);
     s2.render(lib(), d + pos, 0);
   }
@@ -1663,12 +1648,10 @@ void DeathRayBoss::on_arm_death(Ship* arm)
   }
 }
 
-// Super boss
-//------------------------------
 SuperBossArc::SuperBossArc(
     const vec2& position,
     int32_t players, int32_t cycle, int32_t i, Ship* boss, int32_t timer)
-  : Boss(position, z0Game::boss_list(0), SuperBoss::ARC_HP, players, cycle)
+  : Boss(position, z0Game::boss_list(0), SB_ARC_HP, players, cycle)
   , _boss(boss)
   , _i(i)
   , _timer(timer)
@@ -1707,7 +1690,7 @@ void SuperBossArc::render() const
 
 int32_t SuperBossArc::get_damage(int32_t damage, bool magic)
 {
-  if (damage >= Player::bomb_damage) {
+  if (damage >= Player::BOMB_DAMAGE) {
     return damage / 2;
   }
   return damage;
@@ -1728,7 +1711,7 @@ void SuperBossArc::on_destroy()
 
 SuperBoss::SuperBoss(int32_t players, int32_t cycle)
   : Boss(vec2(Lib::WIDTH / 2, -Lib::HEIGHT / (2 + fixed::half)),
-         z0Game::BOSS_3A, BASE_HP, players, cycle)
+         z0Game::BOSS_3A, SB_BASE_HP, players, cycle)
   , _players(players)
   , _cycle(cycle)
   , _ctimer(0)
@@ -1883,7 +1866,7 @@ void SuperBoss::on_destroy()
   set_killed();
   for (const auto& ship : z0().all_ships(SHIP_ENEMY)) {
     if (ship != this) {
-      ship->damage(Player::bomb_damage * 100, false, 0);
+      ship->damage(Player::BOMB_DAMAGE * 100, false, 0);
     }
   }
   explosion();

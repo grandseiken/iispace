@@ -111,7 +111,7 @@ public:
   // Wacky colours
   //------------------------------
   void set_colour_cycle(int32_t cycle);
-  int get_colour_cycle() const;
+  int32_t get_colour_cycle() const;
 
 private:
 

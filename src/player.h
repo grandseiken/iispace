@@ -7,7 +7,7 @@
 class Player : public Ship {
 public:
 
-  static const int32_t bomb_damage = 50;
+  static const int32_t BOMB_DAMAGE = 50;
 
   // Player ship
   //------------------------------
@@ -120,7 +120,7 @@ public:
 
   Powerup(const vec2& position, type_t type);
   void update() override;
-  void damage(int damage, bool magic, Player* source) override;
+  void damage(int32_t damage, bool magic, Player* source) override;
 
 private:
 

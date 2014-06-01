@@ -2,11 +2,12 @@
 #include "boss.h"
 #include "player.h"
 
-const fixed GhostWall::SPEED = 3 + fixed(1) / 2;
-const fixed DeathRay::SPEED = 10;
+static const fixed GHOST_WALL_SPEED = 3 + fixed(1) / 2;
+static const fixed DEATH_RAY_SPEED = 10;
 
-// Big follower
-//------------------------------
+static const int32_t DRB_ARM_ATIMER = 300;
+static const fixed DRB_ARM_SPEED = 4;
+
 BigFollow::BigFollow(const vec2& position, bool has_score)
   : Follow(position, 20, 3)
   , _has_score(has_score)
@@ -23,7 +24,7 @@ void BigFollow::on_destroy(bool bomb)
   }
 
   vec2 d = vec2(10, 0).rotated(shape().rotation());
-  for (int i = 0; i < 3; i++) {
+  for (int32_t i = 0; i < 3; i++) {
     Follow* s = new Follow(shape().centre + d);
     if (!_has_score) {
       s->set_score(0);
@@ -33,8 +34,6 @@ void BigFollow::on_destroy(bool bomb)
   }
 }
 
-// Generic boss projectile
-//------------------------------
 SBBossShot::SBBossShot(const vec2& position, const vec2& velocity, colour_t c)
   : Enemy(position, SHIP_WALL, 0)
   , _dir(velocity)
@@ -60,8 +59,6 @@ void SBBossShot::update()
   shape().set_rotation(shape().rotation() + fixed::hundredth * 2);
 }
 
-// Tractor beam minion
-//------------------------------
 TBossShot::TBossShot(const vec2& position, fixed angle)
   : Enemy(position, SHIP_NONE, 1)
 {
@@ -86,8 +83,6 @@ void TBossShot::update()
   move(_dir);
 }
 
-// Ghost boss wall
-//------------------------------
 GhostWall::GhostWall(bool swap, bool no_gap, bool ignored)
   : Enemy(vec2(Lib::WIDTH / 2, swap ? -10 : 10 + Lib::HEIGHT), SHIP_NONE, 0)
   , _dir(0, swap ? 1 : -1)
@@ -138,10 +133,10 @@ void GhostWall::update()
       (_dir.y > 0 && shape().centre.y < 16) ||
       (_dir.x < 0 && shape().centre.x >= Lib::WIDTH - 32) ||
       (_dir.y < 0 && shape().centre.y >= Lib::HEIGHT - 16)) {
-    move(_dir * SPEED / 2);
+    move(_dir * GHOST_WALL_SPEED / 2);
   }
   else {
-    move(_dir * SPEED);
+    move(_dir * GHOST_WALL_SPEED);
   }
 
   if ((_dir.x > 0 && shape().centre.x > Lib::WIDTH + 10) ||
@@ -152,8 +147,6 @@ void GhostWall::update()
   }
 }
 
-// Ghost boss mine
-//------------------------------
 GhostMine::GhostMine(const vec2& position, Boss* ghost)
   : Enemy(position, SHIP_NONE, 0)
   , _timer(80)
@@ -177,9 +170,8 @@ void GhostMine::update()
       shapes()[0]->category = DANGEROUS | SHIELD | VULNSHIELD;
     }
   }
-  z0Game::ShipList s = z0().collision_list(shape().centre, DANGEROUS);
-  for (unsigned int i = 0; i < s.size(); i++) {
-    if (s[i] == _ghost) {
+  for (const auto& ship : z0().collision_list(shape().centre, DANGEROUS)) {
+    if (ship == _ghost) {
       Enemy* e = z::rand_int(6) == 0 ||
           (_ghost->is_hp_low() && z::rand_int(5) == 0) ?
               new BigFollow(shape().centre, false) : new Follow(shape().centre);
@@ -198,8 +190,6 @@ void GhostMine::render() const
   }
 }
 
-// Death ray
-//------------------------------
 DeathRay::DeathRay(const vec2& position)
   : Enemy(position, SHIP_NONE, 0)
 {
@@ -210,19 +200,17 @@ DeathRay::DeathRay(const vec2& position)
 
 void DeathRay::update()
 {
-  move(vec2(1, 0) * SPEED);
+  move(vec2(1, 0) * DEATH_RAY_SPEED);
   if (shape().centre.x > Lib::WIDTH + 20) {
     destroy();
   }
 }
 
-// Death arm
-//------------------------------
-DeathArm::DeathArm(DeathRayBoss* boss, bool top, int hp)
+DeathArm::DeathArm(DeathRayBoss* boss, bool top, int32_t hp)
   : Enemy(vec2(), SHIP_NONE, hp)
   , _boss(boss)
   , _top(top)
-  , _timer(top ? 2 * DeathRayBoss::ARM_ATIMER / 3 : 0)
+  , _timer(top ? 2 * DRB_ARM_ATIMER / 3 : 0)
   , _attacking(false)
   , _dir()
   , _start(30)
@@ -240,7 +228,7 @@ DeathArm::DeathArm(DeathRayBoss* boss, bool top, int hp)
 
 void DeathArm::update()
 {
-  if (_timer % (DeathRayBoss::ARM_ATIMER / 2) == DeathRayBoss::ARM_ATIMER / 4) {
+  if (_timer % (DRB_ARM_ATIMER / 2) == DRB_ARM_ATIMER / 4) {
     play_sound_random(Lib::SOUND_BOSS_FIRE);
     _target = nearest_player()->shape().centre;
     _shots = 16;
@@ -255,29 +243,29 @@ void DeathArm::update()
   shape().rotate(fixed::hundredth * 5);
   if (_attacking) {
     _timer++;
-    if (_timer < DeathRayBoss::ARM_ATIMER / 4) {
+    if (_timer < DRB_ARM_ATIMER / 4) {
       Player* p = nearest_player();
       vec2 d = p->shape().centre - shape().centre;
       if (d.length() != 0) {
         _dir = d.normalised();
-        move(_dir * DeathRayBoss::ARM_SPEED);
+        move(_dir * DRB_ARM_SPEED);
       }
     }
-    else if (_timer < DeathRayBoss::ARM_ATIMER / 2) {
-      move(_dir * DeathRayBoss::ARM_SPEED);
+    else if (_timer < DRB_ARM_ATIMER / 2) {
+      move(_dir * DRB_ARM_SPEED);
     }
-    else if (_timer < DeathRayBoss::ARM_ATIMER) {
+    else if (_timer < DRB_ARM_ATIMER) {
       vec2 d = _boss->shape().centre +
           vec2(80, _top ? 80 : -80) - shape().centre;
-      if (d.length() > DeathRayBoss::ARM_SPEED) {
-        move(d.normalised() * DeathRayBoss::ARM_SPEED);
+      if (d.length() > DRB_ARM_SPEED) {
+        move(d.normalised() * DRB_ARM_SPEED);
       }
       else {
         _attacking = false;
         _timer = 0;
       }
     }
-    else if (_timer >= DeathRayBoss::ARM_ATIMER) {
+    else if (_timer >= DRB_ARM_ATIMER) {
       _attacking = false;
       _timer = 0;
     }
@@ -285,7 +273,7 @@ void DeathArm::update()
   }
 
   _timer++;
-  if (_timer >= DeathRayBoss::ARM_ATIMER) {
+  if (_timer >= DRB_ARM_ATIMER) {
     _timer = 0;
     _attacking = true;
     _dir = vec2();
@@ -313,8 +301,6 @@ void DeathArm::on_destroy(bool bomb)
   explosion(shapes()[0]->colour, 24);
 }
 
-// Snake tail
-//------------------------------
 SnakeTail::SnakeTail(const vec2& position, colour_t colour)
   : Enemy(position, SHIP_NONE, 1)
   , _tail(0)
@@ -364,8 +350,6 @@ void SnakeTail::on_destroy(bool bomb)
   _tail = 0;
 }
 
-// Snake
-//------------------------------
 Snake::Snake(const vec2& position, colour_t colour, const vec2& dir, fixed rot)
   : Enemy(position, SHIP_NONE, 5)
   , _tail(0)
@@ -383,19 +367,10 @@ Snake::Snake(const vec2& position, colour_t colour, const vec2& dir, fixed rot)
   set_enemy_value(5);
   set_destroy_sound(Lib::SOUND_PLAYER_DESTROY);
   if (dir == vec2()) {
-    int r = z::rand_int(4);
-    if (r == 0) {
-      _dir = vec2(1, 0);
-    }
-    else if (r == 1) {
-      _dir = vec2(-1, 0);
-    }
-    else if (r == 2) {
-      _dir = vec2(0, 1);
-    }
-    else {
-      _dir = vec2(0, -1);
-    }
+    int32_t r = z::rand_int(4);
+    _dir = r == 0 ? vec2(1, 0) :
+           r == 1 ? vec2(-1, 0) :
+           r == 2 ? vec2(0, 1) : vec2(0, -1);
   }
   else {
     _dir = dir.normalised();
@@ -444,8 +419,6 @@ void Snake::on_destroy(bool bomb)
   }
 }
 
-// Rainbow projectile
-//------------------------------
 RainbowShot::RainbowShot(const vec2& position, const vec2& velocity, Ship* boss)
   : SBBossShot(position, velocity)
   , _boss(boss)

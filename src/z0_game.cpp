@@ -8,8 +8,8 @@
 #include <algorithm>
 #include <iostream>
 
-const int z0Game::STARTING_LIVES = 2;
-const int z0Game::BOSSMODE_LIVES = 1;
+const int32_t z0Game::STARTING_LIVES = 2;
+const int32_t z0Game::BOSSMODE_LIVES = 1;
 
 z0Game::z0Game(Lib& lib, const std::vector<std::string>& args)
   : _lib(lib)
@@ -180,7 +180,7 @@ bool z0Game::update()
     }
 
     if (_selection == 1) {
-      int t = _players;
+      int32_t t = _players;
       if (lib().is_key_pressed(Lib::KEY_LEFT) && _players > 1) {
         _players--;
       }
@@ -194,7 +194,7 @@ bool z0Game::update()
     }
 
     if (_selection == -1) {
-      int t = _special_selection;
+      int32_t t = _special_selection;
       if (lib().is_key_pressed(Lib::KEY_LEFT) && _special_selection > 0) {
         _special_selection--;
       }
@@ -226,7 +226,7 @@ bool z0Game::update()
   // Paused
   //------------------------------
   else if (_state == STATE_PAUSE) {
-    int t = _selection;
+    int32_t t = _selection;
     if (lib().is_key_pressed(Lib::KEY_UP) && _selection > 0) {
       _selection--;
     }
@@ -290,7 +290,7 @@ bool z0Game::update()
       _frame_count = _mode == FAST_MODE ? 2 : 1;
     }
 
-    int controllers = 0;
+    int32_t controllers = 0;
     for (int32_t i = 0; i < count_players(); i++) {
       controllers += lib().get_pad_type(i);
     }
@@ -331,7 +331,7 @@ bool z0Game::update()
     }
 
     Player::update_fire_timer();
-    ChaserBoss::_hasCounted = false;
+    ChaserBoss::_has_counted = false;
     std::stable_sort(_collisions.begin(), _collisions.end(), &sort_ships);
     for (std::size_t i = 0; i < _ships.size(); ++i) {
       if (!_ships[i]->is_destroyed()) {
@@ -445,8 +445,8 @@ bool z0Game::update()
       if (lib().is_key_pressed(Lib::KEY_RIGHT)) {
         _enter_r = 0;
         _enter_char++;
-        if (_enter_char >= int(chars.length())) {
-          _enter_char -= int(chars.length());
+        if (_enter_char >= int32_t(chars.length())) {
+          _enter_char -= int32_t(chars.length());
         }
         lib().play_sound(Lib::SOUND_MENU_CLICK);
       }
@@ -455,8 +455,8 @@ bool z0Game::update()
         _enter_time = 16;
         if (_enter_r % 5 == 0 && _enter_r > 5) {
           _enter_char++;
-          if (_enter_char >= int(chars.length())) {
-            _enter_char -= int(chars.length());
+          if (_enter_char >= int32_t(chars.length())) {
+            _enter_char -= int32_t(chars.length());
           }
           lib().play_sound(Lib::SOUND_MENU_CLICK);
         }
@@ -465,7 +465,7 @@ bool z0Game::update()
         _enter_r = 0;
         _enter_char--;
         if (_enter_char < 0) {
-          _enter_char += int(chars.length());
+          _enter_char += int32_t(chars.length());
         }
         lib().play_sound(Lib::SOUND_MENU_CLICK);
       }
@@ -475,7 +475,7 @@ bool z0Game::update()
         if (_enter_r % 5 == 0 && _enter_r > 5) {
           _enter_char--;
           if (_enter_char < 0) {
-            _enter_char += int(chars.length());
+            _enter_char += int32_t(chars.length());
           }
           lib().play_sound(Lib::SOUND_MENU_CLICK);
         }
@@ -531,7 +531,7 @@ void z0Game::render() const
 {
   if (_exit_timer > 0 &&
       !Player::replay.okay && !Player::replay.error.empty()) {
-    int y = 2;
+    int32_t y = 2;
     std::string s = Player::replay.error;
     std::size_t i;
     while ((i = s.find_first_of("\n")) != std::string::npos) {
@@ -574,7 +574,7 @@ void z0Game::render() const
         lib().render_text(flvec2(4.f, 8.f + 2 * i), ss.str(), PANEL_TEXT);
 
         std::stringstream ss2;
-        int pads = lib().get_pad_type(i);
+        int32_t pads = lib().get_pad_type(i);
         if (!Player::replay.recording) {
           ss2 << "REPLAY";
           pads = 1;
@@ -603,7 +603,7 @@ void z0Game::render() const
     std::stringstream ss;
     ss << _lives << " live(s)";
     if (_mode != BOSS_MODE && _overmind->get_timer() >= 0) {
-      int t = int(0.5f + _overmind->get_timer() / 60);
+      int32_t t = int32_t(0.5f + _overmind->get_timer() / 60);
       ss << " " << (t < 10 ? "0" : "") << t;
     }
 
@@ -621,8 +621,8 @@ void z0Game::render() const
                               Boss::_warnings[i - _ships.size()]);
 
       if (v.x < -4) {
-        int a = int(.5f + float(0x1) + float(0x9) *
-                    std::max(v.x + Lib::WIDTH, 0.f) / Lib::WIDTH);
+        int32_t a = int32_t(.5f + float(0x1) + float(0x9) *
+                            std::max(v.x + Lib::WIDTH, 0.f) / Lib::WIDTH);
         a |= a << 4;
         a = (a << 8) | (a << 16) | (a << 24) | 0x66;
         lib().render_line(flvec2(0.f, v.y), flvec2(6, v.y - 3), a);
@@ -630,8 +630,8 @@ void z0Game::render() const
         lib().render_line(flvec2(6.f, v.y + 3), flvec2(0, v.y), a);
       }
       if (v.x >= Lib::WIDTH + 4) {
-        int a = int(.5f + float(0x1) + float(0x9) *
-                    std::max(2 * Lib::WIDTH - v.x, 0.f) / Lib::WIDTH);
+        int32_t a = int32_t(.5f + float(0x1) + float(0x9) *
+                            std::max(2 * Lib::WIDTH - v.x, 0.f) / Lib::WIDTH);
         a |= a << 4;
         a = (a << 8) | (a << 16) | (a << 24) | 0x66;
         lib().render_line(flvec2(float(Lib::WIDTH), v.y),
@@ -642,8 +642,8 @@ void z0Game::render() const
                           flvec2(float(Lib::WIDTH), v.y), a);
       }
       if (v.y < -4) {
-        int a = int(.5f + float(0x1) + float(0x9) *
-                    std::max(v.y + Lib::HEIGHT, 0.f) / Lib::HEIGHT);
+        int32_t a = int32_t(.5f + float(0x1) + float(0x9) *
+                            std::max(v.y + Lib::HEIGHT, 0.f) / Lib::HEIGHT);
         a |= a << 4;
         a = (a << 8) | (a << 16) | (a << 24) | 0x66;
         lib().render_line(flvec2(v.x, 0.f), flvec2(v.x - 3, 6.f), a);
@@ -651,8 +651,8 @@ void z0Game::render() const
         lib().render_line(flvec2(v.x + 3, 6.f), flvec2(v.x, 0.f), a);
       }
       if (v.y >= Lib::HEIGHT + 4) {
-        int a = int(.5f + float(0x1) + float(0x9) *
-                    std::max(2 * Lib::HEIGHT - v.y, 0.f) / Lib::HEIGHT);
+        int32_t a = int32_t(.5f + float(0x1) + float(0x9) *
+                            std::max(2 * Lib::HEIGHT - v.y, 0.f) / Lib::HEIGHT);
         a |= a << 4;
         a = (a << 8) | (a << 16) | (a << 24) | 0x66;
         lib().render_line(flvec2(v.x, float(Lib::HEIGHT)),
@@ -714,7 +714,7 @@ void z0Game::render() const
     lib().render_text(flvec2(37.f - 9, 9.f), "SHADOW1W2", PANEL_TEXT);
 
     std::string b = "BOSSES:  ";
-    int bb = is_hard_mode_unlocked() ?
+    int32_t bb = is_hard_mode_unlocked() ?
         _save.hard_mode_bosses_killed : _save.bosses_killed;
     if (bb & BOSS_1A) b += "X"; else b += "-";
     if (bb & BOSS_1B) b += "X"; else b += "-";
@@ -825,7 +825,7 @@ void z0Game::render() const
         ssi << (i + 1) << ".";
         lib().render_text(flvec2(4.f, 18.f + i), ssi.str(), PANEL_TEXT);
 
-        int n = _selection != -1 ? _players - 1 :
+        int32_t n = _selection != -1 ? _players - 1 :
             _special_selection * Lib::PLAYERS + _players;
 
         if (_save.high_scores[n][i].score <= 0) {
@@ -1072,7 +1072,7 @@ void z0Game::add_particle(const Particle& particle)
 
 // Ship info
 //------------------------------
-int z0Game::get_non_wall_count() const
+int32_t z0Game::get_non_wall_count() const
 {
   return _overmind->count_non_wall_enemies();
 }
@@ -1106,10 +1106,10 @@ bool z0Game::any_collision(const vec2& point, int32_t category) const
   fixed x = point.x;
   fixed y = point.y;
 
-  for (unsigned int i = 0; i < _collisions.size(); i++) {
-    fixed sx = _collisions[i]->shape().centre.x;
-    fixed sy = _collisions[i]->shape().centre.y;
-    fixed w = _collisions[i]->bounding_width();
+  for (const auto& collision : _collisions) {
+    fixed sx = collision->shape().centre.x;
+    fixed sy = collision->shape().centre.y;
+    fixed w = collision->bounding_width();
 
     if (sx - w > x) {
       break;
@@ -1118,7 +1118,7 @@ bool z0Game::any_collision(const vec2& point, int32_t category) const
       continue;
     }
 
-    if (_collisions[i]->check_point(point, category)) {
+    if (collision->check_point(point, category)) {
       return true;
     }
   }
@@ -1282,14 +1282,14 @@ bool z0Game::is_high_score() const
            _save.high_scores[Lib::PLAYERS][_players - 1].score == 0);
   }
 
-  int n =
+  int32_t n =
       _mode == WHAT_MODE ? 3 * Lib::PLAYERS + _players :
       _mode == FAST_MODE ? 2 * Lib::PLAYERS + _players :
       _mode == HARD_MODE ? Lib::PLAYERS + _players : _players - 1;
 
   const HighScoreList& list = _save.high_scores[n];
-  for (unsigned int i = 0; i < list.size(); i++) {
-    if (get_total_score() > list[i].score) {
+  for (const auto& s : list) {
+    if (get_total_score() > s.score) {
       return true;
     }
   }

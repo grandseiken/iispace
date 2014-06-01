@@ -90,7 +90,7 @@ SaveData::SaveData()
     }
   }
 
-  for (int i = 0; i < 4 * Lib::PLAYERS + 1; i++) {
+  for (int32_t i = 0; i < 4 * Lib::PLAYERS + 1; i++) {
     if (i != Lib::PLAYERS) {
       std::sort(high_scores[i].begin(), high_scores[i].end(), &score_sort);
     }

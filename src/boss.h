@@ -3,13 +3,8 @@
 
 #include "ship.h"
 
-// Generic boss
-//------------------------------
 class Boss : public Ship {
 public:
-
-  static const fixed HP_PER_EXTRA_PLAYER;
-  static const fixed HP_PER_EXTRA_CYCLE;
 
   Boss(const vec2& position, z0Game::boss_list boss,
        int32_t hp, int32_t players, int32_t cycle = 0,
@@ -52,8 +47,6 @@ public:
 
   void render_hp_bar() const;
 
-  // Generic behaviour
-  //------------------------------
   void damage(int32_t damage, bool magic, Player* source) override;
   void render() const override;
   void render(bool hp_bar) const;
@@ -74,23 +67,14 @@ private:
   z0Game::boss_list _flag;
   int64_t _score;
   int32_t _ignore_damage_colour;
-  mutable int _damaged;
+  mutable int32_t _damaged;
   mutable bool _show_hp;
   bool _explode_on_damage;
 
 };
 
-// Big square boss
-//------------------------------
 class BigSquareBoss : public Boss {
 public:
-
-  static const int32_t BASE_HP;
-  static const fixed SPEED;
-  static const int32_t TIMER;
-  static const int32_t STIMER;
-  static const fixed ATTACK_RADIUS;
-  static const int32_t ATTACK_TIME;
 
   BigSquareBoss(int32_t players, int32_t cycle);
 
@@ -111,16 +95,8 @@ private:
 
 };
 
-// Shield bomb boss
-//------------------------------
 class ShieldBombBoss : public Boss {
 public:
-
-  static const int32_t BASE_HP;
-  static const int32_t TIMER;
-  static const int32_t UNSHIELD_TIME;
-  static const int32_t ATTACK_TIME;
-  static const fixed SPEED;
 
   ShieldBombBoss(int32_t players, int32_t cycle);
 
@@ -139,16 +115,10 @@ private:
 
 };
 
-// Chaser boss
-//------------------------------
 class ChaserBoss : public Boss {
 public:
 
-  static const int32_t BASE_HP;
-  static const fixed SPEED;
-  static const int32_t TIMER;
-  static const int32_t MAX_SPLIT;
-
+  static const int32_t TIMER = 60;
   ChaserBoss(int32_t players, int32_t cycle, int32_t split = 0,
              const vec2& position = vec2(),
              int32_t time = TIMER, int32_t stagger = 0);
@@ -158,7 +128,7 @@ public:
   int32_t get_damage(int32_t damage, bool magic) override;
   void on_destroy() override;
 
-  static bool _hasCounted;
+  static bool _has_counted;
 
 private:
 
@@ -178,20 +148,14 @@ private:
 
 };
 
-// Tractor boss
-//------------------------------
 class TractorBoss : public Boss {
 public:
-
-  static const int32_t BASE_HP;
-  static const fixed SPEED;
-  static const int32_t TIMER;
 
   TractorBoss(int32_t players, int32_t cycle);
 
   void update() override;
   void render() const override;
-  int get_damage(int32_t damage, bool magic) override;
+  int32_t get_damage(int32_t damage, bool magic) override;
 
 private:
 
@@ -214,14 +178,8 @@ private:
 
 };
 
-// Ghost boss
-//------------------------------
 class GhostBoss : public Boss {
 public:
-
-  static const int32_t BASE_HP;
-  static const int32_t TIMER;
-  static const int32_t ATTACK_TIME;
 
   GhostBoss(int32_t players, int32_t cycle);
 
@@ -246,20 +204,10 @@ private:
   bool _shot_type;
 };
 
-// Death ray boss
-//------------------------------
 class DeathRayBoss : public Boss {
 public:
 
-  static const int32_t BASE_HP;
-  static const int32_t ARM_HP;
-  static const int32_t ARM_ATIMER;
-  static const int32_t ARM_RTIMER;
-  static const fixed ARM_SPEED;
-  static const int32_t RAY_TIMER;
-  static const int32_t TIMER;
-  static const fixed SPEED;
-
+  static const int32_t ARM_RTIMER = 400;
   DeathRayBoss(int32_t players, int32_t cycle);
 
   void update() override;
@@ -287,8 +235,6 @@ private:
 
 };
 
-// Super boss
-//------------------------------
 class SuperBossArc : public Boss {
 public:
 
@@ -315,8 +261,6 @@ private:
 };
 
 class SuperBoss : public Boss {
-  friend class SuperBossArc;
-  friend class RainbowShot;
 public:
 
   enum State {
@@ -325,9 +269,6 @@ public:
     STATE_ATTACK
   };
 
-  static const int32_t BASE_HP;
-  static const int32_t ARC_HP;
-
   SuperBoss(int32_t players, int32_t cycle);
 
   void update() override;
@@ -335,6 +276,9 @@ public:
   void on_destroy() override;
 
 private:
+
+  friend class SuperBossArc;
+  friend class RainbowShot;
 
   int32_t _players;
   int32_t _cycle;

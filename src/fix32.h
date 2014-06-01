@@ -171,52 +171,52 @@ inline std::ostream& operator<<(std::ostream& o, const fixed& f)
   return o;
 }
 
-inline fixed operator+(int v, const fixed& f)
+inline fixed operator+(int32_t v, const fixed& f)
 {
   return fixed(v) + f;
 }
 
-inline fixed operator-(int v, const fixed& f)
+inline fixed operator-(int32_t v, const fixed& f)
 {
   return fixed(v) - f;
 }
 
-inline fixed operator*(int v, const fixed& f)
+inline fixed operator*(int32_t v, const fixed& f)
 {
   return fixed(v) * f;
 }
 
-inline fixed operator/(int v, const fixed& f)
+inline fixed operator/(int32_t v, const fixed& f)
 {
   return fixed(v) / f;
 }
 
-inline bool operator==(int v, const fixed& f)
+inline bool operator==(int32_t v, const fixed& f)
 {
   return fixed(v) == f;
 }
 
-inline bool operator!=(int v, const fixed& f)
+inline bool operator!=(int32_t v, const fixed& f)
 {
   return fixed(v) != f;
 }
 
-inline bool operator<=(int v, const fixed& f)
+inline bool operator<=(int32_t v, const fixed& f)
 {
   return fixed(v) <= f;
 }
 
-inline bool operator>=(int v, const fixed& f)
+inline bool operator>=(int32_t v, const fixed& f)
 {
   return fixed(v) >= f;
 }
 
-inline bool operator<(int v, const fixed& f)
+inline bool operator<(int32_t v, const fixed& f)
 {
   return fixed(v) < f;
 }
 
-inline bool operator>(int v, const fixed& f)
+inline bool operator>(int32_t v, const fixed& f)
 {
   return fixed(v) > f;
 }

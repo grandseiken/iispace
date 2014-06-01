@@ -875,7 +875,7 @@ void Lib::render_text(const flvec2& v, const std::string& text, colour_t c) cons
   _internals->font.SetColor(RgbaToColor(z::colour_cycle(c, _cycle)));
   for (std::size_t i = 0; i < text.length(); ++i) {
     _internals->font.SetPosition(
-        (int(i) + v.x) * TEXT_WIDTH + _extra.x, v.y * TEXT_HEIGHT + _extra.y);
+        (int32_t(i) + v.x) * TEXT_WIDTH + _extra.x, v.y * TEXT_HEIGHT + _extra.y);
     _internals->font.SetSubRect(sf::IntRect(TEXT_WIDTH * text[i], 0,
                                  TEXT_WIDTH * (1 + text[i]), TEXT_HEIGHT));
     _internals->window.Draw(_internals->font);
@@ -885,7 +885,7 @@ void Lib::render_text(const flvec2& v, const std::string& text, colour_t c) cons
 }
 
 void Lib::render_rect(
-    const flvec2& low, const flvec2& hi, colour_t c, int line_width) const
+    const flvec2& low, const flvec2& hi, colour_t c, int32_t line_width) const
 {
 #ifndef PLATFORM_SCORE
   c = z::colour_cycle(c, _cycle);
@@ -990,7 +990,7 @@ void Lib::render() const
 #endif
 }
 
-void Lib::rumble(int player, int time)
+void Lib::rumble(int32_t player, int32_t time)
 {
   /*if (player < 0 || player >= PLAYERS) {
     return;
@@ -1004,7 +1004,7 @@ void Lib::rumble(int player, int time)
 
 void Lib::stop_rumble()
 {
-  /*for (int i = 0; i < PLAYERS; i++) {
+  /*for (int32_t i = 0; i < PLAYERS; i++) {
     _rumble[i] = 0;
     WPAD_Rumble(i, false);
     PAD_ControlMotor(i, PAD_MOTOR_STOP);
@@ -1041,7 +1041,7 @@ bool Lib::play_sound(Sound sound, float volume, float pan, float repitch)
   if (!buffer) {
     return false;
   }
-  for (int i = 0; i < SOUND_MAX; ++i) {
+  for (int32_t i = 0; i < SOUND_MAX; ++i) {
     if (_internals->voices[i]->GetStatus() != sf::Sound::Playing) {
       _internals->voices[i]->SetAttenuation(0.f);
       _internals->voices[i]->SetLoop(false);
@@ -1058,7 +1058,7 @@ bool Lib::play_sound(Sound sound, float volume, float pan, float repitch)
   return false;
 }
 
-void Lib::set_volume(int volume)
+void Lib::set_volume(int32_t volume)
 {
 #ifndef PLATFORM_SCORE
   sf::Listener::SetGlobalVolume(float(std::max(0, std::min(100, volume))));
