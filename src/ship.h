@@ -44,19 +44,19 @@ public:
   Ship(const vec2& position, ship_category type);
   virtual ~Ship();
 
-  void set_game(z0Game& game)
+  void set_game(GameModal& game)
   {
-    _z0 = &game;
+    _game = &game;
   }
 
   Lib& lib() const
   {
-    return _z0->lib();
+    return _game->lib();
   }
 
-  z0Game& z0() const
+  GameModal& game() const
   {
-    return *_z0;
+    return *_game;
   }
 
   void destroy();
@@ -115,7 +115,7 @@ public:
 
   Player* nearest_player() const
   {
-    return _z0->nearest_player(_shape.centre);
+    return _game->nearest_player(_shape.centre);
   }
 
   bool play_sound(Lib::Sound sound)
@@ -162,7 +162,7 @@ protected:
 
 private:
 
-  z0Game* _z0;
+  GameModal* _game;
   ship_category _type;
   bool _destroy;
   CompoundShape _shape;

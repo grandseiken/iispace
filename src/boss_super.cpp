@@ -7,7 +7,7 @@ static const int32_t SB_ARC_HP = 75;
 SuperBossArc::SuperBossArc(
     const vec2& position,
     int32_t players, int32_t cycle, int32_t i, Ship* boss, int32_t timer)
-  : Boss(position, z0Game::boss_list(0), SB_ARC_HP, players, cycle)
+  : Boss(position, GameModal::boss_list(0), SB_ARC_HP, players, cycle)
   , _boss(boss)
   , _i(i)
   , _timer(timer)
@@ -67,7 +67,7 @@ void SuperBossArc::on_destroy()
 
 SuperBoss::SuperBoss(int32_t players, int32_t cycle)
   : Boss(vec2(Lib::WIDTH / 2, -Lib::HEIGHT / (2 + fixed::half)),
-         z0Game::BOSS_3A, SB_BASE_HP, players, cycle)
+         GameModal::BOSS_3A, SB_BASE_HP, players, cycle)
   , _players(players)
   , _cycle(cycle)
   , _ctimer(0)
@@ -220,7 +220,7 @@ int32_t SuperBoss::get_damage(int32_t damage, bool magic)
 void SuperBoss::on_destroy()
 {
   set_killed();
-  for (const auto& ship : z0().all_ships(SHIP_ENEMY)) {
+  for (const auto& ship : game().all_ships(SHIP_ENEMY)) {
     if (ship != this) {
       ship->damage(Player::BOMB_DAMAGE * 100, false, 0);
     }
@@ -245,19 +245,10 @@ void SuperBoss::on_destroy()
   }
   play_sound(Lib::SOUND_EXPLOSION);
 
-  z0Game::ShipList players = z0().get_players();
-  n = 0;
-  for (std::size_t i = 0; i < players.size(); i++) {
-    Player* p = (Player*) players[i];
+  for (const auto& ship : game().players()) {
+    Player* p = (Player*) ship;
     if (!p->is_killed()) {
-      n++;
-    }
-  }
-
-  for (std::size_t i = 0; i < players.size(); i++) {
-    Player* p = (Player*) players[i];
-    if (!p->is_killed()) {
-      p->add_score(get_score() / n);
+      p->add_score(get_score() / game().alive_players());
     }
   }
 
@@ -397,7 +388,7 @@ void RainbowShot::update()
   static const vec2 center = vec2(Lib::WIDTH / 2, Lib::HEIGHT / 2);
 
   if ((shape().centre - center).length() > 100 && _timer % 2 == 0) {
-    z0Game::ShipList list = z0().collision_list(shape().centre, SHIELD);
+    const auto& list = game().collision_list(shape().centre, SHIELD);
     SuperBoss* s = (SuperBoss*) _boss;
     for (std::size_t i = 0; i < list.size(); ++i) {
       bool boss = false;

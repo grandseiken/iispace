@@ -67,13 +67,13 @@ Replay::Replay(const std::string& path)
 
   bool mode;
   ss >> mode;
-  game_mode |= mode * z0Game::BOSS_MODE;
+  game_mode |= mode * GameModal::BOSS_MODE;
   ss >> mode;
-  game_mode |= mode * z0Game::HARD_MODE;
+  game_mode |= mode * GameModal::HARD_MODE;
   ss >> mode;
-  game_mode |= mode * z0Game::FAST_MODE;
+  game_mode |= mode * GameModal::FAST_MODE;
   ss >> mode;
-  game_mode |= mode * z0Game::WHAT_MODE;
+  game_mode |= mode * GameModal::WHAT_MODE;
   ss >> seed;
 
   z::seed((int32_t) seed);
@@ -120,10 +120,10 @@ void Replay::end_recording(const std::string& name, int64_t score) const
   std::stringstream stream(std::ios::in | std::ios::out | std::ios::binary);
   stream << "WiiSPACE v1.3 replay\n" << players << " " <<
       can_face_secret_boss << " " <<
-      (game_mode == z0Game::BOSS_MODE) << " " <<
-      (game_mode == z0Game::HARD_MODE) << " " <<
-      (game_mode == z0Game::FAST_MODE) << " " <<
-      (game_mode == z0Game::WHAT_MODE) << " " << seed << "\n";
+      (game_mode == GameModal::BOSS_MODE) << " " <<
+      (game_mode == GameModal::HARD_MODE) << " " <<
+      (game_mode == GameModal::FAST_MODE) << " " <<
+      (game_mode == GameModal::WHAT_MODE) << " " << seed << "\n";
 
   for (const auto& frame : player_frames) {
     char k = frame.keys;
@@ -139,10 +139,10 @@ void Replay::end_recording(const std::string& name, int64_t score) const
   std::stringstream ss;
   ss << "replays/" << seed << "_" <<
       players << "p_" <<
-      (game_mode == z0Game::BOSS_MODE ? "bossmode_" :
-       game_mode == z0Game::HARD_MODE ? "hardmode_" :
-       game_mode == z0Game::FAST_MODE ? "fastmode_" :
-       game_mode == z0Game::WHAT_MODE ? "w-hatmode_" : "") <<
+      (game_mode == GameModal::BOSS_MODE ? "bossmode_" :
+       game_mode == GameModal::HARD_MODE ? "hardmode_" :
+       game_mode == GameModal::FAST_MODE ? "fastmode_" :
+       game_mode == GameModal::WHAT_MODE ? "w-hatmode_" : "") <<
       name << "_" << score << ".wrp";
 
   std::ofstream file;

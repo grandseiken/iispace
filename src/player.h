@@ -84,8 +84,8 @@ private:
   int32_t _death_count;
 
   static int32_t _fire_timer;
-  static z0Game::ShipList _kill_queue;
-  static z0Game::ShipList _shot_sound_queue;
+  static GameModal::ship_list _kill_queue;
+  static GameModal::ship_list _shot_sound_queue;
 
 };
 

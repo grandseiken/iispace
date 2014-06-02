@@ -44,6 +44,7 @@ public:
     SOUND_POWERUP_OTHER,
     SOUND_MENU_CLICK,
     SOUND_MENU_ACCEPT,
+    SOUND_MAX,
   };
 
   enum PadType {
@@ -69,7 +70,6 @@ public:
     _players = players;
   }
 
-  void init();
   bool begin_frame();
   void end_frame();
   void capture_mouse(bool enabled);
@@ -129,7 +129,7 @@ private:
   ivec2 _extra;
   mutable bool _mouse_moving;
 
-  void LoadSounds();
+  void load_sounds();
 
   // Data
   //------------------------------

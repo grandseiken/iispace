@@ -12,7 +12,7 @@ static const fixed BSB_ATTACK_RADIUS = 120;
 
 BigSquareBoss::BigSquareBoss(int32_t players, int32_t cycle)
   : Boss(vec2(Lib::WIDTH * fixed::hundredth * 75, Lib::HEIGHT * 2),
-         z0Game::BOSS_1A, BSB_BASE_HP, players, cycle)
+         GameModal::BOSS_1A, BSB_BASE_HP, players, cycle)
   , _dir(0, -1)
   , _reverse(false)
   , _timer(BSB_TIMER * 6)
@@ -86,8 +86,9 @@ void BigSquareBoss::update()
       _reverse = !_reverse;
     }
     _spawn_timer++;
-    if (_spawn_timer >=
-        int32_t(BSB_STIMER - z0().alive_players() * 10) / (is_hp_low() ? 2 : 1)) {
+    int32_t t =
+        (BSB_STIMER - game().alive_players() * 10) / (is_hp_low() ? 2 : 1);
+    if (_spawn_timer >= t) {
       _spawn_timer = 0;
       _special_timer++;
       spawn(new BigFollow(shape().centre, false));

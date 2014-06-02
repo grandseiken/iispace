@@ -10,7 +10,7 @@ static const fixed SBB_SPEED = 1;
 
 ShieldBombBoss::ShieldBombBoss(int32_t players, int32_t cycle)
   : Boss(vec2(-Lib::WIDTH / 2, Lib::HEIGHT / 2),
-         z0Game::BOSS_1B, SBB_BASE_HP, players, cycle)
+         GameModal::BOSS_1B, SBB_BASE_HP, players, cycle)
   , _timer(0)
   , _count(0)
   , _unshielded(0)
@@ -100,7 +100,7 @@ void ShieldBombBoss::update()
     if (_count >= 4 && (!z::rand_int(4) || _count >= 8)) {
       _count = 0;
       if (!_unshielded) {
-        if (z0().all_ships(SHIP_POWERUP).size() < 5) {
+        if (game().all_ships(SHIP_POWERUP).size() < 5) {
           spawn(new Powerup(shape().centre, Powerup::BOMB));
         }
       }
@@ -140,8 +140,8 @@ int32_t ShieldBombBoss::get_damage(int32_t damage, bool magic)
   }
   _shot_alternate = !_shot_alternate;
   if (_shot_alternate) {
-    restore_hp(60 /
-        (1 + (z0().get_lives() ? z0().count_players() : z0().alive_players())));
+    restore_hp(60 / (1 + (game().get_lives() ? game().players().size() :
+                                               game().alive_players())));
   }
   return damage;
 }

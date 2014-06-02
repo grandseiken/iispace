@@ -8,7 +8,7 @@ static const fixed GB_WALL_SPEED = 3 + fixed(1) / 2;
 
 GhostBoss::GhostBoss(int32_t players, int32_t cycle)
   : Boss(vec2(Lib::WIDTH / 2, Lib::HEIGHT / 2),
-         z0Game::BOSS_2B, GB_BASE_HP, players, cycle)
+         GameModal::BOSS_2B, GB_BASE_HP, players, cycle)
   , _visible(false)
   , _vtime(0)
   , _timer(0)
@@ -267,7 +267,7 @@ void GhostBoss::update()
     }
     if (_attack == 1) {
       _attack_time = GB_ATTACK_TIME * 3;
-      for (int32_t i = 0; i < z0().count_players(); i++) {
+      for (std::size_t i = 0; i < game().players().size(); i++) {
         spawn(new Powerup(shape().centre, Powerup::SHIELD));
       }
     }
@@ -401,7 +401,7 @@ void GhostMine::update()
       shapes()[0]->category = DANGEROUS | SHIELD | VULNSHIELD;
     }
   }
-  for (const auto& ship : z0().collision_list(shape().centre, DANGEROUS)) {
+  for (const auto& ship : game().collision_list(shape().centre, DANGEROUS)) {
     if (ship == _ghost) {
       Enemy* e = z::rand_int(6) == 0 ||
           (_ghost->is_hp_low() && z::rand_int(5) == 0) ?

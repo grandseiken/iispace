@@ -13,7 +13,7 @@ void Modal::quit()
 void ModalStack::add(Modal* modal)
 {
   modal->_stack = this;
-  _stack.emplace_back(modal);
+  _new_stack.emplace_back(modal);
 }
 
 bool ModalStack::update(Lib& lib)
@@ -35,6 +35,10 @@ bool ModalStack::update(Lib& lib)
       ++it;
     }
   }
+  for (auto& modal : _new_stack) {
+    _stack.emplace_back(std::move(modal));
+  }
+  _new_stack.clear();
   return captured;
 }
 

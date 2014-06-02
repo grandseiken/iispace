@@ -14,7 +14,7 @@ static const fixed DRB_RAY_SPEED = 10;
 
 DeathRayBoss::DeathRayBoss(int32_t players, int32_t cycle)
   : Boss(vec2(Lib::WIDTH * (fixed(3) / 20), -Lib::HEIGHT),
-         z0Game::BOSS_2C, DRB_BASE_HP, players, cycle)
+         GameModal::BOSS_2C, DRB_BASE_HP, players, cycle)
   , _timer(DRB_TIMER * 2)
   , _laser(false)
   , _dir(true)
@@ -171,8 +171,8 @@ void DeathRayBoss::update()
     if (_arm_timer >= DRB_ARM_RTIMER) {
       _arm_timer = 0;
       if (!is_hp_low()) {
-        int32_t players = z0().get_lives() ?
-            z0().count_players() : z0().alive_players();
+        int32_t players = game().get_lives() ?
+            game().players().size() : game().alive_players();
         int32_t hp = (DRB_ARM_HP *
                       (7 * fixed::tenth + 3 * fixed::tenth * players)).to_int();
         _arms.push_back(new DeathArm(this, true, hp));

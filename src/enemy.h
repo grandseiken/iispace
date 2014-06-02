@@ -159,7 +159,7 @@ private:
 
   bool _ready;
   bool _spinning;
-  z0Game::ShipList _players;
+  GameModal::ship_list _players;
 
 };
 

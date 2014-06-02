@@ -16,8 +16,8 @@ static const int32_t SHOT_TIMER = 4;
 static const int32_t MAGIC_SHOT_COUNT = 120;
 static const int32_t POWERUP_ROTATE_TIME = 100;
 
-z0Game::ShipList Player::_kill_queue;
-z0Game::ShipList Player::_shot_sound_queue;
+GameModal::ship_list Player::_kill_queue;
+GameModal::ship_list Player::_shot_sound_queue;
 int32_t Player::_fire_timer;
 Replay Player::replay(0, 0, false);
 std::size_t Player::replay_frame;
@@ -84,13 +84,13 @@ void Player::update()
     return;
   }
   else if (_kill_timer) {
-    if (z0().get_lives() && _kill_queue[0] == this) {
-      z0().sub_life();
+    if (game().get_lives() && _kill_queue[0] == this) {
+      game().sub_life();
       _kill_timer = 0;
       _kill_queue.erase(_kill_queue.begin());
       _revive_timer = REVIVE_TIME;
       shape().centre = vec2(
-          (1 + _player_number) * Lib::WIDTH / (1 + z0().count_players()),
+          (1 + _player_number) * Lib::WIDTH / (1 + game().players().size()),
           Lib::HEIGHT / 2);
       lib().rumble(_player_number, 10);
       play_sound(Lib::SOUND_PLAYER_RESPAWN);
@@ -130,8 +130,8 @@ void Player::update()
     lib().rumble(_player_number, 10);
     play_sound(Lib::SOUND_EXPLOSION);
 
-    z0Game::ShipList list =
-        z0().ships_in_radius(shape().centre, BOMB_BOSS_RADIUS, SHIP_ENEMY);
+    const auto& list =
+        game().ships_in_radius(shape().centre, BOMB_BOSS_RADIUS, SHIP_ENEMY);
     for (const auto& ship : list) {
       if ((ship->type() & SHIP_BOSS) ||
           (ship->shape().centre - shape().centre).length() <= BOMB_RADIUS) {
@@ -177,14 +177,15 @@ void Player::update()
   }
 
   // Damage
-  if (z0().any_collision(shape().centre, DANGEROUS)) {
+  if (game().any_collision(shape().centre, DANGEROUS)) {
     damage();
   }
 }
 
 void Player::render() const
 {
-  if (!_kill_timer && (z0().mode() != z0Game::WHAT_MODE || _revive_timer > 0)) {
+  if (!_kill_timer &&
+      (game().mode() != GameModal::WHAT_MODE || _revive_timer > 0)) {
     flvec2 t = to_float(_fire_target);
     if (t >= flvec2() && t <= flvec2((float) Lib::WIDTH, (float) Lib::HEIGHT)) {
       lib().render_line(t + flvec2(0, 9), t - flvec2(0, 8), colour());
@@ -198,7 +199,7 @@ void Player::render() const
     }
   }
 
-  if (z0().mode() == z0Game::BOSS_MODE) {
+  if (game().mode() == GameModal::BOSS_MODE) {
     return;
   }
 
@@ -345,7 +346,7 @@ Shot::Shot(const vec2& position, Player* player,
 
 void Shot::render() const
 {
-  if (z0().mode() == z0Game::WHAT_MODE) {
+  if (game().mode() == GameModal::WHAT_MODE) {
     return;
   }
   if (_flash) {
@@ -367,15 +368,15 @@ void Shot::update()
     return;
   }
 
-  for (const auto& ship : z0().collision_list(shape().centre, VULNERABLE)) {
+  for (const auto& ship : game().collision_list(shape().centre, VULNERABLE)) {
     ship->damage(1, _magic, _player);
     if (!_magic) {
       destroy();
     }
   }
 
-  if (z0().any_collision(shape().centre, SHIELD) ||
-      (!_magic && z0().any_collision(shape().centre, VULNSHIELD))) {
+  if (game().any_collision(shape().centre, SHIELD) ||
+      (!_magic && game().any_collision(shape().centre, VULNSHIELD))) {
     destroy();
   }
 }
@@ -448,7 +449,7 @@ void Powerup::damage(int32_t damage, bool magic, Player* source)
   if (source) {
     switch (_type) {
     case EXTRA_LIFE:
-      z0().add_life();
+      game().add_life();
       break;
 
     case MAGIC_SHOTS:

@@ -9,7 +9,7 @@ std::vector<vec2> Boss::_warnings;
 static const fixed HP_PER_EXTRA_PLAYER = fixed(1) / 10;
 static const fixed HP_PER_EXTRA_CYCLE = 3 * fixed(1) / 10;
 
-Boss::Boss(const vec2& position, z0Game::boss_list boss, int32_t hp,
+Boss::Boss(const vec2& position, GameModal::boss_list boss, int32_t hp,
            int32_t players, int32_t cycle, bool explode_on_damage)
   : Ship(position, Ship::ship_category(SHIP_BOSS | SHIP_ENEMY))
   , _hp(0)
@@ -24,8 +24,8 @@ Boss::Boss(const vec2& position, z0Game::boss_list boss, int32_t hp,
   set_bounding_width(640);
   set_ignore_damage_colour_index(100);
   long s = 5000 * (cycle + 1) +
-           2500 * (boss > z0Game::BOSS_1C) +
-           2500 * (boss > z0Game::BOSS_2C);
+           2500 * (boss > GameModal::BOSS_1C) +
+           2500 * (boss > GameModal::BOSS_2C);
 
   _score += s;
   for (int32_t i = 0; i < players - 1; ++i) {
@@ -71,8 +71,8 @@ void Boss::damage(int32_t damage, bool magic, Player* source)
     _damaged = 1;
   }
 
-  actual_damage *= 60 /
-      (1 + (z0().get_lives() ? z0().count_players() : z0().alive_players()));
+  actual_damage *= 60 / (1 + (
+      game().get_lives() ? game().players().size() : game().alive_players()));
   _hp -= actual_damage;
 
   if (_hp <= 0 && !is_destroyed()) {
@@ -114,14 +114,14 @@ void Boss::render_hp_bar() const
   }
 
   if (_show_hp) {
-    z0().render_hp_bar(float(_hp) / float(_max_hp));
+    game().render_hp_bar(float(_hp) / float(_max_hp));
   }
 }
 
 void Boss::on_destroy()
 {
   set_killed();
-  for (const auto& ship : z0().all_ships(SHIP_ENEMY)) {
+  for (const auto& ship : game().all_ships(SHIP_ENEMY)) {
     if (ship != this) {
       ship->damage(Player::BOMB_DAMAGE, false, 0);
     }
@@ -144,10 +144,10 @@ void Boss::on_destroy()
   }
   play_sound(Lib::SOUND_EXPLOSION);
 
-  for (const auto& player : z0().get_players()) {
+  for (const auto& player : game().players()) {
     Player* p = (Player*) player;
     if (!p->is_killed() && get_score() > 0) {
-      p->add_score(get_score() / z0().alive_players());
+      p->add_score(get_score() / game().alive_players());
     }
   }
 }

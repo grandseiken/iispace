@@ -10,7 +10,6 @@
 #include "save.h"
 
 const std::string Lib::SUPER_ENCRYPTION_KEY = "<>";
-#define SOUND_MAX 16
 
 #ifdef PLATFORM_LINUX
 #include <sys/stat.h>
@@ -136,10 +135,10 @@ struct Internals {
   int32_t pad_aim_dpads[Lib::PLAYERS];
   mutable vec2 pad_last_aim[Lib::PLAYERS];
 
-  typedef std::pair<int32_t, sf::SoundBuffer*> named_sound;
+  typedef std::pair<int32_t, std::unique_ptr<sf::SoundBuffer>> named_sound;
   typedef std::pair<int32_t, named_sound> sound_resource;
   std::vector<sound_resource> sounds;
-  std::vector<sf::Sound*> voices;
+  std::vector<sf::Sound> voices;
 };
 
 bool Handler::buttonPressed(const OIS::JoyStickEvent& arg, int32_t button)
@@ -406,6 +405,7 @@ Lib::Lib()
     }*/
   }
 
+  bool created = false;
   for (std::size_t i = sf::VideoMode::GetModesCount() - 1;
        i >= 0 && !Settings().windowed; --i) {
     sf::VideoMode m = sf::VideoMode::GetMode(i);
@@ -415,11 +415,53 @@ Lib::Lib()
           m, "WiiSPACE", sf::Style::Fullscreen, sf::WindowSettings(0, 0, 0));
       _extra.x = (m.Width - Lib::WIDTH) / 2;
       _extra.y = (m.Height - Lib::HEIGHT) / 2;
-      return;
+      created = true;
+      break;
     }
   }
-  _internals->window.Create(sf::VideoMode(640, 480, 32), "WiiSPACE",
-                             sf::Style::Close | sf::Style::Titlebar);
+  if (!created) {
+    _internals->window.Create(sf::VideoMode(640, 480, 32), "WiiSPACE",
+                               sf::Style::Close | sf::Style::Titlebar);
+  }
+
+  _internals->image.LoadFromFile("console.png");
+  _internals->image.CreateMaskFromColor(RgbaToColor(0x000000ff));
+  _internals->image.SetSmooth(false);
+  _internals->font = sf::Sprite(_internals->image);
+  load_sounds();
+
+  clear_screen();
+  _internals->window.Show(true);
+  _internals->window.UseVerticalSync(true);
+  _internals->window.SetFramerateLimit(50);
+  _internals->window.ShowMouseCursor(false);
+
+  glClearColor(0.f, 0.f, 0.f, 0.f);
+  glDisable(GL_DEPTH_TEST);
+  glLineWidth(1);
+  glEnable(GL_BLEND);
+  glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+
+  for (int32_t i = 0; i < KEY_MAX; ++i) {
+    std::vector<bool> f;
+    for (int32_t j = 0; j < PLAYERS; ++j) {
+      f.push_back(false);
+    }
+    _keys_pressed.push_back(f);
+    _keys_held.push_back(f);
+    _keys_released.push_back(f);
+  }
+  for (int32_t j = 0; j < PLAYERS; ++j) {
+    _internals->pad_move_vaxes[j] = 0;
+    _internals->pad_move_haxes[j] = 0;
+    _internals->pad_aim_vaxes[j] = 0;
+    _internals->pad_aim_haxes[j] = 0;
+    _internals->pad_move_dpads[j] = OIS::Pov::Centered;
+    _internals->pad_aim_dpads[j] = OIS::Pov::Centered;
+  }
+  for (int32_t i = 0; i < SOUND_MAX; ++i) {
+    _internals->voices.emplace_back();
+  }
 #endif
 }
 
@@ -427,9 +469,6 @@ Lib::~Lib()
 {
 #ifndef PLATFORM_SCORE
   OIS::InputManager::destroyInputSystem(_internals->manager);
-  for (int32_t i = 0; i < SOUND_MAX; ++i) {
-    delete _internals->sounds[i].second.second;
-  }
 #endif
 }
 
@@ -523,52 +562,6 @@ void Lib::set_working_directory(bool original)
 #else
   SetCurrentDirectory(original ? cwd : exe.data());
 #endif
-#endif
-}
-
-// General
-//------------------------------
-void Lib::init()
-{
-#ifndef PLATFORM_SCORE
-  _internals->image.LoadFromFile("console.png");
-  _internals->image.CreateMaskFromColor(RgbaToColor(0x000000ff));
-  _internals->image.SetSmooth(false);
-  _internals->font = sf::Sprite(_internals->image);
-  LoadSounds();
-
-  clear_screen();
-  _internals->window.Show(true);
-  _internals->window.UseVerticalSync(true);
-  _internals->window.SetFramerateLimit(50);
-  _internals->window.ShowMouseCursor(false);
-
-  glClearColor(0.f, 0.f, 0.f, 0.f);
-  glDisable(GL_DEPTH_TEST);
-  glLineWidth(1);
-  glEnable(GL_BLEND);
-  glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
-
-  for (int32_t i = 0; i < KEY_MAX; ++i) {
-    std::vector< bool > f;
-    for (int32_t j = 0; j < PLAYERS; ++j) {
-      f.push_back(false);
-    }
-    _keys_pressed.push_back(f);
-    _keys_held.push_back(f);
-    _keys_released.push_back(f);
-  }
-  for (int32_t j = 0; j < PLAYERS; ++j) {
-    _internals->pad_move_vaxes[j] = 0;
-    _internals->pad_move_haxes[j] = 0;
-    _internals->pad_aim_vaxes[j] = 0;
-    _internals->pad_aim_haxes[j] = 0;
-    _internals->pad_move_dpads[j] = OIS::Pov::Centered;
-    _internals->pad_aim_dpads[j] = OIS::Pov::Centered;
-  }
-  for (int32_t i = 0; i < SOUND_MAX; ++i) {
-    _internals->voices.push_back(new sf::Sound());
-  }
 #endif
 }
 
@@ -673,6 +666,7 @@ void Lib::capture_mouse(bool enabled)
 
 void Lib::new_game()
 {
+#ifndef PLATFORM_SCORE
   for (int32_t i = 0; i < KEY_MAX; ++i) {
     for (int32_t j = 0; j < PLAYERS; ++j) {
       _keys_pressed[i][j] = false;
@@ -680,6 +674,7 @@ void Lib::new_game()
       _keys_held[i][j] = false;
     }
   }
+#endif
 }
 
 void Lib::take_screenshot()
@@ -1031,7 +1026,7 @@ bool Lib::play_sound(Sound sound, float volume, float pan, float repitch)
   for (std::size_t i = 0; i < _internals->sounds.size(); i++) {
     if (sound == _internals->sounds[i].second.first) {
       if (_internals->sounds[i].first <= 0) {
-        buffer = _internals->sounds[i].second.second;
+        buffer = _internals->sounds[i].second.second.get();
         _internals->sounds[i].first = SOUND_TIMER;
       }
       break;
@@ -1042,15 +1037,15 @@ bool Lib::play_sound(Sound sound, float volume, float pan, float repitch)
     return false;
   }
   for (int32_t i = 0; i < SOUND_MAX; ++i) {
-    if (_internals->voices[i]->GetStatus() != sf::Sound::Playing) {
-      _internals->voices[i]->SetAttenuation(0.f);
-      _internals->voices[i]->SetLoop(false);
-      _internals->voices[i]->SetMinDistance(100.f);
-      _internals->voices[i]->SetBuffer(*buffer);
-      _internals->voices[i]->SetVolume(100.f * volume);
-      _internals->voices[i]->SetPitch(pow(2.f, repitch));
-      _internals->voices[i]->SetPosition(pan, 0, -1);
-      _internals->voices[i]->Play();
+    if (_internals->voices[i].GetStatus() != sf::Sound::Playing) {
+      _internals->voices[i].SetAttenuation(0.f);
+      _internals->voices[i].SetLoop(false);
+      _internals->voices[i].SetMinDistance(100.f);
+      _internals->voices[i].SetBuffer(*buffer);
+      _internals->voices[i].SetVolume(100.f * volume);
+      _internals->voices[i].SetPitch(pow(2.f, repitch));
+      _internals->voices[i].SetPosition(pan, 0, -1);
+      _internals->voices[i].Play();
       return true;
     }
   }
@@ -1065,33 +1060,29 @@ void Lib::set_volume(int32_t volume)
 #endif
 }
 
-// Sounds
-//------------------------------
-#ifndef PLATFORM_SCORE
-#define USE_SOUND(sound, data)\
-    sf::SoundBuffer* t_##sound = new sf::SoundBuffer(); \
-    t_##sound->LoadFromFile(data); \
-    _internals->sounds.push_back(\
-        Internals::sound_resource(0, Internals::named_sound(sound, t_##sound)));
-#endif
-
-void Lib::LoadSounds()
+void Lib::load_sounds()
 {
 #ifndef PLATFORM_SCORE
-  USE_SOUND(SOUND_PLAYER_FIRE, "PlayerFire.wav");
-  USE_SOUND(SOUND_MENU_CLICK, "MenuClick.wav");
-  USE_SOUND(SOUND_MENU_ACCEPT, "MenuAccept.wav");
-  USE_SOUND(SOUND_POWERUP_LIFE, "PowerupLife.wav");
-  USE_SOUND(SOUND_POWERUP_OTHER, "PowerupOther.wav");
-  USE_SOUND(SOUND_ENEMY_HIT, "EnemyHit.wav");
-  USE_SOUND(SOUND_ENEMY_DESTROY, "EnemyDestroy.wav");
-  USE_SOUND(SOUND_ENEMY_SHATTER, "EnemyShatter.wav");
-  USE_SOUND(SOUND_ENEMY_SPAWN, "EnemySpawn.wav");
-  USE_SOUND(SOUND_BOSS_ATTACK, "BossAttack.wav");
-  USE_SOUND(SOUND_BOSS_FIRE, "BossFire.wav");
-  USE_SOUND(SOUND_PLAYER_RESPAWN, "PlayerRespawn.wav");
-  USE_SOUND(SOUND_PLAYER_DESTROY, "PlayerDestroy.wav");
-  USE_SOUND(SOUND_PLAYER_SHIELD, "PlayerShield.wav");
-  USE_SOUND(SOUND_EXPLOSION, "Explosion.wav");
+  auto use_sound = [&](Sound sound, const std::string& filename) {
+    sf::SoundBuffer* buffer = new sf::SoundBuffer();
+    buffer->LoadFromFile(filename);
+    _internals->sounds.emplace_back(0, Internals::named_sound(sound, nullptr));
+    _internals->sounds.back().second.second.reset(buffer);
+  };
+  use_sound(SOUND_PLAYER_FIRE, "PlayerFire.wav");
+  use_sound(SOUND_MENU_CLICK, "MenuClick.wav");
+  use_sound(SOUND_MENU_ACCEPT, "MenuAccept.wav");
+  use_sound(SOUND_POWERUP_LIFE, "PowerupLife.wav");
+  use_sound(SOUND_POWERUP_OTHER, "PowerupOther.wav");
+  use_sound(SOUND_ENEMY_HIT, "EnemyHit.wav");
+  use_sound(SOUND_ENEMY_DESTROY, "EnemyDestroy.wav");
+  use_sound(SOUND_ENEMY_SHATTER, "EnemyShatter.wav");
+  use_sound(SOUND_ENEMY_SPAWN, "EnemySpawn.wav");
+  use_sound(SOUND_BOSS_ATTACK, "BossAttack.wav");
+  use_sound(SOUND_BOSS_FIRE, "BossFire.wav");
+  use_sound(SOUND_PLAYER_RESPAWN, "PlayerRespawn.wav");
+  use_sound(SOUND_PLAYER_DESTROY, "PlayerDestroy.wav");
+  use_sound(SOUND_PLAYER_SHIELD, "PlayerShield.wav");
+  use_sound(SOUND_EXPLOSION, "Explosion.wav");
 #endif
 }

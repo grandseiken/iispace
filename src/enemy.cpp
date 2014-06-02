@@ -83,7 +83,7 @@ Follow::Follow(const vec2& position, fixed radius, int32_t hp)
 void Follow::update()
 {
   shape().rotate(fixed::tenth);
-  if (!z0().alive_players()) {
+  if (!game().alive_players()) {
     return;
   }
 
@@ -176,7 +176,7 @@ Square::Square(const vec2& position, fixed rotation)
 
 void Square::update()
 {
-  if (is_on_screen() && z0().get_non_wall_count() == 0) {
+  if (is_on_screen() && game().get_non_wall_count() == 0) {
     _timer--;
   }
   else {
@@ -220,7 +220,8 @@ void Square::update()
 
 void Square::render() const
 {
-  if (z0().get_non_wall_count() == 0 && (_timer % 4 == 1 || _timer % 4 == 2)) {
+  if (game().get_non_wall_count() == 0 &&
+      (_timer % 4 == 1 || _timer % 4 == 2)) {
     render_with_colour(0x33333300);
   }
   else {
@@ -243,7 +244,7 @@ Wall::Wall(const vec2& position, bool rdir)
 
 void Wall::update()
 {
-  if (z0().get_non_wall_count() == 0 && _timer % 8 < 2) {
+  if (game().get_non_wall_count() == 0 && _timer % 8 < 2) {
     if (get_hp() > 2) {
       play_sound(Lib::SOUND_ENEMY_SPAWN);
     }
@@ -528,7 +529,7 @@ void Tractor::update()
       _ready = false;
       _spinning = true;
       _timer = 0;
-      _players = z0().get_players();
+      _players = game().players();
       play_sound(Lib::SOUND_BOSS_FIRE);
     }
   }

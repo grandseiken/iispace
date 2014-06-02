@@ -18,7 +18,8 @@ public:
 
   virtual void operator()() = 0;
 
-  void operator()(z0Game* game, int32_t row, int32_t power, int32_t* hard_already)
+  void operator()(
+      GameModal* game, int32_t row, int32_t power, int32_t* hard_already)
   {
     _game = game;
     _row = row;
@@ -121,7 +122,7 @@ private:
     }
   }
 
-  z0Game* _game;
+  GameModal* _game;
   int32_t _row;
   int32_t _power;
   int32_t* _hard_already;
@@ -130,11 +131,11 @@ private:
 
 std::vector<Overmind::entry> formation_base::static_formations;
 
-Overmind::Overmind(z0Game& z0)
-  : _z0(z0)
+Overmind::Overmind(GameModal& game, bool can_face_secret_boss)
+  : _game(game)
   , _power(0)
   , _hard_already(0)
-  , _timer(POWERUP_TIME)
+  , _timer(0)
   , _count(0)
   , _non_wall_count(0)
   , _levels_mod(0)
@@ -142,20 +143,17 @@ Overmind::Overmind(z0Game& z0)
   , _boss_mod_bosses(0)
   , _boss_mod_fights(0)
   , _boss_mod_secret(0)
-  , _can_face_secret_boss(false)
+  , _can_face_secret_boss(can_face_secret_boss)
   , _is_boss_next(false)
   , _is_boss_level(false)
   , _bosses_to_go(0)
+  , _powerup_mod(0)
+  , _lives_target(0)
+  , _elapsed_time(0)
+  , _waves_total(0)
 {
   add_formations();
-}
 
-Overmind::~Overmind()
-{
-}
-
-void Overmind::reset(bool can_face_secret_boss)
-{
   auto queue = [] {
     int32_t a = z::rand_int(3);
     int32_t b = z::rand_int(2);
@@ -168,34 +166,21 @@ void Overmind::reset(bool can_face_secret_boss)
   _boss1_queue = queue();
   _boss2_queue = queue();
 
-  _is_boss_next = false;
-  _is_boss_level = false;
-  _levels_mod = 0;
-  _groups_mod = 0;
-  _boss_mod_bosses = 0;
-  _boss_mod_fights = 0;
-  _boss_mod_secret = 0;
-  _can_face_secret_boss = can_face_secret_boss;
-  _powerup_mod = 0;
-  _lives_target = 0;
-  _elapsed_time = 0;
-  _bosses_to_go = 0;
-  _waves_total = 0;
-
-  if (_z0.mode() == z0Game::BOSS_MODE) {
-    _power = 0;
-    _timer = 0;
+  if (_game.mode() == GameModal::BOSS_MODE) {
     return;
   }
-  _power = INITIAL_POWER + 2 - _z0.count_players() * 2;
-  if (_z0.mode() == z0Game::HARD_MODE) {
+  _power = INITIAL_POWER + 2 - _game.players().size() * 2;
+  if (_game.mode() == GameModal::HARD_MODE) {
     _power += 20;
     _waves_total = 15;
   }
   _timer = POWERUP_TIME;
   _boss_rest_timer = BOSS_REST_TIME / 8;
-
   Stars::clear();
+}
+
+Overmind::~Overmind()
+{
 }
 
 void Overmind::update()
@@ -203,12 +188,12 @@ void Overmind::update()
   ++_elapsed_time;
   Stars::update();
 
-  if (_z0.mode() == z0Game::BOSS_MODE) {
+  if (_game.mode() == GameModal::BOSS_MODE) {
     if (_count <= 0) {
       Stars::change();
       if (_boss_mod_bosses < 6) {
         if (_boss_mod_bosses)
-        for (int32_t i = 0; i < _z0.count_players(); ++i) {
+        for (std::size_t i = 0; i < _game.players().size(); ++i) {
           spawn_boss_reward();
         }
         boss_mode_boss();
@@ -232,11 +217,11 @@ void Overmind::update()
 
   int32_t boss_cycles = _boss_mod_fights;
   int32_t trigger_stage = _groups_mod + boss_cycles +
-      2 * (_z0.mode() == z0Game::HARD_MODE);
+      2 * (_game.mode() == GameModal::HARD_MODE);
   int32_t trigger_val = INITIAL_TRIGGERVAL;
   for (int32_t i = 0; i < trigger_stage; ++i) {
     trigger_val += i < 2 ? 4 :
-                   i < 7 - _z0.count_players() ? 3 : 2;
+                   i < 7 - int32_t(_game.players().size()) ? 3 : 2;
   }
   if (trigger_val < 0 || _is_boss_level || _is_boss_next) {
     trigger_val = 0;
@@ -256,7 +241,7 @@ void Overmind::update()
       if (_bosses_to_go <= 0) {
         spawn_boss_reward();
         ++_boss_mod_fights;
-        _power += 2 - 2 * _z0.count_players();
+        _power += 2 - 2 * _game.players().size();
         _boss_rest_timer = BOSS_REST_TIME;
         _bosses_to_go = 0;
       }
@@ -288,7 +273,7 @@ void Overmind::update()
       _levels_mod = 0;
       _groups_mod++;
     }
-    if (_groups_mod >= BASE_GROUPS_PER_BOSS + _z0.count_players()) {
+    if (_groups_mod >= BASE_GROUPS_PER_BOSS + int32_t(_game.players().size())) {
       _groups_mod = 0;
       _is_boss_next = true;
       _bosses_to_go = _boss_mod_fights >= 4 ? 3 : _boss_mod_fights >= 2 ? 2 : 1;
@@ -314,12 +299,12 @@ void Overmind::on_enemy_create(const Ship& ship)
 
 void Overmind::spawn(Ship* ship)
 {
-  _z0.add_ship(ship);
+  _game.add_ship(ship);
 }
 
 void Overmind::spawn_powerup()
 {
-  if (_z0.all_ships(Ship::SHIP_POWERUP).size() >= 4) {
+  if (_game.all_ships(Ship::SHIP_POWERUP).size() >= 4) {
     return;
   }
 
@@ -336,17 +321,17 @@ void Overmind::spawn_powerup()
 
   int32_t m = 4;
   for (int32_t i = 1; i <= Lib::PLAYERS; i++) {
-    if (_z0.get_lives() <= _z0.count_players() - i) {
+    if (_game.get_lives() <= int32_t(_game.players().size()) - i) {
       m++;
     }
   }
-  if (!_z0.get_lives()) {
-    m += _z0.killed_players();
+  if (!_game.get_lives()) {
+    m += _game.killed_players();
   }
   if (_lives_target > 0) {
     m += _lives_target;
   }
-  if (_z0.killed_players() == 0 && _lives_target < -1) {
+  if (_game.killed_players() == 0 && _lives_target < -1) {
     m = 3;
   }
 
@@ -366,19 +351,19 @@ void Overmind::spawn_boss_reward()
                     vec2(Lib::WIDTH / 2, Lib::HEIGHT + Lib::HEIGHT / 4);
 
   spawn(new Powerup(v, Powerup::EXTRA_LIFE));
-  if (_z0.mode() != z0Game::BOSS_MODE) {
+  if (_game.mode() != GameModal::BOSS_MODE) {
     spawn_powerup();
   }
 }
 
 void Overmind::wave()
 {
-  if (_z0.mode() == z0Game::FAST_MODE) {
+  if (_game.mode() == GameModal::FAST_MODE) {
     for (int32_t i = 0; i < z::rand_int(7); ++i) {
       z::rand_int(1);
     }
   }
-  if (_z0.mode() == z0Game::WHAT_MODE) {
+  if (_game.mode() == GameModal::WHAT_MODE) {
     for (int32_t i = 0; i < z::rand_int(11); ++i) {
       z::rand_int(1);
     }
@@ -418,16 +403,17 @@ void Overmind::wave()
   _hard_already = 0;
   for (std::size_t row = 0; row < chosen.size(); ++row) {
     chosen[perm[row]]->function->operator()(
-        &_z0, perm[row], _power, &_hard_already);
+        &_game, perm[row], _power, &_hard_already);
   }
 }
 
 void Overmind::boss()
 {
-  int32_t count = _z0.count_players();
-  int32_t cycle = (_z0.mode() == z0Game::HARD_MODE) + _boss_mod_bosses / 2;
+  int32_t count = _game.players().size();
+  int32_t cycle = (_game.mode() == GameModal::HARD_MODE) + _boss_mod_bosses / 2;
   bool secret_chance =
-      (_z0.mode() != z0Game::NORMAL_MODE && _z0.mode() != z0Game::BOSS_MODE) ?
+      (_game.mode() != GameModal::NORMAL_MODE &&
+       _game.mode() != GameModal::BOSS_MODE) ?
       (_boss_mod_fights > 1 ? z::rand_int(4) == 0 :
        _boss_mod_fights > 0 ? z::rand_int(8) == 0 : false) :
       (_boss_mod_fights > 2 ? z::rand_int(4) == 0 :
@@ -436,7 +422,7 @@ void Overmind::boss()
   if (_can_face_secret_boss && _bosses_to_go == 0 &&
       _boss_mod_secret == 0 && secret_chance) {
     int32_t secret_cycle = std::max(
-        0, (_boss_mod_bosses + (_z0.mode() == z0Game::HARD_MODE) - 2) / 2);
+        0, (_boss_mod_bosses + (_game.mode() == GameModal::HARD_MODE) - 2) / 2);
     spawn(new SuperBoss(count, secret_cycle));
     _boss_mod_secret = 2;
   }
@@ -465,7 +451,7 @@ void Overmind::boss()
 void Overmind::boss_mode_boss()
 {
   int32_t boss = _boss_mod_bosses;
-  int32_t count = _z0.count_players();
+  int32_t count = _game.players().size();
   if (_boss_mod_bosses < 3) {
     spawn(_boss1_queue[boss] == 0 ? (Boss*)new BigSquareBoss(count, 0) :
           _boss1_queue[boss] == 1 ? (Boss*)new ShieldBombBoss(count, 0) :

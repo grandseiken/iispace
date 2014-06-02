@@ -47,6 +47,7 @@ public:
 private:
 
   std::vector<std::unique_ptr<Modal>> _stack;
+  std::vector<std::unique_ptr<Modal>> _new_stack;
 
 };
 

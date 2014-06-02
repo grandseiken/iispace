@@ -8,8 +8,10 @@
 #include "replay.h"
 #include "save.h"
 #include "z.h"
-class Overmind;
+
 struct Particle;
+class GameModal;
+class Overmind;
 class Player;
 class Ship;
 
@@ -20,8 +22,8 @@ public:
     CONTINUE,
     END_GAME,
   };
-  PauseModal(output_t* output, Settings& settings);
 
+  PauseModal(output_t* output, Settings& settings);
   void update(Lib& lib) override;
   void render(Lib& lib) const override;
 
@@ -33,17 +35,35 @@ private:
 
 };
 
-struct score_finished {};
-class z0Game {
+class HighScoreModal : public Modal {
 public:
 
-  // Constants
-  //------------------------------
-  enum game_state {
-    STATE_MENU,
-    STATE_GAME,
-    STATE_HIGHSCORE,
-  };
+  HighScoreModal(SaveData& save, GameModal& game, Overmind& overmind);
+  void update(Lib& lib) override;
+  void render(Lib& lib) const override;
+
+private:
+
+  int64_t get_player_score(int32_t player_number) const;
+  int64_t get_player_deaths(int32_t player_number) const;
+  int64_t get_total_score() const;
+  bool is_high_score() const;
+
+  SaveData& _save;
+  GameModal& _game;
+  Overmind& _overmind;
+
+  std::string _enter_name;
+  int32_t _enter_char;
+  int32_t _enter_r;
+  int32_t _enter_time;
+  int32_t _compliment;
+  int32_t _score_screen_timer;
+
+};
+
+class GameModal : public Modal {
+public:
 
   enum game_mode {
     NORMAL_MODE,
@@ -63,19 +83,76 @@ public:
     BOSS_3A = 64,
   };
 
+  GameModal(Lib& lib, SaveData& save, Settings& settings,
+            int32_t* frame_count, bool replay, bool can_face_secret_boss,
+            game_mode mode, int32_t player_count);
+  ~GameModal();
+
+  void update(Lib& lib) override;
+  void render(Lib& lib) const override;
+
+  typedef std::vector<Ship*> ship_list;
+  void add_ship(Ship* ship);
+  void add_particle(const Particle& particle);
+  int32_t get_non_wall_count() const;
+
+  Lib& lib();
+  game_mode mode() const;
+  ship_list all_ships(int32_t ship_mask = 0) const;
+  ship_list ships_in_radius(const vec2& point, fixed radius,
+                            int32_t ship_mask = 0) const;
+  ship_list collision_list(const vec2& point, int32_t category) const;
+  bool any_collision(const vec2& point, int32_t category) const;
+
+  int32_t alive_players() const;
+  int32_t killed_players() const;
+  Player* nearest_player(const vec2& point) const;
+  const ship_list& players() const;
+
+  void add_life();
+  void sub_life();
+  int32_t get_lives() const;
+
+  void render_hp_bar(float fill);
+  void set_boss_killed(boss_list boss);
+
+private:
+
+  Lib& _lib;
+  SaveData& _save;
+  Settings& _settings;
+  PauseModal::output_t _pause_output;
+  int32_t* _frame_count;
+  int32_t _kill_timer;
+
+  game_mode _mode;
+  int32_t _lives;
+  bool _game_over;
+
+  std::unique_ptr<Overmind> _overmind;
+  std::vector<Particle> _particles;
+  std::vector<std::unique_ptr<Ship>> _ships;
+  ship_list _player_list;
+  ship_list _collisions;
+
+  mutable bool _show_hp_bar;
+  mutable float _fill_hp_bar;
+
+  int32_t _controllers_connected;
+  bool _controllers_dialog;
+
+};
+
+struct score_finished {};
+class z0Game {
+public:
+
   static const colour_t PANEL_TEXT = 0xeeeeeeff;
   static const colour_t PANEL_TRAN = 0xeeeeee99;
   static const colour_t PANEL_BACK = 0x000000ff;
-  static const int32_t STARTING_LIVES;
-  static const int32_t BOSSMODE_LIVES;
-
-  typedef std::vector<Ship*> ShipList;
 
   z0Game(Lib& lib, const std::vector<std::string>& args);
-  ~z0Game();
 
-  // Main functions
-  //------------------------------
   void run();
   bool update();
   void render() const;
@@ -83,67 +160,6 @@ public:
   Lib& lib() const
   {
     return _lib;
-  }
-
-  game_mode mode() const
-  {
-    return _mode;
-  }
-
-  // Ships
-  //------------------------------
-  void add_ship(Ship* ship);
-  void add_particle(const Particle& particle);
-  int32_t get_non_wall_count() const;
-
-  ShipList all_ships(int32_t ship_mask = 0) const;
-  ShipList ships_in_radius(const vec2& point, fixed radius,
-                           int32_t ship_mask = 0) const;
-  ShipList collision_list(const vec2& point, int32_t category) const;
-  bool any_collision(const vec2& point, int32_t category) const;
-
-  // Players
-  //------------------------------
-  int32_t count_players() const
-  {
-    return _players;
-  }
-
-  int32_t alive_players() const;
-  int32_t killed_players() const;
-
-  Player* nearest_player(const vec2& point) const;
-
-  ShipList get_players() const
-  {
-    return _player_list;
-  }
-
-  void set_boss_killed(boss_list boss);
-
-  void render_hp_bar(float fill)
-  {
-    _show_hp_bar = true;
-    _fill_hp_bar = fill;
-  }
-
-  // Lives
-  //------------------------------
-  void add_life()
-  {
-    _lives++;
-  }
-
-  void sub_life()
-  {
-    if (_lives) {
-      _lives--;
-    }
-  }
-
-  int32_t get_lives() const
-  {
-    return _lives;
   }
 
 private:
@@ -174,56 +190,18 @@ private:
         ((_save.hard_mode_bosses_killed & 64) == 64);
   }
 
-  std::string convert_to_time(int64_t score) const;
-
-  // Scores
-  //------------------------------
-  int64_t get_player_score(int32_t player_number) const;
-  int64_t get_player_deaths(int32_t player_number) const;
-  int64_t get_total_score() const;
-  bool is_high_score() const;
-
-  void new_game(bool can_face_secret_boss, bool replay, game_mode mode);
-  void end_game();
-
   Lib& _lib;
-  game_state _state;
-  int32_t _players;
-  int32_t _lives;
-  game_mode _mode;
   bool _exit;
   int32_t _frame_count;
 
-  mutable bool _show_hp_bar;
-  mutable float _fill_hp_bar;
-
+  int32_t _players;
   int32_t _selection;
   int32_t _special_selection;
-  int32_t _kill_timer;
   int32_t _exit_timer;
 
-  std::string _enter_name;
-  int32_t _enter_char;
-  int32_t _enter_r;
-  int32_t _enter_time;
-  int32_t _compliment;
-  int32_t _score_screen_timer;
-
-  std::vector<Particle> _particles;
-  std::vector<std::unique_ptr<Ship>> _ships;
-  ShipList _player_list;
-  ShipList _collisions;
-
-  int32_t _controllers_connected;
-  bool _controllers_dialog;
-  bool _first_controllers_dialog;
-
-  std::unique_ptr<Overmind> _overmind;
-  std::vector<std::string> _compliments;
   SaveData _save;
   Settings _settings;
   ModalStack _modals;
-  PauseModal::output_t _pause_output;
 
 };
 

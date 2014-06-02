@@ -21,7 +21,7 @@ private:
   bool _laser;
   bool _dir;
   int32_t _pos;
-  z0Game::ShipList _arms;
+  GameModal::ship_list _arms;
   int32_t _arm_timer;
   int32_t _shot_timer;
 

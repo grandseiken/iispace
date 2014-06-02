@@ -9,8 +9,6 @@ int32_t run(const std::vector<std::string>& args)
 {
   try {
     Lib lib;
-    lib.init();
-
     z0Game game(lib, args);
     game.run();
   }

@@ -89,7 +89,7 @@ ChaserBoss::ChaserBoss(int32_t players, int32_t cycle, int32_t split,
                        const vec2& position, int32_t time, int32_t stagger)
   : Boss(
       !split ? vec2(Lib::WIDTH / 2, -Lib::HEIGHT / 2) : position,
-      z0Game::BOSS_1C,
+      GameModal::BOSS_1C,
       1 + CB_BASE_HP / (fixed::half + HP_REDUCE_POWER_lookup[split]).to_int(),
       players, cycle, split <= 1)
   , _on_screen(split != 0)
@@ -121,7 +121,7 @@ ChaserBoss::ChaserBoss(int32_t players, int32_t cycle, int32_t split,
 
 void ChaserBoss::update()
 {
-  z0Game::ShipList remaining = z0().all_ships();
+  const auto& remaining = game().all_ships();
   _last_dir = _dir.normalised();
   if (is_on_screen()) {
     _on_screen = true;
@@ -132,12 +132,11 @@ void ChaserBoss::update()
   }
   if (_timer <= 0) {
     _timer = TIMER * (_move + 1);
+    int32_t count = remaining.size() - game().players().size();
     if (_split != 0 &&
-        (_move || z::rand_int(8 + _split) == 0 ||
-         int32_t(remaining.size()) - z0().count_players() <= 4 ||
+        (_move || z::rand_int(8 + _split) == 0 || count <= 4 ||
          !z::rand_int(ONE_PT_ONE_FIVE_intLookup[
-             std::max(0, std::min(127, int32_t(remaining.size()) -
-                                       z0().count_players()))]))) {
+             std::max(0, std::min(127, count))]))) {
       _move = !_move;
     }
     if (_move) {
@@ -149,7 +148,7 @@ void ChaserBoss::update()
     move(_dir);
   }
   else {
-    const z0Game::ShipList& nearby = z0().all_ships(SHIP_PLAYER | SHIP_BOSS);
+    const auto& nearby = game().all_ships(SHIP_PLAYER | SHIP_BOSS);
     const fixed attract = 256 * ONE_PT_ONE_lookup[CB_MAX_SPLIT - _split];
     const fixed align = 128 * ONE_PT_ONE_FIVE_lookup[CB_MAX_SPLIT - _split];
     const fixed repulse = 64 * ONE_PT_TWO_lookup[CB_MAX_SPLIT - _split];
@@ -191,21 +190,21 @@ void ChaserBoss::update()
         if (len > attract) {
           continue;
         }
-        // Attract
+        // Attract.
         _dir += v * c_attract;
         if (len > align) {
           continue;
         }
-        // Align
+        // Align.
         _dir += p;
         if (len > repulse) {
           continue;
         }
-        // Repulse
+        // Repulse.
         _dir += v * 3;
       }
     }
-    if (int32_t(remaining.size()) - z0().count_players() < 4 &&
+    if (int32_t(remaining.size()) - game().players().size() < 4 &&
         _split >= CB_MAX_SPLIT - 1) {
       if ((shape().centre.x < 32 && _dir.x < 0) ||
           (shape().centre.x >= Lib::WIDTH - 32 && _dir.x > 0)) {
@@ -216,7 +215,7 @@ void ChaserBoss::update()
         _dir.y = -_dir.y;
       }
     }
-    else if (int32_t(remaining.size()) - z0().count_players() < 8 &&
+    else if (int32_t(remaining.size()) - game().players().size() < 8 &&
              _split >= CB_MAX_SPLIT - 1) {
       if ((shape().centre.x < 0 && _dir.x < 0) ||
           (shape().centre.x >= Lib::WIDTH && _dir.x > 0)) {
@@ -291,7 +290,7 @@ void ChaserBoss::render() const
   _shared_hp += (_split == 7 ? 0 : 2 * hp_lookup[6 - _split]) +
       get_remaining_hp() * 30;
   if (_on_screen) {
-    z0().render_hp_bar(float(_shared_hp) / float(hp_lookup[CB_MAX_SPLIT]));
+    game().render_hp_bar(float(_shared_hp) / float(hp_lookup[CB_MAX_SPLIT]));
   }
 }
 
@@ -320,7 +319,7 @@ void ChaserBoss::on_destroy()
   }
   else {
     last = true;
-    for (const auto& ship : z0().all_ships(SHIP_ENEMY)) {
+    for (const auto& ship : game().all_ships(SHIP_ENEMY)) {
       if (!ship->is_destroyed() && ship != this) {
         last = false;
         break;
@@ -332,21 +331,13 @@ void ChaserBoss::on_destroy()
       for (int32_t i = 0; i < Lib::PLAYERS; i++) {
         lib().rumble(i, 25);
       }
-      z0Game::ShipList players = z0().get_players();
-      int32_t n = 0;
-      for (std::size_t i = 0; i < players.size(); i++) {
-        Player* p = (Player*) players[i];
+      for (const auto& ship : game().players()) {
+        Player* p = (Player*) ship;
         if (!p->is_killed()) {
-          n++;
+          p->add_score(get_score() / game().alive_players());
         }
       }
-      for (std::size_t i = 0; i < players.size(); i++) {
-        Player* p = (Player*) players[i];
-        if (!p->is_killed()) {
-          p->add_score(get_score() / n);
-        }
-      }
-      n = 1;
+      int32_t n = 1;
       for (int32_t i = 0; i < 16; ++i) {
         vec2 v = vec2::from_polar(z::rand_fixed() * (2 * fixed::pi),
                                   8 + z::rand_int(64) + z::rand_int(64));

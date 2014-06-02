@@ -7,7 +7,7 @@ static const fixed TB_SPEED = 2;
 
 TractorBoss::TractorBoss(int32_t players, int32_t cycle)
   : Boss(vec2(Lib::WIDTH * (1 + fixed::half), Lib::HEIGHT / 2),
-         z0Game::BOSS_2A, TB_BASE_HP, players, cycle)
+         GameModal::BOSS_2A, TB_BASE_HP, players, cycle)
   , _will_attack(false)
   , _stopped(false)
   , _generating(false)
@@ -92,7 +92,7 @@ void TractorBoss::update()
   if (!_stopped) {
     move(TB_SPEED * vec2(-1, 0));
     if (!_will_attack && is_on_screen() &&
-        _timer % (16 - z0().alive_players() * 2) == 0) {
+        _timer % (16 - game().alive_players() * 2) == 0) {
       if (_shoot_type == 0 || (is_hp_low() && _shoot_type == 1)) {
         Player* p = nearest_player();
 
@@ -124,7 +124,7 @@ void TractorBoss::update()
         _sound = false;
       }
       _targets.clear();
-      for (const auto& ship : z0().all_ships(SHIP_PLAYER)) {
+      for (const auto& ship : game().all_ships(SHIP_PLAYER)) {
         if (((Player*) ship)->is_killed()) {
           continue;
         }
@@ -146,7 +146,7 @@ void TractorBoss::update()
       }
 
       if (_timer < TB_TIMER * 4 &&
-          _timer % (10 - 2 * z0().alive_players()) == 0) {
+          _timer % (10 - 2 * game().alive_players()) == 0) {
         Ship* s = new TBossShot(
             _s1->convert_point(shape().centre, shape().rotation(), vec2()),
             _gen_dir ? shape().rotation() + fixed::pi : shape().rotation());
@@ -159,7 +159,7 @@ void TractorBoss::update()
         play_sound_random(Lib::SOUND_ENEMY_SPAWN);
       }
 
-      if (is_hp_low() && _timer % (20 - z0().alive_players() * 2) == 0) {
+      if (is_hp_low() && _timer % (20 - game().alive_players() * 2) == 0) {
         Player* p = nearest_player();
         vec2 v = shape().centre;
 
@@ -199,7 +199,7 @@ void TractorBoss::update()
           play_sound_random(Lib::SOUND_BOSS_FIRE);
         }
         _targets.clear();
-        for (const auto& ship : z0().all_ships(SHIP_PLAYER | SHIP_ENEMY)) {
+        for (const auto& ship : game().all_ships(SHIP_PLAYER | SHIP_ENEMY)) {
           if (ship == this || ((ship->type() & SHIP_PLAYER) &&
                                ((Player*) ship)->is_killed())) {
             continue;

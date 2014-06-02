@@ -2,7 +2,7 @@
 #include "z0_game.h"
 
 Ship::Ship(const vec2& position, ship_category type)
-  : _z0(nullptr)
+  : _game(nullptr)
   , _type(type)
   , _destroy(false)
   , _shape(position, 0)
@@ -65,12 +65,12 @@ void Ship::destroy()
 
 void Ship::spawn(Ship* ship) const
 {
-  _z0->add_ship(ship);
+  _game->add_ship(ship);
 }
 
 void Ship::spawn(const Particle& particle) const
 {
-  _z0->add_particle(particle);
+  _game->add_particle(particle);
 }
 
 void Ship::explosion(
