@@ -675,12 +675,11 @@ void GameModal::render(Lib& lib) const
     lib.render_rect(particle.position + flvec2(1, 1),
                     particle.position - flvec2(1, 1), particle.colour);
   }
+  for (std::size_t i = _player_list.size(); i < _ships.size(); ++i) {
+    _ships[i]->render();
+  }
   for (const auto& ship : _player_list) {
     ship->render();
-  }
-  for (std::size_t i = 0;
-        i < std::size_t(players().size()) && i < _ships.size(); ++i) {
-    _ships[i]->render();
   }
 
   if (_controllers_dialog) {
