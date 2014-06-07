@@ -1033,24 +1033,47 @@ bool z0Game::update()
     return false;
   }
 
+  int32_t t = _selection;
   if (lib().is_key_pressed(Lib::KEY_UP)) {
-    _selection--;
-    if (_selection < 0 && !is_boss_mode_unlocked()) {
-      _selection = 0;
-    }
-    else if (_selection < -1 && is_boss_mode_unlocked()) {
-      _selection = -1;
-    }
-    else {
-      lib().play_sound(Lib::SOUND_MENU_CLICK);
-    }
+    _selection = std::max(is_boss_mode_unlocked() ? -1 : 0, _selection - 1);
   }
   if (lib().is_key_pressed(Lib::KEY_DOWN)) {
-    _selection++;
-    if (_selection > 2) {
-      _selection = 2;
+    _selection = std::min(2, _selection + 1);
+  }
+  if (t != _selection) {
+    lib().play_sound(Lib::SOUND_MENU_CLICK);
+  }
+
+  if (_selection == 1) {
+    int32_t t = _players;
+    if (lib().is_key_pressed(Lib::KEY_LEFT)) {
+      _players = std::max(1, _players - 1);
     }
-    else {
+    if (lib().is_key_pressed(Lib::KEY_RIGHT)) {
+      _players = std::min(Lib::PLAYERS, _players + 1);
+    }
+    if (lib().is_key_pressed(Lib::KEY_ACCEPT) ||
+        lib().is_key_pressed(Lib::KEY_MENU)) {
+      _players = 1 + _players % Lib::PLAYERS;
+    }
+    if (t != _players){
+      lib().play_sound(Lib::SOUND_MENU_CLICK);
+    }
+    lib().set_player_count(_players);
+  }
+
+  if (_selection == -1) {
+    int32_t t = _special_selection;
+    if (lib().is_key_pressed(Lib::KEY_LEFT)) {
+      _special_selection = std::max(0, _special_selection - 1);
+    }
+    if (lib().is_key_pressed(Lib::KEY_RIGHT)) {
+      _special_selection = std::min(
+          is_what_mode_unlocked() ? 3 :
+          is_fast_mode_unlocked() ? 2 :
+          is_hard_mode_unlocked() ? 1 : 0, _special_selection + 1);
+    }
+    if (t != _special_selection) {
       lib().play_sound(Lib::SOUND_MENU_CLICK);
     }
   }
@@ -1062,13 +1085,6 @@ bool z0Game::update()
       _modals.add(new GameModal(
           _lib, _save, _settings, &_frame_count, false,
           is_fast_mode_unlocked(), GameModal::NORMAL_MODE, _players));
-    }
-    else if (_selection == 1) {
-      _players++;
-      if (_players > Lib::PLAYERS) {
-        _players = 1;
-      }
-      lib().set_player_count(_players);
     }
     else if (_selection == 2) {
       _exit_timer = 2;
@@ -1085,43 +1101,8 @@ bool z0Game::update()
           _lib, _save, _settings, &_frame_count, false,
           is_fast_mode_unlocked(), mode, _players));
     }
-
-    if (_selection == 1) {
-      lib().play_sound(Lib::SOUND_MENU_CLICK);
-    }
-    else {
+    if (_selection != 1) {
       lib().play_sound(Lib::SOUND_MENU_ACCEPT);
-    }
-  }
-
-  if (_selection == 1) {
-    int32_t t = _players;
-    if (lib().is_key_pressed(Lib::KEY_LEFT) && _players > 1) {
-      _players--;
-    }
-    else if (lib().is_key_pressed(Lib::KEY_RIGHT) && _players < Lib::PLAYERS) {
-      _players++;
-    }
-    if (t != _players){
-      lib().play_sound(Lib::SOUND_MENU_CLICK);
-    }
-    lib().set_player_count(_players);
-  }
-
-  if (_selection == -1) {
-    int32_t t = _special_selection;
-    if (lib().is_key_pressed(Lib::KEY_LEFT) && _special_selection > 0) {
-      _special_selection--;
-    }
-    else if (lib().is_key_pressed(Lib::KEY_RIGHT)) {
-      if ((t == 0 && is_hard_mode_unlocked()) ||
-          (t == 1 && is_fast_mode_unlocked()) ||
-          (t == 2 && is_what_mode_unlocked())) {
-        _special_selection++;
-      }
-    }
-    if (t != _special_selection) {
-      lib().play_sound(Lib::SOUND_MENU_CLICK);
     }
   }
 
@@ -1187,35 +1168,20 @@ void z0Game::render() const
   lib().render_text(flvec2(6.f, 10.f), "PLAYERS", PANEL_TEXT);
   lib().render_text(flvec2(6.f, 12.f), "EXiT", PANEL_TEXT);
 
-  if (_special_selection == 0 && is_boss_mode_unlocked()) {
-    lib().render_text(flvec2(6.f, 6.f), "BOSS MODE", PANEL_TEXT);
-    if (is_hard_mode_unlocked() && _selection == -1) {
-      lib().render_text(flvec2(6.f, 6.f), "         >", PANEL_TRAN);
-    }
+  int32_t max = is_what_mode_unlocked() ? 3 :
+                is_fast_mode_unlocked() ? 2 :
+                is_hard_mode_unlocked() ? 1 : 0;
+  if (is_boss_mode_unlocked()) {
+    std::string str = _special_selection == 0 ? "BOSS MODE" :
+                      _special_selection == 1 ? "HARD MODE" :
+                      _special_selection == 2 ? "FAST MODE" : "W-HAT MODE";
+    lib().render_text(flvec2(6.f, 6.f), str, PANEL_TEXT);
   }
-  if (_special_selection == 1 && is_hard_mode_unlocked()) {
-    lib().render_text(flvec2(6.f, 6.f), "HARD MODE", PANEL_TEXT);
-    if (_selection == -1) {
-      lib().render_text(flvec2(5.f, 6.f), "<", PANEL_TRAN);
-    }
-    if (is_fast_mode_unlocked() && _selection == -1) {
-      lib().render_text(flvec2(6.f, 6.f), "         >", PANEL_TRAN);
-    }
+  if (_selection == -1 && _special_selection > 0) {
+    lib().render_text(flvec2(5.f, 6.f), "<", PANEL_TRAN);
   }
-  if (_special_selection == 2 && is_fast_mode_unlocked()) {
-    lib().render_text(flvec2(6.f, 6.f), "FAST MODE", PANEL_TEXT);
-    if (_selection == -1) {
-      lib().render_text(flvec2(5.f, 6.f), "<", PANEL_TRAN);
-    }
-    if (is_what_mode_unlocked() && _selection == -1) {
-      lib().render_text(flvec2(6.f, 6.f), "         >", PANEL_TRAN);
-    }
-  }
-  if (_special_selection == 3 && is_what_mode_unlocked()) {
-    lib().render_text(flvec2(6.f, 6.f), "W-HAT MODE", PANEL_TEXT);
-    if (_selection == -1) {
-      lib().render_text(flvec2(5.f, 6.f), "<", PANEL_TRAN);
-    }
+  if (_selection == -1 && _special_selection < max) {
+    lib().render_text(flvec2(6.f, 6.f), "         >", PANEL_TRAN);
   }
 
   flvec2 low(float(4 * Lib::TEXT_WIDTH + 4),
