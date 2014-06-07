@@ -57,51 +57,50 @@ PauseModal::PauseModal(output_t* output, Settings& settings)
 void PauseModal::update(Lib& lib)
 {
   int32_t t = _selection;
-  if (lib.is_key_pressed(Lib::KEY_UP) && _selection > 0) {
-    _selection--;
+  if (lib.is_key_pressed(Lib::KEY_UP)) {
+    _selection = std::max(0, _selection - 1);
   }
-  if (lib.is_key_pressed(Lib::KEY_DOWN) && _selection < 2) {
-    _selection++;
+  if (lib.is_key_pressed(Lib::KEY_DOWN)) {
+    _selection = std::min(2, _selection + 1);
   }
   if (t != _selection) {
     lib.play_sound(Lib::SOUND_MENU_CLICK);
   }
 
-  if (lib.is_key_pressed(Lib::KEY_ACCEPT) ||
-      lib.is_key_pressed(Lib::KEY_MENU)) {
-    if (_selection == 0) {
-      quit();
-    }
-    else if (_selection == 1) {
-      *_output = END_GAME;
-      quit();
-    }
-    else if (_selection == 2) {
-      _settings.volume = std::min(fixed(100), 1 + _settings.volume);
-      _settings.save();
-      lib.set_volume(_settings.volume.to_int());
-    }
+  bool accept =
+      lib.is_key_pressed(Lib::KEY_ACCEPT) || lib.is_key_pressed(Lib::KEY_MENU);
+  if (accept && _selection == 0) {
+    quit();
+  }
+  else if (accept && _selection == 1) {
+    *_output = END_GAME;
+    quit();
+  }
+  else if (accept && _selection == 2) {
+    _settings.volume = std::min(fixed(100), 1 + _settings.volume);
+    _settings.save();
+    lib.set_volume(_settings.volume.to_int());
+  }
+  if (accept) {
     lib.play_sound(Lib::SOUND_MENU_ACCEPT);
   }
-  if (lib.is_key_pressed(Lib::KEY_LEFT) && _selection == 2) {
-    if (_settings.volume > 0) {
-      _settings.volume -= 1;
-      lib.set_volume(_settings.volume.to_int());
-      _settings.save();
-      lib.play_sound(Lib::SOUND_MENU_CLICK);
-    }
-  }
-  if (lib.is_key_pressed(Lib::KEY_RIGHT) && _selection == 2) {
-    if (_settings.volume < 100) {
-      _settings.volume += 1;
-      lib.set_volume(_settings.volume.to_int());
-      _settings.save();
-      lib.play_sound(Lib::SOUND_MENU_CLICK);
-    }
-  }
+
   if (lib.is_key_pressed(Lib::KEY_CANCEL)) {
     quit();
     lib.play_sound(Lib::SOUND_MENU_ACCEPT);
+  }
+
+  fixed v = _settings.volume;
+  if (_selection == 2 && lib.is_key_pressed(Lib::KEY_LEFT)) {
+    _settings.volume = std::max(fixed(0), _settings.volume - 1);
+  }
+  if (_selection == 2 && lib.is_key_pressed(Lib::KEY_RIGHT)) {
+    _settings.volume = std::min(fixed(100), _settings.volume + 1);
+  }
+  if (v != _settings.volume) {
+    lib.set_volume(_settings.volume.to_int());
+    _settings.save();
+    lib.play_sound(Lib::SOUND_MENU_CLICK);
   }
 }
 
@@ -169,16 +168,16 @@ HighScoreModal::HighScoreModal(
   , _enter_time(0)
   , _enter_r(0)
   , _compliment(z::rand_int(COMPLIMENTS.size()))
-  , _score_screen_timer(0)
+  , _timer(0)
 {
 }
 
 void HighScoreModal::update(Lib& lib)
 {
-  ++_score_screen_timer;
+  ++_timer;
   GameModal::game_mode mode = _game.mode();
   int32_t players = _game.players().size();
-  #ifdef PLATFORM_SCORE
+#ifdef PLATFORM_SCORE
   int64_t score = get_total_score();
   if (mode == GameModal::BOSS_MODE) {
     score =
@@ -194,103 +193,83 @@ void HighScoreModal::update(Lib& lib)
       (mode == GameModal::WHAT_MODE) << "\n" <<
       score << "\n" << std::flush;
   throw score_finished{};
-  #endif
+#endif
 
-  if (is_high_score()) {
-    _enter_time++;
-    if (lib.is_key_pressed(Lib::KEY_ACCEPT) &&
-        _enter_name.length() < SaveData::MAX_NAME_LENGTH) {
-      _enter_name += ALLOWED_CHARS.substr(_enter_char, 1);
-      _enter_time = 0;
-      lib.play_sound(Lib::SOUND_MENU_CLICK);
-    }
-    if (lib.is_key_pressed(Lib::KEY_CANCEL) && _enter_name.length() > 0) {
-      _enter_name = _enter_name.substr(0, _enter_name.length() - 1);
-      _enter_time = 0;
-      lib.play_sound(Lib::SOUND_MENU_CLICK);
-    }
-    if (lib.is_key_pressed(Lib::KEY_RIGHT)) {
-      _enter_r = 0;
-      _enter_char++;
-      if (_enter_char >= int32_t(ALLOWED_CHARS.length())) {
-        _enter_char -= int32_t(ALLOWED_CHARS.length());
-      }
-      lib.play_sound(Lib::SOUND_MENU_CLICK);
-    }
-    if (lib.is_key_held(Lib::KEY_RIGHT)) {
-      _enter_r++;
-      _enter_time = 16;
-      if (_enter_r % 5 == 0 && _enter_r > 5) {
-        _enter_char++;
-        if (_enter_char >= int32_t(ALLOWED_CHARS.length())) {
-          _enter_char -= int32_t(ALLOWED_CHARS.length());
-        }
-        lib.play_sound(Lib::SOUND_MENU_CLICK);
-      }
-    }
-    if (lib.is_key_pressed(Lib::KEY_LEFT)) {
-      _enter_r = 0;
-      _enter_char--;
-      if (_enter_char < 0) {
-        _enter_char += int32_t(ALLOWED_CHARS.length());
-      }
-      lib.play_sound(Lib::SOUND_MENU_CLICK);
-    }
-    if (lib.is_key_held(Lib::KEY_LEFT)) {
-      _enter_r++;
-      _enter_time = 16;
-      if (_enter_r % 5 == 0 && _enter_r > 5) {
-        _enter_char--;
-        if (_enter_char < 0) {
-          _enter_char += int32_t(ALLOWED_CHARS.length());
-        }
-        lib.play_sound(Lib::SOUND_MENU_CLICK);
-      }
-    }
-
+  if (!is_high_score()) {
     if (lib.is_key_pressed(Lib::KEY_MENU)) {
+      Player::replay.end_recording(
+          "untitled",
+          mode == GameModal::BOSS_MODE ?
+              (_overmind.get_killed_bosses() >= 6 &&
+                _overmind.get_elapsed_time() != 0 ?
+                    std::max(_overmind.get_elapsed_time() -
+                            600l * _game.get_lives(), 1l)
+                : 0l) : get_total_score());
+
+      _save.save();
       lib.play_sound(Lib::SOUND_MENU_ACCEPT);
-      if (mode != GameModal::BOSS_MODE) {
-        int32_t index =
-            mode == GameModal::WHAT_MODE ? 3 * Lib::PLAYERS + players :
-            mode == GameModal::FAST_MODE ? 2 * Lib::PLAYERS + players :
-            mode == GameModal::HARD_MODE ? Lib::PLAYERS + players : players - 1;
-
-        HighScoreList& list = _save.high_scores[index];
-        list.push_back(HighScore{_enter_name, get_total_score()});
-        std::stable_sort(list.begin(), list.end(), &score_sort);
-        list.erase(list.begin() + (list.size() - 1));
-
-        Player::replay.end_recording(_enter_name, get_total_score());
-        _save.save();
-        quit();
-      }
-      else {
-        int64_t score = _overmind.get_elapsed_time();
-        score -= 600l * _game.get_lives();
-        if (score <= 0)
-          score = 1;
-        _save.high_scores[Lib::PLAYERS][players - 1].name = _enter_name;
-        _save.high_scores[Lib::PLAYERS][players - 1].score = score;
-
-        Player::replay.end_recording(_enter_name, score);
-        _save.save();
-        quit();
-      }
+      quit();
     }
+    return;
   }
-  else if (lib.is_key_pressed(Lib::KEY_MENU)) {
-    Player::replay.end_recording(
-        "untitled",
-        mode == GameModal::BOSS_MODE ?
-            (_overmind.get_killed_bosses() >= 6 &&
-             _overmind.get_elapsed_time() != 0 ?
-                 std::max(_overmind.get_elapsed_time() -
-                          600l * _game.get_lives(), 1l)
-              : 0l) : get_total_score());
 
-    _save.save();
+  _enter_time++;
+  if (lib.is_key_pressed(Lib::KEY_ACCEPT) &&
+      _enter_name.length() < SaveData::MAX_NAME_LENGTH) {
+    _enter_name += ALLOWED_CHARS.substr(_enter_char, 1);
+    _enter_time = 0;
+    lib.play_sound(Lib::SOUND_MENU_CLICK);
+  }
+  if (lib.is_key_pressed(Lib::KEY_CANCEL) && _enter_name.length() > 0) {
+    _enter_name = _enter_name.substr(0, _enter_name.length() - 1);
+    _enter_time = 0;
+    lib.play_sound(Lib::SOUND_MENU_CLICK);
+  }
+  if (lib.is_key_pressed(Lib::KEY_RIGHT) || lib.is_key_pressed(Lib::KEY_LEFT)) {
+    _enter_r = 0;
+  }
+  if (lib.is_key_held(Lib::KEY_RIGHT) || lib.is_key_held(Lib::KEY_LEFT)) {
+    ++_enter_r;
+    _enter_time = 16;
+  }
+  if (lib.is_key_pressed(Lib::KEY_RIGHT) ||
+      (lib.is_key_held(Lib::KEY_RIGHT) && _enter_r % 5 == 0 && _enter_r > 5)) {
+    _enter_char = (_enter_char + 1) % ALLOWED_CHARS.length();
+    lib.play_sound(Lib::SOUND_MENU_CLICK);
+  }
+  if (lib.is_key_pressed(Lib::KEY_LEFT) ||
+      (lib.is_key_held(Lib::KEY_LEFT) && _enter_r % 5 == 0 && _enter_r > 5)) {
+    _enter_char =
+        (_enter_char + ALLOWED_CHARS.length() - 1) % ALLOWED_CHARS.length();
+    lib.play_sound(Lib::SOUND_MENU_CLICK);
+  }
+
+  if (lib.is_key_pressed(Lib::KEY_MENU)) {
     lib.play_sound(Lib::SOUND_MENU_ACCEPT);
+    if (mode != GameModal::BOSS_MODE) {
+      int32_t index =
+          mode == GameModal::WHAT_MODE ? 3 * Lib::PLAYERS + players :
+          mode == GameModal::FAST_MODE ? 2 * Lib::PLAYERS + players :
+          mode == GameModal::HARD_MODE ? Lib::PLAYERS + players : players - 1;
+
+      HighScoreList& list = _save.high_scores[index];
+      list.push_back(HighScore{_enter_name, get_total_score()});
+      std::stable_sort(list.begin(), list.end(), &score_sort);
+      list.erase(list.begin() + (list.size() - 1));
+
+      Player::replay.end_recording(_enter_name, get_total_score());
+    }
+    else {
+      int64_t score = _overmind.get_elapsed_time();
+      score -= 600l * _game.get_lives();
+      if (score <= 0)
+        score = 1;
+      _save.high_scores[Lib::PLAYERS][players - 1].name = _enter_name;
+      _save.high_scores[Lib::PLAYERS][players - 1].score = score;
+
+      Player::replay.end_recording(_enter_name, score);
+    }
+    _save.save();
     quit();
   }
 }
@@ -299,6 +278,7 @@ void HighScoreModal::render(Lib& lib) const
 {
   GameModal::game_mode mode = _game.mode();
   int32_t players = _game.players().size();
+
   if (is_high_score()) {
     render_panel(lib, flvec2(3.f, 20.f), flvec2(28.f, 27.f));
     lib.render_text(
@@ -361,12 +341,12 @@ void HighScoreModal::render(Lib& lib) const
 
   for (int32_t i = 0; i < players; ++i) {
     std::stringstream sss;
-    if (_score_screen_timer % 600 < 300) {
-      sss << get_player_score(i);
+    if (_timer % 600 < 300) {
+      sss << ((Player*) _game.players()[i])->score();
     }
     else {
-      sss << get_player_deaths(i) << " death" <<
-          (get_player_deaths(i) != 1 ? "s" : "");
+      int32_t deaths = ((Player*) _game.players()[i])->deaths();
+      sss << deaths << " death" << (deaths != 1 ? "s" : "");
     }
     score = sss.str();
     if (score.length() > SaveData::MAX_SCORE_LENGTH) {
@@ -380,55 +360,36 @@ void HighScoreModal::render(Lib& lib) const
                     Player::player_colour(i));
   }
 
-  if (players > 1) {
-    bool first = true;
-    int64_t max = 0;
-    std::size_t best = 0;
-    for (int32_t i = 0; i < players; ++i) {
-      if (first || get_player_score(i) > max) {
-        max = get_player_score(i);
-        best = i;
-      }
-      first = false;
-    }
-
-    if (get_total_score() > 0) {
-      std::stringstream s;
-      s << "PLAYER " << (best + 1);
-      lib.render_text(flvec2(4.f, 8.f + 2 * players), s.str(),
-                      Player::player_colour(best));
-
-      std::string compliment = COMPLIMENTS[_compliment];
-      lib.render_text(
-          flvec2(12.f, 8.f + 2 * players), compliment, z0Game::PANEL_TEXT);
-    }
-    else {
-      lib.render_text(
-          flvec2(4.f, 8.f + 2 * players), "Oh dear!", z0Game::PANEL_TEXT);
-    }
+  if (players <= 1) {
+    return;
   }
-}
 
-int64_t HighScoreModal::get_player_score(int32_t player_number) const
-{
+  bool first = true;
+  int64_t max = 0;
+  std::size_t best = 0;
   for (Ship* ship : _game.players()) {
     Player* p = (Player*) ship;
-    if (p->player_number() == player_number) {
-      return p->score();
+    if (first || p->score() > max) {
+      max = p->score();
+      best = p->player_number();
     }
+    first = false;
   }
-  return 0;
-}
 
-int64_t HighScoreModal::get_player_deaths(int32_t player_number) const
-{
-  for (Ship* ship : _game.players()) {
-    Player* p = (Player*) ship;
-    if (p->player_number() == player_number) {
-      return p->deaths();
-    }
+  if (get_total_score() > 0) {
+    std::stringstream s;
+    s << "PLAYER " << (best + 1);
+    lib.render_text(flvec2(4.f, 8.f + 2 * players), s.str(),
+                    Player::player_colour(best));
+
+    std::string compliment = COMPLIMENTS[_compliment];
+    lib.render_text(
+        flvec2(12.f, 8.f + 2 * players), compliment, z0Game::PANEL_TEXT);
   }
-  return 0;
+  else {
+    lib.render_text(
+        flvec2(4.f, 8.f + 2 * players), "Oh dear!", z0Game::PANEL_TEXT);
+  }
 }
 
 int64_t HighScoreModal::get_total_score() const

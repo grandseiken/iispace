@@ -44,8 +44,6 @@ public:
 
 private:
 
-  int64_t get_player_score(int32_t player_number) const;
-  int64_t get_player_deaths(int32_t player_number) const;
   int64_t get_total_score() const;
   bool is_high_score() const;
 
@@ -58,7 +56,7 @@ private:
   int32_t _enter_r;
   int32_t _enter_time;
   int32_t _compliment;
-  int32_t _score_screen_timer;
+  int32_t _timer;
 
 };
 
