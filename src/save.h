@@ -2,31 +2,47 @@
 #define IISPACE_SRC_SAVE_H
 
 #include "z.h"
+#include <array>
 #include <vector>
 
-struct HighScore {
-  std::string name;
-  int64_t score;
-};
+struct HighScores {
+  static const int32_t NUM_SCORES = 8;
+  static const int32_t MAX_NAME_LENGTH = 17;
+  static const int32_t MAX_SCORE_LENGTH = 10;
 
-typedef std::vector<HighScore> HighScoreList;
-typedef std::vector<HighScoreList> HighScoreTable;
-inline bool score_sort(const HighScore& a, const HighScore& b)
-{
-  return a.score > b.score;
-}
+  struct high_score {
+    high_score()
+      : score(0) {}
+    std::string name;
+    int64_t score;
+  };
+  typedef std::array<high_score, NUM_SCORES> table;
+  typedef std::array<table, PLAYERS> mode_table;
+  typedef std::array<high_score, PLAYERS> boss_table;
+
+  mode_table normal;
+  mode_table hard;
+  mode_table fast;
+  mode_table what;
+  boss_table boss;
+
+  static std::size_t size(Mode::mode mode);
+  high_score& get(Mode::mode mode, int32_t players, int32_t index);
+  const high_score& get(
+      Mode::mode mode, int32_t players, int32_t index) const;
+
+  bool is_high_score(Mode::mode mode, int32_t players, int64_t score) const;
+  void add_score(Mode::mode mode, int32_t players,
+                 const std::string& name, int64_t score);
+};
 
 struct SaveData {
   SaveData();
   void save() const;
 
-  static const int32_t MAX_NAME_LENGTH = 17;
-  static const int32_t MAX_SCORE_LENGTH = 10;
-  static const int32_t NUM_HIGH_SCORES = 8;
-
   int32_t bosses_killed;
   int32_t hard_mode_bosses_killed;
-  HighScoreTable high_scores;
+  HighScores high_scores;
 };
 
 struct Settings {

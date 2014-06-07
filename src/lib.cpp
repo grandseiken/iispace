@@ -124,16 +124,16 @@ struct Internals {
   OIS::InputManager* manager;
   Handler pad_handler;
   int32_t pad_count;
-  PadConfig pad_config[Lib::PLAYERS];
-  OIS::JoyStick* pads[Lib::PLAYERS];
-  OIS::ForceFeedback* ff[Lib::PLAYERS];
-  fixed pad_move_vaxes[Lib::PLAYERS];
-  fixed pad_move_haxes[Lib::PLAYERS];
-  fixed pad_aim_vaxes[Lib::PLAYERS];
-  fixed pad_aim_haxes[Lib::PLAYERS];
-  int32_t pad_move_dpads[Lib::PLAYERS];
-  int32_t pad_aim_dpads[Lib::PLAYERS];
-  mutable vec2 pad_last_aim[Lib::PLAYERS];
+  PadConfig pad_config[PLAYERS];
+  OIS::JoyStick* pads[PLAYERS];
+  OIS::ForceFeedback* ff[PLAYERS];
+  fixed pad_move_vaxes[PLAYERS];
+  fixed pad_move_haxes[PLAYERS];
+  fixed pad_aim_vaxes[PLAYERS];
+  fixed pad_aim_haxes[PLAYERS];
+  int32_t pad_move_dpads[PLAYERS];
+  int32_t pad_aim_dpads[PLAYERS];
+  mutable vec2 pad_last_aim[PLAYERS];
 
   typedef std::pair<int32_t, std::unique_ptr<sf::SoundBuffer>> named_sound;
   typedef std::pair<int32_t, named_sound> sound_resource;
@@ -144,7 +144,7 @@ struct Internals {
 bool Handler::buttonPressed(const OIS::JoyStickEvent& arg, int32_t button)
 {
   int32_t p = -1;
-  for (int32_t i = 0; i < Lib::PLAYERS &&
+  for (int32_t i = 0; i < PLAYERS &&
                       i < _lib->_internals->pad_count; ++i) {
     if (_lib->_internals->pads[i] == arg.device) {
       p = i;
@@ -166,7 +166,7 @@ bool Handler::buttonPressed(const OIS::JoyStickEvent& arg, int32_t button)
 bool Handler::buttonReleased(const OIS::JoyStickEvent& arg, int32_t button)
 {
   int32_t p = -1;
-  for (int32_t i = 0; i < Lib::PLAYERS &&
+  for (int32_t i = 0; i < PLAYERS &&
                       i < _lib->_internals->pad_count; ++i) {
     if (_lib->_internals->pads[i] == arg.device) {
       p = i;
@@ -188,7 +188,7 @@ bool Handler::buttonReleased(const OIS::JoyStickEvent& arg, int32_t button)
 bool Handler::axisMoved(const OIS::JoyStickEvent& arg, int32_t axis)
 {
   int32_t p = -1;
-  for (int32_t i = 0; i < Lib::PLAYERS &&
+  for (int32_t i = 0; i < PLAYERS &&
                       i < _lib->_internals->pad_count; ++i) {
     if (_lib->_internals->pads[i] == arg.device) {
       p = i;
@@ -226,7 +226,7 @@ bool Handler::axisMoved(const OIS::JoyStickEvent& arg, int32_t axis)
 bool Handler::povMoved(const OIS::JoyStickEvent& arg, int32_t pov)
 {
   int32_t p = -1;
-  for (int32_t i = 0; i < Lib::PLAYERS &&
+  for (int32_t i = 0; i < PLAYERS &&
                       i < _lib->_internals->pad_count; ++i) {
     if (_lib->_internals->pads[i] == arg.device) {
       p = i;

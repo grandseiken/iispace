@@ -175,37 +175,20 @@ HighScoreModal::HighScoreModal(
 void HighScoreModal::update(Lib& lib)
 {
   ++_timer;
-  GameModal::game_mode mode = _game.mode();
+  Mode::mode mode = _game.mode();
   int32_t players = _game.players().size();
+
 #ifdef PLATFORM_SCORE
-  int64_t score = get_total_score();
-  if (mode == GameModal::BOSS_MODE) {
-    score =
-        _overmind.get_killed_bosses() >= 6 &&
-        _overmind.get_elapsed_time() != 0 ?
-            std::max(_overmind.get_elapsed_time() -
-                     600l * _game.get_lives(), 1l) : 0l;
-  }
   std::cout << Player::replay.seed << "\n" << players << "\n" <<
-      (mode == GameModal::BOSS_MODE) << "\n" <<
-      (mode == GameModal::HARD_MODE) << "\n" <<
-      (mode == GameModal::FAST_MODE) << "\n" <<
-      (mode == GameModal::WHAT_MODE) << "\n" <<
-      score << "\n" << std::flush;
+      (mode == Mode::BOSS) << "\n" << (mode == Mode::HARD) << "\n" <<
+      (mode == Mode::FAST) << "\n" << (mode == Mode::WHAT) << "\n" <<
+      get_score() << "\n" << std::flush;
   throw score_finished{};
 #endif
 
   if (!is_high_score()) {
     if (lib.is_key_pressed(Lib::KEY_MENU)) {
-      Player::replay.end_recording(
-          "untitled",
-          mode == GameModal::BOSS_MODE ?
-              (_overmind.get_killed_bosses() >= 6 &&
-                _overmind.get_elapsed_time() != 0 ?
-                    std::max(_overmind.get_elapsed_time() -
-                            600l * _game.get_lives(), 1l)
-                : 0l) : get_total_score());
-
+      Player::replay.end_recording("untitled", get_score());
       _save.save();
       lib.play_sound(Lib::SOUND_MENU_ACCEPT);
       quit();
@@ -215,7 +198,7 @@ void HighScoreModal::update(Lib& lib)
 
   _enter_time++;
   if (lib.is_key_pressed(Lib::KEY_ACCEPT) &&
-      _enter_name.length() < SaveData::MAX_NAME_LENGTH) {
+      _enter_name.length() < HighScores::MAX_NAME_LENGTH) {
     _enter_name += ALLOWED_CHARS.substr(_enter_char, 1);
     _enter_time = 0;
     lib.play_sound(Lib::SOUND_MENU_CLICK);
@@ -246,29 +229,8 @@ void HighScoreModal::update(Lib& lib)
 
   if (lib.is_key_pressed(Lib::KEY_MENU)) {
     lib.play_sound(Lib::SOUND_MENU_ACCEPT);
-    if (mode != GameModal::BOSS_MODE) {
-      int32_t index =
-          mode == GameModal::WHAT_MODE ? 3 * Lib::PLAYERS + players :
-          mode == GameModal::FAST_MODE ? 2 * Lib::PLAYERS + players :
-          mode == GameModal::HARD_MODE ? Lib::PLAYERS + players : players - 1;
-
-      HighScoreList& list = _save.high_scores[index];
-      list.push_back(HighScore{_enter_name, get_total_score()});
-      std::stable_sort(list.begin(), list.end(), &score_sort);
-      list.erase(list.begin() + (list.size() - 1));
-
-      Player::replay.end_recording(_enter_name, get_total_score());
-    }
-    else {
-      int64_t score = _overmind.get_elapsed_time();
-      score -= 600l * _game.get_lives();
-      if (score <= 0)
-        score = 1;
-      _save.high_scores[Lib::PLAYERS][players - 1].name = _enter_name;
-      _save.high_scores[Lib::PLAYERS][players - 1].score = score;
-
-      Player::replay.end_recording(_enter_name, score);
-    }
+    _save.high_scores.add_score(mode, players, _enter_name, get_score());
+    Player::replay.end_recording(_enter_name, get_score());
     _save.save();
     quit();
   }
@@ -276,9 +238,7 @@ void HighScoreModal::update(Lib& lib)
 
 void HighScoreModal::render(Lib& lib) const
 {
-  GameModal::game_mode mode = _game.mode();
   int32_t players = _game.players().size();
-
   if (is_high_score()) {
     render_panel(lib, flvec2(3.f, 20.f), flvec2(28.f, 27.f));
     lib.render_text(
@@ -288,7 +248,7 @@ void HighScoreModal::render(Lib& lib) const
                     z0Game::PANEL_TEXT);
     lib.render_text(flvec2(6.f, 25.f), _enter_name, z0Game::PANEL_TEXT);
     if ((_enter_time / 16) % 2 &&
-        _enter_name.length() < SaveData::MAX_NAME_LENGTH) {
+        _enter_name.length() < HighScores::MAX_NAME_LENGTH) {
       lib.render_text(flvec2(6.f + _enter_name.length(), 25.f),
                       ALLOWED_CHARS.substr(_enter_char, 1), 0xbbbbbbff);
     }
@@ -299,7 +259,7 @@ void HighScoreModal::render(Lib& lib) const
     lib.render_rect(low, hi, z0Game::PANEL_TEXT, 1);
   }
 
-  if (_game.mode() == GameModal::BOSS_MODE) {
+  if (_game.mode() == Mode::BOSS) {
     int32_t extra_lives = _game.get_lives();
     bool b = extra_lives > 0 && _overmind.get_killed_bosses() >= 6;
 
@@ -331,10 +291,10 @@ void HighScoreModal::render(Lib& lib) const
                flvec2(37.f, 8.f + 2 * players + (players > 1 ? 2 : 0)));
 
   std::stringstream ss;
-  ss << get_total_score();
+  ss << get_score();
   std::string score = ss.str();
-  if (score.length() > SaveData::MAX_SCORE_LENGTH) {
-    score = score.substr(0, SaveData::MAX_SCORE_LENGTH);
+  if (score.length() > HighScores::MAX_SCORE_LENGTH) {
+    score = score.substr(0, HighScores::MAX_SCORE_LENGTH);
   }
   lib.render_text(
       flvec2(4.f, 4.f), "TOTAL SCORE: " + score, z0Game::PANEL_TEXT);
@@ -349,8 +309,8 @@ void HighScoreModal::render(Lib& lib) const
       sss << deaths << " death" << (deaths != 1 ? "s" : "");
     }
     score = sss.str();
-    if (score.length() > SaveData::MAX_SCORE_LENGTH) {
-      score = score.substr(0, SaveData::MAX_SCORE_LENGTH);
+    if (score.length() > HighScores::MAX_SCORE_LENGTH) {
+      score = score.substr(0, HighScores::MAX_SCORE_LENGTH);
     }
 
     std::stringstream ssp;
@@ -376,7 +336,7 @@ void HighScoreModal::render(Lib& lib) const
     first = false;
   }
 
-  if (get_total_score() > 0) {
+  if (get_score() > 0) {
     std::stringstream s;
     s << "PLAYER " << (best + 1);
     lib.render_text(flvec2(4.f, 8.f + 2 * players), s.str(),
@@ -392,8 +352,14 @@ void HighScoreModal::render(Lib& lib) const
   }
 }
 
-int64_t HighScoreModal::get_total_score() const
+int64_t HighScoreModal::get_score() const
 {
+  if (_game.mode() == Mode::BOSS) {
+    bool won = _overmind.get_killed_bosses() >= 6 &&
+        _overmind.get_elapsed_time() != 0;
+    return !won ? 0l :
+        std::max(1l, _overmind.get_elapsed_time() - 600l * _game.get_lives());
+  }
   int64_t total = 0;
   for (Ship* ship : _game.players()) {
     total += ((Player*) ship)->score();
@@ -403,37 +369,14 @@ int64_t HighScoreModal::get_total_score() const
 
 bool HighScoreModal::is_high_score() const
 {
-  if (!Player::replay.recording) {
-    return false;
-  }
-
-  int32_t players = _game.players().size();
-  if (_game.mode() == GameModal::BOSS_MODE) {
-    return _overmind.get_killed_bosses() >= 6 &&
-           _overmind.get_elapsed_time() != 0 &&
-          (_overmind.get_elapsed_time() <
-           _save.high_scores[Lib::PLAYERS][players - 1].score ||
-           _save.high_scores[Lib::PLAYERS][players - 1].score == 0);
-  }
-  int32_t n =
-      _game.mode() == GameModal::WHAT_MODE ? 3 * Lib::PLAYERS + players :
-      _game.mode() == GameModal::FAST_MODE ? 2 * Lib::PLAYERS + players :
-      _game.mode() == GameModal::HARD_MODE ? Lib::PLAYERS + players :
-                                             players - 1;
-
-  const HighScoreList& list = _save.high_scores[n];
-  for (const auto& s : list) {
-    if (get_total_score() > s.score) {
-      return true;
-    }
-  }
-  return false;
+  return Player::replay.recording && _save.high_scores.is_high_score(
+      _game.mode(), _game.players().size(), get_score());
 }
 
 GameModal::GameModal(
     Lib& lib, SaveData& save, Settings& settings,
     int32_t* frame_count, bool replay, bool can_face_secret_boss,
-    game_mode mode, int32_t player_count)
+    Mode::mode mode, int32_t player_count)
   : Modal(true, true)
   , _lib(lib)
   , _save(save)
@@ -456,8 +399,8 @@ GameModal::GameModal(
     Player::replay = Replay(player_count, mode, can_face_secret_boss);
   }
   _mode = mode;
-  _lives = mode == BOSS_MODE ? player_count * BOSSMODE_LIVES : STARTING_LIVES;
-  *_frame_count = _mode == FAST_MODE ? 2 : 1;
+  _lives = mode == Mode::BOSS ? player_count * BOSSMODE_LIVES : STARTING_LIVES;
+  *_frame_count = _mode == Mode::FAST ? 2 : 1;
 
   Stars::clear();
   for (int32_t i = 0; i < player_count; ++i) {
@@ -498,11 +441,11 @@ void GameModal::update(Lib& lib)
   lib.capture_mouse(true);
 
   lib.set_colour_cycle(
-      _mode == HARD_MODE ? 128 :
-      _mode == FAST_MODE ? 192 :
-      _mode == WHAT_MODE ? (lib.get_colour_cycle() + 1) % 256 : 0);
+      _mode == Mode::HARD ? 128 :
+      _mode == Mode::FAST ? 192 :
+      _mode == Mode::WHAT ? (lib.get_colour_cycle() + 1) % 256 : 0);
   if (Player::replay.recording) {
-    *_frame_count = _mode == FAST_MODE ? 2 : 1;
+    *_frame_count = _mode == Mode::FAST ? 2 : 1;
   }
 
   int32_t controllers = 0;
@@ -539,7 +482,7 @@ void GameModal::update(Lib& lib)
       *_frame_count *= 2;
     }
     if (lib.is_key_pressed(Lib::KEY_FIRE) &&
-        *_frame_count > (_mode == FAST_MODE ? 2 : 1)) {
+        *_frame_count > (_mode == Mode::FAST ? 2 : 1)) {
       *_frame_count /= 2;
     }
   }
@@ -612,7 +555,7 @@ void GameModal::update(Lib& lib)
   _overmind->update();
 
   if (!_kill_timer && ((killed_players() == players().size() && !get_lives()) ||
-                       (_mode == BOSS_MODE &&
+                       (_mode == Mode::BOSS &&
                         _overmind->get_killed_bosses() >= 6))) {
     _kill_timer = 100;
   }
@@ -682,7 +625,7 @@ void GameModal::render(Lib& lib) const
 
   std::stringstream ss;
   ss << _lives << " live(s)";
-  if (_mode != BOSS_MODE && _overmind->get_timer() >= 0) {
+  if (_mode != Mode::BOSS && _overmind->get_timer() >= 0) {
     int32_t t = int32_t(0.5f + _overmind->get_timer() / 60);
     ss << " " << (t < 10 ? "0" : "") << t;
   }
@@ -743,7 +686,7 @@ void GameModal::render(Lib& lib) const
                       flvec2(v.x, float(Lib::HEIGHT)), a);
     }
   }
-  if (_mode == BOSS_MODE) {
+  if (_mode == Mode::BOSS) {
     std::stringstream sst;
     sst << convert_to_time(_overmind->get_elapsed_time());
     lib.render_text(
@@ -753,7 +696,7 @@ void GameModal::render(Lib& lib) const
   }
 
   if (_show_hp_bar) {
-    int32_t x = _mode == BOSS_MODE ? 48 : 0;
+    int32_t x = _mode == Mode::BOSS ? 48 : 0;
     lib.render_rect(
         flvec2(x + Lib::WIDTH / 2 - 48.f, 16.f),
         flvec2(x + Lib::WIDTH / 2 + 48.f, 32.f),
@@ -766,7 +709,7 @@ void GameModal::render(Lib& lib) const
   }
 
   if (!Player::replay.recording) {
-    int32_t x = _mode == FAST_MODE ? *_frame_count / 2 : *_frame_count;
+    int32_t x = _mode == Mode::FAST ? *_frame_count / 2 : *_frame_count;
     std::stringstream ss;
     ss << x << "X " <<
         int32_t(100 * float(Player::replay_frame) /
@@ -779,7 +722,7 @@ void GameModal::render(Lib& lib) const
   }
 }
 
-GameModal::game_mode GameModal::mode() const
+Mode::mode GameModal::mode() const
 {
   return _mode;
 }
@@ -950,7 +893,7 @@ void GameModal::set_boss_killed(boss_list boss)
   if (!Player::replay.recording) {
     return;
   }
-  if (boss == BOSS_3A || (_mode != BOSS_MODE && _mode != NORMAL_MODE)) {
+  if (boss == BOSS_3A || (_mode != Mode::BOSS && _mode != Mode::NORMAL)) {
     _save.hard_mode_bosses_killed |= boss;
   }
   else {
@@ -978,8 +921,7 @@ z0Game::z0Game(Lib& lib, const std::vector<std::string>& args)
       _modals.add(new GameModal(
           _lib, _save, _settings, &_frame_count, true,
           Player::replay.can_face_secret_boss,
-          GameModal::game_mode(Player::replay.game_mode),
-          Player::replay.players));
+          Player::replay.mode, Player::replay.players));
     }
     else {
       _exit_timer = 256;
@@ -1019,7 +961,7 @@ bool z0Game::update()
     return !_exit_timer;
   }
 
-  for (int32_t i = 0; i < Lib::PLAYERS; i++) {
+  for (int32_t i = 0; i < PLAYERS; i++) {
     if (lib().is_key_held(i, Lib::KEY_FIRE) &&
         lib().is_key_held(i, Lib::KEY_BOMB) &&
         lib().is_key_pressed(Lib::KEY_MENU)) {
@@ -1050,11 +992,11 @@ bool z0Game::update()
       _players = std::max(1, _players - 1);
     }
     if (lib().is_key_pressed(Lib::KEY_RIGHT)) {
-      _players = std::min(Lib::PLAYERS, _players + 1);
+      _players = std::min(PLAYERS, _players + 1);
     }
     if (lib().is_key_pressed(Lib::KEY_ACCEPT) ||
         lib().is_key_pressed(Lib::KEY_MENU)) {
-      _players = 1 + _players % Lib::PLAYERS;
+      _players = 1 + _players % PLAYERS;
     }
     if (t != _players){
       lib().play_sound(Lib::SOUND_MENU_CLICK);
@@ -1084,18 +1026,16 @@ bool z0Game::update()
       lib().new_game();
       _modals.add(new GameModal(
           _lib, _save, _settings, &_frame_count, false,
-          is_fast_mode_unlocked(), GameModal::NORMAL_MODE, _players));
+          is_fast_mode_unlocked(), Mode::NORMAL, _players));
     }
     else if (_selection == 2) {
       _exit_timer = 2;
     }
     else if (_selection == -1) {
-      GameModal::game_mode mode =
-          _special_selection == 0 ? GameModal::BOSS_MODE :
-          _special_selection == 1 ? GameModal::HARD_MODE :
-          _special_selection == 2 ? GameModal::FAST_MODE :
-          _special_selection == 3 ? GameModal::WHAT_MODE :
-                                    GameModal::NORMAL_MODE;
+      Mode::mode mode = _special_selection == 0 ? Mode::BOSS :
+                        _special_selection == 1 ? Mode::HARD :
+                        _special_selection == 2 ? Mode::FAST :
+                        _special_selection == 3 ? Mode::WHAT : Mode::NORMAL;
       lib().new_game();
       _modals.add(new GameModal(
           _lib, _save, _settings, &_frame_count, false,
@@ -1225,44 +1165,34 @@ void z0Game::render() const
     lib().render_text(flvec2(4.f, 22.f), "THREE PLAYERS", PANEL_TEXT);
     lib().render_text(flvec2(4.f, 24.f), "FOUR PLAYERS", PANEL_TEXT);
 
-    for (std::size_t i = 0; i < Lib::PLAYERS; i++) {
+    for (std::size_t i = 0; i < PLAYERS; i++) {
+      auto& s = _save.high_scores.get(Mode::BOSS, i, 0);
       std::string score =
-          convert_to_time(_save.high_scores[Lib::PLAYERS][i].score);
-      if (score.length() > SaveData::MAX_SCORE_LENGTH) {
-        score = score.substr(0, SaveData::MAX_SCORE_LENGTH);
-      }
-      std::string name = _save.high_scores[Lib::PLAYERS][i].name;
-      if (name.length() > SaveData::MAX_NAME_LENGTH) {
-        name = name.substr(0, SaveData::MAX_NAME_LENGTH);
-      }
+          convert_to_time(s.score).substr(0, HighScores::MAX_NAME_LENGTH);
+      std::string name = s.name.substr(HighScores::MAX_NAME_LENGTH);
 
       lib().render_text(flvec2(19.f, 18.f + i * 2), score, PANEL_TEXT);
       lib().render_text(flvec2(19.f, 19.f + i * 2), name, PANEL_TEXT);
     }
   }
   else {
-    for (std::size_t i = 0; i < SaveData::NUM_HIGH_SCORES; i++) {
+    for (std::size_t i = 0; i < HighScores::NUM_SCORES; i++) {
       std::stringstream ssi;
       ssi << (i + 1) << ".";
       lib().render_text(flvec2(4.f, 18.f + i), ssi.str(), PANEL_TEXT);
 
-      int32_t n = _selection != -1 ? _players - 1 :
-          _special_selection * Lib::PLAYERS + _players;
-
-      if (_save.high_scores[n][i].score <= 0) {
+      Mode::mode mode = _selection != -1 ? Mode::NORMAL :
+          _special_selection == 1 ? Mode::HARD :
+          _special_selection == 2 ? Mode::FAST : Mode::WHAT;
+      auto& s = _save.high_scores.get(mode, _players, i);
+      if (s.score <= 0) {
         continue;
       }
 
       std::stringstream ss;
-      ss << _save.high_scores[n][i].score;
-      std::string score = ss.str();
-      if (score.length() > SaveData::MAX_SCORE_LENGTH) {
-        score = score.substr(0, SaveData::MAX_SCORE_LENGTH);
-      }
-      std::string name = _save.high_scores[n][i].name;
-      if (name.length() > SaveData::MAX_NAME_LENGTH) {
-        name = name.substr(0, SaveData::MAX_NAME_LENGTH);
-      }
+      ss << s.score;
+      std::string score = ss.str().substr(0, HighScores::MAX_SCORE_LENGTH);
+      std::string name = s.name.substr(0, HighScores::MAX_SCORE_LENGTH);
 
       lib().render_text(flvec2(7.f, 18.f + i), score, PANEL_TEXT);
       lib().render_text(flvec2(19.f, 18.f + i), name, PANEL_TEXT);

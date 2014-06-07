@@ -8,18 +8,55 @@ static const std::string SETTINGS_VOLUME = "Volume";
 static const std::string SETTINGS_PATH = "wiispace.txt";
 static const std::string SAVE_PATH = "wiispace.sav";
 
+std::size_t HighScores::size(Mode::mode mode)
+{
+  return mode == Mode::BOSS ? 1 : NUM_SCORES;
+}
+
+HighScores::high_score& HighScores::get(
+    Mode::mode mode, int32_t players, int32_t index)
+{
+  return mode == Mode::NORMAL ? normal[players][index] :
+         mode == Mode::HARD ? hard[players][index] :
+         mode == Mode::FAST ? fast[players][index] :
+         mode == Mode::WHAT ? what[players][index] : boss[players];
+}
+
+const HighScores::high_score& HighScores::get(
+    Mode::mode mode, int32_t players, int32_t index) const
+{
+  return mode == Mode::NORMAL ? normal[players][index] :
+         mode == Mode::HARD ? hard[players][index] :
+         mode == Mode::FAST ? fast[players][index] :
+         mode == Mode::WHAT ? what[players][index] : boss[players];
+}
+
+bool HighScores::is_high_score(
+    Mode::mode mode, int32_t players, int64_t score) const
+{
+  return get(mode, players, size(mode) - 1).score < score;
+}
+
+void HighScores::add_score(Mode::mode mode, int32_t players,
+                           const std::string& name, int64_t score)
+{
+  for (int32_t find = 0; find < size(mode); ++find) {
+    if (score <= get(mode, players, find).score) {
+      continue;
+    }
+    for (int32_t move = find; 1 + move < size(mode); ++move) {
+      get(mode, players, 1 + move) = get(mode, players, move);
+    }
+    get(mode, players, find).name = name;
+    get(mode, players, find).score = score;
+    break;
+  }
+}
+
 SaveData::SaveData()
   : bosses_killed(0)
   , hard_mode_bosses_killed(0)
 {
-  for (int32_t i = 0; i < 4 * Lib::PLAYERS + 1; ++i) {
-    high_scores.emplace_back();
-    for (int32_t j = 0;
-         j < (i != Lib::PLAYERS ? NUM_HIGH_SCORES : Lib::PLAYERS); ++j) {
-      high_scores.back().emplace_back();
-    }
-  }
-
   std::ifstream file;
   file.open(SAVE_PATH, std::ios::binary);
 
@@ -55,24 +92,31 @@ SaveData::SaveData()
   ssb >> t1777;
 
   int64_t find_total = 0;
-  int32_t i = 0;
-  int32_t j = 0;
+  int32_t table = 0;
+  int32_t players = 0;
+  int32_t index = 0;
   while (getline(decrypted, line)) {
+    auto& s = high_scores.get(Mode::mode(table), players, index);
+
     std::size_t split = line.find(' ');
     std::stringstream ss(line.substr(0, split));
     std::string name;
     if (line.length() > split + 1) {
-      high_scores[i][j].name = line.substr(split + 1);
+      s.name = line.substr(split + 1);
     }
-    ss >> high_scores[i][j].score;
-    find_total += high_scores[i][j].score;
+    ss >> s.score;
+    find_total += s.score;
 
-    j++;
-    if (j >= NUM_HIGH_SCORES || (i == Lib::PLAYERS && j >= Lib::PLAYERS)) {
-      j = 0;
-      i++;
+    ++index;
+    if (index >= high_scores.size(Mode::mode(table))) {
+      index = 0;
+      ++players;
     }
-    if (i >= 4 * Lib::PLAYERS + 1) {
+    if (players >= PLAYERS) {
+      players = 0;
+      ++table;
+    }
+    if (table >= Mode::END_MODES) {
       break;
     }
   }
@@ -80,55 +124,34 @@ SaveData::SaveData()
   if (find_total != total || find_total % 17 != t17 ||
       find_total % 701 != t701 || find_total % 1171 != t1171 ||
       find_total % 1777 != t1777) {
-    high_scores.clear();
-    for (int32_t i = 0; i < 4 * Lib::PLAYERS + 1; ++i) {
-      high_scores.emplace_back();
-      for (int32_t j = 0;
-           j < (i != Lib::PLAYERS ? NUM_HIGH_SCORES : Lib::PLAYERS); ++j) {
-        high_scores.back().emplace_back();
-      }
-    }
-  }
-
-  for (int32_t i = 0; i < 4 * Lib::PLAYERS + 1; i++) {
-    if (i != Lib::PLAYERS) {
-      std::sort(high_scores[i].begin(), high_scores[i].end(), &score_sort);
-    }
+    high_scores = HighScores();
   }
 }
 
 void SaveData::save() const
 {
   int64_t total = 0;
-  for (int32_t i = 0; i < 4 * Lib::PLAYERS + 1; ++i) {
-    for (int32_t j = 0;
-         j < (i != Lib::PLAYERS ? NUM_HIGH_SCORES : Lib::PLAYERS); ++j) {
-      if ((std::size_t) i < high_scores.size() &&
-          (std::size_t) j < high_scores[i].size()) {
-        total += high_scores[i][j].score;
+  for (int32_t mode = 0; mode < Mode::END_MODES; ++mode) {
+    for (int32_t players = 0; players < PLAYERS; ++players) {
+      for (int32_t i = 0; i < high_scores.size(Mode::mode(mode)); ++i) {
+        total += high_scores.get(Mode::mode(mode), players, i).score;
       }
     }
   }
-
   std::stringstream out;
   out << "WiiSPACE v1.3\n" << bosses_killed << " " <<
       hard_mode_bosses_killed << " " << total << " " <<
       (total % 17) << " " << (total % 701) << " " <<
       (total % 1171) << " " << (total % 1777) << "\n";
-
-  for (int32_t i = 0; i < 4 * Lib::PLAYERS + 1; ++i) {
-    for (int32_t j = 0;
-         j < (i != Lib::PLAYERS ? NUM_HIGH_SCORES : Lib::PLAYERS); ++j) {
-      if ((std::size_t) i < high_scores.size() &&
-          (std::size_t) j < high_scores[i].size()) {
-        out << high_scores[i][j].score << " " << high_scores[i][j].name << "\n";
-      }
-      else {
-        out << "0\n";
+  
+  for (int32_t mode = 0; mode < Mode::END_MODES; ++mode) {
+    for (int32_t players = 0; players < PLAYERS; ++players) {
+      for (int32_t i = 0; i < high_scores.size(Mode::mode(mode)); ++i) {
+        const auto& s = high_scores.get(Mode::mode(mode), players, i);
+        out << s.score << " " << s.name << "\n";
       }
     }
   }
-
   std::string encrypted = z::crypt(out.str(), Lib::SUPER_ENCRYPTION_KEY);
   std::ofstream file;
   file.open(SAVE_PATH, std::ios::binary);

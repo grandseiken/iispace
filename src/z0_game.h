@@ -44,7 +44,7 @@ public:
 
 private:
 
-  int64_t get_total_score() const;
+  int64_t get_score() const;
   bool is_high_score() const;
 
   SaveData& _save;
@@ -63,14 +63,6 @@ private:
 class GameModal : public Modal {
 public:
 
-  enum game_mode {
-    NORMAL_MODE,
-    BOSS_MODE,
-    HARD_MODE,
-    FAST_MODE,
-    WHAT_MODE,
-  };
-
   enum boss_list {
     BOSS_1A = 1,
     BOSS_1B = 2,
@@ -83,7 +75,7 @@ public:
 
   GameModal(Lib& lib, SaveData& save, Settings& settings,
             int32_t* frame_count, bool replay, bool can_face_secret_boss,
-            game_mode mode, int32_t player_count);
+            Mode::mode mode, int32_t player_count);
   ~GameModal();
 
   void update(Lib& lib) override;
@@ -95,7 +87,7 @@ public:
   int32_t get_non_wall_count() const;
 
   Lib& lib();
-  game_mode mode() const;
+  Mode::mode mode() const;
   ship_list all_ships(int32_t ship_mask = 0) const;
   ship_list ships_in_radius(const vec2& point, fixed radius,
                             int32_t ship_mask = 0) const;
@@ -123,7 +115,7 @@ private:
   int32_t* _frame_count;
   int32_t _kill_timer;
 
-  game_mode _mode;
+  Mode::mode _mode;
   int32_t _lives;
   bool _game_over;
 
@@ -170,10 +162,10 @@ private:
   bool is_hard_mode_unlocked() const
   {
     return is_boss_mode_unlocked() &&
-        (_save.high_scores[Lib::PLAYERS][0].score > 0 ||
-         _save.high_scores[Lib::PLAYERS][1].score > 0 ||
-         _save.high_scores[Lib::PLAYERS][2].score > 0 ||
-         _save.high_scores[Lib::PLAYERS][3].score > 0);
+        (_save.high_scores.boss[0].score > 0 ||
+         _save.high_scores.boss[1].score > 0 ||
+         _save.high_scores.boss[2].score > 0 ||
+         _save.high_scores.boss[3].score > 0);
   }
 
   bool is_fast_mode_unlocked() const

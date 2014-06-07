@@ -328,7 +328,7 @@ void ChaserBoss::on_destroy()
 
     if (last) {
       set_killed();
-      for (int32_t i = 0; i < Lib::PLAYERS; i++) {
+      for (int32_t i = 0; i < PLAYERS; i++) {
         lib().rumble(i, 25);
       }
       for (const auto& ship : game().players()) {
@@ -348,7 +348,7 @@ void ChaserBoss::on_destroy()
     }
   }
 
-  for (int32_t i = 0; i < Lib::PLAYERS; i++) {
+  for (int32_t i = 0; i < PLAYERS; i++) {
     lib().rumble(i, _split < 3 ? 10 : 3);
   }
 

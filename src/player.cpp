@@ -19,7 +19,7 @@ static const int32_t POWERUP_ROTATE_TIME = 100;
 GameModal::ship_list Player::_kill_queue;
 GameModal::ship_list Player::_shot_sound_queue;
 int32_t Player::_fire_timer;
-Replay Player::replay(0, 0, false);
+Replay Player::replay(0, Mode::NORMAL, false);
 std::size_t Player::replay_frame;
 
 Player::Player(const vec2& position, int32_t player_number)
@@ -185,7 +185,7 @@ void Player::update()
 void Player::render() const
 {
   if (!_kill_timer &&
-      (game().mode() != GameModal::WHAT_MODE || _revive_timer > 0)) {
+      (game().mode() != Mode::WHAT || _revive_timer > 0)) {
     flvec2 t = to_float(_fire_target);
     if (t >= flvec2() && t <= flvec2((float) Lib::WIDTH, (float) Lib::HEIGHT)) {
       lib().render_line(t + flvec2(0, 9), t - flvec2(0, 8), colour());
@@ -199,7 +199,7 @@ void Player::render() const
     }
   }
 
-  if (game().mode() == GameModal::BOSS_MODE) {
+  if (game().mode() == Mode::BOSS) {
     return;
   }
 
@@ -346,7 +346,7 @@ Shot::Shot(const vec2& position, Player* player,
 
 void Shot::render() const
 {
-  if (game().mode() == GameModal::WHAT_MODE) {
+  if (game().mode() == Mode::WHAT) {
     return;
   }
   if (_flash) {
@@ -415,7 +415,7 @@ Powerup::Powerup(const vec2& position, type_t type)
 void Powerup::update()
 {
   shapes()[0]->colour = Player::player_colour(_frame / 2);
-  _frame = (_frame + 1) % (Lib::PLAYERS * 2);
+  _frame = (_frame + 1) % (PLAYERS * 2);
   shapes()[1]->colour = Player::player_colour(_frame / 2);
 
   if (!is_on_screen()) {

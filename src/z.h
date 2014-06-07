@@ -5,6 +5,17 @@
 #include "fix32.h"
 
 typedef uint32_t colour_t;
+static const int32_t PLAYERS = 4;
+struct Mode {
+  enum mode {
+    NORMAL,
+    BOSS,
+    HARD,
+    FAST,
+    WHAT,
+    END_MODES,
+  };
+};
 
 namespace z {
 

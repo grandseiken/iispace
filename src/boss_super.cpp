@@ -240,7 +240,7 @@ void SuperBoss::on_destroy()
         std::make_pair(n, std::make_pair(shape().centre + v, c)));
     n += i;
   }
-  for (int32_t i = 0; i < Lib::PLAYERS; i++) {
+  for (int32_t i = 0; i < PLAYERS; i++) {
     lib().rumble(i, 25);
   }
   play_sound(Lib::SOUND_EXPLOSION);

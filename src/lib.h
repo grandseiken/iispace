@@ -53,7 +53,6 @@ public:
     PAD_GAMEPAD,
   };
 
-  static const int32_t PLAYERS = 4;
   static const int32_t WIDTH = 640;
   static const int32_t HEIGHT = 480;
   static const int32_t TEXT_WIDTH = 16;
