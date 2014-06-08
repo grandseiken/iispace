@@ -1,5 +1,6 @@
 #include "save.h"
 #include "lib.h"
+#include "../gen/iispace.pb.h"
 #include <algorithm>
 #include <fstream>
 
@@ -66,93 +67,66 @@ SaveData::SaveData()
 
   std::stringstream b;
   b << file.rdbuf();
-  std::stringstream decrypted(z::crypt(b.str(), Lib::SUPER_ENCRYPTION_KEY));
+  proto::SaveData proto;
+  proto.ParseFromString(z::crypt(b.str(), Lib::SUPER_ENCRYPTION_KEY));
   file.close();
+  
+  bosses_killed = proto.bosses_killed();
+  hard_mode_bosses_killed = proto.hard_mode_bosses_killed();
 
-  std::string line;
-  getline(decrypted, line);
-  if (line.compare("WiiSPACE v1.3") != 0) {
-    return;
-  }
-
-  int64_t total = 0;
-  int64_t t17 = 0;
-  int64_t t701 = 0;
-  int64_t t1171 = 0;
-  int64_t t1777 = 0;
-
-  getline(decrypted, line);
-  std::stringstream ssb(line);
-  ssb >> bosses_killed;
-  ssb >> hard_mode_bosses_killed;
-  ssb >> total;
-  ssb >> t17;
-  ssb >> t701;
-  ssb >> t1171;
-  ssb >> t1777;
-
-  int64_t find_total = 0;
-  int32_t table = 0;
-  int32_t players = 0;
-  std::size_t index = 0;
-  while (getline(decrypted, line)) {
-    auto& s = high_scores.get(Mode::mode(table), players, index);
-
-    std::size_t split = line.find(' ');
-    std::stringstream ss(line.substr(0, split));
-    std::string name;
-    if (line.length() > split + 1) {
-      s.name = line.substr(split + 1);
-    }
-    ss >> s.score;
-    find_total += s.score;
-
-    ++index;
-    if (index >= high_scores.size(Mode::mode(table))) {
-      index = 0;
+  auto get_mode_table = [&](const proto::ModeTable& in,
+                            HighScores::mode_table& out) {
+    std::size_t players = 0;
+    for (const auto& t : in.table()) {
+      std::size_t index = 0;
+      for (const auto s : t.score()) {
+        out[players][index].name = s.name();
+        out[players][index].score = s.score();
+        ++index;
+      }
       ++players;
     }
-    if (players >= PLAYERS) {
-      players = 0;
-      ++table;
-    }
-    if (table >= Mode::END_MODES) {
-      break;
-    }
-  }
-
-  if (find_total != total || find_total % 17 != t17 ||
-      find_total % 701 != t701 || find_total % 1171 != t1171 ||
-      find_total % 1777 != t1777) {
-    high_scores = HighScores();
+  };
+  get_mode_table(proto.normal(), high_scores.normal);
+  get_mode_table(proto.hard(), high_scores.hard);
+  get_mode_table(proto.fast(), high_scores.fast);
+  get_mode_table(proto.what(), high_scores.what);
+  std::size_t players = 0;
+  for (const auto& s : proto.boss().score()) {
+    high_scores.boss[players].name = s.name();
+    high_scores.boss[players].score = s.score();
   }
 }
 
 void SaveData::save() const
 {
-  int64_t total = 0;
-  for (int32_t mode = 0; mode < Mode::END_MODES; ++mode) {
-    for (int32_t players = 0; players < PLAYERS; ++players) {
-      for (std::size_t i = 0; i < high_scores.size(Mode::mode(mode)); ++i) {
-        total += high_scores.get(Mode::mode(mode), players, i).score;
+  proto::SaveData proto;
+  proto.set_bosses_killed(bosses_killed);
+  proto.set_hard_mode_bosses_killed(hard_mode_bosses_killed);
+  auto put_mode_table = [&](const HighScores::mode_table& in,
+                            proto::ModeTable& out) {
+    for (const auto& t : in) {
+      proto::Table& out_t = *out.add_table();
+      for (const auto& s : t) {
+        proto::Score& out_s = *out_t.add_score();
+        out_s.set_name(s.name);
+        out_s.set_score(s.score);
       }
     }
+  };
+  put_mode_table(high_scores.normal, *proto.mutable_normal());
+  put_mode_table(high_scores.hard, *proto.mutable_hard());
+  put_mode_table(high_scores.fast, *proto.mutable_fast());
+  put_mode_table(high_scores.what, *proto.mutable_what());
+  for (const auto& s : high_scores.boss) {
+    proto::Score& out_s = *proto.mutable_boss()->add_score();
+    out_s.set_name(s.name);
+    out_s.set_score(s.score);
   }
-  std::stringstream out;
-  out << "WiiSPACE v1.3\n" << bosses_killed << " " <<
-      hard_mode_bosses_killed << " " << total << " " <<
-      (total % 17) << " " << (total % 701) << " " <<
-      (total % 1171) << " " << (total % 1777) << "\n";
-  
-  for (int32_t mode = 0; mode < Mode::END_MODES; ++mode) {
-    for (int32_t players = 0; players < PLAYERS; ++players) {
-      for (std::size_t i = 0; i < high_scores.size(Mode::mode(mode)); ++i) {
-        const auto& s = high_scores.get(Mode::mode(mode), players, i);
-        out << s.score << " " << s.name << "\n";
-      }
-    }
-  }
-  std::string encrypted = z::crypt(out.str(), Lib::SUPER_ENCRYPTION_KEY);
+
+  std::string temp;
+  proto.SerializeToString(&temp);
+  std::string encrypted = z::crypt(temp, Lib::SUPER_ENCRYPTION_KEY);
   std::ofstream file;
   file.open(SAVE_PATH, std::ios::binary);
   file << encrypted;

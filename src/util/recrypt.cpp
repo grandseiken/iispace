@@ -1,6 +1,9 @@
+#include <algorithm>
 #include <fstream>
 #include <iostream>
 #include <sstream>
+#include "../z.h"
+#include "../../gen/iispace.pb.h"
 
 std::string crypt(const std::string& text, const std::string& key)
 {
@@ -29,6 +32,71 @@ std::string read_file(const std::string& filename)
   return contents;
 }
 
+void fixed_read(fixed& f, std::stringstream& in)
+{
+  auto t = f.to_internal();
+  in.read((char*) &t, sizeof(t));
+  f = fixed::from_internal(t);
+}
+
+proto::Replay convert(const std::string& contents)
+{
+  std::string decompress;
+  decompress = z::decompress_string(contents);
+  std::stringstream dc(decompress,
+                       std::ios::in | std::ios::out | std::ios::binary);
+
+  std::string line;
+  getline(dc, line);
+  if (line.compare("WiiSPACE v1.3 replay") != 0) {
+    throw std::runtime_error("invalid replay");
+  }
+  proto::Replay replay;
+  replay.set_game_version("WiiSPACE v1.3 replay");
+
+  getline(dc, line);
+  std::stringstream ss(line);
+  int32_t players;
+  ss >> players;
+  bool can_face_secret_boss;
+  ss >> can_face_secret_boss;
+  replay.set_players(std::max(1, std::min(4, players)));
+  replay.set_can_face_secret_boss(can_face_secret_boss);
+
+  Mode::mode mode;
+  bool bb;
+  ss >> bb;
+  mode = Mode::mode(mode | bb * Mode::BOSS);
+  ss >> bb;
+  mode = Mode::mode(mode | bb * Mode::HARD);
+  ss >> bb;
+  mode = Mode::mode(mode | bb * Mode::FAST);
+  ss >> bb;
+  mode = Mode::mode(mode | bb * Mode::WHAT);
+  int32_t seed;
+  ss >> seed;
+  replay.set_game_mode(mode);
+  replay.set_seed(seed);
+
+  while (!dc.eof()) {
+    proto::PlayerFrame& frame = *replay.add_player_frame();
+    fixed fix;
+    fixed_read(fix, dc);
+    frame.set_velocity_x(fix.to_internal());
+    fixed_read(fix, dc);
+    frame.set_velocity_y(fix.to_internal());
+    fixed_read(fix, dc);
+    frame.set_target_x(fix.to_internal());
+    fixed_read(fix, dc);
+    frame.set_target_y(fix.to_internal());
+    char k;
+    dc.read(&k, sizeof(char));
+    frame.set_keys(k);
+  }
+
+  return replay;
+}
+
 int main(int argc, char** argv)
 {
   if (argc < 4) {
@@ -45,8 +113,11 @@ int main(int argc, char** argv)
     std::cout << "re-encrypting " << filename << std::endl;
 
     std::string temp = crypt(read_file(filename), old_key);
+    proto::Replay replay = convert(temp);
+    replay.SerializeToString(&temp);
+
     std::ofstream out(filename + ".recrypt", std::ios::binary);
-    out << crypt(temp, new_key);
+    out << crypt(z::compress_string(temp), new_key);
     out.close();
   }
   return 0;

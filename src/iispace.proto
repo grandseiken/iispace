@@ -1,3 +1,4 @@
+option optimize_for = LITE_RUNTIME;
 package proto;
 
 message PlayerFrame {
@@ -11,12 +12,13 @@ message PlayerFrame {
 }
 
 message Replay {
-  required int32 game_mode = 1;
-  required int32 players = 2;
-  required int64 seed = 3;
-  optional bool can_face_secret_boss = 4;
+  required string game_version = 1;
+  required int32 game_mode = 2;
+  required int32 players = 3;
+  required int64 seed = 4;
 
-  repeated PlayerFrame player_frames = 5;
+  repeated PlayerFrame player_frame = 5;
+  optional bool can_face_secret_boss = 99;
 }
 
 message Score {
@@ -33,12 +35,12 @@ message ModeTable {
 }
 
 message SaveData {
-  required int32 bosses_killed = 1;
-  required int32 hard_mode_bosses_killed = 2;
+  optional int32 bosses_killed = 1;
+  optional int32 hard_mode_bosses_killed = 2;
 
-  required ModeTable normal = 3;
-  required ModeTable hard = 4;
-  required ModeTable fast = 5;
-  required ModeTable what = 6;
-  required Table boss = 7;
+  optional ModeTable normal = 3;
+  optional ModeTable hard = 4;
+  optional ModeTable fast = 5;
+  optional ModeTable what = 6;
+  optional Table boss = 7;
 }

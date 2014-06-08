@@ -47,6 +47,8 @@
     <ClCompile Include="..\dependencies\zlib_1_2_8\uncompr.c">
       <Filter>zlib</Filter>
     </ClCompile>
+    <ClCompile Include="..\src\z.cpp" />
+    <ClCompile Include="..\gen\iispace.pb.cc" />
   </ItemGroup>
   <ItemGroup>
     <Filter Include="zlib">

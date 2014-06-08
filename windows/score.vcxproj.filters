@@ -68,6 +68,9 @@
     <ClCompile Include="..\src\boss_deathray.cpp" />
     <ClCompile Include="..\src\boss_super.cpp" />
     <ClCompile Include="..\src\modal.cpp" />
+    <ClCompile Include="..\gen\iispace.pb.cc">
+      <Filter>gen</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\src\lib.h" />
@@ -91,10 +94,16 @@
     <ClInclude Include="..\src\boss_deathray.h" />
     <ClInclude Include="..\src\boss_super.h" />
     <ClInclude Include="..\src\modal.h" />
+    <ClInclude Include="..\gen\iispace.pb.h">
+      <Filter>gen</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <Filter Include="zlib">
       <UniqueIdentifier>{f8a143b3-0a8e-4152-8590-37c39420b2e9}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="gen">
+      <UniqueIdentifier>{e171efa9-641d-4f8c-afe7-50511d427ee1}</UniqueIdentifier>
     </Filter>
   </ItemGroup>
   <ItemGroup>

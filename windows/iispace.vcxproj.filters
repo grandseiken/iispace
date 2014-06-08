@@ -4,6 +4,9 @@
     <Filter Include="zlib">
       <UniqueIdentifier>{5a548b21-43d9-4626-b2b6-2b56b0da81dd}</UniqueIdentifier>
     </Filter>
+    <Filter Include="gen">
+      <UniqueIdentifier>{210deb91-3ade-4aa4-b30c-4db370d3e14e}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="..\dependencies\zlib_1_2_8\zutil.c">
@@ -73,6 +76,9 @@
     <ClCompile Include="..\src\boss_deathray.cpp" />
     <ClCompile Include="..\src\boss_super.cpp" />
     <ClCompile Include="..\src\modal.cpp" />
+    <ClCompile Include="..\gen\iispace.pb.cc">
+      <Filter>gen</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\src\fix32.h" />
@@ -96,6 +102,9 @@
     <ClInclude Include="..\src\boss_deathray.h" />
     <ClInclude Include="..\src\boss_super.h" />
     <ClInclude Include="..\src\modal.h" />
+    <ClInclude Include="..\gen\iispace.pb.h">
+      <Filter>gen</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <None Include="..\src\iispace.proto" />
