@@ -4,8 +4,6 @@
 #include <fstream>
 
 Replay::Replay(const std::string& path)
-  : recording(false)
-  , okay(true)
 {
   Lib::set_working_directory(true);
   std::ifstream file;
@@ -13,10 +11,8 @@ Replay::Replay(const std::string& path)
   std::string line;
 
   if (!file) {
-    okay = false;
-    error = "Cannot open:\n" + path;
     Lib::set_working_directory(false);
-    return;
+    throw std::runtime_error("Cannot open:\n" + path);
   }
 
   std::stringstream b;
@@ -26,24 +22,17 @@ Replay::Replay(const std::string& path)
     temp = z::decompress_string(z::crypt(b.str(), Lib::SUPER_ENCRYPTION_KEY));
   }
   catch (std::exception& e) {
-    okay = false;
-    error = e.what();
     Lib::set_working_directory(false);
-    return;
+    throw std::runtime_error(e.what());
   }
   file.close();
   Lib::set_working_directory(false);
   if (!replay.ParseFromString(temp)) {
-    okay = false;
-    error = "Corrupted replay:\n" + path;
-    return;
+    throw std::runtime_error("Corrupted replay:\n" + path);
   }
-  z::seed((int32_t) replay.seed());
 }
 
 Replay::Replay(int32_t players, Mode::mode mode, bool can_face_secret_boss)
-  : recording(true)
-  , okay(true)
 {
   replay.set_game_version("WiiSPACE v1.3 replay");
   replay.set_game_mode(mode);
@@ -52,7 +41,6 @@ Replay::Replay(int32_t players, Mode::mode mode, bool can_face_secret_boss)
 
   int32_t seed = int32_t(time(0));
   replay.set_seed(seed);
-  z::seed((int32_t) seed);
 }
 
 void Replay::record(const vec2& velocity, const vec2& target, int32_t keys)
@@ -65,12 +53,8 @@ void Replay::record(const vec2& velocity, const vec2& target, int32_t keys)
   frame.set_keys(keys);
 }
 
-void Replay::end_recording(const std::string& name, int64_t score) const
+void Replay::write(const std::string& name, int64_t score) const
 {
-  if (!recording) {
-    return;
-  }
-
   std::stringstream ss;
   ss << "replays/" << replay.seed() << "_" <<
       replay.players() << "p_" <<

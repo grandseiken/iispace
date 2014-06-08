@@ -2,16 +2,36 @@
 #define IISPACE_SRC_PLAYER_H
 
 #include "ship.h"
-#include "replay.h"
+
+class Player;
+struct PlayerInput {
+  virtual void get(const Player& player,
+                   vec2& velocity, vec2& target, int32_t& keys) = 0;
+  virtual ~PlayerInput() {}
+};
+struct ReplayPlayerInput : PlayerInput {
+  ReplayPlayerInput(const Replay& replay);
+  void get(const Player& player,
+           vec2& velocity, vec2& target, int32_t& keys) override;
+
+  const Replay& replay;
+  std::size_t replay_frame;
+};
+struct LibPlayerInput : PlayerInput {
+  LibPlayerInput(Lib& lib, Replay& replay);
+  void get(const Player& player,
+           vec2& velocity, vec2& target, int32_t& keys) override;
+
+  Lib& lib;
+  Replay& replay;
+};
 
 class Player : public Ship {
 public:
 
   static const int32_t BOMB_DAMAGE = 50;
 
-  // Player ship
-  //------------------------------
-  Player(const vec2& position, int32_t player_number);
+  Player(PlayerInput& input, const vec2& position, int32_t player_number);
   ~Player() override;
 
   int32_t player_number() const
@@ -19,11 +39,6 @@ public:
     return _player_number;
   }
 
-  static Replay replay;
-  static std::size_t replay_frame;
-
-  // Player behaviour
-  //------------------------------
   void update() override;
   void render() const override;
   void damage();
@@ -69,8 +84,7 @@ public:
 
 private:
 
-  // Internals
-  //------------------------------
+  PlayerInput& _input;
   int32_t _player_number;
   int64_t _score;
   int32_t _multiplier;

@@ -1,8 +1,43 @@
 #include "player.h"
-#include "lib.h"
 #include "enemy.h"
+#include "lib.h"
+#include "replay.h"
 
 #include <algorithm>
+
+ReplayPlayerInput::ReplayPlayerInput(const Replay& replay)
+  : replay(replay)
+  , replay_frame(0)
+{
+}
+
+void ReplayPlayerInput::get(
+    const Player& player, vec2& velocity, vec2& target, int32_t& keys)
+{
+  const auto& pf = replay.replay.player_frame(replay_frame++);
+  velocity = vec2(fixed::from_internal(pf.velocity_x()),
+                  fixed::from_internal(pf.velocity_y()));
+  target = vec2(fixed::from_internal(pf.target_x()),
+                fixed::from_internal(pf.target_y()));
+  keys = pf.keys();
+}
+
+LibPlayerInput::LibPlayerInput(Lib& lib, Replay& replay)
+  : lib(lib)
+  , replay(replay)
+{
+}
+
+void LibPlayerInput::get(
+    const Player& player, vec2& velocity, vec2& target, int32_t& keys)
+{
+  velocity = lib.get_move_velocity(player.player_number());
+  target = lib.get_fire_target(player.player_number(), player.shape().centre);
+  keys = int32_t(
+      lib.is_key_held(player.player_number(), Lib::KEY_FIRE)) |
+      (lib.is_key_pressed(player.player_number(), Lib::KEY_BOMB) << 1);
+  replay.record(velocity, target, keys);
+}
 
 static const fixed PLAYER_SPEED = 5;
 static const fixed SHOT_SPEED = 10;
@@ -19,11 +54,10 @@ static const int32_t POWERUP_ROTATE_TIME = 100;
 GameModal::ship_list Player::_kill_queue;
 GameModal::ship_list Player::_shot_sound_queue;
 int32_t Player::_fire_timer;
-Replay Player::replay(0, Mode::NORMAL, false);
-std::size_t Player::replay_frame;
 
-Player::Player(const vec2& position, int32_t player_number)
+Player::Player(PlayerInput& input, const vec2& position, int32_t player_number)
   : Ship(position, SHIP_PLAYER)
+  , _input(input)
   , _player_number(player_number)
   , _score(0)
   , _multiplier(1)
@@ -54,23 +88,7 @@ void Player::update()
 {
   vec2 velocity;
   int32_t keys = 0;
-
-  if (replay.recording) {
-    velocity = lib().get_move_velocity(_player_number);
-    _fire_target = lib().get_fire_target(_player_number, shape().centre);
-    keys = int32_t(lib().is_key_held(_player_number, Lib::KEY_FIRE)) |
-           (lib().is_key_pressed(_player_number, Lib::KEY_BOMB) << 1);
-    replay.record(velocity, _fire_target, keys);
-  }
-  else if (int32_t(replay_frame) < replay.replay.player_frame_size()) {
-    const auto& pf = replay.replay.player_frame(replay_frame);
-    velocity = vec2(fixed::from_internal(pf.velocity_x()),
-                    fixed::from_internal(pf.velocity_y()));
-    _fire_target = vec2(fixed::from_internal(pf.target_x()),
-                        fixed::from_internal(pf.target_y()));
-    keys = pf.keys();
-    ++replay_frame;
-  }
+  _input.get(*this, velocity, _fire_target, keys);
 
   for (auto it = _shot_sound_queue.begin();
         it != _shot_sound_queue.end(); ++it) {

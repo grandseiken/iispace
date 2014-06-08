@@ -179,7 +179,7 @@ void HighScoreModal::update(Lib& lib)
   int32_t players = _game.players().size();
 
 #ifdef PLATFORM_SCORE
-  std::cout << Player::replay.replay.seed() << "\n" << players << "\n" <<
+  std::cout << _game.replay().replay.seed() << "\n" << players << "\n" <<
       (mode == Mode::BOSS) << "\n" << (mode == Mode::HARD) << "\n" <<
       (mode == Mode::FAST) << "\n" << (mode == Mode::WHAT) << "\n" <<
       get_score() << "\n" << std::flush;
@@ -188,7 +188,9 @@ void HighScoreModal::update(Lib& lib)
 
   if (!is_high_score()) {
     if (lib.is_key_pressed(Lib::KEY_MENU)) {
-      Player::replay.end_recording("untitled", get_score());
+      if (_game.replay_recording()) {
+        _game.replay().write("untitled", get_score());
+      }
       _save.save();
       lib.play_sound(Lib::SOUND_MENU_ACCEPT);
       quit();
@@ -230,7 +232,9 @@ void HighScoreModal::update(Lib& lib)
   if (lib.is_key_pressed(Lib::KEY_MENU)) {
     lib.play_sound(Lib::SOUND_MENU_ACCEPT);
     _save.high_scores.add_score(mode, players - 1, _enter_name, get_score());
-    Player::replay.end_recording(_enter_name, get_score());
+    if (_game.replay_recording()) {
+      _game.replay().write(_enter_name, get_score());
+    }
     _save.save();
     quit();
   }
@@ -369,14 +373,14 @@ int64_t HighScoreModal::get_score() const
 
 bool HighScoreModal::is_high_score() const
 {
-  return Player::replay.recording && _save.high_scores.is_high_score(
+  return _game.replay_recording() && _save.high_scores.is_high_score(
       _game.mode(), _game.players().size() - 1, get_score());
 }
 
 GameModal::GameModal(
     Lib& lib, SaveData& save, Settings& settings,
-    int32_t* frame_count, bool replay, bool can_face_secret_boss,
-    Mode::mode mode, int32_t player_count)
+    int32_t* frame_count, Replay* replay,
+    bool can_face_secret_boss, Mode::mode mode, int32_t player_count)
   : Modal(true, true)
   , _lib(lib)
   , _save(save)
@@ -386,6 +390,9 @@ GameModal::GameModal(
   , _kill_timer(0)
   , _mode(mode)
   , _lives(0)
+  , _replay_recording(!replay)
+  , _replay(player_count, mode, can_face_secret_boss)
+  , _input(new LibPlayerInput(lib, _replay))
   , _controllers_connected(0)
   , _controllers_dialog(true)
   , _show_hp_bar(false)
@@ -393,10 +400,12 @@ GameModal::GameModal(
 {
   static const int32_t STARTING_LIVES = 2;
   static const int32_t BOSSMODE_LIVES = 1;
-
-  if (!replay) {
-    Player::replay = Replay(player_count, mode, can_face_secret_boss);
+  if (replay) {
+    _replay = *replay;
+    _input.reset(new ReplayPlayerInput(_replay));
   }
+  z::seed((int32_t) _replay.replay.seed());
+
   _mode = mode;
   _lives = mode == Mode::BOSS ? player_count * BOSSMODE_LIVES : STARTING_LIVES;
   *_frame_count = _mode == Mode::FAST ? 2 : 1;
@@ -404,7 +413,7 @@ GameModal::GameModal(
   Stars::clear();
   for (int32_t i = 0; i < player_count; ++i) {
     vec2 v((1 + i) * Lib::WIDTH / (1 + player_count), Lib::HEIGHT / 2);
-    Player* p = new Player(v, i);
+    Player* p = new Player(*_input, v, i);
     add_ship(p);
     _player_list.push_back(p);
   }
@@ -439,7 +448,7 @@ void GameModal::update(Lib& lib)
       _mode == Mode::HARD ? 128 :
       _mode == Mode::FAST ? 192 :
       _mode == Mode::WHAT ? (lib.get_colour_cycle() + 1) % 256 : 0);
-  if (Player::replay.recording) {
+  if (_replay_recording) {
     *_frame_count = _mode == Mode::FAST ? 2 : 1;
   }
 
@@ -448,7 +457,7 @@ void GameModal::update(Lib& lib)
     controllers += lib.get_pad_type(i);
   }
   if (controllers < _controllers_connected &&
-      !_controllers_dialog && Player::replay.recording) {
+      !_controllers_dialog && _replay_recording) {
     _controllers_dialog = true;
     lib.play_sound(Lib::SOUND_MENU_ACCEPT);
   }
@@ -472,7 +481,7 @@ void GameModal::update(Lib& lib)
     return;
   }
 
-  if (!Player::replay.recording) {
+  if (!_replay_recording) {
     if (lib.is_key_pressed(Lib::KEY_BOMB)) {
       *_frame_count *= 2;
     }
@@ -591,7 +600,7 @@ void GameModal::render(Lib& lib) const
 
       std::stringstream ss2;
       int32_t pads = lib.get_pad_type(i);
-      if (!Player::replay.recording) {
+      if (!_replay_recording) {
         ss2 << "REPLAY";
         pads = 1;
       }
@@ -701,18 +710,34 @@ void GameModal::render(Lib& lib) const
         z0Game::PANEL_TRAN);
   }
 
-  if (!Player::replay.recording) {
+  if (!_replay_recording) {
+    auto input = (ReplayPlayerInput*) _input.get();
     int32_t x = _mode == Mode::FAST ? *_frame_count / 2 : *_frame_count;
     std::stringstream ss;
     ss << x << "X " <<
-        int32_t(100 * float(Player::replay_frame) /
-        Player::replay.replay.player_frame_size()) << "%";
+        int32_t(100 * float(input->replay_frame) /
+        input->replay.replay.player_frame_size()) << "%";
 
     lib.render_text(
         flvec2(Lib::WIDTH / (2.f * Lib::TEXT_WIDTH) - ss.str().length() / 2,
                 Lib::HEIGHT / Lib::TEXT_HEIGHT - 3.f),
         ss.str(), z0Game::PANEL_TRAN);
   }
+}
+
+const Replay& GameModal::replay() const
+{
+  return _replay;
+}
+
+bool GameModal::replay_recording() const
+{
+  return _replay_recording;
+}
+
+Lib& GameModal::lib()
+{
+  return _lib;
 }
 
 Mode::mode GameModal::mode() const
@@ -741,11 +766,6 @@ void GameModal::add_particle(const Particle& particle)
 int32_t GameModal::get_non_wall_count() const
 {
   return _overmind->count_non_wall_enemies();
-}
-
-Lib& GameModal::lib()
-{
-  return _lib;
 }
 
 GameModal::ship_list GameModal::all_ships(int32_t ship_mask) const
@@ -883,7 +903,7 @@ void GameModal::render_hp_bar(float fill)
 
 void GameModal::set_boss_killed(boss_list boss)
 {
-  if (!Player::replay.recording) {
+  if (!_replay_recording) {
     return;
   }
   if (boss == BOSS_3A || (_mode != Mode::BOSS && _mode != Mode::NORMAL)) {
@@ -905,20 +925,19 @@ z0Game::z0Game(Lib& lib, const std::vector<std::string>& args)
   lib.set_volume(_settings.volume.to_int());
 
   if (!args.empty()) {
-    Player::replay = Replay(args[0]);
-    Player::replay_frame = 0;
-    if (Player::replay.okay) {
-      _player_select = Player::replay.replay.players();
+    try {
+      Replay replay(args[0]);
+      _player_select = replay.replay.players();
       lib.set_player_count(_player_select);
       lib.new_game();
       _modals.add(new GameModal(
-          _lib, _save, _settings, &_frame_count, true,
-          Player::replay.replay.can_face_secret_boss(),
-          Mode::mode(Player::replay.replay.game_mode()),
-          Player::replay.replay.players()));
+          _lib, _save, _settings, &_frame_count, &replay,
+          replay.replay.can_face_secret_boss(),
+          Mode::mode(replay.replay.game_mode()), replay.replay.players()));
     }
-    else {
+    catch (const std::runtime_error& e) {
       _exit_timer = 256;
+      _exit_error = e.what();
     }
   }
 }
@@ -1000,7 +1019,7 @@ bool z0Game::update()
     lib().set_player_count(_player_select);
   }
 
-  if (_menu_select == -1) {
+  if (_menu_select == MENU_SPECIAL) {
     Mode::mode t = _mode_select;
     if (lib().is_key_pressed(Lib::KEY_LEFT)) {
       _mode_select = std::max(Mode::BOSS, Mode::mode(_mode_select - 1));
@@ -1052,10 +1071,9 @@ bool z0Game::update()
 
 void z0Game::render() const
 {
-  if (_exit_timer > 0 &&
-      !Player::replay.okay && !Player::replay.error.empty()) {
+  if (_exit_timer > 0 && !_exit_error.empty()) {
     int32_t y = 2;
-    std::string s = Player::replay.error;
+    std::string s = _exit_error;
     std::size_t i;
     while ((i = s.find_first_of("\n")) != std::string::npos) {
       std::string t = s.substr(0, i);
@@ -1137,7 +1155,7 @@ void z0Game::render() const
   s += _menu_select == MENU_SPECIAL ?
       (_mode_select == Mode::BOSS ? "BOSS MODE" :
        _mode_select == Mode::HARD ? "HARD MODE (" + ss.str() + "P)" :
-       _mode_select == Mode::WHAT ? "FAST MODE (" + ss.str() + "P)" :
+       _mode_select == Mode::FAST ? "FAST MODE (" + ss.str() + "P)" :
         "W-HAT MODE (" + ss.str() + "P)") :
       _player_select == 1 ? "ONE PLAYER" :
       _player_select == 2 ? "TWO PLAYERS" :

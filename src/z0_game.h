@@ -10,6 +10,7 @@
 #include "z.h"
 
 struct Particle;
+struct PlayerInput;
 class GameModal;
 class Overmind;
 class Player;
@@ -74,20 +75,23 @@ public:
   };
 
   GameModal(Lib& lib, SaveData& save, Settings& settings,
-            int32_t* frame_count, bool replay, bool can_face_secret_boss,
-            Mode::mode mode, int32_t player_count);
+            int32_t* frame_count, Replay* replay,
+            bool can_face_secret_boss, Mode::mode mode, int32_t player_count);
   ~GameModal();
 
   void update(Lib& lib) override;
   void render(Lib& lib) const override;
+
+  const Replay& replay() const;
+  bool replay_recording() const;
+  Lib& lib();
+  Mode::mode mode() const;
 
   typedef std::vector<Ship*> ship_list;
   void add_ship(Ship* ship);
   void add_particle(const Particle& particle);
   int32_t get_non_wall_count() const;
 
-  Lib& lib();
-  Mode::mode mode() const;
   ship_list all_ships(int32_t ship_mask = 0) const;
   ship_list ships_in_radius(const vec2& point, fixed radius,
                             int32_t ship_mask = 0) const;
@@ -117,18 +121,21 @@ private:
 
   Mode::mode _mode;
   int32_t _lives;
+  bool _replay_recording;
+  Replay _replay;
 
+  std::unique_ptr<PlayerInput> _input;
   std::unique_ptr<Overmind> _overmind;
   std::vector<Particle> _particles;
   std::vector<std::unique_ptr<Ship>> _ships;
   ship_list _player_list;
   ship_list _collisions;
 
-  mutable bool _show_hp_bar;
-  mutable float _fill_hp_bar;
-
   int32_t _controllers_connected;
   bool _controllers_dialog;
+
+  mutable bool _show_hp_bar;
+  mutable float _fill_hp_bar;
 
 };
 
@@ -169,6 +176,7 @@ private:
   int32_t _player_select;
   Mode::mode _mode_select;
   int32_t _exit_timer;
+  std::string _exit_error;
 
   SaveData _save;
   Settings _settings;
