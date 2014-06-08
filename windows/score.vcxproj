@@ -80,6 +80,11 @@
     <ClCompile Include="..\src\z.cpp" />
     <ClCompile Include="..\src\z0_game.cpp" />
   </ItemGroup>
+  <ItemGroup>
+    <None Include="..\src\iispace.proto">
+      <FileType>Document</FileType>
+    </None>
+  </ItemGroup>
   <PropertyGroup Label="Globals">
     <ProjectGuid>{B62010E9-1F96-4403-A4B4-3C841309BE3E}</ProjectGuid>
     <RootNamespace>gamepad</RootNamespace>
@@ -146,7 +151,7 @@
       <WarningLevel>Level3</WarningLevel>
       <Optimization>Disabled</Optimization>
       <SDLCheck>true</SDLCheck>
-      <AdditionalIncludeDirectories>..\dependencies\ois_1_3\includes;..\dependencies\zlib_1_2_8;..\dependencies\sfml_1_6\include</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>..\dependencies\protobuf_2_5_0\src;..\dependencies\zlib_1_2_8</AdditionalIncludeDirectories>
       <PreprocessorDefinitions>_CRT_SECURE_NO_WARNINGS;_CRT_NONSTDC_NO_DEPRECATE;PLATFORM_SCORE</PreprocessorDefinitions>
     </ClCompile>
     <Link>
@@ -155,13 +160,19 @@
       <AdditionalDependencies>OIS_static_d.lib;sfml-audio-s-d.lib;sfml-graphics-s-d.lib;sfml-main-d.lib;sfml-system-s-d.lib;sfml-window-s-d.lib;freetype.lib;OpenAL32.lib;sndfile.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <SubSystem>Console</SubSystem>
     </Link>
+    <PreBuildEvent>
+      <Command>..\dependencies\protobuf_2_5_0\vsprojects\Release\protoc --cpp_out=../gen --proto_path=../src ../src/iispace.proto</Command>
+    </PreBuildEvent>
+    <PreBuildEvent>
+      <Message>Protobufs</Message>
+    </PreBuildEvent>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <ClCompile>
       <WarningLevel>Level3</WarningLevel>
       <Optimization>Disabled</Optimization>
       <SDLCheck>true</SDLCheck>
-      <AdditionalIncludeDirectories>..\dependencies\ois_1_3\includes;..\dependencies\zlib_1_2_8;..\dependencies\sfml_1_6\include</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>..\dependencies\protobuf_2_5_0\src;..\dependencies\zlib_1_2_8</AdditionalIncludeDirectories>
       <PreprocessorDefinitions>_CRT_SECURE_NO_WARNINGS;_CRT_NONSTDC_NO_DEPRECATE;PLATFORM_SCORE;PLATFORM_64</PreprocessorDefinitions>
     </ClCompile>
     <Link>
@@ -170,6 +181,12 @@
       <AdditionalDependencies>OIS_d.lib;sfml-audio-s-d.lib;sfml-graphics-s-d.lib;sfml-main-d.lib;sfml-system-s-d.lib;sfml-window-s-d.lib;freetype.lib;OpenAL32.lib;sndfile.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <SubSystem>Console</SubSystem>
     </Link>
+    <PreBuildEvent>
+      <Command>..\dependencies\protobuf_2_5_0\vsprojects\Release\protoc --cpp_out=../gen --proto_path=../src ../src/iispace.proto</Command>
+    </PreBuildEvent>
+    <PreBuildEvent>
+      <Message>Protobufs</Message>
+    </PreBuildEvent>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
     <ClCompile>
@@ -178,7 +195,7 @@
       <FunctionLevelLinking>true</FunctionLevelLinking>
       <IntrinsicFunctions>true</IntrinsicFunctions>
       <SDLCheck>true</SDLCheck>
-      <AdditionalIncludeDirectories>..\dependencies\ois_1_3\includes;..\dependencies\zlib_1_2_8;..\dependencies\sfml_1_6\include</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>..\dependencies\protobuf_2_5_0\src;..\dependencies\zlib_1_2_8</AdditionalIncludeDirectories>
       <PreprocessorDefinitions>_CRT_SECURE_NO_WARNINGS;_CRT_NONSTDC_NO_DEPRECATE;PLATFORM_SCORE</PreprocessorDefinitions>
     </ClCompile>
     <Link>
@@ -189,6 +206,12 @@
       <AdditionalDependencies>OIS_static.lib;sfml-audio-s.lib;sfml-graphics-s.lib;sfml-main.lib;sfml-system-s.lib;sfml-window-s.lib;freetype.lib;OpenAL32.lib;sndfile.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <SubSystem>Console</SubSystem>
     </Link>
+    <PreBuildEvent>
+      <Command>..\dependencies\protobuf_2_5_0\vsprojects\Release\protoc --cpp_out=../gen --proto_path=../src ../src/iispace.proto</Command>
+    </PreBuildEvent>
+    <PreBuildEvent>
+      <Message>Protobufs</Message>
+    </PreBuildEvent>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <ClCompile>
@@ -197,7 +220,7 @@
       <FunctionLevelLinking>true</FunctionLevelLinking>
       <IntrinsicFunctions>true</IntrinsicFunctions>
       <SDLCheck>true</SDLCheck>
-      <AdditionalIncludeDirectories>..\dependencies\ois_1_3\includes;..\dependencies\zlib_1_2_8;..\dependencies\sfml_1_6\include</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>..\dependencies\protobuf_2_5_0\src;..\dependencies\zlib_1_2_8</AdditionalIncludeDirectories>
       <PreprocessorDefinitions>_CRT_SECURE_NO_WARNINGS;_CRT_NONSTDC_NO_DEPRECATE;PLATFORM_SCORE;PLATFORM_64</PreprocessorDefinitions>
     </ClCompile>
     <Link>
@@ -208,6 +231,12 @@
       <AdditionalDependencies>OIS.lib;sfml-audio-s.lib;sfml-graphics-s.lib;sfml-main.lib;sfml-system-s.lib;sfml-window-s.lib;freetype.lib;OpenAL32.lib;sndfile.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <SubSystem>Console</SubSystem>
     </Link>
+    <PreBuildEvent>
+      <Command>..\dependencies\protobuf_2_5_0\vsprojects\Release\protoc --cpp_out=../gen --proto_path=../src ../src/iispace.proto</Command>
+    </PreBuildEvent>
+    <PreBuildEvent>
+      <Message>Protobufs</Message>
+    </PreBuildEvent>
   </ItemDefinitionGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

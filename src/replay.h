@@ -20,9 +20,9 @@ struct Replay {
   bool okay;
   std::string error;
 
-  int64_t seed;
-  int32_t players;
   Mode::mode mode;
+  int32_t players;
+  int64_t seed;
   bool can_face_secret_boss;
 
   std::vector<PlayerFrame> player_frames;

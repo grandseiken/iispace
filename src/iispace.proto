@@ -1,0 +1,44 @@
+package proto;
+
+message PlayerFrame {
+  required int64 velocity_x = 1;
+  required int64 velocity_y = 2;
+
+  required int64 target_x = 3;
+  required int64 target_y = 4;
+
+  required int32 keys = 5;
+}
+
+message Replay {
+  required int32 game_mode = 1;
+  required int32 players = 2;
+  required int64 seed = 3;
+  optional bool can_face_secret_boss = 4;
+
+  repeated PlayerFrame player_frames = 5;
+}
+
+message Score {
+  required string name = 1;
+  required int64 score = 2;
+}
+
+message Table {
+  repeated Score score = 1;
+}
+
+message ModeTable {
+  repeated Table table = 1;
+}
+
+message SaveData {
+  required int32 bosses_killed = 1;
+  required int32 hard_mode_bosses_killed = 2;
+
+  required ModeTable normal = 3;
+  required ModeTable hard = 4;
+  required ModeTable fast = 5;
+  required ModeTable what = 6;
+  required Table boss = 7;
+}

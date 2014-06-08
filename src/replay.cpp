@@ -1,5 +1,6 @@
 #include "replay.h"
 #include "z0_game.h"
+#include "../gen/iispace.pb.h"
 #include <algorithm>
 #include <fstream>
 

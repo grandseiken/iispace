@@ -97,4 +97,7 @@
       <UniqueIdentifier>{f8a143b3-0a8e-4152-8590-37c39420b2e9}</UniqueIdentifier>
     </Filter>
   </ItemGroup>
+  <ItemGroup>
+    <None Include="..\src\iispace.proto" />
+  </ItemGroup>
 </Project>

@@ -97,4 +97,7 @@
     <ClInclude Include="..\src\boss_super.h" />
     <ClInclude Include="..\src\modal.h" />
   </ItemGroup>
+  <ItemGroup>
+    <None Include="..\src\iispace.proto" />
+  </ItemGroup>
 </Project>
