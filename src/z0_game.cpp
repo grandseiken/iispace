@@ -386,7 +386,6 @@ GameModal::GameModal(
   , _kill_timer(0)
   , _mode(mode)
   , _lives(0)
-  , _game_over(false)
   , _controllers_connected(0)
   , _controllers_dialog(true)
   , _show_hp_bar(false)
@@ -427,14 +426,10 @@ GameModal::~GameModal()
 
 void GameModal::update(Lib& lib)
 {
-  if (_game_over) {
-    quit();
-    return;
-  }
   if (_pause_output == PauseModal::END_GAME) {
     add(new HighScoreModal(_save, *this, *_overmind));
-    _game_over = true;
     *_frame_count = 1;
+    quit();
     return;
   }
   Boss::_warnings.clear();
@@ -492,7 +487,7 @@ void GameModal::update(Lib& lib)
   auto sort_ships = [](const Ship* a, const Ship* b)
   {
     return a->shape().centre.x - a->bounding_width() <
-            b->shape().centre.x - b->bounding_width();
+        b->shape().centre.x - b->bounding_width();
   };
   std::stable_sort(_collisions.begin(), _collisions.end(), sort_ships);
   for (std::size_t i = 0; i < _ships.size(); ++i) {
@@ -508,21 +503,19 @@ void GameModal::update(Lib& lib)
       }
     }
   }
-  for (std::size_t i = 0; i < Boss::_fireworks.size(); ++i) {
-    if (Boss::_fireworks[i].first <= 0) {
-      vec2 v = _ships[0]->shape().centre;
-      _ships[0]->shape().centre = Boss::_fireworks[i].second.first;
-      _ships[0]->explosion(0xffffffff);
-      _ships[0]->explosion(Boss::_fireworks[i].second.second, 16);
-      _ships[0]->explosion(0xffffffff, 24);
-      _ships[0]->explosion(Boss::_fireworks[i].second.second, 32);
-      _ships[0]->shape().centre = v;
-      Boss::_fireworks.erase(Boss::_fireworks.begin() + i);
-      --i;
+  for (auto it = Boss::_fireworks.begin(); it != Boss::_fireworks.end();) {
+    if (it->first > 0) {
+      --(it++)->first;
+      continue;
     }
-    else {
-      --Boss::_fireworks[i].first;
-    }
+    vec2 v = _ships[0]->shape().centre;
+    _ships[0]->shape().centre = it->second.first;
+    _ships[0]->explosion(0xffffffff);
+    _ships[0]->explosion(it->second.second, 16);
+    _ships[0]->explosion(0xffffffff, 24);
+    _ships[0]->explosion(it->second.second, 32);
+    _ships[0]->shape().centre = v;
+    it = Boss::_fireworks.erase(it);
   }
 
   for (auto it = _ships.begin(); it != _ships.end();) {
@@ -563,9 +556,9 @@ void GameModal::update(Lib& lib)
     _kill_timer--;
     if (!_kill_timer) {
       add(new HighScoreModal(_save, *this, *_overmind));
-      _game_over = true;
       *_frame_count = 1;
       lib.play_sound(Lib::SOUND_MENU_ACCEPT);
+      quit();
     }
   }
 }
@@ -846,23 +839,23 @@ const GameModal::ship_list& GameModal::players() const
 
 Player* GameModal::nearest_player(const vec2& point) const
 {
-  Ship* r = 0;
-  Ship* deadr = 0;
-  fixed d = Lib::WIDTH * Lib::HEIGHT;
-  fixed deadd = Lib::WIDTH * Lib::HEIGHT;
+  Ship* ship = nullptr;
+  Ship* dead = nullptr;
+  fixed ship_dist = 0;
+  fixed dead_dist = 0;
 
-  for (Ship* ship : _player_list) {
-    if (!((Player*) ship)->is_killed() &&
-        (ship->shape().centre - point).length() < d) {
-      d = (ship->shape().centre - point).length();
-      r = ship;
+  for (Ship* s: _player_list) {
+    fixed d = (s->shape().centre - point).length();
+    if ((d < ship_dist || !ship) && !((Player*) s)->is_killed()) {
+      ship_dist = d;
+      ship = s;
     }
-    if ((ship->shape().centre - point).length() < deadd) {
-      deadd = (ship->shape().centre - point).length();
-      deadr = ship;
+    if (d < dead_dist || !dead) {
+      dead_dist = d;
+      dead = s;
     }
   }
-  return (Player*) (r != 0 ? r : deadr);
+  return (Player*) (ship ? ship : dead);
 }
 
 void GameModal::add_life()

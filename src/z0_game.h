@@ -117,7 +117,6 @@ private:
 
   Mode::mode _mode;
   int32_t _lives;
-  bool _game_over;
 
   std::unique_ptr<Overmind> _overmind;
   std::vector<Particle> _particles;

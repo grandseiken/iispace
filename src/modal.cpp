@@ -27,13 +27,11 @@ bool ModalStack::update(Lib& lib)
     }
   }
   while (it != _stack.end()) {
-    (*it)->update(lib);
     if ((*it)->_quit) {
       it = _stack.erase(it);
+      continue;
     }
-    else {
-      ++it;
-    }
+    (*it++)->update(lib);
   }
   for (auto& modal : _new_stack) {
     _stack.emplace_back(std::move(modal));
