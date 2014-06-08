@@ -32,7 +32,7 @@ Replay::Replay(const std::string& path)
   }
 }
 
-Replay::Replay(int32_t players, Mode::mode mode, bool can_face_secret_boss)
+Replay::Replay(Mode::mode mode, int32_t players, bool can_face_secret_boss)
 {
   replay.set_game_version("WiiSPACE v1.3 replay");
   replay.set_game_mode(mode);

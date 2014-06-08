@@ -74,9 +74,10 @@ public:
     BOSS_3A = 64,
   };
 
-  GameModal(Lib& lib, SaveData& save, Settings& settings,
-            int32_t* frame_count, Replay* replay,
-            bool can_face_secret_boss, Mode::mode mode, int32_t player_count);
+  GameModal(Lib& lib, SaveData& save, Settings& settings, int32_t* frame_count,
+            Mode::mode mode, int32_t player_count, bool can_face_secret_boss);
+  GameModal(Lib& lib, SaveData& save, Settings& settings, int32_t* frame_count,
+            const std::string& replay_path);
   ~GameModal();
 
   void update(Lib& lib) override;
@@ -112,6 +113,9 @@ public:
 
 private:
 
+  GameModal(Lib& lib, SaveData& save, Settings& settings, int32_t* frame_count,
+            Replay&& replay, bool replay_recording);
+
   Lib& _lib;
   SaveData& _save;
   Settings& _settings;
@@ -119,12 +123,11 @@ private:
   int32_t* _frame_count;
   int32_t _kill_timer;
 
-  Mode::mode _mode;
-  int32_t _lives;
-  bool _replay_recording;
   Replay _replay;
-
+  bool _replay_recording;
   std::unique_ptr<PlayerInput> _input;
+
+  int32_t _lives;
   std::unique_ptr<Overmind> _overmind;
   std::vector<Particle> _particles;
   std::vector<std::unique_ptr<Ship>> _ships;

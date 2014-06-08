@@ -378,55 +378,24 @@ bool HighScoreModal::is_high_score() const
 }
 
 GameModal::GameModal(
-    Lib& lib, SaveData& save, Settings& settings,
-    int32_t* frame_count, Replay* replay,
-    bool can_face_secret_boss, Mode::mode mode, int32_t player_count)
-  : Modal(true, true)
-  , _lib(lib)
-  , _save(save)
-  , _settings(settings)
-  , _pause_output(PauseModal::CONTINUE)
-  , _frame_count(frame_count)
-  , _kill_timer(0)
-  , _mode(mode)
-  , _lives(0)
-  , _replay_recording(!replay)
-  , _replay(player_count, mode, can_face_secret_boss)
-  , _input(new LibPlayerInput(lib, _replay))
-  , _controllers_connected(0)
-  , _controllers_dialog(true)
-  , _show_hp_bar(false)
-  , _fill_hp_bar(0)
+    Lib& lib, SaveData& save, Settings& settings, int32_t* frame_count,
+    Mode::mode mode, int32_t player_count, bool can_face_secret_boss)
+  : GameModal(lib, save, settings, frame_count,
+              Replay(mode, player_count, can_face_secret_boss), true)
 {
-  static const int32_t STARTING_LIVES = 2;
-  static const int32_t BOSSMODE_LIVES = 1;
-  if (replay) {
-    _replay = *replay;
-    _input.reset(new ReplayPlayerInput(_replay));
-  }
-  z::seed((int32_t) _replay.replay.seed());
+}
 
-  _mode = mode;
-  _lives = mode == Mode::BOSS ? player_count * BOSSMODE_LIVES : STARTING_LIVES;
-  *_frame_count = _mode == Mode::FAST ? 2 : 1;
-
-  Stars::clear();
-  for (int32_t i = 0; i < player_count; ++i) {
-    vec2 v((1 + i) * Lib::WIDTH / (1 + player_count), Lib::HEIGHT / 2);
-    Player* p = new Player(*_input, v, i);
-    add_ship(p);
-    _player_list.push_back(p);
-  }
-  _overmind.reset(new Overmind(*this, can_face_secret_boss));
+GameModal::GameModal(
+    Lib& lib, SaveData& save, Settings& settings, int32_t* frame_count,
+    const std::string& replay_path)
+  : GameModal(lib, save, settings, frame_count, Replay(replay_path), false)
+{
+  lib.set_player_count(_replay.replay.players());
+  lib.new_game();
 }
 
 GameModal::~GameModal()
 { 
-  for (const auto& ship : _ships) {
-    if (ship->type() & Ship::SHIP_ENEMY) {
-      _overmind->on_enemy_destroy(*ship);
-    }
-  }
   Stars::clear();
   Boss::_fireworks.clear();
   Boss::_warnings.clear();
@@ -445,11 +414,11 @@ void GameModal::update(Lib& lib)
   lib.capture_mouse(true);
 
   lib.set_colour_cycle(
-      _mode == Mode::HARD ? 128 :
-      _mode == Mode::FAST ? 192 :
-      _mode == Mode::WHAT ? (lib.get_colour_cycle() + 1) % 256 : 0);
+      mode() == Mode::HARD ? 128 :
+      mode() == Mode::FAST ? 192 :
+      mode() == Mode::WHAT ? (lib.get_colour_cycle() + 1) % 256 : 0);
   if (_replay_recording) {
-    *_frame_count = _mode == Mode::FAST ? 2 : 1;
+    *_frame_count = mode() == Mode::FAST ? 2 : 1;
   }
 
   int32_t controllers = 0;
@@ -486,7 +455,7 @@ void GameModal::update(Lib& lib)
       *_frame_count *= 2;
     }
     if (lib.is_key_pressed(Lib::KEY_FIRE) &&
-        *_frame_count > (_mode == Mode::FAST ? 2 : 1)) {
+        *_frame_count > (mode() == Mode::FAST ? 2 : 1)) {
       *_frame_count /= 2;
     }
   }
@@ -557,7 +526,7 @@ void GameModal::update(Lib& lib)
   _overmind->update();
 
   if (!_kill_timer && ((killed_players() == players().size() && !get_lives()) ||
-                       (_mode == Mode::BOSS &&
+                       (mode() == Mode::BOSS &&
                         _overmind->get_killed_bosses() >= 6))) {
     _kill_timer = 100;
   }
@@ -627,7 +596,7 @@ void GameModal::render(Lib& lib) const
 
   std::stringstream ss;
   ss << _lives << " live(s)";
-  if (_mode != Mode::BOSS && _overmind->get_timer() >= 0) {
+  if (mode() != Mode::BOSS && _overmind->get_timer() >= 0) {
     int32_t t = int32_t(0.5f + _overmind->get_timer() / 60);
     ss << " " << (t < 10 ? "0" : "") << t;
   }
@@ -688,7 +657,7 @@ void GameModal::render(Lib& lib) const
                       flvec2(v.x, float(Lib::HEIGHT)), a);
     }
   }
-  if (_mode == Mode::BOSS) {
+  if (mode() == Mode::BOSS) {
     std::stringstream sst;
     sst << convert_to_time(_overmind->get_elapsed_time());
     lib.render_text(
@@ -698,7 +667,7 @@ void GameModal::render(Lib& lib) const
   }
 
   if (_show_hp_bar) {
-    int32_t x = _mode == Mode::BOSS ? 48 : 0;
+    int32_t x = mode() == Mode::BOSS ? 48 : 0;
     lib.render_rect(
         flvec2(x + Lib::WIDTH / 2 - 48.f, 16.f),
         flvec2(x + Lib::WIDTH / 2 + 48.f, 32.f),
@@ -712,7 +681,7 @@ void GameModal::render(Lib& lib) const
 
   if (!_replay_recording) {
     auto input = (ReplayPlayerInput*) _input.get();
-    int32_t x = _mode == Mode::FAST ? *_frame_count / 2 : *_frame_count;
+    int32_t x = mode() == Mode::FAST ? *_frame_count / 2 : *_frame_count;
     std::stringstream ss;
     ss << x << "X " <<
         int32_t(100 * float(input->replay_frame) /
@@ -742,7 +711,7 @@ Lib& GameModal::lib()
 
 Mode::mode GameModal::mode() const
 {
-  return _mode;
+  return Mode::mode(_replay.replay.game_mode());
 }
 
 void GameModal::add_ship(Ship* ship)
@@ -906,12 +875,49 @@ void GameModal::set_boss_killed(boss_list boss)
   if (!_replay_recording) {
     return;
   }
-  if (boss == BOSS_3A || (_mode != Mode::BOSS && _mode != Mode::NORMAL)) {
+  if (boss == BOSS_3A || (mode() != Mode::BOSS && mode() != Mode::NORMAL)) {
     _save.hard_mode_bosses_killed |= boss;
   }
   else {
     _save.bosses_killed |= boss;
   }
+}
+
+GameModal::GameModal(
+    Lib& lib, SaveData& save, Settings& settings, int32_t* frame_count,
+    Replay&& replay, bool replay_recording)
+  : Modal(true, true)
+  , _lib(lib)
+  , _save(save)
+  , _settings(settings)
+  , _pause_output(PauseModal::CONTINUE)
+  , _frame_count(frame_count)
+  , _kill_timer(0)
+  , _replay(replay)
+  , _replay_recording(replay_recording)
+  , _input(_replay_recording ? (PlayerInput*) new LibPlayerInput(lib, _replay) :
+                               (PlayerInput*) new ReplayPlayerInput(_replay))
+  , _controllers_connected(0)
+  , _controllers_dialog(true)
+  , _show_hp_bar(false)
+  , _fill_hp_bar(0)
+{
+  static const int32_t STARTING_LIVES = 2;
+  static const int32_t BOSSMODE_LIVES = 1;
+  z::seed((int32_t) _replay.replay.seed());
+  _lives = mode() == Mode::BOSS ?
+      _replay.replay.players() * BOSSMODE_LIVES : STARTING_LIVES;
+  *_frame_count = mode() == Mode::FAST ? 2 : 1;
+
+  Stars::clear();
+  for (int32_t i = 0; i < _replay.replay.players(); ++i) {
+    vec2 v((1 + i) * Lib::WIDTH / (1 + _replay.replay.players()),
+           Lib::HEIGHT / 2);
+    Player* p = new Player(*_input, v, i);
+    add_ship(p);
+    _player_list.push_back(p);
+  }
+  _overmind.reset(new Overmind(*this, _replay.replay.can_face_secret_boss()));
 }
 
 z0Game::z0Game(Lib& lib, const std::vector<std::string>& args)
@@ -926,14 +932,8 @@ z0Game::z0Game(Lib& lib, const std::vector<std::string>& args)
 
   if (!args.empty()) {
     try {
-      Replay replay(args[0]);
-      _player_select = replay.replay.players();
-      lib.set_player_count(_player_select);
-      lib.new_game();
       _modals.add(new GameModal(
-          _lib, _save, _settings, &_frame_count, &replay,
-          replay.replay.can_face_secret_boss(),
-          Mode::mode(replay.replay.game_mode()), replay.replay.players()));
+          _lib, _save, _settings, &_frame_count, args[0]));
     }
     catch (const std::runtime_error& e) {
       _exit_timer = 256;
@@ -1037,8 +1037,8 @@ bool z0Game::update()
     if (_menu_select == MENU_START) {
       lib().new_game();
       _modals.add(new GameModal(
-          _lib, _save, _settings, &_frame_count, false,
-          mode_unlocked() >= Mode::FAST, Mode::NORMAL, _player_select));
+          _lib, _save, _settings, &_frame_count,
+          Mode::NORMAL, _player_select, mode_unlocked() >= Mode::FAST));
     }
     else if (_menu_select == MENU_QUIT) {
       _exit_timer = 2;
@@ -1046,8 +1046,8 @@ bool z0Game::update()
     else if (_menu_select == MENU_SPECIAL) {
       lib().new_game();
       _modals.add(new GameModal(
-          _lib, _save, _settings, &_frame_count, false,
-          mode_unlocked() >= Mode::FAST, _mode_select, _player_select));
+          _lib, _save, _settings, &_frame_count,
+          _mode_select, _player_select, mode_unlocked() >= Mode::FAST));
     }
     if (_menu_select != MENU_PLAYERS) {
       lib().play_sound(Lib::SOUND_MENU_ACCEPT);
