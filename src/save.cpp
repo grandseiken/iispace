@@ -40,12 +40,12 @@ bool HighScores::is_high_score(
 void HighScores::add_score(Mode::mode mode, int32_t players,
                            const std::string& name, int64_t score)
 {
-  for (int32_t find = 0; find < size(mode); ++find) {
+  for (std::size_t find = 0; find < size(mode); ++find) {
     if (score <= get(mode, players, find).score) {
       continue;
     }
-    for (int32_t move = find; 1 + move < size(mode); ++move) {
-      get(mode, players, 1 + move) = get(mode, players, move);
+    for (std::size_t move = size(mode) - 1; move > find; --move) {
+      get(mode, players, move) = get(mode, players, move - 1);
     }
     get(mode, players, find).name = name;
     get(mode, players, find).score = score;
@@ -94,7 +94,7 @@ SaveData::SaveData()
   int64_t find_total = 0;
   int32_t table = 0;
   int32_t players = 0;
-  int32_t index = 0;
+  std::size_t index = 0;
   while (getline(decrypted, line)) {
     auto& s = high_scores.get(Mode::mode(table), players, index);
 
@@ -133,7 +133,7 @@ void SaveData::save() const
   int64_t total = 0;
   for (int32_t mode = 0; mode < Mode::END_MODES; ++mode) {
     for (int32_t players = 0; players < PLAYERS; ++players) {
-      for (int32_t i = 0; i < high_scores.size(Mode::mode(mode)); ++i) {
+      for (std::size_t i = 0; i < high_scores.size(Mode::mode(mode)); ++i) {
         total += high_scores.get(Mode::mode(mode), players, i).score;
       }
     }
@@ -146,7 +146,7 @@ void SaveData::save() const
   
   for (int32_t mode = 0; mode < Mode::END_MODES; ++mode) {
     for (int32_t players = 0; players < PLAYERS; ++players) {
-      for (int32_t i = 0; i < high_scores.size(Mode::mode(mode)); ++i) {
+      for (std::size_t i = 0; i < high_scores.size(Mode::mode(mode)); ++i) {
         const auto& s = high_scores.get(Mode::mode(mode), players, i);
         out << s.score << " " << s.name << "\n";
       }

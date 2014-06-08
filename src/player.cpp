@@ -216,7 +216,9 @@ void Player::render() const
 
   ss = std::stringstream();
   n % 2 ? ss << _score << "   " : ss << "   " << _score;
-  lib().render_text(v, ss.str(), colour());
+  lib().render_text(
+      v - (n % 2 ? flvec2(float(ss.str().length() - s.length()), 0) : flvec2()),
+      ss.str(), colour());
 
   if (_magic_shot_timer != 0) {
     v.x += n % 2 ? -1 : ss.str().length();

@@ -154,39 +154,21 @@ public:
 
 private:
 
-  bool is_boss_mode_unlocked() const
-  {
-    return (_save.bosses_killed & 63) == 63;
-  }
+  Mode::mode mode_unlocked() const;
 
-  bool is_hard_mode_unlocked() const
-  {
-    return is_boss_mode_unlocked() &&
-        (_save.high_scores.boss[0].score > 0 ||
-         _save.high_scores.boss[1].score > 0 ||
-         _save.high_scores.boss[2].score > 0 ||
-         _save.high_scores.boss[3].score > 0);
-  }
-
-  bool is_fast_mode_unlocked() const
-  {
-    return is_hard_mode_unlocked() &&
-        ((_save.hard_mode_bosses_killed & 63) == 63);
-  }
-
-  bool is_what_mode_unlocked() const
-  {
-    return is_hard_mode_unlocked() &&
-        ((_save.hard_mode_bosses_killed & 64) == 64);
-  }
+  enum menu_t {
+    MENU_SPECIAL,
+    MENU_START,
+    MENU_PLAYERS,
+    MENU_QUIT,
+  };
 
   Lib& _lib;
-  bool _exit;
   int32_t _frame_count;
 
-  int32_t _players;
-  int32_t _selection;
-  int32_t _special_selection;
+  menu_t _menu_select;
+  int32_t _player_select;
+  Mode::mode _mode_select;
   int32_t _exit_timer;
 
   SaveData _save;
