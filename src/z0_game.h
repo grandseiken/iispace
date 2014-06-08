@@ -39,7 +39,8 @@ private:
 class HighScoreModal : public Modal {
 public:
 
-  HighScoreModal(SaveData& save, GameModal& game, Overmind& overmind);
+  HighScoreModal(SaveData& save, GameModal& game, Overmind& overmind,
+                 bool replay, int32_t seed);
   void update(Lib& lib) override;
   void render(Lib& lib) const override;
 
@@ -51,6 +52,8 @@ private:
   SaveData& _save;
   GameModal& _game;
   Overmind& _overmind;
+  bool _replay;
+  int32_t _seed;
 
   std::string _enter_name;
   int32_t _enter_char;
@@ -83,10 +86,9 @@ public:
   void update(Lib& lib) override;
   void render(Lib& lib) const override;
 
-  const Replay& replay() const;
-  bool replay_recording() const;
   Lib& lib();
   Mode::mode mode() const;
+  void write_replay(const std::string& team_name, int64_t score) const;
 
   typedef std::vector<Ship*> ship_list;
   void add_ship(Ship* ship);

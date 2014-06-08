@@ -159,11 +159,14 @@ static const std::string ALLOWED_CHARS =
     "ABCDEFGHiJKLMNOPQRSTUVWXYZ 1234567890! ";
 
 HighScoreModal::HighScoreModal(
-    SaveData& save, GameModal& game, Overmind& overmind)
+    SaveData& save, GameModal& game, Overmind& overmind,
+    bool replay, int32_t seed)
   : Modal(true, false)
   , _save(save)
   , _game(game)
   , _overmind(overmind)
+  , _replay(replay)
+  , _seed(seed)
   , _enter_char(0)
   , _enter_time(0)
   , _enter_r(0)
@@ -179,7 +182,7 @@ void HighScoreModal::update(Lib& lib)
   int32_t players = _game.players().size();
 
 #ifdef PLATFORM_SCORE
-  std::cout << _game.replay().replay.seed() << "\n" << players << "\n" <<
+  std::cout << _seed << "\n" << players << "\n" <<
       (mode == Mode::BOSS) << "\n" << (mode == Mode::HARD) << "\n" <<
       (mode == Mode::FAST) << "\n" << (mode == Mode::WHAT) << "\n" <<
       get_score() << "\n" << std::flush;
@@ -188,9 +191,7 @@ void HighScoreModal::update(Lib& lib)
 
   if (!is_high_score()) {
     if (lib.is_key_pressed(Lib::KEY_MENU)) {
-      if (_game.replay_recording()) {
-        _game.replay().write("untitled", get_score());
-      }
+      _game.write_replay("untitled", get_score());
       _save.save();
       lib.play_sound(Lib::SOUND_MENU_ACCEPT);
       quit();
@@ -232,9 +233,7 @@ void HighScoreModal::update(Lib& lib)
   if (lib.is_key_pressed(Lib::KEY_MENU)) {
     lib.play_sound(Lib::SOUND_MENU_ACCEPT);
     _save.high_scores.add_score(mode, players - 1, _enter_name, get_score());
-    if (_game.replay_recording()) {
-      _game.replay().write(_enter_name, get_score());
-    }
+    _game.write_replay(_enter_name, get_score());
     _save.save();
     quit();
   }
@@ -373,7 +372,7 @@ int64_t HighScoreModal::get_score() const
 
 bool HighScoreModal::is_high_score() const
 {
-  return _game.replay_recording() && _save.high_scores.is_high_score(
+  return !_replay && _save.high_scores.is_high_score(
       _game.mode(), _game.players().size() - 1, get_score());
 }
 
@@ -405,7 +404,8 @@ GameModal::~GameModal()
 void GameModal::update(Lib& lib)
 {
   if (_pause_output == PauseModal::END_GAME) {
-    add(new HighScoreModal(_save, *this, *_overmind));
+    add(new HighScoreModal(
+        _save, *this, *_overmind, !_replay_recording, _replay.replay.seed()));
     *_frame_count = 1;
     quit();
     return;
@@ -533,7 +533,8 @@ void GameModal::update(Lib& lib)
   if (_kill_timer) {
     _kill_timer--;
     if (!_kill_timer) {
-      add(new HighScoreModal(_save, *this, *_overmind));
+      add(new HighScoreModal(
+          _save, *this, *_overmind, !_replay_recording, _replay.replay.seed()));
       *_frame_count = 1;
       lib.play_sound(Lib::SOUND_MENU_ACCEPT);
       quit();
@@ -694,14 +695,11 @@ void GameModal::render(Lib& lib) const
   }
 }
 
-const Replay& GameModal::replay() const
+void GameModal::write_replay(const std::string& team_name, int64_t score) const
 {
-  return _replay;
-}
-
-bool GameModal::replay_recording() const
-{
-  return _replay_recording;
+  if (_replay_recording) {
+    _replay.write(team_name, score);
+  }
 }
 
 Lib& GameModal::lib()
