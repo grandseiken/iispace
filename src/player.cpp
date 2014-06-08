@@ -62,11 +62,13 @@ void Player::update()
            (lib().is_key_pressed(_player_number, Lib::KEY_BOMB) << 1);
     replay.record(velocity, _fire_target, keys);
   }
-  else if (replay_frame < replay.player_frames.size()) {
-    const PlayerFrame& pf = replay.player_frames[replay_frame];
-    velocity = pf.velocity;
-    _fire_target = pf.target;
-    keys = pf.keys;
+  else if (int32_t(replay_frame) < replay.replay.player_frame_size()) {
+    const auto& pf = replay.replay.player_frame(replay_frame);
+    velocity = vec2(fixed::from_internal(pf.velocity_x()),
+                    fixed::from_internal(pf.velocity_y()));
+    _fire_target = vec2(fixed::from_internal(pf.target_x()),
+                        fixed::from_internal(pf.target_y()));
+    keys = pf.keys();
     ++replay_frame;
   }
 

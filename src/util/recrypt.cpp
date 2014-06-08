@@ -63,7 +63,7 @@ proto::Replay convert(const std::string& contents)
   replay.set_players(std::max(1, std::min(4, players)));
   replay.set_can_face_secret_boss(can_face_secret_boss);
 
-  Mode::mode mode;
+  Mode::mode mode = Mode::NORMAL;
   bool bb;
   ss >> bb;
   mode = Mode::mode(mode | bb * Mode::BOSS);

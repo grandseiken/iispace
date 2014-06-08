@@ -179,7 +179,7 @@ void HighScoreModal::update(Lib& lib)
   int32_t players = _game.players().size();
 
 #ifdef PLATFORM_SCORE
-  std::cout << Player::replay.seed << "\n" << players << "\n" <<
+  std::cout << Player::replay.replay.seed() << "\n" << players << "\n" <<
       (mode == Mode::BOSS) << "\n" << (mode == Mode::HARD) << "\n" <<
       (mode == Mode::FAST) << "\n" << (mode == Mode::WHAT) << "\n" <<
       get_score() << "\n" << std::flush;
@@ -706,7 +706,7 @@ void GameModal::render(Lib& lib) const
     std::stringstream ss;
     ss << x << "X " <<
         int32_t(100 * float(Player::replay_frame) /
-        Player::replay.player_frames.size()) << "%";
+        Player::replay.replay.player_frame_size()) << "%";
 
     lib.render_text(
         flvec2(Lib::WIDTH / (2.f * Lib::TEXT_WIDTH) - ss.str().length() / 2,
@@ -908,13 +908,14 @@ z0Game::z0Game(Lib& lib, const std::vector<std::string>& args)
     Player::replay = Replay(args[0]);
     Player::replay_frame = 0;
     if (Player::replay.okay) {
-      _player_select = Player::replay.players;
+      _player_select = Player::replay.replay.players();
       lib.set_player_count(_player_select);
       lib.new_game();
       _modals.add(new GameModal(
           _lib, _save, _settings, &_frame_count, true,
-          Player::replay.can_face_secret_boss,
-          Player::replay.mode, Player::replay.players));
+          Player::replay.replay.can_face_secret_boss(),
+          Mode::mode(Player::replay.replay.game_mode()),
+          Player::replay.replay.players()));
     }
     else {
       _exit_timer = 256;

@@ -15,7 +15,7 @@ message Replay {
   required string game_version = 1;
   required int32 game_mode = 2;
   required int32 players = 3;
-  required int64 seed = 4;
+  required int32 seed = 4;
 
   repeated PlayerFrame player_frame = 5;
   optional bool can_face_secret_boss = 99;

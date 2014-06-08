@@ -2,13 +2,7 @@
 #define IISPACE_SRC_REPLAY_H
 
 #include "z.h"
-#include <vector>
-
-struct PlayerFrame {
-  vec2 velocity;
-  vec2 target;
-  int32_t keys;
-};
+#include "../gen/iispace.pb.h"
 
 struct Replay {
   Replay(const std::string& path);
@@ -19,15 +13,7 @@ struct Replay {
   bool recording;
   bool okay;
   std::string error;
-
-  Mode::mode mode;
-  int32_t players;
-  int64_t seed;
-  bool can_face_secret_boss;
-
-  std::vector<PlayerFrame> player_frames;
+  proto::Replay replay;
 };
-
-const Replay& PlayRecording(const std::string& path);
 
 #endif
