@@ -27,6 +27,7 @@
 ////////////////////////////////////////////////////////////
 #include <SFML/Window/Joystick.hpp>
 #include <sstream>
+#include <unistd.h>
 
 
 namespace sf

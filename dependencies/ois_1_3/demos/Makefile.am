@@ -4,8 +4,8 @@ noinst_PROGRAMS = ConsoleApp FFConsoleTest
 
 ConsoleApp_SOURCES = OISConsole.cpp
 ConsoleApp_LDFLAGS = -L$(top_builddir)/src
-ConsoleApp_LDADD = -lOIS
+ConsoleApp_LDADD = -lOIS -lX11
 
 FFConsoleTest_SOURCES = FFConsoleDemo.cpp
 FFConsoleTest_LDFLAGS = -L$(top_builddir)/src
-FFConsoleTest_LDADD = -lOIS
+FFConsoleTest_LDADD = -lOIS -lX11

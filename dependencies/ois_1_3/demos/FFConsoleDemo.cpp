@@ -18,6 +18,7 @@ using namespace std;
 
 ////////////////////////////////////Needed Linux Headers//////////////
 #elif defined OIS_LINUX_PLATFORM
+#  include <unistd.h>
 #  include <X11/Xlib.h>
 #else
 #  error Sorry, not yet implemented on this platform.
