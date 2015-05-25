@@ -13,6 +13,7 @@ const std::string Lib::SUPER_ENCRYPTION_KEY = "<>";
 
 #ifdef PLATFORM_LINUX
 #include <sys/stat.h>
+#include <unistd.h>
 #endif
 
 #ifndef PLATFORM_SCORE
@@ -523,7 +524,7 @@ void Lib::set_working_directory(bool original)
     sprintf(temp, "/proc/%d/exe", getpid());
     exe.resize(256);
     std::size_t bytes = 0;
-    while ((bytes = readlink(temp, &_exe[0], exe.size())) == exe.size()) {
+    while ((bytes = readlink(temp, &exe[0], exe.size())) == exe.size()) {
       exe.resize(exe.size() * 2);
     }
     if (bytes >= 0) {

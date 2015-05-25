@@ -1,6 +1,7 @@
 #ifndef IISPACE_SRC_Z0_H
 #define IISPACE_SRC_Z0_H
 
+#include <cmath>
 #include <string>
 #include "fix32.h"
 

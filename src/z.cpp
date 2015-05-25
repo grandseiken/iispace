@@ -1,5 +1,6 @@
 #include "z.h"
 #include <algorithm>
+#include <cstring>
 #include <map>
 #include <zlib.h>
 

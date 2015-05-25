@@ -234,7 +234,7 @@ void Player::render() const
                       Lib::HEIGHT / Lib::TEXT_HEIGHT - 2.f) : flvec2(1.f, 1.f);
   lib().render_text(v, s, z0Game::PANEL_TEXT);
 
-  ss = std::stringstream();
+  ss.str("");
   n % 2 ? ss << _score << "   " : ss << "   " << _score;
   lib().render_text(
       v - (n % 2 ? flvec2(float(ss.str().length() - s.length()), 0) : flvec2()),
