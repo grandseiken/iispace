@@ -88,7 +88,8 @@ clean_all: clean clean_dependencies
 
 # Binary linking.
 $(BINARIES): $(OUTDIR_BIN)/%: \
-  $(OUTDIR_TMP)/$(SRCDIR)/%.cpp.o $(FILTERED_OBJECT_FILES) $(OUTDIR_BIN)/%.mkdir
+  $(OUTDIR_TMP)/$(SRCDIR)/%.cpp.o $(FILTERED_OBJECT_FILES)
+	$(MKDIR)
 	@echo Linking ./$@
 	$(CXX) -o ./$@ $< $(FILTERED_OBJECT_FILES) $(LFLAGS)
 
@@ -97,6 +98,7 @@ $(GENDIR)/%.pb.h: \
   $(GENDIR)/%.pb.cc
 	touch $@ $<
 $(GENDIR)/%.pb.cc: \
-  $(SRCDIR)/%.proto $(GENDIR)/%.mkdir $(DEPENDENCIES)/protobuf.build
+  $(SRCDIR)/%.proto $(DEPENDENCIES)/protobuf.build
+	$(MKDIR)
 	@echo Compiling ./$<
 	$(PROTOC) --proto_path=$(SRCDIR) --cpp_out=$(GENDIR) ./$<
