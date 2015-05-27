@@ -2,21 +2,9 @@
 first: all
 include dependencies/Makefile
 
-# Debug options.
-ifeq ($(DBG), 1)
-OUTDIR=./Debug
-WFLAGS=-Werror -Wall -Wextra -Wpedantic
-CFLAGS_CONFIG=-Og -g -ggdb -DDEBUG
-else
-OUTDIR=./Release
-CFLAGS_CONFIG=-O3
-endif
-
 # Directories.
 OUTDIR_BIN=$(OUTDIR)
-OUTDIR_TMP=$(OUTDIR)/build
 SRCDIR=./src
-GENDIR=./gen
 IISPACE_BINARY=$(OUTDIR_BIN)/main
 GAMEPAD_BINARY=$(OUTDIR_BIN)/util/gamepad
 RECRYPT_BINARY=$(OUTDIR_BIN)/util/recrypt
@@ -31,9 +19,8 @@ CC_OBJECT_FILE_PREREQS=\
 # Compilers and interpreters.
 export PROTOC=$(PROTOBUF_DIR)/src/protoc
 
-CFLAGS_11=-std=c++11
-CFLAGS=\
-  $(CFLAGS_EXTRA) $(CFLAGS_11) $(CFLAGS_CONFIG) -DPLATFORM_LINUX \
+CFLAGS_EXTRA=\
+  -std=c++11 -DPLATFORM_LINUX \
   -isystem $(OIS_DIR)/includes -isystem $(SFML_DIR)/include -isystem $(ZLIB_DIR)
 LFLAGS=\
   $(LFLAGSEXTRA) \
@@ -51,13 +38,13 @@ PROTO_FILES=$(wildcard $(SRCDIR)/*.proto)
 PROTO_OUTPUTS=$(subst $(SRCDIR)/,$(GENDIR)/,$(PROTO_FILES:.proto=.pb.cc))
 CC_GENERATED_FILES=$(PROTO_OUTPUTS)
 
-H_FILES=$(wildcard $(SRCDIR)/*.h)
 CPP_FILES=$(wildcard $(SRCDIR)/*.cpp)
 UTIL_CPP_FILES=$(wildcard $(SRCDIR)/util/*.cpp)
 CC_SOURCE_FILES=$(CPP_FILES) $(UTIL_CPP_FILES)
-FILTERED_OBJECT_FILES=$(addprefix $(OUTDIR_TMP)/,$(addsuffix .o,$(filter-out $(SRCDIR)/main.cpp, $(CPP_FILES) $(CC_GENERATED_FILES))))
-INCLUDE_FILES=$(wildcard $(INCLUDE)/*/*.h)
+FILTERED_OBJECT_FILES=\
+  $(call src_to_o,$(filter-out $(SRCDIR)/main.cpp, $(CPP_FILES) $(CC_GENERATED_FILES)))
 
+H_FILES=$(wildcard $(SRCDIR)/*.h)
 MISC_FILES=Makefile dependencies/Makefile
 ALL_FILES=$(CPP_FILES) $(UTIL_CPP_FILES) $(H_FILES) $(MISC_FILES)
 
