@@ -78,4 +78,8 @@ add_custom_target(iispace_package ALL
 add_custom_target(iispace_test
   WORKING_DIRECTORY "${CMAKE_SOURCE_DIR}"
   COMMAND score "tests/seiken_1p__crikey_641530.wrp"
+  COMMAND score "tests/seiken_2p__RAB  STU Yo_477833.wrp"
+  COMMAND score "tests/seiken_3p__3 OF US_219110.wrp"
+  COMMAND score "tests/Darb_2p__Graves  Darb_553403.wrp"
+  COMMAND score "tests/Darb_4p__Team Graves_430987.wrp"
   DEPENDS score VERBATIM)
