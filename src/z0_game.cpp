@@ -168,8 +168,8 @@ HighScoreModal::HighScoreModal(
   , _replay(replay)
   , _seed(seed)
   , _enter_char(0)
-  , _enter_time(0)
   , _enter_r(0)
+  , _enter_time(0)
   , _compliment(z::rand_int(COMPLIMENTS.size()))
   , _timer(0)
 {
@@ -525,7 +525,7 @@ void GameModal::update(Lib& lib)
   }
   _overmind->update();
 
-  if (!_kill_timer && ((killed_players() == players().size() && !get_lives()) ||
+  if (!_kill_timer && ((killed_players() == (int32_t) players().size() && !get_lives()) ||
                        (mode() == Mode::BOSS &&
                         _overmind->get_killed_bosses() >= 6))) {
     _kill_timer = 100;
@@ -921,8 +921,8 @@ GameModal::GameModal(
 z0Game::z0Game(Lib& lib, const std::vector<std::string>& args)
   : _lib(lib)
   , _frame_count(1)
-  , _player_select(1)
   , _menu_select(MENU_START)
+  , _player_select(1)
   , _mode_select(Mode::BOSS)
   , _exit_timer(0)
 {
@@ -1161,7 +1161,7 @@ void z0Game::render() const
       _player_select == 4 ? "FOUR PLAYERS" : "";
   lib().render_text(flvec2(4.f, 16.f), s, PANEL_TEXT);
 
-  if (_mode_select == MENU_SPECIAL && _mode_select == Mode::BOSS) {
+  if (_menu_select == MENU_SPECIAL && _mode_select == Mode::BOSS) {
     lib().render_text(flvec2(4.f, 18.f), "ONE PLAYER", PANEL_TEXT);
     lib().render_text(flvec2(4.f, 20.f), "TWO PLAYERS", PANEL_TEXT);
     lib().render_text(flvec2(4.f, 22.f), "THREE PLAYERS", PANEL_TEXT);

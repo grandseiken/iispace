@@ -1,5 +1,3 @@
-Release/
-Debug/
-gen/
-dependencies/
+build
+debug
 *.swp

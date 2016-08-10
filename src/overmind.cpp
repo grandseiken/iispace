@@ -134,7 +134,6 @@ std::vector<Overmind::entry> formation_base::static_formations;
 Overmind::Overmind(GameModal& game, bool can_face_secret_boss)
   : _game(game)
   , _power(0)
-  , _hard_already(0)
   , _timer(0)
   , _count(0)
   , _non_wall_count(0)
@@ -144,13 +143,14 @@ Overmind::Overmind(GameModal& game, bool can_face_secret_boss)
   , _boss_mod_fights(0)
   , _boss_mod_secret(0)
   , _can_face_secret_boss(can_face_secret_boss)
-  , _is_boss_next(false)
-  , _is_boss_level(false)
-  , _bosses_to_go(0)
   , _powerup_mod(0)
   , _lives_target(0)
+  , _is_boss_next(false)
+  , _is_boss_level(false)
   , _elapsed_time(0)
   , _waves_total(0)
+  , _hard_already(0)
+  , _bosses_to_go(0)
 {
   add_formations();
 
@@ -479,16 +479,16 @@ struct formation : formation_base {
     void operator()() {}
   };
 
-  void operator()() override
+  static init_t init_v;
+  static void init()
   {
-    init();
+    init_v();
   }
-  static init_t init;
 };
 template<int32_t I, typename F, int32_t C, int32_t R>
 std::unique_ptr<F> formation<I, F, C, R>::function;
 template<int32_t I, typename F, int32_t C, int32_t R>
-typename formation<I, F, C, R>::init_t formation<I, F, C, R>::init;
+typename formation<I, F, C, R>::init_t formation<I, F, C, R>::init_v;
 
 struct square1 : formation<0, square1, 4> {
   void operator()() override
@@ -1166,6 +1166,57 @@ void Overmind::add_formation()
 
 void Overmind::add_formations()
 {
+  square1::init();
+  square2::init();
+  square3::init();
+  square1side::init();
+  square2side::init();
+  square3side::init();
+  wall1::init();
+  wall2::init();
+  wall3::init();
+  wall1side::init();
+  wall2side::init();
+  wall3side::init();
+  follow1::init();
+  follow2::init();
+  follow3::init();
+  follow1side::init();
+  follow2side::init();
+  follow3side::init();
+  chaser1::init();
+  chaser2::init();
+  chaser3::init();
+  chaser4::init();
+  chaser1side::init();
+  chaser2side::init();
+  chaser3side::init();
+  chaser4side::init();
+  hub1::init();
+  hub2::init();
+  hub1side::init();
+  hub2side::init();
+  mixed1::init();
+  mixed2::init();
+  mixed3::init();
+  mixed4::init();
+  mixed5::init();
+  mixed6::init();
+  mixed7::init();
+  mixed1side::init();
+  mixed2side::init();
+  mixed3side::init();
+  mixed4side::init();
+  mixed5side::init();
+  mixed6side::init();
+  mixed7side::init();
+  tractor1::init();
+  tractor2::init();
+  tractor1side::init();
+  tractor2side::init();
+  shielder1::init();
+  shielder1side::init();
+
   for (const auto& f : formation_base::static_formations) {
     _formations.emplace_back(f);
   }

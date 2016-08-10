@@ -20,6 +20,7 @@ const std::string Lib::SUPER_ENCRYPTION_KEY = "<>";
 #include "util/gamepad.h"
 #include <SFML/Graphics.hpp>
 #include <SFML/Audio.hpp>
+#include <SFML/OpenGL.hpp>
 #include <OISJoyStick.h>
 #include <OISInputManager.h>
 #include <OISForceFeedback.h>
@@ -27,38 +28,46 @@ const std::string Lib::SUPER_ENCRYPTION_KEY = "<>";
 #define RgbaToColor(colour)\
     (sf::Color((colour) >> 24, (colour) >> 16, (colour) >> 8, (colour)))
 
-bool SfkToKey(sf::Key::Code code, Lib::Key key)
+sf::RectangleShape MakeRectangle(float x, float y, float w, float h, sf::Color color)
 {
-  if ((code == sf::Key::W || code == sf::Key::Up) && key == Lib::KEY_UP) {
+  sf::RectangleShape r{{w, h}};
+  r.setPosition(x, y);
+  r.setOutlineColor(color);
+  return r;
+}
+
+bool SfkToKey(sf::Keyboard::Key code, Lib::Key key)
+{
+  if ((code == sf::Keyboard::W || code == sf::Keyboard::Up) && key == Lib::KEY_UP) {
     return true;
   }
-  if ((code == sf::Key::A || code == sf::Key::Left) && key == Lib::KEY_LEFT) {
+  if ((code == sf::Keyboard::A || code == sf::Keyboard::Left) && key == Lib::KEY_LEFT) {
     return true;
   }
-  if ((code == sf::Key::S || code == sf::Key::Down) && key == Lib::KEY_DOWN) {
+  if ((code == sf::Keyboard::S || code == sf::Keyboard::Down) && key == Lib::KEY_DOWN) {
     return true;
   }
-  if ((code == sf::Key::D || code == sf::Key::Right) && key == Lib::KEY_RIGHT) {
+  if ((code == sf::Keyboard::D || code == sf::Keyboard::Right) && key == Lib::KEY_RIGHT) {
     return true;
   }
-  if ((code == sf::Key::Escape || code == sf::Key::Return) &&
+  if ((code == sf::Keyboard::Escape || code == sf::Keyboard::Return) &&
       key == Lib::KEY_MENU) {
     return true;
   }
-  if ((code == sf::Key::Z || code == sf::Key::LControl ||
-       code == sf::Key::RControl) &&
+  if ((code == sf::Keyboard::Z || code == sf::Keyboard::LControl ||
+       code == sf::Keyboard::RControl) &&
       key == Lib::KEY_FIRE) {
     return true;
   }
-  if ((code == sf::Key::X || code == sf::Key::Space) && key == Lib::KEY_BOMB) {
+  if ((code == sf::Keyboard::X || code == sf::Keyboard::Space) && key == Lib::KEY_BOMB) {
     return true;
   }
-  if ((code == sf::Key::Z || code == sf::Key::Space ||
-       code == sf::Key::LControl || code == sf::Key::RControl) &&
+  if ((code == sf::Keyboard::Z || code == sf::Keyboard::Space ||
+       code == sf::Keyboard::LControl || code == sf::Keyboard::RControl) &&
       key == Lib::KEY_ACCEPT) {
     return true;
   }
-  if ((code == sf::Key::X || code == sf::Key::Escape) &&
+  if ((code == sf::Keyboard::X || code == sf::Keyboard::Escape) &&
       key == Lib::KEY_CANCEL) {
     return true;
   }
@@ -119,7 +128,7 @@ private:
 
 struct Internals {
   mutable sf::RenderWindow window;
-  sf::Image image;
+  sf::Texture texture;
   mutable sf::Sprite font;
 
   OIS::InputManager* manager;
@@ -296,11 +305,11 @@ struct Internals {};
 #endif
 
 Lib::Lib()
-  : _score_frame(0)
-  , _cycle(0)
+  : _cycle(0)
   , _players(1)
   , _capture_mouse(false)
   , _mouse_moving(true)
+  , _score_frame(0)
 {
 #ifndef PLATFORM_SCORE
   set_working_directory(false);
@@ -407,35 +416,38 @@ Lib::Lib()
   }
 
   bool created = false;
-  for (std::size_t i = sf::VideoMode::GetModesCount() - 1;
+  for (int i = sf::VideoMode::getFullscreenModes().size() - 1;
        i >= 0 && !Settings().windowed; --i) {
-    sf::VideoMode m = sf::VideoMode::GetMode(i);
-    if (m.Width >= unsigned(Lib::WIDTH) &&
-        m.Height >= unsigned(Lib::HEIGHT) && m.BitsPerPixel == 32) {
-      _internals->window.Create(
-          m, "WiiSPACE", sf::Style::Fullscreen, sf::WindowSettings(0, 0, 0));
-      _extra.x = (m.Width - Lib::WIDTH) / 2;
-      _extra.y = (m.Height - Lib::HEIGHT) / 2;
+    sf::VideoMode m = sf::VideoMode::getFullscreenModes()[i];
+    if (m.width >= unsigned(Lib::WIDTH) &&
+        m.height >= unsigned(Lib::HEIGHT) && m.bitsPerPixel == 32) {
+      _internals->window.create(
+          m, "WiiSPACE", sf::Style::Close | sf::Style::Titlebar,
+          sf::ContextSettings(0, 0, 0));
+      _extra.x = (m.width - Lib::WIDTH) / 2;
+      _extra.y = (m.height - Lib::HEIGHT) / 2;
       created = true;
       break;
     }
   }
   if (!created) {
-    _internals->window.Create(sf::VideoMode(640, 480, 32), "WiiSPACE",
+    _internals->window.create(sf::VideoMode(640, 480, 32), "WiiSPACE",
                                sf::Style::Close | sf::Style::Titlebar);
   }
 
-  _internals->image.LoadFromFile("console.png");
-  _internals->image.CreateMaskFromColor(RgbaToColor(0x000000ff));
-  _internals->image.SetSmooth(false);
-  _internals->font = sf::Sprite(_internals->image);
+  sf::Image image;
+  image.loadFromFile("console.png");
+  image.createMaskFromColor(RgbaToColor(0x000000ff));
+  _internals->texture.loadFromImage(image);
+  _internals->texture.setSmooth(false);
+  _internals->font = sf::Sprite(_internals->texture);
   load_sounds();
 
   clear_screen();
-  _internals->window.Show(true);
-  _internals->window.UseVerticalSync(true);
-  _internals->window.SetFramerateLimit(50);
-  _internals->window.ShowMouseCursor(false);
+  _internals->window.setVisible(true);
+  _internals->window.setVerticalSyncEnabled(true);
+  _internals->window.setFramerateLimit(50);
+  _internals->window.setMouseCursorVisible(false);
 
   glClearColor(0.f, 0.f, 0.f, 0.f);
   glDisable(GL_DEPTH_TEST);
@@ -559,7 +571,7 @@ void Lib::set_working_directory(bool original)
   }
 
 #ifdef PLATFORM_LINUX
-  chdir(original ? cwd : exe.data());
+  [](int){}(chdir(original ? cwd : exe.data()));
 #else
   SetCurrentDirectory(original ? cwd : exe.data());
 #endif
@@ -573,22 +585,21 @@ bool Lib::begin_frame()
   sf::Event e;
   int32_t kp = _players <= _internals->pad_count ?
       _players - 1 : _internals->pad_count;
-  while (_internals->window.GetEvent(e))
+  while (_internals->window.pollEvent(e))
   {
-    if (e.Type == sf::Event::Closed ||
-        !_internals->window.IsOpened()) {
+    if (e.type == sf::Event::Closed || !_internals->window.isOpen()) {
       return true;
     }
 
     for (int32_t i = 0; i < KEY_MAX; ++i) {
-      bool kd = e.Type == sf::Event::KeyPressed;
-      bool ku = e.Type == sf::Event::KeyReleased;
-      bool md = e.Type == sf::Event::MouseButtonPressed;
-      bool mu = e.Type == sf::Event::MouseButtonReleased;
+      bool kd = e.type == sf::Event::KeyPressed;
+      bool ku = e.type == sf::Event::KeyReleased;
+      bool md = e.type == sf::Event::MouseButtonPressed;
+      bool mu = e.type == sf::Event::MouseButtonReleased;
 
       bool b = false;
-      b |= (kd || ku) && SfkToKey(e.Key.Code, Lib::Key(i));
-      b |= (md || mu) && SfmToKey(e.MouseButton.Button, Lib::Key(i));
+      b |= (kd || ku) && SfkToKey(e.key.code, Lib::Key(i));
+      b |= (md || mu) && SfmToKey(e.mouseButton.button, Lib::Key(i));
       if (!b) {
         continue;
       }
@@ -603,9 +614,9 @@ bool Lib::begin_frame()
       }
     }
 
-    if (e.Type == sf::Event::MouseMoved) {
-      _mouse.x = e.MouseMove.X;
-      _mouse.y = e.MouseMove.Y;
+    if (e.type == sf::Event::MouseMoved) {
+      _mouse.x = e.mouseMove.x;
+      _mouse.y = e.mouseMove.y;
     }
   }
 
@@ -621,7 +632,7 @@ bool Lib::begin_frame()
     _mouse_moving = true;
   }
   if (_capture_mouse) {
-    _internals->window.SetCursorPosition(_mouse.x, _mouse.y);
+    sf::Mouse::setPosition({_mouse.x, _mouse.y}, _internals->window);
   }
 
   for (int32_t i = 0; i < _internals->pad_count; ++i) {
@@ -681,18 +692,13 @@ void Lib::new_game()
 void Lib::take_screenshot()
 {
 #ifndef PLATFORM_SCORE
-  sf::Image image = _internals->window.Capture();
-  for (std::size_t x = 0; x < image.GetWidth(); ++x) {
-    for (std::size_t y = 0; y < image.GetHeight(); ++y) {
-      sf::Color c = image.GetPixel(x, y);
-      c.a = 0xff;
-      image.SetPixel(x, y, c);
-    }
-  }
+  sf::Texture texture;
+  texture.create(_internals->window.getSize().x, _internals->window.getSize().y);
+  texture.update(_internals->window);
 
   std::stringstream ss;
   ss << "screenshot" << time(0) % 10000000 << ".png";
-  image.SaveToFile(ss.str());
+  texture.copyToImage().saveToFile(ss.str());
 #endif
 }
 
@@ -839,8 +845,8 @@ void Lib::clear_screen() const
 {
 #ifndef PLATFORM_SCORE
   glClear(GL_COLOR_BUFFER_BIT);
-  _internals->window.Clear(RgbaToColor(0x000000ff));
-  _internals->window.Draw(sf::Shape::Rectangle(0, 0, 0, 0, sf::Color()));
+  _internals->window.clear(RgbaToColor(0x000000ff));
+  _internals->window.draw(MakeRectangle(0, 0, 0, 0, sf::Color()));
 #endif
 }
 
@@ -868,15 +874,15 @@ void Lib::render_line(const flvec2& a, const flvec2& b, colour_t c) const
 void Lib::render_text(const flvec2& v, const std::string& text, colour_t c) const
 {
 #ifndef PLATFORM_SCORE
-  _internals->font.SetColor(RgbaToColor(z::colour_cycle(c, _cycle)));
+  _internals->font.setColor(RgbaToColor(z::colour_cycle(c, _cycle)));
   for (std::size_t i = 0; i < text.length(); ++i) {
-    _internals->font.SetPosition(
+    _internals->font.setPosition(
         (int32_t(i) + v.x) * TEXT_WIDTH + _extra.x, v.y * TEXT_HEIGHT + _extra.y);
-    _internals->font.SetSubRect(sf::IntRect(TEXT_WIDTH * text[i], 0,
-                                 TEXT_WIDTH * (1 + text[i]), TEXT_HEIGHT));
-    _internals->window.Draw(_internals->font);
+    _internals->font.setTextureRect(sf::IntRect(TEXT_WIDTH * text[i], 0,
+                                                TEXT_WIDTH, TEXT_HEIGHT));
+    _internals->window.draw(_internals->font);
   }
-  _internals->window.Draw(sf::Shape::Rectangle(0, 0, 0, 0, sf::Color()));
+  _internals->window.draw(MakeRectangle(0, 0, 0, 0, sf::Color()));
 #endif
 }
 
@@ -934,55 +940,55 @@ void Lib::render_rect(
 void Lib::render() const
 {
 #ifndef PLATFORM_SCORE
-  _internals->window.Draw(sf::Shape::Rectangle(
+  _internals->window.draw(MakeRectangle(
       0.f, 0.f,
       float(_extra.x), float(Lib::HEIGHT + _extra.y * 2),
       sf::Color(0, 0, 0, 255)));
-  _internals->window.Draw(sf::Shape::Rectangle(
+  _internals->window.draw(MakeRectangle(
       0.f, 0.f,
       float(Lib::WIDTH + _extra.x * 2), float(_extra.y),
       sf::Color(0, 0, 0, 255)));
-  _internals->window.Draw(sf::Shape::Rectangle(
+  _internals->window.draw(MakeRectangle(
       float(Lib::WIDTH + _extra.x), 0,
       float(Lib::WIDTH + _extra.x * 2), float(Lib::HEIGHT + _extra.y * 2),
       sf::Color(0, 0, 0, 255)));
-  _internals->window.Draw(sf::Shape::Rectangle(
+  _internals->window.draw(MakeRectangle(
       0.f, float(Lib::HEIGHT + _extra.y),
       float(Lib::WIDTH + _extra.x * 2), float(Lib::HEIGHT + _extra.y * 2),
       sf::Color(0, 0, 0, 255)));
-  _internals->window.Draw(sf::Shape::Rectangle(
+  _internals->window.draw(MakeRectangle(
       0.f, 0.f,
       float(_extra.x - 2), float(Lib::HEIGHT + _extra.y * 2),
       sf::Color(32, 32, 32, 255)));
-  _internals->window.Draw(sf::Shape::Rectangle(
+  _internals->window.draw(MakeRectangle(
       0.f, 0.f,
       float(Lib::WIDTH + _extra.x * 2), float(_extra.y - 2),
       sf::Color(32, 32, 32, 255)));
-  _internals->window.Draw(sf::Shape::Rectangle(
+  _internals->window.draw(MakeRectangle(
       float(Lib::WIDTH + _extra.x + 2), float(_extra.y - 4),
       float(Lib::WIDTH + _extra.x * 2), float(Lib::HEIGHT + _extra.y * 2),
       sf::Color(32, 32, 32, 255)));
-  _internals->window.Draw(sf::Shape::Rectangle(
+  _internals->window.draw(MakeRectangle(
       float(_extra.x - 2), float(Lib::HEIGHT + _extra.y + 2),
       float(Lib::WIDTH + _extra.x * 2), float(Lib::HEIGHT + _extra.y * 2),
       sf::Color(32, 32, 32, 255)));
-  _internals->window.Draw(sf::Shape::Rectangle(
+  _internals->window.draw(MakeRectangle(
       float(_extra.x - 4), float(_extra.y - 4),
       float(_extra.x - 2), float(Lib::HEIGHT + _extra.y + 4),
       sf::Color(128, 128, 128, 255)));
-  _internals->window.Draw(sf::Shape::Rectangle(
+  _internals->window.draw(MakeRectangle(
       float(_extra.x - 4), float(_extra.y - 4),
       float(Lib::WIDTH + _extra.x + 4), float(_extra.y - 2),
       sf::Color(128, 128, 128, 255)));
-  _internals->window.Draw(sf::Shape::Rectangle(
+  _internals->window.draw(MakeRectangle(
       float(Lib::WIDTH + _extra.x + 2), float(_extra.y - 4),
       float(Lib::WIDTH + _extra.x + 4), float(Lib::HEIGHT + _extra.y + 4),
       sf::Color(128, 128, 128, 255)));
-  _internals->window.Draw(sf::Shape::Rectangle(
+  _internals->window.draw(MakeRectangle(
       float(_extra.x - 2), float(Lib::HEIGHT + _extra.y + 2),
       float(Lib::WIDTH + _extra.x + 4), float(Lib::HEIGHT + _extra.y + 4),
       sf::Color(128, 128, 128, 255)));
-  _internals->window.Display();
+  _internals->window.display();
 #endif
 }
 
@@ -1038,15 +1044,15 @@ bool Lib::play_sound(Sound sound, float volume, float pan, float repitch)
     return false;
   }
   for (int32_t i = 0; i < SOUND_MAX; ++i) {
-    if (_internals->voices[i].GetStatus() != sf::Sound::Playing) {
-      _internals->voices[i].SetAttenuation(0.f);
-      _internals->voices[i].SetLoop(false);
-      _internals->voices[i].SetMinDistance(100.f);
-      _internals->voices[i].SetBuffer(*buffer);
-      _internals->voices[i].SetVolume(100.f * volume);
-      _internals->voices[i].SetPitch(pow(2.f, repitch));
-      _internals->voices[i].SetPosition(pan, 0, -1);
-      _internals->voices[i].Play();
+    if (_internals->voices[i].getStatus() != sf::Sound::Playing) {
+      _internals->voices[i].setAttenuation(0.f);
+      _internals->voices[i].setLoop(false);
+      _internals->voices[i].setMinDistance(100.f);
+      _internals->voices[i].setBuffer(*buffer);
+      _internals->voices[i].setVolume(100.f * volume);
+      _internals->voices[i].setPitch(pow(2.f, repitch));
+      _internals->voices[i].setPosition(pan, 0, -1);
+      _internals->voices[i].play();
       return true;
     }
   }
@@ -1057,7 +1063,7 @@ bool Lib::play_sound(Sound sound, float volume, float pan, float repitch)
 void Lib::set_volume(int32_t volume)
 {
 #ifndef PLATFORM_SCORE
-  sf::Listener::SetGlobalVolume(float(std::max(0, std::min(100, volume))));
+  sf::Listener::setGlobalVolume(float(std::max(0, std::min(100, volume))));
 #endif
 }
 
@@ -1066,7 +1072,7 @@ void Lib::load_sounds()
 #ifndef PLATFORM_SCORE
   auto use_sound = [&](Sound sound, const std::string& filename) {
     sf::SoundBuffer* buffer = new sf::SoundBuffer();
-    buffer->LoadFromFile(filename);
+    buffer->loadFromFile(filename);
     _internals->sounds.emplace_back(0, Internals::named_sound(sound, nullptr));
     _internals->sounds.back().second.second.reset(buffer);
   };

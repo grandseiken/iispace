@@ -1,6 +1,6 @@
 #include "save.h"
 #include "lib.h"
-#include "../gen/iispace.pb.h"
+#include <iispace.pb.h>
 #include <algorithm>
 #include <fstream>
 
