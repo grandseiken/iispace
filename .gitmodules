@@ -1,6 +1,3 @@
-[submodule "dependencies/makelib"]
-	path = dependencies/makelib
-	url = https://github.com/grandseiken/makelib.git
 [submodule "dependencies/SFML"]
 	path = dependencies/SFML
 	url = http://github.com/SFML/SFML
