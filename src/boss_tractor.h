@@ -6,7 +6,6 @@
 
 class TractorBoss : public Boss {
 public:
-
   TractorBoss(int32_t players, int32_t cycle);
 
   void update() override;
@@ -14,7 +13,6 @@ public:
   int32_t get_damage(int32_t damage, bool magic) override;
 
 private:
-
   CompoundShape* _s1;
   CompoundShape* _s2;
   Polygon* _sattack;
@@ -31,19 +29,15 @@ private:
   std::size_t _attack_shapes;
 
   std::vector<vec2> _targets;
-
 };
 
 class TBossShot : public Enemy {
 public:
-
   TBossShot(const vec2& position, fixed angle);
   void update() override;
 
 private:
-
   vec2 _dir;
-
 };
 
 #endif

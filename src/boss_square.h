@@ -5,7 +5,6 @@
 
 class BigSquareBoss : public Boss {
 public:
-
   BigSquareBoss(int32_t players, int32_t cycle);
 
   void update() override;
@@ -13,7 +12,6 @@ public:
   int32_t get_damage(int32_t damage, bool magic) override;
 
 private:
-
   vec2 _dir;
   bool _reverse;
   int32_t _timer;
@@ -22,7 +20,6 @@ private:
   bool _special_attack;
   bool _special_attack_rotate;
   Player* _attack_player;
-
 };
 
 #endif

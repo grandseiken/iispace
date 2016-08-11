@@ -1,15 +1,14 @@
 #ifndef IISPACE_SRC_OVERMIND_H
 #define IISPACE_SRC_OVERMIND_H
 
-#include "z.h"
 #include <vector>
+#include "z.h"
 class GameModal;
 class Ship;
 
 class formation_base;
 class Overmind {
 public:
-
   static const int32_t TIMER = 2800;
   static const int32_t POWERUP_TIME = 1200;
   static const int32_t BOSS_REST_TIME = 240;
@@ -26,18 +25,15 @@ public:
   //------------------------------
   void update();
 
-  int32_t get_killed_bosses() const
-  {
+  int32_t get_killed_bosses() const {
     return _boss_mod_bosses - 1;
   }
 
-  int32_t get_elapsed_time() const
-  {
+  int32_t get_elapsed_time() const {
     return _elapsed_time;
   }
 
-  int32_t get_timer() const
-  {
+  int32_t get_timer() const {
     return _is_boss_level ? -1 : TIMER - _timer;
   }
 
@@ -46,8 +42,7 @@ public:
   void on_enemy_destroy(const Ship& ship);
   void on_enemy_create(const Ship& ship);
 
-  int32_t count_non_wall_enemies() const
-  {
+  int32_t count_non_wall_enemies() const {
     return _non_wall_count;
   }
 
@@ -59,7 +54,6 @@ public:
   };
 
 private:
-
   void spawn(Ship* ship);
   void spawn_powerup();
   void spawn_boss_reward();
@@ -93,10 +87,9 @@ private:
   int32_t _bosses_to_go;
   std::vector<entry> _formations;
 
-  template<typename F>
+  template <typename F>
   void add_formation();
   void add_formations();
-
 };
 
 #endif

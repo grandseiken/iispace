@@ -5,10 +5,8 @@
 
 class ChaserBoss : public Boss {
 public:
-
   static const int32_t TIMER = 60;
-  ChaserBoss(int32_t players, int32_t cycle, int32_t split = 0,
-             const vec2& position = vec2(),
+  ChaserBoss(int32_t players, int32_t cycle, int32_t split = 0, const vec2& position = vec2(),
              int32_t time = TIMER, int32_t stagger = 0);
 
   void update() override;
@@ -19,7 +17,6 @@ public:
   static bool _has_counted;
 
 private:
-
   bool _on_screen;
   bool _move;
   int32_t _timer;
@@ -33,7 +30,6 @@ private:
   int32_t _stagger;
   static int32_t _count;
   static int32_t _shared_hp;
-
 };
 
 #endif

@@ -6,23 +6,21 @@ static const int32_t TB_TIMER = 100;
 static const fixed TB_SPEED = 2;
 
 TractorBoss::TractorBoss(int32_t players, int32_t cycle)
-  : Boss(vec2(Lib::WIDTH * (1 + fixed::half), Lib::HEIGHT / 2),
-         GameModal::BOSS_2A, TB_BASE_HP, players, cycle)
-  , _will_attack(false)
-  , _stopped(false)
-  , _generating(false)
-  , _attacking(false)
-  , _continue(false)
-  , _gen_dir(0)
-  , _shoot_type(z::rand_int(2))
-  , _sound(true)
-  , _timer(0)
-  , _attack_size(0)
-{
+: Boss(vec2(Lib::WIDTH * (1 + fixed::half), Lib::HEIGHT / 2), GameModal::BOSS_2A, TB_BASE_HP,
+       players, cycle)
+, _will_attack(false)
+, _stopped(false)
+, _generating(false)
+, _attacking(false)
+, _continue(false)
+, _gen_dir(0)
+, _shoot_type(z::rand_int(2))
+, _sound(true)
+, _timer(0)
+, _attack_size(0) {
   _s1 = new CompoundShape(vec2(0, -96), 0, DANGEROUS | VULNERABLE);
 
-  _s1->add_shape(
-      new Polygon(vec2(), 12, 6, 0x882288ff, 0, 0, Polygon::T::POLYGRAM));
+  _s1->add_shape(new Polygon(vec2(), 12, 6, 0x882288ff, 0, 0, Polygon::T::POLYGRAM));
   _s1->add_shape(new Polygon(vec2(), 12, 12, 0x882288ff, 0, 0));
   _s1->add_shape(new Polygon(vec2(), 2, 6, 0x882288ff, 0, 0));
   _s1->add_shape(new Polygon(vec2(), 36, 12, 0xcc33ccff, 0, 0));
@@ -30,14 +28,12 @@ TractorBoss::TractorBoss(int32_t players, int32_t cycle)
   _s1->add_shape(new Polygon(vec2(), 32, 12, 0xcc33ccff, 0, 0));
   for (int32_t i = 0; i < 8; i++) {
     vec2 d = vec2(24, 0).rotated(i * fixed::pi / 4);
-    _s1->add_shape(
-        new Polygon(d, 12, 6, 0xcc33ccff, 0, 0, Polygon::T::POLYGRAM));
+    _s1->add_shape(new Polygon(d, 12, 6, 0xcc33ccff, 0, 0, Polygon::T::POLYGRAM));
   }
 
   _s2 = new CompoundShape(vec2(0, 96), 0, DANGEROUS | VULNERABLE);
 
-  _s2->add_shape(
-      new Polygon(vec2(), 12, 6, 0x882288ff, 0, 0, Polygon::T::POLYGRAM));
+  _s2->add_shape(new Polygon(vec2(), 12, 6, 0x882288ff, 0, 0, Polygon::T::POLYGRAM));
   _s2->add_shape(new Polygon(vec2(), 12, 12, 0x882288ff, 0, 0));
   _s2->add_shape(new Polygon(vec2(), 2, 6, 0x882288ff, 0, 0));
 
@@ -46,8 +42,7 @@ TractorBoss::TractorBoss(int32_t players, int32_t cycle)
   _s2->add_shape(new Polygon(vec2(), 32, 12, 0xcc33ccff, 0, 0));
   for (int32_t i = 0; i < 8; i++) {
     vec2 d = vec2(24, 0).rotated(i * fixed::pi / 4);
-    _s2->add_shape(
-        new Polygon(d, 12, 6, 0xcc33ccff, 0, 0, Polygon::T::POLYGRAM));
+    _s2->add_shape(new Polygon(d, 12, 6, 0xcc33ccff, 0, 0, Polygon::T::POLYGRAM));
   }
 
   add_shape(_s1);
@@ -66,10 +61,8 @@ TractorBoss::TractorBoss(int32_t players, int32_t cycle)
   _attack_shapes = shapes().size();
 }
 
-void TractorBoss::update()
-{
-  if (shape().centre.x <= Lib::WIDTH / 2 &&
-      _will_attack && !_stopped && !_continue) {
+void TractorBoss::update() {
+  if (shape().centre.x <= Lib::WIDTH / 2 && _will_attack && !_stopped && !_continue) {
     _stopped = true;
     _generating = true;
     _gen_dir = z::rand_int(2) == 0;
@@ -91,8 +84,7 @@ void TractorBoss::update()
   _timer++;
   if (!_stopped) {
     move(TB_SPEED * vec2(-1, 0));
-    if (!_will_attack && is_on_screen() &&
-        _timer % (16 - game().alive_players() * 2) == 0) {
+    if (!_will_attack && is_on_screen() && _timer % (16 - game().alive_players() * 2) == 0) {
       if (_shoot_type == 0 || (is_hp_low() && _shoot_type == 1)) {
         Player* p = nearest_player();
 
@@ -134,8 +126,7 @@ void TractorBoss::update()
         ship->move(d * Tractor::TRACTOR_BEAM_SPEED);
       }
     }
-  }
-  else {
+  } else {
     if (_generating) {
       if (_timer >= TB_TIMER * 5) {
         _timer = 0;
@@ -145,16 +136,13 @@ void TractorBoss::update()
         play_sound(Lib::SOUND_BOSS_ATTACK);
       }
 
-      if (_timer < TB_TIMER * 4 &&
-          _timer % (10 - 2 * game().alive_players()) == 0) {
-        Ship* s = new TBossShot(
-            _s1->convert_point(shape().centre, shape().rotation(), vec2()),
-            _gen_dir ? shape().rotation() + fixed::pi : shape().rotation());
+      if (_timer < TB_TIMER * 4 && _timer % (10 - 2 * game().alive_players()) == 0) {
+        Ship* s = new TBossShot(_s1->convert_point(shape().centre, shape().rotation(), vec2()),
+                                _gen_dir ? shape().rotation() + fixed::pi : shape().rotation());
         spawn(s);
 
-        s = new TBossShot(
-            _s2->convert_point(shape().centre, shape().rotation(), vec2()),
-            shape().rotation() + (_gen_dir ? 0 : fixed::pi));
+        s = new TBossShot(_s2->convert_point(shape().centre, shape().rotation(), vec2()),
+                          shape().rotation() + (_gen_dir ? 0 : fixed::pi));
         spawn(s);
         play_sound_random(Lib::SOUND_ENEMY_SPAWN);
       }
@@ -168,16 +156,14 @@ void TractorBoss::update()
         spawn(new BossShot(v, d * -5, 0xcc33ccff));
         play_sound_random(Lib::SOUND_BOSS_FIRE);
       }
-    }
-    else {
+    } else {
       if (!_attacking) {
         if (_timer >= TB_TIMER * 4) {
           _timer = 0;
           _attacking = true;
         }
         if (_timer % (TB_TIMER / (1 + fixed::half)).to_int() == TB_TIMER / 8) {
-          vec2 v = _s1->convert_point(
-              shape().centre, shape().rotation(), vec2());
+          vec2 v = _s1->convert_point(shape().centre, shape().rotation(), vec2());
           vec2 d = vec2::from_polar(z::rand_fixed() * (2 * fixed::pi), 5);
           spawn(new BossShot(v, d, 0xcc33ccff));
           d = d.rotated(fixed::pi / 2);
@@ -200,8 +186,7 @@ void TractorBoss::update()
         }
         _targets.clear();
         for (const auto& ship : game().all_ships(SHIP_PLAYER | SHIP_ENEMY)) {
-          if (ship == this || ((ship->type() & SHIP_PLAYER) &&
-                               ((Player*) ship)->is_killed())) {
+          if (ship == this || ((ship->type() & SHIP_PLAYER) && ((Player*) ship)->is_killed())) {
             continue;
           }
 
@@ -220,8 +205,7 @@ void TractorBoss::update()
           vec2 d = (shape().centre - pos).normalised();
           ship->move(d * speed);
 
-          if ((ship->type() & SHIP_ENEMY) &&
-              !(ship->type() & SHIP_WALL) &&
+          if ((ship->type() & SHIP_ENEMY) && !(ship->type() & SHIP_WALL) &&
               (ship->shape().centre - shape().centre).length() <= 40) {
             ship->destroy();
             _attack_size++;
@@ -229,8 +213,7 @@ void TractorBoss::update()
             add_shape(new Polygon(vec2(), 8, 6, 0xcc33ccff, 0, 0));
           }
         }
-      }
-      else {
+      } else {
         _timer = 0;
         _stopped = false;
         _continue = true;
@@ -250,20 +233,18 @@ void TractorBoss::update()
   }
 
   for (std::size_t i = _attack_shapes; i < shapes().size(); ++i) {
-    vec2 v = vec2::from_polar(z::rand_fixed() * (2 * fixed::pi),
-                              2 * (z::rand_fixed() - fixed::half) *
-                                  fixed(_attack_size) / (1 + fixed::half));
+    vec2 v =
+        vec2::from_polar(z::rand_fixed() * (2 * fixed::pi), 2 * (z::rand_fixed() - fixed::half) *
+                             fixed(_attack_size) / (1 + fixed::half));
     shapes()[i]->centre = v;
   }
 
   fixed r = 0;
   if (!_will_attack || (_stopped && !_generating && !_attacking)) {
     r = fixed::hundredth;
-  }
-  else if (_stopped && _attacking && !_generating) {
+  } else if (_stopped && _attacking && !_generating) {
     r = 0;
-  }
-  else {
+  } else {
     r = fixed::hundredth / 2;
   }
   shape().rotate(r);
@@ -276,28 +257,23 @@ void TractorBoss::update()
   }
 }
 
-void TractorBoss::render() const
-{
+void TractorBoss::render() const {
   Boss::render();
   if ((_stopped && !_generating && !_attacking) ||
       (!_stopped && (_continue || !_will_attack) && is_on_screen())) {
     for (std::size_t i = 0; i < _targets.size(); ++i) {
       if (((_timer + i * 4) / 4) % 2) {
-        lib().render_line(to_float(shape().centre),
-                          to_float(_targets[i]), 0xcc33ccff);
+        lib().render_line(to_float(shape().centre), to_float(_targets[i]), 0xcc33ccff);
       }
     }
   }
 }
 
-int32_t TractorBoss::get_damage(int32_t damage, bool magic)
-{
+int32_t TractorBoss::get_damage(int32_t damage, bool magic) {
   return damage;
 }
 
-TBossShot::TBossShot(const vec2& position, fixed angle)
-  : Enemy(position, SHIP_NONE, 1)
-{
+TBossShot::TBossShot(const vec2& position, fixed angle) : Enemy(position, SHIP_NONE, 1) {
   add_shape(new Polygon(vec2(), 8, 6, 0xcc33ccff, 0, DANGEROUS | VULNERABLE));
   _dir = vec2::from_polar(angle, 3);
   set_bounding_width(8);
@@ -305,14 +281,11 @@ TBossShot::TBossShot(const vec2& position, fixed angle)
   set_destroy_sound(Lib::SOUND_ENEMY_SHATTER);
 }
 
-void TBossShot::update()
-{
-  if ((shape().centre.x > Lib::WIDTH && _dir.x > 0) ||
-      (shape().centre.x < 0 && _dir.x < 0)) {
+void TBossShot::update() {
+  if ((shape().centre.x > Lib::WIDTH && _dir.x > 0) || (shape().centre.x < 0 && _dir.x < 0)) {
     _dir.x = -_dir.x;
   }
-  if ((shape().centre.y > Lib::HEIGHT && _dir.y > 0) ||
-      (shape().centre.y < 0 && _dir.y < 0)) {
+  if ((shape().centre.y > Lib::HEIGHT && _dir.y > 0) || (shape().centre.y < 0 && _dir.y < 0)) {
     _dir.y = -_dir.y;
   }
 

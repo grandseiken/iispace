@@ -11,17 +11,16 @@ static const fixed BSB_SPEED = 2 + fixed(1) / 2;
 static const fixed BSB_ATTACK_RADIUS = 120;
 
 BigSquareBoss::BigSquareBoss(int32_t players, int32_t cycle)
-  : Boss(vec2(Lib::WIDTH * fixed::hundredth * 75, Lib::HEIGHT * 2),
-         GameModal::BOSS_1A, BSB_BASE_HP, players, cycle)
-  , _dir(0, -1)
-  , _reverse(false)
-  , _timer(BSB_TIMER * 6)
-  , _spawn_timer(0)
-  , _special_timer(0)
-  , _special_attack(false)
-  , _special_attack_rotate(false)
-  , _attack_player(0)
-{
+: Boss(vec2(Lib::WIDTH * fixed::hundredth * 75, Lib::HEIGHT * 2), GameModal::BOSS_1A, BSB_BASE_HP,
+       players, cycle)
+, _dir(0, -1)
+, _reverse(false)
+, _timer(BSB_TIMER * 6)
+, _spawn_timer(0)
+, _special_timer(0)
+, _special_attack(false)
+, _special_attack_rotate(false)
+, _attack_player(0) {
   add_shape(new Polygon(vec2(), 160, 4, 0x9933ffff, 0, 0));
   add_shape(new Polygon(vec2(), 140, 4, 0x9933ffff, 0, DANGEROUS));
   add_shape(new Polygon(vec2(), 120, 4, 0x9933ffff, 0, DANGEROUS));
@@ -37,8 +36,7 @@ BigSquareBoss::BigSquareBoss(int32_t players, int32_t cycle)
   add_shape(new Polygon(vec2(), 55, 4, 0x330099ff, 0, SHIELD));
 }
 
-void BigSquareBoss::update()
-{
+void BigSquareBoss::update() {
   const vec2& pos = shape().centre;
   if (pos.y < Lib::HEIGHT * fixed::hundredth * 25 && _dir.y == -1) {
     _dir = vec2(_reverse ? 1 : -1, 0);
@@ -58,8 +56,7 @@ void BigSquareBoss::update()
     if (_attack_player->is_killed()) {
       _special_timer = 0;
       _attack_player = 0;
-    }
-    else if (!_special_timer) {
+    } else if (!_special_timer) {
       vec2 d(BSB_ATTACK_RADIUS, 0);
       if (_special_attack_rotate) {
         d = d.rotated(fixed::pi / 2);
@@ -77,8 +74,7 @@ void BigSquareBoss::update()
     if (!_attack_player) {
       _special_attack = false;
     }
-  }
-  else if (is_on_screen()) {
+  } else if (is_on_screen()) {
     _timer--;
     if (_timer <= 0) {
       _timer = (z::rand_int(6) + 1) * BSB_TIMER;
@@ -86,8 +82,7 @@ void BigSquareBoss::update()
       _reverse = !_reverse;
     }
     _spawn_timer++;
-    int32_t t =
-        (BSB_STIMER - game().alive_players() * 10) / (is_hp_low() ? 2 : 1);
+    int32_t t = (BSB_STIMER - game().alive_players() * 10) / (is_hp_low() ? 2 : 1);
     if (_spawn_timer >= t) {
       _spawn_timer = 0;
       _special_timer++;
@@ -116,8 +111,7 @@ void BigSquareBoss::update()
   }
 }
 
-void BigSquareBoss::render() const
-{
+void BigSquareBoss::render() const {
   Boss::render();
   if ((_special_timer / 4) % 2 && _attack_player) {
     flvec2 d(BSB_ATTACK_RADIUS.to_float(), 0);
@@ -133,7 +127,6 @@ void BigSquareBoss::render() const
   }
 }
 
-int32_t BigSquareBoss::get_damage(int32_t damage, bool magic)
-{
+int32_t BigSquareBoss::get_damage(int32_t damage, bool magic) {
   return damage;
 }

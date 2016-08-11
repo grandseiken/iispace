@@ -1,10 +1,9 @@
 #include "replay.h"
-#include "z0_game.h"
 #include <algorithm>
 #include <fstream>
+#include "z0_game.h"
 
-Replay::Replay(const std::string& path)
-{
+Replay::Replay(const std::string& path) {
   Lib::set_working_directory(true);
   std::ifstream file;
   file.open(path.c_str(), std::ios::binary);
@@ -20,8 +19,7 @@ Replay::Replay(const std::string& path)
   std::string temp;
   try {
     temp = z::decompress_string(z::crypt(b.str(), Lib::SUPER_ENCRYPTION_KEY));
-  }
-  catch (std::exception& e) {
+  } catch (std::exception& e) {
     Lib::set_working_directory(false);
     throw std::runtime_error(e.what());
   }
@@ -32,8 +30,7 @@ Replay::Replay(const std::string& path)
   }
 }
 
-Replay::Replay(Mode::mode mode, int32_t players, bool can_face_secret_boss)
-{
+Replay::Replay(Mode::mode mode, int32_t players, bool can_face_secret_boss) {
   replay.set_game_version("WiiSPACE v1.3 replay");
   replay.set_game_mode(mode);
   replay.set_players(players);
@@ -43,8 +40,7 @@ Replay::Replay(Mode::mode mode, int32_t players, bool can_face_secret_boss)
   replay.set_seed(seed);
 }
 
-void Replay::record(const vec2& velocity, const vec2& target, int32_t keys)
-{
+void Replay::record(const vec2& velocity, const vec2& target, int32_t keys) {
   proto::PlayerFrame& frame = *replay.add_player_frame();
   frame.set_velocity_x(velocity.x.to_internal());
   frame.set_velocity_y(velocity.y.to_internal());
@@ -53,16 +49,15 @@ void Replay::record(const vec2& velocity, const vec2& target, int32_t keys)
   frame.set_keys(keys);
 }
 
-void Replay::write(const std::string& name, int64_t score) const
-{
+void Replay::write(const std::string& name, int64_t score) const {
   std::stringstream ss;
-  ss << "replays/" << replay.seed() << "_" <<
-      replay.players() << "p_" <<
-      (replay.game_mode() == Mode::BOSS ? "bossmode_" :
-       replay.game_mode() == Mode::HARD ? "hardmode_" :
-       replay.game_mode() == Mode::FAST ? "fastmode_" :
-       replay.game_mode() == Mode::WHAT ? "w-hatmode_" : "") <<
-      name << "_" << score << ".wrp";
+  ss << "replays/" << replay.seed() << "_" << replay.players() << "p_"
+     << (replay.game_mode() == Mode::BOSS ? "bossmode_" : replay.game_mode() == Mode::HARD
+                 ? "hardmode_"
+                 : replay.game_mode() == Mode::FAST ? "fastmode_" : replay.game_mode() == Mode::WHAT
+                         ? "w-hatmode_"
+                         : "")
+     << name << "_" << score << ".wrp";
 
   std::string temp;
   replay.SerializeToString(&temp);

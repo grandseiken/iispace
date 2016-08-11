@@ -13,27 +13,22 @@ static const fixed DRB_ARM_SPEED = 4;
 static const fixed DRB_RAY_SPEED = 10;
 
 DeathRayBoss::DeathRayBoss(int32_t players, int32_t cycle)
-  : Boss(vec2(Lib::WIDTH * (fixed(3) / 20), -Lib::HEIGHT),
-         GameModal::BOSS_2C, DRB_BASE_HP, players, cycle)
-  , _timer(DRB_TIMER * 2)
-  , _laser(false)
-  , _dir(true)
-  , _pos(1)
-  , _arm_timer(0)
-  , _shot_timer(0)
-  , _ray_attack_timer(0)
-  , _ray_src1()
-  , _ray_src2()
-{
-  add_shape(new Polygon(
-      vec2(), 110, 12, 0x228855ff, fixed::pi / 12, 0, Polygon::T::POLYSTAR));
-  add_shape(new Polygon(
-      vec2(), 70, 12, 0x33ff99ff, fixed::pi / 12, 0, Polygon::T::POLYGRAM));
-  add_shape(new Polygon(
-      vec2(), 120, 12, 0x33ff99ff, fixed::pi / 12, DANGEROUS | VULNERABLE));
+: Boss(vec2(Lib::WIDTH * (fixed(3) / 20), -Lib::HEIGHT), GameModal::BOSS_2C, DRB_BASE_HP, players,
+       cycle)
+, _timer(DRB_TIMER * 2)
+, _laser(false)
+, _dir(true)
+, _pos(1)
+, _arm_timer(0)
+, _shot_timer(0)
+, _ray_attack_timer(0)
+, _ray_src1()
+, _ray_src2() {
+  add_shape(new Polygon(vec2(), 110, 12, 0x228855ff, fixed::pi / 12, 0, Polygon::T::POLYSTAR));
+  add_shape(new Polygon(vec2(), 70, 12, 0x33ff99ff, fixed::pi / 12, 0, Polygon::T::POLYGRAM));
+  add_shape(new Polygon(vec2(), 120, 12, 0x33ff99ff, fixed::pi / 12, DANGEROUS | VULNERABLE));
   add_shape(new Polygon(vec2(), 115, 12, 0x33ff99ff, fixed::pi / 12, 0));
-  add_shape(new Polygon(
-      vec2(), 110, 12, 0x33ff99ff, fixed::pi / 12, SHIELD));
+  add_shape(new Polygon(vec2(), 110, 12, 0x33ff99ff, fixed::pi / 12, SHIELD));
 
   CompoundShape* s1 = new CompoundShape(vec2(), 0, DANGEROUS);
   for (int32_t i = 1; i < 12; i++) {
@@ -48,17 +43,15 @@ DeathRayBoss::DeathRayBoss(int32_t players, int32_t cycle)
   shape().rotate(2 * fixed::pi * fixed(z::rand_int()) / z::rand_max);
 }
 
-void DeathRayBoss::update()
-{
+void DeathRayBoss::update() {
   bool positioned = true;
-  fixed d =
-      _pos == 0 ? 1 * Lib::HEIGHT / 4 - shape().centre.y :
-      _pos == 1 ? 2 * Lib::HEIGHT / 4 - shape().centre.y :
-      _pos == 2 ? 3 * Lib::HEIGHT / 4 - shape().centre.y :
-      _pos == 3 ? 1 * Lib::HEIGHT / 8 - shape().centre.y :
-      _pos == 4 ? 3 * Lib::HEIGHT / 8 - shape().centre.y :
-      _pos == 5 ? 5 * Lib::HEIGHT / 8 - shape().centre.y :
-      7 * Lib::HEIGHT / 8 - shape().centre.y;
+  fixed d = _pos == 0 ? 1 * Lib::HEIGHT / 4 - shape().centre.y : _pos == 1
+          ? 2 * Lib::HEIGHT / 4 - shape().centre.y
+          : _pos == 2 ? 3 * Lib::HEIGHT / 4 - shape().centre.y : _pos == 3
+                  ? 1 * Lib::HEIGHT / 8 - shape().centre.y
+                  : _pos == 4 ? 3 * Lib::HEIGHT / 8 - shape().centre.y : _pos == 5
+                          ? 5 * Lib::HEIGHT / 8 - shape().centre.y
+                          : 7 * Lib::HEIGHT / 8 - shape().centre.y;
 
   if (d.abs() > 3) {
     move(vec2(0, d / d.abs()) * DRB_SPEED);
@@ -93,8 +86,7 @@ void DeathRayBoss::update()
         _laser = false;
         _timer = DRB_TIMER * (2 + z::rand_int(3));
       }
-    }
-    else {
+    } else {
       fixed r = shape().rotation();
       if (r == 0) {
         _timer = DRB_TIMER * 2;
@@ -102,14 +94,12 @@ void DeathRayBoss::update()
 
       if (r < fixed::tenth || r > 2 * fixed::pi - fixed::tenth) {
         shape().set_rotation(0);
-      }
-      else {
+      } else {
         going_fast = true;
         shape().rotate(_dir ? fixed::tenth : -fixed::tenth);
       }
     }
-  }
-  else {
+  } else {
     shape().rotate(_dir ? fixed::hundredth * 2 : -fixed::hundredth * 2);
     if (is_on_screen()) {
       _timer--;
@@ -171,10 +161,8 @@ void DeathRayBoss::update()
     if (_arm_timer >= DRB_ARM_RTIMER) {
       _arm_timer = 0;
       if (!is_hp_low()) {
-        int32_t players = game().get_lives() ?
-            game().players().size() : game().alive_players();
-        int32_t hp = (DRB_ARM_HP *
-                      (7 * fixed::tenth + 3 * fixed::tenth * players)).to_int();
+        int32_t players = game().get_lives() ? game().players().size() : game().alive_players();
+        int32_t hp = (DRB_ARM_HP * (7 * fixed::tenth + 3 * fixed::tenth * players)).to_int();
         _arms.push_back(new DeathArm(this, true, hp));
         _arms.push_back(new DeathArm(this, false, hp));
         play_sound(Lib::SOUND_ENEMY_SPAWN);
@@ -199,8 +187,7 @@ void DeathRayBoss::update()
   }
 }
 
-void DeathRayBoss::render() const
-{
+void DeathRayBoss::render() const {
   Boss::render();
   for (int32_t i = _ray_attack_timer - 8; i <= _ray_attack_timer + 8; i++) {
     if (i < 40 || i > DRB_RAY_TIMER) {
@@ -220,13 +207,11 @@ void DeathRayBoss::render() const
   }
 }
 
-int32_t DeathRayBoss::get_damage(int32_t damage, bool magic)
-{
+int32_t DeathRayBoss::get_damage(int32_t damage, bool magic) {
   return _arms.size() ? 0 : damage;
 }
 
-void DeathRayBoss::on_arm_death(Ship* arm)
-{
+void DeathRayBoss::on_arm_death(Ship* arm) {
   for (auto it = _arms.begin(); it != _arms.end(); ++it) {
     if (*it == arm) {
       _arms.erase(it);
@@ -235,17 +220,13 @@ void DeathRayBoss::on_arm_death(Ship* arm)
   }
 }
 
-
-DeathRay::DeathRay(const vec2& position)
-  : Enemy(position, SHIP_NONE, 0)
-{
+DeathRay::DeathRay(const vec2& position) : Enemy(position, SHIP_NONE, 0) {
   add_shape(new Box(vec2(), 10, 48, 0, 0, DANGEROUS));
   add_shape(new Line(vec2(), vec2(0, -48), vec2(0, 48), 0xffffffff, 0));
   set_bounding_width(48);
 }
 
-void DeathRay::update()
-{
+void DeathRay::update() {
   move(vec2(1, 0) * DRB_RAY_SPEED);
   if (shape().centre.x > Lib::WIDTH + 20) {
     destroy();
@@ -253,18 +234,16 @@ void DeathRay::update()
 }
 
 DeathArm::DeathArm(DeathRayBoss* boss, bool top, int32_t hp)
-  : Enemy(vec2(), SHIP_NONE, hp)
-  , _boss(boss)
-  , _top(top)
-  , _timer(top ? 2 * DRB_ARM_ATIMER / 3 : 0)
-  , _attacking(false)
-  , _dir()
-  , _start(30)
-  , _shots(0)
-{
+: Enemy(vec2(), SHIP_NONE, hp)
+, _boss(boss)
+, _top(top)
+, _timer(top ? 2 * DRB_ARM_ATIMER / 3 : 0)
+, _attacking(false)
+, _dir()
+, _start(30)
+, _shots(0) {
   add_shape(new Polygon(vec2(), 60, 4, 0x33ff99ff, 0, 0));
-  add_shape(new Polygon(vec2(), 50, 4, 0x228855ff,
-                        0, VULNERABLE, Polygon::T::POLYGRAM));
+  add_shape(new Polygon(vec2(), 50, 4, 0x228855ff, 0, VULNERABLE, Polygon::T::POLYGRAM));
   add_shape(new Polygon(vec2(), 40, 4, 0, 0, SHIELD));
   add_shape(new Polygon(vec2(), 20, 4, 0x33ff99ff, 0, 0));
   add_shape(new Polygon(vec2(), 18, 4, 0x228855ff, 0, 0));
@@ -272,8 +251,7 @@ DeathArm::DeathArm(DeathRayBoss* boss, bool top, int32_t hp)
   set_destroy_sound(Lib::SOUND_PLAYER_DESTROY);
 }
 
-void DeathArm::update()
-{
+void DeathArm::update() {
   if (_timer % (DRB_ARM_ATIMER / 2) == DRB_ARM_ATIMER / 4) {
     play_sound_random(Lib::SOUND_BOSS_FIRE);
     _target = nearest_player()->shape().centre;
@@ -296,22 +274,17 @@ void DeathArm::update()
         _dir = d.normalised();
         move(_dir * DRB_ARM_SPEED);
       }
-    }
-    else if (_timer < DRB_ARM_ATIMER / 2) {
+    } else if (_timer < DRB_ARM_ATIMER / 2) {
       move(_dir * DRB_ARM_SPEED);
-    }
-    else if (_timer < DRB_ARM_ATIMER) {
-      vec2 d = _boss->shape().centre +
-          vec2(80, _top ? 80 : -80) - shape().centre;
+    } else if (_timer < DRB_ARM_ATIMER) {
+      vec2 d = _boss->shape().centre + vec2(80, _top ? 80 : -80) - shape().centre;
       if (d.length() > DRB_ARM_SPEED) {
         move(d.normalised() * DRB_ARM_SPEED);
-      }
-      else {
+      } else {
         _attacking = false;
         _timer = 0;
       }
-    }
-    else if (_timer >= DRB_ARM_ATIMER) {
+    } else if (_timer >= DRB_ARM_ATIMER) {
       _attacking = false;
       _timer = 0;
     }
@@ -339,8 +312,7 @@ void DeathArm::update()
   }
 }
 
-void DeathArm::on_destroy(bool bomb)
-{
+void DeathArm::on_destroy(bool bomb) {
   _boss->on_arm_death(this);
   explosion();
   explosion(0xffffffff, 12);

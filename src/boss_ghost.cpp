@@ -7,22 +7,20 @@ static const int32_t GB_ATTACK_TIME = 100;
 static const fixed GB_WALL_SPEED = 3 + fixed(1) / 2;
 
 GhostBoss::GhostBoss(int32_t players, int32_t cycle)
-  : Boss(vec2(Lib::WIDTH / 2, Lib::HEIGHT / 2),
-         GameModal::BOSS_2B, GB_BASE_HP, players, cycle)
-  , _visible(false)
-  , _vtime(0)
-  , _timer(0)
-  , _attack_time(GB_ATTACK_TIME)
-  , _attack(0)
-  , _rDir(false)
-  , _start_time(120)
-  , _danger_circle(0)
-  , _danger_offset1(0)
-  , _danger_offset2(0)
-  , _danger_offset3(0)
-  , _danger_offset4(0)
-  , _shot_type(false)
-{
+: Boss(vec2(Lib::WIDTH / 2, Lib::HEIGHT / 2), GameModal::BOSS_2B, GB_BASE_HP, players, cycle)
+, _visible(false)
+, _vtime(0)
+, _timer(0)
+, _attack_time(GB_ATTACK_TIME)
+, _attack(0)
+, _rDir(false)
+, _start_time(120)
+, _danger_circle(0)
+, _danger_offset1(0)
+, _danger_offset2(0)
+, _danger_offset3(0)
+, _danger_offset4(0)
+, _shot_type(false) {
   add_shape(new Polygon(vec2(), 32, 8, 0x9933ccff, 0, 0));
   add_shape(new Polygon(vec2(), 48, 8, 0xcc66ffff, 0, 0));
 
@@ -43,8 +41,7 @@ GhostBoss::GhostBoss(int32_t players, int32_t cycle)
     CompoundShape* s = new CompoundShape(vec2(), 0, 0);
     for (int32_t i = 0; i < 16 + n * 6; i++) {
       vec2 d = vec2::from_polar(i * 2 * fixed::pi / (16 + n * 6), 100 + n * 60);
-      s->add_shape(new Polygon(d, 16, 8, n ? 0x330066ff : 0x9933ccff,
-                               0, 0, Polygon::T::POLYSTAR));
+      s->add_shape(new Polygon(d, 16, 8, n ? 0x330066ff : 0x9933ccff, 0, 0, Polygon::T::POLYSTAR));
       s->add_shape(new Polygon(d, 12, 8, n ? 0x330066ff : 0x9933ccff));
     }
     add_shape(s);
@@ -58,8 +55,7 @@ GhostBoss::GhostBoss(int32_t players, int32_t cycle)
   set_ignore_damage_colour_index(12);
 }
 
-void GhostBoss::update()
-{
+void GhostBoss::update() {
   for (int32_t n = 1; n < 5; ++n) {
     CompoundShape* s = (CompoundShape*) shapes()[11 + n].get();
     CompoundShape* c = (CompoundShape*) shapes()[16 + n].get();
@@ -68,30 +64,23 @@ void GhostBoss::update()
     for (int32_t i = 0; i < 16 + n * 6; ++i) {
       Shape& s1 = *s->shapes()[2 * i];
       Shape& s2 = *s->shapes()[1 + 2 * i];
-      int32_t t =
-          n == 1 ? (i + _danger_offset1) % 11 :
-          n == 2 ? (i + _danger_offset2) % 7 :
-          n == 3 ? (i + _danger_offset3) % 17 : (i + _danger_offset4) % 10;
+      int32_t t = n == 1 ? (i + _danger_offset1) % 11 : n == 2 ? (i + _danger_offset2) % 7 : n == 3
+                  ? (i + _danger_offset3) % 17
+                  : (i + _danger_offset4) % 10;
 
-      bool b =
-          n == 1 ? (t % 11 == 0 || t % 11 == 5) :
-          n == 2 ? (t % 7 == 0) :
-          n == 3 ? (t % 17 == 0 || t % 17 == 8) : (t % 10 == 0);
+      bool b = n == 1 ? (t % 11 == 0 || t % 11 == 5) : n == 2 ? (t % 7 == 0) : n == 3
+                  ? (t % 17 == 0 || t % 17 == 8)
+                  : (t % 10 == 0);
 
-      if (((n == 4 && _attack != 2) ||
-           (n + (n == 3)) & _danger_circle) &&
-          _visible && b) {
+      if (((n == 4 && _attack != 2) || (n + (n == 3)) & _danger_circle) && _visible && b) {
         s1.colour = 0xcc66ffff;
         s2.colour = 0xcc66ffff;
         if (_vtime == 0) {
-          vec2 d = vec2::from_polar(
-              i * 2 * fixed::pi / (16 + n * 6), 100 + n * 60);
+          vec2 d = vec2::from_polar(i * 2 * fixed::pi / (16 + n * 6), 100 + n * 60);
           c->add_shape(new Polygon(d, 9, 8, 0));
-          _warnings.push_back(
-              c->convert_point(shape().centre, shape().rotation(), d));
+          _warnings.push_back(c->convert_point(shape().centre, shape().rotation(), d));
         }
-      }
-      else {
+      } else {
         s1.colour = 0x330066ff;
         s2.colour = 0x330066ff;
       }
@@ -109,8 +98,7 @@ void GhostBoss::update()
     CompoundShape* s = (CompoundShape*) shapes()[11 + n].get();
     if (n % 2) {
       s->rotate(fixed::hundredth * 3 + (fixed(3) / 2000) * n);
-    }
-    else {
+    } else {
       s->rotate(fixed::hundredth * 5 - (fixed(3) / 2000) * n);
     }
     for (const auto& t : s->shapes()) {
@@ -120,8 +108,7 @@ void GhostBoss::update()
     s = (CompoundShape*) shapes()[16 + n].get();
     if (n % 2) {
       s->rotate(fixed::hundredth * 3 + (fixed(3) / 2000) * n);
-    }
-    else {
+    } else {
       s->rotate(fixed::hundredth * 4 - (fixed(3) / 2000) * n);
     }
     for (const auto& t : s->shapes()) {
@@ -138,17 +125,15 @@ void GhostBoss::update()
     _timer++;
     if (_timer == 9 * GB_TIMER / 10 ||
         (_timer >= GB_TIMER / 10 && _timer < 9 * GB_TIMER / 10 - 16 &&
-         ((_timer % 16 == 0 && _attack == 2) ||
-          (_timer % 32 == 0 && _shot_type)))) {
+         ((_timer % 16 == 0 && _attack == 2) || (_timer % 32 == 0 && _shot_type)))) {
       for (int32_t i = 0; i < 8; i++) {
         vec2 d = vec2::from_polar(i * fixed::pi / 4 + shape().rotation(), 5);
         spawn(new BossShot(shape().centre, d, 0xcc66ffff));
       }
       play_sound_random(Lib::SOUND_BOSS_FIRE);
     }
-    if (_timer != 9 * GB_TIMER / 10 && _timer >= GB_TIMER / 10 &&
-        _timer < 9 * GB_TIMER / 10 - 16 && _timer % 16 == 0 &&
-        (!_shot_type || _attack == 2)) {
+    if (_timer != 9 * GB_TIMER / 10 && _timer >= GB_TIMER / 10 && _timer < 9 * GB_TIMER / 10 - 16 &&
+        _timer % 16 == 0 && (!_shot_type || _attack == 2)) {
       Player* p = nearest_player();
       vec2 d = (p->shape().centre - shape().centre).normalised();
 
@@ -158,8 +143,7 @@ void GhostBoss::update()
         play_sound_random(Lib::SOUND_BOSS_FIRE);
       }
     }
-  }
-  else {
+  } else {
     _attack_time--;
 
     if (_attack == 2) {
@@ -168,26 +152,18 @@ void GhostBoss::update()
         spawn(new GhostMine(pos, this));
         play_sound_random(Lib::SOUND_ENEMY_SPAWN);
         _danger_circle = 0;
-      }
-      else if (_attack_time == GB_ATTACK_TIME * 4 - 1) {
+      } else if (_attack_time == GB_ATTACK_TIME * 4 - 1) {
         _visible = true;
         _vtime = 60;
-        add_shape(new Box(vec2(Lib::WIDTH / 2 + 32, 0),
-                               Lib::WIDTH / 2, 10, 0xcc66ffff, 0, 0));
-        add_shape(new Box(vec2(Lib::WIDTH / 2 + 32, 0),
-                               Lib::WIDTH / 2, 7, 0xcc66ffff, 0, 0));
-        add_shape(new Box(vec2(Lib::WIDTH / 2 + 32, 0),
-                               Lib::WIDTH / 2, 4, 0xcc66ffff, 0, 0));
+        add_shape(new Box(vec2(Lib::WIDTH / 2 + 32, 0), Lib::WIDTH / 2, 10, 0xcc66ffff, 0, 0));
+        add_shape(new Box(vec2(Lib::WIDTH / 2 + 32, 0), Lib::WIDTH / 2, 7, 0xcc66ffff, 0, 0));
+        add_shape(new Box(vec2(Lib::WIDTH / 2 + 32, 0), Lib::WIDTH / 2, 4, 0xcc66ffff, 0, 0));
 
-        add_shape(new Box(vec2(-Lib::WIDTH / 2 - 32, 0),
-                               Lib::WIDTH / 2, 10, 0xcc66ffff, 0, 0));
-        add_shape(new Box(vec2(-Lib::WIDTH / 2 - 32, 0),
-                               Lib::WIDTH / 2, 7, 0xcc66ffff, 0, 0));
-        add_shape(new Box(vec2(-Lib::WIDTH / 2 - 32, 0),
-                               Lib::WIDTH / 2, 4, 0xcc66ffff, 0, 0));
+        add_shape(new Box(vec2(-Lib::WIDTH / 2 - 32, 0), Lib::WIDTH / 2, 10, 0xcc66ffff, 0, 0));
+        add_shape(new Box(vec2(-Lib::WIDTH / 2 - 32, 0), Lib::WIDTH / 2, 7, 0xcc66ffff, 0, 0));
+        add_shape(new Box(vec2(-Lib::WIDTH / 2 - 32, 0), Lib::WIDTH / 2, 4, 0xcc66ffff, 0, 0));
         play_sound(Lib::SOUND_BOSS_FIRE);
-      }
-      else if (_attack_time < GB_ATTACK_TIME * 3) {
+      } else if (_attack_time < GB_ATTACK_TIME * 3) {
         if (_attack_time == GB_ATTACK_TIME * 3 - 1) {
           play_sound(Lib::SOUND_BOSS_ATTACK);
         }
@@ -217,13 +193,12 @@ void GhostBoss::update()
       spawn(new GhostWall(_rDir, true, 0));
     }
 
-    if ((_attack == 0 || _attack == 1) && is_hp_low() &&
-        _attack_time == GB_ATTACK_TIME * 1) {
+    if ((_attack == 0 || _attack == 1) && is_hp_low() && _attack_time == GB_ATTACK_TIME * 1) {
       int32_t r = z::rand_int(4);
-      vec2 v = r == 0 ? vec2(-Lib::WIDTH / 4, Lib::HEIGHT / 2) :
-               r == 1 ? vec2(Lib::WIDTH + Lib::WIDTH / 4, Lib::HEIGHT / 2) :
-               r == 2 ? vec2(Lib::WIDTH / 2, -Lib::HEIGHT / 4) :
-                        vec2(Lib::WIDTH / 2, Lib::HEIGHT + Lib::HEIGHT / 4);
+      vec2 v = r == 0 ? vec2(-Lib::WIDTH / 4, Lib::HEIGHT / 2) : r == 1
+              ? vec2(Lib::WIDTH + Lib::WIDTH / 4, Lib::HEIGHT / 2)
+              : r == 2 ? vec2(Lib::WIDTH / 2, -Lib::HEIGHT / 4)
+                       : vec2(Lib::WIDTH / 2, Lib::HEIGHT + Lib::HEIGHT / 4);
       spawn(new BigFollow(v, false));
     }
     if (!_attack_time && !_visible) {
@@ -241,8 +216,7 @@ void GhostBoss::update()
         r = z::rand_int(3);
         _danger_circle |= 1 + (r == 2 ? 3 : r);
       }
-    }
-    else {
+    } else {
       _danger_circle = 0;
     }
   }
@@ -291,14 +265,12 @@ void GhostBoss::update()
   }
 }
 
-void GhostBoss::render() const
-{
+void GhostBoss::render() const {
   if ((_start_time / 4) % 2 == 1) {
     render_with_colour(1);
     return;
   }
-  if ((_visible && ((_vtime / 4) % 2 == 0)) ||
-      (!_visible && ((_vtime / 4) % 2 == 1))) {
+  if ((_visible && ((_vtime / 4) % 2 == 0)) || (!_visible && ((_vtime / 4) % 2 == 1))) {
     Boss::render();
     return;
   }
@@ -309,88 +281,66 @@ void GhostBoss::render() const
   }
 }
 
-int32_t GhostBoss::get_damage(int32_t damage, bool magic)
-{
+int32_t GhostBoss::get_damage(int32_t damage, bool magic) {
   return damage;
 }
 
 GhostWall::GhostWall(bool swap, bool no_gap, bool ignored)
-  : Enemy(vec2(Lib::WIDTH / 2, swap ? -10 : 10 + Lib::HEIGHT), SHIP_NONE, 0)
-  , _dir(0, swap ? 1 : -1)
-{
+: Enemy(vec2(Lib::WIDTH / 2, swap ? -10 : 10 + Lib::HEIGHT), SHIP_NONE, 0), _dir(0, swap ? 1 : -1) {
   if (no_gap) {
-    add_shape(new Box(vec2(), fixed(Lib::WIDTH), 10, 0xcc66ffff,
-                      0, DANGEROUS | SHIELD));
+    add_shape(new Box(vec2(), fixed(Lib::WIDTH), 10, 0xcc66ffff, 0, DANGEROUS | SHIELD));
     add_shape(new Box(vec2(), fixed(Lib::WIDTH), 7, 0xcc66ffff, 0, 0));
     add_shape(new Box(vec2(), fixed(Lib::WIDTH), 4, 0xcc66ffff, 0, 0));
-  }
-  else {
-    add_shape(new Box(vec2(), Lib::HEIGHT / 2, 10, 0xcc66ffff,
-                      0, DANGEROUS | SHIELD));
-    add_shape(new Box(vec2(), Lib::HEIGHT / 2, 7, 0xcc66ffff,
-                      0, DANGEROUS | SHIELD));
-    add_shape(new Box(vec2(), Lib::HEIGHT / 2, 4, 0xcc66ffff,
-                      0, DANGEROUS | SHIELD));
+  } else {
+    add_shape(new Box(vec2(), Lib::HEIGHT / 2, 10, 0xcc66ffff, 0, DANGEROUS | SHIELD));
+    add_shape(new Box(vec2(), Lib::HEIGHT / 2, 7, 0xcc66ffff, 0, DANGEROUS | SHIELD));
+    add_shape(new Box(vec2(), Lib::HEIGHT / 2, 4, 0xcc66ffff, 0, DANGEROUS | SHIELD));
   }
   set_bounding_width(fixed(Lib::WIDTH));
 }
 
 GhostWall::GhostWall(bool swap, bool swap_gap)
-  : Enemy(vec2(swap ? -10 : 10 + Lib::WIDTH, Lib::HEIGHT / 2), SHIP_NONE, 0)
-  , _dir(swap ? 1 : -1, 0)
-{
+: Enemy(vec2(swap ? -10 : 10 + Lib::WIDTH, Lib::HEIGHT / 2), SHIP_NONE, 0), _dir(swap ? 1 : -1, 0) {
   set_bounding_width(fixed(Lib::HEIGHT));
   fixed off = swap_gap ? -100 : 100;
 
-  add_shape(new Box(vec2(0, off - 20 - Lib::HEIGHT / 2), 10,
-                    Lib::HEIGHT / 2, 0xcc66ffff, 0, DANGEROUS | SHIELD));
-  add_shape(new Box(vec2(0, off + 20 + Lib::HEIGHT / 2), 10,
-                    Lib::HEIGHT / 2, 0xcc66ffff, 0, DANGEROUS | SHIELD));
+  add_shape(new Box(vec2(0, off - 20 - Lib::HEIGHT / 2), 10, Lib::HEIGHT / 2, 0xcc66ffff, 0,
+                    DANGEROUS | SHIELD));
+  add_shape(new Box(vec2(0, off + 20 + Lib::HEIGHT / 2), 10, Lib::HEIGHT / 2, 0xcc66ffff, 0,
+                    DANGEROUS | SHIELD));
 
-  add_shape(new Box(vec2(0, off - 20 - Lib::HEIGHT / 2), 7,
-                    Lib::HEIGHT / 2, 0xcc66ffff, 0, 0));
-  add_shape(new Box(vec2(0, off + 20 + Lib::HEIGHT / 2), 7,
-                    Lib::HEIGHT / 2, 0xcc66ffff, 0, 0));
+  add_shape(new Box(vec2(0, off - 20 - Lib::HEIGHT / 2), 7, Lib::HEIGHT / 2, 0xcc66ffff, 0, 0));
+  add_shape(new Box(vec2(0, off + 20 + Lib::HEIGHT / 2), 7, Lib::HEIGHT / 2, 0xcc66ffff, 0, 0));
 
-  add_shape(new Box(vec2(0, off - 20 - Lib::HEIGHT / 2), 4,
-                    Lib::HEIGHT / 2, 0xcc66ffff, 0, 0));
-  add_shape(new Box(vec2(0, off + 20 + Lib::HEIGHT / 2), 4,
-                    Lib::HEIGHT / 2, 0xcc66ffff, 0, 0));
+  add_shape(new Box(vec2(0, off - 20 - Lib::HEIGHT / 2), 4, Lib::HEIGHT / 2, 0xcc66ffff, 0, 0));
+  add_shape(new Box(vec2(0, off + 20 + Lib::HEIGHT / 2), 4, Lib::HEIGHT / 2, 0xcc66ffff, 0, 0));
 }
 
-void GhostWall::update()
-{
-  if ((_dir.x > 0 && shape().centre.x < 32) ||
-      (_dir.y > 0 && shape().centre.y < 16) ||
+void GhostWall::update() {
+  if ((_dir.x > 0 && shape().centre.x < 32) || (_dir.y > 0 && shape().centre.y < 16) ||
       (_dir.x < 0 && shape().centre.x >= Lib::WIDTH - 32) ||
       (_dir.y < 0 && shape().centre.y >= Lib::HEIGHT - 16)) {
     move(_dir * GB_WALL_SPEED / 2);
-  }
-  else {
+  } else {
     move(_dir * GB_WALL_SPEED);
   }
 
   if ((_dir.x > 0 && shape().centre.x > Lib::WIDTH + 10) ||
       (_dir.y > 0 && shape().centre.y > Lib::HEIGHT + 10) ||
-      (_dir.x < 0 && shape().centre.x < -10) ||
-      (_dir.y < 0 && shape().centre.y < -10)) {
+      (_dir.x < 0 && shape().centre.x < -10) || (_dir.y < 0 && shape().centre.y < -10)) {
     destroy();
   }
 }
 
 GhostMine::GhostMine(const vec2& position, Boss* ghost)
-  : Enemy(position, SHIP_NONE, 0)
-  , _timer(80)
-  , _ghost(ghost)
-{
+: Enemy(position, SHIP_NONE, 0), _timer(80), _ghost(ghost) {
   add_shape(new Polygon(vec2(), 24, 8, 0x9933ccff, 0, 0));
   add_shape(new Polygon(vec2(), 20, 8, 0x9933ccff, 0, 0));
   set_bounding_width(24);
   set_score(0);
 }
 
-void GhostMine::update()
-{
+void GhostMine::update() {
   if (_timer == 80) {
     explosion();
     shape().set_rotation(z::rand_fixed() * 2 * fixed::pi);
@@ -403,9 +353,9 @@ void GhostMine::update()
   }
   for (const auto& ship : game().collision_list(shape().centre, DANGEROUS)) {
     if (ship == _ghost) {
-      Enemy* e = z::rand_int(6) == 0 ||
-          (_ghost->is_hp_low() && z::rand_int(5) == 0) ?
-              new BigFollow(shape().centre, false) : new Follow(shape().centre);
+      Enemy* e = z::rand_int(6) == 0 || (_ghost->is_hp_low() && z::rand_int(5) == 0)
+          ? new BigFollow(shape().centre, false)
+          : new Follow(shape().centre);
       e->set_score(0);
       spawn(e);
       damage(1, false, 0);
@@ -414,8 +364,7 @@ void GhostMine::update()
   }
 }
 
-void GhostMine::render() const
-{
+void GhostMine::render() const {
   if (!((_timer / 4) % 2)) {
     Enemy::render();
   }

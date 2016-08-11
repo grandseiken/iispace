@@ -6,7 +6,6 @@
 
 class DeathRayBoss : public Boss {
 public:
-
   DeathRayBoss(int32_t players, int32_t cycle);
 
   void update() override;
@@ -16,7 +15,6 @@ public:
   void on_arm_death(Ship* arm);
 
 private:
-
   int32_t _timer;
   bool _laser;
   bool _dir;
@@ -31,26 +29,21 @@ private:
   vec2 _ray_dest;
 
   std::vector<std::pair<int32_t, int32_t>> _shot_queue;
-
 };
 
 class DeathRay : public Enemy {
 public:
-
   DeathRay(const vec2& position);
   void update() override;
-
 };
 
 class DeathArm : public Enemy {
 public:
-
   DeathArm(DeathRayBoss* boss, bool top, int32_t hp);
   void update() override;
   void on_destroy(bool bomb) override;
 
 private:
-
   DeathRayBoss* _boss;
   bool _top;
   int32_t _timer;
@@ -60,8 +53,6 @@ private:
 
   vec2 _target;
   int32_t _shots;
-
 };
-
 
 #endif

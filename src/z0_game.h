@@ -18,7 +18,6 @@ class Ship;
 
 class PauseModal : public Modal {
 public:
-
   enum output_t {
     CONTINUE,
     END_GAME,
@@ -29,23 +28,18 @@ public:
   void render(Lib& lib) const override;
 
 private:
-
   output_t* _output;
   Settings& _settings;
   int32_t _selection;
-
 };
 
 class HighScoreModal : public Modal {
 public:
-
-  HighScoreModal(SaveData& save, GameModal& game, Overmind& overmind,
-                 bool replay, int32_t seed);
+  HighScoreModal(SaveData& save, GameModal& game, Overmind& overmind, bool replay, int32_t seed);
   void update(Lib& lib) override;
   void render(Lib& lib) const override;
 
 private:
-
   int64_t get_score() const;
   bool is_high_score() const;
 
@@ -61,12 +55,10 @@ private:
   int32_t _enter_time;
   int32_t _compliment;
   int32_t _timer;
-
 };
 
 class GameModal : public Modal {
 public:
-
   enum boss_list {
     BOSS_1A = 1,
     BOSS_1B = 2,
@@ -77,8 +69,8 @@ public:
     BOSS_3A = 64,
   };
 
-  GameModal(Lib& lib, SaveData& save, Settings& settings, int32_t* frame_count,
-            Mode::mode mode, int32_t player_count, bool can_face_secret_boss);
+  GameModal(Lib& lib, SaveData& save, Settings& settings, int32_t* frame_count, Mode::mode mode,
+            int32_t player_count, bool can_face_secret_boss);
   GameModal(Lib& lib, SaveData& save, Settings& settings, int32_t* frame_count,
             const std::string& replay_path);
   ~GameModal();
@@ -96,8 +88,7 @@ public:
   int32_t get_non_wall_count() const;
 
   ship_list all_ships(int32_t ship_mask = 0) const;
-  ship_list ships_in_radius(const vec2& point, fixed radius,
-                            int32_t ship_mask = 0) const;
+  ship_list ships_in_radius(const vec2& point, fixed radius, int32_t ship_mask = 0) const;
   ship_list collision_list(const vec2& point, int32_t category) const;
   bool any_collision(const vec2& point, int32_t category) const;
 
@@ -114,9 +105,8 @@ public:
   void set_boss_killed(boss_list boss);
 
 private:
-
-  GameModal(Lib& lib, SaveData& save, Settings& settings, int32_t* frame_count,
-            Replay&& replay, bool replay_recording);
+  GameModal(Lib& lib, SaveData& save, Settings& settings, int32_t* frame_count, Replay&& replay,
+            bool replay_recording);
 
   Lib& _lib;
   SaveData& _save;
@@ -141,13 +131,11 @@ private:
 
   mutable bool _show_hp_bar;
   mutable float _fill_hp_bar;
-
 };
 
 struct score_finished {};
 class z0Game {
 public:
-
   static const colour_t PANEL_TEXT = 0xeeeeeeff;
   static const colour_t PANEL_TRAN = 0xeeeeee99;
   static const colour_t PANEL_BACK = 0x000000ff;
@@ -158,13 +146,11 @@ public:
   bool update();
   void render() const;
 
-  Lib& lib() const
-  {
+  Lib& lib() const {
     return _lib;
   }
 
 private:
-
   Mode::mode mode_unlocked() const;
 
   enum menu_t {
@@ -186,7 +172,6 @@ private:
   SaveData _save;
   Settings _settings;
   ModalStack _modals;
-
 };
 
 #endif

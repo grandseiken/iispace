@@ -5,36 +5,21 @@
 
 #include <algorithm>
 
-ReplayPlayerInput::ReplayPlayerInput(const Replay& replay)
-  : replay(replay)
-  , replay_frame(0)
-{
-}
+ReplayPlayerInput::ReplayPlayerInput(const Replay& replay) : replay(replay), replay_frame(0) {}
 
-void ReplayPlayerInput::get(
-    const Player& player, vec2& velocity, vec2& target, int32_t& keys)
-{
+void ReplayPlayerInput::get(const Player& player, vec2& velocity, vec2& target, int32_t& keys) {
   const auto& pf = replay.replay.player_frame(replay_frame++);
-  velocity = vec2(fixed::from_internal(pf.velocity_x()),
-                  fixed::from_internal(pf.velocity_y()));
-  target = vec2(fixed::from_internal(pf.target_x()),
-                fixed::from_internal(pf.target_y()));
+  velocity = vec2(fixed::from_internal(pf.velocity_x()), fixed::from_internal(pf.velocity_y()));
+  target = vec2(fixed::from_internal(pf.target_x()), fixed::from_internal(pf.target_y()));
   keys = pf.keys();
 }
 
-LibPlayerInput::LibPlayerInput(Lib& lib, Replay& replay)
-  : lib(lib)
-  , replay(replay)
-{
-}
+LibPlayerInput::LibPlayerInput(Lib& lib, Replay& replay) : lib(lib), replay(replay) {}
 
-void LibPlayerInput::get(
-    const Player& player, vec2& velocity, vec2& target, int32_t& keys)
-{
+void LibPlayerInput::get(const Player& player, vec2& velocity, vec2& target, int32_t& keys) {
   velocity = lib.get_move_velocity(player.player_number());
   target = lib.get_fire_target(player.player_number(), player.shape().centre);
-  keys = int32_t(
-      lib.is_key_held(player.player_number(), Lib::KEY_FIRE)) |
+  keys = int32_t(lib.is_key_held(player.player_number(), Lib::KEY_FIRE)) |
       (lib.is_key_pressed(player.player_number(), Lib::KEY_BOMB) << 1);
   replay.record(velocity, target, keys);
 }
@@ -56,20 +41,19 @@ GameModal::ship_list Player::_shot_sound_queue;
 int32_t Player::_fire_timer;
 
 Player::Player(PlayerInput& input, const vec2& position, int32_t player_number)
-  : Ship(position, SHIP_PLAYER)
-  , _input(input)
-  , _player_number(player_number)
-  , _score(0)
-  , _multiplier(1)
-  , _multiplier_count(0)
-  , _kill_timer(0)
-  , _revive_timer(REVIVE_TIME)
-  , _magic_shot_timer(0)
-  , _shield(false)
-  , _bomb(false)
-  , _fire_target(get_screen_centre())
-  , _death_count(0)
-{
+: Ship(position, SHIP_PLAYER)
+, _input(input)
+, _player_number(player_number)
+, _score(0)
+, _multiplier(1)
+, _multiplier_count(0)
+, _kill_timer(0)
+, _revive_timer(REVIVE_TIME)
+, _magic_shot_timer(0)
+, _shield(false)
+, _bomb(false)
+, _fire_target(get_screen_centre())
+, _death_count(0) {
   add_shape(new Polygon(vec2(), 16, 3, colour()));
   add_shape(new Fill(vec2(8, 0), 2, 2, colour()));
   add_shape(new Fill(vec2(8, 0), 1, 1, colour() & 0xffffff33));
@@ -80,18 +64,14 @@ Player::Player(PlayerInput& input, const vec2& position, int32_t player_number)
   _fire_timer = 0;
 }
 
-Player::~Player()
-{
-}
+Player::~Player() {}
 
-void Player::update()
-{
+void Player::update() {
   vec2 velocity;
   int32_t keys = 0;
   _input.get(*this, velocity, _fire_target, keys);
 
-  for (auto it = _shot_sound_queue.begin();
-        it != _shot_sound_queue.end(); ++it) {
+  for (auto it = _shot_sound_queue.begin(); it != _shot_sound_queue.end(); ++it) {
     if ((!(keys & 1) || _kill_timer) && *it == this) {
       _shot_sound_queue.erase(it);
       break;
@@ -102,16 +82,14 @@ void Player::update()
   if (_kill_timer > 1) {
     --_kill_timer;
     return;
-  }
-  else if (_kill_timer) {
+  } else if (_kill_timer) {
     if (game().get_lives() && _kill_queue[0] == this) {
       game().sub_life();
       _kill_timer = 0;
       _kill_queue.erase(_kill_queue.begin());
       _revive_timer = REVIVE_TIME;
-      shape().centre = vec2(
-          (1 + _player_number) * Lib::WIDTH / (1 + game().players().size()),
-          Lib::HEIGHT / 2);
+      shape().centre =
+          vec2((1 + _player_number) * Lib::WIDTH / (1 + game().players().size()), Lib::HEIGHT / 2);
       lib().rumble(_player_number, 10);
       play_sound(Lib::SOUND_PLAYER_RESPAWN);
     }
@@ -125,8 +103,8 @@ void Player::update()
   if (velocity.length() > fixed::hundredth) {
     vec2 v = velocity.length() > 1 ? velocity.normalised() : velocity;
     shape().set_rotation(v.angle());
-    shape().centre = std::max(vec2(), std::min(
-        vec2(Lib::WIDTH, Lib::HEIGHT), PLAYER_SPEED * v + shape().centre));
+    shape().centre = std::max(
+        vec2(), std::min(vec2(Lib::WIDTH, Lib::HEIGHT), PLAYER_SPEED * v + shape().centre));
   }
 
   // Bombs.
@@ -140,18 +118,16 @@ void Player::update()
 
     vec2 t = shape().centre;
     for (int32_t i = 0; i < 64; ++i) {
-      shape().centre =
-          t + vec2::from_polar(2 * i * fixed::pi / 64, BOMB_RADIUS);
-      explosion((i % 2) ? colour() : 0xffffffff,
-                8 + z::rand_int(8) + z::rand_int(8), true, to_float(t));
+      shape().centre = t + vec2::from_polar(2 * i * fixed::pi / 64, BOMB_RADIUS);
+      explosion((i % 2) ? colour() : 0xffffffff, 8 + z::rand_int(8) + z::rand_int(8), true,
+                to_float(t));
     }
     shape().centre = t;
 
     lib().rumble(_player_number, 10);
     play_sound(Lib::SOUND_EXPLOSION);
 
-    const auto& list =
-        game().ships_in_radius(shape().centre, BOMB_BOSS_RADIUS, SHIP_ENEMY);
+    const auto& list = game().ships_in_radius(shape().centre, BOMB_BOSS_RADIUS, SHIP_ENEMY);
     for (const auto& ship : list) {
       if ((ship->type() & SHIP_BOSS) ||
           (ship->shape().centre - shape().centre).length() <= BOMB_RADIUS) {
@@ -176,9 +152,8 @@ void Player::update()
     float volume = .5f * z::rand_fixed().to_float() + .5f;
     float pitch = (z::rand_fixed().to_float() - 1.f) / 12.f;
     if (_shot_sound_queue.empty() || _shot_sound_queue[0] == this) {
-      could_play = lib().play_sound(
-          Lib::SOUND_PLAYER_FIRE, volume,
-          2.f * shape().centre.x.to_float() / Lib::WIDTH - 1.f, pitch);
+      could_play = lib().play_sound(Lib::SOUND_PLAYER_FIRE, volume,
+                                    2.f * shape().centre.x.to_float() / Lib::WIDTH - 1.f, pitch);
       if (could_play && !_shot_sound_queue.empty()) {
         _shot_sound_queue.erase(_shot_sound_queue.begin());
       }
@@ -202,10 +177,8 @@ void Player::update()
   }
 }
 
-void Player::render() const
-{
-  if (!_kill_timer &&
-      (game().mode() != Mode::WHAT || _revive_timer > 0)) {
+void Player::render() const {
+  if (!_kill_timer && (game().mode() != Mode::WHAT || _revive_timer > 0)) {
     flvec2 t = to_float(_fire_target);
     if (t >= flvec2() && t <= flvec2((float) Lib::WIDTH, (float) Lib::HEIGHT)) {
       lib().render_line(t + flvec2(0, 9), t - flvec2(0, 8), colour());
@@ -213,8 +186,7 @@ void Player::render() const
     }
     if (_revive_timer % 2) {
       render_with_colour(0xffffffff);
-    }
-    else {
+    } else {
       Ship::render();
     }
   }
@@ -227,30 +199,27 @@ void Player::render() const
   ss << _multiplier << "X";
   std::string s = ss.str();
   int32_t n = _player_number;
-  flvec2 v =
-      n == 1 ? flvec2(Lib::WIDTH / Lib::TEXT_WIDTH - 1.f - s.length(), 1.f) :
-      n == 2 ? flvec2(1.f, Lib::HEIGHT / Lib::TEXT_HEIGHT - 2.f) :
-      n == 3 ? flvec2(Lib::WIDTH / Lib::TEXT_WIDTH - 1.f - s.length(),
-                      Lib::HEIGHT / Lib::TEXT_HEIGHT - 2.f) : flvec2(1.f, 1.f);
+  flvec2 v = n == 1 ? flvec2(Lib::WIDTH / Lib::TEXT_WIDTH - 1.f - s.length(), 1.f) : n == 2
+          ? flvec2(1.f, Lib::HEIGHT / Lib::TEXT_HEIGHT - 2.f)
+          : n == 3 ? flvec2(Lib::WIDTH / Lib::TEXT_WIDTH - 1.f - s.length(),
+                            Lib::HEIGHT / Lib::TEXT_HEIGHT - 2.f)
+                   : flvec2(1.f, 1.f);
   lib().render_text(v, s, z0Game::PANEL_TEXT);
 
   ss.str("");
   n % 2 ? ss << _score << "   " : ss << "   " << _score;
-  lib().render_text(
-      v - (n % 2 ? flvec2(float(ss.str().length() - s.length()), 0) : flvec2()),
-      ss.str(), colour());
+  lib().render_text(v - (n % 2 ? flvec2(float(ss.str().length() - s.length()), 0) : flvec2()),
+                    ss.str(), colour());
 
   if (_magic_shot_timer != 0) {
     v.x += n % 2 ? -1 : ss.str().length();
     v *= 16;
-    lib().render_rect(
-        v + flvec2(5.f, 11.f - (10 * _magic_shot_timer) / MAGIC_SHOT_COUNT),
-        v + flvec2(9.f, 13.f), 0xffffffff, 2);
+    lib().render_rect(v + flvec2(5.f, 11.f - (10 * _magic_shot_timer) / MAGIC_SHOT_COUNT),
+                      v + flvec2(9.f, 13.f), 0xffffffff, 2);
   }
 }
 
-void Player::damage()
-{
+void Player::damage() {
   if (_kill_timer || _revive_timer) {
     return;
   }
@@ -288,11 +257,10 @@ void Player::damage()
   play_sound(Lib::SOUND_PLAYER_DESTROY);
 }
 
-void Player::add_score(int64_t score)
-{
+void Player::add_score(int64_t score) {
   static const int32_t multiplier_lookup[24] = {
-    1, 2, 4, 8, 16, 32, 64, 128, 256, 512, 1024, 2048, 4096, 8192, 16384, 32768,
-    65536, 131072, 262144, 524288, 1048576, 2097152, 4194304, 8388608,
+      1,    2,    4,     8,     16,    32,     64,     128,    256,     512,     1024,    2048,
+      4096, 8192, 16384, 32768, 65536, 131072, 262144, 524288, 1048576, 2097152, 4194304, 8388608,
   };
 
   lib().rumble(_player_number, 3);
@@ -304,22 +272,17 @@ void Player::add_score(int64_t score)
   }
 }
 
-colour_t Player::player_colour(std::size_t player_number)
-{
-  return
-      player_number == 0 ? 0xff0000ff :
-      player_number == 1 ? 0xff5500ff :
-      player_number == 2 ? 0xffaa00ff :
-      player_number == 3 ? 0xffff00ff : 0x00ff00ff;
+colour_t Player::player_colour(std::size_t player_number) {
+  return player_number == 0 ? 0xff0000ff : player_number == 1 ? 0xff5500ff : player_number == 2
+              ? 0xffaa00ff
+              : player_number == 3 ? 0xffff00ff : 0x00ff00ff;
 }
 
-void Player::activate_magic_shots()
-{
+void Player::activate_magic_shots() {
   _magic_shot_timer = MAGIC_SHOT_COUNT;
 }
 
-void Player::activate_magic_shield()
-{
+void Player::activate_magic_shield() {
   if (_shield) {
     return;
   }
@@ -332,8 +295,7 @@ void Player::activate_magic_shield()
   add_shape(new Polygon(vec2(), 16, 10, 0xffffffff));
 }
 
-void Player::activate_bomb()
-{
+void Player::activate_bomb() {
   if (_bomb) {
     return;
   }
@@ -343,48 +305,37 @@ void Player::activate_bomb()
     _shield = false;
   }
   _bomb = true;
-  add_shape(new Polygon(vec2(-8, 0), 6, 5, 0xffffffff,
-                        fixed::pi, 0, Polygon::T::POLYSTAR));
+  add_shape(new Polygon(vec2(-8, 0), 6, 5, 0xffffffff, fixed::pi, 0, Polygon::T::POLYSTAR));
 }
 
-void Player::update_fire_timer()
-{
+void Player::update_fire_timer() {
   _fire_timer = (_fire_timer + 1) % SHOT_TIMER;
 }
 
-Shot::Shot(const vec2& position, Player* player,
-           const vec2& direction, bool magic)
-  : Ship(position, SHIP_NONE)
-  , _player(player)
-  , _velocity(direction)
-  , _magic(magic)
-  , _flash(false)
-{
+Shot::Shot(const vec2& position, Player* player, const vec2& direction, bool magic)
+: Ship(position, SHIP_NONE), _player(player), _velocity(direction), _magic(magic), _flash(false) {
   _velocity = _velocity.normalised() * SHOT_SPEED;
   add_shape(new Fill(vec2(), 2, 2, _player->colour()));
   add_shape(new Fill(vec2(), 1, 1, _player->colour() & 0xffffff33));
   add_shape(new Fill(vec2(), 3, 3, _player->colour() & 0xffffff33));
 }
 
-void Shot::render() const
-{
+void Shot::render() const {
   if (game().mode() == Mode::WHAT) {
     return;
   }
   if (_flash) {
     render_with_colour(0xffffffff);
-  }
-  else {
+  } else {
     Ship::render();
   }
 }
 
-void Shot::update()
-{
+void Shot::update() {
   _flash = _magic ? z::rand_int(2) != 0 : false;
   move(_velocity);
-  bool on_screen = shape().centre >= vec2(-4, -4) &&
-      shape().centre < vec2(4 + Lib::WIDTH, 4 + Lib::HEIGHT);
+  bool on_screen =
+      shape().centre >= vec2(-4, -4) && shape().centre < vec2(4 + Lib::WIDTH, 4 + Lib::HEIGHT);
   if (!on_screen) {
     destroy();
     return;
@@ -404,46 +355,42 @@ void Shot::update()
 }
 
 Powerup::Powerup(const vec2& position, type_t type)
-  : Ship(position, SHIP_POWERUP)
-  , _type(type)
-  , _frame(0)
-  , _dir(0, 1)
-  , _rotate(false)
-  , _first_frame(true)
-{
+: Ship(position, SHIP_POWERUP)
+, _type(type)
+, _frame(0)
+, _dir(0, 1)
+, _rotate(false)
+, _first_frame(true) {
   add_shape(new Polygon(vec2(), 13, 5, 0, fixed::pi / 2, 0));
   add_shape(new Polygon(vec2(), 9, 5, 0, fixed::pi / 2, 0));
 
   switch (type) {
-  case EXTRA_LIFE:
-    add_shape(new Polygon(vec2(), 8, 3, 0xffffffff, fixed::pi / 2));
-    break;
+    case EXTRA_LIFE:
+      add_shape(new Polygon(vec2(), 8, 3, 0xffffffff, fixed::pi / 2));
+      break;
 
-  case MAGIC_SHOTS:
-    add_shape(new Fill(vec2(), 3, 3, 0xffffffff));
-    break;
+    case MAGIC_SHOTS:
+      add_shape(new Fill(vec2(), 3, 3, 0xffffffff));
+      break;
 
-  case SHIELD:
-    add_shape(new Polygon(vec2(), 11, 5, 0xffffffff, fixed::pi / 2));
-    break;
+    case SHIELD:
+      add_shape(new Polygon(vec2(), 11, 5, 0xffffffff, fixed::pi / 2));
+      break;
 
-  case BOMB:
-    add_shape(new Polygon(vec2(), 11, 10, 0xffffffff,
-                          fixed::pi / 2, 0, Polygon::T::POLYSTAR));
-    break;
+    case BOMB:
+      add_shape(new Polygon(vec2(), 11, 10, 0xffffffff, fixed::pi / 2, 0, Polygon::T::POLYSTAR));
+      break;
   }
 }
 
-void Powerup::update()
-{
+void Powerup::update() {
   shapes()[0]->colour = Player::player_colour(_frame / 2);
   _frame = (_frame + 1) % (PLAYERS * 2);
   shapes()[1]->colour = Player::player_colour(_frame / 2);
 
   if (!is_on_screen()) {
     _dir = get_screen_centre() - shape().centre;
-  }
-  else {
+  } else {
     if (_first_frame) {
       _dir = vec2::from_polar(z::rand_fixed() * 2 * fixed::pi, 1);
     }
@@ -466,36 +413,33 @@ void Powerup::update()
   }
 }
 
-void Powerup::damage(int32_t damage, bool magic, Player* source)
-{
+void Powerup::damage(int32_t damage, bool magic, Player* source) {
   if (source) {
     switch (_type) {
-    case EXTRA_LIFE:
-      game().add_life();
-      break;
+      case EXTRA_LIFE:
+        game().add_life();
+        break;
 
-    case MAGIC_SHOTS:
-      source->activate_magic_shots();
-      break;
+      case MAGIC_SHOTS:
+        source->activate_magic_shots();
+        break;
 
-    case SHIELD:
-      source->activate_magic_shield();
-      break;
+      case SHIELD:
+        source->activate_magic_shield();
+        break;
 
-    case BOMB:
-      source->activate_bomb();
-      break;
+      case BOMB:
+        source->activate_bomb();
+        break;
     }
-    play_sound(_type == EXTRA_LIFE ? Lib::SOUND_POWERUP_LIFE :
-                                     Lib::SOUND_POWERUP_OTHER);
+    play_sound(_type == EXTRA_LIFE ? Lib::SOUND_POWERUP_LIFE : Lib::SOUND_POWERUP_OTHER);
     lib().rumble(source->player_number(), 6);
   }
 
   int32_t r = 5 + z::rand_int(5);
   for (int32_t i = 0; i < r; i++) {
     vec2 dir = vec2::from_polar(z::rand_fixed() * 2 * fixed::pi, 6);
-    spawn(Particle(to_float(shape().centre), 0xffffffff,
-                   to_float(dir), 4 + z::rand_int(8)));
+    spawn(Particle(to_float(shape().centre), 0xffffffff, to_float(dir), 4 + z::rand_int(8)));
   }
   destroy();
 }

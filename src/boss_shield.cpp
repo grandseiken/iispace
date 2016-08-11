@@ -9,17 +9,15 @@ static const int32_t SBB_ATTACK_TIME = 80;
 static const fixed SBB_SPEED = 1;
 
 ShieldBombBoss::ShieldBombBoss(int32_t players, int32_t cycle)
-  : Boss(vec2(-Lib::WIDTH / 2, Lib::HEIGHT / 2),
-         GameModal::BOSS_1B, SBB_BASE_HP, players, cycle)
-  , _timer(0)
-  , _count(0)
-  , _unshielded(0)
-  , _attack(0)
-  , _side(false)
-  , _shot_alternate(false)
-{
-  add_shape(new Polygon(vec2(), 48, 8, 0x339966ff, 0,
-                        DANGEROUS | VULNERABLE, Polygon::T::POLYGRAM));
+: Boss(vec2(-Lib::WIDTH / 2, Lib::HEIGHT / 2), GameModal::BOSS_1B, SBB_BASE_HP, players, cycle)
+, _timer(0)
+, _count(0)
+, _unshielded(0)
+, _attack(0)
+, _side(false)
+, _shot_alternate(false) {
+  add_shape(
+      new Polygon(vec2(), 48, 8, 0x339966ff, 0, DANGEROUS | VULNERABLE, Polygon::T::POLYGRAM));
 
   for (int32_t i = 0; i < 16; i++) {
     vec2 a = vec2(120, 0).rotated(i * fixed::pi / 8);
@@ -37,12 +35,10 @@ ShieldBombBoss::ShieldBombBoss(int32_t players, int32_t cycle)
   set_ignore_damage_colour_index(1);
 }
 
-void ShieldBombBoss::update()
-{
+void ShieldBombBoss::update() {
   if (!_side && shape().centre.x < Lib::WIDTH * fixed::tenth * 6) {
     move(vec2(1, 0) * SBB_SPEED);
-  }
-  else if (_side && shape().centre.x > Lib::WIDTH * fixed::tenth * 4) {
+  } else if (_side && shape().centre.x > Lib::WIDTH * fixed::tenth * 4) {
     move(vec2(-1, 0) * SBB_SPEED);
   }
 
@@ -63,12 +59,10 @@ void ShieldBombBoss::update()
 
     _unshielded--;
     for (std::size_t i = 0; i < 3; i++) {
-      shapes()[i + 17]->colour =
-          (_unshielded / 2) % 4 ? 0x00000000 : 0x666666ff;
+      shapes()[i + 17]->colour = (_unshielded / 2) % 4 ? 0x00000000 : 0x666666ff;
     }
     for (std::size_t i = 0; i < 16; i++) {
-      shapes()[i + 1]->colour = 
-          (_unshielded / 2) % 4 ? 0x00000000 : 0x333333ff;
+      shapes()[i + 1]->colour = (_unshielded / 2) % 4 ? 0x00000000 : 0x333333ff;
     }
 
     if (!_unshielded) {
@@ -85,8 +79,8 @@ void ShieldBombBoss::update()
   }
 
   if (_attack) {
-    vec2 d = _attack_dir.rotated((SBB_ATTACK_TIME - _attack) *
-                                 fixed::half * fixed::pi / SBB_ATTACK_TIME);
+    vec2 d = _attack_dir.rotated((SBB_ATTACK_TIME - _attack) * fixed::half * fixed::pi /
+                                 SBB_ATTACK_TIME);
     spawn(new BossShot(shape().centre, d));
     _attack--;
     play_sound_random(Lib::SOUND_BOSS_FIRE);
@@ -117,16 +111,14 @@ void ShieldBombBoss::update()
         d = d.rotated(2 * fixed::pi / 12);
       }
       play_sound(Lib::SOUND_BOSS_ATTACK);
-    }
-    else {
+    } else {
       _attack = SBB_ATTACK_TIME;
       _attack_dir = vec2::from_polar(z::rand_fixed() * (2 * fixed::pi), 5);
     }
   }
 }
 
-int32_t ShieldBombBoss::get_damage(int32_t damage, bool magic)
-{
+int32_t ShieldBombBoss::get_damage(int32_t damage, bool magic) {
   if (_unshielded) {
     return damage;
   }
@@ -140,8 +132,7 @@ int32_t ShieldBombBoss::get_damage(int32_t damage, bool magic)
   }
   _shot_alternate = !_shot_alternate;
   if (_shot_alternate) {
-    restore_hp(60 / (1 + (game().get_lives() ? game().players().size() :
-                                               game().alive_players())));
+    restore_hp(60 / (1 + (game().get_lives() ? game().players().size() : game().alive_players())));
   }
   return damage;
 }

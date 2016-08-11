@@ -1,23 +1,19 @@
 #include "modal.h"
 
-void Modal::add(Modal* modal)
-{
+void Modal::add(Modal* modal) {
   _stack->add(modal);
 }
 
-void Modal::quit()
-{
+void Modal::quit() {
   _quit = true;
 }
 
-void ModalStack::add(Modal* modal)
-{
+void ModalStack::add(Modal* modal) {
   modal->_stack = this;
   _new_stack.emplace_back(modal);
 }
 
-bool ModalStack::update(Lib& lib)
-{
+bool ModalStack::update(Lib& lib) {
   bool captured = false;
   auto it = _stack.begin();
   for (auto jt = it; jt != _stack.end(); ++jt) {
@@ -40,8 +36,7 @@ bool ModalStack::update(Lib& lib)
   return captured;
 }
 
-bool ModalStack::render(Lib& lib) const
-{
+bool ModalStack::render(Lib& lib) const {
   bool captured = false;
   auto it = _stack.begin();
   for (auto jt = it; jt != _stack.end(); ++jt) {

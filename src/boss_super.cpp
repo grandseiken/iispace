@@ -4,15 +4,13 @@
 static const int32_t SB_BASE_HP = 520;
 static const int32_t SB_ARC_HP = 75;
 
-SuperBossArc::SuperBossArc(
-    const vec2& position,
-    int32_t players, int32_t cycle, int32_t i, Ship* boss, int32_t timer)
-  : Boss(position, GameModal::boss_list(0), SB_ARC_HP, players, cycle)
-  , _boss(boss)
-  , _i(i)
-  , _timer(timer)
-  , _stimer(0)
-{
+SuperBossArc::SuperBossArc(const vec2& position, int32_t players, int32_t cycle, int32_t i,
+                           Ship* boss, int32_t timer)
+: Boss(position, GameModal::boss_list(0), SB_ARC_HP, players, cycle)
+, _boss(boss)
+, _i(i)
+, _timer(timer)
+, _stimer(0) {
   add_shape(new PolyArc(vec2(), 140, 32, 2, 0, i * 2 * fixed::pi / 16, 0));
   add_shape(new PolyArc(vec2(), 135, 32, 2, 0, i * 2 * fixed::pi / 16, 0));
   add_shape(new PolyArc(vec2(), 130, 32, 2, 0, i * 2 * fixed::pi / 16, 0));
@@ -23,12 +21,11 @@ SuperBossArc::SuperBossArc(
   add_shape(new PolyArc(vec2(), 105, 32, 2, 0, i * 2 * fixed::pi / 16, SHIELD));
 }
 
-void SuperBossArc::update()
-{
+void SuperBossArc::update() {
   shape().rotate(fixed(6) / 1000);
   for (int32_t i = 0; i < 8; ++i) {
-    shapes()[7 - i]->colour = z::colour_cycle(
-        is_hp_low() ? 0xff000099 : 0xff0000ff, (i * 32 + 2 * _timer) % 256);
+    shapes()[7 - i]->colour =
+        z::colour_cycle(is_hp_low() ? 0xff000099 : 0xff0000ff, (i * 32 + 2 * _timer) % 256);
   }
   ++_timer;
   ++_stimer;
@@ -37,23 +34,20 @@ void SuperBossArc::update()
   }
 }
 
-void SuperBossArc::render() const
-{
+void SuperBossArc::render() const {
   if (_stimer >= 64 || _stimer % 4 < 2) {
     Boss::render(false);
   }
 }
 
-int32_t SuperBossArc::get_damage(int32_t damage, bool magic)
-{
+int32_t SuperBossArc::get_damage(int32_t damage, bool magic) {
   if (damage >= Player::BOMB_DAMAGE) {
     return damage / 2;
   }
   return damage;
 }
 
-void SuperBossArc::on_destroy()
-{
+void SuperBossArc::on_destroy() {
   vec2 d = vec2::from_polar(_i * 2 * fixed::pi / 16 + shape().rotation(), 120);
   move(d);
   explosion();
@@ -66,15 +60,14 @@ void SuperBossArc::on_destroy()
 }
 
 SuperBoss::SuperBoss(int32_t players, int32_t cycle)
-  : Boss(vec2(Lib::WIDTH / 2, -Lib::HEIGHT / (2 + fixed::half)),
-         GameModal::BOSS_3A, SB_BASE_HP, players, cycle)
-  , _players(players)
-  , _cycle(cycle)
-  , _ctimer(0)
-  , _timer(0)
-  , _state(STATE_ARRIVE)
-  , _snakes(0)
-{
+: Boss(vec2(Lib::WIDTH / 2, -Lib::HEIGHT / (2 + fixed::half)), GameModal::BOSS_3A, SB_BASE_HP,
+       players, cycle)
+, _players(players)
+, _cycle(cycle)
+, _ctimer(0)
+, _timer(0)
+, _state(STATE_ARRIVE)
+, _snakes(0) {
   add_shape(new Polygon(vec2(), 40, 32, 0, 0, DANGEROUS | VULNERABLE));
   add_shape(new Polygon(vec2(), 35, 32, 0, 0, 0));
   add_shape(new Polygon(vec2(), 30, 32, 0, 0, SHIELD));
@@ -89,17 +82,14 @@ SuperBoss::SuperBoss(int32_t players, int32_t cycle)
   set_ignore_damage_colour_index(8);
 }
 
-void SuperBoss::update()
-{
+void SuperBoss::update() {
   if (_arcs.empty()) {
     for (int32_t i = 0; i < 16; ++i) {
-      SuperBossArc* s =
-          new SuperBossArc(shape().centre, _players, _cycle, i, this);
+      SuperBossArc* s = new SuperBossArc(shape().centre, _players, _cycle, i, this);
       spawn(s);
       _arcs.push_back(s);
     }
-  }
-  else {
+  } else {
     for (int32_t i = 0; i < 16; ++i) {
       if (_destroyed[i]) {
         continue;
@@ -111,14 +101,12 @@ void SuperBoss::update()
   shape().rotate(fixed(6) / 1000);
   colour_t c = z::colour_cycle(0xff0000ff, 2 * _ctimer);
   for (int32_t i = 0; i < 8; ++i) {
-    shapes()[7 - i]->colour = 
-        z::colour_cycle(0xff0000ff, (i * 32 + 2 * _ctimer) % 256);
+    shapes()[7 - i]->colour = z::colour_cycle(0xff0000ff, (i * 32 + 2 * _ctimer) % 256);
   }
   ++_ctimer;
   if (shape().centre.y < Lib::HEIGHT / 2) {
     move_vec = vec2(0, 1);
-  }
-  else if (_state == STATE_ARRIVE) {
+  } else if (_state == STATE_ARRIVE) {
     _state = STATE_IDLE;
   }
 
@@ -132,13 +120,11 @@ void SuperBoss::update()
   static const fixed pi2d64 = 2 * fixed::pi / 64;
   static const fixed pi2d32 = 2 * fixed::pi / 32;
 
-  if (_state == STATE_IDLE && is_on_screen() &&
-      _timer != 0 && _timer % 300 == 0) {
+  if (_state == STATE_IDLE && is_on_screen() && _timer != 0 && _timer % 300 == 0) {
     int32_t r = z::rand_int(6);
     if (r == 0 || r == 1) {
       _snakes = 16;
-    }
-    else if (r == 2 || r == 3) {
+    } else if (r == 2 || r == 3) {
       _state = STATE_ATTACK;
       _timer = 0;
       fixed f = z::rand_fixed() * (2 * fixed::pi);
@@ -151,8 +137,7 @@ void SuperBoss::update()
         spawn(new Snake(shape().centre + d * 16, c, d, rf));
         play_sound_random(Lib::SOUND_BOSS_ATTACK);
       }
-    }
-    else if (r == 5) {
+    } else if (r == 5) {
       _state = STATE_ATTACK;
       _timer = 0;
       fixed f = z::rand_fixed() * (2 * fixed::pi);
@@ -161,21 +146,18 @@ void SuperBoss::update()
         spawn(new Snake(shape().centre + d * 16, c, d));
         play_sound_random(Lib::SOUND_BOSS_ATTACK);
       }
-    }
-    else {
+    } else {
       _state = STATE_ATTACK;
       _timer = 0;
       _snakes = 32;
     }
   }
 
-  if (_state == STATE_IDLE && is_on_screen() &&
-      _timer % 300 == 200 && !is_destroyed()) {
+  if (_state == STATE_IDLE && is_on_screen() && _timer % 300 == 200 && !is_destroyed()) {
     std::vector<int32_t> wide3;
     int32_t timer = 0;
     for (int32_t i = 0; i < 16; ++i) {
-      if (_destroyed[(i + 15) % 16] &&
-          _destroyed[i] && _destroyed[(i + 1) % 16]) {
+      if (_destroyed[(i + 15) % 16] && _destroyed[i] && _destroyed[(i + 1) % 16]) {
         wide3.push_back(i);
       }
       if (!_destroyed[i]) {
@@ -184,8 +166,7 @@ void SuperBoss::update()
     }
     if (!wide3.empty()) {
       int32_t r = z::rand_int(int32_t(wide3.size()));
-      SuperBossArc* s = new SuperBossArc(
-          shape().centre, _players, _cycle, wide3[r], this, timer);
+      SuperBossArc* s = new SuperBossArc(shape().centre, _players, _cycle, wide3[r], this, timer);
       s->shape().set_rotation(shape().rotation() - (fixed(6) / 1000));
       spawn(s);
       _arcs[wide3[r]] = s;
@@ -204,21 +185,18 @@ void SuperBoss::update()
 
   if (_snakes) {
     --_snakes;
-    vec2 d = vec2::from_polar(z::rand_fixed() * (2 * fixed::pi),
-                              z::rand_int(32) + z::rand_int(16));
+    vec2 d = vec2::from_polar(z::rand_fixed() * (2 * fixed::pi), z::rand_int(32) + z::rand_int(16));
     spawn(new Snake(d + shape().centre, c));
     play_sound_random(Lib::SOUND_ENEMY_SPAWN);
   }
   move(move_vec);
 }
 
-int32_t SuperBoss::get_damage(int32_t damage, bool magic)
-{
+int32_t SuperBoss::get_damage(int32_t damage, bool magic) {
   return damage;
 }
 
-void SuperBoss::on_destroy()
-{
+void SuperBoss::on_destroy() {
   set_killed();
   for (const auto& ship : game().all_ships(SHIP_ENEMY)) {
     if (ship != this) {
@@ -233,11 +211,10 @@ void SuperBoss::on_destroy()
 
   int32_t n = 1;
   for (int32_t i = 0; i < 16; ++i) {
-    vec2 v = vec2::from_polar(z::rand_fixed() * (2 * fixed::pi),
-                              8 + z::rand_int(64) + z::rand_int(64));
+    vec2 v =
+        vec2::from_polar(z::rand_fixed() * (2 * fixed::pi), 8 + z::rand_int(64) + z::rand_int(64));
     colour_t c = z::colour_cycle(shapes()[0]->colour, n * 2);
-    _fireworks.push_back(
-        std::make_pair(n, std::make_pair(shape().centre + v, c)));
+    _fireworks.push_back(std::make_pair(n, std::make_pair(shape().centre + v, c)));
     n += i;
   }
   for (int32_t i = 0; i < PLAYERS; i++) {
@@ -258,20 +235,13 @@ void SuperBoss::on_destroy()
 }
 
 SnakeTail::SnakeTail(const vec2& position, colour_t colour)
-  : Enemy(position, SHIP_NONE, 1)
-  , _tail(0)
-  , _head(0)
-  , _timer(150)
-  , _dtimer(0)
-{
-  add_shape(
-      new Polygon(vec2(), 10, 4, colour, 0, DANGEROUS | SHIELD | VULNSHIELD));
+: Enemy(position, SHIP_NONE, 1), _tail(0), _head(0), _timer(150), _dtimer(0) {
+  add_shape(new Polygon(vec2(), 10, 4, colour, 0, DANGEROUS | SHIELD | VULNSHIELD));
   set_bounding_width(22);
   set_score(0);
 }
 
-void SnakeTail::update()
-{
+void SnakeTail::update() {
   static const fixed z15 = fixed::hundredth * 15;
   shape().rotate(z15);
   --_timer;
@@ -294,8 +264,7 @@ void SnakeTail::update()
   }
 }
 
-void SnakeTail::on_destroy(bool bomb)
-{
+void SnakeTail::on_destroy(bool bomb) {
   if (_head) {
     _head->_tail = 0;
   }
@@ -307,15 +276,14 @@ void SnakeTail::on_destroy(bool bomb)
 }
 
 Snake::Snake(const vec2& position, colour_t colour, const vec2& dir, fixed rot)
-  : Enemy(position, SHIP_NONE, 5)
-  , _tail(0)
-  , _timer(0)
-  , _dir(0, 0)
-  , _count(0)
-  , _colour(colour)
-  , _shot_snake(false)
-  , _shot_rot(rot)
-{
+: Enemy(position, SHIP_NONE, 5)
+, _tail(0)
+, _timer(0)
+, _dir(0, 0)
+, _count(0)
+, _colour(colour)
+, _shot_snake(false)
+, _shot_rot(rot) {
   add_shape(new Polygon(vec2(), 14, 3, colour, 0, VULNERABLE));
   add_shape(new Polygon(vec2(), 10, 3, 0, 0, DANGEROUS));
   set_score(0);
@@ -324,21 +292,17 @@ Snake::Snake(const vec2& position, colour_t colour, const vec2& dir, fixed rot)
   set_destroy_sound(Lib::SOUND_PLAYER_DESTROY);
   if (dir == vec2()) {
     int32_t r = z::rand_int(4);
-    _dir = r == 0 ? vec2(1, 0) :
-           r == 1 ? vec2(-1, 0) :
-           r == 2 ? vec2(0, 1) : vec2(0, -1);
-  }
-  else {
+    _dir = r == 0 ? vec2(1, 0) : r == 1 ? vec2(-1, 0) : r == 2 ? vec2(0, 1) : vec2(0, -1);
+  } else {
     _dir = dir.normalised();
     _shot_snake = true;
   }
   shape().set_rotation(_dir.angle());
 }
 
-void Snake::update()
-{
-  if (!(shape().centre.x >= -8 && shape().centre.x <= Lib::WIDTH + 8 &&
-        shape().centre.y >= -8 && shape().centre.y <= Lib::HEIGHT + 8)) {
+void Snake::update() {
+  if (!(shape().centre.x >= -8 && shape().centre.x <= Lib::WIDTH + 8 && shape().centre.y >= -8 &&
+        shape().centre.y <= Lib::HEIGHT + 8)) {
     _tail = 0;
     destroy();
     return;
@@ -368,22 +332,16 @@ void Snake::update()
   }
 }
 
-void Snake::on_destroy(bool bomb)
-{
+void Snake::on_destroy(bool bomb) {
   if (_tail) {
     _tail->_dtimer = 4;
   }
 }
 
 RainbowShot::RainbowShot(const vec2& position, const vec2& velocity, Ship* boss)
-  : BossShot(position, velocity)
-  , _boss(boss)
-  , _timer(0)
-{
-}
+: BossShot(position, velocity), _boss(boss), _timer(0) {}
 
-void RainbowShot::update()
-{
+void RainbowShot::update() {
   BossShot::update();
   static const vec2 center = vec2(Lib::WIDTH / 2, Lib::HEIGHT / 2);
 

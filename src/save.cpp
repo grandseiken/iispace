@@ -1,46 +1,39 @@
 #include "save.h"
-#include "lib.h"
 #include <iispace.pb.h>
 #include <algorithm>
 #include <fstream>
+#include "lib.h"
 
 static const std::string SETTINGS_WINDOWED = "Windowed";
 static const std::string SETTINGS_VOLUME = "Volume";
 static const std::string SETTINGS_PATH = "wiispace.txt";
 static const std::string SAVE_PATH = "wiispace.sav";
 
-std::size_t HighScores::size(Mode::mode mode)
-{
+std::size_t HighScores::size(Mode::mode mode) {
   return mode == Mode::BOSS ? 1 : NUM_SCORES;
 }
 
-HighScores::high_score& HighScores::get(
-    Mode::mode mode, int32_t players, int32_t index)
-{
-  return mode == Mode::NORMAL ? normal[players][index] :
-         mode == Mode::HARD ? hard[players][index] :
-         mode == Mode::FAST ? fast[players][index] :
-         mode == Mode::WHAT ? what[players][index] : boss[players];
+HighScores::high_score& HighScores::get(Mode::mode mode, int32_t players, int32_t index) {
+  return mode == Mode::NORMAL ? normal[players][index] : mode == Mode::HARD
+          ? hard[players][index]
+          : mode == Mode::FAST ? fast[players][index] : mode == Mode::WHAT ? what[players][index]
+                                                                           : boss[players];
 }
 
-const HighScores::high_score& HighScores::get(
-    Mode::mode mode, int32_t players, int32_t index) const
-{
-  return mode == Mode::NORMAL ? normal[players][index] :
-         mode == Mode::HARD ? hard[players][index] :
-         mode == Mode::FAST ? fast[players][index] :
-         mode == Mode::WHAT ? what[players][index] : boss[players];
+const HighScores::high_score& HighScores::get(Mode::mode mode, int32_t players,
+                                              int32_t index) const {
+  return mode == Mode::NORMAL ? normal[players][index] : mode == Mode::HARD
+          ? hard[players][index]
+          : mode == Mode::FAST ? fast[players][index] : mode == Mode::WHAT ? what[players][index]
+                                                                           : boss[players];
 }
 
-bool HighScores::is_high_score(
-    Mode::mode mode, int32_t players, int64_t score) const
-{
+bool HighScores::is_high_score(Mode::mode mode, int32_t players, int64_t score) const {
   return get(mode, players, size(mode) - 1).score < score;
 }
 
-void HighScores::add_score(Mode::mode mode, int32_t players,
-                           const std::string& name, int64_t score)
-{
+void HighScores::add_score(Mode::mode mode, int32_t players, const std::string& name,
+                           int64_t score) {
   for (std::size_t find = 0; find < size(mode); ++find) {
     if (score <= get(mode, players, find).score) {
       continue;
@@ -54,10 +47,7 @@ void HighScores::add_score(Mode::mode mode, int32_t players,
   }
 }
 
-SaveData::SaveData()
-  : bosses_killed(0)
-  , hard_mode_bosses_killed(0)
-{
+SaveData::SaveData() : bosses_killed(0), hard_mode_bosses_killed(0) {
   std::ifstream file;
   file.open(SAVE_PATH, std::ios::binary);
 
@@ -70,12 +60,11 @@ SaveData::SaveData()
   proto::SaveData proto;
   proto.ParseFromString(z::crypt(b.str(), Lib::SUPER_ENCRYPTION_KEY));
   file.close();
-  
+
   bosses_killed = proto.bosses_killed();
   hard_mode_bosses_killed = proto.hard_mode_bosses_killed();
 
-  auto get_mode_table = [&](const proto::ModeTable& in,
-                            HighScores::mode_table& out) {
+  auto get_mode_table = [&](const proto::ModeTable& in, HighScores::mode_table& out) {
     std::size_t players = 0;
     for (const auto& t : in.table()) {
       std::size_t index = 0;
@@ -98,13 +87,11 @@ SaveData::SaveData()
   }
 }
 
-void SaveData::save() const
-{
+void SaveData::save() const {
   proto::SaveData proto;
   proto.set_bosses_killed(bosses_killed);
   proto.set_hard_mode_bosses_killed(hard_mode_bosses_killed);
-  auto put_mode_table = [&](const HighScores::mode_table& in,
-                            proto::ModeTable& out) {
+  auto put_mode_table = [&](const HighScores::mode_table& in, proto::ModeTable& out) {
     for (const auto& t : in) {
       proto::Table& out_t = *out.add_table();
       for (const auto& s : t) {
@@ -133,10 +120,7 @@ void SaveData::save() const
   file.close();
 }
 
-Settings::Settings()
-  : windowed(false)
-  , volume(100)
-{
+Settings::Settings() : windowed(false), volume(100) {
   std::ifstream file;
   file.open(SETTINGS_PATH);
 
@@ -164,12 +148,10 @@ Settings::Settings()
   }
 }
 
-void Settings::save() const
-{
+void Settings::save() const {
   std::ofstream out;
   out.open(SETTINGS_PATH);
-  out <<
-      SETTINGS_WINDOWED << " " << (windowed ? "1" : "0") << "\n" <<
-      SETTINGS_VOLUME << " " << volume.to_int();
+  out << SETTINGS_WINDOWED << " " << (windowed ? "1" : "0") << "\n"
+      << SETTINGS_VOLUME << " " << volume.to_int();
   out.close();
 }

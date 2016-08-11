@@ -1,9 +1,9 @@
 #ifndef IISPACE_SRC_SAVE_H
 #define IISPACE_SRC_SAVE_H
 
-#include "z.h"
 #include <array>
 #include <vector>
+#include "z.h"
 
 struct HighScores {
   static const int32_t NUM_SCORES = 8;
@@ -11,8 +11,7 @@ struct HighScores {
   static const int32_t MAX_SCORE_LENGTH = 10;
 
   struct high_score {
-    high_score()
-      : score(0) {}
+    high_score() : score(0) {}
     std::string name;
     int64_t score;
   };
@@ -28,12 +27,10 @@ struct HighScores {
 
   static std::size_t size(Mode::mode mode);
   high_score& get(Mode::mode mode, int32_t players, int32_t index);
-  const high_score& get(
-      Mode::mode mode, int32_t players, int32_t index) const;
+  const high_score& get(Mode::mode mode, int32_t players, int32_t index) const;
 
   bool is_high_score(Mode::mode mode, int32_t players, int64_t score) const;
-  void add_score(Mode::mode mode, int32_t players,
-                 const std::string& name, int64_t score);
+  void add_score(Mode::mode mode, int32_t players, const std::string& name, int64_t score);
 };
 
 struct SaveData {

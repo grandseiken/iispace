@@ -1,15 +1,14 @@
 #ifndef IISPACE_SRC_LIB_H
 #define IISPACE_SRC_LIB_H
 
-#include "z.h"
 #include <map>
 #include <memory>
 #include <vector>
+#include "z.h"
 struct Internals;
 
 class Lib {
 public:
-
   Lib();
   ~Lib();
 
@@ -64,8 +63,7 @@ public:
 
   // General
   //------------------------------
-  void set_player_count(int32_t players)
-  {
+  void set_player_count(int32_t players) {
     _players = players;
   }
 
@@ -95,14 +93,12 @@ public:
   void clear_screen() const;
   void render_line(const flvec2& a, const flvec2& b, colour_t c) const;
   void render_text(const flvec2& v, const std::string& text, colour_t c) const;
-  void render_rect(const flvec2& low, const flvec2& hi,
-                   colour_t c, int32_t line_width = 0) const;
+  void render_rect(const flvec2& low, const flvec2& hi, colour_t c, int32_t line_width = 0) const;
   void render() const;
 
   void rumble(int32_t player, int32_t time);
   void stop_rumble();
-  bool play_sound(
-      Sound sound, float volume = 1.f, float pan = 0.f, float repitch = 0.f);
+  bool play_sound(Sound sound, float volume = 1.f, float pan = 0.f, float repitch = 0.f);
   void set_volume(int32_t volume);
 
   void take_screenshot();
@@ -113,7 +109,6 @@ public:
   int32_t get_colour_cycle() const;
 
 private:
-
   int32_t _cycle;
   int32_t _players;
 
@@ -135,7 +130,6 @@ private:
   std::unique_ptr<Internals> _internals;
   std::size_t _score_frame;
   friend class Handler;
-
 };
 
 #endif

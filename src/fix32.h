@@ -6,8 +6,7 @@
 #include <ostream>
 #include <sstream>
 
-inline int64_t fixed_sgn(int64_t a, int64_t b)
-{
+inline int64_t fixed_sgn(int64_t a, int64_t b) {
   return (((a < 0) == (b < 0)) << 1) - 1;
 }
 
@@ -20,18 +19,15 @@ inline int64_t fixed_sgn(int64_t a, int64_t b)
 #endif
 #endif
 
-inline uint8_t clz(uint64_t x)
-{
+inline uint8_t clz(uint64_t x) {
 #ifdef __GNUC__
-  if (x == 0)
-    return 64;
+  if (x == 0) return 64;
   return __builtin_clzll(x);
 #else
 #ifdef _MSC_VER
   unsigned long t = 0;
 #ifdef PLATFORM_64
-  if (x == 0)
-    return 64;
+  if (x == 0) return 64;
   _BitScanReverse64(&t, x);
   return 63 - uint8_t(t);
 #else
@@ -92,7 +88,6 @@ inline uint8_t clz(uint64_t x)
 
 class fixed {
 public:
-
   inline fixed();
   inline fixed(const fixed& f);
   inline fixed(int32_t v);
@@ -142,14 +137,11 @@ public:
   static const fixed sixteenth;
 
 private:
-
   friend std::ostream& operator<<(std::ostream& o, const fixed& f);
   int64_t _value;
-
 };
 
-inline std::ostream& operator<<(std::ostream& o, const fixed& f)
-{
+inline std::ostream& operator<<(std::ostream& o, const fixed& f) {
   if (f._value < 0) {
     o << "-";
   }
@@ -171,136 +163,104 @@ inline std::ostream& operator<<(std::ostream& o, const fixed& f)
   return o;
 }
 
-inline fixed operator+(int32_t v, const fixed& f)
-{
+inline fixed operator+(int32_t v, const fixed& f) {
   return fixed(v) + f;
 }
 
-inline fixed operator-(int32_t v, const fixed& f)
-{
+inline fixed operator-(int32_t v, const fixed& f) {
   return fixed(v) - f;
 }
 
-inline fixed operator*(int32_t v, const fixed& f)
-{
+inline fixed operator*(int32_t v, const fixed& f) {
   return fixed(v) * f;
 }
 
-inline fixed operator/(int32_t v, const fixed& f)
-{
+inline fixed operator/(int32_t v, const fixed& f) {
   return fixed(v) / f;
 }
 
-inline bool operator==(int32_t v, const fixed& f)
-{
+inline bool operator==(int32_t v, const fixed& f) {
   return fixed(v) == f;
 }
 
-inline bool operator!=(int32_t v, const fixed& f)
-{
+inline bool operator!=(int32_t v, const fixed& f) {
   return fixed(v) != f;
 }
 
-inline bool operator<=(int32_t v, const fixed& f)
-{
+inline bool operator<=(int32_t v, const fixed& f) {
   return fixed(v) <= f;
 }
 
-inline bool operator>=(int32_t v, const fixed& f)
-{
+inline bool operator>=(int32_t v, const fixed& f) {
   return fixed(v) >= f;
 }
 
-inline bool operator<(int32_t v, const fixed& f)
-{
+inline bool operator<(int32_t v, const fixed& f) {
   return fixed(v) < f;
 }
 
-inline bool operator>(int32_t v, const fixed& f)
-{
+inline bool operator>(int32_t v, const fixed& f) {
   return fixed(v) > f;
 }
 
-fixed::fixed()
-  : _value(0)
-{
-}
+fixed::fixed() : _value(0) {}
 
-fixed::fixed(const fixed& f)
-  : _value(f._value)
-{
-}
+fixed::fixed(const fixed& f) : _value(f._value) {}
 
-fixed::fixed(int32_t v)
-  : _value(int64_t(v) << 32)
-{
-}
+fixed::fixed(int32_t v) : _value(int64_t(v) << 32) {}
 
-fixed fixed::from_internal(int64_t f)
-{
+fixed fixed::from_internal(int64_t f) {
   fixed r;
   r._value = f;
   return r;
 }
 
-int64_t fixed::to_internal() const
-{
+int64_t fixed::to_internal() const {
   return _value;
 }
 
-int32_t fixed::to_int() const
-{
+int32_t fixed::to_int() const {
   return _value >> 32;
 }
 
-float fixed::to_float() const
-{
+float fixed::to_float() const {
   return float(_value) / (uint64_t(1) << 32);
 }
 
-fixed::operator bool() const
-{
+fixed::operator bool() const {
   return _value != 0;
 }
 
-fixed& fixed::operator=(const fixed& f)
-{
+fixed& fixed::operator=(const fixed& f) {
   _value = f._value;
   return *this;
 }
 
-fixed& fixed::operator+=(const fixed& f)
-{
+fixed& fixed::operator+=(const fixed& f) {
   return *this = *this + f;
 }
 
-fixed& fixed::operator-=(const fixed& f)
-{
+fixed& fixed::operator-=(const fixed& f) {
   return *this = *this - f;
 }
 
-fixed& fixed::operator*=(const fixed& f)
-{
+fixed& fixed::operator*=(const fixed& f) {
   return *this = *this * f;
 }
 
-fixed& fixed::operator/=(const fixed& f)
-{
+fixed& fixed::operator/=(const fixed& f) {
   return *this = *this / f;
 }
 
-fixed fixed::operator+(const fixed& f) const
-{
+fixed fixed::operator+(const fixed& f) const {
   return from_internal(_value + f._value);
 }
 
-fixed fixed::operator-(const fixed& f) const
-{
+fixed fixed::operator-(const fixed& f) const {
   return from_internal(_value - f._value);
 }
 
-fixed fixed::operator*(const fixed& f) const
-{
+fixed fixed::operator*(const fixed& f) const {
   int64_t sign = fixed_sgn(_value, f._value);
   uint64_t l = abs()._value;
   uint64_t r = f.abs()._value;
@@ -315,8 +275,7 @@ fixed fixed::operator*(const fixed& f) const
   return from_internal(sign * combine);
 }
 
-fixed fixed::operator/(const fixed& f) const
-{
+fixed fixed::operator/(const fixed& f) const {
   int64_t sign = fixed_sgn(_value, f._value);
   uint64_t r = abs()._value;
   uint64_t d = f.abs()._value;
@@ -351,48 +310,39 @@ fixed fixed::operator/(const fixed& f) const
   return from_internal(sign * (q >> 1));
 }
 
-fixed fixed::operator-() const
-{
+fixed fixed::operator-() const {
   return fixed() - *this;
 }
 
-bool fixed::operator==(const fixed& f) const
-{
+bool fixed::operator==(const fixed& f) const {
   return _value == f._value;
 }
 
-bool fixed::operator!=(const fixed& f) const
-{
+bool fixed::operator!=(const fixed& f) const {
   return _value != f._value;
 }
 
-bool fixed::operator<=(const fixed& f) const
-{
+bool fixed::operator<=(const fixed& f) const {
   return _value <= f._value;
 }
 
-bool fixed::operator>=(const fixed& f) const
-{
+bool fixed::operator>=(const fixed& f) const {
   return _value >= f._value;
 }
 
-bool fixed::operator<(const fixed& f) const
-{
+bool fixed::operator<(const fixed& f) const {
   return _value < f._value;
 }
 
-bool fixed::operator>(const fixed& f) const
-{
+bool fixed::operator>(const fixed& f) const {
   return _value > f._value;
 }
 
-fixed fixed::abs() const
-{
+fixed fixed::abs() const {
   return from_internal((_value ^ (_value >> 63)) - (_value >> 63));
 }
 
-fixed fixed::sqrt() const
-{
+fixed fixed::sqrt() const {
   if (_value <= 0) {
     return 0;
   }
@@ -414,8 +364,7 @@ fixed fixed::sqrt() const
   return f;
 }
 
-fixed fixed::sin() const
-{
+fixed fixed::sin() const {
   bool negative = _value < 0;
   fixed angle = from_internal(abs()._value % (2 * pi)._value);
 
@@ -446,13 +395,11 @@ fixed fixed::sin() const
   return negative ? -out : out;
 }
 
-fixed fixed::cos() const
-{
+fixed fixed::cos() const {
   return (*this + pi / 2).sin();
 }
 
-fixed fixed::atan2(const fixed& x) const
-{
+fixed fixed::atan2(const fixed& x) const {
   fixed y = abs();
   fixed angle;
 
@@ -462,19 +409,14 @@ fixed fixed::atan2(const fixed& x) const
     }
     fixed r = (x - y) / (x + y);
     fixed r3 = r * r * r;
-    angle =
-        from_internal(0x32400000) * r3 -
-        from_internal(0xfb500000) * r + pi / 4;
-  }
-  else {
+    angle = from_internal(0x32400000) * r3 - from_internal(0xfb500000) * r + pi / 4;
+  } else {
     if (x - y == 0) {
       return -3 * pi / 4;
     }
     fixed r = (x + y) / (y - x);
     fixed r3 = r * r * r;
-    angle =
-        from_internal(0x32400000) * r3 -
-        from_internal(0xfb500000) * r + 3 * pi / 4;
+    angle = from_internal(0x32400000) * r3 - from_internal(0xfb500000) * r + 3 * pi / 4;
   }
   return _value < 0 ? -angle : angle;
 }

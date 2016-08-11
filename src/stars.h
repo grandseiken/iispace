@@ -1,21 +1,19 @@
 #ifndef IISPACE_SRC_STARS_H
 #define IISPACE_SRC_STARS_H
 
-#include "z.h"
 #include <memory>
 #include <vector>
+#include "z.h"
 class Lib;
 
 class Stars {
 public:
-
   static void change();
   static void update();
   static void render(Lib& lib);
   static void clear();
 
 private:
-
   static void create_star();
 
   enum type_t {
@@ -37,7 +35,6 @@ private:
   static flvec2 _direction;
   static std::vector<std::unique_ptr<data>> _stars;
   static int32_t _star_rate;
-
 };
 
 #endif
