@@ -61,7 +61,7 @@ void Fill::render(Lib& lib, const fvec2& position, float rotation, colour_t colo
 }
 
 bool Fill::check_local_point(const vec2& v) const {
-  return v.x.abs() < width && v.y.abs() < height;
+  return abs(v.x) < width && abs(v.y) < height;
 }
 
 Line::Line(const vec2& centre, const vec2& a, const vec2& b, colour_t colour, fixed rotation)
@@ -97,7 +97,7 @@ void Box::render(Lib& lib, const fvec2& position, float rotation, colour_t colou
 }
 
 bool Box::check_local_point(const vec2& v) const {
-  return v.x.abs() < width && v.y.abs() < height;
+  return abs(v.x) < width && abs(v.y) < height;
 }
 
 Polygon::Polygon(const vec2& centre, fixed radius, int32_t sides, colour_t colour, fixed rotation,

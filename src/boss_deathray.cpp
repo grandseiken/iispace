@@ -53,8 +53,8 @@ void DeathRayBoss::update() {
                           ? 5 * Lib::HEIGHT / 8 - shape().centre.y
                           : 7 * Lib::HEIGHT / 8 - shape().centre.y;
 
-  if (d.abs() > 3) {
-    move(vec2(0, d / d.abs()) * DRB_SPEED);
+  if (abs(d) > 3) {
+    move(vec2(0, d / abs(d)) * DRB_SPEED);
     positioned = false;
   }
 

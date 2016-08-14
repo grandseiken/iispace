@@ -43,22 +43,6 @@ colour_t colour_cycle(colour_t rgb, int32_t cycle);
 
 #define M_PIf 3.14159265358979323846264338327f
 
-inline fixed sqrt(fixed f) {
-  return f.sqrt();
-}
-
-inline fixed cos(fixed f) {
-  return f.cos();
-}
-
-inline fixed sin(fixed f) {
-  return f.sin();
-}
-
-inline fixed atan2(fixed y, fixed x) {
-  return y.atan2(x);
-}
-
 template <typename T>
 class vec2_t {
 public:
