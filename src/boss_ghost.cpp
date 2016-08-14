@@ -25,11 +25,11 @@ GhostBoss::GhostBoss(int32_t players, int32_t cycle)
   add_shape(new Polygon(vec2(), 48, 8, 0xcc66ffff, 0, 0));
 
   for (int32_t i = 0; i < 8; i++) {
-    vec2 c = vec2::from_polar(i * fixed::pi / 4, 48);
+    vec2 c = vec2::from_polar(i * fixed_c::pi / 4, 48);
 
     CompoundShape* s = new CompoundShape(c, 0, 0);
     for (int32_t j = 0; j < 8; j++) {
-      vec2 d = vec2::from_polar(j * fixed::pi / 4, 1);
+      vec2 d = vec2::from_polar(j * fixed_c::pi / 4, 1);
       s->add_shape(new Line(vec2(), d * 10, d * 10 * 2, 0x9933ccff, 0));
     }
     add_shape(s);
@@ -40,7 +40,7 @@ GhostBoss::GhostBoss(int32_t players, int32_t cycle)
   for (int32_t n = 0; n < 5; n++) {
     CompoundShape* s = new CompoundShape(vec2(), 0, 0);
     for (int32_t i = 0; i < 16 + n * 6; i++) {
-      vec2 d = vec2::from_polar(i * 2 * fixed::pi / (16 + n * 6), 100 + n * 60);
+      vec2 d = vec2::from_polar(i * 2 * fixed_c::pi / (16 + n * 6), 100 + n * 60);
       s->add_shape(new Polygon(d, 16, 8, n ? 0x330066ff : 0x9933ccff, 0, 0, Polygon::T::POLYSTAR));
       s->add_shape(new Polygon(d, 12, 8, n ? 0x330066ff : 0x9933ccff));
     }
@@ -76,7 +76,7 @@ void GhostBoss::update() {
         s1.colour = 0xcc66ffff;
         s2.colour = 0xcc66ffff;
         if (_vtime == 0) {
-          vec2 d = vec2::from_polar(i * 2 * fixed::pi / (16 + n * 6), 100 + n * 60);
+          vec2 d = vec2::from_polar(i * 2 * fixed_c::pi / (16 + n * 6), 100 + n * 60);
           c->add_shape(new Polygon(d, 9, 8, 0));
           _warnings.push_back(c->convert_point(shape().centre, shape().rotation(), d));
         }
@@ -87,32 +87,32 @@ void GhostBoss::update() {
     }
   }
   if (!(_attack == 2 && _attack_time < GB_ATTACK_TIME * 4 && _attack_time)) {
-    shape().rotate(-fixed::hundredth * 4);
+    shape().rotate(-fixed_c::hundredth * 4);
   }
 
   for (std::size_t i = 0; i < 8; i++) {
-    shapes()[i + 2]->rotate(fixed::hundredth * 4);
+    shapes()[i + 2]->rotate(fixed_c::hundredth * 4);
   }
-  shapes()[10]->rotate(fixed::hundredth * 6);
+  shapes()[10]->rotate(fixed_c::hundredth * 6);
   for (int32_t n = 0; n < 5; n++) {
     CompoundShape* s = (CompoundShape*) shapes()[11 + n].get();
     if (n % 2) {
-      s->rotate(fixed::hundredth * 3 + (fixed(3) / 2000) * n);
+      s->rotate(fixed_c::hundredth * 3 + (fixed(3) / 2000) * n);
     } else {
-      s->rotate(fixed::hundredth * 5 - (fixed(3) / 2000) * n);
+      s->rotate(fixed_c::hundredth * 5 - (fixed(3) / 2000) * n);
     }
     for (const auto& t : s->shapes()) {
-      t->rotate(-fixed::tenth);
+      t->rotate(-fixed_c::tenth);
     }
 
     s = (CompoundShape*) shapes()[16 + n].get();
     if (n % 2) {
-      s->rotate(fixed::hundredth * 3 + (fixed(3) / 2000) * n);
+      s->rotate(fixed_c::hundredth * 3 + (fixed(3) / 2000) * n);
     } else {
-      s->rotate(fixed::hundredth * 4 - (fixed(3) / 2000) * n);
+      s->rotate(fixed_c::hundredth * 4 - (fixed(3) / 2000) * n);
     }
     for (const auto& t : s->shapes()) {
-      t->rotate(-fixed::tenth);
+      t->rotate(-fixed_c::tenth);
     }
   }
 
@@ -127,7 +127,7 @@ void GhostBoss::update() {
         (_timer >= GB_TIMER / 10 && _timer < 9 * GB_TIMER / 10 - 16 &&
          ((_timer % 16 == 0 && _attack == 2) || (_timer % 32 == 0 && _shot_type)))) {
       for (int32_t i = 0; i < 8; i++) {
-        vec2 d = vec2::from_polar(i * fixed::pi / 4 + shape().rotation(), 5);
+        vec2 d = vec2::from_polar(i * fixed_c::pi / 4 + shape().rotation(), 5);
         spawn(new BossShot(shape().centre, d, 0xcc66ffff));
       }
       play_sound_random(Lib::SOUND_BOSS_FIRE);
@@ -137,7 +137,7 @@ void GhostBoss::update() {
       Player* p = nearest_player();
       vec2 d = (p->shape().centre - shape().centre).normalised();
 
-      if (d.length() > fixed::half) {
+      if (d.length() > fixed_c::half) {
         spawn(new BossShot(shape().centre, d * 5, 0xcc66ffff));
         spawn(new BossShot(shape().centre, d * -5, 0xcc66ffff));
         play_sound_random(Lib::SOUND_BOSS_FIRE);
@@ -167,7 +167,7 @@ void GhostBoss::update() {
         if (_attack_time == GB_ATTACK_TIME * 3 - 1) {
           play_sound(Lib::SOUND_BOSS_ATTACK);
         }
-        shape().rotate((_rDir ? 1 : -1) * 2 * fixed::pi / (GB_ATTACK_TIME * 6));
+        shape().rotate((_rDir ? 1 : -1) * 2 * fixed_c::pi / (GB_ATTACK_TIME * 6));
         if (!_attack_time) {
           for (int32_t i = 0; i < 6; i++) {
             destroy_shape(21);
@@ -343,7 +343,7 @@ GhostMine::GhostMine(const vec2& position, Boss* ghost)
 void GhostMine::update() {
   if (_timer == 80) {
     explosion();
-    shape().set_rotation(z::rand_fixed() * 2 * fixed::pi);
+    shape().set_rotation(z::rand_fixed() * 2 * fixed_c::pi);
   }
   if (_timer) {
     _timer--;

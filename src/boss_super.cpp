@@ -11,14 +11,14 @@ SuperBossArc::SuperBossArc(const vec2& position, int32_t players, int32_t cycle,
 , _i(i)
 , _timer(timer)
 , _stimer(0) {
-  add_shape(new PolyArc(vec2(), 140, 32, 2, 0, i * 2 * fixed::pi / 16, 0));
-  add_shape(new PolyArc(vec2(), 135, 32, 2, 0, i * 2 * fixed::pi / 16, 0));
-  add_shape(new PolyArc(vec2(), 130, 32, 2, 0, i * 2 * fixed::pi / 16, 0));
-  add_shape(new PolyArc(vec2(), 125, 32, 2, 0, i * 2 * fixed::pi / 16, SHIELD));
-  add_shape(new PolyArc(vec2(), 120, 32, 2, 0, i * 2 * fixed::pi / 16, 0));
-  add_shape(new PolyArc(vec2(), 115, 32, 2, 0, i * 2 * fixed::pi / 16, 0));
-  add_shape(new PolyArc(vec2(), 110, 32, 2, 0, i * 2 * fixed::pi / 16, 0));
-  add_shape(new PolyArc(vec2(), 105, 32, 2, 0, i * 2 * fixed::pi / 16, SHIELD));
+  add_shape(new PolyArc(vec2(), 140, 32, 2, 0, i * 2 * fixed_c::pi / 16, 0));
+  add_shape(new PolyArc(vec2(), 135, 32, 2, 0, i * 2 * fixed_c::pi / 16, 0));
+  add_shape(new PolyArc(vec2(), 130, 32, 2, 0, i * 2 * fixed_c::pi / 16, 0));
+  add_shape(new PolyArc(vec2(), 125, 32, 2, 0, i * 2 * fixed_c::pi / 16, SHIELD));
+  add_shape(new PolyArc(vec2(), 120, 32, 2, 0, i * 2 * fixed_c::pi / 16, 0));
+  add_shape(new PolyArc(vec2(), 115, 32, 2, 0, i * 2 * fixed_c::pi / 16, 0));
+  add_shape(new PolyArc(vec2(), 110, 32, 2, 0, i * 2 * fixed_c::pi / 16, 0));
+  add_shape(new PolyArc(vec2(), 105, 32, 2, 0, i * 2 * fixed_c::pi / 16, SHIELD));
 }
 
 void SuperBossArc::update() {
@@ -48,7 +48,7 @@ int32_t SuperBossArc::get_damage(int32_t damage, bool magic) {
 }
 
 void SuperBossArc::on_destroy() {
-  vec2 d = vec2::from_polar(_i * 2 * fixed::pi / 16 + shape().rotation(), 120);
+  vec2 d = vec2::from_polar(_i * 2 * fixed_c::pi / 16 + shape().rotation(), 120);
   move(d);
   explosion();
   explosion(0xffffffff, 12);
@@ -60,7 +60,7 @@ void SuperBossArc::on_destroy() {
 }
 
 SuperBoss::SuperBoss(int32_t players, int32_t cycle)
-: Boss(vec2(Lib::WIDTH / 2, -Lib::HEIGHT / (2 + fixed::half)), GameModal::BOSS_3A, SB_BASE_HP,
+: Boss(vec2(Lib::WIDTH / 2, -Lib::HEIGHT / (2 + fixed_c::half)), GameModal::BOSS_3A, SB_BASE_HP,
        players, cycle)
 , _players(players)
 , _cycle(cycle)
@@ -117,8 +117,8 @@ void SuperBoss::update() {
   }
 
   static const fixed d5d1000 = fixed(5) / 1000;
-  static const fixed pi2d64 = 2 * fixed::pi / 64;
-  static const fixed pi2d32 = 2 * fixed::pi / 32;
+  static const fixed pi2d64 = 2 * fixed_c::pi / 64;
+  static const fixed pi2d32 = 2 * fixed_c::pi / 32;
 
   if (_state == STATE_IDLE && is_on_screen() && _timer != 0 && _timer % 300 == 0) {
     int32_t r = z::rand_int(6);
@@ -127,7 +127,7 @@ void SuperBoss::update() {
     } else if (r == 2 || r == 3) {
       _state = STATE_ATTACK;
       _timer = 0;
-      fixed f = z::rand_fixed() * (2 * fixed::pi);
+      fixed f = z::rand_fixed() * (2 * fixed_c::pi);
       fixed rf = d5d1000 * (1 + z::rand_int(2));
       for (int32_t i = 0; i < 32; ++i) {
         vec2 d = vec2::from_polar(f + i * pi2d32, 1);
@@ -140,7 +140,7 @@ void SuperBoss::update() {
     } else if (r == 5) {
       _state = STATE_ATTACK;
       _timer = 0;
-      fixed f = z::rand_fixed() * (2 * fixed::pi);
+      fixed f = z::rand_fixed() * (2 * fixed_c::pi);
       for (int32_t i = 0; i < 64; ++i) {
         vec2 d = vec2::from_polar(f + i * pi2d64, 1);
         spawn(new Snake(shape().centre + d * 16, c, d));
@@ -174,7 +174,7 @@ void SuperBoss::update() {
       play_sound(Lib::SOUND_ENEMY_SPAWN);
     }
   }
-  static const fixed pi2d128 = 2 * fixed::pi / 128;
+  static const fixed pi2d128 = 2 * fixed_c::pi / 128;
   if (_state == STATE_IDLE && _timer % 72 == 0) {
     for (int32_t i = 0; i < 128; ++i) {
       vec2 d = vec2::from_polar(i * pi2d128, 1);
@@ -185,7 +185,8 @@ void SuperBoss::update() {
 
   if (_snakes) {
     --_snakes;
-    vec2 d = vec2::from_polar(z::rand_fixed() * (2 * fixed::pi), z::rand_int(32) + z::rand_int(16));
+    vec2 d =
+        vec2::from_polar(z::rand_fixed() * (2 * fixed_c::pi), z::rand_int(32) + z::rand_int(16));
     spawn(new Snake(d + shape().centre, c));
     play_sound_random(Lib::SOUND_ENEMY_SPAWN);
   }
@@ -211,8 +212,8 @@ void SuperBoss::on_destroy() {
 
   int32_t n = 1;
   for (int32_t i = 0; i < 16; ++i) {
-    vec2 v =
-        vec2::from_polar(z::rand_fixed() * (2 * fixed::pi), 8 + z::rand_int(64) + z::rand_int(64));
+    vec2 v = vec2::from_polar(z::rand_fixed() * (2 * fixed_c::pi),
+                              8 + z::rand_int(64) + z::rand_int(64));
     colour_t c = z::colour_cycle(shapes()[0]->colour, n * 2);
     _fireworks.push_back(std::make_pair(n, std::make_pair(shape().centre + v, c)));
     n += i;
@@ -242,7 +243,7 @@ SnakeTail::SnakeTail(const vec2& position, colour_t colour)
 }
 
 void SnakeTail::update() {
-  static const fixed z15 = fixed::hundredth * 15;
+  static const fixed z15 = fixed_c::hundredth * 15;
   shape().rotate(z15);
   --_timer;
   if (!_timer) {
@@ -322,7 +323,7 @@ void Snake::update() {
     spawn(t);
   }
   if (!_shot_snake && _timer % 48 == 0 && !z::rand_int(3)) {
-    _dir = _dir.rotated((z::rand_int(2) ? 1 : -1) * fixed::pi / 2);
+    _dir = _dir.rotated((z::rand_int(2) ? 1 : -1) * fixed_c::pi / 2);
     shape().set_rotation(_dir.angle());
   }
   move(_dir * (_shot_snake ? 4 : 2));
@@ -367,7 +368,7 @@ void RainbowShot::update() {
   }
 
   ++_timer;
-  static const fixed r = 6 * (8 * fixed::hundredth / 10);
+  static const fixed r = 6 * (8 * fixed_c::hundredth / 10);
   if (_timer % 8 == 0) {
     _dir = _dir.rotated(r);
   }

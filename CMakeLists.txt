@@ -38,7 +38,6 @@ set(IISPACE_SOURCES
   src/boss_super.cpp
   src/boss_tractor.cpp
   src/enemy.cpp
-  src/fix32.cpp
   src/lib.cpp
   src/main.cpp
   src/modal.cpp
@@ -57,7 +56,7 @@ add_executable(iispace ${IISPACE_SOURCES})
 target_include_directories(iispace PRIVATE ${GENERATED_DIR})
 target_link_libraries(iispace PRIVATE
   libprotobuf ois sfml-audio sfml-graphics sfml-window sfml-system)
-set_property(TARGET iispace PROPERTY CXX_STANDARD 11)
+set_property(TARGET iispace PROPERTY CXX_STANDARD 14)
 if(NOT MSVC)
   target_compile_definitions(iispace PRIVATE PLATFORM_LINUX)
 endif()
@@ -65,7 +64,7 @@ endif()
 add_executable(score ${IISPACE_SOURCES})
 target_include_directories(score PRIVATE ${GENERATED_DIR})
 target_link_libraries(score PRIVATE libprotobuf)
-set_property(TARGET score PROPERTY CXX_STANDARD 11)
+set_property(TARGET score PROPERTY CXX_STANDARD 14)
 target_compile_definitions(score PRIVATE PLATFORM_SCORE)
 
 set(PACKAGE_DIR "${CMAKE_BINARY_DIR}/package")

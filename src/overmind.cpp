@@ -34,8 +34,8 @@ public:
     num = std::max(0, std::min(div - 1, num));
 
     fixed x = fixed(top ? num : div - 1 - num) * Lib::WIDTH / fixed(div - 1);
-    fixed y = top ? -(_row + 1) * (fixed::hundredth * 16) * Lib::HEIGHT
-                  : Lib::HEIGHT * (1 + (_row + 1) * (fixed::hundredth * 16));
+    fixed y = top ? -(_row + 1) * (fixed_c::hundredth * 16) * Lib::HEIGHT
+                  : Lib::HEIGHT * (1 + (_row + 1) * (fixed_c::hundredth * 16));
     return vec2(x, y);
   }
 

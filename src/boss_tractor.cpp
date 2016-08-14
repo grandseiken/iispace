@@ -6,7 +6,7 @@ static const int32_t TB_TIMER = 100;
 static const fixed TB_SPEED = 2;
 
 TractorBoss::TractorBoss(int32_t players, int32_t cycle)
-: Boss(vec2(Lib::WIDTH * (1 + fixed::half), Lib::HEIGHT / 2), GameModal::BOSS_2A, TB_BASE_HP,
+: Boss(vec2(Lib::WIDTH * (1 + fixed_c::half), Lib::HEIGHT / 2), GameModal::BOSS_2A, TB_BASE_HP,
        players, cycle)
 , _will_attack(false)
 , _stopped(false)
@@ -27,7 +27,7 @@ TractorBoss::TractorBoss(int32_t players, int32_t cycle)
   _s1->add_shape(new Polygon(vec2(), 34, 12, 0xcc33ccff, 0, 0));
   _s1->add_shape(new Polygon(vec2(), 32, 12, 0xcc33ccff, 0, 0));
   for (int32_t i = 0; i < 8; i++) {
-    vec2 d = vec2(24, 0).rotated(i * fixed::pi / 4);
+    vec2 d = vec2(24, 0).rotated(i * fixed_c::pi / 4);
     _s1->add_shape(new Polygon(d, 12, 6, 0xcc33ccff, 0, 0, Polygon::T::POLYGRAM));
   }
 
@@ -41,7 +41,7 @@ TractorBoss::TractorBoss(int32_t players, int32_t cycle)
   _s2->add_shape(new Polygon(vec2(), 34, 12, 0xcc33ccff, 0, 0));
   _s2->add_shape(new Polygon(vec2(), 32, 12, 0xcc33ccff, 0, 0));
   for (int32_t i = 0; i < 8; i++) {
-    vec2 d = vec2(24, 0).rotated(i * fixed::pi / 4);
+    vec2 d = vec2(24, 0).rotated(i * fixed_c::pi / 4);
     _s2->add_shape(new Polygon(d, 12, 6, 0xcc33ccff, 0, 0, Polygon::T::POLYGRAM));
   }
 
@@ -78,7 +78,7 @@ void TractorBoss::update() {
     }
     _continue = false;
     _sound = !_will_attack;
-    shape().rotate(z::rand_fixed() * 2 * fixed::pi);
+    shape().rotate(z::rand_fixed() * 2 * fixed_c::pi);
   }
 
   _timer++;
@@ -138,11 +138,11 @@ void TractorBoss::update() {
 
       if (_timer < TB_TIMER * 4 && _timer % (10 - 2 * game().alive_players()) == 0) {
         Ship* s = new TBossShot(_s1->convert_point(shape().centre, shape().rotation(), vec2()),
-                                _gen_dir ? shape().rotation() + fixed::pi : shape().rotation());
+                                _gen_dir ? shape().rotation() + fixed_c::pi : shape().rotation());
         spawn(s);
 
         s = new TBossShot(_s2->convert_point(shape().centre, shape().rotation(), vec2()),
-                          shape().rotation() + (_gen_dir ? 0 : fixed::pi));
+                          shape().rotation() + (_gen_dir ? 0 : fixed_c::pi));
         spawn(s);
         play_sound_random(Lib::SOUND_ENEMY_SPAWN);
       }
@@ -162,25 +162,25 @@ void TractorBoss::update() {
           _timer = 0;
           _attacking = true;
         }
-        if (_timer % (TB_TIMER / (1 + fixed::half)).to_int() == TB_TIMER / 8) {
+        if (_timer % (TB_TIMER / (1 + fixed_c::half)).to_int() == TB_TIMER / 8) {
           vec2 v = _s1->convert_point(shape().centre, shape().rotation(), vec2());
-          vec2 d = vec2::from_polar(z::rand_fixed() * (2 * fixed::pi), 5);
+          vec2 d = vec2::from_polar(z::rand_fixed() * (2 * fixed_c::pi), 5);
           spawn(new BossShot(v, d, 0xcc33ccff));
-          d = d.rotated(fixed::pi / 2);
+          d = d.rotated(fixed_c::pi / 2);
           spawn(new BossShot(v, d, 0xcc33ccff));
-          d = d.rotated(fixed::pi / 2);
+          d = d.rotated(fixed_c::pi / 2);
           spawn(new BossShot(v, d, 0xcc33ccff));
-          d = d.rotated(fixed::pi / 2);
+          d = d.rotated(fixed_c::pi / 2);
           spawn(new BossShot(v, d, 0xcc33ccff));
 
           v = _s2->convert_point(shape().centre, shape().rotation(), vec2());
-          d = vec2::from_polar(z::rand_fixed() * (2 * fixed::pi), 5);
+          d = vec2::from_polar(z::rand_fixed() * (2 * fixed_c::pi), 5);
           spawn(new BossShot(v, d, 0xcc33ccff));
-          d = d.rotated(fixed::pi / 2);
+          d = d.rotated(fixed_c::pi / 2);
           spawn(new BossShot(v, d, 0xcc33ccff));
-          d = d.rotated(fixed::pi / 2);
+          d = d.rotated(fixed_c::pi / 2);
           spawn(new BossShot(v, d, 0xcc33ccff));
-          d = d.rotated(fixed::pi / 2);
+          d = d.rotated(fixed_c::pi / 2);
           spawn(new BossShot(v, d, 0xcc33ccff));
           play_sound_random(Lib::SOUND_BOSS_FIRE);
         }
@@ -200,7 +200,7 @@ void TractorBoss::update() {
             speed = Tractor::TRACTOR_BEAM_SPEED;
           }
           if (ship->type() & SHIP_ENEMY) {
-            speed = 4 + fixed::half;
+            speed = 4 + fixed_c::half;
           }
           vec2 d = (shape().centre - pos).normalised();
           ship->move(d * speed);
@@ -209,7 +209,7 @@ void TractorBoss::update() {
               (ship->shape().centre - shape().centre).length() <= 40) {
             ship->destroy();
             _attack_size++;
-            _sattack->radius = _attack_size / (1 + fixed::half);
+            _sattack->radius = _attack_size / (1 + fixed_c::half);
             add_shape(new Polygon(vec2(), 8, 6, 0xcc33ccff, 0, 0));
           }
         }
@@ -218,7 +218,7 @@ void TractorBoss::update() {
         _stopped = false;
         _continue = true;
         for (int32_t i = 0; i < _attack_size; i++) {
-          vec2 d = vec2::from_polar(i * (2 * fixed::pi) / _attack_size, 5);
+          vec2 d = vec2::from_polar(i * (2 * fixed_c::pi) / _attack_size, 5);
           spawn(new BossShot(shape().centre, d, 0xcc33ccff));
         }
         play_sound(Lib::SOUND_BOSS_FIRE);
@@ -233,27 +233,27 @@ void TractorBoss::update() {
   }
 
   for (std::size_t i = _attack_shapes; i < shapes().size(); ++i) {
-    vec2 v =
-        vec2::from_polar(z::rand_fixed() * (2 * fixed::pi), 2 * (z::rand_fixed() - fixed::half) *
-                             fixed(_attack_size) / (1 + fixed::half));
+    vec2 v = vec2::from_polar(
+        z::rand_fixed() * (2 * fixed_c::pi),
+        2 * (z::rand_fixed() - fixed_c::half) * fixed(_attack_size) / (1 + fixed_c::half));
     shapes()[i]->centre = v;
   }
 
   fixed r = 0;
   if (!_will_attack || (_stopped && !_generating && !_attacking)) {
-    r = fixed::hundredth;
+    r = fixed_c::hundredth;
   } else if (_stopped && _attacking && !_generating) {
     r = 0;
   } else {
-    r = fixed::hundredth / 2;
+    r = fixed_c::hundredth / 2;
   }
   shape().rotate(r);
 
-  _s1->rotate(fixed::tenth / 2);
-  _s2->rotate(-fixed::tenth / 2);
+  _s1->rotate(fixed_c::tenth / 2);
+  _s2->rotate(-fixed_c::tenth / 2);
   for (std::size_t i = 0; i < 8; i++) {
-    _s1->shapes()[4 + i]->rotate(-fixed::tenth);
-    _s2->shapes()[4 + i]->rotate(fixed::tenth);
+    _s1->shapes()[4 + i]->rotate(-fixed_c::tenth);
+    _s2->shapes()[4 + i]->rotate(fixed_c::tenth);
   }
 }
 

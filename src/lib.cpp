@@ -694,8 +694,8 @@ bool Lib::is_key_released(int32_t player, Key k) const {
 bool Lib::is_key_held(int32_t player, Key k) const {
 #ifndef PLATFORM_SCORE
   vec2 v(_internals->pad_aim_haxes[player], _internals->pad_aim_vaxes[player]);
-  if (k == KEY_FIRE &&
-      (_internals->pad_aim_dpads[player] != OIS::Pov::Centered || v.length() >= fixed::tenth * 2)) {
+  if (k == KEY_FIRE && (_internals->pad_aim_dpads[player] != OIS::Pov::Centered ||
+                        v.length() >= fixed_c::tenth * 2)) {
     return true;
   }
   return _keys_held[k][player];
@@ -717,7 +717,7 @@ vec2 Lib::get_move_velocity(int32_t player) const {
   }
 
   v = vec2(_internals->pad_move_haxes[player], _internals->pad_move_vaxes[player]);
-  if (v.length() < fixed::tenth * 2) {
+  if (v.length() < fixed_c::tenth * 2) {
     return vec2();
   }
   return v;
@@ -731,7 +731,7 @@ vec2 Lib::get_fire_target(int32_t player, const vec2& position) const {
   bool kp = player == (_players <= _internals->pad_count ? _players - 1 : _internals->pad_count);
   vec2 v(_internals->pad_aim_haxes[player], _internals->pad_aim_vaxes[player]);
 
-  if (v.length() >= fixed::tenth * 2) {
+  if (v.length() >= fixed_c::tenth * 2) {
     v = v.normalised() * 48;
     if (kp) {
       _mouse_moving = false;

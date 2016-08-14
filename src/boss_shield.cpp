@@ -20,8 +20,8 @@ ShieldBombBoss::ShieldBombBoss(int32_t players, int32_t cycle)
       new Polygon(vec2(), 48, 8, 0x339966ff, 0, DANGEROUS | VULNERABLE, Polygon::T::POLYGRAM));
 
   for (int32_t i = 0; i < 16; i++) {
-    vec2 a = vec2(120, 0).rotated(i * fixed::pi / 8);
-    vec2 b = vec2(80, 0).rotated(i * fixed::pi / 8);
+    vec2 a = vec2(120, 0).rotated(i * fixed_c::pi / 8);
+    vec2 b = vec2(80, 0).rotated(i * fixed_c::pi / 8);
 
     add_shape(new Line(vec2(), a, b, 0x999999ff, 0));
   }
@@ -36,14 +36,14 @@ ShieldBombBoss::ShieldBombBoss(int32_t players, int32_t cycle)
 }
 
 void ShieldBombBoss::update() {
-  if (!_side && shape().centre.x < Lib::WIDTH * fixed::tenth * 6) {
+  if (!_side && shape().centre.x < Lib::WIDTH * fixed_c::tenth * 6) {
     move(vec2(1, 0) * SBB_SPEED);
-  } else if (_side && shape().centre.x > Lib::WIDTH * fixed::tenth * 4) {
+  } else if (_side && shape().centre.x > Lib::WIDTH * fixed_c::tenth * 4) {
     move(vec2(-1, 0) * SBB_SPEED);
   }
 
-  shape().rotate(-fixed::hundredth * 2);
-  shapes()[0]->rotate(-fixed::hundredth * 4);
+  shape().rotate(-fixed_c::hundredth * 2);
+  shapes()[0]->rotate(-fixed_c::hundredth * 4);
   shapes()[20]->set_rotation(shapes()[0]->rotation());
 
   if (!is_on_screen()) {
@@ -79,7 +79,7 @@ void ShieldBombBoss::update() {
   }
 
   if (_attack) {
-    vec2 d = _attack_dir.rotated((SBB_ATTACK_TIME - _attack) * fixed::half * fixed::pi /
+    vec2 d = _attack_dir.rotated((SBB_ATTACK_TIME - _attack) * fixed_c::half * fixed_c::pi /
                                  SBB_ATTACK_TIME);
     spawn(new BossShot(shape().centre, d));
     _attack--;
@@ -108,12 +108,12 @@ void ShieldBombBoss::update() {
       vec2 d = vec2(5, 0).rotated(shape().rotation());
       for (int32_t i = 0; i < 12; i++) {
         spawn(new BossShot(shape().centre, d));
-        d = d.rotated(2 * fixed::pi / 12);
+        d = d.rotated(2 * fixed_c::pi / 12);
       }
       play_sound(Lib::SOUND_BOSS_ATTACK);
     } else {
       _attack = SBB_ATTACK_TIME;
-      _attack_dir = vec2::from_polar(z::rand_fixed() * (2 * fixed::pi), 5);
+      _attack_dir = vec2::from_polar(z::rand_fixed() * (2 * fixed_c::pi), 5);
     }
   }
 }

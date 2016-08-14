@@ -58,7 +58,7 @@ Player::Player(PlayerInput& input, const vec2& position, int32_t player_number)
   add_shape(new Fill(vec2(8, 0), 2, 2, colour()));
   add_shape(new Fill(vec2(8, 0), 1, 1, colour() & 0xffffff33));
   add_shape(new Fill(vec2(8, 0), 3, 3, colour() & 0xffffff33));
-  add_shape(new Polygon(vec2(), 8, 3, colour(), fixed::pi));
+  add_shape(new Polygon(vec2(), 8, 3, colour(), fixed_c::pi));
   _kill_queue.clear();
   _shot_sound_queue.clear();
   _fire_timer = 0;
@@ -100,7 +100,7 @@ void Player::update() {
   }
 
   // Movement.
-  if (velocity.length() > fixed::hundredth) {
+  if (velocity.length() > fixed_c::hundredth) {
     vec2 v = velocity.length() > 1 ? velocity.normalised() : velocity;
     shape().set_rotation(v.angle());
     shape().centre = std::max(
@@ -118,7 +118,7 @@ void Player::update() {
 
     vec2 t = shape().centre;
     for (int32_t i = 0; i < 64; ++i) {
-      shape().centre = t + vec2::from_polar(2 * i * fixed::pi / 64, BOMB_RADIUS);
+      shape().centre = t + vec2::from_polar(2 * i * fixed_c::pi / 64, BOMB_RADIUS);
       explosion((i % 2) ? colour() : 0xffffffff, 8 + z::rand_int(8) + z::rand_int(8), true,
                 to_float(t));
     }
@@ -305,7 +305,7 @@ void Player::activate_bomb() {
     _shield = false;
   }
   _bomb = true;
-  add_shape(new Polygon(vec2(-8, 0), 6, 5, 0xffffffff, fixed::pi, 0, Polygon::T::POLYSTAR));
+  add_shape(new Polygon(vec2(-8, 0), 6, 5, 0xffffffff, fixed_c::pi, 0, Polygon::T::POLYSTAR));
 }
 
 void Player::update_fire_timer() {
@@ -361,12 +361,12 @@ Powerup::Powerup(const vec2& position, type_t type)
 , _dir(0, 1)
 , _rotate(false)
 , _first_frame(true) {
-  add_shape(new Polygon(vec2(), 13, 5, 0, fixed::pi / 2, 0));
-  add_shape(new Polygon(vec2(), 9, 5, 0, fixed::pi / 2, 0));
+  add_shape(new Polygon(vec2(), 13, 5, 0, fixed_c::pi / 2, 0));
+  add_shape(new Polygon(vec2(), 9, 5, 0, fixed_c::pi / 2, 0));
 
   switch (type) {
     case EXTRA_LIFE:
-      add_shape(new Polygon(vec2(), 8, 3, 0xffffffff, fixed::pi / 2));
+      add_shape(new Polygon(vec2(), 8, 3, 0xffffffff, fixed_c::pi / 2));
       break;
 
     case MAGIC_SHOTS:
@@ -374,11 +374,11 @@ Powerup::Powerup(const vec2& position, type_t type)
       break;
 
     case SHIELD:
-      add_shape(new Polygon(vec2(), 11, 5, 0xffffffff, fixed::pi / 2));
+      add_shape(new Polygon(vec2(), 11, 5, 0xffffffff, fixed_c::pi / 2));
       break;
 
     case BOMB:
-      add_shape(new Polygon(vec2(), 11, 10, 0xffffffff, fixed::pi / 2, 0, Polygon::T::POLYSTAR));
+      add_shape(new Polygon(vec2(), 11, 10, 0xffffffff, fixed_c::pi / 2, 0, Polygon::T::POLYSTAR));
       break;
   }
 }
@@ -392,10 +392,10 @@ void Powerup::update() {
     _dir = get_screen_centre() - shape().centre;
   } else {
     if (_first_frame) {
-      _dir = vec2::from_polar(z::rand_fixed() * 2 * fixed::pi, 1);
+      _dir = vec2::from_polar(z::rand_fixed() * 2 * fixed_c::pi, 1);
     }
 
-    _dir = _dir.rotated(2 * fixed::hundredth * (_rotate ? 1 : -1));
+    _dir = _dir.rotated(2 * fixed_c::hundredth * (_rotate ? 1 : -1));
     _rotate = z::rand_int(POWERUP_ROTATE_TIME) ? _rotate : !_rotate;
   }
   _first_frame = false;
@@ -438,7 +438,7 @@ void Powerup::damage(int32_t damage, bool magic, Player* source) {
 
   int32_t r = 5 + z::rand_int(5);
   for (int32_t i = 0; i < r; i++) {
-    vec2 dir = vec2::from_polar(z::rand_fixed() * 2 * fixed::pi, 6);
+    vec2 dir = vec2::from_polar(z::rand_fixed() * 2 * fixed_c::pi, 6);
     spawn(Particle(to_float(shape().centre), 0xffffffff, to_float(dir), 4 + z::rand_int(8)));
   }
   destroy();

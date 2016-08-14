@@ -81,7 +81,7 @@ static const int32_t ONE_PT_ONE_FIVE_intLookup[128] = {
 ChaserBoss::ChaserBoss(int32_t players, int32_t cycle, int32_t split, const vec2& position,
                        int32_t time, int32_t stagger)
 : Boss(!split ? vec2(Lib::WIDTH / 2, -Lib::HEIGHT / 2) : position, GameModal::BOSS_1C,
-       1 + CB_BASE_HP / (fixed::half + HP_REDUCE_POWER_lookup[split]).to_int(), players, cycle,
+       1 + CB_BASE_HP / (fixed_c::half + HP_REDUCE_POWER_lookup[split]).to_int(), players, cycle,
        split <= 1)
 , _on_screen(split != 0)
 , _move(false)
@@ -139,13 +139,13 @@ void ChaserBoss::update() {
     const fixed attract = 256 * ONE_PT_ONE_lookup[CB_MAX_SPLIT - _split];
     const fixed align = 128 * ONE_PT_ONE_FIVE_lookup[CB_MAX_SPLIT - _split];
     const fixed repulse = 64 * ONE_PT_TWO_lookup[CB_MAX_SPLIT - _split];
-    static const fixed c_attract = -(1 + 2 * fixed::tenth);
+    static const fixed c_attract = -(1 + 2 * fixed_c::tenth);
     static const fixed c_dir0 = CB_SPEED / 14;
     static const fixed c_dir1 = 8 * CB_SPEED / (14 * 9);
     static const fixed c_dir2 = 8 * CB_SPEED / (14 * 11);
     static const fixed c_dir3 = 8 * CB_SPEED / (14 * 2);
     static const fixed c_dir4 = 8 * CB_SPEED / (14 * 3);
-    static const fixed c_rotate = fixed::hundredth * 5 / fixed(CB_MAX_SPLIT);
+    static const fixed c_rotate = fixed_c::hundredth * 5 / fixed(CB_MAX_SPLIT);
 
     _dir = _last_dir;
     if (_stagger ==
@@ -236,7 +236,7 @@ void ChaserBoss::update() {
                                                      ? c_dir2
                                                      : _split == 3 ? c_dir3 : c_dir4);
     move(_dir);
-    shape().rotate(fixed::hundredth * 2 + fixed(_split) * c_rotate);
+    shape().rotate(fixed_c::hundredth * 2 + fixed(_split) * c_rotate);
   }
   _shared_hp = 0;
   if (!_has_counted) {
@@ -252,7 +252,7 @@ void ChaserBoss::render() const {
     int32_t hp = 0;
     for (int32_t i = 0; i < 8; i++) {
       hp = 2 * hp +
-          CalculateHP(1 + CB_BASE_HP / (fixed::half + HP_REDUCE_POWER_lookup[7 - i]).to_int(),
+          CalculateHP(1 + CB_BASE_HP / (fixed_c::half + HP_REDUCE_POWER_lookup[7 - i]).to_int(),
                       _players, _cycle);
       hp_lookup.push_back(hp);
     }
@@ -271,7 +271,7 @@ void ChaserBoss::on_destroy() {
   bool last = false;
   if (_split < CB_MAX_SPLIT) {
     for (int32_t i = 0; i < 2; i++) {
-      vec2 d = vec2::from_polar(i * fixed::pi + shape().rotation(),
+      vec2 d = vec2::from_polar(i * fixed_c::pi + shape().rotation(),
                                 8 * ONE_PT_TWO_lookup[CB_MAX_SPLIT - 1 - _split]);
       Ship* s = new ChaserBoss(
           _players, _cycle, _split + 1, shape().centre + d, (i + 1) * TIMER / 2,
@@ -301,7 +301,7 @@ void ChaserBoss::on_destroy() {
       }
       int32_t n = 1;
       for (int32_t i = 0; i < 16; ++i) {
-        vec2 v = vec2::from_polar(z::rand_fixed() * (2 * fixed::pi),
+        vec2 v = vec2::from_polar(z::rand_fixed() * (2 * fixed_c::pi),
                                   8 + z::rand_int(64) + z::rand_int(64));
         _fireworks.push_back(
             std::make_pair(n, std::make_pair(shape().centre + v, shapes()[0]->colour)));

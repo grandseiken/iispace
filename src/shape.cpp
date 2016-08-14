@@ -40,8 +40,8 @@ fixed Shape::rotation() const {
 
 void Shape::set_rotation(fixed rotation) {
   if (_can_rotate) {
-    _rotation = rotation > 2 * fixed::pi ? rotation - 2 * fixed::pi
-                                         : rotation < 0 ? rotation + 2 * fixed::pi : rotation;
+    _rotation = rotation > 2 * fixed_c::pi ? rotation - 2 * fixed_c::pi
+                                           : rotation < 0 ? rotation + 2 * fixed_c::pi : rotation;
   }
 }
 
@@ -167,7 +167,7 @@ void PolyArc::render(Lib& lib, const fvec2& position, float rotation,
 bool PolyArc::check_local_point(const vec2& v) const {
   fixed angle = v.angle();
   fixed len = v.length();
-  bool b = 0 <= angle && v.angle() <= (2 * fixed::pi * segments) / sides;
+  bool b = 0 <= angle && v.angle() <= (2 * fixed_c::pi * segments) / sides;
   return b && len >= radius - 10 && len < radius;
 }
 

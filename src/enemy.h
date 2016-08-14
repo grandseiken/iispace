@@ -66,7 +66,7 @@ private:
 
 class Square : public Enemy {
 public:
-  Square(const vec2& position, fixed rotation = fixed::pi / 2);
+  Square(const vec2& position, fixed rotation = fixed_c::pi / 2);
   void update() override;
   void render() const override;
 

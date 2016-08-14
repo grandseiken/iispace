@@ -11,7 +11,7 @@ static const fixed BSB_SPEED = 2 + fixed(1) / 2;
 static const fixed BSB_ATTACK_RADIUS = 120;
 
 BigSquareBoss::BigSquareBoss(int32_t players, int32_t cycle)
-: Boss(vec2(Lib::WIDTH * fixed::hundredth * 75, Lib::HEIGHT * 2), GameModal::BOSS_1A, BSB_BASE_HP,
+: Boss(vec2(Lib::WIDTH * fixed_c::hundredth * 75, Lib::HEIGHT * 2), GameModal::BOSS_1A, BSB_BASE_HP,
        players, cycle)
 , _dir(0, -1)
 , _reverse(false)
@@ -38,16 +38,16 @@ BigSquareBoss::BigSquareBoss(int32_t players, int32_t cycle)
 
 void BigSquareBoss::update() {
   const vec2& pos = shape().centre;
-  if (pos.y < Lib::HEIGHT * fixed::hundredth * 25 && _dir.y == -1) {
+  if (pos.y < Lib::HEIGHT * fixed_c::hundredth * 25 && _dir.y == -1) {
     _dir = vec2(_reverse ? 1 : -1, 0);
   }
-  if (pos.x < Lib::WIDTH * fixed::hundredth * 25 && _dir.x == -1) {
+  if (pos.x < Lib::WIDTH * fixed_c::hundredth * 25 && _dir.x == -1) {
     _dir = vec2(0, _reverse ? -1 : 1);
   }
-  if (pos.y > Lib::HEIGHT * fixed::hundredth * 75 && _dir.y == 1) {
+  if (pos.y > Lib::HEIGHT * fixed_c::hundredth * 75 && _dir.y == 1) {
     _dir = vec2(_reverse ? -1 : 1, 0);
   }
-  if (pos.x > Lib::WIDTH * fixed::hundredth * 75 && _dir.x == 1) {
+  if (pos.x > Lib::WIDTH * fixed_c::hundredth * 75 && _dir.x == 1) {
     _dir = vec2(0, _reverse ? 1 : -1);
   }
 
@@ -59,14 +59,14 @@ void BigSquareBoss::update() {
     } else if (!_special_timer) {
       vec2 d(BSB_ATTACK_RADIUS, 0);
       if (_special_attack_rotate) {
-        d = d.rotated(fixed::pi / 2);
+        d = d.rotated(fixed_c::pi / 2);
       }
       for (int32_t i = 0; i < 6; i++) {
         Enemy* s = new Follow(_attack_player->shape().centre + d);
-        s->shape().set_rotation(fixed::pi / 4);
+        s->shape().set_rotation(fixed_c::pi / 4);
         s->set_score(0);
         spawn(s);
-        d = d.rotated(2 * fixed::pi / 6);
+        d = d.rotated(2 * fixed_c::pi / 6);
       }
       _attack_player = 0;
       play_sound(Lib::SOUND_ENEMY_SPAWN);
@@ -104,7 +104,7 @@ void BigSquareBoss::update() {
 
   move(_dir * BSB_SPEED);
   for (std::size_t i = 0; i < 6; ++i) {
-    shapes()[i]->rotate((i % 2 ? -1 : 1) * fixed::hundredth * ((1 + i) * 5));
+    shapes()[i]->rotate((i % 2 ? -1 : 1) * fixed_c::hundredth * ((1 + i) * 5));
   }
   for (std::size_t i = 0; i < 6; ++i) {
     shapes()[i + 6]->set_rotation(shapes()[i]->rotation());
@@ -120,7 +120,7 @@ void BigSquareBoss::render() const {
     }
     for (int32_t i = 0; i < 6; i++) {
       fvec2 p = to_float(_attack_player->shape().centre) + d;
-      Polygon s(vec2(), 10, 4, 0x9933ffff, fixed::pi / 4, 0);
+      Polygon s(vec2(), 10, 4, 0x9933ffff, fixed_c::pi / 4, 0);
       s.render(lib(), p, 0);
       d = d.rotated(2 * M_PIf / 6);
     }

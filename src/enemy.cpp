@@ -72,7 +72,7 @@ Follow::Follow(const vec2& position, fixed radius, int32_t hp)
 }
 
 void Follow::update() {
-  shape().rotate(fixed::tenth);
+  shape().rotate(fixed_c::tenth);
   if (!game().alive_players()) {
     return;
   }
@@ -105,7 +105,7 @@ void BigFollow::on_destroy(bool bomb) {
       s->set_score(0);
     }
     spawn(s);
-    d = d.rotated(2 * fixed::pi / 3);
+    d = d.rotated(2 * fixed_c::pi / 3);
   }
 }
 
@@ -138,7 +138,7 @@ void Chaser::update() {
       _move = false;
     }
   } else {
-    shape().rotate(fixed::tenth);
+    shape().rotate(fixed_c::tenth);
   }
 }
 
@@ -218,14 +218,15 @@ void Wall::update() {
   }
 
   if (_rotate) {
-    vec2 d = _dir.rotated((_rdir ? 1 : -1) * (_timer - WALL_TIMER) * fixed::pi / (4 * WALL_TIMER));
+    vec2 d =
+        _dir.rotated((_rdir ? 1 : -1) * (_timer - WALL_TIMER) * fixed_c::pi / (4 * WALL_TIMER));
 
     shape().set_rotation(d.angle());
     _timer--;
     if (_timer <= 0) {
       _timer = 0;
       _rotate = false;
-      _dir = _dir.rotated(_rdir ? -fixed::pi / 4 : fixed::pi / 4);
+      _dir = _dir.rotated(_rdir ? -fixed_c::pi / 4 : fixed_c::pi / 4);
     }
     return;
   } else {
@@ -241,9 +242,9 @@ void Wall::update() {
   }
 
   vec2 pos = shape().centre;
-  if ((pos.x < 0 && _dir.x < -fixed::hundredth) || (pos.y < 0 && _dir.y < -fixed::hundredth) ||
-      (pos.x > Lib::WIDTH && _dir.x > fixed::hundredth) ||
-      (pos.y > Lib::HEIGHT && _dir.y > fixed::hundredth)) {
+  if ((pos.x < 0 && _dir.x < -fixed_c::hundredth) || (pos.y < 0 && _dir.y < -fixed_c::hundredth) ||
+      (pos.x > Lib::WIDTH && _dir.x > fixed_c::hundredth) ||
+      (pos.y > Lib::HEIGHT && _dir.y > fixed_c::hundredth)) {
     _dir = -_dir.normalised();
   }
 
@@ -255,7 +256,7 @@ void Wall::on_destroy(bool bomb) {
   if (bomb) {
     return;
   }
-  vec2 d = _dir.rotated(fixed::pi / 2);
+  vec2 d = _dir.rotated(fixed_c::pi / 2);
 
   vec2 v = shape().centre + d * 10 * 3;
   if (v.x >= 0 && v.x <= Lib::WIDTH && v.y >= 0 && v.y <= Lib::HEIGHT) {
@@ -275,19 +276,21 @@ FollowHub::FollowHub(const vec2& position, bool powera, bool powerb)
 , _count(0)
 , _powera(powera)
 , _powerb(powerb) {
-  add_shape(new Polygon(vec2(), 16, 4, 0x6666ffff, fixed::pi / 4, DANGEROUS | VULNERABLE,
+  add_shape(new Polygon(vec2(), 16, 4, 0x6666ffff, fixed_c::pi / 4, DANGEROUS | VULNERABLE,
                         Polygon::T::POLYGRAM));
   if (_powerb) {
-    add_shape(new Polygon(vec2(16, 0), 8, 4, 0x6666ffff, fixed::pi / 4, 0, Polygon::T::POLYSTAR));
-    add_shape(new Polygon(vec2(-16, 0), 8, 4, 0x6666ffff, fixed::pi / 4, 0, Polygon::T::POLYSTAR));
-    add_shape(new Polygon(vec2(0, 16), 8, 4, 0x6666ffff, fixed::pi / 4, 0, Polygon::T::POLYSTAR));
-    add_shape(new Polygon(vec2(0, -16), 8, 4, 0x6666ffff, fixed::pi / 4, 0, Polygon::T::POLYSTAR));
+    add_shape(new Polygon(vec2(16, 0), 8, 4, 0x6666ffff, fixed_c::pi / 4, 0, Polygon::T::POLYSTAR));
+    add_shape(
+        new Polygon(vec2(-16, 0), 8, 4, 0x6666ffff, fixed_c::pi / 4, 0, Polygon::T::POLYSTAR));
+    add_shape(new Polygon(vec2(0, 16), 8, 4, 0x6666ffff, fixed_c::pi / 4, 0, Polygon::T::POLYSTAR));
+    add_shape(
+        new Polygon(vec2(0, -16), 8, 4, 0x6666ffff, fixed_c::pi / 4, 0, Polygon::T::POLYSTAR));
   }
 
-  add_shape(new Polygon(vec2(16, 0), 8, 4, 0x6666ffff, fixed::pi / 4));
-  add_shape(new Polygon(vec2(-16, 0), 8, 4, 0x6666ffff, fixed::pi / 4));
-  add_shape(new Polygon(vec2(0, 16), 8, 4, 0x6666ffff, fixed::pi / 4));
-  add_shape(new Polygon(vec2(0, -16), 8, 4, 0x6666ffff, fixed::pi / 4));
+  add_shape(new Polygon(vec2(16, 0), 8, 4, 0x6666ffff, fixed_c::pi / 4));
+  add_shape(new Polygon(vec2(-16, 0), 8, 4, 0x6666ffff, fixed_c::pi / 4));
+  add_shape(new Polygon(vec2(0, 16), 8, 4, 0x6666ffff, fixed_c::pi / 4));
+  add_shape(new Polygon(vec2(0, -16), 8, 4, 0x6666ffff, fixed_c::pi / 4));
   set_score(50 + _powera * 10 + _powerb * 10);
   set_bounding_width(16);
   set_destroy_sound(Lib::SOUND_PLAYER_DESTROY);
@@ -313,9 +316,9 @@ void FollowHub::update() {
           ? vec2(-1, 0)
           : shape().centre.y < 0 ? vec2(0, 1) : shape().centre.y > Lib::HEIGHT
                   ? vec2(0, -1)
-                  : _count > 3 ? (_count = 0, _dir.rotated(-fixed::pi / 2)) : _dir;
+                  : _count > 3 ? (_count = 0, _dir.rotated(-fixed_c::pi / 2)) : _dir;
 
-  fixed s = _powera ? fixed::hundredth * 5 + fixed::tenth : fixed::hundredth * 5;
+  fixed s = _powera ? fixed_c::hundredth * 5 + fixed_c::tenth : fixed_c::hundredth * 5;
   shape().rotate(s);
   shapes()[0]->rotate(-s);
 
@@ -341,14 +344,14 @@ Shielder::Shielder(const vec2& position, bool power)
 , _power(power) {
   add_shape(new Polygon(vec2(24, 0), 8, 6, 0x006633ff, 0, VULNSHIELD, Polygon::T::POLYSTAR));
   add_shape(new Polygon(vec2(-24, 0), 8, 6, 0x006633ff, 0, VULNSHIELD, Polygon::T::POLYSTAR));
-  add_shape(
-      new Polygon(vec2(0, 24), 8, 6, 0x006633ff, fixed::pi / 2, VULNSHIELD, Polygon::T::POLYSTAR));
-  add_shape(
-      new Polygon(vec2(0, -24), 8, 6, 0x006633ff, fixed::pi / 2, VULNSHIELD, Polygon::T::POLYSTAR));
+  add_shape(new Polygon(vec2(0, 24), 8, 6, 0x006633ff, fixed_c::pi / 2, VULNSHIELD,
+                        Polygon::T::POLYSTAR));
+  add_shape(new Polygon(vec2(0, -24), 8, 6, 0x006633ff, fixed_c::pi / 2, VULNSHIELD,
+                        Polygon::T::POLYSTAR));
   add_shape(new Polygon(vec2(24, 0), 8, 6, 0x33cc99ff, 0, 0));
   add_shape(new Polygon(vec2(-24, 0), 8, 6, 0x33cc99ff, 0, 0));
-  add_shape(new Polygon(vec2(0, 24), 8, 6, 0x33cc99ff, fixed::pi / 2, 0));
-  add_shape(new Polygon(vec2(0, -24), 8, 6, 0x33cc99ff, fixed::pi / 2, 0));
+  add_shape(new Polygon(vec2(0, 24), 8, 6, 0x33cc99ff, fixed_c::pi / 2, 0));
+  add_shape(new Polygon(vec2(0, -24), 8, 6, 0x33cc99ff, fixed_c::pi / 2, 0));
 
   add_shape(new Polygon(vec2(0, 0), 24, 4, 0x006633ff, 0, 0, Polygon::T::POLYSTAR));
   add_shape(
@@ -360,7 +363,7 @@ Shielder::Shielder(const vec2& position, bool power)
 }
 
 void Shielder::update() {
-  fixed s = _power ? fixed::hundredth * 12 : fixed::hundredth * 4;
+  fixed s = _power ? fixed_c::hundredth * 12 : fixed_c::hundredth * 4;
   shape().rotate(s);
   shapes()[9]->rotate(-2 * s);
   for (int32_t i = 0; i < 8; i++) {
@@ -378,15 +381,16 @@ void Shielder::update() {
     _rotate = false;
   }
 
-  fixed speed = SHIELDER_SPEED + (_power ? fixed::tenth * 3 : fixed::tenth * 2) * (16 - get_hp());
+  fixed speed =
+      SHIELDER_SPEED + (_power ? fixed_c::tenth * 3 : fixed_c::tenth * 2) * (16 - get_hp());
   if (_rotate) {
-    vec2 d = _dir.rotated((_rdir ? 1 : -1) * (SHIELDER_TIMER - _timer) * fixed::pi /
+    vec2 d = _dir.rotated((_rdir ? 1 : -1) * (SHIELDER_TIMER - _timer) * fixed_c::pi /
                           (2 * SHIELDER_TIMER));
     _timer--;
     if (_timer <= 0) {
       _timer = 0;
       _rotate = false;
-      _dir = _dir.rotated((_rdir ? 1 : -1) * fixed::pi / 2);
+      _dir = _dir.rotated((_rdir ? 1 : -1) * fixed_c::pi / 2);
     }
     move(d * speed);
   } else {
@@ -432,11 +436,11 @@ Tractor::Tractor(const vec2& position, bool power)
 }
 
 void Tractor::update() {
-  shapes()[0]->rotate(fixed::hundredth * 5);
-  shapes()[1]->rotate(-fixed::hundredth * 5);
+  shapes()[0]->rotate(fixed_c::hundredth * 5);
+  shapes()[1]->rotate(-fixed_c::hundredth * 5);
   if (_power) {
-    shapes()[3]->rotate(-fixed::hundredth * 8);
-    shapes()[4]->rotate(fixed::hundredth * 8);
+    shapes()[3]->rotate(-fixed_c::hundredth * 8);
+    shapes()[4]->rotate(fixed_c::hundredth * 8);
   }
 
   if (shape().centre.x < 0) {
@@ -452,7 +456,7 @@ void Tractor::update() {
   }
 
   if (!_ready && !_spinning) {
-    move(_dir * TRACTOR_SPEED * (is_on_screen() ? 1 : 2 + fixed::half));
+    move(_dir * TRACTOR_SPEED * (is_on_screen() ? 1 : 2 + fixed_c::half));
 
     if (_timer > TRACTOR_TIMER * 8) {
       _ready = true;
@@ -467,7 +471,7 @@ void Tractor::update() {
       play_sound(Lib::SOUND_BOSS_FIRE);
     }
   } else if (_spinning) {
-    shape().rotate(fixed::tenth * 3);
+    shape().rotate(fixed_c::tenth * 3);
     for (const auto& ship : _players) {
       if (!((Player*) ship)->is_killed()) {
         vec2 d = (shape().centre - ship->shape().centre).normalised();
@@ -518,5 +522,5 @@ void BossShot::update() {
       (p.y < -10 && _dir.y < 0) || (p.y > Lib::HEIGHT + 10 && _dir.y > 0)) {
     destroy();
   }
-  shape().set_rotation(shape().rotation() + fixed::hundredth * 2);
+  shape().set_rotation(shape().rotation() + fixed_c::hundredth * 2);
 }

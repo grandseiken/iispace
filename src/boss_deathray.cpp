@@ -24,15 +24,15 @@ DeathRayBoss::DeathRayBoss(int32_t players, int32_t cycle)
 , _ray_attack_timer(0)
 , _ray_src1()
 , _ray_src2() {
-  add_shape(new Polygon(vec2(), 110, 12, 0x228855ff, fixed::pi / 12, 0, Polygon::T::POLYSTAR));
-  add_shape(new Polygon(vec2(), 70, 12, 0x33ff99ff, fixed::pi / 12, 0, Polygon::T::POLYGRAM));
-  add_shape(new Polygon(vec2(), 120, 12, 0x33ff99ff, fixed::pi / 12, DANGEROUS | VULNERABLE));
-  add_shape(new Polygon(vec2(), 115, 12, 0x33ff99ff, fixed::pi / 12, 0));
-  add_shape(new Polygon(vec2(), 110, 12, 0x33ff99ff, fixed::pi / 12, SHIELD));
+  add_shape(new Polygon(vec2(), 110, 12, 0x228855ff, fixed_c::pi / 12, 0, Polygon::T::POLYSTAR));
+  add_shape(new Polygon(vec2(), 70, 12, 0x33ff99ff, fixed_c::pi / 12, 0, Polygon::T::POLYGRAM));
+  add_shape(new Polygon(vec2(), 120, 12, 0x33ff99ff, fixed_c::pi / 12, DANGEROUS | VULNERABLE));
+  add_shape(new Polygon(vec2(), 115, 12, 0x33ff99ff, fixed_c::pi / 12, 0));
+  add_shape(new Polygon(vec2(), 110, 12, 0x33ff99ff, fixed_c::pi / 12, SHIELD));
 
   CompoundShape* s1 = new CompoundShape(vec2(), 0, DANGEROUS);
   for (int32_t i = 1; i < 12; i++) {
-    CompoundShape* s2 = new CompoundShape(vec2(), i * fixed::pi / 6, 0);
+    CompoundShape* s2 = new CompoundShape(vec2(), i * fixed_c::pi / 6, 0);
     s2->add_shape(new Box(vec2(130, 0), 10, 24, 0x33ff99ff, 0, 0));
     s2->add_shape(new Box(vec2(130, 0), 8, 22, 0x228855ff, 0, 0));
     s1->add_shape(s2);
@@ -40,7 +40,7 @@ DeathRayBoss::DeathRayBoss(int32_t players, int32_t cycle)
   add_shape(s1);
 
   set_ignore_damage_colour_index(5);
-  shape().rotate(2 * fixed::pi * fixed(z::rand_int()) / z::rand_max);
+  shape().rotate(2 * fixed_c::pi * fixed(z::rand_int()) / z::rand_max);
 }
 
 void DeathRayBoss::update() {
@@ -92,15 +92,15 @@ void DeathRayBoss::update() {
         _timer = DRB_TIMER * 2;
       }
 
-      if (r < fixed::tenth || r > 2 * fixed::pi - fixed::tenth) {
+      if (r < fixed_c::tenth || r > 2 * fixed_c::pi - fixed_c::tenth) {
         shape().set_rotation(0);
       } else {
         going_fast = true;
-        shape().rotate(_dir ? fixed::tenth : -fixed::tenth);
+        shape().rotate(_dir ? fixed_c::tenth : -fixed_c::tenth);
       }
     }
   } else {
-    shape().rotate(_dir ? fixed::hundredth * 2 : -fixed::hundredth * 2);
+    shape().rotate(_dir ? fixed_c::hundredth * 2 : -fixed_c::hundredth * 2);
     if (is_on_screen()) {
       _timer--;
       if (_timer % DRB_TIMER == 0 && _timer != 0 && !z::rand_int(4)) {
@@ -149,8 +149,8 @@ void DeathRayBoss::update() {
     }
     if (_shot_timer % 128 == 0) {
       _ray_attack_timer = DRB_RAY_TIMER;
-      vec2 d1 = vec2::from_polar(z::rand_fixed() * 2 * fixed::pi, 110);
-      vec2 d2 = vec2::from_polar(z::rand_fixed() * 2 * fixed::pi, 110);
+      vec2 d1 = vec2::from_polar(z::rand_fixed() * 2 * fixed_c::pi, 110);
+      vec2 d2 = vec2::from_polar(z::rand_fixed() * 2 * fixed_c::pi, 110);
       _ray_src1 = shape().centre + d1;
       _ray_src2 = shape().centre + d2;
       play_sound(Lib::SOUND_ENEMY_SPAWN);
@@ -162,7 +162,7 @@ void DeathRayBoss::update() {
       _arm_timer = 0;
       if (!is_hp_low()) {
         int32_t players = game().get_lives() ? game().players().size() : game().alive_players();
-        int32_t hp = (DRB_ARM_HP * (7 * fixed::tenth + 3 * fixed::tenth * players)).to_int();
+        int32_t hp = (DRB_ARM_HP * (7 * fixed_c::tenth + 3 * fixed_c::tenth * players)).to_int();
         _arms.push_back(new DeathArm(this, true, hp));
         _arms.push_back(new DeathArm(this, false, hp));
         play_sound(Lib::SOUND_ENEMY_SPAWN);
@@ -175,7 +175,7 @@ void DeathRayBoss::update() {
   for (std::size_t i = 0; i < _shot_queue.size(); ++i) {
     if (!going_fast || _shot_timer % 2) {
       int32_t n = _shot_queue[i].first;
-      vec2 d = vec2(1, 0).rotated(shape().rotation() + n * fixed::pi / 6);
+      vec2 d = vec2(1, 0).rotated(shape().rotation() + n * fixed_c::pi / 6);
       Ship* s = new BossShot(shape().centre + d * 120, d * 5, 0x33ff99ff);
       spawn(s);
     }
@@ -264,7 +264,7 @@ void DeathArm::update() {
     --_shots;
   }
 
-  shape().rotate(fixed::hundredth * 5);
+  shape().rotate(fixed_c::hundredth * 5);
   if (_attacking) {
     _timer++;
     if (_timer < DRB_ARM_ATIMER / 4) {
