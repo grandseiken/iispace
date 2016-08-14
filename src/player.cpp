@@ -179,10 +179,10 @@ void Player::update() {
 
 void Player::render() const {
   if (!_kill_timer && (game().mode() != Mode::WHAT || _revive_timer > 0)) {
-    flvec2 t = to_float(_fire_target);
-    if (t >= flvec2() && t <= flvec2((float) Lib::WIDTH, (float) Lib::HEIGHT)) {
-      lib().render_line(t + flvec2(0, 9), t - flvec2(0, 8), colour());
-      lib().render_line(t + flvec2(9, 1), t - flvec2(8, -1), colour());
+    fvec2 t = to_float(_fire_target);
+    if (t >= fvec2() && t <= fvec2((float) Lib::WIDTH, (float) Lib::HEIGHT)) {
+      lib().render_line(t + fvec2(0, 9), t - fvec2(0, 8), colour());
+      lib().render_line(t + fvec2(9, 1), t - fvec2(8, -1), colour());
     }
     if (_revive_timer % 2) {
       render_with_colour(0xffffffff);
@@ -199,23 +199,23 @@ void Player::render() const {
   ss << _multiplier << "X";
   std::string s = ss.str();
   int32_t n = _player_number;
-  flvec2 v = n == 1 ? flvec2(Lib::WIDTH / Lib::TEXT_WIDTH - 1.f - s.length(), 1.f) : n == 2
-          ? flvec2(1.f, Lib::HEIGHT / Lib::TEXT_HEIGHT - 2.f)
-          : n == 3 ? flvec2(Lib::WIDTH / Lib::TEXT_WIDTH - 1.f - s.length(),
-                            Lib::HEIGHT / Lib::TEXT_HEIGHT - 2.f)
-                   : flvec2(1.f, 1.f);
+  fvec2 v = n == 1 ? fvec2(Lib::WIDTH / Lib::TEXT_WIDTH - 1.f - s.length(), 1.f) : n == 2
+          ? fvec2(1.f, Lib::HEIGHT / Lib::TEXT_HEIGHT - 2.f)
+          : n == 3 ? fvec2(Lib::WIDTH / Lib::TEXT_WIDTH - 1.f - s.length(),
+                           Lib::HEIGHT / Lib::TEXT_HEIGHT - 2.f)
+                   : fvec2(1.f, 1.f);
   lib().render_text(v, s, z0Game::PANEL_TEXT);
 
   ss.str("");
   n % 2 ? ss << _score << "   " : ss << "   " << _score;
-  lib().render_text(v - (n % 2 ? flvec2(float(ss.str().length() - s.length()), 0) : flvec2()),
+  lib().render_text(v - (n % 2 ? fvec2(float(ss.str().length() - s.length()), 0) : fvec2()),
                     ss.str(), colour());
 
   if (_magic_shot_timer != 0) {
     v.x += n % 2 ? -1 : ss.str().length();
     v *= 16;
-    lib().render_rect(v + flvec2(5.f, 11.f - (10 * _magic_shot_timer) / MAGIC_SHOT_COUNT),
-                      v + flvec2(9.f, 13.f), 0xffffffff, 2);
+    lib().render_rect(v + fvec2(5.f, 11.f - (10 * _magic_shot_timer) / MAGIC_SHOT_COUNT),
+                      v + fvec2(9.f, 13.f), 0xffffffff, 2);
   }
 }
 

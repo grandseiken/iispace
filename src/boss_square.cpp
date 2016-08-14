@@ -114,12 +114,12 @@ void BigSquareBoss::update() {
 void BigSquareBoss::render() const {
   Boss::render();
   if ((_special_timer / 4) % 2 && _attack_player) {
-    flvec2 d(BSB_ATTACK_RADIUS.to_float(), 0);
+    fvec2 d(BSB_ATTACK_RADIUS.to_float(), 0);
     if (_special_attack_rotate) {
       d = d.rotated(M_PIf / 2);
     }
     for (int32_t i = 0; i < 6; i++) {
-      flvec2 p = to_float(_attack_player->shape().centre) + d;
+      fvec2 p = to_float(_attack_player->shape().centre) + d;
       Polygon s(vec2(), 10, 4, 0x9933ffff, fixed::pi / 4, 0);
       s.render(lib(), p, 0);
       d = d.rotated(2 * M_PIf / 6);

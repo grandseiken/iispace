@@ -189,10 +189,10 @@ vec2_t<T> operator/(const T& t, const vec2_t<T>& v) {
 
 typedef vec2_t<fixed> vec2;
 typedef vec2_t<int32_t> ivec2;
-typedef vec2_t<float> flvec2;
+typedef vec2_t<float> fvec2;
 
-inline flvec2 to_float(const vec2& a) {
-  return flvec2(a.x.to_float(), a.y.to_float());
+inline fvec2 to_float(const vec2& a) {
+  return fvec2(a.x.to_float(), a.y.to_float());
 }
 
 #endif

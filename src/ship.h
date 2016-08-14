@@ -5,12 +5,12 @@
 #include "z0_game.h"
 
 struct Particle {
-  Particle(const flvec2& position, colour_t colour, const flvec2& velocity, int32_t time)
+  Particle(const fvec2& position, colour_t colour, const fvec2& velocity, int32_t time)
   : destroy(false), position(position), velocity(velocity), timer(time), colour(colour) {}
 
   bool destroy;
-  flvec2 position;
-  flvec2 velocity;
+  fvec2 position;
+  fvec2 velocity;
   int32_t timer;
   colour_t colour;
 };
@@ -77,7 +77,7 @@ public:
   // Helpful functions
   //------------------------------
   void explosion(colour_t c = 0, int32_t time = 8, bool towards = false,
-                 const flvec2& v = flvec2()) const;
+                 const fvec2& v = fvec2()) const;
   void render_with_colour(colour_t colour) const;
 
   bool is_on_screen() const {

@@ -25,8 +25,8 @@ vec2 Shape::convert_point(const vec2& position, fixed rotation, const vec2& v) c
   return position + a;
 }
 
-flvec2 Shape::convert_fl_point(const flvec2& position, float rotation, const flvec2& v) const {
-  flvec2 a = v;
+fvec2 Shape::convert_fl_point(const fvec2& position, float rotation, const fvec2& v) const {
+  fvec2 a = v;
   if (_can_rotate) {
     a = a.rotated(_rotation.to_float());
   }
@@ -52,12 +52,11 @@ void Shape::rotate(fixed rotation_amount) {
 Fill::Fill(const vec2& centre, fixed width, fixed height, colour_t colour, int32_t category)
 : Shape(centre, 0, colour, category, false), width(width), height(height) {}
 
-void Fill::render(Lib& lib, const flvec2& position, float rotation,
-                  colour_t colour_override) const {
-  flvec2 c = convert_fl_point(position, rotation, flvec2());
-  flvec2 wh = flvec2(width.to_float(), height.to_float());
-  flvec2 a = c + wh;
-  flvec2 b = c - wh;
+void Fill::render(Lib& lib, const fvec2& position, float rotation, colour_t colour_override) const {
+  fvec2 c = convert_fl_point(position, rotation, fvec2());
+  fvec2 wh = fvec2(width.to_float(), height.to_float());
+  fvec2 a = c + wh;
+  fvec2 b = c - wh;
   lib.render_rect(a, b, colour_override ? colour_override : colour);
 }
 
@@ -68,10 +67,9 @@ bool Fill::check_local_point(const vec2& v) const {
 Line::Line(const vec2& centre, const vec2& a, const vec2& b, colour_t colour, fixed rotation)
 : Shape(centre, rotation, colour, 0), a(a), b(b) {}
 
-void Line::render(Lib& lib, const flvec2& position, float rotation,
-                  colour_t colour_override) const {
-  flvec2 aa = convert_fl_point(position, rotation, to_float(a));
-  flvec2 bb = convert_fl_point(position, rotation, to_float(b));
+void Line::render(Lib& lib, const fvec2& position, float rotation, colour_t colour_override) const {
+  fvec2 aa = convert_fl_point(position, rotation, to_float(a));
+  fvec2 bb = convert_fl_point(position, rotation, to_float(b));
   lib.render_line(aa, bb, colour_override ? colour_override : colour);
 }
 
@@ -83,14 +81,14 @@ Box::Box(const vec2& centre, fixed width, fixed height, colour_t colour, fixed r
          int32_t category)
 : Shape(centre, rotation, colour, category), width(width), height(height) {}
 
-void Box::render(Lib& lib, const flvec2& position, float rotation, colour_t colour_override) const {
+void Box::render(Lib& lib, const fvec2& position, float rotation, colour_t colour_override) const {
   float w = width.to_float();
   float h = height.to_float();
 
-  flvec2 a = convert_fl_point(position, rotation, flvec2(w, h));
-  flvec2 b = convert_fl_point(position, rotation, flvec2(-w, h));
-  flvec2 c = convert_fl_point(position, rotation, flvec2(-w, -h));
-  flvec2 d = convert_fl_point(position, rotation, flvec2(w, -h));
+  fvec2 a = convert_fl_point(position, rotation, fvec2(w, h));
+  fvec2 b = convert_fl_point(position, rotation, fvec2(-w, h));
+  fvec2 c = convert_fl_point(position, rotation, fvec2(-w, -h));
+  fvec2 d = convert_fl_point(position, rotation, fvec2(w, -h));
 
   lib.render_line(a, b, colour_override ? colour_override : colour);
   lib.render_line(b, c, colour_override ? colour_override : colour);
@@ -106,18 +104,18 @@ Polygon::Polygon(const vec2& centre, fixed radius, int32_t sides, colour_t colou
                  int32_t category, T type)
 : Shape(centre, rotation, colour, category), radius(radius), sides(sides), type(type) {}
 
-void Polygon::render(Lib& lib, const flvec2& position, float rotation,
+void Polygon::render(Lib& lib, const fvec2& position, float rotation,
                      colour_t colour_override) const {
   if (sides < 2) {
     return;
   }
 
   float r = radius.to_float();
-  std::vector<flvec2> lines;
+  std::vector<fvec2> lines;
   if (type == T::POLYGRAM) {
-    std::vector<flvec2> list;
+    std::vector<fvec2> list;
     for (int32_t i = 0; i < sides; i++) {
-      flvec2 v = flvec2::from_polar(i * 2 * M_PIf / float(sides), r);
+      fvec2 v = fvec2::from_polar(i * 2 * M_PIf / float(sides), r);
       list.push_back(v);
     }
 
@@ -129,10 +127,10 @@ void Polygon::render(Lib& lib, const flvec2& position, float rotation,
     }
   } else {
     for (int32_t i = 0; i < sides; i++) {
-      flvec2 a = flvec2::from_polar(i * 2 * M_PIf / float(sides), r);
-      flvec2 b = flvec2::from_polar((i + 1) * 2 * M_PIf / float(sides), r);
+      fvec2 a = fvec2::from_polar(i * 2 * M_PIf / float(sides), r);
+      fvec2 b = fvec2::from_polar((i + 1) * 2 * M_PIf / float(sides), r);
       lines.push_back(a);
-      lines.push_back(type == T::POLYGON ? b : flvec2());
+      lines.push_back(type == T::POLYGON ? b : fvec2());
     }
   }
   for (std::size_t i = 0; i < lines.size(); i += 2) {
@@ -150,7 +148,7 @@ PolyArc::PolyArc(const vec2& centre, fixed radius, int32_t sides, int32_t segmen
                  fixed rotation, int32_t category)
 : Shape(centre, rotation, colour, category), radius(radius), sides(sides), segments(segments) {}
 
-void PolyArc::render(Lib& lib, const flvec2& position, float rotation,
+void PolyArc::render(Lib& lib, const fvec2& position, float rotation,
                      colour_t colour_override) const {
   if (sides < 2) {
     return;
@@ -158,8 +156,8 @@ void PolyArc::render(Lib& lib, const flvec2& position, float rotation,
   float r = radius.to_float();
 
   for (int32_t i = 0; i < sides && i < segments; i++) {
-    flvec2 a = flvec2::from_polar(i * 2 * M_PIf / float(sides), r);
-    flvec2 b = flvec2::from_polar((i + 1) * 2 * M_PIf / float(sides), r);
+    fvec2 a = fvec2::from_polar(i * 2 * M_PIf / float(sides), r);
+    fvec2 b = fvec2::from_polar((i + 1) * 2 * M_PIf / float(sides), r);
     lib.render_line(convert_fl_point(position, rotation, a),
                     convert_fl_point(position, rotation, b),
                     colour_override ? colour_override : colour);
@@ -194,8 +192,8 @@ void CompoundShape::clear_shapes() {
   _children.clear();
 }
 
-void CompoundShape::render(Lib& lib, const flvec2& position, float rot, colour_t colour) const {
-  flvec2 c = convert_fl_point(position, rot, flvec2());
+void CompoundShape::render(Lib& lib, const fvec2& position, float rot, colour_t colour) const {
+  fvec2 c = convert_fl_point(position, rot, fvec2());
   for (const auto& child : _children) {
     child->render(lib, c, rotation().to_float() + rot, colour);
   }

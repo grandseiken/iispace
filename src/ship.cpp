@@ -61,19 +61,19 @@ void Ship::spawn(const Particle& particle) const {
   _game->add_particle(particle);
 }
 
-void Ship::explosion(colour_t c, int32_t time, bool towards, const flvec2& v) const {
+void Ship::explosion(colour_t c, int32_t time, bool towards, const fvec2& v) const {
   for (const auto& shape : _shape.shapes()) {
     int32_t n = towards ? z::rand_int(2) + 1 : z::rand_int(8) + 8;
     for (int32_t j = 0; j < n; j++) {
-      flvec2 pos =
-          shape->convert_fl_point(to_float(_shape.centre), _shape.rotation().to_float(), flvec2());
+      fvec2 pos =
+          shape->convert_fl_point(to_float(_shape.centre), _shape.rotation().to_float(), fvec2());
 
-      flvec2 dir = flvec2::from_polar(z::rand_fixed().to_float() * 2 * M_PIf, 6.f);
+      fvec2 dir = fvec2::from_polar(z::rand_fixed().to_float() * 2 * M_PIf, 6.f);
 
-      if (towards && v - pos != flvec2()) {
+      if (towards && v - pos != fvec2()) {
         dir = (v - pos).normalised();
         float angle = dir.angle() + (z::rand_fixed().to_float() - 0.5f) * M_PIf / 4;
-        dir = flvec2::from_polar(angle, 6.f);
+        dir = fvec2::from_polar(angle, 6.f);
       }
 
       spawn(Particle(pos, c ? c : shape->colour, dir, time + z::rand_int(8)));

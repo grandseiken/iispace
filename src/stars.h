@@ -26,13 +26,13 @@ private:
   struct data {
     int32_t timer;
     type_t type;
-    flvec2 position;
+    fvec2 position;
     float speed;
     float size;
     colour_t colour;
   };
 
-  static flvec2 _direction;
+  static fvec2 _direction;
   static std::vector<std::unique_ptr<data>> _stars;
   static int32_t _star_rate;
 };

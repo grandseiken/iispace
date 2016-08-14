@@ -779,7 +779,7 @@ void Lib::clear_screen() const {
 #endif
 }
 
-void Lib::render_line(const flvec2& a, const flvec2& b, colour_t c) const {
+void Lib::render_line(const fvec2& a, const fvec2& b, colour_t c) const {
 #ifndef PLATFORM_SCORE
   c = z::colour_cycle(c, _cycle);
   glBegin(GL_LINES);
@@ -799,7 +799,7 @@ void Lib::render_line(const flvec2& a, const flvec2& b, colour_t c) const {
 #endif
 }
 
-void Lib::render_text(const flvec2& v, const std::string& text, colour_t c) const {
+void Lib::render_text(const fvec2& v, const std::string& text, colour_t c) const {
 #ifndef PLATFORM_SCORE
   _internals->font.setColor(RgbaToColor(z::colour_cycle(c, _cycle)));
   for (std::size_t i = 0; i < text.length(); ++i) {
@@ -812,33 +812,33 @@ void Lib::render_text(const flvec2& v, const std::string& text, colour_t c) cons
 #endif
 }
 
-void Lib::render_rect(const flvec2& low, const flvec2& hi, colour_t c, int32_t line_width) const {
+void Lib::render_rect(const fvec2& low, const fvec2& hi, colour_t c, int32_t line_width) const {
 #ifndef PLATFORM_SCORE
   c = z::colour_cycle(c, _cycle);
-  flvec2 ab(low.x, hi.y);
-  flvec2 ba(hi.x, low.y);
-  const flvec2* list[4];
-  flvec2 normals[4];
+  fvec2 ab(low.x, hi.y);
+  fvec2 ba(hi.x, low.y);
+  const fvec2* list[4];
+  fvec2 normals[4];
   list[0] = &low;
   list[1] = &ab;
   list[2] = &hi;
   list[3] = &ba;
 
-  flvec2 centre = (low + hi) / 2;
+  fvec2 centre = (low + hi) / 2;
   for (std::size_t i = 0; i < 4; ++i) {
-    const flvec2& v0 = *list[(i + 3) % 4];
-    const flvec2& v1 = *list[i];
-    const flvec2& v2 = *list[(i + 1) % 4];
+    const fvec2& v0 = *list[(i + 3) % 4];
+    const fvec2& v1 = *list[i];
+    const fvec2& v2 = *list[(i + 1) % 4];
 
-    flvec2 n1 = flvec2(v0.y - v1.y, v1.x - v0.x).normalised();
-    flvec2 n2 = flvec2(v1.y - v2.y, v2.x - v1.x).normalised();
+    fvec2 n1 = fvec2(v0.y - v1.y, v1.x - v0.x).normalised();
+    fvec2 n2 = fvec2(v1.y - v2.y, v2.x - v1.x).normalised();
 
     float f = 1 + n1.x * n2.x + n1.y * n2.y;
     normals[i] = (n1 + n2) / f;
     float dot = (v1.x - centre.x) * normals[i].x + (v1.y - centre.y) * normals[i].y;
 
     if (dot < 0) {
-      normals[i] = flvec2() - normals[i];
+      normals[i] = fvec2() - normals[i];
     }
   }
 
@@ -851,7 +851,7 @@ void Lib::render_rect(const flvec2& low, const flvec2& hi, colour_t c, int32_t l
   glEnd();
 
   if (line_width > 1) {
-    render_rect(low + flvec2(1.f, 1.f), hi - flvec2(1.f, 1.f), z::colour_cycle(c, _cycle),
+    render_rect(low + fvec2(1.f, 1.f), hi - fvec2(1.f, 1.f), z::colour_cycle(c, _cycle),
                 line_width - 1);
   }
 #endif
