@@ -1,5 +1,4 @@
 #include "overmind.h"
-#include <algorithm>
 #include "boss_chaser.h"
 #include "boss_deathray.h"
 #include "boss_ghost.h"
@@ -10,6 +9,7 @@
 #include "enemy.h"
 #include "player.h"
 #include "stars.h"
+#include <algorithm>
 
 class formation_base {
 public:
@@ -276,9 +276,10 @@ void Overmind::spawn_powerup() {
   }
 
   int32_t r = z::rand_int(4);
-  vec2 v = r == 0 ? vec2(-Lib::WIDTH, Lib::HEIGHT / 2) : r == 1
-          ? vec2(Lib::WIDTH * 2, Lib::HEIGHT / 2)
-          : r == 2 ? vec2(Lib::WIDTH / 2, -Lib::HEIGHT) : vec2(Lib::WIDTH / 2, Lib::HEIGHT * 2);
+  vec2 v = r == 0 ? vec2(-Lib::WIDTH, Lib::HEIGHT / 2)
+      : r == 1    ? vec2(Lib::WIDTH * 2, Lib::HEIGHT / 2)
+      : r == 2    ? vec2(Lib::WIDTH / 2, -Lib::HEIGHT)
+                  : vec2(Lib::WIDTH / 2, Lib::HEIGHT * 2);
 
   int32_t m = 4;
   for (int32_t i = 1; i <= PLAYERS; i++) {
@@ -297,17 +298,19 @@ void Overmind::spawn_powerup() {
   }
 
   r = z::rand_int(m);
-  spawn(new Powerup(v, r == 0 ? Powerup::BOMB : r == 1 ? Powerup::MAGIC_SHOTS : r == 2
-                                ? Powerup::SHIELD
-                                : (--_lives_target, Powerup::EXTRA_LIFE)));
+  spawn(new Powerup(v,
+                    r == 0       ? Powerup::BOMB
+                        : r == 1 ? Powerup::MAGIC_SHOTS
+                        : r == 2 ? Powerup::SHIELD
+                                 : (--_lives_target, Powerup::EXTRA_LIFE)));
 }
 
 void Overmind::spawn_boss_reward() {
   int32_t r = z::rand_int(4);
-  vec2 v = r == 0 ? vec2(-Lib::WIDTH / 4, Lib::HEIGHT / 2) : r == 1
-          ? vec2(Lib::WIDTH + Lib::WIDTH / 4, Lib::HEIGHT / 2)
-          : r == 2 ? vec2(Lib::WIDTH / 2, -Lib::HEIGHT / 4)
-                   : vec2(Lib::WIDTH / 2, Lib::HEIGHT + Lib::HEIGHT / 4);
+  vec2 v = r == 0 ? vec2(-Lib::WIDTH / 4, Lib::HEIGHT / 2)
+      : r == 1    ? vec2(Lib::WIDTH + Lib::WIDTH / 4, Lib::HEIGHT / 2)
+      : r == 2    ? vec2(Lib::WIDTH / 2, -Lib::HEIGHT / 4)
+                  : vec2(Lib::WIDTH / 2, Lib::HEIGHT + Lib::HEIGHT / 4);
 
   spawn(new Powerup(v, Powerup::EXTRA_LIFE));
   if (_game.mode() != Mode::BOSS) {
@@ -368,10 +371,12 @@ void Overmind::boss() {
   int32_t count = _game.players().size();
   int32_t cycle = (_game.mode() == Mode::HARD) + _boss_mod_bosses / 2;
   bool secret_chance = (_game.mode() != Mode::NORMAL && _game.mode() != Mode::BOSS)
-      ? (_boss_mod_fights > 1 ? z::rand_int(4) == 0 : _boss_mod_fights > 0 ? z::rand_int(8) == 0
-                                                                           : false)
-      : (_boss_mod_fights > 2 ? z::rand_int(4) == 0 : _boss_mod_fights > 1 ? z::rand_int(6) == 0
-                                                                           : false);
+      ? (_boss_mod_fights > 1       ? z::rand_int(4) == 0
+             : _boss_mod_fights > 0 ? z::rand_int(8) == 0
+                                    : false)
+      : (_boss_mod_fights > 2       ? z::rand_int(4) == 0
+             : _boss_mod_fights > 1 ? z::rand_int(6) == 0
+                                    : false);
 
   if (_can_face_secret_boss && _bosses_to_go == 0 && _boss_mod_secret == 0 && secret_chance) {
     int32_t secret_cycle = std::max(0, (_boss_mod_bosses + (_game.mode() == Mode::HARD) - 2) / 2);
@@ -380,9 +385,9 @@ void Overmind::boss() {
   }
 
   else if (_boss_mod_bosses % 2 == 0) {
-    spawn(_boss1_queue[0] == 0 ? (Boss*) new BigSquareBoss(count, cycle) : _boss1_queue[0] == 1
-                  ? (Boss*) new ShieldBombBoss(count, cycle)
-                  : (Boss*) new ChaserBoss(count, cycle));
+    spawn(_boss1_queue[0] == 0       ? (Boss*)new BigSquareBoss(count, cycle)
+              : _boss1_queue[0] == 1 ? (Boss*)new ShieldBombBoss(count, cycle)
+                                     : (Boss*)new ChaserBoss(count, cycle));
 
     _boss1_queue.push_back(_boss1_queue.front());
     _boss1_queue.erase(_boss1_queue.begin());
@@ -390,9 +395,9 @@ void Overmind::boss() {
     if (_boss_mod_secret > 0) {
       --_boss_mod_secret;
     }
-    spawn(_boss2_queue[0] == 0 ? (Boss*) new TractorBoss(count, cycle) : _boss2_queue[0] == 1
-                  ? (Boss*) new GhostBoss(count, cycle)
-                  : (Boss*) new DeathRayBoss(count, cycle));
+    spawn(_boss2_queue[0] == 0       ? (Boss*)new TractorBoss(count, cycle)
+              : _boss2_queue[0] == 1 ? (Boss*)new GhostBoss(count, cycle)
+                                     : (Boss*)new DeathRayBoss(count, cycle));
 
     _boss2_queue.push_back(_boss2_queue.front());
     _boss2_queue.erase(_boss2_queue.begin());
@@ -403,13 +408,13 @@ void Overmind::boss_mode_boss() {
   int32_t boss = _boss_mod_bosses;
   int32_t count = _game.players().size();
   if (_boss_mod_bosses < 3) {
-    spawn(_boss1_queue[boss] == 0 ? (Boss*) new BigSquareBoss(count, 0) : _boss1_queue[boss] == 1
-                  ? (Boss*) new ShieldBombBoss(count, 0)
-                  : (Boss*) new ChaserBoss(count, 0));
+    spawn(_boss1_queue[boss] == 0       ? (Boss*)new BigSquareBoss(count, 0)
+              : _boss1_queue[boss] == 1 ? (Boss*)new ShieldBombBoss(count, 0)
+                                        : (Boss*)new ChaserBoss(count, 0));
   } else {
-    spawn(_boss2_queue[boss] == 0 ? (Boss*) new TractorBoss(count, 0) : _boss2_queue[boss] == 1
-                  ? (Boss*) new GhostBoss(count, 0)
-                  : (Boss*) new DeathRayBoss(count, 0));
+    spawn(_boss2_queue[boss] == 0       ? (Boss*)new TractorBoss(count, 0)
+              : _boss2_queue[boss] == 1 ? (Boss*)new GhostBoss(count, 0)
+                                        : (Boss*)new DeathRayBoss(count, 0));
   }
 }
 

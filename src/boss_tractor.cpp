@@ -117,7 +117,7 @@ void TractorBoss::update() {
       }
       _targets.clear();
       for (const auto& ship : game().all_ships(SHIP_PLAYER)) {
-        if (((Player*) ship)->is_killed()) {
+        if (((Player*)ship)->is_killed()) {
           continue;
         }
         vec2 pos = ship->shape().centre;
@@ -186,7 +186,7 @@ void TractorBoss::update() {
         }
         _targets.clear();
         for (const auto& ship : game().all_ships(SHIP_PLAYER | SHIP_ENEMY)) {
-          if (ship == this || ((ship->type() & SHIP_PLAYER) && ((Player*) ship)->is_killed())) {
+          if (ship == this || ((ship->type() & SHIP_PLAYER) && ((Player*)ship)->is_killed())) {
             continue;
           }
 

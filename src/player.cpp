@@ -2,7 +2,6 @@
 #include "enemy.h"
 #include "lib.h"
 #include "replay.h"
-
 #include <algorithm>
 
 ReplayPlayerInput::ReplayPlayerInput(const Replay& replay) : replay(replay), replay_frame(0) {}
@@ -133,7 +132,7 @@ void Player::update() {
           (ship->shape().centre - shape().centre).length() <= BOMB_RADIUS) {
         ship->damage(BOMB_DAMAGE, false, 0);
       }
-      if (!(ship->type() & SHIP_BOSS) && ((Enemy*) ship)->get_score() > 0) {
+      if (!(ship->type() & SHIP_BOSS) && ((Enemy*)ship)->get_score() > 0) {
         add_score(0);
       }
     }
@@ -180,7 +179,7 @@ void Player::update() {
 void Player::render() const {
   if (!_kill_timer && (game().mode() != Mode::WHAT || _revive_timer > 0)) {
     fvec2 t = to_float(_fire_target);
-    if (t >= fvec2() && t <= fvec2((float) Lib::WIDTH, (float) Lib::HEIGHT)) {
+    if (t >= fvec2() && t <= fvec2((float)Lib::WIDTH, (float)Lib::HEIGHT)) {
       lib().render_line(t + fvec2(0, 9), t - fvec2(0, 8), colour());
       lib().render_line(t + fvec2(9, 1), t - fvec2(8, -1), colour());
     }
@@ -199,11 +198,11 @@ void Player::render() const {
   ss << _multiplier << "X";
   std::string s = ss.str();
   int32_t n = _player_number;
-  fvec2 v = n == 1 ? fvec2(Lib::WIDTH / Lib::TEXT_WIDTH - 1.f - s.length(), 1.f) : n == 2
-          ? fvec2(1.f, Lib::HEIGHT / Lib::TEXT_HEIGHT - 2.f)
-          : n == 3 ? fvec2(Lib::WIDTH / Lib::TEXT_WIDTH - 1.f - s.length(),
-                           Lib::HEIGHT / Lib::TEXT_HEIGHT - 2.f)
-                   : fvec2(1.f, 1.f);
+  fvec2 v = n == 1 ? fvec2(Lib::WIDTH / Lib::TEXT_WIDTH - 1.f - s.length(), 1.f)
+      : n == 2     ? fvec2(1.f, Lib::HEIGHT / Lib::TEXT_HEIGHT - 2.f)
+      : n == 3
+      ? fvec2(Lib::WIDTH / Lib::TEXT_WIDTH - 1.f - s.length(), Lib::HEIGHT / Lib::TEXT_HEIGHT - 2.f)
+      : fvec2(1.f, 1.f);
   lib().render_text(v, s, z0Game::PANEL_TEXT);
 
   ss.str("");
@@ -273,9 +272,11 @@ void Player::add_score(int64_t score) {
 }
 
 colour_t Player::player_colour(std::size_t player_number) {
-  return player_number == 0 ? 0xff0000ff : player_number == 1 ? 0xff5500ff : player_number == 2
-              ? 0xffaa00ff
-              : player_number == 3 ? 0xffff00ff : 0x00ff00ff;
+  return player_number == 0 ? 0xff0000ff
+      : player_number == 1  ? 0xff5500ff
+      : player_number == 2  ? 0xffaa00ff
+      : player_number == 3  ? 0xffff00ff
+                            : 0x00ff00ff;
 }
 
 void Player::activate_magic_shots() {
@@ -365,21 +366,21 @@ Powerup::Powerup(const vec2& position, type_t type)
   add_shape(new Polygon(vec2(), 9, 5, 0, fixed_c::pi / 2, 0));
 
   switch (type) {
-    case EXTRA_LIFE:
-      add_shape(new Polygon(vec2(), 8, 3, 0xffffffff, fixed_c::pi / 2));
-      break;
+  case EXTRA_LIFE:
+    add_shape(new Polygon(vec2(), 8, 3, 0xffffffff, fixed_c::pi / 2));
+    break;
 
-    case MAGIC_SHOTS:
-      add_shape(new Fill(vec2(), 3, 3, 0xffffffff));
-      break;
+  case MAGIC_SHOTS:
+    add_shape(new Fill(vec2(), 3, 3, 0xffffffff));
+    break;
 
-    case SHIELD:
-      add_shape(new Polygon(vec2(), 11, 5, 0xffffffff, fixed_c::pi / 2));
-      break;
+  case SHIELD:
+    add_shape(new Polygon(vec2(), 11, 5, 0xffffffff, fixed_c::pi / 2));
+    break;
 
-    case BOMB:
-      add_shape(new Polygon(vec2(), 11, 10, 0xffffffff, fixed_c::pi / 2, 0, Polygon::T::POLYSTAR));
-      break;
+  case BOMB:
+    add_shape(new Polygon(vec2(), 11, 10, 0xffffffff, fixed_c::pi / 2, 0, Polygon::T::POLYSTAR));
+    break;
   }
 }
 
@@ -416,21 +417,21 @@ void Powerup::update() {
 void Powerup::damage(int32_t damage, bool magic, Player* source) {
   if (source) {
     switch (_type) {
-      case EXTRA_LIFE:
-        game().add_life();
-        break;
+    case EXTRA_LIFE:
+      game().add_life();
+      break;
 
-      case MAGIC_SHOTS:
-        source->activate_magic_shots();
-        break;
+    case MAGIC_SHOTS:
+      source->activate_magic_shots();
+      break;
 
-      case SHIELD:
-        source->activate_magic_shield();
-        break;
+    case SHIELD:
+      source->activate_magic_shield();
+      break;
 
-      case BOMB:
-        source->activate_bomb();
-        break;
+    case BOMB:
+      source->activate_bomb();
+      break;
     }
     play_sound(_type == EXTRA_LIFE ? Lib::SOUND_POWERUP_LIFE : Lib::SOUND_POWERUP_OTHER);
     lib().rumble(source->player_number(), 6);

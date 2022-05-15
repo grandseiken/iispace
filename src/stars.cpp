@@ -34,21 +34,21 @@ void Stars::change() {
 void Stars::render(Lib& lib) {
   for (const auto& star : _stars) {
     switch (star->type) {
-      case DOT_STAR:
-      case FAR_STAR:
-        lib.render_rect(star->position - fvec2(1, 1), star->position + fvec2(1, 1), star->colour);
-        break;
+    case DOT_STAR:
+    case FAR_STAR:
+      lib.render_rect(star->position - fvec2(1, 1), star->position + fvec2(1, 1), star->colour);
+      break;
 
-      case BIG_STAR:
-        lib.render_rect(star->position - fvec2(2, 2), star->position + fvec2(2, 2), star->colour);
-        break;
+    case BIG_STAR:
+      lib.render_rect(star->position - fvec2(2, 2), star->position + fvec2(2, 2), star->colour);
+      break;
 
-      case PLANET:
-        for (int32_t i = 0; i < 8; i++) {
-          fvec2 a = fvec2::from_polar(i * M_PIf / 4, star->size);
-          fvec2 b = fvec2::from_polar((i + 1) * M_PIf / 4, star->size);
-          lib.render_line(star->position + a, star->position + b, star->colour);
-        }
+    case PLANET:
+      for (int32_t i = 0; i < 8; i++) {
+        fvec2 a = fvec2::from_polar(i * M_PIf / 4, star->size);
+        fvec2 b = fvec2::from_polar((i + 1) * M_PIf / 4, star->size);
+        lib.render_line(star->position + a, star->position + b, star->colour);
+      }
     }
   }
 }
@@ -70,9 +70,10 @@ void Stars::create_star() {
   star->position.x = edge < 2 ? ratio * Lib::WIDTH : edge == 2 ? -16 : 16 + Lib::WIDTH;
   star->position.y = edge >= 2 ? ratio * Lib::HEIGHT : edge == 0 ? -16 : 16 + Lib::HEIGHT;
 
-  star->colour = type == DOT_STAR ? (z::rand_int(2) ? 0x222222ff : 0x333333ff) : type == FAR_STAR
-          ? (z::rand_int(2) ? 0x222222ff : 0x111111ff)
-          : type == BIG_STAR ? (z::rand_int(2) ? 0x111111ff : 0x222222ff) : 0x111111ff;
+  star->colour = type == DOT_STAR ? (z::rand_int(2) ? 0x222222ff : 0x333333ff)
+      : type == FAR_STAR          ? (z::rand_int(2) ? 0x222222ff : 0x111111ff)
+      : type == BIG_STAR          ? (z::rand_int(2) ? 0x111111ff : 0x222222ff)
+                                  : 0x111111ff;
   if (type == PLANET) {
     star->size = 4.f + z::rand_int(4);
   }

@@ -1,6 +1,5 @@
 #include "boss.h"
 #include "player.h"
-
 #include <algorithm>
 
 std::vector<std::pair<int32_t, std::pair<vec2, colour_t>>> Boss::_fireworks;
@@ -134,7 +133,7 @@ void Boss::on_destroy() {
   play_sound(Lib::SOUND_EXPLOSION);
 
   for (const auto& player : game().players()) {
-    Player* p = (Player*) player;
+    Player* p = (Player*)player;
     if (!p->is_killed() && get_score() > 0) {
       p->add_score(get_score() / game().alive_players());
     }

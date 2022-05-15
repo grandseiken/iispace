@@ -1,6 +1,6 @@
 #include "boss_chaser.h"
-#include <algorithm>
 #include "player.h"
+#include <algorithm>
 
 static const int32_t CB_BASE_HP = 60;
 static const int32_t CB_MAX_SPLIT = 7;
@@ -149,7 +149,12 @@ void ChaserBoss::update() {
 
     _dir = _last_dir;
     if (_stagger ==
-        _count % (_split == 0 ? 1 : _split == 1 ? 2 : _split == 2 ? 4 : _split == 3 ? 8 : 16)) {
+        _count %
+            (_split == 0       ? 1
+                 : _split == 1 ? 2
+                 : _split == 2 ? 4
+                 : _split == 3 ? 8
+                               : 16)) {
       _dir.x = _dir.y = 0;
       for (const auto& ship : nearby) {
         if (ship == this) {
@@ -163,7 +168,7 @@ void ChaserBoss::update() {
         }
         vec2 p;
         if (ship->type() & SHIP_BOSS) {
-          ChaserBoss* c = (ChaserBoss*) ship;
+          ChaserBoss* c = (ChaserBoss*)ship;
           fixed pow = ONE_PT_ONE_FIVE_lookup[CB_MAX_SPLIT - c->_split];
           v *= pow;
           p = c->_last_dir * pow;
@@ -228,13 +233,18 @@ void ChaserBoss::update() {
       _dir = _dir.normalised();
     }
 
-    _dir = _split == 0 ? _dir + _last_dir * 7 : _split == 1 ? _dir * 2 + _last_dir * 7 : _split == 2
-                ? _dir * 4 + _last_dir * 7
-                : _split == 3 ? _dir + _last_dir : _dir * 2 + _last_dir;
+    _dir = _split == 0 ? _dir + _last_dir * 7
+        : _split == 1  ? _dir * 2 + _last_dir * 7
+        : _split == 2  ? _dir * 4 + _last_dir * 7
+        : _split == 3  ? _dir + _last_dir
+                       : _dir * 2 + _last_dir;
 
-    _dir *= ONE_PT_ONE_lookup[_split] * (_split == 0 ? c_dir0 : _split == 1 ? c_dir1 : _split == 2
-                                                     ? c_dir2
-                                                     : _split == 3 ? c_dir3 : c_dir4);
+    _dir *= ONE_PT_ONE_lookup[_split] *
+        (_split == 0       ? c_dir0
+             : _split == 1 ? c_dir1
+             : _split == 2 ? c_dir2
+             : _split == 3 ? c_dir3
+                           : c_dir4);
     move(_dir);
     shape().rotate(fixed_c::hundredth * 2 + fixed(_split) * c_rotate);
   }
@@ -273,9 +283,12 @@ void ChaserBoss::on_destroy() {
     for (int32_t i = 0; i < 2; i++) {
       vec2 d = vec2::from_polar(i * fixed_c::pi + shape().rotation(),
                                 8 * ONE_PT_TWO_lookup[CB_MAX_SPLIT - 1 - _split]);
-      Ship* s = new ChaserBoss(
-          _players, _cycle, _split + 1, shape().centre + d, (i + 1) * TIMER / 2,
-          z::rand_int(_split + 1 == 1 ? 2 : _split + 1 == 2 ? 4 : _split + 1 == 3 ? 8 : 16));
+      Ship* s =
+          new ChaserBoss(_players, _cycle, _split + 1, shape().centre + d, (i + 1) * TIMER / 2,
+                         z::rand_int(_split + 1 == 1       ? 2
+                                         : _split + 1 == 2 ? 4
+                                         : _split + 1 == 3 ? 8
+                                                           : 16));
       spawn(s);
       s->shape().set_rotation(shape().rotation());
     }
@@ -294,7 +307,7 @@ void ChaserBoss::on_destroy() {
         lib().rumble(i, 25);
       }
       for (const auto& ship : game().players()) {
-        Player* p = (Player*) ship;
+        Player* p = (Player*)ship;
         if (!p->is_killed()) {
           p->add_score(get_score() / game().alive_players());
         }

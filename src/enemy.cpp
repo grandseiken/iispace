@@ -1,6 +1,5 @@
 #include "enemy.h"
 #include "player.h"
-
 #include <algorithm>
 
 static const int32_t FOLLOW_TIME = 90;
@@ -312,11 +311,12 @@ void FollowHub::update() {
     }
   }
 
-  _dir = shape().centre.x < 0 ? vec2(1, 0) : shape().centre.x > Lib::WIDTH
-          ? vec2(-1, 0)
-          : shape().centre.y < 0 ? vec2(0, 1) : shape().centre.y > Lib::HEIGHT
-                  ? vec2(0, -1)
-                  : _count > 3 ? (_count = 0, _dir.rotated(-fixed_c::pi / 2)) : _dir;
+  _dir = shape().centre.x < 0          ? vec2(1, 0)
+      : shape().centre.x > Lib::WIDTH  ? vec2(-1, 0)
+      : shape().centre.y < 0           ? vec2(0, 1)
+      : shape().centre.y > Lib::HEIGHT ? vec2(0, -1)
+      : _count > 3                     ? (_count = 0, _dir.rotated(-fixed_c::pi / 2))
+                                       : _dir;
 
   fixed s = _powera ? fixed_c::hundredth * 5 + fixed_c::tenth : fixed_c::hundredth * 5;
   shape().rotate(s);
@@ -371,10 +371,11 @@ void Shielder::update() {
   }
 
   bool on_screen = false;
-  _dir = shape().centre.x < 0 ? vec2(1, 0) : shape().centre.x > Lib::WIDTH ? vec2(-1, 0)
-                                                                           : shape().centre.y < 0
-              ? vec2(0, 1)
-              : shape().centre.y > Lib::HEIGHT ? vec2(0, -1) : (on_screen = true, _dir);
+  _dir = shape().centre.x < 0          ? vec2(1, 0)
+      : shape().centre.x > Lib::WIDTH  ? vec2(-1, 0)
+      : shape().centre.y < 0           ? vec2(0, 1)
+      : shape().centre.y > Lib::HEIGHT ? vec2(0, -1)
+                                       : (on_screen = true, _dir);
 
   if (!on_screen && _rotate) {
     _timer = 0;
@@ -473,7 +474,7 @@ void Tractor::update() {
   } else if (_spinning) {
     shape().rotate(fixed_c::tenth * 3);
     for (const auto& ship : _players) {
-      if (!((Player*) ship)->is_killed()) {
+      if (!((Player*)ship)->is_killed()) {
         vec2 d = (shape().centre - ship->shape().centre).normalised();
         ship->move(d * TRACTOR_BEAM_SPEED);
       }
@@ -497,7 +498,7 @@ void Tractor::render() const {
   Enemy::render();
   if (_spinning) {
     for (std::size_t i = 0; i < _players.size(); ++i) {
-      if (((_timer + i * 4) / 4) % 2 && !((Player*) _players[i])->is_killed()) {
+      if (((_timer + i * 4) / 4) % 2 && !((Player*)_players[i])->is_killed()) {
         lib().render_line(to_float(shape().centre), to_float(_players[i]->shape().centre),
                           0xcc33ccff);
       }

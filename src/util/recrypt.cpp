@@ -1,50 +1,44 @@
+#include "../../gen/iispace.pb.h"
+#include "../z.h"
 #include <algorithm>
 #include <fstream>
 #include <iostream>
 #include <sstream>
-#include "../z.h"
-#include "../../gen/iispace.pb.h"
 
-std::string crypt(const std::string& text, const std::string& key)
-{
+std::string crypt(const std::string& text, const std::string& key) {
   std::string r = "";
   for (std::size_t i = 0; i < text.length(); i++) {
     char c = text[i] ^ key[i % key.length()];
     if (text[i] == '\0' || c == '\0') {
       r += text[i];
-    }
-    else {
+    } else {
       r += c;
     }
   }
   return r;
 }
 
-std::string read_file(const std::string& filename)
-{
+std::string read_file(const std::string& filename) {
   std::ifstream in(filename, std::ios::binary);
   std::string contents;
   in.seekg(0, std::ios::end);
-  contents.resize((unsigned) in.tellg());
+  contents.resize((unsigned)in.tellg());
   in.seekg(0, std::ios::beg);
   in.read(&contents[0], contents.size());
   in.close();
   return contents;
 }
 
-void fixed_read(fixed& f, std::stringstream& in)
-{
+void fixed_read(fixed& f, std::stringstream& in) {
   auto t = f.to_internal();
-  in.read((char*) &t, sizeof(t));
+  in.read((char*)&t, sizeof(t));
   f = fixed::from_internal(t);
 }
 
-proto::Replay convert(const std::string& contents)
-{
+proto::Replay convert(const std::string& contents) {
   std::string decompress;
   decompress = z::decompress_string(contents);
-  std::stringstream dc(decompress,
-                       std::ios::in | std::ios::out | std::ios::binary);
+  std::stringstream dc(decompress, std::ios::in | std::ios::out | std::ios::binary);
 
   std::string line;
   getline(dc, line);
@@ -97,14 +91,12 @@ proto::Replay convert(const std::string& contents)
   return replay;
 }
 
-int main(int argc, char** argv)
-{
+int main(int argc, char** argv) {
   if (argc < 4) {
-    std::cerr <<
-        "usage: " << argv[0] << " old_key_file new_key_file files..." << std::endl;
+    std::cerr << "usage: " << argv[0] << " old_key_file new_key_file files..." << std::endl;
     return 1;
   }
- 
+
   std::string old_key = read_file(argv[1]);
   std::string new_key = read_file(argv[2]);
 

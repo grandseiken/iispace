@@ -61,36 +61,36 @@ colour_t hsl_to_rgb(colour_t hsl) {
     sextant %= 6;
 
     switch (sextant) {
-      case 0:
-        r = v;
-        g = mid1;
-        b = m;
-        break;
-      case 1:
-        r = mid2;
-        g = v;
-        b = m;
-        break;
-      case 2:
-        r = m;
-        g = v;
-        b = mid1;
-        break;
-      case 3:
-        r = m;
-        g = mid2;
-        b = v;
-        break;
-      case 4:
-        r = mid1;
-        g = m;
-        b = v;
-        break;
-      case 5:
-        r = v;
-        g = m;
-        b = mid2;
-        break;
+    case 0:
+      r = v;
+      g = mid1;
+      b = m;
+      break;
+    case 1:
+      r = mid2;
+      g = v;
+      b = m;
+      break;
+    case 2:
+      r = m;
+      g = v;
+      b = mid1;
+      break;
+    case 3:
+      r = m;
+      g = mid2;
+      b = v;
+      break;
+    case 4:
+      r = mid1;
+      g = m;
+      b = v;
+      break;
+    case 5:
+      r = v;
+      g = m;
+      b = mid2;
+      break;
     }
   }
   return ((int32_t(0.5 + r * 255) & 0xff) << 24) | ((int32_t(0.5 + g * 255) & 0xff) << 16) |
@@ -98,7 +98,7 @@ colour_t hsl_to_rgb(colour_t hsl) {
 }
 
 // End anonymous namespace.
-}
+}  // namespace
 
 namespace z {
 
@@ -137,7 +137,7 @@ std::string compress_string(const std::string& str) {
     throw std::runtime_error("deflateInit failed while compressing.");
   }
 
-  zs.next_in = (Bytef*) str.data();
+  zs.next_in = (Bytef*)str.data();
   zs.avail_in = uInt(str.size());
 
   int32_t ret;
@@ -174,7 +174,7 @@ std::string decompress_string(const std::string& str) {
     throw std::runtime_error("inflateInit failed while decompressing.");
   }
 
-  zs.next_in = (Bytef*) str.data();
+  zs.next_in = (Bytef*)str.data();
   zs.avail_in = uInt(str.size());
 
   int32_t ret;
@@ -204,7 +204,8 @@ std::string decompress_string(const std::string& str) {
 }
 
 colour_t colour_cycle(colour_t rgb, int32_t cycle) {
-  if (cycle == 0) return rgb;
+  if (cycle == 0)
+    return rgb;
   colour_t a = rgb & 0x000000ff;
   std::pair<colour_t, int32_t> key = std::make_pair(rgb & 0xffffff00, cycle);
   if (cycle_map.find(key) != cycle_map.end()) {
@@ -219,4 +220,4 @@ colour_t colour_cycle(colour_t rgb, int32_t cycle) {
 }
 
 // End namespace z.
-}
+}  // namespace z

@@ -1,7 +1,7 @@
 #include "replay.h"
+#include "z0_game.h"
 #include <algorithm>
 #include <fstream>
-#include "z0_game.h"
 
 Replay::Replay(const std::string& path) {
   Lib::set_working_directory(true);
@@ -52,11 +52,11 @@ void Replay::record(const vec2& velocity, const vec2& target, int32_t keys) {
 void Replay::write(const std::string& name, int64_t score) const {
   std::stringstream ss;
   ss << "replays/" << replay.seed() << "_" << replay.players() << "p_"
-     << (replay.game_mode() == Mode::BOSS ? "bossmode_" : replay.game_mode() == Mode::HARD
-                 ? "hardmode_"
-                 : replay.game_mode() == Mode::FAST ? "fastmode_" : replay.game_mode() == Mode::WHAT
-                         ? "w-hatmode_"
-                         : "")
+     << (replay.game_mode() == Mode::BOSS       ? "bossmode_"
+             : replay.game_mode() == Mode::HARD ? "hardmode_"
+             : replay.game_mode() == Mode::FAST ? "fastmode_"
+             : replay.game_mode() == Mode::WHAT ? "w-hatmode_"
+                                                : "")
      << name << "_" << score << ".wrp";
 
   std::string temp;

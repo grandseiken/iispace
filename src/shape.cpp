@@ -41,7 +41,8 @@ fixed Shape::rotation() const {
 void Shape::set_rotation(fixed rotation) {
   if (_can_rotate) {
     _rotation = rotation > 2 * fixed_c::pi ? rotation - 2 * fixed_c::pi
-                                           : rotation < 0 ? rotation + 2 * fixed_c::pi : rotation;
+        : rotation < 0                     ? rotation + 2 * fixed_c::pi
+                                           : rotation;
   }
 }
 

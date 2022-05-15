@@ -57,20 +57,22 @@ GhostBoss::GhostBoss(int32_t players, int32_t cycle)
 
 void GhostBoss::update() {
   for (int32_t n = 1; n < 5; ++n) {
-    CompoundShape* s = (CompoundShape*) shapes()[11 + n].get();
-    CompoundShape* c = (CompoundShape*) shapes()[16 + n].get();
+    CompoundShape* s = (CompoundShape*)shapes()[11 + n].get();
+    CompoundShape* c = (CompoundShape*)shapes()[16 + n].get();
     c->clear_shapes();
 
     for (int32_t i = 0; i < 16 + n * 6; ++i) {
       Shape& s1 = *s->shapes()[2 * i];
       Shape& s2 = *s->shapes()[1 + 2 * i];
-      int32_t t = n == 1 ? (i + _danger_offset1) % 11 : n == 2 ? (i + _danger_offset2) % 7 : n == 3
-                  ? (i + _danger_offset3) % 17
-                  : (i + _danger_offset4) % 10;
+      int32_t t = n == 1 ? (i + _danger_offset1) % 11
+          : n == 2       ? (i + _danger_offset2) % 7
+          : n == 3       ? (i + _danger_offset3) % 17
+                         : (i + _danger_offset4) % 10;
 
-      bool b = n == 1 ? (t % 11 == 0 || t % 11 == 5) : n == 2 ? (t % 7 == 0) : n == 3
-                  ? (t % 17 == 0 || t % 17 == 8)
-                  : (t % 10 == 0);
+      bool b = n == 1 ? (t % 11 == 0 || t % 11 == 5)
+          : n == 2    ? (t % 7 == 0)
+          : n == 3    ? (t % 17 == 0 || t % 17 == 8)
+                      : (t % 10 == 0);
 
       if (((n == 4 && _attack != 2) || (n + (n == 3)) & _danger_circle) && _visible && b) {
         s1.colour = 0xcc66ffff;
@@ -95,7 +97,7 @@ void GhostBoss::update() {
   }
   shapes()[10]->rotate(fixed_c::hundredth * 6);
   for (int32_t n = 0; n < 5; n++) {
-    CompoundShape* s = (CompoundShape*) shapes()[11 + n].get();
+    CompoundShape* s = (CompoundShape*)shapes()[11 + n].get();
     if (n % 2) {
       s->rotate(fixed_c::hundredth * 3 + (fixed(3) / 2000) * n);
     } else {
@@ -105,7 +107,7 @@ void GhostBoss::update() {
       t->rotate(-fixed_c::tenth);
     }
 
-    s = (CompoundShape*) shapes()[16 + n].get();
+    s = (CompoundShape*)shapes()[16 + n].get();
     if (n % 2) {
       s->rotate(fixed_c::hundredth * 3 + (fixed(3) / 2000) * n);
     } else {
@@ -195,10 +197,10 @@ void GhostBoss::update() {
 
     if ((_attack == 0 || _attack == 1) && is_hp_low() && _attack_time == GB_ATTACK_TIME * 1) {
       int32_t r = z::rand_int(4);
-      vec2 v = r == 0 ? vec2(-Lib::WIDTH / 4, Lib::HEIGHT / 2) : r == 1
-              ? vec2(Lib::WIDTH + Lib::WIDTH / 4, Lib::HEIGHT / 2)
-              : r == 2 ? vec2(Lib::WIDTH / 2, -Lib::HEIGHT / 4)
-                       : vec2(Lib::WIDTH / 2, Lib::HEIGHT + Lib::HEIGHT / 4);
+      vec2 v = r == 0 ? vec2(-Lib::WIDTH / 4, Lib::HEIGHT / 2)
+          : r == 1    ? vec2(Lib::WIDTH + Lib::WIDTH / 4, Lib::HEIGHT / 2)
+          : r == 2    ? vec2(Lib::WIDTH / 2, -Lib::HEIGHT / 4)
+                      : vec2(Lib::WIDTH / 2, Lib::HEIGHT + Lib::HEIGHT / 4);
       spawn(new BigFollow(v, false));
     }
     if (!_attack_time && !_visible) {

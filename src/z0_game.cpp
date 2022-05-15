@@ -1,12 +1,12 @@
 #include "z0_game.h"
-#include <algorithm>
-#include <iostream>
 #include "boss_chaser.h"
 #include "enemy.h"
 #include "lib.h"
 #include "overmind.h"
 #include "player.h"
 #include "stars.h"
+#include <algorithm>
+#include <iostream>
 
 namespace {
 
@@ -41,7 +41,7 @@ std::string convert_to_time(int64_t score) {
 }
 
 // End anonymous namespace.
-}
+}  // namespace
 
 PauseModal::PauseModal(output_t* output, Settings& settings)
 : Modal(true, false), _output(output), _settings(settings), _selection(0) {
@@ -217,8 +217,8 @@ void HighScoreModal::render(Lib& lib) const {
   if (is_high_score()) {
     render_panel(lib, fvec2(3.f, 20.f), fvec2(28.f, 27.f));
     lib.render_text(fvec2(4.f, 21.f), "It's a high score!", z0Game::PANEL_TEXT);
-    lib.render_text(fvec2(4.f, 23.f), players == 1 ? "Enter name:" : "Enter team name:",
-                    z0Game::PANEL_TEXT);
+    lib.render_text(fvec2(4.f, 23.f),
+                    players == 1 ? "Enter name:" : "Enter team name:", z0Game::PANEL_TEXT);
     lib.render_text(fvec2(6.f, 25.f), _enter_name, z0Game::PANEL_TEXT);
     if ((_enter_time / 16) % 2 && _enter_name.length() < HighScores::MAX_NAME_LENGTH) {
       lib.render_text(fvec2(6.f + _enter_name.length(), 25.f), ALLOWED_CHARS.substr(_enter_char, 1),
@@ -269,9 +269,9 @@ void HighScoreModal::render(Lib& lib) const {
   for (int32_t i = 0; i < players; ++i) {
     std::stringstream sss;
     if (_timer % 600 < 300) {
-      sss << ((Player*) _game.players()[i])->score();
+      sss << ((Player*)_game.players()[i])->score();
     } else {
-      int32_t deaths = ((Player*) _game.players()[i])->deaths();
+      int32_t deaths = ((Player*)_game.players()[i])->deaths();
       sss << deaths << " death" << (deaths != 1 ? "s" : "");
     }
     score = sss.str();
@@ -293,7 +293,7 @@ void HighScoreModal::render(Lib& lib) const {
   int64_t max = 0;
   std::size_t best = 0;
   for (Ship* ship : _game.players()) {
-    Player* p = (Player*) ship;
+    Player* p = (Player*)ship;
     if (first || p->score() > max) {
       max = p->score();
       best = p->player_number();
@@ -320,7 +320,7 @@ int64_t HighScoreModal::get_score() const {
   }
   int64_t total = 0;
   for (Ship* ship : _game.players()) {
-    total += ((Player*) ship)->score();
+    total += ((Player*)ship)->score();
   }
   return total;
 }
@@ -359,9 +359,10 @@ void GameModal::update(Lib& lib) {
   Boss::_warnings.clear();
   lib.capture_mouse(true);
 
-  lib.set_colour_cycle(mode() == Mode::HARD ? 128 : mode() == Mode::FAST
-                               ? 192
-                               : mode() == Mode::WHAT ? (lib.get_colour_cycle() + 1) % 256 : 0);
+  lib.set_colour_cycle(mode() == Mode::HARD       ? 128
+                           : mode() == Mode::FAST ? 192
+                           : mode() == Mode::WHAT ? (lib.get_colour_cycle() + 1) % 256
+                                                  : 0);
   if (_replay_recording) {
     *_frame_count = mode() == Mode::FAST ? 2 : 1;
   }
@@ -465,8 +466,9 @@ void GameModal::update(Lib& lib) {
   }
   _overmind->update();
 
-  if (!_kill_timer && ((killed_players() == (int32_t) players().size() && !get_lives()) ||
-                       (mode() == Mode::BOSS && _overmind->get_killed_bosses() >= 6))) {
+  if (!_kill_timer &&
+      ((killed_players() == (int32_t)players().size() && !get_lives()) ||
+       (mode() == Mode::BOSS && _overmind->get_killed_bosses() >= 6))) {
     _kill_timer = 100;
   }
   if (_kill_timer) {
@@ -602,7 +604,7 @@ void GameModal::render(Lib& lib) const {
   }
 
   if (!_replay_recording) {
-    auto input = (ReplayPlayerInput*) _input.get();
+    auto input = (ReplayPlayerInput*)_input.get();
     int32_t x = mode() == Mode::FAST ? *_frame_count / 2 : *_frame_count;
     std::stringstream ss;
     ss << x << "X "
@@ -659,8 +661,8 @@ GameModal::ship_list GameModal::all_ships(int32_t ship_mask) const {
   return r;
 }
 
-GameModal::ship_list GameModal::ships_in_radius(const vec2& point, fixed radius,
-                                                int32_t ship_mask) const {
+GameModal::ship_list
+GameModal::ships_in_radius(const vec2& point, fixed radius, int32_t ship_mask) const {
   ship_list r;
   for (auto& ship : _ships) {
     if ((!ship_mask || (ship->type() & ship_mask)) &&
@@ -738,7 +740,7 @@ Player* GameModal::nearest_player(const vec2& point) const {
 
   for (Ship* s : _player_list) {
     fixed d = (s->shape().centre - point).length();
-    if ((d < ship_dist || !ship) && !((Player*) s)->is_killed()) {
+    if ((d < ship_dist || !ship) && !((Player*)s)->is_killed()) {
       ship_dist = d;
       ship = s;
     }
@@ -747,7 +749,7 @@ Player* GameModal::nearest_player(const vec2& point) const {
       dead = s;
     }
   }
-  return (Player*) (ship ? ship : dead);
+  return (Player*)(ship ? ship : dead);
 }
 
 void GameModal::add_life() {
@@ -791,15 +793,15 @@ GameModal::GameModal(Lib& lib, SaveData& save, Settings& settings, int32_t* fram
 , _kill_timer(0)
 , _replay(replay)
 , _replay_recording(replay_recording)
-, _input(_replay_recording ? (PlayerInput*) new LibPlayerInput(lib, _replay)
-                           : (PlayerInput*) new ReplayPlayerInput(_replay))
+, _input(_replay_recording ? (PlayerInput*)new LibPlayerInput(lib, _replay)
+                           : (PlayerInput*)new ReplayPlayerInput(_replay))
 , _controllers_connected(0)
 , _controllers_dialog(true)
 , _show_hp_bar(false)
 , _fill_hp_bar(0) {
   static const int32_t STARTING_LIVES = 2;
   static const int32_t BOSSMODE_LIVES = 1;
-  z::seed((int32_t) _replay.replay.seed());
+  z::seed((int32_t)_replay.replay.seed());
   _lives = mode() == Mode::BOSS ? _replay.replay.players() * BOSSMODE_LIVES : STARTING_LIVES;
   *_frame_count = mode() == Mode::FAST ? 2 : 1;
 
@@ -991,9 +993,10 @@ void z0Game::render() const {
   lib().render_text(fvec2(6.f, 12.f), "EXiT", PANEL_TEXT);
 
   if (mode_unlocked() >= Mode::BOSS) {
-    std::string str = _mode_select == Mode::BOSS ? "BOSS MODE" : _mode_select == Mode::HARD
-            ? "HARD MODE"
-            : _mode_select == Mode::FAST ? "FAST MODE" : "W-HAT MODE";
+    std::string str = _mode_select == Mode::BOSS ? "BOSS MODE"
+        : _mode_select == Mode::HARD             ? "HARD MODE"
+        : _mode_select == Mode::FAST             ? "FAST MODE"
+                                                 : "W-HAT MODE";
     lib().render_text(fvec2(6.f, 6.f), str, PANEL_TEXT);
   }
   if (_menu_select == MENU_SPECIAL && _mode_select > Mode::BOSS) {
@@ -1025,13 +1028,15 @@ void z0Game::render() const {
   ss << _player_select;
   std::string s = "HiGH SCORES    ";
   s += _menu_select == MENU_SPECIAL
-      ? (_mode_select == Mode::BOSS ? "BOSS MODE" : _mode_select == Mode::HARD
-                 ? "HARD MODE (" + ss.str() + "P)"
-                 : _mode_select == Mode::FAST ? "FAST MODE (" + ss.str() + "P)"
-                                              : "W-HAT MODE (" + ss.str() + "P)")
-      : _player_select == 1 ? "ONE PLAYER" : _player_select == 2
-              ? "TWO PLAYERS"
-              : _player_select == 3 ? "THREE PLAYERS" : _player_select == 4 ? "FOUR PLAYERS" : "";
+      ? (_mode_select == Mode::BOSS       ? "BOSS MODE"
+             : _mode_select == Mode::HARD ? "HARD MODE (" + ss.str() + "P)"
+             : _mode_select == Mode::FAST ? "FAST MODE (" + ss.str() + "P)"
+                                          : "W-HAT MODE (" + ss.str() + "P)")
+      : _player_select == 1 ? "ONE PLAYER"
+      : _player_select == 2 ? "TWO PLAYERS"
+      : _player_select == 3 ? "THREE PLAYERS"
+      : _player_select == 4 ? "FOUR PLAYERS"
+                            : "";
   lib().render_text(fvec2(4.f, 16.f), s, PANEL_TEXT);
 
   if (_menu_select == MENU_SPECIAL && _mode_select == Mode::BOSS) {

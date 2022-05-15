@@ -1,8 +1,8 @@
 #include "save.h"
+#include "lib.h"
 #include <src/iispace.pb.h>
 #include <algorithm>
 #include <fstream>
-#include "lib.h"
 
 static const std::string SETTINGS_WINDOWED = "Windowed";
 static const std::string SETTINGS_VOLUME = "Volume";
@@ -14,18 +14,20 @@ std::size_t HighScores::size(Mode::mode mode) {
 }
 
 HighScores::high_score& HighScores::get(Mode::mode mode, int32_t players, int32_t index) {
-  return mode == Mode::NORMAL ? normal[players][index] : mode == Mode::HARD
-          ? hard[players][index]
-          : mode == Mode::FAST ? fast[players][index] : mode == Mode::WHAT ? what[players][index]
-                                                                           : boss[players];
+  return mode == Mode::NORMAL ? normal[players][index]
+      : mode == Mode::HARD    ? hard[players][index]
+      : mode == Mode::FAST    ? fast[players][index]
+      : mode == Mode::WHAT    ? what[players][index]
+                              : boss[players];
 }
 
-const HighScores::high_score& HighScores::get(Mode::mode mode, int32_t players,
-                                              int32_t index) const {
-  return mode == Mode::NORMAL ? normal[players][index] : mode == Mode::HARD
-          ? hard[players][index]
-          : mode == Mode::FAST ? fast[players][index] : mode == Mode::WHAT ? what[players][index]
-                                                                           : boss[players];
+const HighScores::high_score&
+HighScores::get(Mode::mode mode, int32_t players, int32_t index) const {
+  return mode == Mode::NORMAL ? normal[players][index]
+      : mode == Mode::HARD    ? hard[players][index]
+      : mode == Mode::FAST    ? fast[players][index]
+      : mode == Mode::WHAT    ? what[players][index]
+                              : boss[players];
 }
 
 bool HighScores::is_high_score(Mode::mode mode, int32_t players, int64_t score) const {

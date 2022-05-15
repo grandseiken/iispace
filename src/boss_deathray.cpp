@@ -45,13 +45,13 @@ DeathRayBoss::DeathRayBoss(int32_t players, int32_t cycle)
 
 void DeathRayBoss::update() {
   bool positioned = true;
-  fixed d = _pos == 0 ? 1 * Lib::HEIGHT / 4 - shape().centre.y : _pos == 1
-          ? 2 * Lib::HEIGHT / 4 - shape().centre.y
-          : _pos == 2 ? 3 * Lib::HEIGHT / 4 - shape().centre.y : _pos == 3
-                  ? 1 * Lib::HEIGHT / 8 - shape().centre.y
-                  : _pos == 4 ? 3 * Lib::HEIGHT / 8 - shape().centre.y : _pos == 5
-                          ? 5 * Lib::HEIGHT / 8 - shape().centre.y
-                          : 7 * Lib::HEIGHT / 8 - shape().centre.y;
+  fixed d = _pos == 0 ? 1 * Lib::HEIGHT / 4 - shape().centre.y
+      : _pos == 1     ? 2 * Lib::HEIGHT / 4 - shape().centre.y
+      : _pos == 2     ? 3 * Lib::HEIGHT / 4 - shape().centre.y
+      : _pos == 3     ? 1 * Lib::HEIGHT / 8 - shape().centre.y
+      : _pos == 4     ? 3 * Lib::HEIGHT / 8 - shape().centre.y
+      : _pos == 5     ? 5 * Lib::HEIGHT / 8 - shape().centre.y
+                      : 7 * Lib::HEIGHT / 8 - shape().centre.y;
 
   if (abs(d) > 3) {
     move(vec2(0, d / abs(d)) * DRB_SPEED);

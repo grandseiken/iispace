@@ -56,7 +56,7 @@ void SuperBossArc::on_destroy() {
   explosion(0xffffffff, 36);
   explosion(shapes()[0]->colour, 48);
   play_sound_random(Lib::SOUND_EXPLOSION);
-  ((SuperBoss*) _boss)->_destroyed[_i] = true;
+  ((SuperBoss*)_boss)->_destroyed[_i] = true;
 }
 
 SuperBoss::SuperBoss(int32_t players, int32_t cycle)
@@ -224,7 +224,7 @@ void SuperBoss::on_destroy() {
   play_sound(Lib::SOUND_EXPLOSION);
 
   for (const auto& ship : game().players()) {
-    Player* p = (Player*) ship;
+    Player* p = (Player*)ship;
     if (!p->is_killed()) {
       p->add_score(get_score() / game().alive_players());
     }
@@ -348,7 +348,7 @@ void RainbowShot::update() {
 
   if ((shape().centre - center).length() > 100 && _timer % 2 == 0) {
     const auto& list = game().collision_list(shape().centre, SHIELD);
-    SuperBoss* s = (SuperBoss*) _boss;
+    SuperBoss* s = (SuperBoss*)_boss;
     for (std::size_t i = 0; i < list.size(); ++i) {
       bool boss = false;
       for (std::size_t j = 0; j < s->_arcs.size(); ++j) {

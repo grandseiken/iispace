@@ -1,5 +1,5 @@
 #include "lib.h"
-
+#include "save.h"
 #include <algorithm>
 #include <ctime>
 #include <fstream>
@@ -7,7 +7,6 @@
 #include <iostream>
 #include <sstream>
 #include <string>
-#include "save.h"
 
 const std::string Lib::SUPER_ENCRYPTION_KEY = "<>";
 
@@ -17,13 +16,13 @@ const std::string Lib::SUPER_ENCRYPTION_KEY = "<>";
 #endif
 
 #ifndef PLATFORM_SCORE
+#include "util/gamepad.h"
 #include <OISForceFeedback.h>
 #include <OISInputManager.h>
 #include <OISJoyStick.h>
 #include <SFML/Audio.hpp>
 #include <SFML/Graphics.hpp>
 #include <SFML/OpenGL.hpp>
-#include "util/gamepad.h"
 
 #define RgbaToColor(colour) (sf::Color((colour) >> 24, (colour) >> 16, (colour) >> 8, (colour)))
 
@@ -81,15 +80,14 @@ bool SfmToKey(sf::Mouse::Button code, Lib::Key key) {
 
 bool PadToKey(PadConfig config, int32_t button, Lib::Key key) {
   PadConfig::Buttons none;
-  const PadConfig::Buttons& buttons =
-      key == Lib::KEY_MENU ? config._startButtons : key == Lib::KEY_FIRE || key == Lib::KEY_ACCEPT
-          ? config._fireButtons
-          : key == Lib::KEY_BOMB || key == Lib::KEY_CANCEL ? config._bombButtons
-                                                           : key == Lib::KEY_UP
-                  ? config._moveUpButtons
-                  : key == Lib::KEY_DOWN ? config._moveDownButtons : key == Lib::KEY_LEFT
-                          ? config._moveLeftButtons
-                          : key == Lib::KEY_RIGHT ? config._moveRightButtons : none;
+  const PadConfig::Buttons& buttons = key == Lib::KEY_MENU ? config._startButtons
+      : key == Lib::KEY_FIRE || key == Lib::KEY_ACCEPT     ? config._fireButtons
+      : key == Lib::KEY_BOMB || key == Lib::KEY_CANCEL     ? config._bombButtons
+      : key == Lib::KEY_UP                                 ? config._moveUpButtons
+      : key == Lib::KEY_DOWN                               ? config._moveDownButtons
+      : key == Lib::KEY_LEFT                               ? config._moveLeftButtons
+      : key == Lib::KEY_RIGHT                              ? config._moveRightButtons
+                                                           : none;
 
   for (std::size_t i = 0; i < buttons.size(); ++i) {
     if (buttons[i] == button) {
@@ -295,11 +293,11 @@ Lib::Lib() : _cycle(0), _players(1), _capture_mouse(false), _mouse_moving(true),
   _internals->pads[0] = _internals->pads[1] = _internals->pads[2] = _internals->pads[3] = 0;
   for (int32_t i = 0; i < _internals->pad_count; ++i) {
     try {
-      tpads[i] = (OIS::JoyStick*) _internals->manager->createInputObject(OIS::OISJoyStick, true);
+      tpads[i] = (OIS::JoyStick*)_internals->manager->createInputObject(OIS::OISJoyStick, true);
       tpads[i]->setEventCallback(&_internals->pad_handler);
     } catch (const std::exception& e) {
       tpads[i] = 0;
-      (void) e;
+      (void)e;
     }
   }
 
@@ -362,7 +360,7 @@ Lib::Lib() : _cycle(0), _players(1), _capture_mouse(false), _mouse_moving(true),
       _internals->ff[i] = 0;
     }
     _internals->ff[i] =
-        (OIS::ForceFeedback*) _internals->pads[i]->queryInterface(OIS::Interface::ForceFeedback);
+        (OIS::ForceFeedback*)_internals->pads[i]->queryInterface(OIS::Interface::ForceFeedback);
 
     /*if (_ff[i]) {
       OIS::Effect* e =
@@ -507,10 +505,10 @@ void Lib::set_working_directory(bool original) {
     cwd[MAX_PATH + 1] = '\0';
 
     exe.resize(MAX_PATH);
-    DWORD result = GetModuleFileName(0, &exe[0], (DWORD) exe.size());
+    DWORD result = GetModuleFileName(0, &exe[0], (DWORD)exe.size());
     while (result == exe.size()) {
       exe.resize(exe.size() * 2);
-      result = GetModuleFileName(0, &exe[0], (DWORD) exe.size());
+      result = GetModuleFileName(0, &exe[0], (DWORD)exe.size());
     }
 
     if (result != 0) {
@@ -694,8 +692,9 @@ bool Lib::is_key_released(int32_t player, Key k) const {
 bool Lib::is_key_held(int32_t player, Key k) const {
 #ifndef PLATFORM_SCORE
   vec2 v(_internals->pad_aim_haxes[player], _internals->pad_aim_vaxes[player]);
-  if (k == KEY_FIRE && (_internals->pad_aim_dpads[player] != OIS::Pov::Centered ||
-                        v.length() >= fixed_c::tenth * 2)) {
+  if (k == KEY_FIRE &&
+      (_internals->pad_aim_dpads[player] != OIS::Pov::Centered ||
+       v.length() >= fixed_c::tenth * 2)) {
     return true;
   }
   return _keys_held[k][player];
