@@ -23,4 +23,5 @@ cc_library(
     "@bazel_tools//src/conditions:windows": glob(["src/win32/*.cpp"]),
     "//conditions:default": glob(["src/linux/*.cpp"]),
   }),
+  visibility = ["//visibility:public"],
 )

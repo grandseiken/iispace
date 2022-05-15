@@ -21,6 +21,14 @@ bazel_skylib_workspace()
 ################################################################################
 
 http_archive(
+  name = "sfml",
+  build_file = "@//deps:sfml.BUILD",
+  sha256 = "bf1e0643acb92369b24572b703473af60bac82caf5af61e77c063b779471bb7f",
+  strip_prefix = "sfml-2.5.1",
+  url = "https://github.com/SFML/SFML/releases/download/2.5.1/SFML-2.5.1-sources.zip",
+)
+
+http_archive(
   name = "ois",
   build_file = "@//deps:ois.BUILD",
   sha256 = "8997ff3d60ef49d4f1291a4100456ac6dddfa0b80eca2414d17c242501917e7e",
