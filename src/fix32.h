@@ -22,7 +22,31 @@ inline constexpr int64_t fixed_abs(int64_t a) {
   return (a ^ (a >> 63)) - (a >> 63);
 }
 
-inline constexpr uint8_t clz(uint64_t x) {
+inline constexpr uint8_t clz_constexpr(int64_t x) {
+  if (x == 0) {
+    return 64;
+  }
+  uint8_t t = 0;
+  if (!(x & 0xffff000000000000ULL)) {
+    t += 16;
+    x <<= 16;
+  }
+  while (!(x & 0xff00000000000000ULL)) {
+    t += 8;
+    x <<= 8;
+  }
+  while (!(x & 0xf000000000000000ULL)) {
+    t += 4;
+    x <<= 4;
+  }
+  while (!(x & 0x8000000000000000ULL)) {
+    t += 1;
+    x <<= 1;
+  }
+  return t;
+}
+
+inline uint8_t clz(uint64_t x) {
 #ifdef __GNUC__
   if (x == 0) {
     return 64;
@@ -49,46 +73,7 @@ inline constexpr uint8_t clz(uint64_t x) {
   return 63 - static_cast<uint8_t>(t);
 #endif
 #else
-  if (x == 0) {
-    return 64;
-  }
-  uint8_t t = 0;
-#ifdef PLATFORM_LINUX
-  if (!(x & 0xffff000000000000ULL)) {
-    t += 16;
-    x <<= 16;
-  }
-  while (!(x & 0xff00000000000000ULL)) {
-    t += 8;
-    x <<= 8;
-  }
-  while (!(x & 0xf000000000000000ULL)) {
-    t += 4;
-    x <<= 4;
-  }
-  while (!(x & 0x8000000000000000ULL)) {
-    t += 1;
-    x <<= 1;
-  }
-#else
-  if (!(x & 0xffff000000000000)) {
-    t += 16;
-    x <<= 16;
-  }
-  while (!(x & 0xff00000000000000)) {
-    t += 8;
-    x <<= 8;
-  }
-  while (!(x & 0xf000000000000000)) {
-    t += 4;
-    x <<= 4;
-  }
-  while (!(x & 0x8000000000000000)) {
-    t += 1;
-    x <<= 1;
-  }
-#endif
-  return t;
+  return clz_constexpr(x);
 #endif
 #endif
 }
@@ -156,9 +141,10 @@ private:
   friend constexpr fixed operator+(const fixed&, const fixed&);
   friend constexpr fixed operator-(const fixed&, const fixed&);
   friend constexpr fixed operator*(const fixed&, const fixed&);
-  friend constexpr fixed operator/(const fixed&, const fixed&);
+  friend fixed operator/(const fixed&, const fixed&);
+  friend constexpr fixed constexpr_div(const fixed&, const fixed&);
   friend constexpr fixed abs(const fixed&);
-  friend constexpr fixed sqrt(const fixed&);
+  friend fixed sqrt(const fixed&);
   friend constexpr fixed sin(const fixed&);
   friend constexpr fixed cos(const fixed&);
   friend constexpr fixed atan2(const fixed&, const fixed&);
@@ -225,7 +211,7 @@ inline constexpr fixed operator*(const fixed& a, const fixed& b) {
   return fixed::from_internal(sign * combine);
 }
 
-inline constexpr fixed operator/(const fixed& a, const fixed& b) {
+inline fixed operator/(const fixed& a, const fixed& b) {
   int64_t sign = detail::fixed_sgn(a._value, b._value);
   uint64_t r = detail::fixed_abs(a._value);
   uint64_t d = detail::fixed_abs(b._value);
@@ -241,6 +227,41 @@ inline constexpr fixed operator/(const fixed& a, const fixed& b) {
   }
   while (r) {
     uint64_t shift = detail::clz(r);
+    if (shift > bit) {
+      shift = bit;
+    }
+    r <<= shift;
+    bit -= shift;
+
+    uint64_t div = r / d;
+    r = r % d;
+    q += div << bit;
+
+    r <<= 1;
+    if (!bit) {
+      break;
+    }
+    --bit;
+  }
+  return fixed::from_internal(sign * (q >> 1));
+}
+
+inline constexpr fixed constexpr_div(const fixed& a, const fixed& b) {
+  int64_t sign = detail::fixed_sgn(a._value, b._value);
+  uint64_t r = detail::fixed_abs(a._value);
+  uint64_t d = detail::fixed_abs(b._value);
+  uint64_t q = 0;
+
+  uint64_t bit = 33;
+  while (!(d & 0xf) && bit >= 4) {
+    d >>= 4;
+    bit -= 4;
+  }
+  if (d == 0) {
+    return 0;
+  }
+  while (r) {
+    uint64_t shift = detail::clz_constexpr(r);
     if (shift > bit) {
       shift = bit;
     }
@@ -284,8 +305,8 @@ inline std::ostream& operator<<(std::ostream& o, const fixed& f) {
 
 namespace fixed_c {
 constexpr fixed pi = fixed::from_internal(0x3243f6a88);
-constexpr fixed tenth = fixed{1} / 10;
-constexpr fixed hundredth = fixed{1} / 100;
+constexpr fixed tenth = constexpr_div(fixed{1}, 10);
+constexpr fixed hundredth = constexpr_div(fixed{1}, 100);
 constexpr fixed half = fixed{1} >> 1;
 constexpr fixed quarter = fixed{1} >> 2;
 constexpr fixed eighth = fixed{1} >> 4;
@@ -296,7 +317,7 @@ inline constexpr fixed abs(const fixed& f) {
   return fixed::from_internal(detail::fixed_abs(f._value));
 }
 
-inline constexpr fixed sqrt(const fixed& f) {
+inline fixed sqrt(const fixed& f) {
   if (f._value <= 0) {
     return 0;
   }
@@ -328,11 +349,11 @@ inline constexpr fixed sin(const fixed& f) {
   fixed angle2 = angle * angle;
   fixed out = angle;
 
-  constexpr fixed r6 = fixed{1} / 6;
-  constexpr fixed r120 = fixed{1} / 120;
-  constexpr fixed r5040 = fixed{1} / 5040;
-  constexpr fixed r362880 = fixed{1} / 362880;
-  constexpr fixed r39916800 = fixed{1} / 39916800;
+  constexpr fixed r6 = constexpr_div(fixed{1}, 6);
+  constexpr fixed r120 = constexpr_div(fixed{1}, 120);
+  constexpr fixed r5040 = constexpr_div(fixed{1}, 5040);
+  constexpr fixed r362880 = constexpr_div(fixed{1}, 362880);
+  constexpr fixed r39916800 = constexpr_div(fixed{1}, 39916800);
 
   angle *= angle2;
   out -= angle * r6;
