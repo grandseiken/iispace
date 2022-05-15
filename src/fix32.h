@@ -92,7 +92,7 @@ inline constexpr uint8_t clz(uint64_t x) {
 #endif
 #endif
 }
-}
+}  // namespace detail
 
 class fixed {
 public:
@@ -290,7 +290,7 @@ constexpr fixed half = fixed{1} >> 1;
 constexpr fixed quarter = fixed{1} >> 2;
 constexpr fixed eighth = fixed{1} >> 4;
 constexpr fixed sixteenth = fixed{1} >> 8;
-}
+}  // namespace fixed_c
 
 inline constexpr fixed abs(const fixed& f) {
   return fixed::from_internal(detail::fixed_abs(f._value));

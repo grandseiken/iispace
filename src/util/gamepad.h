@@ -29,8 +29,7 @@ struct PadConfig {
   Buttons _moveLeftButtons;
   Buttons _moveRightButtons;
 
-  void SetDefault()
-  {
+  void SetDefault() {
     _moveSticks.clear();
     _aimSticks.clear();
     _moveDpads.clear();
@@ -64,8 +63,7 @@ struct PadConfig {
     _bombButtons.push_back(7);
   }
 
-  void Write(std::ofstream& write)
-  {
+  void Write(std::ofstream& write) {
     for (std::size_t t = 0; t < _name.length(); ++t) {
       if (_name[t] == '\n' || _name[t] == '\r') {
         _name[t] = ' ';
@@ -73,9 +71,8 @@ struct PadConfig {
     }
     write << _name << "\n";
     for (std::size_t i = 0; i < _moveSticks.size(); ++i) {
-      write <<
-          _moveSticks[i]._axis1 << " " << _moveSticks[i]._axis1r << " " <<
-          _moveSticks[i]._axis2 << " " << _moveSticks[i]._axis2r << " ";
+      write << _moveSticks[i]._axis1 << " " << _moveSticks[i]._axis1r << " "
+            << _moveSticks[i]._axis2 << " " << _moveSticks[i]._axis2r << " ";
     }
     write << "\n";
     for (std::size_t i = 0; i < _moveDpads.size(); ++i) {
@@ -83,9 +80,8 @@ struct PadConfig {
     }
     write << "\n";
     for (std::size_t i = 0; i < _aimSticks.size(); ++i) {
-      write <<
-          _aimSticks[i]._axis1 << " " << _aimSticks[i]._axis1r << " " <<
-          _aimSticks[i]._axis2 << " " << _aimSticks[i]._axis2r << " ";
+      write << _aimSticks[i]._axis1 << " " << _aimSticks[i]._axis1r << " " << _aimSticks[i]._axis2
+            << " " << _aimSticks[i]._axis2r << " ";
     }
     write << "\n";
     for (std::size_t i = 0; i < _aimDpads.size(); ++i) {
@@ -122,8 +118,7 @@ struct PadConfig {
     write << "\n";
   }
 
-  void Read(std::ifstream& read)
-  {
+  void Read(std::ifstream& read) {
     _moveSticks.clear();
     _aimSticks.clear();
     _moveDpads.clear();

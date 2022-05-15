@@ -1,13 +1,12 @@
 #ifndef IISPACE_SRC_Z0_GAME_H
 #define IISPACE_SRC_Z0_GAME_H
 
-#include <memory>
-
 #include "lib.h"
 #include "modal.h"
 #include "replay.h"
 #include "save.h"
 #include "z.h"
+#include <memory>
 
 struct Particle;
 struct PlayerInput;

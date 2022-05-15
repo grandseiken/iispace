@@ -1,9 +1,9 @@
 #ifndef IISPACE_SRC_SHAPE_H
 #define IISPACE_SRC_SHAPE_H
 
+#include "z.h"
 #include <memory>
 #include <vector>
-#include "z.h"
 
 class Lib;
 class Shape {
@@ -20,8 +20,8 @@ public:
   void set_rotation(fixed rotation);
   void rotate(fixed rotation_amount);
 
-  virtual void render(Lib& lib, const fvec2& position, float rotation,
-                      colour_t colour_override = 0) const = 0;
+  virtual void
+  render(Lib& lib, const fvec2& position, float rotation, colour_t colour_override = 0) const = 0;
 
   vec2 centre;
   colour_t colour;

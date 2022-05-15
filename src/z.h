@@ -1,9 +1,9 @@
 #ifndef IISPACE_SRC_Z0_H
 #define IISPACE_SRC_Z0_H
 
+#include "fix32.h"
 #include <cmath>
 #include <string>
-#include "fix32.h"
 
 typedef uint32_t colour_t;
 static const int32_t PLAYERS = 4;
@@ -39,7 +39,7 @@ std::string decompress_string(const std::string& str);
 colour_t colour_cycle(colour_t rgb, int32_t cycle);
 
 // End namespace z.
-}
+}  // namespace z
 
 #define M_PIf 3.14159265358979323846264338327f
 
@@ -159,7 +159,7 @@ template <typename T>
 vec2_t<T> min(const vec2_t<T>& a, const vec2_t<T>& b) {
   return vec2_t<T>(std::min(a.x, b.x), std::min(a.y, b.y));
 }
-}
+}  // namespace std
 
 template <typename T>
 vec2_t<T> operator*(const T& t, const vec2_t<T>& v) {

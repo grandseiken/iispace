@@ -1,8 +1,8 @@
 #ifndef IISPACE_SRC_OVERMIND_H
 #define IISPACE_SRC_OVERMIND_H
 
-#include <vector>
 #include "z.h"
+#include <vector>
 class GameModal;
 class Ship;
 

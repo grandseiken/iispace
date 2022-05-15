@@ -1,8 +1,8 @@
 #ifndef IISPACE_SRC_REPLAY_H
 #define IISPACE_SRC_REPLAY_H
 
-#include <iispace.pb.h>
 #include "z.h"
+#include <iispace.pb.h>
 
 struct Replay {
   Replay(const std::string& path);
