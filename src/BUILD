@@ -86,6 +86,17 @@ cc_binary(
     "@ois",
     "@sfml",
   ],
+  linkopts = select({
+    "@bazel_tools//src/conditions:windows": [
+      "-DEFAULTLIB:advapi32.lib",
+      "-DEFAULTLIB:dxguid.lib",
+      "-DEFAULTLIB:dinput8.lib",
+      "-DEFAULTLIB:gdi32.lib",
+      "-DEFAULTLIB:opengl32.lib",
+      "-DEFAULTLIB:user32.lib",
+      "-DEFAULTLIB:winmm.lib",
+    ],
+  }),
 )
 
 cc_binary(

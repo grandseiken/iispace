@@ -1,0 +1,3 @@
+build --experimental_enable_runfiles
+build --cxxopt=/std:c++17
+build --copt=/WX

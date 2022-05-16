@@ -23,9 +23,9 @@ bazel_skylib_workspace()
 http_archive(
   name = "sfml",
   build_file = "@//deps:sfml.BUILD",
-  sha256 = "bf1e0643acb92369b24572b703473af60bac82caf5af61e77c063b779471bb7f",
+  sha256 = "3e807f7e810d6357ede35acd97615f1fe67b17028ff3d3d946328afb6104ab86",
   strip_prefix = "sfml-2.5.1",
-  url = "https://github.com/SFML/SFML/releases/download/2.5.1/SFML-2.5.1-sources.zip",
+  url = "https://www.sfml-dev.org/files/SFML-2.5.1-windows-vc15-64-bit.zip",
 )
 
 http_archive(
