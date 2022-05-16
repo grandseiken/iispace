@@ -16,9 +16,12 @@ public:
   SdlIoLayer(access_tag);
   ~SdlIoLayer();
 
-  void update() override;
   void swap_buffers() override;
-  bool should_close() const override;
+  std::optional<event_type> poll() override;
+
+  std::vector<controller::info> controller_info() const override;
+  controller::frame controller_frame(std::size_t index) const override;
+  void input_frame_clear() override;
 
 private:
   struct impl_t;
