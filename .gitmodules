@@ -1,9 +1,0 @@
-[submodule "dependencies/SFML"]
-	path = dependencies/SFML
-	url = http://github.com/SFML/SFML
-[submodule "dependencies/protobuf"]
-	path = dependencies/protobuf
-	url = http://github.com/google/protobuf
-[submodule "dependencies/OIS"]
-	path = dependencies/OIS
-	url = http://github.com/wgois/OIS
