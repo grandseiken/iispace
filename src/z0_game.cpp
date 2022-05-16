@@ -1,6 +1,5 @@
 #include "z0_game.h"
 #include "boss_chaser.h"
-#include "enemy.h"
 #include "lib.h"
 #include "overmind.h"
 #include "player.h"

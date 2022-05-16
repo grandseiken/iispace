@@ -2,7 +2,7 @@
 #define IISPACE_SRC_REPLAY_H
 
 #include "z.h"
-#include <iispace.pb.h>
+#include <src/iispace.pb.h>
 
 struct Replay {
   Replay(const std::string& path);
