@@ -6,6 +6,10 @@
 #include <iostream>
 #include <string>
 
+#ifdef _MSC_VER
+#include <windows.h>
+#endif
+
 class Handler : public OIS::JoyStickListener {
 public:
   Handler() : _arg(0), _button(-1), _axis1(-1), _axis2(-1), _pov(-1) {}
@@ -97,7 +101,8 @@ private:
 
 int assign_start(Handler& handler, OIS::JoyStick** pads, int& i, const std::string& name,
                  PadConfig::Buttons& buttons, std::string& dev_name, const std::vector<int>& done) {
-  std::cout << "Press the [" << name << "] button on the gamepad for PLAYER " << i + 1 << ":\n";
+  std::cout << "Press the [" << name << "] button on the gamepad for PLAYER " << i + 1 << ":"
+            << std::endl;
 
   handler.clear();
   while (true) {
@@ -138,7 +143,7 @@ int assign_start(Handler& handler, OIS::JoyStick** pads, int& i, const std::stri
         i = p;
         buttons.push_back(t);
         dev_name = handler.arg()->vendor();
-        std::cout << "\tAssigned button " << t << " to " << name << " on " << dev_name << "\n";
+        std::cout << "\tAssigned button " << t << " to " << name << " on " << dev_name << std::endl;
         return t;
       }
     }
@@ -150,7 +155,8 @@ void assign(Handler& handler, OIS::JoyStick** pads, int p, int i, const std::str
             const std::string& dev_name) {
   std::cout << "Tilt any [" << name
             << "] sticks FIRST UPWARDS AND THEN TO THE RIGHT, and press any [" << name
-            << "] D-pads, on gamepad for PLAYER " << i + 1 << "\n(or press [START] to continue):\n";
+            << "] D-pads, on gamepad for PLAYER " << i + 1
+            << "\n(or press [START] to continue):" << std::endl;
 
   handler.clear();
   while (true) {
@@ -165,7 +171,7 @@ void assign(Handler& handler, OIS::JoyStick** pads, int p, int i, const std::str
       }
       if (!found) {
         dpads.push_back(t);
-        std::cout << "\tAssigned D-pad " << t << " to " << name << " on " << dev_name << "\n";
+        std::cout << "\tAssigned D-pad " << t << " to " << name << " on " << dev_name << std::endl;
       }
     }
     std::pair<std::pair<int, bool>, std::pair<int, bool>> u = handler.axis();
@@ -185,7 +191,7 @@ void assign(Handler& handler, OIS::JoyStick** pads, int p, int i, const std::str
         stick._axis2r = u.second.second;
         sticks.push_back(stick);
         std::cout << "\tAssigned stick " << stick._axis1 << ", " << stick._axis2 << " to " << name
-                  << " on " << dev_name << "\n";
+                  << " on " << dev_name << std::endl;
       }
     }
     if (handler.button() == start) {
@@ -197,7 +203,7 @@ void assign(Handler& handler, OIS::JoyStick** pads, int p, int i, const std::str
 void assign(Handler& handler, OIS::JoyStick** pads, int p, int i, const std::string& name,
             PadConfig::Buttons& buttons, int start, const std::string& dev_name) {
   std::cout << "Press any [" << name << "] buttons on gamepad #" << i + 1
-            << "\n(or press [START] to continue):\n";
+            << "\n(or press [START] to continue):" << std::endl;
 
   handler.clear();
   while (true) {
@@ -215,16 +221,30 @@ void assign(Handler& handler, OIS::JoyStick** pads, int p, int i, const std::str
       }
       if (!found) {
         buttons.push_back(t);
-        std::cout << "\tAssigned button " << t << " to " << name << " on " << dev_name << "\n";
+        std::cout << "\tAssigned button " << t << " to " << name << " on " << dev_name << std::endl;
       }
     }
   }
 }
 
 int main(int argc, char** argv) {
+#ifdef _MSC_VER
+  static constexpr std::size_t kBufferSize = 1024;
+  char old_title[kBufferSize];
+  char new_title[kBufferSize];
+  GetConsoleTitle(old_title, kBufferSize);
+  wsprintf(new_title, "%d/%d", GetTickCount(), GetCurrentProcessId());
+  SetConsoleTitle(new_title);
+  Sleep(40);
+  HWND handle = FindWindow(nullptr, new_title);
+  SetConsoleTitle(old_title);
+  OIS::InputManager* manager =
+      OIS::InputManager::createInputSystem(reinterpret_cast<std::size_t>(handle));
+#else
   OIS::InputManager* manager = OIS::InputManager::createInputSystem(0);
+#endif
   int n = std::min(4, manager->getNumberOfDevices(OIS::OISJoyStick));
-  std::cout << "\nNumber of gamepads found: " << n << "\n\n";
+  std::cout << "\nNumber of gamepads found: " << n << "\n" << std::endl;
 
   OIS::JoyStick* pads[4] = {0, 0, 0, 0};
   Handler handler;
@@ -236,9 +256,10 @@ int main(int argc, char** argv) {
       std::cout << pads[i]->vendor()
                 << "\n\tAxes: " << pads[i]->getNumberOfComponents(OIS::OIS_Axis)
                 << "\n\tD-pads: " << pads[i]->getNumberOfComponents(OIS::OIS_POV)
-                << "\n\tButtons: " << pads[i]->getNumberOfComponents(OIS::OIS_Button) << "\n\n";
+                << "\n\tButtons: " << pads[i]->getNumberOfComponents(OIS::OIS_Button) << "\n"
+                << std::endl;
     } catch (const std::exception& e) {
-      std::cout << e.what() << "\n";
+      std::cout << e.what() << std::endl;
     }
   }
 
@@ -262,7 +283,7 @@ int main(int argc, char** argv) {
     assign(handler, pads, p, i, "MOVE DOWN", config[i]._moveDownButtons, start, config[i]._name);
     assign(handler, pads, p, i, "MOVE LEFT", config[i]._moveLeftButtons, start, config[i]._name);
     assign(handler, pads, p, i, "MOVE RIGHT", config[i]._moveRightButtons, start, config[i]._name);
-    std::cout << "\n";
+    std::cout << std::endl;
   }
   std::ofstream f("gamepads.txt");
   f << n << "\n";

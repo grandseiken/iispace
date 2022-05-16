@@ -23,5 +23,9 @@ cc_library(
     "@bazel_tools//src/conditions:windows": glob(["src/win32/*.cpp"]),
     "//conditions:default": glob(["src/linux/*.cpp"]),
   }),
+  defines = [
+    "OIS_WIN32_XINPUT_SUPPORT",
+    "OIS_NONCLIENT_BUILD",
+  ],
   visibility = ["//visibility:public"],
 )

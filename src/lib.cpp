@@ -286,7 +286,27 @@ Lib::Lib() : _cycle(0), _players(1), _capture_mouse(false), _mouse_moving(true),
 #endif
   _internals.reset(new Internals());
 
-  _internals->manager = OIS::InputManager::createInputSystem(0);
+  bool created = false;
+  for (int i = sf::VideoMode::getFullscreenModes().size() - 1; i >= 0 && !Settings().windowed;
+       --i) {
+    sf::VideoMode m = sf::VideoMode::getFullscreenModes()[i];
+    if (m.width >= unsigned(Lib::WIDTH) && m.height >= unsigned(Lib::HEIGHT) &&
+        m.bitsPerPixel == 32) {
+      _internals->window.create(m, "WiiSPACE", sf::Style::Close | sf::Style::Titlebar,
+                                sf::ContextSettings(0, 0, 0));
+      _extra.x = (m.width - Lib::WIDTH) / 2;
+      _extra.y = (m.height - Lib::HEIGHT) / 2;
+      created = true;
+      break;
+    }
+  }
+  if (!created) {
+    _internals->window.create(sf::VideoMode(640, 480, 32), "WiiSPACE",
+                              sf::Style::Close | sf::Style::Titlebar);
+  }
+
+  _internals->manager = OIS::InputManager::createInputSystem(
+      reinterpret_cast<std::size_t>(_internals->window.getSystemHandle()));
   _internals->pad_count = std::min(4, _internals->manager->getNumberOfDevices(OIS::OISJoyStick));
   OIS::JoyStick* tpads[4];
   tpads[0] = tpads[1] = tpads[2] = tpads[3] = 0;
@@ -374,25 +394,6 @@ Lib::Lib() : _cycle(0), _players(1), _capture_mouse(false), _mouse_moving(true),
       e->replay_delay = 0;
       _ff[i]->upload(e);
     }*/
-  }
-
-  bool created = false;
-  for (int i = sf::VideoMode::getFullscreenModes().size() - 1; i >= 0 && !Settings().windowed;
-       --i) {
-    sf::VideoMode m = sf::VideoMode::getFullscreenModes()[i];
-    if (m.width >= unsigned(Lib::WIDTH) && m.height >= unsigned(Lib::HEIGHT) &&
-        m.bitsPerPixel == 32) {
-      _internals->window.create(m, "WiiSPACE", sf::Style::Close | sf::Style::Titlebar,
-                                sf::ContextSettings(0, 0, 0));
-      _extra.x = (m.width - Lib::WIDTH) / 2;
-      _extra.y = (m.height - Lib::HEIGHT) / 2;
-      created = true;
-      break;
-    }
-  }
-  if (!created) {
-    _internals->window.create(sf::VideoMode(640, 480, 32), "WiiSPACE",
-                              sf::Style::Close | sf::Style::Titlebar);
   }
 
   sf::Image image;
