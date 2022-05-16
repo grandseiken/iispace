@@ -2,25 +2,7 @@
 #define IISPACE_GAME_LOGIC_PLAYER_H
 #include "game/logic/ship.h"
 
-class Player;
-struct PlayerInput {
-  virtual void get(const Player& player, vec2& velocity, vec2& target, int32_t& keys) = 0;
-  virtual ~PlayerInput() {}
-};
-struct ReplayPlayerInput : PlayerInput {
-  ReplayPlayerInput(const Replay& replay);
-  void get(const Player& player, vec2& velocity, vec2& target, int32_t& keys) override;
-
-  const Replay& replay;
-  std::size_t replay_frame;
-};
-struct LibPlayerInput : PlayerInput {
-  LibPlayerInput(Lib& lib, Replay& replay);
-  void get(const Player& player, vec2& velocity, vec2& target, int32_t& keys) override;
-
-  Lib& lib;
-  Replay& replay;
-};
+class PlayerInput;
 
 class Player : public Ship {
 public:
@@ -86,8 +68,8 @@ private:
   int32_t _death_count;
 
   static int32_t _fire_timer;
-  static GameModal::ship_list _kill_queue;
-  static GameModal::ship_list _shot_sound_queue;
+  static SimState::ship_list _kill_queue;
+  static SimState::ship_list _shot_sound_queue;
 };
 
 class Shot : public Ship {

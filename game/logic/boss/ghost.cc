@@ -7,7 +7,7 @@ static const int32_t GB_ATTACK_TIME = 100;
 static const fixed GB_WALL_SPEED = 3 + fixed(1) / 2;
 
 GhostBoss::GhostBoss(int32_t players, int32_t cycle)
-: Boss(vec2(Lib::WIDTH / 2, Lib::HEIGHT / 2), GameModal::BOSS_2B, GB_BASE_HP, players, cycle)
+: Boss(vec2(Lib::WIDTH / 2, Lib::HEIGHT / 2), SimState::BOSS_2B, GB_BASE_HP, players, cycle)
 , _visible(false)
 , _vtime(0)
 , _timer(0)

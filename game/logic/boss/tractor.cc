@@ -6,7 +6,7 @@ static const int32_t TB_TIMER = 100;
 static const fixed TB_SPEED = 2;
 
 TractorBoss::TractorBoss(int32_t players, int32_t cycle)
-: Boss(vec2(Lib::WIDTH * (1 + fixed_c::half), Lib::HEIGHT / 2), GameModal::BOSS_2A, TB_BASE_HP,
+: Boss(vec2(Lib::WIDTH * (1 + fixed_c::half), Lib::HEIGHT / 2), SimState::BOSS_2A, TB_BASE_HP,
        players, cycle)
 , _will_attack(false)
 , _stopped(false)

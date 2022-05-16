@@ -2,6 +2,7 @@
 #define IISPACE_GAME_COMMON_Z_H
 #include "game/common/fix32.h"
 #include <cmath>
+#include <cstdint>
 #include <string>
 
 typedef uint32_t colour_t;

@@ -1,10 +1,12 @@
 #ifndef IISPACE_GAME_CORE_Z0_GAME_H
 #define IISPACE_GAME_CORE_Z0_GAME_H
+#include "game/common/z.h"
 #include "game/core/lib.h"
 #include "game/core/modal.h"
 #include "game/core/replay.h"
 #include "game/core/save.h"
-#include "game/common/z.h"
+#include "game/logic/sim_state.h"
+#include <cstdint>
 #include <memory>
 
 struct Particle;
@@ -33,7 +35,7 @@ private:
 
 class HighScoreModal : public Modal {
 public:
-  HighScoreModal(SaveData& save, GameModal& game, Overmind& overmind, bool replay, int32_t seed);
+  HighScoreModal(SaveData& save, GameModal& game, const SimState::results& results);
   void update(Lib& lib) override;
   void render(Lib& lib) const override;
 
@@ -43,7 +45,7 @@ private:
 
   SaveData& _save;
   GameModal& _game;
-  Overmind& _overmind;
+  SimState::results _results;
   bool _replay;
   int32_t _seed;
 
@@ -57,78 +59,26 @@ private:
 
 class GameModal : public Modal {
 public:
-  enum boss_list {
-    BOSS_1A = 1,
-    BOSS_1B = 2,
-    BOSS_1C = 4,
-    BOSS_2A = 8,
-    BOSS_2B = 16,
-    BOSS_2C = 32,
-    BOSS_3A = 64,
-  };
-
-  GameModal(Lib& lib, SaveData& save, Settings& settings, int32_t* frame_count, Mode::mode mode,
-            int32_t player_count, bool can_face_secret_boss);
-  GameModal(Lib& lib, SaveData& save, Settings& settings, int32_t* frame_count,
+  GameModal(Lib& lib, SaveData& save, Settings& settings, std::int32_t* frame_count,
+            Mode::mode mode, int32_t player_count, bool can_face_secret_boss);
+  GameModal(Lib& lib, SaveData& save, Settings& settings, std::int32_t* frame_count,
             const std::string& replay_path);
   ~GameModal();
 
+  const SimState& sim_state() const {
+    return *_state;
+  }
   void update(Lib& lib) override;
   void render(Lib& lib) const override;
 
-  Lib& lib();
-  Mode::mode mode() const;
-  void write_replay(const std::string& team_name, int64_t score) const;
-
-  typedef std::vector<Ship*> ship_list;
-  void add_ship(Ship* ship);
-  void add_particle(const Particle& particle);
-  int32_t get_non_wall_count() const;
-
-  ship_list all_ships(int32_t ship_mask = 0) const;
-  ship_list ships_in_radius(const vec2& point, fixed radius, int32_t ship_mask = 0) const;
-  ship_list collision_list(const vec2& point, int32_t category) const;
-  bool any_collision(const vec2& point, int32_t category) const;
-
-  int32_t alive_players() const;
-  int32_t killed_players() const;
-  Player* nearest_player(const vec2& point) const;
-  const ship_list& players() const;
-
-  void add_life();
-  void sub_life();
-  int32_t get_lives() const;
-
-  void render_hp_bar(float fill);
-  void set_boss_killed(boss_list boss);
-
 private:
-  GameModal(Lib& lib, SaveData& save, Settings& settings, int32_t* frame_count, Replay&& replay,
-            bool replay_recording);
-
-  Lib& _lib;
   SaveData& _save;
   Settings& _settings;
-  PauseModal::output_t _pause_output;
-  int32_t* _frame_count;
-  int32_t _kill_timer;
-
-  Replay _replay;
-  bool _replay_recording;
-  std::unique_ptr<PlayerInput> _input;
-
-  int32_t _lives;
-  std::unique_ptr<Overmind> _overmind;
-  std::vector<Particle> _particles;
-  std::vector<std::unique_ptr<Ship>> _ships;
-  ship_list _player_list;
-  ship_list _collisions;
-
-  int32_t _controllers_connected;
-  bool _controllers_dialog;
-
-  mutable bool _show_hp_bar;
-  mutable float _fill_hp_bar;
+  std::int32_t* _frame_count;
+  PauseModal::output_t _pause_output = PauseModal::CONTINUE;
+  int32_t _controllers_connected = 0;
+  bool _controllers_dialog = true;
+  std::unique_ptr<SimState> _state;
 };
 
 struct score_finished {};

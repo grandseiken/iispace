@@ -6,7 +6,7 @@ static const int32_t SB_ARC_HP = 75;
 
 SuperBossArc::SuperBossArc(const vec2& position, int32_t players, int32_t cycle, int32_t i,
                            Ship* boss, int32_t timer)
-: Boss(position, GameModal::boss_list(0), SB_ARC_HP, players, cycle)
+: Boss(position, SimState::boss_list(0), SB_ARC_HP, players, cycle)
 , _boss(boss)
 , _i(i)
 , _timer(timer)
@@ -60,7 +60,7 @@ void SuperBossArc::on_destroy() {
 }
 
 SuperBoss::SuperBoss(int32_t players, int32_t cycle)
-: Boss(vec2(Lib::WIDTH / 2, -Lib::HEIGHT / (2 + fixed_c::half)), GameModal::BOSS_3A, SB_BASE_HP,
+: Boss(vec2(Lib::WIDTH / 2, -Lib::HEIGHT / (2 + fixed_c::half)), SimState::BOSS_3A, SB_BASE_HP,
        players, cycle)
 , _players(players)
 , _cycle(cycle)

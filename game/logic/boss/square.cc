@@ -11,7 +11,7 @@ static const fixed BSB_SPEED = 2 + fixed(1) / 2;
 static const fixed BSB_ATTACK_RADIUS = 120;
 
 BigSquareBoss::BigSquareBoss(int32_t players, int32_t cycle)
-: Boss(vec2(Lib::WIDTH * fixed_c::hundredth * 75, Lib::HEIGHT * 2), GameModal::BOSS_1A, BSB_BASE_HP,
+: Boss(vec2(Lib::WIDTH * fixed_c::hundredth * 75, Lib::HEIGHT * 2), SimState::BOSS_1A, BSB_BASE_HP,
        players, cycle)
 , _dir(0, -1)
 , _reverse(false)

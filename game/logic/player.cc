@@ -1,27 +1,10 @@
 #include "game/logic/player.h"
-#include "game/logic/enemy.h"
 #include "game/core/lib.h"
 #include "game/core/replay.h"
+#include "game/core/z0_game.h"
+#include "game/logic/enemy.h"
+#include "game/logic/player_input.h"
 #include <algorithm>
-
-ReplayPlayerInput::ReplayPlayerInput(const Replay& replay) : replay(replay), replay_frame(0) {}
-
-void ReplayPlayerInput::get(const Player& player, vec2& velocity, vec2& target, int32_t& keys) {
-  const auto& pf = replay.replay.player_frame(replay_frame++);
-  velocity = vec2(fixed::from_internal(pf.velocity_x()), fixed::from_internal(pf.velocity_y()));
-  target = vec2(fixed::from_internal(pf.target_x()), fixed::from_internal(pf.target_y()));
-  keys = pf.keys();
-}
-
-LibPlayerInput::LibPlayerInput(Lib& lib, Replay& replay) : lib(lib), replay(replay) {}
-
-void LibPlayerInput::get(const Player& player, vec2& velocity, vec2& target, int32_t& keys) {
-  velocity = lib.get_move_velocity(player.player_number());
-  target = lib.get_fire_target(player.player_number(), player.shape().centre);
-  keys = int32_t(lib.is_key_held(player.player_number(), Lib::KEY_FIRE)) |
-      (lib.is_key_pressed(player.player_number(), Lib::KEY_BOMB) << 1);
-  replay.record(velocity, target, keys);
-}
 
 static const fixed PLAYER_SPEED = 5;
 static const fixed SHOT_SPEED = 10;
@@ -35,8 +18,8 @@ static const int32_t SHOT_TIMER = 4;
 static const int32_t MAGIC_SHOT_COUNT = 120;
 static const int32_t POWERUP_ROTATE_TIME = 100;
 
-GameModal::ship_list Player::_kill_queue;
-GameModal::ship_list Player::_shot_sound_queue;
+SimState::ship_list Player::_kill_queue;
+SimState::ship_list Player::_shot_sound_queue;
 int32_t Player::_fire_timer;
 
 Player::Player(PlayerInput& input, const vec2& position, int32_t player_number)

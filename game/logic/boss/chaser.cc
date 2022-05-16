@@ -80,7 +80,7 @@ static const int32_t ONE_PT_ONE_FIVE_intLookup[128] = {
 
 ChaserBoss::ChaserBoss(int32_t players, int32_t cycle, int32_t split, const vec2& position,
                        int32_t time, int32_t stagger)
-: Boss(!split ? vec2(Lib::WIDTH / 2, -Lib::HEIGHT / 2) : position, GameModal::BOSS_1C,
+: Boss(!split ? vec2(Lib::WIDTH / 2, -Lib::HEIGHT / 2) : position, SimState::BOSS_1C,
        1 + CB_BASE_HP / (fixed_c::half + HP_REDUCE_POWER_lookup[split]).to_int(), players, cycle,
        split <= 1)
 , _on_screen(split != 0)

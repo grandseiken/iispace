@@ -1,18 +1,8 @@
 #ifndef IISPACE_GAME_LOGIC_SHIP_H
 #define IISPACE_GAME_LOGIC_SHIP_H
+#include "game/core/lib.h"
 #include "game/logic/shape.h"
-#include "game/core/z0_game.h"
-
-struct Particle {
-  Particle(const fvec2& position, colour_t colour, const fvec2& velocity, int32_t time)
-  : destroy(false), position(position), velocity(velocity), timer(time), colour(colour) {}
-
-  bool destroy;
-  fvec2 position;
-  fvec2 velocity;
-  int32_t timer;
-  colour_t colour;
-};
+#include "game/logic/sim_state.h"
 
 class Ship {
 public:
@@ -30,7 +20,7 @@ public:
   Ship(const vec2& position, ship_category type);
   virtual ~Ship();
 
-  void set_game(GameModal& game) {
+  void set_game(SimState& game) {
     _game = &game;
   }
 
@@ -38,7 +28,7 @@ public:
     return _game->lib();
   }
 
-  GameModal& game() const {
+  SimState& game() const {
     return *_game;
   }
 
@@ -126,7 +116,7 @@ protected:
   }
 
 private:
-  GameModal* _game;
+  SimState* _game;
   ship_category _type;
   bool _destroy;
   CompoundShape _shape;

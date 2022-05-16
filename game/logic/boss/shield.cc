@@ -9,7 +9,7 @@ static const int32_t SBB_ATTACK_TIME = 80;
 static const fixed SBB_SPEED = 1;
 
 ShieldBombBoss::ShieldBombBoss(int32_t players, int32_t cycle)
-: Boss(vec2(-Lib::WIDTH / 2, Lib::HEIGHT / 2), GameModal::BOSS_1B, SBB_BASE_HP, players, cycle)
+: Boss(vec2(-Lib::WIDTH / 2, Lib::HEIGHT / 2), SimState::BOSS_1B, SBB_BASE_HP, players, cycle)
 , _timer(0)
 , _count(0)
 , _unshielded(0)

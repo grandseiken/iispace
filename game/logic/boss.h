@@ -4,7 +4,7 @@
 
 class Boss : public Ship {
 public:
-  Boss(const vec2& position, GameModal::boss_list boss, int32_t hp, int32_t players,
+  Boss(const vec2& position, SimState::boss_list boss, int32_t hp, int32_t players,
        int32_t cycle = 0, bool explode_on_damage = true);
 
   void set_killed() {
@@ -52,7 +52,7 @@ protected:
 private:
   int32_t _hp;
   int32_t _max_hp;
-  GameModal::boss_list _flag;
+  SimState::boss_list _flag;
   int64_t _score;
   int32_t _ignore_damage_colour;
   mutable int32_t _damaged;

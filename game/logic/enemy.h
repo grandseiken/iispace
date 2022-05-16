@@ -128,7 +128,7 @@ private:
 
   bool _ready;
   bool _spinning;
-  GameModal::ship_list _players;
+  SimState::ship_list _players;
 };
 
 class BossShot : public Enemy {

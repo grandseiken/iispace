@@ -13,7 +13,7 @@ static const fixed DRB_ARM_SPEED = 4;
 static const fixed DRB_RAY_SPEED = 10;
 
 DeathRayBoss::DeathRayBoss(int32_t players, int32_t cycle)
-: Boss(vec2(Lib::WIDTH * (fixed(3) / 20), -Lib::HEIGHT), GameModal::BOSS_2C, DRB_BASE_HP, players,
+: Boss(vec2(Lib::WIDTH * (fixed(3) / 20), -Lib::HEIGHT), SimState::BOSS_2C, DRB_BASE_HP, players,
        cycle)
 , _timer(DRB_TIMER * 2)
 , _laser(false)

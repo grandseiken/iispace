@@ -3,8 +3,8 @@
 #include "game/common/z.h"
 #include <vector>
 
-class GameModal;
 class Ship;
+class SimState;
 
 class formation_base;
 class Overmind {
@@ -18,7 +18,7 @@ public:
   static const int32_t LEVELS_PER_GROUP = 4;
   static const int32_t BASE_GROUPS_PER_BOSS = 4;
 
-  Overmind(GameModal& game, bool can_face_secret_boss);
+  Overmind(SimState& game, bool can_face_secret_boss);
   ~Overmind();
 
   // General
@@ -62,7 +62,7 @@ private:
   void boss();
   void boss_mode_boss();
 
-  GameModal& _game;
+  SimState& _game;
   int32_t _power;
   int32_t _timer;
   int32_t _count;

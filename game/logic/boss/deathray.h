@@ -18,7 +18,7 @@ private:
   bool _laser;
   bool _dir;
   int32_t _pos;
-  GameModal::ship_list _arms;
+  SimState::ship_list _arms;
   int32_t _arm_timer;
   int32_t _shot_timer;
 

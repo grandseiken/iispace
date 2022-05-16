@@ -17,7 +17,7 @@ public:
 
   virtual void operator()() = 0;
 
-  void operator()(GameModal* game, int32_t row, int32_t power, int32_t* hard_already) {
+  void operator()(SimState* game, int32_t row, int32_t power, int32_t* hard_already) {
     _game = game;
     _row = row;
     _power = power;
@@ -100,7 +100,7 @@ private:
     }
   }
 
-  GameModal* _game;
+  SimState* _game;
   int32_t _row;
   int32_t _power;
   int32_t* _hard_already;
@@ -108,7 +108,7 @@ private:
 
 std::vector<Overmind::entry> formation_base::static_formations;
 
-Overmind::Overmind(GameModal& game, bool can_face_secret_boss)
+Overmind::Overmind(SimState& game, bool can_face_secret_boss)
 : _game(game)
 , _power(0)
 , _timer(0)

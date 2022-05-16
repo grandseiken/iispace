@@ -1,20 +1,11 @@
 #include "game/core/z0_game.h"
-#include "game/logic/boss/chaser.h"
 #include "game/core/lib.h"
-#include "game/logic/overmind.h"
 #include "game/logic/player.h"
-#include "game/logic/stars.h"
+#include "game/logic/sim_state.h"
 #include <algorithm>
 #include <iostream>
 
 namespace {
-
-void render_panel(Lib& lib, const fvec2& low, const fvec2& hi) {
-  fvec2 tlow(low.x * Lib::TEXT_WIDTH, low.y * Lib::TEXT_HEIGHT);
-  fvec2 thi(hi.x * Lib::TEXT_WIDTH, hi.y * Lib::TEXT_HEIGHT);
-  lib.render_rect(tlow, thi, z0Game::PANEL_BACK);
-  lib.render_rect(tlow, thi, z0Game::PANEL_TEXT, 4);
-}
 
 std::string convert_to_time(int64_t score) {
   if (score == 0) {
@@ -39,7 +30,13 @@ std::string convert_to_time(int64_t score) {
   return r.str();
 }
 
-// End anonymous namespace.
+void render_panel(Lib& lib, const fvec2& low, const fvec2& hi) {
+  fvec2 tlow(low.x * Lib::TEXT_WIDTH, low.y * Lib::TEXT_HEIGHT);
+  fvec2 thi(hi.x * Lib::TEXT_WIDTH, hi.y * Lib::TEXT_HEIGHT);
+  lib.render_rect(tlow, thi, z0Game::PANEL_BACK);
+  lib.render_rect(tlow, thi, z0Game::PANEL_TEXT, 4);
+}
+
 }  // namespace
 
 PauseModal::PauseModal(output_t* output, Settings& settings)
@@ -132,14 +129,11 @@ static const std::vector<std::string> COMPLIMENTS{
 
 static const std::string ALLOWED_CHARS = "ABCDEFGHiJKLMNOPQRSTUVWXYZ 1234567890! ";
 
-HighScoreModal::HighScoreModal(SaveData& save, GameModal& game, Overmind& overmind, bool replay,
-                               int32_t seed)
+HighScoreModal::HighScoreModal(SaveData& save, GameModal& game, const SimState::results& results)
 : Modal(true, false)
 , _save(save)
 , _game(game)
-, _overmind(overmind)
-, _replay(replay)
-, _seed(seed)
+, _results(results)
 , _enter_char(0)
 , _enter_r(0)
 , _enter_time(0)
@@ -148,16 +142,14 @@ HighScoreModal::HighScoreModal(SaveData& save, GameModal& game, Overmind& overmi
 
 void HighScoreModal::update(Lib& lib) {
   ++_timer;
-  Mode::mode mode = _game.mode();
-  int32_t players = _game.players().size();
 
 #ifdef PLATFORM_SCORE
-  std::cout << _seed << "\n"
-            << players << "\n"
-            << (mode == Mode::BOSS) << "\n"
-            << (mode == Mode::HARD) << "\n"
-            << (mode == Mode::FAST) << "\n"
-            << (mode == Mode::WHAT) << "\n"
+  std::cout << _results.seed << "\n"
+            << _results.players.size() << "\n"
+            << (_results.mode == Mode::BOSS) << "\n"
+            << (_results.mode == Mode::HARD) << "\n"
+            << (_results.mode == Mode::FAST) << "\n"
+            << (_results.mode == Mode::WHAT) << "\n"
             << get_score() << "\n"
             << std::flush;
   throw score_finished{};
@@ -165,7 +157,7 @@ void HighScoreModal::update(Lib& lib) {
 
   if (!is_high_score()) {
     if (lib.is_key_pressed(Lib::KEY_MENU)) {
-      _game.write_replay("untitled", get_score());
+      _game.sim_state().write_replay("untitled", get_score());
       _save.save();
       lib.play_sound(Lib::SOUND_MENU_ACCEPT);
       quit();
@@ -204,15 +196,16 @@ void HighScoreModal::update(Lib& lib) {
 
   if (lib.is_key_pressed(Lib::KEY_MENU)) {
     lib.play_sound(Lib::SOUND_MENU_ACCEPT);
-    _save.high_scores.add_score(mode, players - 1, _enter_name, get_score());
-    _game.write_replay(_enter_name, get_score());
+    _save.high_scores.add_score(_results.mode, _results.players.size() - 1, _enter_name,
+                                get_score());
+    _game.sim_state().write_replay(_enter_name, get_score());
     _save.save();
     quit();
   }
 }
 
 void HighScoreModal::render(Lib& lib) const {
-  int32_t players = _game.players().size();
+  int32_t players = _results.players.size();
   if (is_high_score()) {
     render_panel(lib, fvec2(3.f, 20.f), fvec2(28.f, 27.f));
     lib.render_text(fvec2(4.f, 21.f), "It's a high score!", z0Game::PANEL_TEXT);
@@ -228,11 +221,11 @@ void HighScoreModal::render(Lib& lib) const {
     lib.render_rect(low, hi, z0Game::PANEL_TEXT, 1);
   }
 
-  if (_game.mode() == Mode::BOSS) {
-    int32_t extra_lives = _game.get_lives();
-    bool b = extra_lives > 0 && _overmind.get_killed_bosses() >= 6;
+  if (_results.mode == Mode::BOSS) {
+    int32_t extra_lives = _results.lives_remaining;
+    bool b = extra_lives > 0 && _results.killed_bosses >= 6;
 
-    long score = _overmind.get_elapsed_time();
+    long score = _results.elapsed_time;
     if (b) {
       score -= 10 * extra_lives;
     }
@@ -250,7 +243,7 @@ void HighScoreModal::render(Lib& lib) const {
     lib.render_text(fvec2(4.f, b ? 6.f : 4.f), "TIME ELAPSED: " + convert_to_time(score),
                     z0Game::PANEL_TEXT);
     std::stringstream ss;
-    ss << "BOSS DESTROY: " << _overmind.get_killed_bosses();
+    ss << "BOSS DESTROY: " << _results.killed_bosses;
     lib.render_text(fvec2(4.f, b ? 8.f : 6.f), ss.str(), z0Game::PANEL_TEXT);
     return;
   }
@@ -268,9 +261,9 @@ void HighScoreModal::render(Lib& lib) const {
   for (int32_t i = 0; i < players; ++i) {
     std::stringstream sss;
     if (_timer % 600 < 300) {
-      sss << ((Player*)_game.players()[i])->score();
+      sss << _results.players[i].score;
     } else {
-      int32_t deaths = ((Player*)_game.players()[i])->deaths();
+      auto deaths = _results.players[i].deaths;
       sss << deaths << " death" << (deaths != 1 ? "s" : "");
     }
     score = sss.str();
@@ -291,11 +284,10 @@ void HighScoreModal::render(Lib& lib) const {
   bool first = true;
   int64_t max = 0;
   std::size_t best = 0;
-  for (Ship* ship : _game.players()) {
-    Player* p = (Player*)ship;
-    if (first || p->score() > max) {
-      max = p->score();
-      best = p->player_number();
+  for (const auto& p : _results.players) {
+    if (first || p.score > max) {
+      max = p.score;
+      best = p.number;
     }
     first = false;
   }
@@ -313,64 +305,62 @@ void HighScoreModal::render(Lib& lib) const {
 }
 
 int64_t HighScoreModal::get_score() const {
-  if (_game.mode() == Mode::BOSS) {
-    bool won = _overmind.get_killed_bosses() >= 6 && _overmind.get_elapsed_time() != 0;
-    return !won ? 0l : std::max(1l, _overmind.get_elapsed_time() - 600l * _game.get_lives());
+  if (_results.mode == Mode::BOSS) {
+    bool won = _results.killed_bosses >= 6 && _results.elapsed_time != 0;
+    return !won ? 0l : std::max(1l, _results.elapsed_time - 600l * _results.lives_remaining);
   }
   int64_t total = 0;
-  for (Ship* ship : _game.players()) {
-    total += ((Player*)ship)->score();
+  for (const auto& p : _results.players) {
+    total += p.score;
   }
   return total;
 }
 
 bool HighScoreModal::is_high_score() const {
-  return !_replay &&
-      _save.high_scores.is_high_score(_game.mode(), _game.players().size() - 1, get_score());
+  return !_results.is_replay &&
+      _save.high_scores.is_high_score(_results.mode, _results.players.size() - 1, get_score());
 }
 
-GameModal::GameModal(Lib& lib, SaveData& save, Settings& settings, int32_t* frame_count,
+GameModal::GameModal(Lib& lib, SaveData& save, Settings& settings, std::int32_t* frame_count,
                      Mode::mode mode, int32_t player_count, bool can_face_secret_boss)
-: GameModal(lib, save, settings, frame_count, Replay(mode, player_count, can_face_secret_boss),
-            true) {}
+: Modal(true, true), _save{save}, _settings{settings}, _frame_count{frame_count} {
+  _state =
+      std::make_unique<SimState>(lib, save, frame_count, mode, player_count, can_face_secret_boss);
+}
 
-GameModal::GameModal(Lib& lib, SaveData& save, Settings& settings, int32_t* frame_count,
+GameModal::GameModal(Lib& lib, SaveData& save, Settings& settings, std::int32_t* frame_count,
                      const std::string& replay_path)
-: GameModal(lib, save, settings, frame_count, Replay(replay_path), false) {
-  lib.set_player_count(_replay.replay.players());
-  lib.new_game();
+: Modal(true, true), _save{save}, _settings{settings}, _frame_count{frame_count} {
+  _state = std::make_unique<SimState>(lib, save, frame_count, replay_path);
 }
 
-GameModal::~GameModal() {
-  Stars::clear();
-  Boss::_fireworks.clear();
-  Boss::_warnings.clear();
-  *_frame_count = 1;
-}
+GameModal::~GameModal() {}
 
 void GameModal::update(Lib& lib) {
-  if (_pause_output == PauseModal::END_GAME) {
-    add(new HighScoreModal(_save, *this, *_overmind, !_replay_recording, _replay.replay.seed()));
+  if (_pause_output == PauseModal::END_GAME || _state->game_over()) {
+    add(new HighScoreModal(_save, *this, _state->get_results()));
     *_frame_count = 1;
+    if (_pause_output != PauseModal::END_GAME) {
+      lib.play_sound(Lib::SOUND_MENU_ACCEPT);
+    }
     quit();
     return;
   }
-  Boss::_warnings.clear();
+
+  if (lib.is_key_pressed(Lib::KEY_MENU)) {
+    lib.capture_mouse(false);
+    add(new PauseModal(&_pause_output, _settings));
+    lib.play_sound(Lib::SOUND_MENU_ACCEPT);
+    return;
+  }
   lib.capture_mouse(true);
 
-  lib.set_colour_cycle(mode() == Mode::HARD       ? 128
-                           : mode() == Mode::FAST ? 192
-                           : mode() == Mode::WHAT ? (lib.get_colour_cycle() + 1) % 256
-                                                  : 0);
-  if (_replay_recording) {
-    *_frame_count = mode() == Mode::FAST ? 2 : 1;
-  }
-
+  auto results = _state->get_results();
   int32_t controllers = 0;
-  for (std::size_t i = 0; i < players().size(); i++) {
+  for (std::size_t i = 0; i < results.players.size(); ++i) {
     controllers += lib.get_pad_type(i);
   }
-  if (controllers < _controllers_connected && !_controllers_dialog && _replay_recording) {
+  if (controllers < _controllers_connected && !_controllers_dialog && !results.is_replay) {
     _controllers_dialog = true;
     lib.play_sound(Lib::SOUND_MENU_ACCEPT);
   }
@@ -380,134 +370,32 @@ void GameModal::update(Lib& lib) {
     if (lib.is_key_pressed(Lib::KEY_MENU) || lib.is_key_pressed(Lib::KEY_ACCEPT)) {
       _controllers_dialog = false;
       lib.play_sound(Lib::SOUND_MENU_ACCEPT);
-      for (std::size_t i = 0; i < players().size(); i++) {
+      for (std::size_t i = 0; i < results.players.size(); ++i) {
         lib.rumble(i, 10);
       }
     }
     return;
   }
 
-  if (lib.is_key_pressed(Lib::KEY_MENU)) {
-    add(new PauseModal(&_pause_output, _settings));
-    lib.play_sound(Lib::SOUND_MENU_ACCEPT);
-    return;
-  }
-
-  if (!_replay_recording) {
-    if (lib.is_key_pressed(Lib::KEY_BOMB)) {
-      *_frame_count *= 2;
-    }
-    if (lib.is_key_pressed(Lib::KEY_FIRE) && *_frame_count > (mode() == Mode::FAST ? 2 : 1)) {
-      *_frame_count /= 2;
-    }
-  }
-
-  Player::update_fire_timer();
-  ChaserBoss::_has_counted = false;
-  auto sort_ships = [](const Ship* a, const Ship* b) {
-    return a->shape().centre.x - a->bounding_width() < b->shape().centre.x - b->bounding_width();
-  };
-  std::stable_sort(_collisions.begin(), _collisions.end(), sort_ships);
-  for (std::size_t i = 0; i < _ships.size(); ++i) {
-    if (!_ships[i]->is_destroyed()) {
-      _ships[i]->update();
-    }
-  }
-  for (auto& particle : _particles) {
-    if (!particle.destroy) {
-      particle.position += particle.velocity;
-      if (--particle.timer <= 0) {
-        particle.destroy = true;
-      }
-    }
-  }
-  for (auto it = Boss::_fireworks.begin(); it != Boss::_fireworks.end();) {
-    if (it->first > 0) {
-      --(it++)->first;
-      continue;
-    }
-    vec2 v = _ships[0]->shape().centre;
-    _ships[0]->shape().centre = it->second.first;
-    _ships[0]->explosion(0xffffffff);
-    _ships[0]->explosion(it->second.second, 16);
-    _ships[0]->explosion(0xffffffff, 24);
-    _ships[0]->explosion(it->second.second, 32);
-    _ships[0]->shape().centre = v;
-    it = Boss::_fireworks.erase(it);
-  }
-
-  for (auto it = _ships.begin(); it != _ships.end();) {
-    if (!(*it)->is_destroyed()) {
-      ++it;
-      continue;
-    }
-
-    if ((*it)->type() & Ship::SHIP_ENEMY) {
-      _overmind->on_enemy_destroy(**it);
-    }
-    for (auto jt = _collisions.begin(); jt != _collisions.end();) {
-      if (it->get() == *jt) {
-        jt = _collisions.erase(jt);
-        continue;
-      }
-      ++jt;
-    }
-
-    it = _ships.erase(it);
-  }
-
-  for (auto it = _particles.begin(); it != _particles.end();) {
-    if (it->destroy) {
-      it = _particles.erase(it);
-      continue;
-    }
-    ++it;
-  }
-  _overmind->update();
-
-  if (!_kill_timer &&
-      ((killed_players() == (int32_t)players().size() && !get_lives()) ||
-       (mode() == Mode::BOSS && _overmind->get_killed_bosses() >= 6))) {
-    _kill_timer = 100;
-  }
-  if (_kill_timer) {
-    _kill_timer--;
-    if (!_kill_timer) {
-      add(new HighScoreModal(_save, *this, *_overmind, !_replay_recording, _replay.replay.seed()));
-      *_frame_count = 1;
-      lib.play_sound(Lib::SOUND_MENU_ACCEPT);
-      quit();
-    }
-  }
+  _state->update(lib);
 }
 
 void GameModal::render(Lib& lib) const {
-  _show_hp_bar = false;
-  _fill_hp_bar = 0;
-  Stars::render(lib);
-  for (const auto& particle : _particles) {
-    lib.render_rect(particle.position + fvec2(1, 1), particle.position - fvec2(1, 1),
-                    particle.colour);
-  }
-  for (std::size_t i = _player_list.size(); i < _ships.size(); ++i) {
-    _ships[i]->render();
-  }
-  for (const auto& ship : _player_list) {
-    ship->render();
-  }
+  _state->render(lib);
+  auto results = _state->get_results();
 
   if (_controllers_dialog) {
-    render_panel(lib, fvec2(3.f, 3.f), fvec2(32.f, 8.f + 2 * players().size()));
+    render_panel(lib, fvec2(3.f, 3.f), fvec2(32.f, 8.f + 2 * results.players.size()));
     lib.render_text(fvec2(4.f, 4.f), "CONTROLLERS FOUND", z0Game::PANEL_TEXT);
 
-    for (std::size_t i = 0; i < players().size(); i++) {
+    for (std::size_t i = 0; i < results.players.size(); i++) {
       std::stringstream ss;
       ss << "PLAYER " << (i + 1) << ": ";
       lib.render_text(fvec2(4.f, 8.f + 2 * i), ss.str(), z0Game::PANEL_TEXT);
 
       std::stringstream ss2;
       int32_t pads = lib.get_pad_type(i);
-      if (!_replay_recording) {
+      if (results.is_replay) {
         ss2 << "REPLAY";
         pads = 1;
       } else {
@@ -531,9 +419,9 @@ void GameModal::render(Lib& lib) const {
   }
 
   std::stringstream ss;
-  ss << _lives << " live(s)";
-  if (mode() != Mode::BOSS && _overmind->get_timer() >= 0) {
-    int32_t t = int32_t(0.5f + _overmind->get_timer() / 60);
+  ss << results.lives_remaining << " live(s)";
+  if (results.mode != Mode::BOSS && results.overmind_timer >= 0) {
+    int32_t t = int32_t(0.5f + results.overmind_timer / 60);
     ss << " " << (t < 10 ? "0" : "") << t;
   }
 
@@ -541,277 +429,32 @@ void GameModal::render(Lib& lib) const {
                         Lib::HEIGHT / Lib::TEXT_HEIGHT - 2.f),
                   ss.str(), z0Game::PANEL_TRAN);
 
-  for (std::size_t i = 0; i < _ships.size() + Boss::_warnings.size(); ++i) {
-    if (i < _ships.size() && !(_ships[i]->type() & Ship::SHIP_ENEMY)) {
-      continue;
-    }
-    fvec2 v = to_float(i < _ships.size() ? _ships[i]->shape().centre
-                                         : Boss::_warnings[i - _ships.size()]);
-
-    if (v.x < -4) {
-      int32_t a =
-          int32_t(.5f + float(0x1) + float(0x9) * std::max(v.x + Lib::WIDTH, 0.f) / Lib::WIDTH);
-      a |= a << 4;
-      a = (a << 8) | (a << 16) | (a << 24) | 0x66;
-      lib.render_line(fvec2(0.f, v.y), fvec2(6, v.y - 3), a);
-      lib.render_line(fvec2(6.f, v.y - 3), fvec2(6, v.y + 3), a);
-      lib.render_line(fvec2(6.f, v.y + 3), fvec2(0, v.y), a);
-    }
-    if (v.x >= Lib::WIDTH + 4) {
-      int32_t a =
-          int32_t(.5f + float(0x1) + float(0x9) * std::max(2 * Lib::WIDTH - v.x, 0.f) / Lib::WIDTH);
-      a |= a << 4;
-      a = (a << 8) | (a << 16) | (a << 24) | 0x66;
-      lib.render_line(fvec2(float(Lib::WIDTH), v.y), fvec2(Lib::WIDTH - 6.f, v.y - 3), a);
-      lib.render_line(fvec2(Lib::WIDTH - 6, v.y - 3), fvec2(Lib::WIDTH - 6.f, v.y + 3), a);
-      lib.render_line(fvec2(Lib::WIDTH - 6, v.y + 3), fvec2(float(Lib::WIDTH), v.y), a);
-    }
-    if (v.y < -4) {
-      int32_t a =
-          int32_t(.5f + float(0x1) + float(0x9) * std::max(v.y + Lib::HEIGHT, 0.f) / Lib::HEIGHT);
-      a |= a << 4;
-      a = (a << 8) | (a << 16) | (a << 24) | 0x66;
-      lib.render_line(fvec2(v.x, 0.f), fvec2(v.x - 3, 6.f), a);
-      lib.render_line(fvec2(v.x - 3, 6.f), fvec2(v.x + 3, 6.f), a);
-      lib.render_line(fvec2(v.x + 3, 6.f), fvec2(v.x, 0.f), a);
-    }
-    if (v.y >= Lib::HEIGHT + 4) {
-      int32_t a = int32_t(.5f + float(0x1) +
-                          float(0x9) * std::max(2 * Lib::HEIGHT - v.y, 0.f) / Lib::HEIGHT);
-      a |= a << 4;
-      a = (a << 8) | (a << 16) | (a << 24) | 0x66;
-      lib.render_line(fvec2(v.x, float(Lib::HEIGHT)), fvec2(v.x - 3, Lib::HEIGHT - 6.f), a);
-      lib.render_line(fvec2(v.x - 3, Lib::HEIGHT - 6.f), fvec2(v.x + 3, Lib::HEIGHT - 6.f), a);
-      lib.render_line(fvec2(v.x + 3, Lib::HEIGHT - 6.f), fvec2(v.x, float(Lib::HEIGHT)), a);
-    }
-  }
-  if (mode() == Mode::BOSS) {
+  if (results.mode == Mode::BOSS) {
     std::stringstream sst;
-    sst << convert_to_time(_overmind->get_elapsed_time());
+    sst << convert_to_time(results.elapsed_time);
     lib.render_text(fvec2(Lib::WIDTH / (2 * Lib::TEXT_WIDTH) - sst.str().length() - 1.f, 1.f),
                     sst.str(), z0Game::PANEL_TRAN);
   }
 
-  if (_show_hp_bar) {
-    int32_t x = mode() == Mode::BOSS ? 48 : 0;
+  if (results.boss_hp_bar) {
+    int32_t x = results.mode == Mode::BOSS ? 48 : 0;
     lib.render_rect(fvec2(x + Lib::WIDTH / 2 - 48.f, 16.f), fvec2(x + Lib::WIDTH / 2 + 48.f, 32.f),
                     z0Game::PANEL_TRAN, 2);
 
     lib.render_rect(fvec2(x + Lib::WIDTH / 2 - 44.f, 16.f + 4),
-                    fvec2(x + Lib::WIDTH / 2 - 44.f + 88.f * _fill_hp_bar, 32.f - 4),
+                    fvec2(x + Lib::WIDTH / 2 - 44.f + 88.f * *results.boss_hp_bar, 32.f - 4),
                     z0Game::PANEL_TRAN);
   }
 
-  if (!_replay_recording) {
-    auto input = (ReplayPlayerInput*)_input.get();
-    int32_t x = mode() == Mode::FAST ? *_frame_count / 2 : *_frame_count;
+  if (results.is_replay) {
+    int32_t x = results.mode == Mode::FAST ? *_frame_count / 2 : *_frame_count;
     std::stringstream ss;
-    ss << x << "X "
-       << int32_t(100 * float(input->replay_frame) / input->replay.replay.player_frame_size())
-       << "%";
+    ss << x << "X " << int32_t(100 * results.replay_progress) << "%";
 
     lib.render_text(fvec2(Lib::WIDTH / (2.f * Lib::TEXT_WIDTH) - ss.str().length() / 2,
                           Lib::HEIGHT / Lib::TEXT_HEIGHT - 3.f),
                     ss.str(), z0Game::PANEL_TRAN);
   }
-}
-
-void GameModal::write_replay(const std::string& team_name, int64_t score) const {
-  if (_replay_recording) {
-    _replay.write(team_name, score);
-  }
-}
-
-Lib& GameModal::lib() {
-  return _lib;
-}
-
-Mode::mode GameModal::mode() const {
-  return Mode::mode(_replay.replay.game_mode());
-}
-
-void GameModal::add_ship(Ship* ship) {
-  ship->set_game(*this);
-  if (ship->type() & Ship::SHIP_ENEMY) {
-    _overmind->on_enemy_create(*ship);
-  }
-  _ships.emplace_back(ship);
-
-  if (ship->bounding_width() > 1) {
-    _collisions.push_back(ship);
-  }
-}
-
-void GameModal::add_particle(const Particle& particle) {
-  _particles.emplace_back(particle);
-}
-
-int32_t GameModal::get_non_wall_count() const {
-  return _overmind->count_non_wall_enemies();
-}
-
-GameModal::ship_list GameModal::all_ships(int32_t ship_mask) const {
-  ship_list r;
-  for (auto& ship : _ships) {
-    if (!ship_mask || (ship->type() & ship_mask)) {
-      r.push_back(ship.get());
-    }
-  }
-  return r;
-}
-
-GameModal::ship_list
-GameModal::ships_in_radius(const vec2& point, fixed radius, int32_t ship_mask) const {
-  ship_list r;
-  for (auto& ship : _ships) {
-    if ((!ship_mask || (ship->type() & ship_mask)) &&
-        (ship->shape().centre - point).length() <= radius) {
-      r.push_back(ship.get());
-    }
-  }
-  return r;
-}
-
-bool GameModal::any_collision(const vec2& point, int32_t category) const {
-  fixed x = point.x;
-  fixed y = point.y;
-
-  for (const auto& collision : _collisions) {
-    fixed sx = collision->shape().centre.x;
-    fixed sy = collision->shape().centre.y;
-    fixed w = collision->bounding_width();
-
-    if (sx - w > x) {
-      break;
-    }
-    if (sx + w < x || sy + w < y || sy - w > y) {
-      continue;
-    }
-
-    if (collision->check_point(point, category)) {
-      return true;
-    }
-  }
-  return false;
-}
-
-GameModal::ship_list GameModal::collision_list(const vec2& point, int32_t category) const {
-  ship_list r;
-  fixed x = point.x;
-  fixed y = point.y;
-
-  for (const auto& collision : _collisions) {
-    fixed sx = collision->shape().centre.x;
-    fixed sy = collision->shape().centre.y;
-    fixed w = collision->bounding_width();
-
-    if (sx - w > x) {
-      break;
-    }
-    if (sx + w < x || sy + w < y || sy - w > y) {
-      continue;
-    }
-
-    if (collision->check_point(point, category)) {
-      r.push_back(collision);
-    }
-  }
-  return r;
-}
-
-int32_t GameModal::alive_players() const {
-  return players().size() - killed_players();
-}
-
-int32_t GameModal::killed_players() const {
-  return Player::killed_players();
-}
-
-const GameModal::ship_list& GameModal::players() const {
-  return _player_list;
-}
-
-Player* GameModal::nearest_player(const vec2& point) const {
-  Ship* ship = nullptr;
-  Ship* dead = nullptr;
-  fixed ship_dist = 0;
-  fixed dead_dist = 0;
-
-  for (Ship* s : _player_list) {
-    fixed d = (s->shape().centre - point).length();
-    if ((d < ship_dist || !ship) && !((Player*)s)->is_killed()) {
-      ship_dist = d;
-      ship = s;
-    }
-    if (d < dead_dist || !dead) {
-      dead_dist = d;
-      dead = s;
-    }
-  }
-  return (Player*)(ship ? ship : dead);
-}
-
-void GameModal::add_life() {
-  _lives++;
-}
-
-void GameModal::sub_life() {
-  if (_lives) {
-    _lives--;
-  }
-}
-
-int32_t GameModal::get_lives() const {
-  return _lives;
-}
-
-void GameModal::render_hp_bar(float fill) {
-  _show_hp_bar = true;
-  _fill_hp_bar = fill;
-}
-
-void GameModal::set_boss_killed(boss_list boss) {
-  if (!_replay_recording) {
-    return;
-  }
-  if (boss == BOSS_3A || (mode() != Mode::BOSS && mode() != Mode::NORMAL)) {
-    _save.hard_mode_bosses_killed |= boss;
-  } else {
-    _save.bosses_killed |= boss;
-  }
-}
-
-GameModal::GameModal(Lib& lib, SaveData& save, Settings& settings, int32_t* frame_count,
-                     Replay&& replay, bool replay_recording)
-: Modal(true, true)
-, _lib(lib)
-, _save(save)
-, _settings(settings)
-, _pause_output(PauseModal::CONTINUE)
-, _frame_count(frame_count)
-, _kill_timer(0)
-, _replay(replay)
-, _replay_recording(replay_recording)
-, _input(_replay_recording ? (PlayerInput*)new LibPlayerInput(lib, _replay)
-                           : (PlayerInput*)new ReplayPlayerInput(_replay))
-, _controllers_connected(0)
-, _controllers_dialog(true)
-, _show_hp_bar(false)
-, _fill_hp_bar(0) {
-  static const int32_t STARTING_LIVES = 2;
-  static const int32_t BOSSMODE_LIVES = 1;
-  z::seed((int32_t)_replay.replay.seed());
-  _lives = mode() == Mode::BOSS ? _replay.replay.players() * BOSSMODE_LIVES : STARTING_LIVES;
-  *_frame_count = mode() == Mode::FAST ? 2 : 1;
-
-  Stars::clear();
-  for (int32_t i = 0; i < _replay.replay.players(); ++i) {
-    vec2 v((1 + i) * Lib::WIDTH / (1 + _replay.replay.players()), Lib::HEIGHT / 2);
-    Player* p = new Player(*_input, v, i);
-    add_ship(p);
-    _player_list.push_back(p);
-  }
-  _overmind.reset(new Overmind(*this, _replay.replay.can_face_secret_boss()));
 }
 
 z0Game::z0Game(Lib& lib, const std::vector<std::string>& args)
@@ -977,13 +620,13 @@ void z0Game::render() const {
 
   std::string b = "BOSSES:  ";
   int32_t bb = mode_unlocked() >= Mode::HARD ? _save.hard_mode_bosses_killed : _save.bosses_killed;
-  b += bb & GameModal::BOSS_1A ? "X" : "-";
-  b += bb & GameModal::BOSS_1B ? "X" : "-";
-  b += bb & GameModal::BOSS_1C ? "X" : "-";
-  b += bb & GameModal::BOSS_3A ? "X" : " ";
-  b += bb & GameModal::BOSS_2A ? "X" : "-";
-  b += bb & GameModal::BOSS_2B ? "X" : "-";
-  b += bb & GameModal::BOSS_2C ? "X" : "-";
+  b += bb & SimState::BOSS_1A ? "X" : "-";
+  b += bb & SimState::BOSS_1B ? "X" : "-";
+  b += bb & SimState::BOSS_1C ? "X" : "-";
+  b += bb & SimState::BOSS_3A ? "X" : " ";
+  b += bb & SimState::BOSS_2A ? "X" : "-";
+  b += bb & SimState::BOSS_2B ? "X" : "-";
+  b += bb & SimState::BOSS_2C ? "X" : "-";
   lib().render_text(fvec2(37.f - 16, 13.f), b, PANEL_TEXT);
 
   lib().render_text(fvec2(4.f, 4.f), "WiiSPACE", PANEL_TEXT);

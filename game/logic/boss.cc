@@ -8,7 +8,7 @@ std::vector<vec2> Boss::_warnings;
 static const fixed HP_PER_EXTRA_PLAYER = fixed(1) / 10;
 static const fixed HP_PER_EXTRA_CYCLE = 3 * fixed(1) / 10;
 
-Boss::Boss(const vec2& position, GameModal::boss_list boss, int32_t hp, int32_t players,
+Boss::Boss(const vec2& position, SimState::boss_list boss, int32_t hp, int32_t players,
            int32_t cycle, bool explode_on_damage)
 : Ship(position, Ship::ship_category(SHIP_BOSS | SHIP_ENEMY))
 , _hp(0)
@@ -22,7 +22,7 @@ Boss::Boss(const vec2& position, GameModal::boss_list boss, int32_t hp, int32_t 
   set_bounding_width(640);
   set_ignore_damage_colour_index(100);
   long s =
-      5000 * (cycle + 1) + 2500 * (boss > GameModal::BOSS_1C) + 2500 * (boss > GameModal::BOSS_2C);
+      5000 * (cycle + 1) + 2500 * (boss > SimState::BOSS_1C) + 2500 * (boss > SimState::BOSS_2C);
 
   _score += s;
   for (int32_t i = 0; i < players - 1; ++i) {
