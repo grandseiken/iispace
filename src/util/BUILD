@@ -6,7 +6,7 @@ cc_library(
 
 cc_binary(
   name = "gamepad",
-  srcs = ["gamepad.cpp"],
+  srcs = ["gamepad.cc"],
   deps = [
     ":gamepad_header",
     "@ois",
