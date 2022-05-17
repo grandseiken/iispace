@@ -53,6 +53,14 @@ http_archive(
 )
 
 http_archive(
+  name = "glm",
+  build_file = "@//deps:glm.BUILD",
+  sha256 = "4605259c22feadf35388c027f07b345ad3aa3b12631a5a316347f7566c6f1839",
+  strip_prefix = "glm-0.9.9.8",
+  url = "https://github.com/g-truc/glm/archive/0.9.9.8.zip",
+)
+
+http_archive(
   name = "gl3w",
   build_file = "@//deps:gl3w.BUILD",
   sha256 = "e96a650a5fb9530b69a19d36ef931801762ce9cf5b51cb607ee116b908a380a6",

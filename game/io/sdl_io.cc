@@ -153,6 +153,13 @@ std::optional<event_type> SdlIoLayer::poll() {
       }
       break;
 
+    case SDL_KEYDOWN:
+    case SDL_KEYUP:
+      if (auto key = convert_sdl_key(event.key.keysym.sym); key) {
+        impl_->keyboard_frame.key(*key) = event.type == SDL_KEYDOWN;
+      }
+      break;
+
     case SDL_MOUSEBUTTONDOWN:
     case SDL_MOUSEBUTTONUP:
       if (auto button = convert_sdl_mouse_button(event.button.button); button) {
@@ -161,14 +168,17 @@ std::optional<event_type> SdlIoLayer::poll() {
       break;
 
     case SDL_MOUSEMOTION:
-      break;  // TODO
+      impl_->mouse_frame.cursor = {event.motion.x, event.motion.y};
+      impl_->mouse_frame.cursor_delta += glm::ivec2{event.motion.xrel, event.motion.yrel};
+      break;
 
     case SDL_MOUSEWHEEL:
-      break;  // TODO
-
-    case SDL_KEYDOWN:
-    case SDL_KEYUP:
-      break;  // TODO
+      if (event.wheel.direction == SDL_MOUSEWHEEL_FLIPPED) {
+        impl_->mouse_frame.wheel_delta -= glm::ivec2{event.wheel.x, event.wheel.y};
+      } else {
+        impl_->mouse_frame.wheel_delta += glm::ivec2{event.wheel.x, event.wheel.y};
+      }
+      break;
     }
   }
   return std::nullopt;
@@ -225,6 +235,8 @@ void SdlIoLayer::input_frame_clear() {
     // TODO: clear button events.
   }
   // TODO: clear mouse+keyboard button events.
+  impl_->mouse_frame.cursor_delta = {0, 0};
+  impl_->mouse_frame.wheel_delta = {0, 0};
 }
 
 }  // namespace ii::io

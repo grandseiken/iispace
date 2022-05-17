@@ -4,6 +4,7 @@ cc_library(
     "input.h",
     "io.h",
   ],
+  deps = ["@glm"],
   visibility = ["//visibility:public"],
 )
 
