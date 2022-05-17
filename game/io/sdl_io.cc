@@ -1,4 +1,5 @@
 #include "game/io/sdl_io.h"
+#include "external/sdl_gamecontrollerdb/gamecontrollerdb.txt.h"
 #include <GL/gl3w.h>
 #include <SDL.h>
 #include <unordered_map>
@@ -158,6 +159,17 @@ SdlIoLayer::create(const char* title, char gl_major, char gl_minor) {
     return unexpected("OpenGL " + std::to_string(+gl_major) + "." + std::to_string(+gl_minor) +
                       " not supported");
   }
+
+  auto* rwops = SDL_RWFromConstMem(external_sdl_gamecontrollerdb_gamecontrollerdb_txt,
+                                   external_sdl_gamecontrollerdb_gamecontrollerdb_txt_len);
+  if (!rwops) {
+    return unexpected("couldn't read SDL_GameControllerDB");
+  }
+  std::unique_ptr<SDL_RWops, int (*)(SDL_RWops*)> unique_rwops{rwops, &SDL_RWclose};
+  if (SDL_GameControllerAddMappingsFromRW(rwops, /* no close */ 0) < 0) {
+    return unexpected(SDL_GetError());
+  }
+
   io_layer->impl_->scan_controllers();
   return io_layer;
 }

@@ -13,6 +13,7 @@ cc_library(
     "//deps/sdl",
     "//game/common:result",
     "@gl3w",
+    "@sdl_gamecontrollerdb",
   ],
   visibility = ["//visibility:public"],
 )

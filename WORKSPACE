@@ -45,6 +45,14 @@ http_archive(
 )
 
 http_archive(
+  name = "sdl_gamecontrollerdb",
+  build_file = "@//deps/sdl:sdl_gamecontrollerdb.BUILD",
+  sha256 = "e45bd267d5c4afef51eb2913c8ad97fb122aeda7eae13d06d10dc40ce6544ff8",
+  strip_prefix = "SDL_GameControllerDB-47afeaa74afeef944f7f895bf67acbfa5d24621a",
+  url = "https://github.com/gabomdq/SDL_GameControllerDB/archive/47afeaa74afeef944f7f895bf67acbfa5d24621a.zip",
+)
+
+http_archive(
   name = "gl3w",
   build_file = "@//deps:gl3w.BUILD",
   sha256 = "e96a650a5fb9530b69a19d36ef931801762ce9cf5b51cb607ee116b908a380a6",
