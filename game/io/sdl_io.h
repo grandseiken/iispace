@@ -21,6 +21,8 @@ public:
 
   std::vector<controller::info> controller_info() const override;
   controller::frame controller_frame(std::size_t index) const override;
+  keyboard::frame keyboard_frame() const override;
+  mouse::frame mouse_frame() const override;
   void input_frame_clear() override;
 
 private:

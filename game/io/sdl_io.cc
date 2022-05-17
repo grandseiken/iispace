@@ -17,6 +17,8 @@ struct SdlIoLayer::impl_t {
   };
   std::vector<controller_data> controllers;
   std::unordered_map<SDL_JoystickID, std::size_t> controller_map;
+  mouse::frame mouse_frame;
+  keyboard::frame keyboard_frame;
 
   void scan_controllers() {
     controllers.clear();
@@ -136,9 +138,7 @@ std::optional<event_type> SdlIoLayer::poll() {
     case SDL_CONTROLLERBUTTONUP:
       {
         auto* data = impl_->controller(event.cbutton.which);
-        auto button =
-            convert_controller_button(static_cast<SDL_GameControllerButton>(event.cbutton.button));
-        if (data && button) {
+        if (auto button = convert_sdl_controller_button(event.cbutton.button); data && button) {
           data->frame.button(*button) = event.type == SDL_CONTROLLERBUTTONDOWN;
         }
       }
@@ -147,12 +147,28 @@ std::optional<event_type> SdlIoLayer::poll() {
     case SDL_CONTROLLERAXISMOTION:
       {
         auto* data = impl_->controller(event.caxis.which);
-        auto axis = convert_controller_axis(static_cast<SDL_GameControllerAxis>(event.caxis.axis));
-        if (data && axis) {
+        if (auto axis = convert_sdl_controller_axis(event.caxis.axis); data && axis) {
           data->frame.axis(*axis) = event.caxis.value;
         }
       }
       break;
+
+    case SDL_MOUSEBUTTONDOWN:
+    case SDL_MOUSEBUTTONUP:
+      if (auto button = convert_sdl_mouse_button(event.button.button); button) {
+        impl_->mouse_frame.button(*button) = event.type == SDL_MOUSEBUTTONDOWN;
+      }
+      break;
+
+    case SDL_MOUSEMOTION:
+      break;  // TODO
+
+    case SDL_MOUSEWHEEL:
+      break;  // TODO
+
+    case SDL_KEYDOWN:
+    case SDL_KEYUP:
+      break;  // TODO
     }
   }
   return std::nullopt;
@@ -196,10 +212,19 @@ controller::frame SdlIoLayer::controller_frame(std::size_t index) const {
   return impl_->controllers[index].frame;
 }
 
+keyboard::frame SdlIoLayer::keyboard_frame() const {
+  return impl_->keyboard_frame;
+}
+
+mouse::frame SdlIoLayer::mouse_frame() const {
+  return impl_->mouse_frame;
+}
+
 void SdlIoLayer::input_frame_clear() {
   for (auto& data : impl_->controllers) {
     // TODO: clear button events.
   }
+  // TODO: clear mouse+keyboard button events.
 }
 
 }  // namespace ii::io

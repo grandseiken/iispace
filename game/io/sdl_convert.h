@@ -2,11 +2,13 @@
 #define IISPACE_GAME_IO_SDL_CONVERT_H
 #include "game/io/input.h"
 #include <SDL_gamecontroller.h>
+#include <SDL_mouse.h>
+#include <cstdint>
 #include <optional>
 
 namespace ii::io {
 
-std::optional<controller::axis> convert_controller_axis(SDL_GameControllerAxis axis) {
+inline std::optional<controller::axis> convert_sdl_controller_axis(std::uint8_t axis) {
   switch (axis) {
   case SDL_CONTROLLER_AXIS_LEFTX:
     return controller::axis::kLX;
@@ -25,7 +27,7 @@ std::optional<controller::axis> convert_controller_axis(SDL_GameControllerAxis a
   }
 }
 
-std::optional<controller::button> convert_controller_button(SDL_GameControllerButton button) {
+inline std::optional<controller::button> convert_sdl_controller_button(std::uint8_t button) {
   switch (button) {
   case SDL_CONTROLLER_BUTTON_A:
     return controller::button::kA;
@@ -69,6 +71,23 @@ std::optional<controller::button> convert_controller_button(SDL_GameControllerBu
     return controller::button::kPaddle4;
   case SDL_CONTROLLER_BUTTON_TOUCHPAD:
     return controller::button::kTouchpad;
+  default:
+    return std::nullopt;
+  }
+}
+
+inline std::optional<mouse::button> convert_sdl_mouse_button(std::uint8_t button) {
+  switch (button) {
+  case SDL_BUTTON_LEFT:
+    return mouse::button::kL;
+  case SDL_BUTTON_MIDDLE:
+    return mouse::button::kM;
+  case SDL_BUTTON_RIGHT:
+    return mouse::button::kR;
+  case SDL_BUTTON_X1:
+    return mouse::button::kX1;
+  case SDL_BUTTON_X2:
+    return mouse::button::kX2;
   default:
     return std::nullopt;
   }

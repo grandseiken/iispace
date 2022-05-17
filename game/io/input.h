@@ -1,6 +1,8 @@
 #ifndef IISPACE_GAME_IO_INPUT_H
 #define IISPACE_GAME_IO_INPUT_H
 #include <array>
+#include <cstddef>
+#include <cstdint>
 #include <optional>
 #include <string>
 
@@ -77,6 +79,36 @@ struct frame {
 };
 
 }  // namespace controller
+
+namespace keyboard {
+struct frame {};
+}  // namespace keyboard
+
+namespace mouse {
+
+enum class button {
+  kL,
+  kM,
+  kR,
+  kX1,
+  kX2,
+  kMax,
+};
+
+struct frame {
+  // TODO: button_event.
+  std::array<bool, static_cast<std::size_t>(button::kMax)> button_state = {false};
+
+  bool button(mouse::button k) const {
+    return button_state[static_cast<std::size_t>(k)];
+  }
+
+  bool& button(mouse::button k) {
+    return button_state[static_cast<std::size_t>(k)];
+  }
+};
+
+}  // namespace mouse
 }  // namespace ii::io
 
 #endif

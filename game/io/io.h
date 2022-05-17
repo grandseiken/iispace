@@ -1,10 +1,8 @@
 #ifndef IISPACE_GAME_IO_IO_H
 #define IISPACE_GAME_IO_IO_H
 #include "game/io/input.h"
-#include <array>
-#include <cstdint>
+#include <cstddef>
 #include <optional>
-#include <string>
 #include <vector>
 
 namespace ii::io {
@@ -23,6 +21,8 @@ public:
 
   virtual std::vector<controller::info> controller_info() const = 0;
   virtual controller::frame controller_frame(std::size_t index) const = 0;
+  virtual keyboard::frame keyboard_frame() const = 0;
+  virtual mouse::frame mouse_frame() const = 0;
   virtual void input_frame_clear() = 0;
 };
 
