@@ -81,7 +81,7 @@ inline uint8_t clz(std::uint64_t x) {
 
 class fixed {
 public:
-  constexpr fixed() : value_{0} {}
+  constexpr fixed() = default;
   constexpr fixed(const fixed& f) : value_{f.value_} {}
   constexpr fixed(std::int32_t v) : value_{static_cast<std::int64_t>(v) << 32} {}
 
@@ -100,7 +100,8 @@ public:
   }
 
   constexpr float to_float() const {
-    return static_cast<float>(value_) / (std::uint64_t{1} << 32);
+    constexpr float multiplier = 1.f / (std::uint64_t{1} << 32u);
+    return static_cast<float>(value_) * multiplier;
   }
 
   constexpr explicit operator bool() const {
@@ -124,7 +125,7 @@ public:
     return *this = *this * f;
   }
 
-  constexpr fixed& operator/=(const fixed& f) {
+  fixed& operator/=(const fixed& f) {
     return *this = *this / f;
   }
 
@@ -149,7 +150,7 @@ private:
   friend constexpr fixed cos(const fixed&);
   friend constexpr fixed atan2(const fixed&, const fixed&);
   friend std::ostream& operator<<(std::ostream&, const fixed&);
-  std::int64_t value_;
+  std::int64_t value_ = 0;
 };
 
 inline constexpr bool operator==(const fixed& a, const fixed& b) {

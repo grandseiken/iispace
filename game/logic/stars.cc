@@ -5,7 +5,7 @@ namespace {
 const std::uint32_t kTimer = 500;
 }  // namespace
 
-fvec2 Stars::direction_(0, 1);
+fvec2 Stars::direction_ = {0, 1};
 std::int32_t Stars::star_rate_ = 0;
 std::vector<std::unique_ptr<Stars::data>> Stars::stars_;
 
@@ -21,13 +21,13 @@ void Stars::update() {
   }
 
   std::int32_t r = star_rate_ > 1 ? z::rand_int(star_rate_) : 0;
-  for (std::int32_t i = 0; i < r; i++) {
+  for (std::int32_t i = 0; i < r; ++i) {
     create_star();
   }
 }
 
 void Stars::change() {
-  direction_ = direction_.rotated((z::rand_fixed().to_float() - 0.5f) * M_PIf);
+  direction_ = direction_.rotated((z::rand_fixed().to_float() - 0.5f) * kPiFloat);
   for (const auto& star : stars_) {
     star->timer = kTimer;
   }
@@ -39,17 +39,17 @@ void Stars::render(Lib& lib) {
     switch (star->type) {
     case type::kDotStar:
     case type::kFarStar:
-      lib.render_rect(star->position - fvec2(1, 1), star->position + fvec2(1, 1), star->colour);
+      lib.render_rect(star->position - fvec2{1, 1}, star->position + fvec2{1, 1}, star->colour);
       break;
 
     case type::kBigStar:
-      lib.render_rect(star->position - fvec2(2, 2), star->position + fvec2(2, 2), star->colour);
+      lib.render_rect(star->position - fvec2{2, 2}, star->position + fvec2{2, 2}, star->colour);
       break;
 
     case type::kPlanet:
-      for (std::int32_t i = 0; i < 8; i++) {
-        fvec2 a = fvec2::from_polar(i * M_PIf / 4, star->size);
-        fvec2 b = fvec2::from_polar((i + 1) * M_PIf / 4, star->size);
+      for (std::int32_t i = 0; i < 8; ++i) {
+        fvec2 a = fvec2::from_polar(i * kPiFloat / 4, star->size);
+        fvec2 b = fvec2::from_polar((i + 1) * kPiFloat / 4, star->size);
         lib.render_line(star->position + a, star->position + b, star->colour);
       }
     }
@@ -67,8 +67,10 @@ void Stars::create_star() {
                   : type::kDotStar;
   float speed = t == type::kDotStar ? 18.f : t == type::kBigStar ? 14.f : 10.f;
 
-  data* star = new data{kTimer, t, {}, speed, 0, 0};
-  stars_.emplace_back(star);
+  auto star = std::make_unique<data>();
+  star->timer = kTimer;
+  star->type = t;
+  star->speed = speed;
 
   std::int32_t edge = z::rand_int(4);
   float ratio = z::rand_fixed().to_float();
@@ -83,10 +85,11 @@ void Stars::create_star() {
   if (t == type::kPlanet) {
     star->size = 4.f + z::rand_int(4);
   }
+  stars_.emplace_back(std::move(star));
 }
 
 void Stars::clear() {
   stars_.clear();
-  direction_ = fvec2(1, 0);
+  direction_ = {1, 0};
   star_rate_ = 0;
 }

@@ -51,9 +51,14 @@ public:
   void write_replay(const std::string& team_name, std::int64_t score) const;
 
   typedef std::vector<Ship*> ship_list;
-  void add_ship(Ship* ship);
+  void add_ship(std::unique_ptr<Ship> ship);
   void add_particle(const Particle& particle);
   std::int32_t get_non_wall_count() const;
+
+  template <typename T, typename... Args>
+  void add_new_ship(Args&&... args) {
+    add_ship(std::make_unique<T>(std::forward<Args>(args)...));
+  }
 
   ship_list all_ships(std::int32_t ship_mask = 0) const;
   ship_list ships_in_radius(const vec2& point, fixed radius, std::int32_t ship_mask = 0) const;

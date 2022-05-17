@@ -109,8 +109,8 @@ public:
   std::int32_t get_colour_cycle() const;
 
 private:
-  std::int32_t cycle_;
-  std::int32_t players_;
+  std::int32_t cycle_ = 0;
+  std::int32_t players_ = 1;
 
   // Internal
   //------------------------------
@@ -118,17 +118,17 @@ private:
   std::vector<std::vector<bool>> keys_held_;
   std::vector<std::vector<bool>> keys_released_;
 
-  bool capture_mouse_;
+  bool capture_mouse_ = false;
   ivec2 mouse_;
   ivec2 extra_;
-  mutable bool mouse_moving_;
+  mutable bool mouse_moving_ = true;
 
   void load_sounds();
 
   // Data
   //------------------------------
   std::unique_ptr<Internals> internals_;
-  std::size_t score_frame_;
+  std::size_t score_frame_ = 0;
   friend class Handler;
 };
 

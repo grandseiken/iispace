@@ -82,26 +82,26 @@ std::int32_t ChaserBoss::shared_hp_;
 
 ChaserBoss::ChaserBoss(std::int32_t players, std::int32_t cycle, std::int32_t split,
                        const vec2& position, std::int32_t time, std::int32_t stagger)
-: Boss(!split ? vec2(Lib::kWidth / 2, -Lib::kHeight / 2) : position, SimState::BOSS_1C,
-       1 + kCbBaseHp / (fixed_c::half + HP_REDUCE_POWER_lookup[split]).to_int(), players, cycle,
-       split <= 1)
-, on_screen_(split != 0)
-, move_(false)
-, timer_(time)
-, dir_()
-, last_dir_()
-, players_(players)
-, cycle_(cycle)
-, split_(split)
-, stagger_(stagger) {
-  add_shape(new Polygon(vec2(), 10 * ONE_AND_HALF_lookup[kCbMaxSplit - split_], 5, 0x3399ffff, 0, 0,
-                        Polygon::T::kPolygram));
-  add_shape(new Polygon(vec2(), 9 * ONE_AND_HALF_lookup[kCbMaxSplit - split_], 5, 0x3399ffff, 0, 0,
-                        Polygon::T::kPolygram));
-  add_shape(new Polygon(vec2(), 8 * ONE_AND_HALF_lookup[kCbMaxSplit - split_], 5, 0, 0,
-                        kDangerous | kVulnerable, Polygon::T::kPolygram));
-  add_shape(new Polygon(vec2(), 7 * ONE_AND_HALF_lookup[kCbMaxSplit - split_], 5, 0, 0, kShield,
-                        Polygon::T::kPolygram));
+: Boss{!split ? vec2{Lib::kWidth / 2, -Lib::kHeight / 2} : position,
+       SimState::BOSS_1C,
+       1 + kCbBaseHp / (fixed_c::half + HP_REDUCE_POWER_lookup[split]).to_int(),
+       players,
+       cycle,
+       split <= 1}
+, on_screen_{split != 0}
+, timer_{time}
+, players_{players}
+, cycle_{cycle}
+, split_{split}
+, stagger_{stagger} {
+  add_new_shape<Polygon>(vec2{}, 10 * ONE_AND_HALF_lookup[kCbMaxSplit - split_], 5, 0x3399ffff, 0,
+                         0, Polygon::T::kPolygram);
+  add_new_shape<Polygon>(vec2{}, 9 * ONE_AND_HALF_lookup[kCbMaxSplit - split_], 5, 0x3399ffff, 0, 0,
+                         Polygon::T::kPolygram);
+  add_new_shape<Polygon>(vec2{}, 8 * ONE_AND_HALF_lookup[kCbMaxSplit - split_], 5, 0, 0,
+                         kDangerous | kVulnerable, Polygon::T::kPolygram);
+  add_new_shape<Polygon>(vec2{}, 7 * ONE_AND_HALF_lookup[kCbMaxSplit - split_], 5, 0, 0, kShield,
+                         Polygon::T::kPolygram);
 
   set_ignore_damage_colour_index(2);
   set_bounding_width(10 * ONE_AND_HALF_lookup[kCbMaxSplit - split_]);
@@ -147,7 +147,7 @@ void ChaserBoss::update() {
     static const fixed c_dir2 = 8 * kCbSpeed / (14 * 11);
     static const fixed c_dir3 = 8 * kCbSpeed / (14 * 2);
     static const fixed c_dir4 = 8 * kCbSpeed / (14 * 3);
-    static const fixed c_rotate = fixed_c::hundredth * 5 / fixed(kCbMaxSplit);
+    static const fixed c_rotate = fixed_c::hundredth * 5 / fixed{kCbMaxSplit};
 
     dir_ = last_dir_;
     if (stagger_ ==
@@ -195,7 +195,8 @@ void ChaserBoss::update() {
         dir_ += v * 3;
       }
     }
-    if (std::int32_t(remaining.size()) - game().players().size() < 4 && split_ >= kCbMaxSplit - 1) {
+    if (static_cast<std::int32_t>(remaining.size()) - game().players().size() < 4 &&
+        split_ >= kCbMaxSplit - 1) {
       if ((shape().centre.x < 32 && dir_.x < 0) ||
           (shape().centre.x >= Lib::kWidth - 32 && dir_.x > 0)) {
         dir_.x = -dir_.x;
@@ -204,7 +205,7 @@ void ChaserBoss::update() {
           (shape().centre.y >= Lib::kHeight - 32 && dir_.y > 0)) {
         dir_.y = -dir_.y;
       }
-    } else if (std::int32_t(remaining.size()) - game().players().size() < 8 &&
+    } else if (static_cast<std::int32_t>(remaining.size()) - game().players().size() < 8 &&
                split_ >= kCbMaxSplit - 1) {
       if ((shape().centre.x < 0 && dir_.x < 0) || (shape().centre.x >= Lib::kWidth && dir_.x > 0)) {
         dir_.x = -dir_.x;
@@ -225,13 +226,13 @@ void ChaserBoss::update() {
     }
 
     if (shape().centre.x < -256) {
-      dir_ = vec2(1, 0);
+      dir_ = vec2{1, 0};
     } else if (shape().centre.x >= Lib::kWidth + 256) {
-      dir_ = vec2(-1, 0);
+      dir_ = vec2{-1, 0};
     } else if (shape().centre.y < -256) {
-      dir_ = vec2(0, 1);
+      dir_ = vec2{0, 1};
     } else if (shape().centre.y >= Lib::kHeight + 256) {
-      dir_ = vec2(0, -1);
+      dir_ = vec2{0, -1};
     } else {
       dir_ = dir_.normalised();
     }
@@ -263,7 +264,7 @@ void ChaserBoss::render() const {
   static std::vector<std::int32_t> hp_lookup;
   if (hp_lookup.empty()) {
     std::int32_t hp = 0;
-    for (std::int32_t i = 0; i < 8; i++) {
+    for (std::int32_t i = 0; i < 8; ++i) {
       hp = 2 * hp +
           CalculateHP(1 + kCbBaseHp / (fixed_c::half + HP_REDUCE_POWER_lookup[7 - i]).to_int(),
                       players_, cycle_);
@@ -272,7 +273,7 @@ void ChaserBoss::render() const {
   }
   shared_hp_ += (split_ == 7 ? 0 : 2 * hp_lookup[6 - split_]) + get_remaining_hp() * 30;
   if (on_screen_) {
-    game().render_hp_bar(float(shared_hp_) / float(hp_lookup[kCbMaxSplit]));
+    game().render_hp_bar(static_cast<float>(shared_hp_) / hp_lookup[kCbMaxSplit]);
   }
 }
 
@@ -283,17 +284,17 @@ std::int32_t ChaserBoss::get_damage(std::int32_t damage, bool magic) {
 void ChaserBoss::on_destroy() {
   bool last = false;
   if (split_ < kCbMaxSplit) {
-    for (std::int32_t i = 0; i < 2; i++) {
+    for (std::int32_t i = 0; i < 2; ++i) {
       vec2 d = vec2::from_polar(i * fixed_c::pi + shape().rotation(),
                                 8 * ONE_PT_TWO_lookup[kCbMaxSplit - 1 - split_]);
-      Ship* s =
-          new ChaserBoss(players_, cycle_, split_ + 1, shape().centre + d, (i + 1) * kTimer / 2,
-                         z::rand_int(split_ + 1 == 1       ? 2
-                                         : split_ + 1 == 2 ? 4
-                                         : split_ + 1 == 3 ? 8
-                                                           : 16));
-      spawn(s);
+      auto s = std::make_unique<ChaserBoss>(players_, cycle_, split_ + 1, shape().centre + d,
+                                            (i + 1) * kTimer / 2,
+                                            z::rand_int(split_ + 1 == 1       ? 2
+                                                            : split_ + 1 == 2 ? 4
+                                                            : split_ + 1 == 3 ? 8
+                                                                              : 16));
       s->shape().set_rotation(shape().rotation());
+      spawn(std::move(s));
     }
   } else {
     last = true;
@@ -306,7 +307,7 @@ void ChaserBoss::on_destroy() {
 
     if (last) {
       set_killed();
-      for (std::int32_t i = 0; i < kPlayers; i++) {
+      for (std::int32_t i = 0; i < kPlayers; ++i) {
         lib().rumble(i, 25);
       }
       for (const auto& ship : game().players()) {
@@ -326,7 +327,7 @@ void ChaserBoss::on_destroy() {
     }
   }
 
-  for (std::int32_t i = 0; i < kPlayers; i++) {
+  for (std::int32_t i = 0; i < kPlayers; ++i) {
     lib().rumble(i, split_ < 3 ? 10 : 3);
   }
 

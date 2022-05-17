@@ -36,7 +36,7 @@ Replay::Replay(game_mode mode, std::int32_t players, bool can_face_secret_boss) 
   replay.set_players(players);
   replay.set_can_face_secret_boss(can_face_secret_boss);
 
-  std::int32_t seed = std::int32_t(time(0));
+  std::int32_t seed = static_cast<std::int32_t>(time(0));
   replay.set_seed(seed);
 }
 

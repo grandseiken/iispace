@@ -12,13 +12,13 @@ public:
 
 private:
   vec2 dir_;
-  bool reverse_;
-  std::int32_t timer_;
-  std::int32_t spawn_timer_;
-  std::int32_t special_timer_;
-  bool special_attack_;
-  bool special_attack_rotate_;
-  Player* attack_player_;
+  bool reverse_ = false;
+  std::int32_t timer_ = 0;
+  std::int32_t spawn_timer_ = 0;
+  std::int32_t special_timer_ = 0;
+  bool special_attack_ = false;
+  bool special_attack_rotate_ = false;
+  Player* attack_player_ = nullptr;
 };
 
 #endif

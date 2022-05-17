@@ -60,21 +60,26 @@ public:
   // Operations
   //------------------------------
   bool check_point(const vec2& v, std::int32_t category = 0) const;
-  void spawn(Ship* ship) const;
+  void spawn(std::unique_ptr<Ship> ship) const;
   void spawn(const Particle& particle) const;
+
+  template <typename T, typename... Args>
+  void spawn_new(Args&&... args) {
+    spawn(std::make_unique<T>(std::forward<Args>(args)...));
+  }
 
   // Helpful functions
   //------------------------------
-  void explosion(colour_t c = 0, std::int32_t time = 8, bool towards = false,
-                 const fvec2& v = fvec2()) const;
+  void
+  explosion(colour_t c = 0, std::int32_t time = 8, bool towards = false, const fvec2& v = {}) const;
   void render_with_colour(colour_t colour) const;
 
   bool is_on_screen() const {
-    return shape_.centre >= vec2() && shape_.centre <= vec2(Lib::kWidth, Lib::kHeight);
+    return shape_.centre >= vec2{} && shape_.centre <= vec2{Lib::kWidth, Lib::kHeight};
   }
 
   static vec2 get_screen_centre() {
-    return vec2(Lib::kWidth / 2, Lib::kHeight / 2);
+    return {Lib::kWidth / 2, Lib::kHeight / 2};
   }
 
   Player* nearest_player() const {
@@ -107,7 +112,12 @@ public:
 
 protected:
   const CompoundShape::shape_list& shapes() const;
-  void add_shape(Shape* shape);
+  template <typename T, typename... Args>
+  void add_new_shape(Args&&... args) {
+    add_shape(std::make_unique<T>(std::forward<Args>(args)...));
+  }
+
+  void add_shape(std::unique_ptr<Shape> shape);
   void destroy_shape(std::size_t index);
   void clear_shapes();
 
@@ -116,12 +126,12 @@ protected:
   }
 
 private:
-  SimState* game_;
-  ship_category type_;
-  bool destroy_;
+  SimState* game_ = nullptr;
+  ship_category type_ = static_cast<ship_category>(0);
+  bool destroy_ = false;
   CompoundShape shape_;
-  fixed bounding_width_;
-  std::int32_t enemy_value_;
+  fixed bounding_width_ = 0;
+  std::int32_t enemy_value_ = 1;
 };
 
 #endif

@@ -6,10 +6,10 @@
 
 struct PadConfig {
   struct Stick {
-    int axis1_;
-    int axis2_;
-    bool axis1r_;
-    bool axis2r_;
+    int axis1_ = 0;
+    int axis2_ = 0;
+    bool axis1r_ = false;
+    bool axis2r_ = false;
   };
   typedef std::vector<Stick> Sticks;
   typedef std::vector<int> Buttons;

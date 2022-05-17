@@ -27,10 +27,10 @@ public:
   virtual void on_destroy(bool bomb) {}
 
 private:
-  std::int32_t hp_;
-  std::int64_t score_;
-  mutable std::int32_t damaged_;
-  Lib::sound destroy_sound_;
+  std::int32_t hp_ = 0;
+  std::int64_t score_ = 0;
+  mutable std::int32_t damaged_ = 0;
+  Lib::sound destroy_sound_ = Lib::sound::kEnemyDestroy;
 };
 
 class Follow : public Enemy {
@@ -39,8 +39,8 @@ public:
   void update() override;
 
 private:
-  std::int32_t timer_;
-  Ship* target_;
+  std::int32_t timer_ = 0;
+  Ship* target_ = nullptr;
 };
 
 class BigFollow : public Follow {
@@ -49,7 +49,7 @@ public:
   void on_destroy(bool bomb) override;
 
 private:
-  bool has_score_;
+  bool has_score_ = 0;
 };
 
 class Chaser : public Enemy {
@@ -58,8 +58,8 @@ public:
   void update() override;
 
 private:
-  bool move_;
-  std::int32_t timer_;
+  bool move_ = false;
+  std::int32_t timer_ = 0;
   vec2 dir_;
 };
 
@@ -71,7 +71,7 @@ public:
 
 private:
   vec2 dir_;
-  std::int32_t timer_;
+  std::int32_t timer_ = 0;
 };
 
 class Wall : public Enemy {
@@ -82,9 +82,9 @@ public:
 
 private:
   vec2 dir_;
-  std::int32_t timer_;
-  bool rotate_;
-  bool rdir_;
+  std::int32_t timer_ = 0;
+  bool rotate_ = false;
+  bool rdir_ = false;
 };
 
 class FollowHub : public Enemy {
@@ -94,11 +94,11 @@ public:
   void on_destroy(bool bomb) override;
 
 private:
-  std::int32_t timer_;
+  std::int32_t timer_ = 0;
   vec2 dir_;
-  std::int32_t count_;
-  bool powera_;
-  bool powerb_;
+  std::int32_t count_ = 0;
+  bool powera_ = false;
+  bool powerb_ = false;
 };
 
 class Shielder : public Enemy {
@@ -108,10 +108,10 @@ public:
 
 private:
   vec2 dir_;
-  std::int32_t timer_;
-  bool rotate_;
-  bool rdir_;
-  bool power_;
+  std::int32_t timer_ = 0;
+  bool rotate_ = false;
+  bool rdir_ = false;
+  bool power_ = false;
 };
 
 class Tractor : public Enemy {
@@ -122,12 +122,12 @@ public:
   void render() const override;
 
 private:
-  std::int32_t timer_;
+  std::int32_t timer_ = 0;
   vec2 dir_;
-  bool power_;
+  bool power_ = false;
 
-  bool ready_;
-  bool spinning_;
+  bool ready_ = false;
+  bool spinning_ = false;
   SimState::ship_list players_;
 };
 

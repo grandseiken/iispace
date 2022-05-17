@@ -50,14 +50,14 @@ protected:
   static std::int32_t CalculateHP(std::int32_t base, std::int32_t players, std::int32_t cycle);
 
 private:
-  std::int32_t hp_;
-  std::int32_t max_hp_;
-  SimState::boss_list flag_;
-  std::int64_t score_;
-  std::int32_t ignore_damage_colour_;
-  mutable std::int32_t damaged_;
-  mutable bool show_hp_;
-  bool explode_on_damage_;
+  std::int32_t hp_ = 0;
+  std::int32_t max_hp_ = 0;
+  SimState::boss_list flag_ = static_cast<SimState::boss_list>(0);
+  std::int64_t score_ = 0;
+  std::int32_t ignore_damage_colour_ = 256;
+  mutable std::int32_t damaged_ = 0;
+  mutable bool show_hp_ = false;
+  bool explode_on_damage_ = false;
 };
 
 #endif

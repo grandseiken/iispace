@@ -7,7 +7,7 @@
 std::int32_t run(const std::vector<std::string>& args) {
   try {
     Lib lib;
-    z0Game game(lib, args);
+    z0Game game{lib, args};
     game.run();
   } catch (const score_finished&) {
   } catch (const std::exception& e) {
@@ -19,7 +19,7 @@ std::int32_t run(const std::vector<std::string>& args) {
 
 std::int32_t test(const std::string& replay) {
   std::vector<std::string> args;
-  args.push_back(replay);
+  args.emplace_back(replay);
   std::cout << "testing " << replay << std::endl;
   return run(args);
 }
@@ -31,19 +31,20 @@ std::int32_t main(std::int32_t argc, char** argv) {
 #ifdef PLATFORM_SCORE
   char* s = getenv("QUERY_STRING");
   if (s) {
-    args.push_back(std::string(s));
+    args.emplace_back(s);
   } else
     for (std::int32_t i = 1; i < argc; ++i) {
-      if (argv[i] == std::string("--test") || argv[i] == std::string("-test")) {
+      std::string arg = argv[i];
+      if (arg == "--test" || arg == "-test") {
         is_test = true;
         continue;
       }
-      args.push_back(std::string(argv[i]));
+      args.emplace_back(arg);
     }
   std::cout << "Content-type: text/plain" << std::endl << std::endl;
 #else
   for (std::int32_t i = 1; i < argc; ++i) {
-    args.push_back(std::string(argv[i]));
+    args.emplace_back(argv[i]);
   }
 #endif
 

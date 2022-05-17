@@ -6,7 +6,7 @@ class ChaserBoss : public Boss {
 public:
   static constexpr std::int32_t kTimer = 60;
   ChaserBoss(std::int32_t players, std::int32_t cycle, std::int32_t split = 0,
-             const vec2& position = vec2(), std::int32_t time = kTimer, std::int32_t stagger = 0);
+             const vec2& position = {}, std::int32_t time = kTimer, std::int32_t stagger = 0);
 
   void update() override;
   void render() const override;
@@ -16,17 +16,17 @@ public:
   static bool has_counted_;
 
 private:
-  bool on_screen_;
-  bool move_;
-  std::int32_t timer_;
+  bool on_screen_ = false;
+  bool move_ = false;
+  std::int32_t timer_ = 0;
   vec2 dir_;
   vec2 last_dir_;
 
-  std::int32_t players_;
-  std::int32_t cycle_;
-  std::int32_t split_;
+  std::int32_t players_ = 0;
+  std::int32_t cycle_ = 0;
+  std::int32_t split_ = 0;
 
-  std::int32_t stagger_;
+  std::int32_t stagger_ = 0;
   static std::int32_t count_;
   static std::int32_t shared_hp_;
 };

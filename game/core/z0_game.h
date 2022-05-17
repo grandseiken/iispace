@@ -30,7 +30,7 @@ public:
 private:
   output_t* output_;
   Settings& settings_;
-  std::int32_t selection_;
+  std::int32_t selection_ = 0;
 };
 
 class HighScoreModal : public Modal {
@@ -46,15 +46,15 @@ private:
   SaveData& save_;
   GameModal& game_;
   SimState::results results_;
-  bool replay_;
-  std::int32_t seed_;
+  bool replay_ = false;
+  std::int32_t seed_ = 0;
 
   std::string enter_name_;
-  std::int32_t enter_char_;
-  std::int32_t enter_r_;
-  std::int32_t enter_time_;
-  std::int32_t compliment_;
-  std::int32_t timer_;
+  std::int32_t enter_char_ = 0;
+  std::int32_t enter_r_ = 0;
+  std::int32_t enter_time_ = 0;
+  std::int32_t compliment_ = 0;
+  std::int32_t timer_ = 0;
 };
 
 class GameModal : public Modal {
@@ -109,12 +109,12 @@ private:
   };
 
   Lib& lib_;
-  std::int32_t frame_count_;
+  std::int32_t frame_count_ = 1;
 
-  menu menu_select_;
-  std::int32_t player_select_;
-  game_mode mode_select_;
-  std::int32_t exit_timer_;
+  menu menu_select_ = menu::kStart;
+  std::int32_t player_select_ = 1;
+  game_mode mode_select_ = game_mode::kBoss;
+  std::int32_t exit_timer_ = 0;
   std::string exit_error_;
 
   SaveData save_;

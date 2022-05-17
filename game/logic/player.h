@@ -55,17 +55,17 @@ public:
 
 private:
   PlayerInput& input_;
-  std::int32_t player_number_;
-  std::int64_t score_;
-  std::int32_t multiplier_;
-  std::int32_t multiplier_count_;
-  std::int32_t kill_timer_;
-  std::int32_t revive_timer_;
-  std::int32_t magic_shot_timer_;
-  bool shield_;
-  bool bomb_;
+  std::int32_t player_number_ = 0;
+  std::int64_t score_ = 0;
+  std::int32_t multiplier_ = 1;
+  std::int32_t multiplier_count_ = 0;
+  std::int32_t kill_timer_ = 0;
+  std::int32_t revive_timer_ = 0;
+  std::int32_t magic_shot_timer_ = 0;
+  bool shield_ = false;
+  bool bomb_ = false;
   vec2 fire_target_;
-  std::int32_t death_count_;
+  std::int32_t death_count_ = 0;
 
   static std::int32_t fire_timer_;
   static SimState::ship_list kill_queue_;
@@ -81,10 +81,10 @@ public:
   void render() const override;
 
 private:
-  Player* player_;
+  Player* player_ = nullptr;
   vec2 velocity_;
-  bool magic_;
-  bool flash_;
+  bool magic_ = false;
+  bool flash_ = false;
 };
 
 class Powerup : public Ship {
@@ -101,11 +101,11 @@ public:
   void damage(std::int32_t damage, bool magic, Player* source) override;
 
 private:
-  type type_;
-  std::int32_t frame_;
-  vec2 dir_;
-  bool rotate_;
-  bool first_frame_;
+  type type_ = type::kExtraLife;
+  std::int32_t frame_ = 0;
+  vec2 dir_ = {0, 1};
+  bool rotate_ = false;
+  bool first_frame_ = true;
 };
 
 #endif

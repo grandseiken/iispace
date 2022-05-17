@@ -25,24 +25,16 @@ SimState::ship_list Player::shot_sound_queue_;
 std::int32_t Player::fire_timer_;
 
 Player::Player(PlayerInput& input, const vec2& position, std::int32_t player_number)
-: Ship(position, kShipPlayer)
-, input_(input)
-, player_number_(player_number)
-, score_(0)
-, multiplier_(1)
-, multiplier_count_(0)
-, kill_timer_(0)
-, revive_timer_(kReviveTime)
-, magic_shot_timer_(0)
-, shield_(false)
-, bomb_(false)
-, fire_target_(get_screen_centre())
-, death_count_(0) {
-  add_shape(new Polygon(vec2(), 16, 3, colour()));
-  add_shape(new Fill(vec2(8, 0), 2, 2, colour()));
-  add_shape(new Fill(vec2(8, 0), 1, 1, colour() & 0xffffff33));
-  add_shape(new Fill(vec2(8, 0), 3, 3, colour() & 0xffffff33));
-  add_shape(new Polygon(vec2(), 8, 3, colour(), fixed_c::pi));
+: Ship{position, kShipPlayer}
+, input_{input}
+, player_number_{player_number}
+, revive_timer_{kReviveTime}
+, fire_target_{get_screen_centre()} {
+  add_new_shape<Polygon>(vec2{}, 16, 3, colour());
+  add_new_shape<Fill>(vec2{8, 0}, 2, 2, colour());
+  add_new_shape<Fill>(vec2{8, 0}, 1, 1, colour() & 0xffffff33);
+  add_new_shape<Fill>(vec2{8, 0}, 3, 3, colour() & 0xffffff33);
+  add_new_shape<Polygon>(vec2{}, 8, 3, colour(), fixed_c::pi);
   kill_queue_.clear();
   shot_sound_queue_.clear();
   fire_timer_ = 0;
@@ -72,8 +64,8 @@ void Player::update() {
       kill_timer_ = 0;
       kill_queue_.erase(kill_queue_.begin());
       revive_timer_ = kReviveTime;
-      shape().centre = vec2((1 + player_number_) * Lib::kWidth / (1 + game().players().size()),
-                            Lib::kHeight / 2);
+      shape().centre = {(1 + player_number_) * Lib::kWidth / (1 + game().players().size()),
+                        Lib::kHeight / 2};
       lib().rumble(player_number_, 10);
       play_sound(Lib::sound::kPlayerRespawn);
     }
@@ -88,7 +80,7 @@ void Player::update() {
     vec2 v = velocity.length() > 1 ? velocity.normalised() : velocity;
     shape().set_rotation(v.angle());
     shape().centre = std::max(
-        vec2(), std::min(vec2(Lib::kWidth, Lib::kHeight), kPlayerSpeed * v + shape().centre));
+        vec2{}, std::min(vec2{Lib::kWidth, Lib::kHeight}, kPlayerSpeed * v + shape().centre));
   }
 
   // Bombs.
@@ -126,7 +118,7 @@ void Player::update() {
   // Shots
   vec2 shot = fire_target_ - shape().centre;
   if (shot.length() > 0 && !fire_timer_ && keys & 1) {
-    spawn(new Shot(shape().centre, this, shot, magic_shot_timer_ != 0));
+    spawn_new<Shot>(shape().centre, this, shot, magic_shot_timer_ != 0);
     if (magic_shot_timer_) {
       --magic_shot_timer_;
     }
@@ -163,10 +155,11 @@ void Player::update() {
 
 void Player::render() const {
   if (!kill_timer_ && (game().mode() != game_mode::kWhat || revive_timer_ > 0)) {
-    fvec2 t = to_float(fire_target_);
-    if (t >= fvec2() && t <= fvec2((float)Lib::kWidth, (float)Lib::kHeight)) {
-      lib().render_line(t + fvec2(0, 9), t - fvec2(0, 8), colour());
-      lib().render_line(t + fvec2(9, 1), t - fvec2(8, -1), colour());
+    auto t = to_float(fire_target_);
+    if (t >= fvec2{} &&
+        t <= fvec2{static_cast<float>(Lib::kWidth), static_cast<float>(Lib::kHeight)}) {
+      lib().render_line(t + fvec2{0, 9}, t - fvec2{0, 8}, colour());
+      lib().render_line(t + fvec2{9, 1}, t - fvec2{8, -1}, colour());
     }
     if (revive_timer_ % 2) {
       render_with_colour(0xffffffff);
@@ -183,23 +176,24 @@ void Player::render() const {
   ss << multiplier_ << "X";
   std::string s = ss.str();
   std::int32_t n = player_number_;
-  fvec2 v = n == 1 ? fvec2(Lib::kWidth / Lib::kTextWidth - 1.f - s.length(), 1.f)
-      : n == 2     ? fvec2(1.f, Lib::kHeight / Lib::kTextHeight - 2.f)
-      : n == 3     ? fvec2(Lib::kWidth / Lib::kTextWidth - 1.f - s.length(),
-                       Lib::kHeight / Lib::kTextHeight - 2.f)
-                   : fvec2(1.f, 1.f);
+  fvec2 v = n == 1 ? fvec2{Lib::kWidth / Lib::kTextWidth - 1.f - s.length(), 1.f}
+      : n == 2     ? fvec2{1.f, Lib::kHeight / Lib::kTextHeight - 2.f}
+      : n == 3     ? fvec2{Lib::kWidth / Lib::kTextWidth - 1.f - s.length(),
+                       Lib::kHeight / Lib::kTextHeight - 2.f}
+                   : fvec2{1.f, 1.f};
   lib().render_text(v, s, z0Game::kPanelText);
 
   ss.str("");
   n % 2 ? ss << score_ << "   " : ss << "   " << score_;
-  lib().render_text(v - (n % 2 ? fvec2(float(ss.str().length() - s.length()), 0) : fvec2()),
-                    ss.str(), colour());
+  lib().render_text(
+      v - (n % 2 ? fvec2{static_cast<float>(ss.str().length() - s.length()), 0} : fvec2{}),
+      ss.str(), colour());
 
   if (magic_shot_timer_ != 0) {
     v.x += n % 2 ? -1 : ss.str().length();
     v *= 16;
-    lib().render_rect(v + fvec2(5.f, 11.f - (10 * magic_shot_timer_) / kMagicShotCount),
-                      v + fvec2(9.f, 13.f), 0xffffffff, 2);
+    lib().render_rect(v + fvec2{5.f, 11.f - (10 * magic_shot_timer_) / kMagicShotCount},
+                      v + fvec2{9.f, 13.f}, 0xffffffff, 2);
   }
 }
 
@@ -278,7 +272,7 @@ void Player::activate_magic_shield() {
     bomb_ = false;
   }
   shield_ = true;
-  add_shape(new Polygon(vec2(), 16, 10, 0xffffffff));
+  add_new_shape<Polygon>(vec2{}, 16, 10, 0xffffffff);
 }
 
 void Player::activate_bomb() {
@@ -291,7 +285,7 @@ void Player::activate_bomb() {
     shield_ = false;
   }
   bomb_ = true;
-  add_shape(new Polygon(vec2(-8, 0), 6, 5, 0xffffffff, fixed_c::pi, 0, Polygon::T::kPolystar));
+  add_new_shape<Polygon>(vec2{-8, 0}, 6, 5, 0xffffffff, fixed_c::pi, 0, Polygon::T::kPolystar);
 }
 
 void Player::update_fire_timer() {
@@ -299,11 +293,11 @@ void Player::update_fire_timer() {
 }
 
 Shot::Shot(const vec2& position, Player* player, const vec2& direction, bool magic)
-: Ship(position, kShipNone), player_(player), velocity_(direction), magic_(magic), flash_(false) {
+: Ship{position, kShipNone}, player_{player}, velocity_{direction}, magic_{magic} {
   velocity_ = velocity_.normalised() * kShotSpeed;
-  add_shape(new Fill(vec2(), 2, 2, player_->colour()));
-  add_shape(new Fill(vec2(), 1, 1, player_->colour() & 0xffffff33));
-  add_shape(new Fill(vec2(), 3, 3, player_->colour() & 0xffffff33));
+  add_new_shape<Fill>(vec2{}, 2, 2, player_->colour());
+  add_new_shape<Fill>(vec2{}, 1, 1, player_->colour() & 0xffffff33);
+  add_new_shape<Fill>(vec2{}, 3, 3, player_->colour() & 0xffffff33);
 }
 
 void Shot::render() const {
@@ -321,7 +315,7 @@ void Shot::update() {
   flash_ = magic_ ? z::rand_int(2) != 0 : false;
   move(velocity_);
   bool on_screen =
-      shape().centre >= vec2(-4, -4) && shape().centre < vec2(4 + Lib::kWidth, 4 + Lib::kHeight);
+      shape().centre >= vec2{-4, -4} && shape().centre < vec2{4 + Lib::kWidth, 4 + Lib::kHeight};
   if (!on_screen) {
     destroy();
     return;
@@ -341,30 +335,25 @@ void Shot::update() {
 }
 
 Powerup::Powerup(const vec2& position, type t)
-: Ship(position, kShipPowerup)
-, type_(t)
-, frame_(0)
-, dir_(0, 1)
-, rotate_(false)
-, first_frame_(true) {
-  add_shape(new Polygon(vec2(), 13, 5, 0, fixed_c::pi / 2, 0));
-  add_shape(new Polygon(vec2(), 9, 5, 0, fixed_c::pi / 2, 0));
+: Ship{position, kShipPowerup}, type_{t}, dir_{0, 1} {
+  add_new_shape<Polygon>(vec2{}, 13, 5, 0, fixed_c::pi / 2, 0);
+  add_new_shape<Polygon>(vec2{}, 9, 5, 0, fixed_c::pi / 2, 0);
 
   switch (type_) {
   case type::kExtraLife:
-    add_shape(new Polygon(vec2(), 8, 3, 0xffffffff, fixed_c::pi / 2));
+    add_new_shape<Polygon>(vec2{}, 8, 3, 0xffffffff, fixed_c::pi / 2);
     break;
 
   case type::kMagicShots:
-    add_shape(new Fill(vec2(), 3, 3, 0xffffffff));
+    add_new_shape<Fill>(vec2{}, 3, 3, 0xffffffff);
     break;
 
   case type::kShield:
-    add_shape(new Polygon(vec2(), 11, 5, 0xffffffff, fixed_c::pi / 2));
+    add_new_shape<Polygon>(vec2{}, 11, 5, 0xffffffff, fixed_c::pi / 2);
     break;
 
   case type::kBomb:
-    add_shape(new Polygon(vec2(), 11, 10, 0xffffffff, fixed_c::pi / 2, 0, Polygon::T::kPolystar));
+    add_new_shape<Polygon>(vec2{}, 11, 10, 0xffffffff, fixed_c::pi / 2, 0, Polygon::T::kPolystar);
     break;
   }
 }
@@ -423,9 +412,9 @@ void Powerup::damage(std::int32_t damage, bool magic, Player* source) {
   }
 
   std::int32_t r = 5 + z::rand_int(5);
-  for (std::int32_t i = 0; i < r; i++) {
+  for (std::int32_t i = 0; i < r; ++i) {
     vec2 dir = vec2::from_polar(z::rand_fixed() * 2 * fixed_c::pi, 6);
-    spawn(Particle(to_float(shape().centre), 0xffffffff, to_float(dir), 4 + z::rand_int(8)));
+    spawn(Particle{to_float(shape().centre), 0xffffffff, to_float(dir), 4 + z::rand_int(8)});
   }
   destroy();
 }

@@ -1,16 +1,16 @@
 #include "game/core/modal.h"
 
-void Modal::add(Modal* modal) {
-  stack_->add(modal);
+void Modal::add(std::unique_ptr<Modal> modal) {
+  stack_->add(std::move(modal));
 }
 
 void Modal::quit() {
   quit_ = true;
 }
 
-void ModalStack::add(Modal* modal) {
+void ModalStack::add(std::unique_ptr<Modal> modal) {
   modal->stack_ = this;
-  new_stack_.emplace_back(modal);
+  new_stack_.emplace_back(std::move(modal));
 }
 
 bool ModalStack::update(Lib& lib) {

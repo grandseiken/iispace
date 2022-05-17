@@ -23,14 +23,14 @@ public:
   render(Lib& lib, const fvec2& position, float rotation, colour_t colour_override = 0) const = 0;
 
   vec2 centre;
-  colour_t colour;
-  std::int32_t category;
+  colour_t colour = 0;
+  std::int32_t category = 0;
 
 private:
   virtual bool check_local_point(const vec2& v) const = 0;
 
-  fixed rotation_;
-  bool can_rotate_;
+  fixed rotation_ = 0;
+  bool can_rotate_ = false;
 };
 
 class Fill : public Shape {
@@ -40,8 +40,8 @@ public:
   void render(Lib& lib, const fvec2& position, float rotation,
               colour_t colour_override = 0) const override;
 
-  fixed width;
-  fixed height;
+  fixed width = 0;
+  fixed height = 0;
 
 private:
   bool check_local_point(const vec2& v) const override;
@@ -69,8 +69,8 @@ public:
   void render(Lib& lib, const fvec2& position, float rotation,
               colour_t colour_override = 0) const override;
 
-  fixed width;
-  fixed height;
+  fixed width = 0;
+  fixed height = 0;
 
 private:
   bool check_local_point(const vec2& v) const override;
@@ -90,9 +90,9 @@ public:
   void render(Lib& lib, const fvec2& position, float rotation,
               colour_t colour_override = 0) const override;
 
-  fixed radius;
-  std::int32_t sides;
-  T type;
+  fixed radius = 0;
+  std::int32_t sides = 0;
+  T type = T::kPolygon;
 
 private:
   bool check_local_point(const vec2& v) const override;
@@ -106,9 +106,9 @@ public:
   void render(Lib& lib, const fvec2& position, float rotation,
               colour_t colour_override = 0) const override;
 
-  fixed radius;
-  std::int32_t sides;
-  std::int32_t segments;
+  fixed radius = 0;
+  std::int32_t sides = 0;
+  std::int32_t segments = 0;
 
 private:
   bool check_local_point(const vec2& v) const override;
@@ -120,7 +120,13 @@ public:
 
   typedef std::vector<std::unique_ptr<Shape>> shape_list;
   const shape_list& shapes() const;
-  void add_shape(Shape* shape);
+
+  template <typename T, typename... Args>
+  void add_new_shape(Args&&... args) {
+    add_shape(std::make_unique<T>(std::forward<Args>(args)...));
+  }
+
+  void add_shape(std::unique_ptr<Shape> shape);
   void destroy_shape(std::size_t index);
   void clear_shapes();
 

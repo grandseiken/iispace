@@ -24,12 +24,12 @@ private:
   };
 
   struct data {
-    std::int32_t timer;
-    Stars::type type;
+    std::int32_t timer = 0;
+    Stars::type type = Stars::type::kDotStar;
     fvec2 position;
-    float speed;
-    float size;
-    colour_t colour;
+    float speed = 0;
+    float size = 0;
+    colour_t colour = 0;
   };
 
   static fvec2 direction_;

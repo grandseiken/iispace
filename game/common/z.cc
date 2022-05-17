@@ -26,7 +26,7 @@ colour_t rgb_to_hsl(colour_t rgb) {
   if (s > 0.0) {
     s /= (l <= 0.5) ? (v + m) : (2.0 - v - m);
   } else {
-    return ((std::int32_t(0.5 + l * 255) & 0xff) << 8);
+    return ((static_cast<std::int32_t>(0.5 + l * 255) & 0xff) << 8);
   }
   r2 = (v - r) / vm;
   g2 = (v - g) / vm;
@@ -39,8 +39,9 @@ colour_t rgb_to_hsl(colour_t rgb) {
     h = (r == m ? 3.0 + g2 : 5.0 - r2);
   }
   h /= 6.0;
-  return ((std::int32_t(0.5 + h * 255) & 0xff) << 24) |
-      ((std::int32_t(0.5 + s * 255) & 0xff) << 16) | ((std::int32_t(0.5 + l * 255) & 0xff) << 8);
+  return ((static_cast<std::int32_t>(0.5 + h * 255) & 0xff) << 24) |
+      ((static_cast<std::int32_t>(0.5 + s * 255) & 0xff) << 16) |
+      ((static_cast<std::int32_t>(0.5 + l * 255) & 0xff) << 8);
 }
 
 colour_t hsl_to_rgb(colour_t hsl) {
@@ -48,16 +49,18 @@ colour_t hsl_to_rgb(colour_t hsl) {
   double s = ((hsl >> 16) & 0xff) / 255.0;
   double l = ((hsl >> 8) & 0xff) / 255.0;
 
-  double r = l, g = l, b = l;
-  double v = (l <= 0.5) ? (l * (1.0 + s)) : (l + s - l * s);
+  double r = l;
+  double g = l;
+  double b = l;
+  double v = (l <= 0.5) ? l * (1.0 + s) : l + s - l * s;
   if (v > 0) {
     h *= 6.0;
     double m = l + l - v;
     double sv = (v - m) / v;
-    ;
-    std::int32_t sextant = std::int32_t(h);
+    std::int32_t sextant = static_cast<std::int32_t>(h);
     double vsf = v * sv * (h - sextant);
-    double mid1 = m + vsf, mid2 = v - vsf;
+    double mid1 = m + vsf;
+    double mid2 = v - vsf;
     sextant %= 6;
 
     switch (sextant) {
@@ -93,8 +96,9 @@ colour_t hsl_to_rgb(colour_t hsl) {
       break;
     }
   }
-  return ((std::int32_t(0.5 + r * 255) & 0xff) << 24) |
-      ((std::int32_t(0.5 + g * 255) & 0xff) << 16) | ((std::int32_t(0.5 + b * 255) & 0xff) << 8);
+  return ((static_cast<std::int32_t>(0.5 + r * 255) & 0xff) << 24) |
+      ((static_cast<std::int32_t>(0.5 + g * 255) & 0xff) << 16) |
+      ((static_cast<std::int32_t>(0.5 + b * 255) & 0xff) << 8);
 }
 
 }  // namespace
@@ -108,27 +112,27 @@ void seed(std::int32_t seed) {
 }
 
 std::int32_t rand_int() {
-  std::int32_t const a = 1103515245;
-  std::int32_t const c = 12345;
+  static constexpr std::int32_t a = 1103515245;
+  static constexpr std::int32_t c = 12345;
   state = a * state + c;
   return (state >> 16) & 0x7fff;
 }
 
 std::string crypt(const std::string& text, const std::string& key) {
-  std::string r = "";
-  for (std::size_t i = 0; i < text.length(); i++) {
+  std::string result;
+  for (std::size_t i = 0; i < text.length(); ++i) {
     char c = text[i] ^ key[i % key.length()];
     if (text[i] == '\0' || c == '\0') {
-      r += text[i];
+      result += text[i];
     } else {
-      r += c;
+      result += c;
     }
   }
-  return r;
+  return result;
 }
 
 std::string compress_string(const std::string& str) {
-  const std::int32_t compression_level = Z_BEST_COMPRESSION;
+  constexpr std::int32_t compression_level = Z_BEST_COMPRESSION;
   z_stream zs;
   memset(&zs, 0, sizeof(zs));
 
@@ -136,33 +140,32 @@ std::string compress_string(const std::string& str) {
     throw std::runtime_error("deflateInit failed while compressing.");
   }
 
-  zs.next_in = (Bytef*)str.data();
-  zs.avail_in = uInt(str.size());
+  zs.next_in = const_cast<Bytef*>(reinterpret_cast<const Bytef*>(str.data()));
+  zs.avail_in = static_cast<uInt>(str.size());
 
-  std::int32_t ret;
-  char outbuffer[32768];
-  std::string outstring;
+  std::int32_t result = 0;
+  char out_buffer[32768];
+  std::string out_string;
 
   do {
-    zs.next_out = reinterpret_cast<Bytef*>(outbuffer);
-    zs.avail_out = sizeof(outbuffer);
+    zs.next_out = reinterpret_cast<Bytef*>(out_buffer);
+    zs.avail_out = sizeof(out_buffer);
 
-    ret = deflate(&zs, Z_FINISH);
+    result = deflate(&zs, Z_FINISH);
 
-    if (outstring.size() < zs.total_out) {
-      outstring.append(outbuffer, zs.total_out - outstring.size());
+    if (out_string.size() < zs.total_out) {
+      out_string.append(out_buffer, zs.total_out - out_string.size());
     }
-  } while (ret == Z_OK);
+  } while (result == Z_OK);
 
   deflateEnd(&zs);
 
-  if (ret != Z_STREAM_END) {
-    std::ostringstream oss;
-    oss << "Exception during zlib compression: (" << ret << ") " << zs.msg;
-    throw std::runtime_error(oss.str());
+  if (result != Z_STREAM_END) {
+    std::ostringstream ss;
+    ss << "Exception during zlib compression: (" << result << ") " << zs.msg;
+    throw std::runtime_error{ss.str()};
   }
-
-  return outstring;
+  return out_string;
 }
 
 std::string decompress_string(const std::string& str) {
@@ -173,40 +176,40 @@ std::string decompress_string(const std::string& str) {
     throw std::runtime_error("inflateInit failed while decompressing.");
   }
 
-  zs.next_in = (Bytef*)str.data();
-  zs.avail_in = uInt(str.size());
+  zs.next_in = const_cast<Bytef*>(reinterpret_cast<const Bytef*>(str.data()));
+  zs.avail_in = static_cast<uInt>(str.size());
 
-  std::int32_t ret;
-  char outbuffer[32768];
-  std::string outstring;
+  std::int32_t result = 0;
+  char out_buffer[32768];
+  std::string out_string;
 
   do {
-    zs.next_out = reinterpret_cast<Bytef*>(outbuffer);
-    zs.avail_out = sizeof(outbuffer);
+    zs.next_out = reinterpret_cast<Bytef*>(out_buffer);
+    zs.avail_out = sizeof(out_buffer);
 
-    ret = inflate(&zs, 0);
+    result = inflate(&zs, 0);
 
-    if (outstring.size() < zs.total_out) {
-      outstring.append(outbuffer, zs.total_out - outstring.size());
+    if (out_string.size() < zs.total_out) {
+      out_string.append(out_buffer, zs.total_out - out_string.size());
     }
-  } while (ret == Z_OK);
+  } while (result == Z_OK);
 
   inflateEnd(&zs);
 
-  if (ret != Z_STREAM_END) {
-    std::ostringstream oss;
-    oss << "Exception during zlib decompression: (" << ret << ") " << zs.msg;
-    throw std::runtime_error(oss.str());
+  if (result != Z_STREAM_END) {
+    std::ostringstream ss;
+    ss << "Exception during zlib decompression: (" << result << ") " << zs.msg;
+    throw std::runtime_error{ss.str()};
   }
-
-  return outstring;
+  return out_string;
 }
 
 colour_t colour_cycle(colour_t rgb, std::int32_t cycle) {
-  if (cycle == 0)
+  if (!cycle) {
     return rgb;
+  }
   colour_t a = rgb & 0x000000ff;
-  std::pair<colour_t, std::int32_t> key = std::make_pair(rgb & 0xffffff00, cycle);
+  auto key = std::make_pair(rgb & 0xffffff00, cycle);
   if (cycle_map.find(key) != cycle_map.end()) {
     return cycle_map[key] | a;
   }

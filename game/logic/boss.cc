@@ -12,15 +12,9 @@ const fixed kHpPerExtraCycle = 3 * fixed(1) / 10;
 
 Boss::Boss(const vec2& position, SimState::boss_list boss, std::int32_t hp, std::int32_t players,
            std::int32_t cycle, bool explode_on_damage)
-: Ship(position, Ship::ship_category(kShipBoss | kShipEnemy))
-, hp_(0)
-, max_hp_(0)
-, flag_(boss)
-, score_(0)
-, ignore_damage_colour_(256)
-, damaged_(0)
-, show_hp_(false)
-, explode_on_damage_(explode_on_damage) {
+: Ship{position, static_cast<Ship::ship_category>(kShipBoss | kShipEnemy)}
+, flag_{boss}
+, explode_on_damage_{explode_on_damage} {
   set_bounding_width(640);
   set_ignore_damage_colour_index(100);
   long s =
@@ -28,7 +22,7 @@ Boss::Boss(const vec2& position, SimState::boss_list boss, std::int32_t hp, std:
 
   score_ += s;
   for (std::int32_t i = 0; i < players - 1; ++i) {
-    score_ += (std::int32_t(s) * kHpPerExtraPlayer).to_int();
+    score_ += (static_cast<std::int32_t>(s) * kHpPerExtraPlayer).to_int();
   }
   hp_ = CalculateHP(hp, players, cycle);
   max_hp_ = hp_;
@@ -92,9 +86,9 @@ void Boss::render(bool hp_bar) const {
     Ship::render();
     return;
   }
-  for (std::size_t i = 0; i < shapes().size(); i++) {
+  for (std::size_t i = 0; i < shapes().size(); ++i) {
     shapes()[i]->render(lib(), to_float(shape().centre), shape().rotation().to_float(),
-                        std::int32_t(i) < ignore_damage_colour_ ? 0xffffffff : 0);
+                        static_cast<std::int32_t>(i) < ignore_damage_colour_ ? 0xffffffff : 0);
   }
   damaged_--;
 }
@@ -105,7 +99,7 @@ void Boss::render_hp_bar() const {
   }
 
   if (show_hp_) {
-    game().render_hp_bar(float(hp_) / float(max_hp_));
+    game().render_hp_bar(static_cast<float>(hp_) / max_hp_);
   }
 }
 
@@ -129,7 +123,7 @@ void Boss::on_destroy() {
         std::make_pair(n, std::make_pair(shape().centre + v, shapes()[0]->colour)));
     n += i;
   }
-  for (std::int32_t i = 0; i < kPlayers; i++) {
+  for (std::int32_t i = 0; i < kPlayers; ++i) {
     lib().rumble(i, 25);
   }
   play_sound(Lib::sound::kExplosion);

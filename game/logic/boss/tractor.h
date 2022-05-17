@@ -12,20 +12,20 @@ public:
   std::int32_t get_damage(std::int32_t damage, bool magic) override;
 
 private:
-  CompoundShape* s1_;
-  CompoundShape* s2_;
-  Polygon* sattack_;
-  bool will_attack_;
-  bool stopped_;
-  bool generating_;
-  bool attacking_;
-  bool continue_;
-  bool gen_dir_;
-  std::int32_t shoot_type_;
-  bool sound_;
-  std::int32_t timer_;
-  std::int32_t attack_size_;
-  std::size_t attack_shapes_;
+  CompoundShape* s1_ = nullptr;
+  CompoundShape* s2_ = nullptr;
+  Polygon* sattack_ = nullptr;
+  bool will_attack_ = false;
+  bool stopped_ = false;
+  bool generating_ = false;
+  bool attacking_ = false;
+  bool continue_ = false;
+  bool gen_dir_ = false;
+  std::int32_t shoot_type_ = 0;
+  bool sound_ = true;
+  std::int32_t timer_ = 0;
+  std::int32_t attack_size_ = 0;
+  std::size_t attack_shapes_ = 0;
 
   std::vector<vec2> targets_;
 };

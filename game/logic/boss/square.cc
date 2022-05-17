@@ -13,44 +13,41 @@ const fixed kBsbAttackRadius = 120;
 }  // namespace
 
 BigSquareBoss::BigSquareBoss(std::int32_t players, std::int32_t cycle)
-: Boss(vec2(Lib::kWidth * fixed_c::hundredth * 75, Lib::kHeight * 2), SimState::BOSS_1A, kBsbBaseHp,
-       players, cycle)
-, dir_(0, -1)
-, reverse_(false)
-, timer_(kBsbTimer * 6)
-, spawn_timer_(0)
-, special_timer_(0)
-, special_attack_(false)
-, special_attack_rotate_(false)
-, attack_player_(0) {
-  add_shape(new Polygon(vec2(), 160, 4, 0x9933ffff, 0, 0));
-  add_shape(new Polygon(vec2(), 140, 4, 0x9933ffff, 0, kDangerous));
-  add_shape(new Polygon(vec2(), 120, 4, 0x9933ffff, 0, kDangerous));
-  add_shape(new Polygon(vec2(), 100, 4, 0x9933ffff, 0, 0));
-  add_shape(new Polygon(vec2(), 80, 4, 0x9933ffff, 0, 0));
-  add_shape(new Polygon(vec2(), 60, 4, 0x9933ffff, 0, kVulnerable));
+: Boss{{Lib::kWidth * fixed_c::hundredth * 75, Lib::kHeight * 2},
+       SimState::BOSS_1A,
+       kBsbBaseHp,
+       players,
+       cycle}
+, dir_{0, -1}
+, timer_{kBsbTimer * 6} {
+  add_new_shape<Polygon>(vec2{}, 160, 4, 0x9933ffff, 0, 0);
+  add_new_shape<Polygon>(vec2{}, 140, 4, 0x9933ffff, 0, kDangerous);
+  add_new_shape<Polygon>(vec2{}, 120, 4, 0x9933ffff, 0, kDangerous);
+  add_new_shape<Polygon>(vec2{}, 100, 4, 0x9933ffff, 0, 0);
+  add_new_shape<Polygon>(vec2{}, 80, 4, 0x9933ffff, 0, 0);
+  add_new_shape<Polygon>(vec2{}, 60, 4, 0x9933ffff, 0, kVulnerable);
 
-  add_shape(new Polygon(vec2(), 155, 4, 0x9933ffff, 0, 0));
-  add_shape(new Polygon(vec2(), 135, 4, 0x9933ffff, 0, 0));
-  add_shape(new Polygon(vec2(), 115, 4, 0x9933ffff, 0, 0));
-  add_shape(new Polygon(vec2(), 95, 4, 0x6600ccff, 0, 0));
-  add_shape(new Polygon(vec2(), 75, 4, 0x6600ccff, 0, 0));
-  add_shape(new Polygon(vec2(), 55, 4, 0x330099ff, 0, kShield));
+  add_new_shape<Polygon>(vec2{}, 155, 4, 0x9933ffff, 0, 0);
+  add_new_shape<Polygon>(vec2{}, 135, 4, 0x9933ffff, 0, 0);
+  add_new_shape<Polygon>(vec2{}, 115, 4, 0x9933ffff, 0, 0);
+  add_new_shape<Polygon>(vec2{}, 95, 4, 0x6600ccff, 0, 0);
+  add_new_shape<Polygon>(vec2{}, 75, 4, 0x6600ccff, 0, 0);
+  add_new_shape<Polygon>(vec2{}, 55, 4, 0x330099ff, 0, kShield);
 }
 
 void BigSquareBoss::update() {
   const vec2& pos = shape().centre;
   if (pos.y < Lib::kHeight * fixed_c::hundredth * 25 && dir_.y == -1) {
-    dir_ = vec2(reverse_ ? 1 : -1, 0);
+    dir_ = {reverse_ ? 1 : -1, 0};
   }
   if (pos.x < Lib::kWidth * fixed_c::hundredth * 25 && dir_.x == -1) {
-    dir_ = vec2(0, reverse_ ? -1 : 1);
+    dir_ = {0, reverse_ ? -1 : 1};
   }
   if (pos.y > Lib::kHeight * fixed_c::hundredth * 75 && dir_.y == 1) {
-    dir_ = vec2(reverse_ ? -1 : 1, 0);
+    dir_ = {reverse_ ? -1 : 1, 0};
   }
   if (pos.x > Lib::kWidth * fixed_c::hundredth * 75 && dir_.x == 1) {
-    dir_ = vec2(0, reverse_ ? 1 : -1);
+    dir_ = {0, reverse_ ? 1 : -1};
   }
 
   if (special_attack_) {
@@ -63,11 +60,11 @@ void BigSquareBoss::update() {
       if (special_attack_rotate_) {
         d = d.rotated(fixed_c::pi / 2);
       }
-      for (std::int32_t i = 0; i < 6; i++) {
-        Enemy* s = new Follow(attack_player_->shape().centre + d);
+      for (std::int32_t i = 0; i < 6; ++i) {
+        auto s = std::make_unique<Follow>(attack_player_->shape().centre + d);
         s->shape().set_rotation(fixed_c::pi / 4);
         s->set_score(0);
-        spawn(s);
+        spawn(std::move(s));
         d = d.rotated(2 * fixed_c::pi / 6);
       }
       attack_player_ = 0;
@@ -80,15 +77,15 @@ void BigSquareBoss::update() {
     timer_--;
     if (timer_ <= 0) {
       timer_ = (z::rand_int(6) + 1) * kBsbTimer;
-      dir_ = vec2() - dir_;
+      dir_ = vec2{} - dir_;
       reverse_ = !reverse_;
     }
-    spawn_timer_++;
+    ++spawn_timer_;
     std::int32_t t = (kBsbSTimer - game().alive_players() * 10) / (is_hp_low() ? 2 : 1);
     if (spawn_timer_ >= t) {
       spawn_timer_ = 0;
-      special_timer_++;
-      spawn(new BigFollow(shape().centre, false));
+      ++special_timer_;
+      spawn_new<BigFollow>(shape().centre, false);
       play_sound_random(Lib::sound::kBossFire);
     }
     if (special_timer_ >= 8 && z::rand_int(4)) {
@@ -118,13 +115,13 @@ void BigSquareBoss::render() const {
   if ((special_timer_ / 4) % 2 && attack_player_) {
     fvec2 d(kBsbAttackRadius.to_float(), 0);
     if (special_attack_rotate_) {
-      d = d.rotated(M_PIf / 2);
+      d = d.rotated(kPiFloat / 2);
     }
-    for (std::int32_t i = 0; i < 6; i++) {
+    for (std::int32_t i = 0; i < 6; ++i) {
       fvec2 p = to_float(attack_player_->shape().centre) + d;
-      Polygon s(vec2(), 10, 4, 0x9933ffff, fixed_c::pi / 4, 0);
+      Polygon s{{}, 10, 4, 0x9933ffff, fixed_c::pi / 4, 0};
       s.render(lib(), p, 0);
-      d = d.rotated(2 * M_PIf / 6);
+      d = d.rotated(2 * kPiFloat / 6);
     }
   }
 }

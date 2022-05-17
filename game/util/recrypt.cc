@@ -7,7 +7,7 @@
 
 std::string crypt(const std::string& text, const std::string& key) {
   std::string r = "";
-  for (std::size_t i = 0; i < text.length(); i++) {
+  for (std::size_t i = 0; i < text.length(); ++i) {
     char c = text[i] ^ key[i % key.length()];
     if (text[i] == '\0' || c == '\0') {
       r += text[i];

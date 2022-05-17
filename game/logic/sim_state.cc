@@ -126,7 +126,7 @@ void SimState::render(Lib& lib) const {
   boss_hp_bar_.reset();
   Stars::render(lib);
   for (const auto& particle : particles_) {
-    lib.render_rect(particle.position + fvec2(1, 1), particle.position - fvec2(1, 1),
+    lib.render_rect(particle.position + fvec2{1, 1}, particle.position - fvec2{1, 1},
                     particle.colour);
   }
   for (std::size_t i = player_list_.size(); i < ships_.size(); ++i) {
@@ -144,40 +144,40 @@ void SimState::render(Lib& lib) const {
                                          : Boss::warnings_[i - ships_.size()]);
 
     if (v.x < -4) {
-      std::int32_t a = std::int32_t(.5f + float(0x1) +
-                                    float(0x9) * std::max(v.x + Lib::kWidth, 0.f) / Lib::kWidth);
+      auto a = static_cast<std::int32_t>(
+          .5f + float{0x1} + float{0x9} * std::max(v.x + Lib::kWidth, 0.f) / Lib::kWidth);
       a |= a << 4;
       a = (a << 8) | (a << 16) | (a << 24) | 0x66;
-      lib.render_line(fvec2(0.f, v.y), fvec2(6, v.y - 3), a);
-      lib.render_line(fvec2(6.f, v.y - 3), fvec2(6, v.y + 3), a);
-      lib.render_line(fvec2(6.f, v.y + 3), fvec2(0, v.y), a);
+      lib.render_line(fvec2{0.f, v.y}, fvec2{6, v.y - 3}, a);
+      lib.render_line(fvec2{6.f, v.y - 3}, fvec2{6, v.y + 3}, a);
+      lib.render_line(fvec2{6.f, v.y + 3}, fvec2{0, v.y}, a);
     }
     if (v.x >= Lib::kWidth + 4) {
-      std::int32_t a = std::int32_t(
-          .5f + float(0x1) + float(0x9) * std::max(2 * Lib::kWidth - v.x, 0.f) / Lib::kWidth);
+      auto a = static_cast<std::int32_t>(
+          .5f + float{0x1} + float{0x9} * std::max(2 * Lib::kWidth - v.x, 0.f) / Lib::kWidth);
       a |= a << 4;
       a = (a << 8) | (a << 16) | (a << 24) | 0x66;
-      lib.render_line(fvec2(float(Lib::kWidth), v.y), fvec2(Lib::kWidth - 6.f, v.y - 3), a);
-      lib.render_line(fvec2(Lib::kWidth - 6, v.y - 3), fvec2(Lib::kWidth - 6.f, v.y + 3), a);
-      lib.render_line(fvec2(Lib::kWidth - 6, v.y + 3), fvec2(float(Lib::kWidth), v.y), a);
+      lib.render_line(fvec2{float{Lib::kWidth}, v.y}, fvec2{Lib::kWidth - 6.f, v.y - 3}, a);
+      lib.render_line(fvec2{Lib::kWidth - 6, v.y - 3}, fvec2{Lib::kWidth - 6.f, v.y + 3}, a);
+      lib.render_line(fvec2{Lib::kWidth - 6, v.y + 3}, fvec2{float{Lib::kWidth}, v.y}, a);
     }
     if (v.y < -4) {
-      std::int32_t a = std::int32_t(.5f + float(0x1) +
-                                    float(0x9) * std::max(v.y + Lib::kHeight, 0.f) / Lib::kHeight);
+      auto a = static_cast<std::int32_t>(
+          .5f + float{0x1} + float{0x9} * std::max(v.y + Lib::kHeight, 0.f) / Lib::kHeight);
       a |= a << 4;
       a = (a << 8) | (a << 16) | (a << 24) | 0x66;
-      lib.render_line(fvec2(v.x, 0.f), fvec2(v.x - 3, 6.f), a);
-      lib.render_line(fvec2(v.x - 3, 6.f), fvec2(v.x + 3, 6.f), a);
-      lib.render_line(fvec2(v.x + 3, 6.f), fvec2(v.x, 0.f), a);
+      lib.render_line(fvec2{v.x, 0.f}, fvec2{v.x - 3, 6.f}, a);
+      lib.render_line(fvec2{v.x - 3, 6.f}, fvec2{v.x + 3, 6.f}, a);
+      lib.render_line(fvec2{v.x + 3, 6.f}, fvec2{v.x, 0.f}, a);
     }
     if (v.y >= Lib::kHeight + 4) {
-      std::int32_t a = std::int32_t(
-          .5f + float(0x1) + float(0x9) * std::max(2 * Lib::kHeight - v.y, 0.f) / Lib::kHeight);
+      auto a = static_cast<std::int32_t>(
+          .5f + float{0x1} + float{0x9} * std::max(2 * Lib::kHeight - v.y, 0.f) / Lib::kHeight);
       a |= a << 4;
       a = (a << 8) | (a << 16) | (a << 24) | 0x66;
-      lib.render_line(fvec2(v.x, float(Lib::kHeight)), fvec2(v.x - 3, Lib::kHeight - 6.f), a);
-      lib.render_line(fvec2(v.x - 3, Lib::kHeight - 6.f), fvec2(v.x + 3, Lib::kHeight - 6.f), a);
-      lib.render_line(fvec2(v.x + 3, Lib::kHeight - 6.f), fvec2(v.x, float(Lib::kHeight)), a);
+      lib.render_line(fvec2{v.x, float{Lib::kHeight}}, fvec2{v.x - 3, Lib::kHeight - 6.f}, a);
+      lib.render_line(fvec2{v.x - 3, Lib::kHeight - 6.f}, fvec2{v.x + 3, Lib::kHeight - 6.f}, a);
+      lib.render_line(fvec2{v.x + 3, Lib::kHeight - 6.f}, fvec2{v.x, float{Lib::kHeight}}, a);
     }
   }
 }
@@ -196,16 +196,15 @@ game_mode SimState::mode() const {
   return game_mode(replay_.replay.game_mode());
 }
 
-void SimState::add_ship(Ship* ship) {
+void SimState::add_ship(std::unique_ptr<Ship> ship) {
   ship->set_game(*this);
   if (ship->type() & Ship::kShipEnemy) {
     overmind_->on_enemy_create(*ship);
   }
-  ships_.emplace_back(ship);
-
   if (ship->bounding_width() > 1) {
-    collisions_.push_back(ship);
+    collisions_.push_back(ship.get());
   }
+  ships_.emplace_back(std::move(ship));
 }
 
 void SimState::add_particle(const Particle& particle) {
@@ -304,7 +303,7 @@ Player* SimState::nearest_player(const vec2& point) const {
   fixed dead_dist = 0;
 
   for (Ship* s : player_list_) {
-    fixed d = (s->shape().centre - point).length();
+    fixed d = (s->shape().centre - point).length_squared();
     if ((d < ship_dist || !ship) && !((Player*)s)->is_killed()) {
       ship_dist = d;
       ship = s;
@@ -322,7 +321,7 @@ bool SimState::game_over() const {
 }
 
 void SimState::add_life() {
-  lives_++;
+  ++lives_;
 }
 
 void SimState::sub_life() {
@@ -398,9 +397,9 @@ SimState::SimState(Lib& lib, SaveData& save, std::int32_t* frame_count, Replay&&
   Stars::clear();
   for (std::int32_t i = 0; i < replay_.replay.players(); ++i) {
     vec2 v((1 + i) * Lib::kWidth / (1 + replay_.replay.players()), Lib::kHeight / 2);
-    Player* p = new Player(*input_, v, i);
-    add_ship(p);
-    player_list_.push_back(p);
+    auto p = std::make_unique<Player>(*input_, v, i);
+    player_list_.push_back(p.get());
+    add_ship(std::move(p));
   }
   overmind_ = std::make_unique<Overmind>(*this, replay_.replay.can_face_secret_boss());
 }

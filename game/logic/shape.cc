@@ -3,11 +3,11 @@
 
 Shape::Shape(const vec2& centre, fixed rotation, colour_t colour, std::int32_t category,
              bool can_rotate)
-: centre(centre)
-, colour(colour)
-, category(category)
-, rotation_(can_rotate ? rotation : 0)
-, can_rotate_(can_rotate) {}
+: centre{centre}
+, colour{colour}
+, category{category}
+, rotation_{can_rotate ? rotation : 0}
+, can_rotate_{can_rotate} {}
 
 bool Shape::check_point(const vec2& v) const {
   vec2 a = v - centre;
@@ -52,11 +52,11 @@ void Shape::rotate(fixed rotation_amount) {
 }
 
 Fill::Fill(const vec2& centre, fixed width, fixed height, colour_t colour, std::int32_t category)
-: Shape(centre, 0, colour, category, false), width(width), height(height) {}
+: Shape{centre, 0, colour, category, false}, width{width}, height{height} {}
 
 void Fill::render(Lib& lib, const fvec2& position, float rotation, colour_t colour_override) const {
-  fvec2 c = convert_fl_point(position, rotation, fvec2());
-  fvec2 wh = fvec2(width.to_float(), height.to_float());
+  fvec2 c = convert_fl_point(position, rotation, {});
+  fvec2 wh = {width.to_float(), height.to_float()};
   fvec2 a = c + wh;
   fvec2 b = c - wh;
   lib.render_rect(a, b, colour_override ? colour_override : colour);
@@ -67,7 +67,7 @@ bool Fill::check_local_point(const vec2& v) const {
 }
 
 Line::Line(const vec2& centre, const vec2& a, const vec2& b, colour_t colour, fixed rotation)
-: Shape(centre, rotation, colour, 0), a(a), b(b) {}
+: Shape{centre, rotation, colour, 0}, a{a}, b{b} {}
 
 void Line::render(Lib& lib, const fvec2& position, float rotation, colour_t colour_override) const {
   fvec2 aa = convert_fl_point(position, rotation, to_float(a));
@@ -81,16 +81,16 @@ bool Line::check_local_point(const vec2& v) const {
 
 Box::Box(const vec2& centre, fixed width, fixed height, colour_t colour, fixed rotation,
          std::int32_t category)
-: Shape(centre, rotation, colour, category), width(width), height(height) {}
+: Shape{centre, rotation, colour, category}, width{width}, height{height} {}
 
 void Box::render(Lib& lib, const fvec2& position, float rotation, colour_t colour_override) const {
   float w = width.to_float();
   float h = height.to_float();
 
-  fvec2 a = convert_fl_point(position, rotation, fvec2(w, h));
-  fvec2 b = convert_fl_point(position, rotation, fvec2(-w, h));
-  fvec2 c = convert_fl_point(position, rotation, fvec2(-w, -h));
-  fvec2 d = convert_fl_point(position, rotation, fvec2(w, -h));
+  fvec2 a = convert_fl_point(position, rotation, {w, h});
+  fvec2 b = convert_fl_point(position, rotation, {-w, h});
+  fvec2 c = convert_fl_point(position, rotation, {-w, -h});
+  fvec2 d = convert_fl_point(position, rotation, {w, -h});
 
   lib.render_line(a, b, colour_override ? colour_override : colour);
   lib.render_line(b, c, colour_override ? colour_override : colour);
@@ -104,7 +104,7 @@ bool Box::check_local_point(const vec2& v) const {
 
 Polygon::Polygon(const vec2& centre, fixed radius, std::int32_t sides, colour_t colour,
                  fixed rotation, std::int32_t category, T type)
-: Shape(centre, rotation, colour, category), radius(radius), sides(sides), type(type) {}
+: Shape{centre, rotation, colour, category}, radius{radius}, sides{sides}, type{type} {}
 
 void Polygon::render(Lib& lib, const fvec2& position, float rotation,
                      colour_t colour_override) const {
@@ -116,23 +116,23 @@ void Polygon::render(Lib& lib, const fvec2& position, float rotation,
   std::vector<fvec2> lines;
   if (type == T::kPolygram) {
     std::vector<fvec2> list;
-    for (std::int32_t i = 0; i < sides; i++) {
-      fvec2 v = fvec2::from_polar(i * 2 * M_PIf / float(sides), r);
+    for (std::int32_t i = 0; i < sides; ++i) {
+      fvec2 v = fvec2::from_polar(i * 2 * kPiFloat / sides, r);
       list.push_back(v);
     }
 
-    for (std::size_t i = 0; i < list.size(); i++) {
-      for (std::size_t j = i + 1; j < list.size(); j++) {
+    for (std::size_t i = 0; i < list.size(); ++i) {
+      for (std::size_t j = i + 1; j < list.size(); ++j) {
         lines.push_back(list[i]);
         lines.push_back(list[j]);
       }
     }
   } else {
-    for (std::int32_t i = 0; i < sides; i++) {
-      fvec2 a = fvec2::from_polar(i * 2 * M_PIf / float(sides), r);
-      fvec2 b = fvec2::from_polar((i + 1) * 2 * M_PIf / float(sides), r);
+    for (std::int32_t i = 0; i < sides; ++i) {
+      fvec2 a = fvec2::from_polar(i * 2 * kPiFloat / sides, r);
+      fvec2 b = fvec2::from_polar((i + 1) * 2 * kPiFloat / sides, r);
       lines.push_back(a);
-      lines.push_back(type == T::kPolygon ? b : fvec2());
+      lines.push_back(type == T::kPolygon ? b : fvec2{});
     }
   }
   for (std::size_t i = 0; i < lines.size(); i += 2) {
@@ -148,7 +148,7 @@ bool Polygon::check_local_point(const vec2& v) const {
 
 PolyArc::PolyArc(const vec2& centre, fixed radius, std::int32_t sides, std::int32_t segments,
                  colour_t colour, fixed rotation, std::int32_t category)
-: Shape(centre, rotation, colour, category), radius(radius), sides(sides), segments(segments) {}
+: Shape{centre, rotation, colour, category}, radius{radius}, sides{sides}, segments{segments} {}
 
 void PolyArc::render(Lib& lib, const fvec2& position, float rotation,
                      colour_t colour_override) const {
@@ -157,9 +157,9 @@ void PolyArc::render(Lib& lib, const fvec2& position, float rotation,
   }
   float r = radius.to_float();
 
-  for (std::int32_t i = 0; i < sides && i < segments; i++) {
-    fvec2 a = fvec2::from_polar(i * 2 * M_PIf / float(sides), r);
-    fvec2 b = fvec2::from_polar((i + 1) * 2 * M_PIf / float(sides), r);
+  for (std::int32_t i = 0; i < sides && i < segments; ++i) {
+    fvec2 a = fvec2::from_polar(i * 2 * kPiFloat / sides, r);
+    fvec2 b = fvec2::from_polar((i + 1) * 2 * kPiFloat / sides, r);
     lib.render_line(convert_fl_point(position, rotation, a),
                     convert_fl_point(position, rotation, b),
                     colour_override ? colour_override : colour);
@@ -174,14 +174,14 @@ bool PolyArc::check_local_point(const vec2& v) const {
 }
 
 CompoundShape::CompoundShape(const vec2& centre, fixed rotation, std::int32_t category)
-: Shape(centre, rotation, 0, category) {}
+: Shape{centre, rotation, 0, category} {}
 
 const CompoundShape::shape_list& CompoundShape::shapes() const {
   return children_;
 }
 
-void CompoundShape::add_shape(Shape* shape) {
-  children_.emplace_back(shape);
+void CompoundShape::add_shape(std::unique_ptr<Shape> shape) {
+  children_.emplace_back(std::move(shape));
 }
 
 void CompoundShape::destroy_shape(std::size_t index) {
@@ -195,7 +195,7 @@ void CompoundShape::clear_shapes() {
 }
 
 void CompoundShape::render(Lib& lib, const fvec2& position, float rot, colour_t colour) const {
-  fvec2 c = convert_fl_point(position, rot, fvec2());
+  fvec2 c = convert_fl_point(position, rot, {});
   for (const auto& child : children_) {
     child->render(lib, c, rotation().to_float() + rot, colour);
   }

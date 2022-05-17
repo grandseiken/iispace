@@ -97,9 +97,9 @@ void SaveData::save() const {
   proto.set_hard_mode_bosses_killed(hard_mode_bosses_killed);
   auto put_mode_table = [&](const HighScores::mode_table& in, proto::ModeTable& out) {
     for (const auto& t : in) {
-      proto::Table& out_t = *out.add_table();
+      auto& out_t = *out.add_table();
       for (const auto& s : t) {
-        proto::Score& out_s = *out_t.add_score();
+        auto& out_s = *out_t.add_score();
         out_s.set_name(s.name);
         out_s.set_score(s.score);
       }
@@ -110,14 +110,14 @@ void SaveData::save() const {
   put_mode_table(high_scores.fast, *proto.mutable_fast());
   put_mode_table(high_scores.what, *proto.mutable_what());
   for (const auto& s : high_scores.boss) {
-    proto::Score& out_s = *proto.mutable_boss()->add_score();
+    auto& out_s = *proto.mutable_boss()->add_score();
     out_s.set_name(s.name);
     out_s.set_score(s.score);
   }
 
   std::string temp;
   proto.SerializeToString(&temp);
-  std::string encrypted = z::crypt(temp, Lib::kSuperEncryptionKey);
+  auto encrypted = z::crypt(temp, Lib::kSuperEncryptionKey);
   std::ofstream file;
   file.open(kSavePath, std::ios::binary);
   file << encrypted;
@@ -138,16 +138,16 @@ Settings::Settings() : windowed(false), volume(100) {
 
   std::string line;
   while (getline(file, line)) {
-    std::stringstream ss(line);
+    std::stringstream ss{line};
     std::string key;
     ss >> key;
     if (key.compare(kSettingsWindowed) == 0) {
       ss >> windowed;
     }
     if (key.compare(kSettingsVolume) == 0) {
-      float t;
+      float t = 0.f;
       ss >> t;
-      volume = std::int32_t(t);
+      volume = static_cast<std::int32_t>(t);
     }
   }
 }

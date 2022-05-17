@@ -14,15 +14,15 @@ public:
   void on_arm_death(Ship* arm);
 
 private:
-  std::int32_t timer_;
-  bool laser_;
-  bool dir_;
-  std::int32_t pos_;
+  std::int32_t timer_ = 0;
+  bool laser_ = false;
+  bool dir_ = true;
+  std::int32_t pos_ = 1;
   SimState::ship_list arms_;
-  std::int32_t arm_timer_;
-  std::int32_t shot_timer_;
+  std::int32_t arm_timer_ = 0;
+  std::int32_t shot_timer_ = 0;
 
-  std::int32_t ray_attack_timer_;
+  std::int32_t ray_attack_timer_ = 0;
   vec2 ray_src1_;
   vec2 ray_src2_;
   vec2 ray_dest_;
@@ -43,15 +43,15 @@ public:
   void on_destroy(bool bomb) override;
 
 private:
-  DeathRayBoss* boss_;
-  bool top_;
-  std::int32_t timer_;
-  bool attacking_;
+  DeathRayBoss* boss_ = nullptr;
+  bool top_ = false;
+  std::int32_t timer_ = 0;
+  bool attacking_ = false;
   vec2 dir_;
-  std::int32_t start_;
+  std::int32_t start_ = 30;
 
   vec2 target_;
-  std::int32_t shots_;
+  std::int32_t shots_ = 0;
 };
 
 #endif

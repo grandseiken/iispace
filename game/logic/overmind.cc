@@ -15,6 +15,7 @@ class formation_base {
 public:
   static std::vector<Overmind::entry> static_formations;
 
+  virtual ~formation_base() {}
   virtual void operator()() = 0;
 
   void
@@ -26,10 +27,6 @@ public:
     operator()();
   }
 
-  void spawn(Ship* ship) {
-    game_->add_ship(ship);
-  }
-
   vec2 spawn_point(bool top, std::int32_t num, std::int32_t div) {
     div = std::max(2, div);
     num = std::max(0, std::min(div - 1, num));
@@ -37,23 +34,23 @@ public:
     fixed x = fixed(top ? num : div - 1 - num) * Lib::kWidth / fixed(div - 1);
     fixed y = top ? -(row_ + 1) * (fixed_c::hundredth * 16) * Lib::kHeight
                   : Lib::kHeight * (1 + (row_ + 1) * (fixed_c::hundredth * 16));
-    return vec2(x, y);
+    return vec2{x, y};
   }
 
   void spawn_follow(std::int32_t num, std::int32_t div, std::int32_t side) {
-    do_sides(side, [&](bool b) { spawn(new Follow(spawn_point(b, num, div))); });
+    do_sides(side, [&](bool b) { game_->add_new_ship<Follow>(spawn_point(b, num, div)); });
   }
 
   void spawn_chaser(std::int32_t num, std::int32_t div, std::int32_t side) {
-    do_sides(side, [&](bool b) { spawn(new Chaser(spawn_point(b, num, div))); });
+    do_sides(side, [&](bool b) { game_->add_new_ship<Chaser>(spawn_point(b, num, div)); });
   }
 
   void spawn_square(std::int32_t num, std::int32_t div, std::int32_t side) {
-    do_sides(side, [&](bool b) { spawn(new Square(spawn_point(b, num, div))); });
+    do_sides(side, [&](bool b) { game_->add_new_ship<Square>(spawn_point(b, num, div)); });
   }
 
   void spawn_wall(std::int32_t num, std::int32_t div, std::int32_t side, bool dir) {
-    do_sides(side, [&](bool b) { spawn(new Wall(spawn_point(b, num, div), dir)); });
+    do_sides(side, [&](bool b) { game_->add_new_ship<Wall>(spawn_point(b, num, div), dir); });
   }
 
   void spawn_follow_hub(std::int32_t num, std::int32_t div, std::int32_t side) {
@@ -66,7 +63,7 @@ public:
       if (p2) {
         *hard_already_ += 2;
       }
-      spawn(new FollowHub(spawn_point(b, num, div), p1, p2));
+      game_->add_new_ship<FollowHub>(spawn_point(b, num, div), p1, p2);
     });
   }
 
@@ -76,7 +73,7 @@ public:
       if (p) {
         *hard_already_ += 3;
       }
-      spawn(new Shielder(spawn_point(b, num, div), p));
+      game_->add_new_ship<Shielder>(spawn_point(b, num, div), p);
     });
   }
 
@@ -86,7 +83,7 @@ public:
       if (p) {
         *hard_already_ += 4;
       }
-      spawn(new Tractor(spawn_point(b, num, div), p));
+      game_->add_new_ship<Tractor>(spawn_point(b, num, div), p);
     });
   }
 
@@ -101,34 +98,16 @@ private:
     }
   }
 
-  SimState* game_;
-  std::int32_t row_;
-  std::int32_t power_;
-  std::int32_t* hard_already_;
+  SimState* game_ = nullptr;
+  std::int32_t row_ = 0;
+  std::int32_t power_ = 0;
+  std::int32_t* hard_already_ = nullptr;
 };
 
 std::vector<Overmind::entry> formation_base::static_formations;
 
 Overmind::Overmind(SimState& game, bool can_face_secret_boss)
-: game_(game)
-, power_(0)
-, timer_(0)
-, count_(0)
-, non_wall_count_(0)
-, levels_mod_(0)
-, groups_mod_(0)
-, boss_mod_bosses_(0)
-, boss_mod_fights_(0)
-, boss_mod_secret_(0)
-, can_face_secret_boss_(can_face_secret_boss)
-, powerup_mod_(0)
-, lives_target_(0)
-, is_boss_next_(false)
-, is_boss_level_(false)
-, elapsed_time_(0)
-, waves_total_(0)
-, hard_already_(0)
-, bosses_to_go_(0) {
+: game_{game}, can_face_secret_boss_{can_face_secret_boss} {
   add_formations();
 
   auto queue = [] {
@@ -173,7 +152,7 @@ void Overmind::update() {
         boss_mode_boss();
       }
       if (boss_mod_bosses_ < 7) {
-        boss_mod_bosses_++;
+        ++boss_mod_bosses_;
       }
     }
     return;
@@ -184,7 +163,7 @@ void Overmind::update() {
     return;
   }
 
-  timer_++;
+  ++timer_;
   if (timer_ == kPowerupTime && !is_boss_level_) {
     spawn_powerup();
   }
@@ -193,7 +172,7 @@ void Overmind::update() {
   std::int32_t trigger_stage = groups_mod_ + boss_cycles + 2 * (game_.mode() == game_mode::kHard);
   std::int32_t trigger_val = kInitialTriggerVal;
   for (std::int32_t i = 0; i < trigger_stage; ++i) {
-    trigger_val += i < 2 ? 4 : i < 7 - std::int32_t(game_.players().size()) ? 3 : 2;
+    trigger_val += i < 2 ? 4 : i < 7 - static_cast<std::int32_t>(game_.players().size()) ? 3 : 2;
   }
   if (trigger_val < 0 || is_boss_level_ || is_boss_next_) {
     trigger_val = 0;
@@ -238,9 +217,9 @@ void Overmind::update() {
 
     if (levels_mod_ >= kLevelsPerGroup) {
       levels_mod_ = 0;
-      groups_mod_++;
+      ++groups_mod_;
     }
-    if (groups_mod_ >= kBaseGroupsPerBoss + std::int32_t(game_.players().size())) {
+    if (groups_mod_ >= kBaseGroupsPerBoss + static_cast<std::int32_t>(game_.players().size())) {
       groups_mod_ = 0;
       is_boss_next_ = true;
       bosses_to_go_ = boss_mod_fights_ >= 4 ? 3 : boss_mod_fights_ >= 2 ? 2 : 1;
@@ -258,12 +237,8 @@ void Overmind::on_enemy_destroy(const Ship& ship) {
 void Overmind::on_enemy_create(const Ship& ship) {
   count_ += ship.enemy_value();
   if (!(ship.type() & Ship::kShipWall)) {
-    non_wall_count_++;
+    ++non_wall_count_;
   }
-}
-
-void Overmind::spawn(Ship* ship) {
-  game_.add_ship(ship);
 }
 
 void Overmind::spawn_powerup() {
@@ -277,15 +252,15 @@ void Overmind::spawn_powerup() {
   }
 
   std::int32_t r = z::rand_int(4);
-  vec2 v = r == 0 ? vec2(-Lib::kWidth, Lib::kHeight / 2)
-      : r == 1    ? vec2(Lib::kWidth * 2, Lib::kHeight / 2)
-      : r == 2    ? vec2(Lib::kWidth / 2, -Lib::kHeight)
-                  : vec2(Lib::kWidth / 2, Lib::kHeight * 2);
+  vec2 v = r == 0 ? vec2{-Lib::kWidth, Lib::kHeight / 2}
+      : r == 1    ? vec2{Lib::kWidth * 2, Lib::kHeight / 2}
+      : r == 2    ? vec2{Lib::kWidth / 2, -Lib::kHeight}
+                  : vec2{Lib::kWidth / 2, Lib::kHeight * 2};
 
   std::int32_t m = 4;
-  for (std::int32_t i = 1; i <= kPlayers; i++) {
-    if (game_.get_lives() <= std::int32_t(game_.players().size()) - i) {
-      m++;
+  for (std::int32_t i = 1; i <= kPlayers; ++i) {
+    if (game_.get_lives() <= static_cast<std::int32_t>(game_.players().size()) - i) {
+      ++m;
     }
   }
   if (!game_.get_lives()) {
@@ -299,21 +274,21 @@ void Overmind::spawn_powerup() {
   }
 
   r = z::rand_int(m);
-  spawn(new Powerup(v,
-                    r == 0       ? Powerup::type::kBomb
-                        : r == 1 ? Powerup::type::kMagicShots
-                        : r == 2 ? Powerup::type::kShield
-                                 : (--lives_target_, Powerup::type::kExtraLife)));
+  game_.add_new_ship<Powerup>(v,
+                              r == 0       ? Powerup::type::kBomb
+                                  : r == 1 ? Powerup::type::kMagicShots
+                                  : r == 2 ? Powerup::type::kShield
+                                           : (--lives_target_, Powerup::type::kExtraLife));
 }
 
 void Overmind::spawn_boss_reward() {
   std::int32_t r = z::rand_int(4);
-  vec2 v = r == 0 ? vec2(-Lib::kWidth / 4, Lib::kHeight / 2)
-      : r == 1    ? vec2(Lib::kWidth + Lib::kWidth / 4, Lib::kHeight / 2)
-      : r == 2    ? vec2(Lib::kWidth / 2, -Lib::kHeight / 4)
-                  : vec2(Lib::kWidth / 2, Lib::kHeight + Lib::kHeight / 4);
+  vec2 v = r == 0 ? vec2{-Lib::kWidth / 4, Lib::kHeight / 2}
+      : r == 1    ? vec2{Lib::kWidth + Lib::kWidth / 4, Lib::kHeight / 2}
+      : r == 2    ? vec2{Lib::kWidth / 2, -Lib::kHeight / 4}
+                  : vec2{Lib::kWidth / 2, Lib::kHeight + Lib::kHeight / 4};
 
-  spawn(new Powerup(v, Powerup::type::kExtraLife));
+  game_.add_new_ship<Powerup>(v, Powerup::type::kExtraLife);
   if (game_.mode() != game_mode::kBoss) {
     spawn_powerup();
   }
@@ -382,25 +357,31 @@ void Overmind::boss() {
   if (can_face_secret_boss_ && bosses_to_go_ == 0 && boss_mod_secret_ == 0 && secret_chance) {
     std::int32_t secret_cycle =
         std::max(0, (boss_mod_bosses_ + (game_.mode() == game_mode::kHard) - 2) / 2);
-    spawn(new SuperBoss(count, secret_cycle));
+    game_.add_new_ship<SuperBoss>(count, secret_cycle);
     boss_mod_secret_ = 2;
   }
 
   else if (boss_mod_bosses_ % 2 == 0) {
-    spawn(boss1_queue_[0] == 0       ? (Boss*)new BigSquareBoss(count, cycle)
-              : boss1_queue_[0] == 1 ? (Boss*)new ShieldBombBoss(count, cycle)
-                                     : (Boss*)new ChaserBoss(count, cycle));
-
+    if (boss1_queue_[0] == 0) {
+      game_.add_new_ship<BigSquareBoss>(count, cycle);
+    } else if (boss1_queue_[0] == 1) {
+      game_.add_new_ship<ShieldBombBoss>(count, cycle);
+    } else {
+      game_.add_new_ship<ChaserBoss>(count, cycle);
+    }
     boss1_queue_.push_back(boss1_queue_.front());
     boss1_queue_.erase(boss1_queue_.begin());
   } else {
     if (boss_mod_secret_ > 0) {
       --boss_mod_secret_;
     }
-    spawn(boss2_queue_[0] == 0       ? (Boss*)new TractorBoss(count, cycle)
-              : boss2_queue_[0] == 1 ? (Boss*)new GhostBoss(count, cycle)
-                                     : (Boss*)new DeathRayBoss(count, cycle));
-
+    if (boss2_queue_[0] == 0) {
+      game_.add_new_ship<TractorBoss>(count, cycle);
+    } else if (boss2_queue_[0] == 1) {
+      game_.add_new_ship<GhostBoss>(count, cycle);
+    } else {
+      game_.add_new_ship<DeathRayBoss>(count, cycle);
+    }
     boss2_queue_.push_back(boss2_queue_.front());
     boss2_queue_.erase(boss2_queue_.begin());
   }
@@ -410,13 +391,21 @@ void Overmind::boss_mode_boss() {
   std::int32_t boss = boss_mod_bosses_;
   std::int32_t count = game_.players().size();
   if (boss_mod_bosses_ < 3) {
-    spawn(boss1_queue_[boss] == 0       ? (Boss*)new BigSquareBoss(count, 0)
-              : boss1_queue_[boss] == 1 ? (Boss*)new ShieldBombBoss(count, 0)
-                                        : (Boss*)new ChaserBoss(count, 0));
+    if (boss1_queue_[boss] == 0) {
+      game_.add_new_ship<BigSquareBoss>(count, 0);
+    } else if (boss1_queue_[boss] == 1) {
+      game_.add_new_ship<ShieldBombBoss>(count, 0);
+    } else {
+      game_.add_new_ship<ChaserBoss>(count, 0);
+    }
   } else {
-    spawn(boss2_queue_[boss] == 0       ? (Boss*)new TractorBoss(count, 0)
-              : boss2_queue_[boss] == 1 ? (Boss*)new GhostBoss(count, 0)
-                                        : (Boss*)new DeathRayBoss(count, 0));
+    if (boss2_queue_[boss] == 0) {
+      game_.add_new_ship<TractorBoss>(count, 0);
+    } else if (boss2_queue_[boss] == 1) {
+      game_.add_new_ship<GhostBoss>(count, 0);
+    } else {
+      game_.add_new_ship<DeathRayBoss>(count, 0);
+    }
   }
 }
 
@@ -427,7 +416,7 @@ struct formation : formation_base {
   static std::unique_ptr<F> function;
   struct init_t {
     init_t() {
-      function.reset(new F());
+      function = std::make_unique<F>();
       static_formations.emplace_back(Overmind::entry{I, C, R, function.get()});
     }
     // Ensure static initialisation.
@@ -446,7 +435,7 @@ typename formation<I, F, C, R>::init_t formation<I, F, C, R>::init_v;
 
 struct square1 : formation<0, square1, 4> {
   void operator()() override {
-    for (std::int32_t i = 1; i < 5; i++) {
+    for (std::int32_t i = 1; i < 5; ++i) {
       spawn_square(i, 6, 0);
     }
   }
@@ -475,7 +464,7 @@ struct square3 : formation<2, square3, 20, 24> {
     std::int32_t p21 = 2 + z::rand_int(14);
     std::int32_t p22 = 2 + z::rand_int(14);
 
-    for (std::int32_t i = 0; i < 18; i++) {
+    for (std::int32_t i = 0; i < 18; ++i) {
       if (r1 < 2 || i != p11) {
         if (r2 < 2 || i != p21) {
           spawn_square(i, 18, 1);
@@ -680,11 +669,11 @@ struct follow2 : formation<13, follow2, 7> {
   void operator()() override {
     std::int32_t p = z::rand_int(2);
     if (p == 0) {
-      for (std::int32_t i = 0; i < 8; i++) {
+      for (std::int32_t i = 0; i < 8; ++i) {
         spawn_follow(i, 8, 0);
       }
     } else
-      for (std::int32_t i = 0; i < 8; i++) {
+      for (std::int32_t i = 0; i < 8; ++i) {
         spawn_follow(4 + i, 16, 0);
       }
   }
@@ -724,11 +713,11 @@ struct follow2side : formation<16, follow2side, 3> {
     std::int32_t r = 1 + z::rand_int(2);
     std::int32_t p = z::rand_int(2);
     if (p == 0) {
-      for (std::int32_t i = 0; i < 8; i++) {
+      for (std::int32_t i = 0; i < 8; ++i) {
         spawn_follow(i, 8, r);
       }
     } else
-      for (std::int32_t i = 0; i < 8; i++) {
+      for (std::int32_t i = 0; i < 8; ++i) {
         spawn_follow(4 + i, 16, r);
       }
   }
@@ -767,11 +756,11 @@ struct chaser2 : formation<19, chaser2, 8> {
   void operator()() override {
     std::int32_t p = z::rand_int(2);
     if (p == 0) {
-      for (std::int32_t i = 0; i < 8; i++) {
+      for (std::int32_t i = 0; i < 8; ++i) {
         spawn_chaser(i, 8, 0);
       }
     } else
-      for (std::int32_t i = 0; i < 8; i++) {
+      for (std::int32_t i = 0; i < 8; ++i) {
         spawn_chaser(4 + i, 16, 0);
       }
   }
@@ -792,7 +781,7 @@ struct chaser3 : formation<20, chaser3, 16> {
 };
 struct chaser4 : formation<21, chaser4, 20> {
   void operator()() override {
-    for (std::int32_t i = 0; i < 22; i++) {
+    for (std::int32_t i = 0; i < 22; ++i) {
       spawn_chaser(i, 22, 0);
     }
   }
@@ -818,11 +807,11 @@ struct chaser2side : formation<23, chaser2side, 4> {
     std::int32_t r = 1 + z::rand_int(2);
     std::int32_t p = z::rand_int(2);
     if (p == 0) {
-      for (std::int32_t i = 0; i < 8; i++) {
+      for (std::int32_t i = 0; i < 8; ++i) {
         spawn_chaser(i, 8, r);
       }
     } else
-      for (std::int32_t i = 0; i < 8; i++) {
+      for (std::int32_t i = 0; i < 8; ++i) {
         spawn_chaser(4 + i, 16, r);
       }
   }
@@ -845,7 +834,7 @@ struct chaser3side : formation<24, chaser3side, 8> {
 struct chaser4side : formation<25, chaser4side, 10> {
   void operator()() override {
     std::int32_t r = 1 + z::rand_int(2);
-    for (std::int32_t i = 0; i < 22; i++) {
+    for (std::int32_t i = 0; i < 22; ++i) {
       spawn_chaser(i, 22, r);
     }
   }
@@ -886,7 +875,7 @@ struct mixed1 : formation<30, mixed1, 6> {
 };
 struct mixed2 : formation<31, mixed2, 12> {
   void operator()() override {
-    for (std::int32_t i = 0; i < 13; i++) {
+    for (std::int32_t i = 0; i < 13; ++i) {
       if (i % 2) {
         spawn_follow(i, 13, 0);
       } else {
@@ -954,7 +943,7 @@ struct mixed2side : formation<38, mixed2side, 6> {
   void operator()() override {
     std::int32_t r = z::rand_int(2);
     std::int32_t p = z::rand_int(2);
-    for (std::int32_t i = 0; i < 13; i++) {
+    for (std::int32_t i = 0; i < 13; ++i) {
       if (i % 2) {
         spawn_follow(i, 13, 1 + r);
       } else {
@@ -1044,11 +1033,6 @@ struct shielder1side : formation<49, shielder1side, 5, 22> {
     spawn_shielder(z::rand_int(3) + 1, 5, 1 + z::rand_int(2));
   }
 };
-
-template <typename F>
-void Overmind::add_formation() {
-  formations_.push_back(entry{F::cost, F::min_resource, new F()});
-}
 
 void Overmind::add_formations() {
   square1::init();

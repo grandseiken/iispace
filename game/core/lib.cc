@@ -117,19 +117,19 @@ struct Internals {
   sf::Texture texture;
   mutable sf::Sprite font;
 
-  OIS::InputManager* manager;
+  OIS::InputManager* manager = nullptr;
   Handler pad_handler;
-  std::int32_t pad_count;
-  PadConfig pad_config[kPlayers];
-  OIS::JoyStick* pads[kPlayers];
-  OIS::ForceFeedback* ff[kPlayers];
-  fixed pad_move_vaxes[kPlayers];
-  fixed pad_move_haxes[kPlayers];
-  fixed pad_aim_vaxes[kPlayers];
-  fixed pad_aim_haxes[kPlayers];
-  std::int32_t pad_move_dpads[kPlayers];
-  std::int32_t pad_aim_dpads[kPlayers];
-  mutable vec2 pad_last_aim[kPlayers];
+  std::int32_t pad_count = 0;
+  PadConfig pad_config[kPlayers] = {{}};
+  OIS::JoyStick* pads[kPlayers] = {nullptr};
+  OIS::ForceFeedback* ff[kPlayers] = {nullptr};
+  fixed pad_move_vaxes[kPlayers] = {0};
+  fixed pad_move_haxes[kPlayers] = {0};
+  fixed pad_aim_vaxes[kPlayers] = {0};
+  fixed pad_aim_haxes[kPlayers] = {0};
+  std::int32_t pad_move_dpads[kPlayers] = {0};
+  std::int32_t pad_aim_dpads[kPlayers] = {0};
+  mutable vec2 pad_last_aim[kPlayers] = {{0, 0}};
 
   typedef std::pair<Lib::sound, std::unique_ptr<sf::SoundBuffer>> named_sound;
   typedef std::pair<std::int32_t, named_sound> sound_resource;
@@ -189,7 +189,7 @@ bool Handler::axisMoved(const OIS::JoyStickEvent& arg, std::int32_t axis) {
   }
 
   fixed v = std::max(
-      -fixed(1), std::min(fixed(1), fixed(arg.state.mAxes[axis].abs) / OIS::JoyStick::MAX_AXIS));
+      -fixed{1}, std::min(fixed{1}, fixed{arg.state.mAxes[axis].abs} / OIS::JoyStick::MAX_AXIS));
   PadConfig& config = lib_->internals_->pad_config[p];
 
   for (std::size_t i = 0; i < config._moveSticks.size(); ++i) {
@@ -278,7 +278,7 @@ bool Handler::povMoved(const OIS::JoyStickEvent& arg, std::int32_t pov) {
 struct Internals {};
 #endif
 
-Lib::Lib() : cycle_(0), players_(1), capture_mouse_(false), mouse_moving_(true), score_frame_(0) {
+Lib::Lib() {
 #ifndef PLATFORM_SCORE
   set_working_directory(false);
 #ifdef PLATFORM_LINUX
@@ -286,7 +286,7 @@ Lib::Lib() : cycle_(0), players_(1), capture_mouse_(false), mouse_moving_(true),
 #else
   CreateDirectory("replays", 0);
 #endif
-  internals_.reset(new Internals());
+  internals_ = std::make_unique<Internals>();
 
   bool created = false;
   for (int i = sf::VideoMode::getFullscreenModes().size() - 1; i >= 0 && !Settings().windowed;
@@ -295,7 +295,7 @@ Lib::Lib() : cycle_(0), players_(1), capture_mouse_(false), mouse_moving_(true),
     if (m.width >= unsigned(Lib::kWidth) && m.height >= unsigned(Lib::kHeight) &&
         m.bitsPerPixel == 32) {
       internals_->window.create(m, "WiiSPACE", sf::Style::Close | sf::Style::Titlebar,
-                                sf::ContextSettings(0, 0, 0));
+                                sf::ContextSettings{0, 0, 0});
       extra_.x = (m.width - Lib::kWidth) / 2;
       extra_.y = (m.height - Lib::kHeight) / 2;
       created = true;
@@ -303,16 +303,14 @@ Lib::Lib() : cycle_(0), players_(1), capture_mouse_(false), mouse_moving_(true),
     }
   }
   if (!created) {
-    internals_->window.create(sf::VideoMode(640, 480, 32), "WiiSPACE",
+    internals_->window.create(sf::VideoMode{640, 480, 32}, "WiiSPACE",
                               sf::Style::Close | sf::Style::Titlebar);
   }
 
   internals_->manager = OIS::InputManager::createInputSystem(
       reinterpret_cast<std::size_t>(internals_->window.getSystemHandle()));
   internals_->pad_count = std::min(4, internals_->manager->getNumberOfDevices(OIS::OISJoyStick));
-  OIS::JoyStick* tpads[4];
-  tpads[0] = tpads[1] = tpads[2] = tpads[3] = 0;
-  internals_->pads[0] = internals_->pads[1] = internals_->pads[2] = internals_->pads[3] = 0;
+  OIS::JoyStick* tpads[4] = {nullptr};
   for (std::int32_t i = 0; i < internals_->pad_count; ++i) {
     try {
       tpads[i] = (OIS::JoyStick*)internals_->manager->createInputObject(OIS::OISJoyStick, true);
@@ -325,10 +323,10 @@ Lib::Lib() : cycle_(0), players_(1), capture_mouse_(false), mouse_moving_(true),
 
   internals_->pad_handler.SetLib(this);
   std::int32_t configs = 0;
-  std::ifstream f("gamepads.txt");
+  std::ifstream f{"gamepads.txt"};
   std::string line;
   getline(f, line);
-  std::stringstream ss(line);
+  std::stringstream ss{line};
   ss >> configs;
   for (std::int32_t i = 0; i < kPlayers; ++i) {
     if (i >= configs) {
@@ -448,7 +446,7 @@ Lib::~Lib() {
 }
 
 bool Lib::is_key_pressed(key k) const {
-  for (std::int32_t i = 0; i < kPlayers; i++)
+  for (std::int32_t i = 0; i < kPlayers; ++i)
     if (is_key_pressed(i, k)) {
       return true;
     }
@@ -456,7 +454,7 @@ bool Lib::is_key_pressed(key k) const {
 }
 
 bool Lib::is_key_released(key k) const {
-  for (std::int32_t i = 0; i < kPlayers; i++)
+  for (std::int32_t i = 0; i < kPlayers; ++i)
     if (is_key_released(i, k)) {
       return true;
     }
@@ -464,7 +462,7 @@ bool Lib::is_key_released(key k) const {
 }
 
 bool Lib::is_key_held(key k) const {
-  for (std::int32_t i = 0; i < kPlayers; i++)
+  for (std::int32_t i = 0; i < kPlayers; ++i)
     if (is_key_held(i, k)) {
       return true;
     }
@@ -611,7 +609,7 @@ void Lib::end_frame() {
     }
   }
 #endif
-  /*for (std::int32_t i = 0; i < kPlayers; i++) {
+  /*for (std::int32_t i = 0; i < kPlayers; ++i) {
     if (rumble_[i]) {
       rumble_[i]--;
       if (!rumble_[i]) {
@@ -713,18 +711,18 @@ vec2 Lib::get_move_velocity(std::int32_t player) const {
   bool kl = is_key_held(player, key::kLeft) || internals_->pad_move_dpads[player] & OIS::Pov::West;
   bool kr = is_key_held(player, key::kRight) || internals_->pad_move_dpads[player] & OIS::Pov::East;
 
-  vec2 v = vec2(0, -1) * ku + vec2(0, 1) * kd + vec2(-1, 0) * kl + vec2(1, 0) * kr;
-  if (v != vec2()) {
+  vec2 v = vec2{0, -1} * ku + vec2{0, 1} * kd + vec2{-1, 0} * kl + vec2{1, 0} * kr;
+  if (v != vec2{}) {
     return v;
   }
 
-  v = vec2(internals_->pad_move_haxes[player], internals_->pad_move_vaxes[player]);
+  v = vec2{internals_->pad_move_haxes[player], internals_->pad_move_vaxes[player]};
   if (v.length() < fixed_c::tenth * 2) {
-    return vec2();
+    return {};
   }
   return v;
 #else
-  return vec2();
+  return {};
 #endif
 }
 
@@ -748,8 +746,8 @@ vec2 Lib::get_fire_target(std::int32_t player, const vec2& position) const {
     bool kl = (internals_->pad_aim_dpads[player] & OIS::Pov::West) != 0;
     bool kr = (internals_->pad_aim_dpads[player] & OIS::Pov::East) != 0;
 
-    vec2 v = vec2(0, -1) * ku + vec2(0, 1) * kd + vec2(-1, 0) * kl + vec2(1, 0) * kr;
-    if (v != vec2()) {
+    vec2 v = vec2{0, -1} * ku + vec2{0, 1} * kd + vec2{-1, 0} * kl + vec2{1, 0} * kr;
+    if (v != vec2{}) {
       v = v.normalised() * 48;
       if (kp) {
         mouse_moving_ = false;
@@ -760,14 +758,14 @@ vec2 Lib::get_fire_target(std::int32_t player, const vec2& position) const {
   }
 
   if (mouse_moving_ && kp) {
-    return vec2(mouse_.x, mouse_.y);
+    return vec2{mouse_.x, mouse_.y};
   }
-  if (internals_->pad_last_aim[player] != vec2()) {
+  if (internals_->pad_last_aim[player] != vec2{}) {
     return position + internals_->pad_last_aim[player];
   }
-  return position + vec2(48, 0);
+  return position + vec2{48, 0};
 #else
-  return vec2();
+  return {};
 #endif
 }
 
@@ -777,7 +775,7 @@ void Lib::clear_screen() const {
 #ifndef PLATFORM_SCORE
   glClear(GL_COLOR_BUFFER_BIT);
   internals_->window.clear(RgbaToColor(0x000000ff));
-  internals_->window.draw(MakeRectangle(0, 0, 0, 0, sf::Color()));
+  internals_->window.draw(MakeRectangle(0, 0, 0, 0, {}));
 #endif
 }
 
@@ -805,12 +803,12 @@ void Lib::render_text(const fvec2& v, const std::string& text, colour_t c) const
 #ifndef PLATFORM_SCORE
   internals_->font.setColor(RgbaToColor(z::colour_cycle(c, cycle_)));
   for (std::size_t i = 0; i < text.length(); ++i) {
-    internals_->font.setPosition((std::int32_t(i) + v.x) * kTextWidth + extra_.x,
+    internals_->font.setPosition((static_cast<std::int32_t>(i) + v.x) * kTextWidth + extra_.x,
                                  v.y * kTextHeight + extra_.y);
-    internals_->font.setTextureRect(sf::IntRect(kTextWidth * text[i], 0, kTextWidth, kTextHeight));
+    internals_->font.setTextureRect(sf::IntRect{kTextWidth * text[i], 0, kTextWidth, kTextHeight});
     internals_->window.draw(internals_->font);
   }
-  internals_->window.draw(MakeRectangle(0, 0, 0, 0, sf::Color()));
+  internals_->window.draw(MakeRectangle(0, 0, 0, 0, {}));
 #endif
 }
 
@@ -818,30 +816,26 @@ void Lib::render_rect(const fvec2& low, const fvec2& hi, colour_t c,
                       std::int32_t line_width) const {
 #ifndef PLATFORM_SCORE
   c = z::colour_cycle(c, cycle_);
-  fvec2 ab(low.x, hi.y);
-  fvec2 ba(hi.x, low.y);
-  const fvec2* list[4];
-  fvec2 normals[4];
-  list[0] = &low;
-  list[1] = &ab;
-  list[2] = &hi;
-  list[3] = &ba;
+  fvec2 ab{low.x, hi.y};
+  fvec2 ba{hi.x, low.y};
+  const fvec2* list[4] = {&low, &ab, &hi, &ba};
+  fvec2 normals[4] = {{}};
 
-  fvec2 centre = (low + hi) / 2;
+  auto centre = (low + hi) / 2;
   for (std::size_t i = 0; i < 4; ++i) {
-    const fvec2& v0 = *list[(i + 3) % 4];
-    const fvec2& v1 = *list[i];
-    const fvec2& v2 = *list[(i + 1) % 4];
+    const auto& v0 = *list[(i + 3) % 4];
+    const auto& v1 = *list[i];
+    const auto& v2 = *list[(i + 1) % 4];
 
-    fvec2 n1 = fvec2(v0.y - v1.y, v1.x - v0.x).normalised();
-    fvec2 n2 = fvec2(v1.y - v2.y, v2.x - v1.x).normalised();
+    auto n1 = fvec2{v0.y - v1.y, v1.x - v0.x}.normalised();
+    auto n2 = fvec2{v1.y - v2.y, v2.x - v1.x}.normalised();
 
-    float f = 1 + n1.x * n2.x + n1.y * n2.y;
+    auto f = 1.f + n1.x * n2.x + n1.y * n2.y;
     normals[i] = (n1 + n2) / f;
-    float dot = (v1.x - centre.x) * normals[i].x + (v1.y - centre.y) * normals[i].y;
+    auto dot = (v1.x - centre.x) * normals[i].x + (v1.y - centre.y) * normals[i].y;
 
     if (dot < 0) {
-      normals[i] = fvec2() - normals[i];
+      normals[i] = fvec2{} - normals[i];
     }
   }
 
@@ -854,7 +848,7 @@ void Lib::render_rect(const fvec2& low, const fvec2& hi, colour_t c,
   glEnd();
 
   if (line_width > 1) {
-    render_rect(low + fvec2(1.f, 1.f), hi - fvec2(1.f, 1.f), z::colour_cycle(c, cycle_),
+    render_rect(low + fvec2{1.f, 1.f}, hi - fvec2{1.f, 1.f}, z::colour_cycle(c, cycle_),
                 line_width - 1);
   }
 #endif
@@ -862,39 +856,35 @@ void Lib::render_rect(const fvec2& low, const fvec2& hi, colour_t c,
 
 void Lib::render() const {
 #ifndef PLATFORM_SCORE
-  internals_->window.draw(MakeRectangle(
-      0.f, 0.f, float(extra_.x), float(Lib::kHeight + extra_.y * 2), sf::Color(0, 0, 0, 255)));
-  internals_->window.draw(MakeRectangle(0.f, 0.f, float(Lib::kWidth + extra_.x * 2),
-                                        float(extra_.y), sf::Color(0, 0, 0, 255)));
   internals_->window.draw(
-      MakeRectangle(float(Lib::kWidth + extra_.x), 0, float(Lib::kWidth + extra_.x * 2),
-                    float(Lib::kHeight + extra_.y * 2), sf::Color(0, 0, 0, 255)));
+      MakeRectangle(0.f, 0.f, extra_.x, Lib::kHeight + extra_.y * 2, sf::Color(0, 0, 0, 255)));
   internals_->window.draw(
-      MakeRectangle(0.f, float(Lib::kHeight + extra_.y), float(Lib::kWidth + extra_.x * 2),
-                    float(Lib::kHeight + extra_.y * 2), sf::Color(0, 0, 0, 255)));
-  internals_->window.draw(MakeRectangle(0.f, 0.f, float(extra_.x - 2),
-                                        float(Lib::kHeight + extra_.y * 2),
+      MakeRectangle(0.f, 0.f, Lib::kWidth + extra_.x * 2, extra_.y, sf::Color(0, 0, 0, 255)));
+  internals_->window.draw(MakeRectangle(Lib::kWidth + extra_.x, 0, Lib::kWidth + extra_.x * 2,
+                                        Lib::kHeight + extra_.y * 2, sf::Color(0, 0, 0, 255)));
+  internals_->window.draw(MakeRectangle(0.f, Lib::kHeight + extra_.y, Lib::kWidth + extra_.x * 2,
+                                        Lib::kHeight + extra_.y * 2, sf::Color(0, 0, 0, 255)));
+  internals_->window.draw(MakeRectangle(0.f, 0.f, extra_.x - 2, Lib::kHeight + extra_.y * 2,
                                         sf::Color(32, 32, 32, 255)));
-  internals_->window.draw(MakeRectangle(0.f, 0.f, float(Lib::kWidth + extra_.x * 2),
-                                        float(extra_.y - 2), sf::Color(32, 32, 32, 255)));
-  internals_->window.draw(MakeRectangle(
-      float(Lib::kWidth + extra_.x + 2), float(extra_.y - 4), float(Lib::kWidth + extra_.x * 2),
-      float(Lib::kHeight + extra_.y * 2), sf::Color(32, 32, 32, 255)));
-  internals_->window.draw(MakeRectangle(
-      float(extra_.x - 2), float(Lib::kHeight + extra_.y + 2), float(Lib::kWidth + extra_.x * 2),
-      float(Lib::kHeight + extra_.y * 2), sf::Color(32, 32, 32, 255)));
-  internals_->window.draw(MakeRectangle(float(extra_.x - 4), float(extra_.y - 4),
-                                        float(extra_.x - 2), float(Lib::kHeight + extra_.y + 4),
+  internals_->window.draw(MakeRectangle(0.f, 0.f, Lib::kWidth + extra_.x * 2, extra_.y - 2,
+                                        sf::Color(32, 32, 32, 255)));
+  internals_->window.draw(MakeRectangle(Lib::kWidth + extra_.x + 2, extra_.y - 4,
+                                        Lib::kWidth + extra_.x * 2, Lib::kHeight + extra_.y * 2,
+                                        sf::Color(32, 32, 32, 255)));
+  internals_->window.draw(MakeRectangle(extra_.x - 2, Lib::kHeight + extra_.y + 2,
+                                        Lib::kWidth + extra_.x * 2, Lib::kHeight + extra_.y * 2,
+                                        sf::Color(32, 32, 32, 255)));
+  internals_->window.draw(MakeRectangle(extra_.x - 4, extra_.y - 4, extra_.x - 2,
+                                        Lib::kHeight + extra_.y + 4,
                                         sf::Color(128, 128, 128, 255)));
-  internals_->window.draw(MakeRectangle(float(extra_.x - 4), float(extra_.y - 4),
-                                        float(Lib::kWidth + extra_.x + 4), float(extra_.y - 2),
+  internals_->window.draw(MakeRectangle(extra_.x - 4, extra_.y - 4, Lib::kWidth + extra_.x + 4,
+                                        extra_.y - 2, sf::Color(128, 128, 128, 255)));
+  internals_->window.draw(MakeRectangle(Lib::kWidth + extra_.x + 2, extra_.y - 4,
+                                        Lib::kWidth + extra_.x + 4, Lib::kHeight + extra_.y + 4,
                                         sf::Color(128, 128, 128, 255)));
-  internals_->window.draw(MakeRectangle(
-      float(Lib::kWidth + extra_.x + 2), float(extra_.y - 4), float(Lib::kWidth + extra_.x + 4),
-      float(Lib::kHeight + extra_.y + 4), sf::Color(128, 128, 128, 255)));
-  internals_->window.draw(MakeRectangle(
-      float(extra_.x - 2), float(Lib::kHeight + extra_.y + 2), float(Lib::kWidth + extra_.x + 4),
-      float(Lib::kHeight + extra_.y + 4), sf::Color(128, 128, 128, 255)));
+  internals_->window.draw(MakeRectangle(extra_.x - 2, Lib::kHeight + extra_.y + 2,
+                                        Lib::kWidth + extra_.x + 4, Lib::kHeight + extra_.y + 4,
+                                        sf::Color(128, 128, 128, 255)));
   internals_->window.display();
 #endif
 }
@@ -911,7 +901,7 @@ void Lib::rumble(std::int32_t player, std::int32_t time) {
 }
 
 void Lib::stop_rumble() {
-  /*for (std::int32_t i = 0; i < kPlayers; i++) {
+  /*for (std::int32_t i = 0; i < kPlayers; ++i) {
     rumble_[i] = 0;
     WPAD_Rumble(i, false);
     PAD_ControlMotor(i, PAD_MOTOR_STOP);
@@ -934,7 +924,7 @@ bool Lib::play_sound(sound s, float volume, float pan, float repitch) {
   }
 
   const sf::SoundBuffer* buffer = 0;
-  for (std::size_t i = 0; i < internals_->sounds.size(); i++) {
+  for (std::size_t i = 0; i < internals_->sounds.size(); ++i) {
     if (s == internals_->sounds[i].second.first) {
       if (internals_->sounds[i].first <= 0) {
         buffer = internals_->sounds[i].second.second.get();
@@ -954,7 +944,7 @@ bool Lib::play_sound(sound s, float volume, float pan, float repitch) {
       internals_->voices[i].setMinDistance(100.f);
       internals_->voices[i].setBuffer(*buffer);
       internals_->voices[i].setVolume(100.f * volume);
-      internals_->voices[i].setPitch(pow(2.f, repitch));
+      internals_->voices[i].setPitch(std::pow(2.f, repitch));
       internals_->voices[i].setPosition(pan, 0, -1);
       internals_->voices[i].play();
       return true;
@@ -966,17 +956,17 @@ bool Lib::play_sound(sound s, float volume, float pan, float repitch) {
 
 void Lib::set_volume(std::int32_t volume) {
 #ifndef PLATFORM_SCORE
-  sf::Listener::setGlobalVolume(float(std::max(0, std::min(100, volume))));
+  sf::Listener::setGlobalVolume(static_cast<float>(std::max(0, std::min(100, volume))));
 #endif
 }
 
 void Lib::load_sounds() {
 #ifndef PLATFORM_SCORE
   auto use_sound = [&](sound s, const std::string& filename) {
-    sf::SoundBuffer* buffer = new sf::SoundBuffer();
+    auto buffer = std::make_unique<sf::SoundBuffer>();
     buffer->loadFromFile(filename);
     internals_->sounds.emplace_back(0, Internals::named_sound{s, nullptr});
-    internals_->sounds.back().second.second.reset(buffer);
+    internals_->sounds.back().second.second = std::move(buffer);
   };
   use_sound(sound::kPlayerFire, "PlayerFire.wav");
   use_sound(sound::kMenuClick, "MenuClick.wav");
