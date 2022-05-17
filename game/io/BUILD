@@ -1,13 +1,19 @@
 cc_library(
   name = "io",
-  hdrs = ["io.h"],
+  hdrs = [
+    "input.h",
+    "io.h",
+  ],
   visibility = ["//visibility:public"],
 )
 
 cc_library(
   name = "sdl_io",
   hdrs = ["sdl_io.h"],
-  srcs = ["sdl_io.cc"],
+  srcs = [
+    "sdl_convert.h",
+    "sdl_io.cc",
+  ],
   deps = [
     ":io",
     "//deps/sdl",

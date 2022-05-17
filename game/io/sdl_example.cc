@@ -27,9 +27,8 @@ int main() {
     io_layer->swap_buffers();
 
     auto frame = io_layer->controller_frame(0);
-    std::cout << +frame.button_state[static_cast<std::size_t>(ii::io::controller::button::kX)]
-              << " " << +frame.axis_state[static_cast<std::size_t>(ii::io::controller::axis::kLT)]
-              << std::endl;
+    std::cout << +frame.button(ii::io::controller::button::kX) << " "
+              << +frame.axis(ii::io::controller::axis::kLT) << std::endl;
   }
   return 0;
 }
