@@ -5,25 +5,25 @@
 
 class GhostBoss : public Boss {
 public:
-  GhostBoss(int32_t players, int32_t cycle);
+  GhostBoss(std::int32_t players, std::int32_t cycle);
 
   void update() override;
   void render() const override;
-  int32_t get_damage(int32_t damage, bool magic) override;
+  std::int32_t get_damage(std::int32_t damage, bool magic) override;
 
 private:
   bool _visible;
-  int32_t _vtime;
-  int32_t _timer;
-  int32_t _attack_time;
-  int32_t _attack;
+  std::int32_t _vtime;
+  std::int32_t _timer;
+  std::int32_t _attack_time;
+  std::int32_t _attack;
   bool _rDir;
-  int32_t _start_time;
-  int32_t _danger_circle;
-  int32_t _danger_offset1;
-  int32_t _danger_offset2;
-  int32_t _danger_offset3;
-  int32_t _danger_offset4;
+  std::int32_t _start_time;
+  std::int32_t _danger_circle;
+  std::int32_t _danger_offset1;
+  std::int32_t _danger_offset2;
+  std::int32_t _danger_offset3;
+  std::int32_t _danger_offset4;
   bool _shot_type;
 };
 
@@ -44,7 +44,7 @@ public:
   void render() const override;
 
 private:
-  int32_t _timer;
+  std::int32_t _timer;
   Boss* _ghost;
 };
 

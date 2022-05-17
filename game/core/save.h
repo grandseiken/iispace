@@ -5,18 +5,18 @@
 #include <vector>
 
 struct HighScores {
-  static const int32_t NUM_SCORES = 8;
-  static const int32_t MAX_NAME_LENGTH = 17;
-  static const int32_t MAX_SCORE_LENGTH = 10;
+  static constexpr std::int32_t kNumScores = 8;
+  static constexpr std::int32_t kMaxNameLength = 17;
+  static constexpr std::int32_t kMaxScoreLength = 10;
 
   struct high_score {
     high_score() : score(0) {}
     std::string name;
-    int64_t score;
+    std::int64_t score;
   };
-  typedef std::array<high_score, NUM_SCORES> table;
-  typedef std::array<table, PLAYERS> mode_table;
-  typedef std::array<high_score, PLAYERS> boss_table;
+  typedef std::array<high_score, kNumScores> table;
+  typedef std::array<table, kPlayers> mode_table;
+  typedef std::array<high_score, kPlayers> boss_table;
 
   mode_table normal;
   mode_table hard;
@@ -24,20 +24,20 @@ struct HighScores {
   mode_table what;
   boss_table boss;
 
-  static std::size_t size(Mode::mode mode);
-  high_score& get(Mode::mode mode, int32_t players, int32_t index);
-  const high_score& get(Mode::mode mode, int32_t players, int32_t index) const;
+  static std::size_t size(game_mode mode);
+  high_score& get(game_mode mode, std::int32_t players, std::int32_t index);
+  const high_score& get(game_mode mode, std::int32_t players, std::int32_t index) const;
 
-  bool is_high_score(Mode::mode mode, int32_t players, int64_t score) const;
-  void add_score(Mode::mode mode, int32_t players, const std::string& name, int64_t score);
+  bool is_high_score(game_mode mode, std::int32_t players, std::int64_t score) const;
+  void add_score(game_mode mode, std::int32_t players, const std::string& name, std::int64_t score);
 };
 
 struct SaveData {
   SaveData();
   void save() const;
 
-  int32_t bosses_killed;
-  int32_t hard_mode_bosses_killed;
+  std::int32_t bosses_killed;
+  std::int32_t hard_mode_bosses_killed;
   HighScores high_scores;
 };
 

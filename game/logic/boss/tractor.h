@@ -5,11 +5,11 @@
 
 class TractorBoss : public Boss {
 public:
-  TractorBoss(int32_t players, int32_t cycle);
+  TractorBoss(std::int32_t players, std::int32_t cycle);
 
   void update() override;
   void render() const override;
-  int32_t get_damage(int32_t damage, bool magic) override;
+  std::int32_t get_damage(std::int32_t damage, bool magic) override;
 
 private:
   CompoundShape* _s1;
@@ -21,10 +21,10 @@ private:
   bool _attacking;
   bool _continue;
   bool _gen_dir;
-  int32_t _shoot_type;
+  std::int32_t _shoot_type;
   bool _sound;
-  int32_t _timer;
-  int32_t _attack_size;
+  std::int32_t _timer;
+  std::int32_t _attack_size;
   std::size_t _attack_shapes;
 
   std::vector<vec2> _targets;

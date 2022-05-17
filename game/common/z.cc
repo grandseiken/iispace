@@ -6,7 +6,7 @@
 
 namespace {
 
-static std::map<std::pair<colour_t, int32_t>, colour_t> cycle_map;
+static std::map<std::pair<colour_t, std::int32_t>, colour_t> cycle_map;
 
 colour_t rgb_to_hsl(colour_t rgb) {
   double r = ((rgb >> 24) & 0xff) / 255.0;
@@ -26,7 +26,7 @@ colour_t rgb_to_hsl(colour_t rgb) {
   if (s > 0.0) {
     s /= (l <= 0.5) ? (v + m) : (2.0 - v - m);
   } else {
-    return ((int32_t(0.5 + l * 255) & 0xff) << 8);
+    return ((std::int32_t(0.5 + l * 255) & 0xff) << 8);
   }
   r2 = (v - r) / vm;
   g2 = (v - g) / vm;
@@ -39,8 +39,8 @@ colour_t rgb_to_hsl(colour_t rgb) {
     h = (r == m ? 3.0 + g2 : 5.0 - r2);
   }
   h /= 6.0;
-  return ((int32_t(0.5 + h * 255) & 0xff) << 24) | ((int32_t(0.5 + s * 255) & 0xff) << 16) |
-      ((int32_t(0.5 + l * 255) & 0xff) << 8);
+  return ((std::int32_t(0.5 + h * 255) & 0xff) << 24) |
+      ((std::int32_t(0.5 + s * 255) & 0xff) << 16) | ((std::int32_t(0.5 + l * 255) & 0xff) << 8);
 }
 
 colour_t hsl_to_rgb(colour_t hsl) {
@@ -55,7 +55,7 @@ colour_t hsl_to_rgb(colour_t hsl) {
     double m = l + l - v;
     double sv = (v - m) / v;
     ;
-    int32_t sextant = int32_t(h);
+    std::int32_t sextant = std::int32_t(h);
     double vsf = v * sv * (h - sextant);
     double mid1 = m + vsf, mid2 = v - vsf;
     sextant %= 6;
@@ -93,23 +93,23 @@ colour_t hsl_to_rgb(colour_t hsl) {
       break;
     }
   }
-  return ((int32_t(0.5 + r * 255) & 0xff) << 24) | ((int32_t(0.5 + g * 255) & 0xff) << 16) |
-      ((int32_t(0.5 + b * 255) & 0xff) << 8);
+  return ((std::int32_t(0.5 + r * 255) & 0xff) << 24) |
+      ((std::int32_t(0.5 + g * 255) & 0xff) << 16) | ((std::int32_t(0.5 + b * 255) & 0xff) << 8);
 }
 
 }  // namespace
 
 namespace z {
 
-int32_t state = 0;
+std::int32_t state = 0;
 
-void seed(int32_t seed) {
+void seed(std::int32_t seed) {
   state = seed;
 }
 
-int32_t rand_int() {
-  int32_t const a = 1103515245;
-  int32_t const c = 12345;
+std::int32_t rand_int() {
+  std::int32_t const a = 1103515245;
+  std::int32_t const c = 12345;
   state = a * state + c;
   return (state >> 16) & 0x7fff;
 }
@@ -128,7 +128,7 @@ std::string crypt(const std::string& text, const std::string& key) {
 }
 
 std::string compress_string(const std::string& str) {
-  const int32_t compression_level = Z_BEST_COMPRESSION;
+  const std::int32_t compression_level = Z_BEST_COMPRESSION;
   z_stream zs;
   memset(&zs, 0, sizeof(zs));
 
@@ -139,7 +139,7 @@ std::string compress_string(const std::string& str) {
   zs.next_in = (Bytef*)str.data();
   zs.avail_in = uInt(str.size());
 
-  int32_t ret;
+  std::int32_t ret;
   char outbuffer[32768];
   std::string outstring;
 
@@ -176,7 +176,7 @@ std::string decompress_string(const std::string& str) {
   zs.next_in = (Bytef*)str.data();
   zs.avail_in = uInt(str.size());
 
-  int32_t ret;
+  std::int32_t ret;
   char outbuffer[32768];
   std::string outstring;
 
@@ -202,11 +202,11 @@ std::string decompress_string(const std::string& str) {
   return outstring;
 }
 
-colour_t colour_cycle(colour_t rgb, int32_t cycle) {
+colour_t colour_cycle(colour_t rgb, std::int32_t cycle) {
   if (cycle == 0)
     return rgb;
   colour_t a = rgb & 0x000000ff;
-  std::pair<colour_t, int32_t> key = std::make_pair(rgb & 0xffffff00, cycle);
+  std::pair<colour_t, std::int32_t> key = std::make_pair(rgb & 0xffffff00, cycle);
   if (cycle_map.find(key) != cycle_map.end()) {
     return cycle_map[key] | a;
   }

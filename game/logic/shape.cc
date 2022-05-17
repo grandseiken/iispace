@@ -1,7 +1,8 @@
 #include "game/logic/shape.h"
 #include "game/core/lib.h"
 
-Shape::Shape(const vec2& centre, fixed rotation, colour_t colour, int32_t category, bool can_rotate)
+Shape::Shape(const vec2& centre, fixed rotation, colour_t colour, std::int32_t category,
+             bool can_rotate)
 : centre(centre)
 , colour(colour)
 , category(category)
@@ -50,7 +51,7 @@ void Shape::rotate(fixed rotation_amount) {
   set_rotation(_rotation + rotation_amount);
 }
 
-Fill::Fill(const vec2& centre, fixed width, fixed height, colour_t colour, int32_t category)
+Fill::Fill(const vec2& centre, fixed width, fixed height, colour_t colour, std::int32_t category)
 : Shape(centre, 0, colour, category, false), width(width), height(height) {}
 
 void Fill::render(Lib& lib, const fvec2& position, float rotation, colour_t colour_override) const {
@@ -79,7 +80,7 @@ bool Line::check_local_point(const vec2& v) const {
 }
 
 Box::Box(const vec2& centre, fixed width, fixed height, colour_t colour, fixed rotation,
-         int32_t category)
+         std::int32_t category)
 : Shape(centre, rotation, colour, category), width(width), height(height) {}
 
 void Box::render(Lib& lib, const fvec2& position, float rotation, colour_t colour_override) const {
@@ -101,8 +102,8 @@ bool Box::check_local_point(const vec2& v) const {
   return abs(v.x) < width && abs(v.y) < height;
 }
 
-Polygon::Polygon(const vec2& centre, fixed radius, int32_t sides, colour_t colour, fixed rotation,
-                 int32_t category, T type)
+Polygon::Polygon(const vec2& centre, fixed radius, std::int32_t sides, colour_t colour,
+                 fixed rotation, std::int32_t category, T type)
 : Shape(centre, rotation, colour, category), radius(radius), sides(sides), type(type) {}
 
 void Polygon::render(Lib& lib, const fvec2& position, float rotation,
@@ -113,9 +114,9 @@ void Polygon::render(Lib& lib, const fvec2& position, float rotation,
 
   float r = radius.to_float();
   std::vector<fvec2> lines;
-  if (type == T::POLYGRAM) {
+  if (type == T::kPolygram) {
     std::vector<fvec2> list;
-    for (int32_t i = 0; i < sides; i++) {
+    for (std::int32_t i = 0; i < sides; i++) {
       fvec2 v = fvec2::from_polar(i * 2 * M_PIf / float(sides), r);
       list.push_back(v);
     }
@@ -127,11 +128,11 @@ void Polygon::render(Lib& lib, const fvec2& position, float rotation,
       }
     }
   } else {
-    for (int32_t i = 0; i < sides; i++) {
+    for (std::int32_t i = 0; i < sides; i++) {
       fvec2 a = fvec2::from_polar(i * 2 * M_PIf / float(sides), r);
       fvec2 b = fvec2::from_polar((i + 1) * 2 * M_PIf / float(sides), r);
       lines.push_back(a);
-      lines.push_back(type == T::POLYGON ? b : fvec2());
+      lines.push_back(type == T::kPolygon ? b : fvec2());
     }
   }
   for (std::size_t i = 0; i < lines.size(); i += 2) {
@@ -145,8 +146,8 @@ bool Polygon::check_local_point(const vec2& v) const {
   return v.length() < radius;
 }
 
-PolyArc::PolyArc(const vec2& centre, fixed radius, int32_t sides, int32_t segments, colour_t colour,
-                 fixed rotation, int32_t category)
+PolyArc::PolyArc(const vec2& centre, fixed radius, std::int32_t sides, std::int32_t segments,
+                 colour_t colour, fixed rotation, std::int32_t category)
 : Shape(centre, rotation, colour, category), radius(radius), sides(sides), segments(segments) {}
 
 void PolyArc::render(Lib& lib, const fvec2& position, float rotation,
@@ -156,7 +157,7 @@ void PolyArc::render(Lib& lib, const fvec2& position, float rotation,
   }
   float r = radius.to_float();
 
-  for (int32_t i = 0; i < sides && i < segments; i++) {
+  for (std::int32_t i = 0; i < sides && i < segments; i++) {
     fvec2 a = fvec2::from_polar(i * 2 * M_PIf / float(sides), r);
     fvec2 b = fvec2::from_polar((i + 1) * 2 * M_PIf / float(sides), r);
     lib.render_line(convert_fl_point(position, rotation, a),
@@ -172,7 +173,7 @@ bool PolyArc::check_local_point(const vec2& v) const {
   return b && len >= radius - 10 && len < radius;
 }
 
-CompoundShape::CompoundShape(const vec2& centre, fixed rotation, int32_t category)
+CompoundShape::CompoundShape(const vec2& centre, fixed rotation, std::int32_t category)
 : Shape(centre, rotation, 0, category) {}
 
 const CompoundShape::shape_list& CompoundShape::shapes() const {

@@ -7,7 +7,7 @@
 class Lib;
 class Shape {
 public:
-  Shape(const vec2& centre, fixed rotation, colour_t colour, int32_t category,
+  Shape(const vec2& centre, fixed rotation, colour_t colour, std::int32_t category,
         bool can_rotate = true);
   virtual ~Shape() {}
 
@@ -24,7 +24,7 @@ public:
 
   vec2 centre;
   colour_t colour;
-  int32_t category;
+  std::int32_t category;
 
 private:
   virtual bool check_local_point(const vec2& v) const = 0;
@@ -35,7 +35,7 @@ private:
 
 class Fill : public Shape {
 public:
-  Fill(const vec2& centre, fixed width, fixed height, colour_t colour, int32_t category = 0);
+  Fill(const vec2& centre, fixed width, fixed height, colour_t colour, std::int32_t category = 0);
 
   void render(Lib& lib, const fvec2& position, float rotation,
               colour_t colour_override = 0) const override;
@@ -64,7 +64,7 @@ private:
 class Box : public Shape {
 public:
   Box(const vec2& centre, fixed width, fixed height, colour_t colour, fixed rotation = 0,
-      int32_t category = 0);
+      std::int32_t category = 0);
 
   void render(Lib& lib, const fvec2& position, float rotation,
               colour_t colour_override = 0) const override;
@@ -79,19 +79,19 @@ private:
 class Polygon : public Shape {
 public:
   enum class T {
-    POLYGON,
-    POLYSTAR,
-    POLYGRAM,
+    kPolygon,
+    kPolystar,
+    kPolygram,
   };
 
-  Polygon(const vec2& centre, fixed radius, int32_t sides, colour_t colour, fixed rotation = 0,
-          int32_t category = 0, T type = T::POLYGON);
+  Polygon(const vec2& centre, fixed radius, std::int32_t sides, colour_t colour, fixed rotation = 0,
+          std::int32_t category = 0, T type = T::kPolygon);
 
   void render(Lib& lib, const fvec2& position, float rotation,
               colour_t colour_override = 0) const override;
 
   fixed radius;
-  int32_t sides;
+  std::int32_t sides;
   T type;
 
 private:
@@ -100,15 +100,15 @@ private:
 
 class PolyArc : public Shape {
 public:
-  PolyArc(const vec2& centre, fixed radius, int32_t sides, int32_t segments, colour_t colour,
-          fixed rotation = 0, int32_t category = 0);
+  PolyArc(const vec2& centre, fixed radius, std::int32_t sides, std::int32_t segments,
+          colour_t colour, fixed rotation = 0, std::int32_t category = 0);
 
   void render(Lib& lib, const fvec2& position, float rotation,
               colour_t colour_override = 0) const override;
 
   fixed radius;
-  int32_t sides;
-  int32_t segments;
+  std::int32_t sides;
+  std::int32_t segments;
 
 private:
   bool check_local_point(const vec2& v) const override;
@@ -116,7 +116,7 @@ private:
 
 class CompoundShape : public Shape {
 public:
-  CompoundShape(const vec2& centre, fixed rotation = 0, int32_t category = 0);
+  CompoundShape(const vec2& centre, fixed rotation = 0, std::int32_t category = 0);
 
   typedef std::vector<std::unique_ptr<Shape>> shape_list;
   const shape_list& shapes() const;

@@ -6,15 +6,15 @@
 
 class Ship {
 public:
-  enum shape_category { VULNERABLE = 1, DANGEROUS = 2, SHIELD = 4, VULNSHIELD = 8 };
+  enum shape_category { kVulnerable = 1, kDangerous = 2, kShield = 4, kVulnShield = 8 };
 
   enum ship_category {
-    SHIP_NONE = 0,
-    SHIP_PLAYER = 1,
-    SHIP_WALL = 2,
-    SHIP_ENEMY = 4,
-    SHIP_BOSS = 8,
-    SHIP_POWERUP = 16,
+    kShipNone = 0,
+    kShipPlayer = 1,
+    kShipWall = 2,
+    kShipEnemy = 4,
+    kShipBoss = 8,
+    kShipPowerup = 16,
   };
 
   Ship(const vec2& position, ship_category type);
@@ -59,42 +59,42 @@ public:
 
   // Operations
   //------------------------------
-  bool check_point(const vec2& v, int32_t category = 0) const;
+  bool check_point(const vec2& v, std::int32_t category = 0) const;
   void spawn(Ship* ship) const;
   void spawn(const Particle& particle) const;
 
   // Helpful functions
   //------------------------------
-  void
-  explosion(colour_t c = 0, int32_t time = 8, bool towards = false, const fvec2& v = fvec2()) const;
+  void explosion(colour_t c = 0, std::int32_t time = 8, bool towards = false,
+                 const fvec2& v = fvec2()) const;
   void render_with_colour(colour_t colour) const;
 
   bool is_on_screen() const {
-    return _shape.centre >= vec2() && _shape.centre <= vec2(Lib::WIDTH, Lib::HEIGHT);
+    return _shape.centre >= vec2() && _shape.centre <= vec2(Lib::kWidth, Lib::kHeight);
   }
 
   static vec2 get_screen_centre() {
-    return vec2(Lib::WIDTH / 2, Lib::HEIGHT / 2);
+    return vec2(Lib::kWidth / 2, Lib::kHeight / 2);
   }
 
   Player* nearest_player() const {
     return _game->nearest_player(_shape.centre);
   }
 
-  bool play_sound(Lib::Sound sound) {
-    return lib().play_sound(sound, 1.f, 2.f * _shape.centre.x.to_float() / Lib::WIDTH - 1.f);
+  bool play_sound(Lib::sound sound) {
+    return lib().play_sound(sound, 1.f, 2.f * _shape.centre.x.to_float() / Lib::kWidth - 1.f);
   }
 
-  bool play_sound_random(Lib::Sound sound, float pitch = 0.f, float volume = 1.f) {
+  bool play_sound_random(Lib::sound sound, float pitch = 0.f, float volume = 1.f) {
     return lib().play_sound(sound, volume * (.5f * z::rand_fixed().to_float() + .5f),
-                            2.f * _shape.centre.x.to_float() / Lib::WIDTH - 1.f, pitch);
+                            2.f * _shape.centre.x.to_float() / Lib::kWidth - 1.f, pitch);
   }
 
-  int32_t enemy_value() const {
+  std::int32_t enemy_value() const {
     return _enemy_value;
   }
 
-  void set_enemy_value(int32_t value) {
+  void set_enemy_value(std::int32_t value) {
     _enemy_value = value;
   }
 
@@ -103,7 +103,7 @@ public:
   virtual void update() = 0;
   virtual void render() const;
   // Player can be null
-  virtual void damage(int32_t damage, bool magic, Player* source) {}
+  virtual void damage(std::int32_t damage, bool magic, Player* source) {}
 
 protected:
   const CompoundShape::shape_list& shapes() const;
@@ -121,7 +121,7 @@ private:
   bool _destroy;
   CompoundShape _shape;
   fixed _bounding_width;
-  int32_t _enemy_value;
+  std::int32_t _enemy_value;
 };
 
 #endif

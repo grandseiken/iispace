@@ -4,9 +4,9 @@
 
 class Enemy : public Ship {
 public:
-  Enemy(const vec2& position, Ship::ship_category type, int32_t hp);
+  Enemy(const vec2& position, Ship::ship_category type, std::int32_t hp);
 
-  int64_t get_score() const {
+  std::int64_t get_score() const {
     return _score;
   }
 
@@ -14,32 +14,32 @@ public:
     _score = score;
   }
 
-  int32_t get_hp() const {
+  std::int32_t get_hp() const {
     return _hp;
   }
 
-  void set_destroy_sound(Lib::Sound sound) {
+  void set_destroy_sound(Lib::sound sound) {
     _destroy_sound = sound;
   }
 
-  void damage(int32_t damage, bool magic, Player* source) override;
+  void damage(std::int32_t damage, bool magic, Player* source) override;
   void render() const override;
   virtual void on_destroy(bool bomb) {}
 
 private:
-  int32_t _hp;
-  int64_t _score;
-  mutable int32_t _damaged;
-  Lib::Sound _destroy_sound;
+  std::int32_t _hp;
+  std::int64_t _score;
+  mutable std::int32_t _damaged;
+  Lib::sound _destroy_sound;
 };
 
 class Follow : public Enemy {
 public:
-  Follow(const vec2& position, fixed radius = 10, int32_t hp = 1);
+  Follow(const vec2& position, fixed radius = 10, std::int32_t hp = 1);
   void update() override;
 
 private:
-  int32_t _timer;
+  std::int32_t _timer;
   Ship* _target;
 };
 
@@ -59,7 +59,7 @@ public:
 
 private:
   bool _move;
-  int32_t _timer;
+  std::int32_t _timer;
   vec2 _dir;
 };
 
@@ -71,7 +71,7 @@ public:
 
 private:
   vec2 _dir;
-  int32_t _timer;
+  std::int32_t _timer;
 };
 
 class Wall : public Enemy {
@@ -82,7 +82,7 @@ public:
 
 private:
   vec2 _dir;
-  int32_t _timer;
+  std::int32_t _timer;
   bool _rotate;
   bool _rdir;
 };
@@ -94,9 +94,9 @@ public:
   void on_destroy(bool bomb) override;
 
 private:
-  int32_t _timer;
+  std::int32_t _timer;
   vec2 _dir;
-  int32_t _count;
+  std::int32_t _count;
   bool _powera;
   bool _powerb;
 };
@@ -108,7 +108,7 @@ public:
 
 private:
   vec2 _dir;
-  int32_t _timer;
+  std::int32_t _timer;
   bool _rotate;
   bool _rdir;
   bool _power;
@@ -116,13 +116,13 @@ private:
 
 class Tractor : public Enemy {
 public:
-  static const fixed TRACTOR_BEAM_SPEED;
+  static const fixed kTractorBeamSpeed;
   Tractor(const vec2& position, bool power = false);
   void update() override;
   void render() const override;
 
 private:
-  int32_t _timer;
+  std::int32_t _timer;
   vec2 _dir;
   bool _power;
 

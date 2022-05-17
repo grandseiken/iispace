@@ -4,7 +4,7 @@
 #include <string>
 #include <vector>
 
-int32_t run(const std::vector<std::string>& args) {
+std::int32_t run(const std::vector<std::string>& args) {
   try {
     Lib lib;
     z0Game game(lib, args);
@@ -17,14 +17,14 @@ int32_t run(const std::vector<std::string>& args) {
   return 0;
 }
 
-int32_t test(const std::string& replay) {
+std::int32_t test(const std::string& replay) {
   std::vector<std::string> args;
   args.push_back(replay);
   std::cout << "testing " << replay << std::endl;
   return run(args);
 }
 
-int32_t main(int32_t argc, char** argv) {
+std::int32_t main(std::int32_t argc, char** argv) {
   std::vector<std::string> args;
   bool is_test = false;
 
@@ -33,7 +33,7 @@ int32_t main(int32_t argc, char** argv) {
   if (s) {
     args.push_back(std::string(s));
   } else
-    for (int32_t i = 1; i < argc; ++i) {
+    for (std::int32_t i = 1; i < argc; ++i) {
       if (argv[i] == std::string("--test") || argv[i] == std::string("-test")) {
         is_test = true;
         continue;
@@ -42,7 +42,7 @@ int32_t main(int32_t argc, char** argv) {
     }
   std::cout << "Content-type: text/plain" << std::endl << std::endl;
 #else
-  for (int32_t i = 1; i < argc; ++i) {
+  for (std::int32_t i = 1; i < argc; ++i) {
     args.push_back(std::string(argv[i]));
   }
 #endif

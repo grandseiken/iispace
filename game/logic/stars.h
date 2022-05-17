@@ -16,16 +16,16 @@ public:
 private:
   static void create_star();
 
-  enum type_t {
-    DOT_STAR,
-    FAR_STAR,
-    BIG_STAR,
-    PLANET,
+  enum class type {
+    kDotStar,
+    kFarStar,
+    kBigStar,
+    kPlanet,
   };
 
   struct data {
-    int32_t timer;
-    type_t type;
+    std::int32_t timer;
+    Stars::type type;
     fvec2 position;
     float speed;
     float size;
@@ -34,7 +34,7 @@ private:
 
   static fvec2 _direction;
   static std::vector<std::unique_ptr<data>> _stars;
-  static int32_t _star_rate;
+  static std::int32_t _star_rate;
 };
 
 #endif

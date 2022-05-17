@@ -4,38 +4,40 @@
 #include <algorithm>
 #include <fstream>
 
-static const std::string SETTINGS_WINDOWED = "Windowed";
-static const std::string SETTINGS_VOLUME = "Volume";
-static const std::string SETTINGS_PATH = "wiispace.txt";
-static const std::string SAVE_PATH = "wiispace.sav";
+namespace {
+const std::string kSettingsWindowed = "Windowed";
+const std::string kSettingsVolume = "Volume";
+const std::string kSettingsPath = "wiispace.txt";
+const std::string kSavePath = "wiispace.sav";
+}  // namespace
 
-std::size_t HighScores::size(Mode::mode mode) {
-  return mode == Mode::BOSS ? 1 : NUM_SCORES;
+std::size_t HighScores::size(game_mode mode) {
+  return mode == game_mode::kBoss ? 1 : kNumScores;
 }
 
-HighScores::high_score& HighScores::get(Mode::mode mode, int32_t players, int32_t index) {
-  return mode == Mode::NORMAL ? normal[players][index]
-      : mode == Mode::HARD    ? hard[players][index]
-      : mode == Mode::FAST    ? fast[players][index]
-      : mode == Mode::WHAT    ? what[players][index]
-                              : boss[players];
+HighScores::high_score& HighScores::get(game_mode mode, std::int32_t players, std::int32_t index) {
+  return mode == game_mode::kNormal ? normal[players][index]
+      : mode == game_mode::kHard    ? hard[players][index]
+      : mode == game_mode::kFast    ? fast[players][index]
+      : mode == game_mode::kWhat    ? what[players][index]
+                                    : boss[players];
 }
 
 const HighScores::high_score&
-HighScores::get(Mode::mode mode, int32_t players, int32_t index) const {
-  return mode == Mode::NORMAL ? normal[players][index]
-      : mode == Mode::HARD    ? hard[players][index]
-      : mode == Mode::FAST    ? fast[players][index]
-      : mode == Mode::WHAT    ? what[players][index]
-                              : boss[players];
+HighScores::get(game_mode mode, std::int32_t players, std::int32_t index) const {
+  return mode == game_mode::kNormal ? normal[players][index]
+      : mode == game_mode::kHard    ? hard[players][index]
+      : mode == game_mode::kFast    ? fast[players][index]
+      : mode == game_mode::kWhat    ? what[players][index]
+                                    : boss[players];
 }
 
-bool HighScores::is_high_score(Mode::mode mode, int32_t players, int64_t score) const {
+bool HighScores::is_high_score(game_mode mode, std::int32_t players, std::int64_t score) const {
   return get(mode, players, size(mode) - 1).score < score;
 }
 
-void HighScores::add_score(Mode::mode mode, int32_t players, const std::string& name,
-                           int64_t score) {
+void HighScores::add_score(game_mode mode, std::int32_t players, const std::string& name,
+                           std::int64_t score) {
   for (std::size_t find = 0; find < size(mode); ++find) {
     if (score <= get(mode, players, find).score) {
       continue;
@@ -51,7 +53,7 @@ void HighScores::add_score(Mode::mode mode, int32_t players, const std::string& 
 
 SaveData::SaveData() : bosses_killed(0), hard_mode_bosses_killed(0) {
   std::ifstream file;
-  file.open(SAVE_PATH, std::ios::binary);
+  file.open(kSavePath, std::ios::binary);
 
   if (!file) {
     return;
@@ -60,7 +62,7 @@ SaveData::SaveData() : bosses_killed(0), hard_mode_bosses_killed(0) {
   std::stringstream b;
   b << file.rdbuf();
   proto::SaveData proto;
-  proto.ParseFromString(z::crypt(b.str(), Lib::SUPER_ENCRYPTION_KEY));
+  proto.ParseFromString(z::crypt(b.str(), Lib::kSuperEncryptionKey));
   file.close();
 
   bosses_killed = proto.bosses_killed();
@@ -115,21 +117,21 @@ void SaveData::save() const {
 
   std::string temp;
   proto.SerializeToString(&temp);
-  std::string encrypted = z::crypt(temp, Lib::SUPER_ENCRYPTION_KEY);
+  std::string encrypted = z::crypt(temp, Lib::kSuperEncryptionKey);
   std::ofstream file;
-  file.open(SAVE_PATH, std::ios::binary);
+  file.open(kSavePath, std::ios::binary);
   file << encrypted;
   file.close();
 }
 
 Settings::Settings() : windowed(false), volume(100) {
   std::ifstream file;
-  file.open(SETTINGS_PATH);
+  file.open(kSettingsPath);
 
   if (!file) {
     std::ofstream out;
-    out.open(SETTINGS_PATH);
-    out << SETTINGS_WINDOWED << " 0\n" << SETTINGS_VOLUME << " 100.0";
+    out.open(kSettingsPath);
+    out << kSettingsWindowed << " 0\n" << kSettingsVolume << " 100.0";
     out.close();
     return;
   }
@@ -139,21 +141,21 @@ Settings::Settings() : windowed(false), volume(100) {
     std::stringstream ss(line);
     std::string key;
     ss >> key;
-    if (key.compare(SETTINGS_WINDOWED) == 0) {
+    if (key.compare(kSettingsWindowed) == 0) {
       ss >> windowed;
     }
-    if (key.compare(SETTINGS_VOLUME) == 0) {
+    if (key.compare(kSettingsVolume) == 0) {
       float t;
       ss >> t;
-      volume = int32_t(t);
+      volume = std::int32_t(t);
     }
   }
 }
 
 void Settings::save() const {
   std::ofstream out;
-  out.open(SETTINGS_PATH);
-  out << SETTINGS_WINDOWED << " " << (windowed ? "1" : "0") << "\n"
-      << SETTINGS_VOLUME << " " << volume.to_int();
+  out.open(kSettingsPath);
+  out << kSettingsWindowed << " " << (windowed ? "1" : "0") << "\n"
+      << kSettingsVolume << " " << volume.to_int();
   out.close();
 }

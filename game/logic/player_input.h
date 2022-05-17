@@ -7,13 +7,13 @@ class Lib;
 class Player;
 
 struct PlayerInput {
-  virtual void get(const Player& player, vec2& velocity, vec2& target, int32_t& keys) = 0;
+  virtual void get(const Player& player, vec2& velocity, vec2& target, std::int32_t& keys) = 0;
   virtual ~PlayerInput() {}
 };
 
 struct ReplayPlayerInput : PlayerInput {
   ReplayPlayerInput(const Replay& replay);
-  void get(const Player& player, vec2& velocity, vec2& target, int32_t& keys) override;
+  void get(const Player& player, vec2& velocity, vec2& target, std::int32_t& keys) override;
 
   const Replay& replay;
   std::size_t replay_frame;
@@ -21,7 +21,7 @@ struct ReplayPlayerInput : PlayerInput {
 
 struct LibPlayerInput : PlayerInput {
   LibPlayerInput(Lib& lib, Replay& replay);
-  void get(const Player& player, vec2& velocity, vec2& target, int32_t& keys) override;
+  void get(const Player& player, vec2& velocity, vec2& target, std::int32_t& keys) override;
 
   Lib& lib;
   Replay& replay;

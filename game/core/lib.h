@@ -13,56 +13,56 @@ public:
 
   // Constants
   //------------------------------
-  enum Key {
-    KEY_FIRE,
-    KEY_BOMB,
-    KEY_ACCEPT,
-    KEY_CANCEL,
-    KEY_MENU,
-    KEY_UP,
-    KEY_DOWN,
-    KEY_LEFT,
-    KEY_RIGHT,
-    KEY_MAX,
+  enum class key {
+    kFire,
+    kBomb,
+    kAccept,
+    kCancel,
+    kMenu,
+    kUp,
+    kDown,
+    kLeft,
+    kRight,
+    kMax,
   };
 
-  enum Sound {
-    SOUND_PLAYER_DESTROY,
-    SOUND_PLAYER_RESPAWN,
-    SOUND_PLAYER_FIRE,
-    SOUND_PLAYER_SHIELD,
-    SOUND_EXPLOSION,
-    SOUND_ENEMY_HIT,
-    SOUND_ENEMY_DESTROY,
-    SOUND_ENEMY_SHATTER,
-    SOUND_ENEMY_SPAWN,
-    SOUND_BOSS_ATTACK,
-    SOUND_BOSS_FIRE,
-    SOUND_POWERUP_LIFE,
-    SOUND_POWERUP_OTHER,
-    SOUND_MENU_CLICK,
-    SOUND_MENU_ACCEPT,
-    SOUND_MAX,
+  enum class sound {
+    kPlayerDestroy,
+    kPlayerRespawn,
+    kPlayerFire,
+    kPlayerShield,
+    kExplosion,
+    kEnemyHit,
+    kEnemyDestroy,
+    kEnemyShatter,
+    kEnemySpawn,
+    kBossAttack,
+    kBossFire,
+    kPowerupLife,
+    kPowerupOther,
+    kMenuClick,
+    kMenuAccept,
+    kMax,
   };
 
-  enum PadType {
-    PAD_NONE,
-    PAD_KEYMOUSE,
-    PAD_GAMEPAD,
+  enum pad_type {
+    kPadNone,
+    kPadKeyboardMouse,
+    kPadGamepad,
   };
 
-  static const int32_t WIDTH = 640;
-  static const int32_t HEIGHT = 480;
-  static const int32_t TEXT_WIDTH = 16;
-  static const int32_t TEXT_HEIGHT = 16;
-  static const int32_t SOUND_TIMER = 4;
+  static constexpr std::int32_t kWidth = 640;
+  static constexpr std::int32_t kHeight = 480;
+  static constexpr std::int32_t kTextWidth = 16;
+  static constexpr std::int32_t kTextHeight = 16;
+  static constexpr std::int32_t kSoundTimer = 4;
 
-  static const std::string ENCRYPTION_KEY;
-  static const std::string SUPER_ENCRYPTION_KEY;
+  static const std::string kEncryptionKey;
+  static const std::string kSuperEncryptionKey;
 
   // General
   //------------------------------
-  void set_player_count(int32_t players) {
+  void set_player_count(std::int32_t players) {
     _players = players;
   }
 
@@ -74,42 +74,43 @@ public:
 
   // Input
   //------------------------------
-  PadType get_pad_type(int32_t player) const;
+  pad_type get_pad_type(std::int32_t player) const;
 
-  bool is_key_pressed(int32_t player, Key k) const;
-  bool is_key_released(int32_t player, Key k) const;
-  bool is_key_held(int32_t player, Key k) const;
+  bool is_key_pressed(std::int32_t player, key k) const;
+  bool is_key_released(std::int32_t player, key k) const;
+  bool is_key_held(std::int32_t player, key k) const;
 
-  bool is_key_pressed(Key k) const;
-  bool is_key_released(Key k) const;
-  bool is_key_held(Key k) const;
+  bool is_key_pressed(key k) const;
+  bool is_key_released(key k) const;
+  bool is_key_held(key k) const;
 
-  vec2 get_move_velocity(int32_t player) const;
-  vec2 get_fire_target(int32_t player, const vec2& position) const;
+  vec2 get_move_velocity(std::int32_t player) const;
+  vec2 get_fire_target(std::int32_t player, const vec2& position) const;
 
   // Output
   //------------------------------
   void clear_screen() const;
   void render_line(const fvec2& a, const fvec2& b, colour_t c) const;
   void render_text(const fvec2& v, const std::string& text, colour_t c) const;
-  void render_rect(const fvec2& low, const fvec2& hi, colour_t c, int32_t line_width = 0) const;
+  void
+  render_rect(const fvec2& low, const fvec2& hi, colour_t c, std::int32_t line_width = 0) const;
   void render() const;
 
-  void rumble(int32_t player, int32_t time);
+  void rumble(std::int32_t player, std::int32_t time);
   void stop_rumble();
-  bool play_sound(Sound sound, float volume = 1.f, float pan = 0.f, float repitch = 0.f);
-  void set_volume(int32_t volume);
+  bool play_sound(sound, float volume = 1.f, float pan = 0.f, float repitch = 0.f);
+  void set_volume(std::int32_t volume);
 
   void take_screenshot();
 
   // Wacky colours
   //------------------------------
-  void set_colour_cycle(int32_t cycle);
-  int32_t get_colour_cycle() const;
+  void set_colour_cycle(std::int32_t cycle);
+  std::int32_t get_colour_cycle() const;
 
 private:
-  int32_t _cycle;
-  int32_t _players;
+  std::int32_t _cycle;
+  std::int32_t _players;
 
   // Internal
   //------------------------------

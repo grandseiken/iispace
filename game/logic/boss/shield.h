@@ -4,16 +4,16 @@
 
 class ShieldBombBoss : public Boss {
 public:
-  ShieldBombBoss(int32_t players, int32_t cycle);
+  ShieldBombBoss(std::int32_t players, std::int32_t cycle);
 
   void update() override;
-  int32_t get_damage(int32_t damage, bool magic) override;
+  std::int32_t get_damage(std::int32_t damage, bool magic) override;
 
 private:
-  int32_t _timer;
-  int32_t _count;
-  int32_t _unshielded;
-  int32_t _attack;
+  std::int32_t _timer;
+  std::int32_t _count;
+  std::int32_t _unshielded;
+  std::int32_t _attack;
   bool _side;
   vec2 _attack_dir;
   bool _shot_alternate;

@@ -50,24 +50,24 @@ proto::Replay convert(const std::string& contents) {
 
   getline(dc, line);
   std::stringstream ss(line);
-  int32_t players;
+  std::int32_t players;
   ss >> players;
   bool can_face_secret_boss;
   ss >> can_face_secret_boss;
   replay.set_players(std::max(1, std::min(4, players)));
   replay.set_can_face_secret_boss(can_face_secret_boss);
 
-  Mode::mode mode = Mode::NORMAL;
+  game_mode mode = game_mode::kNormal;
   bool bb;
   ss >> bb;
-  mode = Mode::mode(mode | bb * Mode::BOSS);
+  mode = static_cast<game_mode>(mode | bb * game_mode::kBoss);
   ss >> bb;
-  mode = Mode::mode(mode | bb * Mode::HARD);
+  mode = static_cast<game_mode>(mode | bb * game_mode::kHard);
   ss >> bb;
-  mode = Mode::mode(mode | bb * Mode::FAST);
+  mode = static_cast<game_mode>(mode | bb * game_mode::kFast);
   ss >> bb;
-  mode = Mode::mode(mode | bb * Mode::WHAT);
-  int32_t seed;
+  mode = static_cast<game_mode>(mode | bb * game_mode::kWhat);
+  std::int32_t seed;
   ss >> seed;
   replay.set_game_mode(mode);
   replay.set_seed(seed);

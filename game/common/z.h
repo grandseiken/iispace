@@ -5,26 +5,24 @@
 #include <cstdint>
 #include <string>
 
-typedef uint32_t colour_t;
-static const int32_t PLAYERS = 4;
-struct Mode {
-  enum mode {
-    NORMAL,
-    BOSS,
-    HARD,
-    FAST,
-    WHAT,
-    END_MODES,
-  };
+typedef std::uint32_t colour_t;
+static constexpr std::int32_t kPlayers = 4;
+enum class game_mode {
+  kNormal,
+  kBoss,
+  kHard,
+  kFast,
+  kWhat,
+  kMax,
 };
 
 namespace z {
 
-static const int32_t rand_max = 0x7fff;
-void seed(int32_t seed);
-int32_t rand_int();
+static constexpr std::int32_t rand_max = 0x7fff;
+void seed(std::int32_t seed);
+std::int32_t rand_int();
 
-inline int32_t rand_int(int32_t max) {
+inline std::int32_t rand_int(std::int32_t max) {
   return rand_int() % max;
 }
 
@@ -36,7 +34,7 @@ std::string crypt(const std::string& text, const std::string& key);
 std::string compress_string(const std::string& str);
 std::string decompress_string(const std::string& str);
 
-colour_t colour_cycle(colour_t rgb, int32_t cycle);
+colour_t colour_cycle(colour_t rgb, std::int32_t cycle);
 
 }  // namespace z
 
@@ -171,7 +169,7 @@ vec2_t<T> operator/(const T& t, const vec2_t<T>& v) {
 }
 
 typedef vec2_t<fixed> vec2;
-typedef vec2_t<int32_t> ivec2;
+typedef vec2_t<std::int32_t> ivec2;
 typedef vec2_t<float> fvec2;
 
 inline fvec2 to_float(const vec2& a) {

@@ -14,15 +14,15 @@
 #endif
 
 namespace detail {
-inline constexpr int64_t fixed_sgn(int64_t a, int64_t b) {
+inline constexpr std::int64_t fixed_sgn(std::int64_t a, std::int64_t b) {
   return (((a < 0) == (b < 0)) << 1) - 1;
 }
 
-inline constexpr int64_t fixed_abs(int64_t a) {
+inline constexpr std::int64_t fixed_abs(std::int64_t a) {
   return (a ^ (a >> 63)) - (a >> 63);
 }
 
-inline constexpr uint8_t clz_constexpr(int64_t x) {
+inline constexpr uint8_t clz_constexpr(std::int64_t x) {
   if (x == 0) {
     return 64;
   }
@@ -46,7 +46,7 @@ inline constexpr uint8_t clz_constexpr(int64_t x) {
   return t;
 }
 
-inline uint8_t clz(uint64_t x) {
+inline uint8_t clz(std::uint64_t x) {
 #ifdef __GNUC__
   if (x == 0) {
     return 64;
@@ -63,13 +63,13 @@ inline uint8_t clz(uint64_t x) {
   return 63 - static_cast<uint8_t>(t);
 #else
   if (x > 0xffffffff) {
-    _BitScanReverse(&t, static_cast<uint32_t>(x >> 32));
+    _BitScanReverse(&t, static_cast<std::uint32_t>(x >> 32));
     return 31 - static_cast<uint8_t>(t);
   }
   if (x == 0) {
     return 64;
   }
-  _BitScanReverse(&t, static_cast<uint32_t>(x & 0xffffffff));
+  _BitScanReverse(&t, static_cast<std::uint32_t>(x & 0xffffffff));
   return 63 - static_cast<uint8_t>(t);
 #endif
 #else
@@ -83,24 +83,24 @@ class fixed {
 public:
   constexpr fixed() : _value{0} {}
   constexpr fixed(const fixed& f) : _value{f._value} {}
-  constexpr fixed(int32_t v) : _value{static_cast<int64_t>(v) << 32} {}
+  constexpr fixed(std::int32_t v) : _value{static_cast<std::int64_t>(v) << 32} {}
 
-  static constexpr fixed from_internal(int64_t v) {
+  static constexpr fixed from_internal(std::int64_t v) {
     fixed f;
     f._value = v;
     return f;
   }
 
-  constexpr int64_t to_internal() const {
+  constexpr std::int64_t to_internal() const {
     return _value;
   }
 
-  constexpr int32_t to_int() const {
+  constexpr std::int32_t to_int() const {
     return _value >> 32;
   }
 
   constexpr float to_float() const {
-    return static_cast<float>(_value) / (uint64_t{1} << 32);
+    return static_cast<float>(_value) / (std::uint64_t{1} << 32);
   }
 
   constexpr explicit operator bool() const {
@@ -135,8 +135,8 @@ private:
   friend constexpr bool operator>=(const fixed&, const fixed&);
   friend constexpr bool operator<(const fixed&, const fixed&);
   friend constexpr bool operator>(const fixed&, const fixed&);
-  friend constexpr fixed operator<<(const fixed&, int32_t);
-  friend constexpr fixed operator>>(const fixed&, int32_t);
+  friend constexpr fixed operator<<(const fixed&, std::int32_t);
+  friend constexpr fixed operator>>(const fixed&, std::int32_t);
   friend constexpr fixed operator-(const fixed&);
   friend constexpr fixed operator+(const fixed&, const fixed&);
   friend constexpr fixed operator-(const fixed&, const fixed&);
@@ -149,7 +149,7 @@ private:
   friend constexpr fixed cos(const fixed&);
   friend constexpr fixed atan2(const fixed&, const fixed&);
   friend std::ostream& operator<<(std::ostream&, const fixed&);
-  int64_t _value;
+  std::int64_t _value;
 };
 
 inline constexpr bool operator==(const fixed& a, const fixed& b) {
@@ -176,11 +176,11 @@ inline constexpr bool operator>(const fixed& a, const fixed& b) {
   return a._value > b._value;
 }
 
-inline constexpr fixed operator<<(const fixed& a, int32_t b) {
+inline constexpr fixed operator<<(const fixed& a, std::int32_t b) {
   return fixed::from_internal(a._value << b);
 }
 
-inline constexpr fixed operator>>(const fixed& a, int32_t b) {
+inline constexpr fixed operator>>(const fixed& a, std::int32_t b) {
   return fixed::from_internal(a._value >> b);
 }
 
@@ -197,27 +197,27 @@ inline constexpr fixed operator-(const fixed& a, const fixed& b) {
 }
 
 inline constexpr fixed operator*(const fixed& a, const fixed& b) {
-  int64_t sign = detail::fixed_sgn(a._value, b._value);
-  uint64_t l = detail::fixed_abs(a._value);
-  uint64_t r = detail::fixed_abs(b._value);
+  std::int64_t sign = detail::fixed_sgn(a._value, b._value);
+  std::uint64_t l = detail::fixed_abs(a._value);
+  std::uint64_t r = detail::fixed_abs(b._value);
 
-  constexpr uint64_t mask = 0xffffffff;
-  uint64_t hi = (l >> 32) * (r >> 32);
-  uint64_t lo = (l & mask) * (r & mask);
-  uint64_t lf = (l >> 32) * (r & mask);
-  uint64_t rt = (l & mask) * (r >> 32);
+  constexpr std::uint64_t mask = 0xffffffff;
+  std::uint64_t hi = (l >> 32) * (r >> 32);
+  std::uint64_t lo = (l & mask) * (r & mask);
+  std::uint64_t lf = (l >> 32) * (r & mask);
+  std::uint64_t rt = (l & mask) * (r >> 32);
 
-  uint64_t combine = (hi << 32) + lf + rt + (lo >> 32);
+  std::uint64_t combine = (hi << 32) + lf + rt + (lo >> 32);
   return fixed::from_internal(sign * combine);
 }
 
 inline fixed operator/(const fixed& a, const fixed& b) {
-  int64_t sign = detail::fixed_sgn(a._value, b._value);
-  uint64_t r = detail::fixed_abs(a._value);
-  uint64_t d = detail::fixed_abs(b._value);
-  uint64_t q = 0;
+  std::int64_t sign = detail::fixed_sgn(a._value, b._value);
+  std::uint64_t r = detail::fixed_abs(a._value);
+  std::uint64_t d = detail::fixed_abs(b._value);
+  std::uint64_t q = 0;
 
-  uint64_t bit = 33;
+  std::uint64_t bit = 33;
   while (!(d & 0xf) && bit >= 4) {
     d >>= 4;
     bit -= 4;
@@ -226,14 +226,14 @@ inline fixed operator/(const fixed& a, const fixed& b) {
     return 0;
   }
   while (r) {
-    uint64_t shift = detail::clz(r);
+    std::uint64_t shift = detail::clz(r);
     if (shift > bit) {
       shift = bit;
     }
     r <<= shift;
     bit -= shift;
 
-    uint64_t div = r / d;
+    std::uint64_t div = r / d;
     r = r % d;
     q += div << bit;
 
@@ -247,12 +247,12 @@ inline fixed operator/(const fixed& a, const fixed& b) {
 }
 
 inline constexpr fixed constexpr_div(const fixed& a, const fixed& b) {
-  int64_t sign = detail::fixed_sgn(a._value, b._value);
-  uint64_t r = detail::fixed_abs(a._value);
-  uint64_t d = detail::fixed_abs(b._value);
-  uint64_t q = 0;
+  std::int64_t sign = detail::fixed_sgn(a._value, b._value);
+  std::uint64_t r = detail::fixed_abs(a._value);
+  std::uint64_t d = detail::fixed_abs(b._value);
+  std::uint64_t q = 0;
 
-  uint64_t bit = 33;
+  std::uint64_t bit = 33;
   while (!(d & 0xf) && bit >= 4) {
     d >>= 4;
     bit -= 4;
@@ -261,14 +261,14 @@ inline constexpr fixed constexpr_div(const fixed& a, const fixed& b) {
     return 0;
   }
   while (r) {
-    uint64_t shift = detail::clz_constexpr(r);
+    std::uint64_t shift = detail::clz_constexpr(r);
     if (shift > bit) {
       shift = bit;
     }
     r <<= shift;
     bit -= shift;
 
-    uint64_t div = r / d;
+    std::uint64_t div = r / d;
     r = r % d;
     q += div << bit;
 
@@ -286,12 +286,12 @@ inline std::ostream& operator<<(std::ostream& o, const fixed& f) {
     o << "-";
   }
 
-  uint64_t v = detail::fixed_abs(f._value);
+  std::uint64_t v = detail::fixed_abs(f._value);
   o << (v >> 32) << ".";
   double d = 0;
   double val = 0.5;
   for (std::size_t i = 0; i < 32; ++i) {
-    if (v & (int64_t(1) << (31 - i))) {
+    if (v & (std::int64_t(1) << (31 - i))) {
       d += val;
     }
     val /= 2;

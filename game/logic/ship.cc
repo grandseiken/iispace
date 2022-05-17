@@ -11,7 +11,7 @@ Ship::Ship(const vec2& position, ship_category type)
 
 Ship::~Ship() {}
 
-bool Ship::check_point(const vec2& v, int32_t category) const {
+bool Ship::check_point(const vec2& v, std::int32_t category) const {
   bool aa = false;
   vec2 a;
   for (const auto& shape : _shape.shapes()) {
@@ -61,10 +61,10 @@ void Ship::spawn(const Particle& particle) const {
   _game->add_particle(particle);
 }
 
-void Ship::explosion(colour_t c, int32_t time, bool towards, const fvec2& v) const {
+void Ship::explosion(colour_t c, std::int32_t time, bool towards, const fvec2& v) const {
   for (const auto& shape : _shape.shapes()) {
-    int32_t n = towards ? z::rand_int(2) + 1 : z::rand_int(8) + 8;
-    for (int32_t j = 0; j < n; j++) {
+    std::int32_t n = towards ? z::rand_int(2) + 1 : z::rand_int(8) + 8;
+    for (std::int32_t j = 0; j < n; j++) {
       fvec2 pos =
           shape->convert_fl_point(to_float(_shape.centre), _shape.rotation().to_float(), fvec2());
 

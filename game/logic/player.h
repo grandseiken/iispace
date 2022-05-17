@@ -6,12 +6,12 @@ class PlayerInput;
 
 class Player : public Ship {
 public:
-  static const int32_t BOMB_DAMAGE = 50;
+  static constexpr std::int32_t kBombDamage = 50;
 
-  Player(PlayerInput& input, const vec2& position, int32_t player_number);
+  Player(PlayerInput& input, const vec2& position, std::int32_t player_number);
   ~Player() override;
 
-  int32_t player_number() const {
+  std::int32_t player_number() const {
     return _player_number;
   }
 
@@ -26,15 +26,15 @@ public:
 
   // Scoring
   //------------------------------
-  int64_t score() const {
+  std::int64_t score() const {
     return _score;
   }
 
-  int32_t deaths() const {
+  std::int32_t deaths() const {
     return _death_count;
   }
 
-  void add_score(int64_t score);
+  void add_score(std::int64_t score);
 
   // Colour
   //------------------------------
@@ -55,19 +55,19 @@ public:
 
 private:
   PlayerInput& _input;
-  int32_t _player_number;
-  int64_t _score;
-  int32_t _multiplier;
-  int32_t _multiplier_count;
-  int32_t _kill_timer;
-  int32_t _revive_timer;
-  int32_t _magic_shot_timer;
+  std::int32_t _player_number;
+  std::int64_t _score;
+  std::int32_t _multiplier;
+  std::int32_t _multiplier_count;
+  std::int32_t _kill_timer;
+  std::int32_t _revive_timer;
+  std::int32_t _magic_shot_timer;
   bool _shield;
   bool _bomb;
   vec2 _fire_target;
-  int32_t _death_count;
+  std::int32_t _death_count;
 
-  static int32_t _fire_timer;
+  static std::int32_t _fire_timer;
   static SimState::ship_list _kill_queue;
   static SimState::ship_list _shot_sound_queue;
 };
@@ -89,20 +89,20 @@ private:
 
 class Powerup : public Ship {
 public:
-  enum type_t {
-    EXTRA_LIFE,
-    MAGIC_SHOTS,
-    SHIELD,
-    BOMB,
+  enum class type {
+    kExtraLife,
+    kMagicShots,
+    kShield,
+    kBomb,
   };
 
-  Powerup(const vec2& position, type_t type);
+  Powerup(const vec2& position, type t);
   void update() override;
-  void damage(int32_t damage, bool magic, Player* source) override;
+  void damage(std::int32_t damage, bool magic, Player* source) override;
 
 private:
-  type_t _type;
-  int32_t _frame;
+  type _type;
+  std::int32_t _frame;
   vec2 _dir;
   bool _rotate;
   bool _first_frame;

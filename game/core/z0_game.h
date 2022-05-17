@@ -19,8 +19,8 @@ class Ship;
 class PauseModal : public Modal {
 public:
   enum output_t {
-    CONTINUE,
-    END_GAME,
+    kContinue,
+    kEndGame,
   };
 
   PauseModal(output_t* output, Settings& settings);
@@ -30,7 +30,7 @@ public:
 private:
   output_t* _output;
   Settings& _settings;
-  int32_t _selection;
+  std::int32_t _selection;
 };
 
 class HighScoreModal : public Modal {
@@ -40,27 +40,27 @@ public:
   void render(Lib& lib) const override;
 
 private:
-  int64_t get_score() const;
+  std::int64_t get_score() const;
   bool is_high_score() const;
 
   SaveData& _save;
   GameModal& _game;
   SimState::results _results;
   bool _replay;
-  int32_t _seed;
+  std::int32_t _seed;
 
   std::string _enter_name;
-  int32_t _enter_char;
-  int32_t _enter_r;
-  int32_t _enter_time;
-  int32_t _compliment;
-  int32_t _timer;
+  std::int32_t _enter_char;
+  std::int32_t _enter_r;
+  std::int32_t _enter_time;
+  std::int32_t _compliment;
+  std::int32_t _timer;
 };
 
 class GameModal : public Modal {
 public:
-  GameModal(Lib& lib, SaveData& save, Settings& settings, std::int32_t* frame_count,
-            Mode::mode mode, int32_t player_count, bool can_face_secret_boss);
+  GameModal(Lib& lib, SaveData& save, Settings& settings, std::int32_t* frame_count, game_mode mode,
+            std::int32_t player_count, bool can_face_secret_boss);
   GameModal(Lib& lib, SaveData& save, Settings& settings, std::int32_t* frame_count,
             const std::string& replay_path);
   ~GameModal();
@@ -75,8 +75,8 @@ private:
   SaveData& _save;
   Settings& _settings;
   std::int32_t* _frame_count;
-  PauseModal::output_t _pause_output = PauseModal::CONTINUE;
-  int32_t _controllers_connected = 0;
+  PauseModal::output_t _pause_output = PauseModal::kContinue;
+  std::int32_t _controllers_connected = 0;
   bool _controllers_dialog = true;
   std::unique_ptr<SimState> _state;
 };
@@ -84,9 +84,9 @@ private:
 struct score_finished {};
 class z0Game {
 public:
-  static const colour_t PANEL_TEXT = 0xeeeeeeff;
-  static const colour_t PANEL_TRAN = 0xeeeeee99;
-  static const colour_t PANEL_BACK = 0x000000ff;
+  static constexpr colour_t kPanelText = 0xeeeeeeff;
+  static constexpr colour_t kPanelTran = 0xeeeeee99;
+  static constexpr colour_t kPanelBack = 0x000000ff;
 
   z0Game(Lib& lib, const std::vector<std::string>& args);
 
@@ -99,22 +99,22 @@ public:
   }
 
 private:
-  Mode::mode mode_unlocked() const;
+  game_mode mode_unlocked() const;
 
-  enum menu_t {
-    MENU_SPECIAL,
-    MENU_START,
-    MENU_PLAYERS,
-    MENU_QUIT,
+  enum class menu {
+    kSpecial,
+    kStart,
+    kPlayers,
+    kQuit,
   };
 
   Lib& _lib;
-  int32_t _frame_count;
+  std::int32_t _frame_count;
 
-  menu_t _menu_select;
-  int32_t _player_select;
-  Mode::mode _mode_select;
-  int32_t _exit_timer;
+  menu _menu_select;
+  std::int32_t _player_select;
+  game_mode _mode_select;
+  std::int32_t _exit_timer;
   std::string _exit_error;
 
   SaveData _save;

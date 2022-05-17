@@ -5,29 +5,29 @@
 
 class DeathRayBoss : public Boss {
 public:
-  DeathRayBoss(int32_t players, int32_t cycle);
+  DeathRayBoss(std::int32_t players, std::int32_t cycle);
 
   void update() override;
   void render() const override;
-  int32_t get_damage(int32_t damage, bool magic) override;
+  std::int32_t get_damage(std::int32_t damage, bool magic) override;
 
   void on_arm_death(Ship* arm);
 
 private:
-  int32_t _timer;
+  std::int32_t _timer;
   bool _laser;
   bool _dir;
-  int32_t _pos;
+  std::int32_t _pos;
   SimState::ship_list _arms;
-  int32_t _arm_timer;
-  int32_t _shot_timer;
+  std::int32_t _arm_timer;
+  std::int32_t _shot_timer;
 
-  int32_t _ray_attack_timer;
+  std::int32_t _ray_attack_timer;
   vec2 _ray_src1;
   vec2 _ray_src2;
   vec2 _ray_dest;
 
-  std::vector<std::pair<int32_t, int32_t>> _shot_queue;
+  std::vector<std::pair<std::int32_t, std::int32_t>> _shot_queue;
 };
 
 class DeathRay : public Enemy {
@@ -38,20 +38,20 @@ public:
 
 class DeathArm : public Enemy {
 public:
-  DeathArm(DeathRayBoss* boss, bool top, int32_t hp);
+  DeathArm(DeathRayBoss* boss, bool top, std::int32_t hp);
   void update() override;
   void on_destroy(bool bomb) override;
 
 private:
   DeathRayBoss* _boss;
   bool _top;
-  int32_t _timer;
+  std::int32_t _timer;
   bool _attacking;
   vec2 _dir;
-  int32_t _start;
+  std::int32_t _start;
 
   vec2 _target;
-  int32_t _shots;
+  std::int32_t _shots;
 };
 
 #endif
