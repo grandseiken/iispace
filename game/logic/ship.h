@@ -21,40 +21,40 @@ public:
   virtual ~Ship();
 
   void set_game(SimState& game) {
-    _game = &game;
+    game_ = &game;
   }
 
   Lib& lib() const {
-    return _game->lib();
+    return game_->lib();
   }
 
   SimState& game() const {
-    return *_game;
+    return *game_;
   }
 
   void destroy();
   bool is_destroyed() const {
-    return _destroy;
+    return destroy_;
   }
 
   ship_category type() const {
-    return _type;
+    return type_;
   }
 
   const CompoundShape& shape() const {
-    return _shape;
+    return shape_;
   }
 
   CompoundShape& shape() {
-    return _shape;
+    return shape_;
   }
 
   void move(const vec2& move_amount) {
-    _shape.centre += move_amount;
+    shape_.centre += move_amount;
   }
 
   fixed bounding_width() const {
-    return _bounding_width;
+    return bounding_width_;
   }
 
   // Operations
@@ -70,7 +70,7 @@ public:
   void render_with_colour(colour_t colour) const;
 
   bool is_on_screen() const {
-    return _shape.centre >= vec2() && _shape.centre <= vec2(Lib::kWidth, Lib::kHeight);
+    return shape_.centre >= vec2() && shape_.centre <= vec2(Lib::kWidth, Lib::kHeight);
   }
 
   static vec2 get_screen_centre() {
@@ -78,24 +78,24 @@ public:
   }
 
   Player* nearest_player() const {
-    return _game->nearest_player(_shape.centre);
+    return game_->nearest_player(shape_.centre);
   }
 
   bool play_sound(Lib::sound sound) {
-    return lib().play_sound(sound, 1.f, 2.f * _shape.centre.x.to_float() / Lib::kWidth - 1.f);
+    return lib().play_sound(sound, 1.f, 2.f * shape_.centre.x.to_float() / Lib::kWidth - 1.f);
   }
 
   bool play_sound_random(Lib::sound sound, float pitch = 0.f, float volume = 1.f) {
     return lib().play_sound(sound, volume * (.5f * z::rand_fixed().to_float() + .5f),
-                            2.f * _shape.centre.x.to_float() / Lib::kWidth - 1.f, pitch);
+                            2.f * shape_.centre.x.to_float() / Lib::kWidth - 1.f, pitch);
   }
 
   std::int32_t enemy_value() const {
-    return _enemy_value;
+    return enemy_value_;
   }
 
   void set_enemy_value(std::int32_t value) {
-    _enemy_value = value;
+    enemy_value_ = value;
   }
 
   // Generic behaviour
@@ -112,16 +112,16 @@ protected:
   void clear_shapes();
 
   void set_bounding_width(fixed width) {
-    _bounding_width = width;
+    bounding_width_ = width;
   }
 
 private:
-  SimState* _game;
-  ship_category _type;
-  bool _destroy;
-  CompoundShape _shape;
-  fixed _bounding_width;
-  std::int32_t _enemy_value;
+  SimState* game_;
+  ship_category type_;
+  bool destroy_;
+  CompoundShape shape_;
+  fixed bounding_width_;
+  std::int32_t enemy_value_;
 };
 
 #endif

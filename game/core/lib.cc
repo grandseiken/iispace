@@ -100,7 +100,7 @@ bool PadToKey(PadConfig config, std::int32_t button, Lib::key key) {
 class Handler : public OIS::JoyStickListener {
 public:
   void SetLib(Lib* lib) {
-    _lib = lib;
+    lib_ = lib;
   }
 
   bool buttonPressed(const OIS::JoyStickEvent& arg, std::int32_t button) override;
@@ -109,7 +109,7 @@ public:
   bool povMoved(const OIS::JoyStickEvent& arg, std::int32_t pov) override;
 
 private:
-  Lib* _lib;
+  Lib* lib_;
 };
 
 struct Internals {
@@ -139,8 +139,8 @@ struct Internals {
 
 bool Handler::buttonPressed(const OIS::JoyStickEvent& arg, std::int32_t button) {
   std::int32_t p = -1;
-  for (std::int32_t i = 0; i < kPlayers && i < _lib->_internals->pad_count; ++i) {
-    if (_lib->_internals->pads[i] == arg.device) {
+  for (std::int32_t i = 0; i < kPlayers && i < lib_->internals_->pad_count; ++i) {
+    if (lib_->internals_->pads[i] == arg.device) {
       p = i;
     }
   }
@@ -149,9 +149,9 @@ bool Handler::buttonPressed(const OIS::JoyStickEvent& arg, std::int32_t button) 
   }
 
   for (std::int32_t i = 0; i < static_cast<std::int32_t>(Lib::key::kMax); ++i) {
-    if (PadToKey(_lib->_internals->pad_config[p], button, static_cast<Lib::key>(i))) {
-      _lib->_keys_pressed[i][p] = true;
-      _lib->_keys_held[i][p] = true;
+    if (PadToKey(lib_->internals_->pad_config[p], button, static_cast<Lib::key>(i))) {
+      lib_->keys_pressed_[i][p] = true;
+      lib_->keys_held_[i][p] = true;
     }
   }
   return true;
@@ -159,8 +159,8 @@ bool Handler::buttonPressed(const OIS::JoyStickEvent& arg, std::int32_t button) 
 
 bool Handler::buttonReleased(const OIS::JoyStickEvent& arg, std::int32_t button) {
   std::int32_t p = -1;
-  for (std::int32_t i = 0; i < kPlayers && i < _lib->_internals->pad_count; ++i) {
-    if (_lib->_internals->pads[i] == arg.device) {
+  for (std::int32_t i = 0; i < kPlayers && i < lib_->internals_->pad_count; ++i) {
+    if (lib_->internals_->pads[i] == arg.device) {
       p = i;
     }
   }
@@ -169,9 +169,9 @@ bool Handler::buttonReleased(const OIS::JoyStickEvent& arg, std::int32_t button)
   }
 
   for (std::int32_t i = 0; i < static_cast<std::int32_t>(Lib::key::kMax); ++i) {
-    if (PadToKey(_lib->_internals->pad_config[p], button, static_cast<Lib::key>(i))) {
-      _lib->_keys_released[i][p] = true;
-      _lib->_keys_held[i][p] = false;
+    if (PadToKey(lib_->internals_->pad_config[p], button, static_cast<Lib::key>(i))) {
+      lib_->keys_released_[i][p] = true;
+      lib_->keys_held_[i][p] = false;
     }
   }
   return true;
@@ -179,8 +179,8 @@ bool Handler::buttonReleased(const OIS::JoyStickEvent& arg, std::int32_t button)
 
 bool Handler::axisMoved(const OIS::JoyStickEvent& arg, std::int32_t axis) {
   std::int32_t p = -1;
-  for (std::int32_t i = 0; i < kPlayers && i < _lib->_internals->pad_count; ++i) {
-    if (_lib->_internals->pads[i] == arg.device) {
+  for (std::int32_t i = 0; i < kPlayers && i < lib_->internals_->pad_count; ++i) {
+    if (lib_->internals_->pads[i] == arg.device) {
       p = i;
     }
   }
@@ -190,22 +190,22 @@ bool Handler::axisMoved(const OIS::JoyStickEvent& arg, std::int32_t axis) {
 
   fixed v = std::max(
       -fixed(1), std::min(fixed(1), fixed(arg.state.mAxes[axis].abs) / OIS::JoyStick::MAX_AXIS));
-  PadConfig& config = _lib->_internals->pad_config[p];
+  PadConfig& config = lib_->internals_->pad_config[p];
 
   for (std::size_t i = 0; i < config._moveSticks.size(); ++i) {
-    if (config._moveSticks[i]._axis1 == axis) {
-      _lib->_internals->pad_move_vaxes[p] = config._moveSticks[i]._axis1r ? -v : v;
+    if (config._moveSticks[i].axis1_ == axis) {
+      lib_->internals_->pad_move_vaxes[p] = config._moveSticks[i].axis1r_ ? -v : v;
     }
-    if (config._moveSticks[i]._axis2 == axis) {
-      _lib->_internals->pad_move_haxes[p] = config._moveSticks[i]._axis2r ? -v : v;
+    if (config._moveSticks[i].axis2_ == axis) {
+      lib_->internals_->pad_move_haxes[p] = config._moveSticks[i].axis2r_ ? -v : v;
     }
   }
   for (std::size_t i = 0; i < config._aimSticks.size(); ++i) {
-    if (config._aimSticks[i]._axis1 == axis) {
-      _lib->_internals->pad_aim_vaxes[p] = config._aimSticks[i]._axis1r ? -v : v;
+    if (config._aimSticks[i].axis1_ == axis) {
+      lib_->internals_->pad_aim_vaxes[p] = config._aimSticks[i].axis1r_ ? -v : v;
     }
-    if (config._aimSticks[i]._axis2 == axis) {
-      _lib->_internals->pad_aim_haxes[p] = config._aimSticks[i]._axis2r ? -v : v;
+    if (config._aimSticks[i].axis2_ == axis) {
+      lib_->internals_->pad_aim_haxes[p] = config._aimSticks[i].axis2r_ ? -v : v;
     }
   }
   return true;
@@ -213,8 +213,8 @@ bool Handler::axisMoved(const OIS::JoyStickEvent& arg, std::int32_t axis) {
 
 bool Handler::povMoved(const OIS::JoyStickEvent& arg, std::int32_t pov) {
   std::int32_t p = -1;
-  for (std::int32_t i = 0; i < kPlayers && i < _lib->_internals->pad_count; ++i) {
-    if (_lib->_internals->pads[i] == arg.device) {
+  for (std::int32_t i = 0; i < kPlayers && i < lib_->internals_->pad_count; ++i) {
+    if (lib_->internals_->pads[i] == arg.device) {
       p = i;
     }
   }
@@ -224,52 +224,52 @@ bool Handler::povMoved(const OIS::JoyStickEvent& arg, std::int32_t pov) {
 
   auto k = [](Lib::key key) { return static_cast<std::size_t>(key); };
 
-  PadConfig& config = _lib->_internals->pad_config[p];
+  PadConfig& config = lib_->internals_->pad_config[p];
   std::int32_t d = arg.state.mPOV[pov].direction;
   for (std::size_t i = 0; i < config._moveDpads.size(); ++i) {
     if (config._moveDpads[i] == pov) {
-      _lib->_internals->pad_move_dpads[p] = d;
+      lib_->internals_->pad_move_dpads[p] = d;
       if (d & OIS::Pov::North) {
-        _lib->_keys_pressed[k(Lib::key::kUp)][p] = true;
-        _lib->_keys_held[k(Lib::key::kUp)][p] = true;
+        lib_->keys_pressed_[k(Lib::key::kUp)][p] = true;
+        lib_->keys_held_[k(Lib::key::kUp)][p] = true;
       } else {
-        if (_lib->_keys_held[k(Lib::key::kUp)][p]) {
-          _lib->_keys_released[k(Lib::key::kUp)][p] = true;
+        if (lib_->keys_held_[k(Lib::key::kUp)][p]) {
+          lib_->keys_released_[k(Lib::key::kUp)][p] = true;
         }
-        _lib->_keys_held[k(Lib::key::kUp)][p] = false;
+        lib_->keys_held_[k(Lib::key::kUp)][p] = false;
       }
       if (d & OIS::Pov::South) {
-        _lib->_keys_pressed[k(Lib::key::kDown)][p] = true;
-        _lib->_keys_held[k(Lib::key::kDown)][p] = true;
+        lib_->keys_pressed_[k(Lib::key::kDown)][p] = true;
+        lib_->keys_held_[k(Lib::key::kDown)][p] = true;
       } else {
-        if (_lib->_keys_held[k(Lib::key::kDown)][p]) {
-          _lib->_keys_released[k(Lib::key::kDown)][p] = true;
+        if (lib_->keys_held_[k(Lib::key::kDown)][p]) {
+          lib_->keys_released_[k(Lib::key::kDown)][p] = true;
         }
-        _lib->_keys_held[k(Lib::key::kDown)][p] = false;
+        lib_->keys_held_[k(Lib::key::kDown)][p] = false;
       }
       if (d & OIS::Pov::West) {
-        _lib->_keys_pressed[k(Lib::key::kLeft)][p] = true;
-        _lib->_keys_held[k(Lib::key::kLeft)][p] = true;
+        lib_->keys_pressed_[k(Lib::key::kLeft)][p] = true;
+        lib_->keys_held_[k(Lib::key::kLeft)][p] = true;
       } else {
-        if (_lib->_keys_held[k(Lib::key::kLeft)][p]) {
-          _lib->_keys_released[k(Lib::key::kLeft)][p] = true;
+        if (lib_->keys_held_[k(Lib::key::kLeft)][p]) {
+          lib_->keys_released_[k(Lib::key::kLeft)][p] = true;
         }
-        _lib->_keys_held[k(Lib::key::kLeft)][p] = false;
+        lib_->keys_held_[k(Lib::key::kLeft)][p] = false;
       }
       if (d & OIS::Pov::East) {
-        _lib->_keys_pressed[k(Lib::key::kRight)][p] = true;
-        _lib->_keys_held[k(Lib::key::kRight)][p] = true;
+        lib_->keys_pressed_[k(Lib::key::kRight)][p] = true;
+        lib_->keys_held_[k(Lib::key::kRight)][p] = true;
       } else {
-        if (_lib->_keys_held[k(Lib::key::kRight)][p]) {
-          _lib->_keys_released[k(Lib::key::kRight)][p] = true;
+        if (lib_->keys_held_[k(Lib::key::kRight)][p]) {
+          lib_->keys_released_[k(Lib::key::kRight)][p] = true;
         }
-        _lib->_keys_held[k(Lib::key::kRight)][p] = false;
+        lib_->keys_held_[k(Lib::key::kRight)][p] = false;
       }
     }
   }
   for (std::size_t i = 0; i < config._aimDpads.size(); ++i) {
     if (config._aimDpads[i] == pov) {
-      _lib->_internals->pad_aim_dpads[p] = d;
+      lib_->internals_->pad_aim_dpads[p] = d;
     }
   }
   return true;
@@ -278,7 +278,7 @@ bool Handler::povMoved(const OIS::JoyStickEvent& arg, std::int32_t pov) {
 struct Internals {};
 #endif
 
-Lib::Lib() : _cycle(0), _players(1), _capture_mouse(false), _mouse_moving(true), _score_frame(0) {
+Lib::Lib() : cycle_(0), players_(1), capture_mouse_(false), mouse_moving_(true), score_frame_(0) {
 #ifndef PLATFORM_SCORE
   set_working_directory(false);
 #ifdef PLATFORM_LINUX
@@ -286,7 +286,7 @@ Lib::Lib() : _cycle(0), _players(1), _capture_mouse(false), _mouse_moving(true),
 #else
   CreateDirectory("replays", 0);
 #endif
-  _internals.reset(new Internals());
+  internals_.reset(new Internals());
 
   bool created = false;
   for (int i = sf::VideoMode::getFullscreenModes().size() - 1; i >= 0 && !Settings().windowed;
@@ -294,36 +294,36 @@ Lib::Lib() : _cycle(0), _players(1), _capture_mouse(false), _mouse_moving(true),
     sf::VideoMode m = sf::VideoMode::getFullscreenModes()[i];
     if (m.width >= unsigned(Lib::kWidth) && m.height >= unsigned(Lib::kHeight) &&
         m.bitsPerPixel == 32) {
-      _internals->window.create(m, "WiiSPACE", sf::Style::Close | sf::Style::Titlebar,
+      internals_->window.create(m, "WiiSPACE", sf::Style::Close | sf::Style::Titlebar,
                                 sf::ContextSettings(0, 0, 0));
-      _extra.x = (m.width - Lib::kWidth) / 2;
-      _extra.y = (m.height - Lib::kHeight) / 2;
+      extra_.x = (m.width - Lib::kWidth) / 2;
+      extra_.y = (m.height - Lib::kHeight) / 2;
       created = true;
       break;
     }
   }
   if (!created) {
-    _internals->window.create(sf::VideoMode(640, 480, 32), "WiiSPACE",
+    internals_->window.create(sf::VideoMode(640, 480, 32), "WiiSPACE",
                               sf::Style::Close | sf::Style::Titlebar);
   }
 
-  _internals->manager = OIS::InputManager::createInputSystem(
-      reinterpret_cast<std::size_t>(_internals->window.getSystemHandle()));
-  _internals->pad_count = std::min(4, _internals->manager->getNumberOfDevices(OIS::OISJoyStick));
+  internals_->manager = OIS::InputManager::createInputSystem(
+      reinterpret_cast<std::size_t>(internals_->window.getSystemHandle()));
+  internals_->pad_count = std::min(4, internals_->manager->getNumberOfDevices(OIS::OISJoyStick));
   OIS::JoyStick* tpads[4];
   tpads[0] = tpads[1] = tpads[2] = tpads[3] = 0;
-  _internals->pads[0] = _internals->pads[1] = _internals->pads[2] = _internals->pads[3] = 0;
-  for (std::int32_t i = 0; i < _internals->pad_count; ++i) {
+  internals_->pads[0] = internals_->pads[1] = internals_->pads[2] = internals_->pads[3] = 0;
+  for (std::int32_t i = 0; i < internals_->pad_count; ++i) {
     try {
-      tpads[i] = (OIS::JoyStick*)_internals->manager->createInputObject(OIS::OISJoyStick, true);
-      tpads[i]->setEventCallback(&_internals->pad_handler);
+      tpads[i] = (OIS::JoyStick*)internals_->manager->createInputObject(OIS::OISJoyStick, true);
+      tpads[i]->setEventCallback(&internals_->pad_handler);
     } catch (const std::exception& e) {
       tpads[i] = 0;
       (void)e;
     }
   }
 
-  _internals->pad_handler.SetLib(this);
+  internals_->pad_handler.SetLib(this);
   std::int32_t configs = 0;
   std::ifstream f("gamepads.txt");
   std::string line;
@@ -332,12 +332,12 @@ Lib::Lib() : _cycle(0), _players(1), _capture_mouse(false), _mouse_moving(true),
   ss >> configs;
   for (std::int32_t i = 0; i < kPlayers; ++i) {
     if (i >= configs) {
-      _internals->pad_config[i].SetDefault();
+      internals_->pad_config[i].SetDefault();
       for (std::int32_t p = 0; p < kPlayers; ++p) {
         if (!tpads[p]) {
           continue;
         }
-        _internals->pads[i] = tpads[p];
+        internals_->pads[i] = tpads[p];
         tpads[p] = 0;
         break;
       }
@@ -358,9 +358,9 @@ Lib::Lib() : _cycle(0), _players(1), _capture_mouse(false), _mouse_moving(true),
       }
 
       if (name.compare(line) == 0) {
-        _internals->pads[i] = tpads[p];
+        internals_->pads[i] = tpads[p];
         tpads[p] = 0;
-        _internals->pad_config[i].Read(f);
+        internals_->pad_config[i].Read(f);
         assigned = true;
         break;
       }
@@ -376,15 +376,15 @@ Lib::Lib() : _cycle(0), _players(1), _capture_mouse(false), _mouse_moving(true),
   f.close();
 
   for (std::int32_t i = 0; i < kPlayers; ++i) {
-    if (!_internals->pads[i]) {
+    if (!internals_->pads[i]) {
       continue;
     } else {
-      _internals->ff[i] = 0;
+      internals_->ff[i] = 0;
     }
-    _internals->ff[i] =
-        (OIS::ForceFeedback*)_internals->pads[i]->queryInterface(OIS::Interface::ForceFeedback);
+    internals_->ff[i] =
+        (OIS::ForceFeedback*)internals_->pads[i]->queryInterface(OIS::Interface::ForceFeedback);
 
-    /*if (_ff[i]) {
+    /*if (ff_[i]) {
       OIS::Effect* e =
           new OIS::Effect(OIS::Effect::ConstantForce, OIS::Effect::Constant);
       e->setNumAxes(1);
@@ -394,23 +394,23 @@ Lib::Lib() : _cycle(0), _players(1), _capture_mouse(false), _mouse_moving(true),
       e->trigger_interval = 1000;
       e->replay_length = 5000;
       e->replay_delay = 0;
-      _ff[i]->upload(e);
+      ff_[i]->upload(e);
     }*/
   }
 
   sf::Image image;
   image.loadFromFile("console.png");
   image.createMaskFromColor(RgbaToColor(0x000000ff));
-  _internals->texture.loadFromImage(image);
-  _internals->texture.setSmooth(false);
-  _internals->font = sf::Sprite(_internals->texture);
+  internals_->texture.loadFromImage(image);
+  internals_->texture.setSmooth(false);
+  internals_->font = sf::Sprite(internals_->texture);
   load_sounds();
 
   clear_screen();
-  _internals->window.setVisible(true);
-  _internals->window.setVerticalSyncEnabled(true);
-  _internals->window.setFramerateLimit(50);
-  _internals->window.setMouseCursorVisible(false);
+  internals_->window.setVisible(true);
+  internals_->window.setVerticalSyncEnabled(true);
+  internals_->window.setFramerateLimit(50);
+  internals_->window.setMouseCursorVisible(false);
 
   glClearColor(0.f, 0.f, 0.f, 0.f);
   glDisable(GL_DEPTH_TEST);
@@ -423,27 +423,27 @@ Lib::Lib() : _cycle(0), _players(1), _capture_mouse(false), _mouse_moving(true),
     for (std::int32_t j = 0; j < kPlayers; ++j) {
       f.push_back(false);
     }
-    _keys_pressed.push_back(f);
-    _keys_held.push_back(f);
-    _keys_released.push_back(f);
+    keys_pressed_.push_back(f);
+    keys_held_.push_back(f);
+    keys_released_.push_back(f);
   }
   for (std::int32_t j = 0; j < kPlayers; ++j) {
-    _internals->pad_move_vaxes[j] = 0;
-    _internals->pad_move_haxes[j] = 0;
-    _internals->pad_aim_vaxes[j] = 0;
-    _internals->pad_aim_haxes[j] = 0;
-    _internals->pad_move_dpads[j] = OIS::Pov::Centered;
-    _internals->pad_aim_dpads[j] = OIS::Pov::Centered;
+    internals_->pad_move_vaxes[j] = 0;
+    internals_->pad_move_haxes[j] = 0;
+    internals_->pad_aim_vaxes[j] = 0;
+    internals_->pad_aim_haxes[j] = 0;
+    internals_->pad_move_dpads[j] = OIS::Pov::Centered;
+    internals_->pad_aim_dpads[j] = OIS::Pov::Centered;
   }
   for (std::int32_t i = 0; i < static_cast<std::int32_t>(sound::kMax); ++i) {
-    _internals->voices.emplace_back();
+    internals_->voices.emplace_back();
   }
 #endif
 }
 
 Lib::~Lib() {
 #ifndef PLATFORM_SCORE
-  OIS::InputManager::destroyInputSystem(_internals->manager);
+  OIS::InputManager::destroyInputSystem(internals_->manager);
 #endif
 }
 
@@ -472,11 +472,11 @@ bool Lib::is_key_held(key k) const {
 }
 
 void Lib::set_colour_cycle(std::int32_t cycle) {
-  _cycle = cycle % 256;
+  cycle_ = cycle % 256;
 }
 
 std::int32_t Lib::get_colour_cycle() const {
-  return _cycle;
+  return cycle_;
 }
 
 void Lib::set_working_directory(bool original) {
@@ -535,11 +535,11 @@ void Lib::set_working_directory(bool original) {
 
 bool Lib::begin_frame() {
 #ifndef PLATFORM_SCORE
-  ivec2 t = _mouse;
+  ivec2 t = mouse_;
   sf::Event e;
-  std::int32_t kp = _players <= _internals->pad_count ? _players - 1 : _internals->pad_count;
-  while (_internals->window.pollEvent(e)) {
-    if (e.type == sf::Event::Closed || !_internals->window.isOpen()) {
+  std::int32_t kp = players_ <= internals_->pad_count ? players_ - 1 : internals_->pad_count;
+  while (internals_->window.pollEvent(e)) {
+    if (e.type == sf::Event::Closed || !internals_->window.isOpen()) {
       return true;
     }
 
@@ -557,46 +557,46 @@ bool Lib::begin_frame() {
       }
 
       if (kd || md) {
-        _keys_pressed[i][kp] = true;
-        _keys_held[i][kp] = true;
+        keys_pressed_[i][kp] = true;
+        keys_held_[i][kp] = true;
       }
       if (ku || mu) {
-        _keys_released[i][kp] = true;
-        _keys_held[i][kp] = false;
+        keys_released_[i][kp] = true;
+        keys_held_[i][kp] = false;
       }
     }
 
     if (e.type == sf::Event::MouseMoved) {
-      _mouse.x = e.mouseMove.x;
-      _mouse.y = e.mouseMove.y;
+      mouse_.x = e.mouseMove.x;
+      mouse_.y = e.mouseMove.y;
     }
   }
 
-  for (std::size_t i = 0; i < _internals->sounds.size(); ++i) {
-    if (_internals->sounds[i].first > 0) {
-      _internals->sounds[i].first--;
+  for (std::size_t i = 0; i < internals_->sounds.size(); ++i) {
+    if (internals_->sounds[i].first > 0) {
+      internals_->sounds[i].first--;
     }
   }
 
-  _mouse = std::max(ivec2{}, std::min(ivec2{Lib::kWidth - 1, Lib::kHeight - 1}, _mouse));
-  if (t != _mouse) {
-    _mouse_moving = true;
+  mouse_ = std::max(ivec2{}, std::min(ivec2{Lib::kWidth - 1, Lib::kHeight - 1}, mouse_));
+  if (t != mouse_) {
+    mouse_moving_ = true;
   }
-  if (_capture_mouse) {
-    sf::Mouse::setPosition({_mouse.x, _mouse.y}, _internals->window);
+  if (capture_mouse_) {
+    sf::Mouse::setPosition({mouse_.x, mouse_.y}, internals_->window);
   }
 
-  for (std::int32_t i = 0; i < _internals->pad_count; ++i) {
-    _internals->pads[i]->capture();
-    const OIS::JoyStickState& s = _internals->pads[i]->getJoyStickState();
+  for (std::int32_t i = 0; i < internals_->pad_count; ++i) {
+    internals_->pads[i]->capture();
+    const OIS::JoyStickState& s = internals_->pads[i]->getJoyStickState();
     for (std::size_t j = 0; j < s.mAxes.size(); ++j) {
-      OIS::JoyStickEvent arg(_internals->pads[i], s);
-      _internals->pad_handler.axisMoved(arg, j);
+      OIS::JoyStickEvent arg(internals_->pads[i], s);
+      internals_->pad_handler.axisMoved(arg, j);
     }
   }
 #else
-  if (_score_frame < 5) {
-    ++_score_frame;
+  if (score_frame_ < 5) {
+    ++score_frame_;
   }
 #endif
   return false;
@@ -606,15 +606,15 @@ void Lib::end_frame() {
 #ifndef PLATFORM_SCORE
   for (std::int32_t i = 0; i < static_cast<std::int32_t>(key::kMax); ++i) {
     for (std::int32_t j = 0; j < kPlayers; ++j) {
-      _keys_pressed[i][j] = false;
-      _keys_released[i][j] = false;
+      keys_pressed_[i][j] = false;
+      keys_released_[i][j] = false;
     }
   }
 #endif
   /*for (std::int32_t i = 0; i < kPlayers; i++) {
-    if (_rumble[i]) {
-      _rumble[i]--;
-      if (!_rumble[i]) {
+    if (rumble_[i]) {
+      rumble_[i]--;
+      if (!rumble_[i]) {
       WPAD_Rumble(i, false);
       PAD_ControlMotor(i, PAD_MOTOR_STOP);
     }
@@ -622,16 +622,16 @@ void Lib::end_frame() {
 }
 
 void Lib::capture_mouse(bool enabled) {
-  _capture_mouse = enabled;
+  capture_mouse_ = enabled;
 }
 
 void Lib::new_game() {
 #ifndef PLATFORM_SCORE
   for (std::int32_t i = 0; i < static_cast<std::int32_t>(key::kMax); ++i) {
     for (std::int32_t j = 0; j < kPlayers; ++j) {
-      _keys_pressed[i][j] = false;
-      _keys_released[i][j] = false;
-      _keys_held[i][j] = false;
+      keys_pressed_[i][j] = false;
+      keys_released_[i][j] = false;
+      keys_held_[i][j] = false;
     }
   }
 #endif
@@ -640,8 +640,8 @@ void Lib::new_game() {
 void Lib::take_screenshot() {
 #ifndef PLATFORM_SCORE
   sf::Texture texture;
-  texture.create(_internals->window.getSize().x, _internals->window.getSize().y);
-  texture.update(_internals->window);
+  texture.create(internals_->window.getSize().x, internals_->window.getSize().y);
+  texture.update(internals_->window);
 
   std::stringstream ss;
   ss << "screenshot" << time(0) % 10000000 << ".png";
@@ -654,11 +654,11 @@ void Lib::take_screenshot() {
 Lib::pad_type Lib::get_pad_type(std::int32_t player) const {
 #ifndef PLATFORM_SCORE
   pad_type result = pad_type::kPadNone;
-  if (player < _internals->pad_count) {
+  if (player < internals_->pad_count) {
     result = pad_type::kPadGamepad;
   }
-  if ((_players <= _internals->pad_count && player == _players - 1) ||
-      (_players > _internals->pad_count && player == _internals->pad_count)) {
+  if ((players_ <= internals_->pad_count && player == players_ - 1) ||
+      (players_ > internals_->pad_count && player == internals_->pad_count)) {
     result = static_cast<pad_type>(result | pad_type::kPadKeyboardMouse);
   }
   return result;
@@ -669,15 +669,15 @@ Lib::pad_type Lib::get_pad_type(std::int32_t player) const {
 
 bool Lib::is_key_pressed(std::int32_t player, key k) const {
 #ifndef PLATFORM_SCORE
-  return _keys_pressed[static_cast<std::size_t>(k)][player];
+  return keys_pressed_[static_cast<std::size_t>(k)][player];
 #else
   if (player != 0) {
     return false;
   }
-  if (k == key::kDown && _score_frame < 4) {
+  if (k == key::kDown && score_frame_ < 4) {
     return true;
   }
-  if (k == key::kAccept && _score_frame == 5) {
+  if (k == key::kAccept && score_frame_ == 5) {
     return true;
   }
   return false;
@@ -686,7 +686,7 @@ bool Lib::is_key_pressed(std::int32_t player, key k) const {
 
 bool Lib::is_key_released(std::int32_t player, key k) const {
 #ifndef PLATFORM_SCORE
-  return _keys_released[static_cast<std::size_t>(k)][player];
+  return keys_released_[static_cast<std::size_t>(k)][player];
 #else
   return false;
 #endif
@@ -694,13 +694,13 @@ bool Lib::is_key_released(std::int32_t player, key k) const {
 
 bool Lib::is_key_held(std::int32_t player, key k) const {
 #ifndef PLATFORM_SCORE
-  vec2 v(_internals->pad_aim_haxes[player], _internals->pad_aim_vaxes[player]);
+  vec2 v(internals_->pad_aim_haxes[player], internals_->pad_aim_vaxes[player]);
   if (k == key::kFire &&
-      (_internals->pad_aim_dpads[player] != OIS::Pov::Centered ||
+      (internals_->pad_aim_dpads[player] != OIS::Pov::Centered ||
        v.length() >= fixed_c::tenth * 2)) {
     return true;
   }
-  return _keys_held[static_cast<std::size_t>(k)][player];
+  return keys_held_[static_cast<std::size_t>(k)][player];
 #else
   return false;
 #endif
@@ -708,17 +708,17 @@ bool Lib::is_key_held(std::int32_t player, key k) const {
 
 vec2 Lib::get_move_velocity(std::int32_t player) const {
 #ifndef PLATFORM_SCORE
-  bool ku = is_key_held(player, key::kUp) || _internals->pad_move_dpads[player] & OIS::Pov::North;
-  bool kd = is_key_held(player, key::kDown) || _internals->pad_move_dpads[player] & OIS::Pov::South;
-  bool kl = is_key_held(player, key::kLeft) || _internals->pad_move_dpads[player] & OIS::Pov::West;
-  bool kr = is_key_held(player, key::kRight) || _internals->pad_move_dpads[player] & OIS::Pov::East;
+  bool ku = is_key_held(player, key::kUp) || internals_->pad_move_dpads[player] & OIS::Pov::North;
+  bool kd = is_key_held(player, key::kDown) || internals_->pad_move_dpads[player] & OIS::Pov::South;
+  bool kl = is_key_held(player, key::kLeft) || internals_->pad_move_dpads[player] & OIS::Pov::West;
+  bool kr = is_key_held(player, key::kRight) || internals_->pad_move_dpads[player] & OIS::Pov::East;
 
   vec2 v = vec2(0, -1) * ku + vec2(0, 1) * kd + vec2(-1, 0) * kl + vec2(1, 0) * kr;
   if (v != vec2()) {
     return v;
   }
 
-  v = vec2(_internals->pad_move_haxes[player], _internals->pad_move_vaxes[player]);
+  v = vec2(internals_->pad_move_haxes[player], internals_->pad_move_vaxes[player]);
   if (v.length() < fixed_c::tenth * 2) {
     return vec2();
   }
@@ -730,40 +730,40 @@ vec2 Lib::get_move_velocity(std::int32_t player) const {
 
 vec2 Lib::get_fire_target(std::int32_t player, const vec2& position) const {
 #ifndef PLATFORM_SCORE
-  bool kp = player == (_players <= _internals->pad_count ? _players - 1 : _internals->pad_count);
-  vec2 v(_internals->pad_aim_haxes[player], _internals->pad_aim_vaxes[player]);
+  bool kp = player == (players_ <= internals_->pad_count ? players_ - 1 : internals_->pad_count);
+  vec2 v(internals_->pad_aim_haxes[player], internals_->pad_aim_vaxes[player]);
 
   if (v.length() >= fixed_c::tenth * 2) {
     v = v.normalised() * 48;
     if (kp) {
-      _mouse_moving = false;
+      mouse_moving_ = false;
     }
-    _internals->pad_last_aim[player] = v;
+    internals_->pad_last_aim[player] = v;
     return v + position;
   }
 
-  if (_internals->pad_aim_dpads[player] != OIS::Pov::Centered) {
-    bool ku = (_internals->pad_aim_dpads[player] & OIS::Pov::North) != 0;
-    bool kd = (_internals->pad_aim_dpads[player] & OIS::Pov::South) != 0;
-    bool kl = (_internals->pad_aim_dpads[player] & OIS::Pov::West) != 0;
-    bool kr = (_internals->pad_aim_dpads[player] & OIS::Pov::East) != 0;
+  if (internals_->pad_aim_dpads[player] != OIS::Pov::Centered) {
+    bool ku = (internals_->pad_aim_dpads[player] & OIS::Pov::North) != 0;
+    bool kd = (internals_->pad_aim_dpads[player] & OIS::Pov::South) != 0;
+    bool kl = (internals_->pad_aim_dpads[player] & OIS::Pov::West) != 0;
+    bool kr = (internals_->pad_aim_dpads[player] & OIS::Pov::East) != 0;
 
     vec2 v = vec2(0, -1) * ku + vec2(0, 1) * kd + vec2(-1, 0) * kl + vec2(1, 0) * kr;
     if (v != vec2()) {
       v = v.normalised() * 48;
       if (kp) {
-        _mouse_moving = false;
+        mouse_moving_ = false;
       }
-      _internals->pad_last_aim[player] = v;
+      internals_->pad_last_aim[player] = v;
       return v + position;
     }
   }
 
-  if (_mouse_moving && kp) {
-    return vec2(_mouse.x, _mouse.y);
+  if (mouse_moving_ && kp) {
+    return vec2(mouse_.x, mouse_.y);
   }
-  if (_internals->pad_last_aim[player] != vec2()) {
-    return position + _internals->pad_last_aim[player];
+  if (internals_->pad_last_aim[player] != vec2()) {
+    return position + internals_->pad_last_aim[player];
   }
   return position + vec2(48, 0);
 #else
@@ -776,48 +776,48 @@ vec2 Lib::get_fire_target(std::int32_t player, const vec2& position) const {
 void Lib::clear_screen() const {
 #ifndef PLATFORM_SCORE
   glClear(GL_COLOR_BUFFER_BIT);
-  _internals->window.clear(RgbaToColor(0x000000ff));
-  _internals->window.draw(MakeRectangle(0, 0, 0, 0, sf::Color()));
+  internals_->window.clear(RgbaToColor(0x000000ff));
+  internals_->window.draw(MakeRectangle(0, 0, 0, 0, sf::Color()));
 #endif
 }
 
 void Lib::render_line(const fvec2& a, const fvec2& b, colour_t c) const {
 #ifndef PLATFORM_SCORE
-  c = z::colour_cycle(c, _cycle);
+  c = z::colour_cycle(c, cycle_);
   glBegin(GL_LINES);
   glColor4ub(c >> 24, c >> 16, c >> 8, c);
-  glVertex3f(a.x + _extra.x, a.y + _extra.y, 0);
-  glVertex3f(b.x + _extra.x, b.y + _extra.y, 0);
+  glVertex3f(a.x + extra_.x, a.y + extra_.y, 0);
+  glVertex3f(b.x + extra_.x, b.y + extra_.y, 0);
   glColor4ub(c >> 24, c >> 16, c >> 8, c & 0xffffff33);
-  glVertex3f(a.x + _extra.x + 1, a.y + _extra.y, 0);
-  glVertex3f(b.x + _extra.x + 1, b.y + _extra.y, 0);
-  glVertex3f(a.x + _extra.x - 1, a.y + _extra.y, 0);
-  glVertex3f(b.x + _extra.x - 1, b.y + _extra.y, 0);
-  glVertex3f(a.x + _extra.x, a.y + _extra.y + 1, 0);
-  glVertex3f(b.x + _extra.x, b.y + _extra.y + 1, 0);
-  glVertex3f(a.x + _extra.x, a.y + _extra.y - 1, 0);
-  glVertex3f(b.x + _extra.x, b.y + _extra.y - 1, 0);
+  glVertex3f(a.x + extra_.x + 1, a.y + extra_.y, 0);
+  glVertex3f(b.x + extra_.x + 1, b.y + extra_.y, 0);
+  glVertex3f(a.x + extra_.x - 1, a.y + extra_.y, 0);
+  glVertex3f(b.x + extra_.x - 1, b.y + extra_.y, 0);
+  glVertex3f(a.x + extra_.x, a.y + extra_.y + 1, 0);
+  glVertex3f(b.x + extra_.x, b.y + extra_.y + 1, 0);
+  glVertex3f(a.x + extra_.x, a.y + extra_.y - 1, 0);
+  glVertex3f(b.x + extra_.x, b.y + extra_.y - 1, 0);
   glEnd();
 #endif
 }
 
 void Lib::render_text(const fvec2& v, const std::string& text, colour_t c) const {
 #ifndef PLATFORM_SCORE
-  _internals->font.setColor(RgbaToColor(z::colour_cycle(c, _cycle)));
+  internals_->font.setColor(RgbaToColor(z::colour_cycle(c, cycle_)));
   for (std::size_t i = 0; i < text.length(); ++i) {
-    _internals->font.setPosition((std::int32_t(i) + v.x) * kTextWidth + _extra.x,
-                                 v.y * kTextHeight + _extra.y);
-    _internals->font.setTextureRect(sf::IntRect(kTextWidth * text[i], 0, kTextWidth, kTextHeight));
-    _internals->window.draw(_internals->font);
+    internals_->font.setPosition((std::int32_t(i) + v.x) * kTextWidth + extra_.x,
+                                 v.y * kTextHeight + extra_.y);
+    internals_->font.setTextureRect(sf::IntRect(kTextWidth * text[i], 0, kTextWidth, kTextHeight));
+    internals_->window.draw(internals_->font);
   }
-  _internals->window.draw(MakeRectangle(0, 0, 0, 0, sf::Color()));
+  internals_->window.draw(MakeRectangle(0, 0, 0, 0, sf::Color()));
 #endif
 }
 
 void Lib::render_rect(const fvec2& low, const fvec2& hi, colour_t c,
                       std::int32_t line_width) const {
 #ifndef PLATFORM_SCORE
-  c = z::colour_cycle(c, _cycle);
+  c = z::colour_cycle(c, cycle_);
   fvec2 ab(low.x, hi.y);
   fvec2 ba(hi.x, low.y);
   const fvec2* list[4];
@@ -854,7 +854,7 @@ void Lib::render_rect(const fvec2& low, const fvec2& hi, colour_t c,
   glEnd();
 
   if (line_width > 1) {
-    render_rect(low + fvec2(1.f, 1.f), hi - fvec2(1.f, 1.f), z::colour_cycle(c, _cycle),
+    render_rect(low + fvec2(1.f, 1.f), hi - fvec2(1.f, 1.f), z::colour_cycle(c, cycle_),
                 line_width - 1);
   }
 #endif
@@ -862,40 +862,40 @@ void Lib::render_rect(const fvec2& low, const fvec2& hi, colour_t c,
 
 void Lib::render() const {
 #ifndef PLATFORM_SCORE
-  _internals->window.draw(MakeRectangle(
-      0.f, 0.f, float(_extra.x), float(Lib::kHeight + _extra.y * 2), sf::Color(0, 0, 0, 255)));
-  _internals->window.draw(MakeRectangle(0.f, 0.f, float(Lib::kWidth + _extra.x * 2),
-                                        float(_extra.y), sf::Color(0, 0, 0, 255)));
-  _internals->window.draw(
-      MakeRectangle(float(Lib::kWidth + _extra.x), 0, float(Lib::kWidth + _extra.x * 2),
-                    float(Lib::kHeight + _extra.y * 2), sf::Color(0, 0, 0, 255)));
-  _internals->window.draw(
-      MakeRectangle(0.f, float(Lib::kHeight + _extra.y), float(Lib::kWidth + _extra.x * 2),
-                    float(Lib::kHeight + _extra.y * 2), sf::Color(0, 0, 0, 255)));
-  _internals->window.draw(MakeRectangle(0.f, 0.f, float(_extra.x - 2),
-                                        float(Lib::kHeight + _extra.y * 2),
+  internals_->window.draw(MakeRectangle(
+      0.f, 0.f, float(extra_.x), float(Lib::kHeight + extra_.y * 2), sf::Color(0, 0, 0, 255)));
+  internals_->window.draw(MakeRectangle(0.f, 0.f, float(Lib::kWidth + extra_.x * 2),
+                                        float(extra_.y), sf::Color(0, 0, 0, 255)));
+  internals_->window.draw(
+      MakeRectangle(float(Lib::kWidth + extra_.x), 0, float(Lib::kWidth + extra_.x * 2),
+                    float(Lib::kHeight + extra_.y * 2), sf::Color(0, 0, 0, 255)));
+  internals_->window.draw(
+      MakeRectangle(0.f, float(Lib::kHeight + extra_.y), float(Lib::kWidth + extra_.x * 2),
+                    float(Lib::kHeight + extra_.y * 2), sf::Color(0, 0, 0, 255)));
+  internals_->window.draw(MakeRectangle(0.f, 0.f, float(extra_.x - 2),
+                                        float(Lib::kHeight + extra_.y * 2),
                                         sf::Color(32, 32, 32, 255)));
-  _internals->window.draw(MakeRectangle(0.f, 0.f, float(Lib::kWidth + _extra.x * 2),
-                                        float(_extra.y - 2), sf::Color(32, 32, 32, 255)));
-  _internals->window.draw(MakeRectangle(
-      float(Lib::kWidth + _extra.x + 2), float(_extra.y - 4), float(Lib::kWidth + _extra.x * 2),
-      float(Lib::kHeight + _extra.y * 2), sf::Color(32, 32, 32, 255)));
-  _internals->window.draw(MakeRectangle(
-      float(_extra.x - 2), float(Lib::kHeight + _extra.y + 2), float(Lib::kWidth + _extra.x * 2),
-      float(Lib::kHeight + _extra.y * 2), sf::Color(32, 32, 32, 255)));
-  _internals->window.draw(MakeRectangle(float(_extra.x - 4), float(_extra.y - 4),
-                                        float(_extra.x - 2), float(Lib::kHeight + _extra.y + 4),
+  internals_->window.draw(MakeRectangle(0.f, 0.f, float(Lib::kWidth + extra_.x * 2),
+                                        float(extra_.y - 2), sf::Color(32, 32, 32, 255)));
+  internals_->window.draw(MakeRectangle(
+      float(Lib::kWidth + extra_.x + 2), float(extra_.y - 4), float(Lib::kWidth + extra_.x * 2),
+      float(Lib::kHeight + extra_.y * 2), sf::Color(32, 32, 32, 255)));
+  internals_->window.draw(MakeRectangle(
+      float(extra_.x - 2), float(Lib::kHeight + extra_.y + 2), float(Lib::kWidth + extra_.x * 2),
+      float(Lib::kHeight + extra_.y * 2), sf::Color(32, 32, 32, 255)));
+  internals_->window.draw(MakeRectangle(float(extra_.x - 4), float(extra_.y - 4),
+                                        float(extra_.x - 2), float(Lib::kHeight + extra_.y + 4),
                                         sf::Color(128, 128, 128, 255)));
-  _internals->window.draw(MakeRectangle(float(_extra.x - 4), float(_extra.y - 4),
-                                        float(Lib::kWidth + _extra.x + 4), float(_extra.y - 2),
+  internals_->window.draw(MakeRectangle(float(extra_.x - 4), float(extra_.y - 4),
+                                        float(Lib::kWidth + extra_.x + 4), float(extra_.y - 2),
                                         sf::Color(128, 128, 128, 255)));
-  _internals->window.draw(MakeRectangle(
-      float(Lib::kWidth + _extra.x + 2), float(_extra.y - 4), float(Lib::kWidth + _extra.x + 4),
-      float(Lib::kHeight + _extra.y + 4), sf::Color(128, 128, 128, 255)));
-  _internals->window.draw(MakeRectangle(
-      float(_extra.x - 2), float(Lib::kHeight + _extra.y + 2), float(Lib::kWidth + _extra.x + 4),
-      float(Lib::kHeight + _extra.y + 4), sf::Color(128, 128, 128, 255)));
-  _internals->window.display();
+  internals_->window.draw(MakeRectangle(
+      float(Lib::kWidth + extra_.x + 2), float(extra_.y - 4), float(Lib::kWidth + extra_.x + 4),
+      float(Lib::kHeight + extra_.y + 4), sf::Color(128, 128, 128, 255)));
+  internals_->window.draw(MakeRectangle(
+      float(extra_.x - 2), float(Lib::kHeight + extra_.y + 2), float(Lib::kWidth + extra_.x + 4),
+      float(Lib::kHeight + extra_.y + 4), sf::Color(128, 128, 128, 255)));
+  internals_->window.display();
 #endif
 }
 
@@ -903,8 +903,8 @@ void Lib::rumble(std::int32_t player, std::int32_t time) {
   /*if (player < 0 || player >= kPlayers) {
     return;
   }
-  _rumble[player] = std::max(_rumble[player], time);
-  if (_rumble[player]) {
+  rumble_[player] = std::max(rumble_[player], time);
+  if (rumble_[player]) {
     WPAD_Rumble(player, true);
     PAD_ControlMotor(player, PAD_MOTOR_RUMBLE);
   }*/
@@ -912,7 +912,7 @@ void Lib::rumble(std::int32_t player, std::int32_t time) {
 
 void Lib::stop_rumble() {
   /*for (std::int32_t i = 0; i < kPlayers; i++) {
-    _rumble[i] = 0;
+    rumble_[i] = 0;
     WPAD_Rumble(i, false);
     PAD_ControlMotor(i, PAD_MOTOR_STOP);
   }*/
@@ -934,11 +934,11 @@ bool Lib::play_sound(sound s, float volume, float pan, float repitch) {
   }
 
   const sf::SoundBuffer* buffer = 0;
-  for (std::size_t i = 0; i < _internals->sounds.size(); i++) {
-    if (s == _internals->sounds[i].second.first) {
-      if (_internals->sounds[i].first <= 0) {
-        buffer = _internals->sounds[i].second.second.get();
-        _internals->sounds[i].first = kSoundTimer;
+  for (std::size_t i = 0; i < internals_->sounds.size(); i++) {
+    if (s == internals_->sounds[i].second.first) {
+      if (internals_->sounds[i].first <= 0) {
+        buffer = internals_->sounds[i].second.second.get();
+        internals_->sounds[i].first = kSoundTimer;
       }
       break;
     }
@@ -948,15 +948,15 @@ bool Lib::play_sound(sound s, float volume, float pan, float repitch) {
     return false;
   }
   for (std::int32_t i = 0; i < static_cast<std::int32_t>(sound::kMax); ++i) {
-    if (_internals->voices[i].getStatus() != sf::Sound::Playing) {
-      _internals->voices[i].setAttenuation(0.f);
-      _internals->voices[i].setLoop(false);
-      _internals->voices[i].setMinDistance(100.f);
-      _internals->voices[i].setBuffer(*buffer);
-      _internals->voices[i].setVolume(100.f * volume);
-      _internals->voices[i].setPitch(pow(2.f, repitch));
-      _internals->voices[i].setPosition(pan, 0, -1);
-      _internals->voices[i].play();
+    if (internals_->voices[i].getStatus() != sf::Sound::Playing) {
+      internals_->voices[i].setAttenuation(0.f);
+      internals_->voices[i].setLoop(false);
+      internals_->voices[i].setMinDistance(100.f);
+      internals_->voices[i].setBuffer(*buffer);
+      internals_->voices[i].setVolume(100.f * volume);
+      internals_->voices[i].setPitch(pow(2.f, repitch));
+      internals_->voices[i].setPosition(pan, 0, -1);
+      internals_->voices[i].play();
       return true;
     }
   }
@@ -975,8 +975,8 @@ void Lib::load_sounds() {
   auto use_sound = [&](sound s, const std::string& filename) {
     sf::SoundBuffer* buffer = new sf::SoundBuffer();
     buffer->loadFromFile(filename);
-    _internals->sounds.emplace_back(0, Internals::named_sound{s, nullptr});
-    _internals->sounds.back().second.second.reset(buffer);
+    internals_->sounds.emplace_back(0, Internals::named_sound{s, nullptr});
+    internals_->sounds.back().second.second.reset(buffer);
   };
   use_sound(sound::kPlayerFire, "PlayerFire.wav");
   use_sound(sound::kMenuClick, "MenuClick.wav");

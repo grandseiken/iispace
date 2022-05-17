@@ -12,12 +12,12 @@ const fixed kSbbSpeed = 1;
 
 ShieldBombBoss::ShieldBombBoss(std::int32_t players, std::int32_t cycle)
 : Boss(vec2(-Lib::kWidth / 2, Lib::kHeight / 2), SimState::BOSS_1B, kSbbBaseHp, players, cycle)
-, _timer(0)
-, _count(0)
-, _unshielded(0)
-, _attack(0)
-, _side(false)
-, _shot_alternate(false) {
+, timer_(0)
+, count_(0)
+, unshielded_(0)
+, attack_(0)
+, side_(false)
+, shot_alternate_(false) {
   add_shape(
       new Polygon(vec2(), 48, 8, 0x339966ff, 0, kDangerous | kVulnerable, Polygon::T::kPolygram));
 
@@ -38,9 +38,9 @@ ShieldBombBoss::ShieldBombBoss(std::int32_t players, std::int32_t cycle)
 }
 
 void ShieldBombBoss::update() {
-  if (!_side && shape().centre.x < Lib::kWidth * fixed_c::tenth * 6) {
+  if (!side_ && shape().centre.x < Lib::kWidth * fixed_c::tenth * 6) {
     move(vec2(1, 0) * kSbbSpeed);
-  } else if (_side && shape().centre.x > Lib::kWidth * fixed_c::tenth * 4) {
+  } else if (side_ && shape().centre.x > Lib::kWidth * fixed_c::tenth * 4) {
     move(vec2(-1, 0) * kSbbSpeed);
   }
 
@@ -53,21 +53,21 @@ void ShieldBombBoss::update() {
   }
 
   if (is_hp_low()) {
-    _timer++;
+    timer_++;
   }
 
-  if (_unshielded) {
-    _timer++;
+  if (unshielded_) {
+    timer_++;
 
-    _unshielded--;
+    unshielded_--;
     for (std::size_t i = 0; i < 3; i++) {
-      shapes()[i + 17]->colour = (_unshielded / 2) % 4 ? 0x00000000 : 0x666666ff;
+      shapes()[i + 17]->colour = (unshielded_ / 2) % 4 ? 0x00000000 : 0x666666ff;
     }
     for (std::size_t i = 0; i < 16; i++) {
-      shapes()[i + 1]->colour = (_unshielded / 2) % 4 ? 0x00000000 : 0x333333ff;
+      shapes()[i + 1]->colour = (unshielded_ / 2) % 4 ? 0x00000000 : 0x333333ff;
     }
 
-    if (!_unshielded) {
+    if (!unshielded_) {
       shapes()[0]->category = kDangerous | kVulnerable;
       shapes()[17]->category = kDangerous | kVulnShield;
 
@@ -80,22 +80,22 @@ void ShieldBombBoss::update() {
     }
   }
 
-  if (_attack) {
-    vec2 d = _attack_dir.rotated((kSbbAttackTime - _attack) * fixed_c::half * fixed_c::pi /
+  if (attack_) {
+    vec2 d = attack_dir_.rotated((kSbbAttackTime - attack_) * fixed_c::half * fixed_c::pi /
                                  kSbbAttackTime);
     spawn(new BossShot(shape().centre, d));
-    _attack--;
+    attack_--;
     play_sound_random(Lib::sound::kBossFire);
   }
 
-  _timer++;
-  if (_timer > kSbbTimer) {
-    _count++;
-    _timer = 0;
+  timer_++;
+  if (timer_ > kSbbTimer) {
+    count_++;
+    timer_ = 0;
 
-    if (_count >= 4 && (!z::rand_int(4) || _count >= 8)) {
-      _count = 0;
-      if (!_unshielded) {
+    if (count_ >= 4 && (!z::rand_int(4) || count_ >= 8)) {
+      count_ = 0;
+      if (!unshielded_) {
         if (game().all_ships(kShipPowerup).size() < 5) {
           spawn(new Powerup(shape().centre, Powerup::type::kBomb));
         }
@@ -103,7 +103,7 @@ void ShieldBombBoss::update() {
     }
 
     if (!z::rand_int(3)) {
-      _side = !_side;
+      side_ = !side_;
     }
 
     if (z::rand_int(2)) {
@@ -114,26 +114,26 @@ void ShieldBombBoss::update() {
       }
       play_sound(Lib::sound::kBossAttack);
     } else {
-      _attack = kSbbAttackTime;
-      _attack_dir = vec2::from_polar(z::rand_fixed() * (2 * fixed_c::pi), 5);
+      attack_ = kSbbAttackTime;
+      attack_dir_ = vec2::from_polar(z::rand_fixed() * (2 * fixed_c::pi), 5);
     }
   }
 }
 
 std::int32_t ShieldBombBoss::get_damage(std::int32_t damage, bool magic) {
-  if (_unshielded) {
+  if (unshielded_) {
     return damage;
   }
-  if (damage >= Player::kBombDamage && !_unshielded) {
-    _unshielded = kSbbUnshieldTime;
+  if (damage >= Player::kBombDamage && !unshielded_) {
+    unshielded_ = kSbbUnshieldTime;
     shapes()[0]->category = kVulnerable | kDangerous;
     shapes()[17]->category = 0;
   }
   if (!magic) {
     return 0;
   }
-  _shot_alternate = !_shot_alternate;
-  if (_shot_alternate) {
+  shot_alternate_ = !shot_alternate_;
+  if (shot_alternate_) {
     restore_hp(60 / (1 + (game().get_lives() ? game().players().size() : game().alive_players())));
   }
   return damage;

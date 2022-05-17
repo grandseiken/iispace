@@ -5,37 +5,37 @@ namespace {
 const std::uint32_t kTimer = 500;
 }  // namespace
 
-fvec2 Stars::_direction(0, 1);
-std::int32_t Stars::_star_rate = 0;
-std::vector<std::unique_ptr<Stars::data>> Stars::_stars;
+fvec2 Stars::direction_(0, 1);
+std::int32_t Stars::star_rate_ = 0;
+std::vector<std::unique_ptr<Stars::data>> Stars::stars_;
 
 void Stars::update() {
-  for (auto it = _stars.begin(); it != _stars.end();) {
-    (*it)->position += _direction * (*it)->speed;
+  for (auto it = stars_.begin(); it != stars_.end();) {
+    (*it)->position += direction_ * (*it)->speed;
     (*it)->timer--;
     if ((*it)->timer <= 0) {
-      it = _stars.erase(it);
+      it = stars_.erase(it);
       continue;
     }
     ++it;
   }
 
-  std::int32_t r = _star_rate > 1 ? z::rand_int(_star_rate) : 0;
+  std::int32_t r = star_rate_ > 1 ? z::rand_int(star_rate_) : 0;
   for (std::int32_t i = 0; i < r; i++) {
     create_star();
   }
 }
 
 void Stars::change() {
-  _direction = _direction.rotated((z::rand_fixed().to_float() - 0.5f) * M_PIf);
-  for (const auto& star : _stars) {
+  direction_ = direction_.rotated((z::rand_fixed().to_float() - 0.5f) * M_PIf);
+  for (const auto& star : stars_) {
     star->timer = kTimer;
   }
-  _star_rate = z::rand_int(3) + 2;
+  star_rate_ = z::rand_int(3) + 2;
 }
 
 void Stars::render(Lib& lib) {
-  for (const auto& star : _stars) {
+  for (const auto& star : stars_) {
     switch (star->type) {
     case type::kDotStar:
     case type::kFarStar:
@@ -68,7 +68,7 @@ void Stars::create_star() {
   float speed = t == type::kDotStar ? 18.f : t == type::kBigStar ? 14.f : 10.f;
 
   data* star = new data{kTimer, t, {}, speed, 0, 0};
-  _stars.emplace_back(star);
+  stars_.emplace_back(star);
 
   std::int32_t edge = z::rand_int(4);
   float ratio = z::rand_fixed().to_float();
@@ -86,7 +86,7 @@ void Stars::create_star() {
 }
 
 void Stars::clear() {
-  _stars.clear();
-  _direction = fvec2(1, 0);
-  _star_rate = 0;
+  stars_.clear();
+  direction_ = fvec2(1, 0);
+  star_rate_ = 0;
 }

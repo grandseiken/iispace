@@ -8,7 +8,7 @@ class ModalStack;
 class Modal {
 public:
   Modal(bool capture_updates, bool capture_rendering)
-  : _capture_updates(capture_updates), _capture_rendering(capture_rendering), _quit(false) {}
+  : capture_updates_(capture_updates), capture_rendering_(capture_rendering), quit_(false) {}
   virtual ~Modal() {}
 
   virtual void update(Lib& lib) = 0;
@@ -20,10 +20,10 @@ protected:
 
 private:
   friend class ModalStack;
-  bool _capture_updates;
-  bool _capture_rendering;
-  bool _quit;
-  ModalStack* _stack;
+  bool capture_updates_;
+  bool capture_rendering_;
+  bool quit_;
+  ModalStack* stack_;
 };
 
 class ModalStack {
@@ -37,8 +37,8 @@ public:
   bool render(Lib& lib) const;
 
 private:
-  std::vector<std::unique_ptr<Modal>> _stack;
-  std::vector<std::unique_ptr<Modal>> _new_stack;
+  std::vector<std::unique_ptr<Modal>> stack_;
+  std::vector<std::unique_ptr<Modal>> new_stack_;
 };
 
 #endif

@@ -12,7 +12,7 @@ public:
   ~Player() override;
 
   std::int32_t player_number() const {
-    return _player_number;
+    return player_number_;
   }
 
   void update() override;
@@ -27,11 +27,11 @@ public:
   // Scoring
   //------------------------------
   std::int64_t score() const {
-    return _score;
+    return score_;
   }
 
   std::int32_t deaths() const {
-    return _death_count;
+    return death_count_;
   }
 
   void add_score(std::int64_t score);
@@ -40,36 +40,36 @@ public:
   //------------------------------
   static colour_t player_colour(std::size_t player_number);
   colour_t colour() const {
-    return player_colour(_player_number);
+    return player_colour(player_number_);
   }
 
   // Temporary death
   //------------------------------
   static std::size_t killed_players() {
-    return _kill_queue.size();
+    return kill_queue_.size();
   }
 
   bool is_killed() {
-    return _kill_timer != 0;
+    return kill_timer_ != 0;
   }
 
 private:
-  PlayerInput& _input;
-  std::int32_t _player_number;
-  std::int64_t _score;
-  std::int32_t _multiplier;
-  std::int32_t _multiplier_count;
-  std::int32_t _kill_timer;
-  std::int32_t _revive_timer;
-  std::int32_t _magic_shot_timer;
-  bool _shield;
-  bool _bomb;
-  vec2 _fire_target;
-  std::int32_t _death_count;
+  PlayerInput& input_;
+  std::int32_t player_number_;
+  std::int64_t score_;
+  std::int32_t multiplier_;
+  std::int32_t multiplier_count_;
+  std::int32_t kill_timer_;
+  std::int32_t revive_timer_;
+  std::int32_t magic_shot_timer_;
+  bool shield_;
+  bool bomb_;
+  vec2 fire_target_;
+  std::int32_t death_count_;
 
-  static std::int32_t _fire_timer;
-  static SimState::ship_list _kill_queue;
-  static SimState::ship_list _shot_sound_queue;
+  static std::int32_t fire_timer_;
+  static SimState::ship_list kill_queue_;
+  static SimState::ship_list shot_sound_queue_;
 };
 
 class Shot : public Ship {
@@ -81,10 +81,10 @@ public:
   void render() const override;
 
 private:
-  Player* _player;
-  vec2 _velocity;
-  bool _magic;
-  bool _flash;
+  Player* player_;
+  vec2 velocity_;
+  bool magic_;
+  bool flash_;
 };
 
 class Powerup : public Ship {
@@ -101,11 +101,11 @@ public:
   void damage(std::int32_t damage, bool magic, Player* source) override;
 
 private:
-  type _type;
-  std::int32_t _frame;
-  vec2 _dir;
-  bool _rotate;
-  bool _first_frame;
+  type type_;
+  std::int32_t frame_;
+  vec2 dir_;
+  bool rotate_;
+  bool first_frame_;
 };
 
 #endif

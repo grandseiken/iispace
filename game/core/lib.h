@@ -63,7 +63,7 @@ public:
   // General
   //------------------------------
   void set_player_count(std::int32_t players) {
-    _players = players;
+    players_ = players;
   }
 
   bool begin_frame();
@@ -109,26 +109,26 @@ public:
   std::int32_t get_colour_cycle() const;
 
 private:
-  std::int32_t _cycle;
-  std::int32_t _players;
+  std::int32_t cycle_;
+  std::int32_t players_;
 
   // Internal
   //------------------------------
-  std::vector<std::vector<bool>> _keys_pressed;
-  std::vector<std::vector<bool>> _keys_held;
-  std::vector<std::vector<bool>> _keys_released;
+  std::vector<std::vector<bool>> keys_pressed_;
+  std::vector<std::vector<bool>> keys_held_;
+  std::vector<std::vector<bool>> keys_released_;
 
-  bool _capture_mouse;
-  ivec2 _mouse;
-  ivec2 _extra;
-  mutable bool _mouse_moving;
+  bool capture_mouse_;
+  ivec2 mouse_;
+  ivec2 extra_;
+  mutable bool mouse_moving_;
 
   void load_sounds();
 
   // Data
   //------------------------------
-  std::unique_ptr<Internals> _internals;
-  std::size_t _score_frame;
+  std::unique_ptr<Internals> internals_;
+  std::size_t score_frame_;
   friend class Handler;
 };
 

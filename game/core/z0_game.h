@@ -28,9 +28,9 @@ public:
   void render(Lib& lib) const override;
 
 private:
-  output_t* _output;
-  Settings& _settings;
-  std::int32_t _selection;
+  output_t* output_;
+  Settings& settings_;
+  std::int32_t selection_;
 };
 
 class HighScoreModal : public Modal {
@@ -43,18 +43,18 @@ private:
   std::int64_t get_score() const;
   bool is_high_score() const;
 
-  SaveData& _save;
-  GameModal& _game;
-  SimState::results _results;
-  bool _replay;
-  std::int32_t _seed;
+  SaveData& save_;
+  GameModal& game_;
+  SimState::results results_;
+  bool replay_;
+  std::int32_t seed_;
 
-  std::string _enter_name;
-  std::int32_t _enter_char;
-  std::int32_t _enter_r;
-  std::int32_t _enter_time;
-  std::int32_t _compliment;
-  std::int32_t _timer;
+  std::string enter_name_;
+  std::int32_t enter_char_;
+  std::int32_t enter_r_;
+  std::int32_t enter_time_;
+  std::int32_t compliment_;
+  std::int32_t timer_;
 };
 
 class GameModal : public Modal {
@@ -66,19 +66,19 @@ public:
   ~GameModal();
 
   const SimState& sim_state() const {
-    return *_state;
+    return *state_;
   }
   void update(Lib& lib) override;
   void render(Lib& lib) const override;
 
 private:
-  SaveData& _save;
-  Settings& _settings;
-  std::int32_t* _frame_count;
-  PauseModal::output_t _pause_output = PauseModal::kContinue;
-  std::int32_t _controllers_connected = 0;
-  bool _controllers_dialog = true;
-  std::unique_ptr<SimState> _state;
+  SaveData& save_;
+  Settings& settings_;
+  std::int32_t* frame_count_;
+  PauseModal::output_t pause_output_ = PauseModal::kContinue;
+  std::int32_t controllers_connected_ = 0;
+  bool controllers_dialog_ = true;
+  std::unique_ptr<SimState> state_;
 };
 
 struct score_finished {};
@@ -95,7 +95,7 @@ public:
   void render() const;
 
   Lib& lib() const {
-    return _lib;
+    return lib_;
   }
 
 private:
@@ -108,18 +108,18 @@ private:
     kQuit,
   };
 
-  Lib& _lib;
-  std::int32_t _frame_count;
+  Lib& lib_;
+  std::int32_t frame_count_;
 
-  menu _menu_select;
-  std::int32_t _player_select;
-  game_mode _mode_select;
-  std::int32_t _exit_timer;
-  std::string _exit_error;
+  menu menu_select_;
+  std::int32_t player_select_;
+  game_mode mode_select_;
+  std::int32_t exit_timer_;
+  std::string exit_error_;
 
-  SaveData _save;
-  Settings _settings;
-  ModalStack _modals;
+  SaveData save_;
+  Settings settings_;
+  ModalStack modals_;
 };
 
 #endif

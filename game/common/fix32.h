@@ -81,34 +81,34 @@ inline uint8_t clz(std::uint64_t x) {
 
 class fixed {
 public:
-  constexpr fixed() : _value{0} {}
-  constexpr fixed(const fixed& f) : _value{f._value} {}
-  constexpr fixed(std::int32_t v) : _value{static_cast<std::int64_t>(v) << 32} {}
+  constexpr fixed() : value_{0} {}
+  constexpr fixed(const fixed& f) : value_{f.value_} {}
+  constexpr fixed(std::int32_t v) : value_{static_cast<std::int64_t>(v) << 32} {}
 
   static constexpr fixed from_internal(std::int64_t v) {
     fixed f;
-    f._value = v;
+    f.value_ = v;
     return f;
   }
 
   constexpr std::int64_t to_internal() const {
-    return _value;
+    return value_;
   }
 
   constexpr std::int32_t to_int() const {
-    return _value >> 32;
+    return value_ >> 32;
   }
 
   constexpr float to_float() const {
-    return static_cast<float>(_value) / (std::uint64_t{1} << 32);
+    return static_cast<float>(value_) / (std::uint64_t{1} << 32);
   }
 
   constexpr explicit operator bool() const {
-    return _value != 0;
+    return value_ != 0;
   }
 
   constexpr fixed& operator=(const fixed& f) {
-    _value = f._value;
+    value_ = f.value_;
     return *this;
   }
 
@@ -149,39 +149,39 @@ private:
   friend constexpr fixed cos(const fixed&);
   friend constexpr fixed atan2(const fixed&, const fixed&);
   friend std::ostream& operator<<(std::ostream&, const fixed&);
-  std::int64_t _value;
+  std::int64_t value_;
 };
 
 inline constexpr bool operator==(const fixed& a, const fixed& b) {
-  return a._value == b._value;
+  return a.value_ == b.value_;
 }
 
 inline constexpr bool operator!=(const fixed& a, const fixed& b) {
-  return a._value != b._value;
+  return a.value_ != b.value_;
 }
 
 inline constexpr bool operator<=(const fixed& a, const fixed& b) {
-  return a._value <= b._value;
+  return a.value_ <= b.value_;
 }
 
 inline constexpr bool operator>=(const fixed& a, const fixed& b) {
-  return a._value >= b._value;
+  return a.value_ >= b.value_;
 }
 
 inline constexpr bool operator<(const fixed& a, const fixed& b) {
-  return a._value < b._value;
+  return a.value_ < b.value_;
 }
 
 inline constexpr bool operator>(const fixed& a, const fixed& b) {
-  return a._value > b._value;
+  return a.value_ > b.value_;
 }
 
 inline constexpr fixed operator<<(const fixed& a, std::int32_t b) {
-  return fixed::from_internal(a._value << b);
+  return fixed::from_internal(a.value_ << b);
 }
 
 inline constexpr fixed operator>>(const fixed& a, std::int32_t b) {
-  return fixed::from_internal(a._value >> b);
+  return fixed::from_internal(a.value_ >> b);
 }
 
 inline constexpr fixed operator-(const fixed& f) {
@@ -189,17 +189,17 @@ inline constexpr fixed operator-(const fixed& f) {
 }
 
 inline constexpr fixed operator+(const fixed& a, const fixed& b) {
-  return fixed::from_internal(a._value + b._value);
+  return fixed::from_internal(a.value_ + b.value_);
 }
 
 inline constexpr fixed operator-(const fixed& a, const fixed& b) {
-  return fixed::from_internal(a._value - b._value);
+  return fixed::from_internal(a.value_ - b.value_);
 }
 
 inline constexpr fixed operator*(const fixed& a, const fixed& b) {
-  std::int64_t sign = detail::fixed_sgn(a._value, b._value);
-  std::uint64_t l = detail::fixed_abs(a._value);
-  std::uint64_t r = detail::fixed_abs(b._value);
+  std::int64_t sign = detail::fixed_sgn(a.value_, b.value_);
+  std::uint64_t l = detail::fixed_abs(a.value_);
+  std::uint64_t r = detail::fixed_abs(b.value_);
 
   constexpr std::uint64_t mask = 0xffffffff;
   std::uint64_t hi = (l >> 32) * (r >> 32);
@@ -212,9 +212,9 @@ inline constexpr fixed operator*(const fixed& a, const fixed& b) {
 }
 
 inline fixed operator/(const fixed& a, const fixed& b) {
-  std::int64_t sign = detail::fixed_sgn(a._value, b._value);
-  std::uint64_t r = detail::fixed_abs(a._value);
-  std::uint64_t d = detail::fixed_abs(b._value);
+  std::int64_t sign = detail::fixed_sgn(a.value_, b.value_);
+  std::uint64_t r = detail::fixed_abs(a.value_);
+  std::uint64_t d = detail::fixed_abs(b.value_);
   std::uint64_t q = 0;
 
   std::uint64_t bit = 33;
@@ -247,9 +247,9 @@ inline fixed operator/(const fixed& a, const fixed& b) {
 }
 
 inline constexpr fixed constexpr_div(const fixed& a, const fixed& b) {
-  std::int64_t sign = detail::fixed_sgn(a._value, b._value);
-  std::uint64_t r = detail::fixed_abs(a._value);
-  std::uint64_t d = detail::fixed_abs(b._value);
+  std::int64_t sign = detail::fixed_sgn(a.value_, b.value_);
+  std::uint64_t r = detail::fixed_abs(a.value_);
+  std::uint64_t d = detail::fixed_abs(b.value_);
   std::uint64_t q = 0;
 
   std::uint64_t bit = 33;
@@ -282,11 +282,11 @@ inline constexpr fixed constexpr_div(const fixed& a, const fixed& b) {
 }
 
 inline std::ostream& operator<<(std::ostream& o, const fixed& f) {
-  if (f._value < 0) {
+  if (f.value_ < 0) {
     o << "-";
   }
 
-  std::uint64_t v = detail::fixed_abs(f._value);
+  std::uint64_t v = detail::fixed_abs(f.value_);
   o << (v >> 32) << ".";
   double d = 0;
   double val = 0.5;
@@ -314,11 +314,11 @@ constexpr fixed sixteenth = fixed{1} >> 8;
 }  // namespace fixed_c
 
 inline constexpr fixed abs(const fixed& f) {
-  return fixed::from_internal(detail::fixed_abs(f._value));
+  return fixed::from_internal(detail::fixed_abs(f.value_));
 }
 
 inline fixed sqrt(const fixed& f) {
-  if (f._value <= 0) {
+  if (f.value_ <= 0) {
     return 0;
   }
   if (f < 1) {
@@ -329,10 +329,10 @@ inline fixed sqrt(const fixed& f) {
   constexpr fixed half = fixed{1} >> 1;
   constexpr fixed bound = fixed{1} >> 10;
 
-  auto r = fixed::from_internal(f._value >> ((32 - detail::clz(f._value)) / 2));
+  auto r = fixed::from_internal(f.value_ >> ((32 - detail::clz(f.value_)) / 2));
   for (std::size_t n = 0; r && n < 8; ++n) {
     r = r * half + a / r;
-    if (fixed::from_internal(detail::fixed_abs((r * r)._value) - f._value) < bound) {
+    if (fixed::from_internal(detail::fixed_abs((r * r).value_) - f.value_) < bound) {
       break;
     }
   }
@@ -340,7 +340,7 @@ inline fixed sqrt(const fixed& f) {
 }
 
 inline constexpr fixed sin(const fixed& f) {
-  auto angle = fixed::from_internal(detail::fixed_abs(f._value) % (2 * fixed_c::pi)._value);
+  auto angle = fixed::from_internal(detail::fixed_abs(f.value_) % (2 * fixed_c::pi).value_);
 
   if (angle > fixed_c::pi) {
     angle -= 2 * fixed_c::pi;
@@ -366,7 +366,7 @@ inline constexpr fixed sin(const fixed& f) {
   angle *= angle2;
   out -= angle * r39916800;
 
-  return f._value < 0 ? -out : out;
+  return f.value_ < 0 ? -out : out;
 }
 
 inline constexpr fixed cos(const fixed& f) {
@@ -377,7 +377,7 @@ inline constexpr fixed atan2(const fixed& y, const fixed& x) {
   auto ay = abs(y);
   fixed angle;
 
-  if (x._value >= 0) {
+  if (x.value_ >= 0) {
     if (x + ay == 0) {
       return -fixed_c::pi / 4;
     }
@@ -394,7 +394,7 @@ inline constexpr fixed atan2(const fixed& y, const fixed& x) {
     angle = fixed::from_internal(0x32400000) * r3 - fixed::from_internal(0xfb500000) * r +
         3 * fixed_c::pi / 4;
   }
-  return y._value < 0 ? -angle : angle;
+  return y.value_ < 0 ? -angle : angle;
 }
 
 #endif

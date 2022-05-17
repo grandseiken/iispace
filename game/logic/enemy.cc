@@ -27,19 +27,19 @@ const fixed Tractor::kTractorBeamSpeed = 2 + fixed(1) / 2;
 
 Enemy::Enemy(const vec2& position, Ship::ship_category type, std::int32_t hp)
 : Ship(position, Ship::ship_category(type | kShipEnemy))
-, _hp(hp)
-, _score(0)
-, _damaged(false)
-, _destroy_sound(Lib::sound::kEnemyDestroy) {}
+, hp_(hp)
+, score_(0)
+, damaged_(false)
+, destroy_sound_(Lib::sound::kEnemyDestroy) {}
 
 void Enemy::damage(std::int32_t damage, bool magic, Player* source) {
-  _hp -= std::max(damage, 0);
+  hp_ -= std::max(damage, 0);
   if (damage > 0) {
     play_sound_random(Lib::sound::kEnemyHit);
   }
 
-  if (_hp <= 0 && !is_destroyed()) {
-    play_sound_random(_destroy_sound);
+  if (hp_ <= 0 && !is_destroyed()) {
+    play_sound_random(destroy_sound_);
     if (source && get_score() > 0) {
       source->add_score(get_score());
     }
@@ -50,21 +50,21 @@ void Enemy::damage(std::int32_t damage, bool magic, Player* source) {
     if (damage > 0) {
       play_sound_random(Lib::sound::kEnemyHit);
     }
-    _damaged = damage >= Player::kBombDamage ? 25 : 1;
+    damaged_ = damage >= Player::kBombDamage ? 25 : 1;
   }
 }
 
 void Enemy::render() const {
-  if (!_damaged) {
+  if (!damaged_) {
     Ship::render();
     return;
   }
   render_with_colour(0xffffffff);
-  --_damaged;
+  --damaged_;
 }
 
 Follow::Follow(const vec2& position, fixed radius, std::int32_t hp)
-: Enemy(position, kShipNone, hp), _timer(0), _target(0) {
+: Enemy(position, kShipNone, hp), timer_(0), target_(0) {
   add_shape(new Polygon(vec2(), radius, 4, 0x9933ffff, 0, kDangerous | kVulnerable));
   set_score(15);
   set_bounding_width(10);
@@ -78,17 +78,17 @@ void Follow::update() {
     return;
   }
 
-  _timer++;
-  if (!_target || _timer > kFollowTime) {
-    _target = nearest_player();
-    _timer = 0;
+  timer_++;
+  if (!target_ || timer_ > kFollowTime) {
+    target_ = nearest_player();
+    timer_ = 0;
   }
-  vec2 d = _target->shape().centre - shape().centre;
+  vec2 d = target_->shape().centre - shape().centre;
   move(d.normalised() * kFollowSpeed);
 }
 
 BigFollow::BigFollow(const vec2& position, bool has_score)
-: Follow(position, 20, 3), _has_score(has_score) {
+: Follow(position, 20, 3), has_score_(has_score) {
   set_score(has_score ? 20 : 0);
   set_destroy_sound(Lib::sound::kPlayerDestroy);
   set_enemy_value(3);
@@ -102,7 +102,7 @@ void BigFollow::on_destroy(bool bomb) {
   vec2 d = vec2(10, 0).rotated(shape().rotation());
   for (std::int32_t i = 0; i < 3; i++) {
     Follow* s = new Follow(shape().centre + d);
-    if (!_has_score) {
+    if (!has_score_) {
       s->set_score(0);
     }
     spawn(s);
@@ -111,7 +111,7 @@ void BigFollow::on_destroy(bool bomb) {
 }
 
 Chaser::Chaser(const vec2& position)
-: Enemy(position, kShipNone, 2), _move(false), _timer(kChaserTime), _dir() {
+: Enemy(position, kShipNone, 2), move_(false), timer_(kChaserTime), dir_() {
   add_shape(
       new Polygon(vec2(), 10, 4, 0x3399ffff, 0, kDangerous | kVulnerable, Polygon::T::kPolygram));
   set_score(30);
@@ -123,20 +123,20 @@ Chaser::Chaser(const vec2& position)
 void Chaser::update() {
   bool before = is_on_screen();
 
-  if (_timer) {
-    _timer--;
+  if (timer_) {
+    timer_--;
   }
-  if (_timer <= 0) {
-    _timer = kChaserTime * (_move + 1);
-    _move = !_move;
-    if (_move) {
-      _dir = kChaserSpeed * (nearest_player()->shape().centre - shape().centre).normalised();
+  if (timer_ <= 0) {
+    timer_ = kChaserTime * (move_ + 1);
+    move_ = !move_;
+    if (move_) {
+      dir_ = kChaserSpeed * (nearest_player()->shape().centre - shape().centre).normalised();
     }
   }
-  if (_move) {
-    move(_dir);
+  if (move_) {
+    move(dir_);
     if (!before && is_on_screen()) {
-      _move = false;
+      move_ = false;
     }
   } else {
     shape().rotate(fixed_c::tenth);
@@ -144,9 +144,9 @@ void Chaser::update() {
 }
 
 Square::Square(const vec2& position, fixed rotation)
-: Enemy(position, kShipWall, 4), _dir(), _timer(z::rand_int(80) + 40) {
+: Enemy(position, kShipWall, 4), dir_(), timer_(z::rand_int(80) + 40) {
   add_shape(new Box(vec2(), 10, 10, 0x33ff33ff, 0, kDangerous | kVulnerable));
-  _dir = vec2::from_polar(rotation, 1);
+  dir_ = vec2::from_polar(rotation, 1);
   set_score(25);
   set_bounding_width(15);
   set_enemy_value(2);
@@ -154,48 +154,48 @@ Square::Square(const vec2& position, fixed rotation)
 
 void Square::update() {
   if (is_on_screen() && game().get_non_wall_count() == 0) {
-    _timer--;
+    timer_--;
   } else {
-    _timer = z::rand_int(80) + 40;
+    timer_ = z::rand_int(80) + 40;
   }
 
-  if (_timer == 0) {
+  if (timer_ == 0) {
     damage(4, false, 0);
   }
 
   const vec2& pos = shape().centre;
-  if (pos.x < 0 && _dir.x <= 0) {
-    _dir.x = -_dir.x;
-    if (_dir.x <= 0) {
-      _dir.x = 1;
+  if (pos.x < 0 && dir_.x <= 0) {
+    dir_.x = -dir_.x;
+    if (dir_.x <= 0) {
+      dir_.x = 1;
     }
   }
-  if (pos.y < 0 && _dir.y <= 0) {
-    _dir.y = -_dir.y;
-    if (_dir.y <= 0) {
-      _dir.y = 1;
+  if (pos.y < 0 && dir_.y <= 0) {
+    dir_.y = -dir_.y;
+    if (dir_.y <= 0) {
+      dir_.y = 1;
     }
   }
 
-  if (pos.x > Lib::kWidth && _dir.x >= 0) {
-    _dir.x = -_dir.x;
-    if (_dir.x >= 0) {
-      _dir.x = -1;
+  if (pos.x > Lib::kWidth && dir_.x >= 0) {
+    dir_.x = -dir_.x;
+    if (dir_.x >= 0) {
+      dir_.x = -1;
     }
   }
-  if (pos.y > Lib::kHeight && _dir.y >= 0) {
-    _dir.y = -_dir.y;
-    if (_dir.y >= 0) {
-      _dir.y = -1;
+  if (pos.y > Lib::kHeight && dir_.y >= 0) {
+    dir_.y = -dir_.y;
+    if (dir_.y >= 0) {
+      dir_.y = -1;
     }
   }
-  _dir = _dir.normalised();
-  move(_dir * kSquareSpeed);
-  shape().set_rotation(_dir.angle());
+  dir_ = dir_.normalised();
+  move(dir_ * kSquareSpeed);
+  shape().set_rotation(dir_.angle());
 }
 
 void Square::render() const {
-  if (game().get_non_wall_count() == 0 && (_timer % 4 == 1 || _timer % 4 == 2)) {
+  if (game().get_non_wall_count() == 0 && (timer_ % 4 == 1 || timer_ % 4 == 2)) {
     render_with_colour(0x33333300);
   } else {
     Enemy::render();
@@ -203,7 +203,7 @@ void Square::render() const {
 }
 
 Wall::Wall(const vec2& position, bool rdir)
-: Enemy(position, kShipWall, 10), _dir(0, 1), _timer(0), _rotate(false), _rdir(rdir) {
+: Enemy(position, kShipWall, 10), dir_(0, 1), timer_(0), rotate_(false), rdir_(rdir) {
   add_shape(new Box(vec2(), 10, 40, 0x33cc33ff, 0, kDangerous | kVulnerable));
   set_score(20);
   set_bounding_width(50);
@@ -211,53 +211,53 @@ Wall::Wall(const vec2& position, bool rdir)
 }
 
 void Wall::update() {
-  if (game().get_non_wall_count() == 0 && _timer % 8 < 2) {
+  if (game().get_non_wall_count() == 0 && timer_ % 8 < 2) {
     if (get_hp() > 2) {
       play_sound(Lib::sound::kEnemySpawn);
     }
     damage(get_hp() - 2, false, 0);
   }
 
-  if (_rotate) {
+  if (rotate_) {
     vec2 d =
-        _dir.rotated((_rdir ? 1 : -1) * (_timer - kWallTimer) * fixed_c::pi / (4 * kWallTimer));
+        dir_.rotated((rdir_ ? 1 : -1) * (timer_ - kWallTimer) * fixed_c::pi / (4 * kWallTimer));
 
     shape().set_rotation(d.angle());
-    _timer--;
-    if (_timer <= 0) {
-      _timer = 0;
-      _rotate = false;
-      _dir = _dir.rotated(_rdir ? -fixed_c::pi / 4 : fixed_c::pi / 4);
+    timer_--;
+    if (timer_ <= 0) {
+      timer_ = 0;
+      rotate_ = false;
+      dir_ = dir_.rotated(rdir_ ? -fixed_c::pi / 4 : fixed_c::pi / 4);
     }
     return;
   } else {
-    _timer++;
-    if (_timer > kWallTimer * 6) {
+    timer_++;
+    if (timer_ > kWallTimer * 6) {
       if (is_on_screen()) {
-        _timer = kWallTimer;
-        _rotate = true;
+        timer_ = kWallTimer;
+        rotate_ = true;
       } else {
-        _timer = 0;
+        timer_ = 0;
       }
     }
   }
 
   vec2 pos = shape().centre;
-  if ((pos.x < 0 && _dir.x < -fixed_c::hundredth) || (pos.y < 0 && _dir.y < -fixed_c::hundredth) ||
-      (pos.x > Lib::kWidth && _dir.x > fixed_c::hundredth) ||
-      (pos.y > Lib::kHeight && _dir.y > fixed_c::hundredth)) {
-    _dir = -_dir.normalised();
+  if ((pos.x < 0 && dir_.x < -fixed_c::hundredth) || (pos.y < 0 && dir_.y < -fixed_c::hundredth) ||
+      (pos.x > Lib::kWidth && dir_.x > fixed_c::hundredth) ||
+      (pos.y > Lib::kHeight && dir_.y > fixed_c::hundredth)) {
+    dir_ = -dir_.normalised();
   }
 
-  move(_dir * kWallSpeed);
-  shape().set_rotation(_dir.angle());
+  move(dir_ * kWallSpeed);
+  shape().set_rotation(dir_.angle());
 }
 
 void Wall::on_destroy(bool bomb) {
   if (bomb) {
     return;
   }
-  vec2 d = _dir.rotated(fixed_c::pi / 2);
+  vec2 d = dir_.rotated(fixed_c::pi / 2);
 
   vec2 v = shape().centre + d * 10 * 3;
   if (v.x >= 0 && v.x <= Lib::kWidth && v.y >= 0 && v.y <= Lib::kHeight) {
@@ -272,14 +272,14 @@ void Wall::on_destroy(bool bomb) {
 
 FollowHub::FollowHub(const vec2& position, bool powera, bool powerb)
 : Enemy(position, kShipNone, 14)
-, _timer(0)
-, _dir(0, 0)
-, _count(0)
-, _powera(powera)
-, _powerb(powerb) {
+, timer_(0)
+, dir_(0, 0)
+, count_(0)
+, powera_(powera)
+, powerb_(powerb) {
   add_shape(new Polygon(vec2(), 16, 4, 0x6666ffff, fixed_c::pi / 4, kDangerous | kVulnerable,
                         Polygon::T::kPolygram));
-  if (_powerb) {
+  if (powerb_) {
     add_shape(
         new Polygon(vec2(16, 0), 8, 4, 0x6666ffff, fixed_c::pi / 4, 0, Polygon::T::kPolystar));
     add_shape(
@@ -294,19 +294,19 @@ FollowHub::FollowHub(const vec2& position, bool powera, bool powerb)
   add_shape(new Polygon(vec2(-16, 0), 8, 4, 0x6666ffff, fixed_c::pi / 4));
   add_shape(new Polygon(vec2(0, 16), 8, 4, 0x6666ffff, fixed_c::pi / 4));
   add_shape(new Polygon(vec2(0, -16), 8, 4, 0x6666ffff, fixed_c::pi / 4));
-  set_score(50 + _powera * 10 + _powerb * 10);
+  set_score(50 + powera_ * 10 + powerb_ * 10);
   set_bounding_width(16);
   set_destroy_sound(Lib::sound::kPlayerDestroy);
   set_enemy_value(6 + (powera ? 2 : 0) + (powerb ? 2 : 0));
 }
 
 void FollowHub::update() {
-  _timer++;
-  if (_timer > (_powera ? kFollowHubTimer / 2 : kFollowHubTimer)) {
-    _timer = 0;
-    _count++;
+  timer_++;
+  if (timer_ > (powera_ ? kFollowHubTimer / 2 : kFollowHubTimer)) {
+    timer_ = 0;
+    count_++;
     if (is_on_screen()) {
-      if (_powerb) {
+      if (powerb_) {
         spawn(new Chaser(shape().centre));
       } else {
         spawn(new Follow(shape().centre));
@@ -315,25 +315,25 @@ void FollowHub::update() {
     }
   }
 
-  _dir = shape().centre.x < 0           ? vec2(1, 0)
+  dir_ = shape().centre.x < 0           ? vec2(1, 0)
       : shape().centre.x > Lib::kWidth  ? vec2(-1, 0)
       : shape().centre.y < 0            ? vec2(0, 1)
       : shape().centre.y > Lib::kHeight ? vec2(0, -1)
-      : _count > 3                      ? (_count = 0, _dir.rotated(-fixed_c::pi / 2))
-                                        : _dir;
+      : count_ > 3                      ? (count_ = 0, dir_.rotated(-fixed_c::pi / 2))
+                                        : dir_;
 
-  fixed s = _powera ? fixed_c::hundredth * 5 + fixed_c::tenth : fixed_c::hundredth * 5;
+  fixed s = powera_ ? fixed_c::hundredth * 5 + fixed_c::tenth : fixed_c::hundredth * 5;
   shape().rotate(s);
   shapes()[0]->rotate(-s);
 
-  move(_dir * kFollowHubSpeed);
+  move(dir_ * kFollowHubSpeed);
 }
 
 void FollowHub::on_destroy(bool bomb) {
   if (bomb) {
     return;
   }
-  if (_powerb) {
+  if (powerb_) {
     spawn(new BigFollow(shape().centre, true));
   }
   spawn(new Chaser(shape().centre));
@@ -341,11 +341,11 @@ void FollowHub::on_destroy(bool bomb) {
 
 Shielder::Shielder(const vec2& position, bool power)
 : Enemy(position, kShipNone, 16)
-, _dir(0, 1)
-, _timer(0)
-, _rotate(false)
-, _rdir(false)
-, _power(power) {
+, dir_(0, 1)
+, timer_(0)
+, rotate_(false)
+, rdir_(false)
+, power_(power) {
   add_shape(new Polygon(vec2(24, 0), 8, 6, 0x006633ff, 0, kVulnShield, Polygon::T::kPolystar));
   add_shape(new Polygon(vec2(-24, 0), 8, 6, 0x006633ff, 0, kVulnShield, Polygon::T::kPolystar));
   add_shape(new Polygon(vec2(0, 24), 8, 6, 0x006633ff, fixed_c::pi / 2, kVulnShield,
@@ -360,14 +360,14 @@ Shielder::Shielder(const vec2& position, bool power)
   add_shape(new Polygon(vec2(0, 0), 24, 4, 0x006633ff, 0, 0, Polygon::T::kPolystar));
   add_shape(
       new Polygon(vec2(0, 0), 14, 8, power ? 0x33cc99ff : 0x006633ff, 0, kDangerous | kVulnerable));
-  set_score(60 + _power * 40);
+  set_score(60 + power_ * 40);
   set_bounding_width(36);
   set_destroy_sound(Lib::sound::kPlayerDestroy);
   set_enemy_value(8 + (power ? 2 : 0));
 }
 
 void Shielder::update() {
-  fixed s = _power ? fixed_c::hundredth * 12 : fixed_c::hundredth * 4;
+  fixed s = power_ ? fixed_c::hundredth * 12 : fixed_c::hundredth * 4;
   shape().rotate(s);
   shapes()[9]->rotate(-2 * s);
   for (std::int32_t i = 0; i < 8; i++) {
@@ -375,37 +375,37 @@ void Shielder::update() {
   }
 
   bool on_screen = false;
-  _dir = shape().centre.x < 0           ? vec2(1, 0)
+  dir_ = shape().centre.x < 0           ? vec2(1, 0)
       : shape().centre.x > Lib::kWidth  ? vec2(-1, 0)
       : shape().centre.y < 0            ? vec2(0, 1)
       : shape().centre.y > Lib::kHeight ? vec2(0, -1)
-                                        : (on_screen = true, _dir);
+                                        : (on_screen = true, dir_);
 
-  if (!on_screen && _rotate) {
-    _timer = 0;
-    _rotate = false;
+  if (!on_screen && rotate_) {
+    timer_ = 0;
+    rotate_ = false;
   }
 
   fixed speed =
-      kShielderSpeed + (_power ? fixed_c::tenth * 3 : fixed_c::tenth * 2) * (16 - get_hp());
-  if (_rotate) {
-    vec2 d = _dir.rotated((_rdir ? 1 : -1) * (kShielderTimer - _timer) * fixed_c::pi /
+      kShielderSpeed + (power_ ? fixed_c::tenth * 3 : fixed_c::tenth * 2) * (16 - get_hp());
+  if (rotate_) {
+    vec2 d = dir_.rotated((rdir_ ? 1 : -1) * (kShielderTimer - timer_) * fixed_c::pi /
                           (2 * kShielderTimer));
-    _timer--;
-    if (_timer <= 0) {
-      _timer = 0;
-      _rotate = false;
-      _dir = _dir.rotated((_rdir ? 1 : -1) * fixed_c::pi / 2);
+    timer_--;
+    if (timer_ <= 0) {
+      timer_ = 0;
+      rotate_ = false;
+      dir_ = dir_.rotated((rdir_ ? 1 : -1) * fixed_c::pi / 2);
     }
     move(d * speed);
   } else {
-    _timer++;
-    if (_timer > kShielderTimer * 2) {
-      _timer = kShielderTimer;
-      _rotate = true;
-      _rdir = z::rand_int(2) != 0;
+    timer_++;
+    if (timer_ > kShielderTimer * 2) {
+      timer_ = kShielderTimer;
+      rotate_ = true;
+      rdir_ = z::rand_int(2) != 0;
     }
-    if (is_on_screen() && _power && _timer % kShielderTimer == kShielderTimer / 2) {
+    if (is_on_screen() && power_ && timer_ % kShielderTimer == kShielderTimer / 2) {
       Player* p = nearest_player();
       vec2 v = shape().centre;
 
@@ -413,18 +413,18 @@ void Shielder::update() {
       spawn(new BossShot(v, d * 3, 0x33cc99ff));
       play_sound_random(Lib::sound::kBossFire);
     }
-    move(_dir * speed);
+    move(dir_ * speed);
   }
-  _dir = _dir.normalised();
+  dir_ = dir_.normalised();
 }
 
 Tractor::Tractor(const vec2& position, bool power)
 : Enemy(position, kShipNone, 50)
-, _timer(kTractorTimer * 4)
-, _dir(0, 0)
-, _power(power)
-, _ready(false)
-, _spinning(false) {
+, timer_(kTractorTimer * 4)
+, dir_(0, 0)
+, power_(power)
+, ready_(false)
+, spinning_(false) {
   add_shape(new Polygon(vec2(24, 0), 12, 6, 0xcc33ccff, 0, kDangerous | kVulnerable,
                         Polygon::T::kPolygram));
   add_shape(new Polygon(vec2(-24, 0), 12, 6, 0xcc33ccff, 0, kDangerous | kVulnerable,
@@ -443,67 +443,67 @@ Tractor::Tractor(const vec2& position, bool power)
 void Tractor::update() {
   shapes()[0]->rotate(fixed_c::hundredth * 5);
   shapes()[1]->rotate(-fixed_c::hundredth * 5);
-  if (_power) {
+  if (power_) {
     shapes()[3]->rotate(-fixed_c::hundredth * 8);
     shapes()[4]->rotate(fixed_c::hundredth * 8);
   }
 
   if (shape().centre.x < 0) {
-    _dir = vec2(1, 0);
+    dir_ = vec2(1, 0);
   } else if (shape().centre.x > Lib::kWidth) {
-    _dir = vec2(-1, 0);
+    dir_ = vec2(-1, 0);
   } else if (shape().centre.y < 0) {
-    _dir = vec2(0, 1);
+    dir_ = vec2(0, 1);
   } else if (shape().centre.y > Lib::kHeight) {
-    _dir = vec2(0, -1);
+    dir_ = vec2(0, -1);
   } else {
-    _timer++;
+    timer_++;
   }
 
-  if (!_ready && !_spinning) {
-    move(_dir * kTractorSpeed * (is_on_screen() ? 1 : 2 + fixed_c::half));
+  if (!ready_ && !spinning_) {
+    move(dir_ * kTractorSpeed * (is_on_screen() ? 1 : 2 + fixed_c::half));
 
-    if (_timer > kTractorTimer * 8) {
-      _ready = true;
-      _timer = 0;
+    if (timer_ > kTractorTimer * 8) {
+      ready_ = true;
+      timer_ = 0;
     }
-  } else if (_ready) {
-    if (_timer > kTractorTimer) {
-      _ready = false;
-      _spinning = true;
-      _timer = 0;
-      _players = game().players();
+  } else if (ready_) {
+    if (timer_ > kTractorTimer) {
+      ready_ = false;
+      spinning_ = true;
+      timer_ = 0;
+      players_ = game().players();
       play_sound(Lib::sound::kBossFire);
     }
-  } else if (_spinning) {
+  } else if (spinning_) {
     shape().rotate(fixed_c::tenth * 3);
-    for (const auto& ship : _players) {
+    for (const auto& ship : players_) {
       if (!((Player*)ship)->is_killed()) {
         vec2 d = (shape().centre - ship->shape().centre).normalised();
         ship->move(d * kTractorBeamSpeed);
       }
     }
 
-    if (_timer % (kTractorTimer / 2) == 0 && is_on_screen() && _power) {
+    if (timer_ % (kTractorTimer / 2) == 0 && is_on_screen() && power_) {
       Player* p = nearest_player();
       vec2 d = (p->shape().centre - shape().centre).normalised();
       spawn(new BossShot(shape().centre, d * 4, 0xcc33ccff));
       play_sound_random(Lib::sound::kBossFire);
     }
 
-    if (_timer > kTractorTimer * 5) {
-      _spinning = false;
-      _timer = 0;
+    if (timer_ > kTractorTimer * 5) {
+      spinning_ = false;
+      timer_ = 0;
     }
   }
 }
 
 void Tractor::render() const {
   Enemy::render();
-  if (_spinning) {
-    for (std::size_t i = 0; i < _players.size(); ++i) {
-      if (((_timer + i * 4) / 4) % 2 && !((Player*)_players[i])->is_killed()) {
-        lib().render_line(to_float(shape().centre), to_float(_players[i]->shape().centre),
+  if (spinning_) {
+    for (std::size_t i = 0; i < players_.size(); ++i) {
+      if (((timer_ + i * 4) / 4) % 2 && !((Player*)players_[i])->is_killed()) {
+        lib().render_line(to_float(shape().centre), to_float(players_[i]->shape().centre),
                           0xcc33ccff);
       }
     }
@@ -511,7 +511,7 @@ void Tractor::render() const {
 }
 
 BossShot::BossShot(const vec2& position, const vec2& velocity, colour_t c)
-: Enemy(position, kShipWall, 0), _dir(velocity) {
+: Enemy(position, kShipWall, 0), dir_(velocity) {
   add_shape(new Polygon(vec2(), 16, 8, c, 0, 0, Polygon::T::kPolystar));
   add_shape(new Polygon(vec2(), 10, 8, c, 0, 0));
   add_shape(new Polygon(vec2(), 12, 8, 0, 0, kDangerous));
@@ -521,10 +521,10 @@ BossShot::BossShot(const vec2& position, const vec2& velocity, colour_t c)
 }
 
 void BossShot::update() {
-  move(_dir);
+  move(dir_);
   vec2 p = shape().centre;
-  if ((p.x < -10 && _dir.x < 0) || (p.x > Lib::kWidth + 10 && _dir.x > 0) ||
-      (p.y < -10 && _dir.y < 0) || (p.y > Lib::kHeight + 10 && _dir.y > 0)) {
+  if ((p.x < -10 && dir_.x < 0) || (p.x > Lib::kWidth + 10 && dir_.x > 0) ||
+      (p.y < -10 && dir_.y < 0) || (p.y > Lib::kHeight + 10 && dir_.y > 0)) {
     destroy();
   }
   shape().set_rotation(shape().rotation() + fixed_c::hundredth * 2);

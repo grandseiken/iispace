@@ -2,22 +2,22 @@
 #include "game/core/z0_game.h"
 
 Ship::Ship(const vec2& position, ship_category type)
-: _game(nullptr)
-, _type(type)
-, _destroy(false)
-, _shape(position, 0)
-, _bounding_width(0)
-, _enemy_value(1) {}
+: game_(nullptr)
+, type_(type)
+, destroy_(false)
+, shape_(position, 0)
+, bounding_width_(0)
+, enemy_value_(1) {}
 
 Ship::~Ship() {}
 
 bool Ship::check_point(const vec2& v, std::int32_t category) const {
   bool aa = false;
   vec2 a;
-  for (const auto& shape : _shape.shapes()) {
+  for (const auto& shape : shape_.shapes()) {
     if (shape->category && (!category || (shape->category & category) == category)) {
       if (!aa) {
-        a = (v - _shape.centre).rotated(-_shape.rotation());
+        a = (v - shape_.centre).rotated(-shape_.rotation());
         aa = true;
       }
 
@@ -30,14 +30,14 @@ bool Ship::check_point(const vec2& v, std::int32_t category) const {
 }
 
 void Ship::render() const {
-  for (const auto& shape : _shape.shapes()) {
-    shape->render(lib(), to_float(_shape.centre), _shape.rotation().to_float());
+  for (const auto& shape : shape_.shapes()) {
+    shape->render(lib(), to_float(shape_.centre), shape_.rotation().to_float());
   }
 }
 
 void Ship::render_with_colour(colour_t colour) const {
-  for (const auto& shape : _shape.shapes()) {
-    shape->render(lib(), to_float(_shape.centre), _shape.rotation().to_float(),
+  for (const auto& shape : shape_.shapes()) {
+    shape->render(lib(), to_float(shape_.centre), shape_.rotation().to_float(),
                   colour & (0xffffff00 | (shape->colour & 0x000000ff)));
   }
 }
@@ -47,26 +47,26 @@ void Ship::destroy() {
     return;
   }
 
-  _destroy = true;
-  for (const auto& shape : _shape.shapes()) {
+  destroy_ = true;
+  for (const auto& shape : shape_.shapes()) {
     shape->category = 0;
   }
 }
 
 void Ship::spawn(Ship* ship) const {
-  _game->add_ship(ship);
+  game_->add_ship(ship);
 }
 
 void Ship::spawn(const Particle& particle) const {
-  _game->add_particle(particle);
+  game_->add_particle(particle);
 }
 
 void Ship::explosion(colour_t c, std::int32_t time, bool towards, const fvec2& v) const {
-  for (const auto& shape : _shape.shapes()) {
+  for (const auto& shape : shape_.shapes()) {
     std::int32_t n = towards ? z::rand_int(2) + 1 : z::rand_int(8) + 8;
     for (std::int32_t j = 0; j < n; j++) {
       fvec2 pos =
-          shape->convert_fl_point(to_float(_shape.centre), _shape.rotation().to_float(), fvec2());
+          shape->convert_fl_point(to_float(shape_.centre), shape_.rotation().to_float(), fvec2());
 
       fvec2 dir = fvec2::from_polar(z::rand_fixed().to_float() * 2 * M_PIf, 6.f);
 
@@ -82,17 +82,17 @@ void Ship::explosion(colour_t c, std::int32_t time, bool towards, const fvec2& v
 }
 
 const CompoundShape::shape_list& Ship::shapes() const {
-  return _shape.shapes();
+  return shape_.shapes();
 }
 
 void Ship::add_shape(Shape* shape) {
-  _shape.add_shape(shape);
+  shape_.add_shape(shape);
 }
 
 void Ship::destroy_shape(std::size_t index) {
-  _shape.destroy_shape(index);
+  shape_.destroy_shape(index);
 }
 
 void Ship::clear_shapes() {
-  _shape.clear_shapes();
+  shape_.clear_shapes();
 }

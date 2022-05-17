@@ -12,19 +12,19 @@ public:
   std::int32_t get_damage(std::int32_t damage, bool magic) override;
 
 private:
-  bool _visible;
-  std::int32_t _vtime;
-  std::int32_t _timer;
-  std::int32_t _attack_time;
-  std::int32_t _attack;
+  bool visible_;
+  std::int32_t vtime_;
+  std::int32_t timer_;
+  std::int32_t attack_time_;
+  std::int32_t attack_;
   bool _rDir;
-  std::int32_t _start_time;
-  std::int32_t _danger_circle;
-  std::int32_t _danger_offset1;
-  std::int32_t _danger_offset2;
-  std::int32_t _danger_offset3;
-  std::int32_t _danger_offset4;
-  bool _shot_type;
+  std::int32_t start_time_;
+  std::int32_t danger_circle_;
+  std::int32_t danger_offset1_;
+  std::int32_t danger_offset2_;
+  std::int32_t danger_offset3_;
+  std::int32_t danger_offset4_;
+  bool shot_type_;
 };
 
 class GhostWall : public Enemy {
@@ -34,7 +34,7 @@ public:
   void update() override;
 
 private:
-  vec2 _dir;
+  vec2 dir_;
 };
 
 class GhostMine : public Enemy {
@@ -44,8 +44,8 @@ public:
   void render() const override;
 
 private:
-  std::int32_t _timer;
-  Boss* _ghost;
+  std::int32_t timer_;
+  Boss* ghost_;
 };
 
 #endif

@@ -15,49 +15,49 @@ SimState::SimState(Lib& lib, SaveData& save, std::int32_t* frame_count, game_mod
 SimState::SimState(Lib& lib, SaveData& save, std::int32_t* frame_count,
                    const std::string& replay_path)
 : SimState(lib, save, frame_count, Replay(replay_path), false) {
-  lib.set_player_count(_replay.replay.players());
+  lib.set_player_count(replay_.replay.players());
   lib.new_game();
 }
 
 SimState::~SimState() {
   Stars::clear();
-  Boss::_fireworks.clear();
-  Boss::_warnings.clear();
-  *_frame_count = 1;
+  Boss::fireworks_.clear();
+  Boss::warnings_.clear();
+  *frame_count_ = 1;
 }
 
 void SimState::update(Lib& lib) {
-  Boss::_warnings.clear();
+  Boss::warnings_.clear();
   lib.set_colour_cycle(mode() == game_mode::kHard       ? 128
                            : mode() == game_mode::kFast ? 192
                            : mode() == game_mode::kWhat ? (lib.get_colour_cycle() + 1) % 256
                                                         : 0);
-  if (_replay_recording) {
-    *_frame_count = mode() == game_mode::kFast ? 2 : 1;
+  if (replay_recording_) {
+    *frame_count_ = mode() == game_mode::kFast ? 2 : 1;
   }
 
-  if (!_replay_recording) {
+  if (!replay_recording_) {
     if (lib.is_key_pressed(Lib::key::kBomb)) {
-      *_frame_count *= 2;
+      *frame_count_ *= 2;
     }
     if (lib.is_key_pressed(Lib::key::kFire) &&
-        *_frame_count > (mode() == game_mode::kFast ? 2 : 1)) {
-      *_frame_count /= 2;
+        *frame_count_ > (mode() == game_mode::kFast ? 2 : 1)) {
+      *frame_count_ /= 2;
     }
   }
 
   Player::update_fire_timer();
-  ChaserBoss::_has_counted = false;
+  ChaserBoss::has_counted_ = false;
   auto sort_ships = [](const Ship* a, const Ship* b) {
     return a->shape().centre.x - a->bounding_width() < b->shape().centre.x - b->bounding_width();
   };
-  std::stable_sort(_collisions.begin(), _collisions.end(), sort_ships);
-  for (std::size_t i = 0; i < _ships.size(); ++i) {
-    if (!_ships[i]->is_destroyed()) {
-      _ships[i]->update();
+  std::stable_sort(collisions_.begin(), collisions_.end(), sort_ships);
+  for (std::size_t i = 0; i < ships_.size(); ++i) {
+    if (!ships_[i]->is_destroyed()) {
+      ships_[i]->update();
     }
   }
-  for (auto& particle : _particles) {
+  for (auto& particle : particles_) {
     if (!particle.destroy) {
       particle.position += particle.velocity;
       if (--particle.timer <= 0) {
@@ -65,83 +65,83 @@ void SimState::update(Lib& lib) {
       }
     }
   }
-  for (auto it = Boss::_fireworks.begin(); it != Boss::_fireworks.end();) {
+  for (auto it = Boss::fireworks_.begin(); it != Boss::fireworks_.end();) {
     if (it->first > 0) {
       --(it++)->first;
       continue;
     }
-    vec2 v = _ships[0]->shape().centre;
-    _ships[0]->shape().centre = it->second.first;
-    _ships[0]->explosion(0xffffffff);
-    _ships[0]->explosion(it->second.second, 16);
-    _ships[0]->explosion(0xffffffff, 24);
-    _ships[0]->explosion(it->second.second, 32);
-    _ships[0]->shape().centre = v;
-    it = Boss::_fireworks.erase(it);
+    vec2 v = ships_[0]->shape().centre;
+    ships_[0]->shape().centre = it->second.first;
+    ships_[0]->explosion(0xffffffff);
+    ships_[0]->explosion(it->second.second, 16);
+    ships_[0]->explosion(0xffffffff, 24);
+    ships_[0]->explosion(it->second.second, 32);
+    ships_[0]->shape().centre = v;
+    it = Boss::fireworks_.erase(it);
   }
 
-  for (auto it = _ships.begin(); it != _ships.end();) {
+  for (auto it = ships_.begin(); it != ships_.end();) {
     if (!(*it)->is_destroyed()) {
       ++it;
       continue;
     }
 
     if ((*it)->type() & Ship::kShipEnemy) {
-      _overmind->on_enemy_destroy(**it);
+      overmind_->on_enemy_destroy(**it);
     }
-    for (auto jt = _collisions.begin(); jt != _collisions.end();) {
+    for (auto jt = collisions_.begin(); jt != collisions_.end();) {
       if (it->get() == *jt) {
-        jt = _collisions.erase(jt);
+        jt = collisions_.erase(jt);
         continue;
       }
       ++jt;
     }
 
-    it = _ships.erase(it);
+    it = ships_.erase(it);
   }
 
-  for (auto it = _particles.begin(); it != _particles.end();) {
+  for (auto it = particles_.begin(); it != particles_.end();) {
     if (it->destroy) {
-      it = _particles.erase(it);
+      it = particles_.erase(it);
       continue;
     }
     ++it;
   }
-  _overmind->update();
+  overmind_->update();
 
-  if (!_kill_timer &&
+  if (!kill_timer_ &&
       ((killed_players() == (std::int32_t)players().size() && !get_lives()) ||
-       (mode() == game_mode::kBoss && _overmind->get_killed_bosses() >= 6))) {
-    _kill_timer = 100;
+       (mode() == game_mode::kBoss && overmind_->get_killed_bosses() >= 6))) {
+    kill_timer_ = 100;
   }
-  if (_kill_timer) {
-    _kill_timer--;
-    if (!_kill_timer) {
-      _game_over = true;
+  if (kill_timer_) {
+    kill_timer_--;
+    if (!kill_timer_) {
+      game_over_ = true;
     }
   }
 }
 
 void SimState::render(Lib& lib) const {
-  _boss_hp_bar.reset();
+  boss_hp_bar_.reset();
   Stars::render(lib);
-  for (const auto& particle : _particles) {
+  for (const auto& particle : particles_) {
     lib.render_rect(particle.position + fvec2(1, 1), particle.position - fvec2(1, 1),
                     particle.colour);
   }
-  for (std::size_t i = _player_list.size(); i < _ships.size(); ++i) {
-    _ships[i]->render();
+  for (std::size_t i = player_list_.size(); i < ships_.size(); ++i) {
+    ships_[i]->render();
   }
-  for (const auto& ship : _player_list) {
+  for (const auto& ship : player_list_) {
     ship->render();
   }
 
-  for (std::size_t i = 0; i < _ships.size() + Boss::_warnings.size(); ++i) {
-    if (i < _ships.size() && !(_ships[i]->type() & Ship::kShipEnemy)) {
+  for (std::size_t i = 0; i < ships_.size() + Boss::warnings_.size(); ++i) {
+    if (i < ships_.size() && !(ships_[i]->type() & Ship::kShipEnemy)) {
       continue;
     }
-    fvec2 v = to_float(i < _ships.size() ? _ships[i]->shape().centre
-                                         : Boss::_warnings[i - _ships.size()]);
+    fvec2 v = to_float(i < ships_.size() ? ships_[i]->shape().centre
+                                         : Boss::warnings_[i - ships_.size()]);
 
     if (v.x < -4) {
       std::int32_t a = std::int32_t(.5f + float(0x1) +
@@ -183,42 +183,42 @@ void SimState::render(Lib& lib) const {
 }
 
 void SimState::write_replay(const std::string& team_name, std::int64_t score) const {
-  if (_replay_recording) {
-    _replay.write(team_name, score);
+  if (replay_recording_) {
+    replay_.write(team_name, score);
   }
 }
 
 Lib& SimState::lib() {
-  return _lib;
+  return lib_;
 }
 
 game_mode SimState::mode() const {
-  return game_mode(_replay.replay.game_mode());
+  return game_mode(replay_.replay.game_mode());
 }
 
 void SimState::add_ship(Ship* ship) {
   ship->set_game(*this);
   if (ship->type() & Ship::kShipEnemy) {
-    _overmind->on_enemy_create(*ship);
+    overmind_->on_enemy_create(*ship);
   }
-  _ships.emplace_back(ship);
+  ships_.emplace_back(ship);
 
   if (ship->bounding_width() > 1) {
-    _collisions.push_back(ship);
+    collisions_.push_back(ship);
   }
 }
 
 void SimState::add_particle(const Particle& particle) {
-  _particles.emplace_back(particle);
+  particles_.emplace_back(particle);
 }
 
 std::int32_t SimState::get_non_wall_count() const {
-  return _overmind->count_non_wall_enemies();
+  return overmind_->count_non_wall_enemies();
 }
 
 SimState::ship_list SimState::all_ships(std::int32_t ship_mask) const {
   ship_list r;
-  for (auto& ship : _ships) {
+  for (auto& ship : ships_) {
     if (!ship_mask || (ship->type() & ship_mask)) {
       r.push_back(ship.get());
     }
@@ -229,7 +229,7 @@ SimState::ship_list SimState::all_ships(std::int32_t ship_mask) const {
 SimState::ship_list
 SimState::ships_in_radius(const vec2& point, fixed radius, std::int32_t ship_mask) const {
   ship_list r;
-  for (auto& ship : _ships) {
+  for (auto& ship : ships_) {
     if ((!ship_mask || (ship->type() & ship_mask)) &&
         (ship->shape().centre - point).length() <= radius) {
       r.push_back(ship.get());
@@ -242,7 +242,7 @@ bool SimState::any_collision(const vec2& point, std::int32_t category) const {
   fixed x = point.x;
   fixed y = point.y;
 
-  for (const auto& collision : _collisions) {
+  for (const auto& collision : collisions_) {
     fixed sx = collision->shape().centre.x;
     fixed sy = collision->shape().centre.y;
     fixed w = collision->bounding_width();
@@ -266,7 +266,7 @@ SimState::ship_list SimState::collision_list(const vec2& point, std::int32_t cat
   fixed x = point.x;
   fixed y = point.y;
 
-  for (const auto& collision : _collisions) {
+  for (const auto& collision : collisions_) {
     fixed sx = collision->shape().centre.x;
     fixed sy = collision->shape().centre.y;
     fixed w = collision->bounding_width();
@@ -294,7 +294,7 @@ std::int32_t SimState::killed_players() const {
 }
 
 const SimState::ship_list& SimState::players() const {
-  return _player_list;
+  return player_list_;
 }
 
 Player* SimState::nearest_player(const vec2& point) const {
@@ -303,7 +303,7 @@ Player* SimState::nearest_player(const vec2& point) const {
   fixed ship_dist = 0;
   fixed dead_dist = 0;
 
-  for (Ship* s : _player_list) {
+  for (Ship* s : player_list_) {
     fixed d = (s->shape().centre - point).length();
     if ((d < ship_dist || !ship) && !((Player*)s)->is_killed()) {
       ship_dist = d;
@@ -318,53 +318,53 @@ Player* SimState::nearest_player(const vec2& point) const {
 }
 
 bool SimState::game_over() const {
-  return _game_over;
+  return game_over_;
 }
 
 void SimState::add_life() {
-  _lives++;
+  lives_++;
 }
 
 void SimState::sub_life() {
-  if (_lives) {
-    _lives--;
+  if (lives_) {
+    lives_--;
   }
 }
 
 std::int32_t SimState::get_lives() const {
-  return _lives;
+  return lives_;
 }
 
 void SimState::render_hp_bar(float fill) {
-  _boss_hp_bar = fill;
+  boss_hp_bar_ = fill;
 }
 
 void SimState::set_boss_killed(boss_list boss) {
-  if (!_replay_recording) {
+  if (!replay_recording_) {
     return;
   }
   if (boss == BOSS_3A || (mode() != game_mode::kBoss && mode() != game_mode::kNormal)) {
-    _save.hard_mode_bosses_killed |= boss;
+    save_.hard_mode_bosses_killed |= boss;
   } else {
-    _save.bosses_killed |= boss;
+    save_.bosses_killed |= boss;
   }
 }
 
 SimState::results SimState::get_results() const {
   results r;
-  r.is_replay = !_replay_recording;
+  r.is_replay = !replay_recording_;
   if (r.is_replay) {
-    auto input = static_cast<ReplayPlayerInput*>(_input.get());
+    auto input = static_cast<ReplayPlayerInput*>(input_.get());
     r.replay_progress =
         static_cast<float>(input->replay_frame) / input->replay.replay.player_frame_size();
   }
   r.mode = mode();
-  r.seed = _replay.replay.seed();
-  r.elapsed_time = _overmind->get_elapsed_time();
-  r.killed_bosses = _overmind->get_killed_bosses();
+  r.seed = replay_.replay.seed();
+  r.elapsed_time = overmind_->get_elapsed_time();
+  r.killed_bosses = overmind_->get_killed_bosses();
   r.lives_remaining = get_lives();
-  r.overmind_timer = _overmind->get_timer();
-  r.boss_hp_bar = _boss_hp_bar;
+  r.overmind_timer = overmind_->get_timer();
+  r.boss_hp_bar = boss_hp_bar_;
 
   for (auto* ship : players()) {
     auto* p = static_cast<Player*>(ship);
@@ -378,29 +378,29 @@ SimState::results SimState::get_results() const {
 
 SimState::SimState(Lib& lib, SaveData& save, std::int32_t* frame_count, Replay&& replay,
                    bool replay_recording)
-: _lib{lib}
-, _save{save}
-, _frame_count{frame_count}
-, _replay{replay}
-, _replay_recording{replay_recording} {
+: lib_{lib}
+, save_{save}
+, frame_count_{frame_count}
+, replay_{replay}
+, replay_recording_{replay_recording} {
   static constexpr std::int32_t kStartingLives = 2;
   static constexpr std::int32_t kBossModeLives = 1;
-  z::seed((std::int32_t)_replay.replay.seed());
-  if (_replay_recording) {
-    _input = std::make_unique<LibPlayerInput>(lib, _replay);
+  z::seed((std::int32_t)replay_.replay.seed());
+  if (replay_recording_) {
+    input_ = std::make_unique<LibPlayerInput>(lib, replay_);
   } else {
-    _input = std::make_unique<ReplayPlayerInput>(_replay);
+    input_ = std::make_unique<ReplayPlayerInput>(replay_);
   }
 
-  _lives = mode() == game_mode::kBoss ? _replay.replay.players() * kBossModeLives : kStartingLives;
-  *_frame_count = mode() == game_mode::kFast ? 2 : 1;
+  lives_ = mode() == game_mode::kBoss ? replay_.replay.players() * kBossModeLives : kStartingLives;
+  *frame_count_ = mode() == game_mode::kFast ? 2 : 1;
 
   Stars::clear();
-  for (std::int32_t i = 0; i < _replay.replay.players(); ++i) {
-    vec2 v((1 + i) * Lib::kWidth / (1 + _replay.replay.players()), Lib::kHeight / 2);
-    Player* p = new Player(*_input, v, i);
+  for (std::int32_t i = 0; i < replay_.replay.players(); ++i) {
+    vec2 v((1 + i) * Lib::kWidth / (1 + replay_.replay.players()), Lib::kHeight / 2);
+    Player* p = new Player(*input_, v, i);
     add_ship(p);
-    _player_list.push_back(p);
+    player_list_.push_back(p);
   }
-  _overmind = std::make_unique<Overmind>(*this, _replay.replay.can_face_secret_boss());
+  overmind_ = std::make_unique<Overmind>(*this, replay_.replay.can_face_secret_boss());
 }

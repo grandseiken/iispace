@@ -6,21 +6,21 @@ Shape::Shape(const vec2& centre, fixed rotation, colour_t colour, std::int32_t c
 : centre(centre)
 , colour(colour)
 , category(category)
-, _rotation(can_rotate ? rotation : 0)
-, _can_rotate(can_rotate) {}
+, rotation_(can_rotate ? rotation : 0)
+, can_rotate_(can_rotate) {}
 
 bool Shape::check_point(const vec2& v) const {
   vec2 a = v - centre;
-  if (_can_rotate) {
-    a = a.rotated(-_rotation);
+  if (can_rotate_) {
+    a = a.rotated(-rotation_);
   }
   return check_local_point(a);
 }
 
 vec2 Shape::convert_point(const vec2& position, fixed rotation, const vec2& v) const {
   vec2 a = v;
-  if (_can_rotate) {
-    a = a.rotated(_rotation);
+  if (can_rotate_) {
+    a = a.rotated(rotation_);
   }
   a = (a + centre).rotated(rotation);
   return position + a;
@@ -28,27 +28,27 @@ vec2 Shape::convert_point(const vec2& position, fixed rotation, const vec2& v) c
 
 fvec2 Shape::convert_fl_point(const fvec2& position, float rotation, const fvec2& v) const {
   fvec2 a = v;
-  if (_can_rotate) {
-    a = a.rotated(_rotation.to_float());
+  if (can_rotate_) {
+    a = a.rotated(rotation_.to_float());
   }
   a = (a + to_float(centre)).rotated(rotation);
   return position + a;
 }
 
 fixed Shape::rotation() const {
-  return _can_rotate ? _rotation : 0;
+  return can_rotate_ ? rotation_ : 0;
 }
 
 void Shape::set_rotation(fixed rotation) {
-  if (_can_rotate) {
-    _rotation = rotation > 2 * fixed_c::pi ? rotation - 2 * fixed_c::pi
+  if (can_rotate_) {
+    rotation_ = rotation > 2 * fixed_c::pi ? rotation - 2 * fixed_c::pi
         : rotation < 0                     ? rotation + 2 * fixed_c::pi
                                            : rotation;
   }
 }
 
 void Shape::rotate(fixed rotation_amount) {
-  set_rotation(_rotation + rotation_amount);
+  set_rotation(rotation_ + rotation_amount);
 }
 
 Fill::Fill(const vec2& centre, fixed width, fixed height, colour_t colour, std::int32_t category)
@@ -177,32 +177,32 @@ CompoundShape::CompoundShape(const vec2& centre, fixed rotation, std::int32_t ca
 : Shape(centre, rotation, 0, category) {}
 
 const CompoundShape::shape_list& CompoundShape::shapes() const {
-  return _children;
+  return children_;
 }
 
 void CompoundShape::add_shape(Shape* shape) {
-  _children.emplace_back(shape);
+  children_.emplace_back(shape);
 }
 
 void CompoundShape::destroy_shape(std::size_t index) {
-  if (index < _children.size()) {
-    _children.erase(index + _children.begin());
+  if (index < children_.size()) {
+    children_.erase(index + children_.begin());
   }
 }
 
 void CompoundShape::clear_shapes() {
-  _children.clear();
+  children_.clear();
 }
 
 void CompoundShape::render(Lib& lib, const fvec2& position, float rot, colour_t colour) const {
   fvec2 c = convert_fl_point(position, rot, fvec2());
-  for (const auto& child : _children) {
+  for (const auto& child : children_) {
     child->render(lib, c, rotation().to_float() + rot, colour);
   }
 }
 
 bool CompoundShape::check_local_point(const vec2& v) const {
-  for (const auto& child : _children) {
+  for (const auto& child : children_) {
     if (child->check_point(v)) {
       return true;
     }

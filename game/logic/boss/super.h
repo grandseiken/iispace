@@ -14,14 +14,14 @@ public:
   void render() const override;
 
   std::int32_t GetTimer() const {
-    return _timer;
+    return timer_;
   }
 
 private:
-  Ship* _boss;
-  std::int32_t _i;
-  std::int32_t _timer;
-  std::int32_t _stimer;
+  Ship* boss_;
+  std::int32_t i_;
+  std::int32_t timer_;
+  std::int32_t stimer_;
 };
 
 class SuperBoss : public Boss {
@@ -38,14 +38,14 @@ private:
   friend class SuperBossArc;
   friend class RainbowShot;
 
-  std::int32_t _players;
-  std::int32_t _cycle;
-  std::int32_t _ctimer;
-  std::int32_t _timer;
-  std::vector<bool> _destroyed;
-  std::vector<SuperBossArc*> _arcs;
-  state _state;
-  std::int32_t _snakes;
+  std::int32_t players_;
+  std::int32_t cycle_;
+  std::int32_t ctimer_;
+  std::int32_t timer_;
+  std::vector<bool> destroyed_;
+  std::vector<SuperBossArc*> arcs_;
+  state state_;
+  std::int32_t snakes_;
 };
 
 class SnakeTail : public Enemy {
@@ -57,10 +57,10 @@ public:
   void on_destroy(bool bomb) override;
 
 private:
-  SnakeTail* _tail;
-  SnakeTail* _head;
-  std::int32_t _timer;
-  std::int32_t _dtimer;
+  SnakeTail* tail_;
+  SnakeTail* head_;
+  std::int32_t timer_;
+  std::int32_t dtimer_;
 };
 
 class Snake : public Enemy {
@@ -70,13 +70,13 @@ public:
   void on_destroy(bool bomb) override;
 
 private:
-  SnakeTail* _tail;
-  std::int32_t _timer;
-  vec2 _dir;
-  std::int32_t _count;
-  colour_t _colour;
-  bool _shot_snake;
-  fixed _shot_rot;
+  SnakeTail* tail_;
+  std::int32_t timer_;
+  vec2 dir_;
+  std::int32_t count_;
+  colour_t colour_;
+  bool shot_snake_;
+  fixed shot_rot_;
 };
 
 class RainbowShot : public BossShot {
@@ -85,8 +85,8 @@ public:
   void update() override;
 
 private:
-  Ship* _boss;
-  std::int32_t _timer;
+  Ship* boss_;
+  std::int32_t timer_;
 };
 
 #endif

@@ -2,8 +2,8 @@
 #include "game/logic/player.h"
 #include <algorithm>
 
-std::vector<std::pair<std::int32_t, std::pair<vec2, colour_t>>> Boss::_fireworks;
-std::vector<vec2> Boss::_warnings;
+std::vector<std::pair<std::int32_t, std::pair<vec2, colour_t>>> Boss::fireworks_;
+std::vector<vec2> Boss::warnings_;
 
 namespace {
 const fixed kHpPerExtraPlayer = fixed(1) / 10;
@@ -13,25 +13,25 @@ const fixed kHpPerExtraCycle = 3 * fixed(1) / 10;
 Boss::Boss(const vec2& position, SimState::boss_list boss, std::int32_t hp, std::int32_t players,
            std::int32_t cycle, bool explode_on_damage)
 : Ship(position, Ship::ship_category(kShipBoss | kShipEnemy))
-, _hp(0)
-, _max_hp(0)
-, _flag(boss)
-, _score(0)
-, _ignore_damage_colour(256)
-, _damaged(0)
-, _show_hp(false)
-, _explode_on_damage(explode_on_damage) {
+, hp_(0)
+, max_hp_(0)
+, flag_(boss)
+, score_(0)
+, ignore_damage_colour_(256)
+, damaged_(0)
+, show_hp_(false)
+, explode_on_damage_(explode_on_damage) {
   set_bounding_width(640);
   set_ignore_damage_colour_index(100);
   long s =
       5000 * (cycle + 1) + 2500 * (boss > SimState::BOSS_1C) + 2500 * (boss > SimState::BOSS_2C);
 
-  _score += s;
+  score_ += s;
   for (std::int32_t i = 0; i < players - 1; ++i) {
-    _score += (std::int32_t(s) * kHpPerExtraPlayer).to_int();
+    score_ += (std::int32_t(s) * kHpPerExtraPlayer).to_int();
   }
-  _hp = CalculateHP(hp, players, cycle);
-  _max_hp = _hp;
+  hp_ = CalculateHP(hp, players, cycle);
+  max_hp_ = hp_;
 }
 
 std::int32_t Boss::CalculateHP(std::int32_t base, std::int32_t players, std::int32_t cycle) {
@@ -56,22 +56,22 @@ void Boss::damage(std::int32_t damage, bool magic, Player* source) {
   }
 
   if (damage >= Player::kBombDamage) {
-    if (_explode_on_damage) {
+    if (explode_on_damage_) {
       explosion();
       explosion(0xffffffff, 16);
       explosion(0, 24);
     }
 
-    _damaged = 25;
-  } else if (_damaged < 1) {
-    _damaged = 1;
+    damaged_ = 25;
+  } else if (damaged_ < 1) {
+    damaged_ = 1;
   }
 
   actual_damage *=
       60 / (1 + (game().get_lives() ? game().players().size() : game().alive_players()));
-  _hp -= actual_damage;
+  hp_ -= actual_damage;
 
-  if (_hp <= 0 && !is_destroyed()) {
+  if (hp_ <= 0 && !is_destroyed()) {
     destroy();
     on_destroy();
   } else if (!is_destroyed()) {
@@ -88,24 +88,24 @@ void Boss::render(bool hp_bar) const {
     render_hp_bar();
   }
 
-  if (!_damaged) {
+  if (!damaged_) {
     Ship::render();
     return;
   }
   for (std::size_t i = 0; i < shapes().size(); i++) {
     shapes()[i]->render(lib(), to_float(shape().centre), shape().rotation().to_float(),
-                        std::int32_t(i) < _ignore_damage_colour ? 0xffffffff : 0);
+                        std::int32_t(i) < ignore_damage_colour_ ? 0xffffffff : 0);
   }
-  _damaged--;
+  damaged_--;
 }
 
 void Boss::render_hp_bar() const {
-  if (!_show_hp && is_on_screen()) {
-    _show_hp = true;
+  if (!show_hp_ && is_on_screen()) {
+    show_hp_ = true;
   }
 
-  if (_show_hp) {
-    game().render_hp_bar(float(_hp) / float(_max_hp));
+  if (show_hp_) {
+    game().render_hp_bar(float(hp_) / float(max_hp_));
   }
 }
 
@@ -125,7 +125,7 @@ void Boss::on_destroy() {
   for (std::int32_t i = 0; i < 16; ++i) {
     vec2 v = vec2::from_polar(z::rand_fixed() * (2 * fixed_c::pi),
                               8 + z::rand_int(64) + z::rand_int(64));
-    _fireworks.push_back(
+    fireworks_.push_back(
         std::make_pair(n, std::make_pair(shape().centre + v, shapes()[0]->colour)));
     n += i;
   }

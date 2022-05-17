@@ -7,19 +7,19 @@ public:
   Enemy(const vec2& position, Ship::ship_category type, std::int32_t hp);
 
   std::int64_t get_score() const {
-    return _score;
+    return score_;
   }
 
   void set_score(long score) {
-    _score = score;
+    score_ = score;
   }
 
   std::int32_t get_hp() const {
-    return _hp;
+    return hp_;
   }
 
   void set_destroy_sound(Lib::sound sound) {
-    _destroy_sound = sound;
+    destroy_sound_ = sound;
   }
 
   void damage(std::int32_t damage, bool magic, Player* source) override;
@@ -27,10 +27,10 @@ public:
   virtual void on_destroy(bool bomb) {}
 
 private:
-  std::int32_t _hp;
-  std::int64_t _score;
-  mutable std::int32_t _damaged;
-  Lib::sound _destroy_sound;
+  std::int32_t hp_;
+  std::int64_t score_;
+  mutable std::int32_t damaged_;
+  Lib::sound destroy_sound_;
 };
 
 class Follow : public Enemy {
@@ -39,8 +39,8 @@ public:
   void update() override;
 
 private:
-  std::int32_t _timer;
-  Ship* _target;
+  std::int32_t timer_;
+  Ship* target_;
 };
 
 class BigFollow : public Follow {
@@ -49,7 +49,7 @@ public:
   void on_destroy(bool bomb) override;
 
 private:
-  bool _has_score;
+  bool has_score_;
 };
 
 class Chaser : public Enemy {
@@ -58,9 +58,9 @@ public:
   void update() override;
 
 private:
-  bool _move;
-  std::int32_t _timer;
-  vec2 _dir;
+  bool move_;
+  std::int32_t timer_;
+  vec2 dir_;
 };
 
 class Square : public Enemy {
@@ -70,8 +70,8 @@ public:
   void render() const override;
 
 private:
-  vec2 _dir;
-  std::int32_t _timer;
+  vec2 dir_;
+  std::int32_t timer_;
 };
 
 class Wall : public Enemy {
@@ -81,10 +81,10 @@ public:
   void on_destroy(bool bomb) override;
 
 private:
-  vec2 _dir;
-  std::int32_t _timer;
-  bool _rotate;
-  bool _rdir;
+  vec2 dir_;
+  std::int32_t timer_;
+  bool rotate_;
+  bool rdir_;
 };
 
 class FollowHub : public Enemy {
@@ -94,11 +94,11 @@ public:
   void on_destroy(bool bomb) override;
 
 private:
-  std::int32_t _timer;
-  vec2 _dir;
-  std::int32_t _count;
-  bool _powera;
-  bool _powerb;
+  std::int32_t timer_;
+  vec2 dir_;
+  std::int32_t count_;
+  bool powera_;
+  bool powerb_;
 };
 
 class Shielder : public Enemy {
@@ -107,11 +107,11 @@ public:
   void update() override;
 
 private:
-  vec2 _dir;
-  std::int32_t _timer;
-  bool _rotate;
-  bool _rdir;
-  bool _power;
+  vec2 dir_;
+  std::int32_t timer_;
+  bool rotate_;
+  bool rdir_;
+  bool power_;
 };
 
 class Tractor : public Enemy {
@@ -122,13 +122,13 @@ public:
   void render() const override;
 
 private:
-  std::int32_t _timer;
-  vec2 _dir;
-  bool _power;
+  std::int32_t timer_;
+  vec2 dir_;
+  bool power_;
 
-  bool _ready;
-  bool _spinning;
-  SimState::ship_list _players;
+  bool ready_;
+  bool spinning_;
+  SimState::ship_list players_;
 };
 
 class BossShot : public Enemy {
@@ -137,7 +137,7 @@ public:
   void update() override;
 
 protected:
-  vec2 _dir;
+  vec2 dir_;
 };
 
 #endif

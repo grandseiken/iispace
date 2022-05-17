@@ -32,9 +32,9 @@ private:
     colour_t colour;
   };
 
-  static fvec2 _direction;
-  static std::vector<std::unique_ptr<data>> _stars;
-  static std::int32_t _star_rate;
+  static fvec2 direction_;
+  static std::vector<std::unique_ptr<data>> stars_;
+  static std::int32_t star_rate_;
 };
 
 #endif

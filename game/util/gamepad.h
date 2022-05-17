@@ -6,15 +6,15 @@
 
 struct PadConfig {
   struct Stick {
-    int _axis1;
-    int _axis2;
-    bool _axis1r;
-    bool _axis2r;
+    int axis1_;
+    int axis2_;
+    bool axis1r_;
+    bool axis2r_;
   };
   typedef std::vector<Stick> Sticks;
   typedef std::vector<int> Buttons;
 
-  std::string _name;
+  std::string name_;
 
   Sticks _moveSticks;
   Buttons _moveDpads;
@@ -40,13 +40,13 @@ struct PadConfig {
     _moveLeftButtons.clear();
     _moveRightButtons.clear();
     Stick stick;
-    stick._axis1 = 2;
-    stick._axis1r = false;
-    stick._axis2 = 3;
-    stick._axis2r = false;
+    stick.axis1_ = 2;
+    stick.axis1r_ = false;
+    stick.axis2_ = 3;
+    stick.axis2r_ = false;
     _moveSticks.push_back(stick);
-    stick._axis1 = 0;
-    stick._axis2 = 1;
+    stick.axis1_ = 0;
+    stick.axis2_ = 1;
     _aimSticks.push_back(stick);
     _moveDpads.push_back(0);
     _aimDpads.push_back(1);
@@ -63,15 +63,15 @@ struct PadConfig {
   }
 
   void Write(std::ofstream& write) {
-    for (std::size_t t = 0; t < _name.length(); ++t) {
-      if (_name[t] == '\n' || _name[t] == '\r') {
-        _name[t] = ' ';
+    for (std::size_t t = 0; t < name_.length(); ++t) {
+      if (name_[t] == '\n' || name_[t] == '\r') {
+        name_[t] = ' ';
       }
     }
-    write << _name << "\n";
+    write << name_ << "\n";
     for (std::size_t i = 0; i < _moveSticks.size(); ++i) {
-      write << _moveSticks[i]._axis1 << " " << _moveSticks[i]._axis1r << " "
-            << _moveSticks[i]._axis2 << " " << _moveSticks[i]._axis2r << " ";
+      write << _moveSticks[i].axis1_ << " " << _moveSticks[i].axis1r_ << " "
+            << _moveSticks[i].axis2_ << " " << _moveSticks[i].axis2r_ << " ";
     }
     write << "\n";
     for (std::size_t i = 0; i < _moveDpads.size(); ++i) {
@@ -79,8 +79,8 @@ struct PadConfig {
     }
     write << "\n";
     for (std::size_t i = 0; i < _aimSticks.size(); ++i) {
-      write << _aimSticks[i]._axis1 << " " << _aimSticks[i]._axis1r << " " << _aimSticks[i]._axis2
-            << " " << _aimSticks[i]._axis2r << " ";
+      write << _aimSticks[i].axis1_ << " " << _aimSticks[i].axis1r_ << " " << _aimSticks[i].axis2_
+            << " " << _aimSticks[i].axis2r_ << " ";
     }
     write << "\n";
     for (std::size_t i = 0; i < _aimDpads.size(); ++i) {
@@ -142,10 +142,10 @@ struct PadConfig {
       ss1 >> b;
       ss1 >> d;
       Stick stick;
-      stick._axis1 = a;
-      stick._axis1r = c != 0;
-      stick._axis2 = b;
-      stick._axis2r = d != 0;
+      stick.axis1_ = a;
+      stick.axis1r_ = c != 0;
+      stick.axis2_ = b;
+      stick.axis2r_ = d != 0;
       _moveSticks.push_back(stick);
     }
     std::getline(read, line);
@@ -160,10 +160,10 @@ struct PadConfig {
       ss3 >> b;
       ss3 >> d;
       Stick stick;
-      stick._axis1 = a;
-      stick._axis1r = c != 0;
-      stick._axis2 = b;
-      stick._axis2r = d != 0;
+      stick.axis1_ = a;
+      stick.axis1r_ = c != 0;
+      stick.axis2_ = b;
+      stick.axis2r_ = d != 0;
       _aimSticks.push_back(stick);
     }
     std::getline(read, line);

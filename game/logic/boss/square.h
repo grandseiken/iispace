@@ -11,14 +11,14 @@ public:
   std::int32_t get_damage(std::int32_t damage, bool magic) override;
 
 private:
-  vec2 _dir;
-  bool _reverse;
-  std::int32_t _timer;
-  std::int32_t _spawn_timer;
-  std::int32_t _special_timer;
-  bool _special_attack;
-  bool _special_attack_rotate;
-  Player* _attack_player;
+  vec2 dir_;
+  bool reverse_;
+  std::int32_t timer_;
+  std::int32_t spawn_timer_;
+  std::int32_t special_timer_;
+  bool special_attack_;
+  bool special_attack_rotate_;
+  Player* attack_player_;
 };
 
 #endif

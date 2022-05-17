@@ -10,13 +10,13 @@ public:
   std::int32_t get_damage(std::int32_t damage, bool magic) override;
 
 private:
-  std::int32_t _timer;
-  std::int32_t _count;
-  std::int32_t _unshielded;
-  std::int32_t _attack;
-  bool _side;
-  vec2 _attack_dir;
-  bool _shot_alternate;
+  std::int32_t timer_;
+  std::int32_t count_;
+  std::int32_t unshielded_;
+  std::int32_t attack_;
+  bool side_;
+  vec2 attack_dir_;
+  bool shot_alternate_;
 };
 
 #endif

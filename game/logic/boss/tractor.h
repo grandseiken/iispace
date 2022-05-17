@@ -12,22 +12,22 @@ public:
   std::int32_t get_damage(std::int32_t damage, bool magic) override;
 
 private:
-  CompoundShape* _s1;
-  CompoundShape* _s2;
-  Polygon* _sattack;
-  bool _will_attack;
-  bool _stopped;
-  bool _generating;
-  bool _attacking;
-  bool _continue;
-  bool _gen_dir;
-  std::int32_t _shoot_type;
-  bool _sound;
-  std::int32_t _timer;
-  std::int32_t _attack_size;
-  std::size_t _attack_shapes;
+  CompoundShape* s1_;
+  CompoundShape* s2_;
+  Polygon* sattack_;
+  bool will_attack_;
+  bool stopped_;
+  bool generating_;
+  bool attacking_;
+  bool continue_;
+  bool gen_dir_;
+  std::int32_t shoot_type_;
+  bool sound_;
+  std::int32_t timer_;
+  std::int32_t attack_size_;
+  std::size_t attack_shapes_;
 
-  std::vector<vec2> _targets;
+  std::vector<vec2> targets_;
 };
 
 class TBossShot : public Enemy {
@@ -36,7 +36,7 @@ public:
   void update() override;
 
 private:
-  vec2 _dir;
+  vec2 dir_;
 };
 
 #endif

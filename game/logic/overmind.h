@@ -26,15 +26,15 @@ public:
   void update();
 
   std::int32_t get_killed_bosses() const {
-    return _boss_mod_bosses - 1;
+    return boss_mod_bosses_ - 1;
   }
 
   std::int32_t get_elapsed_time() const {
-    return _elapsed_time;
+    return elapsed_time_;
   }
 
   std::int32_t get_timer() const {
-    return _is_boss_level ? -1 : kTimer - _timer;
+    return is_boss_level_ ? -1 : kTimer - timer_;
   }
 
   // Enemy-counting
@@ -43,7 +43,7 @@ public:
   void on_enemy_create(const Ship& ship);
 
   std::int32_t count_non_wall_enemies() const {
-    return _non_wall_count;
+    return non_wall_count_;
   }
 
   struct entry {
@@ -62,30 +62,30 @@ private:
   void boss();
   void boss_mode_boss();
 
-  SimState& _game;
-  std::int32_t _power;
-  std::int32_t _timer;
-  std::int32_t _count;
-  std::int32_t _non_wall_count;
-  std::int32_t _levels_mod;
-  std::int32_t _groups_mod;
-  std::int32_t _boss_mod_bosses;
-  std::int32_t _boss_mod_fights;
-  std::int32_t _boss_mod_secret;
-  bool _can_face_secret_boss;
-  std::int32_t _powerup_mod;
-  std::int32_t _lives_target;
-  bool _is_boss_next;
-  bool _is_boss_level;
-  std::int32_t _elapsed_time;
-  std::int32_t _boss_rest_timer;
-  std::int32_t _waves_total;
-  std::int32_t _hard_already;
+  SimState& game_;
+  std::int32_t power_;
+  std::int32_t timer_;
+  std::int32_t count_;
+  std::int32_t non_wall_count_;
+  std::int32_t levels_mod_;
+  std::int32_t groups_mod_;
+  std::int32_t boss_mod_bosses_;
+  std::int32_t boss_mod_fights_;
+  std::int32_t boss_mod_secret_;
+  bool can_face_secret_boss_;
+  std::int32_t powerup_mod_;
+  std::int32_t lives_target_;
+  bool is_boss_next_;
+  bool is_boss_level_;
+  std::int32_t elapsed_time_;
+  std::int32_t boss_rest_timer_;
+  std::int32_t waves_total_;
+  std::int32_t hard_already_;
 
-  std::vector<std::int32_t> _boss1_queue;
-  std::vector<std::int32_t> _boss2_queue;
-  std::int32_t _bosses_to_go;
-  std::vector<entry> _formations;
+  std::vector<std::int32_t> boss1_queue_;
+  std::vector<std::int32_t> boss2_queue_;
+  std::int32_t bosses_to_go_;
+  std::vector<entry> formations_;
 
   template <typename F>
   void add_formation();

@@ -98,24 +98,24 @@ private:
   SimState(Lib& lib, SaveData& save, std::int32_t* frame_count, Replay&& replay,
            bool replay_recording);
 
-  Lib& _lib;
-  SaveData& _save;
-  std::int32_t* _frame_count = nullptr;
-  std::int32_t _kill_timer = 0;
-  bool _game_over = false;
+  Lib& lib_;
+  SaveData& save_;
+  std::int32_t* frame_count_ = nullptr;
+  std::int32_t kill_timer_ = 0;
+  bool game_over_ = false;
 
-  Replay _replay;
-  bool _replay_recording = false;
-  std::unique_ptr<PlayerInput> _input;
+  Replay replay_;
+  bool replay_recording_ = false;
+  std::unique_ptr<PlayerInput> input_;
 
-  std::int32_t _lives = 0;
-  std::unique_ptr<Overmind> _overmind;
-  std::vector<Particle> _particles;
-  std::vector<std::unique_ptr<Ship>> _ships;
-  ship_list _player_list;
-  ship_list _collisions;
+  std::int32_t lives_ = 0;
+  std::unique_ptr<Overmind> overmind_;
+  std::vector<Particle> particles_;
+  std::vector<std::unique_ptr<Ship>> ships_;
+  ship_list player_list_;
+  ship_list collisions_;
 
-  mutable std::optional<float> _boss_hp_bar;
+  mutable std::optional<float> boss_hp_bar_;
 };
 
 #endif

@@ -29,8 +29,8 @@ public:
 private:
   virtual bool check_local_point(const vec2& v) const = 0;
 
-  fixed _rotation;
-  bool _can_rotate;
+  fixed rotation_;
+  bool can_rotate_;
 };
 
 class Fill : public Shape {
@@ -129,7 +129,7 @@ public:
 private:
   bool check_local_point(const vec2& v) const override;
 
-  shape_list _children;
+  shape_list children_;
 };
 
 #endif

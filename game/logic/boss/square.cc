@@ -15,14 +15,14 @@ const fixed kBsbAttackRadius = 120;
 BigSquareBoss::BigSquareBoss(std::int32_t players, std::int32_t cycle)
 : Boss(vec2(Lib::kWidth * fixed_c::hundredth * 75, Lib::kHeight * 2), SimState::BOSS_1A, kBsbBaseHp,
        players, cycle)
-, _dir(0, -1)
-, _reverse(false)
-, _timer(kBsbTimer * 6)
-, _spawn_timer(0)
-, _special_timer(0)
-, _special_attack(false)
-, _special_attack_rotate(false)
-, _attack_player(0) {
+, dir_(0, -1)
+, reverse_(false)
+, timer_(kBsbTimer * 6)
+, spawn_timer_(0)
+, special_timer_(0)
+, special_attack_(false)
+, special_attack_rotate_(false)
+, attack_player_(0) {
   add_shape(new Polygon(vec2(), 160, 4, 0x9933ffff, 0, 0));
   add_shape(new Polygon(vec2(), 140, 4, 0x9933ffff, 0, kDangerous));
   add_shape(new Polygon(vec2(), 120, 4, 0x9933ffff, 0, kDangerous));
@@ -40,71 +40,71 @@ BigSquareBoss::BigSquareBoss(std::int32_t players, std::int32_t cycle)
 
 void BigSquareBoss::update() {
   const vec2& pos = shape().centre;
-  if (pos.y < Lib::kHeight * fixed_c::hundredth * 25 && _dir.y == -1) {
-    _dir = vec2(_reverse ? 1 : -1, 0);
+  if (pos.y < Lib::kHeight * fixed_c::hundredth * 25 && dir_.y == -1) {
+    dir_ = vec2(reverse_ ? 1 : -1, 0);
   }
-  if (pos.x < Lib::kWidth * fixed_c::hundredth * 25 && _dir.x == -1) {
-    _dir = vec2(0, _reverse ? -1 : 1);
+  if (pos.x < Lib::kWidth * fixed_c::hundredth * 25 && dir_.x == -1) {
+    dir_ = vec2(0, reverse_ ? -1 : 1);
   }
-  if (pos.y > Lib::kHeight * fixed_c::hundredth * 75 && _dir.y == 1) {
-    _dir = vec2(_reverse ? -1 : 1, 0);
+  if (pos.y > Lib::kHeight * fixed_c::hundredth * 75 && dir_.y == 1) {
+    dir_ = vec2(reverse_ ? -1 : 1, 0);
   }
-  if (pos.x > Lib::kWidth * fixed_c::hundredth * 75 && _dir.x == 1) {
-    _dir = vec2(0, _reverse ? 1 : -1);
+  if (pos.x > Lib::kWidth * fixed_c::hundredth * 75 && dir_.x == 1) {
+    dir_ = vec2(0, reverse_ ? 1 : -1);
   }
 
-  if (_special_attack) {
-    _special_timer--;
-    if (_attack_player->is_killed()) {
-      _special_timer = 0;
-      _attack_player = 0;
-    } else if (!_special_timer) {
+  if (special_attack_) {
+    special_timer_--;
+    if (attack_player_->is_killed()) {
+      special_timer_ = 0;
+      attack_player_ = 0;
+    } else if (!special_timer_) {
       vec2 d(kBsbAttackRadius, 0);
-      if (_special_attack_rotate) {
+      if (special_attack_rotate_) {
         d = d.rotated(fixed_c::pi / 2);
       }
       for (std::int32_t i = 0; i < 6; i++) {
-        Enemy* s = new Follow(_attack_player->shape().centre + d);
+        Enemy* s = new Follow(attack_player_->shape().centre + d);
         s->shape().set_rotation(fixed_c::pi / 4);
         s->set_score(0);
         spawn(s);
         d = d.rotated(2 * fixed_c::pi / 6);
       }
-      _attack_player = 0;
+      attack_player_ = 0;
       play_sound(Lib::sound::kEnemySpawn);
     }
-    if (!_attack_player) {
-      _special_attack = false;
+    if (!attack_player_) {
+      special_attack_ = false;
     }
   } else if (is_on_screen()) {
-    _timer--;
-    if (_timer <= 0) {
-      _timer = (z::rand_int(6) + 1) * kBsbTimer;
-      _dir = vec2() - _dir;
-      _reverse = !_reverse;
+    timer_--;
+    if (timer_ <= 0) {
+      timer_ = (z::rand_int(6) + 1) * kBsbTimer;
+      dir_ = vec2() - dir_;
+      reverse_ = !reverse_;
     }
-    _spawn_timer++;
+    spawn_timer_++;
     std::int32_t t = (kBsbSTimer - game().alive_players() * 10) / (is_hp_low() ? 2 : 1);
-    if (_spawn_timer >= t) {
-      _spawn_timer = 0;
-      _special_timer++;
+    if (spawn_timer_ >= t) {
+      spawn_timer_ = 0;
+      special_timer_++;
       spawn(new BigFollow(shape().centre, false));
       play_sound_random(Lib::sound::kBossFire);
     }
-    if (_special_timer >= 8 && z::rand_int(4)) {
-      _special_timer = kBsbAttackTime;
-      _special_attack = true;
-      _special_attack_rotate = z::rand_int(2) != 0;
-      _attack_player = nearest_player();
+    if (special_timer_ >= 8 && z::rand_int(4)) {
+      special_timer_ = kBsbAttackTime;
+      special_attack_ = true;
+      special_attack_rotate_ = z::rand_int(2) != 0;
+      attack_player_ = nearest_player();
       play_sound(Lib::sound::kBossAttack);
     }
   }
 
-  if (_special_attack) {
+  if (special_attack_) {
     return;
   }
 
-  move(_dir * kBsbSpeed);
+  move(dir_ * kBsbSpeed);
   for (std::size_t i = 0; i < 6; ++i) {
     shapes()[i]->rotate((i % 2 ? -1 : 1) * fixed_c::hundredth * ((1 + i) * 5));
   }
@@ -115,13 +115,13 @@ void BigSquareBoss::update() {
 
 void BigSquareBoss::render() const {
   Boss::render();
-  if ((_special_timer / 4) % 2 && _attack_player) {
+  if ((special_timer_ / 4) % 2 && attack_player_) {
     fvec2 d(kBsbAttackRadius.to_float(), 0);
-    if (_special_attack_rotate) {
+    if (special_attack_rotate_) {
       d = d.rotated(M_PIf / 2);
     }
     for (std::int32_t i = 0; i < 6; i++) {
-      fvec2 p = to_float(_attack_player->shape().centre) + d;
+      fvec2 p = to_float(attack_player_->shape().centre) + d;
       Polygon s(vec2(), 10, 4, 0x9933ffff, fixed_c::pi / 4, 0);
       s.render(lib(), p, 0);
       d = d.rotated(2 * M_PIf / 6);
