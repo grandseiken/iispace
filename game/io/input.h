@@ -6,6 +6,7 @@
 #include <cstdint>
 #include <optional>
 #include <string>
+#include <vector>
 
 namespace ii::io {
 namespace controller {
@@ -58,7 +59,12 @@ struct info {
 };
 
 struct frame {
-  // TODO: button_event.
+  struct button_event {
+    bool down = false;
+    controller::button button = controller::button::kMax;
+  };
+
+  std::vector<button_event> button_events;
   std::array<bool, static_cast<std::size_t>(button::kMax)> button_state = {false};
   std::array<std::int16_t, static_cast<std::size_t>(axis::kMax)> axis_state = {0};
 
@@ -220,7 +226,12 @@ enum class key {
 };
 
 struct frame {
-  // TODO: key_event.
+  struct key_event {
+    bool down = false;
+    keyboard::key key = keyboard::key::kMax;
+  };
+
+  std::vector<key_event> key_events;
   std::array<bool, static_cast<std::size_t>(key::kMax)> key_state = {false};
   // TODO: std::string char_delta?
 
@@ -247,7 +258,12 @@ enum class button {
 };
 
 struct frame {
-  // TODO: button_event.
+  struct button_event {
+    bool down = false;
+    mouse::button button = mouse::button::kMax;
+  };
+
+  std::vector<button_event> button_events;
   std::array<bool, static_cast<std::size_t>(button::kMax)> button_state = {false};
   glm::ivec2 cursor = {0, 0};
   glm::ivec2 cursor_delta = {0, 0};

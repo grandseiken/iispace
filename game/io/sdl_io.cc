@@ -139,7 +139,10 @@ std::optional<event_type> SdlIoLayer::poll() {
       {
         auto* data = impl_->controller(event.cbutton.which);
         if (auto button = convert_sdl_controller_button(event.cbutton.button); data && button) {
-          data->frame.button(*button) = event.type == SDL_CONTROLLERBUTTONDOWN;
+          auto& e = data->frame.button_events.emplace_back();
+          e.button = *button;
+          e.down = event.type == SDL_CONTROLLERBUTTONDOWN;
+          data->frame.button(*button) = e.down;
         }
       }
       break;
@@ -156,14 +159,20 @@ std::optional<event_type> SdlIoLayer::poll() {
     case SDL_KEYDOWN:
     case SDL_KEYUP:
       if (auto key = convert_sdl_key(event.key.keysym.sym); key) {
-        impl_->keyboard_frame.key(*key) = event.type == SDL_KEYDOWN;
+        auto& e = impl_->keyboard_frame.key_events.emplace_back();
+        e.key = *key;
+        e.down = event.type == SDL_KEYDOWN;
+        impl_->keyboard_frame.key(*key) = e.down;
       }
       break;
 
     case SDL_MOUSEBUTTONDOWN:
     case SDL_MOUSEBUTTONUP:
       if (auto button = convert_sdl_mouse_button(event.button.button); button) {
-        impl_->mouse_frame.button(*button) = event.type == SDL_MOUSEBUTTONDOWN;
+        auto& e = impl_->mouse_frame.button_events.emplace_back();
+        e.button = *button;
+        e.down = event.type == SDL_MOUSEBUTTONDOWN;
+        impl_->mouse_frame.button(*button) = e.down;
       }
       break;
 
@@ -232,9 +241,10 @@ mouse::frame SdlIoLayer::mouse_frame() const {
 
 void SdlIoLayer::input_frame_clear() {
   for (auto& data : impl_->controllers) {
-    // TODO: clear button events.
+    data.frame.button_events.clear();
   }
-  // TODO: clear mouse+keyboard button events.
+  impl_->keyboard_frame.key_events.clear();
+  impl_->mouse_frame.button_events.clear();
   impl_->mouse_frame.cursor_delta = {0, 0};
   impl_->mouse_frame.wheel_delta = {0, 0};
 }
