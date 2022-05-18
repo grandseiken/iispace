@@ -1,6 +1,8 @@
 #include "game/io/sdl_io.h"
 #include <GL/gl3w.h>
+#include <cmath>
 #include <iostream>
+#include <limits>
 
 int main() {
   auto result = ii::io::SdlIoLayer::create("example", /* GL major */ 4, /* GL minor */ 6);
@@ -11,9 +13,25 @@ int main() {
   std::cout << "Init OK" << std::endl;
   auto io_layer = std::move(*result);
 
+  std::uint64_t sin_wave = 0;
+  auto audio_callback = [&sin_wave](std::uint8_t* out_buffer, std::size_t samples) {
+    for (std::size_t i = 0; i < samples; ++i) {
+      float f = static_cast<float>(sin_wave) * 0.05f;
+      auto x = static_cast<ii::io::audio_sample_t>(
+          std::sin(f) * .5f * std::numeric_limits<ii::io::audio_sample_t>::max());
+      std::memcpy(out_buffer, &x, sizeof(x));
+      std::memcpy(out_buffer + sizeof(x), &x, sizeof(x));
+      out_buffer += 2 * sizeof(x);
+      sin_wave++;
+    }
+  };
+
+  io_layer->set_audio_callback(audio_callback);
   bool running = true;
   while (running) {
     io_layer->input_frame_clear();
+    bool audio_change = false;
+    bool controller_change = false;
     while (true) {
       auto event = io_layer->poll();
       if (!event) {
@@ -21,8 +39,36 @@ int main() {
       }
       if (*event == ii::io::event_type::kClose) {
         running = false;
+      } else if (*event == ii::io::event_type::kAudioDeviceChange) {
+        audio_change = true;
+      } else if (*event == ii::io::event_type::kControllerChange) {
+        controller_change = true;
       }
     }
+
+    if (controller_change) {
+      auto infos = io_layer->controller_info();
+      std::size_t i = 0;
+      for (const auto& info : infos) {
+        std::cout << "Controller " << i++ << ": " << info.name << std::endl;
+      }
+    }
+
+    if (audio_change) {
+      auto infos = io_layer->audio_device_info();
+      std::size_t i = 0;
+      for (const auto& info : infos) {
+        std::cout << "Audio device " << i++ << ": " << info << std::endl;
+      }
+
+      auto result = io_layer->open_audio_device(std::nullopt);
+      if (result) {
+        std::cout << "Audio device OK" << std::endl;
+      } else {
+        std::cerr << "ERROR: " << result.error() << std::endl;
+      }
+    }
+
     glClear(GL_COLOR_BUFFER_BIT);
     io_layer->swap_buffers();
 
@@ -30,5 +76,6 @@ int main() {
     std::cout << +frame.button(ii::io::controller::button::kX) << " "
               << +frame.axis(ii::io::controller::axis::kLT) << std::endl;
   }
+  io_layer->close_audio_device();
   return 0;
 }

@@ -25,6 +25,11 @@ public:
   mouse::frame mouse_frame() const override;
   void input_frame_clear() override;
 
+  void set_audio_callback(const std::function<audio_callback>& callback) override;
+  void close_audio_device() override;
+  result<void> open_audio_device(std::optional<std::size_t> index) override;
+  std::vector<std::string> audio_device_info() const override;
+
 private:
   struct impl_t;
   std::unique_ptr<impl_t> impl_;

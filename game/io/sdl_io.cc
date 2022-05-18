@@ -3,6 +3,7 @@
 #include "game/io/sdl_convert.h"
 #include <GL/gl3w.h>
 #include <SDL.h>
+#include <cstring>
 #include <unordered_map>
 
 namespace ii::io {
@@ -19,6 +20,70 @@ struct SdlIoLayer::impl_t {
   std::unordered_map<SDL_JoystickID, std::size_t> controller_map;
   mouse::frame mouse_frame;
   keyboard::frame keyboard_frame;
+
+  SDL_AudioDeviceID audio_device_id;
+  std::unique_ptr<SDL_AudioDeviceID, void (*)(SDL_AudioDeviceID*)> audio_device{nullptr, nullptr};
+  std::function<io::audio_callback> audio_callback;
+
+  void set_audio_callback(const std::function<io::audio_callback>& callback) {
+    if (audio_device_id) {
+      SDL_LockAudioDevice(audio_device_id);
+      audio_callback = callback;
+      SDL_UnlockAudioDevice(audio_device_id);
+    } else {
+      audio_callback = callback;
+    }
+  }
+
+  result<void> open_audio_device(const std::optional<std::string>& name) {
+    audio_device.reset();
+
+    SDL_AudioSpec desired_spec;
+    SDL_AudioSpec obtained_spec;
+    std::memset(&desired_spec, 0, sizeof(desired_spec));
+    std::memset(&obtained_spec, 0, sizeof(obtained_spec));
+
+    desired_spec.freq = static_cast<int>(kAudioSampleRate);
+    desired_spec.format = AUDIO_S16SYS;
+    desired_spec.channels = 2;
+    desired_spec.samples = 1024;
+    desired_spec.callback = +[](void* user_data, std::uint8_t* out_buffer, int size_bytes) {
+      std::size_t samples = size_bytes / (2 * sizeof(audio_sample_t));
+      auto* impl = reinterpret_cast<impl_t*>(user_data);
+      if (impl->audio_callback) {
+        impl->audio_callback(out_buffer, samples);
+      } else {
+        static const audio_sample_t kZero = 0;
+        for (std::size_t i = 0; i < 2 * samples; ++i) {
+          std::memcpy(out_buffer + i * sizeof(kZero), &kZero, sizeof(kZero));
+        }
+      }
+    };
+    desired_spec.userdata = this;
+    auto id = SDL_OpenAudioDevice(name ? name->c_str() : nullptr, /* capture */ 0, &desired_spec,
+                                  &obtained_spec, /* allowed spec changes */ 0);
+    if (!id) {
+      return unexpected(SDL_GetError());
+    }
+
+    audio_device_id = id;
+    audio_device = std::unique_ptr<SDL_AudioDeviceID, void (*)(SDL_AudioDeviceID*)>{
+        &audio_device_id, +[](SDL_AudioDeviceID* id) {
+          if (*id) {
+            SDL_CloseAudioDevice(*id);
+            *id = 0;
+          }
+        }};
+
+    if (obtained_spec.freq != desired_spec.freq || obtained_spec.format != desired_spec.format ||
+        obtained_spec.channels != desired_spec.channels) {
+      return unexpected("audio device opened with unexpected format");
+      audio_device.reset();
+    }
+
+    SDL_PauseAudioDevice(audio_device_id, /* unpause */ 0);
+    return {};
+  }
 
   void scan_controllers() {
     controllers.clear();
@@ -128,6 +193,10 @@ std::optional<event_type> SdlIoLayer::poll() {
         return event_type::kClose;
       }
       break;
+
+    case SDL_AUDIODEVICEADDED:
+    case SDL_AUDIODEVICEREMOVED:
+      return event_type::kAudioDeviceChange;
 
     case SDL_JOYDEVICEADDED:
     case SDL_JOYDEVICEREMOVED:
@@ -247,6 +316,35 @@ void SdlIoLayer::input_frame_clear() {
   impl_->mouse_frame.button_events.clear();
   impl_->mouse_frame.cursor_delta = {0, 0};
   impl_->mouse_frame.wheel_delta = {0, 0};
+}
+
+void SdlIoLayer::set_audio_callback(const std::function<audio_callback>& callback) {
+  impl_->set_audio_callback(callback);
+}
+
+void SdlIoLayer::close_audio_device() {
+  impl_->audio_device.reset();
+}
+
+result<void> SdlIoLayer::open_audio_device(std::optional<std::size_t> index) {
+  std::optional<std::string> device_name;
+  if (index) {
+    auto devices = audio_device_info();
+    if (*index < devices.size()) {
+      device_name = devices[*index];
+    }
+  }
+  return impl_->open_audio_device(device_name);
+}
+
+std::vector<std::string> SdlIoLayer::audio_device_info() const {
+  std::vector<std::string> result;
+  for (int i = 0; i < SDL_GetNumAudioDevices(/* capture */ 0); ++i) {
+    if (const char* name = SDL_GetAudioDeviceName(i, /* capture */ 0); name) {
+      result.emplace_back(name);
+    }
+  }
+  return result;
 }
 
 }  // namespace ii::io
