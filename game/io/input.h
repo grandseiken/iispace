@@ -52,6 +52,9 @@ enum class button {
   kMax,
 };
 
+const char* to_string(axis a, type t);
+const char* to_string(button b, type t);
+
 struct info {
   controller::type type = controller::type::kOther;
   std::string name;
@@ -225,6 +228,8 @@ enum class key {
   kMax,
 };
 
+const char* to_string(key k);
+
 struct frame {
   struct key_event {
     bool down = false;
@@ -256,6 +261,8 @@ enum class button {
   kX2,
   kMax,
 };
+
+const char* to_string(button);
 
 struct frame {
   struct button_event {
