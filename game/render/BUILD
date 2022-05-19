@@ -5,6 +5,7 @@ cc_library(
   deps = [
     "//game/common:types",
     "//game/render/gl",
+    "//game/render/shaders",
     "@gl3w",
     "@glm",
   ],

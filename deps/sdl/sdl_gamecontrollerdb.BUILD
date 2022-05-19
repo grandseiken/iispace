@@ -1,4 +1,4 @@
-load("@//build:xxd.bzl", "xxd")
+load("@//deps:xxd.bzl", "xxd")
 
 xxd(
   name = "sdl_gamecontrollerdb_xxd",

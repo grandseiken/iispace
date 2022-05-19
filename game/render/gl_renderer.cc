@@ -4,6 +4,7 @@
 #include "game/render/gl/program.h"
 #include "game/render/gl/texture.h"
 #include "game/render/gl/types.h"
+#include "game/render/shaders/shaders.h"
 #include <GL/gl3w.h>
 
 namespace ii {
