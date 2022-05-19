@@ -5,9 +5,47 @@
 #include <glm/glm.hpp>
 #include <cstdint>
 #include <optional>
+#include <type_traits>
 
 namespace ii::gl {
 using id = std::uint32_t;
+
+enum class type {
+  kByte,
+  kUnsignedByte,
+  kShort,
+  kUnsignedShort,
+  kInt,
+  kUnsignedInt,
+  kHalfFloat,
+  kFloat,
+  kDouble,
+  kFixed,
+};
+
+template <typename T>
+type type_of() {
+  using t = std::remove_cv_t<std::remove_reference_t<T>>;
+  if constexpr (std::is_same_v<t, std::int8_t>) {
+    return type::kByte;
+  } else if constexpr (std::is_same_v<t, std::uint8_t> || std::is_same_v<t, std::byte>) {
+    return type::kUnsignedByte;
+  } else if constexpr (std::is_same_v<t, short>) {
+    return type::kShort;
+  } else if constexpr (std::is_same_v<t, unsigned short>) {
+    return type::kUnsignedShort;
+  } else if constexpr (std::is_same_v<t, int>) {
+    return type::kInt;
+  } else if constexpr (std::is_same_v<t, unsigned int>) {
+    return type::kUnsignedInt;
+  } else if constexpr (std::is_same_v<t, float>) {
+    return type::kFloat;
+  } else if constexpr (std::is_same_v<t, double>) {
+    return type::kDouble;
+  } else {
+    static_assert(false, "unsupported type");
+  }
+}
 
 namespace detail {
 
@@ -82,6 +120,32 @@ struct delete_vertex_array {
 struct disable_vertex_attribute {
   void operator()(id i) const {
     glDisableVertexAttribArray(i);
+  }
+};
+
+inline GLenum type_to_gl(type t) {
+  switch (t) {
+  default:
+  case type::kByte:
+    return GL_BYTE;
+  case type::kUnsignedByte:
+    return GL_UNSIGNED_BYTE;
+  case type::kShort:
+    return GL_SHORT;
+  case type::kUnsignedShort:
+    return GL_UNSIGNED_SHORT;
+  case type::kInt:
+    return GL_INT;
+  case type::kUnsignedInt:
+    return GL_UNSIGNED_INT;
+  case type::kHalfFloat:
+    return GL_HALF_FLOAT;
+  case type::kFloat:
+    return GL_FLOAT;
+  case type::kDouble:
+    return GL_DOUBLE;
+  case type::kFixed:
+    return GL_FIXED;
   }
 };
 

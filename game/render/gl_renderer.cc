@@ -1,4 +1,8 @@
 #include "game/render/gl_renderer.h"
+#include "game/render/gl/data.h"
+#include "game/render/gl/draw.h"
+#include "game/render/gl/program.h"
+#include "game/render/gl/texture.h"
 #include "game/render/gl/types.h"
 #include <GL/gl3w.h>
 
