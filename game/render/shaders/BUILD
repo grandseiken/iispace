@@ -12,11 +12,7 @@ xxd(
 
 cc_library(
   name = "shaders",
-  hdrs = ["shaders.h"],
-  srcs = [
-    ":shaders_xxd",
-    "shaders.cc",
-  ],
+  hdrs = [":shaders_xxd"],
   deps = ["@span_lite"],
   visibility = ["//visibility:public"],
 )
