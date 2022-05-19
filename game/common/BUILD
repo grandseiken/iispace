@@ -1,6 +1,9 @@
 cc_library(
-  name = "result",
-  hdrs = ["result.h"],
+  name = "types",
+  hdrs = [
+    "raw_ptr.h",
+    "result.h",
+  ],
   deps = ["@expected"],
   visibility = ["//visibility:public"],
 )

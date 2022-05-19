@@ -1,19 +1,21 @@
 #include "game/io/sdl_io.h"
 #include "external/sdl_gamecontrollerdb/gamecontrollerdb.txt.h"
+#include "game/common/raw_ptr.h"
 #include "game/io/sdl_convert.h"
 #include <GL/gl3w.h>
 #include <SDL.h>
 #include <cstring>
+#include <mutex>
 #include <unordered_map>
 
 namespace ii::io {
 
 struct SdlIoLayer::impl_t {
-  std::unique_ptr<SDL_Window, void (*)(SDL_Window*)> window{nullptr, nullptr};
-  std::unique_ptr<void, void (*)(void*)> gl_context{nullptr, nullptr};
+  raw_ptr<SDL_Window> window;
+  raw_ptr<void> gl_context;
 
   struct controller_data {
-    std::unique_ptr<SDL_GameController, void (*)(SDL_GameController*)> controller{nullptr, nullptr};
+    raw_ptr<SDL_GameController> controller;
     controller::frame frame = {};
   };
   std::vector<controller_data> controllers;
@@ -22,18 +24,8 @@ struct SdlIoLayer::impl_t {
   keyboard::frame keyboard_frame;
 
   SDL_AudioDeviceID audio_device_id;
-  std::unique_ptr<SDL_AudioDeviceID, void (*)(SDL_AudioDeviceID*)> audio_device{nullptr, nullptr};
+  raw_ptr<SDL_AudioDeviceID> audio_device;
   std::function<io::audio_callback> audio_callback;
-
-  void set_audio_callback(const std::function<io::audio_callback>& callback) {
-    if (audio_device_id) {
-      SDL_LockAudioDevice(audio_device_id);
-      audio_callback = callback;
-      SDL_UnlockAudioDevice(audio_device_id);
-    } else {
-      audio_callback = callback;
-    }
-  }
 
   result<void> open_audio_device(const std::optional<std::string>& name) {
     audio_device.reset();
@@ -67,13 +59,13 @@ struct SdlIoLayer::impl_t {
     }
 
     audio_device_id = id;
-    audio_device = std::unique_ptr<SDL_AudioDeviceID, void (*)(SDL_AudioDeviceID*)>{
+    audio_device = make_raw(
         &audio_device_id, +[](SDL_AudioDeviceID* id) {
           if (*id) {
             SDL_CloseAudioDevice(*id);
             *id = 0;
           }
-        }};
+        });
 
     if (obtained_spec.freq != desired_spec.freq || obtained_spec.format != desired_spec.format ||
         obtained_spec.channels != desired_spec.channels) {
@@ -92,14 +84,12 @@ struct SdlIoLayer::impl_t {
       if (!SDL_IsGameController(i)) {
         continue;
       }
-      auto* controller = SDL_GameControllerOpen(i);
+      auto controller = make_raw(SDL_GameControllerOpen(i), &SDL_GameControllerClose);
       if (!controller) {
         continue;
       }
-      std::unique_ptr<SDL_GameController, void (*)(SDL_GameController*)> unique_controller{
-          controller, &SDL_GameControllerClose};
 
-      auto* joystick = SDL_GameControllerGetJoystick(controller);
+      auto* joystick = SDL_GameControllerGetJoystick(controller.get());
       if (!joystick) {
         continue;
       }
@@ -107,7 +97,7 @@ struct SdlIoLayer::impl_t {
       auto id = SDL_JoystickGetDeviceInstanceID(i);
       controller_map.emplace(id, controllers.size());
       auto& data = controllers.emplace_back();
-      data.controller = std::move(unique_controller);
+      data.controller = std::move(controller);
     }
   }
 
@@ -133,20 +123,19 @@ SdlIoLayer::create(const char* title, char gl_major, char gl_minor) {
   auto io_layer = std::make_unique<SdlIoLayer>(access_tag{});
   io_layer->impl_ = std::make_unique<impl_t>();
 
-  auto* window = SDL_CreateWindow(
-      title, 0, 0, 0, 0, SDL_WINDOW_OPENGL | SDL_WINDOW_SHOWN | SDL_WINDOW_FULLSCREEN_DESKTOP);
+  auto flags =
+      SDL_WINDOW_OPENGL | SDL_WINDOW_SHOWN | SDL_WINDOW_BORDERLESS | SDL_WINDOW_FULLSCREEN_DESKTOP;
+  auto window = make_raw(SDL_CreateWindow(title, 0, 0, 0, 0, flags), &SDL_DestroyWindow);
   if (!window) {
     return unexpected(SDL_GetError());
   }
-  io_layer->impl_->window =
-      std::unique_ptr<SDL_Window, void (*)(SDL_Window*)>{window, &SDL_DestroyWindow};
 
-  auto* gl_context = SDL_GL_CreateContext(window);
+  auto gl_context = make_raw(SDL_GL_CreateContext(window.get()), &SDL_GL_DeleteContext);
   if (!gl_context) {
     return unexpected(SDL_GetError());
   }
-  io_layer->impl_->gl_context =
-      std::unique_ptr<void, void (*)(void*)>{gl_context, &SDL_GL_DeleteContext};
+  io_layer->impl_->window = std::move(window);
+  io_layer->impl_->gl_context = std::move(gl_context);
 
   if (gl3wInit()) {
     return unexpected("failed to initialize gl3w");
@@ -157,13 +146,14 @@ SdlIoLayer::create(const char* title, char gl_major, char gl_minor) {
                       " not supported");
   }
 
-  auto* rwops = SDL_RWFromConstMem(external_sdl_gamecontrollerdb_gamecontrollerdb_txt,
-                                   external_sdl_gamecontrollerdb_gamecontrollerdb_txt_len);
+  auto rwops = make_raw(
+      SDL_RWFromConstMem(external_sdl_gamecontrollerdb_gamecontrollerdb_txt,
+                         external_sdl_gamecontrollerdb_gamecontrollerdb_txt_len),
+      +[](SDL_RWops* p) { SDL_RWclose(p); });
   if (!rwops) {
     return unexpected("couldn't read SDL_GameControllerDB");
   }
-  std::unique_ptr<SDL_RWops, int (*)(SDL_RWops*)> unique_rwops{rwops, &SDL_RWclose};
-  if (SDL_GameControllerAddMappingsFromRW(rwops, /* no close */ 0) < 0) {
+  if (SDL_GameControllerAddMappingsFromRW(rwops.get(), /* no close */ 0) < 0) {
     return unexpected(SDL_GetError());
   }
 
@@ -178,6 +168,13 @@ SdlIoLayer::~SdlIoLayer() {
     impl_.reset();
     SDL_Quit();
   }
+}
+
+glm::ivec2 SdlIoLayer::dimensions() const {
+  int w = 0;
+  int h = 0;
+  SDL_GetWindowSize(impl_->window.get(), &w, &h);
+  return {w, h};
 }
 
 void SdlIoLayer::swap_buffers() {
@@ -230,6 +227,7 @@ std::optional<event_type> SdlIoLayer::poll() {
       if (auto key = convert_sdl_key(event.key.keysym.sym); key) {
         auto& e = impl_->keyboard_frame.key_events.emplace_back();
         e.key = *key;
+        e.mods = impl_->keyboard_frame.mods();
         e.down = event.type == SDL_KEYDOWN;
         impl_->keyboard_frame.key(*key) = e.down;
       }
@@ -319,7 +317,8 @@ void SdlIoLayer::input_frame_clear() {
 }
 
 void SdlIoLayer::set_audio_callback(const std::function<audio_callback>& callback) {
-  impl_->set_audio_callback(callback);
+  std::unique_lock lock{audio_callback_lock()};
+  impl_->audio_callback = callback;
 }
 
 void SdlIoLayer::close_audio_device() {
@@ -345,6 +344,18 @@ std::vector<std::string> SdlIoLayer::audio_device_info() const {
     }
   }
   return result;
+}
+
+void SdlIoLayer::lock_audio_callback() {
+  if (impl_->audio_device_id) {
+    SDL_LockAudioDevice(impl_->audio_device_id);
+  }
+}
+
+void SdlIoLayer::unlock_audio_callback() {
+  if (impl_->audio_device_id) {
+    SDL_UnlockAudioDevice(impl_->audio_device_id);
+  }
 }
 
 }  // namespace ii::io

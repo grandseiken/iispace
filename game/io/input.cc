@@ -344,6 +344,16 @@ const char* to_string(key k) {
     return "???";
   }
 }
+
+std::uint8_t frame::mods() const {
+  std::uint8_t result = 0;
+  result |= key(key::kLCtrl) || key(key::kRCtrl) ? mods::kCtrl : 0;
+  result |= key(key::kLShift) || key(key::kRShift) ? mods::kShift : 0;
+  result |= key(key::kLAlt) || key(key::kRAlt) ? mods::kAlt : 0;
+  result |= key(key::kLSuper) || key(key::kRSuper) ? mods::kSuper : 0;
+  return result;
+}
+
 }  // namespace keyboard
 
 namespace mouse {

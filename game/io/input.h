@@ -91,6 +91,14 @@ struct frame {
 }  // namespace controller
 
 namespace keyboard {
+namespace mods {
+enum : std::uint8_t {
+  kCtrl = 1,
+  kShift = 2,
+  kAlt = 4,
+  kSuper = 8,
+};
+}  // namespace mods
 
 enum class key {
   k0,
@@ -233,6 +241,7 @@ const char* to_string(key k);
 struct frame {
   struct key_event {
     bool down = false;
+    std::uint8_t mods = 0;
     keyboard::key key = keyboard::key::kMax;
   };
 
@@ -247,6 +256,8 @@ struct frame {
   bool& key(keyboard::key k) {
     return key_state[static_cast<std::size_t>(k)];
   }
+
+  std::uint8_t mods() const;
 };
 
 }  // namespace keyboard

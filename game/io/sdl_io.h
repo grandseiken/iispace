@@ -16,6 +16,7 @@ public:
   SdlIoLayer(access_tag);
   ~SdlIoLayer();
 
+  glm::ivec2 dimensions() const override;
   void swap_buffers() override;
   std::optional<event_type> poll() override;
 
@@ -29,6 +30,10 @@ public:
   void close_audio_device() override;
   result<void> open_audio_device(std::optional<std::size_t> index) override;
   std::vector<std::string> audio_device_info() const override;
+
+protected:
+  void lock_audio_callback() override;
+  void unlock_audio_callback() override;
 
 private:
   struct impl_t;
