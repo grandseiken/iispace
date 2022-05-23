@@ -635,18 +635,6 @@ void Lib::new_game() {
 #endif
 }
 
-void Lib::take_screenshot() {
-#ifndef PLATFORM_SCORE
-  sf::Texture texture;
-  texture.create(internals_->window.getSize().x, internals_->window.getSize().y);
-  texture.update(internals_->window);
-
-  std::stringstream ss;
-  ss << "screenshot" << time(0) % 10000000 << ".png";
-  texture.copyToImage().saveToFile(ss.str());
-#endif
-}
-
 // Input
 //------------------------------
 Lib::pad_type Lib::get_pad_type(std::int32_t player) const {

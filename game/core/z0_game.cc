@@ -495,14 +495,6 @@ bool z0Game::update() {
     exit_timer_--;
     return !exit_timer_;
   }
-
-  for (std::int32_t i = 0; i < kPlayers; ++i) {
-    if (lib().is_key_held(i, Lib::key::kFire) && lib().is_key_held(i, Lib::key::kBomb) &&
-        lib().is_key_pressed(Lib::key::kMenu)) {
-      lib().take_screenshot();
-      break;
-    }
-  }
   lib().capture_mouse(false);
 
   if (modals_.update(lib_)) {

@@ -101,8 +101,6 @@ public:
   bool play_sound(sound, float volume = 1.f, float pan = 0.f, float repitch = 0.f);
   void set_volume(std::int32_t volume);
 
-  void take_screenshot();
-
   // Wacky colours
   //------------------------------
   void set_colour_cycle(std::int32_t cycle);
