@@ -13,6 +13,8 @@
 
 namespace ii {
 namespace {
+#include "game/render/shaders/legacy_line.f.glsl.h"
+#include "game/render/shaders/legacy_line.v.glsl.h"
 #include "game/render/shaders/legacy_rect.f.glsl.h"
 #include "game/render/shaders/legacy_rect.v.glsl.h"
 #include "game/render/shaders/legacy_text.f.glsl.h"
@@ -32,6 +34,10 @@ struct shader_source {
 #define SHADER_SOURCE(name, type) \
   { #name, type, {game_render_shaders_##name, game_render_shaders_##name##_len }, }
 
+const shader_source
+    kLegacyLineFragmentShader SHADER_SOURCE(legacy_line_f_glsl, gl::shader_type::kFragment);
+const shader_source
+    kLegacyLineVertexShader SHADER_SOURCE(legacy_line_v_glsl, gl::shader_type::kVertex);
 const shader_source
     kLegacyRectFragmentShader SHADER_SOURCE(legacy_rect_f_glsl, gl::shader_type::kFragment);
 const shader_source
@@ -90,23 +96,30 @@ struct GlRenderer::impl_t {
   glm::uvec2 screen_dimensions{0, 0};
   glm::uvec2 render_dimensions{0, 0};
 
+  gl::program legacy_line;
   gl::program legacy_rect;
   gl::program legacy_text;
 
+  gl::buffer line_index;
   gl::buffer quad_index;
   gl::texture console_font;
   gl::sampler pixel_sampler;
 
-  impl_t(gl::program legacy_rect, gl::program legacy_text, gl::texture console_font)
-  : legacy_rect{std::move(legacy_rect)}
+  impl_t(gl::program legacy_line, gl::program legacy_rect, gl::program legacy_text,
+         gl::texture console_font)
+  : legacy_line{std::move(legacy_line)}
+  , legacy_rect{std::move(legacy_rect)}
   , legacy_text{std::move(legacy_text)}
+  , line_index(gl::make_buffer())
   , quad_index(gl::make_buffer())
   , console_font{std::move(console_font)}
   , pixel_sampler{gl::make_sampler(gl::filter::kNearest, gl::filter::kNearest,
                                    gl::texture_wrap::kClampToEdge,
                                    gl::texture_wrap::kClampToEdge)} {
-    static const std::vector<unsigned> indices = {0, 1, 2, 0, 2, 3};
-    gl::buffer_data(quad_index, gl::buffer_usage::kStaticDraw, nonstd::span{indices});
+    static const std::vector<unsigned> line_indices = {0, 1};
+    static const std::vector<unsigned> quad_indices = {0, 1, 2, 0, 2, 3};
+    gl::buffer_data(line_index, gl::buffer_usage::kStaticDraw, nonstd::span{line_indices});
+    gl::buffer_data(quad_index, gl::buffer_usage::kStaticDraw, nonstd::span{quad_indices});
   }
 
   glm::vec2 legacy_render_scale() const {
@@ -120,6 +133,24 @@ struct GlRenderer::impl_t {
     } else {
       return {1.f, screen_aspect / render_aspect};
     }
+  }
+
+  void draw_line_internal(const glm::ivec2& a, const glm::ivec2& b) {
+    using int_t = std::int16_t;
+    const std::vector<int_t> vertex_data = {
+        static_cast<int_t>(a.x),
+        static_cast<int_t>(a.y),
+        static_cast<int_t>(b.x),
+        static_cast<int_t>(b.y),
+    };
+    auto vertex_buffer = gl::make_buffer();
+    gl::buffer_data(vertex_buffer, gl::buffer_usage::kStreamDraw, nonstd::span{vertex_data});
+
+    auto vertex_array = gl::make_vertex_array();
+    gl::bind_vertex_array(vertex_array);
+    auto position_handle = gl::vertex_int_attribute_buffer(
+        vertex_buffer, 0, 2, gl::type_of<int_t>(), 2 * sizeof(int_t), 0);
+    gl::draw_elements(gl::draw_mode::kLines, line_index, gl::type_of<unsigned>(), 2, 0);
   }
 
   void draw_rect_internal(const glm::ivec2& position, const glm::ivec2& size) {
@@ -161,6 +192,12 @@ result<GlRenderer> GlRenderer::create() {
     return unexpected(console_font.error());
   }
 
+  auto legacy_line =
+      compile_program("legacy_line.glsl", kLegacyLineFragmentShader, kLegacyLineVertexShader);
+  if (!legacy_line) {
+    return unexpected(legacy_line.error());
+  }
+
   auto legacy_rect =
       compile_program("legacy_rect.glsl", kLegacyRectFragmentShader, kLegacyRectVertexShader);
   if (!legacy_rect) {
@@ -174,8 +211,8 @@ result<GlRenderer> GlRenderer::create() {
   }
 
   GlRenderer renderer{{}};
-  renderer.impl_ = std::make_unique<impl_t>(std::move(*legacy_rect), std::move(*legacy_text),
-                                            std::move(*console_font));
+  renderer.impl_ = std::make_unique<impl_t>(std::move(*legacy_line), std::move(*legacy_rect),
+                                            std::move(*legacy_text), std::move(*console_font));
   return {std::move(renderer)};
 }
 
@@ -283,7 +320,19 @@ void GlRenderer::render_legacy_text(const glm::ivec2& position, const glm::vec4&
 
 void GlRenderer::render_legacy_line(const glm::vec2& a, const glm::vec2& b,
                                     const glm::vec4& colour) {
-  // TODO
+  const auto& program = impl_->legacy_line;
+  gl::use_program(program);
+  gl::enable_blend(true);
+  gl::blend_function(gl::blend_factor::kSrcAlpha, gl::blend_factor::kOneMinusSrcAlpha);
+
+  auto result =
+      gl::set_uniforms(program, "render_scale", impl_->legacy_render_scale(), "render_dimensions",
+                       impl_->render_dimensions, "line_colour", colour);
+  if (!result) {
+    impl_->status = unexpected(result.error());
+    return;
+  }
+  impl_->draw_line_internal(a, b);
 }
 
 void GlRenderer::render_legacy_rect(const glm::ivec2& lo, const glm::ivec2& hi,

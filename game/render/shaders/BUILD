@@ -3,6 +3,8 @@ load("//deps:xxd.bzl", "xxd")
 xxd(
   name = "shaders_xxd",
   srcs = [
+    "legacy_line.f.glsl",
+    "legacy_line.v.glsl",
     "legacy_rect.f.glsl",
     "legacy_rect.v.glsl",
     "legacy_text.f.glsl",

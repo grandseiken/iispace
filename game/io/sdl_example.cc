@@ -79,6 +79,7 @@ int main() {
     renderer.set_dimensions(io_layer->dimensions(), glm::uvec2{640, 480});
     renderer.clear_screen();
     renderer.render_legacy_rect({0, 0}, {640, 480}, 4, {1.f, 1.f, 1.f, 1.f});
+    renderer.render_legacy_line({0, 0}, {640, 480}, {1.f, 1.f, 1.f, 1.f});
     renderer.render_legacy_text({1, 1}, {1.f, 1.f, 1.f, 1.f}, "HELLO!");
     renderer.render_legacy_text({1, 2}, {1.f, 0.f, 0.f, 1.f}, "THIS TEXT IS RED!");
     renderer.render_legacy_text({1, 3}, {1.f, 0.f, 1.f, 1.f}, "HELLO HELLO HELLO HELLO!");
