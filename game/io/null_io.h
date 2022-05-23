@@ -1,20 +1,18 @@
-#ifndef IISPACE_GAME_IO_SDL_IO_H
-#define IISPACE_GAME_IO_SDL_IO_H
+#ifndef IISPACE_GAME_IO_NULL_IO_H
+#define IISPACE_GAME_IO_NULL_IO_H
 #include "game/common/result.h"
 #include "game/io/io.h"
-#include <memory>
 
 namespace ii::io {
 
-class SdlIoLayer : public IoLayer {
+class NullIoLayer : public IoLayer {
 private:
   struct access_tag {};
 
 public:
-  static result<std::unique_ptr<SdlIoLayer>>
-  create(const char* title, char gl_major, char gl_minor);
-  SdlIoLayer(access_tag);
-  ~SdlIoLayer();
+  static result<std::unique_ptr<NullIoLayer>> create();
+  NullIoLayer(access_tag);
+  ~NullIoLayer();
 
   glm::uvec2 dimensions() const override;
   void swap_buffers() override;
@@ -35,10 +33,6 @@ public:
 protected:
   void lock_audio_callback() override;
   void unlock_audio_callback() override;
-
-private:
-  struct impl_t;
-  std::unique_ptr<impl_t> impl_;
 };
 
 }  // namespace ii::io

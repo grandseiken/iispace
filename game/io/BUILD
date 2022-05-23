@@ -26,6 +26,17 @@ cc_library(
   visibility = ["//visibility:public"],
 )
 
+cc_library(
+  name = "null_io",
+  hdrs = ["null_io.h"],
+  srcs = ["null_io.cc"],
+  deps = [
+    ":io",
+    "//game/common:types",
+  ],
+  visibility = ["//visibility:public"],
+)
+
 cc_binary(
   name = "sdl_example",
   srcs = ["sdl_example.cc"],
