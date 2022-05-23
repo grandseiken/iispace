@@ -16,6 +16,7 @@
 * More powerups
 * More upgrade choices
 * Upgrade rerolls
+* Score multiplier capacity
 
 ### Route upgrades
 * Unlock different paths through the route planner
