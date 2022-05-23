@@ -8,5 +8,7 @@ cc_library(
     "//game/render/shaders",
     "@gl3w",
     "@glm",
+    "@lodepng",
   ],
+  visibility = ["//visibility:public"],
 )

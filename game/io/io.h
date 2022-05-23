@@ -26,8 +26,9 @@ public:
   virtual ~IoLayer() = default;
 
   // Basic window functionality.
-  virtual glm::ivec2 dimensions() const = 0;
+  virtual glm::uvec2 dimensions() const = 0;
   virtual void swap_buffers() = 0;
+  virtual void capture_mouse(bool capture) = 0;
   virtual std::optional<event_type> poll() = 0;
 
   // Input.

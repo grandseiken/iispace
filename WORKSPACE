@@ -69,6 +69,14 @@ http_archive(
 )
 
 http_archive(
+  name = "lodepng",
+  build_file = "@//deps:lodepng.BUILD",
+  sha256 = "67196438467d8ce8a5a3438263f533cd5f06dcd134188fb367fa95acff76c7ed",
+  strip_prefix = "lodepng-5601b8272a6850b7c5d693dd0c0e16da50be8d8d",
+  url = "https://github.com/lvandeve/lodepng/archive/5601b8272a6850b7c5d693dd0c0e16da50be8d8d.zip",
+)
+
+http_archive(
   name = "sfml",
   build_file = "@//deps:sfml.BUILD",
   sha256 = "3e807f7e810d6357ede35acd97615f1fe67b17028ff3d3d946328afb6104ab86",

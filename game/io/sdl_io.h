@@ -2,6 +2,7 @@
 #define IISPACE_GAME_IO_SDL_IO_H
 #include "game/common/result.h"
 #include "game/io/io.h"
+#include <glm/glm.hpp>
 #include <memory>
 
 namespace ii::io {
@@ -16,8 +17,9 @@ public:
   SdlIoLayer(access_tag);
   ~SdlIoLayer();
 
-  glm::ivec2 dimensions() const override;
+  glm::uvec2 dimensions() const override;
   void swap_buffers() override;
+  void capture_mouse(bool capture) override;
   std::optional<event_type> poll() override;
 
   std::vector<controller::info> controller_info() const override;

@@ -1,17 +1,24 @@
 #include "game/io/sdl_io.h"
-#include <GL/gl3w.h>
+#include "game/render/gl_renderer.h"
 #include <cmath>
 #include <iostream>
 #include <limits>
 
 int main() {
-  auto result = ii::io::SdlIoLayer::create("example", /* GL major */ 4, /* GL minor */ 6);
-  if (!result) {
-    std::cerr << "ERROR: " << result.error() << std::endl;
+  auto io_result = ii::io::SdlIoLayer::create("example", /* GL major */ 4, /* GL minor */ 6);
+  if (!io_result) {
+    std::cerr << "ERROR (IO): " << io_result.error() << std::endl;
     return 1;
   }
   std::cout << "Init OK" << std::endl;
-  auto io_layer = std::move(*result);
+  auto io_layer = std::move(*io_result);
+
+  auto renderer_result = ii::GlRenderer::create();
+  if (!renderer_result) {
+    std::cerr << "ERROR (renderer): " << renderer_result.error() << std::endl;
+    return 1;
+  }
+  auto renderer = std::move(*renderer_result);
 
   std::uint64_t sin_wave = 0;
   auto audio_callback = [&sin_wave](std::uint8_t* out_buffer, std::size_t samples) {
@@ -69,7 +76,11 @@ int main() {
       }
     }
 
-    glClear(GL_COLOR_BUFFER_BIT);
+    renderer.set_dimensions(io_layer->dimensions(), glm::uvec2{640, 480});
+    renderer.clear_screen();
+    renderer.render_legacy_text({0, 0}, {1.f, 1.f, 1.f, 1.f}, "HELLO!");
+    renderer.render_legacy_text({0, 1}, {1.f, 0.f, 0.f, 1.f}, "THIS TEXT IS RED!");
+    renderer.render_legacy_text({0, 2}, {1.f, 0.f, 1.f, 1.f}, "HELLO HELLO HELLO HELLO!");
     io_layer->swap_buffers();
 
     auto frame = io_layer->controller_frame(0);

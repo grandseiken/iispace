@@ -7,12 +7,15 @@
 * Unlock special ability
 * Weapon / superweapon / bomb upgrade capacity
 * Increase invulnerability window after hit
+* Decrease collision size
 * Weapon damage?
 
 ### Misc upgrades
 * Refills before boss
 * Refills after boss
 * More powerups
+* More upgrade choices
+* Upgrade rerolls
 
 ### Route upgrades
 * Unlock different paths through the route planner
@@ -41,6 +44,7 @@
 * Bomb disabled
 * Superweapon disabled
 * Enemies explode
+* Ship can't stop moving
 
 ## Run powerups
 * Shield

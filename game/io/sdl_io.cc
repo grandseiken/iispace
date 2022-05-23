@@ -170,15 +170,19 @@ SdlIoLayer::~SdlIoLayer() {
   }
 }
 
-glm::ivec2 SdlIoLayer::dimensions() const {
+glm::uvec2 SdlIoLayer::dimensions() const {
   int w = 0;
   int h = 0;
   SDL_GetWindowSize(impl_->window.get(), &w, &h);
-  return {w, h};
+  return {static_cast<std::uint32_t>(w), static_cast<std::uint32_t>(h)};
 }
 
 void SdlIoLayer::swap_buffers() {
   SDL_GL_SwapWindow(impl_->window.get());
+}
+
+void SdlIoLayer::capture_mouse(bool capture) {
+  SDL_SetWindowGrab(impl_->window.get(), capture ? SDL_TRUE : SDL_FALSE);
 }
 
 std::optional<event_type> SdlIoLayer::poll() {

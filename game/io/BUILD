@@ -29,5 +29,8 @@ cc_library(
 cc_binary(
   name = "sdl_example",
   srcs = ["sdl_example.cc"],
-  deps = [":sdl_io"],
+  deps = [
+    ":sdl_io",
+    "//game/render",
+  ],
 )
