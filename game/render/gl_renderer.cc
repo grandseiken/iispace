@@ -1,12 +1,13 @@
 #include "game/render/gl_renderer.h"
+#include "game/common/raw_ptr.h"
 #include "game/render/gl/data.h"
 #include "game/render/gl/draw.h"
 #include "game/render/gl/program.h"
 #include "game/render/gl/texture.h"
 #include "game/render/gl/types.h"
 #include <GL/gl3w.h>
-#include <lodepng.h>
 #include <nonstd/span.hpp>
+#include <stb_image.h>
 #include <algorithm>
 #include <string>
 #include <vector>
@@ -75,17 +76,22 @@ result<gl::program> compile_program(const char* name, T&&... sources) {
   return result;
 }
 
-result<gl::texture> load_png(const std::string& filename) {
-  std::vector<std::uint8_t> image_bytes;  // 4bpp, RGBARGBA...
-  unsigned width = 0, height = 0;
-  unsigned error = lodepng::decode(image_bytes, width, height, filename);
-  if (error) {
-    return unexpected("Couldn't load " + filename + ": " + std::string{lodepng_error_text(error)});
+result<gl::texture> load_image(const std::string& filename) {
+  int width = 0;
+  int height = 0;
+  int channels = 0;
+  auto image_bytes = make_raw(
+      stbi_load(filename.c_str(), &width, &height, &channels, /* desired channels */ 4),
+      +[](std::uint8_t* p) { stbi_image_free(p); });
+  if (!image_bytes) {
+    return unexpected("Couldn't load " + filename + ": " + std::string{stbi_failure_reason()});
   }
+  glm::uvec2 dimensions{static_cast<unsigned>(width), static_cast<unsigned>(height)};
   auto texture = gl::make_texture();
-  gl::texture_image_2d(texture, 0, gl::internal_format::kRgba8, {width, height},
-                       gl::texture_format::kRgba, gl::type_of<std::byte>(),
-                       nonstd::span<const std::uint8_t>{image_bytes});
+  gl::texture_image_2d(
+      texture, 0, gl::internal_format::kRgba8, dimensions, gl::texture_format::kRgba,
+      gl::type_of<std::byte>(),
+      nonstd::span<const std::uint8_t>{image_bytes.get(), 4 * dimensions.x * dimensions.y});
   return {std::move(texture)};
 }
 
@@ -187,7 +193,7 @@ struct GlRenderer::impl_t {
 };
 
 result<std::unique_ptr<GlRenderer>> GlRenderer::create() {
-  auto console_font = load_png("console.png");
+  auto console_font = load_image("console.png");
   if (!console_font) {
     return unexpected(console_font.error());
   }

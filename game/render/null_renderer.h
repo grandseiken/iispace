@@ -21,7 +21,7 @@ public:
   void clear_screen() override {}
   void set_dimensions(const glm::uvec2&, const glm::uvec2&) override {}
   void render_legacy_text(const glm::ivec2&, const glm::vec4&, std::string_view) override {}
-  void render_legacy_line(const glm::vec2&, const glm::vec2& b, const glm::vec4&) override {}
+  void render_legacy_line(const glm::vec2&, const glm::vec2&, const glm::vec4&) override {}
   void render_legacy_rect(const glm::ivec2&, const glm::ivec2&, std::int32_t,
                           const glm::vec4&) override {}
 };

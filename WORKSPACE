@@ -17,7 +17,7 @@ load("@bazel_skylib//:workspace.bzl", "bazel_skylib_workspace")
 bazel_skylib_workspace()
 
 ################################################################################
-# Dependencies
+# Language feature dependencies
 ################################################################################
 
 http_archive(
@@ -36,6 +36,10 @@ http_archive(
   url = "https://github.com/TartanLlama/expected/archive/v1.0.0.zip",
 )
 
+################################################################################
+# I/O dependencies
+################################################################################
+
 http_archive(
   name = "sdl_windows",
   build_file = "@//deps/sdl:sdl_windows.BUILD",
@@ -53,6 +57,26 @@ http_archive(
 )
 
 http_archive(
+  name = "sfml",
+  build_file = "@//deps:sfml.BUILD",
+  sha256 = "3e807f7e810d6357ede35acd97615f1fe67b17028ff3d3d946328afb6104ab86",
+  strip_prefix = "sfml-2.5.1",
+  url = "https://www.sfml-dev.org/files/SFML-2.5.1-windows-vc15-64-bit.zip",
+)
+
+http_archive(
+  name = "ois",
+  build_file = "@//deps:ois.BUILD",
+  sha256 = "8997ff3d60ef49d4f1291a4100456ac6dddfa0b80eca2414d17c242501917e7e",
+  strip_prefix = "OIS-1.5.1",
+  url = "https://github.com/wgois/OIS/archive/refs/tags/v1.5.1.zip",
+)
+
+################################################################################
+# OpenGL dependencies
+################################################################################
+
+http_archive(
   name = "glm",
   build_file = "@//deps:glm.BUILD",
   sha256 = "4605259c22feadf35388c027f07b345ad3aa3b12631a5a316347f7566c6f1839",
@@ -68,28 +92,32 @@ http_archive(
   url = "https://github.com/skaslev/gl3w/archive/5f8d7fd191ba22ff2b60c1106d7135bb9a335533.zip",
 )
 
+################################################################################
+# Media format dependencies
+################################################################################
+
 http_archive(
-  name = "lodepng",
-  build_file = "@//deps:lodepng.BUILD",
-  sha256 = "67196438467d8ce8a5a3438263f533cd5f06dcd134188fb367fa95acff76c7ed",
-  strip_prefix = "lodepng-5601b8272a6850b7c5d693dd0c0e16da50be8d8d",
-  url = "https://github.com/lvandeve/lodepng/archive/5601b8272a6850b7c5d693dd0c0e16da50be8d8d.zip",
+  name = "stb",
+  build_file = "@//deps:stb.BUILD",
+  sha256 = "e3d0edbecd356506d3d69b87419de2f9d180a98099134c6343177885f6c2cbef",
+  strip_prefix = "stb-af1a5bc352164740c1cc1354942b1c6b72eacb8a",
+  url = "https://github.com/nothings/stb/archive/af1a5bc352164740c1cc1354942b1c6b72eacb8a.zip",
 )
 
 http_archive(
-  name = "sfml",
-  build_file = "@//deps:sfml.BUILD",
-  sha256 = "3e807f7e810d6357ede35acd97615f1fe67b17028ff3d3d946328afb6104ab86",
-  strip_prefix = "sfml-2.5.1",
-  url = "https://www.sfml-dev.org/files/SFML-2.5.1-windows-vc15-64-bit.zip",
+  name = "dr_libs",
+  build_file = "@//deps:dr_libs.BUILD",
+  sha256 = "39ea8c1f9b60a945735dfe4a2e0a2a6bd3bc921619fa7d2612dbc284b68c2419",
+  strip_prefix = "dr_libs-15f37e3ab01654c1a3bc98cff2a9ca64e8296fa9",
+  url = "https://github.com/mackron/dr_libs/archive/15f37e3ab01654c1a3bc98cff2a9ca64e8296fa9.zip",
 )
 
 http_archive(
-  name = "ois",
-  build_file = "@//deps:ois.BUILD",
-  sha256 = "8997ff3d60ef49d4f1291a4100456ac6dddfa0b80eca2414d17c242501917e7e",
-  strip_prefix = "OIS-1.5.1",
-  url = "https://github.com/wgois/OIS/archive/refs/tags/v1.5.1.zip",
+  name = "libsamplerate",
+  build_file = "@//deps:libsamplerate.BUILD",
+  sha256 = "7bd06fabd57027e9c0fa22e6bd873e4916ab96ea132d6cb1b76e7fdd2ade1d20",
+  strip_prefix = "libsamplerate-0.2.2",
+  url = "https://github.com/libsndfile/libsamplerate/archive/refs/tags/0.2.2.zip",
 )
 
 ################################################################################

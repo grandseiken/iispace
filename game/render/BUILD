@@ -19,7 +19,7 @@ cc_library(
     "//game/render/shaders",
     "@gl3w",
     "@glm",
-    "@lodepng",
+    "@stb//:stb_image",
   ],
   visibility = ["//visibility:public"],
 )

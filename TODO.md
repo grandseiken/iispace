@@ -46,6 +46,8 @@
 * Superweapon disabled
 * Enemies explode
 * Ship can't stop moving
+* Limited vision radius
+* Projectile hell
 
 ## Run powerups
 * Shield
@@ -79,7 +81,7 @@
 * Continuous laser shots
 * Cluster bomb on impact
 * Ignore enemy shields
-* Knockback on impact
+* AoE + knockback on impact
 
 ### Superweapon?
 * Penetrating shots, deal many ticks of damage
