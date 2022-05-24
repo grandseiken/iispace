@@ -186,7 +186,7 @@ struct GlRenderer::impl_t {
   }
 };
 
-result<GlRenderer> GlRenderer::create() {
+result<std::unique_ptr<GlRenderer>> GlRenderer::create() {
   auto console_font = load_png("console.png");
   if (!console_font) {
     return unexpected(console_font.error());
@@ -210,15 +210,13 @@ result<GlRenderer> GlRenderer::create() {
     return unexpected(legacy_text.error());
   }
 
-  GlRenderer renderer{{}};
-  renderer.impl_ = std::make_unique<impl_t>(std::move(*legacy_line), std::move(*legacy_rect),
-                                            std::move(*legacy_text), std::move(*console_font));
+  auto renderer = std::make_unique<GlRenderer>(access_tag{});
+  renderer->impl_ = std::make_unique<impl_t>(std::move(*legacy_line), std::move(*legacy_rect),
+                                             std::move(*legacy_text), std::move(*console_font));
   return {std::move(renderer)};
 }
 
 GlRenderer::GlRenderer(access_tag) {}
-GlRenderer::GlRenderer(GlRenderer&&) = default;
-GlRenderer& GlRenderer::operator=(GlRenderer&&) = default;
 GlRenderer::~GlRenderer() = default;
 
 void GlRenderer::clear_screen() {

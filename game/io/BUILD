@@ -29,7 +29,6 @@ cc_library(
 cc_library(
   name = "null_io",
   hdrs = ["null_io.h"],
-  srcs = ["null_io.cc"],
   deps = [
     ":io",
     "//game/common:types",
@@ -41,7 +40,9 @@ cc_binary(
   name = "sdl_example",
   srcs = ["sdl_example.cc"],
   deps = [
+    ":null_io",
     ":sdl_io",
-    "//game/render",
+    "//game/render:gl_renderer",
+    "//game/render:null_renderer",
   ],
 )

@@ -14,7 +14,7 @@ public:
   static result<std::unique_ptr<SdlIoLayer>>
   create(const char* title, char gl_major, char gl_minor);
   SdlIoLayer(access_tag);
-  ~SdlIoLayer();
+  ~SdlIoLayer() override;
 
   glm::uvec2 dimensions() const override;
   void swap_buffers() override;
