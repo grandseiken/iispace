@@ -42,6 +42,7 @@ cc_binary(
   deps = [
     ":null_io",
     ":sdl_io",
+    "//game/mixer",
     "//game/render:gl_renderer",
     "//game/render:null_renderer",
   ],

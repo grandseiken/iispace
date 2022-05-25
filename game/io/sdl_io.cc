@@ -45,10 +45,7 @@ struct SdlIoLayer::impl_t {
       if (impl->audio_callback) {
         impl->audio_callback(out_buffer, samples);
       } else {
-        static const audio_sample_t kZero = 0;
-        for (std::size_t i = 0; i < 2 * samples; ++i) {
-          std::memcpy(out_buffer + i * sizeof(kZero), &kZero, sizeof(kZero));
-        }
+        std::memset(out_buffer, 0, 2 * samples * sizeof(audio_sample_t));
       }
     };
     desired_spec.userdata = this;

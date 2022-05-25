@@ -8,4 +8,5 @@ cc_library(
     "@libsamplerate",
     "@span_lite",
   ],
+  visibility = ["//visibility:public"],
 )

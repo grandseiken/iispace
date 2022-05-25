@@ -1,5 +1,6 @@
 #include "game/io/null_io.h"
 #include "game/io/sdl_io.h"
+#include "game/mixer/mixer.h"
 #include "game/render/gl_renderer.h"
 #include "game/render/null_renderer.h"
 #include <cmath>
@@ -22,22 +23,24 @@ int main() {
   }
   auto renderer = std::move(*renderer_result);
 
-  std::uint64_t sin_wave = 0;
-  auto audio_callback = [&sin_wave](std::uint8_t* out_buffer, std::size_t samples) {
-    for (std::size_t i = 0; i < samples; ++i) {
-      float f = static_cast<float>(sin_wave) * 0.05f;
-      auto x = static_cast<ii::io::audio_sample_t>(
-          std::sin(f) * .5f * std::numeric_limits<ii::io::audio_sample_t>::max());
-      std::memcpy(out_buffer, &x, sizeof(x));
-      std::memcpy(out_buffer + sizeof(x), &x, sizeof(x));
-      out_buffer += 2 * sizeof(x);
-      sin_wave++;
-    }
-  };
+  ii::Mixer mixer{ii::io::kAudioSampleRate, /* enabled */ true};
+  io_layer->set_audio_callback(
+      [&mixer](std::uint8_t* out, std::size_t s) { mixer.audio_callback(out, s); });
+  auto sound = mixer.load_wav_file("PlayerRespawn.wav");
+  if (!sound) {
+    std::cerr << "ERROR (sound): " << sound.error() << std::endl;
+    return 1;
+  }
 
-  io_layer->set_audio_callback(audio_callback);
+  std::uint64_t tick = 0;
   bool running = true;
+  bool pan = true;
   while (running) {
+    if (!(tick++ % 8)) {
+      pan = !pan;
+      auto t = static_cast<float>(tick) * (1.f / 256);
+      mixer.play(*sound, .5f, (pan ? 1.f : -1.f) * std::sin(t), 1.f + .25f * std::sin(t));
+    }
     io_layer->input_frame_clear();
     bool audio_change = false;
     bool controller_change = false;
