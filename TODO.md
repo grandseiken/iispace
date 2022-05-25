@@ -87,6 +87,7 @@
 * Penetrating shots, deal many ticks of damage
 * Large number of additional shots
 * Large explosions on impact
+* Single massive damage screen-penetrating sniper shot
 * Megalaser
 
 ### Special ability?

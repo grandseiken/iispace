@@ -56,22 +56,6 @@ http_archive(
   url = "https://github.com/gabomdq/SDL_GameControllerDB/archive/47afeaa74afeef944f7f895bf67acbfa5d24621a.zip",
 )
 
-http_archive(
-  name = "sfml",
-  build_file = "@//deps:sfml.BUILD",
-  sha256 = "3e807f7e810d6357ede35acd97615f1fe67b17028ff3d3d946328afb6104ab86",
-  strip_prefix = "sfml-2.5.1",
-  url = "https://www.sfml-dev.org/files/SFML-2.5.1-windows-vc15-64-bit.zip",
-)
-
-http_archive(
-  name = "ois",
-  build_file = "@//deps:ois.BUILD",
-  sha256 = "8997ff3d60ef49d4f1291a4100456ac6dddfa0b80eca2414d17c242501917e7e",
-  strip_prefix = "OIS-1.5.1",
-  url = "https://github.com/wgois/OIS/archive/refs/tags/v1.5.1.zip",
-)
-
 ################################################################################
 # OpenGL dependencies
 ################################################################################

@@ -1,5 +1,6 @@
 #ifndef IISPACE_GAME_IO_IO_H
 #define IISPACE_GAME_IO_IO_H
+#include "game/common/result.h"
 #include "game/io/input.h"
 #include <glm/glm.hpp>
 #include <cstddef>

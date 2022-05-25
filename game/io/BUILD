@@ -5,7 +5,10 @@ cc_library(
     "io.h",
   ],
   srcs = ["input.cc"],
-  deps = ["@glm"],
+  deps = [
+    "//game/common:types",
+    "@glm",
+  ],
   visibility = ["//visibility:public"],
 )
 
@@ -34,16 +37,4 @@ cc_library(
     "//game/common:types",
   ],
   visibility = ["//visibility:public"],
-)
-
-cc_binary(
-  name = "sdl_example",
-  srcs = ["sdl_example.cc"],
-  deps = [
-    ":null_io",
-    ":sdl_io",
-    "//game/mixer",
-    "//game/render:gl_renderer",
-    "//game/render:null_renderer",
-  ],
 )

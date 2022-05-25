@@ -116,6 +116,11 @@ SdlIoLayer::create(const char* title, char gl_major, char gl_minor) {
   SDL_GL_SetAttribute(SDL_GL_CONTEXT_PROFILE_MASK, SDL_GL_CONTEXT_PROFILE_CORE);
   SDL_GL_SetAttribute(SDL_GL_CONTEXT_MAJOR_VERSION, gl_major);
   SDL_GL_SetAttribute(SDL_GL_CONTEXT_MINOR_VERSION, gl_minor);
+  SDL_GL_SetAttribute(SDL_GL_RED_SIZE, 8);
+  SDL_GL_SetAttribute(SDL_GL_GREEN_SIZE, 8);
+  SDL_GL_SetAttribute(SDL_GL_BLUE_SIZE, 8);
+  SDL_GL_SetAttribute(SDL_GL_ALPHA_SIZE, 8);
+  SDL_GL_SetAttribute(SDL_GL_DOUBLEBUFFER, 1);
   // TODO: setup multisampling?
 
   auto io_layer = std::make_unique<SdlIoLayer>(access_tag{});
@@ -127,6 +132,7 @@ SdlIoLayer::create(const char* title, char gl_major, char gl_minor) {
   if (!window) {
     return unexpected(SDL_GetError());
   }
+  SDL_ShowCursor(SDL_DISABLE);
 
   auto gl_context = make_raw(SDL_GL_CreateContext(window.get()), &SDL_GL_DeleteContext);
   if (!gl_context) {

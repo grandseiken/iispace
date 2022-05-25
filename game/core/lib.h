@@ -1,14 +1,20 @@
 #ifndef IISPACE_GAME_CORE_LIB_H
 #define IISPACE_GAME_CORE_LIB_H
 #include "game/common/z.h"
-#include <map>
 #include <memory>
+#include <string>
 #include <vector>
-struct Internals;
+
+namespace ii {
+namespace io {
+class IoLayer;
+}  // namespace io
+class Renderer;
+}  // namespace ii
 
 class Lib {
 public:
-  Lib();
+  Lib(bool headless, ii::io::IoLayer& io_layer, ii::Renderer& renderer);
   ~Lib();
 
   // Constants
@@ -74,14 +80,13 @@ public:
 
   // Input
   //------------------------------
+  // TODO: refactor with proper controller join UI and abstract input forward layer for sim state.
   pad_type get_pad_type(std::int32_t player) const;
 
   bool is_key_pressed(std::int32_t player, key k) const;
-  bool is_key_released(std::int32_t player, key k) const;
   bool is_key_held(std::int32_t player, key k) const;
 
   bool is_key_pressed(key k) const;
-  bool is_key_released(key k) const;
   bool is_key_held(key k) const;
 
   vec2 get_move_velocity(std::int32_t player) const;
@@ -107,27 +112,16 @@ public:
   std::int32_t get_colour_cycle() const;
 
 private:
-  std::int32_t cycle_ = 0;
+  bool headless_ = false;
+  ii::io::IoLayer& io_layer_;
+  ii::Renderer& renderer_;
+
+  std::int32_t colour_cycle_ = 0;
   std::int32_t players_ = 1;
-
-  // Internal
-  //------------------------------
-  std::vector<std::vector<bool>> keys_pressed_;
-  std::vector<std::vector<bool>> keys_held_;
-  std::vector<std::vector<bool>> keys_released_;
-
-  bool capture_mouse_ = false;
-  ivec2 mouse_;
-  ivec2 extra_;
-  mutable bool mouse_moving_ = true;
-
-  void load_sounds();
-
-  // Data
-  //------------------------------
-  std::unique_ptr<Internals> internals_;
   std::size_t score_frame_ = 0;
-  friend class Handler;
+
+  struct Internals;
+  std::unique_ptr<Internals> internals_;
 };
 
 #endif

@@ -10,7 +10,11 @@ cc_library(
   srcs = ["modal.cc"],
   deps = [
     "//game/common",
+    "//game/io",
+    "//game/mixer",
     "//game/proto:iispace_proto_cc",
+    "//game/render:renderer",
+    "@span_lite",
   ],
   visibility = ["//visibility:public"],
 )
@@ -26,11 +30,10 @@ cc_binary(
   ],
   deps = [
     ":lib",
+    "//game/io:sdl_io",
     "//game/logic",
     "//game/proto:iispace_proto_cc",
-    "//game/util:gamepad_header",
-    "@ois",
-    "@sfml",
+    "//game/render:gl_renderer",
   ],
   linkopts = select({
     "@bazel_tools//src/conditions:windows": [
@@ -52,7 +55,7 @@ cc_binary(
   name = "score",
   srcs = [
     "lib.cc",
-    "main.cc",
+    "main_score.cc",
     "replay.cc",
     "save.cc",
     "z0_game.cc",
@@ -60,8 +63,9 @@ cc_binary(
   defines = ["PLATFORM_SCORE"],
   deps = [
     ":lib",
+    "//game/io:null_io",
     "//game/logic",
     "//game/proto:iispace_proto_cc",
-    "//game/util:gamepad_header",
+    "//game/render:null_renderer",
   ],
 )

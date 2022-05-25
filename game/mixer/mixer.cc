@@ -71,7 +71,7 @@ resample_mono(const std::vector<float>& samples, double target_source_ratio) {
   src_data.data_in = samples.data();
   src_data.data_out = output.data();
   src_data.src_ratio = target_source_ratio;
-  auto error = src_simple(&src_data, SRC_SINC_BEST_QUALITY, /* channels */ 1);
+  auto error = src_simple(&src_data, SRC_SINC_FASTEST, /* channels */ 1);
   if (error) {
     return unexpected(src_strerror(error));
   }
@@ -148,6 +148,7 @@ void Mixer::play(audio_handle_t handle, float volume, float pan, float pitch) {
 
   auto ratio = static_cast<double>(sample_rate_hz_) / clip.sample_rate_hz;
   ratio /= pitch;
+  // TODO: probably shouldn't resample all at once on the fly. Expensive?
   auto resampled = resample_mono(clip.samples, ratio);
   if (!resampled) {
     return;
