@@ -8,7 +8,7 @@ public:
        std::int32_t cycle = 0, bool explode_on_damage = true);
 
   void set_killed() {
-    game().set_boss_killed(flag_);
+    sim().state().set_boss_killed(flag_);
   }
 
   std::int64_t get_score() {

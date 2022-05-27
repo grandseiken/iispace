@@ -2,6 +2,7 @@
 #define IISPACE_GAME_LOGIC_SHIP_H
 #include "game/core/lib.h"
 #include "game/logic/shape.h"
+#include "game/logic/sim_interface.h"
 #include "game/logic/sim_state.h"
 
 class Ship {
@@ -20,16 +21,12 @@ public:
   Ship(const vec2& position, ship_category type);
   virtual ~Ship();
 
-  void set_game(SimState& game) {
-    game_ = &game;
+  void set_sim(ii::SimInterface& sim) {
+    sim_ = &sim;
   }
 
-  Lib& lib() const {
-    return game_->lib();
-  }
-
-  SimState& game() const {
-    return *game_;
+  ii::SimInterface& sim() const {
+    return *sim_;
   }
 
   void destroy();
@@ -75,24 +72,24 @@ public:
   void render_with_colour(colour_t colour) const;
 
   bool is_on_screen() const {
-    return shape_.centre >= vec2{} && shape_.centre <= vec2{Lib::kWidth, Lib::kHeight};
+    return shape_.centre >= vec2{} && shape_.centre <= vec2{ii::kSimWidth, ii::kSimHeight};
   }
 
   static vec2 get_screen_centre() {
-    return {Lib::kWidth / 2, Lib::kHeight / 2};
+    return {ii::kSimWidth / 2, ii::kSimHeight / 2};
   }
 
   Player* nearest_player() const {
-    return game_->nearest_player(shape_.centre);
+    return sim_->state().nearest_player(shape_.centre);
   }
 
-  void play_sound(Lib::sound sound) {
-    lib().play_sound(sound, 1.f, 2.f * shape_.centre.x.to_float() / Lib::kWidth - 1.f);
+  void play_sound(ii::sound sound) {
+    sim().lib().play_sound(sound, 1.f, 2.f * shape_.centre.x.to_float() / ii::kSimWidth - 1.f);
   }
 
-  void play_sound_random(Lib::sound sound, float pitch = 0.f, float volume = 1.f) {
-    lib().play_sound(sound, volume * (.5f * z::rand_fixed().to_float() + .5f),
-                     2.f * shape_.centre.x.to_float() / Lib::kWidth - 1.f, pitch);
+  void play_sound_random(ii::sound sound, float pitch = 0.f, float volume = 1.f) {
+    sim().lib().play_sound(sound, volume * (.5f * z::rand_fixed().to_float() + .5f),
+                           2.f * shape_.centre.x.to_float() / ii::kSimWidth - 1.f, pitch);
   }
 
   std::int32_t enemy_value() const {
@@ -126,7 +123,7 @@ protected:
   }
 
 private:
-  SimState* game_ = nullptr;
+  ii::SimInterface* sim_ = nullptr;
   ship_category type_ = static_cast<ship_category>(0);
   bool destroy_ = false;
   CompoundShape shape_;

@@ -15,7 +15,7 @@ const fixed kDrbRaySpeed = 10;
 }  // namespace
 
 DeathRayBoss::DeathRayBoss(std::int32_t players, std::int32_t cycle)
-: Boss{{Lib::kWidth * (fixed(3) / 20), -Lib::kHeight},
+: Boss{{ii::kSimWidth * (fixed(3) / 20), -ii::kSimHeight},
        SimState::BOSS_2C,
        kDrbBaseHp,
        players,
@@ -42,13 +42,13 @@ DeathRayBoss::DeathRayBoss(std::int32_t players, std::int32_t cycle)
 
 void DeathRayBoss::update() {
   bool positioned = true;
-  fixed d = pos_ == 0 ? 1 * Lib::kHeight / 4 - shape().centre.y
-      : pos_ == 1     ? 2 * Lib::kHeight / 4 - shape().centre.y
-      : pos_ == 2     ? 3 * Lib::kHeight / 4 - shape().centre.y
-      : pos_ == 3     ? 1 * Lib::kHeight / 8 - shape().centre.y
-      : pos_ == 4     ? 3 * Lib::kHeight / 8 - shape().centre.y
-      : pos_ == 5     ? 5 * Lib::kHeight / 8 - shape().centre.y
-                      : 7 * Lib::kHeight / 8 - shape().centre.y;
+  fixed d = pos_ == 0 ? 1 * ii::kSimHeight / 4 - shape().centre.y
+      : pos_ == 1     ? 2 * ii::kSimHeight / 4 - shape().centre.y
+      : pos_ == 2     ? 3 * ii::kSimHeight / 4 - shape().centre.y
+      : pos_ == 3     ? 1 * ii::kSimHeight / 8 - shape().centre.y
+      : pos_ == 4     ? 3 * ii::kSimHeight / 8 - shape().centre.y
+      : pos_ == 5     ? 5 * ii::kSimHeight / 8 - shape().centre.y
+                      : 7 * ii::kSimHeight / 8 - shape().centre.y;
 
   if (abs(d) > 3) {
     move(vec2{0, d / abs(d)} * kDrbSpeed);
@@ -63,7 +63,7 @@ void DeathRayBoss::update() {
     if (ray_attack_timer_ < 40) {
       vec2 d = (ray_dest_ - shape().centre).normalised();
       spawn_new<BossShot>(shape().centre, d * 10, 0xccccccff);
-      play_sound_random(Lib::sound::kBossAttack);
+      play_sound_random(ii::sound::kBossAttack);
       explosion();
     }
   }
@@ -77,7 +77,7 @@ void DeathRayBoss::update() {
 
       if (timer_ < kDrbTimer * 2 && !(timer_ % 3)) {
         spawn_new<DeathRay>(shape().centre + vec2{100, 0});
-        play_sound_random(Lib::sound::kBossFire);
+        play_sound_random(ii::sound::kBossFire);
       }
       if (!timer_) {
         laser_ = false;
@@ -108,7 +108,7 @@ void DeathRayBoss::update() {
         ray_attack_timer_ = kDrbRayTimer;
         ray_src1_ = arms_[0]->shape().centre;
         ray_src2_ = arms_[1]->shape().centre;
-        play_sound(Lib::sound::kEnemySpawn);
+        play_sound(ii::sound::kEnemySpawn);
       }
     }
     if (timer_ <= 0) {
@@ -122,7 +122,7 @@ void DeathRayBoss::update() {
   if (arms_.empty() && !is_hp_low()) {
     if (shot_timer_ % 8 == 0) {
       shot_queue_.push_back(std::pair<std::int32_t, std::int32_t>((shot_timer_ / 8) % 12, 16));
-      play_sound_random(Lib::sound::kBossFire);
+      play_sound_random(ii::sound::kBossFire);
     }
   }
   if (arms_.empty() && is_hp_low()) {
@@ -130,19 +130,19 @@ void DeathRayBoss::update() {
       for (std::int32_t i = 1; i < 16; i += 3) {
         shot_queue_.push_back(std::pair<std::int32_t, std::int32_t>(i, 16));
       }
-      play_sound_random(Lib::sound::kBossFire);
+      play_sound_random(ii::sound::kBossFire);
     }
     if (shot_timer_ % 48 == 16) {
       for (std::int32_t i = 2; i < 12; i += 3) {
         shot_queue_.push_back(std::pair<std::int32_t, std::int32_t>(i, 16));
       }
-      play_sound_random(Lib::sound::kBossFire);
+      play_sound_random(ii::sound::kBossFire);
     }
     if (shot_timer_ % 48 == 32) {
       for (std::int32_t i = 3; i < 12; i += 3) {
         shot_queue_.push_back(std::pair<std::int32_t, std::int32_t>(i, 16));
       }
-      play_sound_random(Lib::sound::kBossFire);
+      play_sound_random(ii::sound::kBossFire);
     }
     if (shot_timer_ % 128 == 0) {
       ray_attack_timer_ = kDrbRayTimer;
@@ -150,7 +150,7 @@ void DeathRayBoss::update() {
       vec2 d2 = vec2::from_polar(z::rand_fixed() * 2 * fixed_c::pi, 110);
       ray_src1_ = shape().centre + d1;
       ray_src2_ = shape().centre + d2;
-      play_sound(Lib::sound::kEnemySpawn);
+      play_sound(ii::sound::kEnemySpawn);
     }
   }
   if (arms_.empty()) {
@@ -158,15 +158,15 @@ void DeathRayBoss::update() {
     if (arm_timer_ >= kDrbArmRTimer) {
       arm_timer_ = 0;
       if (!is_hp_low()) {
-        std::int32_t players =
-            game().get_lives() ? game().players().size() : game().alive_players();
+        std::int32_t players = sim().state().get_lives() ? sim().state().players().size()
+                                                         : sim().state().alive_players();
         std::int32_t hp =
             (kDrbArmHp * (7 * fixed_c::tenth + 3 * fixed_c::tenth * players)).to_int();
         auto arm0 = std::make_unique<DeathArm>(this, true, hp);
         auto arm1 = std::make_unique<DeathArm>(this, false, hp);
         arms_.push_back(arm0.get());
         arms_.push_back(arm1.get());
-        play_sound(Lib::sound::kEnemySpawn);
+        play_sound(ii::sound::kEnemySpawn);
         spawn(std::move(arm0));
         spawn(std::move(arm1));
       }
@@ -198,12 +198,12 @@ void DeathRayBoss::render() const {
     fvec2 d = to_float(ray_src1_) - pos;
     d *= static_cast<float>(i - 40) / (kDrbRayTimer - 40);
     Polygon s{{}, 10, 6, 0x999999ff, 0, 0, Polygon::T::kPolystar};
-    s.render(lib(), d + pos, 0);
+    s.render(sim(), d + pos, 0);
 
     d = to_float(ray_src2_) - pos;
     d *= static_cast<float>(i - 40) / (kDrbRayTimer - 40);
     Polygon s2{{}, 10, 6, 0x999999ff, 0, 0, Polygon::T::kPolystar};
-    s2.render(lib(), d + pos, 0);
+    s2.render(sim(), d + pos, 0);
   }
 }
 
@@ -228,7 +228,7 @@ DeathRay::DeathRay(const vec2& position) : Enemy{position, kShipNone, 0} {
 
 void DeathRay::update() {
   move(vec2{1, 0} * kDrbRaySpeed);
-  if (shape().centre.x > Lib::kWidth + 20) {
+  if (shape().centre.x > ii::kSimWidth + 20) {
     destroy();
   }
 }
@@ -245,12 +245,12 @@ DeathArm::DeathArm(DeathRayBoss* boss, bool top, std::int32_t hp)
   add_new_shape<Polygon>(vec2{}, 20, 4, 0x33ff99ff, 0, 0);
   add_new_shape<Polygon>(vec2{}, 18, 4, 0x228855ff, 0, 0);
   set_bounding_width(60);
-  set_destroy_sound(Lib::sound::kPlayerDestroy);
+  set_destroy_sound(ii::sound::kPlayerDestroy);
 }
 
 void DeathArm::update() {
   if (timer_ % (kDrbArmATimer / 2) == kDrbArmATimer / 4) {
-    play_sound_random(Lib::sound::kBossFire);
+    play_sound_random(ii::sound::kBossFire);
     target_ = nearest_player()->shape().centre;
     shots_ = 16;
   }
@@ -292,7 +292,7 @@ void DeathArm::update() {
     timer_ = 0;
     attacking_ = true;
     dir_ = {};
-    play_sound(Lib::sound::kBossAttack);
+    play_sound(ii::sound::kBossAttack);
   }
   shape().centre = boss_->shape().centre + vec2{80, top_ ? 80 : -80};
 

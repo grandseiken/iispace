@@ -67,7 +67,7 @@ void PauseModal::update(Lib& lib) {
     selection_ = std::min(2, selection_ + 1);
   }
   if (t != selection_) {
-    lib.play_sound(Lib::sound::kMenuClick);
+    lib.play_sound(ii::sound::kMenuClick);
   }
 
   bool accept = lib.is_key_pressed(Lib::key::kAccept) || lib.is_key_pressed(Lib::key::kMenu);
@@ -82,12 +82,12 @@ void PauseModal::update(Lib& lib) {
     lib.set_volume(settings_.volume.to_int());
   }
   if (accept) {
-    lib.play_sound(Lib::sound::kMenuAccept);
+    lib.play_sound(ii::sound::kMenuAccept);
   }
 
   if (lib.is_key_pressed(Lib::key::kCancel)) {
     quit();
-    lib.play_sound(Lib::sound::kMenuAccept);
+    lib.play_sound(ii::sound::kMenuAccept);
   }
 
   fixed v = settings_.volume;
@@ -100,7 +100,7 @@ void PauseModal::update(Lib& lib) {
   if (v != settings_.volume) {
     lib.set_volume(settings_.volume.to_int());
     settings_.save();
-    lib.play_sound(Lib::sound::kMenuClick);
+    lib.play_sound(ii::sound::kMenuClick);
   }
 }
 
@@ -139,23 +139,24 @@ HighScoreModal::HighScoreModal(SaveData& save, GameModal& game, const SimState::
 void HighScoreModal::update(Lib& lib) {
   ++timer_;
 
-#ifdef PLATFORM_SCORE
-  std::cout << results_.seed << "\n"
-            << results_.players.size() << "\n"
-            << (results_.mode == game_mode::kBoss) << "\n"
-            << (results_.mode == game_mode::kHard) << "\n"
-            << (results_.mode == game_mode::kFast) << "\n"
-            << (results_.mode == game_mode::kWhat) << "\n"
-            << get_score() << "\n"
-            << std::flush;
-  throw score_finished{};
-#endif
+  // TODO: remove exceptions.
+  if (lib.headless()) {
+    std::cout << results_.seed << "\n"
+              << results_.players.size() << "\n"
+              << (results_.mode == game_mode::kBoss) << "\n"
+              << (results_.mode == game_mode::kHard) << "\n"
+              << (results_.mode == game_mode::kFast) << "\n"
+              << (results_.mode == game_mode::kWhat) << "\n"
+              << get_score() << "\n"
+              << std::flush;
+    throw score_finished{};
+  }
 
   if (!is_high_score()) {
     if (lib.is_key_pressed(Lib::key::kMenu)) {
       game_.sim_state().write_replay("untitled", get_score());
       save_.save();
-      lib.play_sound(Lib::sound::kMenuAccept);
+      lib.play_sound(ii::sound::kMenuAccept);
       quit();
     }
     return;
@@ -165,12 +166,12 @@ void HighScoreModal::update(Lib& lib) {
   if (lib.is_key_pressed(Lib::key::kAccept) && enter_name_.length() < HighScores::kMaxNameLength) {
     enter_name_ += kAllowedChars.substr(enter_char_, 1);
     enter_time_ = 0;
-    lib.play_sound(Lib::sound::kMenuClick);
+    lib.play_sound(ii::sound::kMenuClick);
   }
   if (lib.is_key_pressed(Lib::key::kCancel) && enter_name_.length() > 0) {
     enter_name_ = enter_name_.substr(0, enter_name_.length() - 1);
     enter_time_ = 0;
-    lib.play_sound(Lib::sound::kMenuClick);
+    lib.play_sound(ii::sound::kMenuClick);
   }
   if (lib.is_key_pressed(Lib::key::kRight) || lib.is_key_pressed(Lib::key::kLeft)) {
     enter_r_ = 0;
@@ -182,16 +183,16 @@ void HighScoreModal::update(Lib& lib) {
   if (lib.is_key_pressed(Lib::key::kRight) ||
       (lib.is_key_held(Lib::key::kRight) && enter_r_ % 5 == 0 && enter_r_ > 5)) {
     enter_char_ = (enter_char_ + 1) % kAllowedChars.length();
-    lib.play_sound(Lib::sound::kMenuClick);
+    lib.play_sound(ii::sound::kMenuClick);
   }
   if (lib.is_key_pressed(Lib::key::kLeft) ||
       (lib.is_key_held(Lib::key::kLeft) && enter_r_ % 5 == 0 && enter_r_ > 5)) {
     enter_char_ = (enter_char_ + kAllowedChars.length() - 1) % kAllowedChars.length();
-    lib.play_sound(Lib::sound::kMenuClick);
+    lib.play_sound(ii::sound::kMenuClick);
   }
 
   if (lib.is_key_pressed(Lib::key::kMenu)) {
-    lib.play_sound(Lib::sound::kMenuAccept);
+    lib.play_sound(ii::sound::kMenuAccept);
     save_.high_scores.add_score(results_.mode, results_.players.size() - 1, enter_name_,
                                 get_score());
     game_.sim_state().write_replay(enter_name_, get_score());
@@ -337,7 +338,7 @@ void GameModal::update(Lib& lib) {
     add(std::make_unique<HighScoreModal>(save_, *this, state_->get_results()));
     *frame_count_ = 1;
     if (pause_output_ != PauseModal::kEndGame) {
-      lib.play_sound(Lib::sound::kMenuAccept);
+      lib.play_sound(ii::sound::kMenuAccept);
     }
     quit();
     return;
@@ -346,7 +347,7 @@ void GameModal::update(Lib& lib) {
   if (lib.is_key_pressed(Lib::key::kMenu)) {
     lib.capture_mouse(false);
     add(std::make_unique<PauseModal>(&pause_output_, settings_));
-    lib.play_sound(Lib::sound::kMenuAccept);
+    lib.play_sound(ii::sound::kMenuAccept);
     return;
   }
   lib.capture_mouse(true);
@@ -358,14 +359,14 @@ void GameModal::update(Lib& lib) {
   }
   if (controllers < controllers_connected_ && !controllers_dialog_ && !results.is_replay) {
     controllers_dialog_ = true;
-    lib.play_sound(Lib::sound::kMenuAccept);
+    lib.play_sound(ii::sound::kMenuAccept);
   }
   controllers_connected_ = controllers;
 
   if (controllers_dialog_) {
     if (lib.is_key_pressed(Lib::key::kMenu) || lib.is_key_pressed(Lib::key::kAccept)) {
       controllers_dialog_ = false;
-      lib.play_sound(Lib::sound::kMenuAccept);
+      lib.play_sound(ii::sound::kMenuAccept);
       for (std::size_t i = 0; i < results.players.size(); ++i) {
         lib.rumble(i, 10);
       }
@@ -475,9 +476,9 @@ void z0Game::run() {
     }
 
     for (std::size_t i = 0; i < f; ++i) {
-#ifdef PLATFORM_SCORE
-      frame_count_ = 16384;
-#endif
+      if (lib_.headless()) {
+        frame_count_ = 16384;
+      }
       if (lib_.begin_frame() || update()) {
         lib_.end_frame();
         return;
@@ -514,7 +515,7 @@ bool z0Game::update() {
                                               static_cast<std::int32_t>(menu_select_) + 1));
   }
   if (t != menu_select_) {
-    lib().play_sound(Lib::sound::kMenuClick);
+    lib().play_sound(ii::sound::kMenuClick);
   }
 
   if (menu_select_ == menu::kPlayers) {
@@ -529,7 +530,7 @@ bool z0Game::update() {
       player_select_ = 1 + player_select_ % kPlayers;
     }
     if (t != player_select_) {
-      lib().play_sound(Lib::sound::kMenuClick);
+      lib().play_sound(ii::sound::kMenuClick);
     }
     lib().set_player_count(player_select_);
   }
@@ -545,7 +546,7 @@ bool z0Game::update() {
                                                      static_cast<std::int32_t>(mode_select_) + 1));
     }
     if (t != mode_select_) {
-      lib().play_sound(Lib::sound::kMenuClick);
+      lib().play_sound(ii::sound::kMenuClick);
     }
   }
 
@@ -563,7 +564,7 @@ bool z0Game::update() {
                                               player_select_, mode_unlocked() >= game_mode::kFast));
     }
     if (menu_select_ != menu::kPlayers) {
-      lib().play_sound(Lib::sound::kMenuAccept);
+      lib().play_sound(ii::sound::kMenuAccept);
     }
   }
 

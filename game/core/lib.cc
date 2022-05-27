@@ -159,7 +159,7 @@ struct Lib::Internals {
     float pan = 0.f;
     float pitch = 0.f;
   };
-  std::unordered_map<Lib::sound, sound_aggregation> sounds;
+  std::unordered_map<ii::sound, sound_aggregation> sounds;
 
   player_input assign_input(std::uint32_t player_number, std::uint32_t player_count) {
     player_input input;
@@ -226,7 +226,7 @@ Lib::Lib(bool headless, ii::io::Filesystem& fs, ii::io::IoLayer& io_layer,
     mixer->audio_callback(p, k);
   });
 
-  auto use_sound = [&](sound s, const std::string& filename) {
+  auto use_sound = [&](ii::sound s, const std::string& filename) {
     if (headless_) {
       return;
     }
@@ -241,21 +241,21 @@ Lib::Lib(bool headless, ii::io::Filesystem& fs, ii::io::IoLayer& io_layer,
       std::cerr << "Couldn't load sound " + filename + ": " << result.error() << std::endl;
     }
   };
-  use_sound(sound::kPlayerFire, "PlayerFire.wav");
-  use_sound(sound::kMenuClick, "MenuClick.wav");
-  use_sound(sound::kMenuAccept, "MenuAccept.wav");
-  use_sound(sound::kPowerupLife, "PowerupLife.wav");
-  use_sound(sound::kPowerupOther, "PowerupOther.wav");
-  use_sound(sound::kEnemyHit, "EnemyHit.wav");
-  use_sound(sound::kEnemyDestroy, "EnemyDestroy.wav");
-  use_sound(sound::kEnemyShatter, "EnemyShatter.wav");
-  use_sound(sound::kEnemySpawn, "EnemySpawn.wav");
-  use_sound(sound::kBossAttack, "BossAttack.wav");
-  use_sound(sound::kBossFire, "BossFire.wav");
-  use_sound(sound::kPlayerRespawn, "PlayerRespawn.wav");
-  use_sound(sound::kPlayerDestroy, "PlayerDestroy.wav");
-  use_sound(sound::kPlayerShield, "PlayerShield.wav");
-  use_sound(sound::kExplosion, "Explosion.wav");
+  use_sound(ii::sound::kPlayerFire, "PlayerFire.wav");
+  use_sound(ii::sound::kMenuClick, "MenuClick.wav");
+  use_sound(ii::sound::kMenuAccept, "MenuAccept.wav");
+  use_sound(ii::sound::kPowerupLife, "PowerupLife.wav");
+  use_sound(ii::sound::kPowerupOther, "PowerupOther.wav");
+  use_sound(ii::sound::kEnemyHit, "EnemyHit.wav");
+  use_sound(ii::sound::kEnemyDestroy, "EnemyDestroy.wav");
+  use_sound(ii::sound::kEnemyShatter, "EnemyShatter.wav");
+  use_sound(ii::sound::kEnemySpawn, "EnemySpawn.wav");
+  use_sound(ii::sound::kBossAttack, "BossAttack.wav");
+  use_sound(ii::sound::kBossFire, "BossFire.wav");
+  use_sound(ii::sound::kPlayerRespawn, "PlayerRespawn.wav");
+  use_sound(ii::sound::kPlayerDestroy, "PlayerDestroy.wav");
+  use_sound(ii::sound::kPlayerShield, "PlayerShield.wav");
+  use_sound(ii::sound::kExplosion, "Explosion.wav");
 
   clear_screen();
 }
@@ -482,7 +482,7 @@ void Lib::stop_rumble() {
   // TODO.
 }
 
-void Lib::play_sound(sound s, float volume, float pan, float repitch) {
+void Lib::play_sound(ii::sound s, float volume, float pan, float repitch) {
   auto& aggregation = internals_->sounds[s];
   ++aggregation.count;
   aggregation.volume += volume;

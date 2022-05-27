@@ -1,6 +1,5 @@
 #include "game/logic/sim_state.h"
 #include "game/core/save.h"
-#include "game/io/file/filesystem.h"
 #include "game/logic/boss.h"
 #include "game/logic/boss/chaser.h"
 #include "game/logic/overmind.h"
@@ -146,39 +145,40 @@ void SimState::render(Lib& lib) const {
 
     if (v.x < -4) {
       auto a = static_cast<std::int32_t>(
-          .5f + float{0x1} + float{0x9} * std::max(v.x + Lib::kWidth, 0.f) / Lib::kWidth);
+          .5f + float{0x1} + float{0x9} * std::max(v.x + ii::kSimWidth, 0.f) / ii::kSimWidth);
       a |= a << 4;
       a = (a << 8) | (a << 16) | (a << 24) | 0x66;
       lib.render_line(fvec2{0.f, v.y}, fvec2{6, v.y - 3}, a);
       lib.render_line(fvec2{6.f, v.y - 3}, fvec2{6, v.y + 3}, a);
       lib.render_line(fvec2{6.f, v.y + 3}, fvec2{0, v.y}, a);
     }
-    if (v.x >= Lib::kWidth + 4) {
+    if (v.x >= ii::kSimWidth + 4) {
       auto a = static_cast<std::int32_t>(
-          .5f + float{0x1} + float{0x9} * std::max(2 * Lib::kWidth - v.x, 0.f) / Lib::kWidth);
+          .5f + float{0x1} + float{0x9} * std::max(2 * ii::kSimWidth - v.x, 0.f) / ii::kSimWidth);
       a |= a << 4;
       a = (a << 8) | (a << 16) | (a << 24) | 0x66;
-      lib.render_line(fvec2{float{Lib::kWidth}, v.y}, fvec2{Lib::kWidth - 6.f, v.y - 3}, a);
-      lib.render_line(fvec2{Lib::kWidth - 6, v.y - 3}, fvec2{Lib::kWidth - 6.f, v.y + 3}, a);
-      lib.render_line(fvec2{Lib::kWidth - 6, v.y + 3}, fvec2{float{Lib::kWidth}, v.y}, a);
+      lib.render_line(fvec2{float{ii::kSimWidth}, v.y}, fvec2{ii::kSimWidth - 6.f, v.y - 3}, a);
+      lib.render_line(fvec2{ii::kSimWidth - 6, v.y - 3}, fvec2{ii::kSimWidth - 6.f, v.y + 3}, a);
+      lib.render_line(fvec2{ii::kSimWidth - 6, v.y + 3}, fvec2{float{ii::kSimWidth}, v.y}, a);
     }
     if (v.y < -4) {
       auto a = static_cast<std::int32_t>(
-          .5f + float{0x1} + float{0x9} * std::max(v.y + Lib::kHeight, 0.f) / Lib::kHeight);
+          .5f + float{0x1} + float{0x9} * std::max(v.y + ii::kSimHeight, 0.f) / ii::kSimHeight);
       a |= a << 4;
       a = (a << 8) | (a << 16) | (a << 24) | 0x66;
       lib.render_line(fvec2{v.x, 0.f}, fvec2{v.x - 3, 6.f}, a);
       lib.render_line(fvec2{v.x - 3, 6.f}, fvec2{v.x + 3, 6.f}, a);
       lib.render_line(fvec2{v.x + 3, 6.f}, fvec2{v.x, 0.f}, a);
     }
-    if (v.y >= Lib::kHeight + 4) {
+    if (v.y >= ii::kSimHeight + 4) {
       auto a = static_cast<std::int32_t>(
-          .5f + float{0x1} + float{0x9} * std::max(2 * Lib::kHeight - v.y, 0.f) / Lib::kHeight);
+          .5f + float{0x1} + float{0x9} * std::max(2 * ii::kSimHeight - v.y, 0.f) / ii::kSimHeight);
       a |= a << 4;
       a = (a << 8) | (a << 16) | (a << 24) | 0x66;
-      lib.render_line(fvec2{v.x, float{Lib::kHeight}}, fvec2{v.x - 3, Lib::kHeight - 6.f}, a);
-      lib.render_line(fvec2{v.x - 3, Lib::kHeight - 6.f}, fvec2{v.x + 3, Lib::kHeight - 6.f}, a);
-      lib.render_line(fvec2{v.x + 3, Lib::kHeight - 6.f}, fvec2{v.x, float{Lib::kHeight}}, a);
+      lib.render_line(fvec2{v.x, float{ii::kSimHeight}}, fvec2{v.x - 3, ii::kSimHeight - 6.f}, a);
+      lib.render_line(fvec2{v.x - 3, ii::kSimHeight - 6.f}, fvec2{v.x + 3, ii::kSimHeight - 6.f},
+                      a);
+      lib.render_line(fvec2{v.x + 3, ii::kSimHeight - 6.f}, fvec2{v.x, float{ii::kSimHeight}}, a);
     }
   }
 }
@@ -198,7 +198,7 @@ game_mode SimState::mode() const {
 }
 
 void SimState::add_ship(std::unique_ptr<Ship> ship) {
-  ship->set_game(*this);
+  ship->set_sim(interface_);
   if (ship->type() & Ship::kShipEnemy) {
     overmind_->on_enemy_create(*ship);
   }
@@ -380,6 +380,7 @@ SimState::SimState(Lib& lib, SaveData& save, std::int32_t* frame_count, Replay&&
                    bool replay_recording)
 : lib_{lib}
 , save_{save}
+, interface_{lib, *this}
 , frame_count_{frame_count}
 , replay_{replay}
 , replay_recording_{replay_recording} {
@@ -397,7 +398,7 @@ SimState::SimState(Lib& lib, SaveData& save, std::int32_t* frame_count, Replay&&
 
   Stars::clear();
   for (std::int32_t i = 0; i < replay_.replay.players(); ++i) {
-    vec2 v((1 + i) * Lib::kWidth / (1 + replay_.replay.players()), Lib::kHeight / 2);
+    vec2 v((1 + i) * ii::kSimWidth / (1 + replay_.replay.players()), ii::kSimHeight / 2);
     auto p = std::make_unique<Player>(*input_, v, i);
     player_list_.push_back(p.get());
     add_ship(std::move(p));

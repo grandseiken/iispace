@@ -1,5 +1,6 @@
 #include "game/logic/stars.h"
 #include "game/core/lib.h"
+#include "game/logic/sim_interface.h"
 
 namespace {
 const std::uint32_t kTimer = 500;
@@ -77,8 +78,8 @@ void Stars::create_star() {
   std::int32_t edge = z::rand_int(4);
   float ratio = z::rand_fixed().to_float();
 
-  star->position.x = edge < 2 ? ratio * Lib::kWidth : edge == 2 ? -16 : 16 + Lib::kWidth;
-  star->position.y = edge >= 2 ? ratio * Lib::kHeight : edge == 0 ? -16 : 16 + Lib::kHeight;
+  star->position.x = edge < 2 ? ratio * ii::kSimWidth : edge == 2 ? -16 : 16 + ii::kSimWidth;
+  star->position.y = edge >= 2 ? ratio * ii::kSimHeight : edge == 0 ? -16 : 16 + ii::kSimHeight;
 
   star->colour = t == type::kDotStar ? (z::rand_int(2) ? 0x222222ff : 0x333333ff)
       : t == type::kFarStar          ? (z::rand_int(2) ? 0x222222ff : 0x111111ff)

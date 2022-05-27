@@ -1,5 +1,5 @@
 cc_library(
-  name = "lib",
+  name = "headers",
   hdrs = [
     "lib.h",
     "modal.h",
@@ -9,33 +9,31 @@ cc_library(
   ],
   srcs = ["modal.cc"],
   deps = [
+    "//game/common:types",
     "//game/common",
-    "//game/io",
-    "//game/io/file:filesystem",
-    "//game/mixer",
+    "//game/mixer:sound",
     "//game/proto:iispace_proto_cc",
-    "//game/render:renderer",
     "@span_lite",
   ],
   visibility = ["//visibility:public"],
 )
 
-cc_binary(
-  name = "iispace",
+cc_library(
+  name = "core",
   srcs = [
     "lib.cc",
-    "main.cc",
     "replay.cc",
     "save.cc",
     "z0_game.cc",
   ],
   deps = [
-    ":lib",
-    "//game/io:sdl_io",
-    "//game/io/file:std_filesystem",
+    ":headers",
+    "//game/io",
+    "//game/io/file:filesystem",
     "//game/logic",
+    "//game/mixer",
     "//game/proto:iispace_proto_cc",
-    "//game/render:gl_renderer",
+    "//game/render:renderer",
   ],
   linkopts = select({
     "@bazel_tools//src/conditions:windows": [
@@ -51,24 +49,5 @@ cc_binary(
       "-DEFAULTLIB:xinput.lib",
     ],
   }),
-)
-
-cc_binary(
-  name = "score",
-  srcs = [
-    "lib.cc",
-    "main_score.cc",
-    "replay.cc",
-    "save.cc",
-    "z0_game.cc",
-  ],
-  defines = ["PLATFORM_SCORE"],
-  deps = [
-    ":lib",
-    "//game/io:null_io",
-    "//game/io/file:std_filesystem",
-    "//game/logic",
-    "//game/proto:iispace_proto_cc",
-    "//game/render:null_renderer",
-  ],
+  visibility = ["//visibility:public"],
 )

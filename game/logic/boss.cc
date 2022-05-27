@@ -61,15 +61,17 @@ void Boss::damage(std::int32_t damage, bool magic, Player* source) {
     damaged_ = 1;
   }
 
-  actual_damage *=
-      60 / (1 + (game().get_lives() ? game().players().size() : game().alive_players()));
+  actual_damage *= 60 /
+      (1 +
+       (sim().state().get_lives() ? sim().state().players().size()
+                                  : sim().state().alive_players()));
   hp_ -= actual_damage;
 
   if (hp_ <= 0 && !is_destroyed()) {
     destroy();
     on_destroy();
   } else if (!is_destroyed()) {
-    play_sound_random(Lib::sound::kEnemyShatter);
+    play_sound_random(ii::sound::kEnemyShatter);
   }
 }
 
@@ -87,7 +89,7 @@ void Boss::render(bool hp_bar) const {
     return;
   }
   for (std::size_t i = 0; i < shapes().size(); ++i) {
-    shapes()[i]->render(lib(), to_float(shape().centre), shape().rotation().to_float(),
+    shapes()[i]->render(sim(), to_float(shape().centre), shape().rotation().to_float(),
                         static_cast<std::int32_t>(i) < ignore_damage_colour_ ? 0xffffffff : 0);
   }
   damaged_--;
@@ -99,13 +101,13 @@ void Boss::render_hp_bar() const {
   }
 
   if (show_hp_) {
-    game().render_hp_bar(static_cast<float>(hp_) / max_hp_);
+    sim().state().render_hp_bar(static_cast<float>(hp_) / max_hp_);
   }
 }
 
 void Boss::on_destroy() {
   set_killed();
-  for (const auto& ship : game().all_ships(kShipEnemy)) {
+  for (const auto& ship : sim().state().all_ships(kShipEnemy)) {
     if (ship != this) {
       ship->damage(Player::kBombDamage, false, 0);
     }
@@ -124,14 +126,14 @@ void Boss::on_destroy() {
     n += i;
   }
   for (std::int32_t i = 0; i < kPlayers; ++i) {
-    lib().rumble(i, 25);
+    sim().lib().rumble(i, 25);
   }
-  play_sound(Lib::sound::kExplosion);
+  play_sound(ii::sound::kExplosion);
 
-  for (const auto& player : game().players()) {
+  for (const auto& player : sim().state().players()) {
     Player* p = (Player*)player;
     if (!p->is_killed() && get_score() > 0) {
-      p->add_score(get_score() / game().alive_players());
+      p->add_score(get_score() / sim().state().alive_players());
     }
   }
 }

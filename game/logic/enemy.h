@@ -18,7 +18,7 @@ public:
     return hp_;
   }
 
-  void set_destroy_sound(Lib::sound sound) {
+  void set_destroy_sound(ii::sound sound) {
     destroy_sound_ = sound;
   }
 
@@ -30,7 +30,7 @@ private:
   std::int32_t hp_ = 0;
   std::int64_t score_ = 0;
   mutable std::int32_t damaged_ = 0;
-  Lib::sound destroy_sound_ = Lib::sound::kEnemyDestroy;
+  ii::sound destroy_sound_ = ii::sound::kEnemyDestroy;
 };
 
 class Follow : public Enemy {

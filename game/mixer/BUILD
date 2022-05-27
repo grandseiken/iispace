@@ -10,3 +10,9 @@ cc_library(
   ],
   visibility = ["//visibility:public"],
 )
+
+cc_library(
+  name = "sound",
+  hdrs = ["sound.h"],
+  visibility = ["//visibility:public"],
+)

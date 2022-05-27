@@ -25,13 +25,13 @@ bool Ship::check_point(const vec2& v, std::int32_t category) const {
 
 void Ship::render() const {
   for (const auto& shape : shape_.shapes()) {
-    shape->render(lib(), to_float(shape_.centre), shape_.rotation().to_float());
+    shape->render(sim(), to_float(shape_.centre), shape_.rotation().to_float());
   }
 }
 
 void Ship::render_with_colour(colour_t colour) const {
   for (const auto& shape : shape_.shapes()) {
-    shape->render(lib(), to_float(shape_.centre), shape_.rotation().to_float(),
+    shape->render(sim(), to_float(shape_.centre), shape_.rotation().to_float(),
                   colour & (0xffffff00 | (shape->colour & 0x000000ff)));
   }
 }
@@ -48,11 +48,11 @@ void Ship::destroy() {
 }
 
 void Ship::spawn(std::unique_ptr<Ship> ship) const {
-  game_->add_ship(std::move(ship));
+  sim_->state().add_ship(std::move(ship));
 }
 
 void Ship::spawn(const Particle& particle) const {
-  game_->add_particle(particle);
+  sim_->state().add_particle(particle);
 }
 
 void Ship::explosion(colour_t c, std::int32_t time, bool towards, const fvec2& v) const {

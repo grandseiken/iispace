@@ -1,6 +1,7 @@
 #ifndef IISPACE_GAME_CORE_LIB_H
 #define IISPACE_GAME_CORE_LIB_H
 #include "game/common/z.h"
+#include "game/mixer/sound.h"
 #include <memory>
 #include <string>
 #include <vector>
@@ -19,6 +20,10 @@ public:
       ii::render::Renderer& renderer);
   ~Lib();
 
+  bool headless() const {
+    return headless_;
+  }
+
   ii::io::Filesystem& filesystem() {
     return fs_;
   }
@@ -35,25 +40,6 @@ public:
     kDown,
     kLeft,
     kRight,
-    kMax,
-  };
-
-  enum class sound {
-    kPlayerDestroy,
-    kPlayerRespawn,
-    kPlayerFire,
-    kPlayerShield,
-    kExplosion,
-    kEnemyHit,
-    kEnemyDestroy,
-    kEnemyShatter,
-    kEnemySpawn,
-    kBossAttack,
-    kBossFire,
-    kPowerupLife,
-    kPowerupOther,
-    kMenuClick,
-    kMenuAccept,
     kMax,
   };
 
@@ -108,7 +94,7 @@ public:
 
   void rumble(std::int32_t player, std::int32_t time);
   void stop_rumble();
-  void play_sound(sound, float volume = 1.f, float pan = 0.f, float repitch = 0.f);
+  void play_sound(ii::sound, float volume = 1.f, float pan = 0.f, float repitch = 0.f);
   void set_volume(std::int32_t volume);
 
   // Wacky colours

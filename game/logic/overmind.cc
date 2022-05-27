@@ -31,9 +31,9 @@ public:
     div = std::max(2, div);
     num = std::max(0, std::min(div - 1, num));
 
-    fixed x = fixed(top ? num : div - 1 - num) * Lib::kWidth / fixed(div - 1);
-    fixed y = top ? -(row_ + 1) * (fixed_c::hundredth * 16) * Lib::kHeight
-                  : Lib::kHeight * (1 + (row_ + 1) * (fixed_c::hundredth * 16));
+    fixed x = fixed(top ? num : div - 1 - num) * ii::kSimWidth / fixed(div - 1);
+    fixed y = top ? -(row_ + 1) * (fixed_c::hundredth * 16) * ii::kSimHeight
+                  : ii::kSimHeight * (1 + (row_ + 1) * (fixed_c::hundredth * 16));
     return vec2{x, y};
   }
 
@@ -252,10 +252,10 @@ void Overmind::spawn_powerup() {
   }
 
   std::int32_t r = z::rand_int(4);
-  vec2 v = r == 0 ? vec2{-Lib::kWidth, Lib::kHeight / 2}
-      : r == 1    ? vec2{Lib::kWidth * 2, Lib::kHeight / 2}
-      : r == 2    ? vec2{Lib::kWidth / 2, -Lib::kHeight}
-                  : vec2{Lib::kWidth / 2, Lib::kHeight * 2};
+  vec2 v = r == 0 ? vec2{-ii::kSimWidth, ii::kSimHeight / 2}
+      : r == 1    ? vec2{ii::kSimWidth * 2, ii::kSimHeight / 2}
+      : r == 2    ? vec2{ii::kSimWidth / 2, -ii::kSimHeight}
+                  : vec2{ii::kSimWidth / 2, ii::kSimHeight * 2};
 
   std::int32_t m = 4;
   for (std::int32_t i = 1; i <= kPlayers; ++i) {
@@ -283,10 +283,10 @@ void Overmind::spawn_powerup() {
 
 void Overmind::spawn_boss_reward() {
   std::int32_t r = z::rand_int(4);
-  vec2 v = r == 0 ? vec2{-Lib::kWidth / 4, Lib::kHeight / 2}
-      : r == 1    ? vec2{Lib::kWidth + Lib::kWidth / 4, Lib::kHeight / 2}
-      : r == 2    ? vec2{Lib::kWidth / 2, -Lib::kHeight / 4}
-                  : vec2{Lib::kWidth / 2, Lib::kHeight + Lib::kHeight / 4};
+  vec2 v = r == 0 ? vec2{-ii::kSimWidth / 4, ii::kSimHeight / 2}
+      : r == 1    ? vec2{ii::kSimWidth + ii::kSimWidth / 4, ii::kSimHeight / 2}
+      : r == 2    ? vec2{ii::kSimWidth / 2, -ii::kSimHeight / 4}
+                  : vec2{ii::kSimWidth / 2, ii::kSimHeight + ii::kSimHeight / 4};
 
   game_.add_new_ship<Powerup>(v, Powerup::type::kExtraLife);
   if (game_.mode() != game_mode::kBoss) {

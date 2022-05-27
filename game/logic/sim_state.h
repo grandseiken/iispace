@@ -2,6 +2,7 @@
 #define IISPACE_GAME_LOGIC_SIM_STATE_H
 #include "game/common/z.h"
 #include "game/core/replay.h"
+#include "game/logic/sim_interface.h"
 #include <cstdint>
 #include <memory>
 #include <optional>
@@ -21,13 +22,13 @@ class Ship;
 
 struct Particle {
   Particle(const fvec2& position, colour_t colour, const fvec2& velocity, std::int32_t time)
-  : destroy(false), position(position), velocity(velocity), timer(time), colour(colour) {}
+  : position{position}, velocity{velocity}, timer{time}, colour{colour} {}
 
-  bool destroy;
+  bool destroy = false;
+  std::int32_t timer = 0;
+  colour_t colour = 0;
   fvec2 position;
   fvec2 velocity;
-  std::int32_t timer;
-  colour_t colour;
 };
 
 class SimState {
@@ -46,6 +47,10 @@ public:
            std::int32_t player_count, bool can_face_secret_boss);
   SimState(Lib& lib, SaveData& save, std::int32_t* frame_count, const std::string& replay_path);
   ~SimState();
+
+  ii::SimInterface& interface() {
+    return interface_;
+  }
 
   void update(Lib& lib);
   void render(Lib& lib) const;
@@ -109,6 +114,7 @@ private:
 
   Lib& lib_;
   SaveData& save_;
+  ii::SimInterface interface_;
   std::int32_t* frame_count_ = nullptr;
   std::int32_t kill_timer_ = 0;
   bool game_over_ = false;

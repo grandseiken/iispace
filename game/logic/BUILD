@@ -33,9 +33,11 @@ cc_library(
     "player_input.cc",
     "shape.cc",
     "ship.cc",
+    "sim_interface.cc",
+    "sim_interface.h",
     "sim_state.cc",
     "stars.cc",
   ],
-  deps = ["//game/core:lib"],
+  deps = ["//game/core:headers"],
   visibility = ["//visibility:public"],
 )

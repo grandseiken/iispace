@@ -11,7 +11,7 @@ const fixed kSbbSpeed = 1;
 }  // namespace
 
 ShieldBombBoss::ShieldBombBoss(std::int32_t players, std::int32_t cycle)
-: Boss{{-Lib::kWidth / 2, Lib::kHeight / 2}, SimState::BOSS_1B, kSbbBaseHp, players, cycle} {
+: Boss{{-ii::kSimWidth / 2, ii::kSimHeight / 2}, SimState::BOSS_1B, kSbbBaseHp, players, cycle} {
   add_new_shape<Polygon>(vec2{}, 48, 8, 0x339966ff, 0, kDangerous | kVulnerable,
                          Polygon::T::kPolygram);
 
@@ -32,9 +32,9 @@ ShieldBombBoss::ShieldBombBoss(std::int32_t players, std::int32_t cycle)
 }
 
 void ShieldBombBoss::update() {
-  if (!side_ && shape().centre.x < Lib::kWidth * fixed_c::tenth * 6) {
+  if (!side_ && shape().centre.x < ii::kSimWidth * fixed_c::tenth * 6) {
     move(vec2{1, 0} * kSbbSpeed);
-  } else if (side_ && shape().centre.x > Lib::kWidth * fixed_c::tenth * 4) {
+  } else if (side_ && shape().centre.x > ii::kSimWidth * fixed_c::tenth * 4) {
     move(vec2{-1, 0} * kSbbSpeed);
   }
 
@@ -79,7 +79,7 @@ void ShieldBombBoss::update() {
                                  kSbbAttackTime);
     spawn_new<BossShot>(shape().centre, d);
     attack_--;
-    play_sound_random(Lib::sound::kBossFire);
+    play_sound_random(ii::sound::kBossFire);
   }
 
   ++timer_;
@@ -90,7 +90,7 @@ void ShieldBombBoss::update() {
     if (count_ >= 4 && (!z::rand_int(4) || count_ >= 8)) {
       count_ = 0;
       if (!unshielded_) {
-        if (game().all_ships(kShipPowerup).size() < 5) {
+        if (sim().state().all_ships(kShipPowerup).size() < 5) {
           spawn_new<Powerup>(shape().centre, Powerup::type::kBomb);
         }
       }
@@ -106,7 +106,7 @@ void ShieldBombBoss::update() {
         spawn_new<BossShot>(shape().centre, d);
         d = d.rotated(2 * fixed_c::pi / 12);
       }
-      play_sound(Lib::sound::kBossAttack);
+      play_sound(ii::sound::kBossAttack);
     } else {
       attack_ = kSbbAttackTime;
       attack_dir_ = vec2::from_polar(z::rand_fixed() * (2 * fixed_c::pi), 5);
@@ -128,7 +128,10 @@ std::int32_t ShieldBombBoss::get_damage(std::int32_t damage, bool magic) {
   }
   shot_alternate_ = !shot_alternate_;
   if (shot_alternate_) {
-    restore_hp(60 / (1 + (game().get_lives() ? game().players().size() : game().alive_players())));
+    restore_hp(60 /
+               (1 +
+                (sim().state().get_lives() ? sim().state().players().size()
+                                           : sim().state().alive_players())));
   }
   return damage;
 }

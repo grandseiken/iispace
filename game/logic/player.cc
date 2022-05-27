@@ -50,15 +50,15 @@ void Player::update() {
     --kill_timer_;
     return;
   } else if (kill_timer_) {
-    if (game().get_lives() && kill_queue_[0] == this) {
-      game().sub_life();
+    if (sim().state().get_lives() && kill_queue_[0] == this) {
+      sim().state().sub_life();
       kill_timer_ = 0;
       kill_queue_.erase(kill_queue_.begin());
       revive_timer_ = kReviveTime;
-      shape().centre = {(1 + player_number_) * Lib::kWidth / (1 + game().players().size()),
-                        Lib::kHeight / 2};
-      lib().rumble(player_number_, 10);
-      play_sound(Lib::sound::kPlayerRespawn);
+      shape().centre = {(1 + player_number_) * ii::kSimWidth / (1 + sim().state().players().size()),
+                        ii::kSimHeight / 2};
+      sim().lib().rumble(player_number_, 10);
+      play_sound(ii::sound::kPlayerRespawn);
     }
     return;
   }
@@ -71,7 +71,7 @@ void Player::update() {
     vec2 v = velocity.length() > 1 ? velocity.normalised() : velocity;
     shape().set_rotation(v.angle());
     shape().centre = std::max(
-        vec2{}, std::min(vec2{Lib::kWidth, Lib::kHeight}, kPlayerSpeed * v + shape().centre));
+        vec2{}, std::min(vec2{ii::kSimWidth, ii::kSimHeight}, kPlayerSpeed * v + shape().centre));
   }
 
   // Bombs.
@@ -91,10 +91,10 @@ void Player::update() {
     }
     shape().centre = t;
 
-    lib().rumble(player_number_, 10);
-    play_sound(Lib::sound::kExplosion);
+    sim().lib().rumble(player_number_, 10);
+    play_sound(ii::sound::kExplosion);
 
-    const auto& list = game().ships_in_radius(shape().centre, kBombBossRadius, kShipEnemy);
+    const auto& list = sim().state().ships_in_radius(shape().centre, kBombBossRadius, kShipEnemy);
     for (const auto& ship : list) {
       if ((ship->type() & kShipBoss) ||
           (ship->shape().centre - shape().centre).length() <= kBombRadius) {
@@ -116,23 +116,23 @@ void Player::update() {
 
     float volume = .5f * z::rand_fixed().to_float() + .5f;
     float pitch = (z::rand_fixed().to_float() - 1.f) / 12.f;
-    float pan = 2.f * shape().centre.x.to_float() / Lib::kWidth - 1.f;
-    lib().play_sound(Lib::sound::kPlayerFire, volume, pan, pitch);
+    float pan = 2.f * shape().centre.x.to_float() / ii::kSimWidth - 1.f;
+    sim().lib().play_sound(ii::sound::kPlayerFire, volume, pan, pitch);
   }
 
   // Damage.
-  if (game().any_collision(shape().centre, kDangerous)) {
+  if (sim().state().any_collision(shape().centre, kDangerous)) {
     damage();
   }
 }
 
 void Player::render() const {
-  if (!kill_timer_ && (game().mode() != game_mode::kWhat || revive_timer_ > 0)) {
+  if (!kill_timer_ && (sim().state().mode() != game_mode::kWhat || revive_timer_ > 0)) {
     auto t = to_float(fire_target_);
     if (t >= fvec2{} &&
-        t <= fvec2{static_cast<float>(Lib::kWidth), static_cast<float>(Lib::kHeight)}) {
-      lib().render_line(t + fvec2{0, 9}, t - fvec2{0, 8}, colour());
-      lib().render_line(t + fvec2{9, 1}, t - fvec2{8, -1}, colour());
+        t <= fvec2{static_cast<float>(ii::kSimWidth), static_cast<float>(ii::kSimHeight)}) {
+      sim().lib().render_line(t + fvec2{0, 9}, t - fvec2{0, 8}, colour());
+      sim().lib().render_line(t + fvec2{9, 1}, t - fvec2{8, -1}, colour());
     }
     if (revive_timer_ % 2) {
       render_with_colour(0xffffffff);
@@ -141,7 +141,7 @@ void Player::render() const {
     }
   }
 
-  if (game().mode() == game_mode::kBoss) {
+  if (sim().state().mode() == game_mode::kBoss) {
     return;
   }
 
@@ -149,24 +149,23 @@ void Player::render() const {
   ss << multiplier_ << "X";
   std::string s = ss.str();
   std::int32_t n = player_number_;
-  fvec2 v = n == 1 ? fvec2{Lib::kWidth / Lib::kTextWidth - 1.f - s.length(), 1.f}
-      : n == 2     ? fvec2{1.f, Lib::kHeight / Lib::kTextHeight - 2.f}
-      : n == 3     ? fvec2{Lib::kWidth / Lib::kTextWidth - 1.f - s.length(),
-                       Lib::kHeight / Lib::kTextHeight - 2.f}
+  fvec2 v = n == 1 ? fvec2{ii::kSimWidth / 16 - 1.f - s.length(), 1.f}
+      : n == 2     ? fvec2{1.f, ii::kSimHeight / 16 - 2.f}
+      : n == 3     ? fvec2{ii::kSimWidth / 16 - 1.f - s.length(), ii::kSimHeight / 16 - 2.f}
                    : fvec2{1.f, 1.f};
-  lib().render_text(v, s, z0Game::kPanelText);
+  sim().lib().render_text(v, s, z0Game::kPanelText);
 
   ss.str("");
   n % 2 ? ss << score_ << "   " : ss << "   " << score_;
-  lib().render_text(
+  sim().lib().render_text(
       v - (n % 2 ? fvec2{static_cast<float>(ss.str().length() - s.length()), 0} : fvec2{}),
       ss.str(), colour());
 
   if (magic_shot_timer_ != 0) {
     v.x += n % 2 ? -1 : ss.str().length();
     v *= 16;
-    lib().render_line_rect(v + fvec2{5.f, 11.f - (10 * magic_shot_timer_) / kMagicShotCount},
-                           v + fvec2{9.f, 13.f}, 0xffffffff);
+    sim().lib().render_line_rect(v + fvec2{5.f, 11.f - (10 * magic_shot_timer_) / kMagicShotCount},
+                                 v + fvec2{9.f, 13.f}, 0xffffffff);
   }
 }
 
@@ -181,8 +180,8 @@ void Player::damage() {
   }
 
   if (shield_) {
-    lib().rumble(player_number_, 10);
-    play_sound(Lib::sound::kPlayerShield);
+    sim().lib().rumble(player_number_, 10);
+    play_sound(ii::sound::kPlayerShield);
     destroy_shape(5);
     shield_ = false;
     revive_timer_ = kShieldTime;
@@ -204,8 +203,8 @@ void Player::damage() {
     bomb_ = false;
   }
   kill_queue_.push_back(this);
-  lib().rumble(player_number_, 25);
-  play_sound(Lib::sound::kPlayerDestroy);
+  sim().lib().rumble(player_number_, 25);
+  play_sound(ii::sound::kPlayerDestroy);
 }
 
 void Player::add_score(std::int64_t score) {
@@ -214,7 +213,7 @@ void Player::add_score(std::int64_t score) {
       4096, 8192, 16384, 32768, 65536, 131072, 262144, 524288, 1048576, 2097152, 4194304, 8388608,
   };
 
-  lib().rumble(player_number_, 3);
+  sim().lib().rumble(player_number_, 3);
   score_ += score * multiplier_;
   ++multiplier_count_;
   if (multiplier_lookup[std::min(multiplier_ + 3, 23)] <= multiplier_count_) {
@@ -274,7 +273,7 @@ Shot::Shot(const vec2& position, Player* player, const vec2& direction, bool mag
 }
 
 void Shot::render() const {
-  if (game().mode() == game_mode::kWhat) {
+  if (sim().state().mode() == game_mode::kWhat) {
     return;
   }
   if (flash_) {
@@ -287,22 +286,22 @@ void Shot::render() const {
 void Shot::update() {
   flash_ = magic_ ? z::rand_int(2) != 0 : false;
   move(velocity_);
-  bool on_screen =
-      shape().centre >= vec2{-4, -4} && shape().centre < vec2{4 + Lib::kWidth, 4 + Lib::kHeight};
+  bool on_screen = shape().centre >= vec2{-4, -4} &&
+      shape().centre < vec2{4 + ii::kSimWidth, 4 + ii::kSimHeight};
   if (!on_screen) {
     destroy();
     return;
   }
 
-  for (const auto& ship : game().collision_list(shape().centre, kVulnerable)) {
+  for (const auto& ship : sim().state().collision_list(shape().centre, kVulnerable)) {
     ship->damage(1, magic_, player_);
     if (!magic_) {
       destroy();
     }
   }
 
-  if (game().any_collision(shape().centre, kShield) ||
-      (!magic_ && game().any_collision(shape().centre, kVulnShield))) {
+  if (sim().state().any_collision(shape().centre, kShield) ||
+      (!magic_ && sim().state().any_collision(shape().centre, kVulnShield))) {
     destroy();
   }
 }
@@ -365,7 +364,7 @@ void Powerup::damage(std::int32_t damage, bool magic, Player* source) {
   if (source) {
     switch (type_) {
     case type::kExtraLife:
-      game().add_life();
+      sim().state().add_life();
       break;
 
     case type::kMagicShots:
@@ -380,8 +379,8 @@ void Powerup::damage(std::int32_t damage, bool magic, Player* source) {
       source->activate_bomb();
       break;
     }
-    play_sound(type_ == type::kExtraLife ? Lib::sound::kPowerupLife : Lib::sound::kPowerupOther);
-    lib().rumble(source->player_number(), 6);
+    play_sound(type_ == type::kExtraLife ? ii::sound::kPowerupLife : ii::sound::kPowerupOther);
+    sim().lib().rumble(source->player_number(), 6);
   }
 
   std::int32_t r = 5 + z::rand_int(5);
