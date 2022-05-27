@@ -59,7 +59,7 @@ void Fill::render(Lib& lib, const fvec2& position, float rotation, colour_t colo
   fvec2 wh = {width.to_float(), height.to_float()};
   fvec2 a = c + wh;
   fvec2 b = c - wh;
-  lib.render_rect(a, b, colour_override ? colour_override : colour);
+  lib.render_line_rect(a, b, colour_override ? colour_override : colour);
 }
 
 bool Fill::check_local_point(const vec2& v) const {

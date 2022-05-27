@@ -18,14 +18,13 @@ public:
   using audio_handle_t = std::size_t;
 
   Mixer(std::uint32_t sample_rate, bool enabled);
-  result<audio_handle_t>
-  load_wav_file(const std::string& filename, std::optional<audio_handle_t> handle = std::nullopt);
   result<audio_handle_t> load_wav_memory(nonstd::span<std::uint8_t> data,
                                          std::optional<audio_handle_t> handle = std::nullopt);
   void release_handle(audio_handle_t);
 
   void set_master_volume(float volume);
   void play(audio_handle_t handle, float volume, float pan, float pitch);
+  void commit();
   void audio_callback(std::uint8_t* out_buffer, std::size_t samples);
 
   struct audio_clip {
@@ -54,6 +53,8 @@ private:
     float rvolume = 0.f;
     std::size_t position = 0;
   };
+  std::vector<sound> new_sounds_;
+
   std::mutex sound_mutex_;
   std::vector<sound> sounds_;
   std::vector<float> mix_buffer_;

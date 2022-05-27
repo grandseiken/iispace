@@ -5,7 +5,7 @@
 #include <glm/glm.hpp>
 #include <string_view>
 
-namespace ii {
+namespace ii::render {
 
 class NullRenderer : public Renderer {
 private:
@@ -29,6 +29,6 @@ public:
                           const glm::vec4&) override {}
 };
 
-}  // namespace ii
+}  // namespace ii::render
 
 #endif

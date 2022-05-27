@@ -4,7 +4,7 @@
 #include <glm/glm.hpp>
 #include <string_view>
 
-namespace ii {
+namespace ii::render {
 
 class Renderer {
 public:
@@ -23,6 +23,6 @@ public:
                                   std::int32_t line_width, const glm::vec4& colour) = 0;
 };
 
-}  // namespace ii
+}  // namespace ii::render
 
 #endif

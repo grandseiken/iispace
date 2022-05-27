@@ -88,7 +88,8 @@
 * Large number of additional shots
 * Large explosions on impact
 * Single massive damage screen-penetrating sniper shot
-* Megalaser
+* Pizza cutter boomerang
+* Megalaser?
 
 ### Special ability?
 * Escape (short-distance teleport + invulnerability)

@@ -453,7 +453,8 @@ void GameModal::render(Lib& lib) const {
   }
 }
 
-z0Game::z0Game(Lib& lib, const std::vector<std::string>& args) : lib_{lib} {
+z0Game::z0Game(Lib& lib, const std::vector<std::string>& args)
+: lib_{lib}, save_{lib.filesystem()}, settings_{lib.filesystem()} {
   lib.set_volume(settings_.volume.to_int());
 
   if (!args.empty()) {

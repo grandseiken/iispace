@@ -1,5 +1,6 @@
 #include "game/core/lib.h"
 #include "game/core/z0_game.h"
+#include "game/io/file/std_filesystem.h"
 #include "game/io/sdl_io.h"
 #include "game/render/gl_renderer.h"
 #include <iostream>
@@ -16,12 +17,13 @@ bool run(const std::vector<std::string>& args) {
       std::cerr << "Error initialising IO: " << io_layer.error() << std::endl;
       return false;
     }
-    auto renderer = ii::GlRenderer::create();
+    ii::io::StdFilesystem fs{"assets", "savedata", "savedata/replays"};
+    auto renderer = ii::render::GlRenderer::create(fs);
     if (!renderer) {
       std::cerr << "Error initialising renderer: " << renderer.error() << std::endl;
       return false;
     }
-    Lib lib{/* headless */ false, **io_layer, **renderer};
+    Lib lib{/* headless */ false, fs, **io_layer, **renderer};
     z0Game game{lib, args};
     game.run();
   } catch (const score_finished&) {

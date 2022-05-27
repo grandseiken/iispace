@@ -86,13 +86,13 @@ public:
     return game_->nearest_player(shape_.centre);
   }
 
-  bool play_sound(Lib::sound sound) {
-    return lib().play_sound(sound, 1.f, 2.f * shape_.centre.x.to_float() / Lib::kWidth - 1.f);
+  void play_sound(Lib::sound sound) {
+    lib().play_sound(sound, 1.f, 2.f * shape_.centre.x.to_float() / Lib::kWidth - 1.f);
   }
 
-  bool play_sound_random(Lib::sound sound, float pitch = 0.f, float volume = 1.f) {
-    return lib().play_sound(sound, volume * (.5f * z::rand_fixed().to_float() + .5f),
-                            2.f * shape_.centre.x.to_float() / Lib::kWidth - 1.f, pitch);
+  void play_sound_random(Lib::sound sound, float pitch = 0.f, float volume = 1.f) {
+    lib().play_sound(sound, volume * (.5f * z::rand_fixed().to_float() + .5f),
+                     2.f * shape_.centre.x.to_float() / Lib::kWidth - 1.f, pitch);
   }
 
   std::int32_t enemy_value() const {

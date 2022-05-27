@@ -1,3 +1,4 @@
 bazel-*/
 .vscode/
+savedata/
 wiispace.txt

@@ -42,15 +42,6 @@ result<Mixer::audio_clip> drwav_read(drwav& wav) {
   return {std::move(result)};
 }
 
-result<Mixer::audio_clip> drwav_load_file(const std::string& filename) {
-  drwav wav;
-  if (!drwav_init_file(&wav, filename.c_str(), /* allocation */ nullptr)) {
-    return unexpected("Couldn't read " + filename);
-  }
-  auto wav_handle = make_raw(&wav, &drwav_free);
-  return drwav_read(wav);
-}
-
 result<Mixer::audio_clip> drwav_load_memory(nonstd::span<std::uint8_t> data) {
   drwav wav;
   if (!drwav_init_memory(&wav, data.data(), data.size(), /* allocation */ nullptr)) {
@@ -94,25 +85,6 @@ void Mixer::set_master_volume(float volume) {
 }
 
 result<Mixer::audio_handle_t>
-Mixer::load_wav_file(const std::string& filename, std::optional<audio_handle_t> handle) {
-  if (!enabled_) {
-    return 0;
-  }
-  auto h = assign_handle(handle);
-  if (!h) {
-    return unexpected(h.error());
-  }
-  auto clip = drwav_load_file(filename);
-  if (!clip) {
-    return unexpected(clip.error());
-  }
-  audio_resource r;
-  r.clip = std::move(*clip);
-  audio_resources_.emplace(*h, std::move(r));
-  return *h;
-}
-
-result<Mixer::audio_handle_t>
 Mixer::load_wav_memory(nonstd::span<std::uint8_t> data, std::optional<audio_handle_t> handle) {
   if (!enabled_) {
     return 0;
@@ -143,7 +115,7 @@ void Mixer::play(audio_handle_t handle, float volume, float pan, float pitch) {
   const auto& clip = *it->second.clip;
 
   volume = std::clamp(volume, 0.f, 1.f);
-  pan = (1.f + std::clamp(pan, -1.f, 1.f)) * kPiFloat / 4.f;
+  pan = std::clamp(kPiFloat / 4.f * (pan + 1.f), 0.f, kPiFloat / 2.f);
   pitch = std::clamp(pitch, 1.f / 64, 64.f);
 
   auto ratio = static_cast<double>(sample_rate_hz_) / clip.sample_rate_hz;
@@ -155,15 +127,21 @@ void Mixer::play(audio_handle_t handle, float volume, float pan, float pitch) {
   }
 
   sound s;
-  s.lvolume = volume * std::cos(pan);
-  s.rvolume = volume * std::sin(pan);
+  s.lvolume = std::clamp(volume * std::cos(pan), 0.f, 1.f);
+  s.rvolume = std::clamp(volume * std::sin(pan), 0.f, 1.f);
   s.samples = std::move(*resampled);
+  new_sounds_.emplace_back(std::move(s));
+}
 
+void Mixer::commit() {
   std::unique_lock lock{sound_mutex_};
   sounds_.erase(std::remove_if(sounds_.begin(), sounds_.end(),
                                [](const sound& s) { return s.position >= s.samples.size(); }),
                 sounds_.end());
-  sounds_.emplace_back(std::move(s));
+  for (auto& s : new_sounds_) {
+    sounds_.emplace_back(std::move(s));
+  }
+  new_sounds_.clear();
 }
 
 void Mixer::audio_callback(std::uint8_t* out_buffer, std::size_t samples) {
@@ -190,7 +168,7 @@ void Mixer::audio_callback(std::uint8_t* out_buffer, std::size_t samples) {
     s *= master_volume;
   }
   for (std::size_t i = 0; i < samples; ++i) {
-    auto v = std::max(mix_buffer_[2 * i], mix_buffer_[2 * i + 1]);
+    auto v = std::max(std::abs(mix_buffer_[2 * i]), std::abs(mix_buffer_[2 * i + 1]));
     auto m = std::tanh(v) / v;
     auto l = f2s16(m * mix_buffer_[2 * i]);
     auto r = f2s16(m * mix_buffer_[2 * i + 1]);

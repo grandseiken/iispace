@@ -121,7 +121,8 @@ SdlIoLayer::create(const char* title, char gl_major, char gl_minor) {
   SDL_GL_SetAttribute(SDL_GL_BLUE_SIZE, 8);
   SDL_GL_SetAttribute(SDL_GL_ALPHA_SIZE, 8);
   SDL_GL_SetAttribute(SDL_GL_DOUBLEBUFFER, 1);
-  // TODO: setup multisampling?
+  SDL_GL_SetAttribute(SDL_GL_MULTISAMPLEBUFFERS, 1);
+  SDL_GL_SetAttribute(SDL_GL_MULTISAMPLESAMPLES, 16);
 
   auto io_layer = std::make_unique<SdlIoLayer>(access_tag{});
   io_layer->impl_ = std::make_unique<impl_t>();

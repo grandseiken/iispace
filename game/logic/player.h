@@ -69,7 +69,6 @@ private:
 
   static std::int32_t fire_timer_;
   static SimState::ship_list kill_queue_;
-  static SimState::ship_list shot_sound_queue_;
 };
 
 class Shot : public Ship {

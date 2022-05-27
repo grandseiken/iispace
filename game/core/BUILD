@@ -11,6 +11,7 @@ cc_library(
   deps = [
     "//game/common",
     "//game/io",
+    "//game/io/file:filesystem",
     "//game/mixer",
     "//game/proto:iispace_proto_cc",
     "//game/render:renderer",
@@ -31,6 +32,7 @@ cc_binary(
   deps = [
     ":lib",
     "//game/io:sdl_io",
+    "//game/io/file:std_filesystem",
     "//game/logic",
     "//game/proto:iispace_proto_cc",
     "//game/render:gl_renderer",
@@ -64,6 +66,7 @@ cc_binary(
   deps = [
     ":lib",
     "//game/io:null_io",
+    "//game/io/file:std_filesystem",
     "//game/logic",
     "//game/proto:iispace_proto_cc",
     "//game/render:null_renderer",

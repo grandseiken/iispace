@@ -206,9 +206,10 @@ Wall::Wall(const vec2& position, bool rdir)
 }
 
 void Wall::update() {
-  if (game().get_non_wall_count() == 0 && timer_ % 8 < 2) {
+  auto count = game().get_non_wall_count();
+  if (!count && timer_ % 8 < 2) {
     if (get_hp() > 2) {
-      play_sound(Lib::sound::kEnemySpawn);
+      lib().play_sound(Lib::sound::kEnemySpawn, 1.f, 0.f);
     }
     damage(get_hp() - 2, false, 0);
   }

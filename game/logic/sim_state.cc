@@ -1,5 +1,6 @@
 #include "game/logic/sim_state.h"
 #include "game/core/save.h"
+#include "game/io/file/filesystem.h"
 #include "game/logic/boss.h"
 #include "game/logic/boss/chaser.h"
 #include "game/logic/overmind.h"
@@ -10,11 +11,11 @@
 
 SimState::SimState(Lib& lib, SaveData& save, std::int32_t* frame_count, game_mode mode,
                    std::int32_t player_count, bool can_face_secret_boss)
-: SimState(lib, save, frame_count, Replay(mode, player_count, can_face_secret_boss), true) {}
+: SimState{lib, save, frame_count, Replay{mode, player_count, can_face_secret_boss}, true} {}
 
 SimState::SimState(Lib& lib, SaveData& save, std::int32_t* frame_count,
                    const std::string& replay_path)
-: SimState(lib, save, frame_count, Replay(replay_path), false) {
+: SimState{lib, save, frame_count, Replay{lib.filesystem(), replay_path}, false} {
   lib.set_player_count(replay_.replay.players());
   lib.new_game();
 }
@@ -126,8 +127,8 @@ void SimState::render(Lib& lib) const {
   boss_hp_bar_.reset();
   Stars::render(lib);
   for (const auto& particle : particles_) {
-    lib.render_rect(particle.position + fvec2{1, 1}, particle.position - fvec2{1, 1},
-                    particle.colour);
+    lib.render_line_rect(particle.position + fvec2{1, 1}, particle.position - fvec2{1, 1},
+                         particle.colour);
   }
   for (std::size_t i = player_list_.size(); i < ships_.size(); ++i) {
     ships_[i]->render();
@@ -184,7 +185,7 @@ void SimState::render(Lib& lib) const {
 
 void SimState::write_replay(const std::string& team_name, std::int64_t score) const {
   if (replay_recording_) {
-    replay_.write(team_name, score);
+    replay_.write(lib_.filesystem(), team_name, score);
   }
 }
 

@@ -1,14 +1,14 @@
 #include "game/core/save.h"
 #include "game/core/lib.h"
+#include "game/io/file/filesystem.h"
 #include "game/proto/iispace.pb.h"
 #include <algorithm>
-#include <fstream>
+#include <sstream>
 
 namespace {
 const std::string kSettingsWindowed = "Windowed";
 const std::string kSettingsVolume = "Volume";
-const std::string kSettingsPath = "wiispace.txt";
-const std::string kSavePath = "wiispace.sav";
+const std::string kSaveName = "iispace";
 }  // namespace
 
 std::size_t HighScores::size(game_mode mode) {
@@ -51,19 +51,13 @@ void HighScores::add_score(game_mode mode, std::int32_t players, const std::stri
   }
 }
 
-SaveData::SaveData() : bosses_killed(0), hard_mode_bosses_killed(0) {
-  std::ifstream file;
-  file.open(kSavePath, std::ios::binary);
-
-  if (!file) {
+SaveData::SaveData(ii::io::Filesystem& fs) : fs{fs} {
+  auto data = fs.read_savegame(kSaveName);
+  if (!data) {
     return;
   }
-
-  std::stringstream b;
-  b << file.rdbuf();
   proto::SaveData proto;
-  proto.ParseFromString(z::crypt(b.str(), Lib::kSuperEncryptionKey));
-  file.close();
+  proto.ParseFromString(z::crypt({data->begin(), data->end()}, Lib::kSuperEncryptionKey));
 
   bosses_killed = proto.bosses_killed();
   hard_mode_bosses_killed = proto.hard_mode_bosses_killed();
@@ -118,44 +112,40 @@ void SaveData::save() const {
   std::string temp;
   proto.SerializeToString(&temp);
   auto encrypted = z::crypt(temp, Lib::kSuperEncryptionKey);
-  std::ofstream file;
-  file.open(kSavePath, std::ios::binary);
-  file << encrypted;
-  file.close();
+  (void)fs.write_savegame(kSaveName,
+                          {reinterpret_cast<std::uint8_t*>(encrypted.data()),
+                           reinterpret_cast<std::uint8_t*>(encrypted.data() + encrypted.size())});
 }
 
-Settings::Settings() : windowed(false), volume(100) {
-  std::ifstream file;
-  file.open(kSettingsPath);
-
-  if (!file) {
-    std::ofstream out;
-    out.open(kSettingsPath);
-    out << kSettingsWindowed << " 0\n" << kSettingsVolume << " 100.0";
-    out.close();
+Settings::Settings(ii::io::Filesystem& fs) : fs{fs} {
+  auto data = fs.read_config();
+  if (!data) {
+    std::string default_config = kSettingsWindowed + " 0\n" + kSettingsVolume + " 100.0";
+    (void)fs.write_config(
+        {reinterpret_cast<const std::uint8_t*>(default_config.data()), default_config.size()});
     return;
   }
 
+  std::string s{data->begin(), data->end()};
+  std::stringstream ss{s};
   std::string line;
-  while (getline(file, line)) {
-    std::stringstream ss{line};
+  while (std::getline(ss, line)) {
+    std::stringstream ss_line{line};
     std::string key;
-    ss >> key;
+    ss_line >> key;
     if (key.compare(kSettingsWindowed) == 0) {
-      ss >> windowed;
+      ss_line >> windowed;
     }
     if (key.compare(kSettingsVolume) == 0) {
       float t = 0.f;
-      ss >> t;
+      ss_line >> t;
       volume = static_cast<std::int32_t>(t);
     }
   }
 }
 
 void Settings::save() const {
-  std::ofstream out;
-  out.open(kSettingsPath);
-  out << kSettingsWindowed << " " << (windowed ? "1" : "0") << "\n"
-      << kSettingsVolume << " " << volume.to_int();
-  out.close();
+  std::string config = kSettingsWindowed + " " + std::string{windowed ? "1" : "0"} + "\n" +
+      kSettingsVolume + " " + std::to_string(volume.to_int());
+  (void)fs.write_config({reinterpret_cast<const std::uint8_t*>(config.data()), config.size()});
 }

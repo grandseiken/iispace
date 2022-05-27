@@ -39,11 +39,13 @@ void Stars::render(Lib& lib) {
     switch (star->type) {
     case type::kDotStar:
     case type::kFarStar:
-      lib.render_rect(star->position - fvec2{1, 1}, star->position + fvec2{1, 1}, star->colour);
+      lib.render_line_rect(star->position - fvec2{1, 1}, star->position + fvec2{1, 1},
+                           star->colour);
       break;
 
     case type::kBigStar:
-      lib.render_rect(star->position - fvec2{2, 2}, star->position + fvec2{2, 2}, star->colour);
+      lib.render_line_rect(star->position - fvec2{2, 2}, star->position + fvec2{2, 2},
+                           star->colour);
       break;
 
     case type::kPlanet:

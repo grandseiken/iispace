@@ -4,15 +4,18 @@
 #include <array>
 #include <vector>
 
+namespace ii::io {
+class Filesystem;
+}  // namespace ii::io
+
 struct HighScores {
   static constexpr std::int32_t kNumScores = 8;
   static constexpr std::int32_t kMaxNameLength = 17;
   static constexpr std::int32_t kMaxScoreLength = 10;
 
   struct high_score {
-    high_score() : score(0) {}
     std::string name;
-    std::int64_t score;
+    std::int64_t score = 0;
   };
   typedef std::array<high_score, kNumScores> table;
   typedef std::array<table, kPlayers> mode_table;
@@ -33,20 +36,22 @@ struct HighScores {
 };
 
 struct SaveData {
-  SaveData();
+  SaveData(ii::io::Filesystem& fs);
   void save() const;
 
-  std::int32_t bosses_killed;
-  std::int32_t hard_mode_bosses_killed;
+  ii::io::Filesystem& fs;
+  std::int32_t bosses_killed = 0;
+  std::int32_t hard_mode_bosses_killed = 0;
   HighScores high_scores;
 };
 
 struct Settings {
-  Settings();
+  Settings(ii::io::Filesystem& fs);
   void save() const;
 
-  bool windowed;
-  fixed volume;
+  ii::io::Filesystem& fs;
+  bool windowed = false;
+  fixed volume = 100;
 };
 
 #endif

@@ -5,17 +5,23 @@
 #include <string>
 #include <vector>
 
-namespace ii {
-namespace io {
+namespace ii::io {
+class Filesystem;
 class IoLayer;
-}  // namespace io
+}  // namespace ii::io
+namespace ii::render {
 class Renderer;
-}  // namespace ii
+}  // namespace ii::render
 
 class Lib {
 public:
-  Lib(bool headless, ii::io::IoLayer& io_layer, ii::Renderer& renderer);
+  Lib(bool headless, ii::io::Filesystem& fs, ii::io::IoLayer& io_layer,
+      ii::render::Renderer& renderer);
   ~Lib();
+
+  ii::io::Filesystem& filesystem() {
+    return fs_;
+  }
 
   // Constants
   //------------------------------
@@ -61,7 +67,6 @@ public:
   static constexpr std::int32_t kHeight = 480;
   static constexpr std::int32_t kTextWidth = 16;
   static constexpr std::int32_t kTextHeight = 16;
-  static constexpr std::int32_t kSoundTimer = 4;
 
   static const std::string kEncryptionKey;
   static const std::string kSuperEncryptionKey;
@@ -76,7 +81,6 @@ public:
   void end_frame();
   void capture_mouse(bool enabled);
   void new_game();
-  static void set_working_directory(bool original);
 
   // Input
   //------------------------------
@@ -96,6 +100,7 @@ public:
   //------------------------------
   void clear_screen() const;
   void render_line(const fvec2& a, const fvec2& b, colour_t c) const;
+  void render_line_rect(const fvec2& lo, const fvec2& hi, colour_t c) const;
   void render_text(const fvec2& v, const std::string& text, colour_t c) const;
   void
   render_rect(const fvec2& low, const fvec2& hi, colour_t c, std::int32_t line_width = 0) const;
@@ -103,7 +108,7 @@ public:
 
   void rumble(std::int32_t player, std::int32_t time);
   void stop_rumble();
-  bool play_sound(sound, float volume = 1.f, float pan = 0.f, float repitch = 0.f);
+  void play_sound(sound, float volume = 1.f, float pan = 0.f, float repitch = 0.f);
   void set_volume(std::int32_t volume);
 
   // Wacky colours
@@ -113,8 +118,9 @@ public:
 
 private:
   bool headless_ = false;
+  ii::io::Filesystem& fs_;
   ii::io::IoLayer& io_layer_;
-  ii::Renderer& renderer_;
+  ii::render::Renderer& renderer_;
 
   std::int32_t colour_cycle_ = 0;
   std::int32_t players_ = 1;

@@ -3,23 +3,28 @@
 #include "game/common/result.h"
 #include "game/render/renderer.h"
 #include <glm/glm.hpp>
+#include <nonstd/span.hpp>
 #include <memory>
 #include <string_view>
 
-namespace ii {
+namespace ii::io {
+class Filesystem;
+}  // namespace ii::io
+namespace ii::render {
 
 class GlRenderer : public Renderer {
 private:
   struct access_tag {};
 
 public:
-  static result<std::unique_ptr<GlRenderer>> create();
+  static result<std::unique_ptr<GlRenderer>> create(const io::Filesystem& fs);
   GlRenderer(access_tag);
   ~GlRenderer() override;
 
   void clear_screen() override;
   void
   set_dimensions(const glm::uvec2& screen_dimensions, const glm::uvec2& render_dimensions) override;
+
   glm::vec2 legacy_render_scale() const override;
   void render_legacy_text(const glm::ivec2& position, const glm::vec4& colour,
                           std::string_view text) override;
@@ -32,6 +37,6 @@ private:
   std::unique_ptr<impl_t> impl_;
 };
 
-}  // namespace ii
+}  // namespace ii::render
 
 #endif

@@ -8,6 +8,10 @@
 #include <string>
 #include <vector>
 
+namespace ii::io {
+class Filesystem;
+}  // namespace ii::io
+
 class Lib;
 class Overmind;
 class Player;

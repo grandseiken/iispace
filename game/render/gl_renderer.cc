@@ -1,5 +1,6 @@
 #include "game/render/gl_renderer.h"
 #include "game/common/raw_ptr.h"
+#include "game/io/file/filesystem.h"
 #include "game/render/gl/data.h"
 #include "game/render/gl/draw.h"
 #include "game/render/gl/program.h"
@@ -12,7 +13,7 @@
 #include <string>
 #include <vector>
 
-namespace ii {
+namespace ii::render {
 namespace {
 #include "game/render/shaders/legacy_line.f.glsl.h"
 #include "game/render/shaders/legacy_line.v.glsl.h"
@@ -76,15 +77,16 @@ result<gl::program> compile_program(const char* name, T&&... sources) {
   return result;
 }
 
-result<gl::texture> load_image(const std::string& filename) {
+result<gl::texture> load_image(const std::string& filename, nonstd::span<const std::uint8_t> data) {
   int width = 0;
   int height = 0;
   int channels = 0;
   auto image_bytes = make_raw(
-      stbi_load(filename.c_str(), &width, &height, &channels, /* desired channels */ 4),
+      stbi_load_from_memory(data.data(), data.size(), &width, &height, &channels,
+                            /* desired channels */ 4),
       +[](std::uint8_t* p) { stbi_image_free(p); });
   if (!image_bytes) {
-    return unexpected("Couldn't load " + filename + ": " + std::string{stbi_failure_reason()});
+    return unexpected("Couldn't parse " + filename + ": " + std::string{stbi_failure_reason()});
   }
   glm::uvec2 dimensions{static_cast<unsigned>(width), static_cast<unsigned>(height)};
   auto texture = gl::make_texture();
@@ -192,8 +194,12 @@ struct GlRenderer::impl_t {
   }
 };
 
-result<std::unique_ptr<GlRenderer>> GlRenderer::create() {
-  auto console_font = load_image("console.png");
+result<std::unique_ptr<GlRenderer>> GlRenderer::create(const io::Filesystem& fs) {
+  auto console_data = fs.read_asset("console.png");
+  if (!console_data) {
+    return unexpected(console_data.error());
+  }
+  auto console_font = load_image("console.png", *console_data);
   if (!console_font) {
     return unexpected(console_font.error());
   }
@@ -362,4 +368,4 @@ void GlRenderer::render_legacy_rect(const glm::ivec2& lo, const glm::ivec2& hi,
   impl_->draw_rect_internal(lo, size);
 }
 
-}  // namespace ii
+}  // namespace ii::render

@@ -1,5 +1,6 @@
 #include "game/core/lib.h"
 #include "game/core/save.h"
+#include "game/io/file/filesystem.h"
 #include "game/io/io.h"
 #include "game/mixer/mixer.h"
 #include "game/render/renderer.h"
@@ -7,15 +8,7 @@
 #include <algorithm>
 #include <iostream>
 #include <limits>
-
-// TODO: fuck this right off.
-#ifdef PLATFORM_LINUX
-#include <sys/stat.h>
-#include <unistd.h>
-#else
-#define WIN32_LEAN_AND_MEAN
-#include <windows.h>
-#endif
+#include <unordered_map>
 
 const std::string Lib::kSuperEncryptionKey = "<>";
 
@@ -147,6 +140,7 @@ struct Lib::Internals {
     last_aim.resize(kPlayers);
   }
 
+  ii::Mixer mixer;
   ii::io::keyboard::frame keyboard_frame;
   ii::io::mouse::frame mouse_frame;
   std::vector<ii::io::controller::info> controller_info;
@@ -159,9 +153,13 @@ struct Lib::Internals {
     ii::io::controller::frame* pad = nullptr;
   };
 
-  ii::Mixer mixer;
-  typedef std::pair<std::int32_t, Lib::sound> sound_resource;
-  std::vector<sound_resource> sounds;
+  struct sound_aggregation {
+    std::size_t count = 0;
+    float volume = 0.f;
+    float pan = 0.f;
+    float pitch = 0.f;
+  };
+  std::unordered_map<Lib::sound, sound_aggregation> sounds;
 
   player_input assign_input(std::uint32_t player_number, std::uint32_t player_count) {
     player_input input;
@@ -220,25 +218,25 @@ struct Lib::Internals {
   }
 };
 
-Lib::Lib(bool headless, ii::io::IoLayer& io_layer, ii::Renderer& renderer)
-: headless_{headless}, io_layer_{io_layer}, renderer_{renderer} {
-#ifndef PLATFORM_SCORE
-  set_working_directory(false);
-#ifdef PLATFORM_LINUX
-  mkdir("replays", 0777);
-#else
-  CreateDirectory("replays", 0);
-#endif
-#endif
+Lib::Lib(bool headless, ii::io::Filesystem& fs, ii::io::IoLayer& io_layer,
+         ii::render::Renderer& renderer)
+: headless_{headless}, fs_{fs}, io_layer_{io_layer}, renderer_{renderer} {
   internals_ = std::make_unique<Internals>(headless);
   io_layer_.set_audio_callback([mixer = &internals_->mixer](std::uint8_t* p, std::size_t k) {
     mixer->audio_callback(p, k);
   });
 
   auto use_sound = [&](sound s, const std::string& filename) {
-    internals_->sounds.emplace_back(0, s);
+    if (headless_) {
+      return;
+    }
+    auto bytes = fs.read_asset(filename);
+    if (!bytes) {
+      std::cerr << bytes.error() << std::endl;
+      return;
+    }
     auto result =
-        internals_->mixer.load_wav_file(filename, static_cast<ii::Mixer::audio_handle_t>(s));
+        internals_->mixer.load_wav_memory(*bytes, static_cast<ii::Mixer::audio_handle_t>(s));
     if (!result) {
       std::cerr << "Couldn't load sound " + filename + ": " << result.error() << std::endl;
     }
@@ -288,60 +286,6 @@ std::int32_t Lib::get_colour_cycle() const {
   return colour_cycle_;
 }
 
-void Lib::set_working_directory(bool original) {
-#ifndef PLATFORM_SCORE
-  static bool initialised = false;
-  static char* cwd = nullptr;
-  static std::vector<char> exe;
-
-  if (!initialised) {
-#ifdef PLATFORM_LINUX
-    cwd = get_current_dir_name();
-    char temp[256];
-    sprintf(temp, "/proc/%d/exe", getpid());
-    exe.resize(256);
-    std::size_t bytes = 0;
-    while ((bytes = readlink(temp, &exe[0], exe.size())) == exe.size()) {
-      exe.resize(exe.size() * 2);
-    }
-    if (bytes >= 0) {
-      while (exe[bytes] != '/') {
-        --bytes;
-      }
-      exe[bytes] = '\0';
-    }
-#else
-    DWORD length = MAX_PATH;
-    cwd = new char[MAX_PATH + 1];
-    GetCurrentDirectory(length, cwd);
-    cwd[MAX_PATH + 1] = '\0';
-
-    exe.resize(MAX_PATH);
-    DWORD result = GetModuleFileName(0, &exe[0], (DWORD)exe.size());
-    while (result == exe.size()) {
-      exe.resize(exe.size() * 2);
-      result = GetModuleFileName(0, &exe[0], (DWORD)exe.size());
-    }
-
-    if (result != 0) {
-      --result;
-      while (exe[result] != '\\') {
-        --result;
-      }
-      exe[result] = '\0';
-    }
-#endif
-    initialised = true;
-  }
-
-#ifdef PLATFORM_LINUX
-  [](int) {}(chdir(original ? cwd : exe.data()));
-#else
-  SetCurrentDirectory(original ? cwd : exe.data());
-#endif
-#endif
-}
-
 bool Lib::begin_frame() {
   bool audio_change = false;
   bool controller_change = false;
@@ -377,12 +321,7 @@ bool Lib::begin_frame() {
   for (std::size_t i = 0; i < internals_->controller_info.size(); ++i) {
     internals_->controller_frames[i] = io_layer_.controller_frame(i);
   }
-
-  for (auto& s : internals_->sounds) {
-    if (s.first > 0) {
-      --s.first;
-    }
-  }
+  internals_->sounds.clear();
 
   renderer_.set_dimensions(io_layer_.dimensions(), glm::uvec2{kWidth, kHeight});
   if (headless_ && score_frame_ < 5) {
@@ -392,7 +331,14 @@ bool Lib::begin_frame() {
 }
 
 void Lib::end_frame() {
+  for (const auto& pair : internals_->sounds) {
+    auto& s = pair.second;
+    internals_->mixer.play(static_cast<ii::Mixer::audio_handle_t>(pair.first),
+                           std::max(0.f, std::min(1.f, s.volume)), s.pan / s.count,
+                           std::pow(2.f, s.pitch));
+  }
   io_layer_.input_frame_clear();
+  internals_->mixer.commit();
 }
 
 void Lib::capture_mouse(bool enabled) {
@@ -503,15 +449,22 @@ void Lib::render_line(const fvec2& a, const fvec2& b, colour_t c) const {
   renderer_.render_legacy_line(convert_vec(a), convert_vec(b), convert_colour(c));
 }
 
+void Lib::render_line_rect(const fvec2& lo, const fvec2& hi, colour_t c) const {
+  fvec2 li{lo.x, hi.y};
+  fvec2 ho{hi.x, lo.y};
+  render_line(lo, li, c);
+  render_line(li, hi, c);
+  render_line(hi, ho, c);
+  render_line(ho, lo, c);
+}
+
 void Lib::render_text(const fvec2& v, const std::string& text, colour_t c) const {
   renderer_.render_legacy_text(static_cast<glm::ivec2>(convert_vec(v)), convert_colour(c), text);
 }
 
-void Lib::render_rect(const fvec2& low, const fvec2& hi, colour_t c,
-                      std::int32_t line_width) const {
-  // TODO: this is incorrect now for ingame rect rendering.
+void Lib::render_rect(const fvec2& lo, const fvec2& hi, colour_t c, std::int32_t line_width) const {
   c = z::colour_cycle(c, colour_cycle_);
-  renderer_.render_legacy_rect(static_cast<glm::ivec2>(convert_vec(low)),
+  renderer_.render_legacy_rect(static_cast<glm::ivec2>(convert_vec(lo)),
                                static_cast<glm::ivec2>(convert_vec(hi)), line_width,
                                convert_colour(c));
 }
@@ -529,29 +482,12 @@ void Lib::stop_rumble() {
   // TODO.
 }
 
-bool Lib::play_sound(sound s, float volume, float pan, float repitch) {
-  // TODO: can this (sound resource/timing) all be removed?
-#ifdef PLATFORM_SCORE
-  return false;
-#else
-  bool timing_ok = false;
-  for (std::size_t i = 0; i < internals_->sounds.size(); ++i) {
-    if (s == internals_->sounds[i].second) {
-      if (internals_->sounds[i].first <= 0) {
-        timing_ok = true;
-        internals_->sounds[i].first = kSoundTimer;
-      }
-      break;
-    }
-  }
-
-  if (!timing_ok) {
-    return false;
-  }
-  internals_->mixer.play(static_cast<ii::Mixer::audio_handle_t>(s), volume, pan,
-                         std::pow(2.f, repitch));
-#endif
-  return false;
+void Lib::play_sound(sound s, float volume, float pan, float repitch) {
+  auto& aggregation = internals_->sounds[s];
+  ++aggregation.count;
+  aggregation.volume += volume;
+  aggregation.pan += pan;
+  aggregation.pitch = repitch;
 }
 
 void Lib::set_volume(std::int32_t volume) {

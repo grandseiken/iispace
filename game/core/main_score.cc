@@ -1,5 +1,6 @@
 #include "game/core/lib.h"
 #include "game/core/z0_game.h"
+#include "game/io/file/std_filesystem.h"
 #include "game/io/null_io.h"
 #include "game/render/null_renderer.h"
 #include <iostream>
@@ -14,12 +15,13 @@ bool run(const std::vector<std::string>& args) {
       std::cerr << "Error initialising IO: " << io_layer.error() << std::endl;
       return false;
     }
-    auto renderer = ii::NullRenderer::create();
+    auto renderer = ii::render::NullRenderer::create();
     if (!renderer) {
       std::cerr << "Error initialising renderer: " << renderer.error() << std::endl;
       return false;
     }
-    Lib lib{/* headless */ true, **io_layer, **renderer};
+    ii::io::StdFilesystem fs{".", "savedata", "tests"};
+    Lib lib{/* headless */ true, fs, **io_layer, **renderer};
     z0Game game{lib, args};
     game.run();
   } catch (const score_finished&) {
@@ -57,11 +59,11 @@ int main(int argc, char** argv) {
   std::cout << "Content-type: text/plain" << std::endl << std::endl;
 
   if (is_test) {
-    test("tests/Darb_2p__Graves  Darb_553403.wrp");
-    test("tests/Darb_4p__Team Graves_430987.wrp");
-    test("tests/seiken_1p__crikey_641530.wrp");
-    test("tests/seiken_2p__RAB  STU Yo_477833.wrp");
-    test("tests/seiken_3p__3 OF US_219110.wrp");
+    test("Darb_2p__Graves  Darb_553403");
+    test("Darb_4p__Team Graves_430987");
+    test("seiken_1p__crikey_641530");
+    test("seiken_2p__RAB  STU Yo_477833");
+    test("seiken_3p__3 OF US_219110");
   } else {
     return run(args) ? 0 : 1;
   }

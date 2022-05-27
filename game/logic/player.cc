@@ -21,7 +21,6 @@ const std::int32_t kPowerupRotateTime = 100;
 }  // namespace
 
 SimState::ship_list Player::kill_queue_;
-SimState::ship_list Player::shot_sound_queue_;
 std::int32_t Player::fire_timer_;
 
 Player::Player(PlayerInput& input, const vec2& position, std::int32_t player_number)
@@ -36,7 +35,6 @@ Player::Player(PlayerInput& input, const vec2& position, std::int32_t player_num
   add_new_shape<Fill>(vec2{8, 0}, 3, 3, colour() & 0xffffff33);
   add_new_shape<Polygon>(vec2{}, 8, 3, colour(), fixed_c::pi);
   kill_queue_.clear();
-  shot_sound_queue_.clear();
   fire_timer_ = 0;
 }
 
@@ -46,13 +44,6 @@ void Player::update() {
   vec2 velocity;
   std::int32_t keys = 0;
   input_.get(*this, velocity, fire_target_, keys);
-
-  for (auto it = shot_sound_queue_.begin(); it != shot_sound_queue_.end(); ++it) {
-    if ((!(keys & 1) || kill_timer_) && *it == this) {
-      shot_sound_queue_.erase(it);
-      break;
-    }
-  }
 
   // Temporary death.
   if (kill_timer_ > 1) {
@@ -115,7 +106,7 @@ void Player::update() {
     }
   }
 
-  // Shots
+  // Shots.
   vec2 shot = fire_target_ - shape().centre;
   if (shot.length() > 0 && !fire_timer_ && keys & 1) {
     spawn_new<Shot>(shape().centre, this, shot, magic_shot_timer_ != 0);
@@ -123,31 +114,13 @@ void Player::update() {
       --magic_shot_timer_;
     }
 
-    bool could_play = false;
-    // Avoid randomness errors due to sound timings.
     float volume = .5f * z::rand_fixed().to_float() + .5f;
     float pitch = (z::rand_fixed().to_float() - 1.f) / 12.f;
-    if (shot_sound_queue_.empty() || shot_sound_queue_[0] == this) {
-      could_play = lib().play_sound(Lib::sound::kPlayerFire, volume,
-                                    2.f * shape().centre.x.to_float() / Lib::kWidth - 1.f, pitch);
-      if (could_play && !shot_sound_queue_.empty()) {
-        shot_sound_queue_.erase(shot_sound_queue_.begin());
-      }
-    }
-    if (!could_play) {
-      bool in_queue = false;
-      for (const auto& ship : shot_sound_queue_) {
-        if (ship == this) {
-          in_queue = true;
-        }
-      }
-      if (!in_queue) {
-        shot_sound_queue_.push_back(this);
-      }
-    }
+    float pan = 2.f * shape().centre.x.to_float() / Lib::kWidth - 1.f;
+    lib().play_sound(Lib::sound::kPlayerFire, volume, pan, pitch);
   }
 
-  // Damage
+  // Damage.
   if (game().any_collision(shape().centre, kDangerous)) {
     damage();
   }
@@ -192,8 +165,8 @@ void Player::render() const {
   if (magic_shot_timer_ != 0) {
     v.x += n % 2 ? -1 : ss.str().length();
     v *= 16;
-    lib().render_rect(v + fvec2{5.f, 11.f - (10 * magic_shot_timer_) / kMagicShotCount},
-                      v + fvec2{9.f, 13.f}, 0xffffffff, 2);
+    lib().render_line_rect(v + fvec2{5.f, 11.f - (10 * magic_shot_timer_) / kMagicShotCount},
+                           v + fvec2{9.f, 13.f}, 0xffffffff);
   }
 }
 
