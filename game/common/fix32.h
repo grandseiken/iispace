@@ -292,7 +292,7 @@ inline std::ostream& operator<<(std::ostream& o, const fixed& f) {
   double d = 0;
   double val = 0.5;
   for (std::size_t i = 0; i < 32; ++i) {
-    if (v & (std::int64_t(1) << (31 - i))) {
+    if (v & (std::int64_t{1} << (31 - i))) {
       d += val;
     }
     val /= 2;

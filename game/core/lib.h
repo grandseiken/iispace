@@ -6,6 +6,9 @@
 #include <string>
 #include <vector>
 
+namespace ii {
+class SimState;
+}  // namespace ii
 namespace ii::io {
 class Filesystem;
 class IoLayer;
@@ -62,11 +65,15 @@ public:
   void set_player_count(std::int32_t players) {
     players_ = players;
   }
+  std::int32_t player_count() const {
+    return players_;
+  }
 
   bool begin_frame();
   void end_frame();
   void capture_mouse(bool enabled);
   void new_game();
+  void post_update(ii::SimState& sim);
 
   // Input
   //------------------------------
@@ -92,7 +99,7 @@ public:
   void render() const;
 
   void rumble(std::int32_t player, std::int32_t time);
-  void play_sound(ii::sound, float volume = 1.f, float pan = 0.f, float repitch = 0.f);
+  void play_sound(ii::sound);
   void set_volume(std::int32_t volume);
 
   // Wacky colours

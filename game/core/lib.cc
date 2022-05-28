@@ -1,13 +1,16 @@
 #include "game/core/lib.h"
 #include "game/core/save.h"
+#include "game/core/z0_game.h"
 #include "game/io/file/filesystem.h"
 #include "game/io/io.h"
+#include "game/logic/sim_state.h"
 #include "game/mixer/mixer.h"
 #include "game/render/renderer.h"
 #include <nonstd/span.hpp>
 #include <algorithm>
 #include <iostream>
 #include <limits>
+#include <sstream>
 #include <unordered_map>
 
 const std::string Lib::kSuperEncryptionKey = "<>";
@@ -331,14 +334,19 @@ bool Lib::begin_frame() {
 }
 
 void Lib::end_frame() {
-  for (const auto& pair : internals_->sounds) {
-    auto& s = pair.second;
-    internals_->mixer.play(static_cast<ii::Mixer::audio_handle_t>(pair.first),
-                           std::max(0.f, std::min(1.f, s.volume)), s.pan / s.count,
-                           std::pow(2.f, s.pitch));
-  }
   io_layer_.input_frame_clear();
   internals_->mixer.commit();
+}
+
+void Lib::post_update(ii::SimState& sim) {
+  for (const auto& pair : sim.get_sound_output()) {
+    auto& s = pair.second;
+    internals_->mixer.play(static_cast<ii::Mixer::audio_handle_t>(pair.first), s.volume, s.pan,
+                           s.pitch);
+  }
+  for (const auto& pair : sim.get_rumble_output()) {
+    rumble(pair.first, pair.second);
+  }
 }
 
 void Lib::capture_mouse(bool enabled) {
@@ -466,15 +474,11 @@ void Lib::render() const {
 }
 
 void Lib::rumble(std::int32_t player, std::int32_t time) {
-  // TODO.
+  // TODO
 }
 
-void Lib::play_sound(ii::sound s, float volume, float pan, float repitch) {
-  auto& aggregation = internals_->sounds[s];
-  ++aggregation.count;
-  aggregation.volume += volume;
-  aggregation.pan += pan;
-  aggregation.pitch = repitch;
+void Lib::play_sound(ii::sound s) {
+  internals_->mixer.play(static_cast<ii::Mixer::audio_handle_t>(s), 1.f, 0.f, 1.f);
 }
 
 void Lib::set_volume(std::int32_t volume) {

@@ -77,6 +77,7 @@ private:
   std::int32_t* frame_count_;
   PauseModal::output_t pause_output_ = PauseModal::kContinue;
   std::int32_t controllers_connected_ = 0;
+  bool is_replay_ = false;
   bool controllers_dialog_ = true;
   std::unique_ptr<ii::SimState> state_;
 };

@@ -30,6 +30,8 @@ SimState::~SimState() {
 }
 
 void SimState::update() {
+  internals_->sound_output.clear();
+  internals_->rumble_output.clear();
   Boss::warnings_.clear();
   lib_.set_colour_cycle(mode() == game_mode::kHard       ? 128
                             : mode() == game_mode::kFast ? 192
@@ -128,6 +130,9 @@ void SimState::update() {
 
 void SimState::render() const {
   internals_->boss_hp_bar.reset();
+  internals_->line_output.clear();
+  internals_->player_output.clear();
+
   Stars::render(interface());
   for (const auto& particle : internals_->particles) {
     interface().render_line_rect(particle.position + fvec2{1, 1}, particle.position - fvec2{1, 1},
@@ -202,21 +207,58 @@ bool SimState::game_over() const {
   return game_over_;
 }
 
+std::unordered_map<sound, SimState::sound_t> SimState::get_sound_output() const {
+  std::unordered_map<sound, sound_t> result;
+  for (const auto& pair : internals_->sound_output) {
+    sound_t s;
+    s.volume = std::max(0.f, std::min(1.f, pair.second.volume));
+    s.pan = pair.second.pan / pair.second.count;
+    s.pitch = std::pow(2.f, pair.second.pitch);
+    result.emplace(pair.first, s);
+  }
+  return result;
+}
+
+std::unordered_map<std::int32_t, std::int32_t> SimState::get_rumble_output() const {
+  return internals_->rumble_output;
+}
+
+SimState::render_output SimState::get_render_output() const {
+  SimState::render_output result;
+  for (const auto& p : internals_->player_output) {
+    auto& o = result.players.emplace_back();
+    o.colour = p.colour;
+    o.multiplier = p.multiplier;
+    o.score = p.score;
+    o.timer = p.timer;
+  }
+  for (const auto& line : internals_->line_output) {
+    auto& l = result.lines.emplace_back();
+    l.a = line.a;
+    l.b = line.b;
+    l.c = line.c;
+  }
+  if (!replay_recording_) {
+    auto input = static_cast<ReplayPlayerInput*>(input_.get());
+    result.replay_progress =
+        static_cast<float>(input->replay_frame) / input->replay.replay.player_frame_size();
+  }
+  result.mode = mode();
+  result.elapsed_time = overmind_->get_elapsed_time();
+  result.lives_remaining = interface().get_lives();
+  result.overmind_timer = overmind_->get_timer();
+  result.boss_hp_bar = internals_->boss_hp_bar;
+  return result;
+}
+
 SimState::results SimState::get_results() const {
   results r;
   r.is_replay = !replay_recording_;
-  if (r.is_replay) {
-    auto input = static_cast<ReplayPlayerInput*>(input_.get());
-    r.replay_progress =
-        static_cast<float>(input->replay_frame) / input->replay.replay.player_frame_size();
-  }
   r.mode = mode();
   r.seed = replay_.replay.seed();
   r.elapsed_time = overmind_->get_elapsed_time();
   r.killed_bosses = overmind_->get_killed_bosses();
   r.lives_remaining = interface().get_lives();
-  r.overmind_timer = overmind_->get_timer();
-  r.boss_hp_bar = internals_->boss_hp_bar;
   r.bosses_killed = internals_->bosses_killed;
   r.hard_mode_bosses_killed = internals_->hard_mode_bosses_killed;
 
@@ -236,7 +278,7 @@ SimState::SimState(Lib& lib, std::int32_t* frame_count, Replay&& replay, bool re
 , replay_{replay}
 , replay_recording_{replay_recording}
 , internals_{std::make_unique<SimInternals>()}
-, interface_{std::make_unique<SimInterface>(lib, internals_.get())} {
+, interface_{std::make_unique<SimInterface>(internals_.get())} {
   static constexpr std::int32_t kStartingLives = 2;
   static constexpr std::int32_t kBossModeLives = 1;
   z::seed((std::int32_t)replay_.replay.seed());

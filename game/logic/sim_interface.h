@@ -40,7 +40,7 @@ public:
   };
   using ship_list = std::vector<Ship*>;
 
-  SimInterface(Lib& lib, SimInternals* internals) : lib_{lib}, internals_{internals} {}
+  SimInterface(SimInternals* internals) : internals_{internals} {}
 
   // State manipulation.
   game_mode mode() const;
@@ -80,7 +80,6 @@ public:
                           std::int32_t multiplier, float timer);
 
 private:
-  Lib& lib_;
   SimInternals* internals_;
 };
 
