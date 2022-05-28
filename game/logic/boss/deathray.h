@@ -18,7 +18,7 @@ private:
   bool laser_ = false;
   bool dir_ = true;
   std::int32_t pos_ = 1;
-  SimState::ship_list arms_;
+  ii::SimInterface::ship_list arms_;
   std::int32_t arm_timer_ = 0;
   std::int32_t shot_timer_ = 0;
 

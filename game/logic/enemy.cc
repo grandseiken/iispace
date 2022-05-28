@@ -209,7 +209,7 @@ void Wall::update() {
   auto count = sim().get_non_wall_count();
   if (!count && timer_ % 8 < 2) {
     if (get_hp() > 2) {
-      sim().lib().play_sound(ii::sound::kEnemySpawn, 1.f, 0.f);
+      sim().play_sound(ii::sound::kEnemySpawn, 1.f, 0.f);
     }
     damage(get_hp() - 2, false, 0);
   }
@@ -484,8 +484,8 @@ void Tractor::render() const {
   if (spinning_) {
     for (std::size_t i = 0; i < players_.size(); ++i) {
       if (((timer_ + i * 4) / 4) % 2 && !((Player*)players_[i])->is_killed()) {
-        sim().lib().render_line(to_float(shape().centre), to_float(players_[i]->shape().centre),
-                                0xcc33ccff);
+        sim().render_line(to_float(shape().centre), to_float(players_[i]->shape().centre),
+                          0xcc33ccff);
       }
     }
   }

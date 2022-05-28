@@ -129,7 +129,8 @@ void PauseModal::render(Lib& lib) const {
   lib.render_rect(low, hi, z0Game::kPanelText, 1);
 }
 
-HighScoreModal::HighScoreModal(SaveData& save, GameModal& game, const SimState::results& results)
+HighScoreModal::HighScoreModal(SaveData& save, GameModal& game,
+                               const ii::SimState::results& results)
 : Modal{true, false}
 , save_{save}
 , game_{game}
@@ -326,13 +327,14 @@ bool HighScoreModal::is_high_score() const {
 GameModal::GameModal(Lib& lib, SaveData& save, Settings& settings, std::int32_t* frame_count,
                      game_mode mode, std::int32_t player_count, bool can_face_secret_boss)
 : Modal{true, true}, save_{save}, settings_{settings}, frame_count_{frame_count} {
-  state_ = std::make_unique<SimState>(lib, frame_count, mode, player_count, can_face_secret_boss);
+  state_ =
+      std::make_unique<ii::SimState>(lib, frame_count, mode, player_count, can_face_secret_boss);
 }
 
 GameModal::GameModal(Lib& lib, SaveData& save, Settings& settings, std::int32_t* frame_count,
                      const std::string& replay_path)
 : Modal{true, true}, save_{save}, settings_{settings}, frame_count_{frame_count} {
-  state_ = std::make_unique<SimState>(lib, frame_count, replay_path);
+  state_ = std::make_unique<ii::SimState>(lib, frame_count, replay_path);
 }
 
 GameModal::~GameModal() {}
@@ -378,11 +380,11 @@ void GameModal::update(Lib& lib) {
     return;
   }
 
-  state_->update(lib);
+  state_->update();
 }
 
 void GameModal::render(Lib& lib) const {
-  state_->render(lib);
+  state_->render();
   auto results = state_->get_results();
 
   if (controllers_dialog_) {

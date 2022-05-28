@@ -1,12 +1,16 @@
 #include "game/logic/sim_state.h"
+#include "game/core/lib.h"
 #include "game/logic/boss.h"
 #include "game/logic/boss/chaser.h"
 #include "game/logic/overmind.h"
 #include "game/logic/player.h"
 #include "game/logic/player_input.h"
 #include "game/logic/ship.h"
+#include "game/logic/sim_interface.h"
 #include "game/logic/sim_internals.h"
 #include "game/logic/stars.h"
+
+namespace ii {
 
 SimState::SimState(Lib& lib, std::int32_t* frame_count, game_mode mode, std::int32_t player_count,
                    bool can_face_secret_boss)
@@ -25,21 +29,21 @@ SimState::~SimState() {
   *frame_count_ = 1;
 }
 
-void SimState::update(Lib& lib) {
+void SimState::update() {
   Boss::warnings_.clear();
-  lib.set_colour_cycle(mode() == game_mode::kHard       ? 128
-                           : mode() == game_mode::kFast ? 192
-                           : mode() == game_mode::kWhat ? (lib.get_colour_cycle() + 1) % 256
-                                                        : 0);
+  lib_.set_colour_cycle(mode() == game_mode::kHard       ? 128
+                            : mode() == game_mode::kFast ? 192
+                            : mode() == game_mode::kWhat ? (lib_.get_colour_cycle() + 1) % 256
+                                                         : 0);
   if (replay_recording_) {
     *frame_count_ = mode() == game_mode::kFast ? 2 : 1;
   }
 
   if (!replay_recording_) {
-    if (lib.is_key_pressed(Lib::key::kBomb)) {
+    if (lib_.is_key_pressed(Lib::key::kBomb)) {
       *frame_count_ *= 2;
     }
-    if (lib.is_key_pressed(Lib::key::kFire) &&
+    if (lib_.is_key_pressed(Lib::key::kFire) &&
         *frame_count_ > (mode() == game_mode::kFast ? 2 : 1)) {
       *frame_count_ /= 2;
     }
@@ -122,12 +126,12 @@ void SimState::update(Lib& lib) {
   }
 }
 
-void SimState::render(Lib& lib) const {
+void SimState::render() const {
   internals_->boss_hp_bar.reset();
-  Stars::render(lib);
+  Stars::render(interface());
   for (const auto& particle : internals_->particles) {
-    lib.render_line_rect(particle.position + fvec2{1, 1}, particle.position - fvec2{1, 1},
-                         particle.colour);
+    interface().render_line_rect(particle.position + fvec2{1, 1}, particle.position - fvec2{1, 1},
+                                 particle.colour);
   }
   for (std::size_t i = internals_->player_list.size(); i < internals_->ships.size(); ++i) {
     internals_->ships[i]->render();
@@ -145,41 +149,41 @@ void SimState::render(Lib& lib) const {
                                               : Boss::warnings_[i - internals_->ships.size()]);
 
     if (v.x < -4) {
-      auto a = static_cast<std::int32_t>(
-          .5f + float{0x1} + float{0x9} * std::max(v.x + ii::kSimWidth, 0.f) / ii::kSimWidth);
+      auto a = static_cast<std::int32_t>(.5f + float{0x1} +
+                                         float{0x9} * std::max(v.x + kSimWidth, 0.f) / kSimWidth);
       a |= a << 4;
       a = (a << 8) | (a << 16) | (a << 24) | 0x66;
-      lib.render_line(fvec2{0.f, v.y}, fvec2{6, v.y - 3}, a);
-      lib.render_line(fvec2{6.f, v.y - 3}, fvec2{6, v.y + 3}, a);
-      lib.render_line(fvec2{6.f, v.y + 3}, fvec2{0, v.y}, a);
+      interface().render_line(fvec2{0.f, v.y}, fvec2{6, v.y - 3}, a);
+      interface().render_line(fvec2{6.f, v.y - 3}, fvec2{6, v.y + 3}, a);
+      interface().render_line(fvec2{6.f, v.y + 3}, fvec2{0, v.y}, a);
     }
-    if (v.x >= ii::kSimWidth + 4) {
+    if (v.x >= kSimWidth + 4) {
       auto a = static_cast<std::int32_t>(
-          .5f + float{0x1} + float{0x9} * std::max(2 * ii::kSimWidth - v.x, 0.f) / ii::kSimWidth);
+          .5f + float{0x1} + float{0x9} * std::max(2 * kSimWidth - v.x, 0.f) / kSimWidth);
       a |= a << 4;
       a = (a << 8) | (a << 16) | (a << 24) | 0x66;
-      lib.render_line(fvec2{float{ii::kSimWidth}, v.y}, fvec2{ii::kSimWidth - 6.f, v.y - 3}, a);
-      lib.render_line(fvec2{ii::kSimWidth - 6, v.y - 3}, fvec2{ii::kSimWidth - 6.f, v.y + 3}, a);
-      lib.render_line(fvec2{ii::kSimWidth - 6, v.y + 3}, fvec2{float{ii::kSimWidth}, v.y}, a);
+      interface().render_line(fvec2{float{kSimWidth}, v.y}, fvec2{kSimWidth - 6.f, v.y - 3}, a);
+      interface().render_line(fvec2{kSimWidth - 6, v.y - 3}, fvec2{kSimWidth - 6.f, v.y + 3}, a);
+      interface().render_line(fvec2{kSimWidth - 6, v.y + 3}, fvec2{float{kSimWidth}, v.y}, a);
     }
     if (v.y < -4) {
-      auto a = static_cast<std::int32_t>(
-          .5f + float{0x1} + float{0x9} * std::max(v.y + ii::kSimHeight, 0.f) / ii::kSimHeight);
+      auto a = static_cast<std::int32_t>(.5f + float{0x1} +
+                                         float{0x9} * std::max(v.y + kSimHeight, 0.f) / kSimHeight);
       a |= a << 4;
       a = (a << 8) | (a << 16) | (a << 24) | 0x66;
-      lib.render_line(fvec2{v.x, 0.f}, fvec2{v.x - 3, 6.f}, a);
-      lib.render_line(fvec2{v.x - 3, 6.f}, fvec2{v.x + 3, 6.f}, a);
-      lib.render_line(fvec2{v.x + 3, 6.f}, fvec2{v.x, 0.f}, a);
+      interface().render_line(fvec2{v.x, 0.f}, fvec2{v.x - 3, 6.f}, a);
+      interface().render_line(fvec2{v.x - 3, 6.f}, fvec2{v.x + 3, 6.f}, a);
+      interface().render_line(fvec2{v.x + 3, 6.f}, fvec2{v.x, 0.f}, a);
     }
-    if (v.y >= ii::kSimHeight + 4) {
+    if (v.y >= kSimHeight + 4) {
       auto a = static_cast<std::int32_t>(
-          .5f + float{0x1} + float{0x9} * std::max(2 * ii::kSimHeight - v.y, 0.f) / ii::kSimHeight);
+          .5f + float{0x1} + float{0x9} * std::max(2 * kSimHeight - v.y, 0.f) / kSimHeight);
       a |= a << 4;
       a = (a << 8) | (a << 16) | (a << 24) | 0x66;
-      lib.render_line(fvec2{v.x, float{ii::kSimHeight}}, fvec2{v.x - 3, ii::kSimHeight - 6.f}, a);
-      lib.render_line(fvec2{v.x - 3, ii::kSimHeight - 6.f}, fvec2{v.x + 3, ii::kSimHeight - 6.f},
-                      a);
-      lib.render_line(fvec2{v.x + 3, ii::kSimHeight - 6.f}, fvec2{v.x, float{ii::kSimHeight}}, a);
+      interface().render_line(fvec2{v.x, float{kSimHeight}}, fvec2{v.x - 3, kSimHeight - 6.f}, a);
+      interface().render_line(fvec2{v.x - 3, kSimHeight - 6.f}, fvec2{v.x + 3, kSimHeight - 6.f},
+                              a);
+      interface().render_line(fvec2{v.x + 3, kSimHeight - 6.f}, fvec2{v.x, float{kSimHeight}}, a);
     }
   }
 }
@@ -188,10 +192,6 @@ void SimState::write_replay(const std::string& team_name, std::int64_t score) co
   if (replay_recording_) {
     replay_.write(lib_.filesystem(), team_name, score);
   }
-}
-
-Lib& SimState::lib() {
-  return lib_;
 }
 
 game_mode SimState::mode() const {
@@ -235,8 +235,8 @@ SimState::SimState(Lib& lib, std::int32_t* frame_count, Replay&& replay, bool re
 , frame_count_{frame_count}
 , replay_{replay}
 , replay_recording_{replay_recording}
-, internals_{std::make_unique<ii::SimInternals>()}
-, interface_{lib, internals_.get()} {
+, internals_{std::make_unique<SimInternals>()}
+, interface_{std::make_unique<SimInterface>(lib, internals_.get())} {
   static constexpr std::int32_t kStartingLives = 2;
   static constexpr std::int32_t kBossModeLives = 1;
   z::seed((std::int32_t)replay_.replay.seed());
@@ -253,11 +253,13 @@ SimState::SimState(Lib& lib, std::int32_t* frame_count, Replay&& replay, bool re
 
   Stars::clear();
   for (std::int32_t i = 0; i < replay_.replay.players(); ++i) {
-    vec2 v((1 + i) * ii::kSimWidth / (1 + replay_.replay.players()), ii::kSimHeight / 2);
+    vec2 v((1 + i) * kSimWidth / (1 + replay_.replay.players()), kSimHeight / 2);
     auto p = std::make_unique<Player>(*input_, v, i);
     internals_->player_list.push_back(p.get());
     interface().add_ship(std::move(p));
   }
-  overmind_ = std::make_unique<Overmind>(interface_, replay_.replay.can_face_secret_boss());
+  overmind_ = std::make_unique<Overmind>(interface(), replay_.replay.can_face_secret_boss());
   internals_->overmind = overmind_.get();
 }
+
+}  // namespace ii

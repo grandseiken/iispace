@@ -1,9 +1,7 @@
 #ifndef IISPACE_GAME_LOGIC_SHIP_H
 #define IISPACE_GAME_LOGIC_SHIP_H
-#include "game/core/lib.h"
 #include "game/logic/shape.h"
 #include "game/logic/sim_interface.h"
-#include "game/logic/sim_state.h"
 
 class Ship {
 public:
@@ -84,12 +82,12 @@ public:
   }
 
   void play_sound(ii::sound sound) {
-    sim().lib().play_sound(sound, 1.f, 2.f * shape_.centre.x.to_float() / ii::kSimWidth - 1.f);
+    sim().play_sound(sound, 1.f, 2.f * shape_.centre.x.to_float() / ii::kSimWidth - 1.f);
   }
 
   void play_sound_random(ii::sound sound, float pitch = 0.f, float volume = 1.f) {
-    sim().lib().play_sound(sound, volume * (.5f * z::rand_fixed().to_float() + .5f),
-                           2.f * shape_.centre.x.to_float() / ii::kSimWidth - 1.f, pitch);
+    sim().play_sound(sound, volume * (.5f * z::rand_fixed().to_float() + .5f),
+                     2.f * shape_.centre.x.to_float() / ii::kSimWidth - 1.f, pitch);
   }
 
   std::int32_t enemy_value() const {

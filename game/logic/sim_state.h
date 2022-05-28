@@ -2,19 +2,11 @@
 #define IISPACE_GAME_LOGIC_SIM_STATE_H
 #include "game/common/z.h"
 #include "game/core/replay.h"
-#include "game/logic/sim_interface.h"
 #include <cstdint>
 #include <memory>
 #include <optional>
 #include <string>
 #include <vector>
-
-namespace ii::io {
-class Filesystem;
-}  // namespace ii::io
-namespace ii {
-struct SimInternals;
-}  // namespace ii
 
 class Lib;
 class Overmind;
@@ -22,27 +14,31 @@ class Player;
 class PlayerInput;
 class Ship;
 
+namespace ii {
+class SimInterface;
+struct SimInternals;
+
 class SimState {
 public:
   using ship_list = std::vector<Ship*>;
 
+  // TODO: move replay handling out of here.
   SimState(Lib& lib, std::int32_t* frame_count, game_mode mode, std::int32_t player_count,
            bool can_face_secret_boss);
   SimState(Lib& lib, std::int32_t* frame_count, const std::string& replay_path);
   ~SimState();
 
-  const ii::SimInterface& interface() const {
-    return interface_;
+  const SimInterface& interface() const {
+    return *interface_;
   }
 
-  ii::SimInterface& interface() {
-    return interface_;
+  SimInterface& interface() {
+    return *interface_;
   }
 
-  void update(Lib& lib);
-  void render(Lib& lib) const;
+  void update();
+  void render() const;
 
-  Lib& lib();
   game_mode mode() const;
   void write_replay(const std::string& team_name, std::int64_t score) const;
   bool game_over() const;
@@ -83,8 +79,10 @@ private:
   bool replay_recording_ = false;
   std::unique_ptr<PlayerInput> input_;
   std::unique_ptr<Overmind> overmind_;
-  std::unique_ptr<ii::SimInternals> internals_;
-  ii::SimInterface interface_;
+  std::unique_ptr<SimInternals> internals_;
+  std::unique_ptr<SimInterface> interface_;
 };
+
+}  // namespace ii
 
 #endif

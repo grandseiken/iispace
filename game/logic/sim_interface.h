@@ -1,6 +1,7 @@
 #ifndef IISPACE_GAME_LOGIC_SIM_INTERFACE_H
 #define IISPACE_GAME_LOGIC_SIM_INTERFACE_H
 #include "game/common/z.h"
+#include "game/mixer/sound.h"
 #include <cstdint>
 #include <memory>
 #include <vector>
@@ -40,10 +41,8 @@ public:
   using ship_list = std::vector<Ship*>;
 
   SimInterface(Lib& lib, SimInternals* internals) : lib_{lib}, internals_{internals} {}
-  Lib& lib() {
-    return lib_;
-  }
 
+  // State manipulation.
   game_mode mode() const;
 
   // TODO: const/non-const versions of retrieval functions.
@@ -71,7 +70,14 @@ public:
     add_ship(std::make_unique<T>(std::forward<Args>(args)...));
   }
 
-  void render_hp_bar(float fill);
+  // Simulation output.
+  void rumble(std::int32_t player, std::int32_t time) const;
+  void play_sound(sound, float volume = 1.f, float pan = 0.f, float repitch = 0.f) const;
+  void render_hp_bar(float fill) const;
+  void render_line(const fvec2& a, const fvec2& b, colour_t c) const;
+  void render_line_rect(const fvec2& lo, const fvec2& hi, colour_t c) const;
+  void render_player_info(std::int32_t player_number, colour_t colour, std::int64_t score,
+                          std::int32_t multiplier, float timer);
 
 private:
   Lib& lib_;

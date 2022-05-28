@@ -260,7 +260,7 @@ void TractorBoss::render() const {
       (!stopped_ && (continue_ || !will_attack_) && is_on_screen())) {
     for (std::size_t i = 0; i < targets_.size(); ++i) {
       if (((timer_ + i * 4) / 4) % 2) {
-        sim().lib().render_line(to_float(shape().centre), to_float(targets_[i]), 0xcc33ccff);
+        sim().render_line(to_float(shape().centre), to_float(targets_[i]), 0xcc33ccff);
       }
     }
   }

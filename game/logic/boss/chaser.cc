@@ -309,7 +309,7 @@ void ChaserBoss::on_destroy() {
     if (last) {
       set_killed();
       for (std::int32_t i = 0; i < kPlayers; ++i) {
-        sim().lib().rumble(i, 25);
+        sim().rumble(i, 25);
       }
       for (const auto& ship : sim().players()) {
         Player* p = (Player*)ship;
@@ -329,7 +329,7 @@ void ChaserBoss::on_destroy() {
   }
 
   for (std::int32_t i = 0; i < kPlayers; ++i) {
-    sim().lib().rumble(i, split_ < 3 ? 10 : 3);
+    sim().rumble(i, split_ < 3 ? 10 : 3);
   }
 
   explosion();

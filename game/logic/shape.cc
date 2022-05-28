@@ -1,5 +1,4 @@
 #include "game/logic/shape.h"
-#include "game/core/lib.h"
 #include "game/logic/sim_interface.h"
 
 Shape::Shape(const vec2& centre, fixed rotation, colour_t colour, std::int32_t category,
@@ -61,7 +60,7 @@ void Fill::render(ii::SimInterface& sim, const fvec2& position, float rotation,
   fvec2 wh = {width.to_float(), height.to_float()};
   fvec2 a = c + wh;
   fvec2 b = c - wh;
-  sim.lib().render_line_rect(a, b, colour_override ? colour_override : colour);
+  sim.render_line_rect(a, b, colour_override ? colour_override : colour);
 }
 
 bool Fill::check_local_point(const vec2& v) const {
@@ -75,7 +74,7 @@ void Line::render(ii::SimInterface& sim, const fvec2& position, float rotation,
                   colour_t colour_override) const {
   fvec2 aa = convert_fl_point(position, rotation, to_float(a));
   fvec2 bb = convert_fl_point(position, rotation, to_float(b));
-  sim.lib().render_line(aa, bb, colour_override ? colour_override : colour);
+  sim.render_line(aa, bb, colour_override ? colour_override : colour);
 }
 
 bool Line::check_local_point(const vec2& v) const {
@@ -96,10 +95,10 @@ void Box::render(ii::SimInterface& sim, const fvec2& position, float rotation,
   fvec2 c = convert_fl_point(position, rotation, {-w, -h});
   fvec2 d = convert_fl_point(position, rotation, {w, -h});
 
-  sim.lib().render_line(a, b, colour_override ? colour_override : colour);
-  sim.lib().render_line(b, c, colour_override ? colour_override : colour);
-  sim.lib().render_line(c, d, colour_override ? colour_override : colour);
-  sim.lib().render_line(d, a, colour_override ? colour_override : colour);
+  sim.render_line(a, b, colour_override ? colour_override : colour);
+  sim.render_line(b, c, colour_override ? colour_override : colour);
+  sim.render_line(c, d, colour_override ? colour_override : colour);
+  sim.render_line(d, a, colour_override ? colour_override : colour);
 }
 
 bool Box::check_local_point(const vec2& v) const {
@@ -140,9 +139,9 @@ void Polygon::render(ii::SimInterface& sim, const fvec2& position, float rotatio
     }
   }
   for (std::size_t i = 0; i < lines.size(); i += 2) {
-    sim.lib().render_line(convert_fl_point(position, rotation, lines[i]),
-                          convert_fl_point(position, rotation, lines[i + 1]),
-                          colour_override ? colour_override : colour);
+    sim.render_line(convert_fl_point(position, rotation, lines[i]),
+                    convert_fl_point(position, rotation, lines[i + 1]),
+                    colour_override ? colour_override : colour);
   }
 }
 
@@ -164,9 +163,9 @@ void PolyArc::render(ii::SimInterface& sim, const fvec2& position, float rotatio
   for (std::int32_t i = 0; i < sides && i < segments; ++i) {
     fvec2 a = fvec2::from_polar(i * 2 * kPiFloat / sides, r);
     fvec2 b = fvec2::from_polar((i + 1) * 2 * kPiFloat / sides, r);
-    sim.lib().render_line(convert_fl_point(position, rotation, a),
-                          convert_fl_point(position, rotation, b),
-                          colour_override ? colour_override : colour);
+    sim.render_line(convert_fl_point(position, rotation, a),
+                    convert_fl_point(position, rotation, b),
+                    colour_override ? colour_override : colour);
   }
 }
 

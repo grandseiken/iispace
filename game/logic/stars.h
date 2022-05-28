@@ -4,13 +4,15 @@
 #include <memory>
 #include <vector>
 
-class Lib;
+namespace ii {
+class SimInterface;
+}  // namespace ii
 
 class Stars {
 public:
   static void change();
   static void update();
-  static void render(Lib& lib);
+  static void render(const ii::SimInterface& sim);
   static void clear();
 
 private:

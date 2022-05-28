@@ -220,7 +220,7 @@ void SuperBoss::on_destroy() {
     n += i;
   }
   for (std::int32_t i = 0; i < kPlayers; ++i) {
-    sim().lib().rumble(i, 25);
+    sim().rumble(i, 25);
   }
   play_sound(ii::sound::kExplosion);
 

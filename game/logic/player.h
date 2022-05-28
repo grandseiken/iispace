@@ -68,7 +68,7 @@ private:
   std::int32_t death_count_ = 0;
 
   static std::int32_t fire_timer_;
-  static SimState::ship_list kill_queue_;
+  static ii::SimInterface::ship_list kill_queue_;
 };
 
 class Shot : public Ship {

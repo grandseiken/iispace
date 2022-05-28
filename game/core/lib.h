@@ -86,14 +86,12 @@ public:
   //------------------------------
   void clear_screen() const;
   void render_line(const fvec2& a, const fvec2& b, colour_t c) const;
-  void render_line_rect(const fvec2& lo, const fvec2& hi, colour_t c) const;
   void render_text(const fvec2& v, const std::string& text, colour_t c) const;
   void
   render_rect(const fvec2& low, const fvec2& hi, colour_t c, std::int32_t line_width = 0) const;
   void render() const;
 
   void rumble(std::int32_t player, std::int32_t time);
-  void stop_rumble();
   void play_sound(ii::sound, float volume = 1.f, float pan = 0.f, float repitch = 0.f);
   void set_volume(std::int32_t volume);
 

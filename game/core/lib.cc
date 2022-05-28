@@ -449,15 +449,6 @@ void Lib::render_line(const fvec2& a, const fvec2& b, colour_t c) const {
   renderer_.render_legacy_line(convert_vec(a), convert_vec(b), convert_colour(c));
 }
 
-void Lib::render_line_rect(const fvec2& lo, const fvec2& hi, colour_t c) const {
-  fvec2 li{lo.x, hi.y};
-  fvec2 ho{hi.x, lo.y};
-  render_line(lo, li, c);
-  render_line(li, hi, c);
-  render_line(hi, ho, c);
-  render_line(ho, lo, c);
-}
-
 void Lib::render_text(const fvec2& v, const std::string& text, colour_t c) const {
   renderer_.render_legacy_text(static_cast<glm::ivec2>(convert_vec(v)), convert_colour(c), text);
 }
@@ -475,10 +466,6 @@ void Lib::render() const {
 }
 
 void Lib::rumble(std::int32_t player, std::int32_t time) {
-  // TODO.
-}
-
-void Lib::stop_rumble() {
   // TODO.
 }
 

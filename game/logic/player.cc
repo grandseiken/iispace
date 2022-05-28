@@ -1,7 +1,4 @@
 #include "game/logic/player.h"
-#include "game/core/lib.h"
-#include "game/core/replay.h"
-#include "game/core/z0_game.h"
 #include "game/logic/enemy.h"
 #include "game/logic/player_input.h"
 #include <algorithm>
@@ -20,7 +17,7 @@ const std::int32_t kMagicShotCount = 120;
 const std::int32_t kPowerupRotateTime = 100;
 }  // namespace
 
-SimState::ship_list Player::kill_queue_;
+ii::SimInterface::ship_list Player::kill_queue_;
 std::int32_t Player::fire_timer_;
 
 Player::Player(PlayerInput& input, const vec2& position, std::int32_t player_number)
@@ -57,7 +54,7 @@ void Player::update() {
       revive_timer_ = kReviveTime;
       shape().centre = {(1 + player_number_) * ii::kSimWidth / (1 + sim().players().size()),
                         ii::kSimHeight / 2};
-      sim().lib().rumble(player_number_, 10);
+      sim().rumble(player_number_, 10);
       play_sound(ii::sound::kPlayerRespawn);
     }
     return;
@@ -91,7 +88,7 @@ void Player::update() {
     }
     shape().centre = t;
 
-    sim().lib().rumble(player_number_, 10);
+    sim().rumble(player_number_, 10);
     play_sound(ii::sound::kExplosion);
 
     const auto& list = sim().ships_in_radius(shape().centre, kBombBossRadius, kShipEnemy);
@@ -117,7 +114,7 @@ void Player::update() {
     float volume = .5f * z::rand_fixed().to_float() + .5f;
     float pitch = (z::rand_fixed().to_float() - 1.f) / 12.f;
     float pan = 2.f * shape().centre.x.to_float() / ii::kSimWidth - 1.f;
-    sim().lib().play_sound(ii::sound::kPlayerFire, volume, pan, pitch);
+    sim().play_sound(ii::sound::kPlayerFire, volume, pan, pitch);
   }
 
   // Damage.
@@ -131,8 +128,8 @@ void Player::render() const {
     auto t = to_float(fire_target_);
     if (t >= fvec2{} &&
         t <= fvec2{static_cast<float>(ii::kSimWidth), static_cast<float>(ii::kSimHeight)}) {
-      sim().lib().render_line(t + fvec2{0, 9}, t - fvec2{0, 8}, colour());
-      sim().lib().render_line(t + fvec2{9, 1}, t - fvec2{8, -1}, colour());
+      sim().render_line(t + fvec2{0, 9}, t - fvec2{0, 8}, colour());
+      sim().render_line(t + fvec2{9, 1}, t - fvec2{8, -1}, colour());
     }
     if (revive_timer_ % 2) {
       render_with_colour(0xffffffff);
@@ -141,31 +138,9 @@ void Player::render() const {
     }
   }
 
-  if (sim().mode() == game_mode::kBoss) {
-    return;
-  }
-
-  std::stringstream ss;
-  ss << multiplier_ << "X";
-  std::string s = ss.str();
-  std::int32_t n = player_number_;
-  fvec2 v = n == 1 ? fvec2{ii::kSimWidth / 16 - 1.f - s.length(), 1.f}
-      : n == 2     ? fvec2{1.f, ii::kSimHeight / 16 - 2.f}
-      : n == 3     ? fvec2{ii::kSimWidth / 16 - 1.f - s.length(), ii::kSimHeight / 16 - 2.f}
-                   : fvec2{1.f, 1.f};
-  sim().lib().render_text(v, s, z0Game::kPanelText);
-
-  ss.str("");
-  n % 2 ? ss << score_ << "   " : ss << "   " << score_;
-  sim().lib().render_text(
-      v - (n % 2 ? fvec2{static_cast<float>(ss.str().length() - s.length()), 0} : fvec2{}),
-      ss.str(), colour());
-
-  if (magic_shot_timer_ != 0) {
-    v.x += n % 2 ? -1 : ss.str().length();
-    v *= 16;
-    sim().lib().render_line_rect(v + fvec2{5.f, 11.f - (10 * magic_shot_timer_) / kMagicShotCount},
-                                 v + fvec2{9.f, 13.f}, 0xffffffff);
+  if (sim().mode() != game_mode::kBoss) {
+    sim().render_player_info(player_number_, colour(), score_, multiplier_,
+                             static_cast<float>(magic_shot_timer_) / kMagicShotCount);
   }
 }
 
@@ -180,7 +155,7 @@ void Player::damage() {
   }
 
   if (shield_) {
-    sim().lib().rumble(player_number_, 10);
+    sim().rumble(player_number_, 10);
     play_sound(ii::sound::kPlayerShield);
     destroy_shape(5);
     shield_ = false;
@@ -203,7 +178,7 @@ void Player::damage() {
     bomb_ = false;
   }
   kill_queue_.push_back(this);
-  sim().lib().rumble(player_number_, 25);
+  sim().rumble(player_number_, 25);
   play_sound(ii::sound::kPlayerDestroy);
 }
 
@@ -213,7 +188,7 @@ void Player::add_score(std::int64_t score) {
       4096, 8192, 16384, 32768, 65536, 131072, 262144, 524288, 1048576, 2097152, 4194304, 8388608,
   };
 
-  sim().lib().rumble(player_number_, 3);
+  sim().rumble(player_number_, 3);
   score_ += score * multiplier_;
   ++multiplier_count_;
   if (multiplier_lookup[std::min(multiplier_ + 3, 23)] <= multiplier_count_) {
@@ -380,7 +355,7 @@ void Powerup::damage(std::int32_t damage, bool magic, Player* source) {
       break;
     }
     play_sound(type_ == type::kExtraLife ? ii::sound::kPowerupLife : ii::sound::kPowerupOther);
-    sim().lib().rumble(source->player_number(), 6);
+    sim().rumble(source->player_number(), 6);
   }
 
   std::int32_t r = 5 + z::rand_int(5);

@@ -128,7 +128,7 @@ private:
 
   bool ready_ = false;
   bool spinning_ = false;
-  SimState::ship_list players_;
+  ii::SimInterface::ship_list players_;
 };
 
 class BossShot : public Enemy {

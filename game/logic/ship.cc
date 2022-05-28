@@ -1,5 +1,4 @@
 #include "game/logic/ship.h"
-#include "game/core/z0_game.h"
 
 Ship::Ship(const vec2& position, ship_category type) : type_{type}, shape_{position, 0} {}
 

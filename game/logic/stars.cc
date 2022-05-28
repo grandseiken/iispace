@@ -1,5 +1,4 @@
 #include "game/logic/stars.h"
-#include "game/core/lib.h"
 #include "game/logic/sim_interface.h"
 
 namespace {
@@ -35,17 +34,17 @@ void Stars::change() {
   star_rate_ = z::rand_int(3) + 2;
 }
 
-void Stars::render(Lib& lib) {
+void Stars::render(const ii::SimInterface& sim) {
   for (const auto& star : stars_) {
     switch (star->type) {
     case type::kDotStar:
     case type::kFarStar:
-      lib.render_line_rect(star->position - fvec2{1, 1}, star->position + fvec2{1, 1},
+      sim.render_line_rect(star->position - fvec2{1, 1}, star->position + fvec2{1, 1},
                            star->colour);
       break;
 
     case type::kBigStar:
-      lib.render_line_rect(star->position - fvec2{2, 2}, star->position + fvec2{2, 2},
+      sim.render_line_rect(star->position - fvec2{2, 2}, star->position + fvec2{2, 2},
                            star->colour);
       break;
 
@@ -53,7 +52,7 @@ void Stars::render(Lib& lib) {
       for (std::int32_t i = 0; i < 8; ++i) {
         fvec2 a = fvec2::from_polar(i * kPiFloat / 4, star->size);
         fvec2 b = fvec2::from_polar((i + 1) * kPiFloat / 4, star->size);
-        lib.render_line(star->position + a, star->position + b, star->colour);
+        sim.render_line(star->position + a, star->position + b, star->colour);
       }
     }
   }

@@ -35,7 +35,7 @@ private:
 
 class HighScoreModal : public Modal {
 public:
-  HighScoreModal(SaveData& save, GameModal& game, const SimState::results& results);
+  HighScoreModal(SaveData& save, GameModal& game, const ii::SimState::results& results);
   void update(Lib& lib) override;
   void render(Lib& lib) const override;
 
@@ -45,7 +45,7 @@ private:
 
   SaveData& save_;
   GameModal& game_;
-  SimState::results results_;
+  ii::SimState::results results_;
   bool replay_ = false;
   std::int32_t seed_ = 0;
 
@@ -65,7 +65,7 @@ public:
             const std::string& replay_path);
   ~GameModal();
 
-  const SimState& sim_state() const {
+  const ii::SimState& sim_state() const {
     return *state_;
   }
   void update(Lib& lib) override;
@@ -78,7 +78,7 @@ private:
   PauseModal::output_t pause_output_ = PauseModal::kContinue;
   std::int32_t controllers_connected_ = 0;
   bool controllers_dialog_ = true;
-  std::unique_ptr<SimState> state_;
+  std::unique_ptr<ii::SimState> state_;
 };
 
 struct score_finished {};
