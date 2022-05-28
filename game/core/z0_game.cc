@@ -324,29 +324,26 @@ bool HighScoreModal::is_high_score() const {
       save_.high_scores.is_high_score(results_.mode, results_.players.size() - 1, get_score());
 }
 
-GameModal::GameModal(Lib& lib, SaveData& save, Settings& settings, std::int32_t* frame_count,
-                     game_mode mode, std::int32_t player_count, bool can_face_secret_boss)
-: Modal{true, true}
-, save_{save}
-, settings_{settings}
-, frame_count_{frame_count}
-, is_replay_{false} {
-  state_ =
-      std::make_unique<ii::SimState>(lib, frame_count, mode, player_count, can_face_secret_boss);
+GameModal::GameModal(Lib& lib, SaveData& save, Settings& settings,
+                     const frame_count_callback& callback, game_mode mode,
+                     std::int32_t player_count, bool can_face_secret_boss)
+: Modal{true, true}, save_{save}, settings_{settings}, callback_{callback}, is_replay_{false} {
+  state_ = std::make_unique<ii::SimState>(
+      lib, ii::SimState::initial_conditions{mode, player_count, can_face_secret_boss});
 }
 
-GameModal::GameModal(Lib& lib, SaveData& save, Settings& settings, std::int32_t* frame_count,
-                     const std::string& replay_path)
-: Modal{true, true}, save_{save}, settings_{settings}, frame_count_{frame_count}, is_replay_{true} {
-  state_ = std::make_unique<ii::SimState>(lib, frame_count, replay_path);
+GameModal::GameModal(Lib& lib, SaveData& save, Settings& settings,
+                     const frame_count_callback& callback, const std::string& replay_path)
+: Modal{true, true}, save_{save}, settings_{settings}, callback_{callback}, is_replay_{true} {
+  state_ = std::make_unique<ii::SimState>(lib, replay_path);
 }
 
 GameModal::~GameModal() {}
 
 void GameModal::update(Lib& lib) {
   if (pause_output_ == PauseModal::kEndGame || state_->game_over()) {
+    callback_(1);
     add(std::make_unique<HighScoreModal>(save_, *this, state_->get_results()));
-    *frame_count_ = 1;
     if (pause_output_ != PauseModal::kEndGame) {
       lib.play_sound(ii::sound::kMenuAccept);
     }
@@ -385,11 +382,13 @@ void GameModal::update(Lib& lib) {
 
   state_->update();
   lib.post_update(*state_);
+  callback_(state_->frame_count());
 }
 
 void GameModal::render(Lib& lib) const {
   state_->render();
   auto render = state_->get_render_output();
+  lib.set_colour_cycle(render.colour_cycle);
 
   for (const auto& line : render.lines) {
     lib.render_line(line.a, line.b, line.c);
@@ -488,7 +487,8 @@ void GameModal::render(Lib& lib) const {
   }
 
   if (render.replay_progress) {
-    std::int32_t x = render.mode == game_mode::kFast ? *frame_count_ / 2 : *frame_count_;
+    std::int32_t x =
+        render.mode == game_mode::kFast ? state_->frame_count() / 2 : state_->frame_count();
     ss.str({});
     ss << x << "X " << static_cast<std::int32_t>(100 * *render.replay_progress) << "%";
 
@@ -504,7 +504,8 @@ z0Game::z0Game(Lib& lib, const std::vector<std::string>& args)
 
   if (!args.empty()) {
     try {
-      modals_.add(std::make_unique<GameModal>(lib_, save_, settings_, &frame_count_, args[0]));
+      modals_.add(std::make_unique<GameModal>(
+          lib_, save_, settings_, [this](std::int32_t c) { frame_count_ = c; }, args[0]));
     } catch (const std::runtime_error& e) {
       exit_timer_ = 256;
       exit_error_ = e.what();
@@ -515,14 +516,11 @@ z0Game::z0Game(Lib& lib, const std::vector<std::string>& args)
 void z0Game::run() {
   while (true) {
     std::size_t f = frame_count_;
-    if (!f) {
-      continue;
+    if (lib_.headless()) {
+      f = 16384;
     }
 
     for (std::size_t i = 0; i < f; ++i) {
-      if (lib_.headless()) {
-        frame_count_ = 16384;
-      }
       if (lib_.begin_frame() || update()) {
         lib_.end_frame();
         return;
@@ -597,15 +595,16 @@ bool z0Game::update() {
   if (lib().is_key_pressed(Lib::key::kAccept) || lib().is_key_pressed(Lib::key::kMenu)) {
     if (menu_select_ == menu::kStart) {
       lib().new_game();
-      modals_.add(std::make_unique<GameModal>(lib_, save_, settings_, &frame_count_,
-                                              game_mode::kNormal, player_select_,
-                                              mode_unlocked() >= game_mode::kFast));
+      modals_.add(std::make_unique<GameModal>(
+          lib_, save_, settings_, [this](std::int32_t c) { frame_count_ = c; }, game_mode::kNormal,
+          player_select_, mode_unlocked() >= game_mode::kFast));
     } else if (menu_select_ == menu::kQuit) {
       exit_timer_ = 2;
     } else if (menu_select_ == menu::kSpecial) {
       lib().new_game();
-      modals_.add(std::make_unique<GameModal>(lib_, save_, settings_, &frame_count_, mode_select_,
-                                              player_select_, mode_unlocked() >= game_mode::kFast));
+      modals_.add(std::make_unique<GameModal>(
+          lib_, save_, settings_, [this](std::int32_t c) { frame_count_ = c; }, mode_select_,
+          player_select_, mode_unlocked() >= game_mode::kFast));
     }
     if (menu_select_ != menu::kPlayers) {
       lib().play_sound(ii::sound::kMenuAccept);

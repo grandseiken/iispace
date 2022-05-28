@@ -7,6 +7,7 @@
 #include "game/core/save.h"
 #include "game/logic/sim_state.h"
 #include <cstdint>
+#include <functional>
 #include <memory>
 
 struct Particle;
@@ -59,9 +60,10 @@ private:
 
 class GameModal : public Modal {
 public:
-  GameModal(Lib& lib, SaveData& save, Settings& settings, std::int32_t* frame_count, game_mode mode,
-            std::int32_t player_count, bool can_face_secret_boss);
-  GameModal(Lib& lib, SaveData& save, Settings& settings, std::int32_t* frame_count,
+  using frame_count_callback = std::function<void(std::int32_t)>;
+  GameModal(Lib& lib, SaveData& save, Settings& settings, const frame_count_callback& callback,
+            game_mode mode, std::int32_t player_count, bool can_face_secret_boss);
+  GameModal(Lib& lib, SaveData& save, Settings& settings, const frame_count_callback& callback,
             const std::string& replay_path);
   ~GameModal();
 
@@ -74,7 +76,7 @@ public:
 private:
   SaveData& save_;
   Settings& settings_;
-  std::int32_t* frame_count_;
+  frame_count_callback callback_;
   PauseModal::output_t pause_output_ = PauseModal::kContinue;
   std::int32_t controllers_connected_ = 0;
   bool is_replay_ = false;
@@ -110,13 +112,13 @@ private:
   };
 
   Lib& lib_;
-  std::int32_t frame_count_ = 1;
 
   menu menu_select_ = menu::kStart;
   std::int32_t player_select_ = 1;
   game_mode mode_select_ = game_mode::kBoss;
   std::int32_t exit_timer_ = 0;
   std::string exit_error_;
+  std::int32_t frame_count_ = 1;
 
   SaveData save_;
   Settings settings_;

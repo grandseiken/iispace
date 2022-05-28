@@ -12,12 +12,12 @@
 
 namespace ii {
 
-SimState::SimState(Lib& lib, std::int32_t* frame_count, game_mode mode, std::int32_t player_count,
-                   bool can_face_secret_boss)
-: SimState{lib, frame_count, Replay{mode, player_count, can_face_secret_boss}, true} {}
+SimState::SimState(Lib& lib, const initial_conditions& conditions)
+: SimState{lib, Replay{conditions.mode, conditions.player_count, conditions.can_face_secret_boss},
+           true} {}
 
-SimState::SimState(Lib& lib, std::int32_t* frame_count, const std::string& replay_path)
-: SimState{lib, frame_count, Replay{lib.filesystem(), replay_path}, false} {
+SimState::SimState(Lib& lib, const std::string& replay_path)
+: SimState{lib, Replay{lib.filesystem(), replay_path}, false} {
   lib.set_player_count(replay_.replay.players());
   lib.new_game();
 }
@@ -26,28 +26,27 @@ SimState::~SimState() {
   Stars::clear();
   Boss::fireworks_.clear();
   Boss::warnings_.clear();
-  *frame_count_ = 1;
+}
+
+std::int32_t SimState::frame_count() const {
+  return (mode() == game_mode::kFast ? 2 : 1) * frame_count_multiplier_;
 }
 
 void SimState::update() {
   internals_->sound_output.clear();
   internals_->rumble_output.clear();
   Boss::warnings_.clear();
-  lib_.set_colour_cycle(mode() == game_mode::kHard       ? 128
-                            : mode() == game_mode::kFast ? 192
-                            : mode() == game_mode::kWhat ? (lib_.get_colour_cycle() + 1) % 256
-                                                         : 0);
-  if (replay_recording_) {
-    *frame_count_ = mode() == game_mode::kFast ? 2 : 1;
-  }
+  colour_cycle_ = mode() == game_mode::kHard ? 128
+      : mode() == game_mode::kFast           ? 192
+      : mode() == game_mode::kWhat           ? (colour_cycle_ + 1) % 256
+                                             : 0;
 
   if (!replay_recording_) {
     if (lib_.is_key_pressed(Lib::key::kBomb)) {
-      *frame_count_ *= 2;
+      frame_count_multiplier_ *= 2;
     }
-    if (lib_.is_key_pressed(Lib::key::kFire) &&
-        *frame_count_ > (mode() == game_mode::kFast ? 2 : 1)) {
-      *frame_count_ /= 2;
+    if (lib_.is_key_pressed(Lib::key::kFire) && frame_count_multiplier_ > 1) {
+      frame_count_multiplier_ /= 2;
     }
   }
 
@@ -248,6 +247,7 @@ SimState::render_output SimState::get_render_output() const {
   result.lives_remaining = interface().get_lives();
   result.overmind_timer = overmind_->get_timer();
   result.boss_hp_bar = internals_->boss_hp_bar;
+  result.colour_cycle = colour_cycle_;
   return result;
 }
 
@@ -272,9 +272,8 @@ SimState::results SimState::get_results() const {
   return r;
 }
 
-SimState::SimState(Lib& lib, std::int32_t* frame_count, Replay&& replay, bool replay_recording)
+SimState::SimState(Lib& lib, Replay&& replay, bool replay_recording)
 : lib_{lib}
-, frame_count_{frame_count}
 , replay_{replay}
 , replay_recording_{replay_recording}
 , internals_{std::make_unique<SimInternals>()}
@@ -291,7 +290,6 @@ SimState::SimState(Lib& lib, std::int32_t* frame_count, Replay&& replay, bool re
   internals_->mode = mode();
   internals_->lives =
       mode() == game_mode::kBoss ? replay_.replay.players() * kBossModeLives : kStartingLives;
-  *frame_count_ = mode() == game_mode::kFast ? 2 : 1;
 
   Stars::clear();
   for (std::int32_t i = 0; i < replay_.replay.players(); ++i) {

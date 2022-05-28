@@ -24,10 +24,15 @@ class SimState {
 public:
   using ship_list = std::vector<Ship*>;
 
+  struct initial_conditions {
+    game_mode mode = game_mode::kNormal;
+    std::int32_t player_count = 0;
+    bool can_face_secret_boss = false;
+  };
+
   // TODO: move replay handling out of here.
-  SimState(Lib& lib, std::int32_t* frame_count, game_mode mode, std::int32_t player_count,
-           bool can_face_secret_boss);
-  SimState(Lib& lib, std::int32_t* frame_count, const std::string& replay_path);
+  SimState(Lib& lib, const initial_conditions&);
+  SimState(Lib& lib, const std::string& replay_path);
   ~SimState();
 
   const SimInterface& interface() const {
@@ -40,6 +45,7 @@ public:
 
   void update();
   void render() const;
+  std::int32_t frame_count() const;
 
   game_mode mode() const;
   void write_replay(const std::string& team_name, std::int64_t score) const;
@@ -73,6 +79,7 @@ public:
     std::int32_t lives_remaining = 0;
     std::int32_t overmind_timer = 0;
     std::optional<float> boss_hp_bar;
+    std::int32_t colour_cycle = 0;
   };
   render_output get_render_output() const;
 
@@ -98,12 +105,13 @@ public:
   results get_results() const;
 
 private:
-  SimState(Lib& lib, std::int32_t* frame_count, Replay&& replay, bool replay_recording);
+  SimState(Lib& lib, Replay&& replay, bool replay_recording);
 
   Lib& lib_;
-  std::int32_t* frame_count_ = nullptr;
   std::int32_t kill_timer_ = 0;
   bool game_over_ = false;
+  std::int32_t frame_count_multiplier_ = 1;
+  std::int32_t colour_cycle_ = 0;
 
   Replay replay_;
   bool replay_recording_ = false;
