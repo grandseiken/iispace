@@ -80,7 +80,7 @@ public:
   }
 
   Player* nearest_player() const {
-    return sim_->state().nearest_player(shape_.centre);
+    return sim_->nearest_player(shape_.centre);
   }
 
   void play_sound(ii::sound sound) {

@@ -10,15 +10,15 @@ const fixed kHpPerExtraPlayer = fixed(1) / 10;
 const fixed kHpPerExtraCycle = 3 * fixed(1) / 10;
 }  // namespace
 
-Boss::Boss(const vec2& position, SimState::boss_list boss, std::int32_t hp, std::int32_t players,
-           std::int32_t cycle, bool explode_on_damage)
+Boss::Boss(const vec2& position, ii::SimInterface::boss_list boss, std::int32_t hp,
+           std::int32_t players, std::int32_t cycle, bool explode_on_damage)
 : Ship{position, static_cast<Ship::ship_category>(kShipBoss | kShipEnemy)}
 , flag_{boss}
 , explode_on_damage_{explode_on_damage} {
   set_bounding_width(640);
   set_ignore_damage_colour_index(100);
-  long s =
-      5000 * (cycle + 1) + 2500 * (boss > SimState::BOSS_1C) + 2500 * (boss > SimState::BOSS_2C);
+  long s = 5000 * (cycle + 1) + 2500 * (boss > ii::SimInterface::BOSS_1C) +
+      2500 * (boss > ii::SimInterface::BOSS_2C);
 
   score_ += s;
   for (std::int32_t i = 0; i < players - 1; ++i) {
@@ -61,10 +61,7 @@ void Boss::damage(std::int32_t damage, bool magic, Player* source) {
     damaged_ = 1;
   }
 
-  actual_damage *= 60 /
-      (1 +
-       (sim().state().get_lives() ? sim().state().players().size()
-                                  : sim().state().alive_players()));
+  actual_damage *= 60 / (1 + (sim().get_lives() ? sim().players().size() : sim().alive_players()));
   hp_ -= actual_damage;
 
   if (hp_ <= 0 && !is_destroyed()) {
@@ -101,13 +98,13 @@ void Boss::render_hp_bar() const {
   }
 
   if (show_hp_) {
-    sim().state().render_hp_bar(static_cast<float>(hp_) / max_hp_);
+    sim().render_hp_bar(static_cast<float>(hp_) / max_hp_);
   }
 }
 
 void Boss::on_destroy() {
   set_killed();
-  for (const auto& ship : sim().state().all_ships(kShipEnemy)) {
+  for (const auto& ship : sim().all_ships(kShipEnemy)) {
     if (ship != this) {
       ship->damage(Player::kBombDamage, false, 0);
     }
@@ -130,10 +127,10 @@ void Boss::on_destroy() {
   }
   play_sound(ii::sound::kExplosion);
 
-  for (const auto& player : sim().state().players()) {
+  for (const auto& player : sim().players()) {
     Player* p = (Player*)player;
     if (!p->is_killed() && get_score() > 0) {
-      p->add_score(get_score() / sim().state().alive_players());
+      p->add_score(get_score() / sim().alive_players());
     }
   }
 }

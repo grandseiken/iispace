@@ -4,11 +4,11 @@
 
 class Boss : public Ship {
 public:
-  Boss(const vec2& position, SimState::boss_list boss, std::int32_t hp, std::int32_t players,
-       std::int32_t cycle = 0, bool explode_on_damage = true);
+  Boss(const vec2& position, ii::SimInterface::boss_list boss, std::int32_t hp,
+       std::int32_t players, std::int32_t cycle = 0, bool explode_on_damage = true);
 
   void set_killed() {
-    sim().state().set_boss_killed(flag_);
+    sim().set_boss_killed(flag_);
   }
 
   std::int64_t get_score() {
@@ -52,7 +52,7 @@ protected:
 private:
   std::int32_t hp_ = 0;
   std::int32_t max_hp_ = 0;
-  SimState::boss_list flag_ = static_cast<SimState::boss_list>(0);
+  ii::SimInterface::boss_list flag_ = static_cast<ii::SimInterface::boss_list>(0);
   std::int64_t score_ = 0;
   std::int32_t ignore_damage_colour_ = 256;
   mutable std::int32_t damaged_ = 0;

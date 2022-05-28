@@ -35,6 +35,7 @@ cc_library(
     "ship.cc",
     "sim_interface.cc",
     "sim_interface.h",
+    "sim_internals.h",
     "sim_state.cc",
     "stars.cc",
   ],

@@ -8,7 +8,7 @@ const std::int32_t kSbArcHp = 75;
 
 SuperBossArc::SuperBossArc(const vec2& position, std::int32_t players, std::int32_t cycle,
                            std::int32_t i, Ship* boss, std::int32_t timer)
-: Boss{position, SimState::boss_list(0), kSbArcHp, players, cycle}
+: Boss{position, static_cast<ii::SimInterface::boss_list>(0), kSbArcHp, players, cycle}
 , boss_{boss}
 , i_{i}
 , timer_{timer} {
@@ -62,7 +62,7 @@ void SuperBossArc::on_destroy() {
 
 SuperBoss::SuperBoss(std::int32_t players, std::int32_t cycle)
 : Boss{{ii::kSimWidth / 2, -ii::kSimHeight / (2 + fixed_c::half)},
-       SimState::BOSS_3A,
+       ii::SimInterface::BOSS_3A,
        kSbBaseHp,
        players,
        cycle}
@@ -200,7 +200,7 @@ std::int32_t SuperBoss::get_damage(std::int32_t damage, bool magic) {
 
 void SuperBoss::on_destroy() {
   set_killed();
-  for (const auto& ship : sim().state().all_ships(kShipEnemy)) {
+  for (const auto& ship : sim().all_ships(kShipEnemy)) {
     if (ship != this) {
       ship->damage(Player::kBombDamage * 100, false, 0);
     }
@@ -224,10 +224,10 @@ void SuperBoss::on_destroy() {
   }
   play_sound(ii::sound::kExplosion);
 
-  for (const auto& ship : sim().state().players()) {
+  for (const auto& ship : sim().players()) {
     Player* p = (Player*)ship;
     if (!p->is_killed()) {
-      p->add_score(get_score() / sim().state().alive_players());
+      p->add_score(get_score() / sim().alive_players());
     }
   }
 
@@ -340,7 +340,7 @@ void RainbowShot::update() {
   static const vec2 center = {ii::kSimWidth / 2, ii::kSimHeight / 2};
 
   if ((shape().centre - center).length() > 100 && timer_ % 2 == 0) {
-    const auto& list = sim().state().collision_list(shape().centre, kShield);
+    const auto& list = sim().collision_list(shape().centre, kShield);
     SuperBoss* s = (SuperBoss*)boss_;
     for (std::size_t i = 0; i < list.size(); ++i) {
       bool boss = false;

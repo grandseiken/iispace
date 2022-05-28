@@ -83,7 +83,7 @@ std::int32_t ChaserBoss::shared_hp_;
 ChaserBoss::ChaserBoss(std::int32_t players, std::int32_t cycle, std::int32_t split,
                        const vec2& position, std::int32_t time, std::int32_t stagger)
 : Boss{!split ? vec2{ii::kSimWidth / 2, -ii::kSimHeight / 2} : position,
-       SimState::BOSS_1C,
+       ii::SimInterface::BOSS_1C,
        1 + kCbBaseHp / (fixed_c::half + HP_REDUCE_POWER_lookup[split]).to_int(),
        players,
        cycle,
@@ -112,7 +112,7 @@ ChaserBoss::ChaserBoss(std::int32_t players, std::int32_t cycle, std::int32_t sp
 }
 
 void ChaserBoss::update() {
-  const auto& remaining = sim().state().all_ships();
+  const auto& remaining = sim().all_ships();
   last_dir_ = dir_.normalised();
   if (is_on_screen()) {
     on_screen_ = true;
@@ -123,7 +123,7 @@ void ChaserBoss::update() {
   }
   if (timer_ <= 0) {
     timer_ = kTimer * (move_ + 1);
-    std::int32_t count = remaining.size() - sim().state().players().size();
+    std::int32_t count = remaining.size() - sim().players().size();
     if (split_ != 0 &&
         (move_ || z::rand_int(8 + split_) == 0 || count <= 4 ||
          !z::rand_int(ONE_PT_ONE_FIVE_intLookup[std::max(0, std::min(127, count))]))) {
@@ -137,7 +137,7 @@ void ChaserBoss::update() {
   if (move_) {
     move(dir_);
   } else {
-    const auto& nearby = sim().state().all_ships(kShipPlayer | kShipBoss);
+    const auto& nearby = sim().all_ships(kShipPlayer | kShipBoss);
     const fixed attract = 256 * ONE_PT_ONE_lookup[kCbMaxSplit - split_];
     const fixed align = 128 * ONE_PT_ONE_FIVE_lookup[kCbMaxSplit - split_];
     const fixed repulse = 64 * ONE_PT_TWO_lookup[kCbMaxSplit - split_];
@@ -195,7 +195,7 @@ void ChaserBoss::update() {
         dir_ += v * 3;
       }
     }
-    if (static_cast<std::int32_t>(remaining.size()) - sim().state().players().size() < 4 &&
+    if (static_cast<std::int32_t>(remaining.size()) - sim().players().size() < 4 &&
         split_ >= kCbMaxSplit - 1) {
       if ((shape().centre.x < 32 && dir_.x < 0) ||
           (shape().centre.x >= ii::kSimWidth - 32 && dir_.x > 0)) {
@@ -205,7 +205,7 @@ void ChaserBoss::update() {
           (shape().centre.y >= ii::kSimHeight - 32 && dir_.y > 0)) {
         dir_.y = -dir_.y;
       }
-    } else if (static_cast<std::int32_t>(remaining.size()) - sim().state().players().size() < 8 &&
+    } else if (static_cast<std::int32_t>(remaining.size()) - sim().players().size() < 8 &&
                split_ >= kCbMaxSplit - 1) {
       if ((shape().centre.x < 0 && dir_.x < 0) ||
           (shape().centre.x >= ii::kSimWidth && dir_.x > 0)) {
@@ -274,7 +274,7 @@ void ChaserBoss::render() const {
   }
   shared_hp_ += (split_ == 7 ? 0 : 2 * hp_lookup[6 - split_]) + get_remaining_hp() * 30;
   if (on_screen_) {
-    sim().state().render_hp_bar(static_cast<float>(shared_hp_) / hp_lookup[kCbMaxSplit]);
+    sim().render_hp_bar(static_cast<float>(shared_hp_) / hp_lookup[kCbMaxSplit]);
   }
 }
 
@@ -299,7 +299,7 @@ void ChaserBoss::on_destroy() {
     }
   } else {
     last = true;
-    for (const auto& ship : sim().state().all_ships(kShipEnemy)) {
+    for (const auto& ship : sim().all_ships(kShipEnemy)) {
       if (!ship->is_destroyed() && ship != this) {
         last = false;
         break;
@@ -311,10 +311,10 @@ void ChaserBoss::on_destroy() {
       for (std::int32_t i = 0; i < kPlayers; ++i) {
         sim().lib().rumble(i, 25);
       }
-      for (const auto& ship : sim().state().players()) {
+      for (const auto& ship : sim().players()) {
         Player* p = (Player*)ship;
         if (!p->is_killed()) {
-          p->add_score(get_score() / sim().state().alive_players());
+          p->add_score(get_score() / sim().alive_players());
         }
       }
       std::int32_t n = 1;

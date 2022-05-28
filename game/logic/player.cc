@@ -50,12 +50,12 @@ void Player::update() {
     --kill_timer_;
     return;
   } else if (kill_timer_) {
-    if (sim().state().get_lives() && kill_queue_[0] == this) {
-      sim().state().sub_life();
+    if (sim().get_lives() && kill_queue_[0] == this) {
+      sim().sub_life();
       kill_timer_ = 0;
       kill_queue_.erase(kill_queue_.begin());
       revive_timer_ = kReviveTime;
-      shape().centre = {(1 + player_number_) * ii::kSimWidth / (1 + sim().state().players().size()),
+      shape().centre = {(1 + player_number_) * ii::kSimWidth / (1 + sim().players().size()),
                         ii::kSimHeight / 2};
       sim().lib().rumble(player_number_, 10);
       play_sound(ii::sound::kPlayerRespawn);
@@ -94,7 +94,7 @@ void Player::update() {
     sim().lib().rumble(player_number_, 10);
     play_sound(ii::sound::kExplosion);
 
-    const auto& list = sim().state().ships_in_radius(shape().centre, kBombBossRadius, kShipEnemy);
+    const auto& list = sim().ships_in_radius(shape().centre, kBombBossRadius, kShipEnemy);
     for (const auto& ship : list) {
       if ((ship->type() & kShipBoss) ||
           (ship->shape().centre - shape().centre).length() <= kBombRadius) {
@@ -121,13 +121,13 @@ void Player::update() {
   }
 
   // Damage.
-  if (sim().state().any_collision(shape().centre, kDangerous)) {
+  if (sim().any_collision(shape().centre, kDangerous)) {
     damage();
   }
 }
 
 void Player::render() const {
-  if (!kill_timer_ && (sim().state().mode() != game_mode::kWhat || revive_timer_ > 0)) {
+  if (!kill_timer_ && (sim().mode() != game_mode::kWhat || revive_timer_ > 0)) {
     auto t = to_float(fire_target_);
     if (t >= fvec2{} &&
         t <= fvec2{static_cast<float>(ii::kSimWidth), static_cast<float>(ii::kSimHeight)}) {
@@ -141,7 +141,7 @@ void Player::render() const {
     }
   }
 
-  if (sim().state().mode() == game_mode::kBoss) {
+  if (sim().mode() == game_mode::kBoss) {
     return;
   }
 
@@ -273,7 +273,7 @@ Shot::Shot(const vec2& position, Player* player, const vec2& direction, bool mag
 }
 
 void Shot::render() const {
-  if (sim().state().mode() == game_mode::kWhat) {
+  if (sim().mode() == game_mode::kWhat) {
     return;
   }
   if (flash_) {
@@ -293,15 +293,15 @@ void Shot::update() {
     return;
   }
 
-  for (const auto& ship : sim().state().collision_list(shape().centre, kVulnerable)) {
+  for (const auto& ship : sim().collision_list(shape().centre, kVulnerable)) {
     ship->damage(1, magic_, player_);
     if (!magic_) {
       destroy();
     }
   }
 
-  if (sim().state().any_collision(shape().centre, kShield) ||
-      (!magic_ && sim().state().any_collision(shape().centre, kVulnShield))) {
+  if (sim().any_collision(shape().centre, kShield) ||
+      (!magic_ && sim().any_collision(shape().centre, kVulnShield))) {
     destroy();
   }
 }
@@ -364,7 +364,7 @@ void Powerup::damage(std::int32_t damage, bool magic, Player* source) {
   if (source) {
     switch (type_) {
     case type::kExtraLife:
-      sim().state().add_life();
+      sim().add_life();
       break;
 
     case type::kMagicShots:

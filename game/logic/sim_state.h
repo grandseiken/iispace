@@ -12,41 +12,28 @@
 namespace ii::io {
 class Filesystem;
 }  // namespace ii::io
+namespace ii {
+struct SimInternals;
+}  // namespace ii
 
 class Lib;
 class Overmind;
 class Player;
 class PlayerInput;
-class SaveData;
 class Ship;
-
-struct Particle {
-  Particle(const fvec2& position, colour_t colour, const fvec2& velocity, std::int32_t time)
-  : position{position}, velocity{velocity}, timer{time}, colour{colour} {}
-
-  bool destroy = false;
-  std::int32_t timer = 0;
-  colour_t colour = 0;
-  fvec2 position;
-  fvec2 velocity;
-};
 
 class SimState {
 public:
-  enum boss_list {
-    BOSS_1A = 1,
-    BOSS_1B = 2,
-    BOSS_1C = 4,
-    BOSS_2A = 8,
-    BOSS_2B = 16,
-    BOSS_2C = 32,
-    BOSS_3A = 64,
-  };
+  using ship_list = std::vector<Ship*>;
 
-  SimState(Lib& lib, SaveData& save, std::int32_t* frame_count, game_mode mode,
-           std::int32_t player_count, bool can_face_secret_boss);
-  SimState(Lib& lib, SaveData& save, std::int32_t* frame_count, const std::string& replay_path);
+  SimState(Lib& lib, std::int32_t* frame_count, game_mode mode, std::int32_t player_count,
+           bool can_face_secret_boss);
+  SimState(Lib& lib, std::int32_t* frame_count, const std::string& replay_path);
   ~SimState();
+
+  const ii::SimInterface& interface() const {
+    return interface_;
+  }
 
   ii::SimInterface& interface() {
     return interface_;
@@ -58,34 +45,7 @@ public:
   Lib& lib();
   game_mode mode() const;
   void write_replay(const std::string& team_name, std::int64_t score) const;
-
-  typedef std::vector<Ship*> ship_list;
-  void add_ship(std::unique_ptr<Ship> ship);
-  void add_particle(const Particle& particle);
-  std::int32_t get_non_wall_count() const;
-
-  template <typename T, typename... Args>
-  void add_new_ship(Args&&... args) {
-    add_ship(std::make_unique<T>(std::forward<Args>(args)...));
-  }
-
-  ship_list all_ships(std::int32_t ship_mask = 0) const;
-  ship_list ships_in_radius(const vec2& point, fixed radius, std::int32_t ship_mask = 0) const;
-  ship_list collision_list(const vec2& point, std::int32_t category) const;
-  bool any_collision(const vec2& point, std::int32_t category) const;
-
-  std::int32_t alive_players() const;
-  std::int32_t killed_players() const;
-  Player* nearest_player(const vec2& point) const;
-  const ship_list& players() const;
-
   bool game_over() const;
-  void add_life();
-  void sub_life();
-  std::int32_t get_lives() const;
-
-  void render_hp_bar(float fill);
-  void set_boss_killed(boss_list boss);
 
   struct results {
     bool is_replay = false;
@@ -98,6 +58,9 @@ public:
     std::int32_t overmind_timer = 0;
     std::optional<float> boss_hp_bar;
 
+    std::int32_t bosses_killed = 0;
+    std::int32_t hard_mode_bosses_killed = 0;
+
     struct player_result {
       std::int32_t number = 0;
       std::int64_t score = 0;
@@ -109,12 +72,9 @@ public:
   results get_results() const;
 
 private:
-  SimState(Lib& lib, SaveData& save, std::int32_t* frame_count, Replay&& replay,
-           bool replay_recording);
+  SimState(Lib& lib, std::int32_t* frame_count, Replay&& replay, bool replay_recording);
 
   Lib& lib_;
-  SaveData& save_;
-  ii::SimInterface interface_;
   std::int32_t* frame_count_ = nullptr;
   std::int32_t kill_timer_ = 0;
   bool game_over_ = false;
@@ -122,15 +82,9 @@ private:
   Replay replay_;
   bool replay_recording_ = false;
   std::unique_ptr<PlayerInput> input_;
-
-  std::int32_t lives_ = 0;
   std::unique_ptr<Overmind> overmind_;
-  std::vector<Particle> particles_;
-  std::vector<std::unique_ptr<Ship>> ships_;
-  ship_list player_list_;
-  ship_list collisions_;
-
-  mutable std::optional<float> boss_hp_bar_;
+  std::unique_ptr<ii::SimInternals> internals_;
+  ii::SimInterface interface_;
 };
 
 #endif

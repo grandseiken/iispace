@@ -18,9 +18,9 @@ public:
   virtual ~formation_base() {}
   virtual void operator()() = 0;
 
-  void
-  operator()(SimState* game, std::int32_t row, std::int32_t power, std::int32_t* hard_already) {
-    game_ = game;
+  void operator()(ii::SimInterface* sim, std::int32_t row, std::int32_t power,
+                  std::int32_t* hard_already) {
+    sim_ = sim;
     row_ = row;
     power_ = power;
     hard_already_ = hard_already;
@@ -38,19 +38,19 @@ public:
   }
 
   void spawn_follow(std::int32_t num, std::int32_t div, std::int32_t side) {
-    do_sides(side, [&](bool b) { game_->add_new_ship<Follow>(spawn_point(b, num, div)); });
+    do_sides(side, [&](bool b) { sim_->add_new_ship<Follow>(spawn_point(b, num, div)); });
   }
 
   void spawn_chaser(std::int32_t num, std::int32_t div, std::int32_t side) {
-    do_sides(side, [&](bool b) { game_->add_new_ship<Chaser>(spawn_point(b, num, div)); });
+    do_sides(side, [&](bool b) { sim_->add_new_ship<Chaser>(spawn_point(b, num, div)); });
   }
 
   void spawn_square(std::int32_t num, std::int32_t div, std::int32_t side) {
-    do_sides(side, [&](bool b) { game_->add_new_ship<Square>(spawn_point(b, num, div)); });
+    do_sides(side, [&](bool b) { sim_->add_new_ship<Square>(spawn_point(b, num, div)); });
   }
 
   void spawn_wall(std::int32_t num, std::int32_t div, std::int32_t side, bool dir) {
-    do_sides(side, [&](bool b) { game_->add_new_ship<Wall>(spawn_point(b, num, div), dir); });
+    do_sides(side, [&](bool b) { sim_->add_new_ship<Wall>(spawn_point(b, num, div), dir); });
   }
 
   void spawn_follow_hub(std::int32_t num, std::int32_t div, std::int32_t side) {
@@ -63,7 +63,7 @@ public:
       if (p2) {
         *hard_already_ += 2;
       }
-      game_->add_new_ship<FollowHub>(spawn_point(b, num, div), p1, p2);
+      sim_->add_new_ship<FollowHub>(spawn_point(b, num, div), p1, p2);
     });
   }
 
@@ -73,7 +73,7 @@ public:
       if (p) {
         *hard_already_ += 3;
       }
-      game_->add_new_ship<Shielder>(spawn_point(b, num, div), p);
+      sim_->add_new_ship<Shielder>(spawn_point(b, num, div), p);
     });
   }
 
@@ -83,7 +83,7 @@ public:
       if (p) {
         *hard_already_ += 4;
       }
-      game_->add_new_ship<Tractor>(spawn_point(b, num, div), p);
+      sim_->add_new_ship<Tractor>(spawn_point(b, num, div), p);
     });
   }
 
@@ -98,7 +98,7 @@ private:
     }
   }
 
-  SimState* game_ = nullptr;
+  ii::SimInterface* sim_ = nullptr;
   std::int32_t row_ = 0;
   std::int32_t power_ = 0;
   std::int32_t* hard_already_ = nullptr;
@@ -106,8 +106,8 @@ private:
 
 std::vector<Overmind::entry> formation_base::static_formations;
 
-Overmind::Overmind(SimState& game, bool can_face_secret_boss)
-: game_{game}, can_face_secret_boss_{can_face_secret_boss} {
+Overmind::Overmind(ii::SimInterface& sim, bool can_face_secret_boss)
+: sim_{sim}, can_face_secret_boss_{can_face_secret_boss} {
   add_formations();
 
   auto queue = [] {
@@ -122,11 +122,11 @@ Overmind::Overmind(SimState& game, bool can_face_secret_boss)
   boss1_queue_ = queue();
   boss2_queue_ = queue();
 
-  if (game_.mode() == game_mode::kBoss) {
+  if (sim_.mode() == game_mode::kBoss) {
     return;
   }
-  power_ = kInitialPower + 2 - game_.players().size() * 2;
-  if (game_.mode() == game_mode::kHard) {
+  power_ = kInitialPower + 2 - sim_.players().size() * 2;
+  if (sim_.mode() == game_mode::kHard) {
     power_ += 20;
     waves_total_ = 15;
   }
@@ -141,12 +141,12 @@ void Overmind::update() {
   ++elapsed_time_;
   Stars::update();
 
-  if (game_.mode() == game_mode::kBoss) {
+  if (sim_.mode() == game_mode::kBoss) {
     if (count_ <= 0) {
       Stars::change();
       if (boss_mod_bosses_ < 6) {
         if (boss_mod_bosses_)
-          for (std::size_t i = 0; i < game_.players().size(); ++i) {
+          for (std::size_t i = 0; i < sim_.players().size(); ++i) {
             spawn_boss_reward();
           }
         boss_mode_boss();
@@ -169,10 +169,10 @@ void Overmind::update() {
   }
 
   std::int32_t boss_cycles = boss_mod_fights_;
-  std::int32_t trigger_stage = groups_mod_ + boss_cycles + 2 * (game_.mode() == game_mode::kHard);
+  std::int32_t trigger_stage = groups_mod_ + boss_cycles + 2 * (sim_.mode() == game_mode::kHard);
   std::int32_t trigger_val = kInitialTriggerVal;
   for (std::int32_t i = 0; i < trigger_stage; ++i) {
-    trigger_val += i < 2 ? 4 : i < 7 - static_cast<std::int32_t>(game_.players().size()) ? 3 : 2;
+    trigger_val += i < 2 ? 4 : i < 7 - static_cast<std::int32_t>(sim_.players().size()) ? 3 : 2;
   }
   if (trigger_val < 0 || is_boss_level_ || is_boss_next_) {
     trigger_val = 0;
@@ -191,7 +191,7 @@ void Overmind::update() {
       if (bosses_to_go_ <= 0) {
         spawn_boss_reward();
         ++boss_mod_fights_;
-        power_ += 2 - 2 * game_.players().size();
+        power_ += 2 - 2 * sim_.players().size();
         boss_rest_timer_ = kBossRestTime;
         bosses_to_go_ = 0;
       } else {
@@ -219,7 +219,7 @@ void Overmind::update() {
       levels_mod_ = 0;
       ++groups_mod_;
     }
-    if (groups_mod_ >= kBaseGroupsPerBoss + static_cast<std::int32_t>(game_.players().size())) {
+    if (groups_mod_ >= kBaseGroupsPerBoss + static_cast<std::int32_t>(sim_.players().size())) {
       groups_mod_ = 0;
       is_boss_next_ = true;
       bosses_to_go_ = boss_mod_fights_ >= 4 ? 3 : boss_mod_fights_ >= 2 ? 2 : 1;
@@ -242,7 +242,7 @@ void Overmind::on_enemy_create(const Ship& ship) {
 }
 
 void Overmind::spawn_powerup() {
-  if (game_.all_ships(Ship::kShipPowerup).size() >= 4) {
+  if (sim_.all_ships(Ship::kShipPowerup).size() >= 4) {
     return;
   }
 
@@ -259,26 +259,26 @@ void Overmind::spawn_powerup() {
 
   std::int32_t m = 4;
   for (std::int32_t i = 1; i <= kPlayers; ++i) {
-    if (game_.get_lives() <= static_cast<std::int32_t>(game_.players().size()) - i) {
+    if (sim_.get_lives() <= static_cast<std::int32_t>(sim_.players().size()) - i) {
       ++m;
     }
   }
-  if (!game_.get_lives()) {
-    m += game_.killed_players();
+  if (!sim_.get_lives()) {
+    m += sim_.killed_players();
   }
   if (lives_target_ > 0) {
     m += lives_target_;
   }
-  if (game_.killed_players() == 0 && lives_target_ < -1) {
+  if (sim_.killed_players() == 0 && lives_target_ < -1) {
     m = 3;
   }
 
   r = z::rand_int(m);
-  game_.add_new_ship<Powerup>(v,
-                              r == 0       ? Powerup::type::kBomb
-                                  : r == 1 ? Powerup::type::kMagicShots
-                                  : r == 2 ? Powerup::type::kShield
-                                           : (--lives_target_, Powerup::type::kExtraLife));
+  sim_.add_new_ship<Powerup>(v,
+                             r == 0       ? Powerup::type::kBomb
+                                 : r == 1 ? Powerup::type::kMagicShots
+                                 : r == 2 ? Powerup::type::kShield
+                                          : (--lives_target_, Powerup::type::kExtraLife));
 }
 
 void Overmind::spawn_boss_reward() {
@@ -288,19 +288,19 @@ void Overmind::spawn_boss_reward() {
       : r == 2    ? vec2{ii::kSimWidth / 2, -ii::kSimHeight / 4}
                   : vec2{ii::kSimWidth / 2, ii::kSimHeight + ii::kSimHeight / 4};
 
-  game_.add_new_ship<Powerup>(v, Powerup::type::kExtraLife);
-  if (game_.mode() != game_mode::kBoss) {
+  sim_.add_new_ship<Powerup>(v, Powerup::type::kExtraLife);
+  if (sim_.mode() != game_mode::kBoss) {
     spawn_powerup();
   }
 }
 
 void Overmind::wave() {
-  if (game_.mode() == game_mode::kFast) {
+  if (sim_.mode() == game_mode::kFast) {
     for (std::int32_t i = 0; i < z::rand_int(7); ++i) {
       z::rand_int(1);
     }
   }
-  if (game_.mode() == game_mode::kWhat) {
+  if (sim_.mode() == game_mode::kWhat) {
     for (std::int32_t i = 0; i < z::rand_int(11); ++i) {
       z::rand_int(1);
     }
@@ -339,14 +339,14 @@ void Overmind::wave() {
   }
   hard_already_ = 0;
   for (std::size_t row = 0; row < chosen.size(); ++row) {
-    chosen[perm[row]]->function->operator()(&game_, perm[row], power_, &hard_already_);
+    chosen[perm[row]]->function->operator()(&sim_, perm[row], power_, &hard_already_);
   }
 }
 
 void Overmind::boss() {
-  std::int32_t count = game_.players().size();
-  std::int32_t cycle = (game_.mode() == game_mode::kHard) + boss_mod_bosses_ / 2;
-  bool secret_chance = (game_.mode() != game_mode::kNormal && game_.mode() != game_mode::kBoss)
+  std::int32_t count = sim_.players().size();
+  std::int32_t cycle = (sim_.mode() == game_mode::kHard) + boss_mod_bosses_ / 2;
+  bool secret_chance = (sim_.mode() != game_mode::kNormal && sim_.mode() != game_mode::kBoss)
       ? (boss_mod_fights_ > 1       ? z::rand_int(4) == 0
              : boss_mod_fights_ > 0 ? z::rand_int(8) == 0
                                     : false)
@@ -356,18 +356,18 @@ void Overmind::boss() {
 
   if (can_face_secret_boss_ && bosses_to_go_ == 0 && boss_mod_secret_ == 0 && secret_chance) {
     std::int32_t secret_cycle =
-        std::max(0, (boss_mod_bosses_ + (game_.mode() == game_mode::kHard) - 2) / 2);
-    game_.add_new_ship<SuperBoss>(count, secret_cycle);
+        std::max(0, (boss_mod_bosses_ + (sim_.mode() == game_mode::kHard) - 2) / 2);
+    sim_.add_new_ship<SuperBoss>(count, secret_cycle);
     boss_mod_secret_ = 2;
   }
 
   else if (boss_mod_bosses_ % 2 == 0) {
     if (boss1_queue_[0] == 0) {
-      game_.add_new_ship<BigSquareBoss>(count, cycle);
+      sim_.add_new_ship<BigSquareBoss>(count, cycle);
     } else if (boss1_queue_[0] == 1) {
-      game_.add_new_ship<ShieldBombBoss>(count, cycle);
+      sim_.add_new_ship<ShieldBombBoss>(count, cycle);
     } else {
-      game_.add_new_ship<ChaserBoss>(count, cycle);
+      sim_.add_new_ship<ChaserBoss>(count, cycle);
     }
     boss1_queue_.push_back(boss1_queue_.front());
     boss1_queue_.erase(boss1_queue_.begin());
@@ -376,11 +376,11 @@ void Overmind::boss() {
       --boss_mod_secret_;
     }
     if (boss2_queue_[0] == 0) {
-      game_.add_new_ship<TractorBoss>(count, cycle);
+      sim_.add_new_ship<TractorBoss>(count, cycle);
     } else if (boss2_queue_[0] == 1) {
-      game_.add_new_ship<GhostBoss>(count, cycle);
+      sim_.add_new_ship<GhostBoss>(count, cycle);
     } else {
-      game_.add_new_ship<DeathRayBoss>(count, cycle);
+      sim_.add_new_ship<DeathRayBoss>(count, cycle);
     }
     boss2_queue_.push_back(boss2_queue_.front());
     boss2_queue_.erase(boss2_queue_.begin());
@@ -389,22 +389,22 @@ void Overmind::boss() {
 
 void Overmind::boss_mode_boss() {
   std::int32_t boss = boss_mod_bosses_;
-  std::int32_t count = game_.players().size();
+  std::int32_t count = sim_.players().size();
   if (boss_mod_bosses_ < 3) {
     if (boss1_queue_[boss] == 0) {
-      game_.add_new_ship<BigSquareBoss>(count, 0);
+      sim_.add_new_ship<BigSquareBoss>(count, 0);
     } else if (boss1_queue_[boss] == 1) {
-      game_.add_new_ship<ShieldBombBoss>(count, 0);
+      sim_.add_new_ship<ShieldBombBoss>(count, 0);
     } else {
-      game_.add_new_ship<ChaserBoss>(count, 0);
+      sim_.add_new_ship<ChaserBoss>(count, 0);
     }
   } else {
     if (boss2_queue_[boss] == 0) {
-      game_.add_new_ship<TractorBoss>(count, 0);
+      sim_.add_new_ship<TractorBoss>(count, 0);
     } else if (boss2_queue_[boss] == 1) {
-      game_.add_new_ship<GhostBoss>(count, 0);
+      sim_.add_new_ship<GhostBoss>(count, 0);
     } else {
-      game_.add_new_ship<DeathRayBoss>(count, 0);
+      sim_.add_new_ship<DeathRayBoss>(count, 0);
     }
   }
 }

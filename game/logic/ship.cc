@@ -48,11 +48,11 @@ void Ship::destroy() {
 }
 
 void Ship::spawn(std::unique_ptr<Ship> ship) const {
-  sim_->state().add_ship(std::move(ship));
+  sim_->add_ship(std::move(ship));
 }
 
 void Ship::spawn(const Particle& particle) const {
-  sim_->state().add_particle(particle);
+  sim_->add_particle(particle);
 }
 
 void Ship::explosion(colour_t c, std::int32_t time, bool towards, const fvec2& v) const {

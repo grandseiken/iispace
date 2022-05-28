@@ -70,7 +70,7 @@ Follow::Follow(const vec2& position, fixed radius, std::int32_t hp)
 
 void Follow::update() {
   shape().rotate(fixed_c::tenth);
-  if (!sim().state().alive_players()) {
+  if (!sim().alive_players()) {
     return;
   }
 
@@ -148,7 +148,7 @@ Square::Square(const vec2& position, fixed rotation)
 }
 
 void Square::update() {
-  if (is_on_screen() && sim().state().get_non_wall_count() == 0) {
+  if (is_on_screen() && sim().get_non_wall_count() == 0) {
     timer_--;
   } else {
     timer_ = z::rand_int(80) + 40;
@@ -190,7 +190,7 @@ void Square::update() {
 }
 
 void Square::render() const {
-  if (sim().state().get_non_wall_count() == 0 && (timer_ % 4 == 1 || timer_ % 4 == 2)) {
+  if (sim().get_non_wall_count() == 0 && (timer_ % 4 == 1 || timer_ % 4 == 2)) {
     render_with_colour(0x33333300);
   } else {
     Enemy::render();
@@ -206,7 +206,7 @@ Wall::Wall(const vec2& position, bool rdir)
 }
 
 void Wall::update() {
-  auto count = sim().state().get_non_wall_count();
+  auto count = sim().get_non_wall_count();
   if (!count && timer_ % 8 < 2) {
     if (get_hp() > 2) {
       sim().lib().play_sound(ii::sound::kEnemySpawn, 1.f, 0.f);
@@ -453,7 +453,7 @@ void Tractor::update() {
       ready_ = false;
       spinning_ = true;
       timer_ = 0;
-      players_ = sim().state().players();
+      players_ = sim().players();
       play_sound(ii::sound::kBossFire);
     }
   } else if (spinning_) {

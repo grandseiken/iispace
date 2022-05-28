@@ -11,7 +11,11 @@ const fixed kSbbSpeed = 1;
 }  // namespace
 
 ShieldBombBoss::ShieldBombBoss(std::int32_t players, std::int32_t cycle)
-: Boss{{-ii::kSimWidth / 2, ii::kSimHeight / 2}, SimState::BOSS_1B, kSbbBaseHp, players, cycle} {
+: Boss{{-ii::kSimWidth / 2, ii::kSimHeight / 2},
+       ii::SimInterface::BOSS_1B,
+       kSbbBaseHp,
+       players,
+       cycle} {
   add_new_shape<Polygon>(vec2{}, 48, 8, 0x339966ff, 0, kDangerous | kVulnerable,
                          Polygon::T::kPolygram);
 
@@ -90,7 +94,7 @@ void ShieldBombBoss::update() {
     if (count_ >= 4 && (!z::rand_int(4) || count_ >= 8)) {
       count_ = 0;
       if (!unshielded_) {
-        if (sim().state().all_ships(kShipPowerup).size() < 5) {
+        if (sim().all_ships(kShipPowerup).size() < 5) {
           spawn_new<Powerup>(shape().centre, Powerup::type::kBomb);
         }
       }
@@ -128,10 +132,7 @@ std::int32_t ShieldBombBoss::get_damage(std::int32_t damage, bool magic) {
   }
   shot_alternate_ = !shot_alternate_;
   if (shot_alternate_) {
-    restore_hp(60 /
-               (1 +
-                (sim().state().get_lives() ? sim().state().players().size()
-                                           : sim().state().alive_players())));
+    restore_hp(60 / (1 + (sim().get_lives() ? sim().players().size() : sim().alive_players())));
   }
   return damage;
 }

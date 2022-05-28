@@ -9,7 +9,11 @@ const fixed kGbWallSpeed = 3 + fixed(1) / 2;
 }  // namespace
 
 GhostBoss::GhostBoss(std::int32_t players, std::int32_t cycle)
-: Boss{{ii::kSimWidth / 2, ii::kSimHeight / 2}, SimState::BOSS_2B, kGbBaseHp, players, cycle}
+: Boss{{ii::kSimWidth / 2, ii::kSimHeight / 2},
+       ii::SimInterface::BOSS_2B,
+       kGbBaseHp,
+       players,
+       cycle}
 , attack_time_{kGbAttackTime} {
   add_new_shape<Polygon>(vec2{}, 32, 8, 0x9933ccff, 0, 0);
   add_new_shape<Polygon>(vec2{}, 48, 8, 0xcc66ffff, 0, 0);
@@ -237,7 +241,7 @@ void GhostBoss::update() {
     }
     if (attack_ == 1) {
       attack_time_ = kGbAttackTime * 3;
-      for (std::size_t i = 0; i < sim().state().players().size(); ++i) {
+      for (std::size_t i = 0; i < sim().players().size(); ++i) {
         spawn_new<Powerup>(shape().centre, Powerup::type::kShield);
       }
     }
@@ -353,7 +357,7 @@ void GhostMine::update() {
       shapes()[0]->category = kDangerous | kShield | kVulnShield;
     }
   }
-  for (const auto& ship : sim().state().collision_list(shape().centre, kDangerous)) {
+  for (const auto& ship : sim().collision_list(shape().centre, kDangerous)) {
     if (ship == ghost_) {
       std::unique_ptr<Enemy> e;
       if (z::rand_int(6) == 0 || (ghost_->is_hp_low() && z::rand_int(5) == 0)) {

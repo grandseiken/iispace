@@ -16,7 +16,7 @@ const fixed kDrbRaySpeed = 10;
 
 DeathRayBoss::DeathRayBoss(std::int32_t players, std::int32_t cycle)
 : Boss{{ii::kSimWidth * (fixed(3) / 20), -ii::kSimHeight},
-       SimState::BOSS_2C,
+       ii::SimInterface::BOSS_2C,
        kDrbBaseHp,
        players,
        cycle}
@@ -158,8 +158,7 @@ void DeathRayBoss::update() {
     if (arm_timer_ >= kDrbArmRTimer) {
       arm_timer_ = 0;
       if (!is_hp_low()) {
-        std::int32_t players = sim().state().get_lives() ? sim().state().players().size()
-                                                         : sim().state().alive_players();
+        std::int32_t players = sim().get_lives() ? sim().players().size() : sim().alive_players();
         std::int32_t hp =
             (kDrbArmHp * (7 * fixed_c::tenth + 3 * fixed_c::tenth * players)).to_int();
         auto arm0 = std::make_unique<DeathArm>(this, true, hp);

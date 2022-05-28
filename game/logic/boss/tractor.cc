@@ -9,7 +9,7 @@ const fixed kTbSpeed = 2;
 
 TractorBoss::TractorBoss(std::int32_t players, std::int32_t cycle)
 : Boss{{ii::kSimWidth * (1 + fixed_c::half), ii::kSimHeight / 2},
-       SimState::BOSS_2A,
+       ii::SimInterface::BOSS_2A,
        kTbBaseHp,
        players,
        cycle}
@@ -83,7 +83,7 @@ void TractorBoss::update() {
   ++timer_;
   if (!stopped_) {
     move(kTbSpeed * vec2{-1, 0});
-    if (!will_attack_ && is_on_screen() && timer_ % (16 - sim().state().alive_players() * 2) == 0) {
+    if (!will_attack_ && is_on_screen() && timer_ % (16 - sim().alive_players() * 2) == 0) {
       if (shoot_type_ == 0 || (is_hp_low() && shoot_type_ == 1)) {
         Player* p = nearest_player();
 
@@ -115,7 +115,7 @@ void TractorBoss::update() {
         sound_ = false;
       }
       targets_.clear();
-      for (const auto& ship : sim().state().all_ships(kShipPlayer)) {
+      for (const auto& ship : sim().all_ships(kShipPlayer)) {
         if (((Player*)ship)->is_killed()) {
           continue;
         }
@@ -135,7 +135,7 @@ void TractorBoss::update() {
         play_sound(ii::sound::kBossAttack);
       }
 
-      if (timer_ < kTbTimer * 4 && timer_ % (10 - 2 * sim().state().alive_players()) == 0) {
+      if (timer_ < kTbTimer * 4 && timer_ % (10 - 2 * sim().alive_players()) == 0) {
         spawn_new<TBossShot>(s1_->convert_point(shape().centre, shape().rotation(), {}),
                              gen_dir_ ? shape().rotation() + fixed_c::pi : shape().rotation());
 
@@ -144,7 +144,7 @@ void TractorBoss::update() {
         play_sound_random(ii::sound::kEnemySpawn);
       }
 
-      if (is_hp_low() && timer_ % (20 - sim().state().alive_players() * 2) == 0) {
+      if (is_hp_low() && timer_ % (20 - sim().alive_players() * 2) == 0) {
         Player* p = nearest_player();
         vec2 v = shape().centre;
 
@@ -182,7 +182,7 @@ void TractorBoss::update() {
           play_sound_random(ii::sound::kBossFire);
         }
         targets_.clear();
-        for (const auto& ship : sim().state().all_ships(kShipPlayer | kShipEnemy)) {
+        for (const auto& ship : sim().all_ships(kShipPlayer | kShipEnemy)) {
           if (ship == this || ((ship->type() & kShipPlayer) && ((Player*)ship)->is_killed())) {
             continue;
           }

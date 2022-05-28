@@ -4,7 +4,9 @@
 #include <vector>
 
 class Ship;
-class SimState;
+namespace ii {
+class SimInterface;
+}
 
 class formation_base;
 class Overmind {
@@ -18,7 +20,7 @@ public:
   static constexpr std::int32_t kLevelsPerGroup = 4;
   static constexpr std::int32_t kBaseGroupsPerBoss = 4;
 
-  Overmind(SimState& game, bool can_face_secret_boss);
+  Overmind(ii::SimInterface& sim, bool can_face_secret_boss);
   ~Overmind();
 
   // General
@@ -61,7 +63,7 @@ private:
   void boss();
   void boss_mode_boss();
 
-  SimState& game_;
+  ii::SimInterface& sim_;
   std::int32_t power_ = 0;
   std::int32_t timer_ = 0;
   std::int32_t count_ = 0;

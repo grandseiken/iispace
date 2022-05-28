@@ -1,20 +1,19 @@
 #include "game/logic/sim_state.h"
-#include "game/core/save.h"
 #include "game/logic/boss.h"
 #include "game/logic/boss/chaser.h"
 #include "game/logic/overmind.h"
 #include "game/logic/player.h"
 #include "game/logic/player_input.h"
 #include "game/logic/ship.h"
+#include "game/logic/sim_internals.h"
 #include "game/logic/stars.h"
 
-SimState::SimState(Lib& lib, SaveData& save, std::int32_t* frame_count, game_mode mode,
-                   std::int32_t player_count, bool can_face_secret_boss)
-: SimState{lib, save, frame_count, Replay{mode, player_count, can_face_secret_boss}, true} {}
+SimState::SimState(Lib& lib, std::int32_t* frame_count, game_mode mode, std::int32_t player_count,
+                   bool can_face_secret_boss)
+: SimState{lib, frame_count, Replay{mode, player_count, can_face_secret_boss}, true} {}
 
-SimState::SimState(Lib& lib, SaveData& save, std::int32_t* frame_count,
-                   const std::string& replay_path)
-: SimState{lib, save, frame_count, Replay{lib.filesystem(), replay_path}, false} {
+SimState::SimState(Lib& lib, std::int32_t* frame_count, const std::string& replay_path)
+: SimState{lib, frame_count, Replay{lib.filesystem(), replay_path}, false} {
   lib.set_player_count(replay_.replay.players());
   lib.new_game();
 }
@@ -51,13 +50,13 @@ void SimState::update(Lib& lib) {
   auto sort_ships = [](const Ship* a, const Ship* b) {
     return a->shape().centre.x - a->bounding_width() < b->shape().centre.x - b->bounding_width();
   };
-  std::stable_sort(collisions_.begin(), collisions_.end(), sort_ships);
-  for (std::size_t i = 0; i < ships_.size(); ++i) {
-    if (!ships_[i]->is_destroyed()) {
-      ships_[i]->update();
+  std::stable_sort(internals_->collisions.begin(), internals_->collisions.end(), sort_ships);
+  for (std::size_t i = 0; i < internals_->ships.size(); ++i) {
+    if (!internals_->ships[i]->is_destroyed()) {
+      internals_->ships[i]->update();
     }
   }
-  for (auto& particle : particles_) {
+  for (auto& particle : internals_->particles) {
     if (!particle.destroy) {
       particle.position += particle.velocity;
       if (--particle.timer <= 0) {
@@ -70,17 +69,17 @@ void SimState::update(Lib& lib) {
       --(it++)->first;
       continue;
     }
-    vec2 v = ships_[0]->shape().centre;
-    ships_[0]->shape().centre = it->second.first;
-    ships_[0]->explosion(0xffffffff);
-    ships_[0]->explosion(it->second.second, 16);
-    ships_[0]->explosion(0xffffffff, 24);
-    ships_[0]->explosion(it->second.second, 32);
-    ships_[0]->shape().centre = v;
+    vec2 v = internals_->ships[0]->shape().centre;
+    internals_->ships[0]->shape().centre = it->second.first;
+    internals_->ships[0]->explosion(0xffffffff);
+    internals_->ships[0]->explosion(it->second.second, 16);
+    internals_->ships[0]->explosion(0xffffffff, 24);
+    internals_->ships[0]->explosion(it->second.second, 32);
+    internals_->ships[0]->shape().centre = v;
     it = Boss::fireworks_.erase(it);
   }
 
-  for (auto it = ships_.begin(); it != ships_.end();) {
+  for (auto it = internals_->ships.begin(); it != internals_->ships.end();) {
     if (!(*it)->is_destroyed()) {
       ++it;
       continue;
@@ -89,20 +88,20 @@ void SimState::update(Lib& lib) {
     if ((*it)->type() & Ship::kShipEnemy) {
       overmind_->on_enemy_destroy(**it);
     }
-    for (auto jt = collisions_.begin(); jt != collisions_.end();) {
+    for (auto jt = internals_->collisions.begin(); jt != internals_->collisions.end();) {
       if (it->get() == *jt) {
-        jt = collisions_.erase(jt);
+        jt = internals_->collisions.erase(jt);
         continue;
       }
       ++jt;
     }
 
-    it = ships_.erase(it);
+    it = internals_->ships.erase(it);
   }
 
-  for (auto it = particles_.begin(); it != particles_.end();) {
+  for (auto it = internals_->particles.begin(); it != internals_->particles.end();) {
     if (it->destroy) {
-      it = particles_.erase(it);
+      it = internals_->particles.erase(it);
       continue;
     }
     ++it;
@@ -110,7 +109,8 @@ void SimState::update(Lib& lib) {
   overmind_->update();
 
   if (!kill_timer_ &&
-      ((killed_players() == (std::int32_t)players().size() && !get_lives()) ||
+      ((interface().killed_players() == (std::int32_t)interface().players().size() &&
+        !interface().get_lives()) ||
        (mode() == game_mode::kBoss && overmind_->get_killed_bosses() >= 6))) {
     kill_timer_ = 100;
   }
@@ -123,25 +123,26 @@ void SimState::update(Lib& lib) {
 }
 
 void SimState::render(Lib& lib) const {
-  boss_hp_bar_.reset();
+  internals_->boss_hp_bar.reset();
   Stars::render(lib);
-  for (const auto& particle : particles_) {
+  for (const auto& particle : internals_->particles) {
     lib.render_line_rect(particle.position + fvec2{1, 1}, particle.position - fvec2{1, 1},
                          particle.colour);
   }
-  for (std::size_t i = player_list_.size(); i < ships_.size(); ++i) {
-    ships_[i]->render();
+  for (std::size_t i = internals_->player_list.size(); i < internals_->ships.size(); ++i) {
+    internals_->ships[i]->render();
   }
-  for (const auto& ship : player_list_) {
+  for (const auto& ship : internals_->player_list) {
     ship->render();
   }
 
-  for (std::size_t i = 0; i < ships_.size() + Boss::warnings_.size(); ++i) {
-    if (i < ships_.size() && !(ships_[i]->type() & Ship::kShipEnemy)) {
+  for (std::size_t i = 0; i < internals_->ships.size() + Boss::warnings_.size(); ++i) {
+    if (i < internals_->ships.size() && !(internals_->ships[i]->type() & Ship::kShipEnemy)) {
       continue;
     }
-    fvec2 v = to_float(i < ships_.size() ? ships_[i]->shape().centre
-                                         : Boss::warnings_[i - ships_.size()]);
+    fvec2 v =
+        to_float(i < internals_->ships.size() ? internals_->ships[i]->shape().centre
+                                              : Boss::warnings_[i - internals_->ships.size()]);
 
     if (v.x < -4) {
       auto a = static_cast<std::int32_t>(
@@ -197,157 +198,8 @@ game_mode SimState::mode() const {
   return game_mode(replay_.replay.game_mode());
 }
 
-void SimState::add_ship(std::unique_ptr<Ship> ship) {
-  ship->set_sim(interface_);
-  if (ship->type() & Ship::kShipEnemy) {
-    overmind_->on_enemy_create(*ship);
-  }
-  if (ship->bounding_width() > 1) {
-    collisions_.push_back(ship.get());
-  }
-  ships_.emplace_back(std::move(ship));
-}
-
-void SimState::add_particle(const Particle& particle) {
-  particles_.emplace_back(particle);
-}
-
-std::int32_t SimState::get_non_wall_count() const {
-  return overmind_->count_non_wall_enemies();
-}
-
-SimState::ship_list SimState::all_ships(std::int32_t ship_mask) const {
-  ship_list r;
-  for (auto& ship : ships_) {
-    if (!ship_mask || (ship->type() & ship_mask)) {
-      r.push_back(ship.get());
-    }
-  }
-  return r;
-}
-
-SimState::ship_list
-SimState::ships_in_radius(const vec2& point, fixed radius, std::int32_t ship_mask) const {
-  ship_list r;
-  for (auto& ship : ships_) {
-    if ((!ship_mask || (ship->type() & ship_mask)) &&
-        (ship->shape().centre - point).length() <= radius) {
-      r.push_back(ship.get());
-    }
-  }
-  return r;
-}
-
-bool SimState::any_collision(const vec2& point, std::int32_t category) const {
-  fixed x = point.x;
-  fixed y = point.y;
-
-  for (const auto& collision : collisions_) {
-    fixed sx = collision->shape().centre.x;
-    fixed sy = collision->shape().centre.y;
-    fixed w = collision->bounding_width();
-
-    if (sx - w > x) {
-      break;
-    }
-    if (sx + w < x || sy + w < y || sy - w > y) {
-      continue;
-    }
-
-    if (collision->check_point(point, category)) {
-      return true;
-    }
-  }
-  return false;
-}
-
-SimState::ship_list SimState::collision_list(const vec2& point, std::int32_t category) const {
-  ship_list r;
-  fixed x = point.x;
-  fixed y = point.y;
-
-  for (const auto& collision : collisions_) {
-    fixed sx = collision->shape().centre.x;
-    fixed sy = collision->shape().centre.y;
-    fixed w = collision->bounding_width();
-
-    if (sx - w > x) {
-      break;
-    }
-    if (sx + w < x || sy + w < y || sy - w > y) {
-      continue;
-    }
-
-    if (collision->check_point(point, category)) {
-      r.push_back(collision);
-    }
-  }
-  return r;
-}
-
-std::int32_t SimState::alive_players() const {
-  return players().size() - killed_players();
-}
-
-std::int32_t SimState::killed_players() const {
-  return Player::killed_players();
-}
-
-const SimState::ship_list& SimState::players() const {
-  return player_list_;
-}
-
-Player* SimState::nearest_player(const vec2& point) const {
-  Ship* ship = nullptr;
-  Ship* dead = nullptr;
-  fixed ship_dist = 0;
-  fixed dead_dist = 0;
-
-  for (Ship* s : player_list_) {
-    fixed d = (s->shape().centre - point).length_squared();
-    if ((d < ship_dist || !ship) && !((Player*)s)->is_killed()) {
-      ship_dist = d;
-      ship = s;
-    }
-    if (d < dead_dist || !dead) {
-      dead_dist = d;
-      dead = s;
-    }
-  }
-  return (Player*)(ship ? ship : dead);
-}
-
 bool SimState::game_over() const {
   return game_over_;
-}
-
-void SimState::add_life() {
-  ++lives_;
-}
-
-void SimState::sub_life() {
-  if (lives_) {
-    lives_--;
-  }
-}
-
-std::int32_t SimState::get_lives() const {
-  return lives_;
-}
-
-void SimState::render_hp_bar(float fill) {
-  boss_hp_bar_ = fill;
-}
-
-void SimState::set_boss_killed(boss_list boss) {
-  if (!replay_recording_) {
-    return;
-  }
-  if (boss == BOSS_3A || (mode() != game_mode::kBoss && mode() != game_mode::kNormal)) {
-    save_.hard_mode_bosses_killed |= boss;
-  } else {
-    save_.bosses_killed |= boss;
-  }
 }
 
 SimState::results SimState::get_results() const {
@@ -362,11 +214,13 @@ SimState::results SimState::get_results() const {
   r.seed = replay_.replay.seed();
   r.elapsed_time = overmind_->get_elapsed_time();
   r.killed_bosses = overmind_->get_killed_bosses();
-  r.lives_remaining = get_lives();
+  r.lives_remaining = interface().get_lives();
   r.overmind_timer = overmind_->get_timer();
-  r.boss_hp_bar = boss_hp_bar_;
+  r.boss_hp_bar = internals_->boss_hp_bar;
+  r.bosses_killed = internals_->bosses_killed;
+  r.hard_mode_bosses_killed = internals_->hard_mode_bosses_killed;
 
-  for (auto* ship : players()) {
+  for (auto* ship : interface().players()) {
     auto* p = static_cast<Player*>(ship);
     auto& pr = r.players.emplace_back();
     pr.number = p->player_number();
@@ -376,14 +230,13 @@ SimState::results SimState::get_results() const {
   return r;
 }
 
-SimState::SimState(Lib& lib, SaveData& save, std::int32_t* frame_count, Replay&& replay,
-                   bool replay_recording)
+SimState::SimState(Lib& lib, std::int32_t* frame_count, Replay&& replay, bool replay_recording)
 : lib_{lib}
-, save_{save}
-, interface_{lib, *this}
 , frame_count_{frame_count}
 , replay_{replay}
-, replay_recording_{replay_recording} {
+, replay_recording_{replay_recording}
+, internals_{std::make_unique<ii::SimInternals>()}
+, interface_{lib, internals_.get()} {
   static constexpr std::int32_t kStartingLives = 2;
   static constexpr std::int32_t kBossModeLives = 1;
   z::seed((std::int32_t)replay_.replay.seed());
@@ -393,15 +246,18 @@ SimState::SimState(Lib& lib, SaveData& save, std::int32_t* frame_count, Replay&&
     input_ = std::make_unique<ReplayPlayerInput>(replay_);
   }
 
-  lives_ = mode() == game_mode::kBoss ? replay_.replay.players() * kBossModeLives : kStartingLives;
+  internals_->mode = mode();
+  internals_->lives =
+      mode() == game_mode::kBoss ? replay_.replay.players() * kBossModeLives : kStartingLives;
   *frame_count_ = mode() == game_mode::kFast ? 2 : 1;
 
   Stars::clear();
   for (std::int32_t i = 0; i < replay_.replay.players(); ++i) {
     vec2 v((1 + i) * ii::kSimWidth / (1 + replay_.replay.players()), ii::kSimHeight / 2);
     auto p = std::make_unique<Player>(*input_, v, i);
-    player_list_.push_back(p.get());
-    add_ship(std::move(p));
+    internals_->player_list.push_back(p.get());
+    interface().add_ship(std::move(p));
   }
-  overmind_ = std::make_unique<Overmind>(*this, replay_.replay.can_face_secret_boss());
+  overmind_ = std::make_unique<Overmind>(interface_, replay_.replay.can_face_secret_boss());
+  internals_->overmind = overmind_.get();
 }

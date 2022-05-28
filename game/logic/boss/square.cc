@@ -14,7 +14,7 @@ const fixed kBsbAttackRadius = 120;
 
 BigSquareBoss::BigSquareBoss(std::int32_t players, std::int32_t cycle)
 : Boss{{ii::kSimWidth * fixed_c::hundredth * 75, ii::kSimHeight * 2},
-       SimState::BOSS_1A,
+       ii::SimInterface::BOSS_1A,
        kBsbBaseHp,
        players,
        cycle}
@@ -81,7 +81,7 @@ void BigSquareBoss::update() {
       reverse_ = !reverse_;
     }
     ++spawn_timer_;
-    std::int32_t t = (kBsbSTimer - sim().state().alive_players() * 10) / (is_hp_low() ? 2 : 1);
+    std::int32_t t = (kBsbSTimer - sim().alive_players() * 10) / (is_hp_low() ? 2 : 1);
     if (spawn_timer_ >= t) {
       spawn_timer_ = 0;
       ++special_timer_;

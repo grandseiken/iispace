@@ -134,7 +134,12 @@ HighScoreModal::HighScoreModal(SaveData& save, GameModal& game, const SimState::
 , save_{save}
 , game_{game}
 , results_{results}
-, compliment_{z::rand_int(kCompliments.size())} {}
+, compliment_{z::rand_int(kCompliments.size())} {
+  if (!results.is_replay) {
+    save_.bosses_killed |= results.bosses_killed;
+    save_.hard_mode_bosses_killed |= results.hard_mode_bosses_killed;
+  }
+}
 
 void HighScoreModal::update(Lib& lib) {
   ++timer_;
@@ -321,14 +326,13 @@ bool HighScoreModal::is_high_score() const {
 GameModal::GameModal(Lib& lib, SaveData& save, Settings& settings, std::int32_t* frame_count,
                      game_mode mode, std::int32_t player_count, bool can_face_secret_boss)
 : Modal{true, true}, save_{save}, settings_{settings}, frame_count_{frame_count} {
-  state_ =
-      std::make_unique<SimState>(lib, save, frame_count, mode, player_count, can_face_secret_boss);
+  state_ = std::make_unique<SimState>(lib, frame_count, mode, player_count, can_face_secret_boss);
 }
 
 GameModal::GameModal(Lib& lib, SaveData& save, Settings& settings, std::int32_t* frame_count,
                      const std::string& replay_path)
 : Modal{true, true}, save_{save}, settings_{settings}, frame_count_{frame_count} {
-  state_ = std::make_unique<SimState>(lib, save, frame_count, replay_path);
+  state_ = std::make_unique<SimState>(lib, frame_count, replay_path);
 }
 
 GameModal::~GameModal() {}
@@ -611,13 +615,13 @@ void z0Game::render() const {
   std::string b = "BOSSES:  ";
   std::int32_t bb =
       mode_unlocked() >= game_mode::kHard ? save_.hard_mode_bosses_killed : save_.bosses_killed;
-  b += bb & SimState::BOSS_1A ? "X" : "-";
-  b += bb & SimState::BOSS_1B ? "X" : "-";
-  b += bb & SimState::BOSS_1C ? "X" : "-";
-  b += bb & SimState::BOSS_3A ? "X" : " ";
-  b += bb & SimState::BOSS_2A ? "X" : "-";
-  b += bb & SimState::BOSS_2B ? "X" : "-";
-  b += bb & SimState::BOSS_2C ? "X" : "-";
+  b += bb & ii::SimInterface::BOSS_1A ? "X" : "-";
+  b += bb & ii::SimInterface::BOSS_1B ? "X" : "-";
+  b += bb & ii::SimInterface::BOSS_1C ? "X" : "-";
+  b += bb & ii::SimInterface::BOSS_3A ? "X" : " ";
+  b += bb & ii::SimInterface::BOSS_2A ? "X" : "-";
+  b += bb & ii::SimInterface::BOSS_2B ? "X" : "-";
+  b += bb & ii::SimInterface::BOSS_2C ? "X" : "-";
   lib().render_text({37.f - 16, 13.f}, b, kPanelText);
 
   lib().render_text({4.f, 4.f}, "WiiSPACE", kPanelText);
