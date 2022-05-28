@@ -1,6 +1,6 @@
 #include "game/logic/player.h"
 #include "game/logic/enemy.h"
-#include "game/logic/player_input.h"
+#include "game/logic/sim/input_adapter.h"
 #include <algorithm>
 
 namespace {
@@ -20,7 +20,7 @@ const std::int32_t kPowerupRotateTime = 100;
 ii::SimInterface::ship_list Player::kill_queue_;
 std::int32_t Player::fire_timer_;
 
-Player::Player(PlayerInput& input, const vec2& position, std::int32_t player_number)
+Player::Player(ii::InputAdapter& input, const vec2& position, std::int32_t player_number)
 : Ship{position, kShipPlayer}
 , input_{input}
 , player_number_{player_number}
@@ -361,7 +361,7 @@ void Powerup::damage(std::int32_t damage, bool magic, Player* source) {
   std::int32_t r = 5 + z::rand_int(5);
   for (std::int32_t i = 0; i < r; ++i) {
     vec2 dir = vec2::from_polar(z::rand_fixed() * 2 * fixed_c::pi, 6);
-    spawn(Particle{to_float(shape().centre), 0xffffffff, to_float(dir), 4 + z::rand_int(8)});
+    spawn(ii::particle{to_float(shape().centre), 0xffffffff, to_float(dir), 4 + z::rand_int(8)});
   }
   destroy();
 }

@@ -2,13 +2,15 @@
 #define IISPACE_GAME_LOGIC_PLAYER_H
 #include "game/logic/ship.h"
 
-class PlayerInput;
+namespace ii {
+class InputAdapter;
+}  // namespace ii
 
 class Player : public Ship {
 public:
   static constexpr std::int32_t kBombDamage = 50;
 
-  Player(PlayerInput& input, const vec2& position, std::int32_t player_number);
+  Player(ii::InputAdapter& input, const vec2& position, std::int32_t player_number);
   ~Player() override;
 
   std::int32_t player_number() const {
@@ -54,7 +56,7 @@ public:
   }
 
 private:
-  PlayerInput& input_;
+  ii::InputAdapter& input_;
   std::int32_t player_number_ = 0;
   std::int64_t score_ = 0;
   std::int32_t multiplier_ = 1;

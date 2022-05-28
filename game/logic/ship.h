@@ -1,7 +1,7 @@
 #ifndef IISPACE_GAME_LOGIC_SHIP_H
 #define IISPACE_GAME_LOGIC_SHIP_H
 #include "game/logic/shape.h"
-#include "game/logic/sim_interface.h"
+#include "game/logic/sim/sim_interface.h"
 
 class Ship {
 public:
@@ -56,7 +56,7 @@ public:
   //------------------------------
   bool check_point(const vec2& v, std::int32_t category = 0) const;
   void spawn(std::unique_ptr<Ship> ship) const;
-  void spawn(const Particle& particle) const;
+  void spawn(const ii::particle& particle) const;
 
   template <typename T, typename... Args>
   void spawn_new(Args&&... args) {

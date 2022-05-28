@@ -1,7 +1,6 @@
 #include "game/core/z0_game.h"
 #include "game/core/lib.h"
 #include "game/logic/player.h"
-#include "game/logic/sim_state.h"
 #include <algorithm>
 #include <iostream>
 

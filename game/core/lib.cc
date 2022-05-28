@@ -3,7 +3,7 @@
 #include "game/core/z0_game.h"
 #include "game/io/file/filesystem.h"
 #include "game/io/io.h"
-#include "game/logic/sim_state.h"
+#include "game/logic/sim/sim_state.h"
 #include "game/mixer/mixer.h"
 #include "game/render/renderer.h"
 #include <nonstd/span.hpp>

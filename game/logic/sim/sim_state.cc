@@ -1,13 +1,13 @@
-#include "game/logic/sim_state.h"
+#include "game/logic/sim/sim_state.h"
 #include "game/core/lib.h"
 #include "game/logic/boss.h"
 #include "game/logic/boss/chaser.h"
 #include "game/logic/overmind.h"
 #include "game/logic/player.h"
-#include "game/logic/player_input.h"
 #include "game/logic/ship.h"
-#include "game/logic/sim_interface.h"
-#include "game/logic/sim_internals.h"
+#include "game/logic/sim/input_adapter.h"
+#include "game/logic/sim/sim_interface.h"
+#include "game/logic/sim/sim_internals.h"
 #include "game/logic/stars.h"
 
 namespace ii {
@@ -238,9 +238,8 @@ SimState::render_output SimState::get_render_output() const {
     l.c = line.c;
   }
   if (!replay_recording_) {
-    auto input = static_cast<ReplayPlayerInput*>(input_.get());
-    result.replay_progress =
-        static_cast<float>(input->replay_frame) / input->replay.replay.player_frame_size();
+    auto input = static_cast<ReplayInputAdapter*>(input_.get());
+    result.replay_progress = input->progress();
   }
   result.mode = mode();
   result.elapsed_time = overmind_->get_elapsed_time();
@@ -282,9 +281,9 @@ SimState::SimState(Lib& lib, Replay&& replay, bool replay_recording)
   static constexpr std::int32_t kBossModeLives = 1;
   z::seed((std::int32_t)replay_.replay.seed());
   if (replay_recording_) {
-    input_ = std::make_unique<LibPlayerInput>(lib, replay_);
+    input_ = std::make_unique<LibInputAdapter>(lib, replay_);
   } else {
-    input_ = std::make_unique<ReplayPlayerInput>(replay_);
+    input_ = std::make_unique<ReplayInputAdapter>(replay_);
   }
 
   internals_->mode = mode();

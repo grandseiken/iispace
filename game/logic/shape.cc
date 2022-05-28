@@ -1,5 +1,5 @@
 #include "game/logic/shape.h"
-#include "game/logic/sim_interface.h"
+#include "game/logic/sim/sim_interface.h"
 
 Shape::Shape(const vec2& centre, fixed rotation, colour_t colour, std::int32_t category,
              bool can_rotate)

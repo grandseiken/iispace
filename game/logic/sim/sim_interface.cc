@@ -1,8 +1,8 @@
-#include "game/logic/sim_interface.h"
+#include "game/logic/sim/sim_interface.h"
 #include "game/logic/overmind.h"
 #include "game/logic/player.h"
 #include "game/logic/ship.h"
-#include "game/logic/sim_internals.h"
+#include "game/logic/sim/sim_internals.h"
 
 namespace ii {
 
@@ -149,7 +149,7 @@ void SimInterface::add_ship(std::unique_ptr<Ship> ship) {
   internals_->ships.emplace_back(std::move(ship));
 }
 
-void SimInterface::add_particle(const Particle& particle) {
+void SimInterface::add_particle(const ii::particle& particle) {
   internals_->particles.emplace_back(particle);
 }
 

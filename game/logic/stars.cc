@@ -1,5 +1,5 @@
 #include "game/logic/stars.h"
-#include "game/logic/sim_interface.h"
+#include "game/logic/sim/sim_interface.h"
 
 namespace {
 const std::uint32_t kTimer = 500;

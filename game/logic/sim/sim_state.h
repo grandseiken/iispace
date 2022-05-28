@@ -1,5 +1,5 @@
-#ifndef IISPACE_GAME_LOGIC_SIM_STATE_H
-#define IISPACE_GAME_LOGIC_SIM_STATE_H
+#ifndef IISPACE_GAME_LOGIC_SIM_SIM_STATE_H
+#define IISPACE_GAME_LOGIC_SIM_SIM_STATE_H
 #include "game/common/z.h"
 #include "game/core/replay.h"
 #include "game/mixer/sound.h"
@@ -13,10 +13,10 @@
 class Lib;
 class Overmind;
 class Player;
-class PlayerInput;
 class Ship;
 
 namespace ii {
+class InputAdapter;
 class SimInterface;
 struct SimInternals;
 
@@ -115,7 +115,7 @@ private:
 
   Replay replay_;
   bool replay_recording_ = false;
-  std::unique_ptr<PlayerInput> input_;
+  std::unique_ptr<InputAdapter> input_;
   std::unique_ptr<Overmind> overmind_;
   std::unique_ptr<SimInternals> internals_;
   std::unique_ptr<SimInterface> interface_;

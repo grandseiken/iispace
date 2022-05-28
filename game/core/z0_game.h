@@ -5,17 +5,12 @@
 #include "game/core/modal.h"
 #include "game/core/replay.h"
 #include "game/core/save.h"
-#include "game/logic/sim_state.h"
+#include "game/logic/sim/sim_state.h"
 #include <cstdint>
 #include <functional>
 #include <memory>
 
-struct Particle;
-struct PlayerInput;
 class GameModal;
-class Overmind;
-class Player;
-class Ship;
 
 class PauseModal : public Modal {
 public:

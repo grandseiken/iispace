@@ -50,7 +50,7 @@ void Ship::spawn(std::unique_ptr<Ship> ship) const {
   sim_->add_ship(std::move(ship));
 }
 
-void Ship::spawn(const Particle& particle) const {
+void Ship::spawn(const ii::particle& particle) const {
   sim_->add_particle(particle);
 }
 
@@ -69,7 +69,7 @@ void Ship::explosion(colour_t c, std::int32_t time, bool towards, const fvec2& v
         dir = fvec2::from_polar(angle, 6.f);
       }
 
-      spawn(Particle{pos, c ? c : shape->colour, dir, time + z::rand_int(8)});
+      spawn(ii::particle{pos, c ? c : shape->colour, dir, time + z::rand_int(8)});
     }
   }
 }

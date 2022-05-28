@@ -1,5 +1,5 @@
-#ifndef IISPACE_GAME_LOGIC_SIM_INTERFACE_H
-#define IISPACE_GAME_LOGIC_SIM_INTERFACE_H
+#ifndef IISPACE_GAME_LOGIC_SIM_SIM_INTERFACE_H
+#define IISPACE_GAME_LOGIC_SIM_SIM_INTERFACE_H
 #include "game/common/z.h"
 #include "game/mixer/sound.h"
 #include <cstdint>
@@ -10,8 +10,14 @@ class Lib;
 class Player;
 class Ship;
 
-struct Particle {
-  Particle(const fvec2& position, colour_t colour, const fvec2& velocity, std::int32_t time)
+namespace ii {
+class SimInternals;
+
+constexpr std::int32_t kSimWidth = 640;
+constexpr std::int32_t kSimHeight = 480;
+
+struct particle {
+  particle(const fvec2& position, colour_t colour, const fvec2& velocity, std::int32_t time)
   : position{position}, velocity{velocity}, timer{time}, colour{colour} {}
 
   bool destroy = false;
@@ -20,12 +26,6 @@ struct Particle {
   fvec2 position;
   fvec2 velocity;
 };
-
-namespace ii {
-class SimInternals;
-
-constexpr std::int32_t kSimWidth = 640;
-constexpr std::int32_t kSimHeight = 480;
 
 class SimInterface {
 public:
@@ -63,7 +63,7 @@ public:
   void set_boss_killed(boss_list boss);
 
   void add_ship(std::unique_ptr<Ship> ship);
-  void add_particle(const Particle& particle);
+  void add_particle(const particle& particle);
 
   template <typename T, typename... Args>
   void add_new_ship(Args&&... args) {
