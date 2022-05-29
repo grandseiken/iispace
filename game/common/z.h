@@ -1,9 +1,11 @@
 #ifndef IISPACE_GAME_COMMON_Z_H
 #define IISPACE_GAME_COMMON_Z_H
 #include "game/common/fix32.h"
+#include "game/common/result.h"
+#include <nonstd/span.hpp>
 #include <cmath>
 #include <cstdint>
-#include <string>
+#include <vector>
 
 typedef std::uint32_t colour_t;
 static constexpr std::int32_t kPlayers = 4;
@@ -30,9 +32,10 @@ inline fixed rand_fixed() {
   return fixed{rand_int()} / rand_max;
 }
 
-std::string crypt(const std::string& text, const std::string& key);
-std::string compress_string(const std::string& str);
-std::string decompress_string(const std::string& str);
+std::vector<std::uint8_t>
+crypt(nonstd::span<const std::uint8_t> text, nonstd::span<const std::uint8_t> key);
+ii::result<std::vector<std::uint8_t>> compress(nonstd::span<const std::uint8_t> bytes);
+ii::result<std::vector<std::uint8_t>> decompress(nonstd::span<const std::uint8_t> bytes);
 
 colour_t colour_cycle(colour_t rgb, std::int32_t cycle);
 

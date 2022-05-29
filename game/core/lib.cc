@@ -13,8 +13,6 @@
 #include <sstream>
 #include <unordered_map>
 
-const std::string Lib::kSuperEncryptionKey = "<>";
-
 namespace {
 
 glm::vec4 convert_colour(colour_t c) {
@@ -483,4 +481,24 @@ void Lib::play_sound(ii::sound s) {
 
 void Lib::set_volume(std::int32_t volume) {
   internals_->mixer.set_master_volume(std::max(0, std::min(100, volume)) / 100.f);
+}
+
+LibInputAdapter::LibInputAdapter(Lib& lib, ii::ReplayWriter& writer) : lib_{lib}, writer_{writer} {}
+
+std::vector<ii::input_frame> LibInputAdapter::get() {
+  std::vector<ii::input_frame> result;
+  for (std::int32_t i = 0; i < lib_.player_count(); ++i) {
+    auto& f = result.emplace_back();
+    f.velocity = lib_.get_move_velocity(i);
+    auto target = lib_.get_fire_target(i);
+    if (target.first) {
+      f.target_relative = target.second;
+    } else {
+      f.target_absolute = target.second;
+    }
+    f.keys = static_cast<std::int32_t>(lib_.is_key_held(i, Lib::key::kFire)) |
+        (lib_.is_key_pressed(i, Lib::key::kBomb) << 1);
+    writer_.add_input_frame(f);
+  }
+  return result;
 }

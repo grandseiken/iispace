@@ -1,6 +1,8 @@
 #ifndef IISPACE_GAME_CORE_LIB_H
 #define IISPACE_GAME_CORE_LIB_H
 #include "game/common/z.h"
+#include "game/core/replay.h"
+#include "game/logic/sim/sim_io.h"
 #include "game/mixer/sound.h"
 #include <memory>
 #include <string>
@@ -57,9 +59,6 @@ public:
   static constexpr std::int32_t kHeight = 480;
   static constexpr std::int32_t kTextWidth = 16;
   static constexpr std::int32_t kTextHeight = 16;
-
-  static const std::string kEncryptionKey;
-  static const std::string kSuperEncryptionKey;
 
   // General
   //------------------------------
@@ -120,6 +119,16 @@ private:
 
   struct Internals;
   std::unique_ptr<Internals> internals_;
+};
+
+class LibInputAdapter : public ii::InputAdapter {
+public:
+  LibInputAdapter(Lib& lib, ii::ReplayWriter& writer);
+  std::vector<ii::input_frame> get() override;
+
+private:
+  Lib& lib_;
+  ii::ReplayWriter& writer_;
 };
 
 #endif

@@ -1,20 +1,62 @@
 #ifndef IISPACE_GAME_CORE_REPLAY_H
 #define IISPACE_GAME_CORE_REPLAY_H
-#include "game/common/z.h"
-#include "game/proto/iispace.pb.h"
+#include "game/common/result.h"
+#include "game/logic/sim/sim_io.h"
+#include <nonstd/span.hpp>
+#include <cstdint>
+#include <memory>
 #include <optional>
 
 namespace ii::io {
 class Filesystem;
 }  // namespace ii::io
 
-struct Replay {
-  Replay(const ii::io::Filesystem& fs, const std::string& path);
-  Replay(game_mode mode, std::int32_t players, bool can_face_secret_boss);
-  void record(const vec2& velocity, bool target_relative, const vec2& target, std::int32_t keys);
-  void write(ii::io::Filesystem& fs, const std::string& name, std::int64_t score) const;
+namespace ii {
 
-  proto::Replay replay;
+class ReplayReader {
+public:
+  ~ReplayReader();
+  ReplayReader(ReplayReader&&);
+  ReplayReader& operator=(ReplayReader&&);
+
+  static result<ReplayReader> create(nonstd::span<const std::uint8_t> bytes);
+  ii::initial_conditions initial_conditions() const;
+  std::optional<ii::input_frame> next_input_frame();
+
+  std::size_t current_input_frame() const;
+  std::size_t total_input_frames() const;
+
+private:
+  ReplayReader();
+  struct impl_t;
+  std::unique_ptr<impl_t> impl_;
 };
+
+class ReplayWriter {
+public:
+  ~ReplayWriter();
+  ReplayWriter(ReplayWriter&&);
+  ReplayWriter& operator=(ReplayWriter&&);
+
+  ReplayWriter(const ii::initial_conditions& conditions);
+  void add_input_frame(const ii::input_frame& frame);
+  result<std::vector<std::uint8_t>> write() const;
+  const ii::initial_conditions& initial_conditions() const;
+
+private:
+  struct impl_t;
+  std::unique_ptr<impl_t> impl_;
+};
+
+class ReplayInputAdapter : public ii::InputAdapter {
+public:
+  ReplayInputAdapter(ReplayReader& replay_reader);
+  std::vector<ii::input_frame> get() override;
+
+private:
+  ReplayReader& reader_;
+};
+
+}  // namespace ii
 
 #endif

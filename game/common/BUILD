@@ -16,6 +16,10 @@ cc_library(
   ],
   srcs = ["z.cc"],
   defines = ["PLATFORM_64"],
-  deps = ["@zlib"],
+  deps = [
+    ":types",
+    "@zlib",
+    "@span_lite",
+  ],
   visibility = ["//visibility:public"],
 )

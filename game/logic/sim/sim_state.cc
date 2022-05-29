@@ -5,27 +5,41 @@
 #include "game/logic/overmind.h"
 #include "game/logic/player.h"
 #include "game/logic/ship.h"
-#include "game/logic/sim/input_adapter.h"
 #include "game/logic/sim/sim_interface.h"
 #include "game/logic/sim/sim_internals.h"
 #include "game/logic/stars.h"
 
 namespace ii {
 
-SimState::SimState(Lib& lib, const initial_conditions& conditions)
-: SimState{lib, Replay{conditions.mode, conditions.player_count, conditions.can_face_secret_boss},
-           true} {}
-
-SimState::SimState(Lib& lib, const std::string& replay_path)
-: SimState{lib, Replay{lib.filesystem(), replay_path}, false} {
-  lib.set_player_count(replay_.replay.players());
-  lib.new_game();
-}
-
 SimState::~SimState() {
   Stars::clear();
   Boss::fireworks_.clear();
   Boss::warnings_.clear();
+}
+
+SimState::SimState(const initial_conditions& conditions, InputAdapter& input)
+: conditions_{conditions}
+, input_{input}
+, internals_{std::make_unique<SimInternals>()}
+, interface_{std::make_unique<SimInterface>(internals_.get())} {
+  static constexpr std::int32_t kStartingLives = 2;
+  static constexpr std::int32_t kBossModeLives = 1;
+  // TODO: make this not a static nonsense.
+  z::seed(conditions_.seed);
+
+  internals_->mode = mode();
+  internals_->lives =
+      mode() == game_mode::kBoss ? conditions_.player_count * kBossModeLives : kStartingLives;
+
+  Stars::clear();
+  for (std::int32_t i = 0; i < conditions_.player_count; ++i) {
+    vec2 v((1 + i) * kSimWidth / (1 + conditions_.player_count), kSimHeight / 2);
+    auto p = std::make_unique<Player>(v, i);
+    internals_->player_list.push_back(p.get());
+    interface().add_ship(std::move(p));
+  }
+  overmind_ = std::make_unique<Overmind>(interface(), conditions_.can_face_secret_boss);
+  internals_->overmind = overmind_.get();
 }
 
 std::int32_t SimState::frame_count() const {
@@ -40,7 +54,7 @@ void SimState::update() {
       : mode() == game_mode::kFast           ? 192
       : mode() == game_mode::kWhat           ? (colour_cycle_ + 1) % 256
                                              : 0;
-  internals_->input_frames = input_->get();
+  internals_->input_frames = input_.get();
 
   Player::update_fire_timer();
   ChaserBoss::has_counted_ = false;
@@ -184,14 +198,8 @@ void SimState::render() const {
   }
 }
 
-void SimState::write_replay(const std::string& team_name, std::int64_t score) const {
-  if (replay_recording_) {
-    replay_.write(lib_.filesystem(), team_name, score);
-  }
-}
-
 game_mode SimState::mode() const {
-  return game_mode(replay_.replay.game_mode());
+  return conditions_.mode;
 }
 
 bool SimState::game_over() const {
@@ -229,10 +237,6 @@ SimState::render_output SimState::get_render_output() const {
     l.b = line.b;
     l.c = line.c;
   }
-  if (!replay_recording_) {
-    auto input = static_cast<ReplayInputAdapter*>(input_.get());
-    result.replay_progress = input->progress();
-  }
   result.mode = mode();
   result.elapsed_time = overmind_->get_elapsed_time();
   result.lives_remaining = interface().get_lives();
@@ -244,9 +248,8 @@ SimState::render_output SimState::get_render_output() const {
 
 SimState::results SimState::get_results() const {
   results r;
-  r.is_replay = !replay_recording_;
   r.mode = mode();
-  r.seed = replay_.replay.seed();
+  r.seed = conditions_.seed;
   r.elapsed_time = overmind_->get_elapsed_time();
   r.killed_bosses = overmind_->get_killed_bosses();
   r.lives_remaining = interface().get_lives();
@@ -261,36 +264,6 @@ SimState::results SimState::get_results() const {
     pr.deaths = p->deaths();
   }
   return r;
-}
-
-SimState::SimState(Lib& lib, Replay&& replay, bool replay_recording)
-: lib_{lib}
-, replay_{replay}
-, replay_recording_{replay_recording}
-, internals_{std::make_unique<SimInternals>()}
-, interface_{std::make_unique<SimInterface>(internals_.get())} {
-  static constexpr std::int32_t kStartingLives = 2;
-  static constexpr std::int32_t kBossModeLives = 1;
-  z::seed((std::int32_t)replay_.replay.seed());
-  if (replay_recording_) {
-    input_ = std::make_unique<LibInputAdapter>(lib, replay_);
-  } else {
-    input_ = std::make_unique<ReplayInputAdapter>(replay_);
-  }
-
-  internals_->mode = mode();
-  internals_->lives =
-      mode() == game_mode::kBoss ? replay_.replay.players() * kBossModeLives : kStartingLives;
-
-  Stars::clear();
-  for (std::int32_t i = 0; i < replay_.replay.players(); ++i) {
-    vec2 v((1 + i) * kSimWidth / (1 + replay_.replay.players()), kSimHeight / 2);
-    auto p = std::make_unique<Player>(v, i);
-    internals_->player_list.push_back(p.get());
-    interface().add_ship(std::move(p));
-  }
-  overmind_ = std::make_unique<Overmind>(interface(), replay_.replay.can_face_secret_boss());
-  internals_->overmind = overmind_.get();
 }
 
 }  // namespace ii

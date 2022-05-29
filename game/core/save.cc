@@ -6,6 +6,7 @@
 #include <sstream>
 
 namespace {
+const std::array<std::uint8_t, 2> kSaveEncryptionKey = {'<', '>'};
 const std::string kSettingsWindowed = "Windowed";
 const std::string kSettingsVolume = "Volume";
 const std::string kSaveName = "iispace";
@@ -57,7 +58,8 @@ SaveData::SaveData(ii::io::Filesystem& fs) : fs{fs} {
     return;
   }
   proto::SaveData proto;
-  proto.ParseFromString(z::crypt({data->begin(), data->end()}, Lib::kSuperEncryptionKey));
+  auto d = z::crypt(*data, kSaveEncryptionKey);
+  proto.ParseFromArray(d.data(), static_cast<int>(d.size()));
 
   bosses_killed = proto.bosses_killed();
   hard_mode_bosses_killed = proto.hard_mode_bosses_killed();
@@ -109,12 +111,10 @@ void SaveData::save() const {
     out_s.set_score(s.score);
   }
 
-  std::string temp;
-  proto.SerializeToString(&temp);
-  auto encrypted = z::crypt(temp, Lib::kSuperEncryptionKey);
-  (void)fs.write_savegame(kSaveName,
-                          {reinterpret_cast<std::uint8_t*>(encrypted.data()),
-                           reinterpret_cast<std::uint8_t*>(encrypted.data() + encrypted.size())});
+  std::vector<std::uint8_t> data;
+  data.resize(proto.ByteSizeLong());
+  proto.SerializeToArray(data.data(), static_cast<int>(data.size()));
+  (void)fs.write_savegame(kSaveName, z::crypt(data, kSaveEncryptionKey));
 }
 
 Settings::Settings(ii::io::Filesystem& fs) : fs{fs} {

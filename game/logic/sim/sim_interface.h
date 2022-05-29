@@ -1,13 +1,12 @@
 #ifndef IISPACE_GAME_LOGIC_SIM_SIM_INTERFACE_H
 #define IISPACE_GAME_LOGIC_SIM_SIM_INTERFACE_H
 #include "game/common/z.h"
-#include "game/logic/sim/input_adapter.h"
+#include "game/logic/sim/sim_io.h"
 #include "game/mixer/sound.h"
 #include <cstdint>
 #include <memory>
 #include <vector>
 
-class Lib;
 class Player;
 class Ship;
 

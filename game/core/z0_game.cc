@@ -1,8 +1,10 @@
 #include "game/core/z0_game.h"
 #include "game/core/lib.h"
+#include "game/io/file/filesystem.h"
 #include "game/logic/player.h"
 #include <algorithm>
 #include <iostream>
+#include <sstream>
 
 namespace {
 // Compliments have a max length of 24.
@@ -48,6 +50,24 @@ void render_panel(Lib& lib, const fvec2& low, const fvec2& hi) {
   fvec2 thi{hi.x * Lib::kTextWidth, hi.y * Lib::kTextHeight};
   lib.render_rect(tlow, thi, z0Game::kPanelBack);
   lib.render_rect(tlow, thi, z0Game::kPanelText, 4);
+}
+
+void save_replay(ii::io::Filesystem& fs, const ii::ReplayWriter& writer, const std::string& name,
+                 std::int64_t score) {
+  std::stringstream ss;
+  auto mode = writer.initial_conditions().mode;
+  ss << writer.initial_conditions().seed << "_" << writer.initial_conditions().player_count << "p_"
+     << (mode == game_mode::kBoss       ? "bossmode_"
+             : mode == game_mode::kHard ? "hardmode_"
+             : mode == game_mode::kFast ? "fastmode_"
+             : mode == game_mode::kWhat ? "w-hatmode_"
+                                        : "")
+     << name << "_" << score;
+
+  auto data = writer.write();
+  if (data) {
+    (void)fs.write_replay(ss.str(), *data);
+  }
 }
 
 }  // namespace
@@ -128,14 +148,17 @@ void PauseModal::render(Lib& lib) const {
   lib.render_rect(low, hi, z0Game::kPanelText, 1);
 }
 
-HighScoreModal::HighScoreModal(SaveData& save, GameModal& game,
-                               const ii::SimState::results& results)
+HighScoreModal::HighScoreModal(bool is_replay, SaveData& save, GameModal& game,
+                               const ii::SimState::results& results,
+                               ii::ReplayWriter* replay_writer)
 : Modal{true, false}
+, is_replay_{is_replay}
 , save_{save}
 , game_{game}
 , results_{results}
+, replay_writer_{replay_writer}
 , compliment_{z::rand_int(kCompliments.size())} {
-  if (!results.is_replay) {
+  if (!is_replay) {
     save_.bosses_killed |= results.bosses_killed;
     save_.hard_mode_bosses_killed |= results.hard_mode_bosses_killed;
   }
@@ -159,7 +182,9 @@ void HighScoreModal::update(Lib& lib) {
 
   if (!is_high_score()) {
     if (lib.is_key_pressed(Lib::key::kMenu)) {
-      game_.sim_state().write_replay("untitled", get_score());
+      if (replay_writer_) {
+        save_replay(lib.filesystem(), *replay_writer_, "untitled", get_score());
+      }
       save_.save();
       lib.play_sound(ii::sound::kMenuAccept);
       quit();
@@ -200,7 +225,9 @@ void HighScoreModal::update(Lib& lib) {
     lib.play_sound(ii::sound::kMenuAccept);
     save_.high_scores.add_score(results_.mode, results_.players.size() - 1, enter_name_,
                                 get_score());
-    game_.sim_state().write_replay(enter_name_, get_score());
+    if (replay_writer_) {
+      save_replay(lib.filesystem(), *replay_writer_, enter_name_, get_score());
+    }
     save_.save();
     quit();
   }
@@ -319,22 +346,40 @@ std::int64_t HighScoreModal::get_score() const {
 }
 
 bool HighScoreModal::is_high_score() const {
-  return !results_.is_replay &&
+  return !is_replay_ &&
       save_.high_scores.is_high_score(results_.mode, results_.players.size() - 1, get_score());
 }
 
 GameModal::GameModal(Lib& lib, SaveData& save, Settings& settings,
                      const frame_count_callback& callback, game_mode mode,
                      std::int32_t player_count, bool can_face_secret_boss)
-: Modal{true, true}, save_{save}, settings_{settings}, callback_{callback}, is_replay_{false} {
-  state_ = std::make_unique<ii::SimState>(
-      lib, ii::SimState::initial_conditions{mode, player_count, can_face_secret_boss});
+: Modal{true, true}, save_{save}, settings_{settings}, callback_{callback} {
+  std::int32_t seed = static_cast<std::int32_t>(time(0));
+  ii::initial_conditions conditions{seed, mode, player_count, can_face_secret_boss};
+  lib.set_player_count(player_count);
+  lib.new_game();
+  game_.emplace(lib, ii::ReplayWriter{conditions});
+  state_ = std::make_unique<ii::SimState>(conditions, game_->input);
 }
 
 GameModal::GameModal(Lib& lib, SaveData& save, Settings& settings,
                      const frame_count_callback& callback, const std::string& replay_path)
-: Modal{true, true}, save_{save}, settings_{settings}, callback_{callback}, is_replay_{true} {
-  state_ = std::make_unique<ii::SimState>(lib, replay_path);
+: Modal{true, true}, save_{save}, settings_{settings}, callback_{callback} {
+  // TODO: exceptions.
+  auto replay_data = lib.filesystem().read_replay(replay_path);
+  if (!replay_data) {
+    throw std::runtime_error{replay_data.error()};
+  }
+  auto reader = ii::ReplayReader::create(*replay_data);
+  if (!reader) {
+    throw std::runtime_error{reader.error()};
+  }
+
+  auto conditions = reader->initial_conditions();
+  lib.set_player_count(conditions.player_count);
+  lib.new_game();
+  replay_.emplace(std::move(*reader));
+  state_ = std::make_unique<ii::SimState>(conditions, replay_->input);
 }
 
 GameModal::~GameModal() {}
@@ -342,7 +387,8 @@ GameModal::~GameModal() {}
 void GameModal::update(Lib& lib) {
   if (pause_output_ == PauseModal::kEndGame || state_->game_over()) {
     callback_(1);
-    add(std::make_unique<HighScoreModal>(save_, *this, state_->get_results()));
+    add(std::make_unique<HighScoreModal>(replay_.has_value(), save_, *this, state_->get_results(),
+                                         game_ ? &game_->writer : nullptr));
     if (pause_output_ != PauseModal::kEndGame) {
       lib.play_sound(ii::sound::kMenuAccept);
     }
@@ -362,7 +408,7 @@ void GameModal::update(Lib& lib) {
   for (std::size_t i = 0; i < lib.player_count(); ++i) {
     controllers |= lib.get_pad_type(i);
   }
-  if (controllers < controllers_connected_ && !controllers_dialog_ && !is_replay_) {
+  if (controllers < controllers_connected_ && !controllers_dialog_ && !replay_) {
     controllers_dialog_ = true;
     lib.play_sound(ii::sound::kMenuAccept);
   }
@@ -381,7 +427,7 @@ void GameModal::update(Lib& lib) {
 
   state_->update();
   lib.post_update(*state_);
-  if (is_replay_) {
+  if (replay_) {
     if (lib.is_key_pressed(Lib::key::kBomb)) {
       frame_count_multiplier_ *= 2;
     }
@@ -442,7 +488,7 @@ void GameModal::render(Lib& lib) const {
 
       ss.str({});
       std::int32_t pads = lib.get_pad_type(i);
-      if (render.replay_progress) {
+      if (replay_) {
         ss << "REPLAY";
         pads = 1;
       } else {
@@ -493,11 +539,13 @@ void GameModal::render(Lib& lib) const {
                     z0Game::kPanelTran);
   }
 
-  if (render.replay_progress) {
+  if (replay_) {
+    auto progress = static_cast<float>(replay_->reader.current_input_frame()) /
+        replay_->reader.total_input_frames();
     std::int32_t x =
         render.mode == game_mode::kFast ? state_->frame_count() / 2 : state_->frame_count();
     ss.str({});
-    ss << x << "X " << static_cast<std::int32_t>(100 * *render.replay_progress) << "%";
+    ss << x << "X " << static_cast<std::int32_t>(100 * progress) << "%";
 
     lib.render_text({Lib::kWidth / (2.f * Lib::kTextWidth) - ss.str().length() / 2,
                      Lib::kHeight / Lib::kTextHeight - 3.f},

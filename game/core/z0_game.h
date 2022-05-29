@@ -9,6 +9,7 @@
 #include <cstdint>
 #include <functional>
 #include <memory>
+#include <optional>
 
 class GameModal;
 
@@ -31,7 +32,8 @@ private:
 
 class HighScoreModal : public Modal {
 public:
-  HighScoreModal(SaveData& save, GameModal& game, const ii::SimState::results& results);
+  HighScoreModal(bool is_replay, SaveData& save, GameModal& game,
+                 const ii::SimState::results& results, ii::ReplayWriter* replay_writer);
   void update(Lib& lib) override;
   void render(Lib& lib) const override;
 
@@ -39,11 +41,11 @@ private:
   std::int64_t get_score() const;
   bool is_high_score() const;
 
+  bool is_replay_ = false;
   SaveData& save_;
   GameModal& game_;
   ii::SimState::results results_;
-  bool replay_ = false;
-  std::int32_t seed_ = 0;
+  ii::ReplayWriter* replay_writer_ = nullptr;
 
   std::string enter_name_;
   std::int32_t enter_char_ = 0;
@@ -69,14 +71,27 @@ public:
   void render(Lib& lib) const override;
 
 private:
+  struct replay_t {
+    replay_t(ii::ReplayReader&& r) : reader{std::move(r)}, input{reader} {}
+    ii::ReplayReader reader;
+    ii::ReplayInputAdapter input;
+  };
+  struct game_t {
+    game_t(Lib& lib, ii::ReplayWriter&& w) : writer{std::move(w)}, input{lib, writer} {}
+    ii::ReplayWriter writer;
+    LibInputAdapter input;
+  };
+
   SaveData& save_;
   Settings& settings_;
   frame_count_callback callback_;
   PauseModal::output_t pause_output_ = PauseModal::kContinue;
   std::int32_t controllers_connected_ = 0;
   std::int32_t frame_count_multiplier_ = 1;
-  bool is_replay_ = false;
   bool controllers_dialog_ = true;
+
+  std::optional<replay_t> replay_;
+  std::optional<game_t> game_;
   std::unique_ptr<ii::SimState> state_;
 };
 

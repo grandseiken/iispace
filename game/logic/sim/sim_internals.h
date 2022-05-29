@@ -2,8 +2,8 @@
 #define IISPACE_GAME_LOGIC_SIM_SIM_INTERNALS_H
 #include "game/common/z.h"
 #include "game/logic/ship.h"
-#include "game/logic/sim/input_adapter.h"
 #include "game/logic/sim/sim_interface.h"
+#include "game/logic/sim/sim_io.h"
 #include <cstdint>
 #include <memory>
 #include <optional>

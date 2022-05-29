@@ -1,40 +1,25 @@
 #ifndef IISPACE_GAME_LOGIC_SIM_SIM_STATE_H
 #define IISPACE_GAME_LOGIC_SIM_SIM_STATE_H
 #include "game/common/z.h"
-#include "game/core/replay.h"
+#include "game/logic/sim/sim_io.h"
 #include "game/mixer/sound.h"
 #include <cstdint>
 #include <memory>
 #include <optional>
-#include <string>
 #include <unordered_map>
 #include <vector>
 
-class Lib;
 class Overmind;
-class Player;
 class Ship;
 
 namespace ii {
-class InputAdapter;
 class SimInterface;
 struct SimInternals;
 
 class SimState {
 public:
-  using ship_list = std::vector<Ship*>;
-
-  struct initial_conditions {
-    // TODO: seed.
-    game_mode mode = game_mode::kNormal;
-    std::int32_t player_count = 0;
-    bool can_face_secret_boss = false;
-  };
-
-  // TODO: move replay handling out of here.
-  SimState(Lib& lib, const initial_conditions&);
-  SimState(Lib& lib, const std::string& replay_path);
   ~SimState();
+  SimState(const initial_conditions& conditions, InputAdapter& input);
 
   const SimInterface& interface() const {
     return *interface_;
@@ -48,8 +33,7 @@ public:
   void render() const;
   std::int32_t frame_count() const;
 
-  game_mode mode() const;
-  void write_replay(const std::string& team_name, std::int64_t score) const;
+  game_mode mode() const;  // TODO: necessary?
   bool game_over() const;
 
   struct sound_t {
@@ -74,7 +58,6 @@ public:
     };
     std::vector<player_info> players;
     std::vector<line_t> lines;
-    std::optional<float> replay_progress;  // TODO: remove.
     game_mode mode = game_mode::kNormal;
     std::int32_t elapsed_time = 0;
     std::int32_t lives_remaining = 0;
@@ -85,7 +68,6 @@ public:
   render_output get_render_output() const;
 
   struct results {
-    bool is_replay = false;
     game_mode mode = game_mode::kNormal;
     std::int32_t seed = 0;
     std::int32_t elapsed_time = 0;
@@ -106,16 +88,12 @@ public:
   results get_results() const;
 
 private:
-  SimState(Lib& lib, Replay&& replay, bool replay_recording);
-
-  Lib& lib_;
+  initial_conditions conditions_;
+  InputAdapter& input_;
   std::int32_t kill_timer_ = 0;
   bool game_over_ = false;
   std::int32_t colour_cycle_ = 0;
 
-  Replay replay_;
-  bool replay_recording_ = false;
-  std::unique_ptr<InputAdapter> input_;
   std::unique_ptr<Overmind> overmind_;
   std::unique_ptr<SimInternals> internals_;
   std::unique_ptr<SimInterface> interface_;

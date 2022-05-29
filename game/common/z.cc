@@ -1,4 +1,5 @@
 #include "game/common/z.h"
+#include "game/common/raw_ptr.h"
 #include <zlib.h>
 #include <algorithm>
 #include <cstring>
@@ -118,90 +119,85 @@ std::int32_t rand_int() {
   return (state >> 16) & 0x7fff;
 }
 
-std::string crypt(const std::string& text, const std::string& key) {
-  std::string result;
-  for (std::size_t i = 0; i < text.length(); ++i) {
-    char c = text[i] ^ key[i % key.length()];
-    if (text[i] == '\0' || c == '\0') {
-      result += text[i];
+std::vector<std::uint8_t>
+crypt(nonstd::span<const std::uint8_t> text, nonstd::span<const std::uint8_t> key) {
+  std::vector<std::uint8_t> result;
+  for (std::size_t i = 0; i < text.size(); ++i) {
+    auto b = text[i] ^ key[i % key.size()];
+    if (!text[i] || !b) {
+      result.emplace_back(text[i]);
     } else {
-      result += c;
+      result.emplace_back(b);
     }
   }
   return result;
 }
 
-std::string compress_string(const std::string& str) {
-  constexpr std::int32_t compression_level = Z_BEST_COMPRESSION;
-  z_stream zs;
-  memset(&zs, 0, sizeof(zs));
-
-  if (deflateInit(&zs, compression_level) != Z_OK) {
-    throw std::runtime_error("deflateInit failed while compressing.");
+ii::result<std::vector<std::uint8_t>> compress(nonstd::span<const std::uint8_t> bytes) {
+  static constexpr std::int32_t kCompressionLevel = Z_BEST_COMPRESSION;
+  z_stream zs = {0};
+  if (deflateInit(&zs, kCompressionLevel) != Z_OK) {
+    return ii::unexpected("deflateInit failed while compressing.");
   }
+  auto zs_unique = ii::make_raw(
+      &zs, +[](z_stream* s) { deflateEnd(s); });
 
-  zs.next_in = const_cast<Bytef*>(reinterpret_cast<const Bytef*>(str.data()));
-  zs.avail_in = static_cast<uInt>(str.size());
+  zs.next_in = const_cast<Bytef*>(reinterpret_cast<const Bytef*>(bytes.data()));
+  zs.avail_in = static_cast<uInt>(bytes.size());
 
   std::int32_t result = 0;
-  char out_buffer[32768];
-  std::string out_string;
+  std::uint8_t out_buffer[32768];
+  std::vector<std::uint8_t> compressed;
 
   do {
     zs.next_out = reinterpret_cast<Bytef*>(out_buffer);
     zs.avail_out = sizeof(out_buffer);
-
     result = deflate(&zs, Z_FINISH);
 
-    if (out_string.size() < zs.total_out) {
-      out_string.append(out_buffer, zs.total_out - out_string.size());
+    if (compressed.size() < zs.total_out) {
+      auto size = zs.total_out - compressed.size();
+      compressed.insert(compressed.end(), out_buffer, out_buffer + size);
     }
   } while (result == Z_OK);
 
-  deflateEnd(&zs);
-
   if (result != Z_STREAM_END) {
-    std::ostringstream ss;
-    ss << "Exception during zlib compression: (" << result << ") " << zs.msg;
-    throw std::runtime_error{ss.str()};
+    return ii::unexpected("compression error " + std::to_string(result) + ": " +
+                          std::string{zs.msg});
   }
-  return out_string;
+  return {std::move(compressed)};
 }
 
-std::string decompress_string(const std::string& str) {
-  z_stream zs;
-  memset(&zs, 0, sizeof(zs));
-
+ii::result<std::vector<std::uint8_t>> decompress(nonstd::span<const std::uint8_t> bytes) {
+  z_stream zs = {0};
   if (inflateInit(&zs) != Z_OK) {
-    throw std::runtime_error("inflateInit failed while decompressing.");
+    return ii::unexpected("inflateInit failed while compressing.");
   }
+  auto zs_unique = ii::make_raw(
+      &zs, +[](z_stream* s) { inflateEnd(s); });
 
-  zs.next_in = const_cast<Bytef*>(reinterpret_cast<const Bytef*>(str.data()));
-  zs.avail_in = static_cast<uInt>(str.size());
+  zs.next_in = const_cast<Bytef*>(reinterpret_cast<const Bytef*>(bytes.data()));
+  zs.avail_in = static_cast<uInt>(bytes.size());
 
   std::int32_t result = 0;
-  char out_buffer[32768];
-  std::string out_string;
+  std::uint8_t out_buffer[32768];
+  std::vector<std::uint8_t> decompressed;
 
   do {
     zs.next_out = reinterpret_cast<Bytef*>(out_buffer);
     zs.avail_out = sizeof(out_buffer);
-
     result = inflate(&zs, 0);
 
-    if (out_string.size() < zs.total_out) {
-      out_string.append(out_buffer, zs.total_out - out_string.size());
+    if (decompressed.size() < zs.total_out) {
+      auto size = zs.total_out - decompressed.size();
+      decompressed.insert(decompressed.end(), out_buffer, out_buffer + size);
     }
   } while (result == Z_OK);
 
-  inflateEnd(&zs);
-
   if (result != Z_STREAM_END) {
-    std::ostringstream ss;
-    ss << "Exception during zlib decompression: (" << result << ") " << zs.msg;
-    throw std::runtime_error{ss.str()};
+    return ii::unexpected("compression error " + std::to_string(result) + ": " +
+                          std::string{zs.msg});
   }
-  return out_string;
+  return {std::move(decompressed)};
 }
 
 colour_t colour_cycle(colour_t rgb, std::int32_t cycle) {
