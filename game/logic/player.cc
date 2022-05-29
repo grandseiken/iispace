@@ -20,9 +20,8 @@ const std::int32_t kPowerupRotateTime = 100;
 ii::SimInterface::ship_list Player::kill_queue_;
 std::int32_t Player::fire_timer_;
 
-Player::Player(ii::InputAdapter& input, const vec2& position, std::int32_t player_number)
+Player::Player(const vec2& position, std::int32_t player_number)
 : Ship{position, kShipPlayer}
-, input_{input}
 , player_number_{player_number}
 , revive_timer_{kReviveTime}
 , fire_target_{get_screen_centre()} {
@@ -38,9 +37,12 @@ Player::Player(ii::InputAdapter& input, const vec2& position, std::int32_t playe
 Player::~Player() {}
 
 void Player::update() {
-  vec2 velocity;
-  std::int32_t keys = 0;
-  input_.get(*this, velocity, fire_target_, keys);
+  auto input = sim().input(player_number_);
+  if (input.target_absolute) {
+    fire_target_ = *input.target_absolute;
+  } else if (input.target_relative) {
+    fire_target_ = shape().centre + *input.target_relative;
+  }
 
   // Temporary death.
   if (kill_timer_ > 1) {
@@ -64,15 +66,15 @@ void Player::update() {
   }
 
   // Movement.
-  if (velocity.length() > fixed_c::hundredth) {
-    vec2 v = velocity.length() > 1 ? velocity.normalised() : velocity;
+  if (input.velocity.length() > fixed_c::hundredth) {
+    vec2 v = input.velocity.length() > 1 ? input.velocity.normalised() : input.velocity;
     shape().set_rotation(v.angle());
     shape().centre = std::max(
         vec2{}, std::min(vec2{ii::kSimWidth, ii::kSimHeight}, kPlayerSpeed * v + shape().centre));
   }
 
   // Bombs.
-  if (bomb_ && keys & 2) {
+  if (bomb_ && input.keys & 2) {
     bomb_ = false;
     destroy_shape(5);
 
@@ -105,7 +107,7 @@ void Player::update() {
 
   // Shots.
   vec2 shot = fire_target_ - shape().centre;
-  if (shot.length() > 0 && !fire_timer_ && keys & 1) {
+  if (shot.length() > 0 && !fire_timer_ && input.keys & 1) {
     spawn_new<Shot>(shape().centre, this, shot, magic_shot_timer_ != 0);
     if (magic_shot_timer_) {
       --magic_shot_timer_;

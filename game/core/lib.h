@@ -4,6 +4,7 @@
 #include "game/mixer/sound.h"
 #include <memory>
 #include <string>
+#include <utility>
 #include <vector>
 
 namespace ii {
@@ -87,7 +88,7 @@ public:
   bool is_key_held(key k) const;
 
   vec2 get_move_velocity(std::int32_t player) const;
-  vec2 get_fire_target(std::int32_t player, const vec2& position) const;
+  std::pair<bool, vec2> get_fire_target(std::int32_t player) const;
 
   // Output
   //------------------------------

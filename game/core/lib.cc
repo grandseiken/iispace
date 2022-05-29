@@ -414,7 +414,7 @@ vec2 Lib::get_move_velocity(std::int32_t player) const {
   return {};
 }
 
-vec2 Lib::get_fire_target(std::int32_t player, const vec2& position) const {
+std::pair<bool, vec2> Lib::get_fire_target(std::int32_t player) const {
   if (!headless_) {
     auto input = internals_->assign_input(player, players_);
     if (input.pad) {
@@ -425,7 +425,7 @@ vec2 Lib::get_fire_target(std::int32_t player, const vec2& position) const {
           internals_->mouse_moving = false;
         }
         internals_->last_aim[player] = v.normalised() * 48;
-        return position + internals_->last_aim[player];
+        return {true, internals_->last_aim[player]};
       }
     }
     if (internals_->mouse_frame.cursor_delta != glm::ivec2{0, 0}) {
@@ -440,12 +440,12 @@ vec2 Lib::get_fire_target(std::int32_t player, const vec2& position) const {
       c *= glm::vec2{Lib::kWidth, Lib::kHeight};
       c.x = std::max<float>(0, std::min<float>(Lib::kWidth, c.x));
       c.y = std::max<float>(0, std::min<float>(Lib::kHeight, c.y));
-      return vec2{c.x, c.y};
-    } else if (input.pad) {
-      return position + internals_->last_aim[player];
+      return {false, vec2{c.x, c.y}};
+    } else if (input.pad && internals_->last_aim[player] != vec2{}) {
+      return {true, internals_->last_aim[player]};
     }
   }
-  return position + vec2{48, 0};
+  return {true, vec2{48, 0}};
 }
 
 void Lib::clear_screen() const {

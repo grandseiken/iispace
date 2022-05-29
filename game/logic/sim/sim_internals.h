@@ -2,6 +2,7 @@
 #define IISPACE_GAME_LOGIC_SIM_SIM_INTERNALS_H
 #include "game/common/z.h"
 #include "game/logic/ship.h"
+#include "game/logic/sim/input_adapter.h"
 #include "game/logic/sim/sim_interface.h"
 #include <cstdint>
 #include <memory>
@@ -14,6 +15,9 @@ class Overmind;
 namespace ii {
 
 struct SimInternals {
+  // Input.
+  std::vector<input_frame> input_frames;
+
   // Internal sim data.
   game_mode mode = game_mode::kNormal;
   using ship_list = std::vector<Ship*>;

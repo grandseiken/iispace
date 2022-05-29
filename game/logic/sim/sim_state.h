@@ -25,6 +25,7 @@ public:
   using ship_list = std::vector<Ship*>;
 
   struct initial_conditions {
+    // TODO: seed.
     game_mode mode = game_mode::kNormal;
     std::int32_t player_count = 0;
     bool can_face_secret_boss = false;
@@ -110,7 +111,6 @@ private:
   Lib& lib_;
   std::int32_t kill_timer_ = 0;
   bool game_over_ = false;
-  std::int32_t frame_count_multiplier_ = 1;
   std::int32_t colour_cycle_ = 0;
 
   Replay replay_;

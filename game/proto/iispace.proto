@@ -1,30 +1,31 @@
-syntax = "proto2";
+syntax = "proto3";
 option optimize_for = LITE_RUNTIME;
 package proto;
 
 message PlayerFrame {
-  required int64 velocity_x = 1;
-  required int64 velocity_y = 2;
+  int64 velocity_x = 1;
+  int64 velocity_y = 2;
 
-  required int64 target_x = 3;
-  required int64 target_y = 4;
+  int64 target_x = 3;
+  int64 target_y = 4;
+  bool target_relative = 6;
 
-  required int32 keys = 5;
+  int32 keys = 5;
 }
 
 message Replay {
-  required string game_version = 1;
-  required int32 game_mode = 2;
-  required int32 players = 3;
-  required int32 seed = 4;
+  string game_version = 1;
+  int32 game_mode = 2;
+  int32 players = 3;
+  int32 seed = 4;
 
   repeated PlayerFrame player_frame = 5;
-  optional bool can_face_secret_boss = 99;
+  bool can_face_secret_boss = 99;
 }
 
 message Score {
-  required string name = 1;
-  required int64 score = 2;
+  string name = 1;
+  int64 score = 2;
 }
 
 message Table {
@@ -36,12 +37,12 @@ message ModeTable {
 }
 
 message SaveData {
-  optional int32 bosses_killed = 1;
-  optional int32 hard_mode_bosses_killed = 2;
+  int32 bosses_killed = 1;
+  int32 hard_mode_bosses_killed = 2;
 
-  optional ModeTable normal = 3;
-  optional ModeTable hard = 4;
-  optional ModeTable fast = 5;
-  optional ModeTable what = 6;
-  optional Table boss = 7;
+  ModeTable normal = 3;
+  ModeTable hard = 4;
+  ModeTable fast = 5;
+  ModeTable what = 6;
+  Table boss = 7;
 }

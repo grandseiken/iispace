@@ -381,7 +381,15 @@ void GameModal::update(Lib& lib) {
 
   state_->update();
   lib.post_update(*state_);
-  callback_(state_->frame_count());
+  if (is_replay_) {
+    if (lib.is_key_pressed(Lib::key::kBomb)) {
+      frame_count_multiplier_ *= 2;
+    }
+    if (lib.is_key_pressed(Lib::key::kFire) && frame_count_multiplier_ > 1) {
+      frame_count_multiplier_ /= 2;
+    }
+  }
+  callback_(state_->frame_count() * frame_count_multiplier_);
 }
 
 void GameModal::render(Lib& lib) const {

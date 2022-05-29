@@ -6,6 +6,13 @@
 
 namespace ii {
 
+input_frame SimInterface::input(std::int32_t player_number) {
+  if (player_number < internals_->input_frames.size()) {
+    return internals_->input_frames[player_number];
+  }
+  return {};
+}
+
 game_mode SimInterface::mode() const {
   return internals_->mode;
 }

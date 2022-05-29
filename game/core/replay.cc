@@ -32,10 +32,12 @@ Replay::Replay(game_mode mode, std::int32_t players, bool can_face_secret_boss) 
   replay.set_seed(seed);
 }
 
-void Replay::record(const vec2& velocity, const vec2& target, std::int32_t keys) {
+void Replay::record(const vec2& velocity, bool target_relative, const vec2& target,
+                    std::int32_t keys) {
   proto::PlayerFrame& frame = *replay.add_player_frame();
   frame.set_velocity_x(velocity.x.to_internal());
   frame.set_velocity_y(velocity.y.to_internal());
+  frame.set_target_relative(target_relative);
   frame.set_target_x(target.x.to_internal());
   frame.set_target_y(target.y.to_internal());
   frame.set_keys(keys);
@@ -44,7 +46,7 @@ void Replay::record(const vec2& velocity, const vec2& target, std::int32_t keys)
 void Replay::write(ii::io::Filesystem& fs, const std::string& name, std::int64_t score) const {
   std::stringstream ss;
   auto mode = static_cast<game_mode>(replay.game_mode());
-  ss << "replays/" << replay.seed() << "_" << replay.players() << "p_"
+  ss << replay.seed() << "_" << replay.players() << "p_"
      << (mode == game_mode::kBoss       ? "bossmode_"
              : mode == game_mode::kHard ? "hardmode_"
              : mode == game_mode::kFast ? "fastmode_"
@@ -53,8 +55,8 @@ void Replay::write(ii::io::Filesystem& fs, const std::string& name, std::int64_t
      << name << "_" << score;
 
   std::string temp;
-  temp = z::crypt(z::compress_string(temp), Lib::kSuperEncryptionKey);
   replay.SerializeToString(&temp);
+  temp = z::crypt(z::compress_string(temp), Lib::kSuperEncryptionKey);
   (void)fs.write_replay(ss.str(),
                         {reinterpret_cast<std::uint8_t*>(temp.data()),
                          reinterpret_cast<std::uint8_t*>(temp.data() + temp.size())});

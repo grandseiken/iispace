@@ -74,6 +74,7 @@ private:
   frame_count_callback callback_;
   PauseModal::output_t pause_output_ = PauseModal::kContinue;
   std::int32_t controllers_connected_ = 0;
+  std::int32_t frame_count_multiplier_ = 1;
   bool is_replay_ = false;
   bool controllers_dialog_ = true;
   std::unique_ptr<ii::SimState> state_;

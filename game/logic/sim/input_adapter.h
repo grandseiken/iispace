@@ -2,22 +2,32 @@
 #define IISPACE_GAME_LOGIC_SIM_INPUT_ADAPTER_H
 #include "game/common/z.h"
 #include "game/core/replay.h"
+#include <cstdint>
+#include <optional>
+#include <vector>
 
 class Lib;
-class Player;
+class Replay;
 
 namespace ii {
+
+struct input_frame {
+  vec2 velocity;
+  std::optional<vec2> target_absolute;
+  std::optional<vec2> target_relative;
+  std::int32_t keys = 0;
+};
 
 class InputAdapter {
 public:
   virtual ~InputAdapter() {}
-  virtual void get(const Player& player, vec2& velocity, vec2& target, std::int32_t& keys) = 0;
+  virtual std::vector<input_frame> get() = 0;
 };
 
 class ReplayInputAdapter : public InputAdapter {
 public:
   ReplayInputAdapter(const Replay& replay);
-  void get(const Player& player, vec2& velocity, vec2& target, std::int32_t& keys) override;
+  std::vector<input_frame> get() override;
   float progress() const;
 
 private:
@@ -28,7 +38,7 @@ private:
 class LibInputAdapter : public InputAdapter {
 public:
   LibInputAdapter(Lib& lib, Replay& replay);
-  void get(const Player& player, vec2& velocity, vec2& target, std::int32_t& keys) override;
+  std::vector<input_frame> get() override;
 
 private:
   Lib& lib_;

@@ -29,7 +29,7 @@ SimState::~SimState() {
 }
 
 std::int32_t SimState::frame_count() const {
-  return (mode() == game_mode::kFast ? 2 : 1) * frame_count_multiplier_;
+  return mode() == game_mode::kFast ? 2 : 1;
 }
 
 void SimState::update() {
@@ -40,15 +40,7 @@ void SimState::update() {
       : mode() == game_mode::kFast           ? 192
       : mode() == game_mode::kWhat           ? (colour_cycle_ + 1) % 256
                                              : 0;
-
-  if (!replay_recording_) {
-    if (lib_.is_key_pressed(Lib::key::kBomb)) {
-      frame_count_multiplier_ *= 2;
-    }
-    if (lib_.is_key_pressed(Lib::key::kFire) && frame_count_multiplier_ > 1) {
-      frame_count_multiplier_ /= 2;
-    }
-  }
+  internals_->input_frames = input_->get();
 
   Player::update_fire_timer();
   ChaserBoss::has_counted_ = false;
@@ -293,7 +285,7 @@ SimState::SimState(Lib& lib, Replay&& replay, bool replay_recording)
   Stars::clear();
   for (std::int32_t i = 0; i < replay_.replay.players(); ++i) {
     vec2 v((1 + i) * kSimWidth / (1 + replay_.replay.players()), kSimHeight / 2);
-    auto p = std::make_unique<Player>(*input_, v, i);
+    auto p = std::make_unique<Player>(v, i);
     internals_->player_list.push_back(p.get());
     interface().add_ship(std::move(p));
   }

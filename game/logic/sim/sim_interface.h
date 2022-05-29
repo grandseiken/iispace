@@ -1,6 +1,7 @@
 #ifndef IISPACE_GAME_LOGIC_SIM_SIM_INTERFACE_H
 #define IISPACE_GAME_LOGIC_SIM_SIM_INTERFACE_H
 #include "game/common/z.h"
+#include "game/logic/sim/input_adapter.h"
 #include "game/mixer/sound.h"
 #include <cstdint>
 #include <memory>
@@ -41,6 +42,9 @@ public:
   using ship_list = std::vector<Ship*>;
 
   SimInterface(SimInternals* internals) : internals_{internals} {}
+
+  // Input.
+  input_frame input(std::int32_t player_number);
 
   // State manipulation.
   game_mode mode() const;
