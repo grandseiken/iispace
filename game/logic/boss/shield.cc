@@ -12,7 +12,7 @@ const fixed kSbbSpeed = 1;
 
 ShieldBombBoss::ShieldBombBoss(std::int32_t players, std::int32_t cycle)
 : Boss{{-ii::kSimWidth / 2, ii::kSimHeight / 2},
-       ii::SimInterface::BOSS_1B,
+       ii::SimInterface::kBoss1B,
        kSbbBaseHp,
        players,
        cycle} {

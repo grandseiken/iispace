@@ -13,6 +13,8 @@ public:
   using byte_buffer = std::vector<std::uint8_t>;
   virtual ~Filesystem() {}
 
+  virtual result<byte_buffer> read(std::string_view name) const = 0;
+
   virtual result<byte_buffer> read_asset(std::string_view name) const = 0;
   virtual result<byte_buffer> read_config() const = 0;
   virtual result<void> write_config(nonstd::span<const std::uint8_t>) = 0;

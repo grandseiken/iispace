@@ -83,7 +83,7 @@ std::int32_t ChaserBoss::shared_hp_;
 ChaserBoss::ChaserBoss(std::int32_t players, std::int32_t cycle, std::int32_t split,
                        const vec2& position, std::int32_t time, std::int32_t stagger)
 : Boss{!split ? vec2{ii::kSimWidth / 2, -ii::kSimHeight / 2} : position,
-       ii::SimInterface::BOSS_1C,
+       ii::SimInterface::kBoss1C,
        1 + kCbBaseHp / (fixed_c::half + HP_REDUCE_POWER_lookup[split]).to_int(),
        players,
        cycle,

@@ -95,7 +95,6 @@ private:
   std::unique_ptr<ii::SimState> state_;
 };
 
-struct score_finished {};
 class z0Game {
 public:
   static constexpr colour_t kPanelText = 0xeeeeeeff;

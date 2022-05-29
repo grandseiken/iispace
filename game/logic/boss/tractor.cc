@@ -9,7 +9,7 @@ const fixed kTbSpeed = 2;
 
 TractorBoss::TractorBoss(std::int32_t players, std::int32_t cycle)
 : Boss{{ii::kSimWidth * (1 + fixed_c::half), ii::kSimHeight / 2},
-       ii::SimInterface::BOSS_2A,
+       ii::SimInterface::kBoss2A,
        kTbBaseHp,
        players,
        cycle}

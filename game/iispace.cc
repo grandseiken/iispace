@@ -23,10 +23,9 @@ bool run(const std::vector<std::string>& args) {
       std::cerr << "Error initialising renderer: " << renderer.error() << std::endl;
       return false;
     }
-    Lib lib{/* headless */ false, fs, **io_layer, **renderer};
+    Lib lib{fs, **io_layer, **renderer};
     z0Game game{lib, args};
     game.run();
-  } catch (const score_finished&) {
   } catch (const std::exception& e) {
     std::cerr << e.what() << std::endl;
     return false;

@@ -62,7 +62,7 @@ void SuperBossArc::on_destroy() {
 
 SuperBoss::SuperBoss(std::int32_t players, std::int32_t cycle)
 : Boss{{ii::kSimWidth / 2, -ii::kSimHeight / (2 + fixed_c::half)},
-       ii::SimInterface::BOSS_3A,
+       ii::SimInterface::kBoss3A,
        kSbBaseHp,
        players,
        cycle}

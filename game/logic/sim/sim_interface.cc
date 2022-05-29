@@ -6,6 +6,14 @@
 
 namespace ii {
 
+colour_t SimInterface::player_colour(std::size_t player_number) {
+  return player_number == 0 ? 0xff0000ff
+      : player_number == 1  ? 0xff5500ff
+      : player_number == 2  ? 0xffaa00ff
+      : player_number == 3  ? 0xffff00ff
+                            : 0x00ff00ff;
+}
+
 input_frame SimInterface::input(std::int32_t player_number) {
   if (player_number < internals_->input_frames.size()) {
     return internals_->input_frames[player_number];
@@ -138,7 +146,7 @@ std::int32_t SimInterface::get_lives() const {
 }
 
 void SimInterface::set_boss_killed(boss_list boss) {
-  if (boss == BOSS_3A || (mode() != game_mode::kBoss && mode() != game_mode::kNormal)) {
+  if (boss == kBoss3A || (mode() != game_mode::kBoss && mode() != game_mode::kNormal)) {
     internals_->hard_mode_bosses_killed |= boss;
   } else {
     internals_->bosses_killed |= boss;

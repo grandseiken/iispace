@@ -5,7 +5,7 @@
 #include "game/io/io.h"
 #include "game/logic/sim/sim_state.h"
 #include "game/mixer/mixer.h"
-#include "game/render/renderer.h"
+#include "game/render/gl_renderer.h"
 #include <nonstd/span.hpp>
 #include <algorithm>
 #include <iostream>
@@ -137,7 +137,7 @@ bool contains(nonstd::span<const T> range, T value) {
 }  // namespace
 
 struct Lib::Internals {
-  Internals(bool headless) : mixer{ii::io::kAudioSampleRate, /* enabled */ !headless} {
+  Internals() : mixer{ii::io::kAudioSampleRate} {
     last_aim.resize(kPlayers);
   }
 
@@ -219,18 +219,14 @@ struct Lib::Internals {
   }
 };
 
-Lib::Lib(bool headless, ii::io::Filesystem& fs, ii::io::IoLayer& io_layer,
-         ii::render::Renderer& renderer)
-: headless_{headless}, fs_{fs}, io_layer_{io_layer}, renderer_{renderer} {
-  internals_ = std::make_unique<Internals>(headless);
+Lib::Lib(ii::io::Filesystem& fs, ii::io::IoLayer& io_layer, ii::render::GlRenderer& renderer)
+: fs_{fs}, io_layer_{io_layer}, renderer_{renderer} {
+  internals_ = std::make_unique<Internals>();
   io_layer_.set_audio_callback([mixer = &internals_->mixer](std::uint8_t* p, std::size_t k) {
     mixer->audio_callback(p, k);
   });
 
   auto use_sound = [&](ii::sound s, const std::string& filename) {
-    if (headless_) {
-      return;
-    }
     auto bytes = fs.read_asset(filename);
     if (!bytes) {
       std::cerr << bytes.error() << std::endl;
@@ -325,9 +321,6 @@ bool Lib::begin_frame() {
   internals_->sounds.clear();
 
   renderer_.set_dimensions(io_layer_.dimensions(), glm::uvec2{kWidth, kHeight});
-  if (headless_ && score_frame_ < 5) {
-    ++score_frame_;
-  }
   return false;
 }
 
@@ -368,80 +361,59 @@ Lib::pad_type Lib::get_pad_type(std::int32_t player) const {
 }
 
 bool Lib::is_key_pressed(std::int32_t player, key k) const {
-  if (!headless_) {
-    return internals_->is_pressed(internals_->assign_input(player, players_), k);
-  }
-  if (player != 0) {
-    return false;
-  }
-  // TODO: just don't do whatever menus this is for in headless mode.
-  if (k == key::kDown && score_frame_ < 4) {
-    return true;
-  }
-  if (k == key::kAccept && score_frame_ == 5) {
-    return true;
-  }
-  return false;
+  return internals_->is_pressed(internals_->assign_input(player, players_), k);
 }
 
 bool Lib::is_key_held(std::int32_t player, key k) const {
-  if (!headless_) {
-    return internals_->is_held(internals_->assign_input(player, players_), k);
-  }
-  return false;
+  return internals_->is_held(internals_->assign_input(player, players_), k);
 }
 
 vec2 Lib::get_move_velocity(std::int32_t player) const {
-  if (!headless_) {
-    bool ku = is_key_held(player, key::kUp);
-    bool kd = is_key_held(player, key::kDown);
-    bool kl = is_key_held(player, key::kLeft);
-    bool kr = is_key_held(player, key::kRight);
+  bool ku = is_key_held(player, key::kUp);
+  bool kd = is_key_held(player, key::kDown);
+  bool kl = is_key_held(player, key::kLeft);
+  bool kr = is_key_held(player, key::kRight);
 
-    vec2 v = vec2{0, -1} * ku + vec2{0, 1} * kd + vec2{-1, 0} * kl + vec2{1, 0} * kr;
-    if (v != vec2{}) {
-      return v;
-    }
-
-    if (auto input = internals_->assign_input(player, players_); input.pad) {
-      return controller_stick(input.pad->axis(ii::io::controller::axis::kLX),
-                              input.pad->axis(ii::io::controller::axis::kLY));
-    }
+  vec2 v = vec2{0, -1} * ku + vec2{0, 1} * kd + vec2{-1, 0} * kl + vec2{1, 0} * kr;
+  if (v != vec2{}) {
     return v;
   }
-  return {};
+
+  if (auto input = internals_->assign_input(player, players_); input.pad) {
+    return controller_stick(input.pad->axis(ii::io::controller::axis::kLX),
+                            input.pad->axis(ii::io::controller::axis::kLY));
+  }
+  return v;
 }
 
 std::pair<bool, vec2> Lib::get_fire_target(std::int32_t player) const {
-  if (!headless_) {
-    auto input = internals_->assign_input(player, players_);
-    if (input.pad) {
-      auto v = controller_stick(input.pad->axis(ii::io::controller::axis::kRX),
-                                input.pad->axis(ii::io::controller::axis::kRY));
-      if (v != vec2{}) {
-        if (input.kbm) {
-          internals_->mouse_moving = false;
-        }
-        internals_->last_aim[player] = v.normalised() * 48;
-        return {true, internals_->last_aim[player]};
+  auto input = internals_->assign_input(player, players_);
+  if (input.pad) {
+    auto v = controller_stick(input.pad->axis(ii::io::controller::axis::kRX),
+                              input.pad->axis(ii::io::controller::axis::kRY));
+    if (v != vec2{}) {
+      if (input.kbm) {
+        internals_->mouse_moving = false;
       }
-    }
-    if (internals_->mouse_frame.cursor_delta != glm::ivec2{0, 0}) {
-      internals_->mouse_moving = true;
-    }
-    if (input.kbm && internals_->mouse_moving) {
-      auto c = static_cast<glm::vec2>(internals_->mouse_frame.cursor);
-      auto r = renderer_.legacy_render_scale();
-      c /= static_cast<glm::vec2>(io_layer_.dimensions());
-      c -= (glm::vec2{1.f, 1.f} - r) / 2.f;
-      c /= r;
-      c *= glm::vec2{Lib::kWidth, Lib::kHeight};
-      c.x = std::max<float>(0, std::min<float>(Lib::kWidth, c.x));
-      c.y = std::max<float>(0, std::min<float>(Lib::kHeight, c.y));
-      return {false, vec2{c.x, c.y}};
-    } else if (input.pad && internals_->last_aim[player] != vec2{}) {
+      internals_->last_aim[player] = v.normalised() * 48;
       return {true, internals_->last_aim[player]};
     }
+  }
+  if (internals_->mouse_frame.cursor_delta != glm::ivec2{0, 0}) {
+    internals_->mouse_moving = true;
+  }
+  if (input.kbm && internals_->mouse_moving) {
+    auto c = static_cast<glm::vec2>(internals_->mouse_frame.cursor);
+    auto r = renderer_.legacy_render_scale();
+    c /= static_cast<glm::vec2>(io_layer_.dimensions());
+    c -= (glm::vec2{1.f, 1.f} - r) / 2.f;
+    c /= r;
+    c *= glm::vec2{Lib::kWidth, Lib::kHeight};
+    c.x = std::max<float>(0, std::min<float>(Lib::kWidth, c.x));
+    c.y = std::max<float>(0, std::min<float>(Lib::kHeight, c.y));
+    return {false, vec2{c.x, c.y}};
+  } else if (input.pad && internals_->last_aim[player] != vec2{}) {
+    return {true, internals_->last_aim[player]};
   }
   return {true, vec2{48, 0}};
 }

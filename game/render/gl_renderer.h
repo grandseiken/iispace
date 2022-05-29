@@ -1,7 +1,6 @@
 #ifndef IISPACE_GAME_RENDER_GL_RENDERER_H
 #define IISPACE_GAME_RENDER_GL_RENDERER_H
 #include "game/common/result.h"
-#include "game/render/renderer.h"
 #include <glm/glm.hpp>
 #include <nonstd/span.hpp>
 #include <memory>
@@ -12,25 +11,24 @@ class Filesystem;
 }  // namespace ii::io
 namespace ii::render {
 
-class GlRenderer : public Renderer {
+class GlRenderer {
 private:
   struct access_tag {};
 
 public:
   static result<std::unique_ptr<GlRenderer>> create(const io::Filesystem& fs);
   GlRenderer(access_tag);
-  ~GlRenderer() override;
+  ~GlRenderer();
 
-  void clear_screen() override;
+  void clear_screen();
+  void set_dimensions(const glm::uvec2& screen_dimensions, const glm::uvec2& render_dimensions);
+
+  glm::vec2 legacy_render_scale() const;
   void
-  set_dimensions(const glm::uvec2& screen_dimensions, const glm::uvec2& render_dimensions) override;
-
-  glm::vec2 legacy_render_scale() const override;
-  void render_legacy_text(const glm::ivec2& position, const glm::vec4& colour,
-                          std::string_view text) override;
-  void render_legacy_line(const glm::vec2& a, const glm::vec2& b, const glm::vec4& colour) override;
+  render_legacy_text(const glm::ivec2& position, const glm::vec4& colour, std::string_view text);
+  void render_legacy_line(const glm::vec2& a, const glm::vec2& b, const glm::vec4& colour);
   void render_legacy_rect(const glm::ivec2& lo, const glm::ivec2& hi, std::int32_t line_width,
-                          const glm::vec4& colour) override;
+                          const glm::vec4& colour);
 
 private:
   struct impl_t;

@@ -77,8 +77,7 @@ Mixer::audio_sample_t f2s16(float v) {
 
 }  // namespace
 
-Mixer::Mixer(std::uint32_t sample_rate_hz, bool enabled)
-: sample_rate_hz_{sample_rate_hz}, enabled_{enabled} {}
+Mixer::Mixer(std::uint32_t sample_rate_hz) : sample_rate_hz_{sample_rate_hz} {}
 
 void Mixer::set_master_volume(float volume) {
   master_volume_ = std::clamp(volume, 0.f, 1.f);
@@ -86,9 +85,6 @@ void Mixer::set_master_volume(float volume) {
 
 result<Mixer::audio_handle_t>
 Mixer::load_wav_memory(nonstd::span<std::uint8_t> data, std::optional<audio_handle_t> handle) {
-  if (!enabled_) {
-    return 0;
-  }
   auto h = assign_handle(handle);
   if (!h) {
     return unexpected(h.error());
@@ -109,7 +105,7 @@ void Mixer::release_handle(audio_handle_t) {
 
 void Mixer::play(audio_handle_t handle, float volume, float pan, float pitch) {
   auto it = audio_resources_.find(handle);
-  if (!enabled_ || it == audio_resources_.end() || !it->second.clip) {
+  if (it == audio_resources_.end() || !it->second.clip) {
     return;
   }
   const auto& clip = *it->second.clip;
@@ -145,11 +141,6 @@ void Mixer::commit() {
 }
 
 void Mixer::audio_callback(std::uint8_t* out_buffer, std::size_t samples) {
-  if (!enabled_) {
-    std::memset(out_buffer, 0, 2 * samples * sizeof(audio_sample_t));
-    return;
-  }
-
   mix_buffer_.resize(2 * samples);
   std::fill(mix_buffer_.begin(), mix_buffer_.end(), 0.f);
   auto master_volume = master_volume_.load();

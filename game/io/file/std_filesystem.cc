@@ -48,16 +48,20 @@ StdFilesystem::StdFilesystem(std::string_view asset_dir, std::string_view save_d
   std::filesystem::create_directories(replay_dir_, ec);
 }
 
+result<Filesystem::byte_buffer> StdFilesystem::read(std::string_view name) const {
+  return io::read(std::filesystem::path{std::string{name}});
+}
+
 result<Filesystem::byte_buffer> StdFilesystem::read_asset(std::string_view name) const {
-  return read(std::filesystem::path{asset_dir_} / name);
+  return io::read(std::filesystem::path{asset_dir_} / name);
 }
 
 result<Filesystem::byte_buffer> StdFilesystem::read_config() const {
-  return read(std::filesystem::path{save_dir_} / kConfigPath);
+  return io::read(std::filesystem::path{save_dir_} / kConfigPath);
 }
 
 result<void> StdFilesystem::write_config(nonstd::span<const std::uint8_t> data) {
-  return write(std::filesystem::path{save_dir_} / kConfigPath, data);
+  return io::write(std::filesystem::path{save_dir_} / kConfigPath, data);
 }
 
 std::vector<std::string> StdFilesystem::list_savegames() const {
@@ -72,12 +76,12 @@ std::vector<std::string> StdFilesystem::list_savegames() const {
 }
 
 result<Filesystem::byte_buffer> StdFilesystem::read_savegame(std::string_view name) const {
-  return read(std::filesystem::path{save_dir_} / (std::string{name} + kSaveExt));
+  return io::read(std::filesystem::path{save_dir_} / (std::string{name} + kSaveExt));
 }
 
 result<void>
 StdFilesystem::write_savegame(std::string_view name, nonstd::span<const std::uint8_t> data) {
-  return write(std::filesystem::path{save_dir_} / (std::string{name} + kSaveExt), data);
+  return io::write(std::filesystem::path{save_dir_} / (std::string{name} + kSaveExt), data);
 }
 
 std::vector<std::string> StdFilesystem::list_replays() const {
@@ -92,12 +96,12 @@ std::vector<std::string> StdFilesystem::list_replays() const {
 }
 
 result<Filesystem::byte_buffer> StdFilesystem::read_replay(std::string_view name) const {
-  return read(std::filesystem::path{replay_dir_} / (std::string{name} + kReplayExt));
+  return io::read(std::filesystem::path{replay_dir_} / (std::string{name} + kReplayExt));
 }
 
 result<void>
 StdFilesystem::write_replay(std::string_view name, nonstd::span<const std::uint8_t> data) {
-  return write(std::filesystem::path{replay_dir_} / (std::string{name} + kReplayExt), data);
+  return io::write(std::filesystem::path{replay_dir_} / (std::string{name} + kReplayExt), data);
 }
 
 }  // namespace ii::io

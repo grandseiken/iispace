@@ -17,18 +17,13 @@ class Filesystem;
 class IoLayer;
 }  // namespace ii::io
 namespace ii::render {
-class Renderer;
+class GlRenderer;
 }  // namespace ii::render
 
 class Lib {
 public:
-  Lib(bool headless, ii::io::Filesystem& fs, ii::io::IoLayer& io_layer,
-      ii::render::Renderer& renderer);
+  Lib(ii::io::Filesystem& fs, ii::io::IoLayer& io_layer, ii::render::GlRenderer& renderer);
   ~Lib();
-
-  bool headless() const {
-    return headless_;
-  }
 
   ii::io::Filesystem& filesystem() {
     return fs_;
@@ -108,14 +103,12 @@ public:
   std::int32_t get_colour_cycle() const;
 
 private:
-  bool headless_ = false;
   ii::io::Filesystem& fs_;
   ii::io::IoLayer& io_layer_;
-  ii::render::Renderer& renderer_;
+  ii::render::GlRenderer& renderer_;
 
   std::int32_t colour_cycle_ = 0;
   std::int32_t players_ = 1;
-  std::size_t score_frame_ = 0;
 
   struct Internals;
   std::unique_ptr<Internals> internals_;

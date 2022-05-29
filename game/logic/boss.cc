@@ -17,8 +17,8 @@ Boss::Boss(const vec2& position, ii::SimInterface::boss_list boss, std::int32_t 
 , explode_on_damage_{explode_on_damage} {
   set_bounding_width(640);
   set_ignore_damage_colour_index(100);
-  long s = 5000 * (cycle + 1) + 2500 * (boss > ii::SimInterface::BOSS_1C) +
-      2500 * (boss > ii::SimInterface::BOSS_2C);
+  long s = 5000 * (cycle + 1) + 2500 * (boss > ii::SimInterface::kBoss1C) +
+      2500 * (boss > ii::SimInterface::kBoss2C);
 
   score_ += s;
   for (std::int32_t i = 0; i < players - 1; ++i) {

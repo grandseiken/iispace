@@ -198,14 +198,6 @@ void Player::add_score(std::int64_t score) {
   }
 }
 
-colour_t Player::player_colour(std::size_t player_number) {
-  return player_number == 0 ? 0xff0000ff
-      : player_number == 1  ? 0xff5500ff
-      : player_number == 2  ? 0xffaa00ff
-      : player_number == 3  ? 0xffff00ff
-                            : 0x00ff00ff;
-}
-
 void Player::activate_magic_shots() {
   magic_shot_timer_ = kMagicShotCount;
 }
@@ -307,9 +299,9 @@ Powerup::Powerup(const vec2& position, type t)
 }
 
 void Powerup::update() {
-  shapes()[0]->colour = Player::player_colour(frame_ / 2);
+  shapes()[0]->colour = ii::SimInterface::player_colour(frame_ / 2);
   frame_ = (frame_ + 1) % (kPlayers * 2);
-  shapes()[1]->colour = Player::player_colour(frame_ / 2);
+  shapes()[1]->colour = ii::SimInterface::player_colour(frame_ / 2);
 
   if (!is_on_screen()) {
     dir_ = get_screen_centre() - shape().centre;

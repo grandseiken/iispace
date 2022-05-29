@@ -1,6 +1,6 @@
 cc_binary(
   name = "iispace",
-  srcs = ["main.cc"],
+  srcs = ["iispace.cc"],
   deps = [
     "//game/core",
     "//game/io:sdl_io",
@@ -21,15 +21,16 @@ cc_binary(
       "-DEFAULTLIB:xinput.lib",
     ],
   }),
+  visibility = ["//visibility:public"],
 )
 
 cc_binary(
   name = "score",
-  srcs = ["main_score.cc"],
+  srcs = ["score.cc"],
   deps = [
-    "//game/core",
-    "//game/io:null_io",
+    "//game/core:replay",
     "//game/io/file:std_filesystem",
-    "//game/render:null_renderer",
+    "//game/logic/sim",
   ],
+  visibility = ["//visibility:public"],
 )

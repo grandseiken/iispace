@@ -29,14 +29,16 @@ struct particle {
 
 class SimInterface {
 public:
+  // TODO: move to sim_io.h?
+  static colour_t player_colour(std::size_t player_number);
   enum boss_list {
-    BOSS_1A = 1,
-    BOSS_1B = 2,
-    BOSS_1C = 4,
-    BOSS_2A = 8,
-    BOSS_2B = 16,
-    BOSS_2C = 32,
-    BOSS_3A = 64,
+    kBoss1A = 1,
+    kBoss1B = 2,
+    kBoss1C = 4,
+    kBoss2A = 8,
+    kBoss2B = 16,
+    kBoss2C = 32,
+    kBoss3A = 64,
   };
   using ship_list = std::vector<Ship*>;
 

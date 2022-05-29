@@ -1,7 +1,7 @@
 #include "game/core/z0_game.h"
 #include "game/core/lib.h"
 #include "game/io/file/filesystem.h"
-#include "game/logic/player.h"
+#include "game/logic/sim/sim_interface.h"
 #include <algorithm>
 #include <iostream>
 #include <sstream>
@@ -166,20 +166,6 @@ HighScoreModal::HighScoreModal(bool is_replay, SaveData& save, GameModal& game,
 
 void HighScoreModal::update(Lib& lib) {
   ++timer_;
-
-  // TODO: remove exceptions.
-  if (lib.headless()) {
-    std::cout << results_.seed << "\n"
-              << results_.players.size() << "\n"
-              << (results_.mode == game_mode::kBoss) << "\n"
-              << (results_.mode == game_mode::kHard) << "\n"
-              << (results_.mode == game_mode::kFast) << "\n"
-              << (results_.mode == game_mode::kWhat) << "\n"
-              << get_score() << "\n"
-              << std::flush;
-    throw score_finished{};
-  }
-
   if (!is_high_score()) {
     if (lib.is_key_pressed(Lib::key::kMenu)) {
       if (replay_writer_) {
@@ -303,7 +289,7 @@ void HighScoreModal::render(Lib& lib) const {
     ss.str({});
     ss << "PLAYER " << (i + 1) << ":";
     lib.render_text({4.f, 8.f + 2 * i}, ss.str(), z0Game::kPanelText);
-    lib.render_text({14.f, 8.f + 2 * i}, score, Player::player_colour(i));
+    lib.render_text({14.f, 8.f + 2 * i}, score, ii::SimInterface::player_colour(i));
   }
 
   if (players <= 1) {
@@ -324,7 +310,7 @@ void HighScoreModal::render(Lib& lib) const {
   if (get_score() > 0) {
     std::stringstream s;
     s << "PLAYER " << (best + 1);
-    lib.render_text({4.f, 8.f + 2 * players}, s.str(), Player::player_colour(best));
+    lib.render_text({4.f, 8.f + 2 * players}, s.str(), ii::SimInterface::player_colour(best));
 
     std::string compliment = kCompliments[compliment_];
     lib.render_text({12.f, 8.f + 2 * players}, compliment, z0Game::kPanelText);
@@ -506,7 +492,7 @@ void GameModal::render(Lib& lib) const {
       }
 
       lib.render_text({14.f, 8.f + 2 * i}, ss.str(),
-                      pads ? Player::player_colour(i) : z0Game::kPanelText);
+                      pads ? ii::SimInterface::player_colour(i) : z0Game::kPanelText);
     }
     return;
   }
@@ -571,10 +557,6 @@ z0Game::z0Game(Lib& lib, const std::vector<std::string>& args)
 void z0Game::run() {
   while (true) {
     std::size_t f = frame_count_;
-    if (lib_.headless()) {
-      f = 16384;
-    }
-
     for (std::size_t i = 0; i < f; ++i) {
       if (lib_.begin_frame() || update()) {
         lib_.end_frame();
@@ -709,13 +691,13 @@ void z0Game::render() const {
   std::string b = "BOSSES:  ";
   std::int32_t bb =
       mode_unlocked() >= game_mode::kHard ? save_.hard_mode_bosses_killed : save_.bosses_killed;
-  b += bb & ii::SimInterface::BOSS_1A ? "X" : "-";
-  b += bb & ii::SimInterface::BOSS_1B ? "X" : "-";
-  b += bb & ii::SimInterface::BOSS_1C ? "X" : "-";
-  b += bb & ii::SimInterface::BOSS_3A ? "X" : " ";
-  b += bb & ii::SimInterface::BOSS_2A ? "X" : "-";
-  b += bb & ii::SimInterface::BOSS_2B ? "X" : "-";
-  b += bb & ii::SimInterface::BOSS_2C ? "X" : "-";
+  b += bb & ii::SimInterface::kBoss1A ? "X" : "-";
+  b += bb & ii::SimInterface::kBoss1B ? "X" : "-";
+  b += bb & ii::SimInterface::kBoss1C ? "X" : "-";
+  b += bb & ii::SimInterface::kBoss3A ? "X" : " ";
+  b += bb & ii::SimInterface::kBoss2A ? "X" : "-";
+  b += bb & ii::SimInterface::kBoss2B ? "X" : "-";
+  b += bb & ii::SimInterface::kBoss2C ? "X" : "-";
   lib().render_text({37.f - 16, 13.f}, b, kPanelText);
 
   lib().render_text({4.f, 4.f}, "WiiSPACE", kPanelText);
@@ -754,7 +736,7 @@ void z0Game::render() const {
   for (std::int32_t i = 0; i < player_select_; ++i) {
     std::stringstream ss;
     ss << (i + 1);
-    lib().render_text({14.f + i, 10.f}, ss.str(), Player::player_colour(i));
+    lib().render_text({14.f + i, 10.f}, ss.str(), ii::SimInterface::player_colour(i));
   }
 
   render_panel(lib(), {3.f, 15.f}, {37.f, 27.f});

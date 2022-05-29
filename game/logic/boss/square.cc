@@ -14,7 +14,7 @@ const fixed kBsbAttackRadius = 120;
 
 BigSquareBoss::BigSquareBoss(std::int32_t players, std::int32_t cycle)
 : Boss{{ii::kSimWidth * fixed_c::hundredth * 75, ii::kSimHeight * 2},
-       ii::SimInterface::BOSS_1A,
+       ii::SimInterface::kBoss1A,
        kBsbBaseHp,
        players,
        cycle}

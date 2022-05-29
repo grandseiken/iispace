@@ -10,7 +10,7 @@ const fixed kGbWallSpeed = 3 + fixed(1) / 2;
 
 GhostBoss::GhostBoss(std::int32_t players, std::int32_t cycle)
 : Boss{{ii::kSimWidth / 2, ii::kSimHeight / 2},
-       ii::SimInterface::BOSS_2B,
+       ii::SimInterface::kBoss2B,
        kGbBaseHp,
        players,
        cycle}

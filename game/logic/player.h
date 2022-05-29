@@ -36,9 +36,8 @@ public:
 
   // Colour
   //------------------------------
-  static colour_t player_colour(std::size_t player_number);
   colour_t colour() const {
-    return player_colour(player_number_);
+    return ii::SimInterface::player_colour(player_number_);
   }
 
   // Temporary death

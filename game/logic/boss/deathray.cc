@@ -16,7 +16,7 @@ const fixed kDrbRaySpeed = 10;
 
 DeathRayBoss::DeathRayBoss(std::int32_t players, std::int32_t cycle)
 : Boss{{ii::kSimWidth * (fixed(3) / 20), -ii::kSimHeight},
-       ii::SimInterface::BOSS_2C,
+       ii::SimInterface::kBoss2C,
        kDrbBaseHp,
        players,
        cycle}

@@ -4,7 +4,6 @@
 #include <memory>
 #include <vector>
 
-class Lib;
 namespace ii {
 class SimInterface;
 }  // namespace ii

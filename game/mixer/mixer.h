@@ -17,7 +17,7 @@ public:
   using audio_sample_t = std::int16_t;
   using audio_handle_t = std::size_t;
 
-  Mixer(std::uint32_t sample_rate, bool enabled);
+  Mixer(std::uint32_t sample_rate);
   result<audio_handle_t> load_wav_memory(nonstd::span<std::uint8_t> data,
                                          std::optional<audio_handle_t> handle = std::nullopt);
   void release_handle(audio_handle_t);
@@ -44,7 +44,6 @@ private:
 
   // Playback.
   std::uint32_t sample_rate_hz_ = 0;
-  bool enabled_ = false;
   std::atomic<float> master_volume_{1.f};
 
   struct sound {

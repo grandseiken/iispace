@@ -1,5 +1,4 @@
 #include "game/logic/sim/sim_state.h"
-#include "game/core/lib.h"
 #include "game/logic/boss.h"
 #include "game/logic/boss/chaser.h"
 #include "game/logic/overmind.h"

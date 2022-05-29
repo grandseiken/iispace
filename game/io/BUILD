@@ -28,13 +28,3 @@ cc_library(
   ],
   visibility = ["//visibility:public"],
 )
-
-cc_library(
-  name = "null_io",
-  hdrs = ["null_io.h"],
-  deps = [
-    ":io",
-    "//game/common:types",
-  ],
-  visibility = ["//visibility:public"],
-)
