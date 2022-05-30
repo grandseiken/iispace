@@ -35,6 +35,7 @@ cc_library(
     ":ii_proto_cc",
     "//game/common:types",
     "//game/common",
+    "//game/logic/sim:sim_interface",
     "@span_lite",
   ],
   visibility = ["//visibility:public"],

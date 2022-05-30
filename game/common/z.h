@@ -9,14 +9,6 @@
 
 typedef std::uint32_t colour_t;
 static constexpr std::int32_t kPlayers = 4;
-enum class game_mode {
-  kNormal,
-  kBoss,
-  kHard,
-  kFast,
-  kWhat,
-  kMax,
-};
 
 namespace z {
 

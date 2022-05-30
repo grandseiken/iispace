@@ -7,6 +7,15 @@
 
 namespace ii {
 
+enum class game_mode {
+  kNormal,
+  kBoss,
+  kHard,
+  kFast,
+  kWhat,
+  kMax,
+};
+
 struct initial_conditions {
   std::int32_t seed = 0;
   game_mode mode = game_mode::kNormal;

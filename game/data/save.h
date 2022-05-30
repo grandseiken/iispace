@@ -2,6 +2,7 @@
 #define IISPACE_GAME_DATA_SAVE_H
 #include "game/common/result.h"
 #include "game/common/z.h"
+#include "game/logic/sim/sim_io.h"
 #include <nonstd/span.hpp>
 #include <cstdint>
 #include <vector>

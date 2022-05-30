@@ -21,19 +21,9 @@ public:
   ~SimState();
   SimState(const initial_conditions& conditions, InputAdapter& input);
 
-  const SimInterface& interface() const {
-    return *interface_;
-  }
-
-  SimInterface& interface() {
-    return *interface_;
-  }
-
   void update();
   void render() const;
   std::int32_t frame_count() const;
-
-  game_mode mode() const;  // TODO: necessary?
   bool game_over() const;
 
   struct sound_t {

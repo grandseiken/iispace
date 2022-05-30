@@ -1,6 +1,5 @@
 #ifndef IISPACE_GAME_CORE_Z0_GAME_H
 #define IISPACE_GAME_CORE_Z0_GAME_H
-#include "game/common/z.h"
 #include "game/core/lib.h"
 #include "game/core/modal.h"
 #include "game/data/replay.h"
@@ -112,7 +111,7 @@ public:
   }
 
 private:
-  game_mode mode_unlocked() const;
+  ii::game_mode mode_unlocked() const;
 
   enum class menu {
     kSpecial,
@@ -125,7 +124,7 @@ private:
 
   menu menu_select_ = menu::kStart;
   std::int32_t player_select_ = 1;
-  game_mode mode_select_ = game_mode::kBoss;
+  ii::game_mode mode_select_ = ii::game_mode::kBoss;
   std::int32_t exit_timer_ = 0;
   std::string exit_error_;
   std::int32_t frame_count_ = 1;
