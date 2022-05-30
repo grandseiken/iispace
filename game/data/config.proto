@@ -1,0 +1,7 @@
+syntax = "proto3";
+option optimize_for = LITE_RUNTIME;
+package ii.proto;
+
+message Config {
+  float volume = 1;
+}

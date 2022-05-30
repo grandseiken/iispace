@@ -1,7 +1,7 @@
 #ifndef IISPACE_GAME_CORE_LIB_H
 #define IISPACE_GAME_CORE_LIB_H
 #include "game/common/z.h"
-#include "game/core/replay.h"
+#include "game/data/replay.h"
 #include "game/logic/sim/sim_io.h"
 #include "game/mixer/sound.h"
 #include <memory>

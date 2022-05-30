@@ -1,4 +1,4 @@
-#include "game/core/replay.h"
+#include "game/data/replay.h"
 #include "game/io/file/std_filesystem.h"
 #include "game/logic/sim/sim_state.h"
 #include <iostream>

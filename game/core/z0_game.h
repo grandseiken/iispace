@@ -3,8 +3,8 @@
 #include "game/common/z.h"
 #include "game/core/lib.h"
 #include "game/core/modal.h"
-#include "game/core/replay.h"
-#include "game/core/save.h"
+#include "game/data/replay.h"
+#include "game/data/save.h"
 #include "game/logic/sim/sim_state.h"
 #include <cstdint>
 #include <functional>
@@ -20,19 +20,19 @@ public:
     kEndGame,
   };
 
-  PauseModal(output_t* output, Settings& settings);
+  PauseModal(output_t* output, ii::Config& settings);
   void update(Lib& lib) override;
   void render(Lib& lib) const override;
 
 private:
   output_t* output_;
-  Settings& settings_;
+  ii::Config& settings_;
   std::int32_t selection_ = 0;
 };
 
 class HighScoreModal : public Modal {
 public:
-  HighScoreModal(bool is_replay, SaveData& save, GameModal& game,
+  HighScoreModal(bool is_replay, ii::SaveGame& save, GameModal& game,
                  const ii::SimState::results& results, ii::ReplayWriter* replay_writer);
   void update(Lib& lib) override;
   void render(Lib& lib) const override;
@@ -42,7 +42,7 @@ private:
   bool is_high_score() const;
 
   bool is_replay_ = false;
-  SaveData& save_;
+  ii::SaveGame& save_;
   GameModal& game_;
   ii::SimState::results results_;
   ii::ReplayWriter* replay_writer_ = nullptr;
@@ -58,10 +58,10 @@ private:
 class GameModal : public Modal {
 public:
   using frame_count_callback = std::function<void(std::int32_t)>;
-  GameModal(Lib& lib, SaveData& save, Settings& settings, const frame_count_callback& callback,
-            const ii::initial_conditions& conditions);
-  GameModal(Lib& lib, SaveData& save, Settings& settings, const frame_count_callback& callback,
-            const std::string& replay_path);
+  GameModal(Lib& lib, ii::SaveGame& save, ii::Config& settings,
+            const frame_count_callback& callback, const ii::initial_conditions& conditions);
+  GameModal(Lib& lib, ii::SaveGame& save, ii::Config& settings,
+            const frame_count_callback& callback, const std::string& replay_path);
   ~GameModal();
 
   const ii::SimState& sim_state() const {
@@ -82,8 +82,8 @@ private:
     LibInputAdapter input;
   };
 
-  SaveData& save_;
-  Settings& settings_;
+  ii::SaveGame& save_;
+  ii::Config& settings_;
   frame_count_callback callback_;
   PauseModal::output_t pause_output_ = PauseModal::kContinue;
   std::int32_t controllers_connected_ = 0;
@@ -130,8 +130,8 @@ private:
   std::string exit_error_;
   std::int32_t frame_count_ = 1;
 
-  SaveData save_;
-  Settings settings_;
+  ii::SaveGame save_;
+  ii::Config settings_;
   ModalStack modals_;
 };
 

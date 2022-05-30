@@ -21,6 +21,7 @@ const std::vector<std::string> kCompliments{" is a swell guy!",         " went a
                                             " is a slippery customer!", "... that's is a puzzle!"};
 
 const std::string kAllowedChars = "ABCDEFGHiJKLMNOPQRSTUVWXYZ 1234567890! ";
+const std::string kSaveName = "iispace";
 
 std::string convert_to_time(std::int64_t score) {
   if (score == 0) {
@@ -72,7 +73,7 @@ void save_replay(ii::io::Filesystem& fs, const ii::ReplayWriter& writer, const s
 
 }  // namespace
 
-PauseModal::PauseModal(output_t* output, Settings& settings)
+PauseModal::PauseModal(output_t* output, ii::Config& settings)
 : Modal{true, false}, output_{output}, settings_{settings} {
   *output = kContinue;
 }
@@ -96,9 +97,11 @@ void PauseModal::update(Lib& lib) {
     *output_ = kEndGame;
     quit();
   } else if (accept && selection_ == 2) {
-    settings_.volume = std::min(fixed{100}, 1 + settings_.volume);
-    settings_.save();
-    lib.set_volume(settings_.volume.to_int());
+    auto data = settings_.save();
+    if (data) {
+      (void)lib.filesystem().write_config(*data);
+    }
+    lib.set_volume(static_cast<std::int32_t>(settings_.volume));
   }
   if (accept) {
     lib.play_sound(ii::sound::kMenuAccept);
@@ -109,16 +112,19 @@ void PauseModal::update(Lib& lib) {
     lib.play_sound(ii::sound::kMenuAccept);
   }
 
-  fixed v = settings_.volume;
+  auto v = settings_.volume;
   if (selection_ == 2 && lib.is_key_pressed(Lib::key::kLeft)) {
-    settings_.volume = std::max(fixed{0}, settings_.volume - 1);
+    settings_.volume = std::max(0.f, settings_.volume - 1.f);
   }
   if (selection_ == 2 && lib.is_key_pressed(Lib::key::kRight)) {
-    settings_.volume = std::min(fixed{100}, settings_.volume + 1);
+    settings_.volume = std::min(100.f, settings_.volume + 1.f);
   }
   if (v != settings_.volume) {
-    lib.set_volume(settings_.volume.to_int());
-    settings_.save();
+    lib.set_volume(static_cast<std::int32_t>(settings_.volume));
+    auto data = settings_.save();
+    if (data) {
+      (void)lib.filesystem().write_config(*data);
+    }
     lib.play_sound(ii::sound::kMenuClick);
   }
 }
@@ -131,7 +137,7 @@ void PauseModal::render(Lib& lib) const {
   lib.render_text({6.f, 10.f}, "END GAME", z0Game::kPanelText);
   lib.render_text({6.f, 12.f}, "VOL.", z0Game::kPanelText);
   std::stringstream vol;
-  std::int32_t v = settings_.volume.to_int();
+  auto v = static_cast<std::int32_t>(settings_.volume);
   vol << " " << (v < 10 ? " " : "") << v;
   lib.render_text({10.f, 12.f}, vol.str(), z0Game::kPanelText);
   if (selection_ == 2 && v > 0) {
@@ -148,7 +154,7 @@ void PauseModal::render(Lib& lib) const {
   lib.render_rect(low, hi, z0Game::kPanelText, 1);
 }
 
-HighScoreModal::HighScoreModal(bool is_replay, SaveData& save, GameModal& game,
+HighScoreModal::HighScoreModal(bool is_replay, ii::SaveGame& save, GameModal& game,
                                const ii::SimState::results& results,
                                ii::ReplayWriter* replay_writer)
 : Modal{true, false}
@@ -171,7 +177,10 @@ void HighScoreModal::update(Lib& lib) {
       if (replay_writer_) {
         save_replay(lib.filesystem(), *replay_writer_, "untitled", get_score());
       }
-      save_.save();
+      auto data = save_.save();
+      if (data) {
+        (void)lib.filesystem().write_savegame(kSaveName, *data);
+      }
       lib.play_sound(ii::sound::kMenuAccept);
       quit();
     }
@@ -179,7 +188,8 @@ void HighScoreModal::update(Lib& lib) {
   }
 
   ++enter_time_;
-  if (lib.is_key_pressed(Lib::key::kAccept) && enter_name_.length() < HighScores::kMaxNameLength) {
+  if (lib.is_key_pressed(Lib::key::kAccept) &&
+      enter_name_.length() < ii::HighScores::kMaxNameLength) {
     enter_name_ += kAllowedChars.substr(enter_char_, 1);
     enter_time_ = 0;
     lib.play_sound(ii::sound::kMenuClick);
@@ -214,7 +224,10 @@ void HighScoreModal::update(Lib& lib) {
     if (replay_writer_) {
       save_replay(lib.filesystem(), *replay_writer_, enter_name_, get_score());
     }
-    save_.save();
+    auto data = save_.save();
+    if (data) {
+      (void)lib.filesystem().write_savegame(kSaveName, *data);
+    }
     quit();
   }
 }
@@ -227,7 +240,7 @@ void HighScoreModal::render(Lib& lib) const {
     lib.render_text({4.f, 23.f},
                     players == 1 ? "Enter name:" : "Enter team name:", z0Game::kPanelText);
     lib.render_text({6.f, 25.f}, enter_name_, z0Game::kPanelText);
-    if ((enter_time_ / 16) % 2 && enter_name_.length() < HighScores::kMaxNameLength) {
+    if ((enter_time_ / 16) % 2 && enter_name_.length() < ii::HighScores::kMaxNameLength) {
       lib.render_text({6.f + enter_name_.length(), 25.f}, kAllowedChars.substr(enter_char_, 1),
                       0xbbbbbbff);
     }
@@ -268,8 +281,8 @@ void HighScoreModal::render(Lib& lib) const {
   std::stringstream ss;
   ss << get_score();
   std::string score = ss.str();
-  if (score.length() > HighScores::kMaxScoreLength) {
-    score = score.substr(0, HighScores::kMaxScoreLength);
+  if (score.length() > ii::HighScores::kMaxScoreLength) {
+    score = score.substr(0, ii::HighScores::kMaxScoreLength);
   }
   lib.render_text({4.f, 4.f}, "TOTAL SCORE: " + score, z0Game::kPanelText);
 
@@ -282,8 +295,8 @@ void HighScoreModal::render(Lib& lib) const {
       ss << deaths << " death" << (deaths != 1 ? "s" : "");
     }
     score = ss.str();
-    if (score.length() > HighScores::kMaxScoreLength) {
-      score = score.substr(0, HighScores::kMaxScoreLength);
+    if (score.length() > ii::HighScores::kMaxScoreLength) {
+      score = score.substr(0, ii::HighScores::kMaxScoreLength);
     }
 
     ss.str({});
@@ -336,7 +349,7 @@ bool HighScoreModal::is_high_score() const {
       save_.high_scores.is_high_score(results_.mode, results_.players.size() - 1, get_score());
 }
 
-GameModal::GameModal(Lib& lib, SaveData& save, Settings& settings,
+GameModal::GameModal(Lib& lib, ii::SaveGame& save, ii::Config& settings,
                      const frame_count_callback& callback, const ii::initial_conditions& conditions)
 : Modal{true, true}, save_{save}, settings_{settings}, callback_{callback} {
   lib.set_player_count(conditions.player_count);
@@ -345,7 +358,7 @@ GameModal::GameModal(Lib& lib, SaveData& save, Settings& settings,
   state_ = std::make_unique<ii::SimState>(conditions, game_->input);
 }
 
-GameModal::GameModal(Lib& lib, SaveData& save, Settings& settings,
+GameModal::GameModal(Lib& lib, ii::SaveGame& save, ii::Config& settings,
                      const frame_count_callback& callback, const std::string& replay_path)
 : Modal{true, true}, save_{save}, settings_{settings}, callback_{callback} {
   // TODO: exceptions.
@@ -536,9 +549,22 @@ void GameModal::render(Lib& lib) const {
   }
 }
 
-z0Game::z0Game(Lib& lib, const std::vector<std::string>& args)
-: lib_{lib}, save_{lib.filesystem()}, settings_{lib.filesystem()} {
-  lib.set_volume(settings_.volume.to_int());
+z0Game::z0Game(Lib& lib, const std::vector<std::string>& args) : lib_{lib} {
+  auto data = lib.filesystem().read_config();
+  if (data) {
+    auto settings = ii::Config::load(*data);
+    if (settings) {
+      settings_ = std::move(*settings);
+    }
+  }
+  data = lib.filesystem().read_savegame(kSaveName);
+  if (data) {
+    auto save_data = ii::SaveGame::load(*data);
+    if (save_data) {
+      save_ = std::move(*save_data);
+    }
+  }
+  lib.set_volume(static_cast<std::int32_t>(settings_.volume));
 
   if (!args.empty()) {
     try {
@@ -766,14 +792,14 @@ void z0Game::render() const {
 
     for (std::size_t i = 0; i < kPlayers; ++i) {
       auto& s = save_.high_scores.get(game_mode::kBoss, i, 0);
-      std::string score = convert_to_time(s.score).substr(0, HighScores::kMaxNameLength);
-      std::string name = s.name.substr(0, HighScores::kMaxNameLength);
+      std::string score = convert_to_time(s.score).substr(0, ii::HighScores::kMaxNameLength);
+      std::string name = s.name.substr(0, ii::HighScores::kMaxNameLength);
 
       lib().render_text({19.f, 18.f + i * 2}, score, kPanelText);
       lib().render_text({19.f, 19.f + i * 2}, name, kPanelText);
     }
   } else {
-    for (std::size_t i = 0; i < HighScores::kNumScores; ++i) {
+    for (std::size_t i = 0; i < ii::HighScores::kNumScores; ++i) {
       ss.str({});
       ss << (i + 1) << ".";
       lib().render_text({4.f, 18.f + i}, ss.str(), kPanelText);
@@ -787,8 +813,8 @@ void z0Game::render() const {
 
       ss.str({});
       ss << s.score;
-      std::string score = ss.str().substr(0, HighScores::kMaxScoreLength);
-      std::string name = s.name.substr(0, HighScores::kMaxScoreLength);
+      std::string score = ss.str().substr(0, ii::HighScores::kMaxScoreLength);
+      std::string name = s.name.substr(0, ii::HighScores::kMaxScoreLength);
 
       lib().render_text({7.f, 18.f + i}, score, kPanelText);
       lib().render_text({19.f, 18.f + i}, name, kPanelText);

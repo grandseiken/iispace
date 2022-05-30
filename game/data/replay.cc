@@ -1,5 +1,5 @@
-#include "game/core/replay.h"
-#include "game/proto/iispace.pb.h"
+#include "game/data/replay.h"
+#include "game/data/replay.pb.h"
 #include <array>
 
 namespace ii {

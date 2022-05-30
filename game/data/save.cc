@@ -1,16 +1,28 @@
-#include "game/core/save.h"
-#include "game/core/lib.h"
-#include "game/io/file/filesystem.h"
-#include "game/proto/iispace.pb.h"
+#include "game/data/save.h"
+#include "game/data/config.pb.h"
+#include "game/data/savegame.pb.h"
 #include <algorithm>
 #include <sstream>
 
+namespace ii {
 namespace {
 const std::array<std::uint8_t, 2> kSaveEncryptionKey = {'<', '>'};
-const std::string kSettingsWindowed = "Windowed";
-const std::string kSettingsVolume = "Volume";
-const std::string kSaveName = "iispace";
 }  // namespace
+
+HighScores::HighScores() {
+  normal.resize(kPlayers);
+  hard.resize(kPlayers);
+  fast.resize(kPlayers);
+  what.resize(kPlayers);
+  boss.resize(kPlayers);
+
+  for (std::size_t i = 0; i < kPlayers; ++i) {
+    normal[i].resize(kNumScores);
+    hard[i].resize(kNumScores);
+    fast[i].resize(kNumScores);
+    what[i].resize(kNumScores);
+  }
+}
 
 std::size_t HighScores::size(game_mode mode) {
   return mode == game_mode::kBoss ? 1 : kNumScores;
@@ -52,19 +64,18 @@ void HighScores::add_score(game_mode mode, std::int32_t players, const std::stri
   }
 }
 
-SaveData::SaveData(ii::io::Filesystem& fs) : fs{fs} {
-  auto data = fs.read_savegame(kSaveName);
-  if (!data) {
-    return;
+result<SaveGame> SaveGame::load(nonstd::span<const std::uint8_t> bytes) {
+  proto::SaveGame proto;
+  auto d = z::crypt(bytes, kSaveEncryptionKey);
+  if (!proto.ParseFromArray(d.data(), static_cast<int>(d.size()))) {
+    return unexpected("Couldn't parse savegame");
   }
-  proto::SaveData proto;
-  auto d = z::crypt(*data, kSaveEncryptionKey);
-  proto.ParseFromArray(d.data(), static_cast<int>(d.size()));
 
-  bosses_killed = proto.bosses_killed();
-  hard_mode_bosses_killed = proto.hard_mode_bosses_killed();
+  SaveGame save;
+  save.bosses_killed = proto.bosses_killed();
+  save.hard_mode_bosses_killed = proto.hard_mode_bosses_killed();
 
-  auto get_mode_table = [&](const proto::ModeTable& in, HighScores::mode_table& out) {
+  auto get_mode_table = [&](const proto::ModeTable& in, std::vector<HighScores::table_t>& out) {
     std::size_t players = 0;
     for (const auto& t : in.table()) {
       std::size_t index = 0;
@@ -76,23 +87,24 @@ SaveData::SaveData(ii::io::Filesystem& fs) : fs{fs} {
       ++players;
     }
   };
-  get_mode_table(proto.normal(), high_scores.normal);
-  get_mode_table(proto.hard(), high_scores.hard);
-  get_mode_table(proto.fast(), high_scores.fast);
-  get_mode_table(proto.what(), high_scores.what);
+  get_mode_table(proto.normal(), save.high_scores.normal);
+  get_mode_table(proto.hard(), save.high_scores.hard);
+  get_mode_table(proto.fast(), save.high_scores.fast);
+  get_mode_table(proto.what(), save.high_scores.what);
   std::size_t players = 0;
   for (const auto& s : proto.boss().score()) {
-    high_scores.boss[players].name = s.name();
-    high_scores.boss[players].score = s.score();
+    save.high_scores.boss[players].name = s.name();
+    save.high_scores.boss[players].score = s.score();
     ++players;
   }
+  return {std::move(save)};
 }
 
-void SaveData::save() const {
-  proto::SaveData proto;
+result<std::vector<std::uint8_t>> SaveGame::save() const {
+  proto::SaveGame proto;
   proto.set_bosses_killed(bosses_killed);
   proto.set_hard_mode_bosses_killed(hard_mode_bosses_killed);
-  auto put_mode_table = [&](const HighScores::mode_table& in, proto::ModeTable& out) {
+  auto put_mode_table = [&](const std::vector<HighScores::table_t>& in, proto::ModeTable& out) {
     for (const auto& t : in) {
       auto& out_t = *out.add_table();
       for (const auto& s : t) {
@@ -114,39 +126,32 @@ void SaveData::save() const {
 
   std::vector<std::uint8_t> data;
   data.resize(proto.ByteSizeLong());
-  proto.SerializeToArray(data.data(), static_cast<int>(data.size()));
-  (void)fs.write_savegame(kSaveName, z::crypt(data, kSaveEncryptionKey));
+  if (!proto.SerializeToArray(data.data(), static_cast<int>(data.size()))) {
+    return unexpected("Couldn't serialize savegame");
+  }
+  return z::crypt(data, kSaveEncryptionKey);
 }
 
-Settings::Settings(ii::io::Filesystem& fs) : fs{fs} {
-  auto data = fs.read_config();
-  if (!data) {
-    std::string default_config = kSettingsWindowed + " 0\n" + kSettingsVolume + " 100.0";
-    (void)fs.write_config(
-        {reinterpret_cast<const std::uint8_t*>(default_config.data()), default_config.size()});
-    return;
+result<Config> Config::load(nonstd::span<const std::uint8_t> bytes) {
+  proto::Config proto;
+  if (!proto.ParseFromArray(bytes.data(), static_cast<int>(bytes.size()))) {
+    return unexpected("Couldn't parse settings");
   }
 
-  std::string s{data->begin(), data->end()};
-  std::stringstream ss{s};
-  std::string line;
-  while (std::getline(ss, line)) {
-    std::stringstream ss_line{line};
-    std::string key;
-    ss_line >> key;
-    if (key.compare(kSettingsWindowed) == 0) {
-      ss_line >> windowed;
-    }
-    if (key.compare(kSettingsVolume) == 0) {
-      float t = 0.f;
-      ss_line >> t;
-      volume = static_cast<std::int32_t>(t);
-    }
-  }
+  Config settings;
+  settings.volume = proto.volume();
+  return {std::move(settings)};
 }
 
-void Settings::save() const {
-  std::string config = kSettingsWindowed + " " + std::string{windowed ? "1" : "0"} + "\n" +
-      kSettingsVolume + " " + std::to_string(volume.to_int());
-  (void)fs.write_config({reinterpret_cast<const std::uint8_t*>(config.data()), config.size()});
+result<std::vector<std::uint8_t>> Config::save() const {
+  proto::Config proto;
+  proto.set_volume(volume);
+  std::vector<std::uint8_t> data;
+  data.resize(proto.ByteSizeLong());
+  if (!proto.SerializeToArray(data.data(), static_cast<int>(data.size()))) {
+    return unexpected("Couldn't serialize settings");
+  }
+  return {std::move(data)};
 }
+
+}  // namespace ii

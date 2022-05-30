@@ -28,7 +28,7 @@ cc_binary(
   name = "score",
   srcs = ["score.cc"],
   deps = [
-    "//game/core:replay",
+    "//game/data:replay",
     "//game/io/file:std_filesystem",
     "//game/logic/sim",
   ],

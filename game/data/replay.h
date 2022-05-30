@@ -1,5 +1,5 @@
-#ifndef IISPACE_GAME_CORE_REPLAY_H
-#define IISPACE_GAME_CORE_REPLAY_H
+#ifndef IISPACE_GAME_DATA_REPLAY_H
+#define IISPACE_GAME_DATA_REPLAY_H
 #include "game/common/result.h"
 #include "game/logic/sim/sim_io.h"
 #include <nonstd/span.hpp>

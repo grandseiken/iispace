@@ -1,12 +1,15 @@
-#ifndef IISPACE_GAME_CORE_SAVE_H
-#define IISPACE_GAME_CORE_SAVE_H
+#ifndef IISPACE_GAME_DATA_SAVE_H
+#define IISPACE_GAME_DATA_SAVE_H
+#include "game/common/result.h"
 #include "game/common/z.h"
-#include <array>
+#include <nonstd/span.hpp>
+#include <cstdint>
 #include <vector>
 
-namespace ii::io {
+namespace ii {
+namespace io {
 class Filesystem;
-}  // namespace ii::io
+}  // namespace io
 
 struct HighScores {
   static constexpr std::int32_t kNumScores = 8;
@@ -17,16 +20,15 @@ struct HighScores {
     std::string name;
     std::int64_t score = 0;
   };
-  typedef std::array<high_score, kNumScores> table;
-  typedef std::array<table, kPlayers> mode_table;
-  typedef std::array<high_score, kPlayers> boss_table;
+  using table_t = std::vector<high_score>;
 
-  mode_table normal;
-  mode_table hard;
-  mode_table fast;
-  mode_table what;
-  boss_table boss;
+  std::vector<table_t> normal;
+  std::vector<table_t> hard;
+  std::vector<table_t> fast;
+  std::vector<table_t> what;
+  table_t boss;
 
+  HighScores();
   static std::size_t size(game_mode mode);
   high_score& get(game_mode mode, std::int32_t players, std::int32_t index);
   const high_score& get(game_mode mode, std::int32_t players, std::int32_t index) const;
@@ -35,23 +37,22 @@ struct HighScores {
   void add_score(game_mode mode, std::int32_t players, const std::string& name, std::int64_t score);
 };
 
-struct SaveData {
-  SaveData(ii::io::Filesystem& fs);
-  void save() const;
+struct SaveGame {
+  static result<SaveGame> load(nonstd::span<const std::uint8_t> bytes);
+  result<std::vector<std::uint8_t>> save() const;
 
-  ii::io::Filesystem& fs;
   std::int32_t bosses_killed = 0;
   std::int32_t hard_mode_bosses_killed = 0;
   HighScores high_scores;
 };
 
-struct Settings {
-  Settings(ii::io::Filesystem& fs);
-  void save() const;
+struct Config {
+  static result<Config> load(nonstd::span<const std::uint8_t> bytes);
+  result<std::vector<std::uint8_t>> save() const;
 
-  ii::io::Filesystem& fs;
-  bool windowed = false;
-  fixed volume = 100;
+  float volume = 100.f;
 };
+
+}  // namespace ii
 
 #endif
