@@ -59,7 +59,7 @@ class GameModal : public Modal {
 public:
   using frame_count_callback = std::function<void(std::int32_t)>;
   GameModal(Lib& lib, SaveData& save, Settings& settings, const frame_count_callback& callback,
-            game_mode mode, std::int32_t player_count, bool can_face_secret_boss);
+            const ii::initial_conditions& conditions);
   GameModal(Lib& lib, SaveData& save, Settings& settings, const frame_count_callback& callback,
             const std::string& replay_path);
   ~GameModal();

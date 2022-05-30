@@ -337,12 +337,9 @@ bool HighScoreModal::is_high_score() const {
 }
 
 GameModal::GameModal(Lib& lib, SaveData& save, Settings& settings,
-                     const frame_count_callback& callback, game_mode mode,
-                     std::int32_t player_count, bool can_face_secret_boss)
+                     const frame_count_callback& callback, const ii::initial_conditions& conditions)
 : Modal{true, true}, save_{save}, settings_{settings}, callback_{callback} {
-  std::int32_t seed = static_cast<std::int32_t>(time(0));
-  ii::initial_conditions conditions{seed, mode, player_count, can_face_secret_boss};
-  lib.set_player_count(player_count);
+  lib.set_player_count(conditions.player_count);
   lib.new_game();
   game_.emplace(lib, ii::ReplayWriter{conditions});
   state_ = std::make_unique<ii::SimState>(conditions, game_->input);
@@ -629,19 +626,24 @@ bool z0Game::update() {
     }
   }
 
+  ii::initial_conditions conditions;
+  conditions.seed = static_cast<std::int32_t>(time(0));
+  conditions.can_face_secret_boss = mode_unlocked() >= game_mode::kFast;
+  conditions.player_count = player_select_;
+  conditions.mode = game_mode::kNormal;
+
   if (lib().is_key_pressed(Lib::key::kAccept) || lib().is_key_pressed(Lib::key::kMenu)) {
     if (menu_select_ == menu::kStart) {
       lib().new_game();
       modals_.add(std::make_unique<GameModal>(
-          lib_, save_, settings_, [this](std::int32_t c) { frame_count_ = c; }, game_mode::kNormal,
-          player_select_, mode_unlocked() >= game_mode::kFast));
+          lib_, save_, settings_, [this](std::int32_t c) { frame_count_ = c; }, conditions));
     } else if (menu_select_ == menu::kQuit) {
       exit_timer_ = 2;
     } else if (menu_select_ == menu::kSpecial) {
+      conditions.mode = mode_select_;
       lib().new_game();
       modals_.add(std::make_unique<GameModal>(
-          lib_, save_, settings_, [this](std::int32_t c) { frame_count_ = c; }, mode_select_,
-          player_select_, mode_unlocked() >= game_mode::kFast));
+          lib_, save_, settings_, [this](std::int32_t c) { frame_count_ = c; }, conditions));
     }
     if (menu_select_ != menu::kPlayers) {
       lib().play_sound(ii::sound::kMenuAccept);
@@ -765,7 +767,7 @@ void z0Game::render() const {
     for (std::size_t i = 0; i < kPlayers; ++i) {
       auto& s = save_.high_scores.get(game_mode::kBoss, i, 0);
       std::string score = convert_to_time(s.score).substr(0, HighScores::kMaxNameLength);
-      std::string name = s.name.substr(HighScores::kMaxNameLength);
+      std::string name = s.name.substr(0, HighScores::kMaxNameLength);
 
       lib().render_text({19.f, 18.f + i * 2}, score, kPanelText);
       lib().render_text({19.f, 19.f + i * 2}, name, kPanelText);

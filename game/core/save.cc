@@ -84,6 +84,7 @@ SaveData::SaveData(ii::io::Filesystem& fs) : fs{fs} {
   for (const auto& s : proto.boss().score()) {
     high_scores.boss[players].name = s.name();
     high_scores.boss[players].score = s.score();
+    ++players;
   }
 }
 

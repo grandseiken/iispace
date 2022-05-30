@@ -399,6 +399,7 @@ void Overmind::boss_mode_boss() {
       sim_.add_new_ship<ChaserBoss>(count, 0);
     }
   } else {
+    boss = boss - 3;
     if (boss2_queue_[boss] == 0) {
       sim_.add_new_ship<TractorBoss>(count, 0);
     } else if (boss2_queue_[boss] == 1) {

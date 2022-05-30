@@ -1,6 +1,11 @@
 load("//test:replay_test.bzl", "replay_test")
 
 replay_test(
+  replay = "replays/bossmode.wrp",
+  score = 39291,
+)
+
+replay_test(
   replay = "replays/BEEF_373295.wrp",
   score = 373295,
 )

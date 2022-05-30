@@ -40,6 +40,7 @@
 * Drawback but increase earned XP
 * Rainbow mode
 * Monochrome mode
+* Silhouette mode
 * Mirror mode
 * Shield disabled
 * Bomb disabled
@@ -89,6 +90,7 @@
 * Large explosions on impact
 * Single massive damage screen-penetrating sniper shot
 * Pizza cutter boomerang
+* Rstick-controllable doomcircle
 * Megalaser?
 
 ### Special ability?

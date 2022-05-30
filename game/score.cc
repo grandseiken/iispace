@@ -27,8 +27,12 @@ bool run(std::optional<std::int64_t> check, const std::string& replay_path) {
   }
   auto results = sim.get_results();
   std::int64_t score = 0;
-  for (const auto& p : results.players) {
-    score += p.score;
+  if (results.mode == game_mode::kBoss) {
+    score = results.elapsed_time;
+  } else {
+    for (const auto& p : results.players) {
+      score += p.score;
+    }
   }
   if (check) {
     return *check == score;
