@@ -26,6 +26,7 @@ public:
   std::int32_t frame_count() const;
   bool game_over() const;
 
+  void clear_output();
   std::unordered_map<sound, sound_out> get_sound_output() const;
   std::unordered_map<std::int32_t, std::int32_t> get_rumble_output() const;
   render_output get_render_output() const;

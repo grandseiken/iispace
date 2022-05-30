@@ -87,6 +87,7 @@ private:
   PauseModal::output_t pause_output_ = PauseModal::kContinue;
   std::int32_t controllers_connected_ = 0;
   std::int32_t frame_count_multiplier_ = 1;
+  mutable std::int32_t audio_tick_ = 0;
   bool controllers_dialog_ = true;
 
   std::optional<replay_t> replay_;

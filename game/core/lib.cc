@@ -328,6 +328,14 @@ void Lib::end_frame() {
   internals_->mixer.commit();
 }
 
+void Lib::capture_mouse(bool enabled) {
+  io_layer_.capture_mouse(enabled);
+}
+
+void Lib::new_game() {
+  io_layer_.input_frame_clear();
+}
+
 void Lib::post_update(ii::SimState& sim) {
   for (const auto& pair : sim.get_sound_output()) {
     auto& s = pair.second;
@@ -337,14 +345,7 @@ void Lib::post_update(ii::SimState& sim) {
   for (const auto& pair : sim.get_rumble_output()) {
     rumble(pair.first, pair.second);
   }
-}
-
-void Lib::capture_mouse(bool enabled) {
-  io_layer_.capture_mouse(enabled);
-}
-
-void Lib::new_game() {
-  io_layer_.input_frame_clear();
+  sim.clear_output();
 }
 
 Lib::pad_type Lib::get_pad_type(std::int32_t player) const {

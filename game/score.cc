@@ -24,6 +24,7 @@ bool run(std::optional<std::int64_t> check, const std::string& replay_path) {
   SimState sim{reader->initial_conditions(), input};
   while (!sim.game_over()) {
     sim.update();
+    sim.clear_output();
   }
   auto results = sim.get_results();
   std::int64_t score = 0;

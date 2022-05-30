@@ -421,7 +421,6 @@ void GameModal::update(Lib& lib) {
   }
 
   state_->update();
-  lib.post_update(*state_);
   if (replay_) {
     if (lib.is_key_pressed(Lib::key::kBomb)) {
       frame_count_multiplier_ *= 2;
@@ -434,6 +433,11 @@ void GameModal::update(Lib& lib) {
 }
 
 void GameModal::render(Lib& lib) const {
+  if (audio_tick_++ %
+          (4 * (1 + static_cast<std::int32_t>(std::log2(frame_count_multiplier_)) / 2)) ==
+      0) {
+    lib.post_update(*state_);
+  }
   state_->render();
   auto render = state_->get_render_output();
   lib.set_colour_cycle(render.colour_cycle);

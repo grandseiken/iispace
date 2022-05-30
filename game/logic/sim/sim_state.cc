@@ -47,8 +47,6 @@ std::int32_t SimState::frame_count() const {
 }
 
 void SimState::update() {
-  internals_->sound_output.clear();
-  internals_->rumble_output.clear();
   Boss::warnings_.clear();
   colour_cycle_ = conditions_.mode == game_mode::kHard ? 128
       : conditions_.mode == game_mode::kFast           ? 192
@@ -200,6 +198,11 @@ void SimState::render() const {
 
 bool SimState::game_over() const {
   return game_over_;
+}
+
+void SimState::clear_output() {
+  internals_->sound_output.clear();
+  internals_->rumble_output.clear();
 }
 
 std::unordered_map<sound, sound_out> SimState::get_sound_output() const {
