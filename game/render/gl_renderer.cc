@@ -108,7 +108,6 @@ struct GlRenderer::impl_t {
   gl::program legacy_rect;
   gl::program legacy_text;
 
-  gl::buffer line_index;
   gl::buffer quad_index;
   gl::texture console_font;
   gl::sampler pixel_sampler;
@@ -118,15 +117,12 @@ struct GlRenderer::impl_t {
   : legacy_line{std::move(legacy_line)}
   , legacy_rect{std::move(legacy_rect)}
   , legacy_text{std::move(legacy_text)}
-  , line_index(gl::make_buffer())
   , quad_index(gl::make_buffer())
   , console_font{std::move(console_font)}
   , pixel_sampler{gl::make_sampler(gl::filter::kNearest, gl::filter::kNearest,
                                    gl::texture_wrap::kClampToEdge,
                                    gl::texture_wrap::kClampToEdge)} {
-    static const std::vector<unsigned> line_indices = {0, 1};
     static const std::vector<unsigned> quad_indices = {0, 1, 2, 0, 2, 3};
-    gl::buffer_data(line_index, gl::buffer_usage::kStaticDraw, nonstd::span{line_indices});
     gl::buffer_data(quad_index, gl::buffer_usage::kStaticDraw, nonstd::span{quad_indices});
   }
 
@@ -141,24 +137,6 @@ struct GlRenderer::impl_t {
     } else {
       return {1.f, screen_aspect / render_aspect};
     }
-  }
-
-  void draw_line_internal(const glm::ivec2& a, const glm::ivec2& b) {
-    using int_t = std::int16_t;
-    const std::vector<int_t> vertex_data = {
-        static_cast<int_t>(a.x),
-        static_cast<int_t>(a.y),
-        static_cast<int_t>(b.x),
-        static_cast<int_t>(b.y),
-    };
-    auto vertex_buffer = gl::make_buffer();
-    gl::buffer_data(vertex_buffer, gl::buffer_usage::kStreamDraw, nonstd::span{vertex_data});
-
-    auto vertex_array = gl::make_vertex_array();
-    gl::bind_vertex_array(vertex_array);
-    auto position_handle = gl::vertex_int_attribute_buffer(
-        vertex_buffer, 0, 2, gl::type_of<int_t>(), 2 * sizeof(int_t), 0);
-    gl::draw_elements(gl::draw_mode::kLines, line_index, gl::type_of<unsigned>(), 2, 0);
   }
 
   void draw_rect_internal(const glm::ivec2& position, const glm::ivec2& size) {
@@ -332,23 +310,6 @@ void GlRenderer::render_legacy_text(const glm::ivec2& position, const glm::vec4&
   gl::draw_elements(gl::draw_mode::kTriangles, index_buffer, gl::type_of<unsigned>(), quads * 6, 0);
 }
 
-void GlRenderer::render_legacy_line(const glm::vec2& a, const glm::vec2& b,
-                                    const glm::vec4& colour) {
-  const auto& program = impl_->legacy_line;
-  gl::use_program(program);
-  gl::enable_blend(true);
-  gl::blend_function(gl::blend_factor::kSrcAlpha, gl::blend_factor::kOneMinusSrcAlpha);
-
-  auto result =
-      gl::set_uniforms(program, "render_scale", impl_->legacy_render_scale(), "render_dimensions",
-                       impl_->render_dimensions, "line_colour", colour);
-  if (!result) {
-    impl_->status = unexpected(result.error());
-    return;
-  }
-  impl_->draw_line_internal(a, b);
-}
-
 void GlRenderer::render_legacy_rect(const glm::ivec2& lo, const glm::ivec2& hi,
                                     std::int32_t line_width, const glm::vec4& colour) {
   const auto& program = impl_->legacy_rect;
@@ -366,6 +327,69 @@ void GlRenderer::render_legacy_rect(const glm::ivec2& lo, const glm::ivec2& hi,
     return;
   }
   impl_->draw_rect_internal(lo, size);
+}
+
+void GlRenderer::render_legacy_line(const glm::vec2& a, const glm::vec2& b,
+                                    const glm::vec4& colour) {
+  std::array<line_t, 1> line = {{a, b, colour}};
+  render_legacy_lines(line);
+}
+
+void GlRenderer::render_legacy_lines(nonstd::span<const line_t> lines) {
+  const auto& program = impl_->legacy_line;
+  gl::use_program(program);
+  gl::enable_blend(true);
+  gl::blend_function(gl::blend_factor::kSrcAlpha, gl::blend_factor::kOneMinusSrcAlpha);
+
+  auto result = gl::set_uniforms(program, "render_scale", impl_->legacy_render_scale(),
+                                 "render_dimensions", impl_->render_dimensions);
+  if (!result) {
+    impl_->status = unexpected(result.error());
+    return;
+  }
+
+  using int_t = std::int16_t;
+  std::vector<int_t> vertex_data;
+  std::vector<float> colour_data;
+  std::vector<unsigned> line_indices;
+  unsigned index = 0;
+  for (const auto& line : lines) {
+    vertex_data.emplace_back(static_cast<int_t>(line.a.x));
+    vertex_data.emplace_back(static_cast<int_t>(line.a.y));
+    vertex_data.emplace_back(static_cast<int_t>(line.b.x));
+    vertex_data.emplace_back(static_cast<int_t>(line.b.y));
+    colour_data.emplace_back(line.colour.r);
+    colour_data.emplace_back(line.colour.g);
+    colour_data.emplace_back(line.colour.b);
+    colour_data.emplace_back(line.colour.a);
+    colour_data.emplace_back(line.colour.r);
+    colour_data.emplace_back(line.colour.g);
+    colour_data.emplace_back(line.colour.b);
+    colour_data.emplace_back(line.colour.a);
+    line_indices.emplace_back(index++);
+    line_indices.emplace_back(index++);
+  }
+
+  auto vertex_buffer = gl::make_buffer();
+  auto colour_buffer = gl::make_buffer();
+  gl::buffer_data(vertex_buffer, gl::buffer_usage::kStreamDraw,
+                  nonstd::span<const int_t>{vertex_data});
+  gl::buffer_data(colour_buffer, gl::buffer_usage::kStreamDraw,
+                  nonstd::span<const float>{colour_data});
+
+  auto line_index = gl::make_buffer();
+  gl::buffer_data(line_index, gl::buffer_usage::kStreamDraw,
+                  nonstd::span<const unsigned>{line_indices});
+
+  auto vertex_array = gl::make_vertex_array();
+  gl::bind_vertex_array(vertex_array);
+  auto position_handle = gl::vertex_int_attribute_buffer(vertex_buffer, 0, 2, gl::type_of<int_t>(),
+                                                         2 * sizeof(int_t), 0);
+  auto colour_handle = gl::vertex_float_attribute_buffer(colour_buffer, 1, 4, gl::type_of<float>(),
+                                                         false, 4 * sizeof(float), 0);
+
+  gl::draw_elements(gl::draw_mode::kLines, line_index, gl::type_of<unsigned>(), 2 * lines.size(),
+                    0);
 }
 
 }  // namespace ii::render

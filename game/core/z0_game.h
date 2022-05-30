@@ -32,7 +32,7 @@ private:
 class HighScoreModal : public Modal {
 public:
   HighScoreModal(bool is_replay, ii::SaveGame& save, GameModal& game,
-                 const ii::SimState::results& results, ii::ReplayWriter* replay_writer);
+                 const ii::sim_results& results, ii::ReplayWriter* replay_writer);
   void update(Lib& lib) override;
   void render(Lib& lib) const override;
 
@@ -43,7 +43,7 @@ private:
   bool is_replay_ = false;
   ii::SaveGame& save_;
   GameModal& game_;
-  ii::SimState::results results_;
+  ii::sim_results results_;
   ii::ReplayWriter* replay_writer_ = nullptr;
 
   std::string enter_name_;

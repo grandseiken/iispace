@@ -155,8 +155,7 @@ void PauseModal::render(Lib& lib) const {
 }
 
 HighScoreModal::HighScoreModal(bool is_replay, ii::SaveGame& save, GameModal& game,
-                               const ii::SimState::results& results,
-                               ii::ReplayWriter* replay_writer)
+                               const ii::sim_results& results, ii::ReplayWriter* replay_writer)
 : Modal{true, false}
 , is_replay_{is_replay}
 , save_{save}
@@ -438,10 +437,7 @@ void GameModal::render(Lib& lib) const {
   state_->render();
   auto render = state_->get_render_output();
   lib.set_colour_cycle(render.colour_cycle);
-
-  for (const auto& line : render.lines) {
-    lib.render_line(line.a, line.b, line.c);
-  }
+  lib.render_lines(render.lines);
 
   std::int32_t n = 0;
   for (const auto& p : render.players) {

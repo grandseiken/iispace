@@ -202,10 +202,10 @@ bool SimState::game_over() const {
   return game_over_;
 }
 
-std::unordered_map<sound, SimState::sound_t> SimState::get_sound_output() const {
-  std::unordered_map<sound, sound_t> result;
+std::unordered_map<sound, sound_out> SimState::get_sound_output() const {
+  std::unordered_map<sound, sound_out> result;
   for (const auto& pair : internals_->sound_output) {
-    sound_t s;
+    sound_out s;
     s.volume = std::max(0.f, std::min(1.f, pair.second.volume));
     s.pan = pair.second.pan / pair.second.count;
     s.pitch = std::pow(2.f, pair.second.pitch);
@@ -218,8 +218,8 @@ std::unordered_map<std::int32_t, std::int32_t> SimState::get_rumble_output() con
   return internals_->rumble_output;
 }
 
-SimState::render_output SimState::get_render_output() const {
-  SimState::render_output result;
+render_output SimState::get_render_output() const {
+  render_output result;
   for (const auto& p : internals_->player_output) {
     auto& o = result.players.emplace_back();
     o.colour = p.colour;
@@ -242,8 +242,8 @@ SimState::render_output SimState::get_render_output() const {
   return result;
 }
 
-SimState::results SimState::get_results() const {
-  results r;
+sim_results SimState::get_results() const {
+  sim_results r;
   r.mode = conditions_.mode;
   r.seed = conditions_.seed;
   r.elapsed_time = overmind_->get_elapsed_time();

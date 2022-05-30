@@ -426,6 +426,17 @@ void Lib::render_line(const fvec2& a, const fvec2& b, colour_t c) const {
   renderer_.render_legacy_line(convert_vec(a), convert_vec(b), convert_colour(c));
 }
 
+void Lib::render_lines(const nonstd::span<ii::render_output::line_t>& lines) const {
+  std::vector<ii::render::line_t> render;
+  for (const auto& line : lines) {
+    auto& rl = render.emplace_back();
+    rl.a = convert_vec(line.a);
+    rl.b = convert_vec(line.b);
+    rl.colour = convert_colour(z::colour_cycle(line.c, colour_cycle_));
+  }
+  renderer_.render_legacy_lines(render);
+}
+
 void Lib::render_text(const fvec2& v, const std::string& text, colour_t c) const {
   renderer_.render_legacy_text(static_cast<glm::ivec2>(convert_vec(v)), convert_colour(c), text);
 }

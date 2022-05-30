@@ -88,6 +88,7 @@ public:
   //------------------------------
   void clear_screen() const;
   void render_line(const fvec2& a, const fvec2& b, colour_t c) const;
+  void render_lines(const nonstd::span<ii::render_output::line_t>& lines) const;
   void render_text(const fvec2& v, const std::string& text, colour_t c) const;
   void
   render_rect(const fvec2& low, const fvec2& hi, colour_t c, std::int32_t line_width = 0) const;
