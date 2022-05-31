@@ -269,6 +269,10 @@ std::optional<event_type> SdlIoLayer::poll() {
   return std::nullopt;
 }
 
+std::size_t SdlIoLayer::controllers() const {
+  return impl_->controllers.size();
+}
+
 std::vector<controller::info> SdlIoLayer::controller_info() const {
   std::vector<controller::info> result;
   for (const auto& data : impl_->controllers) {

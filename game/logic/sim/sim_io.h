@@ -24,6 +24,10 @@ struct initial_conditions {
 };
 
 struct input_frame {
+  enum key : std::int32_t {
+    kFire = 1,
+    kBomb = 2,
+  };
   vec2 velocity;
   std::optional<vec2> target_absolute;
   std::optional<vec2> target_relative;

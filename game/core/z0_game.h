@@ -1,15 +1,18 @@
 #ifndef IISPACE_GAME_CORE_Z0_GAME_H
 #define IISPACE_GAME_CORE_Z0_GAME_H
+#include "game/core/io_input_adapter.h"
 #include "game/core/lib.h"
 #include "game/core/modal.h"
 #include "game/data/replay.h"
 #include "game/data/save.h"
 #include "game/logic/sim/sim_state.h"
 #include <cstdint>
-#include <functional>
 #include <memory>
 #include <optional>
 
+namespace ii::io {
+class IoLayer;
+}  // namespace ii::io
 class GameModal;
 
 class PauseModal : public Modal {
@@ -19,29 +22,27 @@ public:
     kEndGame,
   };
 
-  PauseModal(output_t* output, ii::Config& settings);
-  void update(Lib& lib) override;
-  void render(Lib& lib) const override;
+  PauseModal(output_t* output);
+  void update(Lib& lib, ii::ui::UiLayer& ui) override;
+  void render(Lib& lib, const ii::ui::UiLayer& ui) const override;
 
 private:
   output_t* output_;
-  ii::Config& settings_;
   std::int32_t selection_ = 0;
 };
 
 class HighScoreModal : public Modal {
 public:
-  HighScoreModal(bool is_replay, ii::SaveGame& save, GameModal& game,
-                 const ii::sim_results& results, ii::ReplayWriter* replay_writer);
-  void update(Lib& lib) override;
-  void render(Lib& lib) const override;
+  HighScoreModal(bool is_replay, GameModal& game, const ii::sim_results& results,
+                 ii::ReplayWriter* replay_writer);
+  void update(Lib& lib, ii::ui::UiLayer& ui) override;
+  void render(Lib& lib, const ii::ui::UiLayer& ui) const override;
 
 private:
   std::int64_t get_score() const;
-  bool is_high_score() const;
+  bool is_high_score(const ii::SaveGame&) const;
 
   bool is_replay_ = false;
-  ii::SaveGame& save_;
   GameModal& game_;
   ii::sim_results results_;
   ii::ReplayWriter* replay_writer_ = nullptr;
@@ -56,18 +57,12 @@ private:
 
 class GameModal : public Modal {
 public:
-  using frame_count_callback = std::function<void(std::int32_t)>;
-  GameModal(Lib& lib, ii::SaveGame& save, ii::Config& settings,
-            const frame_count_callback& callback, const ii::initial_conditions& conditions);
-  GameModal(Lib& lib, ii::SaveGame& save, ii::Config& settings,
-            const frame_count_callback& callback, const std::string& replay_path);
+  GameModal(ii::io::IoLayer& io_layer, Lib& lib, const ii::initial_conditions& conditions);
+  GameModal(ii::io::IoLayer& io_layer, Lib& lib, ii::ReplayReader&& replay);
   ~GameModal();
 
-  const ii::SimState& sim_state() const {
-    return *state_;
-  }
-  void update(Lib& lib) override;
-  void render(Lib& lib) const override;
+  void update(Lib& lib, ii::ui::UiLayer& ui) override;
+  void render(Lib& lib, const ii::ui::UiLayer& ui) const override;
 
 private:
   struct replay_t {
@@ -76,18 +71,16 @@ private:
     ii::ReplayInputAdapter input;
   };
   struct game_t {
-    game_t(Lib& lib, ii::ReplayWriter&& w) : writer{std::move(w)}, input{lib, writer} {}
+    game_t(ii::io::IoLayer& io, ii::ReplayWriter&& w) : writer{std::move(w)}, input{io, &writer} {}
     ii::ReplayWriter writer;
-    LibInputAdapter input;
+    ii::IoInputAdapter input;
   };
 
-  ii::SaveGame& save_;
-  ii::Config& settings_;
-  frame_count_callback callback_;
+  ii::io::IoLayer& io_layer_;
   PauseModal::output_t pause_output_ = PauseModal::kContinue;
-  std::int32_t controllers_connected_ = 0;
   std::int32_t frame_count_multiplier_ = 1;
   mutable std::int32_t audio_tick_ = 0;
+  bool show_controllers_dialog_ = true;
   bool controllers_dialog_ = true;
 
   std::optional<replay_t> replay_;
@@ -101,18 +94,18 @@ public:
   static constexpr colour_t kPanelTran = 0xeeeeee99;
   static constexpr colour_t kPanelBack = 0x000000ff;
 
-  z0Game(Lib& lib, const std::vector<std::string>& args);
+  z0Game(ii::io::Filesystem& fs, ii::io::IoLayer& io_layer, Lib& lib,
+         const std::vector<std::string>& args);
 
-  void run();
-  bool update();
-  void render() const;
+  bool update(ii::ui::UiLayer& ui);
+  void render(const ii::ui::UiLayer& ui) const;
 
   Lib& lib() const {
     return lib_;
   }
 
 private:
-  ii::game_mode mode_unlocked() const;
+  ii::game_mode mode_unlocked(const ii::SaveGame&) const;
 
   enum class menu {
     kSpecial,
@@ -121,6 +114,7 @@ private:
     kQuit,
   };
 
+  ii::io::IoLayer& io_layer_;
   Lib& lib_;
 
   menu menu_select_ = menu::kStart;
@@ -128,10 +122,6 @@ private:
   ii::game_mode mode_select_ = ii::game_mode::kBoss;
   std::int32_t exit_timer_ = 0;
   std::string exit_error_;
-  std::int32_t frame_count_ = 1;
-
-  ii::SaveGame save_;
-  ii::Config settings_;
   ModalStack modals_;
 };
 

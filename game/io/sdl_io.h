@@ -21,6 +21,7 @@ public:
   void capture_mouse(bool capture) override;
   std::optional<event_type> poll() override;
 
+  std::size_t controllers() const override;
   std::vector<controller::info> controller_info() const override;
   controller::frame controller_frame(std::size_t index) const override;
   keyboard::frame keyboard_frame() const override;

@@ -73,7 +73,7 @@ void Player::update() {
   }
 
   // Bombs.
-  if (bomb_ && input.keys & 2) {
+  if (bomb_ && input.keys & ii::input_frame::kBomb) {
     bomb_ = false;
     destroy_shape(5);
 
@@ -106,7 +106,7 @@ void Player::update() {
 
   // Shots.
   vec2 shot = fire_target_ - shape().centre;
-  if (shot.length() > 0 && !fire_timer_ && input.keys & 1) {
+  if (shot.length() > 0 && !fire_timer_ && input.keys & ii::input_frame::kFire) {
     spawn_new<Shot>(shape().centre, this, shot, magic_shot_timer_ != 0);
     if (magic_shot_timer_) {
       --magic_shot_timer_;

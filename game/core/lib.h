@@ -25,31 +25,6 @@ public:
   Lib(ii::io::Filesystem& fs, ii::io::IoLayer& io_layer, ii::render::GlRenderer& renderer);
   ~Lib();
 
-  ii::io::Filesystem& filesystem() {
-    return fs_;
-  }
-
-  // Constants
-  //------------------------------
-  enum class key {
-    kFire,
-    kBomb,
-    kAccept,
-    kCancel,
-    kMenu,
-    kUp,
-    kDown,
-    kLeft,
-    kRight,
-    kMax,
-  };
-
-  enum pad_type {
-    kPadNone,
-    kPadKeyboardMouse,
-    kPadGamepad,
-  };
-
   static constexpr std::int32_t kWidth = 640;
   static constexpr std::int32_t kHeight = 480;
   static constexpr std::int32_t kTextWidth = 16;
@@ -66,33 +41,16 @@ public:
 
   bool begin_frame();
   void end_frame();
-  void capture_mouse(bool enabled);
   void new_game();
   void post_update(ii::SimState& sim);
 
-  // Input
-  //------------------------------
-  // TODO: refactor with proper controller join UI and abstract input forward layer for sim state.
-  pad_type get_pad_type(std::int32_t player) const;
-
-  bool is_key_pressed(std::int32_t player, key k) const;
-  bool is_key_held(std::int32_t player, key k) const;
-
-  bool is_key_pressed(key k) const;
-  bool is_key_held(key k) const;
-
-  vec2 get_move_velocity(std::int32_t player) const;
-  std::pair<bool, vec2> get_fire_target(std::int32_t player) const;
-
   // Output
   //------------------------------
-  void clear_screen() const;
   void render_line(const fvec2& a, const fvec2& b, colour_t c) const;
   void render_lines(const nonstd::span<ii::render_output::line_t>& lines) const;
   void render_text(const fvec2& v, const std::string& text, colour_t c) const;
   void
   render_rect(const fvec2& low, const fvec2& hi, colour_t c, std::int32_t line_width = 0) const;
-  void render() const;
 
   void rumble(std::int32_t player, std::int32_t time);
   void play_sound(ii::sound);
@@ -113,16 +71,6 @@ private:
 
   struct Internals;
   std::unique_ptr<Internals> internals_;
-};
-
-class LibInputAdapter : public ii::InputAdapter {
-public:
-  LibInputAdapter(Lib& lib, ii::ReplayWriter& writer);
-  std::vector<ii::input_frame> get() override;
-
-private:
-  Lib& lib_;
-  ii::ReplayWriter& writer_;
 };
 
 #endif

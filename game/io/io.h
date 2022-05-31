@@ -33,6 +33,7 @@ public:
   virtual std::optional<event_type> poll() = 0;
 
   // Input.
+  virtual std::size_t controllers() const = 0;
   virtual std::vector<controller::info> controller_info() const = 0;
   virtual controller::frame controller_frame(std::size_t index) const = 0;
   virtual keyboard::frame keyboard_frame() const = 0;

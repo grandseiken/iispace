@@ -3,6 +3,7 @@ cc_binary(
   srcs = ["iispace.cc"],
   deps = [
     "//game/core",
+    "//game/core:ui_layer",
     "//game/io:sdl_io",
     "//game/io/file:std_filesystem",
     "//game/render:gl_renderer",
