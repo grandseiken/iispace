@@ -29,7 +29,14 @@ public:
   void clear_screen();
   void set_dimensions(const glm::uvec2& screen_dimensions, const glm::uvec2& render_dimensions);
 
-  glm::vec2 legacy_render_scale() const;  // TODO: remove.
+  void set_colour_cycle(std::int32_t cycle) {
+    colour_cycle_ = cycle;
+  }
+
+  std::int32_t colour_cycle() const {
+    return colour_cycle_;
+  }
+
   void
   render_legacy_text(const glm::ivec2& position, const glm::vec4& colour, std::string_view text);
   void render_legacy_rect(const glm::ivec2& lo, const glm::ivec2& hi, std::int32_t line_width,
@@ -38,6 +45,7 @@ public:
   void render_legacy_lines(nonstd::span<const line_t> lines);
 
 private:
+  std::int32_t colour_cycle_ = 0;
   struct impl_t;
   std::unique_ptr<impl_t> impl_;
 };

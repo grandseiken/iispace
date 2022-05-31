@@ -6,6 +6,8 @@ cc_binary(
     "//game/core:ui_layer",
     "//game/io:sdl_io",
     "//game/io/file:std_filesystem",
+    "//game/mixer",
+    "//game/mixer:sound",
     "//game/render:gl_renderer",
   ],
   linkopts = select({

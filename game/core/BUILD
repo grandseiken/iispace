@@ -19,6 +19,8 @@ cc_library(
     "//game/data:save",
     "//game/io",
     "//game/io/file:filesystem",
+    "//game/mixer",
+    "//game/mixer:sound",
     "@span_lite",
   ],
   visibility = ["//visibility:public"],
@@ -27,12 +29,10 @@ cc_library(
 cc_library(
   name = "core",
   hdrs = [
-    "lib.h",
     "modal.h",
     "z0_game.h",
   ],
   srcs = [
-    "lib.cc",
     "modal.cc",
     "z0_game.cc",
   ],
@@ -46,7 +46,6 @@ cc_library(
     "//game/io",
     "//game/io/file:filesystem",
     "//game/logic/sim",
-    "//game/mixer",
     "//game/mixer:sound",
     "//game/render:gl_renderer",
     "@span_lite",

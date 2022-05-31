@@ -221,10 +221,6 @@ void GlRenderer::set_dimensions(const glm::uvec2& screen_dimensions,
   impl_->render_dimensions = render_dimensions;
 }
 
-glm::vec2 GlRenderer::legacy_render_scale() const {
-  return impl_->legacy_render_scale();
-}
-
 void GlRenderer::render_legacy_text(const glm::ivec2& position, const glm::vec4& colour,
                                     std::string_view text) {
   static constexpr glm::uvec2 kTextDimensions{16u, 16u};

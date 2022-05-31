@@ -2,12 +2,16 @@
 #define IISPACE_GAME_CORE_UI_LAYER_H
 #include "game/data/replay.h"
 #include "game/data/save.h"
+#include "game/mixer/sound.h"
 #include <array>
 
 namespace ii::io {
 class Filesystem;
 class IoLayer;
 }  // namespace ii::io
+namespace ii {
+class Mixer;
+}  // namespace ii
 
 namespace ii::ui {
 enum class key {
@@ -45,40 +49,54 @@ struct input_frame {
 
 class UiLayer {
 public:
-  UiLayer(io::Filesystem& fs, io::IoLayer& io_layer);
+  UiLayer(io::Filesystem& fs, io::IoLayer& io_layer, Mixer& mixer);
 
   io::IoLayer& io_layer() {
     return io_layer_;
   }
+
   const io::IoLayer& io_layer() const {
     return io_layer_;
   }
 
-  void compute_input_frame();
-  const input_frame& input() const {
-    return input_;
+  Mixer& mixer() {
+    return mixer_;
   }
 
   Config& config() {
     return config_;
   }
+
   SaveGame& save_game() {
     return save_;
   }
+
   const Config& config() const {
     return config_;
   }
+
   const SaveGame& save_game() const {
     return save_;
   }
 
+  const input_frame& input() const {
+    return input_;
+  }
+
+  void compute_input_frame(bool controller_change);
   void write_config();
   void write_save_game();
   void write_replay(const ii::ReplayWriter& writer, const std::string& name, std::int64_t score);
 
+  void rumble(std::int32_t time);
+  void set_volume(float volume);
+  void play_sound(sound s);
+  void play_sound(sound s, float volume, float pan, float pitch);
+
 private:
   io::Filesystem& fs_;
   io::IoLayer& io_layer_;
+  Mixer& mixer_;
 
   Config config_;
   SaveGame save_;

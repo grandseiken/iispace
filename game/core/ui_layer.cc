@@ -1,6 +1,7 @@
 #include "game/core/ui_layer.h"
 #include "game/io/file/filesystem.h"
 #include "game/io/io.h"
+#include "game/mixer/mixer.h"
 #include <nonstd/span.hpp>
 
 namespace ii::ui {
@@ -134,7 +135,8 @@ void handle(input_frame& result, const io::controller::frame& frame) {
 
 }  // namespace
 
-UiLayer::UiLayer(io::Filesystem& fs, io::IoLayer& io_layer) : fs_{fs}, io_layer_{io_layer} {
+UiLayer::UiLayer(io::Filesystem& fs, io::IoLayer& io_layer, Mixer& mixer)
+: fs_{fs}, io_layer_{io_layer}, mixer_{mixer} {
   auto data = fs.read_config();
   if (data) {
     auto config = ii::Config::load(*data);
@@ -149,10 +151,12 @@ UiLayer::UiLayer(io::Filesystem& fs, io::IoLayer& io_layer) : fs_{fs}, io_layer_
       save_ = std::move(*save_data);
     }
   }
+  set_volume(config_.volume);
 }
 
-void UiLayer::compute_input_frame() {
+void UiLayer::compute_input_frame(bool controller_change) {
   input_ = {};
+  input_.controller_change = controller_change;
   handle(input_, io_layer_.keyboard_frame());
   handle(input_, io_layer_.mouse_frame());
   for (std::size_t i = 0; i < io_layer_.controllers(); ++i) {
@@ -191,6 +195,22 @@ void UiLayer::write_replay(const ii::ReplayWriter& writer, const std::string& na
   if (data) {
     (void)fs_.write_replay(ss.str(), *data);
   }
+}
+
+void UiLayer::rumble(std::int32_t time) {
+  // TODO
+}
+
+void UiLayer::set_volume(float volume) {
+  mixer_.set_master_volume(volume / 100.f);
+}
+
+void UiLayer::play_sound(sound s) {
+  play_sound(s, 1.f, 0.f, 1.f);
+}
+
+void UiLayer::play_sound(sound s, float volume, float pan, float pitch) {
+  mixer_.play(static_cast<ii::Mixer::audio_handle_t>(s), volume, pan, pitch);
 }
 
 }  // namespace ii::ui

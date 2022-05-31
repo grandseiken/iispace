@@ -1,14 +1,18 @@
 #include "game/core/z0_game.h"
-#include "game/core/lib.h"
 #include "game/core/ui_layer.h"
 #include "game/io/file/filesystem.h"
 #include "game/io/io.h"
 #include "game/logic/sim/sim_interface.h"
+#include "game/render/gl_renderer.h"
 #include <algorithm>
-#include <iostream>
 #include <sstream>
 
 namespace {
+constexpr std::int32_t kWidth = 640;
+constexpr std::int32_t kHeight = 480;
+constexpr std::int32_t kTextWidth = 16;
+constexpr std::int32_t kTextHeight = 16;
+
 // Compliments have a max length of 24.
 const std::vector<std::string> kCompliments{" is a swell guy!",         " went absolutely mental!",
                                             " is the bee's knees.",     " goes down in history!",
@@ -47,11 +51,48 @@ std::string convert_to_time(std::int64_t score) {
   return r.str();
 }
 
-void render_panel(Lib& lib, const fvec2& low, const fvec2& hi) {
-  fvec2 tlow{low.x * Lib::kTextWidth, low.y * Lib::kTextHeight};
-  fvec2 thi{hi.x * Lib::kTextWidth, hi.y * Lib::kTextHeight};
-  lib.render_rect(tlow, thi, z0Game::kPanelBack);
-  lib.render_rect(tlow, thi, z0Game::kPanelText, 4);
+glm::vec4 convert_colour(colour_t c) {
+  return {((c >> 24) & 0xff) / 255.f, ((c >> 16) & 0xff) / 255.f, ((c >> 8) & 0xff) / 255.f,
+          (c & 0xff) / 255.f};
+}
+
+glm::vec2 convert_vec(fvec2 v) {
+  return {v.x, v.y};
+}
+
+void render_line(ii::render::GlRenderer& r, const fvec2& a, const fvec2& b, colour_t c) {
+  c = z::colour_cycle(c, r.colour_cycle());
+  r.render_legacy_line(convert_vec(a), convert_vec(b), convert_colour(c));
+}
+
+void render_lines(ii::render::GlRenderer& r, const nonstd::span<ii::render_output::line_t>& lines) {
+  std::vector<ii::render::line_t> render;
+  for (const auto& line : lines) {
+    auto& rl = render.emplace_back();
+    rl.a = convert_vec(line.a);
+    rl.b = convert_vec(line.b);
+    rl.colour = convert_colour(z::colour_cycle(line.c, r.colour_cycle()));
+  }
+  r.render_legacy_lines(render);
+}
+
+void render_text(ii::render::GlRenderer& r, const fvec2& v, const std::string& text, colour_t c) {
+  c = z::colour_cycle(c, r.colour_cycle());
+  r.render_legacy_text(static_cast<glm::ivec2>(convert_vec(v)), convert_colour(c), text);
+}
+
+void render_rect(ii::render::GlRenderer& r, const fvec2& lo, const fvec2& hi, colour_t c,
+                 std::int32_t line_width) {
+  c = z::colour_cycle(c, r.colour_cycle());
+  r.render_legacy_rect(static_cast<glm::ivec2>(convert_vec(lo)),
+                       static_cast<glm::ivec2>(convert_vec(hi)), line_width, convert_colour(c));
+}
+
+void render_panel(ii::render::GlRenderer& r, const fvec2& low, const fvec2& hi) {
+  fvec2 tlow{low.x * kTextWidth, low.y * kTextHeight};
+  fvec2 thi{hi.x * kTextWidth, hi.y * kTextHeight};
+  render_rect(r, tlow, thi, z0Game::kPanelBack, 2);
+  render_rect(r, tlow, thi, z0Game::kPanelText, 4);
 }
 
 }  // namespace
@@ -60,7 +101,7 @@ PauseModal::PauseModal(output_t* output) : Modal{true, false}, output_{output} {
   *output = kContinue;
 }
 
-void PauseModal::update(Lib& lib, ii::ui::UiLayer& ui) {
+void PauseModal::update(ii::ui::UiLayer& ui) {
   std::int32_t t = selection_;
   if (ui.input().pressed(ii::ui::key::kUp)) {
     selection_ = std::max(0, selection_ - 1);
@@ -69,7 +110,7 @@ void PauseModal::update(Lib& lib, ii::ui::UiLayer& ui) {
     selection_ = std::min(2, selection_ + 1);
   }
   if (t != selection_) {
-    lib.play_sound(ii::sound::kMenuClick);
+    ui.play_sound(ii::sound::kMenuClick);
   }
 
   bool accept = ui.input().pressed(ii::ui::key::kAccept) || ui.input().pressed(ii::ui::key::kMenu);
@@ -80,15 +121,15 @@ void PauseModal::update(Lib& lib, ii::ui::UiLayer& ui) {
     quit();
   } else if (accept && selection_ == 2) {
     ui.write_config();
-    lib.set_volume(static_cast<std::int32_t>(ui.config().volume));
+    ui.set_volume(ui.config().volume);
   }
   if (accept) {
-    lib.play_sound(ii::sound::kMenuAccept);
+    ui.play_sound(ii::sound::kMenuAccept);
   }
 
   if (ui.input().pressed(ii::ui::key::kCancel)) {
     quit();
-    lib.play_sound(ii::sound::kMenuAccept);
+    ui.play_sound(ii::sound::kMenuAccept);
   }
 
   auto v = ui.config().volume;
@@ -99,35 +140,35 @@ void PauseModal::update(Lib& lib, ii::ui::UiLayer& ui) {
     ui.config().volume = std::min(100.f, ui.config().volume + 1.f);
   }
   if (v != ui.config().volume) {
-    lib.set_volume(static_cast<std::int32_t>(ui.config().volume));
+    ui.set_volume(ui.config().volume);
     ui.write_config();
-    lib.play_sound(ii::sound::kMenuClick);
+    ui.play_sound(ii::sound::kMenuClick);
   }
 }
 
-void PauseModal::render(Lib& lib, const ii::ui::UiLayer& ui) const {
-  render_panel(lib, {3.f, 3.f}, {15.f, 14.f});
+void PauseModal::render(const ii::ui::UiLayer& ui, ii::render::GlRenderer& r) const {
+  render_panel(r, {3.f, 3.f}, {15.f, 14.f});
 
-  lib.render_text({4.f, 4.f}, "PAUSED", z0Game::kPanelText);
-  lib.render_text({6.f, 8.f}, "CONTINUE", z0Game::kPanelText);
-  lib.render_text({6.f, 10.f}, "END GAME", z0Game::kPanelText);
-  lib.render_text({6.f, 12.f}, "VOL.", z0Game::kPanelText);
+  render_text(r, {4.f, 4.f}, "PAUSED", z0Game::kPanelText);
+  render_text(r, {6.f, 8.f}, "CONTINUE", z0Game::kPanelText);
+  render_text(r, {6.f, 10.f}, "END GAME", z0Game::kPanelText);
+  render_text(r, {6.f, 12.f}, "VOL.", z0Game::kPanelText);
   std::stringstream vol;
   auto v = static_cast<std::int32_t>(ui.config().volume);
   vol << " " << (v < 10 ? " " : "") << v;
-  lib.render_text({10.f, 12.f}, vol.str(), z0Game::kPanelText);
+  render_text(r, {10.f, 12.f}, vol.str(), z0Game::kPanelText);
   if (selection_ == 2 && v > 0) {
-    lib.render_text({5.f, 12.f}, "<", z0Game::kPanelTran);
+    render_text(r, {5.f, 12.f}, "<", z0Game::kPanelTran);
   }
   if (selection_ == 2 && v < 100) {
-    lib.render_text({13.f, 12.f}, ">", z0Game::kPanelTran);
+    render_text(r, {13.f, 12.f}, ">", z0Game::kPanelTran);
   }
 
-  fvec2 low{static_cast<float>(4 * Lib::kTextWidth + 4),
-            static_cast<float>((8 + 2 * selection_) * Lib::kTextHeight + 4)};
-  fvec2 hi{static_cast<float>(5 * Lib::kTextWidth - 4),
-           static_cast<float>((9 + 2 * selection_) * Lib::kTextHeight - 4)};
-  lib.render_rect(low, hi, z0Game::kPanelText, 1);
+  fvec2 low{static_cast<float>(4 * kTextWidth + 4),
+            static_cast<float>((8 + 2 * selection_) * kTextHeight + 4)};
+  fvec2 hi{static_cast<float>(5 * kTextWidth - 4),
+           static_cast<float>((9 + 2 * selection_) * kTextHeight - 4)};
+  render_rect(r, low, hi, z0Game::kPanelText, 1);
 }
 
 HighScoreModal::HighScoreModal(bool is_replay, GameModal& game, const ii::sim_results& results,
@@ -139,7 +180,7 @@ HighScoreModal::HighScoreModal(bool is_replay, GameModal& game, const ii::sim_re
 , replay_writer_{replay_writer}
 , compliment_{z::rand_int(kCompliments.size())} {}
 
-void HighScoreModal::update(Lib& lib, ii::ui::UiLayer& ui) {
+void HighScoreModal::update(ii::ui::UiLayer& ui) {
   if (!is_replay_) {
     ui.save_game().bosses_killed |= results_.bosses_killed;
     ui.save_game().hard_mode_bosses_killed |= results_.hard_mode_bosses_killed;
@@ -152,7 +193,7 @@ void HighScoreModal::update(Lib& lib, ii::ui::UiLayer& ui) {
         ui.write_replay(*replay_writer_, "untitled", get_score());
       }
       ui.write_save_game();
-      lib.play_sound(ii::sound::kMenuAccept);
+      ui.play_sound(ii::sound::kMenuAccept);
       quit();
     }
     return;
@@ -163,12 +204,12 @@ void HighScoreModal::update(Lib& lib, ii::ui::UiLayer& ui) {
       enter_name_.length() < ii::HighScores::kMaxNameLength) {
     enter_name_ += kAllowedChars.substr(enter_char_, 1);
     enter_time_ = 0;
-    lib.play_sound(ii::sound::kMenuClick);
+    ui.play_sound(ii::sound::kMenuClick);
   }
   if (ui.input().pressed(ii::ui::key::kCancel) && enter_name_.length() > 0) {
     enter_name_ = enter_name_.substr(0, enter_name_.length() - 1);
     enter_time_ = 0;
-    lib.play_sound(ii::sound::kMenuClick);
+    ui.play_sound(ii::sound::kMenuClick);
   }
   if (ui.input().pressed(ii::ui::key::kRight) || ui.input().pressed(ii::ui::key::kLeft)) {
     enter_r_ = 0;
@@ -180,16 +221,16 @@ void HighScoreModal::update(Lib& lib, ii::ui::UiLayer& ui) {
   if (ui.input().pressed(ii::ui::key::kRight) ||
       (ui.input().held(ii::ui::key::kRight) && enter_r_ % 5 == 0 && enter_r_ > 5)) {
     enter_char_ = (enter_char_ + 1) % kAllowedChars.length();
-    lib.play_sound(ii::sound::kMenuClick);
+    ui.play_sound(ii::sound::kMenuClick);
   }
   if (ui.input().pressed(ii::ui::key::kLeft) ||
       (ui.input().held(ii::ui::key::kLeft) && enter_r_ % 5 == 0 && enter_r_ > 5)) {
     enter_char_ = (enter_char_ + kAllowedChars.length() - 1) % kAllowedChars.length();
-    lib.play_sound(ii::sound::kMenuClick);
+    ui.play_sound(ii::sound::kMenuClick);
   }
 
   if (ui.input().pressed(ii::ui::key::kMenu)) {
-    lib.play_sound(ii::sound::kMenuAccept);
+    ui.play_sound(ii::sound::kMenuAccept);
     ui.save_game().high_scores.add_score(results_.mode, results_.players.size() - 1, enter_name_,
                                          get_score());
     if (replay_writer_) {
@@ -200,21 +241,21 @@ void HighScoreModal::update(Lib& lib, ii::ui::UiLayer& ui) {
   }
 }
 
-void HighScoreModal::render(Lib& lib, const ii::ui::UiLayer& ui) const {
+void HighScoreModal::render(const ii::ui::UiLayer& ui, ii::render::GlRenderer& r) const {
   std::int32_t players = results_.players.size();
   if (is_high_score(ui.save_game())) {
-    render_panel(lib, {3.f, 20.f}, {28.f, 27.f});
-    lib.render_text({4.f, 21.f}, "It's a high score!", z0Game::kPanelText);
-    lib.render_text({4.f, 23.f},
-                    players == 1 ? "Enter name:" : "Enter team name:", z0Game::kPanelText);
-    lib.render_text({6.f, 25.f}, enter_name_, z0Game::kPanelText);
+    render_panel(r, {3.f, 20.f}, {28.f, 27.f});
+    render_text(r, {4.f, 21.f}, "It's a high score!", z0Game::kPanelText);
+    render_text(r, {4.f, 23.f},
+                players == 1 ? "Enter name:" : "Enter team name:", z0Game::kPanelText);
+    render_text(r, {6.f, 25.f}, enter_name_, z0Game::kPanelText);
     if ((enter_time_ / 16) % 2 && enter_name_.length() < ii::HighScores::kMaxNameLength) {
-      lib.render_text({6.f + enter_name_.length(), 25.f}, kAllowedChars.substr(enter_char_, 1),
-                      0xbbbbbbff);
+      render_text(r, {6.f + enter_name_.length(), 25.f}, kAllowedChars.substr(enter_char_, 1),
+                  0xbbbbbbff);
     }
-    fvec2 low{4 * Lib::kTextWidth + 4, 25 * Lib::kTextHeight + 4};
-    fvec2 hi{5 * Lib::kTextWidth - 4, 26 * Lib::kTextHeight - 4};
-    lib.render_rect(low, hi, z0Game::kPanelText, 1);
+    fvec2 low{4 * kTextWidth + 4, 25 * kTextHeight + 4};
+    fvec2 hi{5 * kTextWidth - 4, 26 * kTextHeight - 4};
+    render_rect(r, low, hi, z0Game::kPanelText, 1);
   }
 
   if (results_.mode == ii::game_mode::kBoss) {
@@ -229,22 +270,22 @@ void HighScoreModal::render(Lib& lib, const ii::ui::UiLayer& ui) const {
       score = 1;
     }
 
-    render_panel(lib, {3.f, 3.f}, {37.f, b ? 10.f : 8.f});
+    render_panel(r, {3.f, 3.f}, {37.f, b ? 10.f : 8.f});
     if (b) {
       std::stringstream ss;
       ss << (extra_lives * 10) << "-second extra-life bonus!";
-      lib.render_text({4.f, 4.f}, ss.str(), z0Game::kPanelText);
+      render_text(r, {4.f, 4.f}, ss.str(), z0Game::kPanelText);
     }
 
-    lib.render_text({4.f, b ? 6.f : 4.f}, "TIME ELAPSED: " + convert_to_time(score),
-                    z0Game::kPanelText);
+    render_text(r, {4.f, b ? 6.f : 4.f}, "TIME ELAPSED: " + convert_to_time(score),
+                z0Game::kPanelText);
     std::stringstream ss;
     ss << "BOSS DESTROY: " << results_.killed_bosses;
-    lib.render_text({4.f, b ? 8.f : 6.f}, ss.str(), z0Game::kPanelText);
+    render_text(r, {4.f, b ? 8.f : 6.f}, ss.str(), z0Game::kPanelText);
     return;
   }
 
-  render_panel(lib, {3.f, 3.f}, {37.f, 8.f + 2 * players + (players > 1 ? 2 : 0)});
+  render_panel(r, {3.f, 3.f}, {37.f, 8.f + 2 * players + (players > 1 ? 2 : 0)});
 
   std::stringstream ss;
   ss << get_score();
@@ -252,7 +293,7 @@ void HighScoreModal::render(Lib& lib, const ii::ui::UiLayer& ui) const {
   if (score.length() > ii::HighScores::kMaxScoreLength) {
     score = score.substr(0, ii::HighScores::kMaxScoreLength);
   }
-  lib.render_text({4.f, 4.f}, "TOTAL SCORE: " + score, z0Game::kPanelText);
+  render_text(r, {4.f, 4.f}, "TOTAL SCORE: " + score, z0Game::kPanelText);
 
   for (std::int32_t i = 0; i < players; ++i) {
     std::stringstream ss;
@@ -269,8 +310,8 @@ void HighScoreModal::render(Lib& lib, const ii::ui::UiLayer& ui) const {
 
     ss.str({});
     ss << "PLAYER " << (i + 1) << ":";
-    lib.render_text({4.f, 8.f + 2 * i}, ss.str(), z0Game::kPanelText);
-    lib.render_text({14.f, 8.f + 2 * i}, score, ii::SimInterface::player_colour(i));
+    render_text(r, {4.f, 8.f + 2 * i}, ss.str(), z0Game::kPanelText);
+    render_text(r, {14.f, 8.f + 2 * i}, score, ii::SimInterface::player_colour(i));
   }
 
   if (players <= 1) {
@@ -291,12 +332,12 @@ void HighScoreModal::render(Lib& lib, const ii::ui::UiLayer& ui) const {
   if (get_score() > 0) {
     std::stringstream s;
     s << "PLAYER " << (best + 1);
-    lib.render_text({4.f, 8.f + 2 * players}, s.str(), ii::SimInterface::player_colour(best));
+    render_text(r, {4.f, 8.f + 2 * players}, s.str(), ii::SimInterface::player_colour(best));
 
     std::string compliment = kCompliments[compliment_];
-    lib.render_text({12.f, 8.f + 2 * players}, compliment, z0Game::kPanelText);
+    render_text(r, {12.f, 8.f + 2 * players}, compliment, z0Game::kPanelText);
   } else {
-    lib.render_text({4.f, 8.f + 2 * players}, "Oh dear!", z0Game::kPanelText);
+    render_text(r, {4.f, 8.f + 2 * players}, "Oh dear!", z0Game::kPanelText);
   }
 }
 
@@ -317,59 +358,51 @@ bool HighScoreModal::is_high_score(const ii::SaveGame& save) const {
       save.high_scores.is_high_score(results_.mode, results_.players.size() - 1, get_score());
 }
 
-GameModal::GameModal(ii::io::IoLayer& io_layer, Lib& lib, const ii::initial_conditions& conditions)
-: Modal{true, true}, io_layer_{io_layer} {
-  lib.set_player_count(conditions.player_count);
-  lib.new_game();
+GameModal::GameModal(ii::io::IoLayer& io_layer, const ii::initial_conditions& conditions)
+: Modal{true, true} {
   game_.emplace(io_layer, ii::ReplayWriter{conditions});
   game_->input.set_player_count(conditions.player_count);
-  game_->input.set_game_dimensions({Lib::kWidth, Lib::kHeight});
+  game_->input.set_game_dimensions({kWidth, kHeight});
   state_ = std::make_unique<ii::SimState>(conditions, game_->input);
 }
 
-GameModal::GameModal(ii::io::IoLayer& io_layer, Lib& lib, ii::ReplayReader&& replay)
-: Modal{true, true}, io_layer_{io_layer} {
+GameModal::GameModal(ii::ReplayReader&& replay) : Modal{true, true} {
   auto conditions = replay.initial_conditions();
-  lib.set_player_count(conditions.player_count);
-  lib.new_game();
   replay_.emplace(std::move(replay));
   state_ = std::make_unique<ii::SimState>(conditions, replay_->input);
 }
 
 GameModal::~GameModal() {}
 
-void GameModal::update(Lib& lib, ii::ui::UiLayer& ui) {
+void GameModal::update(ii::ui::UiLayer& ui) {
   if (pause_output_ == PauseModal::kEndGame || state_->game_over()) {
     add(std::make_unique<HighScoreModal>(replay_.has_value(), *this, state_->get_results(),
                                          game_ ? &game_->writer : nullptr));
     if (pause_output_ != PauseModal::kEndGame) {
-      lib.play_sound(ii::sound::kMenuAccept);
+      ui.play_sound(ii::sound::kMenuAccept);
     }
     quit();
     return;
   }
 
   if (ui.input().pressed(ii::ui::key::kMenu) && !controllers_dialog_) {
-    io_layer_.capture_mouse(false);
+    ui.io_layer().capture_mouse(false);
     add(std::make_unique<PauseModal>(&pause_output_));
-    lib.play_sound(ii::sound::kMenuAccept);
+    ui.play_sound(ii::sound::kMenuAccept);
     return;
   }
-  io_layer_.capture_mouse(true);
+  ui.io_layer().capture_mouse(true);
 
   if (show_controllers_dialog_ && !replay_) {
     controllers_dialog_ = true;
-    lib.play_sound(ii::sound::kMenuAccept);
   }
   show_controllers_dialog_ = false;
 
   if (controllers_dialog_) {
     if (ui.input().pressed(ii::ui::key::kMenu) || ui.input().pressed(ii::ui::key::kAccept)) {
       controllers_dialog_ = false;
-      lib.play_sound(ii::sound::kMenuAccept);
-      for (std::size_t i = 0; i < lib.player_count(); ++i) {
-        lib.rumble(i, 10);
-      }
+      ui.play_sound(ii::sound::kMenuAccept);
+      ui.rumble(10);
     }
     return;
   }
@@ -378,6 +411,19 @@ void GameModal::update(Lib& lib, ii::ui::UiLayer& ui) {
   for (std::int32_t i = 0; i < frames; ++i) {
     state_->update();
   }
+  if (audio_tick_++ %
+          (4 * (1 + static_cast<std::int32_t>(std::log2(frame_count_multiplier_)) / 2)) ==
+      0) {
+    for (const auto& pair : state_->get_sound_output()) {
+      auto& s = pair.second;
+      ui.play_sound(pair.first, s.volume, s.pan, s.pitch);
+    }
+    for (const auto& pair : state_->get_rumble_output()) {
+      // TODO
+    }
+    state_->clear_output();
+  }
+
   if (replay_) {
     if (ui.input().pressed(ii::ui::key::kCancel)) {
       frame_count_multiplier_ *= 2;
@@ -388,32 +434,27 @@ void GameModal::update(Lib& lib, ii::ui::UiLayer& ui) {
   }
 }
 
-void GameModal::render(Lib& lib, const ii::ui::UiLayer& ui) const {
-  if (audio_tick_++ %
-          (4 * (1 + static_cast<std::int32_t>(std::log2(frame_count_multiplier_)) / 2)) ==
-      0) {
-    lib.post_update(*state_);
-  }
+void GameModal::render(const ii::ui::UiLayer& ui, ii::render::GlRenderer& r) const {
   state_->render();
   auto render = state_->get_render_output();
-  lib.set_colour_cycle(render.colour_cycle);
-  lib.render_lines(render.lines);
+  r.set_colour_cycle(render.colour_cycle);
+  render_lines(r, render.lines);
 
   std::int32_t n = 0;
   for (const auto& p : render.players) {
     std::stringstream ss;
     ss << p.multiplier << "X";
     std::string s = ss.str();
-    fvec2 v = n == 1 ? fvec2{Lib::kWidth / 16 - 1.f - s.length(), 1.f}
-        : n == 2     ? fvec2{1.f, Lib::kHeight / 16 - 2.f}
-        : n == 3     ? fvec2{Lib::kWidth / 16 - 1.f - s.length(), Lib::kHeight / 16 - 2.f}
+    fvec2 v = n == 1 ? fvec2{kWidth / 16 - 1.f - s.length(), 1.f}
+        : n == 2     ? fvec2{1.f, kHeight / 16 - 2.f}
+        : n == 3     ? fvec2{kWidth / 16 - 1.f - s.length(), kHeight / 16 - 2.f}
                      : fvec2{1.f, 1.f};
-    lib.render_text(v, s, z0Game::kPanelText);
+    render_text(r, v, s, z0Game::kPanelText);
 
     ss.str("");
     n % 2 ? ss << p.score << "   " : ss << "   " << p.score;
-    lib.render_text(
-        v - (n % 2 ? fvec2{static_cast<float>(ss.str().length() - s.length()), 0} : fvec2{}),
+    render_text(
+        r, v - (n % 2 ? fvec2{static_cast<float>(ss.str().length() - s.length()), 0} : fvec2{}),
         ss.str(), p.colour);
 
     if (p.timer) {
@@ -421,22 +462,22 @@ void GameModal::render(Lib& lib, const ii::ui::UiLayer& ui) const {
       v *= 16;
       auto lo = v + fvec2{5.f, 11.f - 10 * p.timer};
       auto hi = v + fvec2{9.f, 13.f};
-      lib.render_line(lo, {lo.x, hi.y}, 0xffffffff);
-      lib.render_line({lo.x, hi.y}, hi, 0xffffffff);
-      lib.render_line(hi, {hi.x, lo.y}, 0xffffffff);
-      lib.render_line({hi.x, lo.y}, lo, 0xffffffff);
+      render_line(r, lo, {lo.x, hi.y}, 0xffffffff);
+      render_line(r, {lo.x, hi.y}, hi, 0xffffffff);
+      render_line(r, hi, {hi.x, lo.y}, 0xffffffff);
+      render_line(r, {hi.x, lo.y}, lo, 0xffffffff);
     }
     ++n;
   }
 
   if (controllers_dialog_) {
-    render_panel(lib, {3.f, 3.f}, {32.f, 8.f + 2 * lib.player_count()});
-    lib.render_text({4.f, 4.f}, "CONTROLLERS FOUND", z0Game::kPanelText);
+    render_panel(r, {3.f, 3.f}, {32.f, 8.f + 2 * render.players.size()});
+    render_text(r, {4.f, 4.f}, "CONTROLLERS FOUND", z0Game::kPanelText);
 
-    for (std::size_t i = 0; i < lib.player_count(); ++i) {
+    for (std::size_t i = 0; i < render.players.size(); ++i) {
       std::stringstream ss;
       ss << "PLAYER " << (i + 1) << ": ";
-      lib.render_text({4.f, 8.f + 2 * i}, ss.str(), z0Game::kPanelText);
+      render_text(r, {4.f, 8.f + 2 * i}, ss.str(), z0Game::kPanelText);
 
       ss.str({});
       bool b = false;
@@ -460,8 +501,8 @@ void GameModal::render(Lib& lib, const ii::ui::UiLayer& ui) const {
         }
       }
 
-      lib.render_text({14.f, 8.f + 2 * i}, ss.str(),
-                      b ? ii::SimInterface::player_colour(i) : z0Game::kPanelText);
+      render_text(r, {14.f, 8.f + 2 * i}, ss.str(),
+                  b ? ii::SimInterface::player_colour(i) : z0Game::kPanelText);
     }
     return;
   }
@@ -473,25 +514,24 @@ void GameModal::render(Lib& lib, const ii::ui::UiLayer& ui) const {
     ss << " " << (t < 10 ? "0" : "") << t;
   }
 
-  lib.render_text({Lib::kWidth / (2.f * Lib::kTextWidth) - ss.str().length() / 2,
-                   Lib::kHeight / Lib::kTextHeight - 2.f},
-                  ss.str(), z0Game::kPanelTran);
+  render_text(r, {kWidth / (2.f * kTextWidth) - ss.str().length() / 2, kHeight / kTextHeight - 2.f},
+              ss.str(), z0Game::kPanelTran);
 
   if (render.mode == ii::game_mode::kBoss) {
     ss.str({});
     ss << convert_to_time(render.elapsed_time);
-    lib.render_text({Lib::kWidth / (2 * Lib::kTextWidth) - ss.str().length() - 1.f, 1.f}, ss.str(),
-                    z0Game::kPanelTran);
+    render_text(r, {kWidth / (2 * kTextWidth) - ss.str().length() - 1.f, 1.f}, ss.str(),
+                z0Game::kPanelTran);
   }
 
   if (render.boss_hp_bar) {
     std::int32_t x = render.mode == ii::game_mode::kBoss ? 48 : 0;
-    lib.render_rect({x + Lib::kWidth / 2 - 48.f, 16.f}, {x + Lib::kWidth / 2 + 48.f, 32.f},
-                    z0Game::kPanelTran, 2);
+    render_rect(r, {x + kWidth / 2 - 48.f, 16.f}, {x + kWidth / 2 + 48.f, 32.f}, z0Game::kPanelTran,
+                2);
 
-    lib.render_rect({x + Lib::kWidth / 2 - 44.f, 16.f + 4},
-                    {x + Lib::kWidth / 2 - 44.f + 88.f * *render.boss_hp_bar, 32.f - 4},
-                    z0Game::kPanelTran);
+    render_rect(r, {x + kWidth / 2 - 44.f, 16.f + 4},
+                {x + kWidth / 2 - 44.f + 88.f * *render.boss_hp_bar, 32.f - 4}, z0Game::kPanelTran,
+                4);
   }
 
   if (replay_) {
@@ -500,43 +540,26 @@ void GameModal::render(Lib& lib, const ii::ui::UiLayer& ui) const {
     ss.str({});
     ss << frame_count_multiplier_ << "X " << static_cast<std::int32_t>(100 * progress) << "%";
 
-    lib.render_text({Lib::kWidth / (2.f * Lib::kTextWidth) - ss.str().length() / 2,
-                     Lib::kHeight / Lib::kTextHeight - 3.f},
-                    ss.str(), z0Game::kPanelTran);
+    render_text(r,
+                {kWidth / (2.f * kTextWidth) - ss.str().length() / 2, kHeight / kTextHeight - 3.f},
+                ss.str(), z0Game::kPanelTran);
   }
 }
 
-z0Game::z0Game(ii::io::Filesystem& fs, ii::io::IoLayer& io_layer, Lib& lib,
-               const std::vector<std::string>& args)
-: lib_{lib}, io_layer_{io_layer} {
-  if (!args.empty()) {
-    // TODO: exceptions.
-    try {
-      auto replay_data = fs.read_replay(args[0]);
-      if (!replay_data) {
-        throw std::runtime_error{replay_data.error()};
-      }
-      auto reader = ii::ReplayReader::create(*replay_data);
-      if (!reader) {
-        throw std::runtime_error{reader.error()};
-      }
-      modals_.add(std::make_unique<GameModal>(io_layer_, lib_, std::move(*reader)));
-    } catch (const std::runtime_error& e) {
-      exit_timer_ = 256;
-      exit_error_ = e.what();
-    }
+z0Game::z0Game(std::optional<ii::ReplayReader> replay) {
+  if (replay) {
+    modals_.add(std::make_unique<GameModal>(std::move(*replay)));
   }
 }
 
 bool z0Game::update(ii::ui::UiLayer& ui) {
-  lib_.set_volume(static_cast<std::int32_t>(ui.config().volume));
   if (exit_timer_) {
     exit_timer_--;
     return !exit_timer_;
   }
-  io_layer_.capture_mouse(false);
+  ui.io_layer().capture_mouse(false);
 
-  if (modals_.update(lib_, ui)) {
+  if (modals_.update(ui)) {
     return false;
   }
 
@@ -553,7 +576,7 @@ bool z0Game::update(ii::ui::UiLayer& ui) {
                                               static_cast<std::int32_t>(menu_select_) + 1));
   }
   if (t != menu_select_) {
-    lib().play_sound(ii::sound::kMenuClick);
+    ui.play_sound(ii::sound::kMenuClick);
   }
 
   if (menu_select_ == menu::kPlayers) {
@@ -568,9 +591,8 @@ bool z0Game::update(ii::ui::UiLayer& ui) {
       player_select_ = 1 + player_select_ % kPlayers;
     }
     if (t != player_select_) {
-      lib().play_sound(ii::sound::kMenuClick);
+      ui.play_sound(ii::sound::kMenuClick);
     }
-    lib().set_player_count(player_select_);
   }
 
   if (menu_select_ == menu::kSpecial) {
@@ -586,7 +608,7 @@ bool z0Game::update(ii::ui::UiLayer& ui) {
                    static_cast<std::int32_t>(mode_select_) + 1));
     }
     if (t != mode_select_) {
-      lib().play_sound(ii::sound::kMenuClick);
+      ui.play_sound(ii::sound::kMenuClick);
     }
   }
 
@@ -598,59 +620,44 @@ bool z0Game::update(ii::ui::UiLayer& ui) {
 
   if (ui.input().pressed(ii::ui::key::kAccept) || ui.input().pressed(ii::ui::key::kMenu)) {
     if (menu_select_ == menu::kStart) {
-      lib().new_game();
-      modals_.add(std::make_unique<GameModal>(io_layer_, lib_, conditions));
+      modals_.add(std::make_unique<GameModal>(ui.io_layer(), conditions));
     } else if (menu_select_ == menu::kQuit) {
       exit_timer_ = 2;
     } else if (menu_select_ == menu::kSpecial) {
       conditions.mode = mode_select_;
-      lib().new_game();
-      modals_.add(std::make_unique<GameModal>(io_layer_, lib_, conditions));
+      modals_.add(std::make_unique<GameModal>(ui.io_layer(), conditions));
     }
     if (menu_select_ != menu::kPlayers) {
-      lib().play_sound(ii::sound::kMenuAccept);
+      ui.play_sound(ii::sound::kMenuAccept);
     }
-  }
-
-  if (menu_select_ >= menu::kStart || mode_select_ == ii::game_mode::kBoss) {
-    lib().set_colour_cycle(0);
-  } else if (mode_select_ == ii::game_mode::kHard) {
-    lib().set_colour_cycle(128);
-  } else if (mode_select_ == ii::game_mode::kFast) {
-    lib().set_colour_cycle(192);
-  } else if (mode_select_ == ii::game_mode::kWhat) {
-    lib().set_colour_cycle((lib().get_colour_cycle() + 1) % 256);
   }
   return false;
 }
 
-void z0Game::render(const ii::ui::UiLayer& ui) const {
-  if (exit_timer_ > 0 && !exit_error_.empty()) {
-    std::int32_t y = 2;
-    std::string s = exit_error_;
-    std::size_t i;
-    while ((i = s.find_first_of("\n")) != std::string::npos) {
-      std::string t = s.substr(0, i);
-      s = s.substr(i + 1);
-      lib().render_text({2, static_cast<float>(y)}, t, kPanelText);
-      ++y;
-    }
-    lib().render_text({2, static_cast<float>(y)}, s, kPanelText);
+void z0Game::render(const ii::ui::UiLayer& ui, ii::render::GlRenderer& r) const {
+  if (menu_select_ >= menu::kStart || mode_select_ == ii::game_mode::kBoss) {
+    r.set_colour_cycle(0);
+  } else if (mode_select_ == ii::game_mode::kHard) {
+    r.set_colour_cycle(128);
+  } else if (mode_select_ == ii::game_mode::kFast) {
+    r.set_colour_cycle(192);
+  } else if (mode_select_ == ii::game_mode::kWhat) {
+    r.set_colour_cycle((r.colour_cycle() + 1) % 256);
+  }
+
+  r.set_dimensions(ui.io_layer().dimensions(), glm::uvec2{kWidth, kHeight});
+  if (modals_.render(ui, r)) {
     return;
   }
 
-  if (modals_.render(lib_, ui)) {
-    return;
-  }
+  render_panel(r, {3.f, 3.f}, {19.f, 14.f});
 
-  render_panel(lib(), {3.f, 3.f}, {19.f, 14.f});
-
-  lib().render_text({37.f - 16, 3.f}, "coded by: SEiKEN", kPanelText);
-  lib().render_text({37.f - 16, 4.f}, "stu@seiken.co.uk", kPanelText);
-  lib().render_text({37.f - 9, 6.f}, "-testers-", kPanelText);
-  lib().render_text({37.f - 9, 7.f}, "MATT BELL", kPanelText);
-  lib().render_text({37.f - 9, 8.f}, "RUFUZZZZZ", kPanelText);
-  lib().render_text({37.f - 9, 9.f}, "SHADOW1W2", kPanelText);
+  render_text(r, {37.f - 16, 3.f}, "coded by: SEiKEN", kPanelText);
+  render_text(r, {37.f - 16, 4.f}, "stu@seiken.co.uk", kPanelText);
+  render_text(r, {37.f - 9, 6.f}, "-testers-", kPanelText);
+  render_text(r, {37.f - 9, 7.f}, "MATT BELL", kPanelText);
+  render_text(r, {37.f - 9, 8.f}, "RUFUZZZZZ", kPanelText);
+  render_text(r, {37.f - 9, 9.f}, "SHADOW1W2", kPanelText);
 
   std::string b = "BOSSES:  ";
   std::int32_t bb = mode_unlocked(ui.save_game()) >= ii::game_mode::kHard
@@ -663,48 +670,47 @@ void z0Game::render(const ii::ui::UiLayer& ui) const {
   b += bb & ii::SimInterface::kBoss2A ? "X" : "-";
   b += bb & ii::SimInterface::kBoss2B ? "X" : "-";
   b += bb & ii::SimInterface::kBoss2C ? "X" : "-";
-  lib().render_text({37.f - 16, 13.f}, b, kPanelText);
+  render_text(r, {37.f - 16, 13.f}, b, kPanelText);
 
-  lib().render_text({4.f, 4.f}, "WiiSPACE", kPanelText);
-  lib().render_text({6.f, 8.f}, "START GAME", kPanelText);
-  lib().render_text({6.f, 10.f}, "PLAYERS", kPanelText);
-  lib().render_text({6.f, 12.f}, "EXiT", kPanelText);
+  render_text(r, {4.f, 4.f}, "WiiSPACE", kPanelText);
+  render_text(r, {6.f, 8.f}, "START GAME", kPanelText);
+  render_text(r, {6.f, 10.f}, "PLAYERS", kPanelText);
+  render_text(r, {6.f, 12.f}, "EXiT", kPanelText);
 
   if (mode_unlocked(ui.save_game()) >= ii::game_mode::kBoss) {
     std::string str = mode_select_ == ii::game_mode::kBoss ? "BOSS MODE"
         : mode_select_ == ii::game_mode::kHard             ? "HARD MODE"
         : mode_select_ == ii::game_mode::kFast             ? "FAST MODE"
                                                            : "W-HAT MODE";
-    lib().render_text({6.f, 6.f}, str, kPanelText);
+    render_text(r, {6.f, 6.f}, str, kPanelText);
   }
   if (menu_select_ == menu::kSpecial && mode_select_ > ii::game_mode::kBoss) {
-    lib().render_text({5.f, 6.f}, "<", kPanelTran);
+    render_text(r, {5.f, 6.f}, "<", kPanelTran);
   }
   if (menu_select_ == menu::kSpecial && mode_select_ < mode_unlocked(ui.save_game())) {
-    lib().render_text({6.f, 6.f}, "         >", kPanelTran);
+    render_text(r, {6.f, 6.f}, "         >", kPanelTran);
   }
 
   fvec2 low{
-      static_cast<float>(4 * Lib::kTextWidth + 4),
-      static_cast<float>((6 + 2 * static_cast<std::int32_t>(menu_select_)) * Lib::kTextHeight + 4)};
-  fvec2 hi{
-      static_cast<float>(5 * Lib::kTextWidth - 4),
-      static_cast<float>((7 + 2 * static_cast<std::int32_t>(menu_select_)) * Lib::kTextHeight - 4)};
-  lib().render_rect(low, hi, kPanelText, 1);
+      static_cast<float>(4 * kTextWidth + 4),
+      static_cast<float>((6 + 2 * static_cast<std::int32_t>(menu_select_)) * kTextHeight + 4)};
+  fvec2 hi{static_cast<float>(5 * kTextWidth - 4),
+           static_cast<float>((7 + 2 * static_cast<std::int32_t>(menu_select_)) * kTextHeight - 4)};
+  render_rect(r, low, hi, kPanelText, 1);
 
   if (player_select_ > 1 && menu_select_ == menu::kPlayers) {
-    lib().render_text({5.f, 10.f}, "<", kPanelTran);
+    render_text(r, {5.f, 10.f}, "<", kPanelTran);
   }
   if (player_select_ < 4 && menu_select_ == menu::kPlayers) {
-    lib().render_text({14.f + player_select_, 10.f}, ">", kPanelTran);
+    render_text(r, {14.f + player_select_, 10.f}, ">", kPanelTran);
   }
   for (std::int32_t i = 0; i < player_select_; ++i) {
     std::stringstream ss;
     ss << (i + 1);
-    lib().render_text({14.f + i, 10.f}, ss.str(), ii::SimInterface::player_colour(i));
+    render_text(r, {14.f + i, 10.f}, ss.str(), ii::SimInterface::player_colour(i));
   }
 
-  render_panel(lib(), {3.f, 15.f}, {37.f, 27.f});
+  render_panel(r, {3.f, 15.f}, {37.f, 27.f});
 
   std::stringstream ss;
   ss << player_select_;
@@ -719,27 +725,27 @@ void z0Game::render(const ii::ui::UiLayer& ui) const {
       : player_select_ == 3 ? "THREE PLAYERS"
       : player_select_ == 4 ? "FOUR PLAYERS"
                             : "";
-  lib().render_text({4.f, 16.f}, s, kPanelText);
+  render_text(r, {4.f, 16.f}, s, kPanelText);
 
   if (menu_select_ == menu::kSpecial && mode_select_ == ii::game_mode::kBoss) {
-    lib().render_text({4.f, 18.f}, "ONE PLAYER", kPanelText);
-    lib().render_text({4.f, 20.f}, "TWO PLAYERS", kPanelText);
-    lib().render_text({4.f, 22.f}, "THREE PLAYERS", kPanelText);
-    lib().render_text({4.f, 24.f}, "FOUR PLAYERS", kPanelText);
+    render_text(r, {4.f, 18.f}, "ONE PLAYER", kPanelText);
+    render_text(r, {4.f, 20.f}, "TWO PLAYERS", kPanelText);
+    render_text(r, {4.f, 22.f}, "THREE PLAYERS", kPanelText);
+    render_text(r, {4.f, 24.f}, "FOUR PLAYERS", kPanelText);
 
     for (std::size_t i = 0; i < kPlayers; ++i) {
       auto& s = ui.save_game().high_scores.get(ii::game_mode::kBoss, i, 0);
       std::string score = convert_to_time(s.score).substr(0, ii::HighScores::kMaxNameLength);
       std::string name = s.name.substr(0, ii::HighScores::kMaxNameLength);
 
-      lib().render_text({19.f, 18.f + i * 2}, score, kPanelText);
-      lib().render_text({19.f, 19.f + i * 2}, name, kPanelText);
+      render_text(r, {19.f, 18.f + i * 2}, score, kPanelText);
+      render_text(r, {19.f, 19.f + i * 2}, name, kPanelText);
     }
   } else {
     for (std::size_t i = 0; i < ii::HighScores::kNumScores; ++i) {
       ss.str({});
       ss << (i + 1) << ".";
-      lib().render_text({4.f, 18.f + i}, ss.str(), kPanelText);
+      render_text(r, {4.f, 18.f + i}, ss.str(), kPanelText);
 
       auto& s = ui.save_game().high_scores.get(
           menu_select_ == menu::kSpecial ? mode_select_ : ii::game_mode::kNormal,
@@ -753,8 +759,8 @@ void z0Game::render(const ii::ui::UiLayer& ui) const {
       std::string score = ss.str().substr(0, ii::HighScores::kMaxScoreLength);
       std::string name = s.name.substr(0, ii::HighScores::kMaxScoreLength);
 
-      lib().render_text({7.f, 18.f + i}, score, kPanelText);
-      lib().render_text({19.f, 18.f + i}, name, kPanelText);
+      render_text(r, {7.f, 18.f + i}, score, kPanelText);
+      render_text(r, {19.f, 18.f + i}, name, kPanelText);
     }
   }
 }

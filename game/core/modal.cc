@@ -13,7 +13,7 @@ void ModalStack::add(std::unique_ptr<Modal> modal) {
   new_stack_.emplace_back(std::move(modal));
 }
 
-bool ModalStack::update(Lib& lib, ii::ui::UiLayer& ui) {
+bool ModalStack::update(ii::ui::UiLayer& ui) {
   bool captured = false;
   auto it = stack_.begin();
   for (auto jt = it; jt != stack_.end(); ++jt) {
@@ -27,7 +27,7 @@ bool ModalStack::update(Lib& lib, ii::ui::UiLayer& ui) {
       it = stack_.erase(it);
       continue;
     }
-    (*it++)->update(lib, ui);
+    (*it++)->update(ui);
   }
   for (auto& modal : new_stack_) {
     stack_.emplace_back(std::move(modal));
@@ -36,7 +36,7 @@ bool ModalStack::update(Lib& lib, ii::ui::UiLayer& ui) {
   return captured;
 }
 
-bool ModalStack::render(Lib& lib, const ii::ui::UiLayer& ui) const {
+bool ModalStack::render(const ii::ui::UiLayer& ui, ii::render::GlRenderer& r) const {
   bool captured = false;
   auto it = stack_.begin();
   for (auto jt = it; jt != stack_.end(); ++jt) {
@@ -46,7 +46,7 @@ bool ModalStack::render(Lib& lib, const ii::ui::UiLayer& ui) const {
     }
   }
   for (; it != stack_.end(); ++it) {
-    (*it)->render(lib, ui);
+    (*it)->render(ui, r);
   }
   return captured;
 }

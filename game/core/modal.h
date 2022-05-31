@@ -6,8 +6,10 @@
 namespace ii::ui {
 class UiLayer;
 }  // namespace ii::ui
+namespace ii::render {
+class GlRenderer;
+}  // namespace ii::render
 
-class Lib;
 class ModalStack;
 class Modal {
 public:
@@ -15,8 +17,8 @@ public:
   : capture_updates_{capture_updates}, capture_rendering_{capture_rendering} {}
   virtual ~Modal() {}
 
-  virtual void update(Lib& lib, ii::ui::UiLayer& ui) = 0;
-  virtual void render(Lib& lib, const ii::ui::UiLayer& ui) const = 0;
+  virtual void update(ii::ui::UiLayer& ui) = 0;
+  virtual void render(const ii::ui::UiLayer& ui, ii::render::GlRenderer& r) const = 0;
 
 protected:
   void add(std::unique_ptr<Modal> modal);
@@ -35,10 +37,10 @@ public:
   void add(std::unique_ptr<Modal> modal);
 
   // Returns true if any modal captured the update chain.
-  bool update(Lib& lib, ii::ui::UiLayer& ui);
+  bool update(ii::ui::UiLayer& ui);
 
   // Returns true if any modal captured the render chain.
-  bool render(Lib& lib, const ii::ui::UiLayer& ui) const;
+  bool render(const ii::ui::UiLayer& ui, ii::render::GlRenderer& r) const;
 
 private:
   std::vector<std::unique_ptr<Modal>> stack_;
