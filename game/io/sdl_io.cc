@@ -150,6 +150,7 @@ SdlIoLayer::create(const char* title, char gl_major, char gl_minor) {
     return unexpected("OpenGL " + std::to_string(+gl_major) + "." + std::to_string(+gl_minor) +
                       " not supported");
   }
+  SDL_GL_SetSwapInterval(1);
 
   auto rwops = make_raw(
       SDL_RWFromConstMem(external_sdl_gamecontrollerdb_gamecontrollerdb_txt,

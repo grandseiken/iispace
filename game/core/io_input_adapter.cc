@@ -22,16 +22,21 @@ assign_input(std::uint32_t player_index, std::uint32_t player_count, std::size_t
   return input;
 }
 
-vec2 controller_stick(std::int16_t x, std::int16_t y) {
+vec2 controller_stick(std::int16_t x, std::int16_t y, bool normalise) {
+  static constexpr fixed inner_deadzone = fixed_c::tenth * 3;
+  static constexpr fixed outer_deadzone = fixed_c::tenth;
   vec2 v{fixed::from_internal(static_cast<std::int64_t>(x) << 17),
          fixed::from_internal(static_cast<std::int64_t>(y) << 17)};
-  if (v.length() < fixed_c::tenth * 2) {
+  auto length = v.length();
+  if (length < inner_deadzone) {
     return vec2{};
   }
-  if (v.length() > 1 - fixed_c::tenth * 2) {
-    return v.normalised();
+  v = v.normalised();
+  if (normalise || length > 1 - outer_deadzone) {
+    return v;
   }
-  return v;
+  length = (length - inner_deadzone) / (1 - outer_deadzone - inner_deadzone);
+  return v * length;
 }
 
 vec2 kbm_move_velocity(const io::keyboard::frame& frame) {
@@ -83,12 +88,12 @@ vec2 controller_move_velocity(const io::controller::frame& frame) {
     return v;
   }
   return controller_stick(frame.axis(io::controller::axis::kLX),
-                          frame.axis(io::controller::axis::kLY));
+                          frame.axis(io::controller::axis::kLY), false);
 }
 
 vec2 controller_fire_target(const io::controller::frame& frame) {
   return controller_stick(frame.axis(io::controller::axis::kRX),
-                          frame.axis(io::controller::axis::kRY));
+                          frame.axis(io::controller::axis::kRY), true);
 }
 
 std::int32_t controller_keys(const io::controller::frame& frame) {
@@ -161,6 +166,7 @@ std::vector<input_frame> IoInputAdapter::get() {
           mouse_moving_ = false;
         }
         frame.target_relative = last_aim_[i] = v.normalised() * 48;
+        frame.keys |= input_frame::key::kFire;
       }
     }
     if (input.kbm && !frame.target_relative) {

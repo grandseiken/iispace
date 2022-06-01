@@ -5,8 +5,10 @@
 #include "game/mixer/mixer.h"
 #include "game/mixer/sound.h"
 #include "game/render/gl_renderer.h"
+#include <chrono>
 #include <iostream>
 #include <string>
+#include <thread>
 #include <vector>
 
 namespace ii {
@@ -63,8 +65,9 @@ bool run(const std::vector<std::string>& args) {
   load_sounds(fs, mixer);
 
   ui::UiLayer ui_layer{fs, *io_layer, mixer};
+  ModalStack modal_stack;
+  auto* game = modal_stack.add(std::make_unique<z0Game>());
 
-  std::optional<ReplayReader> replay;
   if (!args.empty()) {
     auto replay_data = fs.read_replay(args[0]);
     if (!replay_data) {
@@ -76,12 +79,22 @@ bool run(const std::vector<std::string>& args) {
       std::cerr << reader.error() << std::endl;
       return false;
     }
-    replay = std::move(*reader);
+    modal_stack.add(std::make_unique<GameModal>(std::move(*reader)));
   }
-  z0Game game{std::move(replay)};
+
+  using counter_t = std::chrono::duration<double>;
+  static constexpr std::uint32_t kFps = 50;
+  static constexpr counter_t time_per_frame{1. / kFps};
+  auto last_time = std::chrono::steady_clock::now();
+  auto elapsed_time = [&last_time] {
+    auto now = std::chrono::steady_clock::now();
+    auto r = std::chrono::duration_cast<counter_t>(now - last_time);
+    return r;
+  };
 
   bool exit = false;
   while (!exit) {
+    io_layer->input_frame_clear();
     bool audio_change = false;
     bool controller_change = false;
     while (true) {
@@ -106,16 +119,19 @@ bool run(const std::vector<std::string>& args) {
     }
 
     ui_layer.compute_input_frame(controller_change);
-    if (game.update(ui_layer)) {
-      exit = true;
-    }
-    io_layer->input_frame_clear();
+    modal_stack.update(ui_layer);
     mixer.commit();
+    exit |= modal_stack.empty();
 
     renderer->clear_screen();
-    game.render(ui_layer, *renderer);
-    // TODO: too fast. Was 50FPS, now 60FPS, need timing logic.
+    modal_stack.render(ui_layer, *renderer);
     io_layer->swap_buffers();
+
+    auto elapsed = elapsed_time();
+    if (time_per_frame > elapsed) {
+      std::this_thread::sleep_for(time_per_frame - elapsed);
+    }
+    last_time = std::chrono::steady_clock::now();
   }
   return true;
 }

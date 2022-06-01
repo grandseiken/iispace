@@ -344,16 +344,15 @@ void GlRenderer::render_legacy_lines(nonstd::span<const line_t> lines) {
     return;
   }
 
-  using int_t = std::int16_t;
-  std::vector<int_t> vertex_data;
+  std::vector<float> vertex_data;
   std::vector<float> colour_data;
   std::vector<unsigned> line_indices;
   unsigned index = 0;
   for (const auto& line : lines) {
-    vertex_data.emplace_back(static_cast<int_t>(line.a.x));
-    vertex_data.emplace_back(static_cast<int_t>(line.a.y));
-    vertex_data.emplace_back(static_cast<int_t>(line.b.x));
-    vertex_data.emplace_back(static_cast<int_t>(line.b.y));
+    vertex_data.emplace_back(line.a.x);
+    vertex_data.emplace_back(line.a.y);
+    vertex_data.emplace_back(line.b.x);
+    vertex_data.emplace_back(line.b.y);
     colour_data.emplace_back(line.colour.r);
     colour_data.emplace_back(line.colour.g);
     colour_data.emplace_back(line.colour.b);
@@ -369,7 +368,7 @@ void GlRenderer::render_legacy_lines(nonstd::span<const line_t> lines) {
   auto vertex_buffer = gl::make_buffer();
   auto colour_buffer = gl::make_buffer();
   gl::buffer_data(vertex_buffer, gl::buffer_usage::kStreamDraw,
-                  nonstd::span<const int_t>{vertex_data});
+                  nonstd::span<const float>{vertex_data});
   gl::buffer_data(colour_buffer, gl::buffer_usage::kStreamDraw,
                   nonstd::span<const float>{colour_data});
 
@@ -379,8 +378,8 @@ void GlRenderer::render_legacy_lines(nonstd::span<const line_t> lines) {
 
   auto vertex_array = gl::make_vertex_array();
   gl::bind_vertex_array(vertex_array);
-  auto position_handle = gl::vertex_int_attribute_buffer(vertex_buffer, 0, 2, gl::type_of<int_t>(),
-                                                         2 * sizeof(int_t), 0);
+  auto position_handle = gl::vertex_float_attribute_buffer(
+      vertex_buffer, 0, 2, gl::type_of<float>(), false, 2 * sizeof(float), 0);
   auto colour_handle = gl::vertex_float_attribute_buffer(colour_buffer, 1, 4, gl::type_of<float>(),
                                                          false, 4 * sizeof(float), 0);
 

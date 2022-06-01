@@ -63,6 +63,7 @@
 * Taking hit knocks back enemies
 * Taking hit damages nearby enemies
 * Increased invulnerability window after hit
+* Charge from kills or maybe something else
 
 ### Bomb
 * Increased bomb radius
@@ -71,6 +72,7 @@
 * Bomb is fired a short distance
 * Remote activation bomb (once to deploy, once to explode)
 * Bomb is a black hole
+* Charge from kills
 
 ### Weapon
 * Extra damage
@@ -92,6 +94,7 @@
 * Pizza cutter boomerang
 * Rstick-controllable doomcircle
 * Megalaser?
+* Charge from kills
 
 ### Special ability?
 * Escape (short-distance teleport + invulnerability)

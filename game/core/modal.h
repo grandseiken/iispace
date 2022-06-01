@@ -21,7 +21,10 @@ public:
   virtual void render(const ii::ui::UiLayer& ui, ii::render::GlRenderer& r) const = 0;
 
 protected:
-  void add(std::unique_ptr<Modal> modal);
+  template <typename T>
+  T* add(std::unique_ptr<T> modal) {
+    return stack_->add(std::move(modal));
+  }
   void quit();
 
 private:
@@ -34,7 +37,17 @@ private:
 
 class ModalStack {
 public:
-  void add(std::unique_ptr<Modal> modal);
+  template <typename T>
+  T* add(std::unique_ptr<T> modal) {
+    auto* p = modal.get();
+    modal->stack_ = this;
+    new_stack_.emplace_back(std::move(modal));
+    return p;
+  }
+
+  bool empty() const {
+    return stack_.empty() && new_stack_.empty();
+  }
 
   // Returns true if any modal captured the update chain.
   bool update(ii::ui::UiLayer& ui);

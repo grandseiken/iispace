@@ -411,9 +411,8 @@ void GameModal::update(ii::ui::UiLayer& ui) {
   for (std::int32_t i = 0; i < frames; ++i) {
     state_->update();
   }
-  if (audio_tick_++ %
-          (4 * (1 + static_cast<std::int32_t>(std::log2(frame_count_multiplier_)) / 2)) ==
-      0) {
+  auto frame_x = static_cast<std::int32_t>(std::log2(frame_count_multiplier_));
+  if (audio_tick_++ % (4 * (1 + frame_x / 2)) == 0) {
     for (const auto& pair : state_->get_sound_output()) {
       auto& s = pair.second;
       ui.play_sound(pair.first, s.volume, s.pan, s.pitch);
@@ -437,6 +436,7 @@ void GameModal::update(ii::ui::UiLayer& ui) {
 void GameModal::render(const ii::ui::UiLayer& ui, ii::render::GlRenderer& r) const {
   state_->render();
   auto render = state_->get_render_output();
+  r.set_dimensions(ui.io_layer().dimensions(), glm::uvec2{kWidth, kHeight});
   r.set_colour_cycle(render.colour_cycle);
   render_lines(r, render.lines);
 
@@ -546,22 +546,14 @@ void GameModal::render(const ii::ui::UiLayer& ui, ii::render::GlRenderer& r) con
   }
 }
 
-z0Game::z0Game(std::optional<ii::ReplayReader> replay) {
-  if (replay) {
-    modals_.add(std::make_unique<GameModal>(std::move(*replay)));
-  }
-}
+z0Game::z0Game() : Modal{true, true} {}
 
-bool z0Game::update(ii::ui::UiLayer& ui) {
+void z0Game::update(ii::ui::UiLayer& ui) {
   if (exit_timer_) {
     exit_timer_--;
-    return !exit_timer_;
+    quit();
   }
   ui.io_layer().capture_mouse(false);
-
-  if (modals_.update(ui)) {
-    return false;
-  }
 
   menu t = menu_select_;
   if (ui.input().pressed(ii::ui::key::kUp)) {
@@ -620,18 +612,17 @@ bool z0Game::update(ii::ui::UiLayer& ui) {
 
   if (ui.input().pressed(ii::ui::key::kAccept) || ui.input().pressed(ii::ui::key::kMenu)) {
     if (menu_select_ == menu::kStart) {
-      modals_.add(std::make_unique<GameModal>(ui.io_layer(), conditions));
+      add(std::make_unique<GameModal>(ui.io_layer(), conditions));
     } else if (menu_select_ == menu::kQuit) {
       exit_timer_ = 2;
     } else if (menu_select_ == menu::kSpecial) {
       conditions.mode = mode_select_;
-      modals_.add(std::make_unique<GameModal>(ui.io_layer(), conditions));
+      add(std::make_unique<GameModal>(ui.io_layer(), conditions));
     }
     if (menu_select_ != menu::kPlayers) {
       ui.play_sound(ii::sound::kMenuAccept);
     }
   }
-  return false;
 }
 
 void z0Game::render(const ii::ui::UiLayer& ui, ii::render::GlRenderer& r) const {
@@ -646,10 +637,6 @@ void z0Game::render(const ii::ui::UiLayer& ui, ii::render::GlRenderer& r) const 
   }
 
   r.set_dimensions(ui.io_layer().dimensions(), glm::uvec2{kWidth, kHeight});
-  if (modals_.render(ui, r)) {
-    return;
-  }
-
   render_panel(r, {3.f, 3.f}, {19.f, 14.f});
 
   render_text(r, {37.f - 16, 3.f}, "coded by: SEiKEN", kPanelText);

@@ -361,9 +361,7 @@ void Overmind::boss() {
         std::max(0, (boss_mod_bosses_ + (sim_.mode() == ii::game_mode::kHard) - 2) / 2);
     sim_.add_new_ship<SuperBoss>(count, secret_cycle);
     boss_mod_secret_ = 2;
-  }
-
-  else if (boss_mod_bosses_ % 2 == 0) {
+  } else if (boss_mod_bosses_ % 2 == 0) {
     if (boss1_queue_[0] == 0) {
       sim_.add_new_ship<BigSquareBoss>(count, cycle);
     } else if (boss1_queue_[0] == 1) {

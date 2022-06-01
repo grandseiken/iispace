@@ -1,16 +1,7 @@
 #include "game/core/modal.h"
 
-void Modal::add(std::unique_ptr<Modal> modal) {
-  stack_->add(std::move(modal));
-}
-
 void Modal::quit() {
   quit_ = true;
-}
-
-void ModalStack::add(std::unique_ptr<Modal> modal) {
-  modal->stack_ = this;
-  new_stack_.emplace_back(std::move(modal));
 }
 
 bool ModalStack::update(ii::ui::UiLayer& ui) {

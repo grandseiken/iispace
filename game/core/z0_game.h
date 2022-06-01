@@ -86,15 +86,15 @@ private:
   std::unique_ptr<ii::SimState> state_;
 };
 
-class z0Game {
+class z0Game : public Modal {
 public:
   static constexpr colour_t kPanelText = 0xeeeeeeff;
   static constexpr colour_t kPanelTran = 0xeeeeee99;
   static constexpr colour_t kPanelBack = 0x000000ff;
 
-  z0Game(std::optional<ii::ReplayReader> replay);
-  bool update(ii::ui::UiLayer& ui);
-  void render(const ii::ui::UiLayer& ui, ii::render::GlRenderer& r) const;
+  z0Game();
+  void update(ii::ui::UiLayer& ui) override;
+  void render(const ii::ui::UiLayer& ui, ii::render::GlRenderer& r) const override;
 
 private:
   ii::game_mode mode_unlocked(const ii::SaveGame&) const;
@@ -110,7 +110,6 @@ private:
   std::int32_t player_select_ = 1;
   ii::game_mode mode_select_ = ii::game_mode::kBoss;
   std::int32_t exit_timer_ = 0;
-  ModalStack modals_;
 };
 
 #endif

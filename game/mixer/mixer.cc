@@ -3,20 +3,33 @@
 #include <dr_wav.h>
 #include <samplerate.h>
 #include <algorithm>
+#include <atomic>
 #include <cmath>
 #include <cstring>
 #include <limits>
+#include <mutex>
+#include <unordered_map>
+#include <vector>
 
 namespace ii {
 namespace {
 constexpr float kPiFloat = 3.14159265358979323846264338327f;
 
+struct audio_clip {
+  std::uint32_t sample_rate_hz = 0;
+  std::vector<float> samples;
+};
+
+void src_free(SRC_STATE* state) {
+  src_delete(state);
+}
+
 void drwav_free(drwav* wav) {
   drwav_uninit(wav);
 }
 
-result<Mixer::audio_clip> drwav_read(drwav& wav) {
-  Mixer::audio_clip result;
+result<audio_clip> drwav_read(drwav& wav) {
+  audio_clip result;
   result.sample_rate_hz = wav.sampleRate;
   auto frames = wav.totalPCMFrameCount;
 
@@ -42,32 +55,13 @@ result<Mixer::audio_clip> drwav_read(drwav& wav) {
   return {std::move(result)};
 }
 
-result<Mixer::audio_clip> drwav_load_memory(nonstd::span<std::uint8_t> data) {
+result<audio_clip> drwav_load_memory(nonstd::span<std::uint8_t> data) {
   drwav wav;
   if (!drwav_init_memory(&wav, data.data(), data.size(), /* allocation */ nullptr)) {
     return unexpected("Couldn't read in-memory wav");
   }
   auto wav_handle = make_raw(&wav, &drwav_free);
   return drwav_read(wav);
-}
-
-result<std::vector<float>>
-resample_mono(const std::vector<float>& samples, double target_source_ratio) {
-  std::vector<float> output;
-  output.resize(static_cast<std::size_t>(std::ceil(1 + target_source_ratio * samples.size())));
-
-  SRC_DATA src_data = {0};
-  src_data.input_frames = static_cast<long>(samples.size());
-  src_data.output_frames = static_cast<long>(output.size());
-  src_data.data_in = samples.data();
-  src_data.data_out = output.data();
-  src_data.src_ratio = target_source_ratio;
-  auto error = src_simple(&src_data, SRC_SINC_FASTEST, /* channels */ 1);
-  if (error) {
-    return unexpected(src_strerror(error));
-  }
-  output.resize(static_cast<std::size_t>(src_data.output_frames_gen));
-  return {std::move(output)};
 }
 
 Mixer::audio_sample_t f2s16(float v) {
@@ -77,10 +71,40 @@ Mixer::audio_sample_t f2s16(float v) {
 
 }  // namespace
 
-Mixer::Mixer(std::uint32_t sample_rate_hz) : sample_rate_hz_{sample_rate_hz} {}
+struct Mixer::impl_t {
+  struct audio_resource {
+    std::optional<audio_clip> clip;
+  };
+  audio_handle_t next_handle = 0;
+  std::unordered_map<audio_handle_t, audio_resource> audio_resources;
+
+  struct sound {
+    nonstd::span<const float> samples;
+    raw_ptr<SRC_STATE> src_state;
+    SRC_DATA src_data;
+    float lvolume = 0.f;
+    float rvolume = 0.f;
+    std::size_t position = 0;
+  };
+
+  std::uint32_t sample_rate_hz = 0;
+  std::atomic<float> master_volume{1.f};
+  std::vector<sound> new_sounds;
+
+  std::mutex sound_mutex;
+  std::vector<sound> sounds;
+  std::vector<float> resample_buffer;
+  std::vector<float> mix_buffer;
+};
+
+Mixer::~Mixer() = default;
+
+Mixer::Mixer(std::uint32_t sample_rate_hz) : impl_{std::make_unique<impl_t>()} {
+  impl_->sample_rate_hz = sample_rate_hz;
+}
 
 void Mixer::set_master_volume(float volume) {
-  master_volume_ = std::clamp(volume, 0.f, 1.f);
+  impl_->master_volume = std::clamp(volume, 0.f, 1.f);
 }
 
 result<Mixer::audio_handle_t>
@@ -93,19 +117,15 @@ Mixer::load_wav_memory(nonstd::span<std::uint8_t> data, std::optional<audio_hand
   if (!clip) {
     return unexpected(clip.error());
   }
-  audio_resource r;
+  impl_t::audio_resource r;
   r.clip = std::move(*clip);
-  audio_resources_.emplace(*h, std::move(r));
+  impl_->audio_resources.emplace(*h, std::move(r));
   return *h;
 }
 
-void Mixer::release_handle(audio_handle_t) {
-  // TODO
-}
-
 void Mixer::play(audio_handle_t handle, float volume, float pan, float pitch) {
-  auto it = audio_resources_.find(handle);
-  if (it == audio_resources_.end() || !it->second.clip) {
+  auto it = impl_->audio_resources.find(handle);
+  if (it == impl_->audio_resources.end() || !it->second.clip) {
     return;
   }
   const auto& clip = *it->second.clip;
@@ -114,63 +134,88 @@ void Mixer::play(audio_handle_t handle, float volume, float pan, float pitch) {
   pan = std::clamp(kPiFloat / 4.f * (pan + 1.f), 0.f, kPiFloat / 2.f);
   pitch = std::clamp(pitch, 1.f / 64, 64.f);
 
-  auto ratio = static_cast<double>(sample_rate_hz_) / clip.sample_rate_hz;
-  ratio /= pitch;
-  // TODO: probably shouldn't resample all at once on the fly. Expensive?
-  auto resampled = resample_mono(clip.samples, ratio);
-  if (!resampled) {
-    return;
-  }
-
-  sound s;
+  int error = 0;
+  impl_t::sound s;
   s.lvolume = std::clamp(volume * std::cos(pan), 0.f, 1.f);
   s.rvolume = std::clamp(volume * std::sin(pan), 0.f, 1.f);
-  s.samples = std::move(*resampled);
-  new_sounds_.emplace_back(std::move(s));
+  s.samples = clip.samples;
+  s.src_data.src_ratio = static_cast<double>(impl_->sample_rate_hz) / clip.sample_rate_hz;
+  s.src_data.src_ratio /= pitch;
+  if (s.src_data.src_ratio == 1.f) {
+    impl_->new_sounds.emplace_back(std::move(s));
+  } else {
+    s.src_state = make_raw(src_new(SRC_LINEAR, /* channels */ 1, &error), &src_free);
+    if (s.src_state) {
+      impl_->new_sounds.emplace_back(std::move(s));
+    }
+  }
+  return;
 }
 
 void Mixer::commit() {
-  std::unique_lock lock{sound_mutex_};
-  sounds_.erase(std::remove_if(sounds_.begin(), sounds_.end(),
-                               [](const sound& s) { return s.position >= s.samples.size(); }),
-                sounds_.end());
-  for (auto& s : new_sounds_) {
-    sounds_.emplace_back(std::move(s));
+  std::unique_lock lock{impl_->sound_mutex};
+  impl_->sounds.erase(
+      std::remove_if(impl_->sounds.begin(), impl_->sounds.end(),
+                     [](const impl_t::sound& s) { return s.position >= s.samples.size(); }),
+      impl_->sounds.end());
+  for (auto& s : impl_->new_sounds) {
+    impl_->sounds.emplace_back(std::move(s));
   }
-  new_sounds_.clear();
+  impl_->new_sounds.clear();
 }
 
 void Mixer::audio_callback(std::uint8_t* out_buffer, std::size_t samples) {
-  mix_buffer_.resize(2 * samples);
-  std::fill(mix_buffer_.begin(), mix_buffer_.end(), 0.f);
-  auto master_volume = master_volume_.load();
+  impl_->resample_buffer.resize(samples);
+  impl_->mix_buffer.resize(2 * samples);
+  std::fill(impl_->mix_buffer.begin(), impl_->mix_buffer.end(), 0.f);
+  auto master_volume = impl_->master_volume.load();
   {
-    std::unique_lock lock{sound_mutex_};
-    for (auto& s : sounds_) {
-      auto sample_count = std::min(samples, s.samples.size() - s.position);
-      for (std::size_t i = 0; i < sample_count; ++i) {
-        mix_buffer_[2 * i] += s.lvolume * s.samples[s.position + i];
-        mix_buffer_[2 * i + 1] += s.rvolume * s.samples[s.position + i];
+    std::unique_lock lock{impl_->sound_mutex};
+    for (auto& s : impl_->sounds) {
+      if (!s.src_state) {
+        auto sample_count = std::min(samples, s.samples.size() - s.position);
+        for (std::size_t i = 0; i < sample_count; ++i) {
+          impl_->mix_buffer[2 * i] += s.lvolume * s.samples[s.position + i];
+          impl_->mix_buffer[2 * i + 1] += s.rvolume * s.samples[s.position + i];
+        }
+        s.position += sample_count;
+        continue;
       }
-      s.position += sample_count;
+
+      s.src_data.data_in = s.samples.data() + s.position;
+      s.src_data.input_frames = static_cast<long>(s.samples.size() - s.position);
+      s.src_data.data_out = impl_->resample_buffer.data();
+      s.src_data.output_frames = static_cast<long>(samples);
+      s.src_data.end_of_input = 1;
+      if (src_process(s.src_state.get(), &s.src_data)) {
+        s.position = s.samples.size();
+        continue;
+      }
+
+      auto sample_count = static_cast<std::size_t>(s.src_data.output_frames_gen);
+      for (std::size_t i = 0; i < sample_count; ++i) {
+        impl_->mix_buffer[2 * i] += s.lvolume * impl_->resample_buffer[i];
+        impl_->mix_buffer[2 * i + 1] += s.rvolume * impl_->resample_buffer[i];
+      }
+      s.position += s.src_data.input_frames_used;
     }
   }
-  for (auto& s : mix_buffer_) {
+  for (auto& s : impl_->mix_buffer) {
     s *= master_volume;
   }
   for (std::size_t i = 0; i < samples; ++i) {
-    auto v = std::max(std::abs(mix_buffer_[2 * i]), std::abs(mix_buffer_[2 * i + 1]));
+    auto v = std::max(std::abs(impl_->mix_buffer[2 * i]), std::abs(impl_->mix_buffer[2 * i + 1]));
     auto m = std::tanh(v) / v;
-    auto l = f2s16(m * mix_buffer_[2 * i]);
-    auto r = f2s16(m * mix_buffer_[2 * i + 1]);
+    auto l = f2s16(m * impl_->mix_buffer[2 * i]);
+    auto r = f2s16(m * impl_->mix_buffer[2 * i + 1]);
     std::memcpy(out_buffer + 2 * i * sizeof(audio_sample_t), &l, sizeof(audio_sample_t));
     std::memcpy(out_buffer + (2 * i + 1) * sizeof(audio_sample_t), &r, sizeof(audio_sample_t));
   }
 }
 
 result<Mixer::audio_handle_t> Mixer::assign_handle(std::optional<audio_handle_t> requested) {
-  auto handle = requested ? *requested : next_handle_++;
-  if (audio_resources_.find(handle) != audio_resources_.end()) {
+  auto handle = requested ? *requested : impl_->next_handle++;
+  if (impl_->audio_resources.find(handle) != impl_->audio_resources.end()) {
     return unexpected("Audio handle already in use");
   }
   return handle;
