@@ -7,8 +7,6 @@ xxd(
     "legacy_line.v.glsl",
     "legacy_rect.f.glsl",
     "legacy_rect.v.glsl",
-    "legacy_text.f.glsl",
-    "legacy_text.v.glsl",
     "rect.f.glsl",
     "rect.v.glsl",
     "text.f.glsl",
@@ -19,6 +17,5 @@ xxd(
 cc_library(
   name = "shaders",
   hdrs = [":shaders_xxd"],
-  deps = ["@span_lite"],
   visibility = ["//visibility:public"],
 )

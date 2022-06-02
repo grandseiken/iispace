@@ -104,6 +104,14 @@ http_archive(
   url = "https://github.com/libsndfile/libsamplerate/archive/refs/tags/0.2.2.zip",
 )
 
+http_archive(
+  name = "freetype2",
+  build_file = "@//deps:freetype2.BUILD",
+  sha256 = "e7e71af3a3df56dc711da410757d50aa495860ef1ca8656288726acd3f7fd41d",
+  strip_prefix = "freetype2-f9f6adb625c48ef15b5d61a3ac1709a068ea95a3",
+  url = "https://github.com/freetype/freetype2/archive/f9f6adb625c48ef15b5d61a3ac1709a068ea95a3.zip",
+)
+
 ################################################################################
 # Protobuf
 ################################################################################

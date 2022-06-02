@@ -52,7 +52,7 @@ bool run(const std::vector<std::string>& args) {
     return false;
   }
   io::StdFilesystem fs{"assets", "savedata", "savedata/replays"};
-  auto renderer_result = render::GlRenderer::create(fs);
+  auto renderer_result = render::GlRenderer::create();
   if (!renderer_result) {
     std::cerr << "Error initialising renderer: " << renderer_result.error() << std::endl;
     return false;

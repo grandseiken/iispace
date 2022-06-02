@@ -3,13 +3,15 @@ cc_library(
   hdrs = ["gl_renderer.h"],
   srcs = ["gl_renderer.cc"],
   deps = [
+    "//assets/fonts",
     "//game/common:types",
+    "//game/common:ustring",
     "//game/io/file:filesystem",
+    "//game/io/font",
     "//game/render/gl",
     "//game/render/shaders",
     "@gl3w",
     "@glm",
-    "@stb//:stb_image",
   ],
   visibility = ["//visibility:public"],
 )

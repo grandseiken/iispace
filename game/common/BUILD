@@ -23,3 +23,12 @@ cc_library(
   ],
   visibility = ["//visibility:public"],
 )
+
+cc_library(
+  name = "ustring",
+  hdrs = [
+      "ustring.h",
+      "ustring_convert.h",
+  ],
+  visibility = ["//visibility:public"],
+)
