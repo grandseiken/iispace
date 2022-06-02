@@ -1,5 +1,5 @@
-#ifndef IISPACE_GAME_CORE_MODAL_H
-#define IISPACE_GAME_CORE_MODAL_H
+#ifndef II_GAME_CORE_MODAL_H
+#define II_GAME_CORE_MODAL_H
 #include <memory>
 #include <vector>
 

@@ -1,5 +1,5 @@
-#ifndef IISPACE_GAME_RENDER_GL_TEXTURE_H
-#define IISPACE_GAME_RENDER_GL_TEXTURE_H
+#ifndef II_GAME_RENDER_GL_TEXTURE_H
+#define II_GAME_RENDER_GL_TEXTURE_H
 #include "game/render/gl/types.h"
 #include <GL/gl3w.h>
 #include <glm/glm.hpp>

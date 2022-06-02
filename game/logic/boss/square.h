@@ -1,10 +1,10 @@
-#ifndef IISPACE_GAME_LOGIC_BOSS_SQUARE_H
-#define IISPACE_GAME_LOGIC_BOSS_SQUARE_H
+#ifndef II_GAME_LOGIC_BOSS_SQUARE_H
+#define II_GAME_LOGIC_BOSS_SQUARE_H
 #include "game/logic/boss.h"
 
 class BigSquareBoss : public Boss {
 public:
-  BigSquareBoss(std::int32_t players, std::int32_t cycle);
+  BigSquareBoss(ii::SimInterface& sim, std::int32_t players, std::int32_t cycle);
 
   void update() override;
   void render() const override;

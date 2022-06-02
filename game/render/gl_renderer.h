@@ -1,5 +1,5 @@
-#ifndef IISPACE_GAME_RENDER_GL_RENDERER_H
-#define IISPACE_GAME_RENDER_GL_RENDERER_H
+#ifndef II_GAME_RENDER_GL_RENDERER_H
+#define II_GAME_RENDER_GL_RENDERER_H
 #include "game/common/result.h"
 #include "game/common/ustring.h"
 #include <glm/glm.hpp>

@@ -1,5 +1,5 @@
-#ifndef IISPACE_GAME_LOGIC_STARS_H
-#define IISPACE_GAME_LOGIC_STARS_H
+#ifndef II_GAME_LOGIC_STARS_H
+#define II_GAME_LOGIC_STARS_H
 #include "game/common/z.h"
 #include <memory>
 #include <vector>
@@ -10,13 +10,13 @@ class SimInterface;
 
 class Stars {
 public:
-  static void change();
-  static void update();
+  static void change(ii::SimInterface& sim);
+  static void update(ii::SimInterface& sim);
   static void render(const ii::SimInterface& sim);
   static void clear();
 
 private:
-  static void create_star();
+  static void create_star(ii::SimInterface& sim);
 
   enum class type {
     kDotStar,

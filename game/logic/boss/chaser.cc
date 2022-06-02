@@ -80,9 +80,11 @@ std::int32_t ChaserBoss::count_;
 bool ChaserBoss::has_counted_;
 std::int32_t ChaserBoss::shared_hp_;
 
-ChaserBoss::ChaserBoss(std::int32_t players, std::int32_t cycle, std::int32_t split,
-                       const vec2& position, std::int32_t time, std::int32_t stagger)
-: Boss{!split ? vec2{ii::kSimWidth / 2, -ii::kSimHeight / 2} : position,
+ChaserBoss::ChaserBoss(ii::SimInterface& sim, std::int32_t players, std::int32_t cycle,
+                       std::int32_t split, const vec2& position, std::int32_t time,
+                       std::int32_t stagger)
+: Boss{sim,
+       !split ? vec2{ii::kSimWidth / 2, -ii::kSimHeight / 2} : position,
        ii::SimInterface::kBoss1C,
        1 + kCbBaseHp / (fixed_c::half + HP_REDUCE_POWER_lookup[split]).to_int(),
        players,
@@ -125,8 +127,8 @@ void ChaserBoss::update() {
     timer_ = kTimer * (move_ + 1);
     std::int32_t count = remaining.size() - sim().players().size();
     if (split_ != 0 &&
-        (move_ || z::rand_int(8 + split_) == 0 || count <= 4 ||
-         !z::rand_int(ONE_PT_ONE_FIVE_intLookup[std::max(0, std::min(127, count))]))) {
+        (move_ || sim().random(8 + split_) == 0 || count <= 4 ||
+         !sim().random(ONE_PT_ONE_FIVE_intLookup[std::max(0, std::min(127, count))]))) {
       move_ = !move_;
     }
     if (move_) {
@@ -288,14 +290,13 @@ void ChaserBoss::on_destroy() {
     for (std::int32_t i = 0; i < 2; ++i) {
       vec2 d = vec2::from_polar(i * fixed_c::pi + shape().rotation(),
                                 8 * ONE_PT_TWO_lookup[kCbMaxSplit - 1 - split_]);
-      auto s = std::make_unique<ChaserBoss>(players_, cycle_, split_ + 1, shape().centre + d,
-                                            (i + 1) * kTimer / 2,
-                                            z::rand_int(split_ + 1 == 1       ? 2
-                                                            : split_ + 1 == 2 ? 4
-                                                            : split_ + 1 == 3 ? 8
-                                                                              : 16));
+      auto* s = spawn_new<ChaserBoss>(players_, cycle_, split_ + 1, shape().centre + d,
+                                      (i + 1) * kTimer / 2,
+                                      sim().random(split_ + 1 == 1       ? 2
+                                                       : split_ + 1 == 2 ? 4
+                                                       : split_ + 1 == 3 ? 8
+                                                                         : 16));
       s->shape().set_rotation(shape().rotation());
-      spawn(std::move(s));
     }
   } else {
     last = true;
@@ -308,9 +309,7 @@ void ChaserBoss::on_destroy() {
 
     if (last) {
       set_killed();
-      for (std::int32_t i = 0; i < kPlayers; ++i) {
-        sim().rumble(i, 25);
-      }
+      sim().rumble_all(25);
       for (const auto& ship : sim().players()) {
         Player* p = (Player*)ship;
         if (!p->is_killed()) {
@@ -319,8 +318,8 @@ void ChaserBoss::on_destroy() {
       }
       std::int32_t n = 1;
       for (std::int32_t i = 0; i < 16; ++i) {
-        vec2 v = vec2::from_polar(z::rand_fixed() * (2 * fixed_c::pi),
-                                  8 + z::rand_int(64) + z::rand_int(64));
+        vec2 v = vec2::from_polar(sim().random_fixed() * (2 * fixed_c::pi),
+                                  8 + sim().random(64) + sim().random(64));
         fireworks_.push_back(
             std::make_pair(n, std::make_pair(shape().centre + v, shapes()[0]->colour)));
         n += i;
@@ -328,10 +327,7 @@ void ChaserBoss::on_destroy() {
     }
   }
 
-  for (std::int32_t i = 0; i < kPlayers; ++i) {
-    sim().rumble(i, split_ < 3 ? 10 : 3);
-  }
-
+  sim().rumble_all(split_ < 3 ? 10 : 3);
   explosion();
   explosion(0xffffffff, 12);
   if (split_ < 3 || last) {

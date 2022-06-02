@@ -1,5 +1,5 @@
-#ifndef IISPACE_GAME_LOGIC_SIM_SIM_STATE_H
-#define IISPACE_GAME_LOGIC_SIM_SIM_STATE_H
+#ifndef II_GAME_LOGIC_SIM_SIM_STATE_H
+#define II_GAME_LOGIC_SIM_SIM_STATE_H
 #include "game/common/z.h"
 #include "game/logic/sim/sim_io.h"
 #include "game/mixer/sound.h"

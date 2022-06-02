@@ -1,7 +1,8 @@
-#ifndef IISPACE_GAME_LOGIC_SIM_SIM_INTERNALS_H
-#define IISPACE_GAME_LOGIC_SIM_SIM_INTERNALS_H
+#ifndef II_GAME_LOGIC_SIM_SIM_INTERNALS_H
+#define II_GAME_LOGIC_SIM_SIM_INTERNALS_H
 #include "game/common/z.h"
 #include "game/logic/ship.h"
+#include "game/logic/sim/random_engine.h"
 #include "game/logic/sim/sim_interface.h"
 #include "game/logic/sim/sim_io.h"
 #include <cstdint>
@@ -15,8 +16,10 @@ class Overmind;
 namespace ii {
 
 struct SimInternals {
+  SimInternals(std::int32_t seed) : random_engine{seed} {}
   // Input.
   std::vector<input_frame> input_frames;
+  RandomEngine random_engine;
 
   // Internal sim data.
   game_mode mode = game_mode::kNormal;

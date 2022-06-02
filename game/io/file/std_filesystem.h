@@ -1,5 +1,5 @@
-#ifndef IISPACE_GAME_IO_FILE_STD_FILESYSTEM_H
-#define IISPACE_GAME_IO_FILE_STD_FILESYSTEM_H
+#ifndef II_GAME_IO_FILE_STD_FILESYSTEM_H
+#define II_GAME_IO_FILE_STD_FILESYSTEM_H
 #include "game/io/file/filesystem.h"
 #include <string>
 

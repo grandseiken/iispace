@@ -1,12 +1,12 @@
-#ifndef IISPACE_GAME_LOGIC_PLAYER_H
-#define IISPACE_GAME_LOGIC_PLAYER_H
+#ifndef II_GAME_LOGIC_PLAYER_H
+#define II_GAME_LOGIC_PLAYER_H
 #include "game/logic/ship.h"
 
 class Player : public Ship {
 public:
   static constexpr std::int32_t kBombDamage = 50;
 
-  Player(const vec2& position, std::int32_t player_number);
+  Player(ii::SimInterface& sim, const vec2& position, std::int32_t player_number);
   ~Player() override;
 
   std::int32_t player_number() const {
@@ -69,7 +69,8 @@ private:
 
 class Shot : public Ship {
 public:
-  Shot(const vec2& position, Player* player, const vec2& direction, bool magic = false);
+  Shot(ii::SimInterface& sim, const vec2& position, Player* player, const vec2& direction,
+       bool magic = false);
   ~Shot() override {}
 
   void update() override;
@@ -91,7 +92,7 @@ public:
     kBomb,
   };
 
-  Powerup(const vec2& position, type t);
+  Powerup(ii::SimInterface& sim, const vec2& position, type t);
   void update() override;
   void damage(std::int32_t damage, bool magic, Player* source) override;
 

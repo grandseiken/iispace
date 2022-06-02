@@ -1,12 +1,13 @@
-#ifndef IISPACE_GAME_LOGIC_BOSS_CHASER_H
-#define IISPACE_GAME_LOGIC_BOSS_CHASER_H
+#ifndef II_GAME_LOGIC_BOSS_CHASER_H
+#define II_GAME_LOGIC_BOSS_CHASER_H
 #include "game/logic/boss.h"
 
 class ChaserBoss : public Boss {
 public:
   static constexpr std::int32_t kTimer = 60;
-  ChaserBoss(std::int32_t players, std::int32_t cycle, std::int32_t split = 0,
-             const vec2& position = {}, std::int32_t time = kTimer, std::int32_t stagger = 0);
+  ChaserBoss(ii::SimInterface& sim, std::int32_t players, std::int32_t cycle,
+             std::int32_t split = 0, const vec2& position = {}, std::int32_t time = kTimer,
+             std::int32_t stagger = 0);
 
   void update() override;
   void render() const override;

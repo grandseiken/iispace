@@ -1,5 +1,5 @@
-#ifndef IISPACE_GAME_CORE_UI_LAYER_H
-#define IISPACE_GAME_CORE_UI_LAYER_H
+#ifndef II_GAME_CORE_UI_LAYER_H
+#define II_GAME_CORE_UI_LAYER_H
 #include "game/data/replay.h"
 #include "game/data/save.h"
 #include "game/mixer/sound.h"

@@ -1,5 +1,6 @@
 #include "game/data/replay.h"
-#include "game/data/replay.pb.h"
+#include "game/data/crypt.h"
+#include "game/data/proto/replay.pb.h"
 #include <array>
 
 namespace ii {
@@ -18,7 +19,7 @@ ReplayReader::ReplayReader(ReplayReader&&) = default;
 ReplayReader& ReplayReader::operator=(ReplayReader&&) = default;
 
 result<ReplayReader> ReplayReader::create(nonstd::span<const std::uint8_t> bytes) {
-  auto decompressed = z::decompress(z::crypt(bytes, ii::kReplayEncryptionKey));
+  auto decompressed = decompress(crypt(bytes, ii::kReplayEncryptionKey));
   if (!decompressed) {
     return unexpected("Couldn't decompress replay: " + decompressed.error());
   }
@@ -112,11 +113,11 @@ result<std::vector<std::uint8_t>> ReplayWriter::write() const {
   if (!impl_->replay.SerializeToArray(data.data(), static_cast<int>(data.size()))) {
     return unexpected("Couldn't serialize replay");
   }
-  auto compressed = z::compress(data);
+  auto compressed = compress(data);
   if (!compressed) {
     return unexpected("Couldn't compress replay: " + compressed.error());
   }
-  data = z::crypt(*compressed, ii::kReplayEncryptionKey);
+  data = crypt(*compressed, ii::kReplayEncryptionKey);
   return {std::move(data)};
 }
 

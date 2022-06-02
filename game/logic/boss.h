@@ -1,11 +1,12 @@
-#ifndef IISPACE_GAME_LOGIC_BOSS_H
-#define IISPACE_GAME_LOGIC_BOSS_H
+#ifndef II_GAME_LOGIC_BOSS_H
+#define II_GAME_LOGIC_BOSS_H
 #include "game/logic/ship.h"
 
 class Boss : public Ship {
 public:
-  Boss(const vec2& position, ii::SimInterface::boss_list boss, std::int32_t hp,
-       std::int32_t players, std::int32_t cycle = 0, bool explode_on_damage = true);
+  Boss(ii::SimInterface& sim, const vec2& position, ii::SimInterface::boss_list boss,
+       std::int32_t hp, std::int32_t players, std::int32_t cycle = 0,
+       bool explode_on_damage = true);
 
   void set_killed() {
     sim().set_boss_killed(flag_);

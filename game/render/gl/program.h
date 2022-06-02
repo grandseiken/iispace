@@ -1,5 +1,5 @@
-#ifndef IISPACE_GAME_RENDER_GL_PROGRAM_H
-#define IISPACE_GAME_RENDER_GL_PROGRAM_H
+#ifndef II_GAME_RENDER_GL_PROGRAM_H
+#define II_GAME_RENDER_GL_PROGRAM_H
 #include "game/common/result.h"
 #include "game/render/gl/types.h"
 #include <GL/gl3w.h>

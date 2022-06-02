@@ -1,5 +1,5 @@
-#ifndef IISPACE_GAME_IO_SDL_IO_H
-#define IISPACE_GAME_IO_SDL_IO_H
+#ifndef II_GAME_IO_SDL_IO_H
+#define II_GAME_IO_SDL_IO_H
 #include "game/common/result.h"
 #include "game/io/io.h"
 #include <memory>

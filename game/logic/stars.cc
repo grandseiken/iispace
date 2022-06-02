@@ -9,7 +9,7 @@ fvec2 Stars::direction_ = {0, 1};
 std::int32_t Stars::star_rate_ = 0;
 std::vector<std::unique_ptr<Stars::data>> Stars::stars_;
 
-void Stars::update() {
+void Stars::update(ii::SimInterface& sim) {
   for (auto it = stars_.begin(); it != stars_.end();) {
     (*it)->position += direction_ * (*it)->speed;
     (*it)->timer--;
@@ -20,18 +20,18 @@ void Stars::update() {
     ++it;
   }
 
-  std::int32_t r = star_rate_ > 1 ? z::rand_int(star_rate_) : 0;
+  std::int32_t r = star_rate_ > 1 ? sim.random(star_rate_) : 0;
   for (std::int32_t i = 0; i < r; ++i) {
-    create_star();
+    create_star(sim);
   }
 }
 
-void Stars::change() {
-  direction_ = direction_.rotated((z::rand_fixed().to_float() - 0.5f) * kPiFloat);
+void Stars::change(ii::SimInterface& sim) {
+  direction_ = direction_.rotated((sim.random_fixed().to_float() - 0.5f) * kPiFloat);
   for (const auto& star : stars_) {
     star->timer = kTimer;
   }
-  star_rate_ = z::rand_int(3) + 2;
+  star_rate_ = sim.random(3) + 2;
 }
 
 void Stars::render(const ii::SimInterface& sim) {
@@ -57,9 +57,9 @@ void Stars::render(const ii::SimInterface& sim) {
     }
   }
 }
-void Stars::create_star() {
-  std::int32_t r = z::rand_int(12);
-  if (r <= 0 && z::rand_int(4) != 0) {
+void Stars::create_star(ii::SimInterface& sim) {
+  std::int32_t r = sim.random(12);
+  if (r <= 0 && sim.random(4) != 0) {
     return;
   }
 
@@ -74,18 +74,18 @@ void Stars::create_star() {
   star->type = t;
   star->speed = speed;
 
-  std::int32_t edge = z::rand_int(4);
-  float ratio = z::rand_fixed().to_float();
+  std::int32_t edge = sim.random(4);
+  float ratio = sim.random_fixed().to_float();
 
   star->position.x = edge < 2 ? ratio * ii::kSimWidth : edge == 2 ? -16 : 16 + ii::kSimWidth;
   star->position.y = edge >= 2 ? ratio * ii::kSimHeight : edge == 0 ? -16 : 16 + ii::kSimHeight;
 
-  star->colour = t == type::kDotStar ? (z::rand_int(2) ? 0x222222ff : 0x333333ff)
-      : t == type::kFarStar          ? (z::rand_int(2) ? 0x222222ff : 0x111111ff)
-      : t == type::kBigStar          ? (z::rand_int(2) ? 0x111111ff : 0x222222ff)
+  star->colour = t == type::kDotStar ? (sim.random(2) ? 0x222222ff : 0x333333ff)
+      : t == type::kFarStar          ? (sim.random(2) ? 0x222222ff : 0x111111ff)
+      : t == type::kBigStar          ? (sim.random(2) ? 0x111111ff : 0x222222ff)
                                      : 0x111111ff;
   if (t == type::kPlanet) {
-    star->size = 4.f + z::rand_int(4);
+    star->size = 4.f + sim.random(4);
   }
   stars_.emplace_back(std::move(star));
 }

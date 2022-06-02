@@ -1,5 +1,5 @@
-#ifndef IISPACE_GAME_LOGIC_SHAPE_H
-#define IISPACE_GAME_LOGIC_SHAPE_H
+#ifndef II_GAME_LOGIC_SHAPE_H
+#define II_GAME_LOGIC_SHAPE_H
 #include "game/common/z.h"
 #include <memory>
 #include <vector>
@@ -125,11 +125,11 @@ public:
   const shape_list& shapes() const;
 
   template <typename T, typename... Args>
-  void add_new_shape(Args&&... args) {
-    add_shape(std::make_unique<T>(std::forward<Args>(args)...));
+  T* add_new_shape(Args&&... args) {
+    return static_cast<T*>(add_shape(std::make_unique<T>(std::forward<Args>(args)...)));
   }
 
-  void add_shape(std::unique_ptr<Shape> shape);
+  Shape* add_shape(std::unique_ptr<Shape> shape);
   void destroy_shape(std::size_t index);
   void clear_shapes();
 

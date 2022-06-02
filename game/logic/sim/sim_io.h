@@ -1,11 +1,13 @@
-#ifndef IISPACE_GAME_LOGIC_SIM_SIM_IO_H
-#define IISPACE_GAME_LOGIC_SIM_SIM_IO_H
+#ifndef II_GAME_LOGIC_SIM_SIM_IO_H
+#define II_GAME_LOGIC_SIM_SIM_IO_H
 #include "game/common/z.h"
 #include <cstdint>
 #include <optional>
 #include <vector>
 
 namespace ii {
+
+static constexpr std::int32_t kMaxPlayers = 4;
 
 enum class game_mode {
   kNormal,

@@ -1,5 +1,5 @@
-#ifndef IISPACE_GAME_MIXER_MIXER_H
-#define IISPACE_GAME_MIXER_MIXER_H
+#ifndef II_GAME_MIXER_MIXER_H
+#define II_GAME_MIXER_MIXER_H
 #include "game/common/result.h"
 #include <nonstd/span.hpp>
 #include <cstddef>

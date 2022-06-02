@@ -1,5 +1,5 @@
-#ifndef IISPACE_GAME_COMMON_RESULT_H
-#define IISPACE_GAME_COMMON_RESULT_H
+#ifndef II_GAME_COMMON_RESULT_H
+#define II_GAME_COMMON_RESULT_H
 #include <tl/expected.hpp>
 #include <string>
 

@@ -19,8 +19,8 @@ const std::int32_t kPowerupRotateTime = 100;
 ii::SimInterface::ship_list Player::kill_queue_;
 std::int32_t Player::fire_timer_;
 
-Player::Player(const vec2& position, std::int32_t player_number)
-: Ship{position, kShipPlayer}
+Player::Player(ii::SimInterface& sim, const vec2& position, std::int32_t player_number)
+: Ship{sim, position, kShipPlayer}
 , player_number_{player_number}
 , revive_timer_{kReviveTime}
 , fire_target_{get_screen_centre()} {
@@ -84,7 +84,7 @@ void Player::update() {
     vec2 t = shape().centre;
     for (std::int32_t i = 0; i < 64; ++i) {
       shape().centre = t + vec2::from_polar(2 * i * fixed_c::pi / 64, kBombRadius);
-      explosion((i % 2) ? colour() : 0xffffffff, 8 + z::rand_int(8) + z::rand_int(8), true,
+      explosion((i % 2) ? colour() : 0xffffffff, 8 + sim().random(8) + sim().random(8), true,
                 to_float(t));
     }
     shape().centre = t;
@@ -112,8 +112,8 @@ void Player::update() {
       --magic_shot_timer_;
     }
 
-    float volume = .5f * z::rand_fixed().to_float() + .5f;
-    float pitch = (z::rand_fixed().to_float() - 1.f) / 12.f;
+    float volume = .5f * sim().random_fixed().to_float() + .5f;
+    float pitch = (sim().random_fixed().to_float() - 1.f) / 12.f;
     float pan = 2.f * shape().centre.x.to_float() / ii::kSimWidth - 1.f;
     sim().play_sound(ii::sound::kPlayerFire, volume, pan, pitch);
   }
@@ -232,8 +232,9 @@ void Player::update_fire_timer() {
   fire_timer_ = (fire_timer_ + 1) % kShotTimer;
 }
 
-Shot::Shot(const vec2& position, Player* player, const vec2& direction, bool magic)
-: Ship{position, kShipNone}, player_{player}, velocity_{direction}, magic_{magic} {
+Shot::Shot(ii::SimInterface& sim, const vec2& position, Player* player, const vec2& direction,
+           bool magic)
+: Ship{sim, position, kShipNone}, player_{player}, velocity_{direction}, magic_{magic} {
   velocity_ = velocity_.normalised() * kShotSpeed;
   add_new_shape<Fill>(vec2{}, 2, 2, player_->colour());
   add_new_shape<Fill>(vec2{}, 1, 1, player_->colour() & 0xffffff33);
@@ -252,7 +253,7 @@ void Shot::render() const {
 }
 
 void Shot::update() {
-  flash_ = magic_ ? z::rand_int(2) != 0 : false;
+  flash_ = magic_ ? sim().random(2) != 0 : false;
   move(velocity_);
   bool on_screen = shape().centre >= vec2{-4, -4} &&
       shape().centre < vec2{4 + ii::kSimWidth, 4 + ii::kSimHeight};
@@ -274,8 +275,8 @@ void Shot::update() {
   }
 }
 
-Powerup::Powerup(const vec2& position, type t)
-: Ship{position, kShipPowerup}, type_{t}, dir_{0, 1} {
+Powerup::Powerup(ii::SimInterface& sim, const vec2& position, type t)
+: Ship{sim, position, kShipPowerup}, type_{t}, dir_{0, 1} {
   add_new_shape<Polygon>(vec2{}, 13, 5, 0, fixed_c::pi / 2, 0);
   add_new_shape<Polygon>(vec2{}, 9, 5, 0, fixed_c::pi / 2, 0);
 
@@ -300,18 +301,18 @@ Powerup::Powerup(const vec2& position, type t)
 
 void Powerup::update() {
   shapes()[0]->colour = ii::SimInterface::player_colour(frame_ / 2);
-  frame_ = (frame_ + 1) % (kPlayers * 2);
+  frame_ = (frame_ + 1) % (ii::kMaxPlayers * 2);
   shapes()[1]->colour = ii::SimInterface::player_colour(frame_ / 2);
 
   if (!is_on_screen()) {
     dir_ = get_screen_centre() - shape().centre;
   } else {
     if (first_frame_) {
-      dir_ = vec2::from_polar(z::rand_fixed() * 2 * fixed_c::pi, 1);
+      dir_ = vec2::from_polar(sim().random_fixed() * 2 * fixed_c::pi, 1);
     }
 
     dir_ = dir_.rotated(2 * fixed_c::hundredth * (rotate_ ? 1 : -1));
-    rotate_ = z::rand_int(kPowerupRotateTime) ? rotate_ : !rotate_;
+    rotate_ = sim().random(kPowerupRotateTime) ? rotate_ : !rotate_;
   }
   first_frame_ = false;
 
@@ -351,10 +352,10 @@ void Powerup::damage(std::int32_t damage, bool magic, Player* source) {
     sim().rumble(source->player_number(), 6);
   }
 
-  std::int32_t r = 5 + z::rand_int(5);
+  std::int32_t r = 5 + sim().random(5);
   for (std::int32_t i = 0; i < r; ++i) {
-    vec2 dir = vec2::from_polar(z::rand_fixed() * 2 * fixed_c::pi, 6);
-    spawn(ii::particle{to_float(shape().centre), 0xffffffff, to_float(dir), 4 + z::rand_int(8)});
+    vec2 dir = vec2::from_polar(sim().random_fixed() * 2 * fixed_c::pi, 6);
+    spawn(ii::particle{to_float(shape().centre), 0xffffffff, to_float(dir), 4 + sim().random(8)});
   }
   destroy();
 }

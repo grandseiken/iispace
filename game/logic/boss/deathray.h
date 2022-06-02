@@ -1,11 +1,11 @@
-#ifndef IISPACE_GAME_LOGIC_BOSS_DEATHRAY_H
-#define IISPACE_GAME_LOGIC_BOSS_DEATHRAY_H
+#ifndef II_GAME_LOGIC_BOSS_DEATHRAY_H
+#define II_GAME_LOGIC_BOSS_DEATHRAY_H
 #include "game/logic/boss.h"
 #include "game/logic/enemy.h"
 
 class DeathRayBoss : public Boss {
 public:
-  DeathRayBoss(std::int32_t players, std::int32_t cycle);
+  DeathRayBoss(ii::SimInterface& sim, std::int32_t players, std::int32_t cycle);
 
   void update() override;
   void render() const override;
@@ -32,13 +32,13 @@ private:
 
 class DeathRay : public Enemy {
 public:
-  DeathRay(const vec2& position);
+  DeathRay(ii::SimInterface& sim, const vec2& position);
   void update() override;
 };
 
 class DeathArm : public Enemy {
 public:
-  DeathArm(DeathRayBoss* boss, bool top, std::int32_t hp);
+  DeathArm(ii::SimInterface& sim, DeathRayBoss* boss, bool top, std::int32_t hp);
   void update() override;
   void on_destroy(bool bomb) override;
 

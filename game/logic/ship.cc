@@ -1,6 +1,7 @@
 #include "game/logic/ship.h"
 
-Ship::Ship(const vec2& position, ship_category type) : type_{type}, shape_{position, 0} {}
+Ship::Ship(ii::SimInterface& sim, const vec2& position, ship_category type)
+: sim_{&sim}, type_{type}, shape_{position, 0} {}
 
 Ship::~Ship() {}
 
@@ -46,8 +47,8 @@ void Ship::destroy() {
   }
 }
 
-void Ship::spawn(std::unique_ptr<Ship> ship) const {
-  sim_->add_ship(std::move(ship));
+Ship* Ship::spawn(std::unique_ptr<Ship> ship) const {
+  return sim_->add_ship(std::move(ship));
 }
 
 void Ship::spawn(const ii::particle& particle) const {
@@ -56,20 +57,20 @@ void Ship::spawn(const ii::particle& particle) const {
 
 void Ship::explosion(colour_t c, std::int32_t time, bool towards, const fvec2& v) const {
   for (const auto& shape : shape_.shapes()) {
-    std::int32_t n = towards ? z::rand_int(2) + 1 : z::rand_int(8) + 8;
+    std::int32_t n = towards ? sim().random(2) + 1 : sim().random(8) + 8;
     for (std::int32_t j = 0; j < n; ++j) {
       fvec2 pos =
           shape->convert_fl_point(to_float(shape_.centre), shape_.rotation().to_float(), {});
 
-      fvec2 dir = fvec2::from_polar(z::rand_fixed().to_float() * 2 * kPiFloat, 6.f);
+      fvec2 dir = fvec2::from_polar(sim().random_fixed().to_float() * 2 * kPiFloat, 6.f);
 
       if (towards && v - pos != fvec2{}) {
         dir = (v - pos).normalised();
-        float angle = dir.angle() + (z::rand_fixed().to_float() - 0.5f) * kPiFloat / 4;
+        float angle = dir.angle() + (sim().random_fixed().to_float() - 0.5f) * kPiFloat / 4;
         dir = fvec2::from_polar(angle, 6.f);
       }
 
-      spawn(ii::particle{pos, c ? c : shape->colour, dir, time + z::rand_int(8)});
+      spawn(ii::particle{pos, c ? c : shape->colour, dir, time + sim().random(8)});
     }
   }
 }
@@ -78,8 +79,8 @@ const CompoundShape::shape_list& Ship::shapes() const {
   return shape_.shapes();
 }
 
-void Ship::add_shape(std::unique_ptr<Shape> shape) {
-  shape_.add_shape(std::move(shape));
+Shape* Ship::add_shape(std::unique_ptr<Shape> shape) {
+  return shape_.add_shape(std::move(shape));
 }
 
 void Ship::destroy_shape(std::size_t index) {

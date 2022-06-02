@@ -1,5 +1,5 @@
-#ifndef IISPACE_GAME_COMMON_RAW_PTR_H
-#define IISPACE_GAME_COMMON_RAW_PTR_H
+#ifndef II_GAME_COMMON_RAW_PTR_H
+#define II_GAME_COMMON_RAW_PTR_H
 #include <memory>
 
 namespace ii {

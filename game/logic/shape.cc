@@ -183,8 +183,10 @@ const CompoundShape::shape_list& CompoundShape::shapes() const {
   return children_;
 }
 
-void CompoundShape::add_shape(std::unique_ptr<Shape> shape) {
+Shape* CompoundShape::add_shape(std::unique_ptr<Shape> shape) {
+  auto p = shape.get();
   children_.emplace_back(std::move(shape));
+  return p;
 }
 
 void CompoundShape::destroy_shape(std::size_t index) {

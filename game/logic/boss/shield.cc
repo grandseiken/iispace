@@ -10,8 +10,9 @@ const std::int32_t kSbbAttackTime = 80;
 const fixed kSbbSpeed = 1;
 }  // namespace
 
-ShieldBombBoss::ShieldBombBoss(std::int32_t players, std::int32_t cycle)
-: Boss{{-ii::kSimWidth / 2, ii::kSimHeight / 2},
+ShieldBombBoss::ShieldBombBoss(ii::SimInterface& sim, std::int32_t players, std::int32_t cycle)
+: Boss{sim,
+       {-ii::kSimWidth / 2, ii::kSimHeight / 2},
        ii::SimInterface::kBoss1B,
        kSbbBaseHp,
        players,
@@ -91,7 +92,7 @@ void ShieldBombBoss::update() {
     ++count_;
     timer_ = 0;
 
-    if (count_ >= 4 && (!z::rand_int(4) || count_ >= 8)) {
+    if (count_ >= 4 && (!sim().random(4) || count_ >= 8)) {
       count_ = 0;
       if (!unshielded_) {
         if (sim().all_ships(kShipPowerup).size() < 5) {
@@ -100,11 +101,11 @@ void ShieldBombBoss::update() {
       }
     }
 
-    if (!z::rand_int(3)) {
+    if (!sim().random(3)) {
       side_ = !side_;
     }
 
-    if (z::rand_int(2)) {
+    if (sim().random(2)) {
       vec2 d = vec2{5, 0}.rotated(shape().rotation());
       for (std::int32_t i = 0; i < 12; ++i) {
         spawn_new<BossShot>(shape().centre, d);
@@ -113,7 +114,7 @@ void ShieldBombBoss::update() {
       play_sound(ii::sound::kBossAttack);
     } else {
       attack_ = kSbbAttackTime;
-      attack_dir_ = vec2::from_polar(z::rand_fixed() * (2 * fixed_c::pi), 5);
+      attack_dir_ = vec2::from_polar(sim().random_fixed() * (2 * fixed_c::pi), 5);
     }
   }
 }

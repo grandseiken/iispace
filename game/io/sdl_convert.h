@@ -1,5 +1,5 @@
-#ifndef IISPACE_GAME_IO_SDL_CONVERT_H
-#define IISPACE_GAME_IO_SDL_CONVERT_H
+#ifndef II_GAME_IO_SDL_CONVERT_H
+#define II_GAME_IO_SDL_CONVERT_H
 #include "game/io/input.h"
 #include <SDL_gamecontroller.h>
 #include <SDL_keyboard.h>

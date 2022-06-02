@@ -1,5 +1,5 @@
-#ifndef IISPACE_GAME_LOGIC_SIM_SIM_INTERFACE_H
-#define IISPACE_GAME_LOGIC_SIM_SIM_INTERFACE_H
+#ifndef II_GAME_LOGIC_SIM_SIM_INTERFACE_H
+#define II_GAME_LOGIC_SIM_SIM_INTERFACE_H
 #include "game/common/z.h"
 #include "game/logic/sim/sim_io.h"
 #include "game/mixer/sound.h"
@@ -49,6 +49,8 @@ public:
 
   // State manipulation.
   game_mode mode() const;
+  std::int32_t random(std::int32_t max);
+  fixed random_fixed();
 
   // TODO: const/non-const versions of retrieval functions.
   ship_list all_ships(std::int32_t ship_mask = 0) const;
@@ -67,15 +69,16 @@ public:
   std::int32_t get_lives() const;
   void set_boss_killed(boss_list boss);
 
-  void add_ship(std::unique_ptr<Ship> ship);
+  Ship* add_ship(std::unique_ptr<Ship> ship);
   void add_particle(const particle& particle);
 
   template <typename T, typename... Args>
-  void add_new_ship(Args&&... args) {
-    add_ship(std::make_unique<T>(std::forward<Args>(args)...));
+  T* add_new_ship(Args&&... args) {
+    return static_cast<T*>(add_ship(std::make_unique<T>(*this, std::forward<Args>(args)...)));
   }
 
   // Simulation output.
+  void rumble_all(std::int32_t time) const;
   void rumble(std::int32_t player, std::int32_t time) const;
   void play_sound(sound, float volume = 1.f, float pan = 0.f, float repitch = 0.f) const;
   void render_hp_bar(float fill) const;

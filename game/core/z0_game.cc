@@ -182,7 +182,7 @@ HighScoreModal::HighScoreModal(bool is_replay, GameModal& game, const ii::sim_re
 , game_{game}
 , results_{results}
 , replay_writer_{replay_writer}
-, compliment_{z::rand_int(kCompliments.size())} {}
+, compliment_{results.seed % static_cast<std::int32_t>(kCompliments.size())} {}
 
 void HighScoreModal::update(ii::ui::UiLayer& ui) {
   if (!is_replay_) {
@@ -581,10 +581,10 @@ void z0Game::update(ii::ui::UiLayer& ui) {
       player_select_ = std::max(1, player_select_ - 1);
     }
     if (ui.input().pressed(ii::ui::key::kRight)) {
-      player_select_ = std::min(kPlayers, player_select_ + 1);
+      player_select_ = std::min(ii::kMaxPlayers, player_select_ + 1);
     }
     if (ui.input().pressed(ii::ui::key::kAccept) || ui.input().pressed(ii::ui::key::kMenu)) {
-      player_select_ = 1 + player_select_ % kPlayers;
+      player_select_ = 1 + player_select_ % ii::kMaxPlayers;
     }
     if (t != player_select_) {
       ui.play_sound(ii::sound::kMenuClick);
@@ -724,7 +724,7 @@ void z0Game::render(const ii::ui::UiLayer& ui, ii::render::GlRenderer& r) const 
     render_text(r, {4.f, 22.f}, "THREE PLAYERS", kPanelText);
     render_text(r, {4.f, 24.f}, "FOUR PLAYERS", kPanelText);
 
-    for (std::size_t i = 0; i < kPlayers; ++i) {
+    for (std::size_t i = 0; i < ii::kMaxPlayers; ++i) {
       auto& s = ui.save_game().high_scores.get(ii::game_mode::kBoss, i, 0);
       std::string score = convert_to_time(s.score).substr(0, ii::HighScores::kMaxNameLength);
       std::string name = s.name.substr(0, ii::HighScores::kMaxNameLength);

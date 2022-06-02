@@ -1,5 +1,5 @@
-#ifndef IISPACE_GAME_RENDER_GL_DATA_H
-#define IISPACE_GAME_RENDER_GL_DATA_H
+#ifndef II_GAME_RENDER_GL_DATA_H
+#define II_GAME_RENDER_GL_DATA_H
 #include "game/render/gl/types.h"
 #include <GL/gl3w.h>
 #include <nonstd/span.hpp>

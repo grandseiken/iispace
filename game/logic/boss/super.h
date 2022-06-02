@@ -1,12 +1,12 @@
-#ifndef IISPACE_GAME_LOGIC_BOSS_SUPER_H
-#define IISPACE_GAME_LOGIC_BOSS_SUPER_H
+#ifndef II_GAME_LOGIC_BOSS_SUPER_H
+#define II_GAME_LOGIC_BOSS_SUPER_H
 #include "game/logic/boss.h"
 #include "game/logic/enemy.h"
 
 class SuperBossArc : public Boss {
 public:
-  SuperBossArc(const vec2& position, std::int32_t players, std::int32_t cycle, std::int32_t i,
-               Ship* boss, std::int32_t timer = 0);
+  SuperBossArc(ii::SimInterface& sim, const vec2& position, std::int32_t players,
+               std::int32_t cycle, std::int32_t i, Ship* boss, std::int32_t timer = 0);
 
   void update() override;
   std::int32_t get_damage(std::int32_t damage, bool magic) override;
@@ -28,7 +28,7 @@ class SuperBoss : public Boss {
 public:
   enum class state { kArrive, kIdle, kAttack };
 
-  SuperBoss(std::int32_t players, std::int32_t cycle);
+  SuperBoss(ii::SimInterface& sim, std::int32_t players, std::int32_t cycle);
 
   void update() override;
   std::int32_t get_damage(std::int32_t damage, bool magic) override;
@@ -52,7 +52,7 @@ class SnakeTail : public Enemy {
   friend class Snake;
 
 public:
-  SnakeTail(const vec2& position, colour_t colour);
+  SnakeTail(ii::SimInterface& sim, const vec2& position, colour_t colour);
   void update() override;
   void on_destroy(bool bomb) override;
 
@@ -65,7 +65,8 @@ private:
 
 class Snake : public Enemy {
 public:
-  Snake(const vec2& position, colour_t colour, const vec2& dir = vec2{}, fixed rot = 0);
+  Snake(ii::SimInterface& sim, const vec2& position, colour_t colour, const vec2& dir = vec2{},
+        fixed rot = 0);
   void update() override;
   void on_destroy(bool bomb) override;
 
@@ -81,7 +82,7 @@ private:
 
 class RainbowShot : public BossShot {
 public:
-  RainbowShot(const vec2& position, const vec2& velocity, Ship* boss);
+  RainbowShot(ii::SimInterface& sim, const vec2& position, const vec2& velocity, Ship* boss);
   void update() override;
 
 private:

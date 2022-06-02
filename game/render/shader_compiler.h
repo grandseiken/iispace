@@ -1,5 +1,5 @@
-#ifndef IISPACE_GAME_RENDER_SHADER_COMPILER_H
-#define IISPACE_GAME_RENDER_SHADER_COMPILER_H
+#ifndef II_GAME_RENDER_SHADER_COMPILER_H
+#define II_GAME_RENDER_SHADER_COMPILER_H
 #include "game/common/result.h"
 #include "game/render/gl/program.h"
 #include <string>

@@ -1,5 +1,5 @@
-#ifndef IISPACE_GAME_MIXER_SOUND_H
-#define IISPACE_GAME_MIXER_SOUND_H
+#ifndef II_GAME_MIXER_SOUND_H
+#define II_GAME_MIXER_SOUND_H
 
 namespace ii {
 

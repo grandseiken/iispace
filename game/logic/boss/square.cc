@@ -12,8 +12,9 @@ const fixed kBsbSpeed = 2 + fixed(1) / 2;
 const fixed kBsbAttackRadius = 120;
 }  // namespace
 
-BigSquareBoss::BigSquareBoss(std::int32_t players, std::int32_t cycle)
-: Boss{{ii::kSimWidth * fixed_c::hundredth * 75, ii::kSimHeight * 2},
+BigSquareBoss::BigSquareBoss(ii::SimInterface& sim, std::int32_t players, std::int32_t cycle)
+: Boss{sim,
+       {ii::kSimWidth * fixed_c::hundredth * 75, ii::kSimHeight * 2},
        ii::SimInterface::kBoss1A,
        kBsbBaseHp,
        players,
@@ -61,10 +62,9 @@ void BigSquareBoss::update() {
         d = d.rotated(fixed_c::pi / 2);
       }
       for (std::int32_t i = 0; i < 6; ++i) {
-        auto s = std::make_unique<Follow>(attack_player_->shape().centre + d);
+        auto* s = spawn_new<Follow>(attack_player_->shape().centre + d);
         s->shape().set_rotation(fixed_c::pi / 4);
         s->set_score(0);
-        spawn(std::move(s));
         d = d.rotated(2 * fixed_c::pi / 6);
       }
       attack_player_ = 0;
@@ -76,7 +76,7 @@ void BigSquareBoss::update() {
   } else if (is_on_screen()) {
     timer_--;
     if (timer_ <= 0) {
-      timer_ = (z::rand_int(6) + 1) * kBsbTimer;
+      timer_ = (sim().random(6) + 1) * kBsbTimer;
       dir_ = vec2{} - dir_;
       reverse_ = !reverse_;
     }
@@ -88,10 +88,10 @@ void BigSquareBoss::update() {
       spawn_new<BigFollow>(shape().centre, false);
       play_sound_random(ii::sound::kBossFire);
     }
-    if (special_timer_ >= 8 && z::rand_int(4)) {
+    if (special_timer_ >= 8 && sim().random(4)) {
       special_timer_ = kBsbAttackTime;
       special_attack_ = true;
-      special_attack_rotate_ = z::rand_int(2) != 0;
+      special_attack_rotate_ = sim().random(2) != 0;
       attack_player_ = nearest_player();
       play_sound(ii::sound::kBossAttack);
     }

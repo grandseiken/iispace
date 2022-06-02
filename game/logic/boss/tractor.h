@@ -1,11 +1,11 @@
-#ifndef IISPACE_GAME_LOGIC_BOSS_TRACTOR_H
-#define IISPACE_GAME_LOGIC_BOSS_TRACTOR_H
+#ifndef II_GAME_LOGIC_BOSS_TRACTOR_H
+#define II_GAME_LOGIC_BOSS_TRACTOR_H
 #include "game/logic/boss.h"
 #include "game/logic/enemy.h"
 
 class TractorBoss : public Boss {
 public:
-  TractorBoss(std::int32_t players, std::int32_t cycle);
+  TractorBoss(ii::SimInterface& sim, std::int32_t players, std::int32_t cycle);
 
   void update() override;
   void render() const override;
@@ -32,7 +32,7 @@ private:
 
 class TBossShot : public Enemy {
 public:
-  TBossShot(const vec2& position, fixed angle);
+  TBossShot(ii::SimInterface& sim, const vec2& position, fixed angle);
   void update() override;
 
 private:

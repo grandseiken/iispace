@@ -1,5 +1,5 @@
-#ifndef IISPACE_GAME_COMMON_FIX32_H
-#define IISPACE_GAME_COMMON_FIX32_H
+#ifndef II_GAME_COMMON_FIX32_H
+#define II_GAME_COMMON_FIX32_H
 #include <cstdint>
 #include <iomanip>
 #include <ostream>

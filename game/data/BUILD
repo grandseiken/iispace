@@ -1,17 +1,12 @@
-load("@rules_proto//proto:defs.bzl", "proto_library")
-
-proto_library(
-  name = "ii_proto",
-  srcs = [
-    "config.proto",
-    "replay.proto",
-    "savegame.proto",
+cc_library(
+  name = "crypt",
+  hdrs = ["crypt.h"],
+  srcs = ["crypt.cc"],
+  deps = [
+    "//game/common:types",
+    "@span_lite",
+    "@zlib",
   ],
-)
-
-cc_proto_library(
-  name = "ii_proto_cc",
-  deps = [":ii_proto"],
 )
 
 cc_library(
@@ -19,8 +14,9 @@ cc_library(
   hdrs = ["replay.h"],
   srcs = ["replay.cc"],
   deps = [
-    ":ii_proto_cc",
+    ":crypt",
     "//game/common:types",
+    "//game/data/proto:ii_proto_cc",
     "//game/logic/sim:sim_interface",
     "@span_lite",
   ],
@@ -32,9 +28,10 @@ cc_library(
   hdrs = ["save.h"],
   srcs = ["save.cc"],
   deps = [
-    ":ii_proto_cc",
+    ":crypt",
     "//game/common:types",
     "//game/common",
+    "//game/data/proto:ii_proto_cc",
     "//game/logic/sim:sim_interface",
     "@span_lite",
   ],

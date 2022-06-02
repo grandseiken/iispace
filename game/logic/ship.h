@@ -1,5 +1,5 @@
-#ifndef IISPACE_GAME_LOGIC_SHIP_H
-#define IISPACE_GAME_LOGIC_SHIP_H
+#ifndef II_GAME_LOGIC_SHIP_H
+#define II_GAME_LOGIC_SHIP_H
 #include "game/logic/shape.h"
 #include "game/logic/sim/sim_interface.h"
 
@@ -16,12 +16,8 @@ public:
     kShipPowerup = 16,
   };
 
-  Ship(const vec2& position, ship_category type);
+  Ship(ii::SimInterface& sim, const vec2& position, ship_category type);
   virtual ~Ship();
-
-  void set_sim(ii::SimInterface& sim) {
-    sim_ = &sim;
-  }
 
   ii::SimInterface& sim() const {
     return *sim_;
@@ -55,12 +51,12 @@ public:
   // Operations
   //------------------------------
   bool check_point(const vec2& v, std::int32_t category = 0) const;
-  void spawn(std::unique_ptr<Ship> ship) const;
+  Ship* spawn(std::unique_ptr<Ship> ship) const;
   void spawn(const ii::particle& particle) const;
 
   template <typename T, typename... Args>
-  void spawn_new(Args&&... args) {
-    spawn(std::make_unique<T>(std::forward<Args>(args)...));
+  T* spawn_new(Args&&... args) {
+    return static_cast<T*>(spawn(std::make_unique<T>(sim(), std::forward<Args>(args)...)));
   }
 
   // Helpful functions
@@ -86,7 +82,7 @@ public:
   }
 
   void play_sound_random(ii::sound sound, float pitch = 0.f, float volume = 1.f) {
-    sim().play_sound(sound, volume * (.5f * z::rand_fixed().to_float() + .5f),
+    sim().play_sound(sound, volume * (.5f * sim().random_fixed().to_float() + .5f),
                      2.f * shape_.centre.x.to_float() / ii::kSimWidth - 1.f, pitch);
   }
 
@@ -108,11 +104,11 @@ public:
 protected:
   const CompoundShape::shape_list& shapes() const;
   template <typename T, typename... Args>
-  void add_new_shape(Args&&... args) {
-    add_shape(std::make_unique<T>(std::forward<Args>(args)...));
+  T* add_new_shape(Args&&... args) {
+    return static_cast<T*>(add_shape(std::make_unique<T>(std::forward<Args>(args)...)));
   }
 
-  void add_shape(std::unique_ptr<Shape> shape);
+  Shape* add_shape(std::unique_ptr<Shape> shape);
   void destroy_shape(std::size_t index);
   void clear_shapes();
 

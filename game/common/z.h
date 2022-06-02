@@ -1,33 +1,13 @@
-#ifndef IISPACE_GAME_COMMON_Z_H
-#define IISPACE_GAME_COMMON_Z_H
+#ifndef II_GAME_COMMON_Z_H
+#define II_GAME_COMMON_Z_H
 #include "game/common/fix32.h"
-#include "game/common/result.h"
-#include <nonstd/span.hpp>
 #include <cmath>
 #include <cstdint>
 #include <vector>
 
 typedef std::uint32_t colour_t;
-static constexpr std::int32_t kPlayers = 4;
 
 namespace z {
-
-static constexpr std::int32_t rand_max = 0x7fff;
-void seed(std::int32_t seed);
-std::int32_t rand_int();
-
-inline std::int32_t rand_int(std::int32_t max) {
-  return rand_int() % max;
-}
-
-inline fixed rand_fixed() {
-  return fixed{rand_int()} / rand_max;
-}
-
-std::vector<std::uint8_t>
-crypt(nonstd::span<const std::uint8_t> text, nonstd::span<const std::uint8_t> key);
-ii::result<std::vector<std::uint8_t>> compress(nonstd::span<const std::uint8_t> bytes);
-ii::result<std::vector<std::uint8_t>> decompress(nonstd::span<const std::uint8_t> bytes);
 
 colour_t colour_cycle(colour_t rgb, std::int32_t cycle);
 

@@ -7,6 +7,7 @@
 #include "game/logic/sim/sim_interface.h"
 #include "game/logic/sim/sim_internals.h"
 #include "game/logic/stars.h"
+#include <algorithm>
 
 namespace ii {
 
@@ -19,12 +20,10 @@ SimState::~SimState() {
 SimState::SimState(const initial_conditions& conditions, InputAdapter& input)
 : conditions_{conditions}
 , input_{input}
-, internals_{std::make_unique<SimInternals>()}
+, internals_{std::make_unique<SimInternals>(conditions_.seed)}
 , interface_{std::make_unique<SimInterface>(internals_.get())} {
   static constexpr std::int32_t kStartingLives = 2;
   static constexpr std::int32_t kBossModeLives = 1;
-  // TODO: make this not a static nonsense.
-  z::seed(conditions_.seed);
 
   internals_->mode = conditions_.mode;
   internals_->lives = conditions_.mode == game_mode::kBoss
@@ -34,9 +33,8 @@ SimState::SimState(const initial_conditions& conditions, InputAdapter& input)
   Stars::clear();
   for (std::int32_t i = 0; i < conditions_.player_count; ++i) {
     vec2 v((1 + i) * kSimWidth / (1 + conditions_.player_count), kSimHeight / 2);
-    auto p = std::make_unique<Player>(v, i);
-    internals_->player_list.push_back(p.get());
-    interface_->add_ship(std::move(p));
+    auto* p = interface_->add_new_ship<Player>(v, i);
+    internals_->player_list.push_back(p);
   }
   overmind_ = std::make_unique<Overmind>(*interface_, conditions_.can_face_secret_boss);
   internals_->overmind = overmind_.get();

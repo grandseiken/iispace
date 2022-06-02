@@ -10,9 +10,9 @@ const fixed kHpPerExtraPlayer = fixed(1) / 10;
 const fixed kHpPerExtraCycle = 3 * fixed(1) / 10;
 }  // namespace
 
-Boss::Boss(const vec2& position, ii::SimInterface::boss_list boss, std::int32_t hp,
-           std::int32_t players, std::int32_t cycle, bool explode_on_damage)
-: Ship{position, static_cast<Ship::ship_category>(kShipBoss | kShipEnemy)}
+Boss::Boss(ii::SimInterface& sim, const vec2& position, ii::SimInterface::boss_list boss,
+           std::int32_t hp, std::int32_t players, std::int32_t cycle, bool explode_on_damage)
+: Ship{sim, position, static_cast<Ship::ship_category>(kShipBoss | kShipEnemy)}
 , flag_{boss}
 , explode_on_damage_{explode_on_damage} {
   set_bounding_width(640);
@@ -116,15 +116,13 @@ void Boss::on_destroy() {
   explosion(shapes()[0]->colour, 48);
   std::int32_t n = 1;
   for (std::int32_t i = 0; i < 16; ++i) {
-    vec2 v = vec2::from_polar(z::rand_fixed() * (2 * fixed_c::pi),
-                              8 + z::rand_int(64) + z::rand_int(64));
+    vec2 v = vec2::from_polar(sim().random_fixed() * (2 * fixed_c::pi),
+                              8 + sim().random(64) + sim().random(64));
     fireworks_.push_back(
         std::make_pair(n, std::make_pair(shape().centre + v, shapes()[0]->colour)));
     n += i;
   }
-  for (std::int32_t i = 0; i < kPlayers; ++i) {
-    sim().rumble(i, 25);
-  }
+  sim().rumble_all(25);
   play_sound(ii::sound::kExplosion);
 
   for (const auto& player : sim().players()) {

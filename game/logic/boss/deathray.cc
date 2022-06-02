@@ -14,8 +14,9 @@ const fixed kDrbArmSpeed = 4;
 const fixed kDrbRaySpeed = 10;
 }  // namespace
 
-DeathRayBoss::DeathRayBoss(std::int32_t players, std::int32_t cycle)
-: Boss{{ii::kSimWidth * (fixed(3) / 20), -ii::kSimHeight},
+DeathRayBoss::DeathRayBoss(ii::SimInterface& sim, std::int32_t players, std::int32_t cycle)
+: Boss{sim,
+       {ii::kSimWidth * (fixed(3) / 20), -ii::kSimHeight},
        ii::SimInterface::kBoss2C,
        kDrbBaseHp,
        players,
@@ -27,17 +28,15 @@ DeathRayBoss::DeathRayBoss(std::int32_t players, std::int32_t cycle)
   add_new_shape<Polygon>(vec2{}, 115, 12, 0x33ff99ff, fixed_c::pi / 12, 0);
   add_new_shape<Polygon>(vec2{}, 110, 12, 0x33ff99ff, fixed_c::pi / 12, kShield);
 
-  auto s1 = std::make_unique<CompoundShape>(vec2{}, 0, kDangerous);
+  auto* s1 = add_new_shape<CompoundShape>(vec2{}, 0, kDangerous);
   for (std::int32_t i = 1; i < 12; ++i) {
-    auto s2 = std::make_unique<CompoundShape>(vec2{}, i * fixed_c::pi / 6, 0);
+    auto* s2 = s1->add_new_shape<CompoundShape>(vec2{}, i * fixed_c::pi / 6, 0);
     s2->add_new_shape<Box>(vec2{130, 0}, 10, 24, 0x33ff99ff, 0, 0);
     s2->add_new_shape<Box>(vec2{130, 0}, 8, 22, 0x228855ff, 0, 0);
-    s1->add_shape(std::move(s2));
   }
-  add_shape(std::move(s1));
 
   set_ignore_damage_colour_index(5);
-  shape().rotate(2 * fixed_c::pi * fixed(z::rand_int()) / z::rand_max);
+  shape().rotate(2 * fixed_c::pi * sim.random_fixed());
 }
 
 void DeathRayBoss::update() {
@@ -81,7 +80,7 @@ void DeathRayBoss::update() {
       }
       if (!timer_) {
         laser_ = false;
-        timer_ = kDrbTimer * (2 + z::rand_int(3));
+        timer_ = kDrbTimer * (2 + sim().random(3));
       }
     } else {
       fixed r = shape().rotation();
@@ -100,9 +99,9 @@ void DeathRayBoss::update() {
     shape().rotate(dir_ ? fixed_c::hundredth * 2 : -fixed_c::hundredth * 2);
     if (is_on_screen()) {
       timer_--;
-      if (timer_ % kDrbTimer == 0 && timer_ != 0 && !z::rand_int(4)) {
-        dir_ = z::rand_int(2) != 0;
-        pos_ = z::rand_int(7);
+      if (timer_ % kDrbTimer == 0 && timer_ != 0 && !sim().random(4)) {
+        dir_ = sim().random(2) != 0;
+        pos_ = sim().random(7);
       }
       if (timer_ == kDrbTimer * 2 + 50 && arms_.size() == 2) {
         ray_attack_timer_ = kDrbRayTimer;
@@ -114,7 +113,7 @@ void DeathRayBoss::update() {
     if (timer_ <= 0) {
       laser_ = true;
       timer_ = 0;
-      pos_ = z::rand_int(7);
+      pos_ = sim().random(7);
     }
   }
 
@@ -146,8 +145,8 @@ void DeathRayBoss::update() {
     }
     if (shot_timer_ % 128 == 0) {
       ray_attack_timer_ = kDrbRayTimer;
-      vec2 d1 = vec2::from_polar(z::rand_fixed() * 2 * fixed_c::pi, 110);
-      vec2 d2 = vec2::from_polar(z::rand_fixed() * 2 * fixed_c::pi, 110);
+      vec2 d1 = vec2::from_polar(sim().random_fixed() * 2 * fixed_c::pi, 110);
+      vec2 d2 = vec2::from_polar(sim().random_fixed() * 2 * fixed_c::pi, 110);
       ray_src1_ = shape().centre + d1;
       ray_src2_ = shape().centre + d2;
       play_sound(ii::sound::kEnemySpawn);
@@ -161,13 +160,9 @@ void DeathRayBoss::update() {
         std::int32_t players = sim().get_lives() ? sim().players().size() : sim().alive_players();
         std::int32_t hp =
             (kDrbArmHp * (7 * fixed_c::tenth + 3 * fixed_c::tenth * players)).to_int();
-        auto arm0 = std::make_unique<DeathArm>(this, true, hp);
-        auto arm1 = std::make_unique<DeathArm>(this, false, hp);
-        arms_.push_back(arm0.get());
-        arms_.push_back(arm1.get());
+        arms_.push_back(spawn_new<DeathArm>(this, true, hp));
+        arms_.push_back(spawn_new<DeathArm>(this, false, hp));
         play_sound(ii::sound::kEnemySpawn);
-        spawn(std::move(arm0));
-        spawn(std::move(arm1));
       }
     }
   }
@@ -219,7 +214,8 @@ void DeathRayBoss::on_arm_death(Ship* arm) {
   }
 }
 
-DeathRay::DeathRay(const vec2& position) : Enemy{position, kShipNone, 0} {
+DeathRay::DeathRay(ii::SimInterface& sim, const vec2& position)
+: Enemy{sim, position, kShipNone, 0} {
   add_new_shape<Box>(vec2{}, 10, 48, 0, 0, kDangerous);
   add_new_shape<Line>(vec2{}, vec2{0, -48}, vec2{0, 48}, 0xffffffff, 0);
   set_bounding_width(48);
@@ -232,8 +228,8 @@ void DeathRay::update() {
   }
 }
 
-DeathArm::DeathArm(DeathRayBoss* boss, bool top, std::int32_t hp)
-: Enemy{{}, kShipNone, hp}
+DeathArm::DeathArm(ii::SimInterface& sim, DeathRayBoss* boss, bool top, std::int32_t hp)
+: Enemy{sim, {}, kShipNone, hp}
 , boss_{boss}
 , top_{top}
 , timer_{top ? 2 * kDrbArmATimer / 3 : 0}

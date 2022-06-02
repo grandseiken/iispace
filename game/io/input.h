@@ -1,5 +1,5 @@
-#ifndef IISPACE_GAME_IO_INPUT_H
-#define IISPACE_GAME_IO_INPUT_H
+#ifndef II_GAME_IO_INPUT_H
+#define II_GAME_IO_INPUT_H
 #include <glm/glm.hpp>
 #include <array>
 #include <cstddef>

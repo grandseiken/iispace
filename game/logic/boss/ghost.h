@@ -1,11 +1,11 @@
-#ifndef IISPACE_GAME_LOGIC_BOSS_GHOST_H
-#define IISPACE_GAME_LOGIC_BOSS_GHOST_H
+#ifndef II_GAME_LOGIC_BOSS_GHOST_H
+#define II_GAME_LOGIC_BOSS_GHOST_H
 #include "game/logic/boss.h"
 #include "game/logic/enemy.h"
 
 class GhostBoss : public Boss {
 public:
-  GhostBoss(std::int32_t players, std::int32_t cycle);
+  GhostBoss(ii::SimInterface& sim, std::int32_t players, std::int32_t cycle);
 
   void update() override;
   void render() const override;
@@ -29,8 +29,8 @@ private:
 
 class GhostWall : public Enemy {
 public:
-  GhostWall(bool swap, bool no_gap, bool ignored);
-  GhostWall(bool swap, bool swap_gap);
+  GhostWall(ii::SimInterface& sim, bool swap, bool no_gap, bool ignored);
+  GhostWall(ii::SimInterface& sim, bool swap, bool swap_gap);
   void update() override;
 
 private:
@@ -39,7 +39,7 @@ private:
 
 class GhostMine : public Enemy {
 public:
-  GhostMine(const vec2& position, Boss* ghost);
+  GhostMine(ii::SimInterface& sim, const vec2& position, Boss* ghost);
   void update() override;
   void render() const override;
 

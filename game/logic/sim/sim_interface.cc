@@ -25,6 +25,14 @@ game_mode SimInterface::mode() const {
   return internals_->mode;
 }
 
+std::int32_t SimInterface::random(std::int32_t max) {
+  return internals_->random_engine() % max;
+}
+
+fixed SimInterface::random_fixed() {
+  return fixed{internals_->random_engine()} / RandomEngine::rand_max;
+}
+
 SimInterface::ship_list SimInterface::all_ships(std::int32_t ship_mask) const {
   ship_list r;
   for (auto& ship : internals_->ships) {
@@ -153,8 +161,8 @@ void SimInterface::set_boss_killed(boss_list boss) {
   }
 }
 
-void SimInterface::add_ship(std::unique_ptr<Ship> ship) {
-  ship->set_sim(*this);
+Ship* SimInterface::add_ship(std::unique_ptr<Ship> ship) {
+  auto p = ship.get();
   if (ship->type() & Ship::kShipEnemy) {
     internals_->overmind->on_enemy_create(*ship);
   }
@@ -162,10 +170,17 @@ void SimInterface::add_ship(std::unique_ptr<Ship> ship) {
     internals_->collisions.push_back(ship.get());
   }
   internals_->ships.emplace_back(std::move(ship));
+  return p;
 }
 
 void SimInterface::add_particle(const ii::particle& particle) {
   internals_->particles.emplace_back(particle);
+}
+
+void SimInterface::rumble_all(std::int32_t time) const {
+  for (std::int32_t i = 0; i < players().size(); ++i) {
+    rumble(i, time);
+  }
 }
 
 void SimInterface::rumble(std::int32_t player, std::int32_t time) const {

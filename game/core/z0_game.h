@@ -1,5 +1,5 @@
-#ifndef IISPACE_GAME_CORE_Z0_GAME_H
-#define IISPACE_GAME_CORE_Z0_GAME_H
+#ifndef II_GAME_CORE_Z0_GAME_H
+#define II_GAME_CORE_Z0_GAME_H
 #include "game/core/io_input_adapter.h"
 #include "game/core/modal.h"
 #include "game/data/replay.h"

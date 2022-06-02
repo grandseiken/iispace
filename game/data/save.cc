@@ -1,6 +1,7 @@
 #include "game/data/save.h"
-#include "game/data/config.pb.h"
-#include "game/data/savegame.pb.h"
+#include "game/data/crypt.h"
+#include "game/data/proto/config.pb.h"
+#include "game/data/proto/savegame.pb.h"
 #include <algorithm>
 #include <sstream>
 
@@ -10,13 +11,13 @@ const std::array<std::uint8_t, 2> kSaveEncryptionKey = {'<', '>'};
 }  // namespace
 
 HighScores::HighScores() {
-  normal.resize(kPlayers);
-  hard.resize(kPlayers);
-  fast.resize(kPlayers);
-  what.resize(kPlayers);
-  boss.resize(kPlayers);
+  normal.resize(kMaxPlayers);
+  hard.resize(kMaxPlayers);
+  fast.resize(kMaxPlayers);
+  what.resize(kMaxPlayers);
+  boss.resize(kMaxPlayers);
 
-  for (std::size_t i = 0; i < kPlayers; ++i) {
+  for (std::size_t i = 0; i < kMaxPlayers; ++i) {
     normal[i].resize(kNumScores);
     hard[i].resize(kNumScores);
     fast[i].resize(kNumScores);
@@ -66,7 +67,7 @@ void HighScores::add_score(game_mode mode, std::int32_t players, const std::stri
 
 result<SaveGame> SaveGame::load(nonstd::span<const std::uint8_t> bytes) {
   proto::SaveGame proto;
-  auto d = z::crypt(bytes, kSaveEncryptionKey);
+  auto d = crypt(bytes, kSaveEncryptionKey);
   if (!proto.ParseFromArray(d.data(), static_cast<int>(d.size()))) {
     return unexpected("Couldn't parse savegame");
   }
@@ -129,7 +130,7 @@ result<std::vector<std::uint8_t>> SaveGame::save() const {
   if (!proto.SerializeToArray(data.data(), static_cast<int>(data.size()))) {
     return unexpected("Couldn't serialize savegame");
   }
-  return z::crypt(data, kSaveEncryptionKey);
+  return crypt(data, kSaveEncryptionKey);
 }
 
 result<Config> Config::load(nonstd::span<const std::uint8_t> bytes) {

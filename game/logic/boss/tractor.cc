@@ -7,15 +7,15 @@ const std::int32_t kTbTimer = 100;
 const fixed kTbSpeed = 2;
 }  // namespace
 
-TractorBoss::TractorBoss(std::int32_t players, std::int32_t cycle)
-: Boss{{ii::kSimWidth * (1 + fixed_c::half), ii::kSimHeight / 2},
+TractorBoss::TractorBoss(ii::SimInterface& sim, std::int32_t players, std::int32_t cycle)
+: Boss{sim,
+       {ii::kSimWidth * (1 + fixed_c::half), ii::kSimHeight / 2},
        ii::SimInterface::kBoss2A,
        kTbBaseHp,
        players,
        cycle}
-, shoot_type_{z::rand_int(2)} {
-  auto s1 = std::make_unique<CompoundShape>(vec2{0, -96}, 0, kDangerous | kVulnerable);
-  s1_ = s1.get();
+, shoot_type_{sim.random(2)} {
+  s1_ = add_new_shape<CompoundShape>(vec2{0, -96}, 0, kDangerous | kVulnerable);
 
   s1_->add_new_shape<Polygon>(vec2{}, 12, 6, 0x882288ff, 0, 0, Polygon::T::kPolygram);
   s1_->add_new_shape<Polygon>(vec2{}, 12, 12, 0x882288ff, 0, 0);
@@ -28,8 +28,7 @@ TractorBoss::TractorBoss(std::int32_t players, std::int32_t cycle)
     s1_->add_new_shape<Polygon>(d, 12, 6, 0xcc33ccff, 0, 0, Polygon::T::kPolygram);
   }
 
-  auto s2 = std::make_unique<CompoundShape>(vec2{0, 96}, 0, kDangerous | kVulnerable);
-  s2_ = s2.get();
+  s2_ = add_new_shape<CompoundShape>(vec2{0, 96}, 0, kDangerous | kVulnerable);
 
   s2_->add_new_shape<Polygon>(vec2{}, 12, 6, 0x882288ff, 0, 0, Polygon::T::kPolygram);
   s2_->add_new_shape<Polygon>(vec2{}, 12, 12, 0x882288ff, 0, 0);
@@ -43,12 +42,7 @@ TractorBoss::TractorBoss(std::int32_t players, std::int32_t cycle)
     s2_->add_new_shape<Polygon>(d, 12, 6, 0xcc33ccff, 0, 0, Polygon::T::kPolygram);
   }
 
-  add_shape(std::move(s1));
-  add_shape(std::move(s2));
-
-  auto sattack = std::make_unique<Polygon>(vec2{}, 0, 16, 0x993399ff);
-  sattack_ = sattack.get();
-  add_shape(std::move(sattack));
+  sattack_ = add_new_shape<Polygon>(vec2{}, 0, 16, 0x993399ff);
 
   add_new_shape<Line>(vec2{}, vec2{-2, -96}, vec2{-2, 96}, 0xcc33ccff, 0);
   add_new_shape<Line>(vec2{}, vec2{0, -96}, vec2{0, 96}, 0x882288ff, 0);
@@ -64,20 +58,20 @@ void TractorBoss::update() {
   if (shape().centre.x <= ii::kSimWidth / 2 && will_attack_ && !stopped_ && !continue_) {
     stopped_ = true;
     generating_ = true;
-    gen_dir_ = z::rand_int(2) == 0;
+    gen_dir_ = sim().random(2) == 0;
     timer_ = 0;
   }
 
   if (shape().centre.x < -150) {
     shape().centre.x = ii::kSimWidth + 150;
     will_attack_ = !will_attack_;
-    shoot_type_ = z::rand_int(2);
+    shoot_type_ = sim().random(2);
     if (will_attack_) {
       shoot_type_ = 0;
     }
     continue_ = false;
     sound_ = !will_attack_;
-    shape().rotate(z::rand_fixed() * 2 * fixed_c::pi);
+    shape().rotate(sim().random_fixed() * 2 * fixed_c::pi);
   }
 
   ++timer_;
@@ -161,7 +155,7 @@ void TractorBoss::update() {
         }
         if (timer_ % (kTbTimer / (1 + fixed_c::half)).to_int() == kTbTimer / 8) {
           vec2 v = s1_->convert_point(shape().centre, shape().rotation(), {});
-          vec2 d = vec2::from_polar(z::rand_fixed() * (2 * fixed_c::pi), 5);
+          vec2 d = vec2::from_polar(sim().random_fixed() * (2 * fixed_c::pi), 5);
           spawn_new<BossShot>(v, d, 0xcc33ccff);
           d = d.rotated(fixed_c::pi / 2);
           spawn_new<BossShot>(v, d, 0xcc33ccff);
@@ -171,7 +165,7 @@ void TractorBoss::update() {
           spawn_new<BossShot>(v, d, 0xcc33ccff);
 
           v = s2_->convert_point(shape().centre, shape().rotation(), {});
-          d = vec2::from_polar(z::rand_fixed() * (2 * fixed_c::pi), 5);
+          d = vec2::from_polar(sim().random_fixed() * (2 * fixed_c::pi), 5);
           spawn_new<BossShot>(v, d, 0xcc33ccff);
           d = d.rotated(fixed_c::pi / 2);
           spawn_new<BossShot>(v, d, 0xcc33ccff);
@@ -231,8 +225,8 @@ void TractorBoss::update() {
 
   for (std::size_t i = attack_shapes_; i < shapes().size(); ++i) {
     vec2 v = vec2::from_polar(
-        z::rand_fixed() * (2 * fixed_c::pi),
-        2 * (z::rand_fixed() - fixed_c::half) * fixed(attack_size_) / (1 + fixed_c::half));
+        sim().random_fixed() * (2 * fixed_c::pi),
+        2 * (sim().random_fixed() - fixed_c::half) * fixed(attack_size_) / (1 + fixed_c::half));
     shapes()[i]->centre = v;
   }
 
@@ -270,7 +264,8 @@ std::int32_t TractorBoss::get_damage(std::int32_t damage, bool magic) {
   return damage;
 }
 
-TBossShot::TBossShot(const vec2& position, fixed angle) : Enemy{position, kShipNone, 1} {
+TBossShot::TBossShot(ii::SimInterface& sim, const vec2& position, fixed angle)
+: Enemy{sim, position, kShipNone, 1} {
   add_new_shape<Polygon>(vec2{}, 8, 6, 0xcc33ccff, 0, kDangerous | kVulnerable);
   dir_ = vec2::from_polar(angle, 3);
   set_bounding_width(8);
