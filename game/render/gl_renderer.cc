@@ -1,4 +1,5 @@
 #include "game/render/gl_renderer.h"
+#include "assets/fonts/fonts.h"
 #include "game/common/raw_ptr.h"
 #include "game/io/file/filesystem.h"
 #include "game/io/font/font.h"
@@ -7,6 +8,7 @@
 #include "game/render/gl/program.h"
 #include "game/render/gl/texture.h"
 #include "game/render/gl/types.h"
+#include "game/render/shader_compiler.h"
 #include <GL/gl3w.h>
 #include <nonstd/span.hpp>
 #include <algorithm>
@@ -15,62 +17,6 @@
 
 namespace ii::render {
 namespace {
-#include "assets/fonts/roboto_mono_regular.ttf.h"
-#include "game/render/shaders/line.f.glsl.h"
-#include "game/render/shaders/line.v.glsl.h"
-#include "game/render/shaders/rect.f.glsl.h"
-#include "game/render/shaders/rect.v.glsl.h"
-#include "game/render/shaders/text.f.glsl.h"
-#include "game/render/shaders/text.v.glsl.h"
-
-struct shader_source {
-  shader_source(const char* name, gl::shader_type type, nonstd::span<const std::uint8_t> source)
-  : filename{name}, type{type}, source{source} {
-    std::replace(filename.begin(), filename.end(), '_', '.');
-  }
-
-  std::string filename;
-  gl::shader_type type;
-  nonstd::span<const std::uint8_t> source;
-};
-
-#define SHADER_SOURCE(name, type) \
-  { #name, type, {game_render_shaders_##name, game_render_shaders_##name##_len }, }
-
-const shader_source kLineFragmentShader SHADER_SOURCE(line_f_glsl, gl::shader_type::kFragment);
-const shader_source kLineVertexShader SHADER_SOURCE(line_v_glsl, gl::shader_type::kVertex);
-const shader_source kRectFragmentShader SHADER_SOURCE(rect_f_glsl, gl::shader_type::kFragment);
-const shader_source kRectVertexShader SHADER_SOURCE(rect_v_glsl, gl::shader_type::kVertex);
-const shader_source kTextFragmentShader SHADER_SOURCE(text_f_glsl, gl::shader_type::kFragment);
-const shader_source kTextVertexShader SHADER_SOURCE(text_v_glsl, gl::shader_type::kVertex);
-
-result<gl::shader> compile_shader(const shader_source& source) {
-  auto shader = gl::compile_shader(source.type, source.source);
-  if (!shader) {
-    return unexpected("Couldn't compile " + source.filename + ": " + shader.error());
-  }
-  return {std::move(shader)};
-}
-
-template <typename T, std::size_t... I>
-result<gl::program> link_program(const T& shaders, std::index_sequence<I...>) {
-  return gl::link_program(*shaders[I]...);
-}
-
-template <typename... T>
-result<gl::program> compile_program(const char* name, T&&... sources) {
-  result<gl::shader> shaders[] = {compile_shader(sources)...};
-  for (std::size_t i = 0; i < sizeof...(T); ++i) {
-    if (!shaders[i]) {
-      return unexpected(shaders[i].error());
-    }
-  }
-  auto result = link_program(shaders, std::index_sequence_for<T...>{});
-  if (!result) {
-    return unexpected("Couldn't link " + std::string{name} + ": " + result.error());
-  }
-  return result;
-}
 
 const std::vector<std::uint32_t>& utf32_codes() {
   static const char* chars =
@@ -167,17 +113,28 @@ struct GlRenderer::impl_t {
 };
 
 result<std::unique_ptr<GlRenderer>> GlRenderer::create() {
-  auto line = compile_program("line.glsl", kLineFragmentShader, kLineVertexShader);
+  auto compile_shader = [](gl::shader_type type, auto& entry) {
+    auto shader = gl::compile_shader(type, entry.second);
+    if (!shader) {
+      return unexpected("Error compiling " + entry.first + ": " + shader.error());
+    }
+    return {std::move(shader)};
+  };
+
+  auto line = compile_program({{"game/render/shaders/line.f.glsl", gl::shader_type::kFragment},
+                               {"game/render/shaders/line.v.glsl", gl::shader_type::kVertex}});
   if (!line) {
     return unexpected(line.error());
   }
 
-  auto rect = compile_program("rect.glsl", kRectFragmentShader, kRectVertexShader);
+  auto rect = compile_program({{"game/render/shaders/rect.f.glsl", gl::shader_type::kFragment},
+                               {"game/render/shaders/rect.v.glsl", gl::shader_type::kVertex}});
   if (!rect) {
     return unexpected(rect.error());
   }
 
-  auto text = compile_program("text.glsl", kTextFragmentShader, kTextVertexShader);
+  auto text = compile_program({{"game/render/shaders/text.f.glsl", gl::shader_type::kFragment},
+                               {"game/render/shaders/text.v.glsl", gl::shader_type::kVertex}});
   if (!text) {
     return unexpected(text.error());
   }
@@ -205,8 +162,7 @@ result<std::unique_ptr<GlRenderer>> GlRenderer::create() {
     return {};
   };
 
-  auto font = Font::create(
-      {assets_fonts_roboto_mono_regular_ttf, assets_fonts_roboto_mono_regular_ttf_len});
+  auto font = Font::create(assets::fonts::roboto_mono_regular_ttf());
   if (!font) {
     return unexpected("Error loading font roboto_mono_regular: " + font.error());
   }

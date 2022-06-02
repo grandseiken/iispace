@@ -1,5 +1,5 @@
 #include "game/io/sdl_io.h"
-#include "external/sdl_gamecontrollerdb/gamecontrollerdb.txt.h"
+#include "external/sdl_gamecontrollerdb/sdl_gamecontrollerdb.h"
 #include "game/common/raw_ptr.h"
 #include "game/io/sdl_convert.h"
 #include <GL/gl3w.h>
@@ -153,8 +153,7 @@ SdlIoLayer::create(const char* title, char gl_major, char gl_minor) {
   SDL_GL_SetSwapInterval(1);
 
   auto rwops = make_raw(
-      SDL_RWFromConstMem(external_sdl_gamecontrollerdb_gamecontrollerdb_txt,
-                         external_sdl_gamecontrollerdb_gamecontrollerdb_txt_len),
+      SDL_RWFromConstMem(gamecontrollerdb_txt().data(), gamecontrollerdb_txt().size()),
       +[](SDL_RWops* p) { SDL_RWclose(p); });
   if (!rwops) {
     return unexpected("couldn't read SDL_GameControllerDB");

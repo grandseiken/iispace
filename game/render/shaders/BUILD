@@ -1,7 +1,8 @@
 load("//deps:xxd.bzl", "xxd")
 
 xxd(
-  name = "shaders_xxd",
+  name = "shaders",
+  namespace = "ii::render::shaders",
   srcs = [
     "line.f.glsl",
     "line.v.glsl",
@@ -10,10 +11,5 @@ xxd(
     "text.f.glsl",
     "text.v.glsl",
   ],
-)
-
-cc_library(
-  name = "shaders",
-  hdrs = [":shaders_xxd"],
   visibility = ["//visibility:public"],
 )

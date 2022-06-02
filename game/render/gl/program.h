@@ -8,6 +8,7 @@
 #include <nonstd/span.hpp>
 #include <string>
 #include <type_traits>
+#include <vector>
 
 namespace ii::gl {
 namespace detail {
@@ -100,6 +101,14 @@ template <typename... T>
 std::enable_if_t<std::conjunction_v<std::is_same<T, shader>...>, result<program>>
 link_program(const T&... shaders) {
   id ids[sizeof...(shaders)] = {*shaders...};
+  return detail::link_program(ids);
+}
+
+inline result<program> link_program(nonstd::span<shader> shaders) {
+  std::vector<id> ids;
+  for (auto& s : shaders) {
+    ids.emplace_back(*s);
+  }
   return detail::link_program(ids);
 }
 
