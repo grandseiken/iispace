@@ -16,10 +16,10 @@
 namespace ii::render {
 namespace {
 #include "assets/fonts/roboto_mono_regular.ttf.h"
-#include "game/render/shaders/legacy_line.f.glsl.h"
-#include "game/render/shaders/legacy_line.v.glsl.h"
-#include "game/render/shaders/legacy_rect.f.glsl.h"
-#include "game/render/shaders/legacy_rect.v.glsl.h"
+#include "game/render/shaders/line.f.glsl.h"
+#include "game/render/shaders/line.v.glsl.h"
+#include "game/render/shaders/rect.f.glsl.h"
+#include "game/render/shaders/rect.v.glsl.h"
 #include "game/render/shaders/text.f.glsl.h"
 #include "game/render/shaders/text.v.glsl.h"
 
@@ -37,14 +37,10 @@ struct shader_source {
 #define SHADER_SOURCE(name, type) \
   { #name, type, {game_render_shaders_##name, game_render_shaders_##name##_len }, }
 
-const shader_source
-    kLegacyLineFragmentShader SHADER_SOURCE(legacy_line_f_glsl, gl::shader_type::kFragment);
-const shader_source
-    kLegacyLineVertexShader SHADER_SOURCE(legacy_line_v_glsl, gl::shader_type::kVertex);
-const shader_source
-    kLegacyRectFragmentShader SHADER_SOURCE(legacy_rect_f_glsl, gl::shader_type::kFragment);
-const shader_source
-    kLegacyRectVertexShader SHADER_SOURCE(legacy_rect_v_glsl, gl::shader_type::kVertex);
+const shader_source kLineFragmentShader SHADER_SOURCE(line_f_glsl, gl::shader_type::kFragment);
+const shader_source kLineVertexShader SHADER_SOURCE(line_v_glsl, gl::shader_type::kVertex);
+const shader_source kRectFragmentShader SHADER_SOURCE(rect_f_glsl, gl::shader_type::kFragment);
+const shader_source kRectVertexShader SHADER_SOURCE(rect_v_glsl, gl::shader_type::kVertex);
 const shader_source kTextFragmentShader SHADER_SOURCE(text_f_glsl, gl::shader_type::kFragment);
 const shader_source kTextVertexShader SHADER_SOURCE(text_v_glsl, gl::shader_type::kVertex);
 
@@ -99,8 +95,8 @@ struct GlRenderer::impl_t {
   glm::uvec2 screen_dimensions{0, 0};
   glm::uvec2 render_dimensions{0, 0};
 
-  gl::program legacy_line;
-  gl::program legacy_rect;
+  gl::program line;
+  gl::program rect;
   gl::program text;
 
   gl::buffer quad_index;
@@ -112,9 +108,9 @@ struct GlRenderer::impl_t {
   };
   std::unordered_map<std::uint32_t, font_entry> font_map;
 
-  impl_t(gl::program legacy_line, gl::program legacy_rect, gl::program text)
-  : legacy_line{std::move(legacy_line)}
-  , legacy_rect{std::move(legacy_rect)}
+  impl_t(gl::program line, gl::program rect, gl::program text)
+  : line{std::move(line)}
+  , rect{std::move(rect)}
   , text{std::move(text)}
   , quad_index(gl::make_buffer())
   , pixel_sampler{gl::make_sampler(gl::filter::kNearest, gl::filter::kNearest,
@@ -124,7 +120,7 @@ struct GlRenderer::impl_t {
     gl::buffer_data(quad_index, gl::buffer_usage::kStaticDraw, nonstd::span{quad_indices});
   }
 
-  glm::vec2 legacy_render_scale() const {
+  glm::vec2 render_scale() const {
     auto screen = static_cast<glm::vec2>(screen_dimensions);
     auto render = static_cast<glm::vec2>(render_dimensions);
     auto screen_aspect = screen.x / screen.y;
@@ -171,16 +167,14 @@ struct GlRenderer::impl_t {
 };
 
 result<std::unique_ptr<GlRenderer>> GlRenderer::create() {
-  auto legacy_line =
-      compile_program("legacy_line.glsl", kLegacyLineFragmentShader, kLegacyLineVertexShader);
-  if (!legacy_line) {
-    return unexpected(legacy_line.error());
+  auto line = compile_program("line.glsl", kLineFragmentShader, kLineVertexShader);
+  if (!line) {
+    return unexpected(line.error());
   }
 
-  auto legacy_rect =
-      compile_program("legacy_rect.glsl", kLegacyRectFragmentShader, kLegacyRectVertexShader);
-  if (!legacy_rect) {
-    return unexpected(legacy_rect.error());
+  auto rect = compile_program("rect.glsl", kRectFragmentShader, kRectVertexShader);
+  if (!rect) {
+    return unexpected(rect.error());
   }
 
   auto text = compile_program("text.glsl", kTextFragmentShader, kTextVertexShader);
@@ -189,8 +183,7 @@ result<std::unique_ptr<GlRenderer>> GlRenderer::create() {
   }
 
   auto renderer = std::make_unique<GlRenderer>(access_tag{});
-  renderer->impl_ =
-      std::make_unique<impl_t>(std::move(*legacy_line), std::move(*legacy_rect), std::move(*text));
+  renderer->impl_ = std::make_unique<impl_t>(std::move(*line), std::move(*rect), std::move(*text));
 
   auto load_font = [&](std::uint32_t index, const Font& source, bool lcd,
                        const std::vector<std::uint32_t>& codes,
@@ -228,6 +221,10 @@ result<std::unique_ptr<GlRenderer>> GlRenderer::create() {
 GlRenderer::GlRenderer(access_tag) {}
 GlRenderer::~GlRenderer() = default;
 
+result<void> GlRenderer::status() const {
+  return impl_->status;
+}
+
 void GlRenderer::clear_screen() {
   gl::clear_colour({0.f, 0.f, 0.f, 0.f});
   gl::clear(gl::clear_mask::kColourBufferBit | gl::clear_mask::kDepthBufferBit |
@@ -240,8 +237,8 @@ void GlRenderer::set_dimensions(const glm::uvec2& screen_dimensions,
   impl_->render_dimensions = render_dimensions;
 }
 
-void GlRenderer::render_text(std::uint32_t font_index, std::optional<glm::uvec2> screen_dimensions,
-                             const glm::ivec2& position, const glm::vec4& colour, ustring_view s) {
+void GlRenderer::render_text(std::uint32_t font_index, const glm::ivec2& position,
+                             const glm::vec4& colour, ustring_view s) {
   auto it = impl_->font_map.find(font_index);
   if (it == impl_->font_map.end()) {
     impl_->status = unexpected("Font not found");
@@ -258,19 +255,17 @@ void GlRenderer::render_text(std::uint32_t font_index, std::optional<glm::uvec2>
     gl::blend_function(gl::blend_factor::kSrcAlpha, gl::blend_factor::kOneMinusSrcAlpha);
   }
 
-  auto dimensions = screen_dimensions ? *screen_dimensions : impl_->screen_dimensions;
-  auto result = gl::set_uniforms(program, "dimensions", dimensions, "tex_dimensions",
-                                 font_entry.font.bitmap_dimensions(), "font_lcd",
-                                 font_entry.font.is_lcd() ? 1u : 0u, "text_colour", colour);
+  auto result = gl::set_uniforms(
+      program, "render_scale", impl_->render_scale(), "render_dimensions", impl_->render_dimensions,
+      "texture_dimensions", font_entry.font.bitmap_dimensions(), "is_font_lcd",
+      font_entry.font.is_lcd() ? 1u : 0u, "text_colour", colour);
   if (!result) {
     impl_->status = unexpected(result.error());
-    return;
   }
   result = gl::set_uniform_texture_2d(program, "font_texture", /* texture unit */ 0,
                                       font_entry.texture, impl_->pixel_sampler);
   if (!result) {
     impl_->status = unexpected("OpenGL error: " + result.error());
-    return;
   }
 
   const auto vertex_data = font_entry.font.generate_vertex_data(s, position);
@@ -296,52 +291,36 @@ void GlRenderer::render_text(std::uint32_t font_index, std::optional<glm::uvec2>
   gl::draw_elements(gl::draw_mode::kTriangles, index_buffer, gl::type_of<unsigned>(), quads * 6, 0);
 }
 
-void GlRenderer::render_legacy_text(const glm::ivec2& position, const glm::vec4& colour,
-                                    std::string_view text) {
-  glm::uvec2 dimensions = {
-      impl_->screen_dimensions.x * impl_->render_dimensions.y / impl_->screen_dimensions.y,
-      impl_->render_dimensions.y};
-  auto offset = (dimensions.x - impl_->render_dimensions.x) / 2;
-  render_text(0, dimensions, {offset + position.x * 16, position.y * 16}, colour,
-              ustring_view::utf8(text));
-}
-
-void GlRenderer::render_legacy_rect(const glm::ivec2& lo, const glm::ivec2& hi,
-                                    std::int32_t line_width, const glm::vec4& colour) {
-  const auto& program = impl_->legacy_rect;
+void GlRenderer::render_rect(const glm::ivec2& position, const glm::ivec2& size,
+                             std::int32_t border_width, const glm::vec4& colour_lo,
+                             const glm::vec4& colour_hi, const glm::vec4& border_lo,
+                             const glm::vec4& border_hi) {
+  const auto& program = impl_->rect;
   gl::use_program(program);
   gl::enable_blend(true);
   gl::blend_function(gl::blend_factor::kSrcAlpha, gl::blend_factor::kOneMinusSrcAlpha);
 
-  auto size = hi - lo;
-  auto result =
-      gl::set_uniforms(program, "render_scale", impl_->legacy_render_scale(), "render_dimensions",
-                       impl_->render_dimensions, "rect_dimensions", static_cast<glm::uvec2>(size),
-                       "line_width", glm::uvec2{line_width, line_width}, "rect_colour", colour);
+  auto result = gl::set_uniforms(
+      program, "render_scale", impl_->render_scale(), "render_dimensions", impl_->render_dimensions,
+      "rect_dimensions", static_cast<glm::uvec2>(size), "rect_colour_lo", colour_lo,
+      "rect_colour_hi", colour_hi, "border_colour_lo", border_lo, "border_colour_hi", border_hi,
+      "border_size", glm::uvec2{border_width, border_width});
   if (!result) {
     impl_->status = unexpected(result.error());
-    return;
   }
-  impl_->draw_rect_internal(lo, size);
+  impl_->draw_rect_internal(position, size);
 }
 
-void GlRenderer::render_legacy_line(const glm::vec2& a, const glm::vec2& b,
-                                    const glm::vec4& colour) {
-  std::array<line_t, 1> line = {{a, b, colour}};
-  render_legacy_lines(line);
-}
-
-void GlRenderer::render_legacy_lines(nonstd::span<const line_t> lines) {
-  const auto& program = impl_->legacy_line;
+void GlRenderer::render_lines(nonstd::span<const line_t> lines) {
+  const auto& program = impl_->line;
   gl::use_program(program);
   gl::enable_blend(true);
   gl::blend_function(gl::blend_factor::kSrcAlpha, gl::blend_factor::kOneMinusSrcAlpha);
 
-  auto result = gl::set_uniforms(program, "render_scale", impl_->legacy_render_scale(),
+  auto result = gl::set_uniforms(program, "render_scale", impl_->render_scale(),
                                  "render_dimensions", impl_->render_dimensions);
   if (!result) {
     impl_->status = unexpected(result.error());
-    return;
   }
 
   std::vector<float> vertex_data;

@@ -28,6 +28,7 @@ public:
   GlRenderer(access_tag);
   ~GlRenderer();
 
+  result<void> status() const;
   void clear_screen();
   void set_dimensions(const glm::uvec2& screen_dimensions, const glm::uvec2& render_dimensions);
 
@@ -39,15 +40,12 @@ public:
     return colour_cycle_;
   }
 
-  void render_text(std::uint32_t font_index, std::optional<glm::uvec2> screen_dimensions,
-                   const glm::ivec2& position, const glm::vec4& colour, ustring_view s);
-
-  void
-  render_legacy_text(const glm::ivec2& position, const glm::vec4& colour, std::string_view text);
-  void render_legacy_rect(const glm::ivec2& lo, const glm::ivec2& hi, std::int32_t line_width,
-                          const glm::vec4& colour);
-  void render_legacy_line(const glm::vec2& a, const glm::vec2& b, const glm::vec4& colour);
-  void render_legacy_lines(nonstd::span<const line_t> lines);
+  void render_text(std::uint32_t font_index, const glm::ivec2& position, const glm::vec4& colour,
+                   ustring_view s);
+  void render_rect(const glm::ivec2& position, const glm::ivec2& size, std::int32_t border_width,
+                   const glm::vec4& colour_lo, const glm::vec4& colour_hi,
+                   const glm::vec4& border_lo, const glm::vec4& border_hi);
+  void render_lines(nonstd::span<const line_t> lines);
 
 private:
   std::int32_t colour_cycle_ = 0;

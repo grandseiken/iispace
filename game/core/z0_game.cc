@@ -62,7 +62,8 @@ glm::vec2 convert_vec(fvec2 v) {
 
 void render_line(ii::render::GlRenderer& r, const fvec2& a, const fvec2& b, colour_t c) {
   c = z::colour_cycle(c, r.colour_cycle());
-  r.render_legacy_line(convert_vec(a), convert_vec(b), convert_colour(c));
+  ii::render::line_t line{convert_vec(a), convert_vec(b), convert_colour(c)};
+  r.render_lines({&line, 1});
 }
 
 void render_lines(ii::render::GlRenderer& r, const nonstd::span<ii::render_output::line_t>& lines) {
@@ -73,19 +74,22 @@ void render_lines(ii::render::GlRenderer& r, const nonstd::span<ii::render_outpu
     rl.b = convert_vec(line.b);
     rl.colour = convert_colour(z::colour_cycle(line.c, r.colour_cycle()));
   }
-  r.render_legacy_lines(render);
+  r.render_lines(render);
 }
 
 void render_text(ii::render::GlRenderer& r, const fvec2& v, const std::string& text, colour_t c) {
   c = z::colour_cycle(c, r.colour_cycle());
-  r.render_legacy_text(static_cast<glm::ivec2>(convert_vec(v)), convert_colour(c), text);
+  r.render_text(0, 16 * static_cast<glm::ivec2>(convert_vec(v)), convert_colour(c),
+                ii::ustring_view::utf8(text));
 }
 
 void render_rect(ii::render::GlRenderer& r, const fvec2& lo, const fvec2& hi, colour_t c,
                  std::int32_t line_width) {
   c = z::colour_cycle(c, r.colour_cycle());
-  r.render_legacy_rect(static_cast<glm::ivec2>(convert_vec(lo)),
-                       static_cast<glm::ivec2>(convert_vec(hi)), line_width, convert_colour(c));
+  auto v_lo = static_cast<glm::ivec2>(convert_vec(lo));
+  auto v_hi = static_cast<glm::ivec2>(convert_vec(hi));
+  r.render_rect(v_lo, v_hi - v_lo, line_width, glm::vec4{0.f}, glm::vec4{0.f}, convert_colour(c),
+                convert_colour(c));
 }
 
 void render_panel(ii::render::GlRenderer& r, const fvec2& low, const fvec2& hi) {

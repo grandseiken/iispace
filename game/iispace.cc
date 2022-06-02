@@ -127,6 +127,11 @@ bool run(const std::vector<std::string>& args) {
     modal_stack.render(ui_layer, *renderer);
     io_layer->swap_buffers();
 
+    auto render_status = renderer->status();
+    if (!render_status) {
+      std::cerr << render_status.error() << std::endl;
+    }
+
     auto elapsed = elapsed_time();
     if (time_per_frame > elapsed) {
       std::this_thread::sleep_for(time_per_frame - elapsed);
