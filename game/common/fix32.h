@@ -7,10 +7,7 @@
 
 #ifdef _MSC_VER
 #include <intrin.h>
-#pragma intrinsic(_BitScanReverse)
-#ifdef PLATFORM_64
 #pragma intrinsic(_BitScanReverse64)
-#endif
 #endif
 
 namespace detail {
@@ -52,29 +49,15 @@ inline uint8_t clz(std::uint64_t x) {
     return 64;
   }
   return __builtin_clzll(x);
-#else
-#ifdef _MSC_VER
+#elif _MSC_VER
   unsigned long t = 0;
-#ifdef PLATFORM_64
   if (x == 0) {
     return 64;
   }
   _BitScanReverse64(&t, x);
   return 63 - static_cast<uint8_t>(t);
 #else
-  if (x > 0xffffffff) {
-    _BitScanReverse(&t, static_cast<std::uint32_t>(x >> 32));
-    return 31 - static_cast<uint8_t>(t);
-  }
-  if (x == 0) {
-    return 64;
-  }
-  _BitScanReverse(&t, static_cast<std::uint32_t>(x & 0xffffffff));
-  return 63 - static_cast<uint8_t>(t);
-#endif
-#else
   return clz_constexpr(x);
-#endif
 #endif
 }
 }  // namespace detail

@@ -16,7 +16,6 @@ cc_library(
   ],
   srcs = ["z.cc"],
   deps = ["@glm"],
-  defines = ["PLATFORM_64"],
   visibility = ["//visibility:public"],
 )
 
