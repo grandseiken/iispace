@@ -31,7 +31,7 @@ struct input_frame {
     kFire = 1,
     kBomb = 2,
   };
-  vec2 velocity;
+  vec2 velocity{0};
   std::optional<vec2> target_absolute;
   std::optional<vec2> target_relative;
   std::int32_t keys = 0;

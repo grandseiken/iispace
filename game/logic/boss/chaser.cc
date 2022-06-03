@@ -8,54 +8,49 @@ const std::int32_t kCbMaxSplit = 7;
 const fixed kCbSpeed = 4;
 
 // power(HP_REDUCE_POWER = 1.7, split).
-const fixed HP_REDUCE_POWER_lookup[8] = {fixed(1),
-                                         1 + 7 * (fixed(1) / 10),
-                                         2 + 9 * (fixed(1) / 10),
-                                         4 + 9 * (fixed(1) / 10),
-                                         8 + 4 * (fixed(1) / 10),
-                                         14 + 2 * (fixed(1) / 10),
-                                         24 + 2 * (fixed(1) / 10),
+const fixed HP_REDUCE_POWER_lookup[8] = {1_fx,
+                                         1 + 7 * (1_fx / 10),
+                                         2 + 9 * (1_fx / 10),
+                                         4 + 9 * (1_fx / 10),
+                                         8 + 4 * (1_fx / 10),
+                                         14 + 2 * (1_fx / 10),
+                                         24 + 2 * (1_fx / 10),
                                          41};
 
 // power(1.5, split).
-const fixed ONE_AND_HALF_lookup[8] = {fixed(1),
-                                      1 + (fixed(1) / 2),
-                                      2 + (fixed(1) / 4),
-                                      3 + 4 * (fixed(1) / 10),
-                                      5 + (fixed(1) / 10),
-                                      7 + 6 * (fixed(1) / 10),
-                                      11 + 4 * (fixed(1) / 10),
-                                      17 + (fixed(1) / 10)};
+const fixed ONE_AND_HALF_lookup[8] = {1_fx,
+                                      1 + (1_fx / 2),
+                                      2 + (1_fx / 4),
+                                      3 + 4 * (1_fx / 10),
+                                      5 + (1_fx / 10),
+                                      7 + 6 * (1_fx / 10),
+                                      11 + 4 * (1_fx / 10),
+                                      17 + (1_fx / 10)};
 
 // power(1.1, split).
-const fixed ONE_PT_ONE_lookup[8] = {fixed(1),
-                                    1 + (fixed(1) / 10),
-                                    1 + 2 * (fixed(1) / 10),
-                                    1 + 3 * (fixed(1) / 10),
-                                    1 + 5 * (fixed(1) / 10),
-                                    1 + 6 * (fixed(1) / 10),
-                                    1 + 8 * (fixed(1) / 10),
-                                    1 + 9 * (fixed(1) / 10)};
+const fixed ONE_PT_ONE_lookup[8] = {1_fx,
+                                    1 + (1_fx / 10),
+                                    1 + 2 * (1_fx / 10),
+                                    1 + 3 * (1_fx / 10),
+                                    1 + 5 * (1_fx / 10),
+                                    1 + 6 * (1_fx / 10),
+                                    1 + 8 * (1_fx / 10),
+                                    1 + 9 * (1_fx / 10)};
 
 // power(1.15, split).
-const fixed ONE_PT_ONE_FIVE_lookup[8] = {fixed(1),
-                                         1 + 15 * (fixed(1) / 100),
-                                         1 + 3 * (fixed(1) / 10),
-                                         1 + 5 * (fixed(1) / 10),
-                                         1 + 7 * (fixed(1) / 10),
-                                         2,
-                                         2 + 3 * (fixed(1) / 10),
-                                         2 + 7 * (fixed(1) / 10)};
+const fixed ONE_PT_ONE_FIVE_lookup[8] = {
+    1_fx, 1 + 15 * (1_fx / 100), 1 + 3 * (1_fx / 10), 1 + 5 * (1_fx / 10), 1 + 7 * (1_fx / 10),
+    2,    2 + 3 * (1_fx / 10),   2 + 7 * (1_fx / 10)};
 
 // power(1.2, split).
-const fixed ONE_PT_TWO_lookup[8] = {fixed(1),
-                                    1 + 2 * (fixed(1) / 10),
-                                    1 + 4 * (fixed(1) / 10),
-                                    1 + 7 * (fixed(1) / 10),
-                                    2 + (fixed(1) / 10),
-                                    2 + (fixed(1) / 2),
+const fixed ONE_PT_TWO_lookup[8] = {1_fx,
+                                    1 + 2 * (1_fx / 10),
+                                    1 + 4 * (1_fx / 10),
+                                    1 + 7 * (1_fx / 10),
+                                    2 + (1_fx / 10),
+                                    2 + (1_fx / 2),
                                     3,
-                                    3 + 6 * (fixed(1) / 10)};
+                                    3 + 6 * (1_fx / 10)};
 
 // power(1.15, remaining).
 const std::int32_t ONE_PT_ONE_FIVE_intLookup[128] = {
@@ -96,13 +91,13 @@ ChaserBoss::ChaserBoss(ii::SimInterface& sim, std::int32_t players, std::int32_t
 , cycle_{cycle}
 , split_{split}
 , stagger_{stagger} {
-  add_new_shape<Polygon>(vec2{}, 10 * ONE_AND_HALF_lookup[kCbMaxSplit - split_], 5, 0x3399ffff, 0,
+  add_new_shape<Polygon>(vec2{0}, 10 * ONE_AND_HALF_lookup[kCbMaxSplit - split_], 5, 0x3399ffff, 0,
                          0, Polygon::T::kPolygram);
-  add_new_shape<Polygon>(vec2{}, 9 * ONE_AND_HALF_lookup[kCbMaxSplit - split_], 5, 0x3399ffff, 0, 0,
-                         Polygon::T::kPolygram);
-  add_new_shape<Polygon>(vec2{}, 8 * ONE_AND_HALF_lookup[kCbMaxSplit - split_], 5, 0, 0,
+  add_new_shape<Polygon>(vec2{0}, 9 * ONE_AND_HALF_lookup[kCbMaxSplit - split_], 5, 0x3399ffff, 0,
+                         0, Polygon::T::kPolygram);
+  add_new_shape<Polygon>(vec2{0}, 8 * ONE_AND_HALF_lookup[kCbMaxSplit - split_], 5, 0, 0,
                          kDangerous | kVulnerable, Polygon::T::kPolygram);
-  add_new_shape<Polygon>(vec2{}, 7 * ONE_AND_HALF_lookup[kCbMaxSplit - split_], 5, 0, 0, kShield,
+  add_new_shape<Polygon>(vec2{0}, 7 * ONE_AND_HALF_lookup[kCbMaxSplit - split_], 5, 0, 0, kShield,
                          Polygon::T::kPolygram);
 
   set_ignore_damage_colour_index(2);
@@ -115,7 +110,7 @@ ChaserBoss::ChaserBoss(ii::SimInterface& sim, std::int32_t players, std::int32_t
 
 void ChaserBoss::update() {
   const auto& remaining = sim().all_ships();
-  last_dir_ = dir_.normalised();
+  last_dir_ = normalise(dir_);
   if (is_on_screen()) {
     on_screen_ = true;
   }
@@ -133,7 +128,7 @@ void ChaserBoss::update() {
     }
     if (move_) {
       dir_ = kCbSpeed * ONE_PT_ONE_lookup[split_] *
-          (nearest_player()->shape().centre - shape().centre).normalised();
+          normalise(nearest_player()->shape().centre - shape().centre);
     }
   }
   if (move_) {
@@ -165,32 +160,32 @@ void ChaserBoss::update() {
           continue;
         }
 
-        vec2 v = shape().centre - ship->shape().centre;
-        fixed len = v.length();
-        if (len > 0) {
-          v /= len;
+        auto v = shape().centre - ship->shape().centre;
+        auto r = length(v);
+        if (r > 0) {
+          v /= r;
         }
-        vec2 p;
+        vec2 p{0};
         if (ship->type() & kShipBoss) {
           ChaserBoss* c = (ChaserBoss*)ship;
           fixed pow = ONE_PT_ONE_FIVE_lookup[kCbMaxSplit - c->split_];
           v *= pow;
           p = c->last_dir_ * pow;
         } else {
-          p = vec2::from_polar(ship->shape().rotation(), 1);
+          p = from_polar(ship->shape().rotation(), 1_fx);
         }
 
-        if (len > attract) {
+        if (r > attract) {
           continue;
         }
         // Attract.
         dir_ += v * c_attract;
-        if (len > align) {
+        if (r > align) {
           continue;
         }
         // Align.
         dir_ += p;
-        if (len > repulse) {
+        if (r > repulse) {
           continue;
         }
         // Repulse.
@@ -237,7 +232,7 @@ void ChaserBoss::update() {
     } else if (shape().centre.y >= ii::kSimHeight + 256) {
       dir_ = vec2{0, -1};
     } else {
-      dir_ = dir_.normalised();
+      dir_ = normalise(dir_);
     }
 
     dir_ = split_ == 0 ? dir_ + last_dir_ * 7
@@ -253,7 +248,7 @@ void ChaserBoss::update() {
              : split_ == 3 ? c_dir3
                            : c_dir4);
     move(dir_);
-    shape().rotate(fixed_c::hundredth * 2 + fixed(split_) * c_rotate);
+    shape().rotate(fixed_c::hundredth * 2 + fixed{split_} * c_rotate);
   }
   shared_hp_ = 0;
   if (!has_counted_) {
@@ -288,8 +283,8 @@ void ChaserBoss::on_destroy() {
   bool last = false;
   if (split_ < kCbMaxSplit) {
     for (std::int32_t i = 0; i < 2; ++i) {
-      vec2 d = vec2::from_polar(i * fixed_c::pi + shape().rotation(),
-                                8 * ONE_PT_TWO_lookup[kCbMaxSplit - 1 - split_]);
+      vec2 d = from_polar(i * fixed_c::pi + shape().rotation(),
+                          fixed{8 * ONE_PT_TWO_lookup[kCbMaxSplit - 1 - split_]});
       auto* s = spawn_new<ChaserBoss>(players_, cycle_, split_ + 1, shape().centre + d,
                                       (i + 1) * kTimer / 2,
                                       sim().random(split_ + 1 == 1       ? 2
@@ -318,8 +313,8 @@ void ChaserBoss::on_destroy() {
       }
       std::int32_t n = 1;
       for (std::int32_t i = 0; i < 16; ++i) {
-        vec2 v = vec2::from_polar(sim().random_fixed() * (2 * fixed_c::pi),
-                                  8 + sim().random(64) + sim().random(64));
+        vec2 v = from_polar(sim().random_fixed() * (2 * fixed_c::pi),
+                            fixed{8 + sim().random(64) + sim().random(64)});
         fireworks_.push_back(
             std::make_pair(n, std::make_pair(shape().centre + v, shapes()[0]->colour)));
         n += i;

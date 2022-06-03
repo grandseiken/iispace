@@ -6,7 +6,7 @@ class ChaserBoss : public Boss {
 public:
   static constexpr std::int32_t kTimer = 60;
   ChaserBoss(ii::SimInterface& sim, std::int32_t players, std::int32_t cycle,
-             std::int32_t split = 0, const vec2& position = {}, std::int32_t time = kTimer,
+             std::int32_t split = 0, const vec2& position = vec2{0}, std::int32_t time = kTimer,
              std::int32_t stagger = 0);
 
   void update() override;
@@ -20,8 +20,8 @@ private:
   bool on_screen_ = false;
   bool move_ = false;
   std::int32_t timer_ = 0;
-  vec2 dir_;
-  vec2 last_dir_;
+  vec2 dir_{0};
+  vec2 last_dir_{0};
 
   std::int32_t players_ = 0;
   std::int32_t cycle_ = 0;

@@ -6,8 +6,8 @@ std::vector<std::pair<std::int32_t, std::pair<vec2, colour_t>>> Boss::fireworks_
 std::vector<vec2> Boss::warnings_;
 
 namespace {
-const fixed kHpPerExtraPlayer = fixed(1) / 10;
-const fixed kHpPerExtraCycle = 3 * fixed(1) / 10;
+const fixed kHpPerExtraPlayer = 1_fx / 10;
+const fixed kHpPerExtraCycle = 3 * 1_fx / 10;
 }  // namespace
 
 Boss::Boss(ii::SimInterface& sim, const vec2& position, ii::SimInterface::boss_list boss,
@@ -116,8 +116,8 @@ void Boss::on_destroy() {
   explosion(shapes()[0]->colour, 48);
   std::int32_t n = 1;
   for (std::int32_t i = 0; i < 16; ++i) {
-    vec2 v = vec2::from_polar(sim().random_fixed() * (2 * fixed_c::pi),
-                              8 + sim().random(64) + sim().random(64));
+    vec2 v = from_polar(sim().random_fixed() * (2 * fixed_c::pi),
+                        fixed{8 + sim().random(64) + sim().random(64)});
     fireworks_.push_back(
         std::make_pair(n, std::make_pair(shape().centre + v, shapes()[0]->colour)));
     n += i;

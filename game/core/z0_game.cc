@@ -202,13 +202,13 @@ void HighScoreModal::update(ii::ui::UiLayer& ui) {
 
   ++enter_time_;
   if (ui.input().pressed(ii::ui::key::kAccept) &&
-      enter_name_.length() < ii::HighScores::kMaxNameLength) {
+      enter_name_.size() < ii::HighScores::kMaxNameLength) {
     enter_name_ += kAllowedChars.substr(enter_char_, 1);
     enter_time_ = 0;
     ui.play_sound(ii::sound::kMenuClick);
   }
-  if (ui.input().pressed(ii::ui::key::kCancel) && enter_name_.length() > 0) {
-    enter_name_ = enter_name_.substr(0, enter_name_.length() - 1);
+  if (ui.input().pressed(ii::ui::key::kCancel) && enter_name_.size() > 0) {
+    enter_name_ = enter_name_.substr(0, enter_name_.size() - 1);
     enter_time_ = 0;
     ui.play_sound(ii::sound::kMenuClick);
   }
@@ -221,12 +221,12 @@ void HighScoreModal::update(ii::ui::UiLayer& ui) {
   }
   if (ui.input().pressed(ii::ui::key::kRight) ||
       (ui.input().held(ii::ui::key::kRight) && enter_r_ % 5 == 0 && enter_r_ > 5)) {
-    enter_char_ = (enter_char_ + 1) % kAllowedChars.length();
+    enter_char_ = (enter_char_ + 1) % kAllowedChars.size();
     ui.play_sound(ii::sound::kMenuClick);
   }
   if (ui.input().pressed(ii::ui::key::kLeft) ||
       (ui.input().held(ii::ui::key::kLeft) && enter_r_ % 5 == 0 && enter_r_ > 5)) {
-    enter_char_ = (enter_char_ + kAllowedChars.length() - 1) % kAllowedChars.length();
+    enter_char_ = (enter_char_ + kAllowedChars.size() - 1) % kAllowedChars.size();
     ui.play_sound(ii::sound::kMenuClick);
   }
 
@@ -250,8 +250,8 @@ void HighScoreModal::render(const ii::ui::UiLayer& ui, ii::render::GlRenderer& r
     render_text(r, {4.f, 23.f},
                 players == 1 ? "Enter name:" : "Enter team name:", z0Game::kPanelText);
     render_text(r, {6.f, 25.f}, enter_name_, z0Game::kPanelText);
-    if ((enter_time_ / 16) % 2 && enter_name_.length() < ii::HighScores::kMaxNameLength) {
-      render_text(r, {6.f + enter_name_.length(), 25.f}, kAllowedChars.substr(enter_char_, 1),
+    if ((enter_time_ / 16) % 2 && enter_name_.size() < ii::HighScores::kMaxNameLength) {
+      render_text(r, {6.f + enter_name_.size(), 25.f}, kAllowedChars.substr(enter_char_, 1),
                   0xbbbbbbff);
     }
     glm::vec2 low{4 * kTextWidth + 4, 25 * kTextHeight + 4};
@@ -291,7 +291,7 @@ void HighScoreModal::render(const ii::ui::UiLayer& ui, ii::render::GlRenderer& r
   std::stringstream ss;
   ss << get_score();
   std::string score = ss.str();
-  if (score.length() > ii::HighScores::kMaxScoreLength) {
+  if (score.size() > ii::HighScores::kMaxScoreLength) {
     score = score.substr(0, ii::HighScores::kMaxScoreLength);
   }
   render_text(r, {4.f, 4.f}, "TOTAL SCORE: " + score, z0Game::kPanelText);
@@ -305,7 +305,7 @@ void HighScoreModal::render(const ii::ui::UiLayer& ui, ii::render::GlRenderer& r
       ss << deaths << " death" << (deaths != 1 ? "s" : "");
     }
     score = ss.str();
-    if (score.length() > ii::HighScores::kMaxScoreLength) {
+    if (score.size() > ii::HighScores::kMaxScoreLength) {
       score = score.substr(0, ii::HighScores::kMaxScoreLength);
     }
 
@@ -446,22 +446,21 @@ void GameModal::render(const ii::ui::UiLayer& ui, ii::render::GlRenderer& r) con
     std::stringstream ss;
     ss << p.multiplier << "X";
     std::string s = ss.str();
-    auto v = n == 1 ? glm::vec2{kWidth / 16 - 1.f - s.length(), 1.f}
+    auto v = n == 1 ? glm::vec2{kWidth / 16 - 1.f - s.size(), 1.f}
         : n == 2    ? glm::vec2{1.f, kHeight / 16 - 2.f}
-        : n == 3    ? glm::vec2{kWidth / 16 - 1.f - s.length(), kHeight / 16 - 2.f}
+        : n == 3    ? glm::vec2{kWidth / 16 - 1.f - s.size(), kHeight / 16 - 2.f}
                     : glm::vec2{1.f, 1.f};
     render_text(r, v, s, z0Game::kPanelText);
 
     ss.str("");
     n % 2 ? ss << p.score << "   " : ss << "   " << p.score;
-    render_text(r,
-                v -
-                    (n % 2 ? glm::vec2{static_cast<float>(ss.str().length() - s.length()), 0}
-                           : glm::vec2{0.f}),
-                ss.str(), p.colour);
+    render_text(
+        r,
+        v - (n % 2 ? glm::vec2{static_cast<float>(ss.str().size() - s.size()), 0} : glm::vec2{0.f}),
+        ss.str(), p.colour);
 
     if (p.timer) {
-      v.x += n % 2 ? -1 : ss.str().length();
+      v.x += n % 2 ? -1 : ss.str().size();
       v *= 16;
       auto lo = v + glm::vec2{5.f, 11.f - 10 * p.timer};
       auto hi = v + glm::vec2{9.f, 13.f};
@@ -517,13 +516,13 @@ void GameModal::render(const ii::ui::UiLayer& ui, ii::render::GlRenderer& r) con
     ss << " " << (t < 10 ? "0" : "") << t;
   }
 
-  render_text(r, {kWidth / (2.f * kTextWidth) - ss.str().length() / 2, kHeight / kTextHeight - 2.f},
+  render_text(r, {kWidth / (2.f * kTextWidth) - ss.str().size() / 2, kHeight / kTextHeight - 2.f},
               ss.str(), z0Game::kPanelTran);
 
   if (render.mode == ii::game_mode::kBoss) {
     ss.str({});
     ss << convert_to_time(render.elapsed_time);
-    render_text(r, {kWidth / (2 * kTextWidth) - ss.str().length() - 1.f, 1.f}, ss.str(),
+    render_text(r, {kWidth / (2 * kTextWidth) - ss.str().size() - 1.f, 1.f}, ss.str(),
                 z0Game::kPanelTran);
   }
 
@@ -543,8 +542,7 @@ void GameModal::render(const ii::ui::UiLayer& ui, ii::render::GlRenderer& r) con
     ss.str({});
     ss << frame_count_multiplier_ << "X " << static_cast<std::int32_t>(100 * progress) << "%";
 
-    render_text(r,
-                {kWidth / (2.f * kTextWidth) - ss.str().length() / 2, kHeight / kTextHeight - 3.f},
+    render_text(r, {kWidth / (2.f * kTextWidth) - ss.str().size() / 2, kHeight / kTextHeight - 3.f},
                 ss.str(), z0Game::kPanelTran);
   }
 }

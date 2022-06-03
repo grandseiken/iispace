@@ -1,4 +1,5 @@
 #include "game/logic/ship.h"
+#include <glm/gtc/constants.hpp>
 
 Ship::Ship(ii::SimInterface& sim, const vec2& position, ship_category type)
 : sim_{&sim}, type_{type}, shape_{position, 0} {}
@@ -7,11 +8,11 @@ Ship::~Ship() {}
 
 bool Ship::check_point(const vec2& v, std::int32_t category) const {
   bool aa = false;
-  vec2 a;
+  vec2 a{0};
   for (const auto& shape : shape_.shapes()) {
     if (shape->category && (!category || (shape->category & category) == category)) {
       if (!aa) {
-        a = (v - shape_.centre).rotated(-shape_.rotation());
+        a = rotate(v - shape_.centre, -shape_.rotation());
         aa = true;
       }
 
@@ -62,13 +63,13 @@ void Ship::explosion(colour_t c, std::int32_t time, bool towards, const glm::vec
       auto pos = shape->convert_fl_point(to_float(shape_.centre), shape_.rotation().to_float(),
                                          glm::vec2{0.f});
 
-      auto dir = glm_polar(sim().random_fixed().to_float() * 2 * kPiFloat, 6.f);
+      auto dir = from_polar(sim().random_fixed().to_float() * 2 * glm::pi<float>(), 6.f);
 
       if (towards && v - pos != glm::vec2{0.f}) {
         dir = glm::normalize(v - pos);
-        float angle =
-            std::atan2(dir.y, dir.x) + (sim().random_fixed().to_float() - 0.5f) * kPiFloat / 4;
-        dir = glm_polar(angle, 6.f);
+        float angle = std::atan2(dir.y, dir.x) +
+            (sim().random_fixed().to_float() - 0.5f) * glm::pi<float>() / 4;
+        dir = from_polar(angle, 6.f);
       }
 
       spawn(ii::particle{pos, c ? c : shape->colour, dir, time + sim().random(8)});

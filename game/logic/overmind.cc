@@ -31,7 +31,7 @@ public:
     div = std::max(2, div);
     num = std::max(0, std::min(div - 1, num));
 
-    fixed x = fixed(top ? num : div - 1 - num) * ii::kSimWidth / fixed(div - 1);
+    fixed x = fixed{top ? num : div - 1 - num} * ii::kSimWidth / fixed{div - 1};
     fixed y = top ? -(row_ + 1) * (fixed_c::hundredth * 16) * ii::kSimHeight
                   : ii::kSimHeight * (1 + (row_ + 1) * (fixed_c::hundredth * 16));
     return vec2{x, y};

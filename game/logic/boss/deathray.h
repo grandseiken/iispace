@@ -23,9 +23,9 @@ private:
   std::int32_t shot_timer_ = 0;
 
   std::int32_t ray_attack_timer_ = 0;
-  vec2 ray_src1_;
-  vec2 ray_src2_;
-  vec2 ray_dest_;
+  vec2 ray_src1_{0};
+  vec2 ray_src2_{0};
+  vec2 ray_dest_{0};
 
   std::vector<std::pair<std::int32_t, std::int32_t>> shot_queue_;
 };
@@ -47,10 +47,10 @@ private:
   bool top_ = false;
   std::int32_t timer_ = 0;
   bool attacking_ = false;
-  vec2 dir_;
+  vec2 dir_{0};
   std::int32_t start_ = 30;
 
-  vec2 target_;
+  vec2 target_{0};
   std::int32_t shots_ = 0;
 };
 

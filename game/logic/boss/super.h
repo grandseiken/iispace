@@ -65,7 +65,7 @@ private:
 
 class Snake : public Enemy {
 public:
-  Snake(ii::SimInterface& sim, const vec2& position, colour_t colour, const vec2& dir = vec2{},
+  Snake(ii::SimInterface& sim, const vec2& position, colour_t colour, const vec2& dir = vec2{0},
         fixed rot = 0);
   void update() override;
   void on_destroy(bool bomb) override;
@@ -73,7 +73,7 @@ public:
 private:
   SnakeTail* tail_ = nullptr;
   std::int32_t timer_ = 0;
-  vec2 dir_;
+  vec2 dir_{0};
   std::int32_t count_ = 0;
   colour_t colour_ = 0;
   bool shot_snake_ = false;

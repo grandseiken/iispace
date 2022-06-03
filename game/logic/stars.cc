@@ -1,6 +1,7 @@
 #include "game/logic/stars.h"
 #include "game/logic/shape.h"
 #include "game/logic/sim/sim_interface.h"
+#include <glm/gtc/constants.hpp>
 
 namespace {
 const std::uint32_t kTimer = 500;
@@ -28,7 +29,7 @@ void Stars::update(ii::SimInterface& sim) {
 }
 
 void Stars::change(ii::SimInterface& sim) {
-  direction_ = glm_rotate(direction_, (sim.random_fixed().to_float() - 0.5f) * kPiFloat);
+  direction_ = rotate(direction_, (sim.random_fixed().to_float() - 0.5f) * glm::pi<float>());
   for (const auto& star : stars_) {
     star->timer = kTimer;
   }
@@ -51,8 +52,8 @@ void Stars::render(const ii::SimInterface& sim) {
 
     case type::kPlanet:
       for (std::int32_t i = 0; i < 8; ++i) {
-        auto a = glm_polar(i * kPiFloat / 4, star->size);
-        auto b = glm_polar((i + 1) * kPiFloat / 4, star->size);
+        auto a = from_polar(i * glm::pi<float>() / 4, star->size);
+        auto b = from_polar((i + 1) * glm::pi<float>() / 4, star->size);
         sim.render_line(star->position + a, star->position + b, star->colour);
       }
     }

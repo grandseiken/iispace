@@ -81,8 +81,7 @@ inline uint8_t clz(std::uint64_t x) {
 
 class fixed {
 public:
-  constexpr fixed() = default;
-  constexpr fixed(const fixed& f) : value_{f.value_} {}
+  explicit fixed() = default;
   constexpr fixed(std::int32_t v) : value_{static_cast<std::int64_t>(v) << 32} {}
 
   static constexpr fixed from_internal(std::int64_t v) {
@@ -106,11 +105,6 @@ public:
 
   constexpr explicit operator bool() const {
     return value_ != 0;
-  }
-
-  constexpr fixed& operator=(const fixed& f) {
-    value_ = f.value_;
-    return *this;
   }
 
   constexpr fixed& operator+=(const fixed& f) {
@@ -150,8 +144,30 @@ private:
   friend constexpr fixed cos(const fixed&);
   friend constexpr fixed atan2(const fixed&, const fixed&);
   friend std::ostream& operator<<(std::ostream&, const fixed&);
-  std::int64_t value_ = 0;
+  std::int64_t value_;
 };
+
+namespace std {
+template <>
+class numeric_limits<::fixed> {
+public:
+  static constexpr bool is_specialized = true;
+  static constexpr bool is_signed = true;
+  static constexpr bool is_integer = true;
+  static constexpr bool is_exact = true;
+  static constexpr bool has_infinity = false;
+  static constexpr bool has_quiet_NaN = false;
+  static constexpr bool has_signaling_NaN = false;
+  static constexpr bool round_style = round_toward_zero;
+  static constexpr bool is_iec559 = true;
+  static constexpr bool is_bounded = true;
+  static constexpr bool is_modulo = false;
+};
+}  // namespace std
+
+inline constexpr fixed operator"" _fx(unsigned long long v) {
+  return fixed{static_cast<std::int32_t>(v)};
+}
 
 inline constexpr bool operator==(const fixed& a, const fixed& b) {
   return a.value_ == b.value_;
@@ -306,12 +322,12 @@ inline std::ostream& operator<<(std::ostream& o, const fixed& f) {
 
 namespace fixed_c {
 constexpr fixed pi = fixed::from_internal(0x3243f6a88);
-constexpr fixed tenth = constexpr_div(fixed{1}, 10);
-constexpr fixed hundredth = constexpr_div(fixed{1}, 100);
-constexpr fixed half = fixed{1} >> 1;
-constexpr fixed quarter = fixed{1} >> 2;
-constexpr fixed eighth = fixed{1} >> 4;
-constexpr fixed sixteenth = fixed{1} >> 8;
+constexpr fixed tenth = constexpr_div(1_fx, 10);
+constexpr fixed hundredth = constexpr_div(1_fx, 100);
+constexpr fixed half = 1_fx >> 1;
+constexpr fixed quarter = 1_fx >> 2;
+constexpr fixed eighth = 1_fx >> 4;
+constexpr fixed sixteenth = 1_fx >> 8;
 }  // namespace fixed_c
 
 inline constexpr fixed abs(const fixed& f) {
@@ -327,8 +343,8 @@ inline fixed sqrt(const fixed& f) {
   }
 
   const fixed a = f / 2;
-  constexpr fixed half = fixed{1} >> 1;
-  constexpr fixed bound = fixed{1} >> 10;
+  constexpr fixed half = 1_fx >> 1;
+  constexpr fixed bound = 1_fx >> 10;
 
   auto r = fixed::from_internal(f.value_ >> ((32 - detail::clz(f.value_)) / 2));
   for (std::size_t n = 0; r && n < 8; ++n) {
@@ -350,11 +366,11 @@ inline constexpr fixed sin(const fixed& f) {
   fixed angle2 = angle * angle;
   fixed out = angle;
 
-  constexpr fixed r6 = constexpr_div(fixed{1}, 6);
-  constexpr fixed r120 = constexpr_div(fixed{1}, 120);
-  constexpr fixed r5040 = constexpr_div(fixed{1}, 5040);
-  constexpr fixed r362880 = constexpr_div(fixed{1}, 362880);
-  constexpr fixed r39916800 = constexpr_div(fixed{1}, 39916800);
+  constexpr fixed r6 = constexpr_div(1_fx, 6);
+  constexpr fixed r120 = constexpr_div(1_fx, 120);
+  constexpr fixed r5040 = constexpr_div(1_fx, 5040);
+  constexpr fixed r362880 = constexpr_div(1_fx, 362880);
+  constexpr fixed r39916800 = constexpr_div(1_fx, 39916800);
 
   angle *= angle2;
   out -= angle * r6;

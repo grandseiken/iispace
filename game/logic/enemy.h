@@ -60,7 +60,7 @@ public:
 private:
   bool move_ = false;
   std::int32_t timer_ = 0;
-  vec2 dir_;
+  vec2 dir_{0};
 };
 
 class Square : public Enemy {
@@ -70,7 +70,7 @@ public:
   void render() const override;
 
 private:
-  vec2 dir_;
+  vec2 dir_{0};
   std::int32_t timer_ = 0;
 };
 
@@ -81,7 +81,7 @@ public:
   void on_destroy(bool bomb) override;
 
 private:
-  vec2 dir_;
+  vec2 dir_{0};
   std::int32_t timer_ = 0;
   bool rotate_ = false;
   bool rdir_ = false;
@@ -95,7 +95,7 @@ public:
 
 private:
   std::int32_t timer_ = 0;
-  vec2 dir_;
+  vec2 dir_{0};
   std::int32_t count_ = 0;
   bool powera_ = false;
   bool powerb_ = false;
@@ -107,7 +107,7 @@ public:
   void update() override;
 
 private:
-  vec2 dir_;
+  vec2 dir_{0};
   std::int32_t timer_ = 0;
   bool rotate_ = false;
   bool rdir_ = false;
@@ -123,7 +123,7 @@ public:
 
 private:
   std::int32_t timer_ = 0;
-  vec2 dir_;
+  vec2 dir_{0};
   bool power_ = false;
 
   bool ready_ = false;
@@ -138,7 +138,7 @@ public:
   void update() override;
 
 protected:
-  vec2 dir_;
+  vec2 dir_{0};
 };
 
 #endif

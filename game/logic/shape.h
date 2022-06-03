@@ -9,9 +9,6 @@ namespace ii {
 class SimInterface;
 }  // namespace ii
 
-glm::vec2 glm_polar(float angle, float length);
-glm::vec2 glm_rotate(const glm::vec2& v, float angle);
-
 class Shape {
 public:
   Shape(const vec2& centre, fixed rotation, colour_t colour, std::int32_t category,

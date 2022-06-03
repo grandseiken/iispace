@@ -48,7 +48,7 @@ SimInterface::ships_in_radius(const vec2& point, fixed radius, std::int32_t ship
   ship_list r;
   for (auto& ship : internals_->ships) {
     if ((!ship_mask || (ship->type() & ship_mask)) &&
-        (ship->shape().centre - point).length() <= radius) {
+        length(ship->shape().centre - point) <= radius) {
       r.push_back(ship.get());
     }
   }
@@ -126,7 +126,7 @@ Player* SimInterface::nearest_player(const vec2& point) const {
   fixed dead_dist = 0;
 
   for (Ship* s : internals_->player_list) {
-    fixed d = (s->shape().centre - point).length_squared();
+    auto d = length_squared(s->shape().centre - point);
     if ((d < ship_dist || !ship) && !((Player*)s)->is_killed()) {
       ship_dist = d;
       ship = s;

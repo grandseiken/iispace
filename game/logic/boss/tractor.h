@@ -36,7 +36,7 @@ public:
   void update() override;
 
 private:
-  vec2 dir_;
+  vec2 dir_{0};
 };
 
 #endif

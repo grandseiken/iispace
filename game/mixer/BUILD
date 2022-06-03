@@ -5,6 +5,7 @@ cc_library(
   deps = [
     "//game/common:types",
     "@dr_libs//:dr_wav",
+    "@glm",
     "@libsamplerate",
     "@span_lite",
   ],

@@ -15,7 +15,7 @@ private:
   std::int32_t unshielded_ = 0;
   std::int32_t attack_ = 0;
   bool side_ = false;
-  vec2 attack_dir_;
+  vec2 attack_dir_{0};
   bool shot_alternate_ = false;
 };
 

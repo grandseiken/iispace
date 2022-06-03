@@ -1,14 +1,7 @@
 #include "game/logic/shape.h"
 #include "game/logic/sim/sim_interface.h"
+#include <glm/gtc/constants.hpp>
 #include <cmath>
-
-glm::vec2 glm_polar(float angle, float length) {
-  return length * glm::vec2{std::cos(angle), std::sin(angle)};
-}
-
-glm::vec2 glm_rotate(const glm::vec2& v, float angle) {
-  return glm_polar(std::atan2(v.y, v.x) + angle, glm::length(v));
-}
 
 Shape::Shape(const vec2& centre, fixed rotation, colour_t colour, std::int32_t category,
              bool can_rotate)
@@ -21,7 +14,7 @@ Shape::Shape(const vec2& centre, fixed rotation, colour_t colour, std::int32_t c
 bool Shape::check_point(const vec2& v) const {
   auto a = v - centre;
   if (can_rotate_) {
-    a = a.rotated(-rotation_);
+    a = ::rotate(a, -rotation_);
   }
   return check_local_point(a);
 }
@@ -29,9 +22,9 @@ bool Shape::check_point(const vec2& v) const {
 vec2 Shape::convert_point(const vec2& position, fixed rotation, const vec2& v) const {
   auto a = v;
   if (can_rotate_) {
-    a = a.rotated(rotation_);
+    a = ::rotate(a, rotation_);
   }
-  a = (a + centre).rotated(rotation);
+  a = ::rotate(a + centre, rotation);
   return position + a;
 }
 
@@ -39,9 +32,9 @@ glm::vec2
 Shape::convert_fl_point(const glm::vec2& position, float rotation, const glm::vec2& v) const {
   auto a = v;
   if (can_rotate_) {
-    a = glm_rotate(a, rotation_.to_float());
+    a = ::rotate(a, rotation_.to_float());
   }
-  a = glm_rotate(a + to_float(centre), rotation);
+  a = ::rotate(a + to_float(centre), rotation);
   return position + a;
 }
 
@@ -130,7 +123,7 @@ void Polygon::render(ii::SimInterface& sim, const glm::vec2& position, float rot
   if (type == T::kPolygram) {
     std::vector<glm::vec2> list;
     for (std::int32_t i = 0; i < sides; ++i) {
-      list.push_back(glm_polar(i * 2 * kPiFloat / sides, r));
+      list.push_back(from_polar(i * 2 * glm::pi<float>() / sides, r));
     }
 
     for (std::size_t i = 0; i < list.size(); ++i) {
@@ -141,8 +134,8 @@ void Polygon::render(ii::SimInterface& sim, const glm::vec2& position, float rot
     }
   } else {
     for (std::int32_t i = 0; i < sides; ++i) {
-      auto a = glm_polar(i * 2 * kPiFloat / sides, r);
-      auto b = glm_polar((i + 1) * 2 * kPiFloat / sides, r);
+      auto a = from_polar(i * 2 * glm::pi<float>() / sides, r);
+      auto b = from_polar((i + 1) * 2 * glm::pi<float>() / sides, r);
       lines.push_back(a);
       lines.push_back(type == T::kPolygon ? b : glm::vec2{0.f});
     }
@@ -155,7 +148,7 @@ void Polygon::render(ii::SimInterface& sim, const glm::vec2& position, float rot
 }
 
 bool Polygon::check_local_point(const vec2& v) const {
-  return v.length() < radius;
+  return length(v) < radius;
 }
 
 PolyArc::PolyArc(const vec2& centre, fixed radius, std::int32_t sides, std::int32_t segments,
@@ -170,8 +163,8 @@ void PolyArc::render(ii::SimInterface& sim, const glm::vec2& position, float rot
   float r = radius.to_float();
 
   for (std::int32_t i = 0; i < sides && i < segments; ++i) {
-    auto a = glm_polar(i * 2 * kPiFloat / sides, r);
-    auto b = glm_polar((i + 1) * 2 * kPiFloat / sides, r);
+    auto a = from_polar(i * 2 * glm::pi<float>() / sides, r);
+    auto b = from_polar((i + 1) * 2 * glm::pi<float>() / sides, r);
     sim.render_line(convert_fl_point(position, rotation, a),
                     convert_fl_point(position, rotation, b),
                     colour_override ? colour_override : colour);
@@ -179,10 +172,10 @@ void PolyArc::render(ii::SimInterface& sim, const glm::vec2& position, float rot
 }
 
 bool PolyArc::check_local_point(const vec2& v) const {
-  fixed angle = v.angle();
-  fixed len = v.length();
-  bool b = 0 <= angle && v.angle() <= (2 * fixed_c::pi * segments) / sides;
-  return b && len >= radius - 10 && len < radius;
+  auto theta = angle(v);
+  auto r = length(v);
+  bool b = 0 <= theta && theta <= (2 * fixed_c::pi * segments) / sides;
+  return b && r >= radius - 10 && r < radius;
 }
 
 CompoundShape::CompoundShape(const vec2& centre, fixed rotation, std::int32_t category)

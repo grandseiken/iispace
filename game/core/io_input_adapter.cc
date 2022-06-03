@@ -22,21 +22,21 @@ assign_input(std::uint32_t player_index, std::uint32_t player_count, std::size_t
   return input;
 }
 
-vec2 controller_stick(std::int16_t x, std::int16_t y, bool normalise) {
+vec2 controller_stick(std::int16_t x, std::int16_t y, bool should_normalise) {
   static constexpr fixed inner_deadzone = fixed_c::tenth * 3;
   static constexpr fixed outer_deadzone = fixed_c::tenth;
   vec2 v{fixed::from_internal(static_cast<std::int64_t>(x) << 17),
          fixed::from_internal(static_cast<std::int64_t>(y) << 17)};
-  auto length = v.length();
-  if (length < inner_deadzone) {
-    return vec2{};
+  auto l = length(v);
+  if (l < inner_deadzone) {
+    return vec2{0};
   }
-  v = v.normalised();
-  if (normalise || length > 1 - outer_deadzone) {
+  v = normalise(v);
+  if (should_normalise || l > 1 - outer_deadzone) {
     return v;
   }
-  length = (length - inner_deadzone) / (1 - outer_deadzone - inner_deadzone);
-  return v * length;
+  l = (l - inner_deadzone) / (1 - outer_deadzone - inner_deadzone);
+  return v * l;
 }
 
 vec2 kbm_move_velocity(const io::keyboard::frame& frame) {
@@ -44,7 +44,8 @@ vec2 kbm_move_velocity(const io::keyboard::frame& frame) {
   bool d = frame.key(io::keyboard::key::kDArrow) || frame.key(io::keyboard::key::kS);
   bool l = frame.key(io::keyboard::key::kLArrow) || frame.key(io::keyboard::key::kA);
   bool r = frame.key(io::keyboard::key::kRArrow) || frame.key(io::keyboard::key::kD);
-  return vec2{0, -1} * u + vec2{0, 1} * d + vec2{-1, 0} * l + vec2{1, 0} * r;
+  return vec2{0, -1} * fixed{u} + vec2{0, 1} * fixed{d} + vec2{-1, 0} * fixed{l} +
+      vec2{1, 0} * fixed{r};
 }
 
 vec2 kbm_fire_target(const io::mouse::frame& frame, const glm::uvec2& game_dimensions,
@@ -83,8 +84,9 @@ vec2 controller_move_velocity(const io::controller::frame& frame) {
   bool d = frame.button(io::controller::button::kDpadDown);
   bool l = frame.button(io::controller::button::kDpadLeft);
   bool r = frame.button(io::controller::button::kDpadRight);
-  auto v = vec2{0, -1} * u + vec2{0, 1} * d + vec2{-1, 0} * l + vec2{1, 0} * r;
-  if (v != vec2{}) {
+  auto v = vec2{0, -1} * fixed{u} + vec2{0, 1} * fixed{d} + vec2{-1, 0} * fixed{l} +
+      vec2{1, 0} * fixed{r};
+  if (v != vec2{0}) {
     return v;
   }
   return controller_stick(frame.axis(io::controller::axis::kLX),
@@ -118,7 +120,9 @@ IoInputAdapter::IoInputAdapter(const io::IoLayer& io_layer, ReplayWriter* replay
 void IoInputAdapter::set_player_count(std::uint32_t players) {
   player_count_ = players;
   last_aim_.clear();
-  last_aim_.resize(players);
+  for (std::uint32_t i = 0; i < players; ++i) {
+    last_aim_.emplace_back(vec2{0});
+  }
 }
 
 void IoInputAdapter::set_game_dimensions(const glm::uvec2& dimensions) {
@@ -155,17 +159,17 @@ std::vector<input_frame> IoInputAdapter::get() {
     if (input.kbm) {
       frame.velocity = kbm_move_velocity(keyboard_frame);
     }
-    if (controller && frame.velocity == vec2{}) {
+    if (controller && frame.velocity == vec2{0}) {
       frame.velocity = controller_move_velocity(*controller);
     }
 
     if (controller) {
       auto v = controller_fire_target(*controller);
-      if (v != vec2{}) {
+      if (v != vec2{0}) {
         if (input.kbm) {
           mouse_moving_ = false;
         }
-        frame.target_relative = last_aim_[i] = v.normalised() * 48;
+        frame.target_relative = last_aim_[i] = normalise(v) * 48;
         frame.keys |= input_frame::key::kFire;
       }
     }
@@ -179,7 +183,7 @@ std::vector<input_frame> IoInputAdapter::get() {
       }
     }
     if (!frame.target_absolute && !frame.target_relative) {
-      if (controller && last_aim_[i] != vec2{}) {
+      if (controller && last_aim_[i] != vec2{0}) {
         frame.target_relative = last_aim_[i];
       } else {
         frame.target_relative = vec2{48, 0};

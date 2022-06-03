@@ -66,7 +66,8 @@ public:
   void render_with_colour(colour_t colour) const;
 
   bool is_on_screen() const {
-    return shape_.centre >= vec2{} && shape_.centre <= vec2{ii::kSimWidth, ii::kSimHeight};
+    return all(greaterThanEqual(shape_.centre, vec2{0})) &&
+        all(lessThanEqual(shape_.centre, vec2{ii::kSimWidth, ii::kSimHeight}));
   }
 
   static vec2 get_screen_centre() {

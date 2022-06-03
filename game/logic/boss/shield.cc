@@ -17,21 +17,21 @@ ShieldBombBoss::ShieldBombBoss(ii::SimInterface& sim, std::int32_t players, std:
        kSbbBaseHp,
        players,
        cycle} {
-  add_new_shape<Polygon>(vec2{}, 48, 8, 0x339966ff, 0, kDangerous | kVulnerable,
+  add_new_shape<Polygon>(vec2{0}, 48, 8, 0x339966ff, 0, kDangerous | kVulnerable,
                          Polygon::T::kPolygram);
 
   for (std::int32_t i = 0; i < 16; ++i) {
-    vec2 a = vec2{120, 0}.rotated(i * fixed_c::pi / 8);
-    vec2 b = vec2{80, 0}.rotated(i * fixed_c::pi / 8);
+    vec2 a = rotate(vec2{120, 0}, i * fixed_c::pi / 8);
+    vec2 b = rotate(vec2{80, 0}, i * fixed_c::pi / 8);
 
-    add_new_shape<Line>(vec2{}, a, b, 0x999999ff, 0);
+    add_new_shape<Line>(vec2{0}, a, b, 0x999999ff, 0);
   }
 
-  add_new_shape<Polygon>(vec2{}, 130, 16, 0xccccccff, 0, kVulnShield | kDangerous);
-  add_new_shape<Polygon>(vec2{}, 125, 16, 0xccccccff, 0, 0);
-  add_new_shape<Polygon>(vec2{}, 120, 16, 0xccccccff, 0, 0);
+  add_new_shape<Polygon>(vec2{0}, 130, 16, 0xccccccff, 0, kVulnShield | kDangerous);
+  add_new_shape<Polygon>(vec2{0}, 125, 16, 0xccccccff, 0, 0);
+  add_new_shape<Polygon>(vec2{0}, 120, 16, 0xccccccff, 0, 0);
 
-  add_new_shape<Polygon>(vec2{}, 42, 16, 0, 0, kShield);
+  add_new_shape<Polygon>(vec2{0}, 42, 16, 0, 0, kShield);
 
   set_ignore_damage_colour_index(1);
 }
@@ -80,8 +80,8 @@ void ShieldBombBoss::update() {
   }
 
   if (attack_) {
-    vec2 d = attack_dir_.rotated((kSbbAttackTime - attack_) * fixed_c::half * fixed_c::pi /
-                                 kSbbAttackTime);
+    auto d = rotate(attack_dir_,
+                    (kSbbAttackTime - attack_) * fixed_c::half * fixed_c::pi / kSbbAttackTime);
     spawn_new<BossShot>(shape().centre, d);
     attack_--;
     play_sound_random(ii::sound::kBossFire);
@@ -106,15 +106,15 @@ void ShieldBombBoss::update() {
     }
 
     if (sim().random(2)) {
-      vec2 d = vec2{5, 0}.rotated(shape().rotation());
+      auto d = rotate(vec2{5, 0}, shape().rotation());
       for (std::int32_t i = 0; i < 12; ++i) {
         spawn_new<BossShot>(shape().centre, d);
-        d = d.rotated(2 * fixed_c::pi / 12);
+        d = rotate(d, 2 * fixed_c::pi / 12);
       }
       play_sound(ii::sound::kBossAttack);
     } else {
       attack_ = kSbbAttackTime;
-      attack_dir_ = vec2::from_polar(sim().random_fixed() * (2 * fixed_c::pi), 5);
+      attack_dir_ = from_polar(sim().random_fixed() * (2 * fixed_c::pi), 5_fx);
     }
   }
 }

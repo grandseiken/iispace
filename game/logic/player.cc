@@ -24,11 +24,11 @@ Player::Player(ii::SimInterface& sim, const vec2& position, std::int32_t player_
 , player_number_{player_number}
 , revive_timer_{kReviveTime}
 , fire_target_{get_screen_centre()} {
-  add_new_shape<Polygon>(vec2{}, 16, 3, colour());
+  add_new_shape<Polygon>(vec2{0}, 16, 3, colour());
   add_new_shape<Fill>(vec2{8, 0}, 2, 2, colour());
   add_new_shape<Fill>(vec2{8, 0}, 1, 1, colour() & 0xffffff33);
   add_new_shape<Fill>(vec2{8, 0}, 3, 3, colour() & 0xffffff33);
-  add_new_shape<Polygon>(vec2{}, 8, 3, colour(), fixed_c::pi);
+  add_new_shape<Polygon>(vec2{0}, 8, 3, colour(), fixed_c::pi);
   kill_queue_.clear();
   fire_timer_ = 0;
 }
@@ -65,11 +65,11 @@ void Player::update() {
   }
 
   // Movement.
-  if (input.velocity.length() > fixed_c::hundredth) {
-    vec2 v = input.velocity.length() > 1 ? input.velocity.normalised() : input.velocity;
-    shape().set_rotation(v.angle());
-    shape().centre = std::max(
-        vec2{}, std::min(vec2{ii::kSimWidth, ii::kSimHeight}, kPlayerSpeed * v + shape().centre));
+  if (length(input.velocity) > fixed_c::hundredth) {
+    auto v = length(input.velocity) > 1 ? normalise(input.velocity) : input.velocity;
+    shape().set_rotation(angle(v));
+    shape().centre =
+        max(vec2{0}, min(vec2{ii::kSimWidth, ii::kSimHeight}, kPlayerSpeed * v + shape().centre));
   }
 
   // Bombs.
@@ -83,7 +83,7 @@ void Player::update() {
 
     vec2 t = shape().centre;
     for (std::int32_t i = 0; i < 64; ++i) {
-      shape().centre = t + vec2::from_polar(2 * i * fixed_c::pi / 64, kBombRadius);
+      shape().centre = t + from_polar(2 * i * fixed_c::pi / 64, kBombRadius);
       explosion((i % 2) ? colour() : 0xffffffff, 8 + sim().random(8) + sim().random(8), true,
                 to_float(t));
     }
@@ -95,7 +95,7 @@ void Player::update() {
     const auto& list = sim().ships_in_radius(shape().centre, kBombBossRadius, kShipEnemy);
     for (const auto& ship : list) {
       if ((ship->type() & kShipBoss) ||
-          (ship->shape().centre - shape().centre).length() <= kBombRadius) {
+          length(ship->shape().centre - shape().centre) <= kBombRadius) {
         ship->damage(kBombDamage, false, 0);
       }
       if (!(ship->type() & kShipBoss) && ((Enemy*)ship)->get_score() > 0) {
@@ -105,8 +105,8 @@ void Player::update() {
   }
 
   // Shots.
-  vec2 shot = fire_target_ - shape().centre;
-  if (shot.length() > 0 && !fire_timer_ && input.keys & ii::input_frame::kFire) {
+  auto shot = fire_target_ - shape().centre;
+  if (length(shot) > 0 && !fire_timer_ && input.keys & ii::input_frame::kFire) {
     spawn_new<Shot>(shape().centre, this, shot, magic_shot_timer_ != 0);
     if (magic_shot_timer_) {
       --magic_shot_timer_;
@@ -209,7 +209,7 @@ void Player::activate_magic_shield() {
     bomb_ = false;
   }
   shield_ = true;
-  add_new_shape<Polygon>(vec2{}, 16, 10, 0xffffffff);
+  add_new_shape<Polygon>(vec2{0}, 16, 10, 0xffffffff);
 }
 
 void Player::activate_bomb() {
@@ -232,10 +232,10 @@ void Player::update_fire_timer() {
 Shot::Shot(ii::SimInterface& sim, const vec2& position, Player* player, const vec2& direction,
            bool magic)
 : Ship{sim, position, kShipNone}, player_{player}, velocity_{direction}, magic_{magic} {
-  velocity_ = velocity_.normalised() * kShotSpeed;
-  add_new_shape<Fill>(vec2{}, 2, 2, player_->colour());
-  add_new_shape<Fill>(vec2{}, 1, 1, player_->colour() & 0xffffff33);
-  add_new_shape<Fill>(vec2{}, 3, 3, player_->colour() & 0xffffff33);
+  velocity_ = normalise(velocity_) * kShotSpeed;
+  add_new_shape<Fill>(vec2{0}, 2, 2, player_->colour());
+  add_new_shape<Fill>(vec2{0}, 1, 1, player_->colour() & 0xffffff33);
+  add_new_shape<Fill>(vec2{0}, 3, 3, player_->colour() & 0xffffff33);
 }
 
 void Shot::render() const {
@@ -252,8 +252,8 @@ void Shot::render() const {
 void Shot::update() {
   flash_ = magic_ ? sim().random(2) != 0 : false;
   move(velocity_);
-  bool on_screen = shape().centre >= vec2{-4, -4} &&
-      shape().centre < vec2{4 + ii::kSimWidth, 4 + ii::kSimHeight};
+  bool on_screen = all(greaterThanEqual(shape().centre, vec2{-4, -4})) &&
+      all(lessThan(shape().centre, vec2{4 + ii::kSimWidth, 4 + ii::kSimHeight}));
   if (!on_screen) {
     destroy();
     return;
@@ -274,24 +274,24 @@ void Shot::update() {
 
 Powerup::Powerup(ii::SimInterface& sim, const vec2& position, type t)
 : Ship{sim, position, kShipPowerup}, type_{t}, dir_{0, 1} {
-  add_new_shape<Polygon>(vec2{}, 13, 5, 0, fixed_c::pi / 2, 0);
-  add_new_shape<Polygon>(vec2{}, 9, 5, 0, fixed_c::pi / 2, 0);
+  add_new_shape<Polygon>(vec2{0}, 13, 5, 0, fixed_c::pi / 2, 0);
+  add_new_shape<Polygon>(vec2{0}, 9, 5, 0, fixed_c::pi / 2, 0);
 
   switch (type_) {
   case type::kExtraLife:
-    add_new_shape<Polygon>(vec2{}, 8, 3, 0xffffffff, fixed_c::pi / 2);
+    add_new_shape<Polygon>(vec2{0}, 8, 3, 0xffffffff, fixed_c::pi / 2);
     break;
 
   case type::kMagicShots:
-    add_new_shape<Fill>(vec2{}, 3, 3, 0xffffffff);
+    add_new_shape<Fill>(vec2{0}, 3, 3, 0xffffffff);
     break;
 
   case type::kShield:
-    add_new_shape<Polygon>(vec2{}, 11, 5, 0xffffffff, fixed_c::pi / 2);
+    add_new_shape<Polygon>(vec2{0}, 11, 5, 0xffffffff, fixed_c::pi / 2);
     break;
 
   case type::kBomb:
-    add_new_shape<Polygon>(vec2{}, 11, 10, 0xffffffff, fixed_c::pi / 2, 0, Polygon::T::kPolystar);
+    add_new_shape<Polygon>(vec2{0}, 11, 10, 0xffffffff, fixed_c::pi / 2, 0, Polygon::T::kPolystar);
     break;
   }
 }
@@ -305,23 +305,23 @@ void Powerup::update() {
     dir_ = get_screen_centre() - shape().centre;
   } else {
     if (first_frame_) {
-      dir_ = vec2::from_polar(sim().random_fixed() * 2 * fixed_c::pi, 1);
+      dir_ = from_polar(sim().random_fixed() * 2 * fixed_c::pi, 1_fx);
     }
 
-    dir_ = dir_.rotated(2 * fixed_c::hundredth * (rotate_ ? 1 : -1));
+    dir_ = rotate(dir_, 2 * fixed_c::hundredth * (rotate_ ? 1 : -1));
     rotate_ = sim().random(kPowerupRotateTime) ? rotate_ : !rotate_;
   }
   first_frame_ = false;
 
   Player* p = nearest_player();
-  vec2 pv = p->shape().centre - shape().centre;
-  if (pv.length() <= 40 && !p->is_killed()) {
+  auto pv = p->shape().centre - shape().centre;
+  if (length(pv) <= 40 && !p->is_killed()) {
     dir_ = pv;
   }
-  dir_ = dir_.normalised();
+  dir_ = normalise(dir_);
 
-  move(dir_ * kPowerupSpeed * ((pv.length() <= 40) ? 3 : 1));
-  if (pv.length() <= 10 && !p->is_killed()) {
+  move(dir_ * kPowerupSpeed * ((length(pv) <= 40) ? 3 : 1));
+  if (length(pv) <= 10 && !p->is_killed()) {
     damage(1, false, p);
   }
 }
@@ -351,7 +351,7 @@ void Powerup::damage(std::int32_t damage, bool magic, Player* source) {
 
   std::int32_t r = 5 + sim().random(5);
   for (std::int32_t i = 0; i < r; ++i) {
-    vec2 dir = vec2::from_polar(sim().random_fixed() * 2 * fixed_c::pi, 6);
+    vec2 dir = from_polar(sim().random_fixed() * 2 * fixed_c::pi, 6_fx);
     spawn(ii::particle{to_float(shape().centre), 0xffffffff, to_float(dir), 4 + sim().random(8)});
   }
   destroy();
