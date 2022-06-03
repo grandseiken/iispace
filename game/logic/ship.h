@@ -61,8 +61,8 @@ public:
 
   // Helpful functions
   //------------------------------
-  void
-  explosion(colour_t c = 0, std::int32_t time = 8, bool towards = false, const fvec2& v = {}) const;
+  void explosion(colour_t c = 0, std::int32_t time = 8, bool towards = false,
+                 const glm::vec2& v = glm::vec2{0.f}) const;
   void render_with_colour(colour_t colour) const;
 
   bool is_on_screen() const {

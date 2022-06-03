@@ -55,19 +55,20 @@ void Ship::spawn(const ii::particle& particle) const {
   sim_->add_particle(particle);
 }
 
-void Ship::explosion(colour_t c, std::int32_t time, bool towards, const fvec2& v) const {
+void Ship::explosion(colour_t c, std::int32_t time, bool towards, const glm::vec2& v) const {
   for (const auto& shape : shape_.shapes()) {
     std::int32_t n = towards ? sim().random(2) + 1 : sim().random(8) + 8;
     for (std::int32_t j = 0; j < n; ++j) {
-      fvec2 pos =
-          shape->convert_fl_point(to_float(shape_.centre), shape_.rotation().to_float(), {});
+      auto pos = shape->convert_fl_point(to_float(shape_.centre), shape_.rotation().to_float(),
+                                         glm::vec2{0.f});
 
-      fvec2 dir = fvec2::from_polar(sim().random_fixed().to_float() * 2 * kPiFloat, 6.f);
+      auto dir = glm_polar(sim().random_fixed().to_float() * 2 * kPiFloat, 6.f);
 
-      if (towards && v - pos != fvec2{}) {
-        dir = (v - pos).normalised();
-        float angle = dir.angle() + (sim().random_fixed().to_float() - 0.5f) * kPiFloat / 4;
-        dir = fvec2::from_polar(angle, 6.f);
+      if (towards && v - pos != glm::vec2{0.f}) {
+        dir = glm::normalize(v - pos);
+        float angle =
+            std::atan2(dir.y, dir.x) + (sim().random_fixed().to_float() - 0.5f) * kPiFloat / 4;
+        dir = glm_polar(angle, 6.f);
       }
 
       spawn(ii::particle{pos, c ? c : shape->colour, dir, time + sim().random(8)});

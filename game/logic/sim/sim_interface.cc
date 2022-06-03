@@ -200,16 +200,16 @@ void SimInterface::render_hp_bar(float fill) const {
   internals_->boss_hp_bar = fill;
 }
 
-void SimInterface::render_line(const fvec2& a, const fvec2& b, colour_t c) const {
+void SimInterface::render_line(const glm::vec2& a, const glm::vec2& b, colour_t c) const {
   auto& e = internals_->line_output.emplace_back();
   e.a = a;
   e.b = b;
   e.c = c;
 }
 
-void SimInterface::render_line_rect(const fvec2& lo, const fvec2& hi, colour_t c) const {
-  fvec2 li{lo.x, hi.y};
-  fvec2 ho{hi.x, lo.y};
+void SimInterface::render_line_rect(const glm::vec2& lo, const glm::vec2& hi, colour_t c) const {
+  glm::vec2 li{lo.x, hi.y};
+  glm::vec2 ho{hi.x, lo.y};
   render_line(lo, li, c);
   render_line(li, hi, c);
   render_line(hi, ho, c);

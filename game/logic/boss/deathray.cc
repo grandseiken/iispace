@@ -188,8 +188,8 @@ void DeathRayBoss::render() const {
       continue;
     }
 
-    fvec2 pos = to_float(shape().centre);
-    fvec2 d = to_float(ray_src1_) - pos;
+    auto pos = to_float(shape().centre);
+    auto d = to_float(ray_src1_) - pos;
     d *= static_cast<float>(i - 40) / (kDrbRayTimer - 40);
     Polygon s{{}, 10, 6, 0x999999ff, 0, 0, Polygon::T::kPolystar};
     s.render(sim(), d + pos, 0);

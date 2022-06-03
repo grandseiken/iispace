@@ -1,11 +1,12 @@
 #include "game/logic/stars.h"
+#include "game/logic/shape.h"
 #include "game/logic/sim/sim_interface.h"
 
 namespace {
 const std::uint32_t kTimer = 500;
 }  // namespace
 
-fvec2 Stars::direction_ = {0, 1};
+glm::vec2 Stars::direction_ = {0, 1};
 std::int32_t Stars::star_rate_ = 0;
 std::vector<std::unique_ptr<Stars::data>> Stars::stars_;
 
@@ -27,7 +28,7 @@ void Stars::update(ii::SimInterface& sim) {
 }
 
 void Stars::change(ii::SimInterface& sim) {
-  direction_ = direction_.rotated((sim.random_fixed().to_float() - 0.5f) * kPiFloat);
+  direction_ = glm_rotate(direction_, (sim.random_fixed().to_float() - 0.5f) * kPiFloat);
   for (const auto& star : stars_) {
     star->timer = kTimer;
   }
@@ -39,19 +40,19 @@ void Stars::render(const ii::SimInterface& sim) {
     switch (star->type) {
     case type::kDotStar:
     case type::kFarStar:
-      sim.render_line_rect(star->position - fvec2{1, 1}, star->position + fvec2{1, 1},
+      sim.render_line_rect(star->position - glm::vec2{1, 1}, star->position + glm::vec2{1, 1},
                            star->colour);
       break;
 
     case type::kBigStar:
-      sim.render_line_rect(star->position - fvec2{2, 2}, star->position + fvec2{2, 2},
+      sim.render_line_rect(star->position - glm::vec2{2, 2}, star->position + glm::vec2{2, 2},
                            star->colour);
       break;
 
     case type::kPlanet:
       for (std::int32_t i = 0; i < 8; ++i) {
-        fvec2 a = fvec2::from_polar(i * kPiFloat / 4, star->size);
-        fvec2 b = fvec2::from_polar((i + 1) * kPiFloat / 4, star->size);
+        auto a = glm_polar(i * kPiFloat / 4, star->size);
+        auto b = glm_polar((i + 1) * kPiFloat / 4, star->size);
         sim.render_line(star->position + a, star->position + b, star->colour);
       }
     }

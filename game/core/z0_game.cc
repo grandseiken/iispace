@@ -56,13 +56,9 @@ glm::vec4 convert_colour(colour_t c) {
           (c & 0xff) / 255.f};
 }
 
-glm::vec2 convert_vec(fvec2 v) {
-  return {v.x, v.y};
-}
-
-void render_line(ii::render::GlRenderer& r, const fvec2& a, const fvec2& b, colour_t c) {
+void render_line(ii::render::GlRenderer& r, const glm::vec2& a, const glm::vec2& b, colour_t c) {
   c = z::colour_cycle(c, r.colour_cycle());
-  ii::render::line_t line{convert_vec(a), convert_vec(b), convert_colour(c)};
+  ii::render::line_t line{a, b, convert_colour(c)};
   r.render_lines({&line, 1});
 }
 
@@ -70,31 +66,32 @@ void render_lines(ii::render::GlRenderer& r, const nonstd::span<ii::render_outpu
   std::vector<ii::render::line_t> render;
   for (const auto& line : lines) {
     auto& rl = render.emplace_back();
-    rl.a = convert_vec(line.a);
-    rl.b = convert_vec(line.b);
+    rl.a = line.a;
+    rl.b = line.b;
     rl.colour = convert_colour(z::colour_cycle(line.c, r.colour_cycle()));
   }
   r.render_lines(render);
 }
 
-void render_text(ii::render::GlRenderer& r, const fvec2& v, const std::string& text, colour_t c) {
+void render_text(ii::render::GlRenderer& r, const glm::vec2& v, const std::string& text,
+                 colour_t c) {
   c = z::colour_cycle(c, r.colour_cycle());
-  r.render_text(0, 16 * static_cast<glm::ivec2>(convert_vec(v)), convert_colour(c),
+  r.render_text(0, 16 * static_cast<glm::ivec2>(v), convert_colour(c),
                 ii::ustring_view::utf8(text));
 }
 
-void render_rect(ii::render::GlRenderer& r, const fvec2& lo, const fvec2& hi, colour_t c,
+void render_rect(ii::render::GlRenderer& r, const glm::vec2& lo, const glm::vec2& hi, colour_t c,
                  std::int32_t line_width) {
   c = z::colour_cycle(c, r.colour_cycle());
-  auto v_lo = static_cast<glm::ivec2>(convert_vec(lo));
-  auto v_hi = static_cast<glm::ivec2>(convert_vec(hi));
+  auto v_lo = static_cast<glm::ivec2>(lo);
+  auto v_hi = static_cast<glm::ivec2>(hi);
   r.render_rect(v_lo, v_hi - v_lo, line_width, glm::vec4{0.f}, glm::vec4{0.f}, convert_colour(c),
                 convert_colour(c));
 }
 
-void render_panel(ii::render::GlRenderer& r, const fvec2& low, const fvec2& hi) {
-  fvec2 tlow{low.x * kTextWidth, low.y * kTextHeight};
-  fvec2 thi{hi.x * kTextWidth, hi.y * kTextHeight};
+void render_panel(ii::render::GlRenderer& r, const glm::vec2& low, const glm::vec2& hi) {
+  glm::vec2 tlow{low.x * kTextWidth, low.y * kTextHeight};
+  glm::vec2 thi{hi.x * kTextWidth, hi.y * kTextHeight};
   render_rect(r, tlow, thi, z0Game::kPanelBack, 2);
   render_rect(r, tlow, thi, z0Game::kPanelText, 4);
 }
@@ -168,10 +165,10 @@ void PauseModal::render(const ii::ui::UiLayer& ui, ii::render::GlRenderer& r) co
     render_text(r, {13.f, 12.f}, ">", z0Game::kPanelTran);
   }
 
-  fvec2 low{static_cast<float>(4 * kTextWidth + 4),
-            static_cast<float>((8 + 2 * selection_) * kTextHeight + 4)};
-  fvec2 hi{static_cast<float>(5 * kTextWidth - 4),
-           static_cast<float>((9 + 2 * selection_) * kTextHeight - 4)};
+  glm::vec2 low{static_cast<float>(4 * kTextWidth + 4),
+                static_cast<float>((8 + 2 * selection_) * kTextHeight + 4)};
+  glm::vec2 hi{static_cast<float>(5 * kTextWidth - 4),
+               static_cast<float>((9 + 2 * selection_) * kTextHeight - 4)};
   render_rect(r, low, hi, z0Game::kPanelText, 1);
 }
 
@@ -257,8 +254,8 @@ void HighScoreModal::render(const ii::ui::UiLayer& ui, ii::render::GlRenderer& r
       render_text(r, {6.f + enter_name_.length(), 25.f}, kAllowedChars.substr(enter_char_, 1),
                   0xbbbbbbff);
     }
-    fvec2 low{4 * kTextWidth + 4, 25 * kTextHeight + 4};
-    fvec2 hi{5 * kTextWidth - 4, 26 * kTextHeight - 4};
+    glm::vec2 low{4 * kTextWidth + 4, 25 * kTextHeight + 4};
+    glm::vec2 hi{5 * kTextWidth - 4, 26 * kTextHeight - 4};
     render_rect(r, low, hi, z0Game::kPanelText, 1);
   }
 
@@ -449,23 +446,25 @@ void GameModal::render(const ii::ui::UiLayer& ui, ii::render::GlRenderer& r) con
     std::stringstream ss;
     ss << p.multiplier << "X";
     std::string s = ss.str();
-    fvec2 v = n == 1 ? fvec2{kWidth / 16 - 1.f - s.length(), 1.f}
-        : n == 2     ? fvec2{1.f, kHeight / 16 - 2.f}
-        : n == 3     ? fvec2{kWidth / 16 - 1.f - s.length(), kHeight / 16 - 2.f}
-                     : fvec2{1.f, 1.f};
+    auto v = n == 1 ? glm::vec2{kWidth / 16 - 1.f - s.length(), 1.f}
+        : n == 2    ? glm::vec2{1.f, kHeight / 16 - 2.f}
+        : n == 3    ? glm::vec2{kWidth / 16 - 1.f - s.length(), kHeight / 16 - 2.f}
+                    : glm::vec2{1.f, 1.f};
     render_text(r, v, s, z0Game::kPanelText);
 
     ss.str("");
     n % 2 ? ss << p.score << "   " : ss << "   " << p.score;
-    render_text(
-        r, v - (n % 2 ? fvec2{static_cast<float>(ss.str().length() - s.length()), 0} : fvec2{}),
-        ss.str(), p.colour);
+    render_text(r,
+                v -
+                    (n % 2 ? glm::vec2{static_cast<float>(ss.str().length() - s.length()), 0}
+                           : glm::vec2{0.f}),
+                ss.str(), p.colour);
 
     if (p.timer) {
       v.x += n % 2 ? -1 : ss.str().length();
       v *= 16;
-      auto lo = v + fvec2{5.f, 11.f - 10 * p.timer};
-      auto hi = v + fvec2{9.f, 13.f};
+      auto lo = v + glm::vec2{5.f, 11.f - 10 * p.timer};
+      auto hi = v + glm::vec2{9.f, 13.f};
       render_line(r, lo, {lo.x, hi.y}, 0xffffffff);
       render_line(r, {lo.x, hi.y}, hi, 0xffffffff);
       render_line(r, hi, {hi.x, lo.y}, 0xffffffff);
@@ -682,11 +681,12 @@ void z0Game::render(const ii::ui::UiLayer& ui, ii::render::GlRenderer& r) const 
     render_text(r, {6.f, 6.f}, "         >", kPanelTran);
   }
 
-  fvec2 low{
+  glm::vec2 low{
       static_cast<float>(4 * kTextWidth + 4),
       static_cast<float>((6 + 2 * static_cast<std::int32_t>(menu_select_)) * kTextHeight + 4)};
-  fvec2 hi{static_cast<float>(5 * kTextWidth - 4),
-           static_cast<float>((7 + 2 * static_cast<std::int32_t>(menu_select_)) * kTextHeight - 4)};
+  glm::vec2 hi{
+      static_cast<float>(5 * kTextWidth - 4),
+      static_cast<float>((7 + 2 * static_cast<std::int32_t>(menu_select_)) * kTextHeight - 4)};
   render_rect(r, low, hi, kPanelText, 1);
 
   if (player_select_ > 1 && menu_select_ == menu::kPlayers) {

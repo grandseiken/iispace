@@ -36,6 +36,7 @@ cc_library(
     "//game/common",
     "//game/logic/sim:sim_interface",
     "//game/mixer:sound",
+    "@glm",
   ],
   visibility = ["//visibility:public"],
 )

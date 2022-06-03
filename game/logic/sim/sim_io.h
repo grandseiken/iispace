@@ -1,6 +1,7 @@
 #ifndef II_GAME_LOGIC_SIM_SIM_IO_H
 #define II_GAME_LOGIC_SIM_SIM_IO_H
 #include "game/common/z.h"
+#include <glm/glm.hpp>
 #include <cstdint>
 #include <optional>
 #include <vector>
@@ -56,8 +57,8 @@ struct render_output {
     float timer = 0.f;
   };
   struct line_t {
-    fvec2 a;
-    fvec2 b;
+    glm::vec2 a{0.f};
+    glm::vec2 b{0.f};
     colour_t c = 0;
   };
   std::vector<player_info> players;

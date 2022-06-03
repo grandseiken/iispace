@@ -14,9 +14,9 @@ class Filesystem;
 namespace ii::render {
 
 struct line_t {
-  glm::vec2 a;
-  glm::vec2 b;
-  glm::vec4 colour;
+  glm::vec2 a{0.f};
+  glm::vec2 b{0.f};
+  glm::vec4 colour{0.f};
 };
 
 class GlRenderer {

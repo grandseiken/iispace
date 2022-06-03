@@ -1,5 +1,14 @@
 #include "game/logic/shape.h"
 #include "game/logic/sim/sim_interface.h"
+#include <cmath>
+
+glm::vec2 glm_polar(float angle, float length) {
+  return length * glm::vec2{std::cos(angle), std::sin(angle)};
+}
+
+glm::vec2 glm_rotate(const glm::vec2& v, float angle) {
+  return glm_polar(std::atan2(v.y, v.x) + angle, glm::length(v));
+}
 
 Shape::Shape(const vec2& centre, fixed rotation, colour_t colour, std::int32_t category,
              bool can_rotate)
@@ -10,7 +19,7 @@ Shape::Shape(const vec2& centre, fixed rotation, colour_t colour, std::int32_t c
 , can_rotate_{can_rotate} {}
 
 bool Shape::check_point(const vec2& v) const {
-  vec2 a = v - centre;
+  auto a = v - centre;
   if (can_rotate_) {
     a = a.rotated(-rotation_);
   }
@@ -18,7 +27,7 @@ bool Shape::check_point(const vec2& v) const {
 }
 
 vec2 Shape::convert_point(const vec2& position, fixed rotation, const vec2& v) const {
-  vec2 a = v;
+  auto a = v;
   if (can_rotate_) {
     a = a.rotated(rotation_);
   }
@@ -26,12 +35,13 @@ vec2 Shape::convert_point(const vec2& position, fixed rotation, const vec2& v) c
   return position + a;
 }
 
-fvec2 Shape::convert_fl_point(const fvec2& position, float rotation, const fvec2& v) const {
-  fvec2 a = v;
+glm::vec2
+Shape::convert_fl_point(const glm::vec2& position, float rotation, const glm::vec2& v) const {
+  auto a = v;
   if (can_rotate_) {
-    a = a.rotated(rotation_.to_float());
+    a = glm_rotate(a, rotation_.to_float());
   }
-  a = (a + to_float(centre)).rotated(rotation);
+  a = glm_rotate(a + to_float(centre), rotation);
   return position + a;
 }
 
@@ -54,12 +64,12 @@ void Shape::rotate(fixed rotation_amount) {
 Fill::Fill(const vec2& centre, fixed width, fixed height, colour_t colour, std::int32_t category)
 : Shape{centre, 0, colour, category, false}, width{width}, height{height} {}
 
-void Fill::render(ii::SimInterface& sim, const fvec2& position, float rotation,
+void Fill::render(ii::SimInterface& sim, const glm::vec2& position, float rotation,
                   colour_t colour_override) const {
-  fvec2 c = convert_fl_point(position, rotation, {});
-  fvec2 wh = {width.to_float(), height.to_float()};
-  fvec2 a = c + wh;
-  fvec2 b = c - wh;
+  auto c = convert_fl_point(position, rotation, glm::vec2{0.f});
+  auto wh = glm::vec2{width.to_float(), height.to_float()};
+  auto a = c + wh;
+  auto b = c - wh;
   sim.render_line_rect(a, b, colour_override ? colour_override : colour);
 }
 
@@ -70,10 +80,10 @@ bool Fill::check_local_point(const vec2& v) const {
 Line::Line(const vec2& centre, const vec2& a, const vec2& b, colour_t colour, fixed rotation)
 : Shape{centre, rotation, colour, 0}, a{a}, b{b} {}
 
-void Line::render(ii::SimInterface& sim, const fvec2& position, float rotation,
+void Line::render(ii::SimInterface& sim, const glm::vec2& position, float rotation,
                   colour_t colour_override) const {
-  fvec2 aa = convert_fl_point(position, rotation, to_float(a));
-  fvec2 bb = convert_fl_point(position, rotation, to_float(b));
+  auto aa = convert_fl_point(position, rotation, to_float(a));
+  auto bb = convert_fl_point(position, rotation, to_float(b));
   sim.render_line(aa, bb, colour_override ? colour_override : colour);
 }
 
@@ -85,15 +95,15 @@ Box::Box(const vec2& centre, fixed width, fixed height, colour_t colour, fixed r
          std::int32_t category)
 : Shape{centre, rotation, colour, category}, width{width}, height{height} {}
 
-void Box::render(ii::SimInterface& sim, const fvec2& position, float rotation,
+void Box::render(ii::SimInterface& sim, const glm::vec2& position, float rotation,
                  colour_t colour_override) const {
   float w = width.to_float();
   float h = height.to_float();
 
-  fvec2 a = convert_fl_point(position, rotation, {w, h});
-  fvec2 b = convert_fl_point(position, rotation, {-w, h});
-  fvec2 c = convert_fl_point(position, rotation, {-w, -h});
-  fvec2 d = convert_fl_point(position, rotation, {w, -h});
+  auto a = convert_fl_point(position, rotation, {w, h});
+  auto b = convert_fl_point(position, rotation, {-w, h});
+  auto c = convert_fl_point(position, rotation, {-w, -h});
+  auto d = convert_fl_point(position, rotation, {w, -h});
 
   sim.render_line(a, b, colour_override ? colour_override : colour);
   sim.render_line(b, c, colour_override ? colour_override : colour);
@@ -109,19 +119,18 @@ Polygon::Polygon(const vec2& centre, fixed radius, std::int32_t sides, colour_t 
                  fixed rotation, std::int32_t category, T type)
 : Shape{centre, rotation, colour, category}, radius{radius}, sides{sides}, type{type} {}
 
-void Polygon::render(ii::SimInterface& sim, const fvec2& position, float rotation,
+void Polygon::render(ii::SimInterface& sim, const glm::vec2& position, float rotation,
                      colour_t colour_override) const {
   if (sides < 2) {
     return;
   }
 
   float r = radius.to_float();
-  std::vector<fvec2> lines;
+  std::vector<glm::vec2> lines;
   if (type == T::kPolygram) {
-    std::vector<fvec2> list;
+    std::vector<glm::vec2> list;
     for (std::int32_t i = 0; i < sides; ++i) {
-      fvec2 v = fvec2::from_polar(i * 2 * kPiFloat / sides, r);
-      list.push_back(v);
+      list.push_back(glm_polar(i * 2 * kPiFloat / sides, r));
     }
 
     for (std::size_t i = 0; i < list.size(); ++i) {
@@ -132,10 +141,10 @@ void Polygon::render(ii::SimInterface& sim, const fvec2& position, float rotatio
     }
   } else {
     for (std::int32_t i = 0; i < sides; ++i) {
-      fvec2 a = fvec2::from_polar(i * 2 * kPiFloat / sides, r);
-      fvec2 b = fvec2::from_polar((i + 1) * 2 * kPiFloat / sides, r);
+      auto a = glm_polar(i * 2 * kPiFloat / sides, r);
+      auto b = glm_polar((i + 1) * 2 * kPiFloat / sides, r);
       lines.push_back(a);
-      lines.push_back(type == T::kPolygon ? b : fvec2{});
+      lines.push_back(type == T::kPolygon ? b : glm::vec2{0.f});
     }
   }
   for (std::size_t i = 0; i < lines.size(); i += 2) {
@@ -153,7 +162,7 @@ PolyArc::PolyArc(const vec2& centre, fixed radius, std::int32_t sides, std::int3
                  colour_t colour, fixed rotation, std::int32_t category)
 : Shape{centre, rotation, colour, category}, radius{radius}, sides{sides}, segments{segments} {}
 
-void PolyArc::render(ii::SimInterface& sim, const fvec2& position, float rotation,
+void PolyArc::render(ii::SimInterface& sim, const glm::vec2& position, float rotation,
                      colour_t colour_override) const {
   if (sides < 2) {
     return;
@@ -161,8 +170,8 @@ void PolyArc::render(ii::SimInterface& sim, const fvec2& position, float rotatio
   float r = radius.to_float();
 
   for (std::int32_t i = 0; i < sides && i < segments; ++i) {
-    fvec2 a = fvec2::from_polar(i * 2 * kPiFloat / sides, r);
-    fvec2 b = fvec2::from_polar((i + 1) * 2 * kPiFloat / sides, r);
+    auto a = glm_polar(i * 2 * kPiFloat / sides, r);
+    auto b = glm_polar((i + 1) * 2 * kPiFloat / sides, r);
     sim.render_line(convert_fl_point(position, rotation, a),
                     convert_fl_point(position, rotation, b),
                     colour_override ? colour_override : colour);
@@ -199,9 +208,9 @@ void CompoundShape::clear_shapes() {
   children_.clear();
 }
 
-void CompoundShape::render(ii::SimInterface& sim, const fvec2& position, float rot,
+void CompoundShape::render(ii::SimInterface& sim, const glm::vec2& position, float rot,
                            colour_t colour) const {
-  fvec2 c = convert_fl_point(position, rot, {});
+  auto c = convert_fl_point(position, rot, glm::vec2{0.f});
   for (const auto& child : children_) {
     child->render(sim, c, rotation().to_float() + rot, colour);
   }

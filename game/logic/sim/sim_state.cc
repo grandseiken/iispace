@@ -136,8 +136,8 @@ void SimState::render() const {
 
   Stars::render(*interface_);
   for (const auto& particle : internals_->particles) {
-    interface_->render_line_rect(particle.position + fvec2{1, 1}, particle.position - fvec2{1, 1},
-                                 particle.colour);
+    interface_->render_line_rect(particle.position + glm::vec2{1, 1},
+                                 particle.position - glm::vec2{1, 1}, particle.colour);
   }
   for (std::size_t i = internals_->player_list.size(); i < internals_->ships.size(); ++i) {
     internals_->ships[i]->render();
@@ -150,46 +150,44 @@ void SimState::render() const {
     if (i < internals_->ships.size() && !(internals_->ships[i]->type() & Ship::kShipEnemy)) {
       continue;
     }
-    fvec2 v =
-        to_float(i < internals_->ships.size() ? internals_->ships[i]->shape().centre
-                                              : Boss::warnings_[i - internals_->ships.size()]);
+    auto v = to_float(i < internals_->ships.size() ? internals_->ships[i]->shape().centre
+                                                   : Boss::warnings_[i - internals_->ships.size()]);
 
     if (v.x < -4) {
       auto a = static_cast<std::int32_t>(.5f + float{0x1} +
                                          float{0x9} * std::max(v.x + kSimWidth, 0.f) / kSimWidth);
       a |= a << 4;
       a = (a << 8) | (a << 16) | (a << 24) | 0x66;
-      interface_->render_line(fvec2{0.f, v.y}, fvec2{6, v.y - 3}, a);
-      interface_->render_line(fvec2{6.f, v.y - 3}, fvec2{6, v.y + 3}, a);
-      interface_->render_line(fvec2{6.f, v.y + 3}, fvec2{0, v.y}, a);
+      interface_->render_line({0.f, v.y}, {6, v.y - 3}, a);
+      interface_->render_line({6.f, v.y - 3}, {6, v.y + 3}, a);
+      interface_->render_line({6.f, v.y + 3}, {0, v.y}, a);
     }
     if (v.x >= kSimWidth + 4) {
       auto a = static_cast<std::int32_t>(
           .5f + float{0x1} + float{0x9} * std::max(2 * kSimWidth - v.x, 0.f) / kSimWidth);
       a |= a << 4;
       a = (a << 8) | (a << 16) | (a << 24) | 0x66;
-      interface_->render_line(fvec2{float{kSimWidth}, v.y}, fvec2{kSimWidth - 6.f, v.y - 3}, a);
-      interface_->render_line(fvec2{kSimWidth - 6, v.y - 3}, fvec2{kSimWidth - 6.f, v.y + 3}, a);
-      interface_->render_line(fvec2{kSimWidth - 6, v.y + 3}, fvec2{float{kSimWidth}, v.y}, a);
+      interface_->render_line({float{kSimWidth}, v.y}, {kSimWidth - 6.f, v.y - 3}, a);
+      interface_->render_line({kSimWidth - 6, v.y - 3}, {kSimWidth - 6.f, v.y + 3}, a);
+      interface_->render_line({kSimWidth - 6, v.y + 3}, {float{kSimWidth}, v.y}, a);
     }
     if (v.y < -4) {
       auto a = static_cast<std::int32_t>(.5f + float{0x1} +
                                          float{0x9} * std::max(v.y + kSimHeight, 0.f) / kSimHeight);
       a |= a << 4;
       a = (a << 8) | (a << 16) | (a << 24) | 0x66;
-      interface_->render_line(fvec2{v.x, 0.f}, fvec2{v.x - 3, 6.f}, a);
-      interface_->render_line(fvec2{v.x - 3, 6.f}, fvec2{v.x + 3, 6.f}, a);
-      interface_->render_line(fvec2{v.x + 3, 6.f}, fvec2{v.x, 0.f}, a);
+      interface_->render_line({v.x, 0.f}, {v.x - 3, 6.f}, a);
+      interface_->render_line({v.x - 3, 6.f}, {v.x + 3, 6.f}, a);
+      interface_->render_line({v.x + 3, 6.f}, {v.x, 0.f}, a);
     }
     if (v.y >= kSimHeight + 4) {
       auto a = static_cast<std::int32_t>(
           .5f + float{0x1} + float{0x9} * std::max(2 * kSimHeight - v.y, 0.f) / kSimHeight);
       a |= a << 4;
       a = (a << 8) | (a << 16) | (a << 24) | 0x66;
-      interface_->render_line(fvec2{v.x, float{kSimHeight}}, fvec2{v.x - 3, kSimHeight - 6.f}, a);
-      interface_->render_line(fvec2{v.x - 3, kSimHeight - 6.f}, fvec2{v.x + 3, kSimHeight - 6.f},
-                              a);
-      interface_->render_line(fvec2{v.x + 3, kSimHeight - 6.f}, fvec2{v.x, float{kSimHeight}}, a);
+      interface_->render_line({v.x, float{kSimHeight}}, {v.x - 3, kSimHeight - 6.f}, a);
+      interface_->render_line({v.x - 3, kSimHeight - 6.f}, {v.x + 3, kSimHeight - 6.f}, a);
+      interface_->render_line({v.x + 3, kSimHeight - 6.f}, {v.x, float{kSimHeight}}, a);
     }
   }
 }

@@ -1,12 +1,16 @@
 #ifndef II_GAME_LOGIC_SHAPE_H
 #define II_GAME_LOGIC_SHAPE_H
 #include "game/common/z.h"
+#include <glm/glm.hpp>
 #include <memory>
 #include <vector>
 
 namespace ii {
 class SimInterface;
 }  // namespace ii
+
+glm::vec2 glm_polar(float angle, float length);
+glm::vec2 glm_rotate(const glm::vec2& v, float angle);
 
 class Shape {
 public:
@@ -16,13 +20,13 @@ public:
 
   bool check_point(const vec2& v) const;
   vec2 convert_point(const vec2& position, fixed rotation, const vec2& v) const;
-  fvec2 convert_fl_point(const fvec2& position, float rotation, const fvec2& v) const;
+  glm::vec2 convert_fl_point(const glm::vec2& position, float rotation, const glm::vec2& v) const;
 
   fixed rotation() const;
   void set_rotation(fixed rotation);
   void rotate(fixed rotation_amount);
 
-  virtual void render(ii::SimInterface& sim, const fvec2& position, float rotation,
+  virtual void render(ii::SimInterface& sim, const glm::vec2& position, float rotation,
                       colour_t colour_override = 0) const = 0;
 
   vec2 centre;
@@ -40,7 +44,7 @@ class Fill : public Shape {
 public:
   Fill(const vec2& centre, fixed width, fixed height, colour_t colour, std::int32_t category = 0);
 
-  void render(ii::SimInterface& sim, const fvec2& position, float rotation,
+  void render(ii::SimInterface& sim, const glm::vec2& position, float rotation,
               colour_t colour_override = 0) const override;
 
   fixed width = 0;
@@ -54,7 +58,7 @@ class Line : public Shape {
 public:
   Line(const vec2& centre, const vec2& a, const vec2& b, colour_t colour, fixed rotation = 0);
 
-  void render(ii::SimInterface& sim, const fvec2& position, float rotation,
+  void render(ii::SimInterface& sim, const glm::vec2& position, float rotation,
               colour_t colour_override = 0) const override;
 
   vec2 a;
@@ -69,7 +73,7 @@ public:
   Box(const vec2& centre, fixed width, fixed height, colour_t colour, fixed rotation = 0,
       std::int32_t category = 0);
 
-  void render(ii::SimInterface& sim, const fvec2& position, float rotation,
+  void render(ii::SimInterface& sim, const glm::vec2& position, float rotation,
               colour_t colour_override = 0) const override;
 
   fixed width = 0;
@@ -90,7 +94,7 @@ public:
   Polygon(const vec2& centre, fixed radius, std::int32_t sides, colour_t colour, fixed rotation = 0,
           std::int32_t category = 0, T type = T::kPolygon);
 
-  void render(ii::SimInterface& sim, const fvec2& position, float rotation,
+  void render(ii::SimInterface& sim, const glm::vec2& position, float rotation,
               colour_t colour_override = 0) const override;
 
   fixed radius = 0;
@@ -106,7 +110,7 @@ public:
   PolyArc(const vec2& centre, fixed radius, std::int32_t sides, std::int32_t segments,
           colour_t colour, fixed rotation = 0, std::int32_t category = 0);
 
-  void render(ii::SimInterface& sim, const fvec2& position, float rotation,
+  void render(ii::SimInterface& sim, const glm::vec2& position, float rotation,
               colour_t colour_override = 0) const override;
 
   fixed radius = 0;
@@ -133,7 +137,7 @@ public:
   void destroy_shape(std::size_t index);
   void clear_shapes();
 
-  void render(ii::SimInterface& sim, const fvec2& position, float rot,
+  void render(ii::SimInterface& sim, const glm::vec2& position, float rot,
               colour_t colour = 0) const override;
 
 private:

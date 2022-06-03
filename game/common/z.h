@@ -1,6 +1,7 @@
 #ifndef II_GAME_COMMON_Z_H
 #define II_GAME_COMMON_Z_H
 #include "game/common/fix32.h"
+#include <glm/glm.hpp>
 #include <cmath>
 #include <cstdint>
 #include <vector>
@@ -144,10 +145,8 @@ vec2_t<T> operator/(const T& t, const vec2_t<T>& v) {
 }
 
 typedef vec2_t<fixed> vec2;
-typedef vec2_t<std::int32_t> ivec2;
-typedef vec2_t<float> fvec2;
 
-inline fvec2 to_float(const vec2& a) {
+inline glm::vec2 to_float(const vec2& a) {
   return {a.x.to_float(), a.y.to_float()};
 }
 

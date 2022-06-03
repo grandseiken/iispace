@@ -34,8 +34,8 @@ struct SimInternals {
 
   // Per-frame output.
   struct line_output_t {
-    fvec2 a;
-    fvec2 b;
+    glm::vec2 a{0.f};
+    glm::vec2 b{0.f};
     colour_t c = 0;
   };
   struct player_info_t {

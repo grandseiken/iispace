@@ -28,13 +28,13 @@ private:
   struct data {
     std::int32_t timer = 0;
     Stars::type type = Stars::type::kDotStar;
-    fvec2 position;
+    glm::vec2 position{0.f};
     float speed = 0;
     float size = 0;
     colour_t colour = 0;
   };
 
-  static fvec2 direction_;
+  static glm::vec2 direction_;
   static std::vector<std::unique_ptr<data>> stars_;
   static std::int32_t star_rate_;
 };

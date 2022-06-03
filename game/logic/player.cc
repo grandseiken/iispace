@@ -127,11 +127,8 @@ void Player::update() {
 void Player::render() const {
   if (!kill_timer_ && (sim().mode() != ii::game_mode::kWhat || revive_timer_ > 0)) {
     auto t = to_float(fire_target_);
-    if (t >= fvec2{} &&
-        t <= fvec2{static_cast<float>(ii::kSimWidth), static_cast<float>(ii::kSimHeight)}) {
-      sim().render_line(t + fvec2{0, 9}, t - fvec2{0, 8}, colour());
-      sim().render_line(t + fvec2{9, 1}, t - fvec2{8, -1}, colour());
-    }
+    sim().render_line(t + glm::vec2{0, 9}, t - glm::vec2{0, 8}, colour());
+    sim().render_line(t + glm::vec2{9, 1}, t - glm::vec2{8, -1}, colour());
     if (revive_timer_ % 2) {
       render_with_colour(0xffffffff);
     } else {
