@@ -2,7 +2,7 @@
 #include "game/logic/player.h"
 #include <algorithm>
 
-std::vector<std::pair<std::int32_t, std::pair<vec2, colour_t>>> Boss::fireworks_;
+std::vector<std::pair<std::int32_t, std::pair<vec2, glm::vec4>>> Boss::fireworks_;
 std::vector<vec2> Boss::warnings_;
 
 namespace {
@@ -52,8 +52,8 @@ void Boss::damage(std::int32_t damage, bool magic, Player* source) {
   if (damage >= Player::kBombDamage) {
     if (explode_on_damage_) {
       explosion();
-      explosion(0xffffffff, 16);
-      explosion(0, 24);
+      explosion(glm::vec4{1.f}, 16);
+      explosion(std::nullopt, 24);
     }
 
     damaged_ = 25;
@@ -86,8 +86,9 @@ void Boss::render(bool hp_bar) const {
     return;
   }
   for (std::size_t i = 0; i < shapes().size(); ++i) {
-    shapes()[i]->render(sim(), to_float(shape().centre), shape().rotation().to_float(),
-                        static_cast<std::int32_t>(i) < ignore_damage_colour_ ? 0xffffffff : 0);
+    shapes()[i]->render(
+        sim(), to_float(shape().centre), shape().rotation().to_float(),
+        static_cast<std::int32_t>(i) < ignore_damage_colour_ ? glm::vec4{1.f} : glm::vec4{0.f});
   }
   damaged_--;
 }
@@ -110,9 +111,9 @@ void Boss::on_destroy() {
     }
   }
   explosion();
-  explosion(0xffffffff, 12);
+  explosion(glm::vec4{1.f}, 12);
   explosion(shapes()[0]->colour, 24);
-  explosion(0xffffffff, 36);
+  explosion(glm::vec4{1.f}, 36);
   explosion(shapes()[0]->colour, 48);
   std::int32_t n = 1;
   for (std::int32_t i = 0; i < 16; ++i) {

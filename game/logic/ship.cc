@@ -30,10 +30,10 @@ void Ship::render() const {
   }
 }
 
-void Ship::render_with_colour(colour_t colour) const {
+void Ship::render_with_colour(const glm::vec4& colour) const {
   for (const auto& shape : shape_.shapes()) {
     shape->render(sim(), to_float(shape_.centre), shape_.rotation().to_float(),
-                  colour & (0xffffff00 | (shape->colour & 0x000000ff)));
+                  glm::vec4{colour.r, colour.g, colour.b, shape->colour.a});
   }
 }
 
@@ -56,7 +56,8 @@ void Ship::spawn(const ii::particle& particle) const {
   sim_->add_particle(particle);
 }
 
-void Ship::explosion(colour_t c, std::int32_t time, bool towards, const glm::vec2& v) const {
+void Ship::explosion(const std::optional<glm::vec4>& c, std::int32_t time, bool towards,
+                     const glm::vec2& v) const {
   for (const auto& shape : shape_.shapes()) {
     std::int32_t n = towards ? sim().random(2) + 1 : sim().random(8) + 8;
     for (std::int32_t j = 0; j < n; ++j) {
@@ -72,7 +73,7 @@ void Ship::explosion(colour_t c, std::int32_t time, bool towards, const glm::vec
         dir = from_polar(angle, 6.f);
       }
 
-      spawn(ii::particle{pos, c ? c : shape->colour, dir, time + sim().random(8)});
+      spawn(ii::particle{pos, c ? *c : shape->colour, dir, time + sim().random(8)});
     }
   }
 }

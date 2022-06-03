@@ -31,7 +31,7 @@ def xxd(name, namespace, srcs, testonly = False, visibility = None):
   ] + ["namespace %s {" % namespace]
 
   for src in srcs:
-    src_name = src.replace(".", "_")
+    src_name = src.replace("/", "_").replace(".", "_")
     var_name = "_".join(rdir + pdir + [src_name])
     h_content += ["nonstd::span<const std::uint8_t> %s();" % src_name]
     cc_content += [
@@ -45,7 +45,8 @@ def xxd(name, namespace, srcs, testonly = False, visibility = None):
     "  static const std::unordered_map<std::string, nonstd::span<const std::uint8_t>> kFiles = {",
   ]
   for src in srcs:
-    cc_content += ["    {\"%s\", %s()}," % ("/".join(rdir + pdir + [src]), src.replace(".", "_"))]
+    cc_content += ["    {\"%s\", %s()}," %
+                   ("/".join(rdir + pdir + [src]), src.replace("/", "_").replace(".", "_"))]
   cc_content += [
     "  };",
     "  return kFiles;",

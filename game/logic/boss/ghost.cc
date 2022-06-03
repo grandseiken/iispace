@@ -6,14 +6,18 @@ const std::int32_t kGbBaseHp = 700;
 const std::int32_t kGbTimer = 250;
 const std::int32_t kGbAttackTime = 100;
 const fixed kGbWallSpeed = 3 + 1_fx / 2;
+
+const glm::vec4 c0 = colour_hue360(280, .7f);
+const glm::vec4 c1 = colour_hue360(280, .5f, .6f);
+const glm::vec4 c2 = colour_hue360(270, .2f);
 }  // namespace
 
 GhostBoss::GhostBoss(ii::SimInterface& sim, std::int32_t players, std::int32_t cycle)
 : Boss{sim,  {ii::kSimWidth / 2, ii::kSimHeight / 2}, ii::SimInterface::kBoss2B, kGbBaseHp, players,
        cycle}
 , attack_time_{kGbAttackTime} {
-  add_new_shape<Polygon>(vec2{0}, 32, 8, 0x9933ccff, 0, 0);
-  add_new_shape<Polygon>(vec2{0}, 48, 8, 0xcc66ffff, 0, 0);
+  add_new_shape<Polygon>(vec2{0}, 32, 8, c1, 0, 0);
+  add_new_shape<Polygon>(vec2{0}, 48, 8, c0, 0, 0);
 
   for (std::int32_t i = 0; i < 8; ++i) {
     vec2 c = from_polar(i * fixed_c::pi / 4, 48_fx);
@@ -21,18 +25,18 @@ GhostBoss::GhostBoss(ii::SimInterface& sim, std::int32_t players, std::int32_t c
     auto* s = add_new_shape<CompoundShape>(c, 0, 0);
     for (std::int32_t j = 0; j < 8; ++j) {
       vec2 d = from_polar(j * fixed_c::pi / 4, 1_fx);
-      s->add_new_shape<Line>(vec2{0}, d * 10, d * 10 * 2, 0x9933ccff, 0);
+      s->add_new_shape<Line>(vec2{0}, d * 10, d * 10 * 2, c1, 0);
     }
   }
 
-  add_new_shape<Polygon>(vec2{0}, 24, 8, 0xcc66ffff, 0, 0, Polygon::T::kPolygram);
+  add_new_shape<Polygon>(vec2{0}, 24, 8, c0, 0, 0, Polygon::T::kPolygram);
 
   for (std::int32_t n = 0; n < 5; ++n) {
     auto* s = add_new_shape<CompoundShape>(vec2{0}, 0, 0);
     for (std::int32_t i = 0; i < 16 + n * 6; ++i) {
       vec2 d = from_polar(i * 2 * fixed_c::pi / (16 + n * 6), 100_fx + n * 60);
-      s->add_new_shape<Polygon>(d, 16, 8, n ? 0x330066ff : 0x9933ccff, 0, 0, Polygon::T::kPolystar);
-      s->add_new_shape<Polygon>(d, 12, 8, n ? 0x330066ff : 0x9933ccff);
+      s->add_new_shape<Polygon>(d, 16, 8, n ? c2 : c1, 0, 0, Polygon::T::kPolystar);
+      s->add_new_shape<Polygon>(d, 12, 8, n ? c2 : c1);
     }
   }
 
@@ -63,16 +67,16 @@ void GhostBoss::update() {
                       : (t % 10 == 0);
 
       if (((n == 4 && attack_ != 2) || (n + (n == 3)) & danger_circle_) && visible_ && b) {
-        s1.colour = 0xcc66ffff;
-        s2.colour = 0xcc66ffff;
+        s1.colour = c0;
+        s2.colour = c0;
         if (vtime_ == 0) {
           vec2 d = from_polar(i * 2 * fixed_c::pi / (16 + n * 6), 100_fx + n * 60);
-          c->add_new_shape<Polygon>(d, 9, 8, 0);
+          c->add_new_shape<Polygon>(d, 9, 8, glm::vec4{0.f});
           warnings_.push_back(c->convert_point(shape().centre, shape().rotation(), d));
         }
       } else {
-        s1.colour = 0x330066ff;
-        s2.colour = 0x330066ff;
+        s1.colour = c2;
+        s2.colour = c2;
       }
     }
   }
@@ -118,7 +122,7 @@ void GhostBoss::update() {
          ((timer_ % 16 == 0 && attack_ == 2) || (timer_ % 32 == 0 && shot_type_)))) {
       for (std::int32_t i = 0; i < 8; ++i) {
         auto d = from_polar(i * fixed_c::pi / 4 + shape().rotation(), 5_fx);
-        spawn_new<BossShot>(shape().centre, d, 0xcc66ffff);
+        spawn_new<BossShot>(shape().centre, d, c0);
       }
       play_sound_random(ii::sound::kBossFire);
     }
@@ -128,8 +132,8 @@ void GhostBoss::update() {
       auto d = normalise(p->shape().centre - shape().centre);
 
       if (length(d) > fixed_c::half) {
-        spawn_new<BossShot>(shape().centre, d * 5, 0xcc66ffff);
-        spawn_new<BossShot>(shape().centre, d * -5, 0xcc66ffff);
+        spawn_new<BossShot>(shape().centre, d * 5, c0);
+        spawn_new<BossShot>(shape().centre, d * -5, c0);
         play_sound_random(ii::sound::kBossFire);
       }
     }
@@ -145,17 +149,13 @@ void GhostBoss::update() {
       } else if (attack_time_ == kGbAttackTime * 4 - 1) {
         visible_ = true;
         vtime_ = 60;
-        add_new_shape<Box>(vec2{ii::kSimWidth / 2 + 32, 0}, ii::kSimWidth / 2, 10, 0xcc66ffff, 0,
-                           0);
-        add_new_shape<Box>(vec2{ii::kSimWidth / 2 + 32, 0}, ii::kSimWidth / 2, 7, 0xcc66ffff, 0, 0);
-        add_new_shape<Box>(vec2{ii::kSimWidth / 2 + 32, 0}, ii::kSimWidth / 2, 4, 0xcc66ffff, 0, 0);
+        add_new_shape<Box>(vec2{ii::kSimWidth / 2 + 32, 0}, ii::kSimWidth / 2, 10, c0, 0, 0);
+        add_new_shape<Box>(vec2{ii::kSimWidth / 2 + 32, 0}, ii::kSimWidth / 2, 7, c0, 0, 0);
+        add_new_shape<Box>(vec2{ii::kSimWidth / 2 + 32, 0}, ii::kSimWidth / 2, 4, c0, 0, 0);
 
-        add_new_shape<Box>(vec2{-ii::kSimWidth / 2 - 32, 0}, ii::kSimWidth / 2, 10, 0xcc66ffff, 0,
-                           0);
-        add_new_shape<Box>(vec2{-ii::kSimWidth / 2 - 32, 0}, ii::kSimWidth / 2, 7, 0xcc66ffff, 0,
-                           0);
-        add_new_shape<Box>(vec2{-ii::kSimWidth / 2 - 32, 0}, ii::kSimWidth / 2, 4, 0xcc66ffff, 0,
-                           0);
+        add_new_shape<Box>(vec2{-ii::kSimWidth / 2 - 32, 0}, ii::kSimWidth / 2, 10, c0, 0, 0);
+        add_new_shape<Box>(vec2{-ii::kSimWidth / 2 - 32, 0}, ii::kSimWidth / 2, 7, c0, 0, 0);
+        add_new_shape<Box>(vec2{-ii::kSimWidth / 2 - 32, 0}, ii::kSimWidth / 2, 4, c0, 0, 0);
         play_sound(ii::sound::kBossFire);
       } else if (attack_time_ < kGbAttackTime * 3) {
         if (attack_time_ == kGbAttackTime * 3 - 1) {
@@ -261,7 +261,7 @@ void GhostBoss::update() {
 
 void GhostBoss::render() const {
   if ((start_time_ / 4) % 2 == 1) {
-    render_with_colour(1);
+    render_with_colour({0.f, 0.f, 0.f, 1.f / 255});
     return;
   }
   if ((visible_ && ((vtime_ / 4) % 2 == 0)) || (!visible_ && ((vtime_ / 4) % 2 == 1))) {
@@ -269,7 +269,7 @@ void GhostBoss::render() const {
     return;
   }
 
-  render_with_colour(0x330066ff);
+  render_with_colour(c2);
   if (!start_time_) {
     render_hp_bar();
   }
@@ -283,13 +283,13 @@ GhostWall::GhostWall(ii::SimInterface& sim, bool swap, bool no_gap, bool ignored
 : Enemy{sim, {ii::kSimWidth / 2, swap ? -10 : 10 + ii::kSimHeight}, kShipNone, 0}
 , dir_{0, swap ? 1 : -1} {
   if (no_gap) {
-    add_new_shape<Box>(vec2{0}, fixed{ii::kSimWidth}, 10, 0xcc66ffff, 0, kDangerous | kShield);
-    add_new_shape<Box>(vec2{0}, fixed{ii::kSimWidth}, 7, 0xcc66ffff, 0, 0);
-    add_new_shape<Box>(vec2{0}, fixed{ii::kSimWidth}, 4, 0xcc66ffff, 0, 0);
+    add_new_shape<Box>(vec2{0}, fixed{ii::kSimWidth}, 10, c0, 0, kDangerous | kShield);
+    add_new_shape<Box>(vec2{0}, fixed{ii::kSimWidth}, 7, c0, 0, 0);
+    add_new_shape<Box>(vec2{0}, fixed{ii::kSimWidth}, 4, c0, 0, 0);
   } else {
-    add_new_shape<Box>(vec2{0}, ii::kSimHeight / 2, 10, 0xcc66ffff, 0, kDangerous | kShield);
-    add_new_shape<Box>(vec2{0}, ii::kSimHeight / 2, 7, 0xcc66ffff, 0, kDangerous | kShield);
-    add_new_shape<Box>(vec2{0}, ii::kSimHeight / 2, 4, 0xcc66ffff, 0, kDangerous | kShield);
+    add_new_shape<Box>(vec2{0}, ii::kSimHeight / 2, 10, c0, 0, kDangerous | kShield);
+    add_new_shape<Box>(vec2{0}, ii::kSimHeight / 2, 7, c0, 0, kDangerous | kShield);
+    add_new_shape<Box>(vec2{0}, ii::kSimHeight / 2, 4, c0, 0, kDangerous | kShield);
   }
   set_bounding_width(fixed{ii::kSimWidth});
 }
@@ -300,20 +300,16 @@ GhostWall::GhostWall(ii::SimInterface& sim, bool swap, bool swap_gap)
   set_bounding_width(fixed{ii::kSimHeight});
   fixed off = swap_gap ? -100 : 100;
 
-  add_new_shape<Box>(vec2{0, off - 20 - ii::kSimHeight / 2}, 10, ii::kSimHeight / 2, 0xcc66ffff, 0,
+  add_new_shape<Box>(vec2{0, off - 20 - ii::kSimHeight / 2}, 10, ii::kSimHeight / 2, c0, 0,
                      kDangerous | kShield);
-  add_new_shape<Box>(vec2{0, off + 20 + ii::kSimHeight / 2}, 10, ii::kSimHeight / 2, 0xcc66ffff, 0,
+  add_new_shape<Box>(vec2{0, off + 20 + ii::kSimHeight / 2}, 10, ii::kSimHeight / 2, c0, 0,
                      kDangerous | kShield);
 
-  add_new_shape<Box>(vec2{0, off - 20 - ii::kSimHeight / 2}, 7, ii::kSimHeight / 2, 0xcc66ffff, 0,
-                     0);
-  add_new_shape<Box>(vec2{0, off + 20 + ii::kSimHeight / 2}, 7, ii::kSimHeight / 2, 0xcc66ffff, 0,
-                     0);
+  add_new_shape<Box>(vec2{0, off - 20 - ii::kSimHeight / 2}, 7, ii::kSimHeight / 2, c0, 0, 0);
+  add_new_shape<Box>(vec2{0, off + 20 + ii::kSimHeight / 2}, 7, ii::kSimHeight / 2, c0, 0, 0);
 
-  add_new_shape<Box>(vec2{0, off - 20 - ii::kSimHeight / 2}, 4, ii::kSimHeight / 2, 0xcc66ffff, 0,
-                     0);
-  add_new_shape<Box>(vec2{0, off + 20 + ii::kSimHeight / 2}, 4, ii::kSimHeight / 2, 0xcc66ffff, 0,
-                     0);
+  add_new_shape<Box>(vec2{0, off - 20 - ii::kSimHeight / 2}, 4, ii::kSimHeight / 2, c0, 0, 0);
+  add_new_shape<Box>(vec2{0, off + 20 + ii::kSimHeight / 2}, 4, ii::kSimHeight / 2, c0, 0, 0);
 }
 
 void GhostWall::update() {
@@ -334,8 +330,8 @@ void GhostWall::update() {
 
 GhostMine::GhostMine(ii::SimInterface& sim, const vec2& position, Boss* ghost)
 : Enemy{sim, position, kShipNone, 0}, ghost_{ghost} {
-  add_new_shape<Polygon>(vec2{0}, 24, 8, 0x9933ccff, 0, 0);
-  add_new_shape<Polygon>(vec2{0}, 20, 8, 0x9933ccff, 0, 0);
+  add_new_shape<Polygon>(vec2{0}, 24, 8, c1, 0, 0);
+  add_new_shape<Polygon>(vec2{0}, 20, 8, c1, 0, 0);
   set_bounding_width(24);
   set_score(0);
 }

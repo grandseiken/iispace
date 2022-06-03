@@ -14,7 +14,6 @@ cc_library(
     "fix32.h",
     "z.h",
   ],
-  srcs = ["z.cc"],
   deps = ["@glm"],
   visibility = ["//visibility:public"],
 )

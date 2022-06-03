@@ -11,6 +11,10 @@ const std::int32_t kBsbAttackTime = 90;
 
 const fixed kBsbSpeed = 2 + 1_fx / 2;
 const fixed kBsbAttackRadius = 120;
+
+const glm::vec4 c0 = colour_hue360(270, .6f);
+const glm::vec4 c1 = colour_hue360(270, .4f);
+const glm::vec4 c2 = colour_hue360(260, .3f);
 }  // namespace
 
 BigSquareBoss::BigSquareBoss(ii::SimInterface& sim, std::int32_t players, std::int32_t cycle)
@@ -22,19 +26,19 @@ BigSquareBoss::BigSquareBoss(ii::SimInterface& sim, std::int32_t players, std::i
        cycle}
 , dir_{0, -1}
 , timer_{kBsbTimer * 6} {
-  add_new_shape<Polygon>(vec2{0}, 160, 4, 0x9933ffff, 0, 0);
-  add_new_shape<Polygon>(vec2{0}, 140, 4, 0x9933ffff, 0, kDangerous);
-  add_new_shape<Polygon>(vec2{0}, 120, 4, 0x9933ffff, 0, kDangerous);
-  add_new_shape<Polygon>(vec2{0}, 100, 4, 0x9933ffff, 0, 0);
-  add_new_shape<Polygon>(vec2{0}, 80, 4, 0x9933ffff, 0, 0);
-  add_new_shape<Polygon>(vec2{0}, 60, 4, 0x9933ffff, 0, kVulnerable);
+  add_new_shape<Polygon>(vec2{0}, 160, 4, c0, 0, 0);
+  add_new_shape<Polygon>(vec2{0}, 140, 4, c0, 0, kDangerous);
+  add_new_shape<Polygon>(vec2{0}, 120, 4, c0, 0, kDangerous);
+  add_new_shape<Polygon>(vec2{0}, 100, 4, c0, 0, 0);
+  add_new_shape<Polygon>(vec2{0}, 80, 4, c0, 0, 0);
+  add_new_shape<Polygon>(vec2{0}, 60, 4, c0, 0, kVulnerable);
 
-  add_new_shape<Polygon>(vec2{0}, 155, 4, 0x9933ffff, 0, 0);
-  add_new_shape<Polygon>(vec2{0}, 135, 4, 0x9933ffff, 0, 0);
-  add_new_shape<Polygon>(vec2{0}, 115, 4, 0x9933ffff, 0, 0);
-  add_new_shape<Polygon>(vec2{0}, 95, 4, 0x6600ccff, 0, 0);
-  add_new_shape<Polygon>(vec2{0}, 75, 4, 0x6600ccff, 0, 0);
-  add_new_shape<Polygon>(vec2{0}, 55, 4, 0x330099ff, 0, kShield);
+  add_new_shape<Polygon>(vec2{0}, 155, 4, c0, 0, 0);
+  add_new_shape<Polygon>(vec2{0}, 135, 4, c0, 0, 0);
+  add_new_shape<Polygon>(vec2{0}, 115, 4, c0, 0, 0);
+  add_new_shape<Polygon>(vec2{0}, 95, 4, c1, 0, 0);
+  add_new_shape<Polygon>(vec2{0}, 75, 4, c1, 0, 0);
+  add_new_shape<Polygon>(vec2{0}, 55, 4, c2, 0, kShield);
 }
 
 void BigSquareBoss::update() {
@@ -120,7 +124,7 @@ void BigSquareBoss::render() const {
     }
     for (std::int32_t i = 0; i < 6; ++i) {
       auto p = to_float(attack_player_->shape().centre) + d;
-      Polygon s{vec2{0}, 10, 4, 0x9933ffff, fixed_c::pi / 4, 0};
+      Polygon s{vec2{0}, 10, 4, c0, fixed_c::pi / 4, 0};
       s.render(sim(), p, 0);
       d = rotate(d, 2 * glm::pi<float>() / 6);
     }

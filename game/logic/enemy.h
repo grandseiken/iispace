@@ -134,7 +134,7 @@ private:
 class BossShot : public Enemy {
 public:
   BossShot(ii::SimInterface& sim, const vec2& position, const vec2& velocity,
-           colour_t c = 0x999999ff);
+           const glm::vec4& c = {0.f, 0.f, .6f, 1.f});
   void update() override;
 
 protected:

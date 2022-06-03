@@ -36,7 +36,7 @@ public:
 
   // Colour
   //------------------------------
-  colour_t colour() const {
+  glm::vec4 colour() const {
     return ii::SimInterface::player_colour(player_number_);
   }
 

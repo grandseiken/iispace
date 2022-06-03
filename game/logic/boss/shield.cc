@@ -8,6 +8,10 @@ const std::int32_t kSbbTimer = 100;
 const std::int32_t kSbbUnshieldTime = 300;
 const std::int32_t kSbbAttackTime = 80;
 const fixed kSbbSpeed = 1;
+
+const glm::vec4 c0 = colour_hue360(150, .4f, .5f);
+const glm::vec4 c1 = colour_hue(0.f, .8f, 0.f);
+const glm::vec4 c2 = colour_hue(0.f, .6f, 0.f);
 }  // namespace
 
 ShieldBombBoss::ShieldBombBoss(ii::SimInterface& sim, std::int32_t players, std::int32_t cycle)
@@ -17,21 +21,20 @@ ShieldBombBoss::ShieldBombBoss(ii::SimInterface& sim, std::int32_t players, std:
        kSbbBaseHp,
        players,
        cycle} {
-  add_new_shape<Polygon>(vec2{0}, 48, 8, 0x339966ff, 0, kDangerous | kVulnerable,
-                         Polygon::T::kPolygram);
+  add_new_shape<Polygon>(vec2{0}, 48, 8, c0, 0, kDangerous | kVulnerable, Polygon::T::kPolygram);
 
   for (std::int32_t i = 0; i < 16; ++i) {
     vec2 a = rotate(vec2{120, 0}, i * fixed_c::pi / 8);
     vec2 b = rotate(vec2{80, 0}, i * fixed_c::pi / 8);
 
-    add_new_shape<Line>(vec2{0}, a, b, 0x999999ff, 0);
+    add_new_shape<Line>(vec2{0}, a, b, c2, 0);
   }
 
-  add_new_shape<Polygon>(vec2{0}, 130, 16, 0xccccccff, 0, kVulnShield | kDangerous);
-  add_new_shape<Polygon>(vec2{0}, 125, 16, 0xccccccff, 0, 0);
-  add_new_shape<Polygon>(vec2{0}, 120, 16, 0xccccccff, 0, 0);
+  add_new_shape<Polygon>(vec2{0}, 130, 16, c1, 0, kVulnShield | kDangerous);
+  add_new_shape<Polygon>(vec2{0}, 125, 16, c1, 0, 0);
+  add_new_shape<Polygon>(vec2{0}, 120, 16, c1, 0, 0);
 
-  add_new_shape<Polygon>(vec2{0}, 42, 16, 0, 0, kShield);
+  add_new_shape<Polygon>(vec2{0}, 42, 16, glm::vec4{0.f}, 0, kShield);
 
   set_ignore_damage_colour_index(1);
 }
@@ -60,10 +63,10 @@ void ShieldBombBoss::update() {
 
     unshielded_--;
     for (std::size_t i = 0; i < 3; ++i) {
-      shapes()[i + 17]->colour = (unshielded_ / 2) % 4 ? 0x00000000 : 0x666666ff;
+      shapes()[i + 17]->colour = (unshielded_ / 2) % 4 ? glm::vec4{0.f} : colour_hue(0.f, .4f, 0.f);
     }
     for (std::size_t i = 0; i < 16; ++i) {
-      shapes()[i + 1]->colour = (unshielded_ / 2) % 4 ? 0x00000000 : 0x333333ff;
+      shapes()[i + 1]->colour = (unshielded_ / 2) % 4 ? glm::vec4{0.f} : colour_hue(0.f, .2f, 0.f);
     }
 
     if (!unshielded_) {
@@ -71,10 +74,10 @@ void ShieldBombBoss::update() {
       shapes()[17]->category = kDangerous | kVulnShield;
 
       for (std::size_t i = 0; i < 3; ++i) {
-        shapes()[i + 17]->colour = 0xccccccff;
+        shapes()[i + 17]->colour = c1;
       }
       for (std::size_t i = 0; i < 16; ++i) {
-        shapes()[i + 1]->colour = 0x999999ff;
+        shapes()[i + 1]->colour = c2;
       }
     }
   }

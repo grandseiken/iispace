@@ -51,42 +51,34 @@ std::string convert_to_time(std::int64_t score) {
   return r.str();
 }
 
-glm::vec4 convert_colour(colour_t c) {
-  return {((c >> 24) & 0xff) / 255.f, ((c >> 16) & 0xff) / 255.f, ((c >> 8) & 0xff) / 255.f,
-          (c & 0xff) / 255.f};
-}
-
-void render_line(ii::render::GlRenderer& r, const glm::vec2& a, const glm::vec2& b, colour_t c) {
-  c = z::colour_cycle(c, r.colour_cycle());
-  ii::render::line_t line{a, b, convert_colour(c)};
+void render_line(ii::render::GlRenderer& r, const glm::vec2& a, const glm::vec2& b,
+                 const glm::vec4& c) {
+  ii::render::line_t line{a, b, c};
   r.render_lines({&line, 1});
 }
 
 void render_lines(ii::render::GlRenderer& r, const nonstd::span<ii::render_output::line_t>& lines) {
+  // TODO: avoid this useless copy.
   std::vector<ii::render::line_t> render;
   for (const auto& line : lines) {
     auto& rl = render.emplace_back();
     rl.a = line.a;
     rl.b = line.b;
-    rl.colour = convert_colour(z::colour_cycle(line.c, r.colour_cycle()));
+    rl.colour = line.c;
   }
   r.render_lines(render);
 }
 
 void render_text(ii::render::GlRenderer& r, const glm::vec2& v, const std::string& text,
-                 colour_t c) {
-  c = z::colour_cycle(c, r.colour_cycle());
-  r.render_text(0, 16 * static_cast<glm::ivec2>(v), convert_colour(c),
-                ii::ustring_view::utf8(text));
+                 const glm::vec4& c) {
+  r.render_text(0, 16 * static_cast<glm::ivec2>(v), c, ii::ustring_view::utf8(text));
 }
 
-void render_rect(ii::render::GlRenderer& r, const glm::vec2& lo, const glm::vec2& hi, colour_t c,
-                 std::int32_t line_width) {
-  c = z::colour_cycle(c, r.colour_cycle());
+void render_rect(ii::render::GlRenderer& r, const glm::vec2& lo, const glm::vec2& hi,
+                 const glm::vec4& c, std::int32_t line_width) {
   auto v_lo = static_cast<glm::ivec2>(lo);
   auto v_hi = static_cast<glm::ivec2>(hi);
-  r.render_rect(v_lo, v_hi - v_lo, line_width, glm::vec4{0.f}, glm::vec4{0.f}, convert_colour(c),
-                convert_colour(c));
+  r.render_rect(v_lo, v_hi - v_lo, line_width, glm::vec4{0.f}, glm::vec4{0.f}, c, c);
 }
 
 void render_panel(ii::render::GlRenderer& r, const glm::vec2& low, const glm::vec2& hi) {
@@ -252,7 +244,7 @@ void HighScoreModal::render(const ii::ui::UiLayer& ui, ii::render::GlRenderer& r
     render_text(r, {6.f, 25.f}, enter_name_, z0Game::kPanelText);
     if ((enter_time_ / 16) % 2 && enter_name_.size() < ii::HighScores::kMaxNameLength) {
       render_text(r, {6.f + enter_name_.size(), 25.f}, kAllowedChars.substr(enter_char_, 1),
-                  0xbbbbbbff);
+                  {0.f, 0.f, .75f, 1.f});
     }
     glm::vec2 low{4 * kTextWidth + 4, 25 * kTextHeight + 4};
     glm::vec2 hi{5 * kTextWidth - 4, 26 * kTextHeight - 4};
@@ -421,7 +413,6 @@ void GameModal::update(ii::ui::UiLayer& ui) {
     for (const auto& pair : state_->get_rumble_output()) {
       // TODO
     }
-    state_->clear_output();
   }
 
   if (replay_) {
@@ -464,10 +455,10 @@ void GameModal::render(const ii::ui::UiLayer& ui, ii::render::GlRenderer& r) con
       v *= 16;
       auto lo = v + glm::vec2{5.f, 11.f - 10 * p.timer};
       auto hi = v + glm::vec2{9.f, 13.f};
-      render_line(r, lo, {lo.x, hi.y}, 0xffffffff);
-      render_line(r, {lo.x, hi.y}, hi, 0xffffffff);
-      render_line(r, hi, {hi.x, lo.y}, 0xffffffff);
-      render_line(r, {hi.x, lo.y}, lo, 0xffffffff);
+      render_line(r, lo, {lo.x, hi.y}, glm::vec4{1.f});
+      render_line(r, {lo.x, hi.y}, hi, glm::vec4{1.f});
+      render_line(r, hi, {hi.x, lo.y}, glm::vec4{1.f});
+      render_line(r, {hi.x, lo.y}, lo, glm::vec4{1.f});
     }
     ++n;
   }

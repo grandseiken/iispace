@@ -12,6 +12,11 @@ const std::int32_t kDrbArmRTimer = 400;
 const fixed kDrbSpeed = 5;
 const fixed kDrbArmSpeed = 4;
 const fixed kDrbRaySpeed = 10;
+
+const glm::vec4 c0 = colour_hue360(150, 1.f / 3, .6f);
+const glm::vec4 c1 = colour_hue360(150, .6f);
+const glm::vec4 c2 = colour_hue(0.f, .8f, 0.f);
+const glm::vec4 c3 = colour_hue(0.f, .6f, 0.f);
 }  // namespace
 
 DeathRayBoss::DeathRayBoss(ii::SimInterface& sim, std::int32_t players, std::int32_t cycle)
@@ -22,17 +27,17 @@ DeathRayBoss::DeathRayBoss(ii::SimInterface& sim, std::int32_t players, std::int
        players,
        cycle}
 , timer_{kDrbTimer * 2} {
-  add_new_shape<Polygon>(vec2{0}, 110, 12, 0x228855ff, fixed_c::pi / 12, 0, Polygon::T::kPolystar);
-  add_new_shape<Polygon>(vec2{0}, 70, 12, 0x33ff99ff, fixed_c::pi / 12, 0, Polygon::T::kPolygram);
-  add_new_shape<Polygon>(vec2{0}, 120, 12, 0x33ff99ff, fixed_c::pi / 12, kDangerous | kVulnerable);
-  add_new_shape<Polygon>(vec2{0}, 115, 12, 0x33ff99ff, fixed_c::pi / 12, 0);
-  add_new_shape<Polygon>(vec2{0}, 110, 12, 0x33ff99ff, fixed_c::pi / 12, kShield);
+  add_new_shape<Polygon>(vec2{0}, 110, 12, c0, fixed_c::pi / 12, 0, Polygon::T::kPolystar);
+  add_new_shape<Polygon>(vec2{0}, 70, 12, c1, fixed_c::pi / 12, 0, Polygon::T::kPolygram);
+  add_new_shape<Polygon>(vec2{0}, 120, 12, c1, fixed_c::pi / 12, kDangerous | kVulnerable);
+  add_new_shape<Polygon>(vec2{0}, 115, 12, c1, fixed_c::pi / 12, 0);
+  add_new_shape<Polygon>(vec2{0}, 110, 12, c1, fixed_c::pi / 12, kShield);
 
   auto* s1 = add_new_shape<CompoundShape>(vec2{0}, 0, kDangerous);
   for (std::int32_t i = 1; i < 12; ++i) {
     auto* s2 = s1->add_new_shape<CompoundShape>(vec2{0}, i * fixed_c::pi / 6, 0);
-    s2->add_new_shape<Box>(vec2{130, 0}, 10, 24, 0x33ff99ff, 0, 0);
-    s2->add_new_shape<Box>(vec2{130, 0}, 8, 22, 0x228855ff, 0, 0);
+    s2->add_new_shape<Box>(vec2{130, 0}, 10, 24, c1, 0, 0);
+    s2->add_new_shape<Box>(vec2{130, 0}, 8, 22, c0, 0, 0);
   }
 
   set_ignore_damage_colour_index(5);
@@ -61,7 +66,7 @@ void DeathRayBoss::update() {
     }
     if (ray_attack_timer_ < 40) {
       auto d = normalise(ray_dest_ - shape().centre);
-      spawn_new<BossShot>(shape().centre, d * 10, 0xccccccff);
+      spawn_new<BossShot>(shape().centre, d * 10, c2);
       play_sound_random(ii::sound::kBossAttack);
       explosion();
     }
@@ -171,7 +176,7 @@ void DeathRayBoss::update() {
     if (!going_fast || shot_timer_ % 2) {
       std::int32_t n = shot_queue_[i].first;
       vec2 d = rotate(vec2{1, 0}, shape().rotation() + n * fixed_c::pi / 6);
-      spawn_new<BossShot>(shape().centre + d * 120, d * 5, 0x33ff99ff);
+      spawn_new<BossShot>(shape().centre + d * 120, d * 5, c1);
     }
     shot_queue_[i].second--;
     if (!shot_queue_[i].second) {
@@ -191,12 +196,12 @@ void DeathRayBoss::render() const {
     auto pos = to_float(shape().centre);
     auto d = to_float(ray_src1_) - pos;
     d *= static_cast<float>(i - 40) / (kDrbRayTimer - 40);
-    Polygon s{vec2{0}, 10, 6, 0x999999ff, 0, 0, Polygon::T::kPolystar};
+    Polygon s{vec2{0}, 10, 6, c3, 0, 0, Polygon::T::kPolystar};
     s.render(sim(), d + pos, 0);
 
     d = to_float(ray_src2_) - pos;
     d *= static_cast<float>(i - 40) / (kDrbRayTimer - 40);
-    Polygon s2{vec2{0}, 10, 6, 0x999999ff, 0, 0, Polygon::T::kPolystar};
+    Polygon s2{vec2{0}, 10, 6, c3, 0, 0, Polygon::T::kPolystar};
     s2.render(sim(), d + pos, 0);
   }
 }
@@ -216,8 +221,8 @@ void DeathRayBoss::on_arm_death(Ship* arm) {
 
 DeathRay::DeathRay(ii::SimInterface& sim, const vec2& position)
 : Enemy{sim, position, kShipNone, 0} {
-  add_new_shape<Box>(vec2{0}, 10, 48, 0, 0, kDangerous);
-  add_new_shape<Line>(vec2{0}, vec2{0, -48}, vec2{0, 48}, 0xffffffff, 0);
+  add_new_shape<Box>(vec2{0}, 10, 48, glm::vec4{0.f}, 0, kDangerous);
+  add_new_shape<Line>(vec2{0}, vec2{0, -48}, vec2{0, 48}, glm::vec4{1.f}, 0);
   set_bounding_width(48);
 }
 
@@ -234,11 +239,11 @@ DeathArm::DeathArm(ii::SimInterface& sim, DeathRayBoss* boss, bool top, std::int
 , top_{top}
 , timer_{top ? 2 * kDrbArmATimer / 3 : 0}
 , start_{30} {
-  add_new_shape<Polygon>(vec2{0}, 60, 4, 0x33ff99ff, 0, 0);
-  add_new_shape<Polygon>(vec2{0}, 50, 4, 0x228855ff, 0, kVulnerable, Polygon::T::kPolygram);
-  add_new_shape<Polygon>(vec2{0}, 40, 4, 0, 0, kShield);
-  add_new_shape<Polygon>(vec2{0}, 20, 4, 0x33ff99ff, 0, 0);
-  add_new_shape<Polygon>(vec2{0}, 18, 4, 0x228855ff, 0, 0);
+  add_new_shape<Polygon>(vec2{0}, 60, 4, c1, 0, 0);
+  add_new_shape<Polygon>(vec2{0}, 50, 4, c0, 0, kVulnerable, Polygon::T::kPolygram);
+  add_new_shape<Polygon>(vec2{0}, 40, 4, glm::vec4{0.f}, 0, kShield);
+  add_new_shape<Polygon>(vec2{0}, 20, 4, c1, 0, 0);
+  add_new_shape<Polygon>(vec2{0}, 18, 4, c0, 0, 0);
   set_bounding_width(60);
   set_destroy_sound(ii::sound::kPlayerDestroy);
 }
@@ -251,7 +256,7 @@ void DeathArm::update() {
   }
   if (shots_ > 0) {
     vec2 d = normalise(target_ - shape().centre) * 5;
-    spawn_new<BossShot>(shape().centre, d, 0x33ff99ff);
+    spawn_new<BossShot>(shape().centre, d, c1);
     --shots_;
   }
 
@@ -294,7 +299,7 @@ void DeathArm::update() {
   if (start_) {
     if (start_ == 30) {
       explosion();
-      explosion(0xffffffff);
+      explosion(glm::vec4{1.f});
     }
     start_--;
     if (!start_) {
@@ -306,6 +311,6 @@ void DeathArm::update() {
 void DeathArm::on_destroy(bool bomb) {
   boss_->on_arm_death(this);
   explosion();
-  explosion(0xffffffff, 12);
+  explosion(glm::vec4{1.f}, 12);
   explosion(shapes()[0]->colour, 24);
 }

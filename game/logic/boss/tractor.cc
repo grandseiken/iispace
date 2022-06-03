@@ -5,6 +5,10 @@ namespace {
 const std::int32_t kTbBaseHp = 900;
 const std::int32_t kTbTimer = 100;
 const fixed kTbSpeed = 2;
+
+const glm::vec4 c0 = colour_hue360(300, .5f, .6f);
+const glm::vec4 c1 = colour_hue360(300, 1.f / 3, .6f);
+const glm::vec4 c2 = colour_hue360(300, .4f, .5f);
 }  // namespace
 
 TractorBoss::TractorBoss(ii::SimInterface& sim, std::int32_t players, std::int32_t cycle)
@@ -17,39 +21,39 @@ TractorBoss::TractorBoss(ii::SimInterface& sim, std::int32_t players, std::int32
 , shoot_type_{sim.random(2)} {
   s1_ = add_new_shape<CompoundShape>(vec2{0, -96}, 0, kDangerous | kVulnerable);
 
-  s1_->add_new_shape<Polygon>(vec2{0}, 12, 6, 0x882288ff, 0, 0, Polygon::T::kPolygram);
-  s1_->add_new_shape<Polygon>(vec2{0}, 12, 12, 0x882288ff, 0, 0);
-  s1_->add_new_shape<Polygon>(vec2{0}, 2, 6, 0x882288ff, 0, 0);
-  s1_->add_new_shape<Polygon>(vec2{0}, 36, 12, 0xcc33ccff, 0, 0);
-  s1_->add_new_shape<Polygon>(vec2{0}, 34, 12, 0xcc33ccff, 0, 0);
-  s1_->add_new_shape<Polygon>(vec2{0}, 32, 12, 0xcc33ccff, 0, 0);
+  s1_->add_new_shape<Polygon>(vec2{0}, 12, 6, c1, 0, 0, Polygon::T::kPolygram);
+  s1_->add_new_shape<Polygon>(vec2{0}, 12, 12, c1, 0, 0);
+  s1_->add_new_shape<Polygon>(vec2{0}, 2, 6, c1, 0, 0);
+  s1_->add_new_shape<Polygon>(vec2{0}, 36, 12, c0, 0, 0);
+  s1_->add_new_shape<Polygon>(vec2{0}, 34, 12, c0, 0, 0);
+  s1_->add_new_shape<Polygon>(vec2{0}, 32, 12, c0, 0, 0);
   for (std::int32_t i = 0; i < 8; ++i) {
     vec2 d = rotate(vec2{24, 0}, i * fixed_c::pi / 4);
-    s1_->add_new_shape<Polygon>(d, 12, 6, 0xcc33ccff, 0, 0, Polygon::T::kPolygram);
+    s1_->add_new_shape<Polygon>(d, 12, 6, c0, 0, 0, Polygon::T::kPolygram);
   }
 
   s2_ = add_new_shape<CompoundShape>(vec2{0, 96}, 0, kDangerous | kVulnerable);
 
-  s2_->add_new_shape<Polygon>(vec2{0}, 12, 6, 0x882288ff, 0, 0, Polygon::T::kPolygram);
-  s2_->add_new_shape<Polygon>(vec2{0}, 12, 12, 0x882288ff, 0, 0);
-  s2_->add_new_shape<Polygon>(vec2{0}, 2, 6, 0x882288ff, 0, 0);
+  s2_->add_new_shape<Polygon>(vec2{0}, 12, 6, c1, 0, 0, Polygon::T::kPolygram);
+  s2_->add_new_shape<Polygon>(vec2{0}, 12, 12, c1, 0, 0);
+  s2_->add_new_shape<Polygon>(vec2{0}, 2, 6, c1, 0, 0);
 
-  s2_->add_new_shape<Polygon>(vec2{0}, 36, 12, 0xcc33ccff, 0, 0);
-  s2_->add_new_shape<Polygon>(vec2{0}, 34, 12, 0xcc33ccff, 0, 0);
-  s2_->add_new_shape<Polygon>(vec2{0}, 32, 12, 0xcc33ccff, 0, 0);
+  s2_->add_new_shape<Polygon>(vec2{0}, 36, 12, c0, 0, 0);
+  s2_->add_new_shape<Polygon>(vec2{0}, 34, 12, c0, 0, 0);
+  s2_->add_new_shape<Polygon>(vec2{0}, 32, 12, c0, 0, 0);
   for (std::int32_t i = 0; i < 8; ++i) {
     vec2 d = rotate(vec2{24, 0}, i * fixed_c::pi / 4);
-    s2_->add_new_shape<Polygon>(d, 12, 6, 0xcc33ccff, 0, 0, Polygon::T::kPolygram);
+    s2_->add_new_shape<Polygon>(d, 12, 6, c0, 0, 0, Polygon::T::kPolygram);
   }
 
-  sattack_ = add_new_shape<Polygon>(vec2{0}, 0, 16, 0x993399ff);
+  sattack_ = add_new_shape<Polygon>(vec2{0}, 0, 16, c2);
 
-  add_new_shape<Line>(vec2{0}, vec2{-2, -96}, vec2{-2, 96}, 0xcc33ccff, 0);
-  add_new_shape<Line>(vec2{0}, vec2{0, -96}, vec2{0, 96}, 0x882288ff, 0);
-  add_new_shape<Line>(vec2{0}, vec2{2, -96}, vec2{2, 96}, 0xcc33ccff, 0);
+  add_new_shape<Line>(vec2{0}, vec2{-2, -96}, vec2{-2, 96}, c0, 0);
+  add_new_shape<Line>(vec2{0}, vec2{0, -96}, vec2{0, 96}, c1, 0);
+  add_new_shape<Line>(vec2{0}, vec2{2, -96}, vec2{2, 96}, c0, 0);
 
-  add_new_shape<Polygon>(vec2{0, 96}, 30, 12, 0, 0, kShield);
-  add_new_shape<Polygon>(vec2{0, -96}, 30, 12, 0, 0, kShield);
+  add_new_shape<Polygon>(vec2{0, 96}, 30, 12, glm::vec4{0.f}, 0, kShield);
+  add_new_shape<Polygon>(vec2{0, -96}, 30, 12, glm::vec4{0.f}, 0, kShield);
 
   attack_shapes_ = shapes().size();
 }
@@ -83,13 +87,13 @@ void TractorBoss::update() {
 
         auto v = s1_->convert_point(shape().centre, shape().rotation(), vec2{0});
         auto d = normalise(p->shape().centre - v);
-        spawn_new<BossShot>(v, d * 5, 0xcc33ccff);
-        spawn_new<BossShot>(v, d * -5, 0xcc33ccff);
+        spawn_new<BossShot>(v, d * 5, c0);
+        spawn_new<BossShot>(v, d * -5, c0);
 
         v = s2_->convert_point(shape().centre, shape().rotation(), vec2{0});
         d = normalise(p->shape().centre - v);
-        spawn_new<BossShot>(v, d * 5, 0xcc33ccff);
-        spawn_new<BossShot>(v, d * -5, 0xcc33ccff);
+        spawn_new<BossShot>(v, d * 5, c0);
+        spawn_new<BossShot>(v, d * -5, c0);
 
         play_sound_random(ii::sound::kBossFire);
       }
@@ -97,8 +101,8 @@ void TractorBoss::update() {
         Player* p = nearest_player();
         auto v = shape().centre;
         auto d = normalise(p->shape().centre - v);
-        spawn_new<BossShot>(v, d * 5, 0xcc33ccff);
-        spawn_new<BossShot>(v, d * -5, 0xcc33ccff);
+        spawn_new<BossShot>(v, d * 5, c0);
+        spawn_new<BossShot>(v, d * -5, c0);
         play_sound_random(ii::sound::kBossFire);
       }
     }
@@ -141,8 +145,8 @@ void TractorBoss::update() {
         Player* p = nearest_player();
         auto v = shape().centre;
         auto d = normalise(p->shape().centre - v);
-        spawn_new<BossShot>(v, d * 5, 0xcc33ccff);
-        spawn_new<BossShot>(v, d * -5, 0xcc33ccff);
+        spawn_new<BossShot>(v, d * 5, c0);
+        spawn_new<BossShot>(v, d * -5, c0);
         play_sound_random(ii::sound::kBossFire);
       }
     } else {
@@ -154,23 +158,23 @@ void TractorBoss::update() {
         if (timer_ % (kTbTimer / (1 + fixed_c::half)).to_int() == kTbTimer / 8) {
           auto v = s1_->convert_point(shape().centre, shape().rotation(), vec2{0});
           auto d = from_polar(sim().random_fixed() * (2 * fixed_c::pi), 5_fx);
-          spawn_new<BossShot>(v, d, 0xcc33ccff);
+          spawn_new<BossShot>(v, d, c0);
           d = rotate(d, fixed_c::pi / 2);
-          spawn_new<BossShot>(v, d, 0xcc33ccff);
+          spawn_new<BossShot>(v, d, c0);
           d = rotate(d, fixed_c::pi / 2);
-          spawn_new<BossShot>(v, d, 0xcc33ccff);
+          spawn_new<BossShot>(v, d, c0);
           d = rotate(d, fixed_c::pi / 2);
-          spawn_new<BossShot>(v, d, 0xcc33ccff);
+          spawn_new<BossShot>(v, d, c0);
 
           v = s2_->convert_point(shape().centre, shape().rotation(), vec2{0});
           d = from_polar(sim().random_fixed() * (2 * fixed_c::pi), 5_fx);
-          spawn_new<BossShot>(v, d, 0xcc33ccff);
+          spawn_new<BossShot>(v, d, c0);
           d = rotate(d, fixed_c::pi / 2);
-          spawn_new<BossShot>(v, d, 0xcc33ccff);
+          spawn_new<BossShot>(v, d, c0);
           d = rotate(d, fixed_c::pi / 2);
-          spawn_new<BossShot>(v, d, 0xcc33ccff);
+          spawn_new<BossShot>(v, d, c0);
           d = rotate(d, fixed_c::pi / 2);
-          spawn_new<BossShot>(v, d, 0xcc33ccff);
+          spawn_new<BossShot>(v, d, c0);
           play_sound_random(ii::sound::kBossFire);
         }
         targets_.clear();
@@ -199,7 +203,7 @@ void TractorBoss::update() {
             ship->destroy();
             ++attack_size_;
             sattack_->radius = attack_size_ / (1 + fixed_c::half);
-            add_new_shape<Polygon>(vec2{0}, 8, 6, 0xcc33ccff, 0, 0);
+            add_new_shape<Polygon>(vec2{0}, 8, 6, c0, 0, 0);
           }
         }
       } else {
@@ -208,7 +212,7 @@ void TractorBoss::update() {
         continue_ = true;
         for (std::int32_t i = 0; i < attack_size_; ++i) {
           vec2 d = from_polar(i * (2 * fixed_c::pi) / attack_size_, 5_fx);
-          spawn_new<BossShot>(shape().centre, d, 0xcc33ccff);
+          spawn_new<BossShot>(shape().centre, d, c0);
         }
         play_sound(ii::sound::kBossFire);
         play_sound_random(ii::sound::kExplosion);
@@ -252,7 +256,7 @@ void TractorBoss::render() const {
       (!stopped_ && (continue_ || !will_attack_) && is_on_screen())) {
     for (std::size_t i = 0; i < targets_.size(); ++i) {
       if (((timer_ + i * 4) / 4) % 2) {
-        sim().render_line(to_float(shape().centre), to_float(targets_[i]), 0xcc33ccff);
+        sim().render_line(to_float(shape().centre), to_float(targets_[i]), c0);
       }
     }
   }
@@ -264,7 +268,7 @@ std::int32_t TractorBoss::get_damage(std::int32_t damage, bool magic) {
 
 TBossShot::TBossShot(ii::SimInterface& sim, const vec2& position, fixed angle)
 : Enemy{sim, position, kShipNone, 1} {
-  add_new_shape<Polygon>(vec2{0}, 8, 6, 0xcc33ccff, 0, kDangerous | kVulnerable);
+  add_new_shape<Polygon>(vec2{0}, 8, 6, c0, 0, kDangerous | kVulnerable);
   dir_ = from_polar(angle, 3_fx);
   set_bounding_width(8);
   set_score(0);

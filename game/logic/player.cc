@@ -24,10 +24,12 @@ Player::Player(ii::SimInterface& sim, const vec2& position, std::int32_t player_
 , player_number_{player_number}
 , revive_timer_{kReviveTime}
 , fire_target_{get_screen_centre()} {
+  auto c_dark = colour();
+  c_dark.a = .2f;
   add_new_shape<Polygon>(vec2{0}, 16, 3, colour());
   add_new_shape<Fill>(vec2{8, 0}, 2, 2, colour());
-  add_new_shape<Fill>(vec2{8, 0}, 1, 1, colour() & 0xffffff33);
-  add_new_shape<Fill>(vec2{8, 0}, 3, 3, colour() & 0xffffff33);
+  add_new_shape<Fill>(vec2{8, 0}, 1, 1, c_dark);
+  add_new_shape<Fill>(vec2{8, 0}, 3, 3, c_dark);
   add_new_shape<Polygon>(vec2{0}, 8, 3, colour(), fixed_c::pi);
   kill_queue_.clear();
   fire_timer_ = 0;
@@ -77,14 +79,14 @@ void Player::update() {
     bomb_ = false;
     destroy_shape(5);
 
-    explosion(0xffffffff, 16);
+    explosion(glm::vec4{1.f}, 16);
     explosion(colour(), 32);
-    explosion(0xffffffff, 48);
+    explosion(glm::vec4{1.f}, 48);
 
     vec2 t = shape().centre;
     for (std::int32_t i = 0; i < 64; ++i) {
       shape().centre = t + from_polar(2 * i * fixed_c::pi / 64, kBombRadius);
-      explosion((i % 2) ? colour() : 0xffffffff, 8 + sim().random(8) + sim().random(8), true,
+      explosion((i % 2) ? colour() : glm::vec4{1.f}, 8 + sim().random(8) + sim().random(8), true,
                 to_float(t));
     }
     shape().centre = t;
@@ -130,7 +132,7 @@ void Player::render() const {
     sim().render_line(t + glm::vec2{0, 9}, t - glm::vec2{0, 8}, colour());
     sim().render_line(t + glm::vec2{9, 1}, t - glm::vec2{8, -1}, colour());
     if (revive_timer_ % 2) {
-      render_with_colour(0xffffffff);
+      render_with_colour(glm::vec4{1.f});
     } else {
       Ship::render();
     }
@@ -162,8 +164,8 @@ void Player::damage() {
   }
 
   explosion();
-  explosion(0xffffffff, 14);
-  explosion(0, 20);
+  explosion(glm::vec4{1.f}, 14);
+  explosion(std::nullopt, 20);
 
   magic_shot_timer_ = 0;
   multiplier_ = 1;
@@ -209,7 +211,7 @@ void Player::activate_magic_shield() {
     bomb_ = false;
   }
   shield_ = true;
-  add_new_shape<Polygon>(vec2{0}, 16, 10, 0xffffffff);
+  add_new_shape<Polygon>(vec2{0}, 16, 10, glm::vec4{1.f});
 }
 
 void Player::activate_bomb() {
@@ -222,7 +224,7 @@ void Player::activate_bomb() {
     shield_ = false;
   }
   bomb_ = true;
-  add_new_shape<Polygon>(vec2{-8, 0}, 6, 5, 0xffffffff, fixed_c::pi, 0, Polygon::T::kPolystar);
+  add_new_shape<Polygon>(vec2{-8, 0}, 6, 5, glm::vec4{1.f}, fixed_c::pi, 0, Polygon::T::kPolystar);
 }
 
 void Player::update_fire_timer() {
@@ -233,9 +235,11 @@ Shot::Shot(ii::SimInterface& sim, const vec2& position, Player* player, const ve
            bool magic)
 : Ship{sim, position, kShipNone}, player_{player}, velocity_{direction}, magic_{magic} {
   velocity_ = normalise(velocity_) * kShotSpeed;
+  auto c_dark = player_->colour();
+  c_dark.a = .2f;
   add_new_shape<Fill>(vec2{0}, 2, 2, player_->colour());
-  add_new_shape<Fill>(vec2{0}, 1, 1, player_->colour() & 0xffffff33);
-  add_new_shape<Fill>(vec2{0}, 3, 3, player_->colour() & 0xffffff33);
+  add_new_shape<Fill>(vec2{0}, 1, 1, c_dark);
+  add_new_shape<Fill>(vec2{0}, 3, 3, c_dark);
 }
 
 void Shot::render() const {
@@ -243,7 +247,7 @@ void Shot::render() const {
     return;
   }
   if (flash_) {
-    render_with_colour(0xffffffff);
+    render_with_colour(glm::vec4{1.f});
   } else {
     Ship::render();
   }
@@ -274,24 +278,25 @@ void Shot::update() {
 
 Powerup::Powerup(ii::SimInterface& sim, const vec2& position, type t)
 : Ship{sim, position, kShipPowerup}, type_{t}, dir_{0, 1} {
-  add_new_shape<Polygon>(vec2{0}, 13, 5, 0, fixed_c::pi / 2, 0);
-  add_new_shape<Polygon>(vec2{0}, 9, 5, 0, fixed_c::pi / 2, 0);
+  add_new_shape<Polygon>(vec2{0}, 13, 5, glm::vec4{0.f}, fixed_c::pi / 2, 0);
+  add_new_shape<Polygon>(vec2{0}, 9, 5, glm::vec4{0.f}, fixed_c::pi / 2, 0);
 
   switch (type_) {
   case type::kExtraLife:
-    add_new_shape<Polygon>(vec2{0}, 8, 3, 0xffffffff, fixed_c::pi / 2);
+    add_new_shape<Polygon>(vec2{0}, 8, 3, glm::vec4{1.f}, fixed_c::pi / 2);
     break;
 
   case type::kMagicShots:
-    add_new_shape<Fill>(vec2{0}, 3, 3, 0xffffffff);
+    add_new_shape<Fill>(vec2{0}, 3, 3, glm::vec4{1.f});
     break;
 
   case type::kShield:
-    add_new_shape<Polygon>(vec2{0}, 11, 5, 0xffffffff, fixed_c::pi / 2);
+    add_new_shape<Polygon>(vec2{0}, 11, 5, glm::vec4{1.f}, fixed_c::pi / 2);
     break;
 
   case type::kBomb:
-    add_new_shape<Polygon>(vec2{0}, 11, 10, 0xffffffff, fixed_c::pi / 2, 0, Polygon::T::kPolystar);
+    add_new_shape<Polygon>(vec2{0}, 11, 10, glm::vec4{1.f}, fixed_c::pi / 2, 0,
+                           Polygon::T::kPolystar);
     break;
   }
 }
@@ -352,7 +357,8 @@ void Powerup::damage(std::int32_t damage, bool magic, Player* source) {
   std::int32_t r = 5 + sim().random(5);
   for (std::int32_t i = 0; i < r; ++i) {
     vec2 dir = from_polar(sim().random_fixed() * 2 * fixed_c::pi, 6_fx);
-    spawn(ii::particle{to_float(shape().centre), 0xffffffff, to_float(dir), 4 + sim().random(8)});
+    spawn(
+        ii::particle{to_float(shape().centre), glm::vec4{1.f}, to_float(dir), 4 + sim().random(8)});
   }
   destroy();
 }

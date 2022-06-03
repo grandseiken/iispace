@@ -4,15 +4,14 @@
 #include <glm/glm.hpp>
 #include <cmath>
 #include <cstdint>
-#include <vector>
 
-typedef std::uint32_t colour_t;
+inline glm::vec4 colour_hue(float h, float l = .5f, float s = 1.f) {
+  return {h, s, l, 1.f};
+}
 
-namespace z {
-
-colour_t colour_cycle(colour_t rgb, std::int32_t cycle);
-
-}  // namespace z
+inline glm::vec4 colour_hue360(std::uint32_t h, float l = .5f, float s = 1.f) {
+  return colour_hue(h / 360.f, l, s);
+}
 
 using vec2 = glm::vec<2, fixed>;
 

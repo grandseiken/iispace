@@ -61,9 +61,9 @@ public:
 
   // Helpful functions
   //------------------------------
-  void explosion(colour_t c = 0, std::int32_t time = 8, bool towards = false,
-                 const glm::vec2& v = glm::vec2{0.f}) const;
-  void render_with_colour(colour_t colour) const;
+  void explosion(const std::optional<glm::vec4>& c = std::nullopt, std::int32_t time = 8,
+                 bool towards = false, const glm::vec2& v = glm::vec2{0.f}) const;
+  void render_with_colour(const glm::vec4& colour) const;
 
   bool is_on_screen() const {
     return all(greaterThanEqual(shape_.centre, vec2{0})) &&

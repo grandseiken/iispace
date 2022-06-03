@@ -82,10 +82,13 @@ void Stars::create_star(ii::SimInterface& sim) {
   star->position.x = edge < 2 ? ratio * ii::kSimWidth : edge == 2 ? -16 : 16 + ii::kSimWidth;
   star->position.y = edge >= 2 ? ratio * ii::kSimHeight : edge == 0 ? -16 : 16 + ii::kSimHeight;
 
-  star->colour = t == type::kDotStar ? (sim.random(2) ? 0x222222ff : 0x333333ff)
-      : t == type::kFarStar          ? (sim.random(2) ? 0x222222ff : 0x111111ff)
-      : t == type::kBigStar          ? (sim.random(2) ? 0x111111ff : 0x222222ff)
-                                     : 0x111111ff;
+  auto c0 = colour_hue(0.f, 1 / 15.f, 0.f);
+  auto c1 = colour_hue(0.f, 1 / 7.5f, 0.f);
+  auto c2 = colour_hue(0.f, .2f, 0.f);
+  star->colour = t == type::kDotStar ? (sim.random(2) ? c1 : c2)
+      : t == type::kFarStar          ? (sim.random(2) ? c1 : c0)
+      : t == type::kBigStar          ? (sim.random(2) ? c0 : c1)
+                                     : c0;
   if (t == type::kPlanet) {
     star->size = 4.f + sim.random(4);
   }

@@ -211,10 +211,11 @@ void GlRenderer::render_text(std::uint32_t font_index, const glm::ivec2& positio
     gl::blend_function(gl::blend_factor::kSrcAlpha, gl::blend_factor::kOneMinusSrcAlpha);
   }
 
-  auto result = gl::set_uniforms(
-      program, "render_scale", impl_->render_scale(), "render_dimensions", impl_->render_dimensions,
-      "texture_dimensions", font_entry.font.bitmap_dimensions(), "is_font_lcd",
-      font_entry.font.is_lcd() ? 1u : 0u, "text_colour", colour);
+  auto result = gl::set_uniforms(program, "render_scale", impl_->render_scale(),
+                                 "render_dimensions", impl_->render_dimensions,
+                                 "texture_dimensions", font_entry.font.bitmap_dimensions(),
+                                 "is_font_lcd", font_entry.font.is_lcd() ? 1u : 0u, "text_colour",
+                                 colour, "colour_cycle", colour_cycle_ / 256.f);
   if (!result) {
     impl_->status = unexpected(result.error());
   }
@@ -273,8 +274,9 @@ void GlRenderer::render_lines(nonstd::span<const line_t> lines) {
   gl::enable_blend(true);
   gl::blend_function(gl::blend_factor::kSrcAlpha, gl::blend_factor::kOneMinusSrcAlpha);
 
-  auto result = gl::set_uniforms(program, "render_scale", impl_->render_scale(),
-                                 "render_dimensions", impl_->render_dimensions);
+  auto result =
+      gl::set_uniforms(program, "render_scale", impl_->render_scale(), "render_dimensions",
+                       impl_->render_dimensions, "colour_cycle", colour_cycle_ / 256.f);
   if (!result) {
     impl_->status = unexpected(result.error());
   }

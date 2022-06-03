@@ -55,13 +55,13 @@ void Enemy::render() const {
     Ship::render();
     return;
   }
-  render_with_colour(0xffffffff);
+  render_with_colour(glm::vec4{1.f});
   --damaged_;
 }
 
 Follow::Follow(ii::SimInterface& sim, const vec2& position, fixed radius, std::int32_t hp)
 : Enemy{sim, position, kShipNone, hp} {
-  add_new_shape<Polygon>(vec2{0}, radius, 4, 0x9933ffff, 0, kDangerous | kVulnerable);
+  add_new_shape<Polygon>(vec2{0}, radius, 4, colour_hue360(270, .6f), 0, kDangerous | kVulnerable);
   set_score(15);
   set_bounding_width(10);
   set_destroy_sound(ii::sound::kEnemyShatter);
@@ -107,7 +107,7 @@ void BigFollow::on_destroy(bool bomb) {
 
 Chaser::Chaser(ii::SimInterface& sim, const vec2& position)
 : Enemy{sim, position, kShipNone, 2}, timer_{kChaserTime} {
-  add_new_shape<Polygon>(vec2{0}, 10, 4, 0x3399ffff, 0, kDangerous | kVulnerable,
+  add_new_shape<Polygon>(vec2{0}, 10, 4, colour_hue360(210, .6f), 0, kDangerous | kVulnerable,
                          Polygon::T::kPolygram);
   set_score(30);
   set_bounding_width(10);
@@ -140,7 +140,7 @@ void Chaser::update() {
 
 Square::Square(ii::SimInterface& sim, const vec2& position, fixed rotation)
 : Enemy{sim, position, kShipWall, 4}, timer_{sim.random(80) + 40} {
-  add_new_shape<Box>(vec2{0}, 10, 10, 0x33ff33ff, 0, kDangerous | kVulnerable);
+  add_new_shape<Box>(vec2{0}, 10, 10, colour_hue360(120, .6f), 0, kDangerous | kVulnerable);
   dir_ = from_polar(rotation, 1_fx);
   set_score(25);
   set_bounding_width(15);
@@ -191,7 +191,7 @@ void Square::update() {
 
 void Square::render() const {
   if (sim().get_non_wall_count() == 0 && (timer_ % 4 == 1 || timer_ % 4 == 2)) {
-    render_with_colour(0x33333300);
+    render_with_colour(colour_hue(0.f, .2f, 0.f));
   } else {
     Enemy::render();
   }
@@ -199,7 +199,7 @@ void Square::render() const {
 
 Wall::Wall(ii::SimInterface& sim, const vec2& position, bool rdir)
 : Enemy{sim, position, kShipWall, 10}, dir_{0, 1}, rdir_{rdir} {
-  add_new_shape<Box>(vec2{0}, 10, 40, 0x33cc33ff, 0, kDangerous | kVulnerable);
+  add_new_shape<Box>(vec2{0}, 10, 40, colour_hue360(120, .5f, .6f), 0, kDangerous | kVulnerable);
   set_score(20);
   set_bounding_width(50);
   set_enemy_value(4);
@@ -267,23 +267,20 @@ void Wall::on_destroy(bool bomb) {
 
 FollowHub::FollowHub(ii::SimInterface& sim, const vec2& position, bool powera, bool powerb)
 : Enemy{sim, position, kShipNone, 14}, powera_{powera}, powerb_{powerb} {
-  add_new_shape<Polygon>(vec2{0}, 16, 4, 0x6666ffff, fixed_c::pi / 4, kDangerous | kVulnerable,
+  auto c = colour_hue360(240, .7f);
+  add_new_shape<Polygon>(vec2{0}, 16, 4, c, fixed_c::pi / 4, kDangerous | kVulnerable,
                          Polygon::T::kPolygram);
   if (powerb_) {
-    add_new_shape<Polygon>(vec2{16, 0}, 8, 4, 0x6666ffff, fixed_c::pi / 4, 0,
-                           Polygon::T::kPolystar);
-    add_new_shape<Polygon>(vec2{-16, 0}, 8, 4, 0x6666ffff, fixed_c::pi / 4, 0,
-                           Polygon::T::kPolystar);
-    add_new_shape<Polygon>(vec2{0, 16}, 8, 4, 0x6666ffff, fixed_c::pi / 4, 0,
-                           Polygon::T::kPolystar);
-    add_new_shape<Polygon>(vec2{0, -16}, 8, 4, 0x6666ffff, fixed_c::pi / 4, 0,
-                           Polygon::T::kPolystar);
+    add_new_shape<Polygon>(vec2{16, 0}, 8, 4, c, fixed_c::pi / 4, 0, Polygon::T::kPolystar);
+    add_new_shape<Polygon>(vec2{-16, 0}, 8, 4, c, fixed_c::pi / 4, 0, Polygon::T::kPolystar);
+    add_new_shape<Polygon>(vec2{0, 16}, 8, 4, c, fixed_c::pi / 4, 0, Polygon::T::kPolystar);
+    add_new_shape<Polygon>(vec2{0, -16}, 8, 4, c, fixed_c::pi / 4, 0, Polygon::T::kPolystar);
   }
 
-  add_new_shape<Polygon>(vec2{16, 0}, 8, 4, 0x6666ffff, fixed_c::pi / 4);
-  add_new_shape<Polygon>(vec2{-16, 0}, 8, 4, 0x6666ffff, fixed_c::pi / 4);
-  add_new_shape<Polygon>(vec2{0, 16}, 8, 4, 0x6666ffff, fixed_c::pi / 4);
-  add_new_shape<Polygon>(vec2{0, -16}, 8, 4, 0x6666ffff, fixed_c::pi / 4);
+  add_new_shape<Polygon>(vec2{16, 0}, 8, 4, c, fixed_c::pi / 4);
+  add_new_shape<Polygon>(vec2{-16, 0}, 8, 4, c, fixed_c::pi / 4);
+  add_new_shape<Polygon>(vec2{0, 16}, 8, 4, c, fixed_c::pi / 4);
+  add_new_shape<Polygon>(vec2{0, -16}, 8, 4, c, fixed_c::pi / 4);
   set_score(50 + powera_ * 10 + powerb_ * 10);
   set_bounding_width(16);
   set_destroy_sound(ii::sound::kPlayerDestroy);
@@ -331,20 +328,21 @@ void FollowHub::on_destroy(bool bomb) {
 
 Shielder::Shielder(ii::SimInterface& sim, const vec2& position, bool power)
 : Enemy{sim, position, kShipNone, 16}, dir_{0, 1}, power_{power} {
-  add_new_shape<Polygon>(vec2{24, 0}, 8, 6, 0x006633ff, 0, kVulnShield, Polygon::T::kPolystar);
-  add_new_shape<Polygon>(vec2{-24, 0}, 8, 6, 0x006633ff, 0, kVulnShield, Polygon::T::kPolystar);
-  add_new_shape<Polygon>(vec2{0, 24}, 8, 6, 0x006633ff, fixed_c::pi / 2, kVulnShield,
+  auto c0 = colour_hue360(150, .2f);
+  auto c1 = colour_hue360(160, .5f, .6f);
+  add_new_shape<Polygon>(vec2{24, 0}, 8, 6, c0, 0, kVulnShield, Polygon::T::kPolystar);
+  add_new_shape<Polygon>(vec2{-24, 0}, 8, 6, c0, 0, kVulnShield, Polygon::T::kPolystar);
+  add_new_shape<Polygon>(vec2{0, 24}, 8, 6, c0, fixed_c::pi / 2, kVulnShield,
                          Polygon::T::kPolystar);
-  add_new_shape<Polygon>(vec2{0, -24}, 8, 6, 0x006633ff, fixed_c::pi / 2, kVulnShield,
+  add_new_shape<Polygon>(vec2{0, -24}, 8, 6, c0, fixed_c::pi / 2, kVulnShield,
                          Polygon::T::kPolystar);
-  add_new_shape<Polygon>(vec2{24, 0}, 8, 6, 0x33cc99ff, 0, 0);
-  add_new_shape<Polygon>(vec2{-24, 0}, 8, 6, 0x33cc99ff, 0, 0);
-  add_new_shape<Polygon>(vec2{0, 24}, 8, 6, 0x33cc99ff, fixed_c::pi / 2, 0);
-  add_new_shape<Polygon>(vec2{0, -24}, 8, 6, 0x33cc99ff, fixed_c::pi / 2, 0);
+  add_new_shape<Polygon>(vec2{24, 0}, 8, 6, c1, 0, 0);
+  add_new_shape<Polygon>(vec2{-24, 0}, 8, 6, c1, 0, 0);
+  add_new_shape<Polygon>(vec2{0, 24}, 8, 6, c1, fixed_c::pi / 2, 0);
+  add_new_shape<Polygon>(vec2{0, -24}, 8, 6, c1, fixed_c::pi / 2, 0);
 
-  add_new_shape<Polygon>(vec2{0, 0}, 24, 4, 0x006633ff, 0, 0, Polygon::T::kPolystar);
-  add_new_shape<Polygon>(vec2{0, 0}, 14, 8, power ? 0x33cc99ff : 0x006633ff, 0,
-                         kDangerous | kVulnerable);
+  add_new_shape<Polygon>(vec2{0, 0}, 24, 4, c0, 0, 0, Polygon::T::kPolystar);
+  add_new_shape<Polygon>(vec2{0, 0}, 14, 8, power ? c1 : c0, 0, kDangerous | kVulnerable);
   set_score(60 + power_ * 40);
   set_bounding_width(36);
   set_destroy_sound(ii::sound::kPlayerDestroy);
@@ -395,7 +393,7 @@ void Shielder::update() {
       auto v = shape().centre;
 
       auto d = normalise(p->shape().centre - v);
-      spawn_new<BossShot>(v, d * 3, 0x33cc99ff);
+      spawn_new<BossShot>(v, d * 3, colour_hue360(160, .5f, .6f));
       play_sound_random(ii::sound::kBossFire);
     }
     move(dir_ * speed);
@@ -405,14 +403,14 @@ void Shielder::update() {
 
 Tractor::Tractor(ii::SimInterface& sim, const vec2& position, bool power)
 : Enemy{sim, position, kShipNone, 50}, timer_{kTractorTimer * 4}, power_{power} {
-  add_new_shape<Polygon>(vec2{24, 0}, 12, 6, 0xcc33ccff, 0, kDangerous | kVulnerable,
+  auto c = colour_hue360(300, .5f, .6f);
+  add_new_shape<Polygon>(vec2{24, 0}, 12, 6, c, 0, kDangerous | kVulnerable, Polygon::T::kPolygram);
+  add_new_shape<Polygon>(vec2{-24, 0}, 12, 6, c, 0, kDangerous | kVulnerable,
                          Polygon::T::kPolygram);
-  add_new_shape<Polygon>(vec2{-24, 0}, 12, 6, 0xcc33ccff, 0, kDangerous | kVulnerable,
-                         Polygon::T::kPolygram);
-  add_new_shape<Line>(vec2{0, 0}, vec2{24, 0}, vec2{-24, 0}, 0xcc33ccff);
+  add_new_shape<Line>(vec2{0, 0}, vec2{24, 0}, vec2{-24, 0}, c);
   if (power) {
-    add_new_shape<Polygon>(vec2{24, 0}, 16, 6, 0xcc33ccff, 0, 0, Polygon::T::kPolystar);
-    add_new_shape<Polygon>(vec2{-24, 0}, 16, 6, 0xcc33ccff, 0, 0, Polygon::T::kPolystar);
+    add_new_shape<Polygon>(vec2{24, 0}, 16, 6, c, 0, 0, Polygon::T::kPolystar);
+    add_new_shape<Polygon>(vec2{-24, 0}, 16, 6, c, 0, 0, Polygon::T::kPolystar);
   }
   set_score(85 + power * 40);
   set_bounding_width(36);
@@ -467,7 +465,7 @@ void Tractor::update() {
     if (timer_ % (kTractorTimer / 2) == 0 && is_on_screen() && power_) {
       Player* p = nearest_player();
       auto d = normalise(p->shape().centre - shape().centre);
-      spawn_new<BossShot>(shape().centre, d * 4, 0xcc33ccff);
+      spawn_new<BossShot>(shape().centre, d * 4, colour_hue360(300, .5f, .6f));
       play_sound_random(ii::sound::kBossFire);
     }
 
@@ -484,17 +482,18 @@ void Tractor::render() const {
     for (std::size_t i = 0; i < players_.size(); ++i) {
       if (((timer_ + i * 4) / 4) % 2 && !((Player*)players_[i])->is_killed()) {
         sim().render_line(to_float(shape().centre), to_float(players_[i]->shape().centre),
-                          0xcc33ccff);
+                          colour_hue360(300, .5f, .6f));
       }
     }
   }
 }
 
-BossShot::BossShot(ii::SimInterface& sim, const vec2& position, const vec2& velocity, colour_t c)
+BossShot::BossShot(ii::SimInterface& sim, const vec2& position, const vec2& velocity,
+                   const glm::vec4& c)
 : Enemy{sim, position, kShipWall, 0}, dir_{velocity} {
   add_new_shape<Polygon>(vec2{0}, 16, 8, c, 0, 0, Polygon::T::kPolystar);
   add_new_shape<Polygon>(vec2{0}, 10, 8, c, 0, 0);
-  add_new_shape<Polygon>(vec2{0}, 12, 8, 0, 0, kDangerous);
+  add_new_shape<Polygon>(vec2{0}, 12, 8, glm::vec4{0.f}, 0, kDangerous);
   set_bounding_width(12);
   set_score(0);
   set_enemy_value(1);

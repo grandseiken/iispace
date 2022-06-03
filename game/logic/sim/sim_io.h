@@ -51,7 +51,7 @@ struct sound_out {
 
 struct render_output {
   struct player_info {
-    colour_t colour = 0;
+    glm::vec4 colour{0.f};
     std::int64_t score = 0;
     std::int32_t multiplier = 0;
     float timer = 0.f;
@@ -59,7 +59,7 @@ struct render_output {
   struct line_t {
     glm::vec2 a{0.f};
     glm::vec2 b{0.f};
-    colour_t c = 0;
+    glm::vec4 c{0.f};
   };
   std::vector<player_info> players;
   std::vector<line_t> lines;

@@ -78,9 +78,9 @@ void SimState::update() {
     }
     vec2 v = internals_->ships[0]->shape().centre;
     internals_->ships[0]->shape().centre = it->second.first;
-    internals_->ships[0]->explosion(0xffffffff);
+    internals_->ships[0]->explosion(glm::vec4{1.f});
     internals_->ships[0]->explosion(it->second.second, 16);
-    internals_->ships[0]->explosion(0xffffffff, 24);
+    internals_->ships[0]->explosion(glm::vec4{1.f}, 24);
     internals_->ships[0]->explosion(it->second.second, 32);
     internals_->ships[0]->shape().centre = v;
     it = Boss::fireworks_.erase(it);
@@ -154,40 +154,32 @@ void SimState::render() const {
                                                    : Boss::warnings_[i - internals_->ships.size()]);
 
     if (v.x < -4) {
-      auto a = static_cast<std::int32_t>(.5f + float{0x1} +
-                                         float{0x9} * std::max(v.x + kSimWidth, 0.f) / kSimWidth);
-      a |= a << 4;
-      a = (a << 8) | (a << 16) | (a << 24) | 0x66;
-      interface_->render_line({0.f, v.y}, {6, v.y - 3}, a);
-      interface_->render_line({6.f, v.y - 3}, {6, v.y + 3}, a);
-      interface_->render_line({6.f, v.y + 3}, {0, v.y}, a);
+      auto f = .2f + .6f * std::max(v.x + kSimWidth, 0.f) / kSimWidth;
+      glm::vec4 c{0.f, 0.f, f, .4f};
+      interface_->render_line({0.f, v.y}, {6, v.y - 3}, c);
+      interface_->render_line({6.f, v.y - 3}, {6, v.y + 3}, c);
+      interface_->render_line({6.f, v.y + 3}, {0, v.y}, c);
     }
     if (v.x >= kSimWidth + 4) {
-      auto a = static_cast<std::int32_t>(
-          .5f + float{0x1} + float{0x9} * std::max(2 * kSimWidth - v.x, 0.f) / kSimWidth);
-      a |= a << 4;
-      a = (a << 8) | (a << 16) | (a << 24) | 0x66;
-      interface_->render_line({float{kSimWidth}, v.y}, {kSimWidth - 6.f, v.y - 3}, a);
-      interface_->render_line({kSimWidth - 6, v.y - 3}, {kSimWidth - 6.f, v.y + 3}, a);
-      interface_->render_line({kSimWidth - 6, v.y + 3}, {float{kSimWidth}, v.y}, a);
+      auto f = .2f + .6f * std::max(2 * kSimWidth - v.x, 0.f) / kSimWidth;
+      glm::vec4 c{0.f, 0.f, f, .4f};
+      interface_->render_line({float{kSimWidth}, v.y}, {kSimWidth - 6.f, v.y - 3}, c);
+      interface_->render_line({kSimWidth - 6, v.y - 3}, {kSimWidth - 6.f, v.y + 3}, c);
+      interface_->render_line({kSimWidth - 6, v.y + 3}, {float{kSimWidth}, v.y}, c);
     }
     if (v.y < -4) {
-      auto a = static_cast<std::int32_t>(.5f + float{0x1} +
-                                         float{0x9} * std::max(v.y + kSimHeight, 0.f) / kSimHeight);
-      a |= a << 4;
-      a = (a << 8) | (a << 16) | (a << 24) | 0x66;
-      interface_->render_line({v.x, 0.f}, {v.x - 3, 6.f}, a);
-      interface_->render_line({v.x - 3, 6.f}, {v.x + 3, 6.f}, a);
-      interface_->render_line({v.x + 3, 6.f}, {v.x, 0.f}, a);
+      auto f = .2f + .6f * std::max(v.y + kSimHeight, 0.f) / kSimHeight;
+      glm::vec4 c{0.f, 0.f, f, .4f};
+      interface_->render_line({v.x, 0.f}, {v.x - 3, 6.f}, c);
+      interface_->render_line({v.x - 3, 6.f}, {v.x + 3, 6.f}, c);
+      interface_->render_line({v.x + 3, 6.f}, {v.x, 0.f}, c);
     }
     if (v.y >= kSimHeight + 4) {
-      auto a = static_cast<std::int32_t>(
-          .5f + float{0x1} + float{0x9} * std::max(2 * kSimHeight - v.y, 0.f) / kSimHeight);
-      a |= a << 4;
-      a = (a << 8) | (a << 16) | (a << 24) | 0x66;
-      interface_->render_line({v.x, float{kSimHeight}}, {v.x - 3, kSimHeight - 6.f}, a);
-      interface_->render_line({v.x - 3, kSimHeight - 6.f}, {v.x + 3, kSimHeight - 6.f}, a);
-      interface_->render_line({v.x + 3, kSimHeight - 6.f}, {v.x, float{kSimHeight}}, a);
+      auto f = .2f + .6f * std::max(2 * kSimHeight - v.y, 0.f) / kSimHeight;
+      glm::vec4 c{0.f, 0.f, f, .4f};
+      interface_->render_line({v.x, float{kSimHeight}}, {v.x - 3, kSimHeight - 6.f}, c);
+      interface_->render_line({v.x - 3, kSimHeight - 6.f}, {v.x + 3, kSimHeight - 6.f}, c);
+      interface_->render_line({v.x + 3, kSimHeight - 6.f}, {v.x, float{kSimHeight}}, c);
     }
   }
 }
@@ -210,6 +202,7 @@ std::unordered_map<sound, sound_out> SimState::get_sound_output() const {
     s.pitch = std::pow(2.f, pair.second.pitch);
     result.emplace(pair.first, s);
   }
+  internals_->sound_output.clear();
   return result;
 }
 
@@ -219,19 +212,8 @@ std::unordered_map<std::int32_t, std::int32_t> SimState::get_rumble_output() con
 
 render_output SimState::get_render_output() const {
   render_output result;
-  for (const auto& p : internals_->player_output) {
-    auto& o = result.players.emplace_back();
-    o.colour = p.colour;
-    o.multiplier = p.multiplier;
-    o.score = p.score;
-    o.timer = p.timer;
-  }
-  for (const auto& line : internals_->line_output) {
-    auto& l = result.lines.emplace_back();
-    l.a = line.a;
-    l.b = line.b;
-    l.c = line.c;
-  }
+  result.players = internals_->player_output;
+  result.lines = std::move(internals_->line_output);
   result.mode = conditions_.mode;
   result.elapsed_time = overmind_->get_elapsed_time();
   result.lives_remaining = interface_->get_lives();

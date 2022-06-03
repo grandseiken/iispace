@@ -52,7 +52,7 @@ class SnakeTail : public Enemy {
   friend class Snake;
 
 public:
-  SnakeTail(ii::SimInterface& sim, const vec2& position, colour_t colour);
+  SnakeTail(ii::SimInterface& sim, const vec2& position, const glm::vec4& colour);
   void update() override;
   void on_destroy(bool bomb) override;
 
@@ -65,8 +65,8 @@ private:
 
 class Snake : public Enemy {
 public:
-  Snake(ii::SimInterface& sim, const vec2& position, colour_t colour, const vec2& dir = vec2{0},
-        fixed rot = 0);
+  Snake(ii::SimInterface& sim, const vec2& position, const glm::vec4& colour,
+        const vec2& dir = vec2{0}, fixed rot = 0);
   void update() override;
   void on_destroy(bool bomb) override;
 
@@ -75,7 +75,7 @@ private:
   std::int32_t timer_ = 0;
   vec2 dir_{0};
   std::int32_t count_ = 0;
-  colour_t colour_ = 0;
+  glm::vec4 colour_{0.f};
   bool shot_snake_ = false;
   fixed shot_rot_ = 0;
 };

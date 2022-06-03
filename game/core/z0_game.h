@@ -88,9 +88,9 @@ private:
 
 class z0Game : public Modal {
 public:
-  static constexpr colour_t kPanelText = 0xeeeeeeff;
-  static constexpr colour_t kPanelTran = 0xeeeeee99;
-  static constexpr colour_t kPanelBack = 0x000000ff;
+  static constexpr glm::vec4 kPanelText = {0.f, 0.f, .925f, 1.f};
+  static constexpr glm::vec4 kPanelTran = {0.f, 0.f, .925f, .6f};
+  static constexpr glm::vec4 kPanelBack = {0.f, 0.f, 0.f, 1.f};
 
   z0Game();
   void update(ii::ui::UiLayer& ui) override;

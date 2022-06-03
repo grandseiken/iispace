@@ -44,7 +44,7 @@ public:
   virtual std::int32_t get_damage(std::int32_t damage, bool magic) = 0;
   virtual void on_destroy();
 
-  static std::vector<std::pair<std::int32_t, std::pair<vec2, colour_t>>> fireworks_;
+  static std::vector<std::pair<std::int32_t, std::pair<vec2, glm::vec4>>> fireworks_;
   static std::vector<vec2> warnings_;
 
 protected:

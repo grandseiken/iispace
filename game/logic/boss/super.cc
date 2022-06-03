@@ -12,21 +12,22 @@ SuperBossArc::SuperBossArc(ii::SimInterface& sim, const vec2& position, std::int
 , boss_{boss}
 , i_{i}
 , timer_{timer} {
-  add_new_shape<PolyArc>(vec2{0}, 140, 32, 2, 0, i * 2 * fixed_c::pi / 16, 0);
-  add_new_shape<PolyArc>(vec2{0}, 135, 32, 2, 0, i * 2 * fixed_c::pi / 16, 0);
-  add_new_shape<PolyArc>(vec2{0}, 130, 32, 2, 0, i * 2 * fixed_c::pi / 16, 0);
-  add_new_shape<PolyArc>(vec2{0}, 125, 32, 2, 0, i * 2 * fixed_c::pi / 16, kShield);
-  add_new_shape<PolyArc>(vec2{0}, 120, 32, 2, 0, i * 2 * fixed_c::pi / 16, 0);
-  add_new_shape<PolyArc>(vec2{0}, 115, 32, 2, 0, i * 2 * fixed_c::pi / 16, 0);
-  add_new_shape<PolyArc>(vec2{0}, 110, 32, 2, 0, i * 2 * fixed_c::pi / 16, 0);
-  add_new_shape<PolyArc>(vec2{0}, 105, 32, 2, 0, i * 2 * fixed_c::pi / 16, kShield);
+  glm::vec4 c{0.f};
+  add_new_shape<PolyArc>(vec2{0}, 140, 32, 2, c, i * 2 * fixed_c::pi / 16, 0);
+  add_new_shape<PolyArc>(vec2{0}, 135, 32, 2, c, i * 2 * fixed_c::pi / 16, 0);
+  add_new_shape<PolyArc>(vec2{0}, 130, 32, 2, c, i * 2 * fixed_c::pi / 16, 0);
+  add_new_shape<PolyArc>(vec2{0}, 125, 32, 2, c, i * 2 * fixed_c::pi / 16, kShield);
+  add_new_shape<PolyArc>(vec2{0}, 120, 32, 2, c, i * 2 * fixed_c::pi / 16, 0);
+  add_new_shape<PolyArc>(vec2{0}, 115, 32, 2, c, i * 2 * fixed_c::pi / 16, 0);
+  add_new_shape<PolyArc>(vec2{0}, 110, 32, 2, c, i * 2 * fixed_c::pi / 16, 0);
+  add_new_shape<PolyArc>(vec2{0}, 105, 32, 2, c, i * 2 * fixed_c::pi / 16, kShield);
 }
 
 void SuperBossArc::update() {
   shape().rotate(6_fx / 1000);
   for (std::int32_t i = 0; i < 8; ++i) {
-    shapes()[7 - i]->colour =
-        z::colour_cycle(is_hp_low() ? 0xff000099 : 0xff0000ff, (i * 32 + 2 * timer_) % 256);
+    shapes()[7 - i]->colour = {((i * 32 + 2 * timer_) % 256) / 256.f, 1.f, .5f,
+                               is_hp_low() ? .6f : 1.f};
   }
   ++timer_;
   ++stimer_;
@@ -52,9 +53,9 @@ void SuperBossArc::on_destroy() {
   vec2 d = from_polar(i_ * 2 * fixed_c::pi / 16 + shape().rotation(), 120_fx);
   move(d);
   explosion();
-  explosion(0xffffffff, 12);
+  explosion(glm::vec4{1.f}, 12);
   explosion(shapes()[0]->colour, 24);
-  explosion(0xffffffff, 36);
+  explosion(glm::vec4{1.f}, 36);
   explosion(shapes()[0]->colour, 48);
   play_sound_random(ii::sound::kExplosion);
   ((SuperBoss*)boss_)->destroyed_[i_] = true;
@@ -69,14 +70,14 @@ SuperBoss::SuperBoss(ii::SimInterface& sim, std::int32_t players, std::int32_t c
        cycle}
 , players_{players}
 , cycle_{cycle} {
-  add_new_shape<Polygon>(vec2{0}, 40, 32, 0, 0, kDangerous | kVulnerable);
-  add_new_shape<Polygon>(vec2{0}, 35, 32, 0, 0, 0);
-  add_new_shape<Polygon>(vec2{0}, 30, 32, 0, 0, kShield);
-  add_new_shape<Polygon>(vec2{0}, 25, 32, 0, 0, 0);
-  add_new_shape<Polygon>(vec2{0}, 20, 32, 0, 0, 0);
-  add_new_shape<Polygon>(vec2{0}, 15, 32, 0, 0, 0);
-  add_new_shape<Polygon>(vec2{0}, 10, 32, 0, 0, 0);
-  add_new_shape<Polygon>(vec2{0}, 5, 32, 0, 0, 0);
+  add_new_shape<Polygon>(vec2{0}, 40, 32, glm::vec4{0.f}, 0, kDangerous | kVulnerable);
+  add_new_shape<Polygon>(vec2{0}, 35, 32, glm::vec4{0.f}, 0, 0);
+  add_new_shape<Polygon>(vec2{0}, 30, 32, glm::vec4{0.f}, 0, kShield);
+  add_new_shape<Polygon>(vec2{0}, 25, 32, glm::vec4{0.f}, 0, 0);
+  add_new_shape<Polygon>(vec2{0}, 20, 32, glm::vec4{0.f}, 0, 0);
+  add_new_shape<Polygon>(vec2{0}, 15, 32, glm::vec4{0.f}, 0, 0);
+  add_new_shape<Polygon>(vec2{0}, 10, 32, glm::vec4{0.f}, 0, 0);
+  add_new_shape<Polygon>(vec2{0}, 5, 32, glm::vec4{0.f}, 0, 0);
   for (std::int32_t i = 0; i < 16; ++i) {
     destroyed_.push_back(false);
   }
@@ -98,9 +99,9 @@ void SuperBoss::update() {
   }
   vec2 move_vec{0};
   shape().rotate(6_fx / 1000);
-  colour_t c = z::colour_cycle(0xff0000ff, 2 * ctimer_);
+  auto c = colour_hue((ctimer_ % 128) / 128.f);
   for (std::int32_t i = 0; i < 8; ++i) {
-    shapes()[7 - i]->colour = z::colour_cycle(0xff0000ff, (i * 32 + 2 * ctimer_) % 256);
+    shapes()[7 - i]->colour = colour_hue(((i * 32 + 2 * ctimer_) % 256) / 256.f);
   }
   ++ctimer_;
   if (shape().centre.y < ii::kSimHeight / 2) {
@@ -203,16 +204,17 @@ void SuperBoss::on_destroy() {
     }
   }
   explosion();
-  explosion(0xffffffff, 12);
+  explosion(glm::vec4{1.f}, 12);
   explosion(shapes()[0]->colour, 24);
-  explosion(0xffffffff, 36);
+  explosion(glm::vec4{1.f}, 36);
   explosion(shapes()[0]->colour, 48);
 
   std::int32_t n = 1;
   for (std::int32_t i = 0; i < 16; ++i) {
     vec2 v = from_polar(sim().random_fixed() * (2 * fixed_c::pi),
                         fixed{8 + sim().random(64) + sim().random(64)});
-    colour_t c = z::colour_cycle(shapes()[0]->colour, n * 2);
+    auto c = shapes()[0]->colour;
+    c.x += n / 128.f;
     fireworks_.push_back(std::make_pair(n, std::make_pair(shape().centre + v, c)));
     n += i;
   }
@@ -231,7 +233,7 @@ void SuperBoss::on_destroy() {
   }
 }
 
-SnakeTail::SnakeTail(ii::SimInterface& sim, const vec2& position, colour_t colour)
+SnakeTail::SnakeTail(ii::SimInterface& sim, const vec2& position, const glm::vec4& colour)
 : Enemy{sim, position, kShipNone, 1} {
   add_new_shape<Polygon>(vec2{0}, 10, 4, colour, 0, kDangerous | kShield | kVulnShield);
   set_bounding_width(22);
@@ -272,11 +274,11 @@ void SnakeTail::on_destroy(bool bomb) {
   tail_ = 0;
 }
 
-Snake::Snake(ii::SimInterface& sim, const vec2& position, colour_t colour, const vec2& dir,
+Snake::Snake(ii::SimInterface& sim, const vec2& position, const glm::vec4& colour, const vec2& dir,
              fixed rot)
 : Enemy{sim, position, kShipNone, 5}, colour_{colour}, shot_rot_{rot} {
   add_new_shape<Polygon>(vec2{0}, 14, 3, colour, 0, kVulnerable);
-  add_new_shape<Polygon>(vec2{0}, 10, 3, 0, 0, kDangerous);
+  add_new_shape<Polygon>(vec2{0}, 10, 3, glm::vec4{0.f}, 0, kDangerous);
   set_score(0);
   set_bounding_width(32);
   set_enemy_value(5);
@@ -299,11 +301,14 @@ void Snake::update() {
     return;
   }
 
-  colour_t c = z::colour_cycle(colour_, timer_ % 256);
+  auto c = colour_;
+  c.x += (timer_ % 256) / 256.f;
   shapes()[0]->colour = c;
   ++timer_;
   if (timer_ % (shot_snake_ ? 4 : 8) == 0) {
-    auto* t = spawn_new<SnakeTail>(shape().centre, (c & 0xffffff00) | 0x00000099);
+    auto c_dark = c;
+    c_dark.a = .6f;
+    auto* t = spawn_new<SnakeTail>(shape().centre, c_dark);
     if (tail_ != 0) {
       tail_->head_ = t;
       t->tail_ = tail_;
@@ -351,7 +356,7 @@ void RainbowShot::update() {
         continue;
       }
 
-      explosion(0, 4, true, to_float(shape().centre - dir_));
+      explosion(std::nullopt, 4, true, to_float(shape().centre - dir_));
       destroy();
       return;
     }

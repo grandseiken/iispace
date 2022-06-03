@@ -6,12 +6,12 @@
 
 namespace ii {
 
-colour_t SimInterface::player_colour(std::size_t player_number) {
-  return player_number == 0 ? 0xff0000ff
-      : player_number == 1  ? 0xff5500ff
-      : player_number == 2  ? 0xffaa00ff
-      : player_number == 3  ? 0xffff00ff
-                            : 0x00ff00ff;
+glm::vec4 SimInterface::player_colour(std::size_t player_number) {
+  return player_number == 0 ? colour_hue360(0)
+      : player_number == 1  ? colour_hue360(20)
+      : player_number == 2  ? colour_hue360(40)
+      : player_number == 3  ? colour_hue360(60)
+                            : colour_hue360(120);
 }
 
 input_frame SimInterface::input(std::int32_t player_number) {
@@ -200,14 +200,15 @@ void SimInterface::render_hp_bar(float fill) const {
   internals_->boss_hp_bar = fill;
 }
 
-void SimInterface::render_line(const glm::vec2& a, const glm::vec2& b, colour_t c) const {
+void SimInterface::render_line(const glm::vec2& a, const glm::vec2& b, const glm::vec4& c) const {
   auto& e = internals_->line_output.emplace_back();
   e.a = a;
   e.b = b;
   e.c = c;
 }
 
-void SimInterface::render_line_rect(const glm::vec2& lo, const glm::vec2& hi, colour_t c) const {
+void SimInterface::render_line_rect(const glm::vec2& lo, const glm::vec2& hi,
+                                    const glm::vec4& c) const {
   glm::vec2 li{lo.x, hi.y};
   glm::vec2 ho{hi.x, lo.y};
   render_line(lo, li, c);
@@ -216,7 +217,7 @@ void SimInterface::render_line_rect(const glm::vec2& lo, const glm::vec2& hi, co
   render_line(ho, lo, c);
 }
 
-void SimInterface::render_player_info(std::int32_t player_number, colour_t colour,
+void SimInterface::render_player_info(std::int32_t player_number, const glm::vec4& colour,
                                       std::int64_t score, std::int32_t multiplier, float timer) {
   internals_->player_output.resize(
       std::max<std::size_t>(internals_->player_output.size(), player_number + 1));

@@ -17,12 +17,13 @@ constexpr std::int32_t kSimWidth = 640;
 constexpr std::int32_t kSimHeight = 480;
 
 struct particle {
-  particle(const glm::vec2& position, colour_t colour, const glm::vec2& velocity, std::int32_t time)
+  particle(const glm::vec2& position, const glm::vec4& colour, const glm::vec2& velocity,
+           std::int32_t time)
   : position{position}, velocity{velocity}, timer{time}, colour{colour} {}
 
   bool destroy = false;
   std::int32_t timer = 0;
-  colour_t colour = 0;
+  glm::vec4 colour{0.f};
   glm::vec2 position{0.f};
   glm::vec2 velocity{0.f};
 };
@@ -30,7 +31,7 @@ struct particle {
 class SimInterface {
 public:
   // TODO: move to sim_io.h?
-  static colour_t player_colour(std::size_t player_number);
+  static glm::vec4 player_colour(std::size_t player_number);
   enum boss_list {
     kBoss1A = 1,
     kBoss1B = 2,
@@ -82,9 +83,9 @@ public:
   void rumble(std::int32_t player, std::int32_t time) const;
   void play_sound(sound, float volume = 1.f, float pan = 0.f, float repitch = 0.f) const;
   void render_hp_bar(float fill) const;
-  void render_line(const glm::vec2& a, const glm::vec2& b, colour_t c) const;
-  void render_line_rect(const glm::vec2& lo, const glm::vec2& hi, colour_t c) const;
-  void render_player_info(std::int32_t player_number, colour_t colour, std::int64_t score,
+  void render_line(const glm::vec2& a, const glm::vec2& b, const glm::vec4& c) const;
+  void render_line_rect(const glm::vec2& lo, const glm::vec2& hi, const glm::vec4& c) const;
+  void render_player_info(std::int32_t player_number, const glm::vec4& colour, std::int64_t score,
                           std::int32_t multiplier, float timer);
 
 private:
