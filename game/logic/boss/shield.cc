@@ -21,20 +21,21 @@ ShieldBombBoss::ShieldBombBoss(ii::SimInterface& sim, std::uint32_t players, std
        kSbbBaseHp,
        players,
        cycle} {
-  add_new_shape<Polygon>(vec2{0}, 48, 8, c0, 0, kDangerous | kVulnerable, Polygon::T::kPolygram);
+  add_new_shape<ii::Polygon>(vec2{0}, 48, 8, c0, 0, kDangerous | kVulnerable,
+                             ii::Polygon::T::kPolygram);
 
   for (std::uint32_t i = 0; i < 16; ++i) {
     vec2 a = rotate(vec2{120, 0}, i * fixed_c::pi / 8);
     vec2 b = rotate(vec2{80, 0}, i * fixed_c::pi / 8);
 
-    add_new_shape<Line>(vec2{0}, a, b, c2, 0);
+    add_new_shape<ii::Line>(vec2{0}, a, b, c2, 0);
   }
 
-  add_new_shape<Polygon>(vec2{0}, 130, 16, c1, 0, kVulnShield | kDangerous);
-  add_new_shape<Polygon>(vec2{0}, 125, 16, c1, 0, 0);
-  add_new_shape<Polygon>(vec2{0}, 120, 16, c1, 0, 0);
+  add_new_shape<ii::Polygon>(vec2{0}, 130, 16, c1, 0, kVulnShield | kDangerous);
+  add_new_shape<ii::Polygon>(vec2{0}, 125, 16, c1, 0, 0);
+  add_new_shape<ii::Polygon>(vec2{0}, 120, 16, c1, 0, 0);
 
-  add_new_shape<Polygon>(vec2{0}, 42, 16, glm::vec4{0.f}, 0, kShield);
+  add_new_shape<ii::Polygon>(vec2{0}, 42, 16, glm::vec4{0.f}, 0, kShield);
 
   set_ignore_damage_colour_index(1);
 }

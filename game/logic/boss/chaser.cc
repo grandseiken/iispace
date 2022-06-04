@@ -92,14 +92,15 @@ ChaserBoss::ChaserBoss(ii::SimInterface& sim, std::uint32_t players, std::uint32
 , split_{split}
 , stagger_{stagger} {
   auto c = colour_hue360(210, .6f);
-  add_new_shape<Polygon>(vec2{0}, 10 * ONE_AND_HALF_lookup[kCbMaxSplit - split_], 5, c, 0, 0,
-                         Polygon::T::kPolygram);
-  add_new_shape<Polygon>(vec2{0}, 9 * ONE_AND_HALF_lookup[kCbMaxSplit - split_], 5, c, 0, 0,
-                         Polygon::T::kPolygram);
-  add_new_shape<Polygon>(vec2{0}, 8 * ONE_AND_HALF_lookup[kCbMaxSplit - split_], 5, glm::vec4{0.f},
-                         0, kDangerous | kVulnerable, Polygon::T::kPolygram);
-  add_new_shape<Polygon>(vec2{0}, 7 * ONE_AND_HALF_lookup[kCbMaxSplit - split_], 5, glm::vec4{0.f},
-                         0, kShield, Polygon::T::kPolygram);
+  add_new_shape<ii::Polygon>(vec2{0}, 10 * ONE_AND_HALF_lookup[kCbMaxSplit - split_], 5, c, 0, 0,
+                             ii::Polygon::T::kPolygram);
+  add_new_shape<ii::Polygon>(vec2{0}, 9 * ONE_AND_HALF_lookup[kCbMaxSplit - split_], 5, c, 0, 0,
+                             ii::Polygon::T::kPolygram);
+  add_new_shape<ii::Polygon>(vec2{0}, 8 * ONE_AND_HALF_lookup[kCbMaxSplit - split_], 5,
+                             glm::vec4{0.f}, 0, kDangerous | kVulnerable,
+                             ii::Polygon::T::kPolygram);
+  add_new_shape<ii::Polygon>(vec2{0}, 7 * ONE_AND_HALF_lookup[kCbMaxSplit - split_], 5,
+                             glm::vec4{0.f}, 0, kShield, ii::Polygon::T::kPolygram);
 
   set_ignore_damage_colour_index(2);
   set_bounding_width(10 * ONE_AND_HALF_lookup[kCbMaxSplit - split_]);

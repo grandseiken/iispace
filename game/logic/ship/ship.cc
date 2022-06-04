@@ -1,7 +1,9 @@
-#include "game/logic/ship.h"
+#include "game/logic/ship/ship.h"
 #include <glm/gtc/constants.hpp>
 
-Ship::Ship(ii::SimInterface& sim, const vec2& position, ship_category type)
+namespace ii {
+
+Ship::Ship(SimInterface& sim, const vec2& position, ship_category type)
 : sim_{&sim}, type_{type}, shape_{position, 0} {}
 
 Ship::~Ship() {}
@@ -52,7 +54,7 @@ Ship* Ship::spawn(std::unique_ptr<Ship> ship) const {
   return sim_->add_ship(std::move(ship));
 }
 
-void Ship::spawn(const ii::particle& particle) const {
+void Ship::spawn(const particle& particle) const {
   sim_->add_particle(particle);
 }
 
@@ -73,7 +75,7 @@ void Ship::explosion(const std::optional<glm::vec4>& c, std::uint32_t time, bool
         dir = from_polar(angle, 6.f);
       }
 
-      spawn(ii::particle{pos, c ? *c : shape->colour, dir, time + sim().random(8)});
+      spawn(particle{pos, c ? *c : shape->colour, dir, time + sim().random(8)});
     }
   }
 }
@@ -93,3 +95,5 @@ void Ship::destroy_shape(std::size_t index) {
 void Ship::clear_shapes() {
   shape_.clear_shapes();
 }
+
+}  // namespace ii

@@ -1,7 +1,9 @@
-#ifndef II_GAME_LOGIC_SHIP_H
-#define II_GAME_LOGIC_SHIP_H
-#include "game/logic/shape.h"
+#ifndef II_GAME_LOGIC_SHIP_SHIP_H
+#define II_GAME_LOGIC_SHIP_SHIP_H
+#include "game/logic/ship/shape.h"
 #include "game/logic/sim/sim_interface.h"
+
+namespace ii {
 
 class Ship {
 public:
@@ -21,10 +23,10 @@ public:
     kShipPowerup = 16,
   };
 
-  Ship(ii::SimInterface& sim, const vec2& position, ship_category type);
+  Ship(SimInterface& sim, const vec2& position, ship_category type);
   virtual ~Ship();
 
-  ii::SimInterface& sim() const {
+  SimInterface& sim() const {
     return *sim_;
   }
 
@@ -57,7 +59,7 @@ public:
   //------------------------------
   bool check_point(const vec2& v, std::uint32_t category = 0) const;
   Ship* spawn(std::unique_ptr<Ship> ship) const;
-  void spawn(const ii::particle& particle) const;
+  void spawn(const particle& particle) const;
 
   template <typename T, typename... Args>
   T* spawn_new(Args&&... args) {
@@ -72,24 +74,24 @@ public:
 
   bool is_on_screen() const {
     return all(greaterThanEqual(shape_.centre, vec2{0})) &&
-        all(lessThanEqual(shape_.centre, vec2{ii::kSimDimensions.x, ii::kSimDimensions.y}));
+        all(lessThanEqual(shape_.centre, vec2{kSimDimensions.x, kSimDimensions.y}));
   }
 
   static vec2 get_screen_centre() {
-    return {ii::kSimDimensions.x / 2, ii::kSimDimensions.y / 2};
+    return {kSimDimensions.x / 2, kSimDimensions.y / 2};
   }
 
   Player* nearest_player() const {
     return sim_->nearest_player(shape_.centre);
   }
 
-  void play_sound(ii::sound sound) {
-    sim().play_sound(sound, 1.f, 2.f * shape_.centre.x.to_float() / ii::kSimDimensions.x - 1.f);
+  void play_sound(sound sound) {
+    sim().play_sound(sound, 1.f, 2.f * shape_.centre.x.to_float() / kSimDimensions.x - 1.f);
   }
 
-  void play_sound_random(ii::sound sound, float pitch = 0.f, float volume = 1.f) {
+  void play_sound_random(sound sound, float pitch = 0.f, float volume = 1.f) {
     sim().play_sound(sound, volume * (.5f * sim().random_fixed().to_float() + .5f),
-                     2.f * shape_.centre.x.to_float() / ii::kSimDimensions.x - 1.f, pitch);
+                     2.f * shape_.centre.x.to_float() / kSimDimensions.x - 1.f, pitch);
   }
 
   std::uint32_t enemy_value() const {
@@ -123,12 +125,14 @@ protected:
   }
 
 private:
-  ii::SimInterface* sim_ = nullptr;
+  SimInterface* sim_ = nullptr;
   ship_category type_ = static_cast<ship_category>(0);
   bool destroy_ = false;
   CompoundShape shape_;
   fixed bounding_width_ = 0;
   std::uint32_t enemy_value_ = 1;
 };
+
+}  // namespace ii
 
 #endif

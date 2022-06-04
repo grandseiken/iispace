@@ -7,20 +7,21 @@ const std::uint32_t kSbArcHp = 75;
 }  // namespace
 
 SuperBossArc::SuperBossArc(ii::SimInterface& sim, const vec2& position, std::uint32_t players,
-                           std::uint32_t cycle, std::uint32_t i, Ship* boss, std::uint32_t timer)
+                           std::uint32_t cycle, std::uint32_t i, ii::Ship* boss,
+                           std::uint32_t timer)
 : Boss{sim, position, static_cast<ii::SimInterface::boss_list>(0), kSbArcHp, players, cycle}
 , boss_{boss}
 , i_{i}
 , timer_{timer} {
   glm::vec4 c{0.f};
-  add_new_shape<PolyArc>(vec2{0}, 140, 32, 2, c, i * 2 * fixed_c::pi / 16, 0);
-  add_new_shape<PolyArc>(vec2{0}, 135, 32, 2, c, i * 2 * fixed_c::pi / 16, 0);
-  add_new_shape<PolyArc>(vec2{0}, 130, 32, 2, c, i * 2 * fixed_c::pi / 16, 0);
-  add_new_shape<PolyArc>(vec2{0}, 125, 32, 2, c, i * 2 * fixed_c::pi / 16, kShield);
-  add_new_shape<PolyArc>(vec2{0}, 120, 32, 2, c, i * 2 * fixed_c::pi / 16, 0);
-  add_new_shape<PolyArc>(vec2{0}, 115, 32, 2, c, i * 2 * fixed_c::pi / 16, 0);
-  add_new_shape<PolyArc>(vec2{0}, 110, 32, 2, c, i * 2 * fixed_c::pi / 16, 0);
-  add_new_shape<PolyArc>(vec2{0}, 105, 32, 2, c, i * 2 * fixed_c::pi / 16, kShield);
+  add_new_shape<ii::PolyArc>(vec2{0}, 140, 32, 2, c, i * 2 * fixed_c::pi / 16, 0);
+  add_new_shape<ii::PolyArc>(vec2{0}, 135, 32, 2, c, i * 2 * fixed_c::pi / 16, 0);
+  add_new_shape<ii::PolyArc>(vec2{0}, 130, 32, 2, c, i * 2 * fixed_c::pi / 16, 0);
+  add_new_shape<ii::PolyArc>(vec2{0}, 125, 32, 2, c, i * 2 * fixed_c::pi / 16, kShield);
+  add_new_shape<ii::PolyArc>(vec2{0}, 120, 32, 2, c, i * 2 * fixed_c::pi / 16, 0);
+  add_new_shape<ii::PolyArc>(vec2{0}, 115, 32, 2, c, i * 2 * fixed_c::pi / 16, 0);
+  add_new_shape<ii::PolyArc>(vec2{0}, 110, 32, 2, c, i * 2 * fixed_c::pi / 16, 0);
+  add_new_shape<ii::PolyArc>(vec2{0}, 105, 32, 2, c, i * 2 * fixed_c::pi / 16, kShield);
 }
 
 void SuperBossArc::update() {
@@ -70,14 +71,14 @@ SuperBoss::SuperBoss(ii::SimInterface& sim, std::uint32_t players, std::uint32_t
        cycle}
 , players_{players}
 , cycle_{cycle} {
-  add_new_shape<Polygon>(vec2{0}, 40, 32, glm::vec4{0.f}, 0, kDangerous | kVulnerable);
-  add_new_shape<Polygon>(vec2{0}, 35, 32, glm::vec4{0.f}, 0, 0);
-  add_new_shape<Polygon>(vec2{0}, 30, 32, glm::vec4{0.f}, 0, kShield);
-  add_new_shape<Polygon>(vec2{0}, 25, 32, glm::vec4{0.f}, 0, 0);
-  add_new_shape<Polygon>(vec2{0}, 20, 32, glm::vec4{0.f}, 0, 0);
-  add_new_shape<Polygon>(vec2{0}, 15, 32, glm::vec4{0.f}, 0, 0);
-  add_new_shape<Polygon>(vec2{0}, 10, 32, glm::vec4{0.f}, 0, 0);
-  add_new_shape<Polygon>(vec2{0}, 5, 32, glm::vec4{0.f}, 0, 0);
+  add_new_shape<ii::Polygon>(vec2{0}, 40, 32, glm::vec4{0.f}, 0, kDangerous | kVulnerable);
+  add_new_shape<ii::Polygon>(vec2{0}, 35, 32, glm::vec4{0.f}, 0, 0);
+  add_new_shape<ii::Polygon>(vec2{0}, 30, 32, glm::vec4{0.f}, 0, kShield);
+  add_new_shape<ii::Polygon>(vec2{0}, 25, 32, glm::vec4{0.f}, 0, 0);
+  add_new_shape<ii::Polygon>(vec2{0}, 20, 32, glm::vec4{0.f}, 0, 0);
+  add_new_shape<ii::Polygon>(vec2{0}, 15, 32, glm::vec4{0.f}, 0, 0);
+  add_new_shape<ii::Polygon>(vec2{0}, 10, 32, glm::vec4{0.f}, 0, 0);
+  add_new_shape<ii::Polygon>(vec2{0}, 5, 32, glm::vec4{0.f}, 0, 0);
   for (std::uint32_t i = 0; i < 16; ++i) {
     destroyed_.push_back(false);
   }
@@ -235,7 +236,7 @@ void SuperBoss::on_destroy() {
 
 SnakeTail::SnakeTail(ii::SimInterface& sim, const vec2& position, const glm::vec4& colour)
 : Enemy{sim, position, kShipNone, 1} {
-  add_new_shape<Polygon>(vec2{0}, 10, 4, colour, 0, kDangerous | kShield | kVulnShield);
+  add_new_shape<ii::Polygon>(vec2{0}, 10, 4, colour, 0, kDangerous | kShield | kVulnShield);
   set_bounding_width(22);
   set_score(0);
 }
@@ -273,8 +274,8 @@ void SnakeTail::on_destroy(bool bomb) {
 Snake::Snake(ii::SimInterface& sim, const vec2& position, const glm::vec4& colour, const vec2& dir,
              fixed rot)
 : Enemy{sim, position, kShipNone, 5}, colour_{colour}, shot_rot_{rot} {
-  add_new_shape<Polygon>(vec2{0}, 14, 3, colour, 0, kVulnerable);
-  add_new_shape<Polygon>(vec2{0}, 10, 3, glm::vec4{0.f}, 0, kDangerous);
+  add_new_shape<ii::Polygon>(vec2{0}, 14, 3, colour, 0, kVulnerable);
+  add_new_shape<ii::Polygon>(vec2{0}, 10, 3, glm::vec4{0.f}, 0, kDangerous);
   set_score(0);
   set_bounding_width(32);
   set_enemy_value(5);
@@ -330,7 +331,7 @@ void Snake::on_destroy(bool bomb) {
 }
 
 RainbowShot::RainbowShot(ii::SimInterface& sim, const vec2& position, const vec2& velocity,
-                         Ship* boss)
+                         ii::Ship* boss)
 : BossShot{sim, position, velocity}, boss_{boss} {}
 
 void RainbowShot::update() {

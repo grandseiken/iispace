@@ -4,8 +4,6 @@ cc_library(
     "boss.h",
     "overmind.h",
     "player.h",
-    "shape.h",
-    "ship.h",
     "stars.h",
   ],
   srcs = [
@@ -28,15 +26,14 @@ cc_library(
     "enemy.h",
     "overmind.cc",
     "player.cc",
-    "shape.cc",
-    "ship.cc",
     "stars.cc",
   ],
   deps = [
     "//game/common:math",
+    "//game/logic/ship",
     "//game/logic/sim:sim_interface",
     "//game/mixer:sound",
     "@glm",
   ],
-  visibility = ["//visibility:public"],
+  visibility = [":__subpackages__"],
 )

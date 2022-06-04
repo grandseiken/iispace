@@ -9,9 +9,9 @@
 #include <vector>
 
 class Overmind;
-class Ship;
 
 namespace ii {
+class Ship;
 class SimInterface;
 struct SimInternals;
 

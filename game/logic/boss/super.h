@@ -6,7 +6,7 @@
 class SuperBossArc : public Boss {
 public:
   SuperBossArc(ii::SimInterface& sim, const vec2& position, std::uint32_t players,
-               std::uint32_t cycle, std::uint32_t i, Ship* boss, std::uint32_t timer = 0);
+               std::uint32_t cycle, std::uint32_t i, ii::Ship* boss, std::uint32_t timer = 0);
 
   void update() override;
   std::uint32_t get_damage(std::uint32_t damage, bool magic) override;
@@ -18,7 +18,7 @@ public:
   }
 
 private:
-  Ship* boss_ = nullptr;
+  ii::Ship* boss_ = nullptr;
   std::uint32_t i_ = 0;
   std::uint32_t timer_ = 0;
   std::uint32_t stimer_ = 0;
@@ -82,11 +82,11 @@ private:
 
 class RainbowShot : public BossShot {
 public:
-  RainbowShot(ii::SimInterface& sim, const vec2& position, const vec2& velocity, Ship* boss);
+  RainbowShot(ii::SimInterface& sim, const vec2& position, const vec2& velocity, ii::Ship* boss);
   void update() override;
 
 private:
-  Ship* boss_ = nullptr;
+  ii::Ship* boss_ = nullptr;
   std::uint32_t timer_ = 0;
 };
 

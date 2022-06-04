@@ -1,8 +1,8 @@
 #ifndef II_GAME_LOGIC_BOSS_H
 #define II_GAME_LOGIC_BOSS_H
-#include "game/logic/ship.h"
+#include "game/logic/ship/ship.h"
 
-class Boss : public Ship {
+class Boss : public ii::Ship {
 public:
   Boss(ii::SimInterface& sim, const vec2& position, ii::SimInterface::boss_list boss,
        std::uint32_t hp, std::uint32_t players, std::uint32_t cycle = 0,

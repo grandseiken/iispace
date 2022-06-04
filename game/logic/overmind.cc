@@ -258,22 +258,22 @@ std::optional<std::uint32_t> Overmind::get_timer() const {
   return kTimer - timer_;
 }
 
-void Overmind::on_enemy_destroy(const Ship& ship) {
+void Overmind::on_enemy_destroy(const ii::Ship& ship) {
   count_ -= ship.enemy_value();
-  if (!(ship.type() & Ship::kShipWall)) {
+  if (!(ship.type() & ii::Ship::kShipWall)) {
     non_wall_count_--;
   }
 }
 
-void Overmind::on_enemy_create(const Ship& ship) {
+void Overmind::on_enemy_create(const ii::Ship& ship) {
   count_ += ship.enemy_value();
-  if (!(ship.type() & Ship::kShipWall)) {
+  if (!(ship.type() & ii::Ship::kShipWall)) {
     ++non_wall_count_;
   }
 }
 
 void Overmind::spawn_powerup() {
-  if (sim_.all_ships(Ship::kShipPowerup).size() >= 4) {
+  if (sim_.all_ships(ii::Ship::kShipPowerup).size() >= 4) {
     return;
   }
 

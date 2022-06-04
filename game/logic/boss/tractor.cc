@@ -19,41 +19,41 @@ TractorBoss::TractorBoss(ii::SimInterface& sim, std::uint32_t players, std::uint
        players,
        cycle}
 , shoot_type_{sim.random(2)} {
-  s1_ = add_new_shape<CompoundShape>(vec2{0, -96}, 0, kDangerous | kVulnerable);
+  s1_ = add_new_shape<ii::CompoundShape>(vec2{0, -96}, 0, kDangerous | kVulnerable);
 
-  s1_->add_new_shape<Polygon>(vec2{0}, 12, 6, c1, 0, 0, Polygon::T::kPolygram);
-  s1_->add_new_shape<Polygon>(vec2{0}, 12, 12, c1, 0, 0);
-  s1_->add_new_shape<Polygon>(vec2{0}, 2, 6, c1, 0, 0);
-  s1_->add_new_shape<Polygon>(vec2{0}, 36, 12, c0, 0, 0);
-  s1_->add_new_shape<Polygon>(vec2{0}, 34, 12, c0, 0, 0);
-  s1_->add_new_shape<Polygon>(vec2{0}, 32, 12, c0, 0, 0);
+  s1_->add_new_shape<ii::Polygon>(vec2{0}, 12, 6, c1, 0, 0, ii::Polygon::T::kPolygram);
+  s1_->add_new_shape<ii::Polygon>(vec2{0}, 12, 12, c1, 0, 0);
+  s1_->add_new_shape<ii::Polygon>(vec2{0}, 2, 6, c1, 0, 0);
+  s1_->add_new_shape<ii::Polygon>(vec2{0}, 36, 12, c0, 0, 0);
+  s1_->add_new_shape<ii::Polygon>(vec2{0}, 34, 12, c0, 0, 0);
+  s1_->add_new_shape<ii::Polygon>(vec2{0}, 32, 12, c0, 0, 0);
   for (std::uint32_t i = 0; i < 8; ++i) {
     vec2 d = rotate(vec2{24, 0}, i * fixed_c::pi / 4);
-    s1_->add_new_shape<Polygon>(d, 12, 6, c0, 0, 0, Polygon::T::kPolygram);
+    s1_->add_new_shape<ii::Polygon>(d, 12, 6, c0, 0, 0, ii::Polygon::T::kPolygram);
   }
 
-  s2_ = add_new_shape<CompoundShape>(vec2{0, 96}, 0, kDangerous | kVulnerable);
+  s2_ = add_new_shape<ii::CompoundShape>(vec2{0, 96}, 0, kDangerous | kVulnerable);
 
-  s2_->add_new_shape<Polygon>(vec2{0}, 12, 6, c1, 0, 0, Polygon::T::kPolygram);
-  s2_->add_new_shape<Polygon>(vec2{0}, 12, 12, c1, 0, 0);
-  s2_->add_new_shape<Polygon>(vec2{0}, 2, 6, c1, 0, 0);
+  s2_->add_new_shape<ii::Polygon>(vec2{0}, 12, 6, c1, 0, 0, ii::Polygon::T::kPolygram);
+  s2_->add_new_shape<ii::Polygon>(vec2{0}, 12, 12, c1, 0, 0);
+  s2_->add_new_shape<ii::Polygon>(vec2{0}, 2, 6, c1, 0, 0);
 
-  s2_->add_new_shape<Polygon>(vec2{0}, 36, 12, c0, 0, 0);
-  s2_->add_new_shape<Polygon>(vec2{0}, 34, 12, c0, 0, 0);
-  s2_->add_new_shape<Polygon>(vec2{0}, 32, 12, c0, 0, 0);
+  s2_->add_new_shape<ii::Polygon>(vec2{0}, 36, 12, c0, 0, 0);
+  s2_->add_new_shape<ii::Polygon>(vec2{0}, 34, 12, c0, 0, 0);
+  s2_->add_new_shape<ii::Polygon>(vec2{0}, 32, 12, c0, 0, 0);
   for (std::uint32_t i = 0; i < 8; ++i) {
     vec2 d = rotate(vec2{24, 0}, i * fixed_c::pi / 4);
-    s2_->add_new_shape<Polygon>(d, 12, 6, c0, 0, 0, Polygon::T::kPolygram);
+    s2_->add_new_shape<ii::Polygon>(d, 12, 6, c0, 0, 0, ii::Polygon::T::kPolygram);
   }
 
-  sattack_ = add_new_shape<Polygon>(vec2{0}, 0, 16, c2);
+  sattack_ = add_new_shape<ii::Polygon>(vec2{0}, 0, 16, c2);
 
-  add_new_shape<Line>(vec2{0}, vec2{-2, -96}, vec2{-2, 96}, c0, 0);
-  add_new_shape<Line>(vec2{0}, vec2{0, -96}, vec2{0, 96}, c1, 0);
-  add_new_shape<Line>(vec2{0}, vec2{2, -96}, vec2{2, 96}, c0, 0);
+  add_new_shape<ii::Line>(vec2{0}, vec2{-2, -96}, vec2{-2, 96}, c0, 0);
+  add_new_shape<ii::Line>(vec2{0}, vec2{0, -96}, vec2{0, 96}, c1, 0);
+  add_new_shape<ii::Line>(vec2{0}, vec2{2, -96}, vec2{2, 96}, c0, 0);
 
-  add_new_shape<Polygon>(vec2{0, 96}, 30, 12, glm::vec4{0.f}, 0, kShield);
-  add_new_shape<Polygon>(vec2{0, -96}, 30, 12, glm::vec4{0.f}, 0, kShield);
+  add_new_shape<ii::Polygon>(vec2{0, 96}, 30, 12, glm::vec4{0.f}, 0, kShield);
+  add_new_shape<ii::Polygon>(vec2{0, -96}, 30, 12, glm::vec4{0.f}, 0, kShield);
 
   attack_shapes_ = shapes().size();
 }
@@ -203,7 +203,7 @@ void TractorBoss::update() {
             ship->destroy();
             ++attack_size_;
             sattack_->radius = attack_size_ / (1 + fixed_c::half);
-            add_new_shape<Polygon>(vec2{0}, 8, 6, c0, 0, 0);
+            add_new_shape<ii::Polygon>(vec2{0}, 8, 6, c0, 0, 0);
           }
         }
       } else {
@@ -268,7 +268,7 @@ std::uint32_t TractorBoss::get_damage(std::uint32_t damage, bool magic) {
 
 TBossShot::TBossShot(ii::SimInterface& sim, const vec2& position, fixed angle)
 : Enemy{sim, position, kShipNone, 1} {
-  add_new_shape<Polygon>(vec2{0}, 8, 6, c0, 0, kDangerous | kVulnerable);
+  add_new_shape<ii::Polygon>(vec2{0}, 8, 6, c0, 0, kDangerous | kVulnerable);
   dir_ = from_polar(angle, 3_fx);
   set_bounding_width(8);
   set_score(0);

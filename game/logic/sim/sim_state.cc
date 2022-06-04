@@ -3,7 +3,7 @@
 #include "game/logic/boss/chaser.h"
 #include "game/logic/overmind.h"
 #include "game/logic/player.h"
-#include "game/logic/ship.h"
+#include "game/logic/ship/ship.h"
 #include "game/logic/sim/sim_interface.h"
 #include "game/logic/sim/sim_internals.h"
 #include "game/logic/stars.h"

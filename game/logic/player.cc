@@ -20,17 +20,17 @@ ii::SimInterface::ship_list Player::kill_queue_;
 std::uint32_t Player::fire_timer_;
 
 Player::Player(ii::SimInterface& sim, const vec2& position, std::uint32_t player_number)
-: Ship{sim, position, kShipPlayer}
+: ii::Ship{sim, position, kShipPlayer}
 , player_number_{player_number}
 , revive_timer_{kReviveTime}
 , fire_target_{get_screen_centre()} {
   auto c_dark = colour();
   c_dark.a = .2f;
-  add_new_shape<Polygon>(vec2{0}, 16, 3, colour());
-  add_new_shape<Fill>(vec2{8, 0}, 2, 2, colour());
-  add_new_shape<Fill>(vec2{8, 0}, 1, 1, c_dark);
-  add_new_shape<Fill>(vec2{8, 0}, 3, 3, c_dark);
-  add_new_shape<Polygon>(vec2{0}, 8, 3, colour(), fixed_c::pi);
+  add_new_shape<ii::Polygon>(vec2{0}, 16, 3, colour());
+  add_new_shape<ii::Fill>(vec2{8, 0}, 2, 2, colour());
+  add_new_shape<ii::Fill>(vec2{8, 0}, 1, 1, c_dark);
+  add_new_shape<ii::Fill>(vec2{8, 0}, 3, 3, c_dark);
+  add_new_shape<ii::Polygon>(vec2{0}, 8, 3, colour(), fixed_c::pi);
   kill_queue_.clear();
   fire_timer_ = 0;
 }
@@ -212,7 +212,7 @@ void Player::activate_magic_shield() {
     bomb_ = false;
   }
   shield_ = true;
-  add_new_shape<Polygon>(vec2{0}, 16, 10, glm::vec4{1.f});
+  add_new_shape<ii::Polygon>(vec2{0}, 16, 10, glm::vec4{1.f});
 }
 
 void Player::activate_bomb() {
@@ -225,7 +225,8 @@ void Player::activate_bomb() {
     shield_ = false;
   }
   bomb_ = true;
-  add_new_shape<Polygon>(vec2{-8, 0}, 6, 5, glm::vec4{1.f}, fixed_c::pi, 0, Polygon::T::kPolystar);
+  add_new_shape<ii::Polygon>(vec2{-8, 0}, 6, 5, glm::vec4{1.f}, fixed_c::pi, 0,
+                             ii::Polygon::T::kPolystar);
 }
 
 void Player::update_fire_timer() {
@@ -234,13 +235,13 @@ void Player::update_fire_timer() {
 
 Shot::Shot(ii::SimInterface& sim, const vec2& position, Player* player, const vec2& direction,
            bool magic)
-: Ship{sim, position, kShipNone}, player_{player}, velocity_{direction}, magic_{magic} {
+: ii::Ship{sim, position, kShipNone}, player_{player}, velocity_{direction}, magic_{magic} {
   velocity_ = normalise(velocity_) * kShotSpeed;
   auto c_dark = player_->colour();
   c_dark.a = .2f;
-  add_new_shape<Fill>(vec2{0}, 2, 2, player_->colour());
-  add_new_shape<Fill>(vec2{0}, 1, 1, c_dark);
-  add_new_shape<Fill>(vec2{0}, 3, 3, c_dark);
+  add_new_shape<ii::Fill>(vec2{0}, 2, 2, player_->colour());
+  add_new_shape<ii::Fill>(vec2{0}, 1, 1, c_dark);
+  add_new_shape<ii::Fill>(vec2{0}, 3, 3, c_dark);
 }
 
 void Shot::render() const {
@@ -250,7 +251,7 @@ void Shot::render() const {
   if (flash_) {
     render_with_colour(glm::vec4{1.f});
   } else {
-    Ship::render();
+    ii::Ship::render();
   }
 }
 
@@ -278,26 +279,26 @@ void Shot::update() {
 }
 
 Powerup::Powerup(ii::SimInterface& sim, const vec2& position, type t)
-: Ship{sim, position, kShipPowerup}, type_{t}, dir_{0, 1} {
-  add_new_shape<Polygon>(vec2{0}, 13, 5, glm::vec4{0.f}, fixed_c::pi / 2, 0);
-  add_new_shape<Polygon>(vec2{0}, 9, 5, glm::vec4{0.f}, fixed_c::pi / 2, 0);
+: ii::Ship{sim, position, kShipPowerup}, type_{t}, dir_{0, 1} {
+  add_new_shape<ii::Polygon>(vec2{0}, 13, 5, glm::vec4{0.f}, fixed_c::pi / 2, 0);
+  add_new_shape<ii::Polygon>(vec2{0}, 9, 5, glm::vec4{0.f}, fixed_c::pi / 2, 0);
 
   switch (type_) {
   case type::kExtraLife:
-    add_new_shape<Polygon>(vec2{0}, 8, 3, glm::vec4{1.f}, fixed_c::pi / 2);
+    add_new_shape<ii::Polygon>(vec2{0}, 8, 3, glm::vec4{1.f}, fixed_c::pi / 2);
     break;
 
   case type::kMagicShots:
-    add_new_shape<Fill>(vec2{0}, 3, 3, glm::vec4{1.f});
+    add_new_shape<ii::Fill>(vec2{0}, 3, 3, glm::vec4{1.f});
     break;
 
   case type::kShield:
-    add_new_shape<Polygon>(vec2{0}, 11, 5, glm::vec4{1.f}, fixed_c::pi / 2);
+    add_new_shape<ii::Polygon>(vec2{0}, 11, 5, glm::vec4{1.f}, fixed_c::pi / 2);
     break;
 
   case type::kBomb:
-    add_new_shape<Polygon>(vec2{0}, 11, 10, glm::vec4{1.f}, fixed_c::pi / 2, 0,
-                           Polygon::T::kPolystar);
+    add_new_shape<ii::Polygon>(vec2{0}, 11, 10, glm::vec4{1.f}, fixed_c::pi / 2, 0,
+                               ii::Polygon::T::kPolystar);
     break;
   }
 }

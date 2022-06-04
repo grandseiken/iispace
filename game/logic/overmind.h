@@ -4,10 +4,10 @@
 #include <optional>
 #include <vector>
 
-class Ship;
 namespace ii {
+class Ship;
 class SimInterface;
-}
+}  // namespace ii
 
 class formation_base;
 class Overmind {
@@ -26,8 +26,8 @@ public:
   // Enemy-counting
   //------------------------------
   // TODO: get rid of this.
-  void on_enemy_destroy(const Ship& ship);
-  void on_enemy_create(const Ship& ship);
+  void on_enemy_destroy(const ii::Ship& ship);
+  void on_enemy_create(const ii::Ship& ship);
 
   std::uint32_t count_non_wall_enemies() const {
     return non_wall_count_;

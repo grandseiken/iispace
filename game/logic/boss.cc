@@ -12,7 +12,7 @@ const fixed kHpPerExtraCycle = 3 * 1_fx / 10;
 
 Boss::Boss(ii::SimInterface& sim, const vec2& position, ii::SimInterface::boss_list boss,
            std::uint32_t hp, std::uint32_t players, std::uint32_t cycle, bool explode_on_damage)
-: Ship{sim, position, static_cast<Ship::ship_category>(kShipBoss | kShipEnemy)}
+: ii::Ship{sim, position, static_cast<Ship::ship_category>(kShipBoss | kShipEnemy)}
 , flag_{boss}
 , explode_on_damage_{explode_on_damage} {
   set_bounding_width(640);

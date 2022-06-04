@@ -1,8 +1,8 @@
 #ifndef II_GAME_LOGIC_PLAYER_H
 #define II_GAME_LOGIC_PLAYER_H
-#include "game/logic/ship.h"
+#include "game/logic/ship/ship.h"
 
-class Player : public Ship {
+class Player : public ii::Ship {
 public:
   static constexpr std::uint32_t kBombDamage = 50;
 
@@ -67,7 +67,7 @@ private:
   static ii::SimInterface::ship_list kill_queue_;
 };
 
-class Shot : public Ship {
+class Shot : public ii::Ship {
 public:
   Shot(ii::SimInterface& sim, const vec2& position, Player* player, const vec2& direction,
        bool magic = false);
@@ -83,7 +83,7 @@ private:
   bool flash_ = false;
 };
 
-class Powerup : public Ship {
+class Powerup : public ii::Ship {
 public:
   enum class type {
     kExtraLife,

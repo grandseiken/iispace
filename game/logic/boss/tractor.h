@@ -12,9 +12,9 @@ public:
   std::uint32_t get_damage(std::uint32_t damage, bool magic) override;
 
 private:
-  CompoundShape* s1_ = nullptr;
-  CompoundShape* s2_ = nullptr;
-  Polygon* sattack_ = nullptr;
+  ii::CompoundShape* s1_ = nullptr;
+  ii::CompoundShape* s2_ = nullptr;
+  ii::Polygon* sattack_ = nullptr;
   bool will_attack_ = false;
   bool stopped_ = false;
   bool generating_ = false;

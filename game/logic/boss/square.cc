@@ -26,19 +26,19 @@ BigSquareBoss::BigSquareBoss(ii::SimInterface& sim, std::uint32_t players, std::
        cycle}
 , dir_{0, -1}
 , timer_{kBsbTimer * 6} {
-  add_new_shape<Polygon>(vec2{0}, 160, 4, c0, 0, 0);
-  add_new_shape<Polygon>(vec2{0}, 140, 4, c0, 0, kDangerous);
-  add_new_shape<Polygon>(vec2{0}, 120, 4, c0, 0, kDangerous);
-  add_new_shape<Polygon>(vec2{0}, 100, 4, c0, 0, 0);
-  add_new_shape<Polygon>(vec2{0}, 80, 4, c0, 0, 0);
-  add_new_shape<Polygon>(vec2{0}, 60, 4, c0, 0, kVulnerable);
+  add_new_shape<ii::Polygon>(vec2{0}, 160, 4, c0, 0, 0);
+  add_new_shape<ii::Polygon>(vec2{0}, 140, 4, c0, 0, kDangerous);
+  add_new_shape<ii::Polygon>(vec2{0}, 120, 4, c0, 0, kDangerous);
+  add_new_shape<ii::Polygon>(vec2{0}, 100, 4, c0, 0, 0);
+  add_new_shape<ii::Polygon>(vec2{0}, 80, 4, c0, 0, 0);
+  add_new_shape<ii::Polygon>(vec2{0}, 60, 4, c0, 0, kVulnerable);
 
-  add_new_shape<Polygon>(vec2{0}, 155, 4, c0, 0, 0);
-  add_new_shape<Polygon>(vec2{0}, 135, 4, c0, 0, 0);
-  add_new_shape<Polygon>(vec2{0}, 115, 4, c0, 0, 0);
-  add_new_shape<Polygon>(vec2{0}, 95, 4, c1, 0, 0);
-  add_new_shape<Polygon>(vec2{0}, 75, 4, c1, 0, 0);
-  add_new_shape<Polygon>(vec2{0}, 55, 4, c2, 0, kShield);
+  add_new_shape<ii::Polygon>(vec2{0}, 155, 4, c0, 0, 0);
+  add_new_shape<ii::Polygon>(vec2{0}, 135, 4, c0, 0, 0);
+  add_new_shape<ii::Polygon>(vec2{0}, 115, 4, c0, 0, 0);
+  add_new_shape<ii::Polygon>(vec2{0}, 95, 4, c1, 0, 0);
+  add_new_shape<ii::Polygon>(vec2{0}, 75, 4, c1, 0, 0);
+  add_new_shape<ii::Polygon>(vec2{0}, 55, 4, c2, 0, kShield);
 }
 
 void BigSquareBoss::update() {
@@ -126,7 +126,7 @@ void BigSquareBoss::render() const {
     }
     for (std::uint32_t i = 0; i < 6; ++i) {
       auto p = to_float(attack_player_->shape().centre) + d;
-      Polygon s{vec2{0}, 10, 4, c0, fixed_c::pi / 4, 0};
+      ii::Polygon s{vec2{0}, 10, 4, c0, fixed_c::pi / 4, 0};
       s.render(sim(), p, 0);
       d = rotate(d, 2 * glm::pi<float>() / 6);
     }

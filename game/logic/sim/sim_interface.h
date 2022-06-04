@@ -8,9 +8,9 @@
 #include <vector>
 
 class Player;
-class Ship;
 
 namespace ii {
+class Ship;
 class SimInternals;
 
 constexpr glm::ivec2 kSimDimensions = {640, 480};

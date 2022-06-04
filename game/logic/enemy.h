@@ -1,8 +1,8 @@
 #ifndef II_GAME_LOGIC_ENEMY_H
 #define II_GAME_LOGIC_ENEMY_H
-#include "game/logic/ship.h"
+#include "game/logic/ship/ship.h"
 
-class Enemy : public Ship {
+class Enemy : public ii::Ship {
 public:
   Enemy(ii::SimInterface& sim, const vec2& position, Ship::ship_category type, std::uint32_t hp);
 

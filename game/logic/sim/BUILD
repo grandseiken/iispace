@@ -1,3 +1,4 @@
+# TODO: separate external and internal interfaces.
 cc_library(
   name = "sim_interface",
   hdrs = [
@@ -24,6 +25,7 @@ cc_library(
   deps = [
     ":sim_interface",
     "//game/logic",
+    "//game/logic/ship",
   ],
   visibility = ["//visibility:public"],
 )
