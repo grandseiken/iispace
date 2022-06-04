@@ -11,7 +11,7 @@ const char* kReplayExt = ".wrp";
 result<std::vector<std::uint8_t>> read(const std::filesystem::path& path) {
   std::ifstream f{path.u8string(), std::ios::in | std::ios::binary};
   if (!f.is_open()) {
-    return unexpected("Couldn't open " + path.u8string() + " for reading");
+    return unexpected("Couldn't open " + path.string() + " for reading");
   }
   f.unsetf(std::ios::skipws);
 
@@ -26,14 +26,14 @@ result<std::vector<std::uint8_t>> read(const std::filesystem::path& path) {
   return {std::move(v)};
 }
 
-result<void> write(const std::filesystem::path& path, nonstd::span<const std::uint8_t> bytes) {
+result<void> write(const std::filesystem::path& path, std::span<const std::uint8_t> bytes) {
   std::ofstream f{path.u8string(), std::ios::out | std::ios::binary};
   if (!f.is_open()) {
-    return unexpected("Couldn't open " + path.u8string() + " for writing");
+    return unexpected("Couldn't open " + path.string() + " for writing");
   }
   f.write(reinterpret_cast<const char*>(bytes.data()), bytes.size());
   if (!f.good()) {
-    return unexpected("Error writing " + path.u8string());
+    return unexpected("Error writing " + path.string());
   }
   return {};
 }
@@ -60,7 +60,7 @@ result<Filesystem::byte_buffer> StdFilesystem::read_config() const {
   return io::read(std::filesystem::path{save_dir_} / kConfigPath);
 }
 
-result<void> StdFilesystem::write_config(nonstd::span<const std::uint8_t> data) {
+result<void> StdFilesystem::write_config(std::span<const std::uint8_t> data) {
   return io::write(std::filesystem::path{save_dir_} / kConfigPath, data);
 }
 
@@ -69,7 +69,7 @@ std::vector<std::string> StdFilesystem::list_savegames() const {
   std::error_code ec;
   for (const auto& entry : std::filesystem::directory_iterator{save_dir_, ec}) {
     if (entry.is_regular_file() && entry.path().extension() == kSaveExt) {
-      result.emplace_back(entry.path().stem().u8string());
+      result.emplace_back(entry.path().stem().string());
     }
   }
   return {std::move(result)};
@@ -80,7 +80,7 @@ result<Filesystem::byte_buffer> StdFilesystem::read_savegame(std::string_view na
 }
 
 result<void>
-StdFilesystem::write_savegame(std::string_view name, nonstd::span<const std::uint8_t> data) {
+StdFilesystem::write_savegame(std::string_view name, std::span<const std::uint8_t> data) {
   return io::write(std::filesystem::path{save_dir_} / (std::string{name} + kSaveExt), data);
 }
 
@@ -89,7 +89,7 @@ std::vector<std::string> StdFilesystem::list_replays() const {
   std::error_code ec;
   for (const auto& entry : std::filesystem::directory_iterator{replay_dir_, ec}) {
     if (entry.is_regular_file() && entry.path().extension() == kReplayExt) {
-      result.emplace_back(entry.path().stem().u8string());
+      result.emplace_back(entry.path().stem().string());
     }
   }
   return {std::move(result)};
@@ -100,7 +100,7 @@ result<Filesystem::byte_buffer> StdFilesystem::read_replay(std::string_view name
 }
 
 result<void>
-StdFilesystem::write_replay(std::string_view name, nonstd::span<const std::uint8_t> data) {
+StdFilesystem::write_replay(std::string_view name, std::span<const std::uint8_t> data) {
   return io::write(std::filesystem::path{replay_dir_} / (std::string{name} + kReplayExt), data);
 }
 

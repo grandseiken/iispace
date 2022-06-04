@@ -18,12 +18,12 @@ def xxd(name, namespace, srcs, testonly = False, visibility = None):
   h_content = [
     "#ifndef %s" % guard,
     "#define %s" % guard,
-    "#include <nonstd/span.hpp>",
     "#include <cstdint>",
+    "#include <span>",
     "#include <string>",
     "#include <unordered_map>",
     "namespace %s {" % namespace,
-    "std::unordered_map<std::string, nonstd::span<const std::uint8_t>> %s_filemap();" % name,
+    "std::unordered_map<std::string, std::span<const std::uint8_t>> %s_filemap();" % name,
   ]
 
   cc_content = ["#include \"%s.h\"" % "/".join(pdir + [name])] + [
@@ -33,16 +33,16 @@ def xxd(name, namespace, srcs, testonly = False, visibility = None):
   for src in srcs:
     src_name = src.replace("/", "_").replace(".", "_")
     var_name = "_".join(rdir + pdir + [src_name])
-    h_content += ["nonstd::span<const std::uint8_t> %s();" % src_name]
+    h_content += ["std::span<const std::uint8_t> %s();" % src_name]
     cc_content += [
-      "nonstd::span<const std::uint8_t> %s() {" % src_name,
+      "std::span<const std::uint8_t> %s() {" % src_name,
       "  return {::%s, ::%s_len};" % (var_name, var_name),
       "}",
     ]
 
   cc_content += [
-    "std::unordered_map<std::string, nonstd::span<const std::uint8_t>> %s_filemap() {" % name,
-    "  static const std::unordered_map<std::string, nonstd::span<const std::uint8_t>> kFiles = {",
+    "std::unordered_map<std::string, std::span<const std::uint8_t>> %s_filemap() {" % name,
+    "  static const std::unordered_map<std::string, std::span<const std::uint8_t>> kFiles = {",
   ]
   for src in srcs:
     cc_content += ["    {\"%s\", %s()}," %
@@ -63,7 +63,6 @@ def xxd(name, namespace, srcs, testonly = False, visibility = None):
     name = name,
     hdrs = ["%s.h" % name],
     srcs = ["%s.cc" % name] + ["%s.h" % src for src in srcs],
-    deps = ["@span_lite"],
     testonly = testonly,
     visibility = visibility,
   )

@@ -4,7 +4,6 @@ cc_library(
   srcs = ["crypt.cc"],
   deps = [
     "//game/common:types",
-    "@span_lite",
     "@zlib",
   ],
 )
@@ -19,7 +18,6 @@ cc_library(
     "//game/common:types",
     "//game/data/proto:ii_proto_cc",
     "//game/logic/sim:sim_interface",
-    "@span_lite",
   ],
   visibility = ["//visibility:public"],
 )
@@ -33,7 +31,6 @@ cc_library(
     "//game/common:types",
     "//game/data/proto:ii_proto_cc",
     "//game/logic/sim:sim_interface",
-    "@span_lite",
   ],
   visibility = ["//visibility:public"],
 )

@@ -2,10 +2,10 @@
 #define II_GAME_DATA_REPLAY_H
 #include "game/common/result.h"
 #include "game/logic/sim/sim_io.h"
-#include <nonstd/span.hpp>
 #include <cstdint>
 #include <memory>
 #include <optional>
+#include <span>
 
 namespace ii::io {
 class Filesystem;
@@ -19,7 +19,7 @@ public:
   ReplayReader(ReplayReader&&);
   ReplayReader& operator=(ReplayReader&&);
 
-  static result<ReplayReader> create(nonstd::span<const std::uint8_t> bytes);
+  static result<ReplayReader> create(std::span<const std::uint8_t> bytes);
   ii::initial_conditions initial_conditions() const;
   std::optional<ii::input_frame> next_input_frame();
 

@@ -10,8 +10,8 @@
 #include "game/render/gl/types.h"
 #include "game/render/shader_compiler.h"
 #include <GL/gl3w.h>
-#include <nonstd/span.hpp>
 #include <algorithm>
+#include <span>
 #include <string>
 #include <vector>
 
@@ -63,7 +63,7 @@ struct GlRenderer::impl_t {
                                    gl::texture_wrap::kClampToEdge,
                                    gl::texture_wrap::kClampToEdge)} {
     static const std::vector<unsigned> quad_indices = {0, 1, 2, 0, 2, 3};
-    gl::buffer_data(quad_index, gl::buffer_usage::kStaticDraw, nonstd::span{quad_indices});
+    gl::buffer_data(quad_index, gl::buffer_usage::kStaticDraw, std::span{quad_indices});
   }
 
   glm::vec2 render_scale() const {
@@ -100,7 +100,7 @@ struct GlRenderer::impl_t {
         static_cast<int_t>(0),
     };
     auto vertex_buffer = gl::make_buffer();
-    gl::buffer_data(vertex_buffer, gl::buffer_usage::kStreamDraw, nonstd::span{vertex_data});
+    gl::buffer_data(vertex_buffer, gl::buffer_usage::kStreamDraw, std::span{vertex_data});
 
     auto vertex_array = gl::make_vertex_array();
     gl::bind_vertex_array(vertex_array);
@@ -227,7 +227,7 @@ void GlRenderer::render_text(std::uint32_t font_index, const glm::ivec2& positio
 
   const auto vertex_data = font_entry.font.generate_vertex_data(s, position);
   auto vertex_buffer = gl::make_buffer();
-  gl::buffer_data(vertex_buffer, gl::buffer_usage::kStreamDraw, nonstd::span{vertex_data});
+  gl::buffer_data(vertex_buffer, gl::buffer_usage::kStreamDraw, std::span{vertex_data});
 
   auto quads = static_cast<unsigned>(vertex_data.size() / 16);
   std::vector<unsigned> indices;
@@ -235,8 +235,7 @@ void GlRenderer::render_text(std::uint32_t font_index, const glm::ivec2& positio
     indices.insert(indices.end(), {4 * i, 4 * i + 1, 4 * i + 2, 4 * i, 4 * i + 2, 4 * i + 3});
   }
   auto index_buffer = gl::make_buffer();
-  gl::buffer_data(index_buffer, gl::buffer_usage::kStreamDraw,
-                  nonstd::span<const unsigned>{indices});
+  gl::buffer_data(index_buffer, gl::buffer_usage::kStreamDraw, std::span<const unsigned>{indices});
 
   auto vertex_array = gl::make_vertex_array();
   gl::bind_vertex_array(vertex_array);
@@ -268,7 +267,7 @@ void GlRenderer::render_rect(const glm::ivec2& position, const glm::ivec2& size,
   impl_->draw_rect_internal(position, size);
 }
 
-void GlRenderer::render_lines(nonstd::span<const line_t> lines) {
+void GlRenderer::render_lines(std::span<const line_t> lines) {
   const auto& program = impl_->line;
   gl::use_program(program);
   gl::enable_blend(true);
@@ -305,13 +304,13 @@ void GlRenderer::render_lines(nonstd::span<const line_t> lines) {
   auto vertex_buffer = gl::make_buffer();
   auto colour_buffer = gl::make_buffer();
   gl::buffer_data(vertex_buffer, gl::buffer_usage::kStreamDraw,
-                  nonstd::span<const float>{vertex_data});
+                  std::span<const float>{vertex_data});
   gl::buffer_data(colour_buffer, gl::buffer_usage::kStreamDraw,
-                  nonstd::span<const float>{colour_data});
+                  std::span<const float>{colour_data});
 
   auto line_index = gl::make_buffer();
   gl::buffer_data(line_index, gl::buffer_usage::kStreamDraw,
-                  nonstd::span<const unsigned>{line_indices});
+                  std::span<const unsigned>{line_indices});
 
   auto vertex_array = gl::make_vertex_array();
   gl::bind_vertex_array(vertex_array);

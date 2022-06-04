@@ -2,8 +2,8 @@
 #define II_GAME_DATA_SAVE_H
 #include "game/common/result.h"
 #include "game/logic/sim/sim_io.h"
-#include <nonstd/span.hpp>
 #include <cstdint>
+#include <span>
 #include <vector>
 
 namespace ii {
@@ -39,7 +39,7 @@ struct HighScores {
 };
 
 struct SaveGame {
-  static result<SaveGame> load(nonstd::span<const std::uint8_t> bytes);
+  static result<SaveGame> load(std::span<const std::uint8_t> bytes);
   result<std::vector<std::uint8_t>> save() const;
 
   std::uint32_t bosses_killed = 0;
@@ -48,7 +48,7 @@ struct SaveGame {
 };
 
 struct Config {
-  static result<Config> load(nonstd::span<const std::uint8_t> bytes);
+  static result<Config> load(std::span<const std::uint8_t> bytes);
   result<std::vector<std::uint8_t>> save() const;
 
   float volume = 100.f;

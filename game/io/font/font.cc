@@ -232,7 +232,7 @@ struct Font::font_data {
   std::unique_ptr<void, void (*)(void*)> memory{nullptr, nullptr};
 };
 
-result<Font> Font::create(nonstd::span<const std::uint8_t> data) {
+result<Font> Font::create(std::span<const std::uint8_t> data) {
   if (!s.success) {
     return unexpected(s.success.error());
   }
@@ -318,7 +318,7 @@ result<void> Font::render_code(std::uint32_t code, bool lcd, const glm::uvec2& b
   return {};
 }
 
-result<RenderedFont> Font::render(nonstd::span<const std::uint32_t> utf32_codes, bool lcd,
+result<RenderedFont> Font::render(std::span<const std::uint32_t> utf32_codes, bool lcd,
                                   const glm::uvec2& base_dimensions) const {
   using namespace std::string_literals;
   auto error = FT_Set_Pixel_Sizes(data_->face, base_dimensions.x, base_dimensions.y);

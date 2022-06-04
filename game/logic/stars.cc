@@ -19,9 +19,7 @@ void Stars::update(ii::SimInterface& sim) {
     destroy |= !--star.timer;
   }
   if (destroy) {
-    stars_.erase(
-        std::remove_if(stars_.begin(), stars_.end(), [](const auto& s) { return !s.timer; }),
-        stars_.end());
+    std::erase_if(stars_, [](const auto& s) { return !s.timer; });
   }
 
   auto r = star_rate_ > 1 ? sim.random(star_rate_) : 0u;

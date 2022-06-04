@@ -7,7 +7,6 @@ cc_library(
     "//game/common:ustring",
     "@freetype2",
     "@glm",
-    "@span_lite",
   ],
   visibility = ["//visibility:public"],
 )

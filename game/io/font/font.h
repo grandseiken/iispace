@@ -3,11 +3,11 @@
 #include "game/common/result.h"
 #include "game/common/ustring.h"
 #include <glm/glm.hpp>
-#include <nonstd/span.hpp>
 #include <cstddef>
 #include <cstdint>
 #include <memory>
 #include <optional>
+#include <span>
 #include <unordered_map>
 
 namespace ii {
@@ -34,7 +34,7 @@ public:
     return {lcd_ ? bitmap_dimensions_.x / 3 : bitmap_dimensions_.x, bitmap_dimensions_.y};
   }
 
-  nonstd::span<const std::uint8_t> bitmap() {
+  std::span<const std::uint8_t> bitmap() {
     return bitmap_;
   }
 
@@ -95,7 +95,7 @@ private:
 class Font {
 public:
   // TODO: currently data must live as long as the font.
-  static result<Font> create(nonstd::span<const std::uint8_t> data);
+  static result<Font> create(std::span<const std::uint8_t> data);
 
   ~Font();
   Font(Font&&);
@@ -105,7 +105,7 @@ public:
                            const glm::uvec2& bitmap_dimensions, std::size_t bitmap_stride,
                            std::uint8_t* bitmap, const glm::uvec2& bitmap_position);
 
-  result<RenderedFont> render(nonstd::span<const std::uint32_t> utf32_codes, bool lcd,
+  result<RenderedFont> render(std::span<const std::uint32_t> utf32_codes, bool lcd,
                               const glm::uvec2& base_dimensions) const;
 
 private:

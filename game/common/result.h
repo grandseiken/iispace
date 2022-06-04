@@ -7,7 +7,7 @@ namespace ii {
 
 template <typename T>
 struct [[nodiscard]] result : tl::expected<T, std::string> {
-  using expected::expected;
+  using tl::expected<T, std::string>::expected;
 };
 
 inline auto unexpected(const std::string& s) -> decltype(tl::unexpected(s)) {

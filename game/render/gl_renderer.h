@@ -3,9 +3,9 @@
 #include "game/common/result.h"
 #include "game/common/ustring.h"
 #include <glm/glm.hpp>
-#include <nonstd/span.hpp>
 #include <memory>
 #include <optional>
+#include <span>
 #include <string_view>
 
 namespace ii::io {
@@ -45,7 +45,7 @@ public:
   void render_rect(const glm::ivec2& position, const glm::ivec2& size, std::uint32_t border_width,
                    const glm::vec4& colour_lo, const glm::vec4& colour_hi,
                    const glm::vec4& border_lo, const glm::vec4& border_hi);
-  void render_lines(nonstd::span<const line_t> lines);
+  void render_lines(std::span<const line_t> lines);
 
 private:
   std::uint32_t colour_cycle_ = 0;

@@ -10,7 +10,6 @@ namespace ii::render {
 class GlRenderer;
 }  // namespace ii::render
 
-class ModalStack;
 class Modal {
 public:
   Modal(bool capture_updates, bool capture_rendering)
@@ -22,9 +21,7 @@ public:
 
 protected:
   template <typename T>
-  T* add(std::unique_ptr<T> modal) {
-    return stack_->add(std::move(modal));
-  }
+  T* add(std::unique_ptr<T> modal);
   void quit();
 
 private:
@@ -59,5 +56,10 @@ private:
   std::vector<std::unique_ptr<Modal>> stack_;
   std::vector<std::unique_ptr<Modal>> new_stack_;
 };
+
+template <typename T>
+T* Modal::add(std::unique_ptr<T> modal) {
+  return stack_->add(std::move(modal));
+}
 
 #endif

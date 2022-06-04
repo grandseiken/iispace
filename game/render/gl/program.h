@@ -5,14 +5,14 @@
 #include <GL/gl3w.h>
 #include <glm/glm.hpp>
 #include <glm/gtc/type_ptr.hpp>
-#include <nonstd/span.hpp>
+#include <span>
 #include <string>
 #include <type_traits>
 #include <vector>
 
 namespace ii::gl {
 namespace detail {
-inline result<program> link_program(nonstd::span<id> shaders) {
+inline result<program> link_program(std::span<id> shaders) {
   program handle{glCreateProgram()};
   for (auto shader_id : shaders) {
     glAttachShader(*handle, shader_id);
@@ -51,7 +51,7 @@ enum class shader_type {
   kFragment,
 };
 
-inline result<shader> compile_shader(shader_type type, nonstd::span<const std::uint8_t> source) {
+inline result<shader> compile_shader(shader_type type, std::span<const std::uint8_t> source) {
   GLenum t = 0;
   switch (type) {
   case shader_type::kCompute:
@@ -104,7 +104,7 @@ link_program(const T&... shaders) {
   return detail::link_program(ids);
 }
 
-inline result<program> link_program(nonstd::span<shader> shaders) {
+inline result<program> link_program(std::span<shader> shaders) {
   std::vector<id> ids;
   for (auto& s : shaders) {
     ids.emplace_back(*s);

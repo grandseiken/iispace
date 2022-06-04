@@ -3,7 +3,6 @@ cc_library(
   hdrs = ["filesystem.h"],
   deps = [
     "//game/common:types",
-    "@span_lite",
   ],
   visibility = ["//visibility:public"],
 )

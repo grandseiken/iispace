@@ -19,7 +19,7 @@ ReplayReader::~ReplayReader() = default;
 ReplayReader::ReplayReader(ReplayReader&&) = default;
 ReplayReader& ReplayReader::operator=(ReplayReader&&) = default;
 
-result<ReplayReader> ReplayReader::create(nonstd::span<const std::uint8_t> bytes) {
+result<ReplayReader> ReplayReader::create(std::span<const std::uint8_t> bytes) {
   auto decompressed = decompress(crypt(bytes, ii::kReplayEncryptionKey));
   if (!decompressed) {
     return unexpected("Couldn't decompress replay: " + decompressed.error());

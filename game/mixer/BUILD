@@ -7,7 +7,6 @@ cc_library(
     "@dr_libs//:dr_wav",
     "@glm",
     "@libsamplerate",
-    "@span_lite",
   ],
   visibility = ["//visibility:public"],
 )

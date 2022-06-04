@@ -55,7 +55,7 @@ void render_line(ii::render::GlRenderer& r, const glm::vec2& a, const glm::vec2&
   r.render_lines({&line, 1});
 }
 
-void render_lines(ii::render::GlRenderer& r, const nonstd::span<ii::render_output::line_t>& lines) {
+void render_lines(ii::render::GlRenderer& r, const std::span<ii::render_output::line_t>& lines) {
   // TODO: avoid this useless copy.
   std::vector<ii::render::line_t> render;
   for (const auto& line : lines) {

@@ -3,8 +3,8 @@
 #include "game/render/gl/types.h"
 #include <GL/gl3w.h>
 #include <glm/glm.hpp>
-#include <nonstd/span.hpp>
 #include <cstdint>
+#include <span>
 
 namespace ii::gl {
 enum class internal_format {
@@ -181,22 +181,22 @@ inline void generate_texture_mipmap(const texture& handle) {
 template <typename T>
 void texture_image_1d(const texture& handle, std::uint8_t level, internal_format iformat,
                       std::uint32_t width, texture_format format, type data_type,
-                      nonstd::span<const T> data) {
+                      std::span<const T> data) {
   glBindTexture(GL_TEXTURE_1D, *handle);
   glTexImage1D(GL_TEXTURE_1D, static_cast<GLint>(level), detail::internal_format_to_gl(iformat),
                static_cast<GLsizei>(width), 0, detail::texture_format_to_gl(format),
-               detail::type_to_gl(data_type), nonstd::as_bytes(data).data());
+               detail::type_to_gl(data_type), std::as_bytes(data).data());
   glBindTexture(GL_TEXTURE_1D, 0);
 }
 
 template <typename T>
 void texture_image_2d(const texture& handle, std::uint8_t level, internal_format iformat,
                       const glm::uvec2& dimensions, texture_format format, type data_type,
-                      nonstd::span<const T> data) {
+                      std::span<const T> data) {
   glBindTexture(GL_TEXTURE_2D, *handle);
   glTexImage2D(GL_TEXTURE_2D, static_cast<GLint>(level), detail::internal_format_to_gl(iformat),
                dimensions.x, dimensions.y, 0, detail::texture_format_to_gl(format),
-               detail::type_to_gl(data_type), nonstd::as_bytes(data).data());
+               detail::type_to_gl(data_type), std::as_bytes(data).data());
   glBindTexture(GL_TEXTURE_2D, 0);
 }
 

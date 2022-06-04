@@ -11,7 +11,6 @@ cc_library(
     "//game/common:types",
     "@gl3w",
     "@glm",
-    "@span_lite",
   ],
   visibility = ["//game/render:__pkg__"],
 )

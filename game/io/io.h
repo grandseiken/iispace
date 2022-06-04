@@ -63,13 +63,16 @@ public:
     IoLayer& layer_;
   };
 
-  audio_callback_lock_t audio_callback_lock() {
-    return {*this};
+  audio_callback_lock_t& audio_callback_lock() {
+    return audio_callback_lock_;
   }
 
 protected:
   virtual void lock_audio_callback() = 0;
   virtual void unlock_audio_callback() = 0;
+
+private:
+  audio_callback_lock_t audio_callback_lock_{*this};
 };
 
 }  // namespace ii::io

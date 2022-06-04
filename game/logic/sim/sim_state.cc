@@ -95,10 +95,7 @@ void SimState::update() {
     }
   }
   if (!destroyed_ships.empty()) {
-    internals_->collisions.erase(
-        std::remove_if(internals_->collisions.begin(), internals_->collisions.end(),
-                       [&](Ship* s) { return destroyed_ships.count(s); }),
-        internals_->collisions.end());
+    std::erase_if(internals_->collisions, [&](Ship* s) { return destroyed_ships.count(s); });
   }
   internals_->ships.erase(remove_it, internals_->ships.end());
 

@@ -5,7 +5,7 @@
 namespace ii {
 
 std::vector<std::uint8_t>
-crypt(nonstd::span<const std::uint8_t> text, nonstd::span<const std::uint8_t> key) {
+crypt(std::span<const std::uint8_t> text, std::span<const std::uint8_t> key) {
   std::vector<std::uint8_t> result;
   for (std::size_t i = 0; i < text.size(); ++i) {
     auto b = text[i] ^ key[i % key.size()];
@@ -18,7 +18,7 @@ crypt(nonstd::span<const std::uint8_t> text, nonstd::span<const std::uint8_t> ke
   return result;
 }
 
-ii::result<std::vector<std::uint8_t>> compress(nonstd::span<const std::uint8_t> bytes) {
+ii::result<std::vector<std::uint8_t>> compress(std::span<const std::uint8_t> bytes) {
   static constexpr std::int32_t kCompressionLevel = Z_BEST_COMPRESSION;
   z_stream zs = {0};
   if (deflateInit(&zs, kCompressionLevel) != Z_OK) {
@@ -51,7 +51,7 @@ ii::result<std::vector<std::uint8_t>> compress(nonstd::span<const std::uint8_t> 
   return {std::move(compressed)};
 }
 
-ii::result<std::vector<std::uint8_t>> decompress(nonstd::span<const std::uint8_t> bytes) {
+ii::result<std::vector<std::uint8_t>> decompress(std::span<const std::uint8_t> bytes) {
   z_stream zs = {0};
   if (inflateInit(&zs) != Z_OK) {
     return unexpected("inflateInit failed while compressing.");

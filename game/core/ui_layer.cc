@@ -2,18 +2,18 @@
 #include "game/io/file/filesystem.h"
 #include "game/io/io.h"
 #include "game/mixer/mixer.h"
-#include <nonstd/span.hpp>
+#include <span>
 
 namespace ii::ui {
 namespace {
 const std::string kSaveName = "iispace";
 
 template <typename T>
-bool contains(nonstd::span<const T> range, T value) {
+bool contains(std::span<const T> range, T value) {
   return std::find(range.begin(), range.end(), value) != range.end();
 }
 
-nonstd::span<const io::keyboard::key> keys_for(key k) {
+std::span<const io::keyboard::key> keys_for(key k) {
   using type = io::keyboard::key;
   static constexpr type accept[] = {type::kZ, type::kSpacebar, type::kLCtrl, type::kRCtrl};
   static constexpr type cancel[] = {type::kX, type::kEscape};
@@ -43,7 +43,7 @@ nonstd::span<const io::keyboard::key> keys_for(key k) {
   }
 }
 
-nonstd::span<const io::mouse::button> mouse_buttons_for(key k) {
+std::span<const io::mouse::button> mouse_buttons_for(key k) {
   using type = io::mouse::button;
   static constexpr type accept[] = {type::kL};
   static constexpr type cancel[] = {type::kR};
@@ -58,7 +58,7 @@ nonstd::span<const io::mouse::button> mouse_buttons_for(key k) {
   }
 }
 
-nonstd::span<const io::controller::button> controller_buttons_for(key k) {
+std::span<const io::controller::button> controller_buttons_for(key k) {
   using type = io::controller::button;
   static constexpr type accept[] = {type::kA, type::kRShoulder};
   static constexpr type cancel[] = {type::kB, type::kLShoulder};

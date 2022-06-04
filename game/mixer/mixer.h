@@ -1,11 +1,11 @@
 #ifndef II_GAME_MIXER_MIXER_H
 #define II_GAME_MIXER_MIXER_H
 #include "game/common/result.h"
-#include <nonstd/span.hpp>
 #include <cstddef>
 #include <cstdint>
 #include <memory>
 #include <optional>
+#include <span>
 
 namespace ii {
 
@@ -16,7 +16,7 @@ public:
 
   ~Mixer();
   Mixer(std::uint32_t sample_rate);
-  result<audio_handle_t> load_wav_memory(nonstd::span<std::uint8_t> data,
+  result<audio_handle_t> load_wav_memory(std::span<std::uint8_t> data,
                                          std::optional<audio_handle_t> handle = std::nullopt);
 
   void set_master_volume(float volume);

@@ -55,7 +55,7 @@ result<audio_clip> drwav_read(drwav& wav) {
   return {std::move(result)};
 }
 
-result<audio_clip> drwav_load_memory(nonstd::span<std::uint8_t> data) {
+result<audio_clip> drwav_load_memory(std::span<std::uint8_t> data) {
   drwav wav;
   if (!drwav_init_memory(&wav, data.data(), data.size(), /* allocation */ nullptr)) {
     return unexpected("Couldn't read in-memory wav");
@@ -79,7 +79,7 @@ struct Mixer::impl_t {
   std::unordered_map<audio_handle_t, audio_resource> audio_resources;
 
   struct sound {
-    nonstd::span<const float> samples;
+    std::span<const float> samples;
     raw_ptr<SRC_STATE> src_state;
     SRC_DATA src_data;
     float lvolume = 0.f;
@@ -108,7 +108,7 @@ void Mixer::set_master_volume(float volume) {
 }
 
 result<Mixer::audio_handle_t>
-Mixer::load_wav_memory(nonstd::span<std::uint8_t> data, std::optional<audio_handle_t> handle) {
+Mixer::load_wav_memory(std::span<std::uint8_t> data, std::optional<audio_handle_t> handle) {
   auto h = assign_handle(handle);
   if (!h) {
     return unexpected(h.error());

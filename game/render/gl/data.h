@@ -2,9 +2,9 @@
 #define II_GAME_RENDER_GL_DATA_H
 #include "game/render/gl/types.h"
 #include <GL/gl3w.h>
-#include <nonstd/span.hpp>
 #include <cstddef>
 #include <cstdint>
+#include <span>
 
 namespace ii::gl {
 
@@ -27,7 +27,7 @@ inline buffer make_buffer() {
 }
 
 template <typename T>
-void buffer_data(const buffer& handle, buffer_usage usage, nonstd::span<const T> data) {
+void buffer_data(const buffer& handle, buffer_usage usage, std::span<const T> data) {
   GLenum u = 0;
   switch (usage) {
   case buffer_usage::kStreamDraw:
@@ -58,7 +58,7 @@ void buffer_data(const buffer& handle, buffer_usage usage, nonstd::span<const T>
     u = GL_DYNAMIC_COPY;
     break;
   }
-  auto byte_data = nonstd::as_bytes(data);
+  auto byte_data = std::as_bytes(data);
   glNamedBufferData(*handle, byte_data.size(), byte_data.data(), u);
 }
 

@@ -3,6 +3,7 @@
 #include "game/data/proto/config.pb.h"
 #include "game/data/proto/savegame.pb.h"
 #include <algorithm>
+#include <array>
 #include <sstream>
 
 namespace ii {
@@ -66,7 +67,7 @@ void HighScores::add_score(game_mode mode, std::uint32_t players, const std::str
   }
 }
 
-result<SaveGame> SaveGame::load(nonstd::span<const std::uint8_t> bytes) {
+result<SaveGame> SaveGame::load(std::span<const std::uint8_t> bytes) {
   proto::SaveGame proto;
   auto d = crypt(bytes, kSaveEncryptionKey);
   if (!proto.ParseFromArray(d.data(), static_cast<int>(d.size()))) {
@@ -134,7 +135,7 @@ result<std::vector<std::uint8_t>> SaveGame::save() const {
   return crypt(data, kSaveEncryptionKey);
 }
 
-result<Config> Config::load(nonstd::span<const std::uint8_t> bytes) {
+result<Config> Config::load(std::span<const std::uint8_t> bytes) {
   proto::Config proto;
   if (!proto.ParseFromArray(bytes.data(), static_cast<int>(bytes.size()))) {
     return unexpected("Couldn't parse settings");

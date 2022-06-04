@@ -21,14 +21,6 @@ bazel_skylib_workspace()
 ################################################################################
 
 http_archive(
-  name = "span_lite",
-  build_file = "@//deps:span_lite.BUILD",
-  sha256 = "3c139c67ecaa2704e057d242617c659d234bdc296eb5f863c193bd222e61cee6",
-  strip_prefix = "span-lite-0.9.0",
-  url = "https://github.com/martinmoene/span-lite/archive/v0.9.0.zip",
-)
-
-http_archive(
   name = "expected",
   build_file = "@//deps:expected.BUILD",
   sha256 = "c1733556cbd3b532a02b68e2fbc2091b5bc2cccc279e4f6c6bd83877aabd4b02",
