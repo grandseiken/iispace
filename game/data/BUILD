@@ -15,6 +15,7 @@ cc_library(
   srcs = ["replay.cc"],
   deps = [
     ":crypt",
+    "//game/common:math",
     "//game/common:types",
     "//game/data/proto:ii_proto_cc",
     "//game/logic/sim:sim_interface",
@@ -30,7 +31,6 @@ cc_library(
   deps = [
     ":crypt",
     "//game/common:types",
-    "//game/common",
     "//game/data/proto:ii_proto_cc",
     "//game/logic/sim:sim_interface",
     "@span_lite",

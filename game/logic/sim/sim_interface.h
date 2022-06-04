@@ -1,6 +1,6 @@
 #ifndef II_GAME_LOGIC_SIM_SIM_INTERFACE_H
 #define II_GAME_LOGIC_SIM_SIM_INTERFACE_H
-#include "game/common/z.h"
+#include "game/common/math.h"
 #include "game/logic/sim/sim_io.h"
 #include "game/mixer/sound.h"
 #include <cstdint>
@@ -13,16 +13,15 @@ class Ship;
 namespace ii {
 class SimInternals;
 
-constexpr std::int32_t kSimWidth = 640;
-constexpr std::int32_t kSimHeight = 480;
+constexpr glm::ivec2 kSimDimensions = {640, 480};
 
 struct particle {
   particle(const glm::vec2& position, const glm::vec4& colour, const glm::vec2& velocity,
-           std::int32_t time)
+           std::uint32_t time)
   : position{position}, velocity{velocity}, timer{time}, colour{colour} {}
 
   bool destroy = false;
-  std::int32_t timer = 0;
+  std::uint32_t timer = 0;
   glm::vec4 colour{0.f};
   glm::vec2 position{0.f};
   glm::vec2 velocity{0.f};
@@ -46,28 +45,29 @@ public:
   SimInterface(SimInternals* internals) : internals_{internals} {}
 
   // Input.
-  input_frame input(std::int32_t player_number);
+  input_frame input(std::uint32_t player_number);
 
   // State manipulation.
   game_mode mode() const;
-  std::int32_t random(std::int32_t max);
+  std::uint32_t random(std::uint32_t max);
   fixed random_fixed();
 
   // TODO: const/non-const versions of retrieval functions.
-  ship_list all_ships(std::int32_t ship_mask = 0) const;
-  ship_list ships_in_radius(const vec2& point, fixed radius, std::int32_t ship_mask = 0) const;
-  ship_list collision_list(const vec2& point, std::int32_t category) const;
-  bool any_collision(const vec2& point, std::int32_t category) const;
-  std::int32_t get_non_wall_count() const;
+  ship_list all_ships(std::uint32_t ship_mask = 0) const;
+  ship_list ships_in_radius(const vec2& point, fixed radius, std::uint32_t ship_mask = 0) const;
+  ship_list collision_list(const vec2& point, std::uint32_t category) const;
+  bool any_collision(const vec2& point, std::uint32_t category) const;
+  std::uint32_t get_non_wall_count() const;
 
-  std::int32_t alive_players() const;
-  std::int32_t killed_players() const;
+  std::uint32_t player_count() const;
+  std::uint32_t alive_players() const;
+  std::uint32_t killed_players() const;
   Player* nearest_player(const vec2& point) const;
   const ship_list& players() const;
 
   void add_life();
   void sub_life();
-  std::int32_t get_lives() const;
+  std::uint32_t get_lives() const;
   void set_boss_killed(boss_list boss);
 
   Ship* add_ship(std::unique_ptr<Ship> ship);
@@ -79,14 +79,14 @@ public:
   }
 
   // Simulation output.
-  void rumble_all(std::int32_t time) const;
-  void rumble(std::int32_t player, std::int32_t time) const;
+  void rumble_all(std::uint32_t time) const;
+  void rumble(std::uint32_t player, std::uint32_t time) const;
   void play_sound(sound, float volume = 1.f, float pan = 0.f, float repitch = 0.f) const;
   void render_hp_bar(float fill) const;
   void render_line(const glm::vec2& a, const glm::vec2& b, const glm::vec4& c) const;
   void render_line_rect(const glm::vec2& lo, const glm::vec2& hi, const glm::vec4& c) const;
-  void render_player_info(std::int32_t player_number, const glm::vec4& colour, std::int64_t score,
-                          std::int32_t multiplier, float timer);
+  void render_player_info(std::uint32_t player_number, const glm::vec4& colour, std::uint64_t score,
+                          std::uint32_t multiplier, float timer);
 
 private:
   SimInternals* internals_;

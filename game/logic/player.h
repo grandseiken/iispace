@@ -4,12 +4,12 @@
 
 class Player : public Ship {
 public:
-  static constexpr std::int32_t kBombDamage = 50;
+  static constexpr std::uint32_t kBombDamage = 50;
 
-  Player(ii::SimInterface& sim, const vec2& position, std::int32_t player_number);
+  Player(ii::SimInterface& sim, const vec2& position, std::uint32_t player_number);
   ~Player() override;
 
-  std::int32_t player_number() const {
+  std::uint32_t player_number() const {
     return player_number_;
   }
 
@@ -24,15 +24,15 @@ public:
 
   // Scoring
   //------------------------------
-  std::int64_t score() const {
+  std::uint64_t score() const {
     return score_;
   }
 
-  std::int32_t deaths() const {
+  std::uint32_t deaths() const {
     return death_count_;
   }
 
-  void add_score(std::int64_t score);
+  void add_score(std::uint64_t score);
 
   // Colour
   //------------------------------
@@ -42,8 +42,8 @@ public:
 
   // Temporary death
   //------------------------------
-  static std::size_t killed_players() {
-    return kill_queue_.size();
+  static std::uint32_t killed_players() {
+    return static_cast<std::uint32_t>(kill_queue_.size());
   }
 
   bool is_killed() {
@@ -51,19 +51,19 @@ public:
   }
 
 private:
-  std::int32_t player_number_ = 0;
-  std::int64_t score_ = 0;
-  std::int32_t multiplier_ = 1;
-  std::int32_t multiplier_count_ = 0;
-  std::int32_t kill_timer_ = 0;
-  std::int32_t revive_timer_ = 0;
-  std::int32_t magic_shot_timer_ = 0;
+  std::uint32_t player_number_ = 0;
+  std::uint64_t score_ = 0;
+  std::uint32_t multiplier_ = 1;
+  std::uint32_t multiplier_count_ = 0;
+  std::uint32_t kill_timer_ = 0;
+  std::uint32_t revive_timer_ = 0;
+  std::uint32_t magic_shot_timer_ = 0;
   bool shield_ = false;
   bool bomb_ = false;
   vec2 fire_target_;
-  std::int32_t death_count_ = 0;
+  std::uint32_t death_count_ = 0;
 
-  static std::int32_t fire_timer_;
+  static std::uint32_t fire_timer_;
   static ii::SimInterface::ship_list kill_queue_;
 };
 
@@ -94,11 +94,11 @@ public:
 
   Powerup(ii::SimInterface& sim, const vec2& position, type t);
   void update() override;
-  void damage(std::int32_t damage, bool magic, Player* source) override;
+  void damage(std::uint32_t damage, bool magic, Player* source) override;
 
 private:
   type type_ = type::kExtraLife;
-  std::int32_t frame_ = 0;
+  std::uint32_t frame_ = 0;
   vec2 dir_ = {0, 1};
   bool rotate_ = false;
   bool first_frame_ = true;

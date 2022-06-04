@@ -8,6 +8,7 @@
 #include "game/logic/sim/sim_internals.h"
 #include "game/logic/stars.h"
 #include <algorithm>
+#include <unordered_set>
 
 namespace ii {
 
@@ -22,8 +23,8 @@ SimState::SimState(const initial_conditions& conditions, InputAdapter& input)
 , input_{input}
 , internals_{std::make_unique<SimInternals>(conditions_.seed)}
 , interface_{std::make_unique<SimInterface>(internals_.get())} {
-  static constexpr std::int32_t kStartingLives = 2;
-  static constexpr std::int32_t kBossModeLives = 1;
+  static constexpr std::uint32_t kStartingLives = 2;
+  static constexpr std::uint32_t kBossModeLives = 1;
 
   internals_->mode = conditions_.mode;
   internals_->lives = conditions_.mode == game_mode::kBoss
@@ -31,8 +32,8 @@ SimState::SimState(const initial_conditions& conditions, InputAdapter& input)
       : kStartingLives;
 
   Stars::clear();
-  for (std::int32_t i = 0; i < conditions_.player_count; ++i) {
-    vec2 v((1 + i) * kSimWidth / (1 + conditions_.player_count), kSimHeight / 2);
+  for (std::uint32_t i = 0; i < conditions_.player_count; ++i) {
+    vec2 v((1 + i) * kSimDimensions.x / (1 + conditions_.player_count), kSimDimensions.y / 2);
     auto* p = interface_->add_new_ship<Player>(v, i);
     internals_->player_list.push_back(p);
   }
@@ -40,7 +41,7 @@ SimState::SimState(const initial_conditions& conditions, InputAdapter& input)
   internals_->overmind = overmind_.get();
 }
 
-std::int32_t SimState::frame_count() const {
+std::uint32_t SimState::frame_count() const {
   return conditions_.mode == game_mode::kFast ? 2 : 1;
 }
 
@@ -66,9 +67,7 @@ void SimState::update() {
   for (auto& particle : internals_->particles) {
     if (!particle.destroy) {
       particle.position += particle.velocity;
-      if (--particle.timer <= 0) {
-        particle.destroy = true;
-      }
+      particle.destroy = !--particle.timer;
     }
   }
   for (auto it = Boss::fireworks_.begin(); it != Boss::fireworks_.end();) {
@@ -86,38 +85,31 @@ void SimState::update() {
     it = Boss::fireworks_.erase(it);
   }
 
-  for (auto it = internals_->ships.begin(); it != internals_->ships.end();) {
-    if (!(*it)->is_destroyed()) {
-      ++it;
-      continue;
-    }
-
+  std::unordered_set<Ship*> destroyed_ships;
+  auto remove_it = std::stable_partition(internals_->ships.begin(), internals_->ships.end(),
+                                         [](const auto& ship) { return !ship->is_destroyed(); });
+  for (auto it = remove_it; it != internals_->ships.end(); ++it) {
+    destroyed_ships.emplace(it->get());
     if ((*it)->type() & Ship::kShipEnemy) {
       overmind_->on_enemy_destroy(**it);
     }
-    for (auto jt = internals_->collisions.begin(); jt != internals_->collisions.end();) {
-      if (it->get() == *jt) {
-        jt = internals_->collisions.erase(jt);
-        continue;
-      }
-      ++jt;
-    }
-
-    it = internals_->ships.erase(it);
   }
-
-  for (auto it = internals_->particles.begin(); it != internals_->particles.end();) {
-    if (it->destroy) {
-      it = internals_->particles.erase(it);
-      continue;
-    }
-    ++it;
+  if (!destroyed_ships.empty()) {
+    internals_->collisions.erase(
+        std::remove_if(internals_->collisions.begin(), internals_->collisions.end(),
+                       [&](Ship* s) { return destroyed_ships.count(s); }),
+        internals_->collisions.end());
   }
+  internals_->ships.erase(remove_it, internals_->ships.end());
+
+  internals_->particles.erase(
+      std::remove_if(internals_->particles.begin(), internals_->particles.end(),
+                     [](const particle& p) { return p.destroy; }),
+      internals_->particles.end());
   overmind_->update();
 
   if (!kill_timer_ &&
-      ((interface_->killed_players() == static_cast<std::int32_t>(interface_->players().size()) &&
-        !interface_->get_lives()) ||
+      ((interface_->killed_players() == interface_->player_count() && !interface_->get_lives()) ||
        (conditions_.mode == game_mode::kBoss && overmind_->get_killed_bosses() >= 6))) {
     kill_timer_ = 100;
   }
@@ -154,32 +146,34 @@ void SimState::render() const {
                                                    : Boss::warnings_[i - internals_->ships.size()]);
 
     if (v.x < -4) {
-      auto f = .2f + .6f * std::max(v.x + kSimWidth, 0.f) / kSimWidth;
+      auto f = .2f + .6f * std::max(v.x + kSimDimensions.x, 0.f) / kSimDimensions.x;
       glm::vec4 c{0.f, 0.f, f, .4f};
       interface_->render_line({0.f, v.y}, {6, v.y - 3}, c);
       interface_->render_line({6.f, v.y - 3}, {6, v.y + 3}, c);
       interface_->render_line({6.f, v.y + 3}, {0, v.y}, c);
     }
-    if (v.x >= kSimWidth + 4) {
-      auto f = .2f + .6f * std::max(2 * kSimWidth - v.x, 0.f) / kSimWidth;
+    if (v.x >= kSimDimensions.x + 4) {
+      auto f = .2f + .6f * std::max(2 * kSimDimensions.x - v.x, 0.f) / kSimDimensions.x;
       glm::vec4 c{0.f, 0.f, f, .4f};
-      interface_->render_line({float{kSimWidth}, v.y}, {kSimWidth - 6.f, v.y - 3}, c);
-      interface_->render_line({kSimWidth - 6, v.y - 3}, {kSimWidth - 6.f, v.y + 3}, c);
-      interface_->render_line({kSimWidth - 6, v.y + 3}, {float{kSimWidth}, v.y}, c);
+      interface_->render_line({float{kSimDimensions.x}, v.y}, {kSimDimensions.x - 6.f, v.y - 3}, c);
+      interface_->render_line({kSimDimensions.x - 6, v.y - 3}, {kSimDimensions.x - 6.f, v.y + 3},
+                              c);
+      interface_->render_line({kSimDimensions.x - 6, v.y + 3}, {float{kSimDimensions.x}, v.y}, c);
     }
     if (v.y < -4) {
-      auto f = .2f + .6f * std::max(v.y + kSimHeight, 0.f) / kSimHeight;
+      auto f = .2f + .6f * std::max(v.y + kSimDimensions.y, 0.f) / kSimDimensions.y;
       glm::vec4 c{0.f, 0.f, f, .4f};
       interface_->render_line({v.x, 0.f}, {v.x - 3, 6.f}, c);
       interface_->render_line({v.x - 3, 6.f}, {v.x + 3, 6.f}, c);
       interface_->render_line({v.x + 3, 6.f}, {v.x, 0.f}, c);
     }
-    if (v.y >= kSimHeight + 4) {
-      auto f = .2f + .6f * std::max(2 * kSimHeight - v.y, 0.f) / kSimHeight;
+    if (v.y >= kSimDimensions.y + 4) {
+      auto f = .2f + .6f * std::max(2 * kSimDimensions.y - v.y, 0.f) / kSimDimensions.y;
       glm::vec4 c{0.f, 0.f, f, .4f};
-      interface_->render_line({v.x, float{kSimHeight}}, {v.x - 3, kSimHeight - 6.f}, c);
-      interface_->render_line({v.x - 3, kSimHeight - 6.f}, {v.x + 3, kSimHeight - 6.f}, c);
-      interface_->render_line({v.x + 3, kSimHeight - 6.f}, {v.x, float{kSimHeight}}, c);
+      interface_->render_line({v.x, float{kSimDimensions.y}}, {v.x - 3, kSimDimensions.y - 6.f}, c);
+      interface_->render_line({v.x - 3, kSimDimensions.y - 6.f}, {v.x + 3, kSimDimensions.y - 6.f},
+                              c);
+      interface_->render_line({v.x + 3, kSimDimensions.y - 6.f}, {v.x, float{kSimDimensions.y}}, c);
     }
   }
 }
@@ -206,7 +200,7 @@ std::unordered_map<sound, sound_out> SimState::get_sound_output() const {
   return result;
 }
 
-std::unordered_map<std::int32_t, std::int32_t> SimState::get_rumble_output() const {
+std::unordered_map<std::uint32_t, std::uint32_t> SimState::get_rumble_output() const {
   return internals_->rumble_output;
 }
 

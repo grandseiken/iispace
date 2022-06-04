@@ -29,7 +29,8 @@ std::size_t HighScores::size(game_mode mode) {
   return mode == game_mode::kBoss ? 1 : kNumScores;
 }
 
-HighScores::high_score& HighScores::get(game_mode mode, std::int32_t players, std::int32_t index) {
+HighScores::high_score&
+HighScores::get(game_mode mode, std::uint32_t players, std::uint32_t index) {
   return mode == game_mode::kNormal ? normal[players][index]
       : mode == game_mode::kHard    ? hard[players][index]
       : mode == game_mode::kFast    ? fast[players][index]
@@ -38,7 +39,7 @@ HighScores::high_score& HighScores::get(game_mode mode, std::int32_t players, st
 }
 
 const HighScores::high_score&
-HighScores::get(game_mode mode, std::int32_t players, std::int32_t index) const {
+HighScores::get(game_mode mode, std::uint32_t players, std::uint32_t index) const {
   return mode == game_mode::kNormal ? normal[players][index]
       : mode == game_mode::kHard    ? hard[players][index]
       : mode == game_mode::kFast    ? fast[players][index]
@@ -46,12 +47,12 @@ HighScores::get(game_mode mode, std::int32_t players, std::int32_t index) const 
                                     : boss[players];
 }
 
-bool HighScores::is_high_score(game_mode mode, std::int32_t players, std::int64_t score) const {
+bool HighScores::is_high_score(game_mode mode, std::uint32_t players, std::uint64_t score) const {
   return get(mode, players, size(mode) - 1).score < score;
 }
 
-void HighScores::add_score(game_mode mode, std::int32_t players, const std::string& name,
-                           std::int64_t score) {
+void HighScores::add_score(game_mode mode, std::uint32_t players, const std::string& name,
+                           std::uint64_t score) {
   for (std::size_t find = 0; find < size(mode); ++find) {
     if (score <= get(mode, players, find).score) {
       continue;

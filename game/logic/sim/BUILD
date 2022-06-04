@@ -5,7 +5,7 @@ cc_library(
     "sim_io.h",
   ],
   deps = [
-    "//game/common",
+    "//game/common:math",
     "//game/mixer:sound",
   ],
   visibility = ["//visibility:public"],

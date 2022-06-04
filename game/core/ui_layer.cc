@@ -180,7 +180,7 @@ void UiLayer::write_save_game() {
 }
 
 void UiLayer::write_replay(const ii::ReplayWriter& writer, const std::string& name,
-                           std::int64_t score) {
+                           std::uint64_t score) {
   std::stringstream ss;
   auto mode = writer.initial_conditions().mode;
   ss << writer.initial_conditions().seed << "_" << writer.initial_conditions().player_count << "p_"
@@ -197,7 +197,7 @@ void UiLayer::write_replay(const ii::ReplayWriter& writer, const std::string& na
   }
 }
 
-void UiLayer::rumble(std::int32_t time) {
+void UiLayer::rumble(std::uint32_t time) {
   // TODO
 }
 

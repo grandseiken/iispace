@@ -1,6 +1,5 @@
 #ifndef II_GAME_LOGIC_SIM_SIM_INTERNALS_H
 #define II_GAME_LOGIC_SIM_SIM_INTERNALS_H
-#include "game/common/z.h"
 #include "game/logic/ship.h"
 #include "game/logic/sim/random_engine.h"
 #include "game/logic/sim/sim_interface.h"
@@ -16,7 +15,7 @@ class Overmind;
 namespace ii {
 
 struct SimInternals {
-  SimInternals(std::int32_t seed) : random_engine{seed} {}
+  SimInternals(std::uint32_t seed) : random_engine{seed} {}
   // Input.
   std::vector<input_frame> input_frames;
   RandomEngine random_engine;
@@ -24,7 +23,7 @@ struct SimInternals {
   // Internal sim data.
   game_mode mode = game_mode::kNormal;
   using ship_list = std::vector<Ship*>;
-  std::int32_t lives = 0;
+  std::uint32_t lives = 0;
   std::vector<std::unique_ptr<Ship>> ships;
   std::vector<particle> particles;
   ship_list player_list;
@@ -42,12 +41,12 @@ struct SimInternals {
   std::optional<float> boss_hp_bar;
   std::vector<render_output::line_t> line_output;
   std::vector<render_output::player_info> player_output;
-  std::unordered_map<std::int32_t, std::int32_t> rumble_output;
+  std::unordered_map<std::uint32_t, std::uint32_t> rumble_output;
   std::unordered_map<ii::sound, sound_aggregation_t> sound_output;
 
   // Run output.
-  std::int32_t bosses_killed = 0;
-  std::int32_t hard_mode_bosses_killed = 0;
+  std::uint32_t bosses_killed = 0;
+  std::uint32_t hard_mode_bosses_killed = 0;
 };
 
 }  // namespace ii

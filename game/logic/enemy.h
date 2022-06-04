@@ -4,9 +4,9 @@
 
 class Enemy : public Ship {
 public:
-  Enemy(ii::SimInterface& sim, const vec2& position, Ship::ship_category type, std::int32_t hp);
+  Enemy(ii::SimInterface& sim, const vec2& position, Ship::ship_category type, std::uint32_t hp);
 
-  std::int64_t get_score() const {
+  std::uint64_t get_score() const {
     return score_;
   }
 
@@ -14,7 +14,7 @@ public:
     score_ = score;
   }
 
-  std::int32_t get_hp() const {
+  std::uint32_t get_hp() const {
     return hp_;
   }
 
@@ -22,24 +22,24 @@ public:
     destroy_sound_ = sound;
   }
 
-  void damage(std::int32_t damage, bool magic, Player* source) override;
+  void damage(std::uint32_t damage, bool magic, Player* source) override;
   void render() const override;
   virtual void on_destroy(bool bomb) {}
 
 private:
-  std::int32_t hp_ = 0;
-  std::int64_t score_ = 0;
-  mutable std::int32_t damaged_ = 0;
+  std::uint32_t hp_ = 0;
+  std::uint64_t score_ = 0;
+  mutable std::uint32_t damaged_ = 0;
   ii::sound destroy_sound_ = ii::sound::kEnemyDestroy;
 };
 
 class Follow : public Enemy {
 public:
-  Follow(ii::SimInterface& sim, const vec2& position, fixed radius = 10, std::int32_t hp = 1);
+  Follow(ii::SimInterface& sim, const vec2& position, fixed radius = 10, std::uint32_t hp = 1);
   void update() override;
 
 private:
-  std::int32_t timer_ = 0;
+  std::uint32_t timer_ = 0;
   Ship* target_ = nullptr;
 };
 
@@ -59,7 +59,7 @@ public:
 
 private:
   bool move_ = false;
-  std::int32_t timer_ = 0;
+  std::uint32_t timer_ = 0;
   vec2 dir_{0};
 };
 
@@ -71,7 +71,7 @@ public:
 
 private:
   vec2 dir_{0};
-  std::int32_t timer_ = 0;
+  std::uint32_t timer_ = 0;
 };
 
 class Wall : public Enemy {
@@ -82,7 +82,7 @@ public:
 
 private:
   vec2 dir_{0};
-  std::int32_t timer_ = 0;
+  std::uint32_t timer_ = 0;
   bool rotate_ = false;
   bool rdir_ = false;
 };
@@ -94,9 +94,9 @@ public:
   void on_destroy(bool bomb) override;
 
 private:
-  std::int32_t timer_ = 0;
+  std::uint32_t timer_ = 0;
   vec2 dir_{0};
-  std::int32_t count_ = 0;
+  std::uint32_t count_ = 0;
   bool powera_ = false;
   bool powerb_ = false;
 };
@@ -108,7 +108,7 @@ public:
 
 private:
   vec2 dir_{0};
-  std::int32_t timer_ = 0;
+  std::uint32_t timer_ = 0;
   bool rotate_ = false;
   bool rdir_ = false;
   bool power_ = false;
@@ -122,7 +122,7 @@ public:
   void render() const override;
 
 private:
-  std::int32_t timer_ = 0;
+  std::uint32_t timer_ = 0;
   vec2 dir_{0};
   bool power_ = false;
 

@@ -5,47 +5,47 @@
 
 class SuperBossArc : public Boss {
 public:
-  SuperBossArc(ii::SimInterface& sim, const vec2& position, std::int32_t players,
-               std::int32_t cycle, std::int32_t i, Ship* boss, std::int32_t timer = 0);
+  SuperBossArc(ii::SimInterface& sim, const vec2& position, std::uint32_t players,
+               std::uint32_t cycle, std::uint32_t i, Ship* boss, std::uint32_t timer = 0);
 
   void update() override;
-  std::int32_t get_damage(std::int32_t damage, bool magic) override;
+  std::uint32_t get_damage(std::uint32_t damage, bool magic) override;
   void on_destroy() override;
   void render() const override;
 
-  std::int32_t GetTimer() const {
+  std::uint32_t GetTimer() const {
     return timer_;
   }
 
 private:
   Ship* boss_ = nullptr;
-  std::int32_t i_ = 0;
-  std::int32_t timer_ = 0;
-  std::int32_t stimer_ = 0;
+  std::uint32_t i_ = 0;
+  std::uint32_t timer_ = 0;
+  std::uint32_t stimer_ = 0;
 };
 
 class SuperBoss : public Boss {
 public:
   enum class state { kArrive, kIdle, kAttack };
 
-  SuperBoss(ii::SimInterface& sim, std::int32_t players, std::int32_t cycle);
+  SuperBoss(ii::SimInterface& sim, std::uint32_t players, std::uint32_t cycle);
 
   void update() override;
-  std::int32_t get_damage(std::int32_t damage, bool magic) override;
+  std::uint32_t get_damage(std::uint32_t damage, bool magic) override;
   void on_destroy() override;
 
 private:
   friend class SuperBossArc;
   friend class RainbowShot;
 
-  std::int32_t players_ = 0;
-  std::int32_t cycle_ = 0;
-  std::int32_t ctimer_ = 0;
-  std::int32_t timer_ = 0;
+  std::uint32_t players_ = 0;
+  std::uint32_t cycle_ = 0;
+  std::uint32_t ctimer_ = 0;
+  std::uint32_t timer_ = 0;
   std::vector<bool> destroyed_;
   std::vector<SuperBossArc*> arcs_;
   state state_ = state::kArrive;
-  std::int32_t snakes_ = 0;
+  std::uint32_t snakes_ = 0;
 };
 
 class SnakeTail : public Enemy {
@@ -59,8 +59,8 @@ public:
 private:
   SnakeTail* tail_ = nullptr;
   SnakeTail* head_ = nullptr;
-  std::int32_t timer_ = 150;
-  std::int32_t dtimer_ = 0;
+  std::uint32_t timer_ = 150;
+  std::uint32_t dtimer_ = 0;
 };
 
 class Snake : public Enemy {
@@ -72,9 +72,9 @@ public:
 
 private:
   SnakeTail* tail_ = nullptr;
-  std::int32_t timer_ = 0;
+  std::uint32_t timer_ = 0;
   vec2 dir_{0};
-  std::int32_t count_ = 0;
+  std::uint32_t count_ = 0;
   glm::vec4 colour_{0.f};
   bool shot_snake_ = false;
   fixed shot_rot_ = 0;
@@ -87,7 +87,7 @@ public:
 
 private:
   Ship* boss_ = nullptr;
-  std::int32_t timer_ = 0;
+  std::uint32_t timer_ = 0;
 };
 
 #endif

@@ -14,7 +14,7 @@ glm::vec4 SimInterface::player_colour(std::size_t player_number) {
                             : colour_hue360(120);
 }
 
-input_frame SimInterface::input(std::int32_t player_number) {
+input_frame SimInterface::input(std::uint32_t player_number) {
   if (player_number < internals_->input_frames.size()) {
     return internals_->input_frames[player_number];
   }
@@ -25,15 +25,15 @@ game_mode SimInterface::mode() const {
   return internals_->mode;
 }
 
-std::int32_t SimInterface::random(std::int32_t max) {
+std::uint32_t SimInterface::random(std::uint32_t max) {
   return internals_->random_engine() % max;
 }
 
 fixed SimInterface::random_fixed() {
-  return fixed{internals_->random_engine()} / RandomEngine::rand_max;
+  return fixed{static_cast<std::int32_t>(internals_->random_engine())} / RandomEngine::rand_max;
 }
 
-SimInterface::ship_list SimInterface::all_ships(std::int32_t ship_mask) const {
+SimInterface::ship_list SimInterface::all_ships(std::uint32_t ship_mask) const {
   ship_list r;
   for (auto& ship : internals_->ships) {
     if (!ship_mask || (ship->type() & ship_mask)) {
@@ -44,7 +44,7 @@ SimInterface::ship_list SimInterface::all_ships(std::int32_t ship_mask) const {
 }
 
 SimInterface::ship_list
-SimInterface::ships_in_radius(const vec2& point, fixed radius, std::int32_t ship_mask) const {
+SimInterface::ships_in_radius(const vec2& point, fixed radius, std::uint32_t ship_mask) const {
   ship_list r;
   for (auto& ship : internals_->ships) {
     if ((!ship_mask || (ship->type() & ship_mask)) &&
@@ -55,7 +55,7 @@ SimInterface::ships_in_radius(const vec2& point, fixed radius, std::int32_t ship
   return r;
 }
 
-bool SimInterface::any_collision(const vec2& point, std::int32_t category) const {
+bool SimInterface::any_collision(const vec2& point, std::uint32_t category) const {
   fixed x = point.x;
   fixed y = point.y;
 
@@ -79,7 +79,7 @@ bool SimInterface::any_collision(const vec2& point, std::int32_t category) const
 }
 
 SimInterface::ship_list
-SimInterface::collision_list(const vec2& point, std::int32_t category) const {
+SimInterface::collision_list(const vec2& point, std::uint32_t category) const {
   ship_list r;
   fixed x = point.x;
   fixed y = point.y;
@@ -103,15 +103,19 @@ SimInterface::collision_list(const vec2& point, std::int32_t category) const {
   return r;
 }
 
-std::int32_t SimInterface::get_non_wall_count() const {
+std::uint32_t SimInterface::get_non_wall_count() const {
   return internals_->overmind->count_non_wall_enemies();
 }
 
-std::int32_t SimInterface::alive_players() const {
-  return players().size() - killed_players();
+std::uint32_t SimInterface::player_count() const {
+  return static_cast<std::uint32_t>(players().size());
 }
 
-std::int32_t SimInterface::killed_players() const {
+std::uint32_t SimInterface::alive_players() const {
+  return player_count() - killed_players();
+}
+
+std::uint32_t SimInterface::killed_players() const {
   return Player::killed_players();
 }
 
@@ -149,7 +153,7 @@ void SimInterface::sub_life() {
   }
 }
 
-std::int32_t SimInterface::get_lives() const {
+std::uint32_t SimInterface::get_lives() const {
   return internals_->lives;
 }
 
@@ -177,13 +181,13 @@ void SimInterface::add_particle(const ii::particle& particle) {
   internals_->particles.emplace_back(particle);
 }
 
-void SimInterface::rumble_all(std::int32_t time) const {
-  for (std::int32_t i = 0; i < players().size(); ++i) {
+void SimInterface::rumble_all(std::uint32_t time) const {
+  for (std::uint32_t i = 0; i < player_count(); ++i) {
     rumble(i, time);
   }
 }
 
-void SimInterface::rumble(std::int32_t player, std::int32_t time) const {
+void SimInterface::rumble(std::uint32_t player, std::uint32_t time) const {
   auto& rumble = internals_->rumble_output[player];
   rumble = std::max(rumble, time);
 }
@@ -217,8 +221,8 @@ void SimInterface::render_line_rect(const glm::vec2& lo, const glm::vec2& hi,
   render_line(ho, lo, c);
 }
 
-void SimInterface::render_player_info(std::int32_t player_number, const glm::vec4& colour,
-                                      std::int64_t score, std::int32_t multiplier, float timer) {
+void SimInterface::render_player_info(std::uint32_t player_number, const glm::vec4& colour,
+                                      std::uint64_t score, std::uint32_t multiplier, float timer) {
   internals_->player_output.resize(
       std::max<std::size_t>(internals_->player_output.size(), player_number + 1));
   auto& info = internals_->player_output[player_number];

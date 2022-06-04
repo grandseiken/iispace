@@ -39,8 +39,8 @@ cc_library(
   deps = [
     ":io_input_adapter",
     ":ui_layer",
+    "//game/common:math",
     "//game/common:types",
-    "//game/common",
     "//game/data:replay",
     "//game/data:save",
     "//game/io",

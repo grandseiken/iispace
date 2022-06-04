@@ -6,12 +6,12 @@ namespace ii {
 
 class RandomEngine {
 public:
-  static constexpr std::int32_t rand_max = 0x7fff;
-  RandomEngine(std::int32_t seed);
-  std::int32_t operator()();
+  static constexpr std::uint32_t rand_max = 0x7fff;
+  RandomEngine(std::uint32_t seed);
+  std::uint32_t operator()();
 
 private:
-  std::int32_t state_ = 0;
+  std::uint32_t state_ = 0;
 };
 
 }  // namespace ii

@@ -33,7 +33,7 @@ cc_library(
     "stars.cc",
   ],
   deps = [
-    "//game/common",
+    "//game/common:math",
     "//game/logic/sim:sim_interface",
     "//game/mixer:sound",
     "@glm",

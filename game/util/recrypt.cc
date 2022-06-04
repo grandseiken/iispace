@@ -1,4 +1,4 @@
-#include "game/common/z.h"
+#include "game/common/math.h"
 #include "game/proto/iispace.pb.h"
 #include <algorithm>
 #include <fstream>
@@ -50,7 +50,7 @@ proto::Replay convert(const std::string& contents) {
 
   getline(dc, line);
   std::stringstream ss(line);
-  std::int32_t players;
+  std::uint32_t players;
   ss >> players;
   bool can_face_secret_boss;
   ss >> can_face_secret_boss;
@@ -67,7 +67,7 @@ proto::Replay convert(const std::string& contents) {
   mode = static_cast<game_mode>(mode | bb * game_mode::kFast);
   ss >> bb;
   mode = static_cast<game_mode>(mode | bb * game_mode::kWhat);
-  std::int32_t seed;
+  std::uint32_t seed;
   ss >> seed;
   replay.set_game_mode(mode);
   replay.set_seed(seed);

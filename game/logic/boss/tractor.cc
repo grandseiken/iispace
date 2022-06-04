@@ -2,8 +2,8 @@
 #include "game/logic/player.h"
 
 namespace {
-const std::int32_t kTbBaseHp = 900;
-const std::int32_t kTbTimer = 100;
+const std::uint32_t kTbBaseHp = 900;
+const std::uint32_t kTbTimer = 100;
 const fixed kTbSpeed = 2;
 
 const glm::vec4 c0 = colour_hue360(300, .5f, .6f);
@@ -11,9 +11,9 @@ const glm::vec4 c1 = colour_hue360(300, 1.f / 3, .6f);
 const glm::vec4 c2 = colour_hue360(300, .4f, .5f);
 }  // namespace
 
-TractorBoss::TractorBoss(ii::SimInterface& sim, std::int32_t players, std::int32_t cycle)
+TractorBoss::TractorBoss(ii::SimInterface& sim, std::uint32_t players, std::uint32_t cycle)
 : Boss{sim,
-       {ii::kSimWidth * (1 + fixed_c::half), ii::kSimHeight / 2},
+       {ii::kSimDimensions.x * (1 + fixed_c::half), ii::kSimDimensions.y / 2},
        ii::SimInterface::kBoss2A,
        kTbBaseHp,
        players,
@@ -27,7 +27,7 @@ TractorBoss::TractorBoss(ii::SimInterface& sim, std::int32_t players, std::int32
   s1_->add_new_shape<Polygon>(vec2{0}, 36, 12, c0, 0, 0);
   s1_->add_new_shape<Polygon>(vec2{0}, 34, 12, c0, 0, 0);
   s1_->add_new_shape<Polygon>(vec2{0}, 32, 12, c0, 0, 0);
-  for (std::int32_t i = 0; i < 8; ++i) {
+  for (std::uint32_t i = 0; i < 8; ++i) {
     vec2 d = rotate(vec2{24, 0}, i * fixed_c::pi / 4);
     s1_->add_new_shape<Polygon>(d, 12, 6, c0, 0, 0, Polygon::T::kPolygram);
   }
@@ -41,7 +41,7 @@ TractorBoss::TractorBoss(ii::SimInterface& sim, std::int32_t players, std::int32
   s2_->add_new_shape<Polygon>(vec2{0}, 36, 12, c0, 0, 0);
   s2_->add_new_shape<Polygon>(vec2{0}, 34, 12, c0, 0, 0);
   s2_->add_new_shape<Polygon>(vec2{0}, 32, 12, c0, 0, 0);
-  for (std::int32_t i = 0; i < 8; ++i) {
+  for (std::uint32_t i = 0; i < 8; ++i) {
     vec2 d = rotate(vec2{24, 0}, i * fixed_c::pi / 4);
     s2_->add_new_shape<Polygon>(d, 12, 6, c0, 0, 0, Polygon::T::kPolygram);
   }
@@ -59,7 +59,7 @@ TractorBoss::TractorBoss(ii::SimInterface& sim, std::int32_t players, std::int32
 }
 
 void TractorBoss::update() {
-  if (shape().centre.x <= ii::kSimWidth / 2 && will_attack_ && !stopped_ && !continue_) {
+  if (shape().centre.x <= ii::kSimDimensions.x / 2 && will_attack_ && !stopped_ && !continue_) {
     stopped_ = true;
     generating_ = true;
     gen_dir_ = sim().random(2) == 0;
@@ -67,7 +67,7 @@ void TractorBoss::update() {
   }
 
   if (shape().centre.x < -150) {
-    shape().centre.x = ii::kSimWidth + 150;
+    shape().centre.x = ii::kSimDimensions.x + 150;
     will_attack_ = !will_attack_;
     shoot_type_ = sim().random(2);
     if (will_attack_) {
@@ -210,7 +210,7 @@ void TractorBoss::update() {
         timer_ = 0;
         stopped_ = false;
         continue_ = true;
-        for (std::int32_t i = 0; i < attack_size_; ++i) {
+        for (std::uint32_t i = 0; i < attack_size_; ++i) {
           vec2 d = from_polar(i * (2 * fixed_c::pi) / attack_size_, 5_fx);
           spawn_new<BossShot>(shape().centre, d, c0);
         }
@@ -262,7 +262,7 @@ void TractorBoss::render() const {
   }
 }
 
-std::int32_t TractorBoss::get_damage(std::int32_t damage, bool magic) {
+std::uint32_t TractorBoss::get_damage(std::uint32_t damage, bool magic) {
   return damage;
 }
 
@@ -276,10 +276,12 @@ TBossShot::TBossShot(ii::SimInterface& sim, const vec2& position, fixed angle)
 }
 
 void TBossShot::update() {
-  if ((shape().centre.x > ii::kSimWidth && dir_.x > 0) || (shape().centre.x < 0 && dir_.x < 0)) {
+  if ((shape().centre.x > ii::kSimDimensions.x && dir_.x > 0) ||
+      (shape().centre.x < 0 && dir_.x < 0)) {
     dir_.x = -dir_.x;
   }
-  if ((shape().centre.y > ii::kSimHeight && dir_.y > 0) || (shape().centre.y < 0 && dir_.y < 0)) {
+  if ((shape().centre.y > ii::kSimDimensions.y && dir_.y > 0) ||
+      (shape().centre.y < 0 && dir_.y < 0)) {
     dir_.y = -dir_.y;
   }
 

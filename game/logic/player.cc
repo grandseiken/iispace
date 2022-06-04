@@ -9,17 +9,17 @@ const fixed kBombRadius = 180;
 const fixed kBombBossRadius = 280;
 const fixed kPowerupSpeed = 1;
 
-const std::int32_t kReviveTime = 100;
-const std::int32_t kShieldTime = 50;
-const std::int32_t kShotTimer = 4;
-const std::int32_t kMagicShotCount = 120;
-const std::int32_t kPowerupRotateTime = 100;
+const std::uint32_t kReviveTime = 100;
+const std::uint32_t kShieldTime = 50;
+const std::uint32_t kShotTimer = 4;
+const std::uint32_t kMagicShotCount = 120;
+const std::uint32_t kPowerupRotateTime = 100;
 }  // namespace
 
 ii::SimInterface::ship_list Player::kill_queue_;
-std::int32_t Player::fire_timer_;
+std::uint32_t Player::fire_timer_;
 
-Player::Player(ii::SimInterface& sim, const vec2& position, std::int32_t player_number)
+Player::Player(ii::SimInterface& sim, const vec2& position, std::uint32_t player_number)
 : Ship{sim, position, kShipPlayer}
 , player_number_{player_number}
 , revive_timer_{kReviveTime}
@@ -55,8 +55,8 @@ void Player::update() {
       kill_timer_ = 0;
       kill_queue_.erase(kill_queue_.begin());
       revive_timer_ = kReviveTime;
-      shape().centre = {(1 + player_number_) * ii::kSimWidth / (1 + sim().players().size()),
-                        ii::kSimHeight / 2};
+      shape().centre = {(1 + player_number_) * ii::kSimDimensions.x / (1 + sim().player_count()),
+                        ii::kSimDimensions.y / 2};
       sim().rumble(player_number_, 10);
       play_sound(ii::sound::kPlayerRespawn);
     }
@@ -70,8 +70,9 @@ void Player::update() {
   if (length(input.velocity) > fixed_c::hundredth) {
     auto v = length(input.velocity) > 1 ? normalise(input.velocity) : input.velocity;
     shape().set_rotation(angle(v));
-    shape().centre =
-        max(vec2{0}, min(vec2{ii::kSimWidth, ii::kSimHeight}, kPlayerSpeed * v + shape().centre));
+    shape().centre = max(
+        vec2{0},
+        min(vec2{ii::kSimDimensions.x, ii::kSimDimensions.y}, kPlayerSpeed * v + shape().centre));
   }
 
   // Bombs.
@@ -84,7 +85,7 @@ void Player::update() {
     explosion(glm::vec4{1.f}, 48);
 
     vec2 t = shape().centre;
-    for (std::int32_t i = 0; i < 64; ++i) {
+    for (std::uint32_t i = 0; i < 64; ++i) {
       shape().centre = t + from_polar(2 * i * fixed_c::pi / 64, kBombRadius);
       explosion((i % 2) ? colour() : glm::vec4{1.f}, 8 + sim().random(8) + sim().random(8), true,
                 to_float(t));
@@ -116,7 +117,7 @@ void Player::update() {
 
     float volume = .5f * sim().random_fixed().to_float() + .5f;
     float pitch = (sim().random_fixed().to_float() - 1.f) / 12.f;
-    float pan = 2.f * shape().centre.x.to_float() / ii::kSimWidth - 1.f;
+    float pan = 2.f * shape().centre.x.to_float() / ii::kSimDimensions.x - 1.f;
     sim().play_sound(ii::sound::kPlayerFire, volume, pan, pitch);
   }
 
@@ -182,8 +183,8 @@ void Player::damage() {
   play_sound(ii::sound::kPlayerDestroy);
 }
 
-void Player::add_score(std::int64_t score) {
-  static const std::int32_t multiplier_lookup[24] = {
+void Player::add_score(std::uint64_t score) {
+  static const std::uint32_t multiplier_lookup[24] = {
       1,    2,    4,     8,     16,    32,     64,     128,    256,     512,     1024,    2048,
       4096, 8192, 16384, 32768, 65536, 131072, 262144, 524288, 1048576, 2097152, 4194304, 8388608,
   };
@@ -191,7 +192,7 @@ void Player::add_score(std::int64_t score) {
   sim().rumble(player_number_, 3);
   score_ += score * multiplier_;
   ++multiplier_count_;
-  if (multiplier_lookup[std::min(multiplier_ + 3, 23)] <= multiplier_count_) {
+  if (multiplier_lookup[std::min(multiplier_ + 3, 23u)] <= multiplier_count_) {
     multiplier_count_ = 0;
     ++multiplier_;
   }
@@ -257,7 +258,7 @@ void Shot::update() {
   flash_ = magic_ ? sim().random(2) != 0 : false;
   move(velocity_);
   bool on_screen = all(greaterThanEqual(shape().centre, vec2{-4, -4})) &&
-      all(lessThan(shape().centre, vec2{4 + ii::kSimWidth, 4 + ii::kSimHeight}));
+      all(lessThan(shape().centre, vec2{4 + ii::kSimDimensions.x, 4 + ii::kSimDimensions.y}));
   if (!on_screen) {
     destroy();
     return;
@@ -331,7 +332,7 @@ void Powerup::update() {
   }
 }
 
-void Powerup::damage(std::int32_t damage, bool magic, Player* source) {
+void Powerup::damage(std::uint32_t damage, bool magic, Player* source) {
   if (source) {
     switch (type_) {
     case type::kExtraLife:
@@ -354,8 +355,8 @@ void Powerup::damage(std::int32_t damage, bool magic, Player* source) {
     sim().rumble(source->player_number(), 6);
   }
 
-  std::int32_t r = 5 + sim().random(5);
-  for (std::int32_t i = 0; i < r; ++i) {
+  auto r = 5 + sim().random(5);
+  for (std::uint32_t i = 0; i < r; ++i) {
     vec2 dir = from_polar(sim().random_fixed() * 2 * fixed_c::pi, 6_fx);
     spawn(
         ii::particle{to_float(shape().centre), glm::vec4{1.f}, to_float(dir), 4 + sim().random(8)});

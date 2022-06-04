@@ -1,5 +1,5 @@
-#ifndef II_GAME_COMMON_Z_H
-#define II_GAME_COMMON_Z_H
+#ifndef II_GAME_COMMON_MATH_H
+#define II_GAME_COMMON_MATH_H
 #include "game/common/fix32.h"
 #include <glm/glm.hpp>
 #include <cmath>

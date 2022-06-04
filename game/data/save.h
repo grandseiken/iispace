@@ -12,13 +12,13 @@ class Filesystem;
 }  // namespace io
 
 struct HighScores {
-  static constexpr std::int32_t kNumScores = 8;
-  static constexpr std::int32_t kMaxNameLength = 17;
-  static constexpr std::int32_t kMaxScoreLength = 10;
+  static constexpr std::uint32_t kNumScores = 8;
+  static constexpr std::uint32_t kMaxNameLength = 17;
+  static constexpr std::uint32_t kMaxScoreLength = 10;
 
   struct high_score {
     std::string name;
-    std::int64_t score = 0;
+    std::uint64_t score = 0;
   };
   using table_t = std::vector<high_score>;
 
@@ -30,19 +30,20 @@ struct HighScores {
 
   HighScores();
   static std::size_t size(game_mode mode);
-  high_score& get(game_mode mode, std::int32_t players, std::int32_t index);
-  const high_score& get(game_mode mode, std::int32_t players, std::int32_t index) const;
+  high_score& get(game_mode mode, std::uint32_t players, std::uint32_t index);
+  const high_score& get(game_mode mode, std::uint32_t players, std::uint32_t index) const;
 
-  bool is_high_score(game_mode mode, std::int32_t players, std::int64_t score) const;
-  void add_score(game_mode mode, std::int32_t players, const std::string& name, std::int64_t score);
+  bool is_high_score(game_mode mode, std::uint32_t players, std::uint64_t score) const;
+  void
+  add_score(game_mode mode, std::uint32_t players, const std::string& name, std::uint64_t score);
 };
 
 struct SaveGame {
   static result<SaveGame> load(nonstd::span<const std::uint8_t> bytes);
   result<std::vector<std::uint8_t>> save() const;
 
-  std::int32_t bosses_killed = 0;
-  std::int32_t hard_mode_bosses_killed = 0;
+  std::uint32_t bosses_killed = 0;
+  std::uint32_t hard_mode_bosses_killed = 0;
   HighScores high_scores;
 };
 

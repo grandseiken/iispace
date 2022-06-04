@@ -3,10 +3,10 @@
 #include "game/logic/player.h"
 
 namespace {
-const std::int32_t kSbbBaseHp = 320;
-const std::int32_t kSbbTimer = 100;
-const std::int32_t kSbbUnshieldTime = 300;
-const std::int32_t kSbbAttackTime = 80;
+const std::uint32_t kSbbBaseHp = 320;
+const std::uint32_t kSbbTimer = 100;
+const std::uint32_t kSbbUnshieldTime = 300;
+const std::uint32_t kSbbAttackTime = 80;
 const fixed kSbbSpeed = 1;
 
 const glm::vec4 c0 = colour_hue360(150, .4f, .5f);
@@ -14,16 +14,16 @@ const glm::vec4 c1 = colour_hue(0.f, .8f, 0.f);
 const glm::vec4 c2 = colour_hue(0.f, .6f, 0.f);
 }  // namespace
 
-ShieldBombBoss::ShieldBombBoss(ii::SimInterface& sim, std::int32_t players, std::int32_t cycle)
+ShieldBombBoss::ShieldBombBoss(ii::SimInterface& sim, std::uint32_t players, std::uint32_t cycle)
 : Boss{sim,
-       {-ii::kSimWidth / 2, ii::kSimHeight / 2},
+       {-ii::kSimDimensions.x / 2, ii::kSimDimensions.y / 2},
        ii::SimInterface::kBoss1B,
        kSbbBaseHp,
        players,
        cycle} {
   add_new_shape<Polygon>(vec2{0}, 48, 8, c0, 0, kDangerous | kVulnerable, Polygon::T::kPolygram);
 
-  for (std::int32_t i = 0; i < 16; ++i) {
+  for (std::uint32_t i = 0; i < 16; ++i) {
     vec2 a = rotate(vec2{120, 0}, i * fixed_c::pi / 8);
     vec2 b = rotate(vec2{80, 0}, i * fixed_c::pi / 8);
 
@@ -40,9 +40,9 @@ ShieldBombBoss::ShieldBombBoss(ii::SimInterface& sim, std::int32_t players, std:
 }
 
 void ShieldBombBoss::update() {
-  if (!side_ && shape().centre.x < ii::kSimWidth * fixed_c::tenth * 6) {
+  if (!side_ && shape().centre.x < ii::kSimDimensions.x * fixed_c::tenth * 6) {
     move(vec2{1, 0} * kSbbSpeed);
-  } else if (side_ && shape().centre.x > ii::kSimWidth * fixed_c::tenth * 4) {
+  } else if (side_ && shape().centre.x > ii::kSimDimensions.x * fixed_c::tenth * 4) {
     move(vec2{-1, 0} * kSbbSpeed);
   }
 
@@ -110,7 +110,7 @@ void ShieldBombBoss::update() {
 
     if (sim().random(2)) {
       auto d = rotate(vec2{5, 0}, shape().rotation());
-      for (std::int32_t i = 0; i < 12; ++i) {
+      for (std::uint32_t i = 0; i < 12; ++i) {
         spawn_new<BossShot>(shape().centre, d);
         d = rotate(d, 2 * fixed_c::pi / 12);
       }
@@ -122,7 +122,7 @@ void ShieldBombBoss::update() {
   }
 }
 
-std::int32_t ShieldBombBoss::get_damage(std::int32_t damage, bool magic) {
+std::uint32_t ShieldBombBoss::get_damage(std::uint32_t damage, bool magic) {
   if (unshielded_) {
     return damage;
   }
@@ -136,7 +136,7 @@ std::int32_t ShieldBombBoss::get_damage(std::int32_t damage, bool magic) {
   }
   shot_alternate_ = !shot_alternate_;
   if (shot_alternate_) {
-    restore_hp(60 / (1 + (sim().get_lives() ? sim().players().size() : sim().alive_players())));
+    restore_hp(60 / (1 + (sim().get_lives() ? sim().player_count() : sim().alive_players())));
   }
   return damage;
 }

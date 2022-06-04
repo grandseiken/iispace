@@ -66,6 +66,7 @@ class fixed {
 public:
   explicit fixed() = default;
   constexpr fixed(std::int32_t v) : value_{static_cast<std::int64_t>(v) << 32} {}
+  constexpr fixed(std::uint32_t v) : value_{static_cast<std::int64_t>(v) << 32} {}
 
   static constexpr fixed from_internal(std::int64_t v) {
     fixed f;

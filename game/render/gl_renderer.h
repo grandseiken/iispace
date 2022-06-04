@@ -32,23 +32,23 @@ public:
   void clear_screen();
   void set_dimensions(const glm::uvec2& screen_dimensions, const glm::uvec2& render_dimensions);
 
-  void set_colour_cycle(std::int32_t cycle) {
+  void set_colour_cycle(std::uint32_t cycle) {
     colour_cycle_ = cycle;
   }
 
-  std::int32_t colour_cycle() const {
+  std::uint32_t colour_cycle() const {
     return colour_cycle_;
   }
 
   void render_text(std::uint32_t font_index, const glm::ivec2& position, const glm::vec4& colour,
                    ustring_view s);
-  void render_rect(const glm::ivec2& position, const glm::ivec2& size, std::int32_t border_width,
+  void render_rect(const glm::ivec2& position, const glm::ivec2& size, std::uint32_t border_width,
                    const glm::vec4& colour_lo, const glm::vec4& colour_hi,
                    const glm::vec4& border_lo, const glm::vec4& border_hi);
   void render_lines(nonstd::span<const line_t> lines);
 
 private:
-  std::int32_t colour_cycle_ = 0;
+  std::uint32_t colour_cycle_ = 0;
   struct impl_t;
   std::unique_ptr<impl_t> impl_;
 };

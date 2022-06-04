@@ -3,8 +3,8 @@
 #include <algorithm>
 
 namespace {
-const std::int32_t kCbBaseHp = 60;
-const std::int32_t kCbMaxSplit = 7;
+const std::uint32_t kCbBaseHp = 60;
+const std::uint32_t kCbMaxSplit = 7;
 const fixed kCbSpeed = 4;
 
 // power(HP_REDUCE_POWER = 1.7, split).
@@ -53,7 +53,7 @@ const fixed ONE_PT_TWO_lookup[8] = {1_fx,
                                     3 + 6 * (1_fx / 10)};
 
 // power(1.15, remaining).
-const std::int32_t ONE_PT_ONE_FIVE_intLookup[128] = {
+const std::uint32_t ONE_PT_ONE_FIVE_intLookup[128] = {
     1,        1,        1,        2,        2,        2,        2,        3,        3,
     4,        4,        5,        5,        6,        7,        8,        9,        11,
     12,       14,       16,       19,       22,       25,       29,       33,       38,
@@ -71,15 +71,15 @@ const std::int32_t ONE_PT_ONE_FIVE_intLookup[128] = {
     44455628, 51123971};
 }  // namespace
 
-std::int32_t ChaserBoss::count_;
+std::uint32_t ChaserBoss::count_;
 bool ChaserBoss::has_counted_;
-std::int32_t ChaserBoss::shared_hp_;
+std::uint32_t ChaserBoss::shared_hp_;
 
-ChaserBoss::ChaserBoss(ii::SimInterface& sim, std::int32_t players, std::int32_t cycle,
-                       std::int32_t split, const vec2& position, std::int32_t time,
-                       std::int32_t stagger)
+ChaserBoss::ChaserBoss(ii::SimInterface& sim, std::uint32_t players, std::uint32_t cycle,
+                       std::uint32_t split, const vec2& position, std::uint32_t time,
+                       std::uint32_t stagger)
 : Boss{sim,
-       !split ? vec2{ii::kSimWidth / 2, -ii::kSimHeight / 2} : position,
+       !split ? vec2{ii::kSimDimensions.x / 2, -ii::kSimDimensions.y / 2} : position,
        ii::SimInterface::kBoss1C,
        1 + kCbBaseHp / (fixed_c::half + HP_REDUCE_POWER_lookup[split]).to_int(),
        players,
@@ -119,12 +119,13 @@ void ChaserBoss::update() {
   if (timer_) {
     timer_--;
   }
-  if (timer_ <= 0) {
+  if (!timer_) {
     timer_ = kTimer * (move_ + 1);
-    std::int32_t count = remaining.size() - sim().players().size();
+    std::uint32_t count = remaining.size();
+    count = count > sim().player_count() ? count - sim().player_count() : 0;
     if (split_ != 0 &&
         (move_ || sim().random(8 + split_) == 0 || count <= 4 ||
-         !sim().random(ONE_PT_ONE_FIVE_intLookup[std::max(0, std::min(127, count))]))) {
+         !sim().random(ONE_PT_ONE_FIVE_intLookup[std::min(127u, count)]))) {
       move_ = !move_;
     }
     if (move_) {
@@ -193,44 +194,42 @@ void ChaserBoss::update() {
         dir_ += v * 3;
       }
     }
-    if (static_cast<std::int32_t>(remaining.size()) - sim().players().size() < 4 &&
-        split_ >= kCbMaxSplit - 1) {
+    if (remaining.size() < 4 + sim().player_count() && split_ >= kCbMaxSplit - 1) {
       if ((shape().centre.x < 32 && dir_.x < 0) ||
-          (shape().centre.x >= ii::kSimWidth - 32 && dir_.x > 0)) {
+          (shape().centre.x >= ii::kSimDimensions.x - 32 && dir_.x > 0)) {
         dir_.x = -dir_.x;
       }
       if ((shape().centre.y < 32 && dir_.y < 0) ||
-          (shape().centre.y >= ii::kSimHeight - 32 && dir_.y > 0)) {
+          (shape().centre.y >= ii::kSimDimensions.y - 32 && dir_.y > 0)) {
         dir_.y = -dir_.y;
       }
-    } else if (static_cast<std::int32_t>(remaining.size()) - sim().players().size() < 8 &&
-               split_ >= kCbMaxSplit - 1) {
+    } else if (remaining.size() < 8 + sim().player_count() && split_ >= kCbMaxSplit - 1) {
       if ((shape().centre.x < 0 && dir_.x < 0) ||
-          (shape().centre.x >= ii::kSimWidth && dir_.x > 0)) {
+          (shape().centre.x >= ii::kSimDimensions.x && dir_.x > 0)) {
         dir_.x = -dir_.x;
       }
       if ((shape().centre.y < 0 && dir_.y < 0) ||
-          (shape().centre.y >= ii::kSimHeight && dir_.y > 0)) {
+          (shape().centre.y >= ii::kSimDimensions.y && dir_.y > 0)) {
         dir_.y = -dir_.y;
       }
     } else {
       if ((shape().centre.x < -32 && dir_.x < 0) ||
-          (shape().centre.x >= ii::kSimWidth + 32 && dir_.x > 0)) {
+          (shape().centre.x >= ii::kSimDimensions.x + 32 && dir_.x > 0)) {
         dir_.x = -dir_.x;
       }
       if ((shape().centre.y < -32 && dir_.y < 0) ||
-          (shape().centre.y >= ii::kSimHeight + 32 && dir_.y > 0)) {
+          (shape().centre.y >= ii::kSimDimensions.y + 32 && dir_.y > 0)) {
         dir_.y = -dir_.y;
       }
     }
 
     if (shape().centre.x < -256) {
       dir_ = vec2{1, 0};
-    } else if (shape().centre.x >= ii::kSimWidth + 256) {
+    } else if (shape().centre.x >= ii::kSimDimensions.x + 256) {
       dir_ = vec2{-1, 0};
     } else if (shape().centre.y < -256) {
       dir_ = vec2{0, 1};
-    } else if (shape().centre.y >= ii::kSimHeight + 256) {
+    } else if (shape().centre.y >= ii::kSimDimensions.y + 256) {
       dir_ = vec2{0, -1};
     } else {
       dir_ = normalise(dir_);
@@ -260,10 +259,10 @@ void ChaserBoss::update() {
 
 void ChaserBoss::render() const {
   Boss::render();
-  static std::vector<std::int32_t> hp_lookup;
+  static std::vector<std::uint32_t> hp_lookup;
   if (hp_lookup.empty()) {
-    std::int32_t hp = 0;
-    for (std::int32_t i = 0; i < 8; ++i) {
+    std::uint32_t hp = 0;
+    for (std::uint32_t i = 0; i < 8; ++i) {
       hp = 2 * hp +
           CalculateHP(1 + kCbBaseHp / (fixed_c::half + HP_REDUCE_POWER_lookup[7 - i]).to_int(),
                       players_, cycle_);
@@ -276,14 +275,14 @@ void ChaserBoss::render() const {
   }
 }
 
-std::int32_t ChaserBoss::get_damage(std::int32_t damage, bool magic) {
+std::uint32_t ChaserBoss::get_damage(std::uint32_t damage, bool magic) {
   return damage;
 }
 
 void ChaserBoss::on_destroy() {
   bool last = false;
   if (split_ < kCbMaxSplit) {
-    for (std::int32_t i = 0; i < 2; ++i) {
+    for (std::uint32_t i = 0; i < 2; ++i) {
       vec2 d = from_polar(i * fixed_c::pi + shape().rotation(),
                           fixed{8 * ONE_PT_TWO_lookup[kCbMaxSplit - 1 - split_]});
       auto* s = spawn_new<ChaserBoss>(players_, cycle_, split_ + 1, shape().centre + d,
@@ -312,8 +311,8 @@ void ChaserBoss::on_destroy() {
           p->add_score(get_score() / sim().alive_players());
         }
       }
-      std::int32_t n = 1;
-      for (std::int32_t i = 0; i < 16; ++i) {
+      std::uint32_t n = 1;
+      for (std::uint32_t i = 0; i < 16; ++i) {
         vec2 v = from_polar(sim().random_fixed() * (2 * fixed_c::pi),
                             fixed{8 + sim().random(64) + sim().random(64)});
         fireworks_.push_back(

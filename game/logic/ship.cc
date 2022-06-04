@@ -6,7 +6,7 @@ Ship::Ship(ii::SimInterface& sim, const vec2& position, ship_category type)
 
 Ship::~Ship() {}
 
-bool Ship::check_point(const vec2& v, std::int32_t category) const {
+bool Ship::check_point(const vec2& v, std::uint32_t category) const {
   bool aa = false;
   vec2 a{0};
   for (const auto& shape : shape_.shapes()) {
@@ -56,11 +56,11 @@ void Ship::spawn(const ii::particle& particle) const {
   sim_->add_particle(particle);
 }
 
-void Ship::explosion(const std::optional<glm::vec4>& c, std::int32_t time, bool towards,
+void Ship::explosion(const std::optional<glm::vec4>& c, std::uint32_t time, bool towards,
                      const glm::vec2& v) const {
   for (const auto& shape : shape_.shapes()) {
-    std::int32_t n = towards ? sim().random(2) + 1 : sim().random(8) + 8;
-    for (std::int32_t j = 0; j < n; ++j) {
+    auto n = towards ? sim().random(2) + 1 : sim().random(8) + 8;
+    for (std::uint32_t j = 0; j < n; ++j) {
       auto pos = shape->convert_fl_point(to_float(shape_.centre), shape_.rotation().to_float(),
                                          glm::vec2{0.f});
 

@@ -4,16 +4,16 @@
 
 class ShieldBombBoss : public Boss {
 public:
-  ShieldBombBoss(ii::SimInterface& sim, std::int32_t players, std::int32_t cycle);
+  ShieldBombBoss(ii::SimInterface& sim, std::uint32_t players, std::uint32_t cycle);
 
   void update() override;
-  std::int32_t get_damage(std::int32_t damage, bool magic) override;
+  std::uint32_t get_damage(std::uint32_t damage, bool magic) override;
 
 private:
-  std::int32_t timer_ = 0;
-  std::int32_t count_ = 0;
-  std::int32_t unshielded_ = 0;
-  std::int32_t attack_ = 0;
+  std::uint32_t timer_ = 0;
+  std::uint32_t count_ = 0;
+  std::uint32_t unshielded_ = 0;
+  std::uint32_t attack_ = 0;
   bool side_ = false;
   vec2 attack_dir_{0};
   bool shot_alternate_ = false;

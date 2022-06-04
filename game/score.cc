@@ -8,7 +8,7 @@
 
 namespace ii {
 
-bool run(std::optional<std::int64_t> check, const std::string& replay_path) {
+bool run(std::optional<std::uint64_t> check, const std::string& replay_path) {
   io::StdFilesystem fs{".", ".", "."};
   auto result = fs.read(replay_path);
   if (!result) {
@@ -27,7 +27,7 @@ bool run(std::optional<std::int64_t> check, const std::string& replay_path) {
     sim.clear_output();
   }
   auto results = sim.get_results();
-  std::int64_t score = 0;
+  std::uint64_t score = 0;
   if (results.mode == game_mode::kBoss) {
     score = results.elapsed_time;
   } else {
@@ -46,7 +46,7 @@ bool run(std::optional<std::int64_t> check, const std::string& replay_path) {
 
 int main(int argc, char** argv) {
   std::vector<std::string> args;
-  std::optional<std::int64_t> check;
+  std::optional<std::uint64_t> check;
   bool run = false;
   for (int i = 1; i < argc; ++i) {
     std::string arg = argv[i];

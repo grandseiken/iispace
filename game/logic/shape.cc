@@ -3,7 +3,7 @@
 #include <glm/gtc/constants.hpp>
 #include <cmath>
 
-Shape::Shape(const vec2& centre, fixed rotation, const glm::vec4& colour, std::int32_t category,
+Shape::Shape(const vec2& centre, fixed rotation, const glm::vec4& colour, std::uint32_t category,
              bool can_rotate)
 : centre{centre}
 , colour{colour}
@@ -55,7 +55,7 @@ void Shape::rotate(fixed rotation_amount) {
 }
 
 Fill::Fill(const vec2& centre, fixed width, fixed height, const glm::vec4& colour,
-           std::int32_t category)
+           std::uint32_t category)
 : Shape{centre, 0, colour, category, false}, width{width}, height{height} {}
 
 void Fill::render(ii::SimInterface& sim, const glm::vec2& position, float rotation,
@@ -87,7 +87,7 @@ bool Line::check_local_point(const vec2& v) const {
 }
 
 Box::Box(const vec2& centre, fixed width, fixed height, const glm::vec4& colour, fixed rotation,
-         std::int32_t category)
+         std::uint32_t category)
 : Shape{centre, rotation, colour, category}, width{width}, height{height} {}
 
 void Box::render(ii::SimInterface& sim, const glm::vec2& position, float rotation,
@@ -110,8 +110,8 @@ bool Box::check_local_point(const vec2& v) const {
   return abs(v.x) < width && abs(v.y) < height;
 }
 
-Polygon::Polygon(const vec2& centre, fixed radius, std::int32_t sides, const glm::vec4& colour,
-                 fixed rotation, std::int32_t category, T type)
+Polygon::Polygon(const vec2& centre, fixed radius, std::uint32_t sides, const glm::vec4& colour,
+                 fixed rotation, std::uint32_t category, T type)
 : Shape{centre, rotation, colour, category}, radius{radius}, sides{sides}, type{type} {}
 
 void Polygon::render(ii::SimInterface& sim, const glm::vec2& position, float rotation,
@@ -124,7 +124,7 @@ void Polygon::render(ii::SimInterface& sim, const glm::vec2& position, float rot
   std::vector<glm::vec2> lines;
   if (type == T::kPolygram) {
     std::vector<glm::vec2> list;
-    for (std::int32_t i = 0; i < sides; ++i) {
+    for (std::uint32_t i = 0; i < sides; ++i) {
       list.push_back(from_polar(i * 2 * glm::pi<float>() / sides, r));
     }
 
@@ -135,7 +135,7 @@ void Polygon::render(ii::SimInterface& sim, const glm::vec2& position, float rot
       }
     }
   } else {
-    for (std::int32_t i = 0; i < sides; ++i) {
+    for (std::uint32_t i = 0; i < sides; ++i) {
       auto a = from_polar(i * 2 * glm::pi<float>() / sides, r);
       auto b = from_polar((i + 1) * 2 * glm::pi<float>() / sides, r);
       lines.push_back(a);
@@ -153,8 +153,8 @@ bool Polygon::check_local_point(const vec2& v) const {
   return length(v) < radius;
 }
 
-PolyArc::PolyArc(const vec2& centre, fixed radius, std::int32_t sides, std::int32_t segments,
-                 const glm::vec4& colour, fixed rotation, std::int32_t category)
+PolyArc::PolyArc(const vec2& centre, fixed radius, std::uint32_t sides, std::uint32_t segments,
+                 const glm::vec4& colour, fixed rotation, std::uint32_t category)
 : Shape{centre, rotation, colour, category}, radius{radius}, sides{sides}, segments{segments} {}
 
 void PolyArc::render(ii::SimInterface& sim, const glm::vec2& position, float rotation,
@@ -164,7 +164,7 @@ void PolyArc::render(ii::SimInterface& sim, const glm::vec2& position, float rot
   }
   float r = radius.to_float();
 
-  for (std::int32_t i = 0; i < sides && i < segments; ++i) {
+  for (std::uint32_t i = 0; i < sides && i < segments; ++i) {
     auto a = from_polar(i * 2 * glm::pi<float>() / sides, r);
     auto b = from_polar((i + 1) * 2 * glm::pi<float>() / sides, r);
     sim.render_line(convert_fl_point(position, rotation, a),
@@ -180,7 +180,7 @@ bool PolyArc::check_local_point(const vec2& v) const {
   return b && r >= radius - 10 && r < radius;
 }
 
-CompoundShape::CompoundShape(const vec2& centre, fixed rotation, std::int32_t category)
+CompoundShape::CompoundShape(const vec2& centre, fixed rotation, std::uint32_t category)
 : Shape{centre, rotation, glm::vec4{0.f}, category} {}
 
 const CompoundShape::shape_list& CompoundShape::shapes() const {

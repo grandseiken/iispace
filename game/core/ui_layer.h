@@ -86,9 +86,9 @@ public:
   void compute_input_frame(bool controller_change);
   void write_config();
   void write_save_game();
-  void write_replay(const ii::ReplayWriter& writer, const std::string& name, std::int64_t score);
+  void write_replay(const ii::ReplayWriter& writer, const std::string& name, std::uint64_t score);
 
-  void rumble(std::int32_t time);
+  void rumble(std::uint32_t time);
   void set_volume(float volume);
   void play_sound(sound s);
   void play_sound(sound s, float volume, float pan, float pitch);

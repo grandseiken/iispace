@@ -61,12 +61,12 @@ vec2 kbm_fire_target(const io::mouse::frame& frame, const glm::uvec2& game_dimen
   cursor *= game / scale;
   cursor.x = std::max(0.f, std::min(game.x, cursor.x));
   cursor.y = std::max(0.f, std::min(game.y, cursor.y));
-  return vec2{cursor.x, cursor.y};
+  return vec2{static_cast<std::int32_t>(cursor.x), static_cast<std::int32_t>(cursor.y)};
 }
 
-std::int32_t
+std::uint32_t
 kbm_keys(const io::keyboard::frame& keyboard_frame, const io::mouse::frame& mouse_frame) {
-  std::int32_t result = 0;
+  std::uint32_t result = 0;
   if (keyboard_frame.key(io::keyboard::key::kZ) || keyboard_frame.key(io::keyboard::key::kLCtrl) ||
       keyboard_frame.key(io::keyboard::key::kRCtrl) || mouse_frame.button(io::mouse::button::kL)) {
     result |= input_frame::key::kFire;
@@ -98,8 +98,8 @@ vec2 controller_fire_target(const io::controller::frame& frame) {
                           frame.axis(io::controller::axis::kRY), true);
 }
 
-std::int32_t controller_keys(const io::controller::frame& frame) {
-  std::int32_t result = 0;
+std::uint32_t controller_keys(const io::controller::frame& frame) {
+  std::uint32_t result = 0;
   if (frame.button(io::controller::button::kA) ||
       frame.button(io::controller::button::kRShoulder)) {
     result |= input_frame::key::kFire;

@@ -3,38 +3,39 @@
 #include <algorithm>
 
 namespace {
-const std::int32_t kFollowTime = 90;
+const std::uint32_t kFollowTime = 90;
 const fixed kFollowSpeed = 2;
 
-const std::int32_t kChaserTime = 60;
+const std::uint32_t kChaserTime = 60;
 const fixed kChaserSpeed = 4;
 
 const fixed kSquareSpeed = 2 + 1_fx / 4;
 
-const std::int32_t kWallTimer = 80;
+const std::uint32_t kWallTimer = 80;
 const fixed kWallSpeed = 1 + 1_fx / 4;
 
-const std::int32_t kFollowHubTimer = 170;
+const std::uint32_t kFollowHubTimer = 170;
 const fixed kFollowHubSpeed = 1;
 
-const std::int32_t kShielderTimer = 80;
+const std::uint32_t kShielderTimer = 80;
 const fixed kShielderSpeed = 2;
 
-const std::int32_t kTractorTimer = 50;
+const std::uint32_t kTractorTimer = 50;
 const fixed kTractorSpeed = 6 * (1_fx / 10);
 }  // namespace
 const fixed Tractor::kTractorBeamSpeed = 2 + 1_fx / 2;
 
-Enemy::Enemy(ii::SimInterface& sim, const vec2& position, Ship::ship_category type, std::int32_t hp)
+Enemy::Enemy(ii::SimInterface& sim, const vec2& position, Ship::ship_category type,
+             std::uint32_t hp)
 : Ship{sim, position, static_cast<Ship::ship_category>(type | kShipEnemy)}, hp_{hp} {}
 
-void Enemy::damage(std::int32_t damage, bool magic, Player* source) {
-  hp_ -= std::max(damage, 0);
+void Enemy::damage(std::uint32_t damage, bool magic, Player* source) {
+  hp_ = hp_ < damage ? 0 : hp_ - damage;
   if (damage > 0) {
     play_sound_random(ii::sound::kEnemyHit);
   }
 
-  if (hp_ <= 0 && !is_destroyed()) {
+  if (!hp_ && !is_destroyed()) {
     play_sound_random(destroy_sound_);
     if (source && get_score() > 0) {
       source->add_score(get_score());
@@ -59,7 +60,7 @@ void Enemy::render() const {
   --damaged_;
 }
 
-Follow::Follow(ii::SimInterface& sim, const vec2& position, fixed radius, std::int32_t hp)
+Follow::Follow(ii::SimInterface& sim, const vec2& position, fixed radius, std::uint32_t hp)
 : Enemy{sim, position, kShipNone, hp} {
   add_new_shape<Polygon>(vec2{0}, radius, 4, colour_hue360(270, .6f), 0, kDangerous | kVulnerable);
   set_score(15);
@@ -96,7 +97,7 @@ void BigFollow::on_destroy(bool bomb) {
   }
 
   vec2 d = rotate(vec2{10, 0}, shape().rotation());
-  for (std::int32_t i = 0; i < 3; ++i) {
+  for (std::uint32_t i = 0; i < 3; ++i) {
     auto* s = spawn_new<Follow>(shape().centre + d);
     if (!has_score_) {
       s->set_score(0);
@@ -121,7 +122,7 @@ void Chaser::update() {
   if (timer_) {
     timer_--;
   }
-  if (timer_ <= 0) {
+  if (!timer_) {
     timer_ = kChaserTime * (move_ + 1);
     move_ = !move_;
     if (move_) {
@@ -149,12 +150,14 @@ Square::Square(ii::SimInterface& sim, const vec2& position, fixed rotation)
 
 void Square::update() {
   if (is_on_screen() && sim().get_non_wall_count() == 0) {
-    timer_--;
+    if (timer_) {
+      timer_--;
+    }
   } else {
     timer_ = sim().random(80) + 40;
   }
 
-  if (timer_ == 0) {
+  if (!timer_) {
     damage(4, false, 0);
   }
 
@@ -172,13 +175,13 @@ void Square::update() {
     }
   }
 
-  if (pos.x > ii::kSimWidth && dir_.x >= 0) {
+  if (pos.x > ii::kSimDimensions.x && dir_.x >= 0) {
     dir_.x = -dir_.x;
     if (dir_.x >= 0) {
       dir_.x = -1;
     }
   }
-  if (pos.y > ii::kSimHeight && dir_.y >= 0) {
+  if (pos.y > ii::kSimDimensions.y && dir_.y >= 0) {
     dir_.y = -dir_.y;
     if (dir_.y >= 0) {
       dir_.y = -1;
@@ -211,24 +214,21 @@ void Wall::update() {
     if (get_hp() > 2) {
       sim().play_sound(ii::sound::kEnemySpawn, 1.f, 0.f);
     }
-    damage(get_hp() - 2, false, 0);
+    damage(std::max(2u, get_hp()) - 2, false, 0);
   }
 
   if (rotate_) {
     auto d =
-        rotate(dir_, (rdir_ ? 1 : -1) * (timer_ - kWallTimer) * fixed_c::pi / (4 * kWallTimer));
+        rotate(dir_, (rdir_ ? -1 : 1) * (kWallTimer - timer_) * fixed_c::pi / (4 * kWallTimer));
 
     shape().set_rotation(angle(d));
-    timer_--;
-    if (timer_ <= 0) {
-      timer_ = 0;
+    if (!--timer_) {
       rotate_ = false;
       dir_ = rotate(dir_, rdir_ ? -fixed_c::pi / 4 : fixed_c::pi / 4);
     }
     return;
   } else {
-    ++timer_;
-    if (timer_ > kWallTimer * 6) {
+    if (++timer_ > kWallTimer * 6) {
       if (is_on_screen()) {
         timer_ = kWallTimer;
         rotate_ = true;
@@ -240,8 +240,8 @@ void Wall::update() {
 
   vec2 pos = shape().centre;
   if ((pos.x < 0 && dir_.x < -fixed_c::hundredth) || (pos.y < 0 && dir_.y < -fixed_c::hundredth) ||
-      (pos.x > ii::kSimWidth && dir_.x > fixed_c::hundredth) ||
-      (pos.y > ii::kSimHeight && dir_.y > fixed_c::hundredth)) {
+      (pos.x > ii::kSimDimensions.x && dir_.x > fixed_c::hundredth) ||
+      (pos.y > ii::kSimDimensions.y && dir_.y > fixed_c::hundredth)) {
     dir_ = -normalise(dir_);
   }
 
@@ -255,12 +255,12 @@ void Wall::on_destroy(bool bomb) {
   }
   auto d = rotate(dir_, fixed_c::pi / 2);
   auto v = shape().centre + d * 10 * 3;
-  if (v.x >= 0 && v.x <= ii::kSimWidth && v.y >= 0 && v.y <= ii::kSimHeight) {
+  if (v.x >= 0 && v.x <= ii::kSimDimensions.x && v.y >= 0 && v.y <= ii::kSimDimensions.y) {
     spawn_new<Square>(v, shape().rotation());
   }
 
   v = shape().centre - d * 10 * 3;
-  if (v.x >= 0 && v.x <= ii::kSimWidth && v.y >= 0 && v.y <= ii::kSimHeight) {
+  if (v.x >= 0 && v.x <= ii::kSimDimensions.x && v.y >= 0 && v.y <= ii::kSimDimensions.y) {
     spawn_new<Square>(v, shape().rotation());
   }
 }
@@ -302,12 +302,12 @@ void FollowHub::update() {
     }
   }
 
-  dir_ = shape().centre.x < 0             ? vec2{1, 0}
-      : shape().centre.x > ii::kSimWidth  ? vec2{-1, 0}
-      : shape().centre.y < 0              ? vec2{0, 1}
-      : shape().centre.y > ii::kSimHeight ? vec2{0, -1}
-      : count_ > 3                        ? (count_ = 0, rotate(dir_, -fixed_c::pi / 2))
-                                          : dir_;
+  dir_ = shape().centre.x < 0                   ? vec2{1, 0}
+      : shape().centre.x > ii::kSimDimensions.x ? vec2{-1, 0}
+      : shape().centre.y < 0                    ? vec2{0, 1}
+      : shape().centre.y > ii::kSimDimensions.y ? vec2{0, -1}
+      : count_ > 3                              ? (count_ = 0, rotate(dir_, -fixed_c::pi / 2))
+                                                : dir_;
 
   fixed s = powera_ ? fixed_c::hundredth * 5 + fixed_c::tenth : fixed_c::hundredth * 5;
   shape().rotate(s);
@@ -353,16 +353,16 @@ void Shielder::update() {
   fixed s = power_ ? fixed_c::hundredth * 12 : fixed_c::hundredth * 4;
   shape().rotate(s);
   shapes()[9]->rotate(-2 * s);
-  for (std::int32_t i = 0; i < 8; ++i) {
+  for (std::uint32_t i = 0; i < 8; ++i) {
     shapes()[i]->rotate(-s);
   }
 
   bool on_screen = false;
-  dir_ = shape().centre.x < 0             ? vec2{1, 0}
-      : shape().centre.x > ii::kSimWidth  ? vec2{-1, 0}
-      : shape().centre.y < 0              ? vec2{0, 1}
-      : shape().centre.y > ii::kSimHeight ? vec2{0, -1}
-                                          : (on_screen = true, dir_);
+  dir_ = shape().centre.x < 0                   ? vec2{1, 0}
+      : shape().centre.x > ii::kSimDimensions.x ? vec2{-1, 0}
+      : shape().centre.y < 0                    ? vec2{0, 1}
+      : shape().centre.y > ii::kSimDimensions.y ? vec2{0, -1}
+                                                : (on_screen = true, dir_);
 
   if (!on_screen && rotate_) {
     timer_ = 0;
@@ -374,9 +374,7 @@ void Shielder::update() {
   if (rotate_) {
     auto d = rotate(
         dir_, (rdir_ ? 1 : -1) * (kShielderTimer - timer_) * fixed_c::pi / (2 * kShielderTimer));
-    timer_--;
-    if (timer_ <= 0) {
-      timer_ = 0;
+    if (!--timer_) {
       rotate_ = false;
       dir_ = rotate(dir_, (rdir_ ? 1 : -1) * fixed_c::pi / 2);
     }
@@ -428,11 +426,11 @@ void Tractor::update() {
 
   if (shape().centre.x < 0) {
     dir_ = vec2{1, 0};
-  } else if (shape().centre.x > ii::kSimWidth) {
+  } else if (shape().centre.x > ii::kSimDimensions.x) {
     dir_ = vec2{-1, 0};
   } else if (shape().centre.y < 0) {
     dir_ = vec2{0, 1};
-  } else if (shape().centre.y > ii::kSimHeight) {
+  } else if (shape().centre.y > ii::kSimDimensions.y) {
     dir_ = vec2{0, -1};
   } else {
     ++timer_;
@@ -502,8 +500,8 @@ BossShot::BossShot(ii::SimInterface& sim, const vec2& position, const vec2& velo
 void BossShot::update() {
   move(dir_);
   vec2 p = shape().centre;
-  if ((p.x < -10 && dir_.x < 0) || (p.x > ii::kSimWidth + 10 && dir_.x > 0) ||
-      (p.y < -10 && dir_.y < 0) || (p.y > ii::kSimHeight + 10 && dir_.y > 0)) {
+  if ((p.x < -10 && dir_.x < 0) || (p.x > ii::kSimDimensions.x + 10 && dir_.x > 0) ||
+      (p.y < -10 && dir_.y < 0) || (p.y > ii::kSimDimensions.y + 10 && dir_.y > 0)) {
     destroy();
   }
   shape().set_rotation(shape().rotation() + fixed_c::hundredth * 2);

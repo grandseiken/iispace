@@ -1,20 +1,20 @@
 cc_library(
+  name = "math",
+  hdrs = [
+    "fix32.h",
+    "math.h",
+  ],
+  deps = ["@glm"],
+  visibility = ["//visibility:public"],
+)
+
+cc_library(
   name = "types",
   hdrs = [
     "raw_ptr.h",
     "result.h",
   ],
   deps = ["@expected"],
-  visibility = ["//visibility:public"],
-)
-
-cc_library(
-  name = "common",
-  hdrs = [
-    "fix32.h",
-    "z.h",
-  ],
-  deps = ["@glm"],
   visibility = ["//visibility:public"],
 )
 

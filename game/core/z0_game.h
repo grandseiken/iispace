@@ -27,7 +27,7 @@ public:
 
 private:
   output_t* output_;
-  std::int32_t selection_ = 0;
+  std::uint32_t selection_ = 0;
 };
 
 class HighScoreModal : public Modal {
@@ -38,7 +38,7 @@ public:
   void render(const ii::ui::UiLayer& ui, ii::render::GlRenderer& r) const override;
 
 private:
-  std::int64_t get_score() const;
+  std::uint64_t get_score() const;
   bool is_high_score(const ii::SaveGame&) const;
 
   bool is_replay_ = false;
@@ -47,11 +47,11 @@ private:
   ii::ReplayWriter* replay_writer_ = nullptr;
 
   std::string enter_name_;
-  std::int32_t enter_char_ = 0;
-  std::int32_t enter_r_ = 0;
-  std::int32_t enter_time_ = 0;
-  std::int32_t compliment_ = 0;
-  std::int32_t timer_ = 0;
+  std::uint32_t enter_char_ = 0;
+  std::uint32_t enter_r_ = 0;
+  std::uint32_t enter_time_ = 0;
+  std::uint32_t compliment_ = 0;
+  std::uint32_t timer_ = 0;
 };
 
 class GameModal : public Modal {
@@ -76,8 +76,8 @@ private:
   };
 
   PauseModal::output_t pause_output_ = PauseModal::kContinue;
-  std::int32_t frame_count_multiplier_ = 1;
-  std::int32_t audio_tick_ = 0;
+  std::uint32_t frame_count_multiplier_ = 1;
+  std::uint32_t audio_tick_ = 0;
   bool show_controllers_dialog_ = true;
   bool controllers_dialog_ = true;
 
@@ -107,9 +107,9 @@ private:
   };
 
   menu menu_select_ = menu::kStart;
-  std::int32_t player_select_ = 1;
+  std::uint32_t player_select_ = 1;
   ii::game_mode mode_select_ = ii::game_mode::kBoss;
-  std::int32_t exit_timer_ = 0;
+  std::uint32_t exit_timer_ = 0;
 };
 
 #endif

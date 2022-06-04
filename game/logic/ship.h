@@ -5,9 +5,14 @@
 
 class Ship {
 public:
-  enum shape_category { kVulnerable = 1, kDangerous = 2, kShield = 4, kVulnShield = 8 };
+  enum shape_category : std::uint32_t {
+    kVulnerable = 1,
+    kDangerous = 2,
+    kShield = 4,
+    kVulnShield = 8
+  };
 
-  enum ship_category {
+  enum ship_category : std::uint32_t {
     kShipNone = 0,
     kShipPlayer = 1,
     kShipWall = 2,
@@ -50,7 +55,7 @@ public:
 
   // Operations
   //------------------------------
-  bool check_point(const vec2& v, std::int32_t category = 0) const;
+  bool check_point(const vec2& v, std::uint32_t category = 0) const;
   Ship* spawn(std::unique_ptr<Ship> ship) const;
   void spawn(const ii::particle& particle) const;
 
@@ -61,17 +66,17 @@ public:
 
   // Helpful functions
   //------------------------------
-  void explosion(const std::optional<glm::vec4>& c = std::nullopt, std::int32_t time = 8,
+  void explosion(const std::optional<glm::vec4>& c = std::nullopt, std::uint32_t time = 8,
                  bool towards = false, const glm::vec2& v = glm::vec2{0.f}) const;
   void render_with_colour(const glm::vec4& colour) const;
 
   bool is_on_screen() const {
     return all(greaterThanEqual(shape_.centre, vec2{0})) &&
-        all(lessThanEqual(shape_.centre, vec2{ii::kSimWidth, ii::kSimHeight}));
+        all(lessThanEqual(shape_.centre, vec2{ii::kSimDimensions.x, ii::kSimDimensions.y}));
   }
 
   static vec2 get_screen_centre() {
-    return {ii::kSimWidth / 2, ii::kSimHeight / 2};
+    return {ii::kSimDimensions.x / 2, ii::kSimDimensions.y / 2};
   }
 
   Player* nearest_player() const {
@@ -79,19 +84,19 @@ public:
   }
 
   void play_sound(ii::sound sound) {
-    sim().play_sound(sound, 1.f, 2.f * shape_.centre.x.to_float() / ii::kSimWidth - 1.f);
+    sim().play_sound(sound, 1.f, 2.f * shape_.centre.x.to_float() / ii::kSimDimensions.x - 1.f);
   }
 
   void play_sound_random(ii::sound sound, float pitch = 0.f, float volume = 1.f) {
     sim().play_sound(sound, volume * (.5f * sim().random_fixed().to_float() + .5f),
-                     2.f * shape_.centre.x.to_float() / ii::kSimWidth - 1.f, pitch);
+                     2.f * shape_.centre.x.to_float() / ii::kSimDimensions.x - 1.f, pitch);
   }
 
-  std::int32_t enemy_value() const {
+  std::uint32_t enemy_value() const {
     return enemy_value_;
   }
 
-  void set_enemy_value(std::int32_t value) {
+  void set_enemy_value(std::uint32_t value) {
     enemy_value_ = value;
   }
 
@@ -100,7 +105,7 @@ public:
   virtual void update() = 0;
   virtual void render() const;
   // Player can be null
-  virtual void damage(std::int32_t damage, bool magic, Player* source) {}
+  virtual void damage(std::uint32_t damage, bool magic, Player* source) {}
 
 protected:
   const CompoundShape::shape_list& shapes() const;
@@ -123,7 +128,7 @@ private:
   bool destroy_ = false;
   CompoundShape shape_;
   fixed bounding_width_ = 0;
-  std::int32_t enemy_value_ = 1;
+  std::uint32_t enemy_value_ = 1;
 };
 
 #endif

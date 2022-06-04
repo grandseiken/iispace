@@ -1,4 +1,5 @@
 #include "game/data/replay.h"
+#include "game/common/math.h"
 #include "game/data/crypt.h"
 #include "game/data/proto/replay.pb.h"
 #include <array>
@@ -87,7 +88,7 @@ ReplayWriter::ReplayWriter(const ii::initial_conditions& conditions)
   impl_->conditions = conditions;
   impl_->replay.set_game_version(kReplayVersion);
   impl_->replay.set_seed(conditions.seed);
-  impl_->replay.set_game_mode(static_cast<std::int32_t>(conditions.mode));
+  impl_->replay.set_game_mode(static_cast<std::uint32_t>(conditions.mode));
   impl_->replay.set_players(conditions.player_count);
   impl_->replay.set_can_face_secret_boss(conditions.can_face_secret_boss);
 }
@@ -129,7 +130,7 @@ ReplayInputAdapter::ReplayInputAdapter(ReplayReader& reader) : reader_{reader} {
 
 std::vector<ii::input_frame> ReplayInputAdapter::get() {
   std::vector<ii::input_frame> result;
-  for (std::int32_t i = 0; i < reader_.initial_conditions().player_count; ++i) {
+  for (std::uint32_t i = 0; i < reader_.initial_conditions().player_count; ++i) {
     auto frame = reader_.next_input_frame();
     if (frame) {
       result.emplace_back(std::move(*frame));

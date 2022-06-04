@@ -5,25 +5,25 @@
 
 class GhostBoss : public Boss {
 public:
-  GhostBoss(ii::SimInterface& sim, std::int32_t players, std::int32_t cycle);
+  GhostBoss(ii::SimInterface& sim, std::uint32_t players, std::uint32_t cycle);
 
   void update() override;
   void render() const override;
-  std::int32_t get_damage(std::int32_t damage, bool magic) override;
+  std::uint32_t get_damage(std::uint32_t damage, bool magic) override;
 
 private:
   bool visible_ = false;
-  std::int32_t vtime_ = 0;
-  std::int32_t timer_ = 0;
-  std::int32_t attack_time_ = 0;
-  std::int32_t attack_ = 0;
+  std::uint32_t vtime_ = 0;
+  std::uint32_t timer_ = 0;
+  std::uint32_t attack_time_ = 0;
+  std::uint32_t attack_ = 0;
   bool _rdir = false;
-  std::int32_t start_time_ = 120;
-  std::int32_t danger_circle_ = 0;
-  std::int32_t danger_offset1_ = 0;
-  std::int32_t danger_offset2_ = 0;
-  std::int32_t danger_offset3_ = 0;
-  std::int32_t danger_offset4_ = 0;
+  std::uint32_t start_time_ = 120;
+  std::uint32_t danger_circle_ = 0;
+  std::uint32_t danger_offset1_ = 0;
+  std::uint32_t danger_offset2_ = 0;
+  std::uint32_t danger_offset3_ = 0;
+  std::uint32_t danger_offset4_ = 0;
   bool shot_type_ = false;
 };
 
@@ -44,7 +44,7 @@ public:
   void render() const override;
 
 private:
-  std::int32_t timer_ = 80;
+  std::uint32_t timer_ = 80;
   Boss* ghost_ = nullptr;
 };
 

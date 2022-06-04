@@ -2,12 +2,12 @@
 #include "game/logic/player.h"
 
 namespace {
-const std::int32_t kSbBaseHp = 520;
-const std::int32_t kSbArcHp = 75;
+const std::uint32_t kSbBaseHp = 520;
+const std::uint32_t kSbArcHp = 75;
 }  // namespace
 
-SuperBossArc::SuperBossArc(ii::SimInterface& sim, const vec2& position, std::int32_t players,
-                           std::int32_t cycle, std::int32_t i, Ship* boss, std::int32_t timer)
+SuperBossArc::SuperBossArc(ii::SimInterface& sim, const vec2& position, std::uint32_t players,
+                           std::uint32_t cycle, std::uint32_t i, Ship* boss, std::uint32_t timer)
 : Boss{sim, position, static_cast<ii::SimInterface::boss_list>(0), kSbArcHp, players, cycle}
 , boss_{boss}
 , i_{i}
@@ -25,7 +25,7 @@ SuperBossArc::SuperBossArc(ii::SimInterface& sim, const vec2& position, std::int
 
 void SuperBossArc::update() {
   shape().rotate(6_fx / 1000);
-  for (std::int32_t i = 0; i < 8; ++i) {
+  for (std::uint32_t i = 0; i < 8; ++i) {
     shapes()[7 - i]->colour = {((i * 32 + 2 * timer_) % 256) / 256.f, 1.f, .5f,
                                is_hp_low() ? .6f : 1.f};
   }
@@ -42,7 +42,7 @@ void SuperBossArc::render() const {
   }
 }
 
-std::int32_t SuperBossArc::get_damage(std::int32_t damage, bool magic) {
+std::uint32_t SuperBossArc::get_damage(std::uint32_t damage, bool magic) {
   if (damage >= Player::kBombDamage) {
     return damage / 2;
   }
@@ -61,9 +61,9 @@ void SuperBossArc::on_destroy() {
   ((SuperBoss*)boss_)->destroyed_[i_] = true;
 }
 
-SuperBoss::SuperBoss(ii::SimInterface& sim, std::int32_t players, std::int32_t cycle)
+SuperBoss::SuperBoss(ii::SimInterface& sim, std::uint32_t players, std::uint32_t cycle)
 : Boss{sim,
-       {ii::kSimWidth / 2, -ii::kSimHeight / (2 + fixed_c::half)},
+       {ii::kSimDimensions.x / 2, -ii::kSimDimensions.y / (2 + fixed_c::half)},
        ii::SimInterface::kBoss3A,
        kSbBaseHp,
        players,
@@ -78,7 +78,7 @@ SuperBoss::SuperBoss(ii::SimInterface& sim, std::int32_t players, std::int32_t c
   add_new_shape<Polygon>(vec2{0}, 15, 32, glm::vec4{0.f}, 0, 0);
   add_new_shape<Polygon>(vec2{0}, 10, 32, glm::vec4{0.f}, 0, 0);
   add_new_shape<Polygon>(vec2{0}, 5, 32, glm::vec4{0.f}, 0, 0);
-  for (std::int32_t i = 0; i < 16; ++i) {
+  for (std::uint32_t i = 0; i < 16; ++i) {
     destroyed_.push_back(false);
   }
   set_ignore_damage_colour_index(8);
@@ -86,11 +86,11 @@ SuperBoss::SuperBoss(ii::SimInterface& sim, std::int32_t players, std::int32_t c
 
 void SuperBoss::update() {
   if (arcs_.empty()) {
-    for (std::int32_t i = 0; i < 16; ++i) {
+    for (std::uint32_t i = 0; i < 16; ++i) {
       arcs_.push_back(spawn_new<SuperBossArc>(shape().centre, players_, cycle_, i, this));
     }
   } else {
-    for (std::int32_t i = 0; i < 16; ++i) {
+    for (std::uint32_t i = 0; i < 16; ++i) {
       if (destroyed_[i]) {
         continue;
       }
@@ -100,11 +100,11 @@ void SuperBoss::update() {
   vec2 move_vec{0};
   shape().rotate(6_fx / 1000);
   auto c = colour_hue((ctimer_ % 128) / 128.f);
-  for (std::int32_t i = 0; i < 8; ++i) {
+  for (std::uint32_t i = 0; i < 8; ++i) {
     shapes()[7 - i]->colour = colour_hue(((i * 32 + 2 * ctimer_) % 256) / 256.f);
   }
   ++ctimer_;
-  if (shape().centre.y < ii::kSimHeight / 2) {
+  if (shape().centre.y < ii::kSimDimensions.y / 2) {
     move_vec = {0, 1};
   } else if (state_ == state::kArrive) {
     state_ = state::kIdle;
@@ -120,8 +120,8 @@ void SuperBoss::update() {
   static const fixed pi2d64 = 2 * fixed_c::pi / 64;
   static const fixed pi2d32 = 2 * fixed_c::pi / 32;
 
-  if (state_ == state::kIdle && is_on_screen() && timer_ != 0 && timer_ % 300 == 0) {
-    std::int32_t r = sim().random(6);
+  if (state_ == state::kIdle && is_on_screen() && timer_ && timer_ % 300 == 0) {
+    auto r = sim().random(6);
     if (r == 0 || r == 1) {
       snakes_ = 16;
     } else if (r == 2 || r == 3) {
@@ -129,7 +129,7 @@ void SuperBoss::update() {
       timer_ = 0;
       fixed f = sim().random_fixed() * (2 * fixed_c::pi);
       fixed rf = d5d1000 * (1 + sim().random(2));
-      for (std::int32_t i = 0; i < 32; ++i) {
+      for (std::uint32_t i = 0; i < 32; ++i) {
         vec2 d = from_polar(f + i * pi2d32, 1_fx);
         if (r == 2) {
           rf = d5d1000 * (1 + sim().random(4));
@@ -141,7 +141,7 @@ void SuperBoss::update() {
       state_ = state::kAttack;
       timer_ = 0;
       fixed f = sim().random_fixed() * (2 * fixed_c::pi);
-      for (std::int32_t i = 0; i < 64; ++i) {
+      for (std::uint32_t i = 0; i < 64; ++i) {
         vec2 d = from_polar(f + i * pi2d64, 1_fx);
         spawn_new<Snake>(shape().centre + d * 16, c, d);
         play_sound_random(ii::sound::kBossAttack);
@@ -154,9 +154,9 @@ void SuperBoss::update() {
   }
 
   if (state_ == state::kIdle && is_on_screen() && timer_ % 300 == 200 && !is_destroyed()) {
-    std::vector<std::int32_t> wide3;
-    std::int32_t timer = 0;
-    for (std::int32_t i = 0; i < 16; ++i) {
+    std::vector<std::uint32_t> wide3;
+    std::uint32_t timer = 0;
+    for (std::uint32_t i = 0; i < 16; ++i) {
       if (destroyed_[(i + 15) % 16] && destroyed_[i] && destroyed_[(i + 1) % 16]) {
         wide3.push_back(i);
       }
@@ -165,7 +165,7 @@ void SuperBoss::update() {
       }
     }
     if (!wide3.empty()) {
-      std::int32_t r = sim().random(static_cast<std::int32_t>(wide3.size()));
+      auto r = sim().random(wide3.size());
       auto* s = spawn_new<SuperBossArc>(shape().centre, players_, cycle_, wide3[r], this, timer);
       s->shape().set_rotation(shape().rotation() - (6_fx / 1000));
       arcs_[wide3[r]] = s;
@@ -175,7 +175,7 @@ void SuperBoss::update() {
   }
   static const fixed pi2d128 = 2 * fixed_c::pi / 128;
   if (state_ == state::kIdle && timer_ % 72 == 0) {
-    for (std::int32_t i = 0; i < 128; ++i) {
+    for (std::uint32_t i = 0; i < 128; ++i) {
       vec2 d = from_polar(i * pi2d128, 1_fx);
       spawn_new<RainbowShot>(shape().centre + d * 42, move_vec + d * 3, this);
       play_sound_random(ii::sound::kBossFire);
@@ -192,7 +192,7 @@ void SuperBoss::update() {
   move(move_vec);
 }
 
-std::int32_t SuperBoss::get_damage(std::int32_t damage, bool magic) {
+std::uint32_t SuperBoss::get_damage(std::uint32_t damage, bool magic) {
   return damage;
 }
 
@@ -209,8 +209,8 @@ void SuperBoss::on_destroy() {
   explosion(glm::vec4{1.f}, 36);
   explosion(shapes()[0]->colour, 48);
 
-  std::int32_t n = 1;
-  for (std::int32_t i = 0; i < 16; ++i) {
+  std::uint32_t n = 1;
+  for (std::uint32_t i = 0; i < 16; ++i) {
     vec2 v = from_polar(sim().random_fixed() * (2 * fixed_c::pi),
                         fixed{8 + sim().random(64) + sim().random(64)});
     auto c = shapes()[0]->colour;
@@ -228,7 +228,7 @@ void SuperBoss::on_destroy() {
     }
   }
 
-  for (std::int32_t i = 0; i < 8; ++i) {
+  for (std::uint32_t i = 0; i < 8; ++i) {
     spawn_new<Powerup>(shape().centre, Powerup::type::kBomb);
   }
 }
@@ -243,23 +243,19 @@ SnakeTail::SnakeTail(ii::SimInterface& sim, const vec2& position, const glm::vec
 void SnakeTail::update() {
   static const fixed z15 = fixed_c::hundredth * 15;
   shape().rotate(z15);
-  --timer_;
-  if (!timer_) {
+  if (!--timer_) {
     on_destroy(false);
     destroy();
     explosion();
   }
-  if (dtimer_) {
-    --dtimer_;
-    if (!dtimer_) {
-      if (tail_) {
-        tail_->dtimer_ = 4;
-      }
-      on_destroy(false);
-      destroy();
-      explosion();
-      play_sound_random(ii::sound::kEnemyDestroy);
+  if (dtimer_ && !--dtimer_) {
+    if (tail_) {
+      tail_->dtimer_ = 4;
     }
+    on_destroy(false);
+    destroy();
+    explosion();
+    play_sound_random(ii::sound::kEnemyDestroy);
   }
 }
 
@@ -284,7 +280,7 @@ Snake::Snake(ii::SimInterface& sim, const vec2& position, const glm::vec4& colou
   set_enemy_value(5);
   set_destroy_sound(ii::sound::kPlayerDestroy);
   if (dir == vec2{0}) {
-    std::int32_t r = sim.random(4);
+    auto r = sim.random(4);
     dir_ = r == 0 ? vec2{1, 0} : r == 1 ? vec2{-1, 0} : r == 2 ? vec2{0, 1} : vec2{0, -1};
   } else {
     dir_ = normalise(dir);
@@ -294,8 +290,8 @@ Snake::Snake(ii::SimInterface& sim, const vec2& position, const glm::vec4& colou
 }
 
 void Snake::update() {
-  if (!(shape().centre.x >= -8 && shape().centre.x <= ii::kSimWidth + 8 && shape().centre.y >= -8 &&
-        shape().centre.y <= ii::kSimHeight + 8)) {
+  if (!(shape().centre.x >= -8 && shape().centre.x <= ii::kSimDimensions.x + 8 &&
+        shape().centre.y >= -8 && shape().centre.y <= ii::kSimDimensions.y + 8)) {
     tail_ = 0;
     destroy();
     return;
@@ -339,7 +335,7 @@ RainbowShot::RainbowShot(ii::SimInterface& sim, const vec2& position, const vec2
 
 void RainbowShot::update() {
   BossShot::update();
-  static const vec2 center = {ii::kSimWidth / 2, ii::kSimHeight / 2};
+  static const vec2 center = {ii::kSimDimensions.x / 2, ii::kSimDimensions.y / 2};
 
   if (length(shape().centre - center) > 100 && timer_ % 2 == 0) {
     const auto& list = sim().collision_list(shape().centre, kShield);
