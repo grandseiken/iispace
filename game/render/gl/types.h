@@ -43,7 +43,7 @@ type type_of() {
   } else if constexpr (std::is_same_v<t, double>) {
     return type::kDouble;
   } else {
-    static_assert(false, "unsupported type");
+    static_assert(!std::is_same_v<T, T>, "unsupported type");
   }
 }
 

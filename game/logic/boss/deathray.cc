@@ -291,7 +291,7 @@ void DeathArm::update() {
   if (timer_ >= kDrbArmATimer) {
     timer_ = 0;
     attacking_ = true;
-    dir_ = {0};
+    dir_ = vec2{0};
     play_sound(ii::sound::kBossAttack);
   }
   shape().centre = boss_->shape().centre + vec2{80, top_ ? 80 : -80};

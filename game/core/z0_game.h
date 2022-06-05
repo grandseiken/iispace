@@ -50,7 +50,7 @@ private:
   std::uint32_t enter_char_ = 0;
   std::uint32_t enter_r_ = 0;
   std::uint32_t enter_time_ = 0;
-  std::uint32_t compliment_ = 0;
+  std::size_t compliment_ = 0;
   std::uint32_t timer_ = 0;
 };
 

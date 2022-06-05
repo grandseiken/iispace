@@ -113,7 +113,7 @@ struct GlRenderer::impl_t {
 };
 
 result<std::unique_ptr<GlRenderer>> GlRenderer::create() {
-  auto compile_shader = [](gl::shader_type type, auto& entry) {
+  auto compile_shader = [](gl::shader_type type, auto& entry) -> result<gl::shader> {
     auto shader = gl::compile_shader(type, entry.second);
     if (!shader) {
       return unexpected("Error compiling " + entry.first + ": " + shader.error());

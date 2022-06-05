@@ -11,6 +11,7 @@ cc_library(
 cc_library(
   name = "types",
   hdrs = [
+    "enum.h",
     "raw_ptr.h",
     "result.h",
   ],
