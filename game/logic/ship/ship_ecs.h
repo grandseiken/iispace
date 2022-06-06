@@ -4,7 +4,7 @@
 #include "game/common/enum.h"
 #include <cstddef>
 #include <cstdint>
-#include <limits>
+#include <deque>
 #include <memory>
 #include <optional>
 #include <type_traits>
@@ -82,14 +82,13 @@ private:
   };
 
 public:
-  static constexpr std::size_t kMaxShips =
-      static_cast<std::size_t>(std::numeric_limits<std::underlying_type_t<ship_id>>::max());
-
   using handle = handle_base<false>;
   using const_handle = handle_base<true>;
 
-  std::optional<handle> create();
+  handle create();
   void destroy(ship_id id);
+  void compact();
+
   bool contains(ship_id id) const {
     return ships_.contains(id);
   }
@@ -115,58 +114,91 @@ public:
   }
 
 private:
-  struct component_table {
-    std::vector<std::optional<index_type>> v;
-  };
-
+  struct component_table;
   struct component_storage_base {
     virtual ~component_storage_base() {}
+    virtual void compact() = 0;
+    virtual void reset_index(std::size_t index) = 0;
   };
 
   template <Component C>
-  struct component_storage : component_storage_base {
-    struct entry {
-      ship_id id;
-      std::optional<C> data;
-    };
-    std::vector<entry> entries;
-  };
-
+  struct component_storage;
   template <Component C>
   component_storage<C>& storage();
   template <Component C>
   const component_storage<C>* storage() const;
 
   ship_id next_id_{0};
-  std::unordered_map<ship_id, component_table> ships_;
+  std::unordered_map<ship_id, std::unique_ptr<component_table>> ships_;
   std::vector<std::unique_ptr<component_storage_base>> components_;
 };
 
-inline auto ShipIndex::create() -> std::optional<handle> {
-  if (ships_.size() >= kMaxShips) {
-    return std::nullopt;
+struct ShipIndex::component_table {
+  template <Component C>
+  void set(index_type index) {
+    auto c_index = static_cast<std::size_t>(ecs::id<C>());
+    if (c_index >= v.size()) {
+      v.resize(c_index + 1);
+    }
+    v[c_index] = index;
   }
+  template <Component C>
+  void clear() {
+    auto c_index = static_cast<std::size_t>(ecs::id<C>());
+    v[c_index].reset();
+  }
+  template <Component C>
+  std::optional<index_type> get() const {
+    auto c_index = static_cast<std::size_t>(ecs::id<C>());
+    return c_index < v.size() ? v[c_index] : std::optional<index_type>{};
+  }
+  std::vector<std::optional<index_type>> v;
+};
+
+template <Component C>
+struct ShipIndex::component_storage : ShipIndex::component_storage_base {
+  struct entry {
+    ship_id id;
+    std::optional<C> data;
+  };
+  std::deque<entry> entries;
+
+  void compact() override;
+  void reset_index(std::size_t index) override {
+    entries[index].data.reset();
+  }
+};
+
+inline auto ShipIndex::create() -> handle {
   // TODO: is ID reuse OK?
   auto id = next_id_++;
   while (contains(id)) {
     id = next_id_++;
   }
-  auto pair = ships_.emplace(id, component_table{});
-  return {{id, this, &pair.first->second}};
+  auto [it, _] = ships_.emplace(id, std::make_unique<component_table>());
+  return {id, this, it->second.get()};
 }
 
 inline void ShipIndex::destroy(ship_id id) {
-  // TODO.
   auto it = ships_.find(id);
   if (it != ships_.end()) {
+    handle{id, this, it->second.get()}.clear();
     ships_.erase(it);
+  }
+}
+
+inline void ShipIndex::compact() {
+  for (const auto& c : components_) {
+    if (c) {
+      c->compact();
+    }
   }
 }
 
 inline auto ShipIndex::get(ship_id id) -> std::optional<handle> {
   std::optional<handle> r;
   if (auto it = ships_.find(id); it != ships_.end()) {
-    r = {id, this, &it->second};
+    r = {id, this, it->second.get()};
   }
   return r;
 }
@@ -174,7 +206,7 @@ inline auto ShipIndex::get(ship_id id) -> std::optional<handle> {
 inline auto ShipIndex::get(ship_id id) const -> std::optional<const_handle> {
   std::optional<const_handle> r;
   if (auto it = ships_.find(id); it != ships_.end()) {
-    r = {id, this, &it->second};
+    r = {id, this, it->second.get()};
   }
   return r;
 }
@@ -202,16 +234,13 @@ auto ShipIndex::storage() const -> const component_storage<C>* {
 template <bool Const>
 template <Component C, typename... Args>
 C& ShipIndex::handle_base<Const>::emplace(Args&&... args) const requires !Const {
-  auto c_id = static_cast<std::size_t>(ecs::id<C>());
   auto& storage = index_->storage<C>();
-  if (c_id >= table_->v.size()) {
-    table_->v.resize(1 + c_id);
+  auto index = table_->get<C>();
+  if (!index) {
+    index = static_cast<index_type>(storage.entries.size());
+    storage.entries.emplace_back().id = id();
   }
-  if (!table_->v[c_id]) {
-    table_->v[c_id] = storage.entries.size();
-    storage.entries.emplace_back();
-  }
-  auto& e = storage.entries[*table_->v[c_id]];
+  auto& e = storage.entries[*index];
   e.data.emplace(std::forward<Args>(args)...);
   return *e.data;
 }
@@ -219,49 +248,49 @@ C& ShipIndex::handle_base<Const>::emplace(Args&&... args) const requires !Const 
 template <bool Const>
 template <Component C>
 void ShipIndex::handle_base<Const>::remove() const requires !Const {
-  auto c_id = static_cast<std::size_t>(ecs::id<C>());
-  if (c_id >= table_->v.size() || !table_->v[c_id]) {
-    return;
+  if (auto index = table_->get<C>(); index) {
+    table_->clear<C>();
+    index_->storage<C>().entres[*index].data.reset();
   }
-  auto& storage = index_->storage<C>();
-  auto c_index = *table_->v[c_id];
-  table_->v[c_id].reset();
-  if (1 + c_index < storage.entries.size()) {
-    std::swap(storage.entries[c_index], storage.entries.back());
-    index_->ships_[storage.entries[c_index].id].v[c_id] = c_index;
-  }
-  storage.entries.pop_back();
 }
 
 template <bool Const>
 void ShipIndex::handle_base<Const>::clear() const requires !Const {
-  // TODO
+  for (std::size_t i = 0; i < table_->v.size(); ++i) {
+    if (table_->v[i]) {
+      index_->components_[i]->reset_index(*table_->v[i]);
+    }
+  }
+  table_->v.clear();
 }
 
 template <bool Const>
 template <Component C>
 bool ShipIndex::handle_base<Const>::has() const {
-  auto c_id = static_cast<std::size_t>(ecs::id<C>());
-  return c_id < table_->size() && table_->v[c_id];
+  return table_->get<C>().has_value();
 }
 
 template <bool Const>
 template <Component C>
 C* ShipIndex::handle_base<Const>::get() const requires !Const {
-  auto c_id = static_cast<std::size_t>(ecs::id<C>());
-  return c_id < table_->size() && table_->v[c_id]
-      ? &*index_->storage<C>().entries[*table_->v[c_id]].data
-      : nullptr;
+  if (auto index = table_->get<C>(); index) {
+    return &*index_->storage<C>().entries[*index].data;
+  }
+  return nullptr;
 }
 
 template <bool Const>
 template <Component C>
 const C* ShipIndex::handle_base<Const>::get() const requires Const {
-  auto c_id = static_cast<std::size_t>(ecs::id<C>());
-  const auto* storage = index_->storage<C>();
-  return storage && c_id < table_->size() && table_->v[c_id]
-      ? storage->entries[*table_->v[c_id]].data
-      : nullptr;
+  if (auto index = table_->get<C>(); index) {
+    return &*index_->storage<C>()->entries[*index].data;
+  }
+  return nullptr;
+}
+
+template <Component C>
+void ShipIndex::component_storage<C>::compact() {
+  // TODO
 }
 
 }  // namespace ii::ecs
