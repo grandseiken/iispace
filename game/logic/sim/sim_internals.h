@@ -22,16 +22,17 @@ struct SimInternals {
   RandomEngine random_engine;
 
   // Internal sim data.
-  game_mode mode = game_mode::kNormal;
+  initial_conditions conditions;
   std::uint32_t lives = 0;
-  ecs::EntityIndex entity_index;
+  ecs::EntityIndex index;
 
   using ship_list = std::vector<Ship*>;
   std::vector<particle> particles;
   ship_list player_list;
   ship_list collisions;
-  // TODO: try to remove. Only needed for get_non_wall_count(). Which is a weird function.
-  Overmind* overmind = nullptr;
+
+  // Cached data.
+  std::uint32_t non_wall_enemy_count = 0;
 
   // Per-frame output.
   struct sound_aggregation_t {

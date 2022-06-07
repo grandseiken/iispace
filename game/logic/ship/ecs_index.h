@@ -1,11 +1,9 @@
 #ifndef II_GAME_LOGIC_SHIP_ECS_INDEX_H
 #define II_GAME_LOGIC_SHIP_ECS_INDEX_H
-#include "game/common/enum.h"
-#include <algorithm>
+#include "game/logic/ship/ecs_id.h"
 #include <concepts>
 #include <cstddef>
 #include <cstdint>
-#include <deque>
 #include <functional>
 #include <memory>
 #include <optional>
@@ -14,37 +12,6 @@
 #include <vector>
 
 namespace ii::ecs {
-template <typename Id, typename Tag = Id>
-class sequential_id {
-private:
-  inline static Id identifier_{0};
-
-public:
-  template <typename...>
-  inline static const Id value = identifier_++;
-};
-
-using index_type = std::uint32_t;
-enum class entity_id : index_type {};
-enum class component_id : index_type {};
-}  // namespace ii::ecs
-
-namespace ii {
-template <>
-struct integral_enum<ecs::entity_id> : std::true_type {};
-template <>
-struct integral_enum<ecs::component_id> : std::true_type {};
-}  // namespace ii
-
-namespace ii::ecs {
-
-template <typename T>
-concept Component = /* TODO */ true;
-
-template <Component C>
-component_id id() {
-  return sequential_id<component_id>::value<C>;
-}
 
 namespace detail {
 struct component_storage_base;
@@ -66,20 +33,20 @@ public:
 
   // Add a component.
   template <Component C, typename... Args>
-  C& emplace(Args&&... args) const requires !Const;
+      C& emplace(Args&&... args) const requires(!Const) && std::constructible_from<C, Args...>;
   // Remove a component. Invalidates any direct data reference to the component for this element.
   template <Component C>
-  void remove() const requires !Const;
+  void remove() const requires(!Const);
   // Clear all components. Invalidates all direct data references to any component for this
   // element.
-  void clear() const requires !Const;
+  void clear() const requires(!Const);
 
   // Check existence of a component.
   template <Component C>
   bool has() const;
   // Obtain pointer to component data, if it exists.
   template <Component C>
-  C* get() const requires !Const;
+  C* get() const requires(!Const);
   // Obtain pointer to component data, if it exists.
   template <Component C>
   const C* get() const requires Const;
@@ -136,6 +103,18 @@ public:
   // Obtain pointer to component data for an element, if it exists.
   template <Component C>
   const C* get(entity_id id) const;
+
+  template <typename C>
+  using component_add_callback = std::function<void(handle, C&)>;
+  template <typename C>
+  using component_remove_callback = std::function<void(handle, const C&)>;
+
+  // Add a handler to be called whenever the component is added.
+  template <Component C>
+  void on_component_add(const component_add_callback<C>& f);
+  // Add a handler to be called whenever the component is removed.
+  template <Component C>
+  void on_component_remove(const component_remove_callback<C>& f);
 
   template <Component C>
   void iterate(std::invocable<C&> auto&& f);

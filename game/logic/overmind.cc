@@ -121,8 +121,7 @@ private:
 
 std::vector<Overmind::entry> formation_base::static_formations;
 
-Overmind::Overmind(ii::SimInterface& sim, bool can_face_secret_boss)
-: sim_{sim}, can_face_secret_boss_{can_face_secret_boss} {
+Overmind::Overmind(ii::SimInterface& sim) : sim_{sim} {
   add_formations();
 
   auto queue = [this] {
@@ -137,11 +136,11 @@ Overmind::Overmind(ii::SimInterface& sim, bool can_face_secret_boss)
   boss1_queue_ = queue();
   boss2_queue_ = queue();
 
-  if (sim_.mode() == ii::game_mode::kBoss) {
+  if (sim_.conditions().mode == ii::game_mode::kBoss) {
     return;
   }
   power_ = kInitialPower + 2 - sim_.player_count() * 2;
-  if (sim_.mode() == ii::game_mode::kHard) {
+  if (sim_.conditions().mode == ii::game_mode::kHard) {
     power_ += 20;
     waves_total_ = 15;
   }
@@ -156,8 +155,13 @@ void Overmind::update() {
   ++elapsed_time_;
   Stars::update(sim_);
 
-  if (sim_.mode() == ii::game_mode::kBoss) {
-    if (!count_) {
+  std::uint32_t total_enemy_value = 0;
+  for (const auto* ship : sim_.all_ships(ii::Ship::kShipEnemy)) {
+    total_enemy_value += ship->enemy_value();
+  }
+
+  if (sim_.conditions().mode == ii::game_mode::kBoss) {
+    if (!total_enemy_value) {
       Stars::change(sim_);
       if (boss_mod_bosses_ < 6) {
         if (boss_mod_bosses_)
@@ -184,7 +188,8 @@ void Overmind::update() {
   }
 
   auto boss_cycles = boss_mod_fights_;
-  auto trigger_stage = groups_mod_ + boss_cycles + 2 * (sim_.mode() == ii::game_mode::kHard);
+  auto trigger_stage =
+      groups_mod_ + boss_cycles + 2 * (sim_.conditions().mode == ii::game_mode::kHard);
   auto trigger_val = kInitialTriggerVal;
   for (std::uint32_t i = 0; i < trigger_stage; ++i) {
     trigger_val += i < 2 ? 4 : i + sim_.player_count() < 7 ? 3 : 2;
@@ -193,7 +198,7 @@ void Overmind::update() {
     trigger_val = 0;
   }
 
-  if ((timer_ > kTimer && !is_boss_level_ && !is_boss_next_) || count_ <= trigger_val) {
+  if ((timer_ > kTimer && !is_boss_level_ && !is_boss_next_) || total_enemy_value <= trigger_val) {
     if (timer_ < kPowerupTime && !is_boss_level_) {
       spawn_powerup();
     }
@@ -258,20 +263,6 @@ std::optional<std::uint32_t> Overmind::get_timer() const {
   return kTimer - timer_;
 }
 
-void Overmind::on_enemy_destroy(const ii::Ship& ship) {
-  count_ -= ship.enemy_value();
-  if (!(ship.type() & ii::Ship::kShipWall)) {
-    non_wall_count_--;
-  }
-}
-
-void Overmind::on_enemy_create(const ii::Ship& ship) {
-  count_ += ship.enemy_value();
-  if (!(ship.type() & ii::Ship::kShipWall)) {
-    ++non_wall_count_;
-  }
-}
-
 void Overmind::spawn_powerup() {
   if (sim_.all_ships(ii::Ship::kShipPowerup).size() >= 4) {
     return;
@@ -318,18 +309,18 @@ void Overmind::spawn_boss_reward() {
                   : vec2{ii::kSimDimensions.x / 2, ii::kSimDimensions.y + ii::kSimDimensions.y / 4};
 
   sim_.add_new_ship<Powerup>(v, Powerup::type::kExtraLife);
-  if (sim_.mode() != ii::game_mode::kBoss) {
+  if (sim_.conditions().mode != ii::game_mode::kBoss) {
     spawn_powerup();
   }
 }
 
 void Overmind::wave() {
-  if (sim_.mode() == ii::game_mode::kFast) {
+  if (sim_.conditions().mode == ii::game_mode::kFast) {
     for (std::uint32_t i = 0; i < sim_.random(7); ++i) {
       sim_.random(1);
     }
   }
-  if (sim_.mode() == ii::game_mode::kWhat) {
+  if (sim_.conditions().mode == ii::game_mode::kWhat) {
     for (std::uint32_t i = 0; i < sim_.random(11); ++i) {
       sim_.random(1);
     }
@@ -374,9 +365,9 @@ void Overmind::wave() {
 
 void Overmind::boss() {
   auto count = sim_.player_count();
-  auto cycle = (sim_.mode() == ii::game_mode::kHard) + boss_mod_bosses_ / 2;
-  bool secret_chance =
-      (sim_.mode() != ii::game_mode::kNormal && sim_.mode() != ii::game_mode::kBoss)
+  auto cycle = (sim_.conditions().mode == ii::game_mode::kHard) + boss_mod_bosses_ / 2;
+  bool secret_chance = (sim_.conditions().mode != ii::game_mode::kNormal &&
+                        sim_.conditions().mode != ii::game_mode::kBoss)
       ? (boss_mod_fights_ > 1       ? sim_.random(4) == 0
              : boss_mod_fights_ > 0 ? sim_.random(8) == 0
                                     : false)
@@ -384,9 +375,11 @@ void Overmind::boss() {
              : boss_mod_fights_ > 1 ? sim_.random(6) == 0
                                     : false);
 
-  if (can_face_secret_boss_ && bosses_to_go_ == 0 && boss_mod_secret_ == 0 && secret_chance) {
+  if (sim_.conditions().can_face_secret_boss && bosses_to_go_ == 0 && boss_mod_secret_ == 0 &&
+      secret_chance) {
     auto secret_cycle =
-        (std::max<std::uint32_t>(2u, boss_mod_bosses_ + (sim_.mode() == ii::game_mode::kHard)) -
+        (std::max<std::uint32_t>(
+             2u, boss_mod_bosses_ + (sim_.conditions().mode == ii::game_mode::kHard)) -
          2) /
         2;
     sim_.add_new_ship<SuperBoss>(count, secret_cycle);

@@ -1,9 +1,12 @@
 #ifndef II_GAME_LOGIC_SHIP_SHIP_H
 #define II_GAME_LOGIC_SHIP_SHIP_H
+#include "game/logic/ship/ecs_index.h"
 #include "game/logic/ship/shape.h"
 #include "game/logic/sim/sim_interface.h"
 
 namespace ii {
+
+struct Destroy : ecs::component {};
 
 class Ship {
 public:
@@ -26,14 +29,20 @@ public:
   Ship(SimInterface& sim, const vec2& position, ship_category type);
   virtual ~Ship();
 
+  ecs::handle handle() const {
+    return *handle_;
+  }
+
+  void set_handle(ecs::handle handle) {
+    handle_ = handle;
+  }
+
   SimInterface& sim() const {
     return *sim_;
   }
 
   void destroy();
-  bool is_destroyed() const {
-    return destroy_;
-  }
+  bool is_destroyed() const;
 
   ship_category type() const {
     return type_;
@@ -126,6 +135,7 @@ protected:
 
 private:
   SimInterface* sim_ = nullptr;
+  std::optional<ecs::handle> handle_;
   ship_category type_ = static_cast<ship_category>(0);
   bool destroy_ = false;
   CompoundShape shape_;

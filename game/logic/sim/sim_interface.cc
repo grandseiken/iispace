@@ -6,6 +6,8 @@
 
 namespace ii {
 
+LegacyShip::LegacyShip(std::unique_ptr<Ship>&& s) : ship{std::move(s)} {}
+
 glm::vec4 SimInterface::player_colour(std::size_t player_number) {
   return player_number == 0 ? colour_hue360(0)
       : player_number == 1  ? colour_hue360(20)
@@ -21,8 +23,16 @@ input_frame SimInterface::input(std::uint32_t player_number) {
   return {};
 }
 
-game_mode SimInterface::mode() const {
-  return internals_->mode;
+const initial_conditions& SimInterface::conditions() const {
+  return internals_->conditions;
+}
+
+ecs::EntityIndex& SimInterface::index() {
+  return internals_->index;
+}
+
+const ecs::EntityIndex& SimInterface::index() const {
+  return internals_->index;
 }
 
 std::uint32_t SimInterface::random(std::uint32_t max) {
@@ -33,9 +43,18 @@ fixed SimInterface::random_fixed() {
   return fixed{static_cast<std::int32_t>(internals_->random_engine())} / RandomEngine::rand_max;
 }
 
+std::size_t SimInterface::count_ships(std::uint32_t ship_mask, std::uint32_t exclude_mask) const {
+  std::size_t r = 0;
+  internals_->index.iterate<LegacyShip>([&r, ship_mask, exclude_mask](auto& c) {
+    auto t = c.ship->type();
+    r += (!ship_mask || (c.ship->type() & ship_mask)) && !(exclude_mask & t);
+  });
+  return r;
+}
+
 SimInterface::ship_list SimInterface::all_ships(std::uint32_t ship_mask) const {
   ship_list r;
-  internals_->entity_index.iterate<LegacyShipComponent>([&r, ship_mask](auto& c) {
+  internals_->index.iterate<LegacyShip>([&r, ship_mask](auto& c) {
     if (!ship_mask || (c.ship->type() & ship_mask)) {
       r.emplace_back(c.ship.get());
     }
@@ -46,7 +65,7 @@ SimInterface::ship_list SimInterface::all_ships(std::uint32_t ship_mask) const {
 SimInterface::ship_list
 SimInterface::ships_in_radius(const vec2& point, fixed radius, std::uint32_t ship_mask) const {
   ship_list r;
-  internals_->entity_index.iterate<LegacyShipComponent>([&r, &point, radius, ship_mask](auto& c) {
+  internals_->index.iterate<LegacyShip>([&r, &point, radius, ship_mask](auto& c) {
     if ((!ship_mask || (c.ship->type() & ship_mask)) &&
         length(c.ship->shape().centre - point) <= radius) {
       r.emplace_back(c.ship.get());
@@ -104,7 +123,7 @@ SimInterface::collision_list(const vec2& point, std::uint32_t category) const {
 }
 
 std::uint32_t SimInterface::get_non_wall_count() const {
-  return internals_->overmind->count_non_wall_enemies();
+  return internals_->non_wall_enemy_count;
 }
 
 std::uint32_t SimInterface::player_count() const {
@@ -158,7 +177,9 @@ std::uint32_t SimInterface::get_lives() const {
 }
 
 void SimInterface::set_boss_killed(boss_list boss) {
-  if (boss == kBoss3A || (mode() != game_mode::kBoss && mode() != game_mode::kNormal)) {
+  if (boss == kBoss3A ||
+      (internals_->conditions.mode != game_mode::kBoss &&
+       internals_->conditions.mode != game_mode::kNormal)) {
     internals_->hard_mode_bosses_killed |= boss;
   } else {
     internals_->bosses_killed |= boss;
@@ -167,13 +188,12 @@ void SimInterface::set_boss_killed(boss_list boss) {
 
 Ship* SimInterface::add_ship(std::unique_ptr<Ship> ship) {
   auto p = ship.get();
-  if (ship->type() & Ship::kShipEnemy) {
-    internals_->overmind->on_enemy_create(*ship);
-  }
   if (ship->bounding_width() > 1) {
     internals_->collisions.push_back(ship.get());
   }
-  internals_->entity_index.create().emplace<LegacyShipComponent>(std::move(ship));
+  auto h = internals_->index.create();
+  h.emplace<LegacyShip>(std::move(ship));
+  p->set_handle(h);
   return p;
 }
 

@@ -12,7 +12,7 @@ class SimInterface;
 class formation_base;
 class Overmind {
 public:
-  Overmind(ii::SimInterface& sim, bool can_face_secret_boss);
+  Overmind(ii::SimInterface& sim);
   ~Overmind();
 
   // General
@@ -22,16 +22,6 @@ public:
   std::uint32_t get_killed_bosses() const;
   std::uint32_t get_elapsed_time() const;
   std::optional<std::uint32_t> get_timer() const;
-
-  // Enemy-counting
-  //------------------------------
-  // TODO: get rid of this.
-  void on_enemy_destroy(const ii::Ship& ship);
-  void on_enemy_create(const ii::Ship& ship);
-
-  std::uint32_t count_non_wall_enemies() const {
-    return non_wall_count_;
-  }
 
   struct entry {
     std::uint32_t id;
@@ -51,14 +41,11 @@ private:
   ii::SimInterface& sim_;
   std::uint32_t power_ = 0;
   std::uint32_t timer_ = 0;
-  std::uint32_t count_ = 0;
-  std::uint32_t non_wall_count_ = 0;
   std::uint32_t levels_mod_ = 0;
   std::uint32_t groups_mod_ = 0;
   std::uint32_t boss_mod_bosses_ = 0;
   std::uint32_t boss_mod_fights_ = 0;
   std::uint32_t boss_mod_secret_ = 0;
-  bool can_face_secret_boss_ = false;
   std::uint32_t powerup_mod_ = 0;
   std::uint32_t lives_spawned_ = 0;
   std::uint32_t lives_target_ = 0;

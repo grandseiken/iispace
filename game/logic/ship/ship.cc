@@ -1,4 +1,5 @@
 #include "game/logic/ship/ship.h"
+#include "game/logic/ship/ecs_index.h"
 #include <glm/gtc/constants.hpp>
 
 namespace ii {
@@ -40,14 +41,11 @@ void Ship::render_with_colour(const glm::vec4& colour) const {
 }
 
 void Ship::destroy() {
-  if (is_destroyed()) {
-    return;
-  }
+  handle().emplace<Destroy>();
+}
 
-  destroy_ = true;
-  for (const auto& shape : shape_.shapes()) {
-    shape->category = 0;
-  }
+bool Ship::is_destroyed() const {
+  return handle().has<Destroy>();
 }
 
 Ship* Ship::spawn(std::unique_ptr<Ship> ship) const {

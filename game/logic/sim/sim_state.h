@@ -32,7 +32,6 @@ public:
   sim_results get_results() const;
 
 private:
-  initial_conditions conditions_;
   InputAdapter& input_;
   std::uint32_t kill_timer_ = 0;
   bool game_over_ = false;

@@ -19,38 +19,45 @@ SimState::~SimState() {
 }
 
 SimState::SimState(const initial_conditions& conditions, InputAdapter& input)
-: conditions_{conditions}
-, input_{input}
-, internals_{std::make_unique<SimInternals>(conditions_.seed)}
+: input_{input}
+, internals_{std::make_unique<SimInternals>(conditions.seed)}
 , interface_{std::make_unique<SimInterface>(internals_.get())} {
   static constexpr std::uint32_t kStartingLives = 2;
   static constexpr std::uint32_t kBossModeLives = 1;
 
-  internals_->mode = conditions_.mode;
-  internals_->lives = conditions_.mode == game_mode::kBoss
-      ? conditions_.player_count * kBossModeLives
-      : kStartingLives;
+  internals_->conditions = conditions;
+  internals_->lives = conditions.mode == game_mode::kBoss ? conditions.player_count * kBossModeLives
+                                                          : kStartingLives;
 
   Stars::clear();
-  for (std::uint32_t i = 0; i < conditions_.player_count; ++i) {
-    vec2 v((1 + i) * kSimDimensions.x / (1 + conditions_.player_count), kSimDimensions.y / 2);
+  for (std::uint32_t i = 0; i < conditions.player_count; ++i) {
+    vec2 v((1 + i) * kSimDimensions.x / (1 + conditions.player_count), kSimDimensions.y / 2);
     auto* p = interface_->add_new_ship<Player>(v, i);
     internals_->player_list.push_back(p);
   }
-  overmind_ = std::make_unique<Overmind>(*interface_, conditions_.can_face_secret_boss);
-  internals_->overmind = overmind_.get();
+  overmind_ = std::make_unique<Overmind>(*interface_);
+
+  internals_->index.on_component_add<Destroy>(
+      [internals = internals_.get()](ecs::handle handle, const Destroy&) {
+        if (auto c = handle.get<LegacyShip>(); c) {
+          if (auto it = std::ranges::find(internals->collisions, c->ship.get());
+              it != internals->collisions.end()) {
+            internals->collisions.erase(it);
+          }
+        }
+      });
 }
 
 std::uint32_t SimState::frame_count() const {
-  return conditions_.mode == game_mode::kFast ? 2 : 1;
+  return internals_->conditions.mode == game_mode::kFast ? 2 : 1;
 }
 
 void SimState::update() {
   Boss::warnings_.clear();
-  colour_cycle_ = conditions_.mode == game_mode::kHard ? 128
-      : conditions_.mode == game_mode::kFast           ? 192
-      : conditions_.mode == game_mode::kWhat           ? (colour_cycle_ + 1) % 256
-                                                       : 0;
+  colour_cycle_ = internals_->conditions.mode == game_mode::kHard ? 128
+      : internals_->conditions.mode == game_mode::kFast           ? 192
+      : internals_->conditions.mode == game_mode::kWhat           ? (colour_cycle_ + 1) % 256
+                                                                  : 0;
   internals_->input_frames = input_.get();
 
   Player::update_fire_timer();
@@ -59,9 +66,10 @@ void SimState::update() {
     return a->shape().centre.x - a->bounding_width() < b->shape().centre.x - b->bounding_width();
   };
   std::stable_sort(internals_->collisions.begin(), internals_->collisions.end(), sort_ships);
+  internals_->non_wall_enemy_count = interface_->count_ships(Ship::kShipEnemy, Ship::kShipWall);
 
-  internals_->entity_index.iterate<LegacyShipComponent>([](auto& c) {
-    if (!c.ship->is_destroyed()) {
+  internals_->index.iterate<LegacyShip>([](ecs::handle handle, auto& c) {
+    if (!handle.has<Destroy>()) {
       c.ship->update();
     }
   });
@@ -86,20 +94,14 @@ void SimState::update() {
     it = Boss::fireworks_.erase(it);
   }
 
-  std::unordered_set<Ship*> destroyed_ships;
-  internals_->entity_index.iterate<LegacyShipComponent>([&](ecs::handle handle, auto& c) {
-    if (c.ship->is_destroyed()) {
-      destroyed_ships.emplace(c.ship.get());
-      if (c.ship->type() & Ship::kShipEnemy) {
-        overmind_->on_enemy_destroy(*c.ship);
-      }
-      internals_->entity_index.destroy(handle.id());
-    }
+  bool compact = false;
+  internals_->index.iterate<Destroy>([&](ecs::handle handle, const auto&) {
+    compact = true;
+    internals_->index.destroy(handle.id());
   });
 
-  if (!destroyed_ships.empty()) {
-    std::erase_if(internals_->collisions, [&](Ship* s) { return destroyed_ships.count(s); });
-    internals_->entity_index.compact();
+  if (compact) {
+    internals_->index.compact();
   }
 
   internals_->particles.erase(
@@ -110,7 +112,7 @@ void SimState::update() {
 
   if (!kill_timer_ &&
       ((interface_->killed_players() == interface_->player_count() && !interface_->get_lives()) ||
-       (conditions_.mode == game_mode::kBoss && overmind_->get_killed_bosses() >= 6))) {
+       (internals_->conditions.mode == game_mode::kBoss && overmind_->get_killed_bosses() >= 6))) {
     kill_timer_ = 100;
   }
   if (kill_timer_) {
@@ -131,7 +133,7 @@ void SimState::render() const {
     interface_->render_line_rect(particle.position + glm::vec2{1, 1},
                                  particle.position - glm::vec2{1, 1}, particle.colour);
   }
-  internals_->entity_index.iterate<LegacyShipComponent>([&](const auto& c) {
+  internals_->index.iterate<LegacyShip>([&](const auto& c) {
     if (!(c.ship->type() & Ship::kShipPlayer)) {
       c.ship->render();
     }
@@ -173,7 +175,7 @@ void SimState::render() const {
     }
   };
 
-  internals_->entity_index.iterate<LegacyShipComponent>([&render_warning](const auto& c) {
+  internals_->index.iterate<LegacyShip>([&render_warning](const auto& c) {
     if (c.ship->type() & Ship::kShipEnemy) {
       render_warning(to_float(c.ship->shape().centre));
     }
@@ -213,7 +215,7 @@ render_output SimState::get_render_output() const {
   render_output result;
   result.players = internals_->player_output;
   result.lines = std::move(internals_->line_output);
-  result.mode = conditions_.mode;
+  result.mode = internals_->conditions.mode;
   result.elapsed_time = overmind_->get_elapsed_time();
   result.lives_remaining = interface_->get_lives();
   result.overmind_timer = overmind_->get_timer();
@@ -224,8 +226,8 @@ render_output SimState::get_render_output() const {
 
 sim_results SimState::get_results() const {
   sim_results r;
-  r.mode = conditions_.mode;
-  r.seed = conditions_.seed;
+  r.mode = internals_->conditions.mode;
+  r.seed = internals_->conditions.seed;
   r.elapsed_time = overmind_->get_elapsed_time();
   r.killed_bosses = overmind_->get_killed_bosses();
   r.lives_remaining = interface_->get_lives();

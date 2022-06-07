@@ -1,6 +1,7 @@
 #ifndef II_GAME_LOGIC_SIM_SIM_INTERFACE_H
 #define II_GAME_LOGIC_SIM_SIM_INTERFACE_H
 #include "game/common/math.h"
+#include "game/logic/ship/ecs_id.h"
 #include "game/logic/sim/sim_io.h"
 #include "game/mixer/sound.h"
 #include <cstdint>
@@ -10,6 +11,9 @@
 class Player;
 
 namespace ii {
+namespace ecs {
+class EntityIndex;
+}  // namespace ecs
 class Ship;
 class SimInternals;
 
@@ -27,7 +31,8 @@ struct particle {
   glm::vec2 velocity{0.f};
 };
 
-struct LegacyShipComponent {
+struct LegacyShip : ecs::component {
+  LegacyShip(std::unique_ptr<Ship>&& s);
   std::unique_ptr<Ship> ship;
 };
 
@@ -52,11 +57,15 @@ public:
   input_frame input(std::uint32_t player_number);
 
   // State manipulation.
-  game_mode mode() const;
+  const initial_conditions& conditions() const;
+  ecs::EntityIndex& index();
+  const ecs::EntityIndex& index() const;
+
   std::uint32_t random(std::uint32_t max);
   fixed random_fixed();
 
-  // TODO: const/non-const versions of retrieval functions.
+  // TODO: const/non-const versions of retrieval functions?
+  std::size_t count_ships(std::uint32_t ship_mask = 0, std::uint32_t exclude_mask = 0) const;
   ship_list all_ships(std::uint32_t ship_mask = 0) const;
   ship_list ships_in_radius(const vec2& point, fixed radius, std::uint32_t ship_mask = 0) const;
   ship_list collision_list(const vec2& point, std::uint32_t category) const;

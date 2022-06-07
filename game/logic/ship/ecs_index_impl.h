@@ -1,6 +1,8 @@
 #ifndef II_GAME_LOGIC_SHIP_ECS_INDEX_IMPL_H
 #define II_GAME_LOGIC_SHIP_ECS_INDEX_IMPL_H
 #include "game/logic/ship/ecs_index.h"
+#include <algorithm>
+#include <deque>
 
 namespace ii::ecs::detail {
 
@@ -35,7 +37,7 @@ struct component_table {
 struct component_storage_base {
   virtual ~component_storage_base() {}
   virtual void compact(EntityIndex& index) = 0;
-  virtual void reset_index(std::size_t index) = 0;
+  virtual void remove_index(handle h, std::size_t index) = 0;
 };
 
 template <Component C>
@@ -45,6 +47,8 @@ struct component_storage : component_storage_base {
     std::optional<C> data;
   };
   std::deque<entry> entries;
+  std::vector<EntityIndex::component_add_callback<C>> add_callbacks;
+  std::vector<EntityIndex::component_remove_callback<C>> remove_callbacks;
 
   void compact(EntityIndex& index) override {
     auto has_value = [](const entry& e) { return e.data.has_value(); };
@@ -59,12 +63,16 @@ struct component_storage : component_storage_base {
     entries.erase(pivot, entries.end());
   }
 
-  void reset_index(std::size_t index) override {
+  void remove_index(handle h, std::size_t index) override {
+    for (auto& f : remove_callbacks) {
+      f(h, *entries[index].data);
+    }
     entries[index].data.reset();
   }
 };
 
 }  // namespace ii::ecs::detail
+
 namespace ii::ecs {
 
 inline void EntityIndex::compact() {
@@ -135,6 +143,16 @@ const C* EntityIndex::get(entity_id id) const {
 }
 
 template <Component C>
+void EntityIndex::on_component_add(const component_add_callback<C>& f) {
+  storage<C>().add_callbacks.emplace_back(f);
+}
+
+template <Component C>
+void EntityIndex::on_component_remove(const component_remove_callback<C>& f) {
+  storage<C>().remove_callbacks.emplace_back(f);
+}
+
+template <Component C>
 void EntityIndex::iterate(std::invocable<C&> auto&& f) {
   auto& c = storage<C>();
   for (std::size_t i = 0; i < c.entries.size(); ++i) {
@@ -201,34 +219,45 @@ auto EntityIndex::storage() const -> const detail::component_storage<C>* {
 }
 
 template <bool Const>
-template <Component C, typename... Args>
-C& handle_base<Const>::emplace(Args&&... args) const requires !Const {
-  auto& storage = index_->storage<C>();
-  auto index = table_->get<C>();
-  if (!index) {
-    index = static_cast<index_type>(storage.entries.size());
-    storage.entries.emplace_back().id = id();
-    table_->set<C>(*index);
+    template <Component C, typename... Args>
+    C& handle_base<Const>::emplace(Args&&... args) const requires(!Const) &&
+    std::constructible_from<C, Args...> {
+  auto& storage = index_->template storage<C>();
+  auto index = table_->template get<C>();
+  if (index) {
+    auto& e = storage.entries[*index];
+    e.data.emplace(std::forward<Args>(args)...);
+    return *e.data;
   }
-  auto& e = storage.entries[*index];
+  index = static_cast<index_type>(storage.entries.size());
+  auto& e = storage.entries.emplace_back();
+  e.id = id();
   e.data.emplace(std::forward<Args>(args)...);
+  table_->template set<C>(*index);
+  for (const auto& f : storage.add_callbacks) {
+    f(*this, *e.data);
+  }
   return *e.data;
 }
 
 template <bool Const>
 template <Component C>
-void handle_base<Const>::remove() const requires !Const {
-  if (auto index = table_->get<C>(); index) {
-    table_->reset<C>();
-    index_->storage<C>().entries[*index].data.reset();
+void handle_base<Const>::remove() const requires(!Const) {
+  if (auto index = table_->template get<C>(); index) {
+    auto& c = index_->template storage<C>();
+    for (const auto& f : c.remove_callbacks()) {
+      f(*this, *c.entries[*index].data);
+    }
+    table_->template reset<C>();
+    c.entries[*index].data.reset();
   }
 }
 
 template <bool Const>
-void handle_base<Const>::clear() const requires !Const {
+void handle_base<Const>::clear() const requires(!Const) {
   for (std::size_t i = 0; i < table_->v.size(); ++i) {
     if (table_->v[i]) {
-      index_->components_[i]->reset_index(*table_->v[i]);
+      index_->components_[i]->remove_index(*this, *table_->v[i]);
     }
   }
   table_->v.clear();
@@ -237,14 +266,14 @@ void handle_base<Const>::clear() const requires !Const {
 template <bool Const>
 template <Component C>
 bool handle_base<Const>::has() const {
-  return table_->get<C>().has_value();
+  return table_->template get<C>().has_value();
 }
 
 template <bool Const>
 template <Component C>
-C* handle_base<Const>::get() const requires !Const {
-  if (auto index = table_->get<C>(); index) {
-    return &*index_->storage<C>().entries[*index].data;
+C* handle_base<Const>::get() const requires(!Const) {
+  if (auto index = table_->template get<C>(); index) {
+    return &*index_->template storage<C>().entries[*index].data;
   }
   return nullptr;
 }
@@ -252,8 +281,8 @@ C* handle_base<Const>::get() const requires !Const {
 template <bool Const>
 template <Component C>
 const C* handle_base<Const>::get() const requires Const {
-  if (auto index = table_->get<C>(); index) {
-    return &*index_->storage<C>()->entries[*index].data;
+  if (auto index = table_->template get<C>(); index) {
+    return &*index_->template storage<C>()->entries[*index].data;
   }
   return nullptr;
 }

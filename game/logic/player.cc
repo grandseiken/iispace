@@ -128,7 +128,7 @@ void Player::update() {
 }
 
 void Player::render() const {
-  if (!kill_timer_ && (sim().mode() != ii::game_mode::kWhat || revive_timer_ > 0)) {
+  if (!kill_timer_ && (sim().conditions().mode != ii::game_mode::kWhat || revive_timer_ > 0)) {
     auto t = to_float(fire_target_);
     sim().render_line(t + glm::vec2{0, 9}, t - glm::vec2{0, 8}, colour());
     sim().render_line(t + glm::vec2{9, 1}, t - glm::vec2{8, -1}, colour());
@@ -139,7 +139,7 @@ void Player::render() const {
     }
   }
 
-  if (sim().mode() != ii::game_mode::kBoss) {
+  if (sim().conditions().mode != ii::game_mode::kBoss) {
     sim().render_player_info(player_number_, colour(), score_, multiplier_,
                              static_cast<float>(magic_shot_timer_) / kMagicShotCount);
   }
@@ -245,7 +245,7 @@ Shot::Shot(ii::SimInterface& sim, const vec2& position, Player* player, const ve
 }
 
 void Shot::render() const {
-  if (sim().mode() == ii::game_mode::kWhat) {
+  if (sim().conditions().mode == ii::game_mode::kWhat) {
     return;
   }
   if (flash_) {
