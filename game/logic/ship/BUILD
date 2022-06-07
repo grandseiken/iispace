@@ -1,6 +1,6 @@
 cc_library(
-  name = "ship_ecs",
-  hdrs = ["ship_ecs.h"],
+  name = "ecs",
+  hdrs = ["ecs.h"],
   deps = ["//game/common:types"],
   visibility = ["//game/logic:__subpackages__"],
 )
@@ -18,7 +18,7 @@ cc_library(
     "ship.cc",
   ],
   deps = [
-    ":ship_ecs",
+    ":ecs",
     "//game/common:math",
     "//game/logic/sim:sim_interface",
     "@glm",
