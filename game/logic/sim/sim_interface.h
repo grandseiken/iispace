@@ -27,6 +27,10 @@ struct particle {
   glm::vec2 velocity{0.f};
 };
 
+struct LegacyShipComponent {
+  std::unique_ptr<Ship> ship;
+};
+
 class SimInterface {
 public:
   // TODO: move to sim_io.h?

@@ -59,11 +59,12 @@ void SimState::update() {
     return a->shape().centre.x - a->bounding_width() < b->shape().centre.x - b->bounding_width();
   };
   std::stable_sort(internals_->collisions.begin(), internals_->collisions.end(), sort_ships);
-  for (std::size_t i = 0; i < internals_->ships.size(); ++i) {
-    if (!internals_->ships[i]->is_destroyed()) {
-      internals_->ships[i]->update();
+
+  internals_->entity_index.iterate<LegacyShipComponent>([](auto& c) {
+    if (!c.ship->is_destroyed()) {
+      c.ship->update();
     }
-  }
+  });
   for (auto& particle : internals_->particles) {
     if (!particle.destroy) {
       particle.position += particle.velocity;
@@ -75,29 +76,31 @@ void SimState::update() {
       --(it++)->first;
       continue;
     }
-    vec2 v = internals_->ships[0]->shape().centre;
-    internals_->ships[0]->shape().centre = it->second.first;
-    internals_->ships[0]->explosion(glm::vec4{1.f});
-    internals_->ships[0]->explosion(it->second.second, 16);
-    internals_->ships[0]->explosion(glm::vec4{1.f}, 24);
-    internals_->ships[0]->explosion(it->second.second, 32);
-    internals_->ships[0]->shape().centre = v;
+    vec2 v = internals_->player_list[0]->shape().centre;
+    internals_->player_list[0]->shape().centre = it->second.first;
+    internals_->player_list[0]->explosion(glm::vec4{1.f});
+    internals_->player_list[0]->explosion(it->second.second, 16);
+    internals_->player_list[0]->explosion(glm::vec4{1.f}, 24);
+    internals_->player_list[0]->explosion(it->second.second, 32);
+    internals_->player_list[0]->shape().centre = v;
     it = Boss::fireworks_.erase(it);
   }
 
   std::unordered_set<Ship*> destroyed_ships;
-  auto remove_it = std::stable_partition(internals_->ships.begin(), internals_->ships.end(),
-                                         [](const auto& ship) { return !ship->is_destroyed(); });
-  for (auto it = remove_it; it != internals_->ships.end(); ++it) {
-    destroyed_ships.emplace(it->get());
-    if ((*it)->type() & Ship::kShipEnemy) {
-      overmind_->on_enemy_destroy(**it);
+  internals_->entity_index.iterate<LegacyShipComponent>([&](ecs::handle handle, auto& c) {
+    if (c.ship->is_destroyed()) {
+      destroyed_ships.emplace(c.ship.get());
+      if (c.ship->type() & Ship::kShipEnemy) {
+        overmind_->on_enemy_destroy(*c.ship);
+      }
+      internals_->entity_index.destroy(handle.id());
     }
-  }
+  });
+
   if (!destroyed_ships.empty()) {
     std::erase_if(internals_->collisions, [&](Ship* s) { return destroyed_ships.count(s); });
+    internals_->entity_index.compact();
   }
-  internals_->ships.erase(remove_it, internals_->ships.end());
 
   internals_->particles.erase(
       std::remove_if(internals_->particles.begin(), internals_->particles.end(),
@@ -128,20 +131,16 @@ void SimState::render() const {
     interface_->render_line_rect(particle.position + glm::vec2{1, 1},
                                  particle.position - glm::vec2{1, 1}, particle.colour);
   }
-  for (std::size_t i = internals_->player_list.size(); i < internals_->ships.size(); ++i) {
-    internals_->ships[i]->render();
-  }
+  internals_->entity_index.iterate<LegacyShipComponent>([&](const auto& c) {
+    if (!(c.ship->type() & Ship::kShipPlayer)) {
+      c.ship->render();
+    }
+  });
   for (const auto& ship : internals_->player_list) {
     ship->render();
   }
 
-  for (std::size_t i = 0; i < internals_->ships.size() + Boss::warnings_.size(); ++i) {
-    if (i < internals_->ships.size() && !(internals_->ships[i]->type() & Ship::kShipEnemy)) {
-      continue;
-    }
-    auto v = to_float(i < internals_->ships.size() ? internals_->ships[i]->shape().centre
-                                                   : Boss::warnings_[i - internals_->ships.size()]);
-
+  auto render_warning = [&](const glm::vec2& v) {
     if (v.x < -4) {
       auto f = .2f + .6f * std::max(v.x + kSimDimensions.x, 0.f) / kSimDimensions.x;
       glm::vec4 c{0.f, 0.f, f, .4f};
@@ -172,6 +171,15 @@ void SimState::render() const {
                               c);
       interface_->render_line({v.x + 3, kSimDimensions.y - 6.f}, {v.x, float{kSimDimensions.y}}, c);
     }
+  };
+
+  internals_->entity_index.iterate<LegacyShipComponent>([&render_warning](const auto& c) {
+    if (c.ship->type() & Ship::kShipEnemy) {
+      render_warning(to_float(c.ship->shape().centre));
+    }
+  });
+  for (const auto& v : Boss::warnings_) {
+    render_warning(to_float(v));
   }
 }
 

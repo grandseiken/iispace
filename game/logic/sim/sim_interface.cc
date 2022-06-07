@@ -35,23 +35,23 @@ fixed SimInterface::random_fixed() {
 
 SimInterface::ship_list SimInterface::all_ships(std::uint32_t ship_mask) const {
   ship_list r;
-  for (auto& ship : internals_->ships) {
-    if (!ship_mask || (ship->type() & ship_mask)) {
-      r.push_back(ship.get());
+  internals_->entity_index.iterate<LegacyShipComponent>([&r, ship_mask](auto& c) {
+    if (!ship_mask || (c.ship->type() & ship_mask)) {
+      r.emplace_back(c.ship.get());
     }
-  }
+  });
   return r;
 }
 
 SimInterface::ship_list
 SimInterface::ships_in_radius(const vec2& point, fixed radius, std::uint32_t ship_mask) const {
   ship_list r;
-  for (auto& ship : internals_->ships) {
-    if ((!ship_mask || (ship->type() & ship_mask)) &&
-        length(ship->shape().centre - point) <= radius) {
-      r.push_back(ship.get());
+  internals_->entity_index.iterate<LegacyShipComponent>([&r, &point, radius, ship_mask](auto& c) {
+    if ((!ship_mask || (c.ship->type() & ship_mask)) &&
+        length(c.ship->shape().centre - point) <= radius) {
+      r.emplace_back(c.ship.get());
     }
-  }
+  });
   return r;
 }
 
@@ -173,7 +173,7 @@ Ship* SimInterface::add_ship(std::unique_ptr<Ship> ship) {
   if (ship->bounding_width() > 1) {
     internals_->collisions.push_back(ship.get());
   }
-  internals_->ships.emplace_back(std::move(ship));
+  internals_->entity_index.create().emplace<LegacyShipComponent>(std::move(ship));
   return p;
 }
 

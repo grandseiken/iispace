@@ -1,5 +1,6 @@
 #ifndef II_GAME_LOGIC_SIM_SIM_INTERNALS_H
 #define II_GAME_LOGIC_SIM_SIM_INTERNALS_H
+#include "game/logic/ship/ecs_index.h"
 #include "game/logic/ship/ship.h"
 #include "game/logic/sim/random_engine.h"
 #include "game/logic/sim/sim_interface.h"
@@ -22,9 +23,10 @@ struct SimInternals {
 
   // Internal sim data.
   game_mode mode = game_mode::kNormal;
-  using ship_list = std::vector<Ship*>;
   std::uint32_t lives = 0;
-  std::vector<std::unique_ptr<Ship>> ships;
+  ecs::EntityIndex entity_index;
+
+  using ship_list = std::vector<Ship*>;
   std::vector<particle> particles;
   ship_list player_list;
   ship_list collisions;

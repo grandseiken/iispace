@@ -1,6 +1,9 @@
 cc_library(
   name = "ecs",
-  hdrs = ["ecs.h"],
+  hdrs = [
+    "ecs_index.h",
+    "ecs_index_impl.h",
+  ],
   deps = ["//game/common:types"],
   visibility = ["//game/logic:__subpackages__"],
 )

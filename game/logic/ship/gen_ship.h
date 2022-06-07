@@ -1,6 +1,6 @@
 #ifndef II_GAME_LOGIC_SHIP_GEN_SHIP_H
 #define II_GAME_LOGIC_SHIP_GEN_SHIP_H
-#include "game/logic/ship/ecs.h"
+#include "game/logic/ship/ecs_index.h"
 #include "game/logic/ship/ship.h"
 
 namespace ii {
