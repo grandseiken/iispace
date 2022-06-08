@@ -257,7 +257,7 @@ std::optional<std::uint32_t> Overmind::get_timer() const {
 }
 
 void Overmind::spawn_powerup() {
-  if (sim_.all_ships(ii::ship_flag::kPowerup).size() >= 4) {
+  if (sim_.count_ships(ii::ship_flag::kPowerup) >= 4) {
     return;
   }
 

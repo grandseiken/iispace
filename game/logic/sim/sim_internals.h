@@ -28,12 +28,11 @@ struct SimInternals {
 
   using ship_list = std::vector<Ship*>;
   std::vector<particle> particles;
-  ship_list player_list;
 
   struct collision_entry {
-    fixed x_min;
-    fixed bounding_width;
-    Ship* ship;
+    ecs::const_handle handle;
+    fixed x_min = 0;
+    fixed bounding_width = 0;
   };
   std::vector<collision_entry> collisions;
 

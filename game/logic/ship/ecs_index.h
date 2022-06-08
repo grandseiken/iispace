@@ -29,11 +29,13 @@ public:
 
   handle_base(const handle_base&) = default;
   handle_base& operator=(const handle_base&) = default;
-  handle_base(const handle_base<false>&) requires Const : handle_base{id_, index_, table_} {}
+  handle_base(const handle_base<false>& h) requires Const
+  : handle_base{h.id_, h.index_, h.table_} {}
 
-  // Add a component.
+  // Add a component via in-place construction.
   template <Component C, typename... Args>
       C& emplace(Args&&... args) const requires(!Const) && std::constructible_from<C, Args...>;
+  // Add a component.
   template <typename C>
   C& add(C&& data) const requires Component<std::remove_cvref_t<C>>;
   // Remove a component. Invalidates any direct data reference to the component for this element.
@@ -54,6 +56,7 @@ public:
   const C* get() const requires Const;
 
 private:
+  friend class handle_base<!Const>;
   friend class EntityIndex;
   using index_t = std::conditional_t<Const, const EntityIndex, EntityIndex>;
   using table_t = std::conditional_t<Const, const detail::component_table, detail::component_table>;

@@ -1,5 +1,6 @@
 #include "game/logic/sim/sim_state.h"
 #include "game/logic/boss.h"
+#include "game/logic/enemy.h"
 #include "game/logic/overmind.h"
 #include "game/logic/player.h"
 #include "game/logic/ship/ship.h"
@@ -31,28 +32,42 @@ SimState::SimState(const initial_conditions& conditions, InputAdapter& input)
   Stars::clear();
   for (std::uint32_t i = 0; i < conditions.player_count; ++i) {
     vec2 v((1 + i) * kSimDimensions.x / (1 + conditions.player_count), kSimDimensions.y / 2);
-    auto* p = spawn_player(*interface_, v, i);
-    internals_->player_list.push_back(p);
+    spawn_player(*interface_, v, i);
   }
   overmind_ = std::make_unique<Overmind>(*interface_);
 
   auto internals = internals_.get();
-  internals_->index.on_component_add<Collision>(
-      [internals](ecs::handle handle, const Collision& c) {
-        if (auto s = handle.get<LegacyShip>(); s) {
-          internals->collisions.emplace_back(
-              SimInternals::collision_entry{0_fx, c.bounding_width, s->ship.get()});
+  auto interface = interface_.get();
+  internals_->index.on_component_add<Collision>([internals](ecs::handle h, const Collision& c) {
+    internals->collisions.emplace_back(SimInternals::collision_entry{h, 0, c.bounding_width});
+  });
+  internals_->index.on_component_add<Destroy>(
+      [internals, interface](ecs::handle h, const Destroy& d) {
+        if (auto e = h.get<Enemy>(); e) {
+          if (e->score_reward && d.source) {
+            if (auto player_handle = internals->index.get(*d.source); player_handle) {
+              if (auto s = player_handle->get<LegacyShip>(); s && player_handle->has<Player>()) {
+                static_cast<::Player*>(s->ship.get())->add_score(e->score_reward);
+              }
+            }
+          }
+          if (e->boss_score_reward) {
+            internals->index.iterate<Player>([&](ecs::handle h, const Player&) {
+              if (auto s = h.get<LegacyShip>(); s) {
+                if (auto p = static_cast<::Player*>(s->ship.get()); !p->is_killed()) {
+                  p->add_score(e->boss_score_reward / interface->alive_players());
+                }
+              }
+            });
+          }
+        }
+
+        if (auto it = std::ranges::find(internals->collisions, h.id(),
+                                        [](const auto& e) { return e.handle.id(); });
+            it != internals->collisions.end()) {
+          internals->collisions.erase(it);
         }
       });
-  internals_->index.on_component_add<Destroy>([internals](ecs::handle handle, const Destroy&) {
-    if (auto s = handle.get<LegacyShip>(); s) {
-      if (auto it = std::ranges::find(internals->collisions, s->ship.get(),
-                                      [](const auto& e) { return e.ship; });
-          it != internals->collisions.end()) {
-        internals->collisions.erase(it);
-      }
-    }
-  });
 }
 
 std::uint32_t SimState::frame_count() const {
@@ -67,20 +82,21 @@ void SimState::update() {
                                                                   : 0;
   internals_->input_frames = input_.get();
 
-  Player::update_fire_timer();
+  ::Player::update_fire_timer();
   chaser_boss_begin_frame();
 
-  for (auto& c : internals_->collisions) {
-    c.x_min = c.ship->shape().centre.x - c.bounding_width;
+  for (auto& e : internals_->collisions) {
+    auto& c = *e.handle.get<Collision>();
+    e.x_min = c.centre().x - c.bounding_width;
   }
   std::ranges::stable_sort(internals_->collisions,
                            [](const auto& a, const auto& b) { return a.x_min < b.x_min; });
 
   internals_->non_wall_enemy_count = interface_->count_ships(ship_flag::kEnemy, ship_flag::kWall);
 
-  internals_->index.iterate<LegacyShip>([](ecs::handle handle, auto& c) {
+  internals_->index.iterate<Update>([](ecs::handle handle, auto& c) {
     if (!handle.has<Destroy>()) {
-      c.ship->update();
+      c.update();
     }
   });
   for (auto& particle : internals_->particles) {
@@ -94,18 +110,19 @@ void SimState::update() {
       --(it++)->first;
       continue;
     }
-    vec2 v = internals_->player_list[0]->shape().centre;
-    internals_->player_list[0]->shape().centre = it->second.first;
-    internals_->player_list[0]->explosion(glm::vec4{1.f});
-    internals_->player_list[0]->explosion(it->second.second, 16);
-    internals_->player_list[0]->explosion(glm::vec4{1.f}, 24);
-    internals_->player_list[0]->explosion(it->second.second, 32);
-    internals_->player_list[0]->shape().centre = v;
+    auto* p = interface_->players().front();
+    vec2 v = p->shape().centre;
+    p->shape().centre = it->second.first;
+    p->explosion(glm::vec4{1.f});
+    p->explosion(it->second.second, 16);
+    p->explosion(glm::vec4{1.f}, 24);
+    p->explosion(it->second.second, 32);
+    p->shape().centre = v;
     it = boss_fireworks().erase(it);
   }
 
   bool compact = false;
-  internals_->index.iterate<Destroy>([&](ecs::handle handle, const auto&) {
+  internals_->index.iterate<Destroy>([&](ecs::handle handle, const Destroy&) {
     compact = true;
     internals_->index.destroy(handle.id());
   });
@@ -143,14 +160,13 @@ void SimState::render() const {
     interface_->render_line_rect(particle.position + glm::vec2{1, 1},
                                  particle.position - glm::vec2{1, 1}, particle.colour);
   }
-  internals_->index.iterate<LegacyShip>([&](const auto& c) {
-    if (!(c.ship->type() & ship_flag::kPlayer)) {
-      c.ship->render();
+  internals_->index.iterate<Render>([&](ecs::const_handle h, const auto& c) {
+    if (!h.get<Player>()) {
+      c.render();
     }
   });
-  for (const auto& ship : internals_->player_list) {
-    ship->render();
-  }
+  internals_->index.iterate<Player>(
+      [&](ecs::const_handle h, const auto&) { h.get<Render>()->render(); });
 
   auto render_warning = [&](const glm::vec2& v) {
     if (v.x < -4) {
@@ -245,7 +261,7 @@ sim_results SimState::get_results() const {
   r.hard_mode_bosses_killed = internals_->hard_mode_bosses_killed;
 
   for (auto* ship : interface_->players()) {
-    auto* p = static_cast<Player*>(ship);
+    auto* p = static_cast<::Player*>(ship);
     auto& pr = r.players.emplace_back();
     pr.number = p->player_number();
     pr.score = p->score();

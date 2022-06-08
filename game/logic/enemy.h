@@ -6,6 +6,8 @@
 namespace ii {
 struct Enemy : ecs::component {
   std::uint32_t threat_value = 1;
+  std::uint32_t score_reward = 0;
+  std::uint32_t boss_score_reward = 0;
 };
 
 void spawn_follow(SimInterface&, const vec2& position, bool has_score = true, fixed rotation = 0);
@@ -25,14 +27,6 @@ class Enemy : public ii::Ship {
 public:
   Enemy(ii::SimInterface& sim, const vec2& position, ii::ship_flag type, std::uint32_t hp);
 
-  std::uint64_t get_score() const {
-    return score_;
-  }
-
-  void set_score(long score) {
-    score_ = score;
-  }
-
   std::uint32_t get_hp() const {
     return hp_;
   }
@@ -47,7 +41,6 @@ public:
 
 private:
   std::uint32_t hp_ = 0;
-  std::uint64_t score_ = 0;
   mutable std::uint32_t damaged_ = 0;
   ii::sound destroy_sound_ = ii::sound::kEnemyDestroy;
 };

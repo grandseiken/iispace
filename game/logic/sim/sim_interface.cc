@@ -6,8 +6,6 @@
 
 namespace ii {
 
-LegacyShip::LegacyShip(std::unique_ptr<Ship>&& s) : ship{std::move(s)} {}
-
 glm::vec4 SimInterface::player_colour(std::size_t player_number) {
   return player_number == 0 ? colour_hue360(0)
       : player_number == 1  ? colour_hue360(20)
@@ -78,7 +76,8 @@ bool SimInterface::any_collision(const vec2& point, shape_flag category) const {
   fixed y = point.y;
 
   for (const auto& collision : internals_->collisions) {
-    auto v = collision.ship->shape().centre;
+    auto& e = *collision.handle.get<Collision>();
+    auto v = e.centre();
     fixed w = collision.bounding_width;
 
     // TODO: this optmization check is incorrect, since collision list is sorted based on x-min
@@ -93,7 +92,7 @@ bool SimInterface::any_collision(const vec2& point, shape_flag category) const {
       continue;
     }
 
-    if (collision.ship->check_point(point, category)) {
+    if (e.check(point, category)) {
       return true;
     }
   }
@@ -106,7 +105,8 @@ SimInterface::ship_list SimInterface::collision_list(const vec2& point, shape_fl
   fixed y = point.y;
 
   for (const auto& collision : internals_->collisions) {
-    auto v = collision.ship->shape().centre;
+    auto& e = *collision.handle.get<Collision>();
+    auto v = e.centre();
     fixed w = collision.bounding_width;
 
     // TODO: same as above.
@@ -117,8 +117,10 @@ SimInterface::ship_list SimInterface::collision_list(const vec2& point, shape_fl
       continue;
     }
 
-    if (collision.ship->check_point(point, category)) {
-      r.push_back(collision.ship);
+    if (e.check(point, category)) {
+      if (auto s = collision.handle.get<LegacyShip>(); s) {
+        r.push_back(s->ship.get());
+      }
     }
   }
   return r;
@@ -137,22 +139,28 @@ std::uint32_t SimInterface::alive_players() const {
 }
 
 std::uint32_t SimInterface::killed_players() const {
-  return Player::killed_players();
+  return ::Player::killed_players();
 }
 
-const SimInterface::ship_list& SimInterface::players() const {
-  return internals_->player_list;
+SimInterface::ship_list SimInterface::players() const {
+  ship_list r;
+  index().iterate<Player>([&](ecs::const_handle h, const Player&) {
+    if (auto c = h.get<LegacyShip>(); c) {
+      r.emplace_back(c->ship.get());
+    }
+  });
+  return r;
 }
 
-Player* SimInterface::nearest_player(const vec2& point) const {
+::Player* SimInterface::nearest_player(const vec2& point) const {
   Ship* ship = nullptr;
   Ship* dead = nullptr;
   fixed ship_dist = 0;
   fixed dead_dist = 0;
 
-  for (Ship* s : internals_->player_list) {
+  for (Ship* s : players()) {
     auto d = length_squared(s->shape().centre - point);
-    if ((d < ship_dist || !ship) && !((Player*)s)->is_killed()) {
+    if ((d < ship_dist || !ship) && !((::Player*)s)->is_killed()) {
       ship_dist = d;
       ship = s;
     }
@@ -161,7 +169,7 @@ Player* SimInterface::nearest_player(const vec2& point) const {
       dead = s;
     }
   }
-  return (Player*)(ship ? ship : dead);
+  return (::Player*)(ship ? ship : dead);
 }
 
 void SimInterface::add_life() {
@@ -191,7 +199,9 @@ void SimInterface::set_boss_killed(boss_list boss) {
 ecs::handle SimInterface::create_legacy(std::unique_ptr<Ship> ship) {
   auto p = ship.get();
   auto h = internals_->index.create();
-  h.emplace<LegacyShip>(std::move(ship));
+  h.emplace<LegacyShip>().ship = std::move(ship);
+  h.emplace<Update>().update = [p] { p->update(); };
+  h.emplace<Render>().render = [p] { p->render(); };
   p->set_handle(h);
   return h;
 }

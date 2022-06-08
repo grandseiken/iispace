@@ -33,11 +33,6 @@ struct particle {
   glm::vec2 velocity{0.f};
 };
 
-struct LegacyShip : ecs::component {
-  LegacyShip(std::unique_ptr<Ship>&& s);
-  std::unique_ptr<Ship> ship;
-};
-
 class SimInterface {
 public:
   // TODO: move to sim_io.h?
@@ -78,8 +73,8 @@ public:
   std::uint32_t player_count() const;
   std::uint32_t alive_players() const;
   std::uint32_t killed_players() const;
-  Player* nearest_player(const vec2& point) const;
-  const ship_list& players() const;
+  ::Player* nearest_player(const vec2& point) const;
+  ship_list players() const;
 
   void add_life();
   void sub_life();

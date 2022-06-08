@@ -59,7 +59,7 @@ private:
 
 void spawn_death_ray(ii::SimInterface& sim, const vec2& position) {
   auto h = sim.create_legacy(std::make_unique<DeathRay>(sim, position));
-  h.add(ii::Collision{.bounding_width = 48});
+  h.add(ii::legacy_collision(/* bounding width */ 48, h));
   h.add(ii::Enemy{.threat_value = 1});
 }
 
@@ -67,7 +67,7 @@ DeathArm* spawn_death_arm(ii::SimInterface& sim, DeathRayBoss* boss, bool top, s
   auto u = std::make_unique<DeathArm>(sim, boss, top, hp);
   auto p = u.get();
   auto h = sim.create_legacy(std::move(u));
-  h.add(ii::Collision{.bounding_width = 60});
+  h.add(ii::legacy_collision(/* bounding width */ 60, h));
   h.add(ii::Enemy{.threat_value = 10});
   return p;
 }
@@ -117,7 +117,7 @@ DeathArm::DeathArm(ii::SimInterface& sim, DeathRayBoss* boss, bool top, std::uin
 void DeathArm::update() {
   if (timer_ % (kDrbArmATimer / 2) == kDrbArmATimer / 4) {
     play_sound_random(ii::sound::kBossFire);
-    target_ = nearest_player()->shape().centre;
+    target_ = sim().nearest_player(shape().centre)->shape().centre;
     shots_ = 16;
   }
   if (shots_ > 0) {
@@ -130,7 +130,7 @@ void DeathArm::update() {
   if (attacking_) {
     ++timer_;
     if (timer_ < kDrbArmATimer / 4) {
-      Player* p = nearest_player();
+      auto* p = sim().nearest_player(shape().centre);
       vec2 d = p->shape().centre - shape().centre;
       if (d != vec2{0}) {
         dir_ = normalise(d);
@@ -227,7 +227,7 @@ void DeathRayBoss::update() {
   if (ray_attack_timer_) {
     ray_attack_timer_--;
     if (ray_attack_timer_ == 40) {
-      ray_dest_ = nearest_player()->shape().centre;
+      ray_dest_ = sim().nearest_player(shape().centre)->shape().centre;
     }
     if (ray_attack_timer_ < 40) {
       auto d = normalise(ray_dest_ - shape().centre);
@@ -389,7 +389,8 @@ void DeathRayBoss::on_arm_death(Ship* arm) {
 namespace ii {
 void spawn_death_ray_boss(SimInterface& sim, std::uint32_t players, std::uint32_t cycle) {
   auto h = sim.create_legacy(std::make_unique<DeathRayBoss>(sim, players, cycle));
-  h.add(Collision{.bounding_width = 640});
-  h.add(Enemy{.threat_value = 100});
+  h.add(legacy_collision(/* bounding width */ 640, h));
+  h.add(Enemy{.threat_value = 100,
+              .boss_score_reward = calculate_boss_score(SimInterface::kBoss2C, players, cycle)});
 }
 }  // namespace ii

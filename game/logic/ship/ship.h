@@ -4,6 +4,7 @@
 #include "game/logic/ship/ecs_index.h"
 #include "game/logic/ship/shape.h"
 #include "game/logic/sim/sim_interface.h"
+#include <functional>
 
 namespace ii {
 
@@ -19,9 +20,24 @@ enum class ship_flag : std::uint32_t {
 template <>
 struct bitmask_enum<ship_flag> : std::true_type {};
 
-struct Destroy : ecs::component {};
+class Ship;
+struct LegacyShip : ecs::component {
+  std::unique_ptr<Ship> ship;
+};
+
+struct Destroy : ecs::component {
+  std::optional<ecs::entity_id> source;
+};
 struct Collision : ecs::component {
   fixed bounding_width = 0;
+  std::function<vec2()> centre;
+  std::function<bool(const vec2&, shape_flag)> check;
+};
+struct Update : ecs::component {
+  std::function<void()> update;
+};
+struct Render : ecs::component {
+  std::function<void()> render;
 };
 
 class Ship {
@@ -41,7 +57,7 @@ public:
     return *sim_;
   }
 
-  void destroy();
+  void destroy(std::optional<ecs::entity_id> source = std::nullopt);
   bool is_destroyed() const;
 
   ship_flag type() const {
@@ -74,14 +90,6 @@ public:
   bool is_on_screen() const {
     return all(greaterThanEqual(shape_.centre, vec2{0})) &&
         all(lessThanEqual(shape_.centre, vec2{kSimDimensions.x, kSimDimensions.y}));
-  }
-
-  static vec2 get_screen_centre() {
-    return {kSimDimensions.x / 2, kSimDimensions.y / 2};
-  }
-
-  Player* nearest_player() const {
-    return sim_->nearest_player(shape_.centre);
   }
 
   void play_sound(sound sound) {
@@ -117,6 +125,15 @@ private:
   ship_flag type_ = ship_flag{0};
   CompoundShape shape_;
 };
+
+inline Collision legacy_collision(fixed w, ecs::const_handle h) {
+  auto s = h.get<LegacyShip>();
+  Collision c;
+  c.bounding_width = w;
+  c.centre = [ship = s->ship.get()] { return ship->shape().centre; };
+  c.check = [ship = s->ship.get()](const vec2& v, shape_flag f) { return ship->check_point(v, f); };
+  return c;
+}
 
 }  // namespace ii
 

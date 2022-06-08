@@ -124,7 +124,7 @@ void Powerup::update() {
   shapes()[1]->colour = ii::SimInterface::player_colour(frame_ / 2);
 
   if (!is_on_screen()) {
-    dir_ = get_screen_centre() - shape().centre;
+    dir_ = ii::kSimDimensions / 2_fx - shape().centre;
   } else {
     if (first_frame_) {
       dir_ = from_polar(sim().random_fixed() * 2 * fixed_c::pi, 1_fx);
@@ -135,7 +135,7 @@ void Powerup::update() {
   }
   first_frame_ = false;
 
-  Player* p = nearest_player();
+  auto* p = sim().nearest_player(shape().centre);
   auto pv = p->shape().centre - shape().centre;
   if (length(pv) <= 40 && !p->is_killed()) {
     dir_ = pv;
@@ -189,11 +189,9 @@ void spawn_shot(ii::SimInterface& sim, const vec2& position, Player* player, con
 }  // namespace
 
 namespace ii {
-Player* spawn_player(SimInterface& sim, const vec2& position, std::uint32_t player_number) {
-  auto u = std::make_unique<Player>(sim, position, player_number);
-  auto p = u.get();
-  sim.create_legacy(std::move(u));
-  return p;
+void spawn_player(SimInterface& sim, const vec2& position, std::uint32_t player_number) {
+  auto h = sim.create_legacy(std::make_unique<::Player>(sim, position, player_number));
+  h.emplace<Player>();
 }
 
 void spawn_powerup(SimInterface& sim, const vec2& position, powerup_type type) {
@@ -208,7 +206,7 @@ Player::Player(ii::SimInterface& sim, const vec2& position, std::uint32_t player
 : ii::Ship{sim, position, ii::ship_flag::kPlayer}
 , player_number_{player_number}
 , revive_timer_{kReviveTime}
-, fire_target_{get_screen_centre()} {
+, fire_target_{ii::kSimDimensions / 2_fx} {
   auto c_dark = colour();
   c_dark.a = .2f;
   add_new_shape<ii::Polygon>(vec2{0}, 16, 3, colour());
@@ -287,7 +285,8 @@ void Player::update() {
           length(ship->shape().centre - shape().centre) <= kBombRadius) {
         ship->damage(kBombDamage, false, 0);
       }
-      if (!(ship->type() & ii::ship_flag::kBoss) && ((Enemy*)ship)->get_score() > 0) {
+      const auto* enemy = ship->handle().get<ii::Enemy>();
+      if (!(ship->type() & ii::ship_flag::kBoss) && enemy && enemy->score_reward) {
         add_score(0);
       }
     }

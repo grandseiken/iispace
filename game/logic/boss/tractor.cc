@@ -26,7 +26,6 @@ TBossShot::TBossShot(ii::SimInterface& sim, const vec2& position, fixed angle)
   add_new_shape<ii::Polygon>(vec2{0}, 8, 6, c0, 0,
                              ii::shape_flag::kDangerous | ii::shape_flag::kVulnerable);
   dir_ = from_polar(angle, 3_fx);
-  set_score(0);
   set_destroy_sound(ii::sound::kEnemyShatter);
 }
 
@@ -45,7 +44,7 @@ void TBossShot::update() {
 
 void spawn_tboss_shot(ii::SimInterface& sim, const vec2& position, fixed angle) {
   auto h = sim.create_legacy(std::make_unique<TBossShot>(sim, position, angle));
-  h.add(ii::Collision{.bounding_width = 8});
+  h.add(ii::legacy_collision(/* bounding width */ 8, h));
   h.add(ii::Enemy{.threat_value = 1});
 }
 
@@ -154,7 +153,7 @@ void TractorBoss::update() {
     move(kTbSpeed * vec2{-1, 0});
     if (!will_attack_ && is_on_screen() && timer_ % (16 - sim().alive_players() * 2) == 0) {
       if (shoot_type_ == 0 || (is_hp_low() && shoot_type_ == 1)) {
-        Player* p = nearest_player();
+        Player* p = sim().nearest_player(shape().centre);
 
         auto v = s1_->convert_point(shape().centre, shape().rotation(), vec2{0});
         auto d = normalise(p->shape().centre - v);
@@ -169,7 +168,7 @@ void TractorBoss::update() {
         play_sound_random(ii::sound::kBossFire);
       }
       if (shoot_type_ == 1 || is_hp_low()) {
-        Player* p = nearest_player();
+        Player* p = sim().nearest_player(shape().centre);
         auto v = shape().centre;
         auto d = normalise(p->shape().centre - v);
         ii::spawn_boss_shot(sim(), v, d * 5, c0);
@@ -213,7 +212,7 @@ void TractorBoss::update() {
       }
 
       if (is_hp_low() && timer_ % (20 - sim().alive_players() * 2) == 0) {
-        Player* p = nearest_player();
+        Player* p = sim().nearest_player(shape().centre);
         auto v = shape().centre;
         auto d = normalise(p->shape().centre - v);
         ii::spawn_boss_shot(sim(), v, d * 5, c0);
@@ -343,7 +342,8 @@ std::uint32_t TractorBoss::get_damage(std::uint32_t damage, bool magic) {
 namespace ii {
 void spawn_tractor_boss(SimInterface& sim, std::uint32_t players, std::uint32_t cycle) {
   auto h = sim.create_legacy(std::make_unique<TractorBoss>(sim, players, cycle));
-  h.add(Collision{.bounding_width = 640});
-  h.add(Enemy{.threat_value = 100});
+  h.add(legacy_collision(/* bounding width */ 640, h));
+  h.add(Enemy{.threat_value = 100,
+              .boss_score_reward = calculate_boss_score(SimInterface::kBoss2A, players, cycle)});
 }
 }  // namespace ii

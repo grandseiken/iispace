@@ -111,7 +111,8 @@ spawn_chaser_boss_internal(ii::SimInterface& sim, std::uint32_t players, std::ui
   auto u = std::make_unique<ChaserBoss>(sim, players, cycle, split, position, time, stagger);
   auto p = u.get();
   auto h = sim.create_legacy(std::move(u));
-  h.add(ii::Collision{.bounding_width = 10 * ONE_AND_HALF_lookup[kCbMaxSplit - split]});
+  h.add(
+      ii::legacy_collision(/* bounding width */ 10 * ONE_AND_HALF_lookup[kCbMaxSplit - split], h));
   h.add(ii::Enemy{.threat_value = 100});
   return p;
 }
@@ -171,7 +172,7 @@ void ChaserBoss::update() {
     }
     if (move_) {
       dir_ = kCbSpeed * ONE_PT_ONE_lookup[split_] *
-          normalise(nearest_player()->shape().centre - shape().centre);
+          normalise(sim().nearest_player(shape().centre)->shape().centre - shape().centre);
     }
   }
   if (move_) {
@@ -346,12 +347,8 @@ void ChaserBoss::on_destroy() {
     if (last) {
       set_killed();
       sim().rumble_all(25);
-      for (const auto& ship : sim().players()) {
-        Player* p = (Player*)ship;
-        if (!p->is_killed()) {
-          p->add_score(get_score() / sim().alive_players());
-        }
-      }
+      handle().get<ii::Enemy>()->boss_score_reward =
+          calculate_boss_score(ii::SimInterface::kBoss1C, players_, cycle_);
       std::uint32_t n = 1;
       for (std::uint32_t i = 0; i < 16; ++i) {
         vec2 v = from_polar(sim().random_fixed() * (2 * fixed_c::pi),

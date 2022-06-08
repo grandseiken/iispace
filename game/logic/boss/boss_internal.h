@@ -3,6 +3,9 @@
 #include "game/logic/boss.h"
 #include "game/logic/ship/ship.h"
 
+std::uint32_t
+calculate_boss_score(ii::SimInterface::boss_list boss, std::uint32_t players, std::uint32_t cycle);
+
 class Boss : public ii::Ship {
 public:
   Boss(ii::SimInterface& sim, const vec2& position, ii::SimInterface::boss_list boss,
@@ -11,10 +14,6 @@ public:
 
   void set_killed() {
     sim().set_boss_killed(flag_);
-  }
-
-  std::uint64_t get_score() {
-    return score_;
   }
 
   std::uint32_t get_remaining_hp() const {
@@ -55,7 +54,6 @@ private:
   std::uint32_t hp_ = 0;
   std::uint32_t max_hp_ = 0;
   ii::SimInterface::boss_list flag_ = static_cast<ii::SimInterface::boss_list>(0);
-  std::uint64_t score_ = 0;
   std::uint32_t ignore_damage_colour_ = 256;
   mutable std::uint32_t damaged_ = 0;
   mutable bool show_hp_ = false;

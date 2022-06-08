@@ -116,7 +116,7 @@ void BigSquareBoss::update() {
       special_timer_ = kBsbAttackTime;
       special_attack_ = true;
       special_attack_rotate_ = sim().random(2) != 0;
-      attack_player_ = nearest_player();
+      attack_player_ = sim().nearest_player(shape().centre);
       play_sound(ii::sound::kBossAttack);
     }
   }
@@ -159,7 +159,8 @@ std::uint32_t BigSquareBoss::get_damage(std::uint32_t damage, bool magic) {
 namespace ii {
 void spawn_big_square_boss(SimInterface& sim, std::uint32_t players, std::uint32_t cycle) {
   auto h = sim.create_legacy(std::make_unique<BigSquareBoss>(sim, players, cycle));
-  h.add(Collision{.bounding_width = 640});
-  h.add(Enemy{.threat_value = 100});
+  h.add(legacy_collision(/* bounding width */ 640, h));
+  h.add(Enemy{.threat_value = 100,
+              .boss_score_reward = calculate_boss_score(SimInterface::kBoss1A, players, cycle)});
 }
 }  // namespace ii

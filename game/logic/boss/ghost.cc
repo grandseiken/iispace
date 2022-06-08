@@ -98,7 +98,6 @@ GhostMine::GhostMine(ii::SimInterface& sim, const vec2& position, Boss* ghost)
 : Enemy{sim, position, ii::ship_flag::kNone, 0}, ghost_{ghost} {
   add_new_shape<ii::Polygon>(vec2{0}, 24, 8, c1, 0);
   add_new_shape<ii::Polygon>(vec2{0}, 20, 8, c1, 0);
-  set_score(0);
 }
 
 void GhostMine::update() {
@@ -134,19 +133,19 @@ void GhostMine::render() const {
 
 void spawn_ghost_wall(ii::SimInterface& sim, bool swap, bool no_gap, bool ignored) {
   auto h = sim.create_legacy(std::make_unique<GhostWall>(sim, swap, no_gap, ignored));
-  h.add(ii::Collision{.bounding_width = ii::kSimDimensions.x});
+  h.add(ii::legacy_collision(/* bounding width */ ii::kSimDimensions.x, h));
   h.add(ii::Enemy{.threat_value = 1});
 }
 
 void spawn_ghost_wall(ii::SimInterface& sim, bool swap, bool swap_gap) {
   auto h = sim.create_legacy(std::make_unique<GhostWall>(sim, swap, swap_gap));
-  h.add(ii::Collision{.bounding_width = ii::kSimDimensions.y});
+  h.add(ii::legacy_collision(/* bounding width */ ii::kSimDimensions.y, h));
   h.add(ii::Enemy{.threat_value = 1});
 }
 
 void spawn_ghost_mine(ii::SimInterface& sim, const vec2& position, Boss* ghost) {
   auto h = sim.create_legacy(std::make_unique<GhostMine>(sim, position, ghost));
-  h.add(ii::Collision{.bounding_width = 24});
+  h.add(ii::legacy_collision(/* bounding width */ 24, h));
   h.add(ii::Enemy{.threat_value = 1});
 }
 
@@ -296,7 +295,7 @@ void GhostBoss::update() {
     }
     if (timer_ != 9 * kGbTimer / 10 && timer_ >= kGbTimer / 10 && timer_ < 9 * kGbTimer / 10 - 16 &&
         timer_ % 16 == 0 && (!shot_type_ || attack_ == 2)) {
-      Player* p = nearest_player();
+      auto* p = sim().nearest_player(shape().centre);
       auto d = normalise(p->shape().centre - shape().centre);
 
       if (length(d) > fixed_c::half) {
@@ -459,7 +458,8 @@ std::uint32_t GhostBoss::get_damage(std::uint32_t damage, bool magic) {
 namespace ii {
 void spawn_ghost_boss(SimInterface& sim, std::uint32_t players, std::uint32_t cycle) {
   auto h = sim.create_legacy(std::make_unique<GhostBoss>(sim, players, cycle));
-  h.add(Collision{.bounding_width = 640});
-  h.add(Enemy{.threat_value = 100});
+  h.add(legacy_collision(/* bounding width */ 640, h));
+  h.add(Enemy{.threat_value = 100,
+              .boss_score_reward = calculate_boss_score(SimInterface::kBoss2B, players, cycle)});
 }
 }  // namespace ii

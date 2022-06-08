@@ -10,19 +10,23 @@ const fixed kHpPerExtraPlayer = 1_fx / 10;
 const fixed kHpPerExtraCycle = 3 * 1_fx / 10;
 }  // namespace
 
+std::uint32_t
+calculate_boss_score(ii::SimInterface::boss_list boss, std::uint32_t players, std::uint32_t cycle) {
+  std::uint32_t s = 5000 * (cycle + 1) + 2500 * (boss > ii::SimInterface::kBoss1C) +
+      2500 * (boss > ii::SimInterface::kBoss2C);
+  std::uint32_t r = s;
+  for (std::uint32_t i = 0; i < players - 1; ++i) {
+    r += (s * kHpPerExtraPlayer).to_int();
+  }
+  return r;
+}
+
 Boss::Boss(ii::SimInterface& sim, const vec2& position, ii::SimInterface::boss_list boss,
            std::uint32_t hp, std::uint32_t players, std::uint32_t cycle, bool explode_on_damage)
 : ii::Ship{sim, position, ii::ship_flag::kBoss | ii::ship_flag::kEnemy}
 , flag_{boss}
 , explode_on_damage_{explode_on_damage} {
   set_ignore_damage_colour_index(100);
-  auto s = 5000 * (cycle + 1) + 2500 * (boss > ii::SimInterface::kBoss1C) +
-      2500 * (boss > ii::SimInterface::kBoss2C);
-
-  score_ += s;
-  for (std::uint32_t i = 0; i < players - 1; ++i) {
-    score_ += (s * kHpPerExtraPlayer).to_int();
-  }
   hp_ = CalculateHP(hp, players, cycle);
   max_hp_ = hp_;
 }
@@ -64,8 +68,8 @@ void Boss::damage(std::uint32_t damage, bool magic, Player* source) {
   hp_ = hp_ < actual_damage ? 0 : hp_ - actual_damage;
 
   if (!hp_ && !is_destroyed()) {
-    destroy();
     on_destroy();
+    destroy();
   } else if (!is_destroyed()) {
     play_sound_random(ii::sound::kEnemyShatter);
   }
@@ -123,13 +127,6 @@ void Boss::on_destroy() {
   }
   sim().rumble_all(25);
   play_sound(ii::sound::kExplosion);
-
-  for (const auto& player : sim().players()) {
-    Player* p = (Player*)player;
-    if (!p->is_killed() && get_score() > 0) {
-      p->add_score(get_score() / sim().alive_players());
-    }
-  }
 }
 
 namespace ii {

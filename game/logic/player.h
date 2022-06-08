@@ -1,10 +1,12 @@
 #ifndef II_GAME_LOGIC_PLAYER_H
 #define II_GAME_LOGIC_PLAYER_H
+#include "game/logic/ship/ecs_id.h"
 #include "game/logic/ship/ship.h"
 
 class Player;
 
 namespace ii {
+struct Player : ecs::component {};
 enum class powerup_type {
   kExtraLife,
   kMagicShots,
@@ -12,7 +14,7 @@ enum class powerup_type {
   kBomb,
 };
 
-Player* spawn_player(SimInterface&, const vec2& position, std::uint32_t player_number);
+void spawn_player(SimInterface&, const vec2& position, std::uint32_t player_number);
 void spawn_powerup(SimInterface&, const vec2& position, powerup_type type);
 
 }  // namespace ii

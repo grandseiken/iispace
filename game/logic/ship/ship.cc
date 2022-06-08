@@ -40,8 +40,8 @@ void Ship::render_with_colour(const glm::vec4& colour) const {
   }
 }
 
-void Ship::destroy() {
-  handle().emplace<Destroy>();
+void Ship::destroy(std::optional<ecs::entity_id> source) {
+  handle().add(Destroy{.source = source});
 }
 
 bool Ship::is_destroyed() const {
