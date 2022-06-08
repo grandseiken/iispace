@@ -37,7 +37,8 @@ ShieldBombBoss::ShieldBombBoss(ii::SimInterface& sim, std::uint32_t players, std
        kSbbBaseHp,
        players,
        cycle} {
-  add_new_shape<ii::Polygon>(vec2{0}, 48, 8, c0, 0, kDangerous | kVulnerable,
+  add_new_shape<ii::Polygon>(vec2{0}, 48, 8, c0, 0,
+                             ii::shape_flag::kDangerous | ii::shape_flag::kVulnerable,
                              ii::Polygon::T::kPolygram);
 
   for (std::uint32_t i = 0; i < 16; ++i) {
@@ -47,11 +48,12 @@ ShieldBombBoss::ShieldBombBoss(ii::SimInterface& sim, std::uint32_t players, std
     add_new_shape<ii::Line>(vec2{0}, a, b, c2, 0);
   }
 
-  add_new_shape<ii::Polygon>(vec2{0}, 130, 16, c1, 0, kVulnShield | kDangerous);
-  add_new_shape<ii::Polygon>(vec2{0}, 125, 16, c1, 0, 0);
-  add_new_shape<ii::Polygon>(vec2{0}, 120, 16, c1, 0, 0);
+  add_new_shape<ii::Polygon>(vec2{0}, 130, 16, c1, 0,
+                             ii::shape_flag::kVulnShield | ii::shape_flag::kDangerous);
+  add_new_shape<ii::Polygon>(vec2{0}, 125, 16, c1, 0);
+  add_new_shape<ii::Polygon>(vec2{0}, 120, 16, c1, 0);
 
-  add_new_shape<ii::Polygon>(vec2{0}, 42, 16, glm::vec4{0.f}, 0, kShield);
+  add_new_shape<ii::Polygon>(vec2{0}, 42, 16, glm::vec4{0.f}, 0, ii::shape_flag::kShield);
 
   set_ignore_damage_colour_index(1);
 }
@@ -87,8 +89,8 @@ void ShieldBombBoss::update() {
     }
 
     if (!unshielded_) {
-      shapes()[0]->category = kDangerous | kVulnerable;
-      shapes()[17]->category = kDangerous | kVulnShield;
+      shapes()[0]->category = ii::shape_flag::kDangerous | ii::shape_flag::kVulnerable;
+      shapes()[17]->category = ii::shape_flag::kDangerous | ii::shape_flag::kVulnShield;
 
       for (std::size_t i = 0; i < 3; ++i) {
         shapes()[i + 17]->colour = c1;
@@ -115,7 +117,7 @@ void ShieldBombBoss::update() {
     if (count_ >= 4 && (!sim().random(4) || count_ >= 8)) {
       count_ = 0;
       if (!unshielded_) {
-        if (sim().all_ships(kShipPowerup).size() < 5) {
+        if (sim().count_ships(ii::ship_flag::kPowerup) < 5) {
           ii::spawn_powerup(sim(), shape().centre, ii::powerup_type::kBomb);
         }
       }
@@ -145,8 +147,8 @@ std::uint32_t ShieldBombBoss::get_damage(std::uint32_t damage, bool magic) {
   }
   if (damage >= Player::kBombDamage && !unshielded_) {
     unshielded_ = kSbbUnshieldTime;
-    shapes()[0]->category = kVulnerable | kDangerous;
-    shapes()[17]->category = 0;
+    shapes()[0]->category = ii::shape_flag::kVulnerable | ii::shape_flag::kDangerous;
+    shapes()[17]->category = ii::shape_flag::kNone;
   }
   if (!magic) {
     return 0;
@@ -162,6 +164,7 @@ std::uint32_t ShieldBombBoss::get_damage(std::uint32_t damage, bool magic) {
 namespace ii {
 void spawn_shield_bomb_boss(SimInterface& sim, std::uint32_t players, std::uint32_t cycle) {
   auto h = sim.create_legacy(std::make_unique<ShieldBombBoss>(sim, players, cycle));
-  h.emplace<Collision>(/* bounding width */ 640);
+  h.add(Collision{.bounding_width = 640});
+  h.add(Enemy{.threat_value = 100});
 }
 }  // namespace ii

@@ -26,8 +26,8 @@ public:
 };
 
 DeathRay::DeathRay(ii::SimInterface& sim, const vec2& position)
-: Enemy{sim, position, kShipNone, 0} {
-  add_new_shape<ii::Box>(vec2{0}, 10, 48, glm::vec4{0.f}, 0, kDangerous);
+: Enemy{sim, position, ii::ship_flag::kNone, 0} {
+  add_new_shape<ii::Box>(vec2{0}, 10, 48, glm::vec4{0.f}, 0, ii::shape_flag::kDangerous);
   add_new_shape<ii::Line>(vec2{0}, vec2{0, -48}, vec2{0, 48}, glm::vec4{1.f}, 0);
 }
 
@@ -59,14 +59,16 @@ private:
 
 void spawn_death_ray(ii::SimInterface& sim, const vec2& position) {
   auto h = sim.create_legacy(std::make_unique<DeathRay>(sim, position));
-  h.emplace<ii::Collision>(/* bounding width */ 48);
+  h.add(ii::Collision{.bounding_width = 48});
+  h.add(ii::Enemy{.threat_value = 1});
 }
 
 DeathArm* spawn_death_arm(ii::SimInterface& sim, DeathRayBoss* boss, bool top, std::uint32_t hp) {
   auto u = std::make_unique<DeathArm>(sim, boss, top, hp);
   auto p = u.get();
   auto h = sim.create_legacy(std::move(u));
-  h.emplace<ii::Collision>(/* bounding width */ 60);
+  h.add(ii::Collision{.bounding_width = 60});
+  h.add(ii::Enemy{.threat_value = 10});
   return p;
 }
 
@@ -98,16 +100,17 @@ private:
 };
 
 DeathArm::DeathArm(ii::SimInterface& sim, DeathRayBoss* boss, bool top, std::uint32_t hp)
-: Enemy{sim, vec2{0}, kShipNone, hp}
+: Enemy{sim, vec2{0}, ii::ship_flag::kNone, hp}
 , boss_{boss}
 , top_{top}
 , timer_{top ? 2 * kDrbArmATimer / 3 : 0}
 , start_{30} {
-  add_new_shape<ii::Polygon>(vec2{0}, 60, 4, c1, 0, 0);
-  add_new_shape<ii::Polygon>(vec2{0}, 50, 4, c0, 0, kVulnerable, ii::Polygon::T::kPolygram);
-  add_new_shape<ii::Polygon>(vec2{0}, 40, 4, glm::vec4{0.f}, 0, kShield);
-  add_new_shape<ii::Polygon>(vec2{0}, 20, 4, c1, 0, 0);
-  add_new_shape<ii::Polygon>(vec2{0}, 18, 4, c0, 0, 0);
+  add_new_shape<ii::Polygon>(vec2{0}, 60, 4, c1, 0);
+  add_new_shape<ii::Polygon>(vec2{0}, 50, 4, c0, 0, ii::shape_flag::kVulnerable,
+                             ii::Polygon::T::kPolygram);
+  add_new_shape<ii::Polygon>(vec2{0}, 40, 4, glm::vec4{0.f}, 0, ii::shape_flag::kShield);
+  add_new_shape<ii::Polygon>(vec2{0}, 20, 4, c1, 0);
+  add_new_shape<ii::Polygon>(vec2{0}, 18, 4, c0, 0);
   set_destroy_sound(ii::sound::kPlayerDestroy);
 }
 
@@ -166,7 +169,7 @@ void DeathArm::update() {
     }
     start_--;
     if (!start_) {
-      shapes()[1]->category = kDangerous | kVulnerable;
+      shapes()[1]->category = ii::shape_flag::kDangerous | ii::shape_flag::kVulnerable;
     }
   }
 }
@@ -186,17 +189,20 @@ DeathRayBoss::DeathRayBoss(ii::SimInterface& sim, std::uint32_t players, std::ui
        players,
        cycle}
 , timer_{kDrbTimer * 2} {
-  add_new_shape<ii::Polygon>(vec2{0}, 110, 12, c0, fixed_c::pi / 12, 0, ii::Polygon::T::kPolystar);
-  add_new_shape<ii::Polygon>(vec2{0}, 70, 12, c1, fixed_c::pi / 12, 0, ii::Polygon::T::kPolygram);
-  add_new_shape<ii::Polygon>(vec2{0}, 120, 12, c1, fixed_c::pi / 12, kDangerous | kVulnerable);
-  add_new_shape<ii::Polygon>(vec2{0}, 115, 12, c1, fixed_c::pi / 12, 0);
-  add_new_shape<ii::Polygon>(vec2{0}, 110, 12, c1, fixed_c::pi / 12, kShield);
+  add_new_shape<ii::Polygon>(vec2{0}, 110, 12, c0, fixed_c::pi / 12, ii::shape_flag::kNone,
+                             ii::Polygon::T::kPolystar);
+  add_new_shape<ii::Polygon>(vec2{0}, 70, 12, c1, fixed_c::pi / 12, ii::shape_flag::kNone,
+                             ii::Polygon::T::kPolygram);
+  add_new_shape<ii::Polygon>(vec2{0}, 120, 12, c1, fixed_c::pi / 12,
+                             ii::shape_flag::kDangerous | ii::shape_flag::kVulnerable);
+  add_new_shape<ii::Polygon>(vec2{0}, 115, 12, c1, fixed_c::pi / 12);
+  add_new_shape<ii::Polygon>(vec2{0}, 110, 12, c1, fixed_c::pi / 12, ii::shape_flag::kShield);
 
-  auto* s1 = add_new_shape<ii::CompoundShape>(vec2{0}, 0, kDangerous);
+  auto* s1 = add_new_shape<ii::CompoundShape>(vec2{0}, 0, ii::shape_flag::kDangerous);
   for (std::uint32_t i = 1; i < 12; ++i) {
-    auto* s2 = s1->add_new_shape<ii::CompoundShape>(vec2{0}, i * fixed_c::pi / 6, 0);
-    s2->add_new_shape<ii::Box>(vec2{130, 0}, 10, 24, c1, 0, 0);
-    s2->add_new_shape<ii::Box>(vec2{130, 0}, 8, 22, c0, 0, 0);
+    auto* s2 = s1->add_new_shape<ii::CompoundShape>(vec2{0}, i * fixed_c::pi / 6);
+    s2->add_new_shape<ii::Box>(vec2{130, 0}, 10, 24, c1, 0);
+    s2->add_new_shape<ii::Box>(vec2{130, 0}, 8, 22, c0, 0);
   }
 
   set_ignore_damage_colour_index(5);
@@ -355,12 +361,12 @@ void DeathRayBoss::render() const {
     auto pos = to_float(shape().centre);
     auto d = to_float(ray_src1_) - pos;
     d *= static_cast<float>(k - 40) / (kDrbRayTimer - 40);
-    ii::Polygon s{vec2{0}, 10, 6, c3, 0, 0, ii::Polygon::T::kPolystar};
+    ii::Polygon s{vec2{0}, 10, 6, c3, 0, ii::shape_flag::kNone, ii::Polygon::T::kPolystar};
     s.render(sim(), d + pos, 0);
 
     d = to_float(ray_src2_) - pos;
     d *= static_cast<float>(k - 40) / (kDrbRayTimer - 40);
-    ii::Polygon s2{vec2{0}, 10, 6, c3, 0, 0, ii::Polygon::T::kPolystar};
+    ii::Polygon s2{vec2{0}, 10, 6, c3, 0, ii::shape_flag::kNone, ii::Polygon::T::kPolystar};
     s2.render(sim(), d + pos, 0);
   }
 }
@@ -383,6 +389,7 @@ void DeathRayBoss::on_arm_death(Ship* arm) {
 namespace ii {
 void spawn_death_ray_boss(SimInterface& sim, std::uint32_t players, std::uint32_t cycle) {
   auto h = sim.create_legacy(std::make_unique<DeathRayBoss>(sim, players, cycle));
-  h.emplace<Collision>(/* bounding width */ 640);
+  h.add(Collision{.bounding_width = 640});
+  h.add(Enemy{.threat_value = 100});
 }
 }  // namespace ii

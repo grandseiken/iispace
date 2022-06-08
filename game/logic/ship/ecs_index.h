@@ -34,6 +34,8 @@ public:
   // Add a component.
   template <Component C, typename... Args>
       C& emplace(Args&&... args) const requires(!Const) && std::constructible_from<C, Args...>;
+  template <typename C>
+  C& add(C&& data) const requires Component<std::remove_cvref_t<C>>;
   // Remove a component. Invalidates any direct data reference to the component for this element.
   template <Component C>
   void remove() const requires(!Const);

@@ -42,19 +42,23 @@ SnakeTail* spawn_snake_tail(ii::SimInterface& sim, const vec2& position, const g
   auto u = std::make_unique<SnakeTail>(sim, position, colour);
   auto p = u.get();
   auto h = sim.create_legacy(std::move(u));
-  h.emplace<ii::Collision>(/* bounding width */ 22);
+  h.add(ii::Collision{.bounding_width = 22});
+  h.add(ii::Enemy{.threat_value = 1});
   return p;
 }
 
 void spawn_snake(ii::SimInterface& sim, const vec2& position, const glm::vec4& colour,
                  const vec2& dir = vec2{0}, fixed rot = 0) {
   auto h = sim.create_legacy(std::make_unique<Snake>(sim, position, colour, dir, rot));
-  h.emplace<ii::Collision>(/* bounding width */ 32);
+  h.add(ii::Collision{.bounding_width = 32});
+  h.add(ii::Enemy{.threat_value = 5});
 }
 
 SnakeTail::SnakeTail(ii::SimInterface& sim, const vec2& position, const glm::vec4& colour)
-: Enemy{sim, position, kShipNone, 1} {
-  add_new_shape<ii::Polygon>(vec2{0}, 10, 4, colour, 0, kDangerous | kShield | kVulnShield);
+: Enemy{sim, position, ii::ship_flag::kNone, 1} {
+  add_new_shape<ii::Polygon>(
+      vec2{0}, 10, 4, colour, 0,
+      ii::shape_flag::kDangerous | ii::shape_flag::kShield | ii::shape_flag::kVulnShield);
   set_score(0);
 }
 
@@ -90,11 +94,10 @@ void SnakeTail::on_destroy(bool bomb) {
 
 Snake::Snake(ii::SimInterface& sim, const vec2& position, const glm::vec4& colour, const vec2& dir,
              fixed rot)
-: Enemy{sim, position, kShipNone, 5}, colour_{colour}, shot_rot_{rot} {
-  add_new_shape<ii::Polygon>(vec2{0}, 14, 3, colour, 0, kVulnerable);
-  add_new_shape<ii::Polygon>(vec2{0}, 10, 3, glm::vec4{0.f}, 0, kDangerous);
+: Enemy{sim, position, ii::ship_flag::kNone, 5}, colour_{colour}, shot_rot_{rot} {
+  add_new_shape<ii::Polygon>(vec2{0}, 14, 3, colour, 0, ii::shape_flag::kVulnerable);
+  add_new_shape<ii::Polygon>(vec2{0}, 10, 3, glm::vec4{0.f}, 0, ii::shape_flag::kDangerous);
   set_score(0);
-  set_enemy_value(5);
   set_destroy_sound(ii::sound::kPlayerDestroy);
   if (dir == vec2{0}) {
     auto r = sim.random(4);
@@ -180,7 +183,8 @@ private:
 void spawn_rainbow_shot(ii::SimInterface& sim, const vec2& position, const vec2& velocity,
                         ii::Ship* boss) {
   auto h = sim.create_legacy(std::make_unique<RainbowShot>(sim, position, velocity, boss));
-  h.emplace<ii::Collision>(/* bounding width */ 12);
+  h.add(ii::Collision{.bounding_width = 12});
+  h.add(ii::Enemy{.threat_value = 1});
 }
 
 SuperBossArc* spawn_super_boss_arc(ii::SimInterface& sim, const vec2& position,
@@ -189,7 +193,8 @@ SuperBossArc* spawn_super_boss_arc(ii::SimInterface& sim, const vec2& position,
   auto u = std::make_unique<SuperBossArc>(sim, position, players, cycle, i, boss, timer);
   auto p = u.get();
   auto h = sim.create_legacy(std::move(u));
-  h.emplace<ii::Collision>(/* bounding width */ 640);
+  h.add(ii::Collision{.bounding_width = 640});
+  h.add(ii::Enemy{.threat_value = 10});
   return p;
 }
 
@@ -226,7 +231,7 @@ void RainbowShot::update() {
   static const vec2 center = {ii::kSimDimensions.x / 2, ii::kSimDimensions.y / 2};
 
   if (length(shape().centre - center) > 100 && timer_ % 2 == 0) {
-    const auto& list = sim().collision_list(shape().centre, kShield);
+    const auto& list = sim().collision_list(shape().centre, ii::shape_flag::kShield);
     SuperBoss* s = (SuperBoss*)boss_;
     for (std::size_t i = 0; i < list.size(); ++i) {
       bool boss = false;
@@ -261,14 +266,16 @@ SuperBossArc::SuperBossArc(ii::SimInterface& sim, const vec2& position, std::uin
 , i_{i}
 , timer_{timer} {
   glm::vec4 c{0.f};
-  add_new_shape<ii::PolyArc>(vec2{0}, 140, 32, 2, c, i * 2 * fixed_c::pi / 16, 0);
-  add_new_shape<ii::PolyArc>(vec2{0}, 135, 32, 2, c, i * 2 * fixed_c::pi / 16, 0);
-  add_new_shape<ii::PolyArc>(vec2{0}, 130, 32, 2, c, i * 2 * fixed_c::pi / 16, 0);
-  add_new_shape<ii::PolyArc>(vec2{0}, 125, 32, 2, c, i * 2 * fixed_c::pi / 16, kShield);
-  add_new_shape<ii::PolyArc>(vec2{0}, 120, 32, 2, c, i * 2 * fixed_c::pi / 16, 0);
-  add_new_shape<ii::PolyArc>(vec2{0}, 115, 32, 2, c, i * 2 * fixed_c::pi / 16, 0);
-  add_new_shape<ii::PolyArc>(vec2{0}, 110, 32, 2, c, i * 2 * fixed_c::pi / 16, 0);
-  add_new_shape<ii::PolyArc>(vec2{0}, 105, 32, 2, c, i * 2 * fixed_c::pi / 16, kShield);
+  add_new_shape<ii::PolyArc>(vec2{0}, 140, 32, 2, c, i * 2 * fixed_c::pi / 16);
+  add_new_shape<ii::PolyArc>(vec2{0}, 135, 32, 2, c, i * 2 * fixed_c::pi / 16);
+  add_new_shape<ii::PolyArc>(vec2{0}, 130, 32, 2, c, i * 2 * fixed_c::pi / 16);
+  add_new_shape<ii::PolyArc>(vec2{0}, 125, 32, 2, c, i * 2 * fixed_c::pi / 16,
+                             ii::shape_flag::kShield);
+  add_new_shape<ii::PolyArc>(vec2{0}, 120, 32, 2, c, i * 2 * fixed_c::pi / 16);
+  add_new_shape<ii::PolyArc>(vec2{0}, 115, 32, 2, c, i * 2 * fixed_c::pi / 16);
+  add_new_shape<ii::PolyArc>(vec2{0}, 110, 32, 2, c, i * 2 * fixed_c::pi / 16);
+  add_new_shape<ii::PolyArc>(vec2{0}, 105, 32, 2, c, i * 2 * fixed_c::pi / 16,
+                             ii::shape_flag::kShield);
 }
 
 void SuperBossArc::update() {
@@ -280,7 +287,7 @@ void SuperBossArc::update() {
   ++timer_;
   ++stimer_;
   if (stimer_ == 64) {
-    shapes()[0]->category = kDangerous | kVulnerable;
+    shapes()[0]->category = ii::shape_flag::kDangerous | ii::shape_flag::kVulnerable;
   }
 }
 
@@ -318,14 +325,15 @@ SuperBoss::SuperBoss(ii::SimInterface& sim, std::uint32_t players, std::uint32_t
        cycle}
 , players_{players}
 , cycle_{cycle} {
-  add_new_shape<ii::Polygon>(vec2{0}, 40, 32, glm::vec4{0.f}, 0, kDangerous | kVulnerable);
-  add_new_shape<ii::Polygon>(vec2{0}, 35, 32, glm::vec4{0.f}, 0, 0);
-  add_new_shape<ii::Polygon>(vec2{0}, 30, 32, glm::vec4{0.f}, 0, kShield);
-  add_new_shape<ii::Polygon>(vec2{0}, 25, 32, glm::vec4{0.f}, 0, 0);
-  add_new_shape<ii::Polygon>(vec2{0}, 20, 32, glm::vec4{0.f}, 0, 0);
-  add_new_shape<ii::Polygon>(vec2{0}, 15, 32, glm::vec4{0.f}, 0, 0);
-  add_new_shape<ii::Polygon>(vec2{0}, 10, 32, glm::vec4{0.f}, 0, 0);
-  add_new_shape<ii::Polygon>(vec2{0}, 5, 32, glm::vec4{0.f}, 0, 0);
+  add_new_shape<ii::Polygon>(vec2{0}, 40, 32, glm::vec4{0.f}, 0,
+                             ii::shape_flag::kDangerous | ii::shape_flag::kVulnerable);
+  add_new_shape<ii::Polygon>(vec2{0}, 35, 32, glm::vec4{0.f}, 0);
+  add_new_shape<ii::Polygon>(vec2{0}, 30, 32, glm::vec4{0.f}, 0, ii::shape_flag::kShield);
+  add_new_shape<ii::Polygon>(vec2{0}, 25, 32, glm::vec4{0.f}, 0);
+  add_new_shape<ii::Polygon>(vec2{0}, 20, 32, glm::vec4{0.f}, 0);
+  add_new_shape<ii::Polygon>(vec2{0}, 15, 32, glm::vec4{0.f}, 0);
+  add_new_shape<ii::Polygon>(vec2{0}, 10, 32, glm::vec4{0.f}, 0);
+  add_new_shape<ii::Polygon>(vec2{0}, 5, 32, glm::vec4{0.f}, 0);
   for (std::uint32_t i = 0; i < 16; ++i) {
     destroyed_.push_back(false);
   }
@@ -447,7 +455,7 @@ std::uint32_t SuperBoss::get_damage(std::uint32_t damage, bool magic) {
 
 void SuperBoss::on_destroy() {
   set_killed();
-  for (const auto& ship : sim().all_ships(kShipEnemy)) {
+  for (const auto& ship : sim().all_ships(ii::ship_flag::kEnemy)) {
     if (ship != this) {
       ship->damage(Player::kBombDamage * 100, false, 0);
     }
@@ -487,6 +495,7 @@ void SuperBoss::on_destroy() {
 namespace ii {
 void spawn_super_boss(SimInterface& sim, std::uint32_t players, std::uint32_t cycle) {
   auto h = sim.create_legacy(std::make_unique<SuperBoss>(sim, players, cycle));
-  h.emplace<ii::Collision>(/* bounding width */ 640);
+  h.add(Collision{.bounding_width = 640});
+  h.add(Enemy{.threat_value = 100});
 }
 }  // namespace ii

@@ -47,7 +47,10 @@ private:
 
 Shot::Shot(ii::SimInterface& sim, const vec2& position, Player* player, const vec2& direction,
            bool magic)
-: ii::Ship{sim, position, kShipNone}, player_{player}, velocity_{direction}, magic_{magic} {
+: ii::Ship{sim, position, ii::ship_flag::kNone}
+, player_{player}
+, velocity_{direction}
+, magic_{magic} {
   velocity_ = normalise(velocity_) * kShotSpeed;
   auto c_dark = player_->colour();
   c_dark.a = .2f;
@@ -77,23 +80,23 @@ void Shot::update() {
     return;
   }
 
-  for (const auto& ship : sim().collision_list(shape().centre, kVulnerable)) {
+  for (const auto& ship : sim().collision_list(shape().centre, ii::shape_flag::kVulnerable)) {
     ship->damage(1, magic_, player_);
     if (!magic_) {
       destroy();
     }
   }
 
-  if (sim().any_collision(shape().centre, kShield) ||
-      (!magic_ && sim().any_collision(shape().centre, kVulnShield))) {
+  if (sim().any_collision(shape().centre, ii::shape_flag::kShield) ||
+      (!magic_ && sim().any_collision(shape().centre, ii::shape_flag::kVulnShield))) {
     destroy();
   }
 }
 
 Powerup::Powerup(ii::SimInterface& sim, const vec2& position, ii::powerup_type t)
-: ii::Ship{sim, position, kShipPowerup}, type_{t}, dir_{0, 1} {
-  add_new_shape<ii::Polygon>(vec2{0}, 13, 5, glm::vec4{0.f}, fixed_c::pi / 2, 0);
-  add_new_shape<ii::Polygon>(vec2{0}, 9, 5, glm::vec4{0.f}, fixed_c::pi / 2, 0);
+: ii::Ship{sim, position, ii::ship_flag::kPowerup}, type_{t}, dir_{0, 1} {
+  add_new_shape<ii::Polygon>(vec2{0}, 13, 5, glm::vec4{0.f}, fixed_c::pi / 2);
+  add_new_shape<ii::Polygon>(vec2{0}, 9, 5, glm::vec4{0.f}, fixed_c::pi / 2);
 
   switch (type_) {
   case ii::powerup_type::kExtraLife:
@@ -109,8 +112,8 @@ Powerup::Powerup(ii::SimInterface& sim, const vec2& position, ii::powerup_type t
     break;
 
   case ii::powerup_type::kBomb:
-    add_new_shape<ii::Polygon>(vec2{0}, 11, 10, glm::vec4{1.f}, fixed_c::pi / 2, 0,
-                               ii::Polygon::T::kPolystar);
+    add_new_shape<ii::Polygon>(vec2{0}, 11, 10, glm::vec4{1.f}, fixed_c::pi / 2,
+                               ii::shape_flag::kNone, ii::Polygon::T::kPolystar);
     break;
   }
 }
@@ -202,7 +205,7 @@ ii::SimInterface::ship_list Player::kill_queue_;
 std::uint32_t Player::fire_timer_;
 
 Player::Player(ii::SimInterface& sim, const vec2& position, std::uint32_t player_number)
-: ii::Ship{sim, position, kShipPlayer}
+: ii::Ship{sim, position, ii::ship_flag::kPlayer}
 , player_number_{player_number}
 , revive_timer_{kReviveTime}
 , fire_target_{get_screen_centre()} {
@@ -277,13 +280,14 @@ void Player::update() {
     sim().rumble(player_number_, 10);
     play_sound(ii::sound::kExplosion);
 
-    const auto& list = sim().ships_in_radius(shape().centre, kBombBossRadius, kShipEnemy);
+    const auto& list =
+        sim().ships_in_radius(shape().centre, kBombBossRadius, ii::ship_flag::kEnemy);
     for (const auto& ship : list) {
-      if ((ship->type() & kShipBoss) ||
+      if (+(ship->type() & ii::ship_flag::kBoss) ||
           length(ship->shape().centre - shape().centre) <= kBombRadius) {
         ship->damage(kBombDamage, false, 0);
       }
-      if (!(ship->type() & kShipBoss) && ((Enemy*)ship)->get_score() > 0) {
+      if (!(ship->type() & ii::ship_flag::kBoss) && ((Enemy*)ship)->get_score() > 0) {
         add_score(0);
       }
     }
@@ -304,7 +308,7 @@ void Player::update() {
   }
 
   // Damage.
-  if (sim().any_collision(shape().centre, kDangerous)) {
+  if (sim().any_collision(shape().centre, ii::shape_flag::kDangerous)) {
     damage();
   }
 }
@@ -407,7 +411,7 @@ void Player::activate_bomb() {
     shield_ = false;
   }
   bomb_ = true;
-  add_new_shape<ii::Polygon>(vec2{-8, 0}, 6, 5, glm::vec4{1.f}, fixed_c::pi, 0,
+  add_new_shape<ii::Polygon>(vec2{-8, 0}, 6, 5, glm::vec4{1.f}, fixed_c::pi, ii::shape_flag::kNone,
                              ii::Polygon::T::kPolystar);
 }
 

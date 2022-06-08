@@ -22,8 +22,9 @@ private:
 };
 
 TBossShot::TBossShot(ii::SimInterface& sim, const vec2& position, fixed angle)
-: Enemy{sim, position, kShipNone, 1} {
-  add_new_shape<ii::Polygon>(vec2{0}, 8, 6, c0, 0, kDangerous | kVulnerable);
+: Enemy{sim, position, ii::ship_flag::kNone, 1} {
+  add_new_shape<ii::Polygon>(vec2{0}, 8, 6, c0, 0,
+                             ii::shape_flag::kDangerous | ii::shape_flag::kVulnerable);
   dir_ = from_polar(angle, 3_fx);
   set_score(0);
   set_destroy_sound(ii::sound::kEnemyShatter);
@@ -44,7 +45,8 @@ void TBossShot::update() {
 
 void spawn_tboss_shot(ii::SimInterface& sim, const vec2& position, fixed angle) {
   auto h = sim.create_legacy(std::make_unique<TBossShot>(sim, position, angle));
-  h.emplace<ii::Collision>(/* bounding width */ 8);
+  h.add(ii::Collision{.bounding_width = 8});
+  h.add(ii::Enemy{.threat_value = 1});
 }
 
 class TractorBoss : public Boss {
@@ -82,31 +84,37 @@ TractorBoss::TractorBoss(ii::SimInterface& sim, std::uint32_t players, std::uint
        players,
        cycle}
 , shoot_type_{sim.random(2)} {
-  s1_ = add_new_shape<ii::CompoundShape>(vec2{0, -96}, 0, kDangerous | kVulnerable);
+  s1_ = add_new_shape<ii::CompoundShape>(vec2{0, -96}, 0,
+                                         ii::shape_flag::kDangerous | ii::shape_flag::kVulnerable);
 
-  s1_->add_new_shape<ii::Polygon>(vec2{0}, 12, 6, c1, 0, 0, ii::Polygon::T::kPolygram);
-  s1_->add_new_shape<ii::Polygon>(vec2{0}, 12, 12, c1, 0, 0);
-  s1_->add_new_shape<ii::Polygon>(vec2{0}, 2, 6, c1, 0, 0);
-  s1_->add_new_shape<ii::Polygon>(vec2{0}, 36, 12, c0, 0, 0);
-  s1_->add_new_shape<ii::Polygon>(vec2{0}, 34, 12, c0, 0, 0);
-  s1_->add_new_shape<ii::Polygon>(vec2{0}, 32, 12, c0, 0, 0);
+  s1_->add_new_shape<ii::Polygon>(vec2{0}, 12, 6, c1, 0, ii::shape_flag::kNone,
+                                  ii::Polygon::T::kPolygram);
+  s1_->add_new_shape<ii::Polygon>(vec2{0}, 12, 12, c1, 0);
+  s1_->add_new_shape<ii::Polygon>(vec2{0}, 2, 6, c1, 0);
+  s1_->add_new_shape<ii::Polygon>(vec2{0}, 36, 12, c0, 0);
+  s1_->add_new_shape<ii::Polygon>(vec2{0}, 34, 12, c0, 0);
+  s1_->add_new_shape<ii::Polygon>(vec2{0}, 32, 12, c0, 0);
   for (std::uint32_t i = 0; i < 8; ++i) {
     vec2 d = rotate(vec2{24, 0}, i * fixed_c::pi / 4);
-    s1_->add_new_shape<ii::Polygon>(d, 12, 6, c0, 0, 0, ii::Polygon::T::kPolygram);
+    s1_->add_new_shape<ii::Polygon>(d, 12, 6, c0, 0, ii::shape_flag::kNone,
+                                    ii::Polygon::T::kPolygram);
   }
 
-  s2_ = add_new_shape<ii::CompoundShape>(vec2{0, 96}, 0, kDangerous | kVulnerable);
+  s2_ = add_new_shape<ii::CompoundShape>(vec2{0, 96}, 0,
+                                         ii::shape_flag::kDangerous | ii::shape_flag::kVulnerable);
 
-  s2_->add_new_shape<ii::Polygon>(vec2{0}, 12, 6, c1, 0, 0, ii::Polygon::T::kPolygram);
-  s2_->add_new_shape<ii::Polygon>(vec2{0}, 12, 12, c1, 0, 0);
-  s2_->add_new_shape<ii::Polygon>(vec2{0}, 2, 6, c1, 0, 0);
+  s2_->add_new_shape<ii::Polygon>(vec2{0}, 12, 6, c1, 0, ii::shape_flag::kNone,
+                                  ii::Polygon::T::kPolygram);
+  s2_->add_new_shape<ii::Polygon>(vec2{0}, 12, 12, c1, 0);
+  s2_->add_new_shape<ii::Polygon>(vec2{0}, 2, 6, c1, 0);
 
-  s2_->add_new_shape<ii::Polygon>(vec2{0}, 36, 12, c0, 0, 0);
-  s2_->add_new_shape<ii::Polygon>(vec2{0}, 34, 12, c0, 0, 0);
-  s2_->add_new_shape<ii::Polygon>(vec2{0}, 32, 12, c0, 0, 0);
+  s2_->add_new_shape<ii::Polygon>(vec2{0}, 36, 12, c0, 0);
+  s2_->add_new_shape<ii::Polygon>(vec2{0}, 34, 12, c0, 0);
+  s2_->add_new_shape<ii::Polygon>(vec2{0}, 32, 12, c0, 0);
   for (std::uint32_t i = 0; i < 8; ++i) {
     vec2 d = rotate(vec2{24, 0}, i * fixed_c::pi / 4);
-    s2_->add_new_shape<ii::Polygon>(d, 12, 6, c0, 0, 0, ii::Polygon::T::kPolygram);
+    s2_->add_new_shape<ii::Polygon>(d, 12, 6, c0, 0, ii::shape_flag::kNone,
+                                    ii::Polygon::T::kPolygram);
   }
 
   sattack_ = add_new_shape<ii::Polygon>(vec2{0}, 0, 16, c2);
@@ -115,8 +123,8 @@ TractorBoss::TractorBoss(ii::SimInterface& sim, std::uint32_t players, std::uint
   add_new_shape<ii::Line>(vec2{0}, vec2{0, -96}, vec2{0, 96}, c1, 0);
   add_new_shape<ii::Line>(vec2{0}, vec2{2, -96}, vec2{2, 96}, c0, 0);
 
-  add_new_shape<ii::Polygon>(vec2{0, 96}, 30, 12, glm::vec4{0.f}, 0, kShield);
-  add_new_shape<ii::Polygon>(vec2{0, -96}, 30, 12, glm::vec4{0.f}, 0, kShield);
+  add_new_shape<ii::Polygon>(vec2{0, 96}, 30, 12, glm::vec4{0.f}, 0, ii::shape_flag::kShield);
+  add_new_shape<ii::Polygon>(vec2{0, -96}, 30, 12, glm::vec4{0.f}, 0, ii::shape_flag::kShield);
 
   attack_shapes_ = shapes().size();
 }
@@ -175,7 +183,7 @@ void TractorBoss::update() {
         sound_ = false;
       }
       targets_.clear();
-      for (const auto& ship : sim().all_ships(kShipPlayer)) {
+      for (const auto& ship : sim().all_ships(ii::ship_flag::kPlayer)) {
         if (((Player*)ship)->is_killed()) {
           continue;
         }
@@ -241,32 +249,33 @@ void TractorBoss::update() {
           play_sound_random(ii::sound::kBossFire);
         }
         targets_.clear();
-        for (const auto& ship : sim().all_ships(kShipPlayer | kShipEnemy)) {
-          if (ship == this || ((ship->type() & kShipPlayer) && ((Player*)ship)->is_killed())) {
+        for (const auto& ship : sim().all_ships(ii::ship_flag::kPlayer | ii::ship_flag::kEnemy)) {
+          if (ship == this ||
+              (+(ship->type() & ii::ship_flag::kPlayer) && ((Player*)ship)->is_killed())) {
             continue;
           }
 
-          if (ship->type() & kShipEnemy) {
+          if (+(ship->type() & ii::ship_flag::kEnemy)) {
             play_sound_random(ii::sound::kBossAttack, 0, 0.3f);
           }
           auto pos = ship->shape().centre;
           targets_.push_back(pos);
           fixed speed = 0;
-          if (ship->type() & kShipPlayer) {
+          if (+(ship->type() & ii::ship_flag::kPlayer)) {
             speed = kTractorBeamSpeed;
           }
-          if (ship->type() & kShipEnemy) {
+          if (+(ship->type() & ii::ship_flag::kEnemy)) {
             speed = 4 + fixed_c::half;
           }
           auto d = normalise(shape().centre - pos);
           ship->move(d * speed);
 
-          if ((ship->type() & kShipEnemy) && !(ship->type() & kShipWall) &&
+          if (+(ship->type() & ii::ship_flag::kEnemy) && !(ship->type() & ii::ship_flag::kWall) &&
               length(ship->shape().centre - shape().centre) <= 40) {
             ship->destroy();
             ++attack_size_;
             sattack_->radius = attack_size_ / (1 + fixed_c::half);
-            add_new_shape<ii::Polygon>(vec2{0}, 8, 6, c0, 0, 0);
+            add_new_shape<ii::Polygon>(vec2{0}, 8, 6, c0, 0);
           }
         }
       } else {
@@ -334,6 +343,7 @@ std::uint32_t TractorBoss::get_damage(std::uint32_t damage, bool magic) {
 namespace ii {
 void spawn_tractor_boss(SimInterface& sim, std::uint32_t players, std::uint32_t cycle) {
   auto h = sim.create_legacy(std::make_unique<TractorBoss>(sim, players, cycle));
-  h.emplace<Collision>(/* bounding width */ 640);
+  h.add(Collision{.bounding_width = 640});
+  h.add(Enemy{.threat_value = 100});
 }
 }  // namespace ii

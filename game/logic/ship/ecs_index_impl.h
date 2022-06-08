@@ -241,6 +241,12 @@ template <bool Const>
 }
 
 template <bool Const>
+template <typename C>
+C& handle_base<Const>::add(C&& data) const requires Component<std::remove_cvref_t<C>> {
+  return emplace<std::remove_cvref_t<C>>(std::forward<C>(data));
+}
+
+template <bool Const>
 template <Component C>
 void handle_base<Const>::remove() const requires(!Const) {
   if (auto index = table_->template get<C>(); index) {

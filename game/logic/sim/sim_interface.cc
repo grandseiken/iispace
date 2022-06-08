@@ -43,19 +43,19 @@ fixed SimInterface::random_fixed() {
   return fixed{static_cast<std::int32_t>(internals_->random_engine())} / RandomEngine::rand_max;
 }
 
-std::size_t SimInterface::count_ships(std::uint32_t ship_mask, std::uint32_t exclude_mask) const {
+std::size_t SimInterface::count_ships(ship_flag mask, ship_flag exclude_mask) const {
   std::size_t r = 0;
-  internals_->index.iterate<LegacyShip>([&r, ship_mask, exclude_mask](auto& c) {
+  internals_->index.iterate<LegacyShip>([&r, mask, exclude_mask](auto& c) {
     auto t = c.ship->type();
-    r += (!ship_mask || (c.ship->type() & ship_mask)) && !(exclude_mask & t);
+    r += (!mask || +(c.ship->type() & mask)) && !(exclude_mask & t);
   });
   return r;
 }
 
-SimInterface::ship_list SimInterface::all_ships(std::uint32_t ship_mask) const {
+SimInterface::ship_list SimInterface::all_ships(ship_flag mask) const {
   ship_list r;
-  internals_->index.iterate<LegacyShip>([&r, ship_mask](auto& c) {
-    if (!ship_mask || (c.ship->type() & ship_mask)) {
+  internals_->index.iterate<LegacyShip>([&r, mask](auto& c) {
+    if (!mask || +(c.ship->type() & mask)) {
       r.emplace_back(c.ship.get());
     }
   });
@@ -63,18 +63,17 @@ SimInterface::ship_list SimInterface::all_ships(std::uint32_t ship_mask) const {
 }
 
 SimInterface::ship_list
-SimInterface::ships_in_radius(const vec2& point, fixed radius, std::uint32_t ship_mask) const {
+SimInterface::ships_in_radius(const vec2& point, fixed radius, ship_flag mask) const {
   ship_list r;
-  internals_->index.iterate<LegacyShip>([&r, &point, radius, ship_mask](auto& c) {
-    if ((!ship_mask || (c.ship->type() & ship_mask)) &&
-        length(c.ship->shape().centre - point) <= radius) {
+  internals_->index.iterate<LegacyShip>([&r, &point, radius, mask](auto& c) {
+    if ((!mask || +(c.ship->type() & mask)) && length(c.ship->shape().centre - point) <= radius) {
       r.emplace_back(c.ship.get());
     }
   });
   return r;
 }
 
-bool SimInterface::any_collision(const vec2& point, std::uint32_t category) const {
+bool SimInterface::any_collision(const vec2& point, shape_flag category) const {
   fixed x = point.x;
   fixed y = point.y;
 
@@ -101,8 +100,7 @@ bool SimInterface::any_collision(const vec2& point, std::uint32_t category) cons
   return false;
 }
 
-SimInterface::ship_list
-SimInterface::collision_list(const vec2& point, std::uint32_t category) const {
+SimInterface::ship_list SimInterface::collision_list(const vec2& point, shape_flag category) const {
   ship_list r;
   fixed x = point.x;
   fixed y = point.y;

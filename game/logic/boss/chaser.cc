@@ -1,4 +1,5 @@
 #include "game/logic/boss/boss_internal.h"
+#include "game/logic/enemy.h"
 #include "game/logic/player.h"
 #include <algorithm>
 
@@ -110,7 +111,8 @@ spawn_chaser_boss_internal(ii::SimInterface& sim, std::uint32_t players, std::ui
   auto u = std::make_unique<ChaserBoss>(sim, players, cycle, split, position, time, stagger);
   auto p = u.get();
   auto h = sim.create_legacy(std::move(u));
-  h.emplace<ii::Collision>(/* bounding width */ 10 * ONE_AND_HALF_lookup[kCbMaxSplit - split]);
+  h.add(ii::Collision{.bounding_width = 10 * ONE_AND_HALF_lookup[kCbMaxSplit - split]});
+  h.add(ii::Enemy{.threat_value = 100});
   return p;
 }
 
@@ -131,15 +133,15 @@ ChaserBoss::ChaserBoss(ii::SimInterface& sim, std::uint32_t players, std::uint32
 , split_{split}
 , stagger_{stagger} {
   auto c = colour_hue360(210, .6f);
-  add_new_shape<ii::Polygon>(vec2{0}, 10 * ONE_AND_HALF_lookup[kCbMaxSplit - split_], 5, c, 0, 0,
-                             ii::Polygon::T::kPolygram);
-  add_new_shape<ii::Polygon>(vec2{0}, 9 * ONE_AND_HALF_lookup[kCbMaxSplit - split_], 5, c, 0, 0,
-                             ii::Polygon::T::kPolygram);
-  add_new_shape<ii::Polygon>(vec2{0}, 8 * ONE_AND_HALF_lookup[kCbMaxSplit - split_], 5,
-                             glm::vec4{0.f}, 0, kDangerous | kVulnerable,
-                             ii::Polygon::T::kPolygram);
+  add_new_shape<ii::Polygon>(vec2{0}, 10 * ONE_AND_HALF_lookup[kCbMaxSplit - split_], 5, c, 0,
+                             ii::shape_flag::kNone, ii::Polygon::T::kPolygram);
+  add_new_shape<ii::Polygon>(vec2{0}, 9 * ONE_AND_HALF_lookup[kCbMaxSplit - split_], 5, c, 0,
+                             ii::shape_flag::kNone, ii::Polygon::T::kPolygram);
+  add_new_shape<ii::Polygon>(
+      vec2{0}, 8 * ONE_AND_HALF_lookup[kCbMaxSplit - split_], 5, glm::vec4{0.f}, 0,
+      ii::shape_flag::kDangerous | ii::shape_flag::kVulnerable, ii::Polygon::T::kPolygram);
   add_new_shape<ii::Polygon>(vec2{0}, 7 * ONE_AND_HALF_lookup[kCbMaxSplit - split_], 5,
-                             glm::vec4{0.f}, 0, kShield, ii::Polygon::T::kPolygram);
+                             glm::vec4{0.f}, 0, ii::shape_flag::kShield, ii::Polygon::T::kPolygram);
 
   set_ignore_damage_colour_index(2);
   if (!split_) {
@@ -175,7 +177,7 @@ void ChaserBoss::update() {
   if (move_) {
     move(dir_);
   } else {
-    const auto& nearby = sim().all_ships(kShipPlayer | kShipBoss);
+    const auto& nearby = sim().all_ships(ii::ship_flag::kPlayer | ii::ship_flag::kBoss);
     const fixed attract = 256 * ONE_PT_ONE_lookup[kCbMaxSplit - split_];
     const fixed align = 128 * ONE_PT_ONE_FIVE_lookup[kCbMaxSplit - split_];
     const fixed repulse = 64 * ONE_PT_TWO_lookup[kCbMaxSplit - split_];
@@ -207,7 +209,7 @@ void ChaserBoss::update() {
           v /= r;
         }
         vec2 p{0};
-        if (ship->type() & kShipBoss) {
+        if (+(ship->type() & ii::ship_flag::kBoss)) {
           ChaserBoss* c = (ChaserBoss*)ship;
           fixed pow = ONE_PT_ONE_FIVE_lookup[kCbMaxSplit - c->split_];
           v *= pow;
@@ -334,7 +336,7 @@ void ChaserBoss::on_destroy() {
     }
   } else {
     last = true;
-    for (const auto& ship : sim().all_ships(kShipEnemy)) {
+    for (const auto& ship : sim().all_ships(ii::ship_flag::kEnemy)) {
       if (!ship->is_destroyed() && ship != this) {
         last = false;
         break;

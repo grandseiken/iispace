@@ -1,5 +1,6 @@
 #ifndef II_GAME_LOGIC_SHIP_SHAPE_H
 #define II_GAME_LOGIC_SHIP_SHAPE_H
+#include "game/common/enum.h"
 #include "game/common/math.h"
 #include <glm/glm.hpp>
 #include <memory>
@@ -9,9 +10,19 @@
 namespace ii {
 class SimInterface;
 
+enum class shape_flag : std::uint32_t {
+  kNone = 0,
+  kVulnerable = 1,
+  kDangerous = 2,
+  kShield = 4,
+  kVulnShield = 8
+};
+template <>
+struct bitmask_enum<shape_flag> : std::true_type {};
+
 class Shape {
 public:
-  Shape(const vec2& centre, fixed rotation, const glm::vec4& colour, std::uint32_t category,
+  Shape(const vec2& centre, fixed rotation, const glm::vec4& colour, shape_flag category,
         bool can_rotate = true);
   virtual ~Shape() {}
 
@@ -28,7 +39,7 @@ public:
 
   vec2 centre;
   glm::vec4 colour{0.f};
-  std::uint32_t category = 0;
+  shape_flag category = shape_flag::kNone;
 
 private:
   virtual bool check_local_point(const vec2& v) const = 0;
@@ -40,7 +51,7 @@ private:
 class Fill : public Shape {
 public:
   Fill(const vec2& centre, fixed width, fixed height, const glm::vec4& colour,
-       std::uint32_t category = 0);
+       shape_flag category = shape_flag::kNone);
 
   void render(SimInterface& sim, const glm::vec2& position, float rotation,
               const std::optional<glm::vec4>& colour_override = std::nullopt) const override;
@@ -70,7 +81,7 @@ private:
 class Box : public Shape {
 public:
   Box(const vec2& centre, fixed width, fixed height, const glm::vec4& colour, fixed rotation = 0,
-      std::uint32_t category = 0);
+      shape_flag category = shape_flag::kNone);
 
   void render(SimInterface& sim, const glm::vec2& position, float rotation,
               const std::optional<glm::vec4>& colour_override = std::nullopt) const override;
@@ -91,7 +102,7 @@ public:
   };
 
   Polygon(const vec2& centre, fixed radius, std::uint32_t sides, const glm::vec4& colour,
-          fixed rotation = 0, std::uint32_t category = 0, T type = T::kPolygon);
+          fixed rotation = 0, shape_flag category = shape_flag::kNone, T type = T::kPolygon);
 
   void render(SimInterface& sim, const glm::vec2& position, float rotation,
               const std::optional<glm::vec4>& colour_override = std::nullopt) const override;
@@ -107,7 +118,7 @@ private:
 class PolyArc : public Shape {
 public:
   PolyArc(const vec2& centre, fixed radius, std::uint32_t sides, std::uint32_t segments,
-          const glm::vec4& colour, fixed rotation = 0, std::uint32_t category = 0);
+          const glm::vec4& colour, fixed rotation = 0, shape_flag category = shape_flag::kNone);
 
   void render(SimInterface& sim, const glm::vec2& position, float rotation,
               const std::optional<glm::vec4>& colour_override = std::nullopt) const override;
@@ -122,7 +133,7 @@ private:
 
 class CompoundShape : public Shape {
 public:
-  CompoundShape(const vec2& centre, fixed rotation = 0, std::uint32_t category = 0);
+  CompoundShape(const vec2& centre, fixed rotation = 0, shape_flag category = shape_flag::kNone);
 
   typedef std::vector<std::unique_ptr<Shape>> shape_list;
   const shape_list& shapes() const;

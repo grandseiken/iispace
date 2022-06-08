@@ -5,7 +5,7 @@
 
 namespace ii {
 
-Shape::Shape(const vec2& centre, fixed rotation, const glm::vec4& colour, std::uint32_t category,
+Shape::Shape(const vec2& centre, fixed rotation, const glm::vec4& colour, shape_flag category,
              bool can_rotate)
 : centre{centre}
 , colour{colour}
@@ -57,7 +57,7 @@ void Shape::rotate(fixed rotation_amount) {
 }
 
 Fill::Fill(const vec2& centre, fixed width, fixed height, const glm::vec4& colour,
-           std::uint32_t category)
+           shape_flag category)
 : Shape{centre, 0, colour, category, false}, width{width}, height{height} {}
 
 void Fill::render(SimInterface& sim, const glm::vec2& position, float rotation,
@@ -75,7 +75,7 @@ bool Fill::check_local_point(const vec2& v) const {
 
 Line::Line(const vec2& centre, const vec2& a, const vec2& b, const glm::vec4& colour,
            fixed rotation)
-: Shape{centre, rotation, colour, 0}, a{a}, b{b} {}
+: Shape{centre, rotation, colour, shape_flag{0}}, a{a}, b{b} {}
 
 void Line::render(SimInterface& sim, const glm::vec2& position, float rotation,
                   const std::optional<glm::vec4>& colour_override) const {
@@ -89,7 +89,7 @@ bool Line::check_local_point(const vec2& v) const {
 }
 
 Box::Box(const vec2& centre, fixed width, fixed height, const glm::vec4& colour, fixed rotation,
-         std::uint32_t category)
+         shape_flag category)
 : Shape{centre, rotation, colour, category}, width{width}, height{height} {}
 
 void Box::render(SimInterface& sim, const glm::vec2& position, float rotation,
@@ -113,7 +113,7 @@ bool Box::check_local_point(const vec2& v) const {
 }
 
 Polygon::Polygon(const vec2& centre, fixed radius, std::uint32_t sides, const glm::vec4& colour,
-                 fixed rotation, std::uint32_t category, T type)
+                 fixed rotation, shape_flag category, T type)
 : Shape{centre, rotation, colour, category}, radius{radius}, sides{sides}, type{type} {}
 
 void Polygon::render(SimInterface& sim, const glm::vec2& position, float rotation,
@@ -156,7 +156,7 @@ bool Polygon::check_local_point(const vec2& v) const {
 }
 
 PolyArc::PolyArc(const vec2& centre, fixed radius, std::uint32_t sides, std::uint32_t segments,
-                 const glm::vec4& colour, fixed rotation, std::uint32_t category)
+                 const glm::vec4& colour, fixed rotation, shape_flag category)
 : Shape{centre, rotation, colour, category}, radius{radius}, sides{sides}, segments{segments} {}
 
 void PolyArc::render(SimInterface& sim, const glm::vec2& position, float rotation,
@@ -182,7 +182,7 @@ bool PolyArc::check_local_point(const vec2& v) const {
   return b && r >= radius - 10 && r < radius;
 }
 
-CompoundShape::CompoundShape(const vec2& centre, fixed rotation, std::uint32_t category)
+CompoundShape::CompoundShape(const vec2& centre, fixed rotation, shape_flag category)
 : Shape{centre, rotation, glm::vec4{0.f}, category} {}
 
 const CompoundShape::shape_list& CompoundShape::shapes() const {

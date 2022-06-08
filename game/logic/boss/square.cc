@@ -44,19 +44,19 @@ BigSquareBoss::BigSquareBoss(ii::SimInterface& sim, std::uint32_t players, std::
        cycle}
 , dir_{0, -1}
 , timer_{kBsbTimer * 6} {
-  add_new_shape<ii::Polygon>(vec2{0}, 160, 4, c0, 0, 0);
-  add_new_shape<ii::Polygon>(vec2{0}, 140, 4, c0, 0, kDangerous);
-  add_new_shape<ii::Polygon>(vec2{0}, 120, 4, c0, 0, kDangerous);
-  add_new_shape<ii::Polygon>(vec2{0}, 100, 4, c0, 0, 0);
-  add_new_shape<ii::Polygon>(vec2{0}, 80, 4, c0, 0, 0);
-  add_new_shape<ii::Polygon>(vec2{0}, 60, 4, c0, 0, kVulnerable);
+  add_new_shape<ii::Polygon>(vec2{0}, 160, 4, c0, 0);
+  add_new_shape<ii::Polygon>(vec2{0}, 140, 4, c0, 0, ii::shape_flag::kDangerous);
+  add_new_shape<ii::Polygon>(vec2{0}, 120, 4, c0, 0, ii::shape_flag::kDangerous);
+  add_new_shape<ii::Polygon>(vec2{0}, 100, 4, c0, 0);
+  add_new_shape<ii::Polygon>(vec2{0}, 80, 4, c0, 0);
+  add_new_shape<ii::Polygon>(vec2{0}, 60, 4, c0, 0, ii::shape_flag::kVulnerable);
 
-  add_new_shape<ii::Polygon>(vec2{0}, 155, 4, c0, 0, 0);
-  add_new_shape<ii::Polygon>(vec2{0}, 135, 4, c0, 0, 0);
-  add_new_shape<ii::Polygon>(vec2{0}, 115, 4, c0, 0, 0);
-  add_new_shape<ii::Polygon>(vec2{0}, 95, 4, c1, 0, 0);
-  add_new_shape<ii::Polygon>(vec2{0}, 75, 4, c1, 0, 0);
-  add_new_shape<ii::Polygon>(vec2{0}, 55, 4, c2, 0, kShield);
+  add_new_shape<ii::Polygon>(vec2{0}, 155, 4, c0, 0);
+  add_new_shape<ii::Polygon>(vec2{0}, 135, 4, c0, 0);
+  add_new_shape<ii::Polygon>(vec2{0}, 115, 4, c0, 0);
+  add_new_shape<ii::Polygon>(vec2{0}, 95, 4, c1, 0);
+  add_new_shape<ii::Polygon>(vec2{0}, 75, 4, c1, 0);
+  add_new_shape<ii::Polygon>(vec2{0}, 55, 4, c2, 0, ii::shape_flag::kShield);
 }
 
 void BigSquareBoss::update() {
@@ -143,7 +143,7 @@ void BigSquareBoss::render() const {
     }
     for (std::uint32_t i = 0; i < 6; ++i) {
       auto p = to_float(attack_player_->shape().centre) + d;
-      ii::Polygon s{vec2{0}, 10, 4, c0, fixed_c::pi / 4, 0};
+      ii::Polygon s{vec2{0}, 10, 4, c0, fixed_c::pi / 4, ii::shape_flag::kNone};
       s.render(sim(), p, 0);
       d = rotate(d, 2 * glm::pi<float>() / 6);
     }
@@ -159,6 +159,7 @@ std::uint32_t BigSquareBoss::get_damage(std::uint32_t damage, bool magic) {
 namespace ii {
 void spawn_big_square_boss(SimInterface& sim, std::uint32_t players, std::uint32_t cycle) {
   auto h = sim.create_legacy(std::make_unique<BigSquareBoss>(sim, players, cycle));
-  h.emplace<Collision>(/* bounding width */ 640);
+  h.add(Collision{.bounding_width = 640});
+  h.add(Enemy{.threat_value = 100});
 }
 }  // namespace ii

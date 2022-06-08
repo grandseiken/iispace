@@ -1,8 +1,13 @@
 #ifndef II_GAME_LOGIC_ENEMY_H
 #define II_GAME_LOGIC_ENEMY_H
+#include "game/logic/ship/ecs_index.h"
 #include "game/logic/ship/ship.h"
 
 namespace ii {
+struct Enemy : ecs::component {
+  std::uint32_t threat_value = 1;
+};
+
 void spawn_follow(SimInterface&, const vec2& position, bool has_score = true, fixed rotation = 0);
 void spawn_big_follow(SimInterface&, const vec2& position, bool has_score);
 void spawn_chaser(SimInterface&, const vec2& position);
@@ -18,7 +23,7 @@ void spawn_boss_shot(SimInterface&, const vec2& position, const vec2& velocity,
 
 class Enemy : public ii::Ship {
 public:
-  Enemy(ii::SimInterface& sim, const vec2& position, Ship::ship_category type, std::uint32_t hp);
+  Enemy(ii::SimInterface& sim, const vec2& position, ii::ship_flag type, std::uint32_t hp);
 
   std::uint64_t get_score() const {
     return score_;

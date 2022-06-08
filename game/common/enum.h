@@ -35,9 +35,10 @@ constexpr bool operator!(E e) {
   return !to_underlying(e);
 }
 
-template <IntegralEnum E>
-constexpr E operator+(E e) {
-  return E{+to_underlying(e)};
+template <typename E>
+requires IntegralEnum<E> || BitmaskEnum<E>
+constexpr std::underlying_type_t<E> operator+(E e) {
+  return to_underlying(e);
 }
 
 template <IntegralEnum E>

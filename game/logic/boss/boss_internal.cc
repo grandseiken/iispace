@@ -12,7 +12,7 @@ const fixed kHpPerExtraCycle = 3 * 1_fx / 10;
 
 Boss::Boss(ii::SimInterface& sim, const vec2& position, ii::SimInterface::boss_list boss,
            std::uint32_t hp, std::uint32_t players, std::uint32_t cycle, bool explode_on_damage)
-: ii::Ship{sim, position, static_cast<Ship::ship_category>(kShipBoss | kShipEnemy)}
+: ii::Ship{sim, position, ii::ship_flag::kBoss | ii::ship_flag::kEnemy}
 , flag_{boss}
 , explode_on_damage_{explode_on_damage} {
   set_ignore_damage_colour_index(100);
@@ -103,7 +103,7 @@ void Boss::render_hp_bar() const {
 
 void Boss::on_destroy() {
   set_killed();
-  for (const auto& ship : sim().all_ships(kShipEnemy)) {
+  for (const auto& ship : sim().all_ships(ii::ship_flag::kEnemy)) {
     if (ship != this) {
       ship->damage(Player::kBombDamage, false, 0);
     }

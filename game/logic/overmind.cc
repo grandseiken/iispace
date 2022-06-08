@@ -149,13 +149,12 @@ void Overmind::update() {
   ++elapsed_time_;
   Stars::update(sim_);
 
-  std::uint32_t total_enemy_value = 0;
-  for (const auto* ship : sim_.all_ships(ii::Ship::kShipEnemy)) {
-    total_enemy_value += ship->enemy_value();
-  }
+  std::uint32_t total_enemy_threat = 0;
+  sim_.index().iterate<ii::Enemy>(
+      [&](const ii::Enemy& e) { total_enemy_threat += e.threat_value; });
 
   if (sim_.conditions().mode == ii::game_mode::kBoss) {
-    if (!total_enemy_value) {
+    if (!total_enemy_threat) {
       Stars::change(sim_);
       if (boss_mod_bosses_ < 6) {
         if (boss_mod_bosses_)
@@ -192,7 +191,7 @@ void Overmind::update() {
     trigger_val = 0;
   }
 
-  if ((timer_ > kTimer && !is_boss_level_ && !is_boss_next_) || total_enemy_value <= trigger_val) {
+  if ((timer_ > kTimer && !is_boss_level_ && !is_boss_next_) || total_enemy_threat <= trigger_val) {
     if (timer_ < kPowerupTime && !is_boss_level_) {
       spawn_powerup();
     }
@@ -258,7 +257,7 @@ std::optional<std::uint32_t> Overmind::get_timer() const {
 }
 
 void Overmind::spawn_powerup() {
-  if (sim_.all_ships(ii::Ship::kShipPowerup).size() >= 4) {
+  if (sim_.all_ships(ii::ship_flag::kPowerup).size() >= 4) {
     return;
   }
 

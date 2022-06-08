@@ -1,36 +1,32 @@
 #ifndef II_GAME_LOGIC_SHIP_SHIP_H
 #define II_GAME_LOGIC_SHIP_SHIP_H
+#include "game/common/enum.h"
 #include "game/logic/ship/ecs_index.h"
 #include "game/logic/ship/shape.h"
 #include "game/logic/sim/sim_interface.h"
 
 namespace ii {
 
+enum class ship_flag : std::uint32_t {
+  kNone = 0,
+  kPlayer = 1,
+  kWall = 2,
+  kEnemy = 4,
+  kBoss = 8,
+  kPowerup = 16,
+};
+
+template <>
+struct bitmask_enum<ship_flag> : std::true_type {};
+
 struct Destroy : ecs::component {};
 struct Collision : ecs::component {
-  Collision(fixed bounding_width) : bounding_width{bounding_width} {}
   fixed bounding_width = 0;
 };
 
 class Ship {
 public:
-  enum shape_category : std::uint32_t {
-    kVulnerable = 1,
-    kDangerous = 2,
-    kShield = 4,
-    kVulnShield = 8
-  };
-
-  enum ship_category : std::uint32_t {
-    kShipNone = 0,
-    kShipPlayer = 1,
-    kShipWall = 2,
-    kShipEnemy = 4,
-    kShipBoss = 8,
-    kShipPowerup = 16,
-  };
-
-  Ship(SimInterface& sim, const vec2& position, ship_category type);
+  Ship(SimInterface& sim, const vec2& position, ship_flag type);
   virtual ~Ship();
 
   ecs::handle handle() const {
@@ -48,7 +44,7 @@ public:
   void destroy();
   bool is_destroyed() const;
 
-  ship_category type() const {
+  ship_flag type() const {
     return type_;
   }
 
@@ -66,7 +62,7 @@ public:
 
   // Operations
   //------------------------------
-  bool check_point(const vec2& v, std::uint32_t category = 0) const;
+  bool check_point(const vec2& v, shape_flag category = shape_flag{0}) const;
   void spawn(const particle& particle) const;
 
   // Helpful functions
@@ -97,14 +93,6 @@ public:
                      2.f * shape_.centre.x.to_float() / kSimDimensions.x - 1.f, pitch);
   }
 
-  std::uint32_t enemy_value() const {
-    return enemy_value_;
-  }
-
-  void set_enemy_value(std::uint32_t value) {
-    enemy_value_ = value;
-  }
-
   // Generic behaviour
   //------------------------------
   virtual void update() = 0;
@@ -126,9 +114,8 @@ protected:
 private:
   SimInterface* sim_ = nullptr;
   std::optional<ecs::handle> handle_;
-  ship_category type_ = static_cast<ship_category>(0);
+  ship_flag type_ = ship_flag{0};
   CompoundShape shape_;
-  std::uint32_t enemy_value_ = 1;
 };
 
 }  // namespace ii

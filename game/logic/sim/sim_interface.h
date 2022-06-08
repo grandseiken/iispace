@@ -14,6 +14,8 @@ namespace ii {
 namespace ecs {
 class EntityIndex;
 }  // namespace ecs
+enum class shape_flag : std::uint32_t;
+enum class ship_flag : std::uint32_t;
 class Ship;
 class SimInternals;
 
@@ -65,11 +67,12 @@ public:
   fixed random_fixed();
 
   // TODO: const/non-const versions of retrieval functions?
-  std::size_t count_ships(std::uint32_t ship_mask = 0, std::uint32_t exclude_mask = 0) const;
-  ship_list all_ships(std::uint32_t ship_mask = 0) const;
-  ship_list ships_in_radius(const vec2& point, fixed radius, std::uint32_t ship_mask = 0) const;
-  ship_list collision_list(const vec2& point, std::uint32_t category) const;
-  bool any_collision(const vec2& point, std::uint32_t category) const;
+  std::size_t
+  count_ships(ship_flag mask = ship_flag{0}, ship_flag exclude_mask = ship_flag{0}) const;
+  ship_list all_ships(ship_flag mask = ship_flag{0}) const;
+  ship_list ships_in_radius(const vec2& point, fixed radius, ship_flag mask = ship_flag{0}) const;
+  ship_list collision_list(const vec2& point, shape_flag category) const;
+  bool any_collision(const vec2& point, shape_flag category) const;
   std::uint32_t get_non_wall_count() const;
 
   std::uint32_t player_count() const;

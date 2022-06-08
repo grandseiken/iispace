@@ -76,7 +76,7 @@ void SimState::update() {
   std::ranges::stable_sort(internals_->collisions,
                            [](const auto& a, const auto& b) { return a.x_min < b.x_min; });
 
-  internals_->non_wall_enemy_count = interface_->count_ships(Ship::kShipEnemy, Ship::kShipWall);
+  internals_->non_wall_enemy_count = interface_->count_ships(ship_flag::kEnemy, ship_flag::kWall);
 
   internals_->index.iterate<LegacyShip>([](ecs::handle handle, auto& c) {
     if (!handle.has<Destroy>()) {
@@ -144,7 +144,7 @@ void SimState::render() const {
                                  particle.position - glm::vec2{1, 1}, particle.colour);
   }
   internals_->index.iterate<LegacyShip>([&](const auto& c) {
-    if (!(c.ship->type() & Ship::kShipPlayer)) {
+    if (!(c.ship->type() & ship_flag::kPlayer)) {
       c.ship->render();
     }
   });
@@ -186,7 +186,7 @@ void SimState::render() const {
   };
 
   internals_->index.iterate<LegacyShip>([&render_warning](const auto& c) {
-    if (c.ship->type() & Ship::kShipEnemy) {
+    if (+(c.ship->type() & ship_flag::kEnemy)) {
       render_warning(to_float(c.ship->shape().centre));
     }
   });

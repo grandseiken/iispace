@@ -124,12 +124,11 @@ private:
 
 Follow::Follow(ii::SimInterface& sim, const vec2& position, bool has_score, fixed rotation,
                fixed radius, std::uint32_t hp)
-: Enemy{sim, position, kShipNone, hp} {
+: Enemy{sim, position, ii::ship_flag::kNone, hp} {
   add_new_shape<ii::Polygon>(vec2{0}, radius, 4, colour_hue360(270, .6f), rotation,
-                             kDangerous | kVulnerable);
+                             ii::shape_flag::kDangerous | ii::shape_flag::kVulnerable);
   set_score(has_score ? 15 : 0);
   set_destroy_sound(ii::sound::kEnemyShatter);
-  set_enemy_value(1);
 }
 
 void Follow::update() {
@@ -151,7 +150,6 @@ BigFollow::BigFollow(ii::SimInterface& sim, const vec2& position, bool has_score
 : Follow{sim, position, has_score, 0, 20, 3}, has_score_{has_score} {
   set_score(has_score ? 20 : 0);
   set_destroy_sound(ii::sound::kPlayerDestroy);
-  set_enemy_value(3);
 }
 
 void BigFollow::on_destroy(bool bomb) {
@@ -167,12 +165,12 @@ void BigFollow::on_destroy(bool bomb) {
 }
 
 Chaser::Chaser(ii::SimInterface& sim, const vec2& position)
-: Enemy{sim, position, kShipNone, 2}, timer_{kChaserTime} {
-  add_new_shape<ii::Polygon>(vec2{0}, 10, 4, colour_hue360(210, .6f), 0, kDangerous | kVulnerable,
+: Enemy{sim, position, ii::ship_flag::kNone, 2}, timer_{kChaserTime} {
+  add_new_shape<ii::Polygon>(vec2{0}, 10, 4, colour_hue360(210, .6f), 0,
+                             ii::shape_flag::kDangerous | ii::shape_flag::kVulnerable,
                              ii::Polygon::T::kPolygram);
   set_score(30);
   set_destroy_sound(ii::sound::kEnemyShatter);
-  set_enemy_value(2);
 }
 
 void Chaser::update() {
@@ -199,11 +197,11 @@ void Chaser::update() {
 }
 
 Square::Square(ii::SimInterface& sim, const vec2& position, fixed rotation)
-: Enemy{sim, position, kShipWall, 4}, timer_{sim.random(80) + 40} {
-  add_new_shape<ii::Box>(vec2{0}, 10, 10, colour_hue360(120, .6f), 0, kDangerous | kVulnerable);
+: Enemy{sim, position, ii::ship_flag::kWall, 4}, timer_{sim.random(80) + 40} {
+  add_new_shape<ii::Box>(vec2{0}, 10, 10, colour_hue360(120, .6f), 0,
+                         ii::shape_flag::kDangerous | ii::shape_flag::kVulnerable);
   dir_ = from_polar(rotation, 1_fx);
   set_score(25);
-  set_enemy_value(2);
 }
 
 void Square::update() {
@@ -259,11 +257,10 @@ void Square::render() const {
 }
 
 Wall::Wall(ii::SimInterface& sim, const vec2& position, bool rdir)
-: Enemy{sim, position, kShipWall, 10}, dir_{0, 1}, rdir_{rdir} {
+: Enemy{sim, position, ii::ship_flag::kWall, 10}, dir_{0, 1}, rdir_{rdir} {
   add_new_shape<ii::Box>(vec2{0}, 10, 40, colour_hue360(120, .5f, .6f), 0,
-                         kDangerous | kVulnerable);
+                         ii::shape_flag::kDangerous | ii::shape_flag::kVulnerable);
   set_score(20);
-  set_enemy_value(4);
 }
 
 void Wall::update() {
@@ -324,16 +321,19 @@ void Wall::on_destroy(bool bomb) {
 }
 
 FollowHub::FollowHub(ii::SimInterface& sim, const vec2& position, bool powera, bool powerb)
-: Enemy{sim, position, kShipNone, 14}, powera_{powera}, powerb_{powerb} {
+: Enemy{sim, position, ii::ship_flag::kNone, 14}, powera_{powera}, powerb_{powerb} {
   auto c = colour_hue360(240, .7f);
-  add_new_shape<ii::Polygon>(vec2{0}, 16, 4, c, fixed_c::pi / 4, kDangerous | kVulnerable,
+  add_new_shape<ii::Polygon>(vec2{0}, 16, 4, c, fixed_c::pi / 4,
+                             ii::shape_flag::kDangerous | ii::shape_flag::kVulnerable,
                              ii::Polygon::T::kPolygram);
   if (powerb_) {
-    add_new_shape<ii::Polygon>(vec2{16, 0}, 8, 4, c, fixed_c::pi / 4, 0, ii::Polygon::T::kPolystar);
-    add_new_shape<ii::Polygon>(vec2{-16, 0}, 8, 4, c, fixed_c::pi / 4, 0,
+    add_new_shape<ii::Polygon>(vec2{16, 0}, 8, 4, c, fixed_c::pi / 4, ii::shape_flag::kNone,
                                ii::Polygon::T::kPolystar);
-    add_new_shape<ii::Polygon>(vec2{0, 16}, 8, 4, c, fixed_c::pi / 4, 0, ii::Polygon::T::kPolystar);
-    add_new_shape<ii::Polygon>(vec2{0, -16}, 8, 4, c, fixed_c::pi / 4, 0,
+    add_new_shape<ii::Polygon>(vec2{-16, 0}, 8, 4, c, fixed_c::pi / 4, ii::shape_flag::kNone,
+                               ii::Polygon::T::kPolystar);
+    add_new_shape<ii::Polygon>(vec2{0, 16}, 8, 4, c, fixed_c::pi / 4, ii::shape_flag::kNone,
+                               ii::Polygon::T::kPolystar);
+    add_new_shape<ii::Polygon>(vec2{0, -16}, 8, 4, c, fixed_c::pi / 4, ii::shape_flag::kNone,
                                ii::Polygon::T::kPolystar);
   }
 
@@ -343,7 +343,6 @@ FollowHub::FollowHub(ii::SimInterface& sim, const vec2& position, bool powera, b
   add_new_shape<ii::Polygon>(vec2{0, -16}, 8, 4, c, fixed_c::pi / 4);
   set_score(50 + powera_ * 10 + powerb_ * 10);
   set_destroy_sound(ii::sound::kPlayerDestroy);
-  set_enemy_value(6 + (powera ? 2 : 0) + (powerb ? 2 : 0));
 }
 
 void FollowHub::update() {
@@ -386,25 +385,28 @@ void FollowHub::on_destroy(bool bomb) {
 }
 
 Shielder::Shielder(ii::SimInterface& sim, const vec2& position, bool power)
-: Enemy{sim, position, kShipNone, 16}, dir_{0, 1}, power_{power} {
+: Enemy{sim, position, ii::ship_flag::kNone, 16}, dir_{0, 1}, power_{power} {
   auto c0 = colour_hue360(150, .2f);
   auto c1 = colour_hue360(160, .5f, .6f);
-  add_new_shape<ii::Polygon>(vec2{24, 0}, 8, 6, c0, 0, kVulnShield, ii::Polygon::T::kPolystar);
-  add_new_shape<ii::Polygon>(vec2{-24, 0}, 8, 6, c0, 0, kVulnShield, ii::Polygon::T::kPolystar);
-  add_new_shape<ii::Polygon>(vec2{0, 24}, 8, 6, c0, fixed_c::pi / 2, kVulnShield,
+  add_new_shape<ii::Polygon>(vec2{24, 0}, 8, 6, c0, 0, ii::shape_flag::kVulnShield,
                              ii::Polygon::T::kPolystar);
-  add_new_shape<ii::Polygon>(vec2{0, -24}, 8, 6, c0, fixed_c::pi / 2, kVulnShield,
+  add_new_shape<ii::Polygon>(vec2{-24, 0}, 8, 6, c0, 0, ii::shape_flag::kVulnShield,
                              ii::Polygon::T::kPolystar);
-  add_new_shape<ii::Polygon>(vec2{24, 0}, 8, 6, c1, 0, 0);
-  add_new_shape<ii::Polygon>(vec2{-24, 0}, 8, 6, c1, 0, 0);
-  add_new_shape<ii::Polygon>(vec2{0, 24}, 8, 6, c1, fixed_c::pi / 2, 0);
-  add_new_shape<ii::Polygon>(vec2{0, -24}, 8, 6, c1, fixed_c::pi / 2, 0);
+  add_new_shape<ii::Polygon>(vec2{0, 24}, 8, 6, c0, fixed_c::pi / 2, ii::shape_flag::kVulnShield,
+                             ii::Polygon::T::kPolystar);
+  add_new_shape<ii::Polygon>(vec2{0, -24}, 8, 6, c0, fixed_c::pi / 2, ii::shape_flag::kVulnShield,
+                             ii::Polygon::T::kPolystar);
+  add_new_shape<ii::Polygon>(vec2{24, 0}, 8, 6, c1, 0);
+  add_new_shape<ii::Polygon>(vec2{-24, 0}, 8, 6, c1, 0);
+  add_new_shape<ii::Polygon>(vec2{0, 24}, 8, 6, c1, fixed_c::pi / 2);
+  add_new_shape<ii::Polygon>(vec2{0, -24}, 8, 6, c1, fixed_c::pi / 2);
 
-  add_new_shape<ii::Polygon>(vec2{0, 0}, 24, 4, c0, 0, 0, ii::Polygon::T::kPolystar);
-  add_new_shape<ii::Polygon>(vec2{0, 0}, 14, 8, power ? c1 : c0, 0, kDangerous | kVulnerable);
+  add_new_shape<ii::Polygon>(vec2{0, 0}, 24, 4, c0, 0, ii::shape_flag::kNone,
+                             ii::Polygon::T::kPolystar);
+  add_new_shape<ii::Polygon>(vec2{0, 0}, 14, 8, power ? c1 : c0, 0,
+                             ii::shape_flag::kDangerous | ii::shape_flag::kVulnerable);
   set_score(60 + power_ * 40);
   set_destroy_sound(ii::sound::kPlayerDestroy);
-  set_enemy_value(8 + (power ? 2 : 0));
 }
 
 void Shielder::update() {
@@ -458,20 +460,23 @@ void Shielder::update() {
 }
 
 Tractor::Tractor(ii::SimInterface& sim, const vec2& position, bool power)
-: Enemy{sim, position, kShipNone, 50}, timer_{kTractorTimer * 4}, power_{power} {
+: Enemy{sim, position, ii::ship_flag::kNone, 50}, timer_{kTractorTimer * 4}, power_{power} {
   auto c = colour_hue360(300, .5f, .6f);
-  add_new_shape<ii::Polygon>(vec2{24, 0}, 12, 6, c, 0, kDangerous | kVulnerable,
+  add_new_shape<ii::Polygon>(vec2{24, 0}, 12, 6, c, 0,
+                             ii::shape_flag::kDangerous | ii::shape_flag::kVulnerable,
                              ii::Polygon::T::kPolygram);
-  add_new_shape<ii::Polygon>(vec2{-24, 0}, 12, 6, c, 0, kDangerous | kVulnerable,
+  add_new_shape<ii::Polygon>(vec2{-24, 0}, 12, 6, c, 0,
+                             ii::shape_flag::kDangerous | ii::shape_flag::kVulnerable,
                              ii::Polygon::T::kPolygram);
   add_new_shape<ii::Line>(vec2{0, 0}, vec2{24, 0}, vec2{-24, 0}, c);
   if (power) {
-    add_new_shape<ii::Polygon>(vec2{24, 0}, 16, 6, c, 0, 0, ii::Polygon::T::kPolystar);
-    add_new_shape<ii::Polygon>(vec2{-24, 0}, 16, 6, c, 0, 0, ii::Polygon::T::kPolystar);
+    add_new_shape<ii::Polygon>(vec2{24, 0}, 16, 6, c, 0, ii::shape_flag::kNone,
+                               ii::Polygon::T::kPolystar);
+    add_new_shape<ii::Polygon>(vec2{-24, 0}, 16, 6, c, 0, ii::shape_flag::kNone,
+                               ii::Polygon::T::kPolystar);
   }
   set_score(85 + power * 40);
   set_destroy_sound(ii::sound::kPlayerDestroy);
-  set_enemy_value(10 + (power ? 2 : 0));
 }
 
 void Tractor::update() {
@@ -550,55 +555,63 @@ namespace ii {
 
 void spawn_follow(SimInterface& sim, const vec2& position, bool has_score, fixed rotation) {
   auto h = sim.create_legacy(std::make_unique<Follow>(sim, position, has_score, rotation));
-  h.emplace<Collision>(/* bounding width */ 10);
+  h.add(Collision{.bounding_width = 10});
+  h.add(Enemy{.threat_value = 1});
 }
 
 void spawn_big_follow(SimInterface& sim, const vec2& position, bool has_score) {
   auto h = sim.create_legacy(std::make_unique<BigFollow>(sim, position, has_score));
-  h.emplace<Collision>(/* bounding width */ 10);
+  h.add(Collision{.bounding_width = 10});
+  h.add(Enemy{.threat_value = 3});
 }
 
 void spawn_chaser(SimInterface& sim, const vec2& position) {
   auto h = sim.create_legacy(std::make_unique<Chaser>(sim, position));
-  h.emplace<Collision>(/* bounding width */ 10);
+  h.add(Collision{.bounding_width = 10});
+  h.add(Enemy{.threat_value = 2});
 }
 
 void spawn_square(SimInterface& sim, const vec2& position, fixed rotation) {
   auto h = sim.create_legacy(std::make_unique<Square>(sim, position, rotation));
-  h.emplace<Collision>(/* bounding width */ 15);
+  h.add(Collision{.bounding_width = 15});
+  h.add(Enemy{.threat_value = 2});
 }
 
 void spawn_wall(SimInterface& sim, const vec2& position, bool rdir) {
   auto h = sim.create_legacy(std::make_unique<Wall>(sim, position, rdir));
-  h.emplace<Collision>(/* bounding width */ 50);
+  h.add(Collision{.bounding_width = 50});
+  h.add(Enemy{.threat_value = 4});
 }
 
 void spawn_follow_hub(SimInterface& sim, const vec2& position, bool power_a, bool power_b) {
   auto h = sim.create_legacy(std::make_unique<FollowHub>(sim, position, power_a, power_b));
-  h.emplace<Collision>(/* bounding width */ 16);
+  h.add(Collision{.bounding_width = 16});
+  h.add(Enemy{.threat_value = 6u + 2 * power_a + 2 * power_b});
 }
 
 void spawn_shielder(SimInterface& sim, const vec2& position, bool power) {
   auto h = sim.create_legacy(std::make_unique<Shielder>(sim, position, power));
-  h.emplace<Collision>(/* bounding width */ 36);
+  h.add(Collision{.bounding_width = 36});
+  h.add(Enemy{.threat_value = 8u + 2 * power});
 }
 
 void spawn_tractor(SimInterface& sim, const vec2& position, bool power) {
   auto h = sim.create_legacy(std::make_unique<Tractor>(sim, position, power));
-  h.emplace<Collision>(/* bounding width */ 36);
+  h.add(Collision{.bounding_width = 36});
+  h.add(Enemy{.threat_value = 10u + 2 * power});
 }
 
 void spawn_boss_shot(SimInterface& sim, const vec2& position, const vec2& velocity,
                      const glm::vec4& c) {
   auto h = sim.create_legacy(std::make_unique<BossShot>(sim, position, velocity, c));
-  h.emplace<Collision>(/* bounding width */ 12);
+  h.add(Collision{.bounding_width = 12});
+  h.add(Enemy{.threat_value = 1});
 }
 
 }  // namespace ii
 
-Enemy::Enemy(ii::SimInterface& sim, const vec2& position, Ship::ship_category type,
-             std::uint32_t hp)
-: ii::Ship{sim, position, static_cast<Ship::ship_category>(type | kShipEnemy)}, hp_{hp} {}
+Enemy::Enemy(ii::SimInterface& sim, const vec2& position, ii::ship_flag type, std::uint32_t hp)
+: ii::Ship{sim, position, type | ii::ship_flag::kEnemy}, hp_{hp} {}
 
 void Enemy::damage(std::uint32_t damage, bool magic, Player* source) {
   hp_ = hp_ < damage ? 0 : hp_ - damage;
@@ -633,12 +646,12 @@ void Enemy::render() const {
 
 BossShot::BossShot(ii::SimInterface& sim, const vec2& position, const vec2& velocity,
                    const glm::vec4& c)
-: Enemy{sim, position, kShipWall, 0}, dir_{velocity} {
-  add_new_shape<ii::Polygon>(vec2{0}, 16, 8, c, 0, 0, ii::Polygon::T::kPolystar);
-  add_new_shape<ii::Polygon>(vec2{0}, 10, 8, c, 0, 0);
-  add_new_shape<ii::Polygon>(vec2{0}, 12, 8, glm::vec4{0.f}, 0, kDangerous);
+: Enemy{sim, position, ii::ship_flag::kWall, 0}, dir_{velocity} {
+  add_new_shape<ii::Polygon>(vec2{0}, 16, 8, c, 0, ii::shape_flag::kNone,
+                             ii::Polygon::T::kPolystar);
+  add_new_shape<ii::Polygon>(vec2{0}, 10, 8, c, 0);
+  add_new_shape<ii::Polygon>(vec2{0}, 12, 8, glm::vec4{0.f}, 0, ii::shape_flag::kDangerous);
   set_score(0);
-  set_enemy_value(1);
 }
 
 void BossShot::update() {

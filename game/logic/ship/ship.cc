@@ -4,16 +4,16 @@
 
 namespace ii {
 
-Ship::Ship(SimInterface& sim, const vec2& position, ship_category type)
+Ship::Ship(SimInterface& sim, const vec2& position, ship_flag type)
 : sim_{&sim}, type_{type}, shape_{position, 0} {}
 
 Ship::~Ship() {}
 
-bool Ship::check_point(const vec2& v, std::uint32_t category) const {
+bool Ship::check_point(const vec2& v, shape_flag category) const {
   bool aa = false;
   vec2 a{0};
   for (const auto& shape : shape_.shapes()) {
-    if (shape->category && (!category || (shape->category & category) == category)) {
+    if (+shape->category && (!category || (shape->category & category) == category)) {
       if (!aa) {
         a = rotate(v - shape_.centre, -shape_.rotation());
         aa = true;
