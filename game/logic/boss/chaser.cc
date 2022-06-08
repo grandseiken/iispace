@@ -1,4 +1,4 @@
-#include "game/logic/boss/chaser.h"
+#include "game/logic/boss/boss_internal.h"
 #include "game/logic/player.h"
 #include <algorithm>
 
@@ -69,11 +69,46 @@ const std::uint32_t ONE_PT_ONE_FIVE_intLookup[128] = {
     3592244,  4131080,  4750742,  5463353,  6282856,  7225284,  8309077,  9555438,  10988754,
     12637066, 14532626, 16712520, 19219397, 22102306, 25417652, 29230299, 33614843, 38657069,
     44455628, 51123971};
-}  // namespace
+
+class ChaserBoss : public Boss {
+public:
+  static constexpr std::uint32_t kTimer = 60;
+  ChaserBoss(ii::SimInterface& sim, std::uint32_t players, std::uint32_t cycle, std::uint32_t split,
+             const vec2& position, std::uint32_t time, std::uint32_t stagger);
+
+  void update() override;
+  void render() const override;
+  std::uint32_t get_damage(std::uint32_t damage, bool magic) override;
+  void on_destroy() override;
+
+  static bool has_counted_;
+
+private:
+  bool on_screen_ = false;
+  bool move_ = false;
+  std::uint32_t timer_ = 0;
+  vec2 dir_{0};
+  vec2 last_dir_{0};
+
+  std::uint32_t players_ = 0;
+  std::uint32_t cycle_ = 0;
+  std::uint32_t split_ = 0;
+
+  std::uint32_t stagger_ = 0;
+  static std::uint32_t count_;
+  static std::uint32_t shared_hp_;
+};
 
 std::uint32_t ChaserBoss::count_;
 bool ChaserBoss::has_counted_;
 std::uint32_t ChaserBoss::shared_hp_;
+
+ChaserBoss*
+spawn_chaser_boss_internal(ii::SimInterface& sim, std::uint32_t players, std::uint32_t cycle,
+                           std::uint32_t split = 0, const vec2& position = vec2{0},
+                           std::uint32_t time = ChaserBoss::kTimer, std::uint32_t stagger = 0) {
+  return sim.add_new_ship<ChaserBoss>(players, cycle, split, position, time, stagger);
+}
 
 ChaserBoss::ChaserBoss(ii::SimInterface& sim, std::uint32_t players, std::uint32_t cycle,
                        std::uint32_t split, const vec2& position, std::uint32_t time,
@@ -286,12 +321,12 @@ void ChaserBoss::on_destroy() {
     for (std::uint32_t i = 0; i < 2; ++i) {
       vec2 d = from_polar(i * fixed_c::pi + shape().rotation(),
                           fixed{8 * ONE_PT_TWO_lookup[kCbMaxSplit - 1 - split_]});
-      auto* s = spawn_new<ChaserBoss>(players_, cycle_, split_ + 1, shape().centre + d,
-                                      (i + 1) * kTimer / 2,
-                                      sim().random(split_ + 1 == 1       ? 2
-                                                       : split_ + 1 == 2 ? 4
-                                                       : split_ + 1 == 3 ? 8
-                                                                         : 16));
+      auto* s = spawn_chaser_boss_internal(sim(), players_, cycle_, split_ + 1, shape().centre + d,
+                                           (i + 1) * kTimer / 2,
+                                           sim().random(split_ + 1 == 1       ? 2
+                                                            : split_ + 1 == 2 ? 4
+                                                            : split_ + 1 == 3 ? 8
+                                                                              : 16));
       s->shape().set_rotation(shape().rotation());
     }
   } else {
@@ -342,3 +377,15 @@ void ChaserBoss::on_destroy() {
     play_sound_random(ii::sound::kExplosion);
   }
 }
+
+}  // namespace
+
+namespace ii {
+void spawn_chaser_boss(SimInterface& sim, std::uint32_t players, std::uint32_t cycle) {
+  spawn_chaser_boss_internal(sim, players, cycle);
+}
+
+void chaser_boss_begin_frame() {
+  ChaserBoss::has_counted_ = false;
+}
+}  // namespace ii

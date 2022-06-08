@@ -1,4 +1,4 @@
-#include "game/logic/boss/square.h"
+#include "game/logic/boss/boss_internal.h"
 #include "game/logic/enemy.h"
 #include "game/logic/player.h"
 #include <glm/gtc/constants.hpp>
@@ -15,7 +15,25 @@ const fixed kBsbAttackRadius = 120;
 const glm::vec4 c0 = colour_hue360(270, .6f);
 const glm::vec4 c1 = colour_hue360(270, .4f);
 const glm::vec4 c2 = colour_hue360(260, .3f);
-}  // namespace
+
+class BigSquareBoss : public Boss {
+public:
+  BigSquareBoss(ii::SimInterface& sim, std::uint32_t players, std::uint32_t cycle);
+
+  void update() override;
+  void render() const override;
+  std::uint32_t get_damage(std::uint32_t damage, bool magic) override;
+
+private:
+  vec2 dir_;
+  bool reverse_ = false;
+  std::uint32_t timer_ = 0;
+  std::uint32_t spawn_timer_ = 0;
+  std::uint32_t special_timer_ = 0;
+  bool special_attack_ = false;
+  bool special_attack_rotate_ = false;
+  Player* attack_player_ = nullptr;
+};
 
 BigSquareBoss::BigSquareBoss(ii::SimInterface& sim, std::uint32_t players, std::uint32_t cycle)
 : Boss{sim,
@@ -67,9 +85,8 @@ void BigSquareBoss::update() {
         d = rotate(d, fixed_c::pi / 2);
       }
       for (std::uint32_t i = 0; i < 6; ++i) {
-        auto* s = spawn_new<Follow>(attack_player_->shape().centre + d);
-        s->shape().set_rotation(fixed_c::pi / 4);
-        s->set_score(0);
+        ii::spawn_follow(sim(), attack_player_->shape().centre + d, /* score */ false,
+                         fixed_c::pi / 4);
         d = rotate(d, 2 * fixed_c::pi / 6);
       }
       attack_player_ = 0;
@@ -92,7 +109,7 @@ void BigSquareBoss::update() {
     if (spawn_timer_ >= t) {
       spawn_timer_ = 0;
       ++special_timer_;
-      spawn_new<BigFollow>(shape().centre, false);
+      ii::spawn_big_follow(sim(), shape().centre, false);
       play_sound_random(ii::sound::kBossFire);
     }
     if (special_timer_ >= 8 && sim().random(4)) {
@@ -136,3 +153,11 @@ void BigSquareBoss::render() const {
 std::uint32_t BigSquareBoss::get_damage(std::uint32_t damage, bool magic) {
   return damage;
 }
+
+}  // namespace
+
+namespace ii {
+void spawn_big_square_boss(SimInterface& sim, std::uint32_t players, std::uint32_t cycle) {
+  sim.add_new_ship<BigSquareBoss>(players, cycle);
+}
+}  // namespace ii

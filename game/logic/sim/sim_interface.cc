@@ -79,18 +79,22 @@ bool SimInterface::any_collision(const vec2& point, std::uint32_t category) cons
   fixed y = point.y;
 
   for (const auto& collision : internals_->collisions) {
-    fixed sx = collision->shape().centre.x;
-    fixed sy = collision->shape().centre.y;
-    fixed w = collision->bounding_width();
+    auto v = collision.ship->shape().centre;
+    fixed w = collision.bounding_width;
 
-    if (sx - w > x) {
+    // TODO: this optmization check is incorrect, since collision list is sorted based on x-min
+    // at start of frame; may have moved in the meantime, or list may have been appended to.
+    // May be impossible to fix without breaking replay compatibility, unless there is a clever
+    // way to work around it with update ordering or something.
+    // Very unclear what effective collision semantics actually are.
+    if (v.x - w > x) {
       break;
     }
-    if (sx + w < x || sy + w < y || sy - w > y) {
+    if (v.x + w < x || v.y + w < y || v.y - w > y) {
       continue;
     }
 
-    if (collision->check_point(point, category)) {
+    if (collision.ship->check_point(point, category)) {
       return true;
     }
   }
@@ -104,19 +108,19 @@ SimInterface::collision_list(const vec2& point, std::uint32_t category) const {
   fixed y = point.y;
 
   for (const auto& collision : internals_->collisions) {
-    fixed sx = collision->shape().centre.x;
-    fixed sy = collision->shape().centre.y;
-    fixed w = collision->bounding_width();
+    auto v = collision.ship->shape().centre;
+    fixed w = collision.bounding_width;
 
-    if (sx - w > x) {
+    // TODO: same as above.
+    if (v.x - w > x) {
       break;
     }
-    if (sx + w < x || sy + w < y || sy - w > y) {
+    if (v.x + w < x || v.y + w < y || v.y - w > y) {
       continue;
     }
 
-    if (collision->check_point(point, category)) {
-      r.push_back(collision);
+    if (collision.ship->check_point(point, category)) {
+      r.push_back(collision.ship);
     }
   }
   return r;
@@ -188,11 +192,11 @@ void SimInterface::set_boss_killed(boss_list boss) {
 
 Ship* SimInterface::add_ship(std::unique_ptr<Ship> ship) {
   auto p = ship.get();
-  if (ship->bounding_width() > 1) {
-    internals_->collisions.push_back(ship.get());
-  }
   auto h = internals_->index.create();
   h.emplace<LegacyShip>(std::move(ship));
+  if (auto w = p->bounding_width(); w > 1) {
+    h.emplace<Collision>(w);
+  }
   p->set_handle(h);
   return p;
 }

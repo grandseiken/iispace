@@ -1,12 +1,6 @@
 #include "game/logic/overmind.h"
 #include "game/common/math.h"
-#include "game/logic/boss/chaser.h"
-#include "game/logic/boss/deathray.h"
-#include "game/logic/boss/ghost.h"
-#include "game/logic/boss/shield.h"
-#include "game/logic/boss/square.h"
-#include "game/logic/boss/super.h"
-#include "game/logic/boss/tractor.h"
+#include "game/logic/boss.h"
 #include "game/logic/enemy.h"
 #include "game/logic/player.h"
 #include "game/logic/stars.h"
@@ -51,19 +45,19 @@ public:
   }
 
   void spawn_follow(std::uint32_t num, std::uint32_t div, std::uint32_t side) {
-    do_sides(side, [&](bool b) { sim_->add_new_ship<Follow>(spawn_point(b, num, div)); });
+    do_sides(side, [&](bool b) { ii::spawn_follow(*sim_, spawn_point(b, num, div)); });
   }
 
   void spawn_chaser(std::uint32_t num, std::uint32_t div, std::uint32_t side) {
-    do_sides(side, [&](bool b) { sim_->add_new_ship<Chaser>(spawn_point(b, num, div)); });
+    do_sides(side, [&](bool b) { ii::spawn_chaser(*sim_, spawn_point(b, num, div)); });
   }
 
   void spawn_square(std::uint32_t num, std::uint32_t div, std::uint32_t side) {
-    do_sides(side, [&](bool b) { sim_->add_new_ship<Square>(spawn_point(b, num, div)); });
+    do_sides(side, [&](bool b) { ii::spawn_square(*sim_, spawn_point(b, num, div)); });
   }
 
   void spawn_wall(std::uint32_t num, std::uint32_t div, std::uint32_t side, bool dir) {
-    do_sides(side, [&](bool b) { sim_->add_new_ship<Wall>(spawn_point(b, num, div), dir); });
+    do_sides(side, [&](bool b) { ii::spawn_wall(*sim_, spawn_point(b, num, div), dir); });
   }
 
   void spawn_follow_hub(std::uint32_t num, std::uint32_t div, std::uint32_t side) {
@@ -76,7 +70,7 @@ public:
       if (p2) {
         *hard_already_ += 2;
       }
-      sim_->add_new_ship<FollowHub>(spawn_point(b, num, div), p1, p2);
+      ii::spawn_follow_hub(*sim_, spawn_point(b, num, div), p1, p2);
     });
   }
 
@@ -86,7 +80,7 @@ public:
       if (p) {
         *hard_already_ += 3;
       }
-      sim_->add_new_ship<Shielder>(spawn_point(b, num, div), p);
+      ii::spawn_shielder(*sim_, spawn_point(b, num, div), p);
     });
   }
 
@@ -96,7 +90,7 @@ public:
       if (p) {
         *hard_already_ += 4;
       }
-      sim_->add_new_ship<Tractor>(spawn_point(b, num, div), p);
+      ii::spawn_tractor(*sim_, spawn_point(b, num, div), p);
     });
   }
 
@@ -294,11 +288,11 @@ void Overmind::spawn_powerup() {
   }
 
   r = sim_.random(m);
-  sim_.add_new_ship<Powerup>(v,
-                             r == 0       ? Powerup::type::kBomb
-                                 : r == 1 ? Powerup::type::kMagicShots
-                                 : r == 2 ? Powerup::type::kShield
-                                          : (++lives_spawned_, Powerup::type::kExtraLife));
+  ii::spawn_powerup(sim_, v,
+                    r == 0       ? ii::powerup_type::kBomb
+                        : r == 1 ? ii::powerup_type::kMagicShots
+                        : r == 2 ? ii::powerup_type::kShield
+                                 : (++lives_spawned_, ii::powerup_type::kExtraLife));
 }
 
 void Overmind::spawn_boss_reward() {
@@ -308,7 +302,7 @@ void Overmind::spawn_boss_reward() {
       : r == 2    ? vec2{ii::kSimDimensions.x / 2, -ii::kSimDimensions.y / 4}
                   : vec2{ii::kSimDimensions.x / 2, ii::kSimDimensions.y + ii::kSimDimensions.y / 4};
 
-  sim_.add_new_ship<Powerup>(v, Powerup::type::kExtraLife);
+  ii::spawn_powerup(sim_, v, ii::powerup_type::kExtraLife);
   if (sim_.conditions().mode != ii::game_mode::kBoss) {
     spawn_powerup();
   }
@@ -382,15 +376,16 @@ void Overmind::boss() {
              2u, boss_mod_bosses_ + (sim_.conditions().mode == ii::game_mode::kHard)) -
          2) /
         2;
-    sim_.add_new_ship<SuperBoss>(count, secret_cycle);
+  ii:
+    spawn_super_boss(sim_, count, secret_cycle);
     boss_mod_secret_ = 2;
   } else if (boss_mod_bosses_ % 2 == 0) {
     if (boss1_queue_[0] == 0) {
-      sim_.add_new_ship<BigSquareBoss>(count, cycle);
+      ii::spawn_big_square_boss(sim_, count, cycle);
     } else if (boss1_queue_[0] == 1) {
-      sim_.add_new_ship<ShieldBombBoss>(count, cycle);
+      ii::spawn_shield_bomb_boss(sim_, count, cycle);
     } else {
-      sim_.add_new_ship<ChaserBoss>(count, cycle);
+      ii::spawn_chaser_boss(sim_, count, cycle);
     }
     boss1_queue_.push_back(boss1_queue_.front());
     boss1_queue_.erase(boss1_queue_.begin());
@@ -399,11 +394,11 @@ void Overmind::boss() {
       --boss_mod_secret_;
     }
     if (boss2_queue_[0] == 0) {
-      sim_.add_new_ship<TractorBoss>(count, cycle);
+      spawn_tractor_boss(sim_, count, cycle);
     } else if (boss2_queue_[0] == 1) {
-      sim_.add_new_ship<GhostBoss>(count, cycle);
+      spawn_ghost_boss(sim_, count, cycle);
     } else {
-      sim_.add_new_ship<DeathRayBoss>(count, cycle);
+      spawn_death_ray_boss(sim_, count, cycle);
     }
     boss2_queue_.push_back(boss2_queue_.front());
     boss2_queue_.erase(boss2_queue_.begin());
@@ -415,20 +410,20 @@ void Overmind::boss_mode_boss() {
   auto count = sim_.player_count();
   if (boss_mod_bosses_ < 3) {
     if (boss1_queue_[boss] == 0) {
-      sim_.add_new_ship<BigSquareBoss>(count, 0);
+      ii::spawn_big_square_boss(sim_, count, 0);
     } else if (boss1_queue_[boss] == 1) {
-      sim_.add_new_ship<ShieldBombBoss>(count, 0);
+      ii::spawn_shield_bomb_boss(sim_, count, 0);
     } else {
-      sim_.add_new_ship<ChaserBoss>(count, 0);
+      ii::spawn_chaser_boss(sim_, count, 0);
     }
   } else {
     boss = boss - 3;
     if (boss2_queue_[boss] == 0) {
-      sim_.add_new_ship<TractorBoss>(count, 0);
+      spawn_tractor_boss(sim_, count, 0);
     } else if (boss2_queue_[boss] == 1) {
-      sim_.add_new_ship<GhostBoss>(count, 0);
+      spawn_ghost_boss(sim_, count, 0);
     } else {
-      sim_.add_new_ship<DeathRayBoss>(count, 0);
+      spawn_death_ray_boss(sim_, count, 0);
     }
   }
 }

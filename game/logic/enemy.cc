@@ -22,49 +22,112 @@ const fixed kShielderSpeed = 2;
 
 const std::uint32_t kTractorTimer = 50;
 const fixed kTractorSpeed = 6 * (1_fx / 10);
-}  // namespace
-const fixed Tractor::kTractorBeamSpeed = 2 + 1_fx / 2;
+const fixed kTractorBeamSpeed = 2 + 1_fx / 2;
 
-Enemy::Enemy(ii::SimInterface& sim, const vec2& position, Ship::ship_category type,
-             std::uint32_t hp)
-: ii::Ship{sim, position, static_cast<Ship::ship_category>(type | kShipEnemy)}, hp_{hp} {}
+class Follow : public Enemy {
+public:
+  Follow(ii::SimInterface& sim, const vec2& position, bool has_score, fixed rotation,
+         fixed radius = 10, std::uint32_t hp = 1);
+  void update() override;
 
-void Enemy::damage(std::uint32_t damage, bool magic, Player* source) {
-  hp_ = hp_ < damage ? 0 : hp_ - damage;
-  if (damage > 0) {
-    play_sound_random(ii::sound::kEnemyHit);
-  }
+private:
+  std::uint32_t timer_ = 0;
+  Ship* target_ = nullptr;
+};
 
-  if (!hp_ && !is_destroyed()) {
-    play_sound_random(destroy_sound_);
-    if (source && get_score() > 0) {
-      source->add_score(get_score());
-    }
-    explosion();
-    on_destroy(damage >= Player::kBombDamage);
-    destroy();
-  } else if (!is_destroyed()) {
-    if (damage > 0) {
-      play_sound_random(ii::sound::kEnemyHit);
-    }
-    damaged_ = damage >= Player::kBombDamage ? 25 : 1;
-  }
-}
+class BigFollow : public Follow {
+public:
+  BigFollow(ii::SimInterface& sim, const vec2& position, bool has_score);
+  void on_destroy(bool bomb) override;
 
-void Enemy::render() const {
-  if (!damaged_) {
-    Ship::render();
-    return;
-  }
-  render_with_colour(glm::vec4{1.f});
-  --damaged_;
-}
+private:
+  bool has_score_ = 0;
+};
 
-Follow::Follow(ii::SimInterface& sim, const vec2& position, fixed radius, std::uint32_t hp)
+class Chaser : public Enemy {
+public:
+  Chaser(ii::SimInterface& sim, const vec2& position);
+  void update() override;
+
+private:
+  bool move_ = false;
+  std::uint32_t timer_ = 0;
+  vec2 dir_{0};
+};
+
+class Square : public Enemy {
+public:
+  Square(ii::SimInterface& sim, const vec2& position, fixed rotation = fixed_c::pi / 2);
+  void update() override;
+  void render() const override;
+
+private:
+  vec2 dir_{0};
+  std::uint32_t timer_ = 0;
+};
+
+class Wall : public Enemy {
+public:
+  Wall(ii::SimInterface& sim, const vec2& position, bool rdir);
+  void update() override;
+  void on_destroy(bool bomb) override;
+
+private:
+  vec2 dir_{0};
+  std::uint32_t timer_ = 0;
+  bool rotate_ = false;
+  bool rdir_ = false;
+};
+
+class FollowHub : public Enemy {
+public:
+  FollowHub(ii::SimInterface& sim, const vec2& position, bool powera = false, bool powerb = false);
+  void update() override;
+  void on_destroy(bool bomb) override;
+
+private:
+  std::uint32_t timer_ = 0;
+  vec2 dir_{0};
+  std::uint32_t count_ = 0;
+  bool powera_ = false;
+  bool powerb_ = false;
+};
+
+class Shielder : public Enemy {
+public:
+  Shielder(ii::SimInterface& sim, const vec2& position, bool power = false);
+  void update() override;
+
+private:
+  vec2 dir_{0};
+  std::uint32_t timer_ = 0;
+  bool rotate_ = false;
+  bool rdir_ = false;
+  bool power_ = false;
+};
+
+class Tractor : public Enemy {
+public:
+  Tractor(ii::SimInterface& sim, const vec2& position, bool power = false);
+  void update() override;
+  void render() const override;
+
+private:
+  std::uint32_t timer_ = 0;
+  vec2 dir_{0};
+  bool power_ = false;
+
+  bool ready_ = false;
+  bool spinning_ = false;
+  ii::SimInterface::ship_list players_;
+};
+
+Follow::Follow(ii::SimInterface& sim, const vec2& position, bool has_score, fixed rotation,
+               fixed radius, std::uint32_t hp)
 : Enemy{sim, position, kShipNone, hp} {
-  add_new_shape<ii::Polygon>(vec2{0}, radius, 4, colour_hue360(270, .6f), 0,
+  add_new_shape<ii::Polygon>(vec2{0}, radius, 4, colour_hue360(270, .6f), rotation,
                              kDangerous | kVulnerable);
-  set_score(15);
+  set_score(has_score ? 15 : 0);
   set_bounding_width(10);
   set_destroy_sound(ii::sound::kEnemyShatter);
   set_enemy_value(1);
@@ -86,7 +149,7 @@ void Follow::update() {
 }
 
 BigFollow::BigFollow(ii::SimInterface& sim, const vec2& position, bool has_score)
-: Follow{sim, position, 20, 3}, has_score_{has_score} {
+: Follow{sim, position, has_score_, 0, 20, 3}, has_score_{has_score} {
   set_score(has_score ? 20 : 0);
   set_destroy_sound(ii::sound::kPlayerDestroy);
   set_enemy_value(3);
@@ -99,10 +162,7 @@ void BigFollow::on_destroy(bool bomb) {
 
   vec2 d = rotate(vec2{10, 0}, shape().rotation());
   for (std::uint32_t i = 0; i < 3; ++i) {
-    auto* s = spawn_new<Follow>(shape().centre + d);
-    if (!has_score_) {
-      s->set_score(0);
-    }
+    ii::spawn_follow(sim(), shape().centre + d, has_score_);
     d = rotate(d, 2 * fixed_c::pi / 3);
   }
 }
@@ -258,12 +318,12 @@ void Wall::on_destroy(bool bomb) {
   auto d = rotate(dir_, fixed_c::pi / 2);
   auto v = shape().centre + d * 10 * 3;
   if (v.x >= 0 && v.x <= ii::kSimDimensions.x && v.y >= 0 && v.y <= ii::kSimDimensions.y) {
-    spawn_new<Square>(v, shape().rotation());
+    ii::spawn_square(sim(), v, shape().rotation());
   }
 
   v = shape().centre - d * 10 * 3;
   if (v.x >= 0 && v.x <= ii::kSimDimensions.x && v.y >= 0 && v.y <= ii::kSimDimensions.y) {
-    spawn_new<Square>(v, shape().rotation());
+    ii::spawn_square(sim(), v, shape().rotation());
   }
 }
 
@@ -298,9 +358,9 @@ void FollowHub::update() {
     ++count_;
     if (is_on_screen()) {
       if (powerb_) {
-        spawn_new<Chaser>(shape().centre);
+        ii::spawn_chaser(sim(), shape().centre);
       } else {
-        spawn_new<Follow>(shape().centre);
+        ii::spawn_follow(sim(), shape().centre);
       }
       play_sound_random(ii::sound::kEnemySpawn);
     }
@@ -325,9 +385,9 @@ void FollowHub::on_destroy(bool bomb) {
     return;
   }
   if (powerb_) {
-    spawn_new<BigFollow>(shape().centre, true);
+    ii::spawn_big_follow(sim(), shape().centre, true);
   }
-  spawn_new<Chaser>(shape().centre);
+  ii::spawn_chaser(sim(), shape().centre);
 }
 
 Shielder::Shielder(ii::SimInterface& sim, const vec2& position, bool power)
@@ -395,7 +455,7 @@ void Shielder::update() {
       auto v = shape().centre;
 
       auto d = normalise(p->shape().centre - v);
-      spawn_new<BossShot>(v, d * 3, colour_hue360(160, .5f, .6f));
+      ii::spawn_boss_shot(sim(), v, d * 3, colour_hue360(160, .5f, .6f));
       play_sound_random(ii::sound::kBossFire);
     }
     move(dir_ * speed);
@@ -468,7 +528,7 @@ void Tractor::update() {
     if (timer_ % (kTractorTimer / 2) == 0 && is_on_screen() && power_) {
       Player* p = nearest_player();
       auto d = normalise(p->shape().centre - shape().centre);
-      spawn_new<BossShot>(shape().centre, d * 4, colour_hue360(300, .5f, .6f));
+      ii::spawn_boss_shot(sim(), shape().centre, d * 4, colour_hue360(300, .5f, .6f));
       play_sound_random(ii::sound::kBossFire);
     }
 
@@ -489,6 +549,84 @@ void Tractor::render() const {
       }
     }
   }
+}
+
+}  // namespace
+
+namespace ii {
+
+void spawn_follow(SimInterface& sim, const vec2& position, bool has_score, fixed rotation) {
+  sim.add_new_ship<Follow>(position, has_score, rotation);
+}
+
+void spawn_big_follow(SimInterface& sim, const vec2& position, bool has_score) {
+  sim.add_new_ship<BigFollow>(position, has_score);
+}
+
+void spawn_chaser(SimInterface& sim, const vec2& position) {
+  sim.add_new_ship<Chaser>(position);
+}
+
+void spawn_square(SimInterface& sim, const vec2& position, fixed rotation) {
+  sim.add_new_ship<Square>(position, rotation);
+}
+
+void spawn_wall(SimInterface& sim, const vec2& position, bool rdir) {
+  sim.add_new_ship<Wall>(position, rdir);
+}
+
+void spawn_follow_hub(SimInterface& sim, const vec2& position, bool power_a, bool power_b) {
+  sim.add_new_ship<FollowHub>(position, power_a, power_b);
+}
+
+void spawn_shielder(SimInterface& sim, const vec2& position, bool power) {
+  sim.add_new_ship<Shielder>(position, power);
+}
+
+void spawn_tractor(SimInterface& sim, const vec2& position, bool power) {
+  sim.add_new_ship<Tractor>(position, power);
+}
+
+void spawn_boss_shot(SimInterface& sim, const vec2& position, const vec2& velocity,
+                     const glm::vec4& c) {
+  sim.add_new_ship<BossShot>(position, velocity, c);
+}
+
+}  // namespace ii
+
+Enemy::Enemy(ii::SimInterface& sim, const vec2& position, Ship::ship_category type,
+             std::uint32_t hp)
+: ii::Ship{sim, position, static_cast<Ship::ship_category>(type | kShipEnemy)}, hp_{hp} {}
+
+void Enemy::damage(std::uint32_t damage, bool magic, Player* source) {
+  hp_ = hp_ < damage ? 0 : hp_ - damage;
+  if (damage > 0) {
+    play_sound_random(ii::sound::kEnemyHit);
+  }
+
+  if (!hp_ && !is_destroyed()) {
+    play_sound_random(destroy_sound_);
+    if (source && get_score() > 0) {
+      source->add_score(get_score());
+    }
+    explosion();
+    on_destroy(damage >= Player::kBombDamage);
+    destroy();
+  } else if (!is_destroyed()) {
+    if (damage > 0) {
+      play_sound_random(ii::sound::kEnemyHit);
+    }
+    damaged_ = damage >= Player::kBombDamage ? 25 : 1;
+  }
+}
+
+void Enemy::render() const {
+  if (!damaged_) {
+    Ship::render();
+    return;
+  }
+  render_with_colour(glm::vec4{1.f});
+  --damaged_;
 }
 
 BossShot::BossShot(ii::SimInterface& sim, const vec2& position, const vec2& velocity,

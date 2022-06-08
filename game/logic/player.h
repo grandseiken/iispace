@@ -2,6 +2,21 @@
 #define II_GAME_LOGIC_PLAYER_H
 #include "game/logic/ship/ship.h"
 
+class Player;
+
+namespace ii {
+enum class powerup_type {
+  kExtraLife,
+  kMagicShots,
+  kShield,
+  kBomb,
+};
+
+Player* spawn_player(SimInterface&, const vec2& position, std::uint32_t player_number);
+void spawn_powerup(SimInterface&, const vec2& position, powerup_type type);
+
+}  // namespace ii
+
 class Player : public ii::Ship {
 public:
   static constexpr std::uint32_t kBombDamage = 50;
@@ -65,43 +80,6 @@ private:
 
   static std::uint32_t fire_timer_;
   static ii::SimInterface::ship_list kill_queue_;
-};
-
-class Shot : public ii::Ship {
-public:
-  Shot(ii::SimInterface& sim, const vec2& position, Player* player, const vec2& direction,
-       bool magic = false);
-  ~Shot() override {}
-
-  void update() override;
-  void render() const override;
-
-private:
-  Player* player_ = nullptr;
-  vec2 velocity_;
-  bool magic_ = false;
-  bool flash_ = false;
-};
-
-class Powerup : public ii::Ship {
-public:
-  enum class type {
-    kExtraLife,
-    kMagicShots,
-    kShield,
-    kBomb,
-  };
-
-  Powerup(ii::SimInterface& sim, const vec2& position, type t);
-  void update() override;
-  void damage(std::uint32_t damage, bool magic, Player* source) override;
-
-private:
-  type type_ = type::kExtraLife;
-  std::uint32_t frame_ = 0;
-  vec2 dir_ = {0, 1};
-  bool rotate_ = false;
-  bool first_frame_ = true;
 };
 
 #endif

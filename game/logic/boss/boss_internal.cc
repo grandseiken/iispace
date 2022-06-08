@@ -1,4 +1,4 @@
-#include "game/logic/boss.h"
+#include "game/logic/boss/boss_internal.h"
 #include "game/logic/player.h"
 #include <algorithm>
 
@@ -132,3 +132,13 @@ void Boss::on_destroy() {
     }
   }
 }
+
+namespace ii {
+std::vector<std::pair<std::uint32_t, std::pair<vec2, glm::vec4>>>& boss_fireworks() {
+  return Boss::fireworks_;
+}
+
+std::vector<vec2>& boss_warnings() {
+  return Boss::warnings_;
+}
+}  // namespace ii

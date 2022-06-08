@@ -29,7 +29,13 @@ struct SimInternals {
   using ship_list = std::vector<Ship*>;
   std::vector<particle> particles;
   ship_list player_list;
-  ship_list collisions;
+
+  struct collision_entry {
+    fixed x_min;
+    fixed bounding_width;
+    Ship* ship;
+  };
+  std::vector<collision_entry> collisions;
 
   // Cached data.
   std::uint32_t non_wall_enemy_count = 0;

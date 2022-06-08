@@ -1,15 +1,78 @@
-#include "game/logic/boss/tractor.h"
+#include "game/logic/boss/boss_internal.h"
+#include "game/logic/enemy.h"
 #include "game/logic/player.h"
 
 namespace {
 const std::uint32_t kTbBaseHp = 900;
 const std::uint32_t kTbTimer = 100;
 const fixed kTbSpeed = 2;
+const fixed kTractorBeamSpeed = 2 + 1_fx / 2;
 
 const glm::vec4 c0 = colour_hue360(300, .5f, .6f);
 const glm::vec4 c1 = colour_hue360(300, 1.f / 3, .6f);
 const glm::vec4 c2 = colour_hue360(300, .4f, .5f);
-}  // namespace
+
+class TBossShot : public Enemy {
+public:
+  TBossShot(ii::SimInterface& sim, const vec2& position, fixed angle);
+  void update() override;
+
+private:
+  vec2 dir_{0};
+};
+
+TBossShot::TBossShot(ii::SimInterface& sim, const vec2& position, fixed angle)
+: Enemy{sim, position, kShipNone, 1} {
+  add_new_shape<ii::Polygon>(vec2{0}, 8, 6, c0, 0, kDangerous | kVulnerable);
+  dir_ = from_polar(angle, 3_fx);
+  set_bounding_width(8);
+  set_score(0);
+  set_destroy_sound(ii::sound::kEnemyShatter);
+}
+
+void TBossShot::update() {
+  if ((shape().centre.x > ii::kSimDimensions.x && dir_.x > 0) ||
+      (shape().centre.x < 0 && dir_.x < 0)) {
+    dir_.x = -dir_.x;
+  }
+  if ((shape().centre.y > ii::kSimDimensions.y && dir_.y > 0) ||
+      (shape().centre.y < 0 && dir_.y < 0)) {
+    dir_.y = -dir_.y;
+  }
+
+  move(dir_);
+}
+
+void spawn_tboss_shot(ii::SimInterface& sim, const vec2& position, fixed angle) {
+  sim.add_new_ship<TBossShot>(position, angle);
+}
+
+class TractorBoss : public Boss {
+public:
+  TractorBoss(ii::SimInterface& sim, std::uint32_t players, std::uint32_t cycle);
+
+  void update() override;
+  void render() const override;
+  std::uint32_t get_damage(std::uint32_t damage, bool magic) override;
+
+private:
+  ii::CompoundShape* s1_ = nullptr;
+  ii::CompoundShape* s2_ = nullptr;
+  ii::Polygon* sattack_ = nullptr;
+  bool will_attack_ = false;
+  bool stopped_ = false;
+  bool generating_ = false;
+  bool attacking_ = false;
+  bool continue_ = false;
+  bool gen_dir_ = false;
+  std::uint32_t shoot_type_ = 0;
+  bool sound_ = true;
+  std::uint32_t timer_ = 0;
+  std::uint32_t attack_size_ = 0;
+  std::size_t attack_shapes_ = 0;
+
+  std::vector<vec2> targets_;
+};
 
 TractorBoss::TractorBoss(ii::SimInterface& sim, std::uint32_t players, std::uint32_t cycle)
 : Boss{sim,
@@ -87,13 +150,13 @@ void TractorBoss::update() {
 
         auto v = s1_->convert_point(shape().centre, shape().rotation(), vec2{0});
         auto d = normalise(p->shape().centre - v);
-        spawn_new<BossShot>(v, d * 5, c0);
-        spawn_new<BossShot>(v, d * -5, c0);
+        ii::spawn_boss_shot(sim(), v, d * 5, c0);
+        ii::spawn_boss_shot(sim(), v, d * -5, c0);
 
         v = s2_->convert_point(shape().centre, shape().rotation(), vec2{0});
         d = normalise(p->shape().centre - v);
-        spawn_new<BossShot>(v, d * 5, c0);
-        spawn_new<BossShot>(v, d * -5, c0);
+        ii::spawn_boss_shot(sim(), v, d * 5, c0);
+        ii::spawn_boss_shot(sim(), v, d * -5, c0);
 
         play_sound_random(ii::sound::kBossFire);
       }
@@ -101,8 +164,8 @@ void TractorBoss::update() {
         Player* p = nearest_player();
         auto v = shape().centre;
         auto d = normalise(p->shape().centre - v);
-        spawn_new<BossShot>(v, d * 5, c0);
-        spawn_new<BossShot>(v, d * -5, c0);
+        ii::spawn_boss_shot(sim(), v, d * 5, c0);
+        ii::spawn_boss_shot(sim(), v, d * -5, c0);
         play_sound_random(ii::sound::kBossFire);
       }
     }
@@ -119,7 +182,7 @@ void TractorBoss::update() {
         auto pos = ship->shape().centre;
         targets_.push_back(pos);
         auto d = normalise(shape().centre - pos);
-        ship->move(d * Tractor::kTractorBeamSpeed);
+        ship->move(d * kTractorBeamSpeed);
       }
     }
   } else {
@@ -133,11 +196,11 @@ void TractorBoss::update() {
       }
 
       if (timer_ < kTbTimer * 4 && timer_ % (10 - 2 * sim().alive_players()) == 0) {
-        spawn_new<TBossShot>(s1_->convert_point(shape().centre, shape().rotation(), vec2{0}),
-                             gen_dir_ ? shape().rotation() + fixed_c::pi : shape().rotation());
+        spawn_tboss_shot(sim(), s1_->convert_point(shape().centre, shape().rotation(), vec2{0}),
+                         gen_dir_ ? shape().rotation() + fixed_c::pi : shape().rotation());
 
-        spawn_new<TBossShot>(s2_->convert_point(shape().centre, shape().rotation(), vec2{0}),
-                             shape().rotation() + (gen_dir_ ? 0 : fixed_c::pi));
+        spawn_tboss_shot(sim(), s2_->convert_point(shape().centre, shape().rotation(), vec2{0}),
+                         shape().rotation() + (gen_dir_ ? 0 : fixed_c::pi));
         play_sound_random(ii::sound::kEnemySpawn);
       }
 
@@ -145,8 +208,8 @@ void TractorBoss::update() {
         Player* p = nearest_player();
         auto v = shape().centre;
         auto d = normalise(p->shape().centre - v);
-        spawn_new<BossShot>(v, d * 5, c0);
-        spawn_new<BossShot>(v, d * -5, c0);
+        ii::spawn_boss_shot(sim(), v, d * 5, c0);
+        ii::spawn_boss_shot(sim(), v, d * -5, c0);
         play_sound_random(ii::sound::kBossFire);
       }
     } else {
@@ -158,23 +221,23 @@ void TractorBoss::update() {
         if (timer_ % (kTbTimer / (1 + fixed_c::half)).to_int() == kTbTimer / 8) {
           auto v = s1_->convert_point(shape().centre, shape().rotation(), vec2{0});
           auto d = from_polar(sim().random_fixed() * (2 * fixed_c::pi), 5_fx);
-          spawn_new<BossShot>(v, d, c0);
+          ii::spawn_boss_shot(sim(), v, d, c0);
           d = rotate(d, fixed_c::pi / 2);
-          spawn_new<BossShot>(v, d, c0);
+          ii::spawn_boss_shot(sim(), v, d, c0);
           d = rotate(d, fixed_c::pi / 2);
-          spawn_new<BossShot>(v, d, c0);
+          ii::spawn_boss_shot(sim(), v, d, c0);
           d = rotate(d, fixed_c::pi / 2);
-          spawn_new<BossShot>(v, d, c0);
+          ii::spawn_boss_shot(sim(), v, d, c0);
 
           v = s2_->convert_point(shape().centre, shape().rotation(), vec2{0});
           d = from_polar(sim().random_fixed() * (2 * fixed_c::pi), 5_fx);
-          spawn_new<BossShot>(v, d, c0);
+          ii::spawn_boss_shot(sim(), v, d, c0);
           d = rotate(d, fixed_c::pi / 2);
-          spawn_new<BossShot>(v, d, c0);
+          ii::spawn_boss_shot(sim(), v, d, c0);
           d = rotate(d, fixed_c::pi / 2);
-          spawn_new<BossShot>(v, d, c0);
+          ii::spawn_boss_shot(sim(), v, d, c0);
           d = rotate(d, fixed_c::pi / 2);
-          spawn_new<BossShot>(v, d, c0);
+          ii::spawn_boss_shot(sim(), v, d, c0);
           play_sound_random(ii::sound::kBossFire);
         }
         targets_.clear();
@@ -190,7 +253,7 @@ void TractorBoss::update() {
           targets_.push_back(pos);
           fixed speed = 0;
           if (ship->type() & kShipPlayer) {
-            speed = Tractor::kTractorBeamSpeed;
+            speed = kTractorBeamSpeed;
           }
           if (ship->type() & kShipEnemy) {
             speed = 4 + fixed_c::half;
@@ -212,7 +275,7 @@ void TractorBoss::update() {
         continue_ = true;
         for (std::uint32_t i = 0; i < attack_size_; ++i) {
           vec2 d = from_polar(i * (2 * fixed_c::pi) / attack_size_, 5_fx);
-          spawn_new<BossShot>(shape().centre, d, c0);
+          ii::spawn_boss_shot(sim(), shape().centre, d, c0);
         }
         play_sound(ii::sound::kBossFire);
         play_sound_random(ii::sound::kExplosion);
@@ -266,24 +329,10 @@ std::uint32_t TractorBoss::get_damage(std::uint32_t damage, bool magic) {
   return damage;
 }
 
-TBossShot::TBossShot(ii::SimInterface& sim, const vec2& position, fixed angle)
-: Enemy{sim, position, kShipNone, 1} {
-  add_new_shape<ii::Polygon>(vec2{0}, 8, 6, c0, 0, kDangerous | kVulnerable);
-  dir_ = from_polar(angle, 3_fx);
-  set_bounding_width(8);
-  set_score(0);
-  set_destroy_sound(ii::sound::kEnemyShatter);
-}
+}  // namespace
 
-void TBossShot::update() {
-  if ((shape().centre.x > ii::kSimDimensions.x && dir_.x > 0) ||
-      (shape().centre.x < 0 && dir_.x < 0)) {
-    dir_.x = -dir_.x;
-  }
-  if ((shape().centre.y > ii::kSimDimensions.y && dir_.y > 0) ||
-      (shape().centre.y < 0 && dir_.y < 0)) {
-    dir_.y = -dir_.y;
-  }
-
-  move(dir_);
+namespace ii {
+void spawn_tractor_boss(SimInterface& sim, std::uint32_t players, std::uint32_t cycle) {
+  sim.add_new_ship<TractorBoss>(players, cycle);
 }
+}  // namespace ii

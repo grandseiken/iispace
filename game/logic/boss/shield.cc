@@ -1,4 +1,4 @@
-#include "game/logic/boss/shield.h"
+#include "game/logic/boss/boss_internal.h"
 #include "game/logic/enemy.h"
 #include "game/logic/player.h"
 
@@ -12,7 +12,23 @@ const fixed kSbbSpeed = 1;
 const glm::vec4 c0 = colour_hue360(150, .4f, .5f);
 const glm::vec4 c1 = colour_hue(0.f, .8f, 0.f);
 const glm::vec4 c2 = colour_hue(0.f, .6f, 0.f);
-}  // namespace
+
+class ShieldBombBoss : public Boss {
+public:
+  ShieldBombBoss(ii::SimInterface& sim, std::uint32_t players, std::uint32_t cycle);
+
+  void update() override;
+  std::uint32_t get_damage(std::uint32_t damage, bool magic) override;
+
+private:
+  std::uint32_t timer_ = 0;
+  std::uint32_t count_ = 0;
+  std::uint32_t unshielded_ = 0;
+  std::uint32_t attack_ = 0;
+  bool side_ = false;
+  vec2 attack_dir_{0};
+  bool shot_alternate_ = false;
+};
 
 ShieldBombBoss::ShieldBombBoss(ii::SimInterface& sim, std::uint32_t players, std::uint32_t cycle)
 : Boss{sim,
@@ -86,7 +102,7 @@ void ShieldBombBoss::update() {
   if (attack_) {
     auto d = rotate(attack_dir_,
                     (kSbbAttackTime - attack_) * fixed_c::half * fixed_c::pi / kSbbAttackTime);
-    spawn_new<BossShot>(shape().centre, d);
+    ii::spawn_boss_shot(sim(), shape().centre, d);
     attack_--;
     play_sound_random(ii::sound::kBossFire);
   }
@@ -100,7 +116,7 @@ void ShieldBombBoss::update() {
       count_ = 0;
       if (!unshielded_) {
         if (sim().all_ships(kShipPowerup).size() < 5) {
-          spawn_new<Powerup>(shape().centre, Powerup::type::kBomb);
+          ii::spawn_powerup(sim(), shape().centre, ii::powerup_type::kBomb);
         }
       }
     }
@@ -112,7 +128,7 @@ void ShieldBombBoss::update() {
     if (sim().random(2)) {
       auto d = rotate(vec2{5, 0}, shape().rotation());
       for (std::uint32_t i = 0; i < 12; ++i) {
-        spawn_new<BossShot>(shape().centre, d);
+        ii::spawn_boss_shot(sim(), shape().centre, d);
         d = rotate(d, 2 * fixed_c::pi / 12);
       }
       play_sound(ii::sound::kBossAttack);
@@ -141,3 +157,10 @@ std::uint32_t ShieldBombBoss::get_damage(std::uint32_t damage, bool magic) {
   }
   return damage;
 }
+}  // namespace
+
+namespace ii {
+void spawn_shield_bomb_boss(SimInterface& sim, std::uint32_t players, std::uint32_t cycle) {
+  sim.add_new_ship<ShieldBombBoss>(players, cycle);
+}
+}  // namespace ii

@@ -1,6 +1,5 @@
 #include "game/logic/sim/sim_state.h"
 #include "game/logic/boss.h"
-#include "game/logic/boss/chaser.h"
 #include "game/logic/overmind.h"
 #include "game/logic/player.h"
 #include "game/logic/ship/ship.h"
@@ -14,8 +13,8 @@ namespace ii {
 
 SimState::~SimState() {
   Stars::clear();
-  Boss::fireworks_.clear();
-  Boss::warnings_.clear();
+  boss_fireworks().clear();
+  boss_warnings().clear();
 }
 
 SimState::SimState(const initial_conditions& conditions, InputAdapter& input)
@@ -32,20 +31,27 @@ SimState::SimState(const initial_conditions& conditions, InputAdapter& input)
   Stars::clear();
   for (std::uint32_t i = 0; i < conditions.player_count; ++i) {
     vec2 v((1 + i) * kSimDimensions.x / (1 + conditions.player_count), kSimDimensions.y / 2);
-    auto* p = interface_->add_new_ship<Player>(v, i);
+    auto* p = spawn_player(*interface_, v, i);
     internals_->player_list.push_back(p);
   }
   overmind_ = std::make_unique<Overmind>(*interface_);
 
-  internals_->index.on_component_add<Destroy>(
-      [internals = internals_.get()](ecs::handle handle, const Destroy&) {
-        if (auto c = handle.get<LegacyShip>(); c) {
-          if (auto it = std::ranges::find(internals->collisions, c->ship.get());
-              it != internals->collisions.end()) {
-            internals->collisions.erase(it);
-          }
+  auto internals = internals_.get();
+  internals_->index.on_component_add<Collision>(
+      [internals](ecs::handle handle, const Collision& c) {
+        if (auto s = handle.get<LegacyShip>(); s) {
+          internals->collisions.emplace_back(0, c.bounding_width, s->ship.get());
         }
       });
+  internals_->index.on_component_add<Destroy>([internals](ecs::handle handle, const Destroy&) {
+    if (auto s = handle.get<LegacyShip>(); s) {
+      if (auto it = std::ranges::find(internals->collisions, s->ship.get(),
+                                      [](const auto& e) { return e.ship; });
+          it != internals->collisions.end()) {
+        internals->collisions.erase(it);
+      }
+    }
+  });
 }
 
 std::uint32_t SimState::frame_count() const {
@@ -53,7 +59,7 @@ std::uint32_t SimState::frame_count() const {
 }
 
 void SimState::update() {
-  Boss::warnings_.clear();
+  boss_warnings().clear();
   colour_cycle_ = internals_->conditions.mode == game_mode::kHard ? 128
       : internals_->conditions.mode == game_mode::kFast           ? 192
       : internals_->conditions.mode == game_mode::kWhat           ? (colour_cycle_ + 1) % 256
@@ -61,11 +67,14 @@ void SimState::update() {
   internals_->input_frames = input_.get();
 
   Player::update_fire_timer();
-  ChaserBoss::has_counted_ = false;
-  auto sort_ships = [](const Ship* a, const Ship* b) {
-    return a->shape().centre.x - a->bounding_width() < b->shape().centre.x - b->bounding_width();
-  };
-  std::stable_sort(internals_->collisions.begin(), internals_->collisions.end(), sort_ships);
+  chaser_boss_begin_frame();
+
+  for (auto& c : internals_->collisions) {
+    c.x_min = c.ship->shape().centre.x - c.bounding_width;
+  }
+  std::ranges::stable_sort(internals_->collisions,
+                           [](const auto& a, const auto& b) { return a.x_min < b.x_min; });
+
   internals_->non_wall_enemy_count = interface_->count_ships(Ship::kShipEnemy, Ship::kShipWall);
 
   internals_->index.iterate<LegacyShip>([](ecs::handle handle, auto& c) {
@@ -79,7 +88,7 @@ void SimState::update() {
       particle.destroy = !--particle.timer;
     }
   }
-  for (auto it = Boss::fireworks_.begin(); it != Boss::fireworks_.end();) {
+  for (auto it = boss_fireworks().begin(); it != boss_fireworks().end();) {
     if (it->first > 0) {
       --(it++)->first;
       continue;
@@ -91,7 +100,7 @@ void SimState::update() {
     internals_->player_list[0]->explosion(glm::vec4{1.f}, 24);
     internals_->player_list[0]->explosion(it->second.second, 32);
     internals_->player_list[0]->shape().centre = v;
-    it = Boss::fireworks_.erase(it);
+    it = boss_fireworks().erase(it);
   }
 
   bool compact = false;
@@ -180,7 +189,7 @@ void SimState::render() const {
       render_warning(to_float(c.ship->shape().centre));
     }
   });
-  for (const auto& v : Boss::warnings_) {
+  for (const auto& v : boss_warnings()) {
     render_warning(to_float(v));
   }
 }

@@ -7,6 +7,10 @@
 namespace ii {
 
 struct Destroy : ecs::component {};
+struct Collision : ecs::component {
+  Collision(fixed bounding_width) : bounding_width{bounding_width} {}
+  fixed bounding_width = 0;
+};
 
 class Ship {
 public:
@@ -137,7 +141,6 @@ private:
   SimInterface* sim_ = nullptr;
   std::optional<ecs::handle> handle_;
   ship_category type_ = static_cast<ship_category>(0);
-  bool destroy_ = false;
   CompoundShape shape_;
   fixed bounding_width_ = 0;
   std::uint32_t enemy_value_ = 1;
