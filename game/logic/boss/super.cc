@@ -39,18 +39,22 @@ private:
 };
 
 SnakeTail* spawn_snake_tail(ii::SimInterface& sim, const vec2& position, const glm::vec4& colour) {
-  return sim.add_new_ship<SnakeTail>(position, colour);
+  auto u = std::make_unique<SnakeTail>(sim, position, colour);
+  auto p = u.get();
+  auto h = sim.create_legacy(std::move(u));
+  h.emplace<ii::Collision>(/* bounding width */ 22);
+  return p;
 }
 
 void spawn_snake(ii::SimInterface& sim, const vec2& position, const glm::vec4& colour,
                  const vec2& dir = vec2{0}, fixed rot = 0) {
-  sim.add_new_ship<Snake>(position, colour, dir, rot);
+  auto h = sim.create_legacy(std::make_unique<Snake>(sim, position, colour, dir, rot));
+  h.emplace<ii::Collision>(/* bounding width */ 32);
 }
 
 SnakeTail::SnakeTail(ii::SimInterface& sim, const vec2& position, const glm::vec4& colour)
 : Enemy{sim, position, kShipNone, 1} {
   add_new_shape<ii::Polygon>(vec2{0}, 10, 4, colour, 0, kDangerous | kShield | kVulnShield);
-  set_bounding_width(22);
   set_score(0);
 }
 
@@ -90,7 +94,6 @@ Snake::Snake(ii::SimInterface& sim, const vec2& position, const glm::vec4& colou
   add_new_shape<ii::Polygon>(vec2{0}, 14, 3, colour, 0, kVulnerable);
   add_new_shape<ii::Polygon>(vec2{0}, 10, 3, glm::vec4{0.f}, 0, kDangerous);
   set_score(0);
-  set_bounding_width(32);
   set_enemy_value(5);
   set_destroy_sound(ii::sound::kPlayerDestroy);
   if (dir == vec2{0}) {
@@ -176,13 +179,18 @@ private:
 
 void spawn_rainbow_shot(ii::SimInterface& sim, const vec2& position, const vec2& velocity,
                         ii::Ship* boss) {
-  sim.add_new_ship<RainbowShot>(position, velocity, boss);
+  auto h = sim.create_legacy(std::make_unique<RainbowShot>(sim, position, velocity, boss));
+  h.emplace<ii::Collision>(/* bounding width */ 12);
 }
 
 SuperBossArc* spawn_super_boss_arc(ii::SimInterface& sim, const vec2& position,
                                    std::uint32_t players, std::uint32_t cycle, std::uint32_t i,
                                    ii::Ship* boss, std::uint32_t timer = 0) {
-  return sim.add_new_ship<SuperBossArc>(position, players, cycle, i, boss, timer);
+  auto u = std::make_unique<SuperBossArc>(sim, position, players, cycle, i, boss, timer);
+  auto p = u.get();
+  auto h = sim.create_legacy(std::move(u));
+  h.emplace<ii::Collision>(/* bounding width */ 640);
+  return p;
 }
 
 class SuperBoss : public Boss {
@@ -478,6 +486,7 @@ void SuperBoss::on_destroy() {
 
 namespace ii {
 void spawn_super_boss(SimInterface& sim, std::uint32_t players, std::uint32_t cycle) {
-  sim.add_new_ship<SuperBoss>(players, cycle);
+  auto h = sim.create_legacy(std::make_unique<SuperBoss>(sim, players, cycle));
+  h.emplace<ii::Collision>(/* bounding width */ 640);
 }
 }  // namespace ii

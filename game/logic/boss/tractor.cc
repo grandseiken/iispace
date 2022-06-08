@@ -25,7 +25,6 @@ TBossShot::TBossShot(ii::SimInterface& sim, const vec2& position, fixed angle)
 : Enemy{sim, position, kShipNone, 1} {
   add_new_shape<ii::Polygon>(vec2{0}, 8, 6, c0, 0, kDangerous | kVulnerable);
   dir_ = from_polar(angle, 3_fx);
-  set_bounding_width(8);
   set_score(0);
   set_destroy_sound(ii::sound::kEnemyShatter);
 }
@@ -44,7 +43,8 @@ void TBossShot::update() {
 }
 
 void spawn_tboss_shot(ii::SimInterface& sim, const vec2& position, fixed angle) {
-  sim.add_new_ship<TBossShot>(position, angle);
+  auto h = sim.create_legacy(std::make_unique<TBossShot>(sim, position, angle));
+  h.emplace<ii::Collision>(/* bounding width */ 8);
 }
 
 class TractorBoss : public Boss {
@@ -333,6 +333,7 @@ std::uint32_t TractorBoss::get_damage(std::uint32_t damage, bool magic) {
 
 namespace ii {
 void spawn_tractor_boss(SimInterface& sim, std::uint32_t players, std::uint32_t cycle) {
-  sim.add_new_ship<TractorBoss>(players, cycle);
+  auto h = sim.create_legacy(std::make_unique<TractorBoss>(sim, players, cycle));
+  h.emplace<Collision>(/* bounding width */ 640);
 }
 }  // namespace ii

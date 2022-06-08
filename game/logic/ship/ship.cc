@@ -48,10 +48,6 @@ bool Ship::is_destroyed() const {
   return handle().has<Destroy>();
 }
 
-Ship* Ship::spawn(std::unique_ptr<Ship> ship) const {
-  return sim_->add_ship(std::move(ship));
-}
-
 void Ship::spawn(const particle& particle) const {
   sim_->add_particle(particle);
 }

@@ -161,6 +161,7 @@ std::uint32_t ShieldBombBoss::get_damage(std::uint32_t damage, bool magic) {
 
 namespace ii {
 void spawn_shield_bomb_boss(SimInterface& sim, std::uint32_t players, std::uint32_t cycle) {
-  sim.add_new_ship<ShieldBombBoss>(players, cycle);
+  auto h = sim.create_legacy(std::make_unique<ShieldBombBoss>(sim, players, cycle));
+  h.emplace<Collision>(/* bounding width */ 640);
 }
 }  // namespace ii

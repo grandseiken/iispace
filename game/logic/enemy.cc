@@ -128,7 +128,6 @@ Follow::Follow(ii::SimInterface& sim, const vec2& position, bool has_score, fixe
   add_new_shape<ii::Polygon>(vec2{0}, radius, 4, colour_hue360(270, .6f), rotation,
                              kDangerous | kVulnerable);
   set_score(has_score ? 15 : 0);
-  set_bounding_width(10);
   set_destroy_sound(ii::sound::kEnemyShatter);
   set_enemy_value(1);
 }
@@ -149,7 +148,7 @@ void Follow::update() {
 }
 
 BigFollow::BigFollow(ii::SimInterface& sim, const vec2& position, bool has_score)
-: Follow{sim, position, has_score_, 0, 20, 3}, has_score_{has_score} {
+: Follow{sim, position, has_score, 0, 20, 3}, has_score_{has_score} {
   set_score(has_score ? 20 : 0);
   set_destroy_sound(ii::sound::kPlayerDestroy);
   set_enemy_value(3);
@@ -172,7 +171,6 @@ Chaser::Chaser(ii::SimInterface& sim, const vec2& position)
   add_new_shape<ii::Polygon>(vec2{0}, 10, 4, colour_hue360(210, .6f), 0, kDangerous | kVulnerable,
                              ii::Polygon::T::kPolygram);
   set_score(30);
-  set_bounding_width(10);
   set_destroy_sound(ii::sound::kEnemyShatter);
   set_enemy_value(2);
 }
@@ -205,7 +203,6 @@ Square::Square(ii::SimInterface& sim, const vec2& position, fixed rotation)
   add_new_shape<ii::Box>(vec2{0}, 10, 10, colour_hue360(120, .6f), 0, kDangerous | kVulnerable);
   dir_ = from_polar(rotation, 1_fx);
   set_score(25);
-  set_bounding_width(15);
   set_enemy_value(2);
 }
 
@@ -266,7 +263,6 @@ Wall::Wall(ii::SimInterface& sim, const vec2& position, bool rdir)
   add_new_shape<ii::Box>(vec2{0}, 10, 40, colour_hue360(120, .5f, .6f), 0,
                          kDangerous | kVulnerable);
   set_score(20);
-  set_bounding_width(50);
   set_enemy_value(4);
 }
 
@@ -346,7 +342,6 @@ FollowHub::FollowHub(ii::SimInterface& sim, const vec2& position, bool powera, b
   add_new_shape<ii::Polygon>(vec2{0, 16}, 8, 4, c, fixed_c::pi / 4);
   add_new_shape<ii::Polygon>(vec2{0, -16}, 8, 4, c, fixed_c::pi / 4);
   set_score(50 + powera_ * 10 + powerb_ * 10);
-  set_bounding_width(16);
   set_destroy_sound(ii::sound::kPlayerDestroy);
   set_enemy_value(6 + (powera ? 2 : 0) + (powerb ? 2 : 0));
 }
@@ -408,7 +403,6 @@ Shielder::Shielder(ii::SimInterface& sim, const vec2& position, bool power)
   add_new_shape<ii::Polygon>(vec2{0, 0}, 24, 4, c0, 0, 0, ii::Polygon::T::kPolystar);
   add_new_shape<ii::Polygon>(vec2{0, 0}, 14, 8, power ? c1 : c0, 0, kDangerous | kVulnerable);
   set_score(60 + power_ * 40);
-  set_bounding_width(36);
   set_destroy_sound(ii::sound::kPlayerDestroy);
   set_enemy_value(8 + (power ? 2 : 0));
 }
@@ -476,7 +470,6 @@ Tractor::Tractor(ii::SimInterface& sim, const vec2& position, bool power)
     add_new_shape<ii::Polygon>(vec2{-24, 0}, 16, 6, c, 0, 0, ii::Polygon::T::kPolystar);
   }
   set_score(85 + power * 40);
-  set_bounding_width(36);
   set_destroy_sound(ii::sound::kPlayerDestroy);
   set_enemy_value(10 + (power ? 2 : 0));
 }
@@ -556,40 +549,49 @@ void Tractor::render() const {
 namespace ii {
 
 void spawn_follow(SimInterface& sim, const vec2& position, bool has_score, fixed rotation) {
-  sim.add_new_ship<Follow>(position, has_score, rotation);
+  auto h = sim.create_legacy(std::make_unique<Follow>(sim, position, has_score, rotation));
+  h.emplace<Collision>(/* bounding width */ 10);
 }
 
 void spawn_big_follow(SimInterface& sim, const vec2& position, bool has_score) {
-  sim.add_new_ship<BigFollow>(position, has_score);
+  auto h = sim.create_legacy(std::make_unique<BigFollow>(sim, position, has_score));
+  h.emplace<Collision>(/* bounding width */ 10);
 }
 
 void spawn_chaser(SimInterface& sim, const vec2& position) {
-  sim.add_new_ship<Chaser>(position);
+  auto h = sim.create_legacy(std::make_unique<Chaser>(sim, position));
+  h.emplace<Collision>(/* bounding width */ 10);
 }
 
 void spawn_square(SimInterface& sim, const vec2& position, fixed rotation) {
-  sim.add_new_ship<Square>(position, rotation);
+  auto h = sim.create_legacy(std::make_unique<Square>(sim, position, rotation));
+  h.emplace<Collision>(/* bounding width */ 15);
 }
 
 void spawn_wall(SimInterface& sim, const vec2& position, bool rdir) {
-  sim.add_new_ship<Wall>(position, rdir);
+  auto h = sim.create_legacy(std::make_unique<Wall>(sim, position, rdir));
+  h.emplace<Collision>(/* bounding width */ 50);
 }
 
 void spawn_follow_hub(SimInterface& sim, const vec2& position, bool power_a, bool power_b) {
-  sim.add_new_ship<FollowHub>(position, power_a, power_b);
+  auto h = sim.create_legacy(std::make_unique<FollowHub>(sim, position, power_a, power_b));
+  h.emplace<Collision>(/* bounding width */ 16);
 }
 
 void spawn_shielder(SimInterface& sim, const vec2& position, bool power) {
-  sim.add_new_ship<Shielder>(position, power);
+  auto h = sim.create_legacy(std::make_unique<Shielder>(sim, position, power));
+  h.emplace<Collision>(/* bounding width */ 36);
 }
 
 void spawn_tractor(SimInterface& sim, const vec2& position, bool power) {
-  sim.add_new_ship<Tractor>(position, power);
+  auto h = sim.create_legacy(std::make_unique<Tractor>(sim, position, power));
+  h.emplace<Collision>(/* bounding width */ 36);
 }
 
 void spawn_boss_shot(SimInterface& sim, const vec2& position, const vec2& velocity,
                      const glm::vec4& c) {
-  sim.add_new_ship<BossShot>(position, velocity, c);
+  auto h = sim.create_legacy(std::make_unique<BossShot>(sim, position, velocity, c));
+  h.emplace<Collision>(/* bounding width */ 12);
 }
 
 }  // namespace ii
@@ -635,7 +637,6 @@ BossShot::BossShot(ii::SimInterface& sim, const vec2& position, const vec2& velo
   add_new_shape<ii::Polygon>(vec2{0}, 16, 8, c, 0, 0, ii::Polygon::T::kPolystar);
   add_new_shape<ii::Polygon>(vec2{0}, 10, 8, c, 0, 0);
   add_new_shape<ii::Polygon>(vec2{0}, 12, 8, glm::vec4{0.f}, 0, kDangerous);
-  set_bounding_width(12);
   set_score(0);
   set_enemy_value(1);
 }

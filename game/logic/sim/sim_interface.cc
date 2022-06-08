@@ -190,15 +190,12 @@ void SimInterface::set_boss_killed(boss_list boss) {
   }
 }
 
-Ship* SimInterface::add_ship(std::unique_ptr<Ship> ship) {
+ecs::handle SimInterface::create_legacy(std::unique_ptr<Ship> ship) {
   auto p = ship.get();
   auto h = internals_->index.create();
   h.emplace<LegacyShip>(std::move(ship));
-  if (auto w = p->bounding_width(); w > 1) {
-    h.emplace<Collision>(w);
-  }
   p->set_handle(h);
-  return p;
+  return h;
 }
 
 void SimInterface::add_particle(const ii::particle& particle) {

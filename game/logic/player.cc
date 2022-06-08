@@ -180,18 +180,21 @@ void Powerup::damage(std::uint32_t damage, bool magic, Player* source) {
 
 void spawn_shot(ii::SimInterface& sim, const vec2& position, Player* player, const vec2& direction,
                 bool magic) {
-  sim.add_new_ship<Shot>(position, player, direction, magic);
+  sim.create_legacy(std::make_unique<Shot>(sim, position, player, direction, magic));
 }
 
 }  // namespace
 
 namespace ii {
 Player* spawn_player(SimInterface& sim, const vec2& position, std::uint32_t player_number) {
-  return sim.add_new_ship<Player>(position, player_number);
+  auto u = std::make_unique<Player>(sim, position, player_number);
+  auto p = u.get();
+  sim.create_legacy(std::move(u));
+  return p;
 }
 
 void spawn_powerup(SimInterface& sim, const vec2& position, powerup_type type) {
-  sim.add_new_ship<Powerup>(position, type);
+  sim.create_legacy(std::make_unique<Powerup>(sim, position, type));
 }
 }  // namespace ii
 

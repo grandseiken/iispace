@@ -1,7 +1,7 @@
 #ifndef II_GAME_LOGIC_SIM_SIM_INTERFACE_H
 #define II_GAME_LOGIC_SIM_SIM_INTERFACE_H
 #include "game/common/math.h"
-#include "game/logic/ship/ecs_id.h"
+#include "game/logic/ship/ecs_index.h"
 #include "game/logic/sim/sim_io.h"
 #include "game/mixer/sound.h"
 #include <cstdint>
@@ -83,13 +83,8 @@ public:
   std::uint32_t get_lives() const;
   void set_boss_killed(boss_list boss);
 
-  Ship* add_ship(std::unique_ptr<Ship> ship);
+  ecs::handle create_legacy(std::unique_ptr<Ship> ship);
   void add_particle(const particle& particle);
-
-  template <typename T, typename... Args>
-  T* add_new_ship(Args&&... args) {
-    return static_cast<T*>(add_ship(std::make_unique<T>(*this, std::forward<Args>(args)...)));
-  }
 
   // Simulation output.
   void rumble_all(std::uint32_t time) const;

@@ -34,13 +34,11 @@ GhostWall::GhostWall(ii::SimInterface& sim, bool swap, bool no_gap, bool ignored
     add_new_shape<ii::Box>(vec2{0}, ii::kSimDimensions.y / 2, 7, c0, 0, kDangerous | kShield);
     add_new_shape<ii::Box>(vec2{0}, ii::kSimDimensions.y / 2, 4, c0, 0, kDangerous | kShield);
   }
-  set_bounding_width(fixed{ii::kSimDimensions.x});
 }
 
 GhostWall::GhostWall(ii::SimInterface& sim, bool swap, bool swap_gap)
 : Enemy{sim, {swap ? -10 : 10 + ii::kSimDimensions.x, ii::kSimDimensions.y / 2}, kShipNone, 0}
 , dir_{swap ? 1 : -1, 0} {
-  set_bounding_width(fixed{ii::kSimDimensions.y});
   fixed off = swap_gap ? -100 : 100;
 
   add_new_shape<ii::Box>(vec2{0, off - 20 - ii::kSimDimensions.y / 2}, 10, ii::kSimDimensions.y / 2,
@@ -90,7 +88,6 @@ GhostMine::GhostMine(ii::SimInterface& sim, const vec2& position, Boss* ghost)
 : Enemy{sim, position, kShipNone, 0}, ghost_{ghost} {
   add_new_shape<ii::Polygon>(vec2{0}, 24, 8, c1, 0, 0);
   add_new_shape<ii::Polygon>(vec2{0}, 20, 8, c1, 0, 0);
-  set_bounding_width(24);
   set_score(0);
 }
 
@@ -125,15 +122,18 @@ void GhostMine::render() const {
 }
 
 void spawn_ghost_wall(ii::SimInterface& sim, bool swap, bool no_gap, bool ignored) {
-  sim.add_new_ship<GhostWall>(swap, no_gap, ignored);
+  auto h = sim.create_legacy(std::make_unique<GhostWall>(sim, swap, no_gap, ignored));
+  h.emplace<ii::Collision>(/* bounding width */ fixed{ii::kSimDimensions.x});
 }
 
 void spawn_ghost_wall(ii::SimInterface& sim, bool swap, bool swap_gap) {
-  sim.add_new_ship<GhostWall>(swap, swap_gap);
+  auto h = sim.create_legacy(std::make_unique<GhostWall>(sim, swap, swap_gap));
+  h.emplace<ii::Collision>(/* bounding width */ fixed{ii::kSimDimensions.y});
 }
 
 void spawn_ghost_mine(ii::SimInterface& sim, const vec2& position, Boss* ghost) {
-  sim.add_new_ship<GhostMine>(position, ghost);
+  auto h = sim.create_legacy(std::make_unique<GhostMine>(sim, position, ghost));
+  h.emplace<ii::Collision>(/* bounding width */ 24);
 }
 
 class GhostBoss : public Boss {
@@ -442,6 +442,7 @@ std::uint32_t GhostBoss::get_damage(std::uint32_t damage, bool magic) {
 
 namespace ii {
 void spawn_ghost_boss(SimInterface& sim, std::uint32_t players, std::uint32_t cycle) {
-  sim.add_new_ship<GhostBoss>(players, cycle);
+  auto h = sim.create_legacy(std::make_unique<GhostBoss>(sim, players, cycle));
+  h.emplace<ii::Collision>(/* bounding width */ 640);
 }
 }  // namespace ii

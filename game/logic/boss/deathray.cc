@@ -29,7 +29,6 @@ DeathRay::DeathRay(ii::SimInterface& sim, const vec2& position)
 : Enemy{sim, position, kShipNone, 0} {
   add_new_shape<ii::Box>(vec2{0}, 10, 48, glm::vec4{0.f}, 0, kDangerous);
   add_new_shape<ii::Line>(vec2{0}, vec2{0, -48}, vec2{0, 48}, glm::vec4{1.f}, 0);
-  set_bounding_width(48);
 }
 
 void DeathRay::update() {
@@ -59,11 +58,16 @@ private:
 };
 
 void spawn_death_ray(ii::SimInterface& sim, const vec2& position) {
-  sim.add_new_ship<DeathRay>(position);
+  auto h = sim.create_legacy(std::make_unique<DeathRay>(sim, position));
+  h.emplace<ii::Collision>(/* bounding width */ 48);
 }
 
 DeathArm* spawn_death_arm(ii::SimInterface& sim, DeathRayBoss* boss, bool top, std::uint32_t hp) {
-  return sim.add_new_ship<DeathArm>(boss, top, hp);
+  auto u = std::make_unique<DeathArm>(sim, boss, top, hp);
+  auto p = u.get();
+  auto h = sim.create_legacy(std::move(u));
+  h.emplace<ii::Collision>(/* bounding width */ 60);
+  return p;
 }
 
 class DeathRayBoss : public Boss {
@@ -104,7 +108,6 @@ DeathArm::DeathArm(ii::SimInterface& sim, DeathRayBoss* boss, bool top, std::uin
   add_new_shape<ii::Polygon>(vec2{0}, 40, 4, glm::vec4{0.f}, 0, kShield);
   add_new_shape<ii::Polygon>(vec2{0}, 20, 4, c1, 0, 0);
   add_new_shape<ii::Polygon>(vec2{0}, 18, 4, c0, 0, 0);
-  set_bounding_width(60);
   set_destroy_sound(ii::sound::kPlayerDestroy);
 }
 
@@ -379,6 +382,7 @@ void DeathRayBoss::on_arm_death(Ship* arm) {
 
 namespace ii {
 void spawn_death_ray_boss(SimInterface& sim, std::uint32_t players, std::uint32_t cycle) {
-  sim.add_new_ship<DeathRayBoss>(players, cycle);
+  auto h = sim.create_legacy(std::make_unique<DeathRayBoss>(sim, players, cycle));
+  h.emplace<Collision>(/* bounding width */ 640);
 }
 }  // namespace ii

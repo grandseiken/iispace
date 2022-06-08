@@ -15,7 +15,6 @@ Boss::Boss(ii::SimInterface& sim, const vec2& position, ii::SimInterface::boss_l
 : ii::Ship{sim, position, static_cast<Ship::ship_category>(kShipBoss | kShipEnemy)}
 , flag_{boss}
 , explode_on_damage_{explode_on_damage} {
-  set_bounding_width(640);
   set_ignore_damage_colour_index(100);
   auto s = 5000 * (cycle + 1) + 2500 * (boss > ii::SimInterface::kBoss1C) +
       2500 * (boss > ii::SimInterface::kBoss2C);

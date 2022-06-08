@@ -40,7 +40,8 @@ SimState::SimState(const initial_conditions& conditions, InputAdapter& input)
   internals_->index.on_component_add<Collision>(
       [internals](ecs::handle handle, const Collision& c) {
         if (auto s = handle.get<LegacyShip>(); s) {
-          internals->collisions.emplace_back(0, c.bounding_width, s->ship.get());
+          internals->collisions.emplace_back(
+              SimInternals::collision_entry{0_fx, c.bounding_width, s->ship.get()});
         }
       });
   internals_->index.on_component_add<Destroy>([internals](ecs::handle handle, const Destroy&) {

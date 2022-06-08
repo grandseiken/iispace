@@ -158,6 +158,7 @@ std::uint32_t BigSquareBoss::get_damage(std::uint32_t damage, bool magic) {
 
 namespace ii {
 void spawn_big_square_boss(SimInterface& sim, std::uint32_t players, std::uint32_t cycle) {
-  sim.add_new_ship<BigSquareBoss>(players, cycle);
+  auto h = sim.create_legacy(std::make_unique<BigSquareBoss>(sim, players, cycle));
+  h.emplace<Collision>(/* bounding width */ 640);
 }
 }  // namespace ii

@@ -107,7 +107,11 @@ ChaserBoss*
 spawn_chaser_boss_internal(ii::SimInterface& sim, std::uint32_t players, std::uint32_t cycle,
                            std::uint32_t split = 0, const vec2& position = vec2{0},
                            std::uint32_t time = ChaserBoss::kTimer, std::uint32_t stagger = 0) {
-  return sim.add_new_ship<ChaserBoss>(players, cycle, split, position, time, stagger);
+  auto u = std::make_unique<ChaserBoss>(sim, players, cycle, split, position, time, stagger);
+  auto p = u.get();
+  auto h = sim.create_legacy(std::move(u));
+  h.emplace<ii::Collision>(/* bounding width */ 10 * ONE_AND_HALF_lookup[kCbMaxSplit - split]);
+  return p;
 }
 
 ChaserBoss::ChaserBoss(ii::SimInterface& sim, std::uint32_t players, std::uint32_t cycle,
@@ -138,7 +142,6 @@ ChaserBoss::ChaserBoss(ii::SimInterface& sim, std::uint32_t players, std::uint32
                              glm::vec4{0.f}, 0, kShield, ii::Polygon::T::kPolygram);
 
   set_ignore_damage_colour_index(2);
-  set_bounding_width(10 * ONE_AND_HALF_lookup[kCbMaxSplit - split_]);
   if (!split_) {
     shared_hp_ = 0;
     count_ = 0;

@@ -64,20 +64,10 @@ public:
     shape_.centre += move_amount;
   }
 
-  fixed bounding_width() const {
-    return bounding_width_;
-  }
-
   // Operations
   //------------------------------
   bool check_point(const vec2& v, std::uint32_t category = 0) const;
-  Ship* spawn(std::unique_ptr<Ship> ship) const;
   void spawn(const particle& particle) const;
-
-  template <typename T, typename... Args>
-  T* spawn_new(Args&&... args) {
-    return static_cast<T*>(spawn(std::make_unique<T>(sim(), std::forward<Args>(args)...)));
-  }
 
   // Helpful functions
   //------------------------------
@@ -133,16 +123,11 @@ protected:
   void destroy_shape(std::size_t index);
   void clear_shapes();
 
-  void set_bounding_width(fixed width) {
-    bounding_width_ = width;
-  }
-
 private:
   SimInterface* sim_ = nullptr;
   std::optional<ecs::handle> handle_;
   ship_category type_ = static_cast<ship_category>(0);
   CompoundShape shape_;
-  fixed bounding_width_ = 0;
   std::uint32_t enemy_value_ = 1;
 };
 
