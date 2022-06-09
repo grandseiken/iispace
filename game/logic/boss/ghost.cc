@@ -295,10 +295,8 @@ void GhostBoss::update() {
     }
     if (timer_ != 9 * kGbTimer / 10 && timer_ >= kGbTimer / 10 && timer_ < 9 * kGbTimer / 10 - 16 &&
         timer_ % 16 == 0 && (!shot_type_ || attack_ == 2)) {
-      auto* p = sim().nearest_player(shape().centre);
-      auto d = normalise(p->shape().centre - shape().centre);
-
-      if (length(d) > fixed_c::half) {
+      auto d = sim().nearest_player_direction(shape().centre);
+      if (d != vec2{}) {
         ii::spawn_boss_shot(sim(), shape().centre, d * 5, c0);
         ii::spawn_boss_shot(sim(), shape().centre, d * -5, c0);
         play_sound_random(ii::sound::kBossFire);

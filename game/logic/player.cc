@@ -189,9 +189,24 @@ void spawn_shot(ii::SimInterface& sim, const vec2& position, Player* player, con
 }  // namespace
 
 namespace ii {
+void Player::add_score(SimInterface& sim, std::uint64_t s) {
+  static const std::uint32_t multiplier_lookup[24] = {
+      1,    2,    4,     8,     16,    32,     64,     128,    256,     512,     1024,    2048,
+      4096, 8192, 16384, 32768, 65536, 131072, 262144, 524288, 1048576, 2097152, 4194304, 8388608,
+  };
+
+  sim.rumble(player_number, 3);
+  score += s * multiplier;
+  ++multiplier_count;
+  if (multiplier_lookup[std::min(multiplier + 3, 23u)] <= multiplier_count) {
+    multiplier_count = 0;
+    ++multiplier;
+  }
+}
+
 void spawn_player(SimInterface& sim, const vec2& position, std::uint32_t player_number) {
   auto h = sim.create_legacy(std::make_unique<::Player>(sim, position, player_number));
-  h.emplace<Player>();
+  h.add(Player{.player_number = player_number});
 }
 
 void spawn_powerup(SimInterface& sim, const vec2& position, powerup_type type) {
@@ -221,6 +236,7 @@ Player::Player(ii::SimInterface& sim, const vec2& position, std::uint32_t player
 Player::~Player() {}
 
 void Player::update() {
+  auto& pc = *handle().get<ii::Player>();
   auto input = sim().input(player_number_);
   if (input.target_absolute) {
     fire_target_ = *input.target_absolute;
@@ -229,13 +245,13 @@ void Player::update() {
   }
 
   // Temporary death.
-  if (kill_timer_ > 1) {
-    --kill_timer_;
+  if (pc.kill_timer > 1) {
+    --pc.kill_timer;
     return;
-  } else if (kill_timer_) {
+  } else if (pc.kill_timer) {
     if (sim().get_lives() && kill_queue_[0] == this) {
       sim().sub_life();
-      kill_timer_ = 0;
+      pc.kill_timer = 0;
       kill_queue_.erase(kill_queue_.begin());
       revive_timer_ = kReviveTime;
       shape().centre = {(1 + player_number_) * ii::kSimDimensions.x / (1 + sim().player_count()),
@@ -287,7 +303,7 @@ void Player::update() {
       }
       const auto* enemy = ship->handle().get<ii::Enemy>();
       if (!(ship->type() & ii::ship_flag::kBoss) && enemy && enemy->score_reward) {
-        add_score(0);
+        pc.add_score(sim(), 0);
       }
     }
   }
@@ -313,7 +329,8 @@ void Player::update() {
 }
 
 void Player::render() const {
-  if (!kill_timer_ && (sim().conditions().mode != ii::game_mode::kWhat || revive_timer_ > 0)) {
+  const auto& pc = *handle().get<ii::Player>();
+  if (!pc.kill_timer && (sim().conditions().mode != ii::game_mode::kWhat || revive_timer_ > 0)) {
     auto t = to_float(fire_target_);
     sim().render_line(t + glm::vec2{0, 9}, t - glm::vec2{0, 8}, colour());
     sim().render_line(t + glm::vec2{9, 1}, t - glm::vec2{8, -1}, colour());
@@ -325,13 +342,15 @@ void Player::render() const {
   }
 
   if (sim().conditions().mode != ii::game_mode::kBoss) {
-    sim().render_player_info(player_number_, colour(), score_, multiplier_,
+    auto& pc = *handle().get<ii::Player>();
+    sim().render_player_info(player_number_, colour(), pc.score, pc.multiplier,
                              static_cast<float>(magic_shot_timer_) / kMagicShotCount);
   }
 }
 
 void Player::damage() {
-  if (kill_timer_ || revive_timer_) {
+  auto& pc = *handle().get<ii::Player>();
+  if (pc.kill_timer || revive_timer_) {
     return;
   }
   for (const auto& player : kill_queue_) {
@@ -354,10 +373,10 @@ void Player::damage() {
   explosion(std::nullopt, 20);
 
   magic_shot_timer_ = 0;
-  multiplier_ = 1;
-  multiplier_count_ = 0;
-  kill_timer_ = kReviveTime;
-  ++death_count_;
+  pc.multiplier = 1;
+  pc.multiplier_count = 0;
+  pc.kill_timer = kReviveTime;
+  ++pc.death_count;
   if (shield_ || bomb_) {
     destroy_shape(5);
     shield_ = false;
@@ -366,21 +385,6 @@ void Player::damage() {
   kill_queue_.push_back(this);
   sim().rumble(player_number_, 25);
   play_sound(ii::sound::kPlayerDestroy);
-}
-
-void Player::add_score(std::uint64_t score) {
-  static const std::uint32_t multiplier_lookup[24] = {
-      1,    2,    4,     8,     16,    32,     64,     128,    256,     512,     1024,    2048,
-      4096, 8192, 16384, 32768, 65536, 131072, 262144, 524288, 1048576, 2097152, 4194304, 8388608,
-  };
-
-  sim().rumble(player_number_, 3);
-  score_ += score * multiplier_;
-  ++multiplier_count_;
-  if (multiplier_lookup[std::min(multiplier_ + 3, 23u)] <= multiplier_count_) {
-    multiplier_count_ = 0;
-    ++multiplier_;
-  }
 }
 
 void Player::activate_magic_shots() {

@@ -171,8 +171,7 @@ void ChaserBoss::update() {
       move_ = !move_;
     }
     if (move_) {
-      dir_ = kCbSpeed * ONE_PT_ONE_lookup[split_] *
-          normalise(sim().nearest_player(shape().centre)->shape().centre - shape().centre);
+      dir_ = kCbSpeed * ONE_PT_ONE_lookup[split_] * sim().nearest_player_direction(shape().centre);
     }
   }
   if (move_) {

@@ -153,26 +153,24 @@ void TractorBoss::update() {
     move(kTbSpeed * vec2{-1, 0});
     if (!will_attack_ && is_on_screen() && timer_ % (16 - sim().alive_players() * 2) == 0) {
       if (shoot_type_ == 0 || (is_hp_low() && shoot_type_ == 1)) {
-        Player* p = sim().nearest_player(shape().centre);
+        auto p = sim().nearest_player_position(shape().centre);
 
         auto v = s1_->convert_point(shape().centre, shape().rotation(), vec2{0});
-        auto d = normalise(p->shape().centre - v);
+        auto d = normalise(p - v);
         ii::spawn_boss_shot(sim(), v, d * 5, c0);
         ii::spawn_boss_shot(sim(), v, d * -5, c0);
 
         v = s2_->convert_point(shape().centre, shape().rotation(), vec2{0});
-        d = normalise(p->shape().centre - v);
+        d = normalise(p - v);
         ii::spawn_boss_shot(sim(), v, d * 5, c0);
         ii::spawn_boss_shot(sim(), v, d * -5, c0);
 
         play_sound_random(ii::sound::kBossFire);
       }
       if (shoot_type_ == 1 || is_hp_low()) {
-        Player* p = sim().nearest_player(shape().centre);
-        auto v = shape().centre;
-        auto d = normalise(p->shape().centre - v);
-        ii::spawn_boss_shot(sim(), v, d * 5, c0);
-        ii::spawn_boss_shot(sim(), v, d * -5, c0);
+        auto d = sim().nearest_player_direction(shape().centre);
+        ii::spawn_boss_shot(sim(), shape().centre, d * 5, c0);
+        ii::spawn_boss_shot(sim(), shape().centre, d * -5, c0);
         play_sound_random(ii::sound::kBossFire);
       }
     }
@@ -212,11 +210,9 @@ void TractorBoss::update() {
       }
 
       if (is_hp_low() && timer_ % (20 - sim().alive_players() * 2) == 0) {
-        Player* p = sim().nearest_player(shape().centre);
-        auto v = shape().centre;
-        auto d = normalise(p->shape().centre - v);
-        ii::spawn_boss_shot(sim(), v, d * 5, c0);
-        ii::spawn_boss_shot(sim(), v, d * -5, c0);
+        auto d = sim().nearest_player_direction(shape().centre);
+        ii::spawn_boss_shot(sim(), shape().centre, d * 5, c0);
+        ii::spawn_boss_shot(sim(), shape().centre, d * -5, c0);
         play_sound_random(ii::sound::kBossFire);
       }
     } else {

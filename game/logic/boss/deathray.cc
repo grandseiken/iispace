@@ -130,11 +130,9 @@ void DeathArm::update() {
   if (attacking_) {
     ++timer_;
     if (timer_ < kDrbArmATimer / 4) {
-      auto* p = sim().nearest_player(shape().centre);
-      vec2 d = p->shape().centre - shape().centre;
-      if (d != vec2{0}) {
-        dir_ = normalise(d);
-        move(dir_ * kDrbArmSpeed);
+      auto d = sim().nearest_player_direction(shape().centre);
+      if (d != vec2{}) {
+        move(kDrbArmSpeed * (dir_ = d));
       }
     } else if (timer_ < kDrbArmATimer / 2) {
       move(dir_ * kDrbArmSpeed);

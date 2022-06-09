@@ -74,6 +74,8 @@ public:
   std::uint32_t alive_players() const;
   std::uint32_t killed_players() const;
   ::Player* nearest_player(const vec2& point) const;
+  vec2 nearest_player_position(const vec2& point) const;
+  vec2 nearest_player_direction(const vec2& point) const;
   ship_list players() const;
 
   void add_life();

@@ -43,23 +43,18 @@ SimState::SimState(const initial_conditions& conditions, InputAdapter& input)
   });
   internals_->index.on_component_add<Destroy>(
       [internals, interface](ecs::handle h, const Destroy& d) {
-        if (auto e = h.get<Enemy>(); e) {
-          if (e->score_reward && d.source) {
-            if (auto player_handle = internals->index.get(*d.source); player_handle) {
-              if (auto s = player_handle->get<LegacyShip>(); s && player_handle->has<Player>()) {
-                static_cast<::Player*>(s->ship.get())->add_score(e->score_reward);
-              }
+        auto e = h.get<Enemy>();
+        if (e && e->score_reward && d.source) {
+          if (auto* p = internals->index.get<Player>(*d.source); p) {
+            p->add_score(*interface, e->score_reward);
+          }
+        }
+        if (e && e->boss_score_reward) {
+          internals->index.iterate<Player>([&](ecs::handle h, Player& p) {
+            if (!p.is_killed()) {
+              p.add_score(*interface, e->boss_score_reward / interface->alive_players());
             }
-          }
-          if (e->boss_score_reward) {
-            internals->index.iterate<Player>([&](ecs::handle h, const Player&) {
-              if (auto s = h.get<LegacyShip>(); s) {
-                if (auto p = static_cast<::Player*>(s->ship.get()); !p->is_killed()) {
-                  p->add_score(e->boss_score_reward / interface->alive_players());
-                }
-              }
-            });
-          }
+          });
         }
 
         if (auto it = std::ranges::find(internals->collisions, h.id(),
@@ -260,13 +255,12 @@ sim_results SimState::get_results() const {
   r.bosses_killed = internals_->bosses_killed;
   r.hard_mode_bosses_killed = internals_->hard_mode_bosses_killed;
 
-  for (auto* ship : interface_->players()) {
-    auto* p = static_cast<::Player*>(ship);
+  internals_->index.iterate<Player>([&](const Player& p) {
     auto& pr = r.players.emplace_back();
-    pr.number = p->player_number();
-    pr.score = p->score();
-    pr.deaths = p->deaths();
-  }
+    pr.number = p.player_number;
+    pr.score = p.score;
+    pr.deaths = p.death_count;
+  });
   return r;
 }
 

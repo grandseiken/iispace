@@ -28,14 +28,17 @@ struct LegacyShip : ecs::component {
 struct Destroy : ecs::component {
   std::optional<ecs::entity_id> source;
 };
+
 struct Collision : ecs::component {
   fixed bounding_width = 0;
   std::function<vec2()> centre;
   std::function<bool(const vec2&, shape_flag)> check;
 };
+
 struct Update : ecs::component {
   std::function<void()> update;
 };
+
 struct Render : ecs::component {
   std::function<void()> render;
 };

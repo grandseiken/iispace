@@ -180,8 +180,7 @@ void Chaser::update() {
     timer_ = kChaserTime * (move_ + 1);
     move_ = !move_;
     if (move_) {
-      dir_ = kChaserSpeed *
-          normalise(sim().nearest_player(shape().centre)->shape().centre - shape().centre);
+      dir_ = kChaserSpeed * sim().nearest_player_direction(shape().centre);
     }
   }
   if (move_) {
@@ -441,11 +440,8 @@ void Shielder::update() {
       rdir_ = sim().random(2) != 0;
     }
     if (is_on_screen() && power_ && timer_ % kShielderTimer == kShielderTimer / 2) {
-      Player* p = sim().nearest_player(shape().centre);
-      auto v = shape().centre;
-
-      auto d = normalise(p->shape().centre - v);
-      ii::spawn_boss_shot(sim(), v, d * 3, colour_hue360(160, .5f, .6f));
+      ii::spawn_boss_shot(sim(), shape().centre, 3 * sim().nearest_player_direction(shape().centre),
+                          colour_hue360(160, .5f, .6f));
       play_sound_random(ii::sound::kBossFire);
     }
     move(dir_ * speed);
@@ -517,9 +513,8 @@ void Tractor::update() {
     }
 
     if (timer_ % (kTractorTimer / 2) == 0 && is_on_screen() && power_) {
-      auto* p = sim().nearest_player(shape().centre);
-      auto d = normalise(p->shape().centre - shape().centre);
-      ii::spawn_boss_shot(sim(), shape().centre, d * 4, colour_hue360(300, .5f, .6f));
+      ii::spawn_boss_shot(sim(), shape().centre, 4 * sim().nearest_player_direction(shape().centre),
+                          colour_hue360(300, .5f, .6f));
       play_sound_random(ii::sound::kBossFire);
     }
 

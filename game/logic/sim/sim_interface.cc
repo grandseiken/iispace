@@ -172,6 +172,14 @@ SimInterface::ship_list SimInterface::players() const {
   return (::Player*)(ship ? ship : dead);
 }
 
+vec2 SimInterface::nearest_player_position(const vec2& point) const {
+  return nearest_player(point)->shape().centre;
+}
+
+vec2 SimInterface::nearest_player_direction(const vec2& point) const {
+  return normalise(nearest_player_position(point) - point);
+}
+
 void SimInterface::add_life() {
   ++internals_->lives;
 }

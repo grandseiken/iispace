@@ -6,7 +6,21 @@
 class Player;
 
 namespace ii {
-struct Player : ecs::component {};
+struct Player : ecs::component {
+  std::uint32_t player_number = 0;
+  std::uint32_t kill_timer = 0;
+
+  std::uint64_t score = 0;
+  std::uint32_t multiplier = 1;
+  std::uint32_t multiplier_count = 0;
+  std::uint32_t death_count = 0;
+
+  bool is_killed() const {
+    return kill_timer != 0;
+  }
+  void add_score(SimInterface&, std::uint64_t s);
+};
+
 enum class powerup_type {
   kExtraLife,
   kMagicShots,
@@ -39,18 +53,6 @@ public:
   void activate_bomb();
   static void update_fire_timer();
 
-  // Scoring
-  //------------------------------
-  std::uint64_t score() const {
-    return score_;
-  }
-
-  std::uint32_t deaths() const {
-    return death_count_;
-  }
-
-  void add_score(std::uint64_t score);
-
   // Colour
   //------------------------------
   glm::vec4 colour() const {
@@ -64,21 +66,16 @@ public:
   }
 
   bool is_killed() {
-    return kill_timer_ != 0;
+    return handle().get<ii::Player>()->is_killed();
   }
 
 private:
   std::uint32_t player_number_ = 0;
-  std::uint64_t score_ = 0;
-  std::uint32_t multiplier_ = 1;
-  std::uint32_t multiplier_count_ = 0;
-  std::uint32_t kill_timer_ = 0;
   std::uint32_t revive_timer_ = 0;
   std::uint32_t magic_shot_timer_ = 0;
   bool shield_ = false;
   bool bomb_ = false;
   vec2 fire_target_;
-  std::uint32_t death_count_ = 0;
 
   static std::uint32_t fire_timer_;
   static ii::SimInterface::ship_list kill_queue_;
