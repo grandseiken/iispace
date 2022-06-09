@@ -25,8 +25,6 @@ struct SimInternals {
   initial_conditions conditions;
   std::uint32_t lives = 0;
   ecs::EntityIndex index;
-
-  using ship_list = std::vector<Ship*>;
   std::vector<particle> particles;
 
   struct collision_entry {

@@ -89,6 +89,11 @@ void SimState::update() {
 
   internals_->non_wall_enemy_count = interface_->count_ships(ship_flag::kEnemy, ship_flag::kWall);
 
+  internals_->index.iterate<Health>([](Health& h) {
+    if (h.hit_timer) {
+      --h.hit_timer;
+    }
+  });
   internals_->index.iterate<Update>([](ecs::handle handle, auto& c) {
     if (!handle.has<Destroy>()) {
       c.update();
@@ -105,7 +110,7 @@ void SimState::update() {
       --(it++)->first;
       continue;
     }
-    auto* p = interface_->players().front();
+    auto* p = static_cast<::Player*>(interface_->players().front());
     vec2 v = p->shape().centre;
     p->shape().centre = it->second.first;
     p->explosion(glm::vec4{1.f});

@@ -44,6 +44,7 @@ SnakeTail* spawn_snake_tail(ii::SimInterface& sim, const vec2& position, const g
   auto h = sim.create_legacy(std::move(u));
   h.add(ii::legacy_collision(/* bounding width */ 22, h));
   h.add(ii::Enemy{.threat_value = 1});
+  h.add(ii::Health{.hp = 1, .on_destroy = ii::make_legacy_enemy_on_destroy(h)});
   return p;
 }
 
@@ -52,10 +53,13 @@ void spawn_snake(ii::SimInterface& sim, const vec2& position, const glm::vec4& c
   auto h = sim.create_legacy(std::make_unique<Snake>(sim, position, colour, dir, rot));
   h.add(ii::legacy_collision(/* bounding width */ 32, h));
   h.add(ii::Enemy{.threat_value = 5});
+  h.add(ii::Health{.hp = 5,
+                   .destroy_sound = ii::sound::kPlayerDestroy,
+                   .on_destroy = ii::make_legacy_enemy_on_destroy(h)});
 }
 
 SnakeTail::SnakeTail(ii::SimInterface& sim, const vec2& position, const glm::vec4& colour)
-: Enemy{sim, position, ii::ship_flag::kNone, 1} {
+: Enemy{sim, position, ii::ship_flag::kNone} {
   add_new_shape<ii::Polygon>(
       vec2{0}, 10, 4, colour, 0,
       ii::shape_flag::kDangerous | ii::shape_flag::kShield | ii::shape_flag::kVulnShield);
@@ -93,10 +97,9 @@ void SnakeTail::on_destroy(bool bomb) {
 
 Snake::Snake(ii::SimInterface& sim, const vec2& position, const glm::vec4& colour, const vec2& dir,
              fixed rot)
-: Enemy{sim, position, ii::ship_flag::kNone, 5}, colour_{colour}, shot_rot_{rot} {
+: Enemy{sim, position, ii::ship_flag::kNone}, colour_{colour}, shot_rot_{rot} {
   add_new_shape<ii::Polygon>(vec2{0}, 14, 3, colour, 0, ii::shape_flag::kVulnerable);
   add_new_shape<ii::Polygon>(vec2{0}, 10, 3, glm::vec4{0.f}, 0, ii::shape_flag::kDangerous);
-  set_destroy_sound(ii::sound::kPlayerDestroy);
   if (dir == vec2{0}) {
     auto r = sim.random(4);
     dir_ = r == 0 ? vec2{1, 0} : r == 1 ? vec2{-1, 0} : r == 2 ? vec2{0, 1} : vec2{0, -1};
@@ -183,6 +186,7 @@ void spawn_rainbow_shot(ii::SimInterface& sim, const vec2& position, const vec2&
   auto h = sim.create_legacy(std::make_unique<RainbowShot>(sim, position, velocity, boss));
   h.add(ii::legacy_collision(/* bounding width */ 12, h));
   h.add(ii::Enemy{.threat_value = 1});
+  h.add(ii::Health{.hp = 0, .on_destroy = ii::make_legacy_enemy_on_destroy(h)});
 }
 
 SuperBossArc* spawn_super_boss_arc(ii::SimInterface& sim, const vec2& position,

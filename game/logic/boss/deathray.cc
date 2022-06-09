@@ -26,7 +26,7 @@ public:
 };
 
 DeathRay::DeathRay(ii::SimInterface& sim, const vec2& position)
-: Enemy{sim, position, ii::ship_flag::kNone, 0} {
+: Enemy{sim, position, ii::ship_flag::kNone} {
   add_new_shape<ii::Box>(vec2{0}, 10, 48, glm::vec4{0.f}, 0, ii::shape_flag::kDangerous);
   add_new_shape<ii::Line>(vec2{0}, vec2{0, -48}, vec2{0, 48}, glm::vec4{1.f}, 0);
 }
@@ -41,7 +41,7 @@ void DeathRay::update() {
 class DeathRayBoss;
 class DeathArm : public Enemy {
 public:
-  DeathArm(ii::SimInterface& sim, DeathRayBoss* boss, bool top, std::uint32_t hp);
+  DeathArm(ii::SimInterface& sim, DeathRayBoss* boss, bool top);
   void update() override;
   void on_destroy(bool bomb) override;
 
@@ -61,14 +61,18 @@ void spawn_death_ray(ii::SimInterface& sim, const vec2& position) {
   auto h = sim.create_legacy(std::make_unique<DeathRay>(sim, position));
   h.add(ii::legacy_collision(/* bounding width */ 48, h));
   h.add(ii::Enemy{.threat_value = 1});
+  h.add(ii::Health{.hp = 0, .on_destroy = ii::make_legacy_enemy_on_destroy(h)});
 }
 
 DeathArm* spawn_death_arm(ii::SimInterface& sim, DeathRayBoss* boss, bool top, std::uint32_t hp) {
-  auto u = std::make_unique<DeathArm>(sim, boss, top, hp);
+  auto u = std::make_unique<DeathArm>(sim, boss, top);
   auto p = u.get();
   auto h = sim.create_legacy(std::move(u));
   h.add(ii::legacy_collision(/* bounding width */ 60, h));
   h.add(ii::Enemy{.threat_value = 10});
+  h.add(ii::Health{.hp = hp,
+                   .destroy_sound = ii::sound::kPlayerDestroy,
+                   .on_destroy = ii::make_legacy_enemy_on_destroy(h)});
   return p;
 }
 
@@ -99,8 +103,8 @@ private:
   std::vector<std::pair<std::uint32_t, std::uint32_t>> shot_queue_;
 };
 
-DeathArm::DeathArm(ii::SimInterface& sim, DeathRayBoss* boss, bool top, std::uint32_t hp)
-: Enemy{sim, vec2{0}, ii::ship_flag::kNone, hp}
+DeathArm::DeathArm(ii::SimInterface& sim, DeathRayBoss* boss, bool top)
+: Enemy{sim, vec2{0}, ii::ship_flag::kNone}
 , boss_{boss}
 , top_{top}
 , timer_{top ? 2 * kDrbArmATimer / 3 : 0}
@@ -111,7 +115,6 @@ DeathArm::DeathArm(ii::SimInterface& sim, DeathRayBoss* boss, bool top, std::uin
   add_new_shape<ii::Polygon>(vec2{0}, 40, 4, glm::vec4{0.f}, 0, ii::shape_flag::kShield);
   add_new_shape<ii::Polygon>(vec2{0}, 20, 4, c1, 0);
   add_new_shape<ii::Polygon>(vec2{0}, 18, 4, c0, 0);
-  set_destroy_sound(ii::sound::kPlayerDestroy);
 }
 
 void DeathArm::update() {
@@ -273,8 +276,8 @@ void DeathRayBoss::update() {
       }
       if (timer_ == kDrbTimer * 2 + 50 && arms_.size() == 2) {
         ray_attack_timer_ = kDrbRayTimer;
-        ray_src1_ = arms_[0]->shape().centre;
-        ray_src2_ = arms_[1]->shape().centre;
+        ray_src1_ = arms_[0]->position();
+        ray_src2_ = arms_[1]->position();
         play_sound(ii::sound::kEnemySpawn);
       }
     }

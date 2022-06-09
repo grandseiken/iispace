@@ -1,13 +1,42 @@
 #include "game/logic/ship/ship.h"
 #include "game/logic/ship/ecs_index.h"
-#include <glm/gtc/constants.hpp>
 
 namespace ii {
 
-Ship::Ship(SimInterface& sim, const vec2& position, ship_flag type)
-: sim_{&sim}, type_{type}, shape_{position, 0} {}
+void Health::damage(SimInterface& sim, ecs::handle h, std::uint32_t damage, damage_type type,
+                    std::optional<ecs::entity_id> source) {
+  hp = hp < damage ? 0 : hp - damage;
+  vec2 position = {kSimDimensions.x / 2, kSimDimensions.y / 2};
+  if (auto c = h.get<Position>(); c) {
+    position = c->centre;
+  } else if (auto c = h.get<LegacyShip>(); c) {
+    position = c->ship->shape().centre;
+  }
+  if (hit_sound && damage > 0) {
+    sim.play_sound(*hit_sound, position, /* random */ true);
+  }
+  if (h.has<Destroy>()) {
+    return;
+  }
 
-Ship::~Ship() {}
+  if (!hp) {
+    if (destroy_sound) {
+      sim.play_sound(*destroy_sound, position, /* random */ true);
+    }
+    if (on_destroy) {
+      on_destroy(type);
+    }
+    h.add(Destroy{.source = source});
+  } else {
+    if (hit_sound && damage > 0) {
+      sim.play_sound(*hit_sound, position, /* random */ true);
+    }
+    hit_timer = type == damage_type::kBomb ? 25 : 1;
+  }
+}
+
+Ship::Ship(SimInterface& sim, const vec2& position, ship_flag type)
+: IShip{sim}, type_{type}, shape_{position, 0} {}
 
 bool Ship::check_point(const vec2& v, shape_flag category) const {
   bool aa = false;
@@ -40,37 +69,17 @@ void Ship::render_with_colour(const glm::vec4& colour) const {
   }
 }
 
-void Ship::destroy(std::optional<ecs::entity_id> source) {
-  handle().add(Destroy{.source = source});
-}
-
-bool Ship::is_destroyed() const {
-  return handle().has<Destroy>();
-}
-
 void Ship::spawn(const particle& particle) const {
-  sim_->add_particle(particle);
+  sim().add_particle(particle);
 }
 
 void Ship::explosion(const std::optional<glm::vec4>& c, std::uint32_t time, bool towards,
                      const glm::vec2& v) const {
   for (const auto& shape : shape_.shapes()) {
-    auto n = towards ? sim().random(2) + 1 : sim().random(8) + 8;
-    for (std::uint32_t j = 0; j < n; ++j) {
-      auto pos = shape->convert_fl_point(to_float(shape_.centre), shape_.rotation().to_float(),
-                                         glm::vec2{0.f});
-
-      auto dir = from_polar(sim().random_fixed().to_float() * 2 * glm::pi<float>(), 6.f);
-
-      if (towards && v - pos != glm::vec2{0.f}) {
-        dir = glm::normalize(v - pos);
-        float angle = std::atan2(dir.y, dir.x) +
-            (sim().random_fixed().to_float() - 0.5f) * glm::pi<float>() / 4;
-        dir = from_polar(angle, 6.f);
-      }
-
-      spawn(particle{pos, c ? *c : shape->colour, dir, time + sim().random(8)});
-    }
+    auto pos = shape->convert_fl_point(to_float(shape_.centre), shape_.rotation().to_float(),
+                                       glm::vec2{0.f});
+    sim().explosion(pos, c ? *c : shape->colour, time,
+                    towards ? std::make_optional(v) : std::nullopt);
   }
 }
 

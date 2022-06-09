@@ -101,6 +101,7 @@
 * Knockback nearby enemies
 * Pull in nearby enemies
 * Invisibility (enemies no longer follow)
+* Some sort of drone helper?
 * Slow time
 
 ### Misc

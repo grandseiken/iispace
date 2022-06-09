@@ -3,6 +3,7 @@
 #include "game/logic/player.h"
 #include "game/logic/ship/ship.h"
 #include "game/logic/sim/sim_internals.h"
+#include <glm/gtc/constants.hpp>
 
 namespace ii {
 
@@ -153,13 +154,13 @@ SimInterface::ship_list SimInterface::players() const {
 }
 
 ::Player* SimInterface::nearest_player(const vec2& point) const {
-  Ship* ship = nullptr;
-  Ship* dead = nullptr;
+  IShip* ship = nullptr;
+  IShip* dead = nullptr;
   fixed ship_dist = 0;
   fixed dead_dist = 0;
 
-  for (Ship* s : players()) {
-    auto d = length_squared(s->shape().centre - point);
+  for (IShip* s : players()) {
+    auto d = length_squared(s->position() - point);
     if ((d < ship_dist || !ship) && !((::Player*)s)->is_killed()) {
       ship_dist = d;
       ship = s;
@@ -218,6 +219,21 @@ void SimInterface::add_particle(const ii::particle& particle) {
   internals_->particles.emplace_back(particle);
 }
 
+void SimInterface::explosion(const glm::vec2& v, const glm::vec4& c, std::uint32_t time,
+                             const std::optional<glm::vec2>& towards) {
+  auto n = towards ? random(2) + 1 : random(8) + 8;
+  for (std::uint32_t i = 0; i < n; ++i) {
+    auto dir = from_polar(random_fixed().to_float() * 2 * glm::pi<float>(), 6.f);
+    if (towards && *towards - v != glm::vec2{0.f}) {
+      dir = glm::normalize(*towards - v);
+      float angle =
+          std::atan2(dir.y, dir.x) + (random_fixed().to_float() - 0.5f) * glm::pi<float>() / 4;
+      dir = from_polar(angle, 6.f);
+    }
+    add_particle({v, c, dir, time + random(8)});
+  }
+}
+
 void SimInterface::rumble_all(std::uint32_t time) const {
   for (std::uint32_t i = 0; i < player_count(); ++i) {
     rumble(i, time);
@@ -227,6 +243,15 @@ void SimInterface::rumble_all(std::uint32_t time) const {
 void SimInterface::rumble(std::uint32_t player, std::uint32_t time) const {
   auto& rumble = internals_->rumble_output[player];
   rumble = std::max(rumble, time);
+}
+
+void SimInterface::play_sound(sound s, const vec2& position, bool random, float volume) {
+  if (random) {
+    play_sound(s, volume * (.5f * random_fixed().to_float() + .5f),
+               2.f * position.x.to_float() / kSimDimensions.x - 1.f);
+  } else {
+    play_sound(s, volume, 2.f * position.x.to_float() / kSimDimensions.x - 1.f);
+  }
 }
 
 void SimInterface::play_sound(sound s, float volume, float pan, float repitch) const {

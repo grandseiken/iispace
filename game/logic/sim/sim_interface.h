@@ -16,6 +16,7 @@ class EntityIndex;
 }  // namespace ecs
 enum class shape_flag : std::uint32_t;
 enum class ship_flag : std::uint32_t;
+class IShip;
 class Ship;
 class SimInternals;
 
@@ -46,7 +47,7 @@ public:
     kBoss2C = 32,
     kBoss3A = 64,
   };
-  using ship_list = std::vector<Ship*>;
+  using ship_list = std::vector<IShip*>;
 
   SimInterface(SimInternals* internals) : internals_{internals} {}
 
@@ -85,10 +86,13 @@ public:
 
   ecs::handle create_legacy(std::unique_ptr<Ship> ship);
   void add_particle(const particle& particle);
+  void explosion(const glm::vec2& v, const glm::vec4& c, std::uint32_t time = 8,
+                 const std::optional<glm::vec2>& towards = std::nullopt);
 
   // Simulation output.
   void rumble_all(std::uint32_t time) const;
   void rumble(std::uint32_t player, std::uint32_t time) const;
+  void play_sound(sound, const vec2& position, bool random = false, float volume = 1.f);
   void play_sound(sound, float volume = 1.f, float pan = 0.f, float repitch = 0.f) const;
   void render_hp_bar(float fill) const;
   void render_line(const glm::vec2& a, const glm::vec2& b, const glm::vec4& c) const;

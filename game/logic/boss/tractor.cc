@@ -22,11 +22,10 @@ private:
 };
 
 TBossShot::TBossShot(ii::SimInterface& sim, const vec2& position, fixed angle)
-: Enemy{sim, position, ii::ship_flag::kNone, 1} {
+: Enemy{sim, position, ii::ship_flag::kNone} {
   add_new_shape<ii::Polygon>(vec2{0}, 8, 6, c0, 0,
                              ii::shape_flag::kDangerous | ii::shape_flag::kVulnerable);
   dir_ = from_polar(angle, 3_fx);
-  set_destroy_sound(ii::sound::kEnemyShatter);
 }
 
 void TBossShot::update() {
@@ -46,6 +45,9 @@ void spawn_tboss_shot(ii::SimInterface& sim, const vec2& position, fixed angle) 
   auto h = sim.create_legacy(std::make_unique<TBossShot>(sim, position, angle));
   h.add(ii::legacy_collision(/* bounding width */ 8, h));
   h.add(ii::Enemy{.threat_value = 1});
+  h.add(ii::Health{.hp = 1,
+                   .destroy_sound = ii::sound::kEnemyShatter,
+                   .on_destroy = ii::make_legacy_enemy_on_destroy(h)});
 }
 
 class TractorBoss : public Boss {
@@ -184,10 +186,10 @@ void TractorBoss::update() {
         if (((Player*)ship)->is_killed()) {
           continue;
         }
-        auto pos = ship->shape().centre;
+        auto pos = ship->position();
         targets_.push_back(pos);
         auto d = normalise(shape().centre - pos);
-        ship->move(d * kTractorBeamSpeed);
+        ship->position() += d * kTractorBeamSpeed;
       }
     }
   } else {
@@ -253,7 +255,7 @@ void TractorBoss::update() {
           if (+(ship->type() & ii::ship_flag::kEnemy)) {
             play_sound_random(ii::sound::kBossAttack, 0, 0.3f);
           }
-          auto pos = ship->shape().centre;
+          auto pos = ship->position();
           targets_.push_back(pos);
           fixed speed = 0;
           if (+(ship->type() & ii::ship_flag::kPlayer)) {
@@ -263,10 +265,10 @@ void TractorBoss::update() {
             speed = 4 + fixed_c::half;
           }
           auto d = normalise(shape().centre - pos);
-          ship->move(d * speed);
+          ship->position() += d * speed;
 
           if (+(ship->type() & ii::ship_flag::kEnemy) && !(ship->type() & ii::ship_flag::kWall) &&
-              length(ship->shape().centre - shape().centre) <= 40) {
+              length(ship->position() - shape().centre) <= 40) {
             ship->destroy();
             ++attack_size_;
             sattack_->radius = attack_size_ / (1 + fixed_c::half);

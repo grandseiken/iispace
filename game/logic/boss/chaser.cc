@@ -203,7 +203,7 @@ void ChaserBoss::update() {
           continue;
         }
 
-        auto v = shape().centre - ship->shape().centre;
+        auto v = shape().centre - ship->position();
         auto r = length(v);
         if (r > 0) {
           v /= r;
@@ -215,7 +215,7 @@ void ChaserBoss::update() {
           v *= pow;
           p = c->last_dir_ * pow;
         } else {
-          p = from_polar(ship->shape().rotation(), 1_fx);
+          p = from_polar(ship->rotation(), 1_fx);
         }
 
         if (r > attract) {

@@ -38,7 +38,7 @@ public:
 
   void render_hp_bar() const;
 
-  void damage(std::uint32_t damage, bool magic, Player* source) override;
+  void damage(std::uint32_t damage, bool magic, IShip* source) override;
   void render() const override;
   void render(bool hp_bar) const;
   virtual std::uint32_t get_damage(std::uint32_t damage, bool magic) = 0;

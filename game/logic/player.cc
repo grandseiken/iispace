@@ -35,7 +35,7 @@ class Powerup : public ii::Ship {
 public:
   Powerup(ii::SimInterface& sim, const vec2& position, ii::powerup_type t);
   void update() override;
-  void damage(std::uint32_t damage, bool magic, Player* source) override;
+  void damage(std::uint32_t damage, bool magic, IShip* source) override;
 
 private:
   ii::powerup_type type_ = ii::powerup_type::kExtraLife;
@@ -148,28 +148,29 @@ void Powerup::update() {
   }
 }
 
-void Powerup::damage(std::uint32_t damage, bool magic, Player* source) {
+void Powerup::damage(std::uint32_t damage, bool magic, IShip* source) {
   if (source) {
+    auto p = static_cast<Player*>(source->handle().get<ii::LegacyShip>()->ship.get());
     switch (type_) {
     case ii::powerup_type::kExtraLife:
       sim().add_life();
       break;
 
     case ii::powerup_type::kMagicShots:
-      source->activate_magic_shots();
+      p->activate_magic_shots();
       break;
 
     case ii::powerup_type::kShield:
-      source->activate_magic_shield();
+      p->activate_magic_shield();
       break;
 
     case ii::powerup_type::kBomb:
-      source->activate_bomb();
+      p->activate_bomb();
       break;
     }
     play_sound(type_ == ii::powerup_type::kExtraLife ? ii::sound::kPowerupLife
                                                      : ii::sound::kPowerupOther);
-    sim().rumble(source->player_number(), 6);
+    sim().rumble(p->player_number(), 6);
   }
 
   auto r = 5 + sim().random(5);
@@ -298,7 +299,7 @@ void Player::update() {
         sim().ships_in_radius(shape().centre, kBombBossRadius, ii::ship_flag::kEnemy);
     for (const auto& ship : list) {
       if (+(ship->type() & ii::ship_flag::kBoss) ||
-          length(ship->shape().centre - shape().centre) <= kBombRadius) {
+          length(ship->position() - shape().centre) <= kBombRadius) {
         ship->damage(kBombDamage, false, 0);
       }
       const auto* enemy = ship->handle().get<ii::Enemy>();

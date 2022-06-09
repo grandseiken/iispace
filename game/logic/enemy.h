@@ -10,6 +10,8 @@ struct Enemy : ecs::component {
   std::uint32_t boss_score_reward = 0;
 };
 
+std::function<void(damage_type)> make_legacy_enemy_on_destroy(ecs::handle h);
+
 void spawn_follow(SimInterface&, const vec2& position, bool has_score = true, fixed rotation = 0);
 void spawn_big_follow(SimInterface&, const vec2& position, bool has_score);
 void spawn_chaser(SimInterface&, const vec2& position);
@@ -25,24 +27,9 @@ void spawn_boss_shot(SimInterface&, const vec2& position, const vec2& velocity,
 
 class Enemy : public ii::Ship {
 public:
-  Enemy(ii::SimInterface& sim, const vec2& position, ii::ship_flag type, std::uint32_t hp);
-
-  std::uint32_t get_hp() const {
-    return hp_;
-  }
-
-  void set_destroy_sound(ii::sound sound) {
-    destroy_sound_ = sound;
-  }
-
-  void damage(std::uint32_t damage, bool magic, Player* source) override;
+  Enemy(ii::SimInterface& sim, const vec2& position, ii::ship_flag type);
   void render() const override;
   virtual void on_destroy(bool bomb) {}
-
-private:
-  std::uint32_t hp_ = 0;
-  mutable std::uint32_t damaged_ = 0;
-  ii::sound destroy_sound_ = ii::sound::kEnemyDestroy;
 };
 
 class BossShot : public Enemy {

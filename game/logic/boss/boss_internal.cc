@@ -46,7 +46,7 @@ std::uint32_t Boss::CalculateHP(std::uint32_t base, std::uint32_t players, std::
   return r;
 }
 
-void Boss::damage(std::uint32_t damage, bool magic, Player* source) {
+void Boss::damage(std::uint32_t damage, bool magic, IShip* source) {
   std::uint32_t actual_damage = get_damage(damage, magic);
   if (actual_damage <= 0) {
     return;

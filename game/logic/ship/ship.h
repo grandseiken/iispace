@@ -29,6 +29,15 @@ struct Destroy : ecs::component {
   std::optional<ecs::entity_id> source;
 };
 
+struct ShipFlag : ecs::component {
+  ship_flag flag = ship_flag::kNone;
+};
+
+struct Position : ecs::component {
+  vec2 centre = {0, 0};
+  fixed rotation = 0;
+};
+
 struct Collision : ecs::component {
   fixed bounding_width = 0;
   std::function<vec2()> centre;
@@ -43,12 +52,56 @@ struct Render : ecs::component {
   std::function<void()> render;
 };
 
-class Ship {
+enum class damage_type {
+  kNone,
+  kMagic,
+  kBomb,
+};
+
+struct Health : ecs::component {
+  std::uint32_t hp = 0;
+  std::uint32_t hit_timer = 0;
+  std::optional<ii::sound> hit_sound = ii::sound::kEnemyHit;
+  std::optional<ii::sound> destroy_sound = ii::sound::kEnemyDestroy;
+  std::function<void(damage_type)> on_destroy;
+
+  void damage(SimInterface&, ecs::handle h, std::uint32_t damage, damage_type type,
+              std::optional<ecs::entity_id> source);
+};
+
+class IShip {
+public:
+  IShip(SimInterface& sim) : sim_{sim} {}
+  virtual ~IShip() {}
+
+  SimInterface& sim() const {
+    return sim_;
+  }
+
+  void destroy(std::optional<ecs::entity_id> source = std::nullopt) {
+    handle().add(Destroy{.source = source});
+  }
+
+  bool is_destroyed() const {
+    return handle().has<Destroy>();
+  }
+
+  virtual ship_flag type() const = 0;
+  virtual ecs::handle handle() const = 0;
+  virtual vec2& position() = 0;
+  virtual vec2 position() const = 0;
+  virtual fixed rotation() const = 0;
+  virtual void damage(std::uint32_t damage, bool magic, IShip* source);
+
+private:
+  SimInterface& sim_;
+};
+
+class Ship : public IShip {
 public:
   Ship(SimInterface& sim, const vec2& position, ship_flag type);
-  virtual ~Ship();
 
-  ecs::handle handle() const {
+  ecs::handle handle() const override {
     return *handle_;
   }
 
@@ -56,14 +109,7 @@ public:
     handle_ = handle;
   }
 
-  SimInterface& sim() const {
-    return *sim_;
-  }
-
-  void destroy(std::optional<ecs::entity_id> source = std::nullopt);
-  bool is_destroyed() const;
-
-  ship_flag type() const {
+  ship_flag type() const override {
     return type_;
   }
 
@@ -96,20 +142,24 @@ public:
   }
 
   void play_sound(sound sound) {
-    sim().play_sound(sound, 1.f, 2.f * shape_.centre.x.to_float() / kSimDimensions.x - 1.f);
+    sim().play_sound(sound, shape_.centre);
   }
 
   void play_sound_random(sound sound, float pitch = 0.f, float volume = 1.f) {
-    sim().play_sound(sound, volume * (.5f * sim().random_fixed().to_float() + .5f),
-                     2.f * shape_.centre.x.to_float() / kSimDimensions.x - 1.f, pitch);
+    sim().play_sound(sound, shape_.centre, true, volume);
   }
 
-  // Generic behaviour
-  //------------------------------
+  vec2& position() override {
+    return shape().centre;
+  }
+  vec2 position() const override {
+    return shape().centre;
+  }
+  fixed rotation() const override {
+    return shape().rotation();
+  }
   virtual void update() = 0;
   virtual void render() const;
-  // Player can be null
-  virtual void damage(std::uint32_t damage, bool magic, Player* source) {}
 
 protected:
   const CompoundShape::shape_list& shapes() const;
@@ -123,7 +173,6 @@ protected:
   void clear_shapes();
 
 private:
-  SimInterface* sim_ = nullptr;
   std::optional<ecs::handle> handle_;
   ship_flag type_ = ship_flag{0};
   CompoundShape shape_;
@@ -136,6 +185,43 @@ inline Collision legacy_collision(fixed w, ecs::const_handle h) {
   c.centre = [ship = s->ship.get()] { return ship->shape().centre; };
   c.check = [ship = s->ship.get()](const vec2& v, shape_flag f) { return ship->check_point(v, f); };
   return c;
+}
+
+struct ShipForwarder
+: IShip
+, ecs::component {
+  ecs::handle h;
+  ShipForwarder(SimInterface& sim, ecs::handle h) : IShip{sim}, h{h} {}
+  ship_flag type() const override {
+    return h.get<ShipFlag>()->flag;
+  }
+  ecs::handle handle() const override {
+    return h;
+  }
+  vec2& position() {
+    return h.get<Position>()->centre;
+  }
+  vec2 position() const override {
+    return h.get<Position>()->centre;
+  }
+  fixed rotation() const override {
+    return h.get<Position>()->rotation;
+  }
+};
+
+inline void IShip::damage(std::uint32_t damage, bool magic, IShip* source) {
+  if (auto c = handle().get<Health>(); c) {
+    std::optional<ecs::entity_id> source_id;
+    if (source) {
+      source_id = source->handle().id();
+    }
+    // TODO: damage > 10: kBombDamage
+    c->damage(sim(), handle(), damage,
+              magic             ? damage_type::kMagic
+                  : damage > 10 ? damage_type::kBomb
+                                : damage_type::kNone,
+              source_id);
+  }
 }
 
 }  // namespace ii

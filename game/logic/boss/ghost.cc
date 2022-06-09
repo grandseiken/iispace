@@ -25,8 +25,7 @@ private:
 GhostWall::GhostWall(ii::SimInterface& sim, bool swap, bool no_gap, bool ignored)
 : Enemy{sim,
         {ii::kSimDimensions.x / 2, swap ? -10 : 10 + ii::kSimDimensions.y},
-        ii::ship_flag::kNone,
-        0}
+        ii::ship_flag::kNone}
 , dir_{0, swap ? 1 : -1} {
   if (no_gap) {
     add_new_shape<ii::Box>(vec2{0}, fixed{ii::kSimDimensions.x}, 10, c0, 0,
@@ -46,8 +45,7 @@ GhostWall::GhostWall(ii::SimInterface& sim, bool swap, bool no_gap, bool ignored
 GhostWall::GhostWall(ii::SimInterface& sim, bool swap, bool swap_gap)
 : Enemy{sim,
         {swap ? -10 : 10 + ii::kSimDimensions.x, ii::kSimDimensions.y / 2},
-        ii::ship_flag::kNone,
-        0}
+        ii::ship_flag::kNone}
 , dir_{swap ? 1 : -1, 0} {
   fixed off = swap_gap ? -100 : 100;
 
@@ -95,7 +93,7 @@ private:
 };
 
 GhostMine::GhostMine(ii::SimInterface& sim, const vec2& position, Boss* ghost)
-: Enemy{sim, position, ii::ship_flag::kNone, 0}, ghost_{ghost} {
+: Enemy{sim, position, ii::ship_flag::kNone}, ghost_{ghost} {
   add_new_shape<ii::Polygon>(vec2{0}, 24, 8, c1, 0);
   add_new_shape<ii::Polygon>(vec2{0}, 20, 8, c1, 0);
 }
@@ -135,18 +133,21 @@ void spawn_ghost_wall(ii::SimInterface& sim, bool swap, bool no_gap, bool ignore
   auto h = sim.create_legacy(std::make_unique<GhostWall>(sim, swap, no_gap, ignored));
   h.add(ii::legacy_collision(/* bounding width */ ii::kSimDimensions.x, h));
   h.add(ii::Enemy{.threat_value = 1});
+  h.add(ii::Health{.hp = 0, .on_destroy = ii::make_legacy_enemy_on_destroy(h)});
 }
 
 void spawn_ghost_wall(ii::SimInterface& sim, bool swap, bool swap_gap) {
   auto h = sim.create_legacy(std::make_unique<GhostWall>(sim, swap, swap_gap));
   h.add(ii::legacy_collision(/* bounding width */ ii::kSimDimensions.y, h));
   h.add(ii::Enemy{.threat_value = 1});
+  h.add(ii::Health{.hp = 0, .on_destroy = ii::make_legacy_enemy_on_destroy(h)});
 }
 
 void spawn_ghost_mine(ii::SimInterface& sim, const vec2& position, Boss* ghost) {
   auto h = sim.create_legacy(std::make_unique<GhostMine>(sim, position, ghost));
   h.add(ii::legacy_collision(/* bounding width */ 24, h));
   h.add(ii::Enemy{.threat_value = 1});
+  h.add(ii::Health{.hp = 0, .on_destroy = ii::make_legacy_enemy_on_destroy(h)});
 }
 
 class GhostBoss : public Boss {
