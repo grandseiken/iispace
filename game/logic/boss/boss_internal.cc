@@ -41,10 +41,10 @@ std::uint32_t scale_boss_damage(SimInterface& sim, ecs::handle, damage_type, std
   return damage * (60 / (1 + (sim.get_lives() ? sim.player_count() : sim.alive_players())));
 }
 
-std::function<void(damage_type)>
-make_legacy_boss_on_hit(ecs::handle h, bool explode_on_bomb_damage) {
-  auto boss = static_cast<::Boss*>(h.get<LegacyShip>()->ship.get());
-  return [boss, explode_on_bomb_damage](damage_type type) {
+std::function<void(SimInterface&, ecs::handle, damage_type)>
+make_legacy_boss_on_hit(bool explode_on_bomb_damage) {
+  return [explode_on_bomb_damage](SimInterface&, ecs::handle h, damage_type type) {
+    auto boss = static_cast<::Boss*>(h.get<LegacyShip>()->ship.get());
     if (type == damage_type::kBomb && explode_on_bomb_damage) {
       boss->explosion();
       boss->explosion(glm::vec4{1.f}, 16);
@@ -53,11 +53,9 @@ make_legacy_boss_on_hit(ecs::handle h, bool explode_on_bomb_damage) {
   };
 }
 
-std::function<void(damage_type)> make_legacy_boss_on_destroy(ecs::handle h) {
+void legacy_boss_on_destroy(SimInterface&, ecs::handle h, damage_type type) {
   auto enemy = static_cast<::Enemy*>(h.get<LegacyShip>()->ship.get());
-  return [enemy](damage_type type) {
-    enemy->on_destroy(type == damage_type::kBomb);
-  };
+  enemy->on_destroy(type == damage_type::kBomb);
 }
 
 }  // namespace ii

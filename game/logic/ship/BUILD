@@ -13,6 +13,7 @@ cc_library(
   name = "ship",
   hdrs = [
     "shape.h",
+    "shape_v2.h",
     "ship.h",
   ],
   srcs = [

@@ -43,11 +43,11 @@ void TBossShot::update() {
 
 void spawn_tboss_shot(ii::SimInterface& sim, const vec2& position, fixed angle) {
   auto h = sim.create_legacy(std::make_unique<TBossShot>(sim, position, angle));
-  h.add(ii::legacy_collision(/* bounding width */ 8, h));
+  h.add(ii::legacy_collision(/* bounding width */ 8));
   h.add(ii::Enemy{.threat_value = 1});
   h.add(ii::Health{.hp = 1,
                    .destroy_sound = ii::sound::kEnemyShatter,
-                   .on_destroy = ii::make_legacy_enemy_on_destroy(h)});
+                   .on_destroy = &ii::legacy_enemy_on_destroy});
 }
 
 class TractorBoss : public Boss {
@@ -331,7 +331,7 @@ void TractorBoss::render() const {
 namespace ii {
 void spawn_tractor_boss(SimInterface& sim, std::uint32_t cycle) {
   auto h = sim.create_legacy(std::make_unique<TractorBoss>(sim));
-  h.add(legacy_collision(/* bounding width */ 640, h));
+  h.add(legacy_collision(/* bounding width */ 640));
   h.add(Enemy{.threat_value = 100,
               .boss_score_reward =
                   calculate_boss_score(boss_flag::kBoss2A, sim.player_count(), cycle)});
@@ -341,8 +341,8 @@ void spawn_tractor_boss(SimInterface& sim, std::uint32_t cycle) {
       .hit_sound1 = ii::sound::kEnemyShatter,
       .destroy_sound = std::nullopt,
       .damage_transform = &scale_boss_damage,
-      .on_hit = make_legacy_boss_on_hit(h, true),
-      .on_destroy = make_legacy_boss_on_destroy(h),
+      .on_hit = make_legacy_boss_on_hit(true),
+      .on_destroy = &legacy_boss_on_destroy,
   });
   h.add(Boss{.boss = boss_flag::kBoss2A});
 }

@@ -65,7 +65,7 @@ SimInterface::ship_list
 SimInterface::ships_in_radius(const vec2& point, fixed radius, ship_flag mask) const {
   ship_list r;
   internals_->index.iterate<LegacyShip>([&r, &point, radius, mask](auto& c) {
-    if ((!mask || +(c.ship->type() & mask)) && length(c.ship->shape().centre - point) <= radius) {
+    if ((!mask || +(c.ship->type() & mask)) && length(c.ship->position() - point) <= radius) {
       r.emplace_back(c.ship.get());
     }
   });
@@ -78,7 +78,7 @@ bool SimInterface::any_collision(const vec2& point, shape_flag category) const {
 
   for (const auto& collision : internals_->collisions) {
     auto& e = *collision.handle.get<Collision>();
-    auto v = e.centre();
+    auto v = e.centre(collision.handle);
     fixed w = collision.bounding_width;
 
     // TODO: this optmization check is incorrect, since collision list is sorted based on x-min
@@ -93,7 +93,7 @@ bool SimInterface::any_collision(const vec2& point, shape_flag category) const {
       continue;
     }
 
-    if (e.check(point, category)) {
+    if (e.check(collision.handle, point, category)) {
       return true;
     }
   }
@@ -107,7 +107,7 @@ SimInterface::ship_list SimInterface::collision_list(const vec2& point, shape_fl
 
   for (const auto& collision : internals_->collisions) {
     auto& e = *collision.handle.get<Collision>();
-    auto v = e.centre();
+    auto v = e.centre(collision.handle);
     fixed w = collision.bounding_width;
 
     // TODO: same as above.
@@ -118,7 +118,7 @@ SimInterface::ship_list SimInterface::collision_list(const vec2& point, shape_fl
       continue;
     }
 
-    if (e.check(point, category)) {
+    if (e.check(collision.handle, point, category)) {
       if (auto s = collision.handle.get<LegacyShip>(); s) {
         r.push_back(s->ship.get());
       }
@@ -203,8 +203,8 @@ ecs::handle SimInterface::create_legacy(std::unique_ptr<Ship> ship) {
   auto p = ship.get();
   auto h = internals_->index.create();
   h.emplace<LegacyShip>().ship = std::move(ship);
-  h.emplace<Update>().update = [p] { p->update(); };
-  h.emplace<Render>().render = [p] { p->render(); };
+  h.emplace<Update>().update = [p](SimInterface&, ecs::handle) { p->update(); };
+  h.emplace<Render>().render = [p](const SimInterface&, ecs::const_handle) { p->render(); };
   p->set_handle(h);
   return h;
 }

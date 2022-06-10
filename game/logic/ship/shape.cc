@@ -152,7 +152,7 @@ void Polygon::render(SimInterface& sim, const glm::vec2& position, float rotatio
 }
 
 bool Polygon::check_local_point(const vec2& v) const {
-  return length(v) < radius;
+  return length_squared(v) < radius * radius;
 }
 
 PolyArc::PolyArc(const vec2& centre, fixed radius, std::uint32_t sides, std::uint32_t segments,

@@ -19,6 +19,8 @@ inline constexpr std::int64_t fixed_abs(std::int64_t a) {
 
 class fixed {
 public:
+  std::int64_t value_;
+
   explicit fixed() = default;
   constexpr fixed(std::int32_t v) : value_{static_cast<std::int64_t>(v) << 32} {}
   constexpr fixed(std::uint32_t v) : value_{static_cast<std::int64_t>(v) << 32} {}
@@ -62,9 +64,8 @@ public:
     return *this = *this / f;
   }
 
-  auto operator<=>(const fixed&) const = default;
+  constexpr auto operator<=>(const fixed&) const = default;
 
-private:
   friend constexpr fixed operator<<(const fixed&, std::int32_t);
   friend constexpr fixed operator>>(const fixed&, std::int32_t);
   friend constexpr fixed operator-(const fixed&);
@@ -73,12 +74,11 @@ private:
   friend constexpr fixed operator*(const fixed&, const fixed&);
   friend constexpr fixed operator/(const fixed&, const fixed&);
   friend constexpr fixed abs(const fixed&);
-  friend fixed sqrt(const fixed&);
+  friend constexpr fixed sqrt(const fixed&);
   friend constexpr fixed sin(const fixed&);
   friend constexpr fixed cos(const fixed&);
   friend constexpr fixed atan2(const fixed&, const fixed&);
   friend std::ostream& operator<<(std::ostream&, const fixed&);
-  std::int64_t value_;
 };
 
 namespace std {
@@ -209,7 +209,7 @@ inline constexpr fixed abs(const fixed& f) {
   return fixed::from_internal(detail::fixed_abs(f.value_));
 }
 
-inline fixed sqrt(const fixed& f) {
+inline constexpr fixed sqrt(const fixed& f) {
   if (f.value_ <= 0) {
     return 0;
   }

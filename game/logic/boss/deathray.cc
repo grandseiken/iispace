@@ -59,20 +59,20 @@ private:
 
 void spawn_death_ray(ii::SimInterface& sim, const vec2& position) {
   auto h = sim.create_legacy(std::make_unique<DeathRay>(sim, position));
-  h.add(ii::legacy_collision(/* bounding width */ 48, h));
+  h.add(ii::legacy_collision(/* bounding width */ 48));
   h.add(ii::Enemy{.threat_value = 1});
-  h.add(ii::Health{.hp = 0, .on_destroy = ii::make_legacy_enemy_on_destroy(h)});
+  h.add(ii::Health{.hp = 0, .on_destroy = &ii::legacy_enemy_on_destroy});
 }
 
 DeathArm* spawn_death_arm(ii::SimInterface& sim, DeathRayBoss* boss, bool top, std::uint32_t hp) {
   auto u = std::make_unique<DeathArm>(sim, boss, top);
   auto p = u.get();
   auto h = sim.create_legacy(std::move(u));
-  h.add(ii::legacy_collision(/* bounding width */ 60, h));
+  h.add(ii::legacy_collision(/* bounding width */ 60));
   h.add(ii::Enemy{.threat_value = 10});
   h.add(ii::Health{.hp = hp,
                    .destroy_sound = ii::sound::kPlayerDestroy,
-                   .on_destroy = ii::make_legacy_enemy_on_destroy(h)});
+                   .on_destroy = &ii::legacy_enemy_on_destroy});
   return p;
 }
 
@@ -389,7 +389,7 @@ std::uint32_t transform_death_ray_boss_damage(ii::SimInterface& sim, ii::ecs::ha
 namespace ii {
 void spawn_death_ray_boss(SimInterface& sim, std::uint32_t cycle) {
   auto h = sim.create_legacy(std::make_unique<DeathRayBoss>(sim));
-  h.add(legacy_collision(/* bounding width */ 640, h));
+  h.add(legacy_collision(/* bounding width */ 640));
   h.add(Enemy{.threat_value = 100,
               .boss_score_reward =
                   calculate_boss_score(boss_flag::kBoss2C, sim.player_count(), cycle)});
@@ -400,8 +400,8 @@ void spawn_death_ray_boss(SimInterface& sim, std::uint32_t cycle) {
       .hit_sound1 = ii::sound::kEnemyShatter,
       .destroy_sound = std::nullopt,
       .damage_transform = &transform_death_ray_boss_damage,
-      .on_hit = make_legacy_boss_on_hit(h, true),
-      .on_destroy = make_legacy_boss_on_destroy(h),
+      .on_hit = make_legacy_boss_on_hit(true),
+      .on_destroy = &legacy_boss_on_destroy,
   });
   h.add(Boss{.boss = boss_flag::kBoss2C});
 }

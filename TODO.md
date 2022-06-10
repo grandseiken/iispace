@@ -106,3 +106,24 @@
 
 ### Misc
 * Superweapon refills automatically, but no shields (or limit 1)
+
+## New enemy ideas
+* Redesign shielder, shield at back and sides so you need to get in its path
+* Wall cluster bomb
+* Many new wall types / configuration
+* Enemy that shields other enemies until killed
+* Snakes, oh snakes!
+* Enemy that spawns new ones when hit
+* Bomb that eats other enemies and detonates?
+* Wall section with multiple squares that snakes around and can split
+* More gravity enemies, possibly redesign tractor
+* Enemy that shoots lines of bouncing little things like the tractor boss shots
+* Intelligent square that goes to where player is heading
+
+## Sector conditions
+* Aggressive timer for new spawns (should be no timer usually)
+* Very narrow sector
+* Walls that must be pushed back by shooting
+* Constant square walls that fly past and you need to shoot a path through
+* Square walls that spiral around the outside and go in
+* Zoomed out / bigger area

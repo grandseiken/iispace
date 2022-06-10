@@ -91,7 +91,7 @@ void SimState::update() {
 
   for (auto& e : internals_->collisions) {
     auto& c = *e.handle.get<Collision>();
-    e.x_min = c.centre().x - c.bounding_width;
+    e.x_min = c.centre(e.handle).x - c.bounding_width;
   }
   std::ranges::stable_sort(internals_->collisions,
                            [](const auto& a, const auto& b) { return a.x_min < b.x_min; });
@@ -100,7 +100,7 @@ void SimState::update() {
 
   internals_->index.iterate<Boss>([&](ecs::const_handle h, Boss& boss) {
     std::optional<vec2> position;
-    if (auto* c = h.get<Position>(); c) {
+    if (auto* c = h.get<Transform>(); c) {
       position = c->centre;
     } else if (auto* c = h.get<LegacyShip>(); c) {
       position = c->ship->position();
@@ -114,9 +114,9 @@ void SimState::update() {
       --h.hit_timer;
     }
   });
-  internals_->index.iterate<Update>([](ecs::handle h, Update& c) {
+  internals_->index.iterate<Update>([&](ecs::handle h, Update& c) {
     if (!h.has<Destroy>()) {
-      c.update();
+      c.update(*interface_, h);
     }
   });
   for (auto& particle : internals_->particles) {
@@ -182,11 +182,11 @@ void SimState::render() const {
   }
   internals_->index.iterate<Render>([&](ecs::const_handle h, const auto& c) {
     if (!h.get<Player>()) {
-      c.render();
+      c.render(*interface_, h);
     }
   });
   internals_->index.iterate<Player>(
-      [&](ecs::const_handle h, const auto&) { h.get<Render>()->render(); });
+      [&](ecs::const_handle h, const auto&) { h.get<Render>()->render(*interface_, h); });
 
   auto render_warning = [&](const glm::vec2& v) {
     if (v.x < -4) {
@@ -223,7 +223,7 @@ void SimState::render() const {
 
   internals_->index.iterate<LegacyShip>([&render_warning](const auto& c) {
     if (+(c.ship->type() & ship_flag::kEnemy)) {
-      render_warning(to_float(c.ship->shape().centre));
+      render_warning(to_float(c.ship->position()));
     }
   });
   for (const auto& v : boss_warnings()) {

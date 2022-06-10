@@ -132,23 +132,23 @@ void GhostMine::render() const {
 
 void spawn_ghost_wall(ii::SimInterface& sim, bool swap, bool no_gap, bool ignored) {
   auto h = sim.create_legacy(std::make_unique<GhostWall>(sim, swap, no_gap, ignored));
-  h.add(ii::legacy_collision(/* bounding width */ ii::kSimDimensions.x, h));
+  h.add(ii::legacy_collision(/* bounding width */ ii::kSimDimensions.x));
   h.add(ii::Enemy{.threat_value = 1});
-  h.add(ii::Health{.hp = 0, .on_destroy = ii::make_legacy_enemy_on_destroy(h)});
+  h.add(ii::Health{.hp = 0, .on_destroy = &ii::legacy_enemy_on_destroy});
 }
 
 void spawn_ghost_wall(ii::SimInterface& sim, bool swap, bool swap_gap) {
   auto h = sim.create_legacy(std::make_unique<GhostWall>(sim, swap, swap_gap));
-  h.add(ii::legacy_collision(/* bounding width */ ii::kSimDimensions.y, h));
+  h.add(ii::legacy_collision(/* bounding width */ ii::kSimDimensions.y));
   h.add(ii::Enemy{.threat_value = 1});
-  h.add(ii::Health{.hp = 0, .on_destroy = ii::make_legacy_enemy_on_destroy(h)});
+  h.add(ii::Health{.hp = 0, .on_destroy = &ii::legacy_enemy_on_destroy});
 }
 
 void spawn_ghost_mine(ii::SimInterface& sim, const vec2& position, Boss* ghost) {
   auto h = sim.create_legacy(std::make_unique<GhostMine>(sim, position, ghost));
-  h.add(ii::legacy_collision(/* bounding width */ 24, h));
+  h.add(ii::legacy_collision(/* bounding width */ 24));
   h.add(ii::Enemy{.threat_value = 1});
-  h.add(ii::Health{.hp = 0, .on_destroy = ii::make_legacy_enemy_on_destroy(h)});
+  h.add(ii::Health{.hp = 0, .on_destroy = &ii::legacy_enemy_on_destroy});
 }
 
 class GhostBoss : public Boss {
@@ -444,7 +444,7 @@ void GhostBoss::render() const {
 namespace ii {
 void spawn_ghost_boss(SimInterface& sim, std::uint32_t cycle) {
   auto h = sim.create_legacy(std::make_unique<GhostBoss>(sim));
-  h.add(legacy_collision(/* bounding width */ 640, h));
+  h.add(legacy_collision(/* bounding width */ 640));
   h.add(Enemy{.threat_value = 100,
               .boss_score_reward =
                   calculate_boss_score(boss_flag::kBoss2B, sim.player_count(), cycle)});
@@ -455,8 +455,8 @@ void spawn_ghost_boss(SimInterface& sim, std::uint32_t cycle) {
       .hit_sound1 = ii::sound::kEnemyShatter,
       .destroy_sound = std::nullopt,
       .damage_transform = &scale_boss_damage,
-      .on_hit = make_legacy_boss_on_hit(h, true),
-      .on_destroy = make_legacy_boss_on_destroy(h),
+      .on_hit = make_legacy_boss_on_hit(true),
+      .on_destroy = &legacy_boss_on_destroy,
   });
   h.add(Boss{.boss = boss_flag::kBoss2B});
 }

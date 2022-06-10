@@ -110,8 +110,7 @@ ChaserBoss* spawn_chaser_boss_internal(ii::SimInterface& sim, std::uint32_t cycl
   auto u = std::make_unique<ChaserBoss>(sim, cycle, split, position, time, stagger);
   auto p = u.get();
   auto h = sim.create_legacy(std::move(u));
-  h.add(
-      ii::legacy_collision(/* bounding width */ 10 * ONE_AND_HALF_lookup[kCbMaxSplit - split], h));
+  h.add(ii::legacy_collision(/* bounding width */ 10 * ONE_AND_HALF_lookup[kCbMaxSplit - split]));
   h.add(ii::Enemy{.threat_value = 100});
   h.add(ii::Health{
       .hp = ii::calculate_boss_hp(
@@ -122,8 +121,8 @@ ChaserBoss* spawn_chaser_boss_internal(ii::SimInterface& sim, std::uint32_t cycl
       .hit_sound1 = ii::sound::kEnemyShatter,
       .destroy_sound = std::nullopt,
       .damage_transform = &ii::scale_boss_damage,
-      .on_hit = ii::make_legacy_boss_on_hit(h, split <= 1),
-      .on_destroy = ii::make_legacy_boss_on_destroy(h),
+      .on_hit = ii::make_legacy_boss_on_hit(split <= 1),
+      .on_destroy = &ii::legacy_boss_on_destroy,
   });
   h.add(ChaserBossTag{.split = split});
   return p;
@@ -378,14 +377,14 @@ void spawn_chaser_boss(SimInterface& sim, std::uint32_t cycle) {
                   calculate_boss_score(ii::boss_flag::kBoss1C, sim.player_count(), cycle)});
   h.add(Health{});
   h.add(Boss{.boss = ii::boss_flag::kBoss1C});
-  h.add(Update{.update = [&sim, h, cycle] {
+  h.add(Update{.update = [cycle](SimInterface& sim, ecs::handle h) {
     auto& health = *h.get<Health>();
     auto hp_lookup = get_hp_lookup(sim.player_count(), cycle);
     health.hp = 0;
     health.max_hp = hp_lookup[kCbMaxSplit];
     std::optional<vec2> position;
     sim.index().iterate<ChaserBossTag>([&](ecs::const_handle sub_h, const ChaserBossTag& tag) {
-      if (auto* c = sub_h.get<Position>(); c) {
+      if (auto* c = sub_h.get<Transform>(); c) {
         position = c->centre;
       } else if (auto* c = sub_h.get<LegacyShip>(); c) {
         position = c->ship->position();

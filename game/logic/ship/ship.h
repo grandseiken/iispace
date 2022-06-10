@@ -20,9 +20,9 @@ enum class ship_flag : std::uint32_t {
 template <>
 struct bitmask_enum<ship_flag> : std::true_type {};
 
-class Ship;
+class IShip;
 struct LegacyShip : ecs::component {
-  std::unique_ptr<Ship> ship;
+  std::unique_ptr<IShip> ship;
 };
 
 struct Destroy : ecs::component {
@@ -30,26 +30,37 @@ struct Destroy : ecs::component {
 };
 
 struct ShipFlag : ecs::component {
-  ship_flag flag = ship_flag::kNone;
+  ship_flag flags = ship_flag::kNone;
 };
 
-struct Position : ecs::component {
+struct Transform : ecs::component {
   vec2 centre = {0, 0};
   fixed rotation = 0;
+
+  void move(const vec2& v) {
+    centre += v;
+  }
+  void rotate(fixed amount) {
+    set_rotation(rotation + amount);
+  }
+  void set_rotation(fixed r) {
+    rotation = r > 2 * fixed_c::pi ? r - 2 * fixed_c::pi : r < 0 ? r + 2 * fixed_c::pi : r;
+  }
 };
 
 struct Collision : ecs::component {
   fixed bounding_width = 0;
-  std::function<vec2()> centre;
-  std::function<bool(const vec2&, shape_flag)> check;
+  std::function<bool(ecs::const_handle, const vec2&, shape_flag)> check;
+
+  vec2 centre(ecs::const_handle h) const;
 };
 
 struct Update : ecs::component {
-  std::function<void()> update;
+  std::function<void(SimInterface&, ecs::handle)> update;
 };
 
 struct Render : ecs::component {
-  std::function<void()> render;
+  std::function<void(const SimInterface&, ecs::const_handle)> render;
 };
 
 enum class damage_type {
@@ -71,8 +82,8 @@ struct Health : ecs::component {
 
   std::function<std::uint32_t(SimInterface&, ecs::handle, damage_type, std::uint32_t)>
       damage_transform;
-  std::function<void(damage_type)> on_hit;
-  std::function<void(damage_type)> on_destroy;
+  std::function<void(SimInterface&, ecs::handle, damage_type)> on_hit;
+  std::function<void(SimInterface&, ecs::handle, damage_type)> on_destroy;
 
   bool is_hp_low() const {
     return 3 * hp <= max_hp + max_hp / 5;
@@ -119,6 +130,26 @@ public:
 
 private:
   SimInterface& sim_;
+};
+
+struct ShipForwarder : IShip {
+  ecs::handle h;
+  ShipForwarder(SimInterface& sim, ecs::handle h) : IShip{sim}, h{h} {}
+  ship_flag type() const override {
+    return h.get<ShipFlag>()->flags;
+  }
+  ecs::handle handle() const override {
+    return h;
+  }
+  vec2& position() override {
+    return h.get<Transform>()->centre;
+  }
+  vec2 position() const override {
+    return h.get<Transform>()->centre;
+  }
+  fixed rotation() const override {
+    return h.get<Transform>()->rotation;
+  }
 };
 
 class Ship : public IShip {
@@ -201,36 +232,14 @@ private:
   CompoundShape shape_;
 };
 
-inline Collision legacy_collision(fixed w, ecs::const_handle h) {
-  auto s = h.get<LegacyShip>();
+inline Collision legacy_collision(fixed w) {
   Collision c;
   c.bounding_width = w;
-  c.centre = [ship = s->ship.get()] { return ship->shape().centre; };
-  c.check = [ship = s->ship.get()](const vec2& v, shape_flag f) { return ship->check_point(v, f); };
+  c.check = [](ecs::const_handle h, const vec2& v, shape_flag f) {
+    return static_cast<ii::Ship*>(h.get<LegacyShip>()->ship.get())->check_point(v, f);
+  };
   return c;
 }
-
-struct ShipForwarder
-: IShip
-, ecs::component {
-  ecs::handle h;
-  ShipForwarder(SimInterface& sim, ecs::handle h) : IShip{sim}, h{h} {}
-  ship_flag type() const override {
-    return h.get<ShipFlag>()->flag;
-  }
-  ecs::handle handle() const override {
-    return h;
-  }
-  vec2& position() {
-    return h.get<Position>()->centre;
-  }
-  vec2 position() const override {
-    return h.get<Position>()->centre;
-  }
-  fixed rotation() const override {
-    return h.get<Position>()->rotation;
-  }
-};
 
 inline void IShip::damage(std::uint32_t damage, bool magic, IShip* source) {
   if (auto c = handle().get<Health>(); c) {
@@ -245,6 +254,16 @@ inline void IShip::damage(std::uint32_t damage, bool magic, IShip* source) {
                                 : damage_type::kNone,
               source_id);
   }
+}
+
+inline vec2 Collision::centre(ecs::const_handle h) const {
+  if (auto c = h.get<Transform>()) {
+    return c->centre;
+  }
+  if (auto c = h.get<LegacyShip>()) {
+    return c->ship->position();
+  }
+  return vec2{0};
 }
 
 }  // namespace ii

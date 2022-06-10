@@ -2,6 +2,7 @@
 #define II_GAME_LOGIC_SHIP_SHAPE_H
 #include "game/common/enum.h"
 #include "game/common/math.h"
+#include "game/logic/ship/shape_v2.h"
 #include <glm/glm.hpp>
 #include <memory>
 #include <optional>
@@ -9,16 +10,6 @@
 
 namespace ii {
 class SimInterface;
-
-enum class shape_flag : std::uint32_t {
-  kNone = 0,
-  kVulnerable = 1,
-  kDangerous = 2,
-  kShield = 4,
-  kVulnShield = 8
-};
-template <>
-struct bitmask_enum<shape_flag> : std::true_type {};
 
 class Shape {
 public:

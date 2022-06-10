@@ -149,7 +149,7 @@ void BigSquareBoss::render() const {
 namespace ii {
 void spawn_big_square_boss(SimInterface& sim, std::uint32_t cycle) {
   auto h = sim.create_legacy(std::make_unique<BigSquareBoss>(sim));
-  h.add(legacy_collision(/* bounding width */ 640, h));
+  h.add(legacy_collision(/* bounding width */ 640));
   h.add(Enemy{.threat_value = 100,
               .boss_score_reward =
                   calculate_boss_score(boss_flag::kBoss1A, sim.player_count(), cycle)});
@@ -159,8 +159,8 @@ void spawn_big_square_boss(SimInterface& sim, std::uint32_t cycle) {
       .hit_sound1 = ii::sound::kEnemyShatter,
       .destroy_sound = std::nullopt,
       .damage_transform = &scale_boss_damage,
-      .on_hit = make_legacy_boss_on_hit(h, true),
-      .on_destroy = make_legacy_boss_on_destroy(h),
+      .on_hit = make_legacy_boss_on_hit(true),
+      .on_destroy = &legacy_boss_on_destroy,
   });
   h.add(Boss{.boss = boss_flag::kBoss1A});
 }

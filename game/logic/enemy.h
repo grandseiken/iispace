@@ -4,7 +4,7 @@
 #include "game/logic/ship/ship.h"
 
 namespace ii {
-std::function<void(damage_type)> make_legacy_enemy_on_destroy(ecs::handle h);
+void legacy_enemy_on_destroy(SimInterface&, ecs::handle h, damage_type type);
 
 void spawn_follow(SimInterface&, const vec2& position, bool has_score = true, fixed rotation = 0);
 void spawn_big_follow(SimInterface&, const vec2& position, bool has_score);

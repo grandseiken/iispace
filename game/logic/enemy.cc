@@ -1,11 +1,9 @@
 #include "game/logic/enemy.h"
 #include "game/logic/player.h"
+#include "game/logic/ship/shape_v2.h"
 #include <algorithm>
 
 namespace {
-const std::uint32_t kFollowTime = 90;
-const fixed kFollowSpeed = 2;
-
 const std::uint32_t kChaserTime = 60;
 const fixed kChaserSpeed = 4;
 
@@ -23,25 +21,6 @@ const fixed kShielderSpeed = 2;
 const std::uint32_t kTractorTimer = 50;
 const fixed kTractorSpeed = 6 * (1_fx / 10);
 const fixed kTractorBeamSpeed = 2 + 1_fx / 2;
-
-class Follow : public Enemy {
-public:
-  Follow(ii::SimInterface& sim, const vec2& position, fixed rotation, fixed radius = 10);
-  void update() override;
-
-private:
-  std::uint32_t timer_ = 0;
-  Ship* target_ = nullptr;
-};
-
-class BigFollow : public Follow {
-public:
-  BigFollow(ii::SimInterface& sim, const vec2& position, bool has_score);
-  void on_destroy(bool bomb) override;
-
-private:
-  bool has_score_ = 0;
-};
 
 class Chaser : public Enemy {
 public:
@@ -120,42 +99,6 @@ private:
   bool spinning_ = false;
   ii::SimInterface::ship_list players_;
 };
-
-Follow::Follow(ii::SimInterface& sim, const vec2& position, fixed rotation, fixed radius)
-: Enemy{sim, position, ii::ship_flag::kNone} {
-  add_new_shape<ii::Polygon>(vec2{0}, radius, 4, colour_hue360(270, .6f), rotation,
-                             ii::shape_flag::kDangerous | ii::shape_flag::kVulnerable);
-}
-
-void Follow::update() {
-  shape().rotate(fixed_c::tenth);
-  if (!sim().alive_players()) {
-    return;
-  }
-
-  ++timer_;
-  if (!target_ || timer_ > kFollowTime) {
-    target_ = sim().nearest_player(shape().centre);
-    timer_ = 0;
-  }
-  auto d = target_->shape().centre - shape().centre;
-  move(normalise(d) * kFollowSpeed);
-}
-
-BigFollow::BigFollow(ii::SimInterface& sim, const vec2& position, bool has_score)
-: Follow{sim, position, 0, 20}, has_score_{has_score} {}
-
-void BigFollow::on_destroy(bool bomb) {
-  if (bomb) {
-    return;
-  }
-
-  vec2 d = rotate(vec2{10, 0}, shape().rotation());
-  for (std::uint32_t i = 0; i < 3; ++i) {
-    ii::spawn_follow(sim(), shape().centre + d, has_score_);
-    d = rotate(d, 2 * fixed_c::pi / 3);
-  }
-}
 
 Chaser::Chaser(ii::SimInterface& sim, const vec2& position)
 : Enemy{sim, position, ii::ship_flag::kNone}, timer_{kChaserTime} {
@@ -532,90 +475,191 @@ void Tractor::render() const {
 }  // namespace
 
 namespace ii {
+namespace {
 
-std::function<void(damage_type)> make_legacy_enemy_on_destroy(ecs::handle h) {
+template <shape::ShapeNode S>
+using transform_shape = shape::translate_p<0, shape::rotate_p<1, S>>;
+std::tuple<vec2, fixed> transform_parameters(ecs::const_handle h) {
+  auto& c = *h.get<Transform>();
+  return {c.centre, c.rotation};
+}
+
+template <shape::ShapeNode S>
+void render_enemy(const SimInterface& sim, ecs::const_handle h) {
+  const auto& t = *h.get<Transform>();
+  bool hit = h.has<Health>() && h.get<Health>()->hit_timer;
+  transform_shape<S>::iterate(shape::iterate_lines, transform_parameters(h), {},
+                              [&](const vec2& a, const vec2& b, const glm::vec4& c) {
+                                sim.render_line(to_float(a), to_float(b), hit ? glm::vec4{1.f} : c);
+                              });
+}
+
+template <shape::ShapeNode S>
+void explode_on_destroy(SimInterface& sim, ecs::const_handle h, damage_type) {
+  transform_shape<S>::iterate(
+      shape::iterate_centres, transform_parameters(h), {},
+      [&](const vec2& v, const glm::vec4& c) { sim.explosion(to_float(v), c); });
+}
+
+template <shape::ShapeNode S>
+bool ship_check_point(ecs::const_handle h, const vec2& v, shape_flag mask) {
+  const auto& t = *h.get<Transform>();
+  return transform_shape<S>::check_point(std::tuple{t.centre, t.rotation}, v, mask);
+}
+
+template <ecs::Component C>
+void update_function(SimInterface& sim, ecs::handle h) {
+  h.get<C>()->update(sim, h);
+}
+
+template <ecs::Component Logic>
+ecs::handle
+create_enemy(SimInterface& sim, std::uint32_t threat_value, std::uint32_t score_reward) {
+  auto h = sim.index().create();
+  h.add(ShipFlag{.flags = ship_flag::kEnemy});
+  h.add(LegacyShip{.ship = std::make_unique<ShipForwarder>(sim, h)});
+  h.add(Logic{});
+  h.add(Update{.update = &update_function<Logic>});
+  h.add(Enemy{.threat_value = threat_value, .score_reward = score_reward});
+  return h;
+}
+
+template <shape::ShapeNode Shape>
+void add_enemy_shape(ecs::handle h, std::uint32_t bounding_width, const vec2& position,
+                     fixed rotation = 0) {
+  h.add(Transform{.centre = position, .rotation = rotation});
+  h.add(Collision{.bounding_width = bounding_width, .check = &ship_check_point<Shape>});
+  h.add(Render{.render = &render_enemy<Shape>});
+}
+
+using follow_shape =
+    shape::shape<shape::ngon{.radius = 10,
+                             .sides = 4,
+                             .colour = colour_hue360(270, .6f),
+                             .flags = shape_flag::kDangerous | shape_flag::kVulnerable}>;
+
+using big_follow_shape =
+    shape::shape<shape::ngon{.radius = 20,
+                             .sides = 4,
+                             .colour = colour_hue360(270, .6f),
+                             .flags = shape_flag::kDangerous | shape_flag::kVulnerable}>;
+
+struct Follow : ecs::component {
+  static constexpr std::uint32_t kTime = 90;
+  static constexpr fixed kSpeed = 2;
+
+  std::uint32_t timer = 0;
+  IShip* target = nullptr;
+
+  void update(SimInterface& sim, ecs::handle h) {
+    auto& t = *h.get<Transform>();
+    t.rotate(fixed_c::tenth);
+    if (!sim.alive_players()) {
+      return;
+    }
+
+    ++timer;
+    if (!target || timer > kTime) {
+      target = sim.nearest_player(t.centre);
+      timer = 0;
+    }
+    auto d = target->position() - t.centre;
+    t.move(normalise(d) * kSpeed);
+  }
+};
+
+void big_follow_on_destroy(SimInterface& sim, ecs::const_handle h, damage_type type) {
+  explode_on_destroy<big_follow_shape>(sim, h, type);
+  if (type == damage_type::kBomb) {
+    return;
+  }
+  auto& t = *h.get<Transform>();
+  vec2 d = rotate(vec2{10, 0}, t.rotation);
+  for (std::uint32_t i = 0; i < 3; ++i) {
+    spawn_follow(sim, t.centre + d, h.get<Enemy>()->score_reward != 0);
+    d = rotate(d, 2 * fixed_c::pi / 3);
+  }
+}
+
+}  // namespace
+
+void legacy_enemy_on_destroy(SimInterface&, ecs::handle h, damage_type type) {
   auto enemy = static_cast<::Enemy*>(h.get<LegacyShip>()->ship.get());
-  return [enemy](damage_type type) {
-    enemy->explosion();
-    enemy->on_destroy(type == damage_type::kBomb);
-  };
+  enemy->explosion();
+  enemy->on_destroy(type == damage_type::kBomb);
 }
 
 void spawn_follow(SimInterface& sim, const vec2& position, bool has_score, fixed rotation) {
-  auto h = sim.create_legacy(std::make_unique<Follow>(sim, position, rotation));
-  h.add(legacy_collision(/* bounding width */ 10, h));
-  h.add(Enemy{.threat_value = 1, .score_reward = has_score ? 15u : 0});
+  auto h = create_enemy<Follow>(sim, 1, has_score ? 15u : 0);
+  add_enemy_shape<follow_shape>(h, 10, position, rotation);
   h.add(Health{.hp = 1,
                .destroy_sound = ii::sound::kEnemyShatter,
-               .on_destroy = make_legacy_enemy_on_destroy(h)});
+               .on_destroy = &explode_on_destroy<follow_shape>});
 }
 
 void spawn_big_follow(SimInterface& sim, const vec2& position, bool has_score) {
-  auto h = sim.create_legacy(std::make_unique<BigFollow>(sim, position, has_score));
-  h.add(legacy_collision(/* bounding width */ 10, h));
-  h.add(Enemy{.threat_value = 3, .score_reward = has_score ? 20u : 0});
-  h.add(Health{.hp = 3,
-               .destroy_sound = ii::sound::kPlayerDestroy,
-               .on_destroy = make_legacy_enemy_on_destroy(h)});
+  auto h = create_enemy<Follow>(sim, 3, has_score ? 20u : 0);
+  add_enemy_shape<big_follow_shape>(h, 10, position);
+  h.add(Health{
+      .hp = 3, .destroy_sound = ii::sound::kPlayerDestroy, .on_destroy = &big_follow_on_destroy});
 }
 
 void spawn_chaser(SimInterface& sim, const vec2& position) {
   auto h = sim.create_legacy(std::make_unique<Chaser>(sim, position));
-  h.add(legacy_collision(/* bounding width */ 10, h));
+  h.add(legacy_collision(/* bounding width */ 10));
   h.add(Enemy{.threat_value = 2, .score_reward = 30});
-  h.add(Health{.hp = 2,
-               .destroy_sound = ii::sound::kEnemyShatter,
-               .on_destroy = make_legacy_enemy_on_destroy(h)});
+  h.add(Health{
+      .hp = 2, .destroy_sound = ii::sound::kEnemyShatter, .on_destroy = &legacy_enemy_on_destroy});
 }
 
 void spawn_square(SimInterface& sim, const vec2& position, fixed rotation) {
   auto h = sim.create_legacy(std::make_unique<Square>(sim, position, rotation));
-  h.add(legacy_collision(/* bounding width */ 15, h));
+  h.add(legacy_collision(/* bounding width */ 15));
   h.add(Enemy{.threat_value = 2, .score_reward = 25});
-  h.add(Health{.hp = 4, .on_destroy = make_legacy_enemy_on_destroy(h)});
+  h.add(Health{.hp = 4, .on_destroy = &legacy_enemy_on_destroy});
 }
 
 void spawn_wall(SimInterface& sim, const vec2& position, bool rdir) {
   auto h = sim.create_legacy(std::make_unique<Wall>(sim, position, rdir));
-  h.add(legacy_collision(/* bounding width */ 50, h));
+  h.add(legacy_collision(/* bounding width */ 50));
   h.add(Enemy{.threat_value = 4, .score_reward = 20});
-  h.add(Health{.hp = 10, .on_destroy = make_legacy_enemy_on_destroy(h)});
+  h.add(Health{.hp = 10, .on_destroy = &legacy_enemy_on_destroy});
 }
 
 void spawn_follow_hub(SimInterface& sim, const vec2& position, bool power_a, bool power_b) {
   auto h = sim.create_legacy(std::make_unique<FollowHub>(sim, position, power_a, power_b));
-  h.add(legacy_collision(/* bounding width */ 16, h));
+  h.add(legacy_collision(/* bounding width */ 16));
   h.add(Enemy{.threat_value = 6u + 2 * power_a + 2 * power_b,
               .score_reward = 50u + power_a * 10 + power_b * 10});
   h.add(Health{.hp = 14,
                .destroy_sound = ii::sound::kPlayerDestroy,
-               .on_destroy = make_legacy_enemy_on_destroy(h)});
+               .on_destroy = &legacy_enemy_on_destroy});
 }
 
 void spawn_shielder(SimInterface& sim, const vec2& position, bool power) {
   auto h = sim.create_legacy(std::make_unique<Shielder>(sim, position, power));
-  h.add(legacy_collision(/* bounding width */ 36, h));
+  h.add(legacy_collision(/* bounding width */ 36));
   h.add(Enemy{.threat_value = 8u + 2 * power, .score_reward = 60u + power * 40});
   h.add(Health{.hp = 16,
                .destroy_sound = ii::sound::kPlayerDestroy,
-               .on_destroy = make_legacy_enemy_on_destroy(h)});
+               .on_destroy = &legacy_enemy_on_destroy});
 }
 
 void spawn_tractor(SimInterface& sim, const vec2& position, bool power) {
   auto h = sim.create_legacy(std::make_unique<Tractor>(sim, position, power));
-  h.add(legacy_collision(/* bounding width */ 36, h));
+  h.add(legacy_collision(/* bounding width */ 36));
   h.add(Enemy{.threat_value = 10u + 2 * power, .score_reward = 85u + 40 * power});
   h.add(Health{.hp = 50,
                .destroy_sound = ii::sound::kPlayerDestroy,
-               .on_destroy = make_legacy_enemy_on_destroy(h)});
+               .on_destroy = &legacy_enemy_on_destroy});
 }
 
 void spawn_boss_shot(SimInterface& sim, const vec2& position, const vec2& velocity,
                      const glm::vec4& c) {
   auto h = sim.create_legacy(std::make_unique<BossShot>(sim, position, velocity, c));
-  h.add(legacy_collision(/* bounding width */ 12, h));
+  h.add(legacy_collision(/* bounding width */ 12));
   h.add(Enemy{.threat_value = 1});
-  h.add(Health{.hp = 0, .on_destroy = make_legacy_enemy_on_destroy(h)});
+  h.add(Health{.hp = 0, .on_destroy = &legacy_enemy_on_destroy});
 }
 
 }  // namespace ii

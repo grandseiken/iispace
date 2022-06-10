@@ -12,15 +12,15 @@ void Health::damage(SimInterface& sim, ecs::handle h, std::uint32_t damage, dama
     }
   }
   if (on_hit) {
-    on_hit(type);
+    on_hit(sim, h, type);
   }
 
   hp = hp < damage ? 0 : hp - damage;
   vec2 position = {kSimDimensions.x / 2, kSimDimensions.y / 2};
-  if (auto c = h.get<Position>(); c) {
+  if (auto c = h.get<Transform>(); c) {
     position = c->centre;
   } else if (auto c = h.get<LegacyShip>(); c) {
-    position = c->ship->shape().centre;
+    position = c->ship->position();
   }
 
   if (hit_sound0 && damage) {
@@ -35,7 +35,7 @@ void Health::damage(SimInterface& sim, ecs::handle h, std::uint32_t damage, dama
       sim.play_sound(*destroy_sound, position, /* random */ true);
     }
     if (on_destroy) {
-      on_destroy(type);
+      on_destroy(sim, h, type);
     }
     h.add(Destroy{.source = source});
   } else {
