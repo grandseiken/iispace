@@ -77,9 +77,7 @@ private:
 };
 
 TractorBoss::TractorBoss(ii::SimInterface& sim)
-: Boss{sim,
-       {ii::kSimDimensions.x * (1 + fixed_c::half), ii::kSimDimensions.y / 2},
-       ii::SimInterface::kBoss2A}
+: Boss{sim, {ii::kSimDimensions.x * (1 + fixed_c::half), ii::kSimDimensions.y / 2}}
 , shoot_type_{sim.random(2)} {
   s1_ = add_new_shape<ii::CompoundShape>(vec2{0, -96}, 0,
                                          ii::shape_flag::kDangerous | ii::shape_flag::kVulnerable);
@@ -336,7 +334,7 @@ void spawn_tractor_boss(SimInterface& sim, std::uint32_t cycle) {
   h.add(legacy_collision(/* bounding width */ 640, h));
   h.add(Enemy{.threat_value = 100,
               .boss_score_reward =
-                  calculate_boss_score(SimInterface::kBoss2A, sim.player_count(), cycle)});
+                  calculate_boss_score(boss_flag::kBoss2A, sim.player_count(), cycle)});
   h.add(Health{
       .hp = calculate_boss_hp(kTbBaseHp, sim.player_count(), cycle),
       .hit_sound0 = std::nullopt,
@@ -346,5 +344,6 @@ void spawn_tractor_boss(SimInterface& sim, std::uint32_t cycle) {
       .on_hit = make_legacy_boss_on_hit(h, true),
       .on_destroy = make_legacy_boss_on_destroy(h),
   });
+  h.add(Boss{.boss = boss_flag::kBoss2A});
 }
 }  // namespace ii

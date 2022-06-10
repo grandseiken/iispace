@@ -35,9 +35,7 @@ private:
 };
 
 BigSquareBoss::BigSquareBoss(ii::SimInterface& sim)
-: Boss{sim,
-       {ii::kSimDimensions.x * fixed_c::hundredth * 75, ii::kSimDimensions.y * 2},
-       ii::SimInterface::kBoss1A}
+: Boss{sim, {ii::kSimDimensions.x * fixed_c::hundredth * 75, ii::kSimDimensions.y * 2}}
 , dir_{0, -1}
 , timer_{kBsbTimer * 6} {
   add_new_shape<ii::Polygon>(vec2{0}, 160, 4, c0, 0);
@@ -154,7 +152,7 @@ void spawn_big_square_boss(SimInterface& sim, std::uint32_t cycle) {
   h.add(legacy_collision(/* bounding width */ 640, h));
   h.add(Enemy{.threat_value = 100,
               .boss_score_reward =
-                  calculate_boss_score(SimInterface::kBoss1A, sim.player_count(), cycle)});
+                  calculate_boss_score(boss_flag::kBoss1A, sim.player_count(), cycle)});
   h.add(Health{
       .hp = calculate_boss_hp(kBsbBaseHp, sim.player_count(), cycle),
       .hit_sound0 = std::nullopt,
@@ -164,5 +162,6 @@ void spawn_big_square_boss(SimInterface& sim, std::uint32_t cycle) {
       .on_hit = make_legacy_boss_on_hit(h, true),
       .on_destroy = make_legacy_boss_on_destroy(h),
   });
+  h.add(Boss{.boss = boss_flag::kBoss1A});
 }
 }  // namespace ii

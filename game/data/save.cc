@@ -75,8 +75,9 @@ result<SaveGame> SaveGame::load(std::span<const std::uint8_t> bytes) {
   }
 
   SaveGame save;
-  save.bosses_killed = proto.bosses_killed();
-  save.hard_mode_bosses_killed = proto.hard_mode_bosses_killed();
+  save.bosses_killed = boss_flag{static_cast<std::uint32_t>(proto.bosses_killed())};
+  save.hard_mode_bosses_killed =
+      boss_flag{static_cast<std::uint32_t>(proto.hard_mode_bosses_killed())};
 
   auto get_mode_table = [&](const proto::ModeTable& in, std::vector<HighScores::table_t>& out) {
     std::size_t players = 0;
@@ -105,8 +106,8 @@ result<SaveGame> SaveGame::load(std::span<const std::uint8_t> bytes) {
 
 result<std::vector<std::uint8_t>> SaveGame::save() const {
   proto::SaveGame proto;
-  proto.set_bosses_killed(bosses_killed);
-  proto.set_hard_mode_bosses_killed(hard_mode_bosses_killed);
+  proto.set_bosses_killed(+bosses_killed);
+  proto.set_hard_mode_bosses_killed(+hard_mode_bosses_killed);
   auto put_mode_table = [&](const std::vector<HighScores::table_t>& in, proto::ModeTable& out) {
     for (const auto& t : in) {
       auto& out_t = *out.add_table();

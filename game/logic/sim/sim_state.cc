@@ -56,6 +56,15 @@ SimState::SimState(const initial_conditions& conditions, InputAdapter& input)
             }
           });
         }
+        if (auto b = h.get<Boss>(); b) {
+          if (b->boss == boss_flag::kBoss3A ||
+              (internals->conditions.mode != game_mode::kBoss &&
+               internals->conditions.mode != game_mode::kNormal)) {
+            internals->hard_mode_bosses_killed |= b->boss;
+          } else {
+            internals->bosses_killed |= b->boss;
+          }
+        }
 
         if (auto it = std::ranges::find(internals->collisions, h.id(),
                                         [](const auto& e) { return e.handle.id(); });
@@ -89,13 +98,24 @@ void SimState::update() {
 
   internals_->non_wall_enemy_count = interface_->count_ships(ship_flag::kEnemy, ship_flag::kWall);
 
+  internals_->index.iterate<Boss>([&](ecs::const_handle h, Boss& boss) {
+    std::optional<vec2> position;
+    if (auto* c = h.get<Position>(); c) {
+      position = c->centre;
+    } else if (auto* c = h.get<LegacyShip>(); c) {
+      position = c->ship->position();
+    }
+    if (position && interface_->is_on_screen(*position)) {
+      boss.show_hp_bar = true;
+    }
+  });
   internals_->index.iterate<Health>([](Health& h) {
     if (h.hit_timer) {
       --h.hit_timer;
     }
   });
-  internals_->index.iterate<Update>([](ecs::handle handle, auto& c) {
-    if (!handle.has<Destroy>()) {
+  internals_->index.iterate<Update>([](ecs::handle h, Update& c) {
+    if (!h.has<Destroy>()) {
       c.update();
     }
   });
@@ -122,9 +142,9 @@ void SimState::update() {
   }
 
   bool compact = false;
-  internals_->index.iterate<Destroy>([&](ecs::handle handle, const Destroy&) {
+  internals_->index.iterate<Destroy>([&](ecs::handle h, const Destroy&) {
     compact = true;
-    internals_->index.destroy(handle.id());
+    internals_->index.destroy(h.id());
   });
 
   if (compact) {
@@ -245,8 +265,19 @@ render_output SimState::get_render_output() const {
   result.elapsed_time = overmind_->get_elapsed_time();
   result.lives_remaining = interface_->get_lives();
   result.overmind_timer = overmind_->get_timer();
-  result.boss_hp_bar = internals_->boss_hp_bar;
   result.colour_cycle = colour_cycle_;
+
+  std::uint32_t boss_hp = 0;
+  std::uint32_t boss_max_hp = 0;
+  internals_->index.iterate<Boss>([&](ecs::const_handle h, const Boss& boss) {
+    if (auto c = h.get<Health>(); c && boss.show_hp_bar) {
+      boss_hp += c->hp;
+      boss_max_hp += c->max_hp;
+    }
+  });
+  if (boss_hp && boss_max_hp) {
+    result.boss_hp_bar = static_cast<float>(boss_hp) / boss_max_hp;
+  }
   return result;
 }
 

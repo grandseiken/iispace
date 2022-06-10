@@ -175,8 +175,7 @@ private:
 };
 
 GhostBoss::GhostBoss(ii::SimInterface& sim)
-: Boss{sim, {ii::kSimDimensions.x / 2, ii::kSimDimensions.y / 2}, ii::SimInterface::kBoss2B}
-, attack_time_{kGbAttackTime} {
+: Boss{sim, {ii::kSimDimensions.x / 2, ii::kSimDimensions.y / 2}}, attack_time_{kGbAttackTime} {
   add_new_shape<ii::Polygon>(vec2{0}, 32, 8, c1, 0);
   add_new_shape<ii::Polygon>(vec2{0}, 48, 8, c0, 0);
 
@@ -274,6 +273,7 @@ void GhostBoss::update() {
   }
 
   if (start_time_) {
+    handle().get<ii::Boss>()->show_hp_bar = false;
     start_time_--;
     return;
   }
@@ -439,9 +439,6 @@ void GhostBoss::render() const {
   }
 
   render_with_colour(c2);
-  if (!start_time_) {
-    render_hp_bar();
-  }
 }
 
 }  // namespace
@@ -452,7 +449,7 @@ void spawn_ghost_boss(SimInterface& sim, std::uint32_t cycle) {
   h.add(legacy_collision(/* bounding width */ 640, h));
   h.add(Enemy{.threat_value = 100,
               .boss_score_reward =
-                  calculate_boss_score(SimInterface::kBoss2B, sim.player_count(), cycle)});
+                  calculate_boss_score(boss_flag::kBoss2B, sim.player_count(), cycle)});
   h.add(Health{
       .hp = calculate_boss_hp(kGbBaseHp, sim.player_count(), cycle),
       .hit_sound0 = std::nullopt,
@@ -462,5 +459,6 @@ void spawn_ghost_boss(SimInterface& sim, std::uint32_t cycle) {
       .on_hit = make_legacy_boss_on_hit(h, true),
       .on_destroy = make_legacy_boss_on_destroy(h),
   });
+  h.add(Boss{.boss = boss_flag::kBoss2B});
 }
 }  // namespace ii

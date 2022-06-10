@@ -4,12 +4,6 @@
 #include "game/logic/ship/ship.h"
 
 namespace ii {
-struct Enemy : ecs::component {
-  std::uint32_t threat_value = 1;
-  std::uint32_t score_reward = 0;
-  std::uint32_t boss_score_reward = 0;
-};
-
 std::function<void(damage_type)> make_legacy_enemy_on_destroy(ecs::handle h);
 
 void spawn_follow(SimInterface&, const vec2& position, bool has_score = true, fixed rotation = 0);

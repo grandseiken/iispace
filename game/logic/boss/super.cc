@@ -272,10 +272,7 @@ void RainbowShot::update() {
 
 SuperBossArc::SuperBossArc(ii::SimInterface& sim, const vec2& position, std::uint32_t i,
                            ii::Ship* boss, std::uint32_t timer)
-: Boss{sim, position, static_cast<ii::SimInterface::boss_list>(0)}
-, boss_{boss}
-, i_{i}
-, timer_{timer} {
+: Boss{sim, position}, boss_{boss}, i_{i}, timer_{timer} {
   glm::vec4 c{0.f};
   add_new_shape<ii::PolyArc>(vec2{0}, 140, 32, 2, c, i * 2 * fixed_c::pi / 16);
   add_new_shape<ii::PolyArc>(vec2{0}, 135, 32, 2, c, i * 2 * fixed_c::pi / 16);
@@ -304,7 +301,7 @@ void SuperBossArc::update() {
 
 void SuperBossArc::render() const {
   if (stimer_ >= 64 || stimer_ % 4 < 2) {
-    Boss::render(false);
+    Boss::render();
   }
 }
 
@@ -321,9 +318,7 @@ void SuperBossArc::on_destroy() {
 }
 
 SuperBoss::SuperBoss(ii::SimInterface& sim, std::uint32_t cycle)
-: Boss{sim,
-       {ii::kSimDimensions.x / 2, -ii::kSimDimensions.y / (2 + fixed_c::half)},
-       ii::SimInterface::kBoss3A}
+: Boss{sim, {ii::kSimDimensions.x / 2, -ii::kSimDimensions.y / (2 + fixed_c::half)}}
 , cycle_{cycle} {
   add_new_shape<ii::Polygon>(vec2{0}, 40, 32, glm::vec4{0.f}, 0,
                              ii::shape_flag::kDangerous | ii::shape_flag::kVulnerable);
@@ -449,7 +444,6 @@ void SuperBoss::update() {
 }
 
 void SuperBoss::on_destroy() {
-  set_killed();
   for (const auto& ship : sim().all_ships(ii::ship_flag::kEnemy)) {
     if (ship != this) {
       ship->damage(Player::kBombDamage * 100, false, 0);
@@ -486,7 +480,7 @@ void spawn_super_boss(SimInterface& sim, std::uint32_t cycle) {
   h.add(legacy_collision(/* bounding width */ 640, h));
   h.add(Enemy{.threat_value = 100,
               .boss_score_reward =
-                  calculate_boss_score(SimInterface::kBoss3A, sim.player_count(), cycle)});
+                  calculate_boss_score(boss_flag::kBoss3A, sim.player_count(), cycle)});
   h.add(Health{
       .hp = calculate_boss_hp(kSbBaseHp, sim.player_count(), cycle),
       .hit_sound0 = std::nullopt,
@@ -496,5 +490,6 @@ void spawn_super_boss(SimInterface& sim, std::uint32_t cycle) {
       .on_hit = make_legacy_boss_on_hit(h, true),
       .on_destroy = make_legacy_boss_on_destroy(h),
   });
+  h.add(Boss{.boss = boss_flag::kBoss3A});
 }
 }  // namespace ii

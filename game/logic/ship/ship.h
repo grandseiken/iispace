@@ -79,6 +79,17 @@ struct Health : ecs::component {
               std::optional<ecs::entity_id> source);
 };
 
+struct Enemy : ecs::component {
+  std::uint32_t threat_value = 1;
+  std::uint32_t score_reward = 0;
+  std::uint32_t boss_score_reward = 0;
+};
+
+struct Boss : ecs::component {
+  boss_flag boss = boss_flag{0};
+  bool show_hp_bar = false;
+};
+
 class IShip {
 public:
   IShip(SimInterface& sim) : sim_{sim} {}
@@ -147,8 +158,7 @@ public:
   void render_with_colour(const glm::vec4& colour) const;
 
   bool is_on_screen() const {
-    return all(greaterThanEqual(shape_.centre, vec2{0})) &&
-        all(lessThanEqual(shape_.centre, vec2{kSimDimensions.x, kSimDimensions.y}));
+    return sim().is_on_screen(shape_.centre);
   }
 
   void play_sound(sound sound) {

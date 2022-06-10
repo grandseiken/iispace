@@ -78,7 +78,6 @@ public:
              std::uint32_t time, std::uint32_t stagger);
 
   void update() override;
-  void render() const override;
   void on_destroy() override;
 
   static bool has_counted_;
@@ -95,12 +94,14 @@ private:
 
   std::uint32_t stagger_ = 0;
   static std::uint32_t count_;
-  static std::uint32_t shared_hp_;
 };
 
 std::uint32_t ChaserBoss::count_;
 bool ChaserBoss::has_counted_;
-std::uint32_t ChaserBoss::shared_hp_;
+
+struct ChaserBossTag : ii::ecs::component {
+  std::uint32_t split;
+};
 
 ChaserBoss* spawn_chaser_boss_internal(ii::SimInterface& sim, std::uint32_t cycle,
                                        std::uint32_t split = 0, const vec2& position = vec2{0},
@@ -123,13 +124,13 @@ ChaserBoss* spawn_chaser_boss_internal(ii::SimInterface& sim, std::uint32_t cycl
       .on_hit = ii::make_legacy_boss_on_hit(h, split <= 1),
       .on_destroy = ii::make_legacy_boss_on_destroy(h),
   });
+  h.add(ChaserBossTag{.split = split});
   return p;
 }
 
 ChaserBoss::ChaserBoss(ii::SimInterface& sim, std::uint32_t cycle, std::uint32_t split,
                        const vec2& position, std::uint32_t time, std::uint32_t stagger)
-: Boss{sim, !split ? vec2{ii::kSimDimensions.x / 2, -ii::kSimDimensions.y / 2} : position,
-       ii::SimInterface::kBoss1C}
+: Boss{sim, !split ? vec2{ii::kSimDimensions.x / 2, -ii::kSimDimensions.y / 2} : position}
 , on_screen_{split != 0}
 , timer_{time}
 , cycle_{cycle}
@@ -148,7 +149,6 @@ ChaserBoss::ChaserBoss(ii::SimInterface& sim, std::uint32_t cycle, std::uint32_t
 
   set_ignore_damage_colour_index(2);
   if (!split_) {
-    shared_hp_ = 0;
     count_ = 0;
   }
 }
@@ -293,29 +293,9 @@ void ChaserBoss::update() {
     move(dir_);
     shape().rotate(fixed_c::hundredth * 2 + fixed{split_} * c_rotate);
   }
-  shared_hp_ = 0;
   if (!has_counted_) {
     has_counted_ = true;
     ++count_;
-  }
-}
-
-void ChaserBoss::render() const {
-  Boss::render();
-  static std::vector<std::uint32_t> hp_lookup;
-  if (hp_lookup.empty()) {
-    std::uint32_t hp = 0;
-    for (std::uint32_t i = 0; i < 8; ++i) {
-      hp = 2 * hp +
-          ii::calculate_boss_hp(
-               1 + kCbBaseHp / (fixed_c::half + HP_REDUCE_POWER_lookup[7 - i]).to_int(),
-               sim().player_count(), cycle_);
-      hp_lookup.push_back(hp);
-    }
-  }
-  shared_hp_ += (split_ == 7 ? 0 : 2 * hp_lookup[6 - split_]) + handle().get<ii::Health>()->hp;
-  if (on_screen_) {
-    sim().render_hp_bar(static_cast<float>(shared_hp_) / hp_lookup[kCbMaxSplit]);
   }
 }
 
@@ -343,10 +323,7 @@ void ChaserBoss::on_destroy() {
     }
 
     if (last) {
-      set_killed();
       sim().rumble_all(25);
-      handle().get<ii::Enemy>()->boss_score_reward =
-          calculate_boss_score(ii::SimInterface::kBoss1C, sim().player_count(), cycle_);
       std::uint32_t n = 1;
       for (std::uint32_t i = 0; i < 16; ++i) {
         vec2 v = from_polar(sim().random_fixed() * (2 * fixed_c::pi),
@@ -378,10 +355,52 @@ void ChaserBoss::on_destroy() {
   }
 }
 
+std::vector<std::uint32_t> get_hp_lookup(std::uint32_t players, std::uint32_t cycle) {
+  std::vector<std::uint32_t> r;
+  std::uint32_t hp = 0;
+  for (std::uint32_t i = 0; i < 8; ++i) {
+    hp = 2 * hp +
+        ii::calculate_boss_hp(
+             1 + kCbBaseHp / (fixed_c::half + HP_REDUCE_POWER_lookup[7 - i]).to_int(), players,
+             cycle);
+    r.push_back(hp);
+  }
+  return r;
+}
+
 }  // namespace
 
 namespace ii {
 void spawn_chaser_boss(SimInterface& sim, std::uint32_t cycle) {
+  auto h = sim.index().create();
+  h.add(Enemy{.threat_value = 0,
+              .boss_score_reward =
+                  calculate_boss_score(ii::boss_flag::kBoss1C, sim.player_count(), cycle)});
+  h.add(Health{});
+  h.add(Boss{.boss = ii::boss_flag::kBoss1C});
+  h.add(Update{.update = [&sim, h, cycle] {
+    auto& health = *h.get<Health>();
+    auto hp_lookup = get_hp_lookup(sim.player_count(), cycle);
+    health.hp = 0;
+    health.max_hp = hp_lookup[kCbMaxSplit];
+    std::optional<vec2> position;
+    sim.index().iterate<ChaserBossTag>([&](ecs::const_handle sub_h, const ChaserBossTag& tag) {
+      if (auto* c = sub_h.get<Position>(); c) {
+        position = c->centre;
+      } else if (auto* c = sub_h.get<LegacyShip>(); c) {
+        position = c->ship->position();
+      }
+      if (position && sim.is_on_screen(*position)) {
+        h.get<Boss>()->show_hp_bar = true;
+      }
+      health.hp +=
+          (tag.split == 7 ? 0 : 2 * hp_lookup[6 - tag.split]) + sub_h.get<ii::Health>()->hp;
+    });
+    if (!health.hp) {
+      h.emplace<Destroy>();
+    }
+  }});
+
   spawn_chaser_boss_internal(sim, cycle);
 }
 

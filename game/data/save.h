@@ -42,8 +42,8 @@ struct SaveGame {
   static result<SaveGame> load(std::span<const std::uint8_t> bytes);
   result<std::vector<std::uint8_t>> save() const;
 
-  std::uint32_t bosses_killed = 0;
-  std::uint32_t hard_mode_bosses_killed = 0;
+  boss_flag bosses_killed{0};
+  boss_flag hard_mode_bosses_killed{0};
   HighScores high_scores;
 };
 

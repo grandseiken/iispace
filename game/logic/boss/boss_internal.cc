@@ -12,10 +12,9 @@ const fixed kHpPerExtraCycle = 3 * 1_fx / 10;
 
 namespace ii {
 
-std::uint32_t
-calculate_boss_score(SimInterface::boss_list boss, std::uint32_t players, std::uint32_t cycle) {
-  std::uint32_t s = 5000 * (cycle + 1) + 2500 * (boss > ii::SimInterface::kBoss1C) +
-      2500 * (boss > SimInterface::kBoss2C);
+std::uint32_t calculate_boss_score(boss_flag boss, std::uint32_t players, std::uint32_t cycle) {
+  std::uint32_t s =
+      5000 * (cycle + 1) + 2500 * (boss > boss_flag::kBoss1C) + 2500 * (boss > boss_flag::kBoss2C);
   std::uint32_t r = s;
   for (std::uint32_t i = 0; i < players - 1; ++i) {
     r += (s * kHpPerExtraPlayer).to_int();
@@ -61,20 +60,12 @@ std::function<void(damage_type)> make_legacy_boss_on_destroy(ecs::handle h) {
 
 }  // namespace ii
 
-Boss::Boss(ii::SimInterface& sim, const vec2& position, ii::SimInterface::boss_list boss)
-: ii::Ship{sim, position, ii::ship_flag::kBoss | ii::ship_flag::kEnemy}, flag_{boss} {
+Boss::Boss(ii::SimInterface& sim, const vec2& position)
+: ii::Ship{sim, position, ii::ship_flag::kBoss | ii::ship_flag::kEnemy} {
   set_ignore_damage_colour_index(100);
 }
 
 void Boss::render() const {
-  render(true);
-}
-
-void Boss::render(bool hp_bar) const {
-  if (hp_bar) {
-    render_hp_bar();
-  }
-
   std::uint32_t hit_timer = 0;
   if (auto c = handle().get<ii::Health>(); c) {
     hit_timer = c->hit_timer;
@@ -89,18 +80,7 @@ void Boss::render(bool hp_bar) const {
   }
 }
 
-void Boss::render_hp_bar() const {
-  if (!show_hp_ && is_on_screen()) {
-    show_hp_ = true;
-  }
-
-  if (auto c = handle().get<ii::Health>(); c && show_hp_) {
-    sim().render_hp_bar(static_cast<float>(c->hp) / c->max_hp);
-  }
-}
-
 void Boss::on_destroy() {
-  set_killed();
   for (const auto& ship : sim().all_ships(ii::ship_flag::kEnemy)) {
     if (ship != this) {
       ship->damage(Player::kBombDamage, false, 0);
@@ -125,10 +105,10 @@ void Boss::on_destroy() {
 
 namespace ii {
 std::vector<std::pair<std::uint32_t, std::pair<vec2, glm::vec4>>>& boss_fireworks() {
-  return Boss::fireworks_;
+  return ::Boss::fireworks_;
 }
 
 std::vector<vec2>& boss_warnings() {
-  return Boss::warnings_;
+  return ::Boss::warnings_;
 }
 }  // namespace ii

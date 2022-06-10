@@ -10,14 +10,14 @@ message PlayerFrame {
   int64 target_y = 4;
   bool target_relative = 6;
 
-  int32 keys = 5;
+  uint32 keys = 5;
 }
 
 message Replay {
   string game_version = 1;
-  int32 game_mode = 2;
-  int32 players = 3;
-  int32 seed = 4;
+  uint32 game_mode = 2;
+  uint32 players = 3;
+  uint32 seed = 4;
 
   repeated PlayerFrame player_frame = 5;
   bool can_face_secret_boss = 99;

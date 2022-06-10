@@ -647,16 +647,16 @@ void z0Game::render(const ii::ui::UiLayer& ui, ii::render::GlRenderer& r) const 
   render_text(r, {37.f - 9, 9.f}, "SHADOW1W2", kPanelText);
 
   std::string b = "BOSSES:  ";
-  std::uint32_t bb = mode_unlocked(ui.save_game()) >= ii::game_mode::kHard
+  auto bb = mode_unlocked(ui.save_game()) >= ii::game_mode::kHard
       ? ui.save_game().hard_mode_bosses_killed
       : ui.save_game().bosses_killed;
-  b += bb & ii::SimInterface::kBoss1A ? "X" : "-";
-  b += bb & ii::SimInterface::kBoss1B ? "X" : "-";
-  b += bb & ii::SimInterface::kBoss1C ? "X" : "-";
-  b += bb & ii::SimInterface::kBoss3A ? "X" : " ";
-  b += bb & ii::SimInterface::kBoss2A ? "X" : "-";
-  b += bb & ii::SimInterface::kBoss2B ? "X" : "-";
-  b += bb & ii::SimInterface::kBoss2C ? "X" : "-";
+  b += +(bb & ii::boss_flag::kBoss1A) ? "X" : "-";
+  b += +(bb & ii::boss_flag::kBoss1B) ? "X" : "-";
+  b += +(bb & ii::boss_flag::kBoss1C) ? "X" : "-";
+  b += +(bb & ii::boss_flag::kBoss3A) ? "X" : " ";
+  b += +(bb & ii::boss_flag::kBoss2A) ? "X" : "-";
+  b += +(bb & ii::boss_flag::kBoss2B) ? "X" : "-";
+  b += +(bb & ii::boss_flag::kBoss2C) ? "X" : "-";
   render_text(r, {37.f - 16, 13.f}, b, kPanelText);
 
   render_text(r, {4.f, 4.f}, "WiiSPACE", kPanelText);
@@ -754,17 +754,17 @@ void z0Game::render(const ii::ui::UiLayer& ui, ii::render::GlRenderer& r) const 
 }
 
 ii::game_mode z0Game::mode_unlocked(const ii::SaveGame& save) const {
-  if (!(save.bosses_killed & 63)) {
+  if (!(save.bosses_killed & ii::boss_flag{63})) {
     return ii::game_mode::kNormal;
   }
   if (save.high_scores.boss[0].score == 0 && save.high_scores.boss[1].score == 0 &&
       save.high_scores.boss[2].score == 0 && save.high_scores.boss[3].score == 0) {
     return ii::game_mode::kBoss;
   }
-  if ((save.hard_mode_bosses_killed & 63) != 63) {
+  if ((save.hard_mode_bosses_killed & ii::boss_flag{63}) != ii::boss_flag{63}) {
     return ii::game_mode::kHard;
   }
-  if ((save.hard_mode_bosses_killed & 64) != 64) {
+  if ((save.hard_mode_bosses_killed & ii::boss_flag{64}) != ii::boss_flag{64}) {
     return ii::game_mode::kFast;
   }
   return ii::game_mode::kWhat;

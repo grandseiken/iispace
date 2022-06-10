@@ -31,7 +31,7 @@ private:
 };
 
 ShieldBombBoss::ShieldBombBoss(ii::SimInterface& sim)
-: Boss{sim, {-ii::kSimDimensions.x / 2, ii::kSimDimensions.y / 2}, ii::SimInterface::kBoss1B} {
+: Boss{sim, {-ii::kSimDimensions.x / 2, ii::kSimDimensions.y / 2}} {
   add_new_shape<ii::Polygon>(vec2{0}, 48, 8, c0, 0,
                              ii::shape_flag::kDangerous | ii::shape_flag::kVulnerable,
                              ii::Polygon::T::kPolygram);
@@ -170,7 +170,7 @@ void spawn_shield_bomb_boss(SimInterface& sim, std::uint32_t cycle) {
   h.add(legacy_collision(/* bounding width */ 640, h));
   h.add(Enemy{.threat_value = 100,
               .boss_score_reward =
-                  calculate_boss_score(SimInterface::kBoss1B, sim.player_count(), cycle)});
+                  calculate_boss_score(boss_flag::kBoss1B, sim.player_count(), cycle)});
   h.add(Health{
       .hp = calculate_boss_hp(kSbbBaseHp, sim.player_count(), cycle),
       .hit_sound0 = std::nullopt,
@@ -180,5 +180,6 @@ void spawn_shield_bomb_boss(SimInterface& sim, std::uint32_t cycle) {
       .on_hit = make_legacy_boss_on_hit(h, true),
       .on_destroy = make_legacy_boss_on_destroy(h),
   });
+  h.add(Boss{.boss = boss_flag::kBoss1B});
 }
 }  // namespace ii

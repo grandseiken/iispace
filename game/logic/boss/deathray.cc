@@ -186,8 +186,7 @@ void DeathArm::on_destroy(bool bomb) {
 }
 
 DeathRayBoss::DeathRayBoss(ii::SimInterface& sim)
-: Boss{sim, {ii::kSimDimensions.x * (3_fx / 20), -ii::kSimDimensions.y}, ii::SimInterface::kBoss2C}
-, timer_{kDrbTimer * 2} {
+: Boss{sim, {ii::kSimDimensions.x * (3_fx / 20), -ii::kSimDimensions.y}}, timer_{kDrbTimer * 2} {
   add_new_shape<ii::Polygon>(vec2{0}, 110, 12, c0, fixed_c::pi / 12, ii::shape_flag::kNone,
                              ii::Polygon::T::kPolystar);
   add_new_shape<ii::Polygon>(vec2{0}, 70, 12, c1, fixed_c::pi / 12, ii::shape_flag::kNone,
@@ -395,7 +394,7 @@ void spawn_death_ray_boss(SimInterface& sim, std::uint32_t cycle) {
   h.add(legacy_collision(/* bounding width */ 640, h));
   h.add(Enemy{.threat_value = 100,
               .boss_score_reward =
-                  calculate_boss_score(SimInterface::kBoss2C, sim.player_count(), cycle)});
+                  calculate_boss_score(boss_flag::kBoss2C, sim.player_count(), cycle)});
   h.add(Health{
       .hp = calculate_boss_hp(kDrbBaseHp, sim.player_count(), cycle),
       .hit_sound0 = std::nullopt,
@@ -405,5 +404,6 @@ void spawn_death_ray_boss(SimInterface& sim, std::uint32_t cycle) {
       .on_hit = make_legacy_boss_on_hit(h, true),
       .on_destroy = make_legacy_boss_on_destroy(h),
   });
+  h.add(Boss{.boss = boss_flag::kBoss2C});
 }
 }  // namespace ii

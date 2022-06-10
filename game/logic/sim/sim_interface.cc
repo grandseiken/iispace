@@ -131,6 +131,10 @@ std::uint32_t SimInterface::get_non_wall_count() const {
   return internals_->non_wall_enemy_count;
 }
 
+bool SimInterface::is_on_screen(const vec2& point) const {
+  return all(greaterThanEqual(point, vec2{0})) && all(lessThanEqual(point, vec2{kSimDimensions}));
+}
+
 std::uint32_t SimInterface::player_count() const {
   return static_cast<std::uint32_t>(players().size());
 }
@@ -195,16 +199,6 @@ std::uint32_t SimInterface::get_lives() const {
   return internals_->lives;
 }
 
-void SimInterface::set_boss_killed(boss_list boss) {
-  if (boss == kBoss3A ||
-      (internals_->conditions.mode != game_mode::kBoss &&
-       internals_->conditions.mode != game_mode::kNormal)) {
-    internals_->hard_mode_bosses_killed |= boss;
-  } else {
-    internals_->bosses_killed |= boss;
-  }
-}
-
 ecs::handle SimInterface::create_legacy(std::unique_ptr<Ship> ship) {
   auto p = ship.get();
   auto h = internals_->index.create();
@@ -260,10 +254,6 @@ void SimInterface::play_sound(sound s, float volume, float pan, float repitch) c
   aggregation.volume += volume;
   aggregation.pan += pan;
   aggregation.pitch = repitch;
-}
-
-void SimInterface::render_hp_bar(float fill) const {
-  internals_->boss_hp_bar = fill;
 }
 
 void SimInterface::render_line(const glm::vec2& a, const glm::vec2& b, const glm::vec4& c) const {

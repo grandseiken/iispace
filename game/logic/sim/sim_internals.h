@@ -51,8 +51,8 @@ struct SimInternals {
   std::unordered_map<ii::sound, sound_aggregation_t> sound_output;
 
   // Run output.
-  std::uint32_t bosses_killed = 0;
-  std::uint32_t hard_mode_bosses_killed = 0;
+  boss_flag bosses_killed{0};
+  boss_flag hard_mode_bosses_killed{0};
 };
 
 }  // namespace ii
