@@ -205,8 +205,6 @@ GhostBoss::GhostBoss(ii::SimInterface& sim)
   for (std::uint32_t n = 0; n < 5; ++n) {
     add_new_shape<ii::CompoundShape>(vec2{0}, 0, ii::shape_flag::kDangerous);
   }
-
-  set_ignore_damage_colour_index(12);
 }
 
 void GhostBoss::update() {
@@ -452,6 +450,7 @@ void spawn_ghost_boss(SimInterface& sim, std::uint32_t cycle) {
                   calculate_boss_score(boss_flag::kBoss2B, sim.player_count(), cycle)});
   h.add(Health{
       .hp = calculate_boss_hp(kGbBaseHp, sim.player_count(), cycle),
+      .hit_flash_ignore_index = 12,
       .hit_sound0 = std::nullopt,
       .hit_sound1 = ii::sound::kEnemyShatter,
       .destroy_sound = std::nullopt,

@@ -166,7 +166,7 @@ public:
                std::uint32_t timer = 0);
 
   void update() override;
-  void on_destroy() override;
+  void on_destroy(bool bomb) override;
   void render() const override;
 
   std::uint32_t GetTimer() const {
@@ -207,7 +207,7 @@ SuperBossArc* spawn_super_boss_arc(ii::SimInterface& sim, const vec2& position, 
                                          type == ii::damage_type::kBomb ? damage / 2 : damage);
           },
       .on_hit = ii::make_legacy_boss_on_hit(h, true),
-      .on_destroy = ii::make_legacy_boss_on_destroy(h),
+      .on_destroy = ii::make_legacy_enemy_on_destroy(h),
   });
   return p;
 }
@@ -219,7 +219,7 @@ public:
   SuperBoss(ii::SimInterface& sim, std::uint32_t cycle);
 
   void update() override;
-  void on_destroy() override;
+  void on_destroy(bool bomb) override;
 
 private:
   friend class SuperBossArc;
@@ -305,7 +305,7 @@ void SuperBossArc::render() const {
   }
 }
 
-void SuperBossArc::on_destroy() {
+void SuperBossArc::on_destroy(bool) {
   vec2 d = from_polar(i_ * 2 * fixed_c::pi / 16 + shape().rotation(), 120_fx);
   move(d);
   explosion();
@@ -332,7 +332,6 @@ SuperBoss::SuperBoss(ii::SimInterface& sim, std::uint32_t cycle)
   for (std::uint32_t i = 0; i < 16; ++i) {
     destroyed_.push_back(false);
   }
-  set_ignore_damage_colour_index(8);
 }
 
 void SuperBoss::update() {
@@ -443,7 +442,7 @@ void SuperBoss::update() {
   move(move_vec);
 }
 
-void SuperBoss::on_destroy() {
+void SuperBoss::on_destroy(bool) {
   for (const auto& ship : sim().all_ships(ii::ship_flag::kEnemy)) {
     if (ship != this) {
       ship->damage(Player::kBombDamage * 100, false, 0);
@@ -483,6 +482,7 @@ void spawn_super_boss(SimInterface& sim, std::uint32_t cycle) {
                   calculate_boss_score(boss_flag::kBoss3A, sim.player_count(), cycle)});
   h.add(Health{
       .hp = calculate_boss_hp(kSbBaseHp, sim.player_count(), cycle),
+      .hit_flash_ignore_index = 8,
       .hit_sound0 = std::nullopt,
       .hit_sound1 = ii::sound::kEnemyShatter,
       .destroy_sound = std::nullopt,

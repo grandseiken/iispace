@@ -78,7 +78,7 @@ public:
              std::uint32_t time, std::uint32_t stagger);
 
   void update() override;
-  void on_destroy() override;
+  void on_destroy(bool bomb) override;
 
   static bool has_counted_;
 
@@ -117,6 +117,7 @@ ChaserBoss* spawn_chaser_boss_internal(ii::SimInterface& sim, std::uint32_t cycl
       .hp = ii::calculate_boss_hp(
           1 + kCbBaseHp / (fixed_c::half + HP_REDUCE_POWER_lookup[split]).to_int(),
           sim.player_count(), cycle),
+      .hit_flash_ignore_index = 2,
       .hit_sound0 = std::nullopt,
       .hit_sound1 = ii::sound::kEnemyShatter,
       .destroy_sound = std::nullopt,
@@ -147,7 +148,6 @@ ChaserBoss::ChaserBoss(ii::SimInterface& sim, std::uint32_t cycle, std::uint32_t
   add_new_shape<ii::Polygon>(vec2{0}, 7 * ONE_AND_HALF_lookup[kCbMaxSplit - split_], 5,
                              glm::vec4{0.f}, 0, ii::shape_flag::kShield, ii::Polygon::T::kPolygram);
 
-  set_ignore_damage_colour_index(2);
   if (!split_) {
     count_ = 0;
   }
@@ -299,7 +299,7 @@ void ChaserBoss::update() {
   }
 }
 
-void ChaserBoss::on_destroy() {
+void ChaserBoss::on_destroy(bool) {
   bool last = false;
   if (split_ < kCbMaxSplit) {
     for (std::uint32_t i = 0; i < 2; ++i) {

@@ -61,7 +61,10 @@ enum class damage_type {
 struct Health : ecs::component {
   std::uint32_t hp = 0;
   std::uint32_t max_hp = hp;
+
   std::uint32_t hit_timer = 0;
+  std::optional<std::uint32_t> hit_flash_ignore_index;
+
   std::optional<ii::sound> hit_sound0 = ii::sound::kEnemyHit;
   std::optional<ii::sound> hit_sound1 = ii::sound::kEnemyHit;
   std::optional<ii::sound> destroy_sound = ii::sound::kEnemyDestroy;

@@ -202,8 +202,6 @@ DeathRayBoss::DeathRayBoss(ii::SimInterface& sim)
     s2->add_new_shape<ii::Box>(vec2{130, 0}, 10, 24, c1, 0);
     s2->add_new_shape<ii::Box>(vec2{130, 0}, 8, 22, c0, 0);
   }
-
-  set_ignore_damage_colour_index(5);
   shape().rotate(2 * fixed_c::pi * sim.random_fixed());
 }
 
@@ -397,6 +395,7 @@ void spawn_death_ray_boss(SimInterface& sim, std::uint32_t cycle) {
                   calculate_boss_score(boss_flag::kBoss2C, sim.player_count(), cycle)});
   h.add(Health{
       .hp = calculate_boss_hp(kDrbBaseHp, sim.player_count(), cycle),
+      .hit_flash_ignore_index = 5,
       .hit_sound0 = std::nullopt,
       .hit_sound1 = ii::sound::kEnemyShatter,
       .destroy_sound = std::nullopt,

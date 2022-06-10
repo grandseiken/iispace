@@ -54,33 +54,18 @@ make_legacy_boss_on_hit(ecs::handle h, bool explode_on_bomb_damage) {
 }
 
 std::function<void(damage_type)> make_legacy_boss_on_destroy(ecs::handle h) {
-  auto boss = static_cast<::Boss*>(h.get<LegacyShip>()->ship.get());
-  return [boss](damage_type) { boss->on_destroy(); };
+  auto enemy = static_cast<::Enemy*>(h.get<LegacyShip>()->ship.get());
+  return [enemy](damage_type type) {
+    enemy->on_destroy(type == damage_type::kBomb);
+  };
 }
 
 }  // namespace ii
 
 Boss::Boss(ii::SimInterface& sim, const vec2& position)
-: ii::Ship{sim, position, ii::ship_flag::kBoss | ii::ship_flag::kEnemy} {
-  set_ignore_damage_colour_index(100);
-}
+: Enemy{sim, position, ii::ship_flag::kBoss} {}
 
-void Boss::render() const {
-  std::uint32_t hit_timer = 0;
-  if (auto c = handle().get<ii::Health>(); c) {
-    hit_timer = c->hit_timer;
-  }
-  if (!hit_timer) {
-    Ship::render();
-    return;
-  }
-  for (std::size_t i = 0; i < shapes().size(); ++i) {
-    shapes()[i]->render(sim(), to_float(shape().centre), shape().rotation().to_float(),
-                        i < ignore_damage_colour_ ? glm::vec4{1.f} : glm::vec4{0.f});
-  }
-}
-
-void Boss::on_destroy() {
+void Boss::on_destroy(bool) {
   for (const auto& ship : sim().all_ships(ii::ship_flag::kEnemy)) {
     if (ship != this) {
       ship->damage(Player::kBombDamage, false, 0);

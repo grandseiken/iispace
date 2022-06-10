@@ -18,7 +18,7 @@ public:
   ShieldBombBoss(ii::SimInterface& sim);
 
   void update() override;
-  std::uint32_t get_damage(std::uint32_t damage, ii::damage_type type);
+  std::pair<bool, std::uint32_t> get_damage(std::uint32_t damage, ii::damage_type type);
 
 private:
   std::uint32_t timer_ = 0;
@@ -49,8 +49,6 @@ ShieldBombBoss::ShieldBombBoss(ii::SimInterface& sim)
   add_new_shape<ii::Polygon>(vec2{0}, 120, 16, c1, 0);
 
   add_new_shape<ii::Polygon>(vec2{0}, 42, 16, glm::vec4{0.f}, 0, ii::shape_flag::kShield);
-
-  set_ignore_damage_colour_index(1);
 }
 
 void ShieldBombBoss::update() {
@@ -136,9 +134,10 @@ void ShieldBombBoss::update() {
   }
 }
 
-std::uint32_t ShieldBombBoss::get_damage(std::uint32_t damage, ii::damage_type type) {
+std::pair<bool, std::uint32_t>
+ShieldBombBoss::get_damage(std::uint32_t damage, ii::damage_type type) {
   if (unshielded_) {
-    return damage;
+    return {false, damage};
   }
   if (type == ii::damage_type::kBomb && !unshielded_) {
     unshielded_ = kSbbUnshieldTime;
@@ -146,21 +145,22 @@ std::uint32_t ShieldBombBoss::get_damage(std::uint32_t damage, ii::damage_type t
     shapes()[17]->category = ii::shape_flag::kNone;
   }
   if (type != ii::damage_type::kMagic) {
-    return 0;
+    return {false, 0};
   }
   shot_alternate_ = !shot_alternate_;
-  if (shot_alternate_) {
-    restore_hp(ii::scale_boss_damage(sim(), handle(), ii::damage_type::kNone, 1));
-  }
-  return damage;
+  return {shot_alternate_, damage};
 }
 
 std::uint32_t transform_shield_bomb_boss_damage(ii::SimInterface& sim, ii::ecs::handle h,
                                                 ii::damage_type type, std::uint32_t damage) {
   // TODO.
-  auto d =
+  auto [undo, d] =
       static_cast<ShieldBombBoss*>(h.get<ii::LegacyShip>()->ship.get())->get_damage(damage, type);
-  return ii::scale_boss_damage(sim, h, type, d);
+  d = ii::scale_boss_damage(sim, h, type, d);
+  if (undo) {
+    h.get<ii::Health>()->hp += d;
+  }
+  return d;
 }
 }  // namespace
 
@@ -173,6 +173,7 @@ void spawn_shield_bomb_boss(SimInterface& sim, std::uint32_t cycle) {
                   calculate_boss_score(boss_flag::kBoss1B, sim.player_count(), cycle)});
   h.add(Health{
       .hp = calculate_boss_hp(kSbbBaseHp, sim.player_count(), cycle),
+      .hit_flash_ignore_index = 1,
       .hit_sound0 = std::nullopt,
       .hit_sound1 = ii::sound::kEnemyShatter,
       .destroy_sound = std::nullopt,
