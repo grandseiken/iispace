@@ -112,7 +112,8 @@ void GhostMine::update() {
   }
   for (const auto& ship : sim().collision_list(shape().centre, ii::shape_flag::kDangerous)) {
     if (ship == ghost_) {
-      if (sim().random(6) == 0 || (ghost_->is_hp_low() && sim().random(5) == 0)) {
+      if (sim().random(6) == 0 ||
+          (ghost_->handle().get<ii::Health>()->is_hp_low() && sim().random(5) == 0)) {
         ii::spawn_big_follow(sim(), shape().centre, /* score */ false);
       } else {
         ii::spawn_follow(sim(), shape().centre, /* score */ false);
@@ -152,11 +153,10 @@ void spawn_ghost_mine(ii::SimInterface& sim, const vec2& position, Boss* ghost) 
 
 class GhostBoss : public Boss {
 public:
-  GhostBoss(ii::SimInterface& sim, std::uint32_t players, std::uint32_t cycle);
+  GhostBoss(ii::SimInterface& sim);
 
   void update() override;
   void render() const override;
-  std::uint32_t get_damage(std::uint32_t damage, bool magic) override;
 
 private:
   bool visible_ = false;
@@ -174,13 +174,8 @@ private:
   bool shot_type_ = false;
 };
 
-GhostBoss::GhostBoss(ii::SimInterface& sim, std::uint32_t players, std::uint32_t cycle)
-: Boss{sim,
-       {ii::kSimDimensions.x / 2, ii::kSimDimensions.y / 2},
-       ii::SimInterface::kBoss2B,
-       kGbBaseHp,
-       players,
-       cycle}
+GhostBoss::GhostBoss(ii::SimInterface& sim)
+: Boss{sim, {ii::kSimDimensions.x / 2, ii::kSimDimensions.y / 2}, ii::SimInterface::kBoss2B}
 , attack_time_{kGbAttackTime} {
   add_new_shape<ii::Polygon>(vec2{0}, 32, 8, c1, 0);
   add_new_shape<ii::Polygon>(vec2{0}, 48, 8, c0, 0);
@@ -283,6 +278,7 @@ void GhostBoss::update() {
     return;
   }
 
+  bool is_hp_low = handle().get<ii::Health>()->is_hp_low();
   if (!attack_time_) {
     ++timer_;
     if (timer_ == 9 * kGbTimer / 10 ||
@@ -359,7 +355,7 @@ void GhostBoss::update() {
       spawn_ghost_wall(sim(), _rdir, true, 0);
     }
 
-    if ((attack_ == 0 || attack_ == 1) && is_hp_low() && attack_time_ == kGbAttackTime * 1) {
+    if ((attack_ == 0 || attack_ == 1) && is_hp_low && attack_time_ == kGbAttackTime * 1) {
       auto r = sim().random(4);
       vec2 v = r == 0 ? vec2{-ii::kSimDimensions.x / 4, ii::kSimDimensions.y / 2}
           : r == 1 ? vec2{ii::kSimDimensions.x + ii::kSimDimensions.x / 4, ii::kSimDimensions.y / 2}
@@ -375,11 +371,11 @@ void GhostBoss::update() {
     if (attack_time_ == 0 && attack_ != 2) {
       auto r = sim().random(3);
       danger_circle_ |= 1 + (r == 2 ? 3 : r);
-      if (sim().random(2) || is_hp_low()) {
+      if (sim().random(2) || is_hp_low) {
         r = sim().random(3);
         danger_circle_ |= 1 + (r == 2 ? 3 : r);
       }
-      if (sim().random(2) || is_hp_low()) {
+      if (sim().random(2) || is_hp_low) {
         r = sim().random(3);
         danger_circle_ |= 1 + (r == 2 ? 3 : r);
       }
@@ -448,17 +444,23 @@ void GhostBoss::render() const {
   }
 }
 
-std::uint32_t GhostBoss::get_damage(std::uint32_t damage, bool magic) {
-  return damage;
-}
-
 }  // namespace
 
 namespace ii {
-void spawn_ghost_boss(SimInterface& sim, std::uint32_t players, std::uint32_t cycle) {
-  auto h = sim.create_legacy(std::make_unique<GhostBoss>(sim, players, cycle));
+void spawn_ghost_boss(SimInterface& sim, std::uint32_t cycle) {
+  auto h = sim.create_legacy(std::make_unique<GhostBoss>(sim));
   h.add(legacy_collision(/* bounding width */ 640, h));
   h.add(Enemy{.threat_value = 100,
-              .boss_score_reward = calculate_boss_score(SimInterface::kBoss2B, players, cycle)});
+              .boss_score_reward =
+                  calculate_boss_score(SimInterface::kBoss2B, sim.player_count(), cycle)});
+  h.add(Health{
+      .hp = calculate_boss_hp(kGbBaseHp, sim.player_count(), cycle),
+      .hit_sound0 = std::nullopt,
+      .hit_sound1 = ii::sound::kEnemyShatter,
+      .destroy_sound = std::nullopt,
+      .damage_transform = &scale_boss_damage,
+      .on_hit = make_legacy_boss_on_hit(h, true),
+      .on_destroy = make_legacy_boss_on_destroy(h),
+  });
 }
 }  // namespace ii

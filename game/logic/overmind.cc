@@ -357,7 +357,6 @@ void Overmind::wave() {
 }
 
 void Overmind::boss() {
-  auto count = sim_.player_count();
   auto cycle = (sim_.conditions().mode == ii::game_mode::kHard) + boss_mod_bosses_ / 2;
   bool secret_chance = (sim_.conditions().mode != ii::game_mode::kNormal &&
                         sim_.conditions().mode != ii::game_mode::kBoss)
@@ -375,16 +374,14 @@ void Overmind::boss() {
              2u, boss_mod_bosses_ + (sim_.conditions().mode == ii::game_mode::kHard)) -
          2) /
         2;
-  ii:
-    spawn_super_boss(sim_, count, secret_cycle);
     boss_mod_secret_ = 2;
   } else if (boss_mod_bosses_ % 2 == 0) {
     if (boss1_queue_[0] == 0) {
-      ii::spawn_big_square_boss(sim_, count, cycle);
+      ii::spawn_big_square_boss(sim_, cycle);
     } else if (boss1_queue_[0] == 1) {
-      ii::spawn_shield_bomb_boss(sim_, count, cycle);
+      ii::spawn_shield_bomb_boss(sim_, cycle);
     } else {
-      ii::spawn_chaser_boss(sim_, count, cycle);
+      ii::spawn_chaser_boss(sim_, cycle);
     }
     boss1_queue_.push_back(boss1_queue_.front());
     boss1_queue_.erase(boss1_queue_.begin());
@@ -393,11 +390,11 @@ void Overmind::boss() {
       --boss_mod_secret_;
     }
     if (boss2_queue_[0] == 0) {
-      spawn_tractor_boss(sim_, count, cycle);
+      spawn_tractor_boss(sim_, cycle);
     } else if (boss2_queue_[0] == 1) {
-      spawn_ghost_boss(sim_, count, cycle);
+      spawn_ghost_boss(sim_, cycle);
     } else {
-      spawn_death_ray_boss(sim_, count, cycle);
+      spawn_death_ray_boss(sim_, cycle);
     }
     boss2_queue_.push_back(boss2_queue_.front());
     boss2_queue_.erase(boss2_queue_.begin());
@@ -406,23 +403,22 @@ void Overmind::boss() {
 
 void Overmind::boss_mode_boss() {
   auto boss = boss_mod_bosses_;
-  auto count = sim_.player_count();
   if (boss_mod_bosses_ < 3) {
     if (boss1_queue_[boss] == 0) {
-      ii::spawn_big_square_boss(sim_, count, 0);
+      ii::spawn_big_square_boss(sim_, 0);
     } else if (boss1_queue_[boss] == 1) {
-      ii::spawn_shield_bomb_boss(sim_, count, 0);
+      ii::spawn_shield_bomb_boss(sim_, 0);
     } else {
-      ii::spawn_chaser_boss(sim_, count, 0);
+      ii::spawn_chaser_boss(sim_, 0);
     }
   } else {
     boss = boss - 3;
     if (boss2_queue_[boss] == 0) {
-      spawn_tractor_boss(sim_, count, 0);
+      spawn_tractor_boss(sim_, 0);
     } else if (boss2_queue_[boss] == 1) {
-      spawn_ghost_boss(sim_, count, 0);
+      spawn_ghost_boss(sim_, 0);
     } else {
-      spawn_death_ray_boss(sim_, count, 0);
+      spawn_death_ray_boss(sim_, 0);
     }
   }
 }

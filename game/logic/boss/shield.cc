@@ -15,10 +15,10 @@ const glm::vec4 c2 = colour_hue(0.f, .6f, 0.f);
 
 class ShieldBombBoss : public Boss {
 public:
-  ShieldBombBoss(ii::SimInterface& sim, std::uint32_t players, std::uint32_t cycle);
+  ShieldBombBoss(ii::SimInterface& sim);
 
   void update() override;
-  std::uint32_t get_damage(std::uint32_t damage, bool magic) override;
+  std::uint32_t get_damage(std::uint32_t damage, ii::damage_type type);
 
 private:
   std::uint32_t timer_ = 0;
@@ -30,13 +30,8 @@ private:
   bool shot_alternate_ = false;
 };
 
-ShieldBombBoss::ShieldBombBoss(ii::SimInterface& sim, std::uint32_t players, std::uint32_t cycle)
-: Boss{sim,
-       {-ii::kSimDimensions.x / 2, ii::kSimDimensions.y / 2},
-       ii::SimInterface::kBoss1B,
-       kSbbBaseHp,
-       players,
-       cycle} {
+ShieldBombBoss::ShieldBombBoss(ii::SimInterface& sim)
+: Boss{sim, {-ii::kSimDimensions.x / 2, ii::kSimDimensions.y / 2}, ii::SimInterface::kBoss1B} {
   add_new_shape<ii::Polygon>(vec2{0}, 48, 8, c0, 0,
                              ii::shape_flag::kDangerous | ii::shape_flag::kVulnerable,
                              ii::Polygon::T::kPolygram);
@@ -73,7 +68,7 @@ void ShieldBombBoss::update() {
     return;
   }
 
-  if (is_hp_low()) {
+  if (handle().get<ii::Health>()->is_hp_low()) {
     ++timer_;
   }
 
@@ -141,31 +136,49 @@ void ShieldBombBoss::update() {
   }
 }
 
-std::uint32_t ShieldBombBoss::get_damage(std::uint32_t damage, bool magic) {
+std::uint32_t ShieldBombBoss::get_damage(std::uint32_t damage, ii::damage_type type) {
   if (unshielded_) {
     return damage;
   }
-  if (damage >= Player::kBombDamage && !unshielded_) {
+  if (type == ii::damage_type::kBomb && !unshielded_) {
     unshielded_ = kSbbUnshieldTime;
     shapes()[0]->category = ii::shape_flag::kVulnerable | ii::shape_flag::kDangerous;
     shapes()[17]->category = ii::shape_flag::kNone;
   }
-  if (!magic) {
+  if (type != ii::damage_type::kMagic) {
     return 0;
   }
   shot_alternate_ = !shot_alternate_;
   if (shot_alternate_) {
-    restore_hp(60 / (1 + (sim().get_lives() ? sim().player_count() : sim().alive_players())));
+    restore_hp(ii::scale_boss_damage(sim(), handle(), ii::damage_type::kNone, 1));
   }
   return damage;
+}
+
+std::uint32_t transform_shield_bomb_boss_damage(ii::SimInterface& sim, ii::ecs::handle h,
+                                                ii::damage_type type, std::uint32_t damage) {
+  // TODO.
+  auto d =
+      static_cast<ShieldBombBoss*>(h.get<ii::LegacyShip>()->ship.get())->get_damage(damage, type);
+  return ii::scale_boss_damage(sim, h, type, d);
 }
 }  // namespace
 
 namespace ii {
-void spawn_shield_bomb_boss(SimInterface& sim, std::uint32_t players, std::uint32_t cycle) {
-  auto h = sim.create_legacy(std::make_unique<ShieldBombBoss>(sim, players, cycle));
+void spawn_shield_bomb_boss(SimInterface& sim, std::uint32_t cycle) {
+  auto h = sim.create_legacy(std::make_unique<ShieldBombBoss>(sim));
   h.add(legacy_collision(/* bounding width */ 640, h));
   h.add(Enemy{.threat_value = 100,
-              .boss_score_reward = calculate_boss_score(SimInterface::kBoss1B, players, cycle)});
+              .boss_score_reward =
+                  calculate_boss_score(SimInterface::kBoss1B, sim.player_count(), cycle)});
+  h.add(Health{
+      .hp = calculate_boss_hp(kSbbBaseHp, sim.player_count(), cycle),
+      .hit_sound0 = std::nullopt,
+      .hit_sound1 = ii::sound::kEnemyShatter,
+      .destroy_sound = std::nullopt,
+      .damage_transform = &transform_shield_bomb_boss_damage,
+      .on_hit = make_legacy_boss_on_hit(h, true),
+      .on_destroy = make_legacy_boss_on_destroy(h),
+  });
 }
 }  // namespace ii

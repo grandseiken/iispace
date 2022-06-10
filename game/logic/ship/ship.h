@@ -60,10 +60,20 @@ enum class damage_type {
 
 struct Health : ecs::component {
   std::uint32_t hp = 0;
+  std::uint32_t max_hp = hp;
   std::uint32_t hit_timer = 0;
-  std::optional<ii::sound> hit_sound = ii::sound::kEnemyHit;
+  std::optional<ii::sound> hit_sound0 = ii::sound::kEnemyHit;
+  std::optional<ii::sound> hit_sound1 = ii::sound::kEnemyHit;
   std::optional<ii::sound> destroy_sound = ii::sound::kEnemyDestroy;
+
+  std::function<std::uint32_t(SimInterface&, ecs::handle, damage_type, std::uint32_t)>
+      damage_transform;
+  std::function<void(damage_type)> on_hit;
   std::function<void(damage_type)> on_destroy;
+
+  bool is_hp_low() const {
+    return 3 * hp <= max_hp + max_hp / 5;
+  }
 
   void damage(SimInterface&, ecs::handle h, std::uint32_t damage, damage_type type,
               std::optional<ecs::entity_id> source);

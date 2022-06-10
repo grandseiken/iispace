@@ -5,6 +5,16 @@ namespace ii {
 
 void Health::damage(SimInterface& sim, ecs::handle h, std::uint32_t damage, damage_type type,
                     std::optional<ecs::entity_id> source) {
+  if (damage_transform) {
+    damage = damage_transform(sim, h, type, damage);
+    if (!damage) {
+      return;
+    }
+  }
+  if (on_hit) {
+    on_hit(type);
+  }
+
   hp = hp < damage ? 0 : hp - damage;
   vec2 position = {kSimDimensions.x / 2, kSimDimensions.y / 2};
   if (auto c = h.get<Position>(); c) {
@@ -12,8 +22,9 @@ void Health::damage(SimInterface& sim, ecs::handle h, std::uint32_t damage, dama
   } else if (auto c = h.get<LegacyShip>(); c) {
     position = c->ship->shape().centre;
   }
-  if (hit_sound && damage > 0) {
-    sim.play_sound(*hit_sound, position, /* random */ true);
+
+  if (hit_sound0 && damage) {
+    sim.play_sound(*hit_sound0, position, /* random */ true);
   }
   if (h.has<Destroy>()) {
     return;
@@ -28,10 +39,10 @@ void Health::damage(SimInterface& sim, ecs::handle h, std::uint32_t damage, dama
     }
     h.add(Destroy{.source = source});
   } else {
-    if (hit_sound && damage > 0) {
-      sim.play_sound(*hit_sound, position, /* random */ true);
+    if (hit_sound1 && damage) {
+      sim.play_sound(*hit_sound1, position, /* random */ true);
     }
-    hit_timer = type == damage_type::kBomb ? 25 : 1;
+    hit_timer = std::max<std::uint32_t>(hit_timer, type == damage_type::kBomb ? 25 : 1);
   }
 }
 

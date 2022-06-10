@@ -78,11 +78,14 @@ DeathArm* spawn_death_arm(ii::SimInterface& sim, DeathRayBoss* boss, bool top, s
 
 class DeathRayBoss : public Boss {
 public:
-  DeathRayBoss(ii::SimInterface& sim, std::uint32_t players, std::uint32_t cycle);
+  DeathRayBoss(ii::SimInterface& sim);
 
   void update() override;
   void render() const override;
-  std::uint32_t get_damage(std::uint32_t damage, bool magic) override;
+
+  std::uint32_t get_damage(std::uint32_t damage) {
+    return !arms_.empty() ? 0 : damage;
+  }
 
   void on_arm_death(Ship* arm);
 
@@ -182,13 +185,8 @@ void DeathArm::on_destroy(bool bomb) {
   explosion(shapes()[0]->colour, 24);
 }
 
-DeathRayBoss::DeathRayBoss(ii::SimInterface& sim, std::uint32_t players, std::uint32_t cycle)
-: Boss{sim,
-       {ii::kSimDimensions.x * (3_fx / 20), -ii::kSimDimensions.y},
-       ii::SimInterface::kBoss2C,
-       kDrbBaseHp,
-       players,
-       cycle}
+DeathRayBoss::DeathRayBoss(ii::SimInterface& sim)
+: Boss{sim, {ii::kSimDimensions.x * (3_fx / 20), -ii::kSimDimensions.y}, ii::SimInterface::kBoss2C}
 , timer_{kDrbTimer * 2} {
   add_new_shape<ii::Polygon>(vec2{0}, 110, 12, c0, fixed_c::pi / 12, ii::shape_flag::kNone,
                              ii::Polygon::T::kPolystar);
@@ -288,13 +286,14 @@ void DeathRayBoss::update() {
   }
 
   ++shot_timer_;
-  if (arms_.empty() && !is_hp_low()) {
+  bool is_hp_low = handle().get<ii::Health>()->is_hp_low();
+  if (arms_.empty() && !is_hp_low) {
     if (shot_timer_ % 8 == 0) {
       shot_queue_.emplace_back((shot_timer_ / 8) % 12, 16);
       play_sound_random(ii::sound::kBossFire);
     }
   }
-  if (arms_.empty() && is_hp_low()) {
+  if (arms_.empty() && is_hp_low) {
     if (shot_timer_ % 48 == 0) {
       for (std::uint32_t i = 1; i < 16; i += 3) {
         shot_queue_.emplace_back(i, 16);
@@ -326,7 +325,7 @@ void DeathRayBoss::update() {
     ++arm_timer_;
     if (arm_timer_ >= kDrbArmRTimer) {
       arm_timer_ = 0;
-      if (!is_hp_low()) {
+      if (!is_hp_low) {
         auto players = sim().get_lives() ? sim().player_count() : sim().alive_players();
         std::uint32_t hp =
             (kDrbArmHp * (7 * fixed_c::tenth + 3 * fixed_c::tenth * players)).to_int();
@@ -372,10 +371,6 @@ void DeathRayBoss::render() const {
   }
 }
 
-std::uint32_t DeathRayBoss::get_damage(std::uint32_t damage, bool magic) {
-  return arms_.size() ? 0 : damage;
-}
-
 void DeathRayBoss::on_arm_death(Ship* arm) {
   for (auto it = arms_.begin(); it != arms_.end(); ++it) {
     if (*it == arm) {
@@ -385,13 +380,30 @@ void DeathRayBoss::on_arm_death(Ship* arm) {
   }
 }
 
+std::uint32_t transform_death_ray_boss_damage(ii::SimInterface& sim, ii::ecs::handle h,
+                                              ii::damage_type type, std::uint32_t damage) {
+  // TODO.
+  auto d = static_cast<DeathRayBoss*>(h.get<ii::LegacyShip>()->ship.get())->get_damage(damage);
+  return ii::scale_boss_damage(sim, h, type, d);
+}
+
 }  // namespace
 
 namespace ii {
-void spawn_death_ray_boss(SimInterface& sim, std::uint32_t players, std::uint32_t cycle) {
-  auto h = sim.create_legacy(std::make_unique<DeathRayBoss>(sim, players, cycle));
+void spawn_death_ray_boss(SimInterface& sim, std::uint32_t cycle) {
+  auto h = sim.create_legacy(std::make_unique<DeathRayBoss>(sim));
   h.add(legacy_collision(/* bounding width */ 640, h));
   h.add(Enemy{.threat_value = 100,
-              .boss_score_reward = calculate_boss_score(SimInterface::kBoss2C, players, cycle)});
+              .boss_score_reward =
+                  calculate_boss_score(SimInterface::kBoss2C, sim.player_count(), cycle)});
+  h.add(Health{
+      .hp = calculate_boss_hp(kDrbBaseHp, sim.player_count(), cycle),
+      .hit_sound0 = std::nullopt,
+      .hit_sound1 = ii::sound::kEnemyShatter,
+      .destroy_sound = std::nullopt,
+      .damage_transform = &transform_death_ray_boss_damage,
+      .on_hit = make_legacy_boss_on_hit(h, true),
+      .on_destroy = make_legacy_boss_on_destroy(h),
+  });
 }
 }  // namespace ii

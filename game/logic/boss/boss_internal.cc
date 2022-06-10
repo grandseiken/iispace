@@ -10,10 +10,12 @@ const fixed kHpPerExtraPlayer = 1_fx / 10;
 const fixed kHpPerExtraCycle = 3 * 1_fx / 10;
 }  // namespace
 
+namespace ii {
+
 std::uint32_t
-calculate_boss_score(ii::SimInterface::boss_list boss, std::uint32_t players, std::uint32_t cycle) {
+calculate_boss_score(SimInterface::boss_list boss, std::uint32_t players, std::uint32_t cycle) {
   std::uint32_t s = 5000 * (cycle + 1) + 2500 * (boss > ii::SimInterface::kBoss1C) +
-      2500 * (boss > ii::SimInterface::kBoss2C);
+      2500 * (boss > SimInterface::kBoss2C);
   std::uint32_t r = s;
   for (std::uint32_t i = 0; i < players - 1; ++i) {
     r += (s * kHpPerExtraPlayer).to_int();
@@ -21,17 +23,7 @@ calculate_boss_score(ii::SimInterface::boss_list boss, std::uint32_t players, st
   return r;
 }
 
-Boss::Boss(ii::SimInterface& sim, const vec2& position, ii::SimInterface::boss_list boss,
-           std::uint32_t hp, std::uint32_t players, std::uint32_t cycle, bool explode_on_damage)
-: ii::Ship{sim, position, ii::ship_flag::kBoss | ii::ship_flag::kEnemy}
-, flag_{boss}
-, explode_on_damage_{explode_on_damage} {
-  set_ignore_damage_colour_index(100);
-  hp_ = CalculateHP(hp, players, cycle);
-  max_hp_ = hp_;
-}
-
-std::uint32_t Boss::CalculateHP(std::uint32_t base, std::uint32_t players, std::uint32_t cycle) {
+std::uint32_t calculate_boss_hp(std::uint32_t base, std::uint32_t players, std::uint32_t cycle) {
   auto hp = base * 30;
   auto r = hp;
   for (std::uint32_t i = 0; i < cycle; ++i) {
@@ -46,33 +38,32 @@ std::uint32_t Boss::CalculateHP(std::uint32_t base, std::uint32_t players, std::
   return r;
 }
 
-void Boss::damage(std::uint32_t damage, bool magic, IShip* source) {
-  std::uint32_t actual_damage = get_damage(damage, magic);
-  if (actual_damage <= 0) {
-    return;
-  }
+std::uint32_t scale_boss_damage(SimInterface& sim, ecs::handle, damage_type, std::uint32_t damage) {
+  return damage * (60 / (1 + (sim.get_lives() ? sim.player_count() : sim.alive_players())));
+}
 
-  if (damage >= Player::kBombDamage) {
-    if (explode_on_damage_) {
-      explosion();
-      explosion(glm::vec4{1.f}, 16);
-      explosion(std::nullopt, 24);
+std::function<void(damage_type)>
+make_legacy_boss_on_hit(ecs::handle h, bool explode_on_bomb_damage) {
+  auto boss = static_cast<::Boss*>(h.get<LegacyShip>()->ship.get());
+  return [boss, explode_on_bomb_damage](damage_type type) {
+    if (type == damage_type::kBomb && explode_on_bomb_damage) {
+      boss->explosion();
+      boss->explosion(glm::vec4{1.f}, 16);
+      boss->explosion(std::nullopt, 24);
     }
+  };
+}
 
-    damaged_ = 25;
-  } else if (damaged_ < 1) {
-    damaged_ = 1;
-  }
+std::function<void(damage_type)> make_legacy_boss_on_destroy(ecs::handle h) {
+  auto boss = static_cast<::Boss*>(h.get<LegacyShip>()->ship.get());
+  return [boss](damage_type) { boss->on_destroy(); };
+}
 
-  actual_damage *= 60 / (1 + (sim().get_lives() ? sim().player_count() : sim().alive_players()));
-  hp_ = hp_ < actual_damage ? 0 : hp_ - actual_damage;
+}  // namespace ii
 
-  if (!hp_ && !is_destroyed()) {
-    on_destroy();
-    destroy();
-  } else if (!is_destroyed()) {
-    play_sound_random(ii::sound::kEnemyShatter);
-  }
+Boss::Boss(ii::SimInterface& sim, const vec2& position, ii::SimInterface::boss_list boss)
+: ii::Ship{sim, position, ii::ship_flag::kBoss | ii::ship_flag::kEnemy}, flag_{boss} {
+  set_ignore_damage_colour_index(100);
 }
 
 void Boss::render() const {
@@ -84,7 +75,11 @@ void Boss::render(bool hp_bar) const {
     render_hp_bar();
   }
 
-  if (!damaged_) {
+  std::uint32_t hit_timer = 0;
+  if (auto c = handle().get<ii::Health>(); c) {
+    hit_timer = c->hit_timer;
+  }
+  if (!hit_timer) {
     Ship::render();
     return;
   }
@@ -92,7 +87,6 @@ void Boss::render(bool hp_bar) const {
     shapes()[i]->render(sim(), to_float(shape().centre), shape().rotation().to_float(),
                         i < ignore_damage_colour_ ? glm::vec4{1.f} : glm::vec4{0.f});
   }
-  damaged_--;
 }
 
 void Boss::render_hp_bar() const {
@@ -100,8 +94,8 @@ void Boss::render_hp_bar() const {
     show_hp_ = true;
   }
 
-  if (show_hp_) {
-    sim().render_hp_bar(static_cast<float>(hp_) / max_hp_);
+  if (auto c = handle().get<ii::Health>(); c && show_hp_) {
+    sim().render_hp_bar(static_cast<float>(c->hp) / c->max_hp);
   }
 }
 

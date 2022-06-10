@@ -52,11 +52,10 @@ void spawn_tboss_shot(ii::SimInterface& sim, const vec2& position, fixed angle) 
 
 class TractorBoss : public Boss {
 public:
-  TractorBoss(ii::SimInterface& sim, std::uint32_t players, std::uint32_t cycle);
+  TractorBoss(ii::SimInterface& sim);
 
   void update() override;
   void render() const override;
-  std::uint32_t get_damage(std::uint32_t damage, bool magic) override;
 
 private:
   ii::CompoundShape* s1_ = nullptr;
@@ -77,13 +76,10 @@ private:
   std::vector<vec2> targets_;
 };
 
-TractorBoss::TractorBoss(ii::SimInterface& sim, std::uint32_t players, std::uint32_t cycle)
+TractorBoss::TractorBoss(ii::SimInterface& sim)
 : Boss{sim,
        {ii::kSimDimensions.x * (1 + fixed_c::half), ii::kSimDimensions.y / 2},
-       ii::SimInterface::kBoss2A,
-       kTbBaseHp,
-       players,
-       cycle}
+       ii::SimInterface::kBoss2A}
 , shoot_type_{sim.random(2)} {
   s1_ = add_new_shape<ii::CompoundShape>(vec2{0, -96}, 0,
                                          ii::shape_flag::kDangerous | ii::shape_flag::kVulnerable);
@@ -151,10 +147,11 @@ void TractorBoss::update() {
   }
 
   ++timer_;
+  bool is_hp_low = handle().get<ii::Health>()->is_hp_low();
   if (!stopped_) {
     move(kTbSpeed * vec2{-1, 0});
     if (!will_attack_ && is_on_screen() && timer_ % (16 - sim().alive_players() * 2) == 0) {
-      if (shoot_type_ == 0 || (is_hp_low() && shoot_type_ == 1)) {
+      if (shoot_type_ == 0 || (is_hp_low && shoot_type_ == 1)) {
         auto p = sim().nearest_player_position(shape().centre);
 
         auto v = s1_->convert_point(shape().centre, shape().rotation(), vec2{0});
@@ -169,7 +166,7 @@ void TractorBoss::update() {
 
         play_sound_random(ii::sound::kBossFire);
       }
-      if (shoot_type_ == 1 || is_hp_low()) {
+      if (shoot_type_ == 1 || is_hp_low) {
         auto d = sim().nearest_player_direction(shape().centre);
         ii::spawn_boss_shot(sim(), shape().centre, d * 5, c0);
         ii::spawn_boss_shot(sim(), shape().centre, d * -5, c0);
@@ -211,7 +208,7 @@ void TractorBoss::update() {
         play_sound_random(ii::sound::kEnemySpawn);
       }
 
-      if (is_hp_low() && timer_ % (20 - sim().alive_players() * 2) == 0) {
+      if (is_hp_low && timer_ % (20 - sim().alive_players() * 2) == 0) {
         auto d = sim().nearest_player_direction(shape().centre);
         ii::spawn_boss_shot(sim(), shape().centre, d * 5, c0);
         ii::spawn_boss_shot(sim(), shape().centre, d * -5, c0);
@@ -331,17 +328,23 @@ void TractorBoss::render() const {
   }
 }
 
-std::uint32_t TractorBoss::get_damage(std::uint32_t damage, bool magic) {
-  return damage;
-}
-
 }  // namespace
 
 namespace ii {
-void spawn_tractor_boss(SimInterface& sim, std::uint32_t players, std::uint32_t cycle) {
-  auto h = sim.create_legacy(std::make_unique<TractorBoss>(sim, players, cycle));
+void spawn_tractor_boss(SimInterface& sim, std::uint32_t cycle) {
+  auto h = sim.create_legacy(std::make_unique<TractorBoss>(sim));
   h.add(legacy_collision(/* bounding width */ 640, h));
   h.add(Enemy{.threat_value = 100,
-              .boss_score_reward = calculate_boss_score(SimInterface::kBoss2A, players, cycle)});
+              .boss_score_reward =
+                  calculate_boss_score(SimInterface::kBoss2A, sim.player_count(), cycle)});
+  h.add(Health{
+      .hp = calculate_boss_hp(kTbBaseHp, sim.player_count(), cycle),
+      .hit_sound0 = std::nullopt,
+      .hit_sound1 = ii::sound::kEnemyShatter,
+      .destroy_sound = std::nullopt,
+      .damage_transform = &scale_boss_damage,
+      .on_hit = make_legacy_boss_on_hit(h, true),
+      .on_destroy = make_legacy_boss_on_destroy(h),
+  });
 }
 }  // namespace ii

@@ -162,11 +162,10 @@ private:
 
 class SuperBossArc : public Boss {
 public:
-  SuperBossArc(ii::SimInterface& sim, const vec2& position, std::uint32_t players,
-               std::uint32_t cycle, std::uint32_t i, ii::Ship* boss, std::uint32_t timer = 0);
+  SuperBossArc(ii::SimInterface& sim, const vec2& position, std::uint32_t i, ii::Ship* boss,
+               std::uint32_t timer = 0);
 
   void update() override;
-  std::uint32_t get_damage(std::uint32_t damage, bool magic) override;
   void on_destroy() override;
   void render() const override;
 
@@ -189,14 +188,27 @@ void spawn_rainbow_shot(ii::SimInterface& sim, const vec2& position, const vec2&
   h.add(ii::Health{.hp = 0, .on_destroy = ii::make_legacy_enemy_on_destroy(h)});
 }
 
-SuperBossArc* spawn_super_boss_arc(ii::SimInterface& sim, const vec2& position,
-                                   std::uint32_t players, std::uint32_t cycle, std::uint32_t i,
-                                   ii::Ship* boss, std::uint32_t timer = 0) {
-  auto u = std::make_unique<SuperBossArc>(sim, position, players, cycle, i, boss, timer);
+SuperBossArc* spawn_super_boss_arc(ii::SimInterface& sim, const vec2& position, std::uint32_t cycle,
+                                   std::uint32_t i, ii::Ship* boss, std::uint32_t timer = 0) {
+  auto u = std::make_unique<SuperBossArc>(sim, position, i, boss, timer);
   auto p = u.get();
   auto h = sim.create_legacy(std::move(u));
   h.add(ii::legacy_collision(/* bounding width */ 640, h));
   h.add(ii::Enemy{.threat_value = 10});
+  h.add(ii::Health{
+      .hp = ii::calculate_boss_hp(kSbArcHp, sim.player_count(), cycle),
+      .hit_sound0 = std::nullopt,
+      .hit_sound1 = ii::sound::kEnemyShatter,
+      .destroy_sound = std::nullopt,
+      .damage_transform =
+          +[](ii::SimInterface& sim, ii::ecs::handle h, ii::damage_type type,
+              std::uint32_t damage) {
+            return ii::scale_boss_damage(sim, h, type,
+                                         type == ii::damage_type::kBomb ? damage / 2 : damage);
+          },
+      .on_hit = ii::make_legacy_boss_on_hit(h, true),
+      .on_destroy = ii::make_legacy_boss_on_destroy(h),
+  });
   return p;
 }
 
@@ -204,17 +216,15 @@ class SuperBoss : public Boss {
 public:
   enum class state { kArrive, kIdle, kAttack };
 
-  SuperBoss(ii::SimInterface& sim, std::uint32_t players, std::uint32_t cycle);
+  SuperBoss(ii::SimInterface& sim, std::uint32_t cycle);
 
   void update() override;
-  std::uint32_t get_damage(std::uint32_t damage, bool magic) override;
   void on_destroy() override;
 
 private:
   friend class SuperBossArc;
   friend class RainbowShot;
 
-  std::uint32_t players_ = 0;
   std::uint32_t cycle_ = 0;
   std::uint32_t ctimer_ = 0;
   std::uint32_t timer_ = 0;
@@ -260,10 +270,9 @@ void RainbowShot::update() {
   }
 }
 
-SuperBossArc::SuperBossArc(ii::SimInterface& sim, const vec2& position, std::uint32_t players,
-                           std::uint32_t cycle, std::uint32_t i, ii::Ship* boss,
-                           std::uint32_t timer)
-: Boss{sim, position, static_cast<ii::SimInterface::boss_list>(0), kSbArcHp, players, cycle}
+SuperBossArc::SuperBossArc(ii::SimInterface& sim, const vec2& position, std::uint32_t i,
+                           ii::Ship* boss, std::uint32_t timer)
+: Boss{sim, position, static_cast<ii::SimInterface::boss_list>(0)}
 , boss_{boss}
 , i_{i}
 , timer_{timer} {
@@ -284,7 +293,7 @@ void SuperBossArc::update() {
   shape().rotate(6_fx / 1000);
   for (std::uint32_t i = 0; i < 8; ++i) {
     shapes()[7 - i]->colour = {((i * 32 + 2 * timer_) % 256) / 256.f, 1.f, .5f,
-                               is_hp_low() ? .6f : 1.f};
+                               handle().get<ii::Health>()->is_hp_low() ? .6f : 1.f};
   }
   ++timer_;
   ++stimer_;
@@ -299,13 +308,6 @@ void SuperBossArc::render() const {
   }
 }
 
-std::uint32_t SuperBossArc::get_damage(std::uint32_t damage, bool magic) {
-  if (damage >= Player::kBombDamage) {
-    return damage / 2;
-  }
-  return damage;
-}
-
 void SuperBossArc::on_destroy() {
   vec2 d = from_polar(i_ * 2 * fixed_c::pi / 16 + shape().rotation(), 120_fx);
   move(d);
@@ -318,14 +320,10 @@ void SuperBossArc::on_destroy() {
   ((SuperBoss*)boss_)->destroyed_[i_] = true;
 }
 
-SuperBoss::SuperBoss(ii::SimInterface& sim, std::uint32_t players, std::uint32_t cycle)
+SuperBoss::SuperBoss(ii::SimInterface& sim, std::uint32_t cycle)
 : Boss{sim,
        {ii::kSimDimensions.x / 2, -ii::kSimDimensions.y / (2 + fixed_c::half)},
-       ii::SimInterface::kBoss3A,
-       kSbBaseHp,
-       players,
-       cycle}
-, players_{players}
+       ii::SimInterface::kBoss3A}
 , cycle_{cycle} {
   add_new_shape<ii::Polygon>(vec2{0}, 40, 32, glm::vec4{0.f}, 0,
                              ii::shape_flag::kDangerous | ii::shape_flag::kVulnerable);
@@ -345,7 +343,7 @@ SuperBoss::SuperBoss(ii::SimInterface& sim, std::uint32_t players, std::uint32_t
 void SuperBoss::update() {
   if (arcs_.empty()) {
     for (std::uint32_t i = 0; i < 16; ++i) {
-      arcs_.push_back(spawn_super_boss_arc(sim(), shape().centre, players_, cycle_, i, this));
+      arcs_.push_back(spawn_super_boss_arc(sim(), shape().centre, cycle_, i, this));
     }
   } else {
     for (std::uint32_t i = 0; i < 16; ++i) {
@@ -424,8 +422,7 @@ void SuperBoss::update() {
     }
     if (!wide3.empty()) {
       auto r = sim().random(wide3.size());
-      auto* s =
-          spawn_super_boss_arc(sim(), shape().centre, players_, cycle_, wide3[r], this, timer);
+      auto* s = spawn_super_boss_arc(sim(), shape().centre, cycle_, wide3[r], this, timer);
       s->shape().set_rotation(shape().rotation() - (6_fx / 1000));
       arcs_[wide3[r]] = s;
       destroyed_[wide3[r]] = false;
@@ -449,10 +446,6 @@ void SuperBoss::update() {
     play_sound_random(ii::sound::kEnemySpawn);
   }
   move(move_vec);
-}
-
-std::uint32_t SuperBoss::get_damage(std::uint32_t damage, bool magic) {
-  return damage;
 }
 
 void SuperBoss::on_destroy() {
@@ -488,10 +481,20 @@ void SuperBoss::on_destroy() {
 }  // namespace
 
 namespace ii {
-void spawn_super_boss(SimInterface& sim, std::uint32_t players, std::uint32_t cycle) {
-  auto h = sim.create_legacy(std::make_unique<SuperBoss>(sim, players, cycle));
+void spawn_super_boss(SimInterface& sim, std::uint32_t cycle) {
+  auto h = sim.create_legacy(std::make_unique<SuperBoss>(sim, cycle));
   h.add(legacy_collision(/* bounding width */ 640, h));
   h.add(Enemy{.threat_value = 100,
-              .boss_score_reward = calculate_boss_score(SimInterface::kBoss3A, players, cycle)});
+              .boss_score_reward =
+                  calculate_boss_score(SimInterface::kBoss3A, sim.player_count(), cycle)});
+  h.add(Health{
+      .hp = calculate_boss_hp(kSbBaseHp, sim.player_count(), cycle),
+      .hit_sound0 = std::nullopt,
+      .hit_sound1 = ii::sound::kEnemyShatter,
+      .destroy_sound = std::nullopt,
+      .damage_transform = &scale_boss_damage,
+      .on_hit = make_legacy_boss_on_hit(h, true),
+      .on_destroy = make_legacy_boss_on_destroy(h),
+  });
 }
 }  // namespace ii

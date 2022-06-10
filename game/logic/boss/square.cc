@@ -18,11 +18,10 @@ const glm::vec4 c2 = colour_hue360(260, .3f);
 
 class BigSquareBoss : public Boss {
 public:
-  BigSquareBoss(ii::SimInterface& sim, std::uint32_t players, std::uint32_t cycle);
+  BigSquareBoss(ii::SimInterface& sim);
 
   void update() override;
   void render() const override;
-  std::uint32_t get_damage(std::uint32_t damage, bool magic) override;
 
 private:
   vec2 dir_;
@@ -35,13 +34,10 @@ private:
   Player* attack_player_ = nullptr;
 };
 
-BigSquareBoss::BigSquareBoss(ii::SimInterface& sim, std::uint32_t players, std::uint32_t cycle)
+BigSquareBoss::BigSquareBoss(ii::SimInterface& sim)
 : Boss{sim,
        {ii::kSimDimensions.x * fixed_c::hundredth * 75, ii::kSimDimensions.y * 2},
-       ii::SimInterface::kBoss1A,
-       kBsbBaseHp,
-       players,
-       cycle}
+       ii::SimInterface::kBoss1A}
 , dir_{0, -1}
 , timer_{kBsbTimer * 6} {
   add_new_shape<ii::Polygon>(vec2{0}, 160, 4, c0, 0);
@@ -105,7 +101,7 @@ void BigSquareBoss::update() {
     ++spawn_timer_;
     auto t = kBsbSTimer;
     t -= std::min(t, sim().alive_players() * 10);
-    t /= (is_hp_low() ? 2 : 1);
+    t /= (handle().get<ii::Health>()->is_hp_low() ? 2 : 1);
     if (spawn_timer_ >= t) {
       spawn_timer_ = 0;
       ++special_timer_;
@@ -150,17 +146,23 @@ void BigSquareBoss::render() const {
   }
 }
 
-std::uint32_t BigSquareBoss::get_damage(std::uint32_t damage, bool magic) {
-  return damage;
-}
-
 }  // namespace
 
 namespace ii {
-void spawn_big_square_boss(SimInterface& sim, std::uint32_t players, std::uint32_t cycle) {
-  auto h = sim.create_legacy(std::make_unique<BigSquareBoss>(sim, players, cycle));
+void spawn_big_square_boss(SimInterface& sim, std::uint32_t cycle) {
+  auto h = sim.create_legacy(std::make_unique<BigSquareBoss>(sim));
   h.add(legacy_collision(/* bounding width */ 640, h));
   h.add(Enemy{.threat_value = 100,
-              .boss_score_reward = calculate_boss_score(SimInterface::kBoss1A, players, cycle)});
+              .boss_score_reward =
+                  calculate_boss_score(SimInterface::kBoss1A, sim.player_count(), cycle)});
+  h.add(Health{
+      .hp = calculate_boss_hp(kBsbBaseHp, sim.player_count(), cycle),
+      .hit_sound0 = std::nullopt,
+      .hit_sound1 = ii::sound::kEnemyShatter,
+      .destroy_sound = std::nullopt,
+      .damage_transform = &scale_boss_damage,
+      .on_hit = make_legacy_boss_on_hit(h, true),
+      .on_destroy = make_legacy_boss_on_destroy(h),
+  });
 }
 }  // namespace ii

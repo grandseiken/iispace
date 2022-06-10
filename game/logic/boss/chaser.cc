@@ -74,12 +74,11 @@ const std::uint32_t ONE_PT_ONE_FIVE_intLookup[128] = {
 class ChaserBoss : public Boss {
 public:
   static constexpr std::uint32_t kTimer = 60;
-  ChaserBoss(ii::SimInterface& sim, std::uint32_t players, std::uint32_t cycle, std::uint32_t split,
-             const vec2& position, std::uint32_t time, std::uint32_t stagger);
+  ChaserBoss(ii::SimInterface& sim, std::uint32_t cycle, std::uint32_t split, const vec2& position,
+             std::uint32_t time, std::uint32_t stagger);
 
   void update() override;
   void render() const override;
-  std::uint32_t get_damage(std::uint32_t damage, bool magic) override;
   void on_destroy() override;
 
   static bool has_counted_;
@@ -91,7 +90,6 @@ private:
   vec2 dir_{0};
   vec2 last_dir_{0};
 
-  std::uint32_t players_ = 0;
   std::uint32_t cycle_ = 0;
   std::uint32_t split_ = 0;
 
@@ -104,32 +102,36 @@ std::uint32_t ChaserBoss::count_;
 bool ChaserBoss::has_counted_;
 std::uint32_t ChaserBoss::shared_hp_;
 
-ChaserBoss*
-spawn_chaser_boss_internal(ii::SimInterface& sim, std::uint32_t players, std::uint32_t cycle,
-                           std::uint32_t split = 0, const vec2& position = vec2{0},
-                           std::uint32_t time = ChaserBoss::kTimer, std::uint32_t stagger = 0) {
-  auto u = std::make_unique<ChaserBoss>(sim, players, cycle, split, position, time, stagger);
+ChaserBoss* spawn_chaser_boss_internal(ii::SimInterface& sim, std::uint32_t cycle,
+                                       std::uint32_t split = 0, const vec2& position = vec2{0},
+                                       std::uint32_t time = ChaserBoss::kTimer,
+                                       std::uint32_t stagger = 0) {
+  auto u = std::make_unique<ChaserBoss>(sim, cycle, split, position, time, stagger);
   auto p = u.get();
   auto h = sim.create_legacy(std::move(u));
   h.add(
       ii::legacy_collision(/* bounding width */ 10 * ONE_AND_HALF_lookup[kCbMaxSplit - split], h));
   h.add(ii::Enemy{.threat_value = 100});
+  h.add(ii::Health{
+      .hp = ii::calculate_boss_hp(
+          1 + kCbBaseHp / (fixed_c::half + HP_REDUCE_POWER_lookup[split]).to_int(),
+          sim.player_count(), cycle),
+      .hit_sound0 = std::nullopt,
+      .hit_sound1 = ii::sound::kEnemyShatter,
+      .destroy_sound = std::nullopt,
+      .damage_transform = &ii::scale_boss_damage,
+      .on_hit = ii::make_legacy_boss_on_hit(h, split <= 1),
+      .on_destroy = ii::make_legacy_boss_on_destroy(h),
+  });
   return p;
 }
 
-ChaserBoss::ChaserBoss(ii::SimInterface& sim, std::uint32_t players, std::uint32_t cycle,
-                       std::uint32_t split, const vec2& position, std::uint32_t time,
-                       std::uint32_t stagger)
-: Boss{sim,
-       !split ? vec2{ii::kSimDimensions.x / 2, -ii::kSimDimensions.y / 2} : position,
-       ii::SimInterface::kBoss1C,
-       1 + kCbBaseHp / (fixed_c::half + HP_REDUCE_POWER_lookup[split]).to_int(),
-       players,
-       cycle,
-       split <= 1}
+ChaserBoss::ChaserBoss(ii::SimInterface& sim, std::uint32_t cycle, std::uint32_t split,
+                       const vec2& position, std::uint32_t time, std::uint32_t stagger)
+: Boss{sim, !split ? vec2{ii::kSimDimensions.x / 2, -ii::kSimDimensions.y / 2} : position,
+       ii::SimInterface::kBoss1C}
 , on_screen_{split != 0}
 , timer_{time}
-, players_{players}
 , cycle_{cycle}
 , split_{split}
 , stagger_{stagger} {
@@ -305,19 +307,16 @@ void ChaserBoss::render() const {
     std::uint32_t hp = 0;
     for (std::uint32_t i = 0; i < 8; ++i) {
       hp = 2 * hp +
-          CalculateHP(1 + kCbBaseHp / (fixed_c::half + HP_REDUCE_POWER_lookup[7 - i]).to_int(),
-                      players_, cycle_);
+          ii::calculate_boss_hp(
+               1 + kCbBaseHp / (fixed_c::half + HP_REDUCE_POWER_lookup[7 - i]).to_int(),
+               sim().player_count(), cycle_);
       hp_lookup.push_back(hp);
     }
   }
-  shared_hp_ += (split_ == 7 ? 0 : 2 * hp_lookup[6 - split_]) + get_remaining_hp() * 30;
+  shared_hp_ += (split_ == 7 ? 0 : 2 * hp_lookup[6 - split_]) + handle().get<ii::Health>()->hp;
   if (on_screen_) {
     sim().render_hp_bar(static_cast<float>(shared_hp_) / hp_lookup[kCbMaxSplit]);
   }
-}
-
-std::uint32_t ChaserBoss::get_damage(std::uint32_t damage, bool magic) {
-  return damage;
 }
 
 void ChaserBoss::on_destroy() {
@@ -326,7 +325,7 @@ void ChaserBoss::on_destroy() {
     for (std::uint32_t i = 0; i < 2; ++i) {
       vec2 d = from_polar(i * fixed_c::pi + shape().rotation(),
                           fixed{8 * ONE_PT_TWO_lookup[kCbMaxSplit - 1 - split_]});
-      auto* s = spawn_chaser_boss_internal(sim(), players_, cycle_, split_ + 1, shape().centre + d,
+      auto* s = spawn_chaser_boss_internal(sim(), cycle_, split_ + 1, shape().centre + d,
                                            (i + 1) * kTimer / 2,
                                            sim().random(split_ + 1 == 1       ? 2
                                                             : split_ + 1 == 2 ? 4
@@ -347,7 +346,7 @@ void ChaserBoss::on_destroy() {
       set_killed();
       sim().rumble_all(25);
       handle().get<ii::Enemy>()->boss_score_reward =
-          calculate_boss_score(ii::SimInterface::kBoss1C, players_, cycle_);
+          calculate_boss_score(ii::SimInterface::kBoss1C, sim().player_count(), cycle_);
       std::uint32_t n = 1;
       for (std::uint32_t i = 0; i < 16; ++i) {
         vec2 v = from_polar(sim().random_fixed() * (2 * fixed_c::pi),
@@ -382,8 +381,8 @@ void ChaserBoss::on_destroy() {
 }  // namespace
 
 namespace ii {
-void spawn_chaser_boss(SimInterface& sim, std::uint32_t players, std::uint32_t cycle) {
-  spawn_chaser_boss_internal(sim, players, cycle);
+void spawn_chaser_boss(SimInterface& sim, std::uint32_t cycle) {
+  spawn_chaser_boss_internal(sim, cycle);
 }
 
 void chaser_boss_begin_frame() {
