@@ -49,6 +49,7 @@ public:
   const initial_conditions& conditions() const;
   ecs::EntityIndex& index();
   const ecs::EntityIndex& index() const;
+  std::uint64_t tick_count() const;
 
   std::uint32_t random(std::uint32_t max);
   fixed random_fixed();

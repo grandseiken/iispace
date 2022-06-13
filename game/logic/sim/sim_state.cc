@@ -168,6 +168,7 @@ void SimState::update() {
       game_over_ = true;
     }
   }
+  ++internals_->tick_count;
 }
 
 void SimState::render() const {

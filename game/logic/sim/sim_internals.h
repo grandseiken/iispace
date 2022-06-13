@@ -23,8 +23,9 @@ struct SimInternals {
 
   // Internal sim data.
   initial_conditions conditions;
-  std::uint32_t lives = 0;
   ecs::EntityIndex index;
+  std::uint64_t tick_count = 0;
+  std::uint32_t lives = 0;
   std::vector<particle> particles;
 
   struct collision_entry {

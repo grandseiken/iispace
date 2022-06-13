@@ -160,6 +160,38 @@ struct ngon {
   }
 };
 
+struct box {
+  std::uint32_t width = 0;
+  std::uint32_t height = 0;
+  glm::vec4 colour{0.f};
+  shape_flag flags = shape_flag::kNone;
+
+  constexpr bool check_point(const vec2& v, shape_flag mask) const {
+    return +flags && (!mask || +(flags & mask)) && abs(v.x) < ::fixed{width} &&
+        abs(v.y) < ::fixed{height};
+  }
+
+  template <IterTag I>
+  requires std::same_as<I, iterate_lines_t>
+  void iterate(I, const transform& t, const LineFunction auto& f) {
+    auto a = t.translate({width, height}).v;
+    auto b = t.translate({-width, height}).v;
+    auto c = t.translate({-width, -height}).v;
+    auto d = t.translate({width, -height}).v;
+
+    std::invoke(f, a, b, colour);
+    std::invoke(f, b, c, colour);
+    std::invoke(f, c, d, colour);
+    std::invoke(f, d, a, colour);
+  }
+
+  template <IterTag I>
+  requires std::same_as<I, iterate_centres_t>
+  void iterate(I, const transform& t, const PointFunction auto& f) {
+    std::invoke(f, t.v, colour);
+  }
+};
+
 //////////////////////////////////////////////////////////////////////////////////
 // Value-expresssions.
 //////////////////////////////////////////////////////////////////////////////////

@@ -19,6 +19,7 @@ inline constexpr std::int64_t fixed_abs(std::int64_t a) {
 
 class fixed {
 public:
+  // Shouldn't actually be public, but allows using as a non-type template parameter.
   std::int64_t value_;
 
   explicit fixed() = default;
@@ -93,6 +94,7 @@ public:
   static constexpr bool has_quiet_NaN = false;
   static constexpr bool has_signaling_NaN = false;
   static constexpr bool round_style = round_toward_zero;
+  // Not actually true, but makes this work better with glm.
   static constexpr bool is_iec559 = true;
   static constexpr bool is_bounded = true;
   static constexpr bool is_modulo = false;

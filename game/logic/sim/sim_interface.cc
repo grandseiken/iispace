@@ -34,6 +34,10 @@ const ecs::EntityIndex& SimInterface::index() const {
   return internals_->index;
 }
 
+std::uint64_t SimInterface::tick_count() const {
+  return internals_->tick_count;
+}
+
 std::uint32_t SimInterface::random(std::uint32_t max) {
   return internals_->random_engine() % max;
 }

@@ -60,6 +60,7 @@ struct Update : ecs::component {
 };
 
 struct Render : ecs::component {
+  std::optional<glm::vec4> colour_override;
   std::function<void(const SimInterface&, ecs::const_handle)> render;
 };
 

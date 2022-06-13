@@ -1,16 +1,10 @@
 #include "game/logic/enemy.h"
+#include "game/common/functional.h"
 #include "game/logic/player.h"
 #include "game/logic/ship/shape_v2.h"
 #include <algorithm>
 
 namespace {
-const std::uint32_t kChaserTime = 60;
-const fixed kChaserSpeed = 4;
-
-const fixed kSquareSpeed = 2 + 1_fx / 4;
-
-const std::uint32_t kWallTimer = 80;
-const fixed kWallSpeed = 1 + 1_fx / 4;
 
 const std::uint32_t kFollowHubTimer = 170;
 const fixed kFollowHubSpeed = 1;
@@ -21,41 +15,6 @@ const fixed kShielderSpeed = 2;
 const std::uint32_t kTractorTimer = 50;
 const fixed kTractorSpeed = 6 * (1_fx / 10);
 const fixed kTractorBeamSpeed = 2 + 1_fx / 2;
-
-class Chaser : public Enemy {
-public:
-  Chaser(ii::SimInterface& sim, const vec2& position);
-  void update() override;
-
-private:
-  bool move_ = false;
-  std::uint32_t timer_ = 0;
-  vec2 dir_{0};
-};
-
-class Square : public Enemy {
-public:
-  Square(ii::SimInterface& sim, const vec2& position, fixed rotation = fixed_c::pi / 2);
-  void update() override;
-  void render() const override;
-
-private:
-  vec2 dir_{0};
-  std::uint32_t timer_ = 0;
-};
-
-class Wall : public Enemy {
-public:
-  Wall(ii::SimInterface& sim, const vec2& position, bool rdir);
-  void update() override;
-  void on_destroy(bool bomb) override;
-
-private:
-  vec2 dir_{0};
-  std::uint32_t timer_ = 0;
-  bool rotate_ = false;
-  bool rdir_ = false;
-};
 
 class FollowHub : public Enemy {
 public:
@@ -99,159 +58,6 @@ private:
   bool spinning_ = false;
   ii::SimInterface::ship_list players_;
 };
-
-Chaser::Chaser(ii::SimInterface& sim, const vec2& position)
-: Enemy{sim, position, ii::ship_flag::kNone}, timer_{kChaserTime} {
-  add_new_shape<ii::Polygon>(vec2{0}, 10, 4, colour_hue360(210, .6f), 0,
-                             ii::shape_flag::kDangerous | ii::shape_flag::kVulnerable,
-                             ii::Polygon::T::kPolygram);
-}
-
-void Chaser::update() {
-  bool before = is_on_screen();
-
-  if (timer_) {
-    timer_--;
-  }
-  if (!timer_) {
-    timer_ = kChaserTime * (move_ + 1);
-    move_ = !move_;
-    if (move_) {
-      dir_ = kChaserSpeed * sim().nearest_player_direction(shape().centre);
-    }
-  }
-  if (move_) {
-    move(dir_);
-    if (!before && is_on_screen()) {
-      move_ = false;
-    }
-  } else {
-    shape().rotate(fixed_c::tenth);
-  }
-}
-
-Square::Square(ii::SimInterface& sim, const vec2& position, fixed rotation)
-: Enemy{sim, position, ii::ship_flag::kWall}, timer_{sim.random(80) + 40} {
-  add_new_shape<ii::Box>(vec2{0}, 10, 10, colour_hue360(120, .6f), 0,
-                         ii::shape_flag::kDangerous | ii::shape_flag::kVulnerable);
-  dir_ = from_polar(rotation, 1_fx);
-}
-
-void Square::update() {
-  if (is_on_screen() && sim().get_non_wall_count() == 0) {
-    if (timer_) {
-      timer_--;
-    }
-  } else {
-    timer_ = sim().random(80) + 40;
-  }
-
-  if (!timer_) {
-    damage(4, false, 0);
-  }
-
-  const vec2& pos = shape().centre;
-  if (pos.x < 0 && dir_.x <= 0) {
-    dir_.x = -dir_.x;
-    if (dir_.x <= 0) {
-      dir_.x = 1;
-    }
-  }
-  if (pos.y < 0 && dir_.y <= 0) {
-    dir_.y = -dir_.y;
-    if (dir_.y <= 0) {
-      dir_.y = 1;
-    }
-  }
-
-  if (pos.x > ii::kSimDimensions.x && dir_.x >= 0) {
-    dir_.x = -dir_.x;
-    if (dir_.x >= 0) {
-      dir_.x = -1;
-    }
-  }
-  if (pos.y > ii::kSimDimensions.y && dir_.y >= 0) {
-    dir_.y = -dir_.y;
-    if (dir_.y >= 0) {
-      dir_.y = -1;
-    }
-  }
-  dir_ = normalise(dir_);
-  move(dir_ * kSquareSpeed);
-  shape().set_rotation(angle(dir_));
-}
-
-void Square::render() const {
-  if (sim().get_non_wall_count() == 0 && (timer_ % 4 == 1 || timer_ % 4 == 2)) {
-    render_with_colour(colour_hue(0.f, .2f, 0.f));
-  } else {
-    Enemy::render();
-  }
-}
-
-Wall::Wall(ii::SimInterface& sim, const vec2& position, bool rdir)
-: Enemy{sim, position, ii::ship_flag::kWall}, dir_{0, 1}, rdir_{rdir} {
-  add_new_shape<ii::Box>(vec2{0}, 10, 40, colour_hue360(120, .5f, .6f), 0,
-                         ii::shape_flag::kDangerous | ii::shape_flag::kVulnerable);
-}
-
-void Wall::update() {
-  auto count = sim().get_non_wall_count();
-  if (!count && timer_ % 8 < 2) {
-    auto hp = handle().get<ii::Health>()->hp;
-    if (hp > 2) {
-      sim().play_sound(ii::sound::kEnemySpawn, 1.f, 0.f);
-    }
-    damage(std::max(2u, hp) - 2, false, 0);
-  }
-
-  if (rotate_) {
-    auto d =
-        rotate(dir_, (rdir_ ? -1 : 1) * (kWallTimer - timer_) * fixed_c::pi / (4 * kWallTimer));
-
-    shape().set_rotation(angle(d));
-    if (!--timer_) {
-      rotate_ = false;
-      dir_ = rotate(dir_, rdir_ ? -fixed_c::pi / 4 : fixed_c::pi / 4);
-    }
-    return;
-  } else {
-    if (++timer_ > kWallTimer * 6) {
-      if (is_on_screen()) {
-        timer_ = kWallTimer;
-        rotate_ = true;
-      } else {
-        timer_ = 0;
-      }
-    }
-  }
-
-  vec2 pos = shape().centre;
-  if ((pos.x < 0 && dir_.x < -fixed_c::hundredth) || (pos.y < 0 && dir_.y < -fixed_c::hundredth) ||
-      (pos.x > ii::kSimDimensions.x && dir_.x > fixed_c::hundredth) ||
-      (pos.y > ii::kSimDimensions.y && dir_.y > fixed_c::hundredth)) {
-    dir_ = -normalise(dir_);
-  }
-
-  move(dir_ * kWallSpeed);
-  shape().set_rotation(angle(dir_));
-}
-
-void Wall::on_destroy(bool bomb) {
-  if (bomb) {
-    return;
-  }
-  auto d = rotate(dir_, fixed_c::pi / 2);
-  auto v = shape().centre + d * 10 * 3;
-  if (v.x >= 0 && v.x <= ii::kSimDimensions.x && v.y >= 0 && v.y <= ii::kSimDimensions.y) {
-    ii::spawn_square(sim(), v, shape().rotation());
-  }
-
-  v = shape().centre - d * 10 * 3;
-  if (v.x >= 0 && v.x <= ii::kSimDimensions.x && v.y >= 0 && v.y <= ii::kSimDimensions.y) {
-    ii::spawn_square(sim(), v, shape().rotation());
-  }
-}
 
 FollowHub::FollowHub(ii::SimInterface& sim, const vec2& position, bool powera, bool powerb)
 : Enemy{sim, position, ii::ship_flag::kNone}, powera_{powera}, powerb_{powerb} {
@@ -480,17 +286,20 @@ namespace {
 template <shape::ShapeNode S>
 using transform_shape = shape::translate_p<0, shape::rotate_p<1, S>>;
 std::tuple<vec2, fixed> transform_parameters(ecs::const_handle h) {
-  auto& c = *h.get<Transform>();
-  return {c.centre, c.rotation};
+  auto& transform = *h.get<Transform>();
+  return {transform.centre, transform.rotation};
 }
 
 template <shape::ShapeNode S>
 void render_enemy(const SimInterface& sim, ecs::const_handle h) {
-  const auto& t = *h.get<Transform>();
-  bool hit = h.has<Health>() && h.get<Health>()->hit_timer;
+  auto c_override = h.get<Render>()->colour_override;
+  if (!c_override && h.has<Health>() && h.get<Health>()->hit_timer) {
+    c_override = glm::vec4{1.f};
+  }
   transform_shape<S>::iterate(shape::iterate_lines, transform_parameters(h), {},
                               [&](const vec2& a, const vec2& b, const glm::vec4& c) {
-                                sim.render_line(to_float(a), to_float(b), hit ? glm::vec4{1.f} : c);
+                                sim.render_line(to_float(a), to_float(b),
+                                                c_override ? *c_override : c);
                               });
 }
 
@@ -503,8 +312,7 @@ void explode_on_destroy(SimInterface& sim, ecs::const_handle h, damage_type) {
 
 template <shape::ShapeNode S>
 bool ship_check_point(ecs::const_handle h, const vec2& v, shape_flag mask) {
-  const auto& t = *h.get<Transform>();
-  return transform_shape<S>::check_point(std::tuple{t.centre, t.rotation}, v, mask);
+  return transform_shape<S>::check_point(transform_parameters(h), v, mask);
 }
 
 template <ecs::Component C>
@@ -513,12 +321,11 @@ void update_function(SimInterface& sim, ecs::handle h) {
 }
 
 template <ecs::Component Logic>
-ecs::handle
-create_enemy(SimInterface& sim, std::uint32_t threat_value, std::uint32_t score_reward) {
+ecs::handle create_enemy(SimInterface& sim, std::uint32_t threat_value, std::uint32_t score_reward,
+                         ship_flag flags = ship_flag::kNone) {
   auto h = sim.index().create();
-  h.add(ShipFlag{.flags = ship_flag::kEnemy});
+  h.add(ShipFlag{.flags = ship_flag::kEnemy | flags});
   h.add(LegacyShip{.ship = std::make_unique<ShipForwarder>(sim, h)});
-  h.add(Logic{});
   h.add(Update{.update = &update_function<Logic>});
   h.add(Enemy{.threat_value = threat_value, .score_reward = score_reward});
   return h;
@@ -532,6 +339,9 @@ void add_enemy_shape(ecs::handle h, std::uint32_t bounding_width, const vec2& po
   h.add(Render{.render = &render_enemy<Shape>});
 }
 
+}  // namespace
+
+namespace {
 using follow_shape =
     shape::shape<shape::ngon{.radius = 10,
                              .sides = 4,
@@ -552,46 +362,39 @@ struct Follow : ecs::component {
   IShip* target = nullptr;
 
   void update(SimInterface& sim, ecs::handle h) {
-    auto& t = *h.get<Transform>();
-    t.rotate(fixed_c::tenth);
+    auto& transform = *h.get<Transform>();
+    transform.rotate(fixed_c::tenth);
     if (!sim.alive_players()) {
       return;
     }
 
     ++timer;
     if (!target || timer > kTime) {
-      target = sim.nearest_player(t.centre);
+      target = sim.nearest_player(transform.centre);
       timer = 0;
     }
-    auto d = target->position() - t.centre;
-    t.move(normalise(d) * kSpeed);
+    auto d = target->position() - transform.centre;
+    transform.move(normalise(d) * kSpeed);
   }
 };
 
 void big_follow_on_destroy(SimInterface& sim, ecs::const_handle h, damage_type type) {
-  explode_on_destroy<big_follow_shape>(sim, h, type);
   if (type == damage_type::kBomb) {
     return;
   }
-  auto& t = *h.get<Transform>();
-  vec2 d = rotate(vec2{10, 0}, t.rotation);
+  auto& transform = *h.get<Transform>();
+  vec2 d = rotate(vec2{10, 0}, transform.rotation);
   for (std::uint32_t i = 0; i < 3; ++i) {
-    spawn_follow(sim, t.centre + d, h.get<Enemy>()->score_reward != 0);
+    spawn_follow(sim, transform.centre + d, h.get<Enemy>()->score_reward != 0);
     d = rotate(d, 2 * fixed_c::pi / 3);
   }
 }
-
 }  // namespace
-
-void legacy_enemy_on_destroy(SimInterface&, ecs::handle h, damage_type type) {
-  auto enemy = static_cast<::Enemy*>(h.get<LegacyShip>()->ship.get());
-  enemy->explosion();
-  enemy->on_destroy(type == damage_type::kBomb);
-}
 
 void spawn_follow(SimInterface& sim, const vec2& position, bool has_score, fixed rotation) {
   auto h = create_enemy<Follow>(sim, 1, has_score ? 15u : 0);
   add_enemy_shape<follow_shape>(h, 10, position, rotation);
+  h.add(Follow{});
   h.add(Health{.hp = 1,
                .destroy_sound = ii::sound::kEnemyShatter,
                .on_destroy = &explode_on_destroy<follow_shape>});
@@ -600,30 +403,228 @@ void spawn_follow(SimInterface& sim, const vec2& position, bool has_score, fixed
 void spawn_big_follow(SimInterface& sim, const vec2& position, bool has_score) {
   auto h = create_enemy<Follow>(sim, 3, has_score ? 20u : 0);
   add_enemy_shape<big_follow_shape>(h, 10, position);
-  h.add(Health{
-      .hp = 3, .destroy_sound = ii::sound::kPlayerDestroy, .on_destroy = &big_follow_on_destroy});
+  h.add(Follow{});
+  h.add(Health{.hp = 3,
+               .destroy_sound = ii::sound::kPlayerDestroy,
+               .on_destroy =
+                   sequence<&explode_on_destroy<big_follow_shape>, &big_follow_on_destroy>});
 }
+
+namespace {
+using chaser_shape =
+    shape::shape<shape::ngon{.radius = 10,
+                             .sides = 4,
+                             .colour = colour_hue360(210, .6f),
+                             .style = shape::ngon::style::kPolygram,
+                             .flags = shape_flag::kDangerous | shape_flag::kVulnerable}>;
+
+struct Chaser : ecs::component {
+  static constexpr std::uint32_t kTime = 60;
+  static constexpr fixed kSpeed = 4;
+
+  bool move = false;
+  std::uint32_t timer = kTime;
+  vec2 dir{0};
+
+  void update(SimInterface& sim, ecs::handle h) {
+    auto& transform = *h.get<Transform>();
+    bool before = sim.is_on_screen(transform.centre);
+
+    if (timer) {
+      --timer;
+    }
+    if (!timer) {
+      timer = kTime * (move + 1);
+      move = !move;
+      if (move) {
+        dir = kSpeed * sim.nearest_player_direction(transform.centre);
+      }
+    }
+    if (move) {
+      transform.move(dir);
+      if (!before && sim.is_on_screen(transform.centre)) {
+        move = false;
+      }
+    } else {
+      transform.rotate(fixed_c::tenth);
+    }
+  }
+};
+}  // namespace
 
 void spawn_chaser(SimInterface& sim, const vec2& position) {
-  auto h = sim.create_legacy(std::make_unique<Chaser>(sim, position));
-  h.add(legacy_collision(/* bounding width */ 10));
-  h.add(Enemy{.threat_value = 2, .score_reward = 30});
-  h.add(Health{
-      .hp = 2, .destroy_sound = ii::sound::kEnemyShatter, .on_destroy = &legacy_enemy_on_destroy});
+  auto h = create_enemy<Chaser>(sim, 2, 30);
+  add_enemy_shape<chaser_shape>(h, 10, position);
+  h.add(Chaser{});
+  h.add(Health{.hp = 2,
+               .destroy_sound = ii::sound::kEnemyShatter,
+               .on_destroy = &explode_on_destroy<chaser_shape>});
 }
 
-void spawn_square(SimInterface& sim, const vec2& position, fixed rotation) {
-  auto h = sim.create_legacy(std::make_unique<Square>(sim, position, rotation));
-  h.add(legacy_collision(/* bounding width */ 15));
-  h.add(Enemy{.threat_value = 2, .score_reward = 25});
-  h.add(Health{.hp = 4, .on_destroy = &legacy_enemy_on_destroy});
+namespace {
+using square_shape =
+    shape::shape<shape::box{.width = 10,
+                            .height = 10,
+                            .colour = colour_hue360(120, .6f),
+                            .flags = shape_flag::kDangerous | shape_flag::kVulnerable}>;
+
+struct Square : ecs::component {
+  static constexpr fixed kSpeed = 2 + 1_fx / 4;
+
+  vec2 dir{0};
+  std::uint32_t timer = 0;
+
+  Square(SimInterface& sim, fixed dir_angle)
+  : dir{from_polar(dir_angle, 1_fx)}, timer{sim.random(80) + 40} {}
+
+  void update(SimInterface& sim, ecs::handle h) {
+    auto& transform = *h.get<Transform>();
+    if (sim.is_on_screen(transform.centre) && !sim.get_non_wall_count()) {
+      if (timer) {
+        --timer;
+      }
+    } else {
+      timer = sim.random(80) + 40;
+    }
+
+    if (!timer) {
+      h.get<Health>()->damage(sim, h, 4, damage_type::kNone, std::nullopt);
+    }
+
+    const vec2& v = transform.centre;
+    if (v.x < 0 && dir.x <= 0) {
+      dir.x = -dir.x;
+      if (dir.x <= 0) {
+        dir.x = 1;
+      }
+    }
+    if (v.y < 0 && dir.y <= 0) {
+      dir.y = -dir.y;
+      if (dir.y <= 0) {
+        dir.y = 1;
+      }
+    }
+    if (v.x > ii::kSimDimensions.x && dir.x >= 0) {
+      dir.x = -dir.x;
+      if (dir.x >= 0) {
+        dir.x = -1;
+      }
+    }
+    if (v.y > ii::kSimDimensions.y && dir.y >= 0) {
+      dir.y = -dir.y;
+      if (dir.y >= 0) {
+        dir.y = -1;
+      }
+    }
+    dir = normalise(dir);
+    transform.move(dir * kSpeed);
+    transform.set_rotation(angle(dir));
+
+    if ((timer % 4 == 1 || timer % 4 == 2) && !sim.get_non_wall_count()) {
+      h.get<Render>()->colour_override = colour_hue(0.f, .2f, 0.f);
+    } else {
+      h.get<Render>()->colour_override.reset();
+    }
+  }
+};
+}  // namespace
+
+void spawn_square(SimInterface& sim, const vec2& position, fixed dir_angle) {
+  auto h = create_enemy<Square>(sim, 2, 25, ship_flag::kWall);
+  add_enemy_shape<square_shape>(h, 15, position);
+  h.add(Square{sim, dir_angle});
+  h.add(Health{.hp = 4, .on_destroy = &explode_on_destroy<square_shape>});
 }
+
+namespace {
+using wall_shape =
+    shape::shape<shape::box{.width = 10,
+                            .height = 40,
+                            .colour = colour_hue360(120, .5f, .6f),
+                            .flags = shape_flag::kDangerous | shape_flag::kVulnerable}>;
+
+struct Wall : ecs::component {
+  static constexpr std::uint32_t kTimer = 80;
+  static constexpr fixed kSpeed = 1 + 1_fx / 4;
+
+  vec2 dir{0, 1};
+  std::uint32_t timer = 0;
+  bool is_rotating = false;
+  bool rdir = false;
+
+  Wall(bool rdir) : rdir{rdir} {}
+
+  void update(SimInterface& sim, ecs::handle h) {
+    if (!sim.get_non_wall_count() && timer % 8 < 2) {
+      auto& health = *h.get<Health>();
+      if (health.hp > 2) {
+        sim.play_sound(sound::kEnemySpawn, 1.f, 0.f);
+      }
+      health.damage(sim, h, std::max(2u, health.hp) - 2, damage_type::kNone, std::nullopt);
+    }
+
+    auto& transform = *h.get<Transform>();
+    if (is_rotating) {
+      auto d = rotate(dir, (rdir ? -1 : 1) * (kTimer - timer) * fixed_c::pi / (4 * kTimer));
+
+      transform.set_rotation(angle(d));
+      if (!--timer) {
+        is_rotating = false;
+        dir = rotate(dir, rdir ? -fixed_c::pi / 4 : fixed_c::pi / 4);
+      }
+      return;
+    }
+    if (++timer > kTimer * 6) {
+      if (sim.is_on_screen(transform.centre)) {
+        timer = kTimer;
+        is_rotating = true;
+      } else {
+        timer = 0;
+      }
+    }
+
+    const auto& v = transform.centre;
+    if ((v.x < 0 && dir.x < -fixed_c::hundredth) || (v.y < 0 && dir.y < -fixed_c::hundredth) ||
+        (v.x > ii::kSimDimensions.x && dir.x > fixed_c::hundredth) ||
+        (v.y > ii::kSimDimensions.y && dir.y > fixed_c::hundredth)) {
+      dir = -normalise(dir);
+    }
+
+    transform.move(dir * kSpeed);
+    transform.set_rotation(angle(dir));
+  }
+};
+
+void wall_on_destroy(SimInterface& sim, ecs::const_handle h, damage_type type) {
+  if (type == damage_type::kBomb) {
+    return;
+  }
+
+  const auto& transform = *h.get<Transform>();
+  auto d = rotate(h.get<Wall>()->dir, fixed_c::pi / 2);
+  auto v = transform.centre + d * 10 * 3;
+  if (sim.is_on_screen(v)) {
+    spawn_square(sim, v, transform.rotation);
+  }
+  v = transform.centre - d * 10 * 3;
+  if (sim.is_on_screen(v)) {
+    spawn_square(sim, v, transform.rotation);
+  }
+}
+}  // namespace
 
 void spawn_wall(SimInterface& sim, const vec2& position, bool rdir) {
-  auto h = sim.create_legacy(std::make_unique<Wall>(sim, position, rdir));
-  h.add(legacy_collision(/* bounding width */ 50));
-  h.add(Enemy{.threat_value = 4, .score_reward = 20});
-  h.add(Health{.hp = 10, .on_destroy = &legacy_enemy_on_destroy});
+  auto h = create_enemy<Wall>(sim, 4, 20, ship_flag::kWall);
+  add_enemy_shape<wall_shape>(h, 50, position);
+  h.add(Wall{rdir});
+  h.add(
+      Health{.hp = 10, .on_destroy = sequence<&explode_on_destroy<wall_shape>, &wall_on_destroy>});
+}
+
+void legacy_enemy_on_destroy(SimInterface&, ecs::handle h, damage_type type) {
+  auto enemy = static_cast<::Enemy*>(h.get<LegacyShip>()->ship.get());
+  enemy->explosion();
+  enemy->on_destroy(type == damage_type::kBomb);
 }
 
 void spawn_follow_hub(SimInterface& sim, const vec2& position, bool power_a, bool power_b) {
