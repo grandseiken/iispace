@@ -49,7 +49,7 @@ struct get_handle_parameter<type_list<Args...>>
 };
 
 template <typename Arg, typename H>
-constexpr auto can_synthesize_call_parameter(H handle) {
+constexpr bool can_synthesize_call_parameter(H handle) {
   if constexpr (is_handle_parameter<Arg> ||
                 (is_component_parameter<Arg> && is_pointer_component_parameter<Arg>)) {
     return true;
@@ -59,7 +59,7 @@ constexpr auto can_synthesize_call_parameter(H handle) {
 }
 
 template <typename Arg, typename H>
-constexpr auto synthesize_call_parameter(H handle) {
+constexpr auto&& synthesize_call_parameter(H handle) {
   if constexpr (is_handle_parameter<Arg>) {
     return handle;
   } else if constexpr (is_component_parameter<Arg> && is_pointer_component_parameter<Arg>) {
@@ -103,9 +103,9 @@ struct call_impl {
 }  // namespace detail
 
 template <function auto F>
-inline constexpr auto call = detail::call_impl<false, F>::value;
+inline constexpr auto call = detail::call_impl<false, unwrap<F>>::value;
 template <function auto F>
-inline constexpr auto call_if = detail::call_impl<true, F>::value;
+inline constexpr auto call_if = detail::call_impl<true, unwrap<F>>::value;
 
 }  // namespace ii::ecs
 

@@ -6,7 +6,6 @@
 #include <algorithm>
 
 namespace {
-
 const std::uint32_t kShielderTimer = 80;
 const fixed kShielderSpeed = 2;
 
@@ -320,9 +319,9 @@ struct Follow : ecs::component {
     transform.move(normalise(d) * kSpeed);
   }
 
-  static void on_destroy(const Follow& follow, const Enemy& enemy, const Transform& transform,
-                         SimInterface& sim, damage_type type) {
-    if (!follow.is_big_follow || type == damage_type::kBomb) {
+  void on_destroy(const Enemy& enemy, const Transform& transform, SimInterface& sim,
+                  damage_type type) const {
+    if (!is_big_follow || type == damage_type::kBomb) {
       return;
     }
     vec2 d = rotate(vec2{10, 0}, transform.rotation);
@@ -522,12 +521,11 @@ struct Wall : ecs::component {
     transform.set_rotation(angle(dir));
   }
 
-  static void
-  on_destroy(const Wall& wall, const Transform& transform, SimInterface& sim, damage_type type) {
+  void on_destroy(const Transform& transform, SimInterface& sim, damage_type type) const {
     if (type == damage_type::kBomb) {
       return;
     }
-    auto d = rotate(wall.dir, fixed_c::pi / 2);
+    auto d = rotate(dir, fixed_c::pi / 2);
     auto v = transform.centre + d * 10 * 3;
     if (sim.is_on_screen(v)) {
       spawn_square(sim, v, transform.rotation);
@@ -607,12 +605,11 @@ struct FollowHub : ecs::component {
     transform.move(dir * kSpeed);
   }
 
-  static void
-  on_destroy(const FollowHub& c, const Transform& transform, SimInterface& sim, damage_type type) {
+  void on_destroy(const Transform& transform, SimInterface& sim, damage_type type) const {
     if (type == damage_type::kBomb) {
       return;
     }
-    if (c.power_b) {
+    if (power_b) {
       spawn_big_follow(sim, transform.centre, true);
     }
     spawn_chaser(sim, transform.centre);

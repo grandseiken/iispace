@@ -15,6 +15,7 @@ cc_library(
     "functional.h",
     "raw_ptr.h",
     "result.h",
+    "type_list.h",
   ],
   deps = ["@expected"],
   visibility = ["//visibility:public"],
