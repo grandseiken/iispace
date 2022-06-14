@@ -1,6 +1,7 @@
 #include "game/logic/enemy.h"
 #include "game/common/functional.h"
 #include "game/logic/player.h"
+#include "game/logic/ship/ecs_call.h"
 #include "game/logic/ship/shape_v2.h"
 #include <algorithm>
 
@@ -204,34 +205,41 @@ void Tractor::render() const {
 namespace ii {
 namespace {
 
-template <shape::ShapeNode S>
-using standard_transform = shape::translate_p<0, shape::rotate_p<1, S>>;
-std::tuple<vec2, fixed> transform_parameters(ecs::const_handle h) {
-  auto& transform = *h.get<Transform>();
-  return {transform.centre, transform.rotation};
+template <geom::ShapeNode S>
+using standard_transform = geom::translate_p<0, geom::rotate_p<1, S>>;
+
+template <ecs::Component Logic>
+auto transform_parameters(ecs::const_handle h) {
+  if constexpr (requires { &Logic::shape_parameters; }) {
+    return Logic::shape_parameters(h);
+  } else {
+    auto& transform = *h.get<Transform>();
+    return std::tuple<vec2, fixed>{transform.centre, transform.rotation};
+  }
 }
 
-template <shape::ShapeNode S>
+template <ecs::Component Logic, geom::ShapeNode S>
 void render_enemy(const SimInterface& sim, ecs::const_handle h) {
   auto c_override = h.get<Render>()->colour_override;
   if (!c_override && h.has<Health>() && h.get<Health>()->hit_timer) {
     c_override = glm::vec4{1.f};
   }
-  S::iterate(shape::iterate_lines, transform_parameters(h), {},
+
+  S::iterate(geom::iterate_lines, transform_parameters<Logic>(h), {},
              [&](const vec2& a, const vec2& b, const glm::vec4& c) {
                sim.render_line(to_float(a), to_float(b), c_override ? *c_override : c);
              });
 }
 
-template <shape::ShapeNode S>
-void explode_on_destroy(SimInterface& sim, ecs::const_handle h, damage_type) {
-  S::iterate(shape::iterate_centres, transform_parameters(h), {},
+template <ecs::Component Logic, geom::ShapeNode S>
+void explode_on_destroy(ecs::const_handle h, SimInterface& sim, damage_type) {
+  S::iterate(geom::iterate_centres, transform_parameters<Logic>(h), {},
              [&](const vec2& v, const glm::vec4& c) { sim.explosion(to_float(v), c); });
 }
 
-template <shape::ShapeNode S>
+template <ecs::Component Logic, geom::ShapeNode S>
 bool ship_check_point(ecs::const_handle h, const vec2& v, shape_flag mask) {
-  return S::check_point(transform_parameters(h), v, mask);
+  return S::check_point(transform_parameters<Logic>(h), v, mask);
 }
 
 template <ecs::Component C>
@@ -239,46 +247,62 @@ void update_function(SimInterface& sim, ecs::handle h) {
   h.get<C>()->update(sim, h);
 }
 
-template <ecs::Component Logic>
+template <ecs::Component Logic, geom::ShapeNode S = typename Logic::shape>
 ecs::handle create_enemy(SimInterface& sim, std::uint32_t threat_value, std::uint32_t score_reward,
-                         ship_flag flags = ship_flag::kNone) {
+                         std::uint32_t hp, const vec2& position, fixed rotation = 0,
+                         std::optional<sound> destroy_sound = std::nullopt) {
   auto h = sim.index().create();
-  h.add(ShipFlag{.flags = ship_flag::kEnemy | flags});
+
+  ship_flag flags = ship_flag::kEnemy;
+  if constexpr (requires { Logic::kShipFlags; }) {
+    flags |= Logic::kShipFlags;
+  }
+  h.add(ShipFlag{.flags = flags});
+
   h.add(LegacyShip{.ship = std::make_unique<ShipForwarder>(sim, h)});
   h.add(Update{.update = &update_function<Logic>});
   h.add(Enemy{.threat_value = threat_value, .score_reward = score_reward});
-  return h;
-}
-
-template <shape::ShapeNode Shape>
-void add_enemy_shape(ecs::handle h, std::uint32_t bounding_width, const vec2& position,
-                     fixed rotation = 0) {
+  h.add(Render{.render = &render_enemy<Logic, S>});
   h.add(Transform{.centre = position, .rotation = rotation});
-  h.add(Collision{.bounding_width = bounding_width, .check = &ship_check_point<Shape>});
-  h.add(Render{.render = &render_enemy<Shape>});
+  h.add(Collision{.bounding_width = Logic::kBoundingWidth, .check = &ship_check_point<Logic, S>});
+
+  auto on_destroy = &explode_on_destroy<Logic, S>;
+  if constexpr (requires { &Logic::on_destroy; }) {
+    on_destroy = sequence<&explode_on_destroy<Logic, S>, ecs::call<&Logic::on_destroy>>;
+  }
+  h.add(Health{.hp = hp,
+               .destroy_sound = destroy_sound ? *destroy_sound : Logic::kDestroySound,
+               .on_destroy = on_destroy});
+  return h;
 }
 
 }  // namespace
 
 namespace {
-using follow_shape =
-    standard_transform<shape::ngon<{.radius = 10,
-                                    .sides = 4,
-                                    .colour = colour_hue360(270, .6f),
-                                    .flags = shape_flag::kDangerous | shape_flag::kVulnerable}>>;
-
-using big_follow_shape =
-    standard_transform<shape::ngon<{.radius = 20,
-                                    .sides = 4,
-                                    .colour = colour_hue360(270, .6f),
-                                    .flags = shape_flag::kDangerous | shape_flag::kVulnerable}>>;
-
 struct Follow : ecs::component {
+  static constexpr std::uint32_t kBoundingWidth = 10;
+  static constexpr sound kDestroySound = sound::kEnemyShatter;
+
   static constexpr std::uint32_t kTime = 90;
   static constexpr fixed kSpeed = 2;
 
+  using small_shape =
+      geom::shape<geom::ngon{10, 4, colour_hue360(270, .6f), geom::ngon_style::kPolygon,
+                             shape_flag::kDangerous | shape_flag::kVulnerable}>;
+  using big_shape =
+      geom::shape<geom::ngon{20, 4, colour_hue360(270, .6f), geom::ngon_style::kPolygon,
+                             shape_flag::kDangerous | shape_flag::kVulnerable}>;
+  using shape = standard_transform<geom::conditional_p<2, big_shape, small_shape>>;
+
+  static std::tuple<vec2, fixed, bool> shape_parameters(ecs::const_handle h) {
+    auto& transform = *h.get<Transform>();
+    return {transform.centre, transform.rotation, h.get<Follow>()->is_big_follow};
+  }
+
+  Follow(bool is_big_follow) : is_big_follow{is_big_follow} {}
   std::uint32_t timer = 0;
   IShip* target = nullptr;
+  bool is_big_follow = false;
 
   void update(SimInterface& sim, ecs::handle h) {
     auto& transform = *h.get<Transform>();
@@ -295,51 +319,42 @@ struct Follow : ecs::component {
     auto d = target->position() - transform.centre;
     transform.move(normalise(d) * kSpeed);
   }
-};
 
-void big_follow_on_destroy(SimInterface& sim, ecs::const_handle h, damage_type type) {
-  if (type == damage_type::kBomb) {
-    return;
+  static void on_destroy(const Follow& follow, const Enemy& enemy, const Transform& transform,
+                         SimInterface& sim, damage_type type) {
+    if (!follow.is_big_follow || type == damage_type::kBomb) {
+      return;
+    }
+    vec2 d = rotate(vec2{10, 0}, transform.rotation);
+    for (std::uint32_t i = 0; i < 3; ++i) {
+      spawn_follow(sim, transform.centre + d, enemy.score_reward != 0);
+      d = rotate(d, 2 * fixed_c::pi / 3);
+    }
   }
-  auto& transform = *h.get<Transform>();
-  vec2 d = rotate(vec2{10, 0}, transform.rotation);
-  for (std::uint32_t i = 0; i < 3; ++i) {
-    spawn_follow(sim, transform.centre + d, h.get<Enemy>()->score_reward != 0);
-    d = rotate(d, 2 * fixed_c::pi / 3);
-  }
-}
+};
 }  // namespace
 
 void spawn_follow(SimInterface& sim, const vec2& position, bool has_score, fixed rotation) {
-  auto h = create_enemy<Follow>(sim, 1, has_score ? 15u : 0);
-  add_enemy_shape<follow_shape>(h, 10, position, rotation);
-  h.add(Follow{});
-  h.add(Health{.hp = 1,
-               .destroy_sound = ii::sound::kEnemyShatter,
-               .on_destroy = &explode_on_destroy<follow_shape>});
+  auto h = create_enemy<Follow>(sim, 1, has_score ? 15u : 0, 1, position, rotation);
+  h.add(Follow{false});
 }
 
 void spawn_big_follow(SimInterface& sim, const vec2& position, bool has_score) {
-  auto h = create_enemy<Follow>(sim, 3, has_score ? 20u : 0);
-  add_enemy_shape<big_follow_shape>(h, 10, position);
-  h.add(Follow{});
-  h.add(Health{.hp = 3,
-               .destroy_sound = ii::sound::kPlayerDestroy,
-               .on_destroy =
-                   sequence<&explode_on_destroy<big_follow_shape>, &big_follow_on_destroy>});
+  auto h =
+      create_enemy<Follow>(sim, 3, has_score ? 20u : 0, 3, position, 0, ii::sound::kPlayerDestroy);
+  h.add(Follow{true});
 }
 
 namespace {
-using chaser_shape =
-    standard_transform<shape::ngon<{.radius = 10,
-                                    .sides = 4,
-                                    .colour = colour_hue360(210, .6f),
-                                    .style = shape::ngon_style::kPolygram,
-                                    .flags = shape_flag::kDangerous | shape_flag::kVulnerable}>>;
-
 struct Chaser : ecs::component {
+  static constexpr std::uint32_t kBoundingWidth = 10;
+  static constexpr sound kDestroySound = sound::kEnemyShatter;
+
   static constexpr std::uint32_t kTime = 60;
   static constexpr fixed kSpeed = 4;
+  using shape = standard_transform<
+      geom::shape<geom::ngon{10, 4, colour_hue360(210, .6f), geom::ngon_style::kPolygram,
+                             shape_flag::kDangerous | shape_flag::kVulnerable}>>;
 
   bool move = false;
   std::uint32_t timer = kTime;
@@ -372,23 +387,19 @@ struct Chaser : ecs::component {
 }  // namespace
 
 void spawn_chaser(SimInterface& sim, const vec2& position) {
-  auto h = create_enemy<Chaser>(sim, 2, 30);
-  add_enemy_shape<chaser_shape>(h, 10, position);
+  auto h = create_enemy<Chaser>(sim, 2, 30, 2, position);
   h.add(Chaser{});
-  h.add(Health{.hp = 2,
-               .destroy_sound = ii::sound::kEnemyShatter,
-               .on_destroy = &explode_on_destroy<chaser_shape>});
 }
 
 namespace {
-using square_shape =
-    standard_transform<shape::box<{.width = 10,
-                                   .height = 10,
-                                   .colour = colour_hue360(120, .6f),
-                                   .flags = shape_flag::kDangerous | shape_flag::kVulnerable}>>;
-
 struct Square : ecs::component {
+  static constexpr std::uint32_t kBoundingWidth = 15;
+  static constexpr ship_flag kShipFlags = ship_flag::kWall;
+  static constexpr sound kDestroySound = sound::kEnemyDestroy;
+
   static constexpr fixed kSpeed = 2 + 1_fx / 4;
+  using shape = standard_transform<geom::shape<geom::box{
+      {10, 10}, colour_hue360(120, .6f), shape_flag::kDangerous | shape_flag::kVulnerable}>>;
 
   vec2 dir{0};
   std::uint32_t timer = 0;
@@ -449,22 +460,20 @@ struct Square : ecs::component {
 }  // namespace
 
 void spawn_square(SimInterface& sim, const vec2& position, fixed dir_angle) {
-  auto h = create_enemy<Square>(sim, 2, 25, ship_flag::kWall);
-  add_enemy_shape<square_shape>(h, 15, position);
+  auto h = create_enemy<Square>(sim, 2, 25, 4, position);
   h.add(Square{sim, dir_angle});
-  h.add(Health{.hp = 4, .on_destroy = &explode_on_destroy<square_shape>});
 }
 
 namespace {
-using wall_shape =
-    standard_transform<shape::box<{.width = 10,
-                                   .height = 40,
-                                   .colour = colour_hue360(120, .5f, .6f),
-                                   .flags = shape_flag::kDangerous | shape_flag::kVulnerable}>>;
-
 struct Wall : ecs::component {
+  static constexpr std::uint32_t kBoundingWidth = 50;
+  static constexpr ship_flag kShipFlags = ship_flag::kWall;
+  static constexpr sound kDestroySound = sound::kEnemyDestroy;
+
   static constexpr std::uint32_t kTimer = 80;
   static constexpr fixed kSpeed = 1 + 1_fx / 4;
+  using shape = standard_transform<geom::shape<geom::box{
+      {10, 40}, colour_hue360(120, .5f, .6f), shape_flag::kDangerous | shape_flag::kVulnerable}>>;
 
   vec2 dir{0, 1};
   std::uint32_t timer = 0;
@@ -512,58 +521,55 @@ struct Wall : ecs::component {
     transform.move(dir * kSpeed);
     transform.set_rotation(angle(dir));
   }
+
+  static void
+  on_destroy(const Wall& wall, const Transform& transform, SimInterface& sim, damage_type type) {
+    if (type == damage_type::kBomb) {
+      return;
+    }
+    auto d = rotate(wall.dir, fixed_c::pi / 2);
+    auto v = transform.centre + d * 10 * 3;
+    if (sim.is_on_screen(v)) {
+      spawn_square(sim, v, transform.rotation);
+    }
+    v = transform.centre - d * 10 * 3;
+    if (sim.is_on_screen(v)) {
+      spawn_square(sim, v, transform.rotation);
+    }
+  }
 };
-
-void wall_on_destroy(SimInterface& sim, ecs::const_handle h, damage_type type) {
-  if (type == damage_type::kBomb) {
-    return;
-  }
-
-  const auto& transform = *h.get<Transform>();
-  auto d = rotate(h.get<Wall>()->dir, fixed_c::pi / 2);
-  auto v = transform.centre + d * 10 * 3;
-  if (sim.is_on_screen(v)) {
-    spawn_square(sim, v, transform.rotation);
-  }
-  v = transform.centre - d * 10 * 3;
-  if (sim.is_on_screen(v)) {
-    spawn_square(sim, v, transform.rotation);
-  }
-}
 }  // namespace
 
 void spawn_wall(SimInterface& sim, const vec2& position, bool rdir) {
-  auto h = create_enemy<Wall>(sim, 4, 20, ship_flag::kWall);
-  add_enemy_shape<wall_shape>(h, 50, position);
+  auto h = create_enemy<Wall>(sim, 4, 20, 10, position);
   h.add(Wall{rdir});
-  h.add(
-      Health{.hp = 10, .on_destroy = sequence<&explode_on_destroy<wall_shape>, &wall_on_destroy>});
 }
 
 namespace {
-constexpr glm::vec4 follow_hub_colour = colour_hue360(240, .7f);
-template <shape::ngon_data S>
-using r_pi4_ngon = shape::rotate<fixed_c::pi / 4, shape::ngon<S>>;
-using fh_centre = r_pi4_ngon<{.radius = 16,
-                              .sides = 4,
-                              .colour = follow_hub_colour,
-                              .style = shape::ngon_style::kPolygram,
-                              .flags = shape_flag::kDangerous | shape_flag::kVulnerable}>;
-using fh_spoke = r_pi4_ngon<{
-    .radius = 8, .sides = 4, .colour = follow_hub_colour, .style = shape::ngon_style::kPolygon}>;
-using fh_power_spoke = r_pi4_ngon<{
-    .radius = 8, .sides = 4, .colour = follow_hub_colour, .style = shape::ngon_style::kPolystar}>;
-template <typename T>
-using fh_arrange = shape::compound<shape::translate<16, 0, T>, shape::translate<-16, 0, T>,
-                                   shape::translate<0, 16, T>, shape::translate<0, -16, T>>;
-using follow_hub_shape = shape::translate_p<0, fh_centre, shape::rotate_p<1, fh_arrange<fh_spoke>>>;
-using follow_hub_power_shape =
-    shape::translate_p<0, fh_centre,
-                       shape::rotate_p<1, fh_arrange<fh_spoke>, fh_arrange<fh_power_spoke>>>;
-
 struct FollowHub : ecs::component {
+  static constexpr std::uint32_t kBoundingWidth = 16;
+  static constexpr sound kDestroySound = sound::kPlayerDestroy;
+  static constexpr glm::vec4 kColour = colour_hue360(240, .7f);
   static constexpr std::uint32_t kTimer = 170;
   static constexpr fixed kSpeed = 1;
+
+  template <geom::ngon S>
+  using r_pi4_ngon = geom::rotate<fixed_c::pi / 4, geom::shape<S>>;
+  using fh_centre = r_pi4_ngon<geom::ngon{16, 4, kColour, geom::ngon_style::kPolygram,
+                                          shape_flag::kDangerous | shape_flag::kVulnerable}>;
+  using fh_spoke = r_pi4_ngon<geom::ngon{8, 4, kColour, geom::ngon_style::kPolygon}>;
+  using fh_power_spoke = r_pi4_ngon<geom::ngon{8, 4, kColour, geom::ngon_style::kPolystar}>;
+  template <typename T>
+  using fh_arrange = geom::compound<geom::translate<16, 0, T>, geom::translate<-16, 0, T>,
+                                    geom::translate<0, 16, T>, geom::translate<0, -16, T>>;
+  using shape = geom::translate_p<
+      0, fh_centre,
+      geom::rotate_p<1, fh_arrange<fh_spoke>, geom::if_p<2, fh_arrange<fh_power_spoke>>>>;
+
+  static std::tuple<vec2, fixed, bool> shape_parameters(ecs::const_handle h) {
+    auto& transform = *h.get<Transform>();
+    return {transform.centre, transform.rotation, h.get<FollowHub>()->power_b};
+  }
 
   std::uint32_t timer = 0;
   vec2 dir{0};
@@ -600,45 +606,24 @@ struct FollowHub : ecs::component {
     transform.rotate(s);
     transform.move(dir * kSpeed);
   }
-};
 
-void follow_hub_on_destroy(SimInterface& sim, ecs::const_handle h, damage_type type) {
-  if (type == damage_type::kBomb) {
-    return;
+  static void
+  on_destroy(const FollowHub& c, const Transform& transform, SimInterface& sim, damage_type type) {
+    if (type == damage_type::kBomb) {
+      return;
+    }
+    if (c.power_b) {
+      spawn_big_follow(sim, transform.centre, true);
+    }
+    spawn_chaser(sim, transform.centre);
   }
-  const auto& c = *h.get<FollowHub>();
-  const auto& transform = *h.get<Transform>();
-  if (c.power_b) {
-    spawn_big_follow(sim, transform.centre, true);
-  }
-  spawn_chaser(sim, transform.centre);
-}
+};
 }  // namespace
 
 void spawn_follow_hub(SimInterface& sim, const vec2& position, bool power_a, bool power_b) {
   auto h = create_enemy<FollowHub>(sim, 6u + 2 * power_a + 2 * power_b,
-                                   50u + power_a * 10 + power_b * 10);
+                                   50u + power_a * 10 + power_b * 10, 14, position);
   h.add(FollowHub{power_a, power_b});
-  if (power_b) {
-    add_enemy_shape<follow_hub_power_shape>(h, 16, position);
-    h.add(
-        Health{.hp = 14,
-               .destroy_sound = ii::sound::kPlayerDestroy,
-               .on_destroy =
-                   sequence<&explode_on_destroy<follow_hub_power_shape>, &follow_hub_on_destroy>});
-  } else {
-    add_enemy_shape<follow_hub_shape>(h, 16, position);
-    h.add(Health{.hp = 14,
-                 .destroy_sound = ii::sound::kPlayerDestroy,
-                 .on_destroy =
-                     sequence<&explode_on_destroy<follow_hub_shape>, &follow_hub_on_destroy>});
-  }
-}
-
-void legacy_enemy_on_destroy(SimInterface&, ecs::handle h, damage_type type) {
-  auto enemy = static_cast<::Enemy*>(h.get<LegacyShip>()->ship.get());
-  enemy->explosion();
-  enemy->on_destroy(type == damage_type::kBomb);
 }
 
 void spawn_shielder(SimInterface& sim, const vec2& position, bool power) {

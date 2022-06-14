@@ -35,7 +35,7 @@ void Health::damage(SimInterface& sim, ecs::handle h, std::uint32_t damage, dama
       sim.play_sound(*destroy_sound, position, /* random */ true);
     }
     if (on_destroy) {
-      on_destroy(sim, h, type);
+      on_destroy(h, sim, type);
     }
     h.add(Destroy{.source = source});
   } else {

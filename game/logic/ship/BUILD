@@ -1,6 +1,7 @@
 cc_library(
   name = "ecs",
   hdrs = [
+    "ecs_call.h",
     "ecs_id.h",
     "ecs_index.h",
     "ecs_index_impl.h",

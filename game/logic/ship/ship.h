@@ -1,6 +1,7 @@
 #ifndef II_GAME_LOGIC_SHIP_SHIP_H
 #define II_GAME_LOGIC_SHIP_SHIP_H
 #include "game/common/enum.h"
+#include "game/common/functional.h"
 #include "game/logic/ship/ecs_index.h"
 #include "game/logic/ship/shape.h"
 #include "game/logic/sim/sim_interface.h"
@@ -50,18 +51,18 @@ struct Transform : ecs::component {
 
 struct Collision : ecs::component {
   fixed bounding_width = 0;
-  std::function<bool(ecs::const_handle, const vec2&, shape_flag)> check;
+  function_ptr<bool(ecs::const_handle, const vec2&, shape_flag)> check;
 
   vec2 centre(ecs::const_handle h) const;
 };
 
 struct Update : ecs::component {
-  std::function<void(SimInterface&, ecs::handle)> update;
+  function_ptr<void(SimInterface&, ecs::handle)> update;
 };
 
 struct Render : ecs::component {
   std::optional<glm::vec4> colour_override;
-  std::function<void(const SimInterface&, ecs::const_handle)> render;
+  function_ptr<void(const SimInterface&, ecs::const_handle)> render;
 };
 
 enum class damage_type {
@@ -81,10 +82,10 @@ struct Health : ecs::component {
   std::optional<ii::sound> hit_sound1 = ii::sound::kEnemyHit;
   std::optional<ii::sound> destroy_sound = ii::sound::kEnemyDestroy;
 
-  std::function<std::uint32_t(SimInterface&, ecs::handle, damage_type, std::uint32_t)>
+  function_ptr<std::uint32_t(SimInterface&, ecs::handle, damage_type, std::uint32_t)>
       damage_transform;
-  std::function<void(SimInterface&, ecs::handle, damage_type)> on_hit;
-  std::function<void(SimInterface&, ecs::handle, damage_type)> on_destroy;
+  function_ptr<void(SimInterface&, ecs::handle, damage_type)> on_hit;
+  function_ptr<void(ecs::const_handle, SimInterface&, damage_type)> on_destroy;
 
   bool is_hp_low() const {
     return 3 * hp <= max_hp + max_hp / 5;

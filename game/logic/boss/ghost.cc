@@ -455,7 +455,7 @@ void spawn_ghost_boss(SimInterface& sim, std::uint32_t cycle) {
       .hit_sound1 = ii::sound::kEnemyShatter,
       .destroy_sound = std::nullopt,
       .damage_transform = &scale_boss_damage,
-      .on_hit = make_legacy_boss_on_hit(true),
+      .on_hit = &legacy_boss_on_hit<true>,
       .on_destroy = &legacy_boss_on_destroy,
   });
   h.add(Boss{.boss = boss_flag::kBoss2B});

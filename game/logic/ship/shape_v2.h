@@ -23,7 +23,7 @@ template <>
 struct bitmask_enum<shape_flag> : std::true_type {};
 }  // namespace ii
 
-namespace ii::shape {
+namespace ii::geom {
 struct iterate_lines_t {};
 struct iterate_centres_t {};
 inline constexpr iterate_lines_t iterate_lines;
@@ -49,11 +49,14 @@ struct transform {
 namespace detail {
 struct arbitrary_parameters {};
 struct arbitrary_parameter {
-  operator vec2() {
+  constexpr operator vec2() const {
     return vec2{0, 0};
   }
-  operator fixed() {
+  constexpr operator fixed() const {
     return fixed{0};
+  }
+  constexpr explicit operator bool() const {
+    return false;
   }
 };
 
@@ -86,7 +89,7 @@ concept Shape = requires(T x, transform t) {
 
 template <typename Parameters, typename E, typename V>
 concept ExpressionWithSubstitution = requires(Parameters params) {
-  { E::evaluate(params) } -> std::convertible_to<V>;
+  V{E::evaluate(params)};
 };
 
 template <typename Parameters, typename E>
@@ -120,7 +123,10 @@ enum class ngon_style {
   kPolygram,
 };
 
-struct ngon_data {
+struct ngon {
+  constexpr ngon(std::uint32_t radius, std::uint32_t sides, const glm::vec4& colour,
+                 ngon_style style = ngon_style::kPolygon, shape_flag flags = shape_flag::kNone)
+  : radius{radius}, sides{sides}, colour{colour}, style{style}, flags{flags} {}
   std::uint32_t radius = 0;
   std::uint32_t sides = 0;
   glm::vec4 colour{0.f};
@@ -160,24 +166,26 @@ struct ngon_data {
   }
 };
 
-struct box_data {
-  std::uint32_t width = 0;
-  std::uint32_t height = 0;
+struct box {
+  constexpr box(const glm::uvec2& dimensions, const glm::vec4& colour,
+                shape_flag flags = shape_flag::kNone)
+  : dimensions{dimensions}, colour{colour}, flags{flags} {}
+  glm::uvec2 dimensions{0};
   glm::vec4 colour{0.f};
   shape_flag flags = shape_flag::kNone;
 
   constexpr bool check_point(const vec2& v, shape_flag mask) const {
-    return +flags && (!mask || +(flags & mask)) && abs(v.x) < ::fixed{width} &&
-        abs(v.y) < ::fixed{height};
+    return +flags && (!mask || +(flags & mask)) && abs(v.x) < ::fixed{dimensions.x} &&
+        abs(v.y) < ::fixed{dimensions.y};
   }
 
   template <IterTag I>
   requires std::same_as<I, iterate_lines_t>
   void iterate(I, const transform& t, const LineFunction auto& f) {
-    auto a = t.translate({width, height}).v;
-    auto b = t.translate({-width, height}).v;
-    auto c = t.translate({-width, -height}).v;
-    auto d = t.translate({width, -height}).v;
+    auto a = t.translate({dimensions.x, dimensions.y}).v;
+    auto b = t.translate({-dimensions.x, dimensions.y}).v;
+    auto c = t.translate({-dimensions.x, -dimensions.y}).v;
+    auto d = t.translate({dimensions.x, -dimensions.y}).v;
 
     std::invoke(f, a, b, colour);
     std::invoke(f, b, c, colour);
@@ -219,6 +227,16 @@ struct parameter {
 //////////////////////////////////////////////////////////////////////////////////
 // Shape-expressions.
 //////////////////////////////////////////////////////////////////////////////////
+struct null_shape {
+  template <typename Parameters>
+  static constexpr bool check_point(const Parameters&, const vec2&, shape_flag) {
+    return false;
+  }
+
+  template <IterTag I, typename Parameters>
+  static void iterate(I tag, const Parameters&, const transform&, const IterateFunction<I> auto&) {}
+};
+
 template <ShapeExpression S>
 struct shape_eval {
   template <typename Parameters>
@@ -271,6 +289,33 @@ struct rotate_eval {
   }
 };
 
+template <Expression<bool> Condition, ShapeNode TrueNode, ShapeNode FalseNode>
+struct conditional_eval {
+  template <typename Parameters>
+  requires(
+      ExpressionWithSubstitution<Parameters, Condition, bool>&&
+          ShapeNodeWithSubstitution<Parameters, TrueNode>&& ShapeNodeWithSubstitution<
+              Parameters, FalseNode>) static constexpr bool check_point(const Parameters& params,
+                                                                        const vec2& v,
+                                                                        shape_flag mask) {
+    return bool{Condition::evaluate(params)} ? TrueNode::check_point(params, v, mask)
+                                             : FalseNode::check_point(params, v, mask);
+  }
+
+  template <IterTag I, typename Parameters>
+  requires(ExpressionWithSubstitution<Parameters, Condition, bool>&&
+               ShapeNodeWithSubstitution<Parameters, TrueNode>&& ShapeNodeWithSubstitution<
+                   Parameters, FalseNode>) static void iterate(I tag, const Parameters& params,
+                                                               const transform& t,
+                                                               const IterateFunction<I> auto& f) {
+    if (bool{Condition::evaluate(params)}) {
+      TrueNode::iterate(tag, params, t, f);
+    } else {
+      FalseNode::iterate(tag, params, t, f);
+    }
+  }
+};
+
 template <ShapeNode... Nodes>
 struct compound {
   template <typename Parameters>
@@ -316,11 +361,11 @@ using translate_p = translate_eval<parameter<N>, pack<Nodes...>>;
 template <std::size_t N, ShapeNode... Nodes>
 using rotate_p = rotate_eval<parameter<N>, pack<Nodes...>>;
 
-template <ngon_data S>
-using ngon = shape<S>;
-template <box_data S>
-using box = shape<S>;
+template <std::size_t N, ShapeNode TrueNode, ShapeNode FalseNode>
+using conditional_p = conditional_eval<parameter<N>, TrueNode, FalseNode>;
+template <std::size_t N, ShapeNode Node>
+using if_p = conditional_p<N, Node, null_shape>;
 
-}  // namespace ii::shape
+}  // namespace ii::geom
 
 #endif

@@ -10,9 +10,20 @@ std::uint32_t calculate_boss_hp(std::uint32_t base, std::uint32_t players, std::
 std::uint32_t
 scale_boss_damage(SimInterface&, ecs::handle h, damage_type type, std::uint32_t damage);
 
-std::function<void(SimInterface&, ecs::handle, damage_type)>
-make_legacy_boss_on_hit(bool explode_on_bomb_damage);
-void legacy_boss_on_destroy(SimInterface&, ecs::handle h, damage_type type);
+template <bool ExplodeOnBombDamage>
+void legacy_boss_on_hit(SimInterface&, ecs::handle h, damage_type type) {
+  auto boss = static_cast<::Boss*>(h.get<LegacyShip>()->ship.get());
+  if (type == damage_type::kBomb && ExplodeOnBombDamage) {
+    boss->explosion();
+    boss->explosion(glm::vec4{1.f}, 16);
+    boss->explosion(std::nullopt, 24);
+  }
+}
+
+inline void legacy_boss_on_destroy(ecs::const_handle h, SimInterface&, damage_type type) {
+  auto enemy = static_cast<::Enemy*>(h.get<LegacyShip>()->ship.get());
+  enemy->on_destroy(type == damage_type::kBomb);
+}
 }  // namespace ii
 
 class Boss : public Enemy {

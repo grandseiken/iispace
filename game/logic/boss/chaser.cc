@@ -121,7 +121,7 @@ ChaserBoss* spawn_chaser_boss_internal(ii::SimInterface& sim, std::uint32_t cycl
       .hit_sound1 = ii::sound::kEnemyShatter,
       .destroy_sound = std::nullopt,
       .damage_transform = &ii::scale_boss_damage,
-      .on_hit = ii::make_legacy_boss_on_hit(split <= 1),
+      .on_hit = split <= 1 ? &ii::legacy_boss_on_hit<true> : &ii::legacy_boss_on_hit<false>,
       .on_destroy = &ii::legacy_boss_on_destroy,
   });
   h.add(ChaserBossTag{.split = split});
@@ -375,11 +375,17 @@ void spawn_chaser_boss(SimInterface& sim, std::uint32_t cycle) {
   h.add(Enemy{.threat_value = 0,
               .boss_score_reward =
                   calculate_boss_score(ii::boss_flag::kBoss1C, sim.player_count(), cycle)});
+
+  struct Cycle : ecs::component {
+    std::uint32_t cycle;
+  };
+  h.add(Cycle{.cycle = cycle});
   h.add(Health{});
   h.add(Boss{.boss = ii::boss_flag::kBoss1C});
-  h.add(Update{.update = [cycle](SimInterface& sim, ecs::handle h) {
+
+  h.add(Update{.update = [](SimInterface& sim, ecs::handle h) {
     auto& health = *h.get<Health>();
-    auto hp_lookup = get_hp_lookup(sim.player_count(), cycle);
+    auto hp_lookup = get_hp_lookup(sim.player_count(), h.get<Cycle>()->cycle);
     health.hp = 0;
     health.max_hp = hp_lookup[kCbMaxSplit];
     std::optional<vec2> position;
