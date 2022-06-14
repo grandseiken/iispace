@@ -46,9 +46,7 @@ fixed Shape::rotation() const {
 
 void Shape::set_rotation(fixed rotation) {
   if (can_rotate_) {
-    rotation_ = rotation > 2 * fixed_c::pi ? rotation - 2 * fixed_c::pi
-        : rotation < 0                     ? rotation + 2 * fixed_c::pi
-                                           : rotation;
+    rotation_ = normalise_angle(rotation);
   }
 }
 

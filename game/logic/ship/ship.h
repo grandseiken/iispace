@@ -44,7 +44,7 @@ struct Transform : ecs::component {
     set_rotation(rotation + amount);
   }
   void set_rotation(fixed r) {
-    rotation = r > 2 * fixed_c::pi ? r - 2 * fixed_c::pi : r < 0 ? r + 2 * fixed_c::pi : r;
+    rotation = normalise_angle(r);
   }
 };
 

@@ -59,4 +59,8 @@ inline constexpr glm::vec2 to_float(const vec2& a) {
   return {a.x.to_float(), a.y.to_float()};
 }
 
+inline constexpr fixed normalise_angle(fixed a) {
+  return a > 2 * fixed_c::pi ? a - 2 * fixed_c::pi : a < 0 ? a + 2 * fixed_c::pi : a;
+}
+
 #endif

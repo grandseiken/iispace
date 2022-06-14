@@ -114,17 +114,17 @@ concept ShapeNode = ShapeNodeWithSubstitution<detail::arbitrary_parameters, Node
 //////////////////////////////////////////////////////////////////////////////////
 // Atomic shapes.
 //////////////////////////////////////////////////////////////////////////////////
-struct ngon {
-  enum class style {
-    kPolygon,
-    kPolystar,
-    kPolygram,
-  };
+enum class ngon_style {
+  kPolygon,
+  kPolystar,
+  kPolygram,
+};
 
+struct ngon_data {
   std::uint32_t radius = 0;
   std::uint32_t sides = 0;
   glm::vec4 colour{0.f};
-  style style = style::kPolygon;
+  ngon_style style = ngon_style::kPolygon;
   shape_flag flags = shape_flag::kNone;
 
   constexpr bool check_point(const vec2& v, shape_flag mask) const {
@@ -140,9 +140,9 @@ struct ngon {
       return t.rotate(i * 2 * fixed_c::pi / sides).translate({::fixed{radius}, 0}).v;
     };
 
-    if (style != style::kPolygram) {
+    if (style != ngon_style::kPolygram) {
       for (std::uint32_t i = 0; i < sides; ++i) {
-        std::invoke(f, vertex(i), style == style::kPolygon ? vertex(i + 1) : t.v, colour);
+        std::invoke(f, vertex(i), style == ngon_style::kPolygon ? vertex(i + 1) : t.v, colour);
       }
       return;
     }
@@ -160,7 +160,7 @@ struct ngon {
   }
 };
 
-struct box {
+struct box_data {
   std::uint32_t width = 0;
   std::uint32_t height = 0;
   glm::vec4 colour{0.f};
@@ -199,6 +199,13 @@ template <auto V>
 struct constant {
   static constexpr auto evaluate(const auto&) {
     return V;
+  }
+};
+
+template <fixed X, fixed Y>
+struct constant_vec2 {
+  static constexpr auto evaluate(const auto&) {
+    return vec2{X, Y};
   }
 };
 
@@ -285,15 +292,34 @@ struct compound {
 template <auto V>
 using shape = shape_eval<constant<V>>;
 
-template <auto V, ShapeNode Node>
-using translate = translate_eval<constant<V>, Node>;
-template <auto V, ShapeNode Node>
-using rotate = rotate_eval<constant<V>, Node>;
+namespace detail {
+template <ShapeNode Node, ShapeNode... Rest>
+struct pack {
+  using type = compound<Node, Rest...>;
+};
+template <ShapeNode Node>
+struct pack<Node> {
+  using type = Node;
+};
+}  // namespace detail
 
-template <std::size_t N, ShapeNode Node>
-using translate_p = translate_eval<parameter<N>, Node>;
-template <std::size_t N, ShapeNode Node>
-using rotate_p = rotate_eval<parameter<N>, Node>;
+template <ShapeNode... Nodes>
+using pack = typename detail::pack<Nodes...>::type;
+
+template <fixed X, fixed Y, ShapeNode... Nodes>
+using translate = translate_eval<constant_vec2<X, Y>, pack<Nodes...>>;
+template <fixed Angle, ShapeNode... Nodes>
+using rotate = rotate_eval<constant<Angle>, pack<Nodes...>>;
+
+template <std::size_t N, ShapeNode... Nodes>
+using translate_p = translate_eval<parameter<N>, pack<Nodes...>>;
+template <std::size_t N, ShapeNode... Nodes>
+using rotate_p = rotate_eval<parameter<N>, pack<Nodes...>>;
+
+template <ngon_data S>
+using ngon = shape<S>;
+template <box_data S>
+using box = shape<S>;
 
 }  // namespace ii::shape
 
