@@ -116,7 +116,7 @@ void SimState::update() {
   });
   internals_->index.iterate<Update>([&](ecs::handle h, Update& c) {
     if (!h.has<Destroy>()) {
-      c.update(*interface_, h);
+      c.update(h, *interface_);
     }
   });
   for (auto& particle : internals_->particles) {
@@ -183,11 +183,11 @@ void SimState::render() const {
   }
   internals_->index.iterate<Render>([&](ecs::const_handle h, const auto& c) {
     if (!h.get<Player>()) {
-      c.render(*interface_, h);
+      c.render(h, *interface_);
     }
   });
   internals_->index.iterate<Player>(
-      [&](ecs::const_handle h, const auto&) { h.get<Render>()->render(*interface_, h); });
+      [&](ecs::const_handle h, const auto&) { h.get<Render>()->render(h, *interface_); });
 
   auto render_warning = [&](const glm::vec2& v) {
     if (v.x < -4) {

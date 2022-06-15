@@ -210,7 +210,7 @@ using standard_transform = geom::translate_p<0, geom::rotate_p<1, S>>;
 template <ecs::Component Logic>
 auto transform_parameters(ecs::const_handle h) {
   if constexpr (requires { &Logic::shape_parameters; }) {
-    return Logic::shape_parameters(h);
+    return ecs::call<&Logic::shape_parameters>(h);
   } else {
     auto& transform = *h.get<Transform>();
     return std::tuple<vec2, fixed>{transform.centre, transform.rotation};
@@ -218,9 +218,10 @@ auto transform_parameters(ecs::const_handle h) {
 }
 
 template <ecs::Component Logic, geom::ShapeNode S>
-void render_enemy(const SimInterface& sim, ecs::const_handle h) {
-  auto c_override = h.get<Render>()->colour_override;
-  if (!c_override && h.has<Health>() && h.get<Health>()->hit_timer) {
+void render_enemy(ecs::const_handle h, const Render& render, const Health* health,
+                  const SimInterface& sim) {
+  auto c_override = render.colour_override;
+  if (!c_override && health && health->hit_timer) {
     c_override = glm::vec4{1.f};
   }
 
@@ -241,11 +242,6 @@ bool ship_check_point(ecs::const_handle h, const vec2& v, shape_flag mask) {
   return S::check_point(transform_parameters<Logic>(h), v, mask);
 }
 
-template <ecs::Component C>
-void update_function(SimInterface& sim, ecs::handle h) {
-  h.get<C>()->update(sim, h);
-}
-
 template <ecs::Component Logic, geom::ShapeNode S = typename Logic::shape>
 ecs::handle create_enemy(SimInterface& sim, std::uint32_t threat_value, std::uint32_t score_reward,
                          std::uint32_t hp, const vec2& position, fixed rotation = 0,
@@ -259,15 +255,17 @@ ecs::handle create_enemy(SimInterface& sim, std::uint32_t threat_value, std::uin
   h.add(ShipFlag{.flags = flags});
 
   h.add(LegacyShip{.ship = std::make_unique<ShipForwarder>(sim, h)});
-  h.add(Update{.update = &update_function<Logic>});
+  h.add(Update{.update = ecs::call<&Logic::update>});
   h.add(Enemy{.threat_value = threat_value, .score_reward = score_reward});
-  h.add(Render{.render = &render_enemy<Logic, S>});
+  h.add(Render{.render = ecs::call<&render_enemy<Logic, S>>});
   h.add(Transform{.centre = position, .rotation = rotation});
   h.add(Collision{.bounding_width = Logic::kBoundingWidth, .check = &ship_check_point<Logic, S>});
 
+  using on_destroy_t = void(ecs::const_handle, SimInterface & sim, damage_type);
   auto on_destroy = &explode_on_destroy<Logic, S>;
   if constexpr (requires { &Logic::on_destroy; }) {
-    on_destroy = sequence<&explode_on_destroy<Logic, S>, ecs::call<&Logic::on_destroy>>;
+    on_destroy =
+        sequence<&explode_on_destroy<Logic, S>, cast<on_destroy_t, ecs::call<&Logic::on_destroy>>>;
   }
   h.add(Health{.hp = hp,
                .destroy_sound = destroy_sound ? *destroy_sound : Logic::kDestroySound,
@@ -293,9 +291,8 @@ struct Follow : ecs::component {
                              shape_flag::kDangerous | shape_flag::kVulnerable}>;
   using shape = standard_transform<geom::conditional_p<2, big_shape, small_shape>>;
 
-  static std::tuple<vec2, fixed, bool> shape_parameters(ecs::const_handle h) {
-    auto& transform = *h.get<Transform>();
-    return {transform.centre, transform.rotation, h.get<Follow>()->is_big_follow};
+  std::tuple<vec2, fixed, bool> shape_parameters(const Transform& transform) const {
+    return {transform.centre, transform.rotation, is_big_follow};
   }
 
   Follow(bool is_big_follow) : is_big_follow{is_big_follow} {}
@@ -303,8 +300,7 @@ struct Follow : ecs::component {
   IShip* target = nullptr;
   bool is_big_follow = false;
 
-  void update(SimInterface& sim, ecs::handle h) {
-    auto& transform = *h.get<Transform>();
+  void update(Transform& transform, SimInterface& sim) {
     transform.rotate(fixed_c::tenth);
     if (!sim.alive_players()) {
       return;
@@ -359,8 +355,7 @@ struct Chaser : ecs::component {
   std::uint32_t timer = kTime;
   vec2 dir{0};
 
-  void update(SimInterface& sim, ecs::handle h) {
-    auto& transform = *h.get<Transform>();
+  void update(Transform& transform, SimInterface& sim) {
     bool before = sim.is_on_screen(transform.centre);
 
     if (timer) {
@@ -406,8 +401,8 @@ struct Square : ecs::component {
   Square(SimInterface& sim, fixed dir_angle)
   : dir{from_polar(dir_angle, 1_fx)}, timer{sim.random(80) + 40} {}
 
-  void update(SimInterface& sim, ecs::handle h) {
-    auto& transform = *h.get<Transform>();
+  void
+  update(ecs::handle h, Transform& transform, Health& health, Render& render, SimInterface& sim) {
     if (sim.is_on_screen(transform.centre) && !sim.get_non_wall_count()) {
       if (timer) {
         --timer;
@@ -417,7 +412,7 @@ struct Square : ecs::component {
     }
 
     if (!timer) {
-      h.get<Health>()->damage(sim, h, 4, damage_type::kNone, std::nullopt);
+      health.damage(h, sim, 4, damage_type::kNone, std::nullopt);
     }
 
     const vec2& v = transform.centre;
@@ -450,9 +445,9 @@ struct Square : ecs::component {
     transform.set_rotation(angle(dir));
 
     if ((timer % 4 == 1 || timer % 4 == 2) && !sim.get_non_wall_count()) {
-      h.get<Render>()->colour_override = colour_hue(0.f, .2f, 0.f);
+      render.colour_override = colour_hue(0.f, .2f, 0.f);
     } else {
-      h.get<Render>()->colour_override.reset();
+      render.colour_override.reset();
     }
   }
 };
@@ -481,16 +476,14 @@ struct Wall : ecs::component {
 
   Wall(bool rdir) : rdir{rdir} {}
 
-  void update(SimInterface& sim, ecs::handle h) {
+  void update(ecs::handle h, Transform& transform, Health& health, SimInterface& sim) {
     if (!sim.get_non_wall_count() && timer % 8 < 2) {
-      auto& health = *h.get<Health>();
       if (health.hp > 2) {
         sim.play_sound(sound::kEnemySpawn, 1.f, 0.f);
       }
-      health.damage(sim, h, std::max(2u, health.hp) - 2, damage_type::kNone, std::nullopt);
+      health.damage(h, sim, std::max(2u, health.hp) - 2, damage_type::kNone, std::nullopt);
     }
 
-    auto& transform = *h.get<Transform>();
     if (is_rotating) {
       auto d = rotate(dir, (rdir ? -1 : 1) * (kTimer - timer) * fixed_c::pi / (4 * kTimer));
 
@@ -564,9 +557,8 @@ struct FollowHub : ecs::component {
       0, fh_centre,
       geom::rotate_p<1, fh_arrange<fh_spoke>, geom::if_p<2, fh_arrange<fh_power_spoke>>>>;
 
-  static std::tuple<vec2, fixed, bool> shape_parameters(ecs::const_handle h) {
-    auto& transform = *h.get<Transform>();
-    return {transform.centre, transform.rotation, h.get<FollowHub>()->power_b};
+  std::tuple<vec2, fixed, bool> shape_parameters(const Transform& transform) const {
+    return {transform.centre, transform.rotation, power_b};
   }
 
   std::uint32_t timer = 0;
@@ -577,8 +569,7 @@ struct FollowHub : ecs::component {
 
   FollowHub(bool power_a, bool power_b) : power_a{power_a}, power_b{power_b} {}
 
-  void update(SimInterface& sim, ecs::handle h) {
-    auto& transform = *h.get<Transform>();
+  void update(Transform& transform, SimInterface& sim) {
     ++timer;
     if (timer > (power_a ? kTimer / 2 : kTimer)) {
       timer = 0;

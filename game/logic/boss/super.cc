@@ -201,9 +201,9 @@ SuperBossArc* spawn_super_boss_arc(ii::SimInterface& sim, const vec2& position, 
       .hit_sound1 = ii::sound::kEnemyShatter,
       .destroy_sound = std::nullopt,
       .damage_transform =
-          +[](ii::SimInterface& sim, ii::ecs::handle h, ii::damage_type type,
+          +[](ii::ecs::handle h, ii::SimInterface& sim, ii::damage_type type,
               std::uint32_t damage) {
-            return ii::scale_boss_damage(sim, h, type,
+            return ii::scale_boss_damage(h, sim, type,
                                          type == ii::damage_type::kBomb ? damage / 2 : damage);
           },
       .on_hit = &ii::legacy_boss_on_hit<true>,

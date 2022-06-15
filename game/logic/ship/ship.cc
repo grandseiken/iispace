@@ -3,16 +3,16 @@
 
 namespace ii {
 
-void Health::damage(SimInterface& sim, ecs::handle h, std::uint32_t damage, damage_type type,
+void Health::damage(ecs::handle h, SimInterface& sim, std::uint32_t damage, damage_type type,
                     std::optional<ecs::entity_id> source) {
   if (damage_transform) {
-    damage = damage_transform(sim, h, type, damage);
+    damage = damage_transform(h, sim, type, damage);
     if (!damage) {
       return;
     }
   }
   if (on_hit) {
-    on_hit(sim, h, type);
+    on_hit(h, sim, type);
   }
 
   hp = hp < damage ? 0 : hp - damage;

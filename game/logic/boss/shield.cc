@@ -151,12 +151,12 @@ ShieldBombBoss::get_damage(std::uint32_t damage, ii::damage_type type) {
   return {shot_alternate_, damage};
 }
 
-std::uint32_t transform_shield_bomb_boss_damage(ii::SimInterface& sim, ii::ecs::handle h,
+std::uint32_t transform_shield_bomb_boss_damage(ii::ecs::handle h, ii::SimInterface& sim,
                                                 ii::damage_type type, std::uint32_t damage) {
   // TODO.
   auto [undo, d] =
       static_cast<ShieldBombBoss*>(h.get<ii::LegacyShip>()->ship.get())->get_damage(damage, type);
-  d = ii::scale_boss_damage(sim, h, type, d);
+  d = ii::scale_boss_damage(h, sim, type, d);
   if (undo) {
     h.get<ii::Health>()->hp += d;
   }

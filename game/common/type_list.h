@@ -1,81 +1,167 @@
 #ifndef II_GAME_COMMON_TYPE_LIST_H
 #define II_GAME_COMMON_TYPE_LIST_H
 #include <cstddef>
+#include <limits>
 #include <type_traits>
 
-namespace ii {
+namespace ii::tl {
+
 template <typename...>
-struct type_list {};
+struct list {};
 
 template <typename>
-inline constexpr bool is_type_list_v = false;
-template <typename... Args>
-inline constexpr bool is_type_list_v<type_list<Args...>> = true;
+inline constexpr bool is_type_list = false;
+template <typename... Ts>
+inline constexpr bool is_type_list<list<Ts...>> = true;
 template <typename T>
-concept is_type_list = is_type_list_v<T>;
+concept type_list = is_type_list<T>;
 
-template <typename>
-inline constexpr std::size_t type_list_size = 0;
-template <typename... Args>
-inline constexpr std::size_t type_list_size<type_list<Args...>> = sizeof...(Args);
+template <type_list>
+inline constexpr std::size_t size = 0;
+template <typename... Ts>
+inline constexpr std::size_t size<list<Ts...>> = sizeof...(Ts);
+template <type_list A>
+inline constexpr bool empty = !size<A>;
+inline constexpr std::size_t end = std::numeric_limits<std::size_t>::max();
+template <template <typename> typename F, typename T>
+using invoke = typename F<T>::type;
 
 namespace detail {
-template <typename A, typename B>
-struct type_list_concat_impl : std::type_identity<type_list<A, B>> {};
-template <typename... Args, typename B>
-struct type_list_concat_impl<type_list<Args...>, B> : std::type_identity<type_list<Args..., B>> {};
-template <typename A, typename... Brgs>
-struct type_list_concat_impl<A, type_list<Brgs...>> : std::type_identity<type_list<A, Brgs...>> {};
-template <typename... Args, typename... Brgs>
-struct type_list_concat_impl<type_list<Args...>, type_list<Brgs...>>
-: std::type_identity<type_list<Args..., Brgs...>> {};
+template <typename... As, typename... Bs>
+consteval auto concat_impl(list<As...>, list<Bs...>) -> list<As..., Bs...>;
+template <typename T, typename... Ts>
+consteval auto append_impl(list<Ts...>) -> list<Ts..., T>;
+template <typename T, typename... Ts>
+consteval auto prepend_impl(list<Ts...>) -> list<T, Ts...>;
+template <typename T, typename... Ts>
+consteval auto drop_front_impl(list<T, Ts...>) -> list<Ts...>;
+template <typename T, typename... Ts>
+consteval auto drop_back_impl(list<Ts..., T>) -> list<Ts...>;
+template <typename T, typename... Ts>
+consteval auto front_impl(list<T, Ts...>) -> T;
+template <typename T, typename... Ts>
+consteval auto back_impl(list<Ts..., T>) -> T;
+template <template <typename...> typename Template, typename... Ts>
+consteval auto to_impl(list<Ts...>) -> Template<Ts...>;
 }  // namespace detail
 
-template <typename A, typename B>
-using type_list_concat = typename detail::type_list_concat_impl<A, B>::type;
+template <type_list A, type_list B>
+using concat = decltype(detail::concat_impl(A{}, B{}));
+template <typename T, type_list A>
+using append = decltype(detail::append_impl<T>(A{}));
+template <typename T, type_list A>
+using prepend = decltype(detail::prepend_impl<T>(A{}));
+template <type_list A>
+requires(!empty<A>) using drop_front = decltype(detail::drop_front_impl(A{}));
+template <type_list A>
+requires(!empty<A>) using drop_back = decltype(detail::drop_back_impl(A{}));
+template <type_list A>
+requires(!empty<A>) using front = decltype(detail::front_impl(A{}));
+template <type_list A>
+requires(!empty<A>) using back = decltype(detail::back_impl(A{}));
+template <type_list A, template <typename...> typename Template>
+using to = decltype(detail::to_impl<Template>(A{}));
 
 namespace detail {
-template <typename, template <typename> typename F>
-struct type_list_filter_impl;
-template <template <typename> typename F>
-struct type_list_filter_impl<type_list<>, F> : std::type_identity<type_list<>> {};
-template <typename T, typename... Args, template <typename> typename F>
-struct type_list_filter_impl<type_list<T, Args...>, F>
-: std::type_identity<
-      type_list_concat<std::conditional_t<F<T>::value, T, type_list<>>,
-                       typename type_list_filter_impl<type_list<Args...>, F>::type>> {};
+template <std::size_t N, type_list A>
+consteval auto get_impl(A) {
+  if constexpr (N == 0) {
+    return front<A>{};
+  } else {
+    return get_impl<N - 1>(drop_front<A>{});
+  }
+}
+
+template <std::size_t Index, std::size_t Size, type_list A>
+consteval auto sublist_impl(A) {
+  if constexpr (empty<A> || Size == 0) {
+    return list<>{};
+  } else if constexpr (Index == 0) {
+    return prepend<front<A>, decltype(sublist_impl<0, Size - 1>(drop_front<A>{}))>{};
+  } else {
+    return sublist_impl<Index - 1, Size>(drop_front<A>{});
+  }
+}
 }  // namespace detail
 
-template <typename T, template <typename> typename F>
-using type_list_filter = typename detail::type_list_filter_impl<T, F>::type;
+template <type_list A, std::size_t N>
+requires(N < size<A>) using get = decltype(detail::get_impl<N>(A{}));
+template <type_list A, std::size_t Index, std::size_t Size = end>
+requires(Index <= size<A>) using sublist = decltype(detail::sublist_impl<Index, Size>(A{}));
+template <type_list A, std::size_t... N>
+requires((N < size<A>)&&...) using select = list<get<A, N>...>;
 
 namespace detail {
-template <typename, template <typename> typename F>
-struct type_list_drop_front_impl;
-template <template <typename> typename F>
-struct type_list_drop_front_impl<type_list<>, F> : std::type_identity<type_list<>> {};
-template <typename T, typename... Args, template <typename> typename F>
-struct type_list_drop_front_impl<type_list<T, Args...>, F>
-: std::type_identity<std::conditional_t<
-      F<T>::value, typename type_list_drop_front_impl<type_list<Args...>, F>::type,
-      type_list<T, Args...>>> {};
+template <template <typename> typename P, typename... Ts>
+consteval bool all_of_impl(list<Ts...>) {
+  return (P<Ts>::value && ...);
+}
 
-template <typename, std::size_t>
-struct type_list_first_n_impl;
-template <typename... Args>
-struct type_list_first_n_impl<type_list<Args...>, 0> : std::type_identity<type_list<>> {};
-template <typename T, typename... Args, std::size_t N>
-requires(N > 0) struct type_list_first_n_impl<type_list<T, Args...>, N>
-: std::type_identity<
-      type_list_concat<T, typename type_list_first_n_impl<type_list<Args...>, N - 1>::type>> {
+template <template <typename> typename P, typename... Ts>
+consteval bool any_of_impl(list<Ts...>) {
+  return (P<Ts>::value || ...);
+}
+
+template <template <typename> typename P, type_list A>
+consteval std::size_t find_if_impl(A) {
+  if constexpr (empty<A>) {
+    return 0;
+  } else if constexpr (P<front<A>>::value) {
+    return 0;
+  } else {
+    return 1 + find_if_impl<P>(drop_front<A>{});
+  }
+}
+
+template <template <typename> typename P, type_list A>
+consteval auto filter_impl(A) {
+  if constexpr (empty<A>) {
+    return list<>{};
+  } else if constexpr (P<front<A>>::value) {
+    return prepend<front<A>, decltype(filter_impl<P>(drop_front<A>{}))>{};
+  } else {
+    return filter_impl<P>(drop_front<A>{});
+  }
+}
+
+template <template <typename> typename F, type_list A>
+consteval auto map_impl(A) {
+  if constexpr (empty<A>) {
+    return list<>{};
+  } else {
+    return prepend<invoke<F, front<A>>, decltype(map_impl<F>(drop_front<A>{}))>{};
+  }
+}
+}  // namespace detail
+
+template <type_list A, template <typename> typename P>
+inline constexpr bool all_of = detail::all_of_impl<P>(A{});
+template <type_list A, template <typename> typename P>
+inline constexpr bool any_of = detail::any_of_impl<P>(A{});
+template <type_list A, template <typename> typename P>
+inline constexpr std::size_t find_if = detail::find_if_impl<P>(A{});
+template <type_list A, template <typename> typename P>
+using filter = decltype(detail::filter_impl<P>(A{}));
+template <type_list A, template <typename> typename F>
+using map = decltype(detail::map_impl<F>(A{}));
+
+template <typename T>
+struct same_as_template {
+  template <typename U>
+  struct predicate : std::is_same<T, U> {};
 };
-}  // namespace detail
 
-template <typename T, template <typename> typename F>
-using type_list_drop_front = typename detail::type_list_drop_front_impl<T, F>::type;
-template <typename T, std::size_t N>
-using type_list_first_n = typename detail::type_list_first_n_impl<T, N>::type;
+template <template <typename> typename T>
+struct wrap_template {
+  template <typename U>
+  struct functor : std::type_identity<T<U>> {};
+};
 
-}  // namespace ii
+template <type_list A, typename T>
+inline constexpr std::size_t find = find_if<A, same_as_template<T>::template predicate>;
+template <type_list A, template <typename> typename T>
+using wrap = map<A, wrap_template<T>::template functor>;
+
+}  // namespace ii::tl
 
 #endif

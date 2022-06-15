@@ -57,12 +57,12 @@ struct Collision : ecs::component {
 };
 
 struct Update : ecs::component {
-  function_ptr<void(SimInterface&, ecs::handle)> update;
+  function_ptr<void(ecs::handle, SimInterface&)> update;
 };
 
 struct Render : ecs::component {
   std::optional<glm::vec4> colour_override;
-  function_ptr<void(const SimInterface&, ecs::const_handle)> render;
+  function_ptr<void(ecs::const_handle, const SimInterface&)> render;
 };
 
 enum class damage_type {
@@ -82,16 +82,16 @@ struct Health : ecs::component {
   std::optional<ii::sound> hit_sound1 = ii::sound::kEnemyHit;
   std::optional<ii::sound> destroy_sound = ii::sound::kEnemyDestroy;
 
-  function_ptr<std::uint32_t(SimInterface&, ecs::handle, damage_type, std::uint32_t)>
+  function_ptr<std::uint32_t(ecs::handle, SimInterface&, damage_type, std::uint32_t)>
       damage_transform;
-  function_ptr<void(SimInterface&, ecs::handle, damage_type)> on_hit;
+  function_ptr<void(ecs::handle, SimInterface&, damage_type)> on_hit;
   function_ptr<void(ecs::const_handle, SimInterface&, damage_type)> on_destroy;
 
   bool is_hp_low() const {
     return 3 * hp <= max_hp + max_hp / 5;
   }
 
-  void damage(SimInterface&, ecs::handle h, std::uint32_t damage, damage_type type,
+  void damage(ecs::handle h, SimInterface&, std::uint32_t damage, damage_type type,
               std::optional<ecs::entity_id> source);
 };
 
@@ -250,7 +250,7 @@ inline void IShip::damage(std::uint32_t damage, bool magic, IShip* source) {
       source_id = source->handle().id();
     }
     // TODO: damage > 10: kBombDamage
-    c->damage(sim(), handle(), damage,
+    c->damage(handle(), sim(), damage,
               magic             ? damage_type::kMagic
                   : damage > 10 ? damage_type::kBomb
                                 : damage_type::kNone,

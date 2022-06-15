@@ -23,33 +23,17 @@ inline constexpr bool is_const_component_parameter =
 template <typename T>
 inline constexpr bool is_pointer_component_parameter = std::is_pointer_v<T>;
 
-template <typename... Args>
-inline constexpr bool is_const_handle_parameter_list =
-    (((!is_component_parameter<Args> || is_const_component_parameter<Args>)&&(
-         !is_handle_parameter<Args> || is_const_handle_parameter<Args>)) &&
-     ...);
-template <typename... Args>
-inline constexpr bool has_handle_parameter = (is_handle_parameter<Args> || ...);
+template <typename T>
+struct is_const_parameter
+: std::bool_constant<(!is_component_parameter<T> || is_const_component_parameter<T>)&&(
+      !is_handle_parameter<T> || is_const_handle_parameter<T>)> {};
 
 template <typename T>
-struct convert_parameter_predicate
-: std::bool_constant<is_component_parameter<T> || is_handle_parameter<T>> {};
-template <typename>
-struct convert_parameter_list;
-template <typename... Args>
-struct convert_parameter_list<type_list<Args...>>
-: std::type_identity<type_list_drop_front<type_list<Args...>, convert_parameter_predicate>> {};
-
-template <typename>
-struct get_handle_parameter;
-template <typename... Args>
-struct get_handle_parameter<type_list<Args...>>
-: std::type_identity<
-      std::conditional_t<is_const_handle_parameter_list<Args...>, ecs::const_handle, ecs::handle>> {
-};
+struct retain_parameter
+: std::bool_constant<!is_component_parameter<T> && !is_handle_parameter<T>> {};
 
 template <typename Arg, typename H>
-constexpr bool can_synthesize_call_parameter(H handle) {
+constexpr bool can_synthesize_call_parameter(H&& handle) {
   if constexpr (is_handle_parameter<Arg> ||
                 (is_component_parameter<Arg> && is_pointer_component_parameter<Arg>)) {
     return true;
@@ -59,7 +43,7 @@ constexpr bool can_synthesize_call_parameter(H handle) {
 }
 
 template <typename Arg, typename H>
-constexpr auto&& synthesize_call_parameter(H handle) {
+constexpr decltype(auto) synthesize_call_parameter(H&& handle) {
   if constexpr (is_handle_parameter<Arg>) {
     return handle;
   } else if constexpr (is_component_parameter<Arg> && is_pointer_component_parameter<Arg>) {
@@ -70,34 +54,29 @@ constexpr auto&& synthesize_call_parameter(H handle) {
   }
 }
 
-template <bool, function_type, typename, typename, function auto>
-inline constexpr auto call_impl_invoke = nullptr;
-
-template <bool Check, typename R, typename... ConvertedArgs, typename H,
-          typename... SynthesizedArgs, function auto F>
-inline constexpr auto
-    call_impl_invoke<Check, R(ConvertedArgs...), H, type_list<SynthesizedArgs...>, F> =
-        +[](H h, ConvertedArgs... args) -> R {
-  if constexpr (Check) {
-    if (!(can_synthesize_call_parameter<SynthesizedArgs>(h) && ...)) {
-      return;
+template <bool Check, function auto F, typename H, typename... ForwardedArgs,
+          typename... SynthesizedArgs>
+consteval auto call_impl_create(tl::list<ForwardedArgs...>, tl::list<SynthesizedArgs...>) {
+  return +[](H h, ForwardedArgs... args) {
+    if constexpr (Check) {
+      if (!(can_synthesize_call_parameter<SynthesizedArgs>(h) && ...)) {
+        return;
+      }
     }
-  }
-  return F(synthesize_call_parameter<SynthesizedArgs>(h)..., args...);
-};
+    return F(synthesize_call_parameter<SynthesizedArgs>(h)..., args...);
+  };
+}
 
 template <bool Check, function auto F>
 struct call_impl {
-  using return_type = return_type_t<decltype(F)>;
-  using parameter_types = parameter_types_t<decltype(F)>;
-  using converted_parameter_list = typename detail::convert_parameter_list<parameter_types>::type;
-  using synthesized_parameter_list =
-      type_list_first_n<parameter_types,
-                        type_list_size<parameter_types> - type_list_size<converted_parameter_list>>;
-  using handle_type = typename detail::get_handle_parameter<parameter_types>::type;
-  static inline constexpr auto value =
-      detail::call_impl_invoke<Check, make_function_type<return_type, converted_parameter_list>,
-                               handle_type, synthesized_parameter_list, F>;
+  using parameters = parameter_types_of<decltype(F)>;
+  static inline constexpr auto retain_index = tl::find_if<parameters, retain_parameter>;
+  using forwarded_parameters = tl::sublist<parameters, retain_index>;
+  using synthesized_parameters = tl::sublist<parameters, 0, retain_index>;
+  using handle_type = std::conditional_t<tl::all_of<synthesized_parameters, is_const_parameter>,
+                                         ecs::const_handle, ecs::handle>;
+  static inline constexpr auto value = detail::call_impl_create<Check, F, handle_type>(
+      forwarded_parameters{}, synthesized_parameters{});
 };
 
 }  // namespace detail

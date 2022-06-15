@@ -377,11 +377,11 @@ void DeathRayBoss::on_arm_death(Ship* arm) {
   }
 }
 
-std::uint32_t transform_death_ray_boss_damage(ii::SimInterface& sim, ii::ecs::handle h,
+std::uint32_t transform_death_ray_boss_damage(ii::ecs::handle h, ii::SimInterface& sim,
                                               ii::damage_type type, std::uint32_t damage) {
   // TODO.
   auto d = static_cast<DeathRayBoss*>(h.get<ii::LegacyShip>()->ship.get())->get_damage(damage);
-  return ii::scale_boss_damage(sim, h, type, d);
+  return ii::scale_boss_damage(h, sim, type, d);
 }
 
 }  // namespace

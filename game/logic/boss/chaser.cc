@@ -383,7 +383,7 @@ void spawn_chaser_boss(SimInterface& sim, std::uint32_t cycle) {
   h.add(Health{});
   h.add(Boss{.boss = ii::boss_flag::kBoss1C});
 
-  h.add(Update{.update = [](SimInterface& sim, ecs::handle h) {
+  h.add(Update{.update = [](ecs::handle h, SimInterface& sim) {
     auto& health = *h.get<Health>();
     auto hp_lookup = get_hp_lookup(sim.player_count(), h.get<Cycle>()->cycle);
     health.hp = 0;

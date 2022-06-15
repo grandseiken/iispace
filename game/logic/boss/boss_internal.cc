@@ -37,7 +37,7 @@ std::uint32_t calculate_boss_hp(std::uint32_t base, std::uint32_t players, std::
   return r;
 }
 
-std::uint32_t scale_boss_damage(SimInterface& sim, ecs::handle, damage_type, std::uint32_t damage) {
+std::uint32_t scale_boss_damage(ecs::handle, SimInterface& sim, damage_type, std::uint32_t damage) {
   return damage * (60 / (1 + (sim.get_lives() ? sim.player_count() : sim.alive_players())));
 }
 

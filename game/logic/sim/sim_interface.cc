@@ -207,10 +207,10 @@ ecs::handle SimInterface::create_legacy(std::unique_ptr<Ship> ship) {
   auto p = ship.get();
   auto h = internals_->index.create();
   h.emplace<LegacyShip>().ship = std::move(ship);
-  h.emplace<Update>().update = [](SimInterface&, ecs::handle h) {
+  h.emplace<Update>().update = [](ecs::handle h, SimInterface&) {
     static_cast<Ship*>(h.get<LegacyShip>()->ship.get())->update();
   };
-  h.emplace<Render>().render = [](const SimInterface&, ecs::const_handle h) {
+  h.emplace<Render>().render = [](ecs::const_handle h, const SimInterface&) {
     static_cast<Ship*>(h.get<LegacyShip>()->ship.get())->render();
   };
   p->set_handle(h);

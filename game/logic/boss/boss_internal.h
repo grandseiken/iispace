@@ -8,10 +8,10 @@ namespace ii {
 std::uint32_t calculate_boss_score(boss_flag boss, std::uint32_t players, std::uint32_t cycle);
 std::uint32_t calculate_boss_hp(std::uint32_t base, std::uint32_t players, std::uint32_t cycle);
 std::uint32_t
-scale_boss_damage(SimInterface&, ecs::handle h, damage_type type, std::uint32_t damage);
+scale_boss_damage(ecs::handle h, SimInterface&, damage_type type, std::uint32_t damage);
 
 template <bool ExplodeOnBombDamage>
-void legacy_boss_on_hit(SimInterface&, ecs::handle h, damage_type type) {
+void legacy_boss_on_hit(ecs::handle h, SimInterface&, damage_type type) {
   auto boss = static_cast<::Boss*>(h.get<LegacyShip>()->ship.get());
   if (type == damage_type::kBomb && ExplodeOnBombDamage) {
     boss->explosion();
