@@ -36,13 +36,19 @@ void render_entity_shape(ecs::const_handle h, const Render& render, const Health
              });
 }
 
-template <ecs::Component Logic, geom::ShapeNode S>
+template <ecs::Component Logic, geom::ShapeNode S = typename Logic::shape>
+void explode_entity_shapes_with_colour(ecs::const_handle h, SimInterface& sim, const glm::vec4& c) {
+  S::iterate(geom::iterate_centres, get_shape_parameters<Logic>(h), {},
+             [&](const vec2& v, const glm::vec4&) { sim.explosion(to_float(v), c); });
+}
+
+template <ecs::Component Logic, geom::ShapeNode S = typename Logic::shape>
 void explode_entity_shapes(ecs::const_handle h, SimInterface& sim) {
   S::iterate(geom::iterate_centres, get_shape_parameters<Logic>(h), {},
              [&](const vec2& v, const glm::vec4& c) { sim.explosion(to_float(v), c); });
 }
 
-template <ecs::Component Logic, geom::ShapeNode S>
+template <ecs::Component Logic, geom::ShapeNode S = typename Logic::shape>
 void explode_entity_shapes_towards(ecs::const_handle h, SimInterface& sim, std::uint32_t time,
                                    const vec2& towards) {
   S::iterate(geom::iterate_centres, get_shape_parameters<Logic>(h), {},

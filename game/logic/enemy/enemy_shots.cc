@@ -15,11 +15,10 @@ struct BossShot : ecs::component {
       geom::shape<geom::ngon{10, 8, glm::vec4{1.f}}>,
       geom::shape<geom::ball_collider{12, shape_flag::kDangerous}>>;
 
-  BossShot(const vec2& velocity, const glm::vec4 colour, fixed rotate_speed)
-  : velocity{velocity}, colour{colour}, rotate_speed{rotate_speed} {}
+  BossShot(const vec2& velocity, fixed rotate_speed)
+  : velocity{velocity}, rotate_speed{rotate_speed} {}
   std::uint32_t timer = 0;
   vec2 velocity{0};
-  glm::vec4 colour{0.f};
   fixed rotate_speed = 0;
 
   void update(ecs::handle h, Transform& transform, Render& render, SimInterface& sim) {
@@ -31,11 +30,10 @@ struct BossShot : ecs::component {
     }
     transform.set_rotation(transform.rotation + fixed_c::hundredth * 2);
     if (sim.any_collision(transform.centre, ii::shape_flag::kSafeShield)) {
-      explode_entity_shapes_towards<BossShot, shape>(h, sim, 4, transform.centre - velocity);
+      explode_entity_shapes_towards<BossShot>(h, sim, 4, transform.centre - velocity);
       h.emplace<Destroy>();
       return;
     }
-    render.colour_override = colour;
     if (rotate_speed && ++timer % 8 == 0) {
       velocity = rotate(velocity, 8 * rotate_speed);
     }
@@ -44,11 +42,12 @@ struct BossShot : ecs::component {
 }  // namespace
 
 void spawn_boss_shot(SimInterface& sim, const vec2& position, const vec2& velocity,
-                     const glm::vec4& c, fixed rotate_speed) {
+                     const glm::vec4& colour, fixed rotate_speed) {
   auto h = create_ship<BossShot>(sim, position);
   add_enemy_health<BossShot>(h, 0);
-  h.add(BossShot{velocity, c, rotate_speed});
+  h.add(BossShot{velocity, rotate_speed});
   h.add(Enemy{.threat_value = 1});
+  h.get<Render>()->colour_override = colour;
 }
 
 }  // namespace ii

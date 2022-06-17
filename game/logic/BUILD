@@ -19,6 +19,7 @@ cc_library(
     "enemy/enemy_large.cc",
     "enemy/enemy_shots.cc",
     "enemy/enemy_small.cc",
+    "enemy/enemy_snake.cc",
     "enemy/enemy_wall.cc",
     "enemy/enemy.cc",
     "enemy/enemy.h",
