@@ -1,110 +1,12 @@
 #ifndef II_GAME_LOGIC_SHIP_SHIP_H
 #define II_GAME_LOGIC_SHIP_SHIP_H
-#include "game/common/enum.h"
-#include "game/common/functional.h"
-#include "game/logic/ship/ecs_index.h"
+#include "game/logic/ecs/index.h"
+#include "game/logic/ship/components.h"
 #include "game/logic/ship/shape.h"
 #include "game/logic/sim/sim_interface.h"
-#include <functional>
+#include <optional>
 
 namespace ii {
-
-enum class ship_flag : std::uint32_t {
-  kNone = 0,
-  kPlayer = 1,
-  kWall = 2,
-  kEnemy = 4,
-  kBoss = 8,
-  kPowerup = 16,
-};
-
-template <>
-struct bitmask_enum<ship_flag> : std::true_type {};
-
-class IShip;
-struct LegacyShip : ecs::component {
-  std::unique_ptr<IShip> ship;
-};
-
-struct Destroy : ecs::component {
-  std::optional<ecs::entity_id> source;
-};
-
-struct ShipFlag : ecs::component {
-  ship_flag flags = ship_flag::kNone;
-};
-
-struct Transform : ecs::component {
-  vec2 centre = {0, 0};
-  fixed rotation = 0;
-
-  void move(const vec2& v) {
-    centre += v;
-  }
-  void rotate(fixed amount) {
-    set_rotation(rotation + amount);
-  }
-  void set_rotation(fixed r) {
-    rotation = normalise_angle(r);
-  }
-};
-
-struct Collision : ecs::component {
-  fixed bounding_width = 0;
-  function_ptr<bool(ecs::const_handle, const vec2&, shape_flag)> check;
-
-  vec2 centre(ecs::const_handle h) const;
-};
-
-struct Update : ecs::component {
-  function_ptr<void(ecs::handle, SimInterface&)> update;
-};
-
-struct Render : ecs::component {
-  std::optional<glm::vec4> colour_override;
-  function_ptr<void(ecs::const_handle, const SimInterface&)> render;
-};
-
-enum class damage_type {
-  kNone,
-  kMagic,
-  kBomb,
-};
-
-struct Health : ecs::component {
-  std::uint32_t hp = 0;
-  std::uint32_t max_hp = hp;
-
-  std::uint32_t hit_timer = 0;
-  std::optional<std::uint32_t> hit_flash_ignore_index;
-
-  std::optional<ii::sound> hit_sound0 = ii::sound::kEnemyHit;
-  std::optional<ii::sound> hit_sound1 = ii::sound::kEnemyHit;
-  std::optional<ii::sound> destroy_sound = ii::sound::kEnemyDestroy;
-
-  function_ptr<std::uint32_t(ecs::handle, SimInterface&, damage_type, std::uint32_t)>
-      damage_transform;
-  function_ptr<void(ecs::handle, SimInterface&, damage_type)> on_hit;
-  function_ptr<void(ecs::const_handle, SimInterface&, damage_type)> on_destroy;
-
-  bool is_hp_low() const {
-    return 3 * hp <= max_hp + max_hp / 5;
-  }
-
-  void damage(ecs::handle h, SimInterface&, std::uint32_t damage, damage_type type,
-              std::optional<ecs::entity_id> source);
-};
-
-struct Enemy : ecs::component {
-  std::uint32_t threat_value = 1;
-  std::uint32_t score_reward = 0;
-  std::uint32_t boss_score_reward = 0;
-};
-
-struct Boss : ecs::component {
-  boss_flag boss = boss_flag{0};
-  bool show_hp_bar = false;
-};
 
 class IShip {
 public:
@@ -138,7 +40,7 @@ struct ShipForwarder : IShip {
   ecs::handle h;
   ShipForwarder(SimInterface& sim, ecs::handle h) : IShip{sim}, h{h} {}
   ship_flag type() const override {
-    return h.get<ShipFlag>()->flags;
+    return h.get<ShipFlags>()->flags;
   }
   ecs::handle handle() const override {
     return h;
@@ -256,16 +158,6 @@ inline void IShip::damage(std::uint32_t damage, bool magic, IShip* source) {
                                 : damage_type::kNone,
               source_id);
   }
-}
-
-inline vec2 Collision::centre(ecs::const_handle h) const {
-  if (auto c = h.get<Transform>()) {
-    return c->centre;
-  }
-  if (auto c = h.get<LegacyShip>()) {
-    return c->ship->position();
-  }
-  return vec2{0};
 }
 
 }  // namespace ii

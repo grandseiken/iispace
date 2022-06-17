@@ -59,9 +59,8 @@ void spawn_snake(ii::SimInterface& sim, const vec2& position, const glm::vec4& c
 
 SnakeTail::SnakeTail(ii::SimInterface& sim, const vec2& position, const glm::vec4& colour)
 : Enemy{sim, position, ii::ship_flag::kNone} {
-  add_new_shape<ii::Polygon>(
-      vec2{0}, 10, 4, colour, 0,
-      ii::shape_flag::kDangerous | ii::shape_flag::kShield | ii::shape_flag::kVulnShield);
+  add_new_shape<ii::Polygon>(vec2{0}, 10, 4, colour, 0,
+                             ii::shape_flag::kDangerous | ii::shape_flag::kWeakShield);
 }
 
 void SnakeTail::update() {
@@ -151,11 +150,10 @@ void Snake::on_destroy(bool bomb) {
 
 class RainbowShot : public BossShot {
 public:
-  RainbowShot(ii::SimInterface& sim, const vec2& position, const vec2& velocity, ii::Ship* boss);
+  RainbowShot(ii::SimInterface& sim, const vec2& position, const vec2& velocity);
   void update() override;
 
 private:
-  ii::Ship* boss_ = nullptr;
   std::uint32_t timer_ = 0;
 };
 
@@ -179,9 +177,8 @@ private:
   std::uint32_t stimer_ = 0;
 };
 
-void spawn_rainbow_shot(ii::SimInterface& sim, const vec2& position, const vec2& velocity,
-                        ii::Ship* boss) {
-  auto h = sim.create_legacy(std::make_unique<RainbowShot>(sim, position, velocity, boss));
+void spawn_rainbow_shot(ii::SimInterface& sim, const vec2& position, const vec2& velocity) {
+  auto h = sim.create_legacy(std::make_unique<RainbowShot>(sim, position, velocity));
   h.add(ii::legacy_collision(/* bounding width */ 12));
   h.add(ii::Enemy{.threat_value = 1});
   h.add(ii::Health{.hp = 0, .on_destroy = &ii::legacy_enemy_on_destroy});
@@ -222,7 +219,6 @@ public:
 
 private:
   friend class SuperBossArc;
-  friend class RainbowShot;
 
   std::uint32_t cycle_ = 0;
   std::uint32_t ctimer_ = 0;
@@ -233,37 +229,19 @@ private:
   std::uint32_t snakes_ = 0;
 };
 
-RainbowShot::RainbowShot(ii::SimInterface& sim, const vec2& position, const vec2& velocity,
-                         ii::Ship* boss)
-: BossShot{sim, position, velocity}, boss_{boss} {}
+RainbowShot::RainbowShot(ii::SimInterface& sim, const vec2& position, const vec2& velocity)
+: BossShot{sim, position, velocity} {}
 
 void RainbowShot::update() {
   BossShot::update();
-  static const vec2 center = {ii::kSimDimensions.x / 2, ii::kSimDimensions.y / 2};
-
-  if (length(shape().centre - center) > 100 && timer_ % 2 == 0) {
-    const auto& list = sim().collision_list(shape().centre, ii::shape_flag::kShield);
-    SuperBoss* s = (SuperBoss*)boss_;
-    for (std::size_t i = 0; i < list.size(); ++i) {
-      bool boss = false;
-      for (std::size_t j = 0; j < s->arcs_.size(); ++j) {
-        if (list[i] == s->arcs_[j]) {
-          boss = true;
-          break;
-        }
-      }
-      if (!boss) {
-        continue;
-      }
-
-      explosion(std::nullopt, 4, true, to_float(shape().centre - dir_));
-      destroy();
-      return;
-    }
+  if (sim().any_collision(shape().centre, ii::shape_flag::kSafeShield)) {
+    explosion(std::nullopt, 4, true, to_float(shape().centre - dir_));
+    destroy();
+    return;
   }
 
   ++timer_;
-  static const fixed r = 6 * (8 * fixed_c::hundredth / 10);
+  static constexpr fixed r = 6 * (8 * fixed_c::hundredth / 10);
   if (timer_ % 8 == 0) {
     dir_ = rotate(dir_, r);
   }
@@ -277,12 +255,12 @@ SuperBossArc::SuperBossArc(ii::SimInterface& sim, const vec2& position, std::uin
   add_new_shape<ii::PolyArc>(vec2{0}, 135, 32, 2, c, i * 2 * fixed_c::pi / 16);
   add_new_shape<ii::PolyArc>(vec2{0}, 130, 32, 2, c, i * 2 * fixed_c::pi / 16);
   add_new_shape<ii::PolyArc>(vec2{0}, 125, 32, 2, c, i * 2 * fixed_c::pi / 16,
-                             ii::shape_flag::kShield);
+                             ii::shape_flag::kShield | ii::shape_flag::kSafeShield);
   add_new_shape<ii::PolyArc>(vec2{0}, 120, 32, 2, c, i * 2 * fixed_c::pi / 16);
   add_new_shape<ii::PolyArc>(vec2{0}, 115, 32, 2, c, i * 2 * fixed_c::pi / 16);
   add_new_shape<ii::PolyArc>(vec2{0}, 110, 32, 2, c, i * 2 * fixed_c::pi / 16);
   add_new_shape<ii::PolyArc>(vec2{0}, 105, 32, 2, c, i * 2 * fixed_c::pi / 16,
-                             ii::shape_flag::kShield);
+                             ii::shape_flag::kShield | ii::shape_flag::kSafeShield);
 }
 
 void SuperBossArc::update() {
@@ -426,7 +404,7 @@ void SuperBoss::update() {
   if (state_ == state::kIdle && timer_ % 72 == 0) {
     for (std::uint32_t i = 0; i < 128; ++i) {
       vec2 d = from_polar(i * pi2d128, 1_fx);
-      spawn_rainbow_shot(sim(), shape().centre + d * 42, move_vec + d * 3, this);
+      spawn_rainbow_shot(sim(), shape().centre + d * 42, move_vec + d * 3);
       play_sound_random(ii::sound::kBossFire);
     }
   }

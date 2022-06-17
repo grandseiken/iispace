@@ -1,8 +1,7 @@
 #ifndef II_GAME_LOGIC_SHIP_SHAPE_H
 #define II_GAME_LOGIC_SHIP_SHAPE_H
-#include "game/common/enum.h"
 #include "game/common/math.h"
-#include "game/logic/ship/shape_v2.h"
+#include "game/logic/ship/enums.h"
 #include <glm/glm.hpp>
 #include <memory>
 #include <optional>

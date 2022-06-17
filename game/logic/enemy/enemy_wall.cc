@@ -1,0 +1,159 @@
+#include "game/logic/enemy/enemy.h"
+#include "game/logic/ship/geometry.h"
+#include "game/logic/ship/ship_template.h"
+#include <algorithm>
+
+namespace ii {
+namespace {
+struct Square : ecs::component {
+  static constexpr auto kShipFlags = ship_flag::kEnemy | ship_flag::kWall;
+  static constexpr std::uint32_t kBoundingWidth = 15;
+  static constexpr sound kDestroySound = sound::kEnemyDestroy;
+  static constexpr fixed kSpeed = 2 + 1_fx / 4;
+  using shape = standard_transform<geom::shape<geom::box{
+      {10, 10}, colour_hue360(120, .6f), shape_flag::kDangerous | shape_flag::kVulnerable}>>;
+
+  vec2 dir{0};
+  std::uint32_t timer = 0;
+
+  Square(SimInterface& sim, fixed dir_angle)
+  : dir{from_polar(dir_angle, 1_fx)}, timer{sim.random(80) + 40} {}
+
+  void
+  update(ecs::handle h, Transform& transform, Health& health, Render& render, SimInterface& sim) {
+    if (sim.is_on_screen(transform.centre) && !sim.get_non_wall_count()) {
+      if (timer) {
+        --timer;
+      }
+    } else {
+      timer = sim.random(80) + 40;
+    }
+
+    if (!timer) {
+      health.damage(h, sim, 4, damage_type::kNone, std::nullopt);
+    }
+
+    const vec2& v = transform.centre;
+    if (v.x < 0 && dir.x <= 0) {
+      dir.x = -dir.x;
+      if (dir.x <= 0) {
+        dir.x = 1;
+      }
+    }
+    if (v.y < 0 && dir.y <= 0) {
+      dir.y = -dir.y;
+      if (dir.y <= 0) {
+        dir.y = 1;
+      }
+    }
+    if (v.x > ii::kSimDimensions.x && dir.x >= 0) {
+      dir.x = -dir.x;
+      if (dir.x >= 0) {
+        dir.x = -1;
+      }
+    }
+    if (v.y > ii::kSimDimensions.y && dir.y >= 0) {
+      dir.y = -dir.y;
+      if (dir.y >= 0) {
+        dir.y = -1;
+      }
+    }
+    dir = normalise(dir);
+    transform.move(dir * kSpeed);
+    transform.set_rotation(angle(dir));
+
+    if ((timer % 4 == 1 || timer % 4 == 2) && !sim.get_non_wall_count()) {
+      render.colour_override = colour_hue(0.f, .2f, 0.f);
+    } else {
+      render.colour_override.reset();
+    }
+  }
+};
+
+struct Wall : ecs::component {
+  static constexpr auto kShipFlags = ship_flag::kEnemy | ship_flag::kWall;
+  static constexpr std::uint32_t kBoundingWidth = 50;
+  static constexpr sound kDestroySound = sound::kEnemyDestroy;
+
+  static constexpr std::uint32_t kTimer = 80;
+  static constexpr fixed kSpeed = 1 + 1_fx / 4;
+  using shape = standard_transform<geom::shape<geom::box{
+      {10, 40}, colour_hue360(120, .5f, .6f), shape_flag::kDangerous | shape_flag::kVulnerable}>>;
+
+  vec2 dir{0, 1};
+  std::uint32_t timer = 0;
+  bool is_rotating = false;
+  bool rdir = false;
+
+  Wall(bool rdir) : rdir{rdir} {}
+
+  void update(ecs::handle h, Transform& transform, Health& health, SimInterface& sim) {
+    if (!sim.get_non_wall_count() && timer % 8 < 2) {
+      if (health.hp > 2) {
+        sim.play_sound(sound::kEnemySpawn, 1.f, 0.f);
+      }
+      health.damage(h, sim, std::max(2u, health.hp) - 2, damage_type::kNone, std::nullopt);
+    }
+
+    if (is_rotating) {
+      auto d = rotate(dir, (rdir ? -1 : 1) * (kTimer - timer) * fixed_c::pi / (4 * kTimer));
+
+      transform.set_rotation(angle(d));
+      if (!--timer) {
+        is_rotating = false;
+        dir = rotate(dir, rdir ? -fixed_c::pi / 4 : fixed_c::pi / 4);
+      }
+      return;
+    }
+    if (++timer > kTimer * 6) {
+      if (sim.is_on_screen(transform.centre)) {
+        timer = kTimer;
+        is_rotating = true;
+      } else {
+        timer = 0;
+      }
+    }
+
+    const auto& v = transform.centre;
+    if ((v.x < 0 && dir.x < -fixed_c::hundredth) || (v.y < 0 && dir.y < -fixed_c::hundredth) ||
+        (v.x > ii::kSimDimensions.x && dir.x > fixed_c::hundredth) ||
+        (v.y > ii::kSimDimensions.y && dir.y > fixed_c::hundredth)) {
+      dir = -normalise(dir);
+    }
+
+    transform.move(dir * kSpeed);
+    transform.set_rotation(angle(dir));
+  }
+
+  void on_destroy(const Transform& transform, SimInterface& sim, damage_type type) const {
+    if (type == damage_type::kBomb) {
+      return;
+    }
+    auto d = rotate(dir, fixed_c::pi / 2);
+    auto v = transform.centre + d * 10 * 3;
+    if (sim.is_on_screen(v)) {
+      spawn_square(sim, v, transform.rotation);
+    }
+    v = transform.centre - d * 10 * 3;
+    if (sim.is_on_screen(v)) {
+      spawn_square(sim, v, transform.rotation);
+    }
+  }
+};
+}  // namespace
+
+void spawn_square(SimInterface& sim, const vec2& position, fixed dir_angle) {
+  auto h = create_ship<Square>(sim, position);
+  add_enemy_health<Square>(h, 4);
+  h.add(Square{sim, dir_angle});
+  h.add(Enemy{.threat_value = 2, .score_reward = 25});
+}
+
+void spawn_wall(SimInterface& sim, const vec2& position, bool rdir) {
+  auto h = create_ship<Wall>(sim, position);
+  add_enemy_health<Wall>(h, 10);
+  h.add(Wall{rdir});
+  h.add(Enemy{.threat_value = 4, .score_reward = 20});
+}
+
+}  // namespace ii

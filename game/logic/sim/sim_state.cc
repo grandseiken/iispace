@@ -1,5 +1,6 @@
 #include "game/logic/sim/sim_state.h"
 #include "game/logic/boss/boss.h"
+#include "game/logic/ecs/call.h"
 #include "game/logic/overmind.h"
 #include "game/logic/player.h"
 #include "game/logic/ship/ship.h"
@@ -10,6 +11,14 @@
 #include <unordered_set>
 
 namespace ii {
+namespace {
+vec2 get_centre(const Transform* transform, const LegacyShip* legacy_ship) {
+  if (transform) {
+    return transform->centre;
+  }
+  return legacy_ship->ship->position();
+}
+}  // namespace
 
 SimState::~SimState() {
   Stars::clear();
@@ -90,7 +99,7 @@ void SimState::update() {
 
   for (auto& e : internals_->collisions) {
     auto& c = *e.handle.get<Collision>();
-    e.x_min = c.centre(e.handle).x - c.bounding_width;
+    e.x_min = ecs::call<&get_centre>(e.handle).x - c.bounding_width;
   }
   std::ranges::stable_sort(internals_->collisions,
                            [](const auto& a, const auto& b) { return a.x_min < b.x_min; });

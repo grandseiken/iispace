@@ -1,5 +1,5 @@
-#ifndef II_GAME_LOGIC_SHIP_ECS_ID_H
-#define II_GAME_LOGIC_SHIP_ECS_ID_H
+#ifndef II_GAME_LOGIC_ECS_ID_H
+#define II_GAME_LOGIC_ECS_ID_H
 #include "game/common/enum.h"
 #include <cstdint>
 #include <type_traits>

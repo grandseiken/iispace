@@ -1,7 +1,7 @@
-#ifndef II_GAME_LOGIC_SHIP_ECS_CALL_H
-#define II_GAME_LOGIC_SHIP_ECS_CALL_H
+#ifndef II_GAME_LOGIC_ECS_CALL_H
+#define II_GAME_LOGIC_ECS_CALL_H
 #include "game/common/functional.h"
-#include "game/logic/ship/ecs_index.h"
+#include "game/logic/ecs/index.h"
 #include <cassert>
 #include <type_traits>
 

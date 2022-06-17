@@ -1,29 +1,22 @@
 cc_library(
-  name = "ecs",
-  hdrs = [
-    "ecs_call.h",
-    "ecs_id.h",
-    "ecs_index.h",
-    "ecs_index_impl.h",
-  ],
-  deps = ["//game/common:types"],
-  visibility = ["//game/logic:__subpackages__"],
-)
-
-cc_library(
   name = "ship",
   hdrs = [
+    "components.h",
+    "enums.h",
+    "geometry.h",
     "shape.h",
-    "shape_v2.h",
+    "ship_template.h",
     "ship.h",
   ],
   srcs = [
+    "components.cc",
     "shape.cc",
     "ship.cc",
   ],
   deps = [
-    ":ecs",
+    "//game/common:types",
     "//game/common:math",
+    "//game/logic/ecs",
     "//game/logic/sim:sim_interface",
     "@glm",
   ],

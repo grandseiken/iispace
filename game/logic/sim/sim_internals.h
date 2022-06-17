@@ -1,7 +1,6 @@
 #ifndef II_GAME_LOGIC_SIM_SIM_INTERNALS_H
 #define II_GAME_LOGIC_SIM_SIM_INTERNALS_H
-#include "game/logic/ship/ecs_index.h"
-#include "game/logic/ship/ship.h"
+#include "game/logic/ecs/index.h"
 #include "game/logic/sim/random_engine.h"
 #include "game/logic/sim/sim_interface.h"
 #include "game/logic/sim/sim_io.h"

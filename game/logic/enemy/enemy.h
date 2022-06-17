@@ -1,6 +1,6 @@
 #ifndef II_GAME_LOGIC_ENEMY_ENEMY_H
 #define II_GAME_LOGIC_ENEMY_ENEMY_H
-#include "game/logic/ship/ecs_index.h"
+#include "game/logic/ecs/index.h"
 #include "game/logic/ship/ship.h"
 
 class Enemy : public ii::Ship {

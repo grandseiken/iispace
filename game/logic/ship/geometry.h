@@ -1,7 +1,7 @@
-#ifndef II_GAME_LOGIC_SHIP_SHAPE_V2_H
-#define II_GAME_LOGIC_SHIP_SHAPE_V2_H
-#include "game/common/enum.h"
+#ifndef II_GAME_LOGIC_SHIP_GEOMETRY_H
+#define II_GAME_LOGIC_SHIP_GEOMETRY_H
 #include "game/common/math.h"
+#include "game/logic/ship/enums.h"
 #include <glm/glm.hpp>
 #include <concepts>
 #include <cstddef>
@@ -10,18 +10,6 @@
 #include <tuple>
 #include <type_traits>
 #include <utility>
-
-namespace ii {
-enum class shape_flag : std::uint32_t {
-  kNone = 0,
-  kVulnerable = 1,
-  kDangerous = 2,
-  kShield = 4,
-  kVulnShield = 8
-};
-template <>
-struct bitmask_enum<shape_flag> : std::true_type {};
-}  // namespace ii
 
 namespace ii::geom {
 struct iterate_lines_t {};
@@ -75,6 +63,7 @@ template <typename T>
 concept PointFunction = std::invocable<T, const vec2&, const glm::vec4&>;
 template <typename T>
 concept LineFunction = std::invocable<T, const vec2&, const vec2&, const glm::vec4&>;
+
 template <typename T, typename I>
 concept IterateFunction = IterTag<I> &&
     ((!std::same_as<I, iterate_lines_t> || LineFunction<T>)&&(!std::same_as<I, iterate_centres_t> ||

@@ -87,7 +87,7 @@ void Shot::update() {
   }
 
   if (sim().any_collision(shape().centre, ii::shape_flag::kShield) ||
-      (!magic_ && sim().any_collision(shape().centre, ii::shape_flag::kVulnShield))) {
+      (!magic_ && sim().any_collision(shape().centre, ii::shape_flag::kWeakShield))) {
     destroy();
   }
 }

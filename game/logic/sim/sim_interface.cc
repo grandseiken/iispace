@@ -1,4 +1,5 @@
 #include "game/logic/sim/sim_interface.h"
+#include "game/logic/ecs/call.h"
 #include "game/logic/overmind.h"
 #include "game/logic/player.h"
 #include "game/logic/ship/ship.h"
@@ -6,6 +7,14 @@
 #include <glm/gtc/constants.hpp>
 
 namespace ii {
+namespace {
+vec2 get_centre(const Transform* transform, const LegacyShip* legacy_ship) {
+  if (transform) {
+    return transform->centre;
+  }
+  return legacy_ship->ship->position();
+}
+}  // namespace
 
 glm::vec4 SimInterface::player_colour(std::size_t player_number) {
   return player_number == 0 ? colour_hue360(0)
@@ -82,7 +91,7 @@ bool SimInterface::any_collision(const vec2& point, shape_flag category) const {
 
   for (const auto& collision : internals_->collisions) {
     auto& e = *collision.handle.get<Collision>();
-    auto v = e.centre(collision.handle);
+    auto v = ecs::call<&get_centre>(collision.handle);
     fixed w = collision.bounding_width;
 
     // TODO: this optmization check is incorrect, since collision list is sorted based on x-min
@@ -111,7 +120,7 @@ SimInterface::ship_list SimInterface::collision_list(const vec2& point, shape_fl
 
   for (const auto& collision : internals_->collisions) {
     auto& e = *collision.handle.get<Collision>();
-    auto v = e.centre(collision.handle);
+    auto v = ecs::call<&get_centre>(collision.handle);
     fixed w = collision.bounding_width;
 
     // TODO: same as above.

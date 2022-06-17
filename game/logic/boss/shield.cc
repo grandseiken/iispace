@@ -43,7 +43,7 @@ ShieldBombBoss::ShieldBombBoss(ii::SimInterface& sim)
   }
 
   add_new_shape<ii::Polygon>(vec2{0}, 130, 16, c1, 0,
-                             ii::shape_flag::kVulnShield | ii::shape_flag::kDangerous);
+                             ii::shape_flag::kWeakShield | ii::shape_flag::kDangerous);
   add_new_shape<ii::Polygon>(vec2{0}, 125, 16, c1, 0);
   add_new_shape<ii::Polygon>(vec2{0}, 120, 16, c1, 0);
 
@@ -82,7 +82,7 @@ void ShieldBombBoss::update() {
 
     if (!unshielded_) {
       shapes()[0]->category = ii::shape_flag::kDangerous | ii::shape_flag::kVulnerable;
-      shapes()[17]->category = ii::shape_flag::kDangerous | ii::shape_flag::kVulnShield;
+      shapes()[17]->category = ii::shape_flag::kDangerous | ii::shape_flag::kWeakShield;
 
       for (std::size_t i = 0; i < 3; ++i) {
         shapes()[i + 17]->colour = c1;

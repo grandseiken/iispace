@@ -1,6 +1,6 @@
 #ifndef II_GAME_LOGIC_PLAYER_H
 #define II_GAME_LOGIC_PLAYER_H
-#include "game/logic/ship/ecs_id.h"
+#include "game/logic/ecs/id.h"
 #include "game/logic/ship/ship.h"
 
 class Player;

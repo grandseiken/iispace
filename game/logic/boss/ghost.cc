@@ -106,7 +106,7 @@ void GhostMine::update() {
     timer_--;
     if (!timer_) {
       shapes()[0]->category =
-          ii::shape_flag::kDangerous | ii::shape_flag::kShield | ii::shape_flag::kVulnShield;
+          ii::shape_flag::kDangerous | ii::shape_flag::kShield | ii::shape_flag::kWeakShield;
     }
   }
   for (const auto& ship : sim().collision_list(shape().centre, ii::shape_flag::kDangerous)) {

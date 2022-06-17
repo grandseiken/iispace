@@ -1,6 +1,6 @@
-#ifndef II_GAME_LOGIC_SHIP_ECS_INDEX_IMPL_H
-#define II_GAME_LOGIC_SHIP_ECS_INDEX_IMPL_H
-#include "game/logic/ship/ecs_index.h"
+#ifndef II_GAME_LOGIC_ECS_INDEX_I_H
+#define II_GAME_LOGIC_ECS_INDEX_I_H
+#include "game/logic/ecs/index.h"
 #include <algorithm>
 #include <deque>
 

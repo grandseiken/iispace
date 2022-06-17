@@ -1,7 +1,7 @@
 #ifndef II_GAME_LOGIC_SIM_SIM_INTERFACE_H
 #define II_GAME_LOGIC_SIM_SIM_INTERFACE_H
 #include "game/common/math.h"
-#include "game/logic/ship/ecs_index.h"
+#include "game/logic/ecs/index.h"
 #include "game/logic/sim/sim_io.h"
 #include "game/mixer/sound.h"
 #include <cstdint>
