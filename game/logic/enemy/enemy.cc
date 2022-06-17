@@ -1,4 +1,4 @@
-#include "game/logic/enemy.h"
+#include "game/logic/enemy/enemy.h"
 #include "game/common/functional.h"
 #include "game/logic/player.h"
 #include "game/logic/ship/ecs_call.h"

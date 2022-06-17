@@ -1,7 +1,7 @@
 #ifndef II_GAME_LOGIC_BOSS_BOSS_INTERNAL_H
 #define II_GAME_LOGIC_BOSS_BOSS_INTERNAL_H
-#include "game/logic/boss.h"
-#include "game/logic/enemy.h"
+#include "game/logic/boss/boss.h"
+#include "game/logic/enemy/enemy.h"
 #include "game/logic/ship/ship.h"
 
 namespace ii {

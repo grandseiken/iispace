@@ -1,6 +1,5 @@
 #include "game/logic/sim/sim_state.h"
-#include "game/logic/boss.h"
-#include "game/logic/enemy.h"
+#include "game/logic/boss/boss.h"
 #include "game/logic/overmind.h"
 #include "game/logic/player.h"
 #include "game/logic/ship/ship.h"

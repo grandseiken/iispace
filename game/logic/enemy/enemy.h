@@ -1,5 +1,5 @@
-#ifndef II_GAME_LOGIC_ENEMY_H
-#define II_GAME_LOGIC_ENEMY_H
+#ifndef II_GAME_LOGIC_ENEMY_ENEMY_H
+#define II_GAME_LOGIC_ENEMY_ENEMY_H
 #include "game/logic/ship/ecs_index.h"
 #include "game/logic/ship/ship.h"
 

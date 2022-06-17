@@ -1,5 +1,4 @@
 #include "game/logic/player.h"
-#include "game/logic/enemy.h"
 #include <algorithm>
 
 namespace {

@@ -1,5 +1,5 @@
-#ifndef II_GAME_LOGIC_BOSS_H
-#define II_GAME_LOGIC_BOSS_H
+#ifndef II_GAME_LOGIC_BOSS_BOSS_H
+#define II_GAME_LOGIC_BOSS_BOSS_H
 #include "game/logic/sim/sim_interface.h"
 
 namespace ii {

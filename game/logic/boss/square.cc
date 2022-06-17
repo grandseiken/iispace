@@ -1,5 +1,4 @@
 #include "game/logic/boss/boss_internal.h"
-#include "game/logic/enemy.h"
 #include "game/logic/player.h"
 #include <glm/gtc/constants.hpp>
 
