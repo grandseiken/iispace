@@ -11,44 +11,6 @@ const glm::vec4 c0 = colour_hue360(300, .5f, .6f);
 const glm::vec4 c1 = colour_hue360(300, 1.f / 3, .6f);
 const glm::vec4 c2 = colour_hue360(300, .4f, .5f);
 
-class TBossShot : public Enemy {
-public:
-  TBossShot(ii::SimInterface& sim, const vec2& position, fixed angle);
-  void update() override;
-
-private:
-  vec2 dir_{0};
-};
-
-TBossShot::TBossShot(ii::SimInterface& sim, const vec2& position, fixed angle)
-: Enemy{sim, position, ii::ship_flag::kNone} {
-  add_new_shape<ii::Polygon>(vec2{0}, 8, 6, c0, 0,
-                             ii::shape_flag::kDangerous | ii::shape_flag::kVulnerable);
-  dir_ = from_polar(angle, 3_fx);
-}
-
-void TBossShot::update() {
-  if ((shape().centre.x > ii::kSimDimensions.x && dir_.x > 0) ||
-      (shape().centre.x < 0 && dir_.x < 0)) {
-    dir_.x = -dir_.x;
-  }
-  if ((shape().centre.y > ii::kSimDimensions.y && dir_.y > 0) ||
-      (shape().centre.y < 0 && dir_.y < 0)) {
-    dir_.y = -dir_.y;
-  }
-
-  move(dir_);
-}
-
-void spawn_tboss_shot(ii::SimInterface& sim, const vec2& position, fixed angle) {
-  auto h = sim.create_legacy(std::make_unique<TBossShot>(sim, position, angle));
-  h.add(ii::legacy_collision(/* bounding width */ 8));
-  h.add(ii::Enemy{.threat_value = 1});
-  h.add(ii::Health{.hp = 1,
-                   .destroy_sound = ii::sound::kEnemyShatter,
-                   .on_destroy = &ii::legacy_enemy_on_destroy});
-}
-
 class TractorBoss : public Boss {
 public:
   TractorBoss(ii::SimInterface& sim);
@@ -197,11 +159,11 @@ void TractorBoss::update() {
       }
 
       if (timer_ < kTbTimer * 4 && timer_ % (10 - 2 * sim().alive_players()) == 0) {
-        spawn_tboss_shot(sim(), s1_->convert_point(shape().centre, shape().rotation(), vec2{0}),
-                         gen_dir_ ? shape().rotation() + fixed_c::pi : shape().rotation());
+        spawn_bounce(sim(), s1_->convert_point(shape().centre, shape().rotation(), vec2{0}),
+                     gen_dir_ ? shape().rotation() + fixed_c::pi : shape().rotation());
 
-        spawn_tboss_shot(sim(), s2_->convert_point(shape().centre, shape().rotation(), vec2{0}),
-                         shape().rotation() + (gen_dir_ ? 0 : fixed_c::pi));
+        spawn_bounce(sim(), s2_->convert_point(shape().centre, shape().rotation(), vec2{0}),
+                     shape().rotation() + (gen_dir_ ? 0 : fixed_c::pi));
         play_sound_random(ii::sound::kEnemySpawn);
       }
 

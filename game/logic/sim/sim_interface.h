@@ -59,8 +59,8 @@ public:
   count_ships(ship_flag mask = ship_flag{0}, ship_flag exclude_mask = ship_flag{0}) const;
   ship_list all_ships(ship_flag mask = ship_flag{0}) const;
   ship_list ships_in_radius(const vec2& point, fixed radius, ship_flag mask = ship_flag{0}) const;
-  ship_list collision_list(const vec2& point, shape_flag category) const;
-  bool any_collision(const vec2& point, shape_flag category) const;
+  ship_list collision_list(const vec2& point, shape_flag mask) const;
+  bool any_collision(const vec2& point, shape_flag mask) const;
   std::uint32_t get_non_wall_count() const;
   bool is_on_screen(const vec2& point) const;
 

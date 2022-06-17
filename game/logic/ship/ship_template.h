@@ -43,6 +43,15 @@ void explode_entity_shapes(ecs::const_handle h, SimInterface& sim) {
 }
 
 template <ecs::Component Logic, geom::ShapeNode S>
+void explode_entity_shapes_towards(ecs::const_handle h, SimInterface& sim, std::uint32_t time,
+                                   const vec2& towards) {
+  S::iterate(geom::iterate_centres, get_shape_parameters<Logic>(h), {},
+             [&](const vec2& v, const glm::vec4& c) {
+               sim.explosion(to_float(v), c, time, to_float(towards));
+             });
+}
+
+template <ecs::Component Logic, geom::ShapeNode S>
 bool ship_check_point(ecs::const_handle h, const vec2& v, shape_flag mask) {
   return S::check_point(get_shape_parameters<Logic>(h), v, mask);
 }
@@ -55,7 +64,18 @@ ecs::handle create_ship(SimInterface& sim, const vec2& position, fixed rotation 
 
   h.add(Update{.update = ecs::call<&Logic::update>});
   h.add(Transform{.centre = position, .rotation = rotation});
-  h.add(Collision{.bounding_width = Logic::kBoundingWidth, .check = &ship_check_point<Logic, S>});
+
+  constexpr auto collision_shape_flags = [&]() constexpr {
+    shape_flag result = shape_flag::kNone;
+    S::iterate(
+        geom::iterate_flags, geom::arbitrary_parameters{},
+        {}, [&](shape_flag f) constexpr { result |= f; });
+    return result;
+  }
+  ();
+  h.add(Collision{.flags = collision_shape_flags,
+                  .bounding_width = Logic::kBoundingWidth,
+                  .check = &ship_check_point<Logic, S>});
 
   constexpr auto render = ecs::call<&render_entity_shape<Logic, S>>;
   if constexpr (requires { &Logic::render; }) {

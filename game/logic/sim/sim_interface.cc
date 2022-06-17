@@ -85,7 +85,7 @@ SimInterface::ships_in_radius(const vec2& point, fixed radius, ship_flag mask) c
   return r;
 }
 
-bool SimInterface::any_collision(const vec2& point, shape_flag category) const {
+bool SimInterface::any_collision(const vec2& point, shape_flag mask) const {
   fixed x = point.x;
   fixed y = point.y;
 
@@ -105,15 +105,17 @@ bool SimInterface::any_collision(const vec2& point, shape_flag category) const {
     if (v.x + w < x || v.y + w < y || v.y - w > y) {
       continue;
     }
-
-    if (e.check(collision.handle, point, category)) {
+    if (!(e.flags & mask)) {
+      continue;
+    }
+    if (e.check(collision.handle, point, mask)) {
       return true;
     }
   }
   return false;
 }
 
-SimInterface::ship_list SimInterface::collision_list(const vec2& point, shape_flag category) const {
+SimInterface::ship_list SimInterface::collision_list(const vec2& point, shape_flag mask) const {
   ship_list r;
   fixed x = point.x;
   fixed y = point.y;
@@ -130,8 +132,10 @@ SimInterface::ship_list SimInterface::collision_list(const vec2& point, shape_fl
     if (v.x + w < x || v.y + w < y || v.y - w > y) {
       continue;
     }
-
-    if (e.check(collision.handle, point, category)) {
+    if (!(e.flags & mask)) {
+      continue;
+    }
+    if (e.check(collision.handle, point, mask)) {
       if (auto s = collision.handle.get<LegacyShip>(); s) {
         r.push_back(s->ship.get());
       }

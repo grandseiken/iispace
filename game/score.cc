@@ -36,7 +36,14 @@ bool run(std::optional<std::uint64_t> check, const std::string& replay_path) {
     }
   }
   if (check) {
-    return *check == score;
+    if (*check != score) {
+      std::cerr << "check failed: expected score " << *check << ", was " << score << " at "
+                << (100 * static_cast<float>(reader->current_input_frame()) /
+                    reader->total_input_frames())
+                << "% of input" << std::endl;
+      return false;
+    }
+    return true;
   }
   std::cout << score << std::endl;
   return true;

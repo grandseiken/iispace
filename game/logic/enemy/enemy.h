@@ -17,6 +17,7 @@ inline void legacy_enemy_on_destroy(ecs::const_handle h, SimInterface&, damage_t
   enemy->on_destroy(type == damage_type::kBomb);
 }
 
+void spawn_bounce(ii::SimInterface& sim, const vec2& position, fixed angle);
 void spawn_follow(SimInterface&, const vec2& position, bool has_score = true, fixed rotation = 0);
 void spawn_big_follow(SimInterface&, const vec2& position, bool has_score);
 void spawn_chaser(SimInterface&, const vec2& position);
@@ -27,17 +28,7 @@ void spawn_follow_hub(SimInterface&, const vec2& position, bool powera = false,
 void spawn_shielder(SimInterface&, const vec2& position, bool power = false);
 void spawn_tractor(SimInterface&, const vec2& position, bool power = false);
 void spawn_boss_shot(SimInterface&, const vec2& position, const vec2& velocity,
-                     const glm::vec4& c = {0.f, 0.f, .6f, 1.f});
+                     const glm::vec4& c = {0.f, 0.f, .6f, 1.f}, fixed rotate_speed = 0);
 }  // namespace ii
-
-class BossShot : public Enemy {
-public:
-  BossShot(ii::SimInterface& sim, const vec2& position, const vec2& velocity,
-           const glm::vec4& c = {0.f, 0.f, .6f, 1.f});
-  void update() override;
-
-protected:
-  vec2 dir_{0};
-};
 
 #endif

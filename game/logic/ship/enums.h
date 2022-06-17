@@ -21,6 +21,7 @@ enum class shape_flag : std::uint32_t {
   kShield = 4,       // Blocks all player projectiles.
   kWeakShield = 8,   // Blocks normal player projectiles, magic shots can penetrate.
   kSafeShield = 16,  // Blocks enemy projectiles.
+  kEverything = 1 | 2 | 4 | 8 | 16,
 };
 
 enum class damage_type {

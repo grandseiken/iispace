@@ -148,15 +148,6 @@ void Snake::on_destroy(bool bomb) {
   }
 }
 
-class RainbowShot : public BossShot {
-public:
-  RainbowShot(ii::SimInterface& sim, const vec2& position, const vec2& velocity);
-  void update() override;
-
-private:
-  std::uint32_t timer_ = 0;
-};
-
 class SuperBossArc : public Boss {
 public:
   SuperBossArc(ii::SimInterface& sim, const vec2& position, std::uint32_t i, ii::Ship* boss,
@@ -176,13 +167,6 @@ private:
   std::uint32_t timer_ = 0;
   std::uint32_t stimer_ = 0;
 };
-
-void spawn_rainbow_shot(ii::SimInterface& sim, const vec2& position, const vec2& velocity) {
-  auto h = sim.create_legacy(std::make_unique<RainbowShot>(sim, position, velocity));
-  h.add(ii::legacy_collision(/* bounding width */ 12));
-  h.add(ii::Enemy{.threat_value = 1});
-  h.add(ii::Health{.hp = 0, .on_destroy = &ii::legacy_enemy_on_destroy});
-}
 
 SuperBossArc* spawn_super_boss_arc(ii::SimInterface& sim, const vec2& position, std::uint32_t cycle,
                                    std::uint32_t i, ii::Ship* boss, std::uint32_t timer = 0) {
@@ -228,24 +212,6 @@ private:
   state state_ = state::kArrive;
   std::uint32_t snakes_ = 0;
 };
-
-RainbowShot::RainbowShot(ii::SimInterface& sim, const vec2& position, const vec2& velocity)
-: BossShot{sim, position, velocity} {}
-
-void RainbowShot::update() {
-  BossShot::update();
-  if (sim().any_collision(shape().centre, ii::shape_flag::kSafeShield)) {
-    explosion(std::nullopt, 4, true, to_float(shape().centre - dir_));
-    destroy();
-    return;
-  }
-
-  ++timer_;
-  static constexpr fixed r = 6 * (8 * fixed_c::hundredth / 10);
-  if (timer_ % 8 == 0) {
-    dir_ = rotate(dir_, r);
-  }
-}
 
 SuperBossArc::SuperBossArc(ii::SimInterface& sim, const vec2& position, std::uint32_t i,
                            ii::Ship* boss, std::uint32_t timer)
@@ -404,7 +370,8 @@ void SuperBoss::update() {
   if (state_ == state::kIdle && timer_ % 72 == 0) {
     for (std::uint32_t i = 0; i < 128; ++i) {
       vec2 d = from_polar(i * pi2d128, 1_fx);
-      spawn_rainbow_shot(sim(), shape().centre + d * 42, move_vec + d * 3);
+      spawn_boss_shot(sim(), shape().centre + d * 42, move_vec + d * 3,
+                      glm::vec4{0.f, 0.f, .6f, 1.f}, /* rotate speed */ 6_fx / 1000);
       play_sound_random(ii::sound::kBossFire);
     }
   }

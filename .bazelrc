@@ -4,3 +4,4 @@ build --copt=/WX
 build --copt=/experimental:deterministic
 build --linkopt=/experimental:deterministic
 build -c opt
+test --test_output=errors

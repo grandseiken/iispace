@@ -5,6 +5,32 @@
 
 namespace ii {
 namespace {
+
+struct Bounce : ecs::component {
+  static constexpr auto kShipFlags = ship_flag::kEnemy;
+  static constexpr std::uint32_t kBoundingWidth = 8;
+  static constexpr sound kDestroySound = sound::kEnemyShatter;
+
+  using shape = standard_transform<
+      geom::shape<geom::ngon{8, 6, colour_hue360(300, .5f, .6f), geom::ngon_style::kPolygon,
+                             shape_flag::kDangerous | shape_flag::kVulnerable}>>;
+
+  Bounce(fixed angle) : dir{from_polar(angle, 3_fx)} {}
+  vec2 dir{0};
+
+  void update(Transform& transform, SimInterface&) {
+    if ((transform.centre.x > ii::kSimDimensions.x && dir.x > 0) ||
+        (transform.centre.x < 0 && dir.x < 0)) {
+      dir.x = -dir.x;
+    }
+    if ((transform.centre.y > ii::kSimDimensions.y && dir.y > 0) ||
+        (transform.centre.y < 0 && dir.y < 0)) {
+      dir.y = -dir.y;
+    }
+    transform.move(dir);
+  }
+};
+
 struct Follow : ecs::component {
   static constexpr auto kShipFlags = ship_flag::kEnemy;
   static constexpr std::uint32_t kBoundingWidth = 10;
@@ -97,6 +123,13 @@ struct Chaser : ecs::component {
   }
 };
 }  // namespace
+
+void spawn_bounce(ii::SimInterface& sim, const vec2& position, fixed angle) {
+  auto h = create_ship<Bounce>(sim, position);
+  add_enemy_health<Bounce>(h, 1);
+  h.add(Bounce{angle});
+  h.add(Enemy{.threat_value = 1});
+}
 
 void spawn_follow(SimInterface& sim, const vec2& position, bool has_score, fixed rotation) {
   auto h = create_ship<Follow>(sim, position, rotation);
