@@ -433,9 +433,13 @@ struct Shielder : ecs::component {
   using s_arrange = geom::compound<geom::translate<24, 0, S>, geom::translate<-24, 0, S>,
                                    geom::translate<0, 24, geom::rotate<fixed_c::pi / 2, S>>,
                                    geom::translate<0, -24, geom::rotate<fixed_c::pi / 2, S>>>;
-  using s_centre =
-      geom::shape<geom::ngon{14, 8, /* TODO - 1 if power */ kColour0, geom::ngon_style::kPolygon,
-                             ii::shape_flag::kDangerous | ii::shape_flag::kVulnerable}>;
+  // TODO: better way to swap colours.
+  using s_centre = geom::conditional_p<
+      3,
+      geom::shape<geom::ngon{14, 8, kColour1, geom::ngon_style::kPolygon,
+                             ii::shape_flag::kDangerous | ii::shape_flag::kVulnerable}>,
+      geom::shape<geom::ngon{14, 8, kColour0, geom::ngon_style::kPolygon,
+                             ii::shape_flag::kDangerous | ii::shape_flag::kVulnerable}>>;
   using s_shield0 =
       geom::shape<geom::ngon{8, 6, kColour0, geom::ngon_style::kPolystar, shape_flag::kVulnShield}>;
   using s_shield1 = geom::shape<geom::ngon{8, 6, kColour1}>;
@@ -445,8 +449,8 @@ struct Shielder : ecs::component {
                                                  s_arrange<geom::rotate_p<2, s_shield1>>, s_spokes>,
                                   geom::rotate_p<2, s_centre>>;
 
-  std::tuple<vec2, fixed, fixed> shape_parameters(const Transform& transform) const {
-    return {transform.centre, transform.rotation, -transform.rotation};
+  std::tuple<vec2, fixed, fixed, bool> shape_parameters(const Transform& transform) const {
+    return {transform.centre, transform.rotation, -transform.rotation, power};
   }
 
   vec2 dir{0, 1};
