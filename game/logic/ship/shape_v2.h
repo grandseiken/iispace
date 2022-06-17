@@ -363,8 +363,8 @@ using rotate_p = rotate_eval<parameter<N>, pack<Nodes...>>;
 
 template <std::size_t N, ShapeNode TrueNode, ShapeNode FalseNode>
 using conditional_p = conditional_eval<parameter<N>, TrueNode, FalseNode>;
-template <std::size_t N, ShapeNode Node>
-using if_p = conditional_p<N, Node, null_shape>;
+template <std::size_t N, ShapeNode... Nodes>
+using if_p = conditional_p<N, pack<Nodes...>, null_shape>;
 
 }  // namespace ii::geom
 

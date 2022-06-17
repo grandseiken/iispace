@@ -8,8 +8,8 @@
 namespace ii {
 namespace {
 
-template <geom::ShapeNode S>
-using standard_transform = geom::translate_p<0, geom::rotate_p<1, S>>;
+template <geom::ShapeNode... S>
+using standard_transform = geom::translate_p<0, geom::rotate_p<1, S...>>;
 
 template <ecs::Component Logic>
 auto transform_parameters(ecs::const_handle h) {
@@ -61,9 +61,14 @@ ecs::handle create_enemy(SimInterface& sim, std::uint32_t threat_value, std::uin
   h.add(LegacyShip{.ship = std::make_unique<ShipForwarder>(sim, h)});
   h.add(Update{.update = ecs::call<&Logic::update>});
   h.add(Enemy{.threat_value = threat_value, .score_reward = score_reward});
-  h.add(Render{.render = ecs::call<&render_enemy<Logic, S>>});
   h.add(Transform{.centre = position, .rotation = rotation});
   h.add(Collision{.bounding_width = Logic::kBoundingWidth, .check = &ship_check_point<Logic, S>});
+
+  auto render = ecs::call<&render_enemy<Logic, S>>;
+  if constexpr (requires { &Logic::render; }) {
+    render = sequence<ecs::call<&render_enemy<Logic, S>>, ecs::call<&Logic::render>>;
+  }
+  h.add(Render{.render = render});
 
   using on_destroy_t = void(ecs::const_handle, SimInterface & sim, damage_type);
   auto on_destroy = &explode_on_destroy<Logic, S>;
@@ -346,17 +351,17 @@ struct FollowHub : ecs::component {
 
   static constexpr std::uint32_t kTimer = 170;
   static constexpr fixed kSpeed = 1;
-  static constexpr auto kColour = colour_hue360(240, .7f);
 
+  static constexpr auto c = colour_hue360(240, .7f);
   template <geom::ShapeNode S>
   using fh_arrange = geom::compound<geom::translate<16, 0, S>, geom::translate<-16, 0, S>,
                                     geom::translate<0, 16, S>, geom::translate<0, -16, S>>;
   template <geom::ngon S>
   using r_pi4_ngon = geom::rotate<fixed_c::pi / 4, geom::shape<S>>;
-  using fh_centre = r_pi4_ngon<geom::ngon{16, 4, kColour, geom::ngon_style::kPolygram,
+  using fh_centre = r_pi4_ngon<geom::ngon{16, 4, c, geom::ngon_style::kPolygram,
                                           shape_flag::kDangerous | shape_flag::kVulnerable}>;
-  using fh_spoke = r_pi4_ngon<geom::ngon{8, 4, kColour, geom::ngon_style::kPolygon}>;
-  using fh_power_spoke = r_pi4_ngon<geom::ngon{8, 4, kColour, geom::ngon_style::kPolystar}>;
+  using fh_spoke = r_pi4_ngon<geom::ngon{8, 4, c, geom::ngon_style::kPolygon}>;
+  using fh_power_spoke = r_pi4_ngon<geom::ngon{8, 4, c, geom::ngon_style::kPolystar}>;
   using shape = geom::translate_p<
       0, fh_centre,
       geom::rotate_p<1, fh_arrange<fh_spoke>, geom::if_p<2, fh_arrange<fh_power_spoke>>>>;
@@ -427,8 +432,8 @@ struct Shielder : ecs::component {
   static constexpr std::uint32_t kTimer = 80;
   static constexpr fixed kSpeed = 2;
 
-  static constexpr auto kColour0 = colour_hue360(150, .2f);
-  static constexpr auto kColour1 = colour_hue360(160, .5f, .6f);
+  static constexpr auto c0 = colour_hue360(150, .2f);
+  static constexpr auto c1 = colour_hue360(160, .5f, .6f);
   template <geom::ShapeNode S>
   using s_arrange = geom::compound<geom::translate<24, 0, S>, geom::translate<-24, 0, S>,
                                    geom::translate<0, 24, geom::rotate<fixed_c::pi / 2, S>>,
@@ -436,14 +441,14 @@ struct Shielder : ecs::component {
   // TODO: better way to swap colours.
   using s_centre = geom::conditional_p<
       3,
-      geom::shape<geom::ngon{14, 8, kColour1, geom::ngon_style::kPolygon,
+      geom::shape<geom::ngon{14, 8, c1, geom::ngon_style::kPolygon,
                              ii::shape_flag::kDangerous | ii::shape_flag::kVulnerable}>,
-      geom::shape<geom::ngon{14, 8, kColour0, geom::ngon_style::kPolygon,
+      geom::shape<geom::ngon{14, 8, c0, geom::ngon_style::kPolygon,
                              ii::shape_flag::kDangerous | ii::shape_flag::kVulnerable}>>;
   using s_shield0 =
-      geom::shape<geom::ngon{8, 6, kColour0, geom::ngon_style::kPolystar, shape_flag::kVulnShield}>;
-  using s_shield1 = geom::shape<geom::ngon{8, 6, kColour1}>;
-  using s_spokes = geom::shape<geom::ngon{24, 4, kColour0, geom::ngon_style::kPolystar}>;
+      geom::shape<geom::ngon{8, 6, c0, geom::ngon_style::kPolystar, shape_flag::kVulnShield}>;
+  using s_shield1 = geom::shape<geom::ngon{8, 6, c1}>;
+  using s_spokes = geom::shape<geom::ngon{24, 4, c0, geom::ngon_style::kPolystar}>;
   using shape = geom::translate_p<0,
                                   geom::rotate_p<1, s_arrange<geom::rotate_p<2, s_shield0>>,
                                                  s_arrange<geom::rotate_p<2, s_shield1>>, s_spokes>,
@@ -513,122 +518,112 @@ void spawn_shielder(SimInterface& sim, const vec2& position, bool power) {
 
 namespace {
 
-const std::uint32_t kTractorTimer = 50;
-const fixed kTractorSpeed = 6 * (1_fx / 10);
-const fixed kTractorBeamSpeed = 2 + 1_fx / 2;
+struct Tractor : ecs::component {
+  static constexpr std::uint32_t kBoundingWidth = 36;
+  static constexpr sound kDestroySound = sound::kPlayerDestroy;
 
-class Tractor : public ::Enemy {
-public:
-  Tractor(ii::SimInterface& sim, const vec2& position, bool power = false);
-  void update() override;
-  void render() const override;
+  static constexpr std::uint32_t kTimer = 50;
+  static constexpr fixed kSpeed = 6 * (1_fx / 10);
+  static constexpr fixed kPullSpeed = 2 + 1_fx / 2;
 
-private:
-  std::uint32_t timer_ = 0;
-  vec2 dir_{0};
-  bool power_ = false;
+  static constexpr auto c = colour_hue360(300, .5f, .6f);
+  using t_orb = geom::shape<geom::ngon{12, 6, c, geom::ngon_style::kPolygram,
+                                       ii::shape_flag::kDangerous | ii::shape_flag::kVulnerable}>;
+  using t_star = geom::shape<geom::ngon{16, 6, c, geom::ngon_style::kPolystar}>;
+  using shape = standard_transform<geom::translate<24, 0, geom::rotate_p<2, t_orb>>,
+                                   geom::translate<-24, 0, geom::rotate_p<3, t_orb>>,
+                                   geom::shape<geom::ngon{24, 2, c, geom::ngon_style::kPolystar}>,
+                                   geom::if_p<6, geom::translate<24, 0, geom::rotate_p<4, t_star>>,
+                                              geom::translate<-24, 0, geom::rotate_p<5, t_star>>>>;
 
-  bool ready_ = false;
-  bool spinning_ = false;
-  ii::SimInterface::ship_list players_;
+  std::tuple<vec2, fixed, fixed, fixed, fixed, fixed, bool>
+  shape_parameters(const Transform& transform) const {
+    // TODO: better way of doing this; multiplication expressions.
+    return {transform.centre, transform.rotation, spoke_r0, -spoke_r0, spoke_r1, -spoke_r1, power};
+  }
+
+  std::uint32_t timer = kTimer * 4;
+  vec2 dir{0};
+  bool power = false;
+  bool ready = false;
+  bool spinning = false;
+  fixed spoke_r0 = 0;
+  fixed spoke_r1 = 0;
+  ii::SimInterface::ship_list players;  // TODO.
+
+  Tractor(bool power) : power{power} {}
+
+  void update(Transform& transform, SimInterface& sim) {
+    spoke_r0 = normalise_angle(spoke_r0 + fixed_c::hundredth * 5);
+    spoke_r1 = normalise_angle(spoke_r1 + fixed_c::hundredth * 8);
+
+    if (transform.centre.x < 0) {
+      dir = vec2{1, 0};
+    } else if (transform.centre.x > ii::kSimDimensions.x) {
+      dir = vec2{-1, 0};
+    } else if (transform.centre.y < 0) {
+      dir = vec2{0, 1};
+    } else if (transform.centre.y > ii::kSimDimensions.y) {
+      dir = vec2{0, -1};
+    } else {
+      ++timer;
+    }
+
+    if (!ready && !spinning) {
+      transform.move(dir * kSpeed * (sim.is_on_screen(transform.centre) ? 1 : 2 + fixed_c::half));
+
+      if (timer > kTimer * 8) {
+        ready = true;
+        timer = 0;
+      }
+    } else if (ready) {
+      if (timer > kTimer) {
+        ready = false;
+        spinning = true;
+        timer = 0;
+        players = sim.players();
+        sim.play_sound(ii::sound::kBossFire);
+      }
+    } else if (spinning) {
+      transform.rotate(fixed_c::tenth * 3);
+      for (const auto& ship : players) {
+        if (!((::Player*)ship)->is_killed()) {
+          auto d = normalise(transform.centre - ship->position());
+          ship->position() += d * kPullSpeed;
+        }
+      }
+
+      if (timer % (kTimer / 2) == 0 && sim.is_on_screen(transform.centre) && power) {
+        ii::spawn_boss_shot(sim, transform.centre,
+                            4 * sim.nearest_player_direction(transform.centre),
+                            colour_hue360(300, .5f, .6f));
+        sim.play_sound(ii::sound::kBossFire, transform.centre, true);
+      }
+
+      if (timer > kTimer * 5) {
+        spinning = false;
+        timer = 0;
+      }
+    }
+  }
+
+  void render(const Transform& transform, const SimInterface& sim) const {
+    if (spinning) {
+      for (std::size_t i = 0; i < players.size(); ++i) {
+        if (((timer + i * 4) / 4) % 2 && !((::Player*)players[i])->is_killed()) {
+          sim.render_line(to_float(transform.centre), to_float(players[i]->position()),
+                          colour_hue360(300, .5f, .6f));
+        }
+      }
+    }
+  }
 };
-
-Tractor::Tractor(ii::SimInterface& sim, const vec2& position, bool power)
-: Enemy{sim, position, ii::ship_flag::kNone}, timer_{kTractorTimer * 4}, power_{power} {
-  auto c = colour_hue360(300, .5f, .6f);
-  add_new_shape<ii::Polygon>(vec2{24, 0}, 12, 6, c, 0,
-                             ii::shape_flag::kDangerous | ii::shape_flag::kVulnerable,
-                             ii::Polygon::T::kPolygram);
-  add_new_shape<ii::Polygon>(vec2{-24, 0}, 12, 6, c, 0,
-                             ii::shape_flag::kDangerous | ii::shape_flag::kVulnerable,
-                             ii::Polygon::T::kPolygram);
-  add_new_shape<ii::Line>(vec2{0, 0}, vec2{24, 0}, vec2{-24, 0}, c);
-  if (power) {
-    add_new_shape<ii::Polygon>(vec2{24, 0}, 16, 6, c, 0, ii::shape_flag::kNone,
-                               ii::Polygon::T::kPolystar);
-    add_new_shape<ii::Polygon>(vec2{-24, 0}, 16, 6, c, 0, ii::shape_flag::kNone,
-                               ii::Polygon::T::kPolystar);
-  }
-}
-
-void Tractor::update() {
-  shapes()[0]->rotate(fixed_c::hundredth * 5);
-  shapes()[1]->rotate(-fixed_c::hundredth * 5);
-  if (power_) {
-    shapes()[3]->rotate(-fixed_c::hundredth * 8);
-    shapes()[4]->rotate(fixed_c::hundredth * 8);
-  }
-
-  if (shape().centre.x < 0) {
-    dir_ = vec2{1, 0};
-  } else if (shape().centre.x > ii::kSimDimensions.x) {
-    dir_ = vec2{-1, 0};
-  } else if (shape().centre.y < 0) {
-    dir_ = vec2{0, 1};
-  } else if (shape().centre.y > ii::kSimDimensions.y) {
-    dir_ = vec2{0, -1};
-  } else {
-    ++timer_;
-  }
-
-  if (!ready_ && !spinning_) {
-    move(dir_ * kTractorSpeed * (is_on_screen() ? 1 : 2 + fixed_c::half));
-
-    if (timer_ > kTractorTimer * 8) {
-      ready_ = true;
-      timer_ = 0;
-    }
-  } else if (ready_) {
-    if (timer_ > kTractorTimer) {
-      ready_ = false;
-      spinning_ = true;
-      timer_ = 0;
-      players_ = sim().players();
-      play_sound(ii::sound::kBossFire);
-    }
-  } else if (spinning_) {
-    shape().rotate(fixed_c::tenth * 3);
-    for (const auto& ship : players_) {
-      if (!((::Player*)ship)->is_killed()) {
-        auto d = normalise(shape().centre - ship->position());
-        ship->position() += d * kTractorBeamSpeed;
-      }
-    }
-
-    if (timer_ % (kTractorTimer / 2) == 0 && is_on_screen() && power_) {
-      ii::spawn_boss_shot(sim(), shape().centre, 4 * sim().nearest_player_direction(shape().centre),
-                          colour_hue360(300, .5f, .6f));
-      play_sound_random(ii::sound::kBossFire);
-    }
-
-    if (timer_ > kTractorTimer * 5) {
-      spinning_ = false;
-      timer_ = 0;
-    }
-  }
-}
-
-void Tractor::render() const {
-  ::Enemy::render();
-  if (spinning_) {
-    for (std::size_t i = 0; i < players_.size(); ++i) {
-      if (((timer_ + i * 4) / 4) % 2 && !((::Player*)players_[i])->is_killed()) {
-        sim().render_line(to_float(shape().centre), to_float(players_[i]->position()),
-                          colour_hue360(300, .5f, .6f));
-      }
-    }
-  }
-}
 
 }  // namespace
 
 void spawn_tractor(SimInterface& sim, const vec2& position, bool power) {
-  auto h = sim.create_legacy(std::make_unique<Tractor>(sim, position, power));
-  h.add(legacy_collision(/* bounding width */ 36));
-  h.add(Enemy{.threat_value = 10u + 2 * power, .score_reward = 85u + 40 * power});
-  h.add(Health{.hp = 50,
-               .destroy_sound = ii::sound::kPlayerDestroy,
-               .on_destroy = &legacy_enemy_on_destroy});
+  auto h = create_enemy<Tractor>(sim, 10u + 2 * power, 85u + 40 * power, 50, position);
+  h.add(Tractor{power});
 }
 
 void spawn_boss_shot(SimInterface& sim, const vec2& position, const vec2& velocity,
