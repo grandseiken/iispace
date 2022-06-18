@@ -1,17 +1,18 @@
 #include "game/logic/boss/boss_internal.h"
+#include "game/logic/enemy/enemy.h"
 #include "game/logic/player.h"
 
 namespace ii {
 namespace {
-const std::uint32_t kSbbBaseHp = 320;
-const std::uint32_t kSbbTimer = 100;
-const std::uint32_t kSbbUnshieldTime = 300;
-const std::uint32_t kSbbAttackTime = 80;
-const fixed kSbbSpeed = 1;
+constexpr std::uint32_t kSbbBaseHp = 320;
+constexpr std::uint32_t kSbbTimer = 100;
+constexpr std::uint32_t kSbbUnshieldTime = 300;
+constexpr std::uint32_t kSbbAttackTime = 80;
+constexpr fixed kSbbSpeed = 1;
 
-const glm::vec4 c0 = colour_hue360(150, .4f, .5f);
-const glm::vec4 c1 = colour_hue(0.f, .8f, 0.f);
-const glm::vec4 c2 = colour_hue(0.f, .6f, 0.f);
+constexpr glm::vec4 c0 = colour_hue360(150, .4f, .5f);
+constexpr glm::vec4 c1 = colour_hue(0.f, .8f, 0.f);
+constexpr glm::vec4 c2 = colour_hue(0.f, .6f, 0.f);
 
 class ShieldBombBoss : public ::Boss {
 public:

@@ -1,10 +1,11 @@
 #include "game/logic/boss/boss_internal.h"
+#include "game/logic/enemy/enemy.h"
 #include "game/logic/player.h"
 
 namespace ii {
 namespace {
-const std::uint32_t kSbBaseHp = 520;
-const std::uint32_t kSbArcHp = 75;
+constexpr std::uint32_t kSbBaseHp = 520;
+constexpr std::uint32_t kSbArcHp = 75;
 
 class SuperBossArc : public ::Boss {
 public:

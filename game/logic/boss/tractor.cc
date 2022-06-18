@@ -1,16 +1,17 @@
 #include "game/logic/boss/boss_internal.h"
+#include "game/logic/enemy/enemy.h"
 #include "game/logic/player.h"
 
 namespace ii {
 namespace {
-const std::uint32_t kTbBaseHp = 900;
-const std::uint32_t kTbTimer = 100;
-const fixed kTbSpeed = 2;
-const fixed kTractorBeamSpeed = 2 + 1_fx / 2;
+constexpr std::uint32_t kTbBaseHp = 900;
+constexpr std::uint32_t kTbTimer = 100;
+constexpr fixed kTbSpeed = 2;
+constexpr fixed kTractorBeamSpeed = 2 + 1_fx / 2;
 
-const glm::vec4 c0 = colour_hue360(300, .5f, .6f);
-const glm::vec4 c1 = colour_hue360(300, 1.f / 3, .6f);
-const glm::vec4 c2 = colour_hue360(300, .4f, .5f);
+constexpr glm::vec4 c0 = colour_hue360(300, .5f, .6f);
+constexpr glm::vec4 c1 = colour_hue360(300, 1.f / 3, .6f);
+constexpr glm::vec4 c2 = colour_hue360(300, .4f, .5f);
 
 class TractorBoss : public ::Boss {
 public:

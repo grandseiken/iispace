@@ -44,7 +44,7 @@ std::uint32_t scale_boss_damage(ecs::handle, SimInterface& sim, damage_type, std
 }  // namespace ii
 
 Boss::Boss(ii::SimInterface& sim, const vec2& position)
-: Enemy{sim, position, ii::ship_flag::kBoss} {}
+: ii::Ship{sim, position, ii::ship_flag::kEnemy | ii::ship_flag::kBoss} {}
 
 void Boss::on_destroy(bool) {
   for (const auto& ship : sim().all_ships(ii::ship_flag::kEnemy)) {
@@ -67,6 +67,18 @@ void Boss::on_destroy(bool) {
   }
   sim().rumble_all(25);
   play_sound(ii::sound::kExplosion);
+}
+
+void Boss::render() const {
+  if (auto c = handle().get<ii::Health>(); c && c->hit_timer) {
+    for (std::size_t i = 0; i < shapes().size(); ++i) {
+      bool hit_flash = !c->hit_flash_ignore_index || i < *c->hit_flash_ignore_index;
+      shapes()[i]->render(sim(), to_float(shape().centre), shape().rotation().to_float(),
+                          hit_flash ? std::make_optional(glm::vec4{1.f}) : std::nullopt);
+    }
+    return;
+  }
+  Ship::render();
 }
 
 namespace ii {

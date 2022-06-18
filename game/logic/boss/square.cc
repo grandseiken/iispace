@@ -1,20 +1,21 @@
 #include "game/logic/boss/boss_internal.h"
+#include "game/logic/enemy/enemy.h"
 #include "game/logic/player.h"
 #include <glm/gtc/constants.hpp>
 
 namespace ii {
 namespace {
-const std::uint32_t kBsbBaseHp = 400;
-const std::uint32_t kBsbTimer = 100;
-const std::uint32_t kBsbSTimer = 80;
-const std::uint32_t kBsbAttackTime = 90;
+constexpr std::uint32_t kBsbBaseHp = 400;
+constexpr std::uint32_t kBsbTimer = 100;
+constexpr std::uint32_t kBsbSTimer = 80;
+constexpr std::uint32_t kBsbAttackTime = 90;
 
-const fixed kBsbSpeed = 2 + 1_fx / 2;
-const fixed kBsbAttackRadius = 120;
+constexpr fixed kBsbSpeed = 2 + 1_fx / 2;
+constexpr fixed kBsbAttackRadius = 120;
 
-const glm::vec4 c0 = colour_hue360(270, .6f);
-const glm::vec4 c1 = colour_hue360(270, .4f);
-const glm::vec4 c2 = colour_hue360(260, .3f);
+constexpr glm::vec4 c0 = colour_hue360(270, .6f);
+constexpr glm::vec4 c1 = colour_hue360(270, .4f);
+constexpr glm::vec4 c2 = colour_hue360(260, .3f);
 
 class BigSquareBoss : public ::Boss {
 public:

@@ -177,7 +177,7 @@ struct Tractor : ecs::component {
   using shape = standard_transform<
       geom::translate<24, 0, geom::rotate_eval<geom::multiply_p<5, 2>, t_orb>>,
       geom::translate<-24, 0, geom::rotate_eval<geom::multiply_p<-5, 2>, t_orb>>,
-      geom::ngon_shape<24, 2, c, geom::ngon_style::kPolystar>,
+      geom::line_shape<24, 0, c>,
       geom::if_p<3, geom::translate<24, 0, geom::rotate_eval<geom::multiply_p<8, 2>, t_star>>,
                  geom::translate<-24, 0, geom::rotate_eval<geom::multiply_p<-8, 2>, t_star>>>>;
 

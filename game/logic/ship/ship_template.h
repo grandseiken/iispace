@@ -37,9 +37,10 @@ void render_entity_shape(ecs::const_handle h, const Render& render, const Health
 }
 
 template <ecs::Component Logic, geom::ShapeNode S = typename Logic::shape>
-void explode_entity_shapes_with_colour(ecs::const_handle h, SimInterface& sim, const glm::vec4& c) {
+void explode_entity_shapes_with_colour(ecs::const_handle h, SimInterface& sim, const glm::vec4& c,
+                                       std::uint32_t time = 8) {
   geom::iterate(S{}, geom::iterate_centres, get_shape_parameters<Logic>(h), {},
-                [&](const vec2& v, const glm::vec4&) { sim.explosion(to_float(v), c); });
+                [&](const vec2& v, const glm::vec4&) { sim.explosion(to_float(v), c, time); });
 }
 
 template <ecs::Component Logic, geom::ShapeNode S = typename Logic::shape>

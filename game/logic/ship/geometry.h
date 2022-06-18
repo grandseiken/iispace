@@ -443,6 +443,8 @@ template <std::uint32_t Radius, std::uint32_t Sides, glm::vec4 Colour,
 using ngon_shape = constant<make_ngon(Radius, Sides, Colour, Style, Flags)>;
 template <std::uint32_t W, std::uint32_t H, glm::vec4 Colour, shape_flag Flags = shape_flag::kNone>
 using box_shape = constant<make_box(glm::uvec2{W, H}, Colour, Flags)>;
+template <std::uint32_t Radius, fixed Angle, glm::vec4 Colour>
+using line_shape = rotate<Angle, ngon_shape<Radius, 2, Colour>>;
 
 }  // namespace ii::geom
 

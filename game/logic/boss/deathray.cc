@@ -1,78 +1,151 @@
 #include "game/logic/boss/boss_internal.h"
+#include "game/logic/enemy/enemy.h"
 #include "game/logic/player.h"
+#include "game/logic/ship/geometry.h"
+#include "game/logic/ship/ship_template.h"
 
 namespace ii {
 namespace {
-const std::uint32_t kDrbBaseHp = 600;
-const std::uint32_t kDrbArmHp = 100;
-const std::uint32_t kDrbRayTimer = 100;
-const std::uint32_t kDrbTimer = 100;
-const std::uint32_t kDrbArmATimer = 300;
-const std::uint32_t kDrbArmRTimer = 400;
+constexpr std::uint32_t kDrbBaseHp = 600;
+constexpr std::uint32_t kDrbArmHp = 100;
+constexpr std::uint32_t kDrbRayTimer = 100;
+constexpr std::uint32_t kDrbTimer = 100;
+constexpr std::uint32_t kDrbArmRTimer = 400;
 
-const fixed kDrbSpeed = 5;
-const fixed kDrbArmSpeed = 4;
-const fixed kDrbRaySpeed = 10;
+constexpr fixed kDrbSpeed = 5;
 
-const glm::vec4 c0 = colour_hue360(150, 1.f / 3, .6f);
-const glm::vec4 c1 = colour_hue360(150, .6f);
-const glm::vec4 c2 = colour_hue(0.f, .8f, 0.f);
-const glm::vec4 c3 = colour_hue(0.f, .6f, 0.f);
+constexpr glm::vec4 c0 = colour_hue360(150, 1.f / 3, .6f);
+constexpr glm::vec4 c1 = colour_hue360(150, .6f);
+constexpr glm::vec4 c2 = colour_hue(0.f, .8f, 0.f);
+constexpr glm::vec4 c3 = colour_hue(0.f, .6f, 0.f);
 
-class DeathRay : public ::Enemy {
-public:
-  DeathRay(SimInterface& sim, const vec2& position);
-  void update() override;
-};
+struct DeathRay : ecs::component {
+  static constexpr ship_flag kShipFlags = ship_flag::kEnemy;
+  static constexpr fixed kBoundingWidth = 48;
+  static constexpr sound kDestroySound = sound::kEnemyDestroy;
+  static constexpr fixed kSpeed = 10;
 
-DeathRay::DeathRay(SimInterface& sim, const vec2& position)
-: Enemy{sim, position, ship_flag::kNone} {
-  add_new_shape<Box>(vec2{0}, 10, 48, glm::vec4{0.f}, 0, shape_flag::kDangerous);
-  add_new_shape<Line>(vec2{0}, vec2{0, -48}, vec2{0, 48}, glm::vec4{1.f}, 0);
-}
+  using shape = standard_transform<geom::box_shape<10, 48, glm::vec4{0.f}, shape_flag::kDangerous>,
+                                   geom::line_shape<48, fixed_c::pi / 2, glm::vec4{1.f}>>;
 
-void DeathRay::update() {
-  move(vec2{1, 0} * kDrbRaySpeed);
-  if (shape().centre.x > kSimDimensions.x + 20) {
-    destroy();
+  void update(ecs::handle h, Transform& transform, SimInterface&) {
+    transform.move(vec2{1, 0} * kSpeed);
+    if (transform.centre.x > kSimDimensions.x + 20) {
+      h.emplace<Destroy>();
+    }
   }
-}
-
-class DeathRayBoss;
-class DeathArm : public ::Enemy {
-public:
-  DeathArm(SimInterface& sim, DeathRayBoss* boss, bool top);
-  void update() override;
-  void on_destroy(bool bomb) override;
-
-private:
-  DeathRayBoss* boss_ = nullptr;
-  bool top_ = false;
-  std::uint32_t timer_ = 0;
-  bool attacking_ = false;
-  vec2 dir_{0};
-  std::uint32_t start_ = 30;
-
-  vec2 target_{0};
-  std::uint32_t shots_ = 0;
 };
 
 void spawn_death_ray(SimInterface& sim, const vec2& position) {
-  auto h = sim.create_legacy(std::make_unique<DeathRay>(sim, position));
-  h.add(legacy_collision(/* bounding width */ 48));
+  auto h = create_ship<DeathRay>(sim, position);
+  add_enemy_health<DeathRay>(h, 0);
+  h.add(DeathRay{});
   h.add(Enemy{.threat_value = 1});
-  h.add(Health{.hp = 0, .on_destroy = &legacy_enemy_on_destroy});
 }
 
-DeathArm* spawn_death_arm(SimInterface& sim, DeathRayBoss* boss, bool top, std::uint32_t hp) {
-  auto u = std::make_unique<DeathArm>(sim, boss, top);
-  auto p = u.get();
-  auto h = sim.create_legacy(std::move(u));
-  h.add(legacy_collision(/* bounding width */ 60));
+struct DeathArm : ecs::component {
+  static constexpr ship_flag kShipFlags = ship_flag::kEnemy;
+  static constexpr fixed kBoundingWidth = 60;
+  static constexpr sound kDestroySound = sound::kPlayerDestroy;
+
+  static constexpr std::uint32_t kTimer = 300;
+  static constexpr fixed kSpeed = 4;
+
+  using shape = standard_transform<
+      geom::ngon_shape<60, 4, c1>,
+      geom::conditional_p<
+          2, geom::ngon_shape<50, 4, c0, geom::ngon_style::kPolygram, shape_flag::kVulnerable>,
+          geom::ngon_shape<50, 4, c0, geom::ngon_style::kPolygram,
+                           shape_flag::kDangerous | shape_flag::kVulnerable>>,
+      geom::ball_collider_shape<40, shape_flag::kShield>, geom::ngon_shape<20, 4, c1>,
+      geom::ngon_shape<18, 4, c0>>;
+
+  std::tuple<vec2, fixed, bool> shape_parameters(const Transform& transform) const {
+    return {transform.centre, transform.rotation, start > 0};
+  }
+
+  ecs::entity_id death_boss{0};
+  bool is_top = false;
+  bool attacking = false;
+  std::uint32_t start = 30;
+  std::uint32_t timer = 0;
+  std::uint32_t shots = 0;
+  vec2 dir{0};
+  vec2 target{0};
+
+  DeathArm(ecs::entity_id death_boss, bool is_top)
+  : death_boss{death_boss}, is_top{is_top}, timer{is_top ? 2 * kTimer / 3 : 0} {}
+
+  void update(ecs::handle h, Transform& transform, SimInterface& sim) {
+    if (timer % (kTimer / 2) == kTimer / 4) {
+      sim.play_sound(sound::kBossFire, transform.centre, true);
+      target = sim.nearest_player(transform.centre)->shape().centre;
+      shots = 16;
+    }
+    if (shots > 0) {
+      auto d = normalise(target - transform.centre) * 5;
+      spawn_boss_shot(sim, transform.centre, d, c1);
+      --shots;
+    }
+
+    transform.rotate(fixed_c::hundredth * 5);
+    if (attacking) {
+      ++timer;
+      if (timer < kTimer / 4) {
+        auto d = sim.nearest_player_direction(transform.centre);
+        if (d != vec2{}) {
+          transform.move(kSpeed * (dir = d));
+        }
+      } else if (timer < kTimer / 2) {
+        transform.move(dir * kSpeed);
+      } else if (timer < kTimer) {
+        vec2 d = sim.index().get(death_boss)->get<LegacyShip>()->ship->position() +
+            vec2{80, is_top ? 80 : -80} - transform.centre;
+        if (length(d) > kSpeed) {
+          transform.move(normalise(d) * kSpeed);
+        } else {
+          attacking = false;
+          timer = 0;
+        }
+      } else if (timer >= kTimer) {
+        attacking = false;
+        timer = 0;
+      }
+      return;
+    }
+
+    ++timer;
+    if (timer >= kTimer) {
+      timer = 0;
+      attacking = true;
+      dir = vec2{0};
+      sim.play_sound(sound::kBossAttack);
+    }
+    transform.centre = sim.index().get(death_boss)->get<LegacyShip>()->ship->position() +
+        vec2{80, is_top ? 80 : -80};
+
+    if (start) {
+      if (start == 30) {
+        explode_entity_shapes<DeathArm>(h, sim);
+        explode_entity_shapes_with_colour<DeathArm>(h, sim, glm::vec4{1.f});
+      }
+      start--;
+    }
+  }
+
+  void on_destroy(ecs::const_handle h, const Transform& transform, SimInterface& sim) const {
+    explode_entity_shapes<DeathArm>(h, sim);
+    explode_entity_shapes_with_colour<DeathArm>(h, sim, glm::vec4{1.f}, 12);
+    explode_entity_shapes_with_colour<DeathArm>(h, sim, c1, 24);
+  }
+};
+
+ecs::handle spawn_death_arm(SimInterface& sim, IShip* boss, bool is_top, std::uint32_t hp) {
+  auto h = create_ship<DeathArm>(sim, vec2{0});
+  add_enemy_health<DeathArm>(h, hp);
+  h.add(DeathArm{boss->handle().id(), is_top});
   h.add(Enemy{.threat_value = 10});
-  h.add(Health{
-      .hp = hp, .destroy_sound = sound::kPlayerDestroy, .on_destroy = &legacy_enemy_on_destroy});
-  return p;
+  return h;
 }
 
 class DeathRayBoss : public ::Boss {
@@ -86,14 +159,12 @@ public:
     return !arms_.empty() ? 0 : damage;
   }
 
-  void on_arm_death(Ship* arm);
-
 private:
   std::uint32_t timer_ = 0;
   bool laser_ = false;
   bool dir_ = true;
   std::uint32_t pos_ = 1;
-  SimInterface::ship_list arms_;
+  std::vector<ecs::entity_id> arms_;
   std::uint32_t arm_timer_ = 0;
   std::uint32_t shot_timer_ = 0;
 
@@ -104,84 +175,6 @@ private:
 
   std::vector<std::pair<std::uint32_t, std::uint32_t>> shot_queue_;
 };
-
-DeathArm::DeathArm(SimInterface& sim, DeathRayBoss* boss, bool top)
-: Enemy{sim, vec2{0}, ship_flag::kNone}
-, boss_{boss}
-, top_{top}
-, timer_{top ? 2 * kDrbArmATimer / 3 : 0}
-, start_{30} {
-  add_new_shape<Polygon>(vec2{0}, 60, 4, c1, 0);
-  add_new_shape<Polygon>(vec2{0}, 50, 4, c0, 0, shape_flag::kVulnerable, Polygon::T::kPolygram);
-  add_new_shape<Polygon>(vec2{0}, 40, 4, glm::vec4{0.f}, 0, shape_flag::kShield);
-  add_new_shape<Polygon>(vec2{0}, 20, 4, c1, 0);
-  add_new_shape<Polygon>(vec2{0}, 18, 4, c0, 0);
-}
-
-void DeathArm::update() {
-  if (timer_ % (kDrbArmATimer / 2) == kDrbArmATimer / 4) {
-    play_sound_random(sound::kBossFire);
-    target_ = sim().nearest_player(shape().centre)->shape().centre;
-    shots_ = 16;
-  }
-  if (shots_ > 0) {
-    vec2 d = normalise(target_ - shape().centre) * 5;
-    spawn_boss_shot(sim(), shape().centre, d, c1);
-    --shots_;
-  }
-
-  shape().rotate(fixed_c::hundredth * 5);
-  if (attacking_) {
-    ++timer_;
-    if (timer_ < kDrbArmATimer / 4) {
-      auto d = sim().nearest_player_direction(shape().centre);
-      if (d != vec2{}) {
-        move(kDrbArmSpeed * (dir_ = d));
-      }
-    } else if (timer_ < kDrbArmATimer / 2) {
-      move(dir_ * kDrbArmSpeed);
-    } else if (timer_ < kDrbArmATimer) {
-      vec2 d = boss_->shape().centre + vec2{80, top_ ? 80 : -80} - shape().centre;
-      if (length(d) > kDrbArmSpeed) {
-        move(normalise(d) * kDrbArmSpeed);
-      } else {
-        attacking_ = false;
-        timer_ = 0;
-      }
-    } else if (timer_ >= kDrbArmATimer) {
-      attacking_ = false;
-      timer_ = 0;
-    }
-    return;
-  }
-
-  ++timer_;
-  if (timer_ >= kDrbArmATimer) {
-    timer_ = 0;
-    attacking_ = true;
-    dir_ = vec2{0};
-    play_sound(sound::kBossAttack);
-  }
-  shape().centre = boss_->shape().centre + vec2{80, top_ ? 80 : -80};
-
-  if (start_) {
-    if (start_ == 30) {
-      explosion();
-      explosion(glm::vec4{1.f});
-    }
-    start_--;
-    if (!start_) {
-      shapes()[1]->category = shape_flag::kDangerous | shape_flag::kVulnerable;
-    }
-  }
-}
-
-void DeathArm::on_destroy(bool bomb) {
-  boss_->on_arm_death(this);
-  explosion();
-  explosion(glm::vec4{1.f}, 12);
-  explosion(shapes()[0]->colour, 24);
-}
 
 DeathRayBoss::DeathRayBoss(SimInterface& sim)
 : Boss{sim, {kSimDimensions.x * (3_fx / 20), -kSimDimensions.y}}, timer_{kDrbTimer * 2} {
@@ -204,6 +197,9 @@ DeathRayBoss::DeathRayBoss(SimInterface& sim)
 }
 
 void DeathRayBoss::update() {
+  std::erase_if(arms_, [&](ecs::entity_id id) {
+    return !sim().index().contains(id) || sim().index().get(id)->has<Destroy>();
+  });
   bool positioned = true;
   fixed d = pos_ == 0 ? 1 * kSimDimensions.y / 4 - shape().centre.y
       : pos_ == 1     ? 2 * kSimDimensions.y / 4 - shape().centre.y
@@ -269,8 +265,8 @@ void DeathRayBoss::update() {
       }
       if (timer_ == kDrbTimer * 2 + 50 && arms_.size() == 2) {
         ray_attack_timer_ = kDrbRayTimer;
-        ray_src1_ = arms_[0]->position();
-        ray_src2_ = arms_[1]->position();
+        ray_src1_ = sim().index().get(arms_[0])->get<Transform>()->centre;
+        ray_src2_ = sim().index().get(arms_[1])->get<Transform>()->centre;
         play_sound(sound::kEnemySpawn);
       }
     }
@@ -324,8 +320,8 @@ void DeathRayBoss::update() {
         auto players = sim().get_lives() ? sim().player_count() : sim().alive_players();
         std::uint32_t hp =
             (kDrbArmHp * (7 * fixed_c::tenth + 3 * fixed_c::tenth * players)).to_int();
-        arms_.push_back(spawn_death_arm(sim(), this, true, hp));
-        arms_.push_back(spawn_death_arm(sim(), this, false, hp));
+        arms_.push_back(spawn_death_arm(sim(), this, true, hp).id());
+        arms_.push_back(spawn_death_arm(sim(), this, false, hp).id());
         play_sound(sound::kEnemySpawn);
       }
     }
@@ -363,15 +359,6 @@ void DeathRayBoss::render() const {
     d *= static_cast<float>(k - 40) / (kDrbRayTimer - 40);
     Polygon s2{vec2{0}, 10, 6, c3, 0, shape_flag::kNone, Polygon::T::kPolystar};
     s2.render(sim(), d + pos, 0);
-  }
-}
-
-void DeathRayBoss::on_arm_death(Ship* arm) {
-  for (auto it = arms_.begin(); it != arms_.end(); ++it) {
-    if (*it == arm) {
-      arms_.erase(it);
-      break;
-    }
   }
 }
 

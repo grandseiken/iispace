@@ -4,57 +4,57 @@
 
 namespace ii {
 namespace {
-const std::uint32_t kCbBaseHp = 60;
-const std::uint32_t kCbMaxSplit = 7;
-const fixed kCbSpeed = 4;
+constexpr std::uint32_t kCbBaseHp = 60;
+constexpr std::uint32_t kCbMaxSplit = 7;
+constexpr fixed kCbSpeed = 4;
 
 // power(HP_REDUCE_POWER = 1.7, split).
-const fixed HP_REDUCE_POWER_lookup[8] = {1_fx,
-                                         1 + 7 * (1_fx / 10),
-                                         2 + 9 * (1_fx / 10),
-                                         4 + 9 * (1_fx / 10),
-                                         8 + 4 * (1_fx / 10),
-                                         14 + 2 * (1_fx / 10),
-                                         24 + 2 * (1_fx / 10),
-                                         41};
+constexpr fixed HP_REDUCE_POWER_lookup[8] = {1_fx,
+                                             1 + 7 * (1_fx / 10),
+                                             2 + 9 * (1_fx / 10),
+                                             4 + 9 * (1_fx / 10),
+                                             8 + 4 * (1_fx / 10),
+                                             14 + 2 * (1_fx / 10),
+                                             24 + 2 * (1_fx / 10),
+                                             41};
 
 // power(1.5, split).
-const fixed ONE_AND_HALF_lookup[8] = {1_fx,
-                                      1 + (1_fx / 2),
-                                      2 + (1_fx / 4),
-                                      3 + 4 * (1_fx / 10),
-                                      5 + (1_fx / 10),
-                                      7 + 6 * (1_fx / 10),
-                                      11 + 4 * (1_fx / 10),
-                                      17 + (1_fx / 10)};
+constexpr fixed ONE_AND_HALF_lookup[8] = {1_fx,
+                                          1 + (1_fx / 2),
+                                          2 + (1_fx / 4),
+                                          3 + 4 * (1_fx / 10),
+                                          5 + (1_fx / 10),
+                                          7 + 6 * (1_fx / 10),
+                                          11 + 4 * (1_fx / 10),
+                                          17 + (1_fx / 10)};
 
 // power(1.1, split).
-const fixed ONE_PT_ONE_lookup[8] = {1_fx,
-                                    1 + (1_fx / 10),
-                                    1 + 2 * (1_fx / 10),
-                                    1 + 3 * (1_fx / 10),
-                                    1 + 5 * (1_fx / 10),
-                                    1 + 6 * (1_fx / 10),
-                                    1 + 8 * (1_fx / 10),
-                                    1 + 9 * (1_fx / 10)};
+constexpr fixed ONE_PT_ONE_lookup[8] = {1_fx,
+                                        1 + (1_fx / 10),
+                                        1 + 2 * (1_fx / 10),
+                                        1 + 3 * (1_fx / 10),
+                                        1 + 5 * (1_fx / 10),
+                                        1 + 6 * (1_fx / 10),
+                                        1 + 8 * (1_fx / 10),
+                                        1 + 9 * (1_fx / 10)};
 
 // power(1.15, split).
-const fixed ONE_PT_ONE_FIVE_lookup[8] = {
+constexpr fixed ONE_PT_ONE_FIVE_lookup[8] = {
     1_fx, 1 + 15 * (1_fx / 100), 1 + 3 * (1_fx / 10), 1 + 5 * (1_fx / 10), 1 + 7 * (1_fx / 10),
     2,    2 + 3 * (1_fx / 10),   2 + 7 * (1_fx / 10)};
 
 // power(1.2, split).
-const fixed ONE_PT_TWO_lookup[8] = {1_fx,
-                                    1 + 2 * (1_fx / 10),
-                                    1 + 4 * (1_fx / 10),
-                                    1 + 7 * (1_fx / 10),
-                                    2 + (1_fx / 10),
-                                    2 + (1_fx / 2),
-                                    3,
-                                    3 + 6 * (1_fx / 10)};
+constexpr fixed ONE_PT_TWO_lookup[8] = {1_fx,
+                                        1 + 2 * (1_fx / 10),
+                                        1 + 4 * (1_fx / 10),
+                                        1 + 7 * (1_fx / 10),
+                                        2 + (1_fx / 10),
+                                        2 + (1_fx / 2),
+                                        3,
+                                        3 + 6 * (1_fx / 10)};
 
 // power(1.15, remaining).
-const std::uint32_t ONE_PT_ONE_FIVE_intLookup[128] = {
+constexpr std::uint32_t ONE_PT_ONE_FIVE_intLookup[128] = {
     1,        1,        1,        2,        2,        2,        2,        3,        3,
     4,        4,        5,        5,        6,        7,        8,        9,        11,
     12,       14,       16,       19,       22,       25,       29,       33,       38,

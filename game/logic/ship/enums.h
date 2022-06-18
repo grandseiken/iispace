@@ -15,13 +15,14 @@ enum class ship_flag : std::uint32_t {
 };
 
 enum class shape_flag : std::uint32_t {
-  kNone = 0,
-  kVulnerable = 1,
-  kDangerous = 2,
-  kShield = 4,       // Blocks all player projectiles.
-  kWeakShield = 8,   // Blocks normal player projectiles, magic shots can penetrate.
-  kSafeShield = 16,  // Blocks enemy projectiles.
-  kEverything = 1 | 2 | 4 | 8 | 16,
+  kNone = 0b000000,
+  kVulnerable = 0b000001,
+  kDangerous = 0b000010,
+  kShield = 0b000100,            // Blocks all player projectiles.
+  kWeakShield = 0b001000,        // Blocks normal player projectiles, magic shots can penetrate.
+  kSafeShield = 0b010000,        // Blocks enemy projectiles.
+  kEnemyInteraction = 0b100000,  // Interactions between enemies.
+  kEverything = 0b111111,
 };
 
 enum class damage_type {

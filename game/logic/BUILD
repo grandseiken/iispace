@@ -1,8 +1,14 @@
 cc_library(
+  # TODO
+  name = "player",
+  hdrs = ["player.h"],
+  visibility = [":__subpackages__"],
+)
+
+cc_library(
   name = "logic",
   hdrs = [
     "overmind.h",
-    "player.h",
     "stars.h",
   ],
   srcs = [
@@ -16,19 +22,14 @@ cc_library(
     "boss/square.cc",
     "boss/super.cc",
     "boss/tractor.cc",
-    "enemy/enemy_large.cc",
-    "enemy/enemy_shots.cc",
-    "enemy/enemy_small.cc",
-    "enemy/enemy_snake.cc",
-    "enemy/enemy_wall.cc",
-    "enemy/enemy.cc",
-    "enemy/enemy.h",
     "overmind.cc",
     "player.cc",
     "stars.cc",
   ],
   deps = [
+    ":player",
     "//game/common:math",
+    "//game/logic/enemy",
     "//game/logic/ship",
     "//game/logic/sim:sim_interface",
     "//game/mixer:sound",

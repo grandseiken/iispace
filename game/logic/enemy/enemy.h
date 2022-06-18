@@ -1,21 +1,9 @@
 #ifndef II_GAME_LOGIC_ENEMY_ENEMY_H
 #define II_GAME_LOGIC_ENEMY_ENEMY_H
-#include "game/logic/ecs/index.h"
-#include "game/logic/ship/ship.h"
-
-class Enemy : public ii::Ship {
-public:
-  Enemy(ii::SimInterface& sim, const vec2& position, ii::ship_flag type);
-  void render() const override;
-  virtual void on_destroy(bool bomb) {}
-};
+#include "game/common/math.h"
 
 namespace ii {
-inline void legacy_enemy_on_destroy(ecs::const_handle h, SimInterface&, damage_type type) {
-  auto enemy = static_cast<::Enemy*>(h.get<LegacyShip>()->ship.get());
-  enemy->explosion();
-  enemy->on_destroy(type == damage_type::kBomb);
-}
+class SimInterface;
 
 void spawn_bounce(SimInterface& sim, const vec2& position, fixed angle);
 void spawn_follow(SimInterface&, const vec2& position, bool has_score = true, fixed rotation = 0);

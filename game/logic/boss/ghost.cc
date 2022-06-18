@@ -1,13 +1,14 @@
 #include "game/logic/boss/boss_internal.h"
+#include "game/logic/enemy/enemy.h"
 #include "game/logic/player.h"
 #include "game/logic/ship/geometry.h"
 #include "game/logic/ship/ship_template.h"
 
 namespace ii {
 namespace {
-const std::uint32_t kGbBaseHp = 700;
-const std::uint32_t kGbTimer = 250;
-const std::uint32_t kGbAttackTime = 100;
+constexpr std::uint32_t kGbBaseHp = 700;
+constexpr std::uint32_t kGbTimer = 250;
+constexpr std::uint32_t kGbAttackTime = 100;
 
 constexpr glm::vec4 c0 = colour_hue360(280, .7f);
 constexpr glm::vec4 c1 = colour_hue360(280, .5f, .6f);
@@ -81,60 +82,54 @@ void spawn_ghost_wall_horizontal(SimInterface& sim, bool swap, bool swap_gap) {
   h.add(Enemy{.threat_value = 1});
 }
 
-class GhostMine : public ::Enemy {
-public:
-  GhostMine(SimInterface& sim, const vec2& position, ::Boss* ghost);
-  void update() override;
-  void render() const override;
+struct GhostMine : ecs::component {
+  static constexpr ship_flag kShipFlags = ship_flag::kEnemy;
+  static constexpr fixed kBoundingWidth = 24;
+  static constexpr sound kDestroySound = sound::kEnemyDestroy;
 
-private:
-  std::uint32_t timer_ = 80;
-  ::Boss* ghost_ = nullptr;
+  using shape = standard_transform<
+      geom::conditional_p<
+          2, geom::ngon_shape<24, 8, c1>,
+          geom::ngon_shape<24, 8, c1, geom::ngon_style::kPolygon,
+                           shape_flag::kDangerous | shape_flag::kShield | shape_flag::kWeakShield>>,
+      geom::ngon_shape<20, 8, c1>>;
+  std::tuple<vec2, fixed, bool> shape_parameters(const Transform& transform) const {
+    return {transform.centre, transform.rotation, timer > 0};
+  }
+
+  std::uint32_t timer = 80;
+  ecs::entity_id ghost_boss{0};
+  GhostMine(ecs::entity_id ghost_boss) : ghost_boss{ghost_boss} {}
+
+  void update(ecs::handle h, Transform& transform, Render& render, SimInterface& sim) {
+    if (timer == 80) {
+      explode_entity_shapes<GhostMine>(h, sim);
+      transform.set_rotation(sim.random_fixed() * 2 * fixed_c::pi);
+    }
+    timer && --timer;
+    if (sim.any_collision(transform.centre, shape_flag::kEnemyInteraction)) {
+      if (sim.random(6) == 0 ||
+          (sim.index().contains(ghost_boss) &&
+           sim.index().get(ghost_boss)->get<Health>()->is_hp_low() && sim.random(5) == 0)) {
+        spawn_big_follow(sim, transform.centre, /* score */ false);
+      } else {
+        spawn_follow(sim, transform.centre, /* score */ false);
+      }
+      ecs::call<&Health::damage>(h, sim, 1, damage_type::kNone, std::nullopt);
+    }
+    if ((timer / 4) % 2) {
+      render.colour_override = glm::vec4{0.f};
+    } else {
+      render.colour_override.reset();
+    }
+  }
 };
 
-GhostMine::GhostMine(SimInterface& sim, const vec2& position, ::Boss* ghost)
-: Enemy{sim, position, ship_flag::kNone}, ghost_{ghost} {
-  add_new_shape<Polygon>(vec2{0}, 24, 8, c1, 0);
-  add_new_shape<Polygon>(vec2{0}, 20, 8, c1, 0);
-}
-
-void GhostMine::update() {
-  if (timer_ == 80) {
-    explosion();
-    shape().set_rotation(sim().random_fixed() * 2 * fixed_c::pi);
-  }
-  if (timer_) {
-    timer_--;
-    if (!timer_) {
-      shapes()[0]->category =
-          shape_flag::kDangerous | shape_flag::kShield | shape_flag::kWeakShield;
-    }
-  }
-  for (const auto& ship : sim().collision_list(shape().centre, shape_flag::kDangerous)) {
-    if (ship == ghost_) {
-      if (sim().random(6) == 0 ||
-          (ghost_->handle().get<Health>()->is_hp_low() && sim().random(5) == 0)) {
-        spawn_big_follow(sim(), shape().centre, /* score */ false);
-      } else {
-        spawn_follow(sim(), shape().centre, /* score */ false);
-      }
-      damage(1, false, 0);
-      break;
-    }
-  }
-}
-
-void GhostMine::render() const {
-  if (!((timer_ / 4) % 2)) {
-    Enemy::render();
-  }
-}
-
 void spawn_ghost_mine(SimInterface& sim, const vec2& position, ::Boss* ghost) {
-  auto h = sim.create_legacy(std::make_unique<GhostMine>(sim, position, ghost));
-  h.add(legacy_collision(/* bounding width */ 24));
+  auto h = create_ship<GhostMine>(sim, position);
+  add_enemy_health<GhostMine>(h, 0);
+  h.add(GhostMine{ghost->handle().id()});
   h.add(Enemy{.threat_value = 1});
-  h.add(Health{.hp = 0, .on_destroy = &legacy_enemy_on_destroy});
 }
 
 class GhostBoss : public ::Boss {
@@ -393,11 +388,12 @@ void GhostBoss::update() {
     vtime_--;
     if (!vtime_ && visible_) {
       shapes()[0]->category = shape_flag::kShield;
-      shapes()[1]->category = shape_flag::kDangerous | shape_flag::kVulnerable;
-      shapes()[11]->category = shape_flag::kDangerous;
+      shapes()[1]->category =
+          shape_flag::kDangerous | shape_flag::kEnemyInteraction | shape_flag::kVulnerable;
+      shapes()[11]->category = shape_flag::kDangerous | shape_flag::kEnemyInteraction;
       if (shapes().size() >= 22) {
-        shapes()[21]->category = shape_flag::kDangerous;
-        shapes()[24]->category = shape_flag::kDangerous;
+        shapes()[21]->category = shape_flag::kDangerous | shape_flag::kEnemyInteraction;
+        shapes()[24]->category = shape_flag::kDangerous | shape_flag::kEnemyInteraction;
       }
     }
   }
