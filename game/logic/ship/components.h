@@ -64,9 +64,9 @@ struct Health : ecs::component {
   std::uint32_t hit_timer = 0;
   std::optional<std::uint32_t> hit_flash_ignore_index;
 
-  std::optional<ii::sound> hit_sound0 = ii::sound::kEnemyHit;
-  std::optional<ii::sound> hit_sound1 = ii::sound::kEnemyHit;
-  std::optional<ii::sound> destroy_sound = ii::sound::kEnemyDestroy;
+  std::optional<sound> hit_sound0 = sound::kEnemyHit;
+  std::optional<sound> hit_sound1 = sound::kEnemyHit;
+  std::optional<sound> destroy_sound = sound::kEnemyDestroy;
 
   function_ptr<std::uint32_t(ecs::handle, SimInterface&, damage_type, std::uint32_t)>
       damage_transform;

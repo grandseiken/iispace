@@ -30,36 +30,36 @@ void render_entity_shape(ecs::const_handle h, const Render& render, const Health
     c_override = glm::vec4{1.f};
   }
 
-  S::iterate(geom::iterate_lines, get_shape_parameters<Logic>(h), {},
-             [&](const vec2& a, const vec2& b, const glm::vec4& c) {
-               sim.render_line(to_float(a), to_float(b), c_override ? *c_override : c);
-             });
+  geom::iterate(S{}, geom::iterate_lines, get_shape_parameters<Logic>(h), {},
+                [&](const vec2& a, const vec2& b, const glm::vec4& c) {
+                  sim.render_line(to_float(a), to_float(b), c_override ? *c_override : c);
+                });
 }
 
 template <ecs::Component Logic, geom::ShapeNode S = typename Logic::shape>
 void explode_entity_shapes_with_colour(ecs::const_handle h, SimInterface& sim, const glm::vec4& c) {
-  S::iterate(geom::iterate_centres, get_shape_parameters<Logic>(h), {},
-             [&](const vec2& v, const glm::vec4&) { sim.explosion(to_float(v), c); });
+  geom::iterate(S{}, geom::iterate_centres, get_shape_parameters<Logic>(h), {},
+                [&](const vec2& v, const glm::vec4&) { sim.explosion(to_float(v), c); });
 }
 
 template <ecs::Component Logic, geom::ShapeNode S = typename Logic::shape>
 void explode_entity_shapes(ecs::const_handle h, SimInterface& sim) {
-  S::iterate(geom::iterate_centres, get_shape_parameters<Logic>(h), {},
-             [&](const vec2& v, const glm::vec4& c) { sim.explosion(to_float(v), c); });
+  geom::iterate(S{}, geom::iterate_centres, get_shape_parameters<Logic>(h), {},
+                [&](const vec2& v, const glm::vec4& c) { sim.explosion(to_float(v), c); });
 }
 
 template <ecs::Component Logic, geom::ShapeNode S = typename Logic::shape>
 void explode_entity_shapes_towards(ecs::const_handle h, SimInterface& sim, std::uint32_t time,
                                    const vec2& towards) {
-  S::iterate(geom::iterate_centres, get_shape_parameters<Logic>(h), {},
-             [&](const vec2& v, const glm::vec4& c) {
-               sim.explosion(to_float(v), c, time, to_float(towards));
-             });
+  geom::iterate(S{}, geom::iterate_centres, get_shape_parameters<Logic>(h), {},
+                [&](const vec2& v, const glm::vec4& c) {
+                  sim.explosion(to_float(v), c, time, to_float(towards));
+                });
 }
 
 template <ecs::Component Logic, geom::ShapeNode S>
 bool ship_check_point(ecs::const_handle h, const vec2& v, shape_flag mask) {
-  return S::check_point(get_shape_parameters<Logic>(h), v, mask);
+  return geom::check_point(S{}, get_shape_parameters<Logic>(h), v, mask);
 }
 
 template <ecs::Component Logic, geom::ShapeNode S = typename Logic::shape>
@@ -73,8 +73,8 @@ ecs::handle create_ship(SimInterface& sim, const vec2& position, fixed rotation 
 
   constexpr auto collision_shape_flags = [&]() constexpr {
     shape_flag result = shape_flag::kNone;
-    S::iterate(
-        geom::iterate_flags, geom::arbitrary_parameters{},
+    geom::iterate(
+        S{}, geom::iterate_flags, geom::arbitrary_parameters{},
         {}, [&](shape_flag f) constexpr { result |= f; });
     return result;
   }

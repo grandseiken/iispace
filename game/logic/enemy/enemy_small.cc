@@ -12,18 +12,18 @@ struct Bounce : ecs::component {
   static constexpr sound kDestroySound = sound::kEnemyShatter;
 
   using shape = standard_transform<
-      geom::shape<geom::ngon{8, 6, colour_hue360(300, .5f, .6f), geom::ngon_style::kPolygon,
-                             shape_flag::kDangerous | shape_flag::kVulnerable}>>;
+      geom::ngon_shape<8, 6, colour_hue360(300, .5f, .6f), geom::ngon_style::kPolygon,
+                       shape_flag::kDangerous | shape_flag::kVulnerable>>;
 
   Bounce(fixed angle) : dir{from_polar(angle, 3_fx)} {}
   vec2 dir{0};
 
   void update(Transform& transform, SimInterface&) {
-    if ((transform.centre.x > ii::kSimDimensions.x && dir.x > 0) ||
+    if ((transform.centre.x > kSimDimensions.x && dir.x > 0) ||
         (transform.centre.x < 0 && dir.x < 0)) {
       dir.x = -dir.x;
     }
-    if ((transform.centre.y > ii::kSimDimensions.y && dir.y > 0) ||
+    if ((transform.centre.y > kSimDimensions.y && dir.y > 0) ||
         (transform.centre.y < 0 && dir.y < 0)) {
       dir.y = -dir.y;
     }
@@ -39,12 +39,10 @@ struct Follow : ecs::component {
   static constexpr std::uint32_t kTime = 90;
   static constexpr fixed kSpeed = 2;
 
-  using small_shape =
-      geom::shape<geom::ngon{10, 4, colour_hue360(270, .6f), geom::ngon_style::kPolygon,
-                             shape_flag::kDangerous | shape_flag::kVulnerable}>;
-  using big_shape =
-      geom::shape<geom::ngon{20, 4, colour_hue360(270, .6f), geom::ngon_style::kPolygon,
-                             shape_flag::kDangerous | shape_flag::kVulnerable}>;
+  using small_shape = geom::ngon_shape<10, 4, colour_hue360(270, .6f), geom::ngon_style::kPolygon,
+                                       shape_flag::kDangerous | shape_flag::kVulnerable>;
+  using big_shape = geom::ngon_shape<20, 4, colour_hue360(270, .6f), geom::ngon_style::kPolygon,
+                                     shape_flag::kDangerous | shape_flag::kVulnerable>;
   using shape = standard_transform<geom::conditional_p<2, big_shape, small_shape>>;
 
   std::tuple<vec2, fixed, bool> shape_parameters(const Transform& transform) const {
@@ -92,8 +90,8 @@ struct Chaser : ecs::component {
   static constexpr std::uint32_t kTime = 60;
   static constexpr fixed kSpeed = 4;
   using shape = standard_transform<
-      geom::shape<geom::ngon{10, 4, colour_hue360(210, .6f), geom::ngon_style::kPolygram,
-                             shape_flag::kDangerous | shape_flag::kVulnerable}>>;
+      geom::ngon_shape<10, 4, colour_hue360(210, .6f), geom::ngon_style::kPolygram,
+                       shape_flag::kDangerous | shape_flag::kVulnerable>>;
 
   bool move = false;
   std::uint32_t timer = kTime;
@@ -124,7 +122,7 @@ struct Chaser : ecs::component {
 };
 }  // namespace
 
-void spawn_bounce(ii::SimInterface& sim, const vec2& position, fixed angle) {
+void spawn_bounce(SimInterface& sim, const vec2& position, fixed angle) {
   auto h = create_ship<Bounce>(sim, position);
   add_enemy_health<Bounce>(h, 1);
   h.add(Bounce{angle});
@@ -140,7 +138,7 @@ void spawn_follow(SimInterface& sim, const vec2& position, bool has_score, fixed
 
 void spawn_big_follow(SimInterface& sim, const vec2& position, bool has_score) {
   auto h = create_ship<Follow>(sim, position);
-  add_enemy_health<Follow>(h, 3, ii::sound::kPlayerDestroy);
+  add_enemy_health<Follow>(h, 3, sound::kPlayerDestroy);
   h.add(Follow{true});
   h.add(Enemy{.threat_value = 3, .score_reward = has_score ? 20u : 0});
 }

@@ -141,7 +141,7 @@ inline Collision legacy_collision(fixed w) {
   c.bounding_width = w;
   c.flags = shape_flag::kEverything;
   c.check = [](ecs::const_handle h, const vec2& v, shape_flag f) {
-    return static_cast<ii::Ship*>(h.get<LegacyShip>()->ship.get())->check_point(v, f);
+    return static_cast<Ship*>(h.get<LegacyShip>()->ship.get())->check_point(v, f);
   };
   return c;
 }

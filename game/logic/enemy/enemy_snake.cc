@@ -5,7 +5,7 @@
 namespace ii {
 namespace {
 
-ecs::handle spawn_snake_tail(ii::SimInterface& sim, const vec2& position, const glm::vec4& colour);
+ecs::handle spawn_snake_tail(SimInterface& sim, const vec2& position, const glm::vec4& colour);
 
 struct SnakeTail : ecs::component {
   static constexpr ship_flag kShipFlags = ship_flag::kEnemy;
@@ -13,8 +13,8 @@ struct SnakeTail : ecs::component {
   static constexpr sound kDestroySound = sound::kPlayerDestroy;
 
   using shape =
-      standard_transform<geom::shape<geom::ngon{10, 4, glm::vec4{1.f}, geom::ngon_style::kPolygon,
-                                                shape_flag::kDangerous | shape_flag::kWeakShield}>>;
+      standard_transform<geom::ngon_shape<10, 4, glm::vec4{1.f}, geom::ngon_style::kPolygon,
+                                          shape_flag::kDangerous | shape_flag::kWeakShield>>;
 
   std::optional<ecs::entity_id> tail;
   std::optional<ecs::entity_id> head;
@@ -36,7 +36,7 @@ struct SnakeTail : ecs::component {
       on_destroy(transform, sim);
       h.emplace<Destroy>();
       explode_entity_shapes_with_colour<SnakeTail>(h, sim, *render.colour_override);
-      sim.play_sound(ii::sound::kEnemyDestroy, transform.centre, true);
+      sim.play_sound(sound::kEnemyDestroy, transform.centre, true);
     }
   }
 
@@ -55,10 +55,9 @@ struct Snake : ecs::component {
   static constexpr std::uint32_t kBoundingWidth = 32;
   static constexpr sound kDestroySound = sound::kPlayerDestroy;
 
-  using shape =
-      standard_transform<geom::shape<geom::ngon{14, 3, glm::vec4{1.f}, geom::ngon_style::kPolygon,
-                                                shape_flag::kVulnerable}>,
-                         geom::shape<geom::ball_collider{10, shape_flag::kDangerous}>>;
+  using shape = standard_transform<
+      geom::ngon_shape<14, 3, glm::vec4{1.f}, geom::ngon_style::kPolygon, shape_flag::kVulnerable>,
+      geom::ball_collider_shape<10, shape_flag::kDangerous>>;
 
   std::optional<ecs::entity_id> tail;
   std::uint32_t timer = 0;
@@ -80,8 +79,8 @@ struct Snake : ecs::component {
   }
 
   void update(ecs::handle h, Transform& transform, Render& render, SimInterface& sim) {
-    if (transform.centre.x < -8 || transform.centre.x > ii::kSimDimensions.x + 8 ||
-        transform.centre.y < -8 || transform.centre.y > ii::kSimDimensions.y + 8) {
+    if (transform.centre.x < -8 || transform.centre.x > kSimDimensions.x + 8 ||
+        transform.centre.y < -8 || transform.centre.y > kSimDimensions.y + 8) {
       tail.reset();
       h.emplace<Destroy>();
       return;
@@ -100,7 +99,7 @@ struct Snake : ecs::component {
         new_h.get<SnakeTail>()->tail = tail;
       }
       tail = new_h.id();
-      sim.play_sound(ii::sound::kBossFire, transform.centre, true, .5f);
+      sim.play_sound(sound::kBossFire, transform.centre, true, .5f);
     }
     if (!is_projectile && timer % 48 == 0 && !sim.random(3)) {
       dir = rotate(dir, (sim.random(2) ? 1 : -1) * fixed_c::pi / 2);
@@ -120,7 +119,7 @@ struct Snake : ecs::component {
   }
 };
 
-ecs::handle spawn_snake_tail(ii::SimInterface& sim, const vec2& position, const glm::vec4& colour) {
+ecs::handle spawn_snake_tail(SimInterface& sim, const vec2& position, const glm::vec4& colour) {
   auto h = create_ship<SnakeTail>(sim, position);
   add_enemy_health<SnakeTail>(h, 0);
   h.add(SnakeTail{});
@@ -131,7 +130,7 @@ ecs::handle spawn_snake_tail(ii::SimInterface& sim, const vec2& position, const 
 
 }  // namespace
 
-void spawn_snake(ii::SimInterface& sim, const vec2& position, const glm::vec4& colour,
+void spawn_snake(SimInterface& sim, const vec2& position, const glm::vec4& colour,
                  const vec2& direction, fixed rotation) {
   auto h = create_ship<Snake>(sim, position);
   add_enemy_health<Snake>(h, 5);

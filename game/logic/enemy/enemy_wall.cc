@@ -10,8 +10,9 @@ struct Square : ecs::component {
   static constexpr std::uint32_t kBoundingWidth = 15;
   static constexpr sound kDestroySound = sound::kEnemyDestroy;
   static constexpr fixed kSpeed = 2 + 1_fx / 4;
-  using shape = standard_transform<geom::shape<geom::box{
-      {10, 10}, colour_hue360(120, .6f), shape_flag::kDangerous | shape_flag::kVulnerable}>>;
+  using shape =
+      standard_transform<geom::box_shape<10, 10, colour_hue360(120, .6f),
+                                         shape_flag::kDangerous | shape_flag::kVulnerable>>;
 
   vec2 dir{0};
   std::uint32_t timer = 0;
@@ -46,13 +47,13 @@ struct Square : ecs::component {
         dir.y = 1;
       }
     }
-    if (v.x > ii::kSimDimensions.x && dir.x >= 0) {
+    if (v.x > kSimDimensions.x && dir.x >= 0) {
       dir.x = -dir.x;
       if (dir.x >= 0) {
         dir.x = -1;
       }
     }
-    if (v.y > ii::kSimDimensions.y && dir.y >= 0) {
+    if (v.y > kSimDimensions.y && dir.y >= 0) {
       dir.y = -dir.y;
       if (dir.y >= 0) {
         dir.y = -1;
@@ -77,8 +78,9 @@ struct Wall : ecs::component {
 
   static constexpr std::uint32_t kTimer = 80;
   static constexpr fixed kSpeed = 1 + 1_fx / 4;
-  using shape = standard_transform<geom::shape<geom::box{
-      {10, 40}, colour_hue360(120, .5f, .6f), shape_flag::kDangerous | shape_flag::kVulnerable}>>;
+  using shape =
+      standard_transform<geom::box_shape<10, 40, colour_hue360(120, .5f, .6f),
+                                         shape_flag::kDangerous | shape_flag::kVulnerable>>;
 
   vec2 dir{0, 1};
   std::uint32_t timer = 0;
@@ -116,8 +118,8 @@ struct Wall : ecs::component {
 
     const auto& v = transform.centre;
     if ((v.x < 0 && dir.x < -fixed_c::hundredth) || (v.y < 0 && dir.y < -fixed_c::hundredth) ||
-        (v.x > ii::kSimDimensions.x && dir.x > fixed_c::hundredth) ||
-        (v.y > ii::kSimDimensions.y && dir.y > fixed_c::hundredth)) {
+        (v.x > kSimDimensions.x && dir.x > fixed_c::hundredth) ||
+        (v.y > kSimDimensions.y && dir.y > fixed_c::hundredth)) {
       dir = -normalise(dir);
     }
 

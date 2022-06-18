@@ -8,12 +8,12 @@ namespace {
 struct BossShot : ecs::component {
   static constexpr auto kShipFlags = ship_flag::kEnemy | ship_flag::kWall;
   static constexpr std::uint32_t kBoundingWidth = 12;
-  static constexpr sound kDestroySound = ii::sound::kEnemyDestroy;
+  static constexpr sound kDestroySound = sound::kEnemyDestroy;
 
-  using shape = standard_transform<
-      geom::shape<geom::ngon{16, 8, glm::vec4{1.f}, geom::ngon_style::kPolystar}>,
-      geom::shape<geom::ngon{10, 8, glm::vec4{1.f}}>,
-      geom::shape<geom::ball_collider{12, shape_flag::kDangerous}>>;
+  using shape =
+      standard_transform<geom::ngon_shape<16, 8, glm::vec4{1.f}, geom::ngon_style::kPolystar>,
+                         geom::ngon_shape<10, 8, glm::vec4{1.f}>,
+                         geom::ball_collider_shape<12, shape_flag::kDangerous>>;
 
   BossShot(const vec2& velocity, fixed rotate_speed)
   : velocity{velocity}, rotate_speed{rotate_speed} {}
@@ -24,12 +24,12 @@ struct BossShot : ecs::component {
   void update(ecs::handle h, Transform& transform, Render& render, SimInterface& sim) {
     transform.move(velocity);
     vec2 p = transform.centre;
-    if ((p.x < -10 && velocity.x < 0) || (p.x > ii::kSimDimensions.x + 10 && velocity.x > 0) ||
-        (p.y < -10 && velocity.y < 0) || (p.y > ii::kSimDimensions.y + 10 && velocity.y > 0)) {
+    if ((p.x < -10 && velocity.x < 0) || (p.x > kSimDimensions.x + 10 && velocity.x > 0) ||
+        (p.y < -10 && velocity.y < 0) || (p.y > kSimDimensions.y + 10 && velocity.y > 0)) {
       h.emplace<Destroy>();
     }
     transform.set_rotation(transform.rotation + fixed_c::hundredth * 2);
-    if (sim.any_collision(transform.centre, ii::shape_flag::kSafeShield)) {
+    if (sim.any_collision(transform.centre, shape_flag::kSafeShield)) {
       explode_entity_shapes_towards<BossShot>(h, sim, 4, transform.centre - velocity);
       h.emplace<Destroy>();
       return;

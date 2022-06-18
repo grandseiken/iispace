@@ -2,6 +2,7 @@
 #include "game/logic/player.h"
 #include <glm/gtc/constants.hpp>
 
+namespace ii {
 namespace {
 const std::uint32_t kBsbBaseHp = 400;
 const std::uint32_t kBsbTimer = 100;
@@ -15,9 +16,9 @@ const glm::vec4 c0 = colour_hue360(270, .6f);
 const glm::vec4 c1 = colour_hue360(270, .4f);
 const glm::vec4 c2 = colour_hue360(260, .3f);
 
-class BigSquareBoss : public Boss {
+class BigSquareBoss : public ::Boss {
 public:
-  BigSquareBoss(ii::SimInterface& sim);
+  BigSquareBoss(SimInterface& sim);
 
   void update() override;
   void render() const override;
@@ -30,40 +31,40 @@ private:
   std::uint32_t special_timer_ = 0;
   bool special_attack_ = false;
   bool special_attack_rotate_ = false;
-  Player* attack_player_ = nullptr;
+  ::Player* attack_player_ = nullptr;
 };
 
-BigSquareBoss::BigSquareBoss(ii::SimInterface& sim)
-: Boss{sim, {ii::kSimDimensions.x * fixed_c::hundredth * 75, ii::kSimDimensions.y * 2}}
+BigSquareBoss::BigSquareBoss(SimInterface& sim)
+: Boss{sim, {kSimDimensions.x * fixed_c::hundredth * 75, kSimDimensions.y * 2}}
 , dir_{0, -1}
 , timer_{kBsbTimer * 6} {
-  add_new_shape<ii::Polygon>(vec2{0}, 160, 4, c0, 0);
-  add_new_shape<ii::Polygon>(vec2{0}, 140, 4, c0, 0, ii::shape_flag::kDangerous);
-  add_new_shape<ii::Polygon>(vec2{0}, 120, 4, c0, 0, ii::shape_flag::kDangerous);
-  add_new_shape<ii::Polygon>(vec2{0}, 100, 4, c0, 0);
-  add_new_shape<ii::Polygon>(vec2{0}, 80, 4, c0, 0);
-  add_new_shape<ii::Polygon>(vec2{0}, 60, 4, c0, 0, ii::shape_flag::kVulnerable);
+  add_new_shape<Polygon>(vec2{0}, 160, 4, c0, 0);
+  add_new_shape<Polygon>(vec2{0}, 140, 4, c0, 0, shape_flag::kDangerous);
+  add_new_shape<Polygon>(vec2{0}, 120, 4, c0, 0, shape_flag::kDangerous);
+  add_new_shape<Polygon>(vec2{0}, 100, 4, c0, 0);
+  add_new_shape<Polygon>(vec2{0}, 80, 4, c0, 0);
+  add_new_shape<Polygon>(vec2{0}, 60, 4, c0, 0, shape_flag::kVulnerable);
 
-  add_new_shape<ii::Polygon>(vec2{0}, 155, 4, c0, 0);
-  add_new_shape<ii::Polygon>(vec2{0}, 135, 4, c0, 0);
-  add_new_shape<ii::Polygon>(vec2{0}, 115, 4, c0, 0);
-  add_new_shape<ii::Polygon>(vec2{0}, 95, 4, c1, 0);
-  add_new_shape<ii::Polygon>(vec2{0}, 75, 4, c1, 0);
-  add_new_shape<ii::Polygon>(vec2{0}, 55, 4, c2, 0, ii::shape_flag::kShield);
+  add_new_shape<Polygon>(vec2{0}, 155, 4, c0, 0);
+  add_new_shape<Polygon>(vec2{0}, 135, 4, c0, 0);
+  add_new_shape<Polygon>(vec2{0}, 115, 4, c0, 0);
+  add_new_shape<Polygon>(vec2{0}, 95, 4, c1, 0);
+  add_new_shape<Polygon>(vec2{0}, 75, 4, c1, 0);
+  add_new_shape<Polygon>(vec2{0}, 55, 4, c2, 0, shape_flag::kShield);
 }
 
 void BigSquareBoss::update() {
   const vec2& pos = shape().centre;
-  if (pos.y < ii::kSimDimensions.y * fixed_c::hundredth * 25 && dir_.y == -1) {
+  if (pos.y < kSimDimensions.y * fixed_c::hundredth * 25 && dir_.y == -1) {
     dir_ = {reverse_ ? 1 : -1, 0};
   }
-  if (pos.x < ii::kSimDimensions.x * fixed_c::hundredth * 25 && dir_.x == -1) {
+  if (pos.x < kSimDimensions.x * fixed_c::hundredth * 25 && dir_.x == -1) {
     dir_ = {0, reverse_ ? -1 : 1};
   }
-  if (pos.y > ii::kSimDimensions.y * fixed_c::hundredth * 75 && dir_.y == 1) {
+  if (pos.y > kSimDimensions.y * fixed_c::hundredth * 75 && dir_.y == 1) {
     dir_ = {reverse_ ? -1 : 1, 0};
   }
-  if (pos.x > ii::kSimDimensions.x * fixed_c::hundredth * 75 && dir_.x == 1) {
+  if (pos.x > kSimDimensions.x * fixed_c::hundredth * 75 && dir_.x == 1) {
     dir_ = {0, reverse_ ? 1 : -1};
   }
 
@@ -78,12 +79,11 @@ void BigSquareBoss::update() {
         d = rotate(d, fixed_c::pi / 2);
       }
       for (std::uint32_t i = 0; i < 6; ++i) {
-        ii::spawn_follow(sim(), attack_player_->shape().centre + d, /* score */ false,
-                         fixed_c::pi / 4);
+        spawn_follow(sim(), attack_player_->shape().centre + d, /* score */ false, fixed_c::pi / 4);
         d = rotate(d, 2 * fixed_c::pi / 6);
       }
       attack_player_ = 0;
-      play_sound(ii::sound::kEnemySpawn);
+      play_sound(sound::kEnemySpawn);
     }
     if (!attack_player_) {
       special_attack_ = false;
@@ -98,19 +98,19 @@ void BigSquareBoss::update() {
     ++spawn_timer_;
     auto t = kBsbSTimer;
     t -= std::min(t, sim().alive_players() * 10);
-    t /= (handle().get<ii::Health>()->is_hp_low() ? 2 : 1);
+    t /= (handle().get<Health>()->is_hp_low() ? 2 : 1);
     if (spawn_timer_ >= t) {
       spawn_timer_ = 0;
       ++special_timer_;
-      ii::spawn_big_follow(sim(), shape().centre, false);
-      play_sound_random(ii::sound::kBossFire);
+      spawn_big_follow(sim(), shape().centre, false);
+      play_sound_random(sound::kBossFire);
     }
     if (special_timer_ >= 8 && sim().random(4)) {
       special_timer_ = kBsbAttackTime;
       special_attack_ = true;
       special_attack_rotate_ = sim().random(2) != 0;
       attack_player_ = sim().nearest_player(shape().centre);
-      play_sound(ii::sound::kBossAttack);
+      play_sound(sound::kBossAttack);
     }
   }
 
@@ -136,7 +136,7 @@ void BigSquareBoss::render() const {
     }
     for (std::uint32_t i = 0; i < 6; ++i) {
       auto p = to_float(attack_player_->shape().centre) + d;
-      ii::Polygon s{vec2{0}, 10, 4, c0, fixed_c::pi / 4, ii::shape_flag::kNone};
+      Polygon s{vec2{0}, 10, 4, c0, fixed_c::pi / 4, shape_flag::kNone};
       s.render(sim(), p, 0);
       d = rotate(d, 2 * glm::pi<float>() / 6);
     }
@@ -145,7 +145,6 @@ void BigSquareBoss::render() const {
 
 }  // namespace
 
-namespace ii {
 void spawn_big_square_boss(SimInterface& sim, std::uint32_t cycle) {
   auto h = sim.create_legacy(std::make_unique<BigSquareBoss>(sim));
   h.add(legacy_collision(/* bounding width */ 640));
@@ -155,7 +154,7 @@ void spawn_big_square_boss(SimInterface& sim, std::uint32_t cycle) {
   h.add(Health{
       .hp = calculate_boss_hp(kBsbBaseHp, sim.player_count(), cycle),
       .hit_sound0 = std::nullopt,
-      .hit_sound1 = ii::sound::kEnemyShatter,
+      .hit_sound1 = sound::kEnemyShatter,
       .destroy_sound = std::nullopt,
       .damage_transform = &scale_boss_damage,
       .on_hit = &legacy_boss_on_hit<true>,

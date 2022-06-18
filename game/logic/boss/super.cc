@@ -1,13 +1,14 @@
 #include "game/logic/boss/boss_internal.h"
 #include "game/logic/player.h"
 
+namespace ii {
 namespace {
 const std::uint32_t kSbBaseHp = 520;
 const std::uint32_t kSbArcHp = 75;
 
-class SuperBossArc : public Boss {
+class SuperBossArc : public ::Boss {
 public:
-  SuperBossArc(ii::SimInterface& sim, const vec2& position, std::uint32_t i, ii::Ship* boss,
+  SuperBossArc(SimInterface& sim, const vec2& position, std::uint32_t i, Ship* boss,
                std::uint32_t timer = 0);
 
   void update() override;
@@ -19,41 +20,40 @@ public:
   }
 
 private:
-  ii::Ship* boss_ = nullptr;
+  Ship* boss_ = nullptr;
   std::uint32_t i_ = 0;
   std::uint32_t timer_ = 0;
   std::uint32_t stimer_ = 0;
 };
 
-SuperBossArc* spawn_super_boss_arc(ii::SimInterface& sim, const vec2& position, std::uint32_t cycle,
-                                   std::uint32_t i, ii::Ship* boss, std::uint32_t timer = 0) {
+SuperBossArc* spawn_super_boss_arc(SimInterface& sim, const vec2& position, std::uint32_t cycle,
+                                   std::uint32_t i, Ship* boss, std::uint32_t timer = 0) {
   auto u = std::make_unique<SuperBossArc>(sim, position, i, boss, timer);
   auto p = u.get();
   auto h = sim.create_legacy(std::move(u));
-  h.add(ii::legacy_collision(/* bounding width */ 640));
-  h.add(ii::Enemy{.threat_value = 10});
-  h.add(ii::Health{
-      .hp = ii::calculate_boss_hp(kSbArcHp, sim.player_count(), cycle),
+  h.add(legacy_collision(/* bounding width */ 640));
+  h.add(Enemy{.threat_value = 10});
+  h.add(Health{
+      .hp = calculate_boss_hp(kSbArcHp, sim.player_count(), cycle),
       .hit_sound0 = std::nullopt,
-      .hit_sound1 = ii::sound::kEnemyShatter,
+      .hit_sound1 = sound::kEnemyShatter,
       .destroy_sound = std::nullopt,
       .damage_transform =
-          +[](ii::ecs::handle h, ii::SimInterface& sim, ii::damage_type type,
-              std::uint32_t damage) {
-            return ii::scale_boss_damage(h, sim, type,
-                                         type == ii::damage_type::kBomb ? damage / 2 : damage);
+          +[](ecs::handle h, SimInterface& sim, damage_type type, std::uint32_t damage) {
+            return scale_boss_damage(h, sim, type,
+                                     type == damage_type::kBomb ? damage / 2 : damage);
           },
-      .on_hit = &ii::legacy_boss_on_hit<true>,
-      .on_destroy = &ii::legacy_boss_on_destroy,
+      .on_hit = &legacy_boss_on_hit<true>,
+      .on_destroy = &legacy_boss_on_destroy,
   });
   return p;
 }
 
-class SuperBoss : public Boss {
+class SuperBoss : public ::Boss {
 public:
   enum class state { kArrive, kIdle, kAttack };
 
-  SuperBoss(ii::SimInterface& sim, std::uint32_t cycle);
+  SuperBoss(SimInterface& sim, std::uint32_t cycle);
 
   void update() override;
   void on_destroy(bool bomb) override;
@@ -70,32 +70,32 @@ private:
   std::uint32_t snakes_ = 0;
 };
 
-SuperBossArc::SuperBossArc(ii::SimInterface& sim, const vec2& position, std::uint32_t i,
-                           ii::Ship* boss, std::uint32_t timer)
+SuperBossArc::SuperBossArc(SimInterface& sim, const vec2& position, std::uint32_t i, Ship* boss,
+                           std::uint32_t timer)
 : Boss{sim, position}, boss_{boss}, i_{i}, timer_{timer} {
   glm::vec4 c{0.f};
-  add_new_shape<ii::PolyArc>(vec2{0}, 140, 32, 2, c, i * 2 * fixed_c::pi / 16);
-  add_new_shape<ii::PolyArc>(vec2{0}, 135, 32, 2, c, i * 2 * fixed_c::pi / 16);
-  add_new_shape<ii::PolyArc>(vec2{0}, 130, 32, 2, c, i * 2 * fixed_c::pi / 16);
-  add_new_shape<ii::PolyArc>(vec2{0}, 125, 32, 2, c, i * 2 * fixed_c::pi / 16,
-                             ii::shape_flag::kShield | ii::shape_flag::kSafeShield);
-  add_new_shape<ii::PolyArc>(vec2{0}, 120, 32, 2, c, i * 2 * fixed_c::pi / 16);
-  add_new_shape<ii::PolyArc>(vec2{0}, 115, 32, 2, c, i * 2 * fixed_c::pi / 16);
-  add_new_shape<ii::PolyArc>(vec2{0}, 110, 32, 2, c, i * 2 * fixed_c::pi / 16);
-  add_new_shape<ii::PolyArc>(vec2{0}, 105, 32, 2, c, i * 2 * fixed_c::pi / 16,
-                             ii::shape_flag::kShield | ii::shape_flag::kSafeShield);
+  add_new_shape<PolyArc>(vec2{0}, 140, 32, 2, c, i * 2 * fixed_c::pi / 16);
+  add_new_shape<PolyArc>(vec2{0}, 135, 32, 2, c, i * 2 * fixed_c::pi / 16);
+  add_new_shape<PolyArc>(vec2{0}, 130, 32, 2, c, i * 2 * fixed_c::pi / 16);
+  add_new_shape<PolyArc>(vec2{0}, 125, 32, 2, c, i * 2 * fixed_c::pi / 16,
+                         shape_flag::kShield | shape_flag::kSafeShield);
+  add_new_shape<PolyArc>(vec2{0}, 120, 32, 2, c, i * 2 * fixed_c::pi / 16);
+  add_new_shape<PolyArc>(vec2{0}, 115, 32, 2, c, i * 2 * fixed_c::pi / 16);
+  add_new_shape<PolyArc>(vec2{0}, 110, 32, 2, c, i * 2 * fixed_c::pi / 16);
+  add_new_shape<PolyArc>(vec2{0}, 105, 32, 2, c, i * 2 * fixed_c::pi / 16,
+                         shape_flag::kShield | shape_flag::kSafeShield);
 }
 
 void SuperBossArc::update() {
   shape().rotate(6_fx / 1000);
   for (std::uint32_t i = 0; i < 8; ++i) {
     shapes()[7 - i]->colour = {((i * 32 + 2 * timer_) % 256) / 256.f, 1.f, .5f,
-                               handle().get<ii::Health>()->is_hp_low() ? .6f : 1.f};
+                               handle().get<Health>()->is_hp_low() ? .6f : 1.f};
   }
   ++timer_;
   ++stimer_;
   if (stimer_ == 64) {
-    shapes()[0]->category = ii::shape_flag::kDangerous | ii::shape_flag::kVulnerable;
+    shapes()[0]->category = shape_flag::kDangerous | shape_flag::kVulnerable;
   }
 }
 
@@ -113,22 +113,21 @@ void SuperBossArc::on_destroy(bool) {
   explosion(shapes()[0]->colour, 24);
   explosion(glm::vec4{1.f}, 36);
   explosion(shapes()[0]->colour, 48);
-  play_sound_random(ii::sound::kExplosion);
+  play_sound_random(sound::kExplosion);
   ((SuperBoss*)boss_)->destroyed_[i_] = true;
 }
 
-SuperBoss::SuperBoss(ii::SimInterface& sim, std::uint32_t cycle)
-: Boss{sim, {ii::kSimDimensions.x / 2, -ii::kSimDimensions.y / (2 + fixed_c::half)}}
-, cycle_{cycle} {
-  add_new_shape<ii::Polygon>(vec2{0}, 40, 32, glm::vec4{0.f}, 0,
-                             ii::shape_flag::kDangerous | ii::shape_flag::kVulnerable);
-  add_new_shape<ii::Polygon>(vec2{0}, 35, 32, glm::vec4{0.f}, 0);
-  add_new_shape<ii::Polygon>(vec2{0}, 30, 32, glm::vec4{0.f}, 0, ii::shape_flag::kShield);
-  add_new_shape<ii::Polygon>(vec2{0}, 25, 32, glm::vec4{0.f}, 0);
-  add_new_shape<ii::Polygon>(vec2{0}, 20, 32, glm::vec4{0.f}, 0);
-  add_new_shape<ii::Polygon>(vec2{0}, 15, 32, glm::vec4{0.f}, 0);
-  add_new_shape<ii::Polygon>(vec2{0}, 10, 32, glm::vec4{0.f}, 0);
-  add_new_shape<ii::Polygon>(vec2{0}, 5, 32, glm::vec4{0.f}, 0);
+SuperBoss::SuperBoss(SimInterface& sim, std::uint32_t cycle)
+: Boss{sim, {kSimDimensions.x / 2, -kSimDimensions.y / (2 + fixed_c::half)}}, cycle_{cycle} {
+  add_new_shape<Polygon>(vec2{0}, 40, 32, glm::vec4{0.f}, 0,
+                         shape_flag::kDangerous | shape_flag::kVulnerable);
+  add_new_shape<Polygon>(vec2{0}, 35, 32, glm::vec4{0.f}, 0);
+  add_new_shape<Polygon>(vec2{0}, 30, 32, glm::vec4{0.f}, 0, shape_flag::kShield);
+  add_new_shape<Polygon>(vec2{0}, 25, 32, glm::vec4{0.f}, 0);
+  add_new_shape<Polygon>(vec2{0}, 20, 32, glm::vec4{0.f}, 0);
+  add_new_shape<Polygon>(vec2{0}, 15, 32, glm::vec4{0.f}, 0);
+  add_new_shape<Polygon>(vec2{0}, 10, 32, glm::vec4{0.f}, 0);
+  add_new_shape<Polygon>(vec2{0}, 5, 32, glm::vec4{0.f}, 0);
   for (std::uint32_t i = 0; i < 16; ++i) {
     destroyed_.push_back(false);
   }
@@ -154,7 +153,7 @@ void SuperBoss::update() {
     shapes()[7 - i]->colour = colour_hue(((i * 32 + 2 * ctimer_) % 256) / 256.f);
   }
   ++ctimer_;
-  if (shape().centre.y < ii::kSimDimensions.y / 2) {
+  if (shape().centre.y < kSimDimensions.y / 2) {
     move_vec = {0, 1};
   } else if (state_ == state::kArrive) {
     state_ = state::kIdle;
@@ -185,7 +184,7 @@ void SuperBoss::update() {
           rf = d5d1000 * (1 + sim().random(4));
         }
         spawn_snake(sim(), shape().centre + d * 16, c, d, rf);
-        play_sound_random(ii::sound::kBossAttack);
+        play_sound_random(sound::kBossAttack);
       }
     } else if (r == 5) {
       state_ = state::kAttack;
@@ -194,7 +193,7 @@ void SuperBoss::update() {
       for (std::uint32_t i = 0; i < 64; ++i) {
         vec2 d = from_polar(f + i * pi2d64, 1_fx);
         spawn_snake(sim(), shape().centre + d * 16, c, d);
-        play_sound_random(ii::sound::kBossAttack);
+        play_sound_random(sound::kBossAttack);
       }
     } else {
       state_ = state::kAttack;
@@ -220,7 +219,7 @@ void SuperBoss::update() {
       s->shape().set_rotation(shape().rotation() - (6_fx / 1000));
       arcs_[wide3[r]] = s;
       destroyed_[wide3[r]] = false;
-      play_sound(ii::sound::kEnemySpawn);
+      play_sound(sound::kEnemySpawn);
     }
   }
   static const fixed pi2d128 = 2 * fixed_c::pi / 128;
@@ -229,7 +228,7 @@ void SuperBoss::update() {
       vec2 d = from_polar(i * pi2d128, 1_fx);
       spawn_boss_shot(sim(), shape().centre + d * 42, move_vec + d * 3,
                       glm::vec4{0.f, 0.f, .6f, 1.f}, /* rotate speed */ 6_fx / 1000);
-      play_sound_random(ii::sound::kBossFire);
+      play_sound_random(sound::kBossFire);
     }
   }
 
@@ -238,15 +237,15 @@ void SuperBoss::update() {
     vec2 d = from_polar(sim().random_fixed() * (2 * fixed_c::pi),
                         fixed{sim().random(32) + sim().random(16)});
     spawn_snake(sim(), d + shape().centre, c);
-    play_sound_random(ii::sound::kEnemySpawn);
+    play_sound_random(sound::kEnemySpawn);
   }
   move(move_vec);
 }
 
 void SuperBoss::on_destroy(bool) {
-  for (const auto& ship : sim().all_ships(ii::ship_flag::kEnemy)) {
+  for (const auto& ship : sim().all_ships(ship_flag::kEnemy)) {
     if (ship != this) {
-      ship->damage(Player::kBombDamage * 100, false, 0);
+      ship->damage(::Player::kBombDamage * 100, false, 0);
     }
   }
   explosion();
@@ -265,16 +264,15 @@ void SuperBoss::on_destroy(bool) {
     n += i;
   }
   sim().rumble_all(25);
-  play_sound(ii::sound::kExplosion);
+  play_sound(sound::kExplosion);
 
   for (std::uint32_t i = 0; i < 8; ++i) {
-    ii::spawn_powerup(sim(), shape().centre, ii::powerup_type::kBomb);
+    spawn_powerup(sim(), shape().centre, powerup_type::kBomb);
   }
 }
 
 }  // namespace
 
-namespace ii {
 void spawn_super_boss(SimInterface& sim, std::uint32_t cycle) {
   auto h = sim.create_legacy(std::make_unique<SuperBoss>(sim, cycle));
   h.add(legacy_collision(/* bounding width */ 640));
@@ -285,7 +283,7 @@ void spawn_super_boss(SimInterface& sim, std::uint32_t cycle) {
       .hp = calculate_boss_hp(kSbBaseHp, sim.player_count(), cycle),
       .hit_flash_ignore_index = 8,
       .hit_sound0 = std::nullopt,
-      .hit_sound1 = ii::sound::kEnemyShatter,
+      .hit_sound1 = sound::kEnemyShatter,
       .destroy_sound = std::nullopt,
       .damage_transform = &scale_boss_damage,
       .on_hit = &legacy_boss_on_hit<true>,

@@ -2,6 +2,7 @@
 #include "game/logic/player.h"
 #include <algorithm>
 
+namespace ii {
 namespace {
 const std::uint32_t kCbBaseHp = 60;
 const std::uint32_t kCbMaxSplit = 7;
@@ -70,10 +71,10 @@ const std::uint32_t ONE_PT_ONE_FIVE_intLookup[128] = {
     12637066, 14532626, 16712520, 19219397, 22102306, 25417652, 29230299, 33614843, 38657069,
     44455628, 51123971};
 
-class ChaserBoss : public Boss {
+class ChaserBoss : public ::Boss {
 public:
   static constexpr std::uint32_t kTimer = 60;
-  ChaserBoss(ii::SimInterface& sim, std::uint32_t cycle, std::uint32_t split, const vec2& position,
+  ChaserBoss(SimInterface& sim, std::uint32_t cycle, std::uint32_t split, const vec2& position,
              std::uint32_t time, std::uint32_t stagger);
 
   void update() override;
@@ -98,53 +99,53 @@ private:
 std::uint32_t ChaserBoss::count_;
 bool ChaserBoss::has_counted_;
 
-struct ChaserBossTag : ii::ecs::component {
+struct ChaserBossTag : ecs::component {
   std::uint32_t split;
 };
 
-ChaserBoss* spawn_chaser_boss_internal(ii::SimInterface& sim, std::uint32_t cycle,
+ChaserBoss* spawn_chaser_boss_internal(SimInterface& sim, std::uint32_t cycle,
                                        std::uint32_t split = 0, const vec2& position = vec2{0},
                                        std::uint32_t time = ChaserBoss::kTimer,
                                        std::uint32_t stagger = 0) {
   auto u = std::make_unique<ChaserBoss>(sim, cycle, split, position, time, stagger);
   auto p = u.get();
   auto h = sim.create_legacy(std::move(u));
-  h.add(ii::legacy_collision(/* bounding width */ 10 * ONE_AND_HALF_lookup[kCbMaxSplit - split]));
-  h.add(ii::Enemy{.threat_value = 100});
-  h.add(ii::Health{
-      .hp = ii::calculate_boss_hp(
+  h.add(legacy_collision(/* bounding width */ 10 * ONE_AND_HALF_lookup[kCbMaxSplit - split]));
+  h.add(Enemy{.threat_value = 100});
+  h.add(Health{
+      .hp = calculate_boss_hp(
           1 + kCbBaseHp / (fixed_c::half + HP_REDUCE_POWER_lookup[split]).to_int(),
           sim.player_count(), cycle),
       .hit_flash_ignore_index = 2,
       .hit_sound0 = std::nullopt,
-      .hit_sound1 = ii::sound::kEnemyShatter,
+      .hit_sound1 = sound::kEnemyShatter,
       .destroy_sound = std::nullopt,
-      .damage_transform = &ii::scale_boss_damage,
-      .on_hit = split <= 1 ? &ii::legacy_boss_on_hit<true> : &ii::legacy_boss_on_hit<false>,
-      .on_destroy = &ii::legacy_boss_on_destroy,
+      .damage_transform = &scale_boss_damage,
+      .on_hit = split <= 1 ? &legacy_boss_on_hit<true> : &legacy_boss_on_hit<false>,
+      .on_destroy = &legacy_boss_on_destroy,
   });
   h.add(ChaserBossTag{.split = split});
   return p;
 }
 
-ChaserBoss::ChaserBoss(ii::SimInterface& sim, std::uint32_t cycle, std::uint32_t split,
+ChaserBoss::ChaserBoss(SimInterface& sim, std::uint32_t cycle, std::uint32_t split,
                        const vec2& position, std::uint32_t time, std::uint32_t stagger)
-: Boss{sim, !split ? vec2{ii::kSimDimensions.x / 2, -ii::kSimDimensions.y / 2} : position}
+: Boss{sim, !split ? vec2{kSimDimensions.x / 2, -kSimDimensions.y / 2} : position}
 , on_screen_{split != 0}
 , timer_{time}
 , cycle_{cycle}
 , split_{split}
 , stagger_{stagger} {
   auto c = colour_hue360(210, .6f);
-  add_new_shape<ii::Polygon>(vec2{0}, 10 * ONE_AND_HALF_lookup[kCbMaxSplit - split_], 5, c, 0,
-                             ii::shape_flag::kNone, ii::Polygon::T::kPolygram);
-  add_new_shape<ii::Polygon>(vec2{0}, 9 * ONE_AND_HALF_lookup[kCbMaxSplit - split_], 5, c, 0,
-                             ii::shape_flag::kNone, ii::Polygon::T::kPolygram);
-  add_new_shape<ii::Polygon>(
-      vec2{0}, 8 * ONE_AND_HALF_lookup[kCbMaxSplit - split_], 5, glm::vec4{0.f}, 0,
-      ii::shape_flag::kDangerous | ii::shape_flag::kVulnerable, ii::Polygon::T::kPolygram);
-  add_new_shape<ii::Polygon>(vec2{0}, 7 * ONE_AND_HALF_lookup[kCbMaxSplit - split_], 5,
-                             glm::vec4{0.f}, 0, ii::shape_flag::kShield, ii::Polygon::T::kPolygram);
+  add_new_shape<Polygon>(vec2{0}, 10 * ONE_AND_HALF_lookup[kCbMaxSplit - split_], 5, c, 0,
+                         shape_flag::kNone, Polygon::T::kPolygram);
+  add_new_shape<Polygon>(vec2{0}, 9 * ONE_AND_HALF_lookup[kCbMaxSplit - split_], 5, c, 0,
+                         shape_flag::kNone, Polygon::T::kPolygram);
+  add_new_shape<Polygon>(vec2{0}, 8 * ONE_AND_HALF_lookup[kCbMaxSplit - split_], 5, glm::vec4{0.f},
+                         0, shape_flag::kDangerous | shape_flag::kVulnerable,
+                         Polygon::T::kPolygram);
+  add_new_shape<Polygon>(vec2{0}, 7 * ONE_AND_HALF_lookup[kCbMaxSplit - split_], 5, glm::vec4{0.f},
+                         0, shape_flag::kShield, Polygon::T::kPolygram);
 
   if (!split_) {
     count_ = 0;
@@ -177,7 +178,7 @@ void ChaserBoss::update() {
   if (move_) {
     move(dir_);
   } else {
-    const auto& nearby = sim().all_ships(ii::ship_flag::kPlayer | ii::ship_flag::kBoss);
+    const auto& nearby = sim().all_ships(ship_flag::kPlayer | ship_flag::kBoss);
     const fixed attract = 256 * ONE_PT_ONE_lookup[kCbMaxSplit - split_];
     const fixed align = 128 * ONE_PT_ONE_FIVE_lookup[kCbMaxSplit - split_];
     const fixed repulse = 64 * ONE_PT_TWO_lookup[kCbMaxSplit - split_];
@@ -209,7 +210,7 @@ void ChaserBoss::update() {
           v /= r;
         }
         vec2 p{0};
-        if (+(ship->type() & ii::ship_flag::kBoss)) {
+        if (+(ship->type() & ship_flag::kBoss)) {
           ChaserBoss* c = (ChaserBoss*)ship;
           fixed pow = ONE_PT_ONE_FIVE_lookup[kCbMaxSplit - c->split_];
           v *= pow;
@@ -237,40 +238,40 @@ void ChaserBoss::update() {
     }
     if (remaining.size() < 4 + sim().player_count() && split_ >= kCbMaxSplit - 1) {
       if ((shape().centre.x < 32 && dir_.x < 0) ||
-          (shape().centre.x >= ii::kSimDimensions.x - 32 && dir_.x > 0)) {
+          (shape().centre.x >= kSimDimensions.x - 32 && dir_.x > 0)) {
         dir_.x = -dir_.x;
       }
       if ((shape().centre.y < 32 && dir_.y < 0) ||
-          (shape().centre.y >= ii::kSimDimensions.y - 32 && dir_.y > 0)) {
+          (shape().centre.y >= kSimDimensions.y - 32 && dir_.y > 0)) {
         dir_.y = -dir_.y;
       }
     } else if (remaining.size() < 8 + sim().player_count() && split_ >= kCbMaxSplit - 1) {
       if ((shape().centre.x < 0 && dir_.x < 0) ||
-          (shape().centre.x >= ii::kSimDimensions.x && dir_.x > 0)) {
+          (shape().centre.x >= kSimDimensions.x && dir_.x > 0)) {
         dir_.x = -dir_.x;
       }
       if ((shape().centre.y < 0 && dir_.y < 0) ||
-          (shape().centre.y >= ii::kSimDimensions.y && dir_.y > 0)) {
+          (shape().centre.y >= kSimDimensions.y && dir_.y > 0)) {
         dir_.y = -dir_.y;
       }
     } else {
       if ((shape().centre.x < -32 && dir_.x < 0) ||
-          (shape().centre.x >= ii::kSimDimensions.x + 32 && dir_.x > 0)) {
+          (shape().centre.x >= kSimDimensions.x + 32 && dir_.x > 0)) {
         dir_.x = -dir_.x;
       }
       if ((shape().centre.y < -32 && dir_.y < 0) ||
-          (shape().centre.y >= ii::kSimDimensions.y + 32 && dir_.y > 0)) {
+          (shape().centre.y >= kSimDimensions.y + 32 && dir_.y > 0)) {
         dir_.y = -dir_.y;
       }
     }
 
     if (shape().centre.x < -256) {
       dir_ = vec2{1, 0};
-    } else if (shape().centre.x >= ii::kSimDimensions.x + 256) {
+    } else if (shape().centre.x >= kSimDimensions.x + 256) {
       dir_ = vec2{-1, 0};
     } else if (shape().centre.y < -256) {
       dir_ = vec2{0, 1};
-    } else if (shape().centre.y >= ii::kSimDimensions.y + 256) {
+    } else if (shape().centre.y >= kSimDimensions.y + 256) {
       dir_ = vec2{0, -1};
     } else {
       dir_ = normalise(dir_);
@@ -313,7 +314,7 @@ void ChaserBoss::on_destroy(bool) {
     }
   } else {
     last = true;
-    for (const auto& ship : sim().all_ships(ii::ship_flag::kEnemy)) {
+    for (const auto& ship : sim().all_ships(ship_flag::kEnemy)) {
       if (!ship->is_destroyed() && ship != this) {
         last = false;
         break;
@@ -347,9 +348,9 @@ void ChaserBoss::on_destroy(bool) {
   }
 
   if (split_ < 3 || last) {
-    play_sound(ii::sound::kExplosion);
+    play_sound(sound::kExplosion);
   } else {
-    play_sound_random(ii::sound::kExplosion);
+    play_sound_random(sound::kExplosion);
   }
 }
 
@@ -358,9 +359,8 @@ std::vector<std::uint32_t> get_hp_lookup(std::uint32_t players, std::uint32_t cy
   std::uint32_t hp = 0;
   for (std::uint32_t i = 0; i < 8; ++i) {
     hp = 2 * hp +
-        ii::calculate_boss_hp(
-             1 + kCbBaseHp / (fixed_c::half + HP_REDUCE_POWER_lookup[7 - i]).to_int(), players,
-             cycle);
+        calculate_boss_hp(1 + kCbBaseHp / (fixed_c::half + HP_REDUCE_POWER_lookup[7 - i]).to_int(),
+                          players, cycle);
     r.push_back(hp);
   }
   return r;
@@ -368,19 +368,18 @@ std::vector<std::uint32_t> get_hp_lookup(std::uint32_t players, std::uint32_t cy
 
 }  // namespace
 
-namespace ii {
 void spawn_chaser_boss(SimInterface& sim, std::uint32_t cycle) {
   auto h = sim.index().create();
   h.add(Enemy{.threat_value = 0,
               .boss_score_reward =
-                  calculate_boss_score(ii::boss_flag::kBoss1C, sim.player_count(), cycle)});
+                  calculate_boss_score(boss_flag::kBoss1C, sim.player_count(), cycle)});
 
   struct Cycle : ecs::component {
     std::uint32_t cycle;
   };
   h.add(Cycle{.cycle = cycle});
   h.add(Health{});
-  h.add(Boss{.boss = ii::boss_flag::kBoss1C});
+  h.add(Boss{.boss = boss_flag::kBoss1C});
 
   h.add(Update{.update = [](ecs::handle h, SimInterface& sim) {
     auto& health = *h.get<Health>();
@@ -397,8 +396,7 @@ void spawn_chaser_boss(SimInterface& sim, std::uint32_t cycle) {
       if (position && sim.is_on_screen(*position)) {
         h.get<Boss>()->show_hp_bar = true;
       }
-      health.hp +=
-          (tag.split == 7 ? 0 : 2 * hp_lookup[6 - tag.split]) + sub_h.get<ii::Health>()->hp;
+      health.hp += (tag.split == 7 ? 0 : 2 * hp_lookup[6 - tag.split]) + sub_h.get<Health>()->hp;
     });
     if (!health.hp) {
       h.emplace<Destroy>();

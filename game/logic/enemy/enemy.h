@@ -17,7 +17,7 @@ inline void legacy_enemy_on_destroy(ecs::const_handle h, SimInterface&, damage_t
   enemy->on_destroy(type == damage_type::kBomb);
 }
 
-void spawn_bounce(ii::SimInterface& sim, const vec2& position, fixed angle);
+void spawn_bounce(SimInterface& sim, const vec2& position, fixed angle);
 void spawn_follow(SimInterface&, const vec2& position, bool has_score = true, fixed rotation = 0);
 void spawn_big_follow(SimInterface&, const vec2& position, bool has_score);
 void spawn_chaser(SimInterface&, const vec2& position);
@@ -33,7 +33,7 @@ void spawn_tractor(SimInterface&, const vec2& position, bool power = false);
 void spawn_boss_shot(SimInterface&, const vec2& position, const vec2& velocity,
                      const glm::vec4& c = {0.f, 0.f, .6f, 1.f}, fixed rotate_speed = 0);
 
-void spawn_snake(ii::SimInterface& sim, const vec2& position, const glm::vec4& colour,
+void spawn_snake(SimInterface& sim, const vec2& position, const glm::vec4& colour,
                  const vec2& direction = vec2{0}, fixed rotation = 0);
 }  // namespace ii
 

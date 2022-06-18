@@ -18,7 +18,7 @@ struct FollowHub : ecs::component {
   using fh_arrange = geom::compound<geom::translate<16, 0, S>, geom::translate<-16, 0, S>,
                                     geom::translate<0, 16, S>, geom::translate<0, -16, S>>;
   template <geom::ngon S>
-  using r_pi4_ngon = geom::rotate<fixed_c::pi / 4, geom::shape<S>>;
+  using r_pi4_ngon = geom::rotate<fixed_c::pi / 4, geom::constant<S>>;
   using fh_centre = r_pi4_ngon<geom::ngon{16, 4, c, geom::ngon_style::kPolygram,
                                           shape_flag::kDangerous | shape_flag::kVulnerable}>;
   using fh_spoke = r_pi4_ngon<geom::ngon{8, 4, c, geom::ngon_style::kPolygon}>;
@@ -54,12 +54,12 @@ struct FollowHub : ecs::component {
       }
     }
 
-    dir = transform.centre.x < 0                    ? vec2{1, 0}
-        : transform.centre.x > ii::kSimDimensions.x ? vec2{-1, 0}
-        : transform.centre.y < 0                    ? vec2{0, 1}
-        : transform.centre.y > ii::kSimDimensions.y ? vec2{0, -1}
-        : count > 3                                 ? (count = 0, rotate(dir, -fixed_c::pi / 2))
-                                                    : dir;
+    dir = transform.centre.x < 0                ? vec2{1, 0}
+        : transform.centre.x > kSimDimensions.x ? vec2{-1, 0}
+        : transform.centre.y < 0                ? vec2{0, 1}
+        : transform.centre.y > kSimDimensions.y ? vec2{0, -1}
+        : count > 3                             ? (count = 0, rotate(dir, -fixed_c::pi / 2))
+                                                : dir;
 
     auto s = power_a ? fixed_c::hundredth * 5 + fixed_c::tenth : fixed_c::hundredth * 5;
     transform.rotate(s);
@@ -92,16 +92,16 @@ struct Shielder : ecs::component {
                                    geom::translate<0, 24, geom::rotate<fixed_c::pi / 2, S>>,
                                    geom::translate<0, -24, geom::rotate<fixed_c::pi / 2, S>>>;
   // TODO: better way to swap colours.
-  using s_centre = geom::conditional_p<
-      3,
-      geom::shape<geom::ngon{14, 8, c1, geom::ngon_style::kPolygon,
-                             ii::shape_flag::kDangerous | ii::shape_flag::kVulnerable}>,
-      geom::shape<geom::ngon{14, 8, c0, geom::ngon_style::kPolygon,
-                             ii::shape_flag::kDangerous | ii::shape_flag::kVulnerable}>>;
+  using s_centre =
+      geom::conditional_p<3,
+                          geom::ngon_shape<14, 8, c1, geom::ngon_style::kPolygon,
+                                           shape_flag::kDangerous | shape_flag::kVulnerable>,
+                          geom::ngon_shape<14, 8, c0, geom::ngon_style::kPolygon,
+                                           shape_flag::kDangerous | shape_flag::kVulnerable>>;
   using s_shield0 =
-      geom::shape<geom::ngon{8, 6, c0, geom::ngon_style::kPolystar, shape_flag::kWeakShield}>;
-  using s_shield1 = geom::shape<geom::ngon{8, 6, c1}>;
-  using s_spokes = geom::shape<geom::ngon{24, 4, c0, geom::ngon_style::kPolystar}>;
+      geom::ngon_shape<8, 6, c0, geom::ngon_style::kPolystar, shape_flag::kWeakShield>;
+  using s_shield1 = geom::ngon_shape<8, 6, c1>;
+  using s_spokes = geom::ngon_shape<24, 4, c0, geom::ngon_style::kPolystar>;
   using shape = geom::translate_p<0,
                                   geom::rotate_p<1, s_arrange<geom::rotate_p<2, s_shield0>>,
                                                  s_arrange<geom::rotate_p<2, s_shield1>>, s_spokes>,
@@ -124,11 +124,11 @@ struct Shielder : ecs::component {
     transform.rotate(s);
 
     bool on_screen = false;
-    dir = transform.centre.x < 0                    ? vec2{1, 0}
-        : transform.centre.x > ii::kSimDimensions.x ? vec2{-1, 0}
-        : transform.centre.y < 0                    ? vec2{0, 1}
-        : transform.centre.y > ii::kSimDimensions.y ? vec2{0, -1}
-                                                    : (on_screen = true, dir);
+    dir = transform.centre.x < 0                ? vec2{1, 0}
+        : transform.centre.x > kSimDimensions.x ? vec2{-1, 0}
+        : transform.centre.y < 0                ? vec2{0, 1}
+        : transform.centre.y > kSimDimensions.y ? vec2{0, -1}
+                                                : (on_screen = true, dir);
 
     if (!on_screen && rotate) {
       timer = 0;
@@ -151,10 +151,9 @@ struct Shielder : ecs::component {
         rdir = sim.random(2) != 0;
       }
       if (sim.is_on_screen(transform.centre) && power && timer % kTimer == kTimer / 2) {
-        ii::spawn_boss_shot(sim, transform.centre,
-                            3 * sim.nearest_player_direction(transform.centre),
-                            colour_hue360(160, .5f, .6f));
-        sim.play_sound(ii::sound::kBossFire, transform.centre, true);
+        spawn_boss_shot(sim, transform.centre, 3 * sim.nearest_player_direction(transform.centre),
+                        colour_hue360(160, .5f, .6f));
+        sim.play_sound(sound::kBossFire, transform.centre, true);
       }
       transform.move(dir * speed);
     }
@@ -172,19 +171,19 @@ struct Tractor : ecs::component {
   static constexpr fixed kPullSpeed = 2 + 1_fx / 2;
 
   static constexpr auto c = colour_hue360(300, .5f, .6f);
-  using t_orb = geom::shape<geom::ngon{12, 6, c, geom::ngon_style::kPolygram,
-                                       ii::shape_flag::kDangerous | ii::shape_flag::kVulnerable}>;
-  using t_star = geom::shape<geom::ngon{16, 6, c, geom::ngon_style::kPolystar}>;
-  using shape = standard_transform<geom::translate<24, 0, geom::rotate_p<2, t_orb>>,
-                                   geom::translate<-24, 0, geom::rotate_p<3, t_orb>>,
-                                   geom::shape<geom::ngon{24, 2, c, geom::ngon_style::kPolystar}>,
-                                   geom::if_p<6, geom::translate<24, 0, geom::rotate_p<4, t_star>>,
-                                              geom::translate<-24, 0, geom::rotate_p<5, t_star>>>>;
+  using t_orb = geom::ngon_shape<12, 6, c, geom::ngon_style::kPolygram,
+                                 shape_flag::kDangerous | shape_flag::kVulnerable>;
+  using t_star = geom::ngon_shape<16, 6, c, geom::ngon_style::kPolystar>;
+  using shape = standard_transform<
+      geom::translate<24, 0, geom::rotate_eval<geom::multiply_p<5, 2>, t_orb>>,
+      geom::translate<-24, 0, geom::rotate_eval<geom::multiply_p<-5, 2>, t_orb>>,
+      geom::ngon_shape<24, 2, c, geom::ngon_style::kPolystar>,
+      geom::if_p<3, geom::translate<24, 0, geom::rotate_eval<geom::multiply_p<8, 2>, t_star>>,
+                 geom::translate<-24, 0, geom::rotate_eval<geom::multiply_p<-8, 2>, t_star>>>>;
 
-  std::tuple<vec2, fixed, fixed, fixed, fixed, fixed, bool>
-  shape_parameters(const Transform& transform) const {
+  std::tuple<vec2, fixed, fixed, bool> shape_parameters(const Transform& transform) const {
     // TODO: better way of doing this; multiplication expressions.
-    return {transform.centre, transform.rotation, spoke_r0, -spoke_r0, spoke_r1, -spoke_r1, power};
+    return {transform.centre, transform.rotation, spoke_r, power};
   }
 
   std::uint32_t timer = kTimer * 4;
@@ -192,23 +191,21 @@ struct Tractor : ecs::component {
   bool power = false;
   bool ready = false;
   bool spinning = false;
-  fixed spoke_r0 = 0;
-  fixed spoke_r1 = 0;
-  ii::SimInterface::ship_list players;  // TODO.
+  fixed spoke_r = 0;
+  SimInterface::ship_list players;  // TODO.
 
   Tractor(bool power) : power{power} {}
 
   void update(Transform& transform, SimInterface& sim) {
-    spoke_r0 = normalise_angle(spoke_r0 + fixed_c::hundredth * 5);
-    spoke_r1 = normalise_angle(spoke_r1 + fixed_c::hundredth * 8);
+    spoke_r = normalise_angle(spoke_r + fixed_c::hundredth);
 
     if (transform.centre.x < 0) {
       dir = vec2{1, 0};
-    } else if (transform.centre.x > ii::kSimDimensions.x) {
+    } else if (transform.centre.x > kSimDimensions.x) {
       dir = vec2{-1, 0};
     } else if (transform.centre.y < 0) {
       dir = vec2{0, 1};
-    } else if (transform.centre.y > ii::kSimDimensions.y) {
+    } else if (transform.centre.y > kSimDimensions.y) {
       dir = vec2{0, -1};
     } else {
       ++timer;
@@ -227,7 +224,7 @@ struct Tractor : ecs::component {
         spinning = true;
         timer = 0;
         players = sim.players();
-        sim.play_sound(ii::sound::kBossFire);
+        sim.play_sound(sound::kBossFire);
       }
     } else if (spinning) {
       transform.rotate(fixed_c::tenth * 3);
@@ -239,10 +236,9 @@ struct Tractor : ecs::component {
       }
 
       if (timer % (kTimer / 2) == 0 && sim.is_on_screen(transform.centre) && power) {
-        ii::spawn_boss_shot(sim, transform.centre,
-                            4 * sim.nearest_player_direction(transform.centre),
-                            colour_hue360(300, .5f, .6f));
-        sim.play_sound(ii::sound::kBossFire, transform.centre, true);
+        spawn_boss_shot(sim, transform.centre, 4 * sim.nearest_player_direction(transform.centre),
+                        colour_hue360(300, .5f, .6f));
+        sim.play_sound(sound::kBossFire, transform.centre, true);
       }
 
       if (timer > kTimer * 5) {
