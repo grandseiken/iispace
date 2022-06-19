@@ -1,8 +1,0 @@
-build --experimental_enable_runfiles
-build --cc_output_directory_tag=clang
-build --compiler=clang-cl
-build --cxxopt=/std:c++20
-build --copt=/WX
-build --copt=-Wno-deprecated-volatile
-build -c opt
-test --test_output=errors

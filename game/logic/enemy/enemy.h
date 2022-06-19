@@ -13,8 +13,8 @@ void spawn_chaser(SimInterface&, const vec2& position);
 void spawn_square(SimInterface&, const vec2& position, fixed rotation = fixed_c::pi / 2);
 void spawn_wall(SimInterface&, const vec2& position, bool rdir);
 
-void spawn_follow_hub(SimInterface&, const vec2& position, bool powera = false,
-                      bool powerb = false);
+void spawn_follow_hub(SimInterface&, const vec2& position, bool power_a = false,
+                      bool power_b = false);
 void spawn_shielder(SimInterface&, const vec2& position, bool power = false);
 void spawn_tractor(SimInterface&, const vec2& position, bool power = false);
 

@@ -1,6 +1,19 @@
 load("@bazel_tools//tools/build_defs/repo:http.bzl", "http_archive")
 
 ################################################################################
+# Hedron compile commands extractor
+################################################################################
+
+http_archive(
+    name = "hedron_compile_commands",
+    sha256 = "",
+    strip_prefix = "bazel-compile-commands-extractor-749cd084143d5b5f52857c9f8e3442df58b7ca5f",
+    url = "https://github.com/hedronvision/bazel-compile-commands-extractor/archive/749cd084143d5b5f52857c9f8e3442df58b7ca5f.zip",
+)
+load("@hedron_compile_commands//:workspace_setup.bzl", "hedron_compile_commands_setup")
+hedron_compile_commands_setup()
+
+################################################################################
 # Skylib
 ################################################################################
 

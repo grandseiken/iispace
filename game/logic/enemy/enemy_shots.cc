@@ -21,7 +21,7 @@ struct BossShot : ecs::component {
   vec2 velocity{0};
   fixed rotate_speed = 0;
 
-  void update(ecs::handle h, Transform& transform, Render& render, SimInterface& sim) {
+  void update(ecs::handle h, Transform& transform, SimInterface& sim) {
     transform.move(velocity);
     vec2 p = transform.centre;
     if ((p.x < -10 && velocity.x < 0) || (p.x > kSimDimensions.x + 10 && velocity.x > 0) ||

@@ -1,7 +1,13 @@
 build --experimental_enable_runfiles
 build --cxxopt=/std:c++20
 build --copt=/WX
-build --copt=/experimental:deterministic
-build --linkopt=/experimental:deterministic
+
+build:msvc --copt=/experimental:deterministic
+build:msvc --linkopt=/experimental:deterministic
+
+build:clang --cc_output_directory_tag=clang
+build:clang --compiler=clang-cl
+build:clang --copt=-Wno-deprecated-volatile
+
 build -c opt
 test --test_output=errors

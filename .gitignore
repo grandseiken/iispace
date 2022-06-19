@@ -1,4 +1,7 @@
-bazel-*/
-.vscode/
-savedata/
-wiispace.txt
+/bazel-*
+/external
+/compile_commands.json
+/.cache/
+/.vscode
+/savedata
+/wiispace.txt

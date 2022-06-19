@@ -17,7 +17,7 @@ auto get_shape_parameters(ecs::const_handle h) {
   if constexpr (requires { &Logic::shape_parameters; }) {
     return ecs::call<&Logic::shape_parameters>(h);
   } else {
-    auto& transform = *h.get<Transform>();
+    const auto& transform = *h.get<Transform>();
     return std::tuple<vec2, fixed>{transform.centre, transform.rotation};
   }
 }

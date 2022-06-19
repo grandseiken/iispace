@@ -109,13 +109,13 @@ void iterate_as_utf8(ustring_view s, F&& callback) {
 
 inline std::u32string to_utf32(ustring_view s) {
   std::u32string r;
-  iterate_as_utf32(s, [&](std::size_t, std::uint32_t c) { r += c; });
+  iterate_as_utf32(s, [&](std::size_t, char32_t c) { r += c; });
   return r;
 }
 
 inline std::string to_utf8(ustring_view s) {
   std::string r;
-  iterate_as_utf8(s, [&](std::size_t, std::uint8_t c) { r += c; });
+  iterate_as_utf8(s, [&](std::size_t, char c) { r += c; });
   return r;
 }
 
