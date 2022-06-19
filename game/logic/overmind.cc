@@ -2,7 +2,7 @@
 #include "game/common/math.h"
 #include "game/logic/boss/boss.h"
 #include "game/logic/enemy/enemy.h"
-#include "game/logic/player.h"
+#include "game/logic/player/player.h"
 #include "game/logic/stars.h"
 #include <algorithm>
 
@@ -21,7 +21,7 @@ class formation_base {
 public:
   static std::vector<Overmind::entry> static_formations;
 
-  virtual ~formation_base() {}
+  virtual ~formation_base() = default;
   virtual void operator()() = 0;
 
   void operator()(ii::SimInterface* sim, std::uint32_t row, std::uint32_t power,
@@ -33,7 +33,7 @@ public:
     operator()();
   }
 
-  vec2 spawn_point(bool top, std::uint32_t num, std::uint32_t div) {
+  vec2 spawn_point(bool top, std::uint32_t num, std::uint32_t div) const {
     div = std::max(2u, div);
     num = std::min(div - 1, num);
 
@@ -143,7 +143,7 @@ Overmind::Overmind(ii::SimInterface& sim) : sim_{sim} {
   Stars::clear();
 }
 
-Overmind::~Overmind() {}
+Overmind::~Overmind() = default;
 
 void Overmind::update() {
   ++elapsed_time_;
@@ -157,10 +157,9 @@ void Overmind::update() {
     if (!total_enemy_threat) {
       Stars::change(sim_);
       if (boss_mod_bosses_ < 6) {
-        if (boss_mod_bosses_)
-          for (std::uint32_t i = 0; i < sim_.player_count(); ++i) {
-            spawn_boss_reward();
-          }
+        for (std::uint32_t i = 0; boss_mod_bosses_ && i < sim_.player_count(); ++i) {
+          spawn_boss_reward();
+        }
         boss_mode_boss();
       }
       if (boss_mod_bosses_ < 7) {
@@ -506,10 +505,11 @@ struct square1side : formation<3, square1side, 2> {
       for (std::uint32_t i = 1; i < 5; ++i) {
         spawn_square((i + r) % 2 == 0 ? i : 5 - i, 6, 1 + ((i + r) % 2));
       }
-    } else
+    } else {
       for (std::uint32_t i = 1; i < 3; ++i) {
         spawn_square(r == 0 ? i : 5 - i, 6, 0);
       }
+    }
   }
 };
 struct square2side : formation<4, square2side, 5> {
@@ -525,10 +525,11 @@ struct square2side : formation<4, square2side, 5> {
       for (std::uint32_t i = 1; i < 11; ++i) {
         spawn_square((i + r) % 2 == 0 ? i : 11 - i, 12, 1 + ((i + r) % 2));
       }
-    } else
+    } else {
       for (std::uint32_t i = 1; i < 6; ++i) {
         spawn_square(r == 0 ? i : 11 - i, 12, 0);
       }
+    }
   }
 };
 struct square3side : formation<5, square3side, 10, 12> {
@@ -548,10 +549,11 @@ struct square3side : formation<5, square3side, 10, 12> {
       for (std::uint32_t i = 0; i < 18; ++i) {
         spawn_square((i + r) % 2 == 0 ? i : 17 - i, 18, 1 + ((i + r) % 2));
       }
-    } else
+    } else {
       for (std::uint32_t i = 0; i < 9; ++i) {
         spawn_square(r == 0 ? i : 17 - i, 18, 0);
       }
+    }
   }
 };
 struct wall1 : formation<6, wall1, 5> {
@@ -635,10 +637,11 @@ struct wall2side : formation<10, wall2side, 6> {
       for (std::uint32_t i = 1; i < 8; ++i) {
         spawn_wall(i, 9, 1 + ((i + r) % 2), dir);
       }
-    } else
+    } else {
       for (std::uint32_t i = 0; i < 4; ++i) {
         spawn_wall(r == 0 ? i : 8 - i, 9, 0, dir);
       }
+    }
   }
 };
 struct wall3side : formation<11, wall3side, 11, 13> {
@@ -659,10 +662,11 @@ struct wall3side : formation<11, wall3side, 11, 13> {
       for (std::uint32_t i = 0; i < 12; ++i) {
         spawn_wall((i + r) % 2 == 0 ? i : 11 - i, 12, 1 + ((i + r) % 2), dir);
       }
-    } else
+    } else {
       for (std::uint32_t i = 0; i < 6; ++i) {
         spawn_wall(r == 0 ? i : 11 - i, 12, 0, dir);
       }
+    }
   }
 };
 struct follow1 : formation<12, follow1, 3> {
@@ -687,10 +691,11 @@ struct follow2 : formation<13, follow2, 7> {
       for (std::uint32_t i = 0; i < 8; ++i) {
         spawn_follow(i, 8, 0);
       }
-    } else
+    } else {
       for (std::uint32_t i = 0; i < 8; ++i) {
         spawn_follow(4 + i, 16, 0);
       }
+    }
   }
 };
 struct follow3 : formation<14, follow3, 14> {
@@ -700,11 +705,12 @@ struct follow3 : formation<14, follow3, 14> {
       for (std::uint32_t i = 0; i < 16; ++i) {
         spawn_follow(i, 16, 0);
       }
-    } else
+    } else {
       for (std::uint32_t i = 0; i < 8; ++i) {
         spawn_follow(i, 28, 0);
         spawn_follow(27 - i, 28, 0);
       }
+    }
   }
 };
 struct follow1side : formation<15, follow1side, 2> {
@@ -731,10 +737,11 @@ struct follow2side : formation<16, follow2side, 3> {
       for (std::uint32_t i = 0; i < 8; ++i) {
         spawn_follow(i, 8, r);
       }
-    } else
+    } else {
       for (std::uint32_t i = 0; i < 8; ++i) {
         spawn_follow(4 + i, 16, r);
       }
+    }
   }
 };
 struct follow3side : formation<17, follow3side, 7> {
@@ -745,11 +752,12 @@ struct follow3side : formation<17, follow3side, 7> {
       for (std::uint32_t i = 0; i < 16; ++i) {
         spawn_follow(i, 16, r);
       }
-    } else
+    } else {
       for (std::uint32_t i = 0; i < 8; ++i) {
         spawn_follow(i, 28, r);
         spawn_follow(27 - i, 28, r);
       }
+    }
   }
 };
 struct chaser1 : formation<18, chaser1, 4> {
@@ -774,10 +782,11 @@ struct chaser2 : formation<19, chaser2, 8> {
       for (std::uint32_t i = 0; i < 8; ++i) {
         spawn_chaser(i, 8, 0);
       }
-    } else
+    } else {
       for (std::uint32_t i = 0; i < 8; ++i) {
         spawn_chaser(4 + i, 16, 0);
       }
+    }
   }
 };
 struct chaser3 : formation<20, chaser3, 16> {
@@ -787,11 +796,12 @@ struct chaser3 : formation<20, chaser3, 16> {
       for (std::uint32_t i = 0; i < 16; ++i) {
         spawn_chaser(i, 16, 0);
       }
-    } else
+    } else {
       for (std::uint32_t i = 0; i < 8; ++i) {
         spawn_chaser(i, 28, 0);
         spawn_chaser(27 - i, 28, 0);
       }
+    }
   }
 };
 struct chaser4 : formation<21, chaser4, 20> {
@@ -825,10 +835,11 @@ struct chaser2side : formation<23, chaser2side, 4> {
       for (std::uint32_t i = 0; i < 8; ++i) {
         spawn_chaser(i, 8, r);
       }
-    } else
+    } else {
       for (std::uint32_t i = 0; i < 8; ++i) {
         spawn_chaser(4 + i, 16, r);
       }
+    }
   }
 };
 struct chaser3side : formation<24, chaser3side, 8> {
@@ -839,11 +850,12 @@ struct chaser3side : formation<24, chaser3side, 8> {
       for (std::uint32_t i = 0; i < 16; ++i) {
         spawn_chaser(i, 16, r);
       }
-    } else
+    } else {
       for (std::uint32_t i = 0; i < 8; ++i) {
         spawn_chaser(i, 28, r);
         spawn_chaser(27 - i, 28, r);
       }
+    }
   }
 };
 struct chaser4side : formation<25, chaser4side, 10> {

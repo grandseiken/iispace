@@ -2,7 +2,7 @@
 #include "game/logic/boss/boss.h"
 #include "game/logic/ecs/call.h"
 #include "game/logic/overmind.h"
-#include "game/logic/player.h"
+#include "game/logic/player/player.h"
 #include "game/logic/ship/ship.h"
 #include "game/logic/sim/sim_interface.h"
 #include "game/logic/sim/sim_internals.h"
@@ -44,14 +44,14 @@ SimState::SimState(const initial_conditions& conditions, InputAdapter& input)
   }
   overmind_ = std::make_unique<Overmind>(*interface_);
 
-  auto internals = internals_.get();
-  auto interface = interface_.get();
+  auto* internals = internals_.get();
+  auto* interface = interface_.get();
   internals_->index.on_component_add<Collision>([internals](ecs::handle h, const Collision& c) {
     internals->collisions.emplace_back(SimInternals::collision_entry{h, 0, c.bounding_width});
   });
   internals_->index.on_component_add<Destroy>(
       [internals, interface](ecs::handle h, const Destroy& d) {
-        auto e = h.get<Enemy>();
+        auto* e = h.get<Enemy>();
         if (e && e->score_reward && d.source) {
           if (auto* p = internals->index.get<Player>(*d.source); p) {
             p->add_score(*interface, e->score_reward);
@@ -64,7 +64,7 @@ SimState::SimState(const initial_conditions& conditions, InputAdapter& input)
             }
           });
         }
-        if (auto b = h.get<Boss>(); b) {
+        if (auto* b = h.get<Boss>(); b) {
           if (b->boss == boss_flag::kBoss3A ||
               (internals->conditions.mode != game_mode::kBoss &&
                internals->conditions.mode != game_mode::kNormal)) {
@@ -98,7 +98,7 @@ void SimState::update() {
   chaser_boss_begin_frame();
 
   for (auto& e : internals_->collisions) {
-    auto& c = *e.handle.get<Collision>();
+    const auto& c = *e.handle.get<Collision>();
     e.x_min = ecs::call<&get_centre>(e.handle).x - c.bounding_width;
   }
   std::ranges::stable_sort(internals_->collisions,
@@ -108,9 +108,9 @@ void SimState::update() {
 
   internals_->index.iterate<Boss>([&](ecs::const_handle h, Boss& boss) {
     std::optional<vec2> position;
-    if (auto* c = h.get<Transform>(); c) {
+    if (const auto* c = h.get<Transform>(); c) {
       position = c->centre;
-    } else if (auto* c = h.get<LegacyShip>(); c) {
+    } else if (const auto* c = h.get<LegacyShip>(); c) {
       position = c->ship->position();
     }
     if (position && interface_->is_on_screen(*position)) {
@@ -254,7 +254,7 @@ std::unordered_map<sound, sound_out> SimState::get_sound_output() const {
   for (const auto& pair : internals_->sound_output) {
     sound_out s;
     s.volume = std::max(0.f, std::min(1.f, pair.second.volume));
-    s.pan = pair.second.pan / pair.second.count;
+    s.pan = pair.second.pan / static_cast<float>(pair.second.count);
     s.pitch = std::pow(2.f, pair.second.pitch);
     result.emplace(pair.first, s);
   }
@@ -279,13 +279,13 @@ render_output SimState::get_render_output() const {
   std::uint32_t boss_hp = 0;
   std::uint32_t boss_max_hp = 0;
   internals_->index.iterate<Boss>([&](ecs::const_handle h, const Boss& boss) {
-    if (auto c = h.get<Health>(); c && boss.show_hp_bar) {
+    if (const auto* c = h.get<Health>(); c && boss.show_hp_bar) {
       boss_hp += c->hp;
       boss_max_hp += c->max_hp;
     }
   });
   if (boss_hp && boss_max_hp) {
-    result.boss_hp_bar = static_cast<float>(boss_hp) / boss_max_hp;
+    result.boss_hp_bar = static_cast<float>(boss_hp) / static_cast<float>(boss_max_hp);
   }
   return result;
 }

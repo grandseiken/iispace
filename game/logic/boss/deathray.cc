@@ -1,6 +1,6 @@
 #include "game/logic/boss/boss_internal.h"
 #include "game/logic/enemy/enemy.h"
-#include "game/logic/player.h"
+#include "game/logic/player/player.h"
 #include "game/logic/ship/geometry.h"
 #include "game/logic/ship/ship_template.h"
 

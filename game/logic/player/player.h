@@ -1,5 +1,5 @@
-#ifndef II_GAME_LOGIC_PLAYER_H
-#define II_GAME_LOGIC_PLAYER_H
+#ifndef II_GAME_LOGIC_PLAYER_PLAYER_H
+#define II_GAME_LOGIC_PLAYER_PLAYER_H
 #include "game/logic/ecs/id.h"
 #include "game/logic/ship/ship.h"
 

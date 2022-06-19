@@ -1,7 +1,7 @@
 #include "game/logic/sim/sim_interface.h"
 #include "game/logic/ecs/call.h"
 #include "game/logic/overmind.h"
-#include "game/logic/player.h"
+#include "game/logic/player/player.h"
 #include "game/logic/ship/ship.h"
 #include "game/logic/sim/sim_internals.h"
 #include <glm/gtc/constants.hpp>
@@ -90,7 +90,7 @@ bool SimInterface::any_collision(const vec2& point, shape_flag mask) const {
   fixed y = point.y;
 
   for (const auto& collision : internals_->collisions) {
-    auto& e = *collision.handle.get<Collision>();
+    const auto& e = *collision.handle.get<Collision>();
     auto v = ecs::call<&get_centre>(collision.handle);
     fixed w = collision.bounding_width;
 
@@ -121,7 +121,7 @@ SimInterface::ship_list SimInterface::collision_list(const vec2& point, shape_fl
   fixed y = point.y;
 
   for (const auto& collision : internals_->collisions) {
-    auto& e = *collision.handle.get<Collision>();
+    const auto& e = *collision.handle.get<Collision>();
     auto v = ecs::call<&get_centre>(collision.handle);
     fixed w = collision.bounding_width;
 
@@ -136,7 +136,7 @@ SimInterface::ship_list SimInterface::collision_list(const vec2& point, shape_fl
       continue;
     }
     if (e.check(collision.handle, point, mask)) {
-      if (auto s = collision.handle.get<LegacyShip>(); s) {
+      if (const auto* s = collision.handle.get<LegacyShip>(); s) {
         r.push_back(s->ship.get());
       }
     }
@@ -167,7 +167,7 @@ std::uint32_t SimInterface::killed_players() const {
 SimInterface::ship_list SimInterface::players() const {
   ship_list r;
   index().iterate<Player>([&](ecs::const_handle h, const Player&) {
-    if (auto c = h.get<LegacyShip>(); c) {
+    if (const auto* c = h.get<LegacyShip>(); c) {
       r.emplace_back(c->ship.get());
     }
   });
@@ -217,7 +217,7 @@ std::uint32_t SimInterface::get_lives() const {
 }
 
 ecs::handle SimInterface::create_legacy(std::unique_ptr<Ship> ship) {
-  auto p = ship.get();
+  auto* p = ship.get();
   auto h = internals_->index.create();
   h.emplace<LegacyShip>().ship = std::move(ship);
   h.emplace<Update>().update = [](ecs::handle h, SimInterface&) {

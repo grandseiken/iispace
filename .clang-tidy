@@ -1,9 +1,46 @@
-Checks: '-*,bugprone-*,misc-*,modernize-*,google-*,hicpp-*,cert-*,concurrency-*,cppcoreguidelines-*,performance-*,portability-*,readability-*,-modernize-use-trailing-return-type,-modernize-use-nodiscard,-google-explicit-constructor,-google-readability-todo,-hicpp-uppercase-literal-suffix,-hicpp-named-parameter,-hicpp-explicit-conversions,-hicpp-signed-bitwise,-cppcoreguidelines-pro-type-union-access,-cppcoreguidelines-avoid-magic-numbers,-readability-named-parameter,-readability-identifier-length,-readability-magic-numbers,-readability-uppercase-literal-suffix,-readability-implicit-bool-conversion,-bugprone-branch-clone,-readability-function-cognitive-complexity,-bugprone-easily-swappable-parameters,-performance-unnecessary-value-param,-cppcoreguidelines-avoid-non-const-global-variables,-cert-dcl21-cpp'
+Checks: >
+  -*,
+  bugprone-*,
+  -bugprone-branch-clone,
+  -bugprone-easily-swappable-parameters,
+  cert-*,
+  -cert-dcl21-cpp
+  concurrency-*,
+  cppcoreguidelines-*,
+  -cppcoreguidelines-avoid-magic-numbers,
+  -cppcoreguidelines-avoid-non-const-global-variables,
+  -cppcoreguidelines-pro-type-static-cast-downcast,
+  -cppcoreguidelines-pro-type-union-access,
+  -cppcoreguidelines-special-member-functions,
+  google-*,
+  -google-explicit-constructor,
+  -google-readability-todo,
+  hicpp-*,
+  -hicpp-explicit-conversions,
+  -hicpp-named-parameter,
+  -hicpp-signed-bitwise,
+  -hicpp-special-member-functions,
+  -hicpp-uppercase-literal-suffix,
+  misc-*,
+  -misc-no-recursion,
+  modernize-*,
+  -modernize-use-nodiscard,
+  -modernize-use-trailing-return-type,
+  performance-*,
+  -performance-unnecessary-value-param,
+  portability-*,
+  readability-*,
+  -readability-identifier-length,
+  -readability-implicit-bool-conversion,
+  -readability-magic-numbers,
+  -readability-named-parameter,
+  -readability-uppercase-literal-suffix,
+  -readability-function-cognitive-complexity,
 HeaderFilterRegex: 'game/.*'
 InheritParentConfig: true
 CheckOptions:
-    - key: bugprone-argument-comment.StrictMode
-      value: 1
-    - key: misc-non-private-member-variables-in-classes.IgnoreClassesWithAllMemberVariablesBeingPublic
-      value: 1
+  - key: bugprone-argument-comment.StrictMode
+    value: 1
+  - key: misc-non-private-member-variables-in-classes.IgnoreClassesWithAllMemberVariablesBeingPublic
+    value: 1
 FormatStyle: 'file'

@@ -23,14 +23,16 @@ struct component_storage;
 template <bool Const>
 class handle_base {
 public:
-  entity_id id() const {
-    return id_;
-  }
-
+  handle_base(handle_base&&) noexcept = default;
   handle_base(const handle_base&) = default;
+  handle_base& operator=(handle_base&&) noexcept = default;
   handle_base& operator=(const handle_base&) = default;
   handle_base(const handle_base<false>& h) requires Const
   : handle_base{h.id_, h.index_, h.table_} {}
+
+  entity_id id() const {
+    return id_;
+  }
 
   // Add a component via in-place construction.
   template <Component C, typename... Args>
@@ -64,9 +66,9 @@ private:
   handle_base(entity_id e_id, index_t* index, table_t* table)
   : id_{e_id}, index_{index}, table_{table} {}
 
-  entity_id id_;
-  index_t* index_;
-  table_t* table_;
+  entity_id id_{0};
+  index_t* index_ = nullptr;
+  table_t* table_ = nullptr;
 };
 
 using handle = handle_base<false>;
@@ -77,7 +79,9 @@ public:
   EntityIndex() = default;
   // Moving the index invalidates all handles.
   EntityIndex(EntityIndex&&) = default;
+  EntityIndex(const EntityIndex&) = delete;
   EntityIndex& operator=(EntityIndex&&) = default;
+  EntityIndex& operator=(const EntityIndex&) = delete;
 
   // Rearrange and compact internals. Handles remain valid, but invalidates all direct data
   // references to all components.

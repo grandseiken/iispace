@@ -1,4 +1,4 @@
-#include "game/logic/player.h"
+#include "game/logic/player/player.h"
 #include <algorithm>
 
 namespace {
@@ -18,7 +18,6 @@ class Shot : public ii::Ship {
 public:
   Shot(ii::SimInterface& sim, const vec2& position, Player* player, const vec2& direction,
        bool magic = false);
-  ~Shot() override {}
 
   void update() override;
   void render() const override;
@@ -28,20 +27,6 @@ private:
   vec2 velocity_;
   bool magic_ = false;
   bool flash_ = false;
-};
-
-class Powerup : public ii::Ship {
-public:
-  Powerup(ii::SimInterface& sim, const vec2& position, ii::powerup_type t);
-  void update() override;
-  void damage(std::uint32_t damage, bool magic, IShip* source) override;
-
-private:
-  ii::powerup_type type_ = ii::powerup_type::kExtraLife;
-  std::uint32_t frame_ = 0;
-  vec2 dir_ = {0, 1};
-  bool rotate_ = false;
-  bool first_frame_ = true;
 };
 
 Shot::Shot(ii::SimInterface& sim, const vec2& position, Player* player, const vec2& direction,
@@ -91,6 +76,20 @@ void Shot::update() {
     destroy();
   }
 }
+
+class Powerup : public ii::Ship {
+public:
+  Powerup(ii::SimInterface& sim, const vec2& position, ii::powerup_type t);
+  void update() override;
+  void damage(std::uint32_t damage, bool magic, IShip* source) override;
+
+private:
+  ii::powerup_type type_ = ii::powerup_type::kExtraLife;
+  std::uint32_t frame_ = 0;
+  vec2 dir_ = {0, 1};
+  bool rotate_ = false;
+  bool first_frame_ = true;
+};
 
 Powerup::Powerup(ii::SimInterface& sim, const vec2& position, ii::powerup_type t)
 : ii::Ship{sim, position, ii::ship_flag::kPowerup}, type_{t}, dir_{0, 1} {

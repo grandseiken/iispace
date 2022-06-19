@@ -1,7 +1,7 @@
 cc_library(
   # TODO
   name = "player",
-  hdrs = ["player.h"],
+  hdrs = ["player/player.h"],
   visibility = [":__subpackages__"],
 )
 
@@ -23,7 +23,7 @@ cc_library(
     "boss/super.cc",
     "boss/tractor.cc",
     "overmind.cc",
-    "player.cc",
+    "player/player.cc",
     "stars.cc",
   ],
   deps = [

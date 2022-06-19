@@ -22,12 +22,12 @@ public:
   // Shouldn't actually be public, but allows using as a non-type template parameter.
   std::int64_t value_;
 
-  explicit fixed() = default;
-  constexpr fixed(std::int32_t v) : value_{static_cast<std::int64_t>(v) << 32} {}
-  constexpr fixed(std::uint32_t v) : value_{static_cast<std::int64_t>(v) << 32} {}
+  explicit fixed() noexcept = default;
+  constexpr fixed(std::int32_t v) noexcept : value_{static_cast<std::int64_t>(v) << 32} {}
+  constexpr fixed(std::uint32_t v) noexcept : value_{static_cast<std::int64_t>(v) << 32} {}
 
   static constexpr fixed from_internal(std::int64_t v) {
-    fixed f;
+    fixed f = 0;
     f.value_ = v;
     return f;
   }
@@ -37,11 +37,11 @@ public:
   }
 
   constexpr std::int32_t to_int() const {
-    return value_ >> 32;
+    return static_cast<std::int32_t>(value_ >> 32);
   }
 
   constexpr float to_float() const {
-    constexpr float multiplier = 1.f / (std::uint64_t{1} << 32u);
+    constexpr float multiplier = 1.f / static_cast<float>(std::uint64_t{1} << 32u);
     return static_cast<float>(value_) * multiplier;
   }
 
@@ -101,7 +101,7 @@ public:
 };
 }  // namespace std
 
-inline constexpr fixed operator"" _fx(unsigned long long v) {
+inline constexpr fixed operator"" _fx(std::uint64_t v) {
   return fixed{static_cast<std::int32_t>(v)};
 }
 
@@ -137,7 +137,7 @@ inline constexpr fixed operator*(const fixed& a, const fixed& b) {
   std::uint64_t rt = (l & mask) * (r >> 32);
 
   std::uint64_t combine = (hi << 32) + lf + rt + (lo >> 32);
-  return fixed::from_internal(sign * combine);
+  return fixed::from_internal(sign * static_cast<std::int64_t>(combine));
 }
 
 inline constexpr fixed operator/(const fixed& a, const fixed& b) {
@@ -172,7 +172,7 @@ inline constexpr fixed operator/(const fixed& a, const fixed& b) {
     }
     --bit;
   }
-  return fixed::from_internal(sign * (q >> 1));
+  return fixed::from_internal(sign * static_cast<std::int64_t>(q >> 1));
 }
 
 inline std::ostream& operator<<(std::ostream& o, const fixed& f) {
@@ -270,7 +270,7 @@ inline constexpr fixed cos(const fixed& f) {
 
 inline constexpr fixed atan2(const fixed& y, const fixed& x) {
   auto ay = abs(y);
-  fixed angle;
+  fixed angle = 0;
 
   if (x.value_ >= 0) {
     if (x + ay == 0) {

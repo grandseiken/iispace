@@ -35,7 +35,7 @@ struct component_table {
 };
 
 struct component_storage_base {
-  virtual ~component_storage_base() {}
+  virtual ~component_storage_base() = default;
   virtual void compact(EntityIndex& index) = 0;
   virtual void remove_index(handle h, std::size_t index) = 0;
 };

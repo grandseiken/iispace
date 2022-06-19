@@ -1,5 +1,5 @@
 #include "game/logic/boss/boss_internal.h"
-#include "game/logic/player.h"
+#include "game/logic/player/player.h"
 #include <algorithm>
 
 std::vector<std::pair<std::uint32_t, std::pair<vec2, glm::vec4>>> Boss::fireworks_;
