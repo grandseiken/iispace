@@ -16,8 +16,8 @@ struct ReplayReader::impl_t {
 };
 
 ReplayReader::~ReplayReader() = default;
-ReplayReader::ReplayReader(ReplayReader&&) = default;
-ReplayReader& ReplayReader::operator=(ReplayReader&&) = default;
+ReplayReader::ReplayReader(ReplayReader&&) noexcept = default;
+ReplayReader& ReplayReader::operator=(ReplayReader&&) noexcept = default;
 
 result<ReplayReader> ReplayReader::create(std::span<const std::uint8_t> bytes) {
   auto decompressed = decompress(crypt(bytes, ii::kReplayEncryptionKey));
@@ -80,8 +80,8 @@ struct ReplayWriter::impl_t {
 };
 
 ReplayWriter::~ReplayWriter() = default;
-ReplayWriter::ReplayWriter(ReplayWriter&&) = default;
-ReplayWriter& ReplayWriter::operator=(ReplayWriter&&) = default;
+ReplayWriter::ReplayWriter(ReplayWriter&&) noexcept = default;
+ReplayWriter& ReplayWriter::operator=(ReplayWriter&&) noexcept = default;
 
 ReplayWriter::ReplayWriter(const ii::initial_conditions& conditions)
 : impl_{std::make_unique<impl_t>()} {
@@ -133,7 +133,7 @@ std::vector<ii::input_frame> ReplayInputAdapter::get() {
   for (std::uint32_t i = 0; i < reader_.initial_conditions().player_count; ++i) {
     auto frame = reader_.next_input_frame();
     if (frame) {
-      result.emplace_back(std::move(*frame));
+      result.emplace_back(*frame);
     } else {
       result.emplace_back();
     }

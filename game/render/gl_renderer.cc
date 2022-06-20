@@ -79,7 +79,7 @@ struct GlRenderer::impl_t {
     }
   }
 
-  void draw_rect_internal(const glm::ivec2& position, const glm::ivec2& size) {
+  void draw_rect_internal(const glm::ivec2& position, const glm::ivec2& size) const {
     using int_t = std::int16_t;
     const std::vector<int_t> vertex_data = {
         static_cast<int_t>(position.x),

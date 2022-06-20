@@ -89,7 +89,14 @@ inline auto EntityIndex::create() -> handle {
   while (contains(id)) {
     id = next_id_++;
   }
-  auto [it, _] = entities_.emplace(id, std::make_unique<detail::component_table>());
+  std::unique_ptr<detail::component_table> table;
+  if (table_pool_.empty()) {
+    table = std::make_unique<detail::component_table>();
+  } else {
+    table = std::move(table_pool_.back());
+    table_pool_.pop_back();
+  }
+  auto [it, _] = entities_.emplace(id, std::move(table));
   return {id, this, it->second.get()};
 }
 
@@ -104,6 +111,7 @@ inline void EntityIndex::destroy(entity_id id) {
   auto it = entities_.find(id);
   if (it != entities_.end()) {
     handle{id, this, it->second.get()}.clear();
+    table_pool_.emplace_back(std::move(it->second));
     entities_.erase(it);
   }
 }

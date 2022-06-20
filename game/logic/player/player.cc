@@ -1,9 +1,76 @@
 #include "game/logic/player/player.h"
+#include "game/logic/ship/geometry.h"
+#include "game/logic/ship/ship_template.h"
 #include <algorithm>
+
+namespace ii {
+namespace {
+
+struct Shot : ecs::component {
+  static constexpr fixed kSpeed = 10;
+
+  Shot(::Player* player, const vec2& direction, bool magic)
+  : player{player}, velocity{normalise(direction) * kSpeed}, magic{magic} {}
+  ::Player* player = nullptr;
+  vec2 velocity{0};
+  bool magic = false;
+  bool flash = false;
+
+  void update(ecs::handle h, Transform& transform, SimInterface& sim) {
+    flash = magic && sim.random(2);
+    transform.move(velocity);
+    bool on_screen = all(greaterThanEqual(transform.centre, vec2{-4, -4})) &&
+        all(lessThan(transform.centre, vec2{4 + ii::kSimDimensions.x, 4 + ii::kSimDimensions.y}));
+    if (!on_screen) {
+      h.emplace<Destroy>();
+      return;
+    }
+
+    for (const auto& ship : sim.collision_list(transform.centre, ii::shape_flag::kVulnerable)) {
+      ship->damage(1, magic, player);
+      if (!magic) {
+        h.emplace<Destroy>();
+      }
+    }
+
+    if (sim.any_collision(transform.centre, ii::shape_flag::kShield) ||
+        (!magic && sim.any_collision(transform.centre, ii::shape_flag::kWeakShield))) {
+      h.emplace<Destroy>();
+    }
+  }
+
+  void render(const Transform& transform, const SimInterface& sim) const {
+    if (sim.conditions().mode == ii::game_mode::kWhat) {
+      return;
+    }
+    using shape = geom::translate_p<0, geom::box_shape<2, 2, glm::vec4{1.f}>,
+                                    geom::box_shape<1, 1, glm::vec4{.2f}>,
+                                    geom::box_shape<3, 3, glm::vec4{.2f}>>;
+    geom::iterate(shape{}, geom::iterate_lines, std::tuple{transform.centre}, {},
+                  [&](const vec2& a, const vec2& b, const glm::vec4& c) {
+                    auto colour = flash ? glm::vec4{1.f} : player->colour();
+                    colour.a = c.a;
+                    sim.render_line(to_float(a), to_float(b), colour);
+                  });
+  }
+};
+
+void spawn_shot(ii::SimInterface& sim, const vec2& position, ::Player* player,
+                const vec2& direction, bool magic) {
+  auto h = sim.index().create();
+  h.add(ShipFlags{.flags = ship_flag{0}});
+  h.add(LegacyShip{.ship = std::make_unique<ShipForwarder>(sim, h)});
+  h.add(Update{.update = ecs::call<&Shot::update>});
+  h.add(Transform{.centre = position});
+  h.add(Render{.render = ecs::call<&Shot::render>});
+  h.add(Shot{player, direction, magic});
+}
+
+}  // namespace
+}  // namespace ii
 
 namespace {
 const fixed kPlayerSpeed = 5;
-const fixed kShotSpeed = 10;
 const fixed kBombRadius = 180;
 const fixed kBombBossRadius = 280;
 const fixed kPowerupSpeed = 1;
@@ -13,69 +80,6 @@ const std::uint32_t kShieldTime = 50;
 const std::uint32_t kShotTimer = 4;
 const std::uint32_t kMagicShotCount = 120;
 const std::uint32_t kPowerupRotateTime = 100;
-
-class Shot : public ii::Ship {
-public:
-  Shot(ii::SimInterface& sim, const vec2& position, Player* player, const vec2& direction,
-       bool magic = false);
-
-  void update() override;
-  void render() const override;
-
-private:
-  Player* player_ = nullptr;
-  vec2 velocity_;
-  bool magic_ = false;
-  bool flash_ = false;
-};
-
-Shot::Shot(ii::SimInterface& sim, const vec2& position, Player* player, const vec2& direction,
-           bool magic)
-: ii::Ship{sim, position, ii::ship_flag::kNone}
-, player_{player}
-, velocity_{direction}
-, magic_{magic} {
-  velocity_ = normalise(velocity_) * kShotSpeed;
-  auto c_dark = player_->colour();
-  c_dark.a = .2f;
-  add_new_shape<ii::Fill>(vec2{0}, 2, 2, player_->colour());
-  add_new_shape<ii::Fill>(vec2{0}, 1, 1, c_dark);
-  add_new_shape<ii::Fill>(vec2{0}, 3, 3, c_dark);
-}
-
-void Shot::render() const {
-  if (sim().conditions().mode == ii::game_mode::kWhat) {
-    return;
-  }
-  if (flash_) {
-    render_with_colour(glm::vec4{1.f});
-  } else {
-    ii::Ship::render();
-  }
-}
-
-void Shot::update() {
-  flash_ = magic_ ? sim().random(2) != 0 : false;
-  move(velocity_);
-  bool on_screen = all(greaterThanEqual(shape().centre, vec2{-4, -4})) &&
-      all(lessThan(shape().centre, vec2{4 + ii::kSimDimensions.x, 4 + ii::kSimDimensions.y}));
-  if (!on_screen) {
-    destroy();
-    return;
-  }
-
-  for (const auto& ship : sim().collision_list(shape().centre, ii::shape_flag::kVulnerable)) {
-    ship->damage(1, magic_, player_);
-    if (!magic_) {
-      destroy();
-    }
-  }
-
-  if (sim().any_collision(shape().centre, ii::shape_flag::kShield) ||
-      (!magic_ && sim().any_collision(shape().centre, ii::shape_flag::kWeakShield))) {
-    destroy();
-  }
-}
 
 class Powerup : public ii::Ship {
 public:
@@ -178,11 +182,6 @@ void Powerup::damage(std::uint32_t damage, bool magic, IShip* source) {
         ii::particle{to_float(shape().centre), glm::vec4{1.f}, to_float(dir), 4 + sim().random(8)});
   }
   destroy();
-}
-
-void spawn_shot(ii::SimInterface& sim, const vec2& position, Player* player, const vec2& direction,
-                bool magic) {
-  sim.create_legacy(std::make_unique<Shot>(sim, position, player, direction, magic));
 }
 
 }  // namespace
@@ -310,7 +309,7 @@ void Player::update() {
   // Shots.
   auto shot = fire_target_ - shape().centre;
   if (length(shot) > 0 && !fire_timer_ && input.keys & ii::input_frame::kFire) {
-    spawn_shot(sim(), shape().centre, this, shot, magic_shot_timer_ != 0);
+    ii::spawn_shot(sim(), shape().centre, this, shot, magic_shot_timer_ != 0);
     if (magic_shot_timer_) {
       --magic_shot_timer_;
     }

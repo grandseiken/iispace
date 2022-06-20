@@ -16,8 +16,8 @@ namespace ii {
 class ReplayReader {
 public:
   ~ReplayReader();
-  ReplayReader(ReplayReader&&);
-  ReplayReader& operator=(ReplayReader&&);
+  ReplayReader(ReplayReader&&) noexcept;
+  ReplayReader& operator=(ReplayReader&&) noexcept;
 
   static result<ReplayReader> create(std::span<const std::uint8_t> bytes);
   ii::initial_conditions initial_conditions() const;
@@ -35,8 +35,8 @@ private:
 class ReplayWriter {
 public:
   ~ReplayWriter();
-  ReplayWriter(ReplayWriter&&);
-  ReplayWriter& operator=(ReplayWriter&&);
+  ReplayWriter(ReplayWriter&&) noexcept;
+  ReplayWriter& operator=(ReplayWriter&&) noexcept;
 
   ReplayWriter(const ii::initial_conditions& conditions);
   void add_input_frame(const ii::input_frame& frame);

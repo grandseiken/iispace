@@ -141,7 +141,7 @@ UiLayer::UiLayer(io::Filesystem& fs, io::IoLayer& io_layer, Mixer& mixer)
   if (data) {
     auto config = ii::Config::load(*data);
     if (config) {
-      config_ = std::move(*config);
+      config_ = *config;
     }
   }
   data = fs.read_savegame(kSaveName);

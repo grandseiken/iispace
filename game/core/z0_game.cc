@@ -197,7 +197,7 @@ void HighScoreModal::update(ii::ui::UiLayer& ui) {
     enter_time_ = 0;
     ui.play_sound(ii::sound::kMenuClick);
   }
-  if (ui.input().pressed(ii::ui::key::kCancel) && enter_name_.size() > 0) {
+  if (ui.input().pressed(ii::ui::key::kCancel) && !enter_name_.empty()) {
     enter_name_ = enter_name_.substr(0, enter_name_.size() - 1);
     enter_time_ = 0;
     ui.play_sound(ii::sound::kMenuClick);
@@ -735,7 +735,7 @@ void z0Game::render(const ii::ui::UiLayer& ui, ii::render::GlRenderer& r) const 
       ss << (i + 1) << ".";
       render_text(r, {4.f, 18.f + i}, ss.str(), kPanelText);
 
-      auto& s = ui.save_game().high_scores.get(
+      const auto& s = ui.save_game().high_scores.get(
           menu_select_ == menu::kSpecial ? mode_select_ : ii::game_mode::kNormal,
           player_select_ - 1, i);
       if (s.score <= 0) {

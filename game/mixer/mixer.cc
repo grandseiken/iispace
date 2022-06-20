@@ -81,7 +81,7 @@ struct Mixer::impl_t {
   struct sound {
     std::span<const float> samples;
     raw_ptr<SRC_STATE> src_state;
-    SRC_DATA src_data;
+    SRC_DATA src_data = {};
     float lvolume = 0.f;
     float rvolume = 0.f;
     std::size_t position = 0;
@@ -149,7 +149,6 @@ void Mixer::play(audio_handle_t handle, float volume, float pan, float pitch) {
       impl_->new_sounds.emplace_back(std::move(s));
     }
   }
-  return;
 }
 
 void Mixer::commit() {

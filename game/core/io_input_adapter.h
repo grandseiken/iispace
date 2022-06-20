@@ -14,7 +14,7 @@ class IoLayer;
 
 class IoInputAdapter : public InputAdapter {
 public:
-  ~IoInputAdapter();
+  ~IoInputAdapter() override;
   IoInputAdapter(const io::IoLayer& io_layer, ReplayWriter* replay_writer);
 
   enum input_type : std::uint32_t {

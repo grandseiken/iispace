@@ -148,6 +148,7 @@ private:
   entity_id next_id_{0};
   std::unordered_map<entity_id, std::unique_ptr<detail::component_table>> entities_;
   std::vector<std::unique_ptr<detail::component_storage_base>> components_;
+  std::vector<std::unique_ptr<detail::component_table>> table_pool_;
 };
 
 }  // namespace ii::ecs

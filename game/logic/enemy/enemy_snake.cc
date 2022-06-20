@@ -25,7 +25,7 @@ struct SnakeTail : ecs::component {
     static constexpr fixed z15 = fixed_c::hundredth * 15;
     transform.rotate(z15);
     if (!--timer) {
-      on_destroy(transform, sim);
+      on_destroy(sim);
       h.emplace<Destroy>();
       explode_entity_shapes_with_colour<SnakeTail>(h, sim, *render.colour_override);
     }
@@ -33,14 +33,14 @@ struct SnakeTail : ecs::component {
       if (tail && sim.index().contains(*tail)) {
         sim.index().get(*tail)->get<SnakeTail>()->d_timer = 4;
       }
-      on_destroy(transform, sim);
+      on_destroy(sim);
       h.emplace<Destroy>();
       explode_entity_shapes_with_colour<SnakeTail>(h, sim, *render.colour_override);
       sim.play_sound(sound::kEnemyDestroy, transform.centre, true);
     }
   }
 
-  void on_destroy(const Transform& transform, SimInterface& sim) const {
+  void on_destroy(SimInterface& sim) const {
     if (head && sim.index().contains(*head)) {
       sim.index().get(*head)->get<SnakeTail>()->tail.reset();
     }
@@ -87,7 +87,7 @@ struct Snake : ecs::component {
     }
 
     auto c = colour;
-    c.x += (timer % 256) / 256.f;
+    c.x += static_cast<float>(timer % 256) / 256.f;
     render.colour_override = c;
     ++timer;
     if (timer % (is_projectile ? 4 : 8) == 0) {
@@ -112,7 +112,7 @@ struct Snake : ecs::component {
     }
   }
 
-  void on_destroy(const Transform& transform, SimInterface& sim) const {
+  void on_destroy(SimInterface& sim) const {
     if (tail) {
       sim.index().get(*tail)->get<SnakeTail>()->d_timer = 4;
     }

@@ -144,7 +144,7 @@ result<Config> Config::load(std::span<const std::uint8_t> bytes) {
 
   Config settings;
   settings.volume = proto.volume();
-  return {std::move(settings)};
+  return {settings};
 }
 
 result<std::vector<std::uint8_t>> Config::save() const {
