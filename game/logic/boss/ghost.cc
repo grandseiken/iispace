@@ -417,6 +417,7 @@ void GhostBoss::render() const {
 void spawn_ghost_boss(SimInterface& sim, std::uint32_t cycle) {
   auto h = sim.create_legacy(std::make_unique<GhostBoss>(sim));
   h.add(legacy_collision(/* bounding width */ 640));
+  h.add(ShipFlags{.flags = ship_flag::kEnemy | ship_flag::kBoss});
   h.add(Enemy{.threat_value = 100,
               .boss_score_reward =
                   calculate_boss_score(boss_flag::kBoss2B, sim.player_count(), cycle)});

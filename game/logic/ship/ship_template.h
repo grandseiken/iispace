@@ -22,18 +22,25 @@ auto get_shape_parameters(ecs::const_handle h) {
   }
 }
 
-template <ecs::Component Logic, geom::ShapeNode S>
+template <geom::ShapeNode S>
+void render_shape(const SimInterface& sim, const auto& parameters,
+                  const std::optional<glm::vec4>& c_override = std::nullopt) {
+  geom::iterate(
+      S{}, geom::iterate_lines, parameters, {},
+      [&](const vec2& a, const vec2& b, const glm::vec4& c) {
+        auto colour = c_override ? glm::vec4{c_override->r, c_override->g, c_override->b, c.a} : c;
+        sim.render_line(to_float(a), to_float(b), colour);
+      });
+}
+
+template <ecs::Component Logic, geom::ShapeNode S = typename Logic::shape>
 void render_entity_shape(ecs::const_handle h, const Render& render, const Health* health,
                          const SimInterface& sim) {
   auto c_override = render.colour_override;
   if (!c_override && health && health->hit_timer) {
     c_override = glm::vec4{1.f};
   }
-
-  geom::iterate(S{}, geom::iterate_lines, get_shape_parameters<Logic>(h), {},
-                [&](const vec2& a, const vec2& b, const glm::vec4& c) {
-                  sim.render_line(to_float(a), to_float(b), c_override ? *c_override : c);
-                });
+  render_shape<S>(sim, get_shape_parameters<Logic>(h), c_override);
 }
 
 template <ecs::Component Logic, geom::ShapeNode S = typename Logic::shape>
@@ -80,9 +87,11 @@ ecs::handle create_ship(SimInterface& sim, const vec2& position, fixed rotation 
     return result;
   }
   ();
-  h.add(Collision{.flags = collision_shape_flags,
-                  .bounding_width = Logic::kBoundingWidth,
-                  .check = &ship_check_point<Logic, S>});
+  if constexpr (+collision_shape_flags) {
+    h.add(Collision{.flags = collision_shape_flags,
+                    .bounding_width = Logic::kBoundingWidth,
+                    .check = &ship_check_point<Logic, S>});
+  }
 
   constexpr auto render = ecs::call<&render_entity_shape<Logic, S>>;
   if constexpr (requires { &Logic::render; }) {

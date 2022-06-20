@@ -10,7 +10,6 @@ cc_library(
   ],
   deps = [
     "//game/common:math",
-    "//game/logic:player",
     "//game/logic/ecs",
     "//game/logic/ship",
     "//game/logic/sim:sim_interface",

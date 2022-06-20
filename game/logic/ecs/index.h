@@ -125,6 +125,7 @@ public:
   template <Component C>
   void on_component_remove(const component_remove_callback<C>& f);
 
+  // TODO: should iterate functions should use ecs::call? Or provide alternative versions that do?
   template <Component C>
   void iterate(std::invocable<C&> auto&& f);
   template <Component C>

@@ -33,6 +33,7 @@ SuperBossArc* spawn_super_boss_arc(SimInterface& sim, const vec2& position, std:
   auto p = u.get();
   auto h = sim.create_legacy(std::move(u));
   h.add(legacy_collision(/* bounding width */ 640));
+  h.add(ShipFlags{.flags = ship_flag::kEnemy | ship_flag::kBoss});
   h.add(Enemy{.threat_value = 10});
   h.add(Health{
       .hp = calculate_boss_hp(kSbArcHp, sim.player_count(), cycle),
@@ -244,11 +245,12 @@ void SuperBoss::update() {
 }
 
 void SuperBoss::on_destroy(bool) {
-  for (const auto& ship : sim().all_ships(ship_flag::kEnemy)) {
-    if (ship != this) {
-      ship->damage(::Player::kBombDamage * 100, false, 0);
+  sim().index().iterate<ii::Enemy>([&](ii::ecs::handle h, const ii::Enemy&) {
+    if (h.id() != handle().id()) {
+      ii::ecs::call_if<&ii::Health::damage>(h, sim(), 100 * ::Player::kBombDamage,
+                                            ii::damage_type::kBomb, std::nullopt);
     }
-  }
+  });
   explosion();
   explosion(glm::vec4{1.f}, 12);
   explosion(shapes()[0]->colour, 24);
@@ -277,6 +279,7 @@ void SuperBoss::on_destroy(bool) {
 void spawn_super_boss(SimInterface& sim, std::uint32_t cycle) {
   auto h = sim.create_legacy(std::make_unique<SuperBoss>(sim, cycle));
   h.add(legacy_collision(/* bounding width */ 640));
+  h.add(ShipFlags{.flags = ship_flag::kEnemy | ship_flag::kBoss});
   h.add(Enemy{.threat_value = 100,
               .boss_score_reward =
                   calculate_boss_score(boss_flag::kBoss3A, sim.player_count(), cycle)});

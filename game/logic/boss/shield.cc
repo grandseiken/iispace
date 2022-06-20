@@ -165,6 +165,7 @@ std::uint32_t transform_shield_bomb_boss_damage(ecs::handle h, SimInterface& sim
 void spawn_shield_bomb_boss(SimInterface& sim, std::uint32_t cycle) {
   auto h = sim.create_legacy(std::make_unique<ShieldBombBoss>(sim));
   h.add(legacy_collision(/* bounding width */ 640));
+  h.add(ShipFlags{.flags = ship_flag::kEnemy | ship_flag::kBoss});
   h.add(Enemy{.threat_value = 100,
               .boss_score_reward =
                   calculate_boss_score(boss_flag::kBoss1B, sim.player_count(), cycle)});

@@ -1,5 +1,4 @@
 #include "game/logic/enemy/enemy.h"
-#include "game/logic/player/player.h"
 #include "game/logic/ship/geometry.h"
 #include "game/logic/ship/ship_template.h"
 
@@ -51,7 +50,7 @@ struct Follow : ecs::component {
 
   Follow(bool is_big_follow) : is_big_follow{is_big_follow} {}
   std::uint32_t timer = 0;
-  IShip* target = nullptr;
+  std::optional<ecs::entity_id> target;
   bool is_big_follow = false;
 
   void update(Transform& transform, SimInterface& sim) {
@@ -62,10 +61,10 @@ struct Follow : ecs::component {
 
     ++timer;
     if (!target || timer > kTime) {
-      target = sim.nearest_player(transform.centre);
+      target = sim.nearest_player(transform.centre).id();
       timer = 0;
     }
-    auto d = target->position() - transform.centre;
+    auto d = sim.index().get(*target)->get<Transform>()->centre - transform.centre;
     transform.move(normalise(d) * kSpeed);
   }
 

@@ -44,6 +44,7 @@ TractorBoss::TractorBoss(SimInterface& sim)
 , shoot_type_{sim.random(2)} {
   s1_ = add_new_shape<CompoundShape>(vec2{0, -96}, 0,
                                      shape_flag::kDangerous | shape_flag::kVulnerable);
+  s1_->colour = c1;
 
   s1_->add_new_shape<Polygon>(vec2{0}, 12, 6, c1, 0, shape_flag::kNone, Polygon::T::kPolygram);
   s1_->add_new_shape<Polygon>(vec2{0}, 12, 12, c1, 0);
@@ -136,14 +137,15 @@ void TractorBoss::update() {
         sound_ = false;
       }
       targets_.clear();
-      for (const auto& ship : sim().all_ships(ship_flag::kPlayer)) {
-        if (((::Player*)ship)->is_killed()) {
+      for (auto id : sim().players()) {
+        auto ph = *sim().index().get(id);
+        if (ph.get<Player>()->is_killed()) {
           continue;
         }
-        auto pos = ship->position();
-        targets_.push_back(pos);
-        auto d = normalise(shape().centre - pos);
-        ship->position() += d * kTractorBeamSpeed;
+        auto& transform = *ph.get<Transform>();
+        targets_.push_back(transform.centre);
+        auto d = normalise(shape().centre - transform.centre);
+        transform.centre += d * kTractorBeamSpeed;
       }
     }
   } else {
@@ -200,35 +202,32 @@ void TractorBoss::update() {
           play_sound_random(sound::kBossFire);
         }
         targets_.clear();
-        for (const auto& ship : sim().all_ships(ship_flag::kPlayer | ship_flag::kEnemy)) {
-          if (ship == this ||
-              (+(ship->type() & ship_flag::kPlayer) && ((::Player*)ship)->is_killed())) {
-            continue;
-          }
 
-          if (+(ship->type() & ship_flag::kEnemy)) {
-            play_sound_random(sound::kBossAttack, 0, 0.3f);
+        sim().index().iterate<Player>([&](ecs::handle h, const Player& p) {
+          if (p.is_killed()) {
+            return;
           }
-          auto pos = ship->position();
-          targets_.push_back(pos);
-          fixed speed = 0;
-          if (+(ship->type() & ship_flag::kPlayer)) {
-            speed = kTractorBeamSpeed;
-          }
-          if (+(ship->type() & ship_flag::kEnemy)) {
-            speed = 4 + fixed_c::half;
-          }
-          auto d = normalise(shape().centre - pos);
-          ship->position() += d * speed;
+          auto& transform = *h.get<Transform>();
+          targets_.push_back(transform.centre);
+          transform.centre += normalise(shape().centre - transform.centre) * kTractorBeamSpeed;
+        });
 
-          if (+(ship->type() & ship_flag::kEnemy) && !(ship->type() & ship_flag::kWall) &&
-              length(ship->position() - shape().centre) <= 40) {
-            ship->destroy();
+        sim().index().iterate<Enemy>([&](ecs::handle h, const Enemy&) {
+          if (h.id() == handle().id()) {
+            return;
+          }
+          play_sound_random(sound::kBossAttack, 0, 0.3f);
+          auto& transform = *h.get<Transform>();
+          targets_.push_back(transform.centre);
+          transform.centre += normalise(shape().centre - transform.centre) * (4 + fixed_c::half);
+          if (!(h.get<ShipFlags>()->flags & ship_flag::kWall) &&
+              length(transform.centre - shape().centre) <= 40) {
+            h.emplace<Destroy>();
             ++attack_size_;
             sattack_->radius = attack_size_ / (1 + fixed_c::half);
             add_new_shape<Polygon>(vec2{0}, 8, 6, c0, 0);
           }
-        }
+        });
       } else {
         timer_ = 0;
         stopped_ = false;
@@ -290,6 +289,7 @@ void TractorBoss::render() const {
 void spawn_tractor_boss(SimInterface& sim, std::uint32_t cycle) {
   auto h = sim.create_legacy(std::make_unique<TractorBoss>(sim));
   h.add(legacy_collision(/* bounding width */ 640));
+  h.add(ShipFlags{.flags = ship_flag::kEnemy | ship_flag::kBoss});
   h.add(Enemy{.threat_value = 100,
               .boss_score_reward =
                   calculate_boss_score(boss_flag::kBoss2A, sim.player_count(), cycle)});

@@ -108,9 +108,10 @@ ChaserBoss* spawn_chaser_boss_internal(SimInterface& sim, std::uint32_t cycle,
                                        std::uint32_t time = ChaserBoss::kTimer,
                                        std::uint32_t stagger = 0) {
   auto u = std::make_unique<ChaserBoss>(sim, cycle, split, position, time, stagger);
-  auto p = u.get();
+  auto* p = u.get();
   auto h = sim.create_legacy(std::move(u));
   h.add(legacy_collision(/* bounding width */ 10 * ONE_AND_HALF_lookup[kCbMaxSplit - split]));
+  h.add(ShipFlags{.flags = ship_flag::kEnemy | ship_flag::kBoss});
   h.add(Enemy{.threat_value = 100});
   h.add(Health{
       .hp = calculate_boss_hp(
@@ -153,7 +154,16 @@ ChaserBoss::ChaserBoss(SimInterface& sim, std::uint32_t cycle, std::uint32_t spl
 }
 
 void ChaserBoss::update() {
-  const auto& remaining = sim().all_ships();
+  std::uint32_t remaining = 0;
+  sim().index().iterate<ChaserBossTag>(
+      [&](ecs::const_handle, const ChaserBossTag&) { ++remaining; });
+  // Compatibility: obviously a mistake, we're supposed to be counting bosses - players but instead
+  // counting shots/powerups etc as well.
+  sim().index().iterate<Transform>([&](ecs::const_handle h, const Transform&) {
+    if (!h.has<Player>()) {
+      ++remaining;
+    }
+  });
   last_dir_ = normalise(dir_);
   if (is_on_screen()) {
     on_screen_ = true;
@@ -164,11 +174,9 @@ void ChaserBoss::update() {
   }
   if (!timer_) {
     timer_ = kTimer * (move_ + 1);
-    std::uint32_t count = remaining.size();
-    count = count > sim().player_count() ? count - sim().player_count() : 0;
     if (split_ != 0 &&
-        (move_ || sim().random(8 + split_) == 0 || count <= 4 ||
-         !sim().random(ONE_PT_ONE_FIVE_intLookup[std::min(127u, count)]))) {
+        (move_ || sim().random(8 + split_) == 0 || remaining <= 4 ||
+         !sim().random(ONE_PT_ONE_FIVE_intLookup[std::min(127u, remaining)]))) {
       move_ = !move_;
     }
     if (move_) {
@@ -178,7 +186,6 @@ void ChaserBoss::update() {
   if (move_) {
     move(dir_);
   } else {
-    const auto& nearby = sim().all_ships(ship_flag::kPlayer | ship_flag::kBoss);
     const fixed attract = 256 * ONE_PT_ONE_lookup[kCbMaxSplit - split_];
     const fixed align = 128 * ONE_PT_ONE_FIVE_lookup[kCbMaxSplit - split_];
     const fixed repulse = 64 * ONE_PT_TWO_lookup[kCbMaxSplit - split_];
@@ -199,44 +206,56 @@ void ChaserBoss::update() {
                  : split_ == 3 ? 8
                                : 16)) {
       dir_.x = dir_.y = 0;
-      for (const auto& ship : nearby) {
-        if (ship == this) {
-          continue;
+
+      auto handle_ship = [&](ecs::const_handle h, bool boss) {
+        if (h.id() == handle().id()) {
+          return;
+        }
+        vec2 centre{0};
+        if (boss) {
+          centre = h.get<LegacyShip>()->ship->position();
+        } else {
+          centre = h.get<Transform>()->centre;
         }
 
-        auto v = shape().centre - ship->position();
+        auto v = shape().centre - centre;
         auto r = length(v);
         if (r > 0) {
           v /= r;
         }
         vec2 p{0};
-        if (+(ship->type() & ship_flag::kBoss)) {
-          ChaserBoss* c = (ChaserBoss*)ship;
+        if (boss) {
+          auto* c = static_cast<ChaserBoss*>(h.get<LegacyShip>()->ship.get());
           fixed pow = ONE_PT_ONE_FIVE_lookup[kCbMaxSplit - c->split_];
           v *= pow;
           p = c->last_dir_ * pow;
         } else {
-          p = from_polar(ship->rotation(), 1_fx);
+          p = from_polar(h.get<Transform>()->rotation, 1_fx);
         }
 
         if (r > attract) {
-          continue;
+          return;
         }
         // Attract.
         dir_ += v * c_attract;
         if (r > align) {
-          continue;
+          return;
         }
         // Align.
         dir_ += p;
         if (r > repulse) {
-          continue;
+          return;
         }
         // Repulse.
         dir_ += v * 3;
-      }
+      };
+
+      sim().index().iterate<Player>(
+          [&](ecs::const_handle h, const Player&) { handle_ship(h, false); });
+      sim().index().iterate<ChaserBossTag>(
+          [&](ecs::const_handle h, const ChaserBossTag&) { handle_ship(h, true); });
     }
-    if (remaining.size() < 4 + sim().player_count() && split_ >= kCbMaxSplit - 1) {
+    if (remaining < 4 && split_ >= kCbMaxSplit - 1) {
       if ((shape().centre.x < 32 && dir_.x < 0) ||
           (shape().centre.x >= kSimDimensions.x - 32 && dir_.x > 0)) {
         dir_.x = -dir_.x;
@@ -245,7 +264,7 @@ void ChaserBoss::update() {
           (shape().centre.y >= kSimDimensions.y - 32 && dir_.y > 0)) {
         dir_.y = -dir_.y;
       }
-    } else if (remaining.size() < 8 + sim().player_count() && split_ >= kCbMaxSplit - 1) {
+    } else if (remaining < 8 && split_ >= kCbMaxSplit - 1) {
       if ((shape().centre.x < 0 && dir_.x < 0) ||
           (shape().centre.x >= kSimDimensions.x && dir_.x > 0)) {
         dir_.x = -dir_.x;
@@ -314,12 +333,11 @@ void ChaserBoss::on_destroy(bool) {
     }
   } else {
     last = true;
-    for (const auto& ship : sim().all_ships(ship_flag::kEnemy)) {
-      if (!ship->is_destroyed() && ship != this) {
+    sim().index().iterate<ChaserBossTag>([&](ecs::const_handle h, const ChaserBossTag&) {
+      if (!h.has<Destroy>() && h.id() != handle().id()) {
         last = false;
-        break;
       }
-    }
+    });
 
     if (last) {
       sim().rumble_all(25);

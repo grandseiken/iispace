@@ -1,4 +1,5 @@
 #include "game/logic/boss/boss_internal.h"
+#include "game/logic/ecs/call.h"
 #include "game/logic/player/player.h"
 #include <algorithm>
 
@@ -43,15 +44,15 @@ std::uint32_t scale_boss_damage(ecs::handle, SimInterface& sim, damage_type, std
 
 }  // namespace ii
 
-Boss::Boss(ii::SimInterface& sim, const vec2& position)
-: ii::Ship{sim, position, ii::ship_flag::kEnemy | ii::ship_flag::kBoss} {}
+Boss::Boss(ii::SimInterface& sim, const vec2& position) : ii::Ship{sim, position} {}
 
 void Boss::on_destroy(bool) {
-  for (const auto& ship : sim().all_ships(ii::ship_flag::kEnemy)) {
-    if (ship != this) {
-      ship->damage(Player::kBombDamage, false, 0);
+  sim().index().iterate<ii::Enemy>([&](ii::ecs::handle h, const ii::Enemy&) {
+    if (h.id() != handle().id()) {
+      ii::ecs::call_if<&ii::Health::damage>(h, sim(), Player::kBombDamage, ii::damage_type::kBomb,
+                                            std::nullopt);
     }
-  }
+  });
   explosion();
   explosion(glm::vec4{1.f}, 12);
   explosion(shapes()[0]->colour, 24);
@@ -61,8 +62,7 @@ void Boss::on_destroy(bool) {
   for (std::uint32_t i = 0; i < 16; ++i) {
     vec2 v = from_polar(sim().random_fixed() * (2 * fixed_c::pi),
                         fixed{8 + sim().random(64) + sim().random(64)});
-    fireworks_.push_back(
-        std::make_pair(n, std::make_pair(shape().centre + v, shapes()[0]->colour)));
+    fireworks_.emplace_back(n, std::make_pair(shape().centre + v, shapes()[0]->colour));
     n += i;
   }
   sim().rumble_all(25);
@@ -70,7 +70,7 @@ void Boss::on_destroy(bool) {
 }
 
 void Boss::render() const {
-  if (auto c = handle().get<ii::Health>(); c && c->hit_timer) {
+  if (auto* c = handle().get<ii::Health>(); c && c->hit_timer) {
     for (std::size_t i = 0; i < shapes().size(); ++i) {
       bool hit_flash = !c->hit_flash_ignore_index || i < *c->hit_flash_ignore_index;
       shapes()[i]->render(sim(), to_float(shape().centre), shape().rotation().to_float(),

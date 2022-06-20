@@ -1,23 +1,25 @@
 #ifndef II_GAME_LOGIC_SHIP_SHIP_H
 #define II_GAME_LOGIC_SHIP_SHIP_H
+#include "game/logic/ecs/call.h"
 #include "game/logic/ecs/index.h"
 #include "game/logic/ship/components.h"
 #include "game/logic/ship/shape.h"
 #include "game/logic/sim/sim_interface.h"
 #include <optional>
+#include <utility>
 
 namespace ii {
 
 class IShip {
 public:
   IShip(SimInterface& sim) : sim_{sim} {}
-  virtual ~IShip() {}
+  virtual ~IShip() = default;
 
   SimInterface& sim() const {
     return sim_;
   }
 
-  void destroy(std::optional<ecs::entity_id> source = std::nullopt) {
+  void destroy(std::optional<ecs::entity_id> source = std::nullopt) const {
     handle().add(Destroy{.source = source});
   }
 
@@ -25,12 +27,10 @@ public:
     return handle().has<Destroy>();
   }
 
-  virtual ship_flag type() const = 0;
   virtual ecs::handle handle() const = 0;
   virtual vec2& position() = 0;
   virtual vec2 position() const = 0;
   virtual fixed rotation() const = 0;
-  virtual void damage(std::uint32_t damage, bool magic, IShip* source);
 
 private:
   SimInterface& sim_;
@@ -38,10 +38,7 @@ private:
 
 struct ShipForwarder : IShip {
   ecs::handle h;
-  ShipForwarder(SimInterface& sim, ecs::handle h) : IShip{sim}, h{h} {}
-  ship_flag type() const override {
-    return h.get<ShipFlags>()->flags;
-  }
+  ShipForwarder(SimInterface& sim, ecs::handle h) : IShip{sim}, h{std::move(h)} {}
   ecs::handle handle() const override {
     return h;
   }
@@ -58,7 +55,7 @@ struct ShipForwarder : IShip {
 
 class Ship : public IShip {
 public:
-  Ship(SimInterface& sim, const vec2& position, ship_flag type);
+  Ship(SimInterface& sim, const vec2& position);
 
   ecs::handle handle() const override {
     return *handle_;
@@ -66,10 +63,6 @@ public:
 
   void set_handle(ecs::handle handle) {
     handle_ = handle;
-  }
-
-  ship_flag type() const override {
-    return type_;
   }
 
   const CompoundShape& shape() const {
@@ -132,7 +125,6 @@ protected:
 
 private:
   std::optional<ecs::handle> handle_;
-  ship_flag type_ = ship_flag{0};
   CompoundShape shape_;
 };
 
@@ -144,21 +136,6 @@ inline Collision legacy_collision(fixed w) {
     return static_cast<Ship*>(h.get<LegacyShip>()->ship.get())->check_point(v, f);
   };
   return c;
-}
-
-inline void IShip::damage(std::uint32_t damage, bool magic, IShip* source) {
-  if (auto c = handle().get<Health>(); c) {
-    std::optional<ecs::entity_id> source_id;
-    if (source) {
-      source_id = source->handle().id();
-    }
-    // TODO: damage > 10: kBombDamage
-    c->damage(handle(), sim(), damage,
-              magic             ? damage_type::kMagic
-                  : damage > 10 ? damage_type::kBomb
-                                : damage_type::kNone,
-              source_id);
-  }
 }
 
 }  // namespace ii

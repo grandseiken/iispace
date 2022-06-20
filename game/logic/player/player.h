@@ -1,26 +1,12 @@
 #ifndef II_GAME_LOGIC_PLAYER_PLAYER_H
 #define II_GAME_LOGIC_PLAYER_PLAYER_H
 #include "game/logic/ecs/id.h"
+#include "game/logic/ship/components.h"
 #include "game/logic/ship/ship.h"
 
 class Player;
 
 namespace ii {
-struct Player : ecs::component {
-  std::uint32_t player_number = 0;
-  std::uint32_t kill_timer = 0;
-
-  std::uint64_t score = 0;
-  std::uint32_t multiplier = 1;
-  std::uint32_t multiplier_count = 0;
-  std::uint32_t death_count = 0;
-
-  bool is_killed() const {
-    return kill_timer != 0;
-  }
-  void add_score(SimInterface&, std::uint64_t s);
-};
-
 enum class powerup_type {
   kExtraLife,
   kMagicShots,
@@ -38,7 +24,7 @@ public:
   static constexpr std::uint32_t kBombDamage = 50;
 
   Player(ii::SimInterface& sim, const vec2& position, std::uint32_t player_number);
-  ~Player() override;
+  ~Player() override = default;
 
   std::uint32_t player_number() const {
     return player_number_;
@@ -67,6 +53,20 @@ public:
 
   bool is_killed() {
     return handle().get<ii::Player>()->is_killed();
+  }
+
+  bool has_powerup() const {
+    return shield_ || bomb_;
+  }
+
+  vec2& position() override {
+    return handle().get<ii::Transform>()->centre;
+  }
+  vec2 position() const override {
+    return handle().get<ii::Transform>()->centre;
+  }
+  fixed rotation() const override {
+    return handle().get<ii::Transform>()->rotation;
   }
 
 private:

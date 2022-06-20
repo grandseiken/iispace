@@ -47,4 +47,14 @@ void Health::damage(ecs::handle h, SimInterface& sim, std::uint32_t damage, dama
   }
 }
 
+void Player::add_score(SimInterface& sim, std::uint64_t s) {
+  sim.rumble(player_number, 3);
+  score += s * multiplier;
+  ++multiplier_count;
+  if (multiplier_count >= (1u << std::min(multiplier + 3, 23u))) {
+    multiplier_count = 0;
+    ++multiplier;
+  }
+}
+
 }  // namespace ii

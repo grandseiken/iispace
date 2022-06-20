@@ -5,6 +5,8 @@
 
 namespace ii {
 
+// TODO: can surely be removed and replaced with marker components soon.
+// One issue is chaser boss doesn't have the boss component for (reasons).
 enum class ship_flag : std::uint32_t {
   kNone = 0,
   kPlayer = 1,

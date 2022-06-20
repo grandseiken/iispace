@@ -138,14 +138,26 @@ void SimState::update() {
       --(it++)->first;
       continue;
     }
-    auto* p = static_cast<::Player*>(interface_->players().front());
-    vec2 v = p->shape().centre;
-    p->shape().centre = it->second.first;
-    p->explosion(glm::vec4{1.f});
-    p->explosion(it->second.second, 16);
-    p->explosion(glm::vec4{1.f}, 24);
-    p->explosion(it->second.second, 32);
-    p->shape().centre = v;
+    // Stupid compatibility.
+    auto p0 = *interface_->index().get(interface_->players().front());
+    bool p0_has_powerup = static_cast<::Player*>(p0.get<LegacyShip>()->ship.get())->has_powerup();
+    auto explode = [&](const glm::vec2& v, const glm::vec4& c, std::uint32_t time) {
+      auto c_dark = c;
+      c_dark.a = .5f;
+      interface_->explosion(v, c, time);
+      interface_->explosion(v + glm::vec2{8.f, 0.f}, c, time);
+      interface_->explosion(v + glm::vec2{0.f, 8.f}, c, time);
+      interface_->explosion(v + glm::vec2{8.f, 0.f}, c_dark, time);
+      interface_->explosion(v + glm::vec2{0.f, 8.f}, c_dark, time);
+      if (p0_has_powerup) {
+        interface_->explosion(v, glm::vec4{0.f}, 8);
+      }
+    };
+
+    explode(to_float(it->second.first), glm::vec4{1.f}, 16);
+    explode(to_float(it->second.first), it->second.second, 32);
+    explode(to_float(it->second.first), glm::vec4{1.f}, 64);
+    explode(to_float(it->second.first), it->second.second, 128);
     it = boss_fireworks().erase(it);
   }
 
@@ -230,11 +242,12 @@ void SimState::render() const {
     }
   };
 
-  internals_->index.iterate<LegacyShip>([&render_warning](const auto& c) {
-    if (+(c.ship->type() & ship_flag::kEnemy)) {
-      render_warning(to_float(c.ship->position()));
-    }
-  });
+  internals_->index.iterate<LegacyShip>(
+      [&render_warning](ecs::const_handle h, const LegacyShip& c) {
+        if (h.has<ShipFlags>() && +(h.get<ShipFlags>()->flags & ship_flag::kEnemy)) {
+          render_warning(to_float(c.ship->position()));
+        }
+      });
   for (const auto& v : boss_warnings()) {
     render_warning(to_float(v));
   }

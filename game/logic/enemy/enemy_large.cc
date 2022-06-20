@@ -1,5 +1,4 @@
 #include "game/logic/enemy/enemy.h"
-#include "game/logic/player/player.h"
 #include "game/logic/ship/geometry.h"
 #include "game/logic/ship/ship_template.h"
 
@@ -192,7 +191,7 @@ struct Tractor : ecs::component {
   bool ready = false;
   bool spinning = false;
   fixed spoke_r = 0;
-  SimInterface::ship_list players;  // TODO.
+  std::vector<ecs::entity_id> players;
 
   Tractor(bool power) : power{power} {}
 
@@ -228,10 +227,11 @@ struct Tractor : ecs::component {
       }
     } else if (spinning) {
       transform.rotate(fixed_c::tenth * 3);
-      for (const auto& ship : players) {
-        if (!((::Player*)ship)->is_killed()) {
-          auto d = normalise(transform.centre - ship->position());
-          ship->position() += d * kPullSpeed;
+      for (auto id : players) {
+        auto ph = *sim.index().get(id);
+        if (!ph.get<Player>()->is_killed()) {
+          auto& p_transform = *ph.get<Transform>();
+          p_transform.centre += normalise(transform.centre - p_transform.centre) * kPullSpeed;
         }
       }
 
@@ -251,8 +251,9 @@ struct Tractor : ecs::component {
   void render(const Transform& transform, const SimInterface& sim) const {
     if (spinning) {
       for (std::size_t i = 0; i < players.size(); ++i) {
-        if (((timer + i * 4) / 4) % 2 && !((::Player*)players[i])->is_killed()) {
-          sim.render_line(to_float(transform.centre), to_float(players[i]->position()),
+        auto ph = *sim.index().get(players[i]);
+        if (((timer + i * 4) / 4) % 2 && !ph.get<Player>()->is_killed()) {
+          sim.render_line(to_float(transform.centre), to_float(ph.get<Transform>()->centre),
                           colour_hue360(300, .5f, .6f));
         }
       }

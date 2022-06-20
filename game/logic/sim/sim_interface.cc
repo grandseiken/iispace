@@ -2,6 +2,7 @@
 #include "game/logic/ecs/call.h"
 #include "game/logic/overmind.h"
 #include "game/logic/player/player.h"
+#include "game/logic/ship/components.h"
 #include "game/logic/ship/ship.h"
 #include "game/logic/sim/sim_internals.h"
 #include <glm/gtc/constants.hpp>
@@ -57,30 +58,8 @@ fixed SimInterface::random_fixed() {
 
 std::size_t SimInterface::count_ships(ship_flag mask, ship_flag exclude_mask) const {
   std::size_t r = 0;
-  internals_->index.iterate<LegacyShip>([&r, mask, exclude_mask](auto& c) {
-    auto t = c.ship->type();
-    r += (!mask || +(c.ship->type() & mask)) && !(exclude_mask & t);
-  });
-  return r;
-}
-
-SimInterface::ship_list SimInterface::all_ships(ship_flag mask) const {
-  ship_list r;
-  internals_->index.iterate<LegacyShip>([&r, mask](auto& c) {
-    if (!mask || +(c.ship->type() & mask)) {
-      r.emplace_back(c.ship.get());
-    }
-  });
-  return r;
-}
-
-SimInterface::ship_list
-SimInterface::ships_in_radius(const vec2& point, fixed radius, ship_flag mask) const {
-  ship_list r;
-  internals_->index.iterate<LegacyShip>([&r, &point, radius, mask](auto& c) {
-    if ((!mask || +(c.ship->type() & mask)) && length(c.ship->position() - point) <= radius) {
-      r.emplace_back(c.ship.get());
-    }
+  internals_->index.iterate<ShipFlags>([&r, mask, exclude_mask](const ShipFlags& c) {
+    r += (!mask || +(c.flags & mask)) && !(exclude_mask & c.flags);
   });
   return r;
 }
@@ -153,7 +132,7 @@ bool SimInterface::is_on_screen(const vec2& point) const {
 }
 
 std::uint32_t SimInterface::player_count() const {
-  return static_cast<std::uint32_t>(players().size());
+  return conditions().player_count;
 }
 
 std::uint32_t SimInterface::alive_players() const {
@@ -164,42 +143,58 @@ std::uint32_t SimInterface::killed_players() const {
   return ::Player::killed_players();
 }
 
-SimInterface::ship_list SimInterface::players() const {
-  ship_list r;
-  index().iterate<Player>([&](ecs::const_handle h, const Player&) {
-    if (const auto* c = h.get<LegacyShip>(); c) {
-      r.emplace_back(c->ship.get());
-    }
-  });
-  return r;
-}
-
-::Player* SimInterface::nearest_player(const vec2& point) const {
-  IShip* ship = nullptr;
-  IShip* dead = nullptr;
-  fixed ship_dist = 0;
-  fixed dead_dist = 0;
-
-  for (IShip* s : players()) {
-    auto d = length_squared(s->position() - point);
-    if ((d < ship_dist || !ship) && !((::Player*)s)->is_killed()) {
-      ship_dist = d;
-      ship = s;
-    }
-    if (d < dead_dist || !dead) {
-      dead_dist = d;
-      dead = s;
-    }
-  }
-  return (::Player*)(ship ? ship : dead);
-}
-
 vec2 SimInterface::nearest_player_position(const vec2& point) const {
-  return nearest_player(point)->shape().centre;
+  return nearest_player(point).get<Transform>()->centre;
 }
 
 vec2 SimInterface::nearest_player_direction(const vec2& point) const {
   return normalise(nearest_player_position(point) - point);
+}
+
+ecs::const_handle SimInterface::nearest_player(const vec2& point) const {
+  std::optional<ecs::const_handle> nearest_alive;
+  std::optional<ecs::const_handle> nearest_dead;
+  fixed alive_distance = 0;
+  fixed dead_distance = 0;
+
+  index().iterate<Player>([&](ecs::const_handle h, const Player& p) {
+    auto d = length_squared(ecs::call<&get_centre>(h) - point);
+    if ((d < alive_distance || !nearest_alive) && !p.is_killed()) {
+      alive_distance = d;
+      nearest_alive = h;
+    }
+    if (d < dead_distance || !nearest_dead) {
+      dead_distance = d;
+      nearest_dead = h;
+    }
+  });
+  return nearest_alive ? *nearest_alive : *nearest_dead;
+}
+
+ecs::handle SimInterface::nearest_player(const vec2& point) {
+  std::optional<ecs::handle> nearest_alive;
+  std::optional<ecs::handle> nearest_dead;
+  fixed alive_distance = 0;
+  fixed dead_distance = 0;
+
+  index().iterate<Player>([&](ecs::handle h, const Player& p) {
+    auto d = length_squared(ecs::call<&get_centre>(h) - point);
+    if ((d < alive_distance || !nearest_alive) && !p.is_killed()) {
+      alive_distance = d;
+      nearest_alive = h;
+    }
+    if (d < dead_distance || !nearest_dead) {
+      dead_distance = d;
+      nearest_dead = h;
+    }
+  });
+  return nearest_alive ? *nearest_alive : *nearest_dead;
+}
+
+std::vector<ecs::entity_id> SimInterface::players() const {
+  std::vector<ecs::entity_id> r;
+  index().iterate<Player>([&](ecs::const_handle h, const Player&) { r.emplace_back(h.id()); });
+  return r;
 }
 
 void SimInterface::add_life() {

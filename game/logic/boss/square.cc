@@ -32,7 +32,7 @@ private:
   std::uint32_t special_timer_ = 0;
   bool special_attack_ = false;
   bool special_attack_rotate_ = false;
-  ::Player* attack_player_ = nullptr;
+  std::optional<ecs::entity_id> attack_player_;
 };
 
 BigSquareBoss::BigSquareBoss(SimInterface& sim)
@@ -71,19 +71,20 @@ void BigSquareBoss::update() {
 
   if (special_attack_) {
     special_timer_--;
-    if (attack_player_->is_killed()) {
+    auto ph = *sim().index().get(*attack_player_);
+    if (ph.get<Player>()->is_killed()) {
       special_timer_ = 0;
-      attack_player_ = 0;
+      attack_player_.reset();
     } else if (!special_timer_) {
       vec2 d(kBsbAttackRadius, 0);
       if (special_attack_rotate_) {
         d = rotate(d, fixed_c::pi / 2);
       }
       for (std::uint32_t i = 0; i < 6; ++i) {
-        spawn_follow(sim(), attack_player_->shape().centre + d, /* score */ false, fixed_c::pi / 4);
+        spawn_follow(sim(), ph.get<Transform>()->centre + d, /* score */ false, fixed_c::pi / 4);
         d = rotate(d, 2 * fixed_c::pi / 6);
       }
-      attack_player_ = 0;
+      attack_player_.reset();
       play_sound(sound::kEnemySpawn);
     }
     if (!attack_player_) {
@@ -110,7 +111,7 @@ void BigSquareBoss::update() {
       special_timer_ = kBsbAttackTime;
       special_attack_ = true;
       special_attack_rotate_ = sim().random(2) != 0;
-      attack_player_ = sim().nearest_player(shape().centre);
+      attack_player_ = sim().nearest_player(shape().centre).id();
       play_sound(sound::kBossAttack);
     }
   }
@@ -136,7 +137,7 @@ void BigSquareBoss::render() const {
       d = rotate(d, glm::pi<float>() / 2);
     }
     for (std::uint32_t i = 0; i < 6; ++i) {
-      auto p = to_float(attack_player_->shape().centre) + d;
+      auto p = to_float(sim().index().get(*attack_player_)->get<Transform>()->centre) + d;
       Polygon s{vec2{0}, 10, 4, c0, fixed_c::pi / 4, shape_flag::kNone};
       s.render(sim(), p, 0);
       d = rotate(d, 2 * glm::pi<float>() / 6);
@@ -149,6 +150,7 @@ void BigSquareBoss::render() const {
 void spawn_big_square_boss(SimInterface& sim, std::uint32_t cycle) {
   auto h = sim.create_legacy(std::make_unique<BigSquareBoss>(sim));
   h.add(legacy_collision(/* bounding width */ 640));
+  h.add(ShipFlags{.flags = ship_flag::kEnemy | ship_flag::kBoss});
   h.add(Enemy{.threat_value = 100,
               .boss_score_reward =
                   calculate_boss_score(boss_flag::kBoss1A, sim.player_count(), cycle)});

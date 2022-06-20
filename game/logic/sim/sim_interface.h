@@ -57,8 +57,6 @@ public:
   // TODO: const/non-const versions of retrieval functions?
   std::size_t
   count_ships(ship_flag mask = ship_flag{0}, ship_flag exclude_mask = ship_flag{0}) const;
-  ship_list all_ships(ship_flag mask = ship_flag{0}) const;
-  ship_list ships_in_radius(const vec2& point, fixed radius, ship_flag mask = ship_flag{0}) const;
   ship_list collision_list(const vec2& point, shape_flag mask) const;
   bool any_collision(const vec2& point, shape_flag mask) const;
   std::uint32_t get_non_wall_count() const;
@@ -67,10 +65,12 @@ public:
   std::uint32_t player_count() const;
   std::uint32_t alive_players() const;
   std::uint32_t killed_players() const;
-  ::Player* nearest_player(const vec2& point) const;
   vec2 nearest_player_position(const vec2& point) const;
   vec2 nearest_player_direction(const vec2& point) const;
-  ship_list players() const;
+
+  ecs::const_handle nearest_player(const vec2& point) const;
+  ecs::handle nearest_player(const vec2& point);
+  std::vector<ecs::entity_id> players() const;
 
   void add_life();
   void sub_life();

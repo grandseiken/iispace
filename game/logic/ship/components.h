@@ -81,6 +81,21 @@ struct Health : ecs::component {
               std::optional<ecs::entity_id> source);
 };
 
+struct Player : ecs::component {
+  std::uint32_t player_number = 0;
+  std::uint32_t kill_timer = 0;
+
+  std::uint64_t score = 0;
+  std::uint32_t multiplier = 1;
+  std::uint32_t multiplier_count = 0;
+  std::uint32_t death_count = 0;
+
+  bool is_killed() const {
+    return kill_timer != 0;
+  }
+  void add_score(SimInterface&, std::uint64_t s);
+};
+
 struct Enemy : ecs::component {
   std::uint32_t threat_value = 1;
   std::uint32_t score_reward = 0;

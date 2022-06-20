@@ -79,7 +79,7 @@ struct DeathArm : ecs::component {
   void update(ecs::handle h, Transform& transform, SimInterface& sim) {
     if (timer % (kTimer / 2) == kTimer / 4) {
       sim.play_sound(sound::kBossFire, transform.centre, true);
-      target = sim.nearest_player(transform.centre)->shape().centre;
+      target = sim.nearest_player_position(transform.centre);
       shots = 16;
     }
     if (shots > 0) {
@@ -217,7 +217,7 @@ void DeathRayBoss::update() {
   if (ray_attack_timer_) {
     ray_attack_timer_--;
     if (ray_attack_timer_ == 40) {
-      ray_dest_ = sim().nearest_player(shape().centre)->shape().centre;
+      ray_dest_ = sim().nearest_player_position(shape().centre);
     }
     if (ray_attack_timer_ < 40) {
       auto d = normalise(ray_dest_ - shape().centre);
@@ -374,6 +374,7 @@ std::uint32_t transform_death_ray_boss_damage(ecs::handle h, SimInterface& sim, 
 void spawn_death_ray_boss(SimInterface& sim, std::uint32_t cycle) {
   auto h = sim.create_legacy(std::make_unique<DeathRayBoss>(sim));
   h.add(legacy_collision(/* bounding width */ 640));
+  h.add(ShipFlags{.flags = ship_flag::kEnemy | ship_flag::kBoss});
   h.add(Enemy{.threat_value = 100,
               .boss_score_reward =
                   calculate_boss_score(boss_flag::kBoss2C, sim.player_count(), cycle)});

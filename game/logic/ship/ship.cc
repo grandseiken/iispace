@@ -2,8 +2,7 @@
 
 namespace ii {
 
-Ship::Ship(SimInterface& sim, const vec2& position, ship_flag type)
-: IShip{sim}, type_{type}, shape_{position, 0} {}
+Ship::Ship(SimInterface& sim, const vec2& position) : IShip{sim}, shape_{position, 0} {}
 
 bool Ship::check_point(const vec2& v, shape_flag category) const {
   bool aa = false;
