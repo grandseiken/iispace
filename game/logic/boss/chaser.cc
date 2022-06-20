@@ -155,16 +155,10 @@ ChaserBoss::ChaserBoss(SimInterface& sim, std::uint32_t cycle, std::uint32_t spl
 
 void ChaserBoss::update() {
   handle().get<ii::Boss>()->show_hp_bar = false;
-  std::uint32_t remaining = 0;
-  sim().index().iterate<ChaserBossTag>(
-      [&](ecs::const_handle, const ChaserBossTag&) { ++remaining; });
   // Compatibility: obviously a mistake, we're supposed to be counting bosses - players but instead
   // counting shots/powerups etc as well.
-  sim().index().iterate<Transform>([&](ecs::const_handle h, const Transform&) {
-    if (!h.has<Player>()) {
-      ++remaining;
-    }
-  });
+  auto remaining = sim().index().count<ChaserBossTag>() + sim().index().count<Transform>() -
+      sim().index().count<Player>();
   last_dir_ = normalise(dir_);
   if (is_on_screen()) {
     on_screen_ = true;
@@ -251,10 +245,9 @@ void ChaserBoss::update() {
         dir_ += v * 3;
       };
 
-      sim().index().iterate<Player>(
-          [&](ecs::const_handle h, const Player&) { handle_ship(h, false); });
-      sim().index().iterate<ChaserBossTag>(
-          [&](ecs::const_handle h, const ChaserBossTag&) { handle_ship(h, true); });
+      sim().index().iterate_dispatch<Player>([&](ecs::const_handle h) { handle_ship(h, false); });
+      sim().index().iterate_dispatch<ChaserBossTag>(
+          [&](ecs::const_handle h) { handle_ship(h, true); });
     }
     if (remaining < 4 && split_ >= kCbMaxSplit - 1) {
       if ((shape().centre.x < 32 && dir_.x < 0) ||
@@ -334,7 +327,7 @@ void ChaserBoss::on_destroy(bool) {
     }
   } else {
     last = true;
-    sim().index().iterate<ChaserBossTag>([&](ecs::const_handle h, const ChaserBossTag&) {
+    sim().index().iterate_dispatch<ChaserBossTag>([&](ecs::const_handle h) {
       if (!h.has<Destroy>() && h.id() != handle().id()) {
         last = false;
       }
@@ -346,8 +339,7 @@ void ChaserBoss::on_destroy(bool) {
       for (std::uint32_t i = 0; i < 16; ++i) {
         vec2 v = from_polar(sim().random_fixed() * (2 * fixed_c::pi),
                             fixed{8 + sim().random(64) + sim().random(64)});
-        fireworks_.push_back(
-            std::make_pair(n, std::make_pair(shape().centre + v, shapes()[0]->colour)));
+        fireworks_.emplace_back(n, std::make_pair(shape().centre + v, shapes()[0]->colour));
         n += i;
       }
     }
@@ -406,17 +398,18 @@ void spawn_chaser_boss(SimInterface& sim, std::uint32_t cycle) {
     health.hp = 0;
     health.max_hp = hp_lookup[kCbMaxSplit];
     std::optional<vec2> position;
-    sim.index().iterate<ChaserBossTag>([&](ecs::const_handle sub_h, const ChaserBossTag& tag) {
-      if (auto* c = sub_h.get<Transform>(); c) {
-        position = c->centre;
-      } else if (auto* c = sub_h.get<LegacyShip>(); c) {
-        position = c->ship->position();
-      }
-      if (position && sim.is_on_screen(*position)) {
-        h.get<Boss>()->show_hp_bar = true;
-      }
-      health.hp += (tag.split == 7 ? 0 : 2 * hp_lookup[6 - tag.split]) + sub_h.get<Health>()->hp;
-    });
+    sim.index().iterate_dispatch<ChaserBossTag>(
+        [&](ecs::const_handle sub_h, const ChaserBossTag& tag, const Health& sub_health) {
+          if (const auto* c = sub_h.get<Transform>(); c) {
+            position = c->centre;
+          } else if (const auto* c = sub_h.get<LegacyShip>(); c) {
+            position = c->ship->position();
+          }
+          if (position && sim.is_on_screen(*position)) {
+            h.get<Boss>()->show_hp_bar = true;
+          }
+          health.hp += (tag.split == 7 ? 0 : 2 * hp_lookup[6 - tag.split]) + sub_health.hp;
+        });
     if (!health.hp) {
       h.emplace<Destroy>();
     }

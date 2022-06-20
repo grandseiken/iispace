@@ -244,10 +244,9 @@ void SuperBoss::update() {
 }
 
 void SuperBoss::on_destroy(bool) {
-  sim().index().iterate<ii::Enemy>([&](ii::ecs::handle h, const ii::Enemy&) {
+  sim().index().iterate_dispatch_if<ii::Enemy>([&](ecs::handle h, ii::Health& health) {
     if (h.id() != handle().id()) {
-      ii::ecs::call_if<&ii::Health::damage>(h, sim(), 100 * ::Player::kBombDamage,
-                                            ii::damage_type::kBomb, std::nullopt);
+      health.damage(h, sim(), 100 * ::Player::kBombDamage, ii::damage_type::kBomb, std::nullopt);
     }
   });
   explosion();

@@ -284,28 +284,23 @@ void Player::update() {
     sim().rumble(pc.player_number, 10);
     play_sound(ii::sound::kExplosion);
 
-    // TODO: need to iterate and store a list because otherwise we would also bomb enemies
-    // spawned on_destroy. Should have an iterate that doesn't iterate new entities.
-    std::vector<ii::ecs::handle> list;
-    sim().index().iterate<ii::Enemy>([&](ii::ecs::handle h, const ii::Enemy&) {
-      if (!h.has<ii::LegacyShip>() && !h.has<ii::Transform>()) {
-        return;
-      }
-      auto centre = ii::ecs::call<&ii::get_centre>(h);
-      if (length(centre - transform.centre) <= kBombBossRadius) {
-        list.emplace_back(h);
-      }
-    });
-    for (const auto& h : list) {
-      auto centre = ii::ecs::call<&ii::get_centre>(h);
-      if (h.has<ii::Boss>() || length(centre - transform.centre) <= kBombRadius) {
-        ii::ecs::call_if<&ii::Health::damage>(h, sim(), kBombDamage, ii::damage_type::kBomb,
-                                              std::nullopt);
-      }
-      if (!h.has<ii::Boss>() && h.get<ii::Enemy>()->score_reward) {
-        pc.add_score(sim(), 0);
-      }
-    }
+    sim().index().iterate_dispatch_if<ii::Enemy>(
+        [&](ii::ecs::handle h, const ii::Enemy& e, ii::Health& health) {
+          if (!h.has<ii::LegacyShip>() && !h.has<ii::Transform>()) {
+            return;
+          }
+          auto centre = ii::ecs::call<&ii::get_centre>(h);
+          if (length(centre - transform.centre) > kBombBossRadius) {
+            return;
+          }
+          if (h.has<ii::Boss>() || length(centre - transform.centre) <= kBombRadius) {
+            health.damage(h, sim(), kBombDamage, ii::damage_type::kBomb, std::nullopt);
+          }
+          if (!h.has<ii::Boss>() && e.score_reward) {
+            pc.add_score(sim(), 0);
+          }
+        },
+        /* include_new */ false);
   }
 
   // Shots.

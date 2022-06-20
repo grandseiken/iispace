@@ -128,15 +128,18 @@ public:
   template <Component C>
   void on_component_remove(const component_remove_callback<C>& f);
 
-  // TODO: should iterate functions should use ecs::call? Or provide alternative versions that do?
   template <Component C>
-  void iterate(std::invocable<C&> auto&& f);
+  void iterate(std::invocable<C&> auto&& f, bool include_new = true);
   template <Component C>
-  void iterate(std::invocable<const C&> auto&& f) const;
+  void iterate(std::invocable<const C&> auto&& f, bool include_new = true) const;
   template <Component C>
-  void iterate(std::invocable<handle, C&> auto&& f);
+  void iterate_dispatch(auto&& f, bool include_new = true);
   template <Component C>
-  void iterate(std::invocable<const_handle, const C&> auto&& f) const;
+  void iterate_dispatch(auto&& f, bool include_new = true) const;
+  template <Component C>
+  void iterate_dispatch_if(auto&& f, bool include_new = true);
+  template <Component C>
+  void iterate_dispatch_if(auto&& f, bool include_new = true) const;
 
 private:
   template <bool>

@@ -47,10 +47,9 @@ std::uint32_t scale_boss_damage(ecs::handle, SimInterface& sim, damage_type, std
 Boss::Boss(ii::SimInterface& sim, const vec2& position) : ii::Ship{sim, position} {}
 
 void Boss::on_destroy(bool) {
-  sim().index().iterate<ii::Enemy>([&](ii::ecs::handle h, const ii::Enemy&) {
+  sim().index().iterate_dispatch_if<ii::Enemy>([&](ii::ecs::handle h, ii::Health& health) {
     if (h.id() != handle().id()) {
-      ii::ecs::call_if<&ii::Health::damage>(h, sim(), Player::kBombDamage, ii::damage_type::kBomb,
-                                            std::nullopt);
+      health.damage(h, sim(), Player::kBombDamage, ii::damage_type::kBomb, std::nullopt);
     }
   });
   explosion();

@@ -149,7 +149,7 @@ ecs::const_handle SimInterface::nearest_player(const vec2& point) const {
   fixed alive_distance = 0;
   fixed dead_distance = 0;
 
-  index().iterate<Player>([&](ecs::const_handle h, const Player& p) {
+  index().iterate_dispatch<Player>([&](ecs::const_handle h, const Player& p) {
     auto d = length_squared(ecs::call<&get_centre>(h) - point);
     if ((d < alive_distance || !nearest_alive) && !p.is_killed()) {
       alive_distance = d;
@@ -169,7 +169,7 @@ ecs::handle SimInterface::nearest_player(const vec2& point) {
   fixed alive_distance = 0;
   fixed dead_distance = 0;
 
-  index().iterate<Player>([&](ecs::handle h, const Player& p) {
+  index().iterate_dispatch<Player>([&](ecs::handle h, const Player& p) {
     auto d = length_squared(ecs::call<&get_centre>(h) - point);
     if ((d < alive_distance || !nearest_alive) && !p.is_killed()) {
       alive_distance = d;
@@ -185,7 +185,8 @@ ecs::handle SimInterface::nearest_player(const vec2& point) {
 
 std::vector<ecs::entity_id> SimInterface::players() const {
   std::vector<ecs::entity_id> r;
-  index().iterate<Player>([&](ecs::const_handle h, const Player&) { r.emplace_back(h.id()); });
+  index().iterate_dispatch<Player>(
+      [&](ecs::const_handle h, const Player&) { r.emplace_back(h.id()); });
   return r;
 }
 

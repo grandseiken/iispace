@@ -58,7 +58,7 @@ SimState::SimState(const initial_conditions& conditions, InputAdapter& input)
           }
         }
         if (e && e->boss_score_reward) {
-          internals->index.iterate<Player>([&](ecs::handle h, Player& p) {
+          internals->index.iterate<Player>([&](Player& p) {
             if (!p.is_killed()) {
               p.add_score(*interface, e->boss_score_reward / interface->alive_players());
             }
@@ -106,7 +106,7 @@ void SimState::update() {
 
   internals_->non_wall_enemy_count =
       internals_->index.count<Enemy>() - internals_->index.count<WallTag>();
-  internals_->index.iterate<Boss>([&](ecs::const_handle h, Boss& boss) {
+  internals_->index.iterate_dispatch<Boss>([&](ecs::const_handle h, Boss& boss) {
     std::optional<vec2> position;
     if (const auto* c = h.get<Transform>(); c) {
       position = c->centre;
@@ -122,7 +122,7 @@ void SimState::update() {
       --h.hit_timer;
     }
   });
-  internals_->index.iterate<Update>([&](ecs::handle h, Update& c) {
+  internals_->index.iterate_dispatch<Update>([&](ecs::handle h, Update& c) {
     if (!h.has<Destroy>()) {
       c.update(h, *interface_);
     }
@@ -162,7 +162,7 @@ void SimState::update() {
   }
 
   bool compact = false;
-  internals_->index.iterate<Destroy>([&](ecs::handle h, const Destroy&) {
+  internals_->index.iterate_dispatch<Destroy>([&](ecs::const_handle h) {
     compact = true;
     internals_->index.destroy(h.id());
   });
@@ -201,13 +201,13 @@ void SimState::render() const {
     interface_->render_line_rect(particle.position + glm::vec2{1, 1},
                                  particle.position - glm::vec2{1, 1}, particle.colour);
   }
-  internals_->index.iterate<Render>([&](ecs::const_handle h, const auto& c) {
+  internals_->index.iterate_dispatch<Render>([&](ecs::const_handle h, const Render& r) {
     if (!h.get<Player>()) {
-      c.render(h, *interface_);
+      r.render(h, *interface_);
     }
   });
-  internals_->index.iterate<Player>(
-      [&](ecs::const_handle h, const auto&) { h.get<Render>()->render(h, *interface_); });
+  internals_->index.iterate_dispatch<Player>(
+      [&](ecs::const_handle h, const Render& r) { r.render(h, *interface_); });
 
   auto render_warning = [&](const glm::vec2& v) {
     if (v.x < -4) {
@@ -242,12 +242,11 @@ void SimState::render() const {
     }
   };
 
-  internals_->index.iterate<Enemy>(
-      [&render_warning](ecs::const_handle h, const Enemy&) {
-        if (h.has<Transform>() || h.has<LegacyShip>()) {
-          render_warning(to_float(ecs::call<&get_centre>(h)));
-        }
-      });
+  internals_->index.iterate_dispatch<Enemy>([&render_warning](ecs::const_handle h, const Enemy&) {
+    if (h.has<Transform>() || h.has<LegacyShip>()) {
+      render_warning(to_float(ecs::call<&get_centre>(h)));
+    }
+  });
   for (const auto& v : boss_warnings()) {
     render_warning(to_float(v));
   }
@@ -291,10 +290,10 @@ render_output SimState::get_render_output() const {
 
   std::uint32_t boss_hp = 0;
   std::uint32_t boss_max_hp = 0;
-  internals_->index.iterate<Boss>([&](ecs::const_handle h, const Boss& boss) {
-    if (const auto* c = h.get<Health>(); c && boss.show_hp_bar) {
-      boss_hp += c->hp;
-      boss_max_hp += c->max_hp;
+  internals_->index.iterate_dispatch_if<Boss>([&](const Boss& boss, const Health& health) {
+    if (boss.show_hp_bar) {
+      boss_hp += health.hp;
+      boss_max_hp += health.max_hp;
     }
   });
   if (boss_hp && boss_max_hp) {

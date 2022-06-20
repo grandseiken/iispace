@@ -203,21 +203,19 @@ void TractorBoss::update() {
         }
         targets_.clear();
 
-        sim().index().iterate<Player>([&](ecs::handle h, const Player& p) {
+        sim().index().iterate_dispatch<Player>([&](const Player& p, Transform& transform) {
           if (p.is_killed()) {
             return;
           }
-          auto& transform = *h.get<Transform>();
           targets_.push_back(transform.centre);
           transform.centre += normalise(shape().centre - transform.centre) * kTractorBeamSpeed;
         });
 
-        sim().index().iterate<Enemy>([&](ecs::handle h, const Enemy&) {
+        sim().index().iterate_dispatch_if<Enemy>([&](ecs::handle h, Transform& transform) {
           if (h.id() == handle().id()) {
             return;
           }
           play_sound_random(sound::kBossAttack, 0, 0.3f);
-          auto& transform = *h.get<Transform>();
           targets_.push_back(transform.centre);
           transform.centre += normalise(shape().centre - transform.centre) * (4 + fixed_c::half);
           if (!(h.has<WallTag>()) && length(transform.centre - shape().centre) <= 40) {

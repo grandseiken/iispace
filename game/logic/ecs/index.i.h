@@ -1,5 +1,6 @@
 #ifndef II_GAME_LOGIC_ECS_INDEX_I_H
 #define II_GAME_LOGIC_ECS_INDEX_I_H
+#include "game/logic/ecs/call.h"
 #include "game/logic/ecs/index.h"
 #include <algorithm>
 #include <deque>
@@ -46,6 +47,7 @@ struct component_storage : component_storage_base {
     entity_id id;
     std::optional<C> data;
   };
+  index_type size = 0;
   std::deque<entry> entries;
   std::vector<EntityIndex::component_add_callback<C>> add_callbacks;
   std::vector<EntityIndex::component_remove_callback<C>> remove_callbacks;
@@ -68,8 +70,26 @@ struct component_storage : component_storage_base {
       f(h, *entries[index].data);
     }
     entries[index].data.reset();
+    --size;
   }
 };
+
+template <typename T>
+void iterate(T& storage, bool include_new, auto&& f) {
+  if (include_new) {
+    for (std::size_t i = 0; i < storage.entries.size(); ++i) {
+      if (storage.entries[i].data) {
+        f(storage.entries[i]);
+      }
+    }
+  } else {
+    for (std::size_t i = 0, end = storage.entries.size(); i < end; ++i) {
+      if (storage.entries[i].data) {
+        f(storage.entries[i]);
+      }
+    }
+  }
+}
 
 }  // namespace ii::ecs::detail
 
@@ -134,13 +154,10 @@ inline auto EntityIndex::get(entity_id id) const -> std::optional<const_handle> 
 
 template <Component C>
 index_type EntityIndex::count() const {
-  index_type r = 0;
   if (auto* c = storage<C>(); c) {
-    for (const auto& e : c->entries) {
-      r += static_cast<bool>(e.data);
-    }
+    return c->size;
   }
-  return r;
+  return 0;
 }
 
 template <Component C>
@@ -172,48 +189,38 @@ void EntityIndex::on_component_remove(const component_remove_callback<C>& f) {
 }
 
 template <Component C>
-void EntityIndex::iterate(std::invocable<C&> auto&& f) {
-  auto& c = storage<C>();
-  for (std::size_t i = 0; i < c.entries.size(); ++i) {
-    auto& e = c.entries[i];
-    if (e.data) {
-      std::invoke(f, *e.data);
-    }
-  }
+void EntityIndex::iterate(std::invocable<C&> auto&& f, bool include_new) {
+  detail::iterate(storage<C>(), include_new, [&](auto& e) { f(*e.data); });
 }
 
 template <Component C>
-void EntityIndex::iterate(std::invocable<const C&> auto&& f) const {
+void EntityIndex::iterate(std::invocable<const C&> auto&& f, bool include_new) const {
   if (auto* c = storage<C>(); c) {
-    for (std::size_t i = 0; i < c->entries.size(); ++i) {
-      const auto& e = c->entries[i];
-      if (e.data) {
-        std::invoke(f, *e.data);
-      }
-    }
+    detail::iterate(*c, include_new, [&](const auto& e) { f(*e.data); });
   }
 }
 
 template <Component C>
-void EntityIndex::iterate(std::invocable<handle, C&> auto&& f) {
-  auto& c = storage<C>();
-  for (std::size_t i = 0; i < c.entries.size(); ++i) {
-    auto& e = c.entries[i];
-    if (e.data) {
-      std::invoke(f, *get(e.id), *e.data);
-    }
-  }
+void EntityIndex::iterate_dispatch(auto&& f, bool include_new) {
+  detail::iterate(storage<C>(), include_new, [&](auto& e) { dispatch(*get(e.id), f); });
 }
 
 template <Component C>
-void EntityIndex::iterate(std::invocable<const_handle, const C&> auto&& f) const {
+void EntityIndex::iterate_dispatch(auto&& f, bool include_new) const {
   if (auto* c = storage<C>(); c) {
-    for (std::size_t i = 0; i < c->entries.size(); ++i) {
-      const auto& e = c->entries[i];
-      if (e.data) {
-        std::invoke(f, *get(e.id), *e.data);
-      }
-    }
+    detail::iterate(*c, include_new, [&](const auto& e) { dispatch(*get(e.id), f); });
+  }
+}
+
+template <Component C>
+void EntityIndex::iterate_dispatch_if(auto&& f, bool include_new) {
+  detail::iterate(storage<C>(), include_new, [&](auto& e) { dispatch_if(*get(e.id), f); });
+}
+
+template <Component C>
+void EntityIndex::iterate_dispatch_if(auto&& f, bool include_new) const {
+  if (auto* c = storage<C>(); c) {
+    detail::iterate(*c, include_new, [&](const auto& e) { dispatch_if(*get(e.id), f); });
   }
 }
 
@@ -248,6 +255,7 @@ template <bool Const>
     e.data.emplace(std::forward<Args>(args)...);
     return *e.data;
   }
+  ++storage.size;
   index = static_cast<index_type>(storage.entries.size());
   auto& e = storage.entries.emplace_back();
   e.id = id();
@@ -275,6 +283,7 @@ void handle_base<Const>::remove() const requires(!Const) {
     }
     table_->template reset<C>();
     c.entries[*index].data.reset();
+    --c.size;
   }
 }
 

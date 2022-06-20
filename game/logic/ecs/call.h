@@ -79,12 +79,51 @@ struct call_impl {
       forwarded_parameters{}, synthesized_parameters{});
 };
 
+template <typename T, typename F>
+struct signature_impl;
+template <typename T, typename R, typename... Args>
+struct signature_impl<T, R (T::*)(Args...)> : std::type_identity<R(Args...)> {};
+template <typename T, typename R, typename... Args>
+struct signature_impl<T, R (T::*)(Args...) const> : std::type_identity<R(Args...)> {};
+
+template <bool Check, bool Const, typename... SynthesizedArgs, typename F, typename... Args>
+auto dispatch_invoke(tl::list<SynthesizedArgs...>, handle_base<Const> h, F&& f, Args&&... args) {
+  if constexpr (Check) {
+    if (!(can_synthesize_call_parameter<SynthesizedArgs>(h) && ...)) {
+      return;
+    }
+  }
+  return std::invoke(f, synthesize_call_parameter<SynthesizedArgs>(h)..., args...);
+}
+
+template <bool Check, bool Const, typename F, typename... Args>
+auto dispatch_impl(handle_base<Const> h, F&& f, Args&&... args) {
+  using f_type = std::remove_cvref_t<F>;
+  using m_type = typename signature_impl<f_type, decltype(&f_type::operator())>::type;
+  using parameters = parameter_types_of<m_type>;
+  using synthesized_parameters =
+      tl::sublist<parameters, 0, tl::find_if<parameters, retain_parameter>>;
+  return dispatch_invoke<Check, Const>(synthesized_parameters{}, h, std::forward<F>(f),
+                                       std::forward<Args>(args)...);
+}
+
 }  // namespace detail
 
 template <function auto F>
 inline constexpr auto call = detail::call_impl<false, unwrap<F>>::value;
 template <function auto F>
 inline constexpr auto call_if = detail::call_impl<true, unwrap<F>>::value;
+
+// TODO: dispatch could use concept checking.
+template <bool Const, typename F, typename... Args>
+auto dispatch(handle_base<Const> h, F&& f, Args&&... args) {
+  return detail::dispatch_impl<false>(h, std::forward<F>(f), std::forward<Args>(args)...);
+}
+
+template <bool Const, typename F, typename... Args>
+auto dispatch_if(handle_base<Const> h, F&& f, Args&&... args) {
+  return detail::dispatch_impl<true>(h, std::forward<F>(f), std::forward<Args>(args)...);
+}
 
 }  // namespace ii::ecs
 
