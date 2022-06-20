@@ -15,7 +15,6 @@ constexpr glm::vec4 c1 = colour_hue360(280, .5f, .6f);
 constexpr glm::vec4 c2 = colour_hue360(270, .2f);
 
 struct GhostWall : ecs::component {
-  static constexpr ship_flag kShipFlags = ship_flag::kEnemy;
   static constexpr fixed kBoundingWidth = kSimDimensions.x;
   static constexpr sound kDestroySound = sound::kEnemyDestroy;
   static constexpr fixed kSpeed = 3 + 1_fx / 2;
@@ -83,7 +82,6 @@ void spawn_ghost_wall_horizontal(SimInterface& sim, bool swap, bool swap_gap) {
 }
 
 struct GhostMine : ecs::component {
-  static constexpr ship_flag kShipFlags = ship_flag::kEnemy;
   static constexpr fixed kBoundingWidth = 24;
   static constexpr sound kDestroySound = sound::kEnemyDestroy;
 
@@ -417,7 +415,6 @@ void GhostBoss::render() const {
 void spawn_ghost_boss(SimInterface& sim, std::uint32_t cycle) {
   auto h = sim.create_legacy(std::make_unique<GhostBoss>(sim));
   h.add(legacy_collision(/* bounding width */ 640));
-  h.add(ShipFlags{.flags = ship_flag::kEnemy | ship_flag::kBoss});
   h.add(Enemy{.threat_value = 100,
               .boss_score_reward =
                   calculate_boss_score(boss_flag::kBoss2B, sim.player_count(), cycle)});

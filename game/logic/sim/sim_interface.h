@@ -55,8 +55,6 @@ public:
   fixed random_fixed();
 
   // TODO: const/non-const versions of retrieval functions?
-  std::size_t
-  count_ships(ship_flag mask = ship_flag{0}, ship_flag exclude_mask = ship_flag{0}) const;
   ship_list collision_list(const vec2& point, shape_flag mask) const;
   bool any_collision(const vec2& point, shape_flag mask) const;
   std::uint32_t get_non_wall_count() const;

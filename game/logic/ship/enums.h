@@ -5,17 +5,6 @@
 
 namespace ii {
 
-// TODO: can surely be removed and replaced with marker components soon.
-// One issue is chaser boss doesn't have the boss component for (reasons).
-enum class ship_flag : std::uint32_t {
-  kNone = 0,
-  kPlayer = 1,
-  kWall = 2,
-  kEnemy = 4,
-  kBoss = 8,
-  kPowerup = 16,
-};
-
 enum class shape_flag : std::uint32_t {
   kNone = 0b000000,
   kVulnerable = 0b000001,
@@ -33,8 +22,6 @@ enum class damage_type {
   kBomb,
 };
 
-template <>
-struct bitmask_enum<ship_flag> : std::true_type {};
 template <>
 struct bitmask_enum<shape_flag> : std::true_type {};
 

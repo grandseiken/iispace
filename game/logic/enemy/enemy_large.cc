@@ -5,7 +5,6 @@
 namespace ii {
 namespace {
 struct FollowHub : ecs::component {
-  static constexpr auto kShipFlags = ship_flag::kEnemy;
   static constexpr std::uint32_t kBoundingWidth = 16;
   static constexpr sound kDestroySound = sound::kPlayerDestroy;
 
@@ -77,7 +76,6 @@ struct FollowHub : ecs::component {
 };
 
 struct Shielder : ecs::component {
-  static constexpr auto kShipFlags = ship_flag::kEnemy;
   static constexpr std::uint32_t kBoundingWidth = 36;
   static constexpr sound kDestroySound = sound::kPlayerDestroy;
 
@@ -161,7 +159,6 @@ struct Shielder : ecs::component {
 };
 
 struct Tractor : ecs::component {
-  static constexpr auto kShipFlags = ship_flag::kEnemy;
   static constexpr std::uint32_t kBoundingWidth = 36;
   static constexpr sound kDestroySound = sound::kPlayerDestroy;
 

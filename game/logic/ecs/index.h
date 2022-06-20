@@ -103,6 +103,9 @@ public:
   std::optional<handle> get(entity_id id);
   std::optional<const_handle> get(entity_id id) const;
 
+  // Count number of entities with component.
+  template <Component C>
+  index_type count() const;
   // Check existence of component on an element.
   template <Component C>
   bool has(entity_id id) const;

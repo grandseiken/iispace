@@ -6,7 +6,6 @@
 namespace ii {
 namespace {
 struct Square : ecs::component {
-  static constexpr auto kShipFlags = ship_flag::kEnemy | ship_flag::kWall;
   static constexpr std::uint32_t kBoundingWidth = 15;
   static constexpr sound kDestroySound = sound::kEnemyDestroy;
   static constexpr fixed kSpeed = 2 + 1_fx / 4;
@@ -72,7 +71,6 @@ struct Square : ecs::component {
 };
 
 struct Wall : ecs::component {
-  static constexpr auto kShipFlags = ship_flag::kEnemy | ship_flag::kWall;
   static constexpr std::uint32_t kBoundingWidth = 50;
   static constexpr sound kDestroySound = sound::kEnemyDestroy;
 
@@ -149,6 +147,7 @@ void spawn_square(SimInterface& sim, const vec2& position, fixed dir_angle) {
   add_enemy_health<Square>(h, 4);
   h.add(Square{sim, dir_angle});
   h.add(Enemy{.threat_value = 2, .score_reward = 25});
+  h.add(WallTag{});
 }
 
 void spawn_wall(SimInterface& sim, const vec2& position, bool rdir) {
@@ -156,6 +155,7 @@ void spawn_wall(SimInterface& sim, const vec2& position, bool rdir) {
   add_enemy_health<Wall>(h, 10);
   h.add(Wall{rdir});
   h.add(Enemy{.threat_value = 4, .score_reward = 20});
+  h.add(WallTag{});
 }
 
 }  // namespace ii

@@ -15,7 +15,6 @@ vec2 get_centre(const Transform* transform, const LegacyShip* legacy_ship) {
 }
 
 struct Shot : ecs::component {
-  static constexpr auto kShipFlags = ship_flag::kNone;
   static constexpr fixed kSpeed = 10;
 
   using shape = standard_transform<geom::box_shape<2, 2, glm::vec4{1.f}>,
@@ -176,12 +175,12 @@ struct Powerup : ecs::component {
 
 void spawn_powerup(SimInterface& sim, const vec2& position, powerup_type type) {
   auto h = sim.index().create();
-  h.add(ShipFlags{.flags = ship_flag::kPowerup});
   h.add(LegacyShip{.ship = std::make_unique<ShipForwarder>(sim, h)});
   h.add(Update{.update = ecs::call<&Powerup::update>});
   h.add(Render{.render = ecs::call<&Powerup::render>});
   h.add(Transform{.centre = position});
   h.add(Powerup{type});
+  h.add(PowerupTag{});
 }
 
 }  // namespace ii
@@ -200,7 +199,6 @@ const std::uint32_t kMagicShotCount = 120;
 namespace ii {
 void spawn_player(SimInterface& sim, const vec2& position, std::uint32_t player_number) {
   auto h = sim.create_legacy(std::make_unique<::Player>(sim, position, player_number));
-  h.add(ShipFlags{.flags = ship_flag::kPlayer});
   h.add(Player{.player_number = player_number});
   h.add(Transform{.centre = position});
 }
@@ -299,13 +297,12 @@ void Player::update() {
       }
     });
     for (const auto& h : list) {
-      bool is_boss = +(h.get<ii::ShipFlags>()->flags & ii::ship_flag::kBoss);
       auto centre = ii::ecs::call<&ii::get_centre>(h);
-      if (is_boss || length(centre - transform.centre) <= kBombRadius) {
+      if (h.has<ii::Boss>() || length(centre - transform.centre) <= kBombRadius) {
         ii::ecs::call_if<&ii::Health::damage>(h, sim(), kBombDamage, ii::damage_type::kBomb,
                                               std::nullopt);
       }
-      if (const auto* enemy = h.get<ii::Enemy>(); !is_boss && enemy && enemy->score_reward) {
+      if (!h.has<ii::Boss>() && h.get<ii::Enemy>()->score_reward) {
         pc.add_score(sim(), 0);
       }
     }

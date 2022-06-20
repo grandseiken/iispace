@@ -111,7 +111,6 @@ ChaserBoss* spawn_chaser_boss_internal(SimInterface& sim, std::uint32_t cycle,
   auto* p = u.get();
   auto h = sim.create_legacy(std::move(u));
   h.add(legacy_collision(/* bounding width */ 10 * ONE_AND_HALF_lookup[kCbMaxSplit - split]));
-  h.add(ShipFlags{.flags = ship_flag::kEnemy | ship_flag::kBoss});
   h.add(Enemy{.threat_value = 100});
   h.add(Health{
       .hp = calculate_boss_hp(
@@ -126,6 +125,7 @@ ChaserBoss* spawn_chaser_boss_internal(SimInterface& sim, std::uint32_t cycle,
       .on_destroy = &legacy_boss_on_destroy,
   });
   h.add(ChaserBossTag{.split = split});
+  h.add(Boss{});
   return p;
 }
 
@@ -154,6 +154,7 @@ ChaserBoss::ChaserBoss(SimInterface& sim, std::uint32_t cycle, std::uint32_t spl
 }
 
 void ChaserBoss::update() {
+  handle().get<ii::Boss>()->show_hp_bar = false;
   std::uint32_t remaining = 0;
   sim().index().iterate<ChaserBossTag>(
       [&](ecs::const_handle, const ChaserBossTag&) { ++remaining; });

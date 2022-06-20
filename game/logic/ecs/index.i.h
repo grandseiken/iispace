@@ -133,6 +133,17 @@ inline auto EntityIndex::get(entity_id id) const -> std::optional<const_handle> 
 }
 
 template <Component C>
+index_type EntityIndex::count() const {
+  index_type r = 0;
+  if (auto* c = storage<C>(); c) {
+    for (const auto& e : c->entries) {
+      r += static_cast<bool>(e.data);
+    }
+  }
+  return r;
+}
+
+template <Component C>
 bool EntityIndex::has(entity_id id) const {
   auto h = get(id);
   return h && h->has<C>();

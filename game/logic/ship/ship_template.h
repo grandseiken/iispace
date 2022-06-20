@@ -73,7 +73,6 @@ bool ship_check_point(ecs::const_handle h, const vec2& v, shape_flag mask) {
 template <ecs::Component Logic, geom::ShapeNode S = typename Logic::shape>
 ecs::handle create_ship(SimInterface& sim, const vec2& position, fixed rotation = 0) {
   auto h = sim.index().create();
-  h.add(ShipFlags{.flags = Logic::kShipFlags});
   h.add(LegacyShip{.ship = std::make_unique<ShipForwarder>(sim, h)});
 
   h.add(Update{.update = ecs::call<&Logic::update>});

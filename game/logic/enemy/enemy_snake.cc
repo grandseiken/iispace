@@ -8,7 +8,6 @@ namespace {
 ecs::handle spawn_snake_tail(SimInterface& sim, const vec2& position, const glm::vec4& colour);
 
 struct SnakeTail : ecs::component {
-  static constexpr ship_flag kShipFlags = ship_flag::kEnemy;
   static constexpr std::uint32_t kBoundingWidth = 22;
   static constexpr sound kDestroySound = sound::kPlayerDestroy;
 
@@ -51,7 +50,6 @@ struct SnakeTail : ecs::component {
 };
 
 struct Snake : ecs::component {
-  static constexpr ship_flag kShipFlags = ship_flag::kEnemy;
   static constexpr std::uint32_t kBoundingWidth = 32;
   static constexpr sound kDestroySound = sound::kPlayerDestroy;
 

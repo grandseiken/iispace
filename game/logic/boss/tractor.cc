@@ -220,8 +220,7 @@ void TractorBoss::update() {
           auto& transform = *h.get<Transform>();
           targets_.push_back(transform.centre);
           transform.centre += normalise(shape().centre - transform.centre) * (4 + fixed_c::half);
-          if (!(h.get<ShipFlags>()->flags & ship_flag::kWall) &&
-              length(transform.centre - shape().centre) <= 40) {
+          if (!(h.has<WallTag>()) && length(transform.centre - shape().centre) <= 40) {
             h.emplace<Destroy>();
             ++attack_size_;
             sattack_->radius = attack_size_ / (1 + fixed_c::half);
@@ -289,7 +288,6 @@ void TractorBoss::render() const {
 void spawn_tractor_boss(SimInterface& sim, std::uint32_t cycle) {
   auto h = sim.create_legacy(std::make_unique<TractorBoss>(sim));
   h.add(legacy_collision(/* bounding width */ 640));
-  h.add(ShipFlags{.flags = ship_flag::kEnemy | ship_flag::kBoss});
   h.add(Enemy{.threat_value = 100,
               .boss_score_reward =
                   calculate_boss_score(boss_flag::kBoss2A, sim.player_count(), cycle)});

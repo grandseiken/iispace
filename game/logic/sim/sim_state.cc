@@ -104,8 +104,8 @@ void SimState::update() {
   std::ranges::stable_sort(internals_->collisions,
                            [](const auto& a, const auto& b) { return a.x_min < b.x_min; });
 
-  internals_->non_wall_enemy_count = interface_->count_ships(ship_flag::kEnemy, ship_flag::kWall);
-
+  internals_->non_wall_enemy_count =
+      internals_->index.count<Enemy>() - internals_->index.count<WallTag>();
   internals_->index.iterate<Boss>([&](ecs::const_handle h, Boss& boss) {
     std::optional<vec2> position;
     if (const auto* c = h.get<Transform>(); c) {
@@ -242,10 +242,10 @@ void SimState::render() const {
     }
   };
 
-  internals_->index.iterate<LegacyShip>(
-      [&render_warning](ecs::const_handle h, const LegacyShip& c) {
-        if (h.has<ShipFlags>() && +(h.get<ShipFlags>()->flags & ship_flag::kEnemy)) {
-          render_warning(to_float(c.ship->position()));
+  internals_->index.iterate<Enemy>(
+      [&render_warning](ecs::const_handle h, const Enemy&) {
+        if (h.has<Transform>() || h.has<LegacyShip>()) {
+          render_warning(to_float(ecs::call<&get_centre>(h)));
         }
       });
   for (const auto& v : boss_warnings()) {

@@ -6,7 +6,6 @@ namespace ii {
 namespace {
 
 struct Bounce : ecs::component {
-  static constexpr auto kShipFlags = ship_flag::kEnemy;
   static constexpr std::uint32_t kBoundingWidth = 8;
   static constexpr sound kDestroySound = sound::kEnemyShatter;
 
@@ -31,7 +30,6 @@ struct Bounce : ecs::component {
 };
 
 struct Follow : ecs::component {
-  static constexpr auto kShipFlags = ship_flag::kEnemy;
   static constexpr std::uint32_t kBoundingWidth = 10;
   static constexpr sound kDestroySound = sound::kEnemyShatter;
 
@@ -82,7 +80,6 @@ struct Follow : ecs::component {
 };
 
 struct Chaser : ecs::component {
-  static constexpr auto kShipFlags = ship_flag::kEnemy;
   static constexpr std::uint32_t kBoundingWidth = 10;
   static constexpr sound kDestroySound = sound::kEnemyShatter;
 

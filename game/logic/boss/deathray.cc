@@ -20,7 +20,6 @@ constexpr glm::vec4 c2 = colour_hue(0.f, .8f, 0.f);
 constexpr glm::vec4 c3 = colour_hue(0.f, .6f, 0.f);
 
 struct DeathRay : ecs::component {
-  static constexpr ship_flag kShipFlags = ship_flag::kEnemy;
   static constexpr fixed kBoundingWidth = 48;
   static constexpr sound kDestroySound = sound::kEnemyDestroy;
   static constexpr fixed kSpeed = 10;
@@ -44,7 +43,6 @@ void spawn_death_ray(SimInterface& sim, const vec2& position) {
 }
 
 struct DeathArm : ecs::component {
-  static constexpr ship_flag kShipFlags = ship_flag::kEnemy;
   static constexpr fixed kBoundingWidth = 60;
   static constexpr sound kDestroySound = sound::kPlayerDestroy;
 
@@ -374,7 +372,6 @@ std::uint32_t transform_death_ray_boss_damage(ecs::handle h, SimInterface& sim, 
 void spawn_death_ray_boss(SimInterface& sim, std::uint32_t cycle) {
   auto h = sim.create_legacy(std::make_unique<DeathRayBoss>(sim));
   h.add(legacy_collision(/* bounding width */ 640));
-  h.add(ShipFlags{.flags = ship_flag::kEnemy | ship_flag::kBoss});
   h.add(Enemy{.threat_value = 100,
               .boss_score_reward =
                   calculate_boss_score(boss_flag::kBoss2C, sim.player_count(), cycle)});

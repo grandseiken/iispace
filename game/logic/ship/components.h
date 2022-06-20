@@ -23,10 +23,6 @@ struct Destroy : ecs::component {
   std::optional<ecs::entity_id> source;
 };
 
-struct ShipFlags : ecs::component {
-  ship_flag flags = ship_flag::kNone;
-};
-
 struct Transform : ecs::component {
   vec2 centre = {0, 0};
   fixed rotation = 0;
@@ -45,7 +41,7 @@ struct Transform : ecs::component {
 struct Collision : ecs::component {
   shape_flag flags = shape_flag::kNone;
   fixed bounding_width = 0;
-  function_ptr<bool(ecs::const_handle, const vec2&, shape_flag)> check;
+  function_ptr<bool(ecs::const_handle, const vec2&, shape_flag)> check = nullptr;
 };
 
 struct Update : ecs::component {
@@ -54,7 +50,7 @@ struct Update : ecs::component {
 
 struct Render : ecs::component {
   std::optional<glm::vec4> colour_override;
-  function_ptr<void(ecs::const_handle, const SimInterface&)> render;
+  function_ptr<void(ecs::const_handle, const SimInterface&)> render = nullptr;
 };
 
 struct Health : ecs::component {
@@ -69,9 +65,9 @@ struct Health : ecs::component {
   std::optional<sound> destroy_sound = sound::kEnemyDestroy;
 
   function_ptr<std::uint32_t(ecs::handle, SimInterface&, damage_type, std::uint32_t)>
-      damage_transform;
-  function_ptr<void(ecs::handle, SimInterface&, damage_type)> on_hit;
-  function_ptr<void(ecs::const_handle, SimInterface&, damage_type)> on_destroy;
+      damage_transform = nullptr;
+  function_ptr<void(ecs::handle, SimInterface&, damage_type)> on_hit = nullptr;
+  function_ptr<void(ecs::const_handle, SimInterface&, damage_type)> on_destroy = nullptr;
 
   bool is_hp_low() const {
     return 3 * hp <= max_hp + max_hp / 5;
@@ -80,6 +76,9 @@ struct Health : ecs::component {
   void damage(ecs::handle h, SimInterface&, std::uint32_t damage, damage_type type,
               std::optional<ecs::entity_id> source);
 };
+
+struct PowerupTag : ecs::component {};
+struct WallTag : ecs::component {};
 
 struct Player : ecs::component {
   std::uint32_t player_number = 0;

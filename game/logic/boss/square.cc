@@ -150,7 +150,6 @@ void BigSquareBoss::render() const {
 void spawn_big_square_boss(SimInterface& sim, std::uint32_t cycle) {
   auto h = sim.create_legacy(std::make_unique<BigSquareBoss>(sim));
   h.add(legacy_collision(/* bounding width */ 640));
-  h.add(ShipFlags{.flags = ship_flag::kEnemy | ship_flag::kBoss});
   h.add(Enemy{.threat_value = 100,
               .boss_score_reward =
                   calculate_boss_score(boss_flag::kBoss1A, sim.player_count(), cycle)});

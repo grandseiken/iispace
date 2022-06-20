@@ -56,14 +56,6 @@ fixed SimInterface::random_fixed() {
   return fixed{static_cast<std::int32_t>(internals_->random_engine())} / RandomEngine::rand_max;
 }
 
-std::size_t SimInterface::count_ships(ship_flag mask, ship_flag exclude_mask) const {
-  std::size_t r = 0;
-  internals_->index.iterate<ShipFlags>([&r, mask, exclude_mask](const ShipFlags& c) {
-    r += (!mask || +(c.flags & mask)) && !(exclude_mask & c.flags);
-  });
-  return r;
-}
-
 bool SimInterface::any_collision(const vec2& point, shape_flag mask) const {
   fixed x = point.x;
   fixed y = point.y;
