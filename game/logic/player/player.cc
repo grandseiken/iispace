@@ -199,28 +199,24 @@ const std::uint32_t kMagicShotCount = 120;
 namespace ii {
 void spawn_player(SimInterface& sim, const vec2& position, std::uint32_t player_number) {
   auto h = sim.create_legacy(std::make_unique<::Player>(sim, position, player_number));
-  h.add(Player{.player_number = player_number});
+  h.add(Player{.player_number = player_number, .invulnerability_timer = kReviveTime});
   h.add(Transform{.centre = position});
 }
 }  // namespace ii
 
 ii::SimInterface::ship_list Player::kill_queue_;
-std::uint32_t Player::fire_timer_;
 
 Player::Player(ii::SimInterface& sim, const vec2& position, std::uint32_t player_number)
-: ii::Ship{sim, position}
-, player_number_{player_number}
-, revive_timer_{kReviveTime}
-, fire_target_{ii::kSimDimensions / 2_fx} {
-  auto c_dark = colour();
+: ii::Ship{sim, position}, fire_target_{ii::kSimDimensions / 2_fx} {
+  auto c = ii::SimInterface::player_colour(player_number);
+  auto c_dark = c;
   c_dark.a = .2f;
-  add_new_shape<ii::Polygon>(vec2{0}, 16, 3, colour());
-  add_new_shape<ii::Fill>(vec2{8, 0}, 2, 2, colour());
+  add_new_shape<ii::Polygon>(vec2{0}, 16, 3, c);
+  add_new_shape<ii::Fill>(vec2{8, 0}, 2, 2, c);
   add_new_shape<ii::Fill>(vec2{8, 0}, 1, 1, c_dark);
   add_new_shape<ii::Fill>(vec2{8, 0}, 3, 3, c_dark);
-  add_new_shape<ii::Polygon>(vec2{0}, 8, 3, colour(), fixed_c::pi);
+  add_new_shape<ii::Polygon>(vec2{0}, 8, 3, c, fixed_c::pi);
   kill_queue_.clear();
-  fire_timer_ = 0;
 }
 
 void Player::update() {
@@ -232,6 +228,7 @@ void Player::update() {
   } else if (input.target_relative) {
     fire_target_ = transform.centre + *input.target_relative;
   }
+  pc.fire_timer = (pc.fire_timer + 1) % kShotTimer;
 
   // Temporary death.
   if (pc.kill_timer > 1 && --pc.kill_timer) {
@@ -243,7 +240,7 @@ void Player::update() {
       sim().sub_life();
       pc.kill_timer = 0;
       kill_queue_.erase(kill_queue_.begin());
-      revive_timer_ = kReviveTime;
+      pc.invulnerability_timer = kReviveTime;
       shape().centre = transform.centre = {
           (1 + pc.player_number) * ii::kSimDimensions.x / (1 + sim().player_count()),
           ii::kSimDimensions.y / 2};
@@ -252,7 +249,7 @@ void Player::update() {
     }
     return;
   }
-  revive_timer_ && --revive_timer_;
+  pc.invulnerability_timer && --pc.invulnerability_timer;
 
   // Movement.
   if (length(input.velocity) > fixed_c::hundredth) {
@@ -265,18 +262,19 @@ void Player::update() {
   }
 
   // Bombs.
-  if (bomb_ && input.keys & ii::input_frame::kBomb) {
-    bomb_ = false;
+  if (pc.has_bomb && input.keys & ii::input_frame::kBomb) {
+    auto c = ii::SimInterface::player_colour(pc.player_number);
+    pc.has_bomb = false;
     destroy_shape(5);
 
     explosion(glm::vec4{1.f}, 16);
-    explosion(colour(), 32);
+    explosion(c, 32);
     explosion(glm::vec4{1.f}, 48);
 
     vec2 t = shape().centre;
     for (std::uint32_t i = 0; i < 64; ++i) {
       shape().centre = t + from_polar(2 * i * fixed_c::pi / 64, kBombRadius);
-      explosion((i % 2) ? colour() : glm::vec4{1.f}, 8 + sim().random(8) + sim().random(8), true,
+      explosion((i % 2) ? c : glm::vec4{1.f}, 8 + sim().random(8) + sim().random(8), true,
                 to_float(t));
     }
     shape().centre = t;
@@ -305,11 +303,9 @@ void Player::update() {
 
   // Shots.
   auto shot = fire_target_ - transform.centre;
-  if (length(shot) > 0 && !fire_timer_ && input.keys & ii::input_frame::kFire) {
-    ii::spawn_shot(sim(), transform.centre, handle(), shot, magic_shot_timer_ != 0);
-    if (magic_shot_timer_) {
-      --magic_shot_timer_;
-    }
+  if (length(shot) > 0 && !pc.fire_timer && input.keys & ii::input_frame::kFire) {
+    ii::spawn_shot(sim(), transform.centre, handle(), shot, pc.magic_shot_count != 0);
+    pc.magic_shot_count && --pc.magic_shot_count;
 
     float volume = .5f * sim().random_fixed().to_float() + .5f;
     float pitch = (sim().random_fixed().to_float() - 1.f) / 12.f;
@@ -325,11 +321,13 @@ void Player::update() {
 
 void Player::render() const {
   const auto& pc = *handle().get<ii::Player>();
-  if (!pc.kill_timer && (sim().conditions().mode != ii::game_mode::kWhat || revive_timer_ > 0)) {
+  auto c = ii::SimInterface::player_colour(pc.player_number);
+  if (!pc.kill_timer &&
+      (sim().conditions().mode != ii::game_mode::kWhat || pc.invulnerability_timer > 0)) {
     auto t = to_float(fire_target_);
-    sim().render_line(t + glm::vec2{0, 9}, t - glm::vec2{0, 8}, colour());
-    sim().render_line(t + glm::vec2{9, 1}, t - glm::vec2{8, -1}, colour());
-    if (revive_timer_ % 2) {
+    sim().render_line(t + glm::vec2{0, 9}, t - glm::vec2{0, 8}, c);
+    sim().render_line(t + glm::vec2{9, 1}, t - glm::vec2{8, -1}, c);
+    if (pc.invulnerability_timer % 2) {
       render_with_colour(glm::vec4{1.f});
     } else {
       Ship::render();
@@ -338,28 +336,23 @@ void Player::render() const {
 
   if (sim().conditions().mode != ii::game_mode::kBoss) {
     auto& pc = *handle().get<ii::Player>();
-    sim().render_player_info(pc.player_number, colour(), pc.score, pc.multiplier,
-                             static_cast<float>(magic_shot_timer_) / kMagicShotCount);
+    sim().render_player_info(pc.player_number, c, pc.score, pc.multiplier,
+                             static_cast<float>(pc.magic_shot_count) / kMagicShotCount);
   }
 }
 
 void Player::damage() {
   auto& pc = *handle().get<ii::Player>();
-  if (pc.kill_timer || revive_timer_) {
+  if (pc.kill_timer || pc.invulnerability_timer) {
     return;
   }
-  for (const auto& player : kill_queue_) {
-    if (player == this) {
-      return;
-    }
-  }
 
-  if (shield_) {
+  if (pc.has_shield) {
     sim().rumble(pc.player_number, 10);
     play_sound(ii::sound::kPlayerShield);
     destroy_shape(5);
-    shield_ = false;
-    revive_timer_ = kShieldTime;
+    pc.has_shield = false;
+    pc.invulnerability_timer = kShieldTime;
     return;
   }
 
@@ -367,15 +360,15 @@ void Player::damage() {
   explosion(glm::vec4{1.f}, 14);
   explosion(std::nullopt, 20);
 
-  magic_shot_timer_ = 0;
+  pc.magic_shot_count = 0;
   pc.multiplier = 1;
   pc.multiplier_count = 0;
   pc.kill_timer = kReviveTime;
   ++pc.death_count;
-  if (shield_ || bomb_) {
+  if (pc.has_shield || pc.has_bomb) {
     destroy_shape(5);
-    shield_ = false;
-    bomb_ = false;
+    pc.has_shield = false;
+    pc.has_bomb = false;
   }
   kill_queue_.push_back(this);
   sim().rumble(pc.player_number, 25);
@@ -383,36 +376,34 @@ void Player::damage() {
 }
 
 void Player::activate_magic_shots() {
-  magic_shot_timer_ = kMagicShotCount;
+  handle().get<ii::Player>()->magic_shot_count = kMagicShotCount;
 }
 
 void Player::activate_magic_shield() {
-  if (shield_) {
+  auto& pc = *handle().get<ii::Player>();
+  if (pc.has_shield) {
     return;
   }
 
-  if (bomb_) {
+  if (pc.has_bomb) {
     destroy_shape(5);
-    bomb_ = false;
+    pc.has_bomb = false;
   }
-  shield_ = true;
+  pc.has_shield = true;
   add_new_shape<ii::Polygon>(vec2{0}, 16, 10, glm::vec4{1.f});
 }
 
 void Player::activate_bomb() {
-  if (bomb_) {
+  auto& pc = *handle().get<ii::Player>();
+  if (pc.has_bomb) {
     return;
   }
 
-  if (shield_) {
+  if (pc.has_shield) {
     destroy_shape(5);
-    shield_ = false;
+    pc.has_shield = false;
   }
-  bomb_ = true;
+  pc.has_bomb = true;
   add_new_shape<ii::Polygon>(vec2{-8, 0}, 6, 5, glm::vec4{1.f}, fixed_c::pi, ii::shape_flag::kNone,
                              ii::Polygon::T::kPolystar);
-}
-
-void Player::update_fire_timer() {
-  fire_timer_ = (fire_timer_ + 1) % kShotTimer;
 }

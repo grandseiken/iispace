@@ -42,20 +42,18 @@ public:
 
   SimInterface(SimInternals* internals) : internals_{internals} {}
 
-  // Input.
-  input_frame input(std::uint32_t player_number);
-
   // State manipulation.
   const initial_conditions& conditions() const;
-  ecs::EntityIndex& index();
-  const ecs::EntityIndex& index() const;
+  input_frame input(std::uint32_t player_number);
   std::uint64_t tick_count() const;
+
+  const ecs::EntityIndex& index() const;
+  ecs::EntityIndex& index();
 
   std::uint32_t random(std::uint32_t max);
   fixed random_fixed();
 
-  // TODO: const/non-const versions of retrieval functions?
-  ship_list collision_list(const vec2& point, shape_flag mask) const;
+  std::vector<IShip*> collision_list(const vec2& point, shape_flag mask) const;
   bool any_collision(const vec2& point, shape_flag mask) const;
   std::uint32_t get_non_wall_count() const;
   bool is_on_screen(const vec2& point) const;
@@ -65,10 +63,8 @@ public:
   std::uint32_t killed_players() const;
   vec2 nearest_player_position(const vec2& point) const;
   vec2 nearest_player_direction(const vec2& point) const;
-
   ecs::const_handle nearest_player(const vec2& point) const;
   ecs::handle nearest_player(const vec2& point);
-  std::vector<ecs::entity_id> players() const;
 
   void add_life();
   void sub_life();

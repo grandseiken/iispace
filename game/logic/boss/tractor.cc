@@ -137,16 +137,12 @@ void TractorBoss::update() {
         sound_ = false;
       }
       targets_.clear();
-      for (auto id : sim().players()) {
-        auto ph = *sim().index().get(id);
-        if (ph.get<Player>()->is_killed()) {
-          continue;
+      sim().index().iterate_dispatch<Player>([&](const Player& p, Transform& p_transform) {
+        if (!p.is_killed()) {
+          targets_.push_back(p_transform.centre);
+          p_transform.centre += normalise(shape().centre - p_transform.centre) * kTractorBeamSpeed;
         }
-        auto& transform = *ph.get<Transform>();
-        targets_.push_back(transform.centre);
-        auto d = normalise(shape().centre - transform.centre);
-        transform.centre += d * kTractorBeamSpeed;
-      }
+      });
     }
   } else {
     if (generating_) {

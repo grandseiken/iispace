@@ -26,10 +26,6 @@ public:
   Player(ii::SimInterface& sim, const vec2& position, std::uint32_t player_number);
   ~Player() override = default;
 
-  std::uint32_t player_number() const {
-    return player_number_;
-  }
-
   void update() override;
   void render() const override;
   void damage();
@@ -37,26 +33,11 @@ public:
   void activate_magic_shots();
   void activate_magic_shield();
   void activate_bomb();
-  static void update_fire_timer();
-
-  // Colour
-  //------------------------------
-  glm::vec4 colour() const {
-    return ii::SimInterface::player_colour(player_number_);
-  }
 
   // Temporary death
   //------------------------------
   static std::uint32_t killed_players() {
     return static_cast<std::uint32_t>(kill_queue_.size());
-  }
-
-  bool is_killed() {
-    return handle().get<ii::Player>()->is_killed();
-  }
-
-  bool has_powerup() const {
-    return shield_ || bomb_;
   }
 
   vec2& position() override {
@@ -70,14 +51,7 @@ public:
   }
 
 private:
-  std::uint32_t player_number_ = 0;
-  std::uint32_t revive_timer_ = 0;
-  std::uint32_t magic_shot_timer_ = 0;
-  bool shield_ = false;
-  bool bomb_ = false;
   vec2 fire_target_;
-
-  static std::uint32_t fire_timer_;
   static ii::SimInterface::ship_list kill_queue_;
 };
 

@@ -1,13 +1,28 @@
-build --experimental_enable_runfiles
+startup --windows_enable_symlinks
+
+build --color=yes
+build --curses=yes
+build --ui_actions_shown=16
+build --experimental_windows_watchfs
+build --watchfs
+build --enable_runfiles
 build --cxxopt=/std:c++20
 build --copt=/WX
+build --proto_toolchain_for_cc=//game/data/proto:cc_toolchain
 
 build:msvc --copt=/experimental:deterministic
 build:msvc --linkopt=/experimental:deterministic
 
+build:clang-base --compiler=clang-cl
+build:clang-base --copt=-Wno-deprecated-volatile
+
+build:clang --config=clang-base
 build:clang --cc_output_directory_tag=clang
-build:clang --compiler=clang-cl
-build:clang --copt=-Wno-deprecated-volatile
+
+build:ubsan --config=clang-base
+build:ubsan --cc_output_directory_tag=ubsan
+build:ubsan --copt=-fsanitize=undefined
+build:ubsan --copt=/MT
 
 build -c opt
 test --test_output=errors

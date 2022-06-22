@@ -6,7 +6,7 @@ load("@bazel_tools//tools/build_defs/repo:http.bzl", "http_archive")
 
 http_archive(
     name = "hedron_compile_commands",
-    sha256 = "",
+    sha256 = "2e72c14ec0578ce07a3b76965ed6b67894179df431d735df15beb8ec0371c6d6",
     strip_prefix = "bazel-compile-commands-extractor-749cd084143d5b5f52857c9f8e3442df58b7ca5f",
     url = "https://github.com/hedronvision/bazel-compile-commands-extractor/archive/749cd084143d5b5f52857c9f8e3442df58b7ca5f.zip",
 )
@@ -84,14 +84,6 @@ http_archive(
 ################################################################################
 # Media format dependencies
 ################################################################################
-
-http_archive(
-  name = "stb",
-  build_file = "@//deps:stb.BUILD",
-  sha256 = "e3d0edbecd356506d3d69b87419de2f9d180a98099134c6343177885f6c2cbef",
-  strip_prefix = "stb-af1a5bc352164740c1cc1354942b1c6b72eacb8a",
-  url = "https://github.com/nothings/stb/archive/af1a5bc352164740c1cc1354942b1c6b72eacb8a.zip",
-)
 
 http_archive(
   name = "dr_libs",

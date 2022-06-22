@@ -188,7 +188,6 @@ struct Tractor : ecs::component {
   bool ready = false;
   bool spinning = false;
   fixed spoke_r = 0;
-  std::vector<ecs::entity_id> players;
 
   Tractor(bool power) : power{power} {}
 
@@ -219,19 +218,15 @@ struct Tractor : ecs::component {
         ready = false;
         spinning = true;
         timer = 0;
-        players = sim.players();
         sim.play_sound(sound::kBossFire);
       }
     } else if (spinning) {
       transform.rotate(fixed_c::tenth * 3);
-      for (auto id : players) {
-        auto ph = *sim.index().get(id);
-        if (!ph.get<Player>()->is_killed()) {
-          auto& p_transform = *ph.get<Transform>();
+      sim.index().iterate_dispatch<Player>([&](const Player& p, Transform& p_transform) {
+        if (!p.is_killed()) {
           p_transform.centre += normalise(transform.centre - p_transform.centre) * kPullSpeed;
         }
-      }
-
+      });
       if (timer % (kTimer / 2) == 0 && sim.is_on_screen(transform.centre) && power) {
         spawn_boss_shot(sim, transform.centre, 4 * sim.nearest_player_direction(transform.centre),
                         colour_hue360(300, .5f, .6f));
@@ -247,13 +242,13 @@ struct Tractor : ecs::component {
 
   void render(const Transform& transform, const SimInterface& sim) const {
     if (spinning) {
-      for (std::size_t i = 0; i < players.size(); ++i) {
-        auto ph = *sim.index().get(players[i]);
-        if (((timer + i * 4) / 4) % 2 && !ph.get<Player>()->is_killed()) {
-          sim.render_line(to_float(transform.centre), to_float(ph.get<Transform>()->centre),
+      std::uint32_t i = 0;
+      sim.index().iterate_dispatch<Player>([&](const Player& p, const Transform& p_transform) {
+        if (((timer + i++ * 4) / 4) % 2 && !p.is_killed()) {
+          sim.render_line(to_float(transform.centre), to_float(p_transform.centre),
                           colour_hue360(300, .5f, .6f));
         }
-      }
+      });
     }
   }
 };

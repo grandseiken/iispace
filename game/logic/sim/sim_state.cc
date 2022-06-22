@@ -93,8 +93,6 @@ void SimState::update() {
       : internals_->conditions.mode == game_mode::kWhat           ? (colour_cycle_ + 1) % 256
                                                                   : 0;
   internals_->input_frames = input_.get();
-
-  ::Player::update_fire_timer();
   chaser_boss_begin_frame();
 
   for (auto& e : internals_->collisions) {
@@ -139,8 +137,12 @@ void SimState::update() {
       continue;
     }
     // Stupid compatibility.
-    auto p0 = *interface_->index().get(interface_->players().front());
-    bool p0_has_powerup = static_cast<::Player*>(p0.get<LegacyShip>()->ship.get())->has_powerup();
+    std::optional<bool> p0_has_powerup;
+    interface_->index().iterate<Player>([&](const Player& p) {
+      if (!p0_has_powerup) {
+        p0_has_powerup = p.has_bomb || p.has_shield;
+      }
+    });
     auto explode = [&](const glm::vec2& v, const glm::vec4& c, std::uint32_t time) {
       auto c_dark = c;
       c_dark.a = .5f;
@@ -149,7 +151,7 @@ void SimState::update() {
       interface_->explosion(v + glm::vec2{0.f, 8.f}, c, time);
       interface_->explosion(v + glm::vec2{8.f, 0.f}, c_dark, time);
       interface_->explosion(v + glm::vec2{0.f, 8.f}, c_dark, time);
-      if (p0_has_powerup) {
+      if (p0_has_powerup && *p0_has_powerup) {
         interface_->explosion(v, glm::vec4{0.f}, 8);
       }
     };
@@ -171,10 +173,7 @@ void SimState::update() {
     internals_->index.compact();
   }
 
-  internals_->particles.erase(
-      std::remove_if(internals_->particles.begin(), internals_->particles.end(),
-                     [](const particle& p) { return p.destroy; }),
-      internals_->particles.end());
+  std::erase_if(internals_->particles, [](const particle& p) { return p.destroy; });
   overmind_->update();
 
   if (!kill_timer_ &&

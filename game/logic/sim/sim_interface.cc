@@ -25,6 +25,10 @@ glm::vec4 SimInterface::player_colour(std::size_t player_number) {
                             : colour_hue360(120);
 }
 
+const initial_conditions& SimInterface::conditions() const {
+  return internals_->conditions;
+}
+
 input_frame SimInterface::input(std::uint32_t player_number) {
   if (player_number < internals_->input_frames.size()) {
     return internals_->input_frames[player_number];
@@ -32,20 +36,16 @@ input_frame SimInterface::input(std::uint32_t player_number) {
   return {};
 }
 
-const initial_conditions& SimInterface::conditions() const {
-  return internals_->conditions;
-}
-
-ecs::EntityIndex& SimInterface::index() {
-  return internals_->index;
+std::uint64_t SimInterface::tick_count() const {
+  return internals_->tick_count;
 }
 
 const ecs::EntityIndex& SimInterface::index() const {
   return internals_->index;
 }
 
-std::uint64_t SimInterface::tick_count() const {
-  return internals_->tick_count;
+ecs::EntityIndex& SimInterface::index() {
+  return internals_->index;
 }
 
 std::uint32_t SimInterface::random(std::uint32_t max) {
@@ -181,13 +181,6 @@ ecs::handle SimInterface::nearest_player(const vec2& point) {
     }
   });
   return nearest_alive ? *nearest_alive : *nearest_dead;
-}
-
-std::vector<ecs::entity_id> SimInterface::players() const {
-  std::vector<ecs::entity_id> r;
-  index().iterate_dispatch<Player>(
-      [&](ecs::const_handle h, const Player&) { r.emplace_back(h.id()); });
-  return r;
 }
 
 void SimInterface::add_life() {
