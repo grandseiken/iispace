@@ -51,7 +51,6 @@ public:
   }
 
 private:
-  vec2 fire_target_;
   static ii::SimInterface::ship_list kill_queue_;
 };
 

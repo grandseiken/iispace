@@ -207,7 +207,7 @@ void spawn_player(SimInterface& sim, const vec2& position, std::uint32_t player_
 ii::SimInterface::ship_list Player::kill_queue_;
 
 Player::Player(ii::SimInterface& sim, const vec2& position, std::uint32_t player_number)
-: ii::Ship{sim, position}, fire_target_{ii::kSimDimensions / 2_fx} {
+: ii::Ship{sim, position} {
   auto c = ii::SimInterface::player_colour(player_number);
   auto c_dark = c;
   c_dark.a = .2f;
@@ -224,9 +224,9 @@ void Player::update() {
   auto& transform = *handle().get<ii::Transform>();
   auto input = sim().input(pc.player_number);
   if (input.target_absolute) {
-    fire_target_ = *input.target_absolute;
+    pc.fire_target = *input.target_absolute;
   } else if (input.target_relative) {
-    fire_target_ = transform.centre + *input.target_relative;
+    pc.fire_target = transform.centre + *input.target_relative;
   }
   pc.fire_timer = (pc.fire_timer + 1) % kShotTimer;
 
@@ -302,7 +302,7 @@ void Player::update() {
   }
 
   // Shots.
-  auto shot = fire_target_ - transform.centre;
+  auto shot = pc.fire_target - transform.centre;
   if (length(shot) > 0 && !pc.fire_timer && input.keys & ii::input_frame::kFire) {
     ii::spawn_shot(sim(), transform.centre, handle(), shot, pc.magic_shot_count != 0);
     pc.magic_shot_count && --pc.magic_shot_count;
@@ -324,7 +324,7 @@ void Player::render() const {
   auto c = ii::SimInterface::player_colour(pc.player_number);
   if (!pc.kill_timer &&
       (sim().conditions().mode != ii::game_mode::kWhat || pc.invulnerability_timer > 0)) {
-    auto t = to_float(fire_target_);
+    auto t = to_float(pc.fire_target);
     sim().render_line(t + glm::vec2{0, 9}, t - glm::vec2{0, 8}, c);
     sim().render_line(t + glm::vec2{9, 1}, t - glm::vec2{8, -1}, c);
     if (pc.invulnerability_timer % 2) {

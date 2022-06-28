@@ -85,6 +85,7 @@ struct Player : ecs::component {
   std::uint32_t kill_timer = 0;
   std::uint32_t invulnerability_timer = 0;
 
+  vec2 fire_target{0};
   std::uint32_t fire_timer = 0;
   std::uint32_t magic_shot_count = 0;
   bool has_bomb = false;
