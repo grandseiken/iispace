@@ -2,10 +2,8 @@ cc_library(
   name = "crypt",
   hdrs = ["crypt.h"],
   srcs = ["crypt.cc"],
-  deps = [
-    "//game/common:types",
-    "@zlib",
-  ],
+  deps = ["//game/common:types"],
+  implementation_deps = ["@zlib"],
 )
 
 cc_library(
@@ -13,11 +11,13 @@ cc_library(
   hdrs = ["replay.h"],
   srcs = ["replay.cc"],
   deps = [
+    "//game/common:types",
+    "//game/logic/sim:sim_io",
+  ],
+  implementation_deps = [
     ":crypt",
     "//game/common:math",
-    "//game/common:types",
     "//game/data/proto:ii_proto_cc",
-    "//game/logic/sim:sim_interface",
   ],
   visibility = ["//visibility:public"],
 )
@@ -27,10 +27,12 @@ cc_library(
   hdrs = ["save.h"],
   srcs = ["save.cc"],
   deps = [
-    ":crypt",
     "//game/common:types",
+    "//game/logic/sim:sim_io",
+  ],
+  implementation_deps = [
+    ":crypt",
     "//game/data/proto:ii_proto_cc",
-    "//game/logic/sim:sim_interface",
   ],
   visibility = ["//visibility:public"],
 )

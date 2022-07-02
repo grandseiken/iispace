@@ -21,8 +21,10 @@ cc_library(
   ],
   deps = [
     ":io",
-    "//deps/sdl",
     "//game/common:types",
+  ],
+  implementation_deps = [
+    "//deps/sdl",
     "@gl3w",
     "@sdl_gamecontrollerdb",
   ],

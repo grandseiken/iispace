@@ -20,13 +20,13 @@ cc_library(
     "player/player.h",
     "stars.cc",
   ],
-  deps = [
+  deps = ["@glm"],
+  implementation_deps = [
     "//game/common:math",
     "//game/logic/enemy",
     "//game/logic/ship",
     "//game/logic/sim:sim_interface",
     "//game/mixer:sound",
-    "@glm",
   ],
   visibility = [":__subpackages__"],
 )

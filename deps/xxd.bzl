@@ -1,5 +1,8 @@
 load("@bazel_skylib//rules:write_file.bzl", "write_file")
 
+def _sanitize(s):
+  return s.replace("/", "_").replace(".", "_").replace(" ", "_").replace("-", "_")
+
 def xxd(name, namespace, srcs, testonly = False, visibility = None):
   for src in srcs:
     native.genrule(
@@ -31,7 +34,7 @@ def xxd(name, namespace, srcs, testonly = False, visibility = None):
   ] + ["namespace %s {" % namespace]
 
   for src in srcs:
-    src_name = src.replace("/", "_").replace(".", "_")
+    src_name = _sanitize(src)
     var_name = "_".join(rdir + pdir + [src_name])
     h_content += ["std::span<const std::uint8_t> %s();" % src_name]
     cc_content += [
@@ -45,8 +48,7 @@ def xxd(name, namespace, srcs, testonly = False, visibility = None):
     "  static const std::unordered_map<std::string, std::span<const std::uint8_t>> kFiles = {",
   ]
   for src in srcs:
-    cc_content += ["    {\"%s\", %s()}," %
-                   ("/".join(rdir + pdir + [src]), src.replace("/", "_").replace(".", "_"))]
+    cc_content += ["    {\"%s\", %s()}," % ("/".join(rdir + pdir + [src]), _sanitize(src))]
   cc_content += [
     "  };",
     "  return kFiles;",
@@ -63,6 +65,23 @@ def xxd(name, namespace, srcs, testonly = False, visibility = None):
     name = name,
     hdrs = ["%s.h" % name],
     srcs = ["%s.cc" % name] + ["%s.h" % src for src in srcs],
+    testonly = testonly,
+    visibility = visibility,
+  )
+
+def xxd_legacy(name, srcs, testonly = False, visibility = None):
+  for src in srcs:
+    native.genrule(
+      name = "%s_xxd" % src,
+      srcs = [src],
+      outs = ["%s.h" % src],
+      cmd = "xxd -i \"$<\" \"$@\"",
+      testonly = testonly,
+    )
+
+  native.filegroup(
+    name = name,
+    srcs = ["%s.h" % src for src in srcs],
     testonly = testonly,
     visibility = visibility,
   )

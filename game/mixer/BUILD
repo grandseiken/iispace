@@ -2,8 +2,8 @@ cc_library(
   name = "mixer",
   hdrs = ["mixer.h"],
   srcs = ["mixer.cc"],
-  deps = [
-    "//game/common:types",
+  deps = ["//game/common:types"],
+  implementation_deps = [
     "@dr_libs//:dr_wav",
     "@glm",
     "@libsamplerate",

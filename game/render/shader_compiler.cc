@@ -28,7 +28,7 @@ result<std::string> preprocess(const std::string& filename) {
       return unexpected("Error preprocessing " + filename + ": invalid include");
     }
     auto path = rest.substr(lq + 1, rq - lq - 1);
-    if (included_set.count(path)) {
+    if (included_set.contains(path)) {
       source = source.substr(0, pos) + source.substr(end);
       continue;
     }
@@ -48,7 +48,6 @@ result<std::string> preprocess(const std::string& filename) {
 
 result<gl::program>
 compile_program(const std::unordered_map<std::string, gl::shader_type>& shaders) {
-  const auto& filemap = shaders::shaders_filemap();
   std::vector<gl::shader> compiled_shaders;
   for (const auto& pair : shaders) {
     auto source = preprocess(pair.first);

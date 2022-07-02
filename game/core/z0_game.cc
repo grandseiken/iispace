@@ -2,7 +2,6 @@
 #include "game/core/ui_layer.h"
 #include "game/io/file/filesystem.h"
 #include "game/io/io.h"
-#include "game/logic/sim/sim_interface.h"
 #include "game/render/gl_renderer.h"
 #include <algorithm>
 #include <sstream>
@@ -302,7 +301,7 @@ void HighScoreModal::render(const ii::ui::UiLayer& ui, ii::render::GlRenderer& r
     ss.str({});
     ss << "PLAYER " << (i + 1) << ":";
     render_text(r, {4.f, 8.f + 2 * i}, ss.str(), z0Game::kPanelText);
-    render_text(r, {14.f, 8.f + 2 * i}, score, ii::SimInterface::player_colour(i));
+    render_text(r, {14.f, 8.f + 2 * i}, score, ii::player_colour(i));
   }
 
   if (players <= 1) {
@@ -323,7 +322,7 @@ void HighScoreModal::render(const ii::ui::UiLayer& ui, ii::render::GlRenderer& r
   if (get_score() > 0) {
     std::stringstream s;
     s << "PLAYER " << (best + 1);
-    render_text(r, {4.f, 8.f + 2 * players}, s.str(), ii::SimInterface::player_colour(best));
+    render_text(r, {4.f, 8.f + 2 * players}, s.str(), ii::player_colour(best));
 
     std::string compliment = kCompliments[compliment_];
     render_text(r, {12.f, 8.f + 2 * players}, compliment, z0Game::kPanelText);
@@ -498,8 +497,7 @@ void GameModal::render(const ii::ui::UiLayer& ui, ii::render::GlRenderer& r) con
         }
       }
 
-      render_text(r, {14.f, 8.f + 2 * i}, ss.str(),
-                  b ? ii::SimInterface::player_colour(i) : z0Game::kPanelText);
+      render_text(r, {14.f, 8.f + 2 * i}, ss.str(), b ? ii::player_colour(i) : z0Game::kPanelText);
     }
     return;
   }
@@ -695,7 +693,7 @@ void z0Game::render(const ii::ui::UiLayer& ui, ii::render::GlRenderer& r) const 
   for (std::uint32_t i = 0; i < player_select_; ++i) {
     std::stringstream ss;
     ss << (i + 1);
-    render_text(r, {14.f + i, 10.f}, ss.str(), ii::SimInterface::player_colour(i));
+    render_text(r, {14.f + i, 10.f}, ss.str(), ii::player_colour(i));
   }
 
   render_panel(r, {3.f, 15.f}, {37.f, 27.f});

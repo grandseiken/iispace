@@ -7,6 +7,8 @@
 
 namespace ii {
 namespace {
+constexpr std::uint32_t kMagicShotCount = 120;
+
 vec2 get_centre(const Transform* transform, const LegacyShip* legacy_ship) {
   if (transform) {
     return transform->centre;
@@ -31,7 +33,7 @@ struct Shot : ecs::component {
   void update(ecs::handle h, Transform& transform, Render& render, SimInterface& sim) const {
     render.colour_override = magic && sim.random(2)
         ? glm::vec4{1.f}
-        : SimInterface::player_colour(player.get<Player>()->player_number);
+        : player_colour(player.get<Player>()->player_number);
     if (sim.conditions().mode == game_mode::kWhat) {
       render.colour_override = glm::vec4{0.f};
     }
@@ -106,6 +108,7 @@ struct Powerup : ecs::component {
 
   void
   collect(ecs::handle h, const Transform& transform, SimInterface& sim, ecs::handle source) const {
+    auto& pc = *source.get<ii::Player>();
     auto* player = static_cast<::Player*>(source.get<LegacyShip>()->ship.get());
     switch (type) {
     case ii::powerup_type::kExtraLife:
@@ -113,7 +116,7 @@ struct Powerup : ecs::component {
       break;
 
     case ii::powerup_type::kMagicShots:
-      player->activate_magic_shots();
+      pc.magic_shot_count = kMagicShotCount;
       break;
 
     case ii::powerup_type::kShield:
@@ -148,8 +151,8 @@ struct Powerup : ecs::component {
     using bomb =
         standard_transform<geom::ngon_shape<11, 10, glm::vec4{1.f}, geom::ngon_style::kPolystar>>;
 
-    auto c0 = SimInterface::player_colour((frame % (2 * kMaxPlayers)) / 2);
-    auto c1 = SimInterface::player_colour(((frame + 1) % (2 * kMaxPlayers)) / 2);
+    auto c0 = player_colour((frame % (2 * kMaxPlayers)) / 2);
+    auto c1 = player_colour(((frame + 1) % (2 * kMaxPlayers)) / 2);
     std::tuple parameters{transform.centre, fixed_c::pi / 2};
 
     render_shape<out0>(sim, parameters, c0);
@@ -193,7 +196,6 @@ const fixed kBombBossRadius = 280;
 const std::uint32_t kReviveTime = 100;
 const std::uint32_t kShieldTime = 50;
 const std::uint32_t kShotTimer = 4;
-const std::uint32_t kMagicShotCount = 120;
 }  // namespace
 
 namespace ii {
@@ -208,7 +210,7 @@ ii::SimInterface::ship_list Player::kill_queue_;
 
 Player::Player(ii::SimInterface& sim, const vec2& position, std::uint32_t player_number)
 : ii::Ship{sim, position} {
-  auto c = ii::SimInterface::player_colour(player_number);
+  auto c = ii::player_colour(player_number);
   auto c_dark = c;
   c_dark.a = .2f;
   add_new_shape<ii::Polygon>(vec2{0}, 16, 3, c);
@@ -263,7 +265,7 @@ void Player::update() {
 
   // Bombs.
   if (pc.has_bomb && input.keys & ii::input_frame::kBomb) {
-    auto c = ii::SimInterface::player_colour(pc.player_number);
+    auto c = ii::player_colour(pc.player_number);
     pc.has_bomb = false;
     destroy_shape(5);
 
@@ -321,7 +323,7 @@ void Player::update() {
 
 void Player::render() const {
   const auto& pc = *handle().get<ii::Player>();
-  auto c = ii::SimInterface::player_colour(pc.player_number);
+  auto c = ii::player_colour(pc.player_number);
   if (!pc.kill_timer &&
       (sim().conditions().mode != ii::game_mode::kWhat || pc.invulnerability_timer > 0)) {
     auto t = to_float(pc.fire_target);
@@ -337,7 +339,7 @@ void Player::render() const {
   if (sim().conditions().mode != ii::game_mode::kBoss) {
     auto& pc = *handle().get<ii::Player>();
     sim().render_player_info(pc.player_number, c, pc.score, pc.multiplier,
-                             static_cast<float>(pc.magic_shot_count) / kMagicShotCount);
+                             static_cast<float>(pc.magic_shot_count) / ii::kMagicShotCount);
   }
 }
 
@@ -373,10 +375,6 @@ void Player::damage() {
   kill_queue_.push_back(this);
   sim().rumble(pc.player_number, 25);
   play_sound(ii::sound::kPlayerDestroy);
-}
-
-void Player::activate_magic_shots() {
-  handle().get<ii::Player>()->magic_shot_count = kMagicShotCount;
 }
 
 void Player::activate_magic_shield() {

@@ -36,8 +36,6 @@ struct particle {
 
 class SimInterface {
 public:
-  // TODO: move to sim_io.h?
-  static glm::vec4 player_colour(std::size_t player_number);
   using ship_list = std::vector<IShip*>;
 
   SimInterface(SimInternals* internals) : internals_{internals} {}

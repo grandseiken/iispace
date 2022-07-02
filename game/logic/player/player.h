@@ -30,7 +30,6 @@ public:
   void render() const override;
   void damage();
 
-  void activate_magic_shots();
   void activate_magic_shield();
   void activate_bomb();
 

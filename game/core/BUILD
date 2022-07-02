@@ -3,10 +3,12 @@ cc_library(
   hdrs = ["io_input_adapter.h"],
   srcs = ["io_input_adapter.cc"],
   deps = [
-    "//game/data:replay",
-    "//game/logic/sim:sim_interface",
-    "//game/io",
+    "//game/logic/sim:sim_io",
     "@glm",
+  ],
+  implementation_deps = [
+    "//game/data:replay",
+    "//game/io",
   ],
 )
 
@@ -17,10 +19,12 @@ cc_library(
   deps = [
     "//game/data:replay",
     "//game/data:save",
+    "//game/mixer:sound",
+  ],
+  implementation_deps = [
     "//game/io",
     "//game/io/file:filesystem",
     "//game/mixer",
-    "//game/mixer:sound",
   ],
   visibility = ["//visibility:public"],
 )
@@ -37,14 +41,16 @@ cc_library(
   ],
   deps = [
     ":io_input_adapter",
+    "//game/data:replay",
+    "//game/data:save",
+    "//game/logic/sim",
+  ],
+  implementation_deps = [
     ":ui_layer",
     "//game/common:math",
     "//game/common:types",
-    "//game/data:replay",
-    "//game/data:save",
     "//game/io",
     "//game/io/file:filesystem",
-    "//game/logic/sim",
     "//game/mixer:sound",
     "//game/render:gl_renderer",
   ],

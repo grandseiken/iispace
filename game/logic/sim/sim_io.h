@@ -11,6 +11,14 @@ namespace ii {
 
 static constexpr std::uint32_t kMaxPlayers = 4;
 
+inline glm::vec4 player_colour(std::size_t player_number) {
+  return player_number == 0 ? colour_hue360(0)
+      : player_number == 1  ? colour_hue360(20)
+      : player_number == 2  ? colour_hue360(40)
+      : player_number == 3  ? colour_hue360(60)
+                            : colour_hue360(120);
+}
+
 enum class game_mode : std::uint32_t {
   kNormal,
   kBoss,

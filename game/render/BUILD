@@ -7,15 +7,17 @@ cc_library(
     "shader_compiler.h",
   ],
   deps = [
-    "//assets/fonts",
     "//game/common:types",
     "//game/common:ustring",
+    "@glm",
+  ],
+  implementation_deps = [
+    "//assets/fonts",
     "//game/io/file:filesystem",
     "//game/io/font",
     "//game/render/gl",
     "//game/render/shaders",
     "@gl3w",
-    "@glm",
   ],
   visibility = ["//visibility:public"],
 )
