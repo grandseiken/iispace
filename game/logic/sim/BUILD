@@ -38,6 +38,8 @@ cc_library(
   implementation_deps = [
     ":sim_interface",
     "//game/logic",
+    "//game/logic:overmind",
+    "//game/logic/player",
     "//game/logic/ship",
   ],
   visibility = ["//visibility:public"],

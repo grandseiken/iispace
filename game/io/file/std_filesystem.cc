@@ -9,7 +9,7 @@ const char* kSaveExt = ".sav";
 const char* kReplayExt = ".wrp";
 
 result<std::vector<std::uint8_t>> read(const std::filesystem::path& path) {
-  std::ifstream f{path.u8string(), std::ios::in | std::ios::binary};
+  std::ifstream f{path, std::ios::in | std::ios::binary};
   if (!f.is_open()) {
     return unexpected("Couldn't open " + path.string() + " for reading");
   }
@@ -27,7 +27,7 @@ result<std::vector<std::uint8_t>> read(const std::filesystem::path& path) {
 }
 
 result<void> write(const std::filesystem::path& path, std::span<const std::uint8_t> bytes) {
-  std::ofstream f{path.u8string(), std::ios::out | std::ios::binary};
+  std::ofstream f{path, std::ios::out | std::ios::binary};
   if (!f.is_open()) {
     return unexpected("Couldn't open " + path.string() + " for writing");
   }

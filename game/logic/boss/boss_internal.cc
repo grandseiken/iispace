@@ -49,7 +49,7 @@ Boss::Boss(ii::SimInterface& sim, const vec2& position) : ii::Ship{sim, position
 void Boss::on_destroy(bool) {
   sim().index().iterate_dispatch_if<ii::Enemy>([&](ii::ecs::handle h, ii::Health& health) {
     if (h.id() != handle().id()) {
-      health.damage(h, sim(), Player::kBombDamage, ii::damage_type::kBomb, std::nullopt);
+      health.damage(h, sim(), ii::Player::kBombDamage, ii::damage_type::kBomb, std::nullopt);
     }
   });
   explosion();

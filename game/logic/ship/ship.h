@@ -19,18 +19,9 @@ public:
     return sim_;
   }
 
-  void destroy(std::optional<ecs::entity_id> source = std::nullopt) const {
-    handle().add(Destroy{.source = source});
-  }
-
-  bool is_destroyed() const {
-    return handle().has<Destroy>();
-  }
-
   virtual ecs::handle handle() const = 0;
   virtual vec2& position() = 0;
   virtual vec2 position() const = 0;
-  virtual fixed rotation() const = 0;
 
 private:
   SimInterface& sim_;
@@ -47,9 +38,6 @@ struct ShipForwarder : IShip {
   }
   vec2 position() const override {
     return h.get<Transform>()->centre;
-  }
-  fixed rotation() const override {
-    return h.get<Transform>()->rotation;
   }
 };
 
@@ -105,9 +93,6 @@ public:
   }
   vec2 position() const override {
     return shape().centre;
-  }
-  fixed rotation() const override {
-    return shape().rotation();
   }
   virtual void update() = 0;
   virtual void render() const;

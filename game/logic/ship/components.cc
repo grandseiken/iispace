@@ -18,9 +18,9 @@ void Health::damage(ecs::handle h, SimInterface& sim, std::uint32_t damage, dama
 
   hp = hp < damage ? 0 : hp - damage;
   vec2 position = {kSimDimensions.x / 2, kSimDimensions.y / 2};
-  if (auto c = h.get<Transform>(); c) {
-    position = c->centre;
-  } else if (auto c = h.get<LegacyShip>(); c) {
+  if (auto* c = h.get<Transform>(); c) {
+    position = h.get<Transform>()->centre;
+  } else if (auto* c = h.get<LegacyShip>(); c) {
     position = c->ship->position();
   }
 
@@ -46,6 +46,8 @@ void Health::damage(ecs::handle h, SimInterface& sim, std::uint32_t damage, dama
     hit_timer = std::max<std::uint32_t>(hit_timer, type == damage_type::kBomb ? 25 : 1);
   }
 }
+
+std::vector<std::uint32_t> Player::kill_queue;
 
 void Player::add_score(SimInterface& sim, std::uint64_t s) {
   sim.rumble(player_number, 3);

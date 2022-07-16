@@ -203,7 +203,7 @@ void SuperBoss::update() {
     }
   }
 
-  if (state_ == state::kIdle && is_on_screen() && timer_ % 300 == 200 && !is_destroyed()) {
+  if (state_ == state::kIdle && is_on_screen() && timer_ % 300 == 200 && !handle().has<Destroy>()) {
     std::vector<std::uint32_t> wide3;
     std::uint32_t timer = 0;
     for (std::uint32_t i = 0; i < 16; ++i) {
@@ -246,7 +246,7 @@ void SuperBoss::update() {
 void SuperBoss::on_destroy(bool) {
   sim().index().iterate_dispatch_if<ii::Enemy>([&](ecs::handle h, ii::Health& health) {
     if (h.id() != handle().id()) {
-      health.damage(h, sim(), 100 * ::Player::kBombDamage, ii::damage_type::kBomb, std::nullopt);
+      health.damage(h, sim(), 100 * Player::kBombDamage, ii::damage_type::kBomb, std::nullopt);
     }
   });
   explosion();

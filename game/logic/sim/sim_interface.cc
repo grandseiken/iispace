@@ -1,7 +1,6 @@
 #include "game/logic/sim/sim_interface.h"
 #include "game/logic/ecs/call.h"
 #include "game/logic/overmind.h"
-#include "game/logic/player/player.h"
 #include "game/logic/ship/components.h"
 #include "game/logic/ship/ship.h"
 #include "game/logic/sim/sim_internals.h"
@@ -124,7 +123,7 @@ std::uint32_t SimInterface::alive_players() const {
 }
 
 std::uint32_t SimInterface::killed_players() const {
-  return ::Player::killed_players();
+  return Player::kill_queue.size();
 }
 
 vec2 SimInterface::nearest_player_position(const vec2& point) const {
@@ -141,17 +140,18 @@ ecs::const_handle SimInterface::nearest_player(const vec2& point) const {
   fixed alive_distance = 0;
   fixed dead_distance = 0;
 
-  index().iterate_dispatch<Player>([&](ecs::const_handle h, const Player& p) {
-    auto d = length_squared(ecs::call<&get_centre>(h) - point);
-    if ((d < alive_distance || !nearest_alive) && !p.is_killed()) {
-      alive_distance = d;
-      nearest_alive = h;
-    }
-    if (d < dead_distance || !nearest_dead) {
-      dead_distance = d;
-      nearest_dead = h;
-    }
-  });
+  index().iterate_dispatch<Player>(
+      [&](ecs::const_handle h, const Player& p, const Transform& transform) {
+        auto d = length_squared(transform.centre - point);
+        if ((d < alive_distance || !nearest_alive) && !p.is_killed()) {
+          alive_distance = d;
+          nearest_alive = h;
+        }
+        if (d < dead_distance || !nearest_dead) {
+          dead_distance = d;
+          nearest_dead = h;
+        }
+      });
   return nearest_alive ? *nearest_alive : *nearest_dead;
 }
 
@@ -161,8 +161,8 @@ ecs::handle SimInterface::nearest_player(const vec2& point) {
   fixed alive_distance = 0;
   fixed dead_distance = 0;
 
-  index().iterate_dispatch<Player>([&](ecs::handle h, const Player& p) {
-    auto d = length_squared(ecs::call<&get_centre>(h) - point);
+  index().iterate_dispatch<Player>([&](ecs::handle h, const Player& p, const Transform& transform) {
+    auto d = length_squared(transform.centre - point);
     if ((d < alive_distance || !nearest_alive) && !p.is_killed()) {
       alive_distance = d;
       nearest_alive = h;

@@ -21,7 +21,7 @@ scale_boss_damage(ecs::handle h, SimInterface&, damage_type type, std::uint32_t 
 
 template <bool ExplodeOnBombDamage>
 void legacy_boss_on_hit(ecs::handle h, SimInterface&, damage_type type) {
-  auto boss = static_cast<::Boss*>(h.get<LegacyShip>()->ship.get());
+  auto* boss = static_cast<::Boss*>(h.get<LegacyShip>()->ship.get());
   if (type == damage_type::kBomb && ExplodeOnBombDamage) {
     boss->explosion();
     boss->explosion(glm::vec4{1.f}, 16);
@@ -30,7 +30,7 @@ void legacy_boss_on_hit(ecs::handle h, SimInterface&, damage_type type) {
 }
 
 inline void legacy_boss_on_destroy(ecs::const_handle h, SimInterface&, damage_type type) {
-  auto boss = static_cast<::Boss*>(h.get<LegacyShip>()->ship.get());
+  auto* boss = static_cast<::Boss*>(h.get<LegacyShip>()->ship.get());
   boss->on_destroy(type == damage_type::kBomb);
 }
 }  // namespace ii

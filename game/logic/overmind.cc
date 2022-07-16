@@ -3,6 +3,7 @@
 #include "game/logic/boss/boss.h"
 #include "game/logic/enemy/enemy.h"
 #include "game/logic/player/player.h"
+#include "game/logic/ship/components.h"
 #include "game/logic/stars.h"
 #include <algorithm>
 

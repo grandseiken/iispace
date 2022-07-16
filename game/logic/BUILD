@@ -1,11 +1,10 @@
 cc_library(
   name = "logic",
   hdrs = [
-    "overmind.h",
     "stars.h",
+    "boss/boss.h",
   ],
   srcs = [
-    "boss/boss.h",
     "boss/boss_internal.cc",
     "boss/boss_internal.h",
     "boss/chaser.cc",
@@ -15,18 +14,31 @@ cc_library(
     "boss/square.cc",
     "boss/super.cc",
     "boss/tractor.cc",
-    "overmind.cc",
-    "player/player.cc",
-    "player/player.h",
     "stars.cc",
   ],
-  deps = ["@glm"],
+  deps = [
+    "@glm",
+    "//game/logic/ship",
+    "//game/logic/sim:sim_interface",
+  ],
   implementation_deps = [
     "//game/common:math",
     "//game/logic/enemy",
-    "//game/logic/ship",
-    "//game/logic/sim:sim_interface",
+    "//game/logic/player",
     "//game/mixer:sound",
+  ],
+  visibility = [":__subpackages__"],
+)
+
+cc_library(
+  name = "overmind",
+  hdrs = ["overmind.h"],
+  srcs = ["overmind.cc"],
+  implementation_deps = [
+    ":logic",
+    "//game/common:math",
+    "//game/logic/enemy",
+    "//game/logic/player",
   ],
   visibility = [":__subpackages__"],
 )
