@@ -1,10 +1,10 @@
-#include "game/logic/overmind.h"
+#include "game/logic/overmind/overmind.h"
 #include "game/common/math.h"
 #include "game/logic/boss/boss.h"
 #include "game/logic/enemy/enemy.h"
+#include "game/logic/overmind/stars.h"
 #include "game/logic/player/player.h"
 #include "game/logic/ship/components.h"
-#include "game/logic/stars.h"
 #include <algorithm>
 
 namespace {
@@ -116,7 +116,7 @@ private:
 
 std::vector<Overmind::entry> formation_base::static_formations;
 
-Overmind::Overmind(ii::SimInterface& sim) : sim_{sim} {
+Overmind::Overmind(ii::SimInterface& sim) : sim_{sim}, stars_{std::make_unique<Stars>()} {
   add_formations();
 
   auto queue = [this] {
@@ -141,14 +141,13 @@ Overmind::Overmind(ii::SimInterface& sim) : sim_{sim} {
   }
   timer_ = kPowerupTime;
   boss_rest_timer_ = kBossRestTime / 8;
-  Stars::clear();
 }
 
 Overmind::~Overmind() = default;
 
 void Overmind::update() {
   ++elapsed_time_;
-  Stars::update(sim_);
+  stars_->update(sim_);
 
   std::uint32_t total_enemy_threat = 0;
   sim_.index().iterate<ii::Enemy>(
@@ -156,7 +155,7 @@ void Overmind::update() {
 
   if (sim_.conditions().mode == ii::game_mode::kBoss) {
     if (!total_enemy_threat) {
-      Stars::change(sim_);
+      stars_->change(sim_);
       if (boss_mod_bosses_ < 6) {
         for (std::uint32_t i = 0; boss_mod_bosses_ && i < sim_.player_count(); ++i) {
           spawn_boss_reward();
@@ -196,7 +195,7 @@ void Overmind::update() {
       spawn_powerup();
     }
     timer_ = 0;
-    Stars::change(sim_);
+    stars_->change(sim_);
 
     if (is_boss_level_) {
       ++boss_mod_bosses_;
@@ -239,6 +238,10 @@ void Overmind::update() {
       bosses_to_go_ = boss_mod_fights_ >= 4 ? 3 : boss_mod_fights_ >= 2 ? 2 : 1;
     }
   }
+}
+
+void Overmind::render() const {
+  stars_->render(sim_);
 }
 
 std::uint32_t Overmind::get_killed_bosses() const {

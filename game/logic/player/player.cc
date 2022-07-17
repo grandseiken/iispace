@@ -134,7 +134,7 @@ struct Powerup : ecs::component {
     auto& pc = *source.get<Player>();
     switch (type) {
     case powerup_type::kExtraLife:
-      sim.add_life();
+      ++sim.global_entity().get<GlobalData>()->lives;
       break;
 
     case powerup_type::kMagicShots:
@@ -220,10 +220,11 @@ struct PlayerLogic : ecs::component {
       return;
     }
 
-    auto& kill_queue = Player::kill_queue;
+    auto& global_data = *sim.global_entity().get<GlobalData>();
+    auto& kill_queue = global_data.player_kill_queue;
     if (pc.kill_timer) {
-      if (sim.get_lives() && !kill_queue.empty() && kill_queue.front() == pc.player_number) {
-        sim.sub_life();
+      if (global_data.lives && !kill_queue.empty() && kill_queue.front() == pc.player_number) {
+        --global_data.lives;
         pc.kill_timer = 0;
         kill_queue.erase(kill_queue.begin());
         invulnerability_timer = kReviveTime;
@@ -327,7 +328,7 @@ struct PlayerLogic : ecs::component {
       pc.has_shield = false;
       pc.has_bomb = false;
     }
-    Player::kill_queue.push_back(pc.player_number);
+    sim.global_entity().get<GlobalData>()->player_kill_queue.push_back(pc.player_number);
     sim.rumble(pc.player_number, 25);
     sim.play_sound(sound::kPlayerDestroy, transform.centre);
   }

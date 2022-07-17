@@ -1,4 +1,4 @@
-#include "game/logic/stars.h"
+#include "game/logic/overmind/stars.h"
 #include "game/common/math.h"
 #include "game/logic/ship/shape.h"
 #include "game/logic/sim/sim_interface.h"
@@ -7,10 +7,6 @@
 namespace {
 const std::uint32_t kTimer = 500;
 }  // namespace
-
-glm::vec2 Stars::direction_ = {0, 1};
-std::uint32_t Stars::star_rate_ = 0;
-std::vector<Stars::data_t> Stars::stars_;
 
 void Stars::update(ii::SimInterface& sim) {
   bool destroy = false;
@@ -97,10 +93,4 @@ void Stars::create_star(ii::SimInterface& sim) {
     star.size = 4.f + sim.random(4);
   }
   stars_.emplace_back(star);
-}
-
-void Stars::clear() {
-  stars_.clear();
-  direction_ = {1, 0};
-  star_rate_ = 0;
 }

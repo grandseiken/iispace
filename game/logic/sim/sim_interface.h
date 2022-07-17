@@ -47,15 +47,20 @@ public:
 
   const ecs::EntityIndex& index() const;
   ecs::EntityIndex& index();
+  ecs::const_handle global_entity() const;
+  ecs::handle global_entity();
 
   std::uint32_t random(std::uint32_t max);
   fixed random_fixed();
 
+  // TODO: there's a bunch of random data in the sim internals / interface that could
+  // instead just exist on some component of a singleton entity.
   std::vector<IShip*> collision_list(const vec2& point, shape_flag mask) const;
   bool any_collision(const vec2& point, shape_flag mask) const;
   std::uint32_t get_non_wall_count() const;
   bool is_on_screen(const vec2& point) const;
 
+  std::uint32_t get_lives() const;
   std::uint32_t player_count() const;
   std::uint32_t alive_players() const;
   std::uint32_t killed_players() const;
@@ -63,10 +68,6 @@ public:
   vec2 nearest_player_direction(const vec2& point) const;
   ecs::const_handle nearest_player(const vec2& point) const;
   ecs::handle nearest_player(const vec2& point);
-
-  void add_life();
-  void sub_life();
-  std::uint32_t get_lives() const;
 
   ecs::handle create_legacy(std::unique_ptr<Ship> ship);
   void add_particle(const particle& particle);

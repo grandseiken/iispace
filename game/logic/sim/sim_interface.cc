@@ -1,6 +1,5 @@
 #include "game/logic/sim/sim_interface.h"
 #include "game/logic/ecs/call.h"
-#include "game/logic/overmind.h"
 #include "game/logic/ship/components.h"
 #include "game/logic/ship/ship.h"
 #include "game/logic/sim/sim_internals.h"
@@ -13,6 +12,10 @@ vec2 get_centre(const Transform* transform, const LegacyShip* legacy_ship) {
     return transform->centre;
   }
   return legacy_ship->ship->position();
+}
+
+GlobalData& global_data(SimInternals& internals) {
+  return *internals.global_entity_handle->get<GlobalData>();
 }
 }  // namespace
 
@@ -37,6 +40,14 @@ const ecs::EntityIndex& SimInterface::index() const {
 
 ecs::EntityIndex& SimInterface::index() {
   return internals_->index;
+}
+
+ecs::const_handle SimInterface::global_entity() const {
+  return *internals_->global_entity_handle;
+}
+
+ecs::handle SimInterface::global_entity() {
+  return *internals_->global_entity_handle;
 }
 
 std::uint32_t SimInterface::random(std::uint32_t max) {
@@ -114,6 +125,10 @@ bool SimInterface::is_on_screen(const vec2& point) const {
   return all(greaterThanEqual(point, vec2{0})) && all(lessThanEqual(point, vec2{kSimDimensions}));
 }
 
+std::uint32_t SimInterface::get_lives() const {
+  return global_data(*internals_).lives;
+}
+
 std::uint32_t SimInterface::player_count() const {
   return conditions().player_count;
 }
@@ -123,7 +138,7 @@ std::uint32_t SimInterface::alive_players() const {
 }
 
 std::uint32_t SimInterface::killed_players() const {
-  return Player::kill_queue.size();
+  return global_data(*internals_).player_kill_queue.size();
 }
 
 vec2 SimInterface::nearest_player_position(const vec2& point) const {
@@ -173,20 +188,6 @@ ecs::handle SimInterface::nearest_player(const vec2& point) {
     }
   });
   return nearest_alive ? *nearest_alive : *nearest_dead;
-}
-
-void SimInterface::add_life() {
-  ++internals_->lives;
-}
-
-void SimInterface::sub_life() {
-  if (internals_->lives) {
-    internals_->lives--;
-  }
-}
-
-std::uint32_t SimInterface::get_lives() const {
-  return internals_->lives;
 }
 
 ecs::handle SimInterface::create_legacy(std::unique_ptr<Ship> ship) {

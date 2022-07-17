@@ -1,6 +1,7 @@
-#ifndef II_GAME_LOGIC_OVERMIND_H
-#define II_GAME_LOGIC_OVERMIND_H
+#ifndef II_GAME_LOGIC_OVERMIND_OVERMIND_H
+#define II_GAME_LOGIC_OVERMIND_OVERMIND_H
 #include <cstdint>
+#include <memory>
 #include <optional>
 #include <vector>
 
@@ -8,16 +9,17 @@ namespace ii {
 class Ship;
 class SimInterface;
 }  // namespace ii
+class Stars;
 
 class formation_base;
+// TODO: make Overmind an entity/component.
 class Overmind {
 public:
   Overmind(ii::SimInterface& sim);
   ~Overmind();
 
-  // General
-  //------------------------------
   void update();
+  void render() const;
 
   std::uint32_t get_killed_bosses() const;
   std::uint32_t get_elapsed_time() const;
@@ -39,6 +41,8 @@ private:
   void boss_mode_boss();
 
   ii::SimInterface& sim_;
+  std::unique_ptr<Stars> stars_;
+
   std::uint32_t power_ = 0;
   std::uint32_t timer_ = 0;
   std::uint32_t levels_mod_ = 0;

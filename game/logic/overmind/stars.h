@@ -1,5 +1,5 @@
-#ifndef II_GAME_LOGIC_STARS_H
-#define II_GAME_LOGIC_STARS_H
+#ifndef II_GAME_LOGIC_OVERMIND_STARS_H
+#define II_GAME_LOGIC_OVERMIND_STARS_H
 #include <glm/glm.hpp>
 #include <cstdint>
 #include <memory>
@@ -11,13 +11,12 @@ class SimInterface;
 
 class Stars {
 public:
-  static void change(ii::SimInterface& sim);
-  static void update(ii::SimInterface& sim);
-  static void render(const ii::SimInterface& sim);
-  static void clear();
+  void change(ii::SimInterface& sim);
+  void update(ii::SimInterface& sim);
+  void render(const ii::SimInterface& sim);
 
 private:
-  static void create_star(ii::SimInterface& sim);
+  void create_star(ii::SimInterface& sim);
 
   enum class type {
     kDotStar,
@@ -35,9 +34,9 @@ private:
     glm::vec4 colour{0.f};
   };
 
-  static glm::vec2 direction_;
-  static std::vector<data_t> stars_;
-  static std::uint32_t star_rate_;
+  glm::vec2 direction_ = {0, 1};
+  std::vector<data_t> stars_;
+  std::uint32_t star_rate_ = 0;
 };
 
 #endif

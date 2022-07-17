@@ -15,6 +15,18 @@
 namespace ii {
 class SimInterface;
 
+struct GlobalData : ecs::component {
+  static constexpr std::uint32_t kStartingLives = 2;
+  static constexpr std::uint32_t kBossModeLives = 1;
+
+  std::uint32_t lives = 0;
+  std::vector<std::uint32_t> player_kill_queue;
+
+  GlobalData(const initial_conditions& conditions)
+  : lives{conditions.mode == game_mode::kBoss ? conditions.player_count * kBossModeLives
+                                              : kStartingLives} {}
+};
+
 class IShip;
 struct LegacyShip : ecs::component {
   std::unique_ptr<IShip> ship;
@@ -94,8 +106,6 @@ struct Player : ecs::component {
   std::uint32_t multiplier = 1;
   std::uint32_t multiplier_count = 0;
   std::uint32_t death_count = 0;
-
-  static std::vector<std::uint32_t> kill_queue;
 
   bool is_killed() const {
     return kill_timer != 0;

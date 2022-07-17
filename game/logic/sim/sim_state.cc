@@ -1,12 +1,11 @@
 #include "game/logic/sim/sim_state.h"
 #include "game/logic/boss/boss.h"
 #include "game/logic/ecs/call.h"
-#include "game/logic/overmind.h"
+#include "game/logic/overmind/overmind.h"
 #include "game/logic/player/player.h"
 #include "game/logic/ship/ship.h"
 #include "game/logic/sim/sim_interface.h"
 #include "game/logic/sim/sim_internals.h"
-#include "game/logic/stars.h"
 #include <algorithm>
 #include <unordered_set>
 
@@ -21,7 +20,6 @@ vec2 get_centre(const Transform* transform, const LegacyShip* legacy_ship) {
 }  // namespace
 
 SimState::~SimState() {
-  Stars::clear();
   boss_fireworks().clear();
   boss_warnings().clear();
 }
@@ -30,14 +28,8 @@ SimState::SimState(const initial_conditions& conditions, InputAdapter& input)
 : input_{input}
 , internals_{std::make_unique<SimInternals>(conditions.seed)}
 , interface_{std::make_unique<SimInterface>(internals_.get())} {
-  static constexpr std::uint32_t kStartingLives = 2;
-  static constexpr std::uint32_t kBossModeLives = 1;
-
   internals_->conditions = conditions;
-  internals_->lives = conditions.mode == game_mode::kBoss ? conditions.player_count * kBossModeLives
-                                                          : kStartingLives;
-
-  Stars::clear();
+  (internals_->global_entity_handle = internals_->index.create())->emplace<GlobalData>(conditions);
   for (std::uint32_t i = 0; i < conditions.player_count; ++i) {
     vec2 v((1 + i) * kSimDimensions.x / (1 + conditions.player_count), kSimDimensions.y / 2);
     spawn_player(*interface_, v, i);
@@ -195,7 +187,7 @@ void SimState::render() const {
   internals_->line_output.clear();
   internals_->player_output.clear();
 
-  Stars::render(*interface_);
+  overmind_->render();
   for (const auto& particle : internals_->particles) {
     interface_->render_line_rect(particle.position + glm::vec2{1, 1},
                                  particle.position - glm::vec2{1, 1}, particle.colour);
