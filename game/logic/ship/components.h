@@ -50,7 +50,6 @@ struct Update : ecs::component {
 };
 
 struct Render : ecs::component {
-  std::optional<glm::vec4> colour_override;
   function_ptr<void(ecs::const_handle, const SimInterface&)> render = nullptr;
 };
 
@@ -71,6 +70,7 @@ struct Health : ecs::component {
   function_ptr<void(ecs::const_handle, SimInterface&, damage_type)> on_destroy = nullptr;
 
   bool is_hp_low() const {
+    // hp <= .4 * max_hp.
     return 3 * hp <= max_hp + max_hp / 5;
   }
 

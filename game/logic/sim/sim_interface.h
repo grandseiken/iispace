@@ -81,7 +81,7 @@ public:
   void render_line(const glm::vec2& a, const glm::vec2& b, const glm::vec4& c) const;
   void render_line_rect(const glm::vec2& lo, const glm::vec2& hi, const glm::vec4& c) const;
   void render_player_info(std::uint32_t player_number, const glm::vec4& colour, std::uint64_t score,
-                          std::uint32_t multiplier, float timer);
+                          std::uint32_t multiplier, float timer) const;
 
 private:
   SimInternals* internals_;

@@ -9,18 +9,23 @@ struct Square : ecs::component {
   static constexpr std::uint32_t kBoundingWidth = 15;
   static constexpr sound kDestroySound = sound::kEnemyDestroy;
   static constexpr fixed kSpeed = 2 + 1_fx / 4;
-  using shape =
-      standard_transform<geom::box_shape<10, 10, colour_hue360(120, .6f),
-                                         shape_flag::kDangerous | shape_flag::kVulnerable>>;
+  using shape = standard_transform<
+      geom::box_colour_p<10, 10, 2, shape_flag::kDangerous | shape_flag::kVulnerable>>;
+
+  std::tuple<vec2, fixed, glm::vec4>
+  shape_parameters(const Transform& transform, const Health& health) const {
+    return {transform.centre, transform.rotation,
+            health.hp && invisible_flash ? colour_hue(0.f, .2f, 0.f) : colour_hue360(120, .6f)};
+  }
 
   vec2 dir{0};
   std::uint32_t timer = 0;
+  bool invisible_flash = false;
 
   Square(SimInterface& sim, fixed dir_angle)
   : dir{from_polar(dir_angle, 1_fx)}, timer{sim.random(80) + 40} {}
 
-  void
-  update(ecs::handle h, Transform& transform, Health& health, Render& render, SimInterface& sim) {
+  void update(ecs::handle h, Transform& transform, Health& health, SimInterface& sim) {
     if (sim.is_on_screen(transform.centre) && !sim.get_non_wall_count()) {
       if (timer) {
         --timer;
@@ -61,12 +66,7 @@ struct Square : ecs::component {
     dir = normalise(dir);
     transform.move(dir * kSpeed);
     transform.set_rotation(angle(dir));
-
-    if ((timer % 4 == 1 || timer % 4 == 2) && !sim.get_non_wall_count()) {
-      render.colour_override = colour_hue(0.f, .2f, 0.f);
-    } else {
-      render.colour_override.reset();
-    }
+    invisible_flash = (timer % 4 == 1 || timer % 4 == 2) && !sim.get_non_wall_count();
   }
 };
 
@@ -76,9 +76,8 @@ struct Wall : ecs::component {
 
   static constexpr std::uint32_t kTimer = 80;
   static constexpr fixed kSpeed = 1 + 1_fx / 4;
-  using shape =
-      standard_transform<geom::box_shape<10, 40, colour_hue360(120, .5f, .6f),
-                                         shape_flag::kDangerous | shape_flag::kVulnerable>>;
+  using shape = standard_transform<geom::box<10, 40, colour_hue360(120, .5f, .6f),
+                                             shape_flag::kDangerous | shape_flag::kVulnerable>>;
 
   vec2 dir{0, 1};
   std::uint32_t timer = 0;

@@ -24,8 +24,8 @@ struct DeathRay : ecs::component {
   static constexpr sound kDestroySound = sound::kEnemyDestroy;
   static constexpr fixed kSpeed = 10;
 
-  using shape = standard_transform<geom::box_shape<10, 48, glm::vec4{0.f}, shape_flag::kDangerous>,
-                                   geom::line_shape<48, fixed_c::pi / 2, glm::vec4{1.f}>>;
+  using shape = standard_transform<geom::box<10, 48, glm::vec4{0.f}, shape_flag::kDangerous>,
+                                   geom::line<48, fixed_c::pi / 2, glm::vec4{1.f}>>;
 
   void update(ecs::handle h, Transform& transform, SimInterface&) {
     transform.move(vec2{1, 0} * kSpeed);
@@ -50,13 +50,12 @@ struct DeathArm : ecs::component {
   static constexpr fixed kSpeed = 4;
 
   using shape = standard_transform<
-      geom::ngon_shape<60, 4, c1>,
+      geom::ngon<60, 4, c1>,
       geom::conditional_p<
-          2, geom::ngon_shape<50, 4, c0, geom::ngon_style::kPolygram, shape_flag::kVulnerable>,
-          geom::ngon_shape<50, 4, c0, geom::ngon_style::kPolygram,
-                           shape_flag::kDangerous | shape_flag::kVulnerable>>,
-      geom::ball_collider_shape<40, shape_flag::kShield>, geom::ngon_shape<20, 4, c1>,
-      geom::ngon_shape<18, 4, c0>>;
+          2, geom::ngon<50, 4, c0, geom::ngon_style::kPolygram, shape_flag::kVulnerable>,
+          geom::ngon<50, 4, c0, geom::ngon_style::kPolygram,
+                     shape_flag::kDangerous | shape_flag::kVulnerable>>,
+      geom::ball_collider<40, shape_flag::kShield>, geom::ngon<20, 4, c1>, geom::ngon<18, 4, c0>>;
 
   std::tuple<vec2, fixed, bool> shape_parameters(const Transform& transform) const {
     return {transform.centre, transform.rotation, start > 0};
@@ -125,16 +124,16 @@ struct DeathArm : ecs::component {
     if (start) {
       if (start == 30) {
         explode_entity_shapes<DeathArm>(h, sim);
-        explode_entity_shapes_with_colour<DeathArm>(h, sim, glm::vec4{1.f});
+        explode_entity_shapes<DeathArm>(h, sim, glm::vec4{1.f});
       }
       start--;
     }
   }
 
-  void on_destroy(ecs::const_handle h, const Transform& transform, SimInterface& sim) const {
+  void on_destroy(ecs::const_handle h, SimInterface& sim) const {
     explode_entity_shapes<DeathArm>(h, sim);
-    explode_entity_shapes_with_colour<DeathArm>(h, sim, glm::vec4{1.f}, 12);
-    explode_entity_shapes_with_colour<DeathArm>(h, sim, c1, 24);
+    explode_entity_shapes<DeathArm>(h, sim, glm::vec4{1.f}, 12);
+    explode_entity_shapes<DeathArm>(h, sim, c1, 24);
   }
 };
 

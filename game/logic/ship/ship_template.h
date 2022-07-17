@@ -34,35 +34,32 @@ void render_shape(const SimInterface& sim, const auto& parameters,
 }
 
 template <ecs::Component Logic, geom::ShapeNode S = typename Logic::shape>
-void render_entity_shape(ecs::const_handle h, const Render& render, const Health* health,
-                         const SimInterface& sim) {
-  auto c_override = render.colour_override;
-  if (!c_override && health && health->hit_timer) {
-    c_override = glm::vec4{1.f};
+void render_entity_shape(ecs::const_handle h, const Health* health, const SimInterface& sim) {
+  std::optional<glm::vec4> colour_override;
+  if (health && health->hit_timer) {
+    colour_override = glm::vec4{1.f};
   }
-  render_shape<S>(sim, get_shape_parameters<Logic>(h), c_override);
+  render_shape<S>(sim, get_shape_parameters<Logic>(h), colour_override);
 }
 
 template <ecs::Component Logic, geom::ShapeNode S = typename Logic::shape>
-void explode_entity_shapes_with_colour(ecs::const_handle h, SimInterface& sim, const glm::vec4& c,
-                                       std::uint32_t time = 8) {
-  geom::iterate(S{}, geom::iterate_centres, get_shape_parameters<Logic>(h), {},
-                [&](const vec2& v, const glm::vec4&) { sim.explosion(to_float(v), c, time); });
-}
-
-template <ecs::Component Logic, geom::ShapeNode S = typename Logic::shape>
-void explode_entity_shapes(ecs::const_handle h, SimInterface& sim) {
-  geom::iterate(S{}, geom::iterate_centres, get_shape_parameters<Logic>(h), {},
-                [&](const vec2& v, const glm::vec4& c) { sim.explosion(to_float(v), c); });
-}
-
-template <ecs::Component Logic, geom::ShapeNode S = typename Logic::shape>
-void explode_entity_shapes_towards(ecs::const_handle h, SimInterface& sim, std::uint32_t time,
-                                   const vec2& towards) {
+void explode_entity_shapes(ecs::const_handle h, SimInterface& sim,
+                           const std::optional<glm::vec4> colour_override = std::nullopt,
+                           std::uint32_t time = 8,
+                           const std::optional<vec2>& towards = std::nullopt) {
+  std::optional<glm::vec2> towards_float;
+  if (towards) {
+    towards_float = to_float(*towards);
+  }
   geom::iterate(S{}, geom::iterate_centres, get_shape_parameters<Logic>(h), {},
                 [&](const vec2& v, const glm::vec4& c) {
-                  sim.explosion(to_float(v), c, time, to_float(towards));
+                  sim.explosion(to_float(v), colour_override.value_or(c), time, towards_float);
                 });
+}
+
+template <ecs::Component Logic, geom::ShapeNode S = typename Logic::shape>
+void explode_entity_shapes_default(ecs::const_handle h, SimInterface& sim) {
+  return explode_entity_shapes<Logic, S>(h, sim);
 }
 
 template <ecs::Component Logic, geom::ShapeNode S>
@@ -106,7 +103,7 @@ void add_enemy_health(ecs::handle h, std::uint32_t hp,
                       std::optional<sound> destroy_sound = std::nullopt) {
   destroy_sound = destroy_sound ? *destroy_sound : Logic::kDestroySound;
   using on_destroy_t = void(ecs::const_handle, SimInterface & sim, damage_type);
-  constexpr auto explode_shapes = cast<on_destroy_t, &explode_entity_shapes<Logic, S>>;
+  constexpr auto explode_shapes = cast<on_destroy_t, &explode_entity_shapes_default<Logic, S>>;
   if constexpr (requires { &Logic::on_destroy; }) {
     h.add(Health{.hp = hp,
                  .destroy_sound = destroy_sound,

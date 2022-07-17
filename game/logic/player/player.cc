@@ -19,23 +19,29 @@ vec2 get_centre(const Transform* transform, const LegacyShip* legacy_ship) {
 struct Shot : ecs::component {
   static constexpr fixed kSpeed = 10;
 
-  using shape = standard_transform<geom::box_shape<2, 2, glm::vec4{1.f}>,
-                                   geom::box_shape<1, 1, glm::vec4{.2f}>,
-                                   geom::box_shape<3, 3, glm::vec4{.2f}>>;
+  using shape = standard_transform<geom::box_colour_p<2, 2, 2>, geom::box_colour_p<1, 1, 3>,
+                                   geom::box_colour_p<3, 3, 3>>;
+
+  std::tuple<vec2, fixed, glm::vec4, glm::vec4> shape_parameters(const Transform& transform) const {
+    auto c_dark = colour;
+    c_dark.a = .2f;
+    return {transform.centre, transform.rotation, colour, c_dark};
+  }
 
   ecs::handle player;
   vec2 velocity{0};
   bool magic = false;
+  glm::vec4 colour{0.f};
 
   Shot(ecs::handle player, const vec2& direction, bool magic)
   : player{std::move(player)}, velocity{normalise(direction) * kSpeed}, magic{magic} {}
 
-  void update(ecs::handle h, Transform& transform, Render& render, SimInterface& sim) const {
-    render.colour_override = magic && sim.random(2)
-        ? glm::vec4{1.f}
-        : player_colour(player.get<Player>()->player_number);
+  void update(ecs::handle h, Transform& transform, SimInterface& sim) {
     if (sim.conditions().mode == game_mode::kWhat) {
-      render.colour_override = glm::vec4{0.f};
+      colour = glm::vec4{0.f};
+    } else {
+      colour = magic && sim.random(2) ? glm::vec4{1.f}
+                                      : player_colour(player.get<Player>()->player_number);
     }
     transform.move(velocity);
     bool on_screen = all(greaterThanEqual(transform.centre, vec2{-4, -4})) &&
@@ -68,14 +74,31 @@ void spawn_shot(SimInterface& sim, const vec2& position, ecs::handle player, con
 struct Powerup : ecs::component {
   static constexpr fixed kSpeed = 1;
   static constexpr std::uint32_t kRotateTime = 100;
+  static constexpr glm::vec4 cw{1.f};
 
+  using out0 = geom::ngon_colour_p<13, 5, 2>;
+  using out1 = geom::ngon_colour_p<9, 5, 3>;
+  using extra_life = geom::switch_entry<powerup_type::kExtraLife, geom::ngon<8, 3, cw>>;
+  using magic_shots = geom::switch_entry<powerup_type::kMagicShots, geom::box<3, 3, cw>>;
+  using shield = geom::switch_entry<powerup_type::kShield, geom::ngon<11, 5, cw>>;
+  using bomb =
+      geom::switch_entry<powerup_type::kBomb, geom::ngon<11, 10, cw, geom::ngon_style::kPolystar>>;
+  using shape =
+      standard_transform<out0, out1, geom::switch_p<4, extra_life, magic_shots, shield, bomb>>;
+
+  std::tuple<vec2, fixed, glm::vec4, glm::vec4, powerup_type>
+  shape_parameters(const Transform& transform) const {
+    auto c0 = player_colour((frame % (2 * kMaxPlayers)) / 2);
+    auto c1 = player_colour(((frame + 1) % (2 * kMaxPlayers)) / 2);
+    return {transform.centre, fixed_c::pi / 2, c0, c1, type};
+  }
+
+  Powerup(powerup_type type) : type{type} {}
   powerup_type type = powerup_type::kExtraLife;
   std::uint32_t frame = 0;
   vec2 dir = {0, 1};
   bool rotate = false;
   bool first_frame = true;
-
-  Powerup(powerup_type type) : type{type} {}
 
   void update(ecs::handle h, Transform& transform, SimInterface& sim) {
     ++frame;
@@ -140,38 +163,6 @@ struct Powerup : ecs::component {
     }
     h.emplace<Destroy>();
   }
-
-  void render(const Transform& transform, const SimInterface& sim) const {
-    // TODO: really need a better way of doing dynamic shape-type parameters (specifically colours).
-    using out0 = standard_transform<geom::ngon_shape<13, 5, glm::vec4{1.f}>>;
-    using out1 = standard_transform<geom::ngon_shape<9, 5, glm::vec4{1.f}>>;
-    using extra_life = standard_transform<geom::ngon_shape<8, 3, glm::vec4{1.f}>>;
-    using magic_shots = geom::translate_p<0, geom::box_shape<3, 3, glm::vec4{1.f}>>;
-    using shield = standard_transform<geom::ngon_shape<11, 5, glm::vec4{1.f}>>;
-    using bomb =
-        standard_transform<geom::ngon_shape<11, 10, glm::vec4{1.f}, geom::ngon_style::kPolystar>>;
-
-    auto c0 = player_colour((frame % (2 * kMaxPlayers)) / 2);
-    auto c1 = player_colour(((frame + 1) % (2 * kMaxPlayers)) / 2);
-    std::tuple parameters{transform.centre, fixed_c::pi / 2};
-
-    render_shape<out0>(sim, parameters, c0);
-    render_shape<out1>(sim, parameters, c1);
-    switch (type) {
-    case powerup_type::kExtraLife:
-      render_shape<extra_life>(sim, parameters);
-      break;
-    case powerup_type::kMagicShots:
-      render_shape<magic_shots>(sim, parameters);
-      break;
-    case powerup_type::kShield:
-      render_shape<shield>(sim, parameters);
-      break;
-    case powerup_type::kBomb:
-      render_shape<bomb>(sim, parameters);
-      break;
-    }
-  }
 };
 
 struct PlayerLogic : ecs::component {
@@ -183,9 +174,37 @@ struct PlayerLogic : ecs::component {
   static constexpr std::uint32_t kShieldTime = 50;
   static constexpr std::uint32_t kShotTimer = 4;
 
+  using shield = geom::if_p<2, geom::ngon_colour_p<16, 10, 6>>;
+  using bomb = geom::if_p<
+      3,
+      geom::translate<
+          -8, 0,
+          geom::rotate<fixed_c::pi, geom::ngon_colour_p<6, 5, 6, geom::ngon_style::kPolystar>>>>;
+  using box_shapes =
+      geom::translate<8, 0, geom::rotate_eval<geom::negate_p<1>, geom::box_colour_p<2, 2, 4>>,
+                      geom::rotate_eval<geom::negate_p<1>, geom::box_colour_p<1, 1, 5>>,
+                      geom::rotate_eval<geom::negate_p<1>, geom::box_colour_p<3, 3, 5>>>;
+  using shape = standard_transform<geom::ngon_colour_p<16, 3, 4>,
+                                   geom::rotate<fixed_c::pi, geom::ngon_colour_p<8, 3, 4>>,
+                                   box_shapes, shield, bomb>;
+
+  std::tuple<vec2, fixed, bool, bool, glm::vec4, glm::vec4, glm::vec4>
+  shape_parameters(const Player& pc, const Transform& transform) const {
+    auto colour = !should_render(pc) ? glm::vec4{0.f}
+        : invulnerability_timer % 2  ? glm::vec4{1.f}
+                                     : player_colour(pc.player_number);
+    auto c_dark = colour;
+    c_dark.a = std::min(c_dark.a, .2f);
+    auto powerup_colour = !should_render(pc) ? glm::vec4{0.f} : glm::vec4{1.f};
+    return {transform.centre, transform.rotation, pc.has_shield, pc.has_bomb, colour,
+            c_dark,           powerup_colour};
+  };
+
+  PlayerLogic(const SimInterface& sim) : is_what_mode{sim.conditions().mode == game_mode::kWhat} {}
   std::uint32_t invulnerability_timer = kReviveTime;
   vec2 fire_target{0};
   std::uint32_t fire_timer = 0;
+  bool is_what_mode = false;
 
   void update(ecs::handle h, Player& pc, Transform& transform, SimInterface& sim) {
     auto input = sim.input(pc.player_number);
@@ -230,17 +249,16 @@ struct PlayerLogic : ecs::component {
     if (pc.has_bomb && input.keys & input_frame::kBomb) {
       auto c = player_colour(pc.player_number);
       pc.has_bomb = false;
-      // destroy_shape(5);
 
-      explosion(pc, transform, sim, glm::vec4{1.f}, 16);
-      explosion(pc, transform, sim, c, 32);
-      explosion(pc, transform, sim, glm::vec4{1.f}, 48);
+      explosion(h, std::nullopt, sim, glm::vec4{1.f}, 16);
+      explosion(h, std::nullopt, sim, c, 32);
+      explosion(h, std::nullopt, sim, glm::vec4{1.f}, 48);
 
       Transform bomb_explode;
       for (std::uint32_t i = 0; i < 64; ++i) {
         bomb_explode.centre = transform.centre + from_polar(2 * i * fixed_c::pi / 64, kBombRadius);
-        explosion(pc, bomb_explode, sim, (i % 2) ? c : glm::vec4{1.f},
-                  8 + sim.random(8) + sim.random(8), to_float(transform.centre));
+        explosion(h, bomb_explode, sim, (i % 2) ? c : glm::vec4{1.f},
+                  8 + sim.random(8) + sim.random(8), transform.centre);
       }
 
       sim.rumble(pc.player_number, 10);
@@ -279,11 +297,11 @@ struct PlayerLogic : ecs::component {
 
     // Damage.
     if (sim.any_collision(transform.centre, shape_flag::kDangerous)) {
-      damage(pc, transform, sim);
+      damage(h, pc, transform, sim);
     }
   }
 
-  void damage(Player& pc, Transform& transform, SimInterface& sim) {
+  void damage(ecs::handle h, Player& pc, Transform& transform, SimInterface& sim) {
     if (pc.kill_timer || invulnerability_timer) {
       return;
     }
@@ -291,15 +309,14 @@ struct PlayerLogic : ecs::component {
     if (pc.has_shield) {
       sim.rumble(pc.player_number, 10);
       sim.play_sound(sound::kPlayerShield, transform.centre);
-      // destroy_shape(5);
       pc.has_shield = false;
       invulnerability_timer = kShieldTime;
       return;
     }
 
-    explosion(pc, transform, sim);
-    explosion(pc, transform, sim, glm::vec4{1.f}, 14);
-    explosion(pc, transform, sim, std::nullopt, 20);
+    explosion(h, std::nullopt, sim);
+    explosion(h, std::nullopt, sim, glm::vec4{1.f}, 14);
+    explosion(h, std::nullopt, sim, std::nullopt, 20);
 
     pc.magic_shot_count = 0;
     pc.multiplier = 1;
@@ -307,7 +324,6 @@ struct PlayerLogic : ecs::component {
     pc.kill_timer = kReviveTime;
     ++pc.death_count;
     if (pc.has_shield || pc.has_bomb) {
-      // destroy_shape(5);
       pc.has_shield = false;
       pc.has_bomb = false;
     }
@@ -316,72 +332,51 @@ struct PlayerLogic : ecs::component {
     sim.play_sound(sound::kPlayerDestroy, transform.centre);
   }
 
-  void explosion(const Player& pc, const Transform& transform, SimInterface& sim,
-                 std::optional<glm::vec4> colour = std::nullopt, std::uint32_t time = 8,
-                 std::optional<glm::vec2> towards = std::nullopt) {
-    glm::vec2 v{transform.centre.x.to_float(), transform.centre.y.to_float()};
-    auto c = colour.value_or(player_colour(pc.player_number));
-    auto c_dark = c;
-    c_dark.a = .5f;
-    sim.explosion(v, c, time, towards);
-    sim.explosion(v + glm::vec2{8.f, 0.f}, c, time, towards);
-    sim.explosion(v + glm::vec2{0.f, 8.f}, c, time, towards);
-    sim.explosion(v + glm::vec2{8.f, 0.f}, c_dark, time, towards);
-    sim.explosion(v + glm::vec2{0.f, 8.f}, c_dark, time, towards);
-    if (pc.has_bomb || pc.has_shield) {
-      sim.explosion(v, colour.value_or(glm::vec4{1.f}), time, towards);
+  void explosion(ecs::handle h, const std::optional<Transform>& transform_override,
+                 SimInterface& sim, const std::optional<glm::vec4>& colour = std::nullopt,
+                 std::uint32_t time = 8, const std::optional<vec2>& towards = std::nullopt) const {
+    if (!transform_override) {
+      explode_entity_shapes<PlayerLogic>(h, sim, colour, time, towards);
+      return;
+    }
+    auto& transform = *h.get<Transform>();
+    auto old_transform = transform;
+    transform = *transform_override;
+    explode_entity_shapes<PlayerLogic>(h, sim, colour, time, towards);
+    transform = old_transform;
+  }
+
+  void render(const Player& pc, const SimInterface& sim) const {
+    auto c = player_colour(pc.player_number);
+    if (should_render(pc)) {
+      auto t = to_float(fire_target);
+      sim.render_line(t + glm::vec2{0, 9}, t - glm::vec2{0, 8}, c);
+      sim.render_line(t + glm::vec2{9, 1}, t - glm::vec2{8, -1}, c);
+    }
+
+    if (sim.conditions().mode != game_mode::kBoss) {
+      sim.render_player_info(pc.player_number, c, pc.score, pc.multiplier,
+                             static_cast<float>(pc.magic_shot_count) / kMagicShotCount);
     }
   }
 
-  void render(const Player& pc, const Transform& transform, const SimInterface& sim) const {
-    // TODO: really need a better way of doing dynamic shape-type parameters (specifically colours).
-    static constexpr glm::vec4 c_dark{1.f, 1.f, 1.f, .2f};
-    using box_shapes =
-        geom::translate<8, 0,
-                        geom::rotate_eval<geom::negate_p<1>, geom::box_shape<2, 2, glm::vec4{1.f}>>,
-                        geom::rotate_eval<geom::negate_p<1>, geom::box_shape<1, 1, c_dark>>,
-                        geom::rotate_eval<geom::negate_p<1>, geom::box_shape<3, 3, c_dark>>>;
-    using shape =
-        standard_transform<geom::ngon_shape<16, 3, glm::vec4{1.f}>,
-                           geom::rotate<fixed_c::pi, geom::ngon_shape<8, 3, glm::vec4{1.f}>>,
-                           box_shapes>;
-    using shield = standard_transform<geom::ngon_shape<16, 10, glm::vec4{1.f}>>;
-    using bomb = standard_transform<geom::translate<
-        -8, 0,
-        geom::rotate<fixed_c::pi,
-                     geom::ngon_shape<6, 5, glm::vec4{1.f}, geom::ngon_style::kPolystar>>>>;
-
-    std::tuple parameters{transform.centre, transform.rotation};
-    render_shape<shape>(sim, parameters, player_colour(pc.player_number));
-    if (pc.has_shield) {
-      render_shape<shield>(sim, parameters);
-    }
-    if (pc.has_bomb) {
-      render_shape<bomb>(sim, parameters);
-    }
+  bool should_render(const Player& pc) const {
+    return !pc.kill_timer && (!is_what_mode || invulnerability_timer);
   }
 };
 
 }  // namespace
 
 void spawn_powerup(SimInterface& sim, const vec2& position, powerup_type type) {
-  auto h = sim.index().create();
-  h.add(LegacyShip{.ship = std::make_unique<ShipForwarder>(sim, h)});
-  h.add(Update{.update = ecs::call<&Powerup::update>});
-  h.add(Render{.render = ecs::call<&Powerup::render>});
-  h.add(Transform{.centre = position});
+  auto h = create_ship<Powerup>(sim, position);
   h.add(Powerup{type});
   h.add(PowerupTag{});
 }
 
 void spawn_player(SimInterface& sim, const vec2& position, std::uint32_t player_number) {
-  auto h = sim.index().create();
-  h.add(LegacyShip{.ship = std::make_unique<ShipForwarder>(sim, h)});
-  h.add(Update{.update = ecs::call<&PlayerLogic::update>});
-  h.add(Render{.render = ecs::call<&PlayerLogic::render>});
+  auto h = create_ship<PlayerLogic>(sim, position);
   h.add(Player{.player_number = player_number});
-  h.add(PlayerLogic{});
-  h.add(Transform{.centre = position});
+  h.add(PlayerLogic{sim});
 }
 
 }  // namespace ii

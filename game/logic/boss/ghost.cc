@@ -22,8 +22,8 @@ struct GhostWall : ecs::component {
 
   template <std::uint32_t length>
   using gw_box =
-      geom::compound<geom::box_shape<length, 10, c0, shape_flag::kDangerous | shape_flag::kShield>,
-                     geom::box_shape<length, 7, c0>, geom::box_shape<length, 4, c0>>;
+      geom::compound<geom::box<length, 10, c0, shape_flag::kDangerous | shape_flag::kShield>,
+                     geom::box<length, 7, c0>, geom::box<length, 4, c0>>;
   using gw_horizontal_base = geom::rotate<fixed_c::pi / 2, gw_box<kSimDimensions.y / 2>>;
   template <fixed Y0, fixed Y1>
   using gw_horizontal_align = geom::compound<geom::translate<0, Y0, gw_horizontal_base>,
@@ -86,20 +86,21 @@ struct GhostMine : ecs::component {
   static constexpr sound kDestroySound = sound::kEnemyDestroy;
 
   using shape = standard_transform<
-      geom::conditional_p<
-          2, geom::ngon_shape<24, 8, c1>,
-          geom::ngon_shape<24, 8, c1, geom::ngon_style::kPolygon,
-                           shape_flag::kDangerous | shape_flag::kShield | shape_flag::kWeakShield>>,
-      geom::ngon_shape<20, 8, c1>>;
-  std::tuple<vec2, fixed, bool> shape_parameters(const Transform& transform) const {
-    return {transform.centre, transform.rotation, timer > 0};
+      geom::conditional_p<2, geom::ngon_colour_p<24, 8, 3>,
+                          geom::ngon_colour_p<24, 8, 3, geom::ngon_style::kPolygon,
+                                              shape_flag::kDangerous | shape_flag::kShield |
+                                                  shape_flag::kWeakShield>>,
+      geom::ngon_colour_p<20, 8, 3>>;
+
+  std::tuple<vec2, fixed, bool, glm::vec4> shape_parameters(const Transform& transform) const {
+    return {transform.centre, transform.rotation, timer > 0, (timer / 4) % 2 ? glm::vec4{0.f} : c1};
   }
 
   std::uint32_t timer = 80;
   ecs::entity_id ghost_boss{0};
   GhostMine(ecs::entity_id ghost_boss) : ghost_boss{ghost_boss} {}
 
-  void update(ecs::handle h, Transform& transform, Render& render, SimInterface& sim) {
+  void update(ecs::handle h, Transform& transform, SimInterface& sim) {
     if (timer == 80) {
       explode_entity_shapes<GhostMine>(h, sim);
       transform.set_rotation(sim.random_fixed() * 2 * fixed_c::pi);
@@ -114,11 +115,6 @@ struct GhostMine : ecs::component {
         spawn_follow(sim, transform.centre, /* score */ false);
       }
       ecs::call<&Health::damage>(h, sim, 1, damage_type::kNone, std::nullopt);
-    }
-    if ((timer / 4) % 2) {
-      render.colour_override = glm::vec4{0.f};
-    } else {
-      render.colour_override.reset();
     }
   }
 };

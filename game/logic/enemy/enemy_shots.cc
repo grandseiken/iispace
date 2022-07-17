@@ -9,15 +9,19 @@ struct BossShot : ecs::component {
   static constexpr std::uint32_t kBoundingWidth = 12;
   static constexpr sound kDestroySound = sound::kEnemyDestroy;
 
-  using shape =
-      standard_transform<geom::ngon_shape<16, 8, glm::vec4{1.f}, geom::ngon_style::kPolystar>,
-                         geom::ngon_shape<10, 8, glm::vec4{1.f}>,
-                         geom::ball_collider_shape<12, shape_flag::kDangerous>>;
+  using shape = standard_transform<geom::ngon_colour_p<16, 8, 2, geom::ngon_style::kPolystar>,
+                                   geom::ngon_colour_p<10, 8, 2>,
+                                   geom::ball_collider<12, shape_flag::kDangerous>>;
 
-  BossShot(const vec2& velocity, fixed rotate_speed)
-  : velocity{velocity}, rotate_speed{rotate_speed} {}
+  std::tuple<vec2, fixed, glm::vec4> shape_parameters(const Transform& transform) const {
+    return {transform.centre, transform.rotation, colour};
+  }
+
+  BossShot(const vec2& velocity, const glm::vec4& colour, fixed rotate_speed)
+  : velocity{velocity}, colour{colour}, rotate_speed{rotate_speed} {}
   std::uint32_t timer = 0;
   vec2 velocity{0};
+  glm::vec4 colour{0.f};
   fixed rotate_speed = 0;
 
   void update(ecs::handle h, Transform& transform, SimInterface& sim) {
@@ -29,7 +33,7 @@ struct BossShot : ecs::component {
     }
     transform.set_rotation(transform.rotation + fixed_c::hundredth * 2);
     if (sim.any_collision(transform.centre, shape_flag::kSafeShield)) {
-      explode_entity_shapes_towards<BossShot>(h, sim, 4, transform.centre - velocity);
+      explode_entity_shapes<BossShot>(h, sim, std::nullopt, 4, transform.centre - velocity);
       h.emplace<Destroy>();
       return;
     }
@@ -44,10 +48,9 @@ void spawn_boss_shot(SimInterface& sim, const vec2& position, const vec2& veloci
                      const glm::vec4& colour, fixed rotate_speed) {
   auto h = create_ship<BossShot>(sim, position);
   add_enemy_health<BossShot>(h, 0);
-  h.add(BossShot{velocity, rotate_speed});
+  h.add(BossShot{velocity, colour, rotate_speed});
   h.add(Enemy{.threat_value = 1});
   h.add(WallTag{});
-  h.get<Render>()->colour_override = colour;
 }
 
 }  // namespace ii

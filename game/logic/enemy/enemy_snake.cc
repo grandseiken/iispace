@@ -12,21 +12,27 @@ struct SnakeTail : ecs::component {
   static constexpr sound kDestroySound = sound::kPlayerDestroy;
 
   using shape =
-      standard_transform<geom::ngon_shape<10, 4, glm::vec4{1.f}, geom::ngon_style::kPolygon,
-                                          shape_flag::kDangerous | shape_flag::kWeakShield>>;
+      standard_transform<geom::ngon_colour_p<10, 4, 2, geom::ngon_style::kPolygon,
+                                             shape_flag::kDangerous | shape_flag::kWeakShield>>;
 
+  std::tuple<vec2, fixed, glm::vec4> shape_parameters(const Transform& transform) const {
+    return {transform.centre, transform.rotation, colour};
+  }
+
+  SnakeTail(const glm::vec4& colour) : colour{colour} {}
   std::optional<ecs::entity_id> tail;
   std::optional<ecs::entity_id> head;
   std::uint32_t timer = 150;
   std::uint32_t d_timer = 0;
+  glm::vec4 colour{0.f};
 
-  void update(ecs::handle h, Transform& transform, const Render& render, SimInterface& sim) {
+  void update(ecs::handle h, Transform& transform, SimInterface& sim) {
     static constexpr fixed z15 = fixed_c::hundredth * 15;
     transform.rotate(z15);
     if (!--timer) {
       on_destroy(sim);
       h.emplace<Destroy>();
-      explode_entity_shapes_with_colour<SnakeTail>(h, sim, *render.colour_override);
+      explode_entity_shapes<SnakeTail>(h, sim, colour);
     }
     if (d_timer && !--d_timer) {
       if (tail && sim.index().contains(*tail)) {
@@ -34,7 +40,7 @@ struct SnakeTail : ecs::component {
       }
       on_destroy(sim);
       h.emplace<Destroy>();
-      explode_entity_shapes_with_colour<SnakeTail>(h, sim, *render.colour_override);
+      explode_entity_shapes<SnakeTail>(h, sim, colour);
       sim.play_sound(sound::kEnemyDestroy, transform.centre, true);
     }
   }
@@ -54,19 +60,24 @@ struct Snake : ecs::component {
   static constexpr sound kDestroySound = sound::kPlayerDestroy;
 
   using shape = standard_transform<
-      geom::ngon_shape<14, 3, glm::vec4{1.f}, geom::ngon_style::kPolygon, shape_flag::kVulnerable>,
-      geom::ball_collider_shape<10, shape_flag::kDangerous>>;
+      geom::ngon_colour_p<14, 3, 2, geom::ngon_style::kPolygon, shape_flag::kVulnerable>,
+      geom::ball_collider<10, shape_flag::kDangerous>>;
+
+  std::tuple<vec2, fixed, glm::vec4> shape_parameters(const Transform& transform) const {
+    return {transform.centre, transform.rotation, colour};
+  }
 
   std::optional<ecs::entity_id> tail;
   std::uint32_t timer = 0;
   vec2 dir{0};
   std::uint32_t count = 0;
   bool is_projectile = false;
+  glm::vec4 start_colour{0.f};
   glm::vec4 colour{0.f};
   fixed projectile_rotation = 0;
 
   Snake(SimInterface& sim, const glm::vec4& colour, const vec2& direction, fixed rotation)
-  : colour{colour}, projectile_rotation{rotation} {
+  : start_colour{colour}, colour{colour}, projectile_rotation{rotation} {
     if (direction == vec2{0}) {
       auto r = sim.random(4);
       dir = r == 0 ? vec2{1, 0} : r == 1 ? vec2{-1, 0} : r == 2 ? vec2{0, 1} : vec2{0, -1};
@@ -76,7 +87,7 @@ struct Snake : ecs::component {
     }
   }
 
-  void update(ecs::handle h, Transform& transform, Render& render, SimInterface& sim) {
+  void update(ecs::handle h, Transform& transform, SimInterface& sim) {
     if (transform.centre.x < -8 || transform.centre.x > kSimDimensions.x + 8 ||
         transform.centre.y < -8 || transform.centre.y > kSimDimensions.y + 8) {
       tail.reset();
@@ -84,12 +95,11 @@ struct Snake : ecs::component {
       return;
     }
 
-    auto c = colour;
-    c.x += static_cast<float>(timer % 256) / 256.f;
-    render.colour_override = c;
+    colour = start_colour;
+    colour.x += static_cast<float>(timer % 256) / 256.f;
     ++timer;
     if (timer % (is_projectile ? 4 : 8) == 0) {
-      auto c_dark = c;
+      auto c_dark = colour;
       c_dark.a = .6f;
       auto new_h = spawn_snake_tail(sim, transform.centre, c_dark);
       if (tail && sim.index().contains(*tail)) {
@@ -120,9 +130,8 @@ struct Snake : ecs::component {
 ecs::handle spawn_snake_tail(SimInterface& sim, const vec2& position, const glm::vec4& colour) {
   auto h = create_ship<SnakeTail>(sim, position);
   add_enemy_health<SnakeTail>(h, 0);
-  h.add(SnakeTail{});
+  h.add(SnakeTail{colour});
   h.add(Enemy{.threat_value = 1});
-  h.get<Render>()->colour_override = colour;
   return h;
 }
 

@@ -38,14 +38,9 @@ struct transform {
 //////////////////////////////////////////////////////////////////////////////////
 struct arbitrary_parameters {};
 struct arbitrary_parameter {
-  constexpr operator vec2() const {
-    return vec2{0, 0};
-  }
-  constexpr operator fixed() const {
-    return fixed{0};
-  }
-  constexpr explicit operator bool() const {
-    return false;
+  template <typename T>
+  constexpr explicit operator T() const {
+    return T{0};
   }
   constexpr arbitrary_parameter operator-() const {
     return {};
@@ -56,6 +51,12 @@ constexpr arbitrary_parameter operator*(auto, arbitrary_parameter) {
 }
 constexpr arbitrary_parameter operator*(arbitrary_parameter, auto) {
   return {};
+}
+constexpr bool operator==(arbitrary_parameter, auto) {
+  return true;
+}
+constexpr bool operator==(auto, arbitrary_parameter) {
+  return true;
 }
 
 template <std::size_t N>
@@ -125,7 +126,7 @@ enum class ngon_style {
   kPolygram,
 };
 
-struct ball_collider {
+struct ball_collider_data {
   std::uint32_t radius = 0;
   shape_flag flags = shape_flag::kNone;
 
@@ -151,7 +152,7 @@ struct ball_collider {
   }
 };
 
-struct ngon {
+struct ngon_data {
   std::uint32_t radius = 0;
   std::uint32_t sides = 0;
   glm::vec4 colour{0.f};
@@ -196,7 +197,7 @@ struct ngon {
   }
 };
 
-struct box {
+struct box_data {
   glm::uvec2 dimensions{0};
   glm::vec4 colour{0.f};
   shape_flag flags = shape_flag::kNone;
@@ -232,19 +233,19 @@ struct box {
   }
 };
 
-constexpr ball_collider
+constexpr ball_collider_data
 make_ball_collider(std::uint32_t radius, shape_flag flags = shape_flag::kNone) {
   return {radius, flags};
 }
 
-constexpr ngon make_ngon(std::uint32_t radius, std::uint32_t sides, const glm::vec4& colour,
-                         ngon_style style = ngon_style::kPolygon,
-                         shape_flag flags = shape_flag::kNone) {
+constexpr ngon_data make_ngon(std::uint32_t radius, std::uint32_t sides, const glm::vec4& colour,
+                              ngon_style style = ngon_style::kPolygon,
+                              shape_flag flags = shape_flag::kNone) {
   return {radius, sides, colour, style, flags};
 }
 
-constexpr box make_box(const glm::uvec2& dimensions, const glm::vec4& colour,
-                       shape_flag flags = shape_flag::kNone) {
+constexpr box_data make_box(const glm::uvec2& dimensions, const glm::vec4& colour,
+                            shape_flag flags = shape_flag::kNone) {
   return {dimensions, colour, flags};
 }
 
@@ -255,6 +256,8 @@ template <auto V>
 struct constant {};
 template <fixed X, fixed Y>
 struct constant_vec2 {};
+template <std::uint32_t X, std::uint32_t Y>
+struct constant_uvec2 {};
 template <std::size_t N>
 struct parameter {};
 
@@ -262,35 +265,110 @@ template <typename E>
 struct negate {};
 template <typename E0, typename E1>
 struct multiply {};
+template <typename E0, typename E1>
+struct equal {};
 
 template <auto V>
-static constexpr auto evaluate(constant<V>, const auto&) {
+constexpr auto evaluate(constant<V>, const auto&) {
   return V;
 }
 
 template <fixed X, fixed Y>
-static constexpr auto evaluate(constant_vec2<X, Y>, const auto&) {
+constexpr auto evaluate(constant_vec2<X, Y>, const auto&) {
   return vec2{X, Y};
 }
 
+template <std::uint32_t X, std::uint32_t Y>
+constexpr auto evaluate(constant_uvec2<X, Y>, const auto&) {
+  return glm::uvec2{X, Y};
+}
+
 template <std::size_t N>
-static constexpr auto evaluate(parameter<N>, const auto& params) {
+constexpr auto evaluate(parameter<N>, const auto& params) {
   return get<N>(params);
 }
 
 template <typename E>
-static constexpr auto evaluate(negate<E>, const auto& params) {
+constexpr auto evaluate(negate<E>, const auto& params) {
   return -evaluate(E{}, params);
 }
 
 template <typename E0, typename E1>
-static constexpr auto evaluate(multiply<E0, E1>, const auto& params) {
+constexpr auto evaluate(multiply<E0, E1>, const auto& params) {
   return evaluate(E0{}, params) * evaluate(E1{}, params);
+}
+
+template <typename E0, typename E1>
+constexpr auto evaluate(equal<E0, E1>, const auto& params) {
+  return evaluate(E0{}, params) == evaluate(E1{}, params);
+}
+
+//////////////////////////////////////////////////////////////////////////////////
+// Shape-constructor-expresssions.
+//////////////////////////////////////////////////////////////////////////////////
+template <Expression<std::uint32_t> Radius, Expression<shape_flag> Flags>
+struct ball_collider_eval {};
+template <Expression<std::uint32_t> Radius, Expression<std::uint32_t> Sides,
+          Expression<glm::vec4> Colour,
+          Expression<ngon_style> Style = constant<ngon_style::kPolygon>,
+          Expression<shape_flag> Flags = constant<shape_flag::kNone>>
+struct ngon_eval {};
+template <Expression<glm::uvec2> Dimensions, Expression<glm::vec4> Colour,
+          Expression<shape_flag> Flags = constant<shape_flag::kNone>>
+struct box_eval {};
+
+template <Expression<std::uint32_t> Radius, Expression<shape_flag> Flags>
+constexpr auto evaluate(ball_collider_eval<Radius, Flags>, const auto& params) {
+  return make_ball_collider(std::uint32_t{evaluate(Radius{}, params)},
+                            shape_flag{evaluate(Flags{}, params)});
+}
+
+template <Expression<std::uint32_t> Radius, Expression<std::uint32_t> Sides,
+          Expression<glm::vec4> Colour, Expression<ngon_style> Style, Expression<shape_flag> Flags>
+constexpr auto evaluate(ngon_eval<Radius, Sides, Colour, Style, Flags>, const auto& params) {
+  return make_ngon(std::uint32_t{evaluate(Radius{}, params)},
+                   std::uint32_t{evaluate(Sides{}, params)}, glm::vec4{evaluate(Colour{}, params)},
+                   ngon_style{evaluate(Style{}, params)}, shape_flag{evaluate(Flags{}, params)});
+}
+
+template <Expression<glm::uvec2> Dimensions, Expression<glm::vec4> Colour,
+          Expression<shape_flag> Flags>
+constexpr auto evaluate(box_eval<Dimensions, Colour, Flags>, const auto& params) {
+  return make_box(glm::uvec2{evaluate(Dimensions{}, params)}, glm::vec4{evaluate(Colour{}, params)},
+                  shape_flag{evaluate(Flags{}, params)});
 }
 
 //////////////////////////////////////////////////////////////////////////////////
 // Shape-expressions.
 //////////////////////////////////////////////////////////////////////////////////
+template <ShapeNode... Nodes>
+struct compound {};
+
+namespace detail {
+template <ShapeNode Node, ShapeNode... Rest>
+struct pack {
+  using type = compound<Node, Rest...>;
+};
+template <ShapeNode Node>
+struct pack<Node> {
+  using type = Node;
+};
+}  // namespace detail
+
+template <ShapeNode... Nodes>
+using pack = typename detail::pack<Nodes...>::type;
+template <typename A, typename B>
+struct pair {
+  using a = A;
+  using b = B;
+};
+template <typename Pair>
+using pair_a = typename Pair::a;
+template <typename Pair>
+using pair_b = typename Pair::b;
+template <auto Value, ShapeNode Node>
+using switch_entry = pair<constant<Value>, Node>;
+
 struct null_shape {};
 template <Expression<vec2> V, ShapeNode Node>
 struct translate_eval {};
@@ -298,8 +376,11 @@ template <Expression<fixed> Angle, ShapeNode Node>
 struct rotate_eval {};
 template <Expression<bool> Condition, ShapeNode TrueNode, ShapeNode FalseNode>
 struct conditional_eval {};
-template <ShapeNode... Nodes>
-struct compound {};
+template <Expression<bool> Condition, ShapeNode... Nodes>
+using if_eval = conditional_eval<Condition, pack<Nodes...>, null_shape>;
+template <typename Value, typename... SwitchEntries>
+using switch_eval =
+    compound<if_eval<equal<Value, pair_a<SwitchEntries>>, pair_b<SwitchEntries>>...>;
 
 template <ShapeExpression S, typename Parameters>
 requires ShapeExpressionWithSubstitution<Parameters, S>
@@ -402,49 +483,47 @@ requires(ShapeNodeWithSubstitution<Parameters, Nodes>&&...) constexpr void itera
 //////////////////////////////////////////////////////////////////////////////////
 // Helper combinations.
 //////////////////////////////////////////////////////////////////////////////////
-namespace detail {
-template <ShapeNode Node, ShapeNode... Rest>
-struct pack {
-  using type = compound<Node, Rest...>;
-};
-template <ShapeNode Node>
-struct pack<Node> {
-  using type = Node;
-};
-}  // namespace detail
-
-template <ShapeNode... Nodes>
-using pack = typename detail::pack<Nodes...>::type;
-
 template <fixed X, fixed Y, ShapeNode... Nodes>
 using translate = translate_eval<constant_vec2<X, Y>, pack<Nodes...>>;
 template <fixed Angle, ShapeNode... Nodes>
 using rotate = rotate_eval<constant<Angle>, pack<Nodes...>>;
 
-template <std::size_t N, ShapeNode... Nodes>
-using translate_p = translate_eval<parameter<N>, pack<Nodes...>>;
-template <std::size_t N, ShapeNode... Nodes>
-using rotate_p = rotate_eval<parameter<N>, pack<Nodes...>>;
+template <std::size_t ParameterIndex, ShapeNode... Nodes>
+using translate_p = translate_eval<parameter<ParameterIndex>, pack<Nodes...>>;
+template <std::size_t ParameterIndex, ShapeNode... Nodes>
+using rotate_p = rotate_eval<parameter<ParameterIndex>, pack<Nodes...>>;
 
-template <std::size_t N, ShapeNode TrueNode, ShapeNode FalseNode>
-using conditional_p = conditional_eval<parameter<N>, TrueNode, FalseNode>;
-template <std::size_t N, ShapeNode... Nodes>
-using if_p = conditional_p<N, pack<Nodes...>, null_shape>;
+template <std::size_t ParameterIndex, ShapeNode TrueNode, ShapeNode FalseNode>
+using conditional_p = conditional_eval<parameter<ParameterIndex>, TrueNode, FalseNode>;
+template <std::size_t ParameterIndex, ShapeNode... Nodes>
+using if_p = if_eval<parameter<ParameterIndex>, Nodes...>;
+template <std::size_t ParameterIndex, typename... SwitchEntries>
+using switch_p = switch_eval<parameter<ParameterIndex>, SwitchEntries...>;
 
-template <std::size_t N>
-using negate_p = negate<parameter<N>>;
-template <auto C, std::size_t N>
-using multiply_p = multiply<constant<C>, parameter<N>>;
+template <std::size_t ParameterIndex>
+using negate_p = negate<parameter<ParameterIndex>>;
+template <auto C, std::size_t ParameterIndex>
+using multiply_p = multiply<constant<C>, parameter<ParameterIndex>>;
 
 template <std::uint32_t Radius, shape_flag Flags>
-using ball_collider_shape = constant<make_ball_collider(Radius, Flags)>;
+using ball_collider = constant<make_ball_collider(Radius, Flags)>;
 template <std::uint32_t Radius, std::uint32_t Sides, glm::vec4 Colour,
           ngon_style Style = ngon_style::kPolygon, shape_flag Flags = shape_flag::kNone>
-using ngon_shape = constant<make_ngon(Radius, Sides, Colour, Style, Flags)>;
+using ngon = constant<make_ngon(Radius, Sides, Colour, Style, Flags)>;
 template <std::uint32_t W, std::uint32_t H, glm::vec4 Colour, shape_flag Flags = shape_flag::kNone>
-using box_shape = constant<make_box(glm::uvec2{W, H}, Colour, Flags)>;
+using box = constant<make_box(glm::uvec2{W, H}, Colour, Flags)>;
 template <std::uint32_t Radius, fixed Angle, glm::vec4 Colour>
-using line_shape = rotate<Angle, ngon_shape<Radius, 2, Colour>>;
+using line = rotate<Angle, ngon<Radius, 2, Colour>>;
+
+template <std::uint32_t Radius, std::uint32_t Sides, std::size_t ParameterIndex,
+          ngon_style Style = ngon_style::kPolygon, shape_flag Flags = shape_flag::kNone>
+using ngon_colour_p = ngon_eval<constant<Radius>, constant<Sides>, parameter<ParameterIndex>,
+                                constant<Style>, constant<Flags>>;
+template <std::uint32_t W, std::uint32_t H, std::size_t ParameterIndex,
+          shape_flag Flags = shape_flag::kNone>
+using box_colour_p = box_eval<constant_uvec2<W, H>, parameter<ParameterIndex>, constant<Flags>>;
+template <std::uint32_t Radius, fixed Angle, std::size_t ParameterIndex>
+using line_colour_p = rotate<Angle, ngon_colour_p<Radius, 2, ParameterIndex>>;
 
 }  // namespace ii::geom
 

@@ -108,7 +108,7 @@
 * Superweapon refills automatically, but no shields (or limit 1)
 
 ## New enemy ideas
-* Redesign shielder, shield at back and sides so you need to get in its path
+* Redesign shielder, shield at back and sides so you need to get in its path in front of it
 * Wall cluster bomb
 * Many new wall types / configuration
 * Enemy that shields other enemies until killed

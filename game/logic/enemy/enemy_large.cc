@@ -15,12 +15,12 @@ struct FollowHub : ecs::component {
   template <geom::ShapeNode S>
   using fh_arrange = geom::compound<geom::translate<16, 0, S>, geom::translate<-16, 0, S>,
                                     geom::translate<0, 16, S>, geom::translate<0, -16, S>>;
-  template <geom::ngon S>
-  using r_pi4_ngon = geom::rotate<fixed_c::pi / 4, geom::constant<S>>;
-  using fh_centre = r_pi4_ngon<geom::ngon{16, 4, c, geom::ngon_style::kPolygram,
-                                          shape_flag::kDangerous | shape_flag::kVulnerable}>;
-  using fh_spoke = r_pi4_ngon<geom::ngon{8, 4, c, geom::ngon_style::kPolygon}>;
-  using fh_power_spoke = r_pi4_ngon<geom::ngon{8, 4, c, geom::ngon_style::kPolystar}>;
+  template <geom::ShapeNode S>
+  using r_pi4_ngon = geom::rotate<fixed_c::pi / 4, S>;
+  using fh_centre = r_pi4_ngon<geom::ngon<16, 4, c, geom::ngon_style::kPolygram,
+                                          shape_flag::kDangerous | shape_flag::kVulnerable>>;
+  using fh_spoke = r_pi4_ngon<geom::ngon<8, 4, c, geom::ngon_style::kPolygon>>;
+  using fh_power_spoke = r_pi4_ngon<geom::ngon<8, 4, c, geom::ngon_style::kPolystar>>;
   using shape = geom::translate_p<
       0, fh_centre,
       geom::rotate_p<1, fh_arrange<fh_spoke>, geom::if_p<2, fh_arrange<fh_power_spoke>>>>;
@@ -88,24 +88,18 @@ struct Shielder : ecs::component {
   using s_arrange = geom::compound<geom::translate<24, 0, S>, geom::translate<-24, 0, S>,
                                    geom::translate<0, 24, geom::rotate<fixed_c::pi / 2, S>>,
                                    geom::translate<0, -24, geom::rotate<fixed_c::pi / 2, S>>>;
-  // TODO: better way to swap colours.
-  using s_centre =
-      geom::conditional_p<3,
-                          geom::ngon_shape<14, 8, c1, geom::ngon_style::kPolygon,
-                                           shape_flag::kDangerous | shape_flag::kVulnerable>,
-                          geom::ngon_shape<14, 8, c0, geom::ngon_style::kPolygon,
-                                           shape_flag::kDangerous | shape_flag::kVulnerable>>;
-  using s_shield0 =
-      geom::ngon_shape<8, 6, c0, geom::ngon_style::kPolystar, shape_flag::kWeakShield>;
-  using s_shield1 = geom::ngon_shape<8, 6, c1>;
-  using s_spokes = geom::ngon_shape<24, 4, c0, geom::ngon_style::kPolystar>;
+  using s_centre = geom::ngon_colour_p<14, 8, 3, geom::ngon_style::kPolygon,
+                                       shape_flag::kDangerous | shape_flag::kVulnerable>;
+  using s_shield0 = geom::ngon<8, 6, c0, geom::ngon_style::kPolystar, shape_flag::kWeakShield>;
+  using s_shield1 = geom::ngon<8, 6, c1>;
+  using s_spokes = geom::ngon<24, 4, c0, geom::ngon_style::kPolystar>;
   using shape = geom::translate_p<0,
                                   geom::rotate_p<1, s_arrange<geom::rotate_p<2, s_shield0>>,
                                                  s_arrange<geom::rotate_p<2, s_shield1>>, s_spokes>,
                                   geom::rotate_p<2, s_centre>>;
 
-  std::tuple<vec2, fixed, fixed, bool> shape_parameters(const Transform& transform) const {
-    return {transform.centre, transform.rotation, -transform.rotation, power};
+  std::tuple<vec2, fixed, fixed, glm::vec4> shape_parameters(const Transform& transform) const {
+    return {transform.centre, transform.rotation, -transform.rotation, power ? c1 : c0};
   }
 
   vec2 dir{0, 1};
@@ -167,18 +161,17 @@ struct Tractor : ecs::component {
   static constexpr fixed kPullSpeed = 2 + 1_fx / 2;
 
   static constexpr auto c = colour_hue360(300, .5f, .6f);
-  using t_orb = geom::ngon_shape<12, 6, c, geom::ngon_style::kPolygram,
-                                 shape_flag::kDangerous | shape_flag::kVulnerable>;
-  using t_star = geom::ngon_shape<16, 6, c, geom::ngon_style::kPolystar>;
+  using t_orb = geom::ngon<12, 6, c, geom::ngon_style::kPolygram,
+                           shape_flag::kDangerous | shape_flag::kVulnerable>;
+  using t_star = geom::ngon<16, 6, c, geom::ngon_style::kPolystar>;
   using shape = standard_transform<
       geom::translate<24, 0, geom::rotate_eval<geom::multiply_p<5, 2>, t_orb>>,
       geom::translate<-24, 0, geom::rotate_eval<geom::multiply_p<-5, 2>, t_orb>>,
-      geom::line_shape<24, 0, c>,
+      geom::line<24, 0, c>,
       geom::if_p<3, geom::translate<24, 0, geom::rotate_eval<geom::multiply_p<8, 2>, t_star>>,
                  geom::translate<-24, 0, geom::rotate_eval<geom::multiply_p<-8, 2>, t_star>>>>;
 
   std::tuple<vec2, fixed, fixed, bool> shape_parameters(const Transform& transform) const {
-    // TODO: better way of doing this; multiplication expressions.
     return {transform.centre, transform.rotation, spoke_r, power};
   }
 

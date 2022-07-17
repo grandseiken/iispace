@@ -268,7 +268,8 @@ void SimInterface::render_line_rect(const glm::vec2& lo, const glm::vec2& hi,
 }
 
 void SimInterface::render_player_info(std::uint32_t player_number, const glm::vec4& colour,
-                                      std::uint64_t score, std::uint32_t multiplier, float timer) {
+                                      std::uint64_t score, std::uint32_t multiplier,
+                                      float timer) const {
   internals_->player_output.resize(
       std::max<std::size_t>(internals_->player_output.size(), player_number + 1));
   auto& info = internals_->player_output[player_number];
