@@ -9,7 +9,6 @@ public:
   virtual void on_destroy(bool bomb);
   void render() const override;
 
-  static std::vector<std::pair<std::uint32_t, std::pair<vec2, glm::vec4>>> fireworks_;
   static std::vector<vec2> warnings_;
 };
 

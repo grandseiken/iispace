@@ -8,6 +8,12 @@ constexpr std::uint32_t kCbBaseHp = 60;
 constexpr std::uint32_t kCbMaxSplit = 7;
 constexpr fixed kCbSpeed = 4;
 
+struct ChaserBossSharedState : ecs::component {
+  bool has_counted = false;
+  std::uint32_t count = 0;
+  std::uint32_t cycle = 0;
+};
+
 // power(HP_REDUCE_POWER = 1.7, split).
 constexpr fixed HP_REDUCE_POWER_lookup[8] = {1_fx,
                                              1 + 7 * (1_fx / 10),
@@ -80,8 +86,6 @@ public:
   void update() override;
   void on_destroy(bool bomb) override;
 
-  static bool has_counted_;
-
 private:
   bool on_screen_ = false;
   bool move_ = false;
@@ -93,11 +97,7 @@ private:
   std::uint32_t split_ = 0;
 
   std::uint32_t stagger_ = 0;
-  static std::uint32_t count_;
 };
-
-std::uint32_t ChaserBoss::count_;
-bool ChaserBoss::has_counted_;
 
 struct ChaserBossTag : ecs::component {
   std::uint32_t split;
@@ -149,12 +149,15 @@ ChaserBoss::ChaserBoss(SimInterface& sim, std::uint32_t cycle, std::uint32_t spl
                          0, shape_flag::kShield, Polygon::T::kPolygram);
 
   if (!split_) {
-    count_ = 0;
+    sim.index().iterate<ChaserBossSharedState>(
+        [&](ChaserBossSharedState& state) { state.count = 0; });
   }
 }
 
 void ChaserBoss::update() {
   handle().get<ii::Boss>()->show_hp_bar = false;
+  ChaserBossSharedState* state = nullptr;
+  sim().index().iterate<ChaserBossSharedState>([&](ChaserBossSharedState& s) { state = &s; });
   // Compatibility: obviously a mistake, we're supposed to be counting bosses - players but instead
   // counting shots/powerups etc as well.
   auto remaining = sim().index().count<ChaserBossTag>() + sim().index().count<Transform>() -
@@ -194,7 +197,7 @@ void ChaserBoss::update() {
 
     dir_ = last_dir_;
     if (stagger_ ==
-        count_ %
+        state->count %
             (split_ == 0       ? 1
                  : split_ == 1 ? 2
                  : split_ == 2 ? 4
@@ -305,9 +308,10 @@ void ChaserBoss::update() {
     move(dir_);
     shape().rotate(fixed_c::hundredth * 2 + fixed{split_} * c_rotate);
   }
-  if (!has_counted_) {
-    has_counted_ = true;
-    ++count_;
+  if (!state->has_counted) {
+    // TODO: what even is this?
+    state->has_counted = true;
+    ++state->count;
   }
 }
 
@@ -339,7 +343,9 @@ void ChaserBoss::on_destroy(bool) {
       for (std::uint32_t i = 0; i < 16; ++i) {
         vec2 v = from_polar(sim().random_fixed() * (2 * fixed_c::pi),
                             fixed{8 + sim().random(64) + sim().random(64)});
-        fireworks_.emplace_back(n, std::make_pair(shape().centre + v, shapes()[0]->colour));
+        sim().global_entity().get<ii::GlobalData>()->fireworks.push_back(
+            ii::GlobalData::fireworks_entry{
+                .time = n, .position = shape().centre + v, .colour = shapes()[0]->colour});
         n += i;
       }
     }
@@ -385,16 +391,15 @@ void spawn_chaser_boss(SimInterface& sim, std::uint32_t cycle) {
               .boss_score_reward =
                   calculate_boss_score(boss_flag::kBoss1C, sim.player_count(), cycle)});
 
-  struct Cycle : ecs::component {
-    std::uint32_t cycle;
-  };
-  h.add(Cycle{.cycle = cycle});
+  h.add(ChaserBossSharedState{.cycle = cycle});
   h.add(Health{});
   h.add(Boss{.boss = boss_flag::kBoss1C});
 
   h.add(Update{.update = [](ecs::handle h, SimInterface& sim) {
     auto& health = *h.get<Health>();
-    auto hp_lookup = get_hp_lookup(sim.player_count(), h.get<Cycle>()->cycle);
+    auto& state = *h.get<ChaserBossSharedState>();
+    state.has_counted = false;
+    auto hp_lookup = get_hp_lookup(sim.player_count(), state.cycle);
     health.hp = 0;
     health.max_hp = hp_lookup[kCbMaxSplit];
     std::optional<vec2> position;
@@ -416,9 +421,5 @@ void spawn_chaser_boss(SimInterface& sim, std::uint32_t cycle) {
   }});
 
   spawn_chaser_boss_internal(sim, cycle);
-}
-
-void chaser_boss_begin_frame() {
-  ChaserBoss::has_counted_ = false;
 }
 }  // namespace ii

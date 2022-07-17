@@ -22,9 +22,18 @@ struct GlobalData : ecs::component {
   std::uint32_t lives = 0;
   std::vector<std::uint32_t> player_kill_queue;
 
+  struct fireworks_entry {
+    std::uint32_t time = 0;
+    vec2 position{0};
+    glm::vec4 colour{0.f};
+  };
+  std::vector<fireworks_entry> fireworks;
+
   GlobalData(const initial_conditions& conditions)
   : lives{conditions.mode == game_mode::kBoss ? conditions.player_count * kBossModeLives
                                               : kStartingLives} {}
+
+  void update(SimInterface&);
 };
 
 class IShip;

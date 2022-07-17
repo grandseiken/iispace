@@ -4,6 +4,40 @@
 
 namespace ii {
 
+void GlobalData::update(SimInterface& sim) {
+  for (auto it = fireworks.begin(); it != fireworks.end();) {
+    if (it->time > 0) {
+      --(it++)->time;
+      continue;
+    }
+    // Stupid compatibility.
+    std::optional<bool> p0_has_powerup;
+    sim.index().iterate<Player>([&](const Player& p) {
+      if (!p0_has_powerup) {
+        p0_has_powerup = p.has_bomb || p.has_shield;
+      }
+    });
+    auto explode = [&](const glm::vec2& v, const glm::vec4& c, std::uint32_t time) {
+      auto c_dark = c;
+      c_dark.a = .5f;
+      sim.explosion(v, c, time);
+      sim.explosion(v + glm::vec2{8.f, 0.f}, c, time);
+      sim.explosion(v + glm::vec2{0.f, 8.f}, c, time);
+      sim.explosion(v + glm::vec2{8.f, 0.f}, c_dark, time);
+      sim.explosion(v + glm::vec2{0.f, 8.f}, c_dark, time);
+      if (p0_has_powerup && *p0_has_powerup) {
+        sim.explosion(v, glm::vec4{0.f}, 8);
+      }
+    };
+
+    explode(to_float(it->position), glm::vec4{1.f}, 16);
+    explode(to_float(it->position), it->colour, 32);
+    explode(to_float(it->position), glm::vec4{1.f}, 64);
+    explode(to_float(it->position), it->colour, 128);
+    it = fireworks.erase(it);
+  }
+}
+
 void Health::damage(ecs::handle h, SimInterface& sim, std::uint32_t damage, damage_type type,
                     std::optional<ecs::entity_id> source) {
   if (damage_transform) {

@@ -20,7 +20,6 @@ vec2 get_centre(const Transform* transform, const LegacyShip* legacy_ship) {
 }  // namespace
 
 SimState::~SimState() {
-  boss_fireworks().clear();
   boss_warnings().clear();
 }
 
@@ -29,7 +28,7 @@ SimState::SimState(const initial_conditions& conditions, InputAdapter& input)
 , internals_{std::make_unique<SimInternals>(conditions.seed)}
 , interface_{std::make_unique<SimInterface>(internals_.get())} {
   internals_->conditions = conditions;
-  (internals_->global_entity_handle = internals_->index.create())->emplace<GlobalData>(conditions);
+  internals_->global_entity_handle = internals_->index.create(GlobalData{conditions});
   for (std::uint32_t i = 0; i < conditions.player_count; ++i) {
     vec2 v((1 + i) * kSimDimensions.x / (1 + conditions.player_count), kSimDimensions.y / 2);
     spawn_player(*interface_, v, i);
@@ -85,7 +84,6 @@ void SimState::update() {
       : internals_->conditions.mode == game_mode::kWhat           ? (colour_cycle_ + 1) % 256
                                                                   : 0;
   internals_->input_frames = input_.get();
-  chaser_boss_begin_frame();
 
   for (auto& e : internals_->collisions) {
     const auto& c = *e.handle.get<Collision>();
@@ -123,37 +121,7 @@ void SimState::update() {
       particle.destroy = !--particle.timer;
     }
   }
-  for (auto it = boss_fireworks().begin(); it != boss_fireworks().end();) {
-    if (it->first > 0) {
-      --(it++)->first;
-      continue;
-    }
-    // Stupid compatibility.
-    std::optional<bool> p0_has_powerup;
-    interface_->index().iterate<Player>([&](const Player& p) {
-      if (!p0_has_powerup) {
-        p0_has_powerup = p.has_bomb || p.has_shield;
-      }
-    });
-    auto explode = [&](const glm::vec2& v, const glm::vec4& c, std::uint32_t time) {
-      auto c_dark = c;
-      c_dark.a = .5f;
-      interface_->explosion(v, c, time);
-      interface_->explosion(v + glm::vec2{8.f, 0.f}, c, time);
-      interface_->explosion(v + glm::vec2{0.f, 8.f}, c, time);
-      interface_->explosion(v + glm::vec2{8.f, 0.f}, c_dark, time);
-      interface_->explosion(v + glm::vec2{0.f, 8.f}, c_dark, time);
-      if (p0_has_powerup && *p0_has_powerup) {
-        interface_->explosion(v, glm::vec4{0.f}, 8);
-      }
-    };
-
-    explode(to_float(it->second.first), glm::vec4{1.f}, 16);
-    explode(to_float(it->second.first), it->second.second, 32);
-    explode(to_float(it->second.first), glm::vec4{1.f}, 64);
-    explode(to_float(it->second.first), it->second.second, 128);
-    it = boss_fireworks().erase(it);
-  }
+  internals_->global_entity_handle->get<GlobalData>()->update(*interface_);
 
   bool compact = false;
   internals_->index.iterate_dispatch<Destroy>([&](ecs::const_handle h) {

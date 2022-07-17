@@ -261,7 +261,9 @@ void SuperBoss::on_destroy(bool) {
                         fixed{8 + sim().random(64) + sim().random(64)});
     auto c = shapes()[0]->colour;
     c.x += n / 128.f;
-    fireworks_.push_back(std::make_pair(n, std::make_pair(shape().centre + v, c)));
+    sim().global_entity().get<ii::GlobalData>()->fireworks.push_back(
+        ii::GlobalData::fireworks_entry{
+            .time = n, .position = shape().centre + v, .colour = shapes()[0]->colour});
     n += i;
   }
   sim().rumble_all(25);

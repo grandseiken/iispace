@@ -3,12 +3,11 @@
 #include "game/logic/player/player.h"
 #include <algorithm>
 
-std::vector<std::pair<std::uint32_t, std::pair<vec2, glm::vec4>>> Boss::fireworks_;
 std::vector<vec2> Boss::warnings_;
 
 namespace {
-const fixed kHpPerExtraPlayer = 1_fx / 10;
-const fixed kHpPerExtraCycle = 3 * 1_fx / 10;
+constexpr fixed kHpPerExtraPlayer = 1_fx / 10;
+constexpr fixed kHpPerExtraCycle = 3 * 1_fx / 10;
 }  // namespace
 
 namespace ii {
@@ -61,7 +60,9 @@ void Boss::on_destroy(bool) {
   for (std::uint32_t i = 0; i < 16; ++i) {
     vec2 v = from_polar(sim().random_fixed() * (2 * fixed_c::pi),
                         fixed{8 + sim().random(64) + sim().random(64)});
-    fireworks_.emplace_back(n, std::make_pair(shape().centre + v, shapes()[0]->colour));
+    sim().global_entity().get<ii::GlobalData>()->fireworks.push_back(
+        ii::GlobalData::fireworks_entry{
+            .time = n, .position = shape().centre + v, .colour = shapes()[0]->colour});
     n += i;
   }
   sim().rumble_all(25);
@@ -81,10 +82,6 @@ void Boss::render() const {
 }
 
 namespace ii {
-std::vector<std::pair<std::uint32_t, std::pair<vec2, glm::vec4>>>& boss_fireworks() {
-  return ::Boss::fireworks_;
-}
-
 std::vector<vec2>& boss_warnings() {
   return ::Boss::warnings_;
 }
