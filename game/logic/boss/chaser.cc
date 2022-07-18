@@ -1,8 +1,6 @@
 #include "game/logic/boss/boss_internal.h"
-#include "game/logic/player/player.h"
 #include "game/logic/ship/geometry.h"
 #include "game/logic/ship/ship_template.h"
-#include <algorithm>
 #include <array>
 
 namespace ii {
@@ -104,10 +102,7 @@ struct ChaserBoss : ecs::component {
       on_screen = true;
     }
 
-    if (timer) {
-      --timer;
-    }
-    if (!timer) {
+    if (timer && !--timer) {
       timer = kTimer * (move + 1);
       if (split &&
           (move || !sim.random(8 + split) || remaining <= 4 ||
@@ -363,19 +358,14 @@ void spawn_chaser_boss(SimInterface& sim, std::uint32_t cycle) {
     auto hp_lookup = ChaserBoss::get_hp_lookup(sim.player_count(), state.cycle);
     health.hp = 0;
     health.max_hp = hp_lookup[ChaserBoss::kMaxSplit];
-    std::optional<vec2> position;
-    sim.index().iterate_dispatch<ChaserBoss>(
-        [&](ecs::const_handle sub_h, const ChaserBoss& cb, const Health& sub_health) {
-          if (const auto* c = sub_h.get<Transform>(); c) {
-            position = c->centre;
-          } else if (const auto* c = sub_h.get<LegacyShip>(); c) {
-            position = c->ship->position();
-          }
-          if (position && sim.is_on_screen(*position)) {
-            h.get<Boss>()->show_hp_bar = true;
-          }
-          health.hp += (cb.split == 7 ? 0 : 2 * hp_lookup[6 - cb.split]) + sub_health.hp;
-        });
+    sim.index().iterate_dispatch<ChaserBoss>([&](ecs::const_handle sub_h, const ChaserBoss& cb,
+                                                 const Transform& transform,
+                                                 const Health& sub_health) {
+      if (sim.is_on_screen(transform.centre)) {
+        h.get<Boss>()->show_hp_bar = true;
+      }
+      health.hp += (cb.split == 7 ? 0 : 2 * hp_lookup[6 - cb.split]) + sub_health.hp;
+    });
     if (!health.hp) {
       h.emplace<Destroy>();
     }

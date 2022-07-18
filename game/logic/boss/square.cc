@@ -2,7 +2,6 @@
 #include "game/logic/enemy/enemy.h"
 #include "game/logic/ship/geometry.h"
 #include "game/logic/ship/ship_template.h"
-#include <glm/gtc/constants.hpp>
 
 namespace ii {
 namespace {
