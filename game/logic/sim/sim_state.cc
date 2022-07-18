@@ -1,5 +1,4 @@
 #include "game/logic/sim/sim_state.h"
-#include "game/logic/boss/boss.h"
 #include "game/logic/ecs/call.h"
 #include "game/logic/overmind/overmind.h"
 #include "game/logic/player/player.h"
@@ -19,9 +18,7 @@ vec2 get_centre(const Transform* transform, const LegacyShip* legacy_ship) {
 }
 }  // namespace
 
-SimState::~SimState() {
-  boss_warnings().clear();
-}
+SimState::~SimState() = default;
 
 SimState::SimState(const initial_conditions& conditions, InputAdapter& input)
 : input_{input}
@@ -29,6 +26,7 @@ SimState::SimState(const initial_conditions& conditions, InputAdapter& input)
 , interface_{std::make_unique<SimInterface>(internals_.get())} {
   internals_->conditions = conditions;
   internals_->global_entity_handle = internals_->index.create(GlobalData{conditions});
+  internals_->global_entity_handle->add(Update{.update = ecs::call<&GlobalData::pre_update>});
   for (std::uint32_t i = 0; i < conditions.player_count; ++i) {
     vec2 v((1 + i) * kSimDimensions.x / (1 + conditions.player_count), kSimDimensions.y / 2);
     spawn_player(*interface_, v, i);
@@ -78,7 +76,6 @@ std::uint32_t SimState::frame_count() const {
 }
 
 void SimState::update() {
-  boss_warnings().clear();
   colour_cycle_ = internals_->conditions.mode == game_mode::kHard ? 128
       : internals_->conditions.mode == game_mode::kFast           ? 192
       : internals_->conditions.mode == game_mode::kWhat           ? (colour_cycle_ + 1) % 256
@@ -121,7 +118,7 @@ void SimState::update() {
       particle.destroy = !--particle.timer;
     }
   }
-  internals_->global_entity_handle->get<GlobalData>()->update(*interface_);
+  internals_->global_entity_handle->get<GlobalData>()->post_update(*interface_);
 
   bool compact = false;
   internals_->index.iterate_dispatch<Destroy>([&](ecs::const_handle h) {
@@ -206,7 +203,7 @@ void SimState::render() const {
       render_warning(to_float(ecs::call<&get_centre>(h)));
     }
   });
-  for (const auto& v : boss_warnings()) {
+  for (const auto& v : interface_->global_entity().get<GlobalData>()->extra_enemy_warnings) {
     render_warning(to_float(v));
   }
 }

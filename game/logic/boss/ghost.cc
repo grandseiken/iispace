@@ -205,7 +205,8 @@ void GhostBoss::update() {
         if (vtime_ == 0) {
           vec2 d = from_polar(i * 2 * fixed_c::pi / (16 + n * 6), 100_fx + n * 60);
           c->add_new_shape<Polygon>(d, 9, 8, glm::vec4{0.f});
-          warnings_.push_back(c->convert_point(shape().centre, shape().rotation(), d));
+          sim().global_entity().get<GlobalData>()->extra_enemy_warnings.push_back(
+              c->convert_point(shape().centre, shape().rotation(), d));
         }
       } else {
         s1.colour = c2;

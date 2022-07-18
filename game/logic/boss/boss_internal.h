@@ -1,6 +1,5 @@
 #ifndef II_GAME_LOGIC_BOSS_BOSS_INTERNAL_H
 #define II_GAME_LOGIC_BOSS_BOSS_INTERNAL_H
-#include "game/logic/boss/boss.h"
 #include "game/logic/ship/ship.h"
 
 class Boss : public ii::Ship {
@@ -8,8 +7,6 @@ public:
   Boss(ii::SimInterface& sim, const vec2& position);
   virtual void on_destroy(bool bomb);
   void render() const override;
-
-  static std::vector<vec2> warnings_;
 };
 
 namespace ii {

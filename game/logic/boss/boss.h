@@ -12,8 +12,6 @@ void spawn_ghost_boss(SimInterface&, std::uint32_t cycle);
 void spawn_tractor_boss(SimInterface&, std::uint32_t cycle);
 
 void spawn_super_boss(SimInterface&, std::uint32_t cycle);
-
-std::vector<vec2>& boss_warnings();
 }  // namespace ii
 
 #endif

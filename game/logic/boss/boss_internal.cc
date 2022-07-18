@@ -3,8 +3,6 @@
 #include "game/logic/player/player.h"
 #include <algorithm>
 
-std::vector<vec2> Boss::warnings_;
-
 namespace {
 constexpr fixed kHpPerExtraPlayer = 1_fx / 10;
 constexpr fixed kHpPerExtraCycle = 3 * 1_fx / 10;
@@ -80,9 +78,3 @@ void Boss::render() const {
   }
   Ship::render();
 }
-
-namespace ii {
-std::vector<vec2>& boss_warnings() {
-  return ::Boss::warnings_;
-}
-}  // namespace ii

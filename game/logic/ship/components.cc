@@ -4,7 +4,11 @@
 
 namespace ii {
 
-void GlobalData::update(SimInterface& sim) {
+void GlobalData::pre_update(SimInterface&) {
+  extra_enemy_warnings.clear();
+}
+
+void GlobalData::post_update(SimInterface& sim) {
   for (auto it = fireworks.begin(); it != fireworks.end();) {
     if (it->time > 0) {
       --(it++)->time;

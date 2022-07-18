@@ -37,7 +37,6 @@ cc_library(
   ],
   implementation_deps = [
     ":sim_interface",
-    "//game/logic/boss",
     "//game/logic/overmind",
     "//game/logic/player",
     "//game/logic/ship",

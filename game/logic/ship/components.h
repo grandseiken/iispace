@@ -28,12 +28,13 @@ struct GlobalData : ecs::component {
     glm::vec4 colour{0.f};
   };
   std::vector<fireworks_entry> fireworks;
+  std::vector<vec2> extra_enemy_warnings;
 
   GlobalData(const initial_conditions& conditions)
   : lives{conditions.mode == game_mode::kBoss ? conditions.player_count * kBossModeLives
                                               : kStartingLives} {}
-
-  void update(SimInterface&);
+  void pre_update(SimInterface&);   // Runs before any other entity updates.
+  void post_update(SimInterface&);  // Runs after any other entity updates.
 };
 
 class IShip;
