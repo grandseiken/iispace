@@ -25,7 +25,7 @@ struct DeathRay : ecs::component {
   static constexpr fixed kSpeed = 10;
 
   using shape = standard_transform<geom::box<10, 48, glm::vec4{0.f}, shape_flag::kDangerous>,
-                                   geom::line<48, fixed_c::pi / 2, glm::vec4{1.f}>>;
+                                   geom::line<0, 48, 0, -48, glm::vec4{1.f}>>;
 
   void update(ecs::handle h, Transform& transform, SimInterface&) {
     transform.move(vec2{1, 0} * kSpeed);

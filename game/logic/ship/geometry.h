@@ -23,6 +23,7 @@ struct transform {
   constexpr transform(const vec2& v = vec2{0}, fixed r = 0) : v{v}, r{r} {}
   vec2 v;
   fixed r;
+  std::size_t* shape_index_out = nullptr;
 
   constexpr transform translate(const vec2& t) const {
     return {v + ::rotate(t, r), r};
@@ -137,7 +138,7 @@ struct ball_collider_data {
 
   template <IterTag I>
   requires std::same_as<I, iterate_flags_t>
-  constexpr void iterate(I, const transform& t, const FlagFunction auto& f) {
+  constexpr void iterate(I, const transform&, const FlagFunction auto& f) {
     std::invoke(f, flags);
   }
 
@@ -166,7 +167,7 @@ struct ngon_data {
 
   template <IterTag I>
   requires std::same_as<I, iterate_flags_t>
-  constexpr void iterate(I, const transform& t, const FlagFunction auto& f) {
+  constexpr void iterate(I, const transform&, const FlagFunction auto& f) {
     std::invoke(f, flags);
   }
 
@@ -208,7 +209,7 @@ struct box_data {
 
   template <IterTag I>
   requires std::same_as<I, iterate_flags_t>
-  constexpr void iterate(I, const transform& t, const FlagFunction auto& f) {
+  constexpr void iterate(I, const transform&, const FlagFunction auto& f) {
     std::invoke(f, flags);
   }
 
@@ -233,6 +234,32 @@ struct box_data {
   }
 };
 
+struct line_data {
+  glm::ivec2 a{0};
+  glm::ivec2 b{0};
+  glm::vec4 colour{0.f};
+
+  constexpr bool check_point(const vec2&, shape_flag) const {
+    return false;
+  }
+
+  template <IterTag I>
+  requires std::same_as<I, iterate_flags_t>
+  constexpr void iterate(I, const transform&, const FlagFunction auto&) {}
+
+  template <IterTag I>
+  requires std::same_as<I, iterate_lines_t>
+  constexpr void iterate(I, const transform& t, const LineFunction auto& f) {
+    std::invoke(f, t.translate(vec2{a}).v, t.translate(vec2{b}).v, colour);
+  }
+
+  template <IterTag I>
+  requires std::same_as<I, iterate_centres_t>
+  constexpr void iterate(I, const transform& t, const PointFunction auto& f) {
+    std::invoke(f, t.v + (vec2{a} + vec2{b}) / 2, colour);
+  }
+};
+
 constexpr ball_collider_data
 make_ball_collider(std::uint32_t radius, shape_flag flags = shape_flag::kNone) {
   return {radius, flags};
@@ -248,19 +275,27 @@ constexpr box_data make_box(const glm::uvec2& dimensions, const glm::vec4& colou
                             shape_flag flags = shape_flag::kNone) {
   return {dimensions, colour, flags};
 }
+constexpr line_data make_line(const glm::ivec2& a, const glm::uvec2& b, const glm::vec4& colour) {
+  return {a, b, colour};
+}
 
 //////////////////////////////////////////////////////////////////////////////////
 // Value-expresssions.
 //////////////////////////////////////////////////////////////////////////////////
 template <auto V>
 struct constant {};
+// Special vector constants only needed for MSVC.
 template <fixed X, fixed Y>
 struct constant_vec2 {};
 template <std::uint32_t X, std::uint32_t Y>
 struct constant_uvec2 {};
+template <std::int32_t X, std::int32_t Y>
+struct constant_ivec2 {};
 template <std::size_t N>
 struct parameter {};
 
+template <Expression<bool> Condition, typename ETrue, typename EFalse>
+struct ternary {};
 template <typename E>
 struct negate {};
 template <typename E0, typename E1>
@@ -283,9 +318,19 @@ constexpr auto evaluate(constant_uvec2<X, Y>, const auto&) {
   return glm::uvec2{X, Y};
 }
 
+template <std::int32_t X, std::int32_t Y>
+constexpr auto evaluate(constant_ivec2<X, Y>, const auto&) {
+  return glm::ivec2{X, Y};
+}
+
 template <std::size_t N>
 constexpr auto evaluate(parameter<N>, const auto& params) {
   return get<N>(params);
+}
+
+template <Expression<bool> Condition, typename ETrue, typename EFalse>
+constexpr auto evaluate(ternary<Condition, ETrue, EFalse>, const auto& params) {
+  return evaluate(Condition{}, params) ? evaluate(ETrue{}, params) : evaluate(EFalse{}, params);
 }
 
 template <typename E>
@@ -316,6 +361,8 @@ struct ngon_eval {};
 template <Expression<glm::uvec2> Dimensions, Expression<glm::vec4> Colour,
           Expression<shape_flag> Flags = constant<shape_flag::kNone>>
 struct box_eval {};
+template <Expression<glm::ivec2> A, Expression<glm::ivec2> B, Expression<glm::vec4> Colour>
+struct line_eval {};
 
 template <Expression<std::uint32_t> Radius, Expression<shape_flag> Flags>
 constexpr auto evaluate(ball_collider_eval<Radius, Flags>, const auto& params) {
@@ -336,6 +383,12 @@ template <Expression<glm::uvec2> Dimensions, Expression<glm::vec4> Colour,
 constexpr auto evaluate(box_eval<Dimensions, Colour, Flags>, const auto& params) {
   return make_box(glm::uvec2{evaluate(Dimensions{}, params)}, glm::vec4{evaluate(Colour{}, params)},
                   shape_flag{evaluate(Flags{}, params)});
+}
+
+template <Expression<glm::ivec2> A, Expression<glm::ivec2> B, Expression<glm::vec4> Colour>
+constexpr auto evaluate(line_eval<A, B, Colour>, const auto& params) {
+  return make_line(glm::ivec2{evaluate(A{}, params)}, glm::ivec2{evaluate(B{}, params)},
+                   glm::vec4{evaluate(Colour{}, params)});
 }
 
 //////////////////////////////////////////////////////////////////////////////////
@@ -393,6 +446,9 @@ requires ShapeExpressionWithSubstitution<Parameters, S>
 constexpr void
 iterate(S, I tag, const Parameters& params, const transform& t, const IterateFunction<I> auto& f) {
   evaluate(S{}, params).iterate(tag, t, f);
+  if (t.shape_index_out) {
+    ++*t.shape_index_out;
+  }
 }
 
 constexpr bool check_point(null_shape, const auto&, const vec2&, shape_flag) {
@@ -500,6 +556,8 @@ using if_p = if_eval<parameter<ParameterIndex>, Nodes...>;
 template <std::size_t ParameterIndex, typename... SwitchEntries>
 using switch_p = switch_eval<parameter<ParameterIndex>, SwitchEntries...>;
 
+template <std::size_t ParameterIndex, typename ETrue, typename EFalse>
+using ternary_p = ternary<parameter<ParameterIndex>, ETrue, EFalse>;
 template <std::size_t ParameterIndex>
 using negate_p = negate<parameter<ParameterIndex>>;
 template <auto C, std::size_t ParameterIndex>
@@ -512,8 +570,8 @@ template <std::uint32_t Radius, std::uint32_t Sides, glm::vec4 Colour,
 using ngon = constant<make_ngon(Radius, Sides, Colour, Style, Flags)>;
 template <std::uint32_t W, std::uint32_t H, glm::vec4 Colour, shape_flag Flags = shape_flag::kNone>
 using box = constant<make_box(glm::uvec2{W, H}, Colour, Flags)>;
-template <std::uint32_t Radius, fixed Angle, glm::vec4 Colour>
-using line = rotate<Angle, ngon<Radius, 2, Colour>>;
+template <std::int32_t AX, std::int32_t AY, std::int32_t BX, std::int32_t BY, glm::vec4 Colour>
+using line = constant<make_line(glm::ivec2{AX, AY}, glm::ivec2{BX, BY}, Colour)>;
 
 template <std::uint32_t Radius, std::uint32_t Sides, glm::vec4 Colour,
           shape_flag Flags = shape_flag::kNone>
@@ -532,8 +590,10 @@ using ngon_colour_p = ngon_eval<constant<Radius>, constant<Sides>, parameter<Par
 template <std::uint32_t W, std::uint32_t H, std::size_t ParameterIndex,
           shape_flag Flags = shape_flag::kNone>
 using box_colour_p = box_eval<constant_uvec2<W, H>, parameter<ParameterIndex>, constant<Flags>>;
-template <std::uint32_t Radius, fixed Angle, std::size_t ParameterIndex>
-using line_colour_p = rotate<Angle, ngon_colour_p<Radius, 2, ParameterIndex>>;
+template <std::int32_t AX, std::int32_t AY, std::int32_t BX, std::int32_t BY,
+          std::size_t ParameterIndex>
+using line_colour_p =
+    line_eval<constant_ivec2<AX, AY>, constant_ivec2<BX, BY>, parameter<ParameterIndex>>;
 
 template <std::uint32_t Radius, std::uint32_t Sides, std::size_t ParameterIndex,
           shape_flag Flags = shape_flag::kNone>

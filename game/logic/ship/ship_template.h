@@ -27,9 +27,11 @@ void render_shape(const SimInterface& sim, const auto& parameters,
                   const std::optional<glm::vec4>& c_override = std::nullopt,
                   const std::optional<std::size_t>& c_override_max_index = std::nullopt) {
   std::size_t i = 0;
-  geom::iterate(S{}, geom::iterate_lines, parameters, {},
+  geom::transform transform;
+  transform.shape_index_out = &i;
+  geom::iterate(S{}, geom::iterate_lines, parameters, transform,
                 [&](const vec2& a, const vec2& b, const glm::vec4& c) {
-                  auto colour = c_override && (!c_override_max_index || i++ < *c_override_max_index)
+                  auto colour = c_override && (!c_override_max_index || i < *c_override_max_index)
                       ? glm::vec4{c_override->r, c_override->g, c_override->b, c.a}
                       : c;
                   sim.render_line(to_float(a), to_float(b), colour);
