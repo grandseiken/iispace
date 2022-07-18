@@ -515,6 +515,16 @@ using box = constant<make_box(glm::uvec2{W, H}, Colour, Flags)>;
 template <std::uint32_t Radius, fixed Angle, glm::vec4 Colour>
 using line = rotate<Angle, ngon<Radius, 2, Colour>>;
 
+template <std::uint32_t Radius, std::uint32_t Sides, glm::vec4 Colour,
+          shape_flag Flags = shape_flag::kNone>
+using polygon = ngon<Radius, Sides, Colour, ngon_style::kPolygon, Flags>;
+template <std::uint32_t Radius, std::uint32_t Sides, glm::vec4 Colour,
+          shape_flag Flags = shape_flag::kNone>
+using polystar = ngon<Radius, Sides, Colour, ngon_style::kPolystar, Flags>;
+template <std::uint32_t Radius, std::uint32_t Sides, glm::vec4 Colour,
+          shape_flag Flags = shape_flag::kNone>
+using polygram = ngon<Radius, Sides, Colour, ngon_style::kPolygram, Flags>;
+
 template <std::uint32_t Radius, std::uint32_t Sides, std::size_t ParameterIndex,
           ngon_style Style = ngon_style::kPolygon, shape_flag Flags = shape_flag::kNone>
 using ngon_colour_p = ngon_eval<constant<Radius>, constant<Sides>, parameter<ParameterIndex>,
@@ -524,6 +534,18 @@ template <std::uint32_t W, std::uint32_t H, std::size_t ParameterIndex,
 using box_colour_p = box_eval<constant_uvec2<W, H>, parameter<ParameterIndex>, constant<Flags>>;
 template <std::uint32_t Radius, fixed Angle, std::size_t ParameterIndex>
 using line_colour_p = rotate<Angle, ngon_colour_p<Radius, 2, ParameterIndex>>;
+
+template <std::uint32_t Radius, std::uint32_t Sides, std::size_t ParameterIndex,
+          shape_flag Flags = shape_flag::kNone>
+using polygon_colour_p = ngon_colour_p<Radius, Sides, ParameterIndex, ngon_style::kPolygon, Flags>;
+template <std::uint32_t Radius, std::uint32_t Sides, std::size_t ParameterIndex,
+          shape_flag Flags = shape_flag::kNone>
+using polystar_colour_p =
+    ngon_colour_p<Radius, Sides, ParameterIndex, ngon_style::kPolystar, Flags>;
+template <std::uint32_t Radius, std::uint32_t Sides, std::size_t ParameterIndex,
+          shape_flag Flags = shape_flag::kNone>
+using polygram_colour_p =
+    ngon_colour_p<Radius, Sides, ParameterIndex, ngon_style::kPolygram, Flags>;
 
 }  // namespace ii::geom
 

@@ -11,9 +11,8 @@ struct SnakeTail : ecs::component {
   static constexpr std::uint32_t kBoundingWidth = 22;
   static constexpr sound kDestroySound = sound::kPlayerDestroy;
 
-  using shape =
-      standard_transform<geom::ngon_colour_p<10, 4, 2, geom::ngon_style::kPolygon,
-                                             shape_flag::kDangerous | shape_flag::kWeakShield>>;
+  using shape = standard_transform<
+      geom::polygon_colour_p<10, 4, 2, shape_flag::kDangerous | shape_flag::kWeakShield>>;
 
   std::tuple<vec2, fixed, glm::vec4> shape_parameters(const Transform& transform) const {
     return {transform.centre, transform.rotation, colour};
@@ -59,9 +58,8 @@ struct Snake : ecs::component {
   static constexpr std::uint32_t kBoundingWidth = 32;
   static constexpr sound kDestroySound = sound::kPlayerDestroy;
 
-  using shape = standard_transform<
-      geom::ngon_colour_p<14, 3, 2, geom::ngon_style::kPolygon, shape_flag::kVulnerable>,
-      geom::ball_collider<10, shape_flag::kDangerous>>;
+  using shape = standard_transform<geom::polygon_colour_p<14, 3, 2, shape_flag::kVulnerable>,
+                                   geom::ball_collider<10, shape_flag::kDangerous>>;
 
   std::tuple<vec2, fixed, glm::vec4> shape_parameters(const Transform& transform) const {
     return {transform.centre, transform.rotation, colour};

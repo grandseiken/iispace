@@ -50,11 +50,10 @@ public:
   ecs::const_handle global_entity() const;
   ecs::handle global_entity();
 
+  // TODO: support different categories of random with different seeds.
   std::uint32_t random(std::uint32_t max);
   fixed random_fixed();
 
-  // TODO: there's a bunch of random data in the sim internals / interface that could
-  // instead just exist on some component of a singleton entity.
   std::vector<IShip*> collision_list(const vec2& point, shape_flag mask) const;
   bool any_collision(const vec2& point, shape_flag mask) const;
   std::uint32_t get_non_wall_count() const;

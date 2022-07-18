@@ -86,10 +86,10 @@ struct GhostMine : ecs::component {
   static constexpr sound kDestroySound = sound::kEnemyDestroy;
 
   using shape = standard_transform<
-      geom::conditional_p<2, geom::ngon_colour_p<24, 8, 3>,
-                          geom::ngon_colour_p<24, 8, 3, geom::ngon_style::kPolygon,
-                                              shape_flag::kDangerous | shape_flag::kShield |
-                                                  shape_flag::kWeakShield>>,
+      geom::conditional_p<
+          2, geom::ngon_colour_p<24, 8, 3>,
+          geom::polygon_colour_p<
+              24, 8, 3, shape_flag::kDangerous | shape_flag::kShield | shape_flag::kWeakShield>>,
       geom::ngon_colour_p<20, 8, 3>>;
 
   std::tuple<vec2, fixed, bool, glm::vec4> shape_parameters(const Transform& transform) const {

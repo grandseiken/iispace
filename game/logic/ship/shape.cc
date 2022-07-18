@@ -58,7 +58,7 @@ Fill::Fill(const vec2& centre, fixed width, fixed height, const glm::vec4& colou
            shape_flag category)
 : Shape{centre, 0, colour, category, false}, width{width}, height{height} {}
 
-void Fill::render(SimInterface& sim, const glm::vec2& position, float rotation,
+void Fill::render(const SimInterface& sim, const glm::vec2& position, float rotation,
                   const std::optional<glm::vec4>& colour_override) const {
   auto c = convert_fl_point(position, rotation, glm::vec2{0.f});
   auto wh = glm::vec2{width.to_float(), height.to_float()};
@@ -75,7 +75,7 @@ Line::Line(const vec2& centre, const vec2& a, const vec2& b, const glm::vec4& co
            fixed rotation)
 : Shape{centre, rotation, colour, shape_flag{0}}, a{a}, b{b} {}
 
-void Line::render(SimInterface& sim, const glm::vec2& position, float rotation,
+void Line::render(const SimInterface& sim, const glm::vec2& position, float rotation,
                   const std::optional<glm::vec4>& colour_override) const {
   auto aa = convert_fl_point(position, rotation, to_float(a));
   auto bb = convert_fl_point(position, rotation, to_float(b));
@@ -90,7 +90,7 @@ Box::Box(const vec2& centre, fixed width, fixed height, const glm::vec4& colour,
          shape_flag category)
 : Shape{centre, rotation, colour, category}, width{width}, height{height} {}
 
-void Box::render(SimInterface& sim, const glm::vec2& position, float rotation,
+void Box::render(const SimInterface& sim, const glm::vec2& position, float rotation,
                  const std::optional<glm::vec4>& colour_override) const {
   float w = width.to_float();
   float h = height.to_float();
@@ -114,7 +114,7 @@ Polygon::Polygon(const vec2& centre, fixed radius, std::uint32_t sides, const gl
                  fixed rotation, shape_flag category, T type)
 : Shape{centre, rotation, colour, category}, radius{radius}, sides{sides}, type{type} {}
 
-void Polygon::render(SimInterface& sim, const glm::vec2& position, float rotation,
+void Polygon::render(const SimInterface& sim, const glm::vec2& position, float rotation,
                      const std::optional<glm::vec4>& colour_override) const {
   if (sides < 2) {
     return;
@@ -157,7 +157,7 @@ PolyArc::PolyArc(const vec2& centre, fixed radius, std::uint32_t sides, std::uin
                  const glm::vec4& colour, fixed rotation, shape_flag category)
 : Shape{centre, rotation, colour, category}, radius{radius}, sides{sides}, segments{segments} {}
 
-void PolyArc::render(SimInterface& sim, const glm::vec2& position, float rotation,
+void PolyArc::render(const SimInterface& sim, const glm::vec2& position, float rotation,
                      const std::optional<glm::vec4>& colour_override) const {
   if (sides < 2) {
     return;
@@ -203,7 +203,7 @@ void CompoundShape::clear_shapes() {
   children_.clear();
 }
 
-void CompoundShape::render(SimInterface& sim, const glm::vec2& position, float rot,
+void CompoundShape::render(const SimInterface& sim, const glm::vec2& position, float rot,
                            const std::optional<glm::vec4>& colour_override) const {
   auto c = convert_fl_point(position, rot, glm::vec2{0.f});
   for (const auto& child : children_) {

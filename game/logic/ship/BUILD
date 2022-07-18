@@ -1,3 +1,5 @@
+# TODO: refactor this once IShip is no longer a thing.
+# Probably split geometry.h out into a separate library with multiple headers.
 cc_library(
   name = "ship",
   hdrs = [

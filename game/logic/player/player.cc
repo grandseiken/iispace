@@ -81,8 +81,7 @@ struct Powerup : ecs::component {
   using extra_life = geom::switch_entry<powerup_type::kExtraLife, geom::ngon<8, 3, cw>>;
   using magic_shots = geom::switch_entry<powerup_type::kMagicShots, geom::box<3, 3, cw>>;
   using shield = geom::switch_entry<powerup_type::kShield, geom::ngon<11, 5, cw>>;
-  using bomb =
-      geom::switch_entry<powerup_type::kBomb, geom::ngon<11, 10, cw, geom::ngon_style::kPolystar>>;
+  using bomb = geom::switch_entry<powerup_type::kBomb, geom::polystar<11, 10, cw>>;
   using shape =
       standard_transform<out0, out1, geom::switch_p<4, extra_life, magic_shots, shield, bomb>>;
 
@@ -176,10 +175,7 @@ struct PlayerLogic : ecs::component {
 
   using shield = geom::if_p<2, geom::ngon_colour_p<16, 10, 6>>;
   using bomb = geom::if_p<
-      3,
-      geom::translate<
-          -8, 0,
-          geom::rotate<fixed_c::pi, geom::ngon_colour_p<6, 5, 6, geom::ngon_style::kPolystar>>>>;
+      3, geom::translate<-8, 0, geom::rotate<fixed_c::pi, geom::polystar_colour_p<6, 5, 6>>>>;
   using box_shapes =
       geom::translate<8, 0, geom::rotate_eval<geom::negate_p<1>, geom::box_colour_p<2, 2, 4>>,
                       geom::rotate_eval<geom::negate_p<1>, geom::box_colour_p<1, 1, 5>>,
@@ -255,11 +251,10 @@ struct PlayerLogic : ecs::component {
       explosion(h, std::nullopt, sim, c, 32);
       explosion(h, std::nullopt, sim, glm::vec4{1.f}, 48);
 
-      Transform bomb_explode;
       for (std::uint32_t i = 0; i < 64; ++i) {
-        bomb_explode.centre = transform.centre + from_polar(2 * i * fixed_c::pi / 64, kBombRadius);
-        explosion(h, bomb_explode, sim, (i % 2) ? c : glm::vec4{1.f},
-                  8 + sim.random(8) + sim.random(8), transform.centre);
+        auto v = transform.centre + from_polar(2 * i * fixed_c::pi / 64, kBombRadius);
+        explosion(h, v, sim, (i % 2) ? c : glm::vec4{1.f}, 8 + sim.random(8) + sim.random(8),
+                  transform.centre);
       }
 
       sim.rumble(pc.player_number, 10);
@@ -333,18 +328,14 @@ struct PlayerLogic : ecs::component {
     sim.play_sound(sound::kPlayerDestroy, transform.centre);
   }
 
-  void explosion(ecs::handle h, const std::optional<Transform>& transform_override,
-                 SimInterface& sim, const std::optional<glm::vec4>& colour = std::nullopt,
-                 std::uint32_t time = 8, const std::optional<vec2>& towards = std::nullopt) const {
-    if (!transform_override) {
-      explode_entity_shapes<PlayerLogic>(h, sim, colour, time, towards);
-      return;
+  void explosion(ecs::handle h, const std::optional<vec2>& position_override, SimInterface& sim,
+                 const std::optional<glm::vec4>& colour = std::nullopt, std::uint32_t time = 8,
+                 const std::optional<vec2>& towards = std::nullopt) const {
+    auto parameters = get_shape_parameters<PlayerLogic>(h);
+    if (position_override) {
+      std::get<0>(parameters) = *position_override;
     }
-    auto& transform = *h.get<Transform>();
-    auto old_transform = transform;
-    transform = *transform_override;
-    explode_entity_shapes<PlayerLogic>(h, sim, colour, time, towards);
-    transform = old_transform;
+    explode_shapes<shape>(sim, parameters, colour, time, towards);
   }
 
   void render(const Player& pc, const SimInterface& sim) const {

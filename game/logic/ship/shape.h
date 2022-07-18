@@ -24,7 +24,7 @@ public:
   void set_rotation(fixed rotation);
   void rotate(fixed rotation_amount);
 
-  virtual void render(SimInterface& sim, const glm::vec2& position, float rotation,
+  virtual void render(const SimInterface& sim, const glm::vec2& position, float rotation,
                       const std::optional<glm::vec4>& colour_override = std::nullopt) const = 0;
 
   vec2 centre;
@@ -43,7 +43,7 @@ public:
   Fill(const vec2& centre, fixed width, fixed height, const glm::vec4& colour,
        shape_flag category = shape_flag::kNone);
 
-  void render(SimInterface& sim, const glm::vec2& position, float rotation,
+  void render(const SimInterface& sim, const glm::vec2& position, float rotation,
               const std::optional<glm::vec4>& colour_override = std::nullopt) const override;
 
   fixed width = 0;
@@ -58,7 +58,7 @@ public:
   Line(const vec2& centre, const vec2& a, const vec2& b, const glm::vec4& colour,
        fixed rotation = 0);
 
-  void render(SimInterface& sim, const glm::vec2& position, float rotation,
+  void render(const SimInterface& sim, const glm::vec2& position, float rotation,
               const std::optional<glm::vec4>& colour_override = std::nullopt) const override;
 
   vec2 a;
@@ -73,7 +73,7 @@ public:
   Box(const vec2& centre, fixed width, fixed height, const glm::vec4& colour, fixed rotation = 0,
       shape_flag category = shape_flag::kNone);
 
-  void render(SimInterface& sim, const glm::vec2& position, float rotation,
+  void render(const SimInterface& sim, const glm::vec2& position, float rotation,
               const std::optional<glm::vec4>& colour_override = std::nullopt) const override;
 
   fixed width = 0;
@@ -94,7 +94,7 @@ public:
   Polygon(const vec2& centre, fixed radius, std::uint32_t sides, const glm::vec4& colour,
           fixed rotation = 0, shape_flag category = shape_flag::kNone, T type = T::kPolygon);
 
-  void render(SimInterface& sim, const glm::vec2& position, float rotation,
+  void render(const SimInterface& sim, const glm::vec2& position, float rotation,
               const std::optional<glm::vec4>& colour_override = std::nullopt) const override;
 
   fixed radius = 0;
@@ -110,7 +110,7 @@ public:
   PolyArc(const vec2& centre, fixed radius, std::uint32_t sides, std::uint32_t segments,
           const glm::vec4& colour, fixed rotation = 0, shape_flag category = shape_flag::kNone);
 
-  void render(SimInterface& sim, const glm::vec2& position, float rotation,
+  void render(const SimInterface& sim, const glm::vec2& position, float rotation,
               const std::optional<glm::vec4>& colour_override = std::nullopt) const override;
 
   fixed radius = 0;
@@ -137,7 +137,7 @@ public:
   void destroy_shape(std::size_t index);
   void clear_shapes();
 
-  void render(SimInterface& sim, const glm::vec2& position, float rot,
+  void render(const SimInterface& sim, const glm::vec2& position, float rot,
               const std::optional<glm::vec4>& colour_override = std::nullopt) const override;
 
 private:

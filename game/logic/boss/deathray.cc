@@ -52,9 +52,8 @@ struct DeathArm : ecs::component {
   using shape = standard_transform<
       geom::ngon<60, 4, c1>,
       geom::conditional_p<
-          2, geom::ngon<50, 4, c0, geom::ngon_style::kPolygram, shape_flag::kVulnerable>,
-          geom::ngon<50, 4, c0, geom::ngon_style::kPolygram,
-                     shape_flag::kDangerous | shape_flag::kVulnerable>>,
+          2, geom::polygram<50, 4, c0, shape_flag::kVulnerable>,
+          geom::polygram<50, 4, c0, shape_flag::kDangerous | shape_flag::kVulnerable>>,
       geom::ball_collider<40, shape_flag::kShield>, geom::ngon<20, 4, c1>, geom::ngon<18, 4, c0>>;
 
   std::tuple<vec2, fixed, bool> shape_parameters(const Transform& transform) const {

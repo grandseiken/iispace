@@ -24,22 +24,40 @@ auto get_shape_parameters(ecs::const_handle h) {
 
 template <geom::ShapeNode S>
 void render_shape(const SimInterface& sim, const auto& parameters,
-                  const std::optional<glm::vec4>& c_override = std::nullopt) {
-  geom::iterate(
-      S{}, geom::iterate_lines, parameters, {},
-      [&](const vec2& a, const vec2& b, const glm::vec4& c) {
-        auto colour = c_override ? glm::vec4{c_override->r, c_override->g, c_override->b, c.a} : c;
-        sim.render_line(to_float(a), to_float(b), colour);
-      });
+                  const std::optional<glm::vec4>& c_override = std::nullopt,
+                  const std::optional<std::size_t>& c_override_max_index = std::nullopt) {
+  std::size_t i = 0;
+  geom::iterate(S{}, geom::iterate_lines, parameters, {},
+                [&](const vec2& a, const vec2& b, const glm::vec4& c) {
+                  auto colour = c_override && (!c_override_max_index || i++ < *c_override_max_index)
+                      ? glm::vec4{c_override->r, c_override->g, c_override->b, c.a}
+                      : c;
+                  sim.render_line(to_float(a), to_float(b), colour);
+                });
 }
 
 template <ecs::Component Logic, geom::ShapeNode S = typename Logic::shape>
 void render_entity_shape(ecs::const_handle h, const Health* health, const SimInterface& sim) {
   std::optional<glm::vec4> colour_override;
+  std::optional<std::size_t> colour_override_max_index;
   if (health && health->hit_timer) {
     colour_override = glm::vec4{1.f};
+    colour_override_max_index = health->hit_flash_ignore_index;
   }
-  render_shape<S>(sim, get_shape_parameters<Logic>(h), colour_override);
+  render_shape<S>(sim, get_shape_parameters<Logic>(h), colour_override, colour_override_max_index);
+}
+
+template <geom::ShapeNode S>
+void explode_shapes(SimInterface& sim, const auto& parameters,
+                    const std::optional<glm::vec4> colour_override = std::nullopt,
+                    std::uint32_t time = 8, const std::optional<vec2>& towards = std::nullopt) {
+  std::optional<glm::vec2> towards_float;
+  if (towards) {
+    towards_float = to_float(*towards);
+  }
+  geom::iterate(S{}, geom::iterate_centres, parameters, {}, [&](const vec2& v, const glm::vec4& c) {
+    sim.explosion(to_float(v), colour_override.value_or(c), time, towards_float);
+  });
 }
 
 template <ecs::Component Logic, geom::ShapeNode S = typename Logic::shape>
@@ -47,14 +65,7 @@ void explode_entity_shapes(ecs::const_handle h, SimInterface& sim,
                            const std::optional<glm::vec4> colour_override = std::nullopt,
                            std::uint32_t time = 8,
                            const std::optional<vec2>& towards = std::nullopt) {
-  std::optional<glm::vec2> towards_float;
-  if (towards) {
-    towards_float = to_float(*towards);
-  }
-  geom::iterate(S{}, geom::iterate_centres, get_shape_parameters<Logic>(h), {},
-                [&](const vec2& v, const glm::vec4& c) {
-                  sim.explosion(to_float(v), colour_override.value_or(c), time, towards_float);
-                });
+  explode_shapes<S>(sim, get_shape_parameters<Logic>(h), colour_override, time, towards);
 }
 
 template <ecs::Component Logic, geom::ShapeNode S = typename Logic::shape>

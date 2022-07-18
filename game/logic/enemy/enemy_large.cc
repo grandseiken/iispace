@@ -17,10 +17,10 @@ struct FollowHub : ecs::component {
                                     geom::translate<0, 16, S>, geom::translate<0, -16, S>>;
   template <geom::ShapeNode S>
   using r_pi4_ngon = geom::rotate<fixed_c::pi / 4, S>;
-  using fh_centre = r_pi4_ngon<geom::ngon<16, 4, c, geom::ngon_style::kPolygram,
-                                          shape_flag::kDangerous | shape_flag::kVulnerable>>;
-  using fh_spoke = r_pi4_ngon<geom::ngon<8, 4, c, geom::ngon_style::kPolygon>>;
-  using fh_power_spoke = r_pi4_ngon<geom::ngon<8, 4, c, geom::ngon_style::kPolystar>>;
+  using fh_centre =
+      r_pi4_ngon<geom::polygram<16, 4, c, shape_flag::kDangerous | shape_flag::kVulnerable>>;
+  using fh_spoke = r_pi4_ngon<geom::ngon<8, 4, c>>;
+  using fh_power_spoke = r_pi4_ngon<geom::polystar<8, 4, c>>;
   using shape = geom::translate_p<
       0, fh_centre,
       geom::rotate_p<1, fh_arrange<fh_spoke>, geom::if_p<2, fh_arrange<fh_power_spoke>>>>;
@@ -88,11 +88,11 @@ struct Shielder : ecs::component {
   using s_arrange = geom::compound<geom::translate<24, 0, S>, geom::translate<-24, 0, S>,
                                    geom::translate<0, 24, geom::rotate<fixed_c::pi / 2, S>>,
                                    geom::translate<0, -24, geom::rotate<fixed_c::pi / 2, S>>>;
-  using s_centre = geom::ngon_colour_p<14, 8, 3, geom::ngon_style::kPolygon,
-                                       shape_flag::kDangerous | shape_flag::kVulnerable>;
-  using s_shield0 = geom::ngon<8, 6, c0, geom::ngon_style::kPolystar, shape_flag::kWeakShield>;
+  using s_centre =
+      geom::polygon_colour_p<14, 8, 3, shape_flag::kDangerous | shape_flag::kVulnerable>;
+  using s_shield0 = geom::polystar<8, 6, c0, shape_flag::kWeakShield>;
   using s_shield1 = geom::ngon<8, 6, c1>;
-  using s_spokes = geom::ngon<24, 4, c0, geom::ngon_style::kPolystar>;
+  using s_spokes = geom::polystar<24, 4, c0>;
   using shape = geom::translate_p<0,
                                   geom::rotate_p<1, s_arrange<geom::rotate_p<2, s_shield0>>,
                                                  s_arrange<geom::rotate_p<2, s_shield1>>, s_spokes>,
@@ -161,9 +161,8 @@ struct Tractor : ecs::component {
   static constexpr fixed kPullSpeed = 2 + 1_fx / 2;
 
   static constexpr auto c = colour_hue360(300, .5f, .6f);
-  using t_orb = geom::ngon<12, 6, c, geom::ngon_style::kPolygram,
-                           shape_flag::kDangerous | shape_flag::kVulnerable>;
-  using t_star = geom::ngon<16, 6, c, geom::ngon_style::kPolystar>;
+  using t_orb = geom::polygram<12, 6, c, shape_flag::kDangerous | shape_flag::kVulnerable>;
+  using t_star = geom::polystar<16, 6, c>;
   using shape = standard_transform<
       geom::translate<24, 0, geom::rotate_eval<geom::multiply_p<5, 2>, t_orb>>,
       geom::translate<-24, 0, geom::rotate_eval<geom::multiply_p<-5, 2>, t_orb>>,
