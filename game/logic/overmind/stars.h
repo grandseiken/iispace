@@ -7,16 +7,15 @@
 
 namespace ii {
 class SimInterface;
-}  // namespace ii
 
 class Stars {
 public:
-  void change(ii::SimInterface& sim);
-  void update(ii::SimInterface& sim);
-  void render(const ii::SimInterface& sim);
+  void change(SimInterface& sim);
+  void update(SimInterface& sim);
+  void render(const SimInterface& sim);
 
 private:
-  void create_star(ii::SimInterface& sim);
+  void create_star(SimInterface& sim);
 
   enum class type {
     kDotStar,
@@ -38,5 +37,7 @@ private:
   std::vector<data_t> stars_;
   std::uint32_t star_rate_ = 0;
 };
+
+}  // namespace ii
 
 #endif

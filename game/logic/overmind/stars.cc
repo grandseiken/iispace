@@ -4,11 +4,12 @@
 #include "game/logic/sim/sim_interface.h"
 #include <glm/gtc/constants.hpp>
 
+namespace ii {
 namespace {
 const std::uint32_t kTimer = 500;
 }  // namespace
 
-void Stars::update(ii::SimInterface& sim) {
+void Stars::update(SimInterface& sim) {
   bool destroy = false;
   for (auto& star : stars_) {
     star.position += direction_ * star.speed;
@@ -24,7 +25,7 @@ void Stars::update(ii::SimInterface& sim) {
   }
 }
 
-void Stars::change(ii::SimInterface& sim) {
+void Stars::change(SimInterface& sim) {
   direction_ = rotate(direction_, (sim.random_fixed().to_float() - 0.5f) * glm::pi<float>());
   for (auto& star : stars_) {
     star.timer = kTimer;
@@ -32,7 +33,7 @@ void Stars::change(ii::SimInterface& sim) {
   star_rate_ = sim.random(3) + 2;
 }
 
-void Stars::render(const ii::SimInterface& sim) {
+void Stars::render(const SimInterface& sim) {
   for (const auto& star : stars_) {
     switch (star.type) {
     case type::kDotStar:
@@ -55,7 +56,7 @@ void Stars::render(const ii::SimInterface& sim) {
     }
   }
 }
-void Stars::create_star(ii::SimInterface& sim) {
+void Stars::create_star(SimInterface& sim) {
   auto r = sim.random(12);
   if (r <= 0 && sim.random(4)) {
     return;
@@ -75,12 +76,8 @@ void Stars::create_star(ii::SimInterface& sim) {
   auto edge = sim.random(4);
   float ratio = sim.random_fixed().to_float();
 
-  star.position.x = edge < 2 ? ratio * ii::kSimDimensions.x
-      : edge == 2            ? -16
-                             : 16 + ii::kSimDimensions.x;
-  star.position.y = edge >= 2 ? ratio * ii::kSimDimensions.y
-      : edge == 0             ? -16
-                              : 16 + ii::kSimDimensions.y;
+  star.position.x = edge < 2 ? ratio * kSimDimensions.x : edge == 2 ? -16 : 16 + kSimDimensions.x;
+  star.position.y = edge >= 2 ? ratio * kSimDimensions.y : edge == 0 ? -16 : 16 + kSimDimensions.y;
 
   auto c0 = colour_hue(0.f, .15f, 0.f);
   auto c1 = colour_hue(0.f, .25f, 0.f);
@@ -94,3 +91,5 @@ void Stars::create_star(ii::SimInterface& sim) {
   }
   stars_.emplace_back(star);
 }
+
+}  // namespace ii

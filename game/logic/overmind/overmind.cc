@@ -7,6 +7,7 @@
 #include "game/logic/ship/components.h"
 #include <algorithm>
 
+namespace ii {
 namespace {
 constexpr std::uint32_t kTimer = 2800;
 constexpr std::uint32_t kPowerupTime = 1200;
@@ -25,7 +26,7 @@ public:
   virtual ~formation_base() = default;
   virtual void operator()() = 0;
 
-  void operator()(ii::SimInterface* sim, std::uint32_t row, std::uint32_t power,
+  void operator()(SimInterface* sim, std::uint32_t row, std::uint32_t power,
                   std::uint32_t* hard_already) {
     sim_ = sim;
     row_ = row;
@@ -38,10 +39,10 @@ public:
     div = std::max(2u, div);
     num = std::min(div - 1, num);
 
-    fixed x = fixed{static_cast<std::int32_t>(top ? num : div - 1 - num)} * ii::kSimDimensions.x /
+    fixed x = fixed{static_cast<std::int32_t>(top ? num : div - 1 - num)} * kSimDimensions.x /
         fixed{static_cast<std::int32_t>(div - 1)};
-    fixed y = top ? -((row_ + 1) * (fixed_c::hundredth * 16) * ii::kSimDimensions.y)
-                  : ii::kSimDimensions.y * (1 + (row_ + 1) * (fixed_c::hundredth * 16));
+    fixed y = top ? -((row_ + 1) * (fixed_c::hundredth * 16) * kSimDimensions.y)
+                  : kSimDimensions.y * (1 + (row_ + 1) * (fixed_c::hundredth * 16));
     return vec2{x, y};
   }
 
@@ -96,7 +97,7 @@ public:
   }
 
 protected:
-  ii::SimInterface* sim_ = nullptr;
+  SimInterface* sim_ = nullptr;
 
 private:
   template <typename F>
@@ -116,7 +117,7 @@ private:
 
 std::vector<Overmind::entry> formation_base::static_formations;
 
-Overmind::Overmind(ii::SimInterface& sim) : sim_{sim}, stars_{std::make_unique<Stars>()} {
+Overmind::Overmind(SimInterface& sim) : sim_{sim}, stars_{std::make_unique<Stars>()} {
   add_formations();
 
   auto queue = [this] {
@@ -131,11 +132,11 @@ Overmind::Overmind(ii::SimInterface& sim) : sim_{sim}, stars_{std::make_unique<S
   boss1_queue_ = queue();
   boss2_queue_ = queue();
 
-  if (sim_.conditions().mode == ii::game_mode::kBoss) {
+  if (sim_.conditions().mode == game_mode::kBoss) {
     return;
   }
   power_ = kInitialPower + 2 - sim_.player_count() * 2;
-  if (sim_.conditions().mode == ii::game_mode::kHard) {
+  if (sim_.conditions().mode == game_mode::kHard) {
     power_ += 20;
     waves_total_ = 15;
   }
@@ -150,10 +151,9 @@ void Overmind::update() {
   stars_->update(sim_);
 
   std::uint32_t total_enemy_threat = 0;
-  sim_.index().iterate<ii::Enemy>(
-      [&](const ii::Enemy& e) { total_enemy_threat += e.threat_value; });
+  sim_.index().iterate<Enemy>([&](const Enemy& e) { total_enemy_threat += e.threat_value; });
 
-  if (sim_.conditions().mode == ii::game_mode::kBoss) {
+  if (sim_.conditions().mode == game_mode::kBoss) {
     if (!total_enemy_threat) {
       stars_->change(sim_);
       if (boss_mod_bosses_ < 6) {
@@ -180,8 +180,7 @@ void Overmind::update() {
   }
 
   auto boss_cycles = boss_mod_fights_;
-  auto trigger_stage =
-      groups_mod_ + boss_cycles + 2 * (sim_.conditions().mode == ii::game_mode::kHard);
+  auto trigger_stage = groups_mod_ + boss_cycles + 2 * (sim_.conditions().mode == game_mode::kHard);
   auto trigger_val = kInitialTriggerVal;
   for (std::uint32_t i = 0; i < trigger_stage; ++i) {
     trigger_val += i < 2 ? 4 : i + sim_.player_count() < 7 ? 3 : 2;
@@ -260,7 +259,7 @@ std::optional<std::uint32_t> Overmind::get_timer() const {
 }
 
 void Overmind::spawn_powerup() {
-  if (sim_.index().count<ii::PowerupTag>() >= 4) {
+  if (sim_.index().count<PowerupTag>() >= 4) {
     return;
   }
 
@@ -270,10 +269,10 @@ void Overmind::spawn_powerup() {
   }
 
   auto r = sim_.random(4);
-  vec2 v = r == 0 ? vec2{-ii::kSimDimensions.x, ii::kSimDimensions.y / 2}
-      : r == 1    ? vec2{ii::kSimDimensions.x * 2, ii::kSimDimensions.y / 2}
-      : r == 2    ? vec2{ii::kSimDimensions.x / 2, -ii::kSimDimensions.y}
-                  : vec2{ii::kSimDimensions.x / 2, ii::kSimDimensions.y * 2};
+  vec2 v = r == 0 ? vec2{-kSimDimensions.x, kSimDimensions.y / 2}
+      : r == 1    ? vec2{kSimDimensions.x * 2, kSimDimensions.y / 2}
+      : r == 2    ? vec2{kSimDimensions.x / 2, -kSimDimensions.y}
+                  : vec2{kSimDimensions.x / 2, kSimDimensions.y * 2};
 
   std::uint32_t m = 4;
   if (sim_.player_count() > sim_.get_lives()) {
@@ -291,32 +290,32 @@ void Overmind::spawn_powerup() {
 
   r = sim_.random(m);
   ii::spawn_powerup(sim_, v,
-                    r == 0       ? ii::powerup_type::kBomb
-                        : r == 1 ? ii::powerup_type::kMagicShots
-                        : r == 2 ? ii::powerup_type::kShield
-                                 : (++lives_spawned_, ii::powerup_type::kExtraLife));
+                    r == 0       ? powerup_type::kBomb
+                        : r == 1 ? powerup_type::kMagicShots
+                        : r == 2 ? powerup_type::kShield
+                                 : (++lives_spawned_, powerup_type::kExtraLife));
 }
 
 void Overmind::spawn_boss_reward() {
   auto r = sim_.random(4);
-  vec2 v = r == 0 ? vec2{-ii::kSimDimensions.x / 4, ii::kSimDimensions.y / 2}
-      : r == 1    ? vec2{ii::kSimDimensions.x + ii::kSimDimensions.x / 4, ii::kSimDimensions.y / 2}
-      : r == 2    ? vec2{ii::kSimDimensions.x / 2, -ii::kSimDimensions.y / 4}
-                  : vec2{ii::kSimDimensions.x / 2, ii::kSimDimensions.y + ii::kSimDimensions.y / 4};
+  vec2 v = r == 0 ? vec2{-kSimDimensions.x / 4, kSimDimensions.y / 2}
+      : r == 1    ? vec2{kSimDimensions.x + kSimDimensions.x / 4, kSimDimensions.y / 2}
+      : r == 2    ? vec2{kSimDimensions.x / 2, -kSimDimensions.y / 4}
+                  : vec2{kSimDimensions.x / 2, kSimDimensions.y + kSimDimensions.y / 4};
 
-  ii::spawn_powerup(sim_, v, ii::powerup_type::kExtraLife);
-  if (sim_.conditions().mode != ii::game_mode::kBoss) {
+  ii::spawn_powerup(sim_, v, powerup_type::kExtraLife);
+  if (sim_.conditions().mode != game_mode::kBoss) {
     spawn_powerup();
   }
 }
 
 void Overmind::wave() {
-  if (sim_.conditions().mode == ii::game_mode::kFast) {
+  if (sim_.conditions().mode == game_mode::kFast) {
     for (std::uint32_t i = 0; i < sim_.random(7); ++i) {
       sim_.random(1);
     }
   }
-  if (sim_.conditions().mode == ii::game_mode::kWhat) {
+  if (sim_.conditions().mode == game_mode::kWhat) {
     for (std::uint32_t i = 0; i < sim_.random(11); ++i) {
       sim_.random(1);
     }
@@ -360,9 +359,9 @@ void Overmind::wave() {
 }
 
 void Overmind::boss() {
-  auto cycle = (sim_.conditions().mode == ii::game_mode::kHard) + boss_mod_bosses_ / 2;
-  bool secret_chance = (sim_.conditions().mode != ii::game_mode::kNormal &&
-                        sim_.conditions().mode != ii::game_mode::kBoss)
+  auto cycle = (sim_.conditions().mode == game_mode::kHard) + boss_mod_bosses_ / 2;
+  bool secret_chance =
+      (sim_.conditions().mode != game_mode::kNormal && sim_.conditions().mode != game_mode::kBoss)
       ? (boss_mod_fights_ > 1       ? sim_.random(4) == 0
              : boss_mod_fights_ > 0 ? sim_.random(8) == 0
                                     : false)
@@ -372,20 +371,19 @@ void Overmind::boss() {
 
   if (sim_.conditions().can_face_secret_boss && bosses_to_go_ == 0 && boss_mod_secret_ == 0 &&
       secret_chance) {
-    auto secret_cycle =
-        (std::max<std::uint32_t>(
-             2u, boss_mod_bosses_ + (sim_.conditions().mode == ii::game_mode::kHard)) -
-         2) /
+    auto secret_cycle = (std::max<std::uint32_t>(
+                             2u, boss_mod_bosses_ + (sim_.conditions().mode == game_mode::kHard)) -
+                         2) /
         2;
     boss_mod_secret_ = 2;
-    ii::spawn_super_boss(sim_, cycle);
+    spawn_super_boss(sim_, cycle);
   } else if (boss_mod_bosses_ % 2 == 0) {
     if (boss1_queue_[0] == 0) {
-      ii::spawn_big_square_boss(sim_, cycle);
+      spawn_big_square_boss(sim_, cycle);
     } else if (boss1_queue_[0] == 1) {
-      ii::spawn_shield_bomb_boss(sim_, cycle);
+      spawn_shield_bomb_boss(sim_, cycle);
     } else {
-      ii::spawn_chaser_boss(sim_, cycle);
+      spawn_chaser_boss(sim_, cycle);
     }
     boss1_queue_.push_back(boss1_queue_.front());
     boss1_queue_.erase(boss1_queue_.begin());
@@ -409,11 +407,11 @@ void Overmind::boss_mode_boss() {
   auto boss = boss_mod_bosses_;
   if (boss_mod_bosses_ < 3) {
     if (boss1_queue_[boss] == 0) {
-      ii::spawn_big_square_boss(sim_, 0);
+      spawn_big_square_boss(sim_, 0);
     } else if (boss1_queue_[boss] == 1) {
-      ii::spawn_shield_bomb_boss(sim_, 0);
+      spawn_shield_bomb_boss(sim_, 0);
     } else {
-      ii::spawn_chaser_boss(sim_, 0);
+      spawn_chaser_boss(sim_, 0);
     }
   } else {
     boss = boss - 3;
@@ -1126,3 +1124,5 @@ void Overmind::add_formations() {
   std::sort(formations_.begin(), formations_.end(), id_sort);
   std::stable_sort(formations_.begin(), formations_.end(), cost_sort);
 }
+
+}  // namespace ii

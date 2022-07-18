@@ -8,9 +8,8 @@
 #include <unordered_map>
 #include <vector>
 
-class Overmind;
-
 namespace ii {
+class Overmind;
 class Ship;
 class SimInterface;
 struct SimInternals;

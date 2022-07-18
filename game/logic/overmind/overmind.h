@@ -8,14 +8,13 @@
 namespace ii {
 class Ship;
 class SimInterface;
-}  // namespace ii
 class Stars;
 
 class formation_base;
 // TODO: make Overmind an entity/component.
 class Overmind {
 public:
-  Overmind(ii::SimInterface& sim);
+  Overmind(SimInterface& sim);
   ~Overmind();
 
   void update();
@@ -40,7 +39,7 @@ private:
   void boss();
   void boss_mode_boss();
 
-  ii::SimInterface& sim_;
+  SimInterface& sim_;
   std::unique_ptr<Stars> stars_;
 
   std::uint32_t power_ = 0;
@@ -67,5 +66,7 @@ private:
 
   void add_formations();
 };
+
+}  // namespace ii
 
 #endif
