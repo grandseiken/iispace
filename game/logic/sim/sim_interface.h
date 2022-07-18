@@ -51,6 +51,7 @@ public:
   ecs::handle global_entity();
 
   // TODO: support different categories of random with different seeds.
+  std::uint32_t random_state() const;
   std::uint32_t random(std::uint32_t max);
   fixed random_fixed();
 

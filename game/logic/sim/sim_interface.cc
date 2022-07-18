@@ -50,6 +50,10 @@ ecs::handle SimInterface::global_entity() {
   return *internals_->global_entity_handle;
 }
 
+std::uint32_t SimInterface::random_state() const {
+  return internals_->random_engine.state();
+}
+
 std::uint32_t SimInterface::random(std::uint32_t max) {
   return internals_->random_engine() % max;
 }

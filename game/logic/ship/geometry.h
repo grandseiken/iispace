@@ -128,12 +128,11 @@ enum class ngon_style {
 };
 
 struct ball_collider_data {
-  std::uint32_t radius = 0;
+  fixed radius = 0;
   shape_flag flags = shape_flag::kNone;
 
   constexpr bool check_point(const vec2& v, shape_flag mask) const {
-    auto radius_fixed = ::fixed{radius};
-    return +(flags & mask) && v.x * v.x + v.y * v.y < radius_fixed * radius_fixed;
+    return +(flags & mask) && v.x * v.x + v.y * v.y < radius * radius;
   }
 
   template <IterTag I>
@@ -154,15 +153,14 @@ struct ball_collider_data {
 };
 
 struct ngon_data {
-  std::uint32_t radius = 0;
+  fixed radius = 0;
   std::uint32_t sides = 0;
   glm::vec4 colour{0.f};
   ngon_style style = ngon_style::kPolygon;
   shape_flag flags = shape_flag::kNone;
 
   constexpr bool check_point(const vec2& v, shape_flag mask) const {
-    auto radius_fixed = ::fixed{radius};
-    return +(flags & mask) && v.x * v.x + v.y * v.y < radius_fixed * radius_fixed;
+    return +(flags & mask) && v.x * v.x + v.y * v.y < radius * radius;
   }
 
   template <IterTag I>
@@ -175,7 +173,7 @@ struct ngon_data {
   requires std::same_as<I, iterate_lines_t>
   constexpr void iterate(I, const transform& t, const LineFunction auto& f) {
     auto vertex = [&](std::uint32_t i) {
-      return t.rotate(i * 2 * fixed_c::pi / sides).translate({::fixed{radius}, 0}).v;
+      return t.rotate(i * 2 * fixed_c::pi / sides).translate({radius, 0}).v;
     };
 
     if (style != ngon_style::kPolygram) {
@@ -199,12 +197,12 @@ struct ngon_data {
 };
 
 struct box_data {
-  glm::uvec2 dimensions{0};
+  vec2 dimensions{0};
   glm::vec4 colour{0.f};
   shape_flag flags = shape_flag::kNone;
 
   constexpr bool check_point(const vec2& v, shape_flag mask) const {
-    return +(flags & mask) && abs(v.x) < ::fixed{dimensions.x} && abs(v.y) < ::fixed{dimensions.y};
+    return +(flags & mask) && abs(v.x) < dimensions.x && abs(v.y) < dimensions.y;
   }
 
   template <IterTag I>
@@ -235,8 +233,8 @@ struct box_data {
 };
 
 struct line_data {
-  glm::ivec2 a{0};
-  glm::ivec2 b{0};
+  vec2 a{0};
+  vec2 b{0};
   glm::vec4 colour{0.f};
 
   constexpr bool check_point(const vec2&, shape_flag) const {
@@ -250,32 +248,32 @@ struct line_data {
   template <IterTag I>
   requires std::same_as<I, iterate_lines_t>
   constexpr void iterate(I, const transform& t, const LineFunction auto& f) {
-    std::invoke(f, t.translate(vec2{a}).v, t.translate(vec2{b}).v, colour);
+    std::invoke(f, t.translate(a).v, t.translate(b).v, colour);
   }
 
   template <IterTag I>
   requires std::same_as<I, iterate_centres_t>
   constexpr void iterate(I, const transform& t, const PointFunction auto& f) {
-    std::invoke(f, t.v + (vec2{a} + vec2{b}) / 2, colour);
+    std::invoke(f, t.v + (a + b) / 2, colour);
   }
 };
 
 constexpr ball_collider_data
-make_ball_collider(std::uint32_t radius, shape_flag flags = shape_flag::kNone) {
+make_ball_collider(fixed radius, shape_flag flags = shape_flag::kNone) {
   return {radius, flags};
 }
 
-constexpr ngon_data make_ngon(std::uint32_t radius, std::uint32_t sides, const glm::vec4& colour,
+constexpr ngon_data make_ngon(fixed radius, std::uint32_t sides, const glm::vec4& colour,
                               ngon_style style = ngon_style::kPolygon,
                               shape_flag flags = shape_flag::kNone) {
   return {radius, sides, colour, style, flags};
 }
 
-constexpr box_data make_box(const glm::uvec2& dimensions, const glm::vec4& colour,
-                            shape_flag flags = shape_flag::kNone) {
+constexpr box_data
+make_box(const vec2& dimensions, const glm::vec4& colour, shape_flag flags = shape_flag::kNone) {
   return {dimensions, colour, flags};
 }
-constexpr line_data make_line(const glm::ivec2& a, const glm::uvec2& b, const glm::vec4& colour) {
+constexpr line_data make_line(const vec2& a, const vec2& b, const glm::vec4& colour) {
   return {a, b, colour};
 }
 
@@ -351,43 +349,41 @@ constexpr auto evaluate(equal<E0, E1>, const auto& params) {
 //////////////////////////////////////////////////////////////////////////////////
 // Shape-constructor-expresssions.
 //////////////////////////////////////////////////////////////////////////////////
-template <Expression<std::uint32_t> Radius, Expression<shape_flag> Flags>
+template <Expression<fixed> Radius, Expression<shape_flag> Flags>
 struct ball_collider_eval {};
-template <Expression<std::uint32_t> Radius, Expression<std::uint32_t> Sides,
-          Expression<glm::vec4> Colour,
+template <Expression<fixed> Radius, Expression<std::uint32_t> Sides, Expression<glm::vec4> Colour,
           Expression<ngon_style> Style = constant<ngon_style::kPolygon>,
           Expression<shape_flag> Flags = constant<shape_flag::kNone>>
 struct ngon_eval {};
-template <Expression<glm::uvec2> Dimensions, Expression<glm::vec4> Colour,
+template <Expression<vec2> Dimensions, Expression<glm::vec4> Colour,
           Expression<shape_flag> Flags = constant<shape_flag::kNone>>
 struct box_eval {};
-template <Expression<glm::ivec2> A, Expression<glm::ivec2> B, Expression<glm::vec4> Colour>
+template <Expression<vec2> A, Expression<vec2> B, Expression<glm::vec4> Colour>
 struct line_eval {};
 
-template <Expression<std::uint32_t> Radius, Expression<shape_flag> Flags>
+template <Expression<fixed> Radius, Expression<shape_flag> Flags>
 constexpr auto evaluate(ball_collider_eval<Radius, Flags>, const auto& params) {
-  return make_ball_collider(std::uint32_t{evaluate(Radius{}, params)},
+  return make_ball_collider(fixed{evaluate(Radius{}, params)},
                             shape_flag{evaluate(Flags{}, params)});
 }
 
-template <Expression<std::uint32_t> Radius, Expression<std::uint32_t> Sides,
-          Expression<glm::vec4> Colour, Expression<ngon_style> Style, Expression<shape_flag> Flags>
+template <Expression<fixed> Radius, Expression<std::uint32_t> Sides, Expression<glm::vec4> Colour,
+          Expression<ngon_style> Style, Expression<shape_flag> Flags>
 constexpr auto evaluate(ngon_eval<Radius, Sides, Colour, Style, Flags>, const auto& params) {
-  return make_ngon(std::uint32_t{evaluate(Radius{}, params)},
-                   std::uint32_t{evaluate(Sides{}, params)}, glm::vec4{evaluate(Colour{}, params)},
-                   ngon_style{evaluate(Style{}, params)}, shape_flag{evaluate(Flags{}, params)});
+  return make_ngon(fixed{evaluate(Radius{}, params)}, std::uint32_t{evaluate(Sides{}, params)},
+                   glm::vec4{evaluate(Colour{}, params)}, ngon_style{evaluate(Style{}, params)},
+                   shape_flag{evaluate(Flags{}, params)});
 }
 
-template <Expression<glm::uvec2> Dimensions, Expression<glm::vec4> Colour,
-          Expression<shape_flag> Flags>
+template <Expression<vec2> Dimensions, Expression<glm::vec4> Colour, Expression<shape_flag> Flags>
 constexpr auto evaluate(box_eval<Dimensions, Colour, Flags>, const auto& params) {
-  return make_box(glm::uvec2{evaluate(Dimensions{}, params)}, glm::vec4{evaluate(Colour{}, params)},
+  return make_box(vec2{evaluate(Dimensions{}, params)}, glm::vec4{evaluate(Colour{}, params)},
                   shape_flag{evaluate(Flags{}, params)});
 }
 
-template <Expression<glm::ivec2> A, Expression<glm::ivec2> B, Expression<glm::vec4> Colour>
+template <Expression<vec2> A, Expression<vec2> B, Expression<glm::vec4> Colour>
 constexpr auto evaluate(line_eval<A, B, Colour>, const auto& params) {
-  return make_line(glm::ivec2{evaluate(A{}, params)}, glm::ivec2{evaluate(B{}, params)},
+  return make_line(vec2{evaluate(A{}, params)}, vec2{evaluate(B{}, params)},
                    glm::vec4{evaluate(Colour{}, params)});
 }
 
@@ -563,46 +559,41 @@ using negate_p = negate<parameter<ParameterIndex>>;
 template <auto C, std::size_t ParameterIndex>
 using multiply_p = multiply<constant<C>, parameter<ParameterIndex>>;
 
-template <std::uint32_t Radius, shape_flag Flags>
+template <fixed Radius, shape_flag Flags>
 using ball_collider = constant<make_ball_collider(Radius, Flags)>;
-template <std::uint32_t Radius, std::uint32_t Sides, glm::vec4 Colour,
+template <fixed Radius, std::uint32_t Sides, glm::vec4 Colour,
           ngon_style Style = ngon_style::kPolygon, shape_flag Flags = shape_flag::kNone>
 using ngon = constant<make_ngon(Radius, Sides, Colour, Style, Flags)>;
-template <std::uint32_t W, std::uint32_t H, glm::vec4 Colour, shape_flag Flags = shape_flag::kNone>
-using box = constant<make_box(glm::uvec2{W, H}, Colour, Flags)>;
-template <std::int32_t AX, std::int32_t AY, std::int32_t BX, std::int32_t BY, glm::vec4 Colour>
-using line = constant<make_line(glm::ivec2{AX, AY}, glm::ivec2{BX, BY}, Colour)>;
+template <fixed W, fixed H, glm::vec4 Colour, shape_flag Flags = shape_flag::kNone>
+using box = constant<make_box(vec2{W, H}, Colour, Flags)>;
+template <fixed AX, fixed AY, fixed BX, fixed BY, glm::vec4 Colour>
+using line = constant<make_line(vec2{AX, AY}, vec2{BX, BY}, Colour)>;
 
-template <std::uint32_t Radius, std::uint32_t Sides, glm::vec4 Colour,
-          shape_flag Flags = shape_flag::kNone>
+template <fixed Radius, std::uint32_t Sides, glm::vec4 Colour, shape_flag Flags = shape_flag::kNone>
 using polygon = ngon<Radius, Sides, Colour, ngon_style::kPolygon, Flags>;
-template <std::uint32_t Radius, std::uint32_t Sides, glm::vec4 Colour,
-          shape_flag Flags = shape_flag::kNone>
+template <fixed Radius, std::uint32_t Sides, glm::vec4 Colour, shape_flag Flags = shape_flag::kNone>
 using polystar = ngon<Radius, Sides, Colour, ngon_style::kPolystar, Flags>;
-template <std::uint32_t Radius, std::uint32_t Sides, glm::vec4 Colour,
-          shape_flag Flags = shape_flag::kNone>
+template <fixed Radius, std::uint32_t Sides, glm::vec4 Colour, shape_flag Flags = shape_flag::kNone>
 using polygram = ngon<Radius, Sides, Colour, ngon_style::kPolygram, Flags>;
 
-template <std::uint32_t Radius, std::uint32_t Sides, std::size_t ParameterIndex,
+template <fixed Radius, std::uint32_t Sides, std::size_t ParameterIndex,
           ngon_style Style = ngon_style::kPolygon, shape_flag Flags = shape_flag::kNone>
 using ngon_colour_p = ngon_eval<constant<Radius>, constant<Sides>, parameter<ParameterIndex>,
                                 constant<Style>, constant<Flags>>;
-template <std::uint32_t W, std::uint32_t H, std::size_t ParameterIndex,
-          shape_flag Flags = shape_flag::kNone>
-using box_colour_p = box_eval<constant_uvec2<W, H>, parameter<ParameterIndex>, constant<Flags>>;
-template <std::int32_t AX, std::int32_t AY, std::int32_t BX, std::int32_t BY,
-          std::size_t ParameterIndex>
+template <fixed W, fixed H, std::size_t ParameterIndex, shape_flag Flags = shape_flag::kNone>
+using box_colour_p = box_eval<constant_vec2<W, H>, parameter<ParameterIndex>, constant<Flags>>;
+template <fixed AX, fixed AY, fixed BX, fixed BY, std::size_t ParameterIndex>
 using line_colour_p =
-    line_eval<constant_ivec2<AX, AY>, constant_ivec2<BX, BY>, parameter<ParameterIndex>>;
+    line_eval<constant_vec2<AX, AY>, constant_vec2<BX, BY>, parameter<ParameterIndex>>;
 
-template <std::uint32_t Radius, std::uint32_t Sides, std::size_t ParameterIndex,
+template <fixed Radius, std::uint32_t Sides, std::size_t ParameterIndex,
           shape_flag Flags = shape_flag::kNone>
 using polygon_colour_p = ngon_colour_p<Radius, Sides, ParameterIndex, ngon_style::kPolygon, Flags>;
-template <std::uint32_t Radius, std::uint32_t Sides, std::size_t ParameterIndex,
+template <fixed Radius, std::uint32_t Sides, std::size_t ParameterIndex,
           shape_flag Flags = shape_flag::kNone>
 using polystar_colour_p =
     ngon_colour_p<Radius, Sides, ParameterIndex, ngon_style::kPolystar, Flags>;
-template <std::uint32_t Radius, std::uint32_t Sides, std::size_t ParameterIndex,
+template <fixed Radius, std::uint32_t Sides, std::size_t ParameterIndex,
           shape_flag Flags = shape_flag::kNone>
 using polygram_colour_p =
     ngon_colour_p<Radius, Sides, ParameterIndex, ngon_style::kPolygram, Flags>;

@@ -88,18 +88,20 @@ ecs::handle create_ship(SimInterface& sim, const vec2& position, fixed rotation 
   h.add(Update{.update = ecs::call<&Logic::update>});
   h.add(Transform{.centre = position, .rotation = rotation});
 
-  constexpr auto collision_shape_flags = [&]() constexpr {
-    shape_flag result = shape_flag::kNone;
-    geom::iterate(
-        S{}, geom::iterate_flags, geom::arbitrary_parameters{},
-        {}, [&](shape_flag f) constexpr { result |= f; });
-    return result;
-  }
-  ();
-  if constexpr (+collision_shape_flags) {
-    h.add(Collision{.flags = collision_shape_flags,
-                    .bounding_width = Logic::kBoundingWidth,
-                    .check = &ship_check_point<Logic, S>});
+  if constexpr (requires { &Logic::kBoundingWidth; }) {
+    constexpr auto collision_shape_flags = [&]() constexpr {
+      shape_flag result = shape_flag::kNone;
+      geom::iterate(
+          S{}, geom::iterate_flags, geom::arbitrary_parameters{},
+          {}, [&](shape_flag f) constexpr { result |= f; });
+      return result;
+    }
+    ();
+    if constexpr (+collision_shape_flags) {
+      h.add(Collision{.flags = collision_shape_flags,
+                      .bounding_width = Logic::kBoundingWidth,
+                      .check = &ship_check_point<Logic, S>});
+    }
   }
 
   constexpr auto render = ecs::call<&render_entity_shape<Logic, S>>;
