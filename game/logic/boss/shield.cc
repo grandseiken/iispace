@@ -6,12 +6,6 @@
 
 namespace ii {
 namespace {
-constexpr vec2 strut_rotate_a(fixed i) {
-  return rotate(vec2{80, 0}, i * fixed_c::pi / 8);
-}
-constexpr vec2 strut_rotate_b(fixed i) {
-  return rotate(vec2{120, 0}, i * fixed_c::pi / 8);
-}
 
 struct ShieldBombBoss : ecs::component {
   static constexpr std::uint32_t kBoundingWidth = 640;
@@ -27,8 +21,8 @@ struct ShieldBombBoss : ecs::component {
 
   template <fixed I>
   using strut_shape =
-      geom::line_colour_p<strut_rotate_a(I).x.to_int(), strut_rotate_a(I).y.to_int(),
-                          strut_rotate_b(I).x.to_int(), strut_rotate_b(I).y.to_int(), 3>;
+      geom::line_eval<geom::constant<rotate(vec2{80, 0}, I* fixed_c::pi / 8)>,
+                      geom::constant<rotate(vec2{120, 0}, I* fixed_c::pi / 8)>, geom::parameter<3>>;
   using struts = geom::compound<strut_shape<0>, strut_shape<1>, strut_shape<2>, strut_shape<3>,
                                 strut_shape<4>, strut_shape<5>, strut_shape<6>, strut_shape<7>,
                                 strut_shape<8>, strut_shape<9>, strut_shape<10>, strut_shape<11>,

@@ -1,299 +1,275 @@
 #include "game/logic/boss/boss_internal.h"
 #include "game/logic/enemy/enemy.h"
-#include "game/logic/player/player.h"
+#include "game/logic/ship/geometry.h"
+#include "game/logic/ship/ship_template.h"
 
 namespace ii {
 namespace {
-constexpr std::uint32_t kTbBaseHp = 900;
-constexpr std::uint32_t kTbTimer = 100;
-constexpr fixed kTbSpeed = 2;
-constexpr fixed kTractorBeamSpeed = 2 + 1_fx / 2;
 
-constexpr glm::vec4 c0 = colour_hue360(300, .5f, .6f);
-constexpr glm::vec4 c1 = colour_hue360(300, 1.f / 3, .6f);
-constexpr glm::vec4 c2 = colour_hue360(300, .4f, .5f);
+struct TractorBoss : ecs::component {
+  static constexpr std::uint32_t kBoundingWidth = 640;
+  static constexpr std::uint32_t kBaseHp = 900;
+  static constexpr std::uint32_t kTimer = 100;
+  static constexpr shape_flag kDangerousVulnerable =
+      shape_flag::kDangerous | shape_flag::kVulnerable;
+  static constexpr fixed kSpeed = 2;
+  static constexpr fixed kTractorBeamSpeed = 2 + 1_fx / 2;
 
-class TractorBoss : public ::Boss {
-public:
-  TractorBoss(SimInterface& sim);
+  static constexpr glm::vec4 c0 = colour_hue360(300, .5f, .6f);
+  static constexpr glm::vec4 c1 = colour_hue360(300, 1.f / 3, .6f);
+  static constexpr glm::vec4 c2 = colour_hue360(300, .4f, .5f);
 
-  void update() override;
-  void render() const override;
-
-private:
-  CompoundShape* s1_ = nullptr;
-  CompoundShape* s2_ = nullptr;
-  Polygon* sattack_ = nullptr;
-  bool will_attack_ = false;
-  bool stopped_ = false;
-  bool generating_ = false;
-  bool attacking_ = false;
-  bool continue_ = false;
-  bool gen_dir_ = false;
-  std::uint32_t shoot_type_ = 0;
-  bool sound_ = true;
-  std::uint32_t timer_ = 0;
-  std::uint32_t attack_size_ = 0;
-  std::size_t attack_shapes_ = 0;
-
-  std::vector<vec2> targets_;
-};
-
-TractorBoss::TractorBoss(SimInterface& sim)
-: Boss{sim, {kSimDimensions.x * (1 + fixed_c::half), kSimDimensions.y / 2}}
-, shoot_type_{sim.random(2)} {
-  s1_ = add_new_shape<CompoundShape>(vec2{0, -96}, 0,
-                                     shape_flag::kDangerous | shape_flag::kVulnerable);
-  s1_->colour = c1;
-
-  s1_->add_new_shape<Polygon>(vec2{0}, 12, 6, c1, 0, shape_flag::kNone, Polygon::T::kPolygram);
-  s1_->add_new_shape<Polygon>(vec2{0}, 12, 12, c1, 0);
-  s1_->add_new_shape<Polygon>(vec2{0}, 2, 6, c1, 0);
-  s1_->add_new_shape<Polygon>(vec2{0}, 36, 12, c0, 0);
-  s1_->add_new_shape<Polygon>(vec2{0}, 34, 12, c0, 0);
-  s1_->add_new_shape<Polygon>(vec2{0}, 32, 12, c0, 0);
-  for (std::uint32_t i = 0; i < 8; ++i) {
-    vec2 d = rotate(vec2{24, 0}, i * fixed_c::pi / 4);
-    s1_->add_new_shape<Polygon>(d, 12, 6, c0, 0, shape_flag::kNone, Polygon::T::kPolygram);
+  using attack_shape = standard_transform<geom::translate_p<2, geom::polygon<8, 6, c0>>>;
+  template <std::size_t BI, fixed I>
+  using ball_shape_inner =
+      geom::translate_eval<geom::constant<rotate(vec2{24, 0}, I* fixed_c::pi / 4)>,
+                           geom::rotate_eval<geom::multiply_p<BI ? 1 : -1, 2>,
+                                             geom::polygram<12, 6, c0, kDangerousVulnerable>>>;
+  template <std::size_t I>
+  using ball_shape = geom::compound<
+      geom::attachment_point<I, 0, 0>, geom::polygram<12, 6, c1>,
+      geom::polygon<30, 12, glm::vec4{0.f}, shape_flag::kShield>,
+      geom::disable_iteration<
+          geom::iterate_centres_t,
+          geom::compound<geom::polygon<12, 12, c1>, geom::polygon<2, 6, c1>,
+                         geom::polygon<36, 12, c0, kDangerousVulnerable>, geom::polygon<34, 12, c0>,
+                         geom::polygon<32, 12, c0>, ball_shape_inner<I, 0>, ball_shape_inner<I, 1>,
+                         ball_shape_inner<I, 2>, ball_shape_inner<I, 3>, ball_shape_inner<I, 4>,
+                         ball_shape_inner<I, 5>, ball_shape_inner<I, 6>, ball_shape_inner<I, 7>>>>;
+  using shape = standard_transform<
+      geom::translate<0, -96, geom::rotate_eval<geom::multiply_p<fixed{1} / 2, 2>, ball_shape<0>>>,
+      geom::translate<0, 96, geom::rotate_eval<geom::multiply_p<-fixed{1} / 2, 2>, ball_shape<1>>>,
+      geom::ngon_eval<geom::parameter<3>, geom::constant<16u>, geom::constant<c2>>,
+      geom::line<-2, -96, -2, 96, c0>, geom::line<0, -96, 0, 96, c1>,
+      geom::line<2, -96, 2, 96, c0>>;
+  std::tuple<vec2, fixed, fixed, fixed> shape_parameters(const Transform& transform) const {
+    return {transform.centre, transform.rotation, sub_rotation,
+            static_cast<std::uint32_t>(attack_shapes.size()) / (1 + fixed_c::half)};
   }
 
-  s2_ = add_new_shape<CompoundShape>(vec2{0, 96}, 0,
-                                     shape_flag::kDangerous | shape_flag::kVulnerable);
+  TractorBoss(SimInterface& sim) : shoot_type{sim.random(2)} {}
+  bool will_attack = false;
+  bool stopped = false;
+  bool generating = false;
+  bool attacking = false;
+  bool move_away = false;
+  bool gen_dir = false;
+  bool sound = true;
+  std::uint32_t shoot_type = 0;
+  std::uint32_t timer = 0;
+  std::vector<vec2> attack_shapes;
+  std::vector<vec2> targets;
+  fixed sub_rotation = 0;
 
-  s2_->add_new_shape<Polygon>(vec2{0}, 12, 6, c1, 0, shape_flag::kNone, Polygon::T::kPolygram);
-  s2_->add_new_shape<Polygon>(vec2{0}, 12, 12, c1, 0);
-  s2_->add_new_shape<Polygon>(vec2{0}, 2, 6, c1, 0);
-
-  s2_->add_new_shape<Polygon>(vec2{0}, 36, 12, c0, 0);
-  s2_->add_new_shape<Polygon>(vec2{0}, 34, 12, c0, 0);
-  s2_->add_new_shape<Polygon>(vec2{0}, 32, 12, c0, 0);
-  for (std::uint32_t i = 0; i < 8; ++i) {
-    vec2 d = rotate(vec2{24, 0}, i * fixed_c::pi / 4);
-    s2_->add_new_shape<Polygon>(d, 12, 6, c0, 0, shape_flag::kNone, Polygon::T::kPolygram);
-  }
-
-  sattack_ = add_new_shape<Polygon>(vec2{0}, 0, 16, c2);
-
-  add_new_shape<Line>(vec2{0}, vec2{-2, -96}, vec2{-2, 96}, c0, 0);
-  add_new_shape<Line>(vec2{0}, vec2{0, -96}, vec2{0, 96}, c1, 0);
-  add_new_shape<Line>(vec2{0}, vec2{2, -96}, vec2{2, 96}, c0, 0);
-
-  add_new_shape<Polygon>(vec2{0, 96}, 30, 12, glm::vec4{0.f}, 0, shape_flag::kShield);
-  add_new_shape<Polygon>(vec2{0, -96}, 30, 12, glm::vec4{0.f}, 0, shape_flag::kShield);
-
-  attack_shapes_ = shapes().size();
-}
-
-void TractorBoss::update() {
-  if (shape().centre.x <= kSimDimensions.x / 2 && will_attack_ && !stopped_ && !continue_) {
-    stopped_ = true;
-    generating_ = true;
-    gen_dir_ = sim().random(2) == 0;
-    timer_ = 0;
-  }
-
-  if (shape().centre.x < -150) {
-    shape().centre.x = kSimDimensions.x + 150;
-    will_attack_ = !will_attack_;
-    shoot_type_ = sim().random(2);
-    if (will_attack_) {
-      shoot_type_ = 0;
+  void update(ecs::handle h, Transform& transform, const Health& health, SimInterface& sim) {
+    if (transform.centre.x <= kSimDimensions.x / 2 && will_attack && !stopped && !move_away) {
+      stopped = true;
+      generating = true;
+      gen_dir = !sim.random(2);
+      timer = 0;
     }
-    continue_ = false;
-    sound_ = !will_attack_;
-    shape().rotate(sim().random_fixed() * 2 * fixed_c::pi);
-  }
 
-  ++timer_;
-  bool is_hp_low = handle().get<Health>()->is_hp_low();
-  if (!stopped_) {
-    move(kTbSpeed * vec2{-1, 0});
-    if (!will_attack_ && is_on_screen() && timer_ % (16 - sim().alive_players() * 2) == 0) {
-      if (shoot_type_ == 0 || (is_hp_low && shoot_type_ == 1)) {
-        auto p = sim().nearest_player_position(shape().centre);
-
-        auto v = s1_->convert_point(shape().centre, shape().rotation(), vec2{0});
-        auto d = normalise(p - v);
-        spawn_boss_shot(sim(), v, d * 5, c0);
-        spawn_boss_shot(sim(), v, d * -5, c0);
-
-        v = s2_->convert_point(shape().centre, shape().rotation(), vec2{0});
-        d = normalise(p - v);
-        spawn_boss_shot(sim(), v, d * 5, c0);
-        spawn_boss_shot(sim(), v, d * -5, c0);
-
-        play_sound_random(sound::kBossFire);
+    if (transform.centre.x < -150) {
+      transform.centre.x = kSimDimensions.x + 150;
+      will_attack = !will_attack;
+      shoot_type = sim.random(2);
+      if (will_attack) {
+        shoot_type = 0;
       }
-      if (shoot_type_ == 1 || is_hp_low) {
-        auto d = sim().nearest_player_direction(shape().centre);
-        spawn_boss_shot(sim(), shape().centre, d * 5, c0);
-        spawn_boss_shot(sim(), shape().centre, d * -5, c0);
-        play_sound_random(sound::kBossFire);
-      }
+      move_away = false;
+      sound = !will_attack;
+      transform.rotate(sim.random_fixed() * 2 * fixed_c::pi);
     }
-    if ((!will_attack_ || continue_) && is_on_screen()) {
-      if (sound_) {
-        play_sound(sound::kBossAttack);
-        sound_ = false;
-      }
-      targets_.clear();
-      sim().index().iterate_dispatch<Player>([&](const Player& p, Transform& p_transform) {
-        if (!p.is_killed()) {
-          targets_.push_back(p_transform.centre);
-          p_transform.centre += normalise(shape().centre - p_transform.centre) * kTractorBeamSpeed;
+
+    ++timer;
+    if (!stopped) {
+      transform.move(kSpeed * vec2{-1, 0});
+      if (!will_attack && sim.is_on_screen(transform.centre) &&
+          !(timer % (16 - sim.alive_players() * 2))) {
+        if (!shoot_type || (health.is_hp_low() && shoot_type == 1)) {
+          auto p = sim.nearest_player_position(transform.centre);
+          iterate_entity_attachment_points<TractorBoss>(
+              h, [&](std::size_t, const vec2& v, const vec2&) {
+                auto d = normalise(p - v);
+                spawn_boss_shot(sim, v, d * 5, c0);
+                spawn_boss_shot(sim, v, d * -5, c0);
+              });
+          sim.play_sound(sound::kBossFire, transform.centre, /* random */ true);
         }
-      });
-    }
-  } else {
-    if (generating_) {
-      if (timer_ >= kTbTimer * 5) {
-        timer_ = 0;
-        generating_ = false;
-        attacking_ = false;
-        attack_size_ = 0;
-        play_sound(sound::kBossAttack);
+        if (shoot_type == 1 || health.is_hp_low()) {
+          auto d = sim.nearest_player_direction(transform.centre);
+          spawn_boss_shot(sim, transform.centre, d * 5, c0);
+          spawn_boss_shot(sim, transform.centre, d * -5, c0);
+          sim.play_sound(sound::kBossFire, transform.centre, /* random */ true);
+        }
       }
-
-      if (timer_ < kTbTimer * 4 && timer_ % (10 - 2 * sim().alive_players()) == 0) {
-        spawn_bounce(sim(), s1_->convert_point(shape().centre, shape().rotation(), vec2{0}),
-                     gen_dir_ ? shape().rotation() + fixed_c::pi : shape().rotation());
-
-        spawn_bounce(sim(), s2_->convert_point(shape().centre, shape().rotation(), vec2{0}),
-                     shape().rotation() + (gen_dir_ ? 0 : fixed_c::pi));
-        play_sound_random(sound::kEnemySpawn);
-      }
-
-      if (is_hp_low && timer_ % (20 - sim().alive_players() * 2) == 0) {
-        auto d = sim().nearest_player_direction(shape().centre);
-        spawn_boss_shot(sim(), shape().centre, d * 5, c0);
-        spawn_boss_shot(sim(), shape().centre, d * -5, c0);
-        play_sound_random(sound::kBossFire);
+      if ((!will_attack || move_away) && sim.is_on_screen(transform.centre)) {
+        if (sound) {
+          sim.play_sound(sound::kBossAttack, transform.centre);
+          sound = false;
+        }
+        targets.clear();
+        sim.index().iterate_dispatch<Player>([&](const Player& p, Transform& p_transform) {
+          if (!p.is_killed()) {
+            targets.push_back(p_transform.centre);
+            p_transform.centre +=
+                normalise(transform.centre - p_transform.centre) * kTractorBeamSpeed;
+          }
+        });
       }
     } else {
-      if (!attacking_) {
-        if (timer_ >= kTbTimer * 4) {
-          timer_ = 0;
-          attacking_ = true;
+      if (generating) {
+        if (timer >= kTimer * 5) {
+          timer = 0;
+          generating = false;
+          attacking = false;
+          attack_shapes.clear();
+          sim.play_sound(sound::kBossAttack, transform.centre);
         }
-        if (timer_ % (kTbTimer / (1 + fixed_c::half)).to_int() == kTbTimer / 8) {
-          auto v = s1_->convert_point(shape().centre, shape().rotation(), vec2{0});
-          auto d = from_polar(sim().random_fixed() * (2 * fixed_c::pi), 5_fx);
-          spawn_boss_shot(sim(), v, d, c0);
-          d = rotate(d, fixed_c::pi / 2);
-          spawn_boss_shot(sim(), v, d, c0);
-          d = rotate(d, fixed_c::pi / 2);
-          spawn_boss_shot(sim(), v, d, c0);
-          d = rotate(d, fixed_c::pi / 2);
-          spawn_boss_shot(sim(), v, d, c0);
 
-          v = s2_->convert_point(shape().centre, shape().rotation(), vec2{0});
-          d = from_polar(sim().random_fixed() * (2 * fixed_c::pi), 5_fx);
-          spawn_boss_shot(sim(), v, d, c0);
-          d = rotate(d, fixed_c::pi / 2);
-          spawn_boss_shot(sim(), v, d, c0);
-          d = rotate(d, fixed_c::pi / 2);
-          spawn_boss_shot(sim(), v, d, c0);
-          d = rotate(d, fixed_c::pi / 2);
-          spawn_boss_shot(sim(), v, d, c0);
-          play_sound_random(sound::kBossFire);
+        if (timer < kTimer * 4 && !(timer % (10 - 2 * sim.alive_players()))) {
+          iterate_entity_attachment_points<TractorBoss>(
+              h, [&](std::size_t index, const vec2& v, const vec2&) {
+                spawn_bounce(
+                    sim, v,
+                    !index == gen_dir ? transform.rotation + fixed_c::pi : transform.rotation);
+              });
+          sim.play_sound(sound::kEnemySpawn, transform.centre, /* random */ true);
         }
-        targets_.clear();
 
-        sim().index().iterate_dispatch<Player>([&](const Player& p, Transform& transform) {
-          if (p.is_killed()) {
-            return;
-          }
-          targets_.push_back(transform.centre);
-          transform.centre += normalise(shape().centre - transform.centre) * kTractorBeamSpeed;
-        });
-
-        sim().index().iterate_dispatch_if<Enemy>([&](ecs::handle h, Transform& transform) {
-          if (h.id() == handle().id()) {
-            return;
-          }
-          play_sound_random(sound::kBossAttack, 0, 0.3f);
-          targets_.push_back(transform.centre);
-          transform.centre += normalise(shape().centre - transform.centre) * (4 + fixed_c::half);
-          if (!(h.has<WallTag>()) && length(transform.centre - shape().centre) <= 40) {
-            h.emplace<Destroy>();
-            ++attack_size_;
-            sattack_->radius = attack_size_ / (1 + fixed_c::half);
-            add_new_shape<Polygon>(vec2{0}, 8, 6, c0, 0);
-          }
-        });
+        if (health.is_hp_low() && !(timer % (20 - sim.alive_players() * 2))) {
+          auto d = sim.nearest_player_direction(transform.centre);
+          spawn_boss_shot(sim, transform.centre, d * 5, c0);
+          spawn_boss_shot(sim, transform.centre, d * -5, c0);
+          sim.play_sound(sound::kBossFire, transform.centre, /* random */ true);
+        }
       } else {
-        timer_ = 0;
-        stopped_ = false;
-        continue_ = true;
-        for (std::uint32_t i = 0; i < attack_size_; ++i) {
-          vec2 d = from_polar(i * (2 * fixed_c::pi) / attack_size_, 5_fx);
-          spawn_boss_shot(sim(), shape().centre, d, c0);
+        if (!attacking) {
+          if (timer >= kTimer * 4) {
+            timer = 0;
+            attacking = true;
+          }
+          if (timer % (kTimer / (1 + fixed_c::half)).to_int() == kTimer / 8) {
+            iterate_entity_attachment_points<TractorBoss>(
+                h, [&](std::size_t, const vec2& v, const vec2&) {
+                  auto d = from_polar(sim.random_fixed() * (2 * fixed_c::pi), 5_fx);
+                  spawn_boss_shot(sim, v, d, c0);
+                  d = rotate(d, fixed_c::pi / 2);
+                  spawn_boss_shot(sim, v, d, c0);
+                  d = rotate(d, fixed_c::pi / 2);
+                  spawn_boss_shot(sim, v, d, c0);
+                  d = rotate(d, fixed_c::pi / 2);
+                  spawn_boss_shot(sim, v, d, c0);
+                });
+            sim.play_sound(sound::kBossFire, transform.centre, /* random */ true);
+          }
+          targets.clear();
+
+          sim.index().iterate_dispatch<Player>([&](const Player& p, Transform& p_transform) {
+            if (!p.is_killed()) {
+              targets.push_back(p_transform.centre);
+              p_transform.centre +=
+                  normalise(transform.centre - p_transform.centre) * kTractorBeamSpeed;
+            }
+          });
+
+          sim.index().iterate_dispatch_if<Enemy>([&](ecs::handle eh, Transform& e_transform) {
+            if (eh.id() == h.id()) {
+              return;
+            }
+            sim.play_sound(sound::kBossAttack, transform.centre, /* random */ true,
+                           /* volume */ .3f);
+            targets.push_back(e_transform.centre);
+            e_transform.centre +=
+                normalise(transform.centre - e_transform.centre) * (4 + fixed_c::half);
+            if (!(eh.has<WallTag>()) && length(e_transform.centre - transform.centre) <= 40) {
+              eh.emplace<Destroy>();
+              attack_shapes.emplace_back(0);
+            }
+          });
+        } else {
+          timer = 0;
+          stopped = false;
+          move_away = true;
+          for (std::uint32_t i = 0; i < attack_shapes.size(); ++i) {
+            vec2 d = from_polar(
+                i * (2 * fixed_c::pi) / static_cast<std::uint32_t>(attack_shapes.size()), 5_fx);
+            spawn_boss_shot(sim, transform.centre, d, c0);
+          }
+          sim.play_sound(sound::kBossFire, transform.centre);
+          sim.play_sound(sound::kExplosion, transform.centre, /* random */ true);
+          attack_shapes.clear();
         }
-        play_sound(sound::kBossFire);
-        play_sound_random(sound::kExplosion);
-        attack_size_ = 0;
-        sattack_->radius = 0;
-        while (attack_shapes_ < shapes().size()) {
-          destroy_shape(attack_shapes_);
-        }
+      }
+    }
+
+    for (auto& v : attack_shapes) {
+      v = from_polar(sim.random_fixed() * (2 * fixed_c::pi),
+                     2 * (sim.random_fixed() - fixed_c::half) *
+                         fixed{static_cast<std::uint32_t>(attack_shapes.size())} /
+                         (1 + fixed_c::half));
+    }
+
+    fixed r = 0;
+    if (!will_attack || (stopped && !generating && !attacking)) {
+      r = fixed_c::hundredth;
+    } else if (stopped && attacking && !generating) {
+      r = 0;
+    } else {
+      r = fixed_c::hundredth / 2;
+    }
+    transform.rotate(r);
+    sub_rotation += fixed_c::tenth;
+  }
+
+  void
+  on_hit(ecs::handle h, const Transform& transform, SimInterface& sim, damage_type type) const {
+    boss_on_hit<true, TractorBoss>(h, sim, type);
+    // Compatiblity with old attack shapes actually being part of the shape.
+    if (type == damage_type::kBomb) {
+      for (const auto& v : attack_shapes) {
+        std::tuple parameters{transform.centre, transform.rotation, v};
+        explode_shapes<attack_shape>(sim, parameters);
+        explode_shapes<attack_shape>(sim, parameters, glm::vec4{1.f}, 12);
+        explode_shapes<attack_shape>(sim, parameters, std::nullopt, 24);
       }
     }
   }
 
-  for (std::size_t i = attack_shapes_; i < shapes().size(); ++i) {
-    vec2 v = from_polar(
-        sim().random_fixed() * (2 * fixed_c::pi),
-        2 * (sim().random_fixed() - fixed_c::half) * fixed{attack_size_} / (1 + fixed_c::half));
-    shapes()[i]->centre = v;
-  }
-
-  fixed r = 0;
-  if (!will_attack_ || (stopped_ && !generating_ && !attacking_)) {
-    r = fixed_c::hundredth;
-  } else if (stopped_ && attacking_ && !generating_) {
-    r = 0;
-  } else {
-    r = fixed_c::hundredth / 2;
-  }
-  shape().rotate(r);
-
-  s1_->rotate(fixed_c::tenth / 2);
-  s2_->rotate(-fixed_c::tenth / 2);
-  for (std::size_t i = 0; i < 8; ++i) {
-    s1_->shapes()[4 + i]->rotate(-fixed_c::tenth);
-    s2_->shapes()[4 + i]->rotate(fixed_c::tenth);
-  }
-}
-
-void TractorBoss::render() const {
-  Boss::render();
-  if ((stopped_ && !generating_ && !attacking_) ||
-      (!stopped_ && (continue_ || !will_attack_) && is_on_screen())) {
-    for (std::size_t i = 0; i < targets_.size(); ++i) {
-      if (((timer_ + i * 4) / 4) % 2) {
-        sim().render_line(to_float(shape().centre), to_float(targets_[i]), c0);
+  void render(const Transform& transform, const SimInterface& sim) const {
+    if ((stopped && !generating && !attacking) ||
+        (!stopped && (move_away || !will_attack) && sim.is_on_screen(transform.centre))) {
+      for (std::size_t i = 0; i < targets.size(); ++i) {
+        if (((timer + i * 4) / 4) % 2) {
+          sim.render_line(to_float(transform.centre), to_float(targets[i]), c0);
+        }
       }
     }
+    for (const auto& v : attack_shapes) {
+      std::tuple parameters{transform.centre, transform.rotation, v};
+      render_shape<attack_shape>(sim, parameters);
+    }
   }
-}
+};
 
 }  // namespace
 
 void spawn_tractor_boss(SimInterface& sim, std::uint32_t cycle) {
-  auto h = sim.create_legacy(std::make_unique<TractorBoss>(sim));
-  h.add(legacy_collision(/* bounding width */ 640));
+  auto h =
+      create_ship<TractorBoss>(sim, {kSimDimensions.x * (1 + fixed_c::half), kSimDimensions.y / 2});
   h.add(Enemy{.threat_value = 100,
               .boss_score_reward =
                   calculate_boss_score(boss_flag::kBoss2A, sim.player_count(), cycle)});
   h.add(Health{
-      .hp = calculate_boss_hp(kTbBaseHp, sim.player_count(), cycle),
+      .hp = calculate_boss_hp(TractorBoss::kBaseHp, sim.player_count(), cycle),
       .hit_sound0 = std::nullopt,
       .hit_sound1 = sound::kEnemyShatter,
       .destroy_sound = std::nullopt,
       .damage_transform = &scale_boss_damage,
-      .on_hit = &legacy_boss_on_hit<true>,
-      .on_destroy = &legacy_boss_on_destroy,
+      .on_hit = ecs::call<&TractorBoss::on_hit>,
+      .on_destroy = ecs::call<&boss_on_destroy<TractorBoss>>,
   });
   h.add(Boss{.boss = boss_flag::kBoss2A});
+  h.add(TractorBoss{sim});
 }
 }  // namespace ii

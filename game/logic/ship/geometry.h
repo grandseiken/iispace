@@ -15,9 +15,34 @@ namespace ii::geom {
 struct iterate_flags_t {};
 struct iterate_lines_t {};
 struct iterate_centres_t {};
+struct iterate_attachment_points_t {};
 inline constexpr iterate_flags_t iterate_flags;
 inline constexpr iterate_lines_t iterate_lines;
 inline constexpr iterate_centres_t iterate_centres;
+inline constexpr iterate_attachment_points_t iterate_attachment_points;
+
+template <typename T, typename... Args>
+concept OneOf = (std::same_as<T, Args> || ...);
+template <typename T>
+concept IterTag =
+    OneOf<T, iterate_flags_t, iterate_lines_t, iterate_centres_t, iterate_attachment_points_t>;
+
+template <typename T>
+concept FlagFunction = std::invocable<T, shape_flag>;
+template <typename T>
+concept PointFunction = std::invocable<T, const vec2&, const glm::vec4&>;
+template <typename T>
+concept LineFunction = std::invocable<T, const vec2&, const vec2&, const glm::vec4&>;
+template <typename T>
+concept AttachmentPointFunction = std::invocable<T, std::size_t, const vec2&, const vec2&>;
+
+template <typename T, typename U, bool B>
+concept Implies = (!std::same_as<T, U> || B);
+template <typename T, typename I>
+concept IterateFunction = IterTag<I> && Implies<I, iterate_flags_t, FlagFunction<T>> &&
+    Implies<I, iterate_lines_t, LineFunction<T>> &&
+    Implies<I, iterate_centres_t, PointFunction<T>> &&
+    Implies<I, iterate_attachment_points_t, AttachmentPointFunction<T>>;
 
 struct transform {
   constexpr transform(const vec2& v = vec2{0}, fixed r = 0) : v{v}, r{r} {}
@@ -65,58 +90,44 @@ constexpr arbitrary_parameter get(const arbitrary_parameters&) {
   return {};
 }
 
-template <typename T, typename... Args>
-concept OneOf = (std::same_as<T, Args> || ...);
 template <typename T>
-concept IterTag = OneOf<T, iterate_flags_t, iterate_lines_t, iterate_centres_t>;
-
-template <typename T>
-concept FlagFunction = std::invocable<T, shape_flag>;
-template <typename T>
-concept PointFunction = std::invocable<T, const vec2&, const glm::vec4&>;
-template <typename T>
-concept LineFunction = std::invocable<T, const vec2&, const vec2&, const glm::vec4&>;
-
-template <typename T, typename I>
-concept IterateFunction = IterTag<I> &&((!std::same_as<I, iterate_flags_t> || FlagFunction<T>)&&(
-    !std::same_as<I, iterate_lines_t> || LineFunction<T>)&&(!std::same_as<I, iterate_centres_t> ||
-                                                            PointFunction<T>));
-
-template <typename T>
-concept Shape = requires(T x, transform t) {
+concept Shape = requires(T x) {
   { x.check_point(vec2{}, shape_flag{}) } -> std::convertible_to<bool>;
   x.iterate(iterate_flags, transform{}, [](shape_flag) {});
   x.iterate(iterate_centres, transform{}, [](const vec2&, const glm::vec4&) {});
   x.iterate(iterate_lines, transform{}, [](const vec2&, const vec2&, const glm::vec4&) {});
+  x.iterate(iterate_attachment_points, transform{}, [](std::size_t, const vec2&, const vec2&) {});
 };
 
-template <typename Parameters, typename E, typename V>
+template <typename E, typename V, typename Parameters>
 concept ExpressionWithSubstitution = requires(Parameters params) {
   V{evaluate(E{}, params)};
 };
 
-template <typename Parameters, typename E>
+template <typename E, typename Parameters>
 concept ShapeExpressionWithSubstitution = requires(Parameters params) {
   { evaluate(E{}, params) } -> Shape;
 };
 
-template <typename Parameters, typename Node>
+template <typename Node, typename Parameters>
 concept ShapeNodeWithSubstitution = requires(Parameters params) {
   { check_point(Node{}, params, vec2{}, shape_flag{}) } -> std::convertible_to<bool>;
   iterate(Node{}, iterate_flags, params, transform{}, [](shape_flag) {});
   iterate(Node{}, iterate_centres, params, transform{}, [](const vec2&, const glm::vec4&) {});
   iterate(Node{}, iterate_lines, params, transform{},
           [](const vec2&, const vec2&, const glm::vec4&) {});
+  iterate(Node{}, iterate_attachment_points, params, transform{},
+          [](std::size_t, const vec2&, const vec2&) {});
 };
 
 template <typename E, typename V>
-concept Expression = ExpressionWithSubstitution<arbitrary_parameters, E, V>;
+concept Expression = ExpressionWithSubstitution<E, V, arbitrary_parameters>;
 
 template <typename E>
-concept ShapeExpression = ShapeExpressionWithSubstitution<arbitrary_parameters, E>;
+concept ShapeExpression = ShapeExpressionWithSubstitution<E, arbitrary_parameters>;
 
 template <typename Node>
-concept ShapeNode = ShapeNodeWithSubstitution<arbitrary_parameters, Node>;
+concept ShapeNode = ShapeNodeWithSubstitution<Node, arbitrary_parameters>;
 
 //////////////////////////////////////////////////////////////////////////////////
 // Atomic shapes.
@@ -127,7 +138,16 @@ enum class ngon_style {
   kPolygram,
 };
 
-struct ball_collider_data {
+struct shape_data_base {
+  constexpr bool check_point(const vec2&, shape_flag) const {
+    return false;
+  }
+  template <IterTag I>
+  constexpr void iterate(I, const transform&, const IterateFunction<I> auto&) {}
+};
+
+struct ball_collider_data : shape_data_base {
+  using shape_data_base::iterate;
   fixed radius = 0;
   shape_flag flags = shape_flag::kNone;
 
@@ -135,24 +155,17 @@ struct ball_collider_data {
     return +(flags & mask) && v.x * v.x + v.y * v.y < radius * radius;
   }
 
-  template <IterTag I>
-  requires std::same_as<I, iterate_flags_t>
-  constexpr void iterate(I, const transform&, const FlagFunction auto& f) {
+  constexpr void iterate(iterate_flags_t, const transform&, const FlagFunction auto& f) {
     std::invoke(f, flags);
   }
 
-  template <IterTag I>
-  requires std::same_as<I, iterate_lines_t>
-  constexpr void iterate(I, const transform&, const LineFunction auto&) {}
-
-  template <IterTag I>
-  requires std::same_as<I, iterate_centres_t>
-  constexpr void iterate(I, const transform& t, const PointFunction auto& f) {
+  constexpr void iterate(iterate_centres_t, const transform& t, const PointFunction auto& f) {
     std::invoke(f, t.v, glm::vec4{0.f});
   }
 };
 
-struct ngon_data {
+struct ngon_data : shape_data_base {
+  using shape_data_base::iterate;
   fixed radius = 0;
   std::uint32_t sides = 0;
   glm::vec4 colour{0.f};
@@ -163,15 +176,11 @@ struct ngon_data {
     return +(flags & mask) && v.x * v.x + v.y * v.y < radius * radius;
   }
 
-  template <IterTag I>
-  requires std::same_as<I, iterate_flags_t>
-  constexpr void iterate(I, const transform&, const FlagFunction auto& f) {
+  constexpr void iterate(iterate_flags_t, const transform&, const FlagFunction auto& f) {
     std::invoke(f, flags);
   }
 
-  template <IterTag I>
-  requires std::same_as<I, iterate_lines_t>
-  constexpr void iterate(I, const transform& t, const LineFunction auto& f) {
+  constexpr void iterate(iterate_lines_t, const transform& t, const LineFunction auto& f) {
     auto vertex = [&](std::uint32_t i) {
       return t.rotate(i * 2 * fixed_c::pi / sides).translate({radius, 0}).v;
     };
@@ -189,14 +198,13 @@ struct ngon_data {
     }
   }
 
-  template <IterTag I>
-  requires std::same_as<I, iterate_centres_t>
-  constexpr void iterate(I, const transform& t, const PointFunction auto& f) {
+  constexpr void iterate(iterate_centres_t, const transform& t, const PointFunction auto& f) {
     std::invoke(f, t.v, colour);
   }
 };
 
-struct box_data {
+struct box_data : shape_data_base {
+  using shape_data_base::iterate;
   vec2 dimensions{0};
   glm::vec4 colour{0.f};
   shape_flag flags = shape_flag::kNone;
@@ -205,15 +213,11 @@ struct box_data {
     return +(flags & mask) && abs(v.x) < dimensions.x && abs(v.y) < dimensions.y;
   }
 
-  template <IterTag I>
-  requires std::same_as<I, iterate_flags_t>
-  constexpr void iterate(I, const transform&, const FlagFunction auto& f) {
+  constexpr void iterate(iterate_flags_t, const transform&, const FlagFunction auto& f) {
     std::invoke(f, flags);
   }
 
-  template <IterTag I>
-  requires std::same_as<I, iterate_lines_t>
-  constexpr void iterate(I, const transform& t, const LineFunction auto& f) {
+  constexpr void iterate(iterate_lines_t, const transform& t, const LineFunction auto& f) {
     auto a = t.translate({dimensions.x, dimensions.y}).v;
     auto b = t.translate({-dimensions.x, dimensions.y}).v;
     auto c = t.translate({-dimensions.x, -dimensions.y}).v;
@@ -225,56 +229,61 @@ struct box_data {
     std::invoke(f, d, a, colour);
   }
 
-  template <IterTag I>
-  requires std::same_as<I, iterate_centres_t>
-  constexpr void iterate(I, const transform& t, const PointFunction auto& f) {
+  constexpr void iterate(iterate_centres_t, const transform& t, const PointFunction auto& f) {
     std::invoke(f, t.v, colour);
   }
 };
 
-struct line_data {
+struct line_data : shape_data_base {
+  using shape_data_base::check_point;
+  using shape_data_base::iterate;
   vec2 a{0};
   vec2 b{0};
   glm::vec4 colour{0.f};
 
-  constexpr bool check_point(const vec2&, shape_flag) const {
-    return false;
-  }
-
-  template <IterTag I>
-  requires std::same_as<I, iterate_flags_t>
-  constexpr void iterate(I, const transform&, const FlagFunction auto&) {}
-
-  template <IterTag I>
-  requires std::same_as<I, iterate_lines_t>
-  constexpr void iterate(I, const transform& t, const LineFunction auto& f) {
+  constexpr void iterate(iterate_lines_t, const transform& t, const LineFunction auto& f) {
     std::invoke(f, t.translate(a).v, t.translate(b).v, colour);
   }
 
-  template <IterTag I>
-  requires std::same_as<I, iterate_centres_t>
-  constexpr void iterate(I, const transform& t, const PointFunction auto& f) {
+  constexpr void iterate(iterate_centres_t, const transform& t, const PointFunction auto& f) {
     std::invoke(f, t.v + (a + b) / 2, colour);
+  }
+};
+
+struct attachment_point_data : shape_data_base {
+  using shape_data_base::check_point;
+  using shape_data_base::iterate;
+  std::size_t index{0};
+  vec2 d{0};
+
+  constexpr void
+  iterate(iterate_attachment_points_t, const transform& t, const AttachmentPointFunction auto& f) {
+    std::invoke(f, index, t.v, t.translate(d).v - t.v);
   }
 };
 
 constexpr ball_collider_data
 make_ball_collider(fixed radius, shape_flag flags = shape_flag::kNone) {
-  return {radius, flags};
+  return {{}, radius, flags};
 }
 
 constexpr ngon_data make_ngon(fixed radius, std::uint32_t sides, const glm::vec4& colour,
                               ngon_style style = ngon_style::kPolygon,
                               shape_flag flags = shape_flag::kNone) {
-  return {radius, sides, colour, style, flags};
+  return {{}, radius, sides, colour, style, flags};
 }
 
 constexpr box_data
 make_box(const vec2& dimensions, const glm::vec4& colour, shape_flag flags = shape_flag::kNone) {
-  return {dimensions, colour, flags};
+  return {{}, dimensions, colour, flags};
 }
+
 constexpr line_data make_line(const vec2& a, const vec2& b, const glm::vec4& colour) {
-  return {a, b, colour};
+  return {{}, a, b, colour};
+}
+
+constexpr attachment_point_data make_attachment_point(std::size_t index, const vec2& d) {
+  return {{}, index, d};
 }
 
 //////////////////////////////////////////////////////////////////////////////////
@@ -360,6 +369,8 @@ template <Expression<vec2> Dimensions, Expression<glm::vec4> Colour,
 struct box_eval {};
 template <Expression<vec2> A, Expression<vec2> B, Expression<glm::vec4> Colour>
 struct line_eval {};
+template <Expression<std::size_t> Index, Expression<vec2> Direction = constant<vec2{0}>>
+struct attachment_point_eval {};
 
 template <Expression<fixed> Radius, Expression<shape_flag> Flags>
 constexpr auto evaluate(ball_collider_eval<Radius, Flags>, const auto& params) {
@@ -385,6 +396,12 @@ template <Expression<vec2> A, Expression<vec2> B, Expression<glm::vec4> Colour>
 constexpr auto evaluate(line_eval<A, B, Colour>, const auto& params) {
   return make_line(vec2{evaluate(A{}, params)}, vec2{evaluate(B{}, params)},
                    glm::vec4{evaluate(Colour{}, params)});
+}
+
+template <Expression<std::size_t> Index, Expression<vec2> Direction>
+constexpr auto evaluate(attachment_point_eval<Index, Direction>, const auto& params) {
+  return make_attachment_point(std::size_t{evaluate(Index{}, params)},
+                               vec2{evaluate(Direction{}, params)});
 }
 
 //////////////////////////////////////////////////////////////////////////////////
@@ -419,6 +436,8 @@ template <auto Value, ShapeNode Node>
 using switch_entry = pair<constant<Value>, Node>;
 
 struct null_shape {};
+template <IterTag DisableI, ShapeNode Node>
+struct disable_iteration {};
 template <Expression<vec2> V, ShapeNode Node>
 struct translate_eval {};
 template <Expression<fixed> Angle, ShapeNode Node>
@@ -431,14 +450,12 @@ template <typename Value, typename... SwitchEntries>
 using switch_eval =
     compound<if_eval<equal<Value, pair_a<SwitchEntries>>, pair_b<SwitchEntries>>...>;
 
-template <ShapeExpression S, typename Parameters>
-requires ShapeExpressionWithSubstitution<Parameters, S>
+template <typename Parameters, ShapeExpressionWithSubstitution<Parameters> S>
 constexpr bool check_point(S, const Parameters& params, const vec2& v, shape_flag mask) {
   return evaluate(S{}, params).check_point(v, mask);
 }
 
-template <ShapeExpression S, IterTag I, typename Parameters>
-requires ShapeExpressionWithSubstitution<Parameters, S>
+template <IterTag I, typename Parameters, ShapeExpressionWithSubstitution<Parameters> S>
 constexpr void
 iterate(S, I tag, const Parameters& params, const transform& t, const IterateFunction<I> auto& f) {
   evaluate(S{}, params).iterate(tag, t, f);
@@ -454,59 +471,64 @@ template <IterTag I>
 constexpr void
 iterate(null_shape, I tag, const auto&, const transform&, const IterateFunction<I> auto&) {}
 
-template <Expression<vec2> V, ShapeNode Node, typename Parameters>
-requires ExpressionWithSubstitution<Parameters, V, vec2> &&
-    ShapeNodeWithSubstitution<Parameters, Node>
+template <IterTag DisableI, typename Parameters, ShapeNodeWithSubstitution<Parameters> Node>
+constexpr bool check_point(disable_iteration<DisableI, Node>, const Parameters& params,
+                           const vec2& v, shape_flag mask) {
+  return check_point(Node{}, params, v, mask);
+}
+
+template <IterTag DisableI, IterTag I, typename Parameters,
+          ShapeNodeWithSubstitution<Parameters> Node>
+constexpr void iterate(disable_iteration<DisableI, Node>, I tag, const Parameters& params,
+                       const transform& t, const IterateFunction<I> auto& f) {
+  if constexpr (!std::is_same_v<DisableI, I>) {
+    iterate(Node{}, tag, params, t, f);
+  }
+}
+
+template <typename Parameters, ExpressionWithSubstitution<vec2, Parameters> V,
+          ShapeNodeWithSubstitution<Parameters> Node>
 constexpr bool
 check_point(translate_eval<V, Node>, const Parameters& params, const vec2& v, shape_flag mask) {
   return check_point(Node{}, params, v - vec2{evaluate(V{}, params)}, mask);
 }
 
-template <Expression<vec2> V, ShapeNode Node, IterTag I, typename Parameters>
-requires ExpressionWithSubstitution<Parameters, V, vec2> &&
-    ShapeNodeWithSubstitution<Parameters, Node>
+template <IterTag I, typename Parameters, ExpressionWithSubstitution<vec2, Parameters> V,
+          ShapeNodeWithSubstitution<Parameters> Node>
 constexpr void iterate(translate_eval<V, Node>, I tag, const Parameters& params, const transform& t,
                        const IterateFunction<I> auto& f) {
   iterate(Node{}, tag, params, t.translate(vec2{evaluate(V{}, params)}), f);
 }
 
-template <Expression<fixed> Angle, ShapeNode Node, typename Parameters>
-requires ExpressionWithSubstitution<Parameters, Angle, fixed> &&
-    ShapeNodeWithSubstitution<Parameters, Node>
+template <typename Parameters, ExpressionWithSubstitution<fixed, Parameters> Angle,
+          ShapeNodeWithSubstitution<Parameters> Node>
 constexpr bool
 check_point(rotate_eval<Angle, Node>, const Parameters& params, const vec2& v, shape_flag mask) {
   return check_point(Node{}, params, ::rotate(v, -fixed{evaluate(Angle{}, params)}), mask);
 }
 
-template <Expression<fixed> Angle, ShapeNode Node, IterTag I, typename Parameters>
-requires ExpressionWithSubstitution<Parameters, Angle, fixed> &&
-    ShapeNodeWithSubstitution<Parameters, Node>
+template <IterTag I, typename Parameters, ExpressionWithSubstitution<fixed, Parameters> Angle,
+          ShapeNodeWithSubstitution<Parameters> Node>
 constexpr void iterate(rotate_eval<Angle, Node>, I tag, const Parameters& params,
                        const transform& t, const IterateFunction<I> auto& f) {
   iterate(Node{}, tag, params, t.rotate(fixed{evaluate(Angle{}, params)}), f);
 }
 
-template <Expression<bool> Condition, ShapeNode TrueNode, ShapeNode FalseNode, typename Parameters>
-requires(
-    ExpressionWithSubstitution<Parameters, Condition, bool>&&
-        ShapeNodeWithSubstitution<Parameters, TrueNode>&& ShapeNodeWithSubstitution<
-            Parameters,
-            FalseNode>) constexpr bool check_point(conditional_eval<Condition, TrueNode, FalseNode>,
-                                                   const Parameters& params, const vec2& v,
-                                                   shape_flag mask) {
+template <typename Parameters, ExpressionWithSubstitution<bool, Parameters> Condition,
+          ShapeNodeWithSubstitution<Parameters> TrueNode,
+          ShapeNodeWithSubstitution<Parameters> FalseNode>
+constexpr bool check_point(conditional_eval<Condition, TrueNode, FalseNode>,
+                           const Parameters& params, const vec2& v, shape_flag mask) {
   return bool{evaluate(Condition{}, params)} ? check_point(TrueNode{}, params, v, mask)
                                              : check_point(FalseNode{}, params, v, mask);
 }
 
-template <Expression<bool> Condition, ShapeNode TrueNode, ShapeNode FalseNode, IterTag I,
-          typename Parameters>
-requires(
-    ExpressionWithSubstitution<Parameters, Condition, bool>&&
-        ShapeNodeWithSubstitution<Parameters, TrueNode>&& ShapeNodeWithSubstitution<
-            Parameters,
-            FalseNode>) constexpr void iterate(conditional_eval<Condition, TrueNode, FalseNode>,
-                                               I tag, const Parameters& params, const transform& t,
-                                               const IterateFunction<I> auto& f) {
+template <IterTag I, typename Parameters, ExpressionWithSubstitution<bool, Parameters> Condition,
+          ShapeNodeWithSubstitution<Parameters> TrueNode,
+          ShapeNodeWithSubstitution<Parameters> FalseNode>
+constexpr void
+iterate(conditional_eval<Condition, TrueNode, FalseNode>, I tag, const Parameters& params,
+        const transform& t, const IterateFunction<I> auto& f) {
   if constexpr (std::is_same_v<std::remove_cvref_t<Parameters>, arbitrary_parameters>) {
     iterate(TrueNode{}, tag, params, t, f);
     iterate(FalseNode{}, tag, params, t, f);
@@ -519,16 +541,15 @@ requires(
   }
 }
 
-template <ShapeNode... Nodes, typename Parameters>
-requires(ShapeNodeWithSubstitution<Parameters, Nodes>&&...) constexpr bool check_point(
-    compound<Nodes...>, const Parameters& params, const vec2& v, shape_flag mask) {
+template <typename Parameters, ShapeNodeWithSubstitution<Parameters>... Nodes>
+constexpr bool
+check_point(compound<Nodes...>, const Parameters& params, const vec2& v, shape_flag mask) {
   return (check_point(Nodes{}, params, v, mask) || ...);
 }
 
-template <ShapeNode... Nodes, IterTag I, typename Parameters>
-requires(ShapeNodeWithSubstitution<Parameters, Nodes>&&...) constexpr void iterate(
-    compound<Nodes...>, I tag, const Parameters& params, const transform& t,
-    const IterateFunction<I> auto& f) {
+template <IterTag I, typename Parameters, ShapeNodeWithSubstitution<Parameters>... Nodes>
+constexpr void iterate(compound<Nodes...>, I tag, const Parameters& params, const transform& t,
+                       const IterateFunction<I> auto& f) {
   (iterate(Nodes{}, tag, params, t, f), ...);
 }
 
@@ -568,6 +589,8 @@ template <fixed W, fixed H, glm::vec4 Colour, shape_flag Flags = shape_flag::kNo
 using box = constant<make_box(vec2{W, H}, Colour, Flags)>;
 template <fixed AX, fixed AY, fixed BX, fixed BY, glm::vec4 Colour>
 using line = constant<make_line(vec2{AX, AY}, vec2{BX, BY}, Colour)>;
+template <std::size_t Index, fixed DX, fixed DY>
+using attachment_point = constant<make_attachment_point(Index, vec2{DX, DY})>;
 
 template <fixed Radius, std::uint32_t Sides, glm::vec4 Colour, shape_flag Flags = shape_flag::kNone>
 using polygon = ngon<Radius, Sides, Colour, ngon_style::kPolygon, Flags>;

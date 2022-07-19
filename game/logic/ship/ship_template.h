@@ -49,6 +49,13 @@ void render_entity_shape(ecs::const_handle h, const Health* health, const SimInt
   render_shape<S>(sim, get_shape_parameters<Logic>(h), colour_override, colour_override_max_index);
 }
 
+template <ecs::Component Logic, geom::ShapeNode S = typename Logic::shape>
+void iterate_entity_attachment_points(ecs::const_handle h,
+                                      const geom::AttachmentPointFunction auto& f) {
+  geom::iterate(S{}, geom::iterate_attachment_points, get_shape_parameters<Logic>(h),
+                geom::transform{}, f);
+}
+
 template <geom::ShapeNode S>
 void explode_shapes(SimInterface& sim, const auto& parameters,
                     const std::optional<glm::vec4> colour_override = std::nullopt,
