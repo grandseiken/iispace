@@ -3,13 +3,10 @@
 #include "game/logic/player/player.h"
 #include "game/logic/ship/geometry.h"
 #include "game/logic/ship/ship_template.h"
+#include <array>
 
 namespace ii {
 namespace {
-constexpr std::uint32_t kGbBaseHp = 700;
-constexpr std::uint32_t kGbTimer = 250;
-constexpr std::uint32_t kGbAttackTime = 100;
-
 constexpr glm::vec4 c0 = colour_hue360(280, .7f);
 constexpr glm::vec4 c1 = colour_hue360(280, .5f, .6f);
 constexpr glm::vec4 c2 = colour_hue360(270, .2f);
@@ -119,312 +116,388 @@ struct GhostMine : ecs::component {
   }
 };
 
-void spawn_ghost_mine(SimInterface& sim, const vec2& position, ::Boss* ghost) {
+void spawn_ghost_mine(SimInterface& sim, const vec2& position, ecs::const_handle ghost) {
   auto h = create_ship<GhostMine>(sim, position);
   add_enemy_health<GhostMine>(h, 0);
-  h.add(GhostMine{ghost->handle().id()});
+  h.add(GhostMine{ghost.id()});
   h.add(Enemy{.threat_value = 1});
 }
 
-class GhostBoss : public ::Boss {
-public:
-  GhostBoss(SimInterface& sim);
+struct GhostBoss : ecs::component {
+  static constexpr std::uint32_t kBoundingWidth = 640;
+  static constexpr std::uint32_t kBaseHp = 700;
+  static constexpr std::uint32_t kTimer = 250;
+  static constexpr std::uint32_t kAttackTime = 100;
+  static constexpr shape_flag kShapeFlags = shape_flag::kEverything;
 
-  void update() override;
-  void render() const override;
+  using centre_shape =
+      geom::compound<geom::polygon<32, 8, c1, shape_flag::kShield>,
+                     geom::polygon<48, 8, c0,
+                                   shape_flag::kDangerous | shape_flag::kEnemyInteraction |
+                                       shape_flag::kVulnerable>>;
 
-private:
-  bool visible_ = false;
-  std::uint32_t vtime_ = 0;
-  std::uint32_t timer_ = 0;
-  std::uint32_t attack_time_ = 0;
-  std::uint32_t attack_ = 0;
-  bool _rdir = false;
-  std::uint32_t start_time_ = 120;
-  std::uint32_t danger_circle_ = 0;
-  std::uint32_t danger_offset1_ = 0;
-  std::uint32_t danger_offset2_ = 0;
-  std::uint32_t danger_offset3_ = 0;
-  std::uint32_t danger_offset4_ = 0;
-  bool shot_type_ = false;
-};
+  using render_shape =
+      standard_transform<centre_shape,
+                         geom::rotate_eval<geom::multiply_p<3, 2>, geom::polygram<24, 8, c0>>>;
 
-GhostBoss::GhostBoss(SimInterface& sim)
-: Boss{sim, {kSimDimensions.x / 2, kSimDimensions.y / 2}}, attack_time_{kGbAttackTime} {
-  add_new_shape<Polygon>(vec2{0}, 32, 8, c1, 0);
-  add_new_shape<Polygon>(vec2{0}, 48, 8, c0, 0);
+  using explode_shape =
+      standard_transform<centre_shape,
+                         geom::rotate_eval<geom::multiply_p<3, 2>, geom::polygram<24, 8, c0>>>;
+  using shape = geom::ngon<0, 2, c1>;  // Just for fireworks.
 
-  for (std::uint32_t i = 0; i < 8; ++i) {
-    vec2 c = from_polar(i * fixed_c::pi / 4, 48_fx);
+  using outer_dangerous_t = std::array<std::array<bool, 16 + 4 * 6>, 5>;
+  using outer_rotation_t = std::array<fixed, 5>;
+  std::tuple<vec2, fixed, fixed> shape_parameters(const Transform& transform) const {
+    return {transform.centre, transform.rotation, inner_ring_rotation};
+  }
 
-    auto* s = add_new_shape<CompoundShape>(c, 0);
-    for (std::uint32_t j = 0; j < 8; ++j) {
-      vec2 d = from_polar(j * fixed_c::pi / 4, 1_fx);
-      s->add_new_shape<Line>(vec2{0}, d * 10, d * 10 * 2, c1, 0);
+  bool visible = false;
+  bool shot_type = false;
+  bool rdir = false;
+  bool danger_enable = false;
+  std::uint32_t vtime = 0;
+  std::uint32_t timer = 0;
+  std::uint32_t attack = 0;
+  std::uint32_t attack_time = kAttackTime;
+  std::uint32_t start_time = 120;
+  std::uint32_t danger_circle = 0;
+  std::uint32_t danger_offset1 = 0;
+  std::uint32_t danger_offset2 = 0;
+  std::uint32_t danger_offset3 = 0;
+  std::uint32_t danger_offset4 = 0;
+  // Shape modifiers.
+  outer_dangerous_t outer_dangerous{false};
+  fixed inner_ring_rotation = 0;
+  fixed outer_ball_rotation = 0;
+  outer_rotation_t outer_rotation{0_fx, 0_fx, 0_fx, 0_fx, 0_fx};
+  bool box_attack_shape_enabled = false;
+  bool collision_enabled = false;
+
+  void
+  update(ecs::handle h, Transform& transform, Boss& boss, const Health& health, SimInterface& sim) {
+    outer_dangerous[0].fill(false);
+    for (std::uint32_t n = 1; n < 5; ++n) {
+      auto t_n = geom::transform{}
+                     .translate(transform.centre)
+                     .rotate(transform.rotation + outer_rotation[n]);
+      for (std::uint32_t i = 0; i < 16 + n * 6; ++i) {
+        auto t = n == 1 ? (i + danger_offset1) % 11
+            : n == 2    ? (i + danger_offset2) % 7
+            : n == 3    ? (i + danger_offset3) % 17
+                        : (i + danger_offset4) % 10;
+
+        bool b = n == 1 ? (t % 11 == 0 || t % 11 == 5)
+            : n == 2    ? (t % 7 == 0)
+            : n == 3    ? (t % 17 == 0 || t % 17 == 8)
+                        : (t % 10 == 0);
+
+        outer_dangerous[n][i] =
+            ((n == 4 && attack != 2) || (n + (n == 3)) & danger_circle) && visible && b;
+        if (outer_dangerous[n][i]) {
+          auto t_i = t_n.translate(outer_shape_d(n, i)).rotate(outer_ball_rotation);
+          sim.global_entity().get<GlobalData>()->extra_enemy_warnings.emplace_back(t_i.v);
+        }
+      }
     }
-  }
-
-  add_new_shape<Polygon>(vec2{0}, 24, 8, c0, 0, shape_flag::kNone, Polygon::T::kPolygram);
-
-  for (std::uint32_t n = 0; n < 5; ++n) {
-    auto* s = add_new_shape<CompoundShape>(vec2{0}, 0);
-    for (std::uint32_t i = 0; i < 16 + n * 6; ++i) {
-      vec2 d = from_polar(i * 2 * fixed_c::pi / (16 + n * 6), 100_fx + n * 60);
-      s->add_new_shape<Polygon>(d, 16, 8, n ? c2 : c1, 0, shape_flag::kNone, Polygon::T::kPolystar);
-      s->add_new_shape<Polygon>(d, 12, 8, n ? c2 : c1);
+    danger_enable = !vtime;
+    if (!(attack == 2 && attack_time < kAttackTime * 4 && attack_time)) {
+      transform.rotate(-fixed_c::hundredth * 4);
     }
-  }
 
-  for (std::uint32_t n = 0; n < 5; ++n) {
-    add_new_shape<CompoundShape>(vec2{0}, 0, shape_flag::kDangerous);
-  }
-}
+    inner_ring_rotation = normalise_angle(inner_ring_rotation + 2 * fixed_c::hundredth);
+    outer_ball_rotation = normalise_angle(outer_ball_rotation - fixed_c::tenth);
+    for (std::uint32_t n = 0; n < 5; ++n) {
+      // This reproduces _behaviour_ of old code. However, old code had a bug that _rendered_
+      // as if m was simply (n % 2 ? 3 : 5), which looked way cooler, but also you could get
+      // hit by nothing. This is fixed but looks less cool.
+      // TODO: should actually use the cooler version. It happens not to break current test
+      // replays...
+      std::uint32_t m = !n ? 5 : n % 2 ? 3 : 4;
+      outer_rotation[n] = normalise_angle(outer_rotation[n] + m * fixed_c::hundredth +
+                                          ((n % 2 ? 3_fx : -3_fx) / 2000) * n);
+    }
 
-void GhostBoss::update() {
-  for (std::uint32_t n = 1; n < 5; ++n) {
-    CompoundShape* s = (CompoundShape*)shapes()[11 + n].get();
-    CompoundShape* c = (CompoundShape*)shapes()[16 + n].get();
-    c->clear_shapes();
+    if (start_time) {
+      boss.show_hp_bar = false;
+      --start_time;
+      return;
+    }
 
-    for (std::uint32_t i = 0; i < 16 + n * 6; ++i) {
-      Shape& s1 = *s->shapes()[2 * i];
-      Shape& s2 = *s->shapes()[1 + 2 * i];
-      auto t = n == 1 ? (i + danger_offset1_) % 11
-          : n == 2    ? (i + danger_offset2_) % 7
-          : n == 3    ? (i + danger_offset3_) % 17
-                      : (i + danger_offset4_) % 10;
+    if (!attack_time) {
+      ++timer;
+      if (timer == 9 * kTimer / 10 ||
+          (timer >= kTimer / 10 && timer < 9 * kTimer / 10 - 16 &&
+           ((!(timer % 16) && attack == 2) || (!(timer % 32) && shot_type)))) {
+        for (std::uint32_t i = 0; i < 8; ++i) {
+          auto d = from_polar(i * fixed_c::pi / 4 + transform.rotation, 5_fx);
+          spawn_boss_shot(sim, transform.centre, d, c0);
+        }
+        sim.play_sound(sound::kBossFire, transform.centre, /* random */ true);
+      }
+      if (timer != 9 * kTimer / 10 && timer >= kTimer / 10 && timer < 9 * kTimer / 10 - 16 &&
+          !(timer % 16) && (!shot_type || attack == 2)) {
+        auto d = sim.nearest_player_direction(transform.centre);
+        if (d != vec2{}) {
+          spawn_boss_shot(sim, transform.centre, d * 5, c0);
+          spawn_boss_shot(sim, transform.centre, d * -5, c0);
+          sim.play_sound(sound::kBossFire, transform.centre, /* random */ true);
+        }
+      }
+    } else {
+      --attack_time;
 
-      bool b = n == 1 ? (t % 11 == 0 || t % 11 == 5)
-          : n == 2    ? (t % 7 == 0)
-          : n == 3    ? (t % 17 == 0 || t % 17 == 8)
-                      : (t % 10 == 0);
+      if (attack == 2) {
+        if (attack_time >= kAttackTime * 4 && !(attack_time % 8)) {
+          vec2 pos(sim.random(kSimDimensions.x + 1), sim.random(kSimDimensions.y + 1));
+          spawn_ghost_mine(sim, pos, h);
+          sim.play_sound(sound::kEnemySpawn, pos, /* random */ true);
+          danger_circle = 0;
+        } else if (attack_time == kAttackTime * 4 - 1) {
+          visible = true;
+          vtime = 60;
+          box_attack_shape_enabled = true;
+          sim.play_sound(sound::kBossFire, transform.centre);
+        } else if (attack_time < kAttackTime * 3) {
+          if (attack_time == kAttackTime * 3 - 1) {
+            sim.play_sound(sound::kBossAttack, transform.centre);
+          }
+          transform.rotate((rdir ? 1 : -1) * 2 * fixed_c::pi / (kAttackTime * 6));
+          if (!attack_time) {
+            box_attack_shape_enabled = false;
+          }
+          danger_offset1 = sim.random(11);
+          danger_offset2 = sim.random(7);
+          danger_offset3 = sim.random(17);
+          danger_offset3 = sim.random(10);  // Bug compatibility: probably should be danger_offset4.
+        }
+      }
 
-      if (((n == 4 && attack_ != 2) || (n + (n == 3)) & danger_circle_) && visible_ && b) {
-        s1.colour = c0;
-        s2.colour = c0;
-        if (vtime_ == 0) {
-          vec2 d = from_polar(i * 2 * fixed_c::pi / (16 + n * 6), 100_fx + n * 60);
-          c->add_new_shape<Polygon>(d, 9, 8, glm::vec4{0.f});
-          sim().global_entity().get<GlobalData>()->extra_enemy_warnings.push_back(
-              c->convert_point(shape().centre, shape().rotation(), d));
+      if (!attack && attack_time == kAttackTime * 2) {
+        bool r = sim.random(2);
+        spawn_ghost_wall_horizontal(sim, r, true);
+        spawn_ghost_wall_horizontal(sim, !r, false);
+      }
+      if (attack == 1 && attack_time == kAttackTime * 2) {
+        rdir = sim.random(2);
+        spawn_ghost_wall_vertical(sim, !rdir, false);
+      }
+      if (attack == 1 && attack_time == kAttackTime * 1) {
+        spawn_ghost_wall_vertical(sim, rdir, true);
+      }
+
+      if (attack <= 1 && health.is_hp_low() && attack_time == kAttackTime) {
+        auto r = sim.random(4);
+        vec2 v = r == 0 ? vec2{-kSimDimensions.x / 4, kSimDimensions.y / 2}
+            : r == 1    ? vec2{kSimDimensions.x + kSimDimensions.x / 4, kSimDimensions.y / 2}
+            : r == 2    ? vec2{kSimDimensions.x / 2, -kSimDimensions.y / 4}
+                        : vec2{kSimDimensions.x / 2, kSimDimensions.y + kSimDimensions.y / 4};
+        spawn_big_follow(sim, v, false);
+      }
+      if (!attack_time && !visible) {
+        visible = true;
+        vtime = 60;
+      }
+      if (attack_time == 0 && attack != 2) {
+        auto r = sim.random(3);
+        danger_circle |= 1 + (r == 2 ? 3 : r);
+        if (sim.random(2) || health.is_hp_low()) {
+          r = sim.random(3);
+          danger_circle |= 1 + (r == 2 ? 3 : r);
+        }
+        if (sim.random(2) || health.is_hp_low()) {
+          r = sim.random(3);
+          danger_circle |= 1 + (r == 2 ? 3 : r);
         }
       } else {
-        s1.colour = c2;
-        s2.colour = c2;
+        danger_circle = 0;
       }
     }
-  }
-  if (!(attack_ == 2 && attack_time_ < kGbAttackTime * 4 && attack_time_)) {
-    shape().rotate(-fixed_c::hundredth * 4);
-  }
 
-  for (std::size_t i = 0; i < 8; ++i) {
-    shapes()[i + 2]->rotate(fixed_c::hundredth * 4);
-  }
-  shapes()[10]->rotate(fixed_c::hundredth * 6);
-  for (std::uint32_t n = 0; n < 5; ++n) {
-    CompoundShape* s = (CompoundShape*)shapes()[11 + n].get();
-    if (n % 2) {
-      s->rotate(fixed_c::hundredth * 3 + (3_fx / 2000) * n);
-    } else {
-      s->rotate(fixed_c::hundredth * 5 - (3_fx / 2000) * n);
-    }
-    for (const auto& t : s->shapes()) {
-      t->rotate(-fixed_c::tenth);
-    }
+    if (timer >= kTimer) {
+      timer = 0;
+      visible = false;
+      vtime = 60;
+      attack = sim.random(3);
+      shot_type = !sim.random(2);
+      collision_enabled = false;
+      sim.play_sound(sound::kBossAttack, transform.centre);
 
-    s = (CompoundShape*)shapes()[16 + n].get();
-    if (n % 2) {
-      s->rotate(fixed_c::hundredth * 3 + (3_fx / 2000) * n);
-    } else {
-      s->rotate(fixed_c::hundredth * 4 - (3_fx / 2000) * n);
-    }
-    for (const auto& t : s->shapes()) {
-      t->rotate(-fixed_c::tenth);
-    }
-  }
-
-  if (start_time_) {
-    handle().get<ii::Boss>()->show_hp_bar = false;
-    start_time_--;
-    return;
-  }
-
-  bool is_hp_low = handle().get<Health>()->is_hp_low();
-  if (!attack_time_) {
-    ++timer_;
-    if (timer_ == 9 * kGbTimer / 10 ||
-        (timer_ >= kGbTimer / 10 && timer_ < 9 * kGbTimer / 10 - 16 &&
-         ((timer_ % 16 == 0 && attack_ == 2) || (timer_ % 32 == 0 && shot_type_)))) {
-      for (std::uint32_t i = 0; i < 8; ++i) {
-        auto d = from_polar(i * fixed_c::pi / 4 + shape().rotation(), 5_fx);
-        spawn_boss_shot(sim(), shape().centre, d, c0);
+      if (!attack) {
+        attack_time = kAttackTime * 2 + 50;
       }
-      play_sound_random(sound::kBossFire);
-    }
-    if (timer_ != 9 * kGbTimer / 10 && timer_ >= kGbTimer / 10 && timer_ < 9 * kGbTimer / 10 - 16 &&
-        timer_ % 16 == 0 && (!shot_type_ || attack_ == 2)) {
-      auto d = sim().nearest_player_direction(shape().centre);
-      if (d != vec2{}) {
-        spawn_boss_shot(sim(), shape().centre, d * 5, c0);
-        spawn_boss_shot(sim(), shape().centre, d * -5, c0);
-        play_sound_random(sound::kBossFire);
-      }
-    }
-  } else {
-    attack_time_--;
-
-    if (attack_ == 2) {
-      if (attack_time_ >= kGbAttackTime * 4 && attack_time_ % 8 == 0) {
-        vec2 pos(sim().random(kSimDimensions.x + 1), sim().random(kSimDimensions.y + 1));
-        spawn_ghost_mine(sim(), pos, this);
-        play_sound_random(sound::kEnemySpawn);
-        danger_circle_ = 0;
-      } else if (attack_time_ == kGbAttackTime * 4 - 1) {
-        visible_ = true;
-        vtime_ = 60;
-        add_new_shape<Box>(vec2{kSimDimensions.x / 2 + 32, 0}, kSimDimensions.x / 2, 10, c0, 0);
-        add_new_shape<Box>(vec2{kSimDimensions.x / 2 + 32, 0}, kSimDimensions.x / 2, 7, c0, 0);
-        add_new_shape<Box>(vec2{kSimDimensions.x / 2 + 32, 0}, kSimDimensions.x / 2, 4, c0, 0);
-
-        add_new_shape<Box>(vec2{-kSimDimensions.x / 2 - 32, 0}, kSimDimensions.x / 2, 10, c0, 0);
-        add_new_shape<Box>(vec2{-kSimDimensions.x / 2 - 32, 0}, kSimDimensions.x / 2, 7, c0, 0);
-        add_new_shape<Box>(vec2{-kSimDimensions.x / 2 - 32, 0}, kSimDimensions.x / 2, 4, c0, 0);
-        play_sound(sound::kBossFire);
-      } else if (attack_time_ < kGbAttackTime * 3) {
-        if (attack_time_ == kGbAttackTime * 3 - 1) {
-          play_sound(sound::kBossAttack);
+      if (attack == 1) {
+        attack_time = kAttackTime * 3;
+        for (std::uint32_t i = 0; i < sim.player_count(); ++i) {
+          spawn_powerup(sim, transform.centre, powerup_type::kShield);
         }
-        shape().rotate((_rdir ? 1 : -1) * 2 * fixed_c::pi / (kGbAttackTime * 6));
-        if (!attack_time_) {
-          for (std::uint32_t i = 0; i < 6; ++i) {
-            destroy_shape(21);
-          }
+      }
+      if (attack == 2) {
+        attack_time = kAttackTime * 6;
+        rdir = sim.random(2);
+      }
+    }
+
+    if (vtime) {
+      --vtime;
+      if (!vtime && visible) {
+        collision_enabled = true;
+      }
+    }
+  }
+
+  const vec2& outer_shape_d(std::uint32_t n, std::uint32_t i) const {
+    static const std::vector<std::vector<vec2>> kLookup = [] {
+      std::vector<std::vector<vec2>> v;
+      for (std::uint32_t n = 0; n < 5; ++n) {
+        v.emplace_back();
+        for (std::uint32_t i = 0; i < 16 + n * 6; ++i) {
+          v.back().push_back(from_polar(i * 2 * fixed_c::pi / (16 + n * 6), 100_fx + n * 60));
         }
-        danger_offset1_ = sim().random(11);
-        danger_offset2_ = sim().random(7);
-        danger_offset3_ = sim().random(17);
-        danger_offset3_ = sim().random(10);
       }
-    }
+      return v;
+    }();
+    return kLookup[n][i];
+  }
 
-    if (attack_ == 0 && attack_time_ == kGbAttackTime * 2) {
-      bool r = sim().random(2) != 0;
-      spawn_ghost_wall_horizontal(sim(), r, true);
-      spawn_ghost_wall_horizontal(sim(), !r, false);
-    }
-    if (attack_ == 1 && attack_time_ == kGbAttackTime * 2) {
-      _rdir = sim().random(2) != 0;
-      spawn_ghost_wall_vertical(sim(), !_rdir, false);
-    }
-    if (attack_ == 1 && attack_time_ == kGbAttackTime * 1) {
-      spawn_ghost_wall_vertical(sim(), _rdir, true);
-    }
+  using box_attack_component =
+      geom::compound<geom::box<kSimDimensions.x / 2, 10, c0,
+                               shape_flag::kDangerous | shape_flag::kEnemyInteraction>,
+                     geom::box<kSimDimensions.x / 2, 7, c0>,
+                     geom::box<kSimDimensions.x / 2, 4, c0>>;
+  using box_attack_shape = standard_transform<
+      geom::compound<geom::translate<kSimDimensions.x / 2 + 32, 0, box_attack_component>,
+                     geom::translate<-kSimDimensions.x / 2 - 32, 0, box_attack_component>>>;
+  std::tuple<vec2, fixed> box_attack_parameters(const Transform& transform) const {
+    return {transform.centre, transform.rotation};
+  }
 
-    if ((attack_ == 0 || attack_ == 1) && is_hp_low && attack_time_ == kGbAttackTime * 1) {
-      auto r = sim().random(4);
-      vec2 v = r == 0 ? vec2{-kSimDimensions.x / 4, kSimDimensions.y / 2}
-          : r == 1    ? vec2{kSimDimensions.x + kSimDimensions.x / 4, kSimDimensions.y / 2}
-          : r == 2    ? vec2{kSimDimensions.x / 2, -kSimDimensions.y / 4}
-                      : vec2{kSimDimensions.x / 2, kSimDimensions.y + kSimDimensions.y / 4};
-      spawn_big_follow(sim(), v, false);
+  bool check_point(const Transform& transform, const vec2& v, shape_flag mask) const {
+    if (!collision_enabled) {
+      return false;
     }
-    if (!attack_time_ && !visible_) {
-      visible_ = true;
-      vtime_ = 60;
+    if (geom::check_point(standard_transform<centre_shape>{}, shape_parameters(transform), v,
+                          mask)) {
+      return true;
     }
-    if (attack_time_ == 0 && attack_ != 2) {
-      auto r = sim().random(3);
-      danger_circle_ |= 1 + (r == 2 ? 3 : r);
-      if (sim().random(2) || is_hp_low) {
-        r = sim().random(3);
-        danger_circle_ |= 1 + (r == 2 ? 3 : r);
+    if (box_attack_shape_enabled &&
+        geom::check_point(box_attack_shape{}, box_attack_parameters(transform), v, mask)) {
+      return true;
+    }
+    if (+(mask & (shape_flag::kDangerous | shape_flag::kEnemyInteraction))) {
+      auto v_n = rotate(v - transform.centre, -transform.rotation - outer_rotation[0]);
+      for (std::uint32_t i = 0; i < 16; ++i) {
+        auto v_i = rotate(v_n - outer_shape_d(0, i), -outer_ball_rotation);
+        if (geom::check_point(
+                geom::ball_collider<16, shape_flag::kDangerous | shape_flag::kEnemyInteraction>{},
+                std::tuple<>{}, v_i, mask)) {
+          return true;
+        }
       }
-      if (sim().random(2) || is_hp_low) {
-        r = sim().random(3);
-        danger_circle_ |= 1 + (r == 2 ? 3 : r);
+    }
+    for (std::uint32_t n = 1; n < 5 && +(mask & shape_flag::kDangerous); ++n) {
+      auto v_n = rotate(v - transform.centre, -transform.rotation - outer_rotation[n]);
+      for (std::uint32_t i = 0; i < 16 + n * 6; ++i) {
+        if (!outer_dangerous[n][i] || !danger_enable) {
+          continue;
+        }
+        auto v_i = rotate(v_n - outer_shape_d(n, i), -outer_ball_rotation);
+        if (geom::check_point(geom::ball_collider<9, shape_flag::kDangerous>{}, std::tuple<>{}, v_i,
+                              mask)) {
+          return true;
+        }
       }
+    }
+    return false;
+  }
+
+  template <fixed I>
+  using spark_line = geom::line_eval<geom::constant<10 * from_polar(I* fixed_c::pi / 4, 1_fx)>,
+                                     geom::constant<20 * from_polar(I* fixed_c::pi / 4, 1_fx)>,
+                                     geom::constant<c1>>;
+  using spark_shape = standard_transform<geom::translate_p<
+      2,
+      geom::rotate_p<3, spark_line<0>,
+                     geom::disable_iteration<geom::iterate_centres_t,
+                                             geom::expand_range<fixed, 1, 8, spark_line>>>>>;
+  std::tuple<vec2, fixed, vec2, fixed>
+  spark_shape_parameters(const Transform& transform, std::uint32_t i) const {
+    return {transform.centre, transform.rotation, from_polar(i * fixed_c::pi / 4, 48_fx),
+            2 * inner_ring_rotation};
+  }
+
+  void explode_shapes(const Transform& transform, SimInterface& sim,
+                      const std::optional<glm::vec4> colour_override = std::nullopt,
+                      std::uint32_t time = 8,
+                      const std::optional<vec2>& towards = std::nullopt) const {
+    ii::explode_shapes<explode_shape>(sim, shape_parameters(transform), colour_override, time,
+                                      towards);
+    for (std::uint32_t i = 0; i < 10; ++i) {
+      sim.explosion(to_float(transform.centre), glm::vec4{0.f});  // Compatibility.
+    }
+    for (std::uint32_t i = 0; i < 8; ++i) {
+      ii::explode_shapes<spark_shape>(sim, spark_shape_parameters(transform, i), colour_override,
+                                      time, towards);
+    }
+    if (box_attack_shape_enabled) {
+      ii::explode_shapes<box_attack_shape>(sim, box_attack_parameters(transform), colour_override,
+                                           time, towards);
+    }
+  }
+
+  void
+  render_override(const Transform& transform, const Health& health, const SimInterface& sim) const {
+    std::optional<glm::vec4> colour_override;
+    if ((start_time / 4) % 2 == 1) {
+      colour_override = {0.f, 0.f, 0.f, 1.f / 255};
+    } else if ((visible && ((vtime / 4) % 2 == 0)) || (!visible && ((vtime / 4) % 2 == 1))) {
+      colour_override.reset();
     } else {
-      danger_circle_ = 0;
+      colour_override = c2;
     }
-  }
+    render_entity_shape_override<render_shape>(sim, &health, shape_parameters(transform), {},
+                                               colour_override);
+    for (std::uint32_t i = 0; i < 8; ++i) {
+      render_entity_shape_override<spark_shape>(sim, &health, spark_shape_parameters(transform, i),
+                                                {}, colour_override);
+    }
+    if (box_attack_shape_enabled) {
+      render_entity_shape_override<box_attack_shape>(sim, nullptr, box_attack_parameters(transform),
+                                                     {}, colour_override);
+    }
 
-  if (timer_ >= kGbTimer) {
-    timer_ = 0;
-    visible_ = false;
-    vtime_ = 60;
-    attack_ = sim().random(3);
-    shot_type_ = sim().random(2) == 0;
-    shapes()[0]->category = shape_flag::kNone;
-    shapes()[1]->category = shape_flag::kNone;
-    shapes()[11]->category = shape_flag::kNone;
-    if (shapes().size() >= 22) {
-      shapes()[21]->category = shape_flag::kNone;
-      shapes()[24]->category = shape_flag::kNone;
-    }
-    play_sound(sound::kBossAttack);
-
-    if (attack_ == 0) {
-      attack_time_ = kGbAttackTime * 2 + 50;
-    }
-    if (attack_ == 1) {
-      attack_time_ = kGbAttackTime * 3;
-      for (std::uint32_t i = 0; i < sim().player_count(); ++i) {
-        spawn_powerup(sim(), shape().centre, powerup_type::kShield);
-      }
-    }
-    if (attack_ == 2) {
-      attack_time_ = kGbAttackTime * 6;
-      _rdir = sim().random(2) != 0;
-    }
-  }
-
-  if (vtime_) {
-    vtime_--;
-    if (!vtime_ && visible_) {
-      shapes()[0]->category = shape_flag::kShield;
-      shapes()[1]->category =
-          shape_flag::kDangerous | shape_flag::kEnemyInteraction | shape_flag::kVulnerable;
-      shapes()[11]->category = shape_flag::kDangerous | shape_flag::kEnemyInteraction;
-      if (shapes().size() >= 22) {
-        shapes()[21]->category = shape_flag::kDangerous | shape_flag::kEnemyInteraction;
-        shapes()[24]->category = shape_flag::kDangerous | shape_flag::kEnemyInteraction;
+    using outer_star_shape =
+        geom::compound<geom::polystar_colour_p<16, 8, 0>, geom::polygon_colour_p<12, 8, 0>>;
+    for (std::uint32_t n = 0; n < 5; ++n) {
+      auto t_n = geom::transform{}
+                     .translate(transform.centre)
+                     .rotate(transform.rotation + outer_rotation[n]);
+      for (std::uint32_t i = 0; i < 16 + n * 6; ++i) {
+        auto t_i = t_n.translate(outer_shape_d(n, i)).rotate(outer_ball_rotation);
+        std::tuple parameters{outer_dangerous[n][i] ? c0 : n ? c2 : c1};
+        render_entity_shape_override<outer_star_shape>(sim, nullptr, parameters, t_i,
+                                                       colour_override);
       }
     }
   }
-}
-
-void GhostBoss::render() const {
-  if ((start_time_ / 4) % 2 == 1) {
-    render_with_colour({0.f, 0.f, 0.f, 1.f / 255});
-    return;
-  }
-  if ((visible_ && ((vtime_ / 4) % 2 == 0)) || (!visible_ && ((vtime_ / 4) % 2 == 1))) {
-    Boss::render();
-    return;
-  }
-
-  render_with_colour(c2);
-}
+};
 
 }  // namespace
 
 void spawn_ghost_boss(SimInterface& sim, std::uint32_t cycle) {
-  auto h = sim.create_legacy(std::make_unique<GhostBoss>(sim));
-  h.add(legacy_collision(/* bounding width */ 640));
+  auto h = create_ship<GhostBoss>(sim, {kSimDimensions.x / 2, kSimDimensions.y / 2});
   h.add(Enemy{.threat_value = 100,
               .boss_score_reward =
                   calculate_boss_score(boss_flag::kBoss2B, sim.player_count(), cycle)});
   h.add(Health{
-      .hp = calculate_boss_hp(kGbBaseHp, sim.player_count(), cycle),
-      .hit_flash_ignore_index = 12,
+      .hp = calculate_boss_hp(GhostBoss::kBaseHp, sim.player_count(), cycle),
       .hit_sound0 = std::nullopt,
       .hit_sound1 = sound::kEnemyShatter,
       .destroy_sound = std::nullopt,
       .damage_transform = &scale_boss_damage,
-      .on_hit = &legacy_boss_on_hit<true>,
-      .on_destroy = &legacy_boss_on_destroy,
+      .on_hit = &boss_on_hit<true, GhostBoss>,
+      .on_destroy = ecs::call<&boss_on_destroy<GhostBoss>>,
   });
   h.add(Boss{.boss = boss_flag::kBoss2B});
+  h.add(GhostBoss{});
 }
 }  // namespace ii

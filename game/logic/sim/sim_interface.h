@@ -15,7 +15,6 @@ namespace ecs {
 class EntityIndex;
 }  // namespace ecs
 enum class shape_flag : std::uint32_t;
-enum class ship_flag : std::uint32_t;
 class IShip;
 class Ship;
 class SimInternals;

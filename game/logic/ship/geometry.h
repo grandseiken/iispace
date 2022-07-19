@@ -1,6 +1,7 @@
 #ifndef II_GAME_LOGIC_SHIP_GEOMETRY_H
 #define II_GAME_LOGIC_SHIP_GEOMETRY_H
 #include "game/common/math.h"
+#include "game/common/type_list.h"
 #include "game/logic/ship/enums.h"
 #include <glm/glm.hpp>
 #include <concepts>
@@ -45,17 +46,18 @@ concept IterateFunction = IterTag<I> && Implies<I, iterate_flags_t, FlagFunction
     Implies<I, iterate_attachment_points_t, AttachmentPointFunction<T>>;
 
 struct transform {
-  constexpr transform(const vec2& v = vec2{0}, fixed r = 0) : v{v}, r{r} {}
+  constexpr transform(const vec2& v = vec2{0}, fixed r = 0, std::size_t* shape_index_out = nullptr)
+  : v{v}, r{r}, shape_index_out{shape_index_out} {}
   vec2 v;
   fixed r;
   std::size_t* shape_index_out = nullptr;
 
   constexpr transform translate(const vec2& t) const {
-    return {v + ::rotate(t, r), r};
+    return {v + ::rotate(t, r), r, shape_index_out};
   }
 
   constexpr transform rotate(fixed a) const {
-    return {v, r + a};
+    return {v, r + a, shape_index_out};
   }
 };
 
@@ -69,6 +71,9 @@ struct arbitrary_parameter {
     return T{0};
   }
   constexpr arbitrary_parameter operator-() const {
+    return {};
+  }
+  constexpr arbitrary_parameter operator[](std::size_t) const {
     return {};
   }
 };
@@ -300,6 +305,10 @@ template <std::int32_t X, std::int32_t Y>
 struct constant_ivec2 {};
 template <std::size_t N>
 struct parameter {};
+template <std::size_t N, std::size_t I>
+struct parameter_i {};
+template <std::size_t N, std::size_t I, std::size_t J>
+struct parameter_ij {};
 
 template <Expression<bool> Condition, typename ETrue, typename EFalse>
 struct ternary {};
@@ -333,6 +342,16 @@ constexpr auto evaluate(constant_ivec2<X, Y>, const auto&) {
 template <std::size_t N>
 constexpr auto evaluate(parameter<N>, const auto& params) {
   return get<N>(params);
+}
+
+template <std::size_t N, std::size_t I>
+constexpr auto evaluate(parameter_i<N, I>, const auto& params) {
+  return get<N>(params)[I];
+}
+
+template <std::size_t N, std::size_t I, std::size_t J>
+constexpr auto evaluate(parameter_ij<N, I, J>, const auto& params) {
+  return get<N>(params)[I][J];
 }
 
 template <Expression<bool> Condition, typename ETrue, typename EFalse>
@@ -449,6 +468,16 @@ using if_eval = conditional_eval<Condition, pack<Nodes...>, null_shape>;
 template <typename Value, typename... SwitchEntries>
 using switch_eval =
     compound<if_eval<equal<Value, pair_a<SwitchEntries>>, pair_b<SwitchEntries>>...>;
+
+template <auto I, auto End>
+struct range_values
+: std::type_identity<tl::prepend<constant<I>, typename range_values<I + 1, End>::type>> {};
+template <auto End>
+struct range_values<End, End> : std::type_identity<tl::list<>> {};
+template <typename T, template <T> typename F, T... I>
+consteval auto expand_range_impl(tl::list<constant<I>...>) -> geom::compound<F<I>...>;
+template <typename T, T Begin, T End, template <T> typename F>
+using expand_range = decltype(expand_range_impl<T, F>(typename range_values<Begin, End>::type{}));
 
 template <typename Parameters, ShapeExpressionWithSubstitution<Parameters> S>
 constexpr bool check_point(S, const Parameters& params, const vec2& v, shape_flag mask) {

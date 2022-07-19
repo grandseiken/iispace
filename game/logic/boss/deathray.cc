@@ -144,11 +144,18 @@ struct DeathRayBoss : public ecs::component {
   static constexpr std::uint32_t kArmRTimer = 400;
   static constexpr fixed kSpeed = 5;
 
+  template <fixed I>
+  using edge_shape =
+      geom::rotate<I * fixed_c::pi / 6,
+                   geom::translate<130, 0, geom::box<10, 24, c1, shape_flag::kDangerous>,
+                                   geom::box<8, 22, c0, shape_flag::kDangerous>>>;
   using shape = standard_transform<
       geom::rotate<fixed_c::pi / 12, geom::polystar<110, 12, c0>, geom::polygram<70, 12, c1>,
                    geom::polygon<120, 12, c1, shape_flag::kDangerous | shape_flag::kVulnerable>,
                    geom::ngon<115, 12, c1>, geom::polygon<110, 12, c1, shape_flag::kShield>>,
-      geom::box<0, 0, glm::vec4{0.f}>>;
+      geom::box<0, 0, glm::vec4{0.f}>,
+      geom::disable_iteration<geom::iterate_centres_t,
+                              geom::expand_range<fixed, 1, 12, edge_shape>>>;
 
   std::vector<ecs::entity_id> arms;
   std::uint32_t timer = kTimer * 2;
@@ -309,15 +316,7 @@ struct DeathRayBoss : public ecs::component {
     }
   }
 
-  void render(ecs::const_handle h, const Transform& transform, const SimInterface& sim) const {
-    using edge_shape =
-        standard_transform<geom::translate<130, 0, geom::box<10, 24, c1>, geom::box<8, 22, c0>>>;
-    for (std::uint32_t i = 1; i < 12; ++i) {
-      auto parameters = get_shape_parameters<DeathRayBoss>(h);
-      std::get<1>(parameters) += i * fixed_c::pi / 6;
-      render_shape<edge_shape>(sim, parameters);
-    }
-
+  void render(const Transform& transform, const SimInterface& sim) const {
     using ray_shape = geom::translate_p<0, geom::polystar<10, 6, c3>>;
     for (std::uint32_t i = ray_attack_timer; i <= ray_attack_timer + 16; ++i) {
       auto k = i < 8 ? 0 : i - 8;

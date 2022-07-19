@@ -23,11 +23,11 @@ auto get_shape_parameters(ecs::const_handle h) {
 }
 
 template <geom::ShapeNode S>
-void render_shape(const SimInterface& sim, const auto& parameters,
+void render_shape(const SimInterface& sim, const auto& parameters, const geom::transform& t = {},
                   const std::optional<glm::vec4>& c_override = std::nullopt,
                   const std::optional<std::size_t>& c_override_max_index = std::nullopt) {
   std::size_t i = 0;
-  geom::transform transform;
+  geom::transform transform = t;
   transform.shape_index_out = &i;
   geom::iterate(S{}, geom::iterate_lines, parameters, transform,
                 [&](const vec2& a, const vec2& b, const glm::vec4& c) {
@@ -38,15 +38,22 @@ void render_shape(const SimInterface& sim, const auto& parameters,
                 });
 }
 
+template <geom::ShapeNode S>
+void render_entity_shape_override(const SimInterface& sim, const Health* health,
+                                  const auto& parameters, const geom::transform& t = {},
+                                  const std::optional<glm::vec4>& colour_override = std::nullopt) {
+  std::optional<glm::vec4> c_override = colour_override;
+  std::optional<std::size_t> c_override_max_index;
+  if (!colour_override && health && health->hit_timer) {
+    c_override = glm::vec4{1.f};
+    c_override_max_index = health->hit_flash_ignore_index;
+  }
+  render_shape<S>(sim, parameters, t, c_override, c_override_max_index);
+}
+
 template <ecs::Component Logic, geom::ShapeNode S = typename Logic::shape>
 void render_entity_shape(ecs::const_handle h, const Health* health, const SimInterface& sim) {
-  std::optional<glm::vec4> colour_override;
-  std::optional<std::size_t> colour_override_max_index;
-  if (health && health->hit_timer) {
-    colour_override = glm::vec4{1.f};
-    colour_override_max_index = health->hit_flash_ignore_index;
-  }
-  render_shape<S>(sim, get_shape_parameters<Logic>(h), colour_override, colour_override_max_index);
+  render_entity_shape_override<S>(sim, health, get_shape_parameters<Logic>(h), {}, std::nullopt);
 }
 
 template <ecs::Component Logic, geom::ShapeNode S = typename Logic::shape>
@@ -74,7 +81,11 @@ void explode_entity_shapes(ecs::const_handle h, SimInterface& sim,
                            const std::optional<glm::vec4> colour_override = std::nullopt,
                            std::uint32_t time = 8,
                            const std::optional<vec2>& towards = std::nullopt) {
-  explode_shapes<S>(sim, get_shape_parameters<Logic>(h), colour_override, time, towards);
+  if constexpr (requires { &Logic::explode_shapes; }) {
+    ecs::call<&Logic::explode_shapes>(h, sim, colour_override, time, towards);
+  } else {
+    explode_shapes<S>(sim, get_shape_parameters<Logic>(h), colour_override, time, towards);
+  }
 }
 
 template <ecs::Component Logic, geom::ShapeNode S = typename Logic::shape>
@@ -84,7 +95,11 @@ void explode_entity_shapes_default(ecs::const_handle h, SimInterface& sim) {
 
 template <ecs::Component Logic, geom::ShapeNode S>
 bool ship_check_point(ecs::const_handle h, const vec2& v, shape_flag mask) {
-  return geom::check_point(S{}, get_shape_parameters<Logic>(h), v, mask);
+  if constexpr (requires { &Logic::check_point; }) {
+    return ecs::call<&Logic::check_point>(h, v, mask);
+  } else {
+    return geom::check_point(S{}, get_shape_parameters<Logic>(h), v, mask);
+  }
 }
 
 template <ecs::Component Logic, geom::ShapeNode S = typename Logic::shape>
@@ -104,15 +119,21 @@ ecs::handle create_ship(SimInterface& sim, const vec2& position, fixed rotation 
       return result;
     }
     ();
-    if constexpr (+collision_shape_flags) {
-      h.add(Collision{.flags = collision_shape_flags,
+    auto extra_shape_flags = shape_flag::kNone;
+    if constexpr (requires { Logic::kShapeFlags; }) {
+      extra_shape_flags |= Logic::kShapeFlags;
+    }
+    if constexpr (+collision_shape_flags || requires { Logic::kShapeFlags; }) {
+      h.add(Collision{.flags = collision_shape_flags | extra_shape_flags,
                       .bounding_width = Logic::kBoundingWidth,
                       .check = &ship_check_point<Logic, S>});
     }
   }
 
   constexpr auto render = ecs::call<&render_entity_shape<Logic, S>>;
-  if constexpr (requires { &Logic::render; }) {
+  if constexpr (requires { &Logic::render_override; }) {
+    h.add(Render{.render = ecs::call<&Logic::render_override>});
+  } else if constexpr (requires { &Logic::render; }) {
     h.add(Render{.render = sequence<render, ecs::call<&Logic::render>>});
   } else {
     h.add(Render{.render = render});

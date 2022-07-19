@@ -23,10 +23,6 @@ struct ShieldBombBoss : ecs::component {
   using strut_shape =
       geom::line_eval<geom::constant<rotate(vec2{80, 0}, I* fixed_c::pi / 8)>,
                       geom::constant<rotate(vec2{120, 0}, I* fixed_c::pi / 8)>, geom::parameter<3>>;
-  using struts = geom::compound<strut_shape<0>, strut_shape<1>, strut_shape<2>, strut_shape<3>,
-                                strut_shape<4>, strut_shape<5>, strut_shape<6>, strut_shape<7>,
-                                strut_shape<8>, strut_shape<9>, strut_shape<10>, strut_shape<11>,
-                                strut_shape<12>, strut_shape<13>, strut_shape<14>, strut_shape<15>>;
 
   // TODO: maybe want helpers for changing shape flags easier.
   using centre_shape = geom::polygram<48, 8, c0, shape_flag::kDangerous | shape_flag::kVulnerable>;
@@ -37,8 +33,9 @@ struct ShieldBombBoss : ecs::component {
                       geom::constant<shape_flag::kWeakShield | shape_flag::kDangerous>>>;
 
   using shape = standard_transform<
-      geom::rotate_eval<geom::multiply_p<2, 1>, centre_shape>, struts, shield_shape,
-      geom::ngon_colour_p<125, 16, 4>, geom::ngon_colour_p<120, 16, 4>,
+      geom::rotate_eval<geom::multiply_p<2, 1>, centre_shape>,
+      geom::expand_range<fixed, 0, 16, strut_shape>, shield_shape, geom::ngon_colour_p<125, 16, 4>,
+      geom::ngon_colour_p<120, 16, 4>,
       geom::rotate_p<1, geom::polygon<42, 16, glm::vec4{0.f}, shape_flag::kShield>>>;
 
   std::tuple<vec2, fixed, bool, glm::vec4, glm::vec4>

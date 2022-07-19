@@ -20,11 +20,15 @@ struct TractorBoss : ecs::component {
   static constexpr glm::vec4 c2 = colour_hue360(300, .4f, .5f);
 
   using attack_shape = standard_transform<geom::translate_p<2, geom::polygon<8, 6, c0>>>;
-  template <std::size_t BI, fixed I>
-  using ball_shape_inner =
-      geom::translate_eval<geom::constant<rotate(vec2{24, 0}, I* fixed_c::pi / 4)>,
-                           geom::rotate_eval<geom::multiply_p<BI ? 1 : -1, 2>,
-                                             geom::polygram<12, 6, c0, kDangerousVulnerable>>>;
+  template <std::size_t BI>
+  struct ball_inner {
+    template <fixed I>
+    using ball =
+        geom::translate_eval<geom::constant<rotate(vec2{24, 0}, I* fixed_c::pi / 4)>,
+                             geom::rotate_eval<geom::multiply_p<BI ? 1 : -1, 2>,
+                                               geom::polygram<12, 6, c0, kDangerousVulnerable>>>;
+    using shape = geom::expand_range<fixed, 0, 8, ball>;
+  };
   template <std::size_t I>
   using ball_shape = geom::compound<
       geom::attachment_point<I, 0, 0>, geom::polygram<12, 6, c1>,
@@ -33,9 +37,7 @@ struct TractorBoss : ecs::component {
           geom::iterate_centres_t,
           geom::compound<geom::polygon<12, 12, c1>, geom::polygon<2, 6, c1>,
                          geom::polygon<36, 12, c0, kDangerousVulnerable>, geom::polygon<34, 12, c0>,
-                         geom::polygon<32, 12, c0>, ball_shape_inner<I, 0>, ball_shape_inner<I, 1>,
-                         ball_shape_inner<I, 2>, ball_shape_inner<I, 3>, ball_shape_inner<I, 4>,
-                         ball_shape_inner<I, 5>, ball_shape_inner<I, 6>, ball_shape_inner<I, 7>>>>;
+                         geom::polygon<32, 12, c0>, typename ball_inner<I>::shape>>>;
   using shape = standard_transform<
       geom::translate<0, -96, geom::rotate_eval<geom::multiply_p<fixed{1} / 2, 2>, ball_shape<0>>>,
       geom::translate<0, 96, geom::rotate_eval<geom::multiply_p<-fixed{1} / 2, 2>, ball_shape<1>>>,
