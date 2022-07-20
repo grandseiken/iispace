@@ -76,7 +76,7 @@ ecs::handle spawn_super_boss_arc(SimInterface& sim, const vec2& position, std::u
             return scale_boss_damage(h, sim, type,
                                      type == damage_type::kBomb ? damage / 2 : damage);
           },
-      .on_hit = &legacy_boss_on_hit<true>,
+      .on_hit = &boss_on_hit<true, SuperBossArc>,
       .on_destroy = ecs::call<&SuperBossArc::on_destroy>,
   });
   h.add(SuperBossArc{boss.id(), i, timer});

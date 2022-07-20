@@ -1,17 +1,8 @@
 #ifndef II_GAME_LOGIC_BOSS_BOSS_INTERNAL_H
 #define II_GAME_LOGIC_BOSS_BOSS_INTERNAL_H
 #include "game/logic/ecs/index.h"
-#include "game/logic/ship/geometry.h"
-#include "game/logic/ship/ship.h"
 #include "game/logic/ship/ship_template.h"
 #include "game/logic/sim/sim_interface.h"
-
-class Boss : public ii::Ship {
-public:
-  Boss(ii::SimInterface& sim, const vec2& position);
-  virtual void on_destroy(bool bomb);
-  void render() const override;
-};
 
 namespace ii {
 std::uint32_t calculate_boss_score(boss_flag boss, std::uint32_t players, std::uint32_t cycle);
@@ -63,20 +54,6 @@ void boss_on_destroy(ecs::const_handle h, const Transform& transform, SimInterfa
   sim.play_sound(sound::kExplosion, transform.centre);
 }
 
-template <bool ExplodeOnBombDamage>
-void legacy_boss_on_hit(ecs::handle h, SimInterface&, damage_type type) {
-  auto* boss = static_cast<::Boss*>(h.get<LegacyShip>()->ship.get());
-  if (type == damage_type::kBomb && ExplodeOnBombDamage) {
-    boss->explosion();
-    boss->explosion(glm::vec4{1.f}, 16);
-    boss->explosion(std::nullopt, 24);
-  }
-}
-
-inline void legacy_boss_on_destroy(ecs::const_handle h, SimInterface&, damage_type type) {
-  auto* boss = static_cast<::Boss*>(h.get<LegacyShip>()->ship.get());
-  boss->on_destroy(type == damage_type::kBomb);
-}
 }  // namespace ii
 
 #endif
