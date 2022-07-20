@@ -1,6 +1,5 @@
 #include "game/logic/overmind/stars.h"
 #include "game/common/math.h"
-#include "game/logic/ship/shape.h"
 #include "game/logic/sim/sim_interface.h"
 #include <glm/gtc/constants.hpp>
 

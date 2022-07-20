@@ -1,5 +1,4 @@
 #include "game/logic/ship/components.h"
-#include "game/logic/ship/ship.h"
 #include "game/logic/sim/sim_interface.h"
 
 namespace ii {
@@ -56,10 +55,8 @@ void Health::damage(ecs::handle h, SimInterface& sim, std::uint32_t damage, dama
 
   hp = hp < damage ? 0 : hp - damage;
   vec2 position = {kSimDimensions.x / 2, kSimDimensions.y / 2};
-  if (auto* c = h.get<Transform>(); c) {
+  if (auto* c = h.get<Transform>()) {
     position = h.get<Transform>()->centre;
-  } else if (auto* c = h.get<LegacyShip>(); c) {
-    position = c->ship->position();
   }
 
   if (hit_sound0 && damage) {

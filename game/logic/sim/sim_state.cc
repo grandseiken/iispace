@@ -2,21 +2,13 @@
 #include "game/logic/ecs/call.h"
 #include "game/logic/overmind/overmind.h"
 #include "game/logic/player/player.h"
-#include "game/logic/ship/ship.h"
+#include "game/logic/ship/components.h"
 #include "game/logic/sim/sim_interface.h"
 #include "game/logic/sim/sim_internals.h"
 #include <algorithm>
 #include <unordered_set>
 
 namespace ii {
-namespace {
-vec2 get_centre(const Transform* transform, const LegacyShip* legacy_ship) {
-  if (transform) {
-    return transform->centre;
-  }
-  return legacy_ship->ship->position();
-}
-}  // namespace
 
 SimState::~SimState() = default;
 
@@ -84,21 +76,15 @@ void SimState::update() {
 
   for (auto& e : internals_->collisions) {
     const auto& c = *e.handle.get<Collision>();
-    e.x_min = ecs::call<&get_centre>(e.handle).x - c.bounding_width;
+    e.x_min = e.handle.get<Transform>()->centre.x - c.bounding_width;
   }
   std::ranges::stable_sort(internals_->collisions,
                            [](const auto& a, const auto& b) { return a.x_min < b.x_min; });
 
   internals_->non_wall_enemy_count =
       internals_->index.count<Enemy>() - internals_->index.count<WallTag>();
-  internals_->index.iterate_dispatch<Boss>([&](ecs::const_handle h, Boss& boss) {
-    std::optional<vec2> position;
-    if (const auto* c = h.get<Transform>(); c) {
-      position = c->centre;
-    } else if (const auto* c = h.get<LegacyShip>(); c) {
-      position = c->ship->position();
-    }
-    if (position && interface_->is_on_screen(*position)) {
+  internals_->index.iterate_dispatch_if<Boss>([&](Boss& boss, Transform& transform) {
+    if (interface_->is_on_screen(transform.centre)) {
       boss.show_hp_bar = true;
     }
   });
@@ -198,10 +184,8 @@ void SimState::render() const {
     }
   };
 
-  internals_->index.iterate_dispatch<Enemy>([&render_warning](ecs::const_handle h, const Enemy&) {
-    if (h.has<Transform>() || h.has<LegacyShip>()) {
-      render_warning(to_float(ecs::call<&get_centre>(h)));
-    }
+  internals_->index.iterate_dispatch_if<Enemy>([&render_warning](const Transform& transform) {
+    render_warning(to_float(transform.centre));
   });
   for (const auto& v : interface_->global_entity().get<GlobalData>()->extra_enemy_warnings) {
     render_warning(to_float(v));

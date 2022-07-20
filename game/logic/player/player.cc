@@ -9,13 +9,6 @@ namespace ii {
 namespace {
 constexpr std::uint32_t kMagicShotCount = 120;
 
-vec2 get_centre(const Transform* transform, const LegacyShip* legacy_ship) {
-  if (transform) {
-    return transform->centre;
-  }
-  return legacy_ship->ship->position();
-}
-
 struct Shot : ecs::component {
   static constexpr fixed kSpeed = 10;
 
@@ -51,8 +44,8 @@ struct Shot : ecs::component {
       return;
     }
 
-    for (const auto& ship : sim.collision_list(transform.centre, shape_flag::kVulnerable)) {
-      ecs::call_if<&Health::damage>(ship->handle(), sim, 1,
+    for (const auto& hit_handle : sim.collision_list(transform.centre, shape_flag::kVulnerable)) {
+      ecs::call_if<&Health::damage>(hit_handle, sim, 1,
                                     magic ? damage_type::kMagic : damage_type::kNone, player.id());
       if (!magic) {
         h.emplace<Destroy>();
@@ -261,18 +254,15 @@ struct PlayerLogic : ecs::component {
       sim.play_sound(sound::kExplosion, transform.centre);
 
       sim.index().iterate_dispatch_if<Enemy>(
-          [&](ecs::handle h, const Enemy& e, Health& health) {
-            if (!h.has<LegacyShip>() && !h.has<Transform>()) {
+          [&](ecs::handle eh, const Enemy& e, const Transform& e_transform, Health& health,
+              Boss* boss) {
+            if (length(e_transform.centre - transform.centre) > kBombBossRadius) {
               return;
             }
-            auto centre = ecs::call<&get_centre>(h);
-            if (length(centre - transform.centre) > kBombBossRadius) {
-              return;
+            if (boss || length(e_transform.centre - transform.centre) <= kBombRadius) {
+              health.damage(eh, sim, Player::kBombDamage, damage_type::kBomb, std::nullopt);
             }
-            if (h.has<Boss>() || length(centre - transform.centre) <= kBombRadius) {
-              health.damage(h, sim, Player::kBombDamage, damage_type::kBomb, std::nullopt);
-            }
-            if (!h.has<Boss>() && e.score_reward) {
+            if (!boss && e.score_reward) {
               pc.add_score(sim, 0);
             }
           },

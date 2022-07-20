@@ -1,19 +1,11 @@
 #include "game/logic/sim/sim_interface.h"
 #include "game/logic/ecs/call.h"
 #include "game/logic/ship/components.h"
-#include "game/logic/ship/ship.h"
 #include "game/logic/sim/sim_internals.h"
 #include <glm/gtc/constants.hpp>
 
 namespace ii {
 namespace {
-vec2 get_centre(const Transform* transform, const LegacyShip* legacy_ship) {
-  if (transform) {
-    return transform->centre;
-  }
-  return legacy_ship->ship->position();
-}
-
 GlobalData& global_data(SimInternals& internals) {
   return *internals.global_entity_handle->get<GlobalData>();
 }
@@ -68,7 +60,7 @@ bool SimInterface::any_collision(const vec2& point, shape_flag mask) const {
 
   for (const auto& collision : internals_->collisions) {
     const auto& e = *collision.handle.get<Collision>();
-    auto v = ecs::call<&get_centre>(collision.handle);
+    auto v = collision.handle.get<Transform>()->centre;
     fixed w = collision.bounding_width;
 
     // TODO: this optmization check is incorrect, since collision list is sorted based on x-min
@@ -92,14 +84,14 @@ bool SimInterface::any_collision(const vec2& point, shape_flag mask) const {
   return false;
 }
 
-SimInterface::ship_list SimInterface::collision_list(const vec2& point, shape_flag mask) const {
-  ship_list r;
+std::vector<ecs::handle> SimInterface::collision_list(const vec2& point, shape_flag mask) {
+  std::vector<ecs::handle> r;
   fixed x = point.x;
   fixed y = point.y;
 
   for (const auto& collision : internals_->collisions) {
     const auto& e = *collision.handle.get<Collision>();
-    auto v = ecs::call<&get_centre>(collision.handle);
+    auto v = collision.handle.get<Transform>()->centre;
     fixed w = collision.bounding_width;
 
     // TODO: same as above.
@@ -113,9 +105,7 @@ SimInterface::ship_list SimInterface::collision_list(const vec2& point, shape_fl
       continue;
     }
     if (e.check(collision.handle, point, mask)) {
-      if (const auto* s = collision.handle.get<LegacyShip>(); s) {
-        r.push_back(s->ship.get());
-      }
+      r.push_back(collision.handle);
     }
   }
   return r;
@@ -192,20 +182,6 @@ ecs::handle SimInterface::nearest_player(const vec2& point) {
     }
   });
   return nearest_alive ? *nearest_alive : *nearest_dead;
-}
-
-ecs::handle SimInterface::create_legacy(std::unique_ptr<Ship> ship) {
-  auto* p = ship.get();
-  auto h = internals_->index.create();
-  h.emplace<LegacyShip>().ship = std::move(ship);
-  h.emplace<Update>().update = [](ecs::handle h, SimInterface&) {
-    static_cast<Ship*>(h.get<LegacyShip>()->ship.get())->update();
-  };
-  h.emplace<Render>().render = [](ecs::const_handle h, const SimInterface&) {
-    static_cast<Ship*>(h.get<LegacyShip>()->ship.get())->render();
-  };
-  p->set_handle(h);
-  return h;
 }
 
 void SimInterface::add_particle(const ii::particle& particle) {

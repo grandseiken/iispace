@@ -5,7 +5,6 @@
 #include "game/logic/sim/sim_io.h"
 #include "game/mixer/sound.h"
 #include <cstdint>
-#include <memory>
 #include <vector>
 
 class Player;
@@ -15,8 +14,6 @@ namespace ecs {
 class EntityIndex;
 }  // namespace ecs
 enum class shape_flag : std::uint32_t;
-class IShip;
-class Ship;
 class SimInternals;
 
 constexpr glm::ivec2 kSimDimensions = {640, 480};
@@ -35,8 +32,6 @@ struct particle {
 
 class SimInterface {
 public:
-  using ship_list = std::vector<IShip*>;
-
   SimInterface(SimInternals* internals) : internals_{internals} {}
 
   // State manipulation.
@@ -54,7 +49,7 @@ public:
   std::uint32_t random(std::uint32_t max);
   fixed random_fixed();
 
-  std::vector<IShip*> collision_list(const vec2& point, shape_flag mask) const;
+  std::vector<ecs::handle> collision_list(const vec2& point, shape_flag mask);
   bool any_collision(const vec2& point, shape_flag mask) const;
   std::uint32_t get_non_wall_count() const;
   bool is_on_screen(const vec2& point) const;
@@ -68,7 +63,6 @@ public:
   ecs::const_handle nearest_player(const vec2& point) const;
   ecs::handle nearest_player(const vec2& point);
 
-  ecs::handle create_legacy(std::unique_ptr<Ship> ship);
   void add_particle(const particle& particle);
   void explosion(const glm::vec2& v, const glm::vec4& c, std::uint32_t time = 8,
                  const std::optional<glm::vec2>& towards = std::nullopt);

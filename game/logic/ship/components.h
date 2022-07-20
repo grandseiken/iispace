@@ -8,7 +8,6 @@
 #include "game/mixer/sound.h"
 #include <glm/glm.hpp>
 #include <cstdint>
-#include <memory>
 #include <optional>
 #include <vector>
 
@@ -35,11 +34,6 @@ struct GlobalData : ecs::component {
                                               : kStartingLives} {}
   void pre_update(SimInterface&);   // Runs before any other entity updates.
   void post_update(SimInterface&);  // Runs after any other entity updates.
-};
-
-class IShip;
-struct LegacyShip : ecs::component {
-  std::unique_ptr<IShip> ship;
 };
 
 struct Destroy : ecs::component {

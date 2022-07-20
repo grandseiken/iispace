@@ -28,7 +28,7 @@ struct SimInternals {
   std::vector<particle> particles;
 
   struct collision_entry {
-    ecs::const_handle handle;
+    ecs::handle handle;
     fixed x_min = 0;
     fixed bounding_width = 0;
   };
@@ -48,7 +48,7 @@ struct SimInternals {
   std::vector<render_output::line_t> line_output;
   std::vector<render_output::player_info> player_output;
   std::unordered_map<std::uint32_t, std::uint32_t> rumble_output;
-  std::unordered_map<ii::sound, sound_aggregation_t> sound_output;
+  std::unordered_map<sound, sound_aggregation_t> sound_output;
 
   // Run output.
   boss_flag bosses_killed{0};

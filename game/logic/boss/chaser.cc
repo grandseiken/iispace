@@ -269,9 +269,8 @@ struct ChaserBoss : ecs::component {
         for (std::uint32_t i = 0; i < 16; ++i) {
           vec2 v = from_polar(sim.random_fixed() * (2 * fixed_c::pi),
                               fixed{8 + sim.random(64) + sim.random(64)});
-          sim.global_entity().get<ii::GlobalData>()->fireworks.push_back(
-              ii::GlobalData::fireworks_entry{
-                  .time = n, .position = transform.centre + v, .colour = c});
+          sim.global_entity().get<GlobalData>()->fireworks.push_back(GlobalData::fireworks_entry{
+              .time = n, .position = transform.centre + v, .colour = c});
           n += i;
         }
       }

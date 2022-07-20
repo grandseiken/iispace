@@ -6,15 +6,9 @@ cc_library(
     "components.h",
     "enums.h",
     "geometry.h",
-    "shape.h",
     "ship_template.h",
-    "ship.h",
   ],
-  srcs = [
-    "components.cc",
-    "shape.cc",
-    "ship.cc",
-  ],
+  srcs = ["components.cc"],
   deps = [
     "//game/common:types",
     "//game/common:math",
