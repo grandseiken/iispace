@@ -102,11 +102,11 @@ http_archive(
 )
 
 http_archive(
-  name = "freetype2",
-  build_file = "@//deps:freetype2.BUILD",
-  sha256 = "e7e71af3a3df56dc711da410757d50aa495860ef1ca8656288726acd3f7fd41d",
-  strip_prefix = "freetype2-f9f6adb625c48ef15b5d61a3ac1709a068ea95a3",
-  url = "https://github.com/freetype/freetype2/archive/f9f6adb625c48ef15b5d61a3ac1709a068ea95a3.zip",
+  name = "freetype",
+  build_file = "@//deps:freetype.BUILD",
+  sha256 = "5dac723f3889d451fb0b50a1cde94373a99609a650684a595f334437189a601c",
+  strip_prefix = "freetype-f9f6adb625c48ef15b5d61a3ac1709a068ea95a3",
+  url = "https://github.com/freetype/freetype/archive/f9f6adb625c48ef15b5d61a3ac1709a068ea95a3.zip",
 )
 
 ################################################################################

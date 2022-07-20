@@ -106,14 +106,14 @@ void SimState::update() {
   }
   internals_->global_entity_handle->get<GlobalData>()->post_update(*interface_);
 
-  bool compact = false;
   internals_->index.iterate_dispatch<Destroy>([&](ecs::const_handle h) {
-    compact = true;
     internals_->index.destroy(h.id());
+    ++compact_counter_;
   });
 
-  if (compact) {
+  if (compact_counter_ >= internals_->index.size()) {
     internals_->index.compact();
+    compact_counter_ = 0;
   }
 
   std::erase_if(internals_->particles, [](const particle& p) { return p.destroy; });

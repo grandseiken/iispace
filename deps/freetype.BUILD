@@ -1,5 +1,5 @@
 cc_library(
-  name = "freetype2",
+  name = "freetype",
   includes = ["include"],
   hdrs = glob([
     "include/*.h",

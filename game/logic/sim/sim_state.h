@@ -33,8 +33,9 @@ public:
 private:
   InputAdapter& input_;
   std::uint32_t kill_timer_ = 0;
-  bool game_over_ = false;
   std::uint32_t colour_cycle_ = 0;
+  std::size_t compact_counter_ = 0;
+  bool game_over_ = false;
 
   std::unique_ptr<Overmind> overmind_;
   std::unique_ptr<SimInternals> internals_;

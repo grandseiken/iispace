@@ -95,6 +95,9 @@ public:
   // all direct data references to any of its components.
   void destroy(entity_id id);
 
+  std::size_t size() const {
+    return entities_.size();
+  }
   // Check existence of an element.
   bool contains(entity_id id) const {
     return entities_.contains(id);

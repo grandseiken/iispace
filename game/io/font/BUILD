@@ -7,6 +7,6 @@ cc_library(
     "//game/common:ustring",
     "@glm",
   ],
-  implementation_deps = ["@freetype2"],
+  implementation_deps = ["@freetype"],
   visibility = ["//visibility:public"],
 )
