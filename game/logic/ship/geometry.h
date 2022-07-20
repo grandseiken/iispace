@@ -148,7 +148,7 @@ struct shape_data_base {
     return false;
   }
   template <IterTag I>
-  constexpr void iterate(I, const transform&, const IterateFunction<I> auto&) {}
+  constexpr void iterate(I, const transform&, const IterateFunction<I> auto&) const {}
 };
 
 struct ball_collider_data : shape_data_base {
@@ -160,11 +160,11 @@ struct ball_collider_data : shape_data_base {
     return +(flags & mask) && v.x * v.x + v.y * v.y < radius * radius;
   }
 
-  constexpr void iterate(iterate_flags_t, const transform&, const FlagFunction auto& f) {
+  constexpr void iterate(iterate_flags_t, const transform&, const FlagFunction auto& f) const {
     std::invoke(f, flags);
   }
 
-  constexpr void iterate(iterate_centres_t, const transform& t, const PointFunction auto& f) {
+  constexpr void iterate(iterate_centres_t, const transform& t, const PointFunction auto& f) const {
     std::invoke(f, t.v, glm::vec4{0.f});
   }
 };
@@ -181,11 +181,11 @@ struct ngon_data : shape_data_base {
     return +(flags & mask) && v.x * v.x + v.y * v.y < radius * radius;
   }
 
-  constexpr void iterate(iterate_flags_t, const transform&, const FlagFunction auto& f) {
+  constexpr void iterate(iterate_flags_t, const transform&, const FlagFunction auto& f) const {
     std::invoke(f, flags);
   }
 
-  constexpr void iterate(iterate_lines_t, const transform& t, const LineFunction auto& f) {
+  constexpr void iterate(iterate_lines_t, const transform& t, const LineFunction auto& f) const {
     auto vertex = [&](std::uint32_t i) {
       return t.rotate(i * 2 * fixed_c::pi / sides).translate({radius, 0}).v;
     };
@@ -203,7 +203,7 @@ struct ngon_data : shape_data_base {
     }
   }
 
-  constexpr void iterate(iterate_centres_t, const transform& t, const PointFunction auto& f) {
+  constexpr void iterate(iterate_centres_t, const transform& t, const PointFunction auto& f) const {
     std::invoke(f, t.v, colour);
   }
 };
@@ -218,11 +218,11 @@ struct box_data : shape_data_base {
     return +(flags & mask) && abs(v.x) < dimensions.x && abs(v.y) < dimensions.y;
   }
 
-  constexpr void iterate(iterate_flags_t, const transform&, const FlagFunction auto& f) {
+  constexpr void iterate(iterate_flags_t, const transform&, const FlagFunction auto& f) const {
     std::invoke(f, flags);
   }
 
-  constexpr void iterate(iterate_lines_t, const transform& t, const LineFunction auto& f) {
+  constexpr void iterate(iterate_lines_t, const transform& t, const LineFunction auto& f) const {
     auto a = t.translate({dimensions.x, dimensions.y}).v;
     auto b = t.translate({-dimensions.x, dimensions.y}).v;
     auto c = t.translate({-dimensions.x, -dimensions.y}).v;
@@ -234,7 +234,7 @@ struct box_data : shape_data_base {
     std::invoke(f, d, a, colour);
   }
 
-  constexpr void iterate(iterate_centres_t, const transform& t, const PointFunction auto& f) {
+  constexpr void iterate(iterate_centres_t, const transform& t, const PointFunction auto& f) const {
     std::invoke(f, t.v, colour);
   }
 };
@@ -246,12 +246,45 @@ struct line_data : shape_data_base {
   vec2 b{0};
   glm::vec4 colour{0.f};
 
-  constexpr void iterate(iterate_lines_t, const transform& t, const LineFunction auto& f) {
+  constexpr void iterate(iterate_lines_t, const transform& t, const LineFunction auto& f) const {
     std::invoke(f, t.translate(a).v, t.translate(b).v, colour);
   }
 
-  constexpr void iterate(iterate_centres_t, const transform& t, const PointFunction auto& f) {
-    std::invoke(f, t.v + (a + b) / 2, colour);
+  constexpr void iterate(iterate_centres_t, const transform& t, const PointFunction auto& f) const {
+    std::invoke(f, t.translate((a + b) / 2).v, colour);
+  }
+};
+
+struct polyarc_data : shape_data_base {
+  using shape_data_base::check_point;
+  using shape_data_base::iterate;
+  fixed radius = 0;
+  std::uint32_t sides = 0;
+  std::uint32_t segments = 0;
+  glm::vec4 colour{0.f};
+  shape_flag flags = shape_flag::kNone;
+
+  constexpr bool check_point(const vec2& v, shape_flag mask) const {
+    auto theta = angle(v);
+    auto r = length(v);
+    return +(flags & mask) && 0 <= theta && theta <= (2 * fixed_c::pi * segments) / sides &&
+        r >= radius - 10 && r < radius;
+  }
+
+  constexpr void iterate(iterate_flags_t, const transform&, const FlagFunction auto& f) const {
+    std::invoke(f, flags);
+  }
+
+  constexpr void iterate(iterate_lines_t, const transform& t, const LineFunction auto& f) const {
+    for (std::uint32_t i = 0; sides >= 2 && i < sides && i < segments; ++i) {
+      auto a = from_polar(i * 2 * fixed_c::pi / sides, radius);
+      auto b = from_polar((i + 1) * 2 * fixed_c::pi / sides, radius);
+      std::invoke(f, t.translate(a).v, t.translate(b).v, colour);
+    }
+  }
+
+  constexpr void iterate(iterate_centres_t, const transform& t, const PointFunction auto& f) const {
+    std::invoke(f, t.v, colour);
   }
 };
 
@@ -261,8 +294,8 @@ struct attachment_point_data : shape_data_base {
   std::size_t index{0};
   vec2 d{0};
 
-  constexpr void
-  iterate(iterate_attachment_points_t, const transform& t, const AttachmentPointFunction auto& f) {
+  constexpr void iterate(iterate_attachment_points_t, const transform& t,
+                         const AttachmentPointFunction auto& f) const {
     std::invoke(f, index, t.v, t.translate(d).v - t.v);
   }
 };
@@ -285,6 +318,11 @@ make_box(const vec2& dimensions, const glm::vec4& colour, shape_flag flags = sha
 
 constexpr line_data make_line(const vec2& a, const vec2& b, const glm::vec4& colour) {
   return {{}, a, b, colour};
+}
+
+constexpr polyarc_data make_polyarc(fixed radius, std::uint32_t sides, std::uint32_t segments,
+                                    const glm::vec4& colour, shape_flag flags = shape_flag::kNone) {
+  return {{}, radius, sides, segments, colour, flags};
 }
 
 constexpr attachment_point_data make_attachment_point(std::size_t index, const vec2& d) {
@@ -388,6 +426,10 @@ template <Expression<vec2> Dimensions, Expression<glm::vec4> Colour,
 struct box_eval {};
 template <Expression<vec2> A, Expression<vec2> B, Expression<glm::vec4> Colour>
 struct line_eval {};
+template <Expression<fixed> Radius, Expression<std::uint32_t> Sides,
+          Expression<std::uint32_t> Segments, Expression<glm::vec4> Colour,
+          Expression<shape_flag> Flags = constant<shape_flag::kNone>>
+struct polyarc_eval {};
 template <Expression<std::size_t> Index, Expression<vec2> Direction = constant<vec2{0}>>
 struct attachment_point_eval {};
 
@@ -415,6 +457,15 @@ template <Expression<vec2> A, Expression<vec2> B, Expression<glm::vec4> Colour>
 constexpr auto evaluate(line_eval<A, B, Colour>, const auto& params) {
   return make_line(vec2{evaluate(A{}, params)}, vec2{evaluate(B{}, params)},
                    glm::vec4{evaluate(Colour{}, params)});
+}
+
+template <Expression<fixed> Radius, Expression<std::uint32_t> Sides,
+          Expression<std::uint32_t> Segments, Expression<glm::vec4> Colour,
+          Expression<shape_flag> Flags>
+constexpr auto evaluate(polyarc_eval<Radius, Sides, Segments, Colour, Flags>, const auto& params) {
+  return make_polyarc(fixed{evaluate(Radius{}, params)}, std::uint32_t{evaluate(Sides{}, params)},
+                      std::uint32_t{evaluate(Segments{}, params)},
+                      glm::vec4{evaluate(Colour{}, params)}, shape_flag{evaluate(Flags{}, params)});
 }
 
 template <Expression<std::size_t> Index, Expression<vec2> Direction>
@@ -618,6 +669,9 @@ template <fixed W, fixed H, glm::vec4 Colour, shape_flag Flags = shape_flag::kNo
 using box = constant<make_box(vec2{W, H}, Colour, Flags)>;
 template <fixed AX, fixed AY, fixed BX, fixed BY, glm::vec4 Colour>
 using line = constant<make_line(vec2{AX, AY}, vec2{BX, BY}, Colour)>;
+template <fixed Radius, std::uint32_t Sides, std::uint32_t Segments, glm::vec4 Colour,
+          shape_flag Flags = shape_flag::kNone>
+using polyarc = constant<make_polyarc(Radius, Sides, Segments, Colour, Flags)>;
 template <std::size_t Index, fixed DX, fixed DY>
 using attachment_point = constant<make_attachment_point(Index, vec2{DX, DY})>;
 
@@ -637,6 +691,10 @@ using box_colour_p = box_eval<constant_vec2<W, H>, parameter<ParameterIndex>, co
 template <fixed AX, fixed AY, fixed BX, fixed BY, std::size_t ParameterIndex>
 using line_colour_p =
     line_eval<constant_vec2<AX, AY>, constant_vec2<BX, BY>, parameter<ParameterIndex>>;
+template <fixed Radius, std::uint32_t Sides, std::uint32_t Segments, std::size_t ParameterIndex,
+          shape_flag Flags = shape_flag::kNone>
+using polyarc_colour_p = polyarc_eval<constant<Radius>, constant<Sides>, constant<Segments>,
+                                      parameter<ParameterIndex>, constant<Flags>>;
 
 template <fixed Radius, std::uint32_t Sides, std::size_t ParameterIndex,
           shape_flag Flags = shape_flag::kNone>
