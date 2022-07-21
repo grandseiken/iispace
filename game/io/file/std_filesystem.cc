@@ -1,6 +1,7 @@
 #include "game/io/file/std_filesystem.h"
 #include <filesystem>
 #include <fstream>
+#include <iterator>
 
 namespace ii::io {
 namespace {
@@ -72,7 +73,7 @@ std::vector<std::string> StdFilesystem::list_savegames() const {
       result.emplace_back(entry.path().stem().string());
     }
   }
-  return {std::move(result)};
+  return result;
 }
 
 result<Filesystem::byte_buffer> StdFilesystem::read_savegame(std::string_view name) const {
@@ -92,7 +93,7 @@ std::vector<std::string> StdFilesystem::list_replays() const {
       result.emplace_back(entry.path().stem().string());
     }
   }
-  return {std::move(result)};
+  return result;
 }
 
 result<Filesystem::byte_buffer> StdFilesystem::read_replay(std::string_view name) const {

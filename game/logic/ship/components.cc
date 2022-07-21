@@ -56,7 +56,7 @@ void Health::damage(ecs::handle h, SimInterface& sim, std::uint32_t damage, dama
   hp = hp < damage ? 0 : hp - damage;
   vec2 position = {kSimDimensions.x / 2, kSimDimensions.y / 2};
   if (auto* c = h.get<Transform>()) {
-    position = h.get<Transform>()->centre;
+    position = c->centre;
   }
 
   if (hit_sound0 && damage) {

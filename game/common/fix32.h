@@ -3,6 +3,7 @@
 #include <bit>
 #include <cstdint>
 #include <iomanip>
+#include <limits>
 #include <ostream>
 #include <sstream>
 #include <type_traits>
@@ -101,7 +102,7 @@ public:
 };
 }  // namespace std
 
-inline constexpr fixed operator"" _fx(std::uint64_t v) {
+inline constexpr fixed operator"" _fx(unsigned long long v) {
   return fixed{static_cast<std::int32_t>(v)};
 }
 

@@ -23,6 +23,7 @@ cc_binary(
       "-DEFAULTLIB:winmm.lib",
       "-DEFAULTLIB:xinput.lib",
     ],
+    "//conditions:default": [],
   }),
   visibility = ["//visibility:public"],
 )

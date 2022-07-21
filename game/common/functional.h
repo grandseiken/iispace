@@ -35,6 +35,9 @@ template <typename R, typename... Args>
 struct function_traits<R (*)(Args...)>
 : detail::function_traits_impl<false, true, false, false, R, Args...> {};
 template <typename R, typename... Args>
+struct function_traits<R (*const)(Args...)>
+: detail::function_traits_impl<false, true, false, false, R, Args...> {};
+template <typename R, typename... Args>
 struct function_traits<R (&)(Args...)>
 : detail::function_traits_impl<false, false, true, false, R, Args...> {};
 template <typename C, typename R, typename... Args>
@@ -65,22 +68,21 @@ template <function_type T>
 using function_ptr = T*;
 
 namespace detail {
+template <member_function auto F, typename>
+struct unwrap_f;
 template <member_function auto F, typename... Args>
-consteval auto unwrap_create(tl::list<Args...>) {
-  struct s {
-    inline static constexpr decltype(auto) f(Args... args) {
-      return std::invoke(F, args...);
-    }
-  };
-  return &s::f;
-}
+struct unwrap_f<F, tl::list<Args...>> {
+  static inline constexpr decltype(auto) f(Args... args) {
+    return std::invoke(F, args...);
+  }
+};
 template <function auto F, bool MemPtr = member_function<decltype(F)>>
 struct unwrap_if {
   static inline constexpr auto value = F;
 };
 template <function auto F>
 struct unwrap_if<F, true> {
-  static inline constexpr auto value = unwrap_create<F>(parameter_types_of<decltype(F)>{});
+  static inline constexpr auto value = &unwrap_f<F, parameter_types_of<decltype(F)>>::f;
 };
 }  // namespace detail
 
@@ -88,22 +90,21 @@ template <function auto F>
 inline constexpr auto unwrap = detail::unwrap_if<F>::value;
 
 namespace detail {
+template <function auto F, typename R, typename, typename, typename, typename>
+struct cast_f;
 template <function auto F, typename R, typename... UsedSourceArgs, typename... UnusedSourceArgs,
           typename... UsedTargetArgs, typename... UnusedTargetArgs>
-consteval auto cast_create(tl::list<UsedSourceArgs...>, tl::list<UnusedSourceArgs...>,
-                           tl::list<UsedTargetArgs...>, tl::list<UnusedTargetArgs...>) {
-  struct s {
-    inline static constexpr decltype(auto) f(UsedTargetArgs... args, UnusedTargetArgs...) {
-      return static_cast<R>(F(static_cast<UsedSourceArgs>(args)..., UnusedSourceArgs{}...));
-    }
-  };
-  return &s::f;
-}
+struct cast_f<F, R, tl::list<UsedSourceArgs...>, tl::list<UnusedSourceArgs...>,
+              tl::list<UsedTargetArgs...>, tl::list<UnusedTargetArgs...>> {
+  inline static constexpr decltype(auto) f(UsedTargetArgs... args, UnusedTargetArgs...) {
+    return static_cast<R>(F(static_cast<UsedSourceArgs>(args)..., UnusedSourceArgs{}...));
+  }
+};
 
 template <typename T>
 using is_default_constructible = std::is_constructible<T>;
 template <typename... SourceArgs, typename... TargetArgs>
-consteval bool all_constructible(tl::list<SourceArgs...>, tl::list<TargetArgs...>) {
+constexpr bool all_constructible(tl::list<SourceArgs...>, tl::list<TargetArgs...>) {
   return (std::is_constructible_v<SourceArgs, TargetArgs> && ...);
 }
 
@@ -127,9 +128,9 @@ struct cast_impl {
       tl::all_of<unused_source_args, is_default_constructible>;
 
   template <function auto F>
-  inline static constexpr auto
-      cast = cast_create<F, return_type_of<Target>>(used_source_args{}, unused_source_args{},
-                                                    used_target_args{}, unused_target_args{});
+  inline static constexpr auto cast =
+      &cast_f<F, return_type_of<Target>, used_source_args, unused_source_args, used_target_args,
+              unused_target_args>::f;
 };
 
 template <function_type T, function auto F,
@@ -142,15 +143,14 @@ struct cast_if<T, F, false> {
   static inline constexpr auto value = cast_impl<decltype(F), T>::template cast<F>;
 };
 
-template <function auto... F, typename... Args>
-consteval auto sequence_create(tl::list<Args...>) {
-  struct s {
-    inline static constexpr decltype(auto) f(Args... args) {
-      return (F(args...), ...);
-    }
-  };
-  return &s::f;
-}
+template <typename, function auto... F>
+struct sequence_f;
+template <typename... Args, function auto... F>
+struct sequence_f<tl::list<Args...>, F...> {
+  inline static constexpr decltype(auto) f(Args... args) {
+    return (F(args...), ...);
+  }
+};
 }  // namespace detail
 
 template <typename T, typename... Rest>
@@ -166,7 +166,7 @@ concept castable_to = functional<Source> && functional<Target> &&
 template <function auto F, function auto... Rest>
 requires same_parameters<decltype(F), decltype(Rest)...>
 inline constexpr auto sequence =
-    detail::sequence_create<unwrap<F>, unwrap<Rest>...>(parameter_types_of<decltype(F)>{});
+    &detail::sequence_f<parameter_types_of<decltype(F)>, unwrap<F>, unwrap<Rest>...>::f;
 
 template <function_type T, function auto F>
 requires castable_to<decltype(F), T>

@@ -376,7 +376,7 @@ void Overmind::boss() {
                          2) /
         2;
     boss_mod_secret_ = 2;
-    spawn_super_boss(sim_, cycle);
+    spawn_super_boss(sim_, secret_cycle);
   } else if (boss_mod_bosses_ % 2 == 0) {
     if (boss1_queue_[0] == 0) {
       spawn_big_square_boss(sim_, cycle);

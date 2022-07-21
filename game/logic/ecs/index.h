@@ -12,6 +12,7 @@
 #include <vector>
 
 namespace ii::ecs {
+class EntityIndex;
 
 namespace detail {
 struct component_storage_base;
@@ -148,7 +149,7 @@ private:
   template <bool>
   friend class handle_base;
   template <Component>
-  friend class detail::component_storage;
+  friend struct detail::component_storage;
 
   template <Component C>
   detail::component_storage<C>& storage();

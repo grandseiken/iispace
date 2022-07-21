@@ -46,7 +46,7 @@ ii::initial_conditions ReplayReader::initial_conditions() const {
 }
 
 std::optional<ii::input_frame> ReplayReader::next_input_frame() {
-  if (impl_->frame_index >= impl_->replay.player_frame().size()) {
+  if (impl_->frame_index >= static_cast<std::size_t>(impl_->replay.player_frame().size())) {
     return std::nullopt;
   }
   auto& replay_frame = impl_->replay.player_frame(impl_->frame_index++);

@@ -6,25 +6,39 @@ build --ui_actions_shown=16
 build --experimental_windows_watchfs
 build --watchfs
 build --enable_runfiles
-build --cxxopt=/std:c++20
-build --copt=/WX
 build --proto_toolchain_for_cc=//game/data/proto:cc_toolchain
 build --experimental_cc_implementation_deps
 
+build:windows-common --cxxopt=/std:c++20
+build:windows-common --copt=/WX
+
+build:linux-common --cxxopt=-std=c++20
+build:linux-common --copt=-Werror
+build:linux-common --copt=-Wall
+build:linux-common --per_file_copt=external/.*@-w
+
+build:clang-common --copt=-Wno-deprecated-volatile
+build:clang-common --cxxopt=-Wno-unused-command-line-argument
+
+build:msvc --config=windows-common
 build:msvc --copt=/experimental:deterministic
 build:msvc --linkopt=/experimental:deterministic
 
-build:clang-base --compiler=clang-cl
-build:clang-base --copt=-Wno-deprecated-volatile
-build:clang-base --cxxopt=-Wno-unused-command-line-argument
+build:gcc --config=linux-common
+build:gcc --repo_env=CC=gcc
+build:gcc --cxxopt=-lstdc++
+build:gcc --copt=-Wno-uninitialized
 
-build:clang --config=clang-base
-build:clang --cc_output_directory_tag=clang
+build:clang-cl --config=windows-common
+build:clang-cl --config=clang-common
+build:clang-cl --compiler=clang-cl
+build:clang-cl --cc_output_directory_tag=clang
 
-build:ubsan --config=clang-base
-build:ubsan --cc_output_directory_tag=ubsan
-build:ubsan --copt=-fsanitize=undefined
-build:ubsan --copt=/MT
+build:ubsan-cl --config=windows-common
+build:ubsan-cl --config=clang-common
+build:ubsan-cl --cc_output_directory_tag=ubsan
+build:ubsan-cl --copt=-fsanitize=undefined
+build:ubsan-cl --copt=/MT
 
 build -c opt
 test --test_output=errors

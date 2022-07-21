@@ -54,18 +54,20 @@ constexpr decltype(auto) synthesize_call_parameter(H&& handle) {
   }
 }
 
+template <bool Check, function auto F, typename H, typename, typename>
+struct call_f;
 template <bool Check, function auto F, typename H, typename... ForwardedArgs,
           typename... SynthesizedArgs>
-consteval auto call_impl_create(tl::list<ForwardedArgs...>, tl::list<SynthesizedArgs...>) {
-  return +[](H h, ForwardedArgs... args) {
+struct call_f<Check, F, H, tl::list<ForwardedArgs...>, tl::list<SynthesizedArgs...>> {
+  inline static constexpr auto f(H h, ForwardedArgs... args) {
     if constexpr (Check) {
       if (!(can_synthesize_call_parameter<SynthesizedArgs>(h) && ...)) {
         return;
       }
     }
     return F(synthesize_call_parameter<SynthesizedArgs>(h)..., args...);
-  };
-}
+  }
+};
 
 template <bool Check, function auto F>
 struct call_impl {
@@ -75,8 +77,8 @@ struct call_impl {
   using synthesized_parameters = tl::sublist<parameters, 0, retain_index>;
   using handle_type = std::conditional_t<tl::all_of<synthesized_parameters, is_const_parameter>,
                                          ecs::const_handle, ecs::handle>;
-  static inline constexpr auto value = detail::call_impl_create<Check, F, handle_type>(
-      forwarded_parameters{}, synthesized_parameters{});
+  static inline constexpr auto value =
+      &detail::call_f<Check, F, handle_type, forwarded_parameters, synthesized_parameters>::f;
 };
 
 template <typename T, typename F>

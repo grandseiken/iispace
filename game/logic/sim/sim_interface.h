@@ -14,20 +14,20 @@ namespace ecs {
 class EntityIndex;
 }  // namespace ecs
 enum class shape_flag : std::uint32_t;
-class SimInternals;
+struct SimInternals;
 
 constexpr glm::ivec2 kSimDimensions = {640, 480};
 
 struct particle {
   particle(const glm::vec2& position, const glm::vec4& colour, const glm::vec2& velocity,
            std::uint32_t time)
-  : position{position}, velocity{velocity}, timer{time}, colour{colour} {}
+  : position{position}, colour{colour}, velocity{velocity}, timer{time} {}
 
-  bool destroy = false;
-  std::uint32_t timer = 0;
-  glm::vec4 colour{0.f};
   glm::vec2 position{0.f};
+  glm::vec4 colour{0.f};
   glm::vec2 velocity{0.f};
+  std::uint32_t timer = 0;
+  bool destroy = false;
 };
 
 class SimInterface {
