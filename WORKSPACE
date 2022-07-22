@@ -3,7 +3,6 @@ load("@bazel_tools//tools/build_defs/repo:http.bzl", "http_archive")
 ################################################################################
 # Hedron compile commands extractor
 ################################################################################
-
 http_archive(
     name = "hedron_compile_commands",
     sha256 = "2e72c14ec0578ce07a3b76965ed6b67894179df431d735df15beb8ec0371c6d6",
@@ -16,7 +15,6 @@ hedron_compile_commands_setup()
 ################################################################################
 # Skylib
 ################################################################################
-
 load("@bazel_tools//tools/build_defs/repo:http.bzl", "http_archive")
 http_archive(
   name = "bazel_skylib",
@@ -32,7 +30,6 @@ bazel_skylib_workspace()
 ################################################################################
 # Language feature dependencies
 ################################################################################
-
 http_archive(
   name = "expected",
   build_file = "@//deps:expected.BUILD",
@@ -44,7 +41,6 @@ http_archive(
 ################################################################################
 # I/O dependencies
 ################################################################################
-
 http_archive(
   name = "sdl_windows",
   build_file = "@//deps/sdl:sdl_windows.BUILD",
@@ -64,7 +60,6 @@ http_archive(
 ################################################################################
 # OpenGL dependencies
 ################################################################################
-
 http_archive(
   name = "glm",
   build_file = "@//deps:glm.BUILD",
@@ -84,7 +79,6 @@ http_archive(
 ################################################################################
 # Media format dependencies
 ################################################################################
-
 http_archive(
   name = "dr_libs",
   build_file = "@//deps:dr_libs.BUILD",
@@ -112,7 +106,6 @@ http_archive(
 ################################################################################
 # Protobuf
 ################################################################################
-
 http_archive(
   name = "rules_proto",
   sha256 = "66bfdf8782796239d3875d37e7de19b1d94301e8972b3cbd2446b332429b4df1",
@@ -126,3 +119,15 @@ http_archive(
 load("@rules_proto//proto:repositories.bzl", "rules_proto_dependencies", "rules_proto_toolchains")
 rules_proto_dependencies()
 rules_proto_toolchains()
+
+################################################################################
+# Test utilities
+################################################################################
+
+http_archive(
+  name = "flamegraph",
+  build_file = "@//deps:flamegraph.BUILD",
+  sha256 = "2ad11f0a446aab6089d1f2f0d8cd3b8cbde9d348e91c2c22716fc6a7650eac17",
+  strip_prefix = "FlameGraph-810687f180f3c4929b5d965f54817a5218c9d89b",
+  url = "https://github.com/brendangregg/FlameGraph/archive/810687f180f3c4929b5d965f54817a5218c9d89b.zip",
+)

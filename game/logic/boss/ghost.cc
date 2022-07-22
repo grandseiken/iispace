@@ -369,27 +369,23 @@ struct GhostBoss : ecs::component {
     return {transform.centre, transform.rotation};
   }
 
-  bool check_point(const Transform& transform, const vec2& v, shape_flag mask) const {
+  shape_flag check_point(const Transform& transform, const vec2& v, shape_flag mask) const {
+    auto result = shape_flag::kNone;
     if (!collision_enabled) {
-      return false;
+      return shape_flag::kNone;
     }
-    if (geom::check_point(standard_transform<centre_shape>{}, shape_parameters(transform), v,
-                          mask)) {
-      return true;
-    }
-    if (box_attack_shape_enabled &&
-        geom::check_point(box_attack_shape{}, box_attack_parameters(transform), v, mask)) {
-      return true;
+    result |=
+        geom::check_point(standard_transform<centre_shape>{}, shape_parameters(transform), v, mask);
+    if (box_attack_shape_enabled) {
+      result |= geom::check_point(box_attack_shape{}, box_attack_parameters(transform), v, mask);
     }
     if (+(mask & (shape_flag::kDangerous | shape_flag::kEnemyInteraction))) {
       auto v_n = rotate(v - transform.centre, -transform.rotation - outer_rotation[0]);
       for (std::uint32_t i = 0; i < 16; ++i) {
         auto v_i = rotate(v_n - outer_shape_d(0, i), -outer_ball_rotation);
-        if (geom::check_point(
-                geom::ball_collider<16, shape_flag::kDangerous | shape_flag::kEnemyInteraction>{},
-                std::tuple<>{}, v_i, mask)) {
-          return true;
-        }
+        result |= geom::check_point(
+            geom::ball_collider<16, shape_flag::kDangerous | shape_flag::kEnemyInteraction>{},
+            std::tuple<>{}, v_i, mask);
       }
     }
     for (std::uint32_t n = 1; n < 5 && +(mask & shape_flag::kDangerous); ++n) {
@@ -399,13 +395,11 @@ struct GhostBoss : ecs::component {
           continue;
         }
         auto v_i = rotate(v_n - outer_shape_d(n, i), -outer_ball_rotation);
-        if (geom::check_point(geom::ball_collider<9, shape_flag::kDangerous>{}, std::tuple<>{}, v_i,
-                              mask)) {
-          return true;
-        }
+        result |= geom::check_point(geom::ball_collider<9, shape_flag::kDangerous>{},
+                                    std::tuple<>{}, v_i, mask);
       }
     }
-    return false;
+    return result;
   }
 
   template <fixed I>

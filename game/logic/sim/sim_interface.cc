@@ -59,9 +59,9 @@ bool SimInterface::any_collision(const vec2& point, shape_flag mask) const {
   fixed y = point.y;
 
   for (const auto& collision : internals_->collisions) {
-    const auto& e = *collision.handle.get<Collision>();
-    auto v = collision.handle.get<Transform>()->centre;
-    fixed w = collision.bounding_width;
+    const auto& e = *collision.collision;
+    auto v = collision.transform->centre;
+    fixed w = e.bounding_width;
 
     // TODO: this optmization check is incorrect, since collision list is sorted based on x-min
     // at start of frame; may have moved in the meantime, or list may have been appended to.
@@ -77,22 +77,23 @@ bool SimInterface::any_collision(const vec2& point, shape_flag mask) const {
     if (!(e.flags & mask)) {
       continue;
     }
-    if (e.check(collision.handle, point, mask)) {
+    if (+e.check(collision.handle, point, mask)) {
       return true;
     }
   }
   return false;
 }
 
-std::vector<ecs::handle> SimInterface::collision_list(const vec2& point, shape_flag mask) {
-  std::vector<ecs::handle> r;
+auto SimInterface::collision_list(const vec2& point, shape_flag mask)
+    -> std::vector<collision_info> {
+  std::vector<collision_info> r;
   fixed x = point.x;
   fixed y = point.y;
 
   for (const auto& collision : internals_->collisions) {
-    const auto& e = *collision.handle.get<Collision>();
-    auto v = collision.handle.get<Transform>()->centre;
-    fixed w = collision.bounding_width;
+    const auto& e = *collision.collision;
+    auto v = collision.transform->centre;
+    fixed w = e.bounding_width;
 
     // TODO: same as above.
     if (v.x - w > x) {
@@ -104,8 +105,8 @@ std::vector<ecs::handle> SimInterface::collision_list(const vec2& point, shape_f
     if (!(e.flags & mask)) {
       continue;
     }
-    if (e.check(collision.handle, point, mask)) {
-      r.push_back(collision.handle);
+    if (auto hit = e.check(collision.handle, point, mask); + hit) {
+      r.emplace_back(collision_info{.h = collision.handle, .hit_mask = hit});
     }
   }
   return r;

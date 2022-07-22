@@ -93,7 +93,7 @@ void explode_entity_shapes_default(ecs::const_handle h, SimInterface& sim) {
 }
 
 template <ecs::Component Logic, geom::ShapeNode S>
-bool ship_check_point(ecs::const_handle h, const vec2& v, shape_flag mask) {
+shape_flag ship_check_point(ecs::const_handle h, const vec2& v, shape_flag mask) {
   if constexpr (requires { &Logic::check_point; }) {
     return ecs::call<&Logic::check_point>(h, v, mask);
   } else {

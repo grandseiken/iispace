@@ -21,20 +21,23 @@ struct Shot : ecs::component {
     return {transform.centre, transform.rotation, colour, c_dark};
   }
 
-  ecs::handle player;
+  ecs::entity_id player;
+  std::uint32_t player_number = 0;
   vec2 velocity{0};
   bool magic = false;
   glm::vec4 colour{0.f};
 
-  Shot(ecs::handle player, const vec2& direction, bool magic)
-  : player{std::move(player)}, velocity{normalise(direction) * kSpeed}, magic{magic} {}
+  Shot(ecs::entity_id player, std::uint32_t player_number, const vec2& direction, bool magic)
+  : player{player}
+  , player_number{player_number}
+  , velocity{normalise(direction) * kSpeed}
+  , magic{magic} {}
 
   void update(ecs::handle h, Transform& transform, SimInterface& sim) {
     if (sim.conditions().mode == game_mode::kWhat) {
       colour = glm::vec4{0.f};
     } else {
-      colour = magic && sim.random(2) ? glm::vec4{1.f}
-                                      : player_colour(player.get<Player>()->player_number);
+      colour = magic && sim.random(2) ? glm::vec4{1.f} : player_colour(player_number);
     }
     transform.move(velocity);
     bool on_screen = all(greaterThanEqual(transform.centre, vec2{-4, -4})) &&
@@ -44,16 +47,35 @@ struct Shot : ecs::component {
       return;
     }
 
-    for (const auto& hit_handle : sim.collision_list(transform.centre, shape_flag::kVulnerable)) {
-      ecs::call_if<&Health::damage>(hit_handle, sim, 1,
-                                    magic ? damage_type::kMagic : damage_type::kNone, player.id());
-      if (!magic) {
-        h.emplace<Destroy>();
+    bool destroy = false;
+    auto generation = sim.index().generation();
+    auto collision = sim.collision_list(
+        transform.centre, shape_flag::kVulnerable | shape_flag::kShield | shape_flag::kWeakShield);
+    for (const auto& e : collision) {
+      if (+(e.hit_mask & shape_flag::kVulnerable)) {
+        ecs::call_if<&Health::damage>(e.h, sim, 1, magic ? damage_type::kMagic : damage_type::kNone,
+                                      player);
+        if (!magic) {
+          destroy = true;
+        }
       }
     }
 
-    if (sim.any_collision(transform.centre, shape_flag::kShield) ||
-        (!magic && sim.any_collision(transform.centre, shape_flag::kWeakShield))) {
+    if (!destroy) {
+      // Compatibility: need to rerun the collision check if new entities might have spawned.
+      if (generation != sim.index().generation()) {
+        collision =
+            sim.collision_list(transform.centre, shape_flag::kShield | shape_flag::kWeakShield);
+      }
+      for (const auto& e : collision) {
+        if (!e.h.has<Destroy>() &&
+            (+(e.hit_mask & shape_flag::kShield) ||
+             (!magic && +(e.hit_mask & shape_flag::kWeakShield)))) {
+          destroy = true;
+        }
+      }
+    }
+    if (destroy) {
       h.emplace<Destroy>();
     }
   }
@@ -61,7 +83,8 @@ struct Shot : ecs::component {
 
 void spawn_shot(SimInterface& sim, const vec2& position, ecs::handle player, const vec2& direction,
                 bool magic) {
-  create_ship<Shot>(sim, position).add(Shot{player, direction, magic});
+  create_ship<Shot>(sim, position)
+      .add(Shot{player.id(), player.get<Player>()->player_number, direction, magic});
 }
 
 struct Powerup : ecs::component {

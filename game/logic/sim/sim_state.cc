@@ -19,6 +19,7 @@ SimState::SimState(const initial_conditions& conditions, InputAdapter& input)
   internals_->conditions = conditions;
   internals_->global_entity_handle = internals_->index.create(GlobalData{conditions});
   internals_->global_entity_handle->add(Update{.update = ecs::call<&GlobalData::pre_update>});
+  internals_->global_entity_id = internals_->global_entity_handle->id();
   for (std::uint32_t i = 0; i < conditions.player_count; ++i) {
     vec2 v((1 + i) * kSimDimensions.x / (1 + conditions.player_count), kSimDimensions.y / 2);
     spawn_player(*interface_, v, i);
@@ -28,7 +29,8 @@ SimState::SimState(const initial_conditions& conditions, InputAdapter& input)
   auto* internals = internals_.get();
   auto* interface = interface_.get();
   internals_->index.on_component_add<Collision>([internals](ecs::handle h, const Collision& c) {
-    internals->collisions.emplace_back(SimInternals::collision_entry{h, 0, c.bounding_width});
+    internals->collisions.emplace_back(
+        SimInternals::collision_entry{h.id(), h, h.get<Transform>(), &c, 0});
   });
   internals_->index.on_component_add<Destroy>(
       [internals, interface](ecs::handle h, const Destroy& d) {
@@ -75,8 +77,7 @@ void SimState::update() {
   internals_->input_frames = input_.get();
 
   for (auto& e : internals_->collisions) {
-    const auto& c = *e.handle.get<Collision>();
-    e.x_min = e.handle.get<Transform>()->centre.x - c.bounding_width;
+    e.x_min = e.transform->centre.x - e.collision->bounding_width;
   }
   std::ranges::stable_sort(internals_->collisions,
                            [](const auto& a, const auto& b) { return a.x_min < b.x_min; });
@@ -113,6 +114,12 @@ void SimState::update() {
 
   if (compact_counter_ >= internals_->index.size()) {
     internals_->index.compact();
+    for (auto& e : internals_->collisions) {
+      e.handle = *internals_->index.get(e.id);
+      e.collision = e.handle.get<Collision>();
+      e.transform = e.handle.get<Transform>();
+    }
+    internals_->global_entity_handle = internals_->index.get(internals_->global_entity_id);
     compact_counter_ = 0;
   }
 

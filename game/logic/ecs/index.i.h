@@ -6,35 +6,6 @@
 #include <deque>
 
 namespace ii::ecs::detail {
-
-struct component_table {
-  std::optional<index_type>& operator[](component_id index) {
-    return v[static_cast<std::size_t>(index)];
-  }
-  const std::optional<index_type>& operator[](component_id index) const {
-    return v[static_cast<std::size_t>(index)];
-  }
-
-  template <Component C>
-  void set(index_type index) {
-    auto c_index = static_cast<std::size_t>(ecs::id<C>());
-    if (c_index >= v.size()) {
-      v.resize(c_index + 1);
-    }
-    v[c_index] = index;
-  }
-  template <Component C>
-  void reset() {
-    (*this)[ecs::id<C>()].reset();
-  }
-  template <Component C>
-  std::optional<index_type> get() const {
-    auto c_index = static_cast<std::size_t>(ecs::id<C>());
-    return c_index < v.size() ? v[c_index] : std::optional<index_type>{};
-  }
-  std::vector<std::optional<index_type>> v;
-};
-
 struct component_storage_base {
   virtual ~component_storage_base() = default;
   virtual void compact(EntityIndex& index) = 0;
@@ -90,12 +61,21 @@ void iterate(T& storage, bool include_new, auto&& f) {
     }
   }
 }
-
 }  // namespace ii::ecs::detail
 
 namespace ii::ecs {
 
 inline void EntityIndex::compact() {
+  auto has_value = [](const detail::component_table& table) { return table.id.has_value(); };
+  auto it = std::ranges::find_if_not(entity_tables_, has_value);
+  if (it == entity_tables_.end()) {
+    return;
+  }
+  auto [pivot, _] = std::ranges::stable_partition(it, entity_tables_.end(), has_value);
+  for (; it != pivot; ++it) {
+    entities_[*it->id] = &*it;
+  }
+  entity_tables_.erase(pivot, entity_tables_.end());
   for (const auto& c : components_) {
     if (c) {
       c->compact(*this);
@@ -109,15 +89,9 @@ inline auto EntityIndex::create() -> handle {
   while (contains(id)) {
     id = next_id_++;
   }
-  std::unique_ptr<detail::component_table> table;
-  if (table_pool_.empty()) {
-    table = std::make_unique<detail::component_table>();
-  } else {
-    table = std::move(table_pool_.back());
-    table_pool_.pop_back();
-  }
-  auto [it, _] = entities_.emplace(id, std::move(table));
-  return {id, this, it->second.get()};
+  auto [it, _] = entities_.emplace(id, &entity_tables_.emplace_back());
+  it->second->id = id;
+  return {id, this, it->second};
 }
 
 template <Component... CArgs>
@@ -130,8 +104,8 @@ auto EntityIndex::create(CArgs&&... cargs) -> handle {
 inline void EntityIndex::destroy(entity_id id) {
   auto it = entities_.find(id);
   if (it != entities_.end()) {
-    handle{id, this, it->second.get()}.clear();
-    table_pool_.emplace_back(std::move(it->second));
+    handle{id, this, it->second}.clear();
+    it->second->id.reset();
     entities_.erase(it);
   }
 }
@@ -139,7 +113,7 @@ inline void EntityIndex::destroy(entity_id id) {
 inline auto EntityIndex::get(entity_id id) -> std::optional<handle> {
   std::optional<handle> r;
   if (auto it = entities_.find(id); it != entities_.end()) {
-    r = {id, this, it->second.get()};
+    r = {id, this, it->second};
   }
   return r;
 }
@@ -147,7 +121,7 @@ inline auto EntityIndex::get(entity_id id) -> std::optional<handle> {
 inline auto EntityIndex::get(entity_id id) const -> std::optional<const_handle> {
   std::optional<const_handle> r;
   if (auto it = entities_.find(id); it != entities_.end()) {
-    r = {id, this, it->second.get()};
+    r = {id, this, it->second};
   }
   return r;
 }

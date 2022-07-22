@@ -49,7 +49,11 @@ public:
   std::uint32_t random(std::uint32_t max);
   fixed random_fixed();
 
-  std::vector<ecs::handle> collision_list(const vec2& point, shape_flag mask);
+  struct collision_info {
+    ecs::handle h;
+    shape_flag hit_mask;
+  };
+  std::vector<collision_info> collision_list(const vec2& point, shape_flag mask);
   bool any_collision(const vec2& point, shape_flag mask) const;
   std::uint32_t get_non_wall_count() const;
   bool is_on_screen(const vec2& point) const;

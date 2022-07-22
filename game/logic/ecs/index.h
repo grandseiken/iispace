@@ -1,9 +1,11 @@
 #ifndef II_GAME_LOGIC_ECS_INDEX_H
 #define II_GAME_LOGIC_ECS_INDEX_H
+#include "game/logic/ecs/detail.h"
 #include "game/logic/ecs/id.h"
 #include <concepts>
 #include <cstddef>
 #include <cstdint>
+#include <deque>
 #include <functional>
 #include <memory>
 #include <optional>
@@ -13,13 +15,6 @@
 
 namespace ii::ecs {
 class EntityIndex;
-
-namespace detail {
-struct component_storage_base;
-struct component_table;
-template <Component C>
-struct component_storage;
-}  // namespace detail
 
 template <bool Const>
 class handle_base {
@@ -84,8 +79,7 @@ public:
   EntityIndex& operator=(EntityIndex&&) = default;
   EntityIndex& operator=(const EntityIndex&) = delete;
 
-  // Rearrange and compact internals. Handles remain valid, but invalidates all direct data
-  // references to all components.
+  // Rearrange and compact internals. Invalidates all handles and component references.
   void compact();
   // Create a new element and return handle.
   handle create();
@@ -96,6 +90,9 @@ public:
   // all direct data references to any of its components.
   void destroy(entity_id id);
 
+  entity_id generation() const {
+    return next_id_;
+  }
   std::size_t size() const {
     return entities_.size();
   }
@@ -157,9 +154,9 @@ private:
   const detail::component_storage<C>* storage() const;
 
   entity_id next_id_{0};
-  std::unordered_map<entity_id, std::unique_ptr<detail::component_table>> entities_;
+  std::deque<detail::component_table> entity_tables_;
+  std::unordered_map<entity_id, detail::component_table*> entities_;
   std::vector<std::unique_ptr<detail::component_storage_base>> components_;
-  std::vector<std::unique_ptr<detail::component_table>> table_pool_;
 };
 
 }  // namespace ii::ecs
