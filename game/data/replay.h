@@ -51,10 +51,12 @@ private:
 class ReplayInputAdapter : public ii::InputAdapter {
 public:
   ReplayInputAdapter(ReplayReader& replay_reader);
-  std::vector<ii::input_frame> get() override;
+  std::vector<ii::input_frame>& get() override;
+  void next() override {}
 
 private:
   ReplayReader& reader_;
+  std::vector<ii::input_frame> frames_;
 };
 
 }  // namespace ii

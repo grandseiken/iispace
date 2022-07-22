@@ -11,6 +11,7 @@ public:
   ~StdFilesystem() override {}
 
   result<byte_buffer> read(std::string_view name) const override;
+  result<void> write(std::string_view name, std::span<const std::uint8_t>) override;
 
   result<byte_buffer> read_asset(std::string_view name) const override;
   result<byte_buffer> read_config() const override;

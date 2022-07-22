@@ -94,7 +94,16 @@ struct Health : ecs::component {
               std::optional<ecs::entity_id> source);
 };
 
-struct PowerupTag : ecs::component {};
+enum class powerup_type {
+  kExtraLife,
+  kMagicShots,
+  kShield,
+  kBomb,
+};
+
+struct PowerupTag : ecs::component {
+  powerup_type type = powerup_type::kExtraLife;
+};
 struct WallTag : ecs::component {};
 
 struct Player : ecs::component {

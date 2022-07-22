@@ -1,4 +1,5 @@
 #include "game/data/replay.h"
+#include "game/flags.h"
 #include "game/io/file/std_filesystem.h"
 #include "game/logic/sim/sim_state.h"
 #include <iostream>
@@ -7,6 +8,7 @@
 #include <vector>
 
 namespace ii {
+namespace {
 
 bool run(std::optional<std::uint64_t> check, const std::string& replay_path) {
   io::StdFilesystem fs{".", ".", "."};
@@ -27,17 +29,9 @@ bool run(std::optional<std::uint64_t> check, const std::string& replay_path) {
     sim.clear_output();
   }
   auto results = sim.get_results();
-  std::uint64_t score = 0;
-  if (results.mode == game_mode::kBoss) {
-    score = results.elapsed_time;
-  } else {
-    for (const auto& p : results.players) {
-      score += p.score;
-    }
-  }
   if (check) {
-    if (*check != score) {
-      std::cerr << "check failed: expected score " << *check << ", was " << score << " at "
+    if (*check != results.score) {
+      std::cerr << "check failed: expected score " << *check << ", was " << results.score << " at "
                 << (100 * static_cast<float>(reader->current_input_frame()) /
                     reader->total_input_frames())
                 << "% of input" << std::endl;
@@ -45,26 +39,33 @@ bool run(std::optional<std::uint64_t> check, const std::string& replay_path) {
     }
     return true;
   }
-  std::cout << score << std::endl;
+  std::cout << results.score << std::endl;
   return true;
 }
 
+}  // namespace
 }  // namespace ii
 
 int main(int argc, char** argv) {
-  std::vector<std::string> args;
-  std::optional<std::uint64_t> check;
-  bool run = false;
-  for (int i = 1; i < argc; ++i) {
-    std::string arg = argv[i];
-    if (arg == "--check") {
-      check = std::stol(argv[++i]);
-    } else {
-      run = true;
-      if (!ii::run(check, arg)) {
-        return 1;
-      }
+  auto args = ii::args_init(argc, argv);
+  auto check = ii::flag_parse<std::uint64_t>(args, "check");
+  if (!check) {
+    std::cerr << check.error() << std::endl;
+    return 1;
+  }
+  if (auto result = ii::args_finish(args); !result) {
+    std::cerr << result.error() << std::endl;
+    return 1;
+  }
+
+  if (args.empty()) {
+    std::cerr << "no paths" << std::endl;
+    return 1;
+  }
+  for (const auto& path : args) {
+    if (!ii::run(*check, path)) {
+      return 1;
     }
   }
-  return run ? 0 : 1;
+  return 0;
 }

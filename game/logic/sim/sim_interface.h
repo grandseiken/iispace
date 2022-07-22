@@ -36,7 +36,7 @@ public:
 
   // State manipulation.
   const initial_conditions& conditions() const;
-  input_frame input(std::uint32_t player_number);
+  input_frame& input(std::uint32_t player_number);
   std::uint64_t tick_count() const;
 
   const ecs::EntityIndex& index() const;

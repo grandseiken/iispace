@@ -53,6 +53,10 @@ result<Filesystem::byte_buffer> StdFilesystem::read(std::string_view name) const
   return io::read(std::filesystem::path{std::string{name}});
 }
 
+result<void> StdFilesystem::write(std::string_view name, std::span<const std::uint8_t> data) {
+  return io::write(std::filesystem::path{std::string{name}}, data);
+}
+
 result<Filesystem::byte_buffer> StdFilesystem::read_asset(std::string_view name) const {
   return io::read(std::filesystem::path{asset_dir_} / name);
 }

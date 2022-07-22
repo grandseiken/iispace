@@ -26,7 +26,8 @@ public:
   void set_player_count(std::uint32_t players);
   void set_game_dimensions(const glm::uvec2& dimensions);
   input_type input_type_for(std::uint32_t player_index) const;
-  std::vector<input_frame> get() override;
+  std::vector<input_frame>& get() override;
+  void next() override;
 
 private:
   const io::IoLayer& io_layer_;
@@ -37,6 +38,8 @@ private:
 
   std::vector<vec2> last_aim_;
   bool mouse_moving_ = false;
+
+  std::vector<input_frame> frames_;
 };
 
 }  // namespace ii

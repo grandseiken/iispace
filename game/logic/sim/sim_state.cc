@@ -12,7 +12,8 @@ namespace ii {
 
 SimState::~SimState() = default;
 
-SimState::SimState(const initial_conditions& conditions, InputAdapter& input)
+SimState::SimState(const initial_conditions& conditions, InputAdapter& input,
+                   std::span<const std::uint32_t> ai_players)
 : input_{input}
 , internals_{std::make_unique<SimInternals>(conditions.seed)}
 , interface_{std::make_unique<SimInterface>(internals_.get())} {
@@ -22,7 +23,7 @@ SimState::SimState(const initial_conditions& conditions, InputAdapter& input)
   internals_->global_entity_id = internals_->global_entity_handle->id();
   for (std::uint32_t i = 0; i < conditions.player_count; ++i) {
     vec2 v((1 + i) * kSimDimensions.x / (1 + conditions.player_count), kSimDimensions.y / 2);
-    spawn_player(*interface_, v, i);
+    spawn_player(*interface_, v, i, /* AI */ std::ranges::find(ai_players, i) != ai_players.end());
   }
   overmind_ = std::make_unique<Overmind>(*interface_);
 
@@ -69,12 +70,16 @@ std::uint32_t SimState::frame_count() const {
   return internals_->conditions.mode == game_mode::kFast ? 2 : 1;
 }
 
+std::uint64_t SimState::tick_count() const {
+  return internals_->tick_count;
+}
+
 void SimState::update() {
   colour_cycle_ = internals_->conditions.mode == game_mode::kHard ? 128
       : internals_->conditions.mode == game_mode::kFast           ? 192
       : internals_->conditions.mode == game_mode::kWhat           ? (colour_cycle_ + 1) % 256
                                                                   : 0;
-  internals_->input_frames = input_.get();
+  internals_->input_frames = &input_.get();
 
   for (auto& e : internals_->collisions) {
     e.x_min = e.transform->centre.x - e.collision->bounding_width;
@@ -138,6 +143,7 @@ void SimState::update() {
     }
   }
   ++internals_->tick_count;
+  input_.next();
 }
 
 void SimState::render() const {
@@ -265,6 +271,13 @@ sim_results SimState::get_results() const {
     pr.score = p.score;
     pr.deaths = p.death_count;
   });
+  if (r.mode == game_mode::kBoss) {
+    r.score = r.elapsed_time;
+  } else {
+    for (const auto& p : r.players) {
+      r.score += p.score;
+    }
+  }
   return r;
 }
 

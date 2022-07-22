@@ -43,8 +43,8 @@ struct bitmask_enum<boss_flag> : std::true_type {};
 
 struct initial_conditions {
   std::uint32_t seed = 0;
-  game_mode mode = game_mode::kNormal;
   std::uint32_t player_count = 0;
+  game_mode mode = game_mode::kNormal;
   bool can_face_secret_boss = false;
 };
 
@@ -61,8 +61,9 @@ struct input_frame {
 
 class InputAdapter {
 public:
-  virtual ~InputAdapter() {}
-  virtual std::vector<input_frame> get() = 0;
+  virtual ~InputAdapter() = default;
+  virtual std::vector<input_frame>& get() = 0;
+  virtual void next() = 0;
 };
 
 struct sound_out {
@@ -109,6 +110,7 @@ struct sim_results {
     std::uint32_t deaths = 0;
   };
   std::vector<player_result> players;
+  std::uint64_t score = 0;
 };
 
 }  // namespace ii

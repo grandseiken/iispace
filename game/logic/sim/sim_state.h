@@ -5,6 +5,7 @@
 #include <cstdint>
 #include <memory>
 #include <optional>
+#include <span>
 #include <unordered_map>
 #include <vector>
 
@@ -17,11 +18,13 @@ struct SimInternals;
 class SimState {
 public:
   ~SimState();
-  SimState(const initial_conditions& conditions, InputAdapter& input);
+  SimState(const initial_conditions& conditions, InputAdapter& input,
+           std::span<const std::uint32_t> ai_players = {});
 
   void update();
   void render() const;
   std::uint32_t frame_count() const;
+  std::uint64_t tick_count() const;
   bool game_over() const;
 
   void clear_output();

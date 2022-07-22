@@ -14,6 +14,12 @@ class IoLayer;
 }  // namespace ii::io
 class GameModal;
 
+namespace ii {
+struct game_options_t {
+  std::uint32_t ai_count = 0;
+};
+}  // namespace ii
+
 class PauseModal : public Modal {
 public:
   enum output_t {
@@ -56,7 +62,8 @@ private:
 
 class GameModal : public Modal {
 public:
-  GameModal(ii::io::IoLayer& io_layer, const ii::initial_conditions& conditions);
+  GameModal(ii::io::IoLayer& io_layer, const ii::initial_conditions& conditions,
+            const ii::game_options_t& options);
   GameModal(ii::ReplayReader&& replay);
   ~GameModal();
 
@@ -92,7 +99,7 @@ public:
   static constexpr glm::vec4 kPanelTran = {0.f, 0.f, .925f, .6f};
   static constexpr glm::vec4 kPanelBack = {0.f, 0.f, 0.f, 1.f};
 
-  z0Game();
+  z0Game(const ii::game_options_t& options);
   void update(ii::ui::UiLayer& ui) override;
   void render(const ii::ui::UiLayer& ui, ii::render::GlRenderer& r) const override;
 
@@ -106,6 +113,7 @@ private:
     kQuit,
   };
 
+  ii::game_options_t options_;
   menu menu_select_ = menu::kStart;
   std::uint32_t player_select_ = 1;
   ii::game_mode mode_select_ = ii::game_mode::kBoss;

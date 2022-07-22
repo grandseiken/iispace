@@ -141,7 +141,7 @@ IoInputAdapter::input_type IoInputAdapter::input_type_for(std::uint32_t player_i
   return result;
 }
 
-std::vector<input_frame> IoInputAdapter::get() {
+std::vector<input_frame>& IoInputAdapter::get() {
   auto mouse_frame = io_layer_.mouse_frame();
   auto keyboard_frame = io_layer_.keyboard_frame();
   std::vector<io::controller::frame> controller_frames;
@@ -149,9 +149,9 @@ std::vector<input_frame> IoInputAdapter::get() {
     controller_frames.emplace_back(io_layer_.controller_frame(i));
   }
 
-  std::vector<input_frame> result;
+  frames_.clear();
   for (std::uint32_t i = 0; i < player_count_; ++i) {
-    auto& frame = result.emplace_back();
+    auto& frame = frames_.emplace_back();
     auto input = assign_input(i, player_count_, io_layer_.controllers());
     io::controller::frame* controller =
         input.controller ? &controller_frames[*input.controller] : nullptr;
@@ -197,12 +197,15 @@ std::vector<input_frame> IoInputAdapter::get() {
       frame.keys |= controller_keys(*controller);
     }
   }
+  return frames_;
+}
+
+void IoInputAdapter::next() {
   if (replay_writer_) {
-    for (const auto& frame : result) {
+    for (const auto& frame : frames_) {
       replay_writer_->add_input_frame(frame);
     }
   }
-  return result;
 }
 
 }  // namespace ii

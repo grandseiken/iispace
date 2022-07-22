@@ -15,11 +15,12 @@ const initial_conditions& SimInterface::conditions() const {
   return internals_->conditions;
 }
 
-input_frame SimInterface::input(std::uint32_t player_number) {
-  if (player_number < internals_->input_frames.size()) {
-    return internals_->input_frames[player_number];
+input_frame& SimInterface::input(std::uint32_t player_number) {
+  if (internals_->input_frames && player_number < internals_->input_frames->size()) {
+    return (*internals_->input_frames)[player_number];
   }
-  return {};
+  static input_frame kDefaultFrame;
+  return kDefaultFrame;
 }
 
 std::uint64_t SimInterface::tick_count() const {

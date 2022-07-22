@@ -354,12 +354,18 @@ bool HighScoreModal::is_high_score(const ii::SaveGame& save) const {
       save.high_scores.is_high_score(results_.mode, results_.players.size() - 1, get_score());
 }
 
-GameModal::GameModal(ii::io::IoLayer& io_layer, const ii::initial_conditions& conditions)
+GameModal::GameModal(ii::io::IoLayer& io_layer, const ii::initial_conditions& conditions,
+                     const ii::game_options_t& options)
 : Modal{true, true} {
   game_.emplace(io_layer, ii::ReplayWriter{conditions});
   game_->input.set_player_count(conditions.player_count);
   game_->input.set_game_dimensions(kDimensions);
-  state_ = std::make_unique<ii::SimState>(conditions, game_->input);
+  std::vector<std::uint32_t> ai_players;
+  auto max_ai_count = std::min(conditions.player_count, options.ai_count);
+  for (std::uint32_t i = conditions.player_count - max_ai_count; i < conditions.player_count; ++i) {
+    ai_players.push_back(i);
+  }
+  state_ = std::make_unique<ii::SimState>(conditions, game_->input, ai_players);
 }
 
 GameModal::GameModal(ii::ReplayReader&& replay) : Modal{true, true} {
@@ -368,7 +374,7 @@ GameModal::GameModal(ii::ReplayReader&& replay) : Modal{true, true} {
   state_ = std::make_unique<ii::SimState>(conditions, replay_->input);
 }
 
-GameModal::~GameModal() {}
+GameModal::~GameModal() = default;
 
 void GameModal::update(ii::ui::UiLayer& ui) {
   if (pause_output_ == PauseModal::kEndGame || state_->game_over()) {
@@ -410,7 +416,7 @@ void GameModal::update(ii::ui::UiLayer& ui) {
   auto frame_x = static_cast<std::uint32_t>(std::log2(frame_count_multiplier_));
   if (audio_tick_++ % (4 * (1 + frame_x / 2)) == 0) {
     for (const auto& pair : state_->get_sound_output()) {
-      auto& s = pair.second;
+      const auto& s = pair.second;
       ui.play_sound(pair.first, s.volume, s.pan, s.pitch);
     }
     for (const auto& pair : state_->get_rumble_output()) {
@@ -544,7 +550,7 @@ void GameModal::render(const ii::ui::UiLayer& ui, ii::render::GlRenderer& r) con
   }
 }
 
-z0Game::z0Game() : Modal{true, true} {}
+z0Game::z0Game(const ii::game_options_t& options) : Modal{true, true}, options_{options} {}
 
 void z0Game::update(ii::ui::UiLayer& ui) {
   if (exit_timer_) {
@@ -610,12 +616,12 @@ void z0Game::update(ii::ui::UiLayer& ui) {
 
   if (ui.input().pressed(ii::ui::key::kAccept) || ui.input().pressed(ii::ui::key::kMenu)) {
     if (menu_select_ == menu::kStart) {
-      add(std::make_unique<GameModal>(ui.io_layer(), conditions));
+      add(std::make_unique<GameModal>(ui.io_layer(), conditions, options_));
     } else if (menu_select_ == menu::kQuit) {
       exit_timer_ = 2;
     } else if (menu_select_ == menu::kSpecial) {
       conditions.mode = mode_select_;
-      add(std::make_unique<GameModal>(ui.io_layer(), conditions));
+      add(std::make_unique<GameModal>(ui.io_layer(), conditions, options_));
     }
     if (menu_select_ != menu::kPlayers) {
       ui.play_sound(ii::sound::kMenuAccept);
@@ -720,7 +726,7 @@ void z0Game::render(const ii::ui::UiLayer& ui, ii::render::GlRenderer& r) const 
     render_text(r, {4.f, 24.f}, "FOUR PLAYERS", kPanelText);
 
     for (std::size_t i = 0; i < ii::kMaxPlayers; ++i) {
-      auto& s = ui.save_game().high_scores.get(ii::game_mode::kBoss, i, 0);
+      const auto& s = ui.save_game().high_scores.get(ii::game_mode::kBoss, i, 0);
       std::string score = convert_to_time(s.score).substr(0, ii::HighScores::kMaxNameLength);
       std::string name = s.name.substr(0, ii::HighScores::kMaxNameLength);
 

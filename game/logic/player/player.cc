@@ -1,4 +1,5 @@
 #include "game/logic/player/player.h"
+#include "game/logic/player/ai_player.h"
 #include "game/logic/ship/enums.h"
 #include "game/logic/ship/geometry.h"
 #include "game/logic/ship/ship_template.h"
@@ -213,13 +214,16 @@ struct PlayerLogic : ecs::component {
   };
 
   PlayerLogic(const SimInterface& sim) : is_what_mode{sim.conditions().mode == game_mode::kWhat} {}
-  std::uint32_t invulnerability_timer = kReviveTime;
-  vec2 fire_target{0};
-  std::uint32_t fire_timer = 0;
   bool is_what_mode = false;
+  std::uint32_t invulnerability_timer = kReviveTime;
+  std::uint32_t fire_timer = 0;
+  vec2 fire_target{0};
 
   void update(ecs::handle h, Player& pc, Transform& transform, SimInterface& sim) {
-    auto input = sim.input(pc.player_number);
+    if (auto* ai = h.get<AiPlayer>(); ai) {
+      sim.input(pc.player_number) = ecs::call<&AiPlayer::think>(h, sim);
+    }
+    const auto& input = sim.input(pc.player_number);
     if (input.target_absolute) {
       fire_target = *input.target_absolute;
     } else if (input.target_relative) {
@@ -375,13 +379,17 @@ struct PlayerLogic : ecs::component {
 void spawn_powerup(SimInterface& sim, const vec2& position, powerup_type type) {
   auto h = create_ship<Powerup>(sim, position);
   h.add(Powerup{type});
-  h.add(PowerupTag{});
+  h.add(PowerupTag{.type = type});
 }
 
-void spawn_player(SimInterface& sim, const vec2& position, std::uint32_t player_number) {
+void spawn_player(SimInterface& sim, const vec2& position, std::uint32_t player_number,
+                  bool is_ai) {
   auto h = create_ship<PlayerLogic>(sim, position);
   h.add(Player{.player_number = player_number});
   h.add(PlayerLogic{sim});
+  if (is_ai) {
+    h.add(AiPlayer{});
+  }
 }
 
 }  // namespace ii

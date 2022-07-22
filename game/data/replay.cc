@@ -128,17 +128,17 @@ const ii::initial_conditions& ReplayWriter::initial_conditions() const {
 
 ReplayInputAdapter::ReplayInputAdapter(ReplayReader& reader) : reader_{reader} {}
 
-std::vector<ii::input_frame> ReplayInputAdapter::get() {
-  std::vector<ii::input_frame> result;
+std::vector<ii::input_frame>& ReplayInputAdapter::get() {
+  frames_.clear();
   for (std::uint32_t i = 0; i < reader_.initial_conditions().player_count; ++i) {
     auto frame = reader_.next_input_frame();
     if (frame) {
-      result.emplace_back(*frame);
+      frames_.emplace_back(*frame);
     } else {
-      result.emplace_back();
+      frames_.emplace_back();
     }
   }
-  return result;
+  return frames_;
 }
 
 }  // namespace ii

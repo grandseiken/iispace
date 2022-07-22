@@ -18,7 +18,7 @@ namespace ii {
 struct SimInternals {
   SimInternals(std::uint32_t seed) : random_engine{seed} {}
   // Input.
-  std::vector<input_frame> input_frames;
+  std::vector<input_frame>* input_frames = nullptr;
   RandomEngine random_engine;
 
   // Internal sim data.

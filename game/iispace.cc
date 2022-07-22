@@ -1,5 +1,6 @@
 #include "game/core/ui_layer.h"
 #include "game/core/z0_game.h"
+#include "game/flags.h"
 #include "game/io/file/std_filesystem.h"
 #include "game/io/sdl_io.h"
 #include "game/mixer/mixer.h"
@@ -12,6 +13,7 @@
 #include <vector>
 
 namespace ii {
+namespace {
 
 void load_sounds(const io::Filesystem& fs, Mixer& mixer) {
   auto load_sound = [&](sound s, const std::string& filename) {
@@ -42,7 +44,11 @@ void load_sounds(const io::Filesystem& fs, Mixer& mixer) {
   load_sound(sound::kExplosion, "Explosion.wav");
 }
 
-bool run(const std::vector<std::string>& args) {
+struct options_t {
+  std::uint32_t ai_count = 0;
+};
+
+bool run(const std::vector<std::string>& args, const game_options_t& options) {
   static constexpr char kGlMajor = 4;
   static constexpr char kGlMinor = 6;
 
@@ -66,7 +72,7 @@ bool run(const std::vector<std::string>& args) {
 
   ui::UiLayer ui_layer{fs, *io_layer, mixer};
   ModalStack modal_stack;
-  auto* game = modal_stack.add(std::make_unique<z0Game>());
+  auto* game = modal_stack.add(std::make_unique<z0Game>(options));
 
   if (!args.empty()) {
     auto replay_data = fs.read_replay(args[0]);
@@ -141,12 +147,21 @@ bool run(const std::vector<std::string>& args) {
   return true;
 }
 
+}  // namespace
 }  // namespace ii
 
 int main(int argc, char** argv) {
-  std::vector<std::string> args;
-  for (int i = 1; i < argc; ++i) {
-    args.emplace_back(argv[i]);
+  auto args = ii::args_init(argc, argv);
+  ii::game_options_t options;
+  auto ai_count = ii::flag_parse<std::uint32_t>(args, "ai_count");
+  if (!ai_count) {
+    std::cerr << ai_count.error() << std::endl;
+    return 1;
   }
-  return ii::run(args) ? 0 : 1;
+  options.ai_count = ai_count->value_or(0u);
+  if (auto result = ii::args_finish(args); !result) {
+    std::cerr << result.error() << std::endl;
+    return 1;
+  }
+  return ii::run(args, options) ? 0 : 1;
 }
