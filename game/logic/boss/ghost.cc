@@ -145,8 +145,6 @@ struct GhostBoss : ecs::component {
                          geom::rotate_eval<geom::multiply_p<3, 2>, geom::polygram<24, 8, c0>>>;
   using shape = geom::ngon<0, 2, c1>;  // Just for fireworks.
 
-  using outer_dangerous_t = std::array<std::array<bool, 16 + 4 * 6>, 5>;
-  using outer_rotation_t = std::array<fixed, 5>;
   std::tuple<vec2, fixed, fixed> shape_parameters(const Transform& transform) const {
     return {transform.centre, transform.rotation, inner_ring_rotation};
   }
@@ -166,10 +164,10 @@ struct GhostBoss : ecs::component {
   std::uint32_t danger_offset3 = 0;
   std::uint32_t danger_offset4 = 0;
   // Shape modifiers.
-  outer_dangerous_t outer_dangerous{false};
+  std::array<std::array<bool, 16 + 4 * 6>, 5> outer_dangerous;
   fixed inner_ring_rotation = 0;
   fixed outer_ball_rotation = 0;
-  outer_rotation_t outer_rotation{0_fx, 0_fx, 0_fx, 0_fx, 0_fx};
+  std::array<fixed, 5> outer_rotation{0_fx, 0_fx, 0_fx, 0_fx, 0_fx};
   bool box_attack_shape_enabled = false;
   bool collision_enabled = false;
 

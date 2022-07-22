@@ -1,5 +1,6 @@
 startup --windows_enable_symlinks
 
+# Global options.
 build --color=yes
 build --curses=yes
 build --ui_actions_shown=16
@@ -9,6 +10,10 @@ build --enable_runfiles
 build --proto_toolchain_for_cc=//game/data/proto:cc_toolchain
 build --experimental_cc_implementation_deps
 
+build -c opt
+test --test_output=errors
+
+# Common configuration.
 build:windows-common --cxxopt=/std:c++20
 build:windows-common --copt=/WX
 
@@ -20,14 +25,10 @@ build:linux-common --per_file_copt=external/.*@-w
 build:clang-common --copt=-Wno-deprecated-volatile
 build:clang-common --cxxopt=-Wno-unused-command-line-argument
 
+# Windows configurations.
 build:msvc --config=windows-common
 build:msvc --copt=/experimental:deterministic
 build:msvc --linkopt=/experimental:deterministic
-
-build:gcc --config=linux-common
-build:gcc --repo_env=CC=gcc
-build:gcc --cxxopt=-lstdc++
-build:gcc --copt=-Wno-uninitialized
 
 build:clang-cl --config=windows-common
 build:clang-cl --config=clang-common
@@ -40,5 +41,18 @@ build:ubsan-cl --cc_output_directory_tag=ubsan
 build:ubsan-cl --copt=-fsanitize=undefined
 build:ubsan-cl --copt=/MT
 
-build -c opt
-test --test_output=errors
+# Linux configurations.
+build:gcc --config=linux-common
+build:gcc --repo_env=CC=gcc
+build:gcc --cxxopt=-lstdc++
+build:gcc --copt=-Wno-uninitialized
+
+# TODO: doesn't support ranges, all tests fail if range uses removed.
+build:clang --config=linux-common
+build:clang --config=clang-common
+build:clang --repo_env=CC=clang
+build:clang --linkopt=-lstdc++
+build:clang --cxxopt=-lstdc++
+build:clang --cxxopt=-stdlib=libstdc++
+build:clang --cc_output_directory_tag=clang
+

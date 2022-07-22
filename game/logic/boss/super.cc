@@ -13,7 +13,6 @@ void super_boss_on_arc_destroy(SimInterface& sim, ecs::entity_id id, std::uint32
 struct SuperBossArc : public ecs::component {
   static constexpr std::uint32_t kBoundingWidth = 640;
   static constexpr std::uint32_t kBaseHp = 75;
-  static constexpr glm::vec4 c{0.f};
 
   template <fixed Radius, std::size_t I, shape_flag Flags = shape_flag::kNone>
   using polyarc =
