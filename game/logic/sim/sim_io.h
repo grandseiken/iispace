@@ -87,7 +87,7 @@ struct render_output {
   std::vector<player_info> players;
   std::vector<line_t> lines;
   game_mode mode = game_mode::kNormal;
-  std::uint32_t elapsed_time = 0;
+  std::uint64_t tick_count = 0;
   std::uint32_t lives_remaining = 0;
   std::optional<std::uint32_t> overmind_timer;
   std::optional<float> boss_hp_bar;
@@ -96,8 +96,8 @@ struct render_output {
 
 struct sim_results {
   game_mode mode = game_mode::kNormal;
+  std::uint64_t tick_count = 0;
   std::uint32_t seed = 0;
-  std::uint32_t elapsed_time = 0;
   std::uint32_t killed_bosses = 0;
   std::uint32_t lives_remaining = 0;
 

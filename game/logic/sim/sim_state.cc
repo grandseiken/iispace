@@ -70,10 +70,6 @@ std::uint32_t SimState::frame_count() const {
   return internals_->conditions.mode == game_mode::kFast ? 2 : 1;
 }
 
-std::uint64_t SimState::tick_count() const {
-  return internals_->tick_count;
-}
-
 void SimState::update() {
   colour_cycle_ = internals_->conditions.mode == game_mode::kHard ? 128
       : internals_->conditions.mode == game_mode::kFast           ? 192
@@ -236,7 +232,7 @@ render_output SimState::get_render_output() const {
   result.players = internals_->player_output;
   result.lines = std::move(internals_->line_output);
   result.mode = internals_->conditions.mode;
-  result.elapsed_time = overmind_->get_elapsed_time();
+  result.tick_count = internals_->tick_count;
   result.lives_remaining = interface_->get_lives();
   result.overmind_timer = overmind_->get_timer();
   result.colour_cycle = colour_cycle_;
@@ -259,7 +255,7 @@ sim_results SimState::get_results() const {
   sim_results r;
   r.mode = internals_->conditions.mode;
   r.seed = internals_->conditions.seed;
-  r.elapsed_time = overmind_->get_elapsed_time();
+  r.tick_count = internals_->tick_count;
   r.killed_bosses = overmind_->get_killed_bosses();
   r.lives_remaining = interface_->get_lives();
   r.bosses_killed = internals_->bosses_killed;
@@ -272,7 +268,7 @@ sim_results SimState::get_results() const {
     pr.deaths = p.death_count;
   });
   if (r.mode == game_mode::kBoss) {
-    r.score = r.elapsed_time;
+    r.score = r.tick_count;
   } else {
     for (const auto& p : r.players) {
       r.score += p.score;

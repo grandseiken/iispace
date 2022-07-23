@@ -147,7 +147,6 @@ Overmind::Overmind(SimInterface& sim) : sim_{sim}, stars_{std::make_unique<Stars
 Overmind::~Overmind() = default;
 
 void Overmind::update() {
-  ++elapsed_time_;
   stars_->update(sim_);
 
   std::uint32_t total_enemy_threat = 0;
@@ -245,10 +244,6 @@ void Overmind::render() const {
 
 std::uint32_t Overmind::get_killed_bosses() const {
   return boss_mod_bosses_ ? boss_mod_bosses_ - 1 : 0;
-}
-
-std::uint32_t Overmind::get_elapsed_time() const {
-  return elapsed_time_;
 }
 
 std::optional<std::uint32_t> Overmind::get_timer() const {

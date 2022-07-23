@@ -21,7 +21,6 @@ public:
   void render() const;
 
   std::uint32_t get_killed_bosses() const;
-  std::uint32_t get_elapsed_time() const;
   std::optional<std::uint32_t> get_timer() const;
 
   struct entry {
@@ -54,7 +53,6 @@ private:
   std::uint32_t lives_target_ = 0;
   bool is_boss_next_ = false;
   bool is_boss_level_ = false;
-  std::uint32_t elapsed_time_ = 0;
   std::uint32_t boss_rest_timer_ = 0;
   std::uint32_t waves_total_ = 0;
   std::uint32_t hard_already_ = 0;

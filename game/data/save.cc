@@ -71,7 +71,7 @@ result<SaveGame> SaveGame::load(std::span<const std::uint8_t> bytes) {
   proto::SaveGame proto;
   auto d = crypt(bytes, kSaveEncryptionKey);
   if (!proto.ParseFromArray(d.data(), static_cast<int>(d.size()))) {
-    return unexpected("Couldn't parse savegame");
+    return unexpected("couldn't parse savegame");
   }
 
   SaveGame save;
@@ -131,7 +131,7 @@ result<std::vector<std::uint8_t>> SaveGame::save() const {
   std::vector<std::uint8_t> data;
   data.resize(proto.ByteSizeLong());
   if (!proto.SerializeToArray(data.data(), static_cast<int>(data.size()))) {
-    return unexpected("Couldn't serialize savegame");
+    return unexpected("couldn't serialize savegame");
   }
   return crypt(data, kSaveEncryptionKey);
 }
@@ -139,7 +139,7 @@ result<std::vector<std::uint8_t>> SaveGame::save() const {
 result<Config> Config::load(std::span<const std::uint8_t> bytes) {
   proto::Config proto;
   if (!proto.ParseFromArray(bytes.data(), static_cast<int>(bytes.size()))) {
-    return unexpected("Couldn't parse settings");
+    return unexpected("couldn't parse settings");
   }
 
   Config settings;
@@ -153,7 +153,7 @@ result<std::vector<std::uint8_t>> Config::save() const {
   std::vector<std::uint8_t> data;
   data.resize(proto.ByteSizeLong());
   if (!proto.SerializeToArray(data.data(), static_cast<int>(data.size()))) {
-    return unexpected("Couldn't serialize settings");
+    return unexpected("couldn't serialize settings");
   }
   return {std::move(data)};
 }

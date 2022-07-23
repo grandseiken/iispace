@@ -22,16 +22,16 @@ ReplayReader& ReplayReader::operator=(ReplayReader&&) noexcept = default;
 result<ReplayReader> ReplayReader::create(std::span<const std::uint8_t> bytes) {
   auto decompressed = decompress(crypt(bytes, ii::kReplayEncryptionKey));
   if (!decompressed) {
-    return unexpected("Couldn't decompress replay: " + decompressed.error());
+    return unexpected("couldn't decompress replay: " + decompressed.error());
   }
   ReplayReader reader;
   reader.impl_ = std::make_unique<impl_t>();
   if (!reader.impl_->replay.ParseFromArray(decompressed->data(),
                                            static_cast<int>(decompressed->size()))) {
-    return unexpected("Couldn't parse replay");
+    return unexpected("couldn't parse replay");
   }
   if (reader.impl_->replay.game_version() != kReplayVersion) {
-    return unexpected("Unknown replay game version");
+    return unexpected("unknown replay game version");
   }
   return {std::move(reader)};
 }
@@ -112,11 +112,11 @@ result<std::vector<std::uint8_t>> ReplayWriter::write() const {
   std::vector<std::uint8_t> data;
   data.resize(impl_->replay.ByteSizeLong());
   if (!impl_->replay.SerializeToArray(data.data(), static_cast<int>(data.size()))) {
-    return unexpected("Couldn't serialize replay");
+    return unexpected("couldn't serialize replay");
   }
   auto compressed = compress(data);
   if (!compressed) {
-    return unexpected("Couldn't compress replay: " + compressed.error());
+    return unexpected("couldn't compress replay: " + compressed.error());
   }
   data = crypt(*compressed, ii::kReplayEncryptionKey);
   return {std::move(data)};

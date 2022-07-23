@@ -4,6 +4,16 @@ cc_library(
   deps = ["//game/common:types"],
 )
 
+cc_library(
+  name = "replay_tools",
+  hdrs = ["replay_tools.h"],
+  deps = [
+    "//game/common:types",
+    "//game/data:replay",
+    "//game/logic/sim",
+  ]
+)
+
 cc_binary(
   name = "iispace",
   srcs = ["iispace.cc"],
@@ -40,9 +50,8 @@ cc_binary(
   srcs = ["score.cc"],
   deps = [
     ":flags",
-    "//game/data:replay",
+    ":replay_tools",
     "//game/io/file:std_filesystem",
-    "//game/logic/sim",
   ],
   visibility = ["//visibility:public"],
 )
@@ -52,9 +61,8 @@ cc_binary(
   srcs = ["replay_synth.cc"],
   deps = [
     ":flags",
-    "//game/data:replay",
+    ":replay_tools",
     "//game/io/file:std_filesystem",
-    "//game/logic/sim",
   ],
   visibility = ["//visibility:public"],
 )

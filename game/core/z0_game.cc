@@ -252,7 +252,7 @@ void HighScoreModal::render(const ii::ui::UiLayer& ui, ii::render::GlRenderer& r
     auto extra_lives = results_.lives_remaining;
     bool b = extra_lives > 0 && results_.killed_bosses >= 6;
 
-    long score = results_.elapsed_time;
+    long score = results_.tick_count;
     if (b) {
       score -= 10 * extra_lives;
     }
@@ -333,14 +333,14 @@ void HighScoreModal::render(const ii::ui::UiLayer& ui, ii::render::GlRenderer& r
 
 std::uint64_t HighScoreModal::get_score() const {
   if (results_.mode == ii::game_mode::kBoss) {
-    bool won = results_.killed_bosses >= 6 && results_.elapsed_time != 0;
+    bool won = results_.killed_bosses >= 6 && results_.tick_count != 0;
     if (!won) {
       return 0;
     }
-    if (results_.elapsed_time < 1 + 600 * results_.lives_remaining) {
+    if (results_.tick_count < 1 + 600 * results_.lives_remaining) {
       return 1;
     }
-    return results_.elapsed_time - 600 * results_.lives_remaining;
+    return results_.tick_count - 600 * results_.lives_remaining;
   }
   std::uint64_t total = 0;
   for (const auto& p : results_.players) {
@@ -522,7 +522,7 @@ void GameModal::render(const ii::ui::UiLayer& ui, ii::render::GlRenderer& r) con
 
   if (render.mode == ii::game_mode::kBoss) {
     ss.str({});
-    ss << convert_to_time(render.elapsed_time);
+    ss << convert_to_time(render.tick_count);
     render_text(r, {kDimensions.x / (2 * kTextSize.x) - ss.str().size() - 1.f, 1.f}, ss.str(),
                 z0Game::kPanelTran);
   }

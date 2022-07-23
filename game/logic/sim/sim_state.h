@@ -24,7 +24,6 @@ public:
   void update();
   void render() const;
   std::uint32_t frame_count() const;
-  std::uint64_t tick_count() const;
   bool game_over() const;
 
   void clear_output();

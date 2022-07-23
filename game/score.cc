@@ -2,6 +2,7 @@
 #include "game/flags.h"
 #include "game/io/file/std_filesystem.h"
 #include "game/logic/sim/sim_state.h"
+#include "game/replay_tools.h"
 #include <iostream>
 #include <optional>
 #include <string>
@@ -12,34 +13,27 @@ namespace {
 
 bool run(std::optional<std::uint64_t> check, const std::string& replay_path) {
   io::StdFilesystem fs{".", ".", "."};
-  auto result = fs.read(replay_path);
-  if (!result) {
-    std::cerr << result.error() << std::endl;
+  auto replay_bytes = fs.read(replay_path);
+  if (!replay_bytes) {
+    std::cerr << replay_bytes.error() << std::endl;
     return false;
   }
-  auto reader = ReplayReader::create(*result);
-  if (!reader) {
-    std::cerr << reader.error() << std::endl;
+  auto results = replay_results(*replay_bytes, /* max ticks */ std::nullopt);
+  if (!results) {
+    std::cerr << results.error() << std::endl;
     return false;
   }
-  ReplayInputAdapter input{*reader};
-  SimState sim{reader->initial_conditions(), input};
-  while (!sim.game_over()) {
-    sim.update();
-    sim.clear_output();
-  }
-  auto results = sim.get_results();
   if (check) {
-    if (*check != results.score) {
-      std::cerr << "check failed: expected score " << *check << ", was " << results.score << " at "
-                << (100 * static_cast<float>(reader->current_input_frame()) /
-                    reader->total_input_frames())
-                << "% of input" << std::endl;
+    if (*check != results->sim.score) {
+      std::cerr
+          << "check failed: expected score " << *check << ", was " << results->sim.score << " at "
+          << (100 * static_cast<float>(results->replay_frames_read) / results->replay_frames_total)
+          << "% of input" << std::endl;
       return false;
     }
     return true;
   }
-  std::cout << results.score << std::endl;
+  std::cout << results->sim.score << std::endl;
   return true;
 }
 
