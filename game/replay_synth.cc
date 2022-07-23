@@ -267,5 +267,5 @@ int main(int argc, char** argv) {
     std::cerr << "error: invalid positional argument" << std::endl;
     return 1;
   }
-  return ii::run(options);
+  return ii::run(options) ? 0 : 1;
 }

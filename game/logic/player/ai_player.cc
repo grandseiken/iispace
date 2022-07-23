@@ -88,8 +88,7 @@ input_frame AiPlayer::think(ecs::const_handle h, const Transform& transform, con
         auto offset = p_transform.centre - transform.centre;
         auto distance = length(offset);
         if ((powerup.type == powerup_type::kBomb || powerup.type == powerup_type::kShield) &&
-                player.has_bomb ||
-            player.has_shield) {
+            (player.has_bomb || player.has_shield)) {
           if (distance < kAvoidDistance && !avoid_v) {
             avoid_v = -offset / (distance * distance);
           }

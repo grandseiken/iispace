@@ -35,8 +35,7 @@ build:clang-cl --config=clang-common
 build:clang-cl --compiler=clang-cl
 build:clang-cl --cc_output_directory_tag=clang
 
-build:ubsan-cl --config=windows-common
-build:ubsan-cl --config=clang-common
+build:ubsan-cl --config=clang-cl
 build:ubsan-cl --cc_output_directory_tag=ubsan
 build:ubsan-cl --copt=-fsanitize=undefined
 build:ubsan-cl --copt=/MT

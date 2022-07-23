@@ -21,8 +21,6 @@ constexpr std::uint32_t kBaseGroupsPerBoss = 4;
 
 class formation_base {
 public:
-  static std::vector<Overmind::entry> static_formations;
-
   virtual ~formation_base() = default;
   virtual void operator()() = 0;
 
@@ -114,8 +112,6 @@ private:
   std::uint32_t power_ = 0;
   std::uint32_t* hard_already_ = nullptr;
 };
-
-std::vector<Overmind::entry> formation_base::static_formations;
 
 Overmind::Overmind(SimInterface& sim) : sim_{sim}, stars_{std::make_unique<Stars>()} {
   add_formations();
@@ -424,25 +420,11 @@ void Overmind::boss_mode_boss() {
 //------------------------------
 template <std::uint32_t I, typename F, std::uint32_t C, std::uint32_t R = 0>
 struct formation : formation_base {
-  static std::unique_ptr<F> function;
-  struct init_t {
-    init_t() {
-      function = std::make_unique<F>();
-      static_formations.emplace_back(Overmind::entry{I, C, R, function.get()});
-    }
-    // Ensure static initialisation.
-    void operator()() {}
-  };
-
-  static init_t init_v;
-  static void init() {
-    init_v();
+  static void init(std::vector<Overmind::entry>& formations) {
+    static thread_local F formation;
+    formations.emplace_back(Overmind::entry{I, C, R, &formation});
   }
 };
-template <std::uint32_t I, typename F, std::uint32_t C, std::uint32_t R>
-std::unique_ptr<F> formation<I, F, C, R>::function;
-template <std::uint32_t I, typename F, std::uint32_t C, std::uint32_t R>
-typename formation<I, F, C, R>::init_t formation<I, F, C, R>::init_v;
 
 struct square1 : formation<0, square1, 4> {
   void operator()() override {
@@ -1058,61 +1040,63 @@ struct shielder1side : formation<49, shielder1side, 5, 22> {
   }
 };
 
-void Overmind::add_formations() {
-  square1::init();
-  square2::init();
-  square3::init();
-  square1side::init();
-  square2side::init();
-  square3side::init();
-  wall1::init();
-  wall2::init();
-  wall3::init();
-  wall1side::init();
-  wall2side::init();
-  wall3side::init();
-  follow1::init();
-  follow2::init();
-  follow3::init();
-  follow1side::init();
-  follow2side::init();
-  follow3side::init();
-  chaser1::init();
-  chaser2::init();
-  chaser3::init();
-  chaser4::init();
-  chaser1side::init();
-  chaser2side::init();
-  chaser3side::init();
-  chaser4side::init();
-  hub1::init();
-  hub2::init();
-  hub1side::init();
-  hub2side::init();
-  mixed1::init();
-  mixed2::init();
-  mixed3::init();
-  mixed4::init();
-  mixed5::init();
-  mixed6::init();
-  mixed7::init();
-  mixed1side::init();
-  mixed2side::init();
-  mixed3side::init();
-  mixed4side::init();
-  mixed5side::init();
-  mixed6side::init();
-  mixed7side::init();
-  tractor1::init();
-  tractor2::init();
-  tractor1side::init();
-  tractor2side::init();
-  shielder1::init();
-  shielder1side::init();
+template <typename F>
+void init(std::vector<Overmind::entry>& entries) {
+  entries.emplace_back(F::init());
+}
 
-  for (const auto& f : formation_base::static_formations) {
-    formations_.emplace_back(f);
-  }
+void Overmind::add_formations() {
+  square1::init(formations_);
+  square2::init(formations_);
+  square3::init(formations_);
+  square1side::init(formations_);
+  square2side::init(formations_);
+  square3side::init(formations_);
+  wall1::init(formations_);
+  wall2::init(formations_);
+  wall3::init(formations_);
+  wall1side::init(formations_);
+  wall2side::init(formations_);
+  wall3side::init(formations_);
+  follow1::init(formations_);
+  follow2::init(formations_);
+  follow3::init(formations_);
+  follow1side::init(formations_);
+  follow2side::init(formations_);
+  follow3side::init(formations_);
+  chaser1::init(formations_);
+  chaser2::init(formations_);
+  chaser3::init(formations_);
+  chaser4::init(formations_);
+  chaser1side::init(formations_);
+  chaser2side::init(formations_);
+  chaser3side::init(formations_);
+  chaser4side::init(formations_);
+  hub1::init(formations_);
+  hub2::init(formations_);
+  hub1side::init(formations_);
+  hub2side::init(formations_);
+  mixed1::init(formations_);
+  mixed2::init(formations_);
+  mixed3::init(formations_);
+  mixed4::init(formations_);
+  mixed5::init(formations_);
+  mixed6::init(formations_);
+  mixed7::init(formations_);
+  mixed1side::init(formations_);
+  mixed2side::init(formations_);
+  mixed3side::init(formations_);
+  mixed4side::init(formations_);
+  mixed5side::init(formations_);
+  mixed6side::init(formations_);
+  mixed7side::init(formations_);
+  tractor1::init(formations_);
+  tractor2::init(formations_);
+  tractor1side::init(formations_);
+  tractor2side::init(formations_);
+  shielder1::init(formations_);
+  shielder1side::init(formations_);
+
   auto id_sort = [](const entry& a, const entry& b) { return a.id < b.id; };
   auto cost_sort = [](const entry& a, const entry& b) { return a.cost < b.cost; };
   // Sort by ID first for backwards compatibility.
