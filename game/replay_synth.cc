@@ -205,105 +205,95 @@ bool run(const options_t& options) {
 int main(int argc, char** argv) {
   ii::options_t options;
   auto args = ii::args_init(argc, argv);
-  auto players = ii::flag_parse<std::uint32_t>(args, "players", /* required */ true);
-  if (!players) {
-    std::cerr << players.error() << std::endl;
+  if (auto result = ii::flag_parse<std::uint32_t>(args, "players", options.player_count); !result) {
+    std::cerr << result.error() << std::endl;
     return 1;
   }
-  options.player_count = **players;
-  if (!options.player_count || options.player_count > 4) {
+  if (!options.player_count) {
     std::cerr << "error: invalid player count" << std::endl;
     return 1;
   }
 
-  auto runs = ii::flag_parse<std::uint32_t>(args, "runs");
-  if (!runs) {
-    std::cerr << runs.error() << std::endl;
+  if (auto result = ii::flag_parse<std::uint32_t>(args, "runs", options.runs, 1u); !result) {
+    std::cerr << result.error() << std::endl;
     return 1;
   }
-  options.runs = runs->value_or(1);
   if (!options.runs) {
     std::cerr << "error: invalid run count" << std::endl;
     return 1;
   }
 
-  auto seed = ii::flag_parse<std::uint32_t>(args, "seed");
-  if (!seed) {
-    std::cerr << seed.error() << std::endl;
+  if (auto result = ii::flag_parse<std::uint32_t>(args, "seed", options.seed); !result) {
+    std::cerr << result.error() << std::endl;
     return 1;
   }
-  options.seed = *seed;
 
-  auto max_ticks = ii::flag_parse<std::uint64_t>(args, "max_ticks");
-  if (!max_ticks) {
-    std::cerr << max_ticks.error() << std::endl;
+  if (auto result =
+          ii::flag_parse<std::uint64_t>(args, "max_ticks", options.max_ticks, 1024u * 1024u);
+      !result) {
+    std::cerr << result.error() << std::endl;
     return 1;
   }
-  options.max_ticks = max_ticks->value_or(1024u * 1024u);
 
-  auto mode = ii::flag_parse<std::string>(args, "mode");
-  if (!mode) {
-    std::cerr << mode.error() << std::endl;
+  std::optional<std::string> mode;
+  if (auto result = ii::flag_parse<std::string>(args, "mode", mode); !result) {
+    std::cerr << result.error() << std::endl;
     return 1;
   }
-  if (mode && *mode) {
-    if (**mode == "normal") {
+  if (mode) {
+    if (*mode == "normal") {
       options.mode = ii::game_mode::kNormal;
-    } else if (**mode == "hard") {
+    } else if (*mode == "hard") {
       options.mode = ii::game_mode::kHard;
-    } else if (**mode == "boss") {
+    } else if (*mode == "boss") {
       options.mode = ii::game_mode::kBoss;
-    } else if (**mode == "what") {
+    } else if (*mode == "what") {
       options.mode = ii::game_mode::kWhat;
     } else {
-      std::cerr << "error: unknown mode " << **mode << std::endl;
+      std::cerr << "error: unknown mode " << *mode << std::endl;
       return 1;
     }
   }
 
-  auto can_face_secret_boss = ii::flag_parse<bool>(args, "can_face_secret_boss");
-  if (!can_face_secret_boss) {
-    std::cerr << can_face_secret_boss.error() << std::endl;
+  if (auto result =
+          ii::flag_parse<bool>(args, "can_face_secret_boss", options.can_face_secret_boss, false);
+      !result) {
+    std::cerr << result.error() << std::endl;
     return 1;
   }
-  options.can_face_secret_boss = can_face_secret_boss->value_or(false);
 
-  auto find_boss_kills = ii::flag_parse<std::uint64_t>(args, "find_boss_kills");
-  if (!find_boss_kills) {
-    std::cerr << mode.error() << std::endl;
+  std::uint64_t find_boss_kills = 0;
+  if (auto result = ii::flag_parse<std::uint64_t>(args, "find_boss_kills", find_boss_kills, 0u);
+      !result) {
+    std::cerr << result.error() << std::endl;
     return 1;
   }
-  options.find_boss_kills = static_cast<ii::boss_flag>(find_boss_kills->value_or(0));
+  options.find_boss_kills = static_cast<ii::boss_flag>(find_boss_kills);
 
-  auto verify = ii::flag_parse<bool>(args, "verify");
-  if (!verify) {
-    std::cerr << verify.error() << std::endl;
+  if (auto result = ii::flag_parse<bool>(args, "verify", options.verify, false); !result) {
+    std::cerr << result.error() << std::endl;
     return 1;
   }
-  options.verify = verify->value_or(false);
 
-  auto save_ticks_exceeded = ii::flag_parse<bool>(args, "save_ticks_exceeded");
-  if (!save_ticks_exceeded) {
-    std::cerr << save_ticks_exceeded.error() << std::endl;
+  if (auto result =
+          ii::flag_parse<bool>(args, "save_ticks_exceeded", options.save_ticks_exceeded, false);
+      !result) {
+    std::cerr << result.error() << std::endl;
     return 1;
   }
-  options.save_ticks_exceeded = save_ticks_exceeded->value_or(false);
 
-  auto multithreaded = ii::flag_parse<bool>(args, "multithreaded");
-  if (!multithreaded) {
-    std::cerr << mode.error() << std::endl;
+  bool multithreaded = false;
+  if (auto result = ii::flag_parse<bool>(args, "multithreaded", multithreaded, false); !result) {
+    std::cerr << result.error() << std::endl;
     return 1;
   }
-  options.thread_count = multithreaded->value_or(false)
-      ? std::max<std::uint32_t>(1u, std::thread::hardware_concurrency() - 1u)
-      : 1u;
+  options.thread_count =
+      multithreaded ? std::max<std::uint32_t>(1u, std::thread::hardware_concurrency() - 1u) : 1u;
 
-  auto output_path = ii::flag_parse<std::string>(args, "output");
-  if (!output_path) {
-    std::cerr << mode.error() << std::endl;
+  if (auto result = ii::flag_parse<std::string>(args, "output", options.replay_out_path); !result) {
+    std::cerr << result.error() << std::endl;
     return 1;
   }
-  options.replay_out_path = *output_path;
 
   if (auto result = ii::args_finish(args); !result) {
     std::cerr << result.error() << std::endl;

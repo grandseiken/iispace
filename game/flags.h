@@ -32,23 +32,22 @@ inline std::vector<std::string> args_init(int argc, char** argv) {
 }
 
 template <typename T>
-result<std::optional<T>>
-flag_parse(std::vector<std::string>& args, const std::string& name, bool required = false) {
+result<void>
+flag_parse(std::vector<std::string>& args, const std::string& name, std::optional<T>& out_value) {
   if constexpr (std::is_same_v<T, bool>) {
     for (auto it = args.begin(); it != args.end(); ++it) {
       if (*it == "--" + name) {
         args.erase(it);
-        return std::make_optional(true);
+        out_value = true;
+        return {};
       }
       if (*it == "--no-" + name) {
         args.erase(it);
-        return std::make_optional(false);
+        out_value = false;
+        return {};
       }
     }
-    if (required) {
-      return unexpected("error: flag --" + name + " (or --no-" + name + ") must be specified");
-    }
-    return std::nullopt;
+    return {};
   } else {
     for (auto it = args.begin(); it != args.end(); ++it) {
       if (*it != "--" + name) {
@@ -58,19 +57,37 @@ flag_parse(std::vector<std::string>& args, const std::string& name, bool require
       if (++jt == args.end()) {
         return unexpected("error: flag --" + name + " requires a value");
       }
-      auto value = flag_parse_value<T>(*jt);
-      if (!value) {
+      auto parse_value = flag_parse_value<T>(*jt);
+      if (!parse_value) {
         return unexpected("error: couldn't parse value " + *jt + " for flag --" + name);
       }
       ++jt;
       args.erase(it, jt);
-      return value;
+      out_value = std::move(parse_value);
+      return {};
     }
-    if (required) {
+    return {};
+  }
+}
+
+template <typename T>
+result<void> flag_parse(std::vector<std::string>& args, const std::string& name, T& out_value,
+                        const std::optional<T>& default_value = std::nullopt) {
+  std::optional<T> optional_value;
+  if (auto result = flag_parse(args, name, optional_value); !result) {
+    return result;
+  }
+  if (!optional_value) {
+    if (default_value) {
+      optional_value = default_value;
+    } else if constexpr (std::is_same_v<T, bool>) {
+      return unexpected("error: flag --" + name + " (or --no-" + name + ") must be specified");
+    } else {
       return unexpected("error: flag --" + name + " must be specified");
     }
-    return std::nullopt;
   }
+  out_value = std::move(*optional_value);
+  return {};
 }
 
 inline result<void> args_finish(const std::vector<std::string>& args) {

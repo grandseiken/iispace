@@ -131,7 +131,7 @@ Overmind::Overmind(SimInterface& sim) : sim_{sim}, stars_{std::make_unique<Stars
   if (sim_.conditions().mode == game_mode::kBoss) {
     return;
   }
-  power_ = kInitialPower + 2 - sim_.player_count() * 2;
+  power_ = kInitialPower + 2 - std::min(4u, sim_.player_count()) * 2;
   if (sim_.conditions().mode == game_mode::kHard) {
     power_ += 20;
     waves_total_ = 15;
@@ -198,7 +198,7 @@ void Overmind::update() {
         spawn_boss_reward();
         ++boss_mod_fights_;
         power_ += 2;
-        power_ -= 2 * sim_.player_count();
+        power_ -= 2 * std::min(4u, sim_.player_count());
         boss_rest_timer_ = kBossRestTime;
         bosses_to_go_ = 0;
       } else {

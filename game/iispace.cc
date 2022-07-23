@@ -153,12 +153,11 @@ bool run(const std::vector<std::string>& args, const game_options_t& options) {
 int main(int argc, char** argv) {
   auto args = ii::args_init(argc, argv);
   ii::game_options_t options;
-  auto ai_count = ii::flag_parse<std::uint32_t>(args, "ai_count");
-  if (!ai_count) {
-    std::cerr << ai_count.error() << std::endl;
+  if (auto result = ii::flag_parse<std::uint32_t>(args, "ai_count", options.ai_count, 0u);
+      !result) {
+    std::cerr << result.error() << std::endl;
     return 1;
   }
-  options.ai_count = ai_count->value_or(0u);
   if (auto result = ii::args_finish(args); !result) {
     std::cerr << result.error() << std::endl;
     return 1;

@@ -42,9 +42,9 @@ bool run(std::optional<std::uint64_t> check, const std::string& replay_path) {
 
 int main(int argc, char** argv) {
   auto args = ii::args_init(argc, argv);
-  auto check = ii::flag_parse<std::uint64_t>(args, "check");
-  if (!check) {
-    std::cerr << check.error() << std::endl;
+  std::optional<std::uint64_t> check;
+  if (auto result = ii::flag_parse<std::uint64_t>(args, "check", check); !result) {
+    std::cerr << result.error() << std::endl;
     return 1;
   }
   if (auto result = ii::args_finish(args); !result) {
