@@ -16,10 +16,14 @@ namespace {
 
 struct options_t {
   game_mode mode = game_mode::kNormal;
+  bool can_face_secret_boss = false;
   std::uint32_t player_count = 0;
   std::uint32_t runs = 0;
+  std::optional<std::uint32_t> seed;
 
   bool verify = false;
+  bool save_ticks_exceeded = false;
+  boss_flag find_boss_kills{0};
   std::uint64_t max_ticks = 0;
   std::uint32_t thread_count = 0;
   std::optional<std::string> replay_out_path;
@@ -52,6 +56,7 @@ do_run(const options_t& options, std::uint32_t run_index, const initial_conditio
     }
     std::cout << "ticks:\t" << run_result->ticks << std::endl;
     std::cout << "score:\t" << run_result->score << std::endl;
+    std::cout << "kills:\t" << +run_result->bosses_killed << std::endl;
   }
 
   if (options.verify) {
@@ -82,6 +87,16 @@ bool run(const options_t& options) {
   io::StdFilesystem fs{".", ".", "."};
 
   auto better_than = [&](const run_data_t& a, const run_data_t& b) {
+    if (options.find_boss_kills != boss_flag{0}) {
+      if (+(a.bosses_killed & options.find_boss_kills) >
+          +(b.bosses_killed & options.find_boss_kills)) {
+        return true;
+      }
+      if (+(a.bosses_killed & options.find_boss_kills) <
+          +(b.bosses_killed & options.find_boss_kills)) {
+        return false;
+      }
+    }
     if (options.mode != game_mode::kBoss) {
       return a.score > b.score;
     }
@@ -101,8 +116,10 @@ bool run(const options_t& options) {
   for (std::uint32_t i = 0; i < options.runs; ++i) {
     initial_conditions conditions;
     conditions.mode = options.mode;
+    conditions.can_face_secret_boss = true;
     conditions.player_count = options.player_count;
-    conditions.seed = std::uniform_int_distribution<std::uint32_t>{}(engine);
+    conditions.seed =
+        options.seed ? *options.seed : std::uniform_int_distribution<std::uint32_t>{}(engine);
     run_conditions.emplace_back(conditions);
   }
 
@@ -121,12 +138,13 @@ bool run(const options_t& options) {
       if (data->ticks >= options.max_ticks) {
         std::cout << "run #" << (run_index + 1) << " max ticks exceeded!" << std::endl;
       } else {
-        std::cout << "run #" << (run_index + 1) << " finished with ticks " << data->ticks
-                  << " score " << data->score << std::endl;
+        std::cout << "run #" << (run_index + 1) << " [seed " << run_conditions[run_index].seed
+                  << "] finished with ticks " << data->ticks << " score " << data->score
+                  << " kills " << +data->bosses_killed << std::endl;
       }
     }
 
-    if (data->ticks >= options.max_ticks && data->replay_bytes) {
+    if (data->ticks >= options.max_ticks && data->replay_bytes && options.save_ticks_exceeded) {
       auto path = "exceeded" + std::to_string(run_index + 1) + ".wrp";
       auto write_result = fs.write(path, *data->replay_bytes);
       if (!write_result) {
@@ -167,7 +185,8 @@ bool run(const options_t& options) {
     if (options.runs > 1) {
       std::cout << "========================" << std::endl;
       std::cout << "best run #" << (best_run_index + 1) << ": ticks " << best_run->ticks
-                << " score " << best_run->score << std::endl;
+                << " score " << best_run->score << " kills " << +best_run->bosses_killed
+                << std::endl;
     }
     auto write_result = fs.write(*options.replay_out_path, *best_run->replay_bytes);
     if (!write_result) {
@@ -208,6 +227,13 @@ int main(int argc, char** argv) {
     return 1;
   }
 
+  auto seed = ii::flag_parse<std::uint32_t>(args, "seed");
+  if (!seed) {
+    std::cerr << seed.error() << std::endl;
+    return 1;
+  }
+  options.seed = *seed;
+
   auto max_ticks = ii::flag_parse<std::uint64_t>(args, "max_ticks");
   if (!max_ticks) {
     std::cerr << max_ticks.error() << std::endl;
@@ -235,12 +261,33 @@ int main(int argc, char** argv) {
     }
   }
 
-  auto verify = ii::flag_parse<bool>(args, "verify");
-  if (!verify) {
+  auto can_face_secret_boss = ii::flag_parse<bool>(args, "can_face_secret_boss");
+  if (!can_face_secret_boss) {
+    std::cerr << can_face_secret_boss.error() << std::endl;
+    return 1;
+  }
+  options.can_face_secret_boss = can_face_secret_boss->value_or(false);
+
+  auto find_boss_kills = ii::flag_parse<std::uint64_t>(args, "find_boss_kills");
+  if (!find_boss_kills) {
     std::cerr << mode.error() << std::endl;
     return 1;
   }
+  options.find_boss_kills = static_cast<ii::boss_flag>(find_boss_kills->value_or(0));
+
+  auto verify = ii::flag_parse<bool>(args, "verify");
+  if (!verify) {
+    std::cerr << verify.error() << std::endl;
+    return 1;
+  }
   options.verify = verify->value_or(false);
+
+  auto save_ticks_exceeded = ii::flag_parse<bool>(args, "save_ticks_exceeded");
+  if (!save_ticks_exceeded) {
+    std::cerr << save_ticks_exceeded.error() << std::endl;
+    return 1;
+  }
+  options.save_ticks_exceeded = save_ticks_exceeded->value_or(false);
 
   auto multithreaded = ii::flag_parse<bool>(args, "multithreaded");
   if (!multithreaded) {

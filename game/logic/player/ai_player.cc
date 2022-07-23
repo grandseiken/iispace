@@ -22,6 +22,7 @@ input_frame AiPlayer::think(ecs::const_handle h, const Transform& transform, con
   std::optional<vec2> wall_attract_v;
 
   static constexpr fixed kAvoidDistance = 48;
+  static constexpr fixed kEdgeAvoidDistance = 96;
   static constexpr fixed kAttractDistance = 128;
 
   input_frame frame;
@@ -64,7 +65,8 @@ input_frame AiPlayer::think(ecs::const_handle h, const Transform& transform, con
           if (distance < kAvoidDistance / 2 + size / 2) {
             avoid_urgent = true;
           }
-        } else if (on_screen && !wall && !boss && distance > kAttractDistance + size) {
+        } else if (((on_screen && !wall && !boss) || (!on_screen && boss)) &&
+                   distance > kAttractDistance + size) {
           if (!attract_v) {
             attract_v = vec2{0};
           }
@@ -130,25 +132,46 @@ input_frame AiPlayer::think(ecs::const_handle h, const Transform& transform, con
     target_velocity = normalise(*wall_attract_v);
   }
 
-  if (!avoid_urgent && transform.centre.x < kAvoidDistance) {
-    target_velocity.x = std::max(0_fx, target_velocity.x);
-  }
-  if (!avoid_urgent && transform.centre.x >= kSimDimensions.x - kAvoidDistance) {
-    frame.velocity.x = std::min(0_fx, target_velocity.x);
-  }
-  if (!avoid_urgent && transform.centre.y < kAvoidDistance) {
-    target_velocity.y = std::max(0_fx, target_velocity.y);
-  }
-  if (!avoid_urgent && transform.centre.y >= kSimDimensions.x - kAvoidDistance) {
-    target_velocity.y = std::min(0_fx, target_velocity.y);
-  }
-  if ((transform.centre.x < kAvoidDistance && frame.velocity.x < 0) ||
-      (transform.centre.x >= kSimDimensions.x - kAvoidDistance && frame.velocity.x > 0)) {
+  bool l_edge = transform.centre.x < kEdgeAvoidDistance && target_velocity.x < 0;
+  bool r_edge =
+      transform.centre.x >= kSimDimensions.x - kEdgeAvoidDistance && target_velocity.x > 0;
+  bool u_edge = transform.centre.y < kEdgeAvoidDistance && target_velocity.y < 0;
+  bool d_edge =
+      transform.centre.y >= kSimDimensions.y - kEdgeAvoidDistance && target_velocity.y > 0;
+  if (avoid_v && l_edge && u_edge) {
+    if (abs(target_velocity.x) > abs(target_velocity.y)) {
+      target_velocity.y = 1;
+    } else {
+      target_velocity.x = 1;
+    }
+  } else if (avoid_v && l_edge && d_edge) {
+    if (abs(target_velocity.x) > abs(target_velocity.y)) {
+      target_velocity.y = -1;
+    } else {
+      target_velocity.x = 1;
+    }
+  } else if (avoid_v && r_edge && u_edge) {
+    if (abs(target_velocity.x) > abs(target_velocity.y)) {
+      target_velocity.y = 1;
+    } else {
+      target_velocity.x = -1;
+    }
+  } else if (avoid_v && r_edge && d_edge) {
+    if (abs(target_velocity.x) > abs(target_velocity.y)) {
+      target_velocity.y = -1;
+    } else {
+      target_velocity.x = -1;
+    }
+  } else if (avoid_v && (l_edge || r_edge)) {
     target_velocity.y = target_velocity.y < 0 ? -1 : 1;
-  }
-  if ((transform.centre.y < kAvoidDistance && frame.velocity.y < 0) ||
-      (transform.centre.y >= kSimDimensions.y - kAvoidDistance && frame.velocity.y > 0)) {
+  } else if (avoid_v && (u_edge || d_edge)) {
     target_velocity.x = target_velocity.x < 0 ? -1 : 1;
+  }
+  if (!avoid_urgent && (l_edge || r_edge)) {
+    target_velocity.x = 0;
+  }
+  if (!avoid_urgent && (u_edge || d_edge)) {
+    target_velocity.y = 0;
   }
 
   if (avoid_urgent) {

@@ -8,8 +8,6 @@
 namespace ii {
 namespace {
 
-void super_boss_on_arc_destroy(SimInterface& sim, ecs::entity_id id, std::uint32_t i);
-
 struct SuperBossArc : public ecs::component {
   static constexpr std::uint32_t kBoundingWidth = 640;
   static constexpr std::uint32_t kBaseHp = 75;
@@ -57,7 +55,6 @@ struct SuperBossArc : public ecs::component {
     explode_shapes<shape>(sim, parameters, glm::vec4{1.f}, 36);
     explode_shapes<shape>(sim, parameters, std::nullopt, 48);
     sim.play_sound(sound::kExplosion, std::get<0>(parameters), /* random */ true);
-    super_boss_on_arc_destroy(sim, boss, i);
   }
 };
 
@@ -108,17 +105,22 @@ struct SuperBoss : ecs::component {
   std::uint32_t timer = 0;
   std::uint32_t snakes = 0;
   std::vector<ecs::entity_id> arcs;
-  std::array<bool, 16> destroyed{false};
   std::array<glm::vec4, 8> colours{glm::vec4{0.f}};
 
   void update(ecs::handle h, Transform& transform, SimInterface& sim) {
+    std::vector<bool> destroyed_arcs;
     if (arcs.empty()) {
       for (std::uint32_t i = 0; i < 16; ++i) {
         arcs.push_back(spawn_super_boss_arc(sim, transform.centre, cycle, i, h).id());
+        destroyed_arcs.push_back(false);
       }
     } else {
+      for (auto id : arcs) {
+        auto arc_h = sim.index().get(id);
+        destroyed_arcs.push_back(!arc_h || arc_h->has<Destroy>());
+      }
       for (std::uint32_t i = 0; i < 16; ++i) {
-        if (destroyed[i]) {
+        if (destroyed_arcs[i]) {
           continue;
         }
         sim.index().get(arcs[i])->get<Transform>()->centre = transform.centre;
@@ -185,10 +187,10 @@ struct SuperBoss : ecs::component {
       std::vector<std::uint32_t> wide3;
       std::uint32_t timer = 0;
       for (std::uint32_t i = 0; i < 16; ++i) {
-        if (destroyed[(i + 15) % 16] && destroyed[i] && destroyed[(i + 1) % 16]) {
+        if (destroyed_arcs[(i + 15) % 16] && destroyed_arcs[i] && destroyed_arcs[(i + 1) % 16]) {
           wide3.push_back(i);
         }
-        if (!destroyed[i]) {
+        if (!destroyed_arcs[i]) {
           timer = sim.index().get(arcs[i])->get<SuperBossArc>()->timer;
         }
       }
@@ -196,8 +198,8 @@ struct SuperBoss : ecs::component {
         auto r = sim.random(wide3.size());
         auto arc_h = spawn_super_boss_arc(sim, transform.centre, cycle, wide3[r], h, timer);
         arc_h.get<Transform>()->set_rotation(transform.rotation - (6_fx / 1000));
-        arcs[wide3[r]] = h.id();
-        destroyed[wide3[r]] = false;
+        arcs[wide3[r]] = arc_h.id();
+        destroyed_arcs[wide3[r]] = false;
         sim.play_sound(sound::kEnemySpawn, transform.centre);
       }
     }
@@ -251,12 +253,6 @@ struct SuperBoss : ecs::component {
     }
   }
 };
-
-void super_boss_on_arc_destroy(SimInterface& sim, ecs::entity_id id, std::uint32_t i) {
-  if (auto h = sim.index().get(id)) {
-    h->get<SuperBoss>()->destroyed[i] = true;
-  }
-}
 
 }  // namespace
 

@@ -63,6 +63,7 @@ result<replay_results_t> inline replay_results(std::span<const std::uint8_t> rep
 struct run_data_t {
   std::uint64_t ticks = 0;
   std::uint64_t score = 0;
+  boss_flag bosses_killed{0};
   std::optional<std::vector<std::uint8_t>> replay_bytes;
 };
 
@@ -87,6 +88,8 @@ inline result<run_data_t> synthesize_replay(const initial_conditions& conditions
   run_data_t data;
   data.ticks = results.tick_count;
   data.score = results.score;
+  data.bosses_killed |= results.bosses_killed;
+  data.bosses_killed |= results.hard_mode_bosses_killed;
   if (save_replay || (max_ticks && data.ticks >= *max_ticks)) {
     auto bytes = writer.write();
     if (!bytes) {
