@@ -97,7 +97,7 @@ shape_flag ship_check_point(ecs::const_handle h, const vec2& v, shape_flag mask)
   if constexpr (requires { &Logic::check_point; }) {
     return ecs::call<&Logic::check_point>(h, v, mask);
   } else {
-    return geom::check_point(S{}, get_shape_parameters<Logic>(h), v, mask);
+    return geom::check_point_legacy(S{}, get_shape_parameters<Logic>(h), v, mask);
   }
 }
 
@@ -107,7 +107,13 @@ ecs::handle create_ship(SimInterface& sim, const vec2& position, fixed rotation 
   h.add(Update{.update = ecs::call<&Logic::update>});
   h.add(Transform{.centre = position, .rotation = rotation});
 
-  if constexpr (requires { &Logic::kBoundingWidth; }) {
+  static constexpr bool has_constant_bw = requires {
+    Logic::kBoundingWidth;
+  };
+  static constexpr bool has_function_bw = requires {
+    &Logic::bounding_width;
+  };
+  if constexpr (has_constant_bw || has_function_bw) {
     constexpr auto collision_shape_flags = [&]() constexpr {
       shape_flag result = shape_flag::kNone;
       geom::iterate(
@@ -120,9 +126,15 @@ ecs::handle create_ship(SimInterface& sim, const vec2& position, fixed rotation 
     if constexpr (requires { Logic::kShapeFlags; }) {
       extra_shape_flags |= Logic::kShapeFlags;
     }
+    fixed bounding_width = 0;
+    if constexpr (has_function_bw) {
+      bounding_width = Logic::bounding_width(sim);
+    } else {
+      bounding_width = Logic::kBoundingWidth;
+    }
     if constexpr (+collision_shape_flags || requires { Logic::kShapeFlags; }) {
       h.add(Collision{.flags = collision_shape_flags | extra_shape_flags,
-                      .bounding_width = Logic::kBoundingWidth,
+                      .bounding_width = bounding_width,
                       .check = &ship_check_point<Logic, S>});
     }
   }

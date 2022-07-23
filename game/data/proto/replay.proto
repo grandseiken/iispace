@@ -14,11 +14,31 @@ message PlayerFrame {
 }
 
 message Replay {
+  message GameMode {
+    enum Enum {
+      kNormal = 0;
+      kBoss = 1;
+      kHard = 2;
+      kFast = 3;
+      kWhat = 4;
+    }
+  }
+
+  message CompatibilityLevel {
+    enum Enum {
+      kLegacy = 0;
+      kIispaceV0 = 1;
+    }
+  }
+
   string game_version = 1;
-  uint32 game_mode = 2;
+  CompatibilityLevel.Enum compatibility = 6;
+  GameMode.Enum game_mode = 2;
   uint32 players = 3;
   uint32 seed = 4;
 
-  repeated PlayerFrame player_frame = 5;
+  // Legacy data.
   bool can_face_secret_boss = 99;
+
+  repeated PlayerFrame player_frame = 5;
 }

@@ -609,8 +609,11 @@ void z0Game::update(ii::ui::UiLayer& ui) {
   }
 
   ii::initial_conditions conditions;
+  conditions.compatibility = options_.compatibility;
   conditions.seed = static_cast<std::uint32_t>(time(0));
-  conditions.can_face_secret_boss = mode_unlocked(ui.save_game()) >= ii::game_mode::kFast;
+  if (mode_unlocked(ui.save_game()) >= ii::game_mode::kFast) {
+    conditions.flags |= ii::initial_conditions::flag::kLegacy_CanFaceSecretBoss;
+  }
   conditions.player_count = player_select_;
   conditions.mode = ii::game_mode::kNormal;
 

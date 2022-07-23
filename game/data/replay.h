@@ -21,7 +21,7 @@ public:
 
   static result<ReplayReader> create(std::span<const std::uint8_t> bytes);
   ii::initial_conditions initial_conditions() const;
-  std::optional<ii::input_frame> next_input_frame();
+  std::optional<input_frame> next_input_frame();
 
   std::size_t current_input_frame() const;
   std::size_t total_input_frames() const;
@@ -39,7 +39,7 @@ public:
   ReplayWriter& operator=(ReplayWriter&&) noexcept;
 
   ReplayWriter(const ii::initial_conditions& conditions);
-  void add_input_frame(const ii::input_frame& frame);
+  void add_input_frame(const input_frame& frame);
   result<std::vector<std::uint8_t>> write() const;
   const ii::initial_conditions& initial_conditions() const;
 
@@ -48,15 +48,15 @@ private:
   std::unique_ptr<impl_t> impl_;
 };
 
-class ReplayInputAdapter : public ii::InputAdapter {
+class ReplayInputAdapter : public InputAdapter {
 public:
   ReplayInputAdapter(ReplayReader& replay_reader);
-  std::vector<ii::input_frame>& get() override;
+  std::vector<input_frame>& get() override;
   void next() override {}
 
 private:
   ReplayReader& reader_;
-  std::vector<ii::input_frame> frames_;
+  std::vector<input_frame> frames_;
 };
 
 }  // namespace ii

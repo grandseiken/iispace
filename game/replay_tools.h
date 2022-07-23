@@ -36,6 +36,7 @@ private:
 };
 
 struct replay_results_t {
+  initial_conditions conditions;
   sim_results sim;
   std::size_t replay_frames_read = 0;
   std::size_t replay_frames_total = 0;
@@ -48,12 +49,13 @@ result<replay_results_t> inline replay_results(std::span<const std::uint8_t> rep
     return unexpected(reader.error());
   }
   ReplayInputAdapter input{*reader};
+  replay_results_t results;
+  results.conditions = reader->initial_conditions();
   SimState sim{reader->initial_conditions(), input};
   while (!sim.game_over() && (!max_ticks || sim.get_results().tick_count < *max_ticks)) {
     sim.update();
     sim.clear_output();
   }
-  replay_results_t results;
   results.sim = sim.get_results();
   results.replay_frames_read = reader->current_input_frame();
   results.replay_frames_total = reader->total_input_frames();

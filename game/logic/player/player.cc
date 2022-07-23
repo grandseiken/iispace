@@ -126,7 +126,7 @@ struct Powerup : ecs::component {
         dir = from_polar(sim.random_fixed() * 2 * fixed_c::pi, 1_fx);
       }
 
-      dir = ::rotate(dir, 2 * fixed_c::hundredth * (rotate ? 1 : -1));
+      dir = sim.rotate_compatibility(dir, 2 * fixed_c::hundredth * (rotate ? 1 : -1));
       rotate = sim.random(kRotateTime) ? rotate : !rotate;
     }
     first_frame = false;

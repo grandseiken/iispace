@@ -153,6 +153,23 @@ bool run(const std::vector<std::string>& args, const game_options_t& options) {
 int main(int argc, char** argv) {
   auto args = ii::args_init(argc, argv);
   ii::game_options_t options;
+
+  std::optional<std::string> compatibility;
+  if (auto result = ii::flag_parse<std::string>(args, "compatibility", compatibility); !result) {
+    std::cerr << result.error() << std::endl;
+    return 1;
+  }
+  if (compatibility) {
+    if (*compatibility == "legacy") {
+      options.compatibility = ii::compatibility_level::kLegacy;
+    } else if (*compatibility == "v0") {
+      options.compatibility = ii::compatibility_level::kIispaceV0;
+    } else {
+      std::cerr << "error: unknown compatibility level " << *compatibility << std::endl;
+      return 1;
+    }
+  }
+
   if (auto result = ii::flag_parse<std::uint32_t>(args, "ai_count", options.ai_count, 0u);
       !result) {
     std::cerr << result.error() << std::endl;

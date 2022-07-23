@@ -360,8 +360,8 @@ void Overmind::boss() {
              : boss_mod_fights_ > 1 ? sim_.random(6) == 0
                                     : false);
 
-  if (sim_.conditions().can_face_secret_boss && bosses_to_go_ == 0 && boss_mod_secret_ == 0 &&
-      secret_chance) {
+  if (+(sim_.conditions().flags & initial_conditions::flag::kLegacy_CanFaceSecretBoss) &&
+      bosses_to_go_ == 0 && boss_mod_secret_ == 0 && secret_chance) {
     auto secret_cycle = (std::max<std::uint32_t>(
                              2u, boss_mod_bosses_ + (sim_.conditions().mode == game_mode::kHard)) -
                          2) /

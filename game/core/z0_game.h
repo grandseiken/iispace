@@ -16,6 +16,7 @@ class GameModal;
 
 namespace ii {
 struct game_options_t {
+  compatibility_level compatibility = compatibility_level::kIispaceV0;
   std::uint32_t ai_count = 0;
 };
 }  // namespace ii

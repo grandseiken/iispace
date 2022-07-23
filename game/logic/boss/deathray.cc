@@ -136,7 +136,6 @@ ecs::handle spawn_death_arm(SimInterface& sim, ecs::handle boss, bool is_top, st
 }
 
 struct DeathRayBoss : public ecs::component {
-  static constexpr std::uint32_t kBoundingWidth = 640;
   static constexpr std::uint32_t kBaseHp = 600;
   static constexpr std::uint32_t kArmHp = 100;
   static constexpr std::uint32_t kRayTimer = 100;
@@ -156,6 +155,10 @@ struct DeathRayBoss : public ecs::component {
       geom::box<0, 0, glm::vec4{0.f}>,
       geom::disable_iteration<geom::iterate_centres_t,
                               geom::expand_range<fixed, 1, 12, edge_shape>>>;
+
+  static std::uint32_t bounding_width(const SimInterface& sim) {
+    return sim.conditions().compatibility == compatibility_level::kLegacy ? 640 : 140;
+  }
 
   std::vector<ecs::entity_id> arms;
   std::uint32_t timer = kTimer * 2;
@@ -305,7 +308,7 @@ struct DeathRayBoss : public ecs::component {
     for (std::size_t i = 0; i < shot_queue.size(); ++i) {
       if (!going_fast || shot_timer % 2) {
         auto n = shot_queue[i].first;
-        vec2 d = rotate(vec2{1, 0}, transform.rotation + n * fixed_c::pi / 6);
+        vec2 d = sim.rotate_compatibility(vec2{1, 0}, transform.rotation + n * fixed_c::pi / 6);
         spawn_boss_shot(sim, transform.centre + d * 120, d * 5, c1);
       }
       shot_queue[i].second--;

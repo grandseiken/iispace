@@ -56,8 +56,8 @@ struct FollowHub : ecs::component {
         : transform.centre.x > kSimDimensions.x ? vec2{-1, 0}
         : transform.centre.y < 0                ? vec2{0, 1}
         : transform.centre.y > kSimDimensions.y ? vec2{0, -1}
-        : count > 3                             ? (count = 0, rotate(dir, -fixed_c::pi / 2))
-                                                : dir;
+        : count > 3 ? (count = 0, sim.rotate_compatibility(dir, -fixed_c::pi / 2))
+                    : dir;
 
     auto s = power_a ? fixed_c::hundredth * 5 + fixed_c::tenth : fixed_c::hundredth * 5;
     transform.rotate(s);
@@ -128,10 +128,11 @@ struct Shielder : ecs::component {
 
     fixed speed = kSpeed + (power ? fixed_c::tenth * 3 : fixed_c::tenth * 2) * (16 - health.hp);
     if (rotate) {
-      auto d = ::rotate(dir, (rdir ? 1 : -1) * (kTimer - timer) * fixed_c::pi / (2 * kTimer));
+      auto d = sim.rotate_compatibility(
+          dir, (rdir ? 1 : -1) * (kTimer - timer) * fixed_c::pi / (2 * kTimer));
       if (!--timer) {
         rotate = false;
-        dir = ::rotate(dir, (rdir ? 1 : -1) * fixed_c::pi / 2);
+        dir = sim.rotate_compatibility(dir, (rdir ? 1 : -1) * fixed_c::pi / 2);
       }
       transform.move(d * speed);
     } else {

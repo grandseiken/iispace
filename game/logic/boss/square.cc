@@ -7,8 +7,6 @@ namespace ii {
 namespace {
 
 struct BigSquareBoss : public ecs::component {
-  static constexpr std::uint32_t kBoundingWidth = 640;
-
   static constexpr std::uint32_t kBaseHp = 400;
   static constexpr std::uint32_t kTimer = 100;
   static constexpr std::uint32_t kSTimer = 80;
@@ -30,6 +28,10 @@ struct BigSquareBoss : public ecs::component {
       rotate_s<5, geom::ngon<80, 4, c0>, geom::ngon<75, 4, c1>>,
       rotate_s<-6, geom::polygon<60, 4, c0, shape_flag::kVulnerable>,
                geom::polygon<55, 4, c2, shape_flag::kShield>>>;
+
+  static std::uint32_t bounding_width(const SimInterface& sim) {
+    return sim.conditions().compatibility == compatibility_level::kLegacy ? 640 : 150;
+  }
 
   vec2 dir{0, -1};
   bool reverse = false;
@@ -63,11 +65,11 @@ struct BigSquareBoss : public ecs::component {
       } else if (!special_timer) {
         vec2 d(kSpecialAttackRadius, 0);
         if (special_attack_rotate) {
-          d = rotate(d, fixed_c::pi / 2);
+          d = sim.rotate_compatibility(d, fixed_c::pi / 2);
         }
         for (std::uint32_t i = 0; i < 6; ++i) {
           spawn_follow(sim, ph.get<Transform>()->centre + d, /* score */ false, fixed_c::pi / 4);
-          d = rotate(d, 2 * fixed_c::pi / 6);
+          d = sim.rotate_compatibility(d, 2 * fixed_c::pi / 6);
         }
         attack_player.reset();
         sim.play_sound(sound::kEnemySpawn, ph.get<Transform>()->centre);
@@ -114,12 +116,12 @@ struct BigSquareBoss : public ecs::component {
     if ((special_timer / 4) % 2 && attack_player) {
       vec2 d{kSpecialAttackRadius, 0};
       if (special_attack_rotate) {
-        d = rotate(d, fixed_c::pi / 2);
+        d = sim.rotate_compatibility(d, fixed_c::pi / 2);
       }
       for (std::uint32_t i = 0; i < 6; ++i) {
         auto v = sim.index().get(*attack_player)->get<Transform>()->centre + d;
         render_shape<follow_shape>(sim, std::tuple{v});
-        d = rotate(d, 2 * fixed_c::pi / 6);
+        d = sim.rotate_compatibility(d, 2 * fixed_c::pi / 6);
       }
     }
   }

@@ -70,10 +70,10 @@ struct Follow : ecs::component {
     if (!is_big_follow || type == damage_type::kBomb) {
       return;
     }
-    vec2 d = rotate(vec2{10, 0}, transform.rotation);
+    vec2 d = sim.rotate_compatibility(vec2{10, 0}, transform.rotation);
     for (std::uint32_t i = 0; i < 3; ++i) {
       spawn_follow(sim, transform.centre + d, enemy.score_reward != 0);
-      d = rotate(d, 2 * fixed_c::pi / 3);
+      d = sim.rotate_compatibility(d, 2 * fixed_c::pi / 3);
     }
   }
 };

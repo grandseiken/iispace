@@ -205,12 +205,15 @@ struct GhostBoss : ecs::component {
     inner_ring_rotation = normalise_angle(inner_ring_rotation + 2 * fixed_c::hundredth);
     outer_ball_rotation = normalise_angle(outer_ball_rotation - fixed_c::tenth);
     for (std::uint32_t n = 0; n < 5; ++n) {
-      // This reproduces _behaviour_ of old code. However, old code had a bug that _rendered_
-      // as if m was simply (n % 2 ? 3 : 5), which looked way cooler, but also you could get
-      // hit by nothing. This is fixed but looks less cool.
-      // TODO: should actually use the cooler version. It happens not to break current test
-      // replays...
-      std::uint32_t m = !n ? 5 : n % 2 ? 3 : 4;
+      std::uint32_t m = 0;
+      // Compatibility with legacy bug that incorrectly positioned collision shapes.
+      // Now looks correct (but less cool than supposed to) in legacy mode.
+      // Fixed to work as intended otherwise.
+      if (sim.conditions().compatibility == compatibility_level::kLegacy) {
+        m = !n ? 5 : n % 2 ? 3 : 4;
+      } else {
+        m = n % 2 ? 3 : 5;
+      }
       outer_rotation[n] = normalise_angle(outer_rotation[n] + m * fixed_c::hundredth +
                                           ((n % 2 ? 3_fx : -3_fx) / 2000) * n);
     }
@@ -374,29 +377,30 @@ struct GhostBoss : ecs::component {
     if (!collision_enabled) {
       return shape_flag::kNone;
     }
-    result |=
-        geom::check_point(standard_transform<centre_shape>{}, shape_parameters(transform), v, mask);
+    result |= geom::check_point_legacy(standard_transform<centre_shape>{},
+                                       shape_parameters(transform), v, mask);
     if (box_attack_shape_enabled) {
-      result |= geom::check_point(box_attack_shape{}, box_attack_parameters(transform), v, mask);
+      result |=
+          geom::check_point_legacy(box_attack_shape{}, box_attack_parameters(transform), v, mask);
     }
     if (+(mask & (shape_flag::kDangerous | shape_flag::kEnemyInteraction))) {
-      auto v_n = rotate(v - transform.centre, -transform.rotation - outer_rotation[0]);
+      auto v_n = rotate_legacy(v - transform.centre, -transform.rotation - outer_rotation[0]);
       for (std::uint32_t i = 0; i < 16; ++i) {
-        auto v_i = rotate(v_n - outer_shape_d(0, i), -outer_ball_rotation);
-        result |= geom::check_point(
+        auto v_i = rotate_legacy(v_n - outer_shape_d(0, i), -outer_ball_rotation);
+        result |= geom::check_point_legacy(
             geom::ball_collider<16, shape_flag::kDangerous | shape_flag::kEnemyInteraction>{},
             std::tuple<>{}, v_i, mask);
       }
     }
     for (std::uint32_t n = 1; n < 5 && +(mask & shape_flag::kDangerous); ++n) {
-      auto v_n = rotate(v - transform.centre, -transform.rotation - outer_rotation[n]);
+      auto v_n = rotate_legacy(v - transform.centre, -transform.rotation - outer_rotation[n]);
       for (std::uint32_t i = 0; i < 16 + n * 6; ++i) {
         if (!outer_dangerous[n][i] || !danger_enable) {
           continue;
         }
-        auto v_i = rotate(v_n - outer_shape_d(n, i), -outer_ball_rotation);
-        result |= geom::check_point(geom::ball_collider<9, shape_flag::kDangerous>{},
-                                    std::tuple<>{}, v_i, mask);
+        auto v_i = rotate_legacy(v_n - outer_shape_d(n, i), -outer_ball_rotation);
+        result |= geom::check_point_legacy(geom::ball_collider<9, shape_flag::kDangerous>{},
+                                           std::tuple<>{}, v_i, mask);
       }
     }
     return result;

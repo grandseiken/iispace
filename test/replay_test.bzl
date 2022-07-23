@@ -27,7 +27,7 @@ def replay_test(replay = "", score = 0, **kwargs):
   _replay_test(
     name = "test_%s" % replay,
     deps = [":%s" % replay],
-    args = ["--check", "%s" % score, "$(location :%s)" % replay],
+    args = ["--verify_score", "%s" % score, "$(location :%s)" % replay],
     size = "small",
     **kwargs,
   )

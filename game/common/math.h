@@ -34,19 +34,19 @@ inline constexpr T length_squared(const glm::vec<2, T>& v) {
 
 template <typename T>
 inline constexpr T length(const glm::vec<2, T>& v) {
-  using namespace std;
+  using std::sqrt;
   return sqrt(v.x * v.x + v.y * v.y);
 }
 
 template <typename T>
 inline constexpr T angle(const glm::vec<2, T>& v) {
-  using namespace std;
+  using std::atan2;
   return atan2(v.y, v.x);
 }
 
 template <typename T>
 inline constexpr glm::vec<2, T> normalise(const glm::vec<2, T>& v) {
-  using namespace std;
+  using std::sqrt;
   if (v == glm::vec<2, T>{0}) {
     return v;
   }
@@ -55,13 +55,26 @@ inline constexpr glm::vec<2, T> normalise(const glm::vec<2, T>& v) {
 
 template <typename T>
 inline constexpr glm::vec<2, T> from_polar(T theta, T length) {
-  using namespace std;
+  using std::cos;
+  using std::sin;
   return length * glm::vec<2, T>{cos(theta), sin(theta)};
 }
 
 template <typename T>
 inline constexpr glm::vec<2, T> rotate(const glm::vec<2, T>& v, T theta) {
-  using namespace std;
+  using std::cos;
+  using std::sin;
+  if (!theta) {
+    return v;
+  }
+  auto c = cos(theta);
+  auto s = sin(theta);
+  return {v.x * c - v.y * s, v.x * s + v.y * c};
+}
+
+template <typename T>
+inline constexpr glm::vec<2, T> rotate_legacy(const glm::vec<2, T>& v, T theta) {
+  using std::sqrt;
   return theta ? from_polar(angle(v) + theta, sqrt(length_squared(v))) : v;
 }
 

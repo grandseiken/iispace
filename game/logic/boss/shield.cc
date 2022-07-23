@@ -8,7 +8,6 @@ namespace ii {
 namespace {
 
 struct ShieldBombBoss : ecs::component {
-  static constexpr std::uint32_t kBoundingWidth = 640;
   static constexpr std::uint32_t kBaseHp = 320;
   static constexpr std::uint32_t kTimer = 100;
   static constexpr std::uint32_t kUnshieldTime = 300;
@@ -49,6 +48,10 @@ struct ShieldBombBoss : ecs::component {
                                        : colour_hue(0.f, .4f, 0.f)};
   }
 
+  static std::uint32_t bounding_width(const SimInterface& sim) {
+    return sim.conditions().compatibility == compatibility_level::kLegacy ? 640 : 140;
+  }
+
   std::uint32_t timer = 0;
   std::uint32_t count = 0;
   std::uint32_t unshielded = 0;
@@ -79,8 +82,8 @@ struct ShieldBombBoss : ecs::component {
     }
 
     if (attack) {
-      auto d =
-          rotate(attack_dir, (kAttackTime - attack) * fixed_c::half * fixed_c::pi / kAttackTime);
+      auto d = sim.rotate_compatibility(
+          attack_dir, (kAttackTime - attack) * fixed_c::half * fixed_c::pi / kAttackTime);
       spawn_boss_shot(sim, transform.centre, d);
       attack--;
       sim.play_sound(sound::kBossFire, transform.centre, /* random */ true);
@@ -105,10 +108,10 @@ struct ShieldBombBoss : ecs::component {
       }
 
       if (sim.random(2)) {
-        auto d = rotate(vec2{5, 0}, transform.rotation);
+        auto d = sim.rotate_compatibility(vec2{5, 0}, transform.rotation);
         for (std::uint32_t i = 0; i < 12; ++i) {
           spawn_boss_shot(sim, transform.centre, d);
-          d = rotate(d, 2 * fixed_c::pi / 12);
+          d = sim.rotate_compatibility(d, 2 * fixed_c::pi / 12);
         }
         sim.play_sound(sound::kBossAttack, transform.centre);
       } else {

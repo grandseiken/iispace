@@ -103,7 +103,7 @@ constexpr arbitrary_parameter get(const arbitrary_parameters&) {
 
 template <typename T>
 concept Shape = requires(T x) {
-  { x.check_point(vec2{}, shape_flag{}) } -> std::convertible_to<shape_flag>;
+  { x.check_point_legacy(vec2{}, shape_flag{}) } -> std::convertible_to<shape_flag>;
   x.iterate(iterate_flags, transform{}, [](shape_flag) {});
   x.iterate(iterate_centres, transform{}, [](const vec2&, const glm::vec4&) {});
   x.iterate(iterate_lines, transform{}, [](const vec2&, const vec2&, const glm::vec4&) {});
@@ -122,7 +122,7 @@ concept ShapeExpressionWithSubstitution = requires(Parameters params) {
 
 template <typename Node, typename Parameters>
 concept ShapeNodeWithSubstitution = requires(Parameters params) {
-  { check_point(Node{}, params, vec2{}, shape_flag{}) } -> std::convertible_to<shape_flag>;
+  { check_point_legacy(Node{}, params, vec2{}, shape_flag{}) } -> std::convertible_to<shape_flag>;
   iterate(Node{}, iterate_flags, params, transform{}, [](shape_flag) {});
   iterate(Node{}, iterate_centres, params, transform{}, [](const vec2&, const glm::vec4&) {});
   iterate(Node{}, iterate_lines, params, transform{},
@@ -150,7 +150,7 @@ enum class ngon_style {
 };
 
 struct shape_data_base {
-  constexpr shape_flag check_point(const vec2&, shape_flag) const {
+  constexpr shape_flag check_point_legacy(const vec2&, shape_flag) const {
     return shape_flag::kNone;
   }
   template <IterTag I>
@@ -162,7 +162,7 @@ struct ball_collider_data : shape_data_base {
   fixed radius = 0;
   shape_flag flags = shape_flag::kNone;
 
-  constexpr shape_flag check_point(const vec2& v, shape_flag mask) const {
+  constexpr shape_flag check_point_legacy(const vec2& v, shape_flag mask) const {
     return +(flags & mask) && v.x * v.x + v.y * v.y < radius * radius ? flags & mask
                                                                       : shape_flag::kNone;
   }
@@ -184,7 +184,7 @@ struct ngon_data : shape_data_base {
   ngon_style style = ngon_style::kPolygon;
   shape_flag flags = shape_flag::kNone;
 
-  constexpr shape_flag check_point(const vec2& v, shape_flag mask) const {
+  constexpr shape_flag check_point_legacy(const vec2& v, shape_flag mask) const {
     return +(flags & mask) && v.x * v.x + v.y * v.y < radius * radius ? flags & mask
                                                                       : shape_flag::kNone;
   }
@@ -222,7 +222,7 @@ struct box_data : shape_data_base {
   glm::vec4 colour{0.f};
   shape_flag flags = shape_flag::kNone;
 
-  constexpr shape_flag check_point(const vec2& v, shape_flag mask) const {
+  constexpr shape_flag check_point_legacy(const vec2& v, shape_flag mask) const {
     return +(flags & mask) && abs(v.x) < dimensions.x && abs(v.y) < dimensions.y
         ? flags & mask
         : shape_flag::kNone;
@@ -250,7 +250,7 @@ struct box_data : shape_data_base {
 };
 
 struct line_data : shape_data_base {
-  using shape_data_base::check_point;
+  using shape_data_base::check_point_legacy;
   using shape_data_base::iterate;
   vec2 a{0};
   vec2 b{0};
@@ -273,7 +273,7 @@ struct polyarc_data : shape_data_base {
   glm::vec4 colour{0.f};
   shape_flag flags = shape_flag::kNone;
 
-  constexpr shape_flag check_point(const vec2& v, shape_flag mask) const {
+  constexpr shape_flag check_point_legacy(const vec2& v, shape_flag mask) const {
     if (!(flags & mask)) {
       return shape_flag::kNone;
     }
@@ -303,7 +303,7 @@ struct polyarc_data : shape_data_base {
 };
 
 struct attachment_point_data : shape_data_base {
-  using shape_data_base::check_point;
+  using shape_data_base::check_point_legacy;
   using shape_data_base::iterate;
   std::size_t index{0};
   vec2 d{0};
@@ -545,8 +545,9 @@ template <typename T, T Begin, T End, template <T> typename F>
 using expand_range = decltype(expand_range_impl<T, F>(typename range_values<Begin, End>::type{}));
 
 template <typename Parameters, ShapeExpressionWithSubstitution<Parameters> S>
-constexpr shape_flag check_point(S, const Parameters& params, const vec2& v, shape_flag mask) {
-  return evaluate(S{}, params).check_point(v, mask);
+constexpr shape_flag
+check_point_legacy(S, const Parameters& params, const vec2& v, shape_flag mask) {
+  return evaluate(S{}, params).check_point_legacy(v, mask);
 }
 
 template <IterTag I, typename Parameters, ShapeExpressionWithSubstitution<Parameters> S>
@@ -558,7 +559,7 @@ iterate(S, I tag, const Parameters& params, const transform& t, const IterateFun
   }
 }
 
-constexpr shape_flag check_point(null_shape, const auto&, const vec2&, shape_flag) {
+constexpr shape_flag check_point_legacy(null_shape, const auto&, const vec2&, shape_flag) {
   return shape_flag::kNone;
 }
 template <IterTag I>
@@ -566,9 +567,9 @@ constexpr void
 iterate(null_shape, I tag, const auto&, const transform&, const IterateFunction<I> auto&) {}
 
 template <IterTag DisableI, typename Parameters, ShapeNodeWithSubstitution<Parameters> Node>
-constexpr shape_flag check_point(disable_iteration<DisableI, Node>, const Parameters& params,
-                                 const vec2& v, shape_flag mask) {
-  return check_point(Node{}, params, v, mask);
+constexpr shape_flag check_point_legacy(disable_iteration<DisableI, Node>, const Parameters& params,
+                                        const vec2& v, shape_flag mask) {
+  return check_point_legacy(Node{}, params, v, mask);
 }
 
 template <IterTag DisableI, IterTag I, typename Parameters,
@@ -582,9 +583,9 @@ constexpr void iterate(disable_iteration<DisableI, Node>, I tag, const Parameter
 
 template <typename Parameters, ExpressionWithSubstitution<vec2, Parameters> V,
           ShapeNodeWithSubstitution<Parameters> Node>
-constexpr shape_flag
-check_point(translate_eval<V, Node>, const Parameters& params, const vec2& v, shape_flag mask) {
-  return check_point(Node{}, params, v - vec2{evaluate(V{}, params)}, mask);
+constexpr shape_flag check_point_legacy(translate_eval<V, Node>, const Parameters& params,
+                                        const vec2& v, shape_flag mask) {
+  return check_point_legacy(Node{}, params, v - vec2{evaluate(V{}, params)}, mask);
 }
 
 template <IterTag I, typename Parameters, ExpressionWithSubstitution<vec2, Parameters> V,
@@ -596,9 +597,10 @@ constexpr void iterate(translate_eval<V, Node>, I tag, const Parameters& params,
 
 template <typename Parameters, ExpressionWithSubstitution<fixed, Parameters> Angle,
           ShapeNodeWithSubstitution<Parameters> Node>
-constexpr shape_flag
-check_point(rotate_eval<Angle, Node>, const Parameters& params, const vec2& v, shape_flag mask) {
-  return check_point(Node{}, params, ::rotate(v, -fixed{evaluate(Angle{}, params)}), mask);
+constexpr shape_flag check_point_legacy(rotate_eval<Angle, Node>, const Parameters& params,
+                                        const vec2& v, shape_flag mask) {
+  return check_point_legacy(Node{}, params, ::rotate_legacy(v, -fixed{evaluate(Angle{}, params)}),
+                            mask);
 }
 
 template <IterTag I, typename Parameters, ExpressionWithSubstitution<fixed, Parameters> Angle,
@@ -611,10 +613,10 @@ constexpr void iterate(rotate_eval<Angle, Node>, I tag, const Parameters& params
 template <typename Parameters, ExpressionWithSubstitution<bool, Parameters> Condition,
           ShapeNodeWithSubstitution<Parameters> TrueNode,
           ShapeNodeWithSubstitution<Parameters> FalseNode>
-constexpr shape_flag check_point(conditional_eval<Condition, TrueNode, FalseNode>,
-                                 const Parameters& params, const vec2& v, shape_flag mask) {
-  return bool{evaluate(Condition{}, params)} ? check_point(TrueNode{}, params, v, mask)
-                                             : check_point(FalseNode{}, params, v, mask);
+constexpr shape_flag check_point_legacy(conditional_eval<Condition, TrueNode, FalseNode>,
+                                        const Parameters& params, const vec2& v, shape_flag mask) {
+  return bool{evaluate(Condition{}, params)} ? check_point_legacy(TrueNode{}, params, v, mask)
+                                             : check_point_legacy(FalseNode{}, params, v, mask);
 }
 
 template <IterTag I, typename Parameters, ExpressionWithSubstitution<bool, Parameters> Condition,
@@ -637,8 +639,8 @@ iterate(conditional_eval<Condition, TrueNode, FalseNode>, I tag, const Parameter
 
 template <typename Parameters, ShapeNodeWithSubstitution<Parameters>... Nodes>
 constexpr shape_flag
-check_point(compound<Nodes...>, const Parameters& params, const vec2& v, shape_flag mask) {
-  return (check_point(Nodes{}, params, v, mask) | ...);
+check_point_legacy(compound<Nodes...>, const Parameters& params, const vec2& v, shape_flag mask) {
+  return (check_point_legacy(Nodes{}, params, v, mask) | ...);
 }
 
 template <IterTag I, typename Parameters, ShapeNodeWithSubstitution<Parameters>... Nodes>

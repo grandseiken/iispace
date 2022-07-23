@@ -7,7 +7,6 @@ namespace ii {
 namespace {
 
 struct TractorBoss : ecs::component {
-  static constexpr std::uint32_t kBoundingWidth = 640;
   static constexpr std::uint32_t kBaseHp = 900;
   static constexpr std::uint32_t kTimer = 100;
   static constexpr shape_flag kDangerousVulnerable =
@@ -24,7 +23,7 @@ struct TractorBoss : ecs::component {
   struct ball_inner {
     template <fixed I>
     using ball =
-        geom::translate_eval<geom::constant<rotate(vec2{24, 0}, I* fixed_c::pi / 4)>,
+        geom::translate_eval<geom::constant<rotate_legacy(vec2{24, 0}, I* fixed_c::pi / 4)>,
                              geom::rotate_eval<geom::multiply_p<BI ? 1 : -1, 2>,
                                                geom::polygram<12, 6, c0, kDangerousVulnerable>>>;
     using shape = geom::expand_range<fixed, 0, 8, ball>;
@@ -47,6 +46,10 @@ struct TractorBoss : ecs::component {
   std::tuple<vec2, fixed, fixed, fixed> shape_parameters(const Transform& transform) const {
     return {transform.centre, transform.rotation, sub_rotation,
             static_cast<std::uint32_t>(attack_shapes.size()) / (1 + fixed_c::half)};
+  }
+
+  static std::uint32_t bounding_width(const SimInterface& sim) {
+    return sim.conditions().compatibility == compatibility_level::kLegacy ? 640 : 140;
   }
 
   TractorBoss(SimInterface& sim) : shoot_type{sim.random(2)} {}
@@ -90,12 +93,12 @@ struct TractorBoss : ecs::component {
           !(timer % (16 - sim.alive_players() * 2))) {
         if (!shoot_type || (health.is_hp_low() && shoot_type == 1)) {
           auto p = sim.nearest_player_position(transform.centre);
-          iterate_entity_attachment_points<TractorBoss>(
-              h, [&](std::size_t, const vec2& v, const vec2&) {
-                auto d = normalise(p - v);
-                spawn_boss_shot(sim, v, d * 5, c0);
-                spawn_boss_shot(sim, v, d * -5, c0);
-              });
+          auto f = [&](std::size_t, const vec2& v, const vec2&) {
+            auto d = normalise(p - v);
+            spawn_boss_shot(sim, v, d * 5, c0);
+            spawn_boss_shot(sim, v, d * -5, c0);
+          };
+          iterate_attachment_points_compatibility(h, sim, f);
           sim.play_sound(sound::kBossFire, transform.centre, /* random */ true);
         }
         if (shoot_type == 1 || health.is_hp_low()) {
@@ -130,12 +133,11 @@ struct TractorBoss : ecs::component {
         }
 
         if (timer < kTimer * 4 && !(timer % (10 - 2 * sim.alive_players()))) {
-          iterate_entity_attachment_points<TractorBoss>(
-              h, [&](std::size_t index, const vec2& v, const vec2&) {
-                spawn_bounce(
-                    sim, v,
-                    !index == gen_dir ? transform.rotation + fixed_c::pi : transform.rotation);
-              });
+          auto f = [&](std::size_t index, const vec2& v, const vec2&) {
+            spawn_bounce(sim, v,
+                         !index == gen_dir ? transform.rotation + fixed_c::pi : transform.rotation);
+          };
+          iterate_attachment_points_compatibility(h, sim, f);
           sim.play_sound(sound::kEnemySpawn, transform.centre, /* random */ true);
         }
 
@@ -152,17 +154,17 @@ struct TractorBoss : ecs::component {
             attacking = true;
           }
           if (timer % (kTimer / (1 + fixed_c::half)).to_int() == kTimer / 8) {
-            iterate_entity_attachment_points<TractorBoss>(
-                h, [&](std::size_t, const vec2& v, const vec2&) {
-                  auto d = from_polar(sim.random_fixed() * (2 * fixed_c::pi), 5_fx);
-                  spawn_boss_shot(sim, v, d, c0);
-                  d = rotate(d, fixed_c::pi / 2);
-                  spawn_boss_shot(sim, v, d, c0);
-                  d = rotate(d, fixed_c::pi / 2);
-                  spawn_boss_shot(sim, v, d, c0);
-                  d = rotate(d, fixed_c::pi / 2);
-                  spawn_boss_shot(sim, v, d, c0);
-                });
+            auto f = [&](std::size_t, const vec2& v, const vec2&) {
+              auto d = from_polar(sim.random_fixed() * (2 * fixed_c::pi), 5_fx);
+              spawn_boss_shot(sim, v, d, c0);
+              d = sim.rotate_compatibility(d, fixed_c::pi / 2);
+              spawn_boss_shot(sim, v, d, c0);
+              d = sim.rotate_compatibility(d, fixed_c::pi / 2);
+              spawn_boss_shot(sim, v, d, c0);
+              d = sim.rotate_compatibility(d, fixed_c::pi / 2);
+              spawn_boss_shot(sim, v, d, c0);
+            };
+            iterate_attachment_points_compatibility(h, sim, f);
             sim.play_sound(sound::kBossFire, transform.centre, /* random */ true);
           }
           targets.clear();
@@ -222,6 +224,17 @@ struct TractorBoss : ecs::component {
     }
     transform.rotate(r);
     sub_rotation += fixed_c::tenth;
+  }
+
+  template <typename F>
+  void iterate_attachment_points_compatibility(ecs::const_handle h, SimInterface& sim, const F& f) {
+    if (sim.conditions().compatibility == compatibility_level::kLegacy) {
+      auto transform = *h.get<Transform>();
+      f(0, transform.centre + rotate_legacy(vec2{0, -96}, transform.rotation), {});
+      f(1, transform.centre + rotate_legacy(vec2{0, 96}, transform.rotation), {});
+    } else {
+      iterate_entity_attachment_points<TractorBoss>(h, f);
+    }
   }
 
   void

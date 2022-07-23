@@ -9,7 +9,6 @@ namespace ii {
 namespace {
 
 struct SuperBossArc : public ecs::component {
-  static constexpr std::uint32_t kBoundingWidth = 640;
   static constexpr std::uint32_t kBaseHp = 75;
 
   template <fixed Radius, std::size_t I, shape_flag Flags = shape_flag::kNone>
@@ -27,6 +26,10 @@ struct SuperBossArc : public ecs::component {
   std::tuple<vec2, fixed, fixed, std::array<glm::vec4, 8>>
   shape_parameters(const Transform& transform) const {
     return {transform.centre, transform.rotation, i * 2 * fixed_c::pi / 16, colours};
+  }
+
+  static std::uint32_t bounding_width(const SimInterface& sim) {
+    return sim.conditions().compatibility == compatibility_level::kLegacy ? 640 : 130;
   }
 
   SuperBossArc(ecs::entity_id boss, std::uint32_t i, std::uint32_t timer)
@@ -81,7 +84,6 @@ ecs::handle spawn_super_boss_arc(SimInterface& sim, const vec2& position, std::u
 
 struct SuperBoss : ecs::component {
   enum class state { kArrive, kIdle, kAttack };
-  static constexpr std::uint32_t kBoundingWidth = 640;
   static constexpr std::uint32_t kBaseHp = 520;
 
   template <fixed Radius, std::size_t I, shape_flag Flags = shape_flag::kNone>
@@ -96,6 +98,10 @@ struct SuperBoss : ecs::component {
   std::tuple<vec2, fixed, std::array<glm::vec4, 8>>
   shape_parameters(const Transform& transform) const {
     return {transform.centre, transform.rotation, colours};
+  }
+
+  static std::uint32_t bounding_width(const SimInterface& sim) {
+    return sim.conditions().compatibility == compatibility_level::kLegacy ? 640 : 50;
   }
 
   SuperBoss(std::uint32_t cycle) : cycle{cycle} {}

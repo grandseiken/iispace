@@ -6,12 +6,14 @@
 
 namespace ii {
 namespace {
-const std::string kReplayVersion = "WiiSPACE v1.3 replay";
+const char* kReplayVersion = "iispace";
+const char* kLegacyReplayVersion = "WiiSPACE v1.3 replay";
 const std::array<std::uint8_t, 2> kReplayEncryptionKey = {'<', '>'};
 }  // namespace
 
 struct ReplayReader::impl_t {
   proto::Replay replay;
+  ii::initial_conditions conditions;
   std::size_t frame_index = 0;
 };
 
@@ -20,7 +22,7 @@ ReplayReader::ReplayReader(ReplayReader&&) noexcept = default;
 ReplayReader& ReplayReader::operator=(ReplayReader&&) noexcept = default;
 
 result<ReplayReader> ReplayReader::create(std::span<const std::uint8_t> bytes) {
-  auto decompressed = decompress(crypt(bytes, ii::kReplayEncryptionKey));
+  auto decompressed = decompress(crypt(bytes, kReplayEncryptionKey));
   if (!decompressed) {
     return unexpected("couldn't decompress replay: " + decompressed.error());
   }
@@ -30,27 +32,60 @@ result<ReplayReader> ReplayReader::create(std::span<const std::uint8_t> bytes) {
                                            static_cast<int>(decompressed->size()))) {
     return unexpected("couldn't parse replay");
   }
-  if (reader.impl_->replay.game_version() != kReplayVersion) {
+  if (reader.impl_->replay.game_version() != kReplayVersion &&
+      reader.impl_->replay.game_version() != kLegacyReplayVersion) {
     return unexpected("unknown replay game version");
+  }
+
+  auto& conditions = reader.impl_->conditions;
+  auto& replay = reader.impl_->replay;
+  conditions.seed = replay.seed();
+  switch (replay.compatibility()) {
+  default:
+    return unexpected("unknown replay compatibility level");
+  case proto::Replay::CompatibilityLevel::kLegacy:
+    conditions.compatibility = compatibility_level::kLegacy;
+    break;
+  case proto::Replay::CompatibilityLevel::kIispaceV0:
+    conditions.compatibility = compatibility_level::kIispaceV0;
+    break;
+  }
+  switch (replay.game_mode()) {
+  default:
+    return unexpected("unknown replay game mode");
+  case proto::Replay::GameMode::kNormal:
+    conditions.mode = game_mode::kNormal;
+    break;
+  case proto::Replay::GameMode::kBoss:
+    conditions.mode = game_mode::kBoss;
+    break;
+  case proto::Replay::GameMode::kHard:
+    conditions.mode = game_mode::kHard;
+    break;
+  case proto::Replay::GameMode::kFast:
+    conditions.mode = game_mode::kFast;
+    break;
+  case proto::Replay::GameMode::kWhat:
+    conditions.mode = game_mode::kWhat;
+    break;
+  }
+  conditions.player_count = replay.players();
+  if (replay.can_face_secret_boss()) {
+    conditions.flags |= initial_conditions::flag::kLegacy_CanFaceSecretBoss;
   }
   return {std::move(reader)};
 }
 
 ii::initial_conditions ReplayReader::initial_conditions() const {
-  ii::initial_conditions conditions;
-  conditions.seed = impl_->replay.seed();
-  conditions.mode = static_cast<game_mode>(impl_->replay.game_mode());
-  conditions.player_count = impl_->replay.players();
-  conditions.can_face_secret_boss = impl_->replay.can_face_secret_boss();
-  return conditions;
+  return impl_->conditions;
 }
 
-std::optional<ii::input_frame> ReplayReader::next_input_frame() {
+std::optional<input_frame> ReplayReader::next_input_frame() {
   if (impl_->frame_index >= static_cast<std::size_t>(impl_->replay.player_frame().size())) {
     return std::nullopt;
   }
-  auto& replay_frame = impl_->replay.player_frame(impl_->frame_index++);
-  ii::input_frame frame;
+  const auto& replay_frame = impl_->replay.player_frame(impl_->frame_index++);
+  input_frame frame;
   frame.velocity = {fixed::from_internal(replay_frame.velocity_x()),
                     fixed::from_internal(replay_frame.velocity_y())};
   vec2 target{fixed::from_internal(replay_frame.target_x()),
@@ -88,12 +123,39 @@ ReplayWriter::ReplayWriter(const ii::initial_conditions& conditions)
   impl_->conditions = conditions;
   impl_->replay.set_game_version(kReplayVersion);
   impl_->replay.set_seed(conditions.seed);
-  impl_->replay.set_game_mode(static_cast<std::uint32_t>(conditions.mode));
+  switch (conditions.compatibility) {
+  case compatibility_level::kLegacy:
+    impl_->replay.set_compatibility(proto::Replay::CompatibilityLevel::kLegacy);
+    break;
+  case compatibility_level::kIispaceV0:
+    impl_->replay.set_compatibility(proto::Replay::CompatibilityLevel::kIispaceV0);
+    break;
+  }
+  switch (conditions.mode) {
+  case game_mode::kNormal:
+    impl_->replay.set_game_mode(proto::Replay::GameMode::kNormal);
+    break;
+  case game_mode::kBoss:
+    impl_->replay.set_game_mode(proto::Replay::GameMode::kBoss);
+    break;
+  case game_mode::kHard:
+    impl_->replay.set_game_mode(proto::Replay::GameMode::kHard);
+    break;
+  case game_mode::kFast:
+    impl_->replay.set_game_mode(proto::Replay::GameMode::kFast);
+    break;
+  case game_mode::kWhat:
+    impl_->replay.set_game_mode(proto::Replay::GameMode::kWhat);
+    break;
+  case game_mode::kMax:
+    break;
+  }
   impl_->replay.set_players(conditions.player_count);
-  impl_->replay.set_can_face_secret_boss(conditions.can_face_secret_boss);
+  impl_->replay.set_can_face_secret_boss(
+      +(conditions.flags & ii::initial_conditions::flag::kLegacy_CanFaceSecretBoss));
 }
 
-void ReplayWriter::add_input_frame(const ii::input_frame& frame) {
+void ReplayWriter::add_input_frame(const input_frame& frame) {
   auto& replay_frame = *impl_->replay.add_player_frame();
   replay_frame.set_velocity_x(frame.velocity.x.to_internal());
   replay_frame.set_velocity_y(frame.velocity.y.to_internal());
@@ -118,7 +180,7 @@ result<std::vector<std::uint8_t>> ReplayWriter::write() const {
   if (!compressed) {
     return unexpected("couldn't compress replay: " + compressed.error());
   }
-  data = crypt(*compressed, ii::kReplayEncryptionKey);
+  data = crypt(*compressed, kReplayEncryptionKey);
   return {std::move(data)};
 }
 
@@ -128,7 +190,7 @@ const ii::initial_conditions& ReplayWriter::initial_conditions() const {
 
 ReplayInputAdapter::ReplayInputAdapter(ReplayReader& reader) : reader_{reader} {}
 
-std::vector<ii::input_frame>& ReplayInputAdapter::get() {
+std::vector<input_frame>& ReplayInputAdapter::get() {
   frames_.clear();
   for (std::uint32_t i = 0; i < reader_.initial_conditions().player_count; ++i) {
     auto frame = reader_.next_input_frame();

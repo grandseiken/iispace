@@ -37,7 +37,7 @@ struct BossShot : ecs::component {
       return;
     }
     if (rotate_speed && ++timer % 8 == 0) {
-      velocity = rotate(velocity, 8 * rotate_speed);
+      velocity = sim.rotate_compatibility(velocity, 8 * rotate_speed);
     }
   }
 };

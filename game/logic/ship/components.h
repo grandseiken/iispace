@@ -69,6 +69,12 @@ struct Render : ecs::component {
   function_ptr<void(ecs::const_handle, const SimInterface&)> render = nullptr;
 };
 
+enum class damage_type {
+  kNone,
+  kMagic,
+  kBomb,
+};
+
 struct Health : ecs::component {
   std::uint32_t hp = 0;
   std::uint32_t max_hp = hp;

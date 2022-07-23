@@ -15,8 +15,9 @@ namespace ii {
 namespace {
 
 struct options_t {
+  compatibility_level compatibility = compatibility_level::kIispaceV0;
   game_mode mode = game_mode::kNormal;
-  bool can_face_secret_boss = false;
+  initial_conditions::flag flags = initial_conditions::flag::kNone;
   std::uint32_t player_count = 0;
   std::uint32_t runs = 0;
   std::optional<std::uint32_t> seed;
@@ -37,9 +38,9 @@ do_run(const options_t& options, std::uint32_t run_index, const initial_conditio
       if (run_index) {
         std::cout << '\n';
       }
-      std::cout << "========================" << std::endl;
+      std::cout << "================================================" << std::endl;
       std::cout << "run #" << (run_index + 1) << ": seed " << conditions.seed << std::endl;
-      std::cout << "========================" << std::endl;
+      std::cout << "================================================" << std::endl;
     }
     std::cout << "running sim..." << std::endl;
   }
@@ -116,7 +117,7 @@ bool run(const options_t& options) {
   for (std::uint32_t i = 0; i < options.runs; ++i) {
     initial_conditions conditions;
     conditions.mode = options.mode;
-    conditions.can_face_secret_boss = true;
+    conditions.flags = options.flags;
     conditions.player_count = options.player_count;
     conditions.seed =
         options.seed ? *options.seed : std::uniform_int_distribution<std::uint32_t>{}(engine);
@@ -183,7 +184,7 @@ bool run(const options_t& options) {
   }
   if (options.replay_out_path) {
     if (options.runs > 1) {
-      std::cout << "========================" << std::endl;
+      std::cout << "================================================" << std::endl;
       std::cout << "best run #" << (best_run_index + 1) << ": ticks " << best_run->ticks
                 << " score " << best_run->score << " kills " << +best_run->bosses_killed
                 << std::endl;
@@ -195,7 +196,11 @@ bool run(const options_t& options) {
       return false;
     }
     std::cout << "wrote " << *options.replay_out_path << std::endl;
+    if (options.runs > 1) {
+      std::cout << "================================================" << std::endl;
+    }
   }
+  std::cout << std::endl;
   return true;
 }
 
@@ -250,16 +255,35 @@ int main(int argc, char** argv) {
     } else if (*mode == "what") {
       options.mode = ii::game_mode::kWhat;
     } else {
-      std::cerr << "error: unknown mode " << *mode << std::endl;
+      std::cerr << "error: unknown game mode " << *mode << std::endl;
       return 1;
     }
   }
 
-  if (auto result =
-          ii::flag_parse<bool>(args, "can_face_secret_boss", options.can_face_secret_boss, false);
+  std::optional<std::string> compatibility;
+  if (auto result = ii::flag_parse<std::string>(args, "compatibility", compatibility); !result) {
+    std::cerr << result.error() << std::endl;
+    return 1;
+  }
+  if (compatibility) {
+    if (*compatibility == "legacy") {
+      options.compatibility = ii::compatibility_level::kLegacy;
+    } else if (*compatibility == "v0") {
+      options.compatibility = ii::compatibility_level::kIispaceV0;
+    } else {
+      std::cerr << "error: unknown compatibility level " << *compatibility << std::endl;
+      return 1;
+    }
+  }
+
+  bool can_face_secret_boss = false;
+  if (auto result = ii::flag_parse<bool>(args, "can_face_secret_boss", can_face_secret_boss, false);
       !result) {
     std::cerr << result.error() << std::endl;
     return 1;
+  }
+  if (can_face_secret_boss) {
+    options.flags |= ii::initial_conditions::flag::kLegacy_CanFaceSecretBoss;
   }
 
   std::uint64_t find_boss_kills = 0;

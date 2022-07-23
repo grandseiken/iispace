@@ -31,7 +31,8 @@ input_frame AiPlayer::think(ecs::const_handle h, const Transform& transform, con
           const Collision* collision, const Health* health, const Boss* boss, const WallTag* wall) {
         fixed size = 0;
         if (collision) {
-          size = std::min<fixed>(collision->bounding_width, 120u);
+          // TODO: necessary for ghost boss.
+          size = std::min<fixed>(collision->bounding_width, 160u);
         }
         bool on_screen = false;
         for (const auto& v :

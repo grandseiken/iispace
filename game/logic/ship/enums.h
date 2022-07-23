@@ -16,12 +16,6 @@ enum class shape_flag : std::uint32_t {
   kEverything = 0b111111,
 };
 
-enum class damage_type {
-  kNone,
-  kMagic,
-  kBomb,
-};
-
 template <>
 struct bitmask_enum<shape_flag> : std::true_type {};
 
