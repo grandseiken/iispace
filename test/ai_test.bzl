@@ -22,6 +22,8 @@ _ai_test = rule(
 )
 
 def ai_test(mode, players, runs=1, extra_args=[], **kwargs):
+  if runs > 1:
+    extra_args = extra_args + ["--multithreaded"]
   _ai_test(
     name = "ai_test_%sp_%s" % (players, mode),
     args = [
