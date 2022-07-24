@@ -1,8 +1,11 @@
 cc_library(
   name = "geometry",
   hdrs = [
+    "concepts.h",
     "enums.h",
-    "geometry.h",
+    "expressions.h",
+    "iteration.h",
+    "shape_node.h",
   ],
   deps = [
     "//game/common:types",

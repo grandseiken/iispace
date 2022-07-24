@@ -2,7 +2,8 @@
 #define II_GAME_LOGIC_SHIP_SHIP_TEMPLATE_H
 #include "game/logic/ecs/call.h"
 #include "game/logic/ecs/index.h"
-#include "game/logic/geometry/geometry.h"
+#include "game/logic/geometry/enums.h"
+#include "game/logic/geometry/shape_node.h"
 #include "game/logic/ship/components.h"
 #include "game/logic/sim/sim_interface.h"
 

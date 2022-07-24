@@ -9,6 +9,7 @@ cc_library(
   implementation_deps = [
     ":ai_player",
     "//game/logic/ecs",
+    "//game/logic/geometry/shapes",
     "//game/logic/ship",
     "//game/logic/sim:sim_interface",
   ],

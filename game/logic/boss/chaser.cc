@@ -1,5 +1,5 @@
 #include "game/logic/boss/boss_internal.h"
-#include "game/logic/geometry/geometry.h"
+#include "game/logic/geometry/shapes/shapes.h"
 #include "game/logic/ship/ship_template.h"
 #include <array>
 

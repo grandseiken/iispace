@@ -14,6 +14,7 @@ cc_library(
   ],
   deps = [
     "@glm",
+    "//game/logic/geometry/shapes",
     "//game/logic/ship",
     "//game/logic/sim:sim_interface",
   ],

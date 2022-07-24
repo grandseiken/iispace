@@ -11,6 +11,7 @@ cc_library(
   deps = ["//game/common:math"],
   implementation_deps = [
     "//game/logic/ecs",
+    "//game/logic/geometry/shapes",
     "//game/logic/ship",
     "//game/logic/sim:sim_interface",
   ],
