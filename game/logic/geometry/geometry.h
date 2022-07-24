@@ -1,8 +1,8 @@
-#ifndef II_GAME_LOGIC_SHIP_GEOMETRY_H
-#define II_GAME_LOGIC_SHIP_GEOMETRY_H
+#ifndef II_GAME_LOGIC_GEOMETRY_GEOMETRY_H
+#define II_GAME_LOGIC_GEOMETRY_GEOMETRY_H
 #include "game/common/math.h"
 #include "game/common/type_list.h"
-#include "game/logic/ship/enums.h"
+#include "game/logic/geometry/enums.h"
 #include <glm/glm.hpp>
 #include <concepts>
 #include <cstddef>

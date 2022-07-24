@@ -3,7 +3,7 @@
 #include "game/common/functional.h"
 #include "game/common/math.h"
 #include "game/logic/ecs/index.h"
-#include "game/logic/ship/enums.h"
+#include "game/logic/geometry/enums.h"
 #include "game/logic/sim/sim_io.h"
 #include "game/mixer/sound.h"
 #include <glm/glm.hpp>

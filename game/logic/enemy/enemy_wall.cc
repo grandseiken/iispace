@@ -1,5 +1,5 @@
 #include "game/logic/enemy/enemy.h"
-#include "game/logic/ship/geometry.h"
+#include "game/logic/geometry/geometry.h"
 #include "game/logic/ship/ship_template.h"
 #include <algorithm>
 

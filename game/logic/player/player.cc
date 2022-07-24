@@ -1,7 +1,7 @@
 #include "game/logic/player/player.h"
+#include "game/logic/geometry/enums.h"
+#include "game/logic/geometry/geometry.h"
 #include "game/logic/player/ai_player.h"
-#include "game/logic/ship/enums.h"
-#include "game/logic/ship/geometry.h"
 #include "game/logic/ship/ship_template.h"
 #include <algorithm>
 #include <utility>
