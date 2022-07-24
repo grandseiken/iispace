@@ -1,7 +1,7 @@
 #include "game/logic/boss/boss_internal.h"
 #include "game/logic/enemy/enemy.h"
 #include "game/logic/geometry/node_disable_iteration.h"
-#include "game/logic/geometry/node_expand.h"
+#include "game/logic/geometry/node_for_each.h"
 #include "game/logic/geometry/shapes/attachment_point.h"
 #include "game/logic/geometry/shapes/line.h"
 #include "game/logic/geometry/shapes/ngon.h"
@@ -22,8 +22,6 @@ struct TractorBoss : ecs::component {
   static constexpr glm::vec4 c1 = colour_hue360(300, 1.f / 3, .6f);
   static constexpr glm::vec4 c2 = colour_hue360(300, .4f, .5f);
 
-  // TODO: shape is too complicated and takes too long to compile.
-  // Need a geom::for that's like geom::expand_range but doesn't expand out to N templates.
   using attack_shape = standard_transform<geom::translate_p<2, geom::polygon<8, 6, c0>>>;
   template <std::size_t BI>
   struct ball_inner {
@@ -32,20 +30,24 @@ struct TractorBoss : ecs::component {
         geom::translate_eval<geom::constant<rotate_legacy(vec2{24, 0}, I* fixed_c::pi / 4)>,
                              geom::rotate_eval<geom::multiply_p<BI ? 1 : -1, 2>,
                                                geom::polygram<12, 6, c0, kDangerousVulnerable>>>;
-    using shape = geom::expand_range<fixed, 0, 8, ball>;
+    using shape = geom::for_each<fixed, 0, 8, ball>;
   };
+
   template <std::size_t I>
-  using ball_shape = geom::compound<
-      geom::attachment_point<I, 0, 0>, geom::polygram<12, 6, c1>,
-      geom::polygon<30, 12, glm::vec4{0.f}, shape_flag::kShield>,
-      geom::disable_iteration<
-          geom::iterate_centres_t,
-          geom::compound<geom::polygon<12, 12, c1>, geom::polygon<2, 6, c1>,
-                         geom::polygon<36, 12, c0, kDangerousVulnerable>, geom::polygon<34, 12, c0>,
-                         geom::polygon<32, 12, c0>, typename ball_inner<I>::shape>>>;
+  using ball_shape = geom::translate<
+      0, I ? 96 : -96,
+      geom::rotate_eval<
+          geom::multiply_p<fixed{I ? -1 : 1} / 2, 2>,
+          geom::compound<geom::attachment_point<I, 0, 0>, geom::polygram<12, 6, c1>,
+                         geom::polygon<30, 12, glm::vec4{0.f}, shape_flag::kShield>,
+                         geom::disable_iteration<
+                             geom::iterate_centres_t,
+                             geom::compound<geom::polygon<12, 12, c1>, geom::polygon<2, 6, c1>,
+                                            geom::polygon<36, 12, c0, kDangerousVulnerable>,
+                                            geom::polygon<34, 12, c0>, geom::polygon<32, 12, c0>,
+                                            typename ball_inner<I>::shape>>>>>;
   using shape = standard_transform<
-      geom::translate<0, -96, geom::rotate_eval<geom::multiply_p<fixed{1} / 2, 2>, ball_shape<0>>>,
-      geom::translate<0, 96, geom::rotate_eval<geom::multiply_p<-fixed{1} / 2, 2>, ball_shape<1>>>,
+      geom::for_each<std::size_t, 0, 2, ball_shape>,
       geom::ngon_eval<geom::parameter<3>, geom::constant<16u>, geom::constant<c2>>,
       geom::line<-2, -96, -2, 96, c0>, geom::line<0, -96, 0, 96, c1>,
       geom::line<2, -96, 2, 96, c0>>;
@@ -235,9 +237,8 @@ struct TractorBoss : ecs::component {
   template <typename F>
   void iterate_attachment_points_compatibility(ecs::const_handle h, SimInterface& sim, const F& f) {
     if (sim.conditions().compatibility == compatibility_level::kLegacy) {
-      auto transform = *h.get<Transform>();
-      f(0, transform.centre + rotate_legacy(vec2{0, -96}, transform.rotation), {});
-      f(1, transform.centre + rotate_legacy(vec2{0, 96}, transform.rotation), {});
+      geom::iterate(shape{}, geom::iterate_attachment_points, get_shape_parameters<TractorBoss>(h),
+                    geom::legacy_transform{}, f);
     } else {
       iterate_entity_attachment_points<TractorBoss>(h, f);
     }

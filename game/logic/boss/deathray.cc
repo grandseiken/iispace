@@ -2,7 +2,7 @@
 #include "game/logic/enemy/enemy.h"
 #include "game/logic/geometry/node_conditional.h"
 #include "game/logic/geometry/node_disable_iteration.h"
-#include "game/logic/geometry/node_expand.h"
+#include "game/logic/geometry/node_for_each.h"
 #include "game/logic/geometry/shapes/ball_collider.h"
 #include "game/logic/geometry/shapes/box.h"
 #include "game/logic/geometry/shapes/line.h"
@@ -159,8 +159,7 @@ struct DeathRayBoss : public ecs::component {
                    geom::polygon<120, 12, c1, shape_flag::kDangerous | shape_flag::kVulnerable>,
                    geom::ngon<115, 12, c1>, geom::polygon<110, 12, c1, shape_flag::kShield>>,
       geom::box<0, 0, glm::vec4{0.f}>,
-      geom::disable_iteration<geom::iterate_centres_t,
-                              geom::expand_range<fixed, 1, 12, edge_shape>>>;
+      geom::disable_iteration<geom::iterate_centres_t, geom::for_each<fixed, 1, 12, edge_shape>>>;
 
   static std::uint32_t bounding_width(const SimInterface& sim) {
     return sim.conditions().compatibility == compatibility_level::kLegacy ? 640 : 140;

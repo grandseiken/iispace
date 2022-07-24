@@ -2,7 +2,7 @@
 #include "game/logic/enemy/enemy.h"
 #include "game/logic/geometry/node_conditional.h"
 #include "game/logic/geometry/node_disable_iteration.h"
-#include "game/logic/geometry/node_expand.h"
+#include "game/logic/geometry/node_for_each.h"
 #include "game/logic/geometry/shapes/ball_collider.h"
 #include "game/logic/geometry/shapes/box.h"
 #include "game/logic/geometry/shapes/line.h"
@@ -426,7 +426,7 @@ struct GhostBoss : ecs::component {
       2,
       geom::rotate_p<3, spark_line<0>,
                      geom::disable_iteration<geom::iterate_centres_t,
-                                             geom::expand_range<fixed, 1, 8, spark_line>>>>>;
+                                             geom::for_each<fixed, 1, 8, spark_line>>>>>;
   std::tuple<vec2, fixed, vec2, fixed>
   spark_shape_parameters(const Transform& transform, std::uint32_t i) const {
     return {transform.centre, transform.rotation, from_polar(i * fixed_c::pi / 4, 48_fx),

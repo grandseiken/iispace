@@ -103,6 +103,30 @@ struct transform {
   }
 };
 
+struct legacy_transform {
+  constexpr legacy_transform(const vec2& v = vec2{0}, fixed r = 0) : v{v}, r{r} {}
+  vec2 v;
+  fixed r;
+
+  constexpr const vec2& operator*() const {
+    return v;
+  }
+
+  constexpr const vec2& deref_ignore_rotation() const {
+    return v;
+  }
+
+  constexpr legacy_transform translate(const vec2& t) const {
+    return {v + ::rotate_legacy(t, r), r};
+  }
+
+  constexpr legacy_transform rotate(fixed a) const {
+    return {v, r + a};
+  }
+
+  constexpr void increment_index() const {}
+};
+
 struct convert_local_transform {
   constexpr convert_local_transform(const vec2& v, transform t = {}) : v{v}, ct{t} {}
   vec2 v;

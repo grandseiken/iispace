@@ -8,7 +8,7 @@ cc_library(
     "node.h",
     "node_conditional.h",
     "node_disable_iteration.h",
-    "node_expand.h",
+    "node_for_each.h",
     "node_transform.h",
   ],
   deps = [

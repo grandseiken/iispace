@@ -1,6 +1,6 @@
 #include "game/logic/boss/boss_internal.h"
 #include "game/logic/enemy/enemy.h"
-#include "game/logic/geometry/node_expand.h"
+#include "game/logic/geometry/node_for_each.h"
 #include "game/logic/geometry/shapes/line.h"
 #include "game/logic/geometry/shapes/ngon.h"
 #include "game/logic/player/player.h"
@@ -35,7 +35,7 @@ struct ShieldBombBoss : ecs::component {
 
   using shape = standard_transform<
       geom::rotate_eval<geom::multiply_p<2, 1>, centre_shape>,
-      geom::expand_range<fixed, 0, 16, strut_shape>, shield_shape, geom::ngon_colour_p<125, 16, 4>,
+      geom::for_each<fixed, 0, 16, strut_shape>, shield_shape, geom::ngon_colour_p<125, 16, 4>,
       geom::ngon_colour_p<120, 16, 4>,
       geom::rotate_p<1, geom::polygon<42, 16, glm::vec4{0.f}, shape_flag::kShield>>>;
 
