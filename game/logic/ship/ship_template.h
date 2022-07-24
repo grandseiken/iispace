@@ -29,7 +29,7 @@ void render_shape(const SimInterface& sim, const auto& parameters, const geom::t
                   const std::optional<std::size_t>& c_override_max_index = std::nullopt) {
   std::size_t i = 0;
   geom::transform transform = t;
-  transform.shape_index_out = &i;
+  transform.index_out = &i;
   geom::iterate(S{}, geom::iterate_lines, parameters, transform,
                 [&](const vec2& a, const vec2& b, const glm::vec4& c) {
                   auto colour = c_override && (!c_override_max_index || i < *c_override_max_index)
@@ -72,9 +72,10 @@ void explode_shapes(SimInterface& sim, const auto& parameters,
   if (towards) {
     towards_float = to_float(*towards);
   }
-  geom::iterate(S{}, geom::iterate_centres, parameters, {}, [&](const vec2& v, const glm::vec4& c) {
-    sim.explosion(to_float(v), colour_override.value_or(c), time, towards_float);
-  });
+  geom::iterate(S{}, geom::iterate_centres, parameters, geom::transform{},
+                [&](const vec2& v, const glm::vec4& c) {
+                  sim.explosion(to_float(v), colour_override.value_or(c), time, towards_float);
+                });
 }
 
 template <ecs::Component Logic, geom::ShapeNode S = typename Logic::shape>
@@ -94,12 +95,48 @@ void explode_entity_shapes_default(ecs::const_handle h, SimInterface& sim) {
   return explode_entity_shapes<Logic, S>(h, sim);
 }
 
-template <ecs::Component Logic, geom::ShapeNode S>
-shape_flag ship_check_point(ecs::const_handle h, const vec2& v, shape_flag mask) {
+template <geom::ShapeNode S>
+shape_flag shape_check_point(const auto& parameters, const vec2& v, shape_flag mask) {
+  shape_flag result = shape_flag::kNone;
+  geom::iterate(S{}, geom::iterate_collision(mask), parameters, geom::convert_local_transform{v},
+                [&](shape_flag f) { result |= f; });
+  return result;
+}
+
+template <geom::ShapeNode S>
+shape_flag shape_check_point_legacy(const auto& parameters, const vec2& v, shape_flag mask) {
+  shape_flag result = shape_flag::kNone;
+  geom::iterate(S{}, geom::iterate_collision(mask), parameters,
+                geom::legacy_convert_local_transform{v}, [&](shape_flag f) { result |= f; });
+  return result;
+}
+
+template <geom::ShapeNode S>
+shape_flag shape_check_point_compatibility(const auto& parameters, const SimInterface& sim,
+                                           const vec2& v, shape_flag mask) {
+  if (sim.conditions().compatibility == compatibility_level::kLegacy) {
+    return shape_check_point_legacy<S>(parameters, v, mask);
+  }
+  return shape_check_point<S>(parameters, v, mask);
+}
+
+template <ecs::Component Logic, geom::ShapeNode S = typename Logic::shape>
+shape_flag
+ship_check_point(ecs::const_handle h, const SimInterface& sim, const vec2& v, shape_flag mask) {
   if constexpr (requires { &Logic::check_point; }) {
-    return ecs::call<&Logic::check_point>(h, v, mask);
+    return ecs::call<&Logic::check_point>(h, sim, v, mask);
   } else {
-    return geom::check_point_legacy(S{}, get_shape_parameters<Logic>(h), v, mask);
+    return shape_check_point<S>(get_shape_parameters<Logic>(h), v, mask);
+  }
+}
+
+template <ecs::Component Logic, geom::ShapeNode S = typename Logic::shape>
+shape_flag ship_check_point_legacy(ecs::const_handle h, const SimInterface& sim, const vec2& v,
+                                   shape_flag mask) {
+  if constexpr (requires { &Logic::check_point; }) {
+    return ecs::call<&Logic::check_point>(h, sim, v, mask);
+  } else {
+    return shape_check_point_legacy<S>(get_shape_parameters<Logic>(h), v, mask);
   }
 }
 
@@ -120,7 +157,7 @@ ecs::handle create_ship(SimInterface& sim, const vec2& position, fixed rotation 
       shape_flag result = shape_flag::kNone;
       geom::iterate(
           S{}, geom::iterate_flags, geom::arbitrary_parameters{},
-          {}, [&](shape_flag f) constexpr { result |= f; });
+          geom::transform{}, [&](shape_flag f) constexpr { result |= f; });
       return result;
     }
     ();
@@ -137,7 +174,9 @@ ecs::handle create_ship(SimInterface& sim, const vec2& position, fixed rotation 
     if constexpr (+collision_shape_flags || requires { Logic::kShapeFlags; }) {
       h.add(Collision{.flags = collision_shape_flags | extra_shape_flags,
                       .bounding_width = bounding_width,
-                      .check = &ship_check_point<Logic, S>});
+                      .check = sim.conditions().compatibility == compatibility_level::kLegacy
+                          ? &ship_check_point_legacy<Logic, S>
+                          : &ship_check_point<Logic, S>});
     }
   }
 

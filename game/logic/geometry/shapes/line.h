@@ -6,18 +6,19 @@
 namespace ii::geom {
 
 struct line_data : shape_data_base {
-  using shape_data_base::check_point_legacy;
   using shape_data_base::iterate;
   vec2 a{0};
   vec2 b{0};
   glm::vec4 colour{0.f};
 
-  constexpr void iterate(iterate_lines_t, const transform& t, const LineFunction auto& f) const {
-    std::invoke(f, t.translate(a).v, t.translate(b).v, colour);
+  constexpr void
+  iterate(iterate_lines_t, const Transform auto& t, const LineFunction auto& f) const {
+    std::invoke(f, *t.translate(a), *t.translate(b), colour);
   }
 
-  constexpr void iterate(iterate_centres_t, const transform& t, const PointFunction auto& f) const {
-    std::invoke(f, t.translate((a + b) / 2).v, colour);
+  constexpr void
+  iterate(iterate_centres_t, const Transform auto& t, const PointFunction auto& f) const {
+    std::invoke(f, *t.translate((a + b) / 2), colour);
   }
 };
 

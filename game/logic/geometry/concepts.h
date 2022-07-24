@@ -41,11 +41,12 @@ constexpr arbitrary_parameter get(const arbitrary_parameters&) {
 
 template <typename T>
 concept Shape = requires(T x) {
-  { x.check_point_legacy(vec2{}, shape_flag{}) } -> std::convertible_to<shape_flag>;
-  x.iterate(iterate_flags, transform{}, [](shape_flag) {});
-  x.iterate(iterate_centres, transform{}, [](const vec2&, const glm::vec4&) {});
-  x.iterate(iterate_lines, transform{}, [](const vec2&, const vec2&, const glm::vec4&) {});
-  x.iterate(iterate_attachment_points, transform{}, [](std::size_t, const vec2&, const vec2&) {});
+  x.iterate(iterate_flags, null_transform{}, [](shape_flag) {});
+  x.iterate(iterate_lines, null_transform{}, [](const vec2&, const vec2&, const glm::vec4&) {});
+  x.iterate(iterate_centres, null_transform{}, [](const vec2&, const glm::vec4&) {});
+  x.iterate(iterate_attachment_points, null_transform{},
+            [](std::size_t, const vec2&, const vec2&) {});
+  x.iterate(iterate_collision(shape_flag::kNone), null_transform{}, [](shape_flag) {});
 };
 
 template <typename E, typename V, typename Parameters>
@@ -60,13 +61,14 @@ concept ShapeExpressionWithSubstitution = requires(Parameters params) {
 
 template <typename Node, typename Parameters>
 concept ShapeNodeWithSubstitution = requires(Parameters params) {
-  { check_point_legacy(Node{}, params, vec2{}, shape_flag{}) } -> std::convertible_to<shape_flag>;
-  iterate(Node{}, iterate_flags, params, transform{}, [](shape_flag) {});
-  iterate(Node{}, iterate_centres, params, transform{}, [](const vec2&, const glm::vec4&) {});
-  iterate(Node{}, iterate_lines, params, transform{},
+  iterate(Node{}, iterate_flags, params, null_transform{}, [](shape_flag) {});
+  iterate(Node{}, iterate_lines, params, null_transform{},
           [](const vec2&, const vec2&, const glm::vec4&) {});
-  iterate(Node{}, iterate_attachment_points, params, transform{},
+  iterate(Node{}, iterate_centres, params, null_transform{}, [](const vec2&, const glm::vec4&) {});
+  iterate(Node{}, iterate_attachment_points, params, null_transform{},
           [](std::size_t, const vec2&, const vec2&) {});
+  iterate(Node{}, iterate_collision(shape_flag::kNone), params, null_transform{},
+          [](shape_flag) {});
 };
 
 template <typename E, typename V>

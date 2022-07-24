@@ -378,35 +378,41 @@ struct GhostBoss : ecs::component {
     return {transform.centre, transform.rotation};
   }
 
-  shape_flag check_point(const Transform& transform, const vec2& v, shape_flag mask) const {
+  shape_flag check_point(const Transform& transform, const SimInterface& sim, const vec2& v,
+                         shape_flag mask) const {
     auto result = shape_flag::kNone;
     if (!collision_enabled) {
       return shape_flag::kNone;
     }
-    result |= geom::check_point_legacy(standard_transform<centre_shape>{},
-                                       shape_parameters(transform), v, mask);
+    result |= shape_check_point_compatibility<standard_transform<centre_shape>>(
+        shape_parameters(transform), sim, v, mask);
     if (box_attack_shape_enabled) {
-      result |=
-          geom::check_point_legacy(box_attack_shape{}, box_attack_parameters(transform), v, mask);
+      result |= shape_check_point_compatibility<box_attack_shape>(box_attack_parameters(transform),
+                                                                  sim, v, mask);
     }
+
+    using ring0_ball = standard_transform<geom::translate_p<
+        2,
+        geom::rotate_p<
+            3, geom::ball_collider<16, shape_flag::kDangerous | shape_flag::kEnemyInteraction>>>>;
     if (+(mask & (shape_flag::kDangerous | shape_flag::kEnemyInteraction))) {
-      auto v_n = rotate_legacy(v - transform.centre, -transform.rotation - outer_rotation[0]);
       for (std::uint32_t i = 0; i < 16; ++i) {
-        auto v_i = rotate_legacy(v_n - outer_shape_d(0, i), -outer_ball_rotation);
-        result |= geom::check_point_legacy(
-            geom::ball_collider<16, shape_flag::kDangerous | shape_flag::kEnemyInteraction>{},
-            std::tuple<>{}, v_i, mask);
+        std::tuple parameters{transform.centre, transform.rotation + outer_rotation[0],
+                              outer_shape_d(0, i), outer_ball_rotation};
+        result |= shape_check_point_compatibility<ring0_ball>(parameters, sim, v, mask);
       }
     }
+
+    using ringN_ball = standard_transform<
+        geom::translate_p<2, geom::rotate_p<3, geom::ball_collider<9, shape_flag::kDangerous>>>>;
     for (std::uint32_t n = 1; n < 5 && +(mask & shape_flag::kDangerous); ++n) {
-      auto v_n = rotate_legacy(v - transform.centre, -transform.rotation - outer_rotation[n]);
       for (std::uint32_t i = 0; i < 16 + n * 6; ++i) {
         if (!outer_dangerous[n][i] || !danger_enable) {
           continue;
         }
-        auto v_i = rotate_legacy(v_n - outer_shape_d(n, i), -outer_ball_rotation);
-        result |= geom::check_point_legacy(geom::ball_collider<9, shape_flag::kDangerous>{},
-                                           std::tuple<>{}, v_i, mask);
+        std::tuple parameters{transform.centre, transform.rotation + outer_rotation[n],
+                              outer_shape_d(n, i), outer_ball_rotation};
+        result |= shape_check_point_compatibility<ringN_ball>(parameters, sim, v, mask);
       }
     }
     return result;
@@ -467,16 +473,17 @@ struct GhostBoss : ecs::component {
                                                      {}, colour_override);
     }
 
-    using outer_star_shape =
-        geom::compound<geom::polystar_colour_p<16, 8, 0>, geom::polygon_colour_p<12, 8, 0>>;
+    using outer_star_shape = standard_transform<
+        geom::translate_p<2,
+                          geom::rotate_p<3,
+                                         geom::compound<geom::polystar_colour_p<16, 8, 4>,
+                                                        geom::polygon_colour_p<12, 8, 4>>>>>;
     for (std::uint32_t n = 0; n < 5; ++n) {
-      auto t_n = geom::transform{}
-                     .translate(transform.centre)
-                     .rotate(transform.rotation + outer_rotation[n]);
       for (std::uint32_t i = 0; i < 16 + n * 6; ++i) {
-        auto t_i = t_n.translate(outer_shape_d(n, i)).rotate(outer_ball_rotation);
-        std::tuple parameters{outer_dangerous[n][i] ? c0 : n ? c2 : c1};
-        render_entity_shape_override<outer_star_shape>(sim, nullptr, parameters, t_i,
+        auto colour = outer_dangerous[n][i] ? c0 : n ? c2 : c1;
+        std::tuple parameters{transform.centre, transform.rotation + outer_rotation[n],
+                              outer_shape_d(n, i), outer_ball_rotation, colour};
+        render_entity_shape_override<outer_star_shape>(sim, nullptr, parameters, geom::transform{},
                                                        colour_override);
       }
     }

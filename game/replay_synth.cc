@@ -116,6 +116,7 @@ bool run(const options_t& options) {
   std::vector<initial_conditions> run_conditions;
   for (std::uint32_t i = 0; i < options.runs; ++i) {
     initial_conditions conditions;
+    conditions.compatibility = options.compatibility;
     conditions.mode = options.mode;
     conditions.flags = options.flags;
     conditions.player_count = options.player_count;

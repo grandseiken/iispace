@@ -78,7 +78,7 @@ bool SimInterface::any_collision(const vec2& point, shape_flag mask) const {
     if (!(e.flags & mask)) {
       continue;
     }
-    if (+e.check(collision.handle, point, mask)) {
+    if (+e.check(collision.handle, *this, point, mask)) {
       return true;
     }
   }
@@ -106,7 +106,7 @@ auto SimInterface::collision_list(const vec2& point, shape_flag mask)
     if (!(e.flags & mask)) {
       continue;
     }
-    if (auto hit = e.check(collision.handle, point, mask); + hit) {
+    if (auto hit = e.check(collision.handle, *this, point, mask); + hit) {
       r.emplace_back(collision_info{.h = collision.handle, .hit_mask = hit});
     }
   }

@@ -20,32 +20,17 @@ struct rotate_eval {};
 //////////////////////////////////////////////////////////////////////////////////
 // Iteration functions.
 //////////////////////////////////////////////////////////////////////////////////
-template <typename Parameters, ExpressionWithSubstitution<vec2, Parameters> V,
-          ShapeNodeWithSubstitution<Parameters> Node>
-constexpr shape_flag check_point_legacy(translate_eval<V, Node>, const Parameters& params,
-                                        const vec2& v, shape_flag mask) {
-  return check_point_legacy(Node{}, params, v - vec2{evaluate(V{}, params)}, mask);
-}
-
 template <IterTag I, typename Parameters, ExpressionWithSubstitution<vec2, Parameters> V,
           ShapeNodeWithSubstitution<Parameters> Node>
-constexpr void iterate(translate_eval<V, Node>, I tag, const Parameters& params, const transform& t,
-                       const IterateFunction<I> auto& f) {
+constexpr void iterate(translate_eval<V, Node>, I tag, const Parameters& params,
+                       const Transform auto& t, const IterateFunction<I> auto& f) {
   iterate(Node{}, tag, params, t.translate(vec2{evaluate(V{}, params)}), f);
-}
-
-template <typename Parameters, ExpressionWithSubstitution<fixed, Parameters> Angle,
-          ShapeNodeWithSubstitution<Parameters> Node>
-constexpr shape_flag check_point_legacy(rotate_eval<Angle, Node>, const Parameters& params,
-                                        const vec2& v, shape_flag mask) {
-  return check_point_legacy(Node{}, params, ::rotate_legacy(v, -fixed{evaluate(Angle{}, params)}),
-                            mask);
 }
 
 template <IterTag I, typename Parameters, ExpressionWithSubstitution<fixed, Parameters> Angle,
           ShapeNodeWithSubstitution<Parameters> Node>
 constexpr void iterate(rotate_eval<Angle, Node>, I tag, const Parameters& params,
-                       const transform& t, const IterateFunction<I> auto& f) {
+                       const Transform auto& t, const IterateFunction<I> auto& f) {
   iterate(Node{}, tag, params, t.rotate(fixed{evaluate(Angle{}, params)}), f);
 }
 

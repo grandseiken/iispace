@@ -22,18 +22,21 @@ struct ngon_data : shape_data_base {
   ngon_style style = ngon_style::kPolygon;
   shape_flag flags = shape_flag::kNone;
 
-  constexpr shape_flag check_point_legacy(const vec2& v, shape_flag mask) const {
-    return +(flags & mask) && v.x * v.x + v.y * v.y < radius * radius ? flags & mask
-                                                                      : shape_flag::kNone;
+  constexpr void
+  iterate(iterate_collision_t it, const Transform auto& t, const FlagFunction auto& f) const {
+    if (+(flags & it.mask) && length_squared(t.deref_ignore_rotation()) < radius * radius) {
+      std::invoke(f, flags & it.mask);
+    }
   }
 
-  constexpr void iterate(iterate_flags_t, const transform&, const FlagFunction auto& f) const {
+  constexpr void iterate(iterate_flags_t, const Transform auto&, const FlagFunction auto& f) const {
     std::invoke(f, flags);
   }
 
-  constexpr void iterate(iterate_lines_t, const transform& t, const LineFunction auto& f) const {
+  constexpr void
+  iterate(iterate_lines_t, const Transform auto& t, const LineFunction auto& f) const {
     auto vertex = [&](std::uint32_t i) {
-      return t.rotate(i * 2 * fixed_c::pi / sides).translate({radius, 0}).v;
+      return *t.rotate(i * 2 * fixed_c::pi / sides).translate({radius, 0});
     };
 
     if (style != ngon_style::kPolygram) {
@@ -49,8 +52,9 @@ struct ngon_data : shape_data_base {
     }
   }
 
-  constexpr void iterate(iterate_centres_t, const transform& t, const PointFunction auto& f) const {
-    std::invoke(f, t.v, colour);
+  constexpr void
+  iterate(iterate_centres_t, const Transform auto& t, const PointFunction auto& f) const {
+    std::invoke(f, *t, colour);
   }
 };
 

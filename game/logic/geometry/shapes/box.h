@@ -14,21 +14,23 @@ struct box_data : shape_data_base {
   glm::vec4 colour{0.f};
   shape_flag flags = shape_flag::kNone;
 
-  constexpr shape_flag check_point_legacy(const vec2& v, shape_flag mask) const {
-    return +(flags & mask) && abs(v.x) < dimensions.x && abs(v.y) < dimensions.y
-        ? flags & mask
-        : shape_flag::kNone;
+  constexpr void
+  iterate(iterate_collision_t it, const Transform auto& t, const FlagFunction auto& f) const {
+    if (+(flags & it.mask) && abs((*t).x) < dimensions.x && abs((*t).y) < dimensions.y) {
+      std::invoke(f, flags & it.mask);
+    }
   }
 
-  constexpr void iterate(iterate_flags_t, const transform&, const FlagFunction auto& f) const {
+  constexpr void iterate(iterate_flags_t, const Transform auto&, const FlagFunction auto& f) const {
     std::invoke(f, flags);
   }
 
-  constexpr void iterate(iterate_lines_t, const transform& t, const LineFunction auto& f) const {
-    auto a = t.translate({dimensions.x, dimensions.y}).v;
-    auto b = t.translate({-dimensions.x, dimensions.y}).v;
-    auto c = t.translate({-dimensions.x, -dimensions.y}).v;
-    auto d = t.translate({dimensions.x, -dimensions.y}).v;
+  constexpr void
+  iterate(iterate_lines_t, const Transform auto& t, const LineFunction auto& f) const {
+    auto a = *t.translate({dimensions.x, dimensions.y});
+    auto b = *t.translate({-dimensions.x, dimensions.y});
+    auto c = *t.translate({-dimensions.x, -dimensions.y});
+    auto d = *t.translate({dimensions.x, -dimensions.y});
 
     std::invoke(f, a, b, colour);
     std::invoke(f, b, c, colour);
@@ -36,8 +38,9 @@ struct box_data : shape_data_base {
     std::invoke(f, d, a, colour);
   }
 
-  constexpr void iterate(iterate_centres_t, const transform& t, const PointFunction auto& f) const {
-    std::invoke(f, t.v, colour);
+  constexpr void
+  iterate(iterate_centres_t, const Transform auto& t, const PointFunction auto& f) const {
+    std::invoke(f, *t, colour);
   }
 };
 

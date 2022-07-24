@@ -21,28 +21,16 @@ struct conditional_eval {};
 //////////////////////////////////////////////////////////////////////////////////
 // Iteration functions.
 //////////////////////////////////////////////////////////////////////////////////
-constexpr shape_flag check_point_legacy(null_shape, const auto&, const vec2&, shape_flag) {
-  return shape_flag::kNone;
-}
 template <IterTag I>
 constexpr void
-iterate(null_shape, I tag, const auto&, const transform&, const IterateFunction<I> auto&) {}
-
-template <typename Parameters, ExpressionWithSubstitution<bool, Parameters> Condition,
-          ShapeNodeWithSubstitution<Parameters> TrueNode,
-          ShapeNodeWithSubstitution<Parameters> FalseNode>
-constexpr shape_flag check_point_legacy(conditional_eval<Condition, TrueNode, FalseNode>,
-                                        const Parameters& params, const vec2& v, shape_flag mask) {
-  return bool{evaluate(Condition{}, params)} ? check_point_legacy(TrueNode{}, params, v, mask)
-                                             : check_point_legacy(FalseNode{}, params, v, mask);
-}
+iterate(null_shape, I tag, const auto&, const Transform auto&, const IterateFunction<I> auto&) {}
 
 template <IterTag I, typename Parameters, ExpressionWithSubstitution<bool, Parameters> Condition,
           ShapeNodeWithSubstitution<Parameters> TrueNode,
           ShapeNodeWithSubstitution<Parameters> FalseNode>
 constexpr void
 iterate(conditional_eval<Condition, TrueNode, FalseNode>, I tag, const Parameters& params,
-        const transform& t, const IterateFunction<I> auto& f) {
+        const Transform auto& t, const IterateFunction<I> auto& f) {
   if constexpr (std::is_same_v<std::remove_cvref_t<Parameters>, arbitrary_parameters>) {
     iterate(TrueNode{}, tag, params, t, f);
     iterate(FalseNode{}, tag, params, t, f);

@@ -8,11 +8,8 @@
 namespace ii::geom {
 
 struct shape_data_base {
-  constexpr shape_flag check_point_legacy(const vec2&, shape_flag) const {
-    return shape_flag::kNone;
-  }
   template <IterTag I>
-  constexpr void iterate(I, const transform&, const IterateFunction<I> auto&) const {}
+  constexpr void iterate(I, const Transform auto&, const IterateFunction<I> auto&) const {}
 };
 
 }  // namespace ii::geom

@@ -16,32 +16,36 @@ struct polyarc_data : shape_data_base {
   glm::vec4 colour{0.f};
   shape_flag flags = shape_flag::kNone;
 
-  constexpr shape_flag check_point_legacy(const vec2& v, shape_flag mask) const {
-    if (!(flags & mask)) {
-      return shape_flag::kNone;
+  constexpr void
+  iterate(iterate_collision_t it, const Transform auto& t, const FlagFunction auto& f) const {
+    if (!(flags & it.mask)) {
+      return;
     }
+    auto v = *t;
     auto theta = angle(v);
     auto r = length(v);
-    return 0 <= theta && theta <= (2 * fixed_c::pi * segments) / sides && r >= radius - 10 &&
-            r < radius
-        ? flags & mask
-        : shape_flag::kNone;
+    if (0 <= theta && theta <= (2 * fixed_c::pi * segments) / sides && r >= radius - 10 &&
+        r < radius) {
+      std::invoke(f, flags & it.mask);
+    }
   }
 
-  constexpr void iterate(iterate_flags_t, const transform&, const FlagFunction auto& f) const {
+  constexpr void iterate(iterate_flags_t, const Transform auto&, const FlagFunction auto& f) const {
     std::invoke(f, flags);
   }
 
-  constexpr void iterate(iterate_lines_t, const transform& t, const LineFunction auto& f) const {
+  constexpr void
+  iterate(iterate_lines_t, const Transform auto& t, const LineFunction auto& f) const {
     for (std::uint32_t i = 0; sides >= 2 && i < sides && i < segments; ++i) {
       auto a = from_polar(i * 2 * fixed_c::pi / sides, radius);
       auto b = from_polar((i + 1) * 2 * fixed_c::pi / sides, radius);
-      std::invoke(f, t.translate(a).v, t.translate(b).v, colour);
+      std::invoke(f, *t.translate(a), *t.translate(b), colour);
     }
   }
 
-  constexpr void iterate(iterate_centres_t, const transform& t, const PointFunction auto& f) const {
-    std::invoke(f, t.v, colour);
+  constexpr void
+  iterate(iterate_centres_t, const Transform auto& t, const PointFunction auto& f) const {
+    std::invoke(f, *t, colour);
   }
 };
 

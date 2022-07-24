@@ -77,6 +77,7 @@ void SimState::update() {
                                                                   : 0;
   internals_->input_frames = &input_.get();
 
+  // TODO: write a better collision system for non-legacy-compatibility mode.
   for (auto& e : internals_->collisions) {
     e.x_min = e.transform->centre.x - e.collision->bounding_width;
   }

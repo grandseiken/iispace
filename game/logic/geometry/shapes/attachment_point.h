@@ -7,14 +7,13 @@
 namespace ii::geom {
 
 struct attachment_point_data : shape_data_base {
-  using shape_data_base::check_point_legacy;
   using shape_data_base::iterate;
   std::size_t index{0};
   vec2 d{0};
 
-  constexpr void iterate(iterate_attachment_points_t, const transform& t,
+  constexpr void iterate(iterate_attachment_points_t, const Transform auto& t,
                          const AttachmentPointFunction auto& f) const {
-    std::invoke(f, index, t.v, t.translate(d).v - t.v);
+    std::invoke(f, index, *t, *t.translate(d) - *t);
   }
 };
 

@@ -22,6 +22,8 @@ struct TractorBoss : ecs::component {
   static constexpr glm::vec4 c1 = colour_hue360(300, 1.f / 3, .6f);
   static constexpr glm::vec4 c2 = colour_hue360(300, .4f, .5f);
 
+  // TODO: shape is too complicated and takes too long to compile.
+  // Need a geom::for that's like geom::expand_range but doesn't expand out to N templates.
   using attack_shape = standard_transform<geom::translate_p<2, geom::polygon<8, 6, c0>>>;
   template <std::size_t BI>
   struct ball_inner {

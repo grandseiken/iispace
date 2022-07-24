@@ -10,17 +10,20 @@ struct ball_collider_data : shape_data_base {
   fixed radius = 0;
   shape_flag flags = shape_flag::kNone;
 
-  constexpr shape_flag check_point_legacy(const vec2& v, shape_flag mask) const {
-    return +(flags & mask) && v.x * v.x + v.y * v.y < radius * radius ? flags & mask
-                                                                      : shape_flag::kNone;
+  constexpr void
+  iterate(iterate_collision_t it, const Transform auto& t, const FlagFunction auto& f) const {
+    if (+(flags & it.mask) && length_squared(t.deref_ignore_rotation()) < radius * radius) {
+      std::invoke(f, flags & it.mask);
+    }
   }
 
-  constexpr void iterate(iterate_flags_t, const transform&, const FlagFunction auto& f) const {
+  constexpr void iterate(iterate_flags_t, const Transform auto&, const FlagFunction auto& f) const {
     std::invoke(f, flags);
   }
 
-  constexpr void iterate(iterate_centres_t, const transform& t, const PointFunction auto& f) const {
-    std::invoke(f, t.v, glm::vec4{0.f});
+  constexpr void
+  iterate(iterate_centres_t, const Transform auto& t, const PointFunction auto& f) const {
+    std::invoke(f, *t, glm::vec4{0.f});
   }
 };
 

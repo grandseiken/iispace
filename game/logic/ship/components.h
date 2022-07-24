@@ -58,7 +58,8 @@ struct Transform : ecs::component {
 struct Collision : ecs::component {
   shape_flag flags = shape_flag::kNone;
   fixed bounding_width = 0;
-  function_ptr<shape_flag(ecs::const_handle, const vec2&, shape_flag)> check = nullptr;
+  function_ptr<shape_flag(ecs::const_handle, const SimInterface&, const vec2&, shape_flag)> check =
+      nullptr;
 };
 
 struct Update : ecs::component {
