@@ -94,10 +94,11 @@ int main(int argc, char** argv) {
     std::cerr << "no paths" << std::endl;
     return 1;
   }
+  int exit = 0;
   for (const auto& path : args) {
     if (!ii::run(options, path)) {
-      return 1;
+      exit = 1;
     }
   }
-  return 0;
+  return exit;
 }
