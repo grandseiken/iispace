@@ -56,9 +56,11 @@ constexpr auto evaluate(box_eval<Dimensions, Colour, Flags>, const auto& params)
                   shape_flag{evaluate(Flags{}, params)});
 }
 
+//////////////////////////////////////////////////////////////////////////////////
+// Helper combinations.
+//////////////////////////////////////////////////////////////////////////////////
 template <fixed W, fixed H, glm::vec4 Colour, shape_flag Flags = shape_flag::kNone>
 using box = constant<make_box(vec2{W, H}, Colour, Flags)>;
-
 template <fixed W, fixed H, std::size_t ParameterIndex, shape_flag Flags = shape_flag::kNone>
 using box_colour_p = box_eval<constant_vec2<W, H>, parameter<ParameterIndex>, constant<Flags>>;
 

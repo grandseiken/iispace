@@ -1,6 +1,12 @@
 #include "game/logic/boss/boss_internal.h"
 #include "game/logic/enemy/enemy.h"
-#include "game/logic/geometry/shapes/shapes.h"
+#include "game/logic/geometry/node_conditional.h"
+#include "game/logic/geometry/node_disable_iteration.h"
+#include "game/logic/geometry/node_expand.h"
+#include "game/logic/geometry/shapes/ball_collider.h"
+#include "game/logic/geometry/shapes/box.h"
+#include "game/logic/geometry/shapes/line.h"
+#include "game/logic/geometry/shapes/ngon.h"
 #include "game/logic/player/player.h"
 #include "game/logic/ship/ship_template.h"
 #include <array>

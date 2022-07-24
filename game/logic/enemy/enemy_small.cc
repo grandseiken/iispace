@@ -1,5 +1,6 @@
 #include "game/logic/enemy/enemy.h"
-#include "game/logic/geometry/shapes/shapes.h"
+#include "game/logic/geometry/node_conditional.h"
+#include "game/logic/geometry/shapes/ngon.h"
 #include "game/logic/ship/ship_template.h"
 
 namespace ii {

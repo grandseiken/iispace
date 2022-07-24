@@ -64,6 +64,9 @@ constexpr auto evaluate(polyarc_eval<Radius, Sides, Segments, Colour, Flags>, co
                       glm::vec4{evaluate(Colour{}, params)}, shape_flag{evaluate(Flags{}, params)});
 }
 
+//////////////////////////////////////////////////////////////////////////////////
+// Helper combinations.
+//////////////////////////////////////////////////////////////////////////////////
 template <fixed Radius, std::uint32_t Sides, std::uint32_t Segments, glm::vec4 Colour,
           shape_flag Flags = shape_flag::kNone>
 using polyarc = constant<make_polyarc(Radius, Sides, Segments, Colour, Flags)>;

@@ -34,9 +34,11 @@ constexpr auto evaluate(line_eval<A, B, Colour>, const auto& params) {
                    glm::vec4{evaluate(Colour{}, params)});
 }
 
+//////////////////////////////////////////////////////////////////////////////////
+// Helper combinations.
+//////////////////////////////////////////////////////////////////////////////////
 template <fixed AX, fixed AY, fixed BX, fixed BY, glm::vec4 Colour>
 using line = constant<make_line(vec2{AX, AY}, vec2{BX, BY}, Colour)>;
-
 template <fixed AX, fixed AY, fixed BX, fixed BY, std::size_t ParameterIndex>
 using line_colour_p =
     line_eval<constant_vec2<AX, AY>, constant_vec2<BX, BY>, parameter<ParameterIndex>>;

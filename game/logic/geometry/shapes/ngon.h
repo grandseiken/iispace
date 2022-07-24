@@ -73,6 +73,9 @@ constexpr auto evaluate(ngon_eval<Radius, Sides, Colour, Style, Flags>, const au
                    shape_flag{evaluate(Flags{}, params)});
 }
 
+//////////////////////////////////////////////////////////////////////////////////
+// Helper combinations.
+//////////////////////////////////////////////////////////////////////////////////
 template <fixed Radius, std::uint32_t Sides, glm::vec4 Colour,
           ngon_style Style = ngon_style::kPolygon, shape_flag Flags = shape_flag::kNone>
 using ngon = constant<make_ngon(Radius, Sides, Colour, Style, Flags)>;

@@ -38,6 +38,9 @@ constexpr auto evaluate(ball_collider_eval<Radius, Flags>, const auto& params) {
                             shape_flag{evaluate(Flags{}, params)});
 }
 
+//////////////////////////////////////////////////////////////////////////////////
+// Helper combinations.
+//////////////////////////////////////////////////////////////////////////////////
 template <fixed Radius, shape_flag Flags>
 using ball_collider = constant<make_ball_collider(Radius, Flags)>;
 

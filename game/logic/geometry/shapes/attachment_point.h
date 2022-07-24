@@ -31,6 +31,9 @@ constexpr auto evaluate(attachment_point_eval<Index, Direction>, const auto& par
                                vec2{evaluate(Direction{}, params)});
 }
 
+//////////////////////////////////////////////////////////////////////////////////
+// Helper combinations.
+//////////////////////////////////////////////////////////////////////////////////
 template <std::size_t Index, fixed DX, fixed DY>
 using attachment_point = constant<make_attachment_point(Index, vec2{DX, DY})>;
 

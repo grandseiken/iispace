@@ -1,6 +1,8 @@
 #include "game/logic/player/player.h"
 #include "game/logic/geometry/enums.h"
-#include "game/logic/geometry/shapes/shapes.h"
+#include "game/logic/geometry/node_conditional.h"
+#include "game/logic/geometry/shapes/box.h"
+#include "game/logic/geometry/shapes/ngon.h"
 #include "game/logic/player/ai_player.h"
 #include "game/logic/ship/ship_template.h"
 #include <algorithm>

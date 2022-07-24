@@ -1,5 +1,6 @@
 #include "game/logic/enemy/enemy.h"
-#include "game/logic/geometry/shapes/shapes.h"
+#include "game/logic/geometry/shapes/ball_collider.h"
+#include "game/logic/geometry/shapes/ngon.h"
 #include "game/logic/ship/ship_template.h"
 
 namespace ii {

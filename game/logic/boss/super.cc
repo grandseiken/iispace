@@ -1,6 +1,7 @@
 #include "game/logic/boss/boss_internal.h"
 #include "game/logic/enemy/enemy.h"
-#include "game/logic/geometry/shapes/shapes.h"
+#include "game/logic/geometry/shapes/ngon.h"
+#include "game/logic/geometry/shapes/polyarc.h"
 #include "game/logic/player/player.h"
 #include "game/logic/ship/ship_template.h"
 #include <array>

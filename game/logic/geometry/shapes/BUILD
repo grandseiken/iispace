@@ -8,7 +8,6 @@ cc_library(
     "line.h",
     "ngon.h",
     "polyarc.h",
-    "shapes.h",
   ],
   deps = [
     "//game/logic/geometry",
