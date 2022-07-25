@@ -25,9 +25,9 @@ _replay_test = rule(
 
 def replay_test(replay = "", score = 0, **kwargs):
   _replay_test(
-    name = "test_%s" % replay,
-    deps = [":%s" % replay],
-    args = ["--verify_score", "%s" % score, "$(location :%s)" % replay],
+    name = Label(replay).name,
+    deps = [replay],
+    args = ["--verify_score", "%s" % score, "$(location %s)" % replay],
     size = "small",
     **kwargs,
   )
