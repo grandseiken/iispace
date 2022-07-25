@@ -391,28 +391,29 @@ struct GhostBoss : ecs::component {
                                                                   sim, v, mask);
     }
 
-    using ring0_ball = standard_transform<geom::translate_p<
-        2,
-        geom::rotate_p<
-            3, geom::ball_collider<16, shape_flag::kDangerous | shape_flag::kEnemyInteraction>>>>;
+    using ring0_ball =
+        geom::ball_collider<16, shape_flag::kDangerous | shape_flag::kEnemyInteraction>;
+    using ring0_ball_t =
+        standard_transform<geom::rotate_p<2, geom::translate_p<3, geom::rotate_p<4, ring0_ball>>>>;
     if (+(mask & (shape_flag::kDangerous | shape_flag::kEnemyInteraction))) {
       for (std::uint32_t i = 0; i < 16; ++i) {
-        std::tuple parameters{transform.centre, transform.rotation + outer_rotation[0],
+        std::tuple parameters{transform.centre, transform.rotation, outer_rotation[0],
                               outer_shape_d(0, i), outer_ball_rotation};
-        result |= shape_check_point_compatibility<ring0_ball>(parameters, sim, v, mask);
+        result |= shape_check_point_compatibility<ring0_ball_t>(parameters, sim, v, mask);
       }
     }
 
-    using ringN_ball = standard_transform<
-        geom::translate_p<2, geom::rotate_p<3, geom::ball_collider<9, shape_flag::kDangerous>>>>;
+    using ringN_ball = geom::ball_collider<9, shape_flag::kDangerous>;
+    using ringN_ball_t =
+        standard_transform<geom::rotate_p<2, geom::translate_p<3, geom::rotate_p<4, ringN_ball>>>>;
     for (std::uint32_t n = 1; n < 5 && +(mask & shape_flag::kDangerous); ++n) {
       for (std::uint32_t i = 0; i < 16 + n * 6; ++i) {
         if (!outer_dangerous[n][i] || !danger_enable) {
           continue;
         }
-        std::tuple parameters{transform.centre, transform.rotation + outer_rotation[n],
+        std::tuple parameters{transform.centre, transform.rotation, outer_rotation[n],
                               outer_shape_d(n, i), outer_ball_rotation};
-        result |= shape_check_point_compatibility<ringN_ball>(parameters, sim, v, mask);
+        result |= shape_check_point_compatibility<ringN_ball_t>(parameters, sim, v, mask);
       }
     }
     return result;

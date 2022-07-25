@@ -47,10 +47,11 @@ inline constexpr T angle(const glm::vec<2, T>& v) {
 template <typename T>
 inline constexpr glm::vec<2, T> normalise(const glm::vec<2, T>& v) {
   using std::sqrt;
-  if (v == glm::vec<2, T>{0}) {
+  auto d = length_squared(v);
+  if (!d) {
     return v;
   }
-  return v / sqrt(length_squared(v));
+  return v / sqrt(d);
 }
 
 template <typename T>

@@ -123,7 +123,7 @@ struct TractorBoss : ecs::component {
         }
         targets.clear();
         sim.index().iterate_dispatch<Player>([&](const Player& p, Transform& p_transform) {
-          if (!p.is_killed()) {
+          if (!p.is_killed() && length(p_transform.centre - transform.centre) <= kSimDimensions.x) {
             targets.push_back(p_transform.centre);
             p_transform.centre +=
                 normalise(transform.centre - p_transform.centre) * kTractorBeamSpeed;
@@ -178,7 +178,8 @@ struct TractorBoss : ecs::component {
           targets.clear();
 
           sim.index().iterate_dispatch<Player>([&](const Player& p, Transform& p_transform) {
-            if (!p.is_killed()) {
+            if (!p.is_killed() &&
+                length(p_transform.centre - transform.centre) <= kSimDimensions.x) {
               targets.push_back(p_transform.centre);
               p_transform.centre +=
                   normalise(transform.centre - p_transform.centre) * kTractorBeamSpeed;
@@ -186,7 +187,8 @@ struct TractorBoss : ecs::component {
           });
 
           sim.index().iterate_dispatch_if<Enemy>([&](ecs::handle eh, Transform& e_transform) {
-            if (eh.id() == h.id()) {
+            if (eh.id() == h.id() ||
+                length(e_transform.centre - transform.centre) > kSimDimensions.x) {
               return;
             }
             sim.play_sound(sound::kBossAttack, transform.centre, /* random */ true,

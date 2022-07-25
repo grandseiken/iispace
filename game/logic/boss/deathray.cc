@@ -126,11 +126,7 @@ struct DeathArm : ecs::component {
     }
   }
 
-  void on_destroy(ecs::const_handle h, SimInterface& sim) const {
-    explode_entity_shapes<DeathArm>(h, sim);
-    explode_entity_shapes<DeathArm>(h, sim, glm::vec4{1.f}, 12);
-    explode_entity_shapes<DeathArm>(h, sim, c1, 24);
-  }
+  void on_destroy(ecs::const_handle h, SimInterface& sim) const;
 };
 
 ecs::handle spawn_death_arm(SimInterface& sim, ecs::handle boss, bool is_top, std::uint32_t hp) {
@@ -180,9 +176,6 @@ struct DeathRayBoss : public ecs::component {
   std::vector<std::pair<std::uint32_t, std::uint32_t>> shot_queue;
 
   void update(ecs::handle h, Transform& transform, const Health& health, SimInterface& sim) {
-    std::erase_if(arms, [&](ecs::entity_id id) {
-      return !sim.index().contains(id) || sim.index().get(id)->has<Destroy>();
-    });
     bool in_position = true;
     fixed d = pos == 0 ? 1 * kSimDimensions.y / 4
         : pos == 1     ? 2 * kSimDimensions.y / 4
@@ -346,6 +339,15 @@ struct DeathRayBoss : public ecs::component {
     return arms.empty() ? damage : 0u;
   }
 };
+
+void DeathArm::on_destroy(ecs::const_handle h, SimInterface& sim) const {
+  explode_entity_shapes<DeathArm>(h, sim);
+  explode_entity_shapes<DeathArm>(h, sim, glm::vec4{1.f}, 12);
+  explode_entity_shapes<DeathArm>(h, sim, c1, 24);
+  if (auto boss_h = sim.index().get(death_boss); boss_h) {
+    std::erase(boss_h->get<DeathRayBoss>()->arms, h.id());
+  }
+}
 
 std::uint32_t transform_death_ray_boss_damage(ecs::handle h, SimInterface& sim, damage_type type,
                                               std::uint32_t damage) {

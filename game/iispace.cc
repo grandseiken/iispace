@@ -75,7 +75,7 @@ bool run(const std::vector<std::string>& args, const game_options_t& options) {
   auto* game = modal_stack.add(std::make_unique<z0Game>(options));
 
   if (!args.empty()) {
-    auto replay_data = fs.read_replay(args[0]);
+    auto replay_data = fs.read(args[0]);
     if (!replay_data) {
       std::cerr << replay_data.error() << std::endl;
       return false;
