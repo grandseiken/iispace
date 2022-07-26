@@ -125,8 +125,7 @@ bool run(const options_t& options) {
     run_conditions.emplace_back(conditions);
   }
 
-  std::vector<std::thread> threads;
-  std::mutex mutex;
+  std::uint32_t runs_completed = 0;
   std::uint32_t best_run_index = 0;
   std::optional<run_data_t> best_run;
   bool failed = false;
@@ -137,6 +136,9 @@ bool run(const options_t& options) {
       return failed = true;
     }
     if (options.thread_count > 1) {
+      auto p =
+          static_cast<std::uint32_t>(100 * static_cast<float>(++runs_completed) / options.runs);
+      std::cout << "[" << p << "%] ";
       if (data->ticks >= options.max_ticks) {
         std::cout << "run #" << (run_index + 1) << " max ticks exceeded!" << std::endl;
       } else {
@@ -163,6 +165,8 @@ bool run(const options_t& options) {
     return failed;
   };
 
+  std::vector<std::thread> threads;
+  std::mutex mutex;
   for (std::uint32_t k = 0; k < options.thread_count; ++k) {
     threads.emplace_back([&, k] {
       for (std::uint32_t i = k; i < options.runs; i += options.thread_count) {
