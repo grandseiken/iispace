@@ -15,9 +15,6 @@ void iterate_as_utf32(ustring_view s, F&& callback) {
     return 0;
   };
 
-  auto is_high_surrogate = [](char16_t uc) { return (uc & 0xfffffc00) == 0xd800; };
-  auto is_low_surrogate = [](char16_t uc) { return (uc & 0xfffffc00) == 0xdc00; };
-
   switch (s.encoding()) {
   case ustring_encoding::kAscii:
     for (std::size_t i = 0; i < s.ascii().size(); ++i) {

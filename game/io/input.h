@@ -68,8 +68,8 @@ struct frame {
   };
 
   std::vector<button_event> button_events;
-  std::array<bool, static_cast<std::size_t>(button::kMax)> button_state = {false};
-  std::array<std::int16_t, static_cast<std::size_t>(axis::kMax)> axis_state = {0};
+  std::array<bool, static_cast<std::size_t>(controller::button::kMax)> button_state = {false};
+  std::array<std::int16_t, static_cast<std::size_t>(controller::axis::kMax)> axis_state = {0};
 
   bool button(controller::button k) const {
     return button_state[static_cast<std::size_t>(k)];
@@ -246,7 +246,7 @@ struct frame {
   };
 
   std::vector<key_event> key_events;
-  std::array<bool, static_cast<std::size_t>(key::kMax)> key_state = {false};
+  std::array<bool, static_cast<std::size_t>(keyboard::key::kMax)> key_state = {false};
   // TODO: std::string char_delta?
 
   bool key(keyboard::key k) const {
@@ -282,7 +282,7 @@ struct frame {
   };
 
   std::vector<button_event> button_events;
-  std::array<bool, static_cast<std::size_t>(button::kMax)> button_state = {false};
+  std::array<bool, static_cast<std::size_t>(mouse::button::kMax)> button_state = {false};
   glm::ivec2 cursor = {0, 0};
   glm::ivec2 cursor_delta = {0, 0};
   glm::ivec2 wheel_delta = {0, 0};

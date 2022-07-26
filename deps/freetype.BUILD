@@ -9,6 +9,7 @@ cc_library(
   ]),
   srcs = glob([
     "include/freetype/internal/*.h",
+    "include/freetype/internal/services/*.h",
     "src/**/*.h",
   ]) + [
     "src/autofit/autofit.c",
@@ -55,7 +56,9 @@ cc_library(
       "src/base/ftsystem.c",
     ],
     "//conditions:default": [
-      "builds/unix/ftsystem.c",
+      # TODO: unneeded?
+      # "builds/unix/ftsystem.c",
+      "src/base/ftsystem.c",
       "src/base/ftdebug.c",
     ],
   }),

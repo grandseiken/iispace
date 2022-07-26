@@ -375,7 +375,6 @@ result<RenderedFont> Font::render(std::span<const std::uint32_t> utf32_codes, bo
                                       glyph->bitmap.pitch);
   };
 
-  std::uint32_t frame_index = 0;
   for (auto code : utf32_codes) {
     auto glyph_index = FT_Get_Char_Index(data_->face, code);
     if (!glyph_index) {

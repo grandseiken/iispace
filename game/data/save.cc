@@ -83,7 +83,7 @@ result<SaveGame> SaveGame::load(std::span<const std::uint8_t> bytes) {
     std::size_t players = 0;
     for (const auto& t : in.table()) {
       std::size_t index = 0;
-      for (const auto s : t.score()) {
+      for (const auto& s : t.score()) {
         out[players][index].name = s.name();
         out[players][index].score = s.score();
         ++index;

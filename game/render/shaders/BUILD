@@ -1,4 +1,4 @@
-load("//deps:xxd.bzl", "xxd")
+load("//tools:xxd.bzl", "xxd")
 
 xxd(
   name = "shaders",

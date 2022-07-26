@@ -420,7 +420,7 @@ void GameModal::update(ii::ui::UiLayer& ui) {
       ui.play_sound(pair.first, s.volume, s.pan, s.pitch);
     }
     for (const auto& pair : state_->get_rumble_output()) {
-      // TODO
+      (void)pair;  // TODO
     }
   }
 

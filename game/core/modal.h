@@ -9,6 +9,7 @@ class UiLayer;
 namespace ii::render {
 class GlRenderer;
 }  // namespace ii::render
+class ModalStack;
 
 class Modal {
 public:

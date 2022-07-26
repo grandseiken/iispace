@@ -72,7 +72,7 @@ bool run(const std::vector<std::string>& args, const game_options_t& options) {
 
   ui::UiLayer ui_layer{fs, *io_layer, mixer};
   ModalStack modal_stack;
-  auto* game = modal_stack.add(std::make_unique<z0Game>(options));
+  modal_stack.add(std::make_unique<z0Game>(options));
 
   if (!args.empty()) {
     auto replay_data = fs.read(args[0]);

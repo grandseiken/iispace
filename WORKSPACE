@@ -1,4 +1,5 @@
 load("@bazel_tools//tools/build_defs/repo:http.bzl", "http_archive")
+load("@//tools:sdl_system_repository.bzl", "sdl_system_repository")
 
 ################################################################################
 # Hedron compile commands extractor
@@ -39,7 +40,7 @@ http_archive(
 )
 
 ################################################################################
-# I/O dependencies
+# SDL
 ################################################################################
 http_archive(
   name = "sdl_windows",
@@ -55,6 +56,10 @@ http_archive(
   sha256 = "e45bd267d5c4afef51eb2913c8ad97fb122aeda7eae13d06d10dc40ce6544ff8",
   strip_prefix = "SDL_GameControllerDB-47afeaa74afeef944f7f895bf67acbfa5d24621a",
   url = "https://github.com/gabomdq/SDL_GameControllerDB/archive/47afeaa74afeef944f7f895bf67acbfa5d24621a.zip",
+)
+
+sdl_system_repository(
+  name = "sdl_system",
 )
 
 ################################################################################
@@ -123,7 +128,6 @@ rules_proto_toolchains()
 ################################################################################
 # Test utilities
 ################################################################################
-
 http_archive(
   name = "flamegraph",
   build_file = "@//deps:flamegraph.BUILD",
