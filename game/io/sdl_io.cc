@@ -108,6 +108,10 @@ struct SdlIoLayer::impl_t {
 
 result<std::unique_ptr<SdlIoLayer>>
 SdlIoLayer::create(const char* title, char gl_major, char gl_minor) {
+  // TODO: SDL_INIT_GAMECONTROLLER can sometimes cause hangs or long delays while probing
+  // misbehaving devices or buggy drivers. Apparently it's possible to run that bit asynchronously
+  // on a different thread and start using gamepads once it finishes?
+  // https://mobile.twitter.com/noelfb/status/1256794955227361280
   if (SDL_Init(SDL_INIT_VIDEO | SDL_INIT_AUDIO | SDL_INIT_EVENTS | SDL_INIT_GAMECONTROLLER |
                SDL_INIT_HAPTIC) < 0) {
     return unexpected(SDL_GetError());

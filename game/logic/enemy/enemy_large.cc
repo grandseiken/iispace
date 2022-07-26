@@ -91,17 +91,17 @@ struct Shielder : ecs::component {
                                    geom::translate<0, 24, geom::rotate<fixed_c::pi / 2, S>>,
                                    geom::translate<0, -24, geom::rotate<fixed_c::pi / 2, S>>>;
   using s_centre =
-      geom::polygon_colour_p<14, 8, 3, shape_flag::kDangerous | shape_flag::kVulnerable>;
+      geom::polygon_colour_p<14, 8, 2, shape_flag::kDangerous | shape_flag::kVulnerable>;
   using s_shield0 = geom::polystar<8, 6, c0, shape_flag::kWeakShield>;
   using s_shield1 = geom::ngon<8, 6, c1>;
   using s_spokes = geom::polystar<24, 4, c0>;
-  using shape = geom::translate_p<0,
-                                  geom::rotate_p<1, s_arrange<geom::rotate_p<2, s_shield0>>,
-                                                 s_arrange<geom::rotate_p<2, s_shield1>>, s_spokes>,
-                                  geom::rotate_p<2, s_centre>>;
+  using shape =
+      standard_transform<s_spokes, s_arrange<geom::rotate_eval<geom::multiply_p<-2, 1>, s_shield0>>,
+                         s_arrange<geom::rotate_eval<geom::multiply_p<-2, 1>, s_shield1>>,
+                         geom::rotate_eval<geom::negate_p<1>, s_centre>>;
 
-  std::tuple<vec2, fixed, fixed, glm::vec4> shape_parameters(const Transform& transform) const {
-    return {transform.centre, transform.rotation, -transform.rotation, power ? c1 : c0};
+  std::tuple<vec2, fixed, glm::vec4> shape_parameters(const Transform& transform) const {
+    return {transform.centre, transform.rotation, power ? c1 : c0};
   }
 
   vec2 dir{0, 1};
