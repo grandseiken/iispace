@@ -20,6 +20,7 @@ struct GlobalData : ecs::component {
 
   std::uint32_t lives = 0;
   std::uint32_t non_wall_enemy_count = 0;
+  std::optional<std::uint32_t> overmind_wave_timer;
   std::vector<std::uint32_t> player_kill_queue;
 
   struct fireworks_entry {

@@ -91,7 +91,6 @@ inline result<run_data_t> synthesize_replay(const initial_conditions& conditions
   data.ticks = results.tick_count;
   data.score = results.score;
   data.bosses_killed |= results.bosses_killed;
-  data.bosses_killed |= results.hard_mode_bosses_killed;
   if (save_replay || (max_ticks && data.ticks >= *max_ticks)) {
     auto bytes = writer.write();
     if (!bytes) {

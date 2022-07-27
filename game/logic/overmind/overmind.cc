@@ -3,9 +3,9 @@
 #include "game/logic/boss/boss.h"
 #include "game/logic/overmind/formations.h"
 #include "game/logic/overmind/spawn_context.h"
-#include "game/logic/overmind/stars.h"
 #include "game/logic/player/player.h"
 #include "game/logic/ship/components.h"
+#include "game/logic/sim/fx/stars.h"
 #include <algorithm>
 
 namespace ii {
@@ -20,7 +20,7 @@ constexpr std::uint32_t kLevelsPerGroup = 4;
 constexpr std::uint32_t kBaseGroupsPerBoss = 4;
 }  // namespace
 
-Overmind::Overmind(SimInterface& sim) : sim_{sim}, stars_{std::make_unique<Stars>()} {
+Overmind::Overmind(SimInterface& sim) : sim_{sim} {
   add_formations();
 
   auto queue = [this] {
@@ -50,14 +50,22 @@ Overmind::Overmind(SimInterface& sim) : sim_{sim}, stars_{std::make_unique<Stars
 Overmind::~Overmind() = default;
 
 void Overmind::update() {
-  stars_->update(sim_);
-
+  sim_.stars().update(sim_);
   std::uint32_t total_enemy_threat = 0;
   sim_.index().iterate<Enemy>([&](const Enemy& e) { total_enemy_threat += e.threat_value; });
 
+  auto output_wave_timer = [&] {
+    auto& data = *sim_.global_entity().get<GlobalData>();
+    if (is_boss_level_ || kTimer < timer_) {
+      data.overmind_wave_timer.reset();
+    } else {
+      data.overmind_wave_timer = kTimer - timer_;
+    }
+  };
+
   if (sim_.conditions().mode == game_mode::kBoss) {
     if (!total_enemy_threat) {
-      stars_->change(sim_);
+      sim_.stars().change(sim_);
       if (boss_mod_bosses_ < 6) {
         for (std::uint32_t i = 0; boss_mod_bosses_ && i < sim_.player_count(); ++i) {
           spawn_boss_reward();
@@ -68,11 +76,13 @@ void Overmind::update() {
         ++boss_mod_bosses_;
       }
     }
+    output_wave_timer();
     return;
   }
 
   if (boss_rest_timer_ > 0) {
     --boss_rest_timer_;
+    output_wave_timer();
     return;
   }
 
@@ -96,7 +106,7 @@ void Overmind::update() {
       spawn_powerup();
     }
     timer_ = 0;
-    stars_->change(sim_);
+    sim_.stars().change(sim_);
 
     if (is_boss_level_) {
       ++boss_mod_bosses_;
@@ -139,21 +149,7 @@ void Overmind::update() {
       bosses_to_go_ = boss_mod_fights_ >= 4 ? 3 : boss_mod_fights_ >= 2 ? 2 : 1;
     }
   }
-}
-
-void Overmind::render() const {
-  stars_->render(sim_);
-}
-
-std::uint32_t Overmind::get_killed_bosses() const {
-  return boss_mod_bosses_ ? boss_mod_bosses_ - 1 : 0;
-}
-
-std::optional<std::uint32_t> Overmind::get_timer() const {
-  if (is_boss_level_ || kTimer < timer_) {
-    return std::nullopt;
-  }
-  return kTimer - timer_;
+  output_wave_timer();
 }
 
 void Overmind::spawn_powerup() {

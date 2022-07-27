@@ -18,12 +18,11 @@ cc_library(
   hdrs = [
     "formations.h",
     "spawn_context.h",
-    "stars.h",
   ],
-  srcs = ["stars.cc"],
   deps = [
     "//game/common:math",
     "//game/logic/sim:sim_interface",
+    "//game/logic/sim/fx",
     "//game/logic/enemy",
     "@glm",
   ],

@@ -52,13 +52,7 @@ SimState::SimState(const initial_conditions& conditions, InputAdapter& input,
           });
         }
         if (auto* b = h.get<Boss>(); b) {
-          if (b->boss == boss_flag::kBoss3A ||
-              (internals->conditions.mode != game_mode::kBoss &&
-               internals->conditions.mode != game_mode::kNormal)) {
-            internals->hard_mode_bosses_killed |= b->boss;
-          } else {
-            internals->bosses_killed |= b->boss;
-          }
+          internals->bosses_killed |= b->boss;
         }
 
         if (auto it = std::ranges::find(internals->collisions, h.id(),
@@ -135,7 +129,8 @@ void SimState::update() {
 
   if (!kill_timer_ &&
       ((interface_->killed_players() == interface_->player_count() && !interface_->get_lives()) ||
-       (internals_->conditions.mode == game_mode::kBoss && overmind_->get_killed_bosses() >= 6))) {
+       (internals_->conditions.mode == game_mode::kBoss &&
+        boss_kill_count(internals_->bosses_killed) >= 6))) {
     kill_timer_ = 100;
   }
   if (kill_timer_) {
@@ -153,7 +148,7 @@ void SimState::render() const {
   internals_->line_output.clear();
   internals_->player_output.clear();
 
-  overmind_->render();
+  internals_->stars.render(*interface_);
   for (const auto& particle : internals_->particles) {
     interface_->render_line_rect(particle.position + glm::vec2{1, 1},
                                  particle.position - glm::vec2{1, 1}, particle.colour);
@@ -240,7 +235,7 @@ render_output SimState::get_render_output() const {
   result.mode = internals_->conditions.mode;
   result.tick_count = internals_->tick_count;
   result.lives_remaining = interface_->get_lives();
-  result.overmind_timer = overmind_->get_timer();
+  result.overmind_timer = interface_->global_entity().get<GlobalData>()->overmind_wave_timer;
   result.colour_cycle = colour_cycle_;
 
   std::uint32_t boss_hp = 0;
@@ -262,10 +257,8 @@ sim_results SimState::get_results() const {
   r.mode = internals_->conditions.mode;
   r.seed = internals_->conditions.seed;
   r.tick_count = internals_->tick_count;
-  r.killed_bosses = overmind_->get_killed_bosses();
   r.lives_remaining = interface_->get_lives();
   r.bosses_killed = internals_->bosses_killed;
-  r.hard_mode_bosses_killed = internals_->hard_mode_bosses_killed;
 
   internals_->index.iterate<Player>([&](const Player& p) {
     auto& pr = r.players.emplace_back();

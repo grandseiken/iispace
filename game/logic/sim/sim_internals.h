@@ -2,6 +2,7 @@
 #define II_GAME_LOGIC_SIM_SIM_INTERNALS_H
 #include "game/logic/ecs/index.h"
 #include "game/logic/ship/components.h"
+#include "game/logic/sim/fx/stars.h"
 #include "game/logic/sim/random_engine.h"
 #include "game/logic/sim/sim_interface.h"
 #include "game/logic/sim/sim_io.h"
@@ -28,6 +29,7 @@ struct SimInternals {
   std::optional<ecs::handle> global_entity_handle;
   std::uint64_t tick_count = 0;
   std::vector<particle> particles;
+  Stars stars;
 
   struct collision_entry {
     ecs::entity_id id;
@@ -50,10 +52,8 @@ struct SimInternals {
   std::vector<render_output::player_info> player_output;
   std::unordered_map<std::uint32_t, std::uint32_t> rumble_output;
   std::unordered_map<sound, sound_aggregation_t> sound_output;
-
   // Run output.
   boss_flag bosses_killed{0};
-  boss_flag hard_mode_bosses_killed{0};  // TODO: remove and just check initial conditions mode.
 };
 
 }  // namespace ii

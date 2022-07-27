@@ -182,6 +182,14 @@ ecs::handle SimInterface::nearest_player(const vec2& point) {
   return nearest_alive ? *nearest_alive : *nearest_dead;
 }
 
+Stars& SimInterface::stars() {
+  return internals_->stars;
+}
+
+const Stars& SimInterface::stars() const {
+  return internals_->stars;
+}
+
 void SimInterface::add_particle(const ii::particle& particle) {
   internals_->particles.emplace_back(particle);
 }

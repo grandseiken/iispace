@@ -3,6 +3,7 @@
 #include "game/common/enum.h"
 #include "game/common/math.h"
 #include <glm/glm.hpp>
+#include <bit>
 #include <cstdint>
 #include <optional>
 #include <vector>
@@ -38,6 +39,10 @@ enum class boss_flag : std::uint32_t {
   kBoss2C = 32,
   kBoss3A = 64,
 };
+
+inline std::uint32_t boss_kill_count(boss_flag flag) {
+  return std::popcount(static_cast<std::uint32_t>(flag));
+}
 
 template <>
 struct bitmask_enum<boss_flag> : std::true_type {};
@@ -107,11 +112,8 @@ struct sim_results {
   game_mode mode = game_mode::kNormal;
   std::uint64_t tick_count = 0;
   std::uint32_t seed = 0;
-  std::uint32_t killed_bosses = 0;
   std::uint32_t lives_remaining = 0;
-
   boss_flag bosses_killed{0};
-  boss_flag hard_mode_bosses_killed{0};
 
   struct player_result {
     std::uint32_t number = 0;

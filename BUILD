@@ -5,7 +5,6 @@ CLANG_CL_ARGS = "--config clang-cl"
 refresh_compile_commands(
   name = "refresh_compile_commands",
   targets = {
-    "//game:iispace": CLANG_CL_ARGS,
-    "//game:score": CLANG_CL_ARGS,
+    "//game/...": CLANG_CL_ARGS,
   },
 )

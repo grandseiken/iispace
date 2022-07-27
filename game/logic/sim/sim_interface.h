@@ -15,7 +15,9 @@ class EntityIndex;
 }  // namespace ecs
 enum class shape_flag : std::uint32_t;
 struct SimInternals;
+class Stars;
 
+// TODO: make this dynamic so we can change it for non-legacy mode.
 constexpr glm::ivec2 kSimDimensions = {640, 480};
 
 struct particle {
@@ -44,7 +46,10 @@ public:
   ecs::const_handle global_entity() const;
   ecs::handle global_entity();
 
-  // TODO: support different categories of random with different seeds.
+  // TODO: support different categories of random with different seeds, e.g. kGameState,
+  // kAestheticOnly. Must actually not be different in legacy compatibility mode, otherwise
+  // can separate out non-gamestate-affecting randomness so that these things no longer
+  // need to be strictly preserved.
   std::uint32_t random_state() const;
   std::uint32_t random(std::uint32_t max);
   fixed random_fixed();
@@ -70,6 +75,10 @@ public:
   ecs::const_handle nearest_player(const vec2& point) const;
   ecs::handle nearest_player(const vec2& point);
 
+  // Particle / effects stuff.
+  // TODO: probably unify particles and stars into a new system.
+  Stars& stars();
+  const Stars& stars() const;
   void add_particle(const particle& particle);
   void explosion(const glm::vec2& v, const glm::vec4& c, std::uint32_t time = 8,
                  const std::optional<glm::vec2>& towards = std::nullopt);

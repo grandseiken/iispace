@@ -2,14 +2,12 @@
 #define II_GAME_LOGIC_OVERMIND_OVERMIND_H
 #include "game/common/functional.h"
 #include <cstdint>
-#include <memory>
 #include <optional>
 #include <vector>
 
 namespace ii {
 class SimInterface;
 class SpawnContext;
-class Stars;
 
 // TODO: make Overmind an entity/component.
 class Overmind {
@@ -18,10 +16,6 @@ public:
   ~Overmind();
 
   void update();
-  void render() const;
-
-  std::uint32_t get_killed_bosses() const;
-  std::optional<std::uint32_t> get_timer() const;
 
 private:
   struct entry {
@@ -39,7 +33,6 @@ private:
   void boss_mode_boss();
 
   SimInterface& sim_;
-  std::unique_ptr<Stars> stars_;
 
   std::uint32_t power_ = 0;
   std::uint32_t timer_ = 0;

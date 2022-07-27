@@ -1,5 +1,5 @@
-#ifndef II_GAME_LOGIC_OVERMIND_STARS_H
-#define II_GAME_LOGIC_OVERMIND_STARS_H
+#ifndef II_GAME_LOGIC_SIM_FX_STARS_H
+#define II_GAME_LOGIC_SIM_FX_STARS_H
 #include <glm/glm.hpp>
 #include <cstdint>
 #include <memory>

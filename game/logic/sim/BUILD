@@ -40,6 +40,7 @@ cc_library(
     "//game/logic/overmind",
     "//game/logic/player",
     "//game/logic/ship",
+    "//game/logic/sim/fx",
   ],
   visibility = ["//visibility:public"],
 )
