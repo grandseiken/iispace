@@ -20,7 +20,10 @@ SimState::SimState(const initial_conditions& conditions, InputAdapter& input,
   internals_->conditions = conditions;
   internals_->global_entity_handle = internals_->index.create(GlobalData{conditions});
   internals_->global_entity_handle->add(Update{.update = ecs::call<&GlobalData::pre_update>});
+  internals_->global_entity_handle->add(
+      PostUpdate{.post_update = ecs::call<&GlobalData::post_update>});
   internals_->global_entity_id = internals_->global_entity_handle->id();
+
   for (std::uint32_t i = 0; i < conditions.player_count; ++i) {
     vec2 v((1 + i) * kSimDimensions.x / (1 + conditions.player_count), kSimDimensions.y / 2);
     spawn_player(*interface_, v, i, /* AI */ std::ranges::find(ai_players, i) != ai_players.end());
@@ -84,8 +87,6 @@ void SimState::update() {
   std::ranges::stable_sort(internals_->collisions,
                            [](const auto& a, const auto& b) { return a.x_min < b.x_min; });
 
-  internals_->non_wall_enemy_count =
-      internals_->index.count<Enemy>() - internals_->index.count<WallTag>();
   internals_->index.iterate_dispatch_if<Boss>([&](Boss& boss, Transform& transform) {
     if (interface_->is_on_screen(transform.centre)) {
       boss.show_hp_bar = true;
@@ -107,7 +108,6 @@ void SimState::update() {
       particle.destroy = !--particle.timer;
     }
   }
-  internals_->global_entity_handle->get<GlobalData>()->post_update(*interface_);
 
   internals_->index.iterate_dispatch<Destroy>([&](ecs::const_handle h) {
     internals_->index.destroy(h.id());
@@ -126,6 +126,11 @@ void SimState::update() {
   }
 
   std::erase_if(internals_->particles, [](const particle& p) { return p.destroy; });
+  internals_->index.iterate_dispatch<PostUpdate>([&](ecs::handle h, PostUpdate& c) {
+    if (!h.has<Destroy>()) {
+      c.post_update(h, *interface_);
+    }
+  });
   overmind_->update();
 
   if (!kill_timer_ &&

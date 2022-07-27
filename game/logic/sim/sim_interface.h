@@ -55,7 +55,6 @@ public:
   };
   std::vector<collision_info> collision_list(const vec2& point, shape_flag mask);
   bool any_collision(const vec2& point, shape_flag mask) const;
-  std::uint32_t get_non_wall_count() const;
   bool is_on_screen(const vec2& point) const;
   vec2 rotate_compatibility(const vec2& v, fixed theta) const {
     return conditions().compatibility == compatibility_level::kLegacy ? rotate_legacy(v, theta)

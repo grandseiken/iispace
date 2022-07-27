@@ -19,6 +19,7 @@ struct GlobalData : ecs::component {
   static constexpr std::uint32_t kBossModeLives = 1;
 
   std::uint32_t lives = 0;
+  std::uint32_t non_wall_enemy_count = 0;
   std::vector<std::uint32_t> player_kill_queue;
 
   struct fireworks_entry {
@@ -64,6 +65,10 @@ struct Collision : ecs::component {
 
 struct Update : ecs::component {
   function_ptr<void(ecs::handle, SimInterface&)> update;
+};
+
+struct PostUpdate : ecs::component {
+  function_ptr<void(ecs::handle, SimInterface&)> post_update;
 };
 
 struct Render : ecs::component {

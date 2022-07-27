@@ -23,6 +23,7 @@ public:
   std::uint32_t get_killed_bosses() const;
   std::optional<std::uint32_t> get_timer() const;
 
+private:
   struct entry {
     std::uint32_t id = 0;
     std::uint32_t cost = 0;
@@ -30,7 +31,6 @@ public:
     function_ptr<void(const SpawnContext&)> function = nullptr;
   };
 
-private:
   void spawn_powerup();
   void spawn_boss_reward();
 

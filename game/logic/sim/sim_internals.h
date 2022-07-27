@@ -38,9 +38,6 @@ struct SimInternals {
   };
   std::vector<collision_entry> collisions;
 
-  // Cached data.
-  std::uint32_t non_wall_enemy_count = 0;
-
   // Per-frame output.
   struct sound_aggregation_t {
     std::size_t count = 0;
@@ -56,7 +53,7 @@ struct SimInternals {
 
   // Run output.
   boss_flag bosses_killed{0};
-  boss_flag hard_mode_bosses_killed{0};
+  boss_flag hard_mode_bosses_killed{0};  // TODO: remove and just check initial conditions mode.
 };
 
 }  // namespace ii

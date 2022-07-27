@@ -3,7 +3,8 @@
 
 namespace ii {
 
-void GlobalData::pre_update(SimInterface&) {
+void GlobalData::pre_update(SimInterface& sim) {
+  non_wall_enemy_count = sim.index().count<Enemy>() - sim.index().count<WallTag>();
   extra_enemy_warnings.clear();
 }
 

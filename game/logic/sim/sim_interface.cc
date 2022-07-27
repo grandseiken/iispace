@@ -113,10 +113,6 @@ auto SimInterface::collision_list(const vec2& point, shape_flag mask)
   return r;
 }
 
-std::uint32_t SimInterface::get_non_wall_count() const {
-  return internals_->non_wall_enemy_count;
-}
-
 bool SimInterface::is_on_screen(const vec2& point) const {
   return all(greaterThanEqual(point, vec2{0})) && all(lessThanEqual(point, vec2{kSimDimensions}));
 }
