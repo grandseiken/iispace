@@ -1,16 +1,16 @@
 #ifndef II_GAME_LOGIC_OVERMIND_OVERMIND_H
 #define II_GAME_LOGIC_OVERMIND_OVERMIND_H
+#include "game/common/functional.h"
 #include <cstdint>
 #include <memory>
 #include <optional>
 #include <vector>
 
 namespace ii {
-class Ship;
 class SimInterface;
+class SpawnContext;
 class Stars;
 
-class formation_base;
 // TODO: make Overmind an entity/component.
 class Overmind {
 public:
@@ -24,10 +24,10 @@ public:
   std::optional<std::uint32_t> get_timer() const;
 
   struct entry {
-    std::uint32_t id;
-    std::uint32_t cost;
-    std::uint32_t min_resource;
-    formation_base* function;
+    std::uint32_t id = 0;
+    std::uint32_t cost = 0;
+    std::uint32_t min_resource = 0;
+    function_ptr<void(const SpawnContext&)> function = nullptr;
   };
 
 private:
