@@ -51,10 +51,15 @@ result<replay_results_t> inline replay_results(std::span<const std::uint8_t> rep
   ReplayInputAdapter input{*reader};
   replay_results_t results;
   results.conditions = reader->initial_conditions();
-  SimState sim{reader->initial_conditions(), input};
+  SimState sim{reader->initial_conditions()};
+  std::size_t i = 0;
   while (!sim.game_over() && (!max_ticks || sim.get_results().tick_count < *max_ticks)) {
-    sim.update();
-    sim.clear_output();
+    sim.update(input);
+    if (!(++i % 64)) {
+      sim = sim.copy();
+    } else {
+      sim.clear_output();
+    }
   }
   results.sim = sim.get_results();
   results.replay_frames_read = reader->current_input_frame();
@@ -78,9 +83,9 @@ inline result<run_data_t> synthesize_replay(const initial_conditions& conditions
   for (std::uint32_t i = 0; i < conditions.player_count; ++i) {
     ai_players.emplace_back(i);
   }
-  SimState sim{conditions, input, ai_players};
+  SimState sim{conditions, ai_players};
   while (!sim.game_over()) {
-    sim.update();
+    sim.update(input);
     sim.clear_output();
     if (max_ticks && sim.get_results().tick_count >= *max_ticks) {
       break;

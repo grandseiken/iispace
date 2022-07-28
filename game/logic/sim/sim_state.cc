@@ -9,13 +9,57 @@
 #include <unordered_set>
 
 namespace ii {
+namespace {
+
+void setup_index_callbacks(SimInterface& interface, SimInternals& internals) {
+  internals.index.on_component_add<Collision>([&internals](ecs::handle h, const Collision& c) {
+    internals.collisions.emplace_back(
+        SimInternals::collision_entry{h.id(), h, h.get<Transform>(), &c, 0});
+  });
+  internals.index.on_component_add<Destroy>(
+      [&internals, &interface](ecs::handle h, const Destroy& d) {
+        auto* e = h.get<Enemy>();
+        if (e && e->score_reward && d.source) {
+          if (auto* p = internals.index.get<Player>(*d.source); p) {
+            p->add_score(interface, e->score_reward);
+          }
+        }
+        if (e && e->boss_score_reward) {
+          internals.index.iterate<Player>([&](Player& p) {
+            if (!p.is_killed()) {
+              p.add_score(interface, e->boss_score_reward / interface.alive_players());
+            }
+          });
+        }
+        if (auto* b = h.get<Boss>(); b) {
+          internals.bosses_killed |= b->boss;
+        }
+
+        if (auto it = std::ranges::find(internals.collisions, h.id(),
+                                        [](const auto& e) { return e.handle.id(); });
+            it != internals.collisions.end()) {
+          internals.collisions.erase(it);
+        }
+      });
+}
+
+void refresh_handles(SimInternals& internals) {
+  for (auto& e : internals.collisions) {
+    e.handle = *internals.index.get(e.id);
+    e.collision = e.handle.get<Collision>();
+    e.transform = e.handle.get<Transform>();
+  }
+  internals.global_entity_handle = internals.index.get(internals.global_entity_id);
+}
+
+}  // namespace
 
 SimState::~SimState() = default;
+SimState::SimState(SimState&&) noexcept = default;
+SimState& SimState::operator=(SimState&&) noexcept = default;
 
-SimState::SimState(const initial_conditions& conditions, InputAdapter& input,
-                   std::span<const std::uint32_t> ai_players)
-: input_{input}
-, internals_{std::make_unique<SimInternals>(conditions.seed)}
+SimState::SimState(const initial_conditions& conditions, std::span<const std::uint32_t> ai_players)
+: internals_{std::make_unique<SimInternals>(conditions.seed)}
 , interface_{std::make_unique<SimInterface>(internals_.get())} {
   internals_->conditions = conditions;
   internals_->global_entity_handle = internals_->index.create(GlobalData{conditions});
@@ -29,50 +73,27 @@ SimState::SimState(const initial_conditions& conditions, InputAdapter& input,
     vec2 v((1 + i) * kSimDimensions.x / (1 + conditions.player_count), kSimDimensions.y / 2);
     spawn_player(*interface_, v, i, /* AI */ std::ranges::find(ai_players, i) != ai_players.end());
   }
-
-  auto* internals = internals_.get();
-  auto* interface = interface_.get();
-  internals_->index.on_component_add<Collision>([internals](ecs::handle h, const Collision& c) {
-    internals->collisions.emplace_back(
-        SimInternals::collision_entry{h.id(), h, h.get<Transform>(), &c, 0});
-  });
-  internals_->index.on_component_add<Destroy>(
-      [internals, interface](ecs::handle h, const Destroy& d) {
-        auto* e = h.get<Enemy>();
-        if (e && e->score_reward && d.source) {
-          if (auto* p = internals->index.get<Player>(*d.source); p) {
-            p->add_score(*interface, e->score_reward);
-          }
-        }
-        if (e && e->boss_score_reward) {
-          internals->index.iterate<Player>([&](Player& p) {
-            if (!p.is_killed()) {
-              p.add_score(*interface, e->boss_score_reward / interface->alive_players());
-            }
-          });
-        }
-        if (auto* b = h.get<Boss>(); b) {
-          internals->bosses_killed |= b->boss;
-        }
-
-        if (auto it = std::ranges::find(internals->collisions, h.id(),
-                                        [](const auto& e) { return e.handle.id(); });
-            it != internals->collisions.end()) {
-          internals->collisions.erase(it);
-        }
-      });
+  setup_index_callbacks(*interface_, *internals_);
 }
 
-std::uint32_t SimState::frame_count() const {
-  return internals_->conditions.mode == game_mode::kFast ? 2 : 1;
+SimState SimState::copy() const {
+  SimState sim_copy;
+  sim_copy.internals_ = std::make_unique<SimInternals>(*internals_);
+  sim_copy.interface_ = std::make_unique<SimInterface>(sim_copy.internals_.get());
+  sim_copy.kill_timer_ = kill_timer_;
+  sim_copy.colour_cycle_ = colour_cycle_;
+  sim_copy.game_over_ = game_over_;
+  setup_index_callbacks(*sim_copy.interface_, *sim_copy.internals_);
+  refresh_handles(*sim_copy.internals_);
+  return sim_copy;
 }
 
-void SimState::update() {
+void SimState::update(InputAdapter& input) {
   colour_cycle_ = internals_->conditions.mode == game_mode::kHard ? 128
       : internals_->conditions.mode == game_mode::kFast           ? 192
       : internals_->conditions.mode == game_mode::kWhat           ? (colour_cycle_ + 1) % 256
                                                                   : 0;
-  internals_->input_frames = &input_.get();
+  internals_->input_frames = &input.get();
 
   // TODO: write a better collision system for non-legacy-compatibility mode.
   for (auto& e : internals_->collisions) {
@@ -110,12 +131,7 @@ void SimState::update() {
 
   if (compact_counter_ >= internals_->index.size()) {
     internals_->index.compact();
-    for (auto& e : internals_->collisions) {
-      e.handle = *internals_->index.get(e.id);
-      e.collision = e.handle.get<Collision>();
-      e.transform = e.handle.get<Transform>();
-    }
-    internals_->global_entity_handle = internals_->index.get(internals_->global_entity_id);
+    refresh_handles(*internals_);
     compact_counter_ = 0;
   }
 
@@ -139,7 +155,7 @@ void SimState::update() {
     }
   }
   ++internals_->tick_count;
-  input_.next();
+  input.next();
 }
 
 void SimState::render() const {
@@ -203,6 +219,10 @@ void SimState::render() const {
 
 bool SimState::game_over() const {
   return game_over_;
+}
+
+std::uint32_t SimState::frame_count() const {
+  return internals_->conditions.mode == game_mode::kFast ? 2 : 1;
 }
 
 void SimState::clear_output() {
@@ -274,5 +294,7 @@ sim_results SimState::get_results() const {
   }
   return r;
 }
+
+SimState::SimState() = default;
 
 }  // namespace ii

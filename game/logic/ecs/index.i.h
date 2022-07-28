@@ -10,6 +10,7 @@ struct component_storage_base {
   virtual ~component_storage_base() = default;
   virtual void compact(EntityIndex& index) = 0;
   virtual void remove_index(handle h, std::size_t index) = 0;
+  virtual std::unique_ptr<component_storage_base> copy(EntityIndex& index_copy) const = 0;
 };
 
 template <Component C>
@@ -43,6 +44,21 @@ struct component_storage : component_storage_base {
     entries[index].data.reset();
     --size;
   }
+
+  std::unique_ptr<component_storage_base> copy(EntityIndex& index_copy) const override {
+    auto storage_copy = std::make_unique<component_storage>();
+    storage_copy->size = size;
+    for (const auto& e : entries) {
+      if (e.data) {
+        auto table_index = storage_copy->entries.size();
+        auto& e_copy = storage_copy->entries.emplace_back();
+        e_copy.id = e.id;
+        e_copy.data = e.data;
+        (*index_copy.entities_[e.id])[ecs::id<C>()] = table_index;
+      }
+    }
+    return storage_copy;
+  }
 };
 
 template <typename T>
@@ -64,6 +80,29 @@ void iterate(T& storage, bool include_new, auto&& f) {
 }  // namespace ii::ecs::detail
 
 namespace ii::ecs {
+
+inline EntityIndex EntityIndex::copy() const {
+  EntityIndex index_copy;
+  index_copy.next_id_ = next_id_;
+  index_copy.entities_.reserve(entities_.size());
+  for (const auto& table : entity_tables_) {
+    if (table.id) {
+      auto& table_copy = index_copy.entity_tables_.emplace_back();
+      table_copy.id = table.id;
+      table_copy.v.resize(table.v.size());
+      index_copy.entities_.emplace(*table.id, &table_copy);
+    }
+  }
+  index_copy.components_.reserve(components_.size());
+  for (const auto& c : components_) {
+    if (c) {
+      index_copy.components_.emplace_back(c->copy(index_copy));
+    } else {
+      index_copy.components_.emplace_back();
+    }
+  }
+  return index_copy;
+}
 
 inline void EntityIndex::compact() {
   auto has_value = [](const detail::component_table& table) { return table.id.has_value(); };

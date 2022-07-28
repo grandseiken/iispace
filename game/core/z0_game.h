@@ -91,6 +91,7 @@ private:
 
   std::optional<replay_t> replay_;
   std::optional<game_t> game_;
+  ii::InputAdapter* input_ = nullptr;
   std::unique_ptr<ii::SimState> state_;
 };
 

@@ -1,6 +1,7 @@
 #ifndef II_GAME_LOGIC_ECS_ID_H
 #define II_GAME_LOGIC_ECS_ID_H
 #include "game/common/enum.h"
+#include <concepts>
 #include <cstdint>
 #include <type_traits>
 
@@ -21,7 +22,8 @@ enum class component_id : index_type {};
 
 struct component {};
 template <typename T>
-concept Component = std::is_base_of_v<component, T>;
+concept Component = std::is_base_of_v<component, T> && std::copy_constructible<T> &&
+    std::copyable<T> && std::move_constructible<T> && std::movable<T>;
 
 template <Component C>
 component_id id() {

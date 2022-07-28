@@ -18,6 +18,19 @@ namespace ii {
 
 struct SimInternals {
   SimInternals(std::uint32_t seed) : random_engine{seed} {}
+
+  SimInternals(const SimInternals& other)
+  : random_engine{other.random_engine}
+  , conditions{other.conditions}
+  , index{other.index.copy()}
+  , global_entity_id{other.global_entity_id}
+  , tick_count{other.tick_count}
+  , particles{other.particles}
+  , stars{other.stars}
+  , collisions{other.collisions}
+  , bosses_killed{other.bosses_killed} {}
+
+  SimInternals& operator=(const SimInternals&) = delete;
   // Input.
   std::vector<input_frame>* input_frames = nullptr;
   RandomEngine random_engine;
@@ -40,6 +53,9 @@ struct SimInternals {
   };
   std::vector<collision_entry> collisions;
 
+  // Run output.
+  boss_flag bosses_killed{0};
+
   // Per-frame output.
   struct sound_aggregation_t {
     std::size_t count = 0;
@@ -52,8 +68,6 @@ struct SimInternals {
   std::vector<render_output::player_info> player_output;
   std::unordered_map<std::uint32_t, std::uint32_t> rumble_output;
   std::unordered_map<sound, sound_aggregation_t> sound_output;
-  // Run output.
-  boss_flag bosses_killed{0};
 };
 
 }  // namespace ii

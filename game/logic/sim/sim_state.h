@@ -18,13 +18,17 @@ struct SimInternals;
 class SimState {
 public:
   ~SimState();
-  SimState(const initial_conditions& conditions, InputAdapter& input,
-           std::span<const std::uint32_t> ai_players = {});
+  SimState(SimState&&) noexcept;
+  SimState(const SimState&) = delete;
+  SimState& operator=(SimState&&) noexcept;
+  SimState& operator=(const SimState&) = delete;
+  SimState(const initial_conditions& conditions, std::span<const std::uint32_t> ai_players = {});
 
-  void update();
+  SimState copy() const;
+  void update(InputAdapter& input);
   void render() const;
-  std::uint32_t frame_count() const;
   bool game_over() const;
+  std::uint32_t frame_count() const;
 
   void clear_output();
   std::unordered_map<sound, sound_out> get_sound_output() const;
@@ -33,7 +37,7 @@ public:
   sim_results get_results() const;
 
 private:
-  InputAdapter& input_;
+  SimState();
   std::uint32_t kill_timer_ = 0;
   std::uint32_t colour_cycle_ = 0;
   std::size_t compact_counter_ = 0;
