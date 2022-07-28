@@ -39,7 +39,6 @@ private:
   std::size_t compact_counter_ = 0;
   bool game_over_ = false;
 
-  std::unique_ptr<Overmind> overmind_;
   std::unique_ptr<SimInternals> internals_;
   std::unique_ptr<SimInterface> interface_;
 };

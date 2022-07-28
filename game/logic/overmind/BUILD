@@ -2,11 +2,12 @@ cc_library(
   name = "overmind",
   hdrs = ["overmind.h"],
   srcs = ["overmind.cc"],
-  deps = ["//game/common:types"],
   implementation_deps = [
     ":overmind_internal",
     "//game/common:math",
+    "//game/common:types",
     "//game/logic/boss",
+    "//game/logic/ecs",
     "//game/logic/player",
     "//game/logic/sim:sim_interface",
   ],

@@ -64,6 +64,7 @@
 * Taking hit damages nearby enemies
 * Increased invulnerability window after hit
 * Charge from kills or maybe something else
+* Recharges over time but max charges limited to 1
 
 ### Bomb
 * Increased bomb radius

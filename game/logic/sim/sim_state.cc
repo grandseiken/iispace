@@ -23,12 +23,12 @@ SimState::SimState(const initial_conditions& conditions, InputAdapter& input,
   internals_->global_entity_handle->add(
       PostUpdate{.post_update = ecs::call<&GlobalData::post_update>});
   internals_->global_entity_id = internals_->global_entity_handle->id();
+  spawn_overmind(*interface_);
 
   for (std::uint32_t i = 0; i < conditions.player_count; ++i) {
     vec2 v((1 + i) * kSimDimensions.x / (1 + conditions.player_count), kSimDimensions.y / 2);
     spawn_player(*interface_, v, i, /* AI */ std::ranges::find(ai_players, i) != ai_players.end());
   }
-  overmind_ = std::make_unique<Overmind>(*interface_);
 
   auto* internals = internals_.get();
   auto* interface = interface_.get();
@@ -125,7 +125,6 @@ void SimState::update() {
       c.post_update(h, *interface_);
     }
   });
-  overmind_->update();
 
   if (!kill_timer_ &&
       ((interface_->killed_players() == interface_->player_count() && !interface_->get_lives()) ||
