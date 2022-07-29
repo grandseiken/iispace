@@ -84,62 +84,60 @@ bool run(const options_t& options, const std::string& replay_path) {
   return success;
 }
 
-}  // namespace
-}  // namespace ii
+result<options_t> parse_args(std::vector<std::string>& args) {
+  options_t options;
+  if (auto r = flag_parse(args, "verify_score", options.verify_score); !r) {
+    return unexpected(r.error());
+  }
+  if (auto r = flag_parse(args, "verify_ticks", options.verify_ticks); !r) {
+    return unexpected(r.error());
+  }
+  if (auto r = flag_parse(args, "dump_tick_from", options.dump_state_from_tick); !r) {
+    return unexpected(r.error());
+  }
+  if (auto r = flag_parse(args, "dump_tick_to", options.max_ticks); !r) {
+    return unexpected(r.error());
+  }
 
-int main(int argc, char** argv) {
-  auto args = ii::args_init(argc, argv);
-  ii::options_t options;
-  if (auto result = ii::flag_parse(args, "verify_score", options.verify_score); !result) {
-    std::cerr << result.error() << std::endl;
-    return 1;
-  }
-  if (auto result = ii::flag_parse(args, "verify_ticks", options.verify_ticks); !result) {
-    std::cerr << result.error() << std::endl;
-    return 1;
-  }
-
-  if (auto result = ii::flag_parse(args, "dump_tick_from", options.dump_state_from_tick); !result) {
-    std::cerr << result.error() << std::endl;
-    return 1;
-  }
-  if (auto result = ii::flag_parse(args, "dump_tick_to", options.max_ticks); !result) {
-    std::cerr << result.error() << std::endl;
-    return 1;
-  }
   std::optional<std::uint64_t> dump_tick;
-  if (auto result = ii::flag_parse(args, "dump_tick", dump_tick); !result) {
-    std::cerr << result.error() << std::endl;
-    return 1;
+  if (auto r = flag_parse(args, "dump_tick", dump_tick); !r) {
+    return unexpected(r.error());
   }
   if (dump_tick) {
     options.dump_state_from_tick = dump_tick;
     options.max_ticks = dump_tick;
   }
 
-  if (auto result = ii::flag_parse(args, "dump_entity_ids", options.query.entity_ids); !result) {
-    std::cerr << result.error() << std::endl;
+  if (auto r = flag_parse(args, "dump_entity_ids", options.query.entity_ids); !r) {
+    return unexpected(r.error());
+  }
+  if (auto r = flag_parse(args, "dump_components", options.query.component_names); !r) {
+    return unexpected(r.error());
+  }
+  return {std::move(options)};
+}
+
+}  // namespace
+}  // namespace ii
+
+int main(int argc, char** argv) {
+  auto args = ii::args_init(argc, argv);
+  auto options = ii::parse_args(args);
+  if (!options) {
+    std::cerr << options.error() << std::endl;
     return 1;
   }
-
-  if (auto result = ii::flag_parse(args, "dump_components", options.query.component_names);
-      !result) {
-    std::cerr << result.error() << std::endl;
-    return 1;
-  }
-
   if (auto result = ii::args_finish(args); !result) {
     std::cerr << result.error() << std::endl;
     return 1;
   }
-
   if (args.empty()) {
     std::cerr << "no paths" << std::endl;
     return 1;
   }
   int exit = 0;
   for (const auto& path : args) {
-    if (!ii::run(options, path)) {
+    if (!ii::run(*options, path)) {
       exit = 1;
     }
   }

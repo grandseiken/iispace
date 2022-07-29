@@ -29,7 +29,7 @@ struct SpawnContext {
   }
 
   spawn_direction random_v_direction() const {
-    return sim->random_bool() ? spawn_direction::kTop : spawn_direction::kBottom;
+    return random_bool() ? spawn_direction::kTop : spawn_direction::kBottom;
   }
 
   vec2 spawn_point(spawn_direction d, std::uint32_t i, std::uint32_t n) const {

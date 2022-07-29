@@ -47,8 +47,8 @@ cc_binary(
 )
 
 cc_binary(
-  name = "score",
-  srcs = ["score.cc"],
+  name = "replay",
+  srcs = ["replay.cc"],
   deps = [
     ":flags",
     ":replay_tools",

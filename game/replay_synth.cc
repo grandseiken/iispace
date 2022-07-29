@@ -209,129 +209,113 @@ bool run(const options_t& options) {
   return true;
 }
 
-}  // namespace
-}  // namespace ii
+result<options_t> parse_args(std::vector<std::string>& args) {
+  options_t options;
 
-int main(int argc, char** argv) {
-  ii::options_t options;
-  auto args = ii::args_init(argc, argv);
-  if (auto result = ii::flag_parse<std::uint32_t>(args, "players", options.player_count); !result) {
-    std::cerr << result.error() << std::endl;
-    return 1;
+  if (auto r = flag_parse<std::uint32_t>(args, "players", options.player_count); !r) {
+    return unexpected(r.error());
   }
   if (!options.player_count) {
-    std::cerr << "error: invalid player count" << std::endl;
-    return 1;
+    return unexpected("error: invalid player count");
   }
-
-  if (auto result = ii::flag_parse<std::uint32_t>(args, "runs", options.runs, 1u); !result) {
-    std::cerr << result.error() << std::endl;
-    return 1;
+  if (auto r = flag_parse<std::uint32_t>(args, "runs", options.runs, 1u); !r) {
+    return unexpected(r.error());
   }
   if (!options.runs) {
-    std::cerr << "error: invalid run count" << std::endl;
-    return 1;
+    return unexpected("error: invalid run count");
   }
-
-  if (auto result = ii::flag_parse<std::uint32_t>(args, "seed", options.seed); !result) {
-    std::cerr << result.error() << std::endl;
-    return 1;
+  if (auto r = flag_parse<std::uint32_t>(args, "seed", options.seed); !r) {
+    return unexpected(r.error());
   }
-
-  if (auto result =
-          ii::flag_parse<std::uint64_t>(args, "max_ticks", options.max_ticks, 1024u * 1024u);
-      !result) {
-    std::cerr << result.error() << std::endl;
-    return 1;
+  if (auto r = flag_parse<std::uint64_t>(args, "max_ticks", options.max_ticks, 1024u * 1024u); !r) {
+    return unexpected(r.error());
   }
 
   std::optional<std::string> mode;
-  if (auto result = ii::flag_parse(args, "mode", mode); !result) {
-    std::cerr << result.error() << std::endl;
-    return 1;
+  if (auto r = flag_parse(args, "mode", mode); !r) {
+    return unexpected(r.error());
   }
   if (mode) {
     if (*mode == "normal") {
-      options.mode = ii::game_mode::kNormal;
+      options.mode = game_mode::kNormal;
     } else if (*mode == "hard") {
-      options.mode = ii::game_mode::kHard;
+      options.mode = game_mode::kHard;
     } else if (*mode == "boss") {
-      options.mode = ii::game_mode::kBoss;
+      options.mode = game_mode::kBoss;
     } else if (*mode == "what") {
-      options.mode = ii::game_mode::kWhat;
+      options.mode = game_mode::kWhat;
     } else {
-      std::cerr << "error: unknown game mode " << *mode << std::endl;
-      return 1;
+      return unexpected("error: unknown game mode " + *mode);
     }
   }
 
   std::optional<std::string> compatibility;
-  if (auto result = ii::flag_parse(args, "compatibility", compatibility); !result) {
-    std::cerr << result.error() << std::endl;
-    return 1;
+  if (auto r = flag_parse(args, "compatibility", compatibility); !r) {
+    return unexpected(r.error());
   }
   if (compatibility) {
     if (*compatibility == "legacy") {
-      options.compatibility = ii::compatibility_level::kLegacy;
+      options.compatibility = compatibility_level::kLegacy;
     } else if (*compatibility == "v0") {
-      options.compatibility = ii::compatibility_level::kIispaceV0;
+      options.compatibility = compatibility_level::kIispaceV0;
     } else {
-      std::cerr << "error: unknown compatibility level " << *compatibility << std::endl;
-      return 1;
+      return unexpected("error: unknown compatibility level " + *compatibility);
     }
   }
 
   bool can_face_secret_boss = false;
-  if (auto result = ii::flag_parse<bool>(args, "can_face_secret_boss", can_face_secret_boss, false);
-      !result) {
-    std::cerr << result.error() << std::endl;
-    return 1;
+  if (auto r = flag_parse<bool>(args, "can_face_secret_boss", can_face_secret_boss, false); !r) {
+    return unexpected(r.error());
   }
   if (can_face_secret_boss) {
-    options.flags |= ii::initial_conditions::flag::kLegacy_CanFaceSecretBoss;
+    options.flags |= initial_conditions::flag::kLegacy_CanFaceSecretBoss;
   }
 
   std::uint64_t find_boss_kills = 0;
-  if (auto result = ii::flag_parse<std::uint64_t>(args, "find_boss_kills", find_boss_kills, 0u);
-      !result) {
-    std::cerr << result.error() << std::endl;
-    return 1;
+  if (auto r = flag_parse<std::uint64_t>(args, "find_boss_kills", find_boss_kills, 0u); !r) {
+    return unexpected(r.error());
   }
-  options.find_boss_kills = static_cast<ii::boss_flag>(find_boss_kills);
+  options.find_boss_kills = static_cast<boss_flag>(find_boss_kills);
 
-  if (auto result = ii::flag_parse<bool>(args, "verify", options.verify, false); !result) {
-    std::cerr << result.error() << std::endl;
-    return 1;
+  if (auto r = flag_parse<bool>(args, "verify", options.verify, false); !r) {
+    return unexpected(r.error());
   }
 
-  if (auto result =
-          ii::flag_parse<bool>(args, "save_ticks_exceeded", options.save_ticks_exceeded, false);
-      !result) {
-    std::cerr << result.error() << std::endl;
-    return 1;
+  if (auto r = flag_parse<bool>(args, "save_ticks_exceeded", options.save_ticks_exceeded, false);
+      !r) {
+    return unexpected(r.error());
   }
 
   bool multithreaded = false;
-  if (auto result = ii::flag_parse<bool>(args, "multithreaded", multithreaded, false); !result) {
-    std::cerr << result.error() << std::endl;
-    return 1;
+  if (auto r = flag_parse<bool>(args, "multithreaded", multithreaded, false); !r) {
+    return unexpected(r.error());
   }
   options.thread_count =
       multithreaded ? std::max<std::uint32_t>(1u, std::thread::hardware_concurrency() - 1u) : 1u;
 
-  if (auto result = ii::flag_parse<std::string>(args, "output", options.replay_out_path); !result) {
-    std::cerr << result.error() << std::endl;
+  if (auto r = flag_parse<std::string>(args, "output", options.replay_out_path); !r) {
+    return unexpected(r.error());
+  }
+  return {std::move(options)};
+}
+
+}  // namespace
+}  // namespace ii
+
+int main(int argc, char** argv) {
+  auto args = ii::args_init(argc, argv);
+  auto options = ii::parse_args(args);
+  if (!options) {
+    std::cerr << options.error() << std::endl;
     return 1;
   }
-
   if (auto result = ii::args_finish(args); !result) {
     std::cerr << result.error() << std::endl;
     return 1;
   }
-
   if (!args.empty()) {
     std::cerr << "error: invalid positional argument" << std::endl;
     return 1;
   }
-  return ii::run(options) ? 0 : 1;
+  return ii::run(*options) ? 0 : 1;
 }

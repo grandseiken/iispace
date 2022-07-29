@@ -7,6 +7,13 @@ cc_library(
 )
 
 cc_library(
+  name = "packet",
+  hdrs = ["packet.h"],
+  deps = ["//game/logic/sim:sim_io"],
+  visibility = ["//visibility:public"],
+)
+
+cc_library(
   name = "replay",
   hdrs = ["replay.h"],
   srcs = ["replay.cc"],

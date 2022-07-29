@@ -7,12 +7,9 @@
 #include "game/logic/sim/sim_interface.h"
 #include "game/logic/sim/sim_io.h"
 #include <cstdint>
-#include <memory>
 #include <optional>
 #include <unordered_map>
 #include <vector>
-
-class Overmind;
 
 namespace ii {
 

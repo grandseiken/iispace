@@ -22,7 +22,7 @@ void load_sounds(const io::Filesystem& fs, Mixer& mixer) {
       std::cerr << bytes.error() << std::endl;
       return;
     }
-    auto result = mixer.load_wav_memory(*bytes, static_cast<ii::Mixer::audio_handle_t>(s));
+    auto result = mixer.load_wav_memory(*bytes, static_cast<Mixer::audio_handle_t>(s));
     if (!result) {
       std::cerr << "Couldn't load sound " + filename + ": " << result.error() << std::endl;
     }
@@ -80,7 +80,7 @@ bool run(const std::vector<std::string>& args, const game_options_t& options) {
       std::cerr << replay_data.error() << std::endl;
       return false;
     }
-    auto reader = ii::ReplayReader::create(*replay_data);
+    auto reader = ReplayReader::create(*replay_data);
     if (!reader) {
       std::cerr << reader.error() << std::endl;
       return false;
@@ -107,12 +107,12 @@ bool run(const std::vector<std::string>& args, const game_options_t& options) {
       auto event = io_layer->poll();
       if (!event) {
         break;
-      } else if (*event == ii::io::event_type::kClose) {
+      } else if (*event == io::event_type::kClose) {
         exit = true;
         break;
-      } else if (*event == ii::io::event_type::kAudioDeviceChange) {
+      } else if (*event == io::event_type::kAudioDeviceChange) {
         audio_change = true;
-      } else if (*event == ii::io::event_type::kControllerChange) {
+      } else if (*event == io::event_type::kControllerChange) {
         controller_change = true;
       }
     }
@@ -147,37 +147,42 @@ bool run(const std::vector<std::string>& args, const game_options_t& options) {
   return true;
 }
 
+result<game_options_t> parse_args(std::vector<std::string>& args) {
+  game_options_t options;
+
+  std::optional<std::string> compatibility;
+  if (auto r = flag_parse(args, "compatibility", compatibility); !r) {
+    return unexpected(r.error());
+  }
+  if (compatibility) {
+    if (*compatibility == "legacy") {
+      options.compatibility = compatibility_level::kLegacy;
+    } else if (*compatibility == "v0") {
+      options.compatibility = compatibility_level::kIispaceV0;
+    } else {
+      return unexpected("error: unknown compatibility level " + *compatibility);
+    }
+  }
+
+  if (auto r = flag_parse<std::uint32_t>(args, "ai_count", options.ai_count, 0u); !r) {
+    return unexpected(r.error());
+  }
+  return {std::move(options)};
+}
+
 }  // namespace
 }  // namespace ii
 
 int main(int argc, char** argv) {
   auto args = ii::args_init(argc, argv);
-  ii::game_options_t options;
-
-  std::optional<std::string> compatibility;
-  if (auto result = ii::flag_parse(args, "compatibility", compatibility); !result) {
-    std::cerr << result.error() << std::endl;
-    return 1;
-  }
-  if (compatibility) {
-    if (*compatibility == "legacy") {
-      options.compatibility = ii::compatibility_level::kLegacy;
-    } else if (*compatibility == "v0") {
-      options.compatibility = ii::compatibility_level::kIispaceV0;
-    } else {
-      std::cerr << "error: unknown compatibility level " << *compatibility << std::endl;
-      return 1;
-    }
-  }
-
-  if (auto result = ii::flag_parse<std::uint32_t>(args, "ai_count", options.ai_count, 0u);
-      !result) {
-    std::cerr << result.error() << std::endl;
+  auto options = ii::parse_args(args);
+  if (!options) {
+    std::cerr << options.error() << std::endl;
     return 1;
   }
   if (auto result = ii::args_finish(args); !result) {
     std::cerr << result.error() << std::endl;
     return 1;
   }
-  return ii::run(args, options) ? 0 : 1;
+  return ii::run(args, *options) ? 0 : 1;
 }

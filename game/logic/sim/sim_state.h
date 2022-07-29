@@ -11,9 +11,7 @@
 #include <vector>
 
 namespace ii {
-class Overmind;
 class Printer;
-class Ship;
 class SimInterface;
 struct SimInternals;
 

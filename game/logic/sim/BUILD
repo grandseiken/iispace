@@ -45,3 +45,14 @@ cc_library(
   ],
   visibility = ["//visibility:public"],
 )
+
+cc_library(
+  name = "networked_sim_state",
+  hdrs = ["networked_sim_state.h"],
+  srcs = ["networked_sim_state.cc"],
+  deps = [
+    ":sim",
+    "//game/data:packet",
+  ],
+  visibility = ["//visibility:public"],
+)

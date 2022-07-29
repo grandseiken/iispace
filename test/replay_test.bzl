@@ -1,6 +1,6 @@
 def _replay_test_impl(ctx):
   ctx.actions.symlink(
-    target_file = ctx.executable._score_bin,
+    target_file = ctx.executable._replay_bin,
     output = ctx.outputs.executable,
     is_executable = True,
   )
@@ -14,8 +14,8 @@ _replay_test = rule(
   _replay_test_impl,
   attrs = {
     "deps": attr.label_list(allow_files = True),
-    "_score_bin": attr.label(
-      default = "//game:score",
+    "_replay_bin": attr.label(
+      default = "//game:replay",
       executable = True,
       cfg = "target",
     ),

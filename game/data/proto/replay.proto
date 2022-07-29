@@ -3,6 +3,7 @@ option optimize_for = LITE_RUNTIME;
 package ii.proto;
 
 message PlayerFrame {
+  // TODO: should be sint64. Migrate to a new message?
   int64 velocity_x = 1;
   int64 velocity_y = 2;
 
