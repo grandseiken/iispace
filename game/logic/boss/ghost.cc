@@ -282,12 +282,12 @@ struct GhostBoss : ecs::component {
       }
 
       if (!attack && attack_time == kAttackTime * 2) {
-        bool r = sim.random(2);
+        bool r = sim.random_bool();
         spawn_ghost_wall_horizontal(sim, r, true);
         spawn_ghost_wall_horizontal(sim, !r, false);
       }
       if (attack == 1 && attack_time == kAttackTime * 2) {
-        rdir = sim.random(2);
+        rdir = sim.random_bool();
         spawn_ghost_wall_vertical(sim, !rdir, false);
       }
       if (attack == 1 && attack_time == kAttackTime * 1) {
@@ -309,11 +309,11 @@ struct GhostBoss : ecs::component {
       if (attack_time == 0 && attack != 2) {
         auto r = sim.random(3);
         danger_circle |= 1 + (r == 2 ? 3 : r);
-        if (sim.random(2) || health.is_hp_low()) {
+        if (sim.random_bool() || health.is_hp_low()) {
           r = sim.random(3);
           danger_circle |= 1 + (r == 2 ? 3 : r);
         }
-        if (sim.random(2) || health.is_hp_low()) {
+        if (sim.random_bool() || health.is_hp_low()) {
           r = sim.random(3);
           danger_circle |= 1 + (r == 2 ? 3 : r);
         }
@@ -327,7 +327,7 @@ struct GhostBoss : ecs::component {
       visible = false;
       vtime = 60;
       attack = sim.random(3);
-      shot_type = !sim.random(2);
+      shot_type = !sim.random_bool();
       collision_enabled = false;
       sim.play_sound(sound::kBossAttack, transform.centre);
 
@@ -342,7 +342,7 @@ struct GhostBoss : ecs::component {
       }
       if (attack == 2) {
         attack_time = kAttackTime * 6;
-        rdir = sim.random(2);
+        rdir = sim.random_bool();
       }
     }
 

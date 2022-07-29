@@ -40,7 +40,9 @@ struct Shot : ecs::component {
     if (sim.conditions().mode == game_mode::kWhat) {
       colour = glm::vec4{0.f};
     } else {
-      colour = magic && sim.random(2) ? glm::vec4{1.f} : player_colour(player_number);
+      colour = magic && sim.random(random_source::kLegacyAesthetic).rbool()
+          ? glm::vec4{1.f}
+          : player_colour(player_number);
     }
     transform.move(velocity);
     bool on_screen = all(greaterThanEqual(transform.centre, vec2{-4, -4})) &&
@@ -174,11 +176,12 @@ struct Powerup : ecs::component {
                    transform.centre);
     sim.rumble(source.get<Player>()->player_number, 6);
 
-    auto r = 5 + sim.random(5);
+    auto& random = sim.random(random_source::kLegacyAesthetic);
+    auto r = 5 + random.uint(5);
     for (std::uint32_t i = 0; i < r; ++i) {
-      vec2 dir = from_polar(sim.random_fixed() * 2 * fixed_c::pi, 6_fx);
+      vec2 dir = from_polar(random.fixed() * 2 * fixed_c::pi, 6_fx);
       sim.add_particle(
-          {to_float(transform.centre), glm::vec4{1.f}, to_float(dir), 4 + sim.random(8)});
+          {to_float(transform.centre), glm::vec4{1.f}, to_float(dir), 4 + random.uint(8)});
     }
     h.emplace<Destroy>();
   }
@@ -277,7 +280,8 @@ struct PlayerLogic : ecs::component {
 
       for (std::uint32_t i = 0; i < 64; ++i) {
         auto v = transform.centre + from_polar(2 * i * fixed_c::pi / 64, kBombRadius);
-        explosion(h, v, sim, (i % 2) ? c : glm::vec4{1.f}, 8 + sim.random(8) + sim.random(8),
+        auto& random = sim.random(random_source::kLegacyAesthetic);
+        explosion(h, v, sim, (i % 2) ? c : glm::vec4{1.f}, 8 + random.uint(8) + random.uint(8),
                   transform.centre);
       }
 
@@ -306,8 +310,9 @@ struct PlayerLogic : ecs::component {
       spawn_shot(sim, transform.centre, h, shot, pc.magic_shot_count != 0);
       pc.magic_shot_count && --pc.magic_shot_count;
 
-      float volume = .5f * sim.random_fixed().to_float() + .5f;
-      float pitch = (sim.random_fixed().to_float() - 1.f) / 12.f;
+      auto& random = sim.random(random_source::kLegacyAesthetic);
+      float volume = .5f * random.fixed().to_float() + .5f;
+      float pitch = (random.fixed().to_float() - 1.f) / 12.f;
       float pan = 2.f * transform.centre.x.to_float() / kSimDimensions.x - 1.f;
       sim.play_sound(sound::kPlayerFire, volume, pan, pitch);
     }

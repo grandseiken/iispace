@@ -9,6 +9,15 @@ namespace {
 GlobalData& global_data(SimInternals& internals) {
   return *internals.global_entity_handle->get<GlobalData>();
 }
+
+RandomEngine& engine(SimInternals& internals, random_source s) {
+  if (s == random_source::kGameState ||
+      (s == random_source::kLegacyAesthetic &&
+       internals.conditions.compatibility == compatibility_level::kLegacy)) {
+    return internals.game_state_random;
+  }
+  return internals.aesthetic_random;
+}
 }  // namespace
 
 const initial_conditions& SimInterface::conditions() const {
@@ -43,16 +52,24 @@ ecs::handle SimInterface::global_entity() {
   return *internals_->global_entity_handle;
 }
 
-std::uint32_t SimInterface::random_state() const {
-  return internals_->random_engine.state();
+RandomEngine& SimInterface::random(random_source s) {
+  return engine(*internals_, s);
+}
+
+std::uint32_t SimInterface::random_state(random_source s) const {
+  return engine(*internals_, s).state();
 }
 
 std::uint32_t SimInterface::random(std::uint32_t max) {
-  return internals_->random_engine() % max;
+  return random(random_source::kGameState).uint(max);
 }
 
 fixed SimInterface::random_fixed() {
-  return fixed{static_cast<std::int32_t>(internals_->random_engine())} / RandomEngine::rand_max;
+  return random(random_source::kGameState).fixed();
+}
+
+bool SimInterface::random_bool() {
+  return random(random_source::kGameState).rbool();
 }
 
 bool SimInterface::any_collision(const vec2& point, shape_flag mask) const {
@@ -196,16 +213,16 @@ void SimInterface::add_particle(const ii::particle& particle) {
 
 void SimInterface::explosion(const glm::vec2& v, const glm::vec4& c, std::uint32_t time,
                              const std::optional<glm::vec2>& towards) {
-  auto n = towards ? random(2) + 1 : random(8) + 8;
+  auto& r = random(random_source::kLegacyAesthetic);
+  auto n = towards ? r.rbool() + 1 : r.uint(8) + 8;
   for (std::uint32_t i = 0; i < n; ++i) {
-    auto dir = from_polar(random_fixed().to_float() * 2 * glm::pi<float>(), 6.f);
+    auto dir = from_polar(r.fixed().to_float() * 2 * glm::pi<float>(), 6.f);
     if (towards && *towards - v != glm::vec2{0.f}) {
       dir = glm::normalize(*towards - v);
-      float angle =
-          std::atan2(dir.y, dir.x) + (random_fixed().to_float() - 0.5f) * glm::pi<float>() / 4;
+      float angle = std::atan2(dir.y, dir.x) + (r.fixed().to_float() - 0.5f) * glm::pi<float>() / 4;
       dir = from_polar(angle, 6.f);
     }
-    add_particle({v, c, dir, time + random(8)});
+    add_particle({v, c, dir, time + r.uint(8)});
   }
 }
 
@@ -221,8 +238,9 @@ void SimInterface::rumble(std::uint32_t player, std::uint32_t time) const {
 }
 
 void SimInterface::play_sound(sound s, const vec2& position, bool random, float volume) {
+  auto& r = this->random(random_source::kLegacyAesthetic);
   if (random) {
-    play_sound(s, volume * (.5f * random_fixed().to_float() + .5f),
+    play_sound(s, volume * (.5f * r.fixed().to_float() + .5f),
                2.f * position.x.to_float() / kSimDimensions.x - 1.f);
   } else {
     play_sound(s, volume, 2.f * position.x.to_float() / kSimDimensions.x - 1.f);

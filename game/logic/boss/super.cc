@@ -165,7 +165,7 @@ struct SuperBoss : ecs::component {
         state = state::kAttack;
         timer = 0;
         fixed f = sim.random_fixed() * (2 * fixed_c::pi);
-        fixed rf = d5d1000 * (1 + sim.random(2));
+        fixed rf = d5d1000 * (1 + sim.random_bool());
         for (std::uint32_t i = 0; i < 32; ++i) {
           vec2 d = from_polar(f + i * pi2d32, 1_fx);
           if (r == 2) {

@@ -2,6 +2,7 @@
 #define II_GAME_LOGIC_SIM_SIM_INTERFACE_H
 #include "game/common/math.h"
 #include "game/logic/ecs/index.h"
+#include "game/logic/sim/random_engine.h"
 #include "game/logic/sim/sim_io.h"
 #include "game/mixer/sound.h"
 #include <cstdint>
@@ -32,6 +33,19 @@ struct particle {
   bool destroy = false;
 };
 
+enum class random_source {
+  // For randomness which affects the game state and must be reproduced exactly for replay
+  // compatibility.
+  kGameState,
+  // For randomness which does not affect the game state, and can therefore be used differently
+  // between versions without breaking replays.
+  // TODO: may be advantageous to have multiple of these in order to minimize divergence
+  // in networked rewind/reapply.
+  kAesthetic,
+  // As above, but must actually use game-state randomness in legacy compatibility mode.
+  kLegacyAesthetic,
+};
+
 class SimInterface {
 public:
   SimInterface(SimInternals* internals) : internals_{internals} {}
@@ -46,13 +60,11 @@ public:
   ecs::const_handle global_entity() const;
   ecs::handle global_entity();
 
-  // TODO: support different categories of random with different seeds, e.g. kGameState,
-  // kAestheticOnly. Must actually not be different in legacy compatibility mode, otherwise
-  // can separate out non-gamestate-affecting randomness so that these things no longer
-  // need to be strictly preserved.
-  std::uint32_t random_state() const;
+  RandomEngine& random(random_source s = random_source::kGameState);
+  std::uint32_t random_state(random_source s = random_source::kGameState) const;
   std::uint32_t random(std::uint32_t max);
   fixed random_fixed();
+  bool random_bool();
 
   struct collision_info {
     ecs::handle h;

@@ -27,8 +27,8 @@ public:
 
   SimState();  // Empty state for double-buffering. Behaviour undefined until copy_to().
   SimState(const initial_conditions& conditions, std::span<const std::uint32_t> ai_players = {});
-  // TODO: some kind of fast state checksum.
 
+  std::uint32_t checksum() const;  // Fast checksum.
   void copy_to(SimState&) const;
   void update(InputAdapter& input);
   void render() const;

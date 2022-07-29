@@ -9,6 +9,7 @@ const std::uint32_t kTimer = 500;
 }  // namespace
 
 void Stars::update(SimInterface& sim) {
+  auto& random = sim.random(random_source::kLegacyAesthetic);
   bool destroy = false;
   for (auto& star : stars_) {
     star.position += direction_ * star.speed;
@@ -18,18 +19,19 @@ void Stars::update(SimInterface& sim) {
     std::erase_if(stars_, [](const auto& s) { return !s.timer; });
   }
 
-  auto r = star_rate_ > 1 ? sim.random(star_rate_) : 0u;
+  auto r = star_rate_ > 1 ? random.uint(star_rate_) : 0u;
   for (std::uint32_t i = 0; i < r; ++i) {
     create_star(sim);
   }
 }
 
 void Stars::change(SimInterface& sim) {
-  direction_ = rotate(direction_, (sim.random_fixed().to_float() - 0.5f) * glm::pi<float>());
+  auto& random = sim.random(random_source::kLegacyAesthetic);
+  direction_ = rotate(direction_, (random.fixed().to_float() - 0.5f) * glm::pi<float>());
   for (auto& star : stars_) {
     star.timer = kTimer;
   }
-  star_rate_ = sim.random(3) + 2;
+  star_rate_ = random.uint(3) + 2;
 }
 
 void Stars::render(const SimInterface& sim) {
@@ -55,9 +57,11 @@ void Stars::render(const SimInterface& sim) {
     }
   }
 }
+
 void Stars::create_star(SimInterface& sim) {
-  auto r = sim.random(12);
-  if (r <= 0 && sim.random(4)) {
+  auto& random = sim.random(random_source::kLegacyAesthetic);
+  auto r = random.uint(12);
+  if (r <= 0 && random.uint(4)) {
     return;
   }
 
@@ -72,8 +76,8 @@ void Stars::create_star(SimInterface& sim) {
   star.type = t;
   star.speed = speed;
 
-  auto edge = sim.random(4);
-  float ratio = sim.random_fixed().to_float();
+  auto edge = random.uint(4);
+  float ratio = random.fixed().to_float();
 
   star.position.x = edge < 2 ? ratio * kSimDimensions.x : edge == 2 ? -16 : 16 + kSimDimensions.x;
   star.position.y = edge >= 2 ? ratio * kSimDimensions.y : edge == 0 ? -16 : 16 + kSimDimensions.y;
@@ -81,12 +85,12 @@ void Stars::create_star(SimInterface& sim) {
   auto c0 = colour_hue(0.f, .15f, 0.f);
   auto c1 = colour_hue(0.f, .25f, 0.f);
   auto c2 = colour_hue(0.f, .35f, 0.f);
-  star.colour = t == type::kDotStar ? (sim.random(2) ? c1 : c2)
-      : t == type::kFarStar         ? (sim.random(2) ? c1 : c0)
-      : t == type::kBigStar         ? (sim.random(2) ? c0 : c1)
+  star.colour = t == type::kDotStar ? (random.rbool() ? c1 : c2)
+      : t == type::kFarStar         ? (random.rbool() ? c1 : c0)
+      : t == type::kBigStar         ? (random.rbool() ? c0 : c1)
                                     : c0;
   if (t == type::kPlanet) {
-    star.size = 4.f + sim.random(4);
+    star.size = 4.f + random.uint(4);
   }
   stars_.emplace_back(star);
 }

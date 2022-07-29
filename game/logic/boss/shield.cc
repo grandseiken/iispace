@@ -109,7 +109,7 @@ struct ShieldBombBoss : ecs::component {
         side = !side;
       }
 
-      if (sim.random(2)) {
+      if (sim.random_bool()) {
         auto d = sim.rotate_compatibility(vec2{5, 0}, transform.rotation);
         for (std::uint32_t i = 0; i < 12; ++i) {
           spawn_boss_shot(sim, transform.centre, d);

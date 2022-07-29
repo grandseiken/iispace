@@ -96,7 +96,7 @@ struct BigSquareBoss : public ecs::component {
       if (special_timer >= 8 && sim.random(4)) {
         special_timer = kAttackTime;
         special_attack = true;
-        special_attack_rotate = sim.random(2) != 0;
+        special_attack_rotate = sim.random_bool();
         attack_player = sim.nearest_player(transform.centre).id();
         sim.play_sound(sound::kBossAttack,
                        sim.index().get(*attack_player)->get<Transform>()->centre);

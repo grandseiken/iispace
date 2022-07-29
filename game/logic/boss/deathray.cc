@@ -239,7 +239,7 @@ struct DeathRayBoss : public ecs::component {
       if (sim.is_on_screen(transform.centre)) {
         --timer;
         if (!(timer % kTimer) && timer && !sim.random(4)) {
-          dir = sim.random(2) != 0;
+          dir = sim.random_bool();
           pos = sim.random(7);
         }
         if (timer == kTimer * 2 + 50 && arms.size() == 2) {

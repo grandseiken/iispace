@@ -267,9 +267,10 @@ struct ChaserBoss : ecs::component {
       if (last) {
         sim.rumble_all(25);
         std::uint32_t n = 1;
+        auto& random = sim.random(random_source::kLegacyAesthetic);
         for (std::uint32_t i = 0; i < 16; ++i) {
-          vec2 v = from_polar(sim.random_fixed() * (2 * fixed_c::pi),
-                              fixed{8 + sim.random(64) + sim.random(64)});
+          vec2 v = from_polar(random.fixed() * (2 * fixed_c::pi),
+                              fixed{8 + random.uint(64) + random.uint(64)});
           sim.global_entity().get<GlobalData>()->fireworks.push_back(GlobalData::fireworks_entry{
               .time = n, .position = transform.centre + v, .colour = c});
           n += i;

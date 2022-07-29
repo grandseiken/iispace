@@ -82,6 +82,20 @@ SimState::SimState(const initial_conditions& conditions, std::span<const std::ui
   setup_index_callbacks(*interface_, *internals_);
 }
 
+std::uint32_t SimState::checksum() const {
+  std::uint32_t result = 0;
+  auto hash_combine = [&](std::uint32_t v) {
+    result ^= v + 0x9e3779b9 + (result << 6) + (result >> 2);
+  };
+  internals_->index.iterate_dispatch<Transform>(
+      [&](ecs::const_handle h, const Transform& transform) {
+        hash_combine(+h.id());
+        hash_combine(static_cast<std::uint32_t>(transform.centre.x.to_internal()));
+        hash_combine(static_cast<std::uint32_t>(transform.centre.y.to_internal()));
+      });
+  return result;
+}
+
 void SimState::copy_to(SimState& target) const {
   if (&target == this) {
     return;
@@ -93,7 +107,8 @@ void SimState::copy_to(SimState& target) const {
 
   internals_->index.copy_to(target.internals_->index);
   target.internals_->input_frames = nullptr;
-  target.internals_->random_engine = internals_->random_engine;
+  target.internals_->game_state_random = internals_->game_state_random;
+  target.internals_->aesthetic_random = internals_->aesthetic_random;
   target.internals_->conditions = internals_->conditions;
   target.internals_->global_entity_id = internals_->global_entity_id;
   target.internals_->global_entity_handle.reset();

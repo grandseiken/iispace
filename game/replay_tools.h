@@ -69,7 +69,11 @@ result<replay_results_t> inline replay_results(
     }
     sim.update(input);
     if (!(++i % 16)) {
+      auto checksum = sim.checksum();
       sim.copy_to(double_buffer);
+      if (sim.checksum() != checksum || double_buffer.checksum() != checksum) {
+        return unexpected("checksum failure");
+      }
       std::swap(sim, double_buffer);
     } else {
       sim.clear_output();

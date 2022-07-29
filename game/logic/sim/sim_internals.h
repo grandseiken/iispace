@@ -17,24 +17,12 @@ class Overmind;
 namespace ii {
 
 struct SimInternals {
-  SimInternals(std::uint32_t seed) : random_engine{seed} {}
+  SimInternals(std::uint32_t seed) : game_state_random{seed}, aesthetic_random{seed + 1} {}
 
-  SimInternals(const SimInternals& other)
-  : random_engine{other.random_engine}
-  , conditions{other.conditions}
-  , global_entity_id{other.global_entity_id}
-  , tick_count{other.tick_count}
-  , particles{other.particles}
-  , stars{other.stars}
-  , collisions{other.collisions}
-  , bosses_killed{other.bosses_killed} {
-    other.index.copy_to(index);
-  }
-
-  SimInternals& operator=(const SimInternals&) = delete;
   // Input.
   std::vector<input_frame>* input_frames = nullptr;
-  RandomEngine random_engine;
+  RandomEngine game_state_random;
+  RandomEngine aesthetic_random;
 
   // Internal sim data.
   initial_conditions conditions;

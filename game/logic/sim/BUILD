@@ -11,7 +11,10 @@ cc_library(
 
 cc_library(
   name = "sim_interface",
-  hdrs = ["sim_interface.h"],
+  hdrs = [
+    "random_engine.h",
+    "sim_interface.h",
+  ],
   deps = [
     ":sim_io",
     "//game/common:math",
@@ -25,8 +28,6 @@ cc_library(
   name = "sim",
   hdrs = ["sim_state.h"],
   srcs = [
-    "random_engine.cc",
-    "random_engine.h",
     "sim_interface.cc",
     "sim_internals.h",
     "sim_state.cc",

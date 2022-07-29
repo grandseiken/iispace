@@ -60,7 +60,7 @@ struct TractorBoss : ecs::component {
     return sim.conditions().compatibility == compatibility_level::kLegacy ? 640 : 140;
   }
 
-  TractorBoss(SimInterface& sim) : shoot_type{sim.random(2)} {}
+  TractorBoss(SimInterface& sim) : shoot_type{sim.random_bool()} {}
   bool will_attack = false;
   bool stopped = false;
   bool generating = false;
@@ -78,14 +78,14 @@ struct TractorBoss : ecs::component {
     if (transform.centre.x <= kSimDimensions.x / 2 && will_attack && !stopped && !move_away) {
       stopped = true;
       generating = true;
-      gen_dir = !sim.random(2);
+      gen_dir = !sim.random_bool();
       timer = 0;
     }
 
     if (transform.centre.x < -150) {
       transform.centre.x = kSimDimensions.x + 150;
       will_attack = !will_attack;
-      shoot_type = sim.random(2);
+      shoot_type = sim.random_bool();
       if (will_attack) {
         shoot_type = 0;
       }

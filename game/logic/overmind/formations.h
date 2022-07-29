@@ -109,13 +109,13 @@ struct square3side : formation<10, 12> {
   void operator()(const SpawnContext& context) const {
     auto r = context.random(2);
     auto p = context.random(4);
-    auto r2 = context.random(2);
+    auto r2 = context.random_bool();
     auto p2 = 1 + context.random(16);
 
     if (p < 2) {
       auto d = r ? spawn_direction::kTop : spawn_direction::kBottom;
       for (std::uint32_t i = 0; i < 18; ++i) {
-        if (r2 == 0 || i != p2) {
+        if (!r2 || i != p2) {
           spawn_square(context, d, i, 18);
         }
       }
@@ -134,7 +134,7 @@ struct square3side : formation<10, 12> {
 
 struct wall1 : formation<5> {
   void operator()(const SpawnContext& context) const {
-    bool dir = context.random(2) != 0;
+    bool dir = context.random_bool();
     for (std::uint32_t i = 1; i < 3; ++i) {
       spawn_wall(context, spawn_direction::kMirrorV, i, 4, dir);
     }
@@ -143,7 +143,7 @@ struct wall1 : formation<5> {
 
 struct wall2 : formation<12> {
   void operator()(const SpawnContext& context) const {
-    bool dir = context.random(2) != 0;
+    bool dir = context.random_bool();
     auto r = context.random(4);
     auto p1 = 2 + context.random(5);
     auto p2 = 2 + context.random(5);
@@ -160,7 +160,7 @@ struct wall2 : formation<12> {
 
 struct wall3 : formation<22, 26> {
   void operator()(const SpawnContext& context) const {
-    bool dir = context.random(2) != 0;
+    bool dir = context.random_bool();
     auto r1 = context.random(4);
     auto r2 = context.random(4);
     auto p11 = 1 + context.random(10);
@@ -185,7 +185,7 @@ struct wall3 : formation<22, 26> {
 
 struct wall1side : formation<3> {
   void operator()(const SpawnContext& context) const {
-    bool dir = context.random(2) != 0;
+    bool dir = context.random_bool();
     auto r = context.random(2);
     auto p = context.random(4);
 
@@ -207,7 +207,7 @@ struct wall1side : formation<3> {
 
 struct wall2side : formation<6> {
   void operator()(const SpawnContext& context) const {
-    bool dir = context.random(2) != 0;
+    bool dir = context.random_bool();
     auto r = context.random(2);
     auto p = context.random(4);
 
@@ -231,16 +231,16 @@ struct wall2side : formation<6> {
 
 struct wall3side : formation<11, 13> {
   void operator()(const SpawnContext& context) const {
-    bool dir = context.random(2) != 0;
+    bool dir = context.random_bool();
     auto r = context.random(2);
     auto p = context.random(4);
-    auto r2 = context.random(2);
+    auto r2 = context.random_bool();
     auto p2 = 1 + context.random(10);
 
     if (p < 2) {
       auto d = r ? spawn_direction::kTop : spawn_direction::kBottom;
       for (std::uint32_t i = 0; i < 12; ++i) {
-        if (r2 == 0 || i != p2) {
+        if (!r2 || i != p2) {
           spawn_wall(context, d, i, 12, dir);
         }
       }
@@ -275,8 +275,7 @@ struct follow1 : formation<3> {
 
 struct follow2 : formation<7> {
   void operator()(const SpawnContext& context) const {
-    auto p = context.random(2);
-    if (p == 0) {
+    if (!context.random_bool()) {
       for (std::uint32_t i = 0; i < 8; ++i) {
         spawn_follow(context, spawn_direction::kMirrorV, i, 8);
       }
@@ -290,8 +289,7 @@ struct follow2 : formation<7> {
 
 struct follow3 : formation<14> {
   void operator()(const SpawnContext& context) const {
-    auto p = context.random(2);
-    if (p == 0) {
+    if (!context.random_bool()) {
       for (std::uint32_t i = 0; i < 16; ++i) {
         spawn_follow(context, spawn_direction::kMirrorV, i, 16);
       }
@@ -324,8 +322,7 @@ struct follow1side : formation<2> {
 struct follow2side : formation<3> {
   void operator()(const SpawnContext& context) const {
     auto d = context.random_v_direction();
-    auto p = context.random(2);
-    if (p == 0) {
+    if (!context.random_bool()) {
       for (std::uint32_t i = 0; i < 8; ++i) {
         spawn_follow(context, d, i, 8);
       }
@@ -340,8 +337,7 @@ struct follow2side : formation<3> {
 struct follow3side : formation<7> {
   void operator()(const SpawnContext& context) const {
     auto d = context.random_v_direction();
-    auto p = context.random(2);
-    if (p == 0) {
+    if (!context.random_bool()) {
       for (std::uint32_t i = 0; i < 16; ++i) {
         spawn_follow(context, d, i, 16);
       }
@@ -372,8 +368,7 @@ struct chaser1 : formation<4> {
 
 struct chaser2 : formation<8> {
   void operator()(const SpawnContext& context) const {
-    auto p = context.random(2);
-    if (p == 0) {
+    if (!context.random_bool()) {
       for (std::uint32_t i = 0; i < 8; ++i) {
         spawn_chaser(context, spawn_direction::kMirrorV, i, 8);
       }
@@ -387,8 +382,7 @@ struct chaser2 : formation<8> {
 
 struct chaser3 : formation<16> {
   void operator()(const SpawnContext& context) const {
-    auto p = context.random(2);
-    if (p == 0) {
+    if (!context.random_bool()) {
       for (std::uint32_t i = 0; i < 16; ++i) {
         spawn_chaser(context, spawn_direction::kMirrorV, i, 16);
       }
@@ -429,8 +423,7 @@ struct chaser1side : formation<2> {
 struct chaser2side : formation<4> {
   void operator()(const SpawnContext& context) const {
     auto d = context.random_v_direction();
-    auto p = context.random(2);
-    if (p == 0) {
+    if (!context.random_bool()) {
       for (std::uint32_t i = 0; i < 8; ++i) {
         spawn_chaser(context, d, i, 8);
       }
@@ -445,8 +438,7 @@ struct chaser2side : formation<4> {
 struct chaser3side : formation<8> {
   void operator()(const SpawnContext& context) const {
     auto d = context.random_v_direction();
-    auto p = context.random(2);
-    if (p == 0) {
+    if (!context.random_bool()) {
       for (std::uint32_t i = 0; i < 16; ++i) {
         spawn_chaser(context, d, i, 16);
       }
@@ -501,11 +493,11 @@ struct hub2side : formation<6> {
 
 struct mixed1 : formation<6> {
   void operator()(const SpawnContext& context) const {
-    auto p = context.random(2);
-    spawn_follow(context, spawn_direction::kMirrorV, p == 0 ? 0 : 2, 4);
-    spawn_follow(context, spawn_direction::kMirrorV, p == 0 ? 1 : 3, 4);
-    spawn_chaser(context, spawn_direction::kMirrorV, p == 0 ? 2 : 0, 4);
-    spawn_chaser(context, spawn_direction::kMirrorV, p == 0 ? 3 : 1, 4);
+    auto p = context.random_bool();
+    spawn_follow(context, spawn_direction::kMirrorV, !p ? 0 : 2, 4);
+    spawn_follow(context, spawn_direction::kMirrorV, !p ? 1 : 3, 4);
+    spawn_chaser(context, spawn_direction::kMirrorV, !p ? 2 : 0, 4);
+    spawn_chaser(context, spawn_direction::kMirrorV, !p ? 3 : 1, 4);
   }
 };
 
@@ -523,7 +515,7 @@ struct mixed2 : formation<12> {
 
 struct mixed3 : formation<16> {
   void operator()(const SpawnContext& context) const {
-    bool dir = context.random(2) != 0;
+    bool dir = context.random_bool();
     spawn_wall(context, spawn_direction::kMirrorV, 3, 7, dir);
     spawn_follow_hub(context, spawn_direction::kMirrorV, 1, 7);
     spawn_follow_hub(context, spawn_direction::kMirrorV, 5, 7);
@@ -561,7 +553,7 @@ struct mixed6 : formation<16, 30> {
 
 struct mixed7 : formation<18, 16> {
   void operator()(const SpawnContext& context) const {
-    bool dir = context.random(2) != 0;
+    bool dir = context.random_bool();
     spawn_shielder(context, spawn_direction::kMirrorV, 2, 5);
     spawn_wall(context, spawn_direction::kMirrorV, 1, 10, dir);
     spawn_wall(context, spawn_direction::kMirrorV, 8, 10, dir);
@@ -575,25 +567,25 @@ struct mixed7 : formation<18, 16> {
 struct mixed1side : formation<3> {
   void operator()(const SpawnContext& context) const {
     auto d = context.random_v_direction();
-    auto p = context.random(2);
-    spawn_follow(context, d, p == 0 ? 0 : 2, 4);
-    spawn_follow(context, d, p == 0 ? 1 : 3, 4);
-    spawn_chaser(context, d, p == 0 ? 2 : 0, 4);
-    spawn_chaser(context, d, p == 0 ? 3 : 1, 4);
+    auto p = context.random_bool();
+    spawn_follow(context, d, !p ? 0 : 2, 4);
+    spawn_follow(context, d, !p ? 1 : 3, 4);
+    spawn_chaser(context, d, !p ? 2 : 0, 4);
+    spawn_chaser(context, d, !p ? 3 : 1, 4);
   }
 };
 
 struct mixed2side : formation<6> {
   void operator()(const SpawnContext& context) const {
-    auto r = context.random(2);
-    auto p = context.random(2);
+    auto r = context.random_bool();
+    auto p = context.random_bool();
     auto d0 = r ? spawn_direction::kTop : spawn_direction::kBottom;
     auto d1 = r ? spawn_direction::kBottom : spawn_direction::kTop;
     for (std::uint32_t i = 0; i < 13; ++i) {
       if (i % 2) {
         spawn_follow(context, d0, i, 13);
       } else {
-        spawn_chaser(context, p == 0 ? d0 : d1, i, 13);
+        spawn_chaser(context, p ? d1 : d0, i, 13);
       }
     }
   }
@@ -601,7 +593,7 @@ struct mixed2side : formation<6> {
 
 struct mixed3side : formation<8> {
   void operator()(const SpawnContext& context) const {
-    bool dir = context.random(2) != 0;
+    bool dir = context.random_bool();
     auto d = context.random_v_direction();
     spawn_wall(context, d, 3, 7, dir);
     spawn_follow_hub(context, d, 1, 7);
@@ -642,7 +634,7 @@ struct mixed6side : formation<8, 20> {
 
 struct mixed7side : formation<9, 16> {
   void operator()(const SpawnContext& context) const {
-    bool dir = context.random(2);
+    bool dir = context.random_bool();
     auto d = context.random_v_direction();
     spawn_shielder(context, d, 2, 5);
     spawn_wall(context, d, 1, 10, dir);

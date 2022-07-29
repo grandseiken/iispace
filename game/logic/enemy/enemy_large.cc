@@ -143,7 +143,7 @@ struct Shielder : ecs::component {
       if (timer > kTimer * 2) {
         timer = kTimer;
         rotate = true;
-        rdir = sim.random(2) != 0;
+        rdir = sim.random_bool();
       }
       if (sim.is_on_screen(transform.centre) && power && timer % kTimer == kTimer / 2) {
         spawn_boss_shot(sim, transform.centre, 3 * sim.nearest_player_direction(transform.centre),
