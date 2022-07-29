@@ -94,7 +94,10 @@ namespace ii::ecs {
 inline void EntityIndex::copy_to(EntityIndex& target) const {
   target.next_id_ = next_id_;
   target.entities_.clear();
-  target.entity_tables_.resize(entities_.size());
+  auto size = entities_.size();
+  if (target.entity_tables_.size() < size) {
+    target.entity_tables_.resize(size);
+  }
   for (std::size_t i = 0; const auto& table : entity_tables_) {
     if (table.id) {
       auto& table_copy = target.entity_tables_[i++];
@@ -104,6 +107,11 @@ inline void EntityIndex::copy_to(EntityIndex& target) const {
       target.entities_.emplace(*table.id, &table_copy);
     }
   }
+  for (std::size_t i = size; i < target.next_entity_table_index_; ++i) {
+    target.entity_tables_[i].id.reset();
+    target.entity_tables_[i].v.clear();
+  }
+  target.next_entity_table_index_ = size;
   target.components_.resize(components_.size());
   for (std::size_t i = 0; i < components_.size(); ++i) {
     if (components_[i]) {
@@ -116,15 +124,16 @@ inline void EntityIndex::copy_to(EntityIndex& target) const {
 
 inline void EntityIndex::compact() {
   auto has_value = [](const detail::component_table& table) { return table.id.has_value(); };
-  auto it = std::ranges::find_if_not(entity_tables_, has_value);
-  if (it == entity_tables_.end()) {
+  auto end = entity_tables_.begin() + static_cast<std::ptrdiff_t>(next_entity_table_index_);
+  auto it = std::find_if_not(entity_tables_.begin(), end, has_value);
+  if (it == end) {
     return;
   }
-  auto [pivot, _] = std::ranges::stable_partition(it, entity_tables_.end(), has_value);
+  auto [pivot, _] = std::ranges::stable_partition(it, end, has_value);
   for (; it != pivot; ++it) {
     entities_[*it->id] = &*it;
   }
-  entity_tables_.erase(pivot, entity_tables_.end());
+  next_entity_table_index_ = static_cast<std::size_t>(std::distance(entity_tables_.begin(), pivot));
   for (const auto& c : components_) {
     if (c) {
       c->compact(*this);
@@ -138,9 +147,16 @@ inline auto EntityIndex::create() -> handle {
   while (contains(id)) {
     id = next_id_++;
   }
-  auto [it, _] = entities_.emplace(id, &entity_tables_.emplace_back());
-  it->second->id = id;
-  return {id, this, it->second};
+  detail::component_table* table = nullptr;
+  if (next_entity_table_index_ < entity_tables_.size()) {
+    table = &entity_tables_[next_entity_table_index_];
+  } else {
+    table = &entity_tables_.emplace_back();
+  }
+  table->id = id;
+  entities_.emplace(id, table);
+  ++next_entity_table_index_;
+  return {id, this, table};
 }
 
 template <Component... CArgs>

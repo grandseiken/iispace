@@ -156,6 +156,7 @@ private:
   const detail::component_storage<C>* storage() const;
 
   entity_id next_id_{0};
+  std::size_t next_entity_table_index_ = 0;
   std::deque<detail::component_table> entity_tables_;
   std::unordered_map<entity_id, detail::component_table*> entities_;
   std::vector<std::unique_ptr<detail::component_storage_base>> components_;
