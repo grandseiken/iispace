@@ -76,6 +76,7 @@ struct FollowHub : ecs::component {
     spawn_chaser(sim, transform.centre);
   }
 };
+DEBUG_STRUCT_TUPLE(FollowHub, timer, dir, count, power_a, power_b);
 
 struct Shielder : ecs::component {
   static constexpr std::uint32_t kBoundingWidth = 36;
@@ -154,6 +155,7 @@ struct Shielder : ecs::component {
     dir = normalise(dir);
   }
 };
+DEBUG_STRUCT_TUPLE(Shielder, dir, timer, rotate, rdir, power);
 
 struct Tractor : ecs::component {
   static constexpr std::uint32_t kBoundingWidth = 36;
@@ -247,6 +249,8 @@ struct Tractor : ecs::component {
     }
   }
 };
+DEBUG_STRUCT_TUPLE(Tractor, timer, dir, power, ready, spinning, spoke_r);
+
 }  // namespace
 
 void spawn_follow_hub(SimInterface& sim, const vec2& position, bool power_a, bool power_b) {

@@ -70,6 +70,7 @@ struct Square : ecs::component {
     invisible_flash = no_enemies && (timer % 4 == 1 || timer % 4 == 2);
   }
 };
+DEBUG_STRUCT_TUPLE(Square, dir, timer, invisible_flash);
 
 struct Wall : ecs::component {
   static constexpr std::uint32_t kBoundingWidth = 50;
@@ -141,6 +142,7 @@ struct Wall : ecs::component {
     }
   }
 };
+DEBUG_STRUCT_TUPLE(Wall, dir, timer, is_rotating, rdir);
 }  // namespace
 
 void spawn_square(SimInterface& sim, const vec2& position, fixed dir_angle) {

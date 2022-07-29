@@ -11,6 +11,7 @@ struct ChaserBossSharedState : ecs::component {
   std::uint32_t count = 0;
   std::uint32_t cycle = 0;
 };
+DEBUG_STRUCT_TUPLE(ChaserBossSharedState, count, cycle);
 
 struct split_lookup_entry {
   fixed hp_reduce_power = 0;
@@ -339,6 +340,7 @@ struct ChaserBoss : ecs::component {
     return r;
   }
 };
+DEBUG_STRUCT_TUPLE(ChaserBoss, on_screen, move, dir, last_dir, timer, cycle, split, stagger);
 
 }  // namespace
 

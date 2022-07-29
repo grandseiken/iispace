@@ -12,6 +12,8 @@ namespace ii {
 namespace {
 
 struct options_t {
+  std::optional<std::uint64_t> dump_state_from_tick;
+  std::optional<std::uint64_t> max_ticks;
   std::optional<std::uint64_t> verify_ticks;
   std::optional<std::uint64_t> verify_score;
 };
@@ -23,27 +25,32 @@ bool run(const options_t& options, const std::string& replay_path) {
     std::cerr << replay_bytes.error() << std::endl;
     return false;
   }
-  auto results = replay_results(*replay_bytes, /* max ticks */ std::nullopt);
+  auto results = replay_results(*replay_bytes, options.max_ticks, options.dump_state_from_tick);
   if (!results) {
     std::cerr << results.error() << std::endl;
     return false;
   }
-  std::cout << "================================================" << std::endl;
-  std::cout << replay_path << std::endl;
-  std::cout << "================================================" << std::endl;
   std::cout
+      << "================================================\n"
+      << replay_path << "\n"
+      << "================================================\n"
       << "replay progress:\t"
       << (100 * static_cast<float>(results->replay_frames_read) / results->replay_frames_total)
-      << "%" << std::endl;
-  std::cout << "compatibility:  \t" << static_cast<std::uint32_t>(results->conditions.compatibility)
-            << std::endl;
-  std::cout << "players:        \t" << results->conditions.player_count << std::endl;
-  std::cout << "flags:          \t" << +(results->conditions.flags) << std::endl;
-  std::cout << "mode:           \t" << static_cast<std::uint32_t>(results->conditions.mode)
-            << std::endl;
-  std::cout << "seed:           \t" << results->conditions.seed << std::endl;
-  std::cout << "ticks:          \t" << results->sim.tick_count << std::endl;
-  std::cout << "score:          \t" << results->sim.score << std::endl;
+      << "%\n"
+      << "compatibility:  \t" << static_cast<std::uint32_t>(results->conditions.compatibility)
+      << "\n"
+      << "players:        \t" << results->conditions.player_count << "\n"
+      << "flags:          \t" << +(results->conditions.flags) << "\n"
+      << "mode:           \t" << static_cast<std::uint32_t>(results->conditions.mode) << "\n"
+      << "seed:           \t" << results->conditions.seed << "\n"
+      << "ticks:          \t" << results->sim.tick_count << "\n"
+      << "score:          \t" << results->sim.score << std::endl;
+  for (std::size_t i = 0; i < results->state_dumps.size(); ++i) {
+    std::cout << "\n================================================\n"
+              << "tick " << (options.dump_state_from_tick.value_or(0u) + i) << " state dump\n"
+              << "================================================\n";
+    std::cout << results->state_dumps[i] << std::flush;
+  }
 
   bool success = true;
   if (options.verify_score && *options.verify_score != results->sim.score) {
@@ -60,12 +67,11 @@ bool run(const options_t& options, const std::string& replay_path) {
   if (results->conditions.compatibility == compatibility_level::kLegacy) {
     ++frames_read;
   }
-  if (frames_read < results->replay_frames_total) {
+  if (!options.max_ticks && frames_read < results->replay_frames_total) {
     std::cerr << "verification failed: only " << results->replay_frames_read << " of "
               << results->replay_frames_total << " replay frames consumed" << std::endl;
     success = false;
   }
-  std::cout << std::endl;
   return success;
 }
 
@@ -85,6 +91,28 @@ int main(int argc, char** argv) {
     std::cerr << result.error() << std::endl;
     return 1;
   }
+
+  if (auto result =
+          ii::flag_parse<std::uint64_t>(args, "dump_tick_from", options.dump_state_from_tick);
+      !result) {
+    std::cerr << result.error() << std::endl;
+    return 1;
+  }
+  if (auto result = ii::flag_parse<std::uint64_t>(args, "dump_tick_to", options.max_ticks);
+      !result) {
+    std::cerr << result.error() << std::endl;
+    return 1;
+  }
+  std::optional<std::uint64_t> dump_tick;
+  if (auto result = ii::flag_parse<std::uint64_t>(args, "dump_tick", dump_tick); !result) {
+    std::cerr << result.error() << std::endl;
+    return 1;
+  }
+  if (dump_tick) {
+    options.dump_state_from_tick = dump_tick;
+    options.max_ticks = dump_tick;
+  }
+
   if (auto result = ii::args_finish(args); !result) {
     std::cerr << result.error() << std::endl;
     return 1;

@@ -28,6 +28,7 @@ struct Bounce : ecs::component {
     transform.move(dir);
   }
 };
+DEBUG_STRUCT_TUPLE(Bounce, dir);
 
 struct Follow : ecs::component {
   static constexpr std::uint32_t kBoundingWidth = 10;
@@ -78,6 +79,7 @@ struct Follow : ecs::component {
     }
   }
 };
+DEBUG_STRUCT_TUPLE(Follow, timer, target, is_big_follow);
 
 struct Chaser : ecs::component {
   static constexpr std::uint32_t kBoundingWidth = 10;
@@ -116,6 +118,7 @@ struct Chaser : ecs::component {
     }
   }
 };
+DEBUG_STRUCT_TUPLE(Chaser, move, timer, dir);
 }  // namespace
 
 void spawn_bounce(SimInterface& sim, const vec2& position, fixed angle) {

@@ -31,6 +31,7 @@ struct DeathRay : ecs::component {
     }
   }
 };
+DEBUG_STRUCT_TUPLE(DeathRay);
 
 void spawn_death_ray(SimInterface& sim, const vec2& position) {
   auto h = create_ship<DeathRay>(sim, position);
@@ -128,6 +129,7 @@ struct DeathArm : ecs::component {
 
   void on_destroy(ecs::const_handle h, SimInterface& sim) const;
 };
+DEBUG_STRUCT_TUPLE(DeathArm, death_boss, is_top, attacking, start, timer, shots, dir, target);
 
 ecs::handle spawn_death_arm(SimInterface& sim, ecs::handle boss, bool is_top, std::uint32_t hp) {
   auto h = create_ship<DeathArm>(sim, vec2{0});
@@ -339,6 +341,8 @@ struct DeathRayBoss : public ecs::component {
     return arms.empty() ? damage : 0u;
   }
 };
+DEBUG_STRUCT_TUPLE(DeathRayBoss, arms, timer, laser, dir, pos, arm_timer, shot_timer,
+                   ray_attack_timer, ray_src1, ray_src2, ray_dest);
 
 void DeathArm::on_destroy(ecs::const_handle h, SimInterface& sim) const {
   explode_entity_shapes<DeathArm>(h, sim);

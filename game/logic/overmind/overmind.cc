@@ -415,6 +415,9 @@ struct Overmind : ecs::component {
                      [](const entry& a, const entry& b) { return a.cost < b.cost; });
   }
 };
+DEBUG_STRUCT_TUPLE(Overmind, power, timer, levels_mod, groups_mod, boss_mod_bosses, boss_mod_fights,
+                   boss_mod_secret, powerup_mod, lives_spawned, lives_target, boss_rest_timer,
+                   waves_total, is_boss_next, is_boss_level);
 
 }  // namespace
 

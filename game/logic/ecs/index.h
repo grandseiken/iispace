@@ -1,5 +1,6 @@
 #ifndef II_GAME_LOGIC_ECS_INDEX_H
 #define II_GAME_LOGIC_ECS_INDEX_H
+#include "game/common/printer.h"
 #include "game/logic/ecs/detail.h"
 #include "game/logic/ecs/id.h"
 #include <concepts>
@@ -79,6 +80,8 @@ public:
   EntityIndex& operator=(EntityIndex&&) = default;
   EntityIndex& operator=(const EntityIndex&) = delete;
 
+  // Dump state.
+  void dump(Printer&) const;
   // Replicate all data to target index. Doesn't copy component add/remove callbacks.
   void copy_to(EntityIndex& target) const;
   // Rearrange and compact internals. Invalidates all handles and component references.

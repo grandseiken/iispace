@@ -314,4 +314,8 @@ sim_results SimState::get_results() const {
   return r;
 }
 
+void SimState::dump(Printer& printer) const {
+  internals_->index.dump(printer);
+}
+
 }  // namespace ii

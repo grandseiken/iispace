@@ -11,6 +11,7 @@
 
 namespace ii {
 class Overmind;
+class Printer;
 class Ship;
 class SimInterface;
 struct SimInternals;
@@ -25,6 +26,7 @@ public:
 
   SimState();  // Empty state for double-buffering. Behaviour undefined until copy_to().
   SimState(const initial_conditions& conditions, std::span<const std::uint32_t> ai_players = {});
+  // TODO: some kind of fast state checksum.
 
   void copy_to(SimState&) const;
   void update(InputAdapter& input);
@@ -37,6 +39,7 @@ public:
   std::unordered_map<std::uint32_t, std::uint32_t> get_rumble_output() const;
   render_output get_render_output() const;
   sim_results get_results() const;
+  void dump(Printer&) const;
 
 private:
   std::uint32_t kill_timer_ = 0;

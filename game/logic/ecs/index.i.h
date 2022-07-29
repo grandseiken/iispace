@@ -4,6 +4,7 @@
 #include "game/logic/ecs/index.h"
 #include <algorithm>
 #include <deque>
+#include <typeinfo>
 
 namespace ii::ecs::detail {
 struct component_storage_base {
@@ -13,6 +14,7 @@ struct component_storage_base {
   virtual void copy_clear() = 0;
   virtual void
   copy_to(EntityIndex& index, std::unique_ptr<component_storage_base>& target) const = 0;
+  virtual void dump(std::size_t index, Printer& printer) const = 0;
 };
 
 template <Component C>
@@ -69,6 +71,26 @@ struct component_storage : component_storage_base {
       }
     }
   }
+
+  void dump(std::size_t index, Printer& printer) const override {
+    const auto& data = *entries[index].data;
+    printer.begin().put('[').put(+ecs::id<C>()).put(" / ");
+    if constexpr (requires { to_debug_name(data); }) {
+      printer.put(to_debug_name(data));
+    } else {
+      printer.put(typeid(C).name());
+    }
+    printer.put(']').end();
+    if constexpr (requires { to_debug_tuple(data); }) {
+      printer.indent();
+      std::apply(
+          [&](const auto&... members) {
+            (printer.begin().put(members.name).put(": ").put(members.value).end(), ...);
+          },
+          to_debug_tuple(data));
+      printer.undent();
+    }
+  }
 };
 
 template <typename T>
@@ -90,6 +112,22 @@ void iterate(T& storage, bool include_new, auto&& f) {
 }  // namespace ii::ecs::detail
 
 namespace ii::ecs {
+
+inline void EntityIndex::dump(Printer& printer) const {
+  for (const auto& e : entity_tables_) {
+    if (!e.id) {
+      continue;
+    }
+    printer.begin().put("[@ ").put(+*e.id).put("]").end().indent();
+    for (std::size_t i = 0; i < e.v.size(); ++i) {
+      if (e.v[i]) {
+        components_[i]->dump(*e.v[i], printer);
+      }
+    }
+    printer.undent();
+    printer.end();
+  }
+}
 
 inline void EntityIndex::copy_to(EntityIndex& target) const {
   target.next_id_ = next_id_;

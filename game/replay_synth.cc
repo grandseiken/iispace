@@ -38,9 +38,9 @@ do_run(const options_t& options, std::uint32_t run_index, const initial_conditio
       if (run_index) {
         std::cout << '\n';
       }
-      std::cout << "================================================" << std::endl;
-      std::cout << "run #" << (run_index + 1) << ": seed " << conditions.seed << std::endl;
-      std::cout << "================================================" << std::endl;
+      std::cout << "================================================\n"
+                << "run #" << (run_index + 1) << ": seed " << conditions.seed << "\n"
+                << "================================================\n";
     }
     std::cout << "running sim..." << std::endl;
   }
@@ -53,11 +53,11 @@ do_run(const options_t& options, std::uint32_t run_index, const initial_conditio
 
   if (print_progress) {
     if (run_result->ticks >= options.max_ticks) {
-      std::cout << "max ticks exceeded!" << std::endl;
+      std::cout << "max ticks exceeded!\n";
     }
-    std::cout << "ticks:\t" << run_result->ticks << std::endl;
-    std::cout << "score:\t" << run_result->score << std::endl;
-    std::cout << "kills:\t" << +run_result->bosses_killed << std::endl;
+    std::cout << "ticks:\t" << run_result->ticks << "\n"
+              << "score:\t" << run_result->score << "\n"
+              << "kills:\t" << +run_result->bosses_killed << std::endl;
   }
 
   if (options.verify) {
@@ -189,8 +189,8 @@ bool run(const options_t& options) {
   }
   if (options.replay_out_path) {
     if (options.runs > 1) {
-      std::cout << "================================================" << std::endl;
-      std::cout << "best run #" << (best_run_index + 1) << ": ticks " << best_run->ticks
+      std::cout << "================================================\n"
+                << "best run #" << (best_run_index + 1) << ": ticks " << best_run->ticks
                 << " score " << best_run->score << " kills " << +best_run->bosses_killed
                 << std::endl;
     }

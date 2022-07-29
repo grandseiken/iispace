@@ -54,6 +54,7 @@ struct SnakeTail : ecs::component {
     }
   }
 };
+DEBUG_STRUCT_TUPLE(SnakeTail, tail, head, timer, d_timer);
 
 struct Snake : ecs::component {
   static constexpr std::uint32_t kBoundingWidth = 32;
@@ -125,6 +126,7 @@ struct Snake : ecs::component {
     }
   }
 };
+DEBUG_STRUCT_TUPLE(Snake, tail, timer, dir, count, is_projectile, projectile_rotation);
 
 ecs::handle spawn_snake_tail(SimInterface& sim, const vec2& position, const glm::vec4& colour) {
   auto h = create_ship<SnakeTail>(sim, position);

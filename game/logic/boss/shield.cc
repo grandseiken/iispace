@@ -137,6 +137,8 @@ struct ShieldBombBoss : ecs::component {
     return {shot_alternate, damage};
   }
 };
+DEBUG_STRUCT_TUPLE(ShieldBombBoss, timer, count, unshielded, attack, attack_dir, side,
+                   shot_alternate);
 
 std::uint32_t transform_shield_bomb_boss_damage(ecs::handle h, SimInterface& sim, damage_type type,
                                                 std::uint32_t damage) {

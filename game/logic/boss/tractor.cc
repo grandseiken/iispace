@@ -275,6 +275,8 @@ struct TractorBoss : ecs::component {
     }
   }
 };
+DEBUG_STRUCT_TUPLE(TractorBoss, will_attack, stopped, generating, attacking, move_away, gen_dir,
+                   sound, shoot_type, timer, attack_shapes, targets, sub_rotation);
 
 }  // namespace
 

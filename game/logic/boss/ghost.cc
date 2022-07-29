@@ -65,6 +65,7 @@ struct GhostWall : ecs::component {
     }
   }
 };
+DEBUG_STRUCT_TUPLE(GhostWall, dir, vertical, gap_swap);
 
 void spawn_ghost_wall_vertical(SimInterface& sim, bool swap, bool no_gap) {
   vec2 position{kSimDimensions.x / 2, swap ? -10 : 10 + kSimDimensions.y};
@@ -121,6 +122,7 @@ struct GhostMine : ecs::component {
     }
   }
 };
+DEBUG_STRUCT_TUPLE(GhostMine, timer, ghost_boss);
 
 void spawn_ghost_mine(SimInterface& sim, const vec2& position, ecs::const_handle ghost) {
   auto h = create_ship<GhostMine>(sim, position);
@@ -490,6 +492,9 @@ struct GhostBoss : ecs::component {
     }
   }
 };
+DEBUG_STRUCT_TUPLE(GhostBoss, visible, shot_type, rdir, danger_enable, vtime, timer, attack,
+                   attack_time, start_time, danger_circle, danger_offset1, danger_offset2,
+                   danger_offset3, danger_offset4);
 
 }  // namespace
 

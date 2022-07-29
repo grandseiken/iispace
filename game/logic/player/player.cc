@@ -83,6 +83,7 @@ struct Shot : ecs::component {
     }
   }
 };
+DEBUG_STRUCT_TUPLE(Shot, player, player_number, velocity, magic);
 
 void spawn_shot(SimInterface& sim, const vec2& position, ecs::handle player, const vec2& direction,
                 bool magic) {
@@ -182,6 +183,7 @@ struct Powerup : ecs::component {
     h.emplace<Destroy>();
   }
 };
+DEBUG_STRUCT_TUPLE(Powerup, type, frame, dir, rotate, first_frame);
 
 struct PlayerLogic : ecs::component {
   static constexpr fixed kPlayerSpeed = 5;
@@ -375,6 +377,7 @@ struct PlayerLogic : ecs::component {
     return !pc.kill_timer && (!is_what_mode || invulnerability_timer);
   }
 };
+DEBUG_STRUCT_TUPLE(PlayerLogic, is_what_mode, invulnerability_timer, fire_timer, fire_target);
 
 }  // namespace
 

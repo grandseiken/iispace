@@ -9,6 +9,7 @@ cc_library(
   hdrs = ["replay_tools.h"],
   deps = [
     "//game/common:types",
+    "//game/common:printer",
     "//game/data:replay",
     "//game/logic/sim",
   ]

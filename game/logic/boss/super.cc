@@ -61,6 +61,7 @@ struct SuperBossArc : public ecs::component {
     sim.play_sound(sound::kExplosion, std::get<0>(parameters), /* random */ true);
   }
 };
+DEBUG_STRUCT_TUPLE(SuperBossArc, boss, i, timer, s_timer);
 
 ecs::handle spawn_super_boss_arc(SimInterface& sim, const vec2& position, std::uint32_t cycle,
                                  std::uint32_t i, ecs::handle boss, std::uint32_t timer = 0) {
@@ -260,6 +261,7 @@ struct SuperBoss : ecs::component {
     }
   }
 };
+DEBUG_STRUCT_TUPLE(SuperBoss, state, cycle, ctimer, timer, snakes, arcs);
 
 }  // namespace
 

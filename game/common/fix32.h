@@ -184,7 +184,7 @@ inline std::ostream& operator<<(std::ostream& o, const fixed& f) {
   std::uint64_t v = detail::fixed_abs(f.value_);
   o << (v >> 32) << ".";
   double d = 0;
-  double val = 0.5;
+  double val = .5;
   for (std::size_t i = 0; i < 32; ++i) {
     if (v & (std::int64_t{1} << (31 - i))) {
       d += val;
@@ -193,7 +193,7 @@ inline std::ostream& operator<<(std::ostream& o, const fixed& f) {
   }
 
   std::stringstream ss;
-  ss << std::fixed << std::setprecision(16) << d;
+  ss << std::fixed << std::setprecision(2) << d;
   o << ss.str().substr(2);
   return o;
 }

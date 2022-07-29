@@ -126,6 +126,8 @@ struct BigSquareBoss : public ecs::component {
     }
   }
 };
+DEBUG_STRUCT_TUPLE(BigSquareBoss, dir, reverse, timer, spawn_timer, special_timer, special_attack,
+                   special_attack_rotate, attack_player);
 
 }  // namespace
 

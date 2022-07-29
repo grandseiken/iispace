@@ -7,6 +7,9 @@ cc_library(
     "index.h",
     "index.i.h",
   ],
-  deps = ["//game/common:types"],
+  deps = [
+    "//game/common:printer",
+    "//game/common:types",
+  ],
   visibility = ["//game/logic:__subpackages__"],
 )

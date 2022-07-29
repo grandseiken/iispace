@@ -1,5 +1,6 @@
 #ifndef II_GAME_REPLAY_TOOLS_H
 #define II_GAME_REPLAY_TOOLS_H
+#include "game/common/printer.h"
 #include "game/common/result.h"
 #include "game/data/replay.h"
 #include "game/logic/sim/sim_io.h"
@@ -40,10 +41,12 @@ struct replay_results_t {
   sim_results sim;
   std::size_t replay_frames_read = 0;
   std::size_t replay_frames_total = 0;
+  std::vector<std::string> state_dumps;
 };
 
-result<replay_results_t> inline replay_results(std::span<const std::uint8_t> replay_bytes,
-                                               std::optional<std::uint64_t> max_ticks) {
+result<replay_results_t> inline replay_results(
+    std::span<const std::uint8_t> replay_bytes, std::optional<std::uint64_t> max_ticks,
+    std::optional<std::uint64_t> dump_state_from_tick = std::nullopt) {
   auto reader = ReplayReader::create(replay_bytes);
   if (!reader) {
     return unexpected(reader.error());
@@ -54,7 +57,16 @@ result<replay_results_t> inline replay_results(std::span<const std::uint8_t> rep
   SimState sim{reader->initial_conditions()};
   SimState double_buffer;
   std::size_t i = 0;
-  while (!sim.game_over() && (!max_ticks || sim.get_results().tick_count < *max_ticks)) {
+  while (!sim.game_over()) {
+    auto tick_results = sim.get_results();
+    if (dump_state_from_tick && tick_results.tick_count >= *dump_state_from_tick) {
+      Printer printer;
+      sim.dump(printer);
+      results.state_dumps.emplace_back(printer.extract());
+    }
+    if (max_ticks && tick_results.tick_count >= *max_ticks) {
+      break;
+    }
     sim.update(input);
     if (!(++i % 16)) {
       sim.copy_to(double_buffer);

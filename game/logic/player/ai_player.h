@@ -13,6 +13,7 @@ struct AiPlayer : ecs::component {
   input_frame think(ecs::const_handle h, const Transform& transform, const Player& player,
                     const SimInterface& sim);
 };
+DEBUG_STRUCT_TUPLE(AiPlayer, velocity);
 
 }  // namespace ii
 

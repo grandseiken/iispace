@@ -42,6 +42,7 @@ struct BossShot : ecs::component {
     }
   }
 };
+DEBUG_STRUCT_TUPLE(BossShot, timer, velocity, rotate_speed);
 }  // namespace
 
 void spawn_boss_shot(SimInterface& sim, const vec2& position, const vec2& velocity,

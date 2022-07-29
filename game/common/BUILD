@@ -15,9 +15,20 @@ cc_library(
     "functional.h",
     "raw_ptr.h",
     "result.h",
+    "struct_tuple.h",
     "type_list.h",
   ],
   deps = ["@expected"],
+  visibility = ["//visibility:public"],
+)
+
+cc_library(
+  name = "printer",
+  hdrs = ["printer.h"],
+  deps = [
+    ":math",
+    ":types",
+  ],
   visibility = ["//visibility:public"],
 )
 

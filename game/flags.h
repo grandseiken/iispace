@@ -46,25 +46,37 @@ flag_parse(std::vector<std::string>& args, const std::string& name, std::optiona
         out_value = false;
         return {};
       }
+      if (it->starts_with("--" + name + "=")) {
+        return unexpected("error: flag --" + name + " does not take a value");
+      }
     }
     return {};
   } else {
     for (auto it = args.begin(); it != args.end(); ++it) {
-      if (*it != "--" + name) {
-        continue;
+      if (*it == "--" + name) {
+        auto jt = it;
+        if (++jt == args.end()) {
+          return unexpected("error: flag --" + name + " requires a value");
+        }
+        auto parse_value = flag_parse_value<T>(*jt);
+        if (!parse_value) {
+          return unexpected("error: couldn't parse value " + *jt + " for flag --" + name);
+        }
+        ++jt;
+        args.erase(it, jt);
+        out_value = std::move(parse_value);
+        return {};
       }
-      auto jt = it;
-      if (++jt == args.end()) {
-        return unexpected("error: flag --" + name + " requires a value");
+      if (it->starts_with("--" + name = "=")) {
+        auto value = it->substr(name.size() + 3);
+        auto parse_value = flag_parse_value<T>(value);
+        if (!parse_value) {
+          return unexpected("error: couldn't parse value " + value + " for flag --" + name);
+        }
+        args.erase(it);
+        out_value = std::move(parse_value);
+        return {};
       }
-      auto parse_value = flag_parse_value<T>(*jt);
-      if (!parse_value) {
-        return unexpected("error: couldn't parse value " + *jt + " for flag --" + name);
-      }
-      ++jt;
-      args.erase(it, jt);
-      out_value = std::move(parse_value);
-      return {};
     }
     return {};
   }
