@@ -58,6 +58,12 @@ SimState::~SimState() = default;
 SimState::SimState(SimState&&) noexcept = default;
 SimState& SimState::operator=(SimState&&) noexcept = default;
 
+SimState::SimState()
+: internals_{std::make_unique<SimInternals>(/* seed */ 0)}
+, interface_{std::make_unique<SimInterface>(internals_.get())} {
+  setup_index_callbacks(*interface_, *internals_);
+}
+
 SimState::SimState(const initial_conditions& conditions, std::span<const std::uint32_t> ai_players)
 : internals_{std::make_unique<SimInternals>(conditions.seed)}
 , interface_{std::make_unique<SimInterface>(internals_.get())} {
@@ -76,16 +82,29 @@ SimState::SimState(const initial_conditions& conditions, std::span<const std::ui
   setup_index_callbacks(*interface_, *internals_);
 }
 
-SimState SimState::copy() const {
-  SimState sim_copy;
-  sim_copy.internals_ = std::make_unique<SimInternals>(*internals_);
-  sim_copy.interface_ = std::make_unique<SimInterface>(sim_copy.internals_.get());
-  sim_copy.kill_timer_ = kill_timer_;
-  sim_copy.colour_cycle_ = colour_cycle_;
-  sim_copy.game_over_ = game_over_;
-  setup_index_callbacks(*sim_copy.interface_, *sim_copy.internals_);
-  refresh_handles(*sim_copy.internals_);
-  return sim_copy;
+void SimState::copy_to(SimState& target) const {
+  if (&target == this) {
+    return;
+  }
+  target.kill_timer_ = kill_timer_;
+  target.colour_cycle_ = colour_cycle_;
+  target.game_over_ = game_over_;
+  target.compact_counter_ = 0;
+
+  internals_->index.copy_to(target.internals_->index);
+  target.internals_->input_frames = nullptr;
+  target.internals_->random_engine = internals_->random_engine;
+  target.internals_->conditions = internals_->conditions;
+  target.internals_->global_entity_id = internals_->global_entity_id;
+  target.internals_->global_entity_handle.reset();
+  target.internals_->tick_count = internals_->tick_count;
+  target.internals_->particles = internals_->particles;
+  target.internals_->stars = internals_->stars;
+  target.internals_->collisions = internals_->collisions;
+  target.internals_->bosses_killed = internals_->bosses_killed;
+
+  target.clear_output();
+  refresh_handles(*target.internals_);
 }
 
 void SimState::update(InputAdapter& input) {
@@ -294,7 +313,5 @@ sim_results SimState::get_results() const {
   }
   return r;
 }
-
-SimState::SimState() = default;
 
 }  // namespace ii

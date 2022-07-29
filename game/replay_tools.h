@@ -52,11 +52,13 @@ result<replay_results_t> inline replay_results(std::span<const std::uint8_t> rep
   replay_results_t results;
   results.conditions = reader->initial_conditions();
   SimState sim{reader->initial_conditions()};
+  SimState double_buffer;
   std::size_t i = 0;
   while (!sim.game_over() && (!max_ticks || sim.get_results().tick_count < *max_ticks)) {
     sim.update(input);
-    if (!(++i % 64)) {
-      sim = sim.copy();
+    if (!(++i % 16)) {
+      sim.copy_to(double_buffer);
+      std::swap(sim, double_buffer);
     } else {
       sim.clear_output();
     }

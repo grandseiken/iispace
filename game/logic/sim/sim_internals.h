@@ -22,13 +22,14 @@ struct SimInternals {
   SimInternals(const SimInternals& other)
   : random_engine{other.random_engine}
   , conditions{other.conditions}
-  , index{other.index.copy()}
   , global_entity_id{other.global_entity_id}
   , tick_count{other.tick_count}
   , particles{other.particles}
   , stars{other.stars}
   , collisions{other.collisions}
-  , bosses_killed{other.bosses_killed} {}
+  , bosses_killed{other.bosses_killed} {
+    other.index.copy_to(index);
+  }
 
   SimInternals& operator=(const SimInternals&) = delete;
   // Input.
@@ -54,6 +55,7 @@ struct SimInternals {
   std::vector<collision_entry> collisions;
 
   // Run output.
+  // TODO: if adding more, put in struct for easy copying in copy_to().
   boss_flag bosses_killed{0};
 
   // Per-frame output.

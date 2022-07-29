@@ -79,8 +79,8 @@ public:
   EntityIndex& operator=(EntityIndex&&) = default;
   EntityIndex& operator=(const EntityIndex&) = delete;
 
-  // Make a standalone copy. Doesn't copy component add/remove callbacks.
-  EntityIndex copy() const;
+  // Replicate all data to target index. Doesn't copy component add/remove callbacks.
+  void copy_to(EntityIndex& target) const;
   // Rearrange and compact internals. Invalidates all handles and component references.
   void compact();
   // Create a new element and return handle.

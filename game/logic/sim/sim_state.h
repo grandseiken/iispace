@@ -22,9 +22,11 @@ public:
   SimState(const SimState&) = delete;
   SimState& operator=(SimState&&) noexcept;
   SimState& operator=(const SimState&) = delete;
+
+  SimState();  // Empty state for double-buffering. Behaviour undefined until copy_to().
   SimState(const initial_conditions& conditions, std::span<const std::uint32_t> ai_players = {});
 
-  SimState copy() const;
+  void copy_to(SimState&) const;
   void update(InputAdapter& input);
   void render() const;
   bool game_over() const;
@@ -37,7 +39,6 @@ public:
   sim_results get_results() const;
 
 private:
-  SimState();
   std::uint32_t kill_timer_ = 0;
   std::uint32_t colour_cycle_ = 0;
   std::size_t compact_counter_ = 0;
