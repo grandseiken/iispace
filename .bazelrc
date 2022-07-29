@@ -27,6 +27,8 @@ build:clang-common --cxxopt=-Wno-unused-command-line-argument
 
 # Windows configurations.
 build:msvc --config=windows-common
+build:msvc --copt=/Zc:preprocessor
+build:msvc --copt=/wd5105
 build:msvc --copt=/experimental:deterministic
 build:msvc --linkopt=/experimental:deterministic
 

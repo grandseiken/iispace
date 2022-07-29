@@ -62,7 +62,7 @@ struct component_storage : component_storage_base {
     auto& target = static_cast<component_storage&>(*target_ptr);
     target.size = size;
     target.entries.resize(size);
-    for (std::size_t i = 0; const auto& e : entries) {
+    for (index_type i = 0; const auto& e : entries) {
       if (e.data) {
         auto& e_copy = target.entries[i];
         e_copy.id = e.id;
