@@ -46,7 +46,7 @@ struct replay_results_t {
 
 result<replay_results_t> inline replay_results(
     std::span<const std::uint8_t> replay_bytes, std::optional<std::uint64_t> max_ticks,
-    std::optional<std::uint64_t> dump_state_from_tick = std::nullopt) {
+    std::optional<std::uint64_t> dump_state_from_tick = std::nullopt, SimState::query query = {}) {
   auto reader = ReplayReader::create(replay_bytes);
   if (!reader) {
     return unexpected(reader.error());
@@ -61,7 +61,7 @@ result<replay_results_t> inline replay_results(
     auto tick_results = sim.get_results();
     if (dump_state_from_tick && tick_results.tick_count >= *dump_state_from_tick) {
       Printer printer;
-      sim.dump(printer);
+      sim.dump(printer, query);
       results.state_dumps.emplace_back(printer.extract());
     }
     if (max_ticks && tick_results.tick_count >= *max_ticks) {

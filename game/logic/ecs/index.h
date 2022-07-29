@@ -10,8 +10,10 @@
 #include <functional>
 #include <memory>
 #include <optional>
+#include <string>
 #include <type_traits>
 #include <unordered_map>
+#include <unordered_set>
 #include <vector>
 
 namespace ii::ecs {
@@ -80,8 +82,13 @@ public:
   EntityIndex& operator=(EntityIndex&&) = default;
   EntityIndex& operator=(const EntityIndex&) = delete;
 
+  struct query {
+    std::unordered_set<entity_id> entity_ids;
+    std::unordered_set<std::string> components;
+  };
+
   // Dump state.
-  void dump(Printer&) const;
+  void dump(Printer&, const query& q = {}) const;
   // Replicate all data to target index. Doesn't copy component add/remove callbacks.
   void copy_to(EntityIndex& target) const;
   // Rearrange and compact internals. Invalidates all handles and component references.

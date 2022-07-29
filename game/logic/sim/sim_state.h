@@ -7,6 +7,7 @@
 #include <optional>
 #include <span>
 #include <unordered_map>
+#include <unordered_set>
 #include <vector>
 
 namespace ii {
@@ -39,7 +40,12 @@ public:
   std::unordered_map<std::uint32_t, std::uint32_t> get_rumble_output() const;
   render_output get_render_output() const;
   sim_results get_results() const;
-  void dump(Printer&) const;
+
+  struct query {
+    std::unordered_set<std::uint32_t> entity_ids;
+    std::unordered_set<std::string> component_names;
+  };
+  void dump(Printer&, const query& q = {}) const;
 
 private:
   std::uint32_t kill_timer_ = 0;

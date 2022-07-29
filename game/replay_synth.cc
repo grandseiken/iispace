@@ -246,7 +246,7 @@ int main(int argc, char** argv) {
   }
 
   std::optional<std::string> mode;
-  if (auto result = ii::flag_parse<std::string>(args, "mode", mode); !result) {
+  if (auto result = ii::flag_parse(args, "mode", mode); !result) {
     std::cerr << result.error() << std::endl;
     return 1;
   }
@@ -266,7 +266,7 @@ int main(int argc, char** argv) {
   }
 
   std::optional<std::string> compatibility;
-  if (auto result = ii::flag_parse<std::string>(args, "compatibility", compatibility); !result) {
+  if (auto result = ii::flag_parse(args, "compatibility", compatibility); !result) {
     std::cerr << result.error() << std::endl;
     return 1;
   }

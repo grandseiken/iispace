@@ -26,7 +26,7 @@ inline auto make_struct_tuple_member_entry(const char* name, T&& t) {
 
 #define DEBUG_STRUCT_TUPLE_MEMBER(member) ::make_struct_tuple_member_entry(#member, x.member)
 #define DEBUG_STRUCT_TUPLE(struct_name, ...)                             \
-  inline const char* to_debug_name(const struct_name&) {                 \
+  inline const char* to_debug_name(const struct_name*) {                 \
     return #struct_name;                                                 \
   }                                                                      \
   inline auto to_debug_tuple(const struct_name& x) {                     \

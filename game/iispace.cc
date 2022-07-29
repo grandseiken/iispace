@@ -155,7 +155,7 @@ int main(int argc, char** argv) {
   ii::game_options_t options;
 
   std::optional<std::string> compatibility;
-  if (auto result = ii::flag_parse<std::string>(args, "compatibility", compatibility); !result) {
+  if (auto result = ii::flag_parse(args, "compatibility", compatibility); !result) {
     std::cerr << result.error() << std::endl;
     return 1;
   }

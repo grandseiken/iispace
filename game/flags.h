@@ -1,11 +1,14 @@
 #ifndef II_GAME_FLAGS_H
 #define II_GAME_FLAGS_H
 #include "game/common/result.h"
+#include <algorithm>
 #include <charconv>
 #include <cstdint>
 #include <optional>
+#include <ranges>
 #include <string>
 #include <system_error>
+#include <unordered_set>
 
 namespace ii {
 
@@ -99,6 +102,29 @@ result<void> flag_parse(std::vector<std::string>& args, const std::string& name,
     }
   }
   out_value = std::move(*optional_value);
+  return {};
+}
+
+template <typename T>
+result<void> flag_parse(std::vector<std::string>& args, const std::string& name,
+                        std::unordered_set<T>& out_value) {
+  while (true) {
+    std::optional<std::string> list_value;
+    if (auto result = flag_parse(args, name, list_value); !result) {
+      return result;
+    }
+    if (!list_value) {
+      break;
+    }
+    for (auto sr : *list_value | std::ranges::views::split(',')) {
+      std::string s{&*sr.begin(), static_cast<std::size_t>(std::ranges::distance(sr))};
+      auto value = flag_parse_value<T>(s);
+      if (!value) {
+        return unexpected("error: couldn't parse value " + s + " for flag --" + name);
+      }
+      out_value.emplace(std::move(*value));
+    }
+  }
   return {};
 }
 

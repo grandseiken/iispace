@@ -14,6 +14,7 @@ struct component_storage_base {
   virtual void copy_clear() = 0;
   virtual void
   copy_to(EntityIndex& index, std::unique_ptr<component_storage_base>& target) const = 0;
+  virtual bool matches(const std::unordered_set<std::string>& components) const = 0;
   virtual void dump(std::size_t index, Printer& printer) const = 0;
 };
 
@@ -72,11 +73,20 @@ struct component_storage : component_storage_base {
     }
   }
 
+  bool matches(const std::unordered_set<std::string>& components) const override {
+    C* p = nullptr;
+    if constexpr (requires { to_debug_name(p); }) {
+      return components.count(to_debug_name(p));
+    } else {
+      return false;
+    }
+  }
+
   void dump(std::size_t index, Printer& printer) const override {
     const auto& data = *entries[index].data;
     printer.begin().put('[').put(+ecs::id<C>()).put(" / ");
-    if constexpr (requires { to_debug_name(data); }) {
-      printer.put(to_debug_name(data));
+    if constexpr (requires { to_debug_name(&data); }) {
+      printer.put(to_debug_name(&data));
     } else {
       printer.put(typeid(C).name());
     }
@@ -113,14 +123,26 @@ void iterate(T& storage, bool include_new, auto&& f) {
 
 namespace ii::ecs {
 
-inline void EntityIndex::dump(Printer& printer) const {
+inline void EntityIndex::dump(Printer& printer, const query& q) const {
   for (const auto& e : entity_tables_) {
-    if (!e.id) {
+    if (!e.id || (!q.entity_ids.empty() && !q.entity_ids.contains(*e.id))) {
+      continue;
+    }
+    bool matches_components = q.components.empty();
+    if (!matches_components) {
+      for (std::size_t i = 0; i < e.v.size(); ++i) {
+        if (e.v[i] && components_[i]->matches(q.components)) {
+          matches_components = true;
+          break;
+        }
+      }
+    }
+    if (!matches_components) {
       continue;
     }
     printer.begin().put("[@ ").put(+*e.id).put("]").end().indent();
     for (std::size_t i = 0; i < e.v.size(); ++i) {
-      if (e.v[i]) {
+      if (e.v[i] && (q.components.empty() || components_[i]->matches(q.components))) {
         components_[i]->dump(*e.v[i], printer);
       }
     }

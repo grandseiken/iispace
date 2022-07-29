@@ -314,8 +314,15 @@ sim_results SimState::get_results() const {
   return r;
 }
 
-void SimState::dump(Printer& printer) const {
-  internals_->index.dump(printer);
+void SimState::dump(Printer& printer, const query& q) const {
+  ecs::EntityIndex::query index_q;
+  for (const auto& id : q.entity_ids) {
+    index_q.entity_ids.emplace(ecs::entity_id{id});
+  }
+  for (const auto& name : q.component_names) {
+    index_q.components.emplace(name);
+  }
+  internals_->index.dump(printer, index_q);
 }
 
 }  // namespace ii
