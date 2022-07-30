@@ -52,6 +52,7 @@ cc_binary(
   deps = [
     ":flags",
     ":replay_tools",
+    "//game/data:replay",
     "//game/io/file:std_filesystem",
   ],
   visibility = ["//visibility:public"],

@@ -15,12 +15,12 @@ namespace {
 
 struct options_t {
   SimState::query query;
-
   std::optional<std::uint64_t> dump_state_from_tick;
   std::optional<std::uint64_t> max_ticks;
 
   std::optional<std::uint64_t> verify_ticks;
   std::optional<std::uint64_t> verify_score;
+  std::optional<std::string> convert_out_path;
 };
 
 bool run(const options_t& options, const std::string& replay_path) {
@@ -81,7 +81,34 @@ bool run(const options_t& options, const std::string& replay_path) {
               << results->replay_frames_total << " replay frames consumed" << std::endl;
     success = false;
   }
-  return success;
+  if (!success) {
+    return false;
+  }
+
+  if (options.convert_out_path) {
+    std::cout << "converting replay..." << std::endl;
+    auto reader = ReplayReader::create(*replay_bytes);
+    if (!reader) {
+      std::cerr << reader.error() << std::endl;
+      return false;
+    }
+    ReplayWriter writer{reader->initial_conditions()};
+    while (auto frame = reader->next_input_frame()) {
+      writer.add_input_frame(*frame);
+    }
+    auto out_bytes = writer.write();
+    if (!out_bytes) {
+      std::cerr << out_bytes.error() << std::endl;
+      return false;
+    }
+    auto result = fs.write(*options.convert_out_path, *out_bytes);
+    if (!result) {
+      std::cerr << result.error() << std::endl;
+      return false;
+    }
+    std::cout << "wrote " << *options.convert_out_path << std::endl;
+  }
+  return true;
 }
 
 result<options_t> parse_args(std::vector<std::string>& args) {
@@ -112,6 +139,9 @@ result<options_t> parse_args(std::vector<std::string>& args) {
     return unexpected(r.error());
   }
   if (auto r = flag_parse(args, "dump_components", options.query.component_names); !r) {
+    return unexpected(r.error());
+  }
+  if (auto r = flag_parse(args, "output", options.convert_out_path); !r) {
     return unexpected(r.error());
   }
   return {std::move(options)};

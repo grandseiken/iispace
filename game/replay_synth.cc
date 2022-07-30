@@ -1,4 +1,3 @@
-#include "game/data/replay.h"
 #include "game/flags.h"
 #include "game/io/file/std_filesystem.h"
 #include "game/logic/sim/sim_state.h"

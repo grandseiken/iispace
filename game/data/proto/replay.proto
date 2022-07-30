@@ -2,8 +2,9 @@ syntax = "proto3";
 option optimize_for = LITE_RUNTIME;
 package ii.proto;
 
-message PlayerFrame {
-  // TODO: should be sint64. Migrate to a new message?
+// TODO: never used in released version, so could convert all the tests using this format
+// and remove it.
+message LegacyPlayerFrame {
   int64 velocity_x = 1;
   int64 velocity_y = 2;
 
@@ -12,6 +13,17 @@ message PlayerFrame {
   bool target_relative = 6;
 
   uint32 keys = 5;
+}
+
+message PlayerFrame {
+  sint64 velocity_x = 1;
+  sint64 velocity_y = 2;
+
+  bool target_relative = 3;
+  sint64 target_x = 4;
+  sint64 target_y = 5;
+
+  uint32 keys = 6;
 }
 
 message Replay {
@@ -41,5 +53,6 @@ message Replay {
   // Legacy data.
   bool can_face_secret_boss = 99;
 
-  repeated PlayerFrame player_frame = 5;
+  repeated LegacyPlayerFrame legacy_player_frame = 5;
+  repeated PlayerFrame player_frame = 7;
 }

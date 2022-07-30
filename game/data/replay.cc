@@ -168,22 +168,26 @@ ii::initial_conditions ReplayReader::initial_conditions() const {
 }
 
 std::optional<input_frame> ReplayReader::next_input_frame() {
-  if (impl_->frame_index >= static_cast<std::size_t>(impl_->replay.player_frame().size())) {
+  if (impl_->frame_index >= total_input_frames()) {
     return std::nullopt;
   }
-  const auto& replay_frame = impl_->replay.player_frame(impl_->frame_index++);
-  input_frame frame;
-  frame.velocity = {fixed::from_internal(replay_frame.velocity_x()),
-                    fixed::from_internal(replay_frame.velocity_y())};
-  vec2 target{fixed::from_internal(replay_frame.target_x()),
-              fixed::from_internal(replay_frame.target_y())};
-  if (replay_frame.target_relative()) {
-    frame.target_relative = target;
-  } else {
-    frame.target_absolute = target;
-  }
-  frame.keys = replay_frame.keys();
-  return frame;
+  auto read_frame = [&](const auto& replay_frame) {
+    input_frame frame;
+    frame.velocity = {fixed::from_internal(replay_frame.velocity_x()),
+                      fixed::from_internal(replay_frame.velocity_y())};
+    vec2 target{fixed::from_internal(replay_frame.target_x()),
+                fixed::from_internal(replay_frame.target_y())};
+    if (replay_frame.target_relative()) {
+      frame.target_relative = target;
+    } else {
+      frame.target_absolute = target;
+    }
+    frame.keys = replay_frame.keys();
+    return frame;
+  };
+  return impl_->replay.player_frame().empty()
+      ? read_frame(impl_->replay.legacy_player_frame(impl_->frame_index++))
+      : read_frame(impl_->replay.player_frame(impl_->frame_index++));
 }
 
 std::size_t ReplayReader::current_input_frame() const {
@@ -191,7 +195,8 @@ std::size_t ReplayReader::current_input_frame() const {
 }
 
 std::size_t ReplayReader::total_input_frames() const {
-  return impl_->replay.player_frame().size();
+  return impl_->replay.player_frame().empty() ? impl_->replay.legacy_player_frame().size()
+                                              : impl_->replay.player_frame().size();
 }
 
 ReplayReader::ReplayReader() = default;
