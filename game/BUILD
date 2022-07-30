@@ -74,6 +74,7 @@ cc_binary(
   srcs = ["replay_network_sim.cc"],
   deps = [
     ":flags",
+    ":replay_tools",
     "//game/common:types",
     "//game/data:replay",
     "//game/io/file:std_filesystem",

@@ -32,7 +32,10 @@ public:
                     ReplayWriter* writer = nullptr);
 
   const std::unordered_set<std::string>& checksum_failed_remote_ids() const;
+  // May update canonical state; never updates predicted state.
   void input_packet(const std::string& remote_id, const sim_packet& packet);
+  // Always updates predicted state, advancing its tick count by exactly one. May or may not update
+  // canonical state.
   sim_packet update(std::vector<input_frame> local_input);
 
   const SimState& canonical() const {

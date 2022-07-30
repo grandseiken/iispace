@@ -36,21 +36,7 @@ bool run(const options_t& options, const std::string& replay_path) {
     std::cerr << results.error() << std::endl;
     return false;
   }
-  std::cout
-      << "================================================\n"
-      << replay_path << "\n"
-      << "================================================\n"
-      << "replay progress:\t"
-      << (100 * static_cast<float>(results->replay_frames_read) / results->replay_frames_total)
-      << "%\n"
-      << "compatibility:  \t" << static_cast<std::uint32_t>(results->conditions.compatibility)
-      << "\n"
-      << "players:        \t" << results->conditions.player_count << "\n"
-      << "flags:          \t" << +(results->conditions.flags) << "\n"
-      << "mode:           \t" << static_cast<std::uint32_t>(results->conditions.mode) << "\n"
-      << "seed:           \t" << results->conditions.seed << "\n"
-      << "ticks:          \t" << results->sim.tick_count << "\n"
-      << "score:          \t" << results->sim.score << std::endl;
+  print_replay_info(std::cout, replay_path, *results);
   for (std::size_t i = 0; i < results->state_dumps.size(); ++i) {
     if (results->state_dumps[i].empty()) {
       continue;
@@ -93,8 +79,12 @@ bool run(const options_t& options, const std::string& replay_path) {
       return false;
     }
     ReplayWriter writer{reader->initial_conditions()};
+    std::size_t frames_written = 0;
     while (auto frame = reader->next_input_frame()) {
-      writer.add_input_frame(*frame);
+      if (frames_written < results->replay_frames_read) {
+        writer.add_input_frame(*frame);
+        ++frames_written;
+      }
     }
     auto out_bytes = writer.write();
     if (!out_bytes) {

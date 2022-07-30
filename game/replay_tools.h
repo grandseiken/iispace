@@ -6,6 +6,7 @@
 #include "game/logic/sim/sim_io.h"
 #include "game/logic/sim/sim_state.h"
 #include <optional>
+#include <ostream>
 #include <span>
 
 namespace ii {
@@ -94,6 +95,23 @@ inline result<run_data_t> synthesize_replay(const initial_conditions& conditions
     data.replay_bytes.emplace(std::move(*bytes));
   }
   return data;
+}
+
+inline void print_replay_info(std::ostream& os, const std::string& replay_path,
+                              const replay_results_t& results) {
+  os << "================================================\n"
+     << replay_path << "\n"
+     << "================================================\n"
+     << "replay progress:\t"
+     << (100 * static_cast<float>(results.replay_frames_read) / results.replay_frames_total)
+     << "%\n"
+     << "compatibility:  \t" << static_cast<std::uint32_t>(results.conditions.compatibility) << "\n"
+     << "players:        \t" << results.conditions.player_count << "\n"
+     << "flags:          \t" << +(results.conditions.flags) << "\n"
+     << "mode:           \t" << static_cast<std::uint32_t>(results.conditions.mode) << "\n"
+     << "seed:           \t" << results.conditions.seed << "\n"
+     << "ticks:          \t" << results.sim.tick_count << "\n"
+     << "score:          \t" << results.sim.score << std::endl;
 }
 
 }  // namespace ii
