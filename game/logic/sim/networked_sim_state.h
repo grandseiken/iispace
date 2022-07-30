@@ -31,6 +31,7 @@ public:
   NetworkedSimState(const initial_conditions& conditions, input_mapping mapping,
                     ReplayWriter* writer = nullptr);
 
+  const std::unordered_set<std::string>& checksum_failed_remote_ids() const;
   void input_packet(const std::string& remote_id, const sim_packet& packet);
   sim_packet update(std::vector<input_frame> local_input);
 
@@ -50,9 +51,25 @@ private:
   std::uint64_t predicted_tick_base_ = 0;
 
   struct partial_frame {
-    std::optional<std::uint32_t> checksum;  // TODO.
     std::vector<std::optional<input_frame>> input_frames;
   };
+
+  struct tick_checksum {
+    tick_checksum(std::uint64_t tick_count, std::uint32_t checksum)
+    : tick_count{tick_count}, checksum{checksum} {}
+    std::uint64_t tick_count = 0;
+    std::uint32_t checksum = 0;
+  };
+
+  struct remote_info {
+    std::deque<tick_checksum> checksums;
+    // TODO: which of these do we actually need to adjust timings?
+    std::uint64_t latest_tick = 0;
+    std::uint64_t canonical_tick = 0;
+  };
+  std::deque<tick_checksum> local_checksums_;
+  std::unordered_map<std::string, remote_info> remotes_;
+  std::unordered_set<std::string> checksum_failed_remote_ids_;
 
   // Latest known input for each player.
   std::vector<input_frame> latest_input_;

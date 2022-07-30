@@ -36,9 +36,14 @@ NetworkedSimState::NetworkedSimState(const initial_conditions& conditions, input
 : canonical_state_{conditions, writer}
 , mapping_{std::move(mapping)}
 , player_count_{conditions.player_count} {
+  assert(check_mapping(mapping_));
   canonical_state_.copy_to(predicted_state_);
   latest_input_.resize(player_count_);
-  assert(check_mapping(mapping_));
+  local_checksums_.emplace_back(0u, canonical_state_.checksum());
+}
+
+const std::unordered_set<std::string>& NetworkedSimState::checksum_failed_remote_ids() const {
+  return checksum_failed_remote_ids_;
 }
 
 void NetworkedSimState::input_packet(const std::string& remote_id, const sim_packet& packet) {
@@ -58,6 +63,15 @@ void NetworkedSimState::input_packet(const std::string& remote_id, const sim_pac
     assert(false);
     return;  // Reordered packet (tick N + 1 before tick N)?
   }
+
+  // Update remote info.
+  auto& remote = remotes_[remote_id];
+  remote.latest_tick = 1 + packet.tick_count;
+  remote.canonical_tick = packet.canonical_tick_count;
+  if (remote.checksums.empty() || remote.checksums.back().tick_count < remote.canonical_tick) {
+    auto& c = remote.checksums.emplace_back(remote.canonical_tick, packet.canonical_checksum);
+  }
+
   if (tick_offset == partial_frames_.size()) {
     partial_frames_.emplace_back().input_frames.resize(player_count_);
   }
@@ -85,6 +99,7 @@ void NetworkedSimState::input_packet(const std::string& remote_id, const sim_pac
     v.emplace_back(*f);
   }
   canonical_state_.update(std::move(v));
+  local_checksums_.emplace_back(canonical_state_.tick_count(), canonical_state_.checksum());
   partial_frames_.pop_front();
 }
 
@@ -139,11 +154,38 @@ sim_packet NetworkedSimState::update(std::vector<input_frame> local_input) {
   if (!tick_offset && frame_complete) {
     // Can just advance canonical state.
     canonical_state_.update(std::move(inputs));
+    local_checksums_.emplace_back(canonical_state_.tick_count(), canonical_state_.checksum());
+    partial_frames_.pop_front();
     canonical_state_.copy_to(predicted_state_);
     ++predicted_tick_base_;
-    partial_frames_.pop_front();
   } else {
     predicted_state_.update(std::move(inputs));
+  }
+  packet.canonical_tick_count = local_checksums_.back().tick_count;
+  packet.canonical_checksum = local_checksums_.back().checksum;
+
+  // Verify and discard checksums.
+  while (local_checksums_.size() > 1) {
+    auto& c = local_checksums_.front();
+    bool can_discard = true;
+    for (auto& pair : remotes_) {
+      auto& remote_checksums = pair.second.checksums;
+      while (!remote_checksums.empty() && remote_checksums.front().tick_count < c.tick_count) {
+        remote_checksums.pop_front();
+      }
+      if (remote_checksums.empty()) {
+        can_discard = false;
+        continue;
+      }
+      auto& r = remote_checksums.front();
+      if (r.tick_count == c.tick_count && r.checksum && r.checksum != c.checksum) {
+        checksum_failed_remote_ids_.emplace(pair.first);
+      }
+    }
+    if (!can_discard) {
+      break;
+    }
+    local_checksums_.pop_front();
   }
   return packet;
 }
