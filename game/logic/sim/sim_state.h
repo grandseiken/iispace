@@ -12,6 +12,7 @@
 
 namespace ii {
 class Printer;
+class ReplayWriter;
 class SimInterface;
 struct SimInternals;
 
@@ -24,11 +25,13 @@ public:
   SimState& operator=(const SimState&) = delete;
 
   SimState();  // Empty state for double-buffering. Behaviour undefined until copy_to().
-  SimState(const initial_conditions& conditions, std::span<const std::uint32_t> ai_players = {});
+  SimState(const initial_conditions& conditions, ReplayWriter* replay_writer = nullptr,
+           std::span<const std::uint32_t> ai_players = {});
 
+  std::uint64_t tick_count() const;
   std::uint32_t checksum() const;  // Fast checksum.
   void copy_to(SimState&) const;
-  void update(InputAdapter& input);
+  void update(std::vector<input_frame> input);
   void render() const;
   bool game_over() const;
   std::uint32_t frame_count() const;
@@ -46,6 +49,7 @@ public:
   void dump(Printer&, const query& q = {}) const;
 
 private:
+  ReplayWriter* replay_writer_ = nullptr;
   std::uint32_t kill_timer_ = 0;
   std::uint32_t colour_cycle_ = 0;
   std::size_t compact_counter_ = 0;

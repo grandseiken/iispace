@@ -73,12 +73,11 @@ public:
 
 private:
   struct replay_t {
-    replay_t(ii::ReplayReader&& r) : reader{std::move(r)}, input{reader} {}
+    replay_t(ii::ReplayReader&& r) : reader{std::move(r)} {}
     ii::ReplayReader reader;
-    ii::ReplayInputAdapter input;
   };
   struct game_t {
-    game_t(ii::io::IoLayer& io, ii::ReplayWriter&& w) : writer{std::move(w)}, input{io, &writer} {}
+    game_t(ii::io::IoLayer& io, ii::ReplayWriter&& w) : writer{std::move(w)}, input{io} {}
     ii::ReplayWriter writer;
     ii::IoInputAdapter input;
   };
@@ -91,7 +90,6 @@ private:
 
   std::optional<replay_t> replay_;
   std::optional<game_t> game_;
-  ii::InputAdapter* input_ = nullptr;
   std::unique_ptr<ii::SimState> state_;
 };
 

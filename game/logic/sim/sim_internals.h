@@ -17,7 +17,7 @@ struct SimInternals {
   SimInternals(std::uint32_t seed) : game_state_random{seed}, aesthetic_random{seed + 1} {}
 
   // Input.
-  std::vector<input_frame>* input_frames = nullptr;
+  std::vector<input_frame> input_frames;
   RandomEngine game_state_random;
   RandomEngine aesthetic_random;
 

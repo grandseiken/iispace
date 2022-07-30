@@ -1,4 +1,5 @@
 #include "game/logic/sim/sim_state.h"
+#include "game/data/replay.h"
 #include "game/logic/ecs/call.h"
 #include "game/logic/overmind/overmind.h"
 #include "game/logic/player/player.h"
@@ -64,8 +65,10 @@ SimState::SimState()
   setup_index_callbacks(*interface_, *internals_);
 }
 
-SimState::SimState(const initial_conditions& conditions, std::span<const std::uint32_t> ai_players)
-: internals_{std::make_unique<SimInternals>(conditions.seed)}
+SimState::SimState(const initial_conditions& conditions, ReplayWriter* replay_writer,
+                   std::span<const std::uint32_t> ai_players)
+: replay_writer_{replay_writer}
+, internals_{std::make_unique<SimInternals>(conditions.seed)}
 , interface_{std::make_unique<SimInterface>(internals_.get())} {
   internals_->conditions = conditions;
   internals_->global_entity_handle = internals_->index.create(GlobalData{conditions});
@@ -80,6 +83,10 @@ SimState::SimState(const initial_conditions& conditions, std::span<const std::ui
     spawn_player(*interface_, v, i, /* AI */ std::ranges::find(ai_players, i) != ai_players.end());
   }
   setup_index_callbacks(*interface_, *internals_);
+}
+
+std::uint64_t SimState::tick_count() const {
+  return internals_->tick_count;
 }
 
 std::uint32_t SimState::checksum() const {
@@ -106,7 +113,7 @@ void SimState::copy_to(SimState& target) const {
   target.compact_counter_ = 0;
 
   internals_->index.copy_to(target.internals_->index);
-  target.internals_->input_frames = nullptr;
+  target.internals_->input_frames.clear();
   target.internals_->game_state_random = internals_->game_state_random;
   target.internals_->aesthetic_random = internals_->aesthetic_random;
   target.internals_->conditions = internals_->conditions;
@@ -122,12 +129,13 @@ void SimState::copy_to(SimState& target) const {
   refresh_handles(*target.internals_);
 }
 
-void SimState::update(InputAdapter& input) {
+void SimState::update(std::vector<input_frame> input) {
   colour_cycle_ = internals_->conditions.mode == game_mode::kHard ? 128
       : internals_->conditions.mode == game_mode::kFast           ? 192
       : internals_->conditions.mode == game_mode::kWhat           ? (colour_cycle_ + 1) % 256
                                                                   : 0;
-  internals_->input_frames = &input.get();
+  internals_->input_frames = std::move(input);
+  internals_->input_frames.resize(internals_->conditions.player_count);
 
   // TODO: write a better collision system for non-legacy-compatibility mode.
   for (auto& e : internals_->collisions) {
@@ -182,6 +190,7 @@ void SimState::update(InputAdapter& input) {
         boss_kill_count(internals_->bosses_killed) >= 6))) {
     kill_timer_ = 100;
   }
+  bool already_game_over = game_over_;
   if (kill_timer_) {
     kill_timer_--;
     if (!kill_timer_) {
@@ -189,7 +198,11 @@ void SimState::update(InputAdapter& input) {
     }
   }
   ++internals_->tick_count;
-  input.next();
+  if (replay_writer_ && !already_game_over) {
+    for (const auto& f : internals_->input_frames) {
+      replay_writer_->add_input_frame(f);
+    }
+  }
 }
 
 void SimState::render() const {

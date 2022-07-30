@@ -363,19 +363,17 @@ GameModal::GameModal(ii::io::IoLayer& io_layer, const ii::initial_conditions& co
   game_.emplace(io_layer, ii::ReplayWriter{conditions});
   game_->input.set_player_count(conditions.player_count);
   game_->input.set_game_dimensions(kDimensions);
-  input_ = &game_->input;
   std::vector<std::uint32_t> ai_players;
   auto max_ai_count = std::min(conditions.player_count, options.ai_count);
   for (std::uint32_t i = conditions.player_count - max_ai_count; i < conditions.player_count; ++i) {
     ai_players.push_back(i);
   }
-  state_ = std::make_unique<ii::SimState>(conditions, ai_players);
+  state_ = std::make_unique<ii::SimState>(conditions, &game_->writer, ai_players);
 }
 
 GameModal::GameModal(ii::ReplayReader&& replay) : Modal{true, true} {
   auto conditions = replay.initial_conditions();
   replay_.emplace(std::move(replay));
-  input_ = &replay_->input;
   state_ = std::make_unique<ii::SimState>(conditions);
 }
 
@@ -416,7 +414,7 @@ void GameModal::update(ii::ui::UiLayer& ui) {
 
   auto frames = state_->frame_count() * frame_count_multiplier_;
   for (std::uint32_t i = 0; i < frames; ++i) {
-    state_->update(*input_);
+    state_->update(game_ ? game_->input.get() : replay_->reader.next_tick_input_frames());
   }
   auto frame_x = static_cast<std::uint32_t>(std::log2(frame_count_multiplier_));
   if (audio_tick_++ % (4 * (1 + frame_x / 2)) == 0) {

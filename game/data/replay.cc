@@ -190,6 +190,19 @@ std::optional<input_frame> ReplayReader::next_input_frame() {
       : read_frame(impl_->replay.player_frame(impl_->frame_index++));
 }
 
+std::vector<input_frame> ReplayReader::next_tick_input_frames() {
+  std::vector<input_frame> frames;
+  for (std::uint32_t i = 0; i < impl_->conditions.player_count; ++i) {
+    auto frame = next_input_frame();
+    if (frame) {
+      frames.emplace_back(*frame);
+    } else {
+      frames.emplace_back();
+    }
+  }
+  return frames;
+}
+
 std::size_t ReplayReader::current_input_frame() const {
   return impl_->frame_index;
 }
@@ -278,21 +291,6 @@ result<std::vector<std::uint8_t>> ReplayWriter::write() const {
 
 const ii::initial_conditions& ReplayWriter::initial_conditions() const {
   return impl_->conditions;
-}
-
-ReplayInputAdapter::ReplayInputAdapter(ReplayReader& reader) : reader_{reader} {}
-
-std::vector<input_frame>& ReplayInputAdapter::get() {
-  frames_.clear();
-  for (std::uint32_t i = 0; i < reader_.initial_conditions().player_count; ++i) {
-    auto frame = reader_.next_input_frame();
-    if (frame) {
-      frames_.emplace_back(*frame);
-    } else {
-      frames_.emplace_back();
-    }
-  }
-  return frames_;
 }
 
 }  // namespace ii

@@ -38,6 +38,7 @@ cc_library(
   ],
   implementation_deps = [
     ":sim_interface",
+    "//game/data:replay",
     "//game/logic/overmind",
     "//game/logic/player",
     "//game/logic/ship",

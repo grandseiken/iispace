@@ -10,32 +10,6 @@
 
 namespace ii {
 
-class NullInputAdapter : public InputAdapter {
-public:
-  ~NullInputAdapter() override = default;
-  NullInputAdapter(std::uint32_t player_count, ReplayWriter* replay_writer)
-  : player_count_{player_count}, replay_writer_{replay_writer} {}
-
-  std::vector<input_frame>& get() override {
-    frames_.clear();
-    frames_.resize(player_count_);
-    return frames_;
-  }
-
-  void next() override {
-    if (replay_writer_) {
-      for (const auto& frame : frames_) {
-        replay_writer_->add_input_frame(frame);
-      }
-    }
-  }
-
-private:
-  std::uint32_t player_count_ = 0;
-  ReplayWriter* replay_writer_ = nullptr;
-  std::vector<input_frame> frames_;
-};
-
 struct replay_results_t {
   initial_conditions conditions;
   sim_results sim;
@@ -51,23 +25,21 @@ result<replay_results_t> inline replay_results(
   if (!reader) {
     return unexpected(reader.error());
   }
-  ReplayInputAdapter input{*reader};
   replay_results_t results;
   results.conditions = reader->initial_conditions();
   SimState sim{reader->initial_conditions()};
   SimState double_buffer;
   std::size_t i = 0;
   while (!sim.game_over()) {
-    auto tick_results = sim.get_results();
-    if (dump_state_from_tick && tick_results.tick_count >= *dump_state_from_tick) {
+    if (dump_state_from_tick && sim.tick_count() >= *dump_state_from_tick) {
       Printer printer;
       sim.dump(printer, query);
       results.state_dumps.emplace_back(printer.extract());
     }
-    if (max_ticks && tick_results.tick_count >= *max_ticks) {
+    if (max_ticks && sim.tick_count() >= *max_ticks) {
       break;
     }
-    sim.update(input);
+    sim.update(reader->next_tick_input_frames());
     if (!(++i % 16)) {
       auto checksum = sim.checksum();
       sim.copy_to(double_buffer);
@@ -95,17 +67,16 @@ struct run_data_t {
 inline result<run_data_t> synthesize_replay(const initial_conditions& conditions,
                                             std::optional<std::uint64_t> max_ticks,
                                             bool save_replay) {
-  ReplayWriter writer{conditions};
-  NullInputAdapter input{conditions.player_count, &writer};
   std::vector<std::uint32_t> ai_players;
   for (std::uint32_t i = 0; i < conditions.player_count; ++i) {
     ai_players.emplace_back(i);
   }
-  SimState sim{conditions, ai_players};
+  ReplayWriter writer{conditions};
+  SimState sim{conditions, &writer, ai_players};
   while (!sim.game_over()) {
-    sim.update(input);
+    sim.update({});
     sim.clear_output();
-    if (max_ticks && sim.get_results().tick_count >= *max_ticks) {
+    if (max_ticks && sim.tick_count() >= *max_ticks) {
       break;
     }
   }

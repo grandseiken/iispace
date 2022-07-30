@@ -1,5 +1,4 @@
 #include "game/core/io_input_adapter.h"
-#include "game/data/replay.h"
 #include "game/io/io.h"
 #include <optional>
 
@@ -114,8 +113,7 @@ std::uint32_t controller_keys(const io::controller::frame& frame) {
 }  // namespace
 
 IoInputAdapter::~IoInputAdapter() = default;
-IoInputAdapter::IoInputAdapter(const io::IoLayer& io_layer, ReplayWriter* replay_writer)
-: io_layer_{io_layer}, replay_writer_{replay_writer} {}
+IoInputAdapter::IoInputAdapter(const io::IoLayer& io_layer) : io_layer_{io_layer} {}
 
 void IoInputAdapter::set_player_count(std::uint32_t players) {
   player_count_ = players;
@@ -141,7 +139,7 @@ IoInputAdapter::input_type IoInputAdapter::input_type_for(std::uint32_t player_i
   return result;
 }
 
-std::vector<input_frame>& IoInputAdapter::get() {
+std::vector<input_frame> IoInputAdapter::get() {
   auto mouse_frame = io_layer_.mouse_frame();
   auto keyboard_frame = io_layer_.keyboard_frame();
   std::vector<io::controller::frame> controller_frames;
@@ -149,9 +147,9 @@ std::vector<input_frame>& IoInputAdapter::get() {
     controller_frames.emplace_back(io_layer_.controller_frame(i));
   }
 
-  frames_.clear();
+  std::vector<input_frame> frames;
   for (std::uint32_t i = 0; i < player_count_; ++i) {
-    auto& frame = frames_.emplace_back();
+    auto& frame = frames.emplace_back();
     auto input = assign_input(i, player_count_, io_layer_.controllers());
     io::controller::frame* controller =
         input.controller ? &controller_frames[*input.controller] : nullptr;
@@ -197,15 +195,7 @@ std::vector<input_frame>& IoInputAdapter::get() {
       frame.keys |= controller_keys(*controller);
     }
   }
-  return frames_;
-}
-
-void IoInputAdapter::next() {
-  if (replay_writer_) {
-    for (const auto& frame : frames_) {
-      replay_writer_->add_input_frame(frame);
-    }
-  }
+  return frames;
 }
 
 }  // namespace ii

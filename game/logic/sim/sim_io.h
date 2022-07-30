@@ -73,13 +73,6 @@ struct input_frame {
   std::uint32_t keys = 0;
 };
 
-class InputAdapter {
-public:
-  virtual ~InputAdapter() = default;
-  virtual std::vector<input_frame>& get() = 0;
-  virtual void next() = 0;
-};
-
 struct sound_out {
   float volume = 0.f;
   float pan = 0.f;

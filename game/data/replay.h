@@ -22,6 +22,7 @@ public:
   static result<ReplayReader> create(std::span<const std::uint8_t> bytes);
   ii::initial_conditions initial_conditions() const;
   std::optional<input_frame> next_input_frame();
+  std::vector<input_frame> next_tick_input_frames();
 
   std::size_t current_input_frame() const;
   std::size_t total_input_frames() const;
@@ -46,17 +47,6 @@ public:
 private:
   struct impl_t;
   std::unique_ptr<impl_t> impl_;
-};
-
-class ReplayInputAdapter : public InputAdapter {
-public:
-  ReplayInputAdapter(ReplayReader& replay_reader);
-  std::vector<input_frame>& get() override;
-  void next() override {}
-
-private:
-  ReplayReader& reader_;
-  std::vector<input_frame> frames_;
 };
 
 }  // namespace ii

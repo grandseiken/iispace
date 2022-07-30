@@ -6,10 +6,7 @@ cc_library(
     "//game/logic/sim:sim_io",
     "@glm",
   ],
-  implementation_deps = [
-    "//game/data:replay",
-    "//game/io",
-  ],
+  implementation_deps = ["//game/io"],
 )
 
 cc_library(
