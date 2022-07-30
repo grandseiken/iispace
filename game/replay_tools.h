@@ -19,7 +19,8 @@ struct replay_results_t {
 };
 
 result<replay_results_t> inline replay_results(
-    std::span<const std::uint8_t> replay_bytes, std::optional<std::uint64_t> max_ticks,
+    std::span<const std::uint8_t> replay_bytes,
+    std::optional<std::uint64_t> max_ticks = std::nullopt,
     std::optional<std::uint64_t> dump_state_from_tick = std::nullopt, SimState::query query = {}) {
   auto reader = ReplayReader::create(replay_bytes);
   if (!reader) {

@@ -68,3 +68,15 @@ cc_binary(
   ],
   visibility = ["//visibility:public"],
 )
+
+cc_binary(
+  name = "replay_network_sim",
+  srcs = ["replay_network_sim.cc"],
+  deps = [
+    ":flags",
+    "//game/common:types",
+    "//game/data:replay",
+    "//game/io/file:std_filesystem",
+    "//game/logic/sim:networked_sim_state",
+  ]
+)

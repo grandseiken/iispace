@@ -14,7 +14,7 @@ class ReplayWriter;
 
 class NetworkedSimState {
 public:
-  ~NetworkedSimState();
+  ~NetworkedSimState() = default;
   NetworkedSimState(NetworkedSimState&&) noexcept = default;
   NetworkedSimState(const NetworkedSimState&) = delete;
   NetworkedSimState& operator=(NetworkedSimState&&) noexcept = default;
