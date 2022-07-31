@@ -39,6 +39,13 @@ http_archive(
   url = "https://github.com/TartanLlama/expected/archive/v1.0.0.zip",
 )
 
+http_archive(
+  name = "static_functional",
+  sha256 = "4a6c55792b6d610f6248072f53ce81641517f44f2442446dc966619b9342665c",
+  strip_prefix = "static-functional-1.0.0-alpha1",
+  url = "https://github.com/grandseiken/static-functional/archive/refs/tags/v1.0.0-alpha1.zip",
+)
+
 ################################################################################
 # SDL
 ################################################################################

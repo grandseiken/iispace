@@ -12,6 +12,7 @@ cc_library(
     "//game/logic/geometry",
     "//game/logic/sim:sim_interface",
     "@glm",
+    "@static_functional",
   ],
   visibility = ["//game/logic:__subpackages__"],
 )

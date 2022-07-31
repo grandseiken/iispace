@@ -10,6 +10,7 @@ cc_library(
   deps = [
     "//game/common:printer",
     "//game/common:types",
+    "@static_functional",
   ],
   visibility = ["//game/logic:__subpackages__"],
 )

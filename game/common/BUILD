@@ -12,11 +12,9 @@ cc_library(
   name = "types",
   hdrs = [
     "enum.h",
-    "functional.h",
     "raw_ptr.h",
     "result.h",
     "struct_tuple.h",
-    "type_list.h",
   ],
   deps = ["@expected"],
   visibility = ["//visibility:public"],

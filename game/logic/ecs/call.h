@@ -1,7 +1,7 @@
 #ifndef II_GAME_LOGIC_ECS_CALL_H
 #define II_GAME_LOGIC_ECS_CALL_H
-#include "game/common/functional.h"
 #include "game/logic/ecs/index.h"
+#include <sfn/functional.h>
 #include <cassert>
 #include <type_traits>
 
@@ -54,11 +54,11 @@ constexpr decltype(auto) synthesize_call_parameter(H&& handle) {
   }
 }
 
-template <bool Check, function auto F, typename H, typename, typename>
+template <bool Check, sfn::function auto F, typename H, typename, typename>
 struct call_f;
-template <bool Check, function auto F, typename H, typename... ForwardedArgs,
+template <bool Check, sfn::function auto F, typename H, typename... ForwardedArgs,
           typename... SynthesizedArgs>
-struct call_f<Check, F, H, tl::list<ForwardedArgs...>, tl::list<SynthesizedArgs...>> {
+struct call_f<Check, F, H, sfn::list<ForwardedArgs...>, sfn::list<SynthesizedArgs...>> {
   inline static constexpr auto f(H h, ForwardedArgs... args) {
     if constexpr (Check) {
       if (!(can_synthesize_call_parameter<SynthesizedArgs>(h) && ...)) {
@@ -69,13 +69,13 @@ struct call_f<Check, F, H, tl::list<ForwardedArgs...>, tl::list<SynthesizedArgs.
   }
 };
 
-template <bool Check, function auto F>
+template <bool Check, sfn::function auto F>
 struct call_impl {
-  using parameters = parameter_types_of<decltype(F)>;
-  static inline constexpr auto retain_index = tl::find_if<parameters, retain_parameter>;
-  using forwarded_parameters = tl::sublist<parameters, retain_index>;
-  using synthesized_parameters = tl::sublist<parameters, 0, retain_index>;
-  using handle_type = std::conditional_t<tl::all_of<synthesized_parameters, is_const_parameter>,
+  using parameters = sfn::parameter_types_of<decltype(F)>;
+  static inline constexpr auto retain_index = sfn::find_if<parameters, retain_parameter>;
+  using forwarded_parameters = sfn::sublist<parameters, retain_index>;
+  using synthesized_parameters = sfn::sublist<parameters, 0, retain_index>;
+  using handle_type = std::conditional_t<sfn::all_of<synthesized_parameters, is_const_parameter>,
                                          ecs::const_handle, ecs::handle>;
   static inline constexpr auto value =
       &detail::call_f<Check, F, handle_type, forwarded_parameters, synthesized_parameters>::f;
@@ -89,7 +89,7 @@ template <typename T, typename R, typename... Args>
 struct signature_impl<T, R (T::*)(Args...) const> : std::type_identity<R(Args...)> {};
 
 template <bool Check, bool Const, typename... SynthesizedArgs, typename F, typename... Args>
-auto dispatch_invoke(tl::list<SynthesizedArgs...>, handle_base<Const> h, F&& f, Args&&... args) {
+auto dispatch_invoke(sfn::list<SynthesizedArgs...>, handle_base<Const> h, F&& f, Args&&... args) {
   if constexpr (Check) {
     if (!(can_synthesize_call_parameter<SynthesizedArgs>(h) && ...)) {
       return;
@@ -102,19 +102,19 @@ template <bool Check, bool Const, typename F, typename... Args>
 auto dispatch_impl(handle_base<Const> h, F&& f, Args&&... args) {
   using f_type = std::remove_cvref_t<F>;
   using m_type = typename signature_impl<f_type, decltype(&f_type::operator())>::type;
-  using parameters = parameter_types_of<m_type>;
+  using parameters = sfn::parameter_types_of<m_type>;
   using synthesized_parameters =
-      tl::sublist<parameters, 0, tl::find_if<parameters, retain_parameter>>;
+      sfn::sublist<parameters, 0, sfn::find_if<parameters, retain_parameter>>;
   return dispatch_invoke<Check, Const>(synthesized_parameters{}, h, std::forward<F>(f),
                                        std::forward<Args>(args)...);
 }
 
 }  // namespace detail
 
-template <function auto F>
-inline constexpr auto call = detail::call_impl<false, unwrap<F>>::value;
-template <function auto F>
-inline constexpr auto call_if = detail::call_impl<true, unwrap<F>>::value;
+template <sfn::function auto F>
+inline constexpr auto call = detail::call_impl<false, sfn::unwrap<F>>::value;
+template <sfn::function auto F>
+inline constexpr auto call_if = detail::call_impl<true, sfn::unwrap<F>>::value;
 
 // TODO: dispatch could use concept checking.
 template <bool Const, typename F, typename... Args>

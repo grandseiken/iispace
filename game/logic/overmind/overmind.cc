@@ -1,5 +1,4 @@
 #include "game/logic/overmind/overmind.h"
-#include "game/common/functional.h"
 #include "game/common/math.h"
 #include "game/logic/boss/boss.h"
 #include "game/logic/ecs/index.h"
@@ -8,6 +7,7 @@
 #include "game/logic/player/player.h"
 #include "game/logic/ship/components.h"
 #include "game/logic/sim/fx/stars.h"
+#include <sfn/functional.h>
 #include <algorithm>
 #include <cstdint>
 #include <vector>
@@ -29,7 +29,7 @@ struct Overmind : ecs::component {
     std::uint32_t id = 0;
     std::uint32_t cost = 0;
     std::uint32_t min_resource = 0;
-    function_ptr<void(const SpawnContext&)> function = nullptr;
+    sfn::ptr<void(const SpawnContext&)> function = nullptr;
   };
 
   std::uint32_t power = 0;

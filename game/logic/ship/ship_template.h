@@ -7,6 +7,7 @@
 #include "game/logic/geometry/node_transform.h"
 #include "game/logic/ship/components.h"
 #include "game/logic/sim/sim_interface.h"
+#include <sfn/functional.h>
 
 namespace ii {
 
@@ -184,7 +185,7 @@ ecs::handle create_ship(SimInterface& sim, const vec2& position, fixed rotation 
   if constexpr (requires { &Logic::render_override; }) {
     h.add(Render{.render = ecs::call<&Logic::render_override>});
   } else if constexpr (requires { &Logic::render; }) {
-    h.add(Render{.render = sequence<render, ecs::call<&Logic::render>>});
+    h.add(Render{.render = sfn::sequence<render, ecs::call<&Logic::render>>});
   } else {
     h.add(Render{.render = render});
   }
@@ -196,12 +197,13 @@ void add_enemy_health(ecs::handle h, std::uint32_t hp,
                       std::optional<sound> destroy_sound = std::nullopt) {
   destroy_sound = destroy_sound ? *destroy_sound : Logic::kDestroySound;
   using on_destroy_t = void(ecs::const_handle, SimInterface & sim, damage_type);
-  constexpr auto explode_shapes = cast<on_destroy_t, &explode_entity_shapes_default<Logic, S>>;
+  constexpr auto explode_shapes = sfn::cast<on_destroy_t, &explode_entity_shapes_default<Logic, S>>;
   if constexpr (requires { &Logic::on_destroy; }) {
-    h.add(Health{.hp = hp,
-                 .destroy_sound = destroy_sound,
-                 .on_destroy =
-                     sequence<explode_shapes, cast<on_destroy_t, ecs::call<&Logic::on_destroy>>>});
+    h.add(Health{
+        .hp = hp,
+        .destroy_sound = destroy_sound,
+        .on_destroy =
+            sfn::sequence<explode_shapes, sfn::cast<on_destroy_t, ecs::call<&Logic::on_destroy>>>});
   } else {
     h.add(Health{.hp = hp, .destroy_sound = destroy_sound, .on_destroy = explode_shapes});
   }

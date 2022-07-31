@@ -1,7 +1,6 @@
 #ifndef II_GAME_COMMON_PRINTER_H
 #define II_GAME_COMMON_PRINTER_H
 #include "game/common/enum.h"
-#include "game/common/functional.h"
 #include "game/common/math.h"
 #include <concepts>
 #include <optional>

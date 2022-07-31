@@ -27,6 +27,7 @@ cc_library(
     "//deps/sdl",
     "@gl3w",
     "@sdl_gamecontrollerdb",
+    "@static_functional",
   ],
   visibility = ["//visibility:public"],
 )

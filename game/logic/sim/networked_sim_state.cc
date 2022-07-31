@@ -36,7 +36,7 @@ NetworkedSimState::NetworkedSimState(const initial_conditions& conditions, input
 : canonical_state_{conditions, writer}
 , mapping_{std::move(mapping)}
 , player_count_{conditions.player_count} {
-  (void)check_mapping;
+  (void)&check_mapping;
   assert(check_mapping(conditions, mapping_));
   canonical_state_.copy_to(predicted_state_);
   latest_input_.resize(player_count_);

@@ -1,6 +1,5 @@
 #ifndef II_GAME_LOGIC_SHIP_COMPONENTS_H
 #define II_GAME_LOGIC_SHIP_COMPONENTS_H
-#include "game/common/functional.h"
 #include "game/common/math.h"
 #include "game/common/struct_tuple.h"
 #include "game/logic/ecs/index.h"
@@ -8,6 +7,7 @@
 #include "game/logic/sim/sim_io.h"
 #include "game/mixer/sound.h"
 #include <glm/glm.hpp>
+#include <sfn/functional.h>
 #include <cstdint>
 #include <optional>
 #include <vector>
@@ -66,23 +66,23 @@ DEBUG_STRUCT_TUPLE(Transform, centre, rotation);
 struct Collision : ecs::component {
   shape_flag flags = shape_flag::kNone;
   fixed bounding_width = 0;
-  function_ptr<shape_flag(ecs::const_handle, const SimInterface&, const vec2&, shape_flag)> check =
+  sfn::ptr<shape_flag(ecs::const_handle, const SimInterface&, const vec2&, shape_flag)> check =
       nullptr;
 };
 DEBUG_STRUCT_TUPLE(Collision, flags, bounding_width, check);
 
 struct Update : ecs::component {
-  function_ptr<void(ecs::handle, SimInterface&)> update;
+  sfn::ptr<void(ecs::handle, SimInterface&)> update;
 };
 DEBUG_STRUCT_TUPLE(Update, update);
 
 struct PostUpdate : ecs::component {
-  function_ptr<void(ecs::handle, SimInterface&)> post_update;
+  sfn::ptr<void(ecs::handle, SimInterface&)> post_update;
 };
 DEBUG_STRUCT_TUPLE(PostUpdate, post_update);
 
 struct Render : ecs::component {
-  function_ptr<void(ecs::const_handle, const SimInterface&)> render = nullptr;
+  sfn::ptr<void(ecs::const_handle, const SimInterface&)> render = nullptr;
 };
 DEBUG_STRUCT_TUPLE(Render, render);
 
@@ -103,10 +103,10 @@ struct Health : ecs::component {
   std::optional<sound> hit_sound1 = sound::kEnemyHit;
   std::optional<sound> destroy_sound = sound::kEnemyDestroy;
 
-  function_ptr<std::uint32_t(ecs::handle, SimInterface&, damage_type, std::uint32_t)>
-      damage_transform = nullptr;
-  function_ptr<void(ecs::handle, SimInterface&, damage_type)> on_hit = nullptr;
-  function_ptr<void(ecs::const_handle, SimInterface&, damage_type)> on_destroy = nullptr;
+  sfn::ptr<std::uint32_t(ecs::handle, SimInterface&, damage_type, std::uint32_t)> damage_transform =
+      nullptr;
+  sfn::ptr<void(ecs::handle, SimInterface&, damage_type)> on_hit = nullptr;
+  sfn::ptr<void(ecs::const_handle, SimInterface&, damage_type)> on_destroy = nullptr;
 
   bool is_hp_low() const {
     // hp <= .4 * max_hp.

@@ -4,6 +4,7 @@
 #include "game/io/sdl_convert.h"
 #include <GL/gl3w.h>
 #include <SDL.h>
+#include <sfn/functional.h>
 #include <cstring>
 #include <mutex>
 #include <unordered_map>
@@ -39,15 +40,8 @@ struct SdlIoLayer::impl_t {
     desired_spec.format = AUDIO_S16SYS;
     desired_spec.channels = 2;
     desired_spec.samples = 1024;
-    desired_spec.callback = +[](void* user_data, std::uint8_t* out_buffer, int size_bytes) {
-      std::size_t samples = size_bytes / (2 * sizeof(audio_sample_t));
-      auto* impl = reinterpret_cast<impl_t*>(user_data);
-      if (impl->audio_callback) {
-        impl->audio_callback(out_buffer, samples);
-      } else {
-        std::memset(out_buffer, 0, 2 * samples * sizeof(audio_sample_t));
-      }
-    };
+    desired_spec.callback =
+        sfn::reinterpret<void(void*, std::uint8_t*, int), &impl_t::audio_callback_function>;
     desired_spec.userdata = this;
     auto id = SDL_OpenAudioDevice(name ? name->c_str() : nullptr, /* capture */ 0, &desired_spec,
                                   &obtained_spec, /* allowed spec changes */ 0);
@@ -72,6 +66,15 @@ struct SdlIoLayer::impl_t {
 
     SDL_PauseAudioDevice(audio_device_id, /* unpause */ 0);
     return {};
+  }
+
+  void audio_callback_function(std::uint8_t* out_buffer, int size_bytes) {
+    std::size_t samples = size_bytes / (2 * sizeof(audio_sample_t));
+    if (audio_callback) {
+      audio_callback(out_buffer, samples);
+    } else {
+      std::memset(out_buffer, 0, 2 * samples * sizeof(audio_sample_t));
+    }
   }
 
   void scan_controllers() {
