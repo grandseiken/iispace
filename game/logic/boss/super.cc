@@ -250,7 +250,7 @@ struct SuperBoss : ecs::component {
       vec2 v = from_polar(sim.random_fixed() * (2 * fixed_c::pi),
                           fixed{8 + sim.random(64) + sim.random(64)});
       sim.global_entity().get<GlobalData>()->fireworks.push_back(GlobalData::fireworks_entry{
-          .time = n, .position = transform.centre + v, .colour = colours[i]});
+          .time = n, .position = transform.centre + v, .colour = colours[i % 8]});
       n += i;
     }
     sim.rumble_all(25);

@@ -7,8 +7,11 @@
 #include <cstdint>
 #include <functional>
 #include <iostream>
+#include <memory>
+#include <mutex>
 #include <optional>
 #include <string>
+#include <thread>
 #include <vector>
 
 namespace ii {
@@ -107,7 +110,8 @@ bool run(const options_t& options, const std::string& replay_path) {
     , replay_writer{conditions}
     , mapping{mapping_for(topology, id)}
     , sim{conditions, mapping, &replay_writer}
-    , send_function{std::move(send_function)} {
+    , send_function{std::move(send_function)}
+    , receive_queue_mutex{std::make_unique<std::mutex>()} {
       std::cout << "initialising " << id << " with local players ";
       bool first = true;
       for (auto n : mapping.local.player_numbers) {
@@ -124,14 +128,23 @@ bool run(const options_t& options, const std::string& replay_path) {
     ReplayWriter replay_writer;
     NetworkedSimState::input_mapping mapping;
     NetworkedSimState sim;
-    std::vector<received_packet> receive_queue;
     std::function<void(sim_packet)> send_function;
 
+    // TODO: use concurrent queue instead of mutex.
+    std::thread thread;
+    std::unique_ptr<std::mutex> receive_queue_mutex;
+    std::vector<received_packet> receive_queue;
+
     void update(const per_player_inputs_t& replay) {
-      for (const auto& packet : receive_queue) {
-        sim.input_packet(packet.remote_id, packet.packet);
+      // TODO: vary behaviour to simulate lag, but limit with new timing functions in
+      // NetworkedSimState.
+      {
+        std::lock_guard lock{*receive_queue_mutex};
+        for (const auto& packet : receive_queue) {
+          sim.input_packet(packet.remote_id, packet.packet);
+        }
+        receive_queue.clear();
       }
-      receive_queue.clear();
       auto tick = sim.predicted().tick_count();
       std::vector<input_frame> local_input;
       for (auto n : mapping.local.player_numbers) {
@@ -148,6 +161,7 @@ bool run(const options_t& options, const std::string& replay_path) {
     auto send_function = [&peers, id](sim_packet packet) {
       for (auto& peer : peers) {
         if (peer.id != id) {
+          std::lock_guard lock{*peer.receive_queue_mutex};
           peer.receive_queue.emplace_back(received_packet{id, packet});
         }
       }
@@ -155,20 +169,15 @@ bool run(const options_t& options, const std::string& replay_path) {
     peers.emplace_back(replay_reader->initial_conditions(), topology, id, std::move(send_function));
   }
 
-  while (true) {
-    bool done = true;
-    for (auto& peer : peers) {
-      peer.update(per_player_inputs);
-      done &= peer.sim.canonical().game_over();
-      if (!peer.sim.checksum_failed_remote_ids().empty()) {
-        std::cerr << "error: " << peer.id << " reported checksum failure for "
-                  << *peer.sim.checksum_failed_remote_ids().begin() << std::endl;
-        return false;
+  for (auto& peer : peers) {
+    peer.thread = std::thread{[&] {
+      while (!peer.sim.canonical().game_over()) {
+        peer.update(per_player_inputs);
       }
-    }
-    if (done) {
-      break;
-    }
+    }};
+  }
+  for (auto& peer : peers) {
+    peer.thread.join();
   }
   std::cout << "================================================\n"
             << "simulation complete\n"
@@ -176,6 +185,10 @@ bool run(const options_t& options, const std::string& replay_path) {
 
   bool success = true;
   for (const auto& peer : peers) {
+    for (const auto& id : peer.sim.checksum_failed_remote_ids()) {
+      std::cerr << "error: " << peer.id << " reported checksum failure for " << id << std::endl;
+      success = false;
+    }
     auto results = peer.sim.canonical().get_results();
     if (results.score != canonical_results->sim.score) {
       std::cout << "verification failed for " << peer.id << ": score was " << results.score
