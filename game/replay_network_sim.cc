@@ -4,7 +4,6 @@
 #include "game/io/file/std_filesystem.h"
 #include "game/logic/sim/networked_sim_state.h"
 #include "game/replay_tools.h"
-#include <algorithm>
 #include <cstdint>
 #include <functional>
 #include <iostream>
