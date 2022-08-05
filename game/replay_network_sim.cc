@@ -4,12 +4,15 @@
 #include "game/io/file/std_filesystem.h"
 #include "game/logic/sim/networked_sim_state.h"
 #include "game/replay_tools.h"
+#include <atomic>
+#include <condition_variable>
 #include <cstdint>
 #include <functional>
 #include <iostream>
 #include <memory>
 #include <mutex>
 #include <optional>
+#include <random>
 #include <string>
 #include <thread>
 #include <vector>
@@ -99,19 +102,19 @@ bool run(const options_t& options, const std::string& replay_path) {
   std::cout << "================================================" << std::endl;
 
   struct received_packet {
-    std::string remote_id;
+    std::uint64_t delivery_tick_count = 0;
     sim_packet packet;
   };
 
   struct peer_t {
     peer_t(const initial_conditions& conditions, const topology_t& topology, const std::string& id,
-           std::function<void(sim_packet)> send_function)
+           std::vector<std::unique_ptr<peer_t>>& peers)
     : id{id}
     , replay_writer{conditions}
     , mapping{mapping_for(topology, id)}
     , sim{conditions, mapping, &replay_writer}
-    , send_function{std::move(send_function)}
-    , receive_queue_mutex{std::make_unique<std::mutex>()} {
+    , peers{peers}
+    , engine{std::hash<std::string>{}(id)} {
       std::cout << "initialising " << id << " with local players ";
       bool first = true;
       for (auto n : mapping.local.player_numbers) {
@@ -128,56 +131,93 @@ bool run(const options_t& options, const std::string& replay_path) {
     ReplayWriter replay_writer;
     NetworkedSimState::input_mapping mapping;
     NetworkedSimState sim;
-    std::function<void(sim_packet)> send_function;
+    std::vector<std::unique_ptr<peer_t>>& peers;
+    std::mt19937_64 engine;
 
-    // TODO: use concurrent queue instead of mutex.
+    // TODO: use concurrent queue instead of mutex?
     std::thread thread;
-    std::unique_ptr<std::mutex> receive_queue_mutex;
-    std::vector<received_packet> receive_queue;
+    std::mutex receive_queue_mutex;
+    std::unordered_map<std::string /* source peer ID */, std::vector<received_packet>>
+        receive_queue;
+
+    std::condition_variable tick_count_cv;
+    std::mutex tick_count_mutex;
+    std::atomic<std::uint64_t> tick_count{0};
+
+    void deliver(std::string source_id, received_packet packet) {
+      std::lock_guard lock{receive_queue_mutex};
+      receive_queue[source_id].emplace_back(std::move(packet));
+    }
+
+    void wait_for_sync(std::uint64_t target_tick_count) {
+      static constexpr std::uint64_t kMaximumTickDifference = 32;
+      auto minimum_tick = target_tick_count - std::min(target_tick_count, kMaximumTickDifference);
+      if (tick_count >= minimum_tick) {
+        return;
+      }
+      std::unique_lock lock{tick_count_mutex};
+      tick_count_cv.wait(lock, [&] { return tick_count >= minimum_tick; });
+    }
 
     void update(const per_player_inputs_t& replay) {
       // TODO: vary behaviour to simulate lag, but limit with new timing functions in
       // NetworkedSimState.
-      {
-        std::lock_guard lock{*receive_queue_mutex};
-        for (const auto& packet : receive_queue) {
-          sim.input_packet(packet.remote_id, packet.packet);
-        }
-        receive_queue.clear();
+      auto current_tick = sim.predicted().tick_count();
+      for (auto& peer : peers) {
+        peer->wait_for_sync(current_tick);
       }
-      auto tick = sim.predicted().tick_count();
+      {
+        std::lock_guard lock{receive_queue_mutex};
+        for (auto& pair : receive_queue) {
+          auto end = std::find_if(pair.second.begin(), pair.second.end(), [&](const auto& p) {
+            return p.delivery_tick_count > current_tick;
+          });
+          for (auto it = pair.second.begin(); it != end; ++it) {
+            sim.input_packet(pair.first, it->packet);
+          }
+          pair.second.erase(pair.second.begin(), end);
+        }
+      }
       std::vector<input_frame> local_input;
       for (auto n : mapping.local.player_numbers) {
-        local_input.emplace_back(tick < replay[n].size() ? replay[n][tick] : input_frame{});
+        local_input.emplace_back(current_tick < replay[n].size() ? replay[n][current_tick]
+                                                                 : input_frame{});
       }
-      send_function(sim.update(std::move(local_input)));
+      received_packet packet;
+      packet.packet = sim.update(std::move(local_input));
+      packet.delivery_tick_count =
+          current_tick + std::uniform_int_distribution<std::uint64_t>{0, 8}(engine);
+      for (auto& peer : peers) {
+        if (peer->id != id) {
+          peer->deliver(id, packet);
+        }
+      }
+
+      {
+        std::lock_guard lock{tick_count_mutex};
+        ++tick_count;
+      }
+      tick_count_cv.notify_all();
     }
   };
 
   std::unordered_set<std::string> peer_ids{topology.begin(), topology.end()};
-  std::vector<peer_t> peers;
+  std::vector<std::unique_ptr<peer_t>> peers;
   peers.reserve(peer_ids.size());
   for (const auto& id : peer_ids) {
-    auto send_function = [&peers, id](sim_packet packet) {
-      for (auto& peer : peers) {
-        if (peer.id != id) {
-          std::lock_guard lock{*peer.receive_queue_mutex};
-          peer.receive_queue.emplace_back(received_packet{id, packet});
-        }
-      }
-    };
-    peers.emplace_back(replay_reader->initial_conditions(), topology, id, std::move(send_function));
+    peers.emplace_back(
+        std::make_unique<peer_t>(replay_reader->initial_conditions(), topology, id, peers));
   }
 
   for (auto& peer : peers) {
-    peer.thread = std::thread{[&] {
-      while (!peer.sim.canonical().game_over()) {
-        peer.update(per_player_inputs);
+    peer->thread = std::thread{[&] {
+      while (!peer->sim.canonical().game_over()) {
+        peer->update(per_player_inputs);
       }
     }};
   }
   for (auto& peer : peers) {
-    peer.thread.join();
+    peer->thread.join();
   }
   std::cout << "================================================\n"
             << "simulation complete\n"
@@ -185,29 +225,29 @@ bool run(const options_t& options, const std::string& replay_path) {
 
   bool success = true;
   for (const auto& peer : peers) {
-    for (const auto& id : peer.sim.checksum_failed_remote_ids()) {
-      std::cerr << "error: " << peer.id << " reported checksum failure for " << id << std::endl;
+    for (const auto& id : peer->sim.checksum_failed_remote_ids()) {
+      std::cerr << "error: " << peer->id << " reported checksum failure for " << id << std::endl;
       success = false;
     }
-    auto results = peer.sim.canonical().get_results();
+    auto results = peer->sim.canonical().get_results();
     if (results.score != canonical_results->sim.score) {
-      std::cout << "verification failed for " << peer.id << ": score was " << results.score
+      std::cout << "verification failed for " << peer->id << ": score was " << results.score
                 << std::endl;
       success = false;
     }
     if (results.tick_count < canonical_results->sim.tick_count) {
-      std::cout << "verification failed for " << peer.id << ": ticks was " << results.tick_count
+      std::cout << "verification failed for " << peer->id << ": ticks was " << results.tick_count
                 << std::endl;
       success = false;
     }
-    auto peer_replay_bytes = peer.replay_writer.write();
+    auto peer_replay_bytes = peer->replay_writer.write();
     if (!peer_replay_bytes) {
-      std::cout << "replay serialization failed for " << peer.id << ": "
+      std::cout << "replay serialization failed for " << peer->id << ": "
                 << peer_replay_bytes.error() << std::endl;
       success = false;
     }
     if (*peer_replay_bytes != *canonical_bytes) {
-      std::cout << "verification failed for " << peer.id << ": replay output bytes did not match"
+      std::cout << "verification failed for " << peer->id << ": replay output bytes did not match"
                 << std::endl;
       success = false;
     }
