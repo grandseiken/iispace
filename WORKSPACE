@@ -46,6 +46,14 @@ http_archive(
   url = "https://github.com/grandseiken/static-functional/archive/refs/tags/v1.0.0-alpha1.zip",
 )
 
+http_archive(
+  name = "concurrent_queue",
+  build_file = "@//deps:concurrent_queue.BUILD",
+  sha256 = "5e9e229a1791e8299dcd4bd73ac1be1953424a903818feb7afd929eb16094ef5",
+  strip_prefix = "concurrentqueue-1.0.3",
+  url = "https://github.com/cameron314/concurrentqueue/archive/refs/tags/v1.0.3.zip",
+)
+
 ################################################################################
 # SDL
 ################################################################################

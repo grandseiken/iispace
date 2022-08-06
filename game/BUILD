@@ -79,6 +79,7 @@ cc_binary(
     "//game/data:replay",
     "//game/io/file:std_filesystem",
     "//game/logic/sim:networked_sim_state",
+    "@concurrent_queue",
   ],
   visibility = ["//visibility:public"],
 )

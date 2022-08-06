@@ -4,6 +4,7 @@
 #include "game/io/file/std_filesystem.h"
 #include "game/logic/sim/networked_sim_state.h"
 #include "game/replay_tools.h"
+#include <concurrentqueue.h>
 #include <atomic>
 #include <condition_variable>
 #include <cstdint>
@@ -15,6 +16,7 @@
 #include <random>
 #include <string>
 #include <thread>
+#include <utility>
 #include <vector>
 
 namespace ii {
@@ -109,16 +111,18 @@ bool run(const options_t& options, const std::string& replay_path) {
   };
 
   struct peer_t {
-    peer_t(const initial_conditions& conditions, const topology_t& topology,
-           const options_t& options, const std::string& id,
-           std::vector<std::unique_ptr<peer_t>>& peers)
+    peer_t(const initial_conditions& conditions, const topology_t& topology, options_t options,
+           const std::string& id, std::vector<std::unique_ptr<peer_t>>& peers)
     : id{id}
     , replay_writer{conditions}
     , mapping{mapping_for(topology, id)}
-    , options{options}
+    , options{std::move(options)}
     , sim{conditions, mapping, &replay_writer}
     , peers{peers}
     , engine{std::hash<std::string>{}(id)} {
+      for (const auto& pair : mapping.remote) {
+        inbox[pair.first];
+      }
       std::cout << "initialising " << id << " with local players ";
       bool first = true;
       for (auto n : mapping.local.player_numbers) {
@@ -139,22 +143,23 @@ bool run(const options_t& options, const std::string& replay_path) {
     std::vector<std::unique_ptr<peer_t>>& peers;
     std::mt19937_64 engine;
 
-    // TODO: use concurrent queue instead of mutex?
+    struct remote_inbox {
+      moodycamel::ConcurrentQueue<received_packet> delivery_queue;
+      std::vector<received_packet> receive_buffer;
+    };
     std::thread thread;
-    std::mutex receive_queue_mutex;
-    std::unordered_map<std::string /* source peer ID */, std::vector<received_packet>>
-        receive_queue;
+    std::unordered_map<std::string, remote_inbox> inbox;
 
     std::condition_variable tick_count_cv;
     std::mutex tick_count_mutex;
     std::atomic<std::uint64_t> tick_count{0};
 
     void deliver(std::string source_id, received_packet packet) {
-      std::lock_guard lock{receive_queue_mutex};
-      receive_queue[source_id].emplace_back(std::move(packet));
+      inbox.find(source_id)->second.delivery_queue.enqueue(std::move(packet));
     }
 
     void wait_for_sync(std::uint64_t target_tick_count) {
+      // TODO: limit drift with new timing functions in NetworkedSimState instead?
       auto minimum_tick =
           target_tick_count - std::min(target_tick_count, options.max_tick_difference);
       if (tick_count >= minimum_tick) {
@@ -165,23 +170,23 @@ bool run(const options_t& options, const std::string& replay_path) {
     }
 
     void update(const per_player_inputs_t& replay) {
-      // TODO: vary behaviour to simulate lag, but limit with new timing functions in
-      // NetworkedSimState.
       auto current_tick = sim.predicted().tick_count();
       for (auto& peer : peers) {
         peer->wait_for_sync(current_tick);
       }
-      {
-        std::lock_guard lock{receive_queue_mutex};
-        for (auto& pair : receive_queue) {
-          auto end = std::find_if(pair.second.begin(), pair.second.end(), [&](const auto& p) {
-            return p.delivery_tick_count > current_tick;
-          });
-          for (auto it = pair.second.begin(); it != end; ++it) {
-            sim.input_packet(pair.first, it->packet);
-          }
-          pair.second.erase(pair.second.begin(), end);
+      for (auto& pair : inbox) {
+        auto& e = pair.second;
+        received_packet packet;
+        while (e.delivery_queue.try_dequeue(packet)) {
+          e.receive_buffer.emplace_back(packet);
         }
+        auto end =
+            std::find_if(e.receive_buffer.begin(), e.receive_buffer.end(),
+                         [&](const auto& p) { return p.delivery_tick_count > current_tick; });
+        for (auto it = e.receive_buffer.begin(); it != end; ++it) {
+          sim.input_packet(pair.first, it->packet);
+        }
+        e.receive_buffer.erase(e.receive_buffer.begin(), end);
       }
       std::vector<input_frame> local_input;
       for (auto n : mapping.local.player_numbers) {
