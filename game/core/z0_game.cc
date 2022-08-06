@@ -359,29 +359,41 @@ bool HighScoreModal::is_high_score(const ii::SaveGame& save) const {
 
 GameModal::GameModal(ii::io::IoLayer& io_layer, const ii::initial_conditions& conditions,
                      const ii::game_options_t& options)
-: Modal{true, true} {
+: Modal{true, true}, engine_{std::random_device{}()}, options_{options} {
   game_.emplace(io_layer, ii::ReplayWriter{conditions});
   game_->input.set_player_count(conditions.player_count);
   game_->input.set_game_dimensions(kDimensions);
-  std::vector<std::uint32_t> ai_players;
-  auto max_ai_count = std::min(conditions.player_count, options.ai_count);
-  for (std::uint32_t i = conditions.player_count - max_ai_count; i < conditions.player_count; ++i) {
-    ai_players.push_back(i);
-  }
-  state_ = std::make_unique<ii::SimState>(conditions, &game_->writer, ai_players);
+  state_ = std::make_unique<ii::SimState>(conditions, &game_->writer, options.ai_players);
 }
 
-GameModal::GameModal(ii::ReplayReader&& replay) : Modal{true, true} {
+GameModal::GameModal(ii::ReplayReader&& replay, const ii::game_options_t& options)
+: Modal{true, true}, engine_{std::random_device{}()}, options_{options} {
   auto conditions = replay.initial_conditions();
   replay_.emplace(std::move(replay));
-  state_ = std::make_unique<ii::SimState>(conditions);
+  if (options.replay_remote_players.empty()) {
+    state_ = std::make_unique<ii::SimState>(conditions);
+  } else {
+    ii::NetworkedSimState::input_mapping mapping;
+    for (std::uint32_t i = 0; i < conditions.player_count; ++i) {
+      if (std::ranges::find(options.replay_remote_players, i) ==
+          options.replay_remote_players.end()) {
+        mapping.local.player_numbers.emplace_back(i);
+      } else {
+        mapping.remote["remote"].player_numbers.emplace_back(i);
+      }
+    }
+    network_state_ = std::make_unique<ii::NetworkedSimState>(conditions, mapping);
+  }
 }
 
 GameModal::~GameModal() = default;
 
 void GameModal::update(ii::ui::UiLayer& ui) {
-  if (pause_output_ == PauseModal::kEndGame || state_->game_over()) {
-    add(std::make_unique<HighScoreModal>(replay_.has_value(), *this, state_->get_results(),
+  // TODO: make state / network state an interface?
+  const auto& cstate = network_state_ ? network_state_->canonical() : *state_;
+  const auto& vstate = network_state_ ? network_state_->predicted() : *state_;
+  if (pause_output_ == PauseModal::kEndGame || cstate.game_over()) {
+    add(std::make_unique<HighScoreModal>(replay_.has_value(), *this, cstate.get_results(),
                                          game_ ? &game_->writer : nullptr));
     if (pause_output_ != PauseModal::kEndGame) {
       ui.play_sound(ii::sound::kMenuAccept);
@@ -412,17 +424,50 @@ void GameModal::update(ii::ui::UiLayer& ui) {
     return;
   }
 
-  auto frames = state_->frame_count() * frame_count_multiplier_;
+  auto frames = vstate.frame_count();
+  frames *= frame_count_multiplier_;
   for (std::uint32_t i = 0; i < frames; ++i) {
-    state_->update(game_ ? game_->input.get() : replay_->reader.next_tick_input_frames());
+    if (state_) {
+      state_->update(game_ ? game_->input.get() : replay_->reader.next_tick_input_frames());
+    } else {
+      auto frames = replay_->reader.next_tick_input_frames();
+      std::vector<ii::input_frame> local_frames;
+      replay_network_packet packet;
+      for (std::uint32_t i = 0; i < replay_->reader.initial_conditions().player_count; ++i) {
+        if (std::ranges::find(options_.replay_remote_players, i) !=
+            options_.replay_remote_players.end()) {
+          packet.packet.input_frames.emplace_back(frames[i]);
+        } else {
+          local_frames.emplace_back(frames[i]);
+        }
+      }
+      packet.packet.canonical_checksum = 0;
+      auto current_tick = vstate.tick_count();
+      packet.packet.canonical_tick_count = packet.packet.tick_count = current_tick;
+
+      std::uniform_int_distribution<std::uint64_t> d{options_.replay_min_tick_delivery_delay,
+                                                     options_.replay_max_tick_delivery_delay};
+      packet.delivery_tick_count = current_tick + d(engine_);
+      replay_packets_.emplace_back(packet);
+
+      auto end = std::find_if(replay_packets_.begin(), replay_packets_.end(),
+                              [&](const auto& p) { return p.delivery_tick_count > current_tick; });
+      for (auto it = replay_packets_.begin(); it != end; ++it) {
+        network_state_->input_packet("remote", it->packet);
+      }
+      replay_packets_.erase(replay_packets_.begin(), end);
+      network_state_->update(local_frames);
+      network_state_->clear_canonical_output();
+    }
   }
+
   auto frame_x = static_cast<std::uint32_t>(std::log2(frame_count_multiplier_));
   if (audio_tick_++ % (4 * (1 + frame_x / 2)) == 0) {
-    for (const auto& pair : state_->get_sound_output()) {
+    for (const auto& pair : vstate.get_sound_output()) {
       const auto& s = pair.second;
       ui.play_sound(pair.first, s.volume, s.pan, s.pitch);
     }
-    for (const auto& pair : state_->get_rumble_output()) {
+    for (const auto& pair : vstate.get_rumble_output()) {
       (void)pair;  // TODO
     }
   }
@@ -438,8 +483,14 @@ void GameModal::update(ii::ui::UiLayer& ui) {
 }
 
 void GameModal::render(const ii::ui::UiLayer& ui, ii::render::GlRenderer& r) const {
-  state_->render();
-  auto render = state_->get_render_output();
+  ii::render_output render;
+  if (state_) {
+    state_->render();
+    render = state_->get_render_output();
+  } else {
+    network_state_->predicted().render();
+    render = network_state_->predicted().get_render_output();
+  }
   r.set_dimensions(ui.io_layer().dimensions(), kDimensions);
   r.set_colour_cycle(render.colour_cycle);
   render_lines(r, render.lines);

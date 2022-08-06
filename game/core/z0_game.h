@@ -4,10 +4,12 @@
 #include "game/core/modal.h"
 #include "game/data/replay.h"
 #include "game/data/save.h"
+#include "game/logic/sim/networked_sim_state.h"
 #include "game/logic/sim/sim_state.h"
 #include <cstdint>
 #include <memory>
 #include <optional>
+#include <random>
 
 namespace ii::io {
 class IoLayer;
@@ -17,7 +19,10 @@ class GameModal;
 namespace ii {
 struct game_options_t {
   compatibility_level compatibility = compatibility_level::kIispaceV0;
-  std::uint32_t ai_count = 0;
+  std::vector<std::uint32_t> ai_players;
+  std::vector<std::uint32_t> replay_remote_players;
+  std::uint64_t replay_min_tick_delivery_delay = 0;
+  std::uint64_t replay_max_tick_delivery_delay = 0;
 };
 }  // namespace ii
 
@@ -65,7 +70,7 @@ class GameModal : public Modal {
 public:
   GameModal(ii::io::IoLayer& io_layer, const ii::initial_conditions& conditions,
             const ii::game_options_t& options);
-  GameModal(ii::ReplayReader&& replay);
+  GameModal(ii::ReplayReader&& replay, const ii::game_options_t& options);
   ~GameModal();
 
   void update(ii::ui::UiLayer& ui) override;
@@ -88,9 +93,18 @@ private:
   bool show_controllers_dialog_ = true;
   bool controllers_dialog_ = true;
 
+  struct replay_network_packet {
+    std::uint64_t delivery_tick_count = 0;
+    ii::sim_packet packet;
+  };
+
+  std::mt19937_64 engine_;
+  ii::game_options_t options_;
   std::optional<replay_t> replay_;
   std::optional<game_t> game_;
+  std::vector<replay_network_packet> replay_packets_;
   std::unique_ptr<ii::SimState> state_;
+  std::unique_ptr<ii::NetworkedSimState> network_state_;
 };
 
 class z0Game : public Modal {

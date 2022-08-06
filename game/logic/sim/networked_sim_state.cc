@@ -191,4 +191,28 @@ sim_packet NetworkedSimState::update(std::vector<input_frame> local_input) {
   return packet;
 }
 
+std::pair<std::string, std::uint64_t> NetworkedSimState::min_remote_latest_tick() const {
+  std::pair<std::string, std::uint64_t> result{{}, predicted_state_.tick_count()};
+  bool first = true;
+  for (const auto& pair : remotes_) {
+    if (first || pair.second.latest_tick < result.second) {
+      result = {pair.first, pair.second.latest_tick};
+    }
+    first = false;
+  }
+  return result;
+}
+
+std::pair<std::string, std::uint64_t> NetworkedSimState::min_remote_canonical_tick() const {
+  std::pair<std::string, std::uint64_t> result{{}, canonical_state_.tick_count()};
+  bool first = true;
+  for (const auto& pair : remotes_) {
+    if (first || pair.second.canonical_tick < result.second) {
+      result = {pair.first, pair.second.canonical_tick};
+    }
+    first = false;
+  }
+  return result;
+}
+
 }  // namespace ii

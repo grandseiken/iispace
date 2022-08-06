@@ -44,10 +44,6 @@ void load_sounds(const io::Filesystem& fs, Mixer& mixer) {
   load_sound(sound::kExplosion, "Explosion.wav");
 }
 
-struct options_t {
-  std::uint32_t ai_count = 0;
-};
-
 bool run(const std::vector<std::string>& args, const game_options_t& options) {
   static constexpr char kGlMajor = 4;
   static constexpr char kGlMinor = 6;
@@ -85,7 +81,7 @@ bool run(const std::vector<std::string>& args, const game_options_t& options) {
       std::cerr << reader.error() << std::endl;
       return false;
     }
-    modal_stack.add(std::make_unique<GameModal>(std::move(*reader)));
+    modal_stack.add(std::make_unique<GameModal>(std::move(*reader), options));
   }
 
   using counter_t = std::chrono::duration<double>;
@@ -147,6 +143,22 @@ bool run(const std::vector<std::string>& args, const game_options_t& options) {
   return true;
 }
 
+result<std::vector<std::uint32_t>>
+parse_player_index_list(const std::optional<std::string>& index_string) {
+  std::vector<std::uint32_t> result;
+  if (!index_string) {
+    return result;
+  }
+  for (char c : *index_string) {
+    if (c >= '0' && c <= '9') {
+      result.emplace_back(static_cast<std::uint32_t>(c - '0'));
+    } else {
+      return unexpected("invalid player index list");
+    }
+  }
+  return result;
+}
+
 result<game_options_t> parse_args(std::vector<std::string>& args) {
   game_options_t options;
 
@@ -164,9 +176,38 @@ result<game_options_t> parse_args(std::vector<std::string>& args) {
     }
   }
 
-  if (auto r = flag_parse<std::uint32_t>(args, "ai_count", options.ai_count, 0u); !r) {
+  std::optional<std::string> ai_players;
+  if (auto r = flag_parse(args, "ai_players", ai_players); !r) {
     return unexpected(r.error());
   }
+  auto index_list = parse_player_index_list(ai_players);
+  if (!index_list) {
+    return unexpected(index_list.error());
+  }
+  options.ai_players = std::move(*index_list);
+
+  std::optional<std::string> replay_remote_players;
+  if (auto r = flag_parse(args, "replay_remote_players", replay_remote_players); !r) {
+    return unexpected(r.error());
+  }
+  index_list = parse_player_index_list(replay_remote_players);
+  if (!index_list) {
+    return unexpected(index_list.error());
+  }
+  options.replay_remote_players = std::move(*index_list);
+
+  if (auto r = flag_parse<std::uint64_t>(args, "replay_min_tick_delivery_delay",
+                                         options.replay_min_tick_delivery_delay, 0u);
+      !r) {
+    return unexpected(r.error());
+  }
+
+  if (auto r = flag_parse<std::uint64_t>(args, "replay_max_tick_delivery_delay",
+                                         options.replay_max_tick_delivery_delay, 8u);
+      !r) {
+    return unexpected(r.error());
+  }
+
   return {std::move(options)};
 }
 

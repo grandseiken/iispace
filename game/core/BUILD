@@ -41,6 +41,7 @@ cc_library(
     "//game/data:replay",
     "//game/data:save",
     "//game/logic/sim",
+    "//game/logic/sim:networked_sim_state",
   ],
   implementation_deps = [
     ":ui_layer",

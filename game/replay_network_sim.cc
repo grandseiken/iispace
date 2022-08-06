@@ -202,6 +202,8 @@ bool run(const options_t& options, const std::string& replay_path) {
           peer->deliver(id, packet);
         }
       }
+      sim.clear_canonical_output();
+      sim.clear_predicted_output();
 
       {
         std::lock_guard lock{tick_count_mutex};

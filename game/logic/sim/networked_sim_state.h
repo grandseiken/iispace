@@ -46,6 +46,17 @@ public:
     return predicted_state_;
   }
 
+  void clear_canonical_output() {
+    canonical_state_.clear_output();
+  }
+
+  void clear_predicted_output() {
+    predicted_state_.clear_output();
+  }
+
+  std::pair<std::string, std::uint64_t> min_remote_latest_tick() const;
+  std::pair<std::string, std::uint64_t> min_remote_canonical_tick() const;
+
 private:
   SimState canonical_state_;
   SimState predicted_state_;
