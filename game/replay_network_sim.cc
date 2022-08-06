@@ -22,6 +22,8 @@ namespace {
 
 struct options_t {
   std::string topology;
+  std::uint64_t max_tick_difference = 0;
+  std::uint64_t max_tick_delivery_delay = 0;
 };
 
 // For each player index, the remote ID.
@@ -107,11 +109,13 @@ bool run(const options_t& options, const std::string& replay_path) {
   };
 
   struct peer_t {
-    peer_t(const initial_conditions& conditions, const topology_t& topology, const std::string& id,
+    peer_t(const initial_conditions& conditions, const topology_t& topology,
+           const options_t& options, const std::string& id,
            std::vector<std::unique_ptr<peer_t>>& peers)
     : id{id}
     , replay_writer{conditions}
     , mapping{mapping_for(topology, id)}
+    , options{options}
     , sim{conditions, mapping, &replay_writer}
     , peers{peers}
     , engine{std::hash<std::string>{}(id)} {
@@ -130,6 +134,7 @@ bool run(const options_t& options, const std::string& replay_path) {
     std::string id;
     ReplayWriter replay_writer;
     NetworkedSimState::input_mapping mapping;
+    options_t options;
     NetworkedSimState sim;
     std::vector<std::unique_ptr<peer_t>>& peers;
     std::mt19937_64 engine;
@@ -150,8 +155,8 @@ bool run(const options_t& options, const std::string& replay_path) {
     }
 
     void wait_for_sync(std::uint64_t target_tick_count) {
-      static constexpr std::uint64_t kMaximumTickDifference = 32;
-      auto minimum_tick = target_tick_count - std::min(target_tick_count, kMaximumTickDifference);
+      auto minimum_tick =
+          target_tick_count - std::min(target_tick_count, options.max_tick_difference);
       if (tick_count >= minimum_tick) {
         return;
       }
@@ -185,8 +190,8 @@ bool run(const options_t& options, const std::string& replay_path) {
       }
       received_packet packet;
       packet.packet = sim.update(std::move(local_input));
-      packet.delivery_tick_count =
-          current_tick + std::uniform_int_distribution<std::uint64_t>{0, 8}(engine);
+      packet.delivery_tick_count = current_tick +
+          std::uniform_int_distribution<std::uint64_t>{0, options.max_tick_delivery_delay}(engine);
       for (auto& peer : peers) {
         if (peer->id != id) {
           peer->deliver(id, packet);
@@ -205,8 +210,8 @@ bool run(const options_t& options, const std::string& replay_path) {
   std::vector<std::unique_ptr<peer_t>> peers;
   peers.reserve(peer_ids.size());
   for (const auto& id : peer_ids) {
-    peers.emplace_back(
-        std::make_unique<peer_t>(replay_reader->initial_conditions(), topology, id, peers));
+    peers.emplace_back(std::make_unique<peer_t>(replay_reader->initial_conditions(), topology,
+                                                options, id, peers));
   }
 
   for (auto& peer : peers) {
@@ -258,6 +263,16 @@ bool run(const options_t& options, const std::string& replay_path) {
 result<options_t> parse_args(std::vector<std::string>& args) {
   options_t options;
   if (auto r = flag_parse(args, "topology", options.topology); !r) {
+    return unexpected(r.error());
+  }
+  if (auto r =
+          flag_parse<std::uint64_t>(args, "max_tick_difference", options.max_tick_difference, 32ul);
+      !r) {
+    return unexpected(r.error());
+  }
+  if (auto r = flag_parse<std::uint64_t>(args, "max_tick_delivery_delay",
+                                         options.max_tick_delivery_delay, 8ul);
+      !r) {
     return unexpected(r.error());
   }
   return {std::move(options)};

@@ -23,11 +23,11 @@ _network_sim_test = rule(
   test = True,
 )
 
-def network_sim_test(replay = "", topology = "", **kwargs):
+def network_sim_test(replay = "", topology = "", extra_args=[], **kwargs):
   _network_sim_test(
     name = "%s_%s" % (topology, Label(replay).name),
     deps = [replay],
-    args = ["--topology", "%s" % topology, "$(location %s)" % replay],
+    args = ["--topology", "%s" % topology, "$(location %s)" % replay] + extra_args,
     size = "small",
     **kwargs,
   )

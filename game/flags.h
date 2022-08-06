@@ -70,7 +70,7 @@ flag_parse(std::vector<std::string>& args, const std::string& name, std::optiona
         out_value = std::move(parse_value);
         return {};
       }
-      if (it->starts_with("--" + name = "=")) {
+      if (it->starts_with("--" + name + "=")) {
         auto value = it->substr(name.size() + 3);
         auto parse_value = flag_parse_value<T>(value);
         if (!parse_value) {

@@ -65,9 +65,7 @@ http_archive(
   url = "https://github.com/gabomdq/SDL_GameControllerDB/archive/47afeaa74afeef944f7f895bf67acbfa5d24621a.zip",
 )
 
-sdl_system_repository(
-  name = "sdl_system",
-)
+sdl_system_repository(name = "sdl_system")
 
 ################################################################################
 # OpenGL dependencies
