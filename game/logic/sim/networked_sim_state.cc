@@ -105,7 +105,6 @@ void NetworkedSimState::input_packet(const std::string& remote_id, const sim_pac
     v.emplace_back(*f);
   }
   canonical_state_.update(std::move(v));
-  canonical_state_.update_smoothing(smoothing_data_);
   local_checksums_.emplace_back(canonical_state_.tick_count(), canonical_state_.checksum());
   partial_frames_.pop_front();
 }

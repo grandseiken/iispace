@@ -350,22 +350,25 @@ sim_results SimState::results() const {
 }
 
 void SimState::update_smoothing(smoothing_data& data) {
-  static constexpr fixed kSquaredSpeed = kPlayerSpeed;
   internals_->index.iterate_dispatch<Player>([&](const Player& p, const Transform& transform) {
     auto it = data.players.find(p.player_number);
     if (it == data.players.end()) {
       return;
     }
-    if (!it->second.position || length_squared(*it->second.position - transform.centre) <= kSquaredSpeed) {
+    auto v = transform.centre - *it->second.position;
+    auto distance = length(v);
+    if (!it->second.position || length(v) < kPlayerSpeed * 3_fx / 2_fx) {
+      it->second.velocity = {0, 0};
       it->second.position = transform.centre;
       it->second.rotation = transform.rotation;
       return;
     }
-    // TODO: some kind of velocity-based smoothing like AI players?
-    // This is still a bit jerky, especially with variable delivery delay.
-    auto new_position = *it->second.position + kPlayerSpeed * normalize(transform.centre - *it->second.position);
-    it->second.rotation = angle(new_position - *it->second.position);
-    it->second.position = new_position;
+    auto target_speed =
+        std::max(kPlayerSpeed, std::min(2 * kPlayerSpeed, distance / (2 * kPlayerSpeed)));
+    auto target_velocity = target_speed * normalise(v);
+    it->second.velocity = (3_fx / 4_fx) * (it->second.velocity - target_velocity) + target_velocity;
+    *it->second.position += it->second.velocity;
+    it->second.rotation = angle(it->second.velocity);
   });
   smoothing_data_ = data;
 }

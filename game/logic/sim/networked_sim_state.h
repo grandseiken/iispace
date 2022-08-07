@@ -14,10 +14,11 @@ class ReplayWriter;
 
 // TODO:
 // - sound refactor to add sound modes (predicted only, canonical only, reconcile)
-//   with reconciliation based on semantics of sound.
-// - player status rendering needs to be based on canonical state only. And possibly enemy kills?
-// - particles need to be extracted to an external system and delayed similar to sounds
-//   (i.e. depending on cause).
+//   with reconciliation based on semantics of sound (and whether caused by local or remote player).
+// - exact same thing for particles, with particles extracted to an external system.
+// - status rendering for remote players needs to be based on canonical state only.
+// - possibly some sort of shot logic. Shots spawned in predicted states possibly don't actually
+//   kill enemies. Predicted shots possibly spawned from predicted position and interpolated?
 // - option for N-tick input delay to reduce prediction diff.
 class NetworkedSimState : public ISimState {
 public:
