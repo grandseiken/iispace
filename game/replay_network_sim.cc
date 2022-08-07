@@ -202,8 +202,7 @@ bool run(const options_t& options, const std::string& replay_path) {
           peer->deliver(id, packet);
         }
       }
-      sim.clear_canonical_output();
-      sim.clear_predicted_output();
+      sim.clear_output();
 
       {
         std::lock_guard lock{tick_count_mutex};
@@ -241,7 +240,7 @@ bool run(const options_t& options, const std::string& replay_path) {
       std::cerr << "error: " << peer->id << " reported checksum failure for " << id << std::endl;
       success = false;
     }
-    auto results = peer->sim.canonical().get_results();
+    auto results = peer->sim.canonical().results();
     if (results.score != canonical_results->sim.score) {
       std::cout << "verification failed for " << peer->id << ": score was " << results.score
                 << std::endl;

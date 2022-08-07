@@ -390,10 +390,9 @@ GameModal::~GameModal() = default;
 
 void GameModal::update(ii::ui::UiLayer& ui) {
   // TODO: make state / network state an interface?
-  const auto& cstate = network_state_ ? network_state_->canonical() : *state_;
-  const auto& vstate = network_state_ ? network_state_->predicted() : *state_;
-  if (pause_output_ == PauseModal::kEndGame || cstate.game_over()) {
-    add(std::make_unique<HighScoreModal>(replay_.has_value(), *this, cstate.get_results(),
+  auto& istate = network_state_ ? static_cast<ii::ISimState&>(*network_state_) : *state_;
+  if (pause_output_ == PauseModal::kEndGame || istate.game_over()) {
+    add(std::make_unique<HighScoreModal>(replay_.has_value(), *this, istate.results(),
                                          game_ ? &game_->writer : nullptr));
     if (pause_output_ != PauseModal::kEndGame) {
       ui.play_sound(ii::sound::kMenuAccept);
@@ -424,7 +423,7 @@ void GameModal::update(ii::ui::UiLayer& ui) {
     return;
   }
 
-  auto frames = vstate.frame_count();
+  auto frames = istate.frame_count();
   frames *= frame_count_multiplier_;
   for (std::uint32_t i = 0; i < frames; ++i) {
     if (state_) {
@@ -442,7 +441,7 @@ void GameModal::update(ii::ui::UiLayer& ui) {
         }
       }
       packet.packet.canonical_checksum = 0;
-      auto current_tick = vstate.tick_count();
+      auto current_tick = istate.tick_count();
       packet.packet.canonical_tick_count = packet.packet.tick_count = current_tick;
 
       std::uniform_int_distribution<std::uint64_t> d{options_.replay_min_tick_delivery_delay,
@@ -457,19 +456,20 @@ void GameModal::update(ii::ui::UiLayer& ui) {
       }
       replay_packets_.erase(replay_packets_.begin(), end);
       network_state_->update(local_frames);
-      network_state_->clear_canonical_output();
     }
   }
 
   auto frame_x = static_cast<std::uint32_t>(std::log2(frame_count_multiplier_));
   if (audio_tick_++ % (4 * (1 + frame_x / 2)) == 0) {
-    for (const auto& pair : vstate.get_sound_output()) {
+    auto output = istate.output();
+    for (const auto& pair : output.sound) {
       const auto& s = pair.second;
       ui.play_sound(pair.first, s.volume, s.pan, s.pitch);
     }
-    for (const auto& pair : vstate.get_rumble_output()) {
+    for (const auto& pair : output.rumble) {
       (void)pair;  // TODO
     }
+    istate.clear_output();
   }
 
   if (replay_) {
@@ -483,14 +483,8 @@ void GameModal::update(ii::ui::UiLayer& ui) {
 }
 
 void GameModal::render(const ii::ui::UiLayer& ui, ii::render::GlRenderer& r) const {
-  ii::render_output render;
-  if (state_) {
-    state_->render();
-    render = state_->get_render_output();
-  } else {
-    network_state_->predicted().render();
-    render = network_state_->predicted().get_render_output();
-  }
+  auto& istate = network_state_ ? static_cast<ii::ISimState&>(*network_state_) : *state_;
+  auto render = istate.render();
   r.set_dimensions(ui.io_layer().dimensions(), kDimensions);
   r.set_colour_cycle(render.colour_cycle);
   render_lines(r, render.lines);

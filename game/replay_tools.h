@@ -53,7 +53,7 @@ result<replay_results_t> inline replay_results(
       sim.clear_output();
     }
   }
-  results.sim = sim.get_results();
+  results.sim = sim.results();
   results.replay_frames_read = reader->current_input_frame();
   results.replay_frames_total = reader->total_input_frames();
   return results;
@@ -82,7 +82,7 @@ inline result<run_data_t> synthesize_replay(const initial_conditions& conditions
       break;
     }
   }
-  auto results = sim.get_results();
+  auto results = sim.results();
   run_data_t data;
   data.ticks = results.tick_count;
   data.score = results.score;

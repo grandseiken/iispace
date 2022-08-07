@@ -4,6 +4,7 @@ cc_library(
   deps = [
     "//game/common:types",
     "//game/common:math",
+    "//game/mixer:sound",
     "@glm",
   ],
   visibility = ["//visibility:public"],
@@ -34,7 +35,6 @@ cc_library(
   ],
   deps = [
     ":sim_io",
-    "//game/mixer:sound",
   ],
   implementation_deps = [
     ":sim_interface",

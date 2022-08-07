@@ -2,10 +2,12 @@
 #define II_GAME_LOGIC_SIM_SIM_IO_H
 #include "game/common/enum.h"
 #include "game/common/math.h"
+#include "game/mixer/sound.h"
 #include <glm/glm.hpp>
 #include <bit>
 #include <cstdint>
 #include <optional>
+#include <unordered_map>
 #include <vector>
 
 namespace ii {
@@ -77,6 +79,11 @@ struct sound_out {
   float volume = 0.f;
   float pan = 0.f;
   float pitch = 0.f;
+};
+
+struct aggregate_output {
+  std::unordered_map<sound, sound_out> sound;
+  std::unordered_map<std::uint32_t, std::uint32_t> rumble;
 };
 
 struct render_output {

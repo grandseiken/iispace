@@ -12,9 +12,14 @@
 namespace ii {
 class ReplayWriter;
 
-class NetworkedSimState {
+// TODO:
+// - visual smoothing for (at least) players when predicted state is replayed.
+// - sound refactor to add sound modes (predicted only, canonical only, reconcile)
+//   with reconciliation based on semantics of sound.
+// - option for N-tick input delay to reduce prediction diff.
+class NetworkedSimState : public ISimState {
 public:
-  ~NetworkedSimState() = default;
+  ~NetworkedSimState() override = default;
   NetworkedSimState(NetworkedSimState&&) noexcept = default;
   NetworkedSimState(const NetworkedSimState&) = delete;
   NetworkedSimState& operator=(NetworkedSimState&&) noexcept = default;
@@ -46,16 +51,38 @@ public:
     return predicted_state_;
   }
 
-  void clear_canonical_output() {
-    canonical_state_.clear_output();
+  std::pair<std::string, std::uint64_t> min_remote_latest_tick() const;
+  std::pair<std::string, std::uint64_t> min_remote_canonical_tick() const;
+
+  // ISimState implementation.
+  bool game_over() const override {
+    return canonical_state_.game_over();
   }
 
-  void clear_predicted_output() {
+  std::uint64_t tick_count() const override {
+    return predicted_state_.tick_count();
+  }
+
+  std::uint32_t frame_count() const override {
+    return predicted_state_.frame_count();
+  }
+
+  render_output render() const override {
+    return predicted_state_.render();
+  }
+
+  void clear_output() override {
+    canonical_state_.clear_output();
     predicted_state_.clear_output();
   }
 
-  std::pair<std::string, std::uint64_t> min_remote_latest_tick() const;
-  std::pair<std::string, std::uint64_t> min_remote_canonical_tick() const;
+  aggregate_output output() const override {
+    return predicted_state_.output();
+  }
+
+  sim_results results() const override {
+    return game_over() ? canonical_state_.results() : predicted_state_.results();
+  }
 
 private:
   SimState canonical_state_;

@@ -1,12 +1,10 @@
 #ifndef II_GAME_LOGIC_SIM_SIM_STATE_H
 #define II_GAME_LOGIC_SIM_SIM_STATE_H
 #include "game/logic/sim/sim_io.h"
-#include "game/mixer/sound.h"
 #include <cstdint>
 #include <memory>
 #include <optional>
 #include <span>
-#include <unordered_map>
 #include <unordered_set>
 #include <vector>
 
@@ -16,9 +14,23 @@ class ReplayWriter;
 class SimInterface;
 struct SimInternals;
 
-class SimState {
+class ISimState {
 public:
-  ~SimState();
+  virtual ~ISimState() = default;
+
+  virtual bool game_over() const = 0;
+  virtual std::uint64_t tick_count() const = 0;
+  virtual std::uint32_t frame_count() const = 0;
+  virtual render_output render() const = 0;
+
+  virtual void clear_output() = 0;
+  virtual aggregate_output output() const = 0;
+  virtual sim_results results() const = 0;
+};
+
+class SimState : public ISimState {
+public:
+  ~SimState() override;
   SimState(SimState&&) noexcept;
   SimState(const SimState&) = delete;
   SimState& operator=(SimState&&) noexcept;
@@ -28,19 +40,17 @@ public:
   SimState(const initial_conditions& conditions, ReplayWriter* replay_writer = nullptr,
            std::span<const std::uint32_t> ai_players = {});
 
-  std::uint64_t tick_count() const;
+  std::uint64_t tick_count() const override;
   std::uint32_t checksum() const;  // Fast checksum.
   void copy_to(SimState&) const;
   void update(std::vector<input_frame> input);
-  void render() const;
-  bool game_over() const;
-  std::uint32_t frame_count() const;
+  bool game_over() const override;
+  render_output render() const override;
+  std::uint32_t frame_count() const override;
 
-  void clear_output();
-  std::unordered_map<sound, sound_out> get_sound_output() const;
-  std::unordered_map<std::uint32_t, std::uint32_t> get_rumble_output() const;
-  render_output get_render_output() const;
-  sim_results get_results() const;
+  void clear_output() override;
+  aggregate_output output() const override;
+  sim_results results() const override;
 
   struct query {
     std::unordered_set<std::uint32_t> entity_ids;

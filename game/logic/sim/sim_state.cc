@@ -205,7 +205,11 @@ void SimState::update(std::vector<input_frame> input) {
   }
 }
 
-void SimState::render() const {
+bool SimState::game_over() const {
+  return game_over_;
+}
+
+render_output SimState::render() const {
   internals_->boss_hp_bar.reset();
   internals_->line_output.clear();
   internals_->player_output.clear();
@@ -262,39 +266,7 @@ void SimState::render() const {
   for (const auto& v : interface_->global_entity().get<GlobalData>()->extra_enemy_warnings) {
     render_warning(to_float(v));
   }
-}
 
-bool SimState::game_over() const {
-  return game_over_;
-}
-
-std::uint32_t SimState::frame_count() const {
-  return internals_->conditions.mode == game_mode::kFast ? 2 : 1;
-}
-
-void SimState::clear_output() {
-  internals_->sound_output.clear();
-  internals_->rumble_output.clear();
-}
-
-std::unordered_map<sound, sound_out> SimState::get_sound_output() const {
-  std::unordered_map<sound, sound_out> result;
-  for (const auto& pair : internals_->sound_output) {
-    sound_out s;
-    s.volume = std::max(0.f, std::min(1.f, pair.second.volume));
-    s.pan = pair.second.pan / static_cast<float>(pair.second.count);
-    s.pitch = std::pow(2.f, pair.second.pitch);
-    result.emplace(pair.first, s);
-  }
-  internals_->sound_output.clear();
-  return result;
-}
-
-std::unordered_map<std::uint32_t, std::uint32_t> SimState::get_rumble_output() const {
-  return internals_->rumble_output;
-}
-
-render_output SimState::get_render_output() const {
   render_output result;
   result.players = internals_->player_output;
   result.lines = std::move(internals_->line_output);
@@ -318,7 +290,31 @@ render_output SimState::get_render_output() const {
   return result;
 }
 
-sim_results SimState::get_results() const {
+std::uint32_t SimState::frame_count() const {
+  return internals_->conditions.mode == game_mode::kFast ? 2 : 1;
+}
+
+void SimState::clear_output() {
+  internals_->sound_output.clear();
+  internals_->rumble_output.clear();
+}
+
+aggregate_output SimState::output() const {
+  aggregate_output output;
+  for (const auto& pair : internals_->sound_output) {
+    sound_out s;
+    s.volume = std::max(0.f, std::min(1.f, pair.second.volume));
+    s.pan = pair.second.pan / static_cast<float>(pair.second.count);
+    s.pitch = std::pow(2.f, pair.second.pitch);
+    output.sound.emplace(pair.first, s);
+  }
+  output.rumble = std::move(internals_->rumble_output);
+  internals_->sound_output.clear();
+  internals_->rumble_output.clear();
+  return output;
+}
+
+sim_results SimState::results() const {
   sim_results r;
   r.mode = internals_->conditions.mode;
   r.seed = internals_->conditions.seed;
