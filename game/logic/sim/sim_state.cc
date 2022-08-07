@@ -225,7 +225,18 @@ render_output SimState::render() const {
     }
   });
   internals_->index.iterate_dispatch<Player>(
-      [&](ecs::const_handle h, const Render& r) { r.render(h, *interface_); });
+      [&](ecs::handle h, const Player& p, const Render& r, Transform& transform) {
+        auto it = smoothing_data_.players.find(p.player_number);
+        if (it == smoothing_data_.players.end() || !it->second.position) {
+          r.render(h, *interface_);
+          return;
+        }
+        auto transform_copy = transform;
+        transform.centre = *it->second.position;
+        transform.rotation = it->second.rotation;
+        r.render(h, *interface_);
+        transform = transform_copy;
+      });
 
   auto render_warning = [&](const glm::vec2& v) {
     if (v.x < -4) {
@@ -336,6 +347,27 @@ sim_results SimState::results() const {
     }
   }
   return r;
+}
+
+void SimState::update_smoothing(smoothing_data& data) {
+  static constexpr fixed kSquaredSpeed = kPlayerSpeed;
+  internals_->index.iterate_dispatch<Player>([&](const Player& p, const Transform& transform) {
+    auto it = data.players.find(p.player_number);
+    if (it == data.players.end()) {
+      return;
+    }
+    if (!it->second.position || length_squared(*it->second.position - transform.centre) <= kSquaredSpeed) {
+      it->second.position = transform.centre;
+      it->second.rotation = transform.rotation;
+      return;
+    }
+    // TODO: some kind of velocity-based smoothing like AI players?
+    // This is still a bit jerky, especially with variable delivery delay.
+    auto new_position = *it->second.position + kPlayerSpeed * normalize(transform.centre - *it->second.position);
+    it->second.rotation = angle(new_position - *it->second.position);
+    it->second.position = new_position;
+  });
+  smoothing_data_ = data;
 }
 
 void SimState::dump(Printer& printer, const query& q) const {

@@ -6,6 +6,7 @@
 namespace ii {
 class SimInterface;
 
+static constexpr fixed kPlayerSpeed = 5;
 void spawn_powerup(SimInterface&, const vec2& position, powerup_type type);
 void spawn_player(SimInterface&, const vec2& position, std::uint32_t player_number, bool is_ai);
 }  // namespace ii

@@ -13,9 +13,11 @@ namespace ii {
 class ReplayWriter;
 
 // TODO:
-// - visual smoothing for (at least) players when predicted state is replayed.
 // - sound refactor to add sound modes (predicted only, canonical only, reconcile)
 //   with reconciliation based on semantics of sound.
+// - player status rendering needs to be based on canonical state only. And possibly enemy kills?
+// - particles need to be extracted to an external system and delayed similar to sounds
+//   (i.e. depending on cause).
 // - option for N-tick input delay to reduce prediction diff.
 class NetworkedSimState : public ISimState {
 public:
@@ -90,6 +92,7 @@ private:
   input_mapping mapping_;
   std::uint32_t player_count_ = 0;
   std::uint64_t predicted_tick_base_ = 0;
+  SimState::smoothing_data smoothing_data_;
 
   struct partial_frame {
     std::vector<std::optional<input_frame>> input_frames;

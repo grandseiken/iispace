@@ -189,7 +189,6 @@ struct Powerup : ecs::component {
 DEBUG_STRUCT_TUPLE(Powerup, type, frame, dir, rotate, first_frame);
 
 struct PlayerLogic : ecs::component {
-  static constexpr fixed kPlayerSpeed = 5;
   static constexpr fixed kBombRadius = 180;
   static constexpr fixed kBombBossRadius = 280;
 

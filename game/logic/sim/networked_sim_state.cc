@@ -41,6 +41,11 @@ NetworkedSimState::NetworkedSimState(const initial_conditions& conditions, input
   canonical_state_.copy_to(predicted_state_);
   latest_input_.resize(player_count_);
   local_checksums_.emplace_back(0u, canonical_state_.checksum());
+  for (const auto& pair : mapping_.remote) {
+    for (auto n : pair.second.player_numbers) {
+      smoothing_data_.players[n];
+    }
+  }
 }
 
 const std::unordered_set<std::string>& NetworkedSimState::checksum_failed_remote_ids() const {
@@ -100,15 +105,20 @@ void NetworkedSimState::input_packet(const std::string& remote_id, const sim_pac
     v.emplace_back(*f);
   }
   canonical_state_.update(std::move(v));
+  canonical_state_.update_smoothing(smoothing_data_);
   local_checksums_.emplace_back(canonical_state_.tick_count(), canonical_state_.checksum());
   partial_frames_.pop_front();
 }
 
 sim_packet NetworkedSimState::update(std::vector<input_frame> local_input) {
   auto frame_for = [&](std::uint64_t tick_offset, std::uint32_t k) {
-    return tick_offset < partial_frames_.size() && partial_frames_[tick_offset].input_frames[k]
-        ? *partial_frames_[tick_offset].input_frames[k]
-        : latest_input_[k];
+    if (tick_offset < partial_frames_.size() && partial_frames_[tick_offset].input_frames[k]) {
+      return *partial_frames_[tick_offset].input_frames[k];
+    }
+    // Smoothing of latest input reduces predition jerkiness.
+    static constexpr fixed kInputPredictionSmoothingFactor = 7_fx / 8_fx;
+    latest_input_[k].velocity *= kInputPredictionSmoothingFactor;
+    return latest_input_[k];
   };
 
   if (predicted_tick_base_ < canonical_state_.tick_count()) {
@@ -162,6 +172,7 @@ sim_packet NetworkedSimState::update(std::vector<input_frame> local_input) {
   } else {
     predicted_state_.update(std::move(inputs));
   }
+  predicted_state_.update_smoothing(smoothing_data_);
   packet.canonical_tick_count = local_checksums_.back().tick_count;
   packet.canonical_checksum = local_checksums_.back().checksum;
 
