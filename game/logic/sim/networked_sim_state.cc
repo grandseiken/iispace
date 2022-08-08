@@ -64,6 +64,10 @@ const std::unordered_set<std::string>& NetworkedSimState::checksum_failed_remote
   return checksum_failed_remote_ids_;
 }
 
+void NetworkedSimState::set_input_delay_ticks(std::uint64_t delay_ticks) {
+  input_delay_ticks_ = delay_ticks;
+}
+
 void NetworkedSimState::input_packet(const std::string& remote_id, const sim_packet& packet) {
   auto it = mapping_.remote.find(remote_id);
   if (it == mapping_.remote.end()) {
@@ -121,7 +125,17 @@ void NetworkedSimState::input_packet(const std::string& remote_id, const sim_pac
   partial_frames_.pop_front();
 }
 
-sim_packet NetworkedSimState::update(std::vector<input_frame> local_input) {
+std::vector<sim_packet> NetworkedSimState::update(std::vector<input_frame> local_input) {
+  std::vector<sim_packet> packet_output;
+  while (input_delayed_frames_.size() < 1 + input_delay_ticks_) {
+    auto& packet = packet_output.emplace_back();
+    packet.input_frames = local_input;
+    packet.tick_count = predicted_state_.tick_count() + input_delayed_frames_.size();
+    input_delayed_frames_.emplace_back(std::move(local_input));
+  }
+  local_input = std::move(input_delayed_frames_.front());
+  input_delayed_frames_.pop_front();
+
   auto frame_for = [&](std::uint64_t tick_offset, std::uint32_t k) {
     if (tick_offset < partial_frames_.size() && partial_frames_[tick_offset].input_frames[k]) {
       return *partial_frames_[tick_offset].input_frames[k];
@@ -157,14 +171,10 @@ sim_packet NetworkedSimState::update(std::vector<input_frame> local_input) {
   auto& partial = partial_frames_[tick_offset];
 
   // Fill in our local inputs.
-  sim_packet packet;
-  packet.tick_count = predicted_state_.tick_count();
-  packet.input_frames = std::move(local_input);
   for (std::size_t i = 0; i < mapping_.local.player_numbers.size(); ++i) {
     auto player_number = mapping_.local.player_numbers[i];
     assert(!partial.input_frames[player_number]);
-    partial.input_frames[player_number] =
-        i < packet.input_frames.size() ? packet.input_frames[i] : input_frame{};
+    partial.input_frames[player_number] = i < local_input.size() ? local_input[i] : input_frame{};
   }
 
   bool frame_complete =
@@ -184,8 +194,10 @@ sim_packet NetworkedSimState::update(std::vector<input_frame> local_input) {
     predicted_state_.update(std::move(inputs));
   }
   predicted_state_.update_smoothing(smoothing_data_);
-  packet.canonical_tick_count = local_checksums_.back().tick_count;
-  packet.canonical_checksum = local_checksums_.back().checksum;
+  if (!packet_output.empty()) {
+    packet_output.front().canonical_tick_count = local_checksums_.back().tick_count;
+    packet_output.front().canonical_checksum = local_checksums_.back().checksum;
+  }
 
   // Verify and discard checksums.
   while (local_checksums_.size() > 1) {
@@ -210,7 +222,7 @@ sim_packet NetworkedSimState::update(std::vector<input_frame> local_input) {
     }
     local_checksums_.pop_front();
   }
-  return packet;
+  return packet_output;
 }
 
 std::pair<std::string, std::uint64_t> NetworkedSimState::min_remote_latest_tick() const {

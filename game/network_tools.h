@@ -154,16 +154,20 @@ struct peer_t {
       }
       e.receive_buffer.erase(e.receive_buffer.begin(), end);
     }
-    received_packet packet;
-    packet.packet = sim.update(std::move(local_input));
-    packet.delivery_tick_count = current_tick +
-        std::uniform_int_distribution<std::uint64_t>{0, options.max_tick_delivery_delay}(engine);
-    for (auto& peer : peers) {
-      if (peer->id != id) {
-        peer->deliver(id, packet);
+    auto packets = sim.update(std::move(local_input));
+    sim.clear_output();
+
+    for (auto& p : packets) {
+      received_packet packet;
+      packet.packet = std::move(p);
+      packet.delivery_tick_count = current_tick +
+          std::uniform_int_distribution<std::uint64_t>{0, options.max_tick_delivery_delay}(engine);
+      for (auto& peer : peers) {
+        if (peer->id != id) {
+          peer->deliver(id, packet);
+        }
       }
     }
-    sim.clear_output();
 
     {
       std::lock_guard lock{tick_count_mutex};

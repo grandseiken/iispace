@@ -60,6 +60,12 @@ bool run(const options_t& options) {
   for (auto& peer : peers) {
     peer->thread = std::thread{[&] {
       while (!peer->sim.canonical().game_over()) {
+        if (!(peer->sim.tick_count() % 1024)) {
+          std::uniform_int_distribution<std::uint64_t> d{
+              0, options.network.max_tick_delivery_delay / 2};
+          peer->sim.set_input_delay_ticks(d(engine));
+        }
+
         std::vector<input_frame> inputs;
         peer->sim.predicted().ai_think(inputs);
         std::vector<input_frame> local_inputs;

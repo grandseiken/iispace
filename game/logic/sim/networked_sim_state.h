@@ -20,7 +20,6 @@ class ReplayWriter;
 // - status rendering for remote players needs to be based on canonical state only.
 // - possibly some sort of shot logic. Shots spawned in predicted states possibly don't actually
 //   kill enemies. Predicted shots possibly spawned from predicted position and interpolated?
-// - option for N-tick input delay to reduce prediction diff.
 class NetworkedSimState : public ISimState {
 public:
   ~NetworkedSimState() override = default;
@@ -41,11 +40,14 @@ public:
                     ReplayWriter* writer = nullptr, std::span<std::uint32_t> ai_players = {});
 
   const std::unordered_set<std::string>& checksum_failed_remote_ids() const;
+  // Ticks by which to delay input (increases prediction accuracy in exchange for small amounts of
+  // input lag).
+  void set_input_delay_ticks(std::uint64_t delay_ticks);
   // May update canonical state; never updates predicted state.
   void input_packet(const std::string& remote_id, const sim_packet& packet);
   // Always updates predicted state, advancing its tick count by exactly one. May or may not update
   // canonical state.
-  sim_packet update(std::vector<input_frame> local_input);
+  std::vector<sim_packet> update(std::vector<input_frame> local_input);
 
   const SimState& canonical() const {
     return canonical_state_;
@@ -94,7 +96,10 @@ private:
   SimState predicted_state_;
   input_mapping mapping_;
   std::uint32_t player_count_ = 0;
+  std::uint64_t input_delay_ticks_ = 0;
   std::uint64_t predicted_tick_base_ = 0;
+
+  std::deque<std::vector<input_frame>> input_delayed_frames_;
   SimState::smoothing_data smoothing_data_;
 
   struct partial_frame {
