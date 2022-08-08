@@ -76,7 +76,9 @@ inline result<run_data_t> synthesize_replay(const initial_conditions& conditions
   ReplayWriter writer{conditions};
   SimState sim{conditions, &writer, ai_players};
   while (!sim.game_over()) {
-    sim.update({});
+    std::vector<input_frame> input;
+    sim.ai_think(input);
+    sim.update(input);
     sim.clear_output();
     if (max_ticks && sim.tick_count() >= *max_ticks) {
       break;

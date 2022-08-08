@@ -427,7 +427,11 @@ void GameModal::update(ii::ui::UiLayer& ui) {
   frames *= frame_count_multiplier_;
   for (std::uint32_t i = 0; i < frames; ++i) {
     if (state_) {
-      state_->update(game_ ? game_->input.get() : replay_->reader.next_tick_input_frames());
+      auto input = game_ ? game_->input.get() : replay_->reader.next_tick_input_frames();
+      if (game_) {
+        state_->ai_think(input);
+      }
+      state_->update(input);
     } else {
       auto frames = replay_->reader.next_tick_input_frames();
       std::vector<ii::input_frame> local_frames;
@@ -462,7 +466,7 @@ void GameModal::update(ii::ui::UiLayer& ui) {
   auto frame_x = static_cast<std::uint32_t>(std::log2(frame_count_multiplier_));
   if (audio_tick_++ % (4 * (1 + frame_x / 2)) == 0) {
     auto output = istate.output();
-    for (const auto& pair : output.sound) {
+    for (const auto& pair : output.sound_map) {
       const auto& s = pair.second;
       ui.play_sound(pair.first, s.volume, s.pan, s.pitch);
     }

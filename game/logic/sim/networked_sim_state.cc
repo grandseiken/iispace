@@ -29,11 +29,23 @@ bool check_mapping(const initial_conditions& conditions,
   }
   return true;
 }
+
+std::vector<std::uint32_t> filter_ai_players(const NetworkedSimState::input_mapping& mapping,
+                                             std::span<std::uint32_t> ai_players) {
+  std::vector<std::uint32_t> result;
+  for (auto n : ai_players) {
+    if (std::ranges::find(mapping.local.player_numbers, n) != mapping.local.player_numbers.end()) {
+      result.emplace_back(n);
+    }
+  }
+  return result;
+}
 }  // namespace
 
 NetworkedSimState::NetworkedSimState(const initial_conditions& conditions, input_mapping mapping,
-                                     ReplayWriter* writer)
-: canonical_state_{conditions, writer}
+                                     ReplayWriter* writer, std::span<std::uint32_t> ai_players)
+: local_ai_players_{filter_ai_players(mapping, ai_players)}
+, canonical_state_{conditions, writer, local_ai_players_}
 , mapping_{std::move(mapping)}
 , player_count_{conditions.player_count} {
   (void)&check_mapping;
@@ -95,7 +107,7 @@ void NetworkedSimState::input_packet(const std::string& remote_id, const sim_pac
 
   bool frame_complete =
       std::ranges::all_of(partial.input_frames, [&](const auto& f) { return f.has_value(); });
-  if (tick_offset || !frame_complete) {
+  if (tick_offset || !frame_complete || canonical_state_.game_over()) {
     return;
   }
 

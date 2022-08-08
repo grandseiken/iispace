@@ -82,7 +82,7 @@ struct sound_out {
 };
 
 struct aggregate_output {
-  std::unordered_map<sound, sound_out> sound;
+  std::unordered_map<sound, sound_out> sound_map;
   std::unordered_map<std::uint32_t, std::uint32_t> rumble;
 };
 

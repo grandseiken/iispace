@@ -1,6 +1,6 @@
 def _ai_test_impl(ctx):
   ctx.actions.symlink(
-    target_file = ctx.executable._replay_synth_bin,
+    target_file = ctx.executable._ai_replay_synth_bin,
     output = ctx.outputs.executable,
     is_executable = True,
   )
@@ -12,8 +12,8 @@ def _ai_test_impl(ctx):
 _ai_test = rule(
   _ai_test_impl,
   attrs = {
-    "_replay_synth_bin": attr.label(
-      default = "//game:replay_synth",
+    "_ai_replay_synth_bin": attr.label(
+      default = "//game:ai_replay_synth",
       executable = True,
       cfg = "target",
     ),
@@ -31,6 +31,41 @@ def ai_test(mode, players, runs=1, extra_args=[], **kwargs):
       "--mode", mode,
       "--players", "%s" % players,
       "--runs", "%s" % runs,
+    ] + extra_args,
+    size = "small",
+    **kwargs,
+  )
+
+def _ai_netsim_test_impl(ctx):
+  ctx.actions.symlink(
+    target_file = ctx.executable._ai_network_sim_bin,
+    output = ctx.outputs.executable,
+    is_executable = True,
+  )
+
+  return DefaultInfo(
+    executable = ctx.outputs.executable,
+  )
+
+_ai_netsim_test = rule(
+  _ai_netsim_test_impl,
+  attrs = {
+    "_ai_network_sim_bin": attr.label(
+      default = "//game:ai_network_sim",
+      executable = True,
+      cfg = "target",
+    ),
+  },
+  test = True,
+)
+
+def ai_netsim_test(mode, players, topology = "", extra_args=[], **kwargs):
+  _ai_netsim_test(
+    name = "netsim_%sp_%s" % (players, mode),
+    args = [
+      "--mode", mode,
+      "--players", "%s" % players,
+      "--topology", "%s" % topology,
     ] + extra_args,
     size = "small",
     **kwargs,

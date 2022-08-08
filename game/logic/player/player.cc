@@ -226,9 +226,6 @@ struct PlayerLogic : ecs::component {
   vec2 fire_target{0};
 
   void update(ecs::handle h, Player& pc, Transform& transform, SimInterface& sim) {
-    if (auto* ai = h.get<AiPlayer>(); ai) {
-      sim.input(pc.player_number) = ecs::call<&AiPlayer::think>(h, sim);
-    }
     const auto& input = sim.input(pc.player_number);
     if (input.target_absolute) {
       fire_target = *input.target_absolute;
@@ -399,6 +396,13 @@ void spawn_player(SimInterface& sim, const vec2& position, std::uint32_t player_
   if (is_ai) {
     h.add(AiPlayer{});
   }
+}
+
+std::optional<input_frame> ai_think(const SimInterface& sim, ecs::handle h) {
+  if (auto* ai = h.get<AiPlayer>(); ai) {
+    return ecs::call<&AiPlayer::think>(h, sim);
+  }
+  return std::nullopt;
 }
 
 }  // namespace ii

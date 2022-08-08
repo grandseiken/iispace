@@ -1,6 +1,7 @@
 #include "game/flags.h"
 #include "game/io/file/std_filesystem.h"
 #include "game/logic/sim/sim_state.h"
+#include "game/mode_flags.h"
 #include "game/replay_tools.h"
 #include <iostream>
 #include <mutex>
@@ -214,13 +215,13 @@ result<options_t> parse_args(std::vector<std::string>& args) {
   if (auto r = flag_parse<std::uint32_t>(args, "players", options.player_count); !r) {
     return unexpected(r.error());
   }
-  if (!options.player_count) {
+  if (!has_help_flag() && !options.player_count) {
     return unexpected("error: invalid player count");
   }
   if (auto r = flag_parse<std::uint32_t>(args, "runs", options.runs, 1u); !r) {
     return unexpected(r.error());
   }
-  if (!options.runs) {
+  if (!has_help_flag() && !options.runs) {
     return unexpected("error: invalid run count");
   }
   if (auto r = flag_parse<std::uint32_t>(args, "seed", options.seed); !r) {
@@ -230,44 +231,14 @@ result<options_t> parse_args(std::vector<std::string>& args) {
     return unexpected(r.error());
   }
 
-  std::optional<std::string> mode;
-  if (auto r = flag_parse(args, "mode", mode); !r) {
+  if (auto r = parse_game_mode(args, options.mode); !r) {
     return unexpected(r.error());
   }
-  if (mode) {
-    if (*mode == "normal") {
-      options.mode = game_mode::kNormal;
-    } else if (*mode == "hard") {
-      options.mode = game_mode::kHard;
-    } else if (*mode == "boss") {
-      options.mode = game_mode::kBoss;
-    } else if (*mode == "what") {
-      options.mode = game_mode::kWhat;
-    } else {
-      return unexpected("error: unknown game mode " + *mode);
-    }
-  }
-
-  std::optional<std::string> compatibility;
-  if (auto r = flag_parse(args, "compatibility", compatibility); !r) {
+  if (auto r = parse_compatibility_level(args, options.compatibility); !r) {
     return unexpected(r.error());
   }
-  if (compatibility) {
-    if (*compatibility == "legacy") {
-      options.compatibility = compatibility_level::kLegacy;
-    } else if (*compatibility == "v0") {
-      options.compatibility = compatibility_level::kIispaceV0;
-    } else {
-      return unexpected("error: unknown compatibility level " + *compatibility);
-    }
-  }
-
-  bool can_face_secret_boss = false;
-  if (auto r = flag_parse<bool>(args, "can_face_secret_boss", can_face_secret_boss, false); !r) {
+  if (auto r = parse_initial_conditions_flags(args, options.flags); !r) {
     return unexpected(r.error());
-  }
-  if (can_face_secret_boss) {
-    options.flags |= initial_conditions::flag::kLegacy_CanFaceSecretBoss;
   }
 
   std::uint64_t find_boss_kills = 0;

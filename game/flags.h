@@ -4,6 +4,7 @@
 #include <algorithm>
 #include <charconv>
 #include <cstdint>
+#include <iostream>
 #include <optional>
 #include <ranges>
 #include <string>
@@ -11,6 +12,11 @@
 #include <unordered_set>
 
 namespace ii {
+
+inline bool& has_help_flag() {
+  static bool value;
+  return value;
+}
 
 template <typename T>
 std::optional<T> flag_parse_value(const std::string& arg) {
@@ -24,19 +30,15 @@ std::optional<T> flag_parse_value(const std::string& arg) {
     }
     return value;
   }
-};
-
-inline std::vector<std::string> args_init(int argc, char** argv) {
-  std::vector<std::string> result;
-  for (int i = 1; i < argc; ++i) {
-    result.emplace_back(argv[i]);
-  }
-  return result;
 }
 
 template <typename T>
 result<void>
 flag_parse(std::vector<std::string>& args, const std::string& name, std::optional<T>& out_value) {
+  if (has_help_flag()) {
+    std::cout << "\t--" << name << " (optional)\n";
+    return {};
+  }
   if constexpr (std::is_same_v<T, bool>) {
     for (auto it = args.begin(); it != args.end(); ++it) {
       if (*it == "--" + name) {
@@ -88,6 +90,10 @@ flag_parse(std::vector<std::string>& args, const std::string& name, std::optiona
 template <typename T>
 result<void> flag_parse(std::vector<std::string>& args, const std::string& name, T& out_value,
                         const std::optional<T>& default_value = std::nullopt) {
+  if (has_help_flag()) {
+    std::cout << "\t--" << name << (default_value ? " (optional)\n" : " (required)\n");
+    return {};
+  }
   std::optional<T> optional_value;
   if (auto result = flag_parse(args, name, optional_value); !result) {
     return result;
@@ -108,6 +114,10 @@ result<void> flag_parse(std::vector<std::string>& args, const std::string& name,
 template <typename T>
 result<void> flag_parse(std::vector<std::string>& args, const std::string& name,
                         std::unordered_set<T>& out_value) {
+  if (has_help_flag()) {
+    std::cout << "\t--" << name << " (list)\n";
+    return {};
+  }
   while (true) {
     std::optional<std::string> list_value;
     if (auto result = flag_parse(args, name, list_value); !result) {
@@ -128,7 +138,25 @@ result<void> flag_parse(std::vector<std::string>& args, const std::string& name,
   return {};
 }
 
+inline std::vector<std::string> args_init(int argc, char** argv) {
+  std::vector<std::string> result;
+  for (int i = 1; i < argc; ++i) {
+    result.emplace_back(argv[i]);
+    if (result.back() == "--help") {
+      has_help_flag() = true;
+    }
+  }
+  if (has_help_flag()) {
+    std::cout << argv[0] << " flags:\n";
+  }
+  return result;
+}
+
 inline result<void> args_finish(const std::vector<std::string>& args) {
+  if (has_help_flag()) {
+    std::cout << std::endl;
+    return unexpected("--help specified, exiting");
+  }
   for (const auto& arg : args) {
     if (!arg.empty() && arg.front() == '-') {
       return unexpected("error: unknown flag " + arg);

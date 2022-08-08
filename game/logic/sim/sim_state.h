@@ -45,6 +45,7 @@ public:
   std::uint64_t tick_count() const override;
   std::uint32_t checksum() const;  // Fast checksum.
   void copy_to(SimState&) const;
+  void ai_think(std::vector<input_frame>& input) const;
   void update(std::vector<input_frame> input);
   bool game_over() const override;
   render_output render() const override;

@@ -5,6 +5,7 @@
 #include "game/io/sdl_io.h"
 #include "game/mixer/mixer.h"
 #include "game/mixer/sound.h"
+#include "game/mode_flags.h"
 #include "game/render/gl_renderer.h"
 #include <chrono>
 #include <iostream>
@@ -103,10 +104,12 @@ bool run(const std::vector<std::string>& args, const game_options_t& options) {
       auto event = io_layer->poll();
       if (!event) {
         break;
-      } else if (*event == io::event_type::kClose) {
+      }
+      if (*event == io::event_type::kClose) {
         exit = true;
         break;
-      } else if (*event == io::event_type::kAudioDeviceChange) {
+      }
+      if (*event == io::event_type::kAudioDeviceChange) {
         audio_change = true;
       } else if (*event == io::event_type::kControllerChange) {
         controller_change = true;
@@ -162,18 +165,8 @@ parse_player_index_list(const std::optional<std::string>& index_string) {
 result<game_options_t> parse_args(std::vector<std::string>& args) {
   game_options_t options;
 
-  std::optional<std::string> compatibility;
-  if (auto r = flag_parse(args, "compatibility", compatibility); !r) {
+  if (auto r = parse_compatibility_level(args, options.compatibility); !r) {
     return unexpected(r.error());
-  }
-  if (compatibility) {
-    if (*compatibility == "legacy") {
-      options.compatibility = compatibility_level::kLegacy;
-    } else if (*compatibility == "v0") {
-      options.compatibility = compatibility_level::kIispaceV0;
-    } else {
-      return unexpected("error: unknown compatibility level " + *compatibility);
-    }
   }
 
   std::optional<std::string> ai_players;

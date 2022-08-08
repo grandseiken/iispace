@@ -80,7 +80,8 @@ SimState::SimState(const initial_conditions& conditions, ReplayWriter* replay_wr
 
   for (std::uint32_t i = 0; i < conditions.player_count; ++i) {
     vec2 v((1 + i) * kSimDimensions.x / (1 + conditions.player_count), kSimDimensions.y / 2);
-    spawn_player(*interface_, v, i, /* AI */ std::ranges::find(ai_players, i) != ai_players.end());
+    spawn_player(*interface_, v, i,
+                 /* AI */ std::ranges::find(ai_players, i) != ai_players.end());
   }
   setup_index_callbacks(*interface_, *internals_);
 }
@@ -127,6 +128,15 @@ void SimState::copy_to(SimState& target) const {
 
   target.clear_output();
   refresh_handles(*target.internals_);
+}
+
+void SimState::ai_think(std::vector<input_frame>& input) const {
+  input.resize(internals_->conditions.player_count);
+  internals_->index.iterate_dispatch<Player>([&](ecs::handle h, const Player& p) {
+    if (auto f = ii::ai_think(*interface_, h); f) {
+      input[p.player_number] = *f;
+    }
+  });
 }
 
 void SimState::update(std::vector<input_frame> input) {
@@ -317,7 +327,7 @@ aggregate_output SimState::output() const {
     s.volume = std::max(0.f, std::min(1.f, pair.second.volume));
     s.pan = pair.second.pan / static_cast<float>(pair.second.count);
     s.pitch = std::pow(2.f, pair.second.pitch);
-    output.sound.emplace(pair.first, s);
+    output.sound_map.emplace(pair.first, s);
   }
   output.rumble = std::move(internals_->rumble_output);
   internals_->sound_output.clear();

@@ -15,11 +15,35 @@ cc_library(
   ]
 )
 
+cc_library(
+  name = "network_tools",
+  hdrs = ["network_tools.h"],
+  deps = [
+    "//game:flags",
+    "//game/common:types",
+    "//game/data:packet",
+    "//game/data:replay",
+    "//game/logic/sim:networked_sim_state",
+    "@concurrent_queue",
+  ],
+)
+
+cc_library(
+  name = "mode_flags",
+  hdrs = ["mode_flags.h"],
+  deps = [
+    "//game:flags",
+    "//game/common:types",
+    "//game/logic/sim:sim_io",
+  ],
+)
+
 cc_binary(
   name = "iispace",
   srcs = ["iispace.cc"],
   deps = [
     ":flags",
+    ":mode_flags",
     "//game/core",
     "//game/core:ui_layer",
     "//game/io:sdl_io",
@@ -59,10 +83,25 @@ cc_binary(
 )
 
 cc_binary(
-  name = "replay_synth",
-  srcs = ["replay_synth.cc"],
+  name = "replay_network_sim",
+  srcs = ["replay_network_sim.cc"],
   deps = [
     ":flags",
+    ":network_tools",
+    ":replay_tools",
+    "//game/common:types",
+    "//game/data:replay",
+    "//game/io/file:std_filesystem",
+  ],
+  visibility = ["//visibility:public"],
+)
+
+cc_binary(
+  name = "ai_replay_synth",
+  srcs = ["ai_replay_synth.cc"],
+  deps = [
+    ":flags",
+    ":mode_flags",
     ":replay_tools",
     "//game/io/file:std_filesystem",
   ],
@@ -70,16 +109,14 @@ cc_binary(
 )
 
 cc_binary(
-  name = "replay_network_sim",
-  srcs = ["replay_network_sim.cc"],
+  name = "ai_network_sim",
+  srcs = ["ai_network_sim.cc"],
   deps = [
     ":flags",
+    ":mode_flags",
+    ":network_tools",
     ":replay_tools",
-    "//game/common:types",
-    "//game/data:replay",
     "//game/io/file:std_filesystem",
-    "//game/logic/sim:networked_sim_state",
-    "@concurrent_queue",
   ],
   visibility = ["//visibility:public"],
 )

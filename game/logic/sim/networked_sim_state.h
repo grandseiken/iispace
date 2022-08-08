@@ -5,6 +5,7 @@
 #include "game/logic/sim/sim_state.h"
 #include <cstdint>
 #include <deque>
+#include <span>
 #include <string>
 #include <unordered_map>
 #include <vector>
@@ -37,7 +38,7 @@ public:
   };
 
   NetworkedSimState(const initial_conditions& conditions, input_mapping mapping,
-                    ReplayWriter* writer = nullptr);
+                    ReplayWriter* writer = nullptr, std::span<std::uint32_t> ai_players = {});
 
   const std::unordered_set<std::string>& checksum_failed_remote_ids() const;
   // May update canonical state; never updates predicted state.
@@ -88,6 +89,7 @@ public:
   }
 
 private:
+  std::vector<std::uint32_t> local_ai_players_;
   SimState canonical_state_;
   SimState predicted_state_;
   input_mapping mapping_;
