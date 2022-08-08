@@ -122,6 +122,17 @@ http_archive(
 )
 
 ################################################################################
+# Steamworks SDK
+################################################################################
+http_archive(
+  name = "steamworks_sdk",
+  build_file = "@//deps:steamworks_sdk.BUILD",
+  sha256 = "3d5ab5d2b5538fdbe49fd81abf3b6bc6c18b91bcc6a0fecd4122f22b243ee704",
+  strip_prefix = "sdk",
+  url = "https://partner.steamgames.com/downloads/steamworks_sdk_155.zip",
+)
+
+################################################################################
 # Protobuf
 ################################################################################
 http_archive(
