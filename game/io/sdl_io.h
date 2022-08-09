@@ -27,6 +27,8 @@ public:
   keyboard::frame keyboard_frame() const override;
   mouse::frame mouse_frame() const override;
   void input_frame_clear() override;
+  void controller_rumble(std::size_t index, std::uint16_t lf, std::uint16_t hf,
+                         std::uint32_t duration_ms) const override;
 
   void set_audio_callback(const std::function<audio_callback>& callback) override;
   void close_audio_device() override;

@@ -39,6 +39,8 @@ public:
   virtual keyboard::frame keyboard_frame() const = 0;
   virtual mouse::frame mouse_frame() const = 0;
   virtual void input_frame_clear() = 0;
+  virtual void controller_rumble(std::size_t index, std::uint16_t lf, std::uint16_t hf,
+                                 std::uint32_t duration_ms) const = 0;
 
   // Audio.
   virtual void set_audio_callback(const std::function<audio_callback>& callback) = 0;

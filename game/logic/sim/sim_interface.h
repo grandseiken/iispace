@@ -21,18 +21,8 @@ class Stars;
 // TODO: make this dynamic so we can change it for non-legacy mode.
 constexpr glm::ivec2 kSimDimensions = {640, 480};
 
-struct particle {
-  particle(const glm::vec2& position, const glm::vec4& colour, const glm::vec2& velocity,
-           std::uint32_t time)
-  : position{position}, colour{colour}, velocity{velocity}, timer{time} {}
-
-  glm::vec2 position{0.f};
-  glm::vec4 colour{0.f};
-  glm::vec2 velocity{0.f};
-  std::uint32_t timer = 0;
-  bool destroy = false;
-};
-
+// TODO: to reduce prediction errors, allow each entity to have private sources of
+// (particularly game-state) randomness that will be less likely to diverge.
 enum class random_source {
   // For randomness which affects the game state and must be reproduced exactly for replay
   // compatibility.
@@ -88,7 +78,6 @@ public:
   ecs::handle nearest_player(const vec2& point);
 
   // Particle / effects stuff.
-  // TODO: probably unify particles and stars into a new system.
   Stars& stars();
   const Stars& stars() const;
   void add_particle(const particle& particle);
@@ -101,6 +90,7 @@ public:
   void play_sound(sound, const vec2& position, bool random = false, float volume = 1.f);
   void play_sound(sound, float volume = 1.f, float pan = 0.f, float repitch = 0.f) const;
   void render_line(const glm::vec2& a, const glm::vec2& b, const glm::vec4& c) const;
+  // TODO: only used by Stars, which should be extracted anyway.
   void render_line_rect(const glm::vec2& lo, const glm::vec2& hi, const glm::vec4& c) const;
   void render_player_info(std::uint32_t player_number, const glm::vec4& colour, std::uint64_t score,
                           std::uint32_t multiplier, float timer) const;

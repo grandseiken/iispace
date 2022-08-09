@@ -155,7 +155,7 @@ struct peer_t {
       e.receive_buffer.erase(e.receive_buffer.begin(), end);
     }
     auto packets = sim.update(std::move(local_input));
-    sim.clear_output();
+    sim.output().clear();
 
     for (auto& p : packets) {
       received_packet packet;

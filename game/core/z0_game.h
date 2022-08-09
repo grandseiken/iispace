@@ -1,5 +1,6 @@
 #ifndef II_GAME_CORE_Z0_GAME_H
 #define II_GAME_CORE_Z0_GAME_H
+#include "game/core/render_state.h"
 #include "game/core/io_input_adapter.h"
 #include "game/core/modal.h"
 #include "game/data/replay.h"
@@ -100,6 +101,7 @@ private:
 
   std::mt19937_64 engine_;
   ii::game_options_t options_;
+  ii::RenderState render_state_;
   std::optional<replay_t> replay_;
   std::optional<game_t> game_;
   std::vector<replay_network_packet> replay_packets_;

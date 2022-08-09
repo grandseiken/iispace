@@ -121,12 +121,10 @@ void SimState::copy_to(SimState& target) const {
   target.internals_->global_entity_id = internals_->global_entity_id;
   target.internals_->global_entity_handle.reset();
   target.internals_->tick_count = internals_->tick_count;
-  target.internals_->particles = internals_->particles;
   target.internals_->stars = internals_->stars;
   target.internals_->collisions = internals_->collisions;
   target.internals_->bosses_killed = internals_->bosses_killed;
-
-  target.clear_output();
+  target.internals_->output = internals_->output;
   refresh_handles(*target.internals_);
 }
 
@@ -169,12 +167,6 @@ void SimState::update(std::vector<input_frame> input) {
       c.update(h, *interface_);
     }
   });
-  for (auto& particle : internals_->particles) {
-    if (!particle.destroy) {
-      particle.position += particle.velocity;
-      particle.destroy = !--particle.timer;
-    }
-  }
 
   internals_->index.iterate_dispatch<Destroy>([&](ecs::const_handle h) {
     internals_->index.destroy(h.id());
@@ -187,7 +179,6 @@ void SimState::update(std::vector<input_frame> input) {
     compact_counter_ = 0;
   }
 
-  std::erase_if(internals_->particles, [](const particle& p) { return p.destroy; });
   internals_->index.iterate_dispatch<PostUpdate>([&](ecs::handle h, PostUpdate& c) {
     if (!h.has<Destroy>()) {
       c.post_update(h, *interface_);
@@ -225,10 +216,6 @@ render_output SimState::render() const {
   internals_->player_output.clear();
 
   internals_->stars.render(*interface_);
-  for (const auto& particle : internals_->particles) {
-    interface_->render_line_rect(particle.position + glm::vec2{1, 1},
-                                 particle.position - glm::vec2{1, 1}, particle.colour);
-  }
   internals_->index.iterate_dispatch<Render>([&](ecs::const_handle h, const Render& r) {
     if (!h.get<Player>()) {
       r.render(h, *interface_);
@@ -315,24 +302,8 @@ std::uint32_t SimState::frame_count() const {
   return internals_->conditions.mode == game_mode::kFast ? 2 : 1;
 }
 
-void SimState::clear_output() {
-  internals_->sound_output.clear();
-  internals_->rumble_output.clear();
-}
-
-aggregate_output SimState::output() const {
-  aggregate_output output;
-  for (const auto& pair : internals_->sound_output) {
-    sound_out s;
-    s.volume = std::max(0.f, std::min(1.f, pair.second.volume));
-    s.pan = pair.second.pan / static_cast<float>(pair.second.count);
-    s.pitch = std::pow(2.f, pair.second.pitch);
-    output.sound_map.emplace(pair.first, s);
-  }
-  output.rumble = std::move(internals_->rumble_output);
-  internals_->sound_output.clear();
-  internals_->rumble_output.clear();
-  return output;
+aggregate_output& SimState::output() {
+  return internals_->output;
 }
 
 sim_results SimState::results() const {

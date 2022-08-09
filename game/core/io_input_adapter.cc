@@ -198,4 +198,12 @@ std::vector<input_frame> IoInputAdapter::get() {
   return frames;
 }
 
+void IoInputAdapter::rumble(std::uint32_t player_index, std::uint16_t lf, std::uint16_t hf,
+                            std::uint32_t duration_ms) const {
+  auto input = assign_input(player_index, player_count_, io_layer_.controllers());
+  if (input.controller) {
+    io_layer_.controller_rumble(*input.controller, lf, hf, duration_ms);
+  }
+}
+
 }  // namespace ii

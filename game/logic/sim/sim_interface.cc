@@ -208,7 +208,7 @@ const Stars& SimInterface::stars() const {
 }
 
 void SimInterface::add_particle(const ii::particle& particle) {
-  internals_->particles.emplace_back(particle);
+  internals_->output.particles.emplace_back(particle);
 }
 
 void SimInterface::explosion(const glm::vec2& v, const glm::vec4& c, std::uint32_t time,
@@ -233,7 +233,7 @@ void SimInterface::rumble_all(std::uint32_t time) const {
 }
 
 void SimInterface::rumble(std::uint32_t player, std::uint32_t time) const {
-  auto& rumble = internals_->rumble_output[player];
+  auto& rumble = internals_->output.rumble[player];
   rumble = std::max(rumble, time);
 }
 
@@ -248,11 +248,11 @@ void SimInterface::play_sound(sound s, const vec2& position, bool random, float 
 }
 
 void SimInterface::play_sound(sound s, float volume, float pan, float repitch) const {
-  auto& aggregation = internals_->sound_output[s];
-  ++aggregation.count;
-  aggregation.volume += volume;
-  aggregation.pan += pan;
-  aggregation.pitch = repitch;
+  auto& e = internals_->output.sounds.emplace_back();
+  e.sound_id = s;
+  e.volume = volume;
+  e.pan = pan;
+  e.pitch = repitch;
 }
 
 void SimInterface::render_line(const glm::vec2& a, const glm::vec2& b, const glm::vec4& c) const {

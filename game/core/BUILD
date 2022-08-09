@@ -27,6 +27,19 @@ cc_library(
 )
 
 cc_library(
+  name = "render_state",
+  hdrs = ["render_state.h"],
+  srcs = ["render_state.cc"],
+  deps = ["//game/logic/sim:sim_io"],
+  implementation_deps = [
+    ":io_input_adapter",
+    "//game/logic/sim",
+    "//game/mixer",
+    "//game/render:gl_renderer",
+  ],
+)
+
+cc_library(
   name = "core",
   hdrs = [
     "modal.h",
@@ -38,6 +51,7 @@ cc_library(
   ],
   deps = [
     ":io_input_adapter",
+    ":render_state",
     "//game/data:replay",
     "//game/data:save",
     "//game/logic/sim",

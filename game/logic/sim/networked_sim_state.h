@@ -17,7 +17,8 @@ class ReplayWriter;
 // - sound refactor to add sound modes (predicted only, canonical only, reconcile)
 //   with reconciliation based on semantics of sound (and whether caused by local or remote player).
 // - exact same thing for particles, with particles extracted to an external system.
-// - status rendering for remote players needs to be based on canonical state only.
+// - status rendering for remote players needs to be based on canonical state only. Possibly,
+//   predicted players don't interact with powerups or enemies at all.
 // - possibly some sort of shot logic. Shots spawned in predicted states possibly don't actually
 //   kill enemies. Predicted shots possibly spawned from predicted position and interpolated?
 class NetworkedSimState : public ISimState {
@@ -77,13 +78,8 @@ public:
     return predicted_state_.render();
   }
 
-  void clear_output() override {
-    canonical_state_.clear_output();
-    predicted_state_.clear_output();
-  }
-
-  aggregate_output output() const override {
-    return predicted_state_.output();
+  aggregate_output& output() override {
+    return output_;
   }
 
   sim_results results() const override {
@@ -94,6 +90,7 @@ private:
   std::vector<std::uint32_t> local_ai_players_;
   SimState canonical_state_;
   SimState predicted_state_;
+  aggregate_output output_;
   input_mapping mapping_;
   std::uint32_t player_count_ = 0;
   std::uint64_t input_delay_ticks_ = 0;

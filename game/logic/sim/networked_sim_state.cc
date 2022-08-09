@@ -121,6 +121,7 @@ void NetworkedSimState::input_packet(const std::string& remote_id, const sim_pac
     v.emplace_back(*f);
   }
   canonical_state_.update(std::move(v));
+  canonical_state_.output().clear();
   local_checksums_.emplace_back(canonical_state_.tick_count(), canonical_state_.checksum());
   partial_frames_.pop_front();
 }
@@ -159,6 +160,7 @@ std::vector<sim_packet> NetworkedSimState::update(std::vector<input_frame> local
         predicted_inputs.emplace_back(frame_for(i, k));
       }
       predicted_state_.update(std::move(predicted_inputs));
+      predicted_state_.output().clear();
     }
   }
 
@@ -189,10 +191,13 @@ std::vector<sim_packet> NetworkedSimState::update(std::vector<input_frame> local
     local_checksums_.emplace_back(canonical_state_.tick_count(), canonical_state_.checksum());
     partial_frames_.pop_front();
     canonical_state_.copy_to(predicted_state_);
+    canonical_state_.output().clear();
     ++predicted_tick_base_;
   } else {
     predicted_state_.update(std::move(inputs));
   }
+  predicted_state_.output().append_to(output_);
+  predicted_state_.output().clear();
   predicted_state_.update_smoothing(smoothing_data_);
   if (!packet_output.empty()) {
     packet_output.front().canonical_tick_count = local_checksums_.back().tick_count;

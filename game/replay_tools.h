@@ -50,7 +50,7 @@ result<replay_results_t> inline replay_results(
       }
       std::swap(sim, double_buffer);
     } else {
-      sim.clear_output();
+      sim.output().clear();
     }
   }
   results.sim = sim.results();
@@ -79,7 +79,7 @@ inline result<run_data_t> synthesize_replay(const initial_conditions& conditions
     std::vector<input_frame> input;
     sim.ai_think(input);
     sim.update(input);
-    sim.clear_output();
+    sim.output().clear();
     if (max_ticks && sim.tick_count() >= *max_ticks) {
       break;
     }

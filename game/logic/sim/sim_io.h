@@ -75,14 +75,93 @@ struct input_frame {
   std::uint32_t keys = 0;
 };
 
+enum class resolve {
+  // Effects resolved as soon as they occur in the predicted state; ignored in canonical state.
+  kPredicted,
+  // Effects ignored in predicted state, resolved only when they occur in canonical state.
+  kCanonical,
+  // Resolved in predicted state when cause is a local player, and canonical state when
+  // source is a remote player.
+  kLocal,
+  // Resolved in both predicted state and canonical state, with reconciliation to avoid duplication
+  // based on resolve_key.
+  // TODO: what is this actually necessary for?
+  kReconcile,
+};
+
+struct resolve_key {
+  resolve type = resolve::kPredicted;
+  std::optional<std::uint32_t> cause_player_id;
+  std::optional<std::uint32_t> source_entity_id;
+  std::uint32_t reconcile_tag = 0;
+
+  static resolve_key predicted() {
+    resolve_key key;
+    key.type = resolve::kPredicted;
+    return key;
+  }
+
+  static resolve_key canonical() {
+    resolve_key key;
+    key.type = resolve::kCanonical;
+    return key;
+  }
+
+  static resolve_key local(std::uint32_t player_id) {
+    resolve_key key;
+    key.type = resolve::kLocal;
+    key.cause_player_id = player_id;
+    return key;
+  }
+
+  static resolve_key
+  reconcile(std::optional<std::uint32_t> source_entity_id, std::uint32_t reconcile_tag = 0) {
+    resolve_key key;
+    key.type = resolve::kReconcile;
+    key.source_entity_id = source_entity_id;
+    key.reconcile_tag = reconcile_tag;
+    return key;
+  }
+};
+
+struct particle {
+  particle(const glm::vec2& position, const glm::vec4& colour, const glm::vec2& velocity,
+           std::uint32_t time)
+  : position{position}, colour{colour}, velocity{velocity}, timer{time} {}
+
+  glm::vec2 position{0.f};
+  glm::vec4 colour{0.f};
+  glm::vec2 velocity{0.f};
+  std::uint32_t timer = 0;
+};
+
 struct sound_out {
+  sound sound_id{0};
   float volume = 0.f;
   float pan = 0.f;
   float pitch = 0.f;
 };
 
 struct aggregate_output {
-  std::unordered_map<sound, sound_out> sound_map;
+  void clear() {
+    particles.clear();
+    sounds.clear();
+    rumble.clear();
+  }
+
+  void append_to(aggregate_output& output) const {
+    output.particles.insert(output.particles.end(), particles.begin(), particles.end());
+    output.sounds.insert(output.sounds.end(), sounds.begin(), sounds.end());
+    for (const auto& pair : rumble) {
+      auto& r = output.rumble[pair.first];
+      r = std::max(r, pair.second);
+    }
+  }
+
+  // Old-style output.
+  // TODO: move to resolve-keyed sounds/particles.
+  std::vector<particle> particles;
+  std::vector<sound_out> sounds;
   std::unordered_map<std::uint32_t, std::uint32_t> rumble;
 };
 

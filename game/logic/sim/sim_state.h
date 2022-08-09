@@ -25,8 +25,7 @@ public:
   virtual std::uint32_t frame_count() const = 0;
   virtual render_output render() const = 0;
 
-  virtual void clear_output() = 0;
-  virtual aggregate_output output() const = 0;
+  virtual aggregate_output& output() = 0;
   virtual sim_results results() const = 0;
 };
 
@@ -51,8 +50,7 @@ public:
   render_output render() const override;
   std::uint32_t frame_count() const override;
 
-  void clear_output() override;
-  aggregate_output output() const override;
+  aggregate_output& output() override;
   sim_results results() const override;
 
   struct smoothing_data {

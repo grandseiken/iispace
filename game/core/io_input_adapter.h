@@ -27,6 +27,8 @@ public:
   void set_game_dimensions(const glm::uvec2& dimensions);
   input_type input_type_for(std::uint32_t player_index) const;
   std::vector<input_frame> get();
+  void rumble(std::uint32_t player_index, std::uint16_t lf, std::uint16_t hf,
+              std::uint32_t duration_ms) const;
 
 private:
   const io::IoLayer& io_layer_;

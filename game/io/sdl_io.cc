@@ -115,8 +115,7 @@ SdlIoLayer::create(const char* title, char gl_major, char gl_minor) {
   // misbehaving devices or buggy drivers. Apparently it's possible to run that bit asynchronously
   // on a different thread and start using gamepads once it finishes?
   // https://mobile.twitter.com/noelfb/status/1256794955227361280
-  if (SDL_Init(SDL_INIT_VIDEO | SDL_INIT_AUDIO | SDL_INIT_EVENTS | SDL_INIT_GAMECONTROLLER |
-               SDL_INIT_HAPTIC) < 0) {
+  if (SDL_Init(SDL_INIT_VIDEO | SDL_INIT_AUDIO | SDL_INIT_EVENTS | SDL_INIT_GAMECONTROLLER) < 0) {
     return unexpected(SDL_GetError());
   }
 
@@ -334,6 +333,14 @@ void SdlIoLayer::input_frame_clear() {
   impl_->mouse_frame.button_events.clear();
   impl_->mouse_frame.cursor_delta = {0, 0};
   impl_->mouse_frame.wheel_delta = {0, 0};
+}
+
+void SdlIoLayer::controller_rumble(std::size_t index, std::uint16_t lf, std::uint16_t hf,
+                                   std::uint32_t duration_ms) const {
+  if (index < impl_->controllers.size()) {
+    auto& data = impl_->controllers[index];
+    SDL_JoystickRumble(SDL_GameControllerGetJoystick(data.controller.get()), lf, hf, duration_ms);
+  }
 }
 
 void SdlIoLayer::set_audio_callback(const std::function<audio_callback>& callback) {
