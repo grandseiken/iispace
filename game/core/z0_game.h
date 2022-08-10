@@ -45,8 +45,7 @@ private:
 
 class HighScoreModal : public Modal {
 public:
-  HighScoreModal(bool is_replay, GameModal& game, const ii::sim_results& results,
-                 ii::ReplayWriter* replay_writer);
+  HighScoreModal(bool is_replay, const ii::sim_results& results, ii::ReplayWriter* replay_writer);
   void update(ii::ui::UiLayer& ui) override;
   void render(const ii::ui::UiLayer& ui, ii::render::GlRenderer& r) const override;
 
@@ -55,7 +54,6 @@ private:
   bool is_high_score(const ii::SaveGame&) const;
 
   bool is_replay_ = false;
-  GameModal& game_;
   ii::sim_results results_;
   ii::ReplayWriter* replay_writer_ = nullptr;
 

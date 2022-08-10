@@ -31,11 +31,11 @@ struct component_storage : component_storage_base {
 
   void compact(EntityIndex& index) override {
     auto has_value = [](const entry& e) { return e.data.has_value(); };
-    auto it = std::ranges::find_if_not(entries, has_value);
+    auto it = std::find_if_not(entries.begin(), entries.end(), has_value);
     if (it == entries.end()) {
       return;
     }
-    auto [pivot, _] = std::ranges::stable_partition(it, entries.end(), has_value);
+    auto pivot = std::stable_partition(it, entries.end(), has_value);
     for (index_type c_index = std::distance(entries.begin(), it); it != pivot; ++it) {
       (*index.entities_.find(it->id)->second)[ecs::id<C>()] = c_index++;
     }
@@ -189,7 +189,7 @@ inline void EntityIndex::compact() {
   if (it == end) {
     return;
   }
-  auto [pivot, _] = std::ranges::stable_partition(it, end, has_value);
+  auto pivot = std::stable_partition(it, end, has_value);
   for (; it != pivot; ++it) {
     entities_[*it->id] = &*it;
   }

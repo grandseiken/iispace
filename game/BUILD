@@ -1,3 +1,5 @@
+load("@rules_pkg//:pkg.bzl", "pkg_zip")
+
 cc_library(
   name = "flags",
   hdrs = ["flags.h"],
@@ -119,4 +121,27 @@ cc_binary(
     "//game/io/file:std_filesystem",
   ],
   visibility = ["//visibility:public"],
+)
+
+pkg_zip(
+  name = "game",
+  srcs = [
+    "//assets",
+    "//game:iispace",
+  ] + select({
+    "@bazel_tools//src/conditions:windows": ["@sdl_windows//:sdl_windows_dll"],
+    "//conditions:default": [],
+  }),
+  package_dir = "iispace",
+)
+
+pkg_zip(
+  name = "tools",
+  srcs = [
+    "//game:ai_network_sim",
+    "//game:ai_replay_synth",
+    "//game:replay_network_sim",
+    "//game:replay",
+  ],
+  package_dir = "tools",
 )

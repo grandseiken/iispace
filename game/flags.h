@@ -6,10 +6,10 @@
 #include <cstdint>
 #include <iostream>
 #include <optional>
-#include <ranges>
 #include <string>
 #include <system_error>
 #include <unordered_set>
+#include <vector>
 
 namespace ii {
 
@@ -126,13 +126,20 @@ result<void> flag_parse(std::vector<std::string>& args, const std::string& name,
     if (!list_value) {
       break;
     }
-    for (auto sr : *list_value | std::ranges::views::split(',')) {
-      std::string s{&*sr.begin(), static_cast<std::size_t>(std::ranges::distance(sr))};
+    std::size_t pos = 0;
+    std::size_t next_pos = list_value->find(',');
+    while (true) {
+      auto s = list_value->substr(pos, next_pos - pos);
       auto value = flag_parse_value<T>(s);
       if (!value) {
         return unexpected("error: couldn't parse value " + s + " for flag --" + name);
       }
       out_value.emplace(std::move(*value));
+      if (next_pos == std::string::npos) {
+        break;
+      }
+      pos = next_pos + 1;
+      next_pos = list_value->find(',', pos);
     }
   }
   return {};

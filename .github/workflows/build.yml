@@ -1,0 +1,44 @@
+name: Build
+
+on:
+  workflow_dispatch:
+
+jobs:
+  linux:
+    runs-on: ubuntu-22.04
+    steps:
+    - uses: actions/checkout@v3
+    - name: Set up bazelisk
+      uses: holvonix-open/setup-bazelisk@v0.6.1
+    - run: sudo apt-get update && sudo apt-get install -y libsdl2-dev
+    - run: bazel build --config ci --config gcc //game //game:tools
+    - run: bazel test --config ci --config gcc //test/...
+    - uses: actions/upload-artifact@v3
+      with:
+        name: linux-tools
+        path: bazel-bin/game/tools.zip
+    - uses: actions/upload-artifact@v3
+      with:
+        name: linux-game
+        path: bazel-bin/game/game.zip
+  darwin:
+    runs-on: macos-12
+    steps:
+    - uses: actions/checkout@v3
+    - name: Set up bazelisk
+      uses: holvonix-open/setup-bazelisk@v0.6.1
+    - run: brew install llvm@14 sdl2
+    - run: ls "/usr/local/opt/llvm/bin"
+    - run: export PATH="/usr/local/opt/llvm/bin:$PATH"
+    - run: export BAZEL_USE_CPP_ONLY_TOOLCHAIN=1
+    - run: bazel build --config ci --config darwin //game //game:tools
+    - run: bazel test --config ci --config darwin //test/...
+    - run: ls bazel-bin/game
+    - uses: actions/upload-artifact@v3
+      with:
+        name: darwin-tools
+        path: bazel-bin/game/tools.zip
+    - uses: actions/upload-artifact@v3
+      with:
+        name: darwin-game
+        path: bazel-bin/game/game.zip

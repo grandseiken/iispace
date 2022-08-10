@@ -36,8 +36,8 @@ void setup_index_callbacks(SimInterface& interface, SimInternals& internals) {
           internals.bosses_killed |= b->boss;
         }
 
-        if (auto it = std::ranges::find(internals.collisions, h.id(),
-                                        [](const auto& e) { return e.handle.id(); });
+        if (auto it = std::find_if(internals.collisions.begin(), internals.collisions.end(),
+                                   [&](const auto& e) { return e.handle.id() == h.id(); });
             it != internals.collisions.end()) {
           internals.collisions.erase(it);
         }
@@ -81,7 +81,7 @@ SimState::SimState(const initial_conditions& conditions, ReplayWriter* replay_wr
   for (std::uint32_t i = 0; i < conditions.player_count; ++i) {
     vec2 v((1 + i) * kSimDimensions.x / (1 + conditions.player_count), kSimDimensions.y / 2);
     spawn_player(*interface_, v, i,
-                 /* AI */ std::ranges::find(ai_players, i) != ai_players.end());
+                 /* AI */ std::find(ai_players.begin(), ai_players.end(), i) != ai_players.end());
   }
   setup_index_callbacks(*interface_, *internals_);
 }
@@ -146,8 +146,8 @@ void SimState::update(std::vector<input_frame> input) {
   for (auto& e : internals_->collisions) {
     e.x_min = e.transform->centre.x - e.collision->bounding_width;
   }
-  std::ranges::stable_sort(internals_->collisions,
-                           [](const auto& a, const auto& b) { return a.x_min < b.x_min; });
+  std::stable_sort(internals_->collisions.begin(), internals_->collisions.end(),
+                   [](const auto& a, const auto& b) { return a.x_min < b.x_min; });
 
   internals_->index.iterate_dispatch_if<Boss>([&](Boss& boss, Transform& transform) {
     if (interface_->is_on_screen(transform.centre)) {
@@ -329,7 +329,8 @@ sim_results SimState::results() const {
 
 void SimState::set_predicted_players(std::span<const std::uint32_t> player_ids) {
   internals_->index.iterate<Player>([&](Player& p) {
-    p.is_predicted = std::ranges::find(player_ids, p.player_number) != player_ids.end();
+    p.is_predicted =
+        std::find(player_ids.begin(), player_ids.end(), p.player_number) != player_ids.end();
   });
 }
 

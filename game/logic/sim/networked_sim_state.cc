@@ -21,7 +21,7 @@ bool check_mapping(const initial_conditions& conditions,
   if (mapped_indexes.size() != conditions.player_count) {
     return false;
   }
-  std::ranges::sort(mapped_indexes);
+  std::sort(mapped_indexes.begin(), mapped_indexes.end());
   for (std::uint32_t i = 0; i < mapped_indexes.size(); ++i) {
     if (mapped_indexes[i] != i) {
       return false;
@@ -43,7 +43,8 @@ std::vector<std::uint32_t> filter_ai_players(const NetworkedSimState::input_mapp
                                              std::span<std::uint32_t> ai_players) {
   std::vector<std::uint32_t> result;
   for (auto n : ai_players) {
-    if (std::ranges::find(mapping.local.player_numbers, n) != mapping.local.player_numbers.end()) {
+    if (std::find(mapping.local.player_numbers.begin(), mapping.local.player_numbers.end(), n) !=
+        mapping.local.player_numbers.end()) {
       result.emplace_back(n);
     }
   }
@@ -118,8 +119,8 @@ void NetworkedSimState::input_packet(const std::string& remote_id, const sim_pac
         i < packet.input_frames.size() ? packet.input_frames[i] : input_frame{};
   }
 
-  bool frame_complete =
-      std::ranges::all_of(partial.input_frames, [&](const auto& f) { return f.has_value(); });
+  bool frame_complete = std::all_of(partial.input_frames.begin(), partial.input_frames.end(),
+                                    [&](const auto& f) { return f.has_value(); });
   if (tick_offset || !frame_complete || canonical_state_.game_over()) {
     return;
   }
@@ -190,8 +191,8 @@ std::vector<sim_packet> NetworkedSimState::update(std::vector<input_frame> local
     partial.input_frames[player_number] = i < local_input.size() ? local_input[i] : input_frame{};
   }
 
-  bool frame_complete =
-      std::ranges::all_of(partial.input_frames, [&](const auto& f) { return f.has_value(); });
+  bool frame_complete = std::all_of(partial.input_frames.begin(), partial.input_frames.end(),
+                                    [&](const auto& f) { return f.has_value(); });
   std::vector<input_frame> inputs;
   for (std::uint32_t k = 0; k < player_count_; ++k) {
     inputs.emplace_back(frame_for(tick_offset, k));
@@ -279,7 +280,7 @@ void NetworkedSimState::handle_predicted_output(std::uint64_t tick_count,
       break;
     case resolve::kLocal:
       resolve = !e.key.cause_player_id ||
-          std::ranges::find(remote, *e.key.cause_player_id) == remote.end();
+          std::find(remote.begin(), remote.end(), *e.key.cause_player_id) == remote.end();
       break;
     case resolve::kReconcile:
       resolve = true;
@@ -309,7 +310,7 @@ void NetworkedSimState::handle_canonical_output(std::uint64_t tick_count,
       break;
     case resolve::kLocal:
       resolve = e.key.cause_player_id &&
-          std::ranges::find(remote, *e.key.cause_player_id) != remote.end();
+          std::find(remote.begin(), remote.end(), *e.key.cause_player_id) != remote.end();
       break;
     case resolve::kReconcile:
       auto it = reconciliation_map_.find(e.key);

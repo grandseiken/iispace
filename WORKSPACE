@@ -14,7 +14,7 @@ load("@hedron_compile_commands//:workspace_setup.bzl", "hedron_compile_commands_
 hedron_compile_commands_setup()
 
 ################################################################################
-# Skylib
+# Bazel dependencies
 ################################################################################
 load("@bazel_tools//tools/build_defs/repo:http.bzl", "http_archive")
 http_archive(
@@ -27,6 +27,18 @@ http_archive(
 )
 load("@bazel_skylib//:workspace.bzl", "bazel_skylib_workspace")
 bazel_skylib_workspace()
+
+load("@bazel_tools//tools/build_defs/repo:http.bzl", "http_archive")
+http_archive(
+    name = "rules_pkg",
+    urls = [
+        "https://mirror.bazel.build/github.com/bazelbuild/rules_pkg/releases/download/0.7.0/rules_pkg-0.7.0.tar.gz",
+        "https://github.com/bazelbuild/rules_pkg/releases/download/0.7.0/rules_pkg-0.7.0.tar.gz",
+    ],
+    sha256 = "8a298e832762eda1830597d64fe7db58178aa84cd5926d76d5b744d6558941c2",
+)
+load("@rules_pkg//:deps.bzl", "rules_pkg_dependencies")
+rules_pkg_dependencies()
 
 ################################################################################
 # Language feature dependencies
@@ -41,9 +53,9 @@ http_archive(
 
 http_archive(
   name = "static_functional",
-  sha256 = "4a6c55792b6d610f6248072f53ce81641517f44f2442446dc966619b9342665c",
-  strip_prefix = "static-functional-1.0.0-alpha1",
-  url = "https://github.com/grandseiken/static-functional/archive/refs/tags/v1.0.0-alpha1.zip",
+  sha256 = "d79740eb82f25e9728ee07f7344ac89e621125057e960b238b46976ebf8673d7",
+  strip_prefix = "static-functional-df5154af7c66e8518494d16d88cdbd71698c1f29",
+  url = "https://github.com/grandseiken/static-functional/archive/df5154af7c66e8518494d16d88cdbd71698c1f29.zip",
 )
 
 http_archive(
@@ -129,6 +141,7 @@ http_archive(
   build_file = "@//deps:steamworks_sdk.BUILD",
   sha256 = "3d5ab5d2b5538fdbe49fd81abf3b6bc6c18b91bcc6a0fecd4122f22b243ee704",
   strip_prefix = "sdk",
+  # TODO: can't be downloaded without logging in, won't work for CI.
   url = "https://partner.steamgames.com/downloads/steamworks_sdk_155.zip",
 )
 

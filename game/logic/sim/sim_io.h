@@ -106,7 +106,9 @@ struct resolve_key {
     hash_combine(seed, reconcile_tag);
     return seed;
   }
-  auto operator<=>(const resolve_key&) const = default;
+
+  bool operator==(const resolve_key&) const = default;
+  bool operator!=(const resolve_key&) const = default;
 
   static resolve_key predicted() {
     resolve_key key;

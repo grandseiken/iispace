@@ -14,6 +14,9 @@ build -c opt
 test --test_output=errors
 
 # Common configuration.
+build:ci --curses=no
+build:ci --keep_going
+
 build:windows-common --cxxopt=/std:c++20
 build:windows-common --copt=/WX
 
@@ -48,7 +51,7 @@ build:gcc --repo_env=CC=gcc
 build:gcc --cxxopt=-lstdc++
 build:gcc --copt=-Wno-uninitialized
 
-# TODO: doesn't support ranges, all tests fail if range uses removed.
+# TODO: tests fail using linux clang.
 build:clang --config=linux-common
 build:clang --config=clang-common
 build:clang --repo_env=CC=clang
@@ -57,3 +60,8 @@ build:clang --cxxopt=-lstdc++
 build:clang --cxxopt=-stdlib=libstdc++
 build:clang --cc_output_directory_tag=clang
 
+# MacOS configuration.
+build:darwin --config=linux-common
+build:darwin --config=clang-common
+build:darwin --repo_env=CC=/usr/local/opt/llvm/bin/clang
+build:darwin --action_env=CC=/usr/local/opt/llvm/bin/clang

@@ -45,7 +45,7 @@ input_frame AiPlayer::think(ecs::const_handle h, const Transform& transform, con
         auto offset = e_transform.centre - transform.centre;
         auto distance = length(offset);
         if (on_screen && health && health->hp > 0) {
-          if ((!wall || distance < kAvoidDistance + size) &
+          if ((!wall || distance < kAvoidDistance + size) &&
               (!closest_enemy || distance < closest_enemy->distance)) {
             closest_enemy = target{distance, e_transform.centre, eh.id()};
           }

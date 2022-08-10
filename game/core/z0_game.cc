@@ -161,11 +161,10 @@ void PauseModal::render(const ii::ui::UiLayer& ui, ii::render::GlRenderer& r) co
   render_rect(r, low, hi, z0Game::kPanelText, 1);
 }
 
-HighScoreModal::HighScoreModal(bool is_replay, GameModal& game, const ii::sim_results& results,
+HighScoreModal::HighScoreModal(bool is_replay, const ii::sim_results& results,
                                ii::ReplayWriter* replay_writer)
 : Modal{true, false}
 , is_replay_{is_replay}
-, game_{game}
 , results_{results}
 , replay_writer_{replay_writer}
 , compliment_{results.seed % kCompliments.size()} {}
@@ -375,8 +374,8 @@ GameModal::GameModal(ii::ReplayReader&& replay, const ii::game_options_t& option
   } else {
     ii::NetworkedSimState::input_mapping mapping;
     for (std::uint32_t i = 0; i < conditions.player_count; ++i) {
-      if (std::ranges::find(options.replay_remote_players, i) ==
-          options.replay_remote_players.end()) {
+      if (std::find(options.replay_remote_players.begin(), options.replay_remote_players.end(),
+                    i) == options.replay_remote_players.end()) {
         mapping.local.player_numbers.emplace_back(i);
       } else {
         mapping.remote["remote"].player_numbers.emplace_back(i);
@@ -391,7 +390,7 @@ GameModal::~GameModal() = default;
 void GameModal::update(ii::ui::UiLayer& ui) {
   auto& istate = network_state_ ? static_cast<ii::ISimState&>(*network_state_) : *state_;
   if (pause_output_ == PauseModal::kEndGame || istate.game_over()) {
-    add(std::make_unique<HighScoreModal>(replay_.has_value(), *this, istate.results(),
+    add(std::make_unique<HighScoreModal>(replay_.has_value(), istate.results(),
                                          game_ ? &game_->writer : nullptr));
     if (pause_output_ != PauseModal::kEndGame) {
       ui.play_sound(ii::sound::kMenuAccept);
@@ -436,8 +435,8 @@ void GameModal::update(ii::ui::UiLayer& ui) {
       std::vector<ii::input_frame> local_frames;
       replay_network_packet packet;
       for (std::uint32_t i = 0; i < replay_->reader.initial_conditions().player_count; ++i) {
-        if (std::ranges::find(options_.replay_remote_players, i) !=
-            options_.replay_remote_players.end()) {
+        if (std::find(options_.replay_remote_players.begin(), options_.replay_remote_players.end(),
+                      i) != options_.replay_remote_players.end()) {
           packet.packet.input_frames.emplace_back(frames[i]);
         } else {
           local_frames.emplace_back(frames[i]);
