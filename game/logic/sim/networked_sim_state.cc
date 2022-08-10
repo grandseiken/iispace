@@ -30,6 +30,15 @@ bool check_mapping(const initial_conditions& conditions,
   return true;
 }
 
+std::vector<std::uint32_t> remote_players(const NetworkedSimState::input_mapping& mapping) {
+  std::vector<std::uint32_t> result;
+  for (const auto& pair : mapping.remote) {
+    result.insert(result.end(), pair.second.player_numbers.begin(),
+                  pair.second.player_numbers.end());
+  }
+  return result;
+}
+
 std::vector<std::uint32_t> filter_ai_players(const NetworkedSimState::input_mapping& mapping,
                                              std::span<std::uint32_t> ai_players) {
   std::vector<std::uint32_t> result;
@@ -121,7 +130,7 @@ void NetworkedSimState::input_packet(const std::string& remote_id, const sim_pac
     v.emplace_back(*f);
   }
   canonical_state_.update(std::move(v));
-  canonical_state_.output().clear();
+  handle_canonical_output(canonical_state_.tick_count(), canonical_state_.output());
   local_checksums_.emplace_back(canonical_state_.tick_count(), canonical_state_.checksum());
   partial_frames_.pop_front();
 }
@@ -146,6 +155,7 @@ std::vector<sim_packet> NetworkedSimState::update(std::vector<input_frame> local
     latest_input_[k].velocity *= kInputPredictionSmoothingFactor;
     return latest_input_[k];
   };
+  auto predicted_players = remote_players(mapping_);
 
   if (predicted_tick_base_ < canonical_state_.tick_count()) {
     // Canonical state has advanced since last prediction; rewind and replay.
@@ -159,6 +169,7 @@ std::vector<sim_packet> NetworkedSimState::update(std::vector<input_frame> local
       for (std::uint32_t k = 0; k < player_count_; ++k) {
         predicted_inputs.emplace_back(frame_for(i, k));
       }
+      predicted_state_.set_predicted_players(predicted_players);
       predicted_state_.update(std::move(predicted_inputs));
       predicted_state_.output().clear();
     }
@@ -188,16 +199,17 @@ std::vector<sim_packet> NetworkedSimState::update(std::vector<input_frame> local
   if (!tick_offset && frame_complete) {
     // Can just advance canonical state.
     canonical_state_.update(std::move(inputs));
+    handle_dual_output(canonical_state_.output());
+
     local_checksums_.emplace_back(canonical_state_.tick_count(), canonical_state_.checksum());
     partial_frames_.pop_front();
     canonical_state_.copy_to(predicted_state_);
-    canonical_state_.output().clear();
     ++predicted_tick_base_;
   } else {
+    predicted_state_.set_predicted_players(predicted_players);
     predicted_state_.update(std::move(inputs));
+    handle_predicted_output(predicted_state_.tick_count(), predicted_state_.output());
   }
-  predicted_state_.output().append_to(output_);
-  predicted_state_.output().clear();
   predicted_state_.update_smoothing(smoothing_data_);
   if (!packet_output.empty()) {
     packet_output.front().canonical_tick_count = local_checksums_.back().tick_count;
@@ -252,6 +264,73 @@ std::pair<std::string, std::uint64_t> NetworkedSimState::min_remote_canonical_ti
     first = false;
   }
   return result;
+}
+
+void NetworkedSimState::handle_predicted_output(std::uint64_t tick_count,
+                                                aggregate_output& output) {
+  auto remote = remote_players(mapping_);
+  for (auto& e : output.entries) {
+    bool resolve = false;
+    switch (e.key.type) {
+    case resolve::kPredicted:
+      resolve = true;
+      break;
+    case resolve::kCanonical:
+      break;
+    case resolve::kLocal:
+      resolve = !e.key.cause_player_id ||
+          std::ranges::find(remote, *e.key.cause_player_id) == remote.end();
+      break;
+    case resolve::kReconcile:
+      resolve = true;
+      reconciliation_map_[e.key] = tick_count;
+      break;
+    }
+    if (resolve) {
+      merged_output_.entries.emplace_back(std::move(e));
+    }
+  }
+  output.clear();
+}
+
+void NetworkedSimState::handle_canonical_output(std::uint64_t tick_count,
+                                                aggregate_output& output) {
+  std::erase_if(reconciliation_map_, [&](const auto& pair) {
+    return pair.second + kMaxReconcileTickDifference <= tick_count;
+  });
+  auto remote = remote_players(mapping_);
+  for (auto& e : output.entries) {
+    bool resolve = false;
+    switch (e.key.type) {
+    case resolve::kPredicted:
+      break;
+    case resolve::kCanonical:
+      resolve = true;
+      break;
+    case resolve::kLocal:
+      resolve = e.key.cause_player_id &&
+          std::ranges::find(remote, *e.key.cause_player_id) != remote.end();
+      break;
+    case resolve::kReconcile:
+      auto it = reconciliation_map_.find(e.key);
+      if (it == reconciliation_map_.end()) {
+        resolve = true;
+      } else {
+        reconciliation_map_.erase(it);
+      }
+      break;
+    }
+    if (resolve) {
+      merged_output_.entries.emplace_back(std::move(e));
+    }
+  }
+  output.clear();
+}
+
+void NetworkedSimState::handle_dual_output(aggregate_output& output) {
+  // Called when updating predicted and canonical state in sync, so no fancy stuff needed.
+  output.append_to(merged_output_);
+  output.clear();
 }
 
 }  // namespace ii

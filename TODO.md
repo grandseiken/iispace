@@ -99,12 +99,14 @@
 * Charge from kills
 
 ### Special ability?
-* Escape (short-distance teleport + invulnerability)
+* Escape (short-distance teleport + invulnerability)?
 * Knockback nearby enemies
 * Pull in nearby enemies
 * Invisibility (enemies no longer follow)
 * Some sort of drone helper?
 * Slow time
+
+Note: most of these hard to do with laggy network.
 
 ### Misc
 * Superweapon refills automatically, but no shields (or limit 1)

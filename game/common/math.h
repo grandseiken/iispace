@@ -87,4 +87,14 @@ inline constexpr fixed normalise_angle(fixed a) {
   return a > 2 * fixed_c::pi ? a - 2 * fixed_c::pi : a < 0 ? a + 2 * fixed_c::pi : a;
 }
 
+inline constexpr fixed angle_diff(fixed from, fixed to) {
+  if (to == from) {
+    return 0_fx;
+  }
+  if (to > from) {
+    return to - from <= fixed_c::pi ? to - from : to - (2 * fixed_c::pi + from);
+  }
+  return from - to <= fixed_c::pi ? to - from : 2 * fixed_c::pi + to - from;
+}
+
 #endif

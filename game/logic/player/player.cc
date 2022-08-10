@@ -26,11 +26,13 @@ struct Shot : ecs::component {
 
   ecs::entity_id player;
   std::uint32_t player_number = 0;
+  bool is_predicted = false;
   vec2 velocity{0};
   bool magic = false;
   glm::vec4 colour{0.f};
 
-  Shot(ecs::entity_id player, std::uint32_t player_number, const vec2& direction, bool magic)
+  Shot(ecs::entity_id player, std::uint32_t player_number, bool is_predicted, const vec2& direction,
+       bool magic)
   : player{player}
   , player_number{player_number}
   , velocity{normalise(direction) * kSpeed}
@@ -58,8 +60,10 @@ struct Shot : ecs::component {
         transform.centre, shape_flag::kVulnerable | shape_flag::kShield | shape_flag::kWeakShield);
     for (const auto& e : collision) {
       if (+(e.hit_mask & shape_flag::kVulnerable)) {
-        ecs::call_if<&Health::damage>(e.h, sim, 1, magic ? damage_type::kMagic : damage_type::kNone,
-                                      player);
+        auto type = is_predicted ? damage_type::kPredicted
+            : magic              ? damage_type::kMagic
+                                 : damage_type::kNone;
+        ecs::call_if<&Health::damage>(e.h, sim, 1, type, player);
         if (!magic) {
           destroy = true;
         }
@@ -89,8 +93,9 @@ DEBUG_STRUCT_TUPLE(Shot, player, player_number, velocity, magic);
 
 void spawn_shot(SimInterface& sim, const vec2& position, ecs::handle player, const vec2& direction,
                 bool magic) {
+  const auto& p = *player.get<Player>();
   create_ship<Shot>(sim, position)
-      .add(Shot{player.id(), player.get<Player>()->player_number, direction, magic});
+      .add(Shot{player.id(), p.player_number, p.is_predicted, direction, magic});
 }
 
 struct Powerup : ecs::component {
@@ -138,14 +143,14 @@ struct Powerup : ecs::component {
 
     auto ph = sim.nearest_player(transform.centre);
     auto pv = ph.get<Transform>()->centre - transform.centre;
-    bool is_killed = ph.get<Player>()->is_killed();
-    if (length(pv) <= 40 && !is_killed) {
+    const auto& p = *ph.get<Player>();
+    if (length(pv) <= 40 && !p.is_killed()) {
       dir = pv;
     }
     dir = normalise(dir);
 
     transform.move(dir * kSpeed * ((length(pv) <= 40) ? 3 : 1));
-    if (length(pv) <= 10 && !is_killed) {
+    if (length(pv) <= 10 && !p.is_predicted && !p.is_killed()) {
       collect(h, transform, sim, ph);
     }
   }
@@ -266,7 +271,7 @@ struct PlayerLogic : ecs::component {
     }
 
     // Bombs.
-    if (pc.has_bomb && input.keys & input_frame::kBomb) {
+    if (!pc.is_predicted && pc.has_bomb && input.keys & input_frame::kBomb) {
       auto c = player_colour(pc.player_number);
       pc.has_bomb = false;
 
@@ -314,7 +319,7 @@ struct PlayerLogic : ecs::component {
     }
 
     // Damage.
-    if (sim.any_collision(transform.centre, shape_flag::kDangerous)) {
+    if (!pc.is_predicted && sim.any_collision(transform.centre, shape_flag::kDangerous)) {
       damage(h, pc, transform, sim);
     }
   }

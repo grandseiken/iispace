@@ -207,13 +207,20 @@ const Stars& SimInterface::stars() const {
   return internals_->stars;
 }
 
+aggregate_output::event& SimInterface::emit(const resolve_key& key) {
+  auto& e = internals_->output.entries.emplace_back();
+  e.key = key;
+  return e.e;
+}
+
 void SimInterface::add_particle(const ii::particle& particle) {
-  internals_->output.particles.emplace_back(particle);
+  emit(resolve_key::predicted()).particles.emplace_back(particle);
 }
 
 void SimInterface::explosion(const glm::vec2& v, const glm::vec4& c, std::uint32_t time,
                              const std::optional<glm::vec2>& towards) {
   auto& r = random(random_source::kLegacyAesthetic);
+  auto& e = emit(resolve_key::predicted());
   auto n = towards ? r.rbool() + 1 : r.uint(8) + 8;
   for (std::uint32_t i = 0; i < n; ++i) {
     auto dir = from_polar(r.fixed().to_float() * 2 * glm::pi<float>(), 6.f);
@@ -222,19 +229,19 @@ void SimInterface::explosion(const glm::vec2& v, const glm::vec4& c, std::uint32
       float angle = std::atan2(dir.y, dir.x) + (r.fixed().to_float() - 0.5f) * glm::pi<float>() / 4;
       dir = from_polar(angle, 6.f);
     }
-    add_particle({v, c, dir, time + r.uint(8)});
+    e.particles.emplace_back(particle{v, c, dir, time + r.uint(8)});
   }
 }
 
-void SimInterface::rumble_all(std::uint32_t time) const {
+void SimInterface::rumble_all(std::uint32_t time) {
+  auto& e = emit(resolve_key::predicted());
   for (std::uint32_t i = 0; i < player_count(); ++i) {
-    rumble(i, time);
+    e.rumble[i] = time;
   }
 }
 
-void SimInterface::rumble(std::uint32_t player, std::uint32_t time) const {
-  auto& rumble = internals_->output.rumble[player];
-  rumble = std::max(rumble, time);
+void SimInterface::rumble(std::uint32_t player, std::uint32_t time) {
+  emit(resolve_key::predicted()).rumble[player] = time;
 }
 
 void SimInterface::play_sound(sound s, const vec2& position, bool random, float volume) {
@@ -247,8 +254,8 @@ void SimInterface::play_sound(sound s, const vec2& position, bool random, float 
   }
 }
 
-void SimInterface::play_sound(sound s, float volume, float pan, float repitch) const {
-  auto& e = internals_->output.sounds.emplace_back();
+void SimInterface::play_sound(sound s, float volume, float pan, float repitch) {
+  auto& e = emit(resolve_key::predicted()).sounds.emplace_back();
   e.sound_id = s;
   e.volume = volume;
   e.pan = pan;

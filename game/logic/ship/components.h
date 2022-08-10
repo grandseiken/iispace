@@ -90,6 +90,7 @@ enum class damage_type {
   kNone,
   kMagic,
   kBomb,
+  kPredicted,
 };
 
 struct Health : ecs::component {
@@ -141,6 +142,7 @@ struct Player : ecs::component {
   std::uint32_t magic_shot_count = 0;
   bool has_bomb = false;
   bool has_shield = false;
+  bool is_predicted = false;
 
   std::uint64_t score = 0;
   std::uint32_t multiplier = 1;

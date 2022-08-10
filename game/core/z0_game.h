@@ -1,8 +1,8 @@
 #ifndef II_GAME_CORE_Z0_GAME_H
 #define II_GAME_CORE_Z0_GAME_H
-#include "game/core/render_state.h"
 #include "game/core/io_input_adapter.h"
 #include "game/core/modal.h"
+#include "game/core/render_state.h"
 #include "game/data/replay.h"
 #include "game/data/save.h"
 #include "game/logic/sim/networked_sim_state.h"

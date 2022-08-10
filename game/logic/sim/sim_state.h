@@ -53,6 +53,7 @@ public:
   aggregate_output& output() override;
   sim_results results() const override;
 
+  // Functionality provided specifically for use by NetworkedSimState.
   struct smoothing_data {
     struct player_data {
       std::optional<vec2> position;
@@ -61,8 +62,11 @@ public:
     };
     std::unordered_map<std::uint32_t, player_data> players;
   };
+
+  void set_predicted_players(std::span<const std::uint32_t>);
   void update_smoothing(smoothing_data& data);
 
+  // Debug query API.
   struct query {
     std::unordered_set<std::uint32_t> entity_ids;
     std::unordered_set<std::string> component_names;

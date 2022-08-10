@@ -465,11 +465,8 @@ void GameModal::update(ii::ui::UiLayer& ui) {
   auto frame_x = static_cast<std::uint32_t>(std::log2(frame_count_multiplier_));
   bool handle_audio = !(audio_tick_++ % (4 * (1 + frame_x / 2)));
   bool handle_rumble = game_ && !replay_;
-  if (!handle_rumble) {
-    istate.output().rumble = {};
-  }
   render_state_.handle_output(istate, handle_audio ? &ui.mixer() : nullptr,
-                               handle_rumble ? &game_->input : nullptr);
+                              handle_rumble ? &game_->input : nullptr);
   render_state_.update();
 
   if (replay_) {

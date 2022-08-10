@@ -77,18 +77,17 @@ public:
   ecs::const_handle nearest_player(const vec2& point) const;
   ecs::handle nearest_player(const vec2& point);
 
-  // Particle / effects stuff.
+  // Simulation output (particle / effects stuff; rendering).
   Stars& stars();
   const Stars& stars() const;
+  aggregate_output::event& emit(const resolve_key& key);
   void add_particle(const particle& particle);
   void explosion(const glm::vec2& v, const glm::vec4& c, std::uint32_t time = 8,
                  const std::optional<glm::vec2>& towards = std::nullopt);
-
-  // Simulation output.
-  void rumble_all(std::uint32_t time) const;
-  void rumble(std::uint32_t player, std::uint32_t time) const;
+  void rumble_all(std::uint32_t time);
+  void rumble(std::uint32_t player, std::uint32_t time);
   void play_sound(sound, const vec2& position, bool random = false, float volume = 1.f);
-  void play_sound(sound, float volume = 1.f, float pan = 0.f, float repitch = 0.f) const;
+  void play_sound(sound, float volume = 1.f, float pan = 0.f, float repitch = 0.f);
   void render_line(const glm::vec2& a, const glm::vec2& b, const glm::vec4& c) const;
   // TODO: only used by Stars, which should be extracted anyway.
   void render_line_rect(const glm::vec2& lo, const glm::vec2& hi, const glm::vec4& c) const;

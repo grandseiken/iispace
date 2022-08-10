@@ -17,10 +17,7 @@ class ReplayWriter;
 // - sound refactor to add sound modes (predicted only, canonical only, reconcile)
 //   with reconciliation based on semantics of sound (and whether caused by local or remote player).
 // - exact same thing for particles, with particles extracted to an external system.
-// - status rendering for remote players needs to be based on canonical state only. Possibly,
-//   predicted players don't interact with powerups or enemies at all.
-// - possibly some sort of shot logic. Shots spawned in predicted states possibly don't actually
-//   kill enemies. Predicted shots possibly spawned from predicted position and interpolated?
+// - interpolate positions of shots and/or enemies (e.g. follow)?
 class NetworkedSimState : public ISimState {
 public:
   ~NetworkedSimState() override = default;
@@ -79,7 +76,7 @@ public:
   }
 
   aggregate_output& output() override {
-    return output_;
+    return merged_output_;
   }
 
   sim_results results() const override {
@@ -87,17 +84,28 @@ public:
   }
 
 private:
+  static constexpr std::uint64_t kMaxReconcileTickDifference = 16;
+  void handle_predicted_output(std::uint64_t tick_count, aggregate_output& output);
+  void handle_canonical_output(std::uint64_t tick_count, aggregate_output& output);
+  void handle_dual_output(aggregate_output& output);
+
   std::vector<std::uint32_t> local_ai_players_;
   SimState canonical_state_;
   SimState predicted_state_;
-  aggregate_output output_;
+  aggregate_output merged_output_;
   input_mapping mapping_;
   std::uint32_t player_count_ = 0;
   std::uint64_t input_delay_ticks_ = 0;
   std::uint64_t predicted_tick_base_ = 0;
 
-  std::deque<std::vector<input_frame>> input_delayed_frames_;
+  struct resolve_key_hash {
+    std::size_t operator()(const resolve_key& k) const {
+      return k.hash();
+    }
+  };
+
   SimState::smoothing_data smoothing_data_;
+  std::unordered_map<resolve_key, std::uint64_t, resolve_key_hash> reconciliation_map_;
 
   struct partial_frame {
     std::vector<std::optional<input_frame>> input_frames;
@@ -124,6 +132,8 @@ private:
   std::vector<input_frame> latest_input_;
   // Partial input data, starting at canonical tick.
   std::deque<partial_frame> partial_frames_;
+  // Queue of delayed local inputs.
+  std::deque<std::vector<input_frame>> input_delayed_frames_;
 };
 
 }  // namespace ii

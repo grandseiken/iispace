@@ -91,17 +91,14 @@ std::uint64_t SimState::tick_count() const {
 }
 
 std::uint32_t SimState::checksum() const {
-  std::uint32_t result = 0;
-  auto hash_combine = [&](std::uint32_t v) {
-    result ^= v + 0x9e3779b9 + (result << 6) + (result >> 2);
-  };
+  std::size_t result = 0;
   internals_->index.iterate_dispatch<Transform>(
       [&](ecs::const_handle h, const Transform& transform) {
-        hash_combine(+h.id());
-        hash_combine(static_cast<std::uint32_t>(transform.centre.x.to_internal()));
-        hash_combine(static_cast<std::uint32_t>(transform.centre.y.to_internal()));
+        hash_combine(result, +h.id());
+        hash_combine(result, static_cast<std::size_t>(transform.centre.x.to_internal()));
+        hash_combine(result, static_cast<std::size_t>(transform.centre.y.to_internal()));
       });
-  return result;
+  return static_cast<std::uint32_t>(result);
 }
 
 void SimState::copy_to(SimState& target) const {
@@ -124,7 +121,7 @@ void SimState::copy_to(SimState& target) const {
   target.internals_->stars = internals_->stars;
   target.internals_->collisions = internals_->collisions;
   target.internals_->bosses_killed = internals_->bosses_killed;
-  target.internals_->output = internals_->output;
+  target.internals_->output.clear();
   refresh_handles(*target.internals_);
 }
 
@@ -330,7 +327,28 @@ sim_results SimState::results() const {
   return r;
 }
 
+void SimState::set_predicted_players(std::span<const std::uint32_t> player_ids) {
+  internals_->index.iterate<Player>([&](Player& p) {
+    p.is_predicted = std::ranges::find(player_ids, p.player_number) != player_ids.end();
+  });
+}
+
 void SimState::update_smoothing(smoothing_data& data) {
+  static constexpr fixed kMaxRotationSpeed = fixed_c::pi / 16;
+  auto smooth_rotate = [&](fixed& x, fixed target) {
+    auto d = angle_diff(x, target);
+    if (abs(d) < kMaxRotationSpeed) {
+      x = target;
+    } else {
+      x += std::clamp(d, -kMaxRotationSpeed, kMaxRotationSpeed);
+    }
+  };
+
+  // TODO: possibly this should be some kind of smoothing component and made a bit more generic
+  // so it can be applied to non-players as well.
+  // TODO: detect when positions have actually diverged and only apply smoothing in that case
+  // (i.e. add entries in a separate check_smoothing() function called on rollback/reapply and
+  // remove when resolved)?
   internals_->index.iterate_dispatch<Player>([&](const Player& p, const Transform& transform) {
     auto it = data.players.find(p.player_number);
     if (it == data.players.end()) {
@@ -338,18 +356,18 @@ void SimState::update_smoothing(smoothing_data& data) {
     }
     auto v = transform.centre - *it->second.position;
     auto distance = length(v);
-    if (!it->second.position || length(v) < kPlayerSpeed * 3_fx / 2_fx) {
+    if (!it->second.position || length(v) < kPlayerSpeed) {
       it->second.velocity = {0, 0};
       it->second.position = transform.centre;
-      it->second.rotation = transform.rotation;
+      smooth_rotate(it->second.rotation, transform.rotation);
       return;
     }
     auto target_speed =
-        std::max(kPlayerSpeed, std::min(2 * kPlayerSpeed, distance / (2 * kPlayerSpeed)));
+        std::max(kPlayerSpeed, std::min(kPlayerSpeed * 9_fx / 8_fx, distance / (2 * kPlayerSpeed)));
     auto target_velocity = target_speed * normalise(v);
     it->second.velocity = (3_fx / 4_fx) * (it->second.velocity - target_velocity) + target_velocity;
     *it->second.position += it->second.velocity;
-    it->second.rotation = angle(it->second.velocity);
+    smooth_rotate(it->second.rotation, angle(it->second.velocity));
   });
   smoothing_data_ = data;
 }

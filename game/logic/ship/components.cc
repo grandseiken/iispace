@@ -54,7 +54,9 @@ void Health::damage(ecs::handle h, SimInterface& sim, std::uint32_t damage, dama
     on_hit(h, sim, type);
   }
 
-  hp = hp < damage ? 0 : hp - damage;
+  if (type != damage_type::kPredicted) {
+    hp = hp < damage ? 0 : hp - damage;
+  }
   vec2 position = {kSimDimensions.x / 2, kSimDimensions.y / 2};
   if (auto* c = h.get<Transform>()) {
     position = c->centre;

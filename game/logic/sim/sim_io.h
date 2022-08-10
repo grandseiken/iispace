@@ -6,13 +6,17 @@
 #include <glm/glm.hpp>
 #include <bit>
 #include <cstdint>
+#include <functional>
 #include <optional>
 #include <unordered_map>
 #include <vector>
 
 namespace ii {
-
 static constexpr std::uint32_t kMaxPlayers = 4;
+
+inline void hash_combine(std::size_t& seed, std::size_t v) {
+  seed ^= v + 0x9e3779b9 + (seed << 6) + (seed >> 2);
+};
 
 inline glm::vec4 player_colour(std::size_t player_number) {
   return colour_hue360((20 * player_number) % 360);
@@ -80,12 +84,11 @@ enum class resolve {
   kPredicted,
   // Effects ignored in predicted state, resolved only when they occur in canonical state.
   kCanonical,
-  // Resolved in predicted state when cause is a local player, and canonical state when
+  // Resolved in predicted state when cause is a local player (or empty), and canonical state when
   // source is a remote player.
   kLocal,
   // Resolved in both predicted state and canonical state, with reconciliation to avoid duplication
   // based on resolve_key.
-  // TODO: what is this actually necessary for?
   kReconcile,
 };
 
@@ -94,6 +97,16 @@ struct resolve_key {
   std::optional<std::uint32_t> cause_player_id;
   std::optional<std::uint32_t> source_entity_id;
   std::uint32_t reconcile_tag = 0;
+
+  std::size_t hash() const {
+    std::size_t seed = 0;
+    hash_combine(seed, static_cast<std::uint32_t>(type));
+    hash_combine(seed, cause_player_id.value_or(0));
+    hash_combine(seed, source_entity_id.value_or(0));
+    hash_combine(seed, reconcile_tag);
+    return seed;
+  }
+  auto operator<=>(const resolve_key&) const = default;
 
   static resolve_key predicted() {
     resolve_key key;
@@ -107,7 +120,7 @@ struct resolve_key {
     return key;
   }
 
-  static resolve_key local(std::uint32_t player_id) {
+  static resolve_key local(std::optional<std::uint32_t> player_id) {
     resolve_key key;
     key.type = resolve::kLocal;
     key.cause_player_id = player_id;
@@ -144,25 +157,24 @@ struct sound_out {
 
 struct aggregate_output {
   void clear() {
-    particles.clear();
-    sounds.clear();
-    rumble.clear();
+    entries.clear();
   }
 
   void append_to(aggregate_output& output) const {
-    output.particles.insert(output.particles.end(), particles.begin(), particles.end());
-    output.sounds.insert(output.sounds.end(), sounds.begin(), sounds.end());
-    for (const auto& pair : rumble) {
-      auto& r = output.rumble[pair.first];
-      r = std::max(r, pair.second);
-    }
+    output.entries.insert(output.entries.end(), entries.begin(), entries.end());
   }
 
-  // Old-style output.
-  // TODO: move to resolve-keyed sounds/particles.
-  std::vector<particle> particles;
-  std::vector<sound_out> sounds;
-  std::unordered_map<std::uint32_t, std::uint32_t> rumble;
+  struct event {
+    std::vector<particle> particles;
+    std::vector<sound_out> sounds;
+    std::unordered_map<std::uint32_t, std::uint32_t> rumble;
+  };
+
+  struct entry {
+    resolve_key key;
+    event e;
+  };
+  std::vector<entry> entries;
 };
 
 struct render_output {
