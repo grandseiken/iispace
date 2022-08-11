@@ -4,7 +4,9 @@
 #include "game/logic/ecs/index.h"
 #include <algorithm>
 #include <deque>
+#include <map>
 #include <typeinfo>
+#include <utility>
 
 namespace ii::ecs::detail {
 struct component_storage_base {
@@ -14,8 +16,8 @@ struct component_storage_base {
   virtual void copy_clear() = 0;
   virtual void
   copy_to(EntityIndex& index, std::unique_ptr<component_storage_base>& target) const = 0;
-  virtual bool matches(const std::unordered_set<std::string>& components) const = 0;
-  virtual void dump(std::size_t index, Printer& printer) const = 0;
+  virtual void dump(std::size_t index, bool portable, Printer& printer) const = 0;
+  virtual std::string debug_name() const = 0;
 };
 
 template <Component C>
@@ -73,18 +75,12 @@ struct component_storage : component_storage_base {
     }
   }
 
-  bool matches(const std::unordered_set<std::string>& components) const override {
-    C* p = nullptr;
-    if constexpr (requires { to_debug_name(p); }) {
-      return components.count(to_debug_name(p));
-    } else {
-      return false;
-    }
-  }
-
-  void dump(std::size_t index, Printer& printer) const override {
+  void dump(std::size_t index, bool portable, Printer& printer) const override {
     const auto& data = *entries[index].data;
-    printer.begin().put('[').put(+ecs::id<C>()).put(" / ");
+    printer.begin().put('[');
+    if (!portable) {
+      printer.put(+ecs::id<C>()).put(" / ");
+    }
     if constexpr (requires { to_debug_name(&data); }) {
       printer.put(to_debug_name(&data));
     } else {
@@ -99,6 +95,15 @@ struct component_storage : component_storage_base {
           },
           to_debug_tuple(data));
       printer.undent();
+    }
+  }
+
+  std::string debug_name() const override {
+    C* p = nullptr;
+    if constexpr (requires { to_debug_name(p); }) {
+      return to_debug_name(p);
+    } else {
+      return {};
     }
   }
 };
@@ -123,7 +128,17 @@ void iterate(T& storage, bool include_new, auto&& f) {
 
 namespace ii::ecs {
 
-inline void EntityIndex::dump(Printer& printer, const query& q) const {
+inline void EntityIndex::dump(Printer& printer, bool portable, const query& q) const {
+  std::map<std::string, std::pair<std::size_t, detail::component_storage_base*>> sorted_components;
+  if (portable) {
+    for (std::size_t i = 0; i < components_.size(); ++i) {
+      if (components_[i]) {
+        sorted_components.emplace(components_[i]->debug_name(),
+                                  std::make_pair(i, components_[i].get()));
+      }
+    }
+  }
+
   for (const auto& e : entity_tables_) {
     if (!e.id || (!q.entity_ids.empty() && !q.entity_ids.contains(*e.id))) {
       continue;
@@ -131,7 +146,7 @@ inline void EntityIndex::dump(Printer& printer, const query& q) const {
     bool matches_components = q.components.empty();
     if (!matches_components) {
       for (std::size_t i = 0; i < e.v.size(); ++i) {
-        if (e.v[i] && components_[i]->matches(q.components)) {
+        if (e.v[i] && q.components.contains(components_[i]->debug_name())) {
           matches_components = true;
           break;
         }
@@ -141,9 +156,21 @@ inline void EntityIndex::dump(Printer& printer, const query& q) const {
       continue;
     }
     printer.begin().put("[@ ").put(+*e.id).put("]").end().indent();
-    for (std::size_t i = 0; i < e.v.size(); ++i) {
-      if (e.v[i] && (q.components.empty() || components_[i]->matches(q.components))) {
-        components_[i]->dump(*e.v[i], printer);
+    if (portable) {
+      for (const auto& pair : sorted_components) {
+        auto i = pair.second.first;
+        const auto* c = pair.second.second;
+        if (i < e.v.size() && e.v[i] &&
+            (q.components.empty() || q.components.contains(c->debug_name()))) {
+          c->dump(*e.v[i], portable, printer);
+        }
+      }
+    } else {
+      for (std::size_t i = 0; i < e.v.size(); ++i) {
+        if (e.v[i] &&
+            (q.components.empty() || q.components.contains(components_[i]->debug_name()))) {
+          components_[i]->dump(*e.v[i], portable, printer);
+        }
       }
     }
     printer.undent();

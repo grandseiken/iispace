@@ -15,6 +15,8 @@ namespace ii {
 
 class Printer {
 public:
+  bool print_pointers = false;
+
   std::string extract() {
     return std::move(contents_);
   }
@@ -72,9 +74,13 @@ public:
 
   template <typename R, typename... Args>
   Printer& put(R (*const v)(Args...)) {
-    std::stringstream ss;
-    ss << reinterpret_cast<const void*>(v);
-    return put(ss.str());
+    if (print_pointers) {
+      std::stringstream ss;
+      ss << reinterpret_cast<const void*>(v);
+      return put(ss.str());
+    } else {
+      return put("(function pointer)");
+    }
   }
 
   Printer& put(fixed v) {

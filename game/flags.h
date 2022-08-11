@@ -46,7 +46,7 @@ flag_parse(std::vector<std::string>& args, const std::string& name, std::optiona
         out_value = true;
         return {};
       }
-      if (*it == "--no-" + name) {
+      if (*it == "--no" + name) {
         args.erase(it);
         out_value = false;
         return {};
@@ -102,7 +102,7 @@ result<void> flag_parse(std::vector<std::string>& args, const std::string& name,
     if (default_value) {
       optional_value = default_value;
     } else if constexpr (std::is_same_v<T, bool>) {
-      return unexpected("error: flag --" + name + " (or --no-" + name + ") must be specified");
+      return unexpected("error: flag --" + name + " (or --no" + name + ") must be specified");
     } else {
       return unexpected("error: flag --" + name + " must be specified");
     }

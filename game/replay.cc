@@ -125,6 +125,9 @@ result<options_t> parse_args(std::vector<std::string>& args) {
     options.max_ticks = dump_tick;
   }
 
+  if (auto r = flag_parse<bool>(args, "dump_portable", options.query.portable, false); !r) {
+    return unexpected(r.error());
+  }
   if (auto r = flag_parse(args, "dump_entity_ids", options.query.entity_ids); !r) {
     return unexpected(r.error());
   }

@@ -223,8 +223,10 @@ struct SuperBoss : ecs::component {
 
     if (snakes) {
       --snakes;
-      vec2 d = from_polar(sim.random_fixed() * (2 * fixed_c::pi),
-                          fixed{sim.random(32) + sim.random(16)});
+      auto r0 = sim.random(32);
+      auto r1 = sim.random(16);
+      fixed length{r0 + r1};
+      vec2 d = from_polar(sim.random_fixed() * (2 * fixed_c::pi), length);
       spawn_snake(sim, d + transform.centre, c);
       sim.play_sound(sound::kEnemySpawn, transform.centre, /* random */ true);
     }

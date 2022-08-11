@@ -88,7 +88,7 @@ public:
   };
 
   // Dump state.
-  void dump(Printer&, const query& q = {}) const;
+  void dump(Printer&, bool portable, const query& q = {}) const;
   // Replicate all data to target index. Doesn't copy component add/remove callbacks.
   void copy_to(EntityIndex& target) const;
   // Rearrange and compact internals. Invalidates all handles and component references.

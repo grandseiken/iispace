@@ -68,6 +68,8 @@ public:
 
   // Debug query API.
   struct query {
+    query() : portable{false} {}
+    bool portable;  // Make output identical across runs/compilers.
     std::unordered_set<std::uint32_t> entity_ids;
     std::unordered_set<std::string> component_names;
   };

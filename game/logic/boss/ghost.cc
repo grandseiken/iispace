@@ -257,7 +257,9 @@ struct GhostBoss : ecs::component {
 
       if (attack == 2) {
         if (attack_time >= kAttackTime * 4 && !(attack_time % 8)) {
-          vec2 pos(sim.random(kSimDimensions.x + 1), sim.random(kSimDimensions.y + 1));
+          auto y = sim.random(kSimDimensions.y + 1);
+          auto x = sim.random(kSimDimensions.x + 1);
+          vec2 pos{x, y};
           spawn_ghost_mine(sim, pos, h);
           sim.play_sound(sound::kEnemySpawn, pos, /* random */ true);
           danger_circle = 0;

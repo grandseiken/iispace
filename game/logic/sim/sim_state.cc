@@ -381,7 +381,8 @@ void SimState::dump(Printer& printer, const query& q) const {
   for (const auto& name : q.component_names) {
     index_q.components.emplace(name);
   }
-  internals_->index.dump(printer, index_q);
+  printer.print_pointers = !q.portable;
+  internals_->index.dump(printer, q.portable, index_q);
 }
 
 }  // namespace ii

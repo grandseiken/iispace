@@ -51,7 +51,6 @@ build:gcc --repo_env=CC=gcc
 build:gcc --cxxopt=-lstdc++
 build:gcc --copt=-Wno-uninitialized
 
-# TODO: tests fail using linux clang.
 build:clang --config=linux-common
 build:clang --config=clang-common
 build:clang --repo_env=CC=clang
@@ -61,6 +60,5 @@ build:clang --cxxopt=-stdlib=libstdc++
 build:clang --cc_output_directory_tag=clang
 
 # MacOS configuration.
-# TODO: same tests also fail on apple clang.
 build:darwin --config=linux-common
 build:darwin --config=clang-common
