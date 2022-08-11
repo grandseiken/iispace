@@ -14,9 +14,7 @@ namespace ii {
 class ReplayWriter;
 
 // TODO:
-// - sound refactor to add sound modes (predicted only, canonical only, reconcile)
-//   with reconciliation based on semantics of sound (and whether caused by local or remote player).
-// - exact same thing for particles, with particles extracted to an external system.
+// - death effects to be applied at last-known position of enemy?
 // - interpolate positions of shots and/or enemies (e.g. follow)?
 class NetworkedSimState : public ISimState {
 public:
@@ -87,6 +85,7 @@ private:
   static constexpr std::uint64_t kMaxReconcileTickDifference = 16;
   void handle_predicted_output(std::uint64_t tick_count, aggregate_output& output);
   void handle_canonical_output(std::uint64_t tick_count, aggregate_output& output);
+  void handle_replay_output(std::uint64_t tick_count, aggregate_output& output);
   void handle_dual_output(aggregate_output& output);
 
   std::vector<std::uint32_t> local_ai_players_;

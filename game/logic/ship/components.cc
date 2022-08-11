@@ -8,7 +8,7 @@ void GlobalData::pre_update(SimInterface& sim) {
   extra_enemy_warnings.clear();
 }
 
-void GlobalData::post_update(SimInterface& sim) {
+void GlobalData::post_update(ecs::handle h, SimInterface& sim) {
   for (auto it = fireworks.begin(); it != fireworks.end();) {
     if (it->time > 0) {
       --(it++)->time;
@@ -16,6 +16,7 @@ void GlobalData::post_update(SimInterface& sim) {
     }
     // Stupid compatibility.
     std::optional<bool> p0_has_powerup;
+    auto e = sim.emit(resolve_key::reconcile(h.id(), resolve_tag::kUnknown));
     sim.index().iterate<Player>([&](const Player& p) {
       if (!p0_has_powerup) {
         p0_has_powerup = p.has_bomb || p.has_shield;
@@ -24,13 +25,13 @@ void GlobalData::post_update(SimInterface& sim) {
     auto explode = [&](const glm::vec2& v, const glm::vec4& c, std::uint32_t time) {
       auto c_dark = c;
       c_dark.a = .5f;
-      sim.explosion(v, c, time);
-      sim.explosion(v + glm::vec2{8.f, 0.f}, c, time);
-      sim.explosion(v + glm::vec2{0.f, 8.f}, c, time);
-      sim.explosion(v + glm::vec2{8.f, 0.f}, c_dark, time);
-      sim.explosion(v + glm::vec2{0.f, 8.f}, c_dark, time);
+      e.explosion(v, c, time);
+      e.explosion(v + glm::vec2{8.f, 0.f}, c, time);
+      e.explosion(v + glm::vec2{0.f, 8.f}, c, time);
+      e.explosion(v + glm::vec2{8.f, 0.f}, c_dark, time);
+      e.explosion(v + glm::vec2{0.f, 8.f}, c_dark, time);
       if (p0_has_powerup && *p0_has_powerup) {
-        sim.explosion(v, glm::vec4{0.f}, 8);
+        e.explosion(v, glm::vec4{0.f}, 8);
       }
     };
 
@@ -50,8 +51,9 @@ void Health::damage(ecs::handle h, SimInterface& sim, std::uint32_t damage, dama
       return;
     }
   }
+  auto e = sim.emit(resolve_key::reconcile(h.id(), resolve_tag::kOnHit, hp));
   if (on_hit) {
-    on_hit(h, sim, type);
+    on_hit(h, sim, e, type);
   }
 
   if (type != damage_type::kPredicted) {
@@ -63,30 +65,31 @@ void Health::damage(ecs::handle h, SimInterface& sim, std::uint32_t damage, dama
   }
 
   if (hit_sound0 && damage) {
-    sim.play_sound(*hit_sound0, position, /* random */ true);
+    e.play_random(*hit_sound0, position);
   }
   if (h.has<Destroy>()) {
     return;
   }
 
   if (!hp) {
+    auto e_destroy = sim.emit(resolve_key::reconcile(h.id(), resolve_tag::kOnDestroy));
     if (destroy_sound) {
-      sim.play_sound(*destroy_sound, position, /* random */ true);
+      e_destroy.play_random(*destroy_sound, position);
     }
     if (on_destroy) {
-      on_destroy(h, sim, type);
+      on_destroy(h, sim, e_destroy, type);
     }
     h.add(Destroy{.source = source});
   } else {
     if (hit_sound1 && damage) {
-      sim.play_sound(*hit_sound1, position, /* random */ true);
+      e.play_random(*hit_sound1, position);
     }
     hit_timer = std::max<std::uint32_t>(hit_timer, type == damage_type::kBomb ? 25 : 1);
   }
 }
 
 void Player::add_score(SimInterface& sim, std::uint64_t s) {
-  sim.rumble(player_number, 3);
+  sim.emit(resolve_key::predicted()).rumble(player_number, 3);
   score += s * multiplier;
   ++multiplier_count;
   if (multiplier_count >= (1u << std::min(multiplier + 3, 23u))) {

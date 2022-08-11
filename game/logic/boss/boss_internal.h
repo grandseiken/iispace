@@ -11,17 +11,17 @@ std::uint32_t
 scale_boss_damage(ecs::handle h, SimInterface&, damage_type type, std::uint32_t damage);
 
 template <bool ExplodeOnBombDamage, ecs::Component Logic, geom::ShapeNode S = typename Logic::shape>
-void boss_on_hit(ecs::handle h, SimInterface& sim, damage_type type) {
+void boss_on_hit(ecs::handle h, SimInterface& sim, EmitHandle& e, damage_type type) {
   if (type == damage_type::kBomb && ExplodeOnBombDamage) {
-    explode_entity_shapes<Logic, S>(h, sim);
-    explode_entity_shapes<Logic, S>(h, sim, glm::vec4{1.f}, 12);
-    explode_entity_shapes<Logic, S>(h, sim, std::nullopt, 24);
+    explode_entity_shapes<Logic, S>(h, e);
+    explode_entity_shapes<Logic, S>(h, e, glm::vec4{1.f}, 12);
+    explode_entity_shapes<Logic, S>(h, e, std::nullopt, 24);
   }
 }
 
 template <ecs::Component Logic, geom::ShapeNode S = typename Logic::shape>
 void boss_on_destroy(ecs::const_handle h, const Transform& transform, SimInterface& sim,
-                     damage_type) {
+                     EmitHandle& e, damage_type) {
   sim.index().iterate_dispatch_if<Enemy>([&](ecs::handle eh, Health& health) {
     if (eh.id() != h.id()) {
       health.damage(eh, sim, Player::kBombDamage, damage_type::kBomb, std::nullopt);
@@ -35,11 +35,11 @@ void boss_on_destroy(ecs::const_handle h, const Transform& transform, SimInterfa
                   }
                 });
 
-  explode_entity_shapes<Logic, S>(h, sim);
-  explode_entity_shapes<Logic, S>(h, sim, glm::vec4{1.f}, 12);
-  explode_entity_shapes<Logic, S>(h, sim, boss_colour, 24);
-  explode_entity_shapes<Logic, S>(h, sim, glm::vec4{1.f}, 36);
-  explode_entity_shapes<Logic, S>(h, sim, boss_colour, 48);
+  explode_entity_shapes<Logic, S>(h, e);
+  explode_entity_shapes<Logic, S>(h, e, glm::vec4{1.f}, 12);
+  explode_entity_shapes<Logic, S>(h, e, boss_colour, 24);
+  explode_entity_shapes<Logic, S>(h, e, glm::vec4{1.f}, 36);
+  explode_entity_shapes<Logic, S>(h, e, boss_colour, 48);
   std::uint32_t n = 1;
   auto& random = sim.random(random_source::kLegacyAesthetic);
   for (std::uint32_t i = 0; i < 16; ++i) {
@@ -51,8 +51,7 @@ void boss_on_destroy(ecs::const_handle h, const Transform& transform, SimInterfa
                                     .colour = boss_colour.value_or(glm::vec4{1.f})});
     n += i;
   }
-  sim.rumble_all(25);
-  sim.play_sound(sound::kExplosion, transform.centre);
+  e.rumble_all(25).play(sound::kExplosion, transform.centre);
 }
 
 }  // namespace ii

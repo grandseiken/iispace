@@ -66,7 +66,7 @@ void iterate_entity_attachment_points(ecs::const_handle h,
 }
 
 template <geom::ShapeNode S>
-void explode_shapes(SimInterface& sim, const auto& parameters,
+void explode_shapes(EmitHandle& e, const auto& parameters,
                     const std::optional<glm::vec4> colour_override = std::nullopt,
                     std::uint32_t time = 8, const std::optional<vec2>& towards = std::nullopt) {
   std::optional<glm::vec2> towards_float;
@@ -75,25 +75,25 @@ void explode_shapes(SimInterface& sim, const auto& parameters,
   }
   geom::iterate(S{}, geom::iterate_centres, parameters, geom::transform{},
                 [&](const vec2& v, const glm::vec4& c) {
-                  sim.explosion(to_float(v), colour_override.value_or(c), time, towards_float);
+                  e.explosion(to_float(v), colour_override.value_or(c), time, towards_float);
                 });
 }
 
 template <ecs::Component Logic, geom::ShapeNode S = typename Logic::shape>
-void explode_entity_shapes(ecs::const_handle h, SimInterface& sim,
+void explode_entity_shapes(ecs::const_handle h, EmitHandle& e,
                            const std::optional<glm::vec4> colour_override = std::nullopt,
                            std::uint32_t time = 8,
                            const std::optional<vec2>& towards = std::nullopt) {
   if constexpr (requires { &Logic::explode_shapes; }) {
-    ecs::call<&Logic::explode_shapes>(h, sim, colour_override, time, towards);
+    ecs::call<&Logic::explode_shapes>(h, e, colour_override, time, towards);
   } else {
-    explode_shapes<S>(sim, get_shape_parameters<Logic>(h), colour_override, time, towards);
+    explode_shapes<S>(e, get_shape_parameters<Logic>(h), colour_override, time, towards);
   }
 }
 
 template <ecs::Component Logic, geom::ShapeNode S = typename Logic::shape>
-void explode_entity_shapes_default(ecs::const_handle h, SimInterface& sim) {
-  return explode_entity_shapes<Logic, S>(h, sim);
+void explode_entity_shapes_default(ecs::const_handle h, SimInterface&, EmitHandle& e) {
+  return explode_entity_shapes<Logic, S>(h, e);
 }
 
 template <geom::ShapeNode S>
@@ -196,7 +196,7 @@ template <ecs::Component Logic, geom::ShapeNode S = typename Logic::shape>
 void add_enemy_health(ecs::handle h, std::uint32_t hp,
                       std::optional<sound> destroy_sound = std::nullopt) {
   destroy_sound = destroy_sound ? *destroy_sound : Logic::kDestroySound;
-  using on_destroy_t = void(ecs::const_handle, SimInterface & sim, damage_type);
+  using on_destroy_t = void(ecs::const_handle, SimInterface&, EmitHandle&, damage_type);
   constexpr auto explode_shapes = sfn::cast<on_destroy_t, &explode_entity_shapes_default<Logic, S>>;
   if constexpr (requires { &Logic::on_destroy; }) {
     h.add(Health{

@@ -13,6 +13,7 @@
 #include <vector>
 
 namespace ii {
+class EmitHandle;
 class SimInterface;
 
 struct GlobalData : ecs::component {
@@ -35,8 +36,8 @@ struct GlobalData : ecs::component {
   GlobalData(const initial_conditions& conditions)
   : lives{conditions.mode == game_mode::kBoss ? conditions.player_count * kBossModeLives
                                               : kStartingLives} {}
-  void pre_update(SimInterface&);   // Runs before any other entity updates.
-  void post_update(SimInterface&);  // Runs after any other entity updates.
+  void pre_update(SimInterface&);                // Runs before any other entity updates.
+  void post_update(ecs::handle, SimInterface&);  // Runs after any other entity updates.
 };
 DEBUG_STRUCT_TUPLE(GlobalData, lives, non_wall_enemy_count, overmind_wave_timer, player_kill_queue);
 
@@ -106,8 +107,8 @@ struct Health : ecs::component {
 
   sfn::ptr<std::uint32_t(ecs::handle, SimInterface&, damage_type, std::uint32_t)> damage_transform =
       nullptr;
-  sfn::ptr<void(ecs::handle, SimInterface&, damage_type)> on_hit = nullptr;
-  sfn::ptr<void(ecs::const_handle, SimInterface&, damage_type)> on_destroy = nullptr;
+  sfn::ptr<void(ecs::handle, SimInterface&, EmitHandle&, damage_type)> on_hit = nullptr;
+  sfn::ptr<void(ecs::const_handle, SimInterface&, EmitHandle&, damage_type)> on_destroy = nullptr;
 
   bool is_hp_low() const {
     // hp <= .4 * max_hp.

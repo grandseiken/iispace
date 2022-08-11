@@ -67,7 +67,7 @@ struct Follow : ecs::component {
     transform.move(normalise(d) * kSpeed);
   }
 
-  void on_destroy(const Enemy& enemy, const Transform& transform, SimInterface& sim,
+  void on_destroy(const Enemy& enemy, const Transform& transform, SimInterface& sim, EmitHandle&,
                   damage_type type) const {
     if (!is_big_follow || type == damage_type::kBomb) {
       return;

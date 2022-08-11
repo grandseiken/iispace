@@ -159,6 +159,7 @@ struct Powerup : ecs::component {
   void
   collect(ecs::handle h, const Transform& transform, SimInterface& sim, ecs::handle source) const {
     auto& pc = *source.get<Player>();
+    auto e = sim.emit(resolve_key::local(pc.player_number));
     switch (type) {
     case powerup_type::kExtraLife:
       ++sim.global_entity().get<GlobalData>()->lives;
@@ -178,16 +179,16 @@ struct Powerup : ecs::component {
       pc.has_shield = false;
       break;
     }
-    sim.play_sound(type == powerup_type::kExtraLife ? sound::kPowerupLife : sound::kPowerupOther,
-                   transform.centre);
-    sim.rumble(source.get<Player>()->player_number, 6);
+    e.play(type == powerup_type::kExtraLife ? sound::kPowerupLife : sound::kPowerupOther,
+           transform.centre);
+    e.rumble(source.get<Player>()->player_number, 6);
 
     auto& random = sim.random(random_source::kLegacyAesthetic);
     auto r = 5 + random.uint(5);
     for (std::uint32_t i = 0; i < r; ++i) {
       vec2 dir = from_polar(random.fixed() * 2 * fixed_c::pi, 6_fx);
-      sim.add_particle(
-          {to_float(transform.centre), glm::vec4{1.f}, to_float(dir), 4 + random.uint(8)});
+      e.add(
+          particle{to_float(transform.centre), glm::vec4{1.f}, to_float(dir), 4 + random.uint(8)});
     }
     h.emplace<Destroy>();
   }
@@ -255,8 +256,9 @@ struct PlayerLogic : ecs::component {
         invulnerability_timer = kReviveTime;
         transform.centre = {(1 + pc.player_number) * kSimDimensions.x / (1 + sim.player_count()),
                             kSimDimensions.y / 2};
-        sim.rumble(pc.player_number, 10);
-        sim.play_sound(sound::kPlayerRespawn, transform.centre);
+        sim.emit(resolve_key::reconcile(h.id(), resolve_tag::kRespawn))
+            .rumble(pc.player_number, 10)
+            .play(sound::kPlayerRespawn, transform.centre);
       }
       return;
     }
@@ -276,19 +278,19 @@ struct PlayerLogic : ecs::component {
       auto c = player_colour(pc.player_number);
       pc.has_bomb = false;
 
-      explosion(h, std::nullopt, sim, glm::vec4{1.f}, 16);
-      explosion(h, std::nullopt, sim, c, 32);
-      explosion(h, std::nullopt, sim, glm::vec4{1.f}, 48);
+      auto e = sim.emit(resolve_key::local(pc.player_number));
+      explosion(h, std::nullopt, e, glm::vec4{1.f}, 16);
+      explosion(h, std::nullopt, e, c, 32);
+      explosion(h, std::nullopt, e, glm::vec4{1.f}, 48);
 
       for (std::uint32_t i = 0; i < 64; ++i) {
         auto v = transform.centre + from_polar(2 * i * fixed_c::pi / 64, kBombRadius);
         auto& random = sim.random(random_source::kLegacyAesthetic);
-        explosion(h, v, sim, (i % 2) ? c : glm::vec4{1.f}, 8 + random.uint(8) + random.uint(8),
+        explosion(h, v, e, (i % 2) ? c : glm::vec4{1.f}, 8 + random.uint(8) + random.uint(8),
                   transform.centre);
       }
 
-      sim.rumble(pc.player_number, 10);
-      sim.play_sound(sound::kExplosion, transform.centre);
+      e.rumble(pc.player_number, 10).play(sound::kExplosion, transform.centre);
 
       sim.index().iterate_dispatch_if<Enemy>(
           [&](ecs::handle eh, const Enemy& e, const Transform& e_transform, Health& health,
@@ -316,7 +318,7 @@ struct PlayerLogic : ecs::component {
       float volume = .5f * random.fixed().to_float() + .5f;
       float pitch = (random.fixed().to_float() - 1.f) / 12.f;
       float pan = 2.f * transform.centre.x.to_float() / kSimDimensions.x - 1.f;
-      sim.play_sound(sound::kPlayerFire, volume, pan, pitch);
+      sim.emit(resolve_key::predicted()).play(sound::kPlayerFire, volume, pan, pitch);
     }
 
     // Damage.
@@ -330,17 +332,19 @@ struct PlayerLogic : ecs::component {
       return;
     }
 
+    // TODO: this can still emit wrong deaths for _local_ players! Since enemies can be in different
+    // positions... do we need to make _all_ players predicted for purposes of getting hit?
+    auto e = sim.emit(resolve_key::local(pc.player_number));
     if (pc.has_shield) {
-      sim.rumble(pc.player_number, 10);
-      sim.play_sound(sound::kPlayerShield, transform.centre);
+      e.rumble(pc.player_number, 10).play(sound::kPlayerShield, transform.centre);
       pc.has_shield = false;
       invulnerability_timer = kShieldTime;
       return;
     }
 
-    explosion(h, std::nullopt, sim);
-    explosion(h, std::nullopt, sim, glm::vec4{1.f}, 14);
-    explosion(h, std::nullopt, sim, std::nullopt, 20);
+    explosion(h, std::nullopt, e);
+    explosion(h, std::nullopt, e, glm::vec4{1.f}, 14);
+    explosion(h, std::nullopt, e, std::nullopt, 20);
 
     pc.magic_shot_count = 0;
     pc.multiplier = 1;
@@ -352,18 +356,17 @@ struct PlayerLogic : ecs::component {
       pc.has_bomb = false;
     }
     sim.global_entity().get<GlobalData>()->player_kill_queue.push_back(pc.player_number);
-    sim.rumble(pc.player_number, 25);
-    sim.play_sound(sound::kPlayerDestroy, transform.centre);
+    e.rumble(pc.player_number, 25).play(sound::kPlayerDestroy, transform.centre);
   }
 
-  void explosion(ecs::handle h, const std::optional<vec2>& position_override, SimInterface& sim,
+  void explosion(ecs::handle h, const std::optional<vec2>& position_override, EmitHandle& e,
                  const std::optional<glm::vec4>& colour = std::nullopt, std::uint32_t time = 8,
                  const std::optional<vec2>& towards = std::nullopt) const {
     auto parameters = get_shape_parameters<PlayerLogic>(h);
     if (position_override) {
       std::get<0>(parameters) = *position_override;
     }
-    explode_shapes<shape>(sim, parameters, colour, time, towards);
+    explode_shapes<shape>(e, parameters, colour, time, towards);
   }
 
   void render(const Player& pc, const SimInterface& sim) const {

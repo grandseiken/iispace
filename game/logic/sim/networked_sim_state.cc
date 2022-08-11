@@ -172,7 +172,7 @@ std::vector<sim_packet> NetworkedSimState::update(std::vector<input_frame> local
       }
       predicted_state_.set_predicted_players(predicted_players);
       predicted_state_.update(std::move(predicted_inputs));
-      predicted_state_.output().clear();
+      handle_replay_output(predicted_state_.tick_count(), predicted_state_.output());
     }
   }
 
@@ -322,6 +322,16 @@ void NetworkedSimState::handle_canonical_output(std::uint64_t tick_count,
       break;
     }
     if (resolve) {
+      merged_output_.entries.emplace_back(std::move(e));
+    }
+  }
+  output.clear();
+}
+
+void NetworkedSimState::handle_replay_output(std::uint64_t tick_count, aggregate_output& output) {
+  for (auto& e : output.entries) {
+    if (e.key.type == resolve::kReconcile && !reconciliation_map_.contains(e.key)) {
+      reconciliation_map_[e.key] = tick_count;
       merged_output_.entries.emplace_back(std::move(e));
     }
   }

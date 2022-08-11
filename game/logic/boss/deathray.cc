@@ -120,14 +120,15 @@ struct DeathArm : ecs::component {
 
     if (start) {
       if (start == 30) {
-        explode_entity_shapes<DeathArm>(h, sim);
-        explode_entity_shapes<DeathArm>(h, sim, glm::vec4{1.f});
+        auto e = sim.emit(resolve_key::reconcile(h.id(), resolve_tag::kRespawn));
+        explode_entity_shapes<DeathArm>(h, e);
+        explode_entity_shapes<DeathArm>(h, e, glm::vec4{1.f});
       }
       start--;
     }
   }
 
-  void on_destroy(ecs::const_handle h, SimInterface& sim) const;
+  void on_destroy(ecs::const_handle h, SimInterface& sim, EmitHandle& e) const;
 };
 DEBUG_STRUCT_TUPLE(DeathArm, death_boss, is_top, attacking, start, timer, shots, dir, target);
 
@@ -202,7 +203,8 @@ struct DeathRayBoss : public ecs::component {
         auto d = normalise(ray_dest - transform.centre);
         spawn_boss_shot(sim, transform.centre, d * 10, c2);
         sim.play_sound(sound::kBossAttack, transform.centre, /* random */ true);
-        explode_entity_shapes<DeathRayBoss>(h, sim);
+        auto e = sim.emit(resolve_key::predicted());
+        explode_entity_shapes<DeathRayBoss>(h, e);
       }
     }
 
@@ -344,10 +346,10 @@ struct DeathRayBoss : public ecs::component {
 DEBUG_STRUCT_TUPLE(DeathRayBoss, arms, timer, laser, dir, pos, arm_timer, shot_timer,
                    ray_attack_timer, ray_src1, ray_src2, ray_dest);
 
-void DeathArm::on_destroy(ecs::const_handle h, SimInterface& sim) const {
-  explode_entity_shapes<DeathArm>(h, sim);
-  explode_entity_shapes<DeathArm>(h, sim, glm::vec4{1.f}, 12);
-  explode_entity_shapes<DeathArm>(h, sim, c1, 24);
+void DeathArm::on_destroy(ecs::const_handle h, SimInterface& sim, EmitHandle& e) const {
+  explode_entity_shapes<DeathArm>(h, e);
+  explode_entity_shapes<DeathArm>(h, e, glm::vec4{1.f}, 12);
+  explode_entity_shapes<DeathArm>(h, e, c1, 24);
   if (auto boss_h = sim.index().get(death_boss); boss_h) {
     std::erase(boss_h->get<DeathRayBoss>()->arms, h.id());
   }

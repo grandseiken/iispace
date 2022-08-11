@@ -50,15 +50,15 @@ struct SuperBossArc : public ecs::component {
     ++timer;
   }
 
-  void on_destroy(const Transform& transform, SimInterface& sim, damage_type) const {
+  void on_destroy(const Transform& transform, SimInterface&, EmitHandle& e, damage_type) const {
     auto parameters = shape_parameters(transform);
     std::get<0>(parameters) += from_polar(i * 2 * fixed_c::pi / 16 + transform.rotation, 120_fx);
-    explode_shapes<shape>(sim, parameters);
-    explode_shapes<shape>(sim, parameters, glm::vec4{1.f}, 12);
-    explode_shapes<shape>(sim, parameters, std::nullopt, 24);
-    explode_shapes<shape>(sim, parameters, glm::vec4{1.f}, 36);
-    explode_shapes<shape>(sim, parameters, std::nullopt, 48);
-    sim.play_sound(sound::kExplosion, std::get<0>(parameters), /* random */ true);
+    explode_shapes<shape>(e, parameters);
+    explode_shapes<shape>(e, parameters, glm::vec4{1.f}, 12);
+    explode_shapes<shape>(e, parameters, std::nullopt, 24);
+    explode_shapes<shape>(e, parameters, glm::vec4{1.f}, 36);
+    explode_shapes<shape>(e, parameters, std::nullopt, 48);
+    e.play_random(sound::kExplosion, std::get<0>(parameters));
   }
 };
 DEBUG_STRUCT_TUPLE(SuperBossArc, boss, i, timer, s_timer);
@@ -233,7 +233,7 @@ struct SuperBoss : ecs::component {
     transform.move(move_vec);
   }
 
-  void on_destroy(ecs::const_handle h, const Transform& transform, SimInterface& sim,
+  void on_destroy(ecs::const_handle h, const Transform& transform, SimInterface& sim, EmitHandle& e,
                   damage_type) const {
     sim.index().iterate_dispatch_if<Enemy>([&](ecs::handle eh, Health& health) {
       if (eh.id() != h.id()) {
@@ -241,11 +241,11 @@ struct SuperBoss : ecs::component {
       }
     });
     auto parameters = shape_parameters(transform);
-    explode_shapes<shape>(sim, parameters);
-    explode_shapes<shape>(sim, parameters, glm::vec4{1.f}, 12);
-    explode_shapes<shape>(sim, parameters, std::nullopt, 24);
-    explode_shapes<shape>(sim, parameters, glm::vec4{1.f}, 36);
-    explode_shapes<shape>(sim, parameters, std::nullopt, 48);
+    explode_shapes<shape>(e, parameters);
+    explode_shapes<shape>(e, parameters, glm::vec4{1.f}, 12);
+    explode_shapes<shape>(e, parameters, std::nullopt, 24);
+    explode_shapes<shape>(e, parameters, glm::vec4{1.f}, 36);
+    explode_shapes<shape>(e, parameters, std::nullopt, 48);
 
     std::uint32_t n = 1;
     for (std::uint32_t i = 0; i < 16; ++i) {
@@ -255,8 +255,7 @@ struct SuperBoss : ecs::component {
           .time = n, .position = transform.centre + v, .colour = colours[i % 8]});
       n += i;
     }
-    sim.rumble_all(25);
-    sim.play_sound(sound::kExplosion, transform.centre);
+    e.rumble_all(25).play(sound::kExplosion, transform.centre);
 
     for (std::uint32_t i = 0; i < 8; ++i) {
       spawn_powerup(sim, transform.centre, powerup_type::kBomb);

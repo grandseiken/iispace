@@ -32,7 +32,8 @@ struct SnakeTail : ecs::component {
     if (!--timer) {
       on_destroy(sim);
       h.emplace<Destroy>();
-      explode_entity_shapes<SnakeTail>(h, sim, colour);
+      auto e = sim.emit(resolve_key::reconcile(h.id(), resolve_tag::kOnDestroy));
+      explode_entity_shapes<SnakeTail>(h, e, colour);
     }
     if (d_timer && !--d_timer) {
       if (tail && sim.index().contains(*tail)) {
@@ -40,8 +41,9 @@ struct SnakeTail : ecs::component {
       }
       on_destroy(sim);
       h.emplace<Destroy>();
-      explode_entity_shapes<SnakeTail>(h, sim, colour);
-      sim.play_sound(sound::kEnemyDestroy, transform.centre, true);
+      auto e = sim.emit(resolve_key::reconcile(h.id(), resolve_tag::kOnDestroy));
+      explode_entity_shapes<SnakeTail>(h, e, colour);
+      e.play_random(sound::kEnemyDestroy, transform.centre);
     }
   }
 

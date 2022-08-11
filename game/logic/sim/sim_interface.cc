@@ -20,6 +20,55 @@ RandomEngine& engine(SimInternals& internals, random_source s) {
 }
 }  // namespace
 
+EmitHandle& EmitHandle::add(particle particle) {
+  e->particles.emplace_back(particle);
+  return *this;
+}
+
+EmitHandle& EmitHandle::explosion(const glm::vec2& v, const glm::vec4& c, std::uint32_t time,
+                                  const std::optional<glm::vec2>& towards) {
+  auto& r = sim->random(random_source::kLegacyAesthetic);
+  auto n = towards ? r.rbool() + 1 : r.uint(8) + 8;
+  for (std::uint32_t i = 0; i < n; ++i) {
+    auto dir = from_polar(r.fixed().to_float() * 2 * glm::pi<float>(), 6.f);
+    if (towards && *towards - v != glm::vec2{0.f}) {
+      dir = glm::normalize(*towards - v);
+      float angle = std::atan2(dir.y, dir.x) + (r.fixed().to_float() - 0.5f) * glm::pi<float>() / 4;
+      dir = from_polar(angle, 6.f);
+    }
+    add(particle{v, c, dir, time + r.uint(8)});
+  }
+  return *this;
+}
+
+EmitHandle& EmitHandle::rumble(std::uint32_t player, std::uint32_t time_ticks) {
+  e->rumble_map[player] = std::max(e->rumble_map[player], time_ticks);
+  return *this;
+}
+
+EmitHandle& EmitHandle::rumble_all(std::uint32_t time_ticks) {
+  e->global_rumble = std::max(e->global_rumble, time_ticks);
+  return *this;
+}
+
+EmitHandle& EmitHandle::play(sound s, float volume, float pan, float repitch) {
+  auto& se = e->sounds.emplace_back();
+  se.sound_id = s;
+  se.volume = volume;
+  se.pan = pan;
+  se.pitch = repitch;
+  return *this;
+}
+
+EmitHandle& EmitHandle::play(sound s, const vec2& position, float volume, float repitch) {
+  return play(s, volume, 2.f * position.x.to_float() / kSimDimensions.x - 1.f, repitch);
+}
+
+EmitHandle& EmitHandle::play_random(sound s, const vec2& position, float volume) {
+  auto& r = sim->random(random_source::kLegacyAesthetic);
+  return play(s, position, volume * (.5f * r.fixed().to_float() + .5f));
+}
+
 const initial_conditions& SimInterface::conditions() const {
   return internals_->conditions;
 }
@@ -199,59 +248,6 @@ ecs::handle SimInterface::nearest_player(const vec2& point) {
   return nearest_alive ? *nearest_alive : *nearest_dead;
 }
 
-auto SimInterface::EmitHandle::add(particle particle) -> EmitHandle& {
-  e->particles.emplace_back(particle);
-  return *this;
-}
-
-auto SimInterface::EmitHandle::explosion(const glm::vec2& v, const glm::vec4& c, std::uint32_t time,
-                                         const std::optional<glm::vec2>& towards) -> EmitHandle& {
-  auto& r = sim->random(random_source::kLegacyAesthetic);
-  auto n = towards ? r.rbool() + 1 : r.uint(8) + 8;
-  for (std::uint32_t i = 0; i < n; ++i) {
-    auto dir = from_polar(r.fixed().to_float() * 2 * glm::pi<float>(), 6.f);
-    if (towards && *towards - v != glm::vec2{0.f}) {
-      dir = glm::normalize(*towards - v);
-      float angle = std::atan2(dir.y, dir.x) + (r.fixed().to_float() - 0.5f) * glm::pi<float>() / 4;
-      dir = from_polar(angle, 6.f);
-    }
-    add(particle{v, c, dir, time + r.uint(8)});
-  }
-  return *this;
-}
-
-auto SimInterface::EmitHandle::rumble(std::uint32_t player, std::uint32_t time_ticks)
-    -> EmitHandle& {
-  e->rumble_map[player] = std::max(e->rumble_map[player], time_ticks);
-  return *this;
-}
-
-auto SimInterface::EmitHandle::rumble_all(std::uint32_t time_ticks) -> EmitHandle& {
-  e->global_rumble = std::max(e->global_rumble, time_ticks);
-  return *this;
-}
-
-auto SimInterface::EmitHandle::play(sound s, float volume, float pan, float repitch)
-    -> EmitHandle& {
-  auto& se = e->sounds.emplace_back();
-  se.sound_id = s;
-  se.volume = volume;
-  se.pan = pan;
-  se.pitch = repitch;
-  return *this;
-}
-
-auto SimInterface::EmitHandle::play(sound s, const vec2& position, float volume, float repitch)
-    -> EmitHandle& {
-  return play(s, volume, 2.f * position.x.to_float() / kSimDimensions.x - 1.f, repitch);
-}
-
-auto SimInterface::EmitHandle::play_random(sound s, const vec2& position, float volume)
-    -> EmitHandle& {
-  auto& r = sim->random(random_source::kLegacyAesthetic);
-  return play(s, position, volume * (.5f * r.fixed().to_float() + .5f));
-}
-
 Stars& SimInterface::stars() {
   return internals_->stars;
 }
@@ -260,27 +256,10 @@ const Stars& SimInterface::stars() const {
   return internals_->stars;
 }
 
-auto SimInterface::emit(const resolve_key& key) -> SimInterface::EmitHandle {
+EmitHandle SimInterface::emit(const resolve_key& key) {
   auto& e = internals_->output.entries.emplace_back();
   e.key = key;
   return {*this, e.e};
-}
-
-void SimInterface::add_particle(const ii::particle& particle) {
-  emit(resolve_key::predicted()).add(particle);
-}
-
-void SimInterface::explosion(const glm::vec2& v, const glm::vec4& c, std::uint32_t time,
-                             const std::optional<glm::vec2>& towards) {
-  emit(resolve_key::predicted()).explosion(v, c, time, towards);
-}
-
-void SimInterface::rumble_all(std::uint32_t time) {
-  emit(resolve_key::predicted()).rumble_all(time);
-}
-
-void SimInterface::rumble(std::uint32_t player, std::uint32_t time) {
-  emit(resolve_key::predicted()).rumble(player, time);
 }
 
 void SimInterface::play_sound(sound s, const vec2& position, bool random, float volume) {

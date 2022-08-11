@@ -114,20 +114,26 @@ Note: most of these hard to do with laggy network.
 ## New enemy ideas
 * Redesign shielder, shield at back and sides so you need to get in its path in front of it
 * Wall cluster bomb
+* Hidden superwall that rotates randomly then emits cross of wall segments
+* Wall section with multiple squares that snakes around and can split
 * Many new wall types / configuration
 * Enemy that shields other enemies until killed
 * Snakes, oh snakes!
 * Enemy that spawns new ones when hit
 * Bomb that eats other enemies and detonates?
-* Wall section with multiple squares that snakes around and can split
 * More gravity enemies, possibly redesign tractor
 * Enemy that shoots lines of bouncing little things like the tractor boss shots
-* Intelligent square that goes to where player is heading
+* Intelligent follow square that goes to where player is heading
+* Fill screen with little enemies that bounce off each other
+
+## Bosses
+* Super snake
 
 ## Sector conditions
 * Aggressive timer for new spawns (should be no timer usually)
 * Very narrow sector
 * Walls that must be pushed back by shooting
-* Constant square walls that fly past and you need to shoot a path through
+* Constant square walls / etc that fly past and you need to shoot a path through
 * Square walls that spiral around the outside and go in
 * Zoomed out / bigger area
+* Rainbow snake zone

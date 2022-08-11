@@ -246,16 +246,16 @@ struct TractorBoss : ecs::component {
     }
   }
 
-  void
-  on_hit(ecs::handle h, const Transform& transform, SimInterface& sim, damage_type type) const {
-    boss_on_hit<true, TractorBoss>(h, sim, type);
+  void on_hit(ecs::handle h, const Transform& transform, SimInterface& sim, EmitHandle& e,
+              damage_type type) const {
+    boss_on_hit<true, TractorBoss>(h, sim, e, type);
     // Compatiblity with old attack shapes actually being part of the shape.
     if (type == damage_type::kBomb) {
       for (const auto& v : attack_shapes) {
         std::tuple parameters{transform.centre, transform.rotation, v};
-        explode_shapes<attack_shape>(sim, parameters);
-        explode_shapes<attack_shape>(sim, parameters, glm::vec4{1.f}, 12);
-        explode_shapes<attack_shape>(sim, parameters, std::nullopt, 24);
+        explode_shapes<attack_shape>(e, parameters);
+        explode_shapes<attack_shape>(e, parameters, glm::vec4{1.f}, 12);
+        explode_shapes<attack_shape>(e, parameters, std::nullopt, 24);
       }
     }
   }

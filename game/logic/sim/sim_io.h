@@ -6,12 +6,16 @@
 #include <glm/glm.hpp>
 #include <bit>
 #include <cstdint>
+#include <deque>
 #include <functional>
 #include <optional>
 #include <unordered_map>
 #include <vector>
 
 namespace ii {
+namespace ecs {
+enum class entity_id : std::uint32_t;
+}  // namespace ecs
 static constexpr std::uint32_t kMaxPlayers = 4;
 
 inline void hash_combine(std::size_t& seed, std::size_t v) {
@@ -94,7 +98,9 @@ enum class resolve {
 
 enum class resolve_tag {
   kUnknown,
-  kDestroy,
+  kOnHit,
+  kOnDestroy,
+  kRespawn,
 };
 
 template <>
@@ -105,6 +111,7 @@ struct resolve_key {
   std::optional<std::uint32_t> cause_player_id;
   std::optional<std::uint32_t> source_entity_id;
   resolve_tag reconcile_tag = resolve_tag::kUnknown;
+  std::uint32_t reconcile_value = 0;
 
   std::size_t hash() const {
     std::size_t seed = 0;
@@ -112,6 +119,7 @@ struct resolve_key {
     hash_combine(seed, cause_player_id.value_or(0));
     hash_combine(seed, source_entity_id.value_or(0));
     hash_combine(seed, +reconcile_tag);
+    hash_combine(seed, reconcile_value);
     return seed;
   }
 
@@ -137,12 +145,13 @@ struct resolve_key {
     return key;
   }
 
-  static resolve_key reconcile(std::optional<std::uint32_t> source_entity_id,
-                               resolve_tag reconcile_tag = resolve_tag::kUnknown) {
+  static resolve_key reconcile(std::optional<ecs::entity_id> source_entity_id,
+                               resolve_tag reconcile_tag, std::uint32_t reconcile_value = 0) {
     resolve_key key;
     key.type = resolve::kReconcile;
-    key.source_entity_id = source_entity_id;
+    key.source_entity_id = static_cast<std::uint32_t>(*source_entity_id);
     key.reconcile_tag = reconcile_tag;
+    key.reconcile_value = reconcile_value;
     return key;
   }
 };
@@ -185,7 +194,7 @@ struct aggregate_output {
     resolve_key key;
     event e;
   };
-  std::vector<entry> entries;
+  std::deque<entry> entries;
 };
 
 struct render_output {

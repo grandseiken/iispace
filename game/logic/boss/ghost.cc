@@ -106,7 +106,8 @@ struct GhostMine : ecs::component {
 
   void update(ecs::handle h, Transform& transform, SimInterface& sim) {
     if (timer == 80) {
-      explode_entity_shapes<GhostMine>(h, sim);
+      auto e = sim.emit(resolve_key::reconcile(h.id(), resolve_tag::kRespawn));
+      explode_entity_shapes<GhostMine>(h, e);
       transform.set_rotation(sim.random_fixed() * 2 * fixed_c::pi);
     }
     timer && --timer;
@@ -438,21 +439,21 @@ struct GhostBoss : ecs::component {
             2 * inner_ring_rotation};
   }
 
-  void explode_shapes(const Transform& transform, SimInterface& sim,
+  void explode_shapes(const Transform& transform, EmitHandle& e,
                       const std::optional<glm::vec4> colour_override = std::nullopt,
                       std::uint32_t time = 8,
                       const std::optional<vec2>& towards = std::nullopt) const {
-    ii::explode_shapes<explode_shape>(sim, shape_parameters(transform), colour_override, time,
+    ii::explode_shapes<explode_shape>(e, shape_parameters(transform), colour_override, time,
                                       towards);
     for (std::uint32_t i = 0; i < 10; ++i) {
-      sim.explosion(to_float(transform.centre), glm::vec4{0.f});  // Compatibility.
+      e.explosion(to_float(transform.centre), glm::vec4{0.f});  // Compatibility.
     }
     for (std::uint32_t i = 0; i < 8; ++i) {
-      ii::explode_shapes<spark_shape>(sim, spark_shape_parameters(transform, i), colour_override,
+      ii::explode_shapes<spark_shape>(e, spark_shape_parameters(transform, i), colour_override,
                                       time, towards);
     }
     if (box_attack_shape_enabled) {
-      ii::explode_shapes<box_attack_shape>(sim, box_attack_parameters(transform), colour_override,
+      ii::explode_shapes<box_attack_shape>(e, box_attack_parameters(transform), colour_override,
                                            time, towards);
     }
   }

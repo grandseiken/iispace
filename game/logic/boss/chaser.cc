@@ -242,7 +242,7 @@ struct ChaserBoss : ecs::component {
     }
   }
 
-  void on_destroy(ecs::const_handle h, const Transform& transform, SimInterface& sim,
+  void on_destroy(ecs::const_handle h, const Transform& transform, SimInterface& sim, EmitHandle& e,
                   damage_type) const {
     bool last = false;
     if (split < kMaxSplit) {
@@ -265,7 +265,7 @@ struct ChaserBoss : ecs::component {
       });
 
       if (last) {
-        sim.rumble_all(25);
+        e.rumble_all(25);
         std::uint32_t n = 1;
         auto& random = sim.random(random_source::kLegacyAesthetic);
         for (std::uint32_t i = 0; i < 16; ++i) {
@@ -278,23 +278,23 @@ struct ChaserBoss : ecs::component {
       }
     }
 
-    sim.rumble_all(split < 3 ? 10 : 3);
-    explode_entity_shapes<ChaserBoss>(h, sim);
-    explode_entity_shapes<ChaserBoss>(h, sim, glm::vec4{1.f}, 12);
+    e.rumble_all(split < 3 ? 10 : 3);
+    explode_entity_shapes<ChaserBoss>(h, e);
+    explode_entity_shapes<ChaserBoss>(h, e, glm::vec4{1.f}, 12);
     if (split < 3 || last) {
-      explode_entity_shapes<ChaserBoss>(h, sim, c, 24);
+      explode_entity_shapes<ChaserBoss>(h, e, c, 24);
     }
     if (split < 2 || last) {
-      explode_entity_shapes<ChaserBoss>(h, sim, glm::vec4{1.f}, 36);
+      explode_entity_shapes<ChaserBoss>(h, e, glm::vec4{1.f}, 36);
     }
     if (split < 1 || last) {
-      explode_entity_shapes<ChaserBoss>(h, sim, c, 48);
+      explode_entity_shapes<ChaserBoss>(h, e, c, 48);
     }
 
     if (split < 3 || last) {
-      sim.play_sound(sound::kExplosion, transform.centre);
+      e.play(sound::kExplosion, transform.centre);
     } else {
-      sim.play_sound(sound::kExplosion, transform.centre, /* random */ true);
+      e.play_random(sound::kExplosion, transform.centre);
     }
   }
 

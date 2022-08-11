@@ -127,7 +127,8 @@ struct Wall : ecs::component {
     transform.set_rotation(angle(dir));
   }
 
-  void on_destroy(const Transform& transform, SimInterface& sim, damage_type type) const {
+  void
+  on_destroy(const Transform& transform, SimInterface& sim, EmitHandle&, damage_type type) const {
     if (type == damage_type::kBomb) {
       return;
     }
