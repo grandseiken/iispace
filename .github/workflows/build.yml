@@ -11,8 +11,7 @@ jobs:
     - name: Set up bazelisk
       uses: holvonix-open/setup-bazelisk@v0.6.1
     - run: sudo apt-get update && sudo apt-get install -y libsdl2-dev
-    - run: bazel build --config ci --config gcc //game //game:tools
-    - run: bazel test --config ci --config gcc //test/...
+    - run: bazel build --config ci --config gcc //game //game:tools && ls bazel-bin/game
     - uses: actions/upload-artifact@v3
       with:
         name: linux-tools
@@ -21,19 +20,16 @@ jobs:
       with:
         name: linux-game
         path: bazel-bin/game/game.zip
+    - run: bazel test --config ci --config gcc //test/...
   darwin:
     runs-on: macos-12
     steps:
     - uses: actions/checkout@v3
     - name: Set up bazelisk
       uses: holvonix-open/setup-bazelisk@v0.6.1
-    - run: brew install llvm@14 sdl2
-    - run: ls "/usr/local/opt/llvm/bin"
-    - run: export PATH="/usr/local/opt/llvm/bin:$PATH"
+    - run: brew install sdl2
     - run: export BAZEL_USE_CPP_ONLY_TOOLCHAIN=1
-    - run: bazel build --config ci --config darwin //game //game:tools
-    - run: bazel test --config ci --config darwin //test/...
-    - run: ls bazel-bin/game
+    - run: bazel build --config ci --config darwin //game //game:tools && ls bazel-bin/game
     - uses: actions/upload-artifact@v3
       with:
         name: darwin-tools
@@ -42,3 +38,4 @@ jobs:
       with:
         name: darwin-game
         path: bazel-bin/game/game.zip
+    - run: bazel test --config ci --config darwin //test/...

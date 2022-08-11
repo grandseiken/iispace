@@ -61,7 +61,6 @@ build:clang --cxxopt=-stdlib=libstdc++
 build:clang --cc_output_directory_tag=clang
 
 # MacOS configuration.
+# TODO: same tests also fail on apple clang.
 build:darwin --config=linux-common
 build:darwin --config=clang-common
-build:darwin --repo_env=CC=/usr/local/opt/llvm/bin/clang
-build:darwin --action_env=CC=/usr/local/opt/llvm/bin/clang
