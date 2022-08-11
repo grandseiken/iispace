@@ -28,11 +28,15 @@ void RenderState::handle_output(ISimState& state, Mixer* mixer, IoInputAdapter* 
 
     // Rumble.
     if (input) {
-      for (const auto& pair : e.rumble) {
+      for (const auto& pair : e.rumble_map) {
         rumble[pair.first] = std::max(rumble[pair.first], pair.second);
       }
+      for (std::uint32_t i = 0; e.global_rumble && i < input->player_count(); ++i) {
+        rumble[i] = std::max(rumble[i], e.global_rumble);
+      }
     }
-    e.rumble.clear();  // Always clear rumble, since we're either handling it now or never.
+    e.rumble_map.clear();  // Always clear rumble, since either handling it now or never.
+    e.global_rumble = 0;
 
     // Sounds.
     if (mixer) {
@@ -46,7 +50,7 @@ void RenderState::handle_output(ISimState& state, Mixer* mixer, IoInputAdapter* 
       e.sounds.clear();
     }
 
-    if (e.particles.empty() && e.rumble.empty() && e.sounds.empty()) {
+    if (e.particles.empty() && e.rumble_map.empty() && !e.global_rumble && e.sounds.empty()) {
       it = output.entries.erase(it);
     } else {
       ++it;

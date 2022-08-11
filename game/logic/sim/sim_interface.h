@@ -78,9 +78,28 @@ public:
   ecs::handle nearest_player(const vec2& point);
 
   // Simulation output (particle / effects stuff; rendering).
+  class EmitHandle {
+  public:
+    EmitHandle& add(particle particle);
+    EmitHandle& explosion(const glm::vec2& v, const glm::vec4& c, std::uint32_t time = 8,
+                          const std::optional<glm::vec2>& towards = std::nullopt);
+    EmitHandle& rumble(std::uint32_t player, std::uint32_t time_ticks);
+    EmitHandle& rumble_all(std::uint32_t time_ticks);
+    EmitHandle& play(sound, float volume = 1.f, float pan = 0.f, float repitch = 0.f);
+    EmitHandle& play(sound, const vec2& position, float volume = 1.f, float repitch = 0.f);
+    EmitHandle&
+    play_random(sound, const vec2& position, float volume = 1.f);  // TODO: random pitch?
+
+  private:
+    friend class SimInterface;
+    EmitHandle(SimInterface& sim, aggregate_output::event& e) : sim{&sim}, e{&e} {}
+    SimInterface* sim = nullptr;
+    aggregate_output::event* e = nullptr;
+  };
+
   Stars& stars();
   const Stars& stars() const;
-  aggregate_output::event& emit(const resolve_key& key);
+  EmitHandle emit(const resolve_key& key);
   void add_particle(const particle& particle);
   void explosion(const glm::vec2& v, const glm::vec4& c, std::uint32_t time = 8,
                  const std::optional<glm::vec2>& towards = std::nullopt);

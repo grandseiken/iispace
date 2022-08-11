@@ -92,18 +92,26 @@ enum class resolve {
   kReconcile,
 };
 
+enum class resolve_tag {
+  kUnknown,
+  kDestroy,
+};
+
+template <>
+struct integral_enum<resolve_tag> : std::true_type {};
+
 struct resolve_key {
   resolve type = resolve::kPredicted;
   std::optional<std::uint32_t> cause_player_id;
   std::optional<std::uint32_t> source_entity_id;
-  std::uint32_t reconcile_tag = 0;
+  resolve_tag reconcile_tag = resolve_tag::kUnknown;
 
   std::size_t hash() const {
     std::size_t seed = 0;
     hash_combine(seed, static_cast<std::uint32_t>(type));
     hash_combine(seed, cause_player_id.value_or(0));
     hash_combine(seed, source_entity_id.value_or(0));
-    hash_combine(seed, reconcile_tag);
+    hash_combine(seed, +reconcile_tag);
     return seed;
   }
 
@@ -129,8 +137,8 @@ struct resolve_key {
     return key;
   }
 
-  static resolve_key
-  reconcile(std::optional<std::uint32_t> source_entity_id, std::uint32_t reconcile_tag = 0) {
+  static resolve_key reconcile(std::optional<std::uint32_t> source_entity_id,
+                               resolve_tag reconcile_tag = resolve_tag::kUnknown) {
     resolve_key key;
     key.type = resolve::kReconcile;
     key.source_entity_id = source_entity_id;
@@ -169,7 +177,8 @@ struct aggregate_output {
   struct event {
     std::vector<particle> particles;
     std::vector<sound_out> sounds;
-    std::unordered_map<std::uint32_t, std::uint32_t> rumble;
+    std::unordered_map<std::uint32_t, std::uint32_t> rumble_map;
+    std::uint32_t global_rumble = 0;
   };
 
   struct entry {

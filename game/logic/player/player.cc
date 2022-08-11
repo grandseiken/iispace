@@ -35,6 +35,7 @@ struct Shot : ecs::component {
        bool magic)
   : player{player}
   , player_number{player_number}
+  , is_predicted{is_predicted}
   , velocity{normalise(direction) * kSpeed}
   , magic{magic} {}
 
