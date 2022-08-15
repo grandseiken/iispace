@@ -1,9 +1,8 @@
 #ifndef II_GAME_LOGIC_SIM_SIM_INTERNALS_H
 #define II_GAME_LOGIC_SIM_SIM_INTERNALS_H
+#include "game/common/random.h"
 #include "game/logic/ecs/index.h"
 #include "game/logic/ship/components.h"
-#include "game/logic/sim/fx/stars.h"
-#include "game/logic/sim/random_engine.h"
 #include "game/logic/sim/sim_interface.h"
 #include "game/logic/sim/sim_io.h"
 #include <cstdint>
@@ -27,8 +26,6 @@ struct SimInternals {
   ecs::entity_id global_entity_id{0};
   std::optional<ecs::handle> global_entity_handle;
   std::uint64_t tick_count = 0;
-  // TODO: move stars out into RenderState.
-  Stars stars;
 
   struct collision_entry {
     ecs::entity_id id;

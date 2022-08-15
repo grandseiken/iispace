@@ -30,7 +30,11 @@ cc_library(
   name = "render_state",
   hdrs = ["render_state.h"],
   srcs = ["render_state.cc"],
-  deps = ["//game/logic/sim:sim_io"],
+  deps = [
+    "//game/common:random",
+    "//game/logic/sim:sim_io",
+    "@glm",
+  ],
   implementation_deps = [
     ":io_input_adapter",
     "//game/logic/sim",

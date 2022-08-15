@@ -20,6 +20,11 @@ RandomEngine& engine(SimInternals& internals, random_source s) {
 }
 }  // namespace
 
+EmitHandle& EmitHandle::background_fx(background_fx_change change) {
+  e->background_fx = change;
+  return *this;
+}
+
 EmitHandle& EmitHandle::add(particle particle) {
   e->particles.emplace_back(particle);
   return *this;
@@ -248,14 +253,6 @@ ecs::handle SimInterface::nearest_player(const vec2& point) {
   return nearest_alive ? *nearest_alive : *nearest_dead;
 }
 
-Stars& SimInterface::stars() {
-  return internals_->stars;
-}
-
-const Stars& SimInterface::stars() const {
-  return internals_->stars;
-}
-
 EmitHandle SimInterface::emit(const resolve_key& key) {
   auto& e = internals_->output.entries.emplace_back();
   e.key = key;
@@ -267,16 +264,6 @@ void SimInterface::render_line(const glm::vec2& a, const glm::vec2& b, const glm
   e.a = a;
   e.b = b;
   e.c = c;
-}
-
-void SimInterface::render_line_rect(const glm::vec2& lo, const glm::vec2& hi,
-                                    const glm::vec4& c) const {
-  glm::vec2 li{lo.x, hi.y};
-  glm::vec2 ho{hi.x, lo.y};
-  render_line(lo, li, c);
-  render_line(li, hi, c);
-  render_line(hi, ho, c);
-  render_line(ho, lo, c);
 }
 
 void SimInterface::render_player_info(std::uint32_t player_number, const glm::vec4& colour,

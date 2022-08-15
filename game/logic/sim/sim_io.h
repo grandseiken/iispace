@@ -101,6 +101,7 @@ enum class resolve_tag {
   kOnHit,
   kOnDestroy,
   kRespawn,
+  kBackgroundFx,
 };
 
 template <>
@@ -174,6 +175,14 @@ struct sound_out {
   float pitch = 0.f;
 };
 
+enum class background_fx_type {
+  kStars,
+};
+
+struct background_fx_change {
+  background_fx_type type = background_fx_type::kStars;
+};
+
 struct aggregate_output {
   void clear() {
     entries.clear();
@@ -184,6 +193,7 @@ struct aggregate_output {
   }
 
   struct event {
+    std::optional<background_fx_change> background_fx;
     std::vector<particle> particles;
     std::vector<sound_out> sounds;
     std::unordered_map<std::uint32_t, std::uint32_t> rumble_map;

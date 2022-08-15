@@ -12,13 +12,11 @@ cc_library(
 
 cc_library(
   name = "sim_interface",
-  hdrs = [
-    "random_engine.h",
-    "sim_interface.h",
-  ],
+  hdrs = ["sim_interface.h"],
   deps = [
     ":sim_io",
     "//game/common:math",
+    "//game/common:random",
     "//game/logic/ecs",
     "//game/mixer:sound",
   ],
@@ -42,7 +40,6 @@ cc_library(
     "//game/logic/overmind",
     "//game/logic/player",
     "//game/logic/ship",
-    "//game/logic/sim/fx",
   ],
   visibility = ["//visibility:public"],
 )

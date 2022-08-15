@@ -9,6 +9,13 @@ cc_library(
 )
 
 cc_library(
+  name = "random",
+  hdrs = ["random.h"],
+  deps = [":math"],
+  visibility = ["//visibility:public"],
+)
+
+cc_library(
   name = "types",
   hdrs = [
     "enum.h",

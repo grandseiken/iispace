@@ -7,6 +7,7 @@
 #include <sstream>
 
 namespace {
+// TODO: used for some stuff that should use value from sim state instead.
 constexpr glm::uvec2 kDimensions = {640, 480};
 constexpr glm::uvec2 kTextSize = {16, 16};
 
@@ -358,17 +359,25 @@ bool HighScoreModal::is_high_score(const ii::SaveGame& save) const {
 
 GameModal::GameModal(ii::io::IoLayer& io_layer, const ii::initial_conditions& conditions,
                      const ii::game_options_t& options)
-: Modal{true, true}, engine_{std::random_device{}()}, options_{options} {
+: Modal{true, true}
+, engine_{std::random_device{}()}
+, options_{options}
+, render_state_{conditions.seed} {
   game_.emplace(io_layer, ii::ReplayWriter{conditions});
   game_->input.set_player_count(conditions.player_count);
   game_->input.set_game_dimensions(kDimensions);
+  render_state_.set_dimensions(kDimensions);
   state_ = std::make_unique<ii::SimState>(conditions, &game_->writer, options.ai_players);
 }
 
 GameModal::GameModal(ii::ReplayReader&& replay, const ii::game_options_t& options)
-: Modal{true, true}, engine_{std::random_device{}()}, options_{options} {
+: Modal{true, true}
+, engine_{std::random_device{}()}
+, options_{options}
+, render_state_{replay.initial_conditions().seed} {
   auto conditions = replay.initial_conditions();
   replay_.emplace(std::move(replay));
+  render_state_.set_dimensions(kDimensions);
   if (options.replay_remote_players.empty()) {
     state_ = std::make_unique<ii::SimState>(conditions);
   } else {

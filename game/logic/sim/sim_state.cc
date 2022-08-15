@@ -112,13 +112,12 @@ void SimState::copy_to(SimState& target) const {
 
   internals_->index.copy_to(target.internals_->index);
   target.internals_->input_frames.clear();
-  target.internals_->game_state_random = internals_->game_state_random;
-  target.internals_->aesthetic_random = internals_->aesthetic_random;
+  target.internals_->game_state_random.set_state(internals_->game_state_random.state());
+  target.internals_->aesthetic_random.set_state(internals_->aesthetic_random.state());
   target.internals_->conditions = internals_->conditions;
   target.internals_->global_entity_id = internals_->global_entity_id;
   target.internals_->global_entity_handle.reset();
   target.internals_->tick_count = internals_->tick_count;
-  target.internals_->stars = internals_->stars;
   target.internals_->collisions = internals_->collisions;
   target.internals_->bosses_killed = internals_->bosses_killed;
   target.internals_->output.clear();
@@ -212,7 +211,6 @@ render_output SimState::render() const {
   internals_->line_output.clear();
   internals_->player_output.clear();
 
-  internals_->stars.render(*interface_);
   internals_->index.iterate_dispatch<Render>([&](ecs::const_handle h, const Render& r) {
     if (!h.get<Player>()) {
       r.render(h, *interface_);

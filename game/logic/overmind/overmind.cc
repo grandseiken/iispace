@@ -6,7 +6,6 @@
 #include "game/logic/overmind/spawn_context.h"
 #include "game/logic/player/player.h"
 #include "game/logic/ship/components.h"
-#include "game/logic/sim/fx/stars.h"
 #include <sfn/functional.h>
 #include <algorithm>
 #include <cstdint>
@@ -44,6 +43,7 @@ struct Overmind : ecs::component {
   std::uint32_t lives_target = 0;
   std::uint32_t boss_rest_timer = 0;
   std::uint32_t waves_total = 0;
+  std::uint32_t stars_compatibility = 0;
   bool is_boss_next = false;
   bool is_boss_level = false;
 
@@ -79,8 +79,34 @@ struct Overmind : ecs::component {
     boss_rest_timer = kBossRestTime / 8;
   }
 
-  void update(SimInterface& sim) {
-    sim.stars().update(sim);
+  void update(ecs::handle h, SimInterface& sim) {
+    auto& stars_random = sim.random(random_source::kLegacyAesthetic);
+    auto stars_change = [&] {
+      if (sim.conditions().compatibility == compatibility_level::kLegacy) {
+        stars_random.fixed();
+        stars_compatibility = stars_random.uint(3) + 2;
+      }
+      background_fx_change change;
+      change.type = background_fx_type::kStars;
+      sim.emit(resolve_key::reconcile(h.id(), resolve_tag::kBackgroundFx)).background_fx(change);
+    };
+    if (sim.conditions().compatibility == compatibility_level::kLegacy) {
+      auto rc = stars_compatibility > 1 ? stars_random.uint(stars_compatibility) : 0u;
+      for (std::uint32_t i = 0; i < rc; ++i) {
+        auto r = stars_random.uint(12);
+        if (r <= 0 && stars_random.uint(4)) {
+          continue;
+        }
+        stars_random.uint(4);
+        stars_random.fixed();
+        if (r > 0) {
+          stars_random.rbool();
+        } else {
+          stars_random.uint(4);
+        }
+      }
+    }
+
     std::uint32_t total_enemy_threat = 0;
     sim.index().iterate<Enemy>([&](const Enemy& e) { total_enemy_threat += e.threat_value; });
 
@@ -95,7 +121,7 @@ struct Overmind : ecs::component {
 
     if (sim.conditions().mode == game_mode::kBoss) {
       if (!total_enemy_threat) {
-        sim.stars().change(sim);
+        stars_change();
         if (boss_mod_bosses < 6) {
           for (std::uint32_t i = 0; boss_mod_bosses && i < sim.player_count(); ++i) {
             spawn_boss_reward(sim);
@@ -135,7 +161,7 @@ struct Overmind : ecs::component {
         spawn_powerup(sim);
       }
       timer = 0;
-      sim.stars().change(sim);
+      stars_change();
 
       if (is_boss_level) {
         ++boss_mod_bosses;

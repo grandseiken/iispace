@@ -1,5 +1,5 @@
-#ifndef II_GAME_LOGIC_SIM_RANDOM_ENGINE_H
-#define II_GAME_LOGIC_SIM_RANDOM_ENGINE_H
+#ifndef II_GAME_COMMON_RANDOM_H
+#define II_GAME_COMMON_RANDOM_H
 #include "game/common/fix32.h"
 #include <cstdint>
 
@@ -10,9 +10,15 @@ public:
   static constexpr std::uint32_t rand_max = 0x7fff;
 
   RandomEngine(std::uint32_t seed) : state_{seed} {}
+  RandomEngine(const RandomEngine&) = delete;
+  RandomEngine& operator=(const RandomEngine&) = delete;
 
   std::uint32_t state() const {
     return state_;
+  }
+
+  void set_state(std::uint32_t state) {
+    state_ = state;
   }
 
   std::uint32_t operator()() {

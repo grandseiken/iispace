@@ -1,8 +1,8 @@
 #ifndef II_GAME_LOGIC_SIM_SIM_INTERFACE_H
 #define II_GAME_LOGIC_SIM_SIM_INTERFACE_H
 #include "game/common/math.h"
+#include "game/common/random.h"
 #include "game/logic/ecs/index.h"
-#include "game/logic/sim/random_engine.h"
 #include "game/logic/sim/sim_io.h"
 #include "game/mixer/sound.h"
 #include <cstdint>
@@ -15,10 +15,10 @@ namespace ecs {
 class EntityIndex;
 }  // namespace ecs
 enum class shape_flag : std::uint32_t;
+class SimInterface;
 struct SimInternals;
-class Stars;
 
-// TODO: make this dynamic so we can change it for non-legacy mode.
+// TODO: make this dynamic so it can be changed for non-legacy mode.
 constexpr glm::ivec2 kSimDimensions = {640, 480};
 
 // TODO: to reduce prediction errors, allow each entity to have private sources of
@@ -38,6 +38,7 @@ enum class random_source {
 
 class EmitHandle {
 public:
+  EmitHandle& background_fx(background_fx_change);
   EmitHandle& add(particle particle);
   EmitHandle& explosion(const glm::vec2& v, const glm::vec4& c, std::uint32_t time = 8,
                         const std::optional<glm::vec2>& towards = std::nullopt);
@@ -96,12 +97,8 @@ public:
   ecs::handle nearest_player(const vec2& point);
 
   // Simulation output (particle / effects stuff; rendering).
-  Stars& stars();
-  const Stars& stars() const;
   EmitHandle emit(const resolve_key& key);
   void render_line(const glm::vec2& a, const glm::vec2& b, const glm::vec4& c) const;
-  // TODO: only used by Stars, which should be extracted anyway.
-  void render_line_rect(const glm::vec2& lo, const glm::vec2& hi, const glm::vec4& c) const;
   void render_player_info(std::uint32_t player_number, const glm::vec4& colour, std::uint64_t score,
                           std::uint32_t multiplier, float timer) const;
 
