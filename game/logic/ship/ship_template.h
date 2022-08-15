@@ -113,29 +113,25 @@ shape_flag shape_check_point_legacy(const auto& parameters, const vec2& v, shape
 }
 
 template <geom::ShapeNode S>
-shape_flag shape_check_point_compatibility(const auto& parameters, const SimInterface& sim,
-                                           const vec2& v, shape_flag mask) {
-  if (sim.conditions().compatibility == compatibility_level::kLegacy) {
-    return shape_check_point_legacy<S>(parameters, v, mask);
-  }
-  return shape_check_point<S>(parameters, v, mask);
+shape_flag shape_check_point_compatibility(const auto& parameters, bool is_legacy, const vec2& v,
+                                           shape_flag mask) {
+  return is_legacy ? shape_check_point_legacy<S>(parameters, v, mask)
+                   : shape_check_point<S>(parameters, v, mask);
 }
 
 template <ecs::Component Logic, geom::ShapeNode S = typename Logic::shape>
-shape_flag
-ship_check_point(ecs::const_handle h, const SimInterface& sim, const vec2& v, shape_flag mask) {
+shape_flag ship_check_point(ecs::const_handle h, const vec2& v, shape_flag mask) {
   if constexpr (requires { &Logic::check_point; }) {
-    return ecs::call<&Logic::check_point>(h, sim, v, mask);
+    return ecs::call<&Logic::check_point>(h, v, mask);
   } else {
     return shape_check_point<S>(get_shape_parameters<Logic>(h), v, mask);
   }
 }
 
 template <ecs::Component Logic, geom::ShapeNode S = typename Logic::shape>
-shape_flag ship_check_point_legacy(ecs::const_handle h, const SimInterface& sim, const vec2& v,
-                                   shape_flag mask) {
+shape_flag ship_check_point_legacy(ecs::const_handle h, const vec2& v, shape_flag mask) {
   if constexpr (requires { &Logic::check_point; }) {
-    return ecs::call<&Logic::check_point>(h, sim, v, mask);
+    return ecs::call<&Logic::check_point>(h, v, mask);
   } else {
     return shape_check_point_legacy<S>(get_shape_parameters<Logic>(h), v, mask);
   }

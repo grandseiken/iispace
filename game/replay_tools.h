@@ -60,6 +60,7 @@ result<replay_results_t> inline replay_results(
 }
 
 struct run_data_t {
+  std::uint32_t seed = 0;
   std::uint64_t ticks = 0;
   std::uint64_t score = 0;
   boss_flag bosses_killed{0};
@@ -86,6 +87,7 @@ inline result<run_data_t> synthesize_replay(const initial_conditions& conditions
   }
   auto results = sim.results();
   run_data_t data;
+  data.seed = results.seed;
   data.ticks = results.tick_count;
   data.score = results.score;
   data.bosses_killed |= results.bosses_killed;

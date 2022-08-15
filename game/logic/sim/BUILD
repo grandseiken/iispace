@@ -27,6 +27,8 @@ cc_library(
   name = "sim",
   hdrs = ["sim_state.h"],
   srcs = [
+    "collision.cc",
+    "collision.h",
     "sim_interface.cc",
     "sim_internals.h",
     "sim_state.cc",
@@ -36,6 +38,7 @@ cc_library(
   ],
   implementation_deps = [
     ":sim_interface",
+    "//game/common:math",
     "//game/data:replay",
     "//game/logic/overmind",
     "//game/logic/player",

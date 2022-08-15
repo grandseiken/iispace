@@ -27,6 +27,9 @@ enum class random_source {
   // For randomness which affects the game state and must be reproduced exactly for replay
   // compatibility.
   kGameState,
+  // The same but for meta-level state, so that running the same seed actually gives the same
+  // run, other than in legacy compatibility mode.
+  kGameSequence,
   // For randomness which does not affect the game state, and can therefore be used differently
   // between versions without breaking replays.
   // TODO: may be advantageous to have multiple of these in order to minimize divergence

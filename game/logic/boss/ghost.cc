@@ -162,6 +162,7 @@ struct GhostBoss : ecs::component {
   bool shot_type = false;
   bool rdir = false;
   bool danger_enable = false;
+  bool is_legacy = false;
   std::uint32_t vtime = 0;
   std::uint32_t timer = 0;
   std::uint32_t attack = 0;
@@ -384,17 +385,16 @@ struct GhostBoss : ecs::component {
     return {transform.centre, transform.rotation};
   }
 
-  shape_flag check_point(const Transform& transform, const SimInterface& sim, const vec2& v,
-                         shape_flag mask) const {
+  shape_flag check_point(const Transform& transform, const vec2& v, shape_flag mask) const {
     auto result = shape_flag::kNone;
     if (!collision_enabled) {
       return shape_flag::kNone;
     }
     result |= shape_check_point_compatibility<standard_transform<centre_shape>>(
-        shape_parameters(transform), sim, v, mask);
+        shape_parameters(transform), is_legacy, v, mask);
     if (box_attack_shape_enabled) {
       result |= shape_check_point_compatibility<box_attack_shape>(box_attack_parameters(transform),
-                                                                  sim, v, mask);
+                                                                  is_legacy, v, mask);
     }
 
     using ring0_ball =
@@ -405,7 +405,7 @@ struct GhostBoss : ecs::component {
       for (std::uint32_t i = 0; i < 16; ++i) {
         std::tuple parameters{transform.centre, transform.rotation, outer_rotation[0],
                               outer_shape_d(0, i), outer_ball_rotation};
-        result |= shape_check_point_compatibility<ring0_ball_t>(parameters, sim, v, mask);
+        result |= shape_check_point_compatibility<ring0_ball_t>(parameters, is_legacy, v, mask);
       }
     }
 
@@ -419,7 +419,7 @@ struct GhostBoss : ecs::component {
         }
         std::tuple parameters{transform.centre, transform.rotation, outer_rotation[n],
                               outer_shape_d(n, i), outer_ball_rotation};
-        result |= shape_check_point_compatibility<ringN_ball_t>(parameters, sim, v, mask);
+        result |= shape_check_point_compatibility<ringN_ball_t>(parameters, is_legacy, v, mask);
       }
     }
     return result;
@@ -517,6 +517,6 @@ void spawn_ghost_boss(SimInterface& sim, std::uint32_t cycle) {
       .on_destroy = ecs::call<&boss_on_destroy<GhostBoss>>,
   });
   h.add(Boss{.boss = boss_flag::kBoss2B});
-  h.add(GhostBoss{});
+  h.add(GhostBoss{.is_legacy = sim.conditions().compatibility == compatibility_level::kLegacy});
 }
 }  // namespace ii

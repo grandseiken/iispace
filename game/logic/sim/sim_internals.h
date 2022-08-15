@@ -2,10 +2,10 @@
 #define II_GAME_LOGIC_SIM_SIM_INTERNALS_H
 #include "game/common/random.h"
 #include "game/logic/ecs/index.h"
-#include "game/logic/ship/components.h"
-#include "game/logic/sim/sim_interface.h"
+#include "game/logic/sim/collision.h"
 #include "game/logic/sim/sim_io.h"
 #include <cstdint>
+#include <memory>
 #include <optional>
 #include <unordered_map>
 #include <vector>
@@ -13,11 +13,13 @@
 namespace ii {
 
 struct SimInternals {
-  SimInternals(std::uint32_t seed) : game_state_random{seed}, aesthetic_random{seed + 1} {}
+  SimInternals(std::uint32_t seed)
+  : game_state_random{seed}, game_sequence_random{seed}, aesthetic_random{seed + 1} {}
 
   // Input.
   std::vector<input_frame> input_frames;
   RandomEngine game_state_random;
+  RandomEngine game_sequence_random;
   RandomEngine aesthetic_random;
 
   // Internal sim data.
@@ -26,15 +28,7 @@ struct SimInternals {
   ecs::entity_id global_entity_id{0};
   std::optional<ecs::handle> global_entity_handle;
   std::uint64_t tick_count = 0;
-
-  struct collision_entry {
-    ecs::entity_id id;
-    ecs::handle handle;
-    const Transform* transform = nullptr;
-    const Collision* collision = nullptr;
-    fixed x_min = 0;
-  };
-  std::vector<collision_entry> collisions;
+  std::unique_ptr<CollisionIndex> collision_index;
 
   // Run output.
   // TODO: if adding more, put in struct for easy copying in copy_to().

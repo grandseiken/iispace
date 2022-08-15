@@ -13,10 +13,8 @@ namespace ii {
 namespace {
 
 void setup_index_callbacks(SimInterface& interface, SimInternals& internals) {
-  internals.index.on_component_add<Collision>([&internals](ecs::handle h, const Collision& c) {
-    internals.collisions.emplace_back(
-        SimInternals::collision_entry{h.id(), h, h.get<Transform>(), &c, 0});
-  });
+  internals.index.on_component_add<Collision>(
+      [&internals](ecs::handle h, const Collision& c) { internals.collision_index->add(h, c); });
   internals.index.on_component_add<Destroy>(
       [&internals, &interface](ecs::handle h, const Destroy& d) {
         auto* e = h.get<Enemy>();
@@ -35,21 +33,12 @@ void setup_index_callbacks(SimInterface& interface, SimInternals& internals) {
         if (auto* b = h.get<Boss>(); b) {
           internals.bosses_killed |= b->boss;
         }
-
-        if (auto it = std::find_if(internals.collisions.begin(), internals.collisions.end(),
-                                   [&](const auto& e) { return e.handle.id() == h.id(); });
-            it != internals.collisions.end()) {
-          internals.collisions.erase(it);
-        }
+        internals.collision_index->remove(h);
       });
 }
 
 void refresh_handles(SimInternals& internals) {
-  for (auto& e : internals.collisions) {
-    e.handle = *internals.index.get(e.id);
-    e.collision = e.handle.get<Collision>();
-    e.transform = e.handle.get<Transform>();
-  }
+  internals.collision_index->refresh_handles(internals.index);
   internals.global_entity_handle = internals.index.get(internals.global_entity_id);
 }
 
@@ -71,6 +60,15 @@ SimState::SimState(const initial_conditions& conditions, ReplayWriter* replay_wr
 , internals_{std::make_unique<SimInternals>(conditions.seed)}
 , interface_{std::make_unique<SimInterface>(internals_.get())} {
   internals_->conditions = conditions;
+  if (conditions.compatibility == compatibility_level::kLegacy) {
+    internals_->collision_index = std::make_unique<LegacyCollisionIndex>();
+  } else {
+    // TODO: why does grid size affect results?
+    // E.g. ai_replay_synth --players 3 --seed 1128749985 right now kills 38 on grid size 64 or 32,
+    // but not on 16 or 8 or 128.
+    internals_->collision_index = std::make_unique<GridCollisionIndex>(
+        glm::uvec2{64, 64}, glm::ivec2{-32, -32}, kSimDimensions + glm::ivec2{32, 32});
+  }
   internals_->global_entity_handle = internals_->index.create(GlobalData{conditions});
   internals_->global_entity_handle->add(Update{.update = ecs::call<&GlobalData::pre_update>});
   internals_->global_entity_handle->add(
@@ -113,12 +111,13 @@ void SimState::copy_to(SimState& target) const {
   internals_->index.copy_to(target.internals_->index);
   target.internals_->input_frames.clear();
   target.internals_->game_state_random.set_state(internals_->game_state_random.state());
+  target.internals_->game_sequence_random.set_state(internals_->game_sequence_random.state());
   target.internals_->aesthetic_random.set_state(internals_->aesthetic_random.state());
   target.internals_->conditions = internals_->conditions;
   target.internals_->global_entity_id = internals_->global_entity_id;
   target.internals_->global_entity_handle.reset();
   target.internals_->tick_count = internals_->tick_count;
-  target.internals_->collisions = internals_->collisions;
+  target.internals_->collision_index = internals_->collision_index->clone();
   target.internals_->bosses_killed = internals_->bosses_killed;
   target.internals_->output.clear();
   refresh_handles(*target.internals_);
@@ -140,13 +139,7 @@ void SimState::update(std::vector<input_frame> input) {
                                                                   : 0;
   internals_->input_frames = std::move(input);
   internals_->input_frames.resize(internals_->conditions.player_count);
-
-  // TODO: write a better collision system for non-legacy-compatibility mode.
-  for (auto& e : internals_->collisions) {
-    e.x_min = e.transform->centre.x - e.collision->bounding_width;
-  }
-  std::stable_sort(internals_->collisions.begin(), internals_->collisions.end(),
-                   [](const auto& a, const auto& b) { return a.x_min < b.x_min; });
+  internals_->collision_index->begin_tick();
 
   internals_->index.iterate_dispatch_if<Boss>([&](Boss& boss, Transform& transform) {
     if (interface_->is_on_screen(transform.centre)) {
@@ -158,9 +151,14 @@ void SimState::update(std::vector<input_frame> input) {
       --h.hit_timer;
     }
   });
-  internals_->index.iterate_dispatch<Update>([&](ecs::handle h, Update& c) {
+  internals_->index.iterate_dispatch<Update>([&](ecs::handle h, Update& c, Collision* collision) {
     if (!h.has<Destroy>()) {
       c.update(h, *interface_);
+      if (collision) {
+        // TODO: we only update after the entity itself has updated: this can still lead to minor
+        // inconsistencies if the entity is moved by some external force.
+        internals_->collision_index->update(h, *collision);
+      }
     }
   });
 

@@ -190,9 +190,9 @@ bool run(const options_t& options) {
   if (options.replay_out_path) {
     if (options.runs > 1) {
       std::cout << "================================================\n"
-                << "best run #" << (best_run_index + 1) << ": ticks " << best_run->ticks
-                << " score " << best_run->score << " kills " << +best_run->bosses_killed
-                << std::endl;
+                << "best run #" << (best_run_index + 1) << ":\n\tseed " << best_run->seed
+                << "\n\tticks " << best_run->ticks << "\n\tscore " << best_run->score
+                << "\n\tkills " << +best_run->bosses_killed << std::endl;
     }
     auto write_result = fs.write(*options.replay_out_path, *best_run->replay_bytes);
     if (!write_result) {

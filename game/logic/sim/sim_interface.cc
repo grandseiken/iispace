@@ -11,12 +11,13 @@ GlobalData& global_data(SimInternals& internals) {
 }
 
 RandomEngine& engine(SimInternals& internals, random_source s) {
-  if (s == random_source::kGameState ||
-      (s == random_source::kLegacyAesthetic &&
-       internals.conditions.compatibility == compatibility_level::kLegacy)) {
-    return internals.game_state_random;
+  if (internals.conditions.compatibility == compatibility_level::kLegacy) {
+    return s == random_source::kAesthetic ? internals.aesthetic_random
+                                          : internals.game_state_random;
   }
-  return internals.aesthetic_random;
+  return s == random_source::kGameState   ? internals.game_state_random
+      : s == random_source::kGameSequence ? internals.game_sequence_random
+                                          : internals.aesthetic_random;
 }
 }  // namespace
 
@@ -127,61 +128,12 @@ bool SimInterface::random_bool() {
 }
 
 bool SimInterface::any_collision(const vec2& point, shape_flag mask) const {
-  fixed x = point.x;
-  fixed y = point.y;
-
-  for (const auto& collision : internals_->collisions) {
-    const auto& e = *collision.collision;
-    auto v = collision.transform->centre;
-    fixed w = e.bounding_width;
-
-    // TODO: this optmization check is incorrect, since collision list is sorted based on x-min
-    // at start of frame; may have moved in the meantime, or list may have been appended to.
-    // May be impossible to fix without breaking replay compatibility, unless there is a clever
-    // way to work around it with update ordering or something.
-    // Very unclear what effective collision semantics actually are.
-    if (v.x - w > x) {
-      break;
-    }
-    if (v.x + w < x || v.y + w < y || v.y - w > y) {
-      continue;
-    }
-    if (!(e.flags & mask)) {
-      continue;
-    }
-    if (+e.check(collision.handle, *this, point, mask)) {
-      return true;
-    }
-  }
-  return false;
+  return internals_->collision_index->any_collision(point, mask);
 }
 
 auto SimInterface::collision_list(const vec2& point, shape_flag mask)
     -> std::vector<collision_info> {
-  std::vector<collision_info> r;
-  fixed x = point.x;
-  fixed y = point.y;
-
-  for (const auto& collision : internals_->collisions) {
-    const auto& e = *collision.collision;
-    auto v = collision.transform->centre;
-    fixed w = e.bounding_width;
-
-    // TODO: same as above.
-    if (v.x - w > x) {
-      break;
-    }
-    if (v.x + w < x || v.y + w < y || v.y - w > y) {
-      continue;
-    }
-    if (!(e.flags & mask)) {
-      continue;
-    }
-    if (auto hit = e.check(collision.handle, *this, point, mask); + hit) {
-      r.emplace_back(collision_info{.h = collision.handle, .hit_mask = hit});
-    }
-  }
-  return r;
+  return internals_->collision_index->collision_list(point, mask);
 }
 
 bool SimInterface::is_on_screen(const vec2& point) const {

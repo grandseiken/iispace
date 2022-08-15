@@ -21,11 +21,11 @@ struct SpawnContext {
   std::uint32_t* hard_already = nullptr;
 
   std::uint32_t random(std::uint32_t max) const {
-    return sim->random(max);
+    return sim->random(random_source::kGameSequence).uint(max);
   }
 
   std::uint32_t random_bool() const {
-    return sim->random_bool();
+    return sim->random(random_source::kGameSequence).rbool();
   }
 
   spawn_direction random_v_direction() const {

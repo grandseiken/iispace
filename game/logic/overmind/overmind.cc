@@ -55,9 +55,10 @@ struct Overmind : ecs::component {
   Overmind(SimInterface& sim) {
     add_formations();
 
-    auto queue = [&sim] {
-      auto a = sim.random(3);
-      auto b = sim.random(2);
+    auto& random = sim.random(random_source::kGameSequence);
+    auto queue = [&] {
+      auto a = random.uint(3);
+      auto b = random.uint(2);
       if (a == 0 || (a == 1 && b == 1)) {
         ++b;
       }
@@ -217,7 +218,8 @@ struct Overmind : ecs::component {
       ++lives_target;
     }
 
-    auto r = sim.random(4);
+    auto& random = sim.random(random_source::kGameSequence);
+    auto r = random.uint(4);
     vec2 v = r == 0 ? vec2{-kSimDimensions.x, kSimDimensions.y / 2}
         : r == 1    ? vec2{kSimDimensions.x * 2, kSimDimensions.y / 2}
         : r == 2    ? vec2{kSimDimensions.x / 2, -kSimDimensions.y}
@@ -237,7 +239,7 @@ struct Overmind : ecs::component {
       m = 3;
     }
 
-    r = sim.random(m);
+    r = random.uint(m);
     ii::spawn_powerup(sim, v,
                       r == 0       ? powerup_type::kBomb
                           : r == 1 ? powerup_type::kMagicShots
@@ -246,7 +248,7 @@ struct Overmind : ecs::component {
   }
 
   void spawn_boss_reward(SimInterface& sim) {
-    auto r = sim.random(4);
+    auto r = sim.random(random_source::kGameSequence).uint(4);
     vec2 v = r == 0 ? vec2{-kSimDimensions.x / 4, kSimDimensions.y / 2}
         : r == 1    ? vec2{kSimDimensions.x + kSimDimensions.x / 4, kSimDimensions.y / 2}
         : r == 2    ? vec2{kSimDimensions.x / 2, -kSimDimensions.y / 4}
@@ -259,14 +261,15 @@ struct Overmind : ecs::component {
   }
 
   void wave(SimInterface& sim) {
+    auto& random = sim.random(random_source::kGameSequence);
     if (sim.conditions().mode == game_mode::kFast) {
-      for (std::uint32_t i = 0; i < sim.random(7); ++i) {
-        sim.random(1);
+      for (std::uint32_t i = 0; i < random.uint(7); ++i) {
+        random.uint(1);
       }
     }
     if (sim.conditions().mode == game_mode::kWhat) {
-      for (std::uint32_t i = 0; i < sim.random(11); ++i) {
-        sim.random(1);
+      for (std::uint32_t i = 0; i < random.uint(11); ++i) {
+        random.uint(1);
       }
     }
 
@@ -287,9 +290,9 @@ struct Overmind : ecs::component {
       if (max == 0) {
         break;
       }
-      std::uint32_t n = max == 1 ? 0 : sim.random(max);
+      std::uint32_t n = max == 1 ? 0 : random.uint(max);
 
-      chosen.insert(chosen.begin() + sim.random(chosen.size() + 1), valid[n]);
+      chosen.insert(chosen.begin() + random.uint(chosen.size() + 1), valid[n]);
       resources -= valid[n]->cost;
     }
 
@@ -299,7 +302,7 @@ struct Overmind : ecs::component {
       perm.push_back(i);
     }
     for (std::size_t i = 0; i < chosen.size() - 1; ++i) {
-      std::swap(perm[i], perm[i + sim.random(chosen.size() - i)]);
+      std::swap(perm[i], perm[i + random.uint(chosen.size() - i)]);
     }
     std::uint32_t hard_already = 0;
     for (std::size_t row = 0; row < chosen.size(); ++row) {
@@ -313,14 +316,15 @@ struct Overmind : ecs::component {
   }
 
   void boss(SimInterface& sim) {
+    auto& random = sim.random(random_source::kGameSequence);
     auto cycle = (sim.conditions().mode == game_mode::kHard) + boss_mod_bosses / 2;
     bool secret_chance =
         (sim.conditions().mode != game_mode::kNormal && sim.conditions().mode != game_mode::kBoss)
-        ? (boss_mod_fights > 1       ? sim.random(4) == 0
-               : boss_mod_fights > 0 ? sim.random(8) == 0
+        ? (boss_mod_fights > 1       ? random.uint(4) == 0
+               : boss_mod_fights > 0 ? random.uint(8) == 0
                                      : false)
-        : (boss_mod_fights > 2       ? sim.random(4) == 0
-               : boss_mod_fights > 1 ? sim.random(6) == 0
+        : (boss_mod_fights > 2       ? random.uint(4) == 0
+               : boss_mod_fights > 1 ? random.uint(6) == 0
                                      : false);
 
     if (+(sim.conditions().flags & initial_conditions::flag::kLegacy_CanFaceSecretBoss) &&

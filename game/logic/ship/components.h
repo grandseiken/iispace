@@ -67,8 +67,7 @@ DEBUG_STRUCT_TUPLE(Transform, centre, rotation);
 struct Collision : ecs::component {
   shape_flag flags = shape_flag::kNone;
   fixed bounding_width = 0;
-  sfn::ptr<shape_flag(ecs::const_handle, const SimInterface&, const vec2&, shape_flag)> check =
-      nullptr;
+  sfn::ptr<shape_flag(ecs::const_handle, const vec2&, shape_flag)> check = nullptr;
 };
 DEBUG_STRUCT_TUPLE(Collision, flags, bounding_width, check);
 
