@@ -116,6 +116,7 @@ struct SuperBoss : ecs::component {
   std::array<glm::vec4, 8> colours{glm::vec4{0.f}};
 
   void update(ecs::handle h, Transform& transform, SimInterface& sim) {
+    auto e = sim.emit(resolve_key::predicted());
     std::vector<bool> destroyed_arcs;
     if (arcs.empty()) {
       for (std::uint32_t i = 0; i < 16; ++i) {
@@ -172,7 +173,7 @@ struct SuperBoss : ecs::component {
             rf = d5d1000 * (1 + sim.random(4));
           }
           spawn_snake(sim, transform.centre + d * 16, c, d, rf);
-          sim.play_sound(sound::kBossAttack, transform.centre, /* random */ true);
+          e.play_random(sound::kBossAttack, transform.centre);
         }
       } else if (r == 5) {
         state = state::kAttack;
@@ -181,7 +182,7 @@ struct SuperBoss : ecs::component {
         for (std::uint32_t i = 0; i < 64; ++i) {
           vec2 d = from_polar(f + i * pi2d64, 1_fx);
           spawn_snake(sim, transform.centre + d * 16, c, d);
-          sim.play_sound(sound::kBossAttack, transform.centre, /* random */ true);
+          e.play_random(sound::kBossAttack, transform.centre);
         }
       } else {
         state = state::kAttack;
@@ -208,7 +209,7 @@ struct SuperBoss : ecs::component {
         arc_h.get<Transform>()->set_rotation(transform.rotation - (6_fx / 1000));
         arcs[wide3[r]] = arc_h.id();
         destroyed_arcs[wide3[r]] = false;
-        sim.play_sound(sound::kEnemySpawn, transform.centre);
+        e.play(sound::kEnemySpawn, transform.centre);
       }
     }
     static const fixed pi2d128 = 2 * fixed_c::pi / 128;
@@ -217,7 +218,7 @@ struct SuperBoss : ecs::component {
         vec2 d = from_polar(i * pi2d128, 1_fx);
         spawn_boss_shot(sim, transform.centre + d * 42, move_vec + d * 3,
                         glm::vec4{0.f, 0.f, .6f, 1.f}, /* rotate speed */ 6_fx / 1000);
-        sim.play_sound(sound::kBossFire, transform.centre, /* random */ true);
+        e.play_random(sound::kBossFire, transform.centre);
       }
     }
 
@@ -228,7 +229,7 @@ struct SuperBoss : ecs::component {
       fixed length{r0 + r1};
       vec2 d = from_polar(sim.random_fixed() * (2 * fixed_c::pi), length);
       spawn_snake(sim, d + transform.centre, c);
-      sim.play_sound(sound::kEnemySpawn, transform.centre, /* random */ true);
+      e.play_random(sound::kEnemySpawn, transform.centre);
     }
     transform.move(move_vec);
   }

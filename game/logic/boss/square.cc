@@ -72,7 +72,7 @@ struct BigSquareBoss : public ecs::component {
           d = sim.rotate_compatibility(d, 2 * fixed_c::pi / 6);
         }
         attack_player.reset();
-        sim.play_sound(sound::kEnemySpawn, ph.get<Transform>()->centre);
+        sim.emit(resolve_key::predicted()).play(sound::kEnemySpawn, ph.get<Transform>()->centre);
       }
       if (!attack_player) {
         special_attack = false;
@@ -91,15 +91,15 @@ struct BigSquareBoss : public ecs::component {
         spawn_timer = 0;
         ++special_timer;
         spawn_big_follow(sim, transform.centre, false);
-        sim.play_sound(sound::kBossFire, transform.centre, /* random */ true);
+        sim.emit(resolve_key::predicted()).play_random(sound::kBossFire, transform.centre);
       }
       if (special_timer >= 8 && sim.random(4)) {
         special_timer = kAttackTime;
         special_attack = true;
         special_attack_rotate = sim.random_bool();
         attack_player = sim.nearest_player(transform.centre).id();
-        sim.play_sound(sound::kBossAttack,
-                       sim.index().get(*attack_player)->get<Transform>()->centre);
+        sim.emit(resolve_key::predicted())
+            .play(sound::kBossAttack, sim.index().get(*attack_player)->get<Transform>()->centre);
       }
     }
 

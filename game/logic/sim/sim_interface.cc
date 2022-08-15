@@ -262,19 +262,6 @@ EmitHandle SimInterface::emit(const resolve_key& key) {
   return {*this, e.e};
 }
 
-void SimInterface::play_sound(sound s, const vec2& position, bool random, float volume) {
-  auto e = emit(resolve_key::predicted());
-  if (random) {
-    e.play_random(s, position, volume);
-  } else {
-    e.play(s, position, volume);
-  }
-}
-
-void SimInterface::play_sound(sound s, float volume, float pan, float repitch) {
-  emit(resolve_key::predicted()).play(s, volume, pan, repitch);
-}
-
 void SimInterface::render_line(const glm::vec2& a, const glm::vec2& b, const glm::vec4& c) const {
   auto& e = internals_->line_output.emplace_back();
   e.a = a;

@@ -50,7 +50,7 @@ struct FollowHub : ecs::component {
         } else {
           spawn_follow(sim, transform.centre);
         }
-        sim.play_sound(sound::kEnemySpawn, transform.centre, true);
+        sim.emit(resolve_key::predicted()).play_random(sound::kEnemySpawn, transform.centre);
       }
     }
 
@@ -149,7 +149,7 @@ struct Shielder : ecs::component {
       if (sim.is_on_screen(transform.centre) && power && timer % kTimer == kTimer / 2) {
         spawn_boss_shot(sim, transform.centre, 3 * sim.nearest_player_direction(transform.centre),
                         colour_hue360(160, .5f, .6f));
-        sim.play_sound(sound::kBossFire, transform.centre, true);
+        sim.emit(resolve_key::predicted()).play_random(sound::kBossFire, transform.centre);
       }
       transform.move(dir * speed);
     }
@@ -216,7 +216,7 @@ struct Tractor : ecs::component {
         ready = false;
         spinning = true;
         timer = 0;
-        sim.play_sound(sound::kBossFire);
+        sim.emit(resolve_key::predicted()).play(sound::kBossFire, transform.centre);
       }
     } else if (spinning) {
       transform.rotate(fixed_c::tenth * 3);
@@ -228,7 +228,7 @@ struct Tractor : ecs::component {
       if (timer % (kTimer / 2) == 0 && sim.is_on_screen(transform.centre) && power) {
         spawn_boss_shot(sim, transform.centre, 4 * sim.nearest_player_direction(transform.centre),
                         colour_hue360(300, .5f, .6f));
-        sim.play_sound(sound::kBossFire, transform.centre, true);
+        sim.emit(resolve_key::predicted()).play_random(sound::kBossFire, transform.centre);
       }
 
       if (timer > kTimer * 5) {

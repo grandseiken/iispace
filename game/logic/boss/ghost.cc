@@ -182,6 +182,7 @@ struct GhostBoss : ecs::component {
 
   void
   update(ecs::handle h, Transform& transform, Boss& boss, const Health& health, SimInterface& sim) {
+    auto e = sim.emit(resolve_key::predicted());
     outer_dangerous[0].fill(false);
     for (std::uint32_t n = 1; n < 5; ++n) {
       auto t_n = geom::transform{}
@@ -242,7 +243,7 @@ struct GhostBoss : ecs::component {
           auto d = from_polar(i * fixed_c::pi / 4 + transform.rotation, 5_fx);
           spawn_boss_shot(sim, transform.centre, d, c0);
         }
-        sim.play_sound(sound::kBossFire, transform.centre, /* random */ true);
+        e.play_random(sound::kBossFire, transform.centre);
       }
       if (timer != 9 * kTimer / 10 && timer >= kTimer / 10 && timer < 9 * kTimer / 10 - 16 &&
           !(timer % 16) && (!shot_type || attack == 2)) {
@@ -250,7 +251,7 @@ struct GhostBoss : ecs::component {
         if (d != vec2{}) {
           spawn_boss_shot(sim, transform.centre, d * 5, c0);
           spawn_boss_shot(sim, transform.centre, d * -5, c0);
-          sim.play_sound(sound::kBossFire, transform.centre, /* random */ true);
+          e.play_random(sound::kBossFire, transform.centre);
         }
       }
     } else {
@@ -262,16 +263,16 @@ struct GhostBoss : ecs::component {
           auto x = sim.random(kSimDimensions.x + 1);
           vec2 pos{x, y};
           spawn_ghost_mine(sim, pos, h);
-          sim.play_sound(sound::kEnemySpawn, pos, /* random */ true);
+          e.play_random(sound::kEnemySpawn, pos);
           danger_circle = 0;
         } else if (attack_time == kAttackTime * 4 - 1) {
           visible = true;
           vtime = 60;
           box_attack_shape_enabled = true;
-          sim.play_sound(sound::kBossFire, transform.centre);
+          e.play(sound::kBossFire, transform.centre);
         } else if (attack_time < kAttackTime * 3) {
           if (attack_time == kAttackTime * 3 - 1) {
-            sim.play_sound(sound::kBossAttack, transform.centre);
+            e.play(sound::kBossAttack, transform.centre);
           }
           transform.rotate((rdir ? 1 : -1) * 2 * fixed_c::pi / (kAttackTime * 6));
           if (!attack_time) {
@@ -332,7 +333,7 @@ struct GhostBoss : ecs::component {
       attack = sim.random(3);
       shot_type = !sim.random_bool();
       collision_enabled = false;
-      sim.play_sound(sound::kBossAttack, transform.centre);
+      e.play(sound::kBossAttack, transform.centre);
 
       if (!attack) {
         attack_time = kAttackTime * 2 + 50;

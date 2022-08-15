@@ -91,7 +91,7 @@ struct Wall : ecs::component {
   void update(ecs::handle h, Transform& transform, Health& health, SimInterface& sim) {
     if (!sim.global_entity().get<GlobalData>()->non_wall_enemy_count && timer % 8 < 2) {
       if (health.hp > 2) {
-        sim.play_sound(sound::kEnemySpawn, 1.f, 0.f);
+        sim.emit(resolve_key::predicted()).play(sound::kEnemySpawn, 1.f, 0.f);
       }
       health.damage(h, sim, std::max(2u, health.hp) - 2, damage_type::kNone, std::nullopt);
     }

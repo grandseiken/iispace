@@ -14,7 +14,7 @@ namespace ii {
 class ReplayWriter;
 
 // TODO:
-// - death effects to be applied at last-known position of enemy?
+// - reconcile effects to be applied at last-known position of enemy?
 // - interpolate positions of shots and/or enemies (e.g. follow)?
 class NetworkedSimState : public ISimState {
 public:

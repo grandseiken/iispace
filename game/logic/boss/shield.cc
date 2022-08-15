@@ -88,7 +88,7 @@ struct ShieldBombBoss : ecs::component {
           attack_dir, (kAttackTime - attack) * fixed_c::half * fixed_c::pi / kAttackTime);
       spawn_boss_shot(sim, transform.centre, d);
       attack--;
-      sim.play_sound(sound::kBossFire, transform.centre, /* random */ true);
+      sim.emit(resolve_key::predicted()).play_random(sound::kBossFire, transform.centre);
     }
 
     ++timer;
@@ -115,7 +115,7 @@ struct ShieldBombBoss : ecs::component {
           spawn_boss_shot(sim, transform.centre, d);
           d = sim.rotate_compatibility(d, 2 * fixed_c::pi / 12);
         }
-        sim.play_sound(sound::kBossAttack, transform.centre);
+        sim.emit(resolve_key::predicted()).play(sound::kBossAttack, transform.centre);
       } else {
         attack = kAttackTime;
         attack_dir = from_polar(sim.random_fixed() * (2 * fixed_c::pi), 5_fx);

@@ -109,7 +109,7 @@ struct Snake : ecs::component {
         new_h.get<SnakeTail>()->tail = tail;
       }
       tail = new_h.id();
-      sim.play_sound(sound::kBossFire, transform.centre, true, .5f);
+      sim.emit(resolve_key::predicted()).play_random(sound::kBossFire, transform.centre, .5f);
     }
     if (!is_projectile && timer % 48 == 0 && !sim.random(3)) {
       dir = sim.rotate_compatibility(dir, (sim.random_bool() ? 1 : -1) * fixed_c::pi / 2);

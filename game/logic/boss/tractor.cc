@@ -75,6 +75,7 @@ struct TractorBoss : ecs::component {
   fixed sub_rotation = 0;
 
   void update(ecs::handle h, Transform& transform, const Health& health, SimInterface& sim) {
+    auto e = sim.emit(resolve_key::predicted());
     if (transform.centre.x <= kSimDimensions.x / 2 && will_attack && !stopped && !move_away) {
       stopped = true;
       generating = true;
@@ -107,18 +108,18 @@ struct TractorBoss : ecs::component {
             spawn_boss_shot(sim, v, d * -5, c0);
           };
           iterate_attachment_points_compatibility(h, sim, f);
-          sim.play_sound(sound::kBossFire, transform.centre, /* random */ true);
+          e.play_random(sound::kBossFire, transform.centre);
         }
         if (shoot_type == 1 || health.is_hp_low()) {
           auto d = sim.nearest_player_direction(transform.centre);
           spawn_boss_shot(sim, transform.centre, d * 5, c0);
           spawn_boss_shot(sim, transform.centre, d * -5, c0);
-          sim.play_sound(sound::kBossFire, transform.centre, /* random */ true);
+          e.play_random(sound::kBossFire, transform.centre);
         }
       }
       if ((!will_attack || move_away) && sim.is_on_screen(transform.centre)) {
         if (sound) {
-          sim.play_sound(sound::kBossAttack, transform.centre);
+          e.play(sound::kBossAttack, transform.centre);
           sound = false;
         }
         targets.clear();
@@ -137,7 +138,7 @@ struct TractorBoss : ecs::component {
           generating = false;
           attacking = false;
           attack_shapes.clear();
-          sim.play_sound(sound::kBossAttack, transform.centre);
+          e.play(sound::kBossAttack, transform.centre);
         }
 
         if (timer < kTimer * 4 && !(timer % (10 - 2 * sim.alive_players()))) {
@@ -146,14 +147,14 @@ struct TractorBoss : ecs::component {
                          !index == gen_dir ? transform.rotation + fixed_c::pi : transform.rotation);
           };
           iterate_attachment_points_compatibility(h, sim, f);
-          sim.play_sound(sound::kEnemySpawn, transform.centre, /* random */ true);
+          e.play_random(sound::kEnemySpawn, transform.centre);
         }
 
         if (health.is_hp_low() && !(timer % (20 - sim.alive_players() * 2))) {
           auto d = sim.nearest_player_direction(transform.centre);
           spawn_boss_shot(sim, transform.centre, d * 5, c0);
           spawn_boss_shot(sim, transform.centre, d * -5, c0);
-          sim.play_sound(sound::kBossFire, transform.centre, /* random */ true);
+          e.play_random(sound::kBossFire, transform.centre);
         }
       } else {
         if (!attacking) {
@@ -173,7 +174,7 @@ struct TractorBoss : ecs::component {
               spawn_boss_shot(sim, v, d, c0);
             };
             iterate_attachment_points_compatibility(h, sim, f);
-            sim.play_sound(sound::kBossFire, transform.centre, /* random */ true);
+            e.play_random(sound::kBossFire, transform.centre);
           }
           targets.clear();
 
@@ -191,8 +192,7 @@ struct TractorBoss : ecs::component {
                 length(e_transform.centre - transform.centre) > kSimDimensions.x) {
               return;
             }
-            sim.play_sound(sound::kBossAttack, transform.centre, /* random */ true,
-                           /* volume */ .3f);
+            e.play_random(sound::kBossAttack, transform.centre, /* volume */ .3f);
             targets.push_back(e_transform.centre);
             e_transform.centre +=
                 normalise(transform.centre - e_transform.centre) * (4 + fixed_c::half);
@@ -210,8 +210,8 @@ struct TractorBoss : ecs::component {
                 i * (2 * fixed_c::pi) / static_cast<std::uint32_t>(attack_shapes.size()), 5_fx);
             spawn_boss_shot(sim, transform.centre, d, c0);
           }
-          sim.play_sound(sound::kBossFire, transform.centre);
-          sim.play_sound(sound::kExplosion, transform.centre, /* random */ true);
+          e.play(sound::kBossFire, transform.centre);
+          e.play_random(sound::kExplosion, transform.centre);
           attack_shapes.clear();
         }
       }

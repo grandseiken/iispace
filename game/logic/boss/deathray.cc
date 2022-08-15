@@ -71,8 +71,9 @@ struct DeathArm : ecs::component {
   : death_boss{death_boss}, is_top{is_top}, timer{is_top ? 2 * kTimer / 3 : 0} {}
 
   void update(ecs::handle h, Transform& transform, SimInterface& sim) {
+    auto e = sim.emit(resolve_key::predicted());
     if (timer % (kTimer / 2) == kTimer / 4) {
-      sim.play_sound(sound::kBossFire, transform.centre, true);
+      e.play_random(sound::kBossFire, transform.centre);
       target = sim.nearest_player_position(transform.centre);
       shots = 16;
     }
@@ -113,7 +114,7 @@ struct DeathArm : ecs::component {
       timer = 0;
       attacking = true;
       dir = vec2{0};
-      sim.play_sound(sound::kBossAttack);
+      e.play(sound::kBossAttack, transform.centre);
     }
     transform.centre =
         sim.index().get(death_boss)->get<Transform>()->centre + vec2{80, is_top ? 80 : -80};
@@ -179,6 +180,7 @@ struct DeathRayBoss : public ecs::component {
   std::vector<std::pair<std::uint32_t, std::uint32_t>> shot_queue;
 
   void update(ecs::handle h, Transform& transform, const Health& health, SimInterface& sim) {
+    auto e = sim.emit(resolve_key::predicted());
     bool in_position = true;
     fixed d = pos == 0 ? 1 * kSimDimensions.y / 4
         : pos == 1     ? 2 * kSimDimensions.y / 4
@@ -202,7 +204,7 @@ struct DeathRayBoss : public ecs::component {
       if (ray_attack_timer < 40) {
         auto d = normalise(ray_dest - transform.centre);
         spawn_boss_shot(sim, transform.centre, d * 10, c2);
-        sim.play_sound(sound::kBossAttack, transform.centre, /* random */ true);
+        e.play_random(sound::kBossAttack, transform.centre);
         auto e = sim.emit(resolve_key::predicted());
         explode_entity_shapes<DeathRayBoss>(h, e);
       }
@@ -217,7 +219,7 @@ struct DeathRayBoss : public ecs::component {
 
         if (timer < kTimer * 2 && !(timer % 3)) {
           spawn_death_ray(sim, transform.centre + vec2{100, 0});
-          sim.play_sound(sound::kBossFire, transform.centre, /* random */ true);
+          e.play_random(sound::kBossFire, transform.centre);
         }
         if (!timer) {
           laser = false;
@@ -248,7 +250,7 @@ struct DeathRayBoss : public ecs::component {
           ray_attack_timer = kRayTimer;
           ray_src1 = sim.index().get(arms[0])->get<Transform>()->centre;
           ray_src2 = sim.index().get(arms[1])->get<Transform>()->centre;
-          sim.play_sound(sound::kEnemySpawn, transform.centre);
+          e.play(sound::kEnemySpawn, transform.centre);
         }
       }
       if (!timer) {
@@ -261,7 +263,7 @@ struct DeathRayBoss : public ecs::component {
     if (arms.empty() && !health.is_hp_low()) {
       if (!(shot_timer % 8)) {
         shot_queue.emplace_back((shot_timer / 8) % 12, 16);
-        sim.play_sound(sound::kBossFire, transform.centre, /* random */ true);
+        e.play_random(sound::kBossFire, transform.centre);
       }
     }
     if (arms.empty() && health.is_hp_low()) {
@@ -269,19 +271,19 @@ struct DeathRayBoss : public ecs::component {
         for (std::uint32_t i = 1; i < 16; i += 3) {
           shot_queue.emplace_back(i, 16);
         }
-        sim.play_sound(sound::kBossFire, transform.centre, /* random */ true);
+        e.play_random(sound::kBossFire, transform.centre);
       }
       if (shot_timer % 48 == 16) {
         for (std::uint32_t i = 2; i < 12; i += 3) {
           shot_queue.emplace_back(i, 16);
         }
-        sim.play_sound(sound::kBossFire, transform.centre, /* random */ true);
+        e.play_random(sound::kBossFire, transform.centre);
       }
       if (shot_timer % 48 == 32) {
         for (std::uint32_t i = 3; i < 12; i += 3) {
           shot_queue.emplace_back(i, 16);
         }
-        sim.play_sound(sound::kBossFire, transform.centre, /* random */ true);
+        e.play_random(sound::kBossFire, transform.centre);
       }
       if (shot_timer % 128 == 0) {
         ray_attack_timer = kRayTimer;
@@ -289,7 +291,7 @@ struct DeathRayBoss : public ecs::component {
         vec2 d2 = from_polar(sim.random_fixed() * 2 * fixed_c::pi, 110_fx);
         ray_src1 = transform.centre + d1;
         ray_src2 = transform.centre + d2;
-        sim.play_sound(sound::kEnemySpawn, transform.centre);
+        e.play(sound::kEnemySpawn, transform.centre);
       }
     }
     if (arms.empty()) {
@@ -302,7 +304,7 @@ struct DeathRayBoss : public ecs::component {
               (kArmHp * (7 * fixed_c::tenth + 3 * fixed_c::tenth * players)).to_int();
           arms.push_back(spawn_death_arm(sim, h, true, hp).id());
           arms.push_back(spawn_death_arm(sim, h, false, hp).id());
-          sim.play_sound(sound::kEnemySpawn, transform.centre);
+          e.play(sound::kEnemySpawn, transform.centre);
         }
       }
     }

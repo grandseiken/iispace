@@ -284,6 +284,8 @@ void NetworkedSimState::handle_predicted_output(std::uint64_t tick_count,
       break;
     case resolve::kReconcile:
       resolve = true;
+      // TODO: seems to work fine, but should maybe have multiple entries for each key just to
+      // be sure? Easy with unordered_multimap?
       reconciliation_map_[e.key] = tick_count;
       break;
     }

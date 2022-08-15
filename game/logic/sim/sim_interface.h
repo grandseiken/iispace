@@ -99,9 +99,6 @@ public:
   Stars& stars();
   const Stars& stars() const;
   EmitHandle emit(const resolve_key& key);
-  // TODO: get rid of all this.
-  void play_sound(sound, const vec2& position, bool random = false, float volume = 1.f);
-  void play_sound(sound, float volume = 1.f, float pan = 0.f, float repitch = 0.f);
   void render_line(const glm::vec2& a, const glm::vec2& b, const glm::vec4& c) const;
   // TODO: only used by Stars, which should be extracted anyway.
   void render_line_rect(const glm::vec2& lo, const glm::vec2& hi, const glm::vec4& c) const;
