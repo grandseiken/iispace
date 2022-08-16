@@ -62,13 +62,13 @@ private:
   const cell_t& cell(const glm::ivec2& cell_coords) const;
   cell_t& cell(const glm::ivec2& cell_coords);
 
-  void clear_cells(std::size_t index, entry_t& e);
-  void insert_cells(std::size_t index, entry_t& e);
+  void clear_cells(ecs::entity_id id, entry_t& e);
+  void insert_cells(ecs::entity_id id, entry_t& e);
 
   struct cell_t {
-    void insert(std::size_t index);
-    void clear(std::size_t index);
-    std::vector<std::size_t> entries;
+    void insert(ecs::entity_id id);
+    void clear(ecs::entity_id id);
+    std::vector<ecs::entity_id> entries;
   };
 
   struct entry_t {
@@ -84,8 +84,7 @@ private:
   glm::ivec2 cell_offset_{0, 0};
   glm::ivec2 cell_count_{0, 0};
   std::vector<cell_t> cells_;
-  std::vector<std::optional<entry_t>> entries_;
-  std::unordered_map<ecs::entity_id, std::size_t> entities_;
+  std::unordered_map<ecs::entity_id, entry_t> entities_;
 };
 
 // Buggy, legacy collision system for use with legacy compatibility mode.

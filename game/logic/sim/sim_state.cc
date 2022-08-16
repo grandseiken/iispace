@@ -63,9 +63,6 @@ SimState::SimState(const initial_conditions& conditions, ReplayWriter* replay_wr
   if (conditions.compatibility == compatibility_level::kLegacy) {
     internals_->collision_index = std::make_unique<LegacyCollisionIndex>();
   } else {
-    // TODO: why does grid size affect results?
-    // E.g. ai_replay_synth --players 3 --seed 1128749985 right now kills 38 on grid size 64 or 32,
-    // but not on 16 or 8 or 128.
     internals_->collision_index = std::make_unique<GridCollisionIndex>(
         glm::uvec2{64, 64}, glm::ivec2{-32, -32}, kSimDimensions + glm::ivec2{32, 32});
   }
