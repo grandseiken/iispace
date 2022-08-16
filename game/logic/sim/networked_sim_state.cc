@@ -1,4 +1,5 @@
 #include "game/logic/sim/networked_sim_state.h"
+#include "game/logic/sim/io/conditions.h"
 #include <algorithm>
 #include <cassert>
 

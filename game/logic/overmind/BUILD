@@ -10,6 +10,7 @@ cc_library(
     "//game/logic/ecs",
     "//game/logic/player",
     "//game/logic/sim:sim_interface",
+    "//game/logic/sim/io:conditions",
   ],
   visibility = ["//game/logic:__subpackages__"],
 )

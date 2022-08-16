@@ -4,6 +4,7 @@
 #include "game/data/packet.h"
 #include "game/data/replay.h"
 #include "game/flags.h"
+#include "game/logic/sim/io/aggregate.h"
 #include "game/logic/sim/networked_sim_state.h"
 #include <concurrentqueue.h>
 #include <atomic>

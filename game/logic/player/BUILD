@@ -5,6 +5,7 @@ cc_library(
   deps = [
     "//game/common:math",
     "//game/logic/ship",
+    "//game/logic/sim/io:player",
   ],
   implementation_deps = [
     ":ai_player",
@@ -12,6 +13,7 @@ cc_library(
     "//game/logic/geometry/shapes",
     "//game/logic/ship",
     "//game/logic/sim:sim_interface",
+    "//game/logic/sim/io:conditions",
   ],
   visibility = ["//game/logic:__subpackages__"],
 )
@@ -21,7 +23,7 @@ cc_library(
   hdrs = ["ai_player.h"],
   srcs = ["ai_player.cc"],
   deps = [
-    "//game/logic/sim:sim_io",
+    "//game/logic/sim/io:player",
     "//game/logic/ship",
   ],
   implementation_deps = [

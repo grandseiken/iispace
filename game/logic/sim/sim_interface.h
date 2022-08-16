@@ -3,7 +3,7 @@
 #include "game/common/math.h"
 #include "game/common/random.h"
 #include "game/logic/ecs/index.h"
-#include "game/logic/sim/sim_io.h"
+#include "game/logic/sim/io/aggregate.h"
 #include "game/mixer/sound.h"
 #include <cstdint>
 #include <vector>
@@ -17,6 +17,8 @@ class EntityIndex;
 enum class shape_flag : std::uint32_t;
 class SimInterface;
 struct SimInternals;
+struct initial_conditions;
+struct input_frame;
 
 // TODO: make this dynamic so it can be changed for non-legacy mode.
 constexpr glm::ivec2 kSimDimensions = {640, 480};
@@ -27,7 +29,7 @@ enum class random_source {
   // For randomness which affects the game state and must be reproduced exactly for replay
   // compatibility.
   kGameState,
-  // The same but for meta-level state, so that running the same seed actually gives the same
+  // Similar, but for meta-level state, so that running the same seed actually gives the same
   // run, other than in legacy compatibility mode.
   kGameSequence,
   // For randomness which does not affect the game state, and can therefore be used differently
@@ -64,6 +66,7 @@ public:
 
   // State manipulation.
   const initial_conditions& conditions() const;
+  bool is_legacy() const;
   input_frame& input(std::uint32_t player_number);
   std::uint64_t tick_count() const;
 
@@ -85,10 +88,7 @@ public:
   std::vector<collision_info> collision_list(const vec2& point, shape_flag mask);
   bool any_collision(const vec2& point, shape_flag mask) const;
   bool is_on_screen(const vec2& point) const;
-  vec2 rotate_compatibility(const vec2& v, fixed theta) const {
-    return conditions().compatibility == compatibility_level::kLegacy ? rotate_legacy(v, theta)
-                                                                      : rotate(v, theta);
-  }
+  vec2 rotate_compatibility(const vec2& v, fixed theta) const;
 
   std::uint32_t get_lives() const;
   std::uint32_t player_count() const;

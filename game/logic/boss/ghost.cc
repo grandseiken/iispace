@@ -9,6 +9,7 @@
 #include "game/logic/geometry/shapes/ngon.h"
 #include "game/logic/player/player.h"
 #include "game/logic/ship/ship_template.h"
+#include "game/logic/sim/io/result_events.h"
 #include <array>
 
 namespace ii {
@@ -220,7 +221,7 @@ struct GhostBoss : ecs::component {
       // Compatibility with legacy bug that incorrectly positioned collision shapes.
       // Now looks correct (but less cool than supposed to) in legacy mode.
       // Fixed to work as intended otherwise.
-      if (sim.conditions().compatibility == compatibility_level::kLegacy) {
+      if (sim.is_legacy()) {
         m = !n ? 5 : n % 2 ? 3 : 4;
       } else {
         m = n % 2 ? 3 : 5;
@@ -517,6 +518,6 @@ void spawn_ghost_boss(SimInterface& sim, std::uint32_t cycle) {
       .on_destroy = ecs::call<&boss_on_destroy<GhostBoss>>,
   });
   h.add(Boss{.boss = boss_flag::kBoss2B});
-  h.add(GhostBoss{.is_legacy = sim.conditions().compatibility == compatibility_level::kLegacy});
+  h.add(GhostBoss{.is_legacy = sim.is_legacy()});
 }
 }  // namespace ii

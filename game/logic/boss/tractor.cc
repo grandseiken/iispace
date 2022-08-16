@@ -6,6 +6,7 @@
 #include "game/logic/geometry/shapes/line.h"
 #include "game/logic/geometry/shapes/ngon.h"
 #include "game/logic/ship/ship_template.h"
+#include "game/logic/sim/io/result_events.h"
 
 namespace ii {
 namespace {
@@ -57,7 +58,7 @@ struct TractorBoss : ecs::component {
   }
 
   static std::uint32_t bounding_width(const SimInterface& sim) {
-    return sim.conditions().compatibility == compatibility_level::kLegacy ? 640 : 140;
+    return sim.is_legacy() ? 640 : 140;
   }
 
   TractorBoss(SimInterface& sim) : shoot_type{sim.random_bool()} {}
@@ -238,7 +239,7 @@ struct TractorBoss : ecs::component {
 
   template <typename F>
   void iterate_attachment_points_compatibility(ecs::const_handle h, SimInterface& sim, const F& f) {
-    if (sim.conditions().compatibility == compatibility_level::kLegacy) {
+    if (sim.is_legacy()) {
       geom::iterate(shape{}, geom::iterate_attachment_points, get_shape_parameters<TractorBoss>(h),
                     geom::legacy_transform{}, f);
     } else {

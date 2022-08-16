@@ -1,48 +1,54 @@
 cc_library(
-  name = "sim_io",
-  hdrs = ["sim_io.h"],
-  deps = [
-    "//game/common:types",
-    "//game/common:math",
-    "//game/mixer:sound",
-    "@glm",
-  ],
-  visibility = ["//visibility:public"],
-)
-
-cc_library(
   name = "sim_interface",
   hdrs = ["sim_interface.h"],
   deps = [
-    ":sim_io",
     "//game/common:math",
     "//game/common:random",
     "//game/logic/ecs",
+    "//game/logic/sim/io:aggregate",
     "//game/mixer:sound",
   ],
   visibility = ["//game/logic:__subpackages__"],
 )
 
 cc_library(
+  name = "sim_internals",
+  hdrs = [
+    "collision.h",
+    "sim_internals.h",
+  ],
+  srcs = ["collision.cc"],
+  deps = [
+    ":sim_interface",
+    "//game/common:math",
+    "//game/common:random",
+    "//game/logic/ecs",
+    "//game/logic/ship",
+    "//game/logic/sim/io:conditions",
+    "//game/logic/sim/io:player",
+    "//game/logic/sim/io:render",
+    "//game/logic/sim/io:results",
+  ]
+)
+
+cc_library(
   name = "sim",
   hdrs = ["sim_state.h"],
   srcs = [
-    "collision.cc",
-    "collision.h",
     "sim_interface.cc",
-    "sim_internals.h",
     "sim_state.cc",
   ],
-  deps = [
-    ":sim_io",
-  ],
+  deps = ["//game/logic/sim/io:player"],
   implementation_deps = [
     ":sim_interface",
+    ":sim_internals",
     "//game/common:math",
     "//game/data:replay",
     "//game/logic/overmind",
     "//game/logic/player",
     "//game/logic/ship",
+    "//game/logic/sim/io:conditions",
+    "//game/logic/sim/io:player",
   ],
   visibility = ["//visibility:public"],
 )
@@ -54,6 +60,10 @@ cc_library(
   deps = [
     ":sim",
     "//game/data:packet",
+    "//game/logic/sim/io:aggregate",
+    "//game/logic/sim/io:render",
+    "//game/logic/sim/io:results",
   ],
+  implementation_deps = ["//game/logic/sim/io:conditions"],
   visibility = ["//visibility:public"],
 )

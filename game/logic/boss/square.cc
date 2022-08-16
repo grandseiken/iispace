@@ -2,6 +2,7 @@
 #include "game/logic/enemy/enemy.h"
 #include "game/logic/geometry/shapes/ngon.h"
 #include "game/logic/ship/ship_template.h"
+#include "game/logic/sim/io/result_events.h"
 
 namespace ii {
 namespace {
@@ -30,7 +31,7 @@ struct BigSquareBoss : public ecs::component {
                geom::polygon<55, 4, c2, shape_flag::kShield>>>;
 
   static std::uint32_t bounding_width(const SimInterface& sim) {
-    return sim.conditions().compatibility == compatibility_level::kLegacy ? 640 : 150;
+    return sim.is_legacy() ? 640 : 150;
   }
 
   vec2 dir{0, -1};

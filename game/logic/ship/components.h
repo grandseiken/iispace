@@ -4,7 +4,6 @@
 #include "game/common/struct_tuple.h"
 #include "game/logic/ecs/index.h"
 #include "game/logic/geometry/enums.h"
-#include "game/logic/sim/sim_io.h"
 #include "game/mixer/sound.h"
 #include <glm/glm.hpp>
 #include <sfn/functional.h>
@@ -15,6 +14,8 @@
 namespace ii {
 class EmitHandle;
 class SimInterface;
+struct initial_conditions;
+enum class boss_flag : std::uint32_t;
 
 struct GlobalData : ecs::component {
   static constexpr std::uint32_t kStartingLives = 2;
@@ -33,9 +34,6 @@ struct GlobalData : ecs::component {
   std::vector<fireworks_entry> fireworks;
   std::vector<vec2> extra_enemy_warnings;
 
-  GlobalData(const initial_conditions& conditions)
-  : lives{conditions.mode == game_mode::kBoss ? conditions.player_count * kBossModeLives
-                                              : kStartingLives} {}
   void pre_update(SimInterface&);                // Runs before any other entity updates.
   void post_update(ecs::handle, SimInterface&);  // Runs after any other entity updates.
 };

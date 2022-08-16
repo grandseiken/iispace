@@ -1,6 +1,7 @@
 #include "game/logic/boss/boss_internal.h"
 #include "game/logic/geometry/shapes/ngon.h"
 #include "game/logic/ship/ship_template.h"
+#include "game/logic/sim/io/result_events.h"
 #include <array>
 
 namespace ii {
@@ -305,7 +306,7 @@ struct ChaserBoss : ecs::component {
         sim, !split ? vec2{kSimDimensions.x / 2, -kSimDimensions.y / 2} : position);
     h.add(Collision{.flags = shape_flag::kDangerous | shape_flag::kVulnerable | shape_flag::kShield,
                     .bounding_width = 10 * kSplitLookup[ChaserBoss::kMaxSplit - split].pow_1_5,
-                    .check = sim.conditions().compatibility == compatibility_level::kLegacy
+                    .check = sim.is_legacy()
                         ? &ship_check_point_legacy<ChaserBoss, ChaserBoss::shape>
                         : &ship_check_point<ChaserBoss, ChaserBoss::shape>});
     h.add(Enemy{.threat_value = 100});

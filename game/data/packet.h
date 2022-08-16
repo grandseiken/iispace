@@ -1,8 +1,9 @@
 #ifndef II_GAME_DATA_PACKET_H
 #define II_GAME_DATA_PACKET_H
-#include "game/logic/sim/sim_io.h"
+#include "game/logic/sim/io/player.h"
 #include <cstdint>
 #include <optional>
+#include <vector>
 
 namespace ii {
 

@@ -1,6 +1,8 @@
 #include "game/logic/sim/sim_interface.h"
 #include "game/logic/ecs/call.h"
 #include "game/logic/ship/components.h"
+#include "game/logic/sim/io/conditions.h"
+#include "game/logic/sim/io/player.h"
 #include "game/logic/sim/sim_internals.h"
 #include <glm/gtc/constants.hpp>
 
@@ -79,6 +81,10 @@ const initial_conditions& SimInterface::conditions() const {
   return internals_->conditions;
 }
 
+bool SimInterface::is_legacy() const {
+  return internals_->conditions.compatibility == compatibility_level::kLegacy;
+}
+
 input_frame& SimInterface::input(std::uint32_t player_number) {
   if (player_number < internals_->input_frames.size()) {
     return internals_->input_frames[player_number];
@@ -138,6 +144,11 @@ auto SimInterface::collision_list(const vec2& point, shape_flag mask)
 
 bool SimInterface::is_on_screen(const vec2& point) const {
   return all(greaterThanEqual(point, vec2{0})) && all(lessThanEqual(point, vec2{kSimDimensions}));
+}
+
+vec2 SimInterface::rotate_compatibility(const vec2& v, fixed theta) const {
+  return conditions().compatibility == compatibility_level::kLegacy ? rotate_legacy(v, theta)
+                                                                    : rotate(v, theta);
 }
 
 std::uint32_t SimInterface::get_lives() const {

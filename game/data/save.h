@@ -1,7 +1,8 @@
 #ifndef II_GAME_DATA_SAVE_H
 #define II_GAME_DATA_SAVE_H
 #include "game/common/result.h"
-#include "game/logic/sim/sim_io.h"
+#include "game/logic/sim/io/conditions.h"
+#include "game/logic/sim/io/results.h"
 #include <cstdint>
 #include <span>
 #include <vector>

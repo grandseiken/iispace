@@ -1,6 +1,6 @@
 #ifndef II_GAME_CORE_IO_INPUT_ADAPTER_H
 #define II_GAME_CORE_IO_INPUT_ADAPTER_H
-#include "game/logic/sim/sim_io.h"
+#include "game/logic/sim/io/player.h"
 #include <glm/glm.hpp>
 #include <cstddef>
 #include <cstdint>

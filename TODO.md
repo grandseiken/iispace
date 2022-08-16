@@ -26,21 +26,22 @@
 ### Run unlocks
 * Unlock each of the run upgrades (below)
 
-### Difficulty modifiers
+### Difficulty modifiers (basically heat)
 * Unlock various difficulty modifiers that can be enabled
 * Difficulty modifiers increase earned XP
-* Enough difficulty modifiers unlocks new route possibilities
-* Harder enemy variants
-* Higher enemy density
+* Enough difficulty modifiers unlocks new route possibilities?
+* Harder / faster / higher-hp enemy variants
+* Projectile hell
+* Higher enemy density per wave
+* No powerups, disable ship functions etc
 * Game speed modifier
 * Better enemy tracking
 * Harder boss variants
 
-## Random route conditions
+## Random route/ship conditions
 * Drawback but increase earned XP
 * Rainbow mode
-* Monochrome mode
-* Silhouette mode
+* Monochrome / silhouette mode
 * Mirror mode
 * Shield disabled
 * Bomb disabled
@@ -48,7 +49,6 @@
 * Enemies explode
 * Ship can't stop moving
 * Limited vision radius
-* Projectile hell
 
 ## Run powerups
 * Shield
@@ -87,6 +87,7 @@
 * Cluster bomb on impact
 * Ignore enemy shields
 * AoE + knockback on impact
+* Close-range shotgun
 
 ### Superweapon?
 * Penetrating shots, deal many ticks of damage
@@ -129,7 +130,7 @@ Note: most of these hard to do with laggy network.
 ## Bosses
 * Super snake
 
-## Sector conditions
+## Sector conditions (i.e. route steps)
 * Aggressive timer for new spawns (should be no timer usually)
 * Very narrow sector
 * Walls that must be pushed back by shooting
@@ -137,3 +138,4 @@ Note: most of these hard to do with laggy network.
 * Square walls that spiral around the outside and go in
 * Zoomed out / bigger area
 * Rainbow snake zone
+* Progressively more weird secret routes, in different languages (russian/japanese), minus/glitch level, etc

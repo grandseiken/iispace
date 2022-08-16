@@ -22,6 +22,7 @@ cc_library(
     "//game/common:math",
     "//game/logic/enemy",
     "//game/logic/player",
+    "//game/logic/sim/io:result_events",
     "//game/mixer:sound",
   ],
   visibility = ["//game/logic:__subpackages__"],

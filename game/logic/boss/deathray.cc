@@ -8,6 +8,7 @@
 #include "game/logic/geometry/shapes/line.h"
 #include "game/logic/geometry/shapes/ngon.h"
 #include "game/logic/ship/ship_template.h"
+#include "game/logic/sim/io/result_events.h"
 
 namespace ii {
 namespace {
@@ -162,7 +163,7 @@ struct DeathRayBoss : public ecs::component {
       geom::disable_iteration<geom::iterate_centres_t, geom::for_each<fixed, 1, 12, edge_shape>>>;
 
   static std::uint32_t bounding_width(const SimInterface& sim) {
-    return sim.conditions().compatibility == compatibility_level::kLegacy ? 640 : 140;
+    return sim.is_legacy() ? 640 : 140;
   }
 
   std::vector<ecs::entity_id> arms;

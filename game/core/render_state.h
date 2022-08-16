@@ -1,7 +1,7 @@
 #ifndef II_GAME_CORE_RENDER_STATE_H
 #define II_GAME_CORE_RENDER_STATE_H
 #include "game/common/random.h"
-#include "game/logic/sim/sim_io.h"
+#include "game/logic/sim/io/aggregate.h"
 #include <glm/glm.hpp>
 #include <vector>
 

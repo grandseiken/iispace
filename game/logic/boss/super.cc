@@ -4,6 +4,7 @@
 #include "game/logic/geometry/shapes/polyarc.h"
 #include "game/logic/player/player.h"
 #include "game/logic/ship/ship_template.h"
+#include "game/logic/sim/io/result_events.h"
 #include <array>
 
 namespace ii {
@@ -30,7 +31,7 @@ struct SuperBossArc : public ecs::component {
   }
 
   static std::uint32_t bounding_width(const SimInterface& sim) {
-    return sim.conditions().compatibility == compatibility_level::kLegacy ? 640 : 130;
+    return sim.is_legacy() ? 640 : 130;
   }
 
   SuperBossArc(ecs::entity_id boss, std::uint32_t i, std::uint32_t timer)
@@ -103,7 +104,7 @@ struct SuperBoss : ecs::component {
   }
 
   static std::uint32_t bounding_width(const SimInterface& sim) {
-    return sim.conditions().compatibility == compatibility_level::kLegacy ? 640 : 50;
+    return sim.is_legacy() ? 640 : 50;
   }
 
   SuperBoss(std::uint32_t cycle) : cycle{cycle} {}

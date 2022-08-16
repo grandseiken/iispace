@@ -2,7 +2,7 @@
 #define II_GAME_LOGIC_PLAYER_PLAYER_H
 #include "game/common/math.h"
 #include "game/logic/ship/components.h"
-#include "game/logic/sim/sim_io.h"
+#include "game/logic/sim/io/player.h"
 #include <optional>
 
 namespace ii {

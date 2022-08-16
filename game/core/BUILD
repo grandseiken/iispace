@@ -3,7 +3,7 @@ cc_library(
   hdrs = ["io_input_adapter.h"],
   srcs = ["io_input_adapter.cc"],
   deps = [
-    "//game/logic/sim:sim_io",
+    "//game/logic/sim/io:player",
     "@glm",
   ],
   implementation_deps = ["//game/io"],
@@ -32,7 +32,7 @@ cc_library(
   srcs = ["render_state.cc"],
   deps = [
     "//game/common:random",
-    "//game/logic/sim:sim_io",
+    "//game/logic/sim/io:aggregate",
     "@glm",
   ],
   implementation_deps = [

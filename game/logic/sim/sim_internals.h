@@ -3,7 +3,10 @@
 #include "game/common/random.h"
 #include "game/logic/ecs/index.h"
 #include "game/logic/sim/collision.h"
-#include "game/logic/sim/sim_io.h"
+#include "game/logic/sim/io/conditions.h"
+#include "game/logic/sim/io/player.h"
+#include "game/logic/sim/io/render.h"
+#include "game/logic/sim/io/results.h"
 #include <cstdint>
 #include <memory>
 #include <optional>

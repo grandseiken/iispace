@@ -5,6 +5,7 @@
 #include "game/logic/geometry/shapes/ngon.h"
 #include "game/logic/player/ai_player.h"
 #include "game/logic/ship/ship_template.h"
+#include "game/logic/sim/io/conditions.h"
 #include <algorithm>
 #include <utility>
 

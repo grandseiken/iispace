@@ -14,6 +14,9 @@ cc_library(
     "//game/common:printer",
     "//game/data:replay",
     "//game/logic/sim",
+    "//game/logic/sim/io:aggregate",
+    "//game/logic/sim/io:conditions",
+    "//game/logic/sim/io:results",
   ]
 )
 
@@ -26,6 +29,7 @@ cc_library(
     "//game/data:packet",
     "//game/data:replay",
     "//game/logic/sim:networked_sim_state",
+    "//game/logic/sim/io:aggregate",
     "@concurrent_queue",
   ],
 )
@@ -36,7 +40,7 @@ cc_library(
   deps = [
     "//game:flags",
     "//game/common:types",
-    "//game/logic/sim:sim_io",
+    "//game/logic/sim/io:conditions",
   ],
 )
 

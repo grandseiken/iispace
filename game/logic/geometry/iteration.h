@@ -9,6 +9,7 @@ namespace ii::geom {
 
 struct iterate_flags_t {};
 struct iterate_lines_t {};
+struct iterate_shapes_t {};
 struct iterate_centres_t {};
 struct iterate_attachment_points_t {};
 struct iterate_collision_t {
@@ -17,6 +18,7 @@ struct iterate_collision_t {
 
 inline constexpr iterate_flags_t iterate_flags;
 inline constexpr iterate_lines_t iterate_lines;
+inline constexpr iterate_shapes_t iterate_shapes;
 inline constexpr iterate_centres_t iterate_centres;
 inline constexpr iterate_attachment_points_t iterate_attachment_points;
 inline constexpr iterate_collision_t iterate_collision(shape_flag mask) {
@@ -26,8 +28,8 @@ inline constexpr iterate_collision_t iterate_collision(shape_flag mask) {
 template <typename T, typename... Args>
 concept OneOf = (std::same_as<T, Args> || ...);
 template <typename T>
-concept IterTag = OneOf<T, iterate_flags_t, iterate_lines_t, iterate_centres_t, iterate_collision_t,
-                        iterate_attachment_points_t>;
+concept IterTag = OneOf<T, iterate_flags_t, iterate_lines_t, iterate_shapes_t, iterate_centres_t,
+                        iterate_collision_t, iterate_attachment_points_t>;
 
 template <typename T>
 concept FlagFunction = std::invocable<T, shape_flag>;
@@ -35,6 +37,8 @@ template <typename T>
 concept PointFunction = std::invocable<T, const vec2&, const glm::vec4&>;
 template <typename T>
 concept LineFunction = std::invocable<T, const vec2&, const vec2&, const glm::vec4&>;
+template <typename T>
+concept ShapeFunction = std::invocable<T, /* TODO */ int>;
 template <typename T>
 concept AttachmentPointFunction = std::invocable<T, std::size_t, const vec2&, const vec2&>;
 

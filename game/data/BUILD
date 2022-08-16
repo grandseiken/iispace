@@ -9,7 +9,7 @@ cc_library(
 cc_library(
   name = "packet",
   hdrs = ["packet.h"],
-  deps = ["//game/logic/sim:sim_io"],
+  deps = ["//game/logic/sim/io:player"],
   visibility = ["//visibility:public"],
 )
 
@@ -19,7 +19,8 @@ cc_library(
   srcs = ["replay.cc"],
   deps = [
     "//game/common:types",
-    "//game/logic/sim:sim_io",
+    "//game/logic/sim/io:conditions",
+    "//game/logic/sim/io:player",
   ],
   implementation_deps = [
     ":crypt",
@@ -35,11 +36,13 @@ cc_library(
   srcs = ["save.cc"],
   deps = [
     "//game/common:types",
-    "//game/logic/sim:sim_io",
+    "//game/logic/sim/io:conditions",
+    "//game/logic/sim/io:results",
   ],
   implementation_deps = [
     ":crypt",
     "//game/data/proto:ii_proto_cc",
+    "//game/logic/sim/io:player",
   ],
   visibility = ["//visibility:public"],
 )

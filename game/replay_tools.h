@@ -3,7 +3,9 @@
 #include "game/common/printer.h"
 #include "game/common/result.h"
 #include "game/data/replay.h"
-#include "game/logic/sim/sim_io.h"
+#include "game/logic/sim/io/aggregate.h"
+#include "game/logic/sim/io/conditions.h"
+#include "game/logic/sim/io/results.h"
 #include "game/logic/sim/sim_state.h"
 #include <optional>
 #include <ostream>

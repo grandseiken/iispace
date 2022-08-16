@@ -162,17 +162,18 @@ void PauseModal::render(const ii::ui::UiLayer& ui, ii::render::GlRenderer& r) co
   render_rect(r, low, hi, z0Game::kPanelText, 1);
 }
 
-HighScoreModal::HighScoreModal(bool is_replay, const ii::sim_results& results,
+HighScoreModal::HighScoreModal(bool is_replay, ii::game_mode mode, const ii::sim_results& results,
                                ii::ReplayWriter* replay_writer)
 : Modal{true, false}
 , is_replay_{is_replay}
+, mode_{mode}
 , results_{results}
 , replay_writer_{replay_writer}
 , compliment_{results.seed % kCompliments.size()} {}
 
 void HighScoreModal::update(ii::ui::UiLayer& ui) {
   if (!is_replay_) {
-    if (results_.mode == ii::game_mode::kNormal || results_.mode == ii::game_mode::kBoss) {
+    if (mode_ == ii::game_mode::kNormal || mode_ == ii::game_mode::kBoss) {
       ui.save_game().bosses_killed |= results_.bosses_killed;
     } else {
       ui.save_game().hard_mode_bosses_killed |= results_.bosses_killed;
@@ -224,7 +225,7 @@ void HighScoreModal::update(ii::ui::UiLayer& ui) {
 
   if (ui.input().pressed(ii::ui::key::kMenu)) {
     ui.play_sound(ii::sound::kMenuAccept);
-    ui.save_game().high_scores.add_score(results_.mode, results_.players.size() - 1, enter_name_,
+    ui.save_game().high_scores.add_score(mode_, results_.players.size() - 1, enter_name_,
                                          get_score());
     if (replay_writer_) {
       ui.write_replay(*replay_writer_, enter_name_, get_score());
@@ -251,7 +252,7 @@ void HighScoreModal::render(const ii::ui::UiLayer& ui, ii::render::GlRenderer& r
     render_rect(r, low, hi, z0Game::kPanelText, 1);
   }
 
-  if (results_.mode == ii::game_mode::kBoss) {
+  if (mode_ == ii::game_mode::kBoss) {
     auto extra_lives = results_.lives_remaining;
     bool b = extra_lives > 0 && boss_kill_count(results_.bosses_killed) >= 6;
 
@@ -335,7 +336,7 @@ void HighScoreModal::render(const ii::ui::UiLayer& ui, ii::render::GlRenderer& r
 }
 
 std::uint64_t HighScoreModal::get_score() const {
-  if (results_.mode == ii::game_mode::kBoss) {
+  if (mode_ == ii::game_mode::kBoss) {
     bool won = boss_kill_count(results_.bosses_killed) >= 6 && results_.tick_count != 0;
     if (!won) {
       return 0;
@@ -354,7 +355,7 @@ std::uint64_t HighScoreModal::get_score() const {
 
 bool HighScoreModal::is_high_score(const ii::SaveGame& save) const {
   return !is_replay_ &&
-      save.high_scores.is_high_score(results_.mode, results_.players.size() - 1, get_score());
+      save.high_scores.is_high_score(mode_, results_.players.size() - 1, get_score());
 }
 
 GameModal::GameModal(ii::io::IoLayer& io_layer, const ii::initial_conditions& conditions,
@@ -362,6 +363,7 @@ GameModal::GameModal(ii::io::IoLayer& io_layer, const ii::initial_conditions& co
 : Modal{true, true}
 , engine_{std::random_device{}()}
 , options_{options}
+, mode_{conditions.mode}
 , render_state_{conditions.seed} {
   game_.emplace(io_layer, ii::ReplayWriter{conditions});
   game_->input.set_player_count(conditions.player_count);
@@ -374,6 +376,7 @@ GameModal::GameModal(ii::ReplayReader&& replay, const ii::game_options_t& option
 : Modal{true, true}
 , engine_{std::random_device{}()}
 , options_{options}
+, mode_{replay.initial_conditions().mode}
 , render_state_{replay.initial_conditions().seed} {
   auto conditions = replay.initial_conditions();
   replay_.emplace(std::move(replay));
@@ -399,7 +402,7 @@ GameModal::~GameModal() = default;
 void GameModal::update(ii::ui::UiLayer& ui) {
   auto& istate = network_state_ ? static_cast<ii::ISimState&>(*network_state_) : *state_;
   if (pause_output_ == PauseModal::kEndGame || istate.game_over()) {
-    add(std::make_unique<HighScoreModal>(replay_.has_value(), istate.results(),
+    add(std::make_unique<HighScoreModal>(replay_.has_value(), mode_, istate.results(),
                                          game_ ? &game_->writer : nullptr));
     if (pause_output_ != PauseModal::kEndGame) {
       ui.play_sound(ii::sound::kMenuAccept);
@@ -564,7 +567,7 @@ void GameModal::render(const ii::ui::UiLayer& ui, ii::render::GlRenderer& r) con
 
   std::stringstream ss;
   ss << render.lives_remaining << " live(s)";
-  if (render.mode != ii::game_mode::kBoss && render.overmind_timer) {
+  if (mode_ != ii::game_mode::kBoss && render.overmind_timer) {
     auto t = *render.overmind_timer / 60;
     ss << " " << (t < 10 ? "0" : "") << t;
   }
@@ -574,7 +577,7 @@ void GameModal::render(const ii::ui::UiLayer& ui, ii::render::GlRenderer& r) con
                kDimensions.y / kTextSize.y - 2.f},
               ss.str(), z0Game::kPanelTran);
 
-  if (render.mode == ii::game_mode::kBoss) {
+  if (mode_ == ii::game_mode::kBoss) {
     ss.str({});
     ss << convert_to_time(render.tick_count);
     render_text(r, {kDimensions.x / (2 * kTextSize.x) - ss.str().size() - 1.f, 1.f}, ss.str(),
@@ -582,7 +585,7 @@ void GameModal::render(const ii::ui::UiLayer& ui, ii::render::GlRenderer& r) con
   }
 
   if (render.boss_hp_bar) {
-    std::uint32_t x = render.mode == ii::game_mode::kBoss ? 48 : 0;
+    std::uint32_t x = mode_ == ii::game_mode::kBoss ? 48 : 0;
     render_rect(r, {x + kDimensions.x / 2 - 48.f, 16.f}, {x + kDimensions.x / 2 + 48.f, 32.f},
                 z0Game::kPanelTran, 2);
 

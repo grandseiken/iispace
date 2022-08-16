@@ -171,9 +171,8 @@ ecs::handle create_ship(SimInterface& sim, const vec2& position, fixed rotation 
     if constexpr (+collision_shape_flags || requires { Logic::kShapeFlags; }) {
       h.add(Collision{.flags = collision_shape_flags | extra_shape_flags,
                       .bounding_width = bounding_width,
-                      .check = sim.conditions().compatibility == compatibility_level::kLegacy
-                          ? &ship_check_point_legacy<Logic, S>
-                          : &ship_check_point<Logic, S>});
+                      .check = sim.is_legacy() ? &ship_check_point_legacy<Logic, S>
+                                               : &ship_check_point<Logic, S>});
     }
   }
 

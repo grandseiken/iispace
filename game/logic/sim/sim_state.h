@@ -1,7 +1,7 @@
 #ifndef II_GAME_LOGIC_SIM_SIM_STATE_H
 #define II_GAME_LOGIC_SIM_SIM_STATE_H
 #include "game/common/math.h"
-#include "game/logic/sim/sim_io.h"
+#include "game/logic/sim/io/player.h"
 #include <cstdint>
 #include <memory>
 #include <optional>
@@ -15,6 +15,10 @@ class Printer;
 class ReplayWriter;
 class SimInterface;
 struct SimInternals;
+struct aggregate_output;
+struct initial_conditions;
+struct render_output;
+struct sim_results;
 
 class ISimState {
 public:

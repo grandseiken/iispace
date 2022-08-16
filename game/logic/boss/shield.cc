@@ -5,6 +5,7 @@
 #include "game/logic/geometry/shapes/ngon.h"
 #include "game/logic/player/player.h"
 #include "game/logic/ship/ship_template.h"
+#include "game/logic/sim/io/result_events.h"
 
 namespace ii {
 namespace {
@@ -51,7 +52,7 @@ struct ShieldBombBoss : ecs::component {
   }
 
   static std::uint32_t bounding_width(const SimInterface& sim) {
-    return sim.conditions().compatibility == compatibility_level::kLegacy ? 640 : 140;
+    return sim.is_legacy() ? 640 : 140;
   }
 
   std::uint32_t timer = 0;

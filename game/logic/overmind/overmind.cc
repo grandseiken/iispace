@@ -6,6 +6,7 @@
 #include "game/logic/overmind/spawn_context.h"
 #include "game/logic/player/player.h"
 #include "game/logic/ship/components.h"
+#include "game/logic/sim/io/conditions.h"
 #include <sfn/functional.h>
 #include <algorithm>
 #include <cstdint>

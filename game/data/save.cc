@@ -2,6 +2,7 @@
 #include "game/data/crypt.h"
 #include "game/data/proto/config.pb.h"
 #include "game/data/proto/savegame.pb.h"
+#include "game/logic/sim/io/player.h"
 #include <algorithm>
 #include <array>
 #include <sstream>

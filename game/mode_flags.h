@@ -2,7 +2,7 @@
 #define II_GAME_MODE_FLAGS_H
 #include "game/common/result.h"
 #include "game/flags.h"
-#include "game/logic/sim/sim_io.h"
+#include "game/logic/sim/io/conditions.h"
 
 namespace ii {
 

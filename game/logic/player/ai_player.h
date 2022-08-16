@@ -3,7 +3,7 @@
 #include "game/common/math.h"
 #include "game/logic/ecs/index.h"
 #include "game/logic/ship/components.h"
-#include "game/logic/sim/sim_io.h"
+#include "game/logic/sim/io/player.h"
 
 namespace ii {
 class SimInterface;

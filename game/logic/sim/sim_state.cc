@@ -66,7 +66,10 @@ SimState::SimState(const initial_conditions& conditions, ReplayWriter* replay_wr
     internals_->collision_index = std::make_unique<GridCollisionIndex>(
         glm::uvec2{64, 64}, glm::ivec2{-32, -32}, kSimDimensions + glm::ivec2{32, 32});
   }
-  internals_->global_entity_handle = internals_->index.create(GlobalData{conditions});
+  internals_->global_entity_handle =
+      internals_->index.create(GlobalData{.lives = conditions.mode == game_mode::kBoss
+                                              ? conditions.player_count * GlobalData::kBossModeLives
+                                              : GlobalData::kStartingLives});
   internals_->global_entity_handle->add(Update{.update = ecs::call<&GlobalData::pre_update>});
   internals_->global_entity_handle->add(
       PostUpdate{.post_update = ecs::call<&GlobalData::post_update>});
@@ -268,7 +271,6 @@ render_output SimState::render() const {
   render_output result;
   result.players = internals_->player_output;
   result.lines = std::move(internals_->line_output);
-  result.mode = internals_->conditions.mode;
   result.tick_count = internals_->tick_count;
   result.lives_remaining = interface_->get_lives();
   result.overmind_timer = interface_->global_entity().get<GlobalData>()->overmind_wave_timer;
@@ -298,7 +300,6 @@ aggregate_output& SimState::output() {
 
 sim_results SimState::results() const {
   sim_results r;
-  r.mode = internals_->conditions.mode;
   r.seed = internals_->conditions.seed;
   r.tick_count = internals_->tick_count;
   r.lives_remaining = interface_->get_lives();
@@ -310,7 +311,7 @@ sim_results SimState::results() const {
     pr.score = p.score;
     pr.deaths = p.death_count;
   });
-  if (r.mode == game_mode::kBoss) {
+  if (internals_->conditions.mode == game_mode::kBoss) {
     r.score = r.tick_count;
   } else {
     for (const auto& p : r.players) {
