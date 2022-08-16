@@ -1,11 +1,13 @@
 #include "game/logic/sim/collision.h"
 #include <algorithm>
+#include <bit>
 
 namespace ii {
 
 GridCollisionIndex::GridCollisionIndex(const glm::uvec2& cell_dimensions,
                                        const glm::ivec2& min_point, const glm::ivec2& max_point)
-: cell_dimensions_{cell_dimensions}
+: cell_power_{std::bit_width(std::bit_ceil(cell_dimensions.x)),
+              std::bit_width(std::bit_ceil(cell_dimensions.y))}
 , cell_offset_{cell_coords(min_point)}
 , cell_count_{glm::ivec2{1, 1} + cell_coords(max_point) - cell_offset_} {
   cells_.resize(static_cast<std::size_t>(cell_count_.x) * cell_count_.y);
@@ -96,13 +98,12 @@ GridCollisionIndex::collision_list(const vec2& point, shape_flag mask) const {
   return r;
 }
 
-glm::ivec2 GridCollisionIndex::cell_coords(const vec2& v) const {
-  return cell_coords(glm::ivec2{v.x.to_int(), v.y.to_int()});
+glm::ivec2 GridCollisionIndex::cell_coords(const glm::ivec2& v) const {
+  return {v.x >> cell_power_.x, v.y >> cell_power_.y};
 }
 
-glm::ivec2 GridCollisionIndex::cell_coords(const glm::ivec2& v) const {
-  return {v.x >= 0 ? v.x / cell_dimensions_.x : -((-v.x - 1) / cell_dimensions_.x) - 1,
-          v.y >= 0 ? v.y / cell_dimensions_.y : -((-v.y - 1) / cell_dimensions_.y) - 1};
+glm::ivec2 GridCollisionIndex::cell_coords(const vec2& v) const {
+  return cell_coords(glm::ivec2{v.x.to_int(), v.y.to_int()});
 }
 
 glm::ivec2 GridCollisionIndex::min_coords(const vec2& v) const {

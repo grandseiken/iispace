@@ -80,7 +80,7 @@ private:
     glm::ivec2 max{0, 0};
   };
 
-  glm::ivec2 cell_dimensions_{0, 0};
+  glm::ivec2 cell_power_{0, 0};
   glm::ivec2 cell_offset_{0, 0};
   glm::ivec2 cell_count_{0, 0};
   std::vector<cell_t> cells_;
