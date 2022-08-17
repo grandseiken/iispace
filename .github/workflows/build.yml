@@ -6,6 +6,7 @@ on:
 jobs:
   build:
     strategy:
+      fail-fast: false
       matrix:
         include:
           - os: ubuntu-22.04
@@ -14,9 +15,18 @@ jobs:
           - os: ubuntu-22.04
             config: clang
             command: sudo apt-get update && sudo apt-get install -y libsdl2-dev
+          - os: windows-2022
+            config: msvc
+            command: true
+          - os: windows-2022
+            config: clang-cl
+            command: true
+          - os: windows-2022
+            config: ubsan-cl
+            command: true
           - os: macos-12
             config: darwin
-            command: brew install sdl && export BAZEL_USE_CPP_ONLY_TOOLCHAIN=1
+            command: brew install sdl2 && export BAZEL_USE_CPP_ONLY_TOOLCHAIN=1
     runs-on: ${{ matrix.os }}
     steps:
     - uses: actions/checkout@v3
