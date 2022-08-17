@@ -4,38 +4,30 @@ on:
   workflow_dispatch:
 
 jobs:
-  linux:
-    runs-on: ubuntu-22.04
+  build:
+    strategy:
+      matrix:
+        include:
+          - os: ubuntu-22.04
+            config: gcc
+            command: sudo apt-get update && sudo apt-get install -y libsdl2-dev
+          - os: ubuntu-22.04
+            config: clang
+            command: sudo apt-get update && sudo apt-get install -y libsdl2-dev
+          - os: macos-12
+            config: darwin
+            command: brew install sdl && export BAZEL_USE_CPP_ONLY_TOOLCHAIN=1
+    runs-on: ${{ matrix.os }}
     steps:
     - uses: actions/checkout@v3
-    - name: Set up bazelisk
-      uses: holvonix-open/setup-bazelisk@v0.6.1
-    - run: sudo apt-get update && sudo apt-get install -y libsdl2-dev
-    - run: bazel build --config ci --config gcc //game //game:tools && ls bazel-bin/game
+    - run: ${{ matrix.command }}
+    - run: bazel build --config ci --config ${{ matrix.config }} //game //game:tools && ls bazel-bin/game
     - uses: actions/upload-artifact@v3
       with:
-        name: linux-tools
+        name: ${{ matrix.os }}-${{ matrix.config }}-tools
         path: bazel-bin/game/tools.zip
     - uses: actions/upload-artifact@v3
       with:
-        name: linux-game
+        name: ${{ matrix.os }}-${{ matrix.config }}-game
         path: bazel-bin/game/game.zip
-    - run: bazel test --config ci --config gcc //test/...
-  darwin:
-    runs-on: macos-12
-    steps:
-    - uses: actions/checkout@v3
-    - name: Set up bazelisk
-      uses: holvonix-open/setup-bazelisk@v0.6.1
-    - run: brew install sdl2
-    - run: export BAZEL_USE_CPP_ONLY_TOOLCHAIN=1
-    - run: bazel build --config ci --config darwin //game //game:tools && ls bazel-bin/game
-    - uses: actions/upload-artifact@v3
-      with:
-        name: darwin-tools
-        path: bazel-bin/game/tools.zip
-    - uses: actions/upload-artifact@v3
-      with:
-        name: darwin-game
-        path: bazel-bin/game/game.zip
-    - run: bazel test --config ci --config darwin //test/...
+    - run: bazel test --config ci --config ${{ matrix.config }} //test/...
