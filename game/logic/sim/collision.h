@@ -20,7 +20,7 @@ public:
   virtual std::unique_ptr<CollisionIndex> clone() = 0;
   virtual void refresh_handles(ecs::EntityIndex& index) = 0;
   virtual void add(ecs::handle& h, const Collision& c) = 0;
-  virtual void update(ecs::handle& h, const Collision& c) = 0;
+  virtual void update(ecs::handle& h) = 0;
   virtual void remove(ecs::handle& h) = 0;
   virtual void begin_tick() = 0;
 
@@ -42,7 +42,7 @@ public:
 
   void refresh_handles(ecs::EntityIndex& index) override;
   void add(ecs::handle& h, const Collision& c) override;
-  void update(ecs::handle& h, const Collision& c) override;
+  void update(ecs::handle& h) override;
   void remove(ecs::handle& h) override;
   void begin_tick() override;
 
@@ -97,7 +97,7 @@ public:
 
   void refresh_handles(ecs::EntityIndex& index) override;
   void add(ecs::handle& h, const Collision& c) override;
-  void update(ecs::handle& h, const Collision& c) override;
+  void update(ecs::handle& h) override;
   void remove(ecs::handle& h) override;
   void begin_tick() override;
 

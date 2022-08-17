@@ -151,14 +151,12 @@ void SimState::update(std::vector<input_frame> input) {
       --h.hit_timer;
     }
   });
-  internals_->index.iterate_dispatch<Update>([&](ecs::handle h, Update& c, Collision* collision) {
+  internals_->index.iterate_dispatch<Update>([&](ecs::handle h, Update& c) {
     if (!h.has<Destroy>()) {
       c.update(h, *interface_);
-      if (collision) {
-        // TODO: we only update after the entity itself has updated: this can still lead to minor
-        // inconsistencies if the entity is moved by some external force.
-        internals_->collision_index->update(h, *collision);
-      }
+      // TODO: we only update after the entity itself has updated: this can still lead to minor
+      // inconsistencies if the entity is moved by some external force.
+      internals_->collision_index->update(h);
     }
   });
 
@@ -368,6 +366,9 @@ void SimState::update_smoothing(smoothing_data& data) {
 }
 
 void SimState::dump(Printer& printer, const query& q) const {
+  printer.begin().put("game_state_random: ").put(internals_->game_state_random.state()).end();
+  printer.begin().put("game_sequence_random: ").put(internals_->game_sequence_random.state()).end();
+  printer.begin().put("aesthetic_random: ").put(internals_->aesthetic_random.state()).end().end();
   ecs::EntityIndex::query index_q;
   for (const auto& id : q.entity_ids) {
     index_q.entity_ids.emplace(ecs::entity_id{id});

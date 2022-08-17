@@ -27,7 +27,7 @@ void GridCollisionIndex::add(ecs::handle& h, const Collision& c) {
   insert_cells(h.id(), it->second);
 }
 
-void GridCollisionIndex::update(ecs::handle& h, const Collision&) {
+void GridCollisionIndex::update(ecs::handle& h) {
   auto it = entities_.find(h.id());
   if (it == entities_.end()) {
     return;
@@ -174,7 +174,7 @@ void LegacyCollisionIndex::add(ecs::handle& h, const Collision& c) {
   entries.emplace_back(entry{h.id(), h, h.get<Transform>(), &c, 0});
 }
 
-void LegacyCollisionIndex::update(ecs::handle& h, const Collision& c) {}
+void LegacyCollisionIndex::update(ecs::handle&) {}
 
 void LegacyCollisionIndex::remove(ecs::handle& h) {
   if (auto it = std::find_if(entries.begin(), entries.end(),
