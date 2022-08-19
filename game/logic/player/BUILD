@@ -4,7 +4,7 @@ cc_library(
   srcs = ["player.cc"],
   deps = [
     "//game/common:math",
-    "//game/logic/ship",
+    "//game/logic/ecs",
     "//game/logic/sim/io:player",
   ],
   implementation_deps = [
@@ -14,6 +14,24 @@ cc_library(
     "//game/logic/ship",
     "//game/logic/sim:sim_interface",
     "//game/logic/sim/io:conditions",
+  ],
+  visibility = ["//game/logic:__subpackages__"],
+)
+
+cc_library(
+  name = "powerup",
+  hdrs = ["powerup.h"],
+  srcs = ["powerup.cc"],
+  deps = [
+    "//game/common:math",
+    "//game/logic/ship",
+  ],
+  implementation_deps = [
+    "//game/logic/sim/io:player",
+    "//game/logic/ecs",
+    "//game/logic/geometry/shapes",
+    "//game/logic/ship",
+    "//game/logic/sim:sim_interface",
   ],
   visibility = ["//game/logic:__subpackages__"],
 )
@@ -31,5 +49,4 @@ cc_library(
     "//game/logic/ship",
     "//game/logic/sim:sim_interface",
   ],
-  visibility = ["//game/logic:__subpackages__"],
 )

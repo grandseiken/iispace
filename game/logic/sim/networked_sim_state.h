@@ -1,9 +1,7 @@
 #ifndef II_GAME_LOGIC_SIM_NETWORKED_SIM_STATE_H
 #define II_GAME_LOGIC_SIM_NETWORKED_SIM_STATE_H
 #include "game/data/packet.h"
-#include "game/logic/sim/io/aggregate.h"
-#include "game/logic/sim/io/render.h"
-#include "game/logic/sim/io/results.h"
+#include "game/logic/sim/io/output.h"
 #include "game/logic/sim/sim_state.h"
 #include <cstdint>
 #include <deque>

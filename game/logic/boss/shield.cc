@@ -3,9 +3,9 @@
 #include "game/logic/geometry/node_for_each.h"
 #include "game/logic/geometry/shapes/line.h"
 #include "game/logic/geometry/shapes/ngon.h"
-#include "game/logic/player/player.h"
+#include "game/logic/player/powerup.h"
 #include "game/logic/ship/ship_template.h"
-#include "game/logic/sim/io/result_events.h"
+#include "game/logic/sim/io/events.h"
 
 namespace ii {
 namespace {

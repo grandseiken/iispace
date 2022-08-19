@@ -4,6 +4,7 @@
 #include "game/common/random.h"
 #include "game/logic/ecs/index.h"
 #include "game/logic/sim/io/aggregate.h"
+#include "game/logic/sim/io/render.h"
 #include "game/mixer/sound.h"
 #include <cstdint>
 #include <vector>
@@ -17,6 +18,7 @@ class EntityIndex;
 enum class shape_flag : std::uint32_t;
 class SimInterface;
 struct SimInternals;
+struct aggregate_event;
 struct initial_conditions;
 struct input_frame;
 
@@ -55,9 +57,9 @@ public:
 
 private:
   friend class SimInterface;
-  EmitHandle(SimInterface& sim, aggregate_output::event& e) : sim{&sim}, e{&e} {}
+  EmitHandle(SimInterface& sim, aggregate_event& e) : sim{&sim}, e{&e} {}
   SimInterface* sim = nullptr;
-  aggregate_output::event* e = nullptr;
+  aggregate_event* e = nullptr;
 };
 
 class SimInterface {

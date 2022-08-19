@@ -8,7 +8,7 @@ cc_library(
     "//game/common:types",
     "//game/logic/boss",
     "//game/logic/ecs",
-    "//game/logic/player",
+    "//game/logic/player:powerup",
     "//game/logic/sim:sim_interface",
     "//game/logic/sim/io:conditions",
   ],

@@ -38,6 +38,7 @@ cc_library(
   implementation_deps = [
     ":io_input_adapter",
     "//game/logic/sim",
+    "//game/logic/sim/io:output",
     "//game/mixer",
     "//game/render:gl_renderer",
   ],

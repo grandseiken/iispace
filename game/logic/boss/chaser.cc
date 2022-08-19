@@ -1,7 +1,7 @@
 #include "game/logic/boss/boss_internal.h"
 #include "game/logic/geometry/shapes/ngon.h"
 #include "game/logic/ship/ship_template.h"
-#include "game/logic/sim/io/result_events.h"
+#include "game/logic/sim/io/events.h"
 #include <array>
 
 namespace ii {

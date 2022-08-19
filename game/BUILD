@@ -14,9 +14,8 @@ cc_library(
     "//game/common:printer",
     "//game/data:replay",
     "//game/logic/sim",
-    "//game/logic/sim/io:aggregate",
     "//game/logic/sim/io:conditions",
-    "//game/logic/sim/io:results",
+    "//game/logic/sim/io:output",
   ]
 )
 

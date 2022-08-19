@@ -1,6 +1,6 @@
 #include "game/logic/boss/boss_internal.h"
 #include "game/logic/ecs/call.h"
-#include "game/logic/sim/io/result_events.h"
+#include "game/logic/sim/io/events.h"
 #include <algorithm>
 
 namespace {

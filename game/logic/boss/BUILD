@@ -21,8 +21,8 @@ cc_library(
   implementation_deps = [
     "//game/common:math",
     "//game/logic/enemy",
-    "//game/logic/player",
-    "//game/logic/sim/io:result_events",
+    "//game/logic/player:powerup",
+    "//game/logic/sim/io:events",
     "//game/mixer:sound",
   ],
   visibility = ["//game/logic:__subpackages__"],

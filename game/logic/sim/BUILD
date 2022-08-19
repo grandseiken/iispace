@@ -6,6 +6,7 @@ cc_library(
     "//game/common:random",
     "//game/logic/ecs",
     "//game/logic/sim/io:aggregate",
+    "//game/logic/sim/io:render",
     "//game/mixer:sound",
   ],
   visibility = ["//game/logic:__subpackages__"],
@@ -25,9 +26,8 @@ cc_library(
     "//game/logic/ecs",
     "//game/logic/ship",
     "//game/logic/sim/io:conditions",
+    "//game/logic/sim/io:output",
     "//game/logic/sim/io:player",
-    "//game/logic/sim/io:render",
-    "//game/logic/sim/io:results",
   ]
 )
 
@@ -60,9 +60,7 @@ cc_library(
   deps = [
     ":sim",
     "//game/data:packet",
-    "//game/logic/sim/io:aggregate",
-    "//game/logic/sim/io:render",
-    "//game/logic/sim/io:results",
+    "//game/logic/sim/io:output",
   ],
   implementation_deps = ["//game/logic/sim/io:conditions"],
   visibility = ["//visibility:public"],

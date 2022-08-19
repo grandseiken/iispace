@@ -281,14 +281,14 @@ void GlRenderer::render_lines(std::span<const line_t> lines) {
     vertex_data.emplace_back(line.a.y);
     vertex_data.emplace_back(line.b.x);
     vertex_data.emplace_back(line.b.y);
-    colour_data.emplace_back(line.colour.r);
-    colour_data.emplace_back(line.colour.g);
-    colour_data.emplace_back(line.colour.b);
-    colour_data.emplace_back(line.colour.a);
-    colour_data.emplace_back(line.colour.r);
-    colour_data.emplace_back(line.colour.g);
-    colour_data.emplace_back(line.colour.b);
-    colour_data.emplace_back(line.colour.a);
+    colour_data.emplace_back(line.c.r);
+    colour_data.emplace_back(line.c.g);
+    colour_data.emplace_back(line.c.b);
+    colour_data.emplace_back(line.c.a);
+    colour_data.emplace_back(line.c.r);
+    colour_data.emplace_back(line.c.g);
+    colour_data.emplace_back(line.c.b);
+    colour_data.emplace_back(line.c.a);
     line_indices.emplace_back(index++);
     line_indices.emplace_back(index++);
   }

@@ -2,13 +2,9 @@
 #define II_GAME_LOGIC_SIM_IO_AGGREGATE_H
 #include "game/mixer/sound.h"
 #include <glm/glm.hpp>
-#include <bit>
 #include <cstddef>
 #include <cstdint>
-#include <deque>
 #include <optional>
-#include <unordered_map>
-#include <vector>
 
 namespace ii {
 namespace ecs {
@@ -114,30 +110,6 @@ enum class background_fx_type {
 
 struct background_fx_change {
   background_fx_type type = background_fx_type::kStars;
-};
-
-struct aggregate_output {
-  void clear() {
-    entries.clear();
-  }
-
-  void append_to(aggregate_output& output) const {
-    output.entries.insert(output.entries.end(), entries.begin(), entries.end());
-  }
-
-  struct event {
-    std::optional<background_fx_change> background_fx;
-    std::vector<particle> particles;
-    std::vector<sound_out> sounds;
-    std::unordered_map<std::uint32_t, std::uint32_t> rumble_map;
-    std::uint32_t global_rumble = 0;
-  };
-
-  struct entry {
-    resolve_key key;
-    event e;
-  };
-  std::deque<entry> entries;
 };
 
 }  // namespace ii

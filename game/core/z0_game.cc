@@ -49,24 +49,6 @@ std::string convert_to_time(std::uint64_t score) {
   return r.str();
 }
 
-void render_line(ii::render::GlRenderer& r, const glm::vec2& a, const glm::vec2& b,
-                 const glm::vec4& c) {
-  ii::render::line_t line{a, b, c};
-  r.render_lines({&line, 1});
-}
-
-void render_lines(ii::render::GlRenderer& r, const std::span<ii::render_output::line_t>& lines) {
-  // TODO: avoid this useless copy.
-  std::vector<ii::render::line_t> render;
-  for (const auto& line : lines) {
-    auto& rl = render.emplace_back();
-    rl.a = line.a;
-    rl.b = line.b;
-    rl.colour = line.c;
-  }
-  r.render_lines(render);
-}
-
 void render_text(ii::render::GlRenderer& r, const glm::vec2& v, const std::string& text,
                  const glm::vec4& c) {
   r.render_text(0, 16 * static_cast<glm::ivec2>(v), c, ii::ustring_view::utf8(text));
@@ -496,7 +478,7 @@ void GameModal::render(const ii::ui::UiLayer& ui, ii::render::GlRenderer& r) con
   r.set_dimensions(ui.io_layer().dimensions(), kDimensions);
   r.set_colour_cycle(render.colour_cycle);
   render_state_.render(r);
-  render_lines(r, render.lines);
+  r.render_lines(render.lines);
 
   std::uint32_t n = 0;
   for (const auto& p : render.players) {
@@ -521,10 +503,12 @@ void GameModal::render(const ii::ui::UiLayer& ui, ii::render::GlRenderer& r) con
       v *= 16;
       auto lo = v + glm::vec2{5.f, 11.f - 10 * p.timer};
       auto hi = v + glm::vec2{9.f, 13.f};
-      render_line(r, lo, {lo.x, hi.y}, glm::vec4{1.f});
-      render_line(r, {lo.x, hi.y}, hi, glm::vec4{1.f});
-      render_line(r, hi, {hi.x, lo.y}, glm::vec4{1.f});
-      render_line(r, {hi.x, lo.y}, lo, glm::vec4{1.f});
+      std::vector<ii::line_t> lines;
+      lines.emplace_back(ii::line_t{lo, {lo.x, hi.y}, glm::vec4{1.f}});
+      lines.emplace_back(ii::line_t{{lo.x, hi.y}, hi, glm::vec4{1.f}});
+      lines.emplace_back(ii::line_t{hi, {hi.x, lo.y}, glm::vec4{1.f}});
+      lines.emplace_back(ii::line_t{{hi.x, lo.y}, lo, glm::vec4{1.f}});
+      r.render_lines(lines);
     }
     ++n;
   }

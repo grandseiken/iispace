@@ -4,9 +4,8 @@
 #include "game/logic/ecs/index.h"
 #include "game/logic/sim/collision.h"
 #include "game/logic/sim/io/conditions.h"
+#include "game/logic/sim/io/output.h"
 #include "game/logic/sim/io/player.h"
-#include "game/logic/sim/io/render.h"
-#include "game/logic/sim/io/results.h"
 #include <cstdint>
 #include <memory>
 #include <optional>
@@ -39,8 +38,8 @@ struct SimInternals {
 
   // Per-frame output.
   std::optional<float> boss_hp_bar;
-  std::vector<render_output::line_t> line_output;
-  std::vector<render_output::player_info> player_output;
+  std::vector<line_t> line_output;
+  std::vector<player_info> player_output;
   aggregate_output output;
 };
 

@@ -1,14 +1,4 @@
 cc_library(
-  name = "aggregate",
-  hdrs = ["aggregate.h"],
-  deps = [
-    "//game/mixer:sound",
-    "@glm",
-  ],
-  visibility = ["//visibility:public"],
-)
-
-cc_library(
   name = "conditions",
   hdrs = ["conditions.h"],
   deps = ["//game/common:types"],
@@ -26,6 +16,16 @@ cc_library(
 )
 
 cc_library(
+  name = "aggregate",
+  hdrs = ["aggregate.h"],
+  deps = [
+    "//game/mixer:sound",
+    "@glm",
+  ],
+  visibility = ["//visibility:public"],
+)
+
+cc_library(
   name = "render",
   hdrs = ["render.h"],
   deps = ["@glm"],
@@ -33,17 +33,19 @@ cc_library(
 )
 
 cc_library(
-  name = "result_events",
-  hdrs = ["result_events.h"],
+  name = "events",
+  hdrs = ["events.h"],
   deps = ["//game/common:types"],
   visibility = ["//visibility:public"],
 )
 
 cc_library(
-  name = "results",
-  hdrs = ["results.h"],
+  name = "output",
+  hdrs = ["output.h"],
   deps = [
-    ":result_events",
+    ":aggregate",
+    ":events",
+    ":render",
     "//game/common:types",
   ],
   visibility = ["//visibility:public"],

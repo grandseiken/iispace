@@ -9,6 +9,7 @@ cc_library(
   deps = [
     "//game/common:types",
     "//game/common:ustring",
+    "//game/logic/sim/io:render",
     "@glm",
   ],
   implementation_deps = [

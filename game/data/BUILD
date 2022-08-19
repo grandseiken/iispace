@@ -37,7 +37,7 @@ cc_library(
   deps = [
     "//game/common:types",
     "//game/logic/sim/io:conditions",
-    "//game/logic/sim/io:results",
+    "//game/logic/sim/io:output",
   ],
   implementation_deps = [
     ":crypt",

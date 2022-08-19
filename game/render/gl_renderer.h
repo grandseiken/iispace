@@ -2,6 +2,7 @@
 #define II_GAME_RENDER_GL_RENDERER_H
 #include "game/common/result.h"
 #include "game/common/ustring.h"
+#include "game/logic/sim/io/render.h"
 #include <glm/glm.hpp>
 #include <memory>
 #include <optional>
@@ -12,12 +13,6 @@ namespace ii::io {
 class Filesystem;
 }  // namespace ii::io
 namespace ii::render {
-
-struct line_t {
-  glm::vec2 a{0.f};
-  glm::vec2 b{0.f};
-  glm::vec4 colour{0.f};
-};
 
 class GlRenderer {
 private:

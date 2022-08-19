@@ -1,5 +1,5 @@
-#ifndef II_GAME_LOGIC_SIM_IO_RESULT_EVENTS_H
-#define II_GAME_LOGIC_SIM_IO_RESULT_EVENTS_H
+#ifndef II_GAME_LOGIC_SIM_IO_EVENTS_H
+#define II_GAME_LOGIC_SIM_IO_EVENTS_H
 #include "game/common/enum.h"
 #include <bit>
 #include <cstdint>
