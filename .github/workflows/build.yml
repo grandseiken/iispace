@@ -31,7 +31,7 @@ jobs:
     steps:
     - uses: actions/checkout@v3
     - run: ${{ matrix.command }}
-    - run: bazel build --config ci --config ${{ matrix.config }} //game //game:tools && ls bazel-bin/game
+    - run: bazel build --config ci --config ${{ matrix.config }} //game //game:tools
     - uses: actions/upload-artifact@v3
       with:
         name: ${{ matrix.os }}-${{ matrix.config }}-tools

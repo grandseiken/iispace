@@ -28,6 +28,6 @@ def network_sim_test(replay = "", topology = "", extra_args=[], **kwargs):
     name = "%s_%s" % (topology, Label(replay).name),
     deps = [replay],
     args = ["--topology", "%s" % topology, "$(location %s)" % replay] + extra_args,
-    size = "small",
+    size = "medium",
     **kwargs,
   )

@@ -28,6 +28,6 @@ def replay_test(replay = "", score = 0, **kwargs):
     name = Label(replay).name,
     deps = [replay],
     args = ["--verify_score", "%s" % score, "$(location %s)" % replay],
-    size = "small",
+    size = "medium",
     **kwargs,
   )

@@ -32,7 +32,7 @@ def ai_test(mode, players, runs=1, extra_args=[], **kwargs):
       "--players", "%s" % players,
       "--runs", "%s" % runs,
     ] + extra_args,
-    size = "small",
+    size = "medium",
     **kwargs,
   )
 
@@ -67,6 +67,6 @@ def ai_netsim_test(mode, players, topology = "", extra_args=[], **kwargs):
       "--players", "%s" % players,
       "--topology", "%s" % topology,
     ] + extra_args,
-    size = "small",
+    size = "medium",
     **kwargs,
   )

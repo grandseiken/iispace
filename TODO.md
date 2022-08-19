@@ -128,6 +128,7 @@ Note: most of these hard to do with laggy network.
 * Fill screen with little enemies that bounce off each other
 
 ## Bosses
+* Per-player-count boss balancing with spawns etc
 * Super snake
 
 ## Sector conditions (i.e. route steps)
