@@ -86,12 +86,16 @@ inline result<run_data_t> synthesize_replay(const initial_conditions& conditions
       break;
     }
   }
-  auto results = sim.results();
+  const auto& results = sim.results();
   run_data_t data;
   data.seed = results.seed;
   data.ticks = results.tick_count;
   data.score = results.score;
-  data.bosses_killed |= results.bosses_killed;
+  for (const auto& e : results.events) {
+    if (e.boss_kill) {
+      data.bosses_killed |= *e.boss_kill;
+    }
+  }
   if (save_replay || (max_ticks && data.ticks >= *max_ticks)) {
     auto bytes = writer.write();
     if (!bytes) {

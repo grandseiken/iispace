@@ -91,7 +91,7 @@ bool run(const options_t& options) {
       std::cerr << "error: " << peer->id << " reported checksum failure for " << id << std::endl;
       success = false;
     }
-    auto results = peer->sim.canonical().results();
+    const auto& results = peer->sim.canonical().results();
     if (!expected_results) {
       expected_results = results;
       std::cout << peer->id << ": score " << results.score << ", ticks " << results.tick_count

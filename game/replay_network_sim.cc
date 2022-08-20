@@ -103,7 +103,7 @@ bool run(const network_options_t& options, const std::string& replay_path) {
       std::cerr << "error: " << peer->id << " reported checksum failure for " << id << std::endl;
       success = false;
     }
-    auto results = peer->sim.canonical().results();
+    const auto& results = peer->sim.canonical().results();
     if (results.score != canonical_results->sim.score) {
       std::cout << "verification failed for " << peer->id << ": score was " << results.score
                 << std::endl;

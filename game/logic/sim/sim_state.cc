@@ -14,7 +14,8 @@ namespace {
 
 void setup_index_callbacks(SimInterface& interface, SimInternals& internals) {
   // TODO: should collision be some kind of System implementation that can be auto-hooked up?
-  // TODO: score reward should be handled by some optional system rather than here?
+  // TODO: score reward / boss kills should be handled by some optional system/component rather than
+  // here?
   internals.index.on_component_add<Collision>(
       [&internals](ecs::handle h, const Collision& c) { internals.collision_index->add(h, c); });
   internals.index.on_component_add<Destroy>(
@@ -32,9 +33,8 @@ void setup_index_callbacks(SimInterface& interface, SimInternals& internals) {
             }
           });
         }
-        // TODO: boss kills should go through SimInterface with some kind of event emit function.
         if (auto* b = h.get<Boss>(); b) {
-          internals.bosses_killed |= b->boss;
+          interface.trigger(run_event::boss_kill_event(b->boss));
         }
         internals.collision_index->remove(h);
       });
@@ -121,7 +121,7 @@ void SimState::copy_to(SimState& target) const {
   target.internals_->global_entity_handle.reset();
   target.internals_->tick_count = internals_->tick_count;
   target.internals_->collision_index = internals_->collision_index->clone();
-  target.internals_->bosses_killed = internals_->bosses_killed;
+  target.internals_->results = internals_->results;
   target.internals_->output.clear();
   refresh_handles(*target.internals_);
 }
@@ -183,7 +183,7 @@ void SimState::update(std::vector<input_frame> input) {
   if (!kill_timer_ &&
       ((interface_->killed_players() == interface_->player_count() && !interface_->get_lives()) ||
        (internals_->conditions.mode == game_mode::kBoss &&
-        boss_kill_count(internals_->bosses_killed) >= 6))) {
+        internals_->results.boss_kill_count() >= 6))) {
     kill_timer_ = 100;
   }
   bool already_game_over = game_over_;
@@ -205,10 +205,10 @@ bool SimState::game_over() const {
   return game_over_;
 }
 
-render_output SimState::render() const {
-  internals_->boss_hp_bar.reset();
-  internals_->line_output.clear();
-  internals_->player_output.clear();
+const render_output& SimState::render() const {
+  internals_->render.boss_hp_bar.reset();
+  internals_->render.lines.clear();
+  internals_->render.players.clear();
 
   internals_->index.iterate_dispatch<Render>([&](ecs::const_handle h, const Render& r) {
     if (!h.get<Player>()) {
@@ -274,9 +274,7 @@ render_output SimState::render() const {
     render_warning(to_float(v));
   }
 
-  render_output result;
-  result.players = internals_->player_output;
-  result.lines = std::move(internals_->line_output);
+  auto& result = internals_->render;
   result.tick_count = internals_->tick_count;
   result.lives_remaining = interface_->get_lives();
   result.overmind_timer = interface_->global_entity().get<GlobalData>()->overmind_wave_timer;
@@ -304,19 +302,20 @@ aggregate_output& SimState::output() {
   return internals_->output;
 }
 
-sim_results SimState::results() const {
-  sim_results r;
+const sim_results& SimState::results() const {
+  auto& r = internals_->results;
   r.seed = internals_->conditions.seed;
   r.tick_count = internals_->tick_count;
   r.lives_remaining = interface_->get_lives();
-  r.bosses_killed = internals_->bosses_killed;
 
+  r.players.clear();
   internals_->index.iterate<Player>([&](const Player& p) {
     auto& pr = r.players.emplace_back();
     pr.number = p.player_number;
     pr.score = p.score;
     pr.deaths = p.death_count;
   });
+  r.score = 0;
   if (internals_->conditions.mode == game_mode::kBoss) {
     r.score = r.tick_count;
   } else {

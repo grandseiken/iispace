@@ -69,7 +69,7 @@ public:
     return predicted_state_.frame_count();
   }
 
-  render_output render() const override {
+  const render_output& render() const override {
     return predicted_state_.render();
   }
 
@@ -77,8 +77,8 @@ public:
     return merged_output_;
   }
 
-  sim_results results() const override {
-    return game_over() ? canonical_state_.results() : predicted_state_.results();
+  const sim_results& results() const override {
+    return canonical_state_.results();
   }
 
 private:

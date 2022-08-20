@@ -156,9 +156,9 @@ HighScoreModal::HighScoreModal(bool is_replay, ii::game_mode mode, const ii::sim
 void HighScoreModal::update(ii::ui::UiLayer& ui) {
   if (!is_replay_) {
     if (mode_ == ii::game_mode::kNormal || mode_ == ii::game_mode::kBoss) {
-      ui.save_game().bosses_killed |= results_.bosses_killed;
+      ui.save_game().bosses_killed |= results_.bosses_killed();
     } else {
-      ui.save_game().hard_mode_bosses_killed |= results_.bosses_killed;
+      ui.save_game().hard_mode_bosses_killed |= results_.bosses_killed();
     }
   }
 
@@ -236,7 +236,7 @@ void HighScoreModal::render(const ii::ui::UiLayer& ui, ii::render::GlRenderer& r
 
   if (mode_ == ii::game_mode::kBoss) {
     auto extra_lives = results_.lives_remaining;
-    bool b = extra_lives > 0 && boss_kill_count(results_.bosses_killed) >= 6;
+    bool b = extra_lives > 0 && results_.boss_kill_count() >= 6;
 
     long score = results_.tick_count;
     if (b) {
@@ -256,7 +256,7 @@ void HighScoreModal::render(const ii::ui::UiLayer& ui, ii::render::GlRenderer& r
     render_text(r, {4.f, b ? 6.f : 4.f}, "TIME ELAPSED: " + convert_to_time(score),
                 z0Game::kPanelText);
     std::stringstream ss;
-    ss << "BOSS DESTROY: " << boss_kill_count(results_.bosses_killed);
+    ss << "BOSS DESTROY: " << results_.boss_kill_count();
     render_text(r, {4.f, b ? 8.f : 6.f}, ss.str(), z0Game::kPanelText);
     return;
   }
@@ -319,7 +319,7 @@ void HighScoreModal::render(const ii::ui::UiLayer& ui, ii::render::GlRenderer& r
 
 std::uint64_t HighScoreModal::get_score() const {
   if (mode_ == ii::game_mode::kBoss) {
-    bool won = boss_kill_count(results_.bosses_killed) >= 6 && results_.tick_count != 0;
+    bool won = results_.boss_kill_count() >= 6 && results_.tick_count != 0;
     if (!won) {
       return 0;
     }
@@ -474,7 +474,7 @@ void GameModal::update(ii::ui::UiLayer& ui) {
 
 void GameModal::render(const ii::ui::UiLayer& ui, ii::render::GlRenderer& r) const {
   auto& istate = network_state_ ? static_cast<ii::ISimState&>(*network_state_) : *state_;
-  auto render = istate.render();
+  const auto& render = istate.render();
   r.set_dimensions(ui.io_layer().dimensions(), kDimensions);
   r.set_colour_cycle(render.colour_cycle);
   render_state_.render(r);

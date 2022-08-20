@@ -33,15 +33,11 @@ struct SimInternals {
   std::uint64_t tick_count = 0;
   std::unique_ptr<CollisionIndex> collision_index;
 
-  // Run output.
-  // TODO: if adding more, put in struct for easy copying in copy_to().
-  boss_flag bosses_killed{0};
-
   // Per-frame output.
-  std::optional<float> boss_hp_bar;
-  std::vector<render::line_t> line_output;
-  std::vector<render::player_info> player_output;
   aggregate_output output;
+  render_output render;
+  // Run output.
+  sim_results results;
 };
 
 }  // namespace ii

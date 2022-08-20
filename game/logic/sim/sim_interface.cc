@@ -222,14 +222,18 @@ EmitHandle SimInterface::emit(const resolve_key& key) {
   return {*this, e.e};
 }
 
+void SimInterface::trigger(const run_event& event) {
+  internals_->results.events.emplace_back(event);
+}
+
 void SimInterface::render(const render::line_t& line) const {
-  internals_->line_output.emplace_back(line);
+  internals_->render.lines.emplace_back(line);
 }
 
 void SimInterface::render(std::uint32_t player_number, const render::player_info& info) const {
-  internals_->player_output.resize(
-      std::max<std::size_t>(internals_->player_output.size(), player_number + 1));
-  internals_->player_output[player_number] = info;
+  internals_->render.players.resize(
+      std::max<std::size_t>(internals_->render.players.size(), player_number + 1));
+  internals_->render.players[player_number] = info;
 }
 
 }  // namespace ii

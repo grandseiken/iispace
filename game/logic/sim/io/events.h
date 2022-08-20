@@ -1,8 +1,8 @@
 #ifndef II_GAME_LOGIC_SIM_IO_EVENTS_H
 #define II_GAME_LOGIC_SIM_IO_EVENTS_H
 #include "game/common/enum.h"
-#include <bit>
 #include <cstdint>
+#include <optional>
 
 namespace ii {
 enum class boss_flag : std::uint32_t {
@@ -18,9 +18,15 @@ enum class boss_flag : std::uint32_t {
 template <>
 struct bitmask_enum<boss_flag> : std::true_type {};
 
-inline std::uint32_t boss_kill_count(boss_flag flag) {
-  return std::popcount(static_cast<std::uint32_t>(flag));
-}
+struct run_event {
+  std::optional<boss_flag> boss_kill;
+
+  static run_event boss_kill_event(boss_flag boss) {
+    run_event e;
+    e.boss_kill = boss;
+    return e;
+  }
+};
 
 }  // namespace ii
 

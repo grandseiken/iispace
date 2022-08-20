@@ -3,6 +3,7 @@
 #include "game/logic/sim/io/aggregate.h"
 #include "game/logic/sim/io/events.h"
 #include "game/logic/sim/io/render.h"
+#include <bit>
 #include <cstdint>
 #include <deque>
 #include <optional>
@@ -49,7 +50,6 @@ struct sim_results {
   std::uint64_t tick_count = 0;
   std::uint32_t seed = 0;
   std::uint32_t lives_remaining = 0;
-  boss_flag bosses_killed{0};
 
   struct player_result {
     std::uint32_t number = 0;
@@ -57,7 +57,22 @@ struct sim_results {
     std::uint32_t deaths = 0;
   };
   std::vector<player_result> players;
+  std::vector<run_event> events;
   std::uint64_t score = 0;
+
+  boss_flag bosses_killed() const {
+    boss_flag flag{0};
+    for (const auto& e : events) {
+      if (e.boss_kill) {
+        flag |= *e.boss_kill;
+      }
+    }
+    return flag;
+  }
+
+  std::uint32_t boss_kill_count() const {
+    return std::popcount(+bosses_killed());
+  }
 };
 
 }  // namespace ii

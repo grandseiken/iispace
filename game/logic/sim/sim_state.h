@@ -27,10 +27,10 @@ public:
   virtual bool game_over() const = 0;
   virtual std::uint64_t tick_count() const = 0;
   virtual std::uint32_t frame_count() const = 0;
-  virtual render_output render() const = 0;
+  virtual const render_output& render() const = 0;
 
   virtual aggregate_output& output() = 0;
-  virtual sim_results results() const = 0;
+  virtual const sim_results& results() const = 0;
 };
 
 class SimState : public ISimState {
@@ -51,11 +51,11 @@ public:
   void ai_think(std::vector<input_frame>& input) const;
   void update(std::vector<input_frame> input);
   bool game_over() const override;
-  render_output render() const override;
+  const render_output& render() const override;
   std::uint32_t frame_count() const override;
 
   aggregate_output& output() override;
-  sim_results results() const override;
+  const sim_results& results() const override;
 
   // Functionality provided specifically for use by NetworkedSimState.
   struct smoothing_data {
