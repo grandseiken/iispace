@@ -207,7 +207,7 @@ bool SimState::game_over() const {
 
 const render_output& SimState::render() const {
   internals_->render.boss_hp_bar.reset();
-  internals_->render.lines.clear();
+  internals_->render.shapes.clear();
   internals_->render.players.clear();
 
   internals_->index.iterate_dispatch<Render>([&](ecs::const_handle h, const Render& r) {
@@ -234,36 +234,36 @@ const render_output& SimState::render() const {
     if (v.x < -4) {
       auto f = .2f + .6f * std::max(v.x + kSimDimensions.x, 0.f) / kSimDimensions.x;
       glm::vec4 c{0.f, 0.f, f, .4f};
-      interface_->render(render::line_t{{0.f, v.y}, {6, v.y - 3}, c});
-      interface_->render(render::line_t{{6.f, v.y - 3}, {6, v.y + 3}, c});
-      interface_->render(render::line_t{{6.f, v.y + 3}, {0, v.y}, c});
+      interface_->render(render::shape::line({0.f, v.y}, {6, v.y - 3}, c));
+      interface_->render(render::shape::line({6.f, v.y - 3}, {6, v.y + 3}, c));
+      interface_->render(render::shape::line({6.f, v.y + 3}, {0, v.y}, c));
     }
     if (v.x >= kSimDimensions.x + 4) {
       auto f = .2f + .6f * std::max(2 * kSimDimensions.x - v.x, 0.f) / kSimDimensions.x;
       glm::vec4 c{0.f, 0.f, f, .4f};
+      interface_->render(render::shape::line({float{kSimDimensions.x}, v.y},
+                                             {kSimDimensions.x - 6.f, v.y - 3}, c));
+      interface_->render(render::shape::line({kSimDimensions.x - 6, v.y - 3},
+                                             {kSimDimensions.x - 6.f, v.y + 3}, c));
       interface_->render(
-          render::line_t{{float{kSimDimensions.x}, v.y}, {kSimDimensions.x - 6.f, v.y - 3}, c});
-      interface_->render(
-          render::line_t{{kSimDimensions.x - 6, v.y - 3}, {kSimDimensions.x - 6.f, v.y + 3}, c});
-      interface_->render(
-          render::line_t{{kSimDimensions.x - 6, v.y + 3}, {float{kSimDimensions.x}, v.y}, c});
+          render::shape::line({kSimDimensions.x - 6, v.y + 3}, {float{kSimDimensions.x}, v.y}, c));
     }
     if (v.y < -4) {
       auto f = .2f + .6f * std::max(v.y + kSimDimensions.y, 0.f) / kSimDimensions.y;
       glm::vec4 c{0.f, 0.f, f, .4f};
-      interface_->render(render::line_t{{v.x, 0.f}, {v.x - 3, 6.f}, c});
-      interface_->render(render::line_t{{v.x - 3, 6.f}, {v.x + 3, 6.f}, c});
-      interface_->render(render::line_t{{v.x + 3, 6.f}, {v.x, 0.f}, c});
+      interface_->render(render::shape::line({v.x, 0.f}, {v.x - 3, 6.f}, c));
+      interface_->render(render::shape::line({v.x - 3, 6.f}, {v.x + 3, 6.f}, c));
+      interface_->render(render::shape::line({v.x + 3, 6.f}, {v.x, 0.f}, c));
     }
     if (v.y >= kSimDimensions.y + 4) {
       auto f = .2f + .6f * std::max(2 * kSimDimensions.y - v.y, 0.f) / kSimDimensions.y;
       glm::vec4 c{0.f, 0.f, f, .4f};
-      interface_->render(
-          render::line_t{{v.x, float{kSimDimensions.y}}, {v.x - 3, kSimDimensions.y - 6.f}, c});
-      interface_->render(
-          render::line_t{{v.x - 3, kSimDimensions.y - 6.f}, {v.x + 3, kSimDimensions.y - 6.f}, c});
-      interface_->render(
-          render::line_t{{v.x + 3, kSimDimensions.y - 6.f}, {v.x, float{kSimDimensions.y}}, c});
+      interface_->render(render::shape::line({v.x, float{kSimDimensions.y}},
+                                             {v.x - 3, kSimDimensions.y - 6.f}, c));
+      interface_->render(render::shape::line({v.x - 3, kSimDimensions.y - 6.f},
+                                             {v.x + 3, kSimDimensions.y - 6.f}, c));
+      interface_->render(render::shape::line({v.x + 3, kSimDimensions.y - 6.f},
+                                             {v.x, float{kSimDimensions.y}}, c));
     }
   };
 

@@ -5,6 +5,9 @@
 #include <cstddef>
 #include <type_traits>
 
+namespace ii::render {
+struct shape;
+}  // namespace ii::render
 namespace ii::geom {
 
 struct iterate_flags_t {};
@@ -38,7 +41,7 @@ concept PointFunction = std::invocable<T, const vec2&, const glm::vec4&>;
 template <typename T>
 concept LineFunction = std::invocable<T, const vec2&, const vec2&, const glm::vec4&>;
 template <typename T>
-concept ShapeFunction = std::invocable<T, /* TODO */ int>;
+concept ShapeFunction = std::invocable<T, const render::shape&>;
 template <typename T>
 concept AttachmentPointFunction = std::invocable<T, std::size_t, const vec2&, const vec2&>;
 
@@ -47,6 +50,7 @@ concept Implies = (!std::same_as<T, U> || B);
 template <typename T, typename I>
 concept IterateFunction = IterTag<I> && Implies<I, iterate_flags_t, FlagFunction<T>> &&
     Implies<I, iterate_lines_t, LineFunction<T>> &&
+    Implies<I, iterate_shapes_t, ShapeFunction<T>> &&
     Implies<I, iterate_centres_t, PointFunction<T>> &&
     Implies<I, iterate_collision_t, FlagFunction<T>> &&
     Implies<I, iterate_attachment_points_t, AttachmentPointFunction<T>>;

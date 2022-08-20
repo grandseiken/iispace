@@ -11,6 +11,7 @@ cc_library(
   ],
   deps = [
     "//game/logic/geometry",
+    "//game/logic/sim/io:render",
     "//game/common:types",
     "//game/common:math",
     "@glm",

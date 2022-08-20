@@ -2,6 +2,7 @@
 #define II_GAME_LOGIC_GEOMETRY_SHAPES_BOX_H
 #include "game/logic/geometry/expressions.h"
 #include "game/logic/geometry/shapes/base.h"
+#include "game/logic/sim/io/render.h"
 #include <glm/glm.hpp>
 #include <cstddef>
 #include <cstdint>
@@ -36,6 +37,13 @@ struct box_data : shape_data_base {
     std::invoke(f, b, c, colour);
     std::invoke(f, c, d, colour);
     std::invoke(f, d, a, colour);
+  }
+
+  constexpr void
+  iterate(iterate_shapes_t, const Transform auto& t, const ShapeFunction auto& f) const {
+    iterate(iterate_lines, t, [&](const vec2& a, const vec2& b, const glm::vec4& c) {
+      f(render::shape::line(to_float(a), to_float(b), c));
+    });
   }
 
   constexpr void

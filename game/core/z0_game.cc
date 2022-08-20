@@ -478,7 +478,7 @@ void GameModal::render(const ii::ui::UiLayer& ui, ii::render::GlRenderer& r) con
   r.set_dimensions(ui.io_layer().dimensions(), kDimensions);
   r.set_colour_cycle(render.colour_cycle);
   render_state_.render(r);
-  r.render_lines(render.lines);
+  r.render_shapes(render.shapes);
 
   std::uint32_t n = 0;
   for (const auto& p : render.players) {
@@ -503,12 +503,12 @@ void GameModal::render(const ii::ui::UiLayer& ui, ii::render::GlRenderer& r) con
       v *= 16;
       auto lo = v + glm::vec2{5.f, 11.f - 10 * p.timer};
       auto hi = v + glm::vec2{9.f, 13.f};
-      std::vector<ii::render::line_t> lines;
-      lines.emplace_back(ii::render::line_t{lo, {lo.x, hi.y}, glm::vec4{1.f}});
-      lines.emplace_back(ii::render::line_t{{lo.x, hi.y}, hi, glm::vec4{1.f}});
-      lines.emplace_back(ii::render::line_t{hi, {hi.x, lo.y}, glm::vec4{1.f}});
-      lines.emplace_back(ii::render::line_t{{hi.x, lo.y}, lo, glm::vec4{1.f}});
-      r.render_lines(lines);
+      std::vector<ii::render::shape> lines;
+      lines.emplace_back(ii::render::shape::line(lo, {lo.x, hi.y}, glm::vec4{1.f}));
+      lines.emplace_back(ii::render::shape::line({lo.x, hi.y}, hi, glm::vec4{1.f}));
+      lines.emplace_back(ii::render::shape::line(hi, {hi.x, lo.y}, glm::vec4{1.f}));
+      lines.emplace_back(ii::render::shape::line({hi.x, lo.y}, lo, glm::vec4{1.f}));
+      r.render_shapes(lines);
     }
     ++n;
   }

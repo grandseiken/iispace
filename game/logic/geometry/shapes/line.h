@@ -2,6 +2,7 @@
 #define II_GAME_LOGIC_GEOMETRY_SHAPES_LINE_H
 #include "game/logic/geometry/expressions.h"
 #include "game/logic/geometry/shapes/base.h"
+#include "game/logic/sim/io/render.h"
 
 namespace ii::geom {
 
@@ -14,6 +15,12 @@ struct line_data : shape_data_base {
   constexpr void
   iterate(iterate_lines_t, const Transform auto& t, const LineFunction auto& f) const {
     std::invoke(f, *t.translate(a), *t.translate(b), colour);
+  }
+
+  constexpr void
+  iterate(iterate_shapes_t, const Transform auto& t, const ShapeFunction auto& f) const {
+    std::invoke(f,
+                render::shape::line(to_float(*t.translate(a)), to_float(*t.translate(b)), colour));
   }
 
   constexpr void

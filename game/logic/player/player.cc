@@ -279,8 +279,8 @@ struct PlayerLogic : ecs::component {
     auto c = player_colour(pc.player_number);
     if (should_render(pc)) {
       auto t = to_float(fire_target);
-      sim.render(render::line_t{t + glm::vec2{0, 9}, t - glm::vec2{0, 8}, c});
-      sim.render(render::line_t{t + glm::vec2{9, 1}, t - glm::vec2{8, -1}, c});
+      sim.render(render::shape::line(t + glm::vec2{0, 9}, t - glm::vec2{0, 8}, c));
+      sim.render(render::shape::line(t + glm::vec2{9, 1}, t - glm::vec2{8, -1}, c));
     }
 
     if (sim.conditions().mode != game_mode::kBoss) {

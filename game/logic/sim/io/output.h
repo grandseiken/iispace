@@ -38,7 +38,7 @@ struct aggregate_output {
 
 struct render_output {
   std::vector<render::player_info> players;
-  std::vector<render::line_t> lines;
+  std::vector<render::shape> shapes;
   std::uint64_t tick_count = 0;
   std::uint32_t lives_remaining = 0;
   std::optional<std::uint32_t> overmind_timer;

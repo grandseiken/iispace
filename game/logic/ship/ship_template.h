@@ -32,13 +32,13 @@ void render_shape(const SimInterface& sim, const auto& parameters, const geom::t
   std::size_t i = 0;
   geom::transform transform = t;
   transform.index_out = &i;
-  geom::iterate(S{}, geom::iterate_lines, parameters, transform,
-                [&](const vec2& a, const vec2& b, const glm::vec4& c) {
-                  auto colour = c_override && (!c_override_max_index || i < *c_override_max_index)
-                      ? glm::vec4{c_override->r, c_override->g, c_override->b, c.a}
-                      : c;
-                  sim.render(render::line_t{to_float(a), to_float(b), colour});
-                });
+  geom::iterate(S{}, geom::iterate_shapes, parameters, transform, [&](const render::shape& shape) {
+    render::shape shape_copy = shape;
+    if (c_override && (!c_override_max_index || i < *c_override_max_index)) {
+      shape_copy.colour_override = *c_override;
+    }
+    sim.render(shape);
+  });
 }
 
 template <geom::ShapeNode S>

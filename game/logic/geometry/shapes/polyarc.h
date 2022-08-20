@@ -2,6 +2,7 @@
 #define II_GAME_LOGIC_GEOMETRY_SHAPES_POLYARC_H
 #include "game/logic/geometry/expressions.h"
 #include "game/logic/geometry/shapes/base.h"
+#include "game/logic/sim/io/render.h"
 #include <glm/glm.hpp>
 #include <cstddef>
 #include <cstdint>
@@ -41,6 +42,13 @@ struct polyarc_data : shape_data_base {
       auto b = from_polar((i + 1) * 2 * fixed_c::pi / sides, radius);
       std::invoke(f, *t.translate(a), *t.translate(b), colour);
     }
+  }
+
+  constexpr void
+  iterate(iterate_shapes_t, const Transform auto& t, const ShapeFunction auto& f) const {
+    iterate(iterate_lines, t, [&](const vec2& a, const vec2& b, const glm::vec4& c) {
+      f(render::shape::line(to_float(a), to_float(b), c));
+    });
   }
 
   constexpr void

@@ -226,8 +226,8 @@ void SimInterface::trigger(const run_event& event) {
   internals_->results.events.emplace_back(event);
 }
 
-void SimInterface::render(const render::line_t& line) const {
-  internals_->render.lines.emplace_back(line);
+void SimInterface::render(const render::shape& shape) const {
+  internals_->render.shapes.emplace_back(shape);
 }
 
 void SimInterface::render(std::uint32_t player_number, const render::player_info& info) const {

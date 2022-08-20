@@ -244,8 +244,8 @@ struct Tractor : ecs::component {
       std::uint32_t i = 0;
       sim.index().iterate_dispatch<Player>([&](const Player& p, const Transform& p_transform) {
         if (((timer + i++ * 4) / 4) % 2 && !p.is_killed()) {
-          sim.render(render::line_t{to_float(transform.centre), to_float(p_transform.centre),
-                                    colour_hue360(300, .5f, .6f)});
+          sim.render(render::shape::line(to_float(transform.centre), to_float(p_transform.centre),
+                                         colour_hue360(300, .5f, .6f)));
         }
       });
     }

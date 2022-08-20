@@ -22,8 +22,8 @@ struct initial_conditions;
 struct input_frame;
 struct run_event;
 namespace render {
-struct line_t;
 struct player_info;
+struct shape;
 }  // namespace render
 
 // TODO: make this dynamic so it can be changed for non-legacy mode.
@@ -108,7 +108,7 @@ public:
   // Simulation output (particle / effects stuff; rendering).
   EmitHandle emit(const resolve_key& key);
   void trigger(const run_event&);
-  void render(const render::line_t&) const;
+  void render(const render::shape&) const;
   void render(std::uint32_t player_number, const render::player_info&) const;
 
 private:

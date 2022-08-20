@@ -259,7 +259,7 @@ void GlRenderer::render_rect(const glm::ivec2& position, const glm::ivec2& size,
   impl_->draw_rect_internal(position, size);
 }
 
-void GlRenderer::render_lines(std::span<const line_t> lines) {
+void GlRenderer::render_shapes(std::span<const shape> shapes) {
   const auto& program = impl_->line;
   gl::use_program(program);
   gl::enable_blend(true);
@@ -276,21 +276,28 @@ void GlRenderer::render_lines(std::span<const line_t> lines) {
   std::vector<float> colour_data;
   std::vector<unsigned> line_indices;
   unsigned index = 0;
-  for (const auto& line : lines) {
-    vertex_data.emplace_back(line.a.x);
-    vertex_data.emplace_back(line.a.y);
-    vertex_data.emplace_back(line.b.x);
-    vertex_data.emplace_back(line.b.y);
-    colour_data.emplace_back(line.c.r);
-    colour_data.emplace_back(line.c.g);
-    colour_data.emplace_back(line.c.b);
-    colour_data.emplace_back(line.c.a);
-    colour_data.emplace_back(line.c.r);
-    colour_data.emplace_back(line.c.g);
-    colour_data.emplace_back(line.c.b);
-    colour_data.emplace_back(line.c.a);
-    line_indices.emplace_back(index++);
-    line_indices.emplace_back(index++);
+  for (const auto& shape : shapes) {
+    if (const auto* p = std::get_if<render::line_t>(&shape.data)) {
+      auto c = p->c;
+      if (shape.colour_override) {
+        c = *shape.colour_override;
+        c.a = p->c.a;
+      }
+      vertex_data.emplace_back(p->a.x);
+      vertex_data.emplace_back(p->a.y);
+      vertex_data.emplace_back(p->b.x);
+      vertex_data.emplace_back(p->b.y);
+      colour_data.emplace_back(c.r);
+      colour_data.emplace_back(c.g);
+      colour_data.emplace_back(c.b);
+      colour_data.emplace_back(c.a);
+      colour_data.emplace_back(c.r);
+      colour_data.emplace_back(c.g);
+      colour_data.emplace_back(c.b);
+      colour_data.emplace_back(c.a);
+      line_indices.emplace_back(index++);
+      line_indices.emplace_back(index++);
+    }
   }
 
   auto vertex_buffer = gl::make_buffer();
@@ -311,7 +318,7 @@ void GlRenderer::render_lines(std::span<const line_t> lines) {
   auto colour_handle = gl::vertex_float_attribute_buffer(colour_buffer, 1, 4, gl::type_of<float>(),
                                                          false, 4 * sizeof(float), 0);
 
-  gl::draw_elements(gl::draw_mode::kLines, line_index, gl::type_of<unsigned>(), 2 * lines.size(),
+  gl::draw_elements(gl::draw_mode::kLines, line_index, gl::type_of<unsigned>(), line_indices.size(),
                     0);
 }
 

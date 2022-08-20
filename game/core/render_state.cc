@@ -145,14 +145,14 @@ void RenderState::update() {
 }
 
 void RenderState::render(render::GlRenderer& r) const {
-  std::vector<render::line_t> lines;
+  std::vector<render::shape> lines;
   auto render_line_rect = [&](const glm::vec2& lo, const glm::vec2& hi, const glm::vec4& c) {
     glm::vec2 li{lo.x, hi.y};
     glm::vec2 ho{hi.x, lo.y};
-    lines.emplace_back(render::line_t{lo, li, c});
-    lines.emplace_back(render::line_t{li, hi, c});
-    lines.emplace_back(render::line_t{hi, ho, c});
-    lines.emplace_back(render::line_t{ho, lo, c});
+    lines.emplace_back(render::shape::line(lo, li, c));
+    lines.emplace_back(render::shape::line(li, hi, c));
+    lines.emplace_back(render::shape::line(hi, ho, c));
+    lines.emplace_back(render::shape::line(ho, lo, c));
   };
 
   for (const auto& particle : particles_) {
@@ -177,12 +177,12 @@ void RenderState::render(render::GlRenderer& r) const {
       for (std::uint32_t i = 0; i < 8; ++i) {
         auto a = from_polar(i * glm::pi<float>() / 4, star.size);
         auto b = from_polar((i + 1) * glm::pi<float>() / 4, star.size);
-        lines.emplace_back(render::line_t{star.position + a, star.position + b, star.colour});
+        lines.emplace_back(render::shape::line(star.position + a, star.position + b, star.colour));
       }
     }
   }
 
-  r.render_lines(lines);
+  r.render_shapes(lines);
 }
 
 void RenderState::handle_background_fx(const background_fx_change& change) {
