@@ -13,6 +13,8 @@ namespace ii {
 namespace {
 
 void setup_index_callbacks(SimInterface& interface, SimInternals& internals) {
+  // TODO: should collision be some kind of System implementation that can be auto-hooked up?
+  // TODO: score reward should be handled by some optional system rather than here?
   internals.index.on_component_add<Collision>(
       [&internals](ecs::handle h, const Collision& c) { internals.collision_index->add(h, c); });
   internals.index.on_component_add<Destroy>(
@@ -30,6 +32,7 @@ void setup_index_callbacks(SimInterface& interface, SimInternals& internals) {
             }
           });
         }
+        // TODO: boss kills should go through SimInterface with some kind of event emit function.
         if (auto* b = h.get<Boss>(); b) {
           internals.bosses_killed |= b->boss;
         }
@@ -226,36 +229,41 @@ render_output SimState::render() const {
         transform = transform_copy;
       });
 
+  // TODO: use geometry for this? Extract somewhere?
   auto render_warning = [&](const glm::vec2& v) {
     if (v.x < -4) {
       auto f = .2f + .6f * std::max(v.x + kSimDimensions.x, 0.f) / kSimDimensions.x;
       glm::vec4 c{0.f, 0.f, f, .4f};
-      interface_->render_line({0.f, v.y}, {6, v.y - 3}, c);
-      interface_->render_line({6.f, v.y - 3}, {6, v.y + 3}, c);
-      interface_->render_line({6.f, v.y + 3}, {0, v.y}, c);
+      interface_->render(render::line_t{{0.f, v.y}, {6, v.y - 3}, c});
+      interface_->render(render::line_t{{6.f, v.y - 3}, {6, v.y + 3}, c});
+      interface_->render(render::line_t{{6.f, v.y + 3}, {0, v.y}, c});
     }
     if (v.x >= kSimDimensions.x + 4) {
       auto f = .2f + .6f * std::max(2 * kSimDimensions.x - v.x, 0.f) / kSimDimensions.x;
       glm::vec4 c{0.f, 0.f, f, .4f};
-      interface_->render_line({float{kSimDimensions.x}, v.y}, {kSimDimensions.x - 6.f, v.y - 3}, c);
-      interface_->render_line({kSimDimensions.x - 6, v.y - 3}, {kSimDimensions.x - 6.f, v.y + 3},
-                              c);
-      interface_->render_line({kSimDimensions.x - 6, v.y + 3}, {float{kSimDimensions.x}, v.y}, c);
+      interface_->render(
+          render::line_t{{float{kSimDimensions.x}, v.y}, {kSimDimensions.x - 6.f, v.y - 3}, c});
+      interface_->render(
+          render::line_t{{kSimDimensions.x - 6, v.y - 3}, {kSimDimensions.x - 6.f, v.y + 3}, c});
+      interface_->render(
+          render::line_t{{kSimDimensions.x - 6, v.y + 3}, {float{kSimDimensions.x}, v.y}, c});
     }
     if (v.y < -4) {
       auto f = .2f + .6f * std::max(v.y + kSimDimensions.y, 0.f) / kSimDimensions.y;
       glm::vec4 c{0.f, 0.f, f, .4f};
-      interface_->render_line({v.x, 0.f}, {v.x - 3, 6.f}, c);
-      interface_->render_line({v.x - 3, 6.f}, {v.x + 3, 6.f}, c);
-      interface_->render_line({v.x + 3, 6.f}, {v.x, 0.f}, c);
+      interface_->render(render::line_t{{v.x, 0.f}, {v.x - 3, 6.f}, c});
+      interface_->render(render::line_t{{v.x - 3, 6.f}, {v.x + 3, 6.f}, c});
+      interface_->render(render::line_t{{v.x + 3, 6.f}, {v.x, 0.f}, c});
     }
     if (v.y >= kSimDimensions.y + 4) {
       auto f = .2f + .6f * std::max(2 * kSimDimensions.y - v.y, 0.f) / kSimDimensions.y;
       glm::vec4 c{0.f, 0.f, f, .4f};
-      interface_->render_line({v.x, float{kSimDimensions.y}}, {v.x - 3, kSimDimensions.y - 6.f}, c);
-      interface_->render_line({v.x - 3, kSimDimensions.y - 6.f}, {v.x + 3, kSimDimensions.y - 6.f},
-                              c);
-      interface_->render_line({v.x + 3, kSimDimensions.y - 6.f}, {v.x, float{kSimDimensions.y}}, c);
+      interface_->render(
+          render::line_t{{v.x, float{kSimDimensions.y}}, {v.x - 3, kSimDimensions.y - 6.f}, c});
+      interface_->render(
+          render::line_t{{v.x - 3, kSimDimensions.y - 6.f}, {v.x + 3, kSimDimensions.y - 6.f}, c});
+      interface_->render(
+          render::line_t{{v.x + 3, kSimDimensions.y - 6.f}, {v.x, float{kSimDimensions.y}}, c});
     }
   };
 

@@ -23,6 +23,7 @@ cc_library(
     "//game/logic/enemy",
     "//game/logic/player:powerup",
     "//game/logic/sim/io:events",
+    "//game/logic/sim/io:render",
     "//game/mixer:sound",
   ],
   visibility = ["//game/logic:__subpackages__"],

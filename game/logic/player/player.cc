@@ -6,6 +6,7 @@
 #include "game/logic/player/ai_player.h"
 #include "game/logic/ship/ship_template.h"
 #include "game/logic/sim/io/conditions.h"
+#include "game/logic/sim/io/render.h"
 #include <algorithm>
 #include <utility>
 
@@ -278,13 +279,17 @@ struct PlayerLogic : ecs::component {
     auto c = player_colour(pc.player_number);
     if (should_render(pc)) {
       auto t = to_float(fire_target);
-      sim.render_line(t + glm::vec2{0, 9}, t - glm::vec2{0, 8}, c);
-      sim.render_line(t + glm::vec2{9, 1}, t - glm::vec2{8, -1}, c);
+      sim.render(render::line_t{t + glm::vec2{0, 9}, t - glm::vec2{0, 8}, c});
+      sim.render(render::line_t{t + glm::vec2{9, 1}, t - glm::vec2{8, -1}, c});
     }
 
     if (sim.conditions().mode != game_mode::kBoss) {
-      sim.render_player_info(pc.player_number, c, pc.score, pc.multiplier,
-                             static_cast<float>(pc.magic_shot_count) / kMagicShotCount);
+      render::player_info info;
+      info.colour = c;
+      info.score = pc.score;
+      info.multiplier = pc.multiplier;
+      info.timer = static_cast<float>(pc.magic_shot_count) / kMagicShotCount;
+      sim.render(pc.player_number, info);
     }
   }
 

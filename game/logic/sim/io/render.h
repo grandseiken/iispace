@@ -3,7 +3,7 @@
 #include <glm/glm.hpp>
 #include <cstdint>
 
-namespace ii {
+namespace ii::render {
 
 struct player_info {
   glm::vec4 colour{0.f};
@@ -18,6 +18,6 @@ struct line_t {
   glm::vec4 c{0.f};
 };
 
-}  // namespace ii
+}  // namespace ii::render
 
 #endif

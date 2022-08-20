@@ -6,6 +6,7 @@
 #include "game/logic/geometry/node.h"
 #include "game/logic/geometry/node_transform.h"
 #include "game/logic/ship/components.h"
+#include "game/logic/sim/io/render.h"
 #include "game/logic/sim/sim_interface.h"
 #include <sfn/functional.h>
 
@@ -36,7 +37,7 @@ void render_shape(const SimInterface& sim, const auto& parameters, const geom::t
                   auto colour = c_override && (!c_override_max_index || i < *c_override_max_index)
                       ? glm::vec4{c_override->r, c_override->g, c_override->b, c.a}
                       : c;
-                  sim.render_line(to_float(a), to_float(b), colour);
+                  sim.render(render::line_t{to_float(a), to_float(b), colour});
                 });
 }
 

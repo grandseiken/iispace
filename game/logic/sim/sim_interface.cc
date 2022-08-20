@@ -222,23 +222,14 @@ EmitHandle SimInterface::emit(const resolve_key& key) {
   return {*this, e.e};
 }
 
-void SimInterface::render_line(const glm::vec2& a, const glm::vec2& b, const glm::vec4& c) const {
-  auto& e = internals_->line_output.emplace_back();
-  e.a = a;
-  e.b = b;
-  e.c = c;
+void SimInterface::render(const render::line_t& line) const {
+  internals_->line_output.emplace_back(line);
 }
 
-void SimInterface::render_player_info(std::uint32_t player_number, const glm::vec4& colour,
-                                      std::uint64_t score, std::uint32_t multiplier,
-                                      float timer) const {
+void SimInterface::render(std::uint32_t player_number, const render::player_info& info) const {
   internals_->player_output.resize(
       std::max<std::size_t>(internals_->player_output.size(), player_number + 1));
-  auto& info = internals_->player_output[player_number];
-  info.colour = colour;
-  info.score = score;
-  info.multiplier = multiplier;
-  info.timer = timer;
+  internals_->player_output[player_number] = info;
 }
 
 }  // namespace ii

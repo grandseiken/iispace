@@ -14,6 +14,7 @@ cc_library(
     "//game/logic/ship",
     "//game/logic/sim:sim_interface",
     "//game/logic/sim/io:conditions",
+    "//game/logic/sim/io:render",
   ],
   visibility = ["//game/logic:__subpackages__"],
 )

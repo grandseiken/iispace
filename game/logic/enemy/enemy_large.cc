@@ -3,6 +3,7 @@
 #include "game/logic/geometry/shapes/line.h"
 #include "game/logic/geometry/shapes/ngon.h"
 #include "game/logic/ship/ship_template.h"
+#include "game/logic/sim/io/render.h"
 
 namespace ii {
 namespace {
@@ -243,8 +244,8 @@ struct Tractor : ecs::component {
       std::uint32_t i = 0;
       sim.index().iterate_dispatch<Player>([&](const Player& p, const Transform& p_transform) {
         if (((timer + i++ * 4) / 4) % 2 && !p.is_killed()) {
-          sim.render_line(to_float(transform.centre), to_float(p_transform.centre),
-                          colour_hue360(300, .5f, .6f));
+          sim.render(render::line_t{to_float(transform.centre), to_float(p_transform.centre),
+                                    colour_hue360(300, .5f, .6f)});
         }
       });
     }

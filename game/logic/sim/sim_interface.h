@@ -4,7 +4,6 @@
 #include "game/common/random.h"
 #include "game/logic/ecs/index.h"
 #include "game/logic/sim/io/aggregate.h"
-#include "game/logic/sim/io/render.h"
 #include "game/mixer/sound.h"
 #include <cstdint>
 #include <vector>
@@ -21,6 +20,10 @@ struct SimInternals;
 struct aggregate_event;
 struct initial_conditions;
 struct input_frame;
+namespace render {
+struct line_t;
+struct player_info;
+}  // namespace render
 
 // TODO: make this dynamic so it can be changed for non-legacy mode.
 constexpr glm::ivec2 kSimDimensions = {640, 480};
@@ -103,9 +106,8 @@ public:
 
   // Simulation output (particle / effects stuff; rendering).
   EmitHandle emit(const resolve_key& key);
-  void render_line(const glm::vec2& a, const glm::vec2& b, const glm::vec4& c) const;
-  void render_player_info(std::uint32_t player_number, const glm::vec4& colour, std::uint64_t score,
-                          std::uint32_t multiplier, float timer) const;
+  void render(const render::line_t&) const;
+  void render(std::uint32_t player_number, const render::player_info&) const;
 
 private:
   SimInternals* internals_;

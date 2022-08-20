@@ -7,6 +7,8 @@
 #include "game/logic/geometry/shapes/ngon.h"
 #include "game/logic/ship/ship_template.h"
 #include "game/logic/sim/io/events.h"
+#include "game/logic/sim/io/render.h"
+
 namespace ii {
 namespace {
 
@@ -265,7 +267,7 @@ struct TractorBoss : ecs::component {
         (!stopped && (move_away || !will_attack) && sim.is_on_screen(transform.centre))) {
       for (std::size_t i = 0; i < targets.size(); ++i) {
         if (((timer + i * 4) / 4) % 2) {
-          sim.render_line(to_float(transform.centre), to_float(targets[i]), c0);
+          sim.render(render::line_t{to_float(transform.centre), to_float(targets[i]), c0});
         }
       }
     }

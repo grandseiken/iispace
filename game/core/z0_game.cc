@@ -503,11 +503,11 @@ void GameModal::render(const ii::ui::UiLayer& ui, ii::render::GlRenderer& r) con
       v *= 16;
       auto lo = v + glm::vec2{5.f, 11.f - 10 * p.timer};
       auto hi = v + glm::vec2{9.f, 13.f};
-      std::vector<ii::line_t> lines;
-      lines.emplace_back(ii::line_t{lo, {lo.x, hi.y}, glm::vec4{1.f}});
-      lines.emplace_back(ii::line_t{{lo.x, hi.y}, hi, glm::vec4{1.f}});
-      lines.emplace_back(ii::line_t{hi, {hi.x, lo.y}, glm::vec4{1.f}});
-      lines.emplace_back(ii::line_t{{hi.x, lo.y}, lo, glm::vec4{1.f}});
+      std::vector<ii::render::line_t> lines;
+      lines.emplace_back(ii::render::line_t{lo, {lo.x, hi.y}, glm::vec4{1.f}});
+      lines.emplace_back(ii::render::line_t{{lo.x, hi.y}, hi, glm::vec4{1.f}});
+      lines.emplace_back(ii::render::line_t{hi, {hi.x, lo.y}, glm::vec4{1.f}});
+      lines.emplace_back(ii::render::line_t{{hi.x, lo.y}, lo, glm::vec4{1.f}});
       r.render_lines(lines);
     }
     ++n;

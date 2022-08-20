@@ -11,6 +11,7 @@ cc_library(
     "//game/logic/ecs",
     "//game/logic/geometry",
     "//game/logic/sim:sim_interface",
+    "//game/logic/sim/io:render",
     "@glm",
     "@static_functional",
   ],
