@@ -46,9 +46,16 @@ struct polyarc_data : shape_data_base {
 
   constexpr void
   iterate(iterate_shapes_t, const Transform auto& t, const ShapeFunction auto& f) const {
-    iterate(iterate_lines, t, [&](const vec2& a, const vec2& b, const glm::vec4& c) {
-      f(render::shape::line(to_float(a), to_float(b), c));
-    });
+    render::polyarc arc;
+    arc.origin = to_float(*t);
+    arc.rotation = t.rotation().to_float();
+    arc.radius = radius.to_float();
+    arc.sides = sides;
+    arc.segments = segments;
+    arc.colour = colour;
+    render::shape shape;
+    shape.data = arc;
+    f(shape);
   }
 
   constexpr void

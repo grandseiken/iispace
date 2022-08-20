@@ -96,6 +96,10 @@ struct transform {
     return v;
   }
 
+  constexpr fixed rotation() const {
+    return r;
+  }
+
   constexpr transform translate(const vec2& t) const {
     return {v + ::rotate(t, r), r, index_out};
   }
@@ -122,6 +126,10 @@ struct legacy_transform {
 
   constexpr const vec2& deref_ignore_rotation() const {
     return v;
+  }
+
+  constexpr fixed rotation() const {
+    return r;
   }
 
   constexpr legacy_transform translate(const vec2& t) const {

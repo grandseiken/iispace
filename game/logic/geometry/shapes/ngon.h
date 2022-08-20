@@ -8,12 +8,7 @@
 #include <cstdint>
 
 namespace ii::geom {
-
-enum class ngon_style {
-  kPolygon,
-  kPolystar,
-  kPolygram,
-};
+using render::ngon_style;
 
 struct ngon_data : shape_data_base {
   using shape_data_base::iterate;
@@ -55,9 +50,16 @@ struct ngon_data : shape_data_base {
 
   constexpr void
   iterate(iterate_shapes_t, const Transform auto& t, const ShapeFunction auto& f) const {
-    iterate(iterate_lines, t, [&](const vec2& a, const vec2& b, const glm::vec4& c) {
-      f(render::shape::line(to_float(a), to_float(b), c));
-    });
+    render::ngon ngon;
+    ngon.origin = to_float(*t);
+    ngon.rotation = t.rotation().to_float();
+    ngon.radius = radius.to_float();
+    ngon.sides = sides;
+    ngon.colour = colour;
+    ngon.style = style;
+    render::shape shape;
+    shape.data = ngon;
+    f(shape);
   }
 
   constexpr void

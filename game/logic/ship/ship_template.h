@@ -37,7 +37,7 @@ void render_shape(const SimInterface& sim, const auto& parameters, const geom::t
     if (c_override && (!c_override_max_index || i < *c_override_max_index)) {
       shape_copy.colour_override = *c_override;
     }
-    sim.render(shape);
+    sim.render(shape_copy);
   });
 }
 

@@ -1,5 +1,6 @@
 #include "game/render/gl_renderer.h"
 #include "assets/fonts/fonts.h"
+#include "game/common/math.h"
 #include "game/common/raw_ptr.h"
 #include "game/io/file/filesystem.h"
 #include "game/io/font/font.h"
@@ -10,6 +11,7 @@
 #include "game/render/gl/types.h"
 #include "game/render/shader_compiler.h"
 #include <GL/gl3w.h>
+#include <glm/gtc/constants.hpp>
 #include <algorithm>
 #include <span>
 #include <string>
@@ -276,27 +278,67 @@ void GlRenderer::render_shapes(std::span<const shape> shapes) {
   std::vector<float> colour_data;
   std::vector<unsigned> line_indices;
   unsigned index = 0;
+
+  auto add_line = [&](const glm::vec2& a, const glm::vec2& b, const glm::vec4& c) {
+    vertex_data.emplace_back(a.x);
+    vertex_data.emplace_back(a.y);
+    vertex_data.emplace_back(b.x);
+    vertex_data.emplace_back(b.y);
+    colour_data.emplace_back(c.r);
+    colour_data.emplace_back(c.g);
+    colour_data.emplace_back(c.b);
+    colour_data.emplace_back(c.a);
+    colour_data.emplace_back(c.r);
+    colour_data.emplace_back(c.g);
+    colour_data.emplace_back(c.b);
+    colour_data.emplace_back(c.a);
+    line_indices.emplace_back(index++);
+    line_indices.emplace_back(index++);
+  };
+
+  auto colour_override = [](const glm::vec4& c, const std::optional<glm::vec4>& override) {
+    return override ? glm::vec4{override->r, override->g, override->b, c.a} : c;
+  };
+
   for (const auto& shape : shapes) {
-    if (const auto* p = std::get_if<render::line_t>(&shape.data)) {
-      auto c = p->c;
-      if (shape.colour_override) {
-        c = *shape.colour_override;
-        c.a = p->c.a;
+    if (const auto* p = std::get_if<render::line>(&shape.data)) {
+      add_line(p->a, p->b, colour_override(p->colour, shape.colour_override));
+    } else if (const auto* p = std::get_if<render::box>(&shape.data)) {
+      auto c = colour_override(p->colour, shape.colour_override);
+      auto va = p->origin + rotate(p->dimensions, p->rotation);
+      auto vb = p->origin + rotate(glm::vec2{-p->dimensions.x, p->dimensions.y}, p->rotation);
+      auto vc = p->origin + rotate(-p->dimensions, p->rotation);
+      auto vd = p->origin + rotate(glm::vec2{p->dimensions.x, -p->dimensions.y}, p->rotation);
+      add_line(va, vb, c);
+      add_line(vb, vc, c);
+      add_line(vc, vd, c);
+      add_line(vd, va, c);
+    } else if (const auto* p = std::get_if<render::ngon>(&shape.data)) {
+      auto c = colour_override(p->colour, shape.colour_override);
+      auto vertex = [&](std::uint32_t i) {
+        return p->origin +
+            rotate(glm::vec2{p->radius, 0.f}, p->rotation + i * 2 * glm::pi<float>() / p->sides);
+      };
+      if (p->style != ngon_style::kPolygram) {
+        for (std::uint32_t i = 0; i < p->sides; ++i) {
+          add_line(vertex(i), p->style == ngon_style::kPolygon ? vertex(i + 1) : p->origin, c);
+        }
+      } else {
+        for (std::size_t i = 0; i < p->sides; ++i) {
+          for (std::size_t j = i + 1; j < p->sides; ++j) {
+            add_line(vertex(i), vertex(j), c);
+          }
+        }
       }
-      vertex_data.emplace_back(p->a.x);
-      vertex_data.emplace_back(p->a.y);
-      vertex_data.emplace_back(p->b.x);
-      vertex_data.emplace_back(p->b.y);
-      colour_data.emplace_back(c.r);
-      colour_data.emplace_back(c.g);
-      colour_data.emplace_back(c.b);
-      colour_data.emplace_back(c.a);
-      colour_data.emplace_back(c.r);
-      colour_data.emplace_back(c.g);
-      colour_data.emplace_back(c.b);
-      colour_data.emplace_back(c.a);
-      line_indices.emplace_back(index++);
-      line_indices.emplace_back(index++);
+    } else if (const auto* p = std::get_if<render::polyarc>(&shape.data)) {
+      auto c = colour_override(p->colour, shape.colour_override);
+      for (std::uint32_t i = 0; p->sides >= 2 && i < p->sides && i < p->segments; ++i) {
+        auto a =
+            p->origin + from_polar(p->rotation + i * 2 * glm::pi<float>() / p->sides, p->radius);
+        auto b = p->origin +
+            from_polar(p->rotation + (i + 1) * 2 * glm::pi<float>() / p->sides, p->radius);
+        add_line(a, b, c);
+      }
     }
   }
 

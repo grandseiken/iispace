@@ -41,9 +41,14 @@ struct box_data : shape_data_base {
 
   constexpr void
   iterate(iterate_shapes_t, const Transform auto& t, const ShapeFunction auto& f) const {
-    iterate(iterate_lines, t, [&](const vec2& a, const vec2& b, const glm::vec4& c) {
-      f(render::shape::line(to_float(a), to_float(b), c));
-    });
+    render::box box;
+    box.origin = to_float(*t);
+    box.rotation = t.rotation().to_float();
+    box.dimensions = to_float(dimensions);
+    box.colour = colour;
+    render::shape shape;
+    shape.data = box;
+    f(shape);
   }
 
   constexpr void

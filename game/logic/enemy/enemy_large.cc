@@ -99,8 +99,8 @@ struct Shielder : ecs::component {
   using s_shield1 = geom::ngon<8, 6, c1>;
   using s_spokes = geom::polystar<24, 4, c0>;
   using shape =
-      standard_transform<s_spokes, s_arrange<geom::rotate_eval<geom::multiply_p<-2, 1>, s_shield0>>,
-                         s_arrange<geom::rotate_eval<geom::multiply_p<-2, 1>, s_shield1>>,
+      standard_transform<s_spokes, s_arrange<geom::rotate_eval<geom::multiply_p<-1, 1>, s_shield0>>,
+                         s_arrange<geom::rotate_eval<geom::multiply_p<-1, 1>, s_shield1>>,
                          geom::rotate_eval<geom::negate_p<1>, s_centre>>;
 
   std::tuple<vec2, fixed, glm::vec4> shape_parameters(const Transform& transform) const {

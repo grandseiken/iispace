@@ -14,6 +14,7 @@ cc_library(
   ],
   implementation_deps = [
     "//assets/fonts",
+    "//game/common:math",
     "//game/io/file:filesystem",
     "//game/io/font",
     "//game/render/gl",
