@@ -53,9 +53,11 @@ void load_sounds(const io::Filesystem& fs, Mixer& mixer) {
 bool run(System& system, const std::vector<std::string>& args, const game_options_t& options,
          bool test) {
   static constexpr const char* kTitle = "space";
+  // TODO: OpenGL is deprecated on MacOS. 4.1 seems latest.
+  // https://stackoverflow.com/questions/65802625/develop-using-opengl-4-x-on-osx-big-sur
   static constexpr char kGlMajor = 4;
-  static constexpr char kGlMinor = 6;
-  static constexpr std::uint32_t kGlslVersion = 460;
+  static constexpr char kGlMinor = 1;
+  static constexpr std::uint32_t kGlslVersion = 410;
 
   auto io_layer_result = io::SdlIoLayer::create(kTitle, kGlMajor, kGlMinor);
   if (!io_layer_result) {
