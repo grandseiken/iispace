@@ -19,6 +19,13 @@
 
 namespace ii::render {
 namespace {
+enum shape_shader_style : std::uint32_t {
+  kStyleNgonPolygon = 0,
+  kStyleNgonPolystar = 1,
+  kStyleNgonPolygram = 2,
+  kStyleBox = 3,
+  kStyleLine = 4,
+};
 
 const std::vector<std::uint32_t>& utf32_codes() {
   static const char* chars =
@@ -43,9 +50,9 @@ struct GlRenderer::impl_t {
   glm::uvec2 screen_dimensions{0, 0};
   glm::uvec2 render_dimensions{0, 0};
 
-  gl::program line;
   gl::program rect;
   gl::program text;
+  gl::program shape;
 
   gl::buffer quad_index;
   gl::sampler pixel_sampler;
@@ -56,10 +63,10 @@ struct GlRenderer::impl_t {
   };
   std::unordered_map<std::uint32_t, font_entry> font_map;
 
-  impl_t(gl::program line, gl::program rect, gl::program text)
-  : line{std::move(line)}
-  , rect{std::move(rect)}
+  impl_t(gl::program rect, gl::program text, gl::program shape)
+  : rect{std::move(rect)}
   , text{std::move(text)}
+  , shape{std::move(shape)}
   , quad_index(gl::make_buffer())
   , pixel_sampler{gl::make_sampler(gl::filter::kNearest, gl::filter::kNearest,
                                    gl::texture_wrap::kClampToEdge,
@@ -115,12 +122,6 @@ struct GlRenderer::impl_t {
 };
 
 result<std::unique_ptr<GlRenderer>> GlRenderer::create() {
-  auto line = compile_program({{"game/render/shaders/line.f.glsl", gl::shader_type::kFragment},
-                               {"game/render/shaders/line.v.glsl", gl::shader_type::kVertex}});
-  if (!line) {
-    return unexpected(line.error());
-  }
-
   auto rect = compile_program({{"game/render/shaders/rect.f.glsl", gl::shader_type::kFragment},
                                {"game/render/shaders/rect.v.glsl", gl::shader_type::kVertex}});
   if (!rect) {
@@ -133,8 +134,15 @@ result<std::unique_ptr<GlRenderer>> GlRenderer::create() {
     return unexpected(text.error());
   }
 
+  auto shape = compile_program({{"game/render/shaders/shape.f.glsl", gl::shader_type::kFragment},
+                                {"game/render/shaders/shape.g.glsl", gl::shader_type::kGeometry},
+                                {"game/render/shaders/shape.v.glsl", gl::shader_type::kVertex}});
+  if (!shape) {
+    return unexpected(shape.error());
+  }
+
   auto renderer = std::make_unique<GlRenderer>(access_tag{});
-  renderer->impl_ = std::make_unique<impl_t>(std::move(*line), std::move(*rect), std::move(*text));
+  renderer->impl_ = std::make_unique<impl_t>(std::move(*rect), std::move(*text), std::move(*shape));
 
   auto load_font = [&](std::uint32_t index, const Font& source, bool lcd,
                        const std::vector<std::uint32_t>& codes,
@@ -262,7 +270,7 @@ void GlRenderer::render_rect(const glm::ivec2& position, const glm::ivec2& size,
 }
 
 void GlRenderer::render_shapes(std::span<const shape> shapes) {
-  const auto& program = impl_->line;
+  const auto& program = impl_->shape;
   gl::use_program(program);
   gl::enable_blend(true);
   gl::blend_function(gl::blend_factor::kSrcAlpha, gl::blend_factor::kOneMinusSrcAlpha);
@@ -274,93 +282,141 @@ void GlRenderer::render_shapes(std::span<const shape> shapes) {
     impl_->status = unexpected(result.error());
   }
 
-  std::vector<float> vertex_data;
-  std::vector<float> colour_data;
-  std::vector<unsigned> line_indices;
-  unsigned index = 0;
-
-  auto add_line = [&](const glm::vec2& a, const glm::vec2& b, const glm::vec4& c) {
-    vertex_data.emplace_back(a.x);
-    vertex_data.emplace_back(a.y);
-    vertex_data.emplace_back(b.x);
-    vertex_data.emplace_back(b.y);
-    colour_data.emplace_back(c.r);
-    colour_data.emplace_back(c.g);
-    colour_data.emplace_back(c.b);
-    colour_data.emplace_back(c.a);
-    colour_data.emplace_back(c.r);
-    colour_data.emplace_back(c.g);
-    colour_data.emplace_back(c.b);
-    colour_data.emplace_back(c.a);
-    line_indices.emplace_back(index++);
-    line_indices.emplace_back(index++);
+  struct vertex_data {
+    std::uint32_t style;
+    glm::uvec2 params;
+    float rotation;
+    float line_width;
+    glm::vec2 position;
+    glm::vec2 dimensions;
+    glm::vec4 colour;
   };
 
+  std::vector<float> float_data;
+  std::vector<unsigned> int_data;
+  std::vector<unsigned> indices;
+
+  static constexpr std::size_t kFloatStride = 10 * sizeof(float);
+  static constexpr std::size_t kIntStride = 3 * sizeof(unsigned);
+  auto add_data = [&](const vertex_data& d) {
+    int_data.emplace_back(d.style);
+    int_data.emplace_back(d.params.x);
+    int_data.emplace_back(d.params.y);
+    float_data.emplace_back(d.rotation);
+    float_data.emplace_back(d.line_width);
+    float_data.emplace_back(d.position.x);
+    float_data.emplace_back(d.position.y);
+    float_data.emplace_back(d.dimensions.x);
+    float_data.emplace_back(d.dimensions.y);
+    float_data.emplace_back(d.colour.r);
+    float_data.emplace_back(d.colour.g);
+    float_data.emplace_back(d.colour.b);
+    float_data.emplace_back(d.colour.a);
+    indices.emplace_back(indices.size());
+  };
   auto colour_override = [](const glm::vec4& c, const std::optional<glm::vec4>& override) {
     return override ? glm::vec4{override->r, override->g, override->b, c.a} : c;
   };
 
   for (const auto& shape : shapes) {
-    if (const auto* p = std::get_if<render::line>(&shape.data)) {
-      add_line(p->a, p->b, colour_override(p->colour, shape.colour_override));
-    } else if (const auto* p = std::get_if<render::box>(&shape.data)) {
-      auto c = colour_override(p->colour, shape.colour_override);
-      auto va = p->origin + rotate(p->dimensions, p->rotation);
-      auto vb = p->origin + rotate(glm::vec2{-p->dimensions.x, p->dimensions.y}, p->rotation);
-      auto vc = p->origin + rotate(-p->dimensions, p->rotation);
-      auto vd = p->origin + rotate(glm::vec2{p->dimensions.x, -p->dimensions.y}, p->rotation);
-      add_line(va, vb, c);
-      add_line(vb, vc, c);
-      add_line(vc, vd, c);
-      add_line(vd, va, c);
-    } else if (const auto* p = std::get_if<render::ngon>(&shape.data)) {
-      auto c = colour_override(p->colour, shape.colour_override);
-      auto vertex = [&](std::uint32_t i) {
-        return p->origin +
-            rotate(glm::vec2{p->radius, 0.f}, p->rotation + i * 2 * glm::pi<float>() / p->sides);
+    if (const auto* p = std::get_if<render::ngon>(&shape.data)) {
+      auto colour = colour_override(p->colour, shape.colour_override);
+      auto add_polygon = [&](std::uint32_t style, std::uint32_t param) {
+        add_data(vertex_data{
+            .style = style,
+            .params = {p->sides, param},
+            .rotation = p->rotation,
+            .line_width = p->line_width,
+            .position = p->origin,
+            .dimensions = {p->radius, 0.f},
+            .colour = colour,
+        });
       };
-      if (p->style != ngon_style::kPolygram) {
-        for (std::uint32_t i = 0; i < p->sides; ++i) {
-          add_line(vertex(i), p->style == ngon_style::kPolygon ? vertex(i + 1) : p->origin, c);
-        }
+      if (p->style != ngon_style::kPolygram || p->sides <= 3) {
+        add_polygon(p->style == ngon_style::kPolystar ? kStyleNgonPolystar : kStyleNgonPolygon,
+                    p->sides);
+      } else if (p->sides == 4) {
+        add_polygon(kStyleNgonPolygon, p->sides);
+        add_polygon(kStyleNgonPolystar, p->sides);
       } else {
-        for (std::size_t i = 0; i < p->sides; ++i) {
-          for (std::size_t j = i + 1; j < p->sides; ++j) {
-            add_line(vertex(i), vertex(j), c);
-          }
+        add_polygon(kStyleNgonPolygon, p->sides);
+        for (std::uint32_t i = 0; i + 2 < p->sides; ++i) {
+          add_polygon(kStyleNgonPolygram, i);
         }
       }
     } else if (const auto* p = std::get_if<render::polyarc>(&shape.data)) {
-      auto c = colour_override(p->colour, shape.colour_override);
-      for (std::uint32_t i = 0; p->sides >= 2 && i < p->sides && i < p->segments; ++i) {
-        auto a =
-            p->origin + from_polar(p->rotation + i * 2 * glm::pi<float>() / p->sides, p->radius);
-        auto b = p->origin +
-            from_polar(p->rotation + (i + 1) * 2 * glm::pi<float>() / p->sides, p->radius);
-        add_line(a, b, c);
-      }
+      auto colour = colour_override(p->colour, shape.colour_override);
+      add_data(vertex_data{
+          .style = kStyleNgonPolygon,
+          .params = {p->sides, p->segments},
+          .rotation = p->rotation,
+          .line_width = p->line_width,
+          .position = p->origin,
+          .dimensions = {p->radius, 0},
+          .colour = colour,
+      });
+    } else if (const auto* p = std::get_if<render::box>(&shape.data)) {
+      auto colour = colour_override(p->colour, shape.colour_override);
+      add_data(vertex_data{
+          .style = kStyleBox,
+          .params = {0, 0},
+          .rotation = p->rotation,
+          .line_width = p->line_width,
+          .position = p->origin,
+          .dimensions = p->dimensions,
+          .colour = colour,
+      });
+    } else if (const auto* p = std::get_if<render::line>(&shape.data)) {
+      auto colour = colour_override(p->colour, shape.colour_override);
+      add_data(vertex_data{
+          .style = kStyleLine,
+          .params = {p->sides, 0},
+          .rotation = 0.f,
+          .line_width = p->line_width,
+          .position = p->a,
+          .dimensions = p->b,
+          .colour = colour,
+      });
     }
   }
 
-  auto vertex_buffer = gl::make_buffer();
-  auto colour_buffer = gl::make_buffer();
-  gl::buffer_data(vertex_buffer, gl::buffer_usage::kStreamDraw,
-                  std::span<const float>{vertex_data});
-  gl::buffer_data(colour_buffer, gl::buffer_usage::kStreamDraw,
-                  std::span<const float>{colour_data});
-
-  auto line_index = gl::make_buffer();
-  gl::buffer_data(line_index, gl::buffer_usage::kStreamDraw,
-                  std::span<const unsigned>{line_indices});
+  auto float_buffer = gl::make_buffer();
+  auto int_buffer = gl::make_buffer();
+  auto index_buffer = gl::make_buffer();
+  gl::buffer_data(float_buffer, gl::buffer_usage::kStreamDraw, std::span<const float>{float_data});
+  gl::buffer_data(int_buffer, gl::buffer_usage::kStreamDraw, std::span<const unsigned>{int_data});
+  gl::buffer_data(index_buffer, gl::buffer_usage::kStreamDraw, std::span<const unsigned>{indices});
 
   auto vertex_array = gl::make_vertex_array();
   gl::bind_vertex_array(vertex_array);
-  auto position_handle = gl::vertex_float_attribute_buffer(
-      vertex_buffer, 0, 2, gl::type_of<float>(), false, 2 * sizeof(float), 0);
-  auto colour_handle = gl::vertex_float_attribute_buffer(colour_buffer, 1, 4, gl::type_of<float>(),
-                                                         false, 4 * sizeof(float), 0);
 
-  gl::draw_elements(gl::draw_mode::kLines, line_index, gl::type_of<unsigned>(), line_indices.size(),
+  std::uint32_t index = 0;
+  std::size_t float_offset = 0;
+  std::size_t int_offset = 0;
+  auto add_float_attribute = [&](std::uint8_t count) {
+    auto h = gl::vertex_float_attribute_buffer(float_buffer, index, count, gl::type_of<float>(),
+                                               false, kFloatStride, float_offset * sizeof(float));
+    ++index;
+    float_offset += count;
+    return h;
+  };
+  auto add_int_attribute = [&](std::uint8_t count) {
+    auto h = gl::vertex_int_attribute_buffer(int_buffer, index, count, gl::type_of<unsigned>(),
+                                             kIntStride, int_offset * sizeof(unsigned));
+    ++index;
+    int_offset += count;
+    return h;
+  };
+
+  auto style = add_int_attribute(1);
+  auto params = add_int_attribute(2);
+  auto rotation = add_float_attribute(1);
+  auto line_width = add_float_attribute(1);
+  auto position = add_float_attribute(2);
+  auto dimensions = add_float_attribute(2);
+  auto colour = add_float_attribute(4);
+
+  gl::draw_elements(gl::draw_mode::kPoints, index_buffer, gl::type_of<unsigned>(), indices.size(),
                     0);
 }
 

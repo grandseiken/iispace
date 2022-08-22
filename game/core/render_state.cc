@@ -145,6 +145,7 @@ void RenderState::update() {
 }
 
 void RenderState::render(render::GlRenderer& r) const {
+  // TODO: render all this with shape data instead of lines.
   std::vector<render::shape> lines;
   auto render_line_rect = [&](const glm::vec2& lo, const glm::vec2& hi, const glm::vec4& c) {
     glm::vec2 li{lo.x, hi.y};

@@ -24,6 +24,8 @@ struct line {
   glm::vec2 a{0.f};
   glm::vec2 b{0.f};
   glm::vec4 colour{0.f};
+  float line_width = 1.f;
+  std::uint32_t sides = 4;
 };
 
 struct ngon {
@@ -32,6 +34,7 @@ struct ngon {
   float radius = 0.f;
   std::uint32_t sides = 0;
   glm::vec4 colour{0.f};
+  float line_width = 1.f;
   ngon_style style = ngon_style::kPolygon;
 };
 
@@ -40,6 +43,7 @@ struct box {
   float rotation = 0.f;
   glm::vec2 dimensions{0.f};
   glm::vec4 colour{0.f};
+  float line_width = 1.f;
 };
 
 struct polyarc {
@@ -49,6 +53,7 @@ struct polyarc {
   std::uint32_t sides = 0;
   std::uint32_t segments = 0;
   glm::vec4 colour{0.f};
+  float line_width = 1.f;
 };
 
 using shape_data = std::variant<line, ngon, box, polyarc>;
