@@ -6,6 +6,7 @@
 #include "game/logic/ship/components.h"
 #include "game/logic/sim/sim_interface.h"
 #include "game/logic/sim/sim_internals.h"
+#include <glm/gtc/constants.hpp>
 #include <algorithm>
 #include <unordered_set>
 
@@ -229,41 +230,34 @@ const render_output& SimState::render() const {
         transform = transform_copy;
       });
 
-  // TODO: use geometry for this? Extract somewhere?
+  // TODO: extract somewhere?
   auto render_warning = [&](const glm::vec2& v) {
+    auto render_tri = [&](const glm::vec2& position, float r, float f) {
+      glm::vec4 c{0.f, 0.f, .2f + .6f * f, .4f};
+      render::ngon ngon;
+      ngon.colour = c;
+      ngon.sides = 3;
+      ngon.rotation = r;
+      ngon.radius = 4;
+      ngon.origin = position;
+      interface_->render(render::shape::from(ngon));
+    };
+
     if (v.x < -4) {
-      auto f = .2f + .6f * std::max(v.x + kSimDimensions.x, 0.f) / kSimDimensions.x;
-      glm::vec4 c{0.f, 0.f, f, .4f};
-      interface_->render(render::shape::line({0.f, v.y}, {6, v.y - 3}, c));
-      interface_->render(render::shape::line({6.f, v.y - 3}, {6, v.y + 3}, c));
-      interface_->render(render::shape::line({6.f, v.y + 3}, {0, v.y}, c));
+      auto f = std::max(v.x + kSimDimensions.x, 0.f) / kSimDimensions.x;
+      render_tri({4, v.y}, glm::pi<float>(), f);
     }
     if (v.x >= kSimDimensions.x + 4) {
-      auto f = .2f + .6f * std::max(2 * kSimDimensions.x - v.x, 0.f) / kSimDimensions.x;
-      glm::vec4 c{0.f, 0.f, f, .4f};
-      interface_->render(render::shape::line({float{kSimDimensions.x}, v.y},
-                                             {kSimDimensions.x - 6.f, v.y - 3}, c));
-      interface_->render(render::shape::line({kSimDimensions.x - 6, v.y - 3},
-                                             {kSimDimensions.x - 6.f, v.y + 3}, c));
-      interface_->render(
-          render::shape::line({kSimDimensions.x - 6, v.y + 3}, {float{kSimDimensions.x}, v.y}, c));
+      auto f = std::max(2 * kSimDimensions.x - v.x, 0.f) / kSimDimensions.x;
+      render_tri({kSimDimensions.x - 4, v.y}, 0.f, f);
     }
     if (v.y < -4) {
-      auto f = .2f + .6f * std::max(v.y + kSimDimensions.y, 0.f) / kSimDimensions.y;
-      glm::vec4 c{0.f, 0.f, f, .4f};
-      interface_->render(render::shape::line({v.x, 0.f}, {v.x - 3, 6.f}, c));
-      interface_->render(render::shape::line({v.x - 3, 6.f}, {v.x + 3, 6.f}, c));
-      interface_->render(render::shape::line({v.x + 3, 6.f}, {v.x, 0.f}, c));
+      auto f = std::max(v.y + kSimDimensions.y, 0.f) / kSimDimensions.y;
+      render_tri({v.x, 4}, 3.f * glm::pi<float>() / 2.f, f);
     }
     if (v.y >= kSimDimensions.y + 4) {
-      auto f = .2f + .6f * std::max(2 * kSimDimensions.y - v.y, 0.f) / kSimDimensions.y;
-      glm::vec4 c{0.f, 0.f, f, .4f};
-      interface_->render(render::shape::line({v.x, float{kSimDimensions.y}},
-                                             {v.x - 3, kSimDimensions.y - 6.f}, c));
-      interface_->render(render::shape::line({v.x - 3, kSimDimensions.y - 6.f},
-                                             {v.x + 3, kSimDimensions.y - 6.f}, c));
-      interface_->render(render::shape::line({v.x + 3, kSimDimensions.y - 6.f},
-                                             {v.x, float{kSimDimensions.y}}, c));
+      auto f = std::max(2 * kSimDimensions.y - v.y, 0.f) / kSimDimensions.y;
+      render_tri({v.x, kSimDimensions.y - 4}, glm::pi<float>() / 2.f, f);
     }
   };
 

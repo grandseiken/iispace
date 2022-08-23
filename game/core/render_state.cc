@@ -145,45 +145,42 @@ void RenderState::update() {
 }
 
 void RenderState::render(render::GlRenderer& r) const {
-  // TODO: render all this with shape data instead of lines.
-  std::vector<render::shape> lines;
-  auto render_line_rect = [&](const glm::vec2& lo, const glm::vec2& hi, const glm::vec4& c) {
-    glm::vec2 li{lo.x, hi.y};
-    glm::vec2 ho{hi.x, lo.y};
-    lines.emplace_back(render::shape::line(lo, li, c));
-    lines.emplace_back(render::shape::line(li, hi, c));
-    lines.emplace_back(render::shape::line(hi, ho, c));
-    lines.emplace_back(render::shape::line(ho, lo, c));
+  std::vector<render::shape> shapes;
+  auto render_box = [&](const glm::vec2& v, const glm::vec2& d, const glm::vec4& c) {
+    render::box box;
+    box.origin = v;
+    box.dimensions = d;
+    box.colour = c;
+    shapes.emplace_back(render::shape::from(box));
   };
 
   for (const auto& particle : particles_) {
-    render_line_rect(particle.position + glm::vec2{1, 1}, particle.position - glm::vec2{1, 1},
-                     particle.colour);
+    render_box(particle.position, glm::vec2{1, 1}, particle.colour);
   }
 
   for (const auto& star : stars_) {
     switch (star.type) {
     case star_type::kDotStar:
     case star_type::kFarStar:
-      render_line_rect(star.position - glm::vec2{1, 1}, star.position + glm::vec2{1, 1},
-                       star.colour);
+      render_box(star.position, glm::vec2{1, 1}, star.colour);
       break;
 
     case star_type::kBigStar:
-      render_line_rect(star.position - glm::vec2{2, 2}, star.position + glm::vec2{2, 2},
-                       star.colour);
+      render_box(star.position, glm::vec2{2, 2}, star.colour);
       break;
 
     case star_type::kPlanet:
-      for (std::uint32_t i = 0; i < 8; ++i) {
-        auto a = from_polar(i * glm::pi<float>() / 4, star.size);
-        auto b = from_polar((i + 1) * glm::pi<float>() / 4, star.size);
-        lines.emplace_back(render::shape::line(star.position + a, star.position + b, star.colour));
-      }
+      render::ngon ngon;
+      ngon.sides = 8;
+      ngon.radius = star.size;
+      ngon.colour = star.colour;
+      ngon.origin = star.position;
+      shapes.emplace_back(render::shape::from(ngon));
+      break;
     }
   }
 
-  r.render_shapes(lines);
+  r.render_shapes(shapes);
 }
 
 void RenderState::handle_background_fx(const background_fx_change& change) {

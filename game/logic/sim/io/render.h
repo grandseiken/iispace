@@ -67,6 +67,12 @@ struct shape {
     s.data = render::line{a, b, c};
     return s;
   }
+
+  static shape from(shape_data d) {
+    shape s;
+    s.data = d;
+    return s;
+  }
 };
 
 }  // namespace ii::render
