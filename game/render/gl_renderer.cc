@@ -312,7 +312,7 @@ void GlRenderer::render_shapes(std::span<const shape> shapes) {
     float_data.emplace_back(d.colour.g);
     float_data.emplace_back(d.colour.b);
     float_data.emplace_back(d.colour.a);
-    indices.emplace_back(indices.size());
+    indices.emplace_back(static_cast<std::uint32_t>(indices.size()));
   };
   auto colour_override = [](const glm::vec4& c, const std::optional<glm::vec4>& override) {
     return override ? glm::vec4{override->r, override->g, override->b, c.a} : c;

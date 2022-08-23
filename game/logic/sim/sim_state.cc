@@ -348,16 +348,20 @@ void SimState::update_smoothing(smoothing_data& data) {
     if (it == data.players.end()) {
       return;
     }
-    auto v = transform.centre - *it->second.position;
-    auto distance = length(v);
-    if (!it->second.position || length(v) < kPlayerSpeed) {
+    vec2 v{0, 0};
+    fixed d{0};
+    if (it->second.position) {
+      v = transform.centre - *it->second.position;
+      d = length(v);
+    }
+    if (!it->second.position || d < kPlayerSpeed) {
       it->second.velocity = {0, 0};
       it->second.position = transform.centre;
       smooth_rotate(it->second.rotation, transform.rotation);
       return;
     }
     auto target_speed =
-        std::max(kPlayerSpeed, std::min(kPlayerSpeed * 9_fx / 8_fx, distance / (2 * kPlayerSpeed)));
+        std::max(kPlayerSpeed, std::min(kPlayerSpeed * 9_fx / 8_fx, d / (2 * kPlayerSpeed)));
     auto target_velocity = target_speed * normalise(v);
     it->second.velocity = (3_fx / 4_fx) * (it->second.velocity - target_velocity) + target_velocity;
     *it->second.position += it->second.velocity;
