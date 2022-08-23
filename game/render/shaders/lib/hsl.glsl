@@ -34,5 +34,5 @@ vec4 hsl2rgba(vec4 hsla) {
 }
 
 vec4 hsl2rgba_cycle(vec4 hsla, float cycle) {
-  return hsl2rgba(vec4(hsla.x + cycle, hsla.yza));
+  return hsl2rgba(vec4(hsla.x + cycle, hsla.yz, hsla.a));
 }
