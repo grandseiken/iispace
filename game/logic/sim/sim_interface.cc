@@ -23,6 +23,10 @@ RandomEngine& engine(SimInternals& internals, random_source s) {
 }
 }  // namespace
 
+RandomEngine& EmitHandle::random() {
+  return sim->random(random_source::kAesthetic);
+}
+
 EmitHandle& EmitHandle::background_fx(background_fx_change change) {
   e->background_fx = change;
   return *this;

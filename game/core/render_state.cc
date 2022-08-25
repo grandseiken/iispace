@@ -86,10 +86,10 @@ void RenderState::handle_output(ISimState& state, Mixer* mixer, IoInputAdapter* 
 
 void RenderState::update() {
   for (auto& particle : particles_) {
-    if (!particle.timer) {
+    if (particle.time == particle.end_time) {
       continue;
     }
-    --particle.timer;
+    ++particle.time;
     if (auto* p = std::get_if<dot_particle>(&particle.data)) {
       p->position += p->velocity;
     } else if (auto* p = std::get_if<line_particle>(&particle.data)) {
@@ -97,7 +97,7 @@ void RenderState::update() {
       p->rotation = normalise_angle(p->rotation + p->angular_velocity);
     }
   }
-  std::erase_if(particles_, [](const particle& p) { return !p.timer; });
+  std::erase_if(particles_, [](const particle& p) { return p.time == p.end_time; });
 
   auto create_star = [&] {
     auto r = engine_.uint(12);
@@ -163,11 +163,14 @@ void RenderState::render(render::GlRenderer& r) const {
 
   for (const auto& particle : particles_) {
     if (const auto* p = std::get_if<dot_particle>(&particle.data)) {
-      render_box(p->position, glm::vec2{1.5f, 1.5f}, p->colour, .5f);
+      render_box(p->position, glm::vec2{1.5f, 1.5f}, p->colour, 1.f);
     } else if (const auto* p = std::get_if<line_particle>(&particle.data)) {
       auto v = from_polar(p->rotation, p->radius);
       render::line line;
-      line.colour = p->colour;
+      line.colour = particle.time <= 1
+          ? glm::vec4{1.f}
+          : glm::vec4{p->colour.r, p->colour.g, p->colour.b,
+                      .5f - .5f * (static_cast<float>(particle.time) / particle.end_time)};
       line.a = p->position + v;
       line.b = p->position - v;
       shapes.emplace_back(render::shape::from(line));

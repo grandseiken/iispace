@@ -105,9 +105,10 @@ struct Health : ecs::component {
 
   sfn::ptr<std::uint32_t(ecs::handle, SimInterface&, damage_type, std::uint32_t)> damage_transform =
       nullptr;
-  sfn::ptr<void(ecs::handle, SimInterface&, EmitHandle&, damage_type, vec2)> on_hit = nullptr;
-  sfn::ptr<void(ecs::const_handle, SimInterface&, EmitHandle&, damage_type, vec2)> on_destroy =
+  sfn::ptr<void(ecs::handle, SimInterface&, EmitHandle&, damage_type, const vec2&)> on_hit =
       nullptr;
+  sfn::ptr<void(ecs::const_handle, SimInterface&, EmitHandle&, damage_type, const vec2&)>
+      on_destroy = nullptr;
 
   bool is_hp_low() const {
     // hp <= .4 * max_hp.

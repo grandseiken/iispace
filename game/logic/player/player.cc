@@ -66,7 +66,7 @@ struct Shot : ecs::component {
         auto type = is_predicted ? damage_type::kPredicted
             : magic              ? damage_type::kMagic
                                  : damage_type::kNone;
-        ecs::call_if<&Health::damage>(e.h, sim, 1, type, player, transform.centre);
+        ecs::call_if<&Health::damage>(e.h, sim, 1, type, player, transform.centre - 2 * velocity);
         if (!magic) {
           destroy = true;
         }

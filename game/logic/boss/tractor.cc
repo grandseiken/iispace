@@ -249,7 +249,7 @@ struct TractorBoss : ecs::component {
   }
 
   void on_hit(ecs::handle h, const Transform& transform, SimInterface& sim, EmitHandle& e,
-              damage_type type, vec2 source_position) const {
+              damage_type type, const vec2& source_position) const {
     boss_on_hit<true, TractorBoss>(h, sim, e, type, source_position);
     // Compatiblity with old attack shapes actually being part of the shape.
     if (type == damage_type::kBomb) {

@@ -11,7 +11,7 @@ std::uint32_t
 scale_boss_damage(ecs::handle h, SimInterface&, damage_type type, std::uint32_t damage);
 
 template <bool ExplodeOnBombDamage, ecs::Component Logic, geom::ShapeNode S = typename Logic::shape>
-void boss_on_hit(ecs::handle h, SimInterface& sim, EmitHandle& e, damage_type type, vec2) {
+void boss_on_hit(ecs::handle h, SimInterface& sim, EmitHandle& e, damage_type type, const vec2&) {
   if (type == damage_type::kBomb && ExplodeOnBombDamage) {
     explode_entity_shapes<Logic, S>(h, e);
     explode_entity_shapes<Logic, S>(h, e, glm::vec4{1.f}, 12);
@@ -21,7 +21,7 @@ void boss_on_hit(ecs::handle h, SimInterface& sim, EmitHandle& e, damage_type ty
 
 template <ecs::Component Logic, geom::ShapeNode S = typename Logic::shape>
 void boss_on_destroy(ecs::const_handle h, const Transform& transform, SimInterface& sim,
-                     EmitHandle& e, damage_type, vec2 /* TODO */) {
+                     EmitHandle& e, damage_type, const vec2& /* TODO */) {
   sim.index().iterate_dispatch_if<Enemy>([&](ecs::handle eh, Health& health) {
     if (eh.id() != h.id()) {
       health.damage(eh, sim, Player::kBombDamage, damage_type::kBomb, h.id());

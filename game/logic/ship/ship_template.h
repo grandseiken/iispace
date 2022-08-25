@@ -1,5 +1,6 @@
 #ifndef II_GAME_LOGIC_SHIP_SHIP_TEMPLATE_H
 #define II_GAME_LOGIC_SHIP_SHIP_TEMPLATE_H
+#include "game/common/fix32.h"
 #include "game/logic/ecs/call.h"
 #include "game/logic/ecs/index.h"
 #include "game/logic/geometry/enums.h"
@@ -98,6 +99,50 @@ void explode_entity_shapes_default(ecs::const_handle h, SimInterface&, EmitHandl
 }
 
 template <geom::ShapeNode S>
+void destruct_lines(EmitHandle& e, const auto& parameters, const vec2& source,
+                    std::uint32_t time = 16) {
+  auto& r = e.random();
+  auto f_source = to_float(source);
+  // TODO: something a bit cleverer here? Take velocity of shot into account?
+  // Take velocity of destructed shape into account (maybe using same system as will handle
+  // motion trails)?
+  // Split lines that are too long into smaller ones? Slightly more coherence between
+  // randomness of each line? Make dot particles slightly slower to match?
+  geom::iterate(S{}, geom::iterate_lines, parameters, geom::transform{},
+                [&](const vec2& a, const vec2& b, const glm::vec4& c) {
+                  auto fa = to_float(a);
+                  auto fb = to_float(b);
+                  auto position = (fa + fb) / 2.f;
+                  auto velocity = (r.fixed().to_float() + .5f) * normalise(position - f_source) +
+                      from_polar((2 * fixed_c::pi * r.fixed()).to_float(),
+                                 (r.fixed() / 8).to_float());
+                  auto diameter = distance(fa, fb);
+                  auto d = distance(f_source, fa) - distance(f_source, fb);
+                  if (angle_diff(angle(fa - f_source), angle(fb - f_source)) > 0) {
+                    d = -d;
+                  }
+                  auto angular_velocity =
+                      (d / (8.f * diameter)) * r.fixed().to_float() + r.fixed().to_float() / 32.f;
+                  e.add(particle::from(
+                      line_particle{
+                          .position = position,
+                          .colour = c,
+                          .velocity = velocity,
+                          .radius = diameter / 2.f,
+                          .rotation = angle(fb - fa) - angular_velocity,
+                          .angular_velocity = angular_velocity,
+                      },
+                      time + r.uint(time)));
+                });
+}
+
+template <ecs::Component Logic, geom::ShapeNode S = typename Logic::shape>
+void destruct_entity_lines(ecs::const_handle h, SimInterface&, EmitHandle& e, damage_type,
+                           const vec2& source) {
+  destruct_lines<S>(e, get_shape_parameters<Logic>(h), source);
+}
+
+template <geom::ShapeNode S>
 shape_flag shape_check_point(const auto& parameters, const vec2& v, shape_flag mask) {
   shape_flag result = shape_flag::kNone;
   geom::iterate(S{}, geom::iterate_collision(mask), parameters, geom::convert_local_transform{v},
@@ -192,16 +237,18 @@ template <ecs::Component Logic, geom::ShapeNode S = typename Logic::shape>
 void add_enemy_health(ecs::handle h, std::uint32_t hp,
                       std::optional<sound> destroy_sound = std::nullopt) {
   destroy_sound = destroy_sound ? *destroy_sound : Logic::kDestroySound;
-  using on_destroy_t = void(ecs::const_handle, SimInterface&, EmitHandle&, damage_type, vec2);
+  using on_destroy_t =
+      void(ecs::const_handle, SimInterface&, EmitHandle&, damage_type, const vec2&);
   constexpr auto explode_shapes = sfn::cast<on_destroy_t, &explode_entity_shapes_default<Logic, S>>;
+  constexpr auto on_destroy = sfn::sequence<explode_shapes, &destruct_entity_lines<Logic, S>>;
   if constexpr (requires { &Logic::on_destroy; }) {
     h.add(Health{
         .hp = hp,
         .destroy_sound = destroy_sound,
         .on_destroy =
-            sfn::sequence<explode_shapes, sfn::cast<on_destroy_t, ecs::call<&Logic::on_destroy>>>});
+            sfn::sequence<on_destroy, sfn::cast<on_destroy_t, ecs::call<&Logic::on_destroy>>>});
   } else {
-    h.add(Health{.hp = hp, .destroy_sound = destroy_sound, .on_destroy = explode_shapes});
+    h.add(Health{.hp = hp, .destroy_sound = destroy_sound, .on_destroy = on_destroy});
   }
 }
 

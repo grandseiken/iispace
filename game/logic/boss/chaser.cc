@@ -244,7 +244,7 @@ struct ChaserBoss : ecs::component {
   }
 
   void on_destroy(ecs::const_handle h, const Transform& transform, SimInterface& sim, EmitHandle& e,
-                  damage_type, vec2 /* TODO */) const {
+                  damage_type, const vec2& /* TODO */) const {
     bool last = false;
     if (split < kMaxSplit) {
       for (std::uint32_t i = 0; i < 2; ++i) {

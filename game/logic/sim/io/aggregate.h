@@ -106,10 +106,11 @@ using particle_data = std::variant<dot_particle, line_particle>;
 
 struct particle {
   particle_data data;
-  std::uint32_t timer = 0;
+  std::uint32_t time = 0;
+  std::uint32_t end_time = 0;
 
   static particle from(particle_data d, std::uint32_t time) {
-    return particle{d, time};
+    return particle{d, 0, time};
   }
 };
 

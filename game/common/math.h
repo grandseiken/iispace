@@ -104,4 +104,14 @@ inline constexpr fixed angle_diff(fixed from, fixed to) {
   return from - to <= fixed_c::pi ? to - from : 2 * fixed_c::pi + to - from;
 }
 
+inline constexpr float angle_diff(float from, float to) {
+  if (to == from) {
+    return 0.f;
+  }
+  if (to > from) {
+    return to - from <= glm::pi<float>() ? to - from : to - (2.f * glm::pi<float>() + from);
+  }
+  return from - to <= glm::pi<float>() ? to - from : 2.f * glm::pi<float>() + to - from;
+}
+
 #endif

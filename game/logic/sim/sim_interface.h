@@ -49,6 +49,7 @@ enum class random_source {
 
 class EmitHandle {
 public:
+  RandomEngine& random();
   EmitHandle& background_fx(background_fx_change);
   EmitHandle& add(particle particle);
   EmitHandle& explosion(const glm::vec2& v, const glm::vec4& c, std::uint32_t time = 8,
