@@ -2,6 +2,7 @@
 #define II_GAME_COMMON_MATH_H
 #include "game/common/fix32.h"
 #include <glm/glm.hpp>
+#include <glm/gtc/constants.hpp>
 #include <cmath>
 #include <cstdint>
 
@@ -85,6 +86,12 @@ inline constexpr glm::vec2 to_float(const vec2& a) {
 
 inline constexpr fixed normalise_angle(fixed a) {
   return a > 2 * fixed_c::pi ? a - 2 * fixed_c::pi : a < 0 ? a + 2 * fixed_c::pi : a;
+}
+
+inline constexpr float normalise_angle(float a) {
+  return a > 2.f * glm::pi<float>() ? a - 2.f * glm::pi<float>()
+      : a < 0.f                     ? a + 2.f * glm::pi<float>()
+                                    : a;
 }
 
 inline constexpr fixed angle_diff(fixed from, fixed to) {

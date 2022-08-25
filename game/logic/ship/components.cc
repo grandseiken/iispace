@@ -44,16 +44,30 @@ void GlobalData::post_update(ecs::handle h, SimInterface& sim) {
 }
 
 void Health::damage(ecs::handle h, SimInterface& sim, std::uint32_t damage, damage_type type,
-                    std::optional<ecs::entity_id> source) {
+                    ecs::entity_id source_id, std::optional<vec2> source_position) {
   if (damage_transform) {
     damage = damage_transform(h, sim, type, damage);
     if (!damage) {
       return;
     }
   }
+
+  auto get_source_position = [&]() -> vec2 {
+    if (source_position) {
+      return *source_position;
+    }
+    if (auto* t = sim.index().get<Transform>(source_id); t) {
+      return t->centre;
+    }
+    if (auto* t = h.get<Transform>(); t) {
+      return t->centre;
+    }
+    return kSimDimensions / 2;
+  };
+
   auto e = sim.emit(resolve_key::reconcile(h.id(), resolve_tag::kOnHit, hp));
   if (on_hit) {
-    on_hit(h, sim, e, type);
+    on_hit(h, sim, e, type, get_source_position());
   }
 
   if (type != damage_type::kPredicted) {
@@ -77,9 +91,9 @@ void Health::damage(ecs::handle h, SimInterface& sim, std::uint32_t damage, dama
       e_destroy.play_random(*destroy_sound, position);
     }
     if (on_destroy) {
-      on_destroy(h, sim, e_destroy, type);
+      on_destroy(h, sim, e_destroy, type, get_source_position());
     }
-    h.add(Destroy{.source = source});
+    h.add(Destroy{.source = source_id, .destroy_type = type});
   } else {
     if (hit_sound1 && damage) {
       e.play_random(*hit_sound1, position);

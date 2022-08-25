@@ -17,6 +17,13 @@ class SimInterface;
 struct initial_conditions;
 enum class boss_flag : std::uint32_t;
 
+enum class damage_type {
+  kNone,
+  kMagic,
+  kBomb,
+  kPredicted,
+};
+
 struct GlobalData : ecs::component {
   static constexpr std::uint32_t kStartingLives = 2;
   static constexpr std::uint32_t kBossModeLives = 1;
@@ -41,6 +48,7 @@ DEBUG_STRUCT_TUPLE(GlobalData, lives, non_wall_enemy_count, overmind_wave_timer,
 
 struct Destroy : ecs::component {
   std::optional<ecs::entity_id> source;
+  std::optional<damage_type> destroy_type;
 };
 DEBUG_STRUCT_TUPLE(Destroy);
 
@@ -84,13 +92,6 @@ struct Render : ecs::component {
 };
 DEBUG_STRUCT_TUPLE(Render, render);
 
-enum class damage_type {
-  kNone,
-  kMagic,
-  kBomb,
-  kPredicted,
-};
-
 struct Health : ecs::component {
   std::uint32_t hp = 0;
   std::uint32_t max_hp = hp;
@@ -104,8 +105,9 @@ struct Health : ecs::component {
 
   sfn::ptr<std::uint32_t(ecs::handle, SimInterface&, damage_type, std::uint32_t)> damage_transform =
       nullptr;
-  sfn::ptr<void(ecs::handle, SimInterface&, EmitHandle&, damage_type)> on_hit = nullptr;
-  sfn::ptr<void(ecs::const_handle, SimInterface&, EmitHandle&, damage_type)> on_destroy = nullptr;
+  sfn::ptr<void(ecs::handle, SimInterface&, EmitHandle&, damage_type, vec2)> on_hit = nullptr;
+  sfn::ptr<void(ecs::const_handle, SimInterface&, EmitHandle&, damage_type, vec2)> on_destroy =
+      nullptr;
 
   bool is_hp_low() const {
     // hp <= .4 * max_hp.
@@ -113,7 +115,7 @@ struct Health : ecs::component {
   }
 
   void damage(ecs::handle h, SimInterface&, std::uint32_t damage, damage_type type,
-              std::optional<ecs::entity_id> source);
+              ecs::entity_id source_id, std::optional<vec2> source_position = std::nullopt);
 };
 DEBUG_STRUCT_TUPLE(Health, hp, max_hp, damage_transform, on_hit, on_destroy);
 

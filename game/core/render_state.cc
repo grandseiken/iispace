@@ -86,9 +86,15 @@ void RenderState::handle_output(ISimState& state, Mixer* mixer, IoInputAdapter* 
 
 void RenderState::update() {
   for (auto& particle : particles_) {
-    if (particle.timer) {
-      particle.position += particle.velocity;
-      --particle.timer;
+    if (!particle.timer) {
+      continue;
+    }
+    --particle.timer;
+    if (auto* p = std::get_if<dot_particle>(&particle.data)) {
+      p->position += p->velocity;
+    } else if (auto* p = std::get_if<line_particle>(&particle.data)) {
+      p->position += p->velocity;
+      p->rotation = normalise_angle(p->rotation + p->angular_velocity);
     }
   }
   std::erase_if(particles_, [](const particle& p) { return !p.timer; });
@@ -146,27 +152,37 @@ void RenderState::update() {
 
 void RenderState::render(render::GlRenderer& r) const {
   std::vector<render::shape> shapes;
-  auto render_box = [&](const glm::vec2& v, const glm::vec2& d, const glm::vec4& c) {
+  auto render_box = [&](const glm::vec2& v, const glm::vec2& d, const glm::vec4& c, float lw) {
     render::box box;
     box.origin = v;
     box.dimensions = d;
     box.colour = c;
+    box.line_width = lw;
     shapes.emplace_back(render::shape::from(box));
   };
 
   for (const auto& particle : particles_) {
-    render_box(particle.position, glm::vec2{1, 1}, particle.colour);
+    if (const auto* p = std::get_if<dot_particle>(&particle.data)) {
+      render_box(p->position, glm::vec2{1.5f, 1.5f}, p->colour, .5f);
+    } else if (const auto* p = std::get_if<line_particle>(&particle.data)) {
+      auto v = from_polar(p->rotation, p->radius);
+      render::line line;
+      line.colour = p->colour;
+      line.a = p->position + v;
+      line.b = p->position - v;
+      shapes.emplace_back(render::shape::from(line));
+    }
   }
 
   for (const auto& star : stars_) {
     switch (star.type) {
     case star_type::kDotStar:
     case star_type::kFarStar:
-      render_box(star.position, glm::vec2{1, 1}, star.colour);
+      render_box(star.position, glm::vec2{1, 1}, star.colour, 1.f);
       break;
 
     case star_type::kBigStar:
-      render_box(star.position, glm::vec2{2, 2}, star.colour);
+      render_box(star.position, glm::vec2{2, 2}, star.colour, 1.f);
       break;
 
     case star_type::kPlanet:

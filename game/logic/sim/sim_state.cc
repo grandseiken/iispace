@@ -22,7 +22,7 @@ void setup_index_callbacks(SimInterface& interface, SimInternals& internals) {
   internals.index.on_component_add<Destroy>(
       [&internals, &interface](ecs::handle h, const Destroy& d) {
         auto* e = h.get<Enemy>();
-        if (e && e->score_reward && d.source) {
+        if (e && e->score_reward && d.source && d.destroy_type != damage_type::kBomb) {
           if (auto* p = internals.index.get<Player>(*d.source); p) {
             p->add_score(interface, e->score_reward);
           }

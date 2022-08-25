@@ -192,7 +192,7 @@ template <ecs::Component Logic, geom::ShapeNode S = typename Logic::shape>
 void add_enemy_health(ecs::handle h, std::uint32_t hp,
                       std::optional<sound> destroy_sound = std::nullopt) {
   destroy_sound = destroy_sound ? *destroy_sound : Logic::kDestroySound;
-  using on_destroy_t = void(ecs::const_handle, SimInterface&, EmitHandle&, damage_type);
+  using on_destroy_t = void(ecs::const_handle, SimInterface&, EmitHandle&, damage_type, vec2);
   constexpr auto explode_shapes = sfn::cast<on_destroy_t, &explode_entity_shapes_default<Logic, S>>;
   if constexpr (requires { &Logic::on_destroy; }) {
     h.add(Health{

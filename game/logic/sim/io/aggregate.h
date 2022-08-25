@@ -5,6 +5,7 @@
 #include <cstddef>
 #include <cstdint>
 #include <optional>
+#include <variant>
 
 namespace ii {
 namespace ecs {
@@ -86,15 +87,30 @@ struct resolve_key {
   }
 };
 
-struct particle {
-  particle(const glm::vec2& position, const glm::vec4& colour, const glm::vec2& velocity,
-           std::uint32_t time)
-  : position{position}, colour{colour}, velocity{velocity}, timer{time} {}
-
+struct dot_particle {
   glm::vec2 position{0.f};
   glm::vec4 colour{0.f};
   glm::vec2 velocity{0.f};
+};
+
+struct line_particle {
+  glm::vec2 position{0.f};
+  glm::vec4 colour{0.f};
+  glm::vec2 velocity{0.f};
+  float radius = 0.f;
+  float rotation{0.f};
+  float angular_velocity{0.f};
+};
+
+using particle_data = std::variant<dot_particle, line_particle>;
+
+struct particle {
+  particle_data data;
   std::uint32_t timer = 0;
+
+  static particle from(particle_data d, std::uint32_t time) {
+    return particle{d, time};
+  }
 };
 
 struct sound_out {

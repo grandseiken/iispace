@@ -44,7 +44,7 @@ EmitHandle& EmitHandle::explosion(const glm::vec2& v, const glm::vec4& c, std::u
       float angle = std::atan2(dir.y, dir.x) + (r.fixed().to_float() - 0.5f) * glm::pi<float>() / 4;
       dir = from_polar(angle, 6.f);
     }
-    add(particle{v, c, dir, time + r.uint(8)});
+    add(particle::from(dot_particle{v, c, dir}, time + r.uint(8)));
   }
   return *this;
 }

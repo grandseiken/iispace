@@ -99,8 +99,8 @@ struct Powerup : ecs::component {
     auto r = 5 + random.uint(5);
     for (std::uint32_t i = 0; i < r; ++i) {
       vec2 dir = from_polar(random.fixed() * 2 * fixed_c::pi, 6_fx);
-      e.add(
-          particle{to_float(transform.centre), glm::vec4{1.f}, to_float(dir), 4 + random.uint(8)});
+      e.add(particle::from(dot_particle{to_float(transform.centre), glm::vec4{1.f}, to_float(dir)},
+                           4 + random.uint(8)));
     }
     h.emplace<Destroy>();
   }

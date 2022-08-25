@@ -51,7 +51,8 @@ struct SuperBossArc : public ecs::component {
     ++timer;
   }
 
-  void on_destroy(const Transform& transform, SimInterface&, EmitHandle& e, damage_type) const {
+  void on_destroy(const Transform& transform, SimInterface&, EmitHandle& e, damage_type,
+                  vec2 /* TODO */) const {
     auto parameters = shape_parameters(transform);
     std::get<0>(parameters) += from_polar(i * 2 * fixed_c::pi / 16 + transform.rotation, 120_fx);
     explode_shapes<shape>(e, parameters);
@@ -236,10 +237,10 @@ struct SuperBoss : ecs::component {
   }
 
   void on_destroy(ecs::const_handle h, const Transform& transform, SimInterface& sim, EmitHandle& e,
-                  damage_type) const {
+                  damage_type, vec2 /* TODO */) const {
     sim.index().iterate_dispatch_if<Enemy>([&](ecs::handle eh, Health& health) {
       if (eh.id() != h.id()) {
-        health.damage(eh, sim, 100 * Player::kBombDamage, damage_type::kBomb, std::nullopt);
+        health.damage(eh, sim, 100 * Player::kBombDamage, damage_type::kBomb, h.id());
       }
     });
     auto parameters = shape_parameters(transform);

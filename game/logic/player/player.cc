@@ -66,7 +66,7 @@ struct Shot : ecs::component {
         auto type = is_predicted ? damage_type::kPredicted
             : magic              ? damage_type::kMagic
                                  : damage_type::kNone;
-        ecs::call_if<&Health::damage>(e.h, sim, 1, type, player);
+        ecs::call_if<&Health::damage>(e.h, sim, 1, type, player, transform.centre);
         if (!magic) {
           destroy = true;
         }
@@ -205,7 +205,8 @@ struct PlayerLogic : ecs::component {
               return;
             }
             if (boss || length(e_transform.centre - transform.centre) <= kBombRadius) {
-              health.damage(eh, sim, Player::kBombDamage, damage_type::kBomb, std::nullopt);
+              health.damage(eh, sim, Player::kBombDamage, damage_type::kBomb, h.id(),
+                            transform.centre);
             }
             if (!boss && e.score_reward) {
               pc.add_score(sim, 0);
