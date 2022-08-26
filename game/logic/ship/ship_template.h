@@ -98,10 +98,33 @@ void explode_entity_shapes_default(ecs::const_handle h, SimInterface&, EmitHandl
   return explode_entity_shapes<Logic, S>(h, e);
 }
 
+inline void add_line_particle(EmitHandle& e, const glm::vec2& source, const glm::vec2& a,
+                              const glm::vec2& b, const glm::vec4& c, std::uint32_t time) {
+  auto& r = e.random();
+  auto position = (a + b) / 2.f;
+  auto velocity = 2.f * normalise(position - source) +
+      from_polar((2 * fixed_c::pi * r.fixed()).to_float(), (r.fixed() / 8).to_float());
+  auto diameter = distance(a, b);
+  auto d = distance(source, a) - distance(source, b);
+  if (angle_diff(angle(a - source), angle(b - source)) > 0) {
+    d = -d;
+  }
+  auto angular_velocity = (d / (32.f * diameter)) + r.fixed().to_float() / 64.f;
+  e.add(particle::from(
+      line_particle{
+          .position = position - velocity,
+          .colour = c,
+          .velocity = velocity,
+          .radius = diameter / 2.f,
+          .rotation = angle(b - a) - angular_velocity,
+          .angular_velocity = angular_velocity,
+      },
+      time + r.uint(time)));
+}
+
 template <geom::ShapeNode S>
 void destruct_lines(EmitHandle& e, const auto& parameters, const vec2& source,
                     std::uint32_t time = 16) {
-  auto& r = e.random();
   auto f_source = to_float(source);
   // TODO: something a bit cleverer here? Take velocity of shot into account?
   // Take velocity of destructed shape into account (maybe using same system as will handle
@@ -110,29 +133,7 @@ void destruct_lines(EmitHandle& e, const auto& parameters, const vec2& source,
   // randomness of each line? Make dot particles slightly slower to match?
   geom::iterate(S{}, geom::iterate_lines, parameters, geom::transform{},
                 [&](const vec2& a, const vec2& b, const glm::vec4& c) {
-                  auto fa = to_float(a);
-                  auto fb = to_float(b);
-                  auto position = (fa + fb) / 2.f;
-                  auto velocity = (r.fixed().to_float() + .5f) * normalise(position - f_source) +
-                      from_polar((2 * fixed_c::pi * r.fixed()).to_float(),
-                                 (r.fixed() / 8).to_float());
-                  auto diameter = distance(fa, fb);
-                  auto d = distance(f_source, fa) - distance(f_source, fb);
-                  if (angle_diff(angle(fa - f_source), angle(fb - f_source)) > 0) {
-                    d = -d;
-                  }
-                  auto angular_velocity =
-                      (d / (8.f * diameter)) * r.fixed().to_float() + r.fixed().to_float() / 32.f;
-                  e.add(particle::from(
-                      line_particle{
-                          .position = position,
-                          .colour = c,
-                          .velocity = velocity,
-                          .radius = diameter / 2.f,
-                          .rotation = angle(fb - fa) - angular_velocity,
-                          .angular_velocity = angular_velocity,
-                      },
-                      time + r.uint(time)));
+                  add_line_particle(e, f_source, to_float(a), to_float(b), c, time);
                 });
 }
 

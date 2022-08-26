@@ -85,6 +85,7 @@ void RenderState::handle_output(ISimState& state, Mixer* mixer, IoInputAdapter* 
 }
 
 void RenderState::update() {
+  std::vector<particle> new_particles;
   for (auto& particle : particles_) {
     if (particle.time == particle.end_time) {
       continue;
@@ -93,10 +94,35 @@ void RenderState::update() {
     if (auto* p = std::get_if<dot_particle>(&particle.data)) {
       p->position += p->velocity;
     } else if (auto* p = std::get_if<line_particle>(&particle.data)) {
+      if (particle.time >= particle.end_time / 3 && particle.time > 4 &&
+          !engine_.uint(50u - std::min(48u, static_cast<std::uint32_t>(p->radius)))) {
+        auto v = from_polar(p->rotation, p->radius);
+        line_particle pn;
+        pn.colour = p->colour;
+        pn.velocity = p->velocity + normalise(v);
+        pn.radius = p->radius / 2.f;
+        pn.angular_velocity = p->angular_velocity + glm::pi<float>() / 64.f;
+        pn.position = p->position + v / 2.f + pn.velocity;
+        pn.rotation = p->rotation + pn.angular_velocity;
+
+        ii::particle ppn;
+        ppn.data = pn;
+        ppn.time = std::max(4u, particle.time - 4u);
+        ppn.end_time = particle.end_time - 1;
+        new_particles.emplace_back(ppn);
+
+        p->velocity -= normalise(v);
+        p->position -= v / 2.f;
+        p->angular_velocity -= glm::pi<float>() / 64.f;
+        p->radius /= 2.f;
+        particle.time = ppn.time;
+        --particle.end_time;
+      }
       p->position += p->velocity;
       p->rotation = normalise_angle(p->rotation + p->angular_velocity);
     }
   }
+  particles_.insert(particles_.end(), new_particles.begin(), new_particles.end());
   std::erase_if(particles_, [](const particle& p) { return p.time == p.end_time; });
 
   auto create_star = [&] {
@@ -166,13 +192,16 @@ void RenderState::render(render::GlRenderer& r) const {
       render_box(p->position, glm::vec2{1.5f, 1.5f}, p->colour, 1.f);
     } else if (const auto* p = std::get_if<line_particle>(&particle.data)) {
       auto v = from_polar(p->rotation, p->radius);
+      float t = std::max(0.f, (17.f - particle.time) / 16.f);
       render::line line;
-      line.colour = particle.time <= 1
-          ? glm::vec4{1.f}
-          : glm::vec4{p->colour.r, p->colour.g, p->colour.b,
-                      .5f - .5f * (static_cast<float>(particle.time) / particle.end_time)};
+      line.colour = glm::vec4{
+          p->colour.x, p->colour.y, particle.time <= 3 ? 1.f : p->colour.z,
+          particle.time <= 3
+              ? 1.f
+              : .5f - .5f * (static_cast<float>(particle.time - 4) / (particle.end_time - 4))};
       line.a = p->position + v;
       line.b = p->position - v;
+      line.line_width = glm::mix(1.f, 1.5f, t);
       shapes.emplace_back(render::shape::from(line));
     }
   }
