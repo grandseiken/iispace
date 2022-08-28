@@ -70,14 +70,15 @@ void iterate_entity_attachment_points(ecs::const_handle h,
 template <geom::ShapeNode S>
 void explode_shapes(EmitHandle& e, const auto& parameters,
                     const std::optional<glm::vec4> colour_override = std::nullopt,
-                    std::uint32_t time = 8, const std::optional<vec2>& towards = std::nullopt) {
+                    std::uint32_t time = 8, const std::optional<vec2>& towards = std::nullopt,
+                    std::optional<float> speed = std::nullopt) {
   std::optional<glm::vec2> towards_float;
   if (towards) {
     towards_float = to_float(*towards);
   }
   geom::iterate(S{}, geom::iterate_centres, parameters, geom::transform{},
                 [&](const vec2& v, const glm::vec4& c) {
-                  e.explosion(to_float(v), colour_override.value_or(c), time, towards_float);
+                  e.explosion(to_float(v), colour_override.value_or(c), time, towards_float, speed);
                 });
 }
 
@@ -85,17 +86,13 @@ template <ecs::Component Logic, geom::ShapeNode S = typename Logic::shape>
 void explode_entity_shapes(ecs::const_handle h, EmitHandle& e,
                            const std::optional<glm::vec4> colour_override = std::nullopt,
                            std::uint32_t time = 8,
-                           const std::optional<vec2>& towards = std::nullopt) {
+                           const std::optional<vec2>& towards = std::nullopt,
+                           std::optional<float> speed = std::nullopt) {
   if constexpr (requires { &Logic::explode_shapes; }) {
-    ecs::call<&Logic::explode_shapes>(h, e, colour_override, time, towards);
+    ecs::call<&Logic::explode_shapes>(h, e, colour_override, time, towards, speed);
   } else {
-    explode_shapes<S>(e, get_shape_parameters<Logic>(h), colour_override, time, towards);
+    explode_shapes<S>(e, get_shape_parameters<Logic>(h), colour_override, time, towards, speed);
   }
-}
-
-template <ecs::Component Logic, geom::ShapeNode S = typename Logic::shape>
-void explode_entity_shapes_default(ecs::const_handle h, SimInterface&, EmitHandle& e) {
-  return explode_entity_shapes<Logic, S>(h, e);
 }
 
 inline void add_line_particle(EmitHandle& e, const glm::vec2& source, const glm::vec2& a,
@@ -129,8 +126,6 @@ void destruct_lines(EmitHandle& e, const auto& parameters, const vec2& source,
   // TODO: something a bit cleverer here? Take velocity of shot into account?
   // Take velocity of destructed shape into account (maybe using same system as will handle
   // motion trails)?
-  // Split lines that are too long into smaller ones? Slightly more coherence between
-  // randomness of each line? Make dot particles slightly slower to match?
   geom::iterate(S{}, geom::iterate_lines, parameters, geom::transform{},
                 [&](const vec2& a, const vec2& b, const glm::vec4& c) {
                   add_line_particle(e, f_source, to_float(a), to_float(b), c, time);
@@ -138,9 +133,20 @@ void destruct_lines(EmitHandle& e, const auto& parameters, const vec2& source,
 }
 
 template <ecs::Component Logic, geom::ShapeNode S = typename Logic::shape>
-void destruct_entity_lines(ecs::const_handle h, SimInterface&, EmitHandle& e, damage_type,
-                           const vec2& source) {
-  destruct_lines<S>(e, get_shape_parameters<Logic>(h), source);
+void destruct_entity_lines(ecs::const_handle h, EmitHandle& e, const vec2& source,
+                           std::uint32_t time = 16) {
+  if constexpr (requires { &Logic::destruct_lines; }) {
+    ecs::call<&Logic::destruct_lines>(h, e, source, time);
+  } else {
+    destruct_lines<S>(e, get_shape_parameters<Logic>(h), source, time);
+  }
+}
+
+template <ecs::Component Logic, geom::ShapeNode S = typename Logic::shape>
+void destruct_entity_default(ecs::const_handle h, SimInterface&, EmitHandle& e, damage_type,
+                             const vec2& source) {
+  explode_entity_shapes<Logic, S>(h, e, std::nullopt, 10, std::nullopt, 1.5f);
+  destruct_entity_lines<Logic, S>(h, e, source);
 }
 
 template <geom::ShapeNode S>
@@ -240,8 +246,7 @@ void add_enemy_health(ecs::handle h, std::uint32_t hp,
   destroy_sound = destroy_sound ? *destroy_sound : Logic::kDestroySound;
   using on_destroy_t =
       void(ecs::const_handle, SimInterface&, EmitHandle&, damage_type, const vec2&);
-  constexpr auto explode_shapes = sfn::cast<on_destroy_t, &explode_entity_shapes_default<Logic, S>>;
-  constexpr auto on_destroy = sfn::sequence<explode_shapes, &destruct_entity_lines<Logic, S>>;
+  constexpr auto on_destroy = sfn::cast<on_destroy_t, &destruct_entity_default<Logic, S>>;
   if constexpr (requires { &Logic::on_destroy; }) {
     h.add(Health{
         .hp = hp,

@@ -52,8 +52,9 @@ struct SuperBossArc : public ecs::component {
   }
 
   void on_destroy(const Transform& transform, SimInterface&, EmitHandle& e, damage_type,
-                  const vec2& /* TODO */) const {
+                  const vec2& source) const {
     auto parameters = shape_parameters(transform);
+    destruct_lines<shape>(e, parameters, source, 64);
     std::get<0>(parameters) += from_polar(i * 2 * fixed_c::pi / 16 + transform.rotation, 120_fx);
     explode_shapes<shape>(e, parameters);
     explode_shapes<shape>(e, parameters, glm::vec4{1.f}, 12);
@@ -237,7 +238,7 @@ struct SuperBoss : ecs::component {
   }
 
   void on_destroy(ecs::const_handle h, const Transform& transform, SimInterface& sim, EmitHandle& e,
-                  damage_type, const vec2& /* TODO */) const {
+                  damage_type, const vec2& source) const {
     sim.index().iterate_dispatch_if<Enemy>([&](ecs::handle eh, Health& health) {
       if (eh.id() != h.id()) {
         health.damage(eh, sim, 100 * Player::kBombDamage, damage_type::kBomb, h.id());
@@ -249,6 +250,7 @@ struct SuperBoss : ecs::component {
     explode_shapes<shape>(e, parameters, std::nullopt, 24);
     explode_shapes<shape>(e, parameters, glm::vec4{1.f}, 36);
     explode_shapes<shape>(e, parameters, std::nullopt, 48);
+    destruct_lines<shape>(e, parameters, source, 64);
 
     std::uint32_t n = 1;
     for (std::uint32_t i = 0; i < 16; ++i) {

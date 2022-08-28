@@ -21,7 +21,7 @@ void boss_on_hit(ecs::handle h, SimInterface& sim, EmitHandle& e, damage_type ty
 
 template <ecs::Component Logic, geom::ShapeNode S = typename Logic::shape>
 void boss_on_destroy(ecs::const_handle h, const Transform& transform, SimInterface& sim,
-                     EmitHandle& e, damage_type, const vec2& /* TODO */) {
+                     EmitHandle& e, damage_type, const vec2& source) {
   sim.index().iterate_dispatch_if<Enemy>([&](ecs::handle eh, Health& health) {
     if (eh.id() != h.id()) {
       health.damage(eh, sim, Player::kBombDamage, damage_type::kBomb, h.id());
@@ -40,6 +40,7 @@ void boss_on_destroy(ecs::const_handle h, const Transform& transform, SimInterfa
   explode_entity_shapes<Logic, S>(h, e, boss_colour, 24);
   explode_entity_shapes<Logic, S>(h, e, glm::vec4{1.f}, 36);
   explode_entity_shapes<Logic, S>(h, e, boss_colour, 48);
+  destruct_entity_lines<Logic, S>(h, e, source, 64);
   std::uint32_t n = 1;
   auto& random = sim.random(random_source::kLegacyAesthetic);
   for (std::uint32_t i = 0; i < 16; ++i) {

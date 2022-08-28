@@ -91,6 +91,8 @@ struct dot_particle {
   glm::vec2 position{0.f};
   glm::vec4 colour{0.f};
   glm::vec2 velocity{0.f};
+  float radius = 1.5f;
+  float line_width = 1.f;
 };
 
 struct line_particle {

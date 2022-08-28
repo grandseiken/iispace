@@ -38,17 +38,25 @@ EmitHandle& EmitHandle::add(particle particle) {
 }
 
 EmitHandle& EmitHandle::explosion(const glm::vec2& v, const glm::vec4& c, std::uint32_t time,
-                                  const std::optional<glm::vec2>& towards) {
+                                  const std::optional<glm::vec2>& towards,
+                                  std::optional<float> speed) {
   auto& r = sim->random(random_source::kLegacyAesthetic);
+  auto& ra = sim->random(random_source::kAesthetic);
   auto n = towards ? r.rbool() + 1 : r.uint(8) + 8;
   for (std::uint32_t i = 0; i < n; ++i) {
-    auto dir = from_polar(r.fixed().to_float() * 2 * glm::pi<float>(), 6.f);
+    float rspeed = speed ? *speed * (1.f + ra.fixed().to_float()) : 6.f;
+    auto dir = from_polar(r.fixed().to_float() * 2 * glm::pi<float>(), rspeed);
     if (towards && *towards - v != glm::vec2{0.f}) {
       dir = glm::normalize(*towards - v);
       float angle = std::atan2(dir.y, dir.x) + (r.fixed().to_float() - 0.5f) * glm::pi<float>() / 4;
-      dir = from_polar(angle, 6.f);
+      dir = from_polar(angle, rspeed);
     }
-    add(particle::from(dot_particle{v, c, dir}, time + r.uint(8)));
+    dot_particle p{v, c, dir};
+    if (speed && ra.rbool()) {
+      p.line_width = 2.f;
+      p.radius = 1.f;
+    }
+    add(particle::from(p, time + r.uint(8)));
   }
   return *this;
 }

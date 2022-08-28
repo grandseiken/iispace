@@ -189,19 +189,18 @@ void RenderState::render(render::GlRenderer& r) const {
 
   for (const auto& particle : particles_) {
     if (const auto* p = std::get_if<dot_particle>(&particle.data)) {
-      render_box(p->position, glm::vec2{1.5f, 1.5f}, p->colour, 1.f);
+      render_box(p->position, glm::vec2{p->radius, p->radius}, p->colour, p->line_width);
     } else if (const auto* p = std::get_if<line_particle>(&particle.data)) {
       auto v = from_polar(p->rotation, p->radius);
       float t = std::max(0.f, (17.f - particle.time) / 16.f);
+      float a = particle.time <= 3
+          ? 1.f
+          : .5f * (1.f - static_cast<float>(particle.time - 4) / (particle.end_time - 4));
       render::line line;
-      line.colour = glm::vec4{
-          p->colour.x, p->colour.y, particle.time <= 3 ? 1.f : p->colour.z,
-          particle.time <= 3
-              ? 1.f
-              : .5f - .5f * (static_cast<float>(particle.time - 4) / (particle.end_time - 4))};
+      line.colour = {p->colour.x, p->colour.y, particle.time <= 3 ? 1.f : p->colour.z, a};
       line.a = p->position + v;
       line.b = p->position - v;
-      line.line_width = glm::mix(1.f, 1.5f, t);
+      line.line_width = glm::mix(1.f, 2.f, t);
       shapes.emplace_back(render::shape::from(line));
     }
   }

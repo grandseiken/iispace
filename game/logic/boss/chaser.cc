@@ -244,7 +244,7 @@ struct ChaserBoss : ecs::component {
   }
 
   void on_destroy(ecs::const_handle h, const Transform& transform, SimInterface& sim, EmitHandle& e,
-                  damage_type, const vec2& /* TODO */) const {
+                  damage_type, const vec2& source) const {
     bool last = false;
     if (split < kMaxSplit) {
       for (std::uint32_t i = 0; i < 2; ++i) {
@@ -291,6 +291,7 @@ struct ChaserBoss : ecs::component {
     if (split < 1 || last) {
       explode_entity_shapes<ChaserBoss>(h, e, c, 48);
     }
+    destruct_entity_lines<ChaserBoss>(h, e, source);
 
     if (split < 3 || last) {
       e.play(sound::kExplosion, transform.centre);

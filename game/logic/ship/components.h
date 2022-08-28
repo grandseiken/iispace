@@ -115,6 +115,10 @@ struct Health : ecs::component {
     return 3 * hp <= max_hp + max_hp / 5;
   }
 
+  // TODO: keep a list of recent players and/or source positions?
+  // This could be used to e.g.:
+  // - rumble for everyone recently shooting
+  // - fire particles on death in averaged direction
   void damage(ecs::handle h, SimInterface&, std::uint32_t damage, damage_type type,
               ecs::entity_id source_id, std::optional<vec2> source_position = std::nullopt);
 };
