@@ -28,8 +28,10 @@ void RenderState::handle_output(ISimState& state, Mixer* mixer, IoInputAdapter* 
 
   std::unordered_map<sound, sound_average> sound_map;
   std::vector<bool> rumbled;
-  rumbled.resize(input->player_count());
-  rumble_.resize(input->player_count());
+  if (input) {
+    rumbled.resize(input->player_count());
+    rumble_.resize(input->player_count());
+  }
 
   auto& output = state.output();
   for (auto it = output.entries.begin(); it != output.entries.end();) {
@@ -79,8 +81,9 @@ void RenderState::handle_output(ISimState& state, Mixer* mixer, IoInputAdapter* 
   }
 
   // Final resolution.
-  for (std::uint32_t i = 0; i < input->player_count(); ++i) {
+  for (std::uint32_t i = 0; input && i < input->player_count(); ++i) {
     if (rumbled[i]) {
+      // TODO: screen shake?
       auto r = resolve_rumble(i);
       input->rumble(i, r.lf, r.hf, ticks_to_ms(r.time_ticks));
     }
@@ -135,6 +138,8 @@ void RenderState::update(IoInputAdapter* input) {
         ppn.data = pn;
         ppn.time = std::max(4u, particle.time - 4u);
         ppn.end_time = particle.end_time - 1;
+        ppn.flash_time = 0;
+        ppn.fade = particle.fade;
         new_particles.emplace_back(ppn);
 
         p->velocity -= normalise(v);
@@ -236,16 +241,22 @@ void RenderState::render(render::GlRenderer& r) const {
   }
 
   for (const auto& particle : particles_) {
+    auto get_colour = [&](glm::vec4 c) {
+      float a = particle.time <= particle.flash_time || !particle.fade ? 1.f
+                                                                       : .5f *
+              (1.f -
+               static_cast<float>(particle.time - particle.flash_time - 1) /
+                   (particle.end_time - particle.flash_time - 1));
+      return glm::vec4{c.x, c.y, particle.time <= particle.flash_time ? 1.f : c.z, a};
+    };
     if (const auto* p = std::get_if<dot_particle>(&particle.data)) {
-      render_box(p->position, glm::vec2{p->radius, p->radius}, p->colour, p->line_width);
+      render_box(p->position, glm::vec2{p->radius, p->radius}, get_colour(p->colour),
+                 p->line_width);
     } else if (const auto* p = std::get_if<line_particle>(&particle.data)) {
       auto v = from_polar(p->rotation, p->radius);
       float t = std::max(0.f, (17.f - particle.time) / 16.f);
-      float a = particle.time <= 3
-          ? 1.f
-          : .5f * (1.f - static_cast<float>(particle.time - 4) / (particle.end_time - 4));
       render::line line;
-      line.colour = {p->colour.x, p->colour.y, particle.time <= 3 ? 1.f : p->colour.z, a};
+      line.colour = get_colour(p->colour);
       line.a = p->position + v;
       line.b = p->position - v;
       line.line_width = glm::mix(1.f, 2.f, t);

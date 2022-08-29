@@ -112,6 +112,12 @@ struct Health : ecs::component {
   std::optional<sound> destroy_sound = sound::kEnemyDestroy;
   std::optional<rumble_type> destroy_rumble;
 
+  struct hit_t {
+    vec2 source{0, 0};
+    std::uint64_t tick = 0;
+  };
+  std::vector<hit_t> hits;
+
   sfn::ptr<std::uint32_t(ecs::handle, SimInterface&, damage_type, std::uint32_t)> damage_transform =
       nullptr;
   sfn::ptr<void(ecs::handle, SimInterface&, EmitHandle&, damage_type, const vec2&)> on_hit =
@@ -124,10 +130,6 @@ struct Health : ecs::component {
     return 3 * hp <= max_hp + max_hp / 5;
   }
 
-  // TODO: keep a list of recent players and/or source positions? Do this now!
-  // This could be used to e.g.:
-  // - rumble for everyone recently shooting
-  // - fire particles on death in averaged direction
   void damage(ecs::handle h, SimInterface&, std::uint32_t damage, damage_type type,
               ecs::entity_id source_id, std::optional<vec2> source_position = std::nullopt);
 };

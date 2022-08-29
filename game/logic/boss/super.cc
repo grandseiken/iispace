@@ -250,7 +250,7 @@ struct SuperBoss : ecs::component {
     explode_shapes<shape>(e, parameters, std::nullopt, 24);
     explode_shapes<shape>(e, parameters, glm::vec4{1.f}, 36);
     explode_shapes<shape>(e, parameters, std::nullopt, 48);
-    destruct_lines<shape>(e, parameters, source, 64);
+    destruct_lines<shape>(e, parameters, source, 128);
 
     std::uint32_t n = 1;
     for (std::uint32_t i = 0; i < 16; ++i) {

@@ -107,7 +107,7 @@ inline void add_line_particle(EmitHandle& e, const glm::vec2& source, const glm:
     d = -d;
   }
   auto angular_velocity = (d / (32.f * diameter)) + r.fixed().to_float() / 64.f;
-  e.add(particle::from(
+  auto p = particle::from(
       line_particle{
           .position = position - velocity,
           .colour = c,
@@ -116,7 +116,10 @@ inline void add_line_particle(EmitHandle& e, const glm::vec2& source, const glm:
           .rotation = angle(b - a) - angular_velocity,
           .angular_velocity = angular_velocity,
       },
-      time + r.uint(time)));
+      time + r.uint(time));
+  p.flash_time = 3;
+  p.fade = true;
+  e.add(p);
 }
 
 template <geom::ShapeNode S>

@@ -58,6 +58,7 @@ struct Shot : ecs::component {
     }
 
     bool destroy = false;
+    bool destroy_particles = false;
     auto generation = sim.index().generation();
     auto collision = sim.collision_list(
         transform.centre, shape_flag::kVulnerable | shape_flag::kShield | shape_flag::kWeakShield);
@@ -69,6 +70,7 @@ struct Shot : ecs::component {
         ecs::call_if<&Health::damage>(e.h, sim, 1, type, player, transform.centre - 2 * velocity);
         if (!magic) {
           destroy = true;
+          destroy_particles = true;
         }
       }
     }
@@ -88,6 +90,27 @@ struct Shot : ecs::component {
       }
     }
     if (destroy) {
+      if (destroy_particles) {
+        auto e = sim.emit(resolve_key::predicted());
+        auto& r = sim.random(random_source::kAesthetic);
+        for (std::uint32_t i = 0; i < 2 + r.uint(2); ++i) {
+          // TODO: position + reflect direction could be more accurate with cleverer hit info.
+          auto v = from_polar(angle(to_float(-velocity)) + 2.f * (.5f - r.fixed().to_float()),
+                              2.f * r.fixed().to_float() + 2.f);
+          auto p = particle::from(
+              dot_particle{
+                  .position = to_float(transform.centre - velocity / 2),
+                  .colour = colour,
+                  .velocity = v,
+                  .radius = 1.f,
+                  .line_width = 1.5f,
+              },
+              8 + r.uint(8));
+          p.flash_time = 3;
+          p.fade = true;
+          e.add(p);
+        }
+      }
       h.emplace<Destroy>();
     }
   }

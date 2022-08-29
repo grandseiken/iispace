@@ -65,9 +65,21 @@ void Health::damage(ecs::handle h, SimInterface& sim, std::uint32_t damage, dama
     return kSimDimensions / 2;
   };
 
+  const auto* pc = sim.index().get<Player>(source_id);
+  auto source_v = get_source_position();
+  auto tick = sim.tick_count();
+  if (pc) {
+    if (pc->player_number >= hits.size()) {
+      hits.resize(pc->player_number + 1);
+    }
+    auto& hit = hits[pc->player_number];
+    hit.source = source_v;
+    hit.tick = tick;
+  }
+
   auto e = sim.emit(resolve_key::reconcile(h.id(), resolve_tag::kOnHit, hp));
   if (on_hit) {
-    on_hit(h, sim, e, type, get_source_position());
+    on_hit(h, sim, e, type, source_v);
   }
 
   if (type != damage_type::kPredicted) {
@@ -86,12 +98,13 @@ void Health::damage(ecs::handle h, SimInterface& sim, std::uint32_t damage, dama
   }
 
   if (!hp) {
+    static constexpr std::uint64_t kRecentHitMaxTicks = 15u;
+
     auto e_destroy = sim.emit(resolve_key::reconcile(h.id(), resolve_tag::kOnDestroy));
     if (destroy_sound) {
       e_destroy.play_random(*destroy_sound, position);
     }
-    if (const auto* pc = sim.index().get<Player>(source_id);
-        pc && destroy_rumble.value_or(rumble_type::kNone) != rumble_type::kNone) {
+    if (pc && destroy_rumble.value_or(rumble_type::kNone) != rumble_type::kNone) {
       std::uint32_t time_ticks = 0;
       float lf = 0.f;
       float hf = 0.f;
@@ -117,10 +130,22 @@ void Health::damage(ecs::handle h, SimInterface& sim, std::uint32_t damage, dama
         hf = .25f;
         break;
       }
-      e_destroy.rumble(pc->player_number, time_ticks, lf, hf);
+      for (std::uint32_t i = 0; i < hits.size(); ++i) {
+        if (tick - hits[i].tick <= kRecentHitMaxTicks) {
+          e_destroy.rumble(i, time_ticks, lf, hf);
+        }
+      }
     }
     if (on_destroy) {
-      on_destroy(h, sim, e_destroy, type, get_source_position());
+      vec2 average_source = source_v;
+      std::uint32_t count = 1;
+      for (const auto& hit : hits) {
+        if (tick - hit.tick <= kRecentHitMaxTicks) {
+          average_source += hit.source;
+          ++count;
+        }
+      }
+      on_destroy(h, sim, e_destroy, type, average_source / count);
     }
     h.add(Destroy{.source = source_id, .destroy_type = type});
   } else {

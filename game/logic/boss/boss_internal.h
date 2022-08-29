@@ -40,7 +40,7 @@ void boss_on_destroy(ecs::const_handle h, const Transform& transform, SimInterfa
   explode_entity_shapes<Logic, S>(h, e, boss_colour, 24);
   explode_entity_shapes<Logic, S>(h, e, glm::vec4{1.f}, 36);
   explode_entity_shapes<Logic, S>(h, e, boss_colour, 48);
-  destruct_entity_lines<Logic, S>(h, e, source, 64);
+  destruct_entity_lines<Logic, S>(h, e, source, 128);
   std::uint32_t n = 1;
   auto& random = sim.random(random_source::kLegacyAesthetic);
   for (std::uint32_t i = 0; i < 16; ++i) {
