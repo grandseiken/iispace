@@ -145,7 +145,7 @@ struct SuperBoss : ecs::component {
       colours[7 - i] = colour_hue(((i * 32 + 2 * ctimer) % 256) / 256.f);
     }
     ++ctimer;
-    if (transform.centre.y < kSimDimensions.y / 2) {
+    if (transform.centre.y < sim.dimensions().y / 2) {
       move_vec = {0, 1};
     } else if (state == state::kArrive) {
       state = state::kIdle;
@@ -272,8 +272,8 @@ DEBUG_STRUCT_TUPLE(SuperBoss, state, cycle, ctimer, timer, snakes, arcs);
 }  // namespace
 
 void spawn_super_boss(SimInterface& sim, std::uint32_t cycle) {
-  auto h =
-      create_ship<SuperBoss>(sim, {kSimDimensions.x / 2, -kSimDimensions.y / (2 + fixed_c::half)});
+  auto h = create_ship<SuperBoss>(
+      sim, {sim.dimensions().x / 2, -sim.dimensions().y / (2 + fixed_c::half)});
   h.add(Enemy{.threat_value = 100,
               .boss_score_reward =
                   calculate_boss_score(boss_flag::kBoss3A, sim.player_count(), cycle)});

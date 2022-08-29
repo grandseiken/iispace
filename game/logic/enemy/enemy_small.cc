@@ -17,13 +17,12 @@ struct Bounce : ecs::component {
   Bounce(fixed angle) : dir{from_polar(angle, 3_fx)} {}
   vec2 dir{0};
 
-  void update(Transform& transform, SimInterface&) {
-    if ((transform.centre.x > kSimDimensions.x && dir.x > 0) ||
-        (transform.centre.x < 0 && dir.x < 0)) {
+  void update(Transform& transform, SimInterface& sim) {
+    auto d = sim.dimensions();
+    if ((transform.centre.x > d.x && dir.x > 0) || (transform.centre.x < 0 && dir.x < 0)) {
       dir.x = -dir.x;
     }
-    if ((transform.centre.y > kSimDimensions.y && dir.y > 0) ||
-        (transform.centre.y < 0 && dir.y < 0)) {
+    if ((transform.centre.y > d.y && dir.y > 0) || (transform.centre.y < 0 && dir.y < 0)) {
       dir.y = -dir.y;
     }
     transform.move(dir);

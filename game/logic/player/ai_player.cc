@@ -133,12 +133,11 @@ input_frame AiPlayer::think(ecs::const_handle h, const Transform& transform, con
     target_velocity = normalise(*wall_attract_v);
   }
 
+  auto dim = sim.dimensions();
   bool l_edge = transform.centre.x < kEdgeAvoidDistance && target_velocity.x < 0;
-  bool r_edge =
-      transform.centre.x >= kSimDimensions.x - kEdgeAvoidDistance && target_velocity.x > 0;
+  bool r_edge = transform.centre.x >= dim.x - kEdgeAvoidDistance && target_velocity.x > 0;
   bool u_edge = transform.centre.y < kEdgeAvoidDistance && target_velocity.y < 0;
-  bool d_edge =
-      transform.centre.y >= kSimDimensions.y - kEdgeAvoidDistance && target_velocity.y > 0;
+  bool d_edge = transform.centre.y >= dim.y - kEdgeAvoidDistance && target_velocity.y > 0;
   if (avoid_v && l_edge && u_edge) {
     if (abs(target_velocity.x) > abs(target_velocity.y)) {
       target_velocity.y = 1;

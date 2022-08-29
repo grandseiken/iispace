@@ -26,9 +26,6 @@ struct player_info;
 struct shape;
 }  // namespace render
 
-// TODO: make this dynamic so it can be changed for non-legacy mode.
-constexpr glm::ivec2 kSimDimensions = {640, 480};
-
 // TODO: to reduce prediction errors, allow each entity to have private sources of
 // (particularly game-state) randomness that will be less likely to diverge.
 enum class random_source {
@@ -74,6 +71,7 @@ public:
 
   // State manipulation.
   const initial_conditions& conditions() const;
+  vec2 dimensions() const;
   bool is_legacy() const;
   input_frame& input(std::uint32_t player_number);
   std::uint64_t tick_count() const;

@@ -180,42 +180,41 @@ struct ChaserBoss : ecs::component {
         sim.index().iterate_dispatch<ChaserBoss>(
             [&](ecs::const_handle sh, const ChaserBoss& cb) { handle_ship(sh, &cb); });
       }
+      auto d = sim.dimensions();
       if (remaining < 4 && split >= kMaxSplit - 1) {
         if ((transform.centre.x < 32 && dir.x < 0) ||
-            (transform.centre.x >= kSimDimensions.x - 32 && dir.x > 0)) {
+            (transform.centre.x >= d.x - 32 && dir.x > 0)) {
           dir.x = -dir.x;
         }
         if ((transform.centre.y < 32 && dir.y < 0) ||
-            (transform.centre.y >= kSimDimensions.y - 32 && dir.y > 0)) {
+            (transform.centre.y >= d.y - 32 && dir.y > 0)) {
           dir.y = -dir.y;
         }
       } else if (remaining < 8 && split >= kMaxSplit - 1) {
-        if ((transform.centre.x < 0 && dir.x < 0) ||
-            (transform.centre.x >= kSimDimensions.x && dir.x > 0)) {
+        if ((transform.centre.x < 0 && dir.x < 0) || (transform.centre.x >= d.x && dir.x > 0)) {
           dir.x = -dir.x;
         }
-        if ((transform.centre.y < 0 && dir.y < 0) ||
-            (transform.centre.y >= kSimDimensions.y && dir.y > 0)) {
+        if ((transform.centre.y < 0 && dir.y < 0) || (transform.centre.y >= d.y && dir.y > 0)) {
           dir.y = -dir.y;
         }
       } else {
         if ((transform.centre.x < -32 && dir.x < 0) ||
-            (transform.centre.x >= kSimDimensions.x + 32 && dir.x > 0)) {
+            (transform.centre.x >= d.x + 32 && dir.x > 0)) {
           dir.x = -dir.x;
         }
         if ((transform.centre.y < -32 && dir.y < 0) ||
-            (transform.centre.y >= kSimDimensions.y + 32 && dir.y > 0)) {
+            (transform.centre.y >= d.y + 32 && dir.y > 0)) {
           dir.y = -dir.y;
         }
       }
 
       if (transform.centre.x < -256) {
         dir = vec2{1, 0};
-      } else if (transform.centre.x >= kSimDimensions.x + 256) {
+      } else if (transform.centre.x >= d.x + 256) {
         dir = vec2{-1, 0};
       } else if (transform.centre.y < -256) {
         dir = vec2{0, 1};
-      } else if (transform.centre.y >= kSimDimensions.y + 256) {
+      } else if (transform.centre.y >= d.y + 256) {
         dir = vec2{0, -1};
       } else {
         dir = normalise(dir);
@@ -303,7 +302,7 @@ struct ChaserBoss : ecs::component {
                                     const vec2& position = vec2{0}, std::uint32_t time = kTimer,
                                     std::uint32_t stagger = 0) {
     auto h = create_ship<ChaserBoss>(
-        sim, !split ? vec2{kSimDimensions.x / 2, -kSimDimensions.y / 2} : position);
+        sim, !split ? vec2{sim.dimensions().x / 2, -sim.dimensions().y / 2} : position);
     h.add(Collision{.flags = shape_flag::kDangerous | shape_flag::kVulnerable | shape_flag::kShield,
                     .bounding_width = 10 * kSplitLookup[ChaserBoss::kMaxSplit - split].pow_1_5,
                     .check = sim.is_legacy()

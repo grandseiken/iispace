@@ -43,7 +43,7 @@ struct Powerup : ecs::component {
     ++frame;
 
     if (!sim.is_on_screen(transform.centre)) {
-      dir = kSimDimensions / 2_fx - transform.centre;
+      dir = sim.dimensions() / 2_fx - transform.centre;
     } else {
       if (first_frame) {
         dir = from_polar(sim.random_fixed() * 2 * fixed_c::pi, 1_fx);

@@ -28,8 +28,9 @@ struct BossShot : ecs::component {
   void update(ecs::handle h, Transform& transform, SimInterface& sim) {
     transform.move(velocity);
     vec2 p = transform.centre;
-    if ((p.x < -10 && velocity.x < 0) || (p.x > kSimDimensions.x + 10 && velocity.x > 0) ||
-        (p.y < -10 && velocity.y < 0) || (p.y > kSimDimensions.y + 10 && velocity.y > 0)) {
+    auto d = sim.dimensions();
+    if ((p.x < -10 && velocity.x < 0) || (p.x > d.x + 10 && velocity.x > 0) ||
+        (p.y < -10 && velocity.y < 0) || (p.y > d.y + 10 && velocity.y > 0)) {
       h.emplace<Destroy>();
     }
     transform.set_rotation(transform.rotation + fixed_c::hundredth * 2);

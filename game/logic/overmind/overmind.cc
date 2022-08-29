@@ -221,10 +221,11 @@ struct Overmind : ecs::component {
 
     auto& random = sim.random(random_source::kGameSequence);
     auto r = random.uint(4);
-    vec2 v = r == 0 ? vec2{-kSimDimensions.x, kSimDimensions.y / 2}
-        : r == 1    ? vec2{kSimDimensions.x * 2, kSimDimensions.y / 2}
-        : r == 2    ? vec2{kSimDimensions.x / 2, -kSimDimensions.y}
-                    : vec2{kSimDimensions.x / 2, kSimDimensions.y * 2};
+    auto dim = sim.dimensions();
+    vec2 v = r == 0 ? vec2{-dim.x, dim.y / 2}
+        : r == 1    ? vec2{dim.x * 2, dim.y / 2}
+        : r == 2    ? vec2{dim.x / 2, -dim.y}
+                    : vec2{dim.x / 2, dim.y * 2};
 
     std::uint32_t m = 4;
     if (sim.player_count() > sim.get_lives()) {
@@ -250,10 +251,11 @@ struct Overmind : ecs::component {
 
   void spawn_boss_reward(SimInterface& sim) {
     auto r = sim.random(random_source::kGameSequence).uint(4);
-    vec2 v = r == 0 ? vec2{-kSimDimensions.x / 4, kSimDimensions.y / 2}
-        : r == 1    ? vec2{kSimDimensions.x + kSimDimensions.x / 4, kSimDimensions.y / 2}
-        : r == 2    ? vec2{kSimDimensions.x / 2, -kSimDimensions.y / 4}
-                    : vec2{kSimDimensions.x / 2, kSimDimensions.y + kSimDimensions.y / 4};
+    auto dim = sim.dimensions();
+    vec2 v = r == 0 ? vec2{-dim.x / 4, dim.y / 2}
+        : r == 1    ? vec2{dim.x + dim.x / 4, dim.y / 2}
+        : r == 2    ? vec2{dim.x / 2, -dim.y / 4}
+                    : vec2{dim.x / 2, dim.y + dim.y / 4};
 
     ii::spawn_powerup(sim, v, powerup_type::kExtraLife);
     if (sim.conditions().mode != game_mode::kBoss) {

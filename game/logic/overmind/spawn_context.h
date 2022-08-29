@@ -37,10 +37,11 @@ struct SpawnContext {
     i = std::min(n - 1, i);
 
     bool top = d == spawn_direction::kTop;
-    auto x = fixed{static_cast<std::int32_t>(top ? i : n - 1 - i)} * kSimDimensions.x /
+    auto dim = sim->dimensions();
+    auto x = fixed{static_cast<std::int32_t>(top ? i : n - 1 - i)} * dim.x /
         fixed{static_cast<std::int32_t>(n - 1)};
-    auto y = top ? -((row + 1) * (fixed_c::hundredth * 16) * kSimDimensions.y)
-                 : kSimDimensions.y * (1 + (row + 1) * (fixed_c::hundredth * 16));
+    auto y = top ? -((row + 1) * (fixed_c::hundredth * 16) * dim.y)
+                 : dim.y * (1 + (row + 1) * (fixed_c::hundredth * 16));
     return vec2{x, y};
   }
 

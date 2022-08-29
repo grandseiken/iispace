@@ -62,7 +62,7 @@ void Health::damage(ecs::handle h, SimInterface& sim, std::uint32_t damage, dama
     if (auto* t = h.get<Transform>(); t) {
       return t->centre;
     }
-    return kSimDimensions / 2;
+    return sim.dimensions() / 2;
   };
 
   const auto* pc = sim.index().get<Player>(source_id);
@@ -85,7 +85,7 @@ void Health::damage(ecs::handle h, SimInterface& sim, std::uint32_t damage, dama
   if (type != damage_type::kPredicted) {
     hp = hp < damage ? 0 : hp - damage;
   }
-  vec2 position = {kSimDimensions.x / 2, kSimDimensions.y / 2};
+  auto position = sim.dimensions() / 2;
   if (auto* c = h.get<Transform>()) {
     position = c->centre;
   }

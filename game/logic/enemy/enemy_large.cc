@@ -56,12 +56,13 @@ struct FollowHub : ecs::component {
       }
     }
 
-    dir = transform.centre.x < 0                ? vec2{1, 0}
-        : transform.centre.x > kSimDimensions.x ? vec2{-1, 0}
-        : transform.centre.y < 0                ? vec2{0, 1}
-        : transform.centre.y > kSimDimensions.y ? vec2{0, -1}
-        : count > 3 ? (count = 0, sim.rotate_compatibility(dir, -fixed_c::pi / 2))
-                    : dir;
+    auto d = sim.dimensions();
+    dir = transform.centre.x < 0   ? vec2{1, 0}
+        : transform.centre.x > d.x ? vec2{-1, 0}
+        : transform.centre.y < 0   ? vec2{0, 1}
+        : transform.centre.y > d.y ? vec2{0, -1}
+        : count > 3                ? (count = 0, sim.rotate_compatibility(dir, -fixed_c::pi / 2))
+                                   : dir;
 
     auto s = power_a ? fixed_c::hundredth * 5 + fixed_c::tenth : fixed_c::hundredth * 5;
     transform.rotate(s);
@@ -122,11 +123,12 @@ struct Shielder : ecs::component {
     transform.rotate(s);
 
     bool on_screen = false;
-    dir = transform.centre.x < 0                ? vec2{1, 0}
-        : transform.centre.x > kSimDimensions.x ? vec2{-1, 0}
-        : transform.centre.y < 0                ? vec2{0, 1}
-        : transform.centre.y > kSimDimensions.y ? vec2{0, -1}
-                                                : (on_screen = true, dir);
+    auto dim = sim.dimensions();
+    dir = transform.centre.x < 0     ? vec2{1, 0}
+        : transform.centre.x > dim.x ? vec2{-1, 0}
+        : transform.centre.y < 0     ? vec2{0, 1}
+        : transform.centre.y > dim.y ? vec2{0, -1}
+                                     : (on_screen = true, dir);
 
     if (!on_screen && rotate) {
       timer = 0;
@@ -196,13 +198,14 @@ struct Tractor : ecs::component {
   void update(Transform& transform, SimInterface& sim) {
     spoke_r = normalise_angle(spoke_r + fixed_c::hundredth);
 
+    auto dim = sim.dimensions();
     if (transform.centre.x < 0) {
       dir = vec2{1, 0};
-    } else if (transform.centre.x > kSimDimensions.x) {
+    } else if (transform.centre.x > dim.x) {
       dir = vec2{-1, 0};
     } else if (transform.centre.y < 0) {
       dir = vec2{0, 1};
-    } else if (transform.centre.y > kSimDimensions.y) {
+    } else if (transform.centre.y > dim.y) {
       dir = vec2{0, -1};
     } else {
       ++timer;

@@ -44,16 +44,17 @@ struct BigSquareBoss : public ecs::component {
   std::optional<ecs::entity_id> attack_player;
 
   void update(Transform& transform, const Health& health, SimInterface& sim) {
-    if (transform.centre.y < kSimDimensions.y * fixed_c::hundredth * 25 && dir.y == -1) {
+    auto d = sim.dimensions();
+    if (transform.centre.y < d.y * fixed_c::hundredth * 25 && dir.y == -1) {
       dir = {reverse ? 1 : -1, 0};
     }
-    if (transform.centre.x < kSimDimensions.x * fixed_c::hundredth * 25 && dir.x == -1) {
+    if (transform.centre.x < d.x * fixed_c::hundredth * 25 && dir.x == -1) {
       dir = {0, reverse ? -1 : 1};
     }
-    if (transform.centre.y > kSimDimensions.y * fixed_c::hundredth * 75 && dir.y == 1) {
+    if (transform.centre.y > d.y * fixed_c::hundredth * 75 && dir.y == 1) {
       dir = {reverse ? -1 : 1, 0};
     }
-    if (transform.centre.x > kSimDimensions.x * fixed_c::hundredth * 75 && dir.x == 1) {
+    if (transform.centre.x > d.x * fixed_c::hundredth * 75 && dir.x == 1) {
       dir = {0, reverse ? 1 : -1};
     }
 
@@ -134,7 +135,7 @@ DEBUG_STRUCT_TUPLE(BigSquareBoss, dir, reverse, timer, spawn_timer, special_time
 
 void spawn_big_square_boss(SimInterface& sim, std::uint32_t cycle) {
   auto h = create_ship<BigSquareBoss>(
-      sim, {kSimDimensions.x * fixed_c::hundredth * 75, kSimDimensions.y * 2});
+      sim, {sim.dimensions().x * fixed_c::hundredth * 75, sim.dimensions().y * 2});
   h.add(Enemy{.threat_value = 100,
               .boss_score_reward =
                   calculate_boss_score(boss_flag::kBoss1A, sim.player_count(), cycle)});

@@ -19,24 +19,24 @@ constexpr glm::vec4 c1 = colour_hue360(280, .5f, .6f);
 constexpr glm::vec4 c2 = colour_hue360(270, .2f);
 
 struct GhostWall : ecs::component {
-  static constexpr fixed kBoundingWidth = kSimDimensions.x;
+  static constexpr fixed kBoundingWidth = 640;
   static constexpr sound kDestroySound = sound::kEnemyDestroy;
   static constexpr rumble_type kDestroyRumble = rumble_type::kNone;
   static constexpr fixed kSpeed = 3 + 1_fx / 2;
-  static constexpr fixed kOffsetH = 20 + kSimDimensions.y / 2;
+  static constexpr fixed kOffsetH = 260;
 
   template <std::uint32_t length>
   using gw_box =
       geom::compound<geom::box<length, 10, c0, shape_flag::kDangerous | shape_flag::kShield>,
                      geom::box<length, 7, c0>, geom::box<length, 4, c0>>;
-  using gw_horizontal_base = geom::rotate<fixed_c::pi / 2, gw_box<kSimDimensions.y / 2>>;
+  using gw_horizontal_base = geom::rotate<fixed_c::pi / 2, gw_box<240>>;
   template <fixed Y0, fixed Y1>
   using gw_horizontal_align = geom::compound<geom::translate<0, Y0, gw_horizontal_base>,
                                              geom::translate<0, Y1, gw_horizontal_base>>;
   using shape = geom::translate_p<
       0,
       geom::conditional_p<
-          1, geom::conditional_p<2, gw_box<kSimDimensions.x>, gw_box<kSimDimensions.y / 2>>,
+          1, geom::conditional_p<2, gw_box<640>, gw_box<240>>,
           geom::conditional_p<2, gw_horizontal_align<-100 - kOffsetH, -100 + kOffsetH>,
                               gw_horizontal_align<100 - kOffsetH, 100 + kOffsetH>>>>;
 
@@ -51,18 +51,19 @@ struct GhostWall : ecs::component {
   bool vertical = false;
   bool gap_swap = false;
 
-  void update(ecs::handle h, Transform& transform, SimInterface&) {
+  void update(ecs::handle h, Transform& transform, SimInterface& sim) {
+    auto d = sim.dimensions();
     if ((dir.x > 0 && transform.centre.x < 32) || (dir.y > 0 && transform.centre.y < 16) ||
-        (dir.x < 0 && transform.centre.x >= kSimDimensions.x - 32) ||
-        (dir.y < 0 && transform.centre.y >= kSimDimensions.y - 16)) {
+        (dir.x < 0 && transform.centre.x >= d.x - 32) ||
+        (dir.y < 0 && transform.centre.y >= d.y - 16)) {
       transform.move(dir * kSpeed / 2);
     } else {
       transform.move(dir * kSpeed);
     }
 
-    if ((dir.x > 0 && transform.centre.x > kSimDimensions.x + 10) ||
-        (dir.y > 0 && transform.centre.y > kSimDimensions.y + 10) ||
-        (dir.x < 0 && transform.centre.x < -10) || (dir.y < 0 && transform.centre.y < -10)) {
+    if ((dir.x > 0 && transform.centre.x > d.x + 10) ||
+        (dir.y > 0 && transform.centre.y > d.y + 10) || (dir.x < 0 && transform.centre.x < -10) ||
+        (dir.y < 0 && transform.centre.y < -10)) {
       h.emplace<Destroy>();
     }
   }
@@ -70,7 +71,7 @@ struct GhostWall : ecs::component {
 DEBUG_STRUCT_TUPLE(GhostWall, dir, vertical, gap_swap);
 
 void spawn_ghost_wall_vertical(SimInterface& sim, bool swap, bool no_gap) {
-  vec2 position{kSimDimensions.x / 2, swap ? -10 : 10 + kSimDimensions.y};
+  vec2 position{sim.dimensions().x / 2, swap ? -10 : 10 + sim.dimensions().y};
   vec2 dir{0, swap ? 1 : -1};
   auto h = create_ship<GhostWall>(sim, position);
   add_enemy_health<GhostWall>(h, 0);
@@ -79,7 +80,7 @@ void spawn_ghost_wall_vertical(SimInterface& sim, bool swap, bool no_gap) {
 }
 
 void spawn_ghost_wall_horizontal(SimInterface& sim, bool swap, bool swap_gap) {
-  vec2 position{swap ? -10 : 10 + kSimDimensions.x, kSimDimensions.y / 2};
+  vec2 position{swap ? -10 : 10 + sim.dimensions().x, sim.dimensions().y / 2};
   vec2 dir{swap ? 1 : -1, 0};
   auto h = create_ship<GhostWall>(sim, position);
   add_enemy_health<GhostWall>(h, 0);
@@ -263,8 +264,8 @@ struct GhostBoss : ecs::component {
 
       if (attack == 2) {
         if (attack_time >= kAttackTime * 4 && !(attack_time % 8)) {
-          auto y = sim.random(kSimDimensions.y + 1);
-          auto x = sim.random(kSimDimensions.x + 1);
+          auto y = sim.random(sim.dimensions().y.to_int() + 1);
+          auto x = sim.random(sim.dimensions().x.to_int() + 1);
           vec2 pos{x, y};
           spawn_ghost_mine(sim, pos, h);
           e.play_random(sound::kEnemySpawn, pos);
@@ -304,10 +305,11 @@ struct GhostBoss : ecs::component {
 
       if (attack <= 1 && health.is_hp_low() && attack_time == kAttackTime) {
         auto r = sim.random(4);
-        vec2 v = r == 0 ? vec2{-kSimDimensions.x / 4, kSimDimensions.y / 2}
-            : r == 1    ? vec2{kSimDimensions.x + kSimDimensions.x / 4, kSimDimensions.y / 2}
-            : r == 2    ? vec2{kSimDimensions.x / 2, -kSimDimensions.y / 4}
-                        : vec2{kSimDimensions.x / 2, kSimDimensions.y + kSimDimensions.y / 4};
+        auto d = sim.dimensions();
+        vec2 v = r == 0 ? vec2{-d.x / 4, d.y / 2}
+            : r == 1    ? vec2{d.x + d.x / 4, d.y / 2}
+            : r == 2    ? vec2{d.x / 2, -d.y / 4}
+                        : vec2{d.x / 2, d.y + d.y / 4};
         spawn_big_follow(sim, v, false);
       }
       if (!attack_time && !visible) {
@@ -377,13 +379,11 @@ struct GhostBoss : ecs::component {
   }
 
   using box_attack_component =
-      geom::compound<geom::box<kSimDimensions.x / 2, 10, c0,
-                               shape_flag::kDangerous | shape_flag::kEnemyInteraction>,
-                     geom::box<kSimDimensions.x / 2, 7, c0>,
-                     geom::box<kSimDimensions.x / 2, 4, c0>>;
-  using box_attack_shape = standard_transform<
-      geom::compound<geom::translate<kSimDimensions.x / 2 + 32, 0, box_attack_component>,
-                     geom::translate<-kSimDimensions.x / 2 - 32, 0, box_attack_component>>>;
+      geom::compound<geom::box<320, 10, c0, shape_flag::kDangerous | shape_flag::kEnemyInteraction>,
+                     geom::box<320, 7, c0>, geom::box<320, 4, c0>>;
+  using box_attack_shape =
+      standard_transform<geom::compound<geom::translate<320 + 32, 0, box_attack_component>,
+                                        geom::translate<-320 - 32, 0, box_attack_component>>>;
   std::tuple<vec2, fixed> box_attack_parameters(const Transform& transform) const {
     return {transform.centre, transform.rotation};
   }
@@ -517,7 +517,7 @@ DEBUG_STRUCT_TUPLE(GhostBoss, visible, shot_type, rdir, danger_enable, vtime, ti
 }  // namespace
 
 void spawn_ghost_boss(SimInterface& sim, std::uint32_t cycle) {
-  auto h = create_ship<GhostBoss>(sim, {kSimDimensions.x / 2, kSimDimensions.y / 2});
+  auto h = create_ship<GhostBoss>(sim, sim.dimensions() / 2);
   h.add(Enemy{.threat_value = 100,
               .boss_score_reward =
                   calculate_boss_score(boss_flag::kBoss2B, sim.player_count(), cycle)});

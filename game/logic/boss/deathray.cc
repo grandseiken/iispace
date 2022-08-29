@@ -26,9 +26,9 @@ struct DeathRay : ecs::component {
   using shape = standard_transform<geom::box<10, 48, glm::vec4{0.f}, shape_flag::kDangerous>,
                                    geom::line<0, 48, 0, -48, glm::vec4{1.f}>>;
 
-  void update(ecs::handle h, Transform& transform, SimInterface&) {
+  void update(ecs::handle h, Transform& transform, SimInterface& sim) {
     transform.move(vec2{1, 0} * kSpeed);
-    if (transform.centre.x > kSimDimensions.x + 20) {
+    if (transform.centre.x > sim.dimensions().x + 20) {
       h.emplace<Destroy>();
     }
   }
@@ -185,13 +185,14 @@ struct DeathRayBoss : public ecs::component {
   void update(ecs::handle h, Transform& transform, const Health& health, SimInterface& sim) {
     auto e = sim.emit(resolve_key::predicted());
     bool in_position = true;
-    fixed d = pos == 0 ? 1 * kSimDimensions.y / 4
-        : pos == 1     ? 2 * kSimDimensions.y / 4
-        : pos == 2     ? 3 * kSimDimensions.y / 4
-        : pos == 3     ? 1 * kSimDimensions.y / 8
-        : pos == 4     ? 3 * kSimDimensions.y / 8
-        : pos == 5     ? 5 * kSimDimensions.y / 8
-                       : 7 * kSimDimensions.y / 8;
+    auto sim_dim = sim.dimensions();
+    fixed d = pos == 0 ? 1 * sim_dim.y / 4
+        : pos == 1     ? 2 * sim_dim.y / 4
+        : pos == 2     ? 3 * sim_dim.y / 4
+        : pos == 3     ? 1 * sim_dim.y / 8
+        : pos == 4     ? 3 * sim_dim.y / 8
+        : pos == 5     ? 5 * sim_dim.y / 8
+                       : 7 * sim_dim.y / 8;
     d -= transform.centre.y;
 
     if (abs(d) > 3) {
@@ -370,7 +371,7 @@ std::uint32_t transform_death_ray_boss_damage(ecs::handle h, SimInterface& sim, 
 }  // namespace
 
 void spawn_death_ray_boss(SimInterface& sim, std::uint32_t cycle) {
-  auto h = create_ship<DeathRayBoss>(sim, {kSimDimensions.x * (3_fx / 20), -kSimDimensions.y});
+  auto h = create_ship<DeathRayBoss>(sim, {sim.dimensions().x * (3_fx / 20), -sim.dimensions().y});
   h.add(Enemy{.threat_value = 100,
               .boss_score_reward =
                   calculate_boss_score(boss_flag::kBoss2C, sim.player_count(), cycle)});

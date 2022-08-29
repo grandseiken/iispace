@@ -83,7 +83,10 @@ EmitHandle& EmitHandle::play(sound s, float volume, float pan, float repitch) {
 }
 
 EmitHandle& EmitHandle::play(sound s, const vec2& position, float volume, float repitch) {
-  return play(s, volume, 2.f * position.x.to_float() / kSimDimensions.x - 1.f, repitch);
+  return play(
+      s, volume,
+      2.f * (position.x.to_float() + 1.f / 16) / (sim->dimensions().x.to_int() - 1.f / 8) - 1.f,
+      repitch);
 }
 
 EmitHandle& EmitHandle::play_random(sound s, const vec2& position, float volume) {
@@ -93,6 +96,12 @@ EmitHandle& EmitHandle::play_random(sound s, const vec2& position, float volume)
 
 const initial_conditions& SimInterface::conditions() const {
   return internals_->conditions;
+}
+
+vec2 SimInterface::dimensions() const {
+  // TODO: make this dynamic so it can be changed for non-legacy mode.
+  constexpr glm::ivec2 kSimDimensions = {640, 480};
+  return kSimDimensions;
 }
 
 bool SimInterface::is_legacy() const {
@@ -157,7 +166,7 @@ auto SimInterface::collision_list(const vec2& point, shape_flag mask)
 }
 
 bool SimInterface::is_on_screen(const vec2& point) const {
-  return all(greaterThanEqual(point, vec2{0})) && all(lessThanEqual(point, vec2{kSimDimensions}));
+  return all(greaterThanEqual(point, vec2{0})) && all(lessThanEqual(point, dimensions()));
 }
 
 vec2 SimInterface::rotate_compatibility(const vec2& v, fixed theta) const {

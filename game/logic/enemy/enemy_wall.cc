@@ -41,6 +41,7 @@ struct Square : ecs::component {
     }
 
     const vec2& v = transform.centre;
+    auto dim = sim.dimensions();
     if (v.x < 0 && dir.x <= 0) {
       dir.x = -dir.x;
       if (dir.x <= 0) {
@@ -53,13 +54,13 @@ struct Square : ecs::component {
         dir.y = 1;
       }
     }
-    if (v.x > kSimDimensions.x && dir.x >= 0) {
+    if (v.x > dim.x && dir.x >= 0) {
       dir.x = -dir.x;
       if (dir.x >= 0) {
         dir.x = -1;
       }
     }
-    if (v.y > kSimDimensions.y && dir.y >= 0) {
+    if (v.y > dim.y && dir.y >= 0) {
       dir.y = -dir.y;
       if (dir.y >= 0) {
         dir.y = -1;
@@ -119,9 +120,10 @@ struct Wall : ecs::component {
     }
 
     const auto& v = transform.centre;
+    auto dim = sim.dimensions();
     if ((v.x < 0 && dir.x < -fixed_c::hundredth) || (v.y < 0 && dir.y < -fixed_c::hundredth) ||
-        (v.x > kSimDimensions.x && dir.x > fixed_c::hundredth) ||
-        (v.y > kSimDimensions.y && dir.y > fixed_c::hundredth)) {
+        (v.x > dim.x && dir.x > fixed_c::hundredth) ||
+        (v.y > dim.y && dir.y > fixed_c::hundredth)) {
       dir = -normalise(dir);
     }
 

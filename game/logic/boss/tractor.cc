@@ -78,7 +78,8 @@ struct TractorBoss : ecs::component {
 
   void update(ecs::handle h, Transform& transform, const Health& health, SimInterface& sim) {
     auto e = sim.emit(resolve_key::predicted());
-    if (transform.centre.x <= kSimDimensions.x / 2 && will_attack && !stopped && !move_away) {
+    auto dim_x = sim.dimensions().x;
+    if (transform.centre.x <= dim_x / 2 && will_attack && !stopped && !move_away) {
       stopped = true;
       generating = true;
       gen_dir = !sim.random_bool();
@@ -86,7 +87,7 @@ struct TractorBoss : ecs::component {
     }
 
     if (transform.centre.x < -150) {
-      transform.centre.x = kSimDimensions.x + 150;
+      transform.centre.x = dim_x + 150;
       will_attack = !will_attack;
       shoot_type = sim.random_bool();
       if (will_attack) {
@@ -126,7 +127,7 @@ struct TractorBoss : ecs::component {
         }
         targets.clear();
         sim.index().iterate_dispatch<Player>([&](const Player& p, Transform& p_transform) {
-          if (!p.is_killed() && length(p_transform.centre - transform.centre) <= kSimDimensions.x) {
+          if (!p.is_killed() && length(p_transform.centre - transform.centre) <= dim_x) {
             targets.push_back(p_transform.centre);
             p_transform.centre +=
                 normalise(transform.centre - p_transform.centre) * kTractorBeamSpeed;
@@ -181,8 +182,7 @@ struct TractorBoss : ecs::component {
           targets.clear();
 
           sim.index().iterate_dispatch<Player>([&](const Player& p, Transform& p_transform) {
-            if (!p.is_killed() &&
-                length(p_transform.centre - transform.centre) <= kSimDimensions.x) {
+            if (!p.is_killed() && length(p_transform.centre - transform.centre) <= dim_x) {
               targets.push_back(p_transform.centre);
               p_transform.centre +=
                   normalise(transform.centre - p_transform.centre) * kTractorBeamSpeed;
@@ -190,8 +190,7 @@ struct TractorBoss : ecs::component {
           });
 
           sim.index().iterate_dispatch_if<Enemy>([&](ecs::handle eh, Transform& e_transform) {
-            if (eh.id() == h.id() ||
-                length(e_transform.centre - transform.centre) > kSimDimensions.x) {
+            if (eh.id() == h.id() || length(e_transform.centre - transform.centre) > dim_x) {
               return;
             }
             e.play_random(sound::kBossAttack, transform.centre, /* volume */ .3f);
@@ -283,8 +282,8 @@ DEBUG_STRUCT_TUPLE(TractorBoss, will_attack, stopped, generating, attacking, mov
 }  // namespace
 
 void spawn_tractor_boss(SimInterface& sim, std::uint32_t cycle) {
-  auto h =
-      create_ship<TractorBoss>(sim, {kSimDimensions.x * (1 + fixed_c::half), kSimDimensions.y / 2});
+  auto h = create_ship<TractorBoss>(
+      sim, {sim.dimensions().x * (1 + fixed_c::half), sim.dimensions().y / 2});
   h.add(Enemy{.threat_value = 100,
               .boss_score_reward =
                   calculate_boss_score(boss_flag::kBoss2A, sim.player_count(), cycle)});

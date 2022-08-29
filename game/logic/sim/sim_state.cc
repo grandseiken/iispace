@@ -64,11 +64,13 @@ SimState::SimState(const initial_conditions& conditions, ReplayWriter* replay_wr
 , internals_{std::make_unique<SimInternals>(conditions.seed)}
 , interface_{std::make_unique<SimInterface>(internals_.get())} {
   internals_->conditions = conditions;
+  auto dim = interface_->dimensions();
   if (conditions.compatibility == compatibility_level::kLegacy) {
     internals_->collision_index = std::make_unique<LegacyCollisionIndex>();
   } else {
     internals_->collision_index = std::make_unique<GridCollisionIndex>(
-        glm::uvec2{64, 64}, glm::ivec2{-32, -32}, kSimDimensions + glm::ivec2{32, 32});
+        glm::uvec2{64, 64}, glm::ivec2{-32, -32},
+        glm::ivec2{dim.x.to_int(), dim.y.to_int()} + glm::ivec2{32, 32});
   }
   internals_->global_entity_handle =
       internals_->index.create(GlobalData{.lives = conditions.mode == game_mode::kBoss
@@ -81,7 +83,7 @@ SimState::SimState(const initial_conditions& conditions, ReplayWriter* replay_wr
   spawn_overmind(*interface_);
 
   for (std::uint32_t i = 0; i < conditions.player_count; ++i) {
-    vec2 v((1 + i) * kSimDimensions.x / (1 + conditions.player_count), kSimDimensions.y / 2);
+    vec2 v{(1 + i) * dim.x.to_int() / (1 + conditions.player_count), dim.y / 2};
     spawn_player(*interface_, v, i,
                  /* AI */ std::find(ai_players.begin(), ai_players.end(), i) != ai_players.end());
   }
@@ -210,6 +212,7 @@ const render_output& SimState::render() const {
   internals_->render.boss_hp_bar.reset();
   internals_->render.shapes.clear();
   internals_->render.players.clear();
+  internals_->render.dimensions = to_float(interface_->dimensions());
 
   internals_->index.iterate_dispatch<Render>([&](ecs::const_handle h, const Render& r) {
     if (!h.get<Player>()) {
@@ -243,21 +246,22 @@ const render_output& SimState::render() const {
       interface_->render(render::shape::from(ngon));
     };
 
+    const auto& d = internals_->render.dimensions;
     if (v.x < -4) {
-      auto f = std::max(v.x + kSimDimensions.x, 0.f) / kSimDimensions.x;
+      auto f = std::max(v.x + d.x, 0.f) / d.x;
       render_tri({4, v.y}, glm::pi<float>(), f);
     }
-    if (v.x >= kSimDimensions.x + 4) {
-      auto f = std::max(2 * kSimDimensions.x - v.x, 0.f) / kSimDimensions.x;
-      render_tri({kSimDimensions.x - 4, v.y}, 0.f, f);
+    if (v.x >= d.x + 4) {
+      auto f = std::max(2 * d.x - v.x, 0.f) / d.x;
+      render_tri({d.x - 4, v.y}, 0.f, f);
     }
     if (v.y < -4) {
-      auto f = std::max(v.y + kSimDimensions.y, 0.f) / kSimDimensions.y;
+      auto f = std::max(v.y + d.y, 0.f) / d.y;
       render_tri({v.x, 4}, 3.f * glm::pi<float>() / 2.f, f);
     }
-    if (v.y >= kSimDimensions.y + 4) {
-      auto f = std::max(2 * kSimDimensions.y - v.y, 0.f) / kSimDimensions.y;
-      render_tri({v.x, kSimDimensions.y - 4}, glm::pi<float>() / 2.f, f);
+    if (v.y >= d.y + 4) {
+      auto f = std::max(2 * d.y - v.y, 0.f) / d.y;
+      render_tri({v.x, d.y - 4}, glm::pi<float>() / 2.f, f);
     }
   };
 

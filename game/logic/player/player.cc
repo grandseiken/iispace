@@ -51,7 +51,7 @@ struct Shot : ecs::component {
     }
     transform.move(velocity);
     bool on_screen = all(greaterThanEqual(transform.centre, vec2{-4, -4})) &&
-        all(lessThan(transform.centre, vec2{4 + kSimDimensions.x, 4 + kSimDimensions.y}));
+        all(lessThan(transform.centre, vec2{4, 4} + sim.dimensions()));
     if (!on_screen) {
       h.emplace<Destroy>();
       return;
@@ -175,6 +175,7 @@ struct PlayerLogic : ecs::component {
       return;
     }
 
+    auto dim = sim.dimensions();
     auto& global_data = *sim.global_entity().get<GlobalData>();
     auto& kill_queue = global_data.player_kill_queue;
     if (pc.kill_timer) {
@@ -183,8 +184,8 @@ struct PlayerLogic : ecs::component {
         pc.kill_timer = 0;
         kill_queue.erase(kill_queue.begin());
         invulnerability_timer = kReviveTime;
-        transform.centre = {(1 + pc.player_number) * kSimDimensions.x / (1 + sim.player_count()),
-                            kSimDimensions.y / 2};
+        transform.centre = {(1 + pc.player_number) * dim.x.to_int() / (1 + sim.player_count()),
+                            dim.y / 2};
         sim.emit(resolve_key::reconcile(h.id(), resolve_tag::kRespawn))
             .rumble(pc.player_number, 20, 0.f, 1.f)
             .play(sound::kPlayerRespawn, transform.centre);
@@ -197,9 +198,7 @@ struct PlayerLogic : ecs::component {
     if (length(input.velocity) > fixed_c::hundredth) {
       auto v = length(input.velocity) > 1 ? normalise(input.velocity) : input.velocity;
       transform.set_rotation(angle(v));
-      transform.centre =
-          max(vec2{0},
-              min(vec2{kSimDimensions.x, kSimDimensions.y}, kPlayerSpeed * v + transform.centre));
+      transform.centre = max(vec2{0}, min(dim, kPlayerSpeed * v + transform.centre));
     }
 
     // Bombs.
@@ -247,7 +246,7 @@ struct PlayerLogic : ecs::component {
       auto& random = sim.random(random_source::kLegacyAesthetic);
       float volume = .5f * random.fixed().to_float() + .5f;
       float pitch = (random.fixed().to_float() - 1.f) / 12.f;
-      float pan = 2.f * transform.centre.x.to_float() / kSimDimensions.x - 1.f;
+      float pan = 2.f * transform.centre.x.to_float() / dim.x.to_int() - 1.f;
       sim.emit(resolve_key::predicted()).play(sound::kPlayerFire, volume, pan, pitch);
     }
 

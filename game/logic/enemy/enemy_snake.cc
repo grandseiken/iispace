@@ -93,8 +93,9 @@ struct Snake : ecs::component {
   }
 
   void update(ecs::handle h, Transform& transform, SimInterface& sim) {
-    if (transform.centre.x < -8 || transform.centre.x > kSimDimensions.x + 8 ||
-        transform.centre.y < -8 || transform.centre.y > kSimDimensions.y + 8) {
+    auto d = sim.dimensions();
+    if (transform.centre.x < -8 || transform.centre.x > d.x + 8 || transform.centre.y < -8 ||
+        transform.centre.y > d.y + 8) {
       tail.reset();
       h.emplace<Destroy>();
       return;

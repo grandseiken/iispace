@@ -26,7 +26,6 @@ struct ShieldBombBoss : ecs::component {
       geom::line_eval<geom::constant<rotate(vec2{80, 0}, I* fixed_c::pi / 8)>,
                       geom::constant<rotate(vec2{120, 0}, I* fixed_c::pi / 8)>, geom::parameter<3>>;
 
-  // TODO: maybe want helpers for changing shape flags easier.
   using centre_shape = geom::polygram<48, 8, c0, shape_flag::kDangerous | shape_flag::kVulnerable>;
   using shield_shape = geom::ngon_eval<
       geom::constant<130u>, geom::constant<16u>, geom::parameter<4>,
@@ -64,9 +63,9 @@ struct ShieldBombBoss : ecs::component {
   bool shot_alternate = false;
 
   void update(Transform& transform, const Health& health, SimInterface& sim) {
-    if (!side && transform.centre.x < kSimDimensions.x * fixed_c::tenth * 6) {
+    if (!side && transform.centre.x < sim.dimensions().x * fixed_c::tenth * 6) {
       transform.move(vec2{1, 0} * kSpeed);
-    } else if (side && transform.centre.x > kSimDimensions.x * fixed_c::tenth * 4) {
+    } else if (side && transform.centre.x > sim.dimensions().x * fixed_c::tenth * 4) {
       transform.move(vec2{-1, 0} * kSpeed);
     }
     transform.rotate(-fixed_c::hundredth * 2);
@@ -154,7 +153,7 @@ std::uint32_t transform_shield_bomb_boss_damage(ecs::handle h, SimInterface& sim
 }  // namespace
 
 void spawn_shield_bomb_boss(SimInterface& sim, std::uint32_t cycle) {
-  auto h = create_ship<ShieldBombBoss>(sim, {-kSimDimensions.x / 2, kSimDimensions.y / 2});
+  auto h = create_ship<ShieldBombBoss>(sim, {-sim.dimensions().x / 2, sim.dimensions().y / 2});
   h.add(Enemy{.threat_value = 100,
               .boss_score_reward =
                   calculate_boss_score(boss_flag::kBoss1B, sim.player_count(), cycle)});
