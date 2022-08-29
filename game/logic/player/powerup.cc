@@ -99,9 +99,13 @@ struct Powerup : ecs::component {
     auto& random = sim.random(random_source::kLegacyAesthetic);
     auto r = 5 + random.uint(5);
     for (std::uint32_t i = 0; i < r; ++i) {
-      vec2 dir = from_polar(random.fixed() * 2 * fixed_c::pi, 6_fx);
-      e.add(particle::from(dot_particle{to_float(transform.centre), glm::vec4{1.f}, to_float(dir)},
-                           4 + random.uint(8)));
+      e.add(particle{
+          .position = to_float(transform.centre),
+          .velocity = from_polar(random.fixed().to_float() * 2.f * glm::pi<float>(), 6.f),
+          .colour = glm::vec4{1.f},
+          .data = dot_particle{},
+          .end_time = 4 + random.uint(8),
+      });
     }
     h.emplace<Destroy>();
   }

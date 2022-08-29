@@ -40,7 +40,7 @@ void render_shape(const SimInterface& sim, const auto& parameters,
       shape_copy.z_index = z_index;
     }
     if (c_override && (!c_override_max_index || i < *c_override_max_index)) {
-      shape_copy.colour_override = *c_override;
+      shape_copy.colour = glm::vec4{c_override->r, c_override->g, c_override->b, shape.colour.a};
     }
     sim.render(shape_copy);
   });
@@ -106,7 +106,7 @@ inline void add_line_particle(EmitHandle& e, const glm::vec2& source, const glm:
                               const glm::vec2& b, const glm::vec4& c, std::uint32_t time) {
   auto& r = e.random();
   auto position = (a + b) / 2.f;
-  auto velocity = 2.f * normalise(position - source) +
+  auto velocity = (2.f + .5f * r.fixed().to_float()) * normalise(position - source) +
       from_polar((2 * fixed_c::pi * r.fixed()).to_float(), (r.fixed() / 8).to_float());
   auto diameter = distance(a, b);
   auto d = distance(source, a) - distance(source, b);
@@ -114,28 +114,30 @@ inline void add_line_particle(EmitHandle& e, const glm::vec2& source, const glm:
     d = -d;
   }
   auto angular_velocity = (d / (32.f * diameter)) + r.fixed().to_float() / 64.f;
-  auto p = particle::from(
-      line_particle{
-          .position = position - velocity,
-          .colour = c,
-          .velocity = velocity,
-          .radius = diameter / 2.f,
-          .rotation = angle(b - a) - angular_velocity,
-          .angular_velocity = angular_velocity,
-      },
-      time + r.uint(time));
-  p.flash_time = 3;
-  p.fade = true;
-  e.add(p);
+  e.add(particle{
+      .position = position - velocity,
+      .velocity = velocity,
+      .colour = c,
+      .data =
+          line_particle{
+              .radius = diameter / 2.f,
+              .rotation = angle(b - a) - angular_velocity,
+              .angular_velocity = angular_velocity,
+          },
+      .end_time = time + r.uint(time),
+      .flash_time = 3,
+      .fade = true,
+  });
 }
 
 template <geom::ShapeNode S>
 void destruct_lines(EmitHandle& e, const auto& parameters, const vec2& source,
-                    std::uint32_t time = 16) {
+                    std::uint32_t time = 20) {
   auto f_source = to_float(source);
   // TODO: something a bit cleverer here? Take velocity of shot into account?
   // Take velocity of destructed shape into account (maybe using same system as will handle
   // motion trails)?
+  // Make destruct particles similarly velocified?
   geom::iterate(S{}, geom::iterate_lines, parameters, geom::transform{},
                 [&](const vec2& a, const vec2& b, const glm::vec4& c) {
                   add_line_particle(e, f_source, to_float(a), to_float(b), c, time);
@@ -144,7 +146,7 @@ void destruct_lines(EmitHandle& e, const auto& parameters, const vec2& source,
 
 template <ecs::Component Logic, geom::ShapeNode S = typename Logic::shape>
 void destruct_entity_lines(ecs::const_handle h, EmitHandle& e, const vec2& source,
-                           std::uint32_t time = 16) {
+                           std::uint32_t time = 20) {
   if constexpr (requires { &Logic::destruct_lines; }) {
     ecs::call<&Logic::destruct_lines>(h, e, source, time);
   } else {

@@ -98,18 +98,15 @@ struct Shot : ecs::component {
           // TODO: position + reflect direction could be more accurate with cleverer hit info.
           auto v = from_polar(angle(to_float(-velocity)) + 2.f * (.5f - r.fixed().to_float()),
                               2.f * r.fixed().to_float() + 2.f);
-          auto p = particle::from(
-              dot_particle{
-                  .position = to_float(transform.centre - velocity / 2),
-                  .colour = colour,
-                  .velocity = v,
-                  .radius = 1.f,
-                  .line_width = 1.5f,
-              },
-              8 + r.uint(8));
-          p.flash_time = 3;
-          p.fade = true;
-          e.add(p);
+          e.add(particle{
+              .position = to_float(transform.centre - velocity / 2),
+              .velocity = v,
+              .colour = colour,
+              .data = dot_particle{.radius = 1.f, .line_width = 1.5f},
+              .end_time = 8 + r.uint(8),
+              .flash_time = 3,
+              .fade = true,
+          });
         }
       }
       h.emplace<Destroy>();

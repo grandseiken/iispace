@@ -51,12 +51,18 @@ EmitHandle& EmitHandle::explosion(const glm::vec2& v, const glm::vec4& c, std::u
       float angle = std::atan2(dir.y, dir.x) + (r.fixed().to_float() - 0.5f) * glm::pi<float>() / 4;
       dir = from_polar(angle, rspeed);
     }
-    dot_particle p{v, c, dir};
+    dot_particle dot;
     if (speed && ra.rbool()) {
-      p.line_width = 2.f;
-      p.radius = 1.f;
+      dot.line_width = 2.f;
+      dot.radius = 1.f;
     }
-    add(particle::from(p, time + r.uint(8)));
+    add(particle{
+        .position = v,
+        .velocity = dir,
+        .colour = c,
+        .data = dot,
+        .end_time = time + r.uint(8),
+    });
   }
   return *this;
 }

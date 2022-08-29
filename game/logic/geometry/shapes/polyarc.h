@@ -46,16 +46,15 @@ struct polyarc_data : shape_data_base {
 
   constexpr void
   iterate(iterate_shapes_t, const Transform auto& t, const ShapeFunction auto& f) const {
-    render::polyarc arc;
-    arc.origin = to_float(*t);
-    arc.rotation = t.rotation().to_float();
-    arc.radius = radius.to_float();
-    arc.sides = sides;
-    arc.segments = segments;
-    arc.colour = colour;
-    render::shape shape;
-    shape.data = arc;
-    f(shape);
+    std::invoke(
+        f,
+        render::shape{
+            .origin = to_float(*t),
+            .rotation = t.rotation().to_float(),
+            .colour = colour,
+            .data =
+                render::polyarc{.radius = radius.to_float(), .sides = sides, .segments = segments},
+        });
   }
 
   constexpr void

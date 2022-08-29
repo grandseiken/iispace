@@ -50,16 +50,14 @@ struct ngon_data : shape_data_base {
 
   constexpr void
   iterate(iterate_shapes_t, const Transform auto& t, const ShapeFunction auto& f) const {
-    render::ngon ngon;
-    ngon.origin = to_float(*t);
-    ngon.rotation = t.rotation().to_float();
-    ngon.radius = radius.to_float();
-    ngon.sides = sides;
-    ngon.colour = colour;
-    ngon.style = style;
-    render::shape shape;
-    shape.data = ngon;
-    f(shape);
+    std::invoke(
+        f,
+        render::shape{
+            .origin = to_float(*t),
+            .rotation = t.rotation().to_float(),
+            .colour = colour,
+            .data = render::ngon{.radius = radius.to_float(), .sides = sides, .style = style},
+        });
   }
 
   constexpr void

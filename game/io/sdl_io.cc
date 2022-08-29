@@ -216,26 +216,22 @@ std::optional<event_type> SdlIoLayer::poll() {
       return event_type::kControllerChange;
 
     case SDL_CONTROLLERBUTTONDOWN:
-    case SDL_CONTROLLERBUTTONUP:
-      {
-        auto* data = impl_->controller(event.cbutton.which);
-        if (auto button = convert_sdl_controller_button(event.cbutton.button); data && button) {
-          auto& e = data->frame.button_events.emplace_back();
-          e.button = *button;
-          e.down = event.type == SDL_CONTROLLERBUTTONDOWN;
-          data->frame.button(*button) = e.down;
-        }
+    case SDL_CONTROLLERBUTTONUP: {
+      auto* data = impl_->controller(event.cbutton.which);
+      if (auto button = convert_sdl_controller_button(event.cbutton.button); data && button) {
+        auto& e = data->frame.button_events.emplace_back();
+        e.button = *button;
+        e.down = event.type == SDL_CONTROLLERBUTTONDOWN;
+        data->frame.button(*button) = e.down;
       }
-      break;
+    } break;
 
-    case SDL_CONTROLLERAXISMOTION:
-      {
-        auto* data = impl_->controller(event.caxis.which);
-        if (auto axis = convert_sdl_controller_axis(event.caxis.axis); data && axis) {
-          data->frame.axis(*axis) = event.caxis.value;
-        }
+    case SDL_CONTROLLERAXISMOTION: {
+      auto* data = impl_->controller(event.caxis.which);
+      if (auto axis = convert_sdl_controller_axis(event.caxis.axis); data && axis) {
+        data->frame.axis(*axis) = event.caxis.value;
       }
-      break;
+    } break;
 
     case SDL_KEYDOWN:
     case SDL_KEYUP:

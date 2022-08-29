@@ -503,12 +503,11 @@ void GameModal::render(const ii::ui::UiLayer& ui, ii::render::GlRenderer& r) con
       v *= 16;
       auto lo = v + glm::vec2{5.f, 11.f - 10 * p.timer};
       auto hi = v + glm::vec2{9.f, 13.f};
-      std::vector<ii::render::shape> shapes;
-      ii::render::box box;
-      box.colour = glm::vec4{1.f};
-      box.origin = (lo + hi) / 2.f;
-      box.dimensions = (hi - lo) / 2.f;
-      shapes.emplace_back(ii::render::shape::from(box));
+      std::vector<ii::render::shape> shapes{ii::render::shape{
+          .origin = (lo + hi) / 2.f,
+          .colour = glm::vec4{1.f},
+          .data = ii::render::box{.dimensions = (hi - lo) / 2.f},
+      }};
       r.render_shapes(shapes);
     }
     ++n;

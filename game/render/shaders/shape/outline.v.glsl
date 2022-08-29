@@ -1,6 +1,6 @@
 #version 460
 #include "game/render/shaders/lib/hsl.glsl"
-#include "game/render/shaders/shape_h.glsl"
+#include "game/render/shaders/shape/shape.glsl"
 
 uniform float colour_cycle;
 

@@ -41,14 +41,13 @@ struct box_data : shape_data_base {
 
   constexpr void
   iterate(iterate_shapes_t, const Transform auto& t, const ShapeFunction auto& f) const {
-    render::box box;
-    box.origin = to_float(*t);
-    box.rotation = t.rotation().to_float();
-    box.dimensions = to_float(dimensions);
-    box.colour = colour;
-    render::shape shape;
-    shape.data = box;
-    f(shape);
+    std::invoke(f,
+                render::shape{
+                    .origin = to_float(*t),
+                    .rotation = t.rotation().to_float(),
+                    .colour = colour,
+                    .data = render::box{.dimensions = to_float(dimensions)},
+                });
   }
 
   constexpr void

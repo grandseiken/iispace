@@ -56,11 +56,11 @@ public:
   handle(const handle&) = delete;
   handle& operator=(const handle&) = delete;
 
-  handle(handle&& h) : id_(h.id_) {
+  handle(handle&& h) noexcept : id_(h.id_) {
     h.id_.reset();
   }
 
-  handle& operator=(handle&& h) {
+  handle& operator=(handle&& h) noexcept {
     if (this == &h) {
       return *this;
     }

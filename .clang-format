@@ -18,6 +18,7 @@ IncludeCategories:
   - Regex: '^<[^.]>'
     SortPriority: 3
 
+DeriveLineEnding: true
 DerivePointerAlignment: false
 PointerAlignment: Left
 
@@ -29,7 +30,7 @@ AllowShortIfStatementsOnASingleLine: false
 AllowShortLoopsOnASingleLine: false
 AllowShortLambdasOnASingleLine: true
 
-IndentCaseBlocks: true
+IndentCaseBlocks: false
 IndentCaseLabels: false
 
 IndentWrappedFunctionNames: false
@@ -42,7 +43,7 @@ BreakInheritanceList: BeforeComma
 BinPackArguments: true
 BinPackParameters: true
 AlignOperands: DontAlign
-AlignAfterOpenBracket: true
+AlignAfterOpenBracket: Align
 AllowAllArgumentsOnNextLine: true
 AllowAllParametersOfDeclarationOnNextLine: true
 

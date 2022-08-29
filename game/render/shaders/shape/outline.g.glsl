@@ -1,5 +1,5 @@
 #version 460
-#include "game/render/shaders/shape_h.glsl"
+#include "game/render/shaders/shape/shape.glsl"
 
 uniform vec2 render_scale;
 uniform uvec2 render_dimensions;
@@ -198,10 +198,11 @@ void emit_box(vec2 position, shape_data data) {
 
 void emit_line(vec2 position, shape_data data) {
   uint sides = data.params.x;
+  float radius = data.dimensions.x;
   float angle = kPi * (.25 - 1. / (2. * float(sides)));
-  vec2 a = position;
-  vec2 b = data.dimensions;
-  vec2 n = normalize(b - a);
+  vec2 n = from_polar(data.rotation, 1.);
+  vec2 a = position - radius * n;
+  vec2 b = position + radius * n;
   vec2 p = vec2(n.y, -n.x);
   float pd = data.line_width / 2.;
   float nd = pd / tan(angle);

@@ -88,34 +88,27 @@ struct resolve_key {
 };
 
 struct dot_particle {
-  glm::vec2 position{0.f};
-  glm::vec4 colour{0.f};
-  glm::vec2 velocity{0.f};
   float radius = 1.5f;
   float line_width = 1.f;
 };
 
 struct line_particle {
-  glm::vec2 position{0.f};
-  glm::vec4 colour{0.f};
-  glm::vec2 velocity{0.f};
   float radius = 0.f;
-  float rotation{0.f};
-  float angular_velocity{0.f};
+  float rotation = 0.f;
+  float angular_velocity = 0.f;
 };
 
 using particle_data = std::variant<dot_particle, line_particle>;
 
 struct particle {
+  glm::vec2 position{0.f};
+  glm::vec2 velocity{0.f};
+  glm::vec4 colour{0.f};
   particle_data data;
   std::uint32_t time = 0;
   std::uint32_t end_time = 0;
   std::uint32_t flash_time = 0;
   bool fade = false;
-
-  static particle from(particle_data d, std::uint32_t time) {
-    return particle{d, 0, time};
-  }
 };
 
 enum class background_fx_type {

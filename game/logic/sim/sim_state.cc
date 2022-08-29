@@ -236,14 +236,12 @@ const render_output& SimState::render() const {
   // TODO: extract somewhere?
   auto render_warning = [&](const glm::vec2& v) {
     auto render_tri = [&](const glm::vec2& position, float r, float f) {
-      glm::vec4 c{0.f, 0.f, .2f + .6f * f, .4f};
-      render::ngon ngon;
-      ngon.colour = c;
-      ngon.sides = 3;
-      ngon.rotation = r;
-      ngon.radius = 4;
-      ngon.origin = position;
-      interface_->render(render::shape::from(ngon));
+      interface_->render(render::shape{
+          .origin = position,
+          .rotation = r,
+          .colour = {0.f, 0.f, .2f + .6f * f, .4f},
+          .data = render::ngon{.radius = 4.f, .sides = 3},
+      });
     };
 
     const auto& d = internals_->render.dimensions;

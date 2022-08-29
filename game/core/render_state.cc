@@ -115,42 +115,38 @@ void RenderState::update(IoInputAdapter* input) {
   }
 
   std::vector<particle> new_particles;
-  for (auto& particle : particles_) {
-    if (particle.time == particle.end_time) {
+  for (auto& p : particles_) {
+    if (p.time == p.end_time) {
       continue;
     }
-    ++particle.time;
-    if (auto* p = std::get_if<dot_particle>(&particle.data)) {
-      p->position += p->velocity;
-    } else if (auto* p = std::get_if<line_particle>(&particle.data)) {
-      if (particle.time >= particle.end_time / 3 && particle.time > 4 &&
-          !engine_.uint(50u - std::min(48u, static_cast<std::uint32_t>(p->radius)))) {
-        auto v = from_polar(p->rotation, p->radius);
-        line_particle pn;
-        pn.colour = p->colour;
-        pn.velocity = p->velocity + normalise(v);
-        pn.radius = p->radius / 2.f;
-        pn.angular_velocity = p->angular_velocity + glm::pi<float>() / 64.f;
-        pn.position = p->position + v / 2.f + pn.velocity;
-        pn.rotation = p->rotation + pn.angular_velocity;
+    ++p.time;
+    if (auto* d = std::get_if<dot_particle>(&p.data)) {
+      p.position += p.velocity;
+    } else if (auto* d = std::get_if<line_particle>(&p.data)) {
+      if (p.time >= p.end_time / 3 && p.time > 4 &&
+          !engine_.uint(50u - std::min(48u, static_cast<std::uint32_t>(d->radius)))) {
+        auto v = from_polar(d->rotation, d->radius);
 
-        ii::particle ppn;
-        ppn.data = pn;
-        ppn.time = std::max(4u, particle.time - 4u);
-        ppn.end_time = particle.end_time - 1;
-        ppn.flash_time = 0;
-        ppn.fade = particle.fade;
-        new_particles.emplace_back(ppn);
+        d->radius /= 2.f;
+        line_particle d0 = *d;
+        d->angular_velocity -= glm::pi<float>() / 64.f;
+        d0.angular_velocity += glm::pi<float>() / 64.f;
+        d0.rotation = d->rotation + d0.angular_velocity;
 
-        p->velocity -= normalise(v);
-        p->position -= v / 2.f;
-        p->angular_velocity -= glm::pi<float>() / 64.f;
-        p->radius /= 2.f;
-        particle.time = ppn.time;
-        --particle.end_time;
+        p.time = std::max(4u, p.time - 4u);
+        --p.end_time;
+        p.flash_time = 0;
+        particle p0 = p;
+        p0.data = d0;
+
+        p.velocity -= normalize(v);
+        p.position -= v / 2.f;
+        p0.velocity += normalize(v);
+        p0.position += v / 2.f + p0.velocity;
+        new_particles.emplace_back(p0);
       }
-      p->position += p->velocity;
-      p->rotation = normalise_angle(p->rotation + p->angular_velocity);
+      p.position += p.velocity;
+      d->rotation = normalise_angle(d->rotation + d->angular_velocity);
     }
   }
   particles_.insert(particles_.end(), new_particles.begin(), new_particles.end());
@@ -211,12 +207,12 @@ void RenderState::render(render::GlRenderer& r) const {
   std::vector<render::shape> shapes;
   auto render_box = [&](const glm::vec2& v, const glm::vec2& d, const glm::vec4& c, float lw,
                         float z) {
-    render::box box;
-    box.origin = v;
-    box.dimensions = d;
-    box.colour = c;
-    box.line_width = lw;
-    shapes.emplace_back(render::shape::from(box, z));
+    shapes.emplace_back(render::shape{
+        .origin = v,
+        .colour = c,
+        .z_index = z,
+        .data = render::box{.dimensions = d, .line_width = lw},
+    });
   };
 
   for (const auto& star : stars_) {
@@ -231,37 +227,33 @@ void RenderState::render(render::GlRenderer& r) const {
       break;
 
     case star_type::kPlanet:
-      render::ngon ngon;
-      ngon.sides = 8;
-      ngon.radius = star.size;
-      ngon.colour = star.colour;
-      ngon.origin = star.position;
-      shapes.emplace_back(render::shape::from(ngon, -96.f));
+      shapes.emplace_back(render::shape{
+          .origin = star.position,
+          .colour = star.colour,
+          .z_index = 96.f,
+          .data = render::ngon{.radius = star.size, .sides = 8},
+      });
       break;
     }
   }
 
-  for (const auto& particle : particles_) {
-    auto get_colour = [&](glm::vec4 c) {
-      float a = particle.time <= particle.flash_time || !particle.fade ? 1.f
-                                                                       : .5f *
-              (1.f -
-               static_cast<float>(particle.time - particle.flash_time - 1) /
-                   (particle.end_time - particle.flash_time - 1));
-      return glm::vec4{c.x, c.y, particle.time <= particle.flash_time ? 1.f : c.z, a};
-    };
-    if (const auto* p = std::get_if<dot_particle>(&particle.data)) {
-      render_box(p->position, glm::vec2{p->radius, p->radius}, get_colour(p->colour), p->line_width,
-                 -64.f);
-    } else if (const auto* p = std::get_if<line_particle>(&particle.data)) {
-      auto v = from_polar(p->rotation, p->radius);
-      float t = std::max(0.f, (17.f - particle.time) / 16.f);
-      render::line line;
-      line.colour = get_colour(p->colour);
-      line.a = p->position + v;
-      line.b = p->position - v;
-      line.line_width = glm::mix(1.f, 2.f, t);
-      shapes.emplace_back(render::shape::from(line, -64.f));
+  for (const auto& p : particles_) {
+    float a = p.time <= p.flash_time || !p.fade ? 1.f
+                                                : .5f *
+            (1.f - static_cast<float>(p.time - p.flash_time - 1) / (p.end_time - p.flash_time - 1));
+    glm::vec4 colour{p.colour.x, p.colour.y, p.time <= p.flash_time ? 1.f : p.colour.z, a};
+
+    if (const auto* d = std::get_if<dot_particle>(&p.data)) {
+      render_box(p.position, glm::vec2{d->radius, d->radius}, colour, d->line_width, -64.f);
+    } else if (const auto* d = std::get_if<line_particle>(&p.data)) {
+      float t = std::max(0.f, (17.f - p.time) / 16.f);
+      shapes.emplace_back(render::shape{
+          .origin = p.position,
+          .rotation = d->rotation,
+          .colour = colour,
+          .z_index = -64.f,
+          .data = render::line{.radius = d->radius, .line_width = glm::mix(1.f, 2.f, t)},
+      });
     }
   }
 
