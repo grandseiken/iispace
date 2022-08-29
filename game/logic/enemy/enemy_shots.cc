@@ -9,6 +9,7 @@ namespace {
 struct BossShot : ecs::component {
   static constexpr std::uint32_t kBoundingWidth = 12;
   static constexpr sound kDestroySound = sound::kEnemyDestroy;
+  static constexpr rumble_type kDestroyRumble = rumble_type::kNone;
 
   using shape = standard_transform<geom::polystar_colour_p<16, 8, 2>, geom::ngon_colour_p<10, 8, 2>,
                                    geom::ball_collider<12, shape_flag::kDangerous>>;

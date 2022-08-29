@@ -163,7 +163,7 @@ struct PlayerLogic : ecs::component {
         transform.centre = {(1 + pc.player_number) * kSimDimensions.x / (1 + sim.player_count()),
                             kSimDimensions.y / 2};
         sim.emit(resolve_key::reconcile(h.id(), resolve_tag::kRespawn))
-            .rumble(pc.player_number, 10)
+            .rumble(pc.player_number, 20, 0.f, 1.f)
             .play(sound::kPlayerRespawn, transform.centre);
       }
       return;
@@ -196,7 +196,7 @@ struct PlayerLogic : ecs::component {
                   transform.centre);
       }
 
-      e.rumble(pc.player_number, 10).play(sound::kExplosion, transform.centre);
+      e.rumble(pc.player_number, 20, 1.f, .5f).play(sound::kExplosion, transform.centre);
 
       sim.index().iterate_dispatch_if<Enemy>(
           [&](ecs::handle eh, const Enemy& e, const Transform& e_transform, Health& health,
@@ -243,7 +243,7 @@ struct PlayerLogic : ecs::component {
     // positions... do we need to make _all_ players predicted for purposes of getting hit?
     auto e = sim.emit(resolve_key::local(pc.player_number));
     if (pc.has_shield) {
-      e.rumble(pc.player_number, 10).play(sound::kPlayerShield, transform.centre);
+      e.rumble(pc.player_number, 15, 0.f, 1.f).play(sound::kPlayerShield, transform.centre);
       pc.has_shield = false;
       invulnerability_timer = kShieldTime;
       return;
@@ -263,7 +263,7 @@ struct PlayerLogic : ecs::component {
       pc.has_bomb = false;
     }
     sim.global_entity().get<GlobalData>()->player_kill_queue.push_back(pc.player_number);
-    e.rumble(pc.player_number, 25).play(sound::kPlayerDestroy, transform.centre);
+    e.rumble(pc.player_number, 30, .5f, .5f).play(sound::kPlayerDestroy, transform.centre);
   }
 
   void explosion(ecs::handle h, const std::optional<vec2>& position_override, EmitHandle& e,

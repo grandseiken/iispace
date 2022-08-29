@@ -90,6 +90,35 @@ void Health::damage(ecs::handle h, SimInterface& sim, std::uint32_t damage, dama
     if (destroy_sound) {
       e_destroy.play_random(*destroy_sound, position);
     }
+    if (const auto* pc = sim.index().get<Player>(source_id);
+        pc && destroy_rumble.value_or(rumble_type::kNone) != rumble_type::kNone) {
+      std::uint32_t time_ticks = 0;
+      float lf = 0.f;
+      float hf = 0.f;
+      switch (*destroy_rumble) {
+      case rumble_type::kNone:
+        break;
+      case rumble_type::kLow:
+        time_ticks = 10;
+        lf = .5f;
+        break;
+      case rumble_type::kSmall:
+        time_ticks = 6;
+        hf = .5f;
+        break;
+      case rumble_type::kMedium:
+        time_ticks = 12;
+        hf = .5f;
+        lf = .25f;
+        break;
+      case rumble_type::kLarge:
+        time_ticks = 16;
+        lf = .5f;
+        hf = .25f;
+        break;
+      }
+      e_destroy.rumble(pc->player_number, time_ticks, lf, hf);
+    }
     if (on_destroy) {
       on_destroy(h, sim, e_destroy, type, get_source_position());
     }
@@ -103,7 +132,6 @@ void Health::damage(ecs::handle h, SimInterface& sim, std::uint32_t damage, dama
 }
 
 void Player::add_score(SimInterface& sim, std::uint64_t s) {
-  sim.emit(resolve_key::predicted()).rumble(player_number, 3);
   score += s * multiplier;
   ++multiplier_count;
   if (multiplier_count >= (1u << std::min(multiplier + 3, 23u))) {

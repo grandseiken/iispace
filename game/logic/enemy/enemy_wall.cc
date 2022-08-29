@@ -8,6 +8,7 @@ namespace {
 struct Square : ecs::component {
   static constexpr std::uint32_t kBoundingWidth = 15;
   static constexpr sound kDestroySound = sound::kEnemyDestroy;
+  static constexpr rumble_type kDestroyRumble = rumble_type::kLow;
   static constexpr fixed kSpeed = 2 + 1_fx / 4;
   using shape = standard_transform<
       geom::box_colour_p<10, 10, 2, shape_flag::kDangerous | shape_flag::kVulnerable>>;
@@ -75,6 +76,7 @@ DEBUG_STRUCT_TUPLE(Square, dir, timer, invisible_flash);
 struct Wall : ecs::component {
   static constexpr std::uint32_t kBoundingWidth = 50;
   static constexpr sound kDestroySound = sound::kEnemyDestroy;
+  static constexpr rumble_type kDestroyRumble = rumble_type::kLow;
 
   static constexpr std::uint32_t kTimer = 80;
   static constexpr fixed kSpeed = 1 + 1_fx / 4;

@@ -61,13 +61,15 @@ EmitHandle& EmitHandle::explosion(const glm::vec2& v, const glm::vec4& c, std::u
   return *this;
 }
 
-EmitHandle& EmitHandle::rumble(std::uint32_t player, std::uint32_t time_ticks) {
-  e->rumble_map[player] = std::max(e->rumble_map[player], time_ticks);
+EmitHandle& EmitHandle::rumble(std::uint32_t player, std::uint32_t time_ticks, float lf, float hf) {
+  e->rumble.emplace_back(rumble_out{player, time_ticks, lf, hf});
   return *this;
 }
 
-EmitHandle& EmitHandle::rumble_all(std::uint32_t time_ticks) {
-  e->global_rumble = std::max(e->global_rumble, time_ticks);
+EmitHandle& EmitHandle::rumble_all(std::uint32_t time_ticks, float lf, float hf) {
+  for (std::uint32_t i = 0; i < sim->player_count(); ++i) {
+    rumble(i, time_ticks, lf, hf);
+  }
   return *this;
 }
 

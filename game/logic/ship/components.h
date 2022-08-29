@@ -92,6 +92,14 @@ struct Render : ecs::component {
 };
 DEBUG_STRUCT_TUPLE(Render, render);
 
+enum class rumble_type {
+  kNone,
+  kLow,
+  kSmall,
+  kMedium,
+  kLarge,
+};
+
 struct Health : ecs::component {
   std::uint32_t hp = 0;
   std::uint32_t max_hp = hp;
@@ -102,6 +110,7 @@ struct Health : ecs::component {
   std::optional<sound> hit_sound0 = sound::kEnemyHit;
   std::optional<sound> hit_sound1 = sound::kEnemyHit;
   std::optional<sound> destroy_sound = sound::kEnemyDestroy;
+  std::optional<rumble_type> destroy_rumble;
 
   sfn::ptr<std::uint32_t(ecs::handle, SimInterface&, damage_type, std::uint32_t)> damage_transform =
       nullptr;
@@ -115,7 +124,7 @@ struct Health : ecs::component {
     return 3 * hp <= max_hp + max_hp / 5;
   }
 
-  // TODO: keep a list of recent players and/or source positions?
+  // TODO: keep a list of recent players and/or source positions? Do this now!
   // This could be used to e.g.:
   // - rumble for everyone recently shooting
   // - fire particles on death in averaged direction

@@ -10,6 +10,7 @@ namespace {
 struct FollowHub : ecs::component {
   static constexpr std::uint32_t kBoundingWidth = 16;
   static constexpr sound kDestroySound = sound::kPlayerDestroy;
+  static constexpr rumble_type kDestroyRumble = rumble_type::kLarge;
 
   static constexpr std::uint32_t kTimer = 170;
   static constexpr fixed kSpeed = 1;
@@ -83,6 +84,7 @@ DEBUG_STRUCT_TUPLE(FollowHub, timer, dir, count, power_a, power_b);
 struct Shielder : ecs::component {
   static constexpr std::uint32_t kBoundingWidth = 36;
   static constexpr sound kDestroySound = sound::kPlayerDestroy;
+  static constexpr rumble_type kDestroyRumble = rumble_type::kLarge;
 
   static constexpr std::uint32_t kTimer = 80;
   static constexpr fixed kSpeed = 2;
@@ -162,6 +164,7 @@ DEBUG_STRUCT_TUPLE(Shielder, dir, timer, rotate, rdir, power);
 struct Tractor : ecs::component {
   static constexpr std::uint32_t kBoundingWidth = 36;
   static constexpr sound kDestroySound = sound::kPlayerDestroy;
+  static constexpr rumble_type kDestroyRumble = rumble_type::kLarge;
 
   static constexpr std::uint32_t kTimer = 50;
   static constexpr fixed kSpeed = 6 * (1_fx / 10);

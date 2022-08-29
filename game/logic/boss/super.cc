@@ -260,7 +260,7 @@ struct SuperBoss : ecs::component {
           .time = n, .position = transform.centre + v, .colour = colours[i % 8]});
       n += i;
     }
-    e.rumble_all(25).play(sound::kExplosion, transform.centre);
+    e.rumble_all(30, 1.f, 1.f).play(sound::kExplosion, transform.centre);
 
     for (std::uint32_t i = 0; i < 8; ++i) {
       spawn_powerup(sim, transform.centre, powerup_type::kBomb);

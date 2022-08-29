@@ -460,7 +460,7 @@ void GameModal::update(ii::ui::UiLayer& ui) {
   bool handle_rumble = game_ && !replay_;
   render_state_.handle_output(istate, handle_audio ? &ui.mixer() : nullptr,
                               handle_rumble ? &game_->input : nullptr);
-  render_state_.update();
+  render_state_.update(handle_rumble ? &game_->input : nullptr);
 
   if (replay_) {
     if (ui.input().pressed(ii::ui::key::kCancel)) {

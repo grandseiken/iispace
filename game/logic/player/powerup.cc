@@ -93,7 +93,7 @@ struct Powerup : ecs::component {
     }
     e.play(type == powerup_type::kExtraLife ? sound::kPowerupLife : sound::kPowerupOther,
            transform.centre);
-    e.rumble(source.get<Player>()->player_number, 6);
+    e.rumble(source.get<Player>()->player_number, 10, .25f, .75f);
 
     auto& random = sim.random(random_source::kLegacyAesthetic);
     auto r = 5 + random.uint(5);

@@ -20,6 +20,7 @@ constexpr glm::vec4 c3 = colour_hue(0.f, .6f, 0.f);
 struct DeathRay : ecs::component {
   static constexpr fixed kBoundingWidth = 48;
   static constexpr sound kDestroySound = sound::kEnemyDestroy;
+  static constexpr rumble_type kDestroyRumble = rumble_type::kNone;
   static constexpr fixed kSpeed = 10;
 
   using shape = standard_transform<geom::box<10, 48, glm::vec4{0.f}, shape_flag::kDangerous>,
@@ -44,6 +45,7 @@ void spawn_death_ray(SimInterface& sim, const vec2& position) {
 struct DeathArm : ecs::component {
   static constexpr fixed kBoundingWidth = 60;
   static constexpr sound kDestroySound = sound::kPlayerDestroy;
+  static constexpr rumble_type kDestroyRumble = rumble_type::kLarge;
 
   static constexpr std::uint32_t kTimer = 300;
   static constexpr fixed kSpeed = 4;

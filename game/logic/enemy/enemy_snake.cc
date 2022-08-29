@@ -11,6 +11,7 @@ ecs::handle spawn_snake_tail(SimInterface& sim, const vec2& position, const glm:
 struct SnakeTail : ecs::component {
   static constexpr std::uint32_t kBoundingWidth = 22;
   static constexpr sound kDestroySound = sound::kPlayerDestroy;
+  static constexpr rumble_type kDestroyRumble = rumble_type::kNone;
 
   using shape = standard_transform<
       geom::polygon_colour_p<10, 4, 2, shape_flag::kDangerous | shape_flag::kWeakShield>>;
@@ -62,6 +63,7 @@ DEBUG_STRUCT_TUPLE(SnakeTail, tail, head, timer, d_timer);
 struct Snake : ecs::component {
   static constexpr std::uint32_t kBoundingWidth = 32;
   static constexpr sound kDestroySound = sound::kPlayerDestroy;
+  static constexpr rumble_type kDestroyRumble = rumble_type::kMedium;
 
   using shape = standard_transform<geom::polygon_colour_p<14, 3, 2, shape_flag::kVulnerable>,
                                    geom::ball_collider<10, shape_flag::kDangerous>>;

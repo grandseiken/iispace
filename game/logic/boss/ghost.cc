@@ -21,6 +21,7 @@ constexpr glm::vec4 c2 = colour_hue360(270, .2f);
 struct GhostWall : ecs::component {
   static constexpr fixed kBoundingWidth = kSimDimensions.x;
   static constexpr sound kDestroySound = sound::kEnemyDestroy;
+  static constexpr rumble_type kDestroyRumble = rumble_type::kNone;
   static constexpr fixed kSpeed = 3 + 1_fx / 2;
   static constexpr fixed kOffsetH = 20 + kSimDimensions.y / 2;
 
@@ -89,6 +90,7 @@ void spawn_ghost_wall_horizontal(SimInterface& sim, bool swap, bool swap_gap) {
 struct GhostMine : ecs::component {
   static constexpr fixed kBoundingWidth = 24;
   static constexpr sound kDestroySound = sound::kEnemyDestroy;
+  static constexpr rumble_type kDestroyRumble = rumble_type::kNone;
 
   using shape = standard_transform<
       geom::conditional_p<

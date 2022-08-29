@@ -116,13 +116,6 @@ struct particle {
   }
 };
 
-struct sound_out {
-  sound sound_id{0};
-  float volume = 0.f;
-  float pan = 0.f;
-  float pitch = 0.f;
-};
-
 enum class background_fx_type {
   kStars,
 };

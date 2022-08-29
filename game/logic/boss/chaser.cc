@@ -266,7 +266,7 @@ struct ChaserBoss : ecs::component {
       });
 
       if (last) {
-        e.rumble_all(25);
+        e.rumble_all(30, 1.f, 1.f);
         std::uint32_t n = 1;
         auto& random = sim.random(random_source::kLegacyAesthetic);
         for (std::uint32_t i = 0; i < 16; ++i) {
@@ -279,7 +279,6 @@ struct ChaserBoss : ecs::component {
       }
     }
 
-    e.rumble_all(split < 3 ? 10 : 3);
     explode_entity_shapes<ChaserBoss>(h, e);
     explode_entity_shapes<ChaserBoss>(h, e, glm::vec4{1.f}, 12);
     if (split < 3 || last) {
@@ -311,6 +310,10 @@ struct ChaserBoss : ecs::component {
                         ? &ship_check_point_legacy<ChaserBoss, ChaserBoss::shape>
                         : &ship_check_point<ChaserBoss, ChaserBoss::shape>});
     h.add(Enemy{.threat_value = 100});
+
+    auto rumble = split < 3 ? rumble_type::kLarge
+        : split < 6         ? rumble_type::kMedium
+                            : rumble_type::kSmall;
     h.add(Health{
         .hp = calculate_boss_hp(
             1 +
@@ -321,6 +324,7 @@ struct ChaserBoss : ecs::component {
         .hit_sound0 = std::nullopt,
         .hit_sound1 = sound::kEnemyShatter,
         .destroy_sound = std::nullopt,
+        .destroy_rumble = rumble,
         .damage_transform = &scale_boss_damage,
         .on_hit = split <= 1 ? &boss_on_hit<true, ChaserBoss> : &boss_on_hit<false, ChaserBoss>,
         .on_destroy = ecs::call<&ChaserBoss::on_destroy>,

@@ -12,12 +12,25 @@
 
 namespace ii {
 
+struct sound_out {
+  sound sound_id{0};
+  float volume = 0.f;
+  float pan = 0.f;
+  float pitch = 0.f;
+};
+
+struct rumble_out {
+  std::uint32_t player_id = 0;
+  std::uint32_t time_ticks = 0;
+  float lf = 0.f;
+  float hf = 0.f;
+};
+
 struct aggregate_event {
   std::optional<background_fx_change> background_fx;
   std::vector<particle> particles;
   std::vector<sound_out> sounds;
-  std::unordered_map<std::uint32_t, std::uint32_t> rumble_map;
-  std::uint32_t global_rumble = 0;
+  std::vector<rumble_out> rumble;
 };
 
 struct aggregate_output {

@@ -9,6 +9,7 @@ namespace {
 struct Bounce : ecs::component {
   static constexpr std::uint32_t kBoundingWidth = 8;
   static constexpr sound kDestroySound = sound::kEnemyShatter;
+  static constexpr rumble_type kDestroyRumble = rumble_type::kSmall;
 
   using shape = standard_transform<geom::polygon<8, 6, colour_hue360(300, .5f, .6f),
                                                  shape_flag::kDangerous | shape_flag::kVulnerable>>;
@@ -33,6 +34,7 @@ DEBUG_STRUCT_TUPLE(Bounce, dir);
 struct Follow : ecs::component {
   static constexpr std::uint32_t kBoundingWidth = 10;
   static constexpr sound kDestroySound = sound::kEnemyShatter;
+  static constexpr rumble_type kDestroyRumble = rumble_type::kSmall;
 
   static constexpr std::uint32_t kTime = 90;
   static constexpr fixed kSpeed = 2;
@@ -84,6 +86,7 @@ DEBUG_STRUCT_TUPLE(Follow, timer, target, is_big_follow);
 struct Chaser : ecs::component {
   static constexpr std::uint32_t kBoundingWidth = 10;
   static constexpr sound kDestroySound = sound::kEnemyShatter;
+  static constexpr rumble_type kDestroyRumble = rumble_type::kSmall;
 
   static constexpr std::uint32_t kTime = 60;
   static constexpr fixed kSpeed = 4;
@@ -137,7 +140,7 @@ void spawn_follow(SimInterface& sim, const vec2& position, bool has_score, fixed
 
 void spawn_big_follow(SimInterface& sim, const vec2& position, bool has_score) {
   auto h = create_ship<Follow>(sim, position);
-  add_enemy_health<Follow>(h, 3, sound::kPlayerDestroy);
+  add_enemy_health<Follow>(h, 3, sound::kPlayerDestroy, rumble_type::kMedium);
   h.add(Follow{true});
   h.add(Enemy{.threat_value = 3, .score_reward = has_score ? 20u : 0});
 }

@@ -52,7 +52,7 @@ void boss_on_destroy(ecs::const_handle h, const Transform& transform, SimInterfa
                                     .colour = boss_colour.value_or(glm::vec4{1.f})});
     n += i;
   }
-  e.rumble_all(25).play(sound::kExplosion, transform.centre);
+  e.rumble_all(30, 1.f, 1.f).play(sound::kExplosion, transform.centre);
 }
 
 }  // namespace ii

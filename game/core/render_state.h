@@ -3,6 +3,7 @@
 #include "game/common/random.h"
 #include "game/logic/sim/io/aggregate.h"
 #include <glm/glm.hpp>
+#include <cstdint>
 #include <vector>
 
 namespace ii {
@@ -22,7 +23,7 @@ public:
   }
   // If mixer != nullptr, sounds will be handled. If input != nullptr, rumble will be handled.
   void handle_output(ISimState& state, Mixer* mixer, IoInputAdapter* input);
-  void update();
+  void update(IoInputAdapter* input);
   void render(render::GlRenderer& r) const;
 
 private:
@@ -32,6 +33,14 @@ private:
   glm::ivec2 dimensions_{0, 0};
   std::vector<particle> particles_;
 
+  struct rumble_t {
+    std::uint32_t time_ticks = 0;
+    std::uint16_t lf = 0;
+    std::uint16_t hf = 0;
+  };
+  std::vector<std::vector<rumble_t>> rumble_;
+  rumble_t resolve_rumble(std::uint32_t player) const;
+
   enum class star_type {
     kDotStar,
     kFarStar,
@@ -39,6 +48,7 @@ private:
     kPlanet,
   };
 
+  // TODO: could be merged into particles?
   struct star_data {
     std::uint32_t timer = 0;
     star_type type = star_type::kDotStar;

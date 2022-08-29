@@ -5,11 +5,17 @@
 #include "game/mixer/mixer.h"
 #include "game/render/gl_renderer.h"
 #include <glm/gtc/constants.hpp>
+#include <algorithm>
 #include <unordered_map>
 
 namespace ii {
 namespace {
 const std::uint32_t kStarTimer = 500;
+
+std::uint32_t ticks_to_ms(std::uint32_t ticks) {
+  // Rumble currently defined in ticks, slight overestimate is fine.
+  return ticks * 17u;
+}
 }  // namespace
 
 void RenderState::handle_output(ISimState& state, Mixer* mixer, IoInputAdapter* input) {
@@ -20,8 +26,10 @@ void RenderState::handle_output(ISimState& state, Mixer* mixer, IoInputAdapter* 
     float pitch = 0.f;
   };
 
-  std::unordered_map<std::uint32_t, std::uint32_t> rumble;
   std::unordered_map<sound, sound_average> sound_map;
+  std::vector<bool> rumbled;
+  rumbled.resize(input->player_count());
+  rumble_.resize(input->player_count());
 
   auto& output = state.output();
   for (auto it = output.entries.begin(); it != output.entries.end();) {
@@ -38,15 +46,18 @@ void RenderState::handle_output(ISimState& state, Mixer* mixer, IoInputAdapter* 
 
     // Rumble.
     if (input) {
-      for (const auto& pair : e.rumble_map) {
-        rumble[pair.first] = std::max(rumble[pair.first], pair.second);
-      }
-      for (std::uint32_t i = 0; e.global_rumble && i < input->player_count(); ++i) {
-        rumble[i] = std::max(rumble[i], e.global_rumble);
+      for (const auto& rumble : e.rumble) {
+        auto freq_to_u16 = [](float f) {
+          return static_cast<std::uint16_t>(std::clamp(f, 0.f, 1.f) * static_cast<float>(0xffff));
+        };
+        if (rumble.player_id < input->player_count()) {
+          rumble_t r{rumble.time_ticks, freq_to_u16(rumble.lf), freq_to_u16(rumble.hf)};
+          rumble_[rumble.player_id].emplace_back(r);
+          rumbled[rumble.player_id] = true;
+        }
       }
     }
-    e.rumble_map.clear();  // Always clear rumble, since either handling it now or never.
-    e.global_rumble = 0;
+    e.rumble.clear();  // Always clear rumble, since either handling it now or never.
 
     // Sounds.
     if (mixer) {
@@ -60,8 +71,7 @@ void RenderState::handle_output(ISimState& state, Mixer* mixer, IoInputAdapter* 
       e.sounds.clear();
     }
 
-    if (!e.background_fx && e.particles.empty() && e.rumble_map.empty() && !e.global_rumble &&
-        e.sounds.empty()) {
+    if (!e.background_fx && e.particles.empty() && e.sounds.empty() && e.rumble.empty()) {
       it = output.entries.erase(it);
     } else {
       ++it;
@@ -69,10 +79,11 @@ void RenderState::handle_output(ISimState& state, Mixer* mixer, IoInputAdapter* 
   }
 
   // Final resolution.
-  for (const auto& pair : rumble) {
-    // Rumble currently defined in ticks. TODO: plumb through lf/hf.
-    auto duration_ms = static_cast<std::uint32_t>(pair.second * 16);
-    input->rumble(pair.first, 0x7fff, 0x7fff, duration_ms);
+  for (std::uint32_t i = 0; i < input->player_count(); ++i) {
+    if (rumbled[i]) {
+      auto r = resolve_rumble(i);
+      input->rumble(i, r.lf, r.hf, ticks_to_ms(r.time_ticks));
+    }
   }
 
   for (auto& pair : sound_map) {
@@ -84,7 +95,22 @@ void RenderState::handle_output(ISimState& state, Mixer* mixer, IoInputAdapter* 
   }
 }
 
-void RenderState::update() {
+void RenderState::update(IoInputAdapter* input) {
+  if (input) {
+    for (std::uint32_t i = 0; i < rumble_.size(); ++i) {
+      bool rumbled = false;
+      for (auto& r : rumble_[i]) {
+        r.time_ticks && --r.time_ticks;
+        rumbled |= !r.time_ticks;
+      }
+      if (rumbled) {
+        std::erase_if(rumble_[i], [](const rumble_t& r) { return !r.time_ticks; });
+        auto r = resolve_rumble(i);
+        input->rumble(i, r.lf, r.hf, ticks_to_ms(r.time_ticks));
+      }
+    }
+  }
+
   std::vector<particle> new_particles;
   for (auto& particle : particles_) {
     if (particle.time == particle.end_time) {
@@ -187,24 +213,6 @@ void RenderState::render(render::GlRenderer& r) const {
     shapes.emplace_back(render::shape::from(box));
   };
 
-  for (const auto& particle : particles_) {
-    if (const auto* p = std::get_if<dot_particle>(&particle.data)) {
-      render_box(p->position, glm::vec2{p->radius, p->radius}, p->colour, p->line_width);
-    } else if (const auto* p = std::get_if<line_particle>(&particle.data)) {
-      auto v = from_polar(p->rotation, p->radius);
-      float t = std::max(0.f, (17.f - particle.time) / 16.f);
-      float a = particle.time <= 3
-          ? 1.f
-          : .5f * (1.f - static_cast<float>(particle.time - 4) / (particle.end_time - 4));
-      render::line line;
-      line.colour = {p->colour.x, p->colour.y, particle.time <= 3 ? 1.f : p->colour.z, a};
-      line.a = p->position + v;
-      line.b = p->position - v;
-      line.line_width = glm::mix(1.f, 2.f, t);
-      shapes.emplace_back(render::shape::from(line));
-    }
-  }
-
   for (const auto& star : stars_) {
     switch (star.type) {
     case star_type::kDotStar:
@@ -227,6 +235,24 @@ void RenderState::render(render::GlRenderer& r) const {
     }
   }
 
+  for (const auto& particle : particles_) {
+    if (const auto* p = std::get_if<dot_particle>(&particle.data)) {
+      render_box(p->position, glm::vec2{p->radius, p->radius}, p->colour, p->line_width);
+    } else if (const auto* p = std::get_if<line_particle>(&particle.data)) {
+      auto v = from_polar(p->rotation, p->radius);
+      float t = std::max(0.f, (17.f - particle.time) / 16.f);
+      float a = particle.time <= 3
+          ? 1.f
+          : .5f * (1.f - static_cast<float>(particle.time - 4) / (particle.end_time - 4));
+      render::line line;
+      line.colour = {p->colour.x, p->colour.y, particle.time <= 3 ? 1.f : p->colour.z, a};
+      line.a = p->position + v;
+      line.b = p->position - v;
+      line.line_width = glm::mix(1.f, 2.f, t);
+      shapes.emplace_back(render::shape::from(line));
+    }
+  }
+
   r.render_shapes(shapes);
 }
 
@@ -241,6 +267,26 @@ void RenderState::handle_background_fx(const background_fx_change& change) {
     star_rate_ = engine_.uint(3) + 2;
     break;
   }
+}
+
+auto RenderState::resolve_rumble(std::uint32_t player) const -> rumble_t {
+  rumble_t result;
+  if (player < rumble_.size()) {
+    for (const auto& r : rumble_[player]) {
+      bool gt = r.lf > result.lf || r.hf > result.hf;
+      bool ge = r.lf >= result.lf && r.hf >= result.hf;
+      if (gt && ge) {
+        result.time_ticks = r.time_ticks;
+      } else if (ge) {
+        result.time_ticks = std::max(result.time_ticks, r.time_ticks);
+      } else if (gt) {
+        result.time_ticks = std::min(result.time_ticks, r.time_ticks);
+      }
+      result.lf = std::max(result.lf, r.lf);
+      result.hf = std::max(result.hf, r.hf);
+    }
+  }
+  return result;
 }
 
 }  // namespace ii
