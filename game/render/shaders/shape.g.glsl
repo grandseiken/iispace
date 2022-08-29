@@ -43,9 +43,14 @@ vec2 ngon_vertex(uint i, uint n, float rotation, float radius) {
   return from_polar(rotation + float(i) * 2. * kPi / float(n), radius);
 };
 
+float render_depth() {
+  // Vertex z-range is [128, 128].
+  return (128. + clamp(gl_in[0].gl_Position.z, -128., 128.)) / 256.;
+}
+
 vec4 render_position(vec2 position) {
   vec2 v = render_scale * (2. * position / vec2(render_dimensions) - 1.);
-  return vec4(v.x, -v.y, 0., 1.);
+  return vec4(v.x, -v.y, render_depth(), 1.);
 }
 
 // How far the vertices of an ngon must be retracted so that its _edges_ have

@@ -15,6 +15,17 @@ enum : std::uint8_t {
 };
 }  // namespace clear_mask
 
+enum class comparison {
+  kAlways,
+  kNever,
+  kEqual,
+  kNotEqual,
+  kLess,
+  kLessEqual,
+  kGreater,
+  kGreaterEqual,
+};
+
 enum class draw_mode {
   kPoints,
   kLineStrip,
@@ -53,6 +64,27 @@ enum class blend_factor {
 };
 
 namespace detail {
+
+inline GLenum comparison_to_gl(comparison c) {
+  switch (c) {
+  case comparison::kAlways:
+    return GL_ALWAYS;
+  case comparison::kNever:
+    return GL_NEVER;
+  case comparison::kEqual:
+    return GL_EQUAL;
+  case comparison::kNotEqual:
+    return GL_NOTEQUAL;
+  case comparison::kLess:
+    return GL_LESS;
+  case comparison::kLessEqual:
+    return GL_LEQUAL;
+  case comparison::kGreater:
+    return GL_GREATER;
+  case comparison::kGreaterEqual:
+    return GL_GEQUAL;
+  }
+}
 
 inline GLenum draw_mode_to_gl(draw_mode m) {
   switch (m) {
@@ -134,6 +166,10 @@ inline void clear_colour(const glm::vec4& c) {
   glClearColor(c.r, c.g, c.b, c.a);
 }
 
+inline void clear_depth(double d) {
+  glClearDepth(d);
+}
+
 inline void clear(std::uint8_t mask) {
   GLbitfield m = 0;
   if (mask & clear_mask::kColourBufferBit) {
@@ -146,6 +182,14 @@ inline void clear(std::uint8_t mask) {
     m |= GL_STENCIL_BUFFER_BIT;
   }
   glClear(m);
+}
+
+inline void enable_depth_test(bool enable) {
+  if (enable) {
+    glEnable(GL_DEPTH_TEST);
+  } else {
+    glDisable(GL_DEPTH_TEST);
+  }
 }
 
 inline void enable_blend(bool enable) {
@@ -164,6 +208,10 @@ inline void enable_clip_planes(std::uint32_t count) {
       glDisable(GL_CLIP_DISTANCE0 + i);
     }
   }
+}
+
+inline void depth_function(comparison function) {
+  glDepthFunc(detail::comparison_to_gl(function));
 }
 
 inline void blend_function(blend_factor source, blend_factor destination) {

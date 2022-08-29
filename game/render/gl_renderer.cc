@@ -185,6 +185,7 @@ result<void> GlRenderer::status() const {
 
 void GlRenderer::clear_screen() {
   gl::clear_colour({0.f, 0.f, 0.f, 0.f});
+  gl::clear_depth(0.);
   gl::clear(gl::clear_mask::kColourBufferBit | gl::clear_mask::kDepthBufferBit |
             gl::clear_mask::kStencilBufferBit);
 }
@@ -207,6 +208,7 @@ void GlRenderer::render_text(std::uint32_t font_index, const glm::ivec2& positio
   const auto& program = impl_->text;
   gl::use_program(program);
   gl::enable_blend(true);
+  gl::enable_depth_test(false);
   if (font_entry.font.is_lcd()) {
     gl::blend_function(gl::blend_factor::kSrc1Colour, gl::blend_factor::kOneMinusSrc1Colour);
   } else {
@@ -256,6 +258,7 @@ void GlRenderer::render_rect(const glm::ivec2& position, const glm::ivec2& size,
   const auto& program = impl_->rect;
   gl::use_program(program);
   gl::enable_blend(true);
+  gl::enable_depth_test(false);
   gl::blend_function(gl::blend_factor::kSrcAlpha, gl::blend_factor::kOneMinusSrcAlpha);
 
   auto result = gl::set_uniforms(
@@ -272,7 +275,9 @@ void GlRenderer::render_rect(const glm::ivec2& position, const glm::ivec2& size,
 void GlRenderer::render_shapes(std::span<const shape> shapes) {
   const auto& program = impl_->shape;
   gl::use_program(program);
+  gl::enable_depth_test(true);
   gl::enable_blend(true);
+  gl::depth_function(gl::comparison::kGreaterEqual);
   gl::blend_function(gl::blend_factor::kSrcAlpha, gl::blend_factor::kOneMinusSrcAlpha);
 
   auto result =
@@ -287,16 +292,18 @@ void GlRenderer::render_shapes(std::span<const shape> shapes) {
     glm::uvec2 params;
     float rotation;
     float line_width;
+    float z_index;
     glm::vec2 position;
     glm::vec2 dimensions;
     glm::vec4 colour;
   };
 
+  // TODO: these vectors are gl::buffers below should probably be saved between frames?
   std::vector<float> float_data;
   std::vector<unsigned> int_data;
   std::vector<unsigned> indices;
 
-  static constexpr std::size_t kFloatStride = 10 * sizeof(float);
+  static constexpr std::size_t kFloatStride = 11 * sizeof(float);
   static constexpr std::size_t kIntStride = 3 * sizeof(unsigned);
   auto add_data = [&](const vertex_data& d) {
     int_data.emplace_back(d.style);
@@ -306,6 +313,7 @@ void GlRenderer::render_shapes(std::span<const shape> shapes) {
     float_data.emplace_back(d.line_width);
     float_data.emplace_back(d.position.x);
     float_data.emplace_back(d.position.y);
+    float_data.emplace_back(d.z_index);
     float_data.emplace_back(d.dimensions.x);
     float_data.emplace_back(d.dimensions.y);
     float_data.emplace_back(d.colour.r);
@@ -327,6 +335,7 @@ void GlRenderer::render_shapes(std::span<const shape> shapes) {
             .params = {p->sides, param},
             .rotation = p->rotation,
             .line_width = p->line_width,
+            .z_index = shape.z_index,
             .position = p->origin,
             .dimensions = {p->radius, 0.f},
             .colour = colour,
@@ -351,6 +360,7 @@ void GlRenderer::render_shapes(std::span<const shape> shapes) {
           .params = {p->sides, p->segments},
           .rotation = p->rotation,
           .line_width = p->line_width,
+          .z_index = shape.z_index,
           .position = p->origin,
           .dimensions = {p->radius, 0},
           .colour = colour,
@@ -362,6 +372,7 @@ void GlRenderer::render_shapes(std::span<const shape> shapes) {
           .params = {0, 0},
           .rotation = p->rotation,
           .line_width = p->line_width,
+          .z_index = shape.z_index,
           .position = p->origin,
           .dimensions = p->dimensions,
           .colour = colour,
@@ -373,6 +384,7 @@ void GlRenderer::render_shapes(std::span<const shape> shapes) {
           .params = {p->sides, 0},
           .rotation = 0.f,
           .line_width = p->line_width,
+          .z_index = shape.z_index,
           .position = p->a,
           .dimensions = p->b,
           .colour = colour,
@@ -412,7 +424,7 @@ void GlRenderer::render_shapes(std::span<const shape> shapes) {
   auto params = add_int_attribute(2);
   auto rotation = add_float_attribute(1);
   auto line_width = add_float_attribute(1);
-  auto position = add_float_attribute(2);
+  auto position = add_float_attribute(3);
   auto dimensions = add_float_attribute(2);
   auto colour = add_float_attribute(4);
 
