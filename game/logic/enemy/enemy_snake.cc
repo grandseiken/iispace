@@ -10,6 +10,7 @@ ecs::handle spawn_snake_tail(SimInterface& sim, const vec2& position, const glm:
 
 struct SnakeTail : ecs::component {
   static constexpr std::uint32_t kBoundingWidth = 22;
+  static constexpr float kZIndex = 11.f;
   static constexpr sound kDestroySound = sound::kPlayerDestroy;
   static constexpr rumble_type kDestroyRumble = rumble_type::kNone;
 
@@ -62,6 +63,7 @@ DEBUG_STRUCT_TUPLE(SnakeTail, tail, head, timer, d_timer);
 
 struct Snake : ecs::component {
   static constexpr std::uint32_t kBoundingWidth = 32;
+  static constexpr float kZIndex = 12.f;
   static constexpr sound kDestroySound = sound::kPlayerDestroy;
   static constexpr rumble_type kDestroyRumble = rumble_type::kMedium;
 

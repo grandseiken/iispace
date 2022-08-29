@@ -24,6 +24,7 @@ struct GhostWall : ecs::component {
   static constexpr rumble_type kDestroyRumble = rumble_type::kNone;
   static constexpr fixed kSpeed = 3 + 1_fx / 2;
   static constexpr fixed kOffsetH = 260;
+  static constexpr float kZIndex = 0.f;
 
   template <std::uint32_t length>
   using gw_box =
@@ -92,6 +93,7 @@ struct GhostMine : ecs::component {
   static constexpr fixed kBoundingWidth = 24;
   static constexpr sound kDestroySound = sound::kEnemyDestroy;
   static constexpr rumble_type kDestroyRumble = rumble_type::kNone;
+  static constexpr float kZIndex = 0.f;
 
   using shape = standard_transform<
       geom::conditional_p<
@@ -141,6 +143,7 @@ struct GhostBoss : ecs::component {
   static constexpr std::uint32_t kBaseHp = 700;
   static constexpr std::uint32_t kTimer = 250;
   static constexpr std::uint32_t kAttackTime = 100;
+  static constexpr float kZIndex = 0.f;
   static constexpr shape_flag kShapeFlags = shape_flag::kEverything;
 
   using centre_shape =
@@ -483,15 +486,15 @@ struct GhostBoss : ecs::component {
     } else {
       colour_override = c2;
     }
-    render_entity_shape_override<render_shape>(sim, &health, shape_parameters(transform), {},
+    render_entity_shape_override<render_shape>(sim, &health, shape_parameters(transform), -4.f, {},
                                                colour_override);
     for (std::uint32_t i = 0; i < 8; ++i) {
       render_entity_shape_override<spark_shape>(sim, &health, spark_shape_parameters(transform, i),
-                                                {}, colour_override);
+                                                -2.f, {}, colour_override);
     }
     if (box_attack_shape_enabled) {
       render_entity_shape_override<box_attack_shape>(sim, nullptr, box_attack_parameters(transform),
-                                                     {}, colour_override);
+                                                     0.f, {}, colour_override);
     }
 
     using outer_star_shape = standard_transform<
@@ -504,7 +507,7 @@ struct GhostBoss : ecs::component {
         auto colour = outer_dangerous[n][i] ? c0 : n ? c2 : c1;
         std::tuple parameters{transform.centre, transform.rotation + outer_rotation[n],
                               outer_shape_d(n, i), outer_ball_rotation, colour};
-        render_entity_shape_override<outer_star_shape>(sim, nullptr, parameters, geom::transform{},
+        render_entity_shape_override<outer_star_shape>(sim, nullptr, parameters, -16.f, {},
                                                        colour_override);
       }
     }

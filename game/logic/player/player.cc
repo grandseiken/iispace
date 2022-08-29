@@ -16,6 +16,7 @@ constexpr std::uint32_t kMagicShotCount = 120;
 
 struct Shot : ecs::component {
   static constexpr fixed kSpeed = 10;
+  static constexpr float kZIndex = 64.f;
 
   using shape = standard_transform<geom::box_colour_p<2, 2, 2>, geom::box_colour_p<1, 1, 3>,
                                    geom::box_colour_p<3, 3, 3>>;
@@ -127,6 +128,7 @@ void spawn_shot(SimInterface& sim, const vec2& position, ecs::handle player, con
 struct PlayerLogic : ecs::component {
   static constexpr fixed kBombRadius = 180;
   static constexpr fixed kBombBossRadius = 280;
+  static constexpr float kZIndex = 96.f;
 
   static constexpr std::uint32_t kReviveTime = 100;
   static constexpr std::uint32_t kShieldTime = 50;

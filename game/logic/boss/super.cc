@@ -12,6 +12,7 @@ namespace {
 
 struct SuperBossArc : public ecs::component {
   static constexpr std::uint32_t kBaseHp = 75;
+  static constexpr float kZIndex = -4.f;
 
   template <fixed Radius, std::size_t I, shape_flag Flags = shape_flag::kNone>
   using polyarc =
@@ -90,6 +91,7 @@ ecs::handle spawn_super_boss_arc(SimInterface& sim, const vec2& position, std::u
 struct SuperBoss : ecs::component {
   enum class state { kArrive, kIdle, kAttack };
   static constexpr std::uint32_t kBaseHp = 520;
+  static constexpr float kZIndex = -4.f;
 
   template <fixed Radius, std::size_t I, shape_flag Flags = shape_flag::kNone>
   using polygon =

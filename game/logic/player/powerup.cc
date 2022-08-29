@@ -13,6 +13,7 @@ constexpr std::uint32_t kMagicShotCount = 120;
 
 struct Powerup : ecs::component {
   static constexpr fixed kSpeed = 1;
+  static constexpr float kZIndex = -2.f;
   static constexpr std::uint32_t kRotateTime = 100;
   static constexpr glm::vec4 cw{1.f};
 

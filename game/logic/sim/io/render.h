@@ -60,7 +60,7 @@ using shape_data = std::variant<line, ngon, box, polyarc>;
 
 struct shape {
   std::optional<glm::vec4> colour_override;
-  float z_index = 0.f;
+  std::optional<float> z_index;
   shape_data data;
 
   static shape line(const glm::vec2& a, const glm::vec2& b, const glm::vec4& c) {
@@ -69,9 +69,10 @@ struct shape {
     return s;
   }
 
-  static shape from(shape_data d) {
+  static shape from(shape_data d, std::optional<float> z_index = std::nullopt) {
     shape s;
     s.data = d;
+    s.z_index = z_index;
     return s;
   }
 };

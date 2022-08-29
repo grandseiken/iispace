@@ -8,6 +8,7 @@ namespace {
 
 struct Bounce : ecs::component {
   static constexpr std::uint32_t kBoundingWidth = 8;
+  static constexpr float kZIndex = 8.f;
   static constexpr sound kDestroySound = sound::kEnemyShatter;
   static constexpr rumble_type kDestroyRumble = rumble_type::kSmall;
 
@@ -32,6 +33,7 @@ DEBUG_STRUCT_TUPLE(Bounce, dir);
 
 struct Follow : ecs::component {
   static constexpr std::uint32_t kBoundingWidth = 10;
+  static constexpr float kZIndex = 8.f;
   static constexpr sound kDestroySound = sound::kEnemyShatter;
   static constexpr rumble_type kDestroyRumble = rumble_type::kSmall;
 
@@ -84,6 +86,7 @@ DEBUG_STRUCT_TUPLE(Follow, timer, target, is_big_follow);
 
 struct Chaser : ecs::component {
   static constexpr std::uint32_t kBoundingWidth = 10;
+  static constexpr float kZIndex = 8.f;
   static constexpr sound kDestroySound = sound::kEnemyShatter;
   static constexpr rumble_type kDestroyRumble = rumble_type::kSmall;
 

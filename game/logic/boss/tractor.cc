@@ -19,6 +19,7 @@ struct TractorBoss : ecs::component {
       shape_flag::kDangerous | shape_flag::kVulnerable;
   static constexpr fixed kSpeed = 2;
   static constexpr fixed kTractorBeamSpeed = 2 + 1_fx / 2;
+  static constexpr float kZIndex = -4.f;
 
   static constexpr glm::vec4 c0 = colour_hue360(300, .5f, .6f);
   static constexpr glm::vec4 c1 = colour_hue360(300, 1.f / 3, .6f);

@@ -59,6 +59,7 @@ struct ChaserBoss : ecs::component {
   static constexpr std::uint32_t kMaxSplit = 7;
   static constexpr std::uint32_t kTimer = 60;
   static constexpr fixed kSpeed = 4;
+  static constexpr float kZIndex = -4.f;
   static constexpr glm::vec4 c = colour_hue360(210, .6f);
 
   template <fixed R, glm::vec4 C, shape_flag Flags = shape_flag::kNone>

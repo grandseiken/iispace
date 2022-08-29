@@ -1,5 +1,6 @@
 #version 460
 #include "game/render/shaders/lib/hsl.glsl"
+#include "game/render/shaders/shape_h.glsl"
 
 uniform float colour_cycle;
 
@@ -10,15 +11,6 @@ layout(location = 3) in float in_line_width;
 layout(location = 4) in vec3 in_position;
 layout(location = 5) in vec2 in_dimensions;
 layout(location = 6) in vec4 in_colour;
-
-struct shape_data {
-  uint style;
-  uvec2 params;
-  float rotation;
-  float line_width;
-  vec2 dimensions;
-  vec4 colour;
-};
 
 out v_out_t {
   shape_data data;

@@ -7,6 +7,7 @@ namespace ii {
 namespace {
 struct Square : ecs::component {
   static constexpr std::uint32_t kBoundingWidth = 15;
+  static constexpr float kZIndex = -8.f;
   static constexpr sound kDestroySound = sound::kEnemyDestroy;
   static constexpr rumble_type kDestroyRumble = rumble_type::kLow;
   static constexpr fixed kSpeed = 2 + 1_fx / 4;
@@ -76,6 +77,7 @@ DEBUG_STRUCT_TUPLE(Square, dir, timer, invisible_flash);
 
 struct Wall : ecs::component {
   static constexpr std::uint32_t kBoundingWidth = 50;
+  static constexpr float kZIndex = -8.f;
   static constexpr sound kDestroySound = sound::kEnemyDestroy;
   static constexpr rumble_type kDestroyRumble = rumble_type::kLow;
 

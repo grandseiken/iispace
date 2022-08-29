@@ -14,6 +14,7 @@ struct BigSquareBoss : public ecs::component {
   static constexpr std::uint32_t kAttackTime = 90;
   static constexpr fixed kSpeed = 2 + 1_fx / 2;
   static constexpr fixed kSpecialAttackRadius = 120;
+  static constexpr float kZIndex = -4.f;
 
   static constexpr glm::vec4 c0 = colour_hue360(270, .6f);
   static constexpr glm::vec4 c1 = colour_hue360(270, .4f);

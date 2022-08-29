@@ -8,6 +8,7 @@ namespace ii {
 namespace {
 struct BossShot : ecs::component {
   static constexpr std::uint32_t kBoundingWidth = 12;
+  static constexpr float kZIndex = 16.f;
   static constexpr sound kDestroySound = sound::kEnemyDestroy;
   static constexpr rumble_type kDestroyRumble = rumble_type::kNone;
 

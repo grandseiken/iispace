@@ -1,26 +1,11 @@
 #version 460
-
-const float kPi = 3.1415926538;
-const uint kStyleNgonPolygon = 0;
-const uint kStyleNgonPolystar = 1;
-const uint kStyleNgonPolygram = 2;
-const uint kStyleBox = 3;
-const uint kStyleLine = 4;
+#include "game/render/shaders/shape_h.glsl"
 
 uniform vec2 render_scale;
 uniform uvec2 render_dimensions;
 
 layout(points) in;
 layout(triangle_strip, max_vertices = 128) out;
-
-struct shape_data {
-  uint style;
-  uvec2 params;
-  float rotation;
-  float line_width;
-  vec2 dimensions;
-  vec4 colour;
-};
 
 in v_out_t {
   shape_data data;

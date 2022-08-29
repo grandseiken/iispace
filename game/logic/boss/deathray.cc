@@ -19,6 +19,7 @@ constexpr glm::vec4 c3 = colour_hue(0.f, .6f, 0.f);
 
 struct DeathRay : ecs::component {
   static constexpr fixed kBoundingWidth = 48;
+  static constexpr float kZIndex = 0.f;
   static constexpr sound kDestroySound = sound::kEnemyDestroy;
   static constexpr rumble_type kDestroyRumble = rumble_type::kNone;
   static constexpr fixed kSpeed = 10;
@@ -44,6 +45,7 @@ void spawn_death_ray(SimInterface& sim, const vec2& position) {
 
 struct DeathArm : ecs::component {
   static constexpr fixed kBoundingWidth = 60;
+  static constexpr float kZIndex = 4.f;
   static constexpr sound kDestroySound = sound::kPlayerDestroy;
   static constexpr rumble_type kDestroyRumble = rumble_type::kLarge;
 
@@ -151,6 +153,7 @@ struct DeathRayBoss : public ecs::component {
   static constexpr std::uint32_t kTimer = 100;
   static constexpr std::uint32_t kArmRTimer = 400;
   static constexpr fixed kSpeed = 5;
+  static constexpr float kZIndex = -4.f;
 
   template <fixed I>
   using edge_shape =

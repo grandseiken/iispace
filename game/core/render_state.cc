@@ -209,24 +209,25 @@ void RenderState::update(IoInputAdapter* input) {
 
 void RenderState::render(render::GlRenderer& r) const {
   std::vector<render::shape> shapes;
-  auto render_box = [&](const glm::vec2& v, const glm::vec2& d, const glm::vec4& c, float lw) {
+  auto render_box = [&](const glm::vec2& v, const glm::vec2& d, const glm::vec4& c, float lw,
+                        float z) {
     render::box box;
     box.origin = v;
     box.dimensions = d;
     box.colour = c;
     box.line_width = lw;
-    shapes.emplace_back(render::shape::from(box));
+    shapes.emplace_back(render::shape::from(box, z));
   };
 
   for (const auto& star : stars_) {
     switch (star.type) {
     case star_type::kDotStar:
     case star_type::kFarStar:
-      render_box(star.position, glm::vec2{1, 1}, star.colour, 1.f);
+      render_box(star.position, glm::vec2{1, 1}, star.colour, 1.f, -96.f);
       break;
 
     case star_type::kBigStar:
-      render_box(star.position, glm::vec2{2, 2}, star.colour, 1.f);
+      render_box(star.position, glm::vec2{2, 2}, star.colour, 1.f, -96.f);
       break;
 
     case star_type::kPlanet:
@@ -235,7 +236,7 @@ void RenderState::render(render::GlRenderer& r) const {
       ngon.radius = star.size;
       ngon.colour = star.colour;
       ngon.origin = star.position;
-      shapes.emplace_back(render::shape::from(ngon));
+      shapes.emplace_back(render::shape::from(ngon, -96.f));
       break;
     }
   }
@@ -250,8 +251,8 @@ void RenderState::render(render::GlRenderer& r) const {
       return glm::vec4{c.x, c.y, particle.time <= particle.flash_time ? 1.f : c.z, a};
     };
     if (const auto* p = std::get_if<dot_particle>(&particle.data)) {
-      render_box(p->position, glm::vec2{p->radius, p->radius}, get_colour(p->colour),
-                 p->line_width);
+      render_box(p->position, glm::vec2{p->radius, p->radius}, get_colour(p->colour), p->line_width,
+                 -64.f);
     } else if (const auto* p = std::get_if<line_particle>(&particle.data)) {
       auto v = from_polar(p->rotation, p->radius);
       float t = std::max(0.f, (17.f - particle.time) / 16.f);
@@ -260,7 +261,7 @@ void RenderState::render(render::GlRenderer& r) const {
       line.a = p->position + v;
       line.b = p->position - v;
       line.line_width = glm::mix(1.f, 2.f, t);
-      shapes.emplace_back(render::shape::from(line));
+      shapes.emplace_back(render::shape::from(line, -64.f));
     }
   }
 

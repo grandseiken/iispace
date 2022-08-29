@@ -16,6 +16,7 @@ struct ShieldBombBoss : ecs::component {
   static constexpr std::uint32_t kUnshieldTime = 300;
   static constexpr std::uint32_t kAttackTime = 80;
   static constexpr fixed kSpeed = 1;
+  static constexpr float kZIndex = -4.f;
 
   static constexpr glm::vec4 c0 = colour_hue360(150, .4f, .5f);
   static constexpr glm::vec4 c1 = colour_hue(0.f, .8f, 0.f);
