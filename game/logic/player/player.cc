@@ -273,6 +273,7 @@ struct PlayerLogic : ecs::component {
     explosion(h, std::nullopt, e);
     explosion(h, std::nullopt, e, glm::vec4{1.f}, 14);
     explosion(h, std::nullopt, e, std::nullopt, 20);
+    destruct_entity_lines<PlayerLogic>(h, e, transform.centre, 32);
 
     pc.magic_shot_count = 0;
     pc.multiplier = 1;

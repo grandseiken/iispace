@@ -23,6 +23,7 @@ enum class shader {
   kRect,
   kText,
   kShapeOutline,
+  kShapeMotion,
 };
 
 enum shape_shader_style : std::uint32_t {
@@ -157,7 +158,14 @@ result<std::unique_ptr<GlRenderer>> GlRenderer::create() {
   r = load_shader(shader::kShapeOutline,
                   {{"game/render/shaders/shape/colour.f.glsl", gl::shader_type::kFragment},
                    {"game/render/shaders/shape/outline.g.glsl", gl::shader_type::kGeometry},
-                   {"game/render/shaders/shape/outline.v.glsl", gl::shader_type::kVertex}});
+                   {"game/render/shaders/shape/input.v.glsl", gl::shader_type::kVertex}});
+  if (!r) {
+    return unexpected(r.error());
+  }
+  r = load_shader(shader::kShapeMotion,
+                  {{"game/render/shaders/shape/colour.f.glsl", gl::shader_type::kFragment},
+                   {"game/render/shaders/shape/motion.g.glsl", gl::shader_type::kGeometry},
+                   {"game/render/shaders/shape/input.v.glsl", gl::shader_type::kVertex}});
   if (!r) {
     return unexpected(r.error());
   }
