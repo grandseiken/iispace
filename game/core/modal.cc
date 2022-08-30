@@ -4,6 +4,10 @@ void Modal::quit() {
   quit_ = true;
 }
 
+bool Modal::is_top() const {
+  return stack_->top() == this;
+}
+
 bool ModalStack::update(ii::ui::UiLayer& ui) {
   bool captured = false;
   auto it = stack_.begin();

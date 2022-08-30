@@ -40,7 +40,7 @@ public:
   void render_rect(const glm::ivec2& position, const glm::ivec2& size, std::uint32_t border_width,
                    const glm::vec4& colour_lo, const glm::vec4& colour_hi,
                    const glm::vec4& border_lo, const glm::vec4& border_hi);
-  void render_shapes(std::span<const shape> shapes);
+  void render_shapes(std::span<const shape> shapes, float trail_alpha);
 
 private:
   std::uint32_t colour_cycle_ = 0;

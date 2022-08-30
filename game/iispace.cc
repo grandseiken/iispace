@@ -86,8 +86,6 @@ bool run(const std::vector<std::string>& args, const game_options_t& options) {
   }
 
   using counter_t = std::chrono::duration<double>;
-  static constexpr std::uint32_t kFps = 50;
-  static constexpr counter_t time_per_frame{1. / kFps};
   auto last_time = std::chrono::steady_clock::now();
   auto elapsed_time = [&last_time] {
     auto now = std::chrono::steady_clock::now();
@@ -137,6 +135,8 @@ bool run(const std::vector<std::string>& args, const game_options_t& options) {
       std::cerr << render_status.error() << std::endl;
     }
 
+    auto fps = modal_stack.empty() ? 60 : modal_stack.top()->fps();
+    counter_t time_per_frame{1. / fps};
     auto elapsed = elapsed_time();
     if (time_per_frame > elapsed) {
       std::this_thread::sleep_for(time_per_frame - elapsed);

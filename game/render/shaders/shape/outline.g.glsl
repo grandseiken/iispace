@@ -12,13 +12,26 @@ v_in[];
 
 out vec4 g_colour;
 
+void emit2(vec4 v0, vec4 v1) {
+  gl_Position = v0;
+  EmitVertex();
+  gl_Position = v1;
+  EmitVertex();
+}
+
+void emit3(vec4 v0, vec4 v1, vec4 v2) {
+  gl_Position = v0;
+  EmitVertex();
+  gl_Position = v1;
+  EmitVertex();
+  gl_Position = v2;
+  EmitVertex();
+}
+
 void emit_polygon(vec2 position, shape_data data) {
   polygon_data d = convert_polygon(position, data);
   for (uint i = 0; i <= d.segments; ++i) {
-    gl_Position = polygon_inner_v(d, i);
-    EmitVertex();
-    gl_Position = polygon_outer_v(d, i);
-    EmitVertex();
+    emit2(polygon_inner_v(d, i), polygon_outer_v(d, i));
   }
   EndPrimitive();
 }
@@ -29,16 +42,8 @@ void emit_odd_polystar(vec2 position, shape_data data) {
     polystar_outer a = polystar_outer_v(d, i);
     polystar_inner b = polystar_inner_v(d, i);
 
-    gl_Position = b.v0;
-    EmitVertex();
-    gl_Position = b.v1;
-    EmitVertex();
-    gl_Position = a.v0;
-    EmitVertex();
-    gl_Position = a.v1;
-    EmitVertex();
-    gl_Position = a.v;
-    EmitVertex();
+    emit2(b.v0, b.v1);
+    emit3(a.v0, a.v1, a.v);
     EndPrimitive();
   }
 }
@@ -49,18 +54,8 @@ void emit_even_polystar(vec2 position, shape_data data) {
     polystar_outer a = polystar_outer_v(d, i);
     polystar_outer b = polystar_outer_v(d, i + d.sides / 2);
 
-    gl_Position = a.v;
-    EmitVertex();
-    gl_Position = a.v0;
-    EmitVertex();
-    gl_Position = a.v1;
-    EmitVertex();
-    gl_Position = b.v1;
-    EmitVertex();
-    gl_Position = b.v0;
-    EmitVertex();
-    gl_Position = b.v;
-    EmitVertex();
+    emit3(a.v, a.v0, a.v1);
+    emit3(b.v1, b.v0, b.v);
     EndPrimitive();
   }
 }
@@ -73,61 +68,26 @@ void emit_polygram(vec2 position, shape_data data) {
   for (uint i = start + 2; i < d.sides && i < start + d.sides - 1; ++i) {
     polystar_outer u = polystar_outer_v(d, i);
 
-    gl_Position = u.v;
-    EmitVertex();
-    gl_Position = u.v0;
-    EmitVertex();
-    gl_Position = u.v1;
-    EmitVertex();
-    gl_Position = v.v1;
-    EmitVertex();
-    gl_Position = v.v0;
-    EmitVertex();
-    gl_Position = v.v;
-    EmitVertex();
+    emit3(u.v, u.v0, u.v1);
+    emit3(v.v1, v.v0, v.v);
     EndPrimitive();
   }
 }
 
 void emit_box(vec2 position, shape_data data) {
   box_data d = convert_box(position, data);
-  gl_Position = d.a_outer;
-  EmitVertex();
-  gl_Position = d.a_inner;
-  EmitVertex();
-  gl_Position = d.b_outer;
-  EmitVertex();
-  gl_Position = d.b_inner;
-  EmitVertex();
-  gl_Position = d.c_outer;
-  EmitVertex();
-  gl_Position = d.c_inner;
-  EmitVertex();
-  gl_Position = d.d_outer;
-  EmitVertex();
-  gl_Position = d.d_inner;
-  EmitVertex();
-  gl_Position = d.a_outer;
-  EmitVertex();
-  gl_Position = d.a_inner;
-  EmitVertex();
+  emit2(d.a_outer, d.a_inner);
+  emit2(d.b_outer, d.b_inner);
+  emit2(d.c_outer, d.c_inner);
+  emit2(d.d_outer, d.d_inner);
+  emit2(d.a_outer, d.a_inner);
   EndPrimitive();
 }
 
 void emit_line(vec2 position, shape_data data) {
   line_data d = convert_line(position, data);
-  gl_Position = d.a;
-  EmitVertex();
-  gl_Position = d.a0;
-  EmitVertex();
-  gl_Position = d.a1;
-  EmitVertex();
-  gl_Position = d.b0;
-  EmitVertex();
-  gl_Position = d.b1;
-  EmitVertex();
-  gl_Position = d.b;
-  EmitVertex();
+  emit3(d.a, d.a0, d.a1);
+  emit3(d.b0, d.b1, d.b);
   EndPrimitive();
 }
 

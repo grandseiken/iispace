@@ -43,6 +43,27 @@ void GlobalData::post_update(ecs::handle h, SimInterface& sim) {
   }
 }
 
+void Render::render_shapes(ecs::const_handle h, bool paused, std::vector<render::shape>& output,
+                           const SimInterface& sim) {
+  auto start = output.size();
+  render(h, output, sim);
+  auto count = output.size() - start;
+  trails.resize(count);
+  for (std::size_t i = 0; i < count; ++i) {
+    auto& s = output[start + i];
+    if (s.disable_trail) {
+      s.trail.reset();
+      trails[i].reset();
+    } else if (trails[i]) {
+      s.trail = *trails[i];
+    }
+    if (!paused) {
+      trails[i] = render::motion_trail{
+          .prev_origin = s.origin, .prev_rotation = s.rotation, .prev_colour = s.colour};
+    }
+  }
+}
+
 void Health::damage(ecs::handle h, SimInterface& sim, std::uint32_t damage, damage_type type,
                     ecs::entity_id source_id, std::optional<vec2> source_position) {
   if (damage_transform) {

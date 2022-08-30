@@ -43,13 +43,9 @@ struct Shot : ecs::component {
   , magic{magic} {}
 
   void update(ecs::handle h, Transform& transform, SimInterface& sim) {
-    if (sim.conditions().mode == game_mode::kWhat) {
-      colour = glm::vec4{0.f};
-    } else {
-      colour = magic && sim.random(random_source::kLegacyAesthetic).rbool()
-          ? glm::vec4{1.f}
-          : player_colour(player_number);
-    }
+    colour = magic && sim.random(random_source::kLegacyAesthetic).rbool()
+        ? glm::vec4{1.f}
+        : player_colour(player_number);
     transform.move(velocity);
     bool on_screen = all(greaterThanEqual(transform.centre, vec2{-4, -4})) &&
         all(lessThan(transform.centre, vec2{4, 4} + sim.dimensions()));
@@ -159,14 +155,17 @@ struct PlayerLogic : ecs::component {
   std::uint32_t invulnerability_timer = kReviveTime;
   std::uint32_t fire_timer = 0;
   vec2 fire_target{0};
+  bool fire_target_trail = true;
 
-  void update(ecs::handle h, Player& pc, Transform& transform, SimInterface& sim) {
+  void update(ecs::handle h, Player& pc, Transform& transform, Render& render, SimInterface& sim) {
     const auto& input = sim.input(pc.player_number);
+    auto old_fire_target = fire_target;
     if (input.target_absolute) {
       fire_target = *input.target_absolute;
     } else if (input.target_relative) {
       fire_target = transform.centre + *input.target_relative;
     }
+    fire_target_trail = length_squared(fire_target - old_fire_target) <= 64 * 64;
     fire_timer = (fire_timer + 1) % kShotTimer;
 
     // Temporary death.
@@ -183,6 +182,7 @@ struct PlayerLogic : ecs::component {
         pc.kill_timer = 0;
         kill_queue.erase(kill_queue.begin());
         invulnerability_timer = kReviveTime;
+        render.trails.clear();
         transform.centre = {(1 + pc.player_number) * dim.x.to_int() / (1 + sim.player_count()),
                             dim.y / 2};
         sim.emit(resolve_key::reconcile(h.id(), resolve_tag::kRespawn))
@@ -196,6 +196,10 @@ struct PlayerLogic : ecs::component {
     // Movement.
     if (length(input.velocity) > fixed_c::hundredth) {
       auto v = length(input.velocity) > 1 ? normalise(input.velocity) : input.velocity;
+      auto av = angle(v);
+      if (abs(angle_diff(av, transform.rotation)) > fixed_c::pi / 3) {
+        render.trails.clear();
+      }
       transform.set_rotation(angle(v));
       transform.centre = max(vec2{0}, min(dim, kPlayerSpeed * v + transform.centre));
     }
@@ -298,22 +302,30 @@ struct PlayerLogic : ecs::component {
     explode_shapes<shape>(e, parameters, colour, time, towards);
   }
 
-  void render(const Player& pc, const SimInterface& sim) const {
-    auto c = player_colour(pc.player_number);
+  void render(const Player& pc, std::vector<render::shape>& output) const {
     if (should_render(pc)) {
+      auto c = player_colour(pc.player_number);
       auto t = to_float(fire_target);
-      sim.render(render::shape::line(t + glm::vec2{0, 9}, t - glm::vec2{0, 8}, c));
-      sim.render(render::shape::line(t + glm::vec2{9, 1}, t - glm::vec2{8, -1}, c));
+      output.emplace_back(render::shape{
+          .origin = t,
+          .colour = c,
+          .z_index = 100.f,
+          .disable_trail = !fire_target_trail,
+          .data = render::ngon{.radius = 8, .sides = 4, .style = render::ngon_style::kPolystar},
+      });
     }
+  }
 
-    if (sim.conditions().mode != game_mode::kBoss) {
-      render::player_info info;
-      info.colour = c;
-      info.score = pc.score;
-      info.multiplier = pc.multiplier;
-      info.timer = static_cast<float>(pc.magic_shot_count) / kMagicShotCount;
-      sim.render(pc.player_number, info);
+  std::optional<render::player_info> render_info(const Player& pc, const SimInterface& sim) const {
+    if (sim.conditions().mode == game_mode::kBoss) {
+      return std::nullopt;
     }
+    render::player_info info;
+    info.colour = player_colour(pc.player_number);
+    info.score = pc.score;
+    info.multiplier = pc.multiplier;
+    info.timer = static_cast<float>(pc.magic_shot_count) / kMagicShotCount;
+    return info;
   }
 
   bool should_render(const Player& pc) const {
@@ -327,7 +339,8 @@ DEBUG_STRUCT_TUPLE(PlayerLogic, is_what_mode, invulnerability_timer, fire_timer,
 void spawn_player(SimInterface& sim, const vec2& position, std::uint32_t player_number,
                   bool is_ai) {
   auto h = create_ship<PlayerLogic>(sim, position);
-  h.add(Player{.player_number = player_number});
+  h.add(
+      Player{.player_number = player_number, .render_info = ecs::call<&PlayerLogic::render_info>});
   h.add(PlayerLogic{sim});
   if (is_ai) {
     h.add(AiPlayer{});

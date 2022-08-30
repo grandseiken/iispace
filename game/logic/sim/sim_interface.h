@@ -105,11 +105,9 @@ public:
   ecs::const_handle nearest_player(const vec2& point) const;
   ecs::handle nearest_player(const vec2& point);
 
-  // Simulation output (particle / effects stuff; rendering).
+  // Simulation output.
   EmitHandle emit(const resolve_key& key);
   void trigger(const run_event&);
-  void render(const render::shape&) const;
-  void render(std::uint32_t player_number, const render::player_info&) const;
 
 private:
   SimInternals* internals_;

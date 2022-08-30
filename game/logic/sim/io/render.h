@@ -51,6 +51,7 @@ using shape_data = std::variant<line, ngon, box, polyarc>;
 struct motion_trail {
   glm::vec2 prev_origin{0.f};
   float prev_rotation = 0.f;
+  glm::vec4 prev_colour{0.f};
 };
 
 struct shape {
@@ -59,6 +60,7 @@ struct shape {
   glm::vec4 colour{0.f};
   std::optional<float> z_index;
   std::optional<motion_trail> trail;
+  bool disable_trail = false;
   shape_data data;
 
   static shape line(const glm::vec2& a, const glm::vec2& b, const glm::vec4& c) {

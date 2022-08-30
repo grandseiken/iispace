@@ -175,6 +175,7 @@ std::vector<sim_packet> NetworkedSimState::update(std::vector<input_frame> local
       predicted_state_.update(std::move(predicted_inputs));
       handle_replay_output(predicted_state_.tick_count(), predicted_state_.output());
     }
+    predicted_state_.render(/* paused */ false);  // For motion trails.
   }
 
   // Now predicted_state >= canonical_state; advance one tick.
@@ -200,6 +201,7 @@ std::vector<sim_packet> NetworkedSimState::update(std::vector<input_frame> local
   }
   if (!tick_offset && frame_complete) {
     // Can just advance canonical state.
+    canonical_state_.render(/* paused */ false);  // For motion trails.
     canonical_state_.update(std::move(inputs));
     handle_dual_output(canonical_state_.output());
 

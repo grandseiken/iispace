@@ -19,11 +19,13 @@ public:
 
   virtual void update(ii::ui::UiLayer& ui) = 0;
   virtual void render(const ii::ui::UiLayer& ui, ii::render::GlRenderer& r) const = 0;
+  virtual std::uint32_t fps() const { return 60; }
 
 protected:
   template <typename T>
   T* add(std::unique_ptr<T> modal);
   void quit();
+  bool is_top() const;
 
 private:
   friend class ModalStack;
@@ -41,6 +43,10 @@ public:
     modal->stack_ = this;
     new_stack_.emplace_back(std::move(modal));
     return p;
+  }
+
+  Modal* top() const {
+    return new_stack_.empty() ? stack_.back().get() : new_stack_.back().get();
   }
 
   bool empty() const {

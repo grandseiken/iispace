@@ -76,6 +76,7 @@ public:
 
   void update(ii::ui::UiLayer& ui) override;
   void render(const ii::ui::UiLayer& ui, ii::render::GlRenderer& r) const override;
+  std::uint32_t fps() const override;
 
 private:
   struct replay_t {

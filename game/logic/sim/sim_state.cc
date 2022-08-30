@@ -208,35 +208,42 @@ bool SimState::game_over() const {
   return game_over_;
 }
 
-const render_output& SimState::render() const {
+const render_output& SimState::render(bool paused) const {
   internals_->render.boss_hp_bar.reset();
   internals_->render.shapes.clear();
   internals_->render.players.clear();
   internals_->render.dimensions = to_float(interface_->dimensions());
 
-  internals_->index.iterate_dispatch<Render>([&](ecs::const_handle h, const Render& r) {
+  internals_->index.iterate_dispatch<Render>([&](ecs::handle h, Render& r) {
     if (!h.get<Player>()) {
-      r.render(h, *interface_);
+      r.render_shapes(h, paused, internals_->render.shapes, *interface_);
+      return;
     }
   });
   internals_->index.iterate_dispatch<Player>(
-      [&](ecs::handle h, const Player& p, const Render& r, Transform& transform) {
+      [&](ecs::handle h, const Player& p, Render& r, Transform& transform) {
+        if (auto info = p.render_info(h, *interface_)) {
+          internals_->render.players.resize(std::max(
+              internals_->render.players.size(), static_cast<std::size_t>(p.player_number + 1)));
+          internals_->render.players[p.player_number] = *info;
+        }
+
         auto it = smoothing_data_.players.find(p.player_number);
         if (it == smoothing_data_.players.end() || !it->second.position) {
-          r.render(h, *interface_);
+          r.render_shapes(h, paused, internals_->render.shapes, *interface_);
           return;
         }
         auto transform_copy = transform;
         transform.centre = *it->second.position;
         transform.rotation = it->second.rotation;
-        r.render(h, *interface_);
+        r.render_shapes(h, paused, internals_->render.shapes, *interface_);
         transform = transform_copy;
       });
 
   // TODO: extract somewhere?
   auto render_warning = [&](const glm::vec2& v) {
     auto render_tri = [&](const glm::vec2& position, float r, float f) {
-      interface_->render(render::shape{
+      internals_->render.shapes.emplace_back(render::shape{
           .origin = position,
           .rotation = r,
           .colour = {0.f, 0.f, .2f + .6f * f, .4f},
@@ -290,8 +297,8 @@ const render_output& SimState::render() const {
   return result;
 }
 
-std::uint32_t SimState::frame_count() const {
-  return internals_->conditions.mode == game_mode::kFast ? 2 : 1;
+std::uint32_t SimState::fps() const {
+  return internals_->conditions.mode == game_mode::kFast ? 60 : 50;
 }
 
 aggregate_output& SimState::output() {

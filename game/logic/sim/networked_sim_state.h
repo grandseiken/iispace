@@ -65,12 +65,12 @@ public:
     return predicted_state_.tick_count();
   }
 
-  std::uint32_t frame_count() const override {
-    return predicted_state_.frame_count();
+  std::uint32_t fps() const override {
+    return predicted_state_.fps();
   }
 
-  const render_output& render() const override {
-    return predicted_state_.render();
+  const render_output& render(bool paused) const override {
+    return predicted_state_.render(paused);
   }
 
   aggregate_output& output() override {

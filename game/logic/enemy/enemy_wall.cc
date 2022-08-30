@@ -27,7 +27,8 @@ struct Square : ecs::component {
   Square(SimInterface& sim, fixed dir_angle)
   : dir{from_polar(dir_angle, 1_fx)}, timer{sim.random(80) + 40} {}
 
-  void update(ecs::handle h, Transform& transform, Health& health, SimInterface& sim) {
+  void
+  update(ecs::handle h, Transform& transform, Render& render, Health& health, SimInterface& sim) {
     bool no_enemies = !sim.global_entity().get<GlobalData>()->non_wall_enemy_count;
     if (sim.is_on_screen(transform.centre) && no_enemies) {
       if (timer) {
@@ -48,24 +49,28 @@ struct Square : ecs::component {
       if (dir.x <= 0) {
         dir.x = 1;
       }
+      render.trails.clear();
     }
     if (v.y < 0 && dir.y <= 0) {
       dir.y = -dir.y;
       if (dir.y <= 0) {
         dir.y = 1;
       }
+      render.trails.clear();
     }
     if (v.x > dim.x && dir.x >= 0) {
       dir.x = -dir.x;
       if (dir.x >= 0) {
         dir.x = -1;
       }
+      render.trails.clear();
     }
     if (v.y > dim.y && dir.y >= 0) {
       dir.y = -dir.y;
       if (dir.y >= 0) {
         dir.y = -1;
       }
+      render.trails.clear();
     }
     dir = normalise(dir);
     transform.move(dir * kSpeed);
@@ -93,7 +98,8 @@ struct Wall : ecs::component {
 
   Wall(bool rdir) : rdir{rdir} {}
 
-  void update(ecs::handle h, Transform& transform, Health& health, SimInterface& sim) {
+  void
+  update(ecs::handle h, Transform& transform, Render& render, Health& health, SimInterface& sim) {
     if (!sim.global_entity().get<GlobalData>()->non_wall_enemy_count && timer % 8 < 2) {
       if (health.hp > 2) {
         sim.emit(resolve_key::predicted()).play(sound::kEnemySpawn, 1.f, 0.f);
@@ -127,6 +133,7 @@ struct Wall : ecs::component {
         (v.x > dim.x && dir.x > fixed_c::hundredth) ||
         (v.y > dim.y && dir.y > fixed_c::hundredth)) {
       dir = -normalise(dir);
+      render.trails.clear();
     }
 
     transform.move(dir * kSpeed);

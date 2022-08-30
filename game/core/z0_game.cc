@@ -393,14 +393,6 @@ void GameModal::update(ii::ui::UiLayer& ui) {
     return;
   }
 
-  if (ui.input().pressed(ii::ui::key::kMenu) && !controllers_dialog_) {
-    ui.io_layer().capture_mouse(false);
-    add(std::make_unique<PauseModal>(&pause_output_));
-    ui.play_sound(ii::sound::kMenuAccept);
-    return;
-  }
-  ui.io_layer().capture_mouse(true);
-
   if (show_controllers_dialog_ && !replay_) {
     controllers_dialog_ = true;
   }
@@ -415,9 +407,7 @@ void GameModal::update(ii::ui::UiLayer& ui) {
     return;
   }
 
-  auto frames = istate.frame_count();
-  frames *= frame_count_multiplier_;
-  for (std::uint32_t i = 0; i < frames; ++i) {
+  for (std::uint32_t i = 0; i < frame_count_multiplier_; ++i) {
     if (state_) {
       auto input = game_ ? game_->input.get() : replay_->reader.next_tick_input_frames();
       if (game_) {
@@ -470,15 +460,24 @@ void GameModal::update(ii::ui::UiLayer& ui) {
       frame_count_multiplier_ /= 2;
     }
   }
+
+  if (ui.input().pressed(ii::ui::key::kMenu) && !controllers_dialog_) {
+    ui.io_layer().capture_mouse(false);
+    add(std::make_unique<PauseModal>(&pause_output_));
+    ui.play_sound(ii::sound::kMenuAccept);
+    return;
+  }
+  ui.io_layer().capture_mouse(true);
 }
 
 void GameModal::render(const ii::ui::UiLayer& ui, ii::render::GlRenderer& r) const {
   auto& istate = network_state_ ? static_cast<ii::ISimState&>(*network_state_) : *state_;
-  const auto& render = istate.render();
+  const auto& render = istate.render(/* paused */ controllers_dialog_ || !is_top());
   r.set_dimensions(ui.io_layer().dimensions(), kDimensions);
   r.set_colour_cycle(render.colour_cycle);
   render_state_.render(r);  // TODO: can be merged with below?
-  r.render_shapes(render.shapes);
+  r.render_shapes(render.shapes,
+                  /* trail alpha */ 1.f / (1.f + std::log2f(frame_count_multiplier_)));
 
   std::uint32_t n = 0;
   for (const auto& p : render.players) {
@@ -508,7 +507,7 @@ void GameModal::render(const ii::ui::UiLayer& ui, ii::render::GlRenderer& r) con
           .colour = glm::vec4{1.f},
           .data = ii::render::box{.dimensions = (hi - lo) / 2.f},
       }};
-      r.render_shapes(shapes);
+      r.render_shapes(shapes, 1.f);
     }
     ++n;
   }
@@ -589,6 +588,10 @@ void GameModal::render(const ii::ui::UiLayer& ui, ii::render::GlRenderer& r) con
                  kDimensions.y / kTextSize.y - 3.f},
                 ss.str(), z0Game::kPanelTran);
   }
+}
+
+std::uint32_t GameModal::fps() const {
+  return (network_state_ ? static_cast<ii::ISimState&>(*network_state_) : *state_).fps();
 }
 
 z0Game::z0Game(const ii::game_options_t& options) : Modal{true, true}, options_{options} {}

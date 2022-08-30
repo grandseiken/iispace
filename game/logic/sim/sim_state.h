@@ -26,8 +26,8 @@ public:
 
   virtual bool game_over() const = 0;
   virtual std::uint64_t tick_count() const = 0;
-  virtual std::uint32_t frame_count() const = 0;
-  virtual const render_output& render() const = 0;
+  virtual std::uint32_t fps() const = 0;
+  virtual const render_output& render(bool paused) const = 0;
 
   virtual aggregate_output& output() = 0;
   virtual const sim_results& results() const = 0;
@@ -51,8 +51,8 @@ public:
   void ai_think(std::vector<input_frame>& input) const;
   void update(std::vector<input_frame> input);
   bool game_over() const override;
-  const render_output& render() const override;
-  std::uint32_t frame_count() const override;
+  const render_output& render(bool paused) const override;
+  std::uint32_t fps() const override;
 
   aggregate_output& output() override;
   const sim_results& results() const override;

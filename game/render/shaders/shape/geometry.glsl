@@ -11,6 +11,12 @@ vec4 render_position(vec2 position) {
   return vec4(v.x, -v.y, render_depth(), 1.);
 }
 
+float game_distance(vec4 render_a, vec4 render_b) {
+  vec2 a = (render_a.xy * vec2(render_dimensions) / 2. + 1.) / render_scale;
+  vec2 b = (render_b.xy * vec2(render_dimensions) / 2. + 1.) / render_scale;
+  return distance(a, b);
+}
+
 vec2 from_polar(float a, float r) {
   return vec2(r * cos(a), r * sin(a));
 }

@@ -4,6 +4,7 @@
 #include "game/common/struct_tuple.h"
 #include "game/logic/ecs/index.h"
 #include "game/logic/geometry/enums.h"
+#include "game/logic/sim/io/render.h"
 #include "game/mixer/sound.h"
 #include <glm/glm.hpp>
 #include <sfn/functional.h>
@@ -88,7 +89,12 @@ struct PostUpdate : ecs::component {
 DEBUG_STRUCT_TUPLE(PostUpdate, post_update);
 
 struct Render : ecs::component {
-  sfn::ptr<void(ecs::const_handle, const SimInterface&)> render = nullptr;
+  sfn::ptr<void(ecs::const_handle, std::vector<render::shape>&, const SimInterface&)> render =
+      nullptr;
+  std::vector<std::optional<render::motion_trail>> trails;
+
+  void
+  render_shapes(ecs::const_handle, bool paused, std::vector<render::shape>&, const SimInterface&);
 };
 DEBUG_STRUCT_TUPLE(Render, render);
 
@@ -164,6 +170,9 @@ struct Player : ecs::component {
   std::uint32_t multiplier = 1;
   std::uint32_t multiplier_count = 0;
   std::uint32_t death_count = 0;
+
+  sfn::ptr<std::optional<render::player_info>(ecs::const_handle, const SimInterface&)> render_info =
+      nullptr;
 
   bool is_killed() const {
     return kill_timer != 0;

@@ -77,7 +77,8 @@ struct TractorBoss : ecs::component {
   std::vector<vec2> targets;
   fixed sub_rotation = 0;
 
-  void update(ecs::handle h, Transform& transform, const Health& health, SimInterface& sim) {
+  void update(ecs::handle h, Transform& transform, Render& render, const Health& health,
+              SimInterface& sim) {
     auto e = sim.emit(resolve_key::predicted());
     auto dim_x = sim.dimensions().x;
     if (transform.centre.x <= dim_x / 2 && will_attack && !stopped && !move_away) {
@@ -88,6 +89,7 @@ struct TractorBoss : ecs::component {
     }
 
     if (transform.centre.x < -150) {
+      render.trails.clear();
       transform.centre.x = dim_x + 150;
       will_attack = !will_attack;
       shoot_type = sim.random_bool();
@@ -262,18 +264,21 @@ struct TractorBoss : ecs::component {
     }
   }
 
-  void render(const Transform& transform, const SimInterface& sim) const {
+  void render(const Transform& transform, std::vector<render::shape>& output,
+              const SimInterface& sim) const {
     if ((stopped && !generating && !attacking) ||
         (!stopped && (move_away || !will_attack) && sim.is_on_screen(transform.centre))) {
       for (std::size_t i = 0; i < targets.size(); ++i) {
         if (((timer + i * 4) / 4) % 2) {
-          sim.render(render::shape::line(to_float(transform.centre), to_float(targets[i]), c0));
+          auto s = render::shape::line(to_float(transform.centre), to_float(targets[i]), c0);
+          s.disable_trail = true;
+          output.emplace_back(s);
         }
       }
     }
     for (const auto& v : attack_shapes) {
       std::tuple parameters{transform.centre, transform.rotation, v};
-      render_shape<attack_shape>(sim, parameters);
+      render_shape<attack_shape>(output, parameters);
     }
   }
 };

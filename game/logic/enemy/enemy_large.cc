@@ -248,13 +248,16 @@ struct Tractor : ecs::component {
     }
   }
 
-  void render(const Transform& transform, const SimInterface& sim) const {
+  void render(const Transform& transform, std::vector<render::shape>& output,
+              const SimInterface& sim) const {
     if (spinning) {
       std::uint32_t i = 0;
       sim.index().iterate_dispatch<Player>([&](const Player& p, const Transform& p_transform) {
         if (((timer + i++ * 4) / 4) % 2 && !p.is_killed()) {
-          sim.render(render::shape::line(to_float(transform.centre), to_float(p_transform.centre),
-                                         colour_hue360(300, .5f, .6f)));
+          auto s = render::shape::line(to_float(transform.centre), to_float(p_transform.centre),
+                                       colour_hue360(300, .5f, .6f));
+          s.disable_trail = true;
+          output.emplace_back(s);
         }
       });
     }

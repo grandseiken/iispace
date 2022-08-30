@@ -476,8 +476,8 @@ struct GhostBoss : ecs::component {
     }
   }
 
-  void
-  render_override(const Transform& transform, const Health& health, const SimInterface& sim) const {
+  void render_override(const Transform& transform, const Health& health,
+                       std::vector<render::shape>& output) const {
     std::optional<glm::vec4> colour_override;
     if ((start_time / 4) % 2 == 1) {
       colour_override = {0.f, 0.f, 0.f, 1.f / 255};
@@ -486,15 +486,15 @@ struct GhostBoss : ecs::component {
     } else {
       colour_override = c2;
     }
-    render_entity_shape_override<render_shape>(sim, &health, shape_parameters(transform), -4.f, {},
-                                               colour_override);
+    render_entity_shape_override<render_shape>(output, &health, shape_parameters(transform), -4.f,
+                                               {}, colour_override);
     for (std::uint32_t i = 0; i < 8; ++i) {
-      render_entity_shape_override<spark_shape>(sim, &health, spark_shape_parameters(transform, i),
-                                                -2.f, {}, colour_override);
+      render_entity_shape_override<spark_shape>(
+          output, &health, spark_shape_parameters(transform, i), -2.f, {}, colour_override);
     }
     if (box_attack_shape_enabled) {
-      render_entity_shape_override<box_attack_shape>(sim, nullptr, box_attack_parameters(transform),
-                                                     0.f, {}, colour_override);
+      render_entity_shape_override<box_attack_shape>(
+          output, nullptr, box_attack_parameters(transform), 0.f, {}, colour_override);
     }
 
     using outer_star_shape = standard_transform<
@@ -507,7 +507,7 @@ struct GhostBoss : ecs::component {
         auto colour = outer_dangerous[n][i] ? c0 : n ? c2 : c1;
         std::tuple parameters{transform.centre, transform.rotation + outer_rotation[n],
                               outer_shape_d(n, i), outer_ball_rotation, colour};
-        render_entity_shape_override<outer_star_shape>(sim, nullptr, parameters, -16.f, {},
+        render_entity_shape_override<outer_star_shape>(output, nullptr, parameters, -16.f, {},
                                                        colour_override);
       }
     }

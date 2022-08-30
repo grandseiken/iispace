@@ -255,14 +255,4 @@ void SimInterface::trigger(const run_event& event) {
   internals_->results.events.emplace_back(event);
 }
 
-void SimInterface::render(const render::shape& shape) const {
-  internals_->render.shapes.emplace_back(shape);
-}
-
-void SimInterface::render(std::uint32_t player_number, const render::player_info& info) const {
-  internals_->render.players.resize(
-      std::max<std::size_t>(internals_->render.players.size(), player_number + 1));
-  internals_->render.players[player_number] = info;
-}
-
 }  // namespace ii

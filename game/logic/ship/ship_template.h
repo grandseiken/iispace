@@ -27,7 +27,7 @@ auto get_shape_parameters(ecs::const_handle h) {
 }
 
 template <geom::ShapeNode S>
-void render_shape(const SimInterface& sim, const auto& parameters,
+void render_shape(std::vector<render::shape>& output, const auto& parameters,
                   std::optional<float> z_index = std::nullopt, const geom::transform& t = {},
                   const std::optional<glm::vec4>& c_override = std::nullopt,
                   const std::optional<std::size_t>& c_override_max_index = std::nullopt) {
@@ -42,12 +42,12 @@ void render_shape(const SimInterface& sim, const auto& parameters,
     if (c_override && (!c_override_max_index || i < *c_override_max_index)) {
       shape_copy.colour = glm::vec4{c_override->r, c_override->g, c_override->b, shape.colour.a};
     }
-    sim.render(shape_copy);
+    output.emplace_back(shape_copy);
   });
 }
 
 template <geom::ShapeNode S>
-void render_entity_shape_override(const SimInterface& sim, const Health* health,
+void render_entity_shape_override(std::vector<render::shape>& output, const Health* health,
                                   const auto& parameters,
                                   std::optional<float> z_index = std::nullopt,
                                   const geom::transform& t = {},
@@ -58,13 +58,14 @@ void render_entity_shape_override(const SimInterface& sim, const Health* health,
     c_override = glm::vec4{1.f};
     c_override_max_index = health->hit_flash_ignore_index;
   }
-  render_shape<S>(sim, parameters, z_index, t, c_override, c_override_max_index);
+  render_shape<S>(output, parameters, z_index, t, c_override, c_override_max_index);
 }
 
 template <ecs::Component Logic, geom::ShapeNode S = typename Logic::shape>
-void render_entity_shape(ecs::const_handle h, const Health* health, const SimInterface& sim) {
-  render_entity_shape_override<S>(sim, health, get_shape_parameters<Logic>(h), Logic::kZIndex, {},
-                                  std::nullopt);
+void render_entity_shape(ecs::const_handle h, const Health* health,
+                         std::vector<render::shape>& output) {
+  render_entity_shape_override<S>(output, health, get_shape_parameters<Logic>(h), Logic::kZIndex,
+                                  {}, std::nullopt);
 }
 
 template <ecs::Component Logic, geom::ShapeNode S = typename Logic::shape>
@@ -242,12 +243,14 @@ ecs::handle create_ship(SimInterface& sim, const vec2& position, fixed rotation 
   }
 
   constexpr auto render = ecs::call<&render_entity_shape<Logic, S>>;
+  using render_t = void(ecs::const_handle, std::vector<render::shape>&, const SimInterface&);
   if constexpr (requires { &Logic::render_override; }) {
-    h.add(Render{.render = ecs::call<&Logic::render_override>});
+    h.add(Render{.render = sfn::cast<render_t, ecs::call<&Logic::render_override>>});
   } else if constexpr (requires { &Logic::render; }) {
-    h.add(Render{.render = sfn::sequence<render, ecs::call<&Logic::render>>});
+    h.add(Render{.render = sfn::sequence<sfn::cast<render_t, render>,
+                                         sfn::cast<render_t, ecs::call<&Logic::render>>>});
   } else {
-    h.add(Render{.render = render});
+    h.add(Render{.render = sfn::cast<render_t, render>});
   }
   return h;
 }

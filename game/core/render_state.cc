@@ -205,12 +205,13 @@ void RenderState::update(IoInputAdapter* input) {
 
 void RenderState::render(render::GlRenderer& r) const {
   std::vector<render::shape> shapes;
-  auto render_box = [&](const glm::vec2& v, const glm::vec2& d, const glm::vec4& c, float lw,
-                        float z) {
+  auto render_box = [&](const glm::vec2& v, const glm::vec2& vv, const glm::vec2& d,
+                        const glm::vec4& c, float lw, float z) {
     shapes.emplace_back(render::shape{
         .origin = v,
         .colour = c,
         .z_index = z,
+        .trail = render::motion_trail{.prev_origin = v - vv, .prev_colour = c},
         .data = render::box{.dimensions = d, .line_width = lw},
     });
   };
@@ -219,11 +220,13 @@ void RenderState::render(render::GlRenderer& r) const {
     switch (star.type) {
     case star_type::kDotStar:
     case star_type::kFarStar:
-      render_box(star.position, glm::vec2{1, 1}, star.colour, 1.f, -96.f);
+      render_box(star.position, star_direction_ * star.speed, glm::vec2{1, 1}, star.colour, 1.f,
+                 -96.f);
       break;
 
     case star_type::kBigStar:
-      render_box(star.position, glm::vec2{2, 2}, star.colour, 1.f, -96.f);
+      render_box(star.position, star_direction_ * star.speed, glm::vec2{2, 2}, star.colour, 1.f,
+                 -96.f);
       break;
 
     case star_type::kPlanet:
@@ -231,6 +234,8 @@ void RenderState::render(render::GlRenderer& r) const {
           .origin = star.position,
           .colour = star.colour,
           .z_index = 96.f,
+          .trail = render::motion_trail{.prev_origin = star.position - star_direction_ * star.speed,
+                                        .prev_colour = star.colour},
           .data = render::ngon{.radius = star.size, .sides = 8},
       });
       break;
@@ -244,7 +249,8 @@ void RenderState::render(render::GlRenderer& r) const {
     glm::vec4 colour{p.colour.x, p.colour.y, p.time <= p.flash_time ? 1.f : p.colour.z, a};
 
     if (const auto* d = std::get_if<dot_particle>(&p.data)) {
-      render_box(p.position, glm::vec2{d->radius, d->radius}, colour, d->line_width, -64.f);
+      render_box(p.position, p.velocity, glm::vec2{d->radius, d->radius}, colour, d->line_width,
+                 -64.f);
     } else if (const auto* d = std::get_if<line_particle>(&p.data)) {
       float t = std::max(0.f, (17.f - p.time) / 16.f);
       shapes.emplace_back(render::shape{
@@ -252,12 +258,15 @@ void RenderState::render(render::GlRenderer& r) const {
           .rotation = d->rotation,
           .colour = colour,
           .z_index = -64.f,
+          .trail = render::motion_trail{.prev_origin = p.position - p.velocity,
+                                        .prev_rotation = d->rotation - d->angular_velocity,
+                                        .prev_colour = colour},
           .data = render::line{.radius = d->radius, .line_width = glm::mix(1.f, 2.f, t)},
       });
     }
   }
 
-  r.render_shapes(shapes);
+  r.render_shapes(shapes, /* trail alpha */ 1.f);
 }
 
 void RenderState::handle_background_fx(const background_fx_change& change) {

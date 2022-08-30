@@ -330,7 +330,7 @@ struct DeathRayBoss : public ecs::component {
     }
   }
 
-  void render(const Transform& transform, const SimInterface& sim) const {
+  void render(const Transform& transform, std::vector<render::shape>& output) const {
     using ray_shape = geom::translate_p<0, geom::polystar<10, 6, c3>>;
     for (std::uint32_t i = ray_attack_timer; i <= ray_attack_timer + 16; ++i) {
       auto k = i < 8 ? 0 : i - 8;
@@ -340,11 +340,11 @@ struct DeathRayBoss : public ecs::component {
 
       auto v = ray_src1 - transform.centre;
       v *= static_cast<fixed>(k - 40) / (kRayTimer - 40);
-      render_shape<ray_shape>(sim, std::tuple{transform.centre + v});
+      render_shape<ray_shape>(output, std::tuple{transform.centre + v});
 
       v = ray_src2 - transform.centre;
       v *= static_cast<fixed>(k - 40) / (kRayTimer - 40);
-      render_shape<ray_shape>(sim, std::tuple{transform.centre + v});
+      render_shape<ray_shape>(output, std::tuple{transform.centre + v});
     }
   }
 
