@@ -46,10 +46,11 @@ void load_sounds(const io::Filesystem& fs, Mixer& mixer) {
 }
 
 bool run(const std::vector<std::string>& args, const game_options_t& options) {
+  static constexpr const char* kTitle = "space";
   static constexpr char kGlMajor = 4;
   static constexpr char kGlMinor = 6;
 
-  auto io_layer_result = io::SdlIoLayer::create("iispace", kGlMajor, kGlMinor);
+  auto io_layer_result = io::SdlIoLayer::create(kTitle, kGlMajor, kGlMinor);
   if (!io_layer_result) {
     std::cerr << "Error initialising IO: " << io_layer_result.error() << std::endl;
     return false;

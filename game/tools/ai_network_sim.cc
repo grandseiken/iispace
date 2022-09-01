@@ -3,8 +3,8 @@
 #include "game/flags.h"
 #include "game/io/file/std_filesystem.h"
 #include "game/mode_flags.h"
-#include "game/network_tools.h"
-#include "game/replay_tools.h"
+#include "game/tools/network_tools.h"
+#include "game/tools/replay_tools.h"
 #include <cstdint>
 #include <iostream>
 #include <memory>

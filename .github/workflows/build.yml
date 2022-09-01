@@ -31,7 +31,7 @@ jobs:
     steps:
     - uses: actions/checkout@v3
     - run: ${{ matrix.command }}
-    - run: bazel build --config ci --config ${{ matrix.config }} //game //game:tools
+    - run: bazel build --config ci --config ${{ matrix.config }} //game //game:steam //game:tools
     - uses: actions/upload-artifact@v3
       with:
         name: ${{ matrix.os }}-${{ matrix.config }}-tools
@@ -40,4 +40,8 @@ jobs:
       with:
         name: ${{ matrix.os }}-${{ matrix.config }}-game
         path: bazel-bin/game/game.zip
+    - uses: actions/upload-artifact@v3
+      with:
+        name: ${{ matrix.os }}-${{ matrix.config }}-steam
+        path: bazel-bin/game/steam.zip
     - run: bazel test --config ci --config ${{ matrix.config }} //test/...

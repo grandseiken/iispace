@@ -4,33 +4,7 @@ cc_library(
   name = "flags",
   hdrs = ["flags.h"],
   deps = ["//game/common:types"],
-)
-
-cc_library(
-  name = "replay_tools",
-  hdrs = ["replay_tools.h"],
-  deps = [
-    "//game/common:types",
-    "//game/common:printer",
-    "//game/data:replay",
-    "//game/logic/sim",
-    "//game/logic/sim/io:conditions",
-    "//game/logic/sim/io:output",
-  ]
-)
-
-cc_library(
-  name = "network_tools",
-  hdrs = ["network_tools.h"],
-  deps = [
-    "//game:flags",
-    "//game/common:types",
-    "//game/data:packet",
-    "//game/data:replay",
-    "//game/logic/sim:networked_sim_state",
-    "//game/logic/sim/io:aggregate",
-    "@concurrent_queue",
-  ],
+  visibility = ["//visibility:public"],
 )
 
 cc_library(
@@ -41,11 +15,12 @@ cc_library(
     "//game/common:types",
     "//game/logic/sim/io:conditions",
   ],
+  visibility = ["//visibility:public"],
 )
 
 cc_binary(
-  name = "iispace",
-  srcs = ["iispace.cc"],
+  name = "space",
+  srcs = ["space.cc"],
   deps = [
     ":flags",
     ":mode_flags",
@@ -75,76 +50,36 @@ cc_binary(
   visibility = ["//visibility:public"],
 )
 
-cc_binary(
-  name = "replay",
-  srcs = ["replay.cc"],
-  deps = [
-    ":flags",
-    ":replay_tools",
-    "//game/data:replay",
-    "//game/io/file:std_filesystem",
-  ],
-  visibility = ["//visibility:public"],
-)
-
-cc_binary(
-  name = "replay_network_sim",
-  srcs = ["replay_network_sim.cc"],
-  deps = [
-    ":flags",
-    ":network_tools",
-    ":replay_tools",
-    "//game/common:types",
-    "//game/data:replay",
-    "//game/io/file:std_filesystem",
-  ],
-  visibility = ["//visibility:public"],
-)
-
-cc_binary(
-  name = "ai_replay_synth",
-  srcs = ["ai_replay_synth.cc"],
-  deps = [
-    ":flags",
-    ":mode_flags",
-    ":replay_tools",
-    "//game/io/file:std_filesystem",
-  ],
-  visibility = ["//visibility:public"],
-)
-
-cc_binary(
-  name = "ai_network_sim",
-  srcs = ["ai_network_sim.cc"],
-  deps = [
-    ":flags",
-    ":mode_flags",
-    ":network_tools",
-    ":replay_tools",
-    "//game/io/file:std_filesystem",
-  ],
-  visibility = ["//visibility:public"],
-)
-
 pkg_zip(
   name = "game",
   srcs = [
     "//assets",
-    "//game:iispace",
+    "//game:space",
   ] + select({
     "@bazel_tools//src/conditions:windows": ["@sdl_windows//:sdl_windows_dll"],
     "//conditions:default": [],
   }),
-  package_dir = "iispace",
+  package_dir = "space",
+)
+
+pkg_zip(
+  name = "steam",
+  srcs = [
+    "//assets",
+    "//game:space",
+  ] + select({
+    "@bazel_tools//src/conditions:windows": ["@sdl_windows//:sdl_windows_dll"],
+    "//conditions:default": [],
+  }),
 )
 
 pkg_zip(
   name = "tools",
   srcs = [
-    "//game:ai_network_sim",
-    "//game:ai_replay_synth",
-    "//game:replay_network_sim",
-    "//game:replay",
+    "//game/tools:ai_network_sim",
+    "//game/tools:ai_replay_synth",
+    "//game/tools:replay_network_sim",
+    "//game/tools:replay",
   ],
   package_dir = "tools",
 )

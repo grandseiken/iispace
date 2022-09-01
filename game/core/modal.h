@@ -19,7 +19,9 @@ public:
 
   virtual void update(ii::ui::UiLayer& ui) = 0;
   virtual void render(const ii::ui::UiLayer& ui, ii::render::GlRenderer& r) const = 0;
-  virtual std::uint32_t fps() const { return 60; }
+  virtual std::uint32_t fps() const {
+    return 60;
+  }
 
 protected:
   template <typename T>
