@@ -1,5 +1,3 @@
-#version 460
-
 uniform vec2 render_scale;
 uniform uvec2 render_dimensions;
 uniform uvec2 rect_dimensions;

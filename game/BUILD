@@ -31,6 +31,7 @@ cc_binary(
     "//game/mixer",
     "//game/mixer:sound",
     "//game/render:gl_renderer",
+    "//game/system",
   ],
   linkopts = select({
     "@bazel_tools//src/conditions:windows": [
@@ -59,17 +60,9 @@ pkg_zip(
     "@bazel_tools//src/conditions:windows": ["@sdl_windows//:sdl_windows_dll"],
     "//conditions:default": [],
   }),
-  package_dir = "space",
-)
-
-pkg_zip(
-  name = "steam",
-  srcs = [
-    "//assets",
-    "//game:space",
-  ] + select({
-    "@bazel_tools//src/conditions:windows": ["@sdl_windows//:sdl_windows_dll"],
-    "//conditions:default": [],
+  package_dir = select({
+    "//:steam_build": "",
+    "//conditions:default": "space",
   }),
 )
 

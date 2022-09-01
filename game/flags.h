@@ -145,18 +145,16 @@ result<void> flag_parse(std::vector<std::string>& args, const std::string& name,
   return {};
 }
 
-inline std::vector<std::string> args_init(int argc, char** argv) {
-  std::vector<std::string> result;
+inline void args_init(std::vector<std::string>& args, int argc, const char** argv) {
   for (int i = 1; i < argc; ++i) {
-    result.emplace_back(argv[i]);
-    if (result.back() == "--help") {
-      has_help_flag() = true;
-    }
+    args.emplace_back(argv[i]);
+  }
+  if (std::count(args.begin(), args.end(), "--help")) {
+    has_help_flag() = true;
   }
   if (has_help_flag()) {
     std::cout << argv[0] << " flags:\n";
   }
-  return result;
 }
 
 inline result<void> args_finish(const std::vector<std::string>& args) {

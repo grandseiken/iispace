@@ -19,7 +19,7 @@ private:
   struct access_tag {};
 
 public:
-  static result<std::unique_ptr<GlRenderer>> create();
+  static result<std::unique_ptr<GlRenderer>> create(std::uint32_t shader_version);
   GlRenderer(access_tag);
   ~GlRenderer();
 

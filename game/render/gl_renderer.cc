@@ -123,14 +123,14 @@ struct GlRenderer::impl_t {
   }
 };
 
-result<std::unique_ptr<GlRenderer>> GlRenderer::create() {
+result<std::unique_ptr<GlRenderer>> GlRenderer::create(std::uint32_t shader_version) {
   auto renderer = std::make_unique<GlRenderer>(access_tag{});
   renderer->impl_ = std::make_unique<impl_t>();
 
   auto load_shader =
       [&](shader s,
           const std::unordered_map<std::string, gl::shader_type>& shaders) -> result<void> {
-    auto handle = compile_program(shaders);
+    auto handle = compile_program(shader_version, shaders);
     if (!handle) {
       return unexpected(handle.error());
     }

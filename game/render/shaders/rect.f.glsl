@@ -1,4 +1,3 @@
-#version 460
 #include "game/render/shaders/lib/hsl.glsl"
 
 uniform uvec2 rect_dimensions;

@@ -23,5 +23,9 @@ cc_library(
     "@bazel_tools//src/conditions:darwin_x86_64": [":steamapi_darwin"],
   }),
   includes = ["public"],
+  target_compatible_with = select({
+    "@//:steam_build": [],
+    "//conditions:default": ["@platforms//:incompatible"],
+  }),
   visibility = ["//visibility:public"],
 )

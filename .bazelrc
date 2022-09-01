@@ -1,5 +1,8 @@
 startup --windows_enable_symlinks
 
+# Build configuration flag aliases.
+build --flag_alias=steam=//:steam
+
 # Global options.
 build --color=yes
 build --curses=yes

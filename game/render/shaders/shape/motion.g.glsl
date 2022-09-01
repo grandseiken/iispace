@@ -1,4 +1,3 @@
-#version 460
 #include "game/render/shaders/shape/data.glsl"
 #include "game/render/shaders/shape/geometry.glsl"
 

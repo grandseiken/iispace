@@ -5,13 +5,14 @@
 namespace ii::render {
 namespace {
 
-result<std::string> preprocess(const std::string& filename) {
+result<std::string> preprocess(std::uint32_t version, const std::string& filename) {
   const auto& filemap = shaders::shaders_filemap();
   auto it = filemap.find(filename);
   if (it == filemap.end()) {
     return unexpected("Shader not found: " + filename);
   }
-  std::string source{reinterpret_cast<const char*>(it->second.data()), it->second.size()};
+  std::string source = "#version " + std::to_string(version) + "\n";
+  source.append(reinterpret_cast<const char*>(it->second.data()), it->second.size());
 
   std::unordered_set<std::string> included_set{filename};
   static const std::string kInclude = "#include";
@@ -47,10 +48,11 @@ result<std::string> preprocess(const std::string& filename) {
 }  // namespace
 
 result<gl::program>
-compile_program(const std::unordered_map<std::string, gl::shader_type>& shaders) {
+compile_program(std::uint32_t version,
+                const std::unordered_map<std::string, gl::shader_type>& shaders) {
   std::vector<gl::shader> compiled_shaders;
   for (const auto& pair : shaders) {
-    auto source = preprocess(pair.first);
+    auto source = preprocess(version, pair.first);
     if (!source) {
       return unexpected(source.error());
     }

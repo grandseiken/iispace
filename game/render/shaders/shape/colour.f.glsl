@@ -1,5 +1,3 @@
-#version 460
-
 in vec4 g_colour;
 out vec4 out_colour;
 

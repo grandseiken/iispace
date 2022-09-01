@@ -7,6 +7,7 @@
 #include "game/mixer/sound.h"
 #include "game/mode_flags.h"
 #include "game/render/gl_renderer.h"
+#include "game/system/system.h"
 #include <chrono>
 #include <iostream>
 #include <string>
@@ -45,10 +46,11 @@ void load_sounds(const io::Filesystem& fs, Mixer& mixer) {
   load_sound(sound::kExplosion, "Explosion.wav");
 }
 
-bool run(const std::vector<std::string>& args, const game_options_t& options) {
+bool run(System& system, const std::vector<std::string>& args, const game_options_t& options) {
   static constexpr const char* kTitle = "space";
   static constexpr char kGlMajor = 4;
   static constexpr char kGlMinor = 6;
+  static constexpr std::uint32_t kGlslVersion = 460;
 
   auto io_layer_result = io::SdlIoLayer::create(kTitle, kGlMajor, kGlMinor);
   if (!io_layer_result) {
@@ -56,7 +58,7 @@ bool run(const std::vector<std::string>& args, const game_options_t& options) {
     return false;
   }
   io::StdFilesystem fs{"assets", "savedata", "savedata/replays"};
-  auto renderer_result = render::GlRenderer::create();
+  auto renderer_result = render::GlRenderer::create(kGlslVersion);
   if (!renderer_result) {
     std::cerr << "Error initialising renderer: " << renderer_result.error() << std::endl;
     return false;
@@ -208,8 +210,16 @@ result<game_options_t> parse_args(std::vector<std::string>& args) {
 }  // namespace
 }  // namespace ii
 
-int main(int argc, char** argv) {
-  auto args = ii::args_init(argc, argv);
+int main(int argc, const char** argv) {
+  auto system = ii::create_system();
+  auto init = system->init(argc, argv);
+  if (!init) {
+    std::cerr << init.error() << std::endl;
+    return 1;
+  }
+
+  std::vector<std::string> args;
+  ii::args_init(args, argc, argv);
   auto options = ii::parse_args(args);
   if (!options) {
     std::cerr << options.error() << std::endl;
@@ -219,5 +229,5 @@ int main(int argc, char** argv) {
     std::cerr << result.error() << std::endl;
     return 1;
   }
-  return ii::run(args, *options) ? 0 : 1;
+  return ii::run(*system, args, *options) ? 0 : 1;
 }

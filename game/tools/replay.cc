@@ -143,8 +143,9 @@ result<options_t> parse_args(std::vector<std::string>& args) {
 }  // namespace
 }  // namespace ii
 
-int main(int argc, char** argv) {
-  auto args = ii::args_init(argc, argv);
+int main(int argc, const char** argv) {
+  std::vector<std::string> args;
+  ii::args_init(args, argc, argv);
   auto options = ii::parse_args(args);
   if (!options) {
     std::cerr << options.error() << std::endl;

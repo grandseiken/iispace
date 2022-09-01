@@ -1,4 +1,3 @@
-#version 460
 #include "game/render/shaders/lib/hsl.glsl"
 
 uniform vec2 render_scale;

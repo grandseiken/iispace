@@ -1,5 +1,3 @@
-#version 460
-
 uniform sampler2D font_texture;
 uniform bool is_font_lcd;
 in vec4 v_text_colour;

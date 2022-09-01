@@ -8,7 +8,8 @@
 namespace ii::render {
 
 result<gl::program>
-compile_program(const std::unordered_map<std::string, gl::shader_type>& shaders);
+compile_program(std::uint32_t version,
+                const std::unordered_map<std::string, gl::shader_type>& shaders);
 
 }  // namespace ii::render
 
