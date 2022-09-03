@@ -1,4 +1,5 @@
 load("@rules_pkg//:pkg.bzl", "pkg_zip")
+load("@bazel_skylib//rules:write_file.bzl", "write_file")
 
 cc_library(
   name = "flags",
@@ -18,6 +19,12 @@ cc_library(
   visibility = ["//visibility:public"],
 )
 
+write_file(
+  name = "steam_appid",
+  out = "steam_appid.txt",
+  content = ["2139740"],
+)
+
 cc_binary(
   name = "space",
   srcs = ["space.cc"],
@@ -33,6 +40,10 @@ cc_binary(
     "//game/render:gl_renderer",
     "//game/system",
   ],
+  data = select({
+    "//:steam_build": [":steam_appid"],
+    "//conditions:default": [],
+  }),
   linkopts = select({
     "@bazel_tools//src/conditions:windows": [
       "-DEFAULTLIB:advapi32.lib",
@@ -58,6 +69,9 @@ pkg_zip(
     "//game:space",
   ] + select({
     "@bazel_tools//src/conditions:windows": ["@sdl_windows//:sdl_windows_dll"],
+    "//conditions:default": [],
+  }) + select({
+    "//:steam_build": ["@steamworks_sdk//:steamapi_bin"],
     "//conditions:default": [],
   }),
   package_dir = select({

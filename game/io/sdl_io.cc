@@ -167,6 +167,7 @@ SdlIoLayer::create(const char* title, char gl_major, char gl_minor) {
   if (SDL_GameControllerAddMappingsFromRW(rwops.get(), /* no close */ 0) < 0) {
     return unexpected(SDL_GetError());
   }
+  SDL_RaiseWindow(io_layer->impl_->window.get());
 
   io_layer->impl_->scan_controllers();
   return io_layer;

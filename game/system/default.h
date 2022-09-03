@@ -8,12 +8,8 @@ class DefaultSystem : public System {
 public:
   ~DefaultSystem() override = default;
 
-  result<std::vector<std::string>> init(int argc, const char** argv) override {
-    std::vector<std::string> args;
-    for (int i = 1; i < argc; ++i) {
-      args.emplace_back(argv[i]);
-    }
-    return args;
+  result<std::vector<std::string>> init() override {
+    return {};
   }
 };
 

@@ -7,7 +7,7 @@ namespace ii {
 class SteamSystem : public System {
 public:
   ~SteamSystem() override;
-  result<std::vector<std::string>> init(int argc, const char** argv) override;
+  result<std::vector<std::string>> init() override;
 };
 
 }  // namespace ii

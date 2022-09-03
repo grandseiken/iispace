@@ -212,13 +212,13 @@ result<game_options_t> parse_args(std::vector<std::string>& args) {
 
 int main(int argc, const char** argv) {
   auto system = ii::create_system();
-  auto init = system->init(argc, argv);
+  auto init = system->init();
   if (!init) {
     std::cerr << init.error() << std::endl;
     return 1;
   }
 
-  std::vector<std::string> args;
+  std::vector<std::string> args = std::move(*init);
   ii::args_init(args, argc, argv);
   auto options = ii::parse_args(args);
   if (!options) {

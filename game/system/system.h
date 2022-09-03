@@ -10,7 +10,7 @@ namespace ii {
 class System {
 public:
   virtual ~System() = default;
-  virtual result<std::vector<std::string>> init(int argc, const char** argv) = 0;
+  virtual result<std::vector<std::string>> init() = 0;
 };
 
 std::unique_ptr<System> create_system();
