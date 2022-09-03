@@ -47,15 +47,10 @@ cc_library(
 
 cc_library(
   name = "core",
-  hdrs = [
-    "modal.h",
-    "z0_game.h",
-  ],
-  srcs = [
-    "modal.cc",
-    "z0_game.cc",
-  ],
+  hdrs = ["game_layers.h"],
+  srcs = ["game_layers.cc"],
   deps = [
+    ":game_stack",
     ":io_input_adapter",
     ":render_state",
     "//game/data:replay",
@@ -64,7 +59,6 @@ cc_library(
     "//game/logic/sim:networked_sim_state",
   ],
   implementation_deps = [
-    ":game_stack",
     "//game/common:math",
     "//game/common:types",
     "//game/io",

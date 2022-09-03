@@ -1,5 +1,5 @@
+#include "game/core/game_layers.h"
 #include "game/core/game_stack.h"
-#include "game/core/z0_game.h"
 #include "game/flags.h"
 #include "game/io/file/std_filesystem.h"
 #include "game/io/sdl_io.h"
@@ -70,9 +70,8 @@ bool run(System& system, const std::vector<std::string>& args, const game_option
       [&mixer](std::uint8_t* p, std::size_t k) { mixer.audio_callback(p, k); });
   load_sounds(fs, mixer);
 
-  ui::GameStack ui_layer{fs, *io_layer, mixer};
-  ModalStack modal_stack;
-  modal_stack.add(std::make_unique<z0Game>(options));
+  ui::GameStack stack{fs, *io_layer, mixer};
+  stack.add<MainMenuLayer>(options);
 
   if (!args.empty()) {
     auto replay_data = fs.read(args[0]);
@@ -85,7 +84,7 @@ bool run(System& system, const std::vector<std::string>& args, const game_option
       std::cerr << reader.error() << std::endl;
       return false;
     }
-    modal_stack.add(std::make_unique<GameModal>(std::move(*reader), options));
+    stack.add<SimLayer>(std::move(*reader), options);
   }
 
   using counter_t = std::chrono::duration<double>;
@@ -124,13 +123,12 @@ bool run(System& system, const std::vector<std::string>& args, const game_option
       }
     }
 
-    ui_layer.compute_input_frame(controller_change);
-    modal_stack.update(ui_layer);
+    stack.update(controller_change);
     mixer.commit();
-    exit |= modal_stack.empty();
+    exit |= stack.empty();
 
     renderer->clear_screen();
-    modal_stack.render(ui_layer, *renderer);
+    stack.render(*renderer);
     io_layer->swap_buffers();
 
     auto render_status = renderer->status();
@@ -138,8 +136,7 @@ bool run(System& system, const std::vector<std::string>& args, const game_option
       std::cerr << render_status.error() << std::endl;
     }
 
-    auto fps = modal_stack.empty() ? 60 : modal_stack.top()->fps();
-    counter_t time_per_frame{1. / fps};
+    counter_t time_per_frame{1. / stack.fps()};
     auto elapsed = elapsed_time();
     if (time_per_frame > elapsed) {
       std::this_thread::sleep_for(time_per_frame - elapsed);

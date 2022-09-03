@@ -1,4 +1,4 @@
-#include "game/core/z0_game.h"
+#include "game/core/game_layers.h"
 #include "game/core/game_stack.h"
 #include "game/io/file/filesystem.h"
 #include "game/io/io.h"
@@ -6,10 +6,15 @@
 #include <algorithm>
 #include <sstream>
 
+namespace ii {
 namespace {
 // TODO: used for some stuff that should use value from sim state instead.
 constexpr glm::uvec2 kDimensions = {640, 480};
 constexpr glm::uvec2 kTextSize = {16, 16};
+
+constexpr glm::vec4 kPanelText = {0.f, 0.f, .925f, 1.f};
+constexpr glm::vec4 kPanelTran = {0.f, 0.f, .925f, .6f};
+constexpr glm::vec4 kPanelBack = {0.f, 0.f, 0.f, 1.f};
 
 std::string convert_to_time(std::uint64_t score) {
   if (score == 0) {
@@ -34,100 +39,96 @@ std::string convert_to_time(std::uint64_t score) {
   return r.str();
 }
 
-void render_text(ii::render::GlRenderer& r, const glm::vec2& v, const std::string& text,
+void render_text(render::GlRenderer& r, const glm::vec2& v, const std::string& text,
                  const glm::vec4& c) {
-  r.render_text(0, 16 * static_cast<glm::ivec2>(v), c, ii::ustring_view::utf8(text));
+  r.render_text(0, 16 * static_cast<glm::ivec2>(v), c, ustring_view::utf8(text));
 }
 
 }  // namespace
 
-PauseModal::PauseModal(output_t* output) : Modal{true, false}, output_{output} {
+PauseLayer::PauseLayer(ui::GameStack& stack, output_t* output)
+: ui::GameLayer{stack, ui::layer_flag::kCaptureUpdate}, output_{output} {
   *output = kContinue;
 }
 
-void PauseModal::update(ii::ui::GameStack& ui) {
+void PauseLayer::update(const ui::input_frame& input) {
   auto t = selection_;
-  if (ui.input().pressed(ii::ui::key::kUp)) {
+  if (input.pressed(ui::key::kUp)) {
     selection_ = std::max(0u, selection_ - 1);
   }
-  if (ui.input().pressed(ii::ui::key::kDown)) {
+  if (input.pressed(ui::key::kDown)) {
     selection_ = std::min(2u, selection_ + 1);
   }
   if (t != selection_) {
-    ui.play_sound(ii::sound::kMenuClick);
+    stack().play_sound(sound::kMenuClick);
   }
 
-  bool accept = ui.input().pressed(ii::ui::key::kAccept) || ui.input().pressed(ii::ui::key::kMenu);
+  bool accept = input.pressed(ui::key::kAccept) || input.pressed(ui::key::kMenu);
   if (accept && selection_ == 0) {
-    quit();
+    close();
   } else if (accept && selection_ == 1) {
     *output_ = kEndGame;
-    quit();
+    close();
   } else if (accept && selection_ == 2) {
-    ui.write_config();
-    ui.set_volume(ui.config().volume);
+    stack().write_config();
+    stack().set_volume(stack().config().volume);
   }
   if (accept) {
-    ui.play_sound(ii::sound::kMenuAccept);
+    stack().play_sound(sound::kMenuAccept);
   }
 
-  if (ui.input().pressed(ii::ui::key::kCancel)) {
-    quit();
-    ui.play_sound(ii::sound::kMenuAccept);
+  if (input.pressed(ui::key::kCancel)) {
+    close();
+    stack().play_sound(sound::kMenuAccept);
   }
 
-  auto v = ui.config().volume;
-  if (selection_ == 2 && ui.input().pressed(ii::ui::key::kLeft)) {
-    ui.config().volume = std::max(0.f, ui.config().volume - 1.f);
+  auto v = stack().config().volume;
+  if (selection_ == 2 && input.pressed(ui::key::kLeft)) {
+    stack().config().volume = std::max(0.f, stack().config().volume - 1.f);
   }
-  if (selection_ == 2 && ui.input().pressed(ii::ui::key::kRight)) {
-    ui.config().volume = std::min(100.f, ui.config().volume + 1.f);
+  if (selection_ == 2 && input.pressed(ui::key::kRight)) {
+    stack().config().volume = std::min(100.f, stack().config().volume + 1.f);
   }
-  if (v != ui.config().volume) {
-    ui.set_volume(ui.config().volume);
-    ui.write_config();
-    ui.play_sound(ii::sound::kMenuClick);
+  if (v != stack().config().volume) {
+    stack().set_volume(stack().config().volume);
+    stack().write_config();
+    stack().play_sound(sound::kMenuClick);
   }
 }
 
-void PauseModal::render(const ii::ui::GameStack& ui, ii::render::GlRenderer& r) const {
-  render_text(r, {4.f, 4.f}, "PAUSED", z0Game::kPanelText);
-  render_text(r, {6.f, 8.f}, "CONTINUE", z0Game::kPanelText);
-  render_text(r, {6.f, 10.f}, "END GAME", z0Game::kPanelText);
-  render_text(r, {6.f, 12.f}, "VOL.", z0Game::kPanelText);
+void PauseLayer::render(render::GlRenderer& r) const {
+  render_text(r, {4.f, 4.f}, "PAUSED", kPanelText);
+  render_text(r, {6.f, 8.f}, "CONTINUE", kPanelText);
+  render_text(r, {6.f, 10.f}, "END GAME", kPanelText);
+  render_text(r, {6.f, 12.f}, "VOL.", kPanelText);
   std::stringstream vol;
-  auto v = static_cast<std::uint32_t>(ui.config().volume);
+  auto v = static_cast<std::uint32_t>(stack().config().volume);
   vol << " " << (v < 10 ? " " : "") << v;
-  render_text(r, {10.f, 12.f}, vol.str(), z0Game::kPanelText);
+  render_text(r, {10.f, 12.f}, vol.str(), kPanelText);
   if (selection_ == 2 && v > 0) {
-    render_text(r, {5.f, 12.f}, "<", z0Game::kPanelTran);
+    render_text(r, {5.f, 12.f}, "<", kPanelTran);
   }
   if (selection_ == 2 && v < 100) {
-    render_text(r, {13.f, 12.f}, ">", z0Game::kPanelTran);
+    render_text(r, {13.f, 12.f}, ">", kPanelTran);
   }
-
-  glm::vec2 low{static_cast<float>(4 * kTextSize.x + 4),
-                static_cast<float>((8 + 2 * selection_) * kTextSize.y + 4)};
-  glm::vec2 hi{static_cast<float>(5 * kTextSize.x - 4),
-               static_cast<float>((9 + 2 * selection_) * kTextSize.y - 4)};
 }
 
-GameModal::GameModal(ii::io::IoLayer& io_layer, const ii::initial_conditions& conditions,
-                     const ii::game_options_t& options)
-: Modal{true, true}
+SimLayer::SimLayer(ui::GameStack& stack, const initial_conditions& conditions,
+                   const game_options_t& options)
+: ui::GameLayer{stack, ui::layer_flag::kCaptureUpdate | ui::layer_flag::kCaptureRender}
 , engine_{std::random_device{}()}
 , options_{options}
 , mode_{conditions.mode}
 , render_state_{conditions.seed} {
-  game_.emplace(io_layer, ii::data::ReplayWriter{conditions});
+  game_.emplace(stack.io_layer(), data::ReplayWriter{conditions});
   game_->input.set_player_count(conditions.player_count);
   game_->input.set_game_dimensions(kDimensions);
   render_state_.set_dimensions(kDimensions);
-  state_ = std::make_unique<ii::SimState>(conditions, &game_->writer, options.ai_players);
+  state_ = std::make_unique<SimState>(conditions, &game_->writer, options.ai_players);
 }
 
-GameModal::GameModal(ii::data::ReplayReader&& replay, const ii::game_options_t& options)
-: Modal{true, true}
+SimLayer::SimLayer(ui::GameStack& stack, data::ReplayReader&& replay, const game_options_t& options)
+: ui::GameLayer{stack, ui::layer_flag::kCaptureUpdate | ui::layer_flag::kCaptureRender}
 , engine_{std::random_device{}()}
 , options_{options}
 , mode_{replay.initial_conditions().mode}
@@ -136,9 +137,9 @@ GameModal::GameModal(ii::data::ReplayReader&& replay, const ii::game_options_t& 
   replay_.emplace(std::move(replay));
   render_state_.set_dimensions(kDimensions);
   if (options.replay_remote_players.empty()) {
-    state_ = std::make_unique<ii::SimState>(conditions);
+    state_ = std::make_unique<SimState>(conditions);
   } else {
-    ii::NetworkedSimState::input_mapping mapping;
+    NetworkedSimState::input_mapping mapping;
     for (std::uint32_t i = 0; i < conditions.player_count; ++i) {
       if (std::find(options.replay_remote_players.begin(), options.replay_remote_players.end(),
                     i) == options.replay_remote_players.end()) {
@@ -147,30 +148,32 @@ GameModal::GameModal(ii::data::ReplayReader&& replay, const ii::game_options_t& 
         mapping.remote["remote"].player_numbers.emplace_back(i);
       }
     }
-    network_state_ = std::make_unique<ii::NetworkedSimState>(conditions, mapping);
+    network_state_ = std::make_unique<NetworkedSimState>(conditions, mapping);
   }
 }
 
-GameModal::~GameModal() = default;
+SimLayer::~SimLayer() = default;
 
-void GameModal::update(ii::ui::GameStack& ui) {
-  auto& istate = network_state_ ? static_cast<ii::ISimState&>(*network_state_) : *state_;
-  if (pause_output_ == PauseModal::kEndGame || istate.game_over()) {
+void SimLayer::update(const ui::input_frame& input) {
+  auto& istate = network_state_ ? static_cast<ISimState&>(*network_state_) : *state_;
+  stack().set_fps((network_state_ ? static_cast<ISimState&>(*network_state_) : *state_).fps());
+
+  if (pause_output_ == PauseLayer::kEndGame || istate.game_over()) {
     if (!replay_) {
-      if (mode_ == ii::game_mode::kNormal || mode_ == ii::game_mode::kBoss) {
-        ui.savegame().bosses_killed |= istate.results().bosses_killed();
+      if (mode_ == game_mode::kNormal || mode_ == game_mode::kBoss) {
+        stack().savegame().bosses_killed |= istate.results().bosses_killed();
       } else {
-        ui.savegame().hard_mode_bosses_killed |= istate.results().bosses_killed();
+        stack().savegame().hard_mode_bosses_killed |= istate.results().bosses_killed();
       }
-      ui.write_savegame();
+      stack().write_savegame();
       if (game_) {
-        ui.write_replay(game_->writer, "untitled", istate.results().score);
+        stack().write_replay(game_->writer, "untitled", istate.results().score);
       }
     }
-    if (pause_output_ != PauseModal::kEndGame) {
-      ui.play_sound(ii::sound::kMenuAccept);
+    if (pause_output_ != PauseLayer::kEndGame) {
+      stack().play_sound(sound::kMenuAccept);
     }
-    quit();
+    close();
     return;
   }
 
@@ -180,10 +183,10 @@ void GameModal::update(ii::ui::GameStack& ui) {
   show_controllers_dialog_ = false;
 
   if (controllers_dialog_) {
-    if (ui.input().pressed(ii::ui::key::kMenu) || ui.input().pressed(ii::ui::key::kAccept)) {
+    if (input.pressed(ui::key::kMenu) || input.pressed(ui::key::kAccept)) {
       controllers_dialog_ = false;
-      ui.play_sound(ii::sound::kMenuAccept);
-      ui.rumble(10);
+      stack().play_sound(sound::kMenuAccept);
+      stack().rumble(10);
     }
     return;
   }
@@ -197,7 +200,7 @@ void GameModal::update(ii::ui::GameStack& ui) {
       state_->update(input);
     } else {
       auto frames = replay_->reader.next_tick_input_frames();
-      std::vector<ii::input_frame> local_frames;
+      std::vector<input_frame> local_frames;
       replay_network_packet packet;
       for (std::uint32_t i = 0; i < replay_->reader.initial_conditions().player_count; ++i) {
         if (std::find(options_.replay_remote_players.begin(), options_.replay_remote_players.end(),
@@ -229,32 +232,32 @@ void GameModal::update(ii::ui::GameStack& ui) {
   auto frame_x = static_cast<std::uint32_t>(std::log2(frame_count_multiplier_));
   bool handle_audio = !(audio_tick_++ % (4 * (1 + frame_x / 2)));
   bool handle_rumble = game_ && !replay_;
-  render_state_.handle_output(istate, handle_audio ? &ui.mixer() : nullptr,
+  render_state_.handle_output(istate, handle_audio ? &stack().mixer() : nullptr,
                               handle_rumble ? &game_->input : nullptr);
   render_state_.update(handle_rumble ? &game_->input : nullptr);
 
   if (replay_) {
-    if (ui.input().pressed(ii::ui::key::kCancel)) {
+    if (input.pressed(ui::key::kCancel)) {
       frame_count_multiplier_ *= 2;
     }
-    if (ui.input().pressed(ii::ui::key::kAccept) && frame_count_multiplier_ > 1) {
+    if (input.pressed(ui::key::kAccept) && frame_count_multiplier_ > 1) {
       frame_count_multiplier_ /= 2;
     }
   }
 
-  if (ui.input().pressed(ii::ui::key::kMenu) && !controllers_dialog_) {
-    ui.io_layer().capture_mouse(false);
-    add(std::make_unique<PauseModal>(&pause_output_));
-    ui.play_sound(ii::sound::kMenuAccept);
+  if (input.pressed(ui::key::kMenu) && !controllers_dialog_) {
+    stack().io_layer().capture_mouse(false);
+    stack().add<PauseLayer>(&pause_output_);
+    stack().play_sound(sound::kMenuAccept);
     return;
   }
-  ui.io_layer().capture_mouse(true);
+  stack().io_layer().capture_mouse(true);
 }
 
-void GameModal::render(const ii::ui::GameStack& ui, ii::render::GlRenderer& r) const {
-  auto& istate = network_state_ ? static_cast<ii::ISimState&>(*network_state_) : *state_;
-  const auto& render = istate.render(/* paused */ controllers_dialog_ || !is_top());
-  r.set_dimensions(ui.io_layer().dimensions(), kDimensions);
+void SimLayer::render(render::GlRenderer& r) const {
+  auto& istate = network_state_ ? static_cast<ISimState&>(*network_state_) : *state_;
+  const auto& render = istate.render(/* paused */ controllers_dialog_ || stack().top() != this);
+  r.set_dimensions(stack().io_layer().dimensions(), kDimensions);
   r.set_colour_cycle(render.colour_cycle);
   render_state_.render(r);  // TODO: can be merged with below?
   r.render_shapes(render.shapes,
@@ -269,7 +272,7 @@ void GameModal::render(const ii::ui::GameStack& ui, ii::render::GlRenderer& r) c
         : n == 2    ? glm::vec2{1.f, kDimensions.y / 16 - 2.f}
         : n == 3    ? glm::vec2{kDimensions.x / 16 - 1.f - s.size(), kDimensions.y / 16 - 2.f}
                     : glm::vec2{1.f, 1.f};
-    render_text(r, v, s, z0Game::kPanelText);
+    render_text(r, v, s, kPanelText);
 
     ss.str("");
     n % 2 ? ss << p.score << "   " : ss << "   " << p.score;
@@ -283,10 +286,10 @@ void GameModal::render(const ii::ui::GameStack& ui, ii::render::GlRenderer& r) c
       v *= 16;
       auto lo = v + glm::vec2{5.f, 11.f - 10 * p.timer};
       auto hi = v + glm::vec2{9.f, 13.f};
-      std::vector<ii::render::shape> shapes{ii::render::shape{
+      std::vector<render::shape> shapes{render::shape{
           .origin = (lo + hi) / 2.f,
           .colour = glm::vec4{1.f},
-          .data = ii::render::box{.dimensions = (hi - lo) / 2.f},
+          .data = render::box{.dimensions = (hi - lo) / 2.f},
       }};
       r.render_shapes(shapes, 1.f);
     }
@@ -294,12 +297,12 @@ void GameModal::render(const ii::ui::GameStack& ui, ii::render::GlRenderer& r) c
   }
 
   if (controllers_dialog_) {
-    render_text(r, {4.f, 4.f}, "CONTROLLERS FOUND", z0Game::kPanelText);
+    render_text(r, {4.f, 4.f}, "CONTROLLERS FOUND", kPanelText);
 
     for (std::size_t i = 0; i < render.players.size(); ++i) {
       std::stringstream ss;
       ss << "PLAYER " << (i + 1) << ": ";
-      render_text(r, {4.f, 8.f + 2 * i}, ss.str(), z0Game::kPanelText);
+      render_text(r, {4.f, 8.f + 2 * i}, ss.str(), kPanelText);
 
       ss.str({});
       bool b = false;
@@ -311,26 +314,26 @@ void GameModal::render(const ii::ui::GameStack& ui, ii::render::GlRenderer& r) c
         if (!input_type) {
           ss << "NONE";
         }
-        if (input_type & ii::IoInputAdapter::kController) {
+        if (input_type & IoInputAdapter::kController) {
           ss << "GAMEPAD";
-          if (input_type & ii::IoInputAdapter::kKeyboardMouse) {
+          if (input_type & IoInputAdapter::kKeyboardMouse) {
             ss << ", KB/MOUSE";
           }
           b = true;
-        } else if (input_type & ii::IoInputAdapter::kKeyboardMouse) {
+        } else if (input_type & IoInputAdapter::kKeyboardMouse) {
           ss << "MOUSE & KEYBOARD";
           b = true;
         }
       }
 
-      render_text(r, {14.f, 8.f + 2 * i}, ss.str(), b ? ii::player_colour(i) : z0Game::kPanelText);
+      render_text(r, {14.f, 8.f + 2 * i}, ss.str(), b ? player_colour(i) : kPanelText);
     }
     return;
   }
 
   std::stringstream ss;
   ss << render.lives_remaining << " live(s)";
-  if (mode_ != ii::game_mode::kBoss && render.overmind_timer) {
+  if (mode_ != game_mode::kBoss && render.overmind_timer) {
     auto t = *render.overmind_timer / 60;
     ss << " " << (t < 10 ? "0" : "") << t;
   }
@@ -338,17 +341,17 @@ void GameModal::render(const ii::ui::GameStack& ui, ii::render::GlRenderer& r) c
   render_text(r,
               {kDimensions.x / (2.f * kTextSize.x) - ss.str().size() / 2,
                kDimensions.y / kTextSize.y - 2.f},
-              ss.str(), z0Game::kPanelTran);
+              ss.str(), kPanelTran);
 
-  if (mode_ == ii::game_mode::kBoss) {
+  if (mode_ == game_mode::kBoss) {
     ss.str({});
     ss << convert_to_time(render.tick_count);
     render_text(r, {kDimensions.x / (2 * kTextSize.x) - ss.str().size() - 1.f, 1.f}, ss.str(),
-                z0Game::kPanelTran);
+                kPanelTran);
   }
 
   if (render.boss_hp_bar) {
-    std::uint32_t x = mode_ == ii::game_mode::kBoss ? 48 : 0;
+    std::uint32_t x = mode_ == game_mode::kBoss ? 48 : 0;
   }
 
   if (replay_) {
@@ -360,116 +363,112 @@ void GameModal::render(const ii::ui::GameStack& ui, ii::render::GlRenderer& r) c
     render_text(r,
                 {kDimensions.x / (2.f * kTextSize.x) - ss.str().size() / 2,
                  kDimensions.y / kTextSize.y - 3.f},
-                ss.str(), z0Game::kPanelTran);
+                ss.str(), kPanelTran);
   }
 }
 
-std::uint32_t GameModal::fps() const {
-  return (network_state_ ? static_cast<ii::ISimState&>(*network_state_) : *state_).fps();
-}
+MainMenuLayer::MainMenuLayer(ui::GameStack& stack, const game_options_t& options)
+: ui::GameLayer{stack}, options_{options} {}
 
-z0Game::z0Game(const ii::game_options_t& options) : Modal{true, true}, options_{options} {}
-
-void z0Game::update(ii::ui::GameStack& ui) {
+void MainMenuLayer::update(const ui::input_frame& input) {
   if (exit_timer_) {
     exit_timer_--;
-    quit();
+    close();
   }
-  ui.io_layer().capture_mouse(false);
+  stack().set_fps(60);
+  stack().io_layer().capture_mouse(false);
 
   menu t = menu_select_;
-  if (ui.input().pressed(ii::ui::key::kUp)) {
+  if (input.pressed(ui::key::kUp)) {
     menu_select_ = static_cast<menu>(std::max(static_cast<std::uint32_t>(menu_select_) - 1,
                                               static_cast<std::uint32_t>(menu::kSpecial)));
   }
-  if (ui.input().pressed(ii::ui::key::kDown)) {
+  if (input.pressed(ui::key::kDown)) {
     menu_select_ = static_cast<menu>(std::min(static_cast<std::uint32_t>(menu::kQuit),
                                               static_cast<std::uint32_t>(menu_select_) + 1));
   }
   if (t != menu_select_) {
-    ui.play_sound(ii::sound::kMenuClick);
+    stack().play_sound(sound::kMenuClick);
   }
 
   if (menu_select_ == menu::kPlayers) {
     auto t = player_select_;
-    if (ui.input().pressed(ii::ui::key::kLeft)) {
+    if (input.pressed(ui::key::kLeft)) {
       player_select_ = std::max(1u, player_select_ - 1);
     }
-    if (ui.input().pressed(ii::ui::key::kRight)) {
-      player_select_ = std::min(ii::kMaxPlayers, player_select_ + 1);
+    if (input.pressed(ui::key::kRight)) {
+      player_select_ = std::min(kMaxPlayers, player_select_ + 1);
     }
-    if (ui.input().pressed(ii::ui::key::kAccept) || ui.input().pressed(ii::ui::key::kMenu)) {
-      player_select_ = 1 + player_select_ % ii::kMaxPlayers;
+    if (input.pressed(ui::key::kAccept) || input.pressed(ui::key::kMenu)) {
+      player_select_ = 1 + player_select_ % kMaxPlayers;
     }
     if (t != player_select_) {
-      ui.play_sound(ii::sound::kMenuClick);
+      stack().play_sound(sound::kMenuClick);
     }
   }
 
   if (menu_select_ == menu::kSpecial) {
-    ii::game_mode t = mode_select_;
-    if (ui.input().pressed(ii::ui::key::kLeft)) {
-      mode_select_ =
-          static_cast<ii::game_mode>(std::max(static_cast<std::uint32_t>(ii::game_mode::kBoss),
-                                              static_cast<std::uint32_t>(mode_select_) - 1));
+    game_mode t = mode_select_;
+    if (input.pressed(ui::key::kLeft)) {
+      mode_select_ = static_cast<game_mode>(std::max(static_cast<std::uint32_t>(game_mode::kBoss),
+                                                     static_cast<std::uint32_t>(mode_select_) - 1));
     }
-    if (ui.input().pressed(ii::ui::key::kRight)) {
-      mode_select_ =
-          static_cast<ii::game_mode>(std::min(static_cast<std::uint32_t>(ii::game_mode::kWhat),
-                                              static_cast<std::uint32_t>(mode_select_) + 1));
+    if (input.pressed(ui::key::kRight)) {
+      mode_select_ = static_cast<game_mode>(std::min(static_cast<std::uint32_t>(game_mode::kWhat),
+                                                     static_cast<std::uint32_t>(mode_select_) + 1));
     }
     if (t != mode_select_) {
-      ui.play_sound(ii::sound::kMenuClick);
+      stack().play_sound(sound::kMenuClick);
     }
   }
 
-  ii::initial_conditions conditions;
+  initial_conditions conditions;
   conditions.compatibility = options_.compatibility;
   conditions.seed = static_cast<std::uint32_t>(time(0));
-  conditions.flags |= ii::initial_conditions::flag::kLegacy_CanFaceSecretBoss;
+  conditions.flags |= initial_conditions::flag::kLegacy_CanFaceSecretBoss;
   conditions.player_count = player_select_;
-  conditions.mode = ii::game_mode::kNormal;
+  conditions.mode = game_mode::kNormal;
 
-  if (ui.input().pressed(ii::ui::key::kAccept) || ui.input().pressed(ii::ui::key::kMenu)) {
+  if (input.pressed(ui::key::kAccept) || input.pressed(ui::key::kMenu)) {
     if (menu_select_ == menu::kStart) {
-      add(std::make_unique<GameModal>(ui.io_layer(), conditions, options_));
+      stack().add<SimLayer>(conditions, options_);
     } else if (menu_select_ == menu::kQuit) {
       exit_timer_ = 2;
     } else if (menu_select_ == menu::kSpecial) {
       conditions.mode = mode_select_;
-      add(std::make_unique<GameModal>(ui.io_layer(), conditions, options_));
+      stack().add<SimLayer>(conditions, options_);
     }
     if (menu_select_ != menu::kPlayers) {
-      ui.play_sound(ii::sound::kMenuAccept);
+      stack().play_sound(sound::kMenuAccept);
     }
   }
 }
 
-void z0Game::render(const ii::ui::GameStack& ui, ii::render::GlRenderer& r) const {
-  if (menu_select_ >= menu::kStart || mode_select_ == ii::game_mode::kBoss) {
+void MainMenuLayer::render(render::GlRenderer& r) const {
+  if (menu_select_ >= menu::kStart || mode_select_ == game_mode::kBoss) {
     r.set_colour_cycle(0);
-  } else if (mode_select_ == ii::game_mode::kHard) {
+  } else if (mode_select_ == game_mode::kHard) {
     r.set_colour_cycle(128);
-  } else if (mode_select_ == ii::game_mode::kFast) {
+  } else if (mode_select_ == game_mode::kFast) {
     r.set_colour_cycle(192);
-  } else if (mode_select_ == ii::game_mode::kWhat) {
+  } else if (mode_select_ == game_mode::kWhat) {
     r.set_colour_cycle((r.colour_cycle() + 1) % 256);
   }
 
-  r.set_dimensions(ui.io_layer().dimensions(), kDimensions);
+  r.set_dimensions(stack().io_layer().dimensions(), kDimensions);
   render_text(r, {6.f, 8.f}, "START GAME", kPanelText);
   render_text(r, {6.f, 10.f}, "PLAYERS", kPanelText);
   render_text(r, {6.f, 12.f}, "EXiT", kPanelText);
 
-  std::string str = mode_select_ == ii::game_mode::kBoss ? "BOSS MODE"
-      : mode_select_ == ii::game_mode::kHard             ? "HARD MODE"
-      : mode_select_ == ii::game_mode::kFast             ? "FAST MODE"
-                                                         : "W-HAT MODE";
+  std::string str = mode_select_ == game_mode::kBoss ? "BOSS MODE"
+      : mode_select_ == game_mode::kHard             ? "HARD MODE"
+      : mode_select_ == game_mode::kFast             ? "FAST MODE"
+                                                     : "W-HAT MODE";
   render_text(r, {6.f, 6.f}, str, kPanelText);
-  if (menu_select_ == menu::kSpecial && mode_select_ > ii::game_mode::kBoss) {
+  if (menu_select_ == menu::kSpecial && mode_select_ > game_mode::kBoss) {
     render_text(r, {5.f, 6.f}, "<", kPanelTran);
   }
-  if (menu_select_ == menu::kSpecial && mode_select_ < ii::game_mode::kWhat) {
+  if (menu_select_ == menu::kSpecial && mode_select_ < game_mode::kWhat) {
     render_text(r, {6.f, 6.f}, "         >", kPanelTran);
   }
 
@@ -482,17 +481,17 @@ void z0Game::render(const ii::ui::GameStack& ui, ii::render::GlRenderer& r) cons
   for (std::uint32_t i = 0; i < player_select_; ++i) {
     std::stringstream ss;
     ss << (i + 1);
-    render_text(r, {14.f + i, 10.f}, ss.str(), ii::player_colour(i));
+    render_text(r, {14.f + i, 10.f}, ss.str(), player_colour(i));
   }
 
   std::stringstream ss;
   ss << player_select_;
   std::string s = "HiGH SCORES    ";
   s += menu_select_ == menu::kSpecial
-      ? (mode_select_ == ii::game_mode::kBoss       ? "BOSS MODE"
-             : mode_select_ == ii::game_mode::kHard ? "HARD MODE (" + ss.str() + "P)"
-             : mode_select_ == ii::game_mode::kFast ? "FAST MODE (" + ss.str() + "P)"
-                                                    : "W-HAT MODE (" + ss.str() + "P)")
+      ? (mode_select_ == game_mode::kBoss       ? "BOSS MODE"
+             : mode_select_ == game_mode::kHard ? "HARD MODE (" + ss.str() + "P)"
+             : mode_select_ == game_mode::kFast ? "FAST MODE (" + ss.str() + "P)"
+                                                : "W-HAT MODE (" + ss.str() + "P)")
       : player_select_ == 1 ? "ONE PLAYER"
       : player_select_ == 2 ? "TWO PLAYERS"
       : player_select_ == 3 ? "THREE PLAYERS"
@@ -500,3 +499,5 @@ void z0Game::render(const ii::ui::GameStack& ui, ii::render::GlRenderer& r) cons
                             : "";
   render_text(r, {4.f, 16.f}, s, kPanelText);
 }
+
+}  // namespace ii

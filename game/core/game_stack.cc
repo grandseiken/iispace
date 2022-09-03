@@ -2,6 +2,7 @@
 #include "game/io/file/filesystem.h"
 #include "game/io/io.h"
 #include "game/mixer/mixer.h"
+#include <algorithm>
 #include <span>
 
 namespace ii::ui {
@@ -154,13 +155,46 @@ GameStack::GameStack(io::Filesystem& fs, io::IoLayer& io_layer, Mixer& mixer)
   set_volume(config_.volume);
 }
 
-void GameStack::compute_input_frame(bool controller_change) {
-  input_ = {};
-  input_.controller_change = controller_change;
-  handle(input_, io_layer_.keyboard_frame());
-  handle(input_, io_layer_.mouse_frame());
+void GameStack::update(bool controller_change) {
+  // Compute input frame.
+  input_frame input;
+  input.controller_change = controller_change;
+  handle(input, io_layer_.keyboard_frame());
+  handle(input, io_layer_.mouse_frame());
   for (std::size_t i = 0; i < io_layer_.controllers(); ++i) {
-    handle(input_, io_layer_.controller_frame(i));
+    handle(input, io_layer_.controller_frame(i));
+  }
+  auto it = layers_.end();
+  while (it != layers_.begin()) {
+    --it;
+    if (+((*it)->flags() & layer_flag::kCaptureUpdate)) {
+      break;
+    }
+  }
+  while (it != layers_.end()) {
+    auto size = layers_.size();
+    (*it)->update(input);
+    if (size != layers_.size()) {
+      input = {};
+    }
+    if ((*it)->is_closed()) {
+      it = layers_.erase(it);
+    } else {
+      ++it;
+    }
+  }
+}
+
+void GameStack::render(render::GlRenderer& renderer) const {
+  auto it = layers_.end();
+  while (it != layers_.begin()) {
+    --it;
+    if (+((*it)->flags() & layer_flag::kCaptureRender)) {
+      break;
+    }
+  }
+  for (; it != layers_.end(); ++it) {
+    (*it)->render(renderer);
   }
 }
 
