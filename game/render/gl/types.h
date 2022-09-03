@@ -125,7 +125,6 @@ struct disable_vertex_attribute {
 
 inline GLenum type_to_gl(type t) {
   switch (t) {
-  default:
   case type::kByte:
     return GL_BYTE;
   case type::kUnsignedByte:
@@ -147,7 +146,8 @@ inline GLenum type_to_gl(type t) {
   case type::kFixed:
     return GL_FIXED;
   }
-};
+  return 0;
+}
 
 }  // namespace detail
 

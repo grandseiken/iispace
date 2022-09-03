@@ -120,7 +120,7 @@ void RenderState::update(IoInputAdapter* input) {
       continue;
     }
     ++p.time;
-    if (auto* d = std::get_if<dot_particle>(&p.data)) {
+    if (std::holds_alternative<dot_particle>(p.data)) {
       p.position += p.velocity;
     } else if (auto* d = std::get_if<line_particle>(&p.data)) {
       if (p.time >= p.end_time / 3 && p.time > 4 &&

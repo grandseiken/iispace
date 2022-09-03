@@ -74,7 +74,6 @@ namespace detail {
 
 inline GLint internal_format_to_gl(internal_format f) {
   switch (f) {
-  default:
   case internal_format::kDepthComponent:
     return GL_DEPTH_COMPONENT;
   case internal_format::kDepthStencil:
@@ -128,11 +127,11 @@ inline GLint internal_format_to_gl(internal_format f) {
   case internal_format::kSrgb8Alpha8:
     return GL_SRGB8_ALPHA8;
   }
+  return 0;
 }
 
 inline GLenum texture_format_to_gl(texture_format f) {
   switch (f) {
-  default:
   case texture_format::kRed:
     return GL_RED;
   case texture_format::kRg:
@@ -164,6 +163,7 @@ inline GLenum texture_format_to_gl(texture_format f) {
   case texture_format::kDepthStencil:
     return GL_DEPTH_STENCIL;
   }
+  return 0;
 }
 
 }  // namespace detail
@@ -204,7 +204,6 @@ inline sampler
 make_sampler(filter mag_filter, filter min_filter, texture_wrap wrap_s, texture_wrap wrap_t) {
   auto filter_to_gl = [](filter f) -> GLint {
     switch (f) {
-    default:
     case filter::kNearest:
       return GL_NEAREST;
     case filter::kLinear:
@@ -218,10 +217,10 @@ make_sampler(filter mag_filter, filter min_filter, texture_wrap wrap_s, texture_
     case filter::kLinearMipMapLinear:
       return GL_LINEAR_MIPMAP_LINEAR;
     }
+    return 0;
   };
   auto texture_wrap_to_gl = [](texture_wrap w) -> GLint {
     switch (w) {
-    default:
     case texture_wrap::kClampToEdge:
       return GL_CLAMP_TO_EDGE;
     case texture_wrap::kRepeat:
@@ -229,6 +228,7 @@ make_sampler(filter mag_filter, filter min_filter, texture_wrap wrap_s, texture_
     case texture_wrap::kMirroredRepeat:
       return GL_MIRRORED_REPEAT;
     }
+    return 0;
   };
   id i;
   glGenSamplers(1, &i);

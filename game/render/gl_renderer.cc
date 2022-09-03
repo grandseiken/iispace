@@ -57,7 +57,7 @@ struct GlRenderer::impl_t {
   glm::uvec2 screen_dimensions{0, 0};
   glm::uvec2 render_dimensions{0, 0};
 
-  std::unordered_map<shader, gl::program> shader_map;
+  std::unordered_map<render::shader, gl::program> shader_map;
   gl::buffer quad_index;
   gl::sampler pixel_sampler;
 
@@ -86,11 +86,8 @@ struct GlRenderer::impl_t {
     auto screen_aspect = screen.x / screen.y;
     auto render_aspect = render.x / render.y;
 
-    if (screen_aspect > render_aspect) {
-      return {render_aspect / screen_aspect, 1.f};
-    } else {
-      return {1.f, screen_aspect / render_aspect};
-    }
+    return screen_aspect > render_aspect ? glm::vec2{render_aspect / screen_aspect, 1.f}
+                                         : glm::vec2{1.f, screen_aspect / render_aspect};
   }
 
   void draw_rect_internal(const glm::ivec2& position, const glm::ivec2& size) const {

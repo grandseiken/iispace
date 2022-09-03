@@ -84,11 +84,11 @@ inline GLenum comparison_to_gl(comparison c) {
   case comparison::kGreaterEqual:
     return GL_GEQUAL;
   }
+  return 0;
 }
 
 inline GLenum draw_mode_to_gl(draw_mode m) {
   switch (m) {
-  default:
   case draw_mode::kPoints:
     return GL_POINTS;
   case draw_mode::kLineStrip:
@@ -114,11 +114,11 @@ inline GLenum draw_mode_to_gl(draw_mode m) {
   case draw_mode::kPatches:
     return GL_PATCHES;
   }
+  return 0;
 }
 
 inline GLenum blend_factor_to_gl(blend_factor f) {
   switch (f) {
-  default:
   case blend_factor::kZero:
     return GL_ZERO;
   case blend_factor::kOne:
@@ -158,6 +158,7 @@ inline GLenum blend_factor_to_gl(blend_factor f) {
   case blend_factor::kOneMinusSrc1Alpha:
     return GL_ONE_MINUS_SRC1_ALPHA;
   }
+  return 0;
 }
 
 }  // namespace detail
