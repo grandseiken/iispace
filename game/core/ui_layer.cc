@@ -6,7 +6,7 @@
 
 namespace ii::ui {
 namespace {
-const std::string kSaveName = "iispace";
+const char* kSaveName = "iispace";
 
 template <typename T>
 bool contains(std::span<const T> range, T value) {
@@ -139,14 +139,14 @@ UiLayer::UiLayer(io::Filesystem& fs, io::IoLayer& io_layer, Mixer& mixer)
 : fs_{fs}, io_layer_{io_layer}, mixer_{mixer} {
   auto data = fs.read_config();
   if (data) {
-    auto config = ii::Config::load(*data);
+    auto config = data::read_config(*data);
     if (config) {
       config_ = *config;
     }
   }
   data = fs.read_savegame(kSaveName);
   if (data) {
-    auto save_data = ii::SaveGame::load(*data);
+    auto save_data = data::read_savegame(*data);
     if (save_data) {
       save_ = std::move(*save_data);
     }
@@ -165,7 +165,7 @@ void UiLayer::compute_input_frame(bool controller_change) {
 }
 
 void UiLayer::write_config() {
-  auto data = config_.save();
+  auto data = data::write_config(config_);
   if (data) {
     // TODO: error reporting (and below).
     (void)fs_.write_config(*data);
@@ -173,22 +173,22 @@ void UiLayer::write_config() {
 }
 
 void UiLayer::write_save_game() {
-  auto data = save_.save();
+  auto data = data::write_savegame(save_);
   if (data) {
     (void)fs_.write_savegame(kSaveName, *data);
   }
 }
 
-void UiLayer::write_replay(const ii::ReplayWriter& writer, const std::string& name,
+void UiLayer::write_replay(const data::ReplayWriter& writer, const std::string& name,
                            std::uint64_t score) {
   std::stringstream ss;
   auto mode = writer.initial_conditions().mode;
   ss << writer.initial_conditions().seed << "_" << writer.initial_conditions().player_count << "p_"
-     << (mode == ii::game_mode::kBoss       ? "bossmode_"
-             : mode == ii::game_mode::kHard ? "hardmode_"
-             : mode == ii::game_mode::kFast ? "fastmode_"
-             : mode == ii::game_mode::kWhat ? "w-hatmode_"
-                                            : "")
+     << (mode == game_mode::kBoss       ? "bossmode_"
+             : mode == game_mode::kHard ? "hardmode_"
+             : mode == game_mode::kFast ? "fastmode_"
+             : mode == game_mode::kWhat ? "w-hatmode_"
+                                        : "")
      << name << "_" << score;
 
   auto data = writer.write();
@@ -210,7 +210,7 @@ void UiLayer::play_sound(sound s) {
 }
 
 void UiLayer::play_sound(sound s, float volume, float pan, float pitch) {
-  mixer_.play(static_cast<ii::Mixer::audio_handle_t>(s), volume, pan, pitch);
+  mixer_.play(static_cast<Mixer::audio_handle_t>(s), volume, pan, pitch);
 }
 
 }  // namespace ii::ui

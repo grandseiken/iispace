@@ -11,8 +11,10 @@
 #include <vector>
 
 namespace ii {
-class Printer;
+namespace data {
 class ReplayWriter;
+}  // namespace data
+class Printer;
 class SimInterface;
 struct SimInternals;
 struct aggregate_output;
@@ -42,7 +44,7 @@ public:
   SimState& operator=(const SimState&) = delete;
 
   SimState();  // Empty state for double-buffering. Behaviour undefined until copy_to().
-  SimState(const initial_conditions& conditions, ReplayWriter* replay_writer = nullptr,
+  SimState(const initial_conditions& conditions, data::ReplayWriter* replay_writer = nullptr,
            std::span<const std::uint32_t> ai_players = {});
 
   std::uint64_t tick_count() const override;
@@ -80,7 +82,7 @@ public:
   void dump(Printer&, const query& q = {}) const;
 
 private:
-  ReplayWriter* replay_writer_ = nullptr;
+  data::ReplayWriter* replay_writer_ = nullptr;
   std::uint32_t kill_timer_ = 0;
   std::uint32_t colour_cycle_ = 0;
   std::size_t compact_counter_ = 0;

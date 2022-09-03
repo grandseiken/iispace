@@ -14,6 +14,7 @@ cc_library(
   hdrs = ["ui_layer.h"],
   srcs = ["ui_layer.cc"],
   deps = [
+    "//game/data:config",
     "//game/data:replay",
     "//game/data:save",
     "//game/mixer:sound",

@@ -8,11 +8,7 @@
 #include <optional>
 #include <span>
 
-namespace ii::io {
-class Filesystem;
-}  // namespace ii::io
-
-namespace ii {
+namespace ii::data {
 
 class ReplayReader {
 public:
@@ -50,6 +46,6 @@ private:
   std::unique_ptr<impl_t> impl_;
 };
 
-}  // namespace ii
+}  // namespace ii::data
 
 #endif

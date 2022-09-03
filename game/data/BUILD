@@ -46,3 +46,12 @@ cc_library(
   ],
   visibility = ["//visibility:public"],
 )
+
+cc_library(
+  name = "config",
+  hdrs = ["config.h"],
+  srcs = ["config.cc"],
+  deps = ["//game/common:types"],
+  implementation_deps = ["//game/data/proto:ii_proto_cc"],
+  visibility = ["//visibility:public"],
+)

@@ -11,7 +11,9 @@
 #include <vector>
 
 namespace ii {
+namespace data {
 class ReplayWriter;
+}  // namespace data
 
 // TODO:
 // - reconcile effects to be applied at last-known position of enemy?
@@ -33,7 +35,7 @@ public:
   };
 
   NetworkedSimState(const initial_conditions& conditions, input_mapping mapping,
-                    ReplayWriter* writer = nullptr, std::span<std::uint32_t> ai_players = {});
+                    data::ReplayWriter* writer = nullptr, std::span<std::uint32_t> ai_players = {});
 
   const std::unordered_set<std::string>& checksum_failed_remote_ids() const;
   // Ticks by which to delay input (increases prediction accuracy in exchange for small amounts of

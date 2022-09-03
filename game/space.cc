@@ -80,7 +80,7 @@ bool run(System& system, const std::vector<std::string>& args, const game_option
       std::cerr << replay_data.error() << std::endl;
       return false;
     }
-    auto reader = ReplayReader::create(*replay_data);
+    auto reader = data::ReplayReader::create(*replay_data);
     if (!reader) {
       std::cerr << reader.error() << std::endl;
       return false;

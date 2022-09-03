@@ -58,7 +58,7 @@ SimState::SimState()
   setup_index_callbacks(*interface_, *internals_);
 }
 
-SimState::SimState(const initial_conditions& conditions, ReplayWriter* replay_writer,
+SimState::SimState(const initial_conditions& conditions, data::ReplayWriter* replay_writer,
                    std::span<const std::uint32_t> ai_players)
 : replay_writer_{replay_writer}
 , internals_{std::make_unique<SimInternals>(conditions.seed)}

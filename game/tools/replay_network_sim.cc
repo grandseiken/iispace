@@ -26,7 +26,7 @@ bool run(const network_options_t& options, const std::string& replay_path) {
     return false;
   }
 
-  auto replay_reader = ReplayReader::create(*replay_bytes);
+  auto replay_reader = data::ReplayReader::create(*replay_bytes);
   if (!replay_reader) {
     std::cerr << replay_reader.error() << std::endl;
     return false;
@@ -49,7 +49,7 @@ bool run(const network_options_t& options, const std::string& replay_path) {
   using per_player_inputs_t = std::vector<std::vector<input_frame>>;
   per_player_inputs_t per_player_inputs;
   per_player_inputs.resize(player_count);
-  ReplayWriter canonical_bytes_writer{replay_reader->initial_conditions()};
+  data::ReplayWriter canonical_bytes_writer{replay_reader->initial_conditions()};
   std::size_t canonical_frames_written = 0;
   while (replay_reader->current_input_frame() < replay_reader->total_input_frames()) {
     auto inputs = replay_reader->next_tick_input_frames();

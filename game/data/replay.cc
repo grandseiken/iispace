@@ -5,7 +5,7 @@
 #include <array>
 #include <sstream>
 
-namespace ii {
+namespace ii::data {
 namespace {
 const char* kReplayVersion = "iispace";
 const char* kLegacyReplayVersion = "WiiSPACE v1.3 replay";
@@ -293,4 +293,4 @@ const ii::initial_conditions& ReplayWriter::initial_conditions() const {
   return impl_->conditions;
 }
 
-}  // namespace ii
+}  // namespace ii::data

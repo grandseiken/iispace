@@ -145,7 +145,7 @@ void PauseModal::render(const ii::ui::UiLayer& ui, ii::render::GlRenderer& r) co
 }
 
 HighScoreModal::HighScoreModal(bool is_replay, ii::game_mode mode, const ii::sim_results& results,
-                               ii::ReplayWriter* replay_writer)
+                               ii::data::ReplayWriter* replay_writer)
 : Modal{true, false}
 , is_replay_{is_replay}
 , mode_{mode}
@@ -156,14 +156,14 @@ HighScoreModal::HighScoreModal(bool is_replay, ii::game_mode mode, const ii::sim
 void HighScoreModal::update(ii::ui::UiLayer& ui) {
   if (!is_replay_) {
     if (mode_ == ii::game_mode::kNormal || mode_ == ii::game_mode::kBoss) {
-      ui.save_game().bosses_killed |= results_.bosses_killed();
+      ui.savegame().bosses_killed |= results_.bosses_killed();
     } else {
-      ui.save_game().hard_mode_bosses_killed |= results_.bosses_killed();
+      ui.savegame().hard_mode_bosses_killed |= results_.bosses_killed();
     }
   }
 
   ++timer_;
-  if (!is_high_score(ui.save_game())) {
+  if (!is_high_score(ui.savegame())) {
     if (ui.input().pressed(ii::ui::key::kMenu)) {
       if (replay_writer_) {
         ui.write_replay(*replay_writer_, "untitled", get_score());
@@ -177,7 +177,7 @@ void HighScoreModal::update(ii::ui::UiLayer& ui) {
 
   ++enter_time_;
   if (ui.input().pressed(ii::ui::key::kAccept) &&
-      enter_name_.size() < ii::HighScores::kMaxNameLength) {
+      enter_name_.size() < ii::data::HighScores::kMaxNameLength) {
     enter_name_ += kAllowedChars.substr(enter_char_, 1);
     enter_time_ = 0;
     ui.play_sound(ii::sound::kMenuClick);
@@ -207,8 +207,8 @@ void HighScoreModal::update(ii::ui::UiLayer& ui) {
 
   if (ui.input().pressed(ii::ui::key::kMenu)) {
     ui.play_sound(ii::sound::kMenuAccept);
-    ui.save_game().high_scores.add_score(mode_, results_.players.size() - 1, enter_name_,
-                                         get_score());
+    ui.savegame().high_scores.add_score(mode_, results_.players.size() - 1, enter_name_,
+                                        get_score());
     if (replay_writer_) {
       ui.write_replay(*replay_writer_, enter_name_, get_score());
     }
@@ -219,13 +219,13 @@ void HighScoreModal::update(ii::ui::UiLayer& ui) {
 
 void HighScoreModal::render(const ii::ui::UiLayer& ui, ii::render::GlRenderer& r) const {
   auto players = results_.players.size();
-  if (is_high_score(ui.save_game())) {
+  if (is_high_score(ui.savegame())) {
     render_panel(r, {3.f, 20.f}, {28.f, 27.f});
     render_text(r, {4.f, 21.f}, "It's a high score!", z0Game::kPanelText);
     render_text(r, {4.f, 23.f},
                 players == 1 ? "Enter name:" : "Enter team name:", z0Game::kPanelText);
     render_text(r, {6.f, 25.f}, enter_name_, z0Game::kPanelText);
-    if ((enter_time_ / 16) % 2 && enter_name_.size() < ii::HighScores::kMaxNameLength) {
+    if ((enter_time_ / 16) % 2 && enter_name_.size() < ii::data::HighScores::kMaxNameLength) {
       render_text(r, {6.f + enter_name_.size(), 25.f}, kAllowedChars.substr(enter_char_, 1),
                   {0.f, 0.f, .75f, 1.f});
     }
@@ -266,8 +266,8 @@ void HighScoreModal::render(const ii::ui::UiLayer& ui, ii::render::GlRenderer& r
   std::stringstream ss;
   ss << get_score();
   std::string score = ss.str();
-  if (score.size() > ii::HighScores::kMaxScoreLength) {
-    score = score.substr(0, ii::HighScores::kMaxScoreLength);
+  if (score.size() > ii::data::HighScores::kMaxScoreLength) {
+    score = score.substr(0, ii::data::HighScores::kMaxScoreLength);
   }
   render_text(r, {4.f, 4.f}, "TOTAL SCORE: " + score, z0Game::kPanelText);
 
@@ -280,8 +280,8 @@ void HighScoreModal::render(const ii::ui::UiLayer& ui, ii::render::GlRenderer& r
       ss << deaths << " death" << (deaths != 1 ? "s" : "");
     }
     score = ss.str();
-    if (score.size() > ii::HighScores::kMaxScoreLength) {
-      score = score.substr(0, ii::HighScores::kMaxScoreLength);
+    if (score.size() > ii::data::HighScores::kMaxScoreLength) {
+      score = score.substr(0, ii::data::HighScores::kMaxScoreLength);
     }
 
     ss.str({});
@@ -335,7 +335,7 @@ std::uint64_t HighScoreModal::get_score() const {
   return total;
 }
 
-bool HighScoreModal::is_high_score(const ii::SaveGame& save) const {
+bool HighScoreModal::is_high_score(const ii::data::savegame& save) const {
   return !is_replay_ &&
       save.high_scores.is_high_score(mode_, results_.players.size() - 1, get_score());
 }
@@ -347,14 +347,14 @@ GameModal::GameModal(ii::io::IoLayer& io_layer, const ii::initial_conditions& co
 , options_{options}
 , mode_{conditions.mode}
 , render_state_{conditions.seed} {
-  game_.emplace(io_layer, ii::ReplayWriter{conditions});
+  game_.emplace(io_layer, ii::data::ReplayWriter{conditions});
   game_->input.set_player_count(conditions.player_count);
   game_->input.set_game_dimensions(kDimensions);
   render_state_.set_dimensions(kDimensions);
   state_ = std::make_unique<ii::SimState>(conditions, &game_->writer, options.ai_players);
 }
 
-GameModal::GameModal(ii::ReplayReader&& replay, const ii::game_options_t& options)
+GameModal::GameModal(ii::data::ReplayReader&& replay, const ii::game_options_t& options)
 : Modal{true, true}
 , engine_{std::random_device{}()}
 , options_{options}
@@ -605,11 +605,10 @@ void z0Game::update(ii::ui::UiLayer& ui) {
 
   menu t = menu_select_;
   if (ui.input().pressed(ii::ui::key::kUp)) {
-    menu_select_ = static_cast<menu>(
-        std::max(static_cast<std::uint32_t>(menu_select_) - 1,
-                 static_cast<std::uint32_t>(mode_unlocked(ui.save_game()) >= ii::game_mode::kBoss
-                                                ? menu::kSpecial
-                                                : menu::kStart)));
+    menu_select_ = static_cast<menu>(std::max(
+        static_cast<std::uint32_t>(menu_select_) - 1,
+        static_cast<std::uint32_t>(
+            mode_unlocked(ui.savegame()) >= ii::game_mode::kBoss ? menu::kSpecial : menu::kStart)));
   }
   if (ui.input().pressed(ii::ui::key::kDown)) {
     menu_select_ = static_cast<menu>(std::min(static_cast<std::uint32_t>(menu::kQuit),
@@ -644,7 +643,7 @@ void z0Game::update(ii::ui::UiLayer& ui) {
     }
     if (ui.input().pressed(ii::ui::key::kRight)) {
       mode_select_ = static_cast<ii::game_mode>(
-          std::min(static_cast<std::uint32_t>(mode_unlocked(ui.save_game())),
+          std::min(static_cast<std::uint32_t>(mode_unlocked(ui.savegame())),
                    static_cast<std::uint32_t>(mode_select_) + 1));
     }
     if (t != mode_select_) {
@@ -655,7 +654,7 @@ void z0Game::update(ii::ui::UiLayer& ui) {
   ii::initial_conditions conditions;
   conditions.compatibility = options_.compatibility;
   conditions.seed = static_cast<std::uint32_t>(time(0));
-  if (mode_unlocked(ui.save_game()) >= ii::game_mode::kFast) {
+  if (mode_unlocked(ui.savegame()) >= ii::game_mode::kFast) {
     conditions.flags |= ii::initial_conditions::flag::kLegacy_CanFaceSecretBoss;
   }
   conditions.player_count = player_select_;
@@ -698,9 +697,9 @@ void z0Game::render(const ii::ui::UiLayer& ui, ii::render::GlRenderer& r) const 
   render_text(r, {37.f - 9, 9.f}, "SHADOW1W2", kPanelText);
 
   std::string b = "BOSSES:  ";
-  auto bb = mode_unlocked(ui.save_game()) >= ii::game_mode::kHard
-      ? ui.save_game().hard_mode_bosses_killed
-      : ui.save_game().bosses_killed;
+  auto bb = mode_unlocked(ui.savegame()) >= ii::game_mode::kHard
+      ? ui.savegame().hard_mode_bosses_killed
+      : ui.savegame().bosses_killed;
   b += +(bb & ii::boss_flag::kBoss1A) ? "X" : "-";
   b += +(bb & ii::boss_flag::kBoss1B) ? "X" : "-";
   b += +(bb & ii::boss_flag::kBoss1C) ? "X" : "-";
@@ -715,7 +714,7 @@ void z0Game::render(const ii::ui::UiLayer& ui, ii::render::GlRenderer& r) const 
   render_text(r, {6.f, 10.f}, "PLAYERS", kPanelText);
   render_text(r, {6.f, 12.f}, "EXiT", kPanelText);
 
-  if (mode_unlocked(ui.save_game()) >= ii::game_mode::kBoss) {
+  if (mode_unlocked(ui.savegame()) >= ii::game_mode::kBoss) {
     std::string str = mode_select_ == ii::game_mode::kBoss ? "BOSS MODE"
         : mode_select_ == ii::game_mode::kHard             ? "HARD MODE"
         : mode_select_ == ii::game_mode::kFast             ? "FAST MODE"
@@ -725,7 +724,7 @@ void z0Game::render(const ii::ui::UiLayer& ui, ii::render::GlRenderer& r) const 
   if (menu_select_ == menu::kSpecial && mode_select_ > ii::game_mode::kBoss) {
     render_text(r, {5.f, 6.f}, "<", kPanelTran);
   }
-  if (menu_select_ == menu::kSpecial && mode_select_ < mode_unlocked(ui.save_game())) {
+  if (menu_select_ == menu::kSpecial && mode_select_ < mode_unlocked(ui.savegame())) {
     render_text(r, {6.f, 6.f}, "         >", kPanelTran);
   }
 
@@ -773,20 +772,20 @@ void z0Game::render(const ii::ui::UiLayer& ui, ii::render::GlRenderer& r) const 
     render_text(r, {4.f, 24.f}, "FOUR PLAYERS", kPanelText);
 
     for (std::size_t i = 0; i < ii::kMaxPlayers; ++i) {
-      const auto& s = ui.save_game().high_scores.get(ii::game_mode::kBoss, i, 0);
-      std::string score = convert_to_time(s.score).substr(0, ii::HighScores::kMaxNameLength);
-      std::string name = s.name.substr(0, ii::HighScores::kMaxNameLength);
+      const auto& s = ui.savegame().high_scores.get(ii::game_mode::kBoss, i, 0);
+      std::string score = convert_to_time(s.score).substr(0, ii::data::HighScores::kMaxNameLength);
+      std::string name = s.name.substr(0, ii::data::HighScores::kMaxNameLength);
 
       render_text(r, {19.f, 18.f + i * 2}, score, kPanelText);
       render_text(r, {19.f, 19.f + i * 2}, name, kPanelText);
     }
   } else {
-    for (std::size_t i = 0; i < ii::HighScores::kNumScores; ++i) {
+    for (std::size_t i = 0; i < ii::data::HighScores::kNumScores; ++i) {
       ss.str({});
       ss << (i + 1) << ".";
       render_text(r, {4.f, 18.f + i}, ss.str(), kPanelText);
 
-      const auto& s = ui.save_game().high_scores.get(
+      const auto& s = ui.savegame().high_scores.get(
           menu_select_ == menu::kSpecial ? mode_select_ : ii::game_mode::kNormal,
           player_select_ - 1, i);
       if (s.score <= 0) {
@@ -795,8 +794,8 @@ void z0Game::render(const ii::ui::UiLayer& ui, ii::render::GlRenderer& r) const 
 
       ss.str({});
       ss << s.score;
-      std::string score = ss.str().substr(0, ii::HighScores::kMaxScoreLength);
-      std::string name = s.name.substr(0, ii::HighScores::kMaxScoreLength);
+      std::string score = ss.str().substr(0, ii::data::HighScores::kMaxScoreLength);
+      std::string name = s.name.substr(0, ii::data::HighScores::kMaxScoreLength);
 
       render_text(r, {7.f, 18.f + i}, score, kPanelText);
       render_text(r, {19.f, 18.f + i}, name, kPanelText);
@@ -804,7 +803,7 @@ void z0Game::render(const ii::ui::UiLayer& ui, ii::render::GlRenderer& r) const 
   }
 }
 
-ii::game_mode z0Game::mode_unlocked(const ii::SaveGame& save) const {
+ii::game_mode z0Game::mode_unlocked(const ii::data::savegame& save) const {
   if (!(save.bosses_killed & ii::boss_flag{63})) {
     return ii::game_mode::kNormal;
   }

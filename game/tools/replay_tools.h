@@ -24,7 +24,7 @@ result<replay_results_t> inline replay_results(
     std::span<const std::uint8_t> replay_bytes,
     std::optional<std::uint64_t> max_ticks = std::nullopt,
     std::optional<std::uint64_t> dump_state_from_tick = std::nullopt, SimState::query query = {}) {
-  auto reader = ReplayReader::create(replay_bytes);
+  auto reader = data::ReplayReader::create(replay_bytes);
   if (!reader) {
     return unexpected(reader.error());
   }
@@ -75,7 +75,7 @@ inline result<run_data_t> synthesize_replay(const initial_conditions& conditions
   for (std::uint32_t i = 0; i < conditions.player_count; ++i) {
     ai_players.emplace_back(i);
   }
-  ReplayWriter writer{conditions};
+  data::ReplayWriter writer{conditions};
   SimState sim{conditions, &writer, ai_players};
   while (!sim.game_over()) {
     std::vector<input_frame> input;

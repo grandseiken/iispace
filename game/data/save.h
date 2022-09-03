@@ -7,10 +7,7 @@
 #include <span>
 #include <vector>
 
-namespace ii {
-namespace io {
-class Filesystem;
-}  // namespace io
+namespace ii::data {
 
 struct HighScores {
   static constexpr std::uint32_t kNumScores = 8;
@@ -39,22 +36,15 @@ struct HighScores {
   add_score(game_mode mode, std::uint32_t players, const std::string& name, std::uint64_t score);
 };
 
-struct SaveGame {
-  static result<SaveGame> load(std::span<const std::uint8_t> bytes);
-  result<std::vector<std::uint8_t>> save() const;
-
+struct savegame {
   boss_flag bosses_killed{0};
   boss_flag hard_mode_bosses_killed{0};
   HighScores high_scores;
 };
 
-struct Config {
-  static result<Config> load(std::span<const std::uint8_t> bytes);
-  result<std::vector<std::uint8_t>> save() const;
+result<savegame> read_savegame(std::span<const std::uint8_t>);
+result<std::vector<std::uint8_t>> write_savegame(const savegame&);
 
-  float volume = 100.f;
-};
-
-}  // namespace ii
+}  // namespace ii::data
 
 #endif

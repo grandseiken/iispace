@@ -46,18 +46,18 @@ private:
 class HighScoreModal : public Modal {
 public:
   HighScoreModal(bool is_replay, ii::game_mode mode, const ii::sim_results& results,
-                 ii::ReplayWriter* replay_writer);
+                 ii::data::ReplayWriter* replay_writer);
   void update(ii::ui::UiLayer& ui) override;
   void render(const ii::ui::UiLayer& ui, ii::render::GlRenderer& r) const override;
 
 private:
   std::uint64_t get_score() const;
-  bool is_high_score(const ii::SaveGame&) const;
+  bool is_high_score(const ii::data::savegame&) const;
 
   bool is_replay_ = false;
   ii::game_mode mode_;
   ii::sim_results results_;
-  ii::ReplayWriter* replay_writer_ = nullptr;
+  ii::data::ReplayWriter* replay_writer_ = nullptr;
 
   std::string enter_name_;
   std::uint32_t enter_char_ = 0;
@@ -71,7 +71,7 @@ class GameModal : public Modal {
 public:
   GameModal(ii::io::IoLayer& io_layer, const ii::initial_conditions& conditions,
             const ii::game_options_t& options);
-  GameModal(ii::ReplayReader&& replay, const ii::game_options_t& options);
+  GameModal(ii::data::ReplayReader&& replay, const ii::game_options_t& options);
   ~GameModal();
 
   void update(ii::ui::UiLayer& ui) override;
@@ -80,12 +80,12 @@ public:
 
 private:
   struct replay_t {
-    replay_t(ii::ReplayReader&& r) : reader{std::move(r)} {}
-    ii::ReplayReader reader;
+    replay_t(ii::data::ReplayReader&& r) : reader{std::move(r)} {}
+    ii::data::ReplayReader reader;
   };
   struct game_t {
-    game_t(ii::io::IoLayer& io, ii::ReplayWriter&& w) : writer{std::move(w)}, input{io} {}
-    ii::ReplayWriter writer;
+    game_t(ii::io::IoLayer& io, ii::data::ReplayWriter&& w) : writer{std::move(w)}, input{io} {}
+    ii::data::ReplayWriter writer;
     ii::IoInputAdapter input;
   };
 
@@ -122,7 +122,7 @@ public:
   void render(const ii::ui::UiLayer& ui, ii::render::GlRenderer& r) const override;
 
 private:
-  ii::game_mode mode_unlocked(const ii::SaveGame&) const;
+  ii::game_mode mode_unlocked(const ii::data::savegame&) const;
 
   enum class menu {
     kSpecial,

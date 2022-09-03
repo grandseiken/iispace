@@ -7,7 +7,9 @@
 #include <vector>
 
 namespace ii {
+namespace data {
 class ReplayWriter;
+}  // namespace data
 namespace io {
 class IoLayer;
 }  // namespace io

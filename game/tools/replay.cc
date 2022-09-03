@@ -73,12 +73,12 @@ bool run(const options_t& options, const std::string& replay_path) {
 
   if (options.convert_out_path) {
     std::cout << "converting replay..." << std::endl;
-    auto reader = ReplayReader::create(*replay_bytes);
+    auto reader = data::ReplayReader::create(*replay_bytes);
     if (!reader) {
       std::cerr << reader.error() << std::endl;
       return false;
     }
-    ReplayWriter writer{reader->initial_conditions()};
+    data::ReplayWriter writer{reader->initial_conditions()};
     std::size_t frames_written = 0;
     while (auto frame = reader->next_input_frame()) {
       if (frames_written < results->replay_frames_read) {

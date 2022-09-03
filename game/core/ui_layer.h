@@ -1,5 +1,6 @@
 #ifndef II_GAME_CORE_UI_LAYER_H
 #define II_GAME_CORE_UI_LAYER_H
+#include "game/data/config.h"
 #include "game/data/replay.h"
 #include "game/data/save.h"
 #include "game/mixer/sound.h"
@@ -63,19 +64,19 @@ public:
     return mixer_;
   }
 
-  Config& config() {
+  data::config& config() {
     return config_;
   }
 
-  SaveGame& save_game() {
+  data::savegame& savegame() {
     return save_;
   }
 
-  const Config& config() const {
+  const data::config& config() const {
     return config_;
   }
 
-  const SaveGame& save_game() const {
+  const data::savegame& savegame() const {
     return save_;
   }
 
@@ -86,7 +87,7 @@ public:
   void compute_input_frame(bool controller_change);
   void write_config();
   void write_save_game();
-  void write_replay(const ii::ReplayWriter& writer, const std::string& name, std::uint64_t score);
+  void write_replay(const data::ReplayWriter& writer, const std::string& name, std::uint64_t score);
 
   void rumble(std::uint32_t time);
   void set_volume(float volume);
@@ -98,8 +99,8 @@ private:
   io::IoLayer& io_layer_;
   Mixer& mixer_;
 
-  Config config_;
-  SaveGame save_;
+  data::config config_;
+  data::savegame save_;
   input_frame input_;
 };
 

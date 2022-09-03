@@ -54,7 +54,8 @@ std::vector<std::uint32_t> filter_ai_players(const NetworkedSimState::input_mapp
 }  // namespace
 
 NetworkedSimState::NetworkedSimState(const initial_conditions& conditions, input_mapping mapping,
-                                     ReplayWriter* writer, std::span<std::uint32_t> ai_players)
+                                     data::ReplayWriter* writer,
+                                     std::span<std::uint32_t> ai_players)
 : local_ai_players_{filter_ai_players(mapping, ai_players)}
 , canonical_state_{conditions, writer, local_ai_players_}
 , mapping_{std::move(mapping)}

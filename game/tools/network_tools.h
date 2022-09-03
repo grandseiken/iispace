@@ -104,7 +104,7 @@ struct peer_t {
   };
 
   std::string id;
-  ReplayWriter replay_writer;
+  data::ReplayWriter replay_writer;
   NetworkedSimState::input_mapping mapping;
   network_options_t options;
   NetworkedSimState sim;
