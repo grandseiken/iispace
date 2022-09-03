@@ -1,5 +1,5 @@
-#ifndef II_GAME_CORE_UI_LAYER_H
-#define II_GAME_CORE_UI_LAYER_H
+#ifndef II_GAME_CORE_GAME_STACK_H
+#define II_GAME_CORE_GAME_STACK_H
 #include "game/data/config.h"
 #include "game/data/replay.h"
 #include "game/data/save.h"
@@ -48,9 +48,9 @@ struct input_frame {
   }
 };
 
-class UiLayer {
+class GameStack {
 public:
-  UiLayer(io::Filesystem& fs, io::IoLayer& io_layer, Mixer& mixer);
+  GameStack(io::Filesystem& fs, io::IoLayer& io_layer, Mixer& mixer);
 
   io::IoLayer& io_layer() {
     return io_layer_;
@@ -86,7 +86,7 @@ public:
 
   void compute_input_frame(bool controller_change);
   void write_config();
-  void write_save_game();
+  void write_savegame();
   void write_replay(const data::ReplayWriter& writer, const std::string& name, std::uint64_t score);
 
   void rumble(std::uint32_t time);

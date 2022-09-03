@@ -1,4 +1,4 @@
-#include "game/core/ui_layer.h"
+#include "game/core/game_stack.h"
 #include "game/io/file/filesystem.h"
 #include "game/io/io.h"
 #include "game/mixer/mixer.h"
@@ -135,7 +135,7 @@ void handle(input_frame& result, const io::controller::frame& frame) {
 
 }  // namespace
 
-UiLayer::UiLayer(io::Filesystem& fs, io::IoLayer& io_layer, Mixer& mixer)
+GameStack::GameStack(io::Filesystem& fs, io::IoLayer& io_layer, Mixer& mixer)
 : fs_{fs}, io_layer_{io_layer}, mixer_{mixer} {
   auto data = fs.read_config();
   if (data) {
@@ -154,7 +154,7 @@ UiLayer::UiLayer(io::Filesystem& fs, io::IoLayer& io_layer, Mixer& mixer)
   set_volume(config_.volume);
 }
 
-void UiLayer::compute_input_frame(bool controller_change) {
+void GameStack::compute_input_frame(bool controller_change) {
   input_ = {};
   input_.controller_change = controller_change;
   handle(input_, io_layer_.keyboard_frame());
@@ -164,7 +164,7 @@ void UiLayer::compute_input_frame(bool controller_change) {
   }
 }
 
-void UiLayer::write_config() {
+void GameStack::write_config() {
   auto data = data::write_config(config_);
   if (data) {
     // TODO: error reporting (and below).
@@ -172,15 +172,15 @@ void UiLayer::write_config() {
   }
 }
 
-void UiLayer::write_save_game() {
+void GameStack::write_savegame() {
   auto data = data::write_savegame(save_);
   if (data) {
     (void)fs_.write_savegame(kSaveName, *data);
   }
 }
 
-void UiLayer::write_replay(const data::ReplayWriter& writer, const std::string& name,
-                           std::uint64_t score) {
+void GameStack::write_replay(const data::ReplayWriter& writer, const std::string& name,
+                             std::uint64_t score) {
   std::stringstream ss;
   auto mode = writer.initial_conditions().mode;
   ss << writer.initial_conditions().seed << "_" << writer.initial_conditions().player_count << "p_"
@@ -197,19 +197,19 @@ void UiLayer::write_replay(const data::ReplayWriter& writer, const std::string& 
   }
 }
 
-void UiLayer::rumble(std::uint32_t time) {
+void GameStack::rumble(std::uint32_t time) {
   // TODO
 }
 
-void UiLayer::set_volume(float volume) {
+void GameStack::set_volume(float volume) {
   mixer_.set_master_volume(volume / 100.f);
 }
 
-void UiLayer::play_sound(sound s) {
+void GameStack::play_sound(sound s) {
   play_sound(s, 1.f, 0.f, 1.f);
 }
 
-void UiLayer::play_sound(sound s, float volume, float pan, float pitch) {
+void GameStack::play_sound(sound s, float volume, float pan, float pitch) {
   mixer_.play(static_cast<Mixer::audio_handle_t>(s), volume, pan, pitch);
 }
 

@@ -10,9 +10,9 @@ cc_library(
 )
 
 cc_library(
-  name = "ui_layer",
-  hdrs = ["ui_layer.h"],
-  srcs = ["ui_layer.cc"],
+  name = "game_stack",
+  hdrs = ["game_stack.h"],
+  srcs = ["game_stack.cc"],
   deps = [
     "//game/data:config",
     "//game/data:replay",
@@ -64,7 +64,7 @@ cc_library(
     "//game/logic/sim:networked_sim_state",
   ],
   implementation_deps = [
-    ":ui_layer",
+    ":game_stack",
     "//game/common:math",
     "//game/common:types",
     "//game/io",

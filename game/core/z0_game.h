@@ -35,36 +35,12 @@ public:
   };
 
   PauseModal(output_t* output);
-  void update(ii::ui::UiLayer& ui) override;
-  void render(const ii::ui::UiLayer& ui, ii::render::GlRenderer& r) const override;
+  void update(ii::ui::GameStack& ui) override;
+  void render(const ii::ui::GameStack& ui, ii::render::GlRenderer& r) const override;
 
 private:
   output_t* output_;
   std::uint32_t selection_ = 0;
-};
-
-class HighScoreModal : public Modal {
-public:
-  HighScoreModal(bool is_replay, ii::game_mode mode, const ii::sim_results& results,
-                 ii::data::ReplayWriter* replay_writer);
-  void update(ii::ui::UiLayer& ui) override;
-  void render(const ii::ui::UiLayer& ui, ii::render::GlRenderer& r) const override;
-
-private:
-  std::uint64_t get_score() const;
-  bool is_high_score(const ii::data::savegame&) const;
-
-  bool is_replay_ = false;
-  ii::game_mode mode_;
-  ii::sim_results results_;
-  ii::data::ReplayWriter* replay_writer_ = nullptr;
-
-  std::string enter_name_;
-  std::uint32_t enter_char_ = 0;
-  std::uint32_t enter_r_ = 0;
-  std::uint32_t enter_time_ = 0;
-  std::size_t compliment_ = 0;
-  std::uint32_t timer_ = 0;
 };
 
 class GameModal : public Modal {
@@ -74,8 +50,8 @@ public:
   GameModal(ii::data::ReplayReader&& replay, const ii::game_options_t& options);
   ~GameModal();
 
-  void update(ii::ui::UiLayer& ui) override;
-  void render(const ii::ui::UiLayer& ui, ii::render::GlRenderer& r) const override;
+  void update(ii::ui::GameStack& ui) override;
+  void render(const ii::ui::GameStack& ui, ii::render::GlRenderer& r) const override;
   std::uint32_t fps() const override;
 
 private:
@@ -118,12 +94,10 @@ public:
   static constexpr glm::vec4 kPanelBack = {0.f, 0.f, 0.f, 1.f};
 
   z0Game(const ii::game_options_t& options);
-  void update(ii::ui::UiLayer& ui) override;
-  void render(const ii::ui::UiLayer& ui, ii::render::GlRenderer& r) const override;
+  void update(ii::ui::GameStack& ui) override;
+  void render(const ii::ui::GameStack& ui, ii::render::GlRenderer& r) const override;
 
 private:
-  ii::game_mode mode_unlocked(const ii::data::savegame&) const;
-
   enum class menu {
     kSpecial,
     kStart,

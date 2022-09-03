@@ -32,7 +32,7 @@ cc_binary(
     ":flags",
     ":mode_flags",
     "//game/core",
-    "//game/core:ui_layer",
+    "//game/core:game_stack",
     "//game/io:sdl_io",
     "//game/io/file:std_filesystem",
     "//game/mixer",

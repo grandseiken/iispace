@@ -20,7 +20,6 @@
 namespace ii::render {
 namespace {
 enum class shader {
-  kRect,
   kText,
   kShapeOutline,
   kShapeMotion,
@@ -58,7 +57,6 @@ struct GlRenderer::impl_t {
   glm::uvec2 render_dimensions{0, 0};
 
   std::unordered_map<render::shader, gl::program> shader_map;
-  gl::buffer quad_index;
   gl::sampler pixel_sampler;
 
   struct font_entry {
@@ -68,13 +66,9 @@ struct GlRenderer::impl_t {
   std::unordered_map<std::uint32_t, font_entry> font_map;
 
   impl_t()
-  : quad_index(gl::make_buffer())
-  , pixel_sampler{gl::make_sampler(gl::filter::kNearest, gl::filter::kNearest,
+  : pixel_sampler{gl::make_sampler(gl::filter::kNearest, gl::filter::kNearest,
                                    gl::texture_wrap::kClampToEdge,
-                                   gl::texture_wrap::kClampToEdge)} {
-    static const std::vector<unsigned> quad_indices = {0, 1, 2, 0, 2, 3};
-    gl::buffer_data(quad_index, gl::buffer_usage::kStaticDraw, std::span{quad_indices});
-  }
+                                   gl::texture_wrap::kClampToEdge)} {}
 
   const gl::program& shader(render::shader s) const {
     return shader_map.find(s)->second;
@@ -88,38 +82,6 @@ struct GlRenderer::impl_t {
 
     return screen_aspect > render_aspect ? glm::vec2{render_aspect / screen_aspect, 1.f}
                                          : glm::vec2{1.f, screen_aspect / render_aspect};
-  }
-
-  void draw_rect_internal(const glm::ivec2& position, const glm::ivec2& size) const {
-    using int_t = std::int16_t;
-    const std::vector<int_t> vertex_data = {
-        static_cast<int_t>(position.x),
-        static_cast<int_t>(position.y),
-        static_cast<int_t>(0),
-        static_cast<int_t>(0),
-        static_cast<int_t>(position.x),
-        static_cast<int_t>(position.y + size.y),
-        static_cast<int_t>(0),
-        static_cast<int_t>(1),
-        static_cast<int_t>(position.x + size.x),
-        static_cast<int_t>(position.y + size.y),
-        static_cast<int_t>(1),
-        static_cast<int_t>(1),
-        static_cast<int_t>(position.x + size.x),
-        static_cast<int_t>(position.y),
-        static_cast<int_t>(1),
-        static_cast<int_t>(0),
-    };
-    auto vertex_buffer = gl::make_buffer();
-    gl::buffer_data(vertex_buffer, gl::buffer_usage::kStreamDraw, std::span{vertex_data});
-
-    auto vertex_array = gl::make_vertex_array();
-    gl::bind_vertex_array(vertex_array);
-    auto position_handle = gl::vertex_int_attribute_buffer(
-        vertex_buffer, 0, 2, gl::type_of<int_t>(), 4 * sizeof(int_t), 0);
-    auto tex_coords_handle = gl::vertex_int_attribute_buffer(
-        vertex_buffer, 1, 2, gl::type_of<int_t>(), 4 * sizeof(int_t), 2 * sizeof(int_t));
-    gl::draw_elements(gl::draw_mode::kTriangles, quad_index, gl::type_of<unsigned>(), 6, 0);
   }
 };
 
@@ -138,16 +100,9 @@ result<std::unique_ptr<GlRenderer>> GlRenderer::create(std::uint32_t shader_vers
     return {};
   };
 
-  auto r = load_shader(shader::kRect,
-                       {{"game/render/shaders/rect.f.glsl", gl::shader_type::kFragment},
-                        {"game/render/shaders/rect.v.glsl", gl::shader_type::kVertex}});
-  if (!r) {
-    return unexpected(r.error());
-  }
-
-  r = load_shader(shader::kText,
-                  {{"game/render/shaders/text.f.glsl", gl::shader_type::kFragment},
-                   {"game/render/shaders/text.v.glsl", gl::shader_type::kVertex}});
+  auto r = load_shader(shader::kText,
+                       {{"game/render/shaders/text.f.glsl", gl::shader_type::kFragment},
+                        {"game/render/shaders/text.v.glsl", gl::shader_type::kVertex}});
   if (!r) {
     return unexpected(r.error());
   }
@@ -272,27 +227,6 @@ void GlRenderer::render_text(std::uint32_t font_index, const glm::ivec2& positio
       gl::vertex_int_attribute_buffer(vertex_buffer, 1, 2, gl::type_of<std::int32_t>(),
                                       4 * sizeof(std::int32_t), 2 * sizeof(std::int32_t));
   gl::draw_elements(gl::draw_mode::kTriangles, index_buffer, gl::type_of<unsigned>(), quads * 6, 0);
-}
-
-void GlRenderer::render_rect(const glm::ivec2& position, const glm::ivec2& size,
-                             std::uint32_t border_width, const glm::vec4& colour_lo,
-                             const glm::vec4& colour_hi, const glm::vec4& border_lo,
-                             const glm::vec4& border_hi) {
-  const auto& program = impl_->shader(shader::kRect);
-  gl::use_program(program);
-  gl::enable_blend(true);
-  gl::enable_depth_test(false);
-  gl::blend_function(gl::blend_factor::kSrcAlpha, gl::blend_factor::kOneMinusSrcAlpha);
-
-  auto result = gl::set_uniforms(
-      program, "render_scale", impl_->render_scale(), "render_dimensions", impl_->render_dimensions,
-      "rect_dimensions", static_cast<glm::uvec2>(size), "rect_colour_lo", colour_lo,
-      "rect_colour_hi", colour_hi, "border_colour_lo", border_lo, "border_colour_hi", border_hi,
-      "border_size", glm::uvec2{border_width, border_width});
-  if (!result) {
-    impl_->status = unexpected(result.error());
-  }
-  impl_->draw_rect_internal(position, size);
 }
 
 void GlRenderer::render_shapes(std::span<const shape> shapes, float trail_alpha) {

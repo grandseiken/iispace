@@ -1,4 +1,4 @@
-#include "game/core/ui_layer.h"
+#include "game/core/game_stack.h"
 #include "game/core/z0_game.h"
 #include "game/flags.h"
 #include "game/io/file/std_filesystem.h"
@@ -70,7 +70,7 @@ bool run(System& system, const std::vector<std::string>& args, const game_option
       [&mixer](std::uint8_t* p, std::size_t k) { mixer.audio_callback(p, k); });
   load_sounds(fs, mixer);
 
-  ui::UiLayer ui_layer{fs, *io_layer, mixer};
+  ui::GameStack ui_layer{fs, *io_layer, mixer};
   ModalStack modal_stack;
   modal_stack.add(std::make_unique<z0Game>(options));
 

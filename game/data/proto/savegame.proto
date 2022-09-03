@@ -2,26 +2,8 @@ syntax = "proto3";
 option optimize_for = LITE_RUNTIME;
 package ii.proto;
 
-message Score {
-  string name = 1;
-  uint64 score = 2;
-}
-
-message Table {
-  repeated Score score = 1;
-}
-
-message ModeTable {
-  repeated Table table = 1;
-}
-
+// TODO: savegame data format.
 message SaveGame {
   uint32 bosses_killed = 1;
   uint32 hard_mode_bosses_killed = 2;
-
-  ModeTable normal = 3;
-  ModeTable hard = 4;
-  ModeTable fast = 5;
-  ModeTable what = 6;
-  Table boss = 7;
 }

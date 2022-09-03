@@ -8,7 +8,7 @@ bool Modal::is_top() const {
   return stack_->top() == this;
 }
 
-bool ModalStack::update(ii::ui::UiLayer& ui) {
+bool ModalStack::update(ii::ui::GameStack& ui) {
   bool captured = false;
   auto it = stack_.begin();
   for (auto jt = it; jt != stack_.end(); ++jt) {
@@ -31,7 +31,7 @@ bool ModalStack::update(ii::ui::UiLayer& ui) {
   return captured;
 }
 
-bool ModalStack::render(const ii::ui::UiLayer& ui, ii::render::GlRenderer& r) const {
+bool ModalStack::render(const ii::ui::GameStack& ui, ii::render::GlRenderer& r) const {
   bool captured = false;
   auto it = stack_.begin();
   for (auto jt = it; jt != stack_.end(); ++jt) {

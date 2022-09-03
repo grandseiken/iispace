@@ -4,7 +4,7 @@
 #include <vector>
 
 namespace ii::ui {
-class UiLayer;
+class GameStack;
 }  // namespace ii::ui
 namespace ii::render {
 class GlRenderer;
@@ -17,8 +17,8 @@ public:
   : capture_updates_{capture_updates}, capture_rendering_{capture_rendering} {}
   virtual ~Modal() {}
 
-  virtual void update(ii::ui::UiLayer& ui) = 0;
-  virtual void render(const ii::ui::UiLayer& ui, ii::render::GlRenderer& r) const = 0;
+  virtual void update(ii::ui::GameStack& ui) = 0;
+  virtual void render(const ii::ui::GameStack& ui, ii::render::GlRenderer& r) const = 0;
   virtual std::uint32_t fps() const {
     return 60;
   }
@@ -56,10 +56,10 @@ public:
   }
 
   // Returns true if any modal captured the update chain.
-  bool update(ii::ui::UiLayer& ui);
+  bool update(ii::ui::GameStack& ui);
 
   // Returns true if any modal captured the render chain.
-  bool render(const ii::ui::UiLayer& ui, ii::render::GlRenderer& r) const;
+  bool render(const ii::ui::GameStack& ui, ii::render::GlRenderer& r) const;
 
 private:
   std::vector<std::unique_ptr<Modal>> stack_;

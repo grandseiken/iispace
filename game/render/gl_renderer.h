@@ -37,9 +37,6 @@ public:
 
   void render_text(std::uint32_t font_index, const glm::ivec2& position, const glm::vec4& colour,
                    ustring_view s);
-  void render_rect(const glm::ivec2& position, const glm::ivec2& size, std::uint32_t border_width,
-                   const glm::vec4& colour_lo, const glm::vec4& colour_hi,
-                   const glm::vec4& border_lo, const glm::vec4& border_hi);
   void render_shapes(std::span<const shape> shapes, float trail_alpha);
 
 private:
