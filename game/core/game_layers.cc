@@ -41,7 +41,7 @@ std::string convert_to_time(std::uint64_t score) {
 
 void render_text(render::GlRenderer& r, const glm::vec2& v, const std::string& text,
                  const glm::vec4& c) {
-  r.render_text(0, 16 * static_cast<glm::ivec2>(v), c, ustring_view::utf8(text));
+  r.render_text(0, {16, 16}, 16 * static_cast<glm::ivec2>(v), c, ustring_view::utf8(text));
 }
 
 }  // namespace
@@ -186,7 +186,6 @@ void SimLayer::update(const ui::input_frame& input) {
     if (input.pressed(ui::key::kMenu) || input.pressed(ui::key::kAccept)) {
       controllers_dialog_ = false;
       stack().play_sound(sound::kMenuAccept);
-      stack().rumble(10);
     }
     return;
   }

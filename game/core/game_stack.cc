@@ -231,10 +231,6 @@ void GameStack::write_replay(const data::ReplayWriter& writer, const std::string
   }
 }
 
-void GameStack::rumble(std::uint32_t time) {
-  // TODO
-}
-
 void GameStack::set_volume(float volume) {
   mixer_.set_master_volume(volume / 100.f);
 }

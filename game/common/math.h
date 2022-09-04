@@ -4,7 +4,12 @@
 #include <glm/glm.hpp>
 #include <glm/gtc/constants.hpp>
 #include <cmath>
+#include <cstddef>
 #include <cstdint>
+
+inline void hash_combine(std::size_t& seed, std::size_t v) {
+  seed ^= v + 0x9e3779b9 + (seed << 6) + (seed >> 2);
+};
 
 inline constexpr glm::vec4 colour_hue(float h, float l = .5f, float s = 1.f) {
   return {h, s, l, 1.f};
@@ -113,5 +118,25 @@ inline constexpr float angle_diff(float from, float to) {
   }
   return from - to <= glm::pi<float>() ? to - from : 2.f * glm::pi<float>() + to - from;
 }
+
+namespace std {
+template <std::size_t N, typename T>
+struct hash<glm::vec<N, T>> {
+  std::size_t operator()(const glm::vec<N, T>& v) const {
+    std::size_t r = 0;
+    hash_combine(r, std::hash<T>{}(v.x));
+    if constexpr (N >= 2) {
+      hash_combine(r, std::hash<T>{}(v.y));
+    }
+    if constexpr (N >= 3) {
+      hash_combine(r, std::hash<T>{}(v.z));
+    }
+    if constexpr (N >= 4) {
+      hash_combine(r, std::hash<T>{}(v.w));
+    }
+    return r;
+  }
+};
+}  // namespace std
 
 #endif

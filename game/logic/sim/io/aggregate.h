@@ -1,5 +1,6 @@
 #ifndef II_GAME_LOGIC_SIM_IO_AGGREGATE_H
 #define II_GAME_LOGIC_SIM_IO_AGGREGATE_H
+#include "game/common/math.h"
 #include "game/mixer/sound.h"
 #include <glm/glm.hpp>
 #include <cstddef>
@@ -11,10 +12,6 @@ namespace ii {
 namespace ecs {
 enum class entity_id : std::uint32_t;
 }  // namespace ecs
-
-inline void hash_combine(std::size_t& seed, std::size_t v) {
-  seed ^= v + 0x9e3779b9 + (seed << 6) + (seed >> 2);
-};
 
 enum class resolve : std::uint32_t {
   // Effects resolved as soon as they occur in the predicted state; ignored in canonical state.

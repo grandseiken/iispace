@@ -2,17 +2,19 @@
 #include "assets/fonts/fonts.h"
 #include "game/common/math.h"
 #include "game/common/raw_ptr.h"
-#include "game/io/file/filesystem.h"
 #include "game/io/font/font.h"
+#include "game/render/font_cache.h"
 #include "game/render/gl/data.h"
 #include "game/render/gl/draw.h"
 #include "game/render/gl/program.h"
 #include "game/render/gl/texture.h"
 #include "game/render/gl/types.h"
+#include "game/render/render_common.h"
 #include "game/render/shader_compiler.h"
 #include <GL/gl3w.h>
 #include <glm/gtc/constants.hpp>
 #include <algorithm>
+#include <cmath>
 #include <span>
 #include <string>
 #include <vector>
@@ -56,14 +58,9 @@ struct GlRenderer::impl_t {
   glm::uvec2 screen_dimensions{0, 0};
   glm::uvec2 render_dimensions{0, 0};
 
+  FontCache font_cache;
   std::unordered_map<render::shader, gl::program> shader_map;
   gl::sampler pixel_sampler;
-
-  struct font_entry {
-    RenderedFont font;
-    gl::texture texture;
-  };
-  std::unordered_map<std::uint32_t, font_entry> font_map;
 
   impl_t()
   : pixel_sampler{gl::make_sampler(gl::filter::kNearest, gl::filter::kNearest,
@@ -72,16 +69,6 @@ struct GlRenderer::impl_t {
 
   const gl::program& shader(render::shader s) const {
     return shader_map.find(s)->second;
-  }
-
-  glm::vec2 render_scale() const {
-    auto screen = static_cast<glm::vec2>(screen_dimensions);
-    auto render = static_cast<glm::vec2>(render_dimensions);
-    auto screen_aspect = screen.x / screen.y;
-    auto render_aspect = render.x / render.y;
-
-    return screen_aspect > render_aspect ? glm::vec2{render_aspect / screen_aspect, 1.f}
-                                         : glm::vec2{1.f, screen_aspect / render_aspect};
   }
 };
 
@@ -122,35 +109,10 @@ result<std::unique_ptr<GlRenderer>> GlRenderer::create(std::uint32_t shader_vers
     return unexpected(r.error());
   }
 
-  auto load_font = [&](std::uint32_t index, const Font& source, bool lcd,
-                       const std::vector<std::uint32_t>& codes,
-                       const glm::uvec2& dimensions) -> result<void> {
-    auto rendered_font = source.render(codes, lcd, dimensions);
-    if (!rendered_font) {
-      return unexpected("Error rendering font: " + rendered_font.error());
-    }
-
-    auto texture = gl::make_texture();
-    gl::texture_image_2d(
-        texture, 0, rendered_font->is_lcd() ? gl::internal_format::kRgb : gl::internal_format::kRed,
-        rendered_font->bitmap_dimensions(),
-        rendered_font->is_lcd() ? gl::texture_format::kRgb : gl::texture_format::kRed,
-        gl::type_of<std::byte>(), rendered_font->bitmap());
-
-    impl_t::font_entry entry{std::move(*rendered_font), std::move(texture)};
-    renderer->impl_->font_map.emplace(index, std::move(entry));
-    return {};
-  };
-
-  auto font = Font::create(assets::fonts::roboto_mono_regular_ttf());
-  if (!font) {
-    return unexpected("Error loading font roboto_mono_regular: " + font.error());
+  r = renderer->impl_->font_cache.assign(0u, assets::fonts::roboto_mono_regular_ttf());
+  if (!r) {
+    return unexpected("Error loading font roboto_mono_regular: " + r.error());
   }
-  auto result = load_font(0, *font, /* lcd */ true, utf32_codes(), {16, 16});
-  if (!result) {
-    return unexpected(result.error());
-  }
-
   return {std::move(renderer)};
 }
 
@@ -172,16 +134,31 @@ void GlRenderer::set_dimensions(const glm::uvec2& screen_dimensions,
                                 const glm::uvec2& render_dimensions) {
   impl_->screen_dimensions = screen_dimensions;
   impl_->render_dimensions = render_dimensions;
+  impl_->font_cache.set_dimensions(screen_dimensions, render_dimensions);
 }
 
-void GlRenderer::render_text(std::uint32_t font_index, const glm::ivec2& position,
-                             const glm::vec4& colour, ustring_view s) {
-  auto it = impl_->font_map.find(font_index);
-  if (it == impl_->font_map.end()) {
-    impl_->status = unexpected("Font not found");
+std::int32_t GlRenderer::text_width(std::uint32_t font_index, const glm::uvec2& font_dimensions,
+                                    ustring_view s) {
+  auto font_result = impl_->font_cache.get(font_index, font_dimensions, s);
+  if (!font_result) {
+    impl_->status = unexpected(font_result.error());
+    return static_cast<std::int32_t>(font_dimensions.x);
+  }
+  const auto& font_entry = **font_result;
+  auto width = font_entry.font.calculate_width(s);
+  return static_cast<std::int32_t>(
+      std::ceil(static_cast<float>(width) /
+                render_scale(impl_->screen_dimensions, impl_->render_dimensions)));
+}
+
+void GlRenderer::render_text(std::uint32_t font_index, const glm::uvec2& font_dimensions,
+                             const glm::ivec2& position, const glm::vec4& colour, ustring_view s) {
+  auto font_result = impl_->font_cache.get(font_index, font_dimensions, s);
+  if (!font_result) {
+    impl_->status = unexpected(font_result.error());
     return;
   }
-  auto& font_entry = it->second;
+  const auto& font_entry = **font_result;
 
   const auto& program = impl_->shader(shader::kText);
   gl::use_program(program);
@@ -193,21 +170,25 @@ void GlRenderer::render_text(std::uint32_t font_index, const glm::ivec2& positio
     gl::blend_function(gl::blend_factor::kSrcAlpha, gl::blend_factor::kOneMinusSrcAlpha);
   }
 
-  auto result = gl::set_uniforms(program, "render_scale", impl_->render_scale(),
-                                 "render_dimensions", impl_->render_dimensions,
-                                 "texture_dimensions", font_entry.font.bitmap_dimensions(),
-                                 "is_font_lcd", font_entry.font.is_lcd() ? 1u : 0u, "text_colour",
-                                 colour, "colour_cycle", colour_cycle_ / 256.f);
+  auto render_scale = render_aspect_scale(impl_->screen_dimensions, impl_->render_dimensions);
+  auto result =
+      gl::set_uniforms(program, "render_scale", render_scale, "render_dimensions",
+                       impl_->render_dimensions, "screen_dimensions", impl_->screen_dimensions,
+                       "texture_dimensions", font_entry.font.bitmap_dimensions(), "is_font_lcd",
+                       font_entry.font.is_lcd() ? 1u : 0u, "text_origin", glm::vec2{position},
+                       "text_colour", colour, "colour_cycle", colour_cycle_ / 256.f);
   if (!result) {
     impl_->status = unexpected(result.error());
+    return;
   }
   result = gl::set_uniform_texture_2d(program, "font_texture", /* texture unit */ 0,
                                       font_entry.texture, impl_->pixel_sampler);
   if (!result) {
     impl_->status = unexpected("OpenGL error: " + result.error());
+    return;
   }
 
-  const auto vertex_data = font_entry.font.generate_vertex_data(s, position);
+  const auto vertex_data = font_entry.font.generate_vertex_data(s, {0, 0});
   auto vertex_buffer = gl::make_buffer();
   gl::buffer_data(vertex_buffer, gl::buffer_usage::kStreamDraw, std::span{vertex_data});
 
@@ -394,6 +375,7 @@ void GlRenderer::render_shapes(std::span<const shape> shapes, float trail_alpha)
   auto dimensions = add_float_attribute(2);
   auto colour = add_float_attribute(4);
 
+  auto render_scale = render_aspect_scale(impl_->screen_dimensions, impl_->render_dimensions);
   gl::enable_blend(true);
   gl::blend_function(gl::blend_factor::kSrcAlpha, gl::blend_factor::kOneMinusSrcAlpha);
   if (!trail_indices.empty()) {
@@ -401,7 +383,7 @@ void GlRenderer::render_shapes(std::span<const shape> shapes, float trail_alpha)
     gl::use_program(motion_program);
     gl::enable_depth_test(false);
 
-    auto result = gl::set_uniforms(motion_program, "render_scale", impl_->render_scale(),
+    auto result = gl::set_uniforms(motion_program, "render_scale", render_scale,
                                    "render_dimensions", impl_->render_dimensions, "trail_alpha",
                                    trail_alpha, "colour_cycle", colour_cycle_ / 256.f);
     if (!result) {
@@ -416,9 +398,8 @@ void GlRenderer::render_shapes(std::span<const shape> shapes, float trail_alpha)
   gl::enable_depth_test(true);
   gl::depth_function(gl::comparison::kGreaterEqual);
 
-  auto result =
-      gl::set_uniforms(outline_program, "render_scale", impl_->render_scale(), "render_dimensions",
-                       impl_->render_dimensions, "colour_cycle", colour_cycle_ / 256.f);
+  auto result = gl::set_uniforms(outline_program, "render_scale", render_scale, "render_dimensions",
+                                 impl_->render_dimensions, "colour_cycle", colour_cycle_ / 256.f);
   if (!result) {
     impl_->status = unexpected(result.error());
   }

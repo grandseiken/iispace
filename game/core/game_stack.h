@@ -167,7 +167,6 @@ public:
   void write_savegame();
   void write_replay(const data::ReplayWriter& writer, const std::string& name, std::uint64_t score);
 
-  void rumble(std::uint32_t time);
   void set_volume(float volume);
   void play_sound(sound s);
   void play_sound(sound s, float volume, float pan, float pitch);

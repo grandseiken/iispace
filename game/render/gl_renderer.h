@@ -9,9 +9,6 @@
 #include <span>
 #include <string_view>
 
-namespace ii::io {
-class Filesystem;
-}  // namespace ii::io
 namespace ii::render {
 
 class GlRenderer {
@@ -35,8 +32,10 @@ public:
     return colour_cycle_;
   }
 
-  void render_text(std::uint32_t font_index, const glm::ivec2& position, const glm::vec4& colour,
-                   ustring_view s);
+  std::int32_t
+  text_width(std::uint32_t font_index, const glm::uvec2& font_dimensions, ustring_view s);
+  void render_text(std::uint32_t font_index, const glm::uvec2& font_dimensions,
+                   const glm::ivec2& position, const glm::vec4& colour, ustring_view s);
   void render_shapes(std::span<const shape> shapes, float trail_alpha);
 
 private:
