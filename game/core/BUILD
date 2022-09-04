@@ -10,24 +10,6 @@ cc_library(
 )
 
 cc_library(
-  name = "game_stack",
-  hdrs = ["game_stack.h"],
-  srcs = ["game_stack.cc"],
-  deps = [
-    "//game/data:config",
-    "//game/data:replay",
-    "//game/data:save",
-    "//game/mixer:sound",
-  ],
-  implementation_deps = [
-    "//game/io",
-    "//game/io/file:filesystem",
-    "//game/mixer",
-  ],
-  visibility = ["//visibility:public"],
-)
-
-cc_library(
   name = "render_state",
   hdrs = ["render_state.h"],
   srcs = ["render_state.cc"],
@@ -50,9 +32,9 @@ cc_library(
   hdrs = ["game_layers.h"],
   srcs = ["game_layers.cc"],
   deps = [
-    ":game_stack",
     ":io_input_adapter",
     ":render_state",
+    "//game/core/ui",
     "//game/data:replay",
     "//game/data:save",
     "//game/logic/sim",

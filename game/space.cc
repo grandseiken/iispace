@@ -1,5 +1,5 @@
 #include "game/core/game_layers.h"
-#include "game/core/game_stack.h"
+#include "game/core/ui/game_stack.h"
 #include "game/flags.h"
 #include "game/io/file/std_filesystem.h"
 #include "game/io/sdl_io.h"

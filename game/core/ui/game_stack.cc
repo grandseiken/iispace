@@ -1,8 +1,9 @@
-#include "game/core/game_stack.h"
+#include "game/core/ui/game_stack.h"
 #include "game/io/file/filesystem.h"
 #include "game/io/io.h"
 #include "game/mixer/mixer.h"
 #include <algorithm>
+#include <array>
 #include <span>
 
 namespace ii::ui {
@@ -16,13 +17,13 @@ bool contains(std::span<const T> range, T value) {
 
 std::span<const io::keyboard::key> keys_for(key k) {
   using type = io::keyboard::key;
-  static constexpr type accept[] = {type::kZ, type::kSpacebar, type::kLCtrl, type::kRCtrl};
-  static constexpr type cancel[] = {type::kX, type::kEscape};
-  static constexpr type menu[] = {type::kEscape, type::kReturn};
-  static constexpr type up[] = {type::kW, type::kUArrow};
-  static constexpr type down[] = {type::kS, type::kDArrow};
-  static constexpr type left[] = {type::kA, type::kLArrow};
-  static constexpr type right[] = {type::kD, type::kRArrow};
+  static constexpr std::array accept = {type::kZ, type::kSpacebar, type::kLCtrl, type::kRCtrl};
+  static constexpr std::array cancel = {type::kX, type::kEscape};
+  static constexpr std::array menu = {type::kEscape, type::kReturn};
+  static constexpr std::array up = {type::kW, type::kUArrow};
+  static constexpr std::array down = {type::kS, type::kDArrow};
+  static constexpr std::array left = {type::kA, type::kLArrow};
+  static constexpr std::array right = {type::kD, type::kRArrow};
 
   switch (k) {
   case key::kAccept:
@@ -46,8 +47,8 @@ std::span<const io::keyboard::key> keys_for(key k) {
 
 std::span<const io::mouse::button> mouse_buttons_for(key k) {
   using type = io::mouse::button;
-  static constexpr type accept[] = {type::kL};
-  static constexpr type cancel[] = {type::kR};
+  static constexpr std::array accept = {type::kL};
+  static constexpr std::array cancel = {type::kR};
 
   switch (k) {
   case key::kAccept:
@@ -61,13 +62,13 @@ std::span<const io::mouse::button> mouse_buttons_for(key k) {
 
 std::span<const io::controller::button> controller_buttons_for(key k) {
   using type = io::controller::button;
-  static constexpr type accept[] = {type::kA, type::kRShoulder};
-  static constexpr type cancel[] = {type::kB, type::kLShoulder};
-  static constexpr type menu[] = {type::kStart, type::kGuide};
-  static constexpr type up[] = {type::kDpadUp};
-  static constexpr type down[] = {type::kDpadDown};
-  static constexpr type left[] = {type::kDpadLeft};
-  static constexpr type right[] = {type::kDpadRight};
+  static constexpr std::array accept = {type::kA, type::kRShoulder};
+  static constexpr std::array cancel = {type::kB, type::kLShoulder};
+  static constexpr std::array menu = {type::kStart, type::kGuide};
+  static constexpr std::array up = {type::kDpadUp};
+  static constexpr std::array down = {type::kDpadDown};
+  static constexpr std::array left = {type::kDpadLeft};
+  static constexpr std::array right = {type::kDpadRight};
 
   switch (k) {
   case key::kAccept:
@@ -177,7 +178,7 @@ void GameStack::update(bool controller_change) {
     if (size != layers_.size()) {
       input = {};
     }
-    if ((*it)->is_closed()) {
+    if ((*it)->is_removed()) {
       it = layers_.erase(it);
     } else {
       ++it;

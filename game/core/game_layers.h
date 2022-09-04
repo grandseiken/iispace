@@ -1,8 +1,8 @@
 #ifndef II_GAME_CORE_GAME_LAYERS_H
 #define II_GAME_CORE_GAME_LAYERS_H
-#include "game/core/game_stack.h"
 #include "game/core/io_input_adapter.h"
 #include "game/core/render_state.h"
+#include "game/core/ui/game_stack.h"
 #include "game/data/replay.h"
 #include "game/data/save.h"
 #include "game/logic/sim/networked_sim_state.h"
@@ -34,8 +34,8 @@ public:
 
   PauseLayer(ui::GameStack& stack, output_t* output);
   ~PauseLayer() override = default;
-  void update(const ui::input_frame&) override;
-  void render(render::GlRenderer& r) const override;
+  void update_content(const ui::input_frame&) override;
+  void render_content(render::GlRenderer& r) const override;
 
 private:
   output_t* output_ = nullptr;
@@ -49,8 +49,8 @@ public:
   SimLayer(ui::GameStack& stack, data::ReplayReader&& replay, const game_options_t& options);
   ~SimLayer() override;
 
-  void update(const ui::input_frame&) override;
-  void render(render::GlRenderer& r) const override;
+  void update_content(const ui::input_frame&) override;
+  void render_content(render::GlRenderer& r) const override;
 
 private:
   struct replay_t {
@@ -88,8 +88,8 @@ private:
 class MainMenuLayer : public ui::GameLayer {
 public:
   MainMenuLayer(ui::GameStack& stack, const game_options_t& options);
-  void update(const ui::input_frame&) override;
-  void render(render::GlRenderer& r) const override;
+  void update_content(const ui::input_frame&) override;
+  void render_content(render::GlRenderer& r) const override;
 
 private:
   enum class menu {

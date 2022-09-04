@@ -1,5 +1,5 @@
 #include "game/core/game_layers.h"
-#include "game/core/game_stack.h"
+#include "game/core/ui/game_stack.h"
 #include "game/io/file/filesystem.h"
 #include "game/io/io.h"
 #include "game/render/gl_renderer.h"
@@ -51,7 +51,7 @@ PauseLayer::PauseLayer(ui::GameStack& stack, output_t* output)
   *output = kContinue;
 }
 
-void PauseLayer::update(const ui::input_frame& input) {
+void PauseLayer::update_content(const ui::input_frame& input) {
   auto t = selection_;
   if (input.pressed(ui::key::kUp)) {
     selection_ = std::max(0u, selection_ - 1);
@@ -65,10 +65,10 @@ void PauseLayer::update(const ui::input_frame& input) {
 
   bool accept = input.pressed(ui::key::kAccept) || input.pressed(ui::key::kMenu);
   if (accept && selection_ == 0) {
-    close();
+    remove();
   } else if (accept && selection_ == 1) {
     *output_ = kEndGame;
-    close();
+    remove();
   } else if (accept && selection_ == 2) {
     stack().write_config();
     stack().set_volume(stack().config().volume);
@@ -78,7 +78,7 @@ void PauseLayer::update(const ui::input_frame& input) {
   }
 
   if (input.pressed(ui::key::kCancel)) {
-    close();
+    remove();
     stack().play_sound(sound::kMenuAccept);
   }
 
@@ -96,7 +96,7 @@ void PauseLayer::update(const ui::input_frame& input) {
   }
 }
 
-void PauseLayer::render(render::GlRenderer& r) const {
+void PauseLayer::render_content(render::GlRenderer& r) const {
   render_text(r, {4.f, 4.f}, "PAUSED", kPanelText);
   render_text(r, {6.f, 8.f}, "CONTINUE", kPanelText);
   render_text(r, {6.f, 10.f}, "END GAME", kPanelText);
@@ -154,7 +154,7 @@ SimLayer::SimLayer(ui::GameStack& stack, data::ReplayReader&& replay, const game
 
 SimLayer::~SimLayer() = default;
 
-void SimLayer::update(const ui::input_frame& input) {
+void SimLayer::update_content(const ui::input_frame& input) {
   auto& istate = network_state_ ? static_cast<ISimState&>(*network_state_) : *state_;
   stack().set_fps((network_state_ ? static_cast<ISimState&>(*network_state_) : *state_).fps());
 
@@ -173,7 +173,7 @@ void SimLayer::update(const ui::input_frame& input) {
     if (pause_output_ != PauseLayer::kEndGame) {
       stack().play_sound(sound::kMenuAccept);
     }
-    close();
+    remove();
     return;
   }
 
@@ -253,7 +253,7 @@ void SimLayer::update(const ui::input_frame& input) {
   stack().io_layer().capture_mouse(true);
 }
 
-void SimLayer::render(render::GlRenderer& r) const {
+void SimLayer::render_content(render::GlRenderer& r) const {
   auto& istate = network_state_ ? static_cast<ISimState&>(*network_state_) : *state_;
   const auto& render = istate.render(/* paused */ controllers_dialog_ || stack().top() != this);
   r.set_dimensions(stack().io_layer().dimensions(), kDimensions);
@@ -369,10 +369,10 @@ void SimLayer::render(render::GlRenderer& r) const {
 MainMenuLayer::MainMenuLayer(ui::GameStack& stack, const game_options_t& options)
 : ui::GameLayer{stack}, options_{options} {}
 
-void MainMenuLayer::update(const ui::input_frame& input) {
+void MainMenuLayer::update_content(const ui::input_frame& input) {
   if (exit_timer_) {
     exit_timer_--;
-    close();
+    remove();
   }
   stack().set_fps(60);
   stack().io_layer().capture_mouse(false);
@@ -443,7 +443,7 @@ void MainMenuLayer::update(const ui::input_frame& input) {
   }
 }
 
-void MainMenuLayer::render(render::GlRenderer& r) const {
+void MainMenuLayer::render_content(render::GlRenderer& r) const {
   if (menu_select_ >= menu::kStart || mode_select_ == game_mode::kBoss) {
     r.set_colour_cycle(0);
   } else if (mode_select_ == game_mode::kHard) {
