@@ -63,6 +63,10 @@ public:
     return canonical_state_.game_over();
   }
 
+  glm::uvec2 dimensions() const override {
+    return predicted_state_.dimensions();
+  }
+
   std::uint64_t tick_count() const override {
     return predicted_state_.tick_count();
   }

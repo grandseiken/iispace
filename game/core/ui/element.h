@@ -1,6 +1,6 @@
 #ifndef II_GAME_CORE_UI_ELEMENT_H
 #define II_GAME_CORE_UI_ELEMENT_H
-#include "game/core/ui/rect.h"
+#include "game/common/rect.h"
 #include <deque>
 #include <memory>
 

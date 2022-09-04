@@ -55,8 +55,6 @@ const std::vector<std::uint32_t>& utf32_codes() {
 
 struct GlRenderer::impl_t {
   result<void> status;
-  glm::uvec2 screen_dimensions{0, 0};
-  glm::uvec2 render_dimensions{0, 0};
 
   FontCache font_cache;
   std::unordered_map<render::shader, gl::program> shader_map;
@@ -123,37 +121,29 @@ result<void> GlRenderer::status() const {
   return impl_->status;
 }
 
-void GlRenderer::clear_screen() {
+void GlRenderer::clear_screen() const {
   gl::clear_colour({0.f, 0.f, 0.f, 0.f});
   gl::clear_depth(0.);
   gl::clear(gl::clear_mask::kColourBufferBit | gl::clear_mask::kDepthBufferBit |
             gl::clear_mask::kStencilBufferBit);
 }
 
-void GlRenderer::set_dimensions(const glm::uvec2& screen_dimensions,
-                                const glm::uvec2& render_dimensions) {
-  impl_->screen_dimensions = screen_dimensions;
-  impl_->render_dimensions = render_dimensions;
-  impl_->font_cache.set_dimensions(screen_dimensions, render_dimensions);
-}
-
 std::int32_t GlRenderer::text_width(std::uint32_t font_index, const glm::uvec2& font_dimensions,
-                                    ustring_view s) {
-  auto font_result = impl_->font_cache.get(font_index, font_dimensions, s);
+                                    ustring_view s) const {
+  auto font_result = impl_->font_cache.get(target(), font_index, font_dimensions, s);
   if (!font_result) {
     impl_->status = unexpected(font_result.error());
     return static_cast<std::int32_t>(font_dimensions.x);
   }
   const auto& font_entry = **font_result;
   auto width = font_entry.font.calculate_width(s);
-  return static_cast<std::int32_t>(
-      std::ceil(static_cast<float>(width) /
-                render_scale(impl_->screen_dimensions, impl_->render_dimensions)));
+  return static_cast<std::int32_t>(std::ceil(static_cast<float>(width) / target().scale_factor()));
 }
 
 void GlRenderer::render_text(std::uint32_t font_index, const glm::uvec2& font_dimensions,
-                             const glm::ivec2& position, const glm::vec4& colour, ustring_view s) {
-  auto font_result = impl_->font_cache.get(font_index, font_dimensions, s);
+                             const glm::ivec2& position, const glm::vec4& colour,
+                             ustring_view s) const {
+  auto font_result = impl_->font_cache.get(target(), font_index, font_dimensions, s);
   if (!font_result) {
     impl_->status = unexpected(font_result.error());
     return;
@@ -162,6 +152,7 @@ void GlRenderer::render_text(std::uint32_t font_index, const glm::uvec2& font_di
 
   const auto& program = impl_->shader(shader::kText);
   gl::use_program(program);
+  gl::enable_clip_planes(4u);
   gl::enable_blend(true);
   gl::enable_depth_test(false);
   if (font_entry.font.is_lcd()) {
@@ -170,25 +161,25 @@ void GlRenderer::render_text(std::uint32_t font_index, const glm::uvec2& font_di
     gl::blend_function(gl::blend_factor::kSrcAlpha, gl::blend_factor::kOneMinusSrcAlpha);
   }
 
-  auto render_scale = render_aspect_scale(impl_->screen_dimensions, impl_->render_dimensions);
-  auto result =
-      gl::set_uniforms(program, "render_scale", render_scale, "render_dimensions",
-                       impl_->render_dimensions, "screen_dimensions", impl_->screen_dimensions,
-                       "texture_dimensions", font_entry.font.bitmap_dimensions(), "is_font_lcd",
-                       font_entry.font.is_lcd() ? 1u : 0u, "text_origin", glm::vec2{position},
-                       "text_colour", colour, "colour_cycle", colour_cycle_ / 256.f);
+  auto clip_rect = target().clip_rect();
+  auto text_origin = target().render_to_screen_coords(position + clip_rect.min());
+  auto result = gl::set_uniforms(program, "screen_dimensions", target().screen_dimensions,
+                                 "texture_dimensions", font_entry.font.bitmap_dimensions(),
+                                 "clip_min", target().render_to_screen_coords(clip_rect.min()),
+                                 "clip_max", target().render_to_screen_coords(clip_rect.max()),
+                                 "is_font_lcd", font_entry.font.is_lcd() ? 1u : 0u, "text_colour",
+                                 colour, "colour_cycle", colour_cycle_ / 256.f);
   if (!result) {
     impl_->status = unexpected(result.error());
-    return;
   }
   result = gl::set_uniform_texture_2d(program, "font_texture", /* texture unit */ 0,
                                       font_entry.texture, impl_->pixel_sampler);
   if (!result) {
-    impl_->status = unexpected("OpenGL error: " + result.error());
+    impl_->status = unexpected("text shader error: " + result.error());
     return;
   }
 
-  const auto vertex_data = font_entry.font.generate_vertex_data(s, {0, 0});
+  const auto vertex_data = font_entry.font.generate_vertex_data(s, text_origin);
   auto vertex_buffer = gl::make_buffer();
   gl::buffer_data(vertex_buffer, gl::buffer_usage::kStreamDraw, std::span{vertex_data});
 
@@ -210,7 +201,8 @@ void GlRenderer::render_text(std::uint32_t font_index, const glm::uvec2& font_di
   gl::draw_elements(gl::draw_mode::kTriangles, index_buffer, gl::type_of<unsigned>(), quads * 6, 0);
 }
 
-void GlRenderer::render_shapes(std::span<const shape> shapes, float trail_alpha) {
+void GlRenderer::render_shapes(coordinate_system ctype, std::span<const shape> shapes,
+                               float trail_alpha) const {
   struct vertex_data {
     std::uint32_t style = 0;
     glm::uvec2 params{0u, 0u};
@@ -265,6 +257,11 @@ void GlRenderer::render_shapes(std::span<const shape> shapes, float trail_alpha)
 
   // TODO: arranging so that output is sorted by style (main switch in shader)
   // could perhaps be good for performance.
+  // NOTE: due to geometry shader hardware limits and current implementation,
+  // maximum sides for shapes are:
+  // - polygon:  41
+  // - polystar: 28 even, 17 odd
+  // - polygram: 17
   for (const auto& shape : shapes) {
     if (const auto* p = std::get_if<render::ngon>(&shape.data)) {
       auto add_polygon = [&](std::uint32_t style, std::uint32_t param) {
@@ -375,7 +372,19 @@ void GlRenderer::render_shapes(std::span<const shape> shapes, float trail_alpha)
   auto dimensions = add_float_attribute(2);
   auto colour = add_float_attribute(4);
 
-  auto render_scale = render_aspect_scale(impl_->screen_dimensions, impl_->render_dimensions);
+  auto clip_rect = target().clip_rect();
+  glm::vec2 offset;
+  switch (ctype) {
+  case coordinate_system::kGlobal:
+    offset = glm::vec2{0, 0};
+    break;
+  case coordinate_system::kLocal:
+    offset = clip_rect.min();
+    break;
+  case coordinate_system::kCentered:
+    offset = (clip_rect.min() + clip_rect.max()) / 2;
+  }
+  gl::enable_clip_planes(4u);
   gl::enable_blend(true);
   gl::blend_function(gl::blend_factor::kSrcAlpha, gl::blend_factor::kOneMinusSrcAlpha);
   if (!trail_indices.empty()) {
@@ -383,11 +392,14 @@ void GlRenderer::render_shapes(std::span<const shape> shapes, float trail_alpha)
     gl::use_program(motion_program);
     gl::enable_depth_test(false);
 
-    auto result = gl::set_uniforms(motion_program, "render_scale", render_scale,
-                                   "render_dimensions", impl_->render_dimensions, "trail_alpha",
-                                   trail_alpha, "colour_cycle", colour_cycle_ / 256.f);
+    auto result =
+        gl::set_uniforms(motion_program, "aspect_scale", target().aspect_scale(),
+                         "render_dimensions", target().render_dimensions, "clip_min",
+                         clip_rect.min(), "clip_max", clip_rect.max(), "coordinate_offset", offset,
+                         "trail_alpha", trail_alpha, "colour_cycle", colour_cycle_ / 256.f);
     if (!result) {
-      impl_->status = unexpected(result.error());
+      impl_->status = unexpected("motion shader error: " + result.error());
+      return;
     }
     gl::draw_elements(gl::draw_mode::kLines, trail_index_buffer, gl::type_of<unsigned>(),
                       trail_indices.size(), 0);
@@ -395,13 +407,17 @@ void GlRenderer::render_shapes(std::span<const shape> shapes, float trail_alpha)
 
   const auto& outline_program = impl_->shader(shader::kShapeOutline);
   gl::use_program(outline_program);
+  gl::enable_clip_planes(4u);
   gl::enable_depth_test(true);
   gl::depth_function(gl::comparison::kGreaterEqual);
 
-  auto result = gl::set_uniforms(outline_program, "render_scale", render_scale, "render_dimensions",
-                                 impl_->render_dimensions, "colour_cycle", colour_cycle_ / 256.f);
+  auto result = gl::set_uniforms(outline_program, "aspect_scale", target().aspect_scale(),
+                                 "render_dimensions", target().render_dimensions, "clip_min",
+                                 clip_rect.min(), "clip_max", clip_rect.max(), "coordinate_offset",
+                                 offset, "colour_cycle", colour_cycle_ / 256.f);
   if (!result) {
-    impl_->status = unexpected(result.error());
+    impl_->status = unexpected("outline shader error: " + result.error());
+    return;
   }
   gl::draw_elements(gl::draw_mode::kPoints, outline_index_buffer, gl::type_of<unsigned>(),
                     outline_indices.size(), 0);

@@ -1,9 +1,6 @@
 cc_library(
-  name = "common",
-  hdrs = [
-    "input.h",
-    "rect.h",
-  ],
+  name = "input",
+  hdrs = ["input.h"],
   deps = ["@glm"],
 )
 
@@ -12,7 +9,8 @@ cc_library(
   hdrs = ["element.h"],
   srcs = ["element.cc"],
   deps = [
-    ":common",
+    ":input",
+    "//game/common:math",
     "@glm",
   ],
 )
@@ -22,12 +20,13 @@ cc_library(
   hdrs = ["game_stack.h"],
   srcs = ["game_stack.cc"],
   deps = [
-    ":common",
+    ":input",
     ":element",
     "//game/data:config",
     "//game/data:replay",
     "//game/data:save",
     "//game/mixer:sound",
+    "//game/render:gl_renderer"
   ],
   implementation_deps = [
     "//game/io",

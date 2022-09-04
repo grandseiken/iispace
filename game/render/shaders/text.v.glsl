@@ -1,10 +1,9 @@
 #include "game/render/shaders/lib/hsl.glsl"
 
-uniform vec2 render_scale;
-uniform uvec2 render_dimensions;
 uniform uvec2 screen_dimensions;
 uniform uvec2 texture_dimensions;
-uniform vec2 text_origin;
+uniform ivec2 clip_min;
+uniform ivec2 clip_max;
 uniform vec4 text_colour;
 uniform float colour_cycle;
 
@@ -16,7 +15,13 @@ out vec4 v_text_colour;
 void main() {
   v_texture_coords = vec2(in_texture_coords) / vec2(texture_dimensions);
   v_text_colour = hsl2rgba_cycle(text_colour, colour_cycle);
-  vec2 render_position = render_scale * (2. * text_origin / vec2(render_dimensions) - 1.) +
-      2. * in_position / vec2(screen_dimensions);
-  gl_Position = vec4(render_position.x, -render_position.y, 0., 1.);
+  vec2 v = 2. * in_position / vec2(screen_dimensions) - 1.;
+  vec2 render_min = 2. * vec2(clip_min) / vec2(screen_dimensions) - 1.;
+  vec2 render_max = 2. * vec2(clip_max) / vec2(screen_dimensions) - 1.;
+
+  gl_ClipDistance[0] = v.x - render_min.x;
+  gl_ClipDistance[1] = v.y - render_min.y;
+  gl_ClipDistance[2] = render_max.x - v.x;
+  gl_ClipDistance[3] = render_max.y - v.y;
+  gl_Position = vec4(v.x, -v.y, 0., 1.);
 }

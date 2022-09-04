@@ -4,7 +4,7 @@
 uniform float trail_alpha;
 
 layout(lines) in;
-layout(triangle_strip, max_vertices = 128) out;
+layout(triangle_strip, max_vertices = 85) out;
 
 in v_out_t {
   shape_data data;
@@ -14,10 +14,10 @@ v_in[];
 out vec4 g_colour;
 
 void emit2c(vec4 v0, vec4 c0, vec4 v1, vec4 c1) {
-  gl_Position = v0;
+  set_vertex_data(v0);
   g_colour = vec4(c0.rgb, c0.a * trail_alpha * clamp(game_distance(v0, v1) / 12., .25, .75));
   EmitVertex();
-  gl_Position = v1;
+  set_vertex_data(v1);
   g_colour = vec4(c1.rgb, 0.);
   EmitVertex();
 }
@@ -58,7 +58,7 @@ void emit_polygram(vec2 a, vec2 b, shape_data data_a, shape_data data_b) {
   polystar_data db = convert_polystar(b, data_b);
   polystar_outer va = polystar_outer_v(da, start);
   polystar_outer vb = polystar_outer_v(db, start);
-  for (uint i = start + 2; i < da.sides && i < start + da.sides - 1; ++i) {
+  for (uint i = start + 2; i < da.sides - (start == 0 ? 1 : 0); ++i) {
     polystar_outer ua = polystar_outer_v(da, i);
     polystar_outer ub = polystar_outer_v(db, i);
     emit2c(va.v, data_a.colour, vb.v, data_b.colour);

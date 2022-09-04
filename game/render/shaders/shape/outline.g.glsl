@@ -2,7 +2,7 @@
 #include "game/render/shaders/shape/geometry.glsl"
 
 layout(points) in;
-layout(triangle_strip, max_vertices = 128) out;
+layout(triangle_strip, max_vertices = 85) out;
 
 in v_out_t {
   shape_data data;
@@ -12,18 +12,18 @@ v_in[];
 out vec4 g_colour;
 
 void emit2(vec4 v0, vec4 v1) {
-  gl_Position = v0;
+  set_vertex_data(v0);
   EmitVertex();
-  gl_Position = v1;
+  set_vertex_data(v1);
   EmitVertex();
 }
 
 void emit3(vec4 v0, vec4 v1, vec4 v2) {
-  gl_Position = v0;
+  set_vertex_data(v0);
   EmitVertex();
-  gl_Position = v1;
+  set_vertex_data(v1);
   EmitVertex();
-  gl_Position = v2;
+  set_vertex_data(v2);
   EmitVertex();
 }
 
@@ -64,7 +64,7 @@ void emit_polygram(vec2 position, shape_data data) {
   // TODO: reusing polystar data doesn't guarantee exact line width, probably fine for now.
   polystar_data d = convert_polystar(position, data);
   polystar_outer v = polystar_outer_v(d, start);
-  for (uint i = start + 2; i < d.sides && i < start + d.sides - 1; ++i) {
+  for (uint i = start + 2; i < d.sides - (start == 0 ? 1 : 0); ++i) {
     polystar_outer u = polystar_outer_v(d, i);
 
     emit3(u.v, u.v0, u.v1);

@@ -2,6 +2,7 @@
 #include "game/io/file/filesystem.h"
 #include "game/io/io.h"
 #include "game/mixer/mixer.h"
+#include "game/render/gl_renderer.h"
 #include <algorithm>
 #include <array>
 #include <span>
@@ -194,7 +195,9 @@ void GameStack::render(render::GlRenderer& renderer) const {
       break;
     }
   }
+  renderer.target().screen_dimensions = io_layer_.dimensions();
   for (; it != layers_.end(); ++it) {
+    renderer.target().render_dimensions = static_cast<glm::uvec2>((*it)->bounds().size);
     (*it)->render(renderer);
   }
 }

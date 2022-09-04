@@ -1,7 +1,6 @@
 #include "game/render/font_cache.h"
 #include "game/common/ustring_convert.h"
 #include "game/render/gl/texture.h"
-#include "game/render/render_common.h"
 
 namespace ii::render {
 namespace {
@@ -14,12 +13,6 @@ void FontCache::clear() {
   }
 }
 
-void FontCache::set_dimensions(const glm::uvec2& screen_dimensions,
-                               const glm::uvec2& render_dimensions) {
-  screen_dimensions_ = screen_dimensions;
-  render_dimensions_ = render_dimensions;
-}
-
 result<void> FontCache::assign(std::uint32_t font_id, std::span<const std::uint8_t> bytes) {
   auto font = Font::create(bytes);
   if (!font) {
@@ -29,13 +22,13 @@ result<void> FontCache::assign(std::uint32_t font_id, std::span<const std::uint8
   return {};
 }
 
-auto FontCache::get(std::uint32_t font_id, const glm::uvec2& dimensions, ustring_view text)
-    -> result<const entry*> {
+auto FontCache::get(const target& t, std::uint32_t font_id, const glm::uvec2& dimensions,
+                    ustring_view text) -> result<const entry*> {
   auto it = fonts_.find(font_id);
   if (it == fonts_.end()) {
     return unexpected("invalid font ID");
   }
-  auto scale = render_scale(screen_dimensions_, render_dimensions_);
+  auto scale = t.scale_factor();
   glm::uvec2 pixel_dimensions{static_cast<std::uint32_t>(scale * static_cast<float>(dimensions.x)),
                               static_cast<std::uint32_t>(scale * static_cast<float>(dimensions.y))};
   bool is_lcd = pixel_dimensions.x <= kMaxLcdDimensions || pixel_dimensions.y <= kMaxLcdDimensions;

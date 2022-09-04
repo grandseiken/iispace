@@ -39,7 +39,7 @@ std::string convert_to_time(std::uint64_t score) {
   return r.str();
 }
 
-void render_text(render::GlRenderer& r, const glm::vec2& v, const std::string& text,
+void render_text(const render::GlRenderer& r, const glm::vec2& v, const std::string& text,
                  const glm::vec4& c) {
   r.render_text(0, {16, 16}, 16 * static_cast<glm::ivec2>(v), c, ustring_view::utf8(text));
 }
@@ -48,6 +48,7 @@ void render_text(render::GlRenderer& r, const glm::vec2& v, const std::string& t
 
 PauseLayer::PauseLayer(ui::GameStack& stack, output_t* output)
 : ui::GameLayer{stack, ui::layer_flag::kCaptureUpdate}, output_{output} {
+  set_bounds(rect{kDimensions});
   *output = kContinue;
 }
 
@@ -122,8 +123,6 @@ SimLayer::SimLayer(ui::GameStack& stack, const initial_conditions& conditions,
 , render_state_{conditions.seed} {
   game_.emplace(stack.io_layer(), data::ReplayWriter{conditions});
   game_->input.set_player_count(conditions.player_count);
-  game_->input.set_game_dimensions(kDimensions);
-  render_state_.set_dimensions(kDimensions);
   state_ = std::make_unique<SimState>(conditions, &game_->writer, options.ai_players);
 }
 
@@ -135,7 +134,6 @@ SimLayer::SimLayer(ui::GameStack& stack, data::ReplayReader&& replay, const game
 , render_state_{replay.initial_conditions().seed} {
   auto conditions = replay.initial_conditions();
   replay_.emplace(std::move(replay));
-  render_state_.set_dimensions(kDimensions);
   if (options.replay_remote_players.empty()) {
     state_ = std::make_unique<SimState>(conditions);
   } else {
@@ -156,6 +154,7 @@ SimLayer::~SimLayer() = default;
 
 void SimLayer::update_content(const ui::input_frame& input) {
   auto& istate = network_state_ ? static_cast<ISimState&>(*network_state_) : *state_;
+  set_bounds(rect{istate.dimensions()});
   stack().set_fps((network_state_ ? static_cast<ISimState&>(*network_state_) : *state_).fps());
 
   if (pause_output_ == PauseLayer::kEndGame || istate.game_over()) {
@@ -192,7 +191,9 @@ void SimLayer::update_content(const ui::input_frame& input) {
 
   for (std::uint32_t i = 0; i < frame_count_multiplier_; ++i) {
     if (state_) {
-      auto input = game_ ? game_->input.get() : replay_->reader.next_tick_input_frames();
+      auto input = game_
+          ? (game_->input.set_game_dimensions(istate.dimensions()), game_->input.get())
+          : replay_->reader.next_tick_input_frames();
       if (game_) {
         state_->ai_think(input);
       }
@@ -231,6 +232,7 @@ void SimLayer::update_content(const ui::input_frame& input) {
   auto frame_x = static_cast<std::uint32_t>(std::log2(frame_count_multiplier_));
   bool handle_audio = !(audio_tick_++ % (4 * (1 + frame_x / 2)));
   bool handle_rumble = game_ && !replay_;
+  render_state_.set_dimensions(istate.dimensions());
   render_state_.handle_output(istate, handle_audio ? &stack().mixer() : nullptr,
                               handle_rumble ? &game_->input : nullptr);
   render_state_.update(handle_rumble ? &game_->input : nullptr);
@@ -256,10 +258,11 @@ void SimLayer::update_content(const ui::input_frame& input) {
 void SimLayer::render_content(render::GlRenderer& r) const {
   auto& istate = network_state_ ? static_cast<ISimState&>(*network_state_) : *state_;
   const auto& render = istate.render(/* paused */ controllers_dialog_ || stack().top() != this);
-  r.set_dimensions(stack().io_layer().dimensions(), kDimensions);
   r.set_colour_cycle(render.colour_cycle);
   render_state_.render(r);  // TODO: can be merged with below?
-  r.render_shapes(render.shapes,
+  // TODO: instead of messing with trail alpha, render N frames ago first so trails aren't quite so
+  // long?
+  r.render_shapes(render::coordinate_system::kGlobal, render.shapes,
                   /* trail alpha */ 1.f / (1.f + std::log2f(frame_count_multiplier_)));
 
   std::uint32_t n = 0;
@@ -290,7 +293,7 @@ void SimLayer::render_content(render::GlRenderer& r) const {
           .colour = glm::vec4{1.f},
           .data = render::box{.dimensions = (hi - lo) / 2.f},
       }};
-      r.render_shapes(shapes, 1.f);
+      r.render_shapes(render::coordinate_system::kGlobal, shapes, 1.f);
     }
     ++n;
   }
@@ -367,7 +370,9 @@ void SimLayer::render_content(render::GlRenderer& r) const {
 }
 
 MainMenuLayer::MainMenuLayer(ui::GameStack& stack, const game_options_t& options)
-: ui::GameLayer{stack}, options_{options} {}
+: ui::GameLayer{stack}, options_{options} {
+  set_bounds(rect{kDimensions});
+}
 
 void MainMenuLayer::update_content(const ui::input_frame& input) {
   if (exit_timer_) {
@@ -454,7 +459,6 @@ void MainMenuLayer::render_content(render::GlRenderer& r) const {
     r.set_colour_cycle((r.colour_cycle() + 1) % 256);
   }
 
-  r.set_dimensions(stack().io_layer().dimensions(), kDimensions);
   render_text(r, {6.f, 8.f}, "START GAME", kPanelText);
   render_text(r, {6.f, 10.f}, "PLAYERS", kPanelText);
   render_text(r, {6.f, 12.f}, "EXiT", kPanelText);

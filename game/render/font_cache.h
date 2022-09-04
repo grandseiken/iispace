@@ -5,6 +5,7 @@
 #include "game/common/ustring.h"
 #include "game/io/font/font.h"
 #include "game/render/gl/types.h"
+#include "game/render/render_common.h"
 #include <glm/glm.hpp>
 #include <cstdint>
 #include <span>
@@ -21,9 +22,9 @@ public:
   };
 
   void clear();
-  void set_dimensions(const glm::uvec2& screen_dimensions, const glm::uvec2& render_dimensions);
   result<void> assign(std::uint32_t font_id, std::span<const std::uint8_t> bytes);
-  result<const entry*> get(std::uint32_t font_id, const glm::uvec2& dimensions, ustring_view text);
+  result<const entry*>
+  get(const target& t, std::uint32_t font_id, const glm::uvec2& dimensions, ustring_view text);
 
 private:
   struct size_entry {

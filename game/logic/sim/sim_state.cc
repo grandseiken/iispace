@@ -90,6 +90,11 @@ SimState::SimState(const initial_conditions& conditions, data::ReplayWriter* rep
   setup_index_callbacks(*interface_, *internals_);
 }
 
+glm::uvec2 SimState::dimensions() const {
+  return {static_cast<std::uint32_t>(interface_->dimensions().x.to_int()),
+          static_cast<std::uint32_t>(interface_->dimensions().y.to_int())};
+}
+
 std::uint64_t SimState::tick_count() const {
   return internals_->tick_count;
 }
@@ -212,7 +217,6 @@ const render_output& SimState::render(bool paused) const {
   internals_->render.boss_hp_bar.reset();
   internals_->render.shapes.clear();
   internals_->render.players.clear();
-  internals_->render.dimensions = to_float(interface_->dimensions());
 
   internals_->index.iterate_dispatch<Render>([&](ecs::handle h, Render& r) {
     if (!h.get<Player>()) {
@@ -251,7 +255,7 @@ const render_output& SimState::render(bool paused) const {
       });
     };
 
-    const auto& d = internals_->render.dimensions;
+    auto d = to_float(interface_->dimensions());
     if (v.x < -4) {
       auto f = std::max(v.x + d.x, 0.f) / d.x;
       render_tri({4, v.y}, glm::pi<float>(), f);

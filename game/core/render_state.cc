@@ -266,7 +266,7 @@ void RenderState::render(render::GlRenderer& r) const {
     }
   }
 
-  r.render_shapes(shapes, /* trail alpha */ 1.f);
+  r.render_shapes(render::coordinate_system::kGlobal, shapes, /* trail alpha */ 1.f);
 }
 
 void RenderState::handle_background_fx(const background_fx_change& change) {

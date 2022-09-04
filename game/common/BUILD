@@ -3,6 +3,7 @@ cc_library(
   hdrs = [
     "fix32.h",
     "math.h",
+    "rect.h",
   ],
   deps = ["@glm"],
   visibility = ["//visibility:public"],

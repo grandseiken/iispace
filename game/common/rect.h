@@ -1,8 +1,8 @@
-#ifndef II_GAME_CORE_UI_RECT_H
-#define II_GAME_CORE_UI_RECT_H
+#ifndef II_GAME_COMMON_RECT_H
+#define II_GAME_COMMON_RECT_H
 #include <glm/glm.hpp>
 
-namespace ii::ui {
+namespace ii {
 
 struct rect {
   rect() : position{0, 0}, size{0, 0} {}
@@ -90,6 +90,6 @@ struct rect {
   }
 };
 
-}  // namespace ii::ui
+}  // namespace ii
 
 #endif
