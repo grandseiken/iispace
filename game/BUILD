@@ -37,7 +37,7 @@ cc_binary(
     "//game/io/file:std_filesystem",
     "//game/mixer",
     "//game/mixer:sound",
-    "//game/render:gl_renderer",
+    "//game/render",
     "//game/system",
   ],
   data = select({

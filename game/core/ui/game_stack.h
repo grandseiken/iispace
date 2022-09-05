@@ -25,8 +25,9 @@ class Mixer;
 namespace ii::ui {
 enum class layer_flag : std::uint32_t {
   kNone = 0b0000,
-  kCaptureUpdate = 0b0001,
-  kCaptureRender = 0b0010,
+  kCaptureInput = 0b0001,
+  kCaptureUpdate = 0b0010,
+  kCaptureRender = 0b0100,
 };
 }  // namespace ii::ui
 
@@ -55,6 +56,9 @@ public:
   layer_flag flags() const {
     return flags_;
   }
+
+protected:
+  void update_content(const input_frame&) override;
 
 private:
   layer_flag flags_ = layer_flag::kNone;

@@ -9,7 +9,7 @@ cc_library(
 )
 
 cc_library(
-  name = "gl_renderer",
+  name = "render",
   hdrs = ["gl_renderer.h"],
   srcs = [
     "gl_renderer.cc",

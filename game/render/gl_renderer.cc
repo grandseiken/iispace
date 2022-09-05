@@ -23,6 +23,7 @@ namespace ii::render {
 namespace {
 enum class shader {
   kText,
+  kPanel,
   kShapeOutline,
   kShapeMotion,
 };
@@ -86,8 +87,15 @@ result<std::unique_ptr<GlRenderer>> GlRenderer::create(std::uint32_t shader_vers
   };
 
   auto r = load_shader(shader::kText,
-                       {{"game/render/shaders/text.f.glsl", gl::shader_type::kFragment},
-                        {"game/render/shaders/text.v.glsl", gl::shader_type::kVertex}});
+                       {{"game/render/shaders/ui/text.f.glsl", gl::shader_type::kFragment},
+                        {"game/render/shaders/ui/text.v.glsl", gl::shader_type::kVertex}});
+  if (!r) {
+    return unexpected(r.error());
+  }
+
+  r = load_shader(shader::kPanel,
+                  {{"game/render/shaders/ui/panel.f.glsl", gl::shader_type::kFragment},
+                   {"game/render/shaders/ui/panel.v.glsl", gl::shader_type::kVertex}});
   if (!r) {
     return unexpected(r.error());
   }
@@ -143,6 +151,7 @@ std::int32_t GlRenderer::text_width(std::uint32_t font_index, const glm::uvec2& 
 void GlRenderer::render_text(std::uint32_t font_index, const glm::uvec2& font_dimensions,
                              const glm::ivec2& position, const glm::vec4& colour,
                              ustring_view s) const {
+  // TODO: use geometry shader to generate quads.
   auto font_result = impl_->font_cache.get(target(), font_index, font_dimensions, s);
   if (!font_result) {
     impl_->status = unexpected(font_result.error());
@@ -199,6 +208,54 @@ void GlRenderer::render_text(std::uint32_t font_index, const glm::uvec2& font_di
       gl::vertex_int_attribute_buffer(vertex_buffer, 1, 2, gl::type_of<std::int32_t>(),
                                       4 * sizeof(std::int32_t), 2 * sizeof(std::int32_t));
   gl::draw_elements(gl::draw_mode::kTriangles, index_buffer, gl::type_of<unsigned>(), quads * 6, 0);
+}
+
+void GlRenderer::render_panel(panel_style style, const glm::vec4& colour, const rect& r) {
+  // TODO: implement properly.
+  const auto& program = impl_->shader(shader::kPanel);
+  gl::use_program(program);
+  gl::enable_clip_planes(4u);
+  gl::enable_blend(true);
+  gl::enable_depth_test(false);
+  gl::blend_function(gl::blend_factor::kSrcAlpha, gl::blend_factor::kOneMinusSrcAlpha);
+
+  auto clip_rect = target().clip_rect();
+  // auto text_origin = target().render_to_screen_coords(position + clip_rect.min());
+  auto result =
+      gl::set_uniforms(program, "screen_dimensions", target().screen_dimensions, "panel_dimensions",
+                       r.size, "clip_min", target().render_to_screen_coords(clip_rect.min()),
+                       "clip_max", target().render_to_screen_coords(clip_rect.max()),
+                       "panel_colour", colour, "colour_cycle", colour_cycle_ / 256.f);
+  if (!result) {
+    impl_->status = unexpected(result.error());
+  }
+
+  using int_t = std::int16_t;
+  auto min = target().render_to_screen_coords(r.min());
+  auto max = target().render_to_screen_coords(r.max());
+  const std::vector<int_t> vertex_data = {
+      static_cast<int_t>(min.x), static_cast<int_t>(min.y), static_cast<int_t>(0),
+      static_cast<int_t>(0),     static_cast<int_t>(min.x), static_cast<int_t>(max.y),
+      static_cast<int_t>(0),     static_cast<int_t>(1),     static_cast<int_t>(max.x),
+      static_cast<int_t>(max.y), static_cast<int_t>(1),     static_cast<int_t>(1),
+      static_cast<int_t>(max.x), static_cast<int_t>(min.y), static_cast<int_t>(1),
+      static_cast<int_t>(0),
+  };
+  auto vertex_buffer = gl::make_buffer();
+  gl::buffer_data(vertex_buffer, gl::buffer_usage::kStreamDraw, std::span{vertex_data});
+
+  static const std::vector<unsigned> indices = {0, 1, 2, 0, 2, 3};
+  auto index_buffer = gl::make_buffer();
+  gl::buffer_data(index_buffer, gl::buffer_usage::kStaticDraw, std::span{indices});
+
+  auto vertex_array = gl::make_vertex_array();
+  gl::bind_vertex_array(vertex_array);
+  auto position_handle = gl::vertex_int_attribute_buffer(
+      vertex_buffer, 0, 2, gl::type_of<std::int32_t>(), 4 * sizeof(std::int32_t), 0);
+  auto tex_coords_handle =
+      gl::vertex_int_attribute_buffer(vertex_buffer, 1, 2, gl::type_of<std::int32_t>(),
+                                      4 * sizeof(std::int32_t), 2 * sizeof(std::int32_t));
+  gl::draw_elements(gl::draw_mode::kTriangles, index_buffer, gl::type_of<unsigned>(), 6, 0);
 }
 
 void GlRenderer::render_shapes(coordinate_system ctype, std::span<const shape> shapes,

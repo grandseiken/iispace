@@ -104,6 +104,9 @@ void handle(input_frame& result, const io::mouse::frame& frame) {
       }
     }
   }
+  result.mouse_delta = frame.cursor_delta;
+  result.mouse_cursor = frame.cursor;
+  result.mouse_scroll = frame.wheel_delta;
 }
 
 void handle(input_frame& result, const io::keyboard::frame& frame) {
@@ -136,7 +139,25 @@ void handle(input_frame& result, const io::controller::frame& frame) {
   }
 }
 
+template <typename It>
+auto get_capture_it(It begin, It end, layer_flag flag) {
+  auto it = end;
+  while (it != begin) {
+    --it;
+    if (+((*it)->flags() & flag)) {
+      break;
+    }
+  }
+  return it;
+}
+
 }  // namespace
+
+void GameLayer::update_content(const input_frame&) {
+  for (auto& e : *this) {
+    e->set_bounds(bounds());
+  }
+}
 
 GameStack::GameStack(io::Filesystem& fs, io::IoLayer& io_layer, Mixer& mixer)
 : fs_{fs}, io_layer_{io_layer}, mixer_{mixer} {
@@ -166,16 +187,20 @@ void GameStack::update(bool controller_change) {
   for (std::size_t i = 0; i < io_layer_.controllers(); ++i) {
     handle(input, io_layer_.controller_frame(i));
   }
-  auto it = layers_.end();
-  while (it != layers_.begin()) {
-    --it;
-    if (+((*it)->flags() & layer_flag::kCaptureUpdate)) {
-      break;
-    }
-  }
+  auto it = get_capture_it(layers_.begin(), layers_.end(), layer_flag::kCaptureUpdate);
+  auto input_it = get_capture_it(layers_.begin(), layers_.end(), layer_flag::kCaptureInput);
   while (it != layers_.end()) {
+    input_frame layer_input;
+    if (it >= input_it) {
+      render::target target{.screen_dimensions = io_layer_.dimensions(),
+                            .render_dimensions = (*it)->bounds().size};
+      layer_input = input;
+      layer_input.mouse_cursor = target.screen_to_render_coords(*input.mouse_cursor);
+      layer_input.mouse_delta = *layer_input.mouse_cursor -
+          target.screen_to_render_coords(*input.mouse_cursor - *input.mouse_delta);
+    }
     auto size = layers_.size();
-    (*it)->update(input);
+    (*it)->update(layer_input);
     if (size != layers_.size()) {
       input = {};
     }
@@ -188,14 +213,8 @@ void GameStack::update(bool controller_change) {
 }
 
 void GameStack::render(render::GlRenderer& renderer) const {
-  auto it = layers_.end();
-  while (it != layers_.begin()) {
-    --it;
-    if (+((*it)->flags() & layer_flag::kCaptureRender)) {
-      break;
-    }
-  }
   renderer.target().screen_dimensions = io_layer_.dimensions();
+  auto it = get_capture_it(layers_.begin(), layers_.end(), layer_flag::kCaptureRender);
   for (; it != layers_.end(); ++it) {
     renderer.target().render_dimensions = static_cast<glm::uvec2>((*it)->bounds().size);
     (*it)->render(renderer);

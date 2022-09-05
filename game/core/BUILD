@@ -23,7 +23,7 @@ cc_library(
     "//game/logic/sim",
     "//game/logic/sim/io:output",
     "//game/mixer",
-    "//game/render:gl_renderer",
+    "//game/render",
   ],
 )
 
@@ -46,7 +46,7 @@ cc_library(
     "//game/io",
     "//game/io/file:filesystem",
     "//game/mixer:sound",
-    "//game/render:gl_renderer",
+    "//game/render",
   ],
   visibility = ["//visibility:public"],
 )

@@ -49,6 +49,8 @@ public:
   void render_text(std::uint32_t font_index, const glm::uvec2& font_dimensions,
                    const glm::ivec2& position, const glm::vec4& colour, ustring_view s) const;
 
+  void render_panel(panel_style style, const glm::vec4& colour, const rect& r);
+
   void
   render_shapes(coordinate_system ctype, std::span<const shape> shapes, float trail_alpha) const;
 

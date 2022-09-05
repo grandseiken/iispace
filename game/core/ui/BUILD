@@ -13,6 +13,16 @@ cc_library(
     "//game/common:math",
     "@glm",
   ],
+  implementation_deps = ["//game/render"],
+)
+
+cc_library(
+  name = "toolkit",
+  hdrs = ["toolkit.h"],
+  srcs = ["toolkit.cc"],
+  deps = [":element"],
+  implementation_deps = ["//game/render"],
+  visibility = ["//visibility:public"],
 )
 
 cc_library(
@@ -26,7 +36,7 @@ cc_library(
     "//game/data:replay",
     "//game/data:save",
     "//game/mixer:sound",
-    "//game/render:gl_renderer"
+    "//game/render"
   ],
   implementation_deps = [
     "//game/io",

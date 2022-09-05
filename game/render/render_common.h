@@ -13,6 +13,10 @@ enum class coordinate_system {
   kCentered,
 };
 
+enum class panel_style {
+  kDefault,
+};
+
 struct target {
   glm::uvec2 screen_dimensions{0};
   glm::uvec2 render_dimensions{0};
@@ -21,6 +25,13 @@ struct target {
   glm::ivec2 render_to_screen_coords(const glm::ivec2& v) const {
     auto r = scale_factor() * glm::vec2{v} +
         glm::vec2{screen_dimensions} * (glm::vec2{1.f} - aspect_scale()) / 2.f;
+    return glm::ivec2{glm::round(r)};
+  }
+
+  glm::ivec2 screen_to_render_coords(const glm::ivec2& v) const {
+    auto r =
+        (glm::vec2{v} - glm::vec2{screen_dimensions} * (glm::vec2{1.f} - aspect_scale()) / 2.f) /
+        scale_factor();
     return glm::ivec2{glm::round(r)};
   }
 

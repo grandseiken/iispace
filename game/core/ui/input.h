@@ -1,7 +1,9 @@
 #ifndef II_GAME_CORE_UI_INPUT_H
 #define II_GAME_CORE_UI_INPUT_H
+#include <glm/glm.hpp>
 #include <array>
 #include <cstddef>
+#include <optional>
 
 namespace ii::ui {
 
@@ -20,6 +22,9 @@ struct input_frame {
   bool controller_change = false;
   std::array<bool, static_cast<std::size_t>(key::kMax)> key_pressed = {false};
   std::array<bool, static_cast<std::size_t>(key::kMax)> key_held = {false};
+  std::optional<glm::ivec2> mouse_delta;
+  std::optional<glm::ivec2> mouse_cursor;
+  std::optional<glm::ivec2> mouse_scroll;
 
   bool pressed(key k) const {
     return key_pressed[static_cast<std::size_t>(k)];

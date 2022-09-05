@@ -31,13 +31,37 @@ public:
     return remove_;
   }
 
-  void update(const input_frame&);
-  void render(render::GlRenderer&) const;
+  bool empty() const {
+    return children_.empty();
+  }
+
+  std::size_t size() const {
+    return children_.size();
+  }
+
+  auto begin() const {
+    return children_.cbegin();
+  }
+
+  auto end() const {
+    return children_.cend();
+  }
+
+  auto begin() {
+    return children_.begin();
+  }
+
+  auto end() {
+    return children_.end();
+  }
 
   template <typename T, typename... Args>
   T* add_back(Args&&... args) {
     return children_.emplace_back(std::make_unique<T>(std::forward<Args>(args)...)).get();
   }
+
+  void update(const input_frame&);
+  void render(render::GlRenderer&) const;
 
 protected:
   virtual void update_content(const input_frame&) {}
