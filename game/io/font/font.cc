@@ -98,73 +98,33 @@ std::pair<glm::ivec2, glm::ivec2> RenderedFont::calculate_bounding_box(ustring_v
 std::vector<std::int32_t>
 RenderedFont::generate_vertex_data(ustring_view s, const glm::ivec2& origin) const {
   std::vector<std::int32_t> result;
-  auto origin_copy = origin;
-  origin_copy.y += max_ascent_;
-  iterate_as_utf32(s, [&](std::size_t, std::uint32_t code) {
-    const auto& info = (*this)[code];
-    auto i_dimensions = static_cast<glm::ivec2>(info.bitmap_dimensions);
-    auto i_position = static_cast<glm::ivec2>(info.bitmap_position);
+  iterate_glyph_data(s, origin,
+                     [&](const glm::ivec2& position, const glm::ivec2& texture_coords,
+                         const glm::ivec2& dimensions) {
+                       // Top-left.
+                       result.emplace_back(position.x);
+                       result.emplace_back(position.y);
+                       result.emplace_back(texture_coords.x);
+                       result.emplace_back(texture_coords.y);
 
-    // Top-left.
-    result.emplace_back(origin_copy.x + info.bearing.x);
-    result.emplace_back(origin_copy.y - info.bearing.y);
-    result.emplace_back(i_position.x);
-    result.emplace_back(i_position.y);
+                       // Bottom-left.
+                       result.emplace_back(position.x);
+                       result.emplace_back(position.y + dimensions.y);
+                       result.emplace_back(texture_coords.x);
+                       result.emplace_back(texture_coords.y + dimensions.y);
 
-    // Bottom-left.
-    result.emplace_back(origin_copy.x + info.bearing.x);
-    result.emplace_back(origin_copy.y - info.bearing.y + i_dimensions.y);
-    result.emplace_back(i_position.x);
-    result.emplace_back(i_position.y + i_dimensions.y);
+                       // Bottom-right.
+                       result.emplace_back(position.x + dimensions.x);
+                       result.emplace_back(position.y + dimensions.y);
+                       result.emplace_back(texture_coords.x + dimensions.x);
+                       result.emplace_back(texture_coords.y + dimensions.y);
 
-    // Bottom-right.
-    result.emplace_back(origin_copy.x + info.bearing.x + i_dimensions.x);
-    result.emplace_back(origin_copy.y - info.bearing.y + i_dimensions.y);
-    result.emplace_back(i_position.x + i_dimensions.x);
-    result.emplace_back(i_position.y + i_dimensions.y);
-
-    // Top-right.
-    result.emplace_back(origin_copy.x + info.bearing.x + i_dimensions.x);
-    result.emplace_back(origin_copy.y - info.bearing.y);
-    result.emplace_back(i_position.x + i_dimensions.x);
-    result.emplace_back(i_position.y);
-
-    origin_copy.x += info.advance;
-  });
-  return result;
-}
-
-std::vector<std::int32_t>
-RenderedFont::generate_vertex_data(std::uint32_t c, const glm::ivec2& origin) const {
-  std::vector<std::int32_t> result;
-  const auto& info = (*this)[c];
-  auto i_dimensions = static_cast<glm::ivec2>(info.bitmap_dimensions);
-  auto i_position = static_cast<glm::ivec2>(info.bitmap_position);
-
-  // Top-left.
-  result.emplace_back(origin.x);
-  result.emplace_back(origin.y);
-  result.emplace_back(i_position.x);
-  result.emplace_back(i_position.y);
-
-  // Bottom-left.
-  result.emplace_back(origin.x);
-  result.emplace_back(origin.y + i_dimensions.y);
-  result.emplace_back(i_position.x);
-  result.emplace_back(i_position.y + i_dimensions.y);
-
-  // Bottom-right.
-  result.emplace_back(origin.x + i_dimensions.x);
-  result.emplace_back(origin.y + i_dimensions.y);
-  result.emplace_back(i_position.x + i_dimensions.x);
-  result.emplace_back(i_position.y + i_dimensions.y);
-
-  // Top-right.
-  result.emplace_back(origin.x + i_dimensions.x);
-  result.emplace_back(origin.y);
-  result.emplace_back(i_position.x + i_dimensions.x);
-  result.emplace_back(i_position.y);
-
+                       // Top-right.
+                       result.emplace_back(position.x + dimensions.x);
+                       result.emplace_back(position.y);
+                       result.emplace_back(texture_coords.x + dimensions.x);
+                       result.emplace_back(texture_coords.y);
+                     });
   return result;
 }
 

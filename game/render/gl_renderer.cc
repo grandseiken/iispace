@@ -88,6 +88,7 @@ result<std::unique_ptr<GlRenderer>> GlRenderer::create(std::uint32_t shader_vers
 
   auto r = load_shader(shader::kText,
                        {{"game/render/shaders/ui/text.f.glsl", gl::shader_type::kFragment},
+                        {"game/render/shaders/ui/text.g.glsl", gl::shader_type::kGeometry},
                         {"game/render/shaders/ui/text.v.glsl", gl::shader_type::kVertex}});
   if (!r) {
     return unexpected(r.error());
@@ -151,7 +152,6 @@ std::int32_t GlRenderer::text_width(std::uint32_t font_index, const glm::uvec2& 
 void GlRenderer::render_text(std::uint32_t font_index, const glm::uvec2& font_dimensions,
                              const glm::ivec2& position, const glm::vec4& colour,
                              ustring_view s) const {
-  // TODO: use geometry shader to generate quads.
   auto font_result = impl_->font_cache.get(target(), font_index, font_dimensions, s);
   if (!font_result) {
     impl_->status = unexpected(font_result.error());
@@ -188,30 +188,43 @@ void GlRenderer::render_text(std::uint32_t font_index, const glm::uvec2& font_di
     return;
   }
 
-  const auto vertex_data = font_entry.font.generate_vertex_data(s, text_origin);
-  auto vertex_buffer = gl::make_buffer();
-  gl::buffer_data(vertex_buffer, gl::buffer_usage::kStreamDraw, std::span{vertex_data});
-
-  auto quads = static_cast<unsigned>(vertex_data.size() / 16);
+  std::vector<std::int32_t> vertex_data;
   std::vector<unsigned> indices;
-  for (unsigned i = 0; i < quads; ++i) {
-    indices.insert(indices.end(), {4 * i, 4 * i + 1, 4 * i + 2, 4 * i, 4 * i + 2, 4 * i + 3});
-  }
+  font_entry.font.iterate_glyph_data(
+      s, text_origin,
+      [&](const glm::ivec2& position, const glm::ivec2& texture_coords,
+          const glm::ivec2& dimensions) {
+        vertex_data.emplace_back(position.x);
+        vertex_data.emplace_back(position.y);
+        vertex_data.emplace_back(dimensions.x);
+        vertex_data.emplace_back(dimensions.y);
+        vertex_data.emplace_back(texture_coords.x);
+        vertex_data.emplace_back(texture_coords.y);
+        indices.emplace_back(indices.size());
+      });
+
   auto index_buffer = gl::make_buffer();
+  auto vertex_buffer = gl::make_buffer();
+  gl::buffer_data(vertex_buffer, gl::buffer_usage::kStreamDraw,
+                  std::span<const std::int32_t>{vertex_data});
   gl::buffer_data(index_buffer, gl::buffer_usage::kStreamDraw, std::span<const unsigned>{indices});
 
   auto vertex_array = gl::make_vertex_array();
   gl::bind_vertex_array(vertex_array);
   auto position_handle = gl::vertex_int_attribute_buffer(
-      vertex_buffer, 0, 2, gl::type_of<std::int32_t>(), 4 * sizeof(std::int32_t), 0);
-  auto tex_coords_handle =
+      vertex_buffer, 0, 2, gl::type_of<std::int32_t>(), 6 * sizeof(std::int32_t), 0);
+  auto dimensions_handle =
       gl::vertex_int_attribute_buffer(vertex_buffer, 1, 2, gl::type_of<std::int32_t>(),
-                                      4 * sizeof(std::int32_t), 2 * sizeof(std::int32_t));
-  gl::draw_elements(gl::draw_mode::kTriangles, index_buffer, gl::type_of<unsigned>(), quads * 6, 0);
+                                      6 * sizeof(std::int32_t), 2 * sizeof(std::int32_t));
+  auto tex_coords_handle =
+      gl::vertex_int_attribute_buffer(vertex_buffer, 2, 2, gl::type_of<std::int32_t>(),
+                                      6 * sizeof(std::int32_t), 4 * sizeof(std::int32_t));
+  gl::draw_elements(gl::draw_mode::kPoints, index_buffer, gl::type_of<unsigned>(), indices.size(),
+                    0);
 }
 
 void GlRenderer::render_panel(panel_style style, const glm::vec4& colour, const rect& r) {
-  // TODO: implement properly.
+  // TODO: use geometry shader and implement properly.
   const auto& program = impl_->shader(shader::kPanel);
   gl::use_program(program);
   gl::enable_clip_planes(4u);

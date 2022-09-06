@@ -2,6 +2,7 @@
 #define II_GAME_IO_FONT_FONT_H
 #include "game/common/result.h"
 #include "game/common/ustring.h"
+#include "game/common/ustring_convert.h"
 #include <glm/glm.hpp>
 #include <cstddef>
 #include <cstdint>
@@ -67,12 +68,24 @@ public:
   // rendered in this font.
   std::pair<glm::ivec2, glm::ivec2> calculate_bounding_box(ustring_view s) const;
 
+  template <typename F>
+  void iterate_glyph_data(ustring_view s, const glm::ivec2& origin, F&& f) const {
+    auto origin_copy = origin;
+    origin_copy.y += max_ascent_;
+    iterate_as_utf32(s, [&](std::size_t, std::uint32_t code) {
+      const auto& info = (*this)[code];
+      auto i_dimensions = static_cast<glm::ivec2>(info.bitmap_dimensions);
+      auto i_texture_coords = static_cast<glm::ivec2>(info.bitmap_position);
+      f(glm::ivec2{origin_copy.x + info.bearing.x, origin_copy.y - info.bearing.y},
+        i_texture_coords, i_dimensions);
+      origin_copy.x += info.advance;
+    });
+  }
+
   // Generate vector of vertex data to render the given string.
   // Output is sets of 4x4-tuples describing character quads; each 2-tuple
   // in the format (x, y, tex_x, tex_y).
   std::vector<std::int32_t> generate_vertex_data(ustring_view s, const glm::ivec2& origin) const;
-  // Generate vertex data to render a single character.
-  std::vector<std::int32_t> generate_vertex_data(std::uint32_t c, const glm::ivec2& origin) const;
 
 private:
   friend class Font;
