@@ -80,34 +80,34 @@ public:
   ustring_view(const ustring& s) : e_{s.encoding()} {
     switch (s.encoding()) {
     case ustring_encoding::kAscii:
-      s_ = std::string_view(s.ascii());
+      s_ = std::string_view{s.ascii()};
       break;
     case ustring_encoding::kUtf8:
-      s_ = std::string_view(s.utf8());
+      s_ = std::string_view{s.utf8()};
       break;
     case ustring_encoding::kUtf16:
-      s_ = std::u16string_view(s.utf16());
+      s_ = std::u16string_view{s.utf16()};
       break;
     case ustring_encoding::kUtf32:
-      s_ = std::u32string_view(s.utf32());
+      s_ = std::u32string_view{s.utf32()};
       break;
     }
   }
 
   static ustring_view ascii(std::string_view s) {
-    return {ustring_encoding::kAscii, std::move(s)};
+    return {ustring_encoding::kAscii, s};
   }
 
   static ustring_view utf8(std::string_view s) {
-    return {ustring_encoding::kUtf8, std::move(s)};
+    return {ustring_encoding::kUtf8, s};
   }
 
   static ustring_view utf16(std::u16string_view s) {
-    return {ustring_encoding::kUtf16, std::move(s)};
+    return {ustring_encoding::kUtf16, s};
   }
 
   static ustring_view utf32(std::u32string_view s) {
-    return {ustring_encoding::kUtf32, std::move(s)};
+    return {ustring_encoding::kUtf32, s};
   }
 
   ustring_encoding encoding() const {

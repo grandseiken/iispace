@@ -1,5 +1,5 @@
 #include "game/render/shaders/lib/hsl.glsl"
-#include "game/render/shaders/ui/common.glsl"
+#include "game/render/shaders/ui/data.glsl"
 
 uniform vec4 text_colour;
 uniform float colour_cycle;

@@ -46,9 +46,13 @@ public:
 
   std::int32_t
   text_width(std::uint32_t font_index, const glm::uvec2& font_dimensions, ustring_view s) const;
+  ustring trim_for_width(std::uint32_t font_index, const glm::uvec2& font_dimensions,
+                         std::int32_t width, ustring_view s) const;
+  // TODO: render multiple texts (with same font)?
   void render_text(std::uint32_t font_index, const glm::uvec2& font_dimensions,
                    const glm::ivec2& position, const glm::vec4& colour, ustring_view s) const;
 
+  // TODO: render multiple panels.
   void render_panel(panel_style style, const glm::vec4& colour, const rect& r);
 
   void

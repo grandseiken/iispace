@@ -54,6 +54,10 @@ const std::vector<std::uint32_t>& utf32_codes() {
 
 }  // namespace
 
+// TODO: general things:
+// - can vertex array objects be saved between calls?
+// - can we reuse index buffers or any other buffs?
+// - should we use small integer types or other types for vertex data?
 struct GlRenderer::impl_t {
   result<void> status;
 
@@ -96,6 +100,7 @@ result<std::unique_ptr<GlRenderer>> GlRenderer::create(std::uint32_t shader_vers
 
   r = load_shader(shader::kPanel,
                   {{"game/render/shaders/ui/panel.f.glsl", gl::shader_type::kFragment},
+                   {"game/render/shaders/ui/panel.g.glsl", gl::shader_type::kGeometry},
                    {"game/render/shaders/ui/panel.v.glsl", gl::shader_type::kVertex}});
   if (!r) {
     return unexpected(r.error());
@@ -147,6 +152,19 @@ std::int32_t GlRenderer::text_width(std::uint32_t font_index, const glm::uvec2& 
   const auto& font_entry = **font_result;
   auto width = font_entry.font.calculate_width(s);
   return static_cast<std::int32_t>(std::ceil(static_cast<float>(width) / target().scale_factor()));
+}
+
+ustring GlRenderer::trim_for_width(std::uint32_t font_index, const glm::uvec2& font_dimensions,
+                                   std::int32_t width, ustring_view s) const {
+  auto font_result = impl_->font_cache.get(target(), font_index, font_dimensions, s);
+  if (!font_result) {
+    impl_->status = unexpected(font_result.error());
+    return ustring::ascii("");
+  }
+  const auto& font_entry = **font_result;
+  auto screen_width =
+      static_cast<std::int32_t>(std::floor(static_cast<float>(width) * target().scale_factor()));
+  return font_entry.font.trim_for_width(s, screen_width);
 }
 
 void GlRenderer::render_text(std::uint32_t font_index, const glm::uvec2& font_dimensions,
@@ -211,6 +229,7 @@ void GlRenderer::render_text(std::uint32_t font_index, const glm::uvec2& font_di
 
   auto vertex_array = gl::make_vertex_array();
   gl::bind_vertex_array(vertex_array);
+
   auto position_handle = gl::vertex_int_attribute_buffer(
       vertex_buffer, 0, 2, gl::type_of<std::int32_t>(), 6 * sizeof(std::int32_t), 0);
   auto dimensions_handle =
@@ -233,42 +252,48 @@ void GlRenderer::render_panel(panel_style style, const glm::vec4& colour, const 
   gl::blend_function(gl::blend_factor::kSrcAlpha, gl::blend_factor::kOneMinusSrcAlpha);
 
   auto clip_rect = target().clip_rect();
-  // auto text_origin = target().render_to_screen_coords(position + clip_rect.min());
-  auto result =
-      gl::set_uniforms(program, "screen_dimensions", target().screen_dimensions, "panel_dimensions",
-                       r.size, "clip_min", target().render_to_screen_coords(clip_rect.min()),
-                       "clip_max", target().render_to_screen_coords(clip_rect.max()),
-                       "panel_colour", colour, "colour_cycle", colour_cycle_ / 256.f);
+  auto result = gl::set_uniforms(program, "screen_dimensions", target().screen_dimensions,
+                                 "clip_min", target().render_to_screen_coords(clip_rect.min()),
+                                 "clip_max", target().render_to_screen_coords(clip_rect.max()),
+                                 "colour_cycle", colour_cycle_ / 256.f);
   if (!result) {
-    impl_->status = unexpected(result.error());
+    impl_->status = unexpected("panel shader error: " + result.error());
+    return;
   }
 
-  using int_t = std::int16_t;
   auto min = target().render_to_screen_coords(r.min());
-  auto max = target().render_to_screen_coords(r.max());
-  const std::vector<int_t> vertex_data = {
-      static_cast<int_t>(min.x), static_cast<int_t>(min.y), static_cast<int_t>(0),
-      static_cast<int_t>(0),     static_cast<int_t>(min.x), static_cast<int_t>(max.y),
-      static_cast<int_t>(0),     static_cast<int_t>(1),     static_cast<int_t>(max.x),
-      static_cast<int_t>(max.y), static_cast<int_t>(1),     static_cast<int_t>(1),
-      static_cast<int_t>(max.x), static_cast<int_t>(min.y), static_cast<int_t>(1),
-      static_cast<int_t>(0),
-  };
-  auto vertex_buffer = gl::make_buffer();
-  gl::buffer_data(vertex_buffer, gl::buffer_usage::kStreamDraw, std::span{vertex_data});
+  auto size = target().render_to_screen_coords(r.max()) - min;
 
-  static const std::vector<unsigned> indices = {0, 1, 2, 0, 2, 3};
+  std::vector<float> float_data = {colour.r, colour.g, colour.b, colour.a};
+  std::vector<std::int32_t> int_data = {
+      min.x, min.y, size.x, size.y, r.size.x, r.size.y, static_cast<std::int32_t>(style)};
+  std::vector<unsigned> indices = {0};
+
+  auto int_buffer = gl::make_buffer();
+  auto float_buffer = gl::make_buffer();
   auto index_buffer = gl::make_buffer();
-  gl::buffer_data(index_buffer, gl::buffer_usage::kStaticDraw, std::span{indices});
+  gl::buffer_data(int_buffer, gl::buffer_usage::kStreamDraw,
+                  std::span<const std::int32_t>{int_data});
+  gl::buffer_data(float_buffer, gl::buffer_usage::kStreamDraw, std::span<const float>{float_data});
+  gl::buffer_data(index_buffer, gl::buffer_usage::kStreamDraw, std::span<const unsigned>{indices});
 
   auto vertex_array = gl::make_vertex_array();
   gl::bind_vertex_array(vertex_array);
+
   auto position_handle = gl::vertex_int_attribute_buffer(
-      vertex_buffer, 0, 2, gl::type_of<std::int32_t>(), 4 * sizeof(std::int32_t), 0);
-  auto tex_coords_handle =
-      gl::vertex_int_attribute_buffer(vertex_buffer, 1, 2, gl::type_of<std::int32_t>(),
-                                      4 * sizeof(std::int32_t), 2 * sizeof(std::int32_t));
-  gl::draw_elements(gl::draw_mode::kTriangles, index_buffer, gl::type_of<unsigned>(), 6, 0);
+      int_buffer, 0, 2, gl::type_of<std::int32_t>(), 7 * sizeof(std::int32_t), 0);
+  auto screen_dimensions_handle =
+      gl::vertex_int_attribute_buffer(int_buffer, 1, 2, gl::type_of<std::int32_t>(),
+                                      7 * sizeof(std::int32_t), 2 * sizeof(std::int32_t));
+  auto render_dimensions_handle =
+      gl::vertex_int_attribute_buffer(int_buffer, 2, 2, gl::type_of<std::int32_t>(),
+                                      7 * sizeof(std::int32_t), 4 * sizeof(std::int32_t));
+  auto panel_colour_handle = gl::vertex_float_attribute_buffer(
+      float_buffer, 3, 4, gl::type_of<float>(), false, 4 * sizeof(float), 0);
+  auto style_handle =
+      gl::vertex_int_attribute_buffer(int_buffer, 4, 1, gl::type_of<std::int32_t>(),
+                                      7 * sizeof(std::int32_t), 6 * sizeof(std::int32_t));
+  gl::draw_elements(gl::draw_mode::kPoints, index_buffer, gl::type_of<unsigned>(), 1, 0);
 }
 
 void GlRenderer::render_shapes(coordinate_system ctype, std::span<const shape> shapes,
@@ -332,6 +357,8 @@ void GlRenderer::render_shapes(coordinate_system ctype, std::span<const shape> s
   // - polygon:  41
   // - polystar: 28 even, 17 odd
   // - polygram: 17
+  // Limits could be raised by avoiding clipping in geometry shader, or by sending
+  // more input vertices.
   for (const auto& shape : shapes) {
     if (const auto* p = std::get_if<render::ngon>(&shape.data)) {
       auto add_polygon = [&](std::uint32_t style, std::uint32_t param) {
@@ -416,6 +443,7 @@ void GlRenderer::render_shapes(coordinate_system ctype, std::span<const shape> s
   auto vertex_array = gl::make_vertex_array();
   gl::bind_vertex_array(vertex_array);
 
+  // TODO: make this nicer and use everywhere.
   std::uint32_t index = 0;
   std::size_t float_offset = 0;
   std::size_t int_offset = 0;

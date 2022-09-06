@@ -449,6 +449,8 @@ void MainMenuLayer::update_content(const ui::input_frame& input) {
 }
 
 void MainMenuLayer::render_content(render::GlRenderer& r) const {
+  r.render_panel(render::panel_style::kFlatColour, glm::vec4{1.f, 1.f, 1.f, .25f},
+                 rect{{16 * 4, 16 * 5}, {16 * 16, 16 * 9}});
   if (menu_select_ >= menu::kStart || mode_select_ == game_mode::kBoss) {
     r.set_colour_cycle(0);
   } else if (mode_select_ == game_mode::kHard) {

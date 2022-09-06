@@ -13,8 +13,8 @@ enum class coordinate_system {
   kCentered,
 };
 
-enum class panel_style {
-  kDefault,
+enum class panel_style : std::uint32_t {
+  kFlatColour = 0,
 };
 
 struct target {
