@@ -13,18 +13,18 @@ void FontCache::clear() {
   }
 }
 
-result<void> FontCache::assign(std::uint32_t font_id, std::span<const std::uint8_t> bytes) {
-  auto font = Font::create(bytes);
-  if (!font) {
-    return unexpected(font.error());
+result<void> FontCache::assign(font_id font, std::span<const std::uint8_t> bytes) {
+  auto font_result = Font::create(bytes);
+  if (!font_result) {
+    return unexpected(font_result.error());
   }
-  fonts_.emplace(font_id, font_entry{std::move(*font), {}});
+  fonts_.emplace(font, font_entry{std::move(*font_result), {}});
   return {};
 }
 
-auto FontCache::get(const target& t, std::uint32_t font_id, const glm::uvec2& dimensions,
-                    ustring_view text) -> result<const entry*> {
-  auto it = fonts_.find(font_id);
+auto FontCache::get(const target& t, font_id font, const glm::uvec2& dimensions, ustring_view text)
+    -> result<const entry*> {
+  auto it = fonts_.find(font);
   if (it == fonts_.end()) {
     return unexpected("invalid font ID");
   }

@@ -24,9 +24,7 @@ struct SpawnContext {
     return sim->random(random_source::kGameSequence).uint(max);
   }
 
-  std::uint32_t random_bool() const {
-    return sim->random(random_source::kGameSequence).rbool();
-  }
+  std::uint32_t random_bool() const { return sim->random(random_source::kGameSequence).rbool(); }
 
   spawn_direction random_v_direction() const {
     return random_bool() ? spawn_direction::kTop : spawn_direction::kBottom;

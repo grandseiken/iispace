@@ -27,4 +27,18 @@ void Element::render(render::GlRenderer& renderer) const {
   }
 }
 
+void Element::focus_internal(bool focus, Element* origin) {
+  focus_ = focus;
+  if (focused_child_ && (origin != focused_child_ || !focus)) {
+    focused_child_->focus_internal(false, this);
+    focused_child_ = nullptr;
+  }
+  if (focus && origin && origin != parent_) {
+    focused_child_ = origin;
+  }
+  if (parent_ && origin != parent_) {
+    parent_->focus_internal(focus, this);
+  }
+}
+
 }  // namespace ii::ui

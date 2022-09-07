@@ -43,6 +43,7 @@ cc_library(
   implementation_deps = [
     "//game/common:math",
     "//game/common:types",
+    "//game/core/ui:toolkit",
     "//game/io",
     "//game/io/file:filesystem",
     "//game/mixer:sound",

@@ -29,9 +29,7 @@ public:
   handle_base(const handle_base<false>& h) requires Const
   : handle_base{h.id_, h.index_, h.table_} {}
 
-  entity_id id() const {
-    return id_;
-  }
+  entity_id id() const { return id_; }
 
   // Add a component via in-place construction.
   template <Component C, typename... Args>
@@ -102,16 +100,10 @@ public:
   // all direct data references to any of its components.
   void destroy(entity_id id);
 
-  entity_id generation() const {
-    return next_id_;
-  }
-  std::size_t size() const {
-    return entities_.size();
-  }
+  entity_id generation() const { return next_id_; }
+  std::size_t size() const { return entities_.size(); }
   // Check existence of an element.
-  bool contains(entity_id id) const {
-    return entities_.contains(id);
-  }
+  bool contains(entity_id id) const { return entities_.contains(id); }
   // Return handle for an element.
   std::optional<handle> get(entity_id id);
   std::optional<const_handle> get(entity_id id) const;

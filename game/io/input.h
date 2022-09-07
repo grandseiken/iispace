@@ -71,21 +71,11 @@ struct frame {
   std::array<bool, static_cast<std::size_t>(controller::button::kMax)> button_state = {false};
   std::array<std::int16_t, static_cast<std::size_t>(controller::axis::kMax)> axis_state = {0};
 
-  bool button(controller::button k) const {
-    return button_state[static_cast<std::size_t>(k)];
-  }
+  bool button(controller::button k) const { return button_state[static_cast<std::size_t>(k)]; }
+  bool& button(controller::button k) { return button_state[static_cast<std::size_t>(k)]; }
 
-  bool& button(controller::button k) {
-    return button_state[static_cast<std::size_t>(k)];
-  }
-
-  std::int16_t axis(controller::axis k) const {
-    return axis_state[static_cast<std::size_t>(k)];
-  }
-
-  std::int16_t& axis(controller::axis k) {
-    return axis_state[static_cast<std::size_t>(k)];
-  }
+  std::int16_t axis(controller::axis k) const { return axis_state[static_cast<std::size_t>(k)]; }
+  std::int16_t& axis(controller::axis k) { return axis_state[static_cast<std::size_t>(k)]; }
 };
 
 }  // namespace controller
@@ -249,13 +239,8 @@ struct frame {
   std::array<bool, static_cast<std::size_t>(keyboard::key::kMax)> key_state = {false};
   // TODO: std::string char_delta?
 
-  bool key(keyboard::key k) const {
-    return key_state[static_cast<std::size_t>(k)];
-  }
-
-  bool& key(keyboard::key k) {
-    return key_state[static_cast<std::size_t>(k)];
-  }
+  bool key(keyboard::key k) const { return key_state[static_cast<std::size_t>(k)]; }
+  bool& key(keyboard::key k) { return key_state[static_cast<std::size_t>(k)]; }
 
   std::uint8_t mods() const;
 };
@@ -287,13 +272,8 @@ struct frame {
   glm::ivec2 cursor_delta = {0, 0};
   glm::ivec2 wheel_delta = {0, 0};
 
-  bool button(mouse::button k) const {
-    return button_state[static_cast<std::size_t>(k)];
-  }
-
-  bool& button(mouse::button k) {
-    return button_state[static_cast<std::size_t>(k)];
-  }
+  bool button(mouse::button k) const { return button_state[static_cast<std::size_t>(k)]; }
+  bool& button(mouse::button k) { return button_state[static_cast<std::size_t>(k)]; }
 };
 
 }  // namespace mouse

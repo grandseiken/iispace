@@ -22,9 +22,9 @@ public:
   };
 
   void clear();
-  result<void> assign(std::uint32_t font_id, std::span<const std::uint8_t> bytes);
+  result<void> assign(font_id font, std::span<const std::uint8_t> bytes);
   result<const entry*>
-  get(const target& t, std::uint32_t font_id, const glm::uvec2& dimensions, ustring_view text);
+  get(const target& t, font_id font, const glm::uvec2& dimensions, ustring_view text);
 
 private:
   struct size_entry {
@@ -39,7 +39,7 @@ private:
 
   glm::uvec2 screen_dimensions_{0, 0};
   glm::uvec2 render_dimensions_{0, 0};
-  std::unordered_map<std::uint32_t, font_entry> fonts_;
+  std::unordered_map<font_id, font_entry> fonts_;
 };
 
 }  // namespace ii::render

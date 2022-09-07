@@ -20,7 +20,11 @@ cc_library(
   name = "toolkit",
   hdrs = ["toolkit.h"],
   srcs = ["toolkit.cc"],
-  deps = [":element"],
+  deps = [
+    ":element",
+    "//game/common:ustring",
+    "//game/render:render_common",
+  ],
   implementation_deps = ["//game/render"],
   visibility = ["//visibility:public"],
 )

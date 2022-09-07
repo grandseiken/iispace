@@ -57,17 +57,9 @@ struct Transform : ecs::component {
   vec2 centre = {0, 0};
   fixed rotation = 0;
 
-  void move(const vec2& v) {
-    centre += v;
-  }
-
-  void rotate(fixed amount) {
-    set_rotation(rotation + amount);
-  }
-
-  void set_rotation(fixed r) {
-    rotation = normalise_angle(r);
-  }
+  void move(const vec2& v) { centre += v; }
+  void rotate(fixed amount) { set_rotation(rotation + amount); }
+  void set_rotation(fixed r) { rotation = normalise_angle(r); }
 };
 DEBUG_STRUCT_TUPLE(Transform, centre, rotation);
 
@@ -174,9 +166,7 @@ struct Player : ecs::component {
   sfn::ptr<std::optional<render::player_info>(ecs::const_handle, const SimInterface&)> render_info =
       nullptr;
 
-  bool is_killed() const {
-    return kill_timer != 0;
-  }
+  bool is_killed() const { return kill_timer != 0; }
   void add_score(SimInterface&, std::uint64_t s);
 };
 DEBUG_STRUCT_TUPLE(Player, player_number, kill_timer, magic_shot_count, has_bomb, has_shield, score,

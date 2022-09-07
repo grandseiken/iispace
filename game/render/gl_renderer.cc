@@ -70,9 +70,7 @@ struct GlRenderer::impl_t {
                                    gl::texture_wrap::kClampToEdge,
                                    gl::texture_wrap::kClampToEdge)} {}
 
-  const gl::program& shader(render::shader s) const {
-    return shader_map.find(s)->second;
-  }
+  const gl::program& shader(render::shader s) const { return shader_map.find(s)->second; }
 };
 
 result<std::unique_ptr<GlRenderer>> GlRenderer::create(std::uint32_t shader_version) {
@@ -121,9 +119,33 @@ result<std::unique_ptr<GlRenderer>> GlRenderer::create(std::uint32_t shader_vers
     return unexpected(r.error());
   }
 
-  r = renderer->impl_->font_cache.assign(0u, assets::fonts::roboto_mono_regular_ttf());
-  if (!r) {
-    return unexpected("Error loading font roboto_mono_regular: " + r.error());
+  auto load_font = [&](font_id id, const std::string& name,
+                       std::span<const std::uint8_t> data) -> result<void> {
+    auto r = renderer->impl_->font_cache.assign(id, data);
+    if (!r) {
+      return unexpected("Error loading font " + name + ": " + r.error());
+    }
+    return {};
+  };
+  if (auto r = load_font(font_id::kMonospace, "roboto_mono_regular",
+                         assets::fonts::roboto_mono_regular_ttf());
+      !r) {
+    return unexpected(r.error());
+  }
+  if (auto r = load_font(font_id::kMonospaceBold, "roboto_mono_bold",
+                         assets::fonts::roboto_mono_bold_ttf());
+      !r) {
+    return unexpected(r.error());
+  }
+  if (auto r = load_font(font_id::kMonospaceItalic, "roboto_mono_italic",
+                         assets::fonts::roboto_mono_italic_ttf());
+      !r) {
+    return unexpected(r.error());
+  }
+  if (auto r = load_font(font_id::kMonospaceBoldItalic, "roboto_mono_bold_italic",
+                         assets::fonts::roboto_mono_bold_italic_ttf());
+      !r) {
+    return unexpected(r.error());
   }
   return {std::move(renderer)};
 }
@@ -142,21 +164,32 @@ void GlRenderer::clear_screen() const {
             gl::clear_mask::kStencilBufferBit);
 }
 
-std::int32_t GlRenderer::text_width(std::uint32_t font_index, const glm::uvec2& font_dimensions,
-                                    ustring_view s) const {
-  auto font_result = impl_->font_cache.get(target(), font_index, font_dimensions, s);
+std::int32_t GlRenderer::line_height(font_id font, const glm::uvec2& font_dimensions) const {
+  auto font_result = impl_->font_cache.get(target(), font, font_dimensions, ustring::ascii(""));
   if (!font_result) {
     impl_->status = unexpected(font_result.error());
-    return static_cast<std::int32_t>(font_dimensions.x);
+    return 0;
+  }
+  const auto& font_entry = **font_result;
+  auto height = font_entry.font.line_height();
+  return static_cast<std::int32_t>(std::ceil(static_cast<float>(height) / target().scale_factor()));
+}
+
+std::int32_t
+GlRenderer::text_width(font_id font, const glm::uvec2& font_dimensions, ustring_view s) const {
+  auto font_result = impl_->font_cache.get(target(), font, font_dimensions, s);
+  if (!font_result) {
+    impl_->status = unexpected(font_result.error());
+    return 0;
   }
   const auto& font_entry = **font_result;
   auto width = font_entry.font.calculate_width(s);
   return static_cast<std::int32_t>(std::ceil(static_cast<float>(width) / target().scale_factor()));
 }
 
-ustring GlRenderer::trim_for_width(std::uint32_t font_index, const glm::uvec2& font_dimensions,
+ustring GlRenderer::trim_for_width(font_id font, const glm::uvec2& font_dimensions,
                                    std::int32_t width, ustring_view s) const {
-  auto font_result = impl_->font_cache.get(target(), font_index, font_dimensions, s);
+  auto font_result = impl_->font_cache.get(target(), font, font_dimensions, s);
   if (!font_result) {
     impl_->status = unexpected(font_result.error());
     return ustring::ascii("");
@@ -167,10 +200,10 @@ ustring GlRenderer::trim_for_width(std::uint32_t font_index, const glm::uvec2& f
   return font_entry.font.trim_for_width(s, screen_width);
 }
 
-void GlRenderer::render_text(std::uint32_t font_index, const glm::uvec2& font_dimensions,
+void GlRenderer::render_text(font_id font, const glm::uvec2& font_dimensions,
                              const glm::ivec2& position, const glm::vec4& colour,
                              ustring_view s) const {
-  auto font_result = impl_->font_cache.get(target(), font_index, font_dimensions, s);
+  auto font_result = impl_->font_cache.get(target(), font, font_dimensions, s);
   if (!font_result) {
     impl_->status = unexpected(font_result.error());
     return;
@@ -242,8 +275,11 @@ void GlRenderer::render_text(std::uint32_t font_index, const glm::uvec2& font_di
                     0);
 }
 
-void GlRenderer::render_panel(panel_style style, const glm::vec4& colour, const rect& r) {
-  // TODO: use geometry shader and implement properly.
+void GlRenderer::render_panel(const panel_data& p) {
+  if (p.style == panel_style::kNone) {
+    return;
+  }
+
   const auto& program = impl_->shader(shader::kPanel);
   gl::use_program(program);
   gl::enable_clip_planes(4u);
@@ -261,12 +297,17 @@ void GlRenderer::render_panel(panel_style style, const glm::vec4& colour, const 
     return;
   }
 
-  auto min = target().render_to_screen_coords(r.min());
-  auto size = target().render_to_screen_coords(r.max()) - min;
+  auto min = target().render_to_screen_coords(clip_rect.min() + p.bounds.min());
+  auto size = target().render_to_screen_coords(clip_rect.min() + p.bounds.max()) - min;
 
-  std::vector<float> float_data = {colour.r, colour.g, colour.b, colour.a};
-  std::vector<std::int32_t> int_data = {
-      min.x, min.y, size.x, size.y, r.size.x, r.size.y, static_cast<std::int32_t>(style)};
+  std::vector<float> float_data = {p.colour.r, p.colour.g, p.colour.b, p.colour.a};
+  std::vector<std::int32_t> int_data = {min.x,
+                                        min.y,
+                                        size.x,
+                                        size.y,
+                                        p.bounds.size.x,
+                                        p.bounds.size.y,
+                                        static_cast<std::int32_t>(p.style)};
   std::vector<unsigned> indices = {0};
 
   auto int_buffer = gl::make_buffer();

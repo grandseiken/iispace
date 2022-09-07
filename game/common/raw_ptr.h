@@ -11,9 +11,7 @@ struct raw_deleter {
 
   raw_deleter() : deleter{nullptr} {}
   raw_deleter(deleter_t d) : deleter{d} {}
-  void operator()(T* p) const {
-    deleter(p);
-  }
+  void operator()(T* p) const { deleter(p); }
 };
 }  // namespace detail
 
@@ -24,6 +22,7 @@ template <typename T>
 raw_ptr<T> make_raw(T* p, typename detail::raw_deleter<T>::deleter_t d) {
   return raw_ptr<T>{p, {d}};
 }
+
 }  // namespace ii
 
 #endif

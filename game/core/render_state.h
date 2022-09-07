@@ -18,9 +18,8 @@ class RenderState {
 public:
   ~RenderState() = default;
   RenderState(std::uint32_t seed) : engine_{seed} {}
-  void set_dimensions(const glm::uvec2& dimensions) {
-    dimensions_ = dimensions;
-  }
+  void set_dimensions(const glm::uvec2& dimensions) { dimensions_ = dimensions; }
+
   // If mixer != nullptr, sounds will be handled. If input != nullptr, rumble will be handled.
   void handle_output(ISimState& state, Mixer* mixer, IoInputAdapter* input);
   void update(IoInputAdapter* input);

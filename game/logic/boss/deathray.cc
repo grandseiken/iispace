@@ -348,9 +348,7 @@ struct DeathRayBoss : public ecs::component {
     }
   }
 
-  std::uint32_t get_damage(std::uint32_t damage) const {
-    return arms.empty() ? damage : 0u;
-  }
+  std::uint32_t get_damage(std::uint32_t damage) const { return arms.empty() ? damage : 0u; }
 };
 DEBUG_STRUCT_TUPLE(DeathRayBoss, arms, timer, laser, dir, pos, arm_timer, shot_timer,
                    ray_attack_timer, ray_src1, ray_src2, ray_dest);

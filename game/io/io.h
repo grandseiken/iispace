@@ -50,13 +50,8 @@ public:
 
   class audio_callback_lock_t {
   public:
-    void lock() {
-      layer_.lock_audio_callback();
-    }
-
-    void unlock() {
-      layer_.unlock_audio_callback();
-    }
+    void lock() { layer_.lock_audio_callback(); }
+    void unlock() { layer_.unlock_audio_callback(); }
 
   private:
     friend class IoLayer;
@@ -65,9 +60,7 @@ public:
     IoLayer& layer_;
   };
 
-  audio_callback_lock_t& audio_callback_lock() {
-    return audio_callback_lock_;
-  }
+  audio_callback_lock_t& audio_callback_lock() { return audio_callback_lock_; }
 
 protected:
   virtual void lock_audio_callback() = 0;

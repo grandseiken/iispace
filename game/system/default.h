@@ -7,10 +7,7 @@ namespace ii {
 class DefaultSystem : public System {
 public:
   ~DefaultSystem() override = default;
-
-  result<std::vector<std::string>> init() override {
-    return {};
-  }
+  result<std::vector<std::string>> init() override { return {}; }
 };
 
 }  // namespace ii

@@ -23,7 +23,7 @@ DerivePointerAlignment: false
 PointerAlignment: Left
 
 AllowShortBlocksOnASingleLine: false
-AllowShortFunctionsOnASingleLine: Empty
+AllowShortFunctionsOnASingleLine: Inline
 AllowShortCaseLabelsOnASingleLine: false
 AllowShortEnumsOnASingleLine: true
 AllowShortIfStatementsOnASingleLine: false

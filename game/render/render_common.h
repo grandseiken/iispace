@@ -14,7 +14,22 @@ enum class coordinate_system {
 };
 
 enum class panel_style : std::uint32_t {
-  kFlatColour = 0,
+  kNone = 0,
+  kFlatColour = 1,
+};
+
+enum class font_id : std::uint32_t {
+  kDefault,
+  kMonospace = kDefault,
+  kMonospaceBold,
+  kMonospaceItalic,
+  kMonospaceBoldItalic,
+};
+
+struct panel_data {
+  panel_style style = panel_style::kNone;
+  glm::vec4 colour{1.f};
+  rect bounds;
 };
 
 struct target {
@@ -72,13 +87,8 @@ public:
   clip_handle(clip_handle&&) = delete;
   clip_handle& operator=(clip_handle&&) = delete;
 
-  clip_handle(target& t, const rect& r) : target_{t} {
-    target_.clip_stack.emplace_back(r);
-  }
-
-  ~clip_handle() {
-    target_.clip_stack.pop_back();
-  }
+  clip_handle(target& t, const rect& r) : target_{t} { target_.clip_stack.emplace_back(r); }
+  ~clip_handle() { target_.clip_stack.pop_back(); }
 
 private:
   target& target_;

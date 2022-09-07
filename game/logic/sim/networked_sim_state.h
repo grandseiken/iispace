@@ -47,45 +47,23 @@ public:
   // canonical state.
   std::vector<sim_packet> update(std::vector<input_frame> local_input);
 
-  const SimState& canonical() const {
-    return canonical_state_;
-  }
-
-  const SimState& predicted() const {
-    return predicted_state_;
-  }
+  const SimState& canonical() const { return canonical_state_; }
+  const SimState& predicted() const { return predicted_state_; }
 
   std::pair<std::string, std::uint64_t> min_remote_latest_tick() const;
   std::pair<std::string, std::uint64_t> min_remote_canonical_tick() const;
 
   // ISimState implementation.
-  bool game_over() const override {
-    return canonical_state_.game_over();
-  }
-
-  glm::uvec2 dimensions() const override {
-    return predicted_state_.dimensions();
-  }
-
-  std::uint64_t tick_count() const override {
-    return predicted_state_.tick_count();
-  }
-
-  std::uint32_t fps() const override {
-    return predicted_state_.fps();
-  }
+  bool game_over() const override { return canonical_state_.game_over(); }
+  glm::uvec2 dimensions() const override { return predicted_state_.dimensions(); }
+  std::uint64_t tick_count() const override { return predicted_state_.tick_count(); }
+  std::uint32_t fps() const override { return predicted_state_.fps(); }
 
   const render_output& render(bool paused) const override {
     return predicted_state_.render(paused);
   }
-
-  aggregate_output& output() override {
-    return merged_output_;
-  }
-
-  const sim_results& results() const override {
-    return canonical_state_.results();
-  }
+  aggregate_output& output() override { return merged_output_; }
+  const sim_results& results() const override { return canonical_state_.results(); }
 
 private:
   static constexpr std::uint64_t kMaxReconcileTickDifference = 16;
@@ -104,9 +82,7 @@ private:
   std::uint64_t predicted_tick_base_ = 0;
 
   struct resolve_key_hash {
-    std::size_t operator()(const resolve_key& k) const {
-      return k.hash();
-    }
+    std::size_t operator()(const resolve_key& k) const { return k.hash(); }
   };
 
   SimState::smoothing_data smoothing_data_;

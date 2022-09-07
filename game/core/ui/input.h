@@ -26,21 +26,11 @@ struct input_frame {
   std::optional<glm::ivec2> mouse_cursor;
   std::optional<glm::ivec2> mouse_scroll;
 
-  bool pressed(key k) const {
-    return key_pressed[static_cast<std::size_t>(k)];
-  }
+  bool pressed(key k) const { return key_pressed[static_cast<std::size_t>(k)]; }
+  bool& pressed(key k) { return key_pressed[static_cast<std::size_t>(k)]; }
 
-  bool& pressed(key k) {
-    return key_pressed[static_cast<std::size_t>(k)];
-  }
-
-  bool held(key k) const {
-    return key_held[static_cast<std::size_t>(k)];
-  }
-
-  bool& held(key k) {
-    return key_held[static_cast<std::size_t>(k)];
-  }
+  bool held(key k) const { return key_held[static_cast<std::size_t>(k)]; }
+  bool& held(key k) { return key_held[static_cast<std::size_t>(k)]; }
 };
 
 }  // namespace ii::ui

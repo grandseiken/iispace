@@ -34,10 +34,7 @@ struct aggregate_event {
 };
 
 struct aggregate_output {
-  void clear() {
-    entries.clear();
-  }
-
+  void clear() { entries.clear(); }
   void append_to(aggregate_output& output) const {
     output.entries.insert(output.entries.end(), entries.begin(), entries.end());
   }
@@ -83,9 +80,7 @@ struct sim_results {
     return flag;
   }
 
-  std::uint32_t boss_kill_count() const {
-    return std::popcount(+bosses_killed());
-  }
+  std::uint32_t boss_kill_count() const { return std::popcount(+bosses_killed()); }
 };
 
 }  // namespace ii

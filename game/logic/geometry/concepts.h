@@ -14,12 +14,8 @@ struct arbitrary_parameter {
   constexpr explicit operator T() const {
     return T{0};
   }
-  constexpr arbitrary_parameter operator-() const {
-    return {};
-  }
-  constexpr arbitrary_parameter operator[](std::size_t) const {
-    return {};
-  }
+  constexpr arbitrary_parameter operator-() const { return {}; }
+  constexpr arbitrary_parameter operator[](std::size_t) const { return {}; }
 };
 constexpr arbitrary_parameter operator*(auto, arbitrary_parameter) {
   return {};

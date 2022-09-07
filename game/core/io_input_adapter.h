@@ -25,9 +25,7 @@ public:
     kController = 2,
   };
 
-  std::uint32_t player_count() const {
-    return player_count_;
-  }
+  std::uint32_t player_count() const { return player_count_; }
   void set_player_count(std::uint32_t players);
   void set_game_dimensions(const glm::uvec2& dimensions);
   input_type input_type_for(std::uint32_t player_index) const;

@@ -36,29 +36,13 @@ public:
     return {lcd_ ? bitmap_dimensions_.x / 3 : bitmap_dimensions_.x, bitmap_dimensions_.y};
   }
 
-  std::span<const std::uint8_t> bitmap() {
-    return bitmap_;
-  }
+  std::span<const std::uint8_t> bitmap() { return bitmap_; }
+  bool is_lcd() const { return lcd_; }
 
-  bool is_lcd() const {
-    return lcd_;
-  }
-
-  glm::uvec2 base_dimensions() const {
-    return base_dimensions_;
-  }
-
-  std::int32_t line_height() const {
-    return max_descent_ + max_ascent_;
-  }
-
-  std::int32_t max_descent() const {
-    return max_descent_;
-  }
-
-  std::int32_t max_ascent() const {
-    return max_ascent_;
-  }
+  glm::uvec2 base_dimensions() const { return base_dimensions_; }
+  std::int32_t line_height() const { return max_descent_ + max_ascent_; }
+  std::int32_t max_descent() const { return max_descent_; }
+  std::int32_t max_ascent() const { return max_ascent_; }
 
   // TODO: support kerning?
   // Calculate width of the given string when rendered in this font.

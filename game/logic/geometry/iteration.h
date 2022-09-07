@@ -66,18 +66,11 @@ concept Transform = requires(const T& x) {
 
 struct null_transform {
   constexpr null_transform() = default;
-  constexpr null_transform rotate(fixed) const {
-    return {};
-  }
-  constexpr null_transform translate(const vec2&) const {
-    return {};
-  }
-  constexpr vec2 deref_ignore_rotation() const {
-    return vec2{0};
-  }
-  constexpr vec2 operator*() const {
-    return vec2{0};
-  }
+  constexpr null_transform rotate(fixed) const { return {}; }
+  constexpr null_transform translate(const vec2&) const { return {}; }
+
+  constexpr vec2 deref_ignore_rotation() const { return vec2{0}; }
+  constexpr vec2 operator*() const { return vec2{0}; }
   constexpr void increment_index() const {}
 };
 
@@ -88,25 +81,12 @@ struct transform {
   fixed r;
   std::size_t* index_out = nullptr;
 
-  constexpr const vec2& operator*() const {
-    return v;
-  }
+  constexpr const vec2& operator*() const { return v; }
+  constexpr const vec2& deref_ignore_rotation() const { return v; }
+  constexpr fixed rotation() const { return r; }
 
-  constexpr const vec2& deref_ignore_rotation() const {
-    return v;
-  }
-
-  constexpr fixed rotation() const {
-    return r;
-  }
-
-  constexpr transform translate(const vec2& t) const {
-    return {v + ::rotate(t, r), r, index_out};
-  }
-
-  constexpr transform rotate(fixed a) const {
-    return {v, r + a, index_out};
-  }
+  constexpr transform translate(const vec2& t) const { return {v + ::rotate(t, r), r, index_out}; }
+  constexpr transform rotate(fixed a) const { return {v, r + a, index_out}; }
 
   constexpr void increment_index() const {
     if (index_out) {
@@ -120,26 +100,14 @@ struct legacy_transform {
   vec2 v;
   fixed r;
 
-  constexpr const vec2& operator*() const {
-    return v;
-  }
-
-  constexpr const vec2& deref_ignore_rotation() const {
-    return v;
-  }
-
-  constexpr fixed rotation() const {
-    return r;
-  }
+  constexpr const vec2& operator*() const { return v; }
+  constexpr const vec2& deref_ignore_rotation() const { return v; }
+  constexpr fixed rotation() const { return r; }
 
   constexpr legacy_transform translate(const vec2& t) const {
     return {v + ::rotate_legacy(t, r), r};
   }
-
-  constexpr legacy_transform rotate(fixed a) const {
-    return {v, r + a};
-  }
-
+  constexpr legacy_transform rotate(fixed a) const { return {v, r + a}; }
   constexpr void increment_index() const {}
 };
 
@@ -148,22 +116,11 @@ struct convert_local_transform {
   vec2 v;
   transform ct;
 
-  constexpr vec2 operator*() const {
-    return ::rotate(v - ct.v, -ct.r);
-  }
+  constexpr vec2 operator*() const { return ::rotate(v - ct.v, -ct.r); }
+  constexpr vec2 deref_ignore_rotation() const { return v - ct.v; }
 
-  constexpr vec2 deref_ignore_rotation() const {
-    return v - ct.v;
-  }
-
-  constexpr convert_local_transform translate(const vec2& t) const {
-    return {v, ct.translate(t)};
-  }
-
-  constexpr convert_local_transform rotate(fixed a) const {
-    return {v, ct.rotate(a)};
-  }
-
+  constexpr convert_local_transform translate(const vec2& t) const { return {v, ct.translate(t)}; }
+  constexpr convert_local_transform rotate(fixed a) const { return {v, ct.rotate(a)}; }
   constexpr void increment_index() const {}
 };
 
@@ -172,22 +129,11 @@ struct legacy_convert_local_transform {
 
   vec2 v;
 
-  constexpr const vec2& deref_ignore_rotation() const {
-    return v;
-  }
+  constexpr const vec2& deref_ignore_rotation() const { return v; }
+  constexpr const vec2& operator*() const { return v; }
 
-  constexpr const vec2& operator*() const {
-    return v;
-  }
-
-  constexpr legacy_convert_local_transform translate(const vec2& t) const {
-    return {v - t};
-  }
-
-  constexpr legacy_convert_local_transform rotate(fixed a) const {
-    return {rotate_legacy(v, -a)};
-  }
-
+  constexpr legacy_convert_local_transform translate(const vec2& t) const { return {v - t}; }
+  constexpr legacy_convert_local_transform rotate(fixed a) const { return {rotate_legacy(v, -a)}; }
   constexpr void increment_index() const {}
 };
 

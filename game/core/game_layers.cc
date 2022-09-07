@@ -1,5 +1,6 @@
 #include "game/core/game_layers.h"
 #include "game/core/ui/game_stack.h"
+#include "game/core/ui/toolkit.h"
 #include "game/io/file/filesystem.h"
 #include "game/io/io.h"
 #include "game/render/gl_renderer.h"
@@ -41,7 +42,8 @@ std::string convert_to_time(std::uint64_t score) {
 
 void render_text(const render::GlRenderer& r, const glm::vec2& v, const std::string& text,
                  const glm::vec4& c) {
-  r.render_text(0, {16, 16}, 16 * static_cast<glm::ivec2>(v), c, ustring_view::utf8(text));
+  r.render_text(render::font_id::kDefault, {16, 16}, 16 * static_cast<glm::ivec2>(v), c,
+                ustring_view::utf8(text));
 }
 
 }  // namespace
@@ -372,6 +374,24 @@ void SimLayer::render_content(render::GlRenderer& r) const {
 MainMenuLayer::MainMenuLayer(ui::GameStack& stack, const game_options_t& options)
 : ui::GameLayer{stack}, options_{options} {
   set_bounds(rect{kDimensions});
+
+  auto& panel = *add_back<ui::Panel>();
+  panel.set_style(render::panel_style::kFlatColour)
+      .set_colour({0.f, .5f, .5f, 1.f})
+      .set_padding({8, 8})
+      .set_bounds({{300, 100}, {300, 300}});
+  auto& text = *panel.add_back<ui::TextElement>();
+  text.set_font(render::font_id::kMonospace)
+      .set_font_dimensions({10, 10})
+      .set_multiline(true)
+      .set_text(ustring::utf8(u8"hello world\nfoo bar baz\n\n"
+                              "foobar foobar boo scooby dooby dooby doo lorem "
+                              "ipsum fooby dooby\n\n"
+                              "abcdabcdabcdabcdabcdabcdabcdabcdabcdabcdabcdabcd"
+                              "abcdabcdabcdabcdabcdabcdabcdabcdabcdabcdabcdabcd"
+                              "abcdabcdabcdabcdabcdabcdabcdabcdabcdabcdabcdabcd\n\n\n"
+                              u8"fooby åäö Владимир Г 音 Владимир Г 片仮名 カタカナ\n"
+                              "\tfooby\t\tfoobar"));
 }
 
 void MainMenuLayer::update_content(const ui::input_frame& input) {
@@ -449,8 +469,11 @@ void MainMenuLayer::update_content(const ui::input_frame& input) {
 }
 
 void MainMenuLayer::render_content(render::GlRenderer& r) const {
-  r.render_panel(render::panel_style::kFlatColour, glm::vec4{1.f, 1.f, 1.f, .25f},
-                 rect{{16 * 4, 16 * 5}, {16 * 16, 16 * 9}});
+  r.render_panel({
+      .style = render::panel_style::kFlatColour,
+      .colour = glm::vec4{1.f, 1.f, 1.f, .25f},
+      .bounds = rect{{16 * 4, 16 * 5}, {16 * 16, 16 * 9}},
+  });
   if (menu_select_ >= menu::kStart || mode_select_ == game_mode::kBoss) {
     r.set_colour_cycle(0);
   } else if (mode_select_ == game_mode::kHard) {

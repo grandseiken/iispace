@@ -17,9 +17,7 @@ class Printer {
 public:
   bool print_pointers = false;
 
-  std::string extract() {
-    return std::move(contents_);
-  }
+  std::string extract() { return std::move(contents_); }
 
   Printer& indent() {
     ++indent_;
@@ -68,9 +66,7 @@ public:
     return *this;
   }
 
-  Printer& put(Enum auto v) {
-    return put(to_underlying(v));
-  }
+  Printer& put(Enum auto v) { return put(to_underlying(v)); }
 
   template <typename R, typename... Args>
   Printer& put(R (*const v)(Args...)) {

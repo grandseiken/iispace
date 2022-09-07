@@ -33,39 +33,19 @@ public:
     return f;
   }
 
-  constexpr std::int64_t to_internal() const {
-    return value_;
-  }
-
-  constexpr std::int32_t to_int() const {
-    return static_cast<std::int32_t>(value_ >> 32);
-  }
+  constexpr explicit operator bool() const { return value_ != 0; }
+  constexpr std::int64_t to_internal() const { return value_; }
+  constexpr std::int32_t to_int() const { return static_cast<std::int32_t>(value_ >> 32); }
 
   constexpr float to_float() const {
     constexpr float multiplier = 1.f / static_cast<float>(std::uint64_t{1} << 32u);
     return static_cast<float>(value_) * multiplier;
   }
 
-  constexpr explicit operator bool() const {
-    return value_ != 0;
-  }
-
-  constexpr fixed& operator+=(const fixed& f) {
-    return *this = *this + f;
-  }
-
-  constexpr fixed& operator-=(const fixed& f) {
-    return *this = *this - f;
-  }
-
-  constexpr fixed& operator*=(const fixed& f) {
-    return *this = *this * f;
-  }
-
-  fixed& operator/=(const fixed& f) {
-    return *this = *this / f;
-  }
-
+  constexpr fixed& operator+=(const fixed& f) { return *this = *this + f; }
+  constexpr fixed& operator-=(const fixed& f) { return *this = *this - f; }
+  constexpr fixed& operator*=(const fixed& f) { return *this = *this * f; }
+  fixed& operator/=(const fixed& f) { return *this = *this / f; }
   constexpr auto operator<=>(const fixed&) const = default;
 
   friend constexpr fixed operator<<(const fixed&, std::int32_t);

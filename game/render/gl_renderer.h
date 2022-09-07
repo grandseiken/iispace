@@ -27,33 +27,24 @@ public:
   result<void> status() const;
   void clear_screen() const;
 
-  render::target& target() {
-    return target_;
-  }
-
-  const render::target& target() const {
-    return target_;
-  }
+  render::target& target() { return target_; }
+  const render::target& target() const { return target_; }
 
   // TODO: eliminate these functions?
-  void set_colour_cycle(std::uint32_t cycle) {
-    colour_cycle_ = cycle;
-  }
+  void set_colour_cycle(std::uint32_t cycle) { colour_cycle_ = cycle; }
+  std::uint32_t colour_cycle() const { return colour_cycle_; }
 
-  std::uint32_t colour_cycle() const {
-    return colour_cycle_;
-  }
-
-  std::int32_t
-  text_width(std::uint32_t font_index, const glm::uvec2& font_dimensions, ustring_view s) const;
-  ustring trim_for_width(std::uint32_t font_index, const glm::uvec2& font_dimensions,
-                         std::int32_t width, ustring_view s) const;
+  // TODO: these methods should be extracted from renderer somehow, maybe moved into FontCache.
+  std::int32_t line_height(font_id font, const glm::uvec2& font_dimensions) const;
+  std::int32_t text_width(font_id font, const glm::uvec2& font_dimensions, ustring_view s) const;
+  ustring trim_for_width(font_id font, const glm::uvec2& font_dimensions, std::int32_t width,
+                         ustring_view s) const;
   // TODO: render multiple texts (with same font)?
-  void render_text(std::uint32_t font_index, const glm::uvec2& font_dimensions,
-                   const glm::ivec2& position, const glm::vec4& colour, ustring_view s) const;
+  void render_text(font_id font, const glm::uvec2& font_dimensions, const glm::ivec2& position,
+                   const glm::vec4& colour, ustring_view s) const;
 
-  // TODO: render multiple panels.
-  void render_panel(panel_style style, const glm::vec4& colour, const rect& r);
+  // TODO: render multiple panels?
+  void render_panel(const panel_data&);
 
   void
   render_shapes(coordinate_system ctype, std::span<const shape> shapes, float trail_alpha) const;

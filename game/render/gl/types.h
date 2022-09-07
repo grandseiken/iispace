@@ -56,9 +56,7 @@ public:
   handle(const handle&) = delete;
   handle& operator=(const handle&) = delete;
 
-  handle(handle&& h) noexcept : id_(h.id_) {
-    h.id_.reset();
-  }
+  handle(handle&& h) noexcept : id_(h.id_) { h.id_.reset(); }
 
   handle& operator=(handle&& h) noexcept {
     if (this == &h) {
@@ -72,9 +70,7 @@ public:
     return *this;
   }
 
-  id operator*() const {
-    return *id_;
-  }
+  id operator*() const { return *id_; }
 
   ~handle() {
     if (id_) {
@@ -88,39 +84,25 @@ private:
 };
 
 struct delete_shader {
-  void operator()(id i) const {
-    glDeleteShader(i);
-  }
+  void operator()(id i) const { glDeleteShader(i); }
 };
 struct delete_program {
-  void operator()(id i) const {
-    glDeleteProgram(i);
-  }
+  void operator()(id i) const { glDeleteProgram(i); }
 };
 struct delete_buffer {
-  void operator()(id i) const {
-    glDeleteBuffers(1, &i);
-  }
+  void operator()(id i) const { glDeleteBuffers(1, &i); }
 };
 struct delete_texture {
-  void operator()(id i) const {
-    glDeleteTextures(1, &i);
-  }
+  void operator()(id i) const { glDeleteTextures(1, &i); }
 };
 struct delete_sampler {
-  void operator()(id i) const {
-    glDeleteSamplers(1, &i);
-  }
+  void operator()(id i) const { glDeleteSamplers(1, &i); }
 };
 struct delete_vertex_array {
-  void operator()(id i) const {
-    glDeleteVertexArrays(1, &i);
-  }
+  void operator()(id i) const { glDeleteVertexArrays(1, &i); }
 };
 struct disable_vertex_attribute {
-  void operator()(id i) const {
-    glDisableVertexAttribArray(i);
-  }
+  void operator()(id i) const { glDisableVertexAttribArray(i); }
 };
 
 inline GLenum type_to_gl(type t) {

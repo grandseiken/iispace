@@ -15,57 +15,26 @@ enum ustring_encoding {
 
 class ustring {
 public:
-  static ustring ascii(const std::string& s) {
-    return {ustring_encoding::kAscii, s};
-  }
+  static ustring ascii(const std::string& s) { return {ustring_encoding::kAscii, s}; }
+  static ustring ascii(std::string&& s) { return {ustring_encoding::kAscii, std::move(s)}; }
 
-  static ustring ascii(std::string&& s) {
-    return {ustring_encoding::kAscii, std::move(s)};
+  static ustring utf8(const std::u8string& s) {
+    return {ustring_encoding::kUtf8, std::string{reinterpret_cast<const char*>(s.c_str())}};
   }
+  static ustring utf8(const std::string& s) { return {ustring_encoding::kUtf8, s}; }
+  static ustring utf8(std::string&& s) { return {ustring_encoding::kUtf8, std::move(s)}; }
 
-  static ustring utf8(const std::string& s) {
-    return {ustring_encoding::kUtf8, s};
-  }
+  static ustring utf16(const std::u16string& s) { return {ustring_encoding::kUtf16, s}; }
+  static ustring utf16(std::u16string&& s) { return {ustring_encoding::kUtf16, std::move(s)}; }
 
-  static ustring utf8(std::string&& s) {
-    return {ustring_encoding::kUtf8, std::move(s)};
-  }
+  static ustring utf32(const std::u32string& s) { return {ustring_encoding::kUtf32, s}; }
+  static ustring utf32(std::u32string&& s) { return {ustring_encoding::kUtf32, std::move(s)}; }
 
-  static ustring utf16(const std::u16string& s) {
-    return {ustring_encoding::kUtf16, s};
-  }
-
-  static ustring utf16(std::u16string&& s) {
-    return {ustring_encoding::kUtf16, std::move(s)};
-  }
-
-  static ustring utf32(const std::u32string& s) {
-    return {ustring_encoding::kUtf32, s};
-  }
-
-  static ustring utf32(std::u32string&& s) {
-    return {ustring_encoding::kUtf32, std::move(s)};
-  }
-
-  ustring_encoding encoding() const {
-    return e_;
-  }
-
-  const std::string& ascii() const {
-    return std::get<std::string>(s_);
-  }
-
-  const std::string& utf8() const {
-    return std::get<std::string>(s_);
-  }
-
-  const std::u16string& utf16() const {
-    return std::get<std::u16string>(s_);
-  }
-
-  const std::u32string& utf32() const {
-    return std::get<std::u32string>(s_);
-  }
+  ustring_encoding encoding() const { return e_; }
+  const std::string& ascii() const { return std::get<std::string>(s_); }
+  const std::string& utf8() const { return std::get<std::string>(s_); }
+  const std::u16string& utf16() const { return std::get<std::u16string>(s_); }
+  const std::u32string& utf32() const { return std::get<std::u32string>(s_); }
 
 private:
   template <typename T>
@@ -94,41 +63,16 @@ public:
     }
   }
 
-  static ustring_view ascii(std::string_view s) {
-    return {ustring_encoding::kAscii, s};
-  }
+  static ustring_view ascii(std::string_view s) { return {ustring_encoding::kAscii, s}; }
+  static ustring_view utf8(std::string_view s) { return {ustring_encoding::kUtf8, s}; }
+  static ustring_view utf16(std::u16string_view s) { return {ustring_encoding::kUtf16, s}; }
+  static ustring_view utf32(std::u32string_view s) { return {ustring_encoding::kUtf32, s}; }
 
-  static ustring_view utf8(std::string_view s) {
-    return {ustring_encoding::kUtf8, s};
-  }
-
-  static ustring_view utf16(std::u16string_view s) {
-    return {ustring_encoding::kUtf16, s};
-  }
-
-  static ustring_view utf32(std::u32string_view s) {
-    return {ustring_encoding::kUtf32, s};
-  }
-
-  ustring_encoding encoding() const {
-    return e_;
-  }
-
-  std::string_view ascii() const {
-    return std::get<std::string_view>(s_);
-  }
-
-  std::string_view utf8() const {
-    return std::get<std::string_view>(s_);
-  }
-
-  std::u16string_view utf16() const {
-    return std::get<std::u16string_view>(s_);
-  }
-
-  std::u32string_view utf32() const {
-    return std::get<std::u32string_view>(s_);
-  }
+  ustring_encoding encoding() const { return e_; }
+  std::string_view ascii() const { return std::get<std::string_view>(s_); }
+  std::string_view utf8() const { return std::get<std::string_view>(s_); }
+  std::u16string_view utf16() const { return std::get<std::u16string_view>(s_); }
+  std::u32string_view utf32() const { return std::get<std::u32string_view>(s_); }
 
 private:
   template <typename T>
