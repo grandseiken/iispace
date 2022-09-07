@@ -89,24 +89,18 @@ private:
 
 class LinearLayout : public Element {
 public:
-  LinearLayout(Element* parent, orientation type) : Element{parent}, type_{type} {}
+  LinearLayout(Element* parent, orientation) : Element{parent} {}
 
 protected:
   void update_content(const input_frame&) override {}
-
-private:
-  orientation type_ = orientation::kVertical;
 };
 
 class GridLayout : public Element {
 public:
-  GridLayout(Element* parent, std::uint32_t columns) : Element{parent}, columns_{columns} {}
+  GridLayout(Element* parent, std::uint32_t /* columns */) : Element{parent} {}
 
 protected:
   void update_content(const input_frame&) override {}
-
-private:
-  std::uint32_t columns_ = 0;
 };
 
 }  // namespace ii::ui

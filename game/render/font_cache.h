@@ -34,11 +34,9 @@ private:
 
   struct font_entry {
     ii::Font font;
-    std::unordered_map<glm::uvec2, size_entry> sizes;
+    std::unordered_map<glm::uvec2, size_entry, vec_hash<2, unsigned>> sizes;
   };
 
-  glm::uvec2 screen_dimensions_{0, 0};
-  glm::uvec2 render_dimensions_{0, 0};
   std::unordered_map<font_id, font_entry> fonts_;
 };
 

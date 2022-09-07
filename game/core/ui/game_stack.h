@@ -53,8 +53,8 @@ protected:
   void update_content(const input_frame&) override;
 
 private:
-  layer_flag flags_ = layer_flag::kNone;
   GameStack& stack_;
+  layer_flag flags_ = layer_flag::kNone;
 };
 
 class GameStack {

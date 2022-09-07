@@ -34,12 +34,14 @@ public:
   void set_colour_cycle(std::uint32_t cycle) { colour_cycle_ = cycle; }
   std::uint32_t colour_cycle() const { return colour_cycle_; }
 
-  // TODO: these methods should be extracted from renderer somehow, maybe moved into FontCache.
+  // TODO: rework font support:
+  // - support rendering with multiple fonts, so we can do multilingual text with e.g. Noto Sans.
+  // - allow rendering multiple texts (with same font?), for example for multiline TextElement.
+  // - below methods should be extracted from renderer somehow, maybe moved into FontCache.
   std::int32_t line_height(font_id font, const glm::uvec2& font_dimensions) const;
   std::int32_t text_width(font_id font, const glm::uvec2& font_dimensions, ustring_view s) const;
   ustring trim_for_width(font_id font, const glm::uvec2& font_dimensions, std::int32_t width,
                          ustring_view s) const;
-  // TODO: render multiple texts (with same font)?
   void render_text(font_id font, const glm::uvec2& font_dimensions, const glm::ivec2& position,
                    const glm::vec4& colour, ustring_view s) const;
 

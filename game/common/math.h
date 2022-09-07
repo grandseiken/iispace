@@ -119,9 +119,8 @@ inline constexpr float angle_diff(float from, float to) {
   return from - to <= glm::pi<float>() ? to - from : 2.f * glm::pi<float>() + to - from;
 }
 
-namespace std {
 template <std::size_t N, typename T>
-struct hash<glm::vec<N, T>> {
+struct vec_hash {
   std::size_t operator()(const glm::vec<N, T>& v) const {
     std::size_t r = 0;
     hash_combine(r, std::hash<T>{}(v.x));
@@ -137,6 +136,5 @@ struct hash<glm::vec<N, T>> {
     return r;
   }
 };
-}  // namespace std
 
 #endif

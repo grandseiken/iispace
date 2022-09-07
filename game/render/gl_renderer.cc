@@ -36,22 +36,6 @@ enum shape_shader_style : std::uint32_t {
   kStyleLine = 4,
 };
 
-const std::vector<std::uint32_t>& utf32_codes() {
-  static const char* chars =
-      "abcdefghijklmnopqrstuvwxyz"
-      "ABCDEFGHIJKLMNOPQRSTUVWXYZ"
-      "0123456789"
-      " _!?\"$%^&*()[]{}!/\\@',.-=+#~;:<>£";
-  static const std::vector<std::uint32_t> codes = [&] {
-    std::vector<std::uint32_t> v;
-    for (const char* c = chars; *c; ++c) {
-      v.emplace_back(+*c);
-    }
-    return v;
-  }();
-  return codes;
-}
-
 }  // namespace
 
 // TODO: general things:
@@ -251,7 +235,7 @@ void GlRenderer::render_text(font_id font, const glm::uvec2& font_dimensions,
         vertex_data.emplace_back(dimensions.y);
         vertex_data.emplace_back(texture_coords.x);
         vertex_data.emplace_back(texture_coords.y);
-        indices.emplace_back(indices.size());
+        indices.emplace_back(static_cast<unsigned>(indices.size()));
       });
 
   auto index_buffer = gl::make_buffer();

@@ -15,7 +15,6 @@ constexpr glm::uvec2 kTextSize = {16, 16};
 
 constexpr glm::vec4 kPanelText = {0.f, 0.f, .925f, 1.f};
 constexpr glm::vec4 kPanelTran = {0.f, 0.f, .925f, .6f};
-constexpr glm::vec4 kPanelBack = {0.f, 0.f, 0.f, 1.f};
 
 std::string convert_to_time(std::uint64_t score) {
   if (score == 0) {
@@ -352,10 +351,6 @@ void SimLayer::render_content(render::GlRenderer& r) const {
     ss << convert_to_time(render.tick_count);
     render_text(r, {kDimensions.x / (2 * kTextSize.x) - ss.str().size() - 1.f, 1.f}, ss.str(),
                 kPanelTran);
-  }
-
-  if (render.boss_hp_bar) {
-    std::uint32_t x = mode_ == game_mode::kBoss ? 48 : 0;
   }
 
   if (replay_) {
