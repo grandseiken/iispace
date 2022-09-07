@@ -1,6 +1,7 @@
 #include "game/core/ui/toolkit.h"
 #include "game/common/ustring_convert.h"
 #include "game/render/gl_renderer.h"
+#include <unordered_set>
 
 namespace ii::ui {
 
@@ -108,6 +109,106 @@ void TextElement::render_content(render::GlRenderer& r) const {
     // TODO: render all in one?
     r.render_text(font_, font_dimensions_, position, colour_, ustring_view::utf32(s));
     position.y += line_height;
+  }
+}
+
+void LinearLayout::update_content(const input_frame&) {
+  std::unordered_set<const Element*> children_set;
+  for (const auto& e : *this) {
+    children_set.emplace(e.get());
+  }
+  for (auto it = info_.begin(); it != info_.end();) {
+    if (children_set.contains(it->first)) {
+      ++it;
+    } else {
+      it = info_.erase(it);
+    }
+  }
+
+  auto get_info = [&](const Element* c) {
+    auto it = info_.find(c);
+    return it == info_.end() ? element_info{} : it->second;
+  };
+
+  float total_weight = 0.f;
+  std::int32_t total_absolute = 0;
+  for (const auto& e : *this) {
+    auto info = get_info(e.get());
+    if (info.absolute) {
+      total_absolute += *info.absolute;
+    } else {
+      total_weight += info.relative_weight.value_or(1.f);
+    }
+  }
+
+  auto total_space = type_ == orientation::kVertical ? bounds().size.y : bounds().size.x;
+  auto free_space = std::max(0, total_space - total_absolute) -
+      std::max(0, static_cast<std::int32_t>(size()) - 1) * spacing_;
+  auto relative_width = [&](const element_info& info) {
+    return static_cast<std::int32_t>(std::round(static_cast<float>(free_space) *
+                                                info.relative_weight.value_or(1.f) / total_weight));
+  };
+
+  std::int32_t allocated_space = 0;
+  std::int32_t weighted_count = 0;
+  for (const auto& e : *this) {
+    auto info = get_info(e.get());
+    if (!info.absolute) {
+      allocated_space += relative_width(info);
+      ++weighted_count;
+    }
+  }
+  auto error_space = free_space - allocated_space;
+
+  std::int32_t position = 0;
+  std::size_t weighted_i = 0;
+  for (const auto& e : *this) {
+    auto info = get_info(e.get());
+    std::int32_t element_space = 0;
+    if (info.absolute) {
+      element_space = std::min(*info.absolute, total_space - position);
+    } else if (free_space < 0) {
+      continue;
+    } else {
+      element_space = relative_width(info);
+      bool extra = std::abs(error_space) >
+          (static_cast<std::int32_t>(weighted_i) * std::abs(error_space)) % weighted_count;
+      if (extra) {
+        element_space += error_space > 0 ? 1 : -1;
+      }
+      ++weighted_i;
+    }
+
+    if (type_ == orientation::kVertical) {
+      e->set_bounds({{0, position}, {bounds().size.x, element_space}});
+    } else {
+      e->set_bounds({{position, 0}, {element_space, bounds().size.y}});
+    }
+    position += element_space + spacing_;
+  }
+}
+
+void GridLayout::update_content(const input_frame&) {
+  auto free_space =
+      bounds().size.x - std::max(0, static_cast<std::int32_t>(columns_) - 1) * spacing_;
+  auto grid_size = free_space / columns_;
+  auto error_space = free_space - grid_size * columns_;
+
+  std::int32_t i = 0;
+  std::int32_t x_position = 0;
+  for (const auto& e : *this) {
+    auto x = i % columns_;
+    auto y = i / columns_;
+    ++i;
+    if (!x) {
+      x_position = 0;
+    }
+
+    bool extra = std::abs(error_space) > (x * std::abs(error_space)) % columns_;
+    auto width = grid_size + (extra > 0 ? 1 : -1);
+
+    e->set_bounds({{x_position, y * (grid_size + spacing_)}, {width, grid_size}});
+    x_position += width + spacing_;
   }
 }
 

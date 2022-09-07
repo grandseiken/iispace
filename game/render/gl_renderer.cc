@@ -17,6 +17,7 @@
 #include <cmath>
 #include <span>
 #include <string>
+#include <unordered_map>
 #include <vector>
 
 namespace ii::render {
@@ -36,12 +37,53 @@ enum shape_shader_style : std::uint32_t {
   kStyleLine = 4,
 };
 
+template <typename T>
+gl::buffer make_stream_draw_buffer(std::span<const T> data) {
+  auto buffer = gl::make_buffer();
+  gl::buffer_data(buffer, gl::buffer_usage::kStreamDraw, data);
+  return buffer;
+}
+
+struct vertex_attribute_container {
+  struct type_info {
+    gl::buffer buffer;
+    std::size_t total_count_per_vertex = 0;
+    std::size_t current_offset = 0;
+  };
+  std::unordered_map<gl::type, type_info> buffers;
+  std::vector<gl::vertex_attribute> attributes;
+
+  template <typename T>
+  void add_buffer(std::span<const T> data, std::size_t total_count_per_vertex) {
+    auto buffer = make_stream_draw_buffer(data);
+    buffers.emplace(
+        gl::type_of<T>(),
+        type_info{.buffer = std::move(buffer), .total_count_per_vertex = total_count_per_vertex});
+  }
+
+  template <typename T>
+  void add_attribute(std::size_t index, std::size_t count_per_vertex) {
+    auto it = buffers.find(gl::type_of<T>());
+    assert(it != buffers.end());
+    auto& info = it->second;
+    if constexpr (std::is_integral_v<T>) {
+      attributes.emplace_back(gl::vertex_int_attribute_buffer(
+          info.buffer, index, count_per_vertex, gl::type_of<T>(),
+          info.total_count_per_vertex * sizeof(T), info.current_offset * sizeof(T)));
+    } else {
+      attributes.emplace_back(gl::vertex_float_attribute_buffer(
+          info.buffer, index, count_per_vertex, gl::type_of<T>(),
+          /* normalize */ false, info.total_count_per_vertex * sizeof(T),
+          info.current_offset * sizeof(T)));
+    }
+    info.current_offset += count_per_vertex;
+  }
+};
 }  // namespace
 
 // TODO: general things:
 // - can vertex array objects be saved between calls?
-// - can we reuse index buffers or any other buffs?
-// - should we use small integer types or other types for vertex data?
+// - can we reuse index buffers or any other buffers?
 struct GlRenderer::impl_t {
   result<void> status;
 
@@ -49,12 +91,31 @@ struct GlRenderer::impl_t {
   std::unordered_map<render::shader, gl::program> shader_map;
   gl::sampler pixel_sampler;
 
+  std::optional<gl::buffer> iota_index_buffer;
+  std::uint32_t iota_index_size = 0;
+
   impl_t()
   : pixel_sampler{gl::make_sampler(gl::filter::kNearest, gl::filter::kNearest,
                                    gl::texture_wrap::kClampToEdge,
                                    gl::texture_wrap::kClampToEdge)} {}
 
   const gl::program& shader(render::shader s) const { return shader_map.find(s)->second; }
+
+  const gl::buffer& index_buffer(std::uint32_t indices) {
+    if (!iota_index_buffer) {
+      iota_index_buffer = gl::make_buffer();
+    }
+    if (indices > iota_index_size) {
+      std::vector<std::uint32_t> data;
+      for (std::uint32_t i = 0; i < indices; ++i) {
+        data.emplace_back(i);
+      }
+      gl::buffer_data(*iota_index_buffer, gl::buffer_usage::kStaticDraw,
+                      std::span<const std::uint32_t>{data});
+      iota_index_size = indices;
+    }
+    return *iota_index_buffer;
+  }
 };
 
 result<std::unique_ptr<GlRenderer>> GlRenderer::create(std::uint32_t shader_version) {
@@ -223,40 +284,32 @@ void GlRenderer::render_text(font_id font, const glm::uvec2& font_dimensions,
     return;
   }
 
-  std::vector<std::int32_t> vertex_data;
-  std::vector<unsigned> indices;
+  std::vector<std::int16_t> vertex_data;
+  std::uint32_t vertices = 0;
   font_entry.font.iterate_glyph_data(
       s, text_origin,
       [&](const glm::ivec2& position, const glm::ivec2& texture_coords,
           const glm::ivec2& dimensions) {
-        vertex_data.emplace_back(position.x);
-        vertex_data.emplace_back(position.y);
-        vertex_data.emplace_back(dimensions.x);
-        vertex_data.emplace_back(dimensions.y);
-        vertex_data.emplace_back(texture_coords.x);
-        vertex_data.emplace_back(texture_coords.y);
-        indices.emplace_back(static_cast<unsigned>(indices.size()));
+        vertex_data.emplace_back(static_cast<std::int16_t>(position.x));
+        vertex_data.emplace_back(static_cast<std::int16_t>(position.y));
+        vertex_data.emplace_back(static_cast<std::int16_t>(dimensions.x));
+        vertex_data.emplace_back(static_cast<std::int16_t>(dimensions.y));
+        vertex_data.emplace_back(static_cast<std::int16_t>(texture_coords.x));
+        vertex_data.emplace_back(static_cast<std::int16_t>(texture_coords.y));
+        ++vertices;
       });
 
-  auto index_buffer = gl::make_buffer();
-  auto vertex_buffer = gl::make_buffer();
-  gl::buffer_data(vertex_buffer, gl::buffer_usage::kStreamDraw,
-                  std::span<const std::int32_t>{vertex_data});
-  gl::buffer_data(index_buffer, gl::buffer_usage::kStreamDraw, std::span<const unsigned>{indices});
+  vertex_attribute_container attributes;
+  attributes.add_buffer(std::span<const std::int16_t>(vertex_data), 6);
 
   auto vertex_array = gl::make_vertex_array();
   gl::bind_vertex_array(vertex_array);
 
-  auto position_handle = gl::vertex_int_attribute_buffer(
-      vertex_buffer, 0, 2, gl::type_of<std::int32_t>(), 6 * sizeof(std::int32_t), 0);
-  auto dimensions_handle =
-      gl::vertex_int_attribute_buffer(vertex_buffer, 1, 2, gl::type_of<std::int32_t>(),
-                                      6 * sizeof(std::int32_t), 2 * sizeof(std::int32_t));
-  auto tex_coords_handle =
-      gl::vertex_int_attribute_buffer(vertex_buffer, 2, 2, gl::type_of<std::int32_t>(),
-                                      6 * sizeof(std::int32_t), 4 * sizeof(std::int32_t));
-  gl::draw_elements(gl::draw_mode::kPoints, index_buffer, gl::type_of<unsigned>(), indices.size(),
-                    0);
+  attributes.add_attribute<std::int16_t>(/* position */ 0, 2);
+  attributes.add_attribute<std::int16_t>(/* dimensions */ 1, 2);
+  attributes.add_attribute<std::int16_t>(/* texture_coords */ 2, 2);
+  gl::draw_elements(gl::draw_mode::kPoints, impl_->index_buffer(vertices),
+                    gl::type_of<std::uint32_t>(), vertices, 0);
 }
 
 void GlRenderer::render_panel(const panel_data& p) {
@@ -285,40 +338,25 @@ void GlRenderer::render_panel(const panel_data& p) {
   auto size = target().render_to_screen_coords(clip_rect.min() + p.bounds.max()) - min;
 
   std::vector<float> float_data = {p.colour.r, p.colour.g, p.colour.b, p.colour.a};
-  std::vector<std::int32_t> int_data = {min.x,
-                                        min.y,
-                                        size.x,
-                                        size.y,
-                                        p.bounds.size.x,
-                                        p.bounds.size.y,
-                                        static_cast<std::int32_t>(p.style)};
-  std::vector<unsigned> indices = {0};
+  std::vector<std::int16_t> int_data = {
+      static_cast<std::int16_t>(min.x),           static_cast<std::int16_t>(min.y),
+      static_cast<std::int16_t>(size.x),          static_cast<std::int16_t>(size.y),
+      static_cast<std::int16_t>(p.bounds.size.x), static_cast<std::int16_t>(p.bounds.size.y),
+      static_cast<std::int16_t>(p.style)};
 
-  auto int_buffer = gl::make_buffer();
-  auto float_buffer = gl::make_buffer();
-  auto index_buffer = gl::make_buffer();
-  gl::buffer_data(int_buffer, gl::buffer_usage::kStreamDraw,
-                  std::span<const std::int32_t>{int_data});
-  gl::buffer_data(float_buffer, gl::buffer_usage::kStreamDraw, std::span<const float>{float_data});
-  gl::buffer_data(index_buffer, gl::buffer_usage::kStreamDraw, std::span<const unsigned>{indices});
+  vertex_attribute_container attributes;
+  attributes.add_buffer(std::span<const float>{float_data}, 4);
+  attributes.add_buffer(std::span<const std::int16_t>{int_data}, 7);
 
   auto vertex_array = gl::make_vertex_array();
   gl::bind_vertex_array(vertex_array);
 
-  auto position_handle = gl::vertex_int_attribute_buffer(
-      int_buffer, 0, 2, gl::type_of<std::int32_t>(), 7 * sizeof(std::int32_t), 0);
-  auto screen_dimensions_handle =
-      gl::vertex_int_attribute_buffer(int_buffer, 1, 2, gl::type_of<std::int32_t>(),
-                                      7 * sizeof(std::int32_t), 2 * sizeof(std::int32_t));
-  auto render_dimensions_handle =
-      gl::vertex_int_attribute_buffer(int_buffer, 2, 2, gl::type_of<std::int32_t>(),
-                                      7 * sizeof(std::int32_t), 4 * sizeof(std::int32_t));
-  auto panel_colour_handle = gl::vertex_float_attribute_buffer(
-      float_buffer, 3, 4, gl::type_of<float>(), false, 4 * sizeof(float), 0);
-  auto style_handle =
-      gl::vertex_int_attribute_buffer(int_buffer, 4, 1, gl::type_of<std::int32_t>(),
-                                      7 * sizeof(std::int32_t), 6 * sizeof(std::int32_t));
-  gl::draw_elements(gl::draw_mode::kPoints, index_buffer, gl::type_of<unsigned>(), 1, 0);
+  attributes.add_attribute<std::int16_t>(/* position */ 0, 2);
+  attributes.add_attribute<std::int16_t>(/* screen_dimensions */ 1, 2);
+  attributes.add_attribute<std::int16_t>(/* render_dimensions */ 2, 2);
+  attributes.add_attribute<float>(/* colour */ 3, 4);
+  attributes.add_attribute<std::int16_t>(/* style */ 4, 1);
+  gl::draw_elements(gl::draw_mode::kPoints, impl_->index_buffer(1), gl::type_of<unsigned>(), 1, 0);
 }
 
 void GlRenderer::render_shapes(coordinate_system ctype, std::span<const shape> shapes,
@@ -334,18 +372,16 @@ void GlRenderer::render_shapes(coordinate_system ctype, std::span<const shape> s
     glm::vec4 colour{0.f};
   };
 
-  // TODO: these vectors are gl::buffers below should probably be saved between frames?
+  // TODO: these vectors and gl::buffers below should probably be saved between frames?
   std::vector<float> float_data;
-  std::vector<unsigned> int_data;
+  std::vector<std::uint8_t> int_data;
   std::vector<unsigned> trail_indices;
   std::vector<unsigned> outline_indices;
 
-  static constexpr std::size_t kFloatStride = 11 * sizeof(float);
-  static constexpr std::size_t kIntStride = 3 * sizeof(unsigned);
   auto add_vertex_data = [&](const vertex_data& d) {
-    int_data.emplace_back(d.style);
-    int_data.emplace_back(d.params.x);
-    int_data.emplace_back(d.params.y);
+    int_data.emplace_back(static_cast<std::uint8_t>(d.style));
+    int_data.emplace_back(static_cast<std::uint8_t>(d.params.x));
+    int_data.emplace_back(static_cast<std::uint8_t>(d.params.y));
     float_data.emplace_back(d.rotation);
     float_data.emplace_back(d.line_width);
     float_data.emplace_back(d.position.x);
@@ -454,46 +490,22 @@ void GlRenderer::render_shapes(coordinate_system ctype, std::span<const shape> s
     }
   }
 
-  auto float_buffer = gl::make_buffer();
-  auto int_buffer = gl::make_buffer();
-  auto trail_index_buffer = gl::make_buffer();
-  auto outline_index_buffer = gl::make_buffer();
-  gl::buffer_data(float_buffer, gl::buffer_usage::kStreamDraw, std::span<const float>{float_data});
-  gl::buffer_data(int_buffer, gl::buffer_usage::kStreamDraw, std::span<const unsigned>{int_data});
-  gl::buffer_data(trail_index_buffer, gl::buffer_usage::kStreamDraw,
-                  std::span<const unsigned>{trail_indices});
-  gl::buffer_data(outline_index_buffer, gl::buffer_usage::kStreamDraw,
-                  std::span<const unsigned>{outline_indices});
+  auto trail_index_buffer = make_stream_draw_buffer(std::span<const unsigned>{trail_indices});
+  auto outline_index_buffer = make_stream_draw_buffer(std::span<const unsigned>{outline_indices});
+  vertex_attribute_container attributes;
+  attributes.add_buffer(std::span<const std::uint8_t>(int_data), 3);
+  attributes.add_buffer(std::span<const float>{float_data}, 11);
 
   auto vertex_array = gl::make_vertex_array();
   gl::bind_vertex_array(vertex_array);
 
-  // TODO: make this nicer and use everywhere.
-  std::uint32_t index = 0;
-  std::size_t float_offset = 0;
-  std::size_t int_offset = 0;
-  auto add_float_attribute = [&](std::uint8_t count) {
-    auto h = gl::vertex_float_attribute_buffer(float_buffer, index, count, gl::type_of<float>(),
-                                               false, kFloatStride, float_offset * sizeof(float));
-    ++index;
-    float_offset += count;
-    return h;
-  };
-  auto add_int_attribute = [&](std::uint8_t count) {
-    auto h = gl::vertex_int_attribute_buffer(int_buffer, index, count, gl::type_of<unsigned>(),
-                                             kIntStride, int_offset * sizeof(unsigned));
-    ++index;
-    int_offset += count;
-    return h;
-  };
-
-  auto style = add_int_attribute(1);
-  auto params = add_int_attribute(2);
-  auto rotation = add_float_attribute(1);
-  auto line_width = add_float_attribute(1);
-  auto position = add_float_attribute(3);
-  auto dimensions = add_float_attribute(2);
-  auto colour = add_float_attribute(4);
+  attributes.add_attribute<std::uint8_t>(/* style */ 0, 1);
+  attributes.add_attribute<std::uint8_t>(/* params */ 1, 2);
+  attributes.add_attribute<float>(/* rotation */ 2, 1);
+  attributes.add_attribute<float>(/* line_width */ 3, 1);
+  attributes.add_attribute<float>(/* position */ 4, 3);
+  attributes.add_attribute<float>(/* dimensions */ 5, 2);
+  attributes.add_attribute<float>(/* colour */ 6, 4);
 
   auto clip_rect = target().clip_rect();
   glm::vec2 offset;

@@ -4,6 +4,8 @@
 #include "game/core/ui/element.h"
 #include "game/render/render_common.h"
 #include <glm/glm.hpp>
+#include <optional>
+#include <unordered_map>
 
 namespace ii::ui {
 
@@ -89,18 +91,62 @@ private:
 
 class LinearLayout : public Element {
 public:
-  LinearLayout(Element* parent, orientation) : Element{parent} {}
+  using Element::Element;
+
+  LinearLayout& set_orientation(orientation type) {
+    type_ = type;
+    return *this;
+  }
+
+  LinearLayout& set_spacing(std::uint32_t spacing) {
+    spacing_ = static_cast<std::int32_t>(spacing);
+    return *this;
+  }
+
+  LinearLayout& set_absolute_size(const Element* child, std::uint32_t size) {
+    info_[child] = element_info{static_cast<std::int32_t>(size), std::nullopt};
+    return *this;
+  }
+
+  LinearLayout& set_relative_weight(const Element* child, float weight) {
+    info_[child] = element_info{std::nullopt, weight};
+    return *this;
+  }
 
 protected:
-  void update_content(const input_frame&) override {}
+  void update_content(const input_frame&) override;
+
+private:
+  struct element_info {
+    std::optional<std::int32_t> absolute;
+    std::optional<float> relative_weight;
+  };
+
+  orientation type_ = orientation::kVertical;
+  std::int32_t spacing_ = 0;
+  std::unordered_map<const Element*, element_info> info_;
 };
 
 class GridLayout : public Element {
 public:
-  GridLayout(Element* parent, std::uint32_t /* columns */) : Element{parent} {}
+  using Element::Element;
+
+  GridLayout& set_columns(std::uint32_t columns) {
+    columns_ = std::max<std::int32_t>(1, static_cast<std::int32_t>(columns));
+    return *this;
+  }
+
+  GridLayout& set_spacing(std::uint32_t spacing) {
+    spacing_ = static_cast<std::int32_t>(spacing);
+    return *this;
+  }
 
 protected:
-  void update_content(const input_frame&) override {}
+  void update_content(const input_frame&) override;
+
+private:
+  std::int32_t columns_ = 1;
+  std::int32_t spacing_ = 0;
 };
 
 }  // namespace ii::ui
