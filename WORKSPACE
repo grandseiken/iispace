@@ -44,6 +44,7 @@ rules_pkg_dependencies()
 # Language feature dependencies
 ################################################################################
 http_archive(
+  # CC0 license, no attribution required.
   name = "expected",
   build_file = "@//deps:expected.BUILD",
   sha256 = "c1733556cbd3b532a02b68e2fbc2091b5bc2cccc279e4f6c6bd83877aabd4b02",
@@ -52,6 +53,7 @@ http_archive(
 )
 
 http_archive(
+  # MIT license, but I wrote it and can use it without attribution.
   name = "static_functional",
   sha256 = "d79740eb82f25e9728ee07f7344ac89e621125057e960b238b46976ebf8673d7",
   strip_prefix = "static-functional-df5154af7c66e8518494d16d88cdbd71698c1f29",
@@ -59,6 +61,7 @@ http_archive(
 )
 
 http_archive(
+  # Boost license, no attribution required.
   name = "concurrent_queue",
   build_file = "@//deps:concurrent_queue.BUILD",
   sha256 = "5e9e229a1791e8299dcd4bd73ac1be1953424a903818feb7afd929eb16094ef5",
@@ -70,6 +73,7 @@ http_archive(
 # SDL
 ################################################################################
 http_archive(
+  # zlib license, no attribution required.
   name = "sdl_windows",
   build_file = "@//deps/sdl:sdl_windows.BUILD",
   sha256 = "32adc96d8b25e5671189f1f38a4fc7deb105fbb1b3ed78ffcb23f5b8f36b3922",
@@ -78,6 +82,7 @@ http_archive(
 )
 
 http_archive(
+  # zlib license, no attribution required.
   name = "sdl_gamecontrollerdb",
   build_file = "@//deps/sdl:sdl_gamecontrollerdb.BUILD",
   sha256 = "e45bd267d5c4afef51eb2913c8ad97fb122aeda7eae13d06d10dc40ce6544ff8",
@@ -91,6 +96,7 @@ sdl_system_repository(name = "sdl_system")
 # OpenGL dependencies
 ################################################################################
 http_archive(
+  # MIT license, attribution required?
   name = "glm",
   build_file = "@//deps:glm.BUILD",
   sha256 = "4605259c22feadf35388c027f07b345ad3aa3b12631a5a316347f7566c6f1839",
@@ -99,6 +105,7 @@ http_archive(
 )
 
 http_archive(
+  # Unlicense, no attribution required.
   name = "gl3w",
   build_file = "@//deps:gl3w.BUILD",
   sha256 = "e96a650a5fb9530b69a19d36ef931801762ce9cf5b51cb607ee116b908a380a6",
@@ -110,6 +117,7 @@ http_archive(
 # Media format dependencies
 ################################################################################
 http_archive(
+  # MIT no attribution or public domain, no attribution required.
   name = "dr_libs",
   build_file = "@//deps:dr_libs.BUILD",
   sha256 = "39ea8c1f9b60a945735dfe4a2e0a2a6bd3bc921619fa7d2612dbc284b68c2419",
@@ -118,6 +126,7 @@ http_archive(
 )
 
 http_archive(
+  # BSD licence, attribution required.
   name = "libsamplerate",
   build_file = "@//deps:libsamplerate.BUILD",
   sha256 = "7bd06fabd57027e9c0fa22e6bd873e4916ab96ea132d6cb1b76e7fdd2ade1d20",
@@ -126,6 +135,7 @@ http_archive(
 )
 
 http_archive(
+  # FTL license, attribution required.
   name = "freetype",
   build_file = "@//deps:freetype.BUILD",
   sha256 = "5dac723f3889d451fb0b50a1cde94373a99609a650684a595f334437189a601c",
@@ -158,6 +168,7 @@ http_archive(
   ],
 )
 
+# libprotobuf has Google license, attribution required.
 load("@rules_proto//proto:repositories.bzl", "rules_proto_dependencies", "rules_proto_toolchains")
 rules_proto_dependencies()
 rules_proto_toolchains()
