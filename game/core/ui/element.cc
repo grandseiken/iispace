@@ -4,6 +4,28 @@
 
 namespace ii::ui {
 
+bool Element::focus() {
+  if (+(flags() & element_flags::kCanFocus)) {
+    for (auto* e = root(); e; e = e->focused_child_) {
+      e->focus_ = false;
+    }
+    for (auto* e = this; e; e = e->parent_) {
+      e->focus_ = true;
+    }
+    return true;
+  }
+  return std::find_if(begin(), end(), [](const auto& e) { return e->focus(); }) != end();
+}
+
+void Element::unfocus() {
+  for (auto* e = this; e; e = e->parent_) {
+    if (!e->focus_ || +(e->flags() & element_flags::kCanFocus)) {
+      break;
+    }
+    e->focus_ = false;
+  }
+}
+
 void Element::update(const input_frame& input) {
   auto element_input = input;
   if (element_input.mouse_cursor) {
@@ -19,25 +41,22 @@ void Element::update(const input_frame& input) {
   }
 }
 
+void Element::update_focus(const input_frame& input) {
+  if (!has_focus()) {
+    focus();
+  }
+  for (auto* e = focused_element(); e; e = e->parent()) {
+    if (e->handle_focus(input)) {
+      break;
+    }
+  }
+}
+
 void Element::render(render::GlRenderer& renderer) const {
   render_content(renderer);
   for (const auto& e : children_) {
     render::clip_handle clip{renderer.target(), e->bounds()};
     e->render(renderer);
-  }
-}
-
-void Element::focus_internal(bool focus, Element* origin) {
-  focus_ = focus;
-  if (focused_child_ && (origin != focused_child_ || !focus)) {
-    focused_child_->focus_internal(false, this);
-    focused_child_ = nullptr;
-  }
-  if (focus && origin && origin != parent_) {
-    focused_child_ = origin;
-  }
-  if (parent_ && origin != parent_) {
-    parent_->focus_internal(focus, this);
   }
 }
 

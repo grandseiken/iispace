@@ -1,5 +1,6 @@
 #ifndef II_GAME_CORE_UI_ELEMENT_H
 #define II_GAME_CORE_UI_ELEMENT_H
+#include "game/common/enum.h"
 #include "game/common/rect.h"
 #include <deque>
 #include <memory>
@@ -10,11 +11,26 @@ class GlRenderer;
 
 namespace ii::ui {
 struct input_frame;
+enum class element_flags : std::uint32_t {
+  kNone = 0b0000,
+  kCanFocus = 0b0001,
+};
+}  // namespace ii::ui
+
+namespace ii {
+template <>
+struct bitmask_enum<ui::element_flags> : std::true_type {};
+}  // namespace ii
+
+namespace ii::ui {
 
 class Element {
 public:
   virtual ~Element() = default;
   Element(Element* parent) : parent_{parent} {}
+
+  element_flags flags() const { return flags_; }
+  void add_flags(element_flags flags) { flags_ |= flags; }
 
   rect bounds() const { return bounds_; }
   void set_bounds(const rect& bounds) { bounds_ = bounds; }
@@ -22,16 +38,43 @@ public:
   void remove() { remove_ = true; }
   bool is_removed() const { return remove_; }
 
-  void focus() { focus_internal(true, nullptr); }
-  void unfocus() { focus_internal(false, nullptr); }
+  bool focus();
+  void unfocus();
   bool has_focus() const { return focus_; }
   bool has_primary_focus() const { return focus_ && !focused_child_; }
 
   Element* parent() { return parent_; }
+  Element* focused_child() { return focused_child_; }
+  Element* focused_element() {
+    return !focus_ ? nullptr : focused_child_ ? focused_child_->focused_element() : this;
+  }
+
   const Element* parent() const { return parent_; }
+  const Element* focused_child() const { return focused_child_; }
+  const Element* focused_element() const {
+    return !focus_ ? nullptr : focused_child_ ? focused_child_->focused_element() : this;
+  }
+
+  Element* root() {
+    auto* e = this;
+    while (e->parent()) {
+      e = e->parent();
+    }
+    return e;
+  }
+
+  const Element* root() const {
+    const auto* e = this;
+    while (e->parent()) {
+      e = e->parent();
+    }
+    return e;
+  }
 
   bool empty() const { return children_.empty(); }
   std::size_t size() const { return children_.size(); }
+  Element* operator[](std::size_t i) { return children_[i].get(); }
+  const Element* operator[](std::size_t i) const { return children_[i].get(); }
 
   auto begin() const { return children_.cbegin(); }
   auto end() const { return children_.cend(); }
@@ -47,15 +90,16 @@ public:
   }
 
   void update(const input_frame&);
+  void update_focus(const input_frame&);
   void render(render::GlRenderer&) const;
 
 protected:
   virtual void update_content(const input_frame&) {}
+  virtual bool handle_focus(const input_frame&) { return false; }
   virtual void render_content(render::GlRenderer&) const {}
 
 private:
-  void focus_internal(bool focus, Element* origin);
-
+  element_flags flags_ = element_flags::kNone;
   rect bounds_;
   bool remove_ = false;
   bool focus_ = false;

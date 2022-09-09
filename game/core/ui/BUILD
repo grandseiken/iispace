@@ -9,11 +9,14 @@ cc_library(
   hdrs = ["element.h"],
   srcs = ["element.cc"],
   deps = [
-    ":input",
     "//game/common:math",
+    "//game/common:types",
     "@glm",
   ],
-  implementation_deps = ["//game/render"],
+  implementation_deps = [
+    ":input",
+    "//game/render",
+  ],
 )
 
 cc_library(
@@ -25,7 +28,10 @@ cc_library(
     "//game/common:ustring",
     "//game/render:render_common",
   ],
-  implementation_deps = ["//game/render"],
+  implementation_deps = [
+    ":input",
+    "//game/render",
+  ],
   visibility = ["//visibility:public"],
 )
 

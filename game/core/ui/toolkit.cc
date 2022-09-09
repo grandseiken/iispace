@@ -1,5 +1,6 @@
 #include "game/core/ui/toolkit.h"
 #include "game/common/ustring_convert.h"
+#include "game/core/ui/input.h"
 #include "game/render/gl_renderer.h"
 #include <unordered_set>
 
@@ -188,6 +189,51 @@ void LinearLayout::update_content(const input_frame&) {
   }
 }
 
+bool LinearLayout::handle_focus(const input_frame& frame) {
+  std::int32_t offset = 0;
+  if ((frame.pressed(ui::key::kDown) && type_ == orientation::kVertical) ||
+      (frame.pressed(ui::key::kRight) && type_ == orientation::kHorizontal)) {
+    ++offset;
+  }
+  if ((frame.pressed(ui::key::kUp) && type_ == orientation::kVertical) ||
+      (frame.pressed(ui::key::kLeft) && type_ == orientation::kHorizontal)) {
+    --offset;
+  }
+  if (!offset || empty()) {
+    return false;
+  }
+  std::optional<std::size_t> focus_index;
+  for (std::size_t i = 0; i < size(); ++i) {
+    if ((*this)[i] == focused_child()) {
+      focus_index = i;
+    }
+  }
+  std::size_t u_offset = offset > 0 ? 1u : size() - 1u;
+  std::size_t index = 0;
+  auto is_end = [&](std::size_t i) {
+    return !wrap_focus_ && ((!i && offset < 0u) || (i == size() - 1u && offset > 0u));
+  };
+  if (focus_index) {
+    if (is_end(*focus_index)) {
+      return false;
+    }
+    index = (*focus_index + u_offset) % size();
+  } else {
+    focus_index = offset > 0u ? size() - 1u : 0u;
+    index = offset > 0u ? 0u : size() - 1u;
+  }
+
+  for (; index != focus_index; index = (index + u_offset) % size()) {
+    if ((*this)[index]->focus()) {
+      return true;
+    }
+    if (is_end(index)) {
+      break;
+    }
+  }
+  return false;
+}
+
 void GridLayout::update_content(const input_frame&) {
   auto free_space =
       bounds().size.x - std::max(0, static_cast<std::int32_t>(columns_) - 1) * spacing_;
@@ -210,6 +256,93 @@ void GridLayout::update_content(const input_frame&) {
     e->set_bounds({{x_position, y * (grid_size + spacing_)}, {width, grid_size}});
     x_position += width + spacing_;
   }
+}
+
+bool GridLayout::handle_focus(const input_frame& frame) {
+  glm::ivec2 offset{0};
+  if (frame.pressed(ui::key::kRight)) {
+    ++offset.x;
+  }
+  if (frame.pressed(ui::key::kLeft)) {
+    --offset.x;
+  }
+  if (frame.pressed(ui::key::kDown)) {
+    ++offset.y;
+  }
+  if (frame.pressed(ui::key::kUp)) {
+    --offset.y;
+  }
+  if (!size() || offset == glm::ivec2{0}) {
+    return false;
+  }
+
+  auto columns = static_cast<std::size_t>(columns_);
+  auto rows = (size() + columns - 1) / columns;
+  auto final_columns = size() % columns ? size() % columns : columns;
+
+  std::optional<std::size_t> focus_index;
+  for (std::size_t i = 0; i < size(); ++i) {
+    if ((*this)[i] == focused_child()) {
+      focus_index = i;
+    }
+  }
+
+  auto column = [&] { return *focus_index % columns; };
+  auto row = [&] { return *focus_index / columns; };
+  auto advance = [&]() -> bool {
+    if (offset.x < 0) {
+      if (!wrap_focus_ && !column()) {
+        return false;
+      }
+      focus_index = (*focus_index + size() - 1) % size();
+    } else if (offset.x > 0) {
+      if (!wrap_focus_ &&
+          (1 + column() == columns || (1 + row() == rows && 1 + column() == final_columns))) {
+        return false;
+      }
+      focus_index = (*focus_index + 1) % size();
+    }
+    if (offset.y < 0) {
+      if (!wrap_focus_ && !row()) {
+        return offset.x;
+      }
+      focus_index = row()            ? *focus_index - columns
+          : column() < final_columns ? size() - final_columns + column()
+                                     : size() - final_columns - columns + column();
+    } else if (offset.y > 0) {
+      if (!wrap_focus_ && (1 + row() == rows || (2 + row() == rows && column() >= final_columns))) {
+        return offset.x;
+      }
+      focus_index = 1 + row() == rows                      ? *focus_index + final_columns
+          : 2 + row() == rows && column() >= final_columns ? *focus_index + columns + final_columns
+                                                           : *focus_index + columns;
+    }
+    return true;
+  };
+
+  if (!focus_index) {
+    if (offset.x >= 0) {
+      focus_index = offset.y < 0 ? size() - final_columns : 0;
+    } else {
+      focus_index = offset.y < 0 ? size() - 1 : columns - 1;
+    }
+    if ((*this)[*focus_index]->focus()) {
+      return true;
+    }
+  }
+  auto start_index = *focus_index;
+  while (true) {
+    if (!advance()) {
+      return false;
+    }
+    if ((*this)[*focus_index]->focus()) {
+      return true;
+    }
+    if (*focus_index == start_index) {
+      break;
+    }
+  }
+  return false;
 }
 
 }  // namespace ii::ui
