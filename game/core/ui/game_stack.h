@@ -50,7 +50,7 @@ public:
   layer_flag flags() const { return flags_; }
 
 protected:
-  void update_content(const input_frame&) override;
+  void update_content(const input_frame&, ui::output_frame&) override;
 
 private:
   GameStack& stack_;

@@ -1,6 +1,9 @@
 #include "game/core/game_layers.h"
+#include "game/core/toolkit/button.h"
+#include "game/core/toolkit/layout.h"
+#include "game/core/toolkit/panel.h"
+#include "game/core/toolkit/text.h"
 #include "game/core/ui/game_stack.h"
-#include "game/core/ui/toolkit.h"
 #include "game/io/file/filesystem.h"
 #include "game/io/io.h"
 #include "game/render/gl_renderer.h"
@@ -53,7 +56,7 @@ PauseLayer::PauseLayer(ui::GameStack& stack, output_t* output)
   *output = kContinue;
 }
 
-void PauseLayer::update_content(const ui::input_frame& input) {
+void PauseLayer::update_content(const ui::input_frame& input, ui::output_frame&) {
   auto t = selection_;
   if (input.pressed(ui::key::kUp)) {
     selection_ = std::max(0u, selection_ - 1);
@@ -153,7 +156,7 @@ SimLayer::SimLayer(ui::GameStack& stack, data::ReplayReader&& replay, const game
 
 SimLayer::~SimLayer() = default;
 
-void SimLayer::update_content(const ui::input_frame& input) {
+void SimLayer::update_content(const ui::input_frame& input, ui::output_frame&) {
   auto& istate = network_state_ ? static_cast<ISimState&>(*network_state_) : *state_;
   set_bounds(rect{istate.dimensions()});
   stack().set_fps((network_state_ ? static_cast<ISimState&>(*network_state_) : *state_).fps());
@@ -368,159 +371,51 @@ void SimLayer::render_content(render::GlRenderer& r) const {
 
 MainMenuLayer::MainMenuLayer(ui::GameStack& stack, const game_options_t& options)
 : ui::GameLayer{stack}, options_{options} {
-  set_bounds(rect{kDimensions});
-
+  set_bounds(rect{{640, 360}});
   auto& panel = *add_back<ui::Panel>();
-  panel.set_style(render::panel_style::kFlatColour)
-      .set_colour({0.f, .5f, .5f, 1.f})
-      .set_padding({8, 8})
-      .set_bounds({{300, 100}, {300, 300}});
-  auto& text = *panel.add_back<ui::TextElement>();
-  text.set_font(render::font_id::kMonospace)
-      .set_font_dimensions({10, 10})
-      .set_multiline(true)
-      .set_text(ustring::utf8(u8"hello world\nfoo bar baz\n\n"
-                              "foobar foobar boo scooby dooby dooby doo lorem "
-                              "ipsum fooby dooby\n\n"
-                              "abcdabcdabcdabcdabcdabcdabcdabcdabcdabcdabcdabcd"
-                              "abcdabcdabcdabcdabcdabcdabcdabcdabcdabcdabcdabcd"
-                              "abcdabcdabcdabcdabcdabcdabcdabcdabcdabcdabcdabcd\n\n\n"
-                              u8"fooby åäö Владимир Г 音 Владимир Г 片仮名 カタカナ\n"
-                              "\tfooby\t\tfoobar"));
+  panel.set_bounds(bounds());
+  panel.set_padding({16, 16});
+  auto& layout = *panel.add_back<ui::LinearLayout>();
+  layout.set_wrap_focus(true).set_spacing(4);
+
+  auto add_button = [&](const char* text, std::function<void()> callback) {
+    auto& button = *layout.add_back<ui::Button>();
+    button.set_callback(std::move(callback))
+        .set_text(ustring::ascii(text))
+        .set_font(render::font_id::kMonospace, render::font_id::kMonospaceBold)
+        .set_text_colour(glm::vec4{1.f, 0.f, .65f, 1.f}, glm::vec4{1.f})
+        .set_font_dimensions({16, 16})
+        .set_style(render::panel_style::kFlatColour)
+        .set_padding({4, 4})
+        .set_colour(glm::vec4{1.f, 1.f, 1.f, .125f});
+    layout.set_absolute_size(button, 24);
+  };
+
+  auto start_game = [this](game_mode mode) {
+    initial_conditions conditions;
+    conditions.compatibility = options_.compatibility;
+    conditions.seed = static_cast<std::uint32_t>(time(0));
+    conditions.flags |= initial_conditions::flag::kLegacy_CanFaceSecretBoss;
+    conditions.player_count = player_select_;
+    conditions.mode = mode;
+    this->stack().add<SimLayer>(conditions, options_);
+  };
+
+  add_button("Normal mode", [=] { start_game(game_mode::kNormal); });
+  add_button("Boss mode", [=] { start_game(game_mode::kBoss); });
+  add_button("Hard mode", [=] { start_game(game_mode::kHard); });
+  add_button("Fast mode", [=] { start_game(game_mode::kFast); });
+  add_button("W-hat mode", [=] { start_game(game_mode::kWhat); });
+  add_button("Exit", [this] { exit_timer_ = 2; });
 }
 
-void MainMenuLayer::update_content(const ui::input_frame& input) {
+void MainMenuLayer::update_content(const ui::input_frame& input, ui::output_frame&) {
+  stack().set_fps(60);
+  stack().io_layer().capture_mouse(false);
   if (exit_timer_) {
     exit_timer_--;
     remove();
   }
-  stack().set_fps(60);
-  stack().io_layer().capture_mouse(false);
-
-  menu t = menu_select_;
-  if (input.pressed(ui::key::kUp)) {
-    menu_select_ = static_cast<menu>(std::max(static_cast<std::uint32_t>(menu_select_) - 1,
-                                              static_cast<std::uint32_t>(menu::kSpecial)));
-  }
-  if (input.pressed(ui::key::kDown)) {
-    menu_select_ = static_cast<menu>(std::min(static_cast<std::uint32_t>(menu::kQuit),
-                                              static_cast<std::uint32_t>(menu_select_) + 1));
-  }
-  if (t != menu_select_) {
-    stack().play_sound(sound::kMenuClick);
-  }
-
-  if (menu_select_ == menu::kPlayers) {
-    auto t = player_select_;
-    if (input.pressed(ui::key::kLeft)) {
-      player_select_ = std::max(1u, player_select_ - 1);
-    }
-    if (input.pressed(ui::key::kRight)) {
-      player_select_ = std::min(kMaxPlayers, player_select_ + 1);
-    }
-    if (input.pressed(ui::key::kAccept) || input.pressed(ui::key::kMenu)) {
-      player_select_ = 1 + player_select_ % kMaxPlayers;
-    }
-    if (t != player_select_) {
-      stack().play_sound(sound::kMenuClick);
-    }
-  }
-
-  if (menu_select_ == menu::kSpecial) {
-    game_mode t = mode_select_;
-    if (input.pressed(ui::key::kLeft)) {
-      mode_select_ = static_cast<game_mode>(std::max(static_cast<std::uint32_t>(game_mode::kBoss),
-                                                     static_cast<std::uint32_t>(mode_select_) - 1));
-    }
-    if (input.pressed(ui::key::kRight)) {
-      mode_select_ = static_cast<game_mode>(std::min(static_cast<std::uint32_t>(game_mode::kWhat),
-                                                     static_cast<std::uint32_t>(mode_select_) + 1));
-    }
-    if (t != mode_select_) {
-      stack().play_sound(sound::kMenuClick);
-    }
-  }
-
-  initial_conditions conditions;
-  conditions.compatibility = options_.compatibility;
-  conditions.seed = static_cast<std::uint32_t>(time(0));
-  conditions.flags |= initial_conditions::flag::kLegacy_CanFaceSecretBoss;
-  conditions.player_count = player_select_;
-  conditions.mode = game_mode::kNormal;
-
-  if (input.pressed(ui::key::kAccept) || input.pressed(ui::key::kMenu)) {
-    if (menu_select_ == menu::kStart) {
-      stack().add<SimLayer>(conditions, options_);
-    } else if (menu_select_ == menu::kQuit) {
-      exit_timer_ = 2;
-    } else if (menu_select_ == menu::kSpecial) {
-      conditions.mode = mode_select_;
-      stack().add<SimLayer>(conditions, options_);
-    }
-    if (menu_select_ != menu::kPlayers) {
-      stack().play_sound(sound::kMenuAccept);
-    }
-  }
-}
-
-void MainMenuLayer::render_content(render::GlRenderer& r) const {
-  r.render_panel({
-      .style = render::panel_style::kFlatColour,
-      .colour = glm::vec4{1.f, 1.f, 1.f, .25f},
-      .bounds = rect{{16 * 4, 16 * 5}, {16 * 16, 16 * 9}},
-  });
-  if (menu_select_ >= menu::kStart || mode_select_ == game_mode::kBoss) {
-    r.set_colour_cycle(0);
-  } else if (mode_select_ == game_mode::kHard) {
-    r.set_colour_cycle(128);
-  } else if (mode_select_ == game_mode::kFast) {
-    r.set_colour_cycle(192);
-  } else if (mode_select_ == game_mode::kWhat) {
-    r.set_colour_cycle((r.colour_cycle() + 1) % 256);
-  }
-
-  render_text(r, {6.f, 8.f}, "START GAME", kPanelText);
-  render_text(r, {6.f, 10.f}, "PLAYERS", kPanelText);
-  render_text(r, {6.f, 12.f}, "EXiT", kPanelText);
-
-  std::string str = mode_select_ == game_mode::kBoss ? "BOSS MODE"
-      : mode_select_ == game_mode::kHard             ? "HARD MODE"
-      : mode_select_ == game_mode::kFast             ? "FAST MODE"
-                                                     : "W-HAT MODE";
-  render_text(r, {6.f, 6.f}, str, kPanelText);
-  if (menu_select_ == menu::kSpecial && mode_select_ > game_mode::kBoss) {
-    render_text(r, {5.f, 6.f}, "<", kPanelTran);
-  }
-  if (menu_select_ == menu::kSpecial && mode_select_ < game_mode::kWhat) {
-    render_text(r, {6.f, 6.f}, "         >", kPanelTran);
-  }
-
-  if (player_select_ > 1 && menu_select_ == menu::kPlayers) {
-    render_text(r, {5.f, 10.f}, "<", kPanelTran);
-  }
-  if (player_select_ < 4 && menu_select_ == menu::kPlayers) {
-    render_text(r, {14.f + player_select_, 10.f}, ">", kPanelTran);
-  }
-  for (std::uint32_t i = 0; i < player_select_; ++i) {
-    std::stringstream ss;
-    ss << (i + 1);
-    render_text(r, {14.f + i, 10.f}, ss.str(), player_colour(i));
-  }
-
-  std::stringstream ss;
-  ss << player_select_;
-  std::string s = "HiGH SCORES    ";
-  s += menu_select_ == menu::kSpecial
-      ? (mode_select_ == game_mode::kBoss       ? "BOSS MODE"
-             : mode_select_ == game_mode::kHard ? "HARD MODE (" + ss.str() + "P)"
-             : mode_select_ == game_mode::kFast ? "FAST MODE (" + ss.str() + "P)"
-                                                : "W-HAT MODE (" + ss.str() + "P)")
-      : player_select_ == 1 ? "ONE PLAYER"
-      : player_select_ == 2 ? "TWO PLAYERS"
-      : player_select_ == 3 ? "THREE PLAYERS"
-      : player_select_ == 4 ? "FOUR PLAYERS"
-                            : "";
-  render_text(r, {4.f, 16.f}, s, kPanelText);
 }
 
 }  // namespace ii

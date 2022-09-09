@@ -1,7 +1,11 @@
 cc_library(
   name = "input",
   hdrs = ["input.h"],
-  deps = ["@glm"],
+  deps = [
+    "//game/mixer:sound",
+    "@glm",
+  ],
+  visibility = ["//visibility:public"],
 )
 
 cc_library(
@@ -12,21 +16,6 @@ cc_library(
     "//game/common:math",
     "//game/common:types",
     "@glm",
-  ],
-  implementation_deps = [
-    ":input",
-    "//game/render",
-  ],
-)
-
-cc_library(
-  name = "toolkit",
-  hdrs = ["toolkit.h"],
-  srcs = ["toolkit.cc"],
-  deps = [
-    ":element",
-    "//game/common:ustring",
-    "//game/render:render_common",
   ],
   implementation_deps = [
     ":input",

@@ -11,6 +11,7 @@ class GlRenderer;
 
 namespace ii::ui {
 struct input_frame;
+struct output_frame;
 enum class element_flags : std::uint32_t {
   kNone = 0b0000,
   kCanFocus = 0b0001,
@@ -18,6 +19,7 @@ enum class element_flags : std::uint32_t {
 }  // namespace ii::ui
 
 namespace ii {
+class Mixer;
 template <>
 struct bitmask_enum<ui::element_flags> : std::true_type {};
 }  // namespace ii
@@ -89,13 +91,13 @@ public:
     return r;
   }
 
-  void update(const input_frame&);
-  void update_focus(const input_frame&);
+  void update(const input_frame&, output_frame&);
+  void update_focus(const input_frame&, output_frame&);
   void render(render::GlRenderer&) const;
 
 protected:
-  virtual void update_content(const input_frame&) {}
-  virtual bool handle_focus(const input_frame&) { return false; }
+  virtual void update_content(const input_frame&, output_frame&) {}
+  virtual bool handle_focus(const input_frame&, output_frame&) { return false; }
   virtual void render_content(render::GlRenderer&) const {}
 
 private:

@@ -18,7 +18,8 @@ bool contains(std::span<const T> range, T value) {
 
 std::span<const io::keyboard::key> keys_for(key k) {
   using type = io::keyboard::key;
-  static constexpr std::array accept = {type::kZ, type::kSpacebar, type::kLCtrl, type::kRCtrl};
+  static constexpr std::array accept = {type::kZ, type::kReturn, type::kSpacebar, type::kLCtrl,
+                                        type::kRCtrl};
   static constexpr std::array cancel = {type::kX, type::kEscape};
   static constexpr std::array menu = {type::kEscape, type::kReturn};
   static constexpr std::array up = {type::kW, type::kUArrow};
@@ -153,7 +154,7 @@ auto get_capture_it(It begin, It end, layer_flag flag) {
 
 }  // namespace
 
-void GameLayer::update_content(const input_frame&) {
+void GameLayer::update_content(const input_frame&, ui::output_frame&) {
   for (auto& e : *this) {
     e->set_bounds(bounds());
   }
@@ -200,7 +201,14 @@ void GameStack::update(bool controller_change) {
           target.screen_to_render_coords(*input.mouse_cursor - *input.mouse_delta);
     }
     auto size = layers_.size();
-    (*it)->update(layer_input);
+    output_frame output;
+    (*it)->update(layer_input, output);
+    if (it >= input_it) {
+      (*it)->update_focus(layer_input, output);
+    }
+    for (auto s : output.sounds) {
+      play_sound(s);
+    }
     if (size != layers_.size()) {
       input = {};
     }

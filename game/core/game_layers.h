@@ -34,7 +34,7 @@ public:
 
   PauseLayer(ui::GameStack& stack, output_t* output);
   ~PauseLayer() override = default;
-  void update_content(const ui::input_frame&) override;
+  void update_content(const ui::input_frame&, ui::output_frame&) override;
   void render_content(render::GlRenderer& r) const override;
 
 private:
@@ -49,7 +49,7 @@ public:
   SimLayer(ui::GameStack& stack, data::ReplayReader&& replay, const game_options_t& options);
   ~SimLayer() override;
 
-  void update_content(const ui::input_frame&) override;
+  void update_content(const ui::input_frame&, ui::output_frame&) override;
   void render_content(render::GlRenderer& r) const override;
 
 private:
@@ -88,8 +88,7 @@ private:
 class MainMenuLayer : public ui::GameLayer {
 public:
   MainMenuLayer(ui::GameStack& stack, const game_options_t& options);
-  void update_content(const ui::input_frame&) override;
-  void render_content(render::GlRenderer& r) const override;
+  void update_content(const ui::input_frame&, ui::output_frame&) override;
 
 private:
   enum class menu {

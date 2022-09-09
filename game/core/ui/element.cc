@@ -6,11 +6,17 @@ namespace ii::ui {
 
 bool Element::focus() {
   if (+(flags() & element_flags::kCanFocus)) {
-    for (auto* e = root(); e; e = e->focused_child_) {
+    for (auto* e = root(); e;) {
       e->focus_ = false;
+      auto* c = e->focused_child_;
+      e->focused_child_ = nullptr;
+      e = c;
     }
     for (auto* e = this; e; e = e->parent_) {
       e->focus_ = true;
+      if (e->parent_) {
+        e->parent_->focused_child_ = e;
+      }
     }
     return true;
   }
@@ -19,14 +25,17 @@ bool Element::focus() {
 
 void Element::unfocus() {
   for (auto* e = this; e; e = e->parent_) {
-    if (!e->focus_ || +(e->flags() & element_flags::kCanFocus)) {
+    if (!e->focus_ || (e != this && +(e->flags() & element_flags::kCanFocus))) {
       break;
     }
     e->focus_ = false;
+    if (e->parent_) {
+      e->parent_->focused_child_ = nullptr;
+    }
   }
 }
 
-void Element::update(const input_frame& input) {
+void Element::update(const input_frame& input, output_frame& output) {
   auto element_input = input;
   if (element_input.mouse_cursor) {
     if (bounds().contains(*element_input.mouse_cursor)) {
@@ -35,18 +44,18 @@ void Element::update(const input_frame& input) {
       element_input.mouse_cursor.reset();
     }
   }
-  update_content(element_input);
+  update_content(element_input, output);
   for (auto& e : children_) {
-    e->update(element_input);
+    e->update(element_input, output);
   }
 }
 
-void Element::update_focus(const input_frame& input) {
+void Element::update_focus(const input_frame& input, output_frame& output) {
   if (!has_focus()) {
     focus();
   }
   for (auto* e = focused_element(); e; e = e->parent()) {
-    if (e->handle_focus(input)) {
+    if (e->handle_focus(input, output)) {
       break;
     }
   }

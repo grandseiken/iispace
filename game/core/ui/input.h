@@ -1,9 +1,11 @@
 #ifndef II_GAME_CORE_UI_INPUT_H
 #define II_GAME_CORE_UI_INPUT_H
+#include "game/mixer/sound.h"
 #include <glm/glm.hpp>
 #include <array>
 #include <cstddef>
 #include <optional>
+#include <vector>
 
 namespace ii::ui {
 
@@ -31,6 +33,10 @@ struct input_frame {
 
   bool held(key k) const { return key_held[static_cast<std::size_t>(k)]; }
   bool& held(key k) { return key_held[static_cast<std::size_t>(k)]; }
+};
+
+struct output_frame {
+  std::vector<sound> sounds;
 };
 
 }  // namespace ii::ui
