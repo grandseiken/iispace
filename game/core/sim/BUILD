@@ -2,27 +2,47 @@ cc_library(
   name = "sim_layer",
   hdrs = ["sim_layer.h"],
   srcs = ["sim_layer.cc"],
-  deps = [
-    "//game/core/ui",
-  ],
+  deps = ["//game/core/ui"],
   implementation_deps = [
     ":input_adapter",
-    ":pause_layer",
-    ":render_state",
-    "//game/common:math",
-    "//game/common:types",
+    ":sim_layer_internal",
     "//game/core:game_options",
-    "//game/core/toolkit",
     "//game/data:replay",
     "//game/data:save",
-    "//game/io",
-    "//game/io/file:filesystem",
+    "//game/logic/sim",
+    "//game/mixer:sound",
+    "//game/render",
+  ],
+  visibility = ["//visibility:public"],
+)
+
+cc_library(
+  name = "replay_viewer",
+  hdrs = ["replay_viewer.h"],
+  srcs = ["replay_viewer.cc"],
+  deps = ["//game/core/ui"],
+  implementation_deps = [
+    ":sim_layer_internal",
+    "//game/core:game_options",
+    "//game/data:replay",
     "//game/logic/sim",
     "//game/logic/sim:networked_sim_state",
     "//game/mixer:sound",
     "//game/render",
   ],
   visibility = ["//visibility:public"],
+)
+
+cc_library(
+  name = "sim_layer_internal",
+  hdrs = ["sim_layer_internal.h"],
+  deps = [
+    ":pause_layer",
+    ":render_state",
+    "//game/core/ui",
+    "//game/logic/sim",
+    "//game/logic/sim/io:render",
+  ],
 )
 
 cc_library(

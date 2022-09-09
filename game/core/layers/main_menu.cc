@@ -26,7 +26,8 @@ MainMenuLayer::MainMenuLayer(ui::GameStack& stack, const game_options_t& options
         .set_font_dimensions(kLargeFont)
         .set_style(render::panel_style::kFlatColour)
         .set_padding(kPadding)
-        .set_colour({1.f, 1.f, 1.f, 1.f / 8});
+        .set_colour({1.f, 1.f, 1.f, 1.f / 8})
+        .set_drop_shadow(kDropShadow, .5f);
     layout.set_absolute_size(button, 24);
   };
 
@@ -45,7 +46,7 @@ MainMenuLayer::MainMenuLayer(ui::GameStack& stack, const game_options_t& options
   add_button("Hard mode", [=] { start_game(game_mode::kHard); });
   add_button("Fast mode", [=] { start_game(game_mode::kFast); });
   add_button("W-hat mode", [=] { start_game(game_mode::kWhat); });
-  add_button("Exit", [this] { exit_timer_ = 2; });
+  add_button("Exit", [this] { exit_timer_ = 4; });
 
   stack.set_volume(.5f);
   focus();
@@ -56,8 +57,9 @@ void MainMenuLayer::update_content(const ui::input_frame& input, ui::output_fram
   stack().set_fps(60);
   stack().io_layer().capture_mouse(false);
   if (exit_timer_) {
-    exit_timer_--;
-    remove();
+    if (!--exit_timer_) {
+      remove();
+    }
   }
 }
 

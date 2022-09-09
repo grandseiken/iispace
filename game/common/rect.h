@@ -14,6 +14,8 @@ struct rect {
   glm::ivec2 size;
 
   bool empty() const { return !size.x && !size.y; }
+  bool operator==(const rect&) const = default;
+  bool operator!=(const rect&) const = default;
 
   bool contains(const glm::ivec2& p) const {
     return glm::all(glm::greaterThanEqual(p, min())) && glm::all(glm::lessThan(p, max()));

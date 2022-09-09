@@ -42,6 +42,7 @@ public:
 
   result<void> status() const;
   void clear_screen() const;
+  void clear_depth() const;
 
   render::target& target() { return target_; }
   const render::target& target() const { return target_; }

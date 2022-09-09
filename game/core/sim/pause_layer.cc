@@ -33,7 +33,8 @@ PauseLayer::PauseLayer(ui::GameStack& stack, std::function<void()> on_quit)
         .set_font_dimensions(kLargeFont)
         .set_style(render::panel_style::kFlatColour)
         .set_padding(kPadding)
-        .set_colour({1.f, 1.f, 1.f, 1.f / 16});
+        .set_colour({1.f, 1.f, 1.f, 1.f / 16})
+        .set_drop_shadow(kDropShadow, .5f);
     layout.set_absolute_size(button, 24);
   };
 
@@ -58,7 +59,6 @@ PauseLayer::PauseLayer(ui::GameStack& stack, std::function<void()> on_quit)
 
 void PauseLayer::update_content(const ui::input_frame& input, ui::output_frame& output) {
   ui::GameLayer::update_content(input, output);
-  stack().io_layer().capture_mouse(false);
 
   if (input.pressed(ui::key::kCancel) || input.pressed(ui::key::kEscape)) {
     stack().play_sound(sound::kMenuAccept);

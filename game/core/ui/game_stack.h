@@ -103,6 +103,7 @@ private:
   data::savegame save_;
 
   std::uint32_t fps_ = 60;
+  std::uint32_t cursor_anim_frame_ = 0;
   std::optional<glm::ivec2> cursor_;
   std::deque<std::unique_ptr<GameLayer>> layers_;
 };

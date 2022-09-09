@@ -1,5 +1,5 @@
 #include "game/core/layers/main_menu.h"
-#include "game/core/sim/sim_layer.h"
+#include "game/core/sim/replay_viewer.h"
 #include "game/core/ui/game_stack.h"
 #include "game/flags.h"
 #include "game/io/file/std_filesystem.h"
@@ -85,7 +85,7 @@ bool run(System& system, const std::vector<std::string>& args, const game_option
       std::cerr << reader.error() << std::endl;
       return false;
     }
-    stack.add<SimLayer>(std::move(*reader), options);
+    stack.add<ReplayViewer>(std::move(*reader), options);
   }
 
   using counter_t = std::chrono::duration<double>;

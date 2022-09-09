@@ -209,6 +209,11 @@ void GlRenderer::clear_screen() const {
             gl::clear_mask::kStencilBufferBit);
 }
 
+void GlRenderer::clear_depth() const {
+  gl::clear_depth(0.);
+  gl::clear(gl::clear_mask::kDepthBufferBit);
+}
+
 std::int32_t GlRenderer::line_height(font_id font, const glm::uvec2& font_dimensions) const {
   auto font_result = impl_->font_cache.get(target(), font, font_dimensions, ustring::ascii(""));
   if (!font_result) {

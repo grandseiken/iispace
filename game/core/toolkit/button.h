@@ -49,6 +49,7 @@ public:
   Button& set_text_colour(const glm::vec4& colour) { return set_text_colour(colour, colour); }
 
   Button& set_font_dimensions(const glm::uvec2& dimensions);
+  Button& set_drop_shadow(const glm::ivec2& offset, float opacity);
   Button& set_text(ustring&& text);
   Button& set_padding(const glm::ivec2& padding);
   Button& set_margin(const glm::ivec2& margin);

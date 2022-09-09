@@ -16,6 +16,11 @@ Button& Button::set_font_dimensions(const glm::uvec2& dimensions) {
   return *this;
 }
 
+Button& Button::set_drop_shadow(const glm::ivec2& offset, float opacity) {
+  text_element_->set_drop_shadow(offset, opacity);
+  return *this;
+}
+
 Button& Button::set_text(ustring&& text) {
   text_element_->set_text(std::move(text));
   return *this;

@@ -94,6 +94,10 @@ std::vector<std::u32string> split_lines(ustring_view s, render::GlRenderer& r, r
 }  // namespace
 
 void TextElement::render_content(render::GlRenderer& r) const {
+  if (cached_bounds_ != bounds()) {
+    cached_bounds_ = bounds();
+    dirty_ = true;
+  }
   if (render_dimensions_ != r.target().render_dimensions) {
     render_dimensions_ = r.target().render_dimensions;
     dirty_ = true;
@@ -112,8 +116,15 @@ void TextElement::render_content(render::GlRenderer& r) const {
 
   auto line_height = r.line_height(font_, font_dimensions_);
   glm::ivec2 position{0};
+  // TODO: render all in one?
+  if (drop_shadow_) {
+    for (const auto& s : lines_) {
+      r.render_text(font_, font_dimensions_, position + drop_shadow_->offset,
+                    glm::vec4{0.f, 0.f, 0.f, drop_shadow_->opacity}, ustring_view::utf32(s));
+    }
+  }
+  position = glm::ivec2{0};
   for (const auto& s : lines_) {
-    // TODO: render all in one?
     r.render_text(font_, font_dimensions_, position, colour_, ustring_view::utf32(s));
     position.y += line_height;
   }

@@ -192,10 +192,12 @@ void GameStack::update(bool controller_change) {
     handle(input, io_layer_.controller_frame(i));
   }
   cursor_ = input.mouse_cursor;
+  std::erase_if(layers_, [](const auto& e) { return e->is_removed(); });
+
   io_layer_.capture_mouse(!layers_.empty() && +(top()->flags() & layer_flag::kCaptureCursor));
   auto it = get_capture_it(layers_.begin(), layers_.end(), layer_flag::kCaptureUpdate);
   auto input_it = get_capture_it(layers_.begin(), layers_.end(), layer_flag::kCaptureInput);
-  while (it != layers_.end()) {
+  for (; it != layers_.end(); ++it) {
     auto& e = *it;
     input_frame layer_input;
     if (it >= input_it) {
@@ -233,12 +235,8 @@ void GameStack::update(bool controller_change) {
     if (size != layers_.size()) {
       input = {};
     }
-    if (e->is_removed()) {
-      it = layers_.erase(it);
-    } else {
-      ++it;
-    }
   }
+  ++cursor_anim_frame_;
 }
 
 void GameStack::render(render::GlRenderer& renderer) const {
@@ -247,18 +245,45 @@ void GameStack::render(render::GlRenderer& renderer) const {
   for (; it != layers_.end(); ++it) {
     renderer.target().render_dimensions = static_cast<glm::uvec2>((*it)->bounds().size);
     (*it)->render(renderer);
+    renderer.clear_depth();
   }
-  renderer.target().render_dimensions = {640, 360};
   if (cursor_ && (layers_.empty() || !(top()->flags() & layer_flag::kCaptureCursor))) {
     // Render cursor.
-    auto offset = static_cast<glm::ivec2>(glm::round(from_polar(glm::pi<float>() / 3.f, 8.f)));
-    render::shape cursor_shape{
-        .origin = offset + renderer.target().screen_to_render_coords(*cursor_),
-        .colour = colour_hue360(120),
-        .z_index = 128.f,
-        .data = render::ngon{.radius = 8.f, .sides = 3, .line_width = 2.f},
+    // TODO: probably replace this once we can render shape fills with cool effects.
+    renderer.target().render_dimensions = {640, 360};
+    auto radius = 10.f;
+    auto origin = static_cast<glm::vec2>(renderer.target().screen_to_render_coords(*cursor_)) +
+        glm::round(from_polar(glm::pi<float>() / 3.f, radius));
+    auto flash = (64.f - cursor_anim_frame_ % 64) / 64.f;
+    std::array cursor_shapes = {
+        render::shape{
+            .origin = origin + glm::vec2{2.f, 2.f},
+            .colour = {0.f, 0.f, 0.f, .5f},
+            .z_index = 127.5f,
+            .data = render::ngon{.radius = radius, .sides = 3, .line_width = radius / 2},
+        },
+        render::shape{
+            .origin = origin,
+            .colour = colour_hue360(120, .5f, .5f),
+            .z_index = 127.6f,
+            .data = render::ngon{.radius = radius, .sides = 3, .line_width = radius / 2},
+        },
+        render::shape{
+            .origin = origin,
+            .colour = {0.f, 0.f, 0.f, 1.f},
+            .z_index = 128.f,
+            .data = render::ngon{.radius = radius, .sides = 3, .line_width = 1.5f},
+        },
+        render::shape{
+            .origin = origin,
+            .colour = colour_hue360(120, .85f, .5f),
+            .z_index = 127.8f,
+            .data = render::ngon{.radius = radius * flash,
+                                 .sides = 3,
+                                 .line_width = std::min(radius * flash / 2.f, 1.5f)},
+        },
     };
-    renderer.render_shapes(render::coordinate_system::kGlobal, {&cursor_shape, 1}, 0.f);
+    renderer.render_shapes(render::coordinate_system::kGlobal, cursor_shapes, 0.f);
   }
 }
 

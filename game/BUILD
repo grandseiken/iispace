@@ -32,7 +32,7 @@ cc_binary(
     ":flags",
     ":mode_flags",
     "//game/core/layers:main_menu",
-    "//game/core/sim:sim_layer",
+    "//game/core/sim:replay_viewer",
     "//game/core/ui",
     "//game/io:sdl_io",
     "//game/io/file:std_filesystem",
