@@ -89,11 +89,11 @@ bool run(System& system, const std::vector<std::string>& args, const game_option
   }
 
   using counter_t = std::chrono::duration<double>;
-  auto last_time = std::chrono::steady_clock::now();
-  auto elapsed_time = [&last_time] {
+  auto start_time = std::chrono::steady_clock::now();
+  auto target_time = counter_t{0.};
+  auto elapsed_time = [&] {
     auto now = std::chrono::steady_clock::now();
-    auto r = std::chrono::duration_cast<counter_t>(now - last_time);
-    return r;
+    return std::chrono::duration_cast<counter_t>(now - start_time);
   };
 
   bool exit = false;
@@ -138,11 +138,13 @@ bool run(System& system, const std::vector<std::string>& args, const game_option
     }
 
     counter_t time_per_frame{1. / stack.fps()};
-    auto elapsed = elapsed_time();
-    if (time_per_frame > elapsed) {
-      std::this_thread::sleep_for(time_per_frame - elapsed);
+    target_time += time_per_frame;
+    auto actual_time = elapsed_time();
+    if (actual_time >= target_time) {
+      target_time = actual_time;
+    } else {
+      std::this_thread::sleep_for(target_time - actual_time);
     }
-    last_time = std::chrono::steady_clock::now();
   }
   return true;
 }

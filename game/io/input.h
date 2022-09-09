@@ -268,7 +268,7 @@ struct frame {
 
   std::vector<button_event> button_events;
   std::array<bool, static_cast<std::size_t>(mouse::button::kMax)> button_state = {false};
-  glm::ivec2 cursor = {0, 0};
+  std::optional<glm::ivec2> cursor = std::nullopt;
   glm::ivec2 cursor_delta = {0, 0};
   glm::ivec2 wheel_delta = {0, 0};
 

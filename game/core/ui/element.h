@@ -40,7 +40,7 @@ public:
   void remove() { remove_ = true; }
   bool is_removed() const { return remove_; }
 
-  bool focus();
+  bool focus(bool last = false);
   void unfocus();
   bool has_focus() const { return focus_; }
   bool has_primary_focus() const { return focus_ && !focused_child_; }
@@ -78,9 +78,13 @@ public:
   Element* operator[](std::size_t i) { return children_[i].get(); }
   const Element* operator[](std::size_t i) const { return children_[i].get(); }
 
+  auto rbegin() const { return children_.crbegin(); }
   auto begin() const { return children_.cbegin(); }
+  auto rend() const { return children_.crend(); }
   auto end() const { return children_.cend(); }
+  auto rbegin() { return children_.rbegin(); }
   auto begin() { return children_.begin(); }
+  auto rend() { return children_.rend(); }
   auto end() { return children_.end(); }
 
   template <typename T, typename... Args>

@@ -46,6 +46,9 @@ MainMenuLayer::MainMenuLayer(ui::GameStack& stack, const game_options_t& options
   add_button("Fast mode", [=] { start_game(game_mode::kFast); });
   add_button("W-hat mode", [=] { start_game(game_mode::kWhat); });
   add_button("Exit", [this] { exit_timer_ = 2; });
+
+  stack.set_volume(.5f);
+  focus();
 }
 
 void MainMenuLayer::update_content(const ui::input_frame& input, ui::output_frame& output) {

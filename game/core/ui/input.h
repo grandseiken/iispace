@@ -10,9 +10,11 @@
 namespace ii::ui {
 
 enum class key {
+  kClick,
   kAccept,
   kCancel,
-  kMenu,
+  kStart,
+  kEscape,
   kUp,
   kDown,
   kLeft,

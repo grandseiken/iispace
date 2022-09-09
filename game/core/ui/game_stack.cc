@@ -18,10 +18,9 @@ bool contains(std::span<const T> range, T value) {
 
 std::span<const io::keyboard::key> keys_for(key k) {
   using type = io::keyboard::key;
-  static constexpr std::array accept = {type::kZ, type::kReturn, type::kSpacebar, type::kLCtrl,
-                                        type::kRCtrl};
-  static constexpr std::array cancel = {type::kX, type::kEscape};
-  static constexpr std::array menu = {type::kEscape, type::kReturn};
+  static constexpr std::array accept = {type::kReturn, type::kSpacebar};
+  static constexpr std::array cancel = {type::kEscape};
+  static constexpr std::array escape = {type::kEscape};
   static constexpr std::array up = {type::kW, type::kUArrow};
   static constexpr std::array down = {type::kS, type::kDArrow};
   static constexpr std::array left = {type::kA, type::kLArrow};
@@ -32,8 +31,10 @@ std::span<const io::keyboard::key> keys_for(key k) {
     return accept;
   case key::kCancel:
     return cancel;
-  case key::kMenu:
-    return menu;
+  case key::kStart:
+    return {};
+  case key::kEscape:
+    return escape;
   case key::kUp:
     return up;
   case key::kDown:
@@ -64,9 +65,9 @@ std::span<const io::mouse::button> mouse_buttons_for(key k) {
 
 std::span<const io::controller::button> controller_buttons_for(key k) {
   using type = io::controller::button;
-  static constexpr std::array accept = {type::kA, type::kRShoulder};
-  static constexpr std::array cancel = {type::kB, type::kLShoulder};
-  static constexpr std::array menu = {type::kStart, type::kGuide};
+  static constexpr std::array accept = {type::kA};
+  static constexpr std::array cancel = {type::kB};
+  static constexpr std::array start = {type::kStart, type::kGuide};
   static constexpr std::array up = {type::kDpadUp};
   static constexpr std::array down = {type::kDpadDown};
   static constexpr std::array left = {type::kDpadLeft};
@@ -77,8 +78,10 @@ std::span<const io::controller::button> controller_buttons_for(key k) {
     return accept;
   case key::kCancel:
     return cancel;
-  case key::kMenu:
-    return menu;
+  case key::kStart:
+    return start;
+  case key::kEscape:
+    return {};
   case key::kUp:
     return up;
   case key::kDown:
@@ -188,23 +191,41 @@ void GameStack::update(bool controller_change) {
   for (std::size_t i = 0; i < io_layer_.controllers(); ++i) {
     handle(input, io_layer_.controller_frame(i));
   }
+  cursor_ = input.mouse_cursor;
+  io_layer_.capture_mouse(!layers_.empty() && +(top()->flags() & layer_flag::kCaptureCursor));
   auto it = get_capture_it(layers_.begin(), layers_.end(), layer_flag::kCaptureUpdate);
   auto input_it = get_capture_it(layers_.begin(), layers_.end(), layer_flag::kCaptureInput);
   while (it != layers_.end()) {
+    auto& e = *it;
     input_frame layer_input;
     if (it >= input_it) {
       render::target target{.screen_dimensions = io_layer_.dimensions(),
                             .render_dimensions = (*it)->bounds().size};
       layer_input = input;
-      layer_input.mouse_cursor = target.screen_to_render_coords(*input.mouse_cursor);
-      layer_input.mouse_delta = *layer_input.mouse_cursor -
-          target.screen_to_render_coords(*input.mouse_cursor - *input.mouse_delta);
+      if (input.mouse_cursor) {
+        layer_input.mouse_cursor = target.screen_to_render_coords(*input.mouse_cursor);
+        layer_input.mouse_delta = *layer_input.mouse_cursor -
+            target.screen_to_render_coords(*input.mouse_cursor - *input.mouse_delta);
+      } else {
+        layer_input.mouse_delta.reset();
+      }
     }
     auto size = layers_.size();
     output_frame output;
-    (*it)->update(layer_input, output);
+    e->update(layer_input, output);
     if (it >= input_it) {
-      (*it)->update_focus(layer_input, output);
+      if (!e->has_focus()) {
+        if (layer_input.pressed(ui::key::kUp) || input.pressed(ui::key::kLeft)) {
+          e->focus(/* last */ true);
+        } else if (layer_input.pressed(ui::key::kDown) || input.pressed(ui::key::kRight)) {
+          e->focus(/* last */ false);
+        }
+        if (e->has_focus()) {
+          play_sound(sound::kMenuClick);
+          layer_input.key_pressed.fill(false);
+        }
+      }
+      e->update_focus(layer_input, output);
     }
     for (auto s : output.sounds) {
       play_sound(s);
@@ -212,7 +233,7 @@ void GameStack::update(bool controller_change) {
     if (size != layers_.size()) {
       input = {};
     }
-    if ((*it)->is_removed()) {
+    if (e->is_removed()) {
       it = layers_.erase(it);
     } else {
       ++it;
@@ -226,6 +247,18 @@ void GameStack::render(render::GlRenderer& renderer) const {
   for (; it != layers_.end(); ++it) {
     renderer.target().render_dimensions = static_cast<glm::uvec2>((*it)->bounds().size);
     (*it)->render(renderer);
+  }
+  renderer.target().render_dimensions = {640, 360};
+  if (cursor_ && (layers_.empty() || !(top()->flags() & layer_flag::kCaptureCursor))) {
+    // Render cursor.
+    auto offset = static_cast<glm::ivec2>(glm::round(from_polar(glm::pi<float>() / 3.f, 8.f)));
+    render::shape cursor_shape{
+        .origin = offset + renderer.target().screen_to_render_coords(*cursor_),
+        .colour = colour_hue360(120),
+        .z_index = 128.f,
+        .data = render::ngon{.radius = 8.f, .sides = 3, .line_width = 2.f},
+    };
+    renderer.render_shapes(render::coordinate_system::kGlobal, {&cursor_shape, 1}, 0.f);
   }
 }
 
@@ -263,7 +296,7 @@ void GameStack::write_replay(const data::ReplayWriter& writer, const std::string
 }
 
 void GameStack::set_volume(float volume) {
-  mixer_.set_master_volume(volume / 100.f);
+  mixer_.set_master_volume(volume);
 }
 
 void GameStack::play_sound(sound s) {

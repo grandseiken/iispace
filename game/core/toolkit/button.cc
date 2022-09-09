@@ -32,13 +32,20 @@ Button& Button::set_margin(const glm::ivec2& margin) {
 }
 
 void Button::update_content(const input_frame& input, ui::output_frame& output) {
+  if (input.mouse_delta && *input.mouse_delta != glm::ivec2{0}) {
+    if (input.mouse_cursor && bounds().size_rect().contains(*input.mouse_cursor)) {
+      focus();
+    } else {
+      unfocus();
+    }
+  }
   if (has_primary_focus()) {
     panel_->set_colour(focus_colour_);
     panel_->set_style(focus_style_);
     text_element_->set_colour(focus_text_colour_);
     text_element_->set_font(focus_font_);
 
-    if (callback_ && input.pressed(ui::key::kAccept)) {
+    if (callback_ && (input.pressed(ui::key::kAccept) || input.pressed(ui::key::kStart))) {
       output.sounds.emplace_back(sound::kMenuAccept);
       callback_();
     }

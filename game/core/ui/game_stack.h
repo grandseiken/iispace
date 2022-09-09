@@ -28,6 +28,7 @@ enum class layer_flag : std::uint32_t {
   kCaptureInput = 0b0001,
   kCaptureUpdate = 0b0010,
   kCaptureRender = 0b0100,
+  kCaptureCursor = 0b1000,
 };
 }  // namespace ii::ui
 
@@ -102,6 +103,7 @@ private:
   data::savegame save_;
 
   std::uint32_t fps_ = 60;
+  std::optional<glm::ivec2> cursor_;
   std::deque<std::unique_ptr<GameLayer>> layers_;
 };
 

@@ -4,6 +4,7 @@
 #include "game/core/toolkit/layout.h"
 #include "game/core/toolkit/panel.h"
 #include "game/core/toolkit/text.h"
+#include "game/io/io.h"
 #include "game/render/gl_renderer.h"
 
 namespace ii {
@@ -50,12 +51,16 @@ PauseLayer::PauseLayer(ui::GameStack& stack, std::function<void()> on_quit)
     }
     remove();
   });
+
+  stack.play_sound(sound::kMenuAccept);
+  focus();
 }
 
 void PauseLayer::update_content(const ui::input_frame& input, ui::output_frame& output) {
   ui::GameLayer::update_content(input, output);
+  stack().io_layer().capture_mouse(false);
 
-  if (input.pressed(ui::key::kCancel)) {
+  if (input.pressed(ui::key::kCancel) || input.pressed(ui::key::kEscape)) {
     stack().play_sound(sound::kMenuAccept);
     remove();
   }

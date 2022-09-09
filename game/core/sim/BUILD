@@ -34,6 +34,7 @@ cc_library(
     "//game/core/layers:common",
     "//game/core/toolkit",
     "//game/render",
+    "//game/io",
   ],
 )
 

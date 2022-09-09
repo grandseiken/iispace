@@ -150,7 +150,8 @@ struct PlayerLogic : ecs::component {
             c_dark,           powerup_colour};
   };
 
-  PlayerLogic(const SimInterface& sim) : is_what_mode{sim.conditions().mode == game_mode::kWhat} {}
+  PlayerLogic(const SimInterface& sim, const vec2& target)
+  : is_what_mode{sim.conditions().mode == game_mode::kWhat}, fire_target{target} {}
   bool is_what_mode = false;
   std::uint32_t invulnerability_timer = kReviveTime;
   std::uint32_t fire_timer = 0;
@@ -341,7 +342,7 @@ void spawn_player(SimInterface& sim, const vec2& position, std::uint32_t player_
   auto h = create_ship<PlayerLogic>(sim, position);
   h.add(
       Player{.player_number = player_number, .render_info = ecs::call<&PlayerLogic::render_info>});
-  h.add(PlayerLogic{sim});
+  h.add(PlayerLogic{sim, position + vec2{0, -48}});
   if (is_ai) {
     h.add(AiPlayer{});
   }

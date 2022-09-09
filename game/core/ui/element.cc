@@ -4,7 +4,7 @@
 
 namespace ii::ui {
 
-bool Element::focus() {
+bool Element::focus(bool last) {
   if (+(flags() & element_flags::kCanFocus)) {
     for (auto* e = root(); e;) {
       e->focus_ = false;
@@ -19,6 +19,9 @@ bool Element::focus() {
       }
     }
     return true;
+  }
+  if (last) {
+    return std::find_if(rbegin(), rend(), [](const auto& e) { return e->focus(); }) != rend();
   }
   return std::find_if(begin(), end(), [](const auto& e) { return e->focus(); }) != end();
 }
@@ -51,9 +54,6 @@ void Element::update(const input_frame& input, output_frame& output) {
 }
 
 void Element::update_focus(const input_frame& input, output_frame& output) {
-  if (!has_focus()) {
-    focus();
-  }
   for (auto* e = focused_element(); e; e = e->parent()) {
     if (e->handle_focus(input, output)) {
       break;

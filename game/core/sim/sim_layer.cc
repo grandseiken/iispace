@@ -99,11 +99,15 @@ SimLayer::~SimLayer() = default;
 
 SimLayer::SimLayer(ui::GameStack& stack, const initial_conditions& conditions,
                    const game_options_t& options)
-: ui::GameLayer{stack, ui::layer_flag::kCaptureUpdate | ui::layer_flag::kCaptureRender}
+: ui::GameLayer{stack,
+                ui::layer_flag::kCaptureUpdate | ui::layer_flag::kCaptureRender |
+                    ui::layer_flag::kCaptureCursor}
 , impl_{std::make_unique<impl_t>(conditions, options)} {
   impl_->game.emplace(stack.io_layer(), data::ReplayWriter{conditions});
   impl_->game->input.set_player_count(conditions.player_count);
   impl_->state = std::make_unique<SimState>(conditions, &impl_->game->writer, options.ai_players);
+  add_flags(ui::element_flags::kCanFocus);
+  focus();
 }
 
 SimLayer::SimLayer(ui::GameStack& stack, data::ReplayReader&& replay, const game_options_t& options)
@@ -125,9 +129,12 @@ SimLayer::SimLayer(ui::GameStack& stack, data::ReplayReader&& replay, const game
     }
     impl_->network_state = std::make_unique<NetworkedSimState>(conditions, mapping);
   }
+  add_flags(ui::element_flags::kCanFocus);
+  focus();
 }
 
 void SimLayer::update_content(const ui::input_frame& input, ui::output_frame&) {
+  stack().io_layer().capture_mouse(true);
   auto& istate =
       impl_->network_state ? static_cast<ISimState&>(*impl_->network_state) : *impl_->state;
   set_bounds(rect{istate.dimensions()});
@@ -151,7 +158,7 @@ void SimLayer::update_content(const ui::input_frame& input, ui::output_frame&) {
   impl_->show_controllers_dialog = false;
 
   if (impl_->controllers_dialog) {
-    if (input.pressed(ui::key::kMenu) || input.pressed(ui::key::kAccept)) {
+    if (input.pressed(ui::key::kStart) || input.pressed(ui::key::kAccept)) {
       impl_->controllers_dialog = false;
       stack().play_sound(sound::kMenuAccept);
     }
@@ -216,16 +223,14 @@ void SimLayer::update_content(const ui::input_frame& input, ui::output_frame&) {
     }
   }
 
-  if (input.pressed(ui::key::kMenu) && !impl_->controllers_dialog) {
-    stack().io_layer().capture_mouse(false);
+  if ((input.pressed(ui::key::kStart) || input.pressed(ui::key::kEscape)) &&
+      !impl_->controllers_dialog) {
     stack().add<PauseLayer>([this] {
       end_game();
       remove();
     });
-    stack().play_sound(sound::kMenuAccept);
     return;
   }
-  stack().io_layer().capture_mouse(true);
 }
 
 void SimLayer::render_content(render::GlRenderer& r) const {

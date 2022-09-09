@@ -319,6 +319,9 @@ keyboard::frame SdlIoLayer::keyboard_frame() const {
 }
 
 mouse::frame SdlIoLayer::mouse_frame() const {
+  if (SDL_GetMouseFocus() != impl_->window.get()) {
+    impl_->mouse_frame.cursor.reset();
+  }
   return impl_->mouse_frame;
 }
 

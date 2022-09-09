@@ -56,7 +56,9 @@ vec2 kbm_fire_target(const io::mouse::frame& frame, const glm::uvec2& game_dimen
   auto scale = screen_aspect > game_aspect ? glm::vec2{game_aspect / screen_aspect, 1.f}
                                            : glm::vec2{1.f, screen_aspect / game_aspect};
 
-  auto cursor = static_cast<glm::vec2>(frame.cursor) / screen - (glm::vec2{1.f, 1.f} - scale) / 2.f;
+  auto screen_cursor = static_cast<glm::vec2>(
+      frame.cursor.value_or(glm::ivec2{screen_dimensions.x / 2, screen_dimensions.y / 2}));
+  auto cursor = screen_cursor / screen - (glm::vec2{1.f, 1.f} - scale) / 2.f;
   cursor *= game / scale;
   cursor.x = std::max(0.f, std::min(game.x, cursor.x));
   cursor.y = std::max(0.f, std::min(game.y, cursor.y));

@@ -9,7 +9,7 @@
 namespace ii::data {
 
 struct config {
-  float volume = 100.f;
+  float volume = 1.f;
 };
 
 result<config> read_config(std::span<const std::uint8_t>);
