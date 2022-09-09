@@ -31,7 +31,8 @@ cc_binary(
   deps = [
     ":flags",
     ":mode_flags",
-    "//game/core",
+    "//game/core/layers:main_menu",
+    "//game/core/sim:sim_layer",
     "//game/core/ui",
     "//game/io:sdl_io",
     "//game/io/file:std_filesystem",

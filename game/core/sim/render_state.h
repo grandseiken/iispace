@@ -1,5 +1,5 @@
-#ifndef II_GAME_CORE_RENDER_STATE_H
-#define II_GAME_CORE_RENDER_STATE_H
+#ifndef II_GAME_CORE_SIM_RENDER_STATE_H
+#define II_GAME_CORE_SIM_RENDER_STATE_H
 #include "game/common/random.h"
 #include "game/logic/sim/io/aggregate.h"
 #include <glm/glm.hpp>
@@ -11,7 +11,7 @@ namespace render {
 class GlRenderer;
 }  // namespace render
 class ISimState;
-class IoInputAdapter;
+class InputAdapter;
 class Mixer;
 
 class RenderState {
@@ -21,8 +21,8 @@ public:
   void set_dimensions(const glm::uvec2& dimensions) { dimensions_ = dimensions; }
 
   // If mixer != nullptr, sounds will be handled. If input != nullptr, rumble will be handled.
-  void handle_output(ISimState& state, Mixer* mixer, IoInputAdapter* input);
-  void update(IoInputAdapter* input);
+  void handle_output(ISimState& state, Mixer* mixer, InputAdapter* input);
+  void update(InputAdapter* input);
   void render(render::GlRenderer& r) const;
 
 private:

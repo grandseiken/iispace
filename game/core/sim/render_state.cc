@@ -1,5 +1,5 @@
-#include "game/core/render_state.h"
-#include "game/core/io_input_adapter.h"
+#include "game/core/sim/render_state.h"
+#include "game/core/sim/input_adapter.h"
 #include "game/logic/sim/io/output.h"
 #include "game/logic/sim/sim_state.h"
 #include "game/mixer/mixer.h"
@@ -18,7 +18,7 @@ std::uint32_t ticks_to_ms(std::uint32_t ticks) {
 }
 }  // namespace
 
-void RenderState::handle_output(ISimState& state, Mixer* mixer, IoInputAdapter* input) {
+void RenderState::handle_output(ISimState& state, Mixer* mixer, InputAdapter* input) {
   struct sound_average {
     std::size_t count = 0;
     float volume = 0.f;
@@ -98,7 +98,7 @@ void RenderState::handle_output(ISimState& state, Mixer* mixer, IoInputAdapter* 
   }
 }
 
-void RenderState::update(IoInputAdapter* input) {
+void RenderState::update(InputAdapter* input) {
   if (input) {
     for (std::uint32_t i = 0; i < rumble_.size(); ++i) {
       bool rumbled = false;

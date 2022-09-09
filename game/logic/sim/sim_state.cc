@@ -146,7 +146,7 @@ void SimState::ai_think(std::vector<input_frame>& input) const {
 void SimState::update(std::vector<input_frame> input) {
   colour_cycle_ = internals_->conditions.mode == game_mode::kHard ? 128
       : internals_->conditions.mode == game_mode::kFast           ? 192
-      : internals_->conditions.mode == game_mode::kWhat           ? (colour_cycle_ + 1) % 256
+      : internals_->conditions.mode == game_mode::kWhat           ? (colour_cycle_ + 3) % 256
                                                                   : 0;
   internals_->input_frames = std::move(input);
   internals_->input_frames.resize(internals_->conditions.player_count);

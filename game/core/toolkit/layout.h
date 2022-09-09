@@ -21,6 +21,11 @@ public:
     return *this;
   }
 
+  LinearLayout& set_align_end(bool align_end) {
+    align_end_ = align_end;
+    return *this;
+  }
+
   LinearLayout& set_orientation(orientation type) {
     type_ = type;
     return *this;
@@ -52,6 +57,7 @@ private:
   };
 
   bool wrap_focus_ = false;
+  bool align_end_ = false;
   orientation type_ = orientation::kVertical;
   std::int32_t spacing_ = 0;
   std::unordered_map<const Element*, element_info> info_;

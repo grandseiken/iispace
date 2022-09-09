@@ -1,5 +1,5 @@
-#ifndef II_GAME_CORE_IO_INPUT_ADAPTER_H
-#define II_GAME_CORE_IO_INPUT_ADAPTER_H
+#ifndef II_GAME_CORE_SIM_INPUT_ADAPTER_H
+#define II_GAME_CORE_SIM_INPUT_ADAPTER_H
 #include "game/logic/sim/io/player.h"
 #include <glm/glm.hpp>
 #include <cstddef>
@@ -14,10 +14,10 @@ namespace io {
 class IoLayer;
 }  // namespace io
 
-class IoInputAdapter {
+class InputAdapter {
 public:
-  ~IoInputAdapter();
-  IoInputAdapter(const io::IoLayer& io_layer);
+  ~InputAdapter();
+  InputAdapter(const io::IoLayer& io_layer);
 
   enum input_type : std::uint32_t {
     kNone = 0,

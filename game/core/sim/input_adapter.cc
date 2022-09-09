@@ -1,4 +1,4 @@
-#include "game/core/io_input_adapter.h"
+#include "game/core/sim/input_adapter.h"
 #include "game/io/io.h"
 #include <optional>
 
@@ -112,10 +112,10 @@ std::uint32_t controller_keys(const io::controller::frame& frame) {
 
 }  // namespace
 
-IoInputAdapter::~IoInputAdapter() = default;
-IoInputAdapter::IoInputAdapter(const io::IoLayer& io_layer) : io_layer_{io_layer} {}
+InputAdapter::~InputAdapter() = default;
+InputAdapter::InputAdapter(const io::IoLayer& io_layer) : io_layer_{io_layer} {}
 
-void IoInputAdapter::set_player_count(std::uint32_t players) {
+void InputAdapter::set_player_count(std::uint32_t players) {
   player_count_ = players;
   last_aim_.clear();
   for (std::uint32_t i = 0; i < players; ++i) {
@@ -123,11 +123,11 @@ void IoInputAdapter::set_player_count(std::uint32_t players) {
   }
 }
 
-void IoInputAdapter::set_game_dimensions(const glm::uvec2& dimensions) {
+void InputAdapter::set_game_dimensions(const glm::uvec2& dimensions) {
   game_dimensions_ = dimensions;
 }
 
-IoInputAdapter::input_type IoInputAdapter::input_type_for(std::uint32_t player_index) const {
+InputAdapter::input_type InputAdapter::input_type_for(std::uint32_t player_index) const {
   input_type result = input_type::kNone;
   auto input = assign_input(player_index, player_count_, io_layer_.controllers());
   if (input.controller) {
@@ -139,7 +139,7 @@ IoInputAdapter::input_type IoInputAdapter::input_type_for(std::uint32_t player_i
   return result;
 }
 
-std::vector<input_frame> IoInputAdapter::get() {
+std::vector<input_frame> InputAdapter::get() {
   auto mouse_frame = io_layer_.mouse_frame();
   auto keyboard_frame = io_layer_.keyboard_frame();
   std::vector<io::controller::frame> controller_frames;
@@ -198,8 +198,8 @@ std::vector<input_frame> IoInputAdapter::get() {
   return frames;
 }
 
-void IoInputAdapter::rumble(std::uint32_t player_index, std::uint16_t lf, std::uint16_t hf,
-                            std::uint32_t duration_ms) const {
+void InputAdapter::rumble(std::uint32_t player_index, std::uint16_t lf, std::uint16_t hf,
+                          std::uint32_t duration_ms) const {
   auto input = assign_input(player_index, player_count_, io_layer_.controllers());
   if (input.controller) {
     io_layer_.controller_rumble(*input.controller, lf, hf, duration_ms);

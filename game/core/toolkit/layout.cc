@@ -54,7 +54,7 @@ void LinearLayout::update_content(const input_frame&, ui::output_frame&) {
   }
   auto error_space = free_space - allocated_space;
 
-  std::int32_t position = 0;
+  std::int32_t position = align_end_ && !weighted_count ? free_space : 0;
   std::size_t weighted_i = 0;
   for (const auto& e : *this) {
     auto info = get_info(e.get());
