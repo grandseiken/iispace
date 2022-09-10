@@ -75,8 +75,11 @@ public:
   void set_fps(std::uint32_t fps) { fps_ = fps; }
 
   template <typename T, typename... Args>
-  void add(Args&&... args) {
-    layers_.emplace_back(std::make_unique<T>(*this, std::forward<Args>(args)...));
+  T* add(Args&&... args) {
+    auto u = std::make_unique<T>(*this, std::forward<Args>(args)...);
+    auto r = u.get();
+    layers_.emplace_back(std::move(u));
+    return r;
   }
 
   bool empty() const { return layers_.empty(); }
@@ -106,8 +109,11 @@ private:
   std::uint32_t fps_ = 60;
   std::uint32_t cursor_anim_frame_ = 0;
   std::uint32_t cursor_frame_ = 0;
+  std::vector<glm::ivec2> prev_controller_;
+  std::optional<glm::ivec2> prev_cursor_;
   std::optional<glm::ivec2> cursor_;
   std::deque<std::unique_ptr<GameLayer>> layers_;
+  std::array<std::uint32_t, static_cast<std::size_t>(key::kMax)> key_held_frames = {0u};
 };
 
 }  // namespace ii::ui

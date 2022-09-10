@@ -118,7 +118,7 @@ bool LinearLayout::handle_focus(const input_frame& input, ui::output_frame& outp
 
   for (; index != focus_index; index = (index + u_offset) % size()) {
     if ((*this)[index]->focus()) {
-      output.sounds.emplace_back(sound::kMenuClick);
+      output.sounds.emplace(sound::kMenuClick);
       return true;
     }
     if (is_end(index)) {
@@ -221,7 +221,7 @@ bool GridLayout::handle_focus(const input_frame& input, ui::output_frame& output
       focus_index = offset.y < 0 ? size() - 1 : columns - 1;
     }
     if ((*this)[*focus_index]->focus()) {
-      output.sounds.emplace_back(sound::kMenuClick);
+      output.sounds.emplace(sound::kMenuClick);
       return true;
     }
   }
@@ -231,7 +231,7 @@ bool GridLayout::handle_focus(const input_frame& input, ui::output_frame& output
       return false;
     }
     if ((*this)[*focus_index]->focus()) {
-      output.sounds.emplace_back(sound::kMenuClick);
+      output.sounds.emplace(sound::kMenuClick);
       return true;
     }
     if (*focus_index == start_index) {

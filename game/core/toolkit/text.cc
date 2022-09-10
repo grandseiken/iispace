@@ -113,18 +113,41 @@ void TextElement::render_content(render::GlRenderer& r) const {
     }
     dirty_ = false;
   }
-
   auto line_height = r.line_height(font_, font_dimensions_);
-  glm::ivec2 position{0};
+
+  auto align_x = [&](std::u32string s) -> std::int32_t {
+    if (+(align_ & alignment::kLeft)) {
+      return 0;
+    }
+    if (+(align_ & alignment::kRight)) {
+      return bounds().size.x - r.text_width(font_, font_dimensions_, ustring_view::utf32(s));
+    }
+    return (bounds().size.x - r.text_width(font_, font_dimensions_, ustring_view::utf32(s))) / 2;
+  };
+
+  auto align_y = [&]() -> std::int32_t {
+    if (+(align_ & alignment::kTop)) {
+      return 0;
+    }
+    if (+(align_ & alignment::kBottom)) {
+      return bounds().size.y - line_height * static_cast<std::int32_t>(lines_.size());
+    }
+    return (bounds().size.y - line_height * static_cast<std::int32_t>(lines_.size())) / 2;
+  };
+
+  glm::ivec2 position{0, align_y()};
   // TODO: render all in one?
   if (drop_shadow_) {
     for (const auto& s : lines_) {
+      position.x = align_x(s);
       r.render_text(font_, font_dimensions_, position + drop_shadow_->offset,
                     glm::vec4{0.f, 0.f, 0.f, drop_shadow_->opacity}, ustring_view::utf32(s));
+      position.y += line_height;
     }
   }
-  position = glm::ivec2{0};
+  position = glm::ivec2{0, align_y()};
   for (const auto& s : lines_) {
+    position.x = align_x(s);
     r.render_text(font_, font_dimensions_, position, colour_, ustring_view::utf32(s));
     position.y += line_height;
   }

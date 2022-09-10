@@ -21,6 +21,11 @@ Button& Button::set_drop_shadow(const glm::ivec2& offset, float opacity) {
   return *this;
 }
 
+Button& Button::set_alignment(alignment align) {
+  text_element_->set_alignment(align);
+  return *this;
+}
+
 Button& Button::set_text(ustring&& text) {
   text_element_->set_text(std::move(text));
   return *this;
@@ -37,11 +42,16 @@ Button& Button::set_margin(const glm::ivec2& margin) {
 }
 
 void Button::update_content(const input_frame& input, ui::output_frame& output) {
+  bool hover = input.mouse_cursor && bounds().size_rect().contains(*input.mouse_cursor);
   if (input.mouse_delta && *input.mouse_delta != glm::ivec2{0}) {
-    if (input.mouse_cursor && bounds().size_rect().contains(*input.mouse_cursor)) {
+    bool f = has_focus();
+    if (hover) {
       focus();
     } else {
       unfocus();
+    }
+    if (!f && has_focus()) {
+      output.sounds.emplace(sound::kMenuClick);
     }
   }
   if (has_primary_focus()) {
@@ -50,8 +60,10 @@ void Button::update_content(const input_frame& input, ui::output_frame& output) 
     text_element_->set_colour(focus_text_colour_);
     text_element_->set_font(focus_font_);
 
-    if (callback_ && (input.pressed(ui::key::kAccept) || input.pressed(ui::key::kStart))) {
-      output.sounds.emplace_back(sound::kMenuAccept);
+    if (callback_ &&
+        (input.pressed(ui::key::kAccept) || input.pressed(ui::key::kStart) ||
+         (input.pressed(ui::key::kClick) && hover))) {
+      output.sounds.emplace(sound::kMenuAccept);
       callback_();
     }
   } else {

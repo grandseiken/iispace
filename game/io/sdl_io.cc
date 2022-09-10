@@ -236,7 +236,7 @@ std::optional<event_type> SdlIoLayer::poll() {
 
     case SDL_KEYDOWN:
     case SDL_KEYUP:
-      if (auto key = convert_sdl_key(event.key.keysym.sym); key) {
+      if (auto key = convert_sdl_key(event.key.keysym.sym); key && !event.key.repeat) {
         auto& e = impl_->keyboard_frame.key_events.emplace_back();
         e.key = *key;
         e.mods = impl_->keyboard_frame.mods();

@@ -14,6 +14,7 @@ cc_library(
   ],
   deps = [
     "//game/core/ui:element",
+    "//game/common:types",
     "//game/common:ustring",
     "//game/render:render_common",
   ],

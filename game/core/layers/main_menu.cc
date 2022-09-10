@@ -5,6 +5,7 @@
 #include "game/core/toolkit/button.h"
 #include "game/core/toolkit/layout.h"
 #include "game/core/toolkit/panel.h"
+#include "game/core/toolkit/text.h"
 #include "game/io/io.h"
 
 namespace ii {

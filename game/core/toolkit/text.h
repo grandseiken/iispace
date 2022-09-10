@@ -1,15 +1,31 @@
 #ifndef II_GAME_CORE_TOOLKIT_TEXT_H
 #define II_GAME_CORE_TOOLKIT_TEXT_H
+#include "game/common/enum.h"
 #include "game/common/ustring.h"
 #include "game/core/ui/element.h"
 #include "game/render/render_common.h"
 #include <glm/glm.hpp>
+#include <cstdint>
 #include <optional>
 #include <string>
 #include <vector>
 
 namespace ii::ui {
+enum class alignment : std::uint32_t {
+  kCentered = 0b0000,
+  kLeft = 0b0001,
+  kRight = 0b0010,
+  kTop = 0b0100,
+  kBottom = 0b1000,
+};
+}  // namespace ii::ui
 
+namespace ii {
+template <>
+struct bitmask_enum<ui::alignment> : std::true_type {};
+}  // namespace ii
+
+namespace ii::ui {
 class TextElement : public Element {
 public:
   using Element::Element;
@@ -48,6 +64,11 @@ public:
     return *this;
   }
 
+  TextElement& set_alignment(alignment align) {
+    align_ = align;
+    return *this;
+  }
+
   TextElement& set_text(ustring&& text) {
     text_ = std::move(text);
     dirty_ = true;
@@ -68,6 +89,7 @@ private:
   glm::vec4 colour_{1.f};
   std::optional<drop_shadow> drop_shadow_;
   bool multiline_ = false;
+  alignment align_ = alignment::kLeft | alignment::kTop;
   ustring text_ = ustring::ascii("");
 
   mutable rect cached_bounds_;

@@ -4,8 +4,10 @@ cc_library(
   srcs = ["sim_layer.cc"],
   deps = ["//game/core/ui"],
   implementation_deps = [
+    ":hud_layer",
     ":input_adapter",
-    ":sim_layer_internal",
+    ":pause_layer",
+    ":render_state",
     "//game/core:game_options",
     "//game/data:replay",
     "//game/data:save",
@@ -22,7 +24,9 @@ cc_library(
   srcs = ["replay_viewer.cc"],
   deps = ["//game/core/ui"],
   implementation_deps = [
-    ":sim_layer_internal",
+    ":hud_layer",
+    ":pause_layer",
+    ":render_state",
     "//game/core:game_options",
     "//game/data:replay",
     "//game/logic/sim",
@@ -34,14 +38,14 @@ cc_library(
 )
 
 cc_library(
-  name = "sim_layer_internal",
-  hdrs = ["sim_layer_internal.h"],
-  deps = [
-    ":pause_layer",
-    ":render_state",
-    "//game/core/ui",
-    "//game/logic/sim",
-    "//game/logic/sim/io:render",
+  name = "hud_layer",
+  hdrs = ["hud_layer.h"],
+  srcs = ["hud_layer.cc"],
+  deps = ["//game/core/ui"],
+  implementation_deps = [
+    "//game/core/layers:common",
+    "//game/core/toolkit",
+    "//game/logic/sim/io:output",
   ],
 )
 

@@ -5,7 +5,7 @@
 #include <array>
 #include <cstddef>
 #include <optional>
-#include <vector>
+#include <unordered_set>
 
 namespace ii::ui {
 
@@ -29,6 +29,7 @@ struct input_frame {
   std::optional<glm::ivec2> mouse_delta;
   std::optional<glm::ivec2> mouse_cursor;
   std::optional<glm::ivec2> mouse_scroll;
+  std::optional<glm::ivec2> controller_scroll;
   bool pad_navigation = false;
 
   bool pressed(key k) const { return key_pressed[static_cast<std::size_t>(k)]; }
@@ -39,7 +40,8 @@ struct input_frame {
 };
 
 struct output_frame {
-  std::vector<sound> sounds;
+  // TODO: dedupe/mix this like with aggregates...
+  std::unordered_set<sound> sounds;
 };
 
 }  // namespace ii::ui

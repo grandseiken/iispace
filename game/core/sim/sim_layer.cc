@@ -1,9 +1,9 @@
 #include "game/core/sim/sim_layer.h"
 #include "game/core/game_options.h"
+#include "game/core/sim/hud_layer.h"
 #include "game/core/sim/input_adapter.h"
 #include "game/core/sim/pause_layer.h"
 #include "game/core/sim/render_state.h"
-#include "game/core/sim/sim_layer_internal.h"
 #include "game/data/replay.h"
 #include "game/data/save.h"
 #include "game/logic/sim/sim_state.h"
@@ -14,6 +14,19 @@
 #include <vector>
 
 namespace ii {
+namespace {
+// TODO: used for some stuff that should use value from sim state instead.
+constexpr glm::uvec2 kDimensions = {640, 480};
+constexpr glm::uvec2 kTextSize = {16, 16};
+
+constexpr glm::vec4 kPanelText = {0.f, 0.f, .925f, 1.f};
+constexpr glm::vec4 kPanelTran = {0.f, 0.f, .925f, .6f};
+inline void render_text(const render::GlRenderer& r, const glm::vec2& v, const std::string& text,
+                        const glm::vec4& c) {
+  r.render_text(render::font_id::kDefault, {16, 16}, 16 * static_cast<glm::ivec2>(v), c,
+                ustring_view::utf8(text));
+}
+}  // namespace
 
 struct SimLayer::impl_t {
   impl_t(io::IoLayer& io_layer, const initial_conditions& conditions, const game_options_t& options)
@@ -26,6 +39,7 @@ struct SimLayer::impl_t {
     input.set_player_count(conditions.player_count);
   }
 
+  HudLayer* hud = nullptr;
   std::uint32_t audio_tick = 0;
   bool show_controllers_dialog = true;
   bool controllers_dialog = true;
@@ -48,13 +62,18 @@ SimLayer::SimLayer(ui::GameStack& stack, const initial_conditions& conditions,
 , impl_{std::make_unique<impl_t>(stack.io_layer(), conditions, options)} {}
 
 void SimLayer::update_content(const ui::input_frame& ui_input, ui::output_frame&) {
-  set_sim_layer(*impl_->state, stack(), *this);
+  set_bounds(rect{impl_->state->dimensions()});
+  stack().set_fps(impl_->state->fps());
+  if (!impl_->hud) {
+    impl_->hud = stack().add<HudLayer>(impl_->mode);
+  }
   if (is_removed()) {
     return;
   }
   if (impl_->state->game_over()) {
     end_game();
     stack().play_sound(sound::kMenuAccept);
+    impl_->hud->remove();
     remove();
     return;
   }
@@ -65,7 +84,8 @@ void SimLayer::update_content(const ui::input_frame& ui_input, ui::output_frame&
   impl_->show_controllers_dialog = false;
 
   if (impl_->controllers_dialog) {
-    if (ui_input.pressed(ui::key::kStart) || ui_input.pressed(ui::key::kAccept)) {
+    if (ui_input.pressed(ui::key::kStart) || ui_input.pressed(ui::key::kAccept) ||
+        ui_input.pressed(ui::key::kClick)) {
       impl_->controllers_dialog = false;
       stack().play_sound(sound::kMenuAccept);
     }
@@ -87,6 +107,7 @@ void SimLayer::update_content(const ui::input_frame& ui_input, ui::output_frame&
       !impl_->controllers_dialog) {
     stack().add<PauseLayer>([this] {
       end_game();
+      impl_->hud->remove();
       remove();
     });
     return;
@@ -99,7 +120,7 @@ void SimLayer::render_content(render::GlRenderer& r) const {
   r.set_colour_cycle(render.colour_cycle);
   impl_->render_state.render(r);  // TODO: can be merged with below?
   r.render_shapes(render::coordinate_system::kGlobal, render.shapes, /* trail alpha */ 1.f);
-  render_hud(r, impl_->mode, render);
+  impl_->hud->set_data(render);
 
   if (impl_->controllers_dialog) {
     render_text(r, {4.f, 4.f}, "CONTROLLERS FOUND", kPanelText);

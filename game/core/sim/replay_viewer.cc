@@ -1,8 +1,8 @@
 #include "game/core/sim/replay_viewer.h"
 #include "game/core/game_options.h"
+#include "game/core/sim/hud_layer.h"
 #include "game/core/sim/pause_layer.h"
 #include "game/core/sim/render_state.h"
-#include "game/core/sim/sim_layer_internal.h"
 #include "game/data/replay.h"
 #include "game/logic/sim/networked_sim_state.h"
 #include "game/logic/sim/sim_state.h"
@@ -11,7 +11,6 @@
 #include <cstdint>
 #include <optional>
 #include <random>
-#include <sstream>
 
 namespace ii {
 
@@ -23,6 +22,7 @@ struct ReplayViewer::impl_t {
   , render_state{this->reader.initial_conditions().seed}
   , engine{std::random_device{}()} {}
 
+  HudLayer* hud = nullptr;
   data::ReplayReader reader;
   game_options_t options;
   game_mode mode;
@@ -69,13 +69,23 @@ ReplayViewer::ReplayViewer(ui::GameStack& stack, data::ReplayReader&& replay,
 }
 
 void ReplayViewer::update_content(const ui::input_frame& input, ui::output_frame&) {
-  set_sim_layer(impl_->istate(), stack(), *this);
+  set_bounds(rect{impl_->istate().dimensions()});
+  stack().set_fps(impl_->istate().fps());
+  if (!impl_->hud) {
+    impl_->hud = stack().add<HudLayer>(impl_->mode);
+  }
+  auto progress =
+      static_cast<float>(impl_->reader.current_input_frame()) / impl_->reader.total_input_frames();
+  impl_->hud->set_status_text(std::to_string(impl_->frame_count_multiplier) + "X " +
+                              std::to_string(static_cast<std::uint32_t>(100 * progress)) + "%");
+
   if (is_removed()) {
     return;
   }
 
   if (impl_->istate().game_over()) {
     stack().play_sound(sound::kMenuAccept);
+    impl_->hud->remove();
     remove();
     return;
   }
@@ -123,15 +133,18 @@ void ReplayViewer::update_content(const ui::input_frame& input, ui::output_frame
                                     nullptr);
   impl_->render_state.update(nullptr);
 
-  if (input.pressed(ui::key::kCancel)) {
+  if (input.pressed(ui::key::kUp)) {
     impl_->frame_count_multiplier *= 2;
   }
-  if (input.pressed(ui::key::kAccept) && impl_->frame_count_multiplier > 1) {
+  if (input.pressed(ui::key::kDown) && impl_->frame_count_multiplier > 1) {
     impl_->frame_count_multiplier /= 2;
   }
 
   if ((input.pressed(ui::key::kStart) || input.pressed(ui::key::kEscape))) {
-    stack().add<PauseLayer>([this] { remove(); });
+    stack().add<PauseLayer>([this] {
+      impl_->hud->remove();
+      remove();
+    });
     return;
   }
 }
@@ -142,19 +155,9 @@ void ReplayViewer::render_content(render::GlRenderer& r) const {
   impl_->render_state.render(r);  // TODO: can be merged with below?
   // TODO: instead of messing with trail alpha, render N frames ago first so trails aren't quite so
   // long?
+  impl_->hud->set_data(render);
   r.render_shapes(render::coordinate_system::kGlobal, render.shapes,
                   /* trail alpha */ 1.f / (1.f + std::log2f(impl_->frame_count_multiplier)));
-  render_hud(r, impl_->mode, render);
-
-  auto progress =
-      static_cast<float>(impl_->reader.current_input_frame()) / impl_->reader.total_input_frames();
-  std::stringstream ss;
-  ss << impl_->frame_count_multiplier << "X " << static_cast<std::uint32_t>(100 * progress) << "%";
-
-  render_text(r,
-              {kDimensions.x / (2.f * kTextSize.x) - ss.str().size() / 2,
-               kDimensions.y / kTextSize.y - 3.f},
-              ss.str(), kPanelTran);
 }
 
 }  // namespace ii

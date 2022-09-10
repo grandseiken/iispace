@@ -5,16 +5,24 @@
 #include "game/render/gl_renderer.h"
 #include <algorithm>
 #include <array>
+#include <cmath>
+#include <limits>
 #include <span>
 
 namespace ii::ui {
 namespace {
 const char* kSaveName = "space";
-constexpr std::uint32_t kCursorFrames = 16;
+constexpr std::uint32_t kCursorFrames = 32u;
+constexpr std::uint32_t kKeyRepeatDelayFrames = 20u;
+constexpr std::uint32_t kKeyRepeatIntervalFrames = 5u;
 
 template <typename T>
 bool contains(std::span<const T> range, T value) {
   return std::find(range.begin(), range.end(), value) != range.end();
+}
+
+bool is_navigation(key k) {
+  return k == key::kUp || k == key::kDown || k == key::kLeft || k == key::kRight;
 }
 
 std::span<const io::keyboard::key> keys_for(key k) {
@@ -51,12 +59,12 @@ std::span<const io::keyboard::key> keys_for(key k) {
 
 std::span<const io::mouse::button> mouse_buttons_for(key k) {
   using type = io::mouse::button;
-  static constexpr std::array accept = {type::kL};
+  static constexpr std::array click = {type::kL};
   static constexpr std::array cancel = {type::kR};
 
   switch (k) {
-  case key::kAccept:
-    return accept;
+  case key::kClick:
+    return click;
   case key::kCancel:
     return cancel;
   default:
@@ -124,13 +132,13 @@ void handle(input_frame& result, const io::keyboard::frame& frame) {
     for (const auto& e : frame.key_events) {
       if (e.down && contains(keys, e.key)) {
         result.pressed(k) = true;
-        result.pad_navigation = true;
+        result.pad_navigation |= is_navigation(k);
       }
     }
   }
 }
 
-void handle(input_frame& result, const io::controller::frame& frame) {
+void handle(input_frame& result, const io::controller::frame& frame, glm::ivec2& previous) {
   for (std::size_t i = 0; i < static_cast<std::size_t>(key::kMax); ++i) {
     auto k = static_cast<key>(i);
     auto buttons = controller_buttons_for(k);
@@ -140,10 +148,45 @@ void handle(input_frame& result, const io::controller::frame& frame) {
     for (const auto& e : frame.button_events) {
       if (e.down && contains(buttons, e.button)) {
         result.pressed(k) = true;
-        result.pad_navigation = true;
+        result.pad_navigation |= is_navigation(k);
       }
     }
   }
+
+  auto convert_axis = [](std::int16_t v) -> std::int32_t {
+    auto f = std::abs(static_cast<float>(v)) / std::numeric_limits<std::int16_t>::max();
+    f = std::round(4.f * std::clamp(2.f * f - 1.f, 0.f, 1.f));
+    auto i = static_cast<std::int32_t>(f);
+    return v >= 0 ? i : -i;
+  };
+
+  if (auto x = convert_axis(frame.axis(io::controller::axis::kRX)); x) {
+    if (!result.controller_scroll) {
+      result.controller_scroll = {0, 0};
+    }
+    result.controller_scroll->x += x;
+  }
+
+  if (auto y = convert_axis(frame.axis(io::controller::axis::kRY)); y) {
+    if (!result.controller_scroll) {
+      result.controller_scroll = {0, 0};
+    }
+    result.controller_scroll->y += y;
+  }
+
+  auto x = convert_axis(frame.axis(io::controller::axis::kLX));
+  auto y = convert_axis(frame.axis(io::controller::axis::kLY));
+  result.pad_navigation |= abs(x) > 1 || abs(y) > 1;
+  result.held(ui::key::kLeft) |= x < -1;
+  result.held(ui::key::kRight) |= x > 1;
+  result.held(ui::key::kUp) |= y < -1;
+  result.held(ui::key::kDown) |= y > 1;
+  result.pressed(ui::key::kLeft) |= x < -1 && previous.x >= -1;
+  result.pressed(ui::key::kRight) |= x > 1 && previous.x <= 1;
+  result.pressed(ui::key::kUp) |= y < -1 && previous.y >= -1;
+  result.pressed(ui::key::kDown) |= y > 1 && previous.y <= 1;
+  previous.x = x;
+  previous.y = y;
 }
 
 template <typename It>
@@ -191,11 +234,31 @@ void GameStack::update(bool controller_change) {
   // Compute input frame.
   input_frame input;
   input.controller_change = controller_change;
+  if (controller_change) {
+    prev_controller_.clear();
+    for (std::size_t i = 0; i < io_layer_.controllers(); ++i) {
+      prev_controller_.emplace_back(glm::ivec2{0});
+    }
+  }
   handle(input, io_layer_.keyboard_frame());
   handle(input, io_layer_.mouse_frame());
   for (std::size_t i = 0; i < io_layer_.controllers(); ++i) {
-    handle(input, io_layer_.controller_frame(i));
+    handle(input, io_layer_.controller_frame(i), prev_controller_[i]);
   }
+
+  for (std::size_t i = 0; i < static_cast<std::size_t>(ui::key::kMax); ++i) {
+    if (input.key_held[i] && is_navigation(static_cast<ui::key>(i))) {
+      ++key_held_frames[i];
+    } else {
+      key_held_frames[i] = 0;
+    }
+    if (key_held_frames[i] >= kKeyRepeatDelayFrames &&
+        !((key_held_frames[i] - kKeyRepeatDelayFrames) % kKeyRepeatIntervalFrames)) {
+      input.key_pressed[i] = true;
+    }
+  }
+
+  prev_cursor_ = cursor_;
   cursor_ = input.mouse_cursor;
   if (input.mouse_delta && input.mouse_delta != glm::ivec2{0}) {
     show_cursor_ = true;
@@ -203,9 +266,9 @@ void GameStack::update(bool controller_change) {
     show_cursor_ = false;
   }
   if (show_cursor_ && cursor_frame_ < kCursorFrames) {
-    ++cursor_frame_;
+    cursor_frame_ = std::min(kCursorFrames, cursor_frame_ + 3u);
   } else if (!show_cursor_ && cursor_frame_) {
-    --cursor_frame_;
+    cursor_frame_ -= std::min(cursor_frame_, 2u);
   }
 
   io_layer_.capture_mouse(!layers_.empty() && +(top()->flags() & layer_flag::kCaptureCursor));
@@ -270,12 +333,19 @@ void GameStack::render(render::GlRenderer& renderer) const {
     auto radius = scale * 8.f;
     auto origin = static_cast<glm::vec2>(renderer.target().screen_to_render_coords(*cursor_)) +
         from_polar(glm::pi<float>() / 3.f, radius);
+    std::optional<render::motion_trail> trail;
+    if (prev_cursor_) {
+      trail = {.prev_origin = static_cast<glm::vec2>(
+                                  renderer.target().screen_to_render_coords(*prev_cursor_)) +
+                   from_polar(glm::pi<float>() / 3.f, radius)};
+    }
     auto flash = (64.f - cursor_anim_frame_ % 64) / 64.f;
     std::array cursor_shapes = {
         render::shape{
             .origin = origin + glm::vec2{2.f, 2.f},
             .colour = {0.f, 0.f, 0.f, .5f},
             .z_index = 127.5f,
+            .trail = trail,
             .data = render::ngon{.radius = radius, .sides = 3, .line_width = radius / 2},
         },
         render::shape{
@@ -288,6 +358,7 @@ void GameStack::render(render::GlRenderer& renderer) const {
             .origin = origin,
             .colour = {0.f, 0.f, 0.f, 1.f},
             .z_index = 128.f,
+            .trail = trail,
             .data = render::ngon{.radius = radius, .sides = 3, .line_width = 1.5f},
         },
         render::shape{
@@ -299,7 +370,7 @@ void GameStack::render(render::GlRenderer& renderer) const {
                                  .line_width = std::min(radius * flash / 2.f, 1.5f)},
         },
     };
-    renderer.render_shapes(render::coordinate_system::kGlobal, cursor_shapes, 0.f);
+    renderer.render_shapes(render::coordinate_system::kGlobal, cursor_shapes, .25f);
   }
 }
 
