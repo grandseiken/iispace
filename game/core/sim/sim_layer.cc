@@ -116,7 +116,7 @@ void SimLayer::update_content(const ui::input_frame& ui_input, ui::output_frame&
 
 void SimLayer::render_content(render::GlRenderer& r) const {
   const auto& render =
-      impl_->state->render(/* paused */ impl_->controllers_dialog || stack().top() != this);
+      impl_->state->render(/* paused */ impl_->controllers_dialog || stack().top() != impl_->hud);
   r.set_colour_cycle(render.colour_cycle);
   impl_->render_state.render(r);  // TODO: can be merged with below?
   r.render_shapes(render::coordinate_system::kGlobal, render.shapes, /* trail alpha */ 1.f);

@@ -8,11 +8,16 @@
 #include "game/logic/sim/sim_state.h"
 #include "game/render/gl_renderer.h"
 #include <algorithm>
+#include <array>
 #include <cstdint>
 #include <optional>
 #include <random>
 
 namespace ii {
+namespace {
+constexpr std::array kSpeedFrames = {1u, 2u, 4u, 8u, 16u, 32u, 64u};
+constexpr std::array kSpeedPreRenderFrames = {0u, 1u, 3u, 6u, 14u, 30u, 61u};
+}  // namespace
 
 struct ReplayViewer::impl_t {
   impl_t(data::ReplayReader&& reader, const game_options_t& options)
@@ -27,7 +32,7 @@ struct ReplayViewer::impl_t {
   game_options_t options;
   game_mode mode;
   RenderState render_state;
-  std::uint32_t frame_count_multiplier = 1;
+  std::uint32_t speed = 0;
   std::uint32_t audio_tick = 0;
   std::unique_ptr<SimState> state;
 
@@ -76,7 +81,7 @@ void ReplayViewer::update_content(const ui::input_frame& input, ui::output_frame
   }
   auto progress =
       static_cast<float>(impl_->reader.current_input_frame()) / impl_->reader.total_input_frames();
-  impl_->hud->set_status_text(std::to_string(impl_->frame_count_multiplier) + "X " +
+  impl_->hud->set_status_text(std::to_string(kSpeedFrames[impl_->speed]) + "X " +
                               std::to_string(static_cast<std::uint32_t>(100 * progress)) + "%");
 
   if (is_removed()) {
@@ -90,7 +95,7 @@ void ReplayViewer::update_content(const ui::input_frame& input, ui::output_frame
     return;
   }
 
-  for (std::uint32_t i = 0; i < impl_->frame_count_multiplier; ++i) {
+  for (std::uint32_t i = 0; i < kSpeedFrames[impl_->speed]; ++i) {
     if (impl_->state) {
       auto input = impl_->reader.next_tick_input_frames();
       impl_->state->update(input);
@@ -124,20 +129,22 @@ void ReplayViewer::update_content(const ui::input_frame& input, ui::output_frame
       impl_->replay_packets.erase(impl_->replay_packets.begin(), end);
       impl_->network_state->update(local_frames);
     }
+    if (1 + i == kSpeedPreRenderFrames[impl_->speed]) {
+      impl_->istate().render(/* paused */ false);
+    }
   }
 
-  auto frame_x = static_cast<std::uint32_t>(std::log2(impl_->frame_count_multiplier));
-  bool handle_audio = !(impl_->audio_tick++ % (4 * (1 + frame_x / 2)));
+  bool handle_audio = !(impl_->audio_tick++ % (4 * (1 + impl_->speed / 2)));
   impl_->render_state.set_dimensions(impl_->istate().dimensions());
   impl_->render_state.handle_output(impl_->istate(), handle_audio ? &stack().mixer() : nullptr,
                                     nullptr);
   impl_->render_state.update(nullptr);
 
   if (input.pressed(ui::key::kUp)) {
-    impl_->frame_count_multiplier *= 2;
+    impl_->speed = std::min(6u, impl_->speed + 1);
   }
-  if (input.pressed(ui::key::kDown) && impl_->frame_count_multiplier > 1) {
-    impl_->frame_count_multiplier /= 2;
+  if (input.pressed(ui::key::kDown) && impl_->speed) {
+    --impl_->speed;
   }
 
   if ((input.pressed(ui::key::kStart) || input.pressed(ui::key::kEscape))) {
@@ -150,14 +157,13 @@ void ReplayViewer::update_content(const ui::input_frame& input, ui::output_frame
 }
 
 void ReplayViewer::render_content(render::GlRenderer& r) const {
-  const auto& render = impl_->istate().render(/* paused */ stack().top() != this);
+  const auto& render = impl_->istate().render(/* paused */ stack().top() != impl_->hud);
   r.set_colour_cycle(render.colour_cycle);
   impl_->render_state.render(r);  // TODO: can be merged with below?
   // TODO: instead of messing with trail alpha, render N frames ago first so trails aren't quite so
   // long?
   impl_->hud->set_data(render);
-  r.render_shapes(render::coordinate_system::kGlobal, render.shapes,
-                  /* trail alpha */ 1.f / (1.f + std::log2f(impl_->frame_count_multiplier)));
+  r.render_shapes(render::coordinate_system::kGlobal, render.shapes, /* trail alpha */ 1.f);
 }
 
 }  // namespace ii

@@ -14,10 +14,12 @@ inline result<void> parse_game_mode(std::vector<std::string>& args, game_mode& m
   if (mode_string) {
     if (*mode_string == "normal") {
       mode = game_mode::kNormal;
-    } else if (*mode_string == "hard") {
-      mode = game_mode::kHard;
     } else if (*mode_string == "boss") {
       mode = game_mode::kBoss;
+    } else if (*mode_string == "hard") {
+      mode = game_mode::kHard;
+    } else if (*mode_string == "fast") {
+      mode = game_mode::kFast;
     } else if (*mode_string == "what") {
       mode = game_mode::kWhat;
     } else {
