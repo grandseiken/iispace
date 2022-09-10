@@ -145,7 +145,7 @@ vec4 polygon_outer_v(polygon_data d, uint i) {
 
 vec4 polygon_inner_v(polygon_data d, uint i) {
   return render_position(d.position +
-                         ngon_vertex(i % d.sides, d.sides, d.rotation, d.radius - d.rd));
+                         ngon_vertex(i % d.sides, d.sides, d.rotation, max(0, d.radius - d.rd)));
 }
 
 // Polystars.

@@ -68,6 +68,8 @@ public:
   // single pass, etc.
   void render_panel(const panel_data&);
 
+  // TODO: render drop shadows.
+  // TODO: render fills.
   void
   render_shapes(coordinate_system ctype, std::span<const shape> shapes, float trail_alpha) const;
 

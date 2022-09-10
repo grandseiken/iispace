@@ -29,6 +29,7 @@ struct input_frame {
   std::optional<glm::ivec2> mouse_delta;
   std::optional<glm::ivec2> mouse_cursor;
   std::optional<glm::ivec2> mouse_scroll;
+  bool pad_navigation = false;
 
   bool pressed(key k) const { return key_pressed[static_cast<std::size_t>(k)]; }
   bool& pressed(key k) { return key_pressed[static_cast<std::size_t>(k)]; }

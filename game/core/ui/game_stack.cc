@@ -9,7 +9,8 @@
 
 namespace ii::ui {
 namespace {
-const char* kSaveName = "iispace";
+const char* kSaveName = "space";
+constexpr std::uint32_t kCursorFrames = 16;
 
 template <typename T>
 bool contains(std::span<const T> range, T value) {
@@ -123,6 +124,7 @@ void handle(input_frame& result, const io::keyboard::frame& frame) {
     for (const auto& e : frame.key_events) {
       if (e.down && contains(keys, e.key)) {
         result.pressed(k) = true;
+        result.pad_navigation = true;
       }
     }
   }
@@ -138,6 +140,7 @@ void handle(input_frame& result, const io::controller::frame& frame) {
     for (const auto& e : frame.button_events) {
       if (e.down && contains(buttons, e.button)) {
         result.pressed(k) = true;
+        result.pad_navigation = true;
       }
     }
   }
@@ -183,6 +186,8 @@ GameStack::GameStack(io::Filesystem& fs, io::IoLayer& io_layer, Mixer& mixer)
 }
 
 void GameStack::update(bool controller_change) {
+  std::erase_if(layers_, [](const auto& e) { return e->is_removed(); });
+
   // Compute input frame.
   input_frame input;
   input.controller_change = controller_change;
@@ -192,7 +197,16 @@ void GameStack::update(bool controller_change) {
     handle(input, io_layer_.controller_frame(i));
   }
   cursor_ = input.mouse_cursor;
-  std::erase_if(layers_, [](const auto& e) { return e->is_removed(); });
+  if (input.mouse_delta && input.mouse_delta != glm::ivec2{0}) {
+    show_cursor_ = true;
+  } else if (input.pad_navigation) {
+    show_cursor_ = false;
+  }
+  if (show_cursor_ && cursor_frame_ < kCursorFrames) {
+    ++cursor_frame_;
+  } else if (!show_cursor_ && cursor_frame_) {
+    --cursor_frame_;
+  }
 
   io_layer_.capture_mouse(!layers_.empty() && +(top()->flags() & layer_flag::kCaptureCursor));
   auto it = get_capture_it(layers_.begin(), layers_.end(), layer_flag::kCaptureUpdate);
@@ -247,13 +261,15 @@ void GameStack::render(render::GlRenderer& renderer) const {
     (*it)->render(renderer);
     renderer.clear_depth();
   }
-  if (cursor_ && (layers_.empty() || !(top()->flags() & layer_flag::kCaptureCursor))) {
-    // Render cursor.
+  if (cursor_ && cursor_frame_ &&
+      (layers_.empty() || !(top()->flags() & layer_flag::kCaptureCursor))) {
     // TODO: probably replace this once we can render shape fills with cool effects.
     renderer.target().render_dimensions = {640, 360};
-    auto radius = 10.f;
+    auto scale = static_cast<float>(cursor_frame_) / kCursorFrames;
+    scale = 1.f / 16 + (15.f / 16) * (1.f - (1.f - scale * scale));
+    auto radius = scale * 8.f;
     auto origin = static_cast<glm::vec2>(renderer.target().screen_to_render_coords(*cursor_)) +
-        glm::round(from_polar(glm::pi<float>() / 3.f, radius));
+        from_polar(glm::pi<float>() / 3.f, radius);
     auto flash = (64.f - cursor_anim_frame_ % 64) / 64.f;
     std::array cursor_shapes = {
         render::shape{
