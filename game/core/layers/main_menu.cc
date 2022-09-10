@@ -37,7 +37,7 @@ MainMenuLayer::MainMenuLayer(ui::GameStack& stack, const game_options_t& options
     conditions.compatibility = options_.compatibility;
     conditions.seed = static_cast<std::uint32_t>(time(0));
     conditions.flags |= initial_conditions::flag::kLegacy_CanFaceSecretBoss;
-    conditions.player_count = player_select_;
+    conditions.player_count = 1u /* TODO */;
     conditions.mode = mode;
     this->stack().add<SimLayer>(conditions, options_);
   };

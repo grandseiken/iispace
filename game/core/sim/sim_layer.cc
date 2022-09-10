@@ -15,12 +15,8 @@
 
 namespace ii {
 namespace {
-// TODO: used for some stuff that should use value from sim state instead.
-constexpr glm::uvec2 kDimensions = {640, 480};
-constexpr glm::uvec2 kTextSize = {16, 16};
-
+// TODO.
 constexpr glm::vec4 kPanelText = {0.f, 0.f, .925f, 1.f};
-constexpr glm::vec4 kPanelTran = {0.f, 0.f, .925f, .6f};
 inline void render_text(const render::GlRenderer& r, const glm::vec2& v, const std::string& text,
                         const glm::vec4& c) {
   r.render_text(render::font_id::kDefault, {16, 16}, 16 * static_cast<glm::ivec2>(v), c,

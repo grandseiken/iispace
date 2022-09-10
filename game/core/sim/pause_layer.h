@@ -13,7 +13,6 @@ public:
 
 private:
   std::function<void()> on_quit_;
-  std::uint32_t selection_ = 0;
 };
 }  // namespace ii
 
