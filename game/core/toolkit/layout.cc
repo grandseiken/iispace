@@ -104,7 +104,7 @@ bool LinearLayout::handle_focus(const input_frame& input, ui::output_frame& outp
   std::size_t u_offset = offset > 0 ? 1u : size() - 1u;
   std::size_t index = 0;
   auto is_end = [&](std::size_t i) {
-    return !wrap_focus_ && ((!i && offset < 0u) || (i == size() - 1u && offset > 0u));
+    return !wrap_focus_ && ((!i && offset < 0) || (i == size() - 1u && offset > 0));
   };
   if (focus_index) {
     if (is_end(*focus_index)) {
@@ -112,8 +112,8 @@ bool LinearLayout::handle_focus(const input_frame& input, ui::output_frame& outp
     }
     index = (*focus_index + u_offset) % size();
   } else {
-    focus_index = offset > 0u ? size() - 1u : 0u;
-    index = offset > 0u ? 0u : size() - 1u;
+    focus_index = offset > 0 ? size() - 1u : 0u;
+    index = offset > 0 ? 0u : size() - 1u;
   }
 
   for (; index != focus_index; index = (index + u_offset) % size()) {
@@ -145,7 +145,10 @@ void GridLayout::update_content(const input_frame&, ui::output_frame&) {
     }
 
     bool extra = std::abs(error_space) > (x * std::abs(error_space)) % columns_;
-    auto width = grid_size + (extra > 0 ? 1 : -1);
+    auto width = grid_size;
+    if (extra) {
+      width += error_space > 0 ? 1 : -1;
+    }
 
     e->set_bounds({{x_position, y * (grid_size + spacing_)}, {width, grid_size}});
     x_position += width + spacing_;

@@ -335,9 +335,10 @@ void GameStack::render(render::GlRenderer& renderer) const {
         from_polar(glm::pi<float>() / 3.f, radius);
     std::optional<render::motion_trail> trail;
     if (prev_cursor_) {
-      trail = {.prev_origin = static_cast<glm::vec2>(
-                                  renderer.target().screen_to_render_coords(*prev_cursor_)) +
-                   from_polar(glm::pi<float>() / 3.f, radius)};
+      trail = render::motion_trail{
+          .prev_origin =
+              static_cast<glm::vec2>(renderer.target().screen_to_render_coords(*prev_cursor_)) +
+              from_polar(glm::pi<float>() / 3.f, radius)};
     }
     auto flash = (64.f - cursor_anim_frame_ % 64) / 64.f;
     std::array cursor_shapes = {
