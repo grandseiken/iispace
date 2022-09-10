@@ -58,6 +58,7 @@ public:
 
 protected:
   void update_content(const input_frame&, ui::output_frame&) override;
+  void on_focus_change() override;
 
 private:
   Panel* panel_ = nullptr;

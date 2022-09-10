@@ -20,16 +20,14 @@ constexpr std::array kSpeedPreRenderFrames = {0u, 1u, 3u, 6u, 14u, 30u, 61u};
 }  // namespace
 
 struct ReplayViewer::impl_t {
-  impl_t(data::ReplayReader&& reader, const game_options_t& options)
+  impl_t(data::ReplayReader&& reader)
   : reader{std::move(reader)}
-  , options{options}
   , mode{this->reader.initial_conditions().mode}
   , render_state{this->reader.initial_conditions().seed}
   , engine{std::random_device{}()} {}
 
   HudLayer* hud = nullptr;
   data::ReplayReader reader;
-  game_options_t options;
   game_mode mode;
   RenderState render_state;
   std::uint32_t speed = 0;
@@ -51,20 +49,19 @@ struct ReplayViewer::impl_t {
 
 ReplayViewer::~ReplayViewer() = default;
 
-ReplayViewer::ReplayViewer(ui::GameStack& stack, data::ReplayReader&& replay,
-                           const game_options_t& options)
-: ui::GameLayer{stack, ui::layer_flag::kCaptureUpdate | ui::layer_flag::kCaptureRender}
-, impl_{std::make_unique<impl_t>(std::move(replay), options)} {
+ReplayViewer::ReplayViewer(ui::GameStack& stack, data::ReplayReader&& replay)
+: ui::GameLayer{stack, ui::layer_flag::kBaseLayer}
+, impl_{std::make_unique<impl_t>(std::move(replay))} {
   auto conditions = impl_->reader.initial_conditions();
-  if (options.replay_remote_players.empty()) {
+  const auto& remote_players = stack.options().replay_remote_players;
+  if (remote_players.empty()) {
     impl_->state = std::make_unique<SimState>(conditions);
     return;
   }
 
   NetworkedSimState::input_mapping mapping;
   for (std::uint32_t i = 0; i < conditions.player_count; ++i) {
-    if (std::find(options.replay_remote_players.begin(), options.replay_remote_players.end(), i) ==
-        options.replay_remote_players.end()) {
+    if (std::find(remote_players.begin(), remote_players.end(), i) == remote_players.end()) {
       mapping.local.player_numbers.emplace_back(i);
     } else {
       mapping.remote["remote"].player_numbers.emplace_back(i);
@@ -95,6 +92,7 @@ void ReplayViewer::update_content(const ui::input_frame& input, ui::output_frame
     return;
   }
 
+  const auto& remote_players = stack().options().replay_remote_players;
   for (std::uint32_t i = 0; i < kSpeedFrames[impl_->speed]; ++i) {
     if (impl_->state) {
       auto input = impl_->reader.next_tick_input_frames();
@@ -104,9 +102,7 @@ void ReplayViewer::update_content(const ui::input_frame& input, ui::output_frame
       std::vector<input_frame> local_frames;
       impl_t::replay_network_packet packet;
       for (std::uint32_t i = 0; i < impl_->reader.initial_conditions().player_count; ++i) {
-        if (std::find(impl_->options.replay_remote_players.begin(),
-                      impl_->options.replay_remote_players.end(),
-                      i) != impl_->options.replay_remote_players.end()) {
+        if (std::find(remote_players.begin(), remote_players.end(), i) != remote_players.end()) {
           packet.packet.input_frames.emplace_back(frames[i]);
         } else {
           local_frames.emplace_back(frames[i]);
@@ -116,8 +112,9 @@ void ReplayViewer::update_content(const ui::input_frame& input, ui::output_frame
       auto current_tick = impl_->network_state->tick_count();
       packet.packet.canonical_tick_count = packet.packet.tick_count = current_tick;
 
-      std::uniform_int_distribution<std::uint64_t> d{impl_->options.replay_min_tick_delivery_delay,
-                                                     impl_->options.replay_max_tick_delivery_delay};
+      std::uniform_int_distribution<std::uint64_t> d{
+          stack().options().replay_min_tick_delivery_delay,
+          stack().options().replay_max_tick_delivery_delay};
       packet.delivery_tick_count = current_tick + d(impl_->engine);
       impl_->replay_packets.emplace_back(packet);
 

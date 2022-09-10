@@ -14,10 +14,10 @@ namespace io {
 class IoLayer;
 }  // namespace io
 
-class InputAdapter {
+class SimInputAdapter {
 public:
-  ~InputAdapter();
-  InputAdapter(const io::IoLayer& io_layer);
+  ~SimInputAdapter();
+  SimInputAdapter(const io::IoLayer& io_layer);
 
   enum input_type : std::uint32_t {
     kNone = 0,

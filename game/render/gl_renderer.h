@@ -34,6 +34,7 @@ private:
   struct access_tag {};
 
 public:
+  // TODO: work out what colourspaces are going on (sRGB/gamma etc).
   static result<std::unique_ptr<GlRenderer>> create(std::uint32_t shader_version);
   GlRenderer(access_tag);
   GlRenderer(GlRenderer&&) = delete;

@@ -2,14 +2,17 @@
 #define II_GAME_CORE_UI_ELEMENT_H
 #include "game/common/enum.h"
 #include "game/common/rect.h"
+#include <cstdint>
 #include <deque>
 #include <memory>
+#include <optional>
 
 namespace ii::render {
 class GlRenderer;
 }  // namespace ii::render
 
 namespace ii::ui {
+struct multi_input_frame;
 struct input_frame;
 struct output_frame;
 enum class element_flags : std::uint32_t {
@@ -40,7 +43,14 @@ public:
   void remove() { remove_ = true; }
   bool is_removed() const { return remove_; }
 
-  bool focus(bool last = false);
+  void show() { hide_ = false; }
+  void hide() {
+    unfocus();
+    hide_ = true;
+  }
+  bool is_visible() const { return !hide_; }
+
+  bool focus(bool last = false, std::optional<glm::ivec2> cursor = std::nullopt);
   void unfocus();
   bool has_focus() const { return focus_; }
   bool has_primary_focus() const { return focus_ && !focused_child_; }
@@ -57,9 +67,11 @@ public:
     return !focus_ ? nullptr : focused_child_ ? focused_child_->focused_element() : this;
   }
 
+  void assign_input_root(std::size_t index) { input_root_ = index; }
+
   Element* root() {
     auto* e = this;
-    while (e->parent()) {
+    while (!e->input_root_ && e->parent()) {
       e = e->parent();
     }
     return e;
@@ -67,7 +79,7 @@ public:
 
   const Element* root() const {
     const auto* e = this;
-    while (e->parent()) {
+    while (!e->input_root_ && e->parent()) {
       e = e->parent();
     }
     return e;
@@ -95,21 +107,24 @@ public:
     return r;
   }
 
-  void update(const input_frame&, output_frame&);
-  void update_focus(const input_frame&, output_frame&);
+  void update(const multi_input_frame&, output_frame&);
+  void update_focus(const multi_input_frame&, output_frame&);
   void render(render::GlRenderer&) const;
 
 protected:
   virtual void update_content(const input_frame&, output_frame&) {}
   virtual bool handle_focus(const input_frame&, output_frame&) { return false; }
   virtual void render_content(render::GlRenderer&) const {}
+  virtual void on_focus_change() {}
 
 private:
   element_flags flags_ = element_flags::kNone;
   rect bounds_;
   bool remove_ = false;
+  bool hide_ = false;
   bool focus_ = false;
 
+  std::optional<std::size_t> input_root_;
   Element* parent_ = nullptr;
   Element* focused_child_ = nullptr;
   std::deque<std::unique_ptr<Element>> children_;

@@ -54,25 +54,28 @@ void Button::update_content(const input_frame& input, ui::output_frame& output) 
       output.sounds.emplace(sound::kMenuClick);
     }
   }
+  on_focus_change();
+  if (has_primary_focus() && callback_ &&
+      (input.pressed(ui::key::kAccept) || input.pressed(ui::key::kStart) ||
+       (input.pressed(ui::key::kClick) && hover))) {
+    output.sounds.emplace(sound::kMenuAccept);
+    callback_();
+  }
+  panel_->set_bounds(bounds().size_rect());
+}
+
+void Button::on_focus_change() {
   if (has_primary_focus()) {
     panel_->set_colour(focus_colour_);
     panel_->set_style(focus_style_);
     text_element_->set_colour(focus_text_colour_);
     text_element_->set_font(focus_font_);
-
-    if (callback_ &&
-        (input.pressed(ui::key::kAccept) || input.pressed(ui::key::kStart) ||
-         (input.pressed(ui::key::kClick) && hover))) {
-      output.sounds.emplace(sound::kMenuAccept);
-      callback_();
-    }
   } else {
     panel_->set_colour(colour_);
     panel_->set_style(style_);
     text_element_->set_colour(text_colour_);
     text_element_->set_font(font_);
   }
-  panel_->set_bounds(bounds().size_rect());
 }
 
 }  // namespace ii::ui

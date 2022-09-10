@@ -8,12 +8,11 @@ class ReplayReader;
 }  // namespace ii::data
 
 namespace ii {
-struct game_options_t;
 
 class ReplayViewer : public ui::GameLayer {
 public:
   ~ReplayViewer() override;
-  ReplayViewer(ui::GameStack& stack, data::ReplayReader&& replay, const game_options_t& options);
+  ReplayViewer(ui::GameStack& stack, data::ReplayReader&& replay);
 
   void update_content(const ui::input_frame&, ui::output_frame&) override;
   void render_content(render::GlRenderer& r) const override;

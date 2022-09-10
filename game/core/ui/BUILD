@@ -25,12 +25,26 @@ cc_library(
 )
 
 cc_library(
+  name = "input_adapter",
+  hdrs = ["input_adapter.h"],
+  srcs = ["input_adapter.cc"],
+  deps = [
+    ":input",
+    "@glm",
+  ],
+  implementation_deps = ["//game/io"],
+  visibility = ["//visibility:public"],
+)
+
+cc_library(
   name = "ui",
   hdrs = ["game_stack.h"],
   srcs = ["game_stack.cc"],
   deps = [
     ":input",
+    ":input_adapter",
     ":element",
+    "//game/core:game_options",
     "//game/data:config",
     "//game/data:replay",
     "//game/data:save",

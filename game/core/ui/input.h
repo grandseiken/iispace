@@ -39,6 +39,11 @@ struct input_frame {
   bool& held(key k) { return key_held[static_cast<std::size_t>(k)]; }
 };
 
+struct multi_input_frame {
+  input_frame global;
+  std::vector<input_frame> assignments;
+};
+
 struct output_frame {
   // TODO: dedupe/mix this like with aggregates...
   std::unordered_set<sound> sounds;

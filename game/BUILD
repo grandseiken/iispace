@@ -31,6 +31,7 @@ cc_binary(
   deps = [
     ":flags",
     ":mode_flags",
+    "//game/core:game_options",
     "//game/core/layers:main_menu",
     "//game/core/sim:replay_viewer",
     "//game/core/ui",

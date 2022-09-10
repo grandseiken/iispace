@@ -18,7 +18,7 @@ std::uint32_t ticks_to_ms(std::uint32_t ticks) {
 }
 }  // namespace
 
-void RenderState::handle_output(ISimState& state, Mixer* mixer, InputAdapter* input) {
+void RenderState::handle_output(ISimState& state, Mixer* mixer, SimInputAdapter* input) {
   struct sound_average {
     std::size_t count = 0;
     float volume = 0.f;
@@ -98,7 +98,7 @@ void RenderState::handle_output(ISimState& state, Mixer* mixer, InputAdapter* in
   }
 }
 
-void RenderState::update(InputAdapter* input) {
+void RenderState::update(SimInputAdapter* input) {
   if (input) {
     for (std::uint32_t i = 0; i < rumble_.size(); ++i) {
       bool rumbled = false;

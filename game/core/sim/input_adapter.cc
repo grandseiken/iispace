@@ -114,10 +114,10 @@ std::uint32_t controller_keys(const io::controller::frame& frame) {
 
 }  // namespace
 
-InputAdapter::~InputAdapter() = default;
-InputAdapter::InputAdapter(const io::IoLayer& io_layer) : io_layer_{io_layer} {}
+SimInputAdapter::~SimInputAdapter() = default;
+SimInputAdapter::SimInputAdapter(const io::IoLayer& io_layer) : io_layer_{io_layer} {}
 
-void InputAdapter::set_player_count(std::uint32_t players) {
+void SimInputAdapter::set_player_count(std::uint32_t players) {
   player_count_ = players;
   last_aim_.clear();
   for (std::uint32_t i = 0; i < players; ++i) {
@@ -125,11 +125,11 @@ void InputAdapter::set_player_count(std::uint32_t players) {
   }
 }
 
-void InputAdapter::set_game_dimensions(const glm::uvec2& dimensions) {
+void SimInputAdapter::set_game_dimensions(const glm::uvec2& dimensions) {
   game_dimensions_ = dimensions;
 }
 
-InputAdapter::input_type InputAdapter::input_type_for(std::uint32_t player_index) const {
+SimInputAdapter::input_type SimInputAdapter::input_type_for(std::uint32_t player_index) const {
   input_type result = input_type::kNone;
   auto input = assign_input(player_index, player_count_, io_layer_.controllers());
   if (input.controller) {
@@ -141,7 +141,7 @@ InputAdapter::input_type InputAdapter::input_type_for(std::uint32_t player_index
   return result;
 }
 
-std::vector<input_frame> InputAdapter::get() {
+std::vector<input_frame> SimInputAdapter::get() {
   auto mouse_frame = io_layer_.mouse_frame();
   auto keyboard_frame = io_layer_.keyboard_frame();
   std::vector<io::controller::frame> controller_frames;
@@ -200,8 +200,8 @@ std::vector<input_frame> InputAdapter::get() {
   return frames;
 }
 
-void InputAdapter::rumble(std::uint32_t player_index, std::uint16_t lf, std::uint16_t hf,
-                          std::uint32_t duration_ms) const {
+void SimInputAdapter::rumble(std::uint32_t player_index, std::uint16_t lf, std::uint16_t hf,
+                             std::uint32_t duration_ms) const {
   auto input = assign_input(player_index, player_count_, io_layer_.controllers());
   if (input.controller) {
     io_layer_.controller_rumble(*input.controller, lf, hf, duration_ms);

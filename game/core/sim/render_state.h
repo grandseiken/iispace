@@ -11,7 +11,7 @@ namespace render {
 class GlRenderer;
 }  // namespace render
 class ISimState;
-class InputAdapter;
+class SimInputAdapter;
 class Mixer;
 
 class RenderState {
@@ -21,8 +21,8 @@ public:
   void set_dimensions(const glm::uvec2& dimensions) { dimensions_ = dimensions; }
 
   // If mixer != nullptr, sounds will be handled. If input != nullptr, rumble will be handled.
-  void handle_output(ISimState& state, Mixer* mixer, InputAdapter* input);
-  void update(InputAdapter* input);
+  void handle_output(ISimState& state, Mixer* mixer, SimInputAdapter* input);
+  void update(SimInputAdapter* input);
   void render(render::GlRenderer& r) const;
 
 private:

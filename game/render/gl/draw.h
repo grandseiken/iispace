@@ -185,6 +185,14 @@ inline void clear(std::uint8_t mask) {
   glClear(m);
 }
 
+inline void enable_srgb(bool enable) {
+  if (enable) {
+    glEnable(GL_FRAMEBUFFER_SRGB);
+  } else {
+    glDisable(GL_FRAMEBUFFER_SRGB);
+  }
+}
+
 inline void enable_depth_test(bool enable) {
   if (enable) {
     glEnable(GL_DEPTH_TEST);

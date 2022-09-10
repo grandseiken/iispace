@@ -1,3 +1,4 @@
+#include "game/core/game_options.h"
 #include "game/core/layers/main_menu.h"
 #include "game/core/sim/replay_viewer.h"
 #include "game/core/ui/game_stack.h"
@@ -71,8 +72,8 @@ bool run(System& system, const std::vector<std::string>& args, const game_option
       [&mixer](std::uint8_t* p, std::size_t k) { mixer.audio_callback(p, k); });
   load_sounds(fs, mixer);
 
-  ui::GameStack stack{fs, *io_layer, mixer};
-  stack.add<MainMenuLayer>(options);
+  ui::GameStack stack{fs, *io_layer, mixer, options};
+  stack.add<MainMenuLayer>();
 
   if (!args.empty()) {
     auto replay_data = fs.read(args[0]);
@@ -85,7 +86,7 @@ bool run(System& system, const std::vector<std::string>& args, const game_option
       std::cerr << reader.error() << std::endl;
       return false;
     }
-    stack.add<ReplayViewer>(std::move(*reader), options);
+    stack.add<ReplayViewer>(std::move(*reader));
   }
 
   using counter_t = std::chrono::duration<double>;

@@ -166,6 +166,9 @@ struct PlayerLogic : ecs::component {
     } else if (input.target_relative) {
       fire_target = transform.centre + *input.target_relative;
     }
+    if (!sim.is_legacy()) {
+      fire_target = glm::clamp(fire_target, vec2{0}, sim.dimensions());
+    }
     fire_target_trail = length_squared(fire_target - old_fire_target) <= 64 * 64;
     fire_timer = (fire_timer + 1) % kShotTimer;
 

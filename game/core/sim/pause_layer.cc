@@ -54,7 +54,6 @@ PauseLayer::PauseLayer(ui::GameStack& stack, std::function<void()> on_quit)
   });
 
   stack.play_sound(sound::kMenuAccept);
-  focus();
 }
 
 void PauseLayer::update_content(const ui::input_frame& input, ui::output_frame& output) {

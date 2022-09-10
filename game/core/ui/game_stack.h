@@ -1,8 +1,10 @@
 #ifndef II_GAME_CORE_UI_GAME_STACK_H
 #define II_GAME_CORE_UI_GAME_STACK_H
 #include "game/common/enum.h"
+#include "game/core/game_options.h"
 #include "game/core/ui/element.h"
 #include "game/core/ui/input.h"
+#include "game/core/ui/input_adapter.h"
 #include "game/data/config.h"
 #include "game/data/replay.h"
 #include "game/data/save.h"
@@ -29,6 +31,7 @@ enum class layer_flag : std::uint32_t {
   kCaptureUpdate = 0b0010,
   kCaptureRender = 0b0100,
   kCaptureCursor = 0b1000,
+  kBaseLayer = kCaptureUpdate | kCaptureRender,
 };
 }  // namespace ii::ui
 
@@ -60,19 +63,24 @@ private:
 
 class GameStack {
 public:
-  GameStack(io::Filesystem& fs, io::IoLayer& io_layer, Mixer& mixer);
+  GameStack(io::Filesystem& fs, io::IoLayer& io_layer, Mixer& mixer,
+            const game_options_t& game_options);
 
-  io::IoLayer& io_layer() { return io_layer_; }
-  const io::IoLayer& io_layer() const { return io_layer_; }
   Mixer& mixer() { return mixer_; }
+  InputAdapter& input() { return adapter_; }
+  io::IoLayer& io_layer() { return io_layer_; }
+  const InputAdapter& input() const { return adapter_; }
+  const io::IoLayer& io_layer() const { return io_layer_; }
 
   data::config& config() { return config_; }
   data::savegame& savegame() { return save_; }
   const data::config& config() const { return config_; }
   const data::savegame& savegame() const { return save_; }
+  const game_options_t& options() const { return options_; }
 
   std::uint32_t fps() const { return fps_; }
   void set_fps(std::uint32_t fps) { fps_ = fps; }
+  std::uint32_t frame() const { return frame_; }
 
   template <typename T, typename... Args>
   T* add(Args&&... args) {
@@ -101,19 +109,20 @@ private:
   io::Filesystem& fs_;
   io::IoLayer& io_layer_;
   Mixer& mixer_;
+  InputAdapter adapter_;
 
+  game_options_t options_;
   data::config config_;
   data::savegame save_;
+  std::uint32_t frame_ = 0;
 
   bool show_cursor_ = true;
   std::uint32_t fps_ = 60;
   std::uint32_t cursor_anim_frame_ = 0;
   std::uint32_t cursor_frame_ = 0;
-  std::vector<glm::ivec2> prev_controller_;
   std::optional<glm::ivec2> prev_cursor_;
   std::optional<glm::ivec2> cursor_;
   std::deque<std::unique_ptr<GameLayer>> layers_;
-  std::array<std::uint32_t, static_cast<std::size_t>(key::kMax)> key_held_frames = {0u};
 };
 
 }  // namespace ii::ui
