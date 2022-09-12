@@ -64,7 +64,9 @@ bool Element::focus(bool last, std::optional<glm::ivec2> cursor) {
     }
     return true;
   }
-  auto recurse = [&](const auto& e) { return e->is_visible() && e->focus(last, cursor); };
+  auto recurse = [&](const auto& e) {
+    return e->is_visible() && !e->is_input_root() && e->focus(last, cursor);
+  };
   return last ? std::find_if(rbegin(), rend(), recurse) != rend()
               : std::find_if(begin(), end(), recurse) != end();
 }

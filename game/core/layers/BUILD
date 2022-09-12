@@ -1,7 +1,9 @@
 cc_library(
   name = "common",
   hdrs = ["common.h"],
+  srcs = ["common.cc"],
   deps = ["@glm"],
+  implementation_deps = ["//game/core/toolkit"],
   visibility = ["//visibility:public"],
 )
 

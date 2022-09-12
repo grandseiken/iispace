@@ -21,7 +21,8 @@ bool is_navigation(key k) {
 
 std::span<const io::keyboard::key> keys_for(key k) {
   using type = io::keyboard::key;
-  static constexpr std::array accept = {type::kReturn, type::kSpacebar};
+  static constexpr std::array accept = {type::kReturn};
+  static constexpr std::array start = {type::kSpacebar};
   static constexpr std::array cancel = {type::kEscape};
   static constexpr std::array escape = {type::kEscape};
   static constexpr std::array up = {type::kW, type::kUArrow};
@@ -35,7 +36,7 @@ std::span<const io::keyboard::key> keys_for(key k) {
   case key::kCancel:
     return cancel;
   case key::kStart:
-    return {};
+    return start;
   case key::kEscape:
     return escape;
   case key::kUp:
@@ -124,6 +125,9 @@ void handle(input_frame& result, const io::keyboard::frame& frame) {
       result.held(k) |= frame.key(kbk);
     }
     for (const auto& e : frame.key_events) {
+      if (e.down && e.key == io::keyboard::key::kSpacebar) {
+        result.join_game_inputs.emplace_back(input_device_id::kbm());
+      }
       if (e.down && contains(keys, e.key)) {
         result.pressed(k) = true;
         result.pad_navigation |= is_navigation(k);
@@ -132,7 +136,8 @@ void handle(input_frame& result, const io::keyboard::frame& frame) {
   }
 }
 
-void handle(input_frame& result, const io::controller::frame& frame, glm::ivec2& previous) {
+void handle(input_frame& result, const io::controller::frame& frame, std::size_t index,
+            glm::ivec2& previous) {
   for (std::size_t i = 0; i < static_cast<std::size_t>(key::kMax); ++i) {
     auto k = static_cast<key>(i);
     auto buttons = controller_buttons_for(k);
@@ -140,6 +145,9 @@ void handle(input_frame& result, const io::controller::frame& frame, glm::ivec2&
       result.held(k) |= frame.button(b);
     }
     for (const auto& e : frame.button_events) {
+      if (e.down && e.button == io::controller::button::kStart) {
+        result.join_game_inputs.emplace_back(input_device_id::controller(index));
+      }
       if (e.down && contains(buttons, e.button)) {
         result.pressed(k) = true;
         result.pad_navigation |= is_navigation(k);
@@ -208,15 +216,16 @@ multi_input_frame InputAdapter::ui_frame(bool controller_change) {
   if (kbm_assignment_) {
     handle(input.assignments[*kbm_assignment_], io_layer_.keyboard_frame());
     handle(input.assignments[*kbm_assignment_], io_layer_.mouse_frame());
+    handle(input.global, io_layer_.mouse_frame());
   } else {
     handle(input.global, io_layer_.keyboard_frame());
     handle(input.global, io_layer_.mouse_frame());
   }
   for (std::size_t i = 0; i < io_layer_.controllers(); ++i) {
     if (auto it = controller_assignments_.find(i); it != controller_assignments_.end()) {
-      handle(input.assignments[it->second], io_layer_.controller_frame(i), prev_controller_[i]);
+      handle(input.assignments[it->second], io_layer_.controller_frame(i), i, prev_controller_[i]);
     } else {
-      handle(input.global, io_layer_.controller_frame(i), prev_controller_[i]);
+      handle(input.global, io_layer_.controller_frame(i), i, prev_controller_[i]);
     }
   }
 
@@ -238,28 +247,56 @@ multi_input_frame InputAdapter::ui_frame(bool controller_change) {
   for (std::uint32_t i = 0; i < size; ++i) {
     do_repeats(input.assignments[i], assignment_repeat_data_[i]);
   }
+
+  auto mouse_moved = [](const input_frame& frame) {
+    return frame.mouse_delta && *frame.mouse_delta != glm::ivec2{0};
+  };
+  if ((!kbm_assignment_ && mouse_moved(input.global)) ||
+      (kbm_assignment_ && mouse_moved(input.assignments[*kbm_assignment_]))) {
+    show_cursor_ = true;
+  } else if ((!kbm_assignment_ && input.global.pad_navigation) ||
+             (kbm_assignment_ && input.assignments[*kbm_assignment_].pad_navigation)) {
+    show_cursor_ = false;
+  }
+  input.show_cursor = show_cursor_;
   return input;
 }
 
 void InputAdapter::clear_assignments() {
   kbm_assignment_.reset();
+  controller_assignments_.clear();
   assignment_repeat_data_.clear();
 }
 
-void InputAdapter::assign_kbm(std::uint32_t assignment) {
-  kbm_assignment_ = assignment;
+void InputAdapter::assign_input_device(input_device_id id, std::uint32_t assignment) {
+  if (id.controller_index) {
+    controller_assignments_[*id.controller_index] = assignment;
+  } else {
+    kbm_assignment_ = assignment;
+  }
   if (assignment < assignment_repeat_data_.size()) {
     assignment_repeat_data_[assignment].fill(0);
   }
 }
 
-void InputAdapter::assign_controller(std::uint32_t assignment, std::size_t controller_index) {
-  controller_assignments_[controller_index] = assignment;
-  if (assignment < assignment_repeat_data_.size()) {
-    assignment_repeat_data_[assignment].fill(0);
+bool InputAdapter::is_assigned(input_device_id id) {
+  if (id.controller_index) {
+    return controller_assignments_.contains(*id.controller_index);
   }
+  return kbm_assignment_.has_value();
 }
 
-void InputAdapter::unassign(std::uint32_t assignment) {}
+void InputAdapter::unassign(std::uint32_t assignment) {
+  if (kbm_assignment_ == assignment) {
+    kbm_assignment_.reset();
+  }
+  for (auto it = controller_assignments_.begin(); it != controller_assignments_.end();) {
+    if (it->second == assignment) {
+      it = controller_assignments_.erase(it);
+    } else {
+      ++it;
+    }
+  }
+}
 
 }  // namespace ii::ui

@@ -1,10 +1,76 @@
 #include "game/core/layers/run_lobby.h"
 #include "game/core/layers/common.h"
+#include "game/core/toolkit/button.h"
 #include "game/core/toolkit/layout.h"
 #include "game/core/toolkit/panel.h"
 #include "game/core/toolkit/text.h"
 
 namespace ii {
+
+class AssignmentPanel : public ui::Panel {
+public:
+  AssignmentPanel(Element* parent)
+  : ui::Panel{parent}
+  , inactive_{*add_back<ui::Panel>()}
+  , active_{*add_back<ui::Panel>()}
+  , text_{*inactive_.add_back<ui::TextElement>()} {
+    active_.hide();
+    text_.set_text(ustring::ascii("Press start or\nspacebar to join"))
+        .set_font(render::font_id::kMonospace)
+        .set_colour(kTextColour)
+        .set_font_dimensions(kMediumFont)
+        .set_drop_shadow(kDropShadow, .5f)
+        .set_alignment(ui::alignment::kCentered)
+        .set_multiline(true);
+
+    auto& layout = *active_.add_back<ui::LinearLayout>();
+    layout.set_wrap_focus(true).set_align_end(true).set_spacing(kPadding.y);
+    standard_button(*layout.add_back<ui::Button>()).set_text(ustring::ascii("Ready"));
+    standard_button(*layout.add_back<ui::Button>())
+        .set_text(ustring::ascii("Leave"))
+        .set_callback([this] { clear(); });
+  }
+
+  void assign(std::size_t index, ui::input_device_id id) {
+    assign_input_root(index);
+    inactive_.hide();
+    active_.show();
+    if (id.controller_index) {
+      active_.focus();
+    }
+  }
+
+  void clear() {
+    if (auto* e = active_.focused_element()) {
+      e->unfocus();
+    }
+    active_.hide();
+    inactive_.show();
+    clear_input_root();
+  }
+
+protected:
+  void update_content(const ui::input_frame& input, ui::output_frame& output) override {
+    ui::Panel::update_content(input, output);
+
+    if (input.pressed(ui::key::kCancel)) {
+      clear();
+    }
+
+    auto colour = kTextColour;
+    auto t = frame_++ % 256;
+    float a = t < 128 ? t / 128.f : (256 - t) / 128.f;
+    colour.a = a;
+    text_.set_colour(colour).set_drop_shadow(kDropShadow, a);
+  }
+
+private:
+  bool assigned_ = false;
+  std::uint32_t frame_ = 0;
+  ui::Panel& inactive_;
+  ui::Panel& active_;
+  ui::TextElement& text_;
+};
 
 RunLobbyLayer::RunLobbyLayer(ui::GameStack& stack, const initial_conditions& conditions)
 : ui::GameLayer{stack, ui::layer_flag::kBaseLayer}, conditions_{conditions} {
@@ -17,18 +83,14 @@ RunLobbyLayer::RunLobbyLayer(ui::GameStack& stack, const initial_conditions& con
 
   auto& top = *layout.add_back<ui::Panel>();
   auto& main = *layout.add_back<ui::LinearLayout>();
-  auto& bottom = *layout.add_back<ui::Panel>();
+  auto& bottom = *layout.add_back<ui::LinearLayout>();
 
   top.set_style(render::panel_style::kFlatColour)
       .set_padding(kPadding)
       .set_colour(kBackgroundColour);
-  bottom.set_padding(kPadding);
-  layout.set_absolute_size(top, kLargeFont.y + 2 * kPadding.y);
-  layout.set_absolute_size(bottom, kLargeFont.y + 2 * kPadding.y);
-
-  auto& title = *top.add_back<ui::TextElement>();
-  auto& status = *bottom.add_back<ui::TextElement>();
-  status_ = &status;
+  layout.set_absolute_size(top, kLargeFont.y + 2 * kPadding.y)
+      .set_absolute_size(bottom, kLargeFont.y + 2 * kPadding.y);
+  bottom.set_spacing(kPadding.x).set_orientation(ui::orientation::kHorizontal);
 
   std::string title_text;
   switch (conditions.mode) {
@@ -50,28 +112,57 @@ RunLobbyLayer::RunLobbyLayer(ui::GameStack& stack, const initial_conditions& con
     break;
   }
 
+  auto& title = *top.add_back<ui::TextElement>();
   title.set_text(ustring::ascii(title_text))
-      .set_font(render::font_id::kMonospaceBold)
+      .set_font(render::font_id::kMonospaceBoldItalic)
       .set_colour(kHighlightColour)
       .set_font_dimensions(kLargeFont)
       .set_drop_shadow(kDropShadow, .5f)
       .set_alignment(ui::alignment::kCentered);
-  status.set_text(ustring::ascii("Press start/enter to join"))
-      .set_font(render::font_id::kMonospace)
-      .set_colour(kTextColour)
-      .set_font_dimensions(kLargeFont)
-      .set_drop_shadow(kDropShadow, .5f)
-      .set_alignment(ui::alignment::kCentered);
+  auto& back = *bottom.add_back<ui::Button>();
+  standard_button(back).set_text(ustring::ascii("Back")).set_callback([this] {
+    this->stack().input().clear_assignments();
+    remove();
+  });
+
+  main.set_orientation(ui::orientation::kHorizontal);
+  main.set_spacing(kPadding.x);
+  for (std::uint32_t i = 0; i < kMaxPlayers; ++i) {
+    assignment_panels_.emplace_back(main.add_back<AssignmentPanel>());
+  }
 }
 
 void RunLobbyLayer::update_content(const ui::input_frame& input, ui::output_frame& output) {
   GameLayer::update_content(input, output);
 
-  auto colour = kTextColour;
-  auto t = stack().frame() % 256;
-  float a = t < 128 ? t / 128.f : (256 - t) / 128.f;
-  colour.a = a;
-  status_->set_colour(colour).set_drop_shadow(kDropShadow, a);
+  for (std::uint32_t i = 0; i < assignment_panels_.size(); ++i) {
+    if (!assignment_panels_[i]->is_input_root()) {
+      stack().input().unassign(i);
+    }
+  }
+  for (const auto& join : input.join_game_inputs) {
+    if (stack().input().is_assigned(join)) {
+      continue;
+    }
+    std::optional<std::size_t> new_index;
+    for (std::size_t i = 0; i < assignment_panels_.size(); ++i) {
+      if (!assignment_panels_[i]->is_input_root()) {
+        new_index = i;
+        break;
+      }
+    }
+    if (!new_index) {
+      break;
+    }
+    stack().input().assign_input_device(join, static_cast<std::uint32_t>(*new_index));
+    assignment_panels_[*new_index]->assign(*new_index, join);
+  }
+
+  if (input.pressed(ui::key::kCancel)) {
+    output.sounds.emplace(sound::kMenuAccept);
+    stack().input().clear_assignments();
+    remove();
+  }
 }
 
 }  // namespace ii

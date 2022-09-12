@@ -80,7 +80,6 @@ public:
 
   std::uint32_t fps() const { return fps_; }
   void set_fps(std::uint32_t fps) { fps_ = fps; }
-  std::uint32_t frame() const { return frame_; }
 
   template <typename T, typename... Args>
   T* add(Args&&... args) {
@@ -114,9 +113,7 @@ private:
   game_options_t options_;
   data::config config_;
   data::savegame save_;
-  std::uint32_t frame_ = 0;
 
-  bool show_cursor_ = true;
   std::uint32_t fps_ = 60;
   std::uint32_t cursor_anim_frame_ = 0;
   std::uint32_t cursor_frame_ = 0;

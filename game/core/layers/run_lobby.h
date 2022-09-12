@@ -3,11 +3,8 @@
 #include "game/core/ui/game_stack.h"
 
 namespace ii {
-namespace ui {
-class TextElement;
-}  // namespace ui
+class AssignmentPanel;
 
-// TODO: need some system to handle multi-input simultaneously in different sections of the UI.
 class RunLobbyLayer : public ui::GameLayer {
 public:
   RunLobbyLayer(ui::GameStack& stack, const initial_conditions& conditions);
@@ -15,7 +12,7 @@ public:
 
 private:
   initial_conditions conditions_;
-  ui::TextElement* status_ = nullptr;
+  std::vector<AssignmentPanel*> assignment_panels_;
 };
 
 }  // namespace ii

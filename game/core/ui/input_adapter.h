@@ -21,8 +21,8 @@ public:
   // TODO: need some way of preserving assignments on controller change; will need
   // support from IoLayer.
   void clear_assignments();
-  void assign_kbm(std::uint32_t assignment);
-  void assign_controller(std::uint32_t assignment, std::size_t controller_index);
+  void assign_input_device(input_device_id id, std::uint32_t assignment);
+  bool is_assigned(input_device_id);
   void unassign(std::uint32_t assignment);
 
 private:
@@ -34,6 +34,7 @@ private:
   key_repeat_data global_repeat_data = {0u};
   std::vector<key_repeat_data> assignment_repeat_data_;
   std::vector<glm::ivec2> prev_controller_;
+  bool show_cursor_ = true;
 };
 
 }  // namespace ii::ui

@@ -68,6 +68,8 @@ public:
   }
 
   void assign_input_root(std::size_t index) { input_root_ = index; }
+  bool is_input_root() { return input_root_.has_value(); }
+  void clear_input_root() { input_root_.reset(); }
 
   Element* root() {
     auto* e = this;

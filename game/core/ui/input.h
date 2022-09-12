@@ -22,15 +22,23 @@ enum class key {
   kMax,
 };
 
+struct input_device_id {
+  std::optional<std::size_t> controller_index;
+
+  static input_device_id kbm() { return {}; }
+  static input_device_id controller(std::size_t index) { return {index}; }
+};
+
 struct input_frame {
   bool controller_change = false;
+  bool pad_navigation = false;
   std::array<bool, static_cast<std::size_t>(key::kMax)> key_pressed = {false};
   std::array<bool, static_cast<std::size_t>(key::kMax)> key_held = {false};
   std::optional<glm::ivec2> mouse_delta;
   std::optional<glm::ivec2> mouse_cursor;
   std::optional<glm::ivec2> mouse_scroll;
   std::optional<glm::ivec2> controller_scroll;
-  bool pad_navigation = false;
+  std::vector<input_device_id> join_game_inputs;
 
   bool pressed(key k) const { return key_pressed[static_cast<std::size_t>(k)]; }
   bool& pressed(key k) { return key_pressed[static_cast<std::size_t>(k)]; }
@@ -40,6 +48,7 @@ struct input_frame {
 };
 
 struct multi_input_frame {
+  bool show_cursor = false;
   input_frame global;
   std::vector<input_frame> assignments;
 };

@@ -14,6 +14,11 @@ static constexpr glm::ivec2 kDropShadow = {2, 2};
 static constexpr glm::vec4 kBackgroundColour = {1.f, 1.f, 1.f, 1.f / 8};
 static constexpr glm::vec4 kTextColour = {1.f, 0.f, .65f, 1.f};
 static constexpr glm::vec4 kHighlightColour = {1.f, 1.f, 1.f, 1.f};
+
+namespace ui {
+class Button;
+}  // namespace ui
+ui::Button& standard_button(ui::Button& button);
 }  // namespace ii
 
 #endif

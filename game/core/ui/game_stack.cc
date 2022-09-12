@@ -58,14 +58,9 @@ void GameStack::update(bool controller_change) {
 
   prev_cursor_ = cursor_;
   cursor_ = input.global.mouse_cursor;
-  if (input.global.mouse_delta && input.global.mouse_delta != glm::ivec2{0}) {
-    show_cursor_ = true;
-  } else if (input.global.pad_navigation) {
-    show_cursor_ = false;
-  }
-  if (show_cursor_ && cursor_frame_ < kCursorFrames) {
+  if (input.show_cursor && cursor_frame_ < kCursorFrames) {
     cursor_frame_ = std::min(kCursorFrames, cursor_frame_ + 3u);
-  } else if (!show_cursor_ && cursor_frame_) {
+  } else if (!input.show_cursor && cursor_frame_) {
     cursor_frame_ -= std::min(cursor_frame_, 2u);
   }
 
@@ -80,7 +75,9 @@ void GameStack::update(bool controller_change) {
   // TODO: this function has a bunch of stuff to handle:
   // - mouse focusing the correct thing at the moment UI changes
   // - avoiding double-inputs at the moment UI changes
+  // - default-focusing on pad/arrow navigation.
   // but we will probably need the same stuff inside of GameLayers too.
+  // TODO: exactly this for assignment input roots.
   auto size = layers_.size();
   for (; it != layers_.end(); ++it) {
     auto& e = *it;
@@ -127,15 +124,15 @@ void GameStack::update(bool controller_change) {
   if (!empty() && size != layers_.size()) {
     auto target = get_target(*top());
     std::optional<glm::ivec2> cursor;
-    if (show_cursor_ && input.global.mouse_cursor) {
+    if (input.show_cursor && input.global.mouse_cursor) {
       cursor = target.screen_to_render_coords(*input.global.mouse_cursor);
     }
-    if (!top()->focus(/* last */ false, cursor) && cursor) {
+    if (cursor && input.show_cursor) {
+      top()->focus(/* last */ false, cursor);
+    } else if (!top()->has_focus()) {
       top()->focus(/* last */ false);
     }
   }
-
-  ++frame_;
   ++cursor_anim_frame_;
 }
 

@@ -23,15 +23,7 @@ ui::LinearLayout& add_main_layout(ui::Element* e) {
 
 void add_button(ui::LinearLayout& layout, const char* text, std::function<void()> callback) {
   auto& button = *layout.add_back<ui::Button>();
-  button.set_callback(std::move(callback))
-      .set_text(ustring::ascii(text))
-      .set_font(render::font_id::kMonospace, render::font_id::kMonospaceBold)
-      .set_text_colour(kTextColour, kHighlightColour)
-      .set_font_dimensions(kLargeFont)
-      .set_style(render::panel_style::kFlatColour)
-      .set_padding(kPadding)
-      .set_colour(kBackgroundColour)
-      .set_drop_shadow(kDropShadow, .5f);
+  standard_button(button).set_callback(std::move(callback)).set_text(ustring::ascii(text));
   layout.set_absolute_size(button, kLargeFont.y + 2 * kPadding.y);
 };
 

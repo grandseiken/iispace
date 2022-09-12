@@ -56,8 +56,7 @@ void Button::update_content(const input_frame& input, ui::output_frame& output) 
   }
   on_focus_change();
   if (has_primary_focus() && callback_ &&
-      (input.pressed(ui::key::kAccept) || input.pressed(ui::key::kStart) ||
-       (input.pressed(ui::key::kClick) && hover))) {
+      (input.pressed(ui::key::kAccept) || (input.pressed(ui::key::kClick) && hover))) {
     output.sounds.emplace(sound::kMenuAccept);
     callback_();
   }
