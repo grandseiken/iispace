@@ -27,11 +27,12 @@ class Mixer;
 namespace ii::ui {
 enum class layer_flag : std::uint32_t {
   kNone = 0b0000,
-  kCaptureInput = 0b0001,
-  kCaptureUpdate = 0b0010,
-  kCaptureRender = 0b0100,
-  kCaptureCursor = 0b1000,
+  kCaptureInput = 0b00000001,
+  kCaptureUpdate = 0b00000010,
+  kCaptureRender = 0b00000100,
+  kCaptureCursor = 0b00001000,
   kBaseLayer = kCaptureUpdate | kCaptureRender,
+  kNoAutoFocus = 0b00010000,
 };
 }  // namespace ii::ui
 
@@ -51,7 +52,7 @@ public:
 
   const GameStack& stack() const { return stack_; }
   GameStack& stack() { return stack_; }
-  layer_flag flags() const { return flags_; }
+  layer_flag layer_flags() const { return flags_; }
 
 protected:
   void update_content(const input_frame&, ui::output_frame&) override;

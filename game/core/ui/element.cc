@@ -33,13 +33,7 @@ multi_input_frame map_input(const multi_input_frame& input,
 
 }  // namespace
 
-bool Element::focus(bool last, std::optional<glm::ivec2> cursor) {
-  if (cursor) {
-    if (!bounds().contains(*cursor)) {
-      return false;
-    }
-    *cursor -= bounds().min();
-  }
+bool Element::focus(bool last) {
   if (+(flags() & element_flags::kCanFocus)) {
     std::vector<Element*> callbacks;
     for (auto* e = root(); e;) {
@@ -65,7 +59,7 @@ bool Element::focus(bool last, std::optional<glm::ivec2> cursor) {
     return true;
   }
   auto recurse = [&](const auto& e) {
-    return e->is_visible() && !e->is_input_root() && e->focus(last, cursor);
+    return e->is_visible() && !e->is_input_root() && e->focus(last);
   };
   return last ? std::find_if(rbegin(), rend(), recurse) != rend()
               : std::find_if(begin(), end(), recurse) != end();
@@ -109,6 +103,21 @@ void Element::update_focus(const multi_input_frame& input, output_frame& output)
 
   if (parent_ == nullptr || input_root_) {
     auto element_input = map_input(input, input_root_, {});
+
+    if (!has_focus()) {
+      if (element_input.global.pressed(ui::key::kUp) ||
+          element_input.global.pressed(ui::key::kLeft)) {
+        focus(/* last */ true);
+      } else if (element_input.global.pressed(ui::key::kDown) ||
+                 element_input.global.pressed(ui::key::kRight)) {
+        focus(/* last */ false);
+      }
+      if (has_focus()) {
+        output.sounds.emplace(sound::kMenuClick);
+        element_input.global.key_pressed.fill(false);
+      }
+    }
+
     for (auto* e = focused_element(); e; e = e->parent()) {
       if (e->handle_focus(element_input.global, output)) {
         break;

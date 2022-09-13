@@ -17,7 +17,7 @@ auto get_capture_it(It begin, It end, layer_flag flag) {
   auto it = end;
   while (it != begin) {
     --it;
-    if (+((*it)->flags() & flag)) {
+    if (+((*it)->layer_flags() & flag)) {
       break;
     }
   }
@@ -63,8 +63,21 @@ void GameStack::update(bool controller_change) {
   } else if (!input.show_cursor && cursor_frame_) {
     cursor_frame_ -= std::min(cursor_frame_, 2u);
   }
+  if (!input.show_cursor) {
+    input.global.mouse_cursor.reset();
+    for (auto& frame : input.assignments) {
+      frame.mouse_cursor.reset();
+    }
+  }
+  bool assignment_mouse_active = false;
+  for (auto& frame : input.assignments) {
+    if (frame.mouse_cursor) {
+      assignment_mouse_active = frame.mouse_active = true;
+    }
+  }
+  input.global.mouse_active = !assignment_mouse_active && input.global.mouse_cursor.has_value();
 
-  io_layer_.capture_mouse(!layers_.empty() && +(top()->flags() & layer_flag::kCaptureCursor));
+  io_layer_.capture_mouse(!layers_.empty() && +(top()->layer_flags() & layer_flag::kCaptureCursor));
   auto it = get_capture_it(layers_.begin(), layers_.end(), layer_flag::kCaptureUpdate);
   auto input_it = get_capture_it(layers_.begin(), layers_.end(), layer_flag::kCaptureInput);
   auto get_target = [&](const GameLayer& layer) {
@@ -72,16 +85,12 @@ void GameStack::update(bool controller_change) {
                           .render_dimensions = layer.bounds().size};
   };
 
-  // TODO: this function has a bunch of stuff to handle:
-  // - mouse focusing the correct thing at the moment UI changes
-  // - avoiding double-inputs at the moment UI changes
-  // - default-focusing on pad/arrow navigation.
-  // but we will probably need the same stuff inside of GameLayers too.
-  // TODO: exactly this for assignment input roots.
   auto size = layers_.size();
   for (; it != layers_.end(); ++it) {
     auto& e = *it;
     multi_input_frame layer_input;
+    // TODO: distance < size check is avoiding double-inputs at moment UI changes,
+    // but likely need same inside elements as well?
     if (it >= input_it && std::distance(layers_.begin(), it) < size) {
       auto target = get_target(**it);
       layer_input = input;
@@ -101,18 +110,6 @@ void GameStack::update(bool controller_change) {
     output_frame output;
     e->update(layer_input, output);
     if (it >= input_it) {
-      if (!e->has_focus()) {
-        if (layer_input.global.pressed(ui::key::kUp) || input.global.pressed(ui::key::kLeft)) {
-          e->focus(/* last */ true);
-        } else if (layer_input.global.pressed(ui::key::kDown) ||
-                   input.global.pressed(ui::key::kRight)) {
-          e->focus(/* last */ false);
-        }
-        if (e->has_focus()) {
-          play_sound(sound::kMenuClick);
-          layer_input.global.key_pressed.fill(false);
-        }
-      }
       e->update_focus(layer_input, output);
     }
     for (auto s : output.sounds) {
@@ -121,17 +118,10 @@ void GameStack::update(bool controller_change) {
   }
 
   std::erase_if(layers_, [](const auto& e) { return e->is_removed(); });
-  if (!empty() && size != layers_.size()) {
-    auto target = get_target(*top());
-    std::optional<glm::ivec2> cursor;
-    if (input.show_cursor && input.global.mouse_cursor) {
-      cursor = target.screen_to_render_coords(*input.global.mouse_cursor);
-    }
-    if (cursor && input.show_cursor) {
-      top()->focus(/* last */ false, cursor);
-    } else if (!top()->has_focus()) {
-      top()->focus(/* last */ false);
-    }
+  // Auto-focus new menus for non-mouse inputs.
+  if (size != layers_.size() && !empty() && !top()->has_focus() && !input.show_cursor &&
+      !(top()->layer_flags() & layer_flag::kNoAutoFocus)) {
+    top()->focus(/* last */ false);
   }
   ++cursor_anim_frame_;
 }
@@ -145,7 +135,7 @@ void GameStack::render(render::GlRenderer& renderer) const {
     renderer.clear_depth();
   }
   if (cursor_ && cursor_frame_ &&
-      (layers_.empty() || !(top()->flags() & layer_flag::kCaptureCursor))) {
+      (layers_.empty() || !(top()->layer_flags() & layer_flag::kCaptureCursor))) {
     // TODO: probably replace this once we can render shape fills with cool effects.
     renderer.target().render_dimensions = {640, 360};
     auto scale = static_cast<float>(cursor_frame_) / kCursorFrames;

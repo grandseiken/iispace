@@ -42,25 +42,26 @@ Button& Button::set_margin(const glm::ivec2& margin) {
 }
 
 void Button::update_content(const input_frame& input, ui::output_frame& output) {
-  bool hover = input.mouse_cursor && bounds().size_rect().contains(*input.mouse_cursor);
-  if (input.mouse_delta && *input.mouse_delta != glm::ivec2{0}) {
-    bool f = has_focus();
-    if (hover) {
-      focus();
-    } else {
-      unfocus();
-    }
-    if (!f && has_focus()) {
+  bool mouse_hover = input.mouse_cursor && bounds().size_rect().contains(*input.mouse_cursor);
+  bool mouse_moved = input.mouse_delta && *input.mouse_delta != glm::ivec2{0};
+  bool f = has_focus();
+  if (mouse_hover) {
+    focus();
+    if (!f && mouse_moved) {
       output.sounds.emplace(sound::kMenuClick);
     }
   }
+  if (!mouse_hover && (input.mouse_active || mouse_over_)) {
+    unfocus();
+  }
   on_focus_change();
   if (has_primary_focus() && callback_ &&
-      (input.pressed(ui::key::kAccept) || (input.pressed(ui::key::kClick) && hover))) {
+      (input.pressed(ui::key::kAccept) || (input.pressed(ui::key::kClick) && mouse_hover))) {
     output.sounds.emplace(sound::kMenuAccept);
     callback_();
   }
   panel_->set_bounds(bounds().size_rect());
+  mouse_over_ = mouse_hover;
 }
 
 void Button::on_focus_change() {

@@ -63,8 +63,9 @@ protected:
 private:
   Panel* panel_ = nullptr;
   TextElement* text_element_ = nullptr;
-
   std::function<void()> callback_;
+  bool mouse_over_ = false;
+
   render::panel_style style_ = render::panel_style::kNone;
   render::panel_style focus_style_ = render::panel_style::kNone;
   render::font_id font_ = render::font_id::kDefault;

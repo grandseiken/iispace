@@ -73,7 +73,8 @@ private:
 };
 
 RunLobbyLayer::RunLobbyLayer(ui::GameStack& stack, const initial_conditions& conditions)
-: ui::GameLayer{stack, ui::layer_flag::kBaseLayer}, conditions_{conditions} {
+: ui::GameLayer{stack, ui::layer_flag::kBaseLayer | ui::layer_flag::kNoAutoFocus}
+, conditions_{conditions} {
   set_bounds(rect{kUiDimensions});
 
   auto& panel = *add_back<ui::Panel>();
@@ -119,8 +120,8 @@ RunLobbyLayer::RunLobbyLayer(ui::GameStack& stack, const initial_conditions& con
       .set_font_dimensions(kLargeFont)
       .set_drop_shadow(kDropShadow, .5f)
       .set_alignment(ui::alignment::kCentered);
-  auto& back = *bottom.add_back<ui::Button>();
-  standard_button(back).set_text(ustring::ascii("Back")).set_callback([this] {
+  back_button_ = bottom.add_back<ui::Button>();
+  standard_button(*back_button_).set_text(ustring::ascii("Back")).set_callback([this] {
     this->stack().input().clear_assignments();
     remove();
   });
@@ -156,6 +157,7 @@ void RunLobbyLayer::update_content(const ui::input_frame& input, ui::output_fram
     }
     stack().input().assign_input_device(join, static_cast<std::uint32_t>(*new_index));
     assignment_panels_[*new_index]->assign(*new_index, join);
+    back_button_->unfocus();
   }
 
   if (input.pressed(ui::key::kCancel)) {

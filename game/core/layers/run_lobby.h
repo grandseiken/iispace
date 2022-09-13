@@ -3,6 +3,9 @@
 #include "game/core/ui/game_stack.h"
 
 namespace ii {
+namespace ui {
+class Button;
+}  // namespace ui
 class AssignmentPanel;
 
 class RunLobbyLayer : public ui::GameLayer {
@@ -12,6 +15,7 @@ public:
 
 private:
   initial_conditions conditions_;
+  ui::Button* back_button_ = nullptr;
   std::vector<AssignmentPanel*> assignment_panels_;
 };
 

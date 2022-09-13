@@ -32,6 +32,7 @@ struct input_device_id {
 struct input_frame {
   bool controller_change = false;
   bool pad_navigation = false;
+  bool mouse_active = false;
   std::array<bool, static_cast<std::size_t>(key::kMax)> key_pressed = {false};
   std::array<bool, static_cast<std::size_t>(key::kMax)> key_held = {false};
   std::optional<glm::ivec2> mouse_delta;

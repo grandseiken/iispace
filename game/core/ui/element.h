@@ -50,7 +50,7 @@ public:
   }
   bool is_visible() const { return !hide_; }
 
-  bool focus(bool last = false, std::optional<glm::ivec2> cursor = std::nullopt);
+  bool focus(bool last = false);
   void unfocus();
   bool has_focus() const { return focus_; }
   bool has_primary_focus() const { return focus_ && !focused_child_; }
