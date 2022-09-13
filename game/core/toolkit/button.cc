@@ -51,17 +51,18 @@ void Button::update_content(const input_frame& input, ui::output_frame& output) 
       output.sounds.emplace(sound::kMenuClick);
     }
   }
-  if (!mouse_hover && (input.mouse_active || mouse_over_)) {
+  if (has_primary_focus() && !mouse_hover && (input.mouse_active || mouse_over_)) {
     unfocus();
   }
+  mouse_over_ = mouse_hover;
   on_focus_change();
   if (has_primary_focus() && callback_ &&
       (input.pressed(ui::key::kAccept) || (input.pressed(ui::key::kClick) && mouse_hover))) {
     output.sounds.emplace(sound::kMenuAccept);
+    mouse_over_ = false;  // Otherwise it won't get updated later when not visible.
     callback_();
   }
   panel_->set_bounds(bounds().size_rect());
-  mouse_over_ = mouse_hover;
 }
 
 void Button::on_focus_change() {

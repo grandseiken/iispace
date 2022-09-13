@@ -4,13 +4,16 @@
 #include "game/core/toolkit/layout.h"
 #include "game/core/toolkit/panel.h"
 #include "game/core/toolkit/text.h"
+#include "game/io/io.h"
+#include "game/logic/sim/io/player.h"
 
 namespace ii {
 
 class AssignmentPanel : public ui::Panel {
 public:
-  AssignmentPanel(Element* parent)
+  AssignmentPanel(Element* parent, std::size_t index)
   : ui::Panel{parent}
+  , index_{index}
   , inactive_{*add_back<ui::Panel>()}
   , active_{*add_back<ui::Panel>()}
   , text_{*inactive_.add_back<ui::TextElement>()} {
@@ -23,20 +26,37 @@ public:
         .set_alignment(ui::alignment::kCentered)
         .set_multiline(true);
 
+    auto colour = player_colour(index);
+    auto focus_colour = colour;
+    focus_colour.z += .125f;
+
     auto& layout = *active_.add_back<ui::LinearLayout>();
     layout.set_wrap_focus(true).set_align_end(true).set_spacing(kPadding.y);
-    standard_button(*layout.add_back<ui::Button>()).set_text(ustring::ascii("Ready"));
-    standard_button(*layout.add_back<ui::Button>())
-        .set_text(ustring::ascii("Leave"))
-        .set_callback([this] { clear(); });
+    controller_text_ = layout.add_back<ui::TextElement>();
+    controller_text_->set_alignment(ui::alignment::kCentered)
+        .set_colour(colour)
+        .set_font(render::font_id::kMonospaceItalic)
+        .set_font_dimensions(kMediumFont);
+    auto& ready = standard_button(*layout.add_back<ui::Button>())
+                      .set_text(ustring::ascii("Ready"))
+                      .set_text_colour(colour, focus_colour);
+    auto& leave = standard_button(*layout.add_back<ui::Button>())
+                      .set_text(ustring::ascii("Leave"))
+                      .set_text_colour(colour, focus_colour)
+                      .set_callback([this] { clear(); });
+    layout.set_absolute_size(ready, kLargeFont.y + 2 * kPadding.y);
+    layout.set_absolute_size(leave, kLargeFont.y + 2 * kPadding.y);
   }
 
-  void assign(std::size_t index, ui::input_device_id id) {
-    assign_input_root(index);
+  void assign(ui::input_device_id id) {
+    assign_input_root(index_);
     inactive_.hide();
     active_.show();
     if (id.controller_index) {
+      controller_text_->set_text(ustring::ascii("Controller"));
       active_.focus();
+    } else {
+      controller_text_->set_text(ustring::ascii("KBM"));
     }
   }
 
@@ -54,6 +74,7 @@ protected:
     ui::Panel::update_content(input, output);
 
     if (input.pressed(ui::key::kCancel)) {
+      output.sounds.emplace(sound::kMenuAccept);
       clear();
     }
 
@@ -65,11 +86,14 @@ protected:
   }
 
 private:
+  std::size_t index_ = 0;
   bool assigned_ = false;
+
   std::uint32_t frame_ = 0;
   ui::Panel& inactive_;
   ui::Panel& active_;
   ui::TextElement& text_;
+  ui::TextElement* controller_text_ = nullptr;
 };
 
 RunLobbyLayer::RunLobbyLayer(ui::GameStack& stack, const initial_conditions& conditions)
@@ -129,7 +153,7 @@ RunLobbyLayer::RunLobbyLayer(ui::GameStack& stack, const initial_conditions& con
   main.set_orientation(ui::orientation::kHorizontal);
   main.set_spacing(kPadding.x);
   for (std::uint32_t i = 0; i < kMaxPlayers; ++i) {
-    assignment_panels_.emplace_back(main.add_back<AssignmentPanel>());
+    assignment_panels_.emplace_back(main.add_back<AssignmentPanel>(i));
   }
 }
 
@@ -156,7 +180,8 @@ void RunLobbyLayer::update_content(const ui::input_frame& input, ui::output_fram
       break;
     }
     stack().input().assign_input_device(join, static_cast<std::uint32_t>(*new_index));
-    assignment_panels_[*new_index]->assign(*new_index, join);
+    assignment_panels_[*new_index]->assign(join);
+    output.sounds.emplace(sound::kMenuAccept);
     back_button_->unfocus();
   }
 

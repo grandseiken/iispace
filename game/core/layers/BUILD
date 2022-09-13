@@ -34,6 +34,8 @@ cc_library(
   implementation_deps = [
     ":common",
     "//game/core/toolkit",
+    "//game/logic/sim/io:player",
+    "//game/io",
   ],
   visibility = ["//visibility:public"],
 )

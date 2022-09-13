@@ -89,9 +89,7 @@ void GameStack::update(bool controller_change) {
   for (; it != layers_.end(); ++it) {
     auto& e = *it;
     multi_input_frame layer_input;
-    // TODO: distance < size check is avoiding double-inputs at moment UI changes,
-    // but likely need same inside elements as well?
-    if (it >= input_it && std::distance(layers_.begin(), it) < size) {
+    if (it >= input_it) {
       auto target = get_target(**it);
       layer_input = input;
       auto map_cursor = [&](input_frame& frame) {
@@ -106,6 +104,15 @@ void GameStack::update(bool controller_change) {
       };
       map_cursor(layer_input.global);
       std::for_each(layer_input.assignments.begin(), layer_input.assignments.end(), map_cursor);
+      // TODO: avoiding double-inputs at moment UI changes, but likely need same inside elements?
+      if (std::distance(layers_.begin(), it) >= size) {
+        layer_input.global.join_game_inputs.clear();
+        layer_input.global.key_pressed.fill(false);
+        for (auto& frame : layer_input.assignments) {
+          frame.join_game_inputs.clear();
+          frame.key_pressed.fill(false);
+        }
+      }
     }
     output_frame output;
     e->update(layer_input, output);
