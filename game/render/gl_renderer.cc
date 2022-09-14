@@ -251,7 +251,7 @@ ustring GlRenderer::trim_for_width(font_id font, const glm::uvec2& font_dimensio
 }
 
 void GlRenderer::render_text(font_id font, const glm::uvec2& font_dimensions,
-                             const glm::ivec2& position, const glm::vec4& colour,
+                             const glm::ivec2& position, const glm::vec4& colour, bool clip,
                              ustring_view s) const {
   auto font_result = impl_->font_cache.get(target(), font, font_dimensions, s);
   if (!font_result) {
@@ -262,7 +262,11 @@ void GlRenderer::render_text(font_id font, const glm::uvec2& font_dimensions,
 
   const auto& program = impl_->shader(shader::kText);
   gl::use_program(program);
-  gl::enable_clip_planes(4u);
+  if (clip) {
+    gl::enable_clip_planes(4u);
+  } else {
+    gl::enable_clip_planes(0u);
+  }
   gl::enable_blend(true);
   gl::enable_depth_test(false);
   if (font_entry.font.is_lcd()) {

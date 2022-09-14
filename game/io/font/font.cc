@@ -161,9 +161,6 @@ result<void> RenderedFont::insert_glyph(std::uint32_t utf32_code, const glyph_in
     info_copy.bitmap_position.x /= 3u;
     info_copy.bitmap_dimensions.x /= 3u;
   }
-  max_ascent_ = std::max<std::int32_t>(max_ascent_, info_copy.bearing.y);
-  max_descent_ =
-      std::max<std::int32_t>(max_descent_, info_copy.bitmap_dimensions.y - info_copy.bearing.y);
   glyph_map_.emplace(utf32_code, info_copy);
   return {};
 }
@@ -297,6 +294,22 @@ result<RenderedFont> Font::render(std::span<const std::uint32_t> utf32_codes, bo
   }
   if (!rendered_font.base_dimensions_.y) {
     rendered_font.base_dimensions_.y = rendered_font.base_dimensions_.x;
+  }
+
+  rendered_font.max_ascent_ =
+      static_cast<std::int32_t>(data_->face->ascender *
+                                (data_->face->size->metrics.y_scale / 65536.)) >>
+      6;
+  rendered_font.max_descent_ =
+      static_cast<std::int32_t>(
+          std::abs(data_->face->descender * (data_->face->size->metrics.y_scale / 65536.))) >>
+      6;
+  if (rendered_font.max_ascent_ + rendered_font.max_descent_ >
+      static_cast<std::int32_t>(rendered_font.base_dimensions_.y)) {
+    float scale = rendered_font.base_dimensions_.y /
+        static_cast<float>(rendered_font.max_ascent_ + rendered_font.max_descent_);
+    rendered_font.max_ascent_ = static_cast<std::int32_t>(scale * rendered_font.max_ascent_);
+    rendered_font.max_descent_ = static_cast<std::int32_t>(scale * rendered_font.max_descent_);
   }
 
   auto insert_glyph = [&](std::uint32_t key, unsigned int glyph_index,

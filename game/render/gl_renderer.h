@@ -61,7 +61,7 @@ public:
   ustring trim_for_width(font_id font, const glm::uvec2& font_dimensions, std::int32_t width,
                          ustring_view s) const;
   void render_text(font_id font, const glm::uvec2& font_dimensions, const glm::ivec2& position,
-                   const glm::vec4& colour, ustring_view s) const;
+                   const glm::vec4& colour, bool clip, ustring_view s) const;
 
   // TODO: render multiple panels?
   // TODO: in general we can maybe render UI with minimal draw calls via a breadth-first search

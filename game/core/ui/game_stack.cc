@@ -77,6 +77,7 @@ void GameStack::update(bool controller_change) {
   }
   input.global.mouse_active = !assignment_mouse_active && input.global.mouse_cursor.has_value();
 
+  std::erase_if(layers_, [](const auto& e) { return e->is_removed(); });
   io_layer_.capture_mouse(!layers_.empty() && +(top()->layer_flags() & layer_flag::kCaptureCursor));
   auto it = get_capture_it(layers_.begin(), layers_.end(), layer_flag::kCaptureUpdate);
   auto input_it = get_capture_it(layers_.begin(), layers_.end(), layer_flag::kCaptureInput);
@@ -115,16 +116,15 @@ void GameStack::update(bool controller_change) {
       }
     }
     output_frame output;
-    e->update(layer_input, output);
     if (it >= input_it) {
       e->update_focus(layer_input, output);
     }
+    e->update(layer_input, output);
     for (auto s : output.sounds) {
       play_sound(s);
     }
   }
 
-  std::erase_if(layers_, [](const auto& e) { return e->is_removed(); });
   // Auto-focus new menus for non-mouse inputs.
   if (size != layers_.size() && !empty() && !top()->has_focus() && !input.show_cursor &&
       !(top()->layer_flags() & layer_flag::kNoAutoFocus)) {

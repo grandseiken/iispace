@@ -141,14 +141,16 @@ void TextElement::render_content(render::GlRenderer& r) const {
     for (const auto& s : lines_) {
       position.x = align_x(s);
       r.render_text(font_, font_dimensions_, position + drop_shadow_->offset,
-                    glm::vec4{0.f, 0.f, 0.f, drop_shadow_->opacity}, ustring_view::utf32(s));
+                    glm::vec4{0.f, 0.f, 0.f, drop_shadow_->opacity}, /* clip */ false,
+                    ustring_view::utf32(s));
       position.y += line_height;
     }
   }
   position = glm::ivec2{0, align_y()};
   for (const auto& s : lines_) {
     position.x = align_x(s);
-    r.render_text(font_, font_dimensions_, position, colour_, ustring_view::utf32(s));
+    r.render_text(font_, font_dimensions_, position, colour_, /* clip */ false,
+                  ustring_view::utf32(s));
     position.y += line_height;
   }
 }
