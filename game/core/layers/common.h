@@ -6,6 +6,7 @@
 namespace ii {
 static constexpr glm::ivec2 kUiDimensions = {640, 360};
 static constexpr glm::uvec2 kLargeFont = {16, 16};
+static constexpr glm::uvec2 kSemiLargeFont = {12, 12};
 static constexpr glm::uvec2 kMediumFont = {10, 10};
 static constexpr glm::uvec2 kSpacing = {16, 16};
 static constexpr glm::uvec2 kPadding = {4, 4};

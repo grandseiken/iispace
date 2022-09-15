@@ -41,7 +41,7 @@ Button& Button::set_margin(const glm::ivec2& margin) {
   return *this;
 }
 
-void Button::update_content(const input_frame& input, ui::output_frame& output) {
+void Button::update_content(const input_frame& input, output_frame& output) {
   bool mouse_hover = input.mouse_cursor && bounds().size_rect().contains(*input.mouse_cursor);
   bool mouse_moved = input.mouse_delta && *input.mouse_delta != glm::ivec2{0};
   bool f = has_focus();
@@ -57,7 +57,7 @@ void Button::update_content(const input_frame& input, ui::output_frame& output) 
   mouse_over_ = mouse_hover;
   on_focus_change();
   if (has_primary_focus() && callback_ &&
-      (input.pressed(ui::key::kAccept) || (input.pressed(ui::key::kClick) && mouse_hover))) {
+      (input.pressed(key::kAccept) || (input.pressed(key::kClick) && mouse_hover))) {
     output.sounds.emplace(sound::kMenuAccept);
     mouse_over_ = false;  // Otherwise it won't get updated later when not visible.
     callback_();

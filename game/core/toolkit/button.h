@@ -57,7 +57,7 @@ public:
   Button& set_margin(const glm::ivec2& margin);
 
 protected:
-  void update_content(const input_frame&, ui::output_frame&) override;
+  void update_content(const input_frame&, output_frame&) override;
   void on_focus_change() override;
 
 private:

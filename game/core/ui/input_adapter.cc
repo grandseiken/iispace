@@ -16,7 +16,8 @@ bool contains(std::span<const T> range, T value) {
 }
 
 bool is_navigation(key k) {
-  return k == key::kUp || k == key::kDown || k == key::kLeft || k == key::kRight;
+  return k == key::kUp || k == key::kDown || k == key::kLeft || k == key::kRight ||
+      k == key::kAccept;
 }
 
 std::span<const io::keyboard::key> keys_for(key k) {

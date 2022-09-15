@@ -144,6 +144,7 @@ void GameStack::render(render::GlRenderer& renderer) const {
   if (cursor_ && cursor_frame_ &&
       (layers_.empty() || !(top()->layer_flags() & layer_flag::kCaptureCursor))) {
     // TODO: probably replace this once we can render shape fills with cool effects.
+    auto hue = cursor_hue_.value_or(1.f / 3);
     renderer.target().render_dimensions = {640, 360};
     auto scale = static_cast<float>(cursor_frame_) / kCursorFrames;
     scale = 1.f / 16 + (15.f / 16) * (1.f - (1.f - scale * scale));
@@ -168,7 +169,7 @@ void GameStack::render(render::GlRenderer& renderer) const {
         },
         render::shape{
             .origin = origin,
-            .colour = colour_hue360(120, .5f, .5f),
+            .colour = {hue, .5f, .5f, 1.f},
             .z_index = 127.6f,
             .data = render::ngon{.radius = radius, .sides = 3, .line_width = radius / 2},
         },
@@ -181,7 +182,7 @@ void GameStack::render(render::GlRenderer& renderer) const {
         },
         render::shape{
             .origin = origin,
-            .colour = colour_hue360(120, .85f, .5f),
+            .colour = {hue, .5f, .85f, 1.f},
             .z_index = 127.8f,
             .data = render::ngon{.radius = radius * flash,
                                  .sides = 3,

@@ -3,7 +3,7 @@
 
 namespace ii::ui {
 
-void Panel::update_content(const input_frame&, ui::output_frame&) {
+void Panel::update_content(const input_frame&, output_frame&) {
   auto r = bounds().size_rect().contract(margin_).contract(padding_);
   for (auto& e : *this) {
     e->set_bounds(r);

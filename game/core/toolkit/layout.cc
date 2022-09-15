@@ -6,7 +6,7 @@
 
 namespace ii::ui {
 
-void LinearLayout::update_content(const input_frame&, ui::output_frame&) {
+void LinearLayout::update_content(const input_frame&, output_frame&) {
   std::unordered_set<const Element*> children_set;
   for (const auto& e : *this) {
     children_set.emplace(e.get());
@@ -82,14 +82,14 @@ void LinearLayout::update_content(const input_frame&, ui::output_frame&) {
   }
 }
 
-bool LinearLayout::handle_focus(const input_frame& input, ui::output_frame& output) {
+bool LinearLayout::handle_focus(const input_frame& input, output_frame& output) {
   std::int32_t offset = 0;
-  if ((input.pressed(ui::key::kDown) && type_ == orientation::kVertical) ||
-      (input.pressed(ui::key::kRight) && type_ == orientation::kHorizontal)) {
+  if ((input.pressed(key::kDown) && type_ == orientation::kVertical) ||
+      (input.pressed(key::kRight) && type_ == orientation::kHorizontal)) {
     ++offset;
   }
-  if ((input.pressed(ui::key::kUp) && type_ == orientation::kVertical) ||
-      (input.pressed(ui::key::kLeft) && type_ == orientation::kHorizontal)) {
+  if ((input.pressed(key::kUp) && type_ == orientation::kVertical) ||
+      (input.pressed(key::kLeft) && type_ == orientation::kHorizontal)) {
     --offset;
   }
   if (!offset || empty()) {
@@ -128,7 +128,7 @@ bool LinearLayout::handle_focus(const input_frame& input, ui::output_frame& outp
   return false;
 }
 
-void GridLayout::update_content(const input_frame&, ui::output_frame&) {
+void GridLayout::update_content(const input_frame&, output_frame&) {
   auto free_space =
       bounds().size.x - std::max(0, static_cast<std::int32_t>(columns_) - 1) * spacing_;
   auto grid_size = free_space / columns_;
@@ -155,18 +155,18 @@ void GridLayout::update_content(const input_frame&, ui::output_frame&) {
   }
 }
 
-bool GridLayout::handle_focus(const input_frame& input, ui::output_frame& output) {
+bool GridLayout::handle_focus(const input_frame& input, output_frame& output) {
   glm::ivec2 offset{0};
-  if (input.pressed(ui::key::kRight)) {
+  if (input.pressed(key::kRight)) {
     ++offset.x;
   }
-  if (input.pressed(ui::key::kLeft)) {
+  if (input.pressed(key::kLeft)) {
     --offset.x;
   }
-  if (input.pressed(ui::key::kDown)) {
+  if (input.pressed(key::kDown)) {
     ++offset.y;
   }
-  if (input.pressed(ui::key::kUp)) {
+  if (input.pressed(key::kUp)) {
     --offset.y;
   }
   if (!size() || offset == glm::ivec2{0}) {
@@ -242,6 +242,24 @@ bool GridLayout::handle_focus(const input_frame& input, ui::output_frame& output
     }
   }
   return false;
+}
+
+void TabContainer::set_active(std::size_t index) {
+  active_index_ = index;
+  for (std::size_t i = 0; i < size(); ++i) {
+    if (i == index) {
+      (*this)[i]->show();
+    } else {
+      (*this)[i]->hide();
+    }
+  }
+}
+
+void TabContainer::update_content(const input_frame&, output_frame&) {
+  for (auto& e : *this) {
+    e->set_bounds(bounds().size_rect());
+  }
+  set_active(active_index_);
 }
 
 }  // namespace ii::ui

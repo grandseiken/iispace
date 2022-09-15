@@ -31,7 +31,7 @@ public:
   }
 
 protected:
-  void update_content(const input_frame&, ui::output_frame&) override;
+  void update_content(const input_frame&, output_frame&) override;
   void render_content(render::GlRenderer&) const override;
 
 private:

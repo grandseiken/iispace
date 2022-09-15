@@ -81,6 +81,8 @@ public:
 
   std::uint32_t fps() const { return fps_; }
   void set_fps(std::uint32_t fps) { fps_ = fps; }
+  void set_cursor_hue(float hue) { cursor_hue_ = hue; }
+  void clear_cursor_hue() { cursor_hue_.reset(); }
 
   template <typename T, typename... Args>
   T* add(Args&&... args) {
@@ -118,6 +120,7 @@ private:
   std::uint32_t fps_ = 60;
   std::uint32_t cursor_anim_frame_ = 0;
   std::uint32_t cursor_frame_ = 0;
+  std::optional<float> cursor_hue_;
   std::optional<glm::ivec2> prev_cursor_;
   std::optional<glm::ivec2> cursor_;
   std::deque<std::unique_ptr<GameLayer>> layers_;

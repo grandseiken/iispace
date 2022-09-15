@@ -47,8 +47,8 @@ public:
   }
 
 protected:
-  void update_content(const input_frame&, ui::output_frame&) override;
-  bool handle_focus(const input_frame&, ui::output_frame&) override;
+  void update_content(const input_frame&, output_frame&) override;
+  bool handle_focus(const input_frame&, output_frame&) override;
 
 private:
   struct element_info {
@@ -83,13 +83,26 @@ public:
   }
 
 protected:
-  void update_content(const input_frame&, ui::output_frame&) override;
-  bool handle_focus(const input_frame&, ui::output_frame&) override;
+  void update_content(const input_frame&, output_frame&) override;
+  bool handle_focus(const input_frame&, output_frame&) override;
 
 private:
   bool wrap_focus_ = false;
   std::int32_t columns_ = 1;
   std::int32_t spacing_ = 0;
+};
+
+class TabContainer : public Element {
+public:
+  using Element::Element;
+  void set_active(std::size_t index);
+  std::size_t active_index() const { return active_index_; }
+
+protected:
+  void update_content(const input_frame&, output_frame&) override;
+
+private:
+  std::size_t active_index_ = 0;
 };
 
 }  // namespace ii::ui
