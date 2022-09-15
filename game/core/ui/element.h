@@ -44,10 +44,7 @@ public:
   bool is_removed() const { return remove_; }
 
   void show() { hide_ = false; }
-  void hide() {
-    unfocus();
-    hide_ = true;
-  }
+  void hide() { hide_ = true; }
   bool is_visible() const { return !hide_; }
 
   bool focus(bool last = false);

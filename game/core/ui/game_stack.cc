@@ -26,7 +26,7 @@ auto get_capture_it(It begin, It end, layer_flag flag) {
 
 }  // namespace
 
-void GameLayer::update_content(const input_frame&, ui::output_frame&) {
+void GameLayer::update_content(const input_frame&, output_frame&) {
   for (auto& e : *this) {
     e->set_bounds(bounds());
   }

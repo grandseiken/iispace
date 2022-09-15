@@ -105,11 +105,11 @@ void Element::update_focus(const multi_input_frame& input, output_frame& output)
     auto element_input = map_input(input, input_root_, {});
 
     if (!has_focus()) {
-      if (element_input.global.pressed(ui::key::kUp) ||
-          element_input.global.pressed(ui::key::kLeft)) {
+      if (element_input.global.pressed(key::kUp) ||
+          element_input.global.pressed(key::kLeft)) {
         focus(/* last */ true);
-      } else if (element_input.global.pressed(ui::key::kDown) ||
-                 element_input.global.pressed(ui::key::kRight)) {
+      } else if (element_input.global.pressed(key::kDown) ||
+                 element_input.global.pressed(key::kRight)) {
         focus(/* last */ false);
       }
       if (has_focus()) {

@@ -92,8 +92,6 @@ protected:
 
     if (input.pressed(ui::key::kCancel) && main_->active_index()) {
       if (config_tab_->active_index()) {
-        // TODO: navigation buttons weirdly don't do the right thing after cancelling out?
-        // Because of weird focus loss between tab switches maybe?
         config_tab_->set_active(0);
       } else {
         clear();

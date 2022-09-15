@@ -246,12 +246,22 @@ bool GridLayout::handle_focus(const input_frame& input, output_frame& output) {
 
 void TabContainer::set_active(std::size_t index) {
   active_index_ = index;
+  Element* new_focus = nullptr;
   for (std::size_t i = 0; i < size(); ++i) {
     if (i == index) {
-      (*this)[i]->show();
+      auto* e = (*this)[i];
+      e->show();
+      if (e->has_focus()) {
+        new_focus = e->focused_element();
+      }
     } else {
       (*this)[i]->hide();
     }
+  }
+  if (new_focus) {
+    new_focus->focus();
+  } else {
+    unfocus();
   }
 }
 
