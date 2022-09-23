@@ -8,6 +8,9 @@
 #include "game/logic/sim/io/player.h"
 
 namespace ii {
+namespace {
+constexpr std::uint32_t kAllReadyTimerFrames = 300;
+}  // namespace
 
 class AssignmentPanel : public ui::Panel {
 public:
@@ -76,7 +79,6 @@ public:
   }
 
   void ready() { config_tab_->set_active(1); }
-
   void clear() {
     if (auto* e = main_->focused_element()) {
       e->unfocus();
@@ -85,6 +87,9 @@ public:
     main_->set_active(0);
     clear_input_root();
   }
+
+  bool is_assigned() const { return assigned_id_.has_value(); }
+  bool is_ready() const { return config_tab_->active_index(); }
 
 protected:
   void update_content(const ui::input_frame& input, ui::output_frame& output) override {
@@ -129,13 +134,15 @@ RunLobbyLayer::RunLobbyLayer(ui::GameStack& stack, const initial_conditions& con
 
   auto& top = *layout.add_back<ui::Panel>();
   auto& main = *layout.add_back<ui::LinearLayout>();
-  auto& bottom = *layout.add_back<ui::LinearLayout>();
+  bottom_tabs_ = layout.add_back<ui::TabContainer>();
+  auto& bottom = *bottom_tabs_->add_back<ui::LinearLayout>();
+  all_ready_text_ = bottom_tabs_->add_back<ui::TextElement>();
 
   top.set_style(render::panel_style::kFlatColour)
       .set_padding(kPadding)
       .set_colour(kBackgroundColour);
   layout.set_absolute_size(top, kLargeFont.y + 2 * kPadding.y)
-      .set_absolute_size(bottom, kLargeFont.y + 2 * kPadding.y);
+      .set_absolute_size(*bottom_tabs_, kLargeFont.y + 2 * kPadding.y);
   bottom.set_spacing(kPadding.x).set_orientation(ui::orientation::kHorizontal);
 
   std::string title_text;
@@ -165,6 +172,13 @@ RunLobbyLayer::RunLobbyLayer(ui::GameStack& stack, const initial_conditions& con
       .set_font_dimensions(kLargeFont)
       .set_drop_shadow(kDropShadow, .5f)
       .set_alignment(ui::alignment::kCentered);
+
+  all_ready_text_->set_font(render::font_id::kMonospaceBoldItalic)
+      .set_colour(kHighlightColour)
+      .set_font_dimensions(kLargeFont)
+      .set_drop_shadow(kDropShadow, .5f)
+      .set_alignment(ui::alignment::kCentered);
+
   back_button_ = bottom.add_back<ui::Button>();
   standard_button(*back_button_).set_text(ustring::ascii("Back")).set_callback([this] {
     this->stack().input().clear_assignments();
@@ -181,11 +195,6 @@ RunLobbyLayer::RunLobbyLayer(ui::GameStack& stack, const initial_conditions& con
 void RunLobbyLayer::update_content(const ui::input_frame& input, ui::output_frame& output) {
   GameLayer::update_content(input, output);
 
-  for (std::uint32_t i = 0; i < assignment_panels_.size(); ++i) {
-    if (!assignment_panels_[i]->is_input_root()) {
-      stack().input().unassign(i);
-    }
-  }
   for (const auto& join : input.join_game_inputs) {
     if (stack().input().is_assigned(join)) {
       continue;
@@ -208,6 +217,41 @@ void RunLobbyLayer::update_content(const ui::input_frame& input, ui::output_fram
     output.sounds.emplace(sound::kMenuAccept);
     back_button_->unfocus();
   }
+
+  std::uint32_t assigned_count = 0;
+  std::uint32_t ready_count = 0;
+  for (std::uint32_t i = 0; i < assignment_panels_.size(); ++i) {
+    auto& panel = *assignment_panels_[i];
+    if (!panel.is_assigned()) {
+      stack().input().unassign(i);
+    }
+    if (panel.is_assigned()) {
+      ++assigned_count;
+      if (panel.is_ready()) {
+        ++ready_count;
+      }
+    }
+  }
+
+  bool all_ready = assigned_count && assigned_count == ready_count;
+  if (all_ready) {
+    if (!all_ready_timer_) {
+      all_ready_timer_ = kAllReadyTimerFrames;
+    }
+    if (!--*all_ready_timer_) {
+      all_ready_timer_.reset();
+    }
+  } else {
+    all_ready_timer_.reset();
+  }
+  if (all_ready_timer_) {
+    auto s = "Game starting in " + std::to_string(*all_ready_timer_ / 60);
+    bottom_tabs_->set_active(1);
+    all_ready_text_->set_text(ustring::ascii(s));
+  } else {
+    bottom_tabs_->set_active(0);
+  }
+
   if (!stack().input().is_assigned(ui::input_device_id::kbm())) {
     stack().clear_cursor_hue();
   }
