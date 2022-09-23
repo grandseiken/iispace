@@ -1,5 +1,4 @@
 load("@bazel_tools//tools/build_defs/repo:http.bzl", "http_archive")
-load("@//tools:sdl_system_repository.bzl", "sdl_system_repository")
 
 ################################################################################
 # Hedron compile commands extractor
@@ -39,6 +38,12 @@ http_archive(
 )
 load("@rules_pkg//:deps.bzl", "rules_pkg_dependencies")
 rules_pkg_dependencies()
+
+################################################################################
+# Custom repository rules
+################################################################################
+load("@//tools:http_archive_override.bzl", "http_archive_override")
+load("@//tools:sdl_system_repository.bzl", "sdl_system_repository")
 
 ################################################################################
 # Language feature dependencies
@@ -146,13 +151,17 @@ http_archive(
 ################################################################################
 # Steamworks SDK
 ################################################################################
-http_archive(
+STEAMWORKS_SDK_VERSION = 155
+http_archive_override(
   name = "steamworks_sdk",
   build_file = "@//deps:steamworks_sdk.BUILD",
   sha256 = "3d5ab5d2b5538fdbe49fd81abf3b6bc6c18b91bcc6a0fecd4122f22b243ee704",
   strip_prefix = "sdk",
-  # TODO: can't be downloaded without logging in, won't work for CI.
-  url = "https://partner.steamgames.com/downloads/steamworks_sdk_155.zip",
+  # Copy steamworks zip into repo root to source locally.
+  local_path = "steamworks_sdk_%s.zip" % STEAMWORKS_SDK_VERSION,
+  urls = [
+    "https://partner.steamgames.com/downloads/steamworks_sdk_%s.zip" % STEAMWORKS_SDK_VERSION,
+  ],
 )
 
 ################################################################################

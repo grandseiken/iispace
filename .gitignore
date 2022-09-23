@@ -4,5 +4,6 @@
 /savedata
 /steam_appid.txt
 /steam_build/
+/steamworks_sdk_*.zip
 /.cache/
 /.vscode
