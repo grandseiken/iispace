@@ -73,8 +73,6 @@ private:
 MainMenuLayer::MainMenuLayer(ui::GameStack& stack) : ui::GameLayer{stack} {
   set_bounds(rect{kUiDimensions});
 
-  // TODO: highlighted buttons are one pixel off (or something) on first view but not on return.
-  // What's going on?
   auto& layout = add_main_layout(this);
   add_button(layout, "Start game", [this] { this->stack().add<StartGameLayer>(); });
   add_button(layout, "Exit", [this] { exit_timer_ = 4; });

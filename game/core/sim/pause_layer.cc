@@ -44,7 +44,7 @@ PauseLayer::PauseLayer(ui::GameStack& stack, std::function<void()> on_quit)
       .set_font(render::font_id::kMonospaceItalic)
       .set_font_dimensions(kLargeFont);
 
-  // TODO: reinstate volume control / settings menu.
+  // TODO: reinstate volume control / settings menu. Allow explicit controller rebind?
   add_button("Continue", [this] { remove(); });
   add_button("End game", [this] {
     if (on_quit_) {

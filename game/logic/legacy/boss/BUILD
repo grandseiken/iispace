@@ -1,0 +1,30 @@
+cc_library(
+  name = "boss",
+  hdrs = ["boss.h"],
+  srcs = [
+    "boss_internal.cc",
+    "boss_internal.h",
+    "chaser.cc",
+    "deathray.cc",
+    "ghost.cc",
+    "shield.cc",
+    "square.cc",
+    "super.cc",
+    "tractor.cc",
+  ],
+  deps = [
+    "@glm",
+    "//game/logic/geometry/shapes",
+    "//game/logic/ship",
+    "//game/logic/sim:sim_interface",
+  ],
+  implementation_deps = [
+    "//game/common:math",
+    "//game/logic/legacy/enemy",
+    "//game/logic/legacy/player:powerup",
+    "//game/logic/sim/io:events",
+    "//game/logic/sim/io:render",
+    "//game/mixer:sound",
+  ],
+  visibility = ["//game/logic/legacy/overmind:__pkg__"],
+)

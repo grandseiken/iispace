@@ -1,8 +1,8 @@
 #include "game/logic/sim/sim_state.h"
 #include "game/data/replay.h"
 #include "game/logic/ecs/call.h"
-#include "game/logic/overmind/overmind.h"
-#include "game/logic/player/player.h"
+#include "game/logic/legacy/overmind/overmind.h"
+#include "game/logic/legacy/player/player.h"
 #include "game/logic/ship/components.h"
 #include "game/logic/sim/sim_interface.h"
 #include "game/logic/sim/sim_internals.h"
@@ -80,12 +80,13 @@ SimState::SimState(const initial_conditions& conditions, data::ReplayWriter* rep
   internals_->global_entity_handle->add(
       PostUpdate{.post_update = ecs::call<&GlobalData::post_update>});
   internals_->global_entity_id = internals_->global_entity_handle->id();
-  spawn_overmind(*interface_);
+  legacy::spawn_overmind(*interface_);
 
   for (std::uint32_t i = 0; i < conditions.player_count; ++i) {
     vec2 v{(1 + i) * dim.x.to_int() / (1 + conditions.player_count), dim.y / 2};
-    spawn_player(*interface_, v, i,
-                 /* AI */ std::find(ai_players.begin(), ai_players.end(), i) != ai_players.end());
+    legacy::spawn_player(
+        *interface_, v, i,
+        /* AI */ std::find(ai_players.begin(), ai_players.end(), i) != ai_players.end());
   }
   setup_index_callbacks(*interface_, *internals_);
 }
@@ -137,7 +138,7 @@ void SimState::copy_to(SimState& target) const {
 void SimState::ai_think(std::vector<input_frame>& input) const {
   input.resize(internals_->conditions.player_count);
   internals_->index.iterate_dispatch<Player>([&](ecs::handle h, const Player& p) {
-    if (auto f = ii::ai_think(*interface_, h); f) {
+    if (auto f = legacy::ai_think(*interface_, h); f) {
       input[p.player_number] = *f;
     }
   });
@@ -342,6 +343,7 @@ void SimState::set_predicted_players(std::span<const std::uint32_t> player_ids) 
 
 void SimState::update_smoothing(smoothing_data& data) {
   static constexpr fixed kMaxRotationSpeed = fixed_c::pi / 16;
+  static constexpr fixed kPlayerSpeed = legacy::kPlayerSpeed;
   auto smooth_rotate = [&](fixed& x, fixed target) {
     auto d = angle_diff(x, target);
     if (abs(d) < kMaxRotationSpeed) {
