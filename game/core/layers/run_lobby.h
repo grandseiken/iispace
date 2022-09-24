@@ -19,6 +19,9 @@ public:
   void update_content(const ui::input_frame&, ui::output_frame&) override;
 
 private:
+  void clear_and_remove();
+  void start_game();
+
   initial_conditions conditions_;
   ui::TabContainer* bottom_tabs_ = nullptr;
   ui::Button* back_button_ = nullptr;

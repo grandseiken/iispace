@@ -23,6 +23,7 @@ enum class key {
 };
 
 struct input_device_id {
+  // TODO: replace this with a stable reference. Needs IoLayer support.
   std::optional<std::size_t> controller_index;
 
   static input_device_id kbm() { return {}; }

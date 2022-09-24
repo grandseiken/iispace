@@ -1,5 +1,6 @@
 #include "game/core/layers/run_lobby.h"
 #include "game/core/layers/common.h"
+#include "game/core/sim/sim_layer.h"
 #include "game/core/toolkit/button.h"
 #include "game/core/toolkit/layout.h"
 #include "game/core/toolkit/panel.h"
@@ -12,6 +13,9 @@ namespace {
 constexpr std::uint32_t kAllReadyTimerFrames = 300;
 }  // namespace
 
+// TODO: assignment panels currently fixed colour/number, so we with dropouts we can end up with
+// e.g. players 0, 1 and 3 going into the game and then inconsistent player colours.
+// TODO: indication that in single-player mode any combination of controller/KBM can be used.
 class AssignmentPanel : public ui::Panel {
 public:
   AssignmentPanel(Element* parent, std::size_t index)
@@ -90,6 +94,7 @@ public:
 
   bool is_assigned() const { return assigned_id_.has_value(); }
   bool is_ready() const { return config_tab_->active_index(); }
+  ui::input_device_id assigned_input_device() const { return *assigned_id_; }
 
 protected:
   void update_content(const ui::input_frame& input, ui::output_frame& output) override {
@@ -181,8 +186,7 @@ RunLobbyLayer::RunLobbyLayer(ui::GameStack& stack, const initial_conditions& con
 
   back_button_ = bottom.add_back<ui::Button>();
   standard_button(*back_button_).set_text(ustring::ascii("Back")).set_callback([this] {
-    this->stack().input().clear_assignments();
-    remove();
+    clear_and_remove();
   });
 
   main.set_orientation(ui::orientation::kHorizontal);
@@ -239,7 +243,7 @@ void RunLobbyLayer::update_content(const ui::input_frame& input, ui::output_fram
       all_ready_timer_ = kAllReadyTimerFrames;
     }
     if (!--*all_ready_timer_) {
-      all_ready_timer_.reset();
+      start_game();
     }
   } else {
     all_ready_timer_.reset();
@@ -258,10 +262,28 @@ void RunLobbyLayer::update_content(const ui::input_frame& input, ui::output_fram
 
   if (input.pressed(ui::key::kCancel)) {
     output.sounds.emplace(sound::kMenuAccept);
-    stack().input().clear_assignments();
-    stack().clear_cursor_hue();
-    remove();
+    clear_and_remove();
   }
+}
+
+void RunLobbyLayer::clear_and_remove() {
+  stack().input().clear_assignments();
+  stack().clear_cursor_hue();
+  remove();
+}
+
+void RunLobbyLayer::start_game() {
+  std::vector<ui::input_device_id> input_devices;
+  auto start_conditions = conditions_;
+  start_conditions.player_count = 0;
+  for (const auto* panel : assignment_panels_) {
+    if (panel->is_assigned()) {
+      ++start_conditions.player_count;
+      input_devices.emplace_back(panel->assigned_input_device());
+    }
+  }
+  stack().add<SimLayer>(start_conditions, input_devices);
+  clear_and_remove();
 }
 
 }  // namespace ii

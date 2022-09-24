@@ -157,8 +157,6 @@ void ReplayViewer::render_content(render::GlRenderer& r) const {
   const auto& render = impl_->istate().render(/* paused */ stack().top() != impl_->hud);
   r.set_colour_cycle(render.colour_cycle);
   impl_->render_state.render(r);  // TODO: can be merged with below?
-  // TODO: instead of messing with trail alpha, render N frames ago first so trails aren't quite so
-  // long?
   impl_->hud->set_data(render);
   r.render_shapes(render::coordinate_system::kGlobal, render.shapes, /* trail alpha */ 1.f);
 }

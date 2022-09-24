@@ -1,25 +1,10 @@
 #include "game/core/sim/input_adapter.h"
+#include "game/core/ui/input.h"
 #include "game/io/io.h"
 #include <optional>
 
 namespace ii {
 namespace {
-
-struct player_input {
-  bool kbm = false;
-  std::optional<std::size_t> controller;
-};
-
-player_input
-assign_input(std::uint32_t player_index, std::uint32_t player_count, std::size_t controller_count) {
-  player_input input;
-  if (player_index < controller_count) {
-    input.controller = player_index;
-  }
-  input.kbm = (player_count <= controller_count && 1 + player_index == player_count) ||
-      (player_count > controller_count && player_index == controller_count);
-  return input;
-}
 
 vec2 controller_stick(std::int16_t x, std::int16_t y, bool should_normalise) {
   static constexpr fixed inner_deadzone = fixed_c::tenth * 3;
@@ -115,30 +100,16 @@ std::uint32_t controller_keys(const io::controller::frame& frame) {
 }  // namespace
 
 SimInputAdapter::~SimInputAdapter() = default;
-SimInputAdapter::SimInputAdapter(const io::IoLayer& io_layer) : io_layer_{io_layer} {}
-
-void SimInputAdapter::set_player_count(std::uint32_t players) {
-  player_count_ = players;
-  last_aim_.clear();
-  for (std::uint32_t i = 0; i < players; ++i) {
-    last_aim_.emplace_back(vec2{0});
+SimInputAdapter::SimInputAdapter(const io::IoLayer& io_layer,
+                                 std::span<const ui::input_device_id> input_devices)
+: io_layer_{io_layer} {
+  for (const auto& input_device : input_devices) {
+    input_.emplace_back().device = input_device;
   }
 }
 
 void SimInputAdapter::set_game_dimensions(const glm::uvec2& dimensions) {
   game_dimensions_ = dimensions;
-}
-
-SimInputAdapter::input_type SimInputAdapter::input_type_for(std::uint32_t player_index) const {
-  input_type result = input_type::kNone;
-  auto input = assign_input(player_index, player_count_, io_layer_.controllers());
-  if (input.controller) {
-    result = input_type::kController;
-  }
-  if (input.kbm) {
-    result = static_cast<input_type>(result | input_type::kKeyboardMouse);
-  }
-  return result;
 }
 
 std::vector<input_frame> SimInputAdapter::get() {
@@ -150,30 +121,43 @@ std::vector<input_frame> SimInputAdapter::get() {
   }
 
   std::vector<input_frame> frames;
-  for (std::uint32_t i = 0; i < player_count_; ++i) {
+  bool single_player = input_.size() <= 1u;
+  for (auto& input : input_) {
     auto& frame = frames.emplace_back();
-    auto input = assign_input(i, player_count_, io_layer_.controllers());
-    io::controller::frame* controller =
-        input.controller ? &controller_frames[*input.controller] : nullptr;
+    io::controller::frame* controller = input.device.controller_index
+        ? &controller_frames[*input.device.controller_index]
+        : nullptr;
+    bool kbm = !controller || single_player;
+    auto for_controllers = [&](auto&& f) {
+      if (single_player) {
+        for (const auto& controller_frame : controller_frames) {
+          f(controller_frame);
+        }
+      } else if (controller) {
+        f(*controller);
+      }
+    };
 
-    if (input.kbm) {
+    if (kbm) {
       frame.velocity = kbm_move_velocity(keyboard_frame);
     }
-    if (controller && frame.velocity == vec2{0}) {
-      frame.velocity = controller_move_velocity(*controller);
-    }
+    for_controllers([&](const auto& controller_frame) {
+      if (frame.velocity == vec2{0}) {
+        frame.velocity = controller_move_velocity(controller_frame);
+      }
+    });
 
-    if (controller) {
-      auto v = controller_fire_target(*controller);
-      if (v != vec2{0}) {
-        if (input.kbm) {
+    for_controllers([&](const auto& controller_frame) {
+      auto v = controller_fire_target(controller_frame);
+      if (!frame.target_relative && v != vec2{0}) {
+        if (kbm) {
           mouse_moving_ = false;
         }
-        frame.target_relative = last_aim_[i] = normalise(v) * 48;
+        frame.target_relative = input.last_aim = normalise(v) * 48;
         frame.keys |= input_frame::key::kFire;
       }
-    }
-    if (input.kbm && !frame.target_relative) {
+    });
+    if (kbm && !frame.target_relative) {
       if (mouse_frame.cursor_delta != glm::ivec2{0, 0}) {
         mouse_moving_ = true;
       }
@@ -183,28 +167,26 @@ std::vector<input_frame> SimInputAdapter::get() {
       }
     }
     if (!frame.target_absolute && !frame.target_relative) {
-      if (controller && last_aim_[i] != vec2{0}) {
-        frame.target_relative = last_aim_[i];
+      if ((controller || single_player) && input.last_aim != vec2{0}) {
+        frame.target_relative = input.last_aim;
       } else {
         frame.target_relative = vec2{48, 0};
       }
     }
 
-    if (input.kbm) {
+    if (kbm) {
       frame.keys |= kbm_keys(keyboard_frame, mouse_frame);
     }
-    if (controller) {
-      frame.keys |= controller_keys(*controller);
-    }
+    for_controllers(
+        [&](const auto& controller_frame) { frame.keys |= controller_keys(*controller); });
   }
   return frames;
 }
 
 void SimInputAdapter::rumble(std::uint32_t player_index, std::uint16_t lf, std::uint16_t hf,
                              std::uint32_t duration_ms) const {
-  auto input = assign_input(player_index, player_count_, io_layer_.controllers());
-  if (input.controller) {
-    io_layer_.controller_rumble(*input.controller, lf, hf, duration_ms);
+  if (player_index < input_.size() && input_[player_index].device.controller_index) {
+    io_layer_.controller_rumble(*input_[player_index].device.controller_index, lf, hf, duration_ms);
   }
 }
 

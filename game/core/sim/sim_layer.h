@@ -1,7 +1,9 @@
 #ifndef II_GAME_CORE_SIM_SIM_LAYER_H
 #define II_GAME_CORE_SIM_SIM_LAYER_H
 #include "game/core/ui/game_stack.h"
+#include "game/core/ui/input.h"
 #include <memory>
+#include <span>
 
 namespace ii {
 struct initial_conditions;
@@ -11,7 +13,7 @@ class SimLayer : public ui::GameLayer {
 public:
   ~SimLayer() override;
   SimLayer(ui::GameStack& stack, const initial_conditions& conditions,
-           const game_options_t& options);
+           std::span<const ui::input_device_id> input_devices);
 
   void update_content(const ui::input_frame&, ui::output_frame&) override;
   void render_content(render::GlRenderer& r) const override;

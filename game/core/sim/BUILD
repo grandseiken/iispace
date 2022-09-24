@@ -67,6 +67,7 @@ cc_library(
   hdrs = ["input_adapter.h"],
   srcs = ["input_adapter.cc"],
   deps = [
+    "//game/core/ui:input",
     "//game/logic/sim/io:player",
     "@glm",
   ],

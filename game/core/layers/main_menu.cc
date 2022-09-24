@@ -40,7 +40,7 @@ public:
       conditions.compatibility = this->stack().options().compatibility;
       conditions.seed = static_cast<std::uint32_t>(time(0));
       conditions.flags |= initial_conditions::flag::kLegacy_CanFaceSecretBoss;
-      conditions.player_count = 1u /* TODO */;
+      conditions.player_count = 0u;
       conditions.mode = mode;
       this->stack().add<RunLobbyLayer>(conditions);
     };

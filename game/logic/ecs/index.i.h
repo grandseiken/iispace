@@ -229,7 +229,6 @@ inline void EntityIndex::compact() {
 }
 
 inline auto EntityIndex::create() -> handle {
-  // TODO: is ID reuse OK?
   auto id = next_id_++;
   while (contains(id)) {
     id = next_id_++;

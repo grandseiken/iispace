@@ -33,6 +33,7 @@ cc_library(
   ],
   implementation_deps = [
     ":common",
+    "//game/core/sim:sim_layer",
     "//game/core/toolkit",
     "//game/logic/sim/io:player",
     "//game/io",

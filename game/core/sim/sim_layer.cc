@@ -4,6 +4,7 @@
 #include "game/core/sim/input_adapter.h"
 #include "game/core/sim/pause_layer.h"
 #include "game/core/sim/render_state.h"
+#include "game/core/ui/input.h"
 #include "game/data/replay.h"
 #include "game/data/save.h"
 #include "game/logic/sim/sim_state.h"
@@ -16,15 +17,14 @@
 namespace ii {
 
 struct SimLayer::impl_t {
-  impl_t(io::IoLayer& io_layer, const initial_conditions& conditions, const game_options_t& options)
+  impl_t(io::IoLayer& io_layer, const initial_conditions& conditions,
+         std::span<const ui::input_device_id> input_devices, const game_options_t& options)
   : options{options}
   , mode{conditions.mode}
   , render_state{conditions.seed}
-  , input{io_layer}
+  , input{io_layer, input_devices}
   , writer{conditions}
-  , state{std::make_unique<SimState>(conditions, &writer, options.ai_players)} {
-    input.set_player_count(conditions.player_count);
-  }
+  , state{std::make_unique<SimState>(conditions, &writer, options.ai_players)} {}
 
   HudLayer* hud = nullptr;
   std::uint32_t audio_tick = 0;
@@ -39,9 +39,9 @@ struct SimLayer::impl_t {
 SimLayer::~SimLayer() = default;
 
 SimLayer::SimLayer(ui::GameStack& stack, const initial_conditions& conditions,
-                   const game_options_t& options)
+                   std::span<const ui::input_device_id> input_devices)
 : ui::GameLayer{stack, ui::layer_flag::kBaseLayer | ui::layer_flag::kCaptureCursor}
-, impl_{std::make_unique<impl_t>(stack.io_layer(), conditions, options)} {}
+, impl_{std::make_unique<impl_t>(stack.io_layer(), conditions, input_devices, stack.options())} {}
 
 void SimLayer::update_content(const ui::input_frame& ui_input, ui::output_frame&) {
   set_bounds(rect{impl_->state->dimensions()});
