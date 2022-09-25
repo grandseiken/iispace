@@ -1,7 +1,8 @@
-/steam_appid.txt
 /bazel-*
-/external
 /compile_commands.json
+/external
+/savedata
+/steam_appid.txt
+/steam_build/
 /.cache/
 /.vscode
-/savedata

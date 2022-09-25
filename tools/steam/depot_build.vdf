@@ -1,0 +1,8 @@
+"DepotBuild" {
+  "DepotID" "2139742"
+  "FileMapping" {
+    "LocalPath" "*"
+    "DepotPath" "."
+    "Recursive" "1"
+  }
+}

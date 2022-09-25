@@ -1,0 +1,9 @@
+"AppBuild" {
+  "AppID" "2139740"
+  "Desc" "Alpha build"
+  "ContentRoot" "../../steam_build/content"
+  "BuildOutput" "../../steam_build/output"
+  "Depots" {
+    "2139742" "depot_build.vdf"
+  }
+}
