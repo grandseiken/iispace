@@ -97,11 +97,14 @@ void MainMenuLayer::update_content(const ui::input_frame& input, ui::output_fram
 
   auto& system = stack().system();
   if (system.supports_networked_multiplayer()) {
+    std::size_t friends_online = 0;
     std::size_t friends_in_game = 0;
     for (const auto& info : system.friend_list()) {
-      friends_in_game += info.in_game ? 1u : 0u;
+      friends_online += info.in_game ? 1u : 0u;
+      friends_in_game += info.lobby_id ? 1u : 0u;
     }
     auto text = "Logged in as: " + to_utf8(system.local_username()) +
+        "\nFriends online: " + std::to_string(friends_online) +
         "\nFriends in-game: " + std::to_string(friends_in_game);
     top_text_->set_text(ustring::utf8(text));
   }

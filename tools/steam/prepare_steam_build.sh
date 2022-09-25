@@ -1,4 +1,10 @@
 #!/bin/bash
+# Build successfully before running, e.g.
+#   bazel build --config clang-cl --steam ...
+# After running:
+#   - bazel run @steamworks_sdk//:steamcmd
+#   - login <username> <password>
+#   - run_app_build <repo_path>/tools/steam/app_build.vdf
 set -e
 
 SCRIPT_DIR=$(cd -- "$(dirname -- "${BASH_SOURCE[0]}" )" &> /dev/null && pwd)

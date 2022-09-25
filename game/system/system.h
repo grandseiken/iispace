@@ -3,6 +3,7 @@
 #include "game/common/result.h"
 #include "game/common/ustring.h"
 #include <cstdint>
+#include <functional>
 #include <memory>
 #include <optional>
 #include <string>
@@ -12,6 +13,9 @@ namespace ii {
 
 class System {
 public:
+  template <typename T>
+  using callback = std::function<void(result<T>)>;
+
   enum class event_type {
     kNone,
     kOverlayActivated,
@@ -37,6 +41,8 @@ public:
   virtual bool supports_networked_multiplayer() const = 0;
   virtual ustring local_username() const = 0;
   virtual const std::vector<friend_info>& friend_list() const = 0;
+
+  virtual void create_lobby(callback<void> cb) = 0;
 };
 
 std::unique_ptr<System> create_system();

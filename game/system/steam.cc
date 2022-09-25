@@ -4,6 +4,7 @@
 namespace ii {
 namespace {
 constexpr std::uint64_t kSteamAppId = 2139740u;
+constexpr std::uint32_t kLobbyMaxMembers = 4u;
 
 std::vector<std::string> get_steam_command_line() {
   static constexpr std::size_t kBufferStartSize = 1024;
@@ -68,6 +69,38 @@ std::vector<System::friend_info> get_steam_friend_list() {
   }
   return result;
 }
+
+template <typename T>
+class CallResult {
+private:
+  struct access_tag {};
+
+public:
+  static void on_complete(SteamAPICall_t call_id, System::callback<const T*> callback) {
+    auto p = std::make_unique<CallResult>(access_tag{}, call_id, std::move(callback));
+    p->self_ = std::move(p);
+  }
+
+  CallResult(access_tag, SteamAPICall_t call_id, System::callback<const T*>&& callback)
+  : callback_{std::move(callback)} {
+    call_result_.Set(call_id, this, &CallResult::on_complete_internal);
+  }
+
+private:
+  void on_complete_internal(const T* data, bool io_failure) {
+    auto scoped_destroy = std::move(self_);
+    if (io_failure) {
+      callback_(unexpected("steam API call failed"));
+    } else {
+      callback_(data);
+    }
+  }
+
+  std::unique_ptr<CallResult> self_;
+  System::callback<const T*> callback_;
+  CCallResult<CallResult, const T> call_result_;
+};
+
 }  // namespace
 
 struct SteamSystem::impl_t {
@@ -77,15 +110,15 @@ struct SteamSystem::impl_t {
   , persona_state_change_cb{this, &impl_t::on_persona_state_change} {}
 
   template <typename T>
-  using callback_t = CCallback<impl_t, T>;
+  using callback_t = CCallback<impl_t, const T>;
   callback_t<GameOverlayActivated_t> game_overlay_activated_cb;
   callback_t<PersonaStateChange_t> persona_state_change_cb;
 
-  void on_game_overlay_activated(GameOverlayActivated_t*) {
+  void on_game_overlay_activated(const GameOverlayActivated_t*) {
     events.emplace_back().type = event_type::kOverlayActivated;
   }
 
-  void on_persona_state_change(PersonaStateChange_t*) { friend_list.reset(); }
+  void on_persona_state_change(const PersonaStateChange_t*) { friend_list.reset(); }
 
   std::vector<event> events;
   std::optional<std::vector<friend_info>> friend_list;
@@ -129,6 +162,21 @@ auto SteamSystem::friend_list() const -> const std::vector<friend_info>& {
     impl_->friend_list = get_steam_friend_list();
   }
   return *impl_->friend_list;
+}
+
+void SteamSystem::create_lobby(callback<void> cb) {
+  auto call_id =
+      SteamMatchmaking()->CreateLobby(k_ELobbyTypeFriendsOnly, static_cast<int>(kLobbyMaxMembers));
+  CallResult<LobbyCreated_t>::on_complete(call_id,
+                                          [cb = std::move(cb)](result<const LobbyCreated_t*> data) {
+                                            if (!data) {
+                                              cb(unexpected(data.error()));
+                                            } else if ((*data)->m_eResult != k_EResultOK) {
+                                              cb(unexpected("failed to create steam lobby"));
+                                            } else {
+                                              cb({});
+                                            }
+                                          });
 }
 
 }  // namespace ii

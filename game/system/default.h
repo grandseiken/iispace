@@ -21,6 +21,8 @@ public:
     const static std::vector<friend_info> kEmpty;
     return kEmpty;
   }
+
+  void create_lobby(callback<void> cb) override { cb(unexpected("unsupported")); }
 };
 
 }  // namespace ii

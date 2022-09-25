@@ -1,5 +1,6 @@
 "AppBuild" {
   "AppID" "2139740"
+  // TODO: preview build?
   // TODO: put git commit hash in here.
   "Desc" "Alpha build"
   "ContentRoot" "../../steam_build/content"
