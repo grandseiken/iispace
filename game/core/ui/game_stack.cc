@@ -32,9 +32,14 @@ void GameLayer::update_content(const input_frame&, output_frame&) {
   }
 }
 
-GameStack::GameStack(io::Filesystem& fs, io::IoLayer& io_layer, Mixer& mixer,
+GameStack::GameStack(io::Filesystem& fs, io::IoLayer& io_layer, System& system, Mixer& mixer,
                      const game_options_t& options)
-: fs_{fs}, io_layer_{io_layer}, mixer_{mixer}, adapter_{io_layer}, options_{options} {
+: fs_{fs}
+, io_layer_{io_layer}
+, system_{system}
+, mixer_{mixer}
+, adapter_{io_layer}
+, options_{options} {
   auto data = fs.read_config();
   if (data) {
     auto config = data::read_config(*data);

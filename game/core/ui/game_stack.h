@@ -22,6 +22,7 @@ class GlRenderer;
 }  // namespace ii::render
 namespace ii {
 class Mixer;
+class System;
 }  // namespace ii
 
 namespace ii::ui {
@@ -64,9 +65,10 @@ private:
 
 class GameStack {
 public:
-  GameStack(io::Filesystem& fs, io::IoLayer& io_layer, Mixer& mixer,
+  GameStack(io::Filesystem& fs, io::IoLayer& io_layer, System& system, Mixer& mixer,
             const game_options_t& game_options);
 
+  System& system() { return system_; }
   Mixer& mixer() { return mixer_; }
   InputAdapter& input() { return adapter_; }
   io::IoLayer& io_layer() { return io_layer_; }
@@ -110,6 +112,7 @@ public:
 private:
   io::Filesystem& fs_;
   io::IoLayer& io_layer_;
+  System& system_;
   Mixer& mixer_;
   InputAdapter adapter_;
 

@@ -72,7 +72,7 @@ bool run(System& system, const std::vector<std::string>& args, const game_option
       [&mixer](std::uint8_t* p, std::size_t k) { mixer.audio_callback(p, k); });
   load_sounds(fs, mixer);
 
-  ui::GameStack stack{fs, *io_layer, mixer, options};
+  ui::GameStack stack{fs, *io_layer, system, mixer, options};
   stack.add<MainMenuLayer>();
 
   if (!args.empty()) {

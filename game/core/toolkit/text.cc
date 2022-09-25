@@ -6,16 +6,10 @@
 namespace ii::ui {
 namespace {
 
-std::u32string to_u32(ustring_view s) {
-  std::u32string r;
-  iterate_as_utf32(s, [&](std::size_t, std::uint32_t c) { r += static_cast<char32_t>(c); });
-  return r;
-}
-
 std::vector<std::u32string> split_lines(ustring_view s, render::GlRenderer& r, render::font_id font,
                                         const glm::uvec2& font_dimensions,
                                         std::int32_t bounds_width) {
-  auto u32 = to_u32(s);
+  auto u32 = to_utf32(s);
 
   auto text_width = [&](std::size_t start, std::size_t end) {
     return r.text_width(font, font_dimensions,
@@ -107,7 +101,7 @@ void TextElement::render_content(render::GlRenderer& r) const {
     if (!multiline_) {
       lines_.clear();
       lines_.emplace_back(
-          to_u32(r.trim_for_width(font_, font_dimensions_, bounds().size.x, text_)));
+          to_utf32(r.trim_for_width(font_, font_dimensions_, bounds().size.x, text_)));
     } else {
       lines_ = split_lines(text_, r, font_, font_dimensions_, bounds().size.x);
     }

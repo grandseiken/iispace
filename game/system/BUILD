@@ -1,7 +1,7 @@
 cc_library(
   name = "system",
   srcs = ["system.cc"],
-  deps = [":system_header"],
+  deps = [":header"],
   implementation_deps = [":default"] + select({
     "//:steam_build": [":steam"],
     "//conditions:default": [],
@@ -14,21 +14,26 @@ cc_library(
 )
 
 cc_library(
-  name = "system_header",
+  name = "header",
   hdrs = ["system.h"],
-  deps = ["//game/common:types"],
+  deps = [
+    "//game/common:types",
+    "//game/common:ustring",
+  ],
+  visibility = ["//visibility:public"],
 )
 
 cc_library(
   name = "default",
   hdrs = ["default.h"],
+  deps = [":header"],
 )
 
 cc_library(
   name = "steam",
   hdrs = ["steam.h"],
   srcs = ["steam.cc"],
-  deps = [":system_header"],
+  deps = [":header"],
   implementation_deps = ["@steamworks_sdk"],
   target_compatible_with = select({
     "@//:steam_build": [],

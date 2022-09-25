@@ -3,7 +3,7 @@
 
 namespace ii {
 namespace {
-constexpr std::uint32_t kSteamAppId = 2139740u;
+constexpr std::uint64_t kSteamAppId = 2139740u;
 
 std::vector<std::string> get_steam_command_line() {
   static constexpr std::size_t kBufferStartSize = 1024;
@@ -54,6 +54,32 @@ result<std::vector<std::string>> SteamSystem::init() {
     return unexpected("ERROR: failed to initialize steam API");
   }
   return get_steam_command_line();
+}
+
+bool SteamSystem::supports_network_multiplayer() const {
+  return true;
+}
+
+ustring SteamSystem::local_username() const {
+  return ustring::utf8(SteamFriends()->GetPersonaName());
+}
+
+std::size_t SteamSystem::friends_in_game() const {
+  auto friend_count = SteamFriends()->GetFriendCount(k_EFriendFlagImmediate);
+  if (friend_count < 0) {
+    return 0;
+  }
+  std::size_t result = 0;
+  for (int i = 0; i < friend_count; ++i) {
+    auto friend_id = SteamFriends()->GetFriendByIndex(i, k_EFriendFlagImmediate);
+    FriendGameInfo_t game_info;
+    if (SteamFriends()->GetFriendGamePlayed(friend_id, &game_info)) {
+      if (game_info.m_gameID.ToUint64() == kSteamAppId) {
+        ++result;
+      }
+    }
+  }
+  return result;
 }
 
 }  // namespace ii

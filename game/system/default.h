@@ -8,6 +8,10 @@ class DefaultSystem : public System {
 public:
   ~DefaultSystem() override = default;
   result<std::vector<std::string>> init() override { return {}; }
+
+  bool supports_network_multiplayer() const override { return false; }
+  ustring local_username() const override { return ustring::ascii("Player"); }
+  std::size_t friends_in_game() const override { return 0; }
 };
 
 }  // namespace ii

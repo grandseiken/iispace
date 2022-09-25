@@ -5,6 +5,9 @@
 #include <vector>
 
 namespace ii {
+namespace ui {
+class TextElement;
+}  // namespace ui
 
 class MainMenuLayer : public ui::GameLayer {
 public:
@@ -12,6 +15,7 @@ public:
   void update_content(const ui::input_frame&, ui::output_frame&) override;
 
 private:
+  ui::TextElement* top_text_ = nullptr;
   std::uint32_t exit_timer_ = 0;
 };
 

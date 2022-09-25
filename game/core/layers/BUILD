@@ -19,6 +19,7 @@ cc_library(
     "//game/core/sim:sim_layer",
     "//game/core/toolkit",
     "//game/io",
+    "//game/system:header",
   ],
   visibility = ["//visibility:public"],
 )
