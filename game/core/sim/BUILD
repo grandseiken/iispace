@@ -59,6 +59,7 @@ cc_library(
     "//game/core/toolkit",
     "//game/render",
     "//game/io",
+    "//game/system:header",
   ],
 )
 

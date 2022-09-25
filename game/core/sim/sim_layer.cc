@@ -71,7 +71,8 @@ void SimLayer::update_content(const ui::input_frame& ui_input, ui::output_frame&
                                     &impl_->input);
   impl_->render_state.update(&impl_->input);
 
-  if ((ui_input.pressed(ui::key::kStart) || ui_input.pressed(ui::key::kEscape))) {
+  if (ui_input.pressed(ui::key::kStart) || ui_input.pressed(ui::key::kEscape) ||
+      sim_should_pause(stack())) {
     stack().add<PauseLayer>([this] {
       end_game();
       impl_->hud->remove();

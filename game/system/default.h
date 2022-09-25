@@ -9,9 +9,18 @@ public:
   ~DefaultSystem() override = default;
   result<std::vector<std::string>> init() override { return {}; }
 
-  bool supports_network_multiplayer() const override { return false; }
+  void tick() override {}
+  const std::vector<event>& events() const override {
+    const static std::vector<event> kEmpty;
+    return kEmpty;
+  }
+
+  bool supports_networked_multiplayer() const override { return false; }
   ustring local_username() const override { return ustring::ascii("Player"); }
-  std::size_t friends_in_game() const override { return 0; }
+  const std::vector<friend_info>& friend_list() const override {
+    const static std::vector<friend_info> kEmpty;
+    return kEmpty;
+  }
 };
 
 }  // namespace ii

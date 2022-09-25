@@ -6,8 +6,18 @@
 #include "game/core/toolkit/text.h"
 #include "game/io/io.h"
 #include "game/render/gl_renderer.h"
+#include "game/system/system.h"
 
 namespace ii {
+
+bool sim_should_pause(ui::GameStack& stack) {
+  for (const auto& event : stack.system().events()) {
+    if (event.type == System::event_type::kOverlayActivated) {
+      return true;
+    }
+  }
+  return false;
+}
 
 PauseLayer::PauseLayer(ui::GameStack& stack, std::function<void()> on_quit)
 : ui::GameLayer{stack, ui::layer_flag::kCaptureUpdate}, on_quit_{std::move(on_quit)} {

@@ -5,6 +5,8 @@
 #include <functional>
 
 namespace ii {
+bool sim_should_pause(ui::GameStack& stack);
+
 class PauseLayer : public ui::GameLayer {
 public:
   PauseLayer(ui::GameStack& stack, std::function<void()> on_quit);

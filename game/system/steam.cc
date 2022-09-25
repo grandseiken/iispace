@@ -40,11 +40,61 @@ std::vector<std::string> get_steam_command_line() {
   }
   return v;
 }
+
+std::vector<System::friend_info> get_steam_friend_list() {
+  std::vector<System::friend_info> result;
+  auto friend_count = SteamFriends()->GetFriendCount(k_EFriendFlagImmediate);
+  if (friend_count < 0) {
+    return result;
+  }
+  for (int i = 0; i < friend_count; ++i) {
+    auto friend_id = SteamFriends()->GetFriendByIndex(i, k_EFriendFlagImmediate);
+    if (SteamFriends()->GetFriendPersonaState(friend_id) == k_EPersonaStateOffline) {
+      continue;
+    }
+    auto& info = result.emplace_back();
+    info.id = friend_id.ConvertToUint64();
+    info.username = ustring::utf8(SteamFriends()->GetFriendPersonaName(friend_id));
+
+    FriendGameInfo_t game_info;
+    if (SteamFriends()->GetFriendGamePlayed(friend_id, &game_info)) {
+      if (game_info.m_gameID.ToUint64() == kSteamAppId) {
+        info.in_game = true;
+        if (game_info.m_steamIDLobby.IsLobby() && game_info.m_steamIDLobby.IsValid()) {
+          info.lobby_id = game_info.m_steamIDLobby.ConvertToUint64();
+        }
+      }
+    }
+  }
+  return result;
+}
 }  // namespace
 
-SteamSystem::~SteamSystem() {
-  SteamAPI_Shutdown();
-}
+struct SteamSystem::impl_t {
+  ~impl_t() { SteamAPI_Shutdown(); }
+  impl_t()
+  : game_overlay_activated_cb{this, &impl_t::on_game_overlay_activated}
+  , persona_state_change_cb{this, &impl_t::on_persona_state_change} {}
+
+  template <typename T>
+  using callback_t = CCallback<impl_t, T>;
+  callback_t<GameOverlayActivated_t> game_overlay_activated_cb;
+  callback_t<PersonaStateChange_t> persona_state_change_cb;
+
+  void on_game_overlay_activated(GameOverlayActivated_t*) {
+    events.emplace_back().type = event_type::kOverlayActivated;
+  }
+
+  void on_persona_state_change(PersonaStateChange_t*) { friend_list.reset(); }
+
+  std::vector<event> events;
+  std::optional<std::vector<friend_info>> friend_list;
+};
+
+void OnGameOverlayActivated(GameOverlayActivated_t*) {}
+
+SteamSystem::SteamSystem() = default;
+SteamSystem::~SteamSystem() = default;
 
 result<std::vector<std::string>> SteamSystem::init() {
   if (SteamAPI_RestartAppIfNecessary(kSteamAppId)) {
@@ -53,10 +103,20 @@ result<std::vector<std::string>> SteamSystem::init() {
   if (!SteamAPI_Init()) {
     return unexpected("ERROR: failed to initialize steam API");
   }
+  impl_ = std::make_unique<impl_t>();
   return get_steam_command_line();
 }
 
-bool SteamSystem::supports_network_multiplayer() const {
+void SteamSystem::tick() {
+  impl_->events.clear();
+  SteamAPI_RunCallbacks();
+}
+
+auto SteamSystem::events() const -> const std::vector<event>& {
+  return impl_->events;
+}
+
+bool SteamSystem::supports_networked_multiplayer() const {
   return true;
 }
 
@@ -64,22 +124,11 @@ ustring SteamSystem::local_username() const {
   return ustring::utf8(SteamFriends()->GetPersonaName());
 }
 
-std::size_t SteamSystem::friends_in_game() const {
-  auto friend_count = SteamFriends()->GetFriendCount(k_EFriendFlagImmediate);
-  if (friend_count < 0) {
-    return 0;
+auto SteamSystem::friend_list() const -> const std::vector<friend_info>& {
+  if (!impl_->friend_list) {
+    impl_->friend_list = get_steam_friend_list();
   }
-  std::size_t result = 0;
-  for (int i = 0; i < friend_count; ++i) {
-    auto friend_id = SteamFriends()->GetFriendByIndex(i, k_EFriendFlagImmediate);
-    FriendGameInfo_t game_info;
-    if (SteamFriends()->GetFriendGamePlayed(friend_id, &game_info)) {
-      if (game_info.m_gameID.ToUint64() == kSteamAppId) {
-        ++result;
-      }
-    }
-  }
-  return result;
+  return *impl_->friend_list;
 }
 
 }  // namespace ii

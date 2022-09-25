@@ -144,7 +144,8 @@ void ReplayViewer::update_content(const ui::input_frame& input, ui::output_frame
     --impl_->speed;
   }
 
-  if ((input.pressed(ui::key::kStart) || input.pressed(ui::key::kEscape))) {
+  if (input.pressed(ui::key::kStart) || input.pressed(ui::key::kEscape) ||
+      sim_should_pause(stack())) {
     stack().add<PauseLayer>([this] {
       impl_->hud->remove();
       remove();

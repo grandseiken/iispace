@@ -125,6 +125,7 @@ bool run(System& system, const std::vector<std::string>& args, const game_option
       }
     }
 
+    system.tick();
     stack.update(controller_change);
     mixer.commit();
     exit |= stack.empty();
