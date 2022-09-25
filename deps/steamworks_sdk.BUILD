@@ -39,3 +39,12 @@ cc_library(
   }),
   visibility = ["//visibility:public"],
 )
+
+alias(
+  name = "steamcmd",
+  actual = select({
+    "@bazel_tools//src/conditions:windows": ":tools/ContentBuilder/builder/steamcmd.exe",
+    "@bazel_tools//src/conditions:linux_x86_64": ":tools/ContentBuilder/builder_linux/steamcmd.sh",
+    "@bazel_tools//src/conditions:darwin_x86_64": ":tools/ContentBuilder/builder_osx/steamcmd.sh",
+  }),
+)
