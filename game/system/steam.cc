@@ -70,19 +70,22 @@ std::vector<System::friend_info> get_steam_friend_list() {
   return result;
 }
 
-template <typename T>
+template <typename T, typename R = void>
 class CallResult {
 private:
   struct access_tag {};
 
 public:
-  static void on_complete(SteamAPICall_t call_id, System::callback<const T*> callback) {
-    auto p = std::make_unique<CallResult>(access_tag{}, call_id, std::move(callback));
+  using callback_t = std::function<result<R>(const T*)>;
+
+  static void on_complete(SteamAPICall_t call_id, promise_result<R> promise, callback_t callback) {
+    auto p = std::make_unique<CallResult>(access_tag{}, call_id, std::move(promise),
+                                          std::move(callback));
     p->self_ = std::move(p);
   }
 
-  CallResult(access_tag, SteamAPICall_t call_id, System::callback<const T*>&& callback)
-  : callback_{std::move(callback)} {
+  CallResult(access_tag, SteamAPICall_t call_id, promise_result<R> promise, callback_t&& callback)
+  : promise_{std::move(promise)}, callback_{std::move(callback)} {
     call_result_.Set(call_id, this, &CallResult::on_complete_internal);
   }
 
@@ -90,14 +93,15 @@ private:
   void on_complete_internal(const T* data, bool io_failure) {
     auto scoped_destroy = std::move(self_);
     if (io_failure) {
-      callback_(unexpected("steam API call failed"));
+      promise_.set(unexpected("steam API call failed"));
     } else {
-      callback_(data);
+      promise_.set(callback_(data));
     }
   }
 
   std::unique_ptr<CallResult> self_;
-  System::callback<const T*> callback_;
+  promise_result<R> promise_;
+  callback_t callback_;
   CCallResult<CallResult, const T> call_result_;
 };
 
@@ -164,19 +168,20 @@ auto SteamSystem::friend_list() const -> const std::vector<friend_info>& {
   return *impl_->friend_list;
 }
 
-void SteamSystem::create_lobby(callback<void> cb) {
+async_result<void> SteamSystem::create_lobby() {
   auto call_id =
       SteamMatchmaking()->CreateLobby(k_ELobbyTypeFriendsOnly, static_cast<int>(kLobbyMaxMembers));
-  CallResult<LobbyCreated_t>::on_complete(call_id,
-                                          [cb = std::move(cb)](result<const LobbyCreated_t*> data) {
-                                            if (!data) {
-                                              cb(unexpected(data.error()));
-                                            } else if ((*data)->m_eResult != k_EResultOK) {
-                                              cb(unexpected("failed to create steam lobby"));
-                                            } else {
-                                              cb({});
+
+  promise_result<void> promise;
+  auto future = promise.future();
+  CallResult<LobbyCreated_t>::on_complete(call_id, std::move(promise),
+                                          [](const LobbyCreated_t* data) -> result<void> {
+                                            if (data->m_eResult != k_EResultOK) {
+                                              return unexpected("failed to create steam lobby");
                                             }
+                                            return {};
                                           });
+  return future;
 }
 
 }  // namespace ii

@@ -1,4 +1,11 @@
 cc_library(
+  name = "async",
+  hdrs = ["async.h"],
+  deps = [":types"],
+  visibility = ["//visibility:public"],
+)
+
+cc_library(
   name = "math",
   hdrs = [
     "fix32.h",

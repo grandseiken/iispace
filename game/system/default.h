@@ -22,7 +22,7 @@ public:
     return kEmpty;
   }
 
-  void create_lobby(callback<void> cb) override { cb(unexpected("unsupported")); }
+  async_result<void> create_lobby() override { return {unexpected("unsupported")}; }
 };
 
 }  // namespace ii

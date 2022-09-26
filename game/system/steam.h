@@ -17,7 +17,7 @@ public:
   ustring local_username() const override;
   const std::vector<friend_info>& friend_list() const override;
 
-  void create_lobby(callback<void> cb) override;
+  async_result<void> create_lobby() override;
 
 private:
   struct impl_t;

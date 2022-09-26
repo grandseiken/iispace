@@ -17,6 +17,7 @@ cc_library(
   name = "header",
   hdrs = ["system.h"],
   deps = [
+    "//game/common:async",
     "//game/common:types",
     "//game/common:ustring",
   ],
