@@ -9,7 +9,7 @@ namespace ii {
 namespace detail {
 struct void_t {};
 template <typename T>
-using swap_void = std::conditional_t<std::is_same_v<T, void>, detail::void_t, T>;
+using swap_void = std::conditional_t<std::is_void_v<T>, detail::void_t, T>;
 }  // namespace detail
 
 template <typename T>
@@ -41,7 +41,9 @@ public:
   bool is_valid() const { return value_; }
 
   value_type& operator*() { return **value_; }
+  value_type* operator->() { return &**value_; }
   const value_type& operator*() const { return **value_; }
+  const value_type* operator->() const { return &**value_; }
 
 private:
   friend class async_promise<T>;

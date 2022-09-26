@@ -23,29 +23,11 @@ PauseLayer::PauseLayer(ui::GameStack& stack, std::function<void()> on_quit)
 : ui::GameLayer{stack, ui::layer_flag::kCaptureUpdate}, on_quit_{std::move(on_quit)} {
   set_bounds(rect{kUiDimensions});
 
-  auto& panel = *add_back<ui::Panel>();
-  panel.set_colour({0.f, 0.f, 0.f, 1.f / 2})
-      .set_padding({kUiDimensions.x / 4, 3 * kUiDimensions.y / 8})
-      .set_style(render::panel_style::kFlatColour);
-  auto& inner = *panel.add_back<ui::Panel>();
-  inner.set_colour({0.f, 0.f, 0.f, 3.f / 4})
-      .set_padding(kPadding)
-      .set_style(render::panel_style::kFlatColour);
-  auto& layout = *inner.add_back<ui::LinearLayout>();
-  layout.set_wrap_focus(true).set_align_end(true).set_spacing(kPadding.y);
-
+  auto& layout = add_dialog_layout(*this);
   auto add_button = [&](const char* text, std::function<void()> callback) {
     auto& button = *layout.add_back<ui::Button>();
-    button.set_callback(std::move(callback))
-        .set_text(ustring::ascii(text))
-        .set_font(render::font_id::kMonospace, render::font_id::kMonospaceBold)
-        .set_text_colour({1.f, 0.f, .65f, 1.f}, glm::vec4{1.f})
-        .set_font_dimensions(kLargeFont)
-        .set_style(render::panel_style::kFlatColour)
-        .set_padding(kPadding)
-        .set_colour({1.f, 1.f, 1.f, 1.f / 16})
-        .set_drop_shadow(kDropShadow, .5f);
-    layout.set_absolute_size(button, 24);
+    standard_button(button).set_text(ustring::ascii(text)).set_callback(std::move(callback));
+    layout.set_absolute_size(button, kLargeFont.y + 2 * kPadding.y);
   };
 
   auto& title = *layout.add_back<ui::TextElement>();

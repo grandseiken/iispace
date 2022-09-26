@@ -10,7 +10,7 @@
 
 namespace ii {
 namespace {
-constexpr std::uint32_t kAllReadyTimerFrames = 300;
+constexpr std::uint32_t kAllReadyTimerFrames = 240;
 }  // namespace
 
 // TODO: assignment panels currently fixed colour/number, so we with dropouts we can end up with
@@ -242,6 +242,9 @@ void RunLobbyLayer::update_content(const ui::input_frame& input, ui::output_fram
     if (!all_ready_timer_) {
       all_ready_timer_ = kAllReadyTimerFrames;
     }
+    if (*all_ready_timer_ % stack().fps() == 0) {
+      output.sounds.emplace(sound::kPlayerShield);
+    }
     if (!--*all_ready_timer_) {
       start_game();
     }
@@ -249,7 +252,7 @@ void RunLobbyLayer::update_content(const ui::input_frame& input, ui::output_fram
     all_ready_timer_.reset();
   }
   if (all_ready_timer_) {
-    auto s = "Game starting in " + std::to_string(*all_ready_timer_ / 60);
+    auto s = "Game starting in " + std::to_string(*all_ready_timer_ / stack().fps());
     bottom_tabs_->set_active(1);
     all_ready_text_->set_text(ustring::ascii(s));
   } else {

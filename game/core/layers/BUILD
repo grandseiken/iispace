@@ -8,6 +8,21 @@ cc_library(
 )
 
 cc_library(
+  name = "utility",
+  hdrs = ["utility.h"],
+  srcs = ["utility.cc"],
+  deps = [
+    ":common",
+    "//game/common:async",
+    "//game/common:ustring",
+    "//game/core/toolkit",
+    "//game/core/ui",
+  ],
+  implementation_deps = ["//game/core/toolkit"],
+  visibility = ["//visibility:public"],
+)
+
+cc_library(
   name = "main_menu",
   hdrs = ["main_menu.h"],
   srcs = ["main_menu.cc"],
@@ -15,6 +30,7 @@ cc_library(
   implementation_deps = [
     ":common",
     ":run_lobby",
+    ":utility",
     "//game/core:game_options",
     "//game/core/sim:sim_layer",
     "//game/core/toolkit",

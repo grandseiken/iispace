@@ -3,6 +3,7 @@
 #include "game/core/game_options.h"
 #include "game/core/layers/common.h"
 #include "game/core/layers/run_lobby.h"
+#include "game/core/layers/utility.h"
 #include "game/core/sim/sim_layer.h"
 #include "game/core/toolkit/button.h"
 #include "game/core/toolkit/layout.h"
@@ -31,10 +32,11 @@ void add_button(ui::LinearLayout& layout, const char* text, std::function<void()
 
 // TODO: maybe this should not be a separate layer, but currently a lot of UI edge-cases
 // for UI switching is only handled for layers by the GameStack.
-class StartGameLayer : public ui::GameLayer {
+class CreateGameLayer : public ui::GameLayer {
 public:
-  StartGameLayer(ui::GameStack& stack)
-  : ui::GameLayer{stack, ui::layer_flag::kCaptureInput | ui::layer_flag::kCaptureRender} {
+  CreateGameLayer(ui::GameStack& stack, bool host_online)
+  : ui::GameLayer{stack, ui::layer_flag::kCaptureInput | ui::layer_flag::kCaptureRender}
+  , host_online_{host_online} {
     set_bounds(rect{kUiDimensions});
 
     auto start_game = [this](game_mode mode) {
@@ -44,7 +46,14 @@ public:
       conditions.flags |= initial_conditions::flag::kLegacy_CanFaceSecretBoss;
       conditions.player_count = 0u;
       conditions.mode = mode;
-      this->stack().add<RunLobbyLayer>(conditions);
+      if (!host_online_) {
+        this->stack().add<RunLobbyLayer>(conditions);
+        return;
+      }
+      auto async = this->stack().system().create_lobby();
+      this->stack().add<AsyncWaitLayer<void>>(
+          ustring::ascii("Creating lobby..."), std::move(async),
+          [this, conditions] { this->stack().add<RunLobbyLayer>(conditions); });
     };
 
     auto& layout = add_main_layout(this);
@@ -67,7 +76,7 @@ public:
   }
 
 private:
-  game_options_t options_;
+  bool host_online_;
 };
 
 }  // namespace
@@ -76,8 +85,16 @@ MainMenuLayer::MainMenuLayer(ui::GameStack& stack) : ui::GameLayer{stack} {
   set_bounds(rect{kUiDimensions});
 
   auto& layout = add_main_layout(this);
-  add_button(layout, "Start game", [this] { this->stack().add<StartGameLayer>(); });
-  add_button(layout, "Exit", [this] { exit_timer_ = 4; });
+  if (stack.system().supports_networked_multiplayer()) {
+    add_button(layout, "Start local game",
+               [this] { this->stack().add<CreateGameLayer>(/* online */ false); });
+    add_button(layout, "Host online game",
+               [this] { this->stack().add<CreateGameLayer>(/* online */ true); });
+  } else {
+    add_button(layout, "Start game",
+               [this] { this->stack().add<CreateGameLayer>(/* online */ false); });
+  }
+  add_button(layout, "Exit", [this] { exit_timer_ = 8; });
 
   auto& top = add_main_layout(this, false);
   top_text_ = top.add_back<ui::TextElement>();

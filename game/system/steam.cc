@@ -1,5 +1,6 @@
 #include "game/system/steam.h"
 #include <steam/steam_api.h>
+#include <iostream>
 
 namespace ii {
 namespace {
@@ -174,13 +175,15 @@ async_result<void> SteamSystem::create_lobby() {
 
   promise_result<void> promise;
   auto future = promise.future();
-  CallResult<LobbyCreated_t>::on_complete(call_id, std::move(promise),
-                                          [](const LobbyCreated_t* data) -> result<void> {
-                                            if (data->m_eResult != k_EResultOK) {
-                                              return unexpected("failed to create steam lobby");
-                                            }
-                                            return {};
-                                          });
+  CallResult<LobbyCreated_t>::on_complete(
+      call_id, std::move(promise), [](const LobbyCreated_t* data) -> result<void> {
+        if (data->m_eResult != k_EResultOK) {
+          std::cerr << "failed to create steam lobby: " << data->m_eResult << std::endl;
+          return unexpected("failed to create steam lobby");
+        }
+        std::cout << "created steam lobby: " << data->m_ulSteamIDLobby << std::endl;
+        return {};
+      });
   return future;
 }
 
