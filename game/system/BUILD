@@ -35,7 +35,10 @@ cc_library(
   hdrs = ["steam.h"],
   srcs = ["steam.cc"],
   deps = [":header"],
-  implementation_deps = ["@steamworks_sdk"],
+  implementation_deps = [
+    "@static_functional",
+    "@steamworks_sdk",
+  ],
   target_compatible_with = select({
     "@//:steam_build": [],
     "//conditions:default": ["@platforms//:incompatible"],

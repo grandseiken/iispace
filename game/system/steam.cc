@@ -1,11 +1,13 @@
 #include "game/system/steam.h"
+#include <sfn/functional.h>
 #include <steam/steam_api.h>
-#include <iostream>
+#include <functional>
+#include <type_traits>
 
 namespace ii {
 namespace {
 constexpr std::uint64_t kSteamAppId = 2139740u;
-constexpr std::uint32_t kLobbyMaxMembers = 4u;
+constexpr std::uint32_t kLobbyMaxMembers = 8u;
 
 std::vector<std::string> get_steam_command_line() {
   static constexpr std::size_t kBufferStartSize = 1024;
@@ -55,20 +57,36 @@ std::vector<System::friend_info> get_steam_friend_list() {
       continue;
     }
     auto& info = result.emplace_back();
-    info.id = friend_id.ConvertToUint64();
-    info.username = ustring::utf8(SteamFriends()->GetFriendPersonaName(friend_id));
+    info.user.id = friend_id.ConvertToUint64();
+    info.user.name = ustring::utf8(SteamFriends()->GetFriendPersonaName(friend_id));
 
     FriendGameInfo_t game_info;
-    if (SteamFriends()->GetFriendGamePlayed(friend_id, &game_info)) {
-      if (game_info.m_gameID.ToUint64() == kSteamAppId) {
-        info.in_game = true;
-        if (game_info.m_steamIDLobby.IsLobby() && game_info.m_steamIDLobby.IsValid()) {
-          info.lobby_id = game_info.m_steamIDLobby.ConvertToUint64();
-        }
+    if (SteamFriends()->GetFriendGamePlayed(friend_id, &game_info) &&
+        game_info.m_gameID.ToUint64() == kSteamAppId) {
+      info.in_game = true;
+      if (game_info.m_steamIDLobby.IsValid()) {
+        info.lobby_id = game_info.m_steamIDLobby.ConvertToUint64();
       }
     }
   }
   return result;
+}
+
+System::lobby_info get_lobby_info(std::uint64_t lobby_id) {
+  System::lobby_info info;
+  info.id = lobby_id;
+  info.is_host = SteamMatchmaking()->GetLobbyOwner(lobby_id) == SteamUser()->GetSteamID();
+  info.max_players = static_cast<std::uint32_t>(SteamMatchmaking()->GetLobbyMemberLimit(lobby_id));
+
+  auto num_players = SteamMatchmaking()->GetNumLobbyMembers(lobby_id);
+  info.players = static_cast<std::uint32_t>(num_players);
+  for (int i = 0; i < num_players; ++i) {
+    auto id = SteamMatchmaking()->GetLobbyMemberByIndex(lobby_id, i);
+    auto& m = info.members.emplace_back();
+    m.id = id.ConvertToUint64();
+    m.name = ustring::utf8(SteamFriends()->GetFriendPersonaName(id));
+  }
+  return info;
 }
 
 template <typename T, typename R = void>
@@ -94,7 +112,7 @@ private:
   void on_complete_internal(const T* data, bool io_failure) {
     auto scoped_destroy = std::move(self_);
     if (io_failure) {
-      promise_.set(unexpected("steam API call failed"));
+      promise_.set(unexpected("Steam API call failed"));
     } else {
       promise_.set(callback_(data));
     }
@@ -110,23 +128,42 @@ private:
 
 struct SteamSystem::impl_t {
   ~impl_t() { SteamAPI_Shutdown(); }
-  impl_t()
-  : game_overlay_activated_cb{this, &impl_t::on_game_overlay_activated}
-  , persona_state_change_cb{this, &impl_t::on_persona_state_change} {}
+  impl_t() = default;
 
-  template <typename T>
-  using callback_t = CCallback<impl_t, const T>;
-  callback_t<GameOverlayActivated_t> game_overlay_activated_cb;
-  callback_t<PersonaStateChange_t> persona_state_change_cb;
+  template <sfn::member_function auto F>
+  struct callback {
+    using arg_type = sfn::back<sfn::parameter_types_of<decltype(F)>>;
+    using type = std::remove_pointer_t<arg_type>;
+    CCallback<impl_t, type> cb;
+    callback(impl_t* p) : cb{p, F} {}
+  };
 
-  void on_game_overlay_activated(const GameOverlayActivated_t*) {
+  void persona_state_change(const PersonaStateChange_t*) { friend_list.reset(); }
+  void game_overlay_activated(const GameOverlayActivated_t*) {
     events.emplace_back().type = event_type::kOverlayActivated;
   }
 
-  void on_persona_state_change(const PersonaStateChange_t*) { friend_list.reset(); }
+  void game_lobby_join_requested(const GameLobbyJoinRequested_t* data) {
+    // TODO: handle this from command-line also.
+    auto& e = events.emplace_back();
+    e.type = event_type::kLobbyJoinRequested;
+    e.id = data->m_steamIDLobby.ConvertToUint64();
+  }
+
+  void lobby_enter(const LobbyEnter_t* data) {
+    if (data->m_EChatRoomEnterResponse == k_EChatRoomEnterResponseSuccess) {
+      current_lobby = get_lobby_info(data->m_ulSteamIDLobby);
+    }
+  }
+
+  callback<&impl_t::persona_state_change> persona_state_change_cb{this};
+  callback<&impl_t::game_overlay_activated> game_overlay_activated_cb{this};
+  callback<&impl_t::game_lobby_join_requested> game_lobby_join_requested_cb{this};
+  callback<&impl_t::lobby_enter> lobby_enter_cb{this};
 
   std::vector<event> events;
   std::optional<std::vector<friend_info>> friend_list;
+  std::optional<lobby_info> current_lobby;
 };
 
 void OnGameOverlayActivated(GameOverlayActivated_t*) {}
@@ -158,8 +195,11 @@ bool SteamSystem::supports_networked_multiplayer() const {
   return true;
 }
 
-ustring SteamSystem::local_username() const {
-  return ustring::utf8(SteamFriends()->GetPersonaName());
+auto SteamSystem::local_user() const -> user_info {
+  user_info user;
+  user.id = SteamUser()->GetSteamID().ConvertToUint64();
+  user.name = ustring::utf8(SteamFriends()->GetPersonaName());
+  return user;
 }
 
 auto SteamSystem::friend_list() const -> const std::vector<friend_info>& {
@@ -167,6 +207,13 @@ auto SteamSystem::friend_list() const -> const std::vector<friend_info>& {
     impl_->friend_list = get_steam_friend_list();
   }
   return *impl_->friend_list;
+}
+
+void SteamSystem::leave_lobby() {
+  if (impl_->current_lobby) {
+    SteamMatchmaking()->LeaveLobby(impl_->current_lobby->id);
+    impl_->current_lobby.reset();
+  }
 }
 
 async_result<void> SteamSystem::create_lobby() {
@@ -178,13 +225,24 @@ async_result<void> SteamSystem::create_lobby() {
   CallResult<LobbyCreated_t>::on_complete(
       call_id, std::move(promise), [](const LobbyCreated_t* data) -> result<void> {
         if (data->m_eResult != k_EResultOK) {
-          std::cerr << "failed to create steam lobby: " << data->m_eResult << std::endl;
-          return unexpected("failed to create steam lobby");
+          return unexpected("Couldn't create steam lobby: " + std::to_string(data->m_eResult));
         }
-        std::cout << "created steam lobby: " << data->m_ulSteamIDLobby << std::endl;
         return {};
       });
   return future;
+}
+
+async_result<void> SteamSystem::join_lobby(std::uint64_t lobby_id) {
+  return {unexpected("NYI")};  // TODO
+}
+
+auto SteamSystem::current_lobby() const -> std::optional<lobby_info> {
+  return std::nullopt;  // TODO
+}
+
+auto SteamSystem::lobby_results() const -> const std::vector<lobby_info>& {
+  static const std::vector<lobby_info> kEmpty;
+  return kEmpty;  // TODO
 }
 
 }  // namespace ii

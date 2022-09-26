@@ -4,7 +4,6 @@
 #include "game/common/result.h"
 #include "game/common/ustring.h"
 #include <cstdint>
-#include <functional>
 #include <memory>
 #include <optional>
 #include <string>
@@ -17,17 +16,33 @@ public:
   enum class event_type {
     kNone,
     kOverlayActivated,
+    kLobbyJoinRequested,
   };
 
   struct event {
     event_type type = event_type::kNone;
+    std::uint64_t id = 0;
+  };
+
+  struct user_info {
+    std::uint64_t id = 0;
+    ustring name = ustring::ascii("");
+    // TODO: avatar?
   };
 
   struct friend_info {
-    std::uint64_t id = 0;
-    ustring username = ustring::ascii("");
+    user_info user;
     bool in_game = false;
     std::optional<std::uint64_t> lobby_id;
+  };
+
+  struct lobby_info {
+    bool is_host = false;
+    ustring name = ustring::ascii("");  // TODO.
+    std::uint64_t id = 0;
+    std::uint32_t players = 0;
+    std::uint32_t max_players = 0;
+    std::vector<user_info> members;
   };
 
   virtual ~System() = default;
@@ -37,10 +52,14 @@ public:
   virtual const std::vector<event>& events() const = 0;
 
   virtual bool supports_networked_multiplayer() const = 0;
-  virtual ustring local_username() const = 0;
+  virtual user_info local_user() const = 0;
   virtual const std::vector<friend_info>& friend_list() const = 0;
 
+  virtual void leave_lobby() = 0;
   virtual async_result<void> create_lobby() = 0;
+  virtual async_result<void> join_lobby(std::uint64_t lobby_id) = 0;
+  virtual std::optional<lobby_info> current_lobby() const = 0;
+  virtual const std::vector<lobby_info>& lobby_results() const = 0;
 };
 
 std::unique_ptr<System> create_system();

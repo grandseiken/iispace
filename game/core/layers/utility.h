@@ -54,6 +54,9 @@ public:
     ui::GameLayer::update_content(input, output);
     if (async_) {
       if (!*async_) {
+        // TODO: causes slight visual glitch when both darken overlays are rendered at once
+        // for one frame. Either fix by combining, or separate out newly-added stack layers
+        // and elements so they don't appear until next frame.
         stack().template add<ErrorLayer>(ustring::utf8(async_->error()));
       } else {
         if (on_success_) {

@@ -90,10 +90,12 @@ MainMenuLayer::MainMenuLayer(ui::GameStack& stack) : ui::GameLayer{stack} {
                [this] { this->stack().add<CreateGameLayer>(/* online */ false); });
     add_button(layout, "Host online game",
                [this] { this->stack().add<CreateGameLayer>(/* online */ true); });
+    add_button(layout, "Join online game", [this] { /* TODO */ });
   } else {
     add_button(layout, "Start game",
                [this] { this->stack().add<CreateGameLayer>(/* online */ false); });
   }
+  add_button(layout, "View replay", [this] { /* TODO */ });
   add_button(layout, "Exit", [this] { exit_timer_ = 8; });
 
   auto& top = add_main_layout(this, false);
@@ -120,7 +122,7 @@ void MainMenuLayer::update_content(const ui::input_frame& input, ui::output_fram
       friends_online += info.in_game ? 1u : 0u;
       friends_in_game += info.lobby_id ? 1u : 0u;
     }
-    auto text = "Logged in as: " + to_utf8(system.local_username()) +
+    auto text = "Logged in as: " + to_utf8(system.local_user().name) +
         "\nFriends online: " + std::to_string(friends_online) +
         "\nFriends in-game: " + std::to_string(friends_in_game);
     top_text_->set_text(ustring::utf8(text));
