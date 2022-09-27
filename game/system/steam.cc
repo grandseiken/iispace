@@ -3,6 +3,7 @@
 #include <steam/steam_api.h>
 #include <functional>
 #include <type_traits>
+#include <unordered_map>
 
 namespace ii {
 namespace {
@@ -130,6 +131,20 @@ struct SteamSystem::impl_t {
   ~impl_t() { SteamAPI_Shutdown(); }
   impl_t() = default;
 
+  void leave_lobby() {
+    if (current_lobby) {
+      SteamMatchmaking()->LeaveLobby(current_lobby->id);
+      current_lobby.reset();
+    }
+  }
+
+  void set_lobby(std::uint64_t lobby_id) {
+    if (current_lobby && current_lobby->id != lobby_id) {
+      SteamMatchmaking()->LeaveLobby(current_lobby->id);
+    }
+    current_lobby = get_lobby_info(lobby_id);
+  }
+
   template <sfn::member_function auto F>
   struct callback {
     using arg_type = sfn::back<sfn::parameter_types_of<decltype(F)>>;
@@ -151,8 +166,18 @@ struct SteamSystem::impl_t {
   }
 
   void lobby_enter(const LobbyEnter_t* data) {
+    // This flow triggered from create_lobby().
     if (data->m_EChatRoomEnterResponse == k_EChatRoomEnterResponseSuccess) {
-      current_lobby = get_lobby_info(data->m_ulSteamIDLobby);
+      set_lobby(data->m_ulSteamIDLobby);
+    }
+  }
+
+  void avatar_image_loaded(const AvatarImageLoaded_t* data) {
+    auto& avatar = avatars[data->m_steamID.ConvertToUint64()];
+    if (SteamUtils()->GetImageSize(data->m_iImage, &avatar.dimensions.x, &avatar.dimensions.y)) {
+      avatar.rgba_buffer.resize(4 * avatar.dimensions.x * avatar.dimensions.y);
+      SteamUtils()->GetImageRGBA(data->m_iImage, avatar.rgba_buffer.data(),
+                                 static_cast<int>(avatar.rgba_buffer.size()));
     }
   }
 
@@ -161,9 +186,15 @@ struct SteamSystem::impl_t {
   callback<&impl_t::game_lobby_join_requested> game_lobby_join_requested_cb{this};
   callback<&impl_t::lobby_enter> lobby_enter_cb{this};
 
+  struct avatar_data {
+    glm::uvec2 dimensions{0, 0};
+    std::vector<std::uint8_t> rgba_buffer;
+  };
+
   std::vector<event> events;
   std::optional<std::vector<friend_info>> friend_list;
   std::optional<lobby_info> current_lobby;
+  std::unordered_map<std::uint64_t, avatar_data> avatars;
 };
 
 void OnGameOverlayActivated(GameOverlayActivated_t*) {}
@@ -209,11 +240,24 @@ auto SteamSystem::friend_list() const -> const std::vector<friend_info>& {
   return *impl_->friend_list;
 }
 
-void SteamSystem::leave_lobby() {
-  if (impl_->current_lobby) {
-    SteamMatchmaking()->LeaveLobby(impl_->current_lobby->id);
-    impl_->current_lobby.reset();
+auto SteamSystem::avatar(std::uint64_t user_id) const -> std::optional<avatar_info> {
+  if (!impl_->avatars.contains(user_id)) {
+    SteamFriends()->GetLargeFriendAvatar(user_id);
+    return std::nullopt;
   }
+  auto& data = impl_->avatars[user_id];
+  if (!data.dimensions.x || !data.dimensions.y) {
+    return std::nullopt;  // Not loaded yet.
+  }
+
+  avatar_info info;
+  info.dimensions = data.dimensions;
+  info.rgba_buffer = data.rgba_buffer;
+  return info;
+}
+
+void SteamSystem::leave_lobby() {
+  impl_->leave_lobby();
 }
 
 async_result<void> SteamSystem::create_lobby() {
@@ -233,16 +277,24 @@ async_result<void> SteamSystem::create_lobby() {
 }
 
 async_result<void> SteamSystem::join_lobby(std::uint64_t lobby_id) {
-  return {unexpected("NYI")};  // TODO
+  auto call_id = SteamMatchmaking()->JoinLobby(lobby_id);
+
+  promise_result<void> promise;
+  auto future = promise.future();
+  CallResult<LobbyEnter_t>::on_complete(
+      call_id, std::move(promise), [this](const LobbyEnter_t* data) -> result<void> {
+        if (data->m_EChatRoomEnterResponse != k_EChatRoomEnterResponseSuccess) {
+          return unexpected("Couldn't join steam lobby: " +
+                            std::to_string(data->m_EChatRoomEnterResponse));
+        }
+        impl_->set_lobby(data->m_ulSteamIDLobby);
+        return {};
+      });
+  return future;
 }
 
 auto SteamSystem::current_lobby() const -> std::optional<lobby_info> {
-  return std::nullopt;  // TODO
-}
-
-auto SteamSystem::lobby_results() const -> const std::vector<lobby_info>& {
-  static const std::vector<lobby_info> kEmpty;
-  return kEmpty;  // TODO
+  return impl_->current_lobby;
 }
 
 }  // namespace ii

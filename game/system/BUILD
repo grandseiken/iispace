@@ -20,6 +20,7 @@ cc_library(
     "//game/common:async",
     "//game/common:types",
     "//game/common:ustring",
+    "@glm",
   ],
   visibility = ["//visibility:public"],
 )

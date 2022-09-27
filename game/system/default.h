@@ -21,17 +21,12 @@ public:
     static const std::vector<friend_info> kEmpty;
     return kEmpty;
   }
+  std::optional<avatar_info> avatar(std::uint64_t) const override { return std::nullopt; }
 
   void leave_lobby() override {}
   async_result<void> create_lobby() override { return {unexpected("unsupported")}; }
-  async_result<void> join_lobby(std::uint64_t lobby_id) override {
-    return {unexpected("unsupported")};
-  }
+  async_result<void> join_lobby(std::uint64_t) override { return {unexpected("unsupported")}; }
   std::optional<lobby_info> current_lobby() const override { return std::nullopt; }
-  const std::vector<lobby_info>& lobby_results() const override {
-    static const std::vector<lobby_info> kEmpty;
-    return kEmpty;
-  }
 };
 
 }  // namespace ii

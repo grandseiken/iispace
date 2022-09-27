@@ -16,12 +16,12 @@ public:
   bool supports_networked_multiplayer() const override;
   user_info local_user() const override;
   const std::vector<friend_info>& friend_list() const override;
+  std::optional<avatar_info> avatar(std::uint64_t user_id) const override;
 
   void leave_lobby() override;
   async_result<void> create_lobby() override;
   async_result<void> join_lobby(std::uint64_t lobby_id) override;
   std::optional<lobby_info> current_lobby() const override;
-  const std::vector<lobby_info>& lobby_results() const override;
 
 private:
   struct impl_t;
