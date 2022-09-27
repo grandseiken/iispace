@@ -1,6 +1,7 @@
 #include "game/system/steam.h"
 #include <sfn/functional.h>
 #include <steam/steam_api.h>
+#include <algorithm>
 #include <functional>
 #include <type_traits>
 #include <unordered_map>
@@ -129,10 +130,15 @@ private:
 
 struct SteamSystem::impl_t {
   ~impl_t() { SteamAPI_Shutdown(); }
-  impl_t() = default;
+  impl_t() { SteamNetworkingUtils()->InitRelayNetworkAccess(); }
 
   void leave_lobby() {
     if (current_lobby) {
+      for (const auto& m : current_lobby->members) {
+        SteamNetworkingIdentity identity{};
+        identity.SetSteamID(m.id);
+        SteamNetworkingMessages()->CloseSessionWithUser(identity);
+      }
       SteamMatchmaking()->LeaveLobby(current_lobby->id);
       current_lobby.reset();
     }
@@ -140,7 +146,7 @@ struct SteamSystem::impl_t {
 
   void set_lobby(std::uint64_t lobby_id) {
     if (current_lobby && current_lobby->id != lobby_id) {
-      SteamMatchmaking()->LeaveLobby(current_lobby->id);
+      leave_lobby();
     }
     current_lobby = get_lobby_info(lobby_id);
   }
@@ -180,6 +186,7 @@ struct SteamSystem::impl_t {
         k_EChatMemberStateChangeDisconnected | k_EChatMemberStateChangeKicked |
         k_EChatMemberStateChangeBanned;
 
+    bool disconnected = false;
     if (data->m_rgfChatMemberStateChange & k_EChatMemberStateChangeEntered) {
       auto& e = events.emplace_back();
       e.type = event_type::kLobbyMemberEntered;
@@ -188,12 +195,17 @@ struct SteamSystem::impl_t {
       auto& e = events.emplace_back();
       if (data->m_ulSteamIDUserChanged == SteamUser()->GetSteamID()) {
         e.type = event_type::kLobbyDisconnected;
+        disconnected = true;
       } else {
         e.type = event_type::kLobbyMemberLeft;
         e.id = data->m_ulSteamIDUserChanged;
       }
     }
-    set_lobby(data->m_ulSteamIDLobby);
+    if (disconnected) {
+      leave_lobby();
+    } else {
+      set_lobby(data->m_ulSteamIDLobby);
+    }
   }
 
   void avatar_image_loaded(const AvatarImageLoaded_t* data) {
@@ -205,12 +217,33 @@ struct SteamSystem::impl_t {
     }
   }
 
+  void session_request(const SteamNetworkingMessagesSessionRequest_t* data) {
+    if (!current_lobby) {
+      return;
+    }
+    bool from_lobby =
+        std::any_of(current_lobby->members.begin(), current_lobby->members.end(),
+                    [&](const auto& m) { return m.id == data->m_identityRemote.GetSteamID64(); });
+    if (!from_lobby) {
+      return;
+    }
+    SteamNetworkingMessages()->AcceptSessionWithUser(data->m_identityRemote);
+  }
+
+  void session_failed(const SteamNetworkingMessagesSessionFailed_t* data) {
+    auto& e = events.emplace_back();
+    e.type = event_type::kMessagingSessionFailed;
+    e.id = data->m_info.m_identityRemote.GetSteamID64();
+  }
+
   callback<&impl_t::persona_state_change> persona_state_change_cb{this};
   callback<&impl_t::game_overlay_activated> game_overlay_activated_cb{this};
   callback<&impl_t::game_lobby_join_requested> game_lobby_join_requested_cb{this};
   callback<&impl_t::lobby_enter> lobby_enter_cb{this};
   callback<&impl_t::lobby_chat_update> lobby_chat_update_cb{this};
   callback<&impl_t::avatar_image_loaded> avatar_image_loaded_cb{this};
+  callback<&impl_t::session_request> session_request_cb{this};
+  callback<&impl_t::session_failed> session_failed_cb{this};
 
   struct avatar_data {
     glm::uvec2 dimensions{0, 0};
@@ -322,6 +355,22 @@ async_result<void> SteamSystem::join_lobby(std::uint64_t lobby_id) {
 
 auto SteamSystem::current_lobby() const -> std::optional<lobby_info> {
   return impl_->current_lobby;
+}
+
+auto SteamSystem::session(std::uint64_t user_id) const -> std::optional<session_info> {
+  return std::nullopt;  // TODO: cache SteamNetworkingMessages()->GetSessionConnectionInfo().
+}
+
+void SteamSystem::send_to(std::uint64_t user_id, const send_message&) {
+  // TODO
+}
+
+void SteamSystem::broadcast(const send_message&) {
+  // TODO
+}
+
+void SteamSystem::receive(std::vector<received_message>&) {
+  // TODO
 }
 
 }  // namespace ii

@@ -23,6 +23,11 @@ public:
   async_result<void> join_lobby(std::uint64_t lobby_id) override;
   std::optional<lobby_info> current_lobby() const override;
 
+  std::optional<session_info> session(std::uint64_t user_id) const override;
+  void send_to(std::uint64_t user_id, const send_message&) override;
+  void broadcast(const send_message&) override;
+  void receive(std::vector<received_message>&) override;
+
 private:
   struct impl_t;
   std::unique_ptr<impl_t> impl_;

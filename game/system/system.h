@@ -25,6 +25,8 @@ public:
     kLobbyMemberLeft,
     // We were disconnected from the lobby for some reason.
     kLobbyDisconnected,
+    // Messaging session with user failed.
+    kMessagingSessionFailed,
   };
 
   struct event {
@@ -56,21 +58,50 @@ public:
     std::vector<user_info> members;
   };
 
+  struct session_info {
+    std::uint32_t ping_ms = 0;
+  };
+
+  enum send_flags : std::uint32_t {
+    kSendReliable = 1,
+    kSendNoNagle = 2,
+  };
+
+  struct send_message {
+    std::uint32_t send_flags = 0;
+    std::uint32_t channel = 0;
+    std::span<const std::uint8_t> bytes;
+  };
+
+  struct received_message {
+    std::uint64_t source_user_id = 0;
+    std::uint32_t channel = 0;
+    std::vector<std::uint8_t> bytes;
+  };
+
   virtual ~System() = default;
   virtual result<std::vector<std::string>> init() = 0;
 
   virtual void tick() = 0;
   virtual const std::vector<event>& events() const = 0;
 
+  // User API.
   virtual bool supports_networked_multiplayer() const = 0;
   virtual user_info local_user() const = 0;
   virtual const std::vector<friend_info>& friend_list() const = 0;
   virtual std::optional<avatar_info> avatar(std::uint64_t user_id) const = 0;
 
+  // Lobby API.
   virtual void leave_lobby() = 0;
   virtual async_result<void> create_lobby() = 0;
   virtual async_result<void> join_lobby(std::uint64_t lobby_id) = 0;
   virtual std::optional<lobby_info> current_lobby() const = 0;
+
+  // Messaging API.
+  virtual std::optional<session_info> session(std::uint64_t user_id) const = 0;
+  virtual void send_to(std::uint64_t user_id, const send_message&) = 0;
+  virtual void broadcast(const send_message&) = 0;
+  virtual void receive(std::vector<received_message>&) = 0;
 };
 
 std::unique_ptr<System> create_system();

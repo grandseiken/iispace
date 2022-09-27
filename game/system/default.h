@@ -27,6 +27,11 @@ public:
   async_result<void> create_lobby() override { return {unexpected("unsupported")}; }
   async_result<void> join_lobby(std::uint64_t) override { return {unexpected("unsupported")}; }
   std::optional<lobby_info> current_lobby() const override { return std::nullopt; }
+
+  std::optional<session_info> session(std::uint64_t) const override { return std::nullopt; }
+  void send_to(std::uint64_t, const send_message&) override {}
+  void broadcast(const send_message&) override {}
+  void receive(std::vector<received_message>&) override {}
 };
 
 }  // namespace ii
