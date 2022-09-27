@@ -172,6 +172,30 @@ struct SteamSystem::impl_t {
     }
   }
 
+  void lobby_chat_update(const LobbyChatUpdate_t* data) {
+    if (!current_lobby || data->m_ulSteamIDLobby != current_lobby->id) {
+      return;
+    }
+    static constexpr auto kLeaveFlags = k_EChatMemberStateChangeLeft |
+        k_EChatMemberStateChangeDisconnected | k_EChatMemberStateChangeKicked |
+        k_EChatMemberStateChangeBanned;
+
+    if (data->m_rgfChatMemberStateChange & k_EChatMemberStateChangeEntered) {
+      auto& e = events.emplace_back();
+      e.type = event_type::kLobbyMemberEntered;
+      e.id = data->m_ulSteamIDUserChanged;
+    } else if (data->m_rgfChatMemberStateChange & kLeaveFlags) {
+      auto& e = events.emplace_back();
+      if (data->m_ulSteamIDUserChanged == SteamUser()->GetSteamID()) {
+        e.type = event_type::kLobbyDisconnected;
+      } else {
+        e.type = event_type::kLobbyMemberLeft;
+        e.id = data->m_ulSteamIDUserChanged;
+      }
+    }
+    set_lobby(data->m_ulSteamIDLobby);
+  }
+
   void avatar_image_loaded(const AvatarImageLoaded_t* data) {
     auto& avatar = avatars[data->m_steamID.ConvertToUint64()];
     if (SteamUtils()->GetImageSize(data->m_iImage, &avatar.dimensions.x, &avatar.dimensions.y)) {
@@ -185,6 +209,8 @@ struct SteamSystem::impl_t {
   callback<&impl_t::game_overlay_activated> game_overlay_activated_cb{this};
   callback<&impl_t::game_lobby_join_requested> game_lobby_join_requested_cb{this};
   callback<&impl_t::lobby_enter> lobby_enter_cb{this};
+  callback<&impl_t::lobby_chat_update> lobby_chat_update_cb{this};
+  callback<&impl_t::avatar_image_loaded> avatar_image_loaded_cb{this};
 
   struct avatar_data {
     glm::uvec2 dimensions{0, 0};
@@ -261,6 +287,7 @@ void SteamSystem::leave_lobby() {
 }
 
 async_result<void> SteamSystem::create_lobby() {
+  // TODO: allow other lobby types (e.g. public?).
   auto call_id =
       SteamMatchmaking()->CreateLobby(k_ELobbyTypeFriendsOnly, static_cast<int>(kLobbyMaxMembers));
 

@@ -18,7 +18,13 @@ public:
   enum class event_type {
     kNone,
     kOverlayActivated,
+    // Lobby join triggered from out-of-game (e.g. Steam invite).
     kLobbyJoinRequested,
+    // Someone entered or left the lobby we are currently in.
+    kLobbyMemberEntered,
+    kLobbyMemberLeft,
+    // We were disconnected from the lobby for some reason.
+    kLobbyDisconnected,
   };
 
   struct event {
@@ -44,7 +50,6 @@ public:
 
   struct lobby_info {
     bool is_host = false;
-    ustring name = ustring::ascii("");  // TODO.
     std::uint64_t id = 0;
     std::uint32_t players = 0;
     std::uint32_t max_players = 0;
