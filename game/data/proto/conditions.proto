@@ -1,0 +1,34 @@
+syntax = "proto3";
+option optimize_for = LITE_RUNTIME;
+package ii.proto;
+
+message GameMode {
+  enum Enum {
+    kNormal = 0;
+    kBoss = 1;
+    kHard = 2;
+    kFast = 3;
+    kWhat = 4;
+  }
+}
+
+message CompatibilityLevel {
+  enum Enum {
+    kLegacy = 0;
+    kIispaceV0 = 1;
+  }
+}
+
+message InitialConditions {
+  enum Flag {
+    kNone = 0;
+    kLegacy_CanFaceSecretBoss = 1;
+  }
+
+  CompatibilityLevel.Enum compatibility = 1;
+  uint32 seed = 2;
+  uint32 player_count = 3;
+
+  GameMode.Enum game_mode = 4;
+  Flag flags = 5;
+}

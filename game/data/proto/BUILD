@@ -9,6 +9,7 @@ proto_lang_toolchain(
 proto_library(
   name = "ii_proto",
   srcs = [
+    "conditions.proto",
     "config.proto",
     "replay.proto",
     "savegame.proto",

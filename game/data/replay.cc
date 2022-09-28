@@ -1,5 +1,6 @@
 #include "game/data/replay.h"
 #include "game/common/math.h"
+#include "game/data/conditions.h"
 #include "game/data/crypt.h"
 #include "game/data/proto/replay.pb.h"
 #include <array>
@@ -57,7 +58,7 @@ result<proto::Replay> read_replay_file(std::span<const std::uint8_t> bytes) {
   result.set_game_version(kLegacyReplayVersion);
   std::uint32_t players = 0;
   std::uint32_t seed = 0;
-  proto::Replay::GameMode::Enum mode = proto::Replay::GameMode::kNormal;
+  proto::GameMode::Enum mode = proto::GameMode::kNormal;
   bool can_face_secret_boss = false;
 
   std::getline(dc, line);
@@ -67,13 +68,13 @@ result<proto::Replay> read_replay_file(std::span<const std::uint8_t> bytes) {
 
   bool bb = false;
   ss >> bb;
-  mode = bb ? proto::Replay::GameMode::kBoss : mode;
+  mode = bb ? proto::GameMode::kBoss : mode;
   ss >> bb;
-  mode = bb ? proto::Replay::GameMode::kHard : mode;
+  mode = bb ? proto::GameMode::kHard : mode;
   ss >> bb;
-  mode = bb ? proto::Replay::GameMode::kFast : mode;
+  mode = bb ? proto::GameMode::kFast : mode;
   ss >> bb;
-  mode = bb ? proto::Replay::GameMode::kWhat : mode;
+  mode = bb ? proto::GameMode::kWhat : mode;
   ss >> seed;
 
   result.set_players(std::max(1u, std::min(4u, players)));
@@ -126,39 +127,28 @@ result<ReplayReader> ReplayReader::create(std::span<const std::uint8_t> bytes) {
 
   auto& conditions = reader.impl_->conditions;
   auto& replay = reader.impl_->replay;
-  conditions.seed = replay.seed();
-  switch (replay.compatibility()) {
-  default:
-    return unexpected("unknown replay compatibility level");
-  case proto::Replay::CompatibilityLevel::kLegacy:
-    conditions.compatibility = compatibility_level::kLegacy;
-    break;
-  case proto::Replay::CompatibilityLevel::kIispaceV0:
-    conditions.compatibility = compatibility_level::kIispaceV0;
-    break;
-  }
-  switch (replay.game_mode()) {
-  default:
-    return unexpected("unknown replay game mode");
-  case proto::Replay::GameMode::kNormal:
-    conditions.mode = game_mode::kNormal;
-    break;
-  case proto::Replay::GameMode::kBoss:
-    conditions.mode = game_mode::kBoss;
-    break;
-  case proto::Replay::GameMode::kHard:
-    conditions.mode = game_mode::kHard;
-    break;
-  case proto::Replay::GameMode::kFast:
-    conditions.mode = game_mode::kFast;
-    break;
-  case proto::Replay::GameMode::kWhat:
-    conditions.mode = game_mode::kWhat;
-    break;
-  }
-  conditions.player_count = replay.players();
-  if (replay.can_face_secret_boss()) {
-    conditions.flags |= initial_conditions::flag::kLegacy_CanFaceSecretBoss;
+  if (replay.has_conditions()) {
+    auto conditions_result = read_initial_conditions(replay.conditions());
+    if (!conditions_result) {
+      return unexpected(conditions_result.error());
+    }
+    conditions = *conditions_result;
+  } else {
+    conditions.seed = replay.seed();
+    auto compatibility = read_compatibility_level(replay.compatibility());
+    if (!compatibility) {
+      return unexpected(compatibility.error());
+    }
+    conditions.compatibility = *compatibility;
+    auto mode = read_game_mode(replay.game_mode());
+    if (!mode) {
+      return unexpected(mode.error());
+    }
+    conditions.mode = *mode;
+    conditions.player_count = replay.players();
+    if (replay.can_face_secret_boss()) {
+      conditions.flags |= initial_conditions::flag::kLegacy_CanFaceSecretBoss;
+    }
   }
   return {std::move(reader)};
 }
@@ -227,37 +217,7 @@ ReplayWriter::ReplayWriter(const ii::initial_conditions& conditions)
 : impl_{std::make_unique<impl_t>()} {
   impl_->conditions = conditions;
   impl_->replay.set_game_version(kReplayVersion);
-  impl_->replay.set_seed(conditions.seed);
-  switch (conditions.compatibility) {
-  case compatibility_level::kLegacy:
-    impl_->replay.set_compatibility(proto::Replay::CompatibilityLevel::kLegacy);
-    break;
-  case compatibility_level::kIispaceV0:
-    impl_->replay.set_compatibility(proto::Replay::CompatibilityLevel::kIispaceV0);
-    break;
-  }
-  switch (conditions.mode) {
-  case game_mode::kNormal:
-    impl_->replay.set_game_mode(proto::Replay::GameMode::kNormal);
-    break;
-  case game_mode::kBoss:
-    impl_->replay.set_game_mode(proto::Replay::GameMode::kBoss);
-    break;
-  case game_mode::kHard:
-    impl_->replay.set_game_mode(proto::Replay::GameMode::kHard);
-    break;
-  case game_mode::kFast:
-    impl_->replay.set_game_mode(proto::Replay::GameMode::kFast);
-    break;
-  case game_mode::kWhat:
-    impl_->replay.set_game_mode(proto::Replay::GameMode::kWhat);
-    break;
-  case game_mode::kMax:
-    break;
-  }
-  impl_->replay.set_players(conditions.player_count);
-  impl_->replay.set_can_face_secret_boss(
-      +(conditions.flags & ii::initial_conditions::flag::kLegacy_CanFaceSecretBoss));
+  *impl_->replay.mutable_conditions() = write_initial_conditions(conditions);
 }
 
 void ReplayWriter::add_input_frame(const input_frame& frame) {

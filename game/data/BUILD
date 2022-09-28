@@ -1,4 +1,14 @@
 cc_library(
+  name = "conditions",
+  hdrs = ["conditions.h"],
+  deps = [
+    "//game/common:types",
+    "//game/data/proto:ii_proto_cc",
+    "//game/logic/sim/io:conditions",
+  ],
+)
+
+cc_library(
   name = "crypt",
   hdrs = ["crypt.h"],
   srcs = ["crypt.cc"],
@@ -23,6 +33,7 @@ cc_library(
     "//game/logic/sim/io:player",
   ],
   implementation_deps = [
+    ":conditions",
     ":crypt",
     "//game/common:math",
     "//game/data/proto:ii_proto_cc",

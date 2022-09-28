@@ -1,6 +1,7 @@
 syntax = "proto3";
 option optimize_for = LITE_RUNTIME;
 package ii.proto;
+import "game/data/proto/conditions.proto";
 
 // TODO: never used in released version, so could convert all the tests using this format
 // and remove it.
@@ -27,29 +28,14 @@ message PlayerFrame {
 }
 
 message Replay {
-  message GameMode {
-    enum Enum {
-      kNormal = 0;
-      kBoss = 1;
-      kHard = 2;
-      kFast = 3;
-      kWhat = 4;
-    }
-  }
-
-  message CompatibilityLevel {
-    enum Enum {
-      kLegacy = 0;
-      kIispaceV0 = 1;
-    }
-  }
-
   string game_version = 1;
+
+  InitialConditions conditions = 8;
+  // TODO: all of this also never used in released version as above.
   CompatibilityLevel.Enum compatibility = 6;
   GameMode.Enum game_mode = 2;
   uint32 players = 3;
   uint32 seed = 4;
-
   // Legacy data.
   bool can_face_secret_boss = 99;
 
