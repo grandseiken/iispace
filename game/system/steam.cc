@@ -2,7 +2,9 @@
 #include <sfn/functional.h>
 #include <steam/steam_api.h>
 #include <algorithm>
+#include <array>
 #include <charconv>
+#include <chrono>
 #include <functional>
 #include <type_traits>
 #include <unordered_map>
@@ -49,6 +51,12 @@ std::vector<std::string> get_steam_command_line(int argc, const char** argv) {
     v.emplace_back(argv[i]);
   }
   return v;
+}
+
+SteamNetworkingIdentity remote_user(std::uint64_t user_id) {
+  SteamNetworkingIdentity identity{};
+  identity.SetSteamID64(user_id);
+  return identity;
 }
 
 std::vector<System::friend_info> get_steam_friend_list() {
@@ -99,6 +107,20 @@ System::lobby_info get_lobby_info(std::uint64_t lobby_id) {
   return info;
 }
 
+System::session_info get_session_info(std::uint64_t user_id) {
+  System::session_info info;
+
+  SteamNetConnectionRealTimeStatus_t status{};
+  auto state =
+      SteamNetworkingMessages()->GetSessionConnectionInfo(remote_user(user_id), nullptr, &status);
+  if (state == k_ESteamNetworkingConnectionState_None) {
+    return info;
+  }
+
+  info.ping_ms = status.m_nPing;
+  return info;
+}
+
 template <typename T, typename R = void>
 class CallResult {
 private:
@@ -143,11 +165,10 @@ struct SteamSystem::impl_t {
   void leave_lobby() {
     if (current_lobby) {
       for (const auto& m : current_lobby->members) {
-        SteamNetworkingIdentity identity{};
-        identity.SetSteamID(m.id);
-        SteamNetworkingMessages()->CloseSessionWithUser(identity);
+        SteamNetworkingMessages()->CloseSessionWithUser(remote_user(m.id));
       }
       SteamMatchmaking()->LeaveLobby(current_lobby->id);
+      sessions.clear();
       current_lobby.reset();
     }
   }
@@ -240,6 +261,7 @@ struct SteamSystem::impl_t {
   }
 
   void session_failed(const SteamNetworkingMessagesSessionFailed_t* data) {
+    SteamNetworkingMessages()->CloseSessionWithUser(data->m_info.m_identityRemote);
     auto& e = events.emplace_back();
     e.type = event_type::kMessagingSessionFailed;
     e.id = data->m_info.m_identityRemote.GetSteamID64();
@@ -264,6 +286,9 @@ struct SteamSystem::impl_t {
   std::optional<std::vector<friend_info>> friend_list;
   std::optional<lobby_info> current_lobby;
   std::unordered_map<std::uint64_t, avatar_data> avatars;
+  std::unordered_map<std::uint64_t, session_info> sessions;
+  std::chrono::steady_clock::time_point last_session_refresh =
+      std::chrono::steady_clock::time_point::min();
 };
 
 void OnGameOverlayActivated(GameOverlayActivated_t*) {}
@@ -308,6 +333,15 @@ void SteamSystem::tick() {
     e.type = event_type::kLobbyJoinRequested;
     e.id = *impl_->lobby_join_cmdline;
     impl_->lobby_join_cmdline.reset();
+  }
+
+  static constexpr auto kSessionRefreshInterval = std::chrono::seconds{2};
+  if (impl_->current_lobby &&
+      std::chrono::steady_clock::now() > impl_->last_session_refresh + kSessionRefreshInterval) {
+    for (const auto& m : impl_->current_lobby->members) {
+      impl_->sessions[m.id] = get_session_info(m.id);
+    }
+    impl_->last_session_refresh = std::chrono::steady_clock::now();
   }
 }
 
@@ -398,19 +432,59 @@ void SteamSystem::show_invite_dialog() const {
 }
 
 auto SteamSystem::session(std::uint64_t user_id) const -> std::optional<session_info> {
-  return std::nullopt;  // TODO: cache SteamNetworkingMessages()->GetSessionConnectionInfo().
+  auto it = impl_->sessions.find(user_id);
+  if (it == impl_->sessions.end()) {
+    return std::nullopt;
+  }
+  return it->second;
 }
 
-void SteamSystem::send_to(std::uint64_t user_id, const send_message&) {
-  // TODO
+void SteamSystem::send_to(std::uint64_t user_id, const send_message& message) {
+  int send_flags = 0;
+  if (message.send_flags & kSendNoNagle) {
+    send_flags |= k_nSteamNetworkingSend_NoNagle;
+  }
+  if (message.send_flags & kSendReliable) {
+    send_flags |= k_nSteamNetworkingSend_Reliable;
+  }
+  SteamNetworkingMessages()->SendMessageToUser(remote_user(user_id), message.bytes.data(),
+                                               static_cast<std::uint32_t>(message.bytes.size()),
+                                               send_flags, static_cast<int>(message.channel));
 }
 
-void SteamSystem::broadcast(const send_message&) {
-  // TODO
+void SteamSystem::send_to_host(const send_message& message) {
+  if (impl_->current_lobby && impl_->current_lobby->host) {
+    send_to(impl_->current_lobby->host->id, message);
+  }
 }
 
-void SteamSystem::receive(std::vector<received_message>&) {
-  // TODO
+void SteamSystem::broadcast(const send_message& message) {
+  if (!impl_->current_lobby) {
+    return;
+  }
+  for (const auto& m : impl_->current_lobby->members) {
+    if (m.id != SteamUser()->GetSteamID()) {
+      send_to(m.id, message);
+    }
+  }
+}
+
+void SteamSystem::receive(std::uint32_t channel, std::vector<received_message>& output) {
+  std::array<SteamNetworkingMessage_t*, 16> buffer{};
+  while (true) {
+    auto count = SteamNetworkingMessages()->ReceiveMessagesOnChannel(
+        static_cast<int>(channel), buffer.data(), static_cast<int>(buffer.size()));
+    for (int i = 0; i < count; ++i) {
+      auto& m = output.emplace_back();
+      m.source_user_id = buffer[i]->m_identityPeer.GetSteamID64();
+      m.bytes.resize(static_cast<std::size_t>(buffer[i]->m_cbSize));
+      std::memcpy(m.bytes.data(), buffer[i]->m_pData, m.bytes.size());
+      buffer[i]->Release();
+    }
+    if (static_cast<std::size_t>(count) < buffer.size()) {
+      break;
+    }
+  }
 }
 
 }  // namespace ii

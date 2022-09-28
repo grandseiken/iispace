@@ -37,8 +37,9 @@ public:
 
   std::optional<session_info> session(std::uint64_t) const override { return std::nullopt; }
   void send_to(std::uint64_t, const send_message&) override {}
+  void send_to_host(const send_message&) override {}
   void broadcast(const send_message&) override {}
-  void receive(std::vector<received_message>&) override {}
+  void receive(std::uint32_t, std::vector<received_message>&) override {}
 };
 
 }  // namespace ii

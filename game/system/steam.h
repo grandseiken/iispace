@@ -26,8 +26,9 @@ public:
 
   std::optional<session_info> session(std::uint64_t user_id) const override;
   void send_to(std::uint64_t user_id, const send_message&) override;
+  void send_to_host(const send_message&) override;
   void broadcast(const send_message&) override;
-  void receive(std::vector<received_message>&) override;
+  void receive(std::uint32_t channel, std::vector<received_message>&) override;
 
 private:
   struct impl_t;

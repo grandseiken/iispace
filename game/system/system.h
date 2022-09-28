@@ -76,7 +76,6 @@ public:
 
   struct received_message {
     std::uint64_t source_user_id = 0;
-    std::uint32_t channel = 0;
     std::vector<std::uint8_t> bytes;
   };
 
@@ -102,8 +101,9 @@ public:
   // Messaging API.
   virtual std::optional<session_info> session(std::uint64_t user_id) const = 0;
   virtual void send_to(std::uint64_t user_id, const send_message&) = 0;
+  virtual void send_to_host(const send_message&) = 0;
   virtual void broadcast(const send_message&) = 0;
-  virtual void receive(std::vector<received_message>&) = 0;
+  virtual void receive(std::uint32_t channel, std::vector<received_message>&) = 0;
 };
 
 std::unique_ptr<System> create_system();

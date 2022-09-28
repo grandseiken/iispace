@@ -234,6 +234,7 @@ void RunLobbyLayer::update_content(const ui::input_frame& input, ui::output_fram
     auto& system = stack().system();
     const auto& events = system.events();
     bool disconnected = !system.current_lobby() ||
+        (!system.current_lobby()->host && !conditions_) ||
         std::any_of(events.begin(), events.end(),
                     [](const auto& e) { return e.type == System::event_type::kLobbyDisconnected; });
     if (disconnected) {
