@@ -77,10 +77,14 @@ result<proto::Replay> read_replay_file(std::span<const std::uint8_t> bytes) {
   mode = bb ? proto::GameMode::kWhat : mode;
   ss >> seed;
 
-  result.set_players(std::max(1u, std::min(4u, players)));
-  result.set_can_face_secret_boss(can_face_secret_boss);
-  result.set_game_mode(mode);
-  result.set_seed(seed);
+  auto& conditions = *result.mutable_conditions();
+  conditions.set_compatibility(proto::CompatibilityLevel::kLegacy);
+  conditions.set_seed(seed);
+  conditions.set_player_count(std::max(1u, std::min(4u, players)));
+  conditions.set_game_mode(mode);
+  if (can_face_secret_boss) {
+    conditions.set_flags(proto::InitialConditions::kLegacy_CanFaceSecretBoss);
+  }
 
   auto fixed_read = [](std::stringstream& in) {
     std::int64_t t = 0;
@@ -127,29 +131,11 @@ result<ReplayReader> ReplayReader::create(std::span<const std::uint8_t> bytes) {
 
   auto& conditions = reader.impl_->conditions;
   auto& replay = reader.impl_->replay;
-  if (replay.has_conditions()) {
-    auto conditions_result = read_initial_conditions(replay.conditions());
-    if (!conditions_result) {
-      return unexpected(conditions_result.error());
-    }
-    conditions = *conditions_result;
-  } else {
-    conditions.seed = replay.seed();
-    auto compatibility = read_compatibility_level(replay.compatibility());
-    if (!compatibility) {
-      return unexpected(compatibility.error());
-    }
-    conditions.compatibility = *compatibility;
-    auto mode = read_game_mode(replay.game_mode());
-    if (!mode) {
-      return unexpected(mode.error());
-    }
-    conditions.mode = *mode;
-    conditions.player_count = replay.players();
-    if (replay.can_face_secret_boss()) {
-      conditions.flags |= initial_conditions::flag::kLegacy_CanFaceSecretBoss;
-    }
+  auto conditions_result = read_initial_conditions(replay.conditions());
+  if (!conditions_result) {
+    return unexpected(conditions_result.error());
   }
+  conditions = *conditions_result;
   return {std::move(reader)};
 }
 
@@ -161,23 +147,19 @@ std::optional<input_frame> ReplayReader::next_input_frame() {
   if (impl_->frame_index >= total_input_frames()) {
     return std::nullopt;
   }
-  auto read_frame = [&](const auto& replay_frame) {
-    input_frame frame;
-    frame.velocity = {fixed::from_internal(replay_frame.velocity_x()),
-                      fixed::from_internal(replay_frame.velocity_y())};
-    vec2 target{fixed::from_internal(replay_frame.target_x()),
-                fixed::from_internal(replay_frame.target_y())};
-    if (replay_frame.target_relative()) {
-      frame.target_relative = target;
-    } else {
-      frame.target_absolute = target;
-    }
-    frame.keys = replay_frame.keys();
-    return frame;
-  };
-  return impl_->replay.player_frame().empty()
-      ? read_frame(impl_->replay.legacy_player_frame(impl_->frame_index++))
-      : read_frame(impl_->replay.player_frame(impl_->frame_index++));
+  const auto& replay_frame = impl_->replay.player_frame(impl_->frame_index++);
+  input_frame frame;
+  frame.velocity = {fixed::from_internal(replay_frame.velocity_x()),
+                    fixed::from_internal(replay_frame.velocity_y())};
+  vec2 target{fixed::from_internal(replay_frame.target_x()),
+              fixed::from_internal(replay_frame.target_y())};
+  if (replay_frame.target_relative()) {
+    frame.target_relative = target;
+  } else {
+    frame.target_absolute = target;
+  }
+  frame.keys = replay_frame.keys();
+  return frame;
 }
 
 std::vector<input_frame> ReplayReader::next_tick_input_frames() {
@@ -198,8 +180,7 @@ std::size_t ReplayReader::current_input_frame() const {
 }
 
 std::size_t ReplayReader::total_input_frames() const {
-  return impl_->replay.player_frame().empty() ? impl_->replay.legacy_player_frame().size()
-                                              : impl_->replay.player_frame().size();
+  return impl_->replay.player_frame().size();
 }
 
 ReplayReader::ReplayReader() = default;
