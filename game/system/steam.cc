@@ -391,6 +391,12 @@ auto SteamSystem::current_lobby() const -> std::optional<lobby_info> {
   return impl_->current_lobby;
 }
 
+void SteamSystem::show_invite_dialog() const {
+  if (impl_->current_lobby) {
+    SteamFriends()->ActivateGameOverlayInviteDialog(impl_->current_lobby->id);
+  }
+}
+
 auto SteamSystem::session(std::uint64_t user_id) const -> std::optional<session_info> {
   return std::nullopt;  // TODO: cache SteamNetworkingMessages()->GetSessionConnectionInfo().
 }

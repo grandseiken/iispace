@@ -22,6 +22,7 @@ public:
   async_result<void> create_lobby() override;
   async_result<void> join_lobby(std::uint64_t lobby_id) override;
   std::optional<lobby_info> current_lobby() const override;
+  void show_invite_dialog() const override;
 
   std::optional<session_info> session(std::uint64_t user_id) const override;
   void send_to(std::uint64_t user_id, const send_message&) override;

@@ -25,6 +25,7 @@ private:
   std::optional<initial_conditions> conditions_;
   bool online_ = false;
   ui::TextElement* title_ = nullptr;
+  ui::TextElement* subtitle_ = nullptr;
   ui::TabContainer* bottom_tabs_ = nullptr;
   ui::Button* back_button_ = nullptr;
   ui::TextElement* all_ready_text_ = nullptr;

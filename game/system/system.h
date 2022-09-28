@@ -97,6 +97,7 @@ public:
   virtual async_result<void> create_lobby() = 0;
   virtual async_result<void> join_lobby(std::uint64_t lobby_id) = 0;
   virtual std::optional<lobby_info> current_lobby() const = 0;
+  virtual void show_invite_dialog() const = 0;
 
   // Messaging API.
   virtual std::optional<session_info> session(std::uint64_t user_id) const = 0;

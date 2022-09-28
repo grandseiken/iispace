@@ -158,9 +158,10 @@ RunLobbyLayer::RunLobbyLayer(ui::GameStack& stack, std::optional<initial_conditi
   auto& panel = *add_back<ui::Panel>();
   panel.set_padding(kSpacing);
   auto& layout = *panel.add_back<ui::LinearLayout>();
-  layout.set_spacing(kPadding.y);
+  layout.set_spacing(kPadding.y).set_wrap_focus(true);
 
   auto& top = *layout.add_back<ui::Panel>();
+  auto& subtop = *layout.add_back<ui::LinearLayout>();
   auto& main = *layout.add_back<ui::LinearLayout>();
   bottom_tabs_ = layout.add_back<ui::TabContainer>();
   auto& bottom = *bottom_tabs_->add_back<ui::LinearLayout>();
@@ -170,8 +171,30 @@ RunLobbyLayer::RunLobbyLayer(ui::GameStack& stack, std::optional<initial_conditi
       .set_padding(kPadding)
       .set_colour(kBackgroundColour);
   layout.set_absolute_size(top, kLargeFont.y + 2 * kPadding.y)
+      .set_absolute_size(subtop, kLargeFont.y + 2 * kPadding.y)
       .set_absolute_size(*bottom_tabs_, kLargeFont.y + 2 * kPadding.y);
   bottom.set_spacing(kPadding.x).set_orientation(ui::orientation::kHorizontal);
+
+  subtop.set_orientation(ui::orientation::kHorizontal);
+  auto& subbox = *subtop.add_back<ui::Panel>();
+  subbox.set_padding(kPadding);
+
+  subtitle_ = subbox.add_back<ui::TextElement>();
+  if (online_) {
+    subtitle_->set_alignment(ui::alignment::kLeft);
+    auto& invite_button = *subtop.add_back<ui::Button>();
+    standard_button(invite_button)
+        .set_alignment(ui::alignment::kCentered)
+        .set_text(ustring::ascii("Invite"))
+        .set_callback([this] { this->stack().system().show_invite_dialog(); });
+    subtop.set_relative_weight(invite_button, 1.f / 4);
+  } else {
+    subtitle_->set_alignment(ui::alignment::kCentered);
+  }
+  subtitle_->set_font(render::font_id::kMonospace)
+      .set_colour(kTextColour)
+      .set_font_dimensions(kMediumFont)
+      .set_drop_shadow(kDropShadow, .5f);
 
   title_ = top.add_back<ui::TextElement>();
   title_->set_font(render::font_id::kMonospaceBoldItalic)
@@ -187,7 +210,9 @@ RunLobbyLayer::RunLobbyLayer(ui::GameStack& stack, std::optional<initial_conditi
       .set_alignment(ui::alignment::kCentered);
 
   back_button_ = bottom.add_back<ui::Button>();
-  standard_button(*back_button_).set_text(ustring::ascii("Back")).set_callback([this] {
+  const auto* back_text = online_ ? "Leave lobby" : "Back";
+  standard_button(*back_button_).set_text(ustring::ascii(back_text)).set_callback([this] {
+    this->stack().system().leave_lobby();
     clear_and_remove();
   });
 
@@ -212,7 +237,10 @@ void RunLobbyLayer::update_content(const ui::input_frame& input, ui::output_fram
         std::any_of(events.begin(), events.end(),
                     [](const auto& e) { return e.type == System::event_type::kLobbyDisconnected; });
     if (disconnected) {
-      stack().add<ErrorLayer>(ustring::ascii("Disconnected"), [this] { clear_and_remove(); });
+      stack().add<ErrorLayer>(ustring::ascii("Disconnected"), [this] {
+        stack().system().leave_lobby();
+        clear_and_remove();
+      });
       return;
     }
     auto lobby = *system.current_lobby();
@@ -221,6 +249,16 @@ void RunLobbyLayer::update_content(const ui::input_frame& input, ui::output_fram
     } else {
       title_text += ustring::ascii(" (Host)");
     }
+    ustring s;
+    for (const auto& m : lobby.members) {
+      if (!s.empty()) {
+        s += ustring::ascii(", ");
+      }
+      s += m.name;
+    }
+    subtitle_->set_text(std::move(s));
+  } else {
+    subtitle_->set_text(ustring::ascii("Local game"));
   }
   title_->set_text(std::move(title_text));
 
@@ -289,6 +327,9 @@ void RunLobbyLayer::update_content(const ui::input_frame& input, ui::output_fram
   }
 
   if (input.pressed(ui::key::kCancel)) {
+    if (online_) {
+      stack().system().leave_lobby();
+    }
     output.sounds.emplace(sound::kMenuAccept);
     clear_and_remove();
   }
