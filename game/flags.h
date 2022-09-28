@@ -25,7 +25,7 @@ std::optional<T> flag_parse_value(const std::string& arg) {
   } else {
     T value = 0;
     auto result = std::from_chars(arg.data(), arg.data() + arg.size(), value);
-    if (result.ec != std::error_code{} || result.ptr != arg.data() + arg.size()) {
+    if (result.ec != std::errc{} || result.ptr != arg.data() + arg.size()) {
       return std::nullopt;
     }
     return value;

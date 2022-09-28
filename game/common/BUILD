@@ -51,5 +51,6 @@ cc_library(
       "ustring.h",
       "ustring_convert.h",
   ],
+  srcs = ["ustring.cc"],
   visibility = ["//visibility:public"],
 )

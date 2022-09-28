@@ -50,10 +50,12 @@ cc_library(
   ],
   implementation_deps = [
     ":common",
+    ":utility",
     "//game/core/sim:sim_layer",
     "//game/core/toolkit",
     "//game/logic/sim/io:player",
     "//game/io",
+    "//game/system:header",
   ],
   visibility = ["//visibility:public"],
 )

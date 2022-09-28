@@ -2,6 +2,7 @@
 #include <sfn/functional.h>
 #include <steam/steam_api.h>
 #include <algorithm>
+#include <charconv>
 #include <functional>
 #include <type_traits>
 #include <unordered_map>
@@ -77,8 +78,12 @@ std::vector<System::friend_info> get_steam_friend_list() {
 System::lobby_info get_lobby_info(std::uint64_t lobby_id) {
   System::lobby_info info;
   info.id = lobby_id;
-  info.is_host = SteamMatchmaking()->GetLobbyOwner(lobby_id) == SteamUser()->GetSteamID();
   info.max_players = static_cast<std::uint32_t>(SteamMatchmaking()->GetLobbyMemberLimit(lobby_id));
+  if (auto host = SteamMatchmaking()->GetLobbyOwner(lobby_id); host != SteamUser()->GetSteamID()) {
+    auto& h = info.host.emplace();
+    h.id = host.ConvertToUint64();
+    h.name = ustring::utf8(SteamFriends()->GetFriendPersonaName(host));
+  }
 
   auto num_players = SteamMatchmaking()->GetNumLobbyMembers(lobby_id);
   info.players = static_cast<std::uint32_t>(num_players);
@@ -165,7 +170,8 @@ struct SteamSystem::impl_t {
   }
 
   void game_lobby_join_requested(const GameLobbyJoinRequested_t* data) {
-    // TODO: handle this from command-line also.
+    // This is steam invite dialog flow when invitee is already in-game. Otherwise uses
+    // command-line flow in SteamSystem::init().
     auto& e = events.emplace_back();
     e.type = event_type::kLobbyJoinRequested;
     e.id = data->m_steamIDLobby.ConvertToUint64();
@@ -251,6 +257,7 @@ struct SteamSystem::impl_t {
   };
 
   std::vector<event> events;
+  std::optional<std::uint64_t> lobby_join_cmdline;
   std::optional<std::vector<friend_info>> friend_list;
   std::optional<lobby_info> current_lobby;
   std::unordered_map<std::uint64_t, avatar_data> avatars;
@@ -269,12 +276,36 @@ result<std::vector<std::string>> SteamSystem::init() {
     return unexpected("ERROR: failed to initialize steam API");
   }
   impl_ = std::make_unique<impl_t>();
-  return get_steam_command_line();
+  auto args = get_steam_command_line();
+  for (auto it = args.begin(); it != args.end(); ++it) {
+    if (*it != "+connect_lobby") {
+      continue;
+    }
+    if (it + 1 == args.end()) {
+      args.erase(it);
+      break;
+    }
+    ++it;
+    std::uint64_t lobby_id = 0;
+    auto result = std::from_chars(it->data(), it->data() + it->size(), lobby_id);
+    if (result.ec == std::errc{} && result.ptr == it->data() + it->size()) {
+      impl_->lobby_join_cmdline = lobby_id;
+    }
+    args.erase(it, it + 2);
+    break;
+  }
+  return args;
 }
 
 void SteamSystem::tick() {
   impl_->events.clear();
   SteamAPI_RunCallbacks();
+  if (impl_->lobby_join_cmdline) {
+    auto& e = impl_->events.emplace_back();
+    e.type = event_type::kLobbyJoinRequested;
+    e.id = *impl_->lobby_join_cmdline;
+    impl_->lobby_join_cmdline.reset();
+  }
 }
 
 auto SteamSystem::events() const -> const std::vector<event>& {

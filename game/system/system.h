@@ -41,7 +41,7 @@ public:
 
   struct user_info {
     std::uint64_t id = 0;
-    ustring name = ustring::ascii("");
+    ustring name;
   };
 
   struct friend_info {
@@ -51,10 +51,11 @@ public:
   };
 
   struct lobby_info {
-    bool is_host = false;
     std::uint64_t id = 0;
     std::uint32_t players = 0;
     std::uint32_t max_players = 0;
+    // If empty, we are the host.
+    std::optional<user_info> host;
     std::vector<user_info> members;
   };
 

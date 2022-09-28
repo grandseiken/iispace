@@ -15,14 +15,16 @@ class AssignmentPanel;
 
 class RunLobbyLayer : public ui::GameLayer {
 public:
-  RunLobbyLayer(ui::GameStack& stack, const initial_conditions& conditions);
+  RunLobbyLayer(ui::GameStack& stack, std::optional<initial_conditions> conditions, bool online);
   void update_content(const ui::input_frame&, ui::output_frame&) override;
 
 private:
   void clear_and_remove();
   void start_game();
 
-  initial_conditions conditions_;
+  std::optional<initial_conditions> conditions_;
+  bool online_ = false;
+  ui::TextElement* title_ = nullptr;
   ui::TabContainer* bottom_tabs_ = nullptr;
   ui::Button* back_button_ = nullptr;
   ui::TextElement* all_ready_text_ = nullptr;

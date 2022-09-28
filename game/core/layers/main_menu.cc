@@ -47,13 +47,13 @@ public:
       conditions.player_count = 0u;
       conditions.mode = mode;
       if (!host_online_) {
-        this->stack().add<RunLobbyLayer>(conditions);
+        this->stack().add<RunLobbyLayer>(conditions, /* online*/ false);
         return;
       }
       auto async = this->stack().system().create_lobby();
       this->stack().add<AsyncWaitLayer<void>>(
           ustring::ascii("Creating lobby..."), std::move(async),
-          [this, conditions] { this->stack().add<RunLobbyLayer>(conditions); });
+          [this, conditions] { this->stack().add<RunLobbyLayer>(conditions, /* online */ true); });
     };
 
     auto& layout = add_main_layout(this);
@@ -114,6 +114,23 @@ void MainMenuLayer::update_content(const ui::input_frame& input, ui::output_fram
   ui::GameLayer::update_content(input, output);
   stack().set_fps(60);
 
+  if (exit_timer_) {
+    if (!--exit_timer_) {
+      remove();
+    }
+    return;
+  }
+
+  for (const auto& e : stack().system().events()) {
+    if (e.type == System::event_type::kLobbyJoinRequested) {
+      auto async = this->stack().system().join_lobby(e.id);
+      this->stack().add<AsyncWaitLayer<void>>(
+          ustring::ascii("Joining lobby..."), std::move(async),
+          [this] { stack().add<RunLobbyLayer>(std::nullopt, /* online */ true); });
+      break;
+    }
+  }
+
   auto& system = stack().system();
   if (system.supports_networked_multiplayer()) {
     std::size_t friends_online = 0;
@@ -126,12 +143,6 @@ void MainMenuLayer::update_content(const ui::input_frame& input, ui::output_fram
         "\nFriends online: " + std::to_string(friends_online) +
         "\nFriends in-game: " + std::to_string(friends_in_game);
     top_text_->set_text(ustring::utf8(text));
-  }
-
-  if (exit_timer_) {
-    if (!--exit_timer_) {
-      remove();
-    }
   }
 }
 

@@ -1,5 +1,6 @@
 #include "game/core/layers/run_lobby.h"
 #include "game/core/layers/common.h"
+#include "game/core/layers/utility.h"
 #include "game/core/sim/sim_layer.h"
 #include "game/core/toolkit/button.h"
 #include "game/core/toolkit/layout.h"
@@ -7,6 +8,8 @@
 #include "game/core/toolkit/text.h"
 #include "game/io/io.h"
 #include "game/logic/sim/io/player.h"
+#include "game/system/system.h"
+#include <algorithm>
 
 namespace ii {
 namespace {
@@ -127,9 +130,11 @@ private:
   ui::TextElement* controller_text_ = nullptr;
 };
 
-RunLobbyLayer::RunLobbyLayer(ui::GameStack& stack, const initial_conditions& conditions)
+RunLobbyLayer::RunLobbyLayer(ui::GameStack& stack, std::optional<initial_conditions> conditions,
+                             bool online)
 : ui::GameLayer{stack, ui::layer_flag::kBaseLayer | ui::layer_flag::kNoAutoFocus}
-, conditions_{conditions} {
+, conditions_{conditions}
+, online_{online} {
   set_bounds(rect{kUiDimensions});
 
   auto& panel = *add_back<ui::Panel>();
@@ -150,29 +155,8 @@ RunLobbyLayer::RunLobbyLayer(ui::GameStack& stack, const initial_conditions& con
       .set_absolute_size(*bottom_tabs_, kLargeFont.y + 2 * kPadding.y);
   bottom.set_spacing(kPadding.x).set_orientation(ui::orientation::kHorizontal);
 
-  std::string title_text;
-  switch (conditions.mode) {
-  default:
-  case game_mode::kNormal:
-    title_text = "Normal mode";
-    break;
-  case game_mode::kBoss:
-    title_text = "Boss mode";
-    break;
-  case game_mode::kHard:
-    title_text = "Hard mode";
-    break;
-  case game_mode::kFast:
-    title_text = "Fast mode";
-    break;
-  case game_mode::kWhat:
-    title_text = "W-hat mode";
-    break;
-  }
-
-  auto& title = *top.add_back<ui::TextElement>();
-  title.set_text(ustring::ascii(title_text))
-      .set_font(render::font_id::kMonospaceBoldItalic)
+  title_ = top.add_back<ui::TextElement>();
+  title_->set_font(render::font_id::kMonospaceBoldItalic)
       .set_colour(kHighlightColour)
       .set_font_dimensions(kLargeFont)
       .set_drop_shadow(kDropShadow, .5f)
@@ -198,6 +182,46 @@ RunLobbyLayer::RunLobbyLayer(ui::GameStack& stack, const initial_conditions& con
 
 void RunLobbyLayer::update_content(const ui::input_frame& input, ui::output_frame& output) {
   GameLayer::update_content(input, output);
+  ustring title_text;
+  if (conditions_) {
+    switch (conditions_->mode) {
+    default:
+    case game_mode::kNormal:
+      title_text = ustring::ascii("Normal mode");
+      break;
+    case game_mode::kBoss:
+      title_text = ustring::ascii("Boss mode");
+      break;
+    case game_mode::kHard:
+      title_text = ustring::ascii("Hard mode");
+      break;
+    case game_mode::kFast:
+      title_text = ustring::ascii("Fast mode");
+      break;
+    case game_mode::kWhat:
+      title_text = ustring::ascii("W-hat mode");
+      break;
+    }
+  }
+
+  if (online_) {
+    auto& system = stack().system();
+    const auto& events = system.events();
+    bool disconnected = !system.current_lobby() ||
+        std::any_of(events.begin(), events.end(),
+                    [](const auto& e) { return e.type == System::event_type::kLobbyDisconnected; });
+    if (disconnected) {
+      stack().add<ErrorLayer>(ustring::ascii("Disconnected"), [this] { clear_and_remove(); });
+      return;
+    }
+    auto lobby = *system.current_lobby();
+    if (lobby.host) {
+      title_text += ustring::ascii(" (") + lobby.host->name + ustring::ascii("'s game)");
+    } else {
+      title_text += ustring::ascii(" (Host)");
+    }
+  }
+  title_->set_text(std::move(title_text));
 
   for (const auto& join : input.join_game_inputs) {
     if (stack().input().is_assigned(join)) {
@@ -237,7 +261,7 @@ void RunLobbyLayer::update_content(const ui::input_frame& input, ui::output_fram
     }
   }
 
-  bool all_ready = assigned_count && assigned_count == ready_count;
+  bool all_ready = assigned_count && assigned_count == ready_count && conditions_;
   if (all_ready) {
     if (!all_ready_timer_) {
       all_ready_timer_ = kAllReadyTimerFrames;
@@ -277,7 +301,7 @@ void RunLobbyLayer::clear_and_remove() {
 
 void RunLobbyLayer::start_game() {
   std::vector<ui::input_device_id> input_devices;
-  auto start_conditions = conditions_;
+  auto start_conditions = *conditions_;
   start_conditions.player_count = 0;
   for (const auto* panel : assignment_panels_) {
     if (panel->is_assigned()) {
