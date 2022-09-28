@@ -288,10 +288,10 @@ result<std::vector<std::string>> SteamSystem::init(int argc, const char** argv) 
       args.erase(it);
       break;
     }
-    ++it;
     std::uint64_t lobby_id = 0;
-    auto result = std::from_chars(it->data(), it->data() + it->size(), lobby_id);
-    if (result.ec == std::errc{} && result.ptr == it->data() + it->size()) {
+    auto arg_it = it + 1;
+    auto result = std::from_chars(arg_it->data(), arg_it->data() + arg_it->size(), lobby_id);
+    if (result.ec == std::errc{} && result.ptr == arg_it->data() + arg_it->size()) {
       impl_->lobby_join_cmdline = lobby_id;
     }
     args.erase(it, it + 2);
