@@ -178,7 +178,7 @@ std::vector<input_frame> SimInputAdapter::get() {
       frame.keys |= kbm_keys(keyboard_frame, mouse_frame);
     }
     for_controllers(
-        [&](const auto& controller_frame) { frame.keys |= controller_keys(*controller); });
+        [&](const auto& controller_frame) { frame.keys |= controller_keys(controller_frame); });
   }
   return frames;
 }

@@ -14,6 +14,24 @@
 namespace ii {
 namespace {
 constexpr std::uint32_t kAllReadyTimerFrames = 240;
+
+ustring mode_title(const initial_conditions& conditions) {
+  switch (conditions.mode) {
+  default:
+  case game_mode::kNormal:
+    return ustring::ascii("Normal mode");
+  case game_mode::kBoss:
+    return ustring::ascii("Boss mode");
+  case game_mode::kHard:
+    return ustring::ascii("Hard mode");
+  case game_mode::kFast:
+    return ustring::ascii("Fast mode");
+  case game_mode::kWhat:
+    return ustring::ascii("W-hat mode");
+  }
+  return {};
+}
+
 }  // namespace
 
 // TODO: assignment panels currently fixed colour/number, so we with dropouts we can end up with
@@ -184,24 +202,7 @@ void RunLobbyLayer::update_content(const ui::input_frame& input, ui::output_fram
   GameLayer::update_content(input, output);
   ustring title_text;
   if (conditions_) {
-    switch (conditions_->mode) {
-    default:
-    case game_mode::kNormal:
-      title_text = ustring::ascii("Normal mode");
-      break;
-    case game_mode::kBoss:
-      title_text = ustring::ascii("Boss mode");
-      break;
-    case game_mode::kHard:
-      title_text = ustring::ascii("Hard mode");
-      break;
-    case game_mode::kFast:
-      title_text = ustring::ascii("Fast mode");
-      break;
-    case game_mode::kWhat:
-      title_text = ustring::ascii("W-hat mode");
-      break;
-    }
+    title_text = mode_title(*conditions_);
   }
 
   if (online_) {
