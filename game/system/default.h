@@ -7,7 +7,13 @@ namespace ii {
 class DefaultSystem : public System {
 public:
   ~DefaultSystem() override = default;
-  result<std::vector<std::string>> init() override { return {}; }
+  result<std::vector<std::string>> init(int argc, const char** argv) override {
+    std::vector<std::string> result;
+    for (int i = 1; i < argc; ++i) {
+      result.emplace_back(argv[i]);
+    }
+    return result;
+  }
 
   void tick() override {}
   const std::vector<event>& events() const override {

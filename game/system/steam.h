@@ -9,7 +9,7 @@ class SteamSystem : public System {
 public:
   SteamSystem();
   ~SteamSystem() override;
-  result<std::vector<std::string>> init() override;
+  result<std::vector<std::string>> init(int argc, const char** argv) override;
   void tick() override;
   const std::vector<event>& events() const override;
 

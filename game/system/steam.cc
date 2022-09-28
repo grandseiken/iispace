@@ -12,7 +12,7 @@ namespace {
 constexpr std::uint64_t kSteamAppId = 2139740u;
 constexpr std::uint32_t kLobbyMaxMembers = 8u;
 
-std::vector<std::string> get_steam_command_line() {
+std::vector<std::string> get_steam_command_line(int argc, const char** argv) {
   static constexpr std::size_t kBufferStartSize = 1024;
   std::string s;
   s.resize(kBufferStartSize);
@@ -44,6 +44,9 @@ std::vector<std::string> get_steam_command_line() {
   }
   if (!current_arg.empty()) {
     v.emplace_back(current_arg);
+  }
+  for (int i = 1; i < argc; ++i) {
+    v.emplace_back(argv[i]);
   }
   return v;
 }
@@ -268,7 +271,7 @@ void OnGameOverlayActivated(GameOverlayActivated_t*) {}
 SteamSystem::SteamSystem() = default;
 SteamSystem::~SteamSystem() = default;
 
-result<std::vector<std::string>> SteamSystem::init() {
+result<std::vector<std::string>> SteamSystem::init(int argc, const char** argv) {
   if (SteamAPI_RestartAppIfNecessary(kSteamAppId)) {
     return unexpected("relaunching through steam");
   }
@@ -276,7 +279,7 @@ result<std::vector<std::string>> SteamSystem::init() {
     return unexpected("ERROR: failed to initialize steam API");
   }
   impl_ = std::make_unique<impl_t>();
-  auto args = get_steam_command_line();
+  auto args = get_steam_command_line(argc, argv);
   for (auto it = args.begin(); it != args.end(); ++it) {
     if (*it != "+connect_lobby") {
       continue;

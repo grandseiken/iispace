@@ -81,7 +81,7 @@ public:
   };
 
   virtual ~System() = default;
-  virtual result<std::vector<std::string>> init() = 0;
+  virtual result<std::vector<std::string>> init(int argc, const char** argv) = 0;
 
   virtual void tick() = 0;
   virtual const std::vector<event>& events() const = 0;
