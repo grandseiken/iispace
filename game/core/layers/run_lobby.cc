@@ -12,6 +12,7 @@
 #include "game/logic/sim/io/player.h"
 #include "game/system/system.h"
 #include <algorithm>
+#include <utility>
 
 namespace ii {
 namespace {
@@ -133,10 +134,24 @@ void RunLobbyLayer::update_content(const ui::input_frame& input, ui::output_fram
     system.broadcast(message);
   };
 
+  auto send_request = [&](const data::lobby_request_packet& packet) {
+    auto bytes = data::write_lobby_request_packet(packet);
+    if (!bytes) {
+      stack().add<ErrorLayer>(ustring::ascii("Error sending lobby request: " + bytes.error()),
+                              [this] { disconnect_and_remove(); });
+      return;
+    }
+    System::send_message message;
+    message.send_flags = System::send_flags::kSendReliable;
+    message.channel = 1;
+    message.bytes = *bytes;
+    system.send_to_host(message);
+  };
+
   auto receive_broadcast = [&] {
     std::vector<System::received_message> messages;
-    std::vector<data::lobby_update_packet> packets;
     system.receive(0, messages);
+    std::vector<data::lobby_update_packet> packets;
     for (const auto& m : messages) {
       if (!system.current_lobby() || !system.current_lobby()->host ||
           m.source_user_id != system.current_lobby()->host->id) {
@@ -153,6 +168,25 @@ void RunLobbyLayer::update_content(const ui::input_frame& input, ui::output_fram
     return packets;
   };
 
+  auto receive_requests = [&] {
+    std::vector<System::received_message> messages;
+    system.receive(1, messages);
+    std::vector<std::pair<std::uint64_t, data::lobby_request_packet>> packets;
+    for (const auto& m : messages) {
+      if (!system.current_lobby() || system.current_lobby()->host) {
+        continue;
+      }
+      auto packet = data::read_lobby_request_packet(m.bytes);
+      if (!packet) {
+        stack().add<ErrorLayer>(ustring::ascii("Error receiving lobby request: " + packet.error()),
+                                [this] { disconnect_and_remove(); });
+        break;
+      }
+      packets.emplace_back(m.source_user_id, std::move(*packet));
+    }
+    return packets;
+  };
+
   if (online_) {
     bool disconnected = !system.current_lobby() || (is_host && !conditions_) ||
         event_triggered(system, System::event_type::kLobbyDisconnected);
@@ -161,19 +195,26 @@ void RunLobbyLayer::update_content(const ui::input_frame& input, ui::output_fram
       return;
     }
 
-    if (is_host && event_triggered(system, System::event_type::kLobbyMemberEntered)) {
-      data::lobby_update_packet packet;
-      packet.conditions = conditions_;
-      broadcast(packet);
+    std::optional<std::uint64_t> host_id;
+    if (system.current_lobby()->host) {
+      host_id = system.current_lobby()->host->id;
     }
-    if (!is_host) {
-      for (const auto& packet : receive_broadcast()) {
-        if (packet.conditions) {
-          conditions_ = *packet.conditions;
-        }
-        if (packet.slots) {
-          coordinator_->handle(*packet.slots);
-        }
+    if (host_id != host_) {
+      host_ = host_id;
+      coordinator_->set_dirty();
+    }
+
+    for (const auto& packet : receive_broadcast()) {
+      if (!is_host && packet.conditions) {
+        conditions_ = *packet.conditions;
+      }
+      if (!is_host && packet.slots) {
+        coordinator_->handle(*packet.slots);
+      }
+    }
+    for (const auto& pair : receive_requests()) {
+      if (is_host) {
+        coordinator_->handle(pair.first, pair.second);
       }
     }
 
@@ -197,7 +238,7 @@ void RunLobbyLayer::update_content(const ui::input_frame& input, ui::output_fram
     output.sounds.emplace(sound::kMenuAccept);
     back_button_->unfocus();
   }
-  if (conditions_ && coordinator_->game_ready()) {
+  if (!online_ && conditions_ && coordinator_->game_ready()) {
     if (!all_ready_timer_) {
       all_ready_timer_ = kAllReadyTimerFrames;
     }
@@ -216,6 +257,21 @@ void RunLobbyLayer::update_content(const ui::input_frame& input, ui::output_fram
     all_ready_text_->set_text(ustring::ascii(s));
   } else {
     bottom_tabs_->set_active(0);
+  }
+
+  if (online_) {
+    data::lobby_update_packet packet;
+    packet.slots = coordinator_->host_slot_update();
+    if (is_host && event_triggered(system, System::event_type::kLobbyMemberEntered)) {
+      packet.conditions = conditions_;
+    }
+    if (packet.conditions || packet.slots || packet.start) {
+      broadcast(packet);
+    }
+
+    if (auto request = coordinator_->client_request(); request) {
+      send_request(*request);
+    }
   }
 
   if (auto index = stack().input().assignment(ui::input_device_id::kbm()); index) {

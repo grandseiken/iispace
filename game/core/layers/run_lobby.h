@@ -26,6 +26,7 @@ private:
   void start_game();
 
   std::optional<initial_conditions> conditions_;
+  std::optional<std::uint64_t> host_;
   bool online_ = false;
   ui::TextElement* title_ = nullptr;
   ui::TextElement* subtitle_ = nullptr;

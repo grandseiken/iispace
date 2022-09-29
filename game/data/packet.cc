@@ -44,8 +44,9 @@ result<lobby_update_packet> read_lobby_update_packet(std::span<const std::uint8_
     for (const auto& ps : proto->slots().slot()) {
       auto& slot = data.slots->emplace_back();
       if (ps.is_assigned()) {
-        slot.assigned_user_id = ps.user_id();
+        slot.owner_user_id = ps.owner_user_id();
       }
+      slot.is_ready = ps.is_ready();
     }
   }
   if (proto->has_start()) {
@@ -67,26 +68,13 @@ result<lobby_request_packet> read_lobby_request_packet(std::span<const std::uint
   }
 
   lobby_request_packet data;
-  for (const auto& pr : proto->request()) {
-    auto& request = data.requests.emplace_back();
-    switch (pr.type()) {
-    default:
-    case proto::LobbyRequestPacket::kNone:
-      request.type = lobby_request_packet::request_type::kNone;
-      break;
-    case proto::LobbyRequestPacket::kPlayerJoin:
-      request.type = lobby_request_packet::request_type::kPlayerJoin;
-      break;
-    case proto::LobbyRequestPacket::kPlayerReady:
-      request.type = lobby_request_packet::request_type::kPlayerReady;
-      break;
-    case proto::LobbyRequestPacket::kPlayerLeave:
-      request.type = lobby_request_packet::request_type::kPlayerLeave;
-      break;
-    }
-    request.slot = pr.slot();
-  }
   data.sequence_number = proto->sequence_number();
+  data.slots_requested = proto->slots_requested();
+  for (const auto& ps : proto->slot()) {
+    auto& slot = data.slots.emplace_back();
+    slot.index = ps.index();
+    slot.is_ready = ps.is_ready();
+  }
   return {std::move(data)};
 }
 
@@ -109,10 +97,11 @@ result<std::vector<std::uint8_t>> write_lobby_update_packet(const lobby_update_p
   if (data.slots) {
     for (const auto& slot : *data.slots) {
       auto& ps = *proto.mutable_slots()->add_slot();
-      if (slot.assigned_user_id) {
+      if (slot.owner_user_id) {
         ps.set_is_assigned(true);
-        ps.set_user_id(*slot.assigned_user_id);
+        ps.set_owner_user_id(*slot.owner_user_id);
       }
+      ps.set_is_ready(slot.is_ready);
     }
   }
   if (data.start) {
@@ -128,25 +117,13 @@ result<std::vector<std::uint8_t>> write_lobby_update_packet(const lobby_update_p
 
 result<std::vector<std::uint8_t>> write_lobby_request_packet(const lobby_request_packet& data) {
   proto::LobbyRequestPacket proto;
-  for (const auto& request : data.requests) {
-    auto& pr = *proto.add_request();
-    switch (request.type) {
-    case lobby_request_packet::request_type::kNone:
-      pr.set_type(proto::LobbyRequestPacket::kNone);
-      break;
-    case lobby_request_packet::request_type::kPlayerJoin:
-      pr.set_type(proto::LobbyRequestPacket::kPlayerJoin);
-      break;
-    case lobby_request_packet::request_type::kPlayerReady:
-      pr.set_type(proto::LobbyRequestPacket::kPlayerReady);
-      break;
-    case lobby_request_packet::request_type::kPlayerLeave:
-      pr.set_type(proto::LobbyRequestPacket::kPlayerLeave);
-      break;
-    }
-    pr.set_slot(request.slot);
-  }
   proto.set_sequence_number(data.sequence_number);
+  proto.set_slots_requested(data.slots_requested);
+  for (const auto& slot : data.slots) {
+    auto& ps = *proto.add_slot();
+    ps.set_index(slot.index);
+    ps.set_is_ready(slot.is_ready);
+  }
   return write_proto(proto);
 }
 

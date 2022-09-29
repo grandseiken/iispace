@@ -74,5 +74,6 @@ cc_library(
   implementation_deps = [
     ":common",
     "//game/core/toolkit",
+    "//game/system:header",
   ],
 )

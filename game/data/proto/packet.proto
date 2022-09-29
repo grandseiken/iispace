@@ -15,7 +15,8 @@ message SimPacket {
 message LobbyUpdatePacket {
   message SlotInfo {
     bool is_assigned = 1;
-    uint64 user_id = 2;
+    uint64 owner_user_id = 2;
+    bool is_ready = 3;
   }
 
   message SlotInfoUpdate {
@@ -34,17 +35,12 @@ message LobbyUpdatePacket {
 }
 
 message LobbyRequestPacket {
-  enum RequestType {
-    kNone = 0;
-    kPlayerJoin = 1;
-    kPlayerReady = 2;
-    kPlayerLeave = 3;
+  message SlotInfo {
+    uint32 index = 1;
+    bool is_ready = 2;
   }
 
-  message Request {
-    RequestType type = 1;
-    uint32 slot = 2;
-  }
-  repeated Request request = 1;
-  uint32 sequence_number = 2;
+  uint32 sequence_number = 1;
+  uint32 slots_requested = 2;
+  repeated SlotInfo slot = 3;
 }

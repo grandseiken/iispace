@@ -24,7 +24,8 @@ struct sim_packet {
 // Sent from host to all lobby members on lobby state change.
 struct lobby_update_packet {
   struct slot_info {
-    std::optional<std::uint64_t> assigned_user_id;
+    std::optional<std::uint64_t> owner_user_id;
+    bool is_ready = false;
   };
 
   struct start_game {
@@ -41,19 +42,14 @@ struct lobby_update_packet {
 // Sent from lobby member to host to request state change.
 // TODO: game version check? Or should this be handled by System layer automatically?
 struct lobby_request_packet {
-  enum class request_type {
-    kNone = 0,
-    kPlayerJoin = 1,
-    kPlayerReady = 2,
-    kPlayerLeave = 3,
+  struct slot_info {
+    std::uint32_t index = 0;
+    bool is_ready = false;
   };
 
-  struct request {
-    request_type type = request_type::kNone;
-    std::uint32_t slot = 0;
-  };
-  std::vector<request> requests;
   std::uint32_t sequence_number = 0;
+  std::uint32_t slots_requested = 0;
+  std::vector<slot_info> slots;
 };
 
 result<sim_packet> read_sim_packet(std::span<const std::uint8_t>);
