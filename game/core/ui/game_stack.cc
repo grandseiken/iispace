@@ -111,7 +111,7 @@ void GameStack::update(bool controller_change) {
       map_cursor(layer_input.global);
       std::for_each(layer_input.assignments.begin(), layer_input.assignments.end(), map_cursor);
       // TODO: avoiding double-inputs at moment UI changes, but likely need same inside elements?
-      if (std::distance(layers_.begin(), it) >= size) {
+      if (std::distance(layers_.begin(), it) >= static_cast<std::ptrdiff_t>(size)) {
         layer_input.global.join_game_inputs.clear();
         layer_input.global.key_pressed.fill(false);
         for (auto& frame : layer_input.assignments) {

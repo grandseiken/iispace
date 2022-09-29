@@ -49,9 +49,10 @@ result<lobby_update_packet> read_lobby_update_packet(std::span<const std::uint8_
     }
   }
   if (proto->has_start()) {
-    auto& start = data.start.emplace();
+    lobby_update_packet::start_game start;
     start.countdown = proto->start().countdown();
     start.lock_slots = proto->start().lock_slots();
+    data.start = start;
   }
   return {std::move(data)};
 }

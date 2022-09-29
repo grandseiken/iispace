@@ -6,6 +6,7 @@
 #include <cstddef>
 #include <optional>
 #include <unordered_set>
+#include <vector>
 
 namespace ii::ui {
 

@@ -63,7 +63,7 @@ public:
     add_button(layout, "Hard mode", [=] { start_game(game_mode::kHard); });
     add_button(layout, "Fast mode", [=] { start_game(game_mode::kFast); });
     add_button(layout, "W-hat mode", [=] { start_game(game_mode::kWhat); });
-    add_button(layout, "Back", [=] { remove(); });
+    add_button(layout, "Back", [this] { remove(); });
 
     stack.set_volume(.5f);
   }
@@ -91,12 +91,12 @@ MainMenuLayer::MainMenuLayer(ui::GameStack& stack) : ui::GameLayer{stack} {
                [this] { this->stack().add<CreateGameLayer>(/* online */ false); });
     add_button(layout, "Host online game (WIP)",
                [this] { this->stack().add<CreateGameLayer>(/* online */ true); });
-    add_button(layout, "Join online game (NYI)", [this] { /* TODO */ });
+    add_button(layout, "Join online game (NYI)", [] { /* TODO */ });
   } else {
     add_button(layout, "Start game",
                [this] { this->stack().add<CreateGameLayer>(/* online */ false); });
   }
-  add_button(layout, "View replay (NYI)", [this] { /* TODO */ });
+  add_button(layout, "View replay (NYI)", [] { /* TODO */ });
   add_button(layout, "Exit", [this] { exit_timer_ = 8; });
 
   auto& top = add_main_layout(this, false);

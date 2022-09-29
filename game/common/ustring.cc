@@ -66,6 +66,7 @@ ustring ustring::substr(std::size_t offset, std::size_t count) const {
   case ustring_encoding::kUtf32:
     return ustring::utf32(std::get<std::u32string>(s_).substr(offset, count));
   }
+  return {};
 }
 
 ustring ustring::operator+(const ustring& s) const {
@@ -179,6 +180,7 @@ ustring_view ustring_view::substr(std::size_t offset, std::size_t count) const {
   case ustring_encoding::kUtf32:
     return ustring_view::utf32(std::get<std::u32string_view>(s_).substr(offset, count));
   }
+  return ustring_view::ascii({});
 }
 
 }  // namespace ii
