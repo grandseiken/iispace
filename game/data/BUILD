@@ -1,18 +1,17 @@
 cc_library(
-  name = "conditions",
-  hdrs = ["conditions.h"],
+  name = "internal",
+  hdrs = [
+    "conditions.h",
+    "crypt.h",
+    "input_frame.h",
+  ],
+  srcs = ["crypt.cc"],
   deps = [
     "//game/common:types",
     "//game/data/proto:ii_proto_cc",
     "//game/logic/sim/io:conditions",
+    "//game/logic/sim/io:player",
   ],
-)
-
-cc_library(
-  name = "crypt",
-  hdrs = ["crypt.h"],
-  srcs = ["crypt.cc"],
-  deps = ["//game/common:types"],
   implementation_deps = ["@zlib"],
 )
 
@@ -33,8 +32,7 @@ cc_library(
     "//game/logic/sim/io:player",
   ],
   implementation_deps = [
-    ":conditions",
-    ":crypt",
+    ":internal",
     "//game/common:math",
     "//game/data/proto:ii_proto_cc",
   ],
@@ -51,7 +49,7 @@ cc_library(
     "//game/logic/sim/io:output",
   ],
   implementation_deps = [
-    ":crypt",
+    ":internal",
     "//game/data/proto:ii_proto_cc",
     "//game/logic/sim/io:player",
   ],

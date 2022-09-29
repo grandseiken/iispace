@@ -2,6 +2,7 @@
 #include "game/common/math.h"
 #include "game/data/conditions.h"
 #include "game/data/crypt.h"
+#include "game/data/input_frame.h"
 #include "game/data/proto/replay.pb.h"
 #include <array>
 #include <sstream>
@@ -43,7 +44,7 @@ result<proto::Replay> read_replay_file(std::span<const std::uint8_t> bytes) {
                        {reinterpret_cast<const std::uint8_t*>(kLegacyReplayEncryptionKey),
                         std::strlen(kLegacyReplayEncryptionKey)}));
   if (!decompressed) {
-    return unexpected("couldn't decompress replay");
+    return unexpected("not a valid replay file");
   }
 
   std::string dc_string{reinterpret_cast<const char*>(decompressed->data()),
@@ -93,7 +94,7 @@ result<proto::Replay> read_replay_file(std::span<const std::uint8_t> bytes) {
   };
 
   while (!dc.eof()) {
-    proto::PlayerFrame& frame = *result.add_player_frame();
+    proto::InputFrame& frame = *result.add_player_frame();
     frame.set_velocity_x(fixed_read(dc));
     frame.set_velocity_y(fixed_read(dc));
     frame.set_target_x(fixed_read(dc));
@@ -147,19 +148,7 @@ std::optional<input_frame> ReplayReader::next_input_frame() {
   if (impl_->frame_index >= total_input_frames()) {
     return std::nullopt;
   }
-  const auto& replay_frame = impl_->replay.player_frame(impl_->frame_index++);
-  input_frame frame;
-  frame.velocity = {fixed::from_internal(replay_frame.velocity_x()),
-                    fixed::from_internal(replay_frame.velocity_y())};
-  vec2 target{fixed::from_internal(replay_frame.target_x()),
-              fixed::from_internal(replay_frame.target_y())};
-  if (replay_frame.target_relative()) {
-    frame.target_relative = target;
-  } else {
-    frame.target_absolute = target;
-  }
-  frame.keys = replay_frame.keys();
-  return frame;
+  return read_input_frame(impl_->replay.player_frame(impl_->frame_index++));
 }
 
 std::vector<input_frame> ReplayReader::next_tick_input_frames() {
@@ -202,18 +191,7 @@ ReplayWriter::ReplayWriter(const ii::initial_conditions& conditions)
 }
 
 void ReplayWriter::add_input_frame(const input_frame& frame) {
-  auto& replay_frame = *impl_->replay.add_player_frame();
-  replay_frame.set_velocity_x(frame.velocity.x.to_internal());
-  replay_frame.set_velocity_y(frame.velocity.y.to_internal());
-  if (frame.target_relative) {
-    replay_frame.set_target_relative(true);
-    replay_frame.set_target_x(frame.target_relative->x.to_internal());
-    replay_frame.set_target_y(frame.target_relative->y.to_internal());
-  } else if (frame.target_absolute) {
-    replay_frame.set_target_x(frame.target_absolute->x.to_internal());
-    replay_frame.set_target_y(frame.target_absolute->y.to_internal());
-  }
-  replay_frame.set_keys(frame.keys);
+  *impl_->replay.add_player_frame() = write_input_frame(frame);
 }
 
 result<std::vector<std::uint8_t>> ReplayWriter::write() const {

@@ -11,6 +11,7 @@ proto_library(
   srcs = [
     "conditions.proto",
     "config.proto",
+    "input_frame.proto",
     "replay.proto",
     "savegame.proto",
   ],
