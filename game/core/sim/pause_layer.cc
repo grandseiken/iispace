@@ -11,12 +11,7 @@
 namespace ii {
 
 bool sim_should_pause(ui::GameStack& stack) {
-  for (const auto& event : stack.system().events()) {
-    if (event.type == System::event_type::kOverlayActivated) {
-      return true;
-    }
-  }
-  return false;
+  return event_triggered(stack.system(), System::event_type::kOverlayActivated).has_value();
 }
 
 PauseLayer::PauseLayer(ui::GameStack& stack, std::function<void()> on_quit)

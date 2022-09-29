@@ -54,6 +54,7 @@ cc_library(
     ":utility",
     "//game/core/sim:sim_layer",
     "//game/core/toolkit",
+    "//game/data:packet",
     "//game/logic/sim/io:player",
     "//game/io",
     "//game/system:header",

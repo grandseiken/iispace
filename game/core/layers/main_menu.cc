@@ -122,14 +122,11 @@ void MainMenuLayer::update_content(const ui::input_frame& input, ui::output_fram
     return;
   }
 
-  for (const auto& e : stack().system().events()) {
-    if (e.type == System::event_type::kLobbyJoinRequested) {
-      auto async = this->stack().system().join_lobby(e.id);
-      this->stack().add<AsyncWaitLayer<void>>(
-          ustring::ascii("Joining lobby..."), std::move(async),
-          [this] { stack().add<RunLobbyLayer>(std::nullopt, /* online */ true); });
-      break;
-    }
+  if (auto e = event_triggered(stack().system(), System::event_type::kLobbyJoinRequested); e) {
+    auto async = this->stack().system().join_lobby(e->id);
+    this->stack().add<AsyncWaitLayer<void>>(
+        ustring::ascii("Joining lobby..."), std::move(async),
+        [this] { stack().add<RunLobbyLayer>(std::nullopt, /* online */ true); });
   }
 
   auto& system = stack().system();

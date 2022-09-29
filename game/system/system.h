@@ -107,6 +107,7 @@ public:
 };
 
 std::unique_ptr<System> create_system();
+std::optional<System::event> event_triggered(const System& system, System::event_type type);
 
 }  // namespace ii
 

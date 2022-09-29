@@ -14,4 +14,13 @@ std::unique_ptr<System> create_system() {
 #endif
 }
 
+std::optional<System::event> event_triggered(const System& system, System::event_type type) {
+  for (const auto& e : system.events()) {
+    if (e.type == type) {
+      return e;
+    }
+  }
+  return std::nullopt;
+}
+
 }  // namespace ii

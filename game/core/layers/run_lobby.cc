@@ -6,6 +6,7 @@
 #include "game/core/toolkit/layout.h"
 #include "game/core/toolkit/panel.h"
 #include "game/core/toolkit/text.h"
+#include "game/data/packet.h"
 #include "game/io/io.h"
 #include "game/logic/sim/io/player.h"
 #include "game/system/system.h"
@@ -212,8 +213,7 @@ RunLobbyLayer::RunLobbyLayer(ui::GameStack& stack, std::optional<initial_conditi
   back_button_ = bottom.add_back<ui::Button>();
   const auto* back_text = online_ ? "Leave lobby" : "Back";
   standard_button(*back_button_).set_text(ustring::ascii(back_text)).set_callback([this] {
-    this->stack().system().leave_lobby();
-    clear_and_remove();
+    disconnect_and_remove();
   });
 
   main.set_orientation(ui::orientation::kHorizontal);
@@ -230,28 +230,69 @@ void RunLobbyLayer::update_content(const ui::input_frame& input, ui::output_fram
     title_text = mode_title(*conditions_);
   }
 
-  if (online_) {
-    auto& system = stack().system();
-    const auto& events = system.events();
-    bool disconnected = !system.current_lobby() ||
-        (!system.current_lobby()->host && !conditions_) ||
-        std::any_of(events.begin(), events.end(),
-                    [](const auto& e) { return e.type == System::event_type::kLobbyDisconnected; });
-    if (disconnected) {
-      stack().add<ErrorLayer>(ustring::ascii("Disconnected"), [this] {
-        stack().system().leave_lobby();
-        clear_and_remove();
-      });
+  auto& system = stack().system();
+  bool is_host = online_ && system.current_lobby() && !system.current_lobby()->host;
+
+  auto broadcast = [&](const data::lobby_update_packet& packet) {
+    auto bytes = data::write_lobby_update_packet(packet);
+    if (!bytes) {
+      stack().add<ErrorLayer>(ustring::ascii("Error sending lobby update: " + bytes.error()),
+                              [this] { disconnect_and_remove(); });
       return;
     }
-    auto lobby = *system.current_lobby();
-    if (lobby.host) {
-      title_text += ustring::ascii(" (") + lobby.host->name + ustring::ascii("'s game)");
-    } else {
-      title_text += ustring::ascii(" (Host)");
+    System::send_message message;
+    message.send_flags = System::send_flags::kSendReliable;
+    message.channel = 0;
+    message.bytes = *bytes;
+    system.broadcast(message);
+  };
+
+  auto receive_broadcast = [&] {
+    std::vector<System::received_message> messages;
+    std::vector<data::lobby_update_packet> packets;
+    system.receive(0, messages);
+    for (const auto& m : messages) {
+      if (!system.current_lobby() || !system.current_lobby()->host ||
+          m.source_user_id != system.current_lobby()->host->id) {
+        continue;
+      }
+      auto packet = data::read_lobby_update_packet(m.bytes);
+      if (!packet) {
+        stack().add<ErrorLayer>(ustring::ascii("Error receiving lobby update: " + packet.error()),
+                                [this] { disconnect_and_remove(); });
+        break;
+      }
+      packets.emplace_back(std::move(*packet));
     }
-    ustring s;
-    for (const auto& m : lobby.members) {
+    return packets;
+  };
+
+  if (online_) {
+    bool disconnected = !system.current_lobby() || (is_host && !conditions_) ||
+        event_triggered(system, System::event_type::kLobbyDisconnected);
+    if (disconnected) {
+      stack().add<ErrorLayer>(ustring::ascii("Disconnected"), [this] { disconnect_and_remove(); });
+      return;
+    }
+
+    if (is_host && event_triggered(system, System::event_type::kLobbyMemberEntered)) {
+      data::lobby_update_packet packet;
+      packet.conditions = conditions_;
+      broadcast(packet);
+    }
+    if (!is_host) {
+      for (const auto& packet : receive_broadcast()) {
+        if (packet.conditions) {
+          conditions_ = *packet.conditions;
+        }
+      }
+    }
+
+    title_text += is_host
+        ? ustring::ascii(" (Host)")
+        : ustring::ascii(" (") + system.current_lobby()->host->name + ustring::ascii("'s game)");
+    auto s = ustring::ascii("In lobby: ");
+    for (const auto& m : system.current_lobby()->members) {
       if (!s.empty()) {
         s += ustring::ascii(", ");
       }
@@ -328,12 +369,16 @@ void RunLobbyLayer::update_content(const ui::input_frame& input, ui::output_fram
   }
 
   if (input.pressed(ui::key::kCancel)) {
-    if (online_) {
-      stack().system().leave_lobby();
-    }
     output.sounds.emplace(sound::kMenuAccept);
-    clear_and_remove();
+    disconnect_and_remove();
   }
+}
+
+void RunLobbyLayer::disconnect_and_remove() {
+  if (online_) {
+    stack().system().leave_lobby();
+  }
+  clear_and_remove();
 }
 
 void RunLobbyLayer::clear_and_remove() {

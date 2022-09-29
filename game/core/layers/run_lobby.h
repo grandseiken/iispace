@@ -19,6 +19,7 @@ public:
   void update_content(const ui::input_frame&, ui::output_frame&) override;
 
 private:
+  void disconnect_and_remove();
   void clear_and_remove();
   void start_game();
 
