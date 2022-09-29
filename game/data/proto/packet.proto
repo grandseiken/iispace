@@ -30,6 +30,7 @@ message LobbyUpdatePacket {
   InitialConditions conditions = 1;
   SlotInfoUpdate slots = 2;
   StartGame start = 3;
+  map<uint64, uint32> sequence_numbers = 4;
 }
 
 message LobbyRequestPacket {
@@ -45,4 +46,5 @@ message LobbyRequestPacket {
     uint32 slot = 2;
   }
   repeated Request request = 1;
+  uint32 sequence_number = 2;
 }

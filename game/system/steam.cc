@@ -421,7 +421,7 @@ async_result<void> SteamSystem::join_lobby(std::uint64_t lobby_id) {
   return future;
 }
 
-auto SteamSystem::current_lobby() const -> std::optional<lobby_info> {
+auto SteamSystem::current_lobby() const -> const std::optional<lobby_info>& {
   return impl_->current_lobby;
 }
 

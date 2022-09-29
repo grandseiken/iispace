@@ -6,6 +6,7 @@
 #include <cstdint>
 #include <optional>
 #include <span>
+#include <unordered_map>
 #include <vector>
 
 namespace ii::data {
@@ -34,6 +35,7 @@ struct lobby_update_packet {
   std::optional<initial_conditions> conditions;
   std::optional<std::vector<slot_info>> slots;
   std::optional<start_game> start;
+  std::unordered_map<std::uint64_t, std::uint32_t> sequence_numbers;
 };
 
 // Sent from lobby member to host to request state change.
@@ -51,6 +53,7 @@ struct lobby_request_packet {
     std::uint32_t slot = 0;
   };
   std::vector<request> requests;
+  std::uint32_t sequence_number = 0;
 };
 
 result<sim_packet> read_sim_packet(std::span<const std::uint8_t>);

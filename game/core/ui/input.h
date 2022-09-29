@@ -29,6 +29,11 @@ struct input_device_id {
 
   static input_device_id kbm() { return {}; }
   static input_device_id controller(std::size_t index) { return {index}; }
+
+  bool operator==(const input_device_id& id) const {
+    return controller_index == id.controller_index;
+  }
+  bool operator!=(const input_device_id& id) const { return !operator==(id); }
 };
 
 struct input_frame {

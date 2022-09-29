@@ -51,6 +51,7 @@ cc_library(
   ],
   implementation_deps = [
     ":common",
+    ":slot_coordinator",
     ":utility",
     "//game/core/sim:sim_layer",
     "//game/core/toolkit",
@@ -60,4 +61,18 @@ cc_library(
     "//game/system:header",
   ],
   visibility = ["//visibility:public"],
+)
+
+cc_library(
+  name = "slot_coordinator",
+  hdrs = ["slot_coordinator.h"],
+  srcs = ["slot_coordinator.cc"],
+  deps = [
+    "//game/core/ui",
+    "//game/data:packet",
+  ],
+  implementation_deps = [
+    ":common",
+    "//game/core/toolkit",
+  ],
 )

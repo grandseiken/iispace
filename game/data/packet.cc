@@ -54,6 +54,9 @@ result<lobby_update_packet> read_lobby_update_packet(std::span<const std::uint8_
     start.lock_slots = proto->start().lock_slots();
     data.start = start;
   }
+  for (const auto& pair : proto->sequence_numbers()) {
+    data.sequence_numbers[pair.first] = pair.second;
+  }
   return {std::move(data)};
 }
 
@@ -83,6 +86,7 @@ result<lobby_request_packet> read_lobby_request_packet(std::span<const std::uint
     }
     request.slot = pr.slot();
   }
+  data.sequence_number = proto->sequence_number();
   return {std::move(data)};
 }
 
@@ -116,6 +120,9 @@ result<std::vector<std::uint8_t>> write_lobby_update_packet(const lobby_update_p
     ps.set_countdown(data.start->countdown);
     ps.set_lock_slots(data.start->lock_slots);
   }
+  for (const auto& pair : data.sequence_numbers) {
+    (*proto.mutable_sequence_numbers())[pair.first] = pair.second;
+  }
   return write_proto(proto);
 }
 
@@ -139,6 +146,7 @@ result<std::vector<std::uint8_t>> write_lobby_request_packet(const lobby_request
     }
     pr.set_slot(request.slot);
   }
+  proto.set_sequence_number(data.sequence_number);
   return write_proto(proto);
 }
 

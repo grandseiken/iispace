@@ -280,11 +280,19 @@ void InputAdapter::assign_input_device(input_device_id id, std::uint32_t assignm
   }
 }
 
-bool InputAdapter::is_assigned(input_device_id id) {
+std::optional<std::uint32_t> InputAdapter::assignment(input_device_id id) {
   if (id.controller_index) {
-    return controller_assignments_.contains(*id.controller_index);
+    auto it = controller_assignments_.find(*id.controller_index);
+    if (it == controller_assignments_.end()) {
+      return std::nullopt;
+    }
+    return it->second;
   }
-  return kbm_assignment_.has_value();
+  return kbm_assignment_;
+}
+
+bool InputAdapter::is_assigned(input_device_id id) {
+  return assignment(id).has_value();
 }
 
 void InputAdapter::unassign(std::uint32_t assignment) {

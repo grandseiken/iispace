@@ -1,7 +1,8 @@
-#ifndef II_GAME_CORE_LAYERS_PLAYER_JOIN_H
-#define II_GAME_CORE_LAYERS_PLAYER_JOIN_H
+#ifndef II_GAME_CORE_LAYERS_RUN_LOBBY_H
+#define II_GAME_CORE_LAYERS_RUN_LOBBY_H
 #include "game/core/ui/game_stack.h"
 #include <cstdint>
+#include <memory>
 #include <optional>
 #include <vector>
 
@@ -11,10 +12,11 @@ class Button;
 class TabContainer;
 class TextElement;
 }  // namespace ui
-class AssignmentPanel;
+class LobbySlotCoordinator;
 
 class RunLobbyLayer : public ui::GameLayer {
 public:
+  ~RunLobbyLayer() override;
   RunLobbyLayer(ui::GameStack& stack, std::optional<initial_conditions> conditions, bool online);
   void update_content(const ui::input_frame&, ui::output_frame&) override;
 
@@ -30,7 +32,7 @@ private:
   ui::TabContainer* bottom_tabs_ = nullptr;
   ui::Button* back_button_ = nullptr;
   ui::TextElement* all_ready_text_ = nullptr;
-  std::vector<AssignmentPanel*> assignment_panels_;
+  std::unique_ptr<LobbySlotCoordinator> coordinator_;
   std::optional<std::uint32_t> all_ready_timer_;
 };
 

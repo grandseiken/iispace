@@ -32,7 +32,10 @@ public:
   void leave_lobby() override {}
   async_result<void> create_lobby() override { return {unexpected("unsupported")}; }
   async_result<void> join_lobby(std::uint64_t) override { return {unexpected("unsupported")}; }
-  std::optional<lobby_info> current_lobby() const override { return std::nullopt; }
+  const std::optional<lobby_info>& current_lobby() const override {
+    static const std::optional<lobby_info> kEmpty;
+    return kEmpty;
+  }
   void show_invite_dialog() const override {}
 
   std::optional<session_info> session(std::uint64_t) const override { return std::nullopt; }

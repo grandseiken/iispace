@@ -22,8 +22,10 @@ public:
   // support from IoLayer.
   void clear_assignments();
   void assign_input_device(input_device_id id, std::uint32_t assignment);
-  bool is_assigned(input_device_id);
   void unassign(std::uint32_t assignment);
+
+  std::optional<std::uint32_t> assignment(input_device_id);
+  bool is_assigned(input_device_id);
 
 private:
   io::IoLayer& io_layer_;
