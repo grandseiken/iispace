@@ -11,6 +11,7 @@
 #include "game/core/toolkit/text.h"
 #include "game/io/io.h"
 #include "game/system/system.h"
+#include "game/version.h"
 #include <utility>
 
 namespace ii {
@@ -139,10 +140,11 @@ void MainMenuLayer::update_content(const ui::input_frame& input, ui::output_fram
       friends_online += info.in_game ? 1u : 0u;
       friends_in_game += info.lobby_id ? 1u : 0u;
     }
-    auto text = "Logged in as: " + to_utf8(system.local_user().name) +
-        "\nFriends online: " + std::to_string(friends_online) +
-        "\nFriends in-game: " + std::to_string(friends_in_game);
-    top_text_->set_text(ustring::utf8(text));
+    auto text = ustring::ascii("Version: " + std::string{kGameVersion} + "\nLogged in as: ") +
+        system.local_user().name +
+        ustring::ascii("\nFriends online: " + std::to_string(friends_online) +
+                       "\nFriends in-game: " + std::to_string(friends_in_game));
+    top_text_->set_text(std::move(text));
   }
 }
 

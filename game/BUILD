@@ -2,6 +2,12 @@ load("@rules_pkg//:pkg.bzl", "pkg_zip")
 load("@bazel_skylib//rules:write_file.bzl", "write_file")
 
 cc_library(
+  name = "version",
+  hdrs = ["version.h"],
+  visibility = ["//visibility:public"],
+)
+
+cc_library(
   name = "flags",
   hdrs = ["flags.h"],
   deps = ["//game/common:types"],

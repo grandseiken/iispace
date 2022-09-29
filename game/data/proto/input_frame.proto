@@ -12,4 +12,3 @@ message InputFrame {
 
   uint32 keys = 6;
 }
-

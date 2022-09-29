@@ -100,7 +100,7 @@ struct peer_t {
 
   struct received_packet {
     std::uint64_t delivery_tick_count = 0;
-    sim_packet packet;
+    data::sim_packet packet;
   };
 
   std::string id;

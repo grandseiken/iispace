@@ -2,7 +2,7 @@
 #include "game/common/raw_ptr.h"
 #include <zlib.h>
 
-namespace ii {
+namespace ii::data {
 
 std::vector<std::uint8_t>
 crypt(std::span<const std::uint8_t> text, std::span<const std::uint8_t> key) {
@@ -83,4 +83,4 @@ ii::result<std::vector<std::uint8_t>> decompress(std::span<const std::uint8_t> b
   return {std::move(decompressed)};
 }
 
-}  // namespace ii
+}  // namespace ii::data

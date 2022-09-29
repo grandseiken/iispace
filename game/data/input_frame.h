@@ -3,14 +3,13 @@
 #include "game/data/proto/input_frame.pb.h"
 #include "game/logic/sim/io/player.h"
 
-namespace ii {
+namespace ii::data {
 
 inline input_frame read_input_frame(const proto::InputFrame& proto) {
   input_frame frame;
   frame.velocity = {fixed::from_internal(proto.velocity_x()),
                     fixed::from_internal(proto.velocity_y())};
-  vec2 target{fixed::from_internal(proto.target_x()),
-              fixed::from_internal(proto.target_y())};
+  vec2 target{fixed::from_internal(proto.target_x()), fixed::from_internal(proto.target_y())};
   if (proto.target_relative()) {
     frame.target_relative = target;
   } else {
@@ -36,6 +35,6 @@ inline proto::InputFrame write_input_frame(const input_frame& frame) {
   return proto;
 }
 
-}  // namespace ii
+}  // namespace ii::data
 
 #endif

@@ -36,7 +36,7 @@ struct ReplayViewer::impl_t {
 
   struct replay_network_packet {
     std::uint64_t delivery_tick_count = 0;
-    sim_packet packet;
+    data::sim_packet packet;
   };
   std::mt19937_64 engine;
   std::vector<replay_network_packet> replay_packets;

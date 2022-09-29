@@ -4,6 +4,7 @@ cc_library(
     "conditions.h",
     "crypt.h",
     "input_frame.h",
+    "proto_tools.h",
   ],
   srcs = ["crypt.cc"],
   deps = [
@@ -18,7 +19,14 @@ cc_library(
 cc_library(
   name = "packet",
   hdrs = ["packet.h"],
-  deps = ["//game/logic/sim/io:player"],
+  srcs = ["packet.cc"],
+  deps = [
+    ":internal",
+    "//game/common:types",
+    "//game/logic/sim/io:conditions",
+    "//game/logic/sim/io:player",
+  ],
+  implementation_deps = ["//game/data/proto:ii_proto_cc"],
   visibility = ["//visibility:public"],
 )
 
@@ -61,6 +69,9 @@ cc_library(
   hdrs = ["config.h"],
   srcs = ["config.cc"],
   deps = ["//game/common:types"],
-  implementation_deps = ["//game/data/proto:ii_proto_cc"],
+  implementation_deps = [
+    ":internal",
+    "//game/data/proto:ii_proto_cc",
+  ],
   visibility = ["//visibility:public"],
 )

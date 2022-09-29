@@ -4,7 +4,7 @@
 #include "game/data/proto/conditions.pb.h"
 #include "game/logic/sim/io/conditions.h"
 
-namespace ii {
+namespace ii::data {
 
 inline result<compatibility_level> read_compatibility_level(proto::CompatibilityLevel::Enum value) {
   switch (value) {
@@ -98,6 +98,6 @@ inline proto::InitialConditions write_initial_conditions(const initial_condition
   return proto;
 }
 
-}  // namespace ii
+}  // namespace ii::data
 
 #endif

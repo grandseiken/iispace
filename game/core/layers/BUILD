@@ -31,6 +31,7 @@ cc_library(
     ":common",
     ":run_lobby",
     ":utility",
+    "//game:version",
     "//game/core:game_options",
     "//game/core/sim:sim_layer",
     "//game/core/toolkit",

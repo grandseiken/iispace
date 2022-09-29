@@ -1,0 +1,48 @@
+syntax = "proto3";
+option optimize_for = LITE_RUNTIME;
+package ii.proto;
+import "game/data/proto/conditions.proto";
+import "game/data/proto/input_frame.proto";
+
+message SimPacket {
+  uint64 tick_count = 1;
+  repeated InputFrame input_frame = 2;
+
+  uint64 canonical_tick_count = 3;
+  uint32 canonical_checksum = 4;
+}
+
+message LobbyUpdatePacket {
+  message SlotInfo {
+    bool is_assigned = 1;
+    uint64 user_id = 2;
+  }
+
+  message SlotInfoUpdate {
+    repeated SlotInfo slot = 1;
+  }
+
+  message StartGame {
+    bool countdown = 1;
+    bool lock_slots = 2;
+  }
+
+  InitialConditions conditions = 1;
+  SlotInfoUpdate slots = 2;
+  StartGame start = 3;
+}
+
+message LobbyRequestPacket {
+  enum RequestType {
+    kNone = 0;
+    kPlayerJoin = 1;
+    kPlayerReady = 2;
+    kPlayerLeave = 3;
+  }
+
+  message Request {
+    RequestType type = 1;
+    uint32 slot = 2;
+  }
+  repeated Request request = 1;
+}

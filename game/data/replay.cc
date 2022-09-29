@@ -4,6 +4,7 @@
 #include "game/data/crypt.h"
 #include "game/data/input_frame.h"
 #include "game/data/proto/replay.pb.h"
+#include "game/data/proto_tools.h"
 #include <array>
 #include <sstream>
 
@@ -29,13 +30,9 @@ const char* kLegacyReplayEncryptionKey =
 const std::array<std::uint8_t, 2> kReplayEncryptionKey = {'<', '>'};
 
 result<proto::Replay> read_replay_file(std::span<const std::uint8_t> bytes) {
-  proto::Replay result;
   auto decompressed = decompress(crypt(bytes, kReplayEncryptionKey));
   if (decompressed) {
-    if (!result.ParseFromArray(decompressed->data(), static_cast<int>(decompressed->size()))) {
-      return unexpected("not a valid replay file");
-    }
-    return {std::move(result)};
+    return read_proto<proto::Replay>(*decompressed);
   }
 
   // Try parsing as legacy v1.3 replay.
@@ -44,7 +41,7 @@ result<proto::Replay> read_replay_file(std::span<const std::uint8_t> bytes) {
                        {reinterpret_cast<const std::uint8_t*>(kLegacyReplayEncryptionKey),
                         std::strlen(kLegacyReplayEncryptionKey)}));
   if (!decompressed) {
-    return unexpected("not a valid replay file");
+    return unexpected("invalid data");
   }
 
   std::string dc_string{reinterpret_cast<const char*>(decompressed->data()),
@@ -53,9 +50,10 @@ result<proto::Replay> read_replay_file(std::span<const std::uint8_t> bytes) {
   std::string line;
   std::getline(dc, line);
   if (line != kLegacyReplayVersion) {
-    return unexpected("not a valid replay file");
+    return unexpected("invalid data");
   }
 
+  proto::Replay result;
   result.set_game_version(kLegacyReplayVersion);
   std::uint32_t players = 0;
   std::uint32_t seed = 0;
@@ -195,17 +193,15 @@ void ReplayWriter::add_input_frame(const input_frame& frame) {
 }
 
 result<std::vector<std::uint8_t>> ReplayWriter::write() const {
-  std::vector<std::uint8_t> data;
-  data.resize(impl_->replay.ByteSizeLong());
-  if (!impl_->replay.SerializeToArray(data.data(), static_cast<int>(data.size()))) {
-    return unexpected("couldn't serialize replay");
+  auto data = write_proto(impl_->replay);
+  if (!data) {
+    return unexpected(data.error());
   }
-  auto compressed = compress(data);
+  auto compressed = compress(*data);
   if (!compressed) {
     return unexpected("couldn't compress replay: " + compressed.error());
   }
-  data = crypt(*compressed, kReplayEncryptionKey);
-  return {std::move(data)};
+  return crypt(*compressed, kReplayEncryptionKey);
 }
 
 const ii::initial_conditions& ReplayWriter::initial_conditions() const {

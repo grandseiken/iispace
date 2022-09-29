@@ -12,6 +12,7 @@ proto_library(
     "conditions.proto",
     "config.proto",
     "input_frame.proto",
+    "packet.proto",
     "replay.proto",
     "savegame.proto",
   ],

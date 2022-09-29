@@ -42,10 +42,10 @@ public:
   // input lag).
   void set_input_delay_ticks(std::uint64_t delay_ticks);
   // May update canonical state; never updates predicted state.
-  void input_packet(const std::string& remote_id, const sim_packet& packet);
+  void input_packet(const std::string& remote_id, const data::sim_packet& packet);
   // Always updates predicted state, advancing its tick count by exactly one. May or may not update
   // canonical state.
-  std::vector<sim_packet> update(std::vector<input_frame> local_input);
+  std::vector<data::sim_packet> update(std::vector<input_frame> local_input);
 
   const SimState& canonical() const { return canonical_state_; }
   const SimState& predicted() const { return predicted_state_; }

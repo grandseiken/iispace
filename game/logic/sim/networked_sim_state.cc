@@ -80,7 +80,7 @@ void NetworkedSimState::set_input_delay_ticks(std::uint64_t delay_ticks) {
   input_delay_ticks_ = delay_ticks;
 }
 
-void NetworkedSimState::input_packet(const std::string& remote_id, const sim_packet& packet) {
+void NetworkedSimState::input_packet(const std::string& remote_id, const data::sim_packet& packet) {
   auto it = mapping_.remote.find(remote_id);
   if (it == mapping_.remote.end()) {
     assert(false);
@@ -138,8 +138,8 @@ void NetworkedSimState::input_packet(const std::string& remote_id, const sim_pac
   partial_frames_.pop_front();
 }
 
-std::vector<sim_packet> NetworkedSimState::update(std::vector<input_frame> local_input) {
-  std::vector<sim_packet> packet_output;
+std::vector<data::sim_packet> NetworkedSimState::update(std::vector<input_frame> local_input) {
+  std::vector<data::sim_packet> packet_output;
   while (input_delayed_frames_.size() < 1 + input_delay_ticks_) {
     auto& packet = packet_output.emplace_back();
     packet.input_frames = local_input;
