@@ -212,12 +212,12 @@ void RunLobbyLayer::update_content(const ui::input_frame& input, ui::output_fram
         conditions_ = *packet.conditions;
       }
       if (!is_host && packet.slots) {
-        coordinator_->handle(*packet.slots);
+        coordinator_->handle(*packet.slots, output);
       }
     }
     for (const auto& pair : receive_requests()) {
       if (is_host) {
-        coordinator_->handle(pair.first, pair.second);
+        coordinator_->handle(pair.first, pair.second, output);
       }
     }
 

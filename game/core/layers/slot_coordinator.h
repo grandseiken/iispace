@@ -13,8 +13,11 @@ class LobbySlotPanel;
 class LobbySlotCoordinator {
 public:
   LobbySlotCoordinator(ui::GameStack& stack, ui::Element& element, bool online);
-  void handle(const std::vector<data::lobby_update_packet::slot_info>& info);
-  void handle(std::uint64_t client_user_id, const data::lobby_request_packet& request);
+
+  void
+  handle(const std::vector<data::lobby_update_packet::slot_info>& info, ui::output_frame& output);
+  void handle(std::uint64_t client_user_id, const data::lobby_request_packet& request,
+              ui::output_frame& output);
   bool update(const std::vector<ui::input_device_id>& joins);
 
   bool game_ready() const;
@@ -43,7 +46,6 @@ private:
   std::vector<ui::input_device_id> queued_devices_;
   std::unordered_map<std::uint64_t, std::uint32_t> host_sequence_numbers_;
 
-  std::uint32_t client_sequence_number_ = 0;
   bool host_slot_info_dirty_ = false;
   bool client_slot_info_dirty_ = false;
 };

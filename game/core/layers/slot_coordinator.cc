@@ -172,20 +172,27 @@ LobbySlotCoordinator::LobbySlotCoordinator(ui::GameStack& stack, ui::Element& el
   }
 }
 
-void LobbySlotCoordinator::handle(const std::vector<data::lobby_update_packet::slot_info>& info) {
+void LobbySlotCoordinator::handle(const std::vector<data::lobby_update_packet::slot_info>& info,
+                                  ui::output_frame& output) {
   if (!is_client()) {
     return;
   }
   for (std::uint32_t i = 0; i < slots_.size() && i < info.size(); ++i) {
-    slots_[i].owner = info[i].owner_user_id;
-    if (slots_[i].owner != stack_.system().local_user().id) {
+    if (slots_[i].owner != info[i].owner_user_id) {
+      slots_[i].owner = info[i].owner_user_id;
+      output.sounds.emplace(sound::kMenuClick);
+    }
+    if (slots_[i].owner != stack_.system().local_user().id &&
+        slots_[i].is_ready != info[i].is_ready) {
       slots_[i].is_ready = info[i].is_ready;
+      output.sounds.emplace(sound::kMenuClick);
     }
   }
 }
 
 void LobbySlotCoordinator::handle(std::uint64_t client_user_id,
-                                  const data::lobby_request_packet& request) {
+                                  const data::lobby_request_packet& request,
+                                  ui::output_frame& output) {
   if (!is_host()) {
     return;
   }
@@ -202,9 +209,11 @@ void LobbySlotCoordinator::handle(std::uint64_t client_user_id,
       slots_[i].owner.reset();
       slots_[i].is_ready = false;
       host_slot_info_dirty_ = true;
+      output.sounds.emplace(sound::kMenuClick);
     } else if (it->is_ready != slots_[i].is_ready) {
       slots_[i].is_ready = it->is_ready;
       host_slot_info_dirty_ = true;
+      output.sounds.emplace(sound::kMenuClick);
     }
   }
 
@@ -222,6 +231,7 @@ void LobbySlotCoordinator::handle(std::uint64_t client_user_id,
         slots_[*index].owner = client_user_id;
         slots_[*index].is_ready = false;
         host_slot_info_dirty_ = true;
+        output.sounds.emplace(sound::kMenuClick);
       } else {
         break;
       }
@@ -281,9 +291,9 @@ bool LobbySlotCoordinator::update(const std::vector<ui::input_device_id>& joins)
     slot.is_ready = false;
     slot.panel->assign(*it, std::move(controller_name));
     it = queued_devices_.erase(it);
-    joined = true;
     client_slot_info_dirty_ = true;
     host_slot_info_dirty_ = true;
+    joined = true;
   };
 
   std::size_t joining_index = 0;
@@ -370,7 +380,6 @@ std::optional<data::lobby_request_packet> LobbySlotCoordinator::client_request()
   client_slot_info_dirty_ = false;
 
   data::lobby_request_packet packet;
-  packet.sequence_number = ++client_sequence_number_;
   for (std::uint32_t i = 0; i < slots_.size(); ++i) {
     auto& slot = slots_[i];
     if (slot.owner == stack_.system().local_user().id) {

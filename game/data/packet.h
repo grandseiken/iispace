@@ -36,7 +36,6 @@ struct lobby_update_packet {
   std::optional<initial_conditions> conditions;
   std::optional<std::vector<slot_info>> slots;
   std::optional<start_game> start;
-  std::unordered_map<std::uint64_t, std::uint32_t> sequence_numbers;
 };
 
 // Sent from lobby member to host to request state change.
@@ -47,7 +46,6 @@ struct lobby_request_packet {
     bool is_ready = false;
   };
 
-  std::uint32_t sequence_number = 0;
   std::uint32_t slots_requested = 0;
   std::vector<slot_info> slots;
 };
