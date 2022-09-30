@@ -23,14 +23,9 @@ message LobbyUpdatePacket {
     repeated SlotInfo slot = 1;
   }
 
-  message StartGame {
-    bool countdown = 1;
-    bool lock_slots = 2;
-  }
-
   InitialConditions conditions = 1;
   SlotInfoUpdate slots = 2;
-  StartGame start = 3;
+  uint32 start = 3;
 }
 
 message LobbyRequestPacket {

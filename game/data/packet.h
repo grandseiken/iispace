@@ -28,14 +28,17 @@ struct lobby_update_packet {
     bool is_ready = false;
   };
 
-  struct start_game {
-    bool countdown = false;
-    bool lock_slots = false;
+  enum start_flags : std::uint32_t {
+    kNone = 0,
+    kStartTimer = 0b0001,
+    kCancelTimer = 0b0010,
+    kLockSlots = 0b0100,
+    kStartGame = 0b1000,
   };
 
   std::optional<initial_conditions> conditions;
   std::optional<std::vector<slot_info>> slots;
-  std::optional<start_game> start;
+  std::uint32_t start = start_flags::kNone;
 };
 
 // Sent from lobby member to host to request state change.

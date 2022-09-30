@@ -49,12 +49,7 @@ result<lobby_update_packet> read_lobby_update_packet(std::span<const std::uint8_
       slot.is_ready = ps.is_ready();
     }
   }
-  if (proto->has_start()) {
-    lobby_update_packet::start_game start;
-    start.countdown = proto->start().countdown();
-    start.lock_slots = proto->start().lock_slots();
-    data.start = start;
-  }
+  data.start = proto->start();
   return {std::move(data)};
 }
 
@@ -100,11 +95,7 @@ result<std::vector<std::uint8_t>> write_lobby_update_packet(const lobby_update_p
       ps.set_is_ready(slot.is_ready);
     }
   }
-  if (data.start) {
-    auto& ps = *proto.mutable_start();
-    ps.set_countdown(data.start->countdown);
-    ps.set_lock_slots(data.start->lock_slots);
-  }
+  proto.set_start(data.start);
   return write_proto(proto);
 }
 

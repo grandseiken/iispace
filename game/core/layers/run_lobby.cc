@@ -16,7 +16,8 @@
 
 namespace ii {
 namespace {
-constexpr std::uint32_t kAllReadyTimerFrames = 240;
+constexpr std::uint32_t kStartTimerFrames = 240;
+constexpr std::uint32_t kStartTimerLockFrames = 90;
 
 ustring mode_title(const initial_conditions& conditions) {
   switch (conditions.mode) {
@@ -120,7 +121,8 @@ void RunLobbyLayer::update_content(const ui::input_frame& input, ui::output_fram
   auto& system = stack().system();
   bool is_host = online_ && system.current_lobby() && !system.current_lobby()->host;
 
-  auto broadcast = [&](const data::lobby_update_packet& packet) {
+  auto send_update = [&](std::optional<std::uint64_t> user_id,
+                         const data::lobby_update_packet& packet) {
     auto bytes = data::write_lobby_update_packet(packet);
     if (!bytes) {
       stack().add<ErrorLayer>(ustring::ascii("Error sending lobby update: " + bytes.error()),
@@ -131,7 +133,11 @@ void RunLobbyLayer::update_content(const ui::input_frame& input, ui::output_fram
     message.send_flags = System::send_flags::kSendReliable;
     message.channel = 0;
     message.bytes = *bytes;
-    system.broadcast(message);
+    if (user_id) {
+      system.send_to(*user_id, message);
+    } else {
+      system.broadcast(message);
+    }
   };
 
   auto send_request = [&](const data::lobby_request_packet& packet) {
@@ -208,11 +214,24 @@ void RunLobbyLayer::update_content(const ui::input_frame& input, ui::output_fram
     }
 
     for (const auto& packet : receive_broadcast()) {
-      if (!is_host && packet.conditions) {
+      if (is_host) {
+        break;
+      }
+      if (packet.conditions) {
         conditions_ = *packet.conditions;
       }
-      if (!is_host && packet.slots) {
+      if (packet.slots) {
         coordinator_->handle(*packet.slots, output);
+      }
+      if (packet.start & data::lobby_update_packet::kStartTimer) {
+        start_timer_ = kStartTimerFrames;
+      } else if (packet.start & data::lobby_update_packet::kCancelTimer) {
+        start_timer_.reset();
+        coordinator_->unlock();
+      } else if (packet.start & data::lobby_update_packet::kLockSlots) {
+        coordinator_->lock();
+      } else if (packet.start & data::lobby_update_packet::kStartGame) {
+        start_game();
       }
     }
     for (const auto& pair : receive_requests()) {
@@ -241,21 +260,102 @@ void RunLobbyLayer::update_content(const ui::input_frame& input, ui::output_fram
     output.sounds.emplace(sound::kMenuAccept);
     back_button_->unfocus();
   }
-  if (!online_ && conditions_ && coordinator_->game_ready()) {
-    if (!all_ready_timer_) {
-      all_ready_timer_ = kAllReadyTimerFrames;
+
+  bool all_ready = (!online_ || is_host) && conditions_ && coordinator_->game_ready() &&
+      !event_triggered(system, System::event_type::kLobbyMemberEntered) &&
+      !event_triggered(system, System::event_type::kLobbyMemberLeft) &&
+      !event_triggered(system, System::event_type::kMessagingSessionFailed);
+
+  auto schedule = [&](schedule_t& s) -> std::uint32_t {
+    s.clear();
+    if (!system.current_lobby()) {
+      return 0;
     }
-    if (*all_ready_timer_ % stack().fps() == 0) {
-      output.sounds.emplace(sound::kPlayerShield);
+    std::uint32_t frames_max = 0;
+    for (const auto& m : system.current_lobby()->members) {
+      if (m.id == system.local_user().id) {
+        continue;
+      }
+      auto latency_seconds = static_cast<float>(system.session(m.id)->ping_ms) / 2000.f;
+      auto latency_frames = static_cast<std::uint32_t>(std::ceil(stack().fps() * latency_seconds));
+      latency_frames = std::min(latency_frames, stack().fps());
+      frames_max = std::max(frames_max, latency_frames);
+      s[m.id] = latency_frames;
     }
-    if (!--*all_ready_timer_) {
+    return frames_max;
+  };
+
+  auto process = [&](schedule_t& s, std::uint32_t timer, std::uint32_t flag) {
+    for (auto it = s.begin(); it != s.end();) {
+      if (timer > it->second) {
+        ++it;
+        continue;
+      }
+      data::lobby_update_packet packet;
+      packet.start |= flag;
+      send_update(it->first, packet);
+      it = s.erase(it);
+    }
+    return !timer;
+  };
+
+  std::uint32_t broadcast_start_flags = data::lobby_update_packet::kNone;
+  if (!online_) {
+    if (!all_ready) {
+      start_timer_.reset();
+    } else if (!start_timer_) {
+      start_timer_ = kStartTimerFrames;
+    }
+  } else if (is_host &&
+             (!system.current_lobby() || (start_timer_ && !host_countdown_) ||
+              (host_countdown_ && !all_ready))) {
+    broadcast_start_flags |= data::lobby_update_packet::kCancelTimer;
+    start_timer_.reset();
+    host_countdown_.reset();
+  } else if (is_host && all_ready && !host_countdown_) {
+    auto& hc = host_countdown_.emplace();
+    hc.countdown_schedule.emplace();
+    hc.timer = schedule(*hc.countdown_schedule);
+  } else if (!is_host) {
+    host_countdown_.reset();
+  }
+
+  if (host_countdown_) {
+    auto& hc = *host_countdown_;
+    hc.timer && --hc.timer;
+    if (hc.countdown_schedule &&
+        process(*hc.countdown_schedule, hc.timer, data::lobby_update_packet::kStartTimer)) {
+      start_timer_ = kStartTimerFrames;
+      hc.countdown_schedule.reset();
+    }
+    if (hc.start_game_schedule &&
+        process(*hc.start_game_schedule, hc.timer, data::lobby_update_packet::kStartGame)) {
       start_game();
     }
-  } else {
-    all_ready_timer_.reset();
   }
-  if (all_ready_timer_) {
-    auto s = "Game starting in " + std::to_string(*all_ready_timer_ / stack().fps());
+
+  if (start_timer_) {
+    if (*start_timer_ && *start_timer_ % stack().fps() == 0) {
+      output.sounds.emplace(sound::kPlayerShield);
+    }
+    *start_timer_ && --*start_timer_;
+    if (host_countdown_ &&
+        *start_timer_ == kStartTimerLockFrames + host_countdown_->max_frame_latency) {
+      broadcast_start_flags = data::lobby_update_packet::kLockSlots;
+    }
+    if (!*start_timer_ && !online_) {
+      start_game();
+    } else if (!*start_timer_ && host_countdown_) {
+      auto& hc = *host_countdown_;
+      if (!hc.start_game_schedule) {
+        hc.start_game_schedule.emplace();
+        hc.timer = schedule(*hc.start_game_schedule);
+      }
+    }
+  }
+
+  if (start_timer_) {
+    auto s = "Game starting in " + std::to_string(*start_timer_ / stack().fps());
     bottom_tabs_->set_active(1);
     all_ready_text_->set_text(ustring::ascii(s));
   } else {
@@ -271,8 +371,9 @@ void RunLobbyLayer::update_content(const ui::input_frame& input, ui::output_fram
       coordinator_->set_dirty();
     }
     packet.slots = coordinator_->host_slot_update();
+    packet.start = broadcast_start_flags;
     if (packet.conditions || packet.slots || packet.start) {
-      broadcast(packet);
+      send_update(/* broadcast */ std::nullopt, packet);
     }
 
     if (auto request = coordinator_->client_request(); request) {

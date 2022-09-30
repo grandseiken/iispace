@@ -50,7 +50,11 @@ public:
     auto& leave_button = standard_button(*l_bottom.add_back<ui::Button>())
                              .set_text(ustring::ascii("Leave"))
                              .set_text_colour(colour, focus_colour)
-                             .set_callback([this] { clear(); });
+                             .set_callback([this] {
+                               if (!locked_) {
+                                 clear();
+                               }
+                             });
     l_bottom.set_absolute_size(ready_button, kLargeFont.y + 2 * kPadding.y);
     l_bottom.set_absolute_size(leave_button, kLargeFont.y + 2 * kPadding.y);
 
@@ -65,6 +69,7 @@ public:
   }
 
   void set_joining(bool joining) { joining_ = joining; }
+  void set_locked(bool locked) { locked_ = locked; }
 
   void set_username(ustring s) {
     owner_username_ = std::move(s);
@@ -129,7 +134,7 @@ protected:
   void update_content(const ui::input_frame& input, ui::output_frame& output) override {
     ui::Panel::update_content(input, output);
 
-    if (input.pressed(ui::key::kCancel) && main_->active_index()) {
+    if (!locked_ && input.pressed(ui::key::kCancel) && main_->active_index()) {
       if (config_tab_->active_index()) {
         config_tab_->set_active(0);
       } else {
@@ -154,6 +159,7 @@ protected:
 private:
   std::size_t index_ = 0;
   bool joining_ = false;
+  bool locked_ = false;
   std::optional<ui::input_device_id> assigned_id_;
   std::optional<ustring> owner_username_;
   std::optional<std::string> controller_name_;
@@ -268,8 +274,23 @@ bool LobbySlotCoordinator::update(const std::vector<ui::input_device_id>& joins)
     return std::nullopt;
   };
 
+  if (is_host()) {
+    for (auto& slot : slots_) {
+      if (!slot.owner) {
+        continue;
+      }
+      auto lobby = stack_.system().current_lobby();
+      bool in_lobby = lobby &&
+          std::count_if(lobby->members.begin(), lobby->members.end(),
+                        [&](const auto& m) { return m.id == *slot.owner; });
+      if (!in_lobby) {
+        slot.owner.reset();
+        host_slot_info_dirty_ = true;
+      }
+    }
+  }
   for (const auto& join : joins) {
-    if (!device_in_use(join)) {
+    if (!locked_ && !device_in_use(join)) {
       queued_devices_.emplace_back(join);
       client_slot_info_dirty_ = true;
     }
@@ -366,6 +387,20 @@ std::uint32_t LobbySlotCoordinator::player_count() const {
   return static_cast<std::uint32_t>(
       std::count_if(slots_.begin(), slots_.end(),
                     [](const auto& slot) { return slot.assignment || slot.owner; }));
+}
+
+void LobbySlotCoordinator::lock() {
+  locked_ = true;
+  for (const auto& slot : slots_) {
+    slot.panel->set_locked(true);
+  }
+}
+
+void LobbySlotCoordinator::unlock() {
+  for (const auto& slot : slots_) {
+    slot.panel->set_locked(false);
+  }
+  locked_ = false;
 }
 
 void LobbySlotCoordinator::set_dirty() {

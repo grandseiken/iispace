@@ -24,6 +24,8 @@ public:
   std::vector<ui::input_device_id> input_devices() const;
   std::uint32_t player_count() const;
 
+  void lock();
+  void unlock();
   void set_dirty();
   std::optional<data::lobby_request_packet> client_request();
   std::optional<std::vector<data::lobby_update_packet::slot_info>> host_slot_update();
@@ -46,6 +48,7 @@ private:
   std::vector<ui::input_device_id> queued_devices_;
   std::unordered_map<std::uint64_t, std::uint32_t> host_sequence_numbers_;
 
+  bool locked_ = false;
   bool host_slot_info_dirty_ = false;
   bool client_slot_info_dirty_ = false;
 };
