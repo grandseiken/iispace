@@ -59,6 +59,19 @@ struct info {
   controller::type type = controller::type::kOther;
   std::string name;
   std::optional<std::uint32_t> player_index;
+
+  std::string get_name() const {
+    if (!name.empty()) {
+      return name;
+    }
+    if (type == controller::type::kPsx) {
+      return "Controller (PSX)";
+    }
+    if (type == controller::type::kXbox) {
+      return "Controller (XBox)";
+    }
+    return "Controller";
+  }
 };
 
 struct frame {

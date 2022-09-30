@@ -203,6 +203,9 @@ void RunLobbyLayer::update_content(const ui::input_frame& input, ui::output_fram
       host_ = host_id;
       coordinator_->set_dirty();
     }
+    if (event_triggered(stack().system(), System::event_type::kMessagingSessionFailed)) {
+      coordinator_->set_dirty();
+    }
 
     for (const auto& packet : receive_broadcast()) {
       if (!is_host && packet.conditions) {
@@ -261,10 +264,13 @@ void RunLobbyLayer::update_content(const ui::input_frame& input, ui::output_fram
 
   if (online_) {
     data::lobby_update_packet packet;
-    packet.slots = coordinator_->host_slot_update();
-    if (is_host && event_triggered(system, System::event_type::kLobbyMemberEntered)) {
+    bool force_refresh =
+        is_host && event_triggered(system, System::event_type::kLobbyMemberEntered);
+    if (force_refresh) {
       packet.conditions = conditions_;
+      coordinator_->set_dirty();
     }
+    packet.slots = coordinator_->host_slot_update();
     if (packet.conditions || packet.slots || packet.start) {
       broadcast(packet);
     }

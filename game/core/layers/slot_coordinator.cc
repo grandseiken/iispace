@@ -4,6 +4,7 @@
 #include "game/core/toolkit/layout.h"
 #include "game/core/toolkit/panel.h"
 #include "game/core/toolkit/text.h"
+#include "game/io/io.h"
 #include "game/system/system.h"
 #include <algorithm>
 
@@ -18,8 +19,7 @@ public:
   : ui::Panel{parent}, index_{index}, main_{add_back<ui::TabContainer>()} {
     waiting_text_ = main_->add_back<ui::TextElement>();
     auto& active = *main_->add_back<ui::Panel>();
-    waiting_text_->set_text(ustring::ascii("Press start or\nspacebar to join"))
-        .set_font(render::font_id::kMonospaceItalic)
+    waiting_text_->set_font(render::font_id::kMonospaceItalic)
         .set_colour(kTextColour)
         .set_font_dimensions(kSemiLargeFont)
         .set_drop_shadow(kDropShadow, .5f)
@@ -64,6 +64,8 @@ public:
         .set_font_dimensions(kLargeFont);
   }
 
+  void set_joining(bool joining) { joining_ = joining; }
+
   void set_username(ustring s) {
     owner_username_ = std::move(s);
     refresh_controller_text();
@@ -73,16 +75,20 @@ public:
     assigned_id_.reset();
     main_->set_active(1u);
     config_tab_->set_active(is_ready ? 2u : 1u);
+    controller_name_.reset();
     refresh_controller_text();
   }
 
-  void assign(ui::input_device_id id) {
+  void assign(ui::input_device_id id, std::optional<std::string> controller_name) {
     assigned_id_ = id;
     assign_input_root(index_);
     main_->set_active(1u);
     config_tab_->set_active(0u);
     if (id.controller_index) {
+      controller_name_ = std::move(controller_name);
       main_->focus();
+    } else {
+      controller_name_.reset();
     }
     refresh_controller_text();
   }
@@ -92,6 +98,7 @@ public:
     if (auto* e = main_->focused_element()) {
       e->unfocus();
     }
+    controller_name_.reset();
     assigned_id_.reset();
     config_tab_->set_active(0);
     main_->set_active(0);
@@ -112,7 +119,7 @@ protected:
     }
     if (!assigned_id_) {
     } else if (assigned_id_->controller_index) {
-      s += ustring::ascii("\nController");
+      s += ustring::ascii(std::string{"\n"} + controller_name_.value_or("Controller"));
     } else {
       s += ustring::ascii("\nMouse and keyboard");
     }
@@ -131,6 +138,12 @@ protected:
       output.sounds.emplace(sound::kMenuAccept);
     }
 
+    if (joining_) {
+      waiting_text_->set_text(ustring::ascii("Joining..."));
+    } else {
+      waiting_text_->set_text(ustring::ascii("Press start or\nspacebar to join"));
+    }
+
     auto colour = kTextColour;
     auto t = frame_++ % 256;
     float a = t < 128 ? t / 128.f : (256 - t) / 128.f;
@@ -140,8 +153,10 @@ protected:
 
 private:
   std::size_t index_ = 0;
+  bool joining_ = false;
   std::optional<ui::input_device_id> assigned_id_;
   std::optional<ustring> owner_username_;
+  std::optional<std::string> controller_name_;
 
   std::uint32_t frame_ = 0;
   ui::TabContainer* main_;
@@ -256,18 +271,24 @@ bool LobbySlotCoordinator::update(const std::vector<ui::input_device_id>& joins)
     if (!slot_index) {
       break;
     }
+    std::optional<std::string> controller_name;
+    if (it->controller_index && *it->controller_index < stack_.io_layer().controllers()) {
+      controller_name = stack_.io_layer().controller_info()[*it->controller_index].get_name();
+    }
     stack_.input().assign_input_device(*it, static_cast<std::uint32_t>(*slot_index));
     auto& slot = slots_[*slot_index];
     slot.assignment = *it;
     slot.is_ready = false;
-    slot.panel->assign(*it);
+    slot.panel->assign(*it, std::move(controller_name));
     it = queued_devices_.erase(it);
     joined = true;
     client_slot_info_dirty_ = true;
     host_slot_info_dirty_ = true;
   };
 
+  std::size_t joining_index = 0;
   for (std::uint32_t i = 0; i < slots_.size(); ++i) {
+    slots_[i].panel->set_joining(!slots_[i].owner && joining_index++ < queued_devices_.size());
     if (online_ && stack_.system().current_lobby() && slots_[i].owner) {
       for (const auto& m : stack_.system().current_lobby()->members) {
         if (m.id == slots_[i].owner) {
