@@ -43,8 +43,11 @@ public:
   const SimState& canonical() const { return canonical_state_; }
   const SimState& predicted() const { return predicted_state_; }
 
-  std::pair<std::string, std::uint64_t> min_remote_latest_tick() const;
-  std::pair<std::string, std::uint64_t> min_remote_canonical_tick() const;
+  struct remote_stats {
+    std::uint64_t latest_tick = 0;
+    std::uint64_t canonical_tick = 0;
+  };
+  remote_stats remote(const std::string& remote_id) const;
 
   // ISimState implementation.
   bool game_over() const override { return canonical_state_.game_over(); }
@@ -94,7 +97,6 @@ private:
 
   struct remote_info {
     std::deque<tick_checksum> checksums;
-    // TODO: which of these do we actually need to adjust timings?
     std::uint64_t latest_tick = 0;
     std::uint64_t canonical_tick = 0;
   };

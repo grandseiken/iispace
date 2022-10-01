@@ -246,28 +246,13 @@ std::vector<data::sim_packet> NetworkedSimState::update(std::vector<input_frame>
   return packet_output;
 }
 
-std::pair<std::string, std::uint64_t> NetworkedSimState::min_remote_latest_tick() const {
-  std::pair<std::string, std::uint64_t> result{{}, predicted_state_.tick_count()};
-  bool first = true;
-  for (const auto& pair : remotes_) {
-    if (first || pair.second.latest_tick < result.second) {
-      result = {pair.first, pair.second.latest_tick};
-    }
-    first = false;
+auto NetworkedSimState::remote(const std::string& remote_id) const -> remote_stats {
+  remote_stats stats;
+  if (auto it = remotes_.find(remote_id); it != remotes_.end()) {
+    stats.latest_tick = it->second.latest_tick;
+    stats.canonical_tick = it->second.canonical_tick;
   }
-  return result;
-}
-
-std::pair<std::string, std::uint64_t> NetworkedSimState::min_remote_canonical_tick() const {
-  std::pair<std::string, std::uint64_t> result{{}, canonical_state_.tick_count()};
-  bool first = true;
-  for (const auto& pair : remotes_) {
-    if (first || pair.second.canonical_tick < result.second) {
-      result = {pair.first, pair.second.canonical_tick};
-    }
-    first = false;
-  }
-  return result;
+  return stats;
 }
 
 void NetworkedSimState::handle_predicted_output(std::uint64_t tick_count,

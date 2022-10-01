@@ -142,18 +142,43 @@ void SimLayer::networked_update(std::vector<input_frame>&& local_input) {
     impl_->networked_state->input_packet(std::to_string(m.source_user_id), *packet);
   }
 
-  auto packets = impl_->networked_state->update(local_input);
-  for (const auto& packet : packets) {
-    auto bytes = data::write_sim_packet(packet);
-    if (!bytes) {
-      disconnect_with_error(ustring::ascii("Error sending sim packet: " + bytes.error()));
-      return;
+  std::uint32_t frame_count = 1;
+  if (stack().system().current_lobby()->host) {
+    // Try to sync timing with host.
+    static constexpr std::uint32_t kFrameSyncWindowSize = 10u;
+    auto host_id = stack().system().current_lobby()->host->id;
+    auto host_stats = impl_->networked_state->remote(std::to_string(host_id));
+    auto host_session = stack().system().session(host_id);
+    if (host_session) {
+      auto estimated_host_tick = host_stats.latest_tick +
+          static_cast<std::uint32_t>(std::ceil(stack().fps() *
+                                               static_cast<float>(host_session->ping_ms) / 2000.f));
+      auto local_tick = impl_->networked_state->tick_count() + 1;
+      if (local_tick >= estimated_host_tick + kFrameSyncWindowSize) {
+        frame_count = 0;
+      } else if (local_tick + kFrameSyncWindowSize <= estimated_host_tick) {
+        frame_count = 2;
+      }
     }
-    System::send_message message;
-    message.bytes = *bytes;
-    message.channel = data::sim_packet::kChannel;
-    message.send_flags = System::send_flags::kSendNoNagle | System::send_flags::kSendReliable;
-    stack().system().broadcast(message);
+  }
+
+  for (std::uint32_t i = 0; i < frame_count; ++i) {
+    auto packets = impl_->networked_state->update(local_input);
+    for (const auto& packet : packets) {
+      auto bytes = data::write_sim_packet(packet);
+      if (!bytes) {
+        disconnect_with_error(ustring::ascii("Error sending sim packet: " + bytes.error()));
+        return;
+      }
+      System::send_message message;
+      message.bytes = *bytes;
+      message.channel = data::sim_packet::kChannel;
+      message.send_flags = System::send_flags::kSendReliable;
+      if (i + 1 == frame_count) {
+        message.send_flags |= System::send_flags::kSendNoNagle;
+      }
+      stack().system().broadcast(message);
+    }
   }
 
   if (!impl_->networked_state->checksum_failed_remote_ids().empty()) {
