@@ -48,6 +48,7 @@ cc_library(
   deps = [
     "//game/core/ui",
     "//game/logic/sim/io:conditions",
+    "//game/logic/sim/io:player",
   ],
   implementation_deps = [
     ":common",
@@ -56,7 +57,6 @@ cc_library(
     "//game/core/sim:sim_layer",
     "//game/core/toolkit",
     "//game/data:packet",
-    "//game/logic/sim/io:player",
     "//game/io",
     "//game/system:header",
   ],

@@ -7,10 +7,9 @@ namespace ii {
 namespace {
 // Input mapping for game with N players should provide exactly one input source (local or remote)
 // for each player index 0 <= I < N.
-bool check_mapping(const initial_conditions& conditions,
-                   NetworkedSimState::input_mapping& mapping) {
+bool check_mapping(const initial_conditions& conditions, network_input_mapping& mapping) {
   std::vector<std::uint32_t> mapped_indexes;
-  auto add = [&](const NetworkedSimState::source_mapping& m) {
+  auto add = [&](const input_source_mapping& m) {
     for (auto n : m.player_numbers) {
       mapped_indexes.emplace_back(n);
     }
@@ -31,7 +30,7 @@ bool check_mapping(const initial_conditions& conditions,
   return true;
 }
 
-std::vector<std::uint32_t> remote_players(const NetworkedSimState::input_mapping& mapping) {
+std::vector<std::uint32_t> remote_players(const network_input_mapping& mapping) {
   std::vector<std::uint32_t> result;
   for (const auto& pair : mapping.remote) {
     result.insert(result.end(), pair.second.player_numbers.begin(),
@@ -40,8 +39,8 @@ std::vector<std::uint32_t> remote_players(const NetworkedSimState::input_mapping
   return result;
 }
 
-std::vector<std::uint32_t> filter_ai_players(const NetworkedSimState::input_mapping& mapping,
-                                             std::span<std::uint32_t> ai_players) {
+std::vector<std::uint32_t>
+filter_ai_players(const network_input_mapping& mapping, std::span<std::uint32_t> ai_players) {
   std::vector<std::uint32_t> result;
   for (auto n : ai_players) {
     if (std::find(mapping.local.player_numbers.begin(), mapping.local.player_numbers.end(), n) !=
@@ -53,8 +52,8 @@ std::vector<std::uint32_t> filter_ai_players(const NetworkedSimState::input_mapp
 }
 }  // namespace
 
-NetworkedSimState::NetworkedSimState(const initial_conditions& conditions, input_mapping mapping,
-                                     data::ReplayWriter* writer,
+NetworkedSimState::NetworkedSimState(const initial_conditions& conditions,
+                                     network_input_mapping mapping, data::ReplayWriter* writer,
                                      std::span<std::uint32_t> ai_players)
 : local_ai_players_{filter_ai_players(mapping, ai_players)}
 , canonical_state_{conditions, writer, local_ai_players_}

@@ -23,9 +23,19 @@ message LobbyUpdatePacket {
     repeated SlotInfo slot = 1;
   }
 
+  message PlayerSetup {
+    uint64 user_id = 1;
+  }
+
+  message StartGameSetup {
+    repeated PlayerSetup player = 1;
+  }
+
   InitialConditions conditions = 1;
   SlotInfoUpdate slots = 2;
+
   uint32 start = 3;
+  StartGameSetup setup = 4;
 }
 
 message LobbyRequestPacket {

@@ -444,6 +444,16 @@ LobbySlotCoordinator::host_slot_update() {
   return {std::move(slot_info)};
 }
 
+data::lobby_update_packet::start_game_setup LobbySlotCoordinator::start_game_setup() {
+  data::lobby_update_packet::start_game_setup setup;
+  for (const auto& slot : slots_) {
+    if (slot.owner) {
+      setup.players.emplace_back().user_id = *slot.owner;
+    }
+  }
+  return setup;
+}
+
 bool LobbySlotCoordinator::is_host() const {
   return online_ && stack_.system().current_lobby() && !stack_.system().current_lobby()->host;
 }

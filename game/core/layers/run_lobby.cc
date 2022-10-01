@@ -9,7 +9,6 @@
 #include "game/core/toolkit/text.h"
 #include "game/data/packet.h"
 #include "game/io/io.h"
-#include "game/logic/sim/io/player.h"
 #include "game/system/system.h"
 #include <algorithm>
 #include <utility>
@@ -131,7 +130,7 @@ void RunLobbyLayer::update_content(const ui::input_frame& input, ui::output_fram
     }
     System::send_message message;
     message.send_flags = System::send_flags::kSendReliable;
-    message.channel = 0;
+    message.channel = data::lobby_update_packet::kChannel;
     message.bytes = *bytes;
     if (user_id) {
       system.send_to(*user_id, message);
@@ -149,14 +148,14 @@ void RunLobbyLayer::update_content(const ui::input_frame& input, ui::output_fram
     }
     System::send_message message;
     message.send_flags = System::send_flags::kSendReliable;
-    message.channel = 1;
+    message.channel = data::lobby_request_packet::kChannel;
     message.bytes = *bytes;
     system.send_to_host(message);
   };
 
-  auto receive_broadcast = [&] {
+  auto receive_update = [&] {
     std::vector<System::received_message> messages;
-    system.receive(0, messages);
+    system.receive(data::lobby_update_packet::kChannel, messages);
     std::vector<data::lobby_update_packet> packets;
     for (const auto& m : messages) {
       if (!system.current_lobby() || !system.current_lobby()->host ||
@@ -165,7 +164,7 @@ void RunLobbyLayer::update_content(const ui::input_frame& input, ui::output_fram
       }
       auto packet = data::read_lobby_update_packet(m.bytes);
       if (!packet) {
-        stack().add<ErrorLayer>(ustring::ascii("Error receiving lobby update: " + packet.error()),
+        stack().add<ErrorLayer>(ustring::ascii("Error reading lobby update: " + packet.error()),
                                 [this] { disconnect_and_remove(); });
         break;
       }
@@ -176,7 +175,7 @@ void RunLobbyLayer::update_content(const ui::input_frame& input, ui::output_fram
 
   auto receive_requests = [&] {
     std::vector<System::received_message> messages;
-    system.receive(1, messages);
+    system.receive(data::lobby_request_packet::kChannel, messages);
     std::vector<std::pair<std::uint64_t, data::lobby_request_packet>> packets;
     for (const auto& m : messages) {
       if (!system.current_lobby() || system.current_lobby()->host) {
@@ -184,13 +183,26 @@ void RunLobbyLayer::update_content(const ui::input_frame& input, ui::output_fram
       }
       auto packet = data::read_lobby_request_packet(m.bytes);
       if (!packet) {
-        stack().add<ErrorLayer>(ustring::ascii("Error receiving lobby request: " + packet.error()),
+        stack().add<ErrorLayer>(ustring::ascii("Error reading lobby request: " + packet.error()),
                                 [this] { disconnect_and_remove(); });
         break;
       }
       packets.emplace_back(m.source_user_id, std::move(*packet));
     }
     return packets;
+  };
+
+  auto setup_network_mapping = [&](const data::lobby_update_packet::start_game_setup& setup) {
+    network_input_mapping m;
+    for (std::uint32_t i = 0; i < setup.players.size(); ++i) {
+      const auto& p = setup.players[i];
+      if (p.user_id == stack().system().local_user().id) {
+        m.local.player_numbers.emplace_back(i);
+      } else {
+        m.remote[std::to_string(p.user_id)].player_numbers.emplace_back(i);
+      }
+    }
+    return m;
   };
 
   if (online_) {
@@ -213,7 +225,7 @@ void RunLobbyLayer::update_content(const ui::input_frame& input, ui::output_fram
       coordinator_->set_dirty();
     }
 
-    for (const auto& packet : receive_broadcast()) {
+    for (const auto& packet : receive_update()) {
       if (is_host) {
         break;
       }
@@ -230,8 +242,8 @@ void RunLobbyLayer::update_content(const ui::input_frame& input, ui::output_fram
         coordinator_->unlock();
       } else if (packet.start & data::lobby_update_packet::kLockSlots) {
         coordinator_->lock();
-      } else if (packet.start & data::lobby_update_packet::kStartGame) {
-        start_game();
+      } else if (packet.setup && (packet.start & data::lobby_update_packet::kStartGame)) {
+        start_game(setup_network_mapping(*packet.setup));
       }
     }
     for (const auto& pair : receive_requests()) {
@@ -285,18 +297,30 @@ void RunLobbyLayer::update_content(const ui::input_frame& input, ui::output_fram
     return frames_max;
   };
 
-  auto process = [&](schedule_t& s, std::uint32_t timer, std::uint32_t flag) {
+  auto process = [&](schedule_t& s, std::uint32_t timer, auto&& make_packet) {
     for (auto it = s.begin(); it != s.end();) {
       if (timer > it->second) {
         ++it;
         continue;
       }
-      data::lobby_update_packet packet;
-      packet.start |= flag;
-      send_update(it->first, packet);
+      send_update(it->first, make_packet());
       it = s.erase(it);
     }
     return !timer;
+  };
+
+  auto make_start_timer_packet = [] {
+    data::lobby_update_packet packet;
+    packet.start = data::lobby_update_packet::kStartTimer;
+    return packet;
+  };
+
+  auto make_start_game_packet = [&] {
+    data::lobby_update_packet packet;
+    packet.start = data::lobby_update_packet::kStartGame;
+    packet.conditions = conditions_;
+    packet.setup = coordinator_->start_game_setup();
+    return packet;
   };
 
   std::uint32_t broadcast_start_flags = data::lobby_update_packet::kNone;
@@ -324,13 +348,13 @@ void RunLobbyLayer::update_content(const ui::input_frame& input, ui::output_fram
     auto& hc = *host_countdown_;
     hc.timer && --hc.timer;
     if (hc.countdown_schedule &&
-        process(*hc.countdown_schedule, hc.timer, data::lobby_update_packet::kStartTimer)) {
+        process(*hc.countdown_schedule, hc.timer, make_start_timer_packet)) {
       start_timer_ = kStartTimerFrames;
       hc.countdown_schedule.reset();
     }
     if (hc.start_game_schedule &&
-        process(*hc.start_game_schedule, hc.timer, data::lobby_update_packet::kStartGame)) {
-      start_game();
+        process(*hc.start_game_schedule, hc.timer, make_start_game_packet)) {
+      start_game(setup_network_mapping(coordinator_->start_game_setup()));
     }
   }
 
@@ -344,7 +368,7 @@ void RunLobbyLayer::update_content(const ui::input_frame& input, ui::output_fram
       broadcast_start_flags = data::lobby_update_packet::kLockSlots;
     }
     if (!*start_timer_ && !online_) {
-      start_game();
+      start_game(/* local */ std::nullopt);
     } else if (!*start_timer_ && host_countdown_) {
       auto& hc = *host_countdown_;
       if (!hc.start_game_schedule) {
@@ -406,11 +430,11 @@ void RunLobbyLayer::clear_and_remove() {
   remove();
 }
 
-void RunLobbyLayer::start_game() {
+void RunLobbyLayer::start_game(std::optional<network_input_mapping> network) {
   auto input_devices = coordinator_->input_devices();
   auto start_conditions = *conditions_;
   start_conditions.player_count = coordinator_->player_count();
-  stack().add<SimLayer>(start_conditions, input_devices);
+  stack().add<SimLayer>(start_conditions, input_devices, std::move(network));
   clear_and_remove();
 }
 

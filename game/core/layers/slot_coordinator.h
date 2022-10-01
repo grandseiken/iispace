@@ -29,6 +29,7 @@ public:
   void set_dirty();
   std::optional<data::lobby_request_packet> client_request();
   std::optional<std::vector<data::lobby_update_packet::slot_info>> host_slot_update();
+  data::lobby_update_packet::start_game_setup start_game_setup();
 
 private:
   bool is_host() const;

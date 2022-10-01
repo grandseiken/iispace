@@ -2,6 +2,7 @@
 #define II_GAME_LOGIC_SIM_NETWORKED_SIM_STATE_H
 #include "game/data/packet.h"
 #include "game/logic/sim/io/output.h"
+#include "game/logic/sim/io/player.h"
 #include "game/logic/sim/sim_state.h"
 #include <cstdint>
 #include <deque>
@@ -26,15 +27,7 @@ public:
   NetworkedSimState& operator=(NetworkedSimState&&) noexcept = default;
   NetworkedSimState& operator=(const NetworkedSimState&) = delete;
 
-  struct source_mapping {
-    std::vector<std::uint32_t> player_numbers;
-  };
-  struct input_mapping {
-    source_mapping local;
-    std::unordered_map</* remote ID */ std::string, source_mapping> remote;
-  };
-
-  NetworkedSimState(const initial_conditions& conditions, input_mapping mapping,
+  NetworkedSimState(const initial_conditions& conditions, network_input_mapping mapping,
                     data::ReplayWriter* writer = nullptr, std::span<std::uint32_t> ai_players = {});
 
   const std::unordered_set<std::string>& checksum_failed_remote_ids() const;
@@ -76,7 +69,7 @@ private:
   SimState canonical_state_;
   SimState predicted_state_;
   aggregate_output merged_output_;
-  input_mapping mapping_;
+  network_input_mapping mapping_;
   std::uint32_t player_count_ = 0;
   std::uint64_t input_delay_ticks_ = 0;
   std::uint64_t predicted_tick_base_ = 0;

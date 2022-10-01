@@ -61,6 +61,7 @@ cc_library(
     ":sim",
     "//game/data:packet",
     "//game/logic/sim/io:output",
+    "//game/logic/sim/io:player",
   ],
   implementation_deps = ["//game/logic/sim/io:conditions"],
   visibility = ["//visibility:public"],

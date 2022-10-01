@@ -9,10 +9,12 @@
 #include <unordered_map>
 #include <vector>
 
+// TODO: should all packets be merged into one structure and go down a single channel?
 namespace ii::data {
 
 // Sent from each peer to all others every tick.
 struct sim_packet {
+  static constexpr std::uint32_t kChannel = 0;
   // Tick count at which the input frames apply.
   std::uint64_t tick_count = 0;
   std::vector<input_frame> input_frames;
@@ -23,6 +25,8 @@ struct sim_packet {
 
 // Sent from host to all lobby members on lobby state change.
 struct lobby_update_packet {
+  static constexpr std::uint32_t kChannel = 1;
+
   struct slot_info {
     std::optional<std::uint64_t> owner_user_id;
     bool is_ready = false;
@@ -36,14 +40,25 @@ struct lobby_update_packet {
     kStartGame = 0b1000,
   };
 
+  struct player_setup {
+    std::uint64_t user_id = 0;
+  };
+
+  struct start_game_setup {
+    std::vector<player_setup> players;
+  };
+
   std::optional<initial_conditions> conditions;
   std::optional<std::vector<slot_info>> slots;
+  std::optional<start_game_setup> setup;
   std::uint32_t start = start_flags::kNone;
 };
 
 // Sent from lobby member to host to request state change.
 // TODO: game version check? Or should this be handled by System layer automatically?
 struct lobby_request_packet {
+  static constexpr std::uint32_t kChannel = 2;
+
   struct slot_info {
     std::uint32_t index = 0;
     bool is_ready = false;

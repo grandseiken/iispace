@@ -1,14 +1,18 @@
 #include "game/core/sim/sim_layer.h"
 #include "game/core/game_options.h"
+#include "game/core/layers/utility.h"
 #include "game/core/sim/hud_layer.h"
 #include "game/core/sim/input_adapter.h"
 #include "game/core/sim/pause_layer.h"
 #include "game/core/sim/render_state.h"
 #include "game/core/ui/input.h"
+#include "game/data/packet.h"
 #include "game/data/replay.h"
 #include "game/data/save.h"
+#include "game/logic/sim/networked_sim_state.h"
 #include "game/logic/sim/sim_state.h"
 #include "game/render/gl_renderer.h"
+#include "game/system/system.h"
 #include <algorithm>
 #include <cstdint>
 #include <sstream>
@@ -16,15 +20,27 @@
 
 namespace ii {
 
+// TODO: handle input device issues (not enough, unplugged, etc).
 struct SimLayer::impl_t {
   impl_t(io::IoLayer& io_layer, const initial_conditions& conditions,
-         std::span<const ui::input_device_id> input_devices, const game_options_t& options)
+         std::span<const ui::input_device_id> input_devices,
+         std::optional<network_input_mapping> network, const game_options_t& options)
   : options{options}
   , mode{conditions.mode}
   , render_state{conditions.seed}
   , input{io_layer, input_devices}
   , writer{conditions}
-  , state{std::make_unique<SimState>(conditions, &writer, options.ai_players)} {}
+  , network{std::move(network)} {
+    if (this->network) {
+      networked_state = std::make_unique<NetworkedSimState>(conditions, *this->network, &writer);
+    } else {
+      state = std::make_unique<SimState>(conditions, &writer, options.ai_players);
+    }
+  }
+
+  ISimState& istate() const {
+    return networked_state ? static_cast<ISimState&>(*networked_state) : *state;
+  }
 
   HudLayer* hud = nullptr;
   std::uint32_t audio_tick = 0;
@@ -34,25 +50,29 @@ struct SimLayer::impl_t {
   SimInputAdapter input;
   data::ReplayWriter writer;
   std::unique_ptr<SimState> state;
+  std::unique_ptr<NetworkedSimState> networked_state;
+  std::optional<network_input_mapping> network;
 };
 
 SimLayer::~SimLayer() = default;
 
 SimLayer::SimLayer(ui::GameStack& stack, const initial_conditions& conditions,
-                   std::span<const ui::input_device_id> input_devices)
+                   std::span<const ui::input_device_id> input_devices,
+                   std::optional<network_input_mapping> network)
 : ui::GameLayer{stack, ui::layer_flag::kBaseLayer | ui::layer_flag::kCaptureCursor}
-, impl_{std::make_unique<impl_t>(stack.io_layer(), conditions, input_devices, stack.options())} {}
+, impl_{std::make_unique<impl_t>(stack.io_layer(), conditions, input_devices, std::move(network),
+                                 stack.options())} {}
 
 void SimLayer::update_content(const ui::input_frame& ui_input, ui::output_frame&) {
-  set_bounds(rect{impl_->state->dimensions()});
-  stack().set_fps(impl_->state->fps());
+  set_bounds(rect{impl_->istate().dimensions()});
+  stack().set_fps(impl_->istate().fps());
   if (!impl_->hud) {
     impl_->hud = stack().add<HudLayer>(impl_->mode);
   }
   if (is_removed()) {
     return;
   }
-  if (impl_->state->game_over()) {
+  if (impl_->istate().game_over()) {
     end_game();
     stack().play_sound(sound::kMenuAccept);
     impl_->hud->remove();
@@ -60,14 +80,18 @@ void SimLayer::update_content(const ui::input_frame& ui_input, ui::output_frame&
     return;
   }
 
-  impl_->input.set_game_dimensions(impl_->state->dimensions());
+  impl_->input.set_game_dimensions(impl_->istate().dimensions());
   auto sim_input = impl_->input.get();
-  impl_->state->ai_think(sim_input);
-  impl_->state->update(sim_input);
+  if (impl_->networked_state) {
+    networked_update(std::move(sim_input));
+  } else {
+    impl_->state->ai_think(sim_input);
+    impl_->state->update(sim_input);
+  }
 
   bool handle_audio = !(impl_->audio_tick++ % 4);
-  impl_->render_state.set_dimensions(impl_->state->dimensions());
-  impl_->render_state.handle_output(*impl_->state, handle_audio ? &stack().mixer() : nullptr,
+  impl_->render_state.set_dimensions(impl_->istate().dimensions());
+  impl_->render_state.handle_output(impl_->istate(), handle_audio ? &stack().mixer() : nullptr,
                                     &impl_->input);
   impl_->render_state.update(&impl_->input);
 
@@ -83,15 +107,62 @@ void SimLayer::update_content(const ui::input_frame& ui_input, ui::output_frame&
 }
 
 void SimLayer::render_content(render::GlRenderer& r) const {
-  const auto& render = impl_->state->render(/* paused */ stack().top() != impl_->hud);
+  const auto& render = impl_->istate().render(/* paused */ stack().top() != impl_->hud);
   r.set_colour_cycle(render.colour_cycle);
   impl_->render_state.render(r);  // TODO: can be merged with below?
   r.render_shapes(render::coordinate_system::kGlobal, render.shapes, /* trail alpha */ 1.f);
   impl_->hud->set_data(render);
 }
 
+void SimLayer::networked_update(std::vector<input_frame>&& local_input) {
+  // TODO: timing.
+  auto disconnect_with_error = [this](ustring message) {
+    stack().add<ErrorLayer>(std::move(message), [this] {
+      impl_->hud->remove();
+      remove();
+    });
+  };
+
+  bool disconnected = !stack().system().current_lobby() ||
+      event_triggered(stack().system(), System::event_type::kLobbyDisconnected) ||
+      event_triggered(stack().system(), System::event_type::kMessagingSessionFailed);
+  if (disconnected) {
+    disconnect_with_error(ustring::ascii("Disconnected"));
+    return;
+  }
+
+  std::vector<System::received_message> messages;
+  stack().system().receive(data::sim_packet::kChannel, messages);
+  for (const auto& m : messages) {
+    auto packet = data::read_sim_packet(m.bytes);
+    if (!packet) {
+      disconnect_with_error(ustring::ascii("Error reading sim packet: " + packet.error()));
+      return;
+    }
+    impl_->networked_state->input_packet(std::to_string(m.source_user_id), *packet);
+  }
+
+  auto packets = impl_->networked_state->update(local_input);
+  for (const auto& packet : packets) {
+    auto bytes = data::write_sim_packet(packet);
+    if (!bytes) {
+      disconnect_with_error(ustring::ascii("Error sending sim packet: " + bytes.error()));
+      return;
+    }
+    System::send_message message;
+    message.bytes = *bytes;
+    message.channel = data::sim_packet::kChannel;
+    message.send_flags = System::send_flags::kSendNoNagle | System::send_flags::kSendReliable;
+    stack().system().broadcast(message);
+  }
+
+  if (!impl_->networked_state->checksum_failed_remote_ids().empty()) {
+    disconnect_with_error(ustring::ascii("Desync"));
+  }
+}
+
 void SimLayer::end_game() {
-  auto results = impl_->state->results();
+  auto results = impl_->istate().results();
   if (impl_->mode == game_mode::kNormal || impl_->mode == game_mode::kBoss) {
     stack().savegame().bosses_killed |= results.bosses_killed();
   } else {

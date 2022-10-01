@@ -59,7 +59,7 @@ ReplayViewer::ReplayViewer(ui::GameStack& stack, data::ReplayReader&& replay)
     return;
   }
 
-  NetworkedSimState::input_mapping mapping;
+  network_input_mapping mapping;
   for (std::uint32_t i = 0; i < conditions.player_count; ++i) {
     if (std::find(remote_players.begin(), remote_players.end(), i) == remote_players.end()) {
       mapping.local.player_numbers.emplace_back(i);

@@ -2,6 +2,7 @@
 #define II_GAME_CORE_SIM_SIM_LAYER_H
 #include "game/core/ui/game_stack.h"
 #include "game/core/ui/input.h"
+#include "game/logic/sim/io/player.h"
 #include <memory>
 #include <span>
 
@@ -13,12 +14,14 @@ class SimLayer : public ui::GameLayer {
 public:
   ~SimLayer() override;
   SimLayer(ui::GameStack& stack, const initial_conditions& conditions,
-           std::span<const ui::input_device_id> input_devices);
+           std::span<const ui::input_device_id> input_devices,
+           std::optional<network_input_mapping> network = std::nullopt);
 
   void update_content(const ui::input_frame&, ui::output_frame&) override;
   void render_content(render::GlRenderer& r) const override;
 
 private:
+  void networked_update(std::vector<input_frame>&&);
   void end_game();
 
   struct impl_t;

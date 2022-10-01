@@ -5,6 +5,8 @@
 #include <cstddef>
 #include <cstdint>
 #include <optional>
+#include <unordered_map>
+#include <vector>
 
 namespace ii {
 static constexpr std::uint32_t kMaxPlayers = 4;
@@ -22,6 +24,15 @@ struct input_frame {
   std::optional<vec2> target_absolute;
   std::optional<vec2> target_relative;
   std::uint32_t keys = 0;
+};
+
+struct input_source_mapping {
+  std::vector<std::uint32_t> player_numbers;
+};
+
+struct network_input_mapping {
+  input_source_mapping local;
+  std::unordered_map</* remote ID */ std::string, input_source_mapping> remote;
 };
 
 }  // namespace ii

@@ -50,6 +50,12 @@ result<lobby_update_packet> read_lobby_update_packet(std::span<const std::uint8_
     }
   }
   data.start = proto->start();
+  if (proto->has_setup()) {
+    auto& setup = data.setup.emplace();
+    for (const auto& ps : proto->setup().player()) {
+      setup.players.emplace_back().user_id = ps.user_id();
+    }
+  }
   return {std::move(data)};
 }
 
@@ -96,6 +102,12 @@ result<std::vector<std::uint8_t>> write_lobby_update_packet(const lobby_update_p
     }
   }
   proto.set_start(data.start);
+  if (data.setup) {
+    auto& ps = *proto.mutable_setup();
+    for (const auto& p : data.setup->players) {
+      ps.add_player()->set_user_id(p.user_id);
+    }
+  }
   return write_proto(proto);
 }
 

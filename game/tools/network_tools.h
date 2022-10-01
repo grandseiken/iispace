@@ -36,9 +36,8 @@ parse_topology(const std::string& topology_string, std::uint32_t player_count) {
   return topology;
 }
 
-inline NetworkedSimState::input_mapping
-mapping_for(const topology_t& topology, const std::string& id) {
-  NetworkedSimState::input_mapping m;
+inline network_input_mapping mapping_for(const topology_t& topology, const std::string& id) {
+  network_input_mapping m;
   for (std::uint32_t i = 0; i < topology.size(); ++i) {
     if (topology[i] == id) {
       m.local.player_numbers.emplace_back(i);
@@ -105,7 +104,7 @@ struct peer_t {
 
   std::string id;
   data::ReplayWriter replay_writer;
-  NetworkedSimState::input_mapping mapping;
+  network_input_mapping mapping;
   network_options_t options;
   NetworkedSimState sim;
   std::vector<std::unique_ptr<peer_t>>& peers;

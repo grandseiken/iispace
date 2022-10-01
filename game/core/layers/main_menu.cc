@@ -89,7 +89,7 @@ MainMenuLayer::MainMenuLayer(ui::GameStack& stack) : ui::GameLayer{stack} {
   if (stack.system().supports_networked_multiplayer()) {
     add_button(layout, "Start local game",
                [this] { this->stack().add<CreateGameLayer>(/* online */ false); });
-    add_button(layout, "Host online game (WIP)",
+    add_button(layout, "Host online game",
                [this] { this->stack().add<CreateGameLayer>(/* online */ true); });
     add_button(layout, "Join online game (NYI)", [] { /* TODO */ });
   } else {
