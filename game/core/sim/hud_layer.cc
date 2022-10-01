@@ -1,5 +1,6 @@
 #include "game/core/sim/hud_layer.h"
 #include "game/core/layers/common.h"
+#include "game/core/toolkit/layout.h"
 #include "game/core/toolkit/panel.h"
 #include "game/core/toolkit/text.h"
 #include "game/logic/sim/io/output.h"
@@ -28,17 +29,54 @@ inline std::string convert_to_time(std::uint64_t score) {
   return r;
 }
 
+class PlayerHud : public ui::Panel {
+public:
+  PlayerHud(ui::Element* parent, ui::alignment align) : ui::Panel(parent), align_{align} {
+    auto& layout = *add_back<ui::LinearLayout>();
+    layout.set_spacing(kPadding.y);
+    if (+(align & ui::alignment::kTop)) {
+      status_ = layout.add_back<ui::TextElement>();
+      debug_ = layout.add_back<ui::TextElement>();
+    } else {
+      debug_ = layout.add_back<ui::TextElement>();
+      status_ = layout.add_back<ui::TextElement>();
+    }
+    layout.set_align_end(!(align & ui::alignment::kTop));
+    layout.set_absolute_size(*status_, kMediumFont.y);
+
+    status_->set_alignment(align)
+        .set_font(render::font_id::kMonospace)
+        .set_font_dimensions(kMediumFont)
+        .set_colour(kTextColour);
+    debug_->set_alignment(align)
+        .set_font(render::font_id::kMonospace)
+        .set_font_dimensions(kSmallFont)
+        .set_colour(kTextColour)
+        .set_multiline(true);
+  }
+
+  void set_colour(const glm::vec4& colour) { status_->set_colour(colour); }
+
+  void set_player_status(ustring&& s) { status_->set_text(std::move(s)); }
+
+  void set_debug_text(ustring&& s) { debug_->set_text(std::move(s)); }
+
+private:
+  ui::TextElement* status_ = nullptr;
+  ui::TextElement* debug_ = nullptr;
+  ui::alignment align_;
+};
+
 HudLayer::HudLayer(ui::GameStack& stack, game_mode mode)
 : ui::GameLayer{stack, ui::layer_flag::kCaptureCursor}, mode_{mode} {
   set_bounds(rect{kUiDimensions});
 
+  static constexpr auto padding = 2u * kPadding;
   auto add = [&](const rect& r, ui::alignment align) {
-    auto& p = *add_back<ui::Panel>();
+    auto& p = *add_back<PlayerHud>(align);
+    p.set_margin(padding);
     p.set_bounds(r);
-    p.set_margin(2u * kPadding);
-    auto& t = *p.add_back<ui::TextElement>();
-    t.set_alignment(align).set_font(render::font_id::kMonospace).set_font_dimensions(kMediumFont);
-    return &t;
+    return &p;
   };
 
   huds_ = {
@@ -50,8 +88,15 @@ HudLayer::HudLayer(ui::GameStack& stack, game_mode mode)
       add(rect{kUiDimensions / 2, kUiDimensions / 2},
           ui::alignment::kRight | ui::alignment::kBottom),
   };
-  status_ = add(bounds().size_rect(), ui::alignment::kBottom);
-  status_->set_multiline(true);
+
+  auto& p = *add_back<ui::Panel>();
+  p.set_margin(padding);
+  p.set_bounds(bounds().size_rect());
+  status_ = p.add_back<ui::TextElement>();
+  status_->set_alignment(ui::alignment::kBottom)
+      .set_font(render::font_id::kMonospace)
+      .set_font_dimensions(kMediumFont)
+      .set_multiline(true);
 }
 
 void HudLayer::update_content(const ui::input_frame&, ui::output_frame&) {
@@ -60,13 +105,15 @@ void HudLayer::update_content(const ui::input_frame&, ui::output_frame&) {
   }
   for (std::size_t i = 0; i < 4; ++i) {
     if (i >= render_->players.size()) {
-      huds_[i]->set_text(ustring::ascii(""));
+      huds_[i]->set_player_status({});
+      huds_[i]->set_debug_text({});
       continue;
     }
     const auto& p = render_->players[i];
     huds_[i]->set_colour(p.colour);
-    huds_[i]->set_text(
+    huds_[i]->set_player_status(
         ustring::ascii(std::to_string(p.score) + " (" + std::to_string(p.multiplier) + "X)"));
+    huds_[i]->set_debug_text(ustring::ascii(debug_text_[i]));
   }
 
   std::string s = std::to_string(render_->lives_remaining) + " live(s)";

@@ -14,6 +14,7 @@
 #include "game/render/gl_renderer.h"
 #include "game/system/system.h"
 #include <algorithm>
+#include <charconv>
 #include <cstdint>
 #include <sstream>
 #include <vector>
@@ -178,6 +179,39 @@ void SimLayer::networked_update(std::vector<input_frame>&& local_input) {
         message.send_flags |= System::send_flags::kSendNoNagle;
       }
       stack().system().broadcast(message);
+    }
+  }
+
+  for (std::uint32_t i = 0; i < kMaxPlayers; ++i) {
+    for (const auto& pair : impl_->network->remote) {
+      const auto& numbers = pair.second.player_numbers;
+      if (!std::count(numbers.begin(), numbers.end(), i)) {
+        continue;
+      }
+      std::uint64_t id = 0;
+      auto result = std::from_chars(pair.first.data(), pair.first.data() + pair.first.size(), id);
+      if (result.ec != std::errc{} || result.ptr != pair.first.data() + pair.first.size()) {
+        continue;
+      }
+      auto stats = impl_->networked_state->remote(pair.first);
+      auto session = stack().system().session(id);
+      if (!session) {
+        continue;
+      }
+
+      std::string debug;
+      debug += "ping: " + std::to_string(session->ping_ms);
+      debug += "\nquality: " + std::to_string(session->quality);
+
+      auto estimated_tick = stats.latest_tick +
+          static_cast<std::uint32_t>(std::ceil(stack().fps() *
+                                               static_cast<float>(session->ping_ms) / 2000.f));
+
+      auto fdiff = static_cast<std::int64_t>(estimated_tick) -
+          static_cast<std::int64_t>(impl_->networked_state->tick_count());
+      debug += "\nfdiff: " + std::to_string(fdiff);
+      debug += "\nnpred: " + std::to_string(stats.latest_tick - stats.canonical_tick);
+      impl_->hud->set_debug_text(i, std::move(debug));
     }
   }
 

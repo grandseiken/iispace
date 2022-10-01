@@ -61,6 +61,7 @@ public:
 
   struct session_info {
     std::uint32_t ping_ms = 0;
+    float quality = 0.f;
   };
 
   enum send_flags : std::uint32_t {

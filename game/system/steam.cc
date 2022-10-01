@@ -118,6 +118,7 @@ System::session_info get_session_info(std::uint64_t user_id) {
   }
 
   info.ping_ms = status.m_nPing;
+  info.quality = (status.m_flConnectionQualityRemote + status.m_flConnectionQualityLocal) / 2.f;
   return info;
 }
 
