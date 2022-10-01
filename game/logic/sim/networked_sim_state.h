@@ -19,6 +19,11 @@ class ReplayWriter;
 // TODO:
 // - reconcile effects to be applied at last-known position of enemy?
 // - interpolate positions of shots and/or enemies (e.g. follow)?
+// - in networked games, something can go wrong with motion trail positions due to rollback
+// - resulting in blurs that are much too big.
+// - also in networked games, respawning players interpolate from their death position for some
+//   reason.
+// - motion blur when acquiring shield powerup shouldn't happen?
 class NetworkedSimState : public ISimState {
 public:
   ~NetworkedSimState() override = default;

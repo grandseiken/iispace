@@ -21,6 +21,7 @@ public:
   void render_content(render::GlRenderer& r) const override;
 
 private:
+  std::string network_debug_text(std::uint32_t index);
   void networked_update(std::vector<input_frame>&&);
   void end_game();
 

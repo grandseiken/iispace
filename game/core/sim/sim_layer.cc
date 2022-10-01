@@ -20,6 +20,16 @@
 #include <vector>
 
 namespace ii {
+namespace {
+
+std::uint64_t estimate_tick(std::uint32_t fps, const NetworkedSimState::remote_stats& stats,
+                            const System::session_info& session) {
+  return stats.latest_tick +
+      static_cast<std::uint64_t>(
+             std::ceil(static_cast<float>(fps) * static_cast<float>(session.ping_ms) / 2000.f));
+};
+
+}  // namespace
 
 // TODO: handle input device issues (not enough, unplugged, etc).
 struct SimLayer::impl_t {
@@ -53,6 +63,48 @@ struct SimLayer::impl_t {
   std::unique_ptr<SimState> state;
   std::unique_ptr<NetworkedSimState> networked_state;
   std::optional<network_input_mapping> network;
+
+  struct network_frame_diff_t {
+    bool ahead = false;
+    std::uint32_t frame_count = 0;
+  };
+  std::optional<network_frame_diff_t> network_frame_diff;
+
+  std::uint32_t networked_frame_advance_count(std::uint32_t local_tick, std::uint32_t host_tick) {
+    static constexpr std::uint32_t kFrameSyncWindowSize = 8u;
+    static constexpr std::uint32_t kFrameSyncInWindowFrames = 12u;
+    if (local_tick >= host_tick + kFrameSyncWindowSize) {
+      network_frame_diff.reset();
+      return 0u;
+    }
+    if (local_tick + kFrameSyncWindowSize <= host_tick) {
+      network_frame_diff.reset();
+      return 2u;
+    }
+    if (local_tick <= host_tick + 1u && host_tick <= local_tick + 1u) {
+      network_frame_diff.reset();
+      return 1u;
+    }
+    if (local_tick > host_tick) {
+      if (!network_frame_diff || !network_frame_diff->ahead) {
+        network_frame_diff = network_frame_diff_t{};
+      }
+      if (++network_frame_diff->frame_count == kFrameSyncInWindowFrames) {
+        network_frame_diff.reset();
+        return 0u;
+      }
+      return 1u;
+    }
+    if (!network_frame_diff || network_frame_diff->ahead) {
+      network_frame_diff = network_frame_diff_t{};
+      network_frame_diff->ahead = true;
+    }
+    if (++network_frame_diff->frame_count == kFrameSyncInWindowFrames) {
+      network_frame_diff.reset();
+      return 2u;
+    }
+    return 1u;
+  }
 };
 
 SimLayer::~SimLayer() = default;
@@ -96,7 +148,8 @@ void SimLayer::update_content(const ui::input_frame& ui_input, ui::output_frame&
                                     &impl_->input);
   impl_->render_state.update(&impl_->input);
 
-  if (ui_input.pressed(ui::key::kStart) || ui_input.pressed(ui::key::kEscape) ||
+  // TODO: handle pausing in multiplayer.
+  if (!impl_->network && ui_input.pressed(ui::key::kStart) || ui_input.pressed(ui::key::kEscape) ||
       sim_should_pause(stack())) {
     stack().add<PauseLayer>([this] {
       end_game();
@@ -113,6 +166,42 @@ void SimLayer::render_content(render::GlRenderer& r) const {
   impl_->render_state.render(r);  // TODO: can be merged with below?
   r.render_shapes(render::coordinate_system::kGlobal, render.shapes, /* trail alpha */ 1.f);
   impl_->hud->set_data(render);
+}
+
+std::string SimLayer::network_debug_text(std::uint32_t index) {
+  const auto& local_players = impl_->network->local.player_numbers;
+  if (std::count(local_players.begin(), local_players.end(), index)) {
+    return "npred: " +
+        std::to_string(impl_->networked_state->predicted().tick_count() -
+                       impl_->networked_state->canonical().tick_count());
+  }
+
+  for (const auto& pair : impl_->network->remote) {
+    const auto& players = pair.second.player_numbers;
+    if (!std::count(players.begin(), players.end(), index)) {
+      continue;
+    }
+    std::uint64_t id = 0;
+    auto result = std::from_chars(pair.first.data(), pair.first.data() + pair.first.size(), id);
+    if (result.ec != std::errc{} || result.ptr != pair.first.data() + pair.first.size()) {
+      continue;
+    }
+    auto stats = impl_->networked_state->remote(pair.first);
+    auto session = stack().system().session(id);
+    if (!session) {
+      continue;
+    }
+    auto fdiff = static_cast<std::int64_t>(estimate_tick(stack().fps(), stats, *session)) -
+        static_cast<std::int64_t>(impl_->networked_state->tick_count());
+
+    std::string debug;
+    debug += "ping: " + std::to_string(session->ping_ms);
+    debug += "\nquality: " + std::to_string(session->quality);
+    debug += "\nfdiff: " + std::to_string(fdiff);
+    debug += "\nfpred: " + std::to_string(stats.latest_tick - stats.canonical_tick);
+    return debug;
+  }
+  return {};
 }
 
 void SimLayer::networked_update(std::vector<input_frame>&& local_input) {
@@ -145,21 +234,14 @@ void SimLayer::networked_update(std::vector<input_frame>&& local_input) {
 
   std::uint32_t frame_count = 1;
   if (stack().system().current_lobby()->host) {
-    // Try to sync timing with host.
-    static constexpr std::uint32_t kFrameSyncWindowSize = 10u;
+    // Sync timing with host.
     auto host_id = stack().system().current_lobby()->host->id;
     auto host_stats = impl_->networked_state->remote(std::to_string(host_id));
     auto host_session = stack().system().session(host_id);
     if (host_session) {
-      auto estimated_host_tick = host_stats.latest_tick +
-          static_cast<std::uint32_t>(std::ceil(stack().fps() *
-                                               static_cast<float>(host_session->ping_ms) / 2000.f));
+      auto estimated_host_tick = estimate_tick(stack().fps(), host_stats, *host_session);
       auto local_tick = impl_->networked_state->tick_count() + 1;
-      if (local_tick >= estimated_host_tick + kFrameSyncWindowSize) {
-        frame_count = 0;
-      } else if (local_tick + kFrameSyncWindowSize <= estimated_host_tick) {
-        frame_count = 2;
-      }
+      frame_count = impl_->networked_frame_advance_count(local_tick, estimated_host_tick);
     }
   }
 
@@ -183,36 +265,7 @@ void SimLayer::networked_update(std::vector<input_frame>&& local_input) {
   }
 
   for (std::uint32_t i = 0; i < kMaxPlayers; ++i) {
-    for (const auto& pair : impl_->network->remote) {
-      const auto& numbers = pair.second.player_numbers;
-      if (!std::count(numbers.begin(), numbers.end(), i)) {
-        continue;
-      }
-      std::uint64_t id = 0;
-      auto result = std::from_chars(pair.first.data(), pair.first.data() + pair.first.size(), id);
-      if (result.ec != std::errc{} || result.ptr != pair.first.data() + pair.first.size()) {
-        continue;
-      }
-      auto stats = impl_->networked_state->remote(pair.first);
-      auto session = stack().system().session(id);
-      if (!session) {
-        continue;
-      }
-
-      std::string debug;
-      debug += "ping: " + std::to_string(session->ping_ms);
-      debug += "\nquality: " + std::to_string(session->quality);
-
-      auto estimated_tick = stats.latest_tick +
-          static_cast<std::uint32_t>(std::ceil(stack().fps() *
-                                               static_cast<float>(session->ping_ms) / 2000.f));
-
-      auto fdiff = static_cast<std::int64_t>(estimated_tick) -
-          static_cast<std::int64_t>(impl_->networked_state->tick_count());
-      debug += "\nfdiff: " + std::to_string(fdiff);
-      debug += "\nnpred: " + std::to_string(stats.latest_tick - stats.canonical_tick);
-      impl_->hud->set_debug_text(i, std::move(debug));
-    }
+    impl_->hud->set_debug_text(i, network_debug_text(i));
   }
 
   if (!impl_->networked_state->checksum_failed_remote_ids().empty()) {
