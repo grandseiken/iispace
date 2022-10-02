@@ -87,7 +87,7 @@ struct SimLayer::impl_t {
       return 1u;
     }
     if (local_tick > host_tick) {
-      if (!network_frame_diff || !network_frame_diff->ahead) {
+      if (!network_frame_diff || network_frame_diff->ahead) {
         network_frame_diff = network_frame_diff_t{};
       }
       if (++network_frame_diff->frame_count == kFrameSyncInWindowFrames) {
@@ -96,7 +96,7 @@ struct SimLayer::impl_t {
       }
       return 1u;
     }
-    if (!network_frame_diff || network_frame_diff->ahead) {
+    if (!network_frame_diff || !network_frame_diff->ahead) {
       network_frame_diff = network_frame_diff_t{};
       network_frame_diff->ahead = true;
     }

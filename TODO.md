@@ -95,6 +95,7 @@
 * Large explosions on impact
 * Single massive damage screen-penetrating sniper shot
 * Pizza cutter boomerang
+* Bulldozer
 * Rstick-controllable doomcircle
 * Megalaser?
 * Charge from kills
@@ -105,6 +106,8 @@
 * Pull in nearby enemies
 * Invisibility (enemies no longer follow)
 * Some sort of drone helper?
+* Temporary invulnerability
+* Torus warp
 * Slow time
 
 Note: most of these hard to do with laggy network.
