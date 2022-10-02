@@ -83,10 +83,10 @@ DEBUG_STRUCT_TUPLE(PostUpdate, post_update);
 struct Render : ecs::component {
   sfn::ptr<void(ecs::const_handle, std::vector<render::shape>&, const SimInterface&)> render =
       nullptr;
-  std::vector<std::optional<render::motion_trail>> trails;
+  bool clear_trails = false;
 
-  void
-  render_shapes(ecs::const_handle, bool paused, std::vector<render::shape>&, const SimInterface&);
+  void render_shapes(ecs::const_handle, render::entity_state& state, bool paused,
+                     std::vector<render::shape>&, const SimInterface&);
 };
 DEBUG_STRUCT_TUPLE(Render, render);
 

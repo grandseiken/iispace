@@ -22,6 +22,7 @@ struct aggregate_output;
 struct initial_conditions;
 struct render_output;
 struct sim_results;
+struct transient_render_state;
 
 class ISimState {
 public:
@@ -31,7 +32,7 @@ public:
   virtual glm::uvec2 dimensions() const = 0;
   virtual std::uint64_t tick_count() const = 0;
   virtual std::uint32_t fps() const = 0;
-  virtual const render_output& render(bool paused) const = 0;
+  virtual const render_output& render(transient_render_state&, bool paused) const = 0;
 
   virtual aggregate_output& output() = 0;
   virtual const sim_results& results() const = 0;
@@ -56,7 +57,7 @@ public:
   void ai_think(std::vector<input_frame>& input) const;
   void update(std::vector<input_frame> input);
   bool game_over() const override;
-  const render_output& render(bool paused) const override;
+  const render_output& render(transient_render_state& state, bool paused) const override;
   std::uint32_t fps() const override;
 
   aggregate_output& output() override;

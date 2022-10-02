@@ -4,6 +4,7 @@
 #include <glm/glm.hpp>
 #include <cstdint>
 #include <optional>
+#include <unordered_map>
 #include <variant>
 
 namespace ii::render {
@@ -71,6 +72,10 @@ struct shape {
         .data = render::line{.radius = distance(a, b) / 2.f},
     };
   }
+};
+
+struct entity_state {
+  std::vector<std::optional<motion_trail>> trails;
 };
 
 }  // namespace ii::render

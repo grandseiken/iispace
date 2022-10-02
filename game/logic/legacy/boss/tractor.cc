@@ -89,7 +89,7 @@ struct TractorBoss : ecs::component {
     }
 
     if (transform.centre.x < -150) {
-      render.trails.clear();
+      render.clear_trails = true;
       transform.centre.x = dim_x + 150;
       will_attack = !will_attack;
       shoot_type = sim.random_bool();

@@ -186,7 +186,7 @@ struct PlayerLogic : ecs::component {
         pc.kill_timer = 0;
         kill_queue.erase(kill_queue.begin());
         invulnerability_timer = kReviveTime;
-        render.trails.clear();
+        render.clear_trails = true;
         transform.centre = {(1 + pc.player_number) * dim.x.to_int() / (1 + sim.player_count()),
                             dim.y / 2};
         sim.emit(resolve_key::reconcile(h.id(), resolve_tag::kRespawn))
@@ -202,7 +202,7 @@ struct PlayerLogic : ecs::component {
       auto v = length(input.velocity) > 1 ? normalise(input.velocity) : input.velocity;
       auto av = angle(v);
       if (abs(angle_diff(av, transform.rotation)) > fixed_c::pi / 3) {
-        render.trails.clear();
+        render.clear_trails = true;
       }
       transform.set_rotation(angle(v));
       transform.centre = max(vec2{0}, min(dim, kPlayerSpeed * v + transform.centre));
@@ -310,6 +310,7 @@ struct PlayerLogic : ecs::component {
     if (should_render(pc)) {
       auto c = player_colour(pc.player_number);
       auto t = to_float(fire_target);
+      // TODO: reticule shares same index as shield/bomb powerup so causes odd motion blur incidents.
       output.emplace_back(render::shape{
           .origin = t,
           .colour = c,

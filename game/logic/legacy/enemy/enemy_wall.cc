@@ -49,28 +49,28 @@ struct Square : ecs::component {
       if (dir.x <= 0) {
         dir.x = 1;
       }
-      render.trails.clear();
+      render.clear_trails = true;
     }
     if (v.y < 0 && dir.y <= 0) {
       dir.y = -dir.y;
       if (dir.y <= 0) {
         dir.y = 1;
       }
-      render.trails.clear();
+      render.clear_trails = true;
     }
     if (v.x > dim.x && dir.x >= 0) {
       dir.x = -dir.x;
       if (dir.x >= 0) {
         dir.x = -1;
       }
-      render.trails.clear();
+      render.clear_trails = true;
     }
     if (v.y > dim.y && dir.y >= 0) {
       dir.y = -dir.y;
       if (dir.y >= 0) {
         dir.y = -1;
       }
-      render.trails.clear();
+      render.clear_trails = true;
     }
     dir = normalise(dir);
     transform.move(dir * kSpeed);
@@ -133,7 +133,7 @@ struct Wall : ecs::component {
         (v.x > dim.x && dir.x > fixed_c::hundredth) ||
         (v.y > dim.y && dir.y > fixed_c::hundredth)) {
       dir = -normalise(dir);
-      render.trails.clear();
+      render.clear_trails = true;
     }
 
     transform.move(dir * kSpeed);

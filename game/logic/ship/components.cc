@@ -43,22 +43,26 @@ void GlobalData::post_update(ecs::handle h, SimInterface& sim) {
   }
 }
 
-void Render::render_shapes(ecs::const_handle h, bool paused, std::vector<render::shape>& output,
-                           const SimInterface& sim) {
+void Render::render_shapes(ecs::const_handle h, render::entity_state& state, bool paused,
+                           std::vector<render::shape>& output, const SimInterface& sim) {
+  if (clear_trails) {
+    state.trails.clear();
+    clear_trails = false;
+  }
   auto start = output.size();
   render(h, output, sim);
   auto count = output.size() - start;
-  trails.resize(count);
+  state.trails.resize(count);
   for (std::size_t i = 0; i < count; ++i) {
     auto& s = output[start + i];
     if (s.disable_trail) {
       s.trail.reset();
-      trails[i].reset();
-    } else if (trails[i]) {
-      s.trail = *trails[i];
+      state.trails[i].reset();
+    } else if (state.trails[i]) {
+      s.trail = *state.trails[i];
     }
     if (!paused) {
-      trails[i] = render::motion_trail{
+      state.trails[i] = render::motion_trail{
           .prev_origin = s.origin, .prev_rotation = s.rotation, .prev_colour = s.colour};
     }
   }

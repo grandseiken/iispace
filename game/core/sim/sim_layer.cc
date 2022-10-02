@@ -58,6 +58,7 @@ struct SimLayer::impl_t {
   game_options_t options;
   game_mode mode;
   RenderState render_state;
+  transient_render_state transients;
   SimInputAdapter input;
   data::ReplayWriter writer;
   std::unique_ptr<SimState> state;
@@ -149,8 +150,9 @@ void SimLayer::update_content(const ui::input_frame& ui_input, ui::output_frame&
   impl_->render_state.update(&impl_->input);
 
   // TODO: handle pausing in multiplayer.
-  if (!impl_->network && ui_input.pressed(ui::key::kStart) || ui_input.pressed(ui::key::kEscape) ||
-      sim_should_pause(stack())) {
+  bool should_pause = (ui_input.pressed(ui::key::kStart) || ui_input.pressed(ui::key::kEscape) ||
+                       sim_should_pause(stack()));
+  if (!impl_->network && should_pause) {
     stack().add<PauseLayer>([this] {
       end_game();
       impl_->hud->remove();
@@ -161,7 +163,8 @@ void SimLayer::update_content(const ui::input_frame& ui_input, ui::output_frame&
 }
 
 void SimLayer::render_content(render::GlRenderer& r) const {
-  const auto& render = impl_->istate().render(/* paused */ stack().top() != impl_->hud);
+  const auto& render =
+      impl_->istate().render(impl_->transients, /* paused */ stack().top() != impl_->hud);
   r.set_colour_cycle(render.colour_cycle);
   impl_->render_state.render(r);  // TODO: can be merged with below?
   r.render_shapes(render::coordinate_system::kGlobal, render.shapes, /* trail alpha */ 1.f);
@@ -171,7 +174,7 @@ void SimLayer::render_content(render::GlRenderer& r) const {
 std::string SimLayer::network_debug_text(std::uint32_t index) {
   const auto& local_players = impl_->network->local.player_numbers;
   if (std::count(local_players.begin(), local_players.end(), index)) {
-    return "npred: " +
+    return "fpred: " +
         std::to_string(impl_->networked_state->predicted().tick_count() -
                        impl_->networked_state->canonical().tick_count());
   }

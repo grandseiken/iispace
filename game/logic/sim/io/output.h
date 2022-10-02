@@ -56,6 +56,10 @@ struct render_output {
   std::uint32_t colour_cycle = 0;
 };
 
+struct transient_render_state {
+  std::unordered_map<std::uint32_t, render::entity_state> entity_map;
+};
+
 struct sim_results {
   std::uint64_t tick_count = 0;
   std::uint32_t seed = 0;

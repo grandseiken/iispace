@@ -4,6 +4,7 @@
 #include "game/logic/legacy/overmind/overmind.h"
 #include "game/logic/legacy/player/player.h"
 #include "game/logic/ship/components.h"
+#include "game/logic/sim/io/render.h"
 #include "game/logic/sim/sim_interface.h"
 #include "game/logic/sim/sim_internals.h"
 #include <glm/gtc/constants.hpp>
@@ -214,36 +215,39 @@ bool SimState::game_over() const {
   return game_over_;
 }
 
-const render_output& SimState::render(bool paused) const {
+const render_output& SimState::render(transient_render_state& state, bool paused) const {
   internals_->render.boss_hp_bar.reset();
   internals_->render.shapes.clear();
   internals_->render.players.clear();
 
   internals_->index.iterate_dispatch<Render>([&](ecs::handle h, Render& r) {
     if (!h.get<Player>()) {
-      r.render_shapes(h, paused, internals_->render.shapes, *interface_);
+      r.render_shapes(h, state.entity_map[+h.id()], paused, internals_->render.shapes, *interface_);
       return;
     }
   });
-  internals_->index.iterate_dispatch<Player>(
-      [&](ecs::handle h, const Player& p, Render& r, Transform& transform) {
-        if (auto info = p.render_info(h, *interface_)) {
-          internals_->render.players.resize(std::max(
-              internals_->render.players.size(), static_cast<std::size_t>(p.player_number + 1)));
-          internals_->render.players[p.player_number] = *info;
-        }
+  internals_->index.iterate_dispatch<Player>([&](ecs::handle h, const Player& p, Render& r,
+                                                 Transform& transform) {
+    if (auto info = p.render_info(h, *interface_)) {
+      internals_->render.players.resize(std::max(internals_->render.players.size(),
+                                                 static_cast<std::size_t>(p.player_number + 1)));
+      internals_->render.players[p.player_number] = *info;
+    }
 
-        auto it = smoothing_data_.players.find(p.player_number);
-        if (it == smoothing_data_.players.end() || !it->second.position) {
-          r.render_shapes(h, paused, internals_->render.shapes, *interface_);
-          return;
-        }
-        auto transform_copy = transform;
-        transform.centre = *it->second.position;
-        transform.rotation = it->second.rotation;
-        r.render_shapes(h, paused, internals_->render.shapes, *interface_);
-        transform = transform_copy;
-      });
+    auto it = smoothing_data_.players.find(p.player_number);
+    if (it == smoothing_data_.players.end() || !it->second.position) {
+      r.render_shapes(h, state.entity_map[+h.id()], paused, internals_->render.shapes, *interface_);
+      return;
+    }
+    auto transform_copy = transform;
+    transform.centre = *it->second.position;
+    transform.rotation = it->second.rotation;
+    r.render_shapes(h, state.entity_map[+h.id()], paused, internals_->render.shapes, *interface_);
+    transform = transform_copy;
+  });
+  std::erase_if(state.entity_map, [&](const auto& pair) {
+    return !internals_->index.contains(ecs::entity_id{pair.first});
+  });
 
   // TODO: extract somewhere?
   auto render_warning = [&](const glm::vec2& v) {
@@ -369,9 +373,14 @@ void SimState::update_smoothing(smoothing_data& data) {
       v = transform.centre - *it->second.position;
       d = length(v);
     }
-    if (!it->second.position || d < kPlayerSpeed) {
+    if (!it->second.position || d < kPlayerSpeed || p.is_killed()) {
       it->second.velocity = {0, 0};
-      it->second.position = transform.centre;
+      if (p.is_killed()) {
+        // Avoid interpolating to spawn position after death.
+        it->second.position.reset();
+      } else {
+        it->second.position = transform.centre;
+      }
       smooth_rotate(it->second.rotation, transform.rotation);
       return;
     }

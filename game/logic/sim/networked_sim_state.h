@@ -21,8 +21,6 @@ class ReplayWriter;
 // - interpolate positions of shots and/or enemies (e.g. follow)?
 // - in networked games, something can go wrong with motion trail positions due to rollback
 // - resulting in blurs that are much too big.
-// - also in networked games, respawning players interpolate from their death position for some
-//   reason.
 // - motion blur when acquiring shield powerup shouldn't happen?
 class NetworkedSimState : public ISimState {
 public:
@@ -60,8 +58,8 @@ public:
   std::uint64_t tick_count() const override { return predicted_state_.tick_count(); }
   std::uint32_t fps() const override { return predicted_state_.fps(); }
 
-  const render_output& render(bool paused) const override {
-    return predicted_state_.render(paused);
+  const render_output& render(transient_render_state& state, bool paused) const override {
+    return predicted_state_.render(state, paused);
   }
   aggregate_output& output() override { return merged_output_; }
   const sim_results& results() const override { return canonical_state_.results(); }

@@ -30,6 +30,7 @@ struct ReplayViewer::impl_t {
   data::ReplayReader reader;
   game_mode mode;
   RenderState render_state;
+  transient_render_state transients;
   std::uint32_t speed = 0;
   std::uint32_t audio_tick = 0;
   std::unique_ptr<SimState> state;
@@ -127,7 +128,7 @@ void ReplayViewer::update_content(const ui::input_frame& input, ui::output_frame
       impl_->network_state->update(local_frames);
     }
     if (1 + i == kSpeedPreRenderFrames[impl_->speed]) {
-      impl_->istate().render(/* paused */ false);
+      impl_->istate().render(impl_->transients, /* paused */ false);
     }
   }
 
@@ -155,7 +156,8 @@ void ReplayViewer::update_content(const ui::input_frame& input, ui::output_frame
 }
 
 void ReplayViewer::render_content(render::GlRenderer& r) const {
-  const auto& render = impl_->istate().render(/* paused */ stack().top() != impl_->hud);
+  const auto& render =
+      impl_->istate().render(impl_->transients, /* paused */ stack().top() != impl_->hud);
   r.set_colour_cycle(render.colour_cycle);
   impl_->render_state.render(r);  // TODO: can be merged with below?
   impl_->hud->set_data(render);
