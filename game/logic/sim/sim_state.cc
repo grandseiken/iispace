@@ -215,6 +215,10 @@ bool SimState::game_over() const {
   return game_over_;
 }
 
+std::uint32_t SimState::fps() const {
+  return internals_->conditions.mode == game_mode::kFast ? 60 : 50;
+}
+
 const render_output& SimState::render(transient_render_state& state, bool paused) const {
   internals_->render.boss_hp_bar.reset();
   internals_->render.shapes.clear();
@@ -304,10 +308,6 @@ const render_output& SimState::render(transient_render_state& state, bool paused
     result.boss_hp_bar = static_cast<float>(boss_hp) / static_cast<float>(boss_max_hp);
   }
   return result;
-}
-
-std::uint32_t SimState::fps() const {
-  return internals_->conditions.mode == game_mode::kFast ? 60 : 50;
 }
 
 aggregate_output& SimState::output() {

@@ -57,8 +57,10 @@ public:
   void ai_think(std::vector<input_frame>& input) const;
   void update(std::vector<input_frame> input);
   bool game_over() const override;
-  const render_output& render(transient_render_state& state, bool paused) const override;
   std::uint32_t fps() const override;
+  // TODO: transient_render_state mucks up with entity IDs sometimes (e.g. shots teleporting).
+  // Need to figure out how to avoid that.
+  const render_output& render(transient_render_state& state, bool paused) const override;
 
   aggregate_output& output() override;
   const sim_results& results() const override;
