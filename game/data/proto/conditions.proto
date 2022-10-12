@@ -2,21 +2,35 @@ syntax = "proto3";
 option optimize_for = LITE_RUNTIME;
 package ii.proto;
 
-message GameMode {
-  enum Enum {
-    kNormal = 0;
-    kBoss = 1;
-    kHard = 2;
-    kFast = 3;
-    kWhat = 4;
-  }
-}
-
 message CompatibilityLevel {
   enum Enum {
     kLegacy = 0;
     kIispaceV0 = 1;
   }
+}
+
+message GameMode {
+  enum Enum {
+    // Legacy game modes.
+    kLegacy_Normal = 0;
+    kLegacy_Boss = 1;
+    kLegacy_Hard = 2;
+    kLegacy_Fast = 3;
+    kLegacy_What = 4;
+    // New game modes.
+    kStandardRun = 5;
+  }
+}
+
+message RunModifiers {}
+message GameTechTree {}
+
+message RunBiome {
+  enum Enum {
+    kNone = 0;
+    kTesting = 1;
+  }
+  Enum value = 1;
 }
 
 message InitialConditions {
@@ -30,5 +44,8 @@ message InitialConditions {
   uint32 player_count = 3;
 
   GameMode.Enum game_mode = 4;
+  RunModifiers modifiers = 6;
+  GameTechTree tech_tree = 7;
   Flag flags = 5;
+  repeated RunBiome biome = 8;
 }

@@ -157,6 +157,7 @@ struct Player : ecs::component {
   bool has_bomb = false;
   bool has_shield = false;
   bool is_predicted = false;
+  fixed speed = 0;  // Used for CSP.
 
   std::uint64_t score = 0;
   std::uint32_t multiplier = 1;

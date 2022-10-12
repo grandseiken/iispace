@@ -12,16 +12,18 @@ inline result<void> parse_game_mode(std::vector<std::string>& args, game_mode& m
     return unexpected(r.error());
   }
   if (mode_string) {
-    if (*mode_string == "normal") {
-      mode = game_mode::kNormal;
-    } else if (*mode_string == "boss") {
-      mode = game_mode::kBoss;
-    } else if (*mode_string == "hard") {
-      mode = game_mode::kHard;
-    } else if (*mode_string == "fast") {
-      mode = game_mode::kFast;
-    } else if (*mode_string == "what") {
-      mode = game_mode::kWhat;
+    if (*mode_string == "standard_run") {
+      mode = game_mode::kStandardRun;
+    } else if (*mode_string == "legacy_normal") {
+      mode = game_mode::kLegacy_Normal;
+    } else if (*mode_string == "legacy_boss") {
+      mode = game_mode::kLegacy_Boss;
+    } else if (*mode_string == "legacy_hard") {
+      mode = game_mode::kLegacy_Hard;
+    } else if (*mode_string == "legacy_fast") {
+      mode = game_mode::kLegacy_Fast;
+    } else if (*mode_string == "legacy_what") {
+      mode = game_mode::kLegacy_What;
     } else {
       return unexpected("error: unknown game mode " + *mode_string);
     }

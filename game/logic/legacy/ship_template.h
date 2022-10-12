@@ -1,5 +1,5 @@
-#ifndef II_GAME_LOGIC_SHIP_SHIP_TEMPLATE_H
-#define II_GAME_LOGIC_SHIP_SHIP_TEMPLATE_H
+#ifndef II_GAME_LOGIC_LEGACY_SHIP_TEMPLATE_H
+#define II_GAME_LOGIC_LEGACY_SHIP_TEMPLATE_H
 #include "game/common/fix32.h"
 #include "game/logic/ecs/call.h"
 #include "game/logic/ecs/index.h"
@@ -11,7 +11,7 @@
 #include "game/logic/sim/sim_interface.h"
 #include <sfn/functional.h>
 
-namespace ii {
+namespace ii::legacy {
 
 template <geom::ShapeNode... S>
 using standard_transform = geom::translate_p<0, geom::rotate_p<1, S...>>;
@@ -279,6 +279,6 @@ void add_enemy_health(ecs::handle h, std::uint32_t hp,
   }
 }
 
-}  // namespace ii
+}  // namespace ii::legacy
 
 #endif

@@ -21,7 +21,7 @@ namespace {
 struct options_t {
   network_options_t network;
   compatibility_level compatibility = compatibility_level::kIispaceV0;
-  game_mode mode = game_mode::kNormal;
+  game_mode mode = game_mode::kStandardRun;
   initial_conditions::flag flags = initial_conditions::flag::kNone;
   std::uint32_t player_count = 0;
   std::optional<std::uint32_t> seed;

@@ -57,7 +57,7 @@ result<proto::Replay> read_replay_file(std::span<const std::uint8_t> bytes) {
   result.set_game_version(kLegacyReplayVersion);
   std::uint32_t players = 0;
   std::uint32_t seed = 0;
-  proto::GameMode::Enum mode = proto::GameMode::kNormal;
+  proto::GameMode::Enum mode = proto::GameMode::kLegacy_Normal;
   bool can_face_secret_boss = false;
 
   std::getline(dc, line);
@@ -67,13 +67,13 @@ result<proto::Replay> read_replay_file(std::span<const std::uint8_t> bytes) {
 
   bool bb = false;
   ss >> bb;
-  mode = bb ? proto::GameMode::kBoss : mode;
+  mode = bb ? proto::GameMode::kLegacy_Boss : mode;
   ss >> bb;
-  mode = bb ? proto::GameMode::kHard : mode;
+  mode = bb ? proto::GameMode::kLegacy_Hard : mode;
   ss >> bb;
-  mode = bb ? proto::GameMode::kFast : mode;
+  mode = bb ? proto::GameMode::kLegacy_Fast : mode;
   ss >> bb;
-  mode = bb ? proto::GameMode::kWhat : mode;
+  mode = bb ? proto::GameMode::kLegacy_What : mode;
   ss >> seed;
 
   auto& conditions = *result.mutable_conditions();

@@ -47,6 +47,9 @@ public:
       conditions.flags |= initial_conditions::flag::kLegacy_CanFaceSecretBoss;
       conditions.player_count = 0u;
       conditions.mode = mode;
+      if (conditions.mode == game_mode::kStandardRun) {
+        conditions.biomes.emplace_back(run_biome::kTesting);
+      }
       if (!host_online_) {
         this->stack().add<RunLobbyLayer>(conditions, /* online*/ false);
         return;
@@ -58,11 +61,12 @@ public:
     };
 
     auto& layout = add_main_layout(this);
-    add_button(layout, "Normal mode", [=] { start_game(game_mode::kNormal); });
-    add_button(layout, "Boss mode", [=] { start_game(game_mode::kBoss); });
-    add_button(layout, "Hard mode", [=] { start_game(game_mode::kHard); });
-    add_button(layout, "Fast mode", [=] { start_game(game_mode::kFast); });
-    add_button(layout, "W-hat mode", [=] { start_game(game_mode::kWhat); });
+    add_button(layout, "NEW GAME ALPHA PLUS!", [=] { start_game(game_mode::kStandardRun); });
+    add_button(layout, "Normal mode (legacy)", [=] { start_game(game_mode::kLegacy_Normal); });
+    add_button(layout, "Boss mode (legacy)", [=] { start_game(game_mode::kLegacy_Boss); });
+    add_button(layout, "Hard mode (legacy)", [=] { start_game(game_mode::kLegacy_Hard); });
+    add_button(layout, "Fast mode (legacy)", [=] { start_game(game_mode::kLegacy_Fast); });
+    add_button(layout, "W-hat mode (legacy)", [=] { start_game(game_mode::kLegacy_What); });
     add_button(layout, "Back", [this] { remove(); });
 
     stack.set_volume(.5f);

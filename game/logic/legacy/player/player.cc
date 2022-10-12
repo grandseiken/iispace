@@ -4,7 +4,7 @@
 #include "game/logic/geometry/shapes/box.h"
 #include "game/logic/geometry/shapes/ngon.h"
 #include "game/logic/legacy/player/ai_player.h"
-#include "game/logic/ship/ship_template.h"
+#include "game/logic/legacy/ship_template.h"
 #include "game/logic/sim/io/conditions.h"
 #include "game/logic/sim/io/render.h"
 #include <algorithm>
@@ -119,6 +119,7 @@ void spawn_shot(SimInterface& sim, const vec2& position, ecs::handle player, con
 }
 
 struct PlayerLogic : ecs::component {
+  static constexpr fixed kPlayerSpeed = 5;
   static constexpr fixed kBombRadius = 180;
   static constexpr fixed kBombBossRadius = 280;
   static constexpr float kZIndex = 96.f;
@@ -151,7 +152,7 @@ struct PlayerLogic : ecs::component {
   };
 
   PlayerLogic(const SimInterface& sim, const vec2& target)
-  : is_what_mode{sim.conditions().mode == game_mode::kWhat}, fire_target{target} {}
+  : is_what_mode{sim.conditions().mode == game_mode::kLegacy_What}, fire_target{target} {}
   bool is_what_mode = false;
   std::uint32_t invulnerability_timer = kReviveTime;
   std::uint32_t fire_timer = 0;
@@ -159,6 +160,7 @@ struct PlayerLogic : ecs::component {
   bool fire_target_trail = true;
 
   void update(ecs::handle h, Player& pc, Transform& transform, Render& render, SimInterface& sim) {
+    pc.speed = kPlayerSpeed;
     const auto& input = sim.input(pc.player_number);
     auto old_fire_target = fire_target;
     if (input.target_absolute) {
@@ -310,7 +312,8 @@ struct PlayerLogic : ecs::component {
     if (should_render(pc)) {
       auto c = player_colour(pc.player_number);
       auto t = to_float(fire_target);
-      // TODO: reticule shares same index as shield/bomb powerup so causes odd motion blur incidents.
+      // TODO: reticule shares same index as shield/bomb powerup so causes odd motion blur
+      // incidents.
       output.emplace_back(render::shape{
           .origin = t,
           .colour = c,
@@ -322,7 +325,7 @@ struct PlayerLogic : ecs::component {
   }
 
   std::optional<render::player_info> render_info(const Player& pc, const SimInterface& sim) const {
-    if (sim.conditions().mode == game_mode::kBoss) {
+    if (sim.conditions().mode == game_mode::kLegacy_Boss) {
       return std::nullopt;
     }
     render::player_info info;

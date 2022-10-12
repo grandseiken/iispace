@@ -9,14 +9,13 @@ cc_library(
   ],
   implementation_deps = [
     ":ai_player",
-    "//game/logic/ecs",
     "//game/logic/geometry/shapes",
-    "//game/logic/ship",
+    "//game/logic/legacy:ship_template",
     "//game/logic/sim:sim_interface",
     "//game/logic/sim/io:conditions",
     "//game/logic/sim/io:render",
   ],
-  visibility = ["//game/logic/sim:__pkg__"],
+  visibility = ["//game/logic/legacy:__pkg__"],
 )
 
 cc_library(
@@ -25,13 +24,13 @@ cc_library(
   srcs = ["powerup.cc"],
   deps = [
     "//game/common:math",
-    "//game/logic/ship",
+    "//game/logic/ship:components",
   ],
   implementation_deps = [
     "//game/logic/sim/io:player",
     "//game/logic/ecs",
     "//game/logic/geometry/shapes",
-    "//game/logic/ship",
+    "//game/logic/legacy:ship_template",
     "//game/logic/sim:sim_interface",
   ],
   visibility = [
@@ -46,11 +45,11 @@ cc_library(
   srcs = ["ai_player.cc"],
   deps = [
     "//game/logic/sim/io:player",
-    "//game/logic/ship",
+    "//game/logic/ship:components",
   ],
   implementation_deps = [
     "//game/logic/ecs",
-    "//game/logic/ship",
+    "//game/logic/legacy:ship_template",
     "//game/logic/sim:sim_interface",
   ],
 )

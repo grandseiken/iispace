@@ -9,10 +9,11 @@ cc_library(
     "//game/logic/legacy/boss",
     "//game/logic/ecs",
     "//game/logic/legacy/player:powerup",
+    "//game/logic/ship:components",
     "//game/logic/sim:sim_interface",
     "//game/logic/sim/io:conditions",
   ],
-  visibility = ["//game/logic/sim:__pkg__"],
+  visibility = ["//game/logic/legacy:__pkg__"],
 )
 
 cc_library(

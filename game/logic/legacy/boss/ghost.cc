@@ -8,7 +8,7 @@
 #include "game/logic/legacy/boss/boss_internal.h"
 #include "game/logic/legacy/enemy/enemy.h"
 #include "game/logic/legacy/player/powerup.h"
-#include "game/logic/ship/ship_template.h"
+#include "game/logic/legacy/ship_template.h"
 #include "game/logic/sim/io/events.h"
 #include <array>
 
@@ -450,29 +450,29 @@ struct GhostBoss : ecs::component {
                       const std::optional<glm::vec4> colour_override = std::nullopt,
                       std::uint32_t time = 8, const std::optional<vec2>& towards = std::nullopt,
                       std::optional<float> speed = std::nullopt) const {
-    ii::explode_shapes<explode_shape>(e, shape_parameters(transform), colour_override, time,
-                                      towards, speed);
+    legacy::explode_shapes<explode_shape>(e, shape_parameters(transform), colour_override, time,
+                                          towards, speed);
     for (std::uint32_t i = 0; i < 10; ++i) {
       e.explosion(to_float(transform.centre), glm::vec4{0.f});  // Compatibility.
     }
     for (std::uint32_t i = 0; i < 8; ++i) {
-      ii::explode_shapes<spark_shape>(e, spark_shape_parameters(transform, i), colour_override,
-                                      time, towards, speed);
+      legacy::explode_shapes<spark_shape>(e, spark_shape_parameters(transform, i), colour_override,
+                                          time, towards, speed);
     }
     if (box_attack_shape_enabled) {
-      ii::explode_shapes<box_attack_shape>(e, box_attack_parameters(transform), colour_override,
-                                           time, towards, speed);
+      legacy::explode_shapes<box_attack_shape>(e, box_attack_parameters(transform), colour_override,
+                                               time, towards, speed);
     }
   }
 
   void destruct_lines(const Transform& transform, EmitHandle& e, const vec2& source,
                       std::uint32_t time) const {
-    ii::destruct_lines<explode_shape>(e, shape_parameters(transform), source);
+    legacy::destruct_lines<explode_shape>(e, shape_parameters(transform), source);
     for (std::uint32_t i = 0; i < 8; ++i) {
-      ii::destruct_lines<spark_shape>(e, spark_shape_parameters(transform, i), source, time);
+      legacy::destruct_lines<spark_shape>(e, spark_shape_parameters(transform, i), source, time);
     }
     if (box_attack_shape_enabled) {
-      ii::destruct_lines<box_attack_shape>(e, box_attack_parameters(transform), source, time);
+      legacy::destruct_lines<box_attack_shape>(e, box_attack_parameters(transform), source, time);
     }
   }
 

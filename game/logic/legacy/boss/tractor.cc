@@ -5,7 +5,7 @@
 #include "game/logic/geometry/shapes/ngon.h"
 #include "game/logic/legacy/boss/boss_internal.h"
 #include "game/logic/legacy/enemy/enemy.h"
-#include "game/logic/ship/ship_template.h"
+#include "game/logic/legacy/ship_template.h"
 #include "game/logic/sim/io/events.h"
 #include "game/logic/sim/io/render.h"
 

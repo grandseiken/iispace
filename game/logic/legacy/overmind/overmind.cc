@@ -69,11 +69,11 @@ struct Overmind : ecs::component {
     boss1_queue = queue();
     boss2_queue = queue();
 
-    if (sim.conditions().mode == game_mode::kBoss) {
+    if (sim.conditions().mode == game_mode::kLegacy_Boss) {
       return;
     }
     power = kInitialPower + 2 - std::min(4u, sim.player_count()) * 2;
-    if (sim.conditions().mode == game_mode::kHard) {
+    if (sim.conditions().mode == game_mode::kLegacy_Hard) {
       power += 20;
       waves_total = 15;
     }
@@ -121,7 +121,7 @@ struct Overmind : ecs::component {
       }
     };
 
-    if (sim.conditions().mode == game_mode::kBoss) {
+    if (sim.conditions().mode == game_mode::kLegacy_Boss) {
       if (!total_enemy_threat) {
         stars_change();
         if (boss_mod_bosses < 6) {
@@ -149,7 +149,8 @@ struct Overmind : ecs::component {
     }
 
     auto boss_cycles = boss_mod_fights;
-    auto trigger_stage = groups_mod + boss_cycles + 2 * (sim.conditions().mode == game_mode::kHard);
+    auto trigger_stage =
+        groups_mod + boss_cycles + 2 * (sim.conditions().mode == game_mode::kLegacy_Hard);
     auto trigger_val = kInitialTriggerVal;
     for (std::uint32_t i = 0; i < trigger_stage; ++i) {
       trigger_val += i < 2 ? 4 : i + sim.player_count() < 7 ? 3 : 2;
@@ -258,19 +259,19 @@ struct Overmind : ecs::component {
                     : vec2{dim.x / 2, dim.y + dim.y / 4};
 
     legacy::spawn_powerup(sim, v, powerup_type::kExtraLife);
-    if (sim.conditions().mode != game_mode::kBoss) {
+    if (sim.conditions().mode != game_mode::kLegacy_Boss) {
       spawn_powerup(sim);
     }
   }
 
   void wave(SimInterface& sim) {
     auto& random = sim.random(random_source::kGameSequence);
-    if (sim.conditions().mode == game_mode::kFast) {
+    if (sim.conditions().mode == game_mode::kLegacy_Fast) {
       for (std::uint32_t i = 0; i < random.uint(7); ++i) {
         random.uint(1);
       }
     }
-    if (sim.conditions().mode == game_mode::kWhat) {
+    if (sim.conditions().mode == game_mode::kLegacy_What) {
       for (std::uint32_t i = 0; i < random.uint(11); ++i) {
         random.uint(1);
       }
@@ -320,9 +321,9 @@ struct Overmind : ecs::component {
 
   void boss(SimInterface& sim) {
     auto& random = sim.random(random_source::kGameSequence);
-    auto cycle = (sim.conditions().mode == game_mode::kHard) + boss_mod_bosses / 2;
-    bool secret_chance =
-        (sim.conditions().mode != game_mode::kNormal && sim.conditions().mode != game_mode::kBoss)
+    auto cycle = (sim.conditions().mode == game_mode::kLegacy_Hard) + boss_mod_bosses / 2;
+    bool secret_chance = (sim.conditions().mode != game_mode::kLegacy_Normal &&
+                          sim.conditions().mode != game_mode::kLegacy_Boss)
         ? (boss_mod_fights > 1       ? random.uint(4) == 0
                : boss_mod_fights > 0 ? random.uint(8) == 0
                                      : false)
@@ -332,9 +333,10 @@ struct Overmind : ecs::component {
 
     if (+(sim.conditions().flags & initial_conditions::flag::kLegacy_CanFaceSecretBoss) &&
         bosses_to_go == 0 && boss_mod_secret == 0 && secret_chance) {
-      auto secret_cycle = (std::max<std::uint32_t>(
-                               2u, boss_mod_bosses + (sim.conditions().mode == game_mode::kHard)) -
-                           2) /
+      auto secret_cycle =
+          (std::max<std::uint32_t>(
+               2u, boss_mod_bosses + (sim.conditions().mode == game_mode::kLegacy_Hard)) -
+           2) /
           2;
       boss_mod_secret = 2;
       spawn_super_boss(sim, secret_cycle);

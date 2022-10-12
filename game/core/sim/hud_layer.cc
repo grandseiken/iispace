@@ -117,7 +117,7 @@ void HudLayer::update_content(const ui::input_frame&, ui::output_frame&) {
   }
 
   std::string s = std::to_string(render_->lives_remaining) + " live(s)";
-  if (mode_ == game_mode::kBoss) {
+  if (mode_ == game_mode::kLegacy_Boss) {
     s += "\n" + convert_to_time(render_->tick_count);
   } else if (render_->overmind_timer) {
     auto t = *render_->overmind_timer / 60;

@@ -278,9 +278,10 @@ void SimLayer::networked_update(std::vector<input_frame>&& local_input) {
 
 void SimLayer::end_game() {
   auto results = impl_->istate().results();
-  if (impl_->mode == game_mode::kNormal || impl_->mode == game_mode::kBoss) {
+  if (impl_->mode == game_mode::kLegacy_Normal || impl_->mode == game_mode::kLegacy_Boss) {
     stack().savegame().bosses_killed |= results.bosses_killed();
-  } else {
+  } else if (impl_->mode == game_mode::kLegacy_Hard || impl_->mode == game_mode::kLegacy_Fast ||
+             impl_->mode == game_mode::kLegacy_What) {
     stack().savegame().hard_mode_bosses_killed |= results.bosses_killed();
   }
   stack().write_savegame();

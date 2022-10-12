@@ -2,6 +2,7 @@
 #define II_GAME_LOGIC_SIM_IO_CONDITIONS_H
 #include "game/common/enum.h"
 #include <cstdint>
+#include <vector>
 
 namespace ii {
 
@@ -11,13 +12,22 @@ enum class compatibility_level {
 };
 
 enum class game_mode : std::uint32_t {
-  kNormal,
-  kBoss,
-  kHard,
-  kFast,
-  kWhat,
-  kMax,
+  // New game modes.
+  kStandardRun,
+  // Legacy game modes.
+  kLegacy_Normal,
+  kLegacy_Boss,
+  kLegacy_Hard,
+  kLegacy_Fast,
+  kLegacy_What,
 };
+
+enum class run_biome : std::uint32_t {
+  kTesting,
+};
+
+struct run_modifiers {};
+struct game_tech_tree {};
 
 struct initial_conditions {
   enum class flag : std::uint32_t {
@@ -27,8 +37,12 @@ struct initial_conditions {
   compatibility_level compatibility = compatibility_level::kIispaceV0;
   std::uint32_t seed = 0;
   std::uint32_t player_count = 0;
-  game_mode mode = game_mode::kNormal;
+
+  game_mode mode = game_mode::kStandardRun;
+  game_tech_tree tech_tree;
+  run_modifiers modifiers;
   flag flags = flag::kNone;
+  std::vector<run_biome> biomes;
 };
 
 template <>

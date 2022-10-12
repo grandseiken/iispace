@@ -27,6 +27,7 @@ struct SimInternals {
 
   // Internal sim data.
   initial_conditions conditions;
+  vec2 dimensions{0};
   ecs::EntityIndex index;
   ecs::entity_id global_entity_id{0};
   std::optional<ecs::handle> global_entity_handle;

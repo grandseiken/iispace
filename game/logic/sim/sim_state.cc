@@ -1,12 +1,12 @@
 #include "game/logic/sim/sim_state.h"
 #include "game/data/replay.h"
 #include "game/logic/ecs/call.h"
-#include "game/logic/legacy/overmind/overmind.h"
-#include "game/logic/legacy/player/player.h"
+#include "game/logic/legacy/setup.h"
 #include "game/logic/ship/components.h"
 #include "game/logic/sim/io/render.h"
 #include "game/logic/sim/sim_interface.h"
 #include "game/logic/sim/sim_internals.h"
+#include "game/logic/v0/setup.h"
 #include <glm/gtc/constants.hpp>
 #include <algorithm>
 #include <unordered_set>
@@ -14,32 +14,19 @@
 namespace ii {
 namespace {
 
-void setup_index_callbacks(SimInterface& interface, SimInternals& internals) {
+std::unique_ptr<SimSetup> make_sim_setup(const initial_conditions& conditions) {
+  if (conditions.mode == game_mode::kStandardRun) {
+    return std::make_unique<v0::V0SimSetup>();
+  }
+  return std::make_unique<legacy::LegacySimSetup>();
+}
+
+void initialise_systems(SimInternals& internals) {
   // TODO: should collision be some kind of System implementation that can be auto-hooked up?
-  // TODO: score reward / boss kills should be handled by some optional system/component rather than
-  // here?
   internals.index.on_component_add<Collision>(
       [&internals](ecs::handle h, const Collision& c) { internals.collision_index->add(h, c); });
   internals.index.on_component_add<Destroy>(
-      [&internals, &interface](ecs::handle h, const Destroy& d) {
-        auto* e = h.get<Enemy>();
-        if (e && e->score_reward && d.source && d.destroy_type != damage_type::kBomb) {
-          if (auto* p = internals.index.get<Player>(*d.source); p) {
-            p->add_score(interface, e->score_reward);
-          }
-        }
-        if (e && e->boss_score_reward) {
-          internals.index.iterate<Player>([&](Player& p) {
-            if (!p.is_killed()) {
-              p.add_score(interface, e->boss_score_reward / interface.alive_players());
-            }
-          });
-        }
-        if (auto* b = h.get<Boss>(); b) {
-          interface.trigger(run_event::boss_kill_event(b->boss));
-        }
-        internals.collision_index->remove(h);
-      });
+      [&internals](ecs::handle h, const Destroy&) { internals.collision_index->remove(h); });
 }
 
 void refresh_handles(SimInternals& internals) {
@@ -56,7 +43,7 @@ SimState& SimState::operator=(SimState&&) noexcept = default;
 SimState::SimState()
 : internals_{std::make_unique<SimInternals>(/* seed */ 0)}
 , interface_{std::make_unique<SimInterface>(internals_.get())} {
-  setup_index_callbacks(*interface_, *internals_);
+  initialise_systems(*internals_);
 }
 
 SimState::SimState(const initial_conditions& conditions, data::ReplayWriter* replay_writer,
@@ -64,32 +51,23 @@ SimState::SimState(const initial_conditions& conditions, data::ReplayWriter* rep
 : replay_writer_{replay_writer}
 , internals_{std::make_unique<SimInternals>(conditions.seed)}
 , interface_{std::make_unique<SimInterface>(internals_.get())} {
+  setup_ = make_sim_setup(conditions);
   internals_->conditions = conditions;
-  auto dim = interface_->dimensions();
+  internals_->dimensions = setup_->parameters(internals_->conditions).dimensions;
+
   if (conditions.compatibility == compatibility_level::kLegacy) {
     internals_->collision_index = std::make_unique<LegacyCollisionIndex>();
   } else {
     internals_->collision_index = std::make_unique<GridCollisionIndex>(
         glm::uvec2{64, 64}, glm::ivec2{-32, -32},
-        glm::ivec2{dim.x.to_int(), dim.y.to_int()} + glm::ivec2{32, 32});
+        glm::ivec2{internals_->dimensions.x.to_int(), internals_->dimensions.y.to_int()} +
+            glm::ivec2{32, 32});
   }
-  internals_->global_entity_handle =
-      internals_->index.create(GlobalData{.lives = conditions.mode == game_mode::kBoss
-                                              ? conditions.player_count * GlobalData::kBossModeLives
-                                              : GlobalData::kStartingLives});
-  internals_->global_entity_handle->add(Update{.update = ecs::call<&GlobalData::pre_update>});
-  internals_->global_entity_handle->add(
-      PostUpdate{.post_update = ecs::call<&GlobalData::post_update>});
-  internals_->global_entity_id = internals_->global_entity_handle->id();
-  legacy::spawn_overmind(*interface_);
 
-  for (std::uint32_t i = 0; i < conditions.player_count; ++i) {
-    vec2 v{(1 + i) * dim.x.to_int() / (1 + conditions.player_count), dim.y / 2};
-    legacy::spawn_player(
-        *interface_, v, i,
-        /* AI */ std::find(ai_players.begin(), ai_players.end(), i) != ai_players.end());
-  }
-  setup_index_callbacks(*interface_, *internals_);
+  internals_->global_entity_id = setup_->start_game(conditions, ai_players, *interface_);
+  setup_->initialise_systems(*interface_);
+  initialise_systems(*internals_);
+  refresh_handles(*internals_);
 }
 
 glm::uvec2 SimState::dimensions() const {
@@ -116,6 +94,10 @@ void SimState::copy_to(SimState& target) const {
   if (&target == this) {
     return;
   }
+  if (!target.setup_) {
+    target.setup_ = make_sim_setup(internals_->conditions);
+    target.setup_->initialise_systems(*target.interface_);
+  }
   target.kill_timer_ = kill_timer_;
   target.colour_cycle_ = colour_cycle_;
   target.game_over_ = game_over_;
@@ -127,6 +109,7 @@ void SimState::copy_to(SimState& target) const {
   target.internals_->game_sequence_random.set_state(internals_->game_sequence_random.state());
   target.internals_->aesthetic_random.set_state(internals_->aesthetic_random.state());
   target.internals_->conditions = internals_->conditions;
+  target.internals_->dimensions = internals_->dimensions;
   target.internals_->global_entity_id = internals_->global_entity_id;
   target.internals_->global_entity_handle.reset();
   target.internals_->tick_count = internals_->tick_count;
@@ -139,17 +122,17 @@ void SimState::copy_to(SimState& target) const {
 void SimState::ai_think(std::vector<input_frame>& input) const {
   input.resize(internals_->conditions.player_count);
   internals_->index.iterate_dispatch<Player>([&](ecs::handle h, const Player& p) {
-    if (auto f = legacy::ai_think(*interface_, h); f) {
+    if (auto f = setup_->ai_think(*interface_, h); f) {
       input[p.player_number] = *f;
     }
   });
 }
 
 void SimState::update(std::vector<input_frame> input) {
-  colour_cycle_ = internals_->conditions.mode == game_mode::kHard ? 128
-      : internals_->conditions.mode == game_mode::kFast           ? 192
-      : internals_->conditions.mode == game_mode::kWhat           ? (colour_cycle_ + 3) % 256
-                                                                  : 0;
+  colour_cycle_ = internals_->conditions.mode == game_mode::kLegacy_Hard ? 128
+      : internals_->conditions.mode == game_mode::kLegacy_Fast           ? 192
+      : internals_->conditions.mode == game_mode::kLegacy_What           ? (colour_cycle_ + 3) % 256
+                                                                         : 0;
   internals_->input_frames = std::move(input);
   internals_->input_frames.resize(internals_->conditions.player_count);
   internals_->collision_index->begin_tick();
@@ -192,7 +175,7 @@ void SimState::update(std::vector<input_frame> input) {
 
   if (!kill_timer_ &&
       ((interface_->killed_players() == interface_->player_count() && !interface_->get_lives()) ||
-       (internals_->conditions.mode == game_mode::kBoss &&
+       (internals_->conditions.mode == game_mode::kLegacy_Boss &&
         internals_->results.boss_kill_count() >= 6))) {
     kill_timer_ = 100;
   }
@@ -216,39 +199,40 @@ bool SimState::game_over() const {
 }
 
 std::uint32_t SimState::fps() const {
-  return internals_->conditions.mode == game_mode::kFast ? 60 : 50;
+  return setup_->parameters(internals_->conditions).fps;
 }
 
 const render_output& SimState::render(transient_render_state& state, bool paused) const {
-  internals_->render.boss_hp_bar.reset();
-  internals_->render.shapes.clear();
-  internals_->render.players.clear();
+  auto& result = internals_->render;
+  result.boss_hp_bar.reset();
+  result.shapes.clear();
+  result.players.clear();
 
   internals_->index.iterate_dispatch<Render>([&](ecs::handle h, Render& r) {
     if (!h.get<Player>()) {
-      r.render_shapes(h, state.entity_map[+h.id()], paused, internals_->render.shapes, *interface_);
+      r.render_shapes(h, state.entity_map[+h.id()], paused, result.shapes, *interface_);
       return;
     }
   });
-  internals_->index.iterate_dispatch<Player>([&](ecs::handle h, const Player& p, Render& r,
-                                                 Transform& transform) {
-    if (auto info = p.render_info(h, *interface_)) {
-      internals_->render.players.resize(std::max(internals_->render.players.size(),
-                                                 static_cast<std::size_t>(p.player_number + 1)));
-      internals_->render.players[p.player_number] = *info;
-    }
+  internals_->index.iterate_dispatch<Player>(
+      [&](ecs::handle h, const Player& p, Render& r, Transform& transform) {
+        if (auto info = p.render_info(h, *interface_)) {
+          result.players.resize(
+              std::max(result.players.size(), static_cast<std::size_t>(p.player_number + 1)));
+          result.players[p.player_number] = *info;
+        }
 
-    auto it = smoothing_data_.players.find(p.player_number);
-    if (it == smoothing_data_.players.end() || !it->second.position) {
-      r.render_shapes(h, state.entity_map[+h.id()], paused, internals_->render.shapes, *interface_);
-      return;
-    }
-    auto transform_copy = transform;
-    transform.centre = *it->second.position;
-    transform.rotation = it->second.rotation;
-    r.render_shapes(h, state.entity_map[+h.id()], paused, internals_->render.shapes, *interface_);
-    transform = transform_copy;
-  });
+        auto it = smoothing_data_.players.find(p.player_number);
+        if (it == smoothing_data_.players.end() || !it->second.position) {
+          r.render_shapes(h, state.entity_map[+h.id()], paused, result.shapes, *interface_);
+          return;
+        }
+        auto transform_copy = transform;
+        transform.centre = *it->second.position;
+        transform.rotation = it->second.rotation;
+        r.render_shapes(h, state.entity_map[+h.id()], paused, result.shapes, *interface_);
+        transform = transform_copy;
+      });
   std::erase_if(state.entity_map, [&](const auto& pair) {
     return !internals_->index.contains(ecs::entity_id{pair.first});
   });
@@ -256,7 +240,7 @@ const render_output& SimState::render(transient_render_state& state, bool paused
   // TODO: extract somewhere?
   auto render_warning = [&](const glm::vec2& v) {
     auto render_tri = [&](const glm::vec2& position, float r, float f) {
-      internals_->render.shapes.emplace_back(render::shape{
+      result.shapes.emplace_back(render::shape{
           .origin = position,
           .rotation = r,
           .colour = {0.f, 0.f, .2f + .6f * f, .4f},
@@ -286,14 +270,16 @@ const render_output& SimState::render(transient_render_state& state, bool paused
   internals_->index.iterate_dispatch_if<Enemy>([&render_warning](const Transform& transform) {
     render_warning(to_float(transform.centre));
   });
-  for (const auto& v : interface_->global_entity().get<GlobalData>()->extra_enemy_warnings) {
-    render_warning(to_float(v));
+
+  if (const auto* global_data = interface_->global_entity().get<GlobalData>(); global_data) {
+    for (const auto& v : global_data->extra_enemy_warnings) {
+      render_warning(to_float(v));
+    }
+    result.overmind_timer = global_data->overmind_wave_timer;
   }
 
-  auto& result = internals_->render;
   result.tick_count = internals_->tick_count;
   result.lives_remaining = interface_->get_lives();
-  result.overmind_timer = interface_->global_entity().get<GlobalData>()->overmind_wave_timer;
   result.colour_cycle = colour_cycle_;
 
   std::uint32_t boss_hp = 0;
@@ -328,7 +314,8 @@ const sim_results& SimState::results() const {
     pr.deaths = p.death_count;
   });
   r.score = 0;
-  if (internals_->conditions.mode == game_mode::kBoss) {
+  if (internals_->conditions.mode == game_mode::kStandardRun ||
+      internals_->conditions.mode == game_mode::kLegacy_Boss) {
     r.score = r.tick_count;
   } else {
     for (const auto& p : r.players) {
@@ -347,7 +334,6 @@ void SimState::set_predicted_players(std::span<const std::uint32_t> player_ids) 
 
 void SimState::update_smoothing(smoothing_data& data) {
   static constexpr fixed kMaxRotationSpeed = fixed_c::pi / 16;
-  static constexpr fixed kPlayerSpeed = legacy::kPlayerSpeed;
   auto smooth_rotate = [&](fixed& x, fixed target) {
     auto d = angle_diff(x, target);
     if (abs(d) < kMaxRotationSpeed) {
@@ -373,7 +359,7 @@ void SimState::update_smoothing(smoothing_data& data) {
       v = transform.centre - *it->second.position;
       d = length(v);
     }
-    if (!it->second.position || d < kPlayerSpeed || p.is_killed()) {
+    if (!it->second.position || d < p.speed || p.is_killed()) {
       it->second.velocity = {0, 0};
       if (p.is_killed()) {
         // Avoid interpolating to spawn position after death.
@@ -384,8 +370,7 @@ void SimState::update_smoothing(smoothing_data& data) {
       smooth_rotate(it->second.rotation, transform.rotation);
       return;
     }
-    auto target_speed =
-        std::max(kPlayerSpeed, std::min(kPlayerSpeed * 9_fx / 8_fx, d / (2 * kPlayerSpeed)));
+    auto target_speed = std::max(p.speed, std::min(p.speed * 9_fx / 8_fx, d / (2 * p.speed)));
     auto target_velocity = target_speed * normalise(v);
     it->second.velocity = (3_fx / 4_fx) * (it->second.velocity - target_velocity) + target_velocity;
     *it->second.position += it->second.velocity;

@@ -23,12 +23,27 @@ cc_library(
     "//game/common:math",
     "//game/common:random",
     "//game/logic/ecs",
-    "//game/logic/ship",
+    "//game/logic/ship:components",
     "//game/logic/sim/io:conditions",
     "//game/logic/sim/io:output",
     "//game/logic/sim/io:player",
     "//game/logic/sim/io:render",
   ]
+)
+
+cc_library(
+  name = "setup",
+  hdrs = ["setup.h"],
+  deps = [
+    "//game/common:math",
+    "//game/logic/ecs",
+    "//game/logic/sim/io:conditions",
+    "//game/logic/sim/io:player",
+  ],
+  visibility = [
+    "//game/logic/legacy:__pkg__",
+    "//game/logic/v0:__pkg__",
+  ],
 )
 
 cc_library(
@@ -44,9 +59,9 @@ cc_library(
     ":sim_internals",
     "//game/common:math",
     "//game/data:replay",
-    "//game/logic/legacy/overmind",
-    "//game/logic/legacy/player",
-    "//game/logic/ship",
+    "//game/logic/legacy:setup",
+    "//game/logic/v0:setup",
+    "//game/logic/ship:components",
     "//game/logic/sim/io:conditions",
     "//game/logic/sim/io:player",
   ],

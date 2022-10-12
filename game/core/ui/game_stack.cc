@@ -218,11 +218,11 @@ void GameStack::write_replay(const data::ReplayWriter& writer, const std::string
   std::stringstream ss;
   auto mode = writer.initial_conditions().mode;
   ss << writer.initial_conditions().seed << "_" << writer.initial_conditions().player_count << "p_"
-     << (mode == game_mode::kBoss       ? "bossmode_"
-             : mode == game_mode::kHard ? "hardmode_"
-             : mode == game_mode::kFast ? "fastmode_"
-             : mode == game_mode::kWhat ? "w-hatmode_"
-                                        : "")
+     << (mode == game_mode::kLegacy_Boss       ? "bossmode_"
+             : mode == game_mode::kLegacy_Hard ? "hardmode_"
+             : mode == game_mode::kLegacy_Fast ? "fastmode_"
+             : mode == game_mode::kLegacy_What ? "w-hatmode_"
+                                               : "")
      << name << "_" << score;
 
   auto data = writer.write();

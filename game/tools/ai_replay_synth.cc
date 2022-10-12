@@ -16,7 +16,7 @@ namespace {
 
 struct options_t {
   compatibility_level compatibility = compatibility_level::kIispaceV0;
-  game_mode mode = game_mode::kNormal;
+  game_mode mode = game_mode::kStandardRun;
   initial_conditions::flag flags = initial_conditions::flag::kNone;
   std::uint32_t player_count = 0;
   std::uint32_t runs = 0;
@@ -98,7 +98,7 @@ bool run(const options_t& options) {
         return false;
       }
     }
-    if (options.mode != game_mode::kBoss) {
+    if (options.mode != game_mode::kLegacy_Boss) {
       return a.score > b.score;
     }
     if (a.score && !b.score) {

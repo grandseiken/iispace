@@ -21,15 +21,15 @@ constexpr std::uint32_t kStartTimerLockFrames = 90;
 ustring mode_title(const initial_conditions& conditions) {
   switch (conditions.mode) {
   default:
-  case game_mode::kNormal:
+  case game_mode::kLegacy_Normal:
     return ustring::ascii("Normal mode");
-  case game_mode::kBoss:
+  case game_mode::kLegacy_Boss:
     return ustring::ascii("Boss mode");
-  case game_mode::kHard:
+  case game_mode::kLegacy_Hard:
     return ustring::ascii("Hard mode");
-  case game_mode::kFast:
+  case game_mode::kLegacy_Fast:
     return ustring::ascii("Fast mode");
-  case game_mode::kWhat:
+  case game_mode::kLegacy_What:
     return ustring::ascii("W-hat mode");
   }
   return {};

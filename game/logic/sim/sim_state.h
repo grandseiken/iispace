@@ -17,6 +17,7 @@ class ReplayWriter;
 }  // namespace data
 class Printer;
 class SimInterface;
+class SimSetup;
 struct SimInternals;
 struct aggregate_output;
 struct initial_conditions;
@@ -95,6 +96,7 @@ private:
   bool game_over_ = false;
   smoothing_data smoothing_data_;
 
+  std::unique_ptr<SimSetup> setup_;
   std::unique_ptr<SimInternals> internals_;
   std::unique_ptr<SimInterface> interface_;
 };

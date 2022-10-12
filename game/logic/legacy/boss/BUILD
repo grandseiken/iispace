@@ -15,7 +15,7 @@ cc_library(
   deps = [
     "@glm",
     "//game/logic/geometry/shapes",
-    "//game/logic/ship",
+    "//game/logic/legacy:ship_template",
     "//game/logic/sim:sim_interface",
   ],
   implementation_deps = [

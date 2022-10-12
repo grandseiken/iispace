@@ -1,7 +1,7 @@
 #ifndef II_GAME_LOGIC_LEGACY_BOSS_BOSS_INTERNAL_H
 #define II_GAME_LOGIC_LEGACY_BOSS_BOSS_INTERNAL_H
 #include "game/logic/ecs/index.h"
-#include "game/logic/ship/ship_template.h"
+#include "game/logic/legacy/ship_template.h"
 #include "game/logic/sim/sim_interface.h"
 
 namespace ii::legacy {

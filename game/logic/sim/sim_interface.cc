@@ -8,8 +8,8 @@
 
 namespace ii {
 namespace {
-GlobalData& global_data(SimInternals& internals) {
-  return *internals.global_entity_handle->get<GlobalData>();
+GlobalData* global_data(SimInternals& internals) {
+  return internals.global_entity_handle->get<GlobalData>();
 }
 
 RandomEngine& engine(SimInternals& internals, random_source s) {
@@ -105,9 +105,7 @@ const initial_conditions& SimInterface::conditions() const {
 }
 
 vec2 SimInterface::dimensions() const {
-  // TODO: make this dynamic so it can be changed for non-legacy mode.
-  constexpr glm::ivec2 kSimDimensions = {640, 480};
-  return kSimDimensions;
+  return internals_->dimensions;
 }
 
 bool SimInterface::is_legacy() const {
@@ -181,7 +179,10 @@ vec2 SimInterface::rotate_compatibility(const vec2& v, fixed theta) const {
 }
 
 std::uint32_t SimInterface::get_lives() const {
-  return global_data(*internals_).lives;
+  if (auto* data = global_data(*internals_); data) {
+    return data->lives;
+  }
+  return 0;
 }
 
 std::uint32_t SimInterface::player_count() const {
@@ -193,7 +194,10 @@ std::uint32_t SimInterface::alive_players() const {
 }
 
 std::uint32_t SimInterface::killed_players() const {
-  return global_data(*internals_).player_kill_queue.size();
+  if (auto* data = global_data(*internals_); data) {
+    return data->player_kill_queue.size();
+  }
+  return 0;
 }
 
 vec2 SimInterface::nearest_player_position(const vec2& point) const {

@@ -30,7 +30,7 @@ protected:
   void update_content(const ui::input_frame&, ui::output_frame&) override;
 
 private:
-  game_mode mode_ = game_mode::kNormal;
+  game_mode mode_ = game_mode::kStandardRun;
   std::array<PlayerHud*, kMaxPlayers> huds_ = {nullptr};
   ui::TextElement* status_ = nullptr;
   std::string status_text_;
