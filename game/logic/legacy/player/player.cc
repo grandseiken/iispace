@@ -214,6 +214,7 @@ struct PlayerLogic : ecs::component {
     if (!pc.is_predicted && pc.has_bomb && input.keys & input_frame::kBomb) {
       auto c = player_colour(pc.player_number);
       pc.has_bomb = false;
+      render.clear_trails = true;
 
       auto e = sim.emit(resolve_key::local(pc.player_number));
       explosion(h, std::nullopt, e, glm::vec4{1.f}, 16);
@@ -261,11 +262,11 @@ struct PlayerLogic : ecs::component {
 
     // Damage.
     if (!pc.is_predicted && sim.any_collision(transform.centre, shape_flag::kDangerous)) {
-      damage(h, pc, transform, sim);
+      damage(h, pc, transform, render, sim);
     }
   }
 
-  void damage(ecs::handle h, Player& pc, Transform& transform, SimInterface& sim) {
+  void damage(ecs::handle h, Player& pc, Transform& transform, Render& render, SimInterface& sim) {
     if (pc.kill_timer || invulnerability_timer) {
       return;
     }
@@ -276,6 +277,7 @@ struct PlayerLogic : ecs::component {
     if (pc.has_shield) {
       e.rumble(pc.player_number, 15, 0.f, 1.f).play(sound::kPlayerShield, transform.centre);
       pc.has_shield = false;
+      render.clear_trails = true;
       invulnerability_timer = kShieldTime;
       return;
     }
@@ -312,8 +314,6 @@ struct PlayerLogic : ecs::component {
     if (should_render(pc)) {
       auto c = player_colour(pc.player_number);
       auto t = to_float(fire_target);
-      // TODO: reticule shares same index as shield/bomb powerup so causes odd motion blur
-      // incidents.
       output.emplace_back(render::shape{
           .origin = t,
           .colour = c,

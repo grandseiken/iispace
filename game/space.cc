@@ -1,6 +1,7 @@
 #include "game/core/game_options.h"
 #include "game/core/layers/main_menu.h"
 #include "game/core/sim/replay_viewer.h"
+#include "game/core/sim/sim_layer.h"
 #include "game/core/ui/game_stack.h"
 #include "game/flags.h"
 #include "game/io/file/std_filesystem.h"
@@ -48,7 +49,8 @@ void load_sounds(const io::Filesystem& fs, Mixer& mixer) {
   load_sound(sound::kExplosion, "Explosion.wav");
 }
 
-bool run(System& system, const std::vector<std::string>& args, const game_options_t& options) {
+bool run(System& system, const std::vector<std::string>& args, const game_options_t& options,
+         bool test) {
   static constexpr const char* kTitle = "space";
   static constexpr char kGlMajor = 4;
   static constexpr char kGlMinor = 6;
@@ -87,6 +89,13 @@ bool run(System& system, const std::vector<std::string>& args, const game_option
       return false;
     }
     stack.add<ReplayViewer>(std::move(*reader));
+  } else if (test) {
+    initial_conditions conditions;
+    conditions.player_count = 1;
+    conditions.mode = game_mode::kStandardRun;
+    conditions.biomes.emplace_back(run_biome::kTesting);
+    auto kbm = ui::input_device_id::kbm();
+    stack.add<SimLayer>(conditions, std::span<const ui::input_device_id>{&kbm, 1u});
   }
 
   using counter_t = std::chrono::duration<double>;
@@ -227,9 +236,14 @@ int main(int argc, const char** argv) {
     std::cerr << options.error() << std::endl;
     return 1;
   }
+  bool test = false;
+  if (auto result = ii::flag_parse<bool>(args, "test", test, false); !result) {
+    std::cerr << result.error() << std::endl;
+    return 1;
+  }
   if (auto result = ii::args_finish(args); !result) {
     std::cerr << result.error() << std::endl;
     return 1;
   }
-  return ii::run(*system, args, *options) ? 0 : 1;
+  return ii::run(*system, args, *options, test) ? 0 : 1;
 }

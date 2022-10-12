@@ -1,6 +1,6 @@
 #ifndef II_GAME_LOGIC_LEGACY_SHIP_TEMPLATE_H
 #define II_GAME_LOGIC_LEGACY_SHIP_TEMPLATE_H
-#include "game/common/fix32.h"
+#include "game/common/math.h"
 #include "game/logic/ecs/call.h"
 #include "game/logic/ecs/index.h"
 #include "game/logic/geometry/enums.h"
@@ -9,64 +9,21 @@
 #include "game/logic/ship/components.h"
 #include "game/logic/sim/io/render.h"
 #include "game/logic/sim/sim_interface.h"
+#include "game/logic/v0/ship_template.h"
 #include <sfn/functional.h>
+#include <cstddef>
+#include <optional>
+#include <vector>
 
 namespace ii::legacy {
 
-template <geom::ShapeNode... S>
-using standard_transform = geom::translate_p<0, geom::rotate_p<1, S...>>;
-
-template <ecs::Component Logic>
-auto get_shape_parameters(ecs::const_handle h) {
-  if constexpr (requires { &Logic::shape_parameters; }) {
-    return ecs::call<&Logic::shape_parameters>(h);
-  } else {
-    const auto& transform = *h.get<Transform>();
-    return std::tuple<vec2, fixed>{transform.centre, transform.rotation};
-  }
-}
-
-template <geom::ShapeNode S>
-void render_shape(std::vector<render::shape>& output, const auto& parameters,
-                  std::optional<float> z_index = std::nullopt, const geom::transform& t = {},
-                  const std::optional<glm::vec4>& c_override = std::nullopt,
-                  const std::optional<std::size_t>& c_override_max_index = std::nullopt) {
-  std::size_t i = 0;
-  geom::transform transform = t;
-  transform.index_out = &i;
-  geom::iterate(S{}, geom::iterate_shapes, parameters, transform, [&](const render::shape& shape) {
-    render::shape shape_copy = shape;
-    if (!shape.z_index) {
-      shape_copy.z_index = z_index;
-    }
-    if (c_override && (!c_override_max_index || i < *c_override_max_index)) {
-      shape_copy.colour = glm::vec4{c_override->r, c_override->g, c_override->b, shape.colour.a};
-    }
-    output.emplace_back(shape_copy);
-  });
-}
-
-template <geom::ShapeNode S>
-void render_entity_shape_override(std::vector<render::shape>& output, const Health* health,
-                                  const auto& parameters,
-                                  std::optional<float> z_index = std::nullopt,
-                                  const geom::transform& t = {},
-                                  const std::optional<glm::vec4>& colour_override = std::nullopt) {
-  std::optional<glm::vec4> c_override = colour_override;
-  std::optional<std::size_t> c_override_max_index;
-  if (!colour_override && health && health->hit_timer) {
-    c_override = glm::vec4{1.f};
-    c_override_max_index = health->hit_flash_ignore_index;
-  }
-  render_shape<S>(output, parameters, z_index, t, c_override, c_override_max_index);
-}
-
-template <ecs::Component Logic, geom::ShapeNode S = typename Logic::shape>
-void render_entity_shape(ecs::const_handle h, const Health* health,
-                         std::vector<render::shape>& output) {
-  render_entity_shape_override<S>(output, health, get_shape_parameters<Logic>(h), Logic::kZIndex,
-                                  {}, std::nullopt);
-}
+using v0::get_shape_parameters;
+using v0::render_entity_shape;
+using v0::render_entity_shape_override;
+using v0::render_shape;
+using v0::shape_check_point;
+using v0::ship_check_point;
+using v0::standard_transform;
 
 template <ecs::Component Logic, geom::ShapeNode S = typename Logic::shape>
 void iterate_entity_attachment_points(ecs::const_handle h,
@@ -75,6 +32,9 @@ void iterate_entity_attachment_points(ecs::const_handle h,
                 geom::transform{}, f);
 }
 
+//////////////////////////////////////////////////////////////////////////////////
+// Particles.
+//////////////////////////////////////////////////////////////////////////////////
 template <geom::ShapeNode S>
 void explode_shapes(EmitHandle& e, const auto& parameters,
                     const std::optional<glm::vec4> colour_override = std::nullopt,
@@ -162,14 +122,9 @@ void destruct_entity_default(ecs::const_handle h, SimInterface&, EmitHandle& e, 
   destruct_entity_lines<Logic, S>(h, e, source);
 }
 
-template <geom::ShapeNode S>
-shape_flag shape_check_point(const auto& parameters, const vec2& v, shape_flag mask) {
-  shape_flag result = shape_flag::kNone;
-  geom::iterate(S{}, geom::iterate_collision(mask), parameters, geom::convert_local_transform{v},
-                [&](shape_flag f) { result |= f; });
-  return result;
-}
-
+//////////////////////////////////////////////////////////////////////////////////
+// Collision.
+//////////////////////////////////////////////////////////////////////////////////
 template <geom::ShapeNode S>
 shape_flag shape_check_point_legacy(const auto& parameters, const vec2& v, shape_flag mask) {
   shape_flag result = shape_flag::kNone;
@@ -178,80 +133,40 @@ shape_flag shape_check_point_legacy(const auto& parameters, const vec2& v, shape
   return result;
 }
 
-template <geom::ShapeNode S>
-shape_flag shape_check_point_compatibility(const auto& parameters, bool is_legacy, const vec2& v,
-                                           shape_flag mask) {
-  return is_legacy ? shape_check_point_legacy<S>(parameters, v, mask)
-                   : shape_check_point<S>(parameters, v, mask);
-}
-
-template <ecs::Component Logic, geom::ShapeNode S = typename Logic::shape>
-shape_flag ship_check_point(ecs::const_handle h, const vec2& v, shape_flag mask) {
-  if constexpr (requires { &Logic::check_point; }) {
-    return ecs::call<&Logic::check_point>(h, v, mask);
-  } else {
-    return shape_check_point<S>(get_shape_parameters<Logic>(h), v, mask);
-  }
-}
-
 template <ecs::Component Logic, geom::ShapeNode S = typename Logic::shape>
 shape_flag ship_check_point_legacy(ecs::const_handle h, const vec2& v, shape_flag mask) {
-  if constexpr (requires { &Logic::check_point; }) {
-    return ecs::call<&Logic::check_point>(h, v, mask);
-  } else {
-    return shape_check_point_legacy<S>(get_shape_parameters<Logic>(h), v, mask);
-  }
+  return shape_check_point_legacy<S>(get_shape_parameters<Logic>(h), v, mask);
 }
 
+//////////////////////////////////////////////////////////////////////////////////
+// Creation templates.
+//////////////////////////////////////////////////////////////////////////////////
 template <ecs::Component Logic, geom::ShapeNode S = typename Logic::shape>
 ecs::handle create_ship(SimInterface& sim, const vec2& position, fixed rotation = 0) {
-  auto h = sim.index().create();
-  h.add(Update{.update = ecs::call<&Logic::update>});
-  h.add(Transform{.centre = position, .rotation = rotation});
+  auto h = v0::create_ship<Logic>(sim, position, rotation);
 
+  static constexpr auto collision_flags = v0::get_shape_flags<Logic, S>();
   static constexpr bool has_constant_bw = requires {
     Logic::kBoundingWidth;
   };
   static constexpr bool has_function_bw = requires {
     &Logic::bounding_width;
   };
-  if constexpr (has_constant_bw || has_function_bw) {
-    constexpr auto collision_shape_flags = [&]() constexpr {
-      shape_flag result = shape_flag::kNone;
-      geom::iterate(
-          S{}, geom::iterate_flags, geom::arbitrary_parameters{},
-          geom::transform{}, [&](shape_flag f) constexpr { result |= f; });
-      return result;
-    }
-    ();
-    auto extra_shape_flags = shape_flag::kNone;
-    if constexpr (requires { Logic::kShapeFlags; }) {
-      extra_shape_flags |= Logic::kShapeFlags;
-    }
+
+  if constexpr (+collision_flags && (has_constant_bw || has_function_bw)) {
     fixed bounding_width = 0;
     if constexpr (has_function_bw) {
       bounding_width = Logic::bounding_width(sim);
     } else {
       bounding_width = Logic::kBoundingWidth;
     }
-    if constexpr (+collision_shape_flags || requires { Logic::kShapeFlags; }) {
-      h.add(Collision{.flags = collision_shape_flags | extra_shape_flags,
-                      .bounding_width = bounding_width,
-                      .check = sim.is_legacy() ? &ship_check_point_legacy<Logic, S>
-                                               : &ship_check_point<Logic, S>});
-    }
+    h.add(Collision{.flags = collision_flags,
+                    .bounding_width = bounding_width,
+                    .check = sim.is_legacy() ? &ship_check_point_legacy<Logic, S>
+                                             : &v0::ship_check_point<Logic, S>});
   }
 
-  constexpr auto render = ecs::call<&render_entity_shape<Logic, S>>;
-  using render_t = void(ecs::const_handle, std::vector<render::shape>&, const SimInterface&);
-  if constexpr (requires { &Logic::render_override; }) {
-    h.add(Render{.render = sfn::cast<render_t, ecs::call<&Logic::render_override>>});
-  } else if constexpr (requires { &Logic::render; }) {
-    h.add(Render{.render = sfn::sequence<sfn::cast<render_t, render>,
-                                         sfn::cast<render_t, ecs::call<&Logic::render>>>});
-  } else {
-    h.add(Render{.render = sfn::cast<render_t, render>});
-  }
+  v0::add_render<Logic, S>(h);
   return h;
 }
 

@@ -40,6 +40,7 @@ cc_binary(
     "//game/core:game_options",
     "//game/core/layers:main_menu",
     "//game/core/sim:replay_viewer",
+    "//game/core/sim:sim_layer",
     "//game/core/ui",
     "//game/io:sdl_io",
     "//game/io/file:std_filesystem",

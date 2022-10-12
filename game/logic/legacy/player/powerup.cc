@@ -72,6 +72,7 @@ struct Powerup : ecs::component {
   void
   collect(ecs::handle h, const Transform& transform, SimInterface& sim, ecs::handle source) const {
     auto& pc = *source.get<Player>();
+    auto& render = *source.get<Render>();
     auto e = sim.emit(resolve_key::local(pc.player_number));
     switch (type) {
     case powerup_type::kExtraLife:
@@ -85,11 +86,13 @@ struct Powerup : ecs::component {
     case powerup_type::kShield:
       pc.has_shield = true;
       pc.has_bomb = false;
+      render.clear_trails = true;
       break;
 
     case powerup_type::kBomb:
       pc.has_bomb = true;
       pc.has_shield = false;
+      render.clear_trails = true;
       break;
     }
     e.play(type == powerup_type::kExtraLife ? sound::kPowerupLife : sound::kPowerupOther,

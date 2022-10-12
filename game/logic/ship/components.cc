@@ -45,6 +45,8 @@ void GlobalData::post_update(ecs::handle h, SimInterface& sim) {
 
 void Render::render_shapes(ecs::const_handle h, render::entity_state& state, bool paused,
                            std::vector<render::shape>& output, const SimInterface& sim) {
+  // TODO: this is basically hard to control. clear_trails is a hack due to
+  // not being able to specify which shape is which from frame to frame.
   if (clear_trails) {
     state.trails.clear();
     clear_trails = false;

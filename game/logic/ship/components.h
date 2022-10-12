@@ -66,7 +66,9 @@ DEBUG_STRUCT_TUPLE(Transform, centre, rotation);
 struct Collision : ecs::component {
   shape_flag flags = shape_flag::kNone;
   fixed bounding_width = 0;
-  sfn::ptr<shape_flag(ecs::const_handle, const vec2&, shape_flag)> check = nullptr;
+
+  using check_t = shape_flag(ecs::const_handle, const vec2&, shape_flag);
+  sfn::ptr<check_t> check = nullptr;
 };
 DEBUG_STRUCT_TUPLE(Collision, flags, bounding_width, check);
 
@@ -81,8 +83,8 @@ struct PostUpdate : ecs::component {
 DEBUG_STRUCT_TUPLE(PostUpdate, post_update);
 
 struct Render : ecs::component {
-  sfn::ptr<void(ecs::const_handle, std::vector<render::shape>&, const SimInterface&)> render =
-      nullptr;
+  using render_t = void(ecs::const_handle, std::vector<render::shape>&, const SimInterface&);
+  sfn::ptr<render_t> render = nullptr;
   bool clear_trails = false;
 
   void render_shapes(ecs::const_handle, render::entity_state& state, bool paused,
@@ -116,12 +118,14 @@ struct Health : ecs::component {
   };
   std::vector<hit_t> hits;
 
-  sfn::ptr<std::uint32_t(ecs::handle, SimInterface&, damage_type, std::uint32_t)> damage_transform =
-      nullptr;
-  sfn::ptr<void(ecs::handle, SimInterface&, EmitHandle&, damage_type, const vec2&)> on_hit =
-      nullptr;
-  sfn::ptr<void(ecs::const_handle, SimInterface&, EmitHandle&, damage_type, const vec2&)>
-      on_destroy = nullptr;
+  using damage_transform_t = std::uint32_t(ecs::handle, SimInterface&, damage_type, std::uint32_t);
+  using on_hit_t = void(ecs::handle, SimInterface&, EmitHandle&, damage_type, const vec2&);
+  using on_destroy_t = void(ecs::const_handle, SimInterface&, EmitHandle&, damage_type,
+                            const vec2&);
+
+  sfn::ptr<damage_transform_t> damage_transform = nullptr;
+  sfn::ptr<on_hit_t> on_hit = nullptr;
+  sfn::ptr<on_destroy_t> on_destroy = nullptr;
 
   bool is_hp_low() const {
     // hp <= .4 * max_hp.

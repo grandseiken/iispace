@@ -23,6 +23,7 @@ cc_library(
     "//game/logic/ship:components",
     "//game/logic/sim:sim_interface",
     "//game/logic/sim/io:render",
+    "//game/logic/v0:ship_template",
     "@static_functional",
   ],
   visibility = ["//game/logic/legacy:__subpackages__"],

@@ -18,6 +18,13 @@ constexpr glm::vec4 c0 = colour_hue360(280, .7f);
 constexpr glm::vec4 c1 = colour_hue360(280, .5f, .6f);
 constexpr glm::vec4 c2 = colour_hue360(270, .2f);
 
+template <geom::ShapeNode S>
+shape_flag shape_check_point_compatibility(const auto& parameters, bool is_legacy, const vec2& v,
+                                           shape_flag mask) {
+  return is_legacy ? shape_check_point_legacy<S>(parameters, v, mask)
+                   : shape_check_point<S>(parameters, v, mask);
+}
+
 struct GhostWall : ecs::component {
   static constexpr fixed kBoundingWidth = 640;
   static constexpr sound kDestroySound = sound::kEnemyDestroy;
@@ -520,7 +527,12 @@ DEBUG_STRUCT_TUPLE(GhostBoss, visible, shot_type, rdir, danger_enable, vtime, ti
 }  // namespace
 
 void spawn_ghost_boss(SimInterface& sim, std::uint32_t cycle) {
-  auto h = create_ship<GhostBoss>(sim, sim.dimensions() / 2);
+  auto h = v0::create_ship<GhostBoss>(sim, sim.dimensions() / 2);
+  h.add(Collision{.flags = GhostBoss::kShapeFlags,
+                  .bounding_width = GhostBoss::kBoundingWidth,
+                  .check = ecs::call<&GhostBoss::check_point>});
+  h.add(Render{.render = sfn::cast<Render::render_t, ecs::call<&GhostBoss::render_override>>});
+
   h.add(Enemy{.threat_value = 100,
               .boss_score_reward =
                   calculate_boss_score(boss_flag::kBoss2B, sim.player_count(), cycle)});

@@ -1,5 +1,5 @@
-#ifndef II_GAME_CORE_SIM_SIM_LAYER_H
-#define II_GAME_CORE_SIM_SIM_LAYER_H
+#ifndef II_GAME_CORE_SIM_REPLAY_VIEWER_H
+#define II_GAME_CORE_SIM_REPLAY_VIEWER_H
 #include "game/core/ui/game_stack.h"
 #include <memory>
 
