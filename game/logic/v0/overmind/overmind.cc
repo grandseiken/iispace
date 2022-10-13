@@ -70,15 +70,17 @@ struct Overmind : ecs::component {
     }
 
     auto& random = sim.random(random_source::kGameSequence);
-    auto w = random.uint(3);
-    for (std::uint32_t i = 0; i < 120; ++i) {
+    auto w = random.uint(2);
+    for (std::uint32_t i = 0; i < 400; ++i) {
       auto r = random.uint(16);
       auto p = random_spawn_point(sim, 200);
 
-      if (w == 2) {
-        spawn_big_chaser(sim, p);
-      } else if (w == 1) {
-        spawn_chaser(sim, p);
+      if (w == 1) {
+        if (r < 8) {
+          spawn_big_chaser(sim, p);
+        } else {
+          spawn_chaser(sim, p);
+        }
       } else {
         if (!r) {
           spawn_huge_follow(sim, p);

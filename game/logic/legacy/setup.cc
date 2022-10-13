@@ -35,9 +35,7 @@ void LegacySimSetup::initialise_systems(SimInterface& sim) {
   });
 }
 
-ecs::entity_id LegacySimSetup::start_game(const initial_conditions& conditions,
-                                          std::span<const std::uint32_t> ai_players,
-                                          SimInterface& sim) {
+ecs::entity_id LegacySimSetup::start_game(const initial_conditions& conditions, SimInterface& sim) {
   auto dim = sim.dimensions();
   auto lives = conditions.mode == game_mode::kLegacy_Boss
       ? conditions.player_count * GlobalData::kBossModeLives
@@ -50,16 +48,10 @@ ecs::entity_id LegacySimSetup::start_game(const initial_conditions& conditions,
   legacy::spawn_overmind(sim);
   for (std::uint32_t i = 0; i < conditions.player_count; ++i) {
     vec2 v{(1 + i) * dim.x.to_int() / (1 + conditions.player_count), dim.y / 2};
-    legacy::spawn_player(
-        sim, v, i,
-        /* AI */ std::find(ai_players.begin(), ai_players.end(), i) != ai_players.end());
+    legacy::spawn_player(sim, v, i);
   }
 
   return global_entity.id();
-}
-
-std::optional<input_frame> LegacySimSetup::ai_think(const SimInterface& sim, ecs::handle h) {
-  return legacy::ai_think(sim, h);
 }
 
 }  // namespace ii::legacy

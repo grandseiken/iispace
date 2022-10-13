@@ -6,6 +6,7 @@
 #include "game/logic/sim/io/render.h"
 #include "game/logic/sim/sim_interface.h"
 #include "game/logic/sim/sim_internals.h"
+#include "game/logic/v0/ai/ai_player.h"
 #include "game/logic/v0/setup.h"
 #include <glm/gtc/constants.hpp>
 #include <algorithm>
@@ -64,7 +65,12 @@ SimState::SimState(const initial_conditions& conditions, data::ReplayWriter* rep
             glm::ivec2{32, 32});
   }
 
-  internals_->global_entity_id = setup_->start_game(conditions, ai_players, *interface_);
+  internals_->global_entity_id = setup_->start_game(conditions, *interface_);
+  internals_->index.iterate_dispatch<Player>([&](ecs::handle h, const Player& p) {
+    if (std::find(ai_players.begin(), ai_players.end(), p.player_number) != ai_players.end()) {
+      v0::add_ai(h);
+    }
+  });
   setup_->initialise_systems(*interface_);
   initialise_systems(*internals_);
   refresh_handles(*internals_);
@@ -122,7 +128,7 @@ void SimState::copy_to(SimState& target) const {
 void SimState::ai_think(std::vector<input_frame>& input) const {
   input.resize(internals_->conditions.player_count);
   internals_->index.iterate_dispatch<Player>([&](ecs::handle h, const Player& p) {
-    if (auto f = setup_->ai_think(*interface_, h); f) {
+    if (auto f = v0::ai_think(*interface_, h); f) {
       input[p.player_number] = *f;
     }
   });

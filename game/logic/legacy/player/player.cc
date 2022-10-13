@@ -3,9 +3,9 @@
 #include "game/logic/geometry/node_conditional.h"
 #include "game/logic/geometry/shapes/box.h"
 #include "game/logic/geometry/shapes/ngon.h"
-#include "game/logic/legacy/player/ai_player.h"
 #include "game/logic/legacy/ship_template.h"
 #include "game/logic/sim/io/conditions.h"
+#include "game/logic/sim/io/player.h"
 #include "game/logic/sim/io/render.h"
 #include <algorithm>
 #include <utility>
@@ -344,22 +344,11 @@ DEBUG_STRUCT_TUPLE(PlayerLogic, is_what_mode, invulnerability_timer, fire_timer,
 
 }  // namespace
 
-void spawn_player(SimInterface& sim, const vec2& position, std::uint32_t player_number,
-                  bool is_ai) {
+void spawn_player(SimInterface& sim, const vec2& position, std::uint32_t player_number) {
   auto h = create_ship<PlayerLogic>(sim, position);
   h.add(
       Player{.player_number = player_number, .render_info = ecs::call<&PlayerLogic::render_info>});
   h.add(PlayerLogic{sim, position + vec2{0, -48}});
-  if (is_ai) {
-    h.add(AiPlayer{});
-  }
-}
-
-std::optional<input_frame> ai_think(const SimInterface& sim, ecs::handle h) {
-  if (auto* ai = h.get<AiPlayer>(); ai) {
-    return ecs::call<&AiPlayer::think>(h, sim);
-  }
-  return std::nullopt;
 }
 
 }  // namespace ii::legacy

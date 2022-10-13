@@ -5,15 +5,14 @@ cc_library(
   deps = [
     "//game/common:math",
     "//game/logic/ecs",
-    "//game/logic/sim/io:player",
   ],
   implementation_deps = [
-    ":ai_player",
     "//game/logic/geometry/shapes",
     "//game/logic/legacy:ship_template",
     "//game/logic/sim:sim_interface",
     "//game/logic/sim/io:conditions",
     "//game/logic/sim/io:render",
+    "//game/logic/sim/io:player",
   ],
   visibility = ["//game/logic/legacy:__pkg__"],
 )
@@ -36,20 +35,5 @@ cc_library(
   visibility = [
     "//game/logic/legacy/boss:__pkg__",
     "//game/logic/legacy/overmind:__pkg__",
-  ],
-)
-
-cc_library(
-  name = "ai_player",
-  hdrs = ["ai_player.h"],
-  srcs = ["ai_player.cc"],
-  deps = [
-    "//game/logic/sim/io:player",
-    "//game/logic/ship:components",
-  ],
-  implementation_deps = [
-    "//game/logic/ecs",
-    "//game/logic/legacy:ship_template",
-    "//game/logic/sim:sim_interface",
   ],
 )

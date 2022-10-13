@@ -61,6 +61,7 @@ cc_library(
     "//game/data:replay",
     "//game/logic/legacy:setup",
     "//game/logic/v0:setup",
+    "//game/logic/v0/ai",
     "//game/logic/ship:components",
     "//game/logic/sim/io:conditions",
     "//game/logic/sim/io:player",

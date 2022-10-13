@@ -5,12 +5,12 @@ cc_library(
   deps = [
     "//game/common:math",
     "//game/logic/ecs",
-    "//game/logic/sim/io:player",
   ],
   implementation_deps = [
     ":shot",
     "//game/logic/geometry/shapes",
     "//game/logic/ship:components",
+    "//game/logic/sim/io:player",
     "//game/logic/v0:ship_template",
   ],
   visibility = ["//game/logic/v0:__pkg__"],

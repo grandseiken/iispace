@@ -14,24 +14,16 @@ auto V0SimSetup::parameters(const initial_conditions&) const -> game_parameters 
 
 void V0SimSetup::initialise_systems(SimInterface& sim) {}
 
-ecs::entity_id V0SimSetup::start_game(const initial_conditions& conditions,
-                                      std::span<const std::uint32_t> ai_players,
-                                      SimInterface& sim) {
+ecs::entity_id V0SimSetup::start_game(const initial_conditions& conditions, SimInterface& sim) {
   auto global_entity = sim.index().create();
   v0::spawn_overmind(sim);
 
   auto dim = sim.dimensions();
   for (std::uint32_t i = 0; i < conditions.player_count; ++i) {
     vec2 v{(1 + i) * dim.x.to_int() / (1 + conditions.player_count), dim.y / 2};
-    v0::spawn_player(
-        sim, v, i,
-        /* AI */ std::find(ai_players.begin(), ai_players.end(), i) != ai_players.end());
+    v0::spawn_player(sim, v, i);
   }
   return global_entity.id();
-}
-
-std::optional<input_frame> V0SimSetup::ai_think(const SimInterface& sim, ecs::handle h) {
-  return v0::ai_think(sim, h);
 }
 
 }  // namespace ii::v0

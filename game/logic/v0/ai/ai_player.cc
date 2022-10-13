@@ -1,8 +1,16 @@
-#include "game/logic/legacy/player/ai_player.h"
+#include "game/logic/v0/ai/ai_player.h"
 #include "game/logic/ship/components.h"
 #include "game/logic/sim/sim_interface.h"
 
-namespace ii::legacy {
+namespace ii::v0 {
+namespace {
+
+struct AiPlayer : ecs::component {
+  vec2 velocity{0};
+  input_frame think(ecs::const_handle h, const Transform& transform, const Player& player,
+                    const SimInterface& sim);
+};
+DEBUG_STRUCT_TUPLE(AiPlayer, velocity);
 
 input_frame AiPlayer::think(ecs::const_handle h, const Transform& transform, const Player& player,
                             const SimInterface& sim) {
@@ -185,4 +193,17 @@ input_frame AiPlayer::think(ecs::const_handle h, const Transform& transform, con
   return frame;
 }
 
-}  // namespace ii::legacy
+}  // namespace
+
+void add_ai(ecs::handle h) {
+  h.emplace<AiPlayer>();
+}
+
+std::optional<input_frame> ai_think(const SimInterface& sim, ecs::handle h) {
+  if (auto* ai = h.get<AiPlayer>(); ai) {
+    return ecs::call<&AiPlayer::think>(h, sim);
+  }
+  return std::nullopt;
+}
+
+}  // namespace ii::v0

@@ -23,10 +23,7 @@ public:
   virtual game_parameters parameters(const initial_conditions&) const = 0;
   virtual void initialise_systems(SimInterface& sim) = 0;
   // Returns global entity ID.
-  virtual ecs::entity_id start_game(const initial_conditions&,
-                                    std::span<const std::uint32_t> ai_players,
-                                    SimInterface& sim) = 0;
-  virtual std::optional<input_frame> ai_think(const SimInterface& sim, ecs::handle h) = 0;
+  virtual ecs::entity_id start_game(const initial_conditions&, SimInterface& sim) = 0;
 };
 
 }  // namespace ii

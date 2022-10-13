@@ -2,6 +2,7 @@
 #include "game/logic/geometry/shapes/box.h"
 #include "game/logic/geometry/shapes/ngon.h"
 #include "game/logic/ship/components.h"
+#include "game/logic/sim/io/player.h"
 #include "game/logic/v0/particles.h"
 #include "game/logic/v0/player/shot.h"
 #include "game/logic/v0/ship_template.h"
@@ -144,19 +145,11 @@ DEBUG_STRUCT_TUPLE(PlayerLogic, invulnerability_timer, fire_timer, fire_target);
 
 }  // namespace
 
-void spawn_player(SimInterface& sim, const vec2& position, std::uint32_t player_number,
-                  bool is_ai) {
+void spawn_player(SimInterface& sim, const vec2& position, std::uint32_t player_number) {
   auto h = create_ship_default<PlayerLogic>(sim, position);
   h.add(
       Player{.player_number = player_number, .render_info = ecs::call<&PlayerLogic::render_info>});
   h.add(PlayerLogic{position + vec2{0, -48}});
-  if (is_ai) {
-    // TODO: AI v0.
-  }
-}
-
-std::optional<input_frame> ai_think(const SimInterface& /* sim */, ecs::handle /* h */) {
-  return std::nullopt;  // TODO: AI v0.
 }
 
 }  // namespace ii::v0
