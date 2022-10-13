@@ -55,6 +55,12 @@ inline constexpr glm::vec<N, T> lerp(const glm::vec<N, T>& a, const glm::vec<N, 
   return t * b + (T{1} - t) * a;
 }
 
+template <glm::length_t N, typename T>
+inline constexpr glm::vec<N, T>
+rc_smooth(const glm::vec<N, T>& v, const glm::vec<N, T>& target, T coefficient) {
+  return coefficient * (v - target) + target;
+}
+
 template <typename T>
 inline constexpr glm::vec<2, T> normalise(const glm::vec<2, T>& v) {
   using std::sqrt;

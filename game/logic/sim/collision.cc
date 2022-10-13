@@ -98,6 +98,27 @@ GridCollisionIndex::collision_list(const vec2& point, shape_flag mask) const {
   return r;
 }
 
+std::vector<ecs::handle>
+GridCollisionIndex::in_range(const vec2& point, fixed distance, ecs::component_id cid) const {
+  std::vector<ecs::handle> result;
+  auto min = min_coords(point - distance);
+  auto max = max_coords(point + distance);
+  for (std::int32_t y = min.y; y <= max.y; ++y) {
+    for (std::int32_t x = min.x; x <= max.x; ++x) {
+      for (auto id : cell(glm::ivec2{x, y}).entries) {
+        const auto& e = entities_.find(id)->second;
+        if (!e.handle.has(cid)) {
+          continue;
+        }
+        if (length_squared(e.transform->centre - point) <= distance * distance) {
+          result.emplace_back(e.handle);
+        }
+      }
+    }
+  }
+  return result;
+}
+
 glm::ivec2 GridCollisionIndex::cell_coords(const glm::ivec2& v) const {
   return {v.x >> cell_power_.x, v.y >> cell_power_.y};
 }
@@ -247,6 +268,12 @@ LegacyCollisionIndex::collision_list(const vec2& point, shape_flag mask) const {
     }
   }
   return r;
+}
+
+std::vector<ecs::handle>
+LegacyCollisionIndex::in_range(const vec2&, fixed, ecs::component_id) const {
+  // Not used in legacy game (for now, at least).
+  return {};
 }
 
 }  // namespace ii

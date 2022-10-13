@@ -13,6 +13,7 @@
 #include "game/system/system.h"
 #include <chrono>
 #include <iostream>
+#include <random>
 #include <string>
 #include <thread>
 #include <vector>
@@ -92,6 +93,7 @@ bool run(System& system, const std::vector<std::string>& args, const game_option
   } else if (test) {
     initial_conditions conditions;
     conditions.player_count = 1;
+    conditions.seed = std::random_device{}();
     conditions.mode = game_mode::kStandardRun;
     conditions.biomes.emplace_back(run_biome::kTesting);
     auto kbm = ui::input_device_id::kbm();

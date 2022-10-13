@@ -27,6 +27,8 @@ public:
   virtual bool any_collision(const vec2& point, shape_flag mask) const = 0;
   virtual std::vector<SimInterface::collision_info>
   collision_list(const vec2& point, shape_flag mask) const = 0;
+  virtual std::vector<ecs::handle>
+  in_range(const vec2& point, fixed distance, ecs::component_id) const = 0;
 };
 
 // TODO: probably needs optimizing.
@@ -49,6 +51,8 @@ public:
   bool any_collision(const vec2& point, shape_flag mask) const override;
   std::vector<SimInterface::collision_info>
   collision_list(const vec2& point, shape_flag mask) const override;
+  std::vector<ecs::handle>
+  in_range(const vec2& point, fixed distance, ecs::component_id cid) const override;
 
 private:
   struct cell_t;
@@ -104,6 +108,9 @@ public:
   bool any_collision(const vec2& point, shape_flag mask) const override;
   std::vector<SimInterface::collision_info>
   collision_list(const vec2& point, shape_flag mask) const override;
+
+  std::vector<ecs::handle>
+  in_range(const vec2& point, fixed distance, ecs::component_id cid) const override;
 
 private:
   struct entry {

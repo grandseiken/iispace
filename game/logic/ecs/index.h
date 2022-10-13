@@ -47,6 +47,7 @@ public:
   // Check existence of a component.
   template <Component C>
   bool has() const;
+  bool has(component_id) const;
   // Obtain pointer to component data, if it exists.
   template <Component C>
   C* get() const requires(!Const);
@@ -114,6 +115,7 @@ public:
   // Check existence of component on an element.
   template <Component C>
   bool has(entity_id id) const;
+  bool has(entity_id id, component_id) const;
   // Obtain pointer to component data for an element, if it exists.
   template <Component C>
   C* get(entity_id id);

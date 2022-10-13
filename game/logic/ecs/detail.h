@@ -31,7 +31,10 @@ struct component_table {
   }
   template <Component C>
   std::optional<index_type> get() const {
-    auto c_index = static_cast<std::size_t>(ecs::id<C>());
+    return get(ecs::id<C>());
+  }
+  std::optional<index_type> get(component_id cid) const {
+    auto c_index = static_cast<std::size_t>(cid);
     return c_index < v.size() ? v[c_index] : std::optional<index_type>{};
   }
   std::optional<entity_id> id;

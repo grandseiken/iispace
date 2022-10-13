@@ -175,10 +175,10 @@ input_frame AiPlayer::think(ecs::const_handle h, const Transform& transform, con
   }
 
   if (avoid_urgent) {
-    velocity = (3_fx / 4_fx) * (velocity - target_velocity) + target_velocity;
+    velocity = rc_smooth(velocity, target_velocity, 3_fx / 4_fx);
     frame.keys |= input_frame::key::kBomb;
   } else {
-    velocity = (15_fx / 16_fx) * (velocity - target_velocity) + target_velocity;
+    velocity = rc_smooth(velocity, target_velocity, 15_fx / 16_fx);
   }
   frame.velocity = velocity;
 

@@ -96,6 +96,12 @@ public:
   bool is_on_screen(const vec2& point) const;
   vec2 rotate_compatibility(const vec2& v, fixed theta) const;
 
+  template <ecs::component C>
+  std::vector<ecs::handle> in_range(const vec2& point, fixed distance) {
+    return in_range(point, distance, ecs::id<C>());
+  }
+  std::vector<ecs::handle> in_range(const vec2& point, fixed distance, ecs::component_id);
+
   std::uint32_t get_lives() const;
   std::uint32_t player_count() const;
   std::uint32_t alive_players() const;

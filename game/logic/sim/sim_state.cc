@@ -372,7 +372,7 @@ void SimState::update_smoothing(smoothing_data& data) {
     }
     auto target_speed = std::max(p.speed, std::min(p.speed * 9_fx / 8_fx, d / (2 * p.speed)));
     auto target_velocity = target_speed * normalise(v);
-    it->second.velocity = (3_fx / 4_fx) * (it->second.velocity - target_velocity) + target_velocity;
+    it->second.velocity = rc_smooth(it->second.velocity, target_velocity, 3_fx / 4_fx);
     *it->second.position += it->second.velocity;
     smooth_rotate(it->second.rotation, angle(it->second.velocity));
   });

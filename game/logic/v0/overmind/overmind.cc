@@ -19,6 +19,14 @@ spawn_side random_spawn_side(RandomEngine& r) {
   return spawn_side{r.uint(4u)};
 }
 
+spawn_side random_spawn_vside(RandomEngine& r) {
+  return spawn_side{r.uint(2u)};
+}
+
+spawn_side random_spawn_hside(RandomEngine& r) {
+  return spawn_side{2u + r.uint(2u)};
+}
+
 vec2 spawn_point(const SimInterface& sim, spawn_side side, fixed t, fixed distance) {
   auto dim = sim.dimensions();
   auto point = [&](const vec2& a, const vec2& b, const vec2& d) {
@@ -42,18 +50,43 @@ vec2 random_spawn_point(SimInterface& sim, fixed distance) {
   return spawn_point(sim, random_spawn_side(r), r.fixed(), distance);
 }
 
+vec2 random_spawn_vpoint(SimInterface& sim, fixed distance) {
+  auto& r = sim.random(random_source::kGameSequence);
+  return spawn_point(sim, random_spawn_vside(r), r.fixed(), distance);
+}
+
+vec2 random_spawn_hpoint(SimInterface& sim, fixed distance) {
+  auto& r = sim.random(random_source::kGameSequence);
+  return spawn_point(sim, random_spawn_hside(r), r.fixed(), distance);
+}
+
 struct Overmind : ecs::component {
   std::uint32_t timer = 0;
   void update(ecs::handle h, SimInterface& sim) {
-    if (++timer % 2 == 0 && timer % 400 > 200) {
-      auto r = sim.random(random_source::kGameSequence).uint(16);
+    std::uint32_t total_enemy_threat = 0;
+    sim.index().iterate<Enemy>([&](const Enemy& e) { total_enemy_threat += e.threat_value; });
+    if (total_enemy_threat) {
+      return;
+    }
+
+    auto& random = sim.random(random_source::kGameSequence);
+    auto w = random.uint(3);
+    for (std::uint32_t i = 0; i < 120; ++i) {
+      auto r = random.uint(16);
       auto p = random_spawn_point(sim, 200);
-      if (!r) {
-        spawn_huge_follow(sim, p);
-      } else if (r <= 3) {
-        spawn_big_follow(sim, p);
+
+      if (w == 2) {
+        spawn_big_chaser(sim, p);
+      } else if (w == 1) {
+        spawn_chaser(sim, p);
       } else {
-        spawn_follow(sim, p);
+        if (!r) {
+          spawn_huge_follow(sim, p);
+        } else if (r <= 3) {
+          spawn_big_follow(sim, p);
+        } else {
+          spawn_follow(sim, p);
+        }
       }
     }
   }

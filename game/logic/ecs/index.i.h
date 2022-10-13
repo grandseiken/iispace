@@ -291,6 +291,11 @@ bool EntityIndex::has(entity_id id) const {
   return h && h->has<C>();
 }
 
+inline bool EntityIndex::has(entity_id id, component_id cid) const {
+  auto h = get(id);
+  return h && h->has(cid);
+}
+
 template <Component C>
 C* EntityIndex::get(entity_id id) {
   auto h = get(id);
@@ -426,6 +431,11 @@ template <bool Const>
 template <Component C>
 bool handle_base<Const>::has() const {
   return table_->template get<C>().has_value();
+}
+
+template <bool Const>
+bool handle_base<Const>::has(component_id cid) const {
+  return table_->get(cid).has_value();
 }
 
 template <bool Const>
