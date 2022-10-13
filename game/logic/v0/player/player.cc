@@ -57,7 +57,7 @@ struct PlayerLogic : ecs::component {
     // Temporary death.
     auto dim = sim.dimensions();
     if (pc.kill_timer) {
-      if (--pc.kill_timer) {
+      if (!--pc.kill_timer) {
         invulnerability_timer = kReviveTime;
         render.clear_trails = true;
         transform.centre = {(1 + pc.player_number) * dim.x.to_int() / (1 + sim.player_count()),
@@ -84,7 +84,8 @@ struct PlayerLogic : ecs::component {
     // Shots.
     auto shot = fire_target - transform.centre;
     if (length(shot) > 0 && !fire_timer && input.keys & input_frame::kFire) {
-      spawn_player_shot(sim, transform.centre, h, shot, /* penetrating */ false);
+      spawn_player_shot(sim, transform.centre, h, shot,
+                        /* penetrating */ input.keys & input_frame::kBomb);
       fire_timer = kShotTimer;
 
       auto& random = sim.random(random_source::kAesthetic);
@@ -145,7 +146,7 @@ DEBUG_STRUCT_TUPLE(PlayerLogic, invulnerability_timer, fire_timer, fire_target);
 
 void spawn_player(SimInterface& sim, const vec2& position, std::uint32_t player_number,
                   bool is_ai) {
-  auto h = add_render<PlayerLogic>(create_ship<PlayerLogic>(sim, position));
+  auto h = create_ship_default<PlayerLogic>(sim, position);
   h.add(
       Player{.player_number = player_number, .render_info = ecs::call<&PlayerLogic::render_info>});
   h.add(PlayerLogic{position + vec2{0, -48}});

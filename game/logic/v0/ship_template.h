@@ -115,7 +115,7 @@ ecs::handle create_ship(SimInterface& sim, const vec2& position, fixed rotation 
 
 template <ecs::Component Logic, geom::ShapeNode S = typename Logic::shape>
 ecs::handle add_collision(ecs::handle h) {
-  static constexpr auto collision_flags = get_collision_flags<Logic, S>();
+  static constexpr auto collision_flags = get_shape_flags<Logic, S>();
   static_assert(+collision_flags);
   static_assert(requires { Logic::kBoundingWidth; });
   h.add(Collision{.flags = collision_flags,
@@ -134,6 +134,15 @@ ecs::handle add_render(ecs::handle h) {
     h.add(Render{.render = sfn::cast<Render::render_t, render>});
   }
   return h;
+}
+
+template <ecs::Component Logic, geom::ShapeNode S = typename Logic::shape>
+ecs::handle create_ship_default(SimInterface& sim, const vec2& position, fixed rotation = 0) {
+  auto h = create_ship<Logic>(sim, position, rotation);
+  if constexpr (+get_shape_flags<Logic, S>()) {
+    add_collision<Logic, S>(h);
+  }
+  return add_render<Logic, S>(h);
 }
 
 }  // namespace ii::v0

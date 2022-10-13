@@ -50,6 +50,11 @@ inline constexpr T angle(const glm::vec<2, T>& v) {
   return atan2(v.y, v.x);
 }
 
+template <glm::length_t N, typename T>
+inline constexpr glm::vec<N, T> lerp(const glm::vec<N, T>& a, const glm::vec<N, T>& b, T t) {
+  return t * b + (T{1} - t) * a;
+}
+
 template <typename T>
 inline constexpr glm::vec<2, T> normalise(const glm::vec<2, T>& v) {
   using std::sqrt;

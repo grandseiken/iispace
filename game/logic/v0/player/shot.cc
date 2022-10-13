@@ -108,8 +108,7 @@ DEBUG_STRUCT_TUPLE(PlayerShot, player, player_number, velocity, penetrating);
 void spawn_player_shot(SimInterface& sim, const vec2& position, ecs::handle player,
                        const vec2& direction, bool penetrating) {
   const auto& p = *player.get<Player>();
-  auto h = create_ship<PlayerShot>(sim, position);
-  add_render<PlayerShot>(h);
+  auto h = create_ship_default<PlayerShot>(sim, position);
   h.add(PlayerShot{player.id(), p.player_number, p.is_predicted, direction, penetrating});
 }
 
