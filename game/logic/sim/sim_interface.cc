@@ -178,9 +178,9 @@ vec2 SimInterface::rotate_compatibility(const vec2& v, fixed theta) const {
                                                                     : rotate(v, theta);
 }
 
-std::vector<ecs::handle>
-SimInterface::in_range(const vec2& point, fixed distance, ecs::component_id cid) {
-  return internals_->collision_index->in_range(point, distance, cid);
+void SimInterface::in_range(const vec2& point, fixed distance, ecs::component_id cid,
+                            std::size_t max_n, std::vector<range_info>& output) {
+  internals_->collision_index->in_range(point, distance, cid, max_n, output);
 }
 
 std::uint32_t SimInterface::get_lives() const {

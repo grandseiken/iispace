@@ -93,6 +93,9 @@ bool run(System& system, const std::vector<std::string>& args, const game_option
   } else if (test) {
     initial_conditions conditions;
     conditions.player_count = 1;
+    for (auto player_number : options.ai_players) {
+      conditions.player_count = std::max(conditions.player_count, player_number + 1);
+    }
     conditions.seed = std::random_device{}();
     conditions.mode = game_mode::kStandardRun;
     conditions.biomes.emplace_back(run_biome::kTesting);

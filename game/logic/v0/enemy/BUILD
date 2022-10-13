@@ -11,7 +11,7 @@ cc_library(
     "//game/logic/sim/io:render",
     "//game/logic/v0:ship_template",
   ],
-  visibility = ["//game/logic/v0/overmind:__pkg__"],
+  visibility = ["//game/logic/v0/overmind:__subpackages__"],
 )
 
 cc_library(

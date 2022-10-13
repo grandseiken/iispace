@@ -18,7 +18,7 @@ struct Follow : ecs::component {
   static constexpr rumble_type kDestroyRumble = rumble_type::kSmall;
 
   static constexpr fixed kSpeed = 7_fx / 4_fx;
-  static constexpr std::uint32_t kTime = 90;
+  static constexpr std::uint32_t kTime = 60;
   static constexpr std::uint32_t kSmallWidth = 11;
   static constexpr std::uint32_t kBigWidth = 22;
   static constexpr std::uint32_t kHugeWidth = 33;
@@ -46,8 +46,9 @@ struct Follow : ecs::component {
   std::optional<vec2> direction;
   std::optional<ecs::entity_id> target;
   std::optional<ecs::entity_id> next_target;
+  std::vector<ecs::entity_id> closest;
 
-  void update(Transform& transform, SimInterface& sim) {
+  void update(ecs::handle h, Transform& transform, SimInterface& sim) {
     transform.rotate(fixed_c::tenth / (1_fx + size * 1_fx / 2_fx));
 
     if (sim.is_on_screen(transform.centre)) {
@@ -60,18 +61,30 @@ struct Follow : ecs::component {
       return;
     }
 
-    // TODO: make this some sort of new generic apply-force component?
     fixed move_scale = 1_fx;
     vec2 target_spread{0};
     if (extra_velocity == vec2{0}) {
-      for (const auto& eh : sim.in_range(transform.centre, 32, ecs::id<Follow>())) {
-        auto d = transform.centre - eh.get<Transform>()->centre;
-        if (d != vec2{0}) {
-          target_spread +=
-              (1 + eh.get<Follow>()->size) * normalise(d) / std::max(4_fx, length_squared(d));
+      if ((+h.id() + sim.tick_count()) % 16 == 0) {
+        thread_local std::vector<SimInterface::range_info> range_output;
+        range_output.clear();
+        closest.clear();
+        sim.in_range(transform.centre, 24, ecs::id<Follow>(), /* max */ 6, range_output);
+        for (const auto& e : range_output) {
+          closest.emplace_back(e.h.id());
+        }
+      }
+      for (auto id : closest) {
+        if (auto eh = sim.index().get(id); eh && !eh->has<Destroy>()) {
+          auto d = eh->get<Transform>()->centre - transform.centre;
+          auto d_sq = length_squared(d);
+          if (d != vec2{0}) {
+            target_spread -=
+                (1 + eh->get<Follow>()->size) * d / (sqrt(d_sq) * std::max(4_fx, d_sq));
+          }
         }
       }
     } else {
+      // TODO: make this some sort of new generic apply-force component?
       transform.move(extra_velocity);
       extra_velocity *= 31_fx / 32;
       auto t = length(extra_velocity);
@@ -80,12 +93,13 @@ struct Follow : ecs::component {
         extra_velocity = vec2{0};
       }
     }
-    spread_velocity = rc_smooth(spread_velocity, 5 * kSpeed * target_spread, 15_fx / 16_fx);
+    spread_velocity = rc_smooth(spread_velocity, 6 * kSpeed * target_spread, 15_fx / 16_fx);
     transform.move(spread_velocity);
     if (!sim.alive_players()) {
       return;
     }
 
+    // TODO: acquire new target if current is dead.
     ++timer;
     if (!target || timer >= kTime) {
       (target ? next_target : target) = sim.nearest_player(transform.centre).id();
@@ -117,7 +131,7 @@ struct Follow : ecs::component {
   }
 };
 DEBUG_STRUCT_TUPLE(Follow, timer, size, in_formation, extra_velocity, spread_velocity, direction,
-                   target, next_target);
+                   target, next_target, closest);
 
 template <geom::ShapeNode S>
 ecs::handle create_follow_ship(SimInterface& sim, std::uint32_t size, std::uint32_t health,
@@ -177,6 +191,7 @@ struct Chaser : ecs::component {
   bool is_moving = false;
   vec2 direction{0};
   vec2 spread_velocity{0};
+  std::vector<ecs::entity_id> closest;
 
   void update(ecs::handle h, Transform& transform, SimInterface& sim) {
     bool was_on_screen = sim.is_on_screen(transform.centre);
@@ -210,17 +225,29 @@ struct Chaser : ecs::component {
     }
 
     vec2 target_spread{0};
-    for (const auto& eh : sim.in_range(transform.centre, 32, ecs::id<Chaser>())) {
-      if (eh.id() == h.id() || (is_moving != eh.get<Chaser>()->is_moving)) {
-        continue;
-      }
-      auto d = transform.centre - eh.get<Transform>()->centre;
-      if (d != vec2{0}) {
-        target_spread +=
-            (1 + eh.get<Chaser>()->size) * normalise(d) / std::max(1_fx, length_squared(d));
+
+    if ((+h.id() + sim.tick_count()) % 16 == 0) {
+      thread_local std::vector<SimInterface::range_info> range_output;
+      range_output.clear();
+      closest.clear();
+      sim.in_range(transform.centre, 24, ecs::id<Chaser>(), /* max */ 6, range_output);
+      for (const auto& e : range_output) {
+        closest.emplace_back(e.h.id());
       }
     }
-    target_spread *= kSpeed * (is_moving ? fixed{kTime - timer} / kTime : 1_fx);
+    for (auto id : closest) {
+      if (auto eh = sim.index().get(id); id != h.id() && eh && !eh->has<Destroy>()) {
+        if (is_moving != eh->get<Chaser>()->is_moving) {
+          continue;
+        }
+        auto d = eh->get<Transform>()->centre - transform.centre;
+        auto d_sq = length_squared(d);
+        if (d != vec2{0}) {
+          target_spread -= (1 + eh->get<Chaser>()->size) * d / (sqrt(d_sq) * std::max(1_fx, d_sq));
+        }
+      }
+    }
+    target_spread *= (3_fx / 2_fx) * kSpeed * (is_moving ? fixed{kTime - timer} / kTime : 1_fx);
     spread_velocity = rc_smooth(spread_velocity, target_spread, 15_fx / 16_fx);
     transform.move(spread_velocity);
   }
@@ -239,7 +266,7 @@ struct Chaser : ecs::component {
   }
 };
 DEBUG_STRUCT_TUPLE(Chaser, timer, size, next_target_id, on_screen, is_moving, direction,
-                   spread_velocity);
+                   spread_velocity, closest);
 
 template <geom::ShapeNode S>
 ecs::handle

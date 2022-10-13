@@ -27,8 +27,8 @@ public:
   virtual bool any_collision(const vec2& point, shape_flag mask) const = 0;
   virtual std::vector<SimInterface::collision_info>
   collision_list(const vec2& point, shape_flag mask) const = 0;
-  virtual std::vector<ecs::handle>
-  in_range(const vec2& point, fixed distance, ecs::component_id) const = 0;
+  virtual void in_range(const vec2& point, fixed distance, ecs::component_id, std::size_t max_n,
+                        std::vector<SimInterface::range_info>& output) const = 0;
 };
 
 // TODO: probably needs optimizing.
@@ -51,8 +51,8 @@ public:
   bool any_collision(const vec2& point, shape_flag mask) const override;
   std::vector<SimInterface::collision_info>
   collision_list(const vec2& point, shape_flag mask) const override;
-  std::vector<ecs::handle>
-  in_range(const vec2& point, fixed distance, ecs::component_id cid) const override;
+  void in_range(const vec2& point, fixed distance, ecs::component_id, std::size_t max_n,
+                std::vector<SimInterface::range_info>& output) const override;
 
 private:
   struct cell_t;
@@ -73,6 +73,7 @@ private:
     void insert(ecs::entity_id id);
     void clear(ecs::entity_id id);
     std::vector<ecs::entity_id> entries;
+    std::vector<ecs::entity_id> centres;
   };
 
   struct entry_t {
@@ -82,6 +83,7 @@ private:
     const Collision* collision = nullptr;
     glm::ivec2 min{0, 0};
     glm::ivec2 max{0, 0};
+    glm::ivec2 centre{0, 0};
   };
 
   glm::ivec2 cell_power_{0, 0};
@@ -109,8 +111,8 @@ public:
   std::vector<SimInterface::collision_info>
   collision_list(const vec2& point, shape_flag mask) const override;
 
-  std::vector<ecs::handle>
-  in_range(const vec2& point, fixed distance, ecs::component_id cid) const override;
+  void in_range(const vec2& point, fixed distance, ecs::component_id, std::size_t max_n,
+                std::vector<SimInterface::range_info>& output) const override;
 
 private:
   struct entry {

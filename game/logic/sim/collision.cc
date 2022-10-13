@@ -98,25 +98,48 @@ GridCollisionIndex::collision_list(const vec2& point, shape_flag mask) const {
   return r;
 }
 
-std::vector<ecs::handle>
-GridCollisionIndex::in_range(const vec2& point, fixed distance, ecs::component_id cid) const {
-  std::vector<ecs::handle> result;
+void GridCollisionIndex::in_range(const vec2& point, fixed distance, ecs::component_id cid,
+                                  std::size_t max_n,
+                                  std::vector<SimInterface::range_info>& output) const {
   auto min = min_coords(point - distance);
   auto max = max_coords(point + distance);
+  auto output_begin = output.size();
+  fixed max_distance = 0;
+  std::size_t max_index = 0;
+  // TODO: start from centre cell and work outwards, exiting if minimum possible distance is
+  // too great (or output full).
   for (std::int32_t y = min.y; y <= max.y; ++y) {
     for (std::int32_t x = min.x; x <= max.x; ++x) {
-      for (auto id : cell(glm::ivec2{x, y}).entries) {
+      for (auto id : cell(glm::ivec2{x, y}).centres) {
         const auto& e = entities_.find(id)->second;
         if (!e.handle.has(cid)) {
           continue;
         }
-        if (length_squared(e.transform->centre - point) <= distance * distance) {
-          result.emplace_back(e.handle);
+        auto d = e.transform->centre - point;
+        auto d_sq = length_squared(d);
+        if (d_sq <= distance * distance && (!max_n || output.size() - output_begin < max_n)) {
+          if (!max_distance || d_sq > max_distance) {
+            max_distance = d_sq;
+            max_index = output.size();
+          }
+          output.emplace_back(SimInterface::range_info{e.handle, d, d_sq});
+          continue;
+        }
+        if (d_sq > max_distance) {
+          continue;
+        }
+        output[max_index] = {e.handle, d, d_sq};
+        max_distance = 0;
+        for (std::size_t i = output_begin; i < output.size(); ++i) {
+          auto& o = output[i];
+          if (!max_distance || o.distance_sq > max_distance) {
+            max_distance = o.distance_sq;
+            max_index = i;
+          }
         }
       }
     }
   }
-  return result;
 }
 
 glm::ivec2 GridCollisionIndex::cell_coords(const glm::ivec2& v) const {
@@ -159,15 +182,23 @@ void GridCollisionIndex::clear_cells(ecs::entity_id id, entry_t& e) {
       cell(glm::ivec2{x, y}).clear(id);
     }
   }
+  if (is_cell_valid(e.centre)) {
+    auto& c = cell(e.centre);
+    c.centres.erase(std::find(c.centres.begin(), c.centres.end(), id));
+  }
 }
 
 void GridCollisionIndex::insert_cells(ecs::entity_id id, entry_t& e) {
   e.min = min_coords(e.transform->centre - e.collision->bounding_width);
   e.max = max_coords(e.transform->centre + e.collision->bounding_width);
+  e.centre = cell_coords(e.transform->centre);
   for (std::int32_t y = e.min.y; y <= e.max.y; ++y) {
     for (std::int32_t x = e.min.x; x <= e.max.x; ++x) {
       cell(glm::ivec2{x, y}).insert(id);
     }
+  }
+  if (is_cell_valid(e.centre)) {
+    cell(e.centre).centres.emplace_back(id);
   }
 }
 
@@ -270,10 +301,9 @@ LegacyCollisionIndex::collision_list(const vec2& point, shape_flag mask) const {
   return r;
 }
 
-std::vector<ecs::handle>
-LegacyCollisionIndex::in_range(const vec2&, fixed, ecs::component_id) const {
+void LegacyCollisionIndex::in_range(const vec2&, fixed, ecs::component_id, std::size_t,
+                                    std::vector<SimInterface::range_info>&) const {
   // Not used in legacy game (for now, at least).
-  return {};
 }
 
 }  // namespace ii

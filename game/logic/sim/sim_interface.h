@@ -91,16 +91,24 @@ public:
     ecs::handle h;
     shape_flag hit_mask;
   };
+  struct range_info {
+    ecs::handle h;
+    vec2 d{0};
+    fixed distance_sq = 0;
+  };
+
   std::vector<collision_info> collision_list(const vec2& point, shape_flag mask);
   bool any_collision(const vec2& point, shape_flag mask) const;
   bool is_on_screen(const vec2& point) const;
   vec2 rotate_compatibility(const vec2& v, fixed theta) const;
 
   template <ecs::component C>
-  std::vector<ecs::handle> in_range(const vec2& point, fixed distance) {
-    return in_range(point, distance, ecs::id<C>());
+  void
+  in_range(const vec2& point, fixed distance, std::size_t max_n, std::vector<range_info>& output) {
+    in_range(point, distance, ecs::id<C>(), max_n, output);
   }
-  std::vector<ecs::handle> in_range(const vec2& point, fixed distance, ecs::component_id);
+  void in_range(const vec2& point, fixed distance, ecs::component_id, std::size_t max_n,
+                std::vector<range_info>& output);
 
   std::uint32_t get_lives() const;
   std::uint32_t player_count() const;
