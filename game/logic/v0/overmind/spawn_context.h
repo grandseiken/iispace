@@ -44,6 +44,77 @@ enum class spawn_side : std::uint32_t {
   kReverseMirrorD5 = 31,
 };
 
+inline spawn_side opposite_side(spawn_side side) {
+  switch (side) {
+  case spawn_side::kTop:
+    return spawn_side::kBottom;
+  case spawn_side::kBottom:
+    return spawn_side::kTop;
+  case spawn_side::kLeft:
+    return spawn_side::kRight;
+  case spawn_side::kRight:
+    return spawn_side::kLeft;
+  case spawn_side::kReverseTop:
+    return spawn_side::kReverseBottom;
+  case spawn_side::kReverseBottom:
+    return spawn_side::kReverseTop;
+  case spawn_side::kReverseLeft:
+    return spawn_side::kReverseRight;
+  case spawn_side::kReverseRight:
+    return spawn_side::kReverseLeft;
+  case spawn_side::kTopLeft:
+    return spawn_side::kBottomRight;
+  case spawn_side::kTopRight:
+    return spawn_side::kBottomLeft;
+  case spawn_side::kBottomLeft:
+    return spawn_side::kTopRight;
+  case spawn_side::kBottomRight:
+    return spawn_side::kTopLeft;
+  case spawn_side::kReverseTopLeft:
+    return spawn_side::kReverseBottomRight;
+  case spawn_side::kReverseTopRight:
+    return spawn_side::kReverseBottomLeft;
+  case spawn_side::kReverseBottomLeft:
+    return spawn_side::kReverseTopRight;
+  case spawn_side::kReverseBottomRight:
+    return spawn_side::kReverseTopLeft;
+  default:
+    return side;
+  }
+}
+
+inline bool is_vertical(spawn_side side) {
+  switch (side) {
+  case spawn_side::kTop:
+  case spawn_side::kBottom:
+  case spawn_side::kReverseTop:
+  case spawn_side::kReverseBottom:
+  case spawn_side::kMirrorV:
+  case spawn_side::kReverseMirrorV:
+    return true;
+  default:
+    return false;
+  }
+}
+
+inline bool is_horizontal(spawn_side side) {
+  switch (side) {
+  case spawn_side::kLeft:
+  case spawn_side::kRight:
+  case spawn_side::kReverseLeft:
+  case spawn_side::kReverseRight:
+  case spawn_side::kMirrorH:
+  case spawn_side::kReverseMirrorH:
+    return true;
+  default:
+    return false;
+  }
+}
+
+inline bool is_diagonal(spawn_side side) {
+  return !is_vertical(side) && !is_horizontal(side);
+}
+
 inline vec2 spawn_direction(spawn_side side) {
   switch (side) {
   case spawn_side::kTop:
@@ -150,7 +221,7 @@ struct spawn_context {
   }
 
   vec2 spawn_point(spawn_side side, std::uint32_t i, std::uint32_t n) const {
-    return spawn_point(side, fixed{i % n + 1} / fixed{n + 1});
+    return spawn_point(side, fixed{i % n + 1_fx / 2} / fixed{n});
   }
 
   std::vector<spawn_side> resolve_sides(spawn_side side) const {

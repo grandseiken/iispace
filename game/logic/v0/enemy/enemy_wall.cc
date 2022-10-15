@@ -1,3 +1,4 @@
+#include "game/logic/geometry/node_conditional.h"
 #include "game/logic/geometry/shapes/box.h"
 #include "game/logic/v0/enemy/enemy.h"
 #include "game/logic/v0/enemy/enemy_template.h"
@@ -88,19 +89,28 @@ struct Wall : ecs::component {
 
   static constexpr std::uint32_t kTimer = 95;
   static constexpr fixed kSpeed = 1;
-  using shape = standard_transform<geom::box<12, 48, colour_hue360(120, .5f, .6f),
-                                             shape_flag::kDangerous | shape_flag::kVulnerable>>;
+  using shape = standard_transform<
+      geom::conditional_p<2,
+                          geom::box<12, 48, colour_hue360(120, .5f, .6f),
+                                    shape_flag::kDangerous | shape_flag::kWeakVulnerable>,
+                          geom::box<12, 48, colour_hue360(120, .5f, .6f),
+                                    shape_flag::kDangerous | shape_flag::kVulnerable>>>;
 
+  Wall(const vec2& dir, bool anti) : dir{dir}, anti{anti} {}
   vec2 dir{0};
   std::uint32_t timer = 0;
   bool is_rotating = false;
   bool anti = false;
+  bool weak = false;
 
-  Wall(const vec2& dir, bool anti) : dir{dir}, anti{anti} {}
+  std::tuple<vec2, fixed, bool> shape_parameters(const Transform& transform) const {
+    return {transform.centre, transform.rotation, weak};
+  }
 
   void
   update(ecs::handle h, Transform& transform, Render& render, Health& health, SimInterface& sim) {
-    if (!sim.global_entity().get<GlobalData>()->non_wall_enemy_count && timer % 8 < 2) {
+    if (!sim.global_entity().get<GlobalData>()->non_wall_enemy_count && timer && timer % 8 < 2) {
+      weak = true;
       if (health.hp > 2) {
         sim.emit(resolve_key::predicted()).play(sound::kEnemySpawn, 1.f, 0.f);
       }

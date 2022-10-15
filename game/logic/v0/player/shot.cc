@@ -52,18 +52,19 @@ struct PlayerShot : ecs::component {
     bool destroy = false;
     bool destroy_particles = false;
     auto generation = sim.index().generation();
-    auto collision = sim.collision_list(
-        transform.centre, shape_flag::kVulnerable | shape_flag::kShield | shape_flag::kWeakShield);
+    auto collision = sim.collision_list(transform.centre,
+                                        shape_flag::kVulnerable | shape_flag::kWeakVulnerable |
+                                            shape_flag::kShield | shape_flag::kWeakShield);
     for (const auto& e : collision) {
       if (e.h.has<Destroy>()) {
         continue;
       }
-      if (+(e.hit_mask & shape_flag::kVulnerable)) {
+      if (+(e.hit_mask & (shape_flag::kVulnerable | shape_flag::kWeakVulnerable))) {
         auto type = is_predicted ? damage_type::kPredicted
             : penetrating        ? damage_type::kMagic
                                  : damage_type::kNone;
         ecs::call_if<&Health::damage>(e.h, sim, 1, type, player, transform.centre - 2 * velocity);
-        if (!penetrating) {
+        if (!(e.hit_mask & shape_flag::kWeakVulnerable) && !penetrating) {
           destroy = true;
           destroy_particles = true;
           break;

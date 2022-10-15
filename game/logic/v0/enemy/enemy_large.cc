@@ -67,7 +67,7 @@ struct FollowHub : ecs::component {
         : count > 3 ? (count = 0, sim.rotate_compatibility(dir, -fixed_c::pi / 2))
                     : dir;
 
-    auto s = fast ? fixed_c::hundredth * 6 + fixed_c::tenth : fixed_c::hundredth * 6;
+    auto s = fast ? fixed_c::hundredth * 4 + fixed_c::tenth / 2 : fixed_c::hundredth * 4;
     transform.rotate(s);
     transform.move(dir * kSpeed);
   }

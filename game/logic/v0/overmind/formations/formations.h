@@ -46,11 +46,11 @@ inline void spawn_chaser(spawn_context& context, spawn_side, const vec2& positio
 
 inline void spawn_follow_hub(spawn_context& context, spawn_side, const vec2& position) {
   bool fast = !context.random.uint(8);
-  auto r = context.random.uint(8);
+  auto r = context.random.uint(16);
   if (r == 0) {
-    v0::spawn_chaser_hub(context.sim, position, fast);
-  } else if (r == 1) {
     v0::spawn_big_follow_hub(context.sim, position, fast);
+  } else if (r <= 3) {
+    v0::spawn_chaser_hub(context.sim, position, fast);
   } else {
     v0::spawn_follow_hub(context.sim, position, fast);
   }
@@ -185,8 +185,19 @@ struct wall0 : formation<5> {
   void operator()(spawn_context& context) const {
     auto side = context.random_mside();
     auto f = context.random.rbool() ? &spawn_wall0 : &spawn_wall1;
-    for (std::uint32_t i = 1; i < 3; ++i) {
-      context.spawn(f, side, i, 4);
+    auto p = context.random.uint(6);
+    if (p == 0 || p == 1) {
+      context.spawn(f, side, 0, 4);
+      context.spawn(f, side, 1, 4);
+    } else if (p == 2 || p == 3) {
+      context.spawn(f, side, 0, 4);
+      context.spawn(f, side, 2, 4);
+    } else if (p == 4) {
+      context.spawn(f, side, 1, 4);
+      context.spawn(f, side, 2, 4);
+    } else if (p == 5) {
+      context.spawn(f, side, 0, 4);
+      context.spawn(f, side, 3, 4);
     }
   }
 };
@@ -195,38 +206,40 @@ struct wall1 : formation<12> {
   void operator()(spawn_context& context) const {
     auto f = context.random.rbool() ? &spawn_wall0 : &spawn_wall1;
     auto r = context.random.uint(4);
-    auto p1 = 2 + context.random.uint(5);
-    auto p2 = 2 + context.random.uint(5);
-    for (std::uint32_t i = 1; i < 8; ++i) {
+    auto p1 = 2 + context.random.uint(6);
+    auto p2 = 2 + context.random.uint(6);
+    for (std::uint32_t i = 1; i < 9; ++i) {
       if (r < 2 || i != p1) {
-        context.spawn(f, spawn_side::kBottom, i, 9);
+        context.spawn(f, spawn_side::kBottom, i, 10);
       }
       if (r < 2 || (r == 2 && i != 8 - p1) || (r == 3 && i != p2)) {
-        context.spawn(f, spawn_side::kTop, i, 9);
+        context.spawn(f, spawn_side::kTop, i, 10);
       }
     }
   }
 };
 
-struct wall2 : formation<22, 26> {
+struct wall2 : formation<20, 24> {
   void operator()(spawn_context& context) const {
+    // TODO: sometimes alternate rotate dir on this and wall2_side?
+    // Also: sometimes stagger row rotate timing?
     auto f = context.random.rbool() ? &spawn_wall0 : &spawn_wall1;
     auto r1 = context.random.uint(4);
     auto r2 = context.random.uint(4);
-    auto p11 = 1 + context.random.uint(10);
-    auto p12 = 1 + context.random.uint(10);
-    auto p21 = 1 + context.random.uint(10);
-    auto p22 = 1 + context.random.uint(10);
+    auto p11 = 1 + context.random.uint(8);
+    auto p12 = 1 + context.random.uint(8);
+    auto p21 = 1 + context.random.uint(8);
+    auto p22 = 1 + context.random.uint(8);
 
-    for (std::uint32_t i = 0; i < 12; ++i) {
+    for (std::uint32_t i = 0; i < 10; ++i) {
       if (r1 < 2 || i != p11) {
         if (r2 < 2 || i != p21) {
-          context.spawn(f, spawn_side::kBottom, i, 12);
+          context.spawn(f, spawn_side::kBottom, i, 10);
         }
       }
       if (r1 < 2 || (r1 == 2 && i != 11 - p11) || (r1 == 3 && i != p12)) {
         if (r2 < 2 || (r2 == 2 && i != 11 - p21) || (r2 == 3 && i != p22)) {
-          context.spawn(f, spawn_side::kTop, i, 12);
+          context.spawn(f, spawn_side::kTop, i, 10);
         }
       }
     }
@@ -236,21 +249,24 @@ struct wall2 : formation<22, 26> {
 struct wall0_side : formation<3> {
   void operator()(spawn_context& context) const {
     auto f = context.random.rbool() ? &spawn_wall0 : &spawn_wall1;
-    auto r = context.random.uint(2);
-    auto p = context.random.uint(4);
-
-    if (p < 2) {
-      auto d = r ? spawn_side::kTop : spawn_side::kBottom;
-      for (std::uint32_t i = 1; i < 3; ++i) {
-        context.spawn(f, d, i, 4);
-      }
-    } else if (p == 2) {
-      for (std::uint32_t i = 1; i < 3; ++i) {
-        auto d = (i + r) % 2 ? spawn_side::kTop : spawn_side::kBottom;
-        context.spawn(f, d, (i + r) % 2 ? 3 - i : i, 4);
+    if (context.random.rbool()) {
+      auto side = context.random_vside();
+      auto p = context.random.uint(6);
+      if (p == 0 || p == 1) {
+        context.spawn(f, side, 0, 4);
+        context.spawn(f, side, 1, 4);
+      } else if (p == 2 || p == 3) {
+        context.spawn(f, side, 0, 4);
+        context.spawn(f, side, 2, 4);
+      } else if (p == 4) {
+        context.spawn(f, side, 1, 4);
+        context.spawn(f, side, 2, 4);
+      } else if (p == 5) {
+        context.spawn(f, side, 0, 4);
+        context.spawn(f, side, 3, 4);
       }
     } else {
-      context.spawn(f, context.random_mside(), 1 + r, 4);
+      context.spawn(f, context.random_mside(), context.random.uint(2), 4);
     }
   }
 };
@@ -258,52 +274,71 @@ struct wall0_side : formation<3> {
 struct wall1_side : formation<6> {
   void operator()(spawn_context& context) const {
     auto f = context.random.rbool() ? &spawn_wall0 : &spawn_wall1;
-    auto r = context.random.uint(2);
-    auto p = context.random.uint(4);
+    auto p = context.random.uint(3);
 
-    if (p < 2) {
-      auto d = r ? spawn_side::kTop : spawn_side::kBottom;
-      for (std::uint32_t i = 1; i < 8; ++i) {
-        context.spawn(f, d, i, 9);
+    // TODO: need better ways of dividing the space to line up walls nicely.
+    // 10 walls exactly fills horizontal space.
+    // But 5.625 fills vertical.
+    if (p == 0) {
+      auto side = context.random_vside();
+      for (std::uint32_t i = 1; i < 9; ++i) {
+        context.spawn(f, side, i, 10);
       }
-    } else if (p == 2) {
-      for (std::uint32_t i = 1; i < 8; ++i) {
-        auto d = (i + r) % 2 ? spawn_side::kTop : spawn_side::kBottom;
-        context.spawn(f, d, i, 9);
+    } else if (p == 1) {
+      auto side = context.random_mside();
+      if (is_vertical(side)) {
+        for (std::uint32_t i = 0; i < 4; ++i) {
+          context.spawn(f, side, 2 * i, 10);
+        }
+      } else {
+        for (std::uint32_t i = 0; i < 4; ++i) {
+          context.spawn(f, side, 4 + 12 * i, 45);
+        }
       }
     } else {
       auto side = context.random_mside();
-      for (std::uint32_t i = 0; i < 4; ++i) {
-        context.spawn(f, side, r ? 8 - i : i, 9);
+      if (is_vertical(side)) {
+        for (std::uint32_t i = 0; i < 4; ++i) {
+          context.spawn(f, side, i, 10);
+        }
+      } else {
+        for (std::uint32_t i = 0; i < 4; ++i) {
+          context.spawn(f, side, 4 + 8 * i, 45);
+        }
       }
     }
   }
 };
 
-struct wall2_side : formation<11, 13> {
+struct wall2_side : formation<10, 12> {
   void operator()(spawn_context& context) const {
     auto f = context.random.rbool() ? &spawn_wall0 : &spawn_wall1;
-    auto r = context.random.uint(2);
-    auto p = context.random.uint(4);
-    auto r2 = context.random.rbool();
-    auto p2 = 1 + context.random.uint(10);
+    auto p = context.random.uint(3);
 
-    if (p < 2) {
-      auto d = r ? spawn_side::kTop : spawn_side::kBottom;
-      for (std::uint32_t i = 0; i < 12; ++i) {
+    if (p == 0) {
+      auto side = context.random_vside();
+      auto r2 = context.random.rbool();
+      auto p2 = 1 + context.random.uint(8);
+      for (std::uint32_t i = 0; i < 10; ++i) {
         if (!r2 || i != p2) {
-          context.spawn(f, d, i, 12);
+          context.spawn(f, side, i, 10);
         }
       }
-    } else if (p == 2) {
-      for (std::uint32_t i = 0; i < 12; ++i) {
-        auto d = (i + r) % 2 ? spawn_side::kTop : spawn_side::kBottom;
-        context.spawn(f, d, (i + r) % 2 ? 11 - i : i, 12);
+    } else if (p == 1) {
+      auto side = context.random_mside();
+      if (is_vertical(side)) {
+        for (std::uint32_t i = 0; i < 5; ++i) {
+          context.spawn(f, side, 2 * i, 10);
+        }
+      } else {
+        for (std::uint32_t i = 0; i < 5; ++i) {
+          context.spawn(f, side, 2 + 8 * i, 45);
+        }
       }
     } else {
-      auto side = context.random_mside();
-      for (std::uint32_t i = 0; i < 6; ++i) {
-        context.spawn(f, side, r ? 11 - i : i, 12);
+      auto side = context.random.rbool() ? spawn_side::kMirrorV : spawn_side::kReverseMirrorV;
+      for (std::uint32_t i = 0; i < 5; ++i) {
+        context.spawn(f, side, i, 10);
       }
     }
   }
