@@ -13,10 +13,11 @@ struct formation {
 };
 
 inline void spawn_follow(spawn_context& context, spawn_side side, const vec2& position) {
-  auto r = context.random.uint(32);
+  // TODO: work out how this should actually work.
+  auto r = context.random.uint(64);
   if (!r) {
     v0::spawn_huge_follow(context.sim, position, spawn_direction(side));
-  } else if (r <= 4) {
+  } else if (r <= 6) {
     v0::spawn_big_follow(context.sim, position, spawn_direction(side));
   } else {
     v0::spawn_follow(context.sim, position, spawn_direction(side));
@@ -28,6 +29,18 @@ inline void spawn_chaser(spawn_context& context, spawn_side, const vec2& positio
     v0::spawn_big_chaser(context.sim, position);
   } else {
     v0::spawn_chaser(context.sim, position);
+  }
+}
+
+inline void spawn_follow_hub(spawn_context& context, spawn_side, const vec2& position) {
+  bool fast = !context.random.uint(8);
+  auto r = context.random.uint(8);
+  if (r == 0) {
+    v0::spawn_chaser_hub(context.sim, position, fast);
+  } else if (r == 1) {
+    v0::spawn_big_follow_hub(context.sim, position, fast);
+  } else {
+    v0::spawn_follow_hub(context.sim, position, fast);
   }
 }
 
@@ -277,6 +290,39 @@ struct chaser3_side : formation<10> {
     for (std::uint32_t i = 0; i < 22; ++i) {
       context.spawn(&spawn_chaser, side, i, 22);
     }
+  }
+};
+
+struct hub0 : formation<6> {
+  void operator()(spawn_context& context) const {
+    auto side = context.random_mside();
+    context.spawn(&spawn_follow_hub, side, 1 + context.random.uint(3), 5);
+  }
+};
+
+struct hub1 : formation<12> {
+  void operator()(spawn_context& context) const {
+    auto side = context.random_mside();
+    auto p = context.random.uint(3);
+    context.spawn(&spawn_follow_hub, side, p == 1 ? 2 : 1, 5);
+    context.spawn(&spawn_follow_hub, side, p == 2 ? 2 : 3, 5);
+  }
+};
+
+struct hub0_side : formation<3> {
+  void operator()(spawn_context& context) const {
+    auto side = context.random_vside();
+    auto p = 1 + context.random.uint(3);
+    context.spawn(&spawn_follow_hub, side, p, 5);
+  }
+};
+
+struct hub1_side : formation<6> {
+  void operator()(spawn_context& context) const {
+    auto side = context.random_vside();
+    auto p = context.random.uint(3);
+    context.spawn(&spawn_follow_hub, side, p == 1 ? 2 : 1, 5);
+    context.spawn(&spawn_follow_hub, side, p == 2 ? 2 : 3, 5);
   }
 };
 

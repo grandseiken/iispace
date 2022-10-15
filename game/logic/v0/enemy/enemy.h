@@ -16,6 +16,10 @@ void spawn_huge_follow(SimInterface&, const vec2& position,
 
 void spawn_chaser(SimInterface&, const vec2& position);
 void spawn_big_chaser(SimInterface&, const vec2& position);
+
+void spawn_follow_hub(SimInterface& sim, const vec2& position, bool fast = false);
+void spawn_big_follow_hub(SimInterface& sim, const vec2& position, bool fast = false);
+void spawn_chaser_hub(SimInterface& sim, const vec2& position, bool fast = false);
 }  // namespace v0
 }  // namespace ii
 

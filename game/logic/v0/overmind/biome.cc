@@ -45,6 +45,11 @@ public:
     s.add<formations::chaser1_side>();
     s.add<formations::chaser2_side>();
     s.add<formations::chaser3_side>();
+
+    s.add<formations::hub0>(2);
+    s.add<formations::hub1>(2);
+    s.add<formations::hub0_side>(2);
+    s.add<formations::hub1_side>(2);
   }
 
   void spawn_wave(SimInterface& sim, const wave_data& wave) const override {
