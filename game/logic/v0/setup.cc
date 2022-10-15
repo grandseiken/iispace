@@ -1,4 +1,5 @@
 #include "game/logic/v0/setup.h"
+#include "game/logic/ship/components.h"
 #include "game/logic/sim/sim_interface.h"
 #include "game/logic/v0/overmind/overmind.h"
 #include "game/logic/v0/player/player.h"
@@ -15,7 +16,10 @@ auto V0SimSetup::parameters(const initial_conditions&) const -> game_parameters 
 void V0SimSetup::initialise_systems(SimInterface& sim) {}
 
 ecs::entity_id V0SimSetup::start_game(const initial_conditions& conditions, SimInterface& sim) {
-  auto global_entity = sim.index().create();
+  // TODO: not all strictly necessary. Should divide global data up into legacy/v0 components.
+  auto global_entity = sim.index().create(GlobalData{});
+  global_entity.add(Update{.update = ecs::call<&GlobalData::pre_update>});
+  global_entity.add(PostUpdate{.post_update = ecs::call<&GlobalData::post_update>});
   v0::spawn_overmind(sim);
 
   auto dim = sim.dimensions();

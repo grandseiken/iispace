@@ -12,8 +12,9 @@ struct PlayerShot : ecs::component {
   static constexpr fixed kSpeed = 10_fx * 15_fx / 16_fx;
   static constexpr float kZIndex = 64.f;
 
-  using shape = standard_transform<geom::box_colour_p<2, 2, 2>, geom::box_colour_p<1, 1, 3>,
-                                   geom::box_colour_p<3, 3, 3>>;
+  using shape = standard_transform<geom::box_colour_p<2 + 1_fx / 2_fx, 2 + 1_fx / 2_fx, 2>,
+                                   geom::box_colour_p<1 + 1_fx / 4_fx, 1 + 1_fx / 4_fx, 3>,
+                                   geom::box_colour_p<3 + 3_fx / 4_fx, 3 + 3_fx / 4_fx, 3>>;
 
   std::tuple<vec2, fixed, glm::vec4, glm::vec4> shape_parameters(const Transform& transform) const {
     auto c_dark = colour;

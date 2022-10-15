@@ -5,13 +5,13 @@
 namespace ii::v0 {
 namespace {
 struct FollowHub : ecs::component {
-  static constexpr std::uint32_t kBoundingWidth = 16;
+  static constexpr std::uint32_t kBoundingWidth = 18;
   static constexpr float kZIndex = 0.f;
   static constexpr sound kDestroySound = sound::kPlayerDestroy;
   static constexpr rumble_type kDestroyRumble = rumble_type::kLarge;
 
   static constexpr std::uint32_t kTimer = 200;
-  static constexpr fixed kSpeed = 1;
+  static constexpr fixed kSpeed = 15_fx / 16_fx;
 
   static constexpr auto c = colour_hue360(240, .7f);
   template <geom::ShapeNode S>
@@ -59,14 +59,13 @@ struct FollowHub : ecs::component {
       }
     }
 
-    // TODO: go further to actually on screen.
-    auto d = sim.dimensions();
-    dir = transform.centre.x < 0   ? vec2{1, 0}
-        : transform.centre.x > d.x ? vec2{-1, 0}
-        : transform.centre.y < 0   ? vec2{0, 1}
-        : transform.centre.y > d.y ? vec2{0, -1}
-        : count > 3                ? (count = 0, sim.rotate_compatibility(dir, -fixed_c::pi / 2))
-                                   : dir;
+    auto dim = sim.dimensions();
+    dir = transform.centre.x < 24         ? vec2{1, 0}
+        : transform.centre.x > dim.x - 24 ? vec2{-1, 0}
+        : transform.centre.y < 24         ? vec2{0, 1}
+        : transform.centre.y > dim.y - 24 ? vec2{0, -1}
+        : count > 3 ? (count = 0, sim.rotate_compatibility(dir, -fixed_c::pi / 2))
+                    : dir;
 
     auto s = fast ? fixed_c::hundredth * 6 + fixed_c::tenth : fixed_c::hundredth * 6;
     transform.rotate(s);

@@ -2,8 +2,9 @@ cc_library(
   name = "enemy",
   hdrs = ["enemy.h"],
   srcs = [
-    "enemy_small.cc",
     "enemy_large.cc",
+    "enemy_small.cc",
+    "enemy_wall.cc",
   ],
   deps = ["//game/common:math"],
   implementation_deps = [

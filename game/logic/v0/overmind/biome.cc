@@ -50,6 +50,20 @@ public:
     s.add<formations::hub1>(2);
     s.add<formations::hub0_side>(2);
     s.add<formations::hub1_side>(2);
+
+    s.add<formations::square0>();
+    s.add<formations::square1>();
+    s.add<formations::square2>();
+    s.add<formations::square0_side>();
+    s.add<formations::square1_side>();
+    s.add<formations::square2_side>();
+
+    s.add<formations::wall0>();
+    s.add<formations::wall1>();
+    s.add<formations::wall2>();
+    s.add<formations::wall0_side>();
+    s.add<formations::wall1_side>();
+    s.add<formations::wall2_side>();
   }
 
   void spawn_wave(SimInterface& sim, const wave_data& wave) const override {

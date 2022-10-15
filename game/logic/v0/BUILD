@@ -4,6 +4,7 @@ cc_library(
   srcs = ["setup.cc"],
   deps = ["//game/logic/sim:setup"],
   implementation_deps = [
+    "//game/logic/ship:components",
     "//game/logic/sim:sim_interface",
     "//game/logic/v0/overmind",
     "//game/logic/v0/player",
