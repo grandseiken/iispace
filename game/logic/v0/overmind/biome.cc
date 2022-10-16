@@ -18,6 +18,7 @@ void spawn(spawn_context& context) {
   }
 
   // Spawn.
+  context.upgrade_budget = context.data.upgrade_budget;
   for (const auto& e : context.output.entries) {
     e.function(context, e.side, e.position);
   }

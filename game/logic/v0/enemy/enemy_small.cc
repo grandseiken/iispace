@@ -203,13 +203,14 @@ struct Chaser : ecs::component {
       is_moving = !is_moving;
       timer = kTime * (is_moving ? 1 : 2);
       if (is_moving) {
-        direction = kSpeed * (1_fx + size * 1_fx / 4_fx) *
+        direction =
             normalise(sim.index().get(next_target_id)->get<Transform>()->centre - transform.centre);
         next_target_id = ecs::entity_id{0};
       }
     }
     if (is_moving) {
-      transform.move(direction);
+      transform.move(kSpeed * (1_fx + (size && sim.is_on_screen(transform.centre)) * 1_fx / 4_fx) *
+                     direction);
 
       if (was_on_screen && !sim.is_on_screen(transform.centre)) {
         on_screen = false;

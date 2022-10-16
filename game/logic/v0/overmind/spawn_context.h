@@ -164,6 +164,7 @@ struct spawn_context {
 
   wave_data data;
   std::uint32_t row_number = 0;
+  std::uint32_t upgrade_budget = 0;
   spawned_wave output;
 
   vec2 spawn_point(spawn_side side, fixed t) const {
@@ -220,10 +221,6 @@ struct spawn_context {
     }
   }
 
-  vec2 spawn_point(spawn_side side, std::uint32_t i, std::uint32_t n) const {
-    return spawn_point(side, fixed{i % n + 1_fx / 2} / fixed{n});
-  }
-
   std::vector<spawn_side> resolve_sides(spawn_side side) const {
     switch (side) {
     default:
@@ -275,13 +272,17 @@ struct spawn_context {
   spawn_side random_dmoside() { return spawn_side{20u + random.uint(4u)}; }
   spawn_side random_dmaside() { return spawn_side{24u + random.uint(8u)}; }
 
-  void spawn(spawn_function f, spawn_side side, std::uint32_t i, std::uint32_t n) {
+  void spawn(spawn_function f, spawn_side side, fixed t) {
     for (auto& s : resolve_sides(side)) {
       auto& e = output.entries.emplace_back();
       e.side = s;
-      e.position = spawn_point(s, i, n);
+      e.position = spawn_point(s, t);
       e.function = f;
     }
+  }
+
+  void spawn(spawn_function f, spawn_side side, std::uint32_t i, std::uint32_t n) {
+    spawn(f, side, fixed{i % n + 1_fx / 2} / fixed{n});
   }
 };
 

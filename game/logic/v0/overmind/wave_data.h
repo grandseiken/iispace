@@ -5,8 +5,10 @@
 namespace ii::v0 {
 
 struct wave_data {
+  std::uint32_t threat_trigger = 0;
   std::uint32_t wave_count = 0;
   std::uint32_t power = 0;
+  std::uint32_t upgrade_budget = 0;
 };
 
 }  // namespace ii::v0

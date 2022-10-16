@@ -14,18 +14,18 @@ struct Overmind : ecs::component {
   wave_data data;
 
   Overmind() {
-    static constexpr std::int32_t kInitialPower = 32;
+    static constexpr std::int32_t kInitialPower = 16;
     data.power = kInitialPower;
   }
 
-  void update(ecs::handle h, SimInterface& sim) {
+  void update(SimInterface& sim) {
     std::uint32_t total_enemy_threat = 0;
     sim.index().iterate<Enemy>([&](const Enemy& e) { total_enemy_threat += e.threat_value; });
-    if (total_enemy_threat) {
+    if (total_enemy_threat > data.threat_trigger) {
       return;
     }
 
-    auto& biomes = sim.conditions().biomes;
+    const auto& biomes = sim.conditions().biomes;
     if (biome_index >= biomes.size()) {
       return;
     }
@@ -37,7 +37,11 @@ struct Overmind : ecs::component {
 
     if (data.wave_count < 5) {
       data.power += 2;
+    } else {
+      ++data.power;
     }
+    data.upgrade_budget = data.power / 2;
+    ++data.threat_trigger;
     ++data.wave_count;
   }
 };

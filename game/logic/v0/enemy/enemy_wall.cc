@@ -87,7 +87,7 @@ struct Wall : ecs::component {
   static constexpr sound kDestroySound = sound::kEnemyDestroy;
   static constexpr rumble_type kDestroyRumble = rumble_type::kLow;
 
-  static constexpr std::uint32_t kTimer = 95;
+  static constexpr std::uint32_t kTimer = 100;
   static constexpr fixed kSpeed = 1;
   using shape = standard_transform<
       geom::conditional_p<2,
@@ -127,12 +127,10 @@ struct Wall : ecs::component {
       }
       return;
     }
-    if (++timer > kTimer * 6) {
-      if (sim.is_on_screen(transform.centre)) {
+    if (sim.is_on_screen(transform.centre)) {
+      if (++timer > kTimer * 6) {
         timer = kTimer;
         is_rotating = true;
-      } else {
-        timer = 0;
       }
     }
 
