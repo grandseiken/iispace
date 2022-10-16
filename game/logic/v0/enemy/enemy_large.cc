@@ -1,5 +1,5 @@
-#include "game/logic/geometry/shapes/ngon.h"
 #include "game/logic/geometry/shapes/line.h"
+#include "game/logic/geometry/shapes/ngon.h"
 #include "game/logic/geometry/shapes/polyarc.h"
 #include "game/logic/v0/enemy/enemy.h"
 #include "game/logic/v0/enemy/enemy_template.h"
@@ -97,39 +97,60 @@ struct Shielder : ecs::component {
   static constexpr sound kDestroySound = sound::kPlayerDestroy;
   static constexpr rumble_type kDestroyRumble = rumble_type::kLarge;
 
-  static constexpr std::uint32_t kTimer = 100;
-  static constexpr fixed kSpeed = 2_fx;
+  static constexpr std::uint32_t kTimer = 40;
+  static constexpr fixed kSpeed = 1_fx;
 
   static constexpr auto c0 = colour_hue360(150, .2f);
   static constexpr auto c1 = colour_hue360(160, .5f, .6f);
   static constexpr auto c2 = glm::vec4{0.f, 0.f, .75f, 1.f};
 
-  using centre_shape = geom::compound<
-      geom::polystar<26, 12, c0>,
-      geom::polygon<6, 12, c0>,
-      geom::polygon<20, 12, c1, shape_flag::kDangerous | shape_flag::kVulnerable>>;
-  using shield_shape = geom::rotate_p<2,
-      geom::line<32, 0, 18, 0, c2>,
-      geom::rotate<fixed_c::pi / 4, geom::line<-32, 0, -18, 0, c2>>,
-      geom::polyarc<26, 16, 10, c2>,
-      geom::polyarc<32, 16, 10, c2, shape_flag::kWeakShield>>;
+  using centre_shape =
+      geom::compound<geom::polystar<26, 12, c0>, geom::polygon<6, 12, c0>,
+                     geom::polygon<20, 12, c1, shape_flag::kDangerous | shape_flag::kVulnerable>>;
+  using shield_shape = geom::rotate_p<2, geom::line<32, 0, 18, 0, c2>,
+                                      geom::rotate<fixed_c::pi / 4, geom::line<-32, 0, -18, 0, c2>>,
+                                      geom::polyarc<26, 16, 10, c2>,
+                                      geom::polyarc<32, 16, 10, c2, shape_flag::kWeakShield>>;
   using shape = geom::translate_p<0, geom::rotate_p<1, centre_shape>, shield_shape>;
 
   std::tuple<vec2, fixed, fixed> shape_parameters(const Transform& transform) const {
     return {transform.centre, transform.rotation, shield_angle + fixed_c::pi / 2 - fixed_c::pi / 8};
   }
 
-  Shielder(bool power) : power{power} {}
+  Shielder(SimInterface& sim, bool power)
+  : timer{sim.random(random_source::kGameState).uint(kTimer)}, power{power} {}
   std::uint32_t timer = 0;
-  vec2 dir{0, 1};
-  bool is_rotating = false;
-  bool rotate_anti = false;
+  vec2 velocity{0, 0};
+  vec2 spread_velocity{0};
+  std::optional<ecs::entity_id> target;
+  std::optional<ecs::entity_id> next_target;
+  std::vector<ecs::entity_id> closest;
   bool power = false;
+  bool on_screen = false;
   fixed shield_angle = 0;
 
-  void update(Transform& transform, const Health& health, SimInterface& sim) {
-    fixed s = power ? fixed_c::hundredth * 12 : fixed_c::hundredth * 4;
-    transform.rotate(s);
+  void update(ecs::handle h, Transform& transform, const Health& health, SimInterface& sim) {
+    transform.rotate(power ? fixed_c::hundredth * 8 : fixed_c::hundredth * 4);
+    if (sim.is_on_screen(transform.centre)) {
+      on_screen = true;
+    }
+    ++timer;
+    if (!target || timer == kTimer / 2) {
+      (target ? next_target : target) = sim.nearest_player(transform.centre).id();
+    }
+    if (timer >= kTimer) {
+      if (next_target) {
+        target = next_target;
+      }
+      next_target.reset();
+      timer = 0;
+    }
+
+    auto max_speed = !on_screen ? kSpeed : kSpeed * (6 + (health.max_hp - health.hp) / 2);
+    auto target_v = max_speed *
+        normalise(sim.index().get(*target)->get<Transform>()->centre - transform.centre);
+    velocity = rc_smooth(velocity, target_v, 127_fx / 128);
+    transform.move(velocity);
 
     static constexpr fixed kMaxRotationSpeed = 1_fx / 16_fx;
     auto smooth_rotate = [&](fixed& x, fixed target) {
@@ -140,49 +161,34 @@ struct Shielder : ecs::component {
         x += std::clamp(d, -kMaxRotationSpeed, kMaxRotationSpeed);
       }
     };
+    smooth_rotate(shield_angle, angle(velocity));
 
-    bool on_screen = false;
-    auto dim = sim.dimensions();
-    dir = transform.centre.x < 0     ? vec2{1, 0}
-        : transform.centre.x > dim.x ? vec2{-1, 0}
-        : transform.centre.y < 0     ? vec2{0, 1}
-        : transform.centre.y > dim.y ? vec2{0, -1}
-                                     : (on_screen = true, dir);
-
-    if (!on_screen && is_rotating) {
-      timer = 0;
-      is_rotating = false;
+    if ((+h.id() + sim.tick_count()) % 16 == 0) {
+      thread_local std::vector<SimInterface::range_info> range_output;
+      range_output.clear();
+      closest.clear();
+      sim.in_range(transform.centre, 128, ecs::id<Shielder>(), /* max */ 4, range_output);
+      for (const auto& e : range_output) {
+        closest.emplace_back(e.h.id());
+      }
     }
-
-    fixed speed = kSpeed + (power ? fixed_c::tenth * 3 : fixed_c::tenth * 2) * (20 - health.hp);
-    if (is_rotating) {
-      auto d = rotate(dir, (rotate_anti ? 1 : -1) * (kTimer - timer) * fixed_c::pi / (2 * kTimer));
-      if (!--timer) {
-        is_rotating = false;
-        dir = rotate(dir, (rotate_anti ? 1 : -1) * fixed_c::pi / 2);
+    vec2 target_spread{0};
+    for (auto id : closest) {
+      if (auto eh = sim.index().get(id); id != h.id() && eh && !eh->has<Destroy>()) {
+        auto d = eh->get<Transform>()->centre - transform.centre;
+        auto d_sq = length_squared(d);
+        if (d != vec2{0}) {
+          target_spread -= d / std::max(1_fx, d_sq);
+        }
       }
-      transform.move(d * speed);
-      smooth_rotate(shield_angle, angle(d));
-    } else {
-      ++timer;
-      if (timer > kTimer * 2) {
-        timer = kTimer;
-        is_rotating = true;
-        rotate_anti = sim.random_bool();
-      }
-      if (sim.is_on_screen(transform.centre) && power && timer % kTimer == kTimer / 2) {
-        // spawn_boss_shot(sim, transform.centre, 3 *
-        // sim.nearest_player_direction(transform.centre),
-        //                 colour_hue360(160, .5f, .6f));
-        sim.emit(resolve_key::predicted()).play_random(sound::kBossFire, transform.centre);
-      }
-      transform.move(dir * speed);
-      smooth_rotate(shield_angle, angle(dir));
     }
-    dir = normalise(dir);
+    target_spread *= 64 * kSpeed;
+    spread_velocity = rc_smooth(spread_velocity, target_spread, 15_fx / 16_fx);
+    transform.move(spread_velocity);
   }
 };
-DEBUG_STRUCT_TUPLE(Shielder, timer, dir, is_rotating, rotate_anti, power, shield_angle);
+DEBUG_STRUCT_TUPLE(Shielder, timer, velocity, spread_velocity, target, next_target, closest, power,
+                   on_screen, shield_angle);
 
 }  // namespace
 
@@ -210,7 +216,7 @@ void spawn_chaser_hub(SimInterface& sim, const vec2& position, bool fast) {
 void spawn_shielder(SimInterface& sim, const vec2& position, bool power) {
   auto h = create_ship_default<Shielder>(sim, position);
   add_enemy_health<Shielder>(h, 20);
-  h.add(Shielder{power});
+  h.add(Shielder{sim, power});
   h.add(Enemy{.threat_value = 8u + 2u * power});
 }
 
