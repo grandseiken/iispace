@@ -282,6 +282,7 @@ const render_output& SimState::render(transient_render_state& state, bool paused
       render_warning(to_float(v));
     }
     result.overmind_timer = global_data->overmind_wave_timer;
+    result.overmind_wave = global_data->overmind_wave_count;
   }
 
   result.tick_count = internals_->tick_count;

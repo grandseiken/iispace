@@ -43,6 +43,7 @@ struct Overmind : ecs::component {
     data.upgrade_budget = data.power / 2;
     ++data.threat_trigger;
     ++data.wave_count;
+    sim.global_entity().get<GlobalData>()->overmind_wave_count = data.wave_count;
   }
 };
 DEBUG_STRUCT_TUPLE(Overmind, biome_index, data.wave_count, data.power);

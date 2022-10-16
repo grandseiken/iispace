@@ -66,6 +66,7 @@
 * Charge from kills or maybe something else
 * Recharges over time but max charges limited to 1
 * Block one direction with physical shield!
+* Little thing that circles round you dealing damage
 
 ### Bomb
 * Increased bomb radius
@@ -110,7 +111,7 @@
 * Torus warp
 * Slow time
 
-Note: most of these hard to do with laggy network.
+Note: many of these hard to do with laggy network.
 
 ### Misc
 * Superweapon refills automatically, but no shields (or limit 1)
@@ -123,10 +124,10 @@ Note: most of these hard to do with laggy network.
 * Square walls that spiral around the outside and go in
 * Zoomed out / bigger area
 * Rainbow snake zone
-* Progressively more weird secret routes, in different languages (russian/japanese), minus/glitch level, etc
+* Progressively more weird secret routes, in different languages/scripts (russian/japanese), minus/glitch level, etc
+* Massive black hole
 
 ## New enemy ideas
-* Redesign shielder, shield at back and sides so you need to get in its path in front of it
 * Wall cluster bomb
 * Hidden superwall that rotates randomly then emits cross of wall segments
 * Wall section with multiple squares that snakes around and can split

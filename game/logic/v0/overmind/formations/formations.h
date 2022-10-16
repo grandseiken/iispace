@@ -647,14 +647,14 @@ struct hub1_side : formation<6> {
   }
 };
 
-struct shielder0 : formation<10, 24> {
+struct shielder0 : formation<12, 24> {
   void operator()(spawn_context& context) const {
     auto side = context.random_mside();
     context.spawn(&spawn_shielder, side, context.random.uint(3) + 1, 5);
   }
 };
 
-struct shielder0_side : formation<5, 22> {
+struct shielder0_side : formation<6, 22> {
   void operator()(spawn_context& context) const {
     auto side = context.random_side();
     context.spawn(&spawn_shielder, side, context.random.uint(3) + 1, 5);
@@ -740,15 +740,15 @@ struct mixed3 : formation<18> {
   }
 };
 
-struct mixed4 : formation<22, 38> {
+struct mixed4 : formation<24, 38> {
   void operator()(spawn_context& context) const {
-    auto side = context.random_vside();
-    context.spawn(&spawn_follow_hub, side, 1, 7);
-    context.spawn(&spawn_tractor, side, 3, 7);
+    auto side = context.random_mside();
+    context.spawn(&spawn_follow_hub, context.random_mside(), 1, 7);
+    context.spawn(&spawn_tractor, context.random_vside(), 3, 7);
   }
 };
 
-struct mixed5 : formation<16, 30> {
+struct mixed5 : formation<22, 36> {
   void operator()(spawn_context& context) const {
     auto side = context.random_mside();
     context.spawn(&spawn_follow_hub, side, 1, 5);
@@ -756,7 +756,7 @@ struct mixed5 : formation<16, 30> {
   }
 };
 
-struct mixed6 : formation<18, 16> {
+struct mixed6 : formation<20, 26> {
   void operator()(spawn_context& context) const {
     auto side = context.random_mside();
     bool d = context.random.rbool();
@@ -830,7 +830,7 @@ struct mixed4_side : formation<19, 36> {
   }
 };
 
-struct mixed5_side : formation<8, 20> {
+struct mixed5_side : formation<10, 22> {
   void operator()(spawn_context& context) const {
     auto side = context.random_side();
     context.spawn(&spawn_follow_hub, side, 1, 5);
@@ -838,7 +838,7 @@ struct mixed5_side : formation<8, 20> {
   }
 };
 
-struct mixed6_side : formation<9, 16> {
+struct mixed6_side : formation<10, 18> {
   void operator()(spawn_context& context) const {
     auto side = context.random_side();
     bool d = context.random.rbool();

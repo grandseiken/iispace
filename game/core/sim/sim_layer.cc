@@ -143,7 +143,7 @@ void SimLayer::update_content(const ui::input_frame& ui_input, ui::output_frame&
     impl_->state->update(sim_input);
   }
 
-  bool handle_audio = !(impl_->audio_tick++ % 4);
+  bool handle_audio = !(impl_->audio_tick++ % (stack().fps() >= 60 ? 5 : 4));
   impl_->render_state.set_dimensions(impl_->istate().dimensions());
   impl_->render_state.handle_output(impl_->istate(), handle_audio ? &stack().mixer() : nullptr,
                                     &impl_->input);

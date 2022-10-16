@@ -104,7 +104,7 @@ void HudLayer::update_content(const ui::input_frame&, ui::output_frame&) {
     return;
   }
   for (std::size_t i = 0; i < 4; ++i) {
-    if (i >= render_->players.size()) {
+    if (mode_ == game_mode::kStandardRun || i >= render_->players.size()) {
       huds_[i]->set_player_status({});
       huds_[i]->set_debug_text({});
       continue;
@@ -116,17 +116,25 @@ void HudLayer::update_content(const ui::input_frame&, ui::output_frame&) {
     huds_[i]->set_debug_text(ustring::ascii(debug_text_[i]));
   }
 
-  std::string s = std::to_string(render_->lives_remaining) + " live(s)";
-  if (mode_ == game_mode::kLegacy_Boss) {
-    s += "\n" + convert_to_time(render_->tick_count);
-  } else if (render_->overmind_timer) {
-    auto t = *render_->overmind_timer / 60;
-    s += (t < 10 ? " 0" : " ") + std::to_string(t);
+  if (mode_ == game_mode::kStandardRun) {
+    std::string s = convert_to_time(render_->tick_count);
+    if (render_->overmind_wave) {
+      s += " (wave " + std::to_string(*render_->overmind_wave) + ")";
+    }
+    status_->set_text(ustring::ascii(s));
+  } else {
+    std::string s = std::to_string(render_->lives_remaining) + " live(s)";
+    if (mode_ == game_mode::kLegacy_Boss) {
+      s += "\n" + convert_to_time(render_->tick_count);
+    } else if (render_->overmind_timer) {
+      auto t = *render_->overmind_timer / 60;
+      s += (t < 10 ? " 0" : " ") + std::to_string(t);
+    }
+    if (!status_text_.empty()) {
+      s = status_text_ + "\n" + s;
+    }
+    status_->set_text(ustring::ascii(s));
   }
-  if (!status_text_.empty()) {
-    s = status_text_ + "\n" + s;
-  }
-  status_->set_text(ustring::ascii(s));
 }
 
 }  // namespace ii

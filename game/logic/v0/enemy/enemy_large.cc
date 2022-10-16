@@ -147,8 +147,8 @@ struct Shielder : ecs::component {
       timer = 0;
     }
 
-    auto max_speed =
-        !on_screen ? kSpeed * 3_fx / 2 : kSpeed * (6 + (health.max_hp - health.hp) / 2);
+    auto max_speed = !on_screen ? kSpeed * 3_fx / 2
+                                : kSpeed * (6_fx + fixed{health.max_hp - health.hp} / (5_fx / 2));
     auto target_v = max_speed *
         normalise(sim.index().get(*target)->get<Transform>()->centre - transform.centre);
     velocity = rc_smooth(velocity, target_v, 127_fx / 128);
@@ -193,24 +193,24 @@ DEBUG_STRUCT_TUPLE(Shielder, timer, velocity, spread_velocity, target, next_targ
                    on_screen, shield_angle);
 
 struct Tractor : ecs::component {
-  static constexpr std::uint32_t kBoundingWidth = 40;
+  static constexpr std::uint32_t kBoundingWidth = 45;
   static constexpr float kZIndex = 0.f;
   static constexpr sound kDestroySound = sound::kPlayerDestroy;
   static constexpr rumble_type kDestroyRumble = rumble_type::kLarge;
 
   static constexpr std::uint32_t kTimer = 60;
   static constexpr fixed kSpeed = 6 * (15_fx / 160);
-  static constexpr fixed kPullSpeed = 2;
+  static constexpr fixed kPullSpeed = 2 + 1_fx / 4;
 
   static constexpr auto c = colour_hue360(300, .5f, .6f);
   using t_orb = geom::polygram<16, 6, c, shape_flag::kDangerous | shape_flag::kVulnerable>;
   using t_star = geom::polystar<18, 6, c>;
   using shape = standard_transform<
-      geom::translate<25, 0, geom::rotate_eval<geom::multiply_p<5, 2>, t_orb>>,
-      geom::translate<-25, 0, geom::rotate_eval<geom::multiply_p<-5, 2>, t_orb>>,
-      geom::line<-25, 0, 24, 0, c>,
-      geom::if_p<3, geom::translate<25, 0, geom::rotate_eval<geom::multiply_p<8, 2>, t_star>>,
-                 geom::translate<-25, 0, geom::rotate_eval<geom::multiply_p<-8, 2>, t_star>>>>;
+      geom::translate<26, 0, geom::rotate_eval<geom::multiply_p<5, 2>, t_orb>>,
+      geom::translate<-26, 0, geom::rotate_eval<geom::multiply_p<-5, 2>, t_orb>>,
+      geom::line<-26, 0, 26, 0, c>,
+      geom::if_p<3, geom::translate<26, 0, geom::rotate_eval<geom::multiply_p<8, 2>, t_star>>,
+                 geom::translate<-26, 0, geom::rotate_eval<geom::multiply_p<-8, 2>, t_star>>>>;
 
   std::tuple<vec2, fixed, fixed, bool> shape_parameters(const Transform& transform) const {
     return {transform.centre, transform.rotation, spoke_r, power};
@@ -324,7 +324,7 @@ void spawn_shielder(SimInterface& sim, const vec2& position, bool power) {
 
 void spawn_tractor(SimInterface& sim, const vec2& position, bool power) {
   auto h = create_ship_default<Tractor>(sim, position);
-  add_enemy_health<Tractor>(h, 50);
+  add_enemy_health<Tractor>(h, 42);
   h.add(Tractor{power});
   h.add(Enemy{.threat_value = 10u + 4u * power});
 }

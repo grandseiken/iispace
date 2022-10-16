@@ -52,6 +52,7 @@ struct render_output {
   std::uint64_t tick_count = 0;
   std::uint32_t lives_remaining = 0;
   std::optional<std::uint32_t> overmind_timer;
+  std::optional<std::uint32_t> overmind_wave;
   std::optional<float> boss_hp_bar;
   std::uint32_t colour_cycle = 0;
 };
