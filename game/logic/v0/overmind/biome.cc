@@ -47,10 +47,10 @@ public:
     s.add<formations::chaser2_side>();
     s.add<formations::chaser3_side>();
 
-    s.add<formations::hub0>(2);
-    s.add<formations::hub1>(2);
-    s.add<formations::hub0_side>(2);
-    s.add<formations::hub1_side>(2);
+    s.add<formations::hub0>();
+    s.add<formations::hub1>();
+    s.add<formations::hub0_side>();
+    s.add<formations::hub1_side>();
 
     s.add<formations::square0>();
     s.add<formations::square1>();
@@ -68,6 +68,26 @@ public:
 
     s.add<formations::shielder0>();
     s.add<formations::shielder0_side>();
+
+    s.add<formations::tractor0>();
+    s.add<formations::tractor1>();
+    s.add<formations::tractor0_side>();
+    s.add<formations::tractor1_side>();
+
+    s.add<formations::mixed0>();
+    s.add<formations::mixed1>();
+    s.add<formations::mixed2>();
+    s.add<formations::mixed3>();
+    s.add<formations::mixed4>();
+    s.add<formations::mixed5>();
+    s.add<formations::mixed6>();
+    s.add<formations::mixed0_side>();
+    s.add<formations::mixed1_side>();
+    s.add<formations::mixed2_side>();
+    s.add<formations::mixed3_side>();
+    s.add<formations::mixed4_side>();
+    s.add<formations::mixed5_side>();
+    s.add<formations::mixed6_side>();
   }
 
   void spawn_wave(SimInterface& sim, const wave_data& wave) const override {

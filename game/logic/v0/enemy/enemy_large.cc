@@ -1,3 +1,4 @@
+#include "game/logic/geometry/node_conditional.h"
 #include "game/logic/geometry/shapes/line.h"
 #include "game/logic/geometry/shapes/ngon.h"
 #include "game/logic/geometry/shapes/polyarc.h"
@@ -146,7 +147,8 @@ struct Shielder : ecs::component {
       timer = 0;
     }
 
-    auto max_speed = !on_screen ? kSpeed : kSpeed * (6 + (health.max_hp - health.hp) / 2);
+    auto max_speed =
+        !on_screen ? kSpeed * 3_fx / 2 : kSpeed * (6 + (health.max_hp - health.hp) / 2);
     auto target_v = max_speed *
         normalise(sim.index().get(*target)->get<Transform>()->centre - transform.centre);
     velocity = rc_smooth(velocity, target_v, 127_fx / 128);
@@ -190,6 +192,106 @@ struct Shielder : ecs::component {
 DEBUG_STRUCT_TUPLE(Shielder, timer, velocity, spread_velocity, target, next_target, closest, power,
                    on_screen, shield_angle);
 
+struct Tractor : ecs::component {
+  static constexpr std::uint32_t kBoundingWidth = 40;
+  static constexpr float kZIndex = 0.f;
+  static constexpr sound kDestroySound = sound::kPlayerDestroy;
+  static constexpr rumble_type kDestroyRumble = rumble_type::kLarge;
+
+  static constexpr std::uint32_t kTimer = 60;
+  static constexpr fixed kSpeed = 6 * (15_fx / 160);
+  static constexpr fixed kPullSpeed = 2;
+
+  static constexpr auto c = colour_hue360(300, .5f, .6f);
+  using t_orb = geom::polygram<16, 6, c, shape_flag::kDangerous | shape_flag::kVulnerable>;
+  using t_star = geom::polystar<18, 6, c>;
+  using shape = standard_transform<
+      geom::translate<25, 0, geom::rotate_eval<geom::multiply_p<5, 2>, t_orb>>,
+      geom::translate<-25, 0, geom::rotate_eval<geom::multiply_p<-5, 2>, t_orb>>,
+      geom::line<-25, 0, 24, 0, c>,
+      geom::if_p<3, geom::translate<25, 0, geom::rotate_eval<geom::multiply_p<8, 2>, t_star>>,
+                 geom::translate<-25, 0, geom::rotate_eval<geom::multiply_p<-8, 2>, t_star>>>>;
+
+  std::tuple<vec2, fixed, fixed, bool> shape_parameters(const Transform& transform) const {
+    return {transform.centre, transform.rotation, spoke_r, power};
+  }
+
+  Tractor(bool power) : power{power} {}
+  std::uint32_t timer = kTimer * 4;
+  vec2 dir{0};
+  bool power = false;
+  bool ready = false;
+  bool spinning = false;
+  fixed spoke_r = 0;
+
+  void update(Transform& transform, SimInterface& sim) {
+    spoke_r = normalise_angle(spoke_r + fixed_c::hundredth);
+
+    auto dim = sim.dimensions();
+    if (transform.centre.x < 0) {
+      dir = vec2{1, 0};
+    } else if (transform.centre.x > dim.x) {
+      dir = vec2{-1, 0};
+    } else if (transform.centre.y < 0) {
+      dir = vec2{0, 1};
+    } else if (transform.centre.y > dim.y) {
+      dir = vec2{0, -1};
+    } else {
+      ++timer;
+    }
+
+    if (!ready && !spinning) {
+      transform.move(dir * kSpeed * (sim.is_on_screen(transform.centre) ? 1 : 2 + fixed_c::half));
+
+      if (timer > kTimer * 8) {
+        ready = true;
+        timer = 0;
+      }
+    } else if (ready) {
+      if (timer > kTimer) {
+        ready = false;
+        spinning = true;
+        timer = 0;
+        sim.emit(resolve_key::predicted()).play(sound::kBossFire, transform.centre);
+      }
+    } else if (spinning) {
+      transform.rotate(fixed_c::tenth * (2_fx + 1_fx / 2));
+      sim.index().iterate_dispatch<Player>([&](const Player& p, Transform& p_transform) {
+        if (!p.is_killed()) {
+          p_transform.centre += normalise(transform.centre - p_transform.centre) * kPullSpeed;
+        }
+      });
+      if (timer % (kTimer / 2) == 0 && sim.is_on_screen(transform.centre) && power) {
+        // spawn_boss_shot(sim, transform.centre, 4 *
+        // sim.nearest_player_direction(transform.centre),
+        //                 colour_hue360(300, .5f, .6f));
+        // sim.emit(resolve_key::predicted()).play_random(sound::kBossFire, transform.centre);
+      }
+
+      if (timer > kTimer * 5) {
+        spinning = false;
+        timer = 0;
+      }
+    }
+  }
+
+  void render(const Transform& transform, std::vector<render::shape>& output,
+              const SimInterface& sim) const {
+    if (spinning) {
+      std::uint32_t i = 0;
+      sim.index().iterate_dispatch<Player>([&](const Player& p, const Transform& p_transform) {
+        if (((timer + i++ * 4) / 4) % 2 && !p.is_killed()) {
+          auto s = render::shape::line(to_float(transform.centre), to_float(p_transform.centre),
+                                       colour_hue360(300, .5f, .6f));
+          s.disable_trail = true;
+          output.emplace_back(s);
+        }
+      });
+    }
+  }
+};
+DEBUG_STRUCT_TUPLE(Tractor, timer, dir, power, ready, spinning, spoke_r);
+
 }  // namespace
 
 void spawn_follow_hub(SimInterface& sim, const vec2& position, bool fast) {
@@ -218,6 +320,13 @@ void spawn_shielder(SimInterface& sim, const vec2& position, bool power) {
   add_enemy_health<Shielder>(h, 20);
   h.add(Shielder{sim, power});
   h.add(Enemy{.threat_value = 8u + 2u * power});
+}
+
+void spawn_tractor(SimInterface& sim, const vec2& position, bool power) {
+  auto h = create_ship_default<Tractor>(sim, position);
+  add_enemy_health<Tractor>(h, 50);
+  h.add(Tractor{power});
+  h.add(Enemy{.threat_value = 10u + 4u * power});
 }
 
 }  // namespace ii::v0
