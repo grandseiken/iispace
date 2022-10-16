@@ -86,6 +86,10 @@ inline void spawn_follow_hub(spawn_context& context, spawn_side, const vec2& pos
   }
 }
 
+inline void spawn_shielder(spawn_context& context, spawn_side, const vec2& position) {
+  v0::spawn_shielder(context.sim, position);
+}
+
 struct square0 : formation<4> {
   void operator()(spawn_context& context) const {
     auto side = context.random_mside();
@@ -636,6 +640,20 @@ struct hub1_side : formation<6> {
     auto p = context.random.uint(3);
     context.spawn(&spawn_follow_hub, side, p == 1 ? 2 : 1, 5);
     context.spawn(&spawn_follow_hub, side, p == 2 ? 2 : 3, 5);
+  }
+};
+
+struct shielder0 : formation<10, 24> {
+  void operator()(spawn_context& context) const {
+    auto side = context.random_mside();
+    context.spawn(&spawn_shielder, side, context.random.uint(3) + 1, 5);
+  }
+};
+
+struct shielder0_side : formation<5, 22> {
+  void operator()(spawn_context& context) const {
+    auto side = context.random_side();
+    context.spawn(&spawn_shielder, side, context.random.uint(3) + 1, 5);
   }
 };
 

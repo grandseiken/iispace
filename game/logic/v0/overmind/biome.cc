@@ -65,6 +65,9 @@ public:
     s.add<formations::wall0_side>();
     s.add<formations::wall1_side>();
     s.add<formations::wall2_side>();
+
+    s.add<formations::shielder0>();
+    s.add<formations::shielder0_side>();
   }
 
   void spawn_wave(SimInterface& sim, const wave_data& wave) const override {
