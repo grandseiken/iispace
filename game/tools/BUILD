@@ -1,4 +1,10 @@
 cc_library(
+  name = "conditions",
+  hdrs = ["conditions.h"],
+  deps = ["//game/logic/sim/io:conditions"],
+)
+
+cc_library(
   name = "replay_tools",
   hdrs = ["replay_tools.h"],
   deps = [
@@ -55,6 +61,7 @@ cc_binary(
   name = "ai_replay_synth",
   srcs = ["ai_replay_synth.cc"],
   deps = [
+    ":conditions",
     ":replay_tools",
     "//game:flags",
     "//game:mode_flags",
@@ -67,6 +74,7 @@ cc_binary(
   name = "ai_network_sim",
   srcs = ["ai_network_sim.cc"],
   deps = [
+    ":conditions",
     ":network_tools",
     ":replay_tools",
     "//game:flags",

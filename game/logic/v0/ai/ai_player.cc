@@ -34,62 +34,66 @@ input_frame AiPlayer::think(ecs::const_handle h, const Transform& transform, con
   static constexpr fixed kAttractDistance = 128;
 
   input_frame frame;
-  sim.index().iterate_dispatch_if<Enemy>(
-      [&](ecs::const_handle eh, const Enemy& enemy, const Transform& e_transform,
-          const Collision* collision, const Health* health, const Boss* boss, const WallTag* wall) {
-        fixed size = 0;
-        if (collision) {
-          // TODO: necessary for ghost boss.
-          size = std::min<fixed>(collision->bounding_width, 160u);
-        }
-        bool on_screen = false;
-        for (const auto& v :
-             {vec2{size, size}, vec2{size, -size}, vec2{-size, size}, vec2{-size, -size}}) {
-          if (sim.is_on_screen(e_transform.centre + v)) {
-            on_screen = true;
-          }
-        }
+  auto handle_target = [&](ecs::const_handle eh, const Enemy* enemy, const AiFocusTag* ai_focus,
+                           const Transform& e_transform, const Collision* collision,
+                           const Health* health, const Boss* boss, const WallTag* wall) {
+    fixed size = 0;
+    if (collision) {
+      // TODO: necessary for ghost boss.
+      size = std::min<fixed>(collision->bounding_width, 160u);
+    }
+    bool on_screen = false;
+    for (const auto& v :
+         {vec2{size, size}, vec2{size, -size}, vec2{-size, size}, vec2{-size, -size}}) {
+      if (sim.is_on_screen(e_transform.centre + v)) {
+        on_screen = true;
+      }
+    }
 
-        auto offset = e_transform.centre - transform.centre;
-        auto distance = length(offset);
-        if (on_screen && health && health->hp > 0) {
-          if ((!wall || distance < kAvoidDistance + size) &&
-              (!closest_enemy || distance < closest_enemy->distance)) {
-            closest_enemy = target{distance, e_transform.centre, eh.id()};
-          }
-          if (wall && (!closest_wall || distance < closest_wall->distance)) {
-            closest_wall = target{distance, e_transform.centre, eh.id()};
-          }
-        }
+    auto offset = e_transform.centre - transform.centre;
+    auto distance = length(offset);
+    if (on_screen && health && health->hp > 0) {
+      if ((!wall || distance < kAvoidDistance + size) &&
+          (!closest_enemy || distance < closest_enemy->distance)) {
+        closest_enemy = target{distance, e_transform.centre, eh.id()};
+      }
+      if (wall && (!closest_wall || distance < closest_wall->distance)) {
+        closest_wall = target{distance, e_transform.centre, eh.id()};
+      }
+    }
 
-        if (!distance) {
-          return;
-        }
-        auto threat_c = enemy.threat_value * enemy.threat_value;
-        if (distance < kAvoidDistance + size) {
-          if (!avoid_v) {
-            avoid_v = vec2{0};
-          }
-          *avoid_v -= offset / (distance * distance);
-          if (distance < kAvoidDistance / 2 + size / 2) {
-            avoid_urgent = true;
-          }
-        } else if (((on_screen && !wall && !boss) || (!on_screen && boss)) &&
-                   distance > kAttractDistance + size) {
-          if (!attract_v) {
-            attract_v = vec2{0};
-          }
-          *attract_v += threat_c * offset / (distance * distance);
-        } else if (on_screen && wall && distance > kAttractDistance + size) {
-          if (!wall_attract_v) {
-            wall_attract_v = vec2{0};
-          }
-          *wall_attract_v += threat_c * offset / (distance * distance);
-        }
-        if (on_screen && boss && distance < kAttractDistance + size) {
-          frame.keys |= input_frame::key::kBomb;
-        }
-      });
+    if (!distance) {
+      return;
+    }
+    auto threat_c =
+        enemy ? enemy->threat_value * enemy->threat_value : ai_focus->priority * ai_focus->priority;
+    if (enemy && distance < kAvoidDistance + size) {
+      if (!avoid_v) {
+        avoid_v = vec2{0};
+      }
+      *avoid_v -= offset / (distance * distance);
+      if (distance < kAvoidDistance / 2 + size / 2) {
+        avoid_urgent = true;
+      }
+    } else if (((on_screen && !wall && !boss) || (!on_screen && boss)) &&
+               distance > kAttractDistance + size) {
+      if (!attract_v) {
+        attract_v = vec2{0};
+      }
+      *attract_v += threat_c * offset / (distance * distance);
+    } else if (on_screen && wall && distance > kAttractDistance + size) {
+      if (!wall_attract_v) {
+        wall_attract_v = vec2{0};
+      }
+      *wall_attract_v += threat_c * offset / (distance * distance);
+    }
+    if (on_screen && boss && distance < kAttractDistance + size) {
+      frame.keys |= input_frame::key::kBomb;
+    }
+  };
+
+  sim.index().iterate_dispatch_if<Enemy>(handle_target);
+  sim.index().iterate_dispatch_if<AiFocusTag>(handle_target);
 
   sim.index().iterate_dispatch_if<PowerupTag>(
       [&](const PowerupTag& powerup, const Transform& p_transform) {

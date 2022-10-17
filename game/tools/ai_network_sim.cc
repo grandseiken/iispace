@@ -3,6 +3,7 @@
 #include "game/flags.h"
 #include "game/io/file/std_filesystem.h"
 #include "game/mode_flags.h"
+#include "game/tools/conditions.h"
 #include "game/tools/network_tools.h"
 #include "game/tools/replay_tools.h"
 #include <cstdint>
@@ -37,6 +38,7 @@ bool run(const options_t& options) {
   conditions.player_count = options.player_count;
   conditions.seed =
       options.seed ? *options.seed : std::uniform_int_distribution<std::uint32_t>{}(engine);
+  fill_standard_run_conditions(conditions);
 
   auto topology_result = parse_topology(options.network.topology, conditions.player_count);
   if (!topology_result) {

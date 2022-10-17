@@ -2,7 +2,6 @@
 #define II_GAME_LOGIC_V0_PLAYER_SHOT_H
 #include "game/common/math.h"
 #include "game/logic/ecs/index.h"
-#include <cstdint>
 
 namespace ii {
 class SimInterface;

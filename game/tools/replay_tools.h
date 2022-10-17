@@ -1,5 +1,5 @@
-#ifndef II_GAME_REPLAY_TOOLS_H
-#define II_GAME_REPLAY_TOOLS_H
+#ifndef II_GAME_TOOLS_REPLAY_TOOLS_H
+#define II_GAME_TOOLS_REPLAY_TOOLS_H
 #include "game/common/printer.h"
 #include "game/common/result.h"
 #include "game/data/replay.h"

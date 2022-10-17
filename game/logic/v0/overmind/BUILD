@@ -9,6 +9,7 @@ cc_library(
     "//game/logic/ship:components",
     "//game/logic/sim:sim_interface",
     "//game/logic/sim/io:conditions",
+    "//game/logic/v0/player",
   ],
   visibility = ["//game/logic/v0:__pkg__"],
 )

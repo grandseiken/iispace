@@ -14,17 +14,12 @@ namespace ii::geom {
 //////////////////////////////////////////////////////////////////////////////////
 // Definitions.
 //////////////////////////////////////////////////////////////////////////////////
-struct null_shape {};
 template <Expression<bool> Condition, ShapeNode TrueNode, ShapeNode FalseNode>
 struct conditional_eval {};
 
 //////////////////////////////////////////////////////////////////////////////////
 // Iteration functions.
 //////////////////////////////////////////////////////////////////////////////////
-template <IterTag I>
-constexpr void
-iterate(null_shape, I tag, const auto&, const Transform auto&, const IterateFunction<I> auto&) {}
-
 template <IterTag I, typename Parameters, ExpressionWithSubstitution<bool, Parameters> Condition,
           ShapeNodeWithSubstitution<Parameters> TrueNode,
           ShapeNodeWithSubstitution<Parameters> FalseNode>

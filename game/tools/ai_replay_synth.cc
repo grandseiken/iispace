@@ -2,6 +2,7 @@
 #include "game/io/file/std_filesystem.h"
 #include "game/logic/sim/sim_state.h"
 #include "game/mode_flags.h"
+#include "game/tools/conditions.h"
 #include "game/tools/replay_tools.h"
 #include <iostream>
 #include <mutex>
@@ -122,6 +123,7 @@ bool run(const options_t& options) {
     conditions.player_count = options.player_count;
     conditions.seed =
         options.seed ? *options.seed : std::uniform_int_distribution<std::uint32_t>{}(engine);
+    fill_standard_run_conditions(conditions);
     run_conditions.emplace_back(conditions);
   }
 

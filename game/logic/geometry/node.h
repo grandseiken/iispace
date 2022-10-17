@@ -25,6 +25,7 @@ struct pack<Node> {
 
 template <ShapeNode... Nodes>
 using pack = typename detail::pack<Nodes...>::type;
+using null_shape = compound<>;
 
 //////////////////////////////////////////////////////////////////////////////////
 // Iteration functions.

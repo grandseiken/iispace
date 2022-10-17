@@ -5,26 +5,38 @@
 #include "game/logic/sim/sim_interface.h"
 #include "game/logic/v0/overmind/biome.h"
 #include "game/logic/v0/overmind/wave_data.h"
+#include "game/logic/v0/player/player.h"
 
 namespace ii::v0 {
 namespace {
 
 struct Overmind : ecs::component {
+  static constexpr std::uint32_t kInitialPower = 16;
+  static constexpr std::uint32_t kSpawnTimer = 60;
+
   std::size_t biome_index = 0;
+  std::uint32_t spawn_timer = 0;
   wave_data data;
 
-  Overmind() {
-    static constexpr std::int32_t kInitialPower = 16;
-    data.power = kInitialPower;
-  }
+  Overmind() { data.power = kInitialPower; }
 
   void update(SimInterface& sim) {
-    std::uint32_t total_enemy_threat = 0;
-    sim.index().iterate<Enemy>([&](const Enemy& e) { total_enemy_threat += e.threat_value; });
-    if (total_enemy_threat > data.threat_trigger) {
+    if (spawn_timer) {
+      if (!--spawn_timer) {
+        spawn_wave(sim);
+      }
       return;
     }
 
+    std::uint32_t total_enemy_threat = 0;
+    sim.index().iterate<Enemy>([&](const Enemy& e) { total_enemy_threat += e.threat_value; });
+    if (total_enemy_threat <= data.threat_trigger) {
+      respawn_players(sim);
+      spawn_timer = kSpawnTimer;
+    }
+  }
+
+  void spawn_wave(SimInterface& sim) {
     const auto& biomes = sim.conditions().biomes;
     if (biome_index >= biomes.size()) {
       return;
@@ -33,8 +45,11 @@ struct Overmind : ecs::component {
     if (!biome) {
       return;
     }
-    biome->spawn_wave(sim, data);
+    spawn_wave(sim, *biome);
+  }
 
+  void spawn_wave(SimInterface& sim, const Biome& biome) {
+    biome.spawn_wave(sim, data);
     if (data.wave_count < 5) {
       data.power += 2;
     } else {

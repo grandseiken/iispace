@@ -199,10 +199,13 @@ std::uint32_t SimInterface::alive_players() const {
 }
 
 std::uint32_t SimInterface::killed_players() const {
-  if (auto* data = global_data(*internals_); data) {
-    return data->player_kill_queue.size();
-  }
-  return 0;
+  std::uint32_t result = 0;
+  internals_->index.iterate_dispatch<Player>([&](const Player& pc) {
+    if (pc.is_killed()) {
+      ++result;
+    }
+  });
+  return result;
 }
 
 vec2 SimInterface::nearest_player_position(const vec2& point) const {

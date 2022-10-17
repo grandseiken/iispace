@@ -1,5 +1,5 @@
-#ifndef II_GAME_NETWORK_TOOLS_H
-#define II_GAME_NETWORK_TOOLS_H
+#ifndef II_GAME_TOOLS_NETWORK_TOOLS_H
+#define II_GAME_TOOLS_NETWORK_TOOLS_H
 #include "game/common/result.h"
 #include "game/data/packet.h"
 #include "game/data/replay.h"

@@ -4,6 +4,7 @@
 #include "game/logic/ship/components.h"
 #include "game/logic/sim/io/player.h"
 #include "game/logic/v0/particles.h"
+#include "game/logic/v0/player/bubble.h"
 #include "game/logic/v0/player/shot.h"
 #include "game/logic/v0/ship_template.h"
 
@@ -36,7 +37,7 @@ struct PlayerLogic : ecs::component {
   };
 
   PlayerLogic(const vec2& target) : fire_target{target} {}
-
+  std::optional<ecs::entity_id> bubble_id;
   std::uint32_t invulnerability_timer = kReviveTime;
   std::uint32_t fire_timer = 0;
   vec2 fire_target{0};
@@ -58,14 +59,12 @@ struct PlayerLogic : ecs::component {
     // Temporary death.
     auto dim = sim.dimensions();
     if (pc.kill_timer) {
-      if (!--pc.kill_timer) {
-        invulnerability_timer = kReviveTime;
-        render.clear_trails = true;
-        transform.centre = {(1 + pc.player_number) * dim.x.to_int() / (1 + sim.player_count()),
-                            dim.y / 2};
-        sim.emit(resolve_key::reconcile(h.id(), resolve_tag::kRespawn))
-            .rumble(pc.player_number, 20, 0.f, 1.f)
-            .play(sound::kPlayerRespawn, transform.centre);
+      if (!bubble_id) {
+        return;
+      }
+      if (auto h = sim.index().get(*bubble_id); h) {
+        transform = *h->get<Transform>();
+        return;
       }
       return;
     }
@@ -102,6 +101,17 @@ struct PlayerLogic : ecs::component {
     }
   }
 
+  void post_update(ecs::handle h, Player& pc, const Transform& transform, SimInterface& sim) {
+    if (bubble_id && !sim.index().get(*bubble_id)) {
+      bubble_id.reset();
+      pc.kill_timer = 0;
+      invulnerability_timer = kReviveTime;
+      sim.emit(resolve_key::reconcile(h.id(), resolve_tag::kRespawn))
+          .rumble(pc.player_number, 20, 0.f, 1.f)
+          .play(sound::kPlayerRespawn, transform.centre);
+    }
+  }
+
   void damage(ecs::handle h, Player& pc, Transform& transform, SimInterface& sim) {
     if (pc.kill_timer || invulnerability_timer) {
       return;
@@ -115,7 +125,7 @@ struct PlayerLogic : ecs::component {
     explode_entity_shapes<PlayerLogic>(h, e, std::nullopt, 20);
     destruct_entity_lines<PlayerLogic>(h, e, transform.centre, 32);
 
-    pc.kill_timer = kReviveTime;
+    pc.kill_timer = 1u;
     ++pc.death_count;
     e.rumble(pc.player_number, 30, .5f, .5f).play(sound::kPlayerDestroy, transform.centre);
   }
@@ -150,6 +160,15 @@ void spawn_player(SimInterface& sim, const vec2& position, std::uint32_t player_
   h.add(
       Player{.player_number = player_number, .render_info = ecs::call<&PlayerLogic::render_info>});
   h.add(PlayerLogic{position + vec2{0, -48}});
+  h.add(PostUpdate{.post_update = ecs::call<&PlayerLogic::post_update>});
+}
+
+void respawn_players(SimInterface& sim) {
+  sim.index().iterate_dispatch<Player>([&](ecs::handle h, const Player& pc, PlayerLogic& logic) {
+    if (pc.kill_timer && !logic.bubble_id) {
+      logic.bubble_id = spawn_player_bubble(sim, h).id();
+    }
+  });
 }
 
 }  // namespace ii::v0

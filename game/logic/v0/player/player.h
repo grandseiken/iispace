@@ -8,6 +8,7 @@ namespace ii {
 class SimInterface;
 namespace v0 {
 void spawn_player(SimInterface&, const vec2& position, std::uint32_t player_number);
+void respawn_players(SimInterface&);
 }  // namespace v0
 }  // namespace ii
 

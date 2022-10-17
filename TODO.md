@@ -51,9 +51,9 @@
 * Limited vision radius
 
 ## Run powerups
-* Shield
-* Bomb
-* Superweapon charge
+* Shield - drop from enemies?
+* Bomb - drop from enemies?
+* Superweapon charge - by killing stuff
 
 ## Run upgrades
 
@@ -100,6 +100,7 @@
 * Rstick-controllable doomcircle
 * Megalaser?
 * Charge from kills
+* Hookshot?
 
 ### Special ability?
 * Escape (short-distance teleport + invulnerability)?
@@ -128,18 +129,20 @@ Note: many of these hard to do with laggy network.
 * Massive black hole
 
 ## New enemy ideas
+* Enemy that moves slowly until you're close then speeds at you
+* Enemy that shoots lines of bouncing little things like the tractor boss shots
 * Wall cluster bomb
 * Hidden superwall that rotates randomly then emits cross of wall segments
 * Wall section with multiple squares that snakes around and can split
 * Many new wall types / configuration
 * Enemy that shields (or heals) other enemies until killed
 * Snakes, oh snakes!
-* Enemy that spawns new ones when hit
+* Big ol enemy that spawns new ones when hit and you don't really want to shoot
 * Bomb that eats other enemies and detonates?
 * More gravity enemies, possibly redesign tractor
-* Enemy that shoots lines of bouncing little things like the tractor boss shots
 * Intelligent follow square that goes to where player is heading
 * Fill screen with little enemies that bounce off each other
+* Hookshot
 
 ### Bosses
 * Per-player-count boss balancing with spawns etc

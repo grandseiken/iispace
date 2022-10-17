@@ -191,6 +191,11 @@ struct Boss : ecs::component {
 };
 DEBUG_STRUCT_TUPLE(Boss, boss);
 
+struct AiFocusTag : ecs::component {
+  std::uint32_t priority = 1;
+};
+DEBUG_STRUCT_TUPLE(AiFocusTag, priority);
+
 }  // namespace ii
 
 #endif
