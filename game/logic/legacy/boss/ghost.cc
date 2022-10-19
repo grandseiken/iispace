@@ -150,7 +150,6 @@ struct GhostBoss : ecs::component {
   static constexpr std::uint32_t kBaseHp = 700;
   static constexpr std::uint32_t kTimer = 250;
   static constexpr std::uint32_t kAttackTime = 100;
-  static constexpr float kZIndex = 0.f;
   static constexpr shape_flag kShapeFlags = shape_flag::kEverything;
 
   using centre_shape =

@@ -742,7 +742,6 @@ struct mixed3 : formation<18> {
 
 struct mixed4 : formation<24, 38> {
   void operator()(spawn_context& context) const {
-    auto side = context.random_mside();
     context.spawn(&spawn_follow_hub, context.random_mside(), 1, 7);
     context.spawn(&spawn_tractor, context.random_vside(), 3, 7);
   }

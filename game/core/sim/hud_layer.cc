@@ -31,7 +31,7 @@ inline std::string convert_to_time(std::uint64_t score) {
 
 class PlayerHud : public ui::Panel {
 public:
-  PlayerHud(ui::Element* parent, ui::alignment align) : ui::Panel(parent), align_{align} {
+  PlayerHud(ui::Element* parent, ui::alignment align) : ui::Panel(parent) {
     auto& layout = *add_back<ui::LinearLayout>();
     layout.set_spacing(kPadding.y);
     if (+(align & ui::alignment::kTop)) {
@@ -64,7 +64,6 @@ public:
 private:
   ui::TextElement* status_ = nullptr;
   ui::TextElement* debug_ = nullptr;
-  ui::alignment align_;
 };
 
 HudLayer::HudLayer(ui::GameStack& stack, game_mode mode)

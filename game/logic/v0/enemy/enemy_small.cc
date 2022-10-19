@@ -183,7 +183,7 @@ struct Chaser : ecs::component {
       standard_transform<geom::polygram<18, 4, colour_hue360(210, .6f),
                                         shape_flag::kDangerous | shape_flag::kVulnerable>>;
 
-  Chaser(std::uint32_t size, std::uint32_t stagger) : size{size}, timer{kTime - stagger} {}
+  Chaser(std::uint32_t size, std::uint32_t stagger) : timer{kTime - stagger}, size{size} {}
   std::uint32_t timer = 0;
   std::uint32_t size = 0;
   ecs::entity_id next_target_id{0};

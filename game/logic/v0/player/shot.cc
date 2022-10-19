@@ -51,7 +51,6 @@ struct PlayerShot : ecs::component {
 
     bool destroy = false;
     bool destroy_particles = false;
-    auto generation = sim.index().generation();
     auto collision = sim.collision_list(transform.centre,
                                         shape_flag::kVulnerable | shape_flag::kWeakVulnerable |
                                             shape_flag::kShield | shape_flag::kWeakShield);
