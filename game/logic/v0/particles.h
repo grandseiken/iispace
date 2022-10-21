@@ -4,7 +4,7 @@
 #include "game/logic/ecs/call.h"
 #include "game/logic/ecs/id.h"
 #include "game/logic/geometry/node.h"
-#include "game/logic/ship/components.h"
+#include "game/logic/sim/components.h"
 #include "game/logic/sim/io/render.h"
 #include "game/logic/v0/ship_template.h"
 #include <sfn/functional.h>

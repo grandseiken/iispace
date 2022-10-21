@@ -155,13 +155,13 @@ ecs::handle create_follow_ship(SimInterface& sim, std::uint32_t size, std::uint3
 void spawn_follow(SimInterface& sim, std::uint32_t size, const vec2& position,
                   std::optional<vec2> direction, fixed rotation, const vec2& initial_velocity) {
   if (size == 2) {
-    create_follow_ship<Follow::huge_shape>(sim, 2, 5, Follow::kHugeWidth, position, direction,
+    create_follow_ship<Follow::huge_shape>(sim, 2, 40, Follow::kHugeWidth, position, direction,
                                            rotation, initial_velocity);
   } else if (size == 1) {
-    create_follow_ship<Follow::big_shape>(sim, 1, 3, Follow::kBigWidth, position, direction,
+    create_follow_ship<Follow::big_shape>(sim, 1, 24, Follow::kBigWidth, position, direction,
                                           rotation, initial_velocity);
   } else {
-    create_follow_ship<Follow::small_shape>(sim, 0, 1, Follow::kSmallWidth, position, direction,
+    create_follow_ship<Follow::small_shape>(sim, 0, 8, Follow::kSmallWidth, position, direction,
                                             rotation, initial_velocity);
   }
 }
@@ -291,10 +291,10 @@ create_chaser_ship(SimInterface& sim, std::uint32_t size, std::uint32_t health, 
 void spawn_chaser(SimInterface& sim, std::uint32_t size, const vec2& position, fixed rotation,
                   std::uint32_t stagger) {
   if (size == 1) {
-    create_chaser_ship<Chaser::big_shape>(sim, 1, 4, Chaser::kBigWidth, position, rotation,
+    create_chaser_ship<Chaser::big_shape>(sim, 1, 32, Chaser::kBigWidth, position, rotation,
                                           stagger);
   } else {
-    create_chaser_ship<Chaser::small_shape>(sim, 0, 2, Chaser::kSmallWidth, position, rotation,
+    create_chaser_ship<Chaser::small_shape>(sim, 0, 16, Chaser::kSmallWidth, position, rotation,
                                             stagger);
   }
 }

@@ -147,8 +147,8 @@ struct Shielder : ecs::component {
       timer = 0;
     }
 
-    auto max_speed = !on_screen ? kSpeed * 3_fx / 2
-                                : kSpeed * (6_fx + fixed{health.max_hp - health.hp} / (5_fx / 2));
+    auto max_speed =
+        !on_screen ? kSpeed * 3_fx / 2 : kSpeed * (6_fx + fixed{health.max_hp - health.hp} / 20_fx);
     auto target_v = max_speed *
         normalise(sim.index().get(*target)->get<Transform>()->centre - transform.centre);
     velocity = rc_smooth(velocity, target_v, 127_fx / 128);
@@ -296,35 +296,35 @@ DEBUG_STRUCT_TUPLE(Tractor, timer, dir, power, ready, spinning, spoke_r);
 
 void spawn_follow_hub(SimInterface& sim, const vec2& position, bool fast) {
   auto h = create_ship_default<FollowHub, FollowHub::hub_shape>(sim, position);
-  add_enemy_health<FollowHub, FollowHub::hub_shape>(h, 14);
+  add_enemy_health<FollowHub, FollowHub::hub_shape>(h, 112);
   h.add(FollowHub{false, false, fast});
   h.add(Enemy{.threat_value = 6u + 4u * fast});
 }
 
 void spawn_big_follow_hub(SimInterface& sim, const vec2& position, bool fast) {
   auto h = create_ship_default<FollowHub, FollowHub::big_hub_shape>(sim, position);
-  add_enemy_health<FollowHub, FollowHub::big_hub_shape>(h, 14);
+  add_enemy_health<FollowHub, FollowHub::big_hub_shape>(h, 112);
   h.add(FollowHub{true, false, fast});
   h.add(Enemy{.threat_value = 12u + 8u * fast});
 }
 
 void spawn_chaser_hub(SimInterface& sim, const vec2& position, bool fast) {
   auto h = create_ship_default<FollowHub, FollowHub::chaser_hub_shape>(sim, position);
-  add_enemy_health<FollowHub, FollowHub::chaser_hub_shape>(h, 14);
+  add_enemy_health<FollowHub, FollowHub::chaser_hub_shape>(h, 112);
   h.add(FollowHub{false, true, fast});
   h.add(Enemy{.threat_value = 10u + 6u * fast});
 }
 
 void spawn_shielder(SimInterface& sim, const vec2& position, bool power) {
   auto h = create_ship_default<Shielder>(sim, position);
-  add_enemy_health<Shielder>(h, 20);
+  add_enemy_health<Shielder>(h, 160);
   h.add(Shielder{sim, power});
   h.add(Enemy{.threat_value = 8u + 2u * power});
 }
 
 void spawn_tractor(SimInterface& sim, const vec2& position, bool power) {
   auto h = create_ship_default<Tractor>(sim, position);
-  add_enemy_health<Tractor>(h, 42);
+  add_enemy_health<Tractor>(h, 336);
   h.add(Tractor{power});
   h.add(Enemy{.threat_value = 10u + 4u * power});
 }

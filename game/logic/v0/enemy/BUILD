@@ -22,8 +22,8 @@ cc_library(
   name = "enemy_internal",
   hdrs = ["enemy_template.h"],
   deps = [
-    "//game/logic/ship:components",
     "//game/logic/sim:sim_interface",
+    "//game/logic/v0:components",
     "//game/logic/v0:ship_template",
     "@static_functional",
   ],

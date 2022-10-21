@@ -2,10 +2,10 @@
 #include "game/common/math.h"
 #include "game/logic/ecs/index.h"
 #include "game/logic/legacy/boss/boss.h"
+#include "game/logic/legacy/components.h"
 #include "game/logic/legacy/overmind/formations.h"
 #include "game/logic/legacy/overmind/spawn_context.h"
 #include "game/logic/legacy/player/powerup.h"
-#include "game/logic/ship/components.h"
 #include "game/logic/sim/io/conditions.h"
 #include <sfn/functional.h>
 #include <algorithm>

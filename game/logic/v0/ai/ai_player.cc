@@ -1,6 +1,6 @@
 #include "game/logic/v0/ai/ai_player.h"
-#include "game/logic/ship/components.h"
 #include "game/logic/sim/sim_interface.h"
+#include "game/logic/v0/components.h"
 
 namespace ii::v0 {
 namespace {

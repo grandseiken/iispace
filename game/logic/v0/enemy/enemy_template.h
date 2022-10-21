@@ -1,8 +1,8 @@
 #ifndef GAME_LOGIC_V0_ENEMY_ENEMY_TEMPLATE_H
 #define GAME_LOGIC_V0_ENEMY_ENEMY_TEMPLATE_H
 #include "game/logic/ecs/index.h"
-#include "game/logic/ship/components.h"
 #include "game/logic/sim/sim_interface.h"
+#include "game/logic/v0/components.h"
 #include "game/logic/v0/particles.h"
 #include "game/logic/v0/ship_template.h"
 #include <sfn/functional.h>

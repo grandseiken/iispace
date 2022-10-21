@@ -1,21 +1,16 @@
-#ifndef II_GAME_LOGIC_SHIP_COMPONENTS_H
-#define II_GAME_LOGIC_SHIP_COMPONENTS_H
+#ifndef II_GAME_LOGIC_SIM_COMPONENTS_H
+#define II_GAME_LOGIC_SIM_COMPONENTS_H
 #include "game/common/math.h"
 #include "game/common/struct_tuple.h"
 #include "game/logic/ecs/index.h"
 #include "game/logic/geometry/enums.h"
 #include "game/logic/sim/io/render.h"
 #include "game/mixer/sound.h"
-#include <glm/glm.hpp>
 #include <sfn/functional.h>
-#include <cstdint>
-#include <optional>
-#include <vector>
 
 namespace ii {
 class EmitHandle;
 class SimInterface;
-struct initial_conditions;
 enum class boss_flag : std::uint32_t;
 
 enum class damage_type {
@@ -25,28 +20,20 @@ enum class damage_type {
   kPredicted,
 };
 
-struct GlobalData : ecs::component {
-  static constexpr std::uint32_t kStartingLives = 2;
-  static constexpr std::uint32_t kBossModeLives = 1;
-
-  std::uint32_t lives = 0;
-  std::uint32_t non_wall_enemy_count = 0;
-  std::optional<std::uint32_t> overmind_wave_timer;
-  std::optional<std::uint32_t> overmind_wave_count;
-  std::vector<std::uint32_t> player_kill_queue;
-
-  struct fireworks_entry {
-    std::uint32_t time = 0;
-    vec2 position{0};
-    glm::vec4 colour{0.f};
-  };
-  std::vector<fireworks_entry> fireworks;
-  std::vector<vec2> extra_enemy_warnings;
-
-  void pre_update(SimInterface&);                // Runs before any other entity updates.
-  void post_update(ecs::handle, SimInterface&);  // Runs after any other entity updates.
+enum class rumble_type {
+  kNone,
+  kLow,
+  kSmall,
+  kMedium,
+  kLarge,
 };
-DEBUG_STRUCT_TUPLE(GlobalData, lives, non_wall_enemy_count, overmind_wave_timer, player_kill_queue);
+
+enum class powerup_type {
+  kExtraLife,
+  kMagicShots,
+  kShield,
+  kBomb,
+};
 
 struct Destroy : ecs::component {
   std::optional<ecs::entity_id> source;
@@ -93,13 +80,27 @@ struct Render : ecs::component {
 };
 DEBUG_STRUCT_TUPLE(Render, render);
 
-enum class rumble_type {
-  kNone,
-  kLow,
-  kSmall,
-  kMedium,
-  kLarge,
+struct WallTag : ecs::component {};
+DEBUG_STRUCT_TUPLE(WallTag);
+
+// TODO: should really be in legacy (but AI needs to know powerup type to know whether to chase it).
+struct PowerupTag : ecs::component {
+  powerup_type type = powerup_type::kExtraLife;
 };
+DEBUG_STRUCT_TUPLE(PowerupTag);
+
+struct Boss : ecs::component {
+  boss_flag boss = boss_flag{0};
+  bool show_hp_bar = false;
+};
+DEBUG_STRUCT_TUPLE(Boss, boss);
+
+struct Enemy : ecs::component {
+  std::uint32_t threat_value = 1;
+  std::uint32_t score_reward = 0;
+  std::uint32_t boss_score_reward = 0;
+};
+DEBUG_STRUCT_TUPLE(Enemy, threat_value, score_reward, boss_score_reward);
 
 struct Health : ecs::component {
   std::uint32_t hp = 0;
@@ -138,24 +139,8 @@ struct Health : ecs::component {
 };
 DEBUG_STRUCT_TUPLE(Health, hp, max_hp, damage_transform, on_hit, on_destroy);
 
-enum class powerup_type {
-  kExtraLife,
-  kMagicShots,
-  kShield,
-  kBomb,
-};
-
-struct PowerupTag : ecs::component {
-  powerup_type type = powerup_type::kExtraLife;
-};
-DEBUG_STRUCT_TUPLE(PowerupTag);
-
-struct WallTag : ecs::component {};
-DEBUG_STRUCT_TUPLE(WallTag);
-
+// TODO: split this up.
 struct Player : ecs::component {
-  static constexpr std::uint32_t kBombDamage = 50;
-
   std::uint32_t player_number = 0;
   std::uint32_t kill_timer = 0;
   std::uint32_t magic_shot_count = 0;
@@ -177,24 +162,6 @@ struct Player : ecs::component {
 };
 DEBUG_STRUCT_TUPLE(Player, player_number, kill_timer, magic_shot_count, has_bomb, has_shield, score,
                    multiplier, multiplier_count, death_count);
-
-struct Enemy : ecs::component {
-  std::uint32_t threat_value = 1;
-  std::uint32_t score_reward = 0;
-  std::uint32_t boss_score_reward = 0;
-};
-DEBUG_STRUCT_TUPLE(Enemy, threat_value, score_reward, boss_score_reward);
-
-struct Boss : ecs::component {
-  boss_flag boss = boss_flag{0};
-  bool show_hp_bar = false;
-};
-DEBUG_STRUCT_TUPLE(Boss, boss);
-
-struct AiFocusTag : ecs::component {
-  std::uint32_t priority = 1;
-};
-DEBUG_STRUCT_TUPLE(AiFocusTag, priority);
 
 }  // namespace ii
 

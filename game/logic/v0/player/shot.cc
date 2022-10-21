@@ -1,7 +1,7 @@
 #include "game/logic/v0/player/shot.h"
 #include "game/logic/geometry/shapes/box.h"
-#include "game/logic/ship/components.h"
 #include "game/logic/sim/io/player.h"
+#include "game/logic/v0/components.h"
 #include "game/logic/v0/particles.h"
 #include "game/logic/v0/ship_template.h"
 
@@ -62,7 +62,7 @@ struct PlayerShot : ecs::component {
         auto type = is_predicted ? damage_type::kPredicted
             : penetrating        ? damage_type::kMagic
                                  : damage_type::kNone;
-        ecs::call_if<&Health::damage>(e.h, sim, 1, type, player, transform.centre - 2 * velocity);
+        ecs::call_if<&Health::damage>(e.h, sim, 8u, type, player, transform.centre - 2 * velocity);
         if (!(e.hit_mask & shape_flag::kWeakVulnerable) && !penetrating) {
           destroy = true;
           destroy_particles = true;

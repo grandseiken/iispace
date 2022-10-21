@@ -8,6 +8,7 @@ cc_library(
   ],
   implementation_deps = [
     "//game/logic/geometry/shapes",
+    "//game/logic/legacy:components",
     "//game/logic/legacy:ship_template",
     "//game/logic/sim:sim_interface",
     "//game/logic/sim/io:conditions",
@@ -23,12 +24,13 @@ cc_library(
   srcs = ["powerup.cc"],
   deps = [
     "//game/common:math",
-    "//game/logic/ship:components",
+    "//game/logic/sim:components",
   ],
   implementation_deps = [
     "//game/logic/sim/io:player",
     "//game/logic/ecs",
     "//game/logic/geometry/shapes",
+    "//game/logic/legacy:components",
     "//game/logic/legacy:ship_template",
     "//game/logic/sim:sim_interface",
   ],

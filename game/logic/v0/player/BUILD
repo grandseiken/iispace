@@ -10,8 +10,8 @@ cc_library(
     ":bubble",
     ":shot",
     "//game/logic/geometry/shapes",
-    "//game/logic/ship:components",
     "//game/logic/sim/io:player",
+    "//game/logic/v0:components",
     "//game/logic/v0:ship_template",
   ],
   visibility = ["//game/logic/v0:__subpackages__"],
@@ -26,8 +26,25 @@ cc_library(
     "//game/logic/geometry/shapes",
     "//game/logic/sim:sim_interface",
     "//game/logic/sim/io:player",
+    "//game/logic/v0:components",
     "//game/logic/v0:ship_template",
   ],
+)
+
+cc_library(
+  name = "powerup",
+  hdrs = ["powerup.h"],
+  srcs = ["powerup.cc"],
+  deps = ["//game/common:math"],
+  implementation_deps = [
+    "//game/logic/sim/io:player",
+    "//game/logic/ecs",
+    "//game/logic/geometry/shapes",
+    "//game/logic/v0:components",
+    "//game/logic/v0:ship_template",
+    "//game/logic/sim:sim_interface",
+  ],
+  visibility = ["//game/logic/v0/enemy:__subpackages__"],
 )
 
 cc_library(
@@ -40,8 +57,8 @@ cc_library(
   ],
   implementation_deps = [
     "//game/logic/geometry/shapes",
-    "//game/logic/ship:components",
     "//game/logic/sim/io:player",
+    "//game/logic/v0:components",
     "//game/logic/v0:ship_template",
   ],
 )

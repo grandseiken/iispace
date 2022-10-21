@@ -1,6 +1,7 @@
 #ifndef II_GAME_LOGIC_LEGACY_BOSS_BOSS_INTERNAL_H
 #define II_GAME_LOGIC_LEGACY_BOSS_BOSS_INTERNAL_H
 #include "game/logic/ecs/index.h"
+#include "game/logic/legacy/components.h"
 #include "game/logic/legacy/ship_template.h"
 #include "game/logic/sim/sim_interface.h"
 
@@ -24,7 +25,7 @@ void boss_on_destroy(ecs::const_handle h, const Transform& transform, SimInterfa
                      EmitHandle& e, damage_type, const vec2& source) {
   sim.index().iterate_dispatch_if<Enemy>([&](ecs::handle eh, Health& health) {
     if (eh.id() != h.id()) {
-      health.damage(eh, sim, Player::kBombDamage, damage_type::kBomb, h.id());
+      health.damage(eh, sim, GlobalData::kBombDamage, damage_type::kBomb, h.id());
     }
   });
   std::optional<glm::vec4> boss_colour;

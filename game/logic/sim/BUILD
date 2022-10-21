@@ -1,4 +1,21 @@
 cc_library(
+  name = "components",
+  hdrs = ["components.h"],
+  srcs = ["components.cc"],
+  deps = [
+    "//game/common:math",
+    "//game/common:types",
+    "//game/logic/ecs",
+    "//game/logic/geometry",
+    "//game/logic/sim/io:render",
+    "//game/mixer:sound",
+    "@static_functional",
+  ],
+  implementation_deps = [":sim_interface"],
+  visibility = ["//game/logic:__subpackages__"],
+)
+
+cc_library(
   name = "sim_interface",
   hdrs = ["sim_interface.h"],
   deps = [
@@ -19,11 +36,11 @@ cc_library(
   ],
   srcs = ["collision.cc"],
   deps = [
+    ":components",
     ":sim_interface",
     "//game/common:math",
     "//game/common:random",
     "//game/logic/ecs",
-    "//game/logic/ship:components",
     "//game/logic/sim/io:conditions",
     "//game/logic/sim/io:output",
     "//game/logic/sim/io:player",
@@ -59,10 +76,11 @@ cc_library(
     ":sim_internals",
     "//game/common:math",
     "//game/data:replay",
+    "//game/logic/legacy:components",
     "//game/logic/legacy:setup",
+    "//game/logic/v0:components",
     "//game/logic/v0:setup",
     "//game/logic/v0/ai",
-    "//game/logic/ship:components",
     "//game/logic/sim/io:conditions",
     "//game/logic/sim/io:player",
   ],

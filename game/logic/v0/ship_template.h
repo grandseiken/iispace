@@ -6,7 +6,7 @@
 #include "game/logic/geometry/enums.h"
 #include "game/logic/geometry/node.h"
 #include "game/logic/geometry/node_transform.h"
-#include "game/logic/ship/components.h"
+#include "game/logic/sim/components.h"
 #include "game/logic/sim/io/render.h"
 #include "game/logic/sim/sim_interface.h"
 #include <sfn/functional.h>

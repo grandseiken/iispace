@@ -243,7 +243,7 @@ struct SuperBoss : ecs::component {
                   damage_type, const vec2& source) const {
     sim.index().iterate_dispatch_if<Enemy>([&](ecs::handle eh, Health& health) {
       if (eh.id() != h.id()) {
-        health.damage(eh, sim, 100 * Player::kBombDamage, damage_type::kBomb, h.id());
+        health.damage(eh, sim, 100 * GlobalData::kBombDamage, damage_type::kBomb, h.id());
       }
     });
     auto parameters = shape_parameters(transform);

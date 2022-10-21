@@ -1,7 +1,7 @@
 #include "game/logic/legacy/setup.h"
+#include "game/logic/legacy/components.h"
 #include "game/logic/legacy/overmind/overmind.h"
 #include "game/logic/legacy/player/player.h"
-#include "game/logic/ship/components.h"
 #include "game/logic/sim/io/events.h"
 #include "game/logic/sim/sim_interface.h"
 

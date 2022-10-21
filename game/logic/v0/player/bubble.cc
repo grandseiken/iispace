@@ -1,8 +1,8 @@
 #include "game/logic/v0/player/bubble.h"
 #include "game/logic/geometry/shapes/ngon.h"
-#include "game/logic/ship/components.h"
 #include "game/logic/sim/io/player.h"
 #include "game/logic/sim/sim_interface.h"
+#include "game/logic/v0/components.h"
 #include "game/logic/v0/particles.h"
 #include "game/logic/v0/ship_template.h"
 
@@ -18,19 +18,23 @@ struct PlayerBubble : ecs::component {
   using shape = geom::translate_p<
       0,
       geom::rotate_eval<geom::multiply_p<-2_fx, 1>,
-                        geom::polygon<14, 8, glm::vec4{1.f}, shape_flag::kVulnerable>>,
+                        geom::polygon_colour_p<14, 8, 3, shape_flag::kVulnerable>>,
       geom::rotate_p<1, geom::polygon_colour_p<18, 3, 2>>>;
-  std::tuple<vec2, fixed, glm::vec4> shape_parameters(const Transform& transform) const {
-    return {transform.centre, transform.rotation, player_colour(player_number)};
+  std::tuple<vec2, fixed, glm::vec4, glm::vec4> shape_parameters(const Transform& transform) const {
+    auto lightness = (1.f + sin(static_cast<float>(tick_count) / 16.f)) / 2.f;
+    return {transform.centre, transform.rotation, player_colour(player_number),
+            glm::vec4{1.f, 1.f, 1.f, lightness}};
   }
 
   PlayerBubble(std::uint32_t player_number) : player_number{player_number} {}
-  std::uint32_t player_number;
+  std::uint32_t player_number = 0;
+  std::uint32_t tick_count = 0;
   vec2 dir{0};
   bool first_frame = true;
   bool rotate_anti = false;
 
   void update(Transform& transform, SimInterface& sim) {
+    tick_count = sim.tick_count();
     if (!sim.is_on_screen(transform.centre)) {
       dir = sim.dimensions() / 2_fx - transform.centre;
     } else {
@@ -47,7 +51,7 @@ struct PlayerBubble : ecs::component {
     transform.move(normalise(dir) * kSpeed);
   }
 };
-DEBUG_STRUCT_TUPLE(PlayerBubble, player_number, dir, first_frame, rotate_anti);
+DEBUG_STRUCT_TUPLE(PlayerBubble, player_number, tick_count, dir, first_frame, rotate_anti);
 
 }  // namespace
 

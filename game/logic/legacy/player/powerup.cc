@@ -2,6 +2,7 @@
 #include "game/logic/geometry/node_conditional.h"
 #include "game/logic/geometry/shapes/box.h"
 #include "game/logic/geometry/shapes/ngon.h"
+#include "game/logic/legacy/components.h"
 #include "game/logic/legacy/ship_template.h"
 #include "game/logic/sim/io/player.h"
 #include <algorithm>

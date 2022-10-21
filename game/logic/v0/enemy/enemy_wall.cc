@@ -168,7 +168,7 @@ DEBUG_STRUCT_TUPLE(Wall, dir, timer, is_rotating, anti);
 
 void spawn_square(SimInterface& sim, const vec2& position, const vec2& dir) {
   auto h = create_ship_default<Square>(sim, position);
-  add_enemy_health<Square>(h, 4);
+  add_enemy_health<Square>(h, 32);
   h.add(Square{sim, dir});
   h.add(Enemy{.threat_value = 2});
   h.add(WallTag{});
@@ -176,7 +176,7 @@ void spawn_square(SimInterface& sim, const vec2& position, const vec2& dir) {
 
 void spawn_wall(SimInterface& sim, const vec2& position, const vec2& dir, bool anti) {
   auto h = create_ship_default<Wall>(sim, position);
-  add_enemy_health<Wall>(h, 10);
+  add_enemy_health<Wall>(h, 80);
   h.add(Wall{dir, anti});
   h.add(Enemy{.threat_value = 4});
   h.add(WallTag{});

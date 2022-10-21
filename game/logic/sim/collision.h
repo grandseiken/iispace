@@ -2,7 +2,7 @@
 #define GAME_LOGIC_SIM_COLLISION_H
 #include "game/common/math.h"
 #include "game/logic/ecs/index.h"
-#include "game/logic/ship/components.h"
+#include "game/logic/sim/components.h"
 #include "game/logic/sim/sim_interface.h"
 #include <glm/glm.hpp>
 #include <cstddef>

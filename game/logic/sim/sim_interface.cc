@@ -1,6 +1,7 @@
 #include "game/logic/sim/sim_interface.h"
 #include "game/logic/ecs/call.h"
-#include "game/logic/ship/components.h"
+#include "game/logic/legacy/components.h"
+#include "game/logic/sim/components.h"
 #include "game/logic/sim/io/conditions.h"
 #include "game/logic/sim/io/player.h"
 #include "game/logic/sim/sim_internals.h"
@@ -8,9 +9,6 @@
 
 namespace ii {
 namespace {
-GlobalData* global_data(SimInternals& internals) {
-  return internals.global_entity_handle->get<GlobalData>();
-}
 
 RandomEngine& engine(SimInternals& internals, random_source s) {
   if (internals.conditions.compatibility == compatibility_level::kLegacy) {
@@ -184,7 +182,7 @@ void SimInterface::in_range(const vec2& point, fixed distance, ecs::component_id
 }
 
 std::uint32_t SimInterface::get_lives() const {
-  if (auto* data = global_data(*internals_); data) {
+  if (auto* data = internals_->global_entity_handle->get<legacy::GlobalData>(); data) {
     return data->lives;
   }
   return 0;

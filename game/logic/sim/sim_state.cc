@@ -1,12 +1,13 @@
 #include "game/logic/sim/sim_state.h"
 #include "game/data/replay.h"
 #include "game/logic/ecs/call.h"
+#include "game/logic/legacy/components.h"
 #include "game/logic/legacy/setup.h"
-#include "game/logic/ship/components.h"
 #include "game/logic/sim/io/render.h"
 #include "game/logic/sim/sim_interface.h"
 #include "game/logic/sim/sim_internals.h"
 #include "game/logic/v0/ai/ai_player.h"
+#include "game/logic/v0/components.h"
 #include "game/logic/v0/setup.h"
 #include <glm/gtc/constants.hpp>
 #include <algorithm>
@@ -277,12 +278,14 @@ const render_output& SimState::render(transient_render_state& state, bool paused
     render_warning(to_float(transform.centre));
   });
 
-  if (const auto* global_data = interface_->global_entity().get<GlobalData>(); global_data) {
-    for (const auto& v : global_data->extra_enemy_warnings) {
+  if (const auto* data = interface_->global_entity().get<legacy::GlobalData>(); data) {
+    for (const auto& v : data->extra_enemy_warnings) {
       render_warning(to_float(v));
     }
-    result.overmind_timer = global_data->overmind_wave_timer;
-    result.overmind_wave = global_data->overmind_wave_count;
+    result.overmind_timer = data->overmind_wave_timer;
+  }
+  if (const auto* data = interface_->global_entity().get<v0::GlobalData>(); data) {
+    result.overmind_wave = data->overmind_wave_count;
   }
 
   result.tick_count = internals_->tick_count;

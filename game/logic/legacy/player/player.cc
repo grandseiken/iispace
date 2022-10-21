@@ -3,6 +3,7 @@
 #include "game/logic/geometry/node_conditional.h"
 #include "game/logic/geometry/shapes/box.h"
 #include "game/logic/geometry/shapes/ngon.h"
+#include "game/logic/legacy/components.h"
 #include "game/logic/legacy/ship_template.h"
 #include "game/logic/sim/io/conditions.h"
 #include "game/logic/sim/io/player.h"
@@ -237,7 +238,7 @@ struct PlayerLogic : ecs::component {
               return;
             }
             if (boss || length(e_transform.centre - transform.centre) <= kBombRadius) {
-              health.damage(eh, sim, Player::kBombDamage, damage_type::kBomb, h.id(),
+              health.damage(eh, sim, GlobalData::kBombDamage, damage_type::kBomb, h.id(),
                             transform.centre);
             }
             if (!boss && e.score_reward) {
