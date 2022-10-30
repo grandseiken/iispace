@@ -12,7 +12,7 @@ namespace {
 
 struct Powerup : ecs::component {
   static constexpr fixed kSpeed = 7_fx / 8_fx;
-  static constexpr float kZIndex = -2.f;
+  // static constexpr float kZIndex = -2.f;
   static constexpr std::uint32_t kRotateTime = 150;
   static constexpr glm::vec4 cw{1.f};
 
@@ -52,7 +52,6 @@ struct Powerup : ecs::component {
   void
   collect(ecs::handle h, const Transform& transform, SimInterface& sim, ecs::handle source) const {
     auto& pc = *source.get<Player>();
-    auto& render = *source.get<Render>();
     auto e = sim.emit(resolve_key::local(pc.player_number));
     e.play(false ? sound::kPowerupLife : sound::kPowerupOther, transform.centre);
     e.rumble(source.get<Player>()->player_number, 10, .25f, .75f);

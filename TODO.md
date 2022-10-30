@@ -83,6 +83,7 @@
 * Remote activation bomb (once to deploy, once to explode)
 * Bomb is a black hole
 * Bomb is a DoT. Upgrade: DoT can spread
+* Bomb hits entire screen but for less damage (leaves large enemies alive mostly)
 * Extra capacity
 
 ### Maybe ideas

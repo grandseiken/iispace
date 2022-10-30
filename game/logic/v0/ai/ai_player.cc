@@ -102,14 +102,15 @@ input_frame AiPlayer::think(ecs::const_handle h, const Transform& transform, con
         }
         auto offset = p_transform.centre - transform.centre;
         auto distance = length(offset);
+        // Legacy powerup handling.
         if ((powerup.type == powerup_type::kBomb || powerup.type == powerup_type::kShield) &&
-            (player.has_bomb || player.has_shield)) {
+            (player.bomb_count || player.shield_count)) {
           if (distance < kAvoidDistance && !avoid_v) {
             avoid_v = -offset / (distance * distance);
           }
           return;
         }
-        if (powerup.type == powerup_type::kMagicShots && player.magic_shot_count) {
+        if (powerup.type == powerup_type::kMagicShots && player.super_charge) {
           return;
         }
         if (!powerup_attract_v) {

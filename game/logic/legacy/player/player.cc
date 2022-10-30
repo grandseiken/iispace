@@ -148,7 +148,7 @@ struct PlayerLogic : ecs::component {
     auto c_dark = colour;
     c_dark.a = std::min(c_dark.a, .2f);
     auto powerup_colour = !should_render(pc) ? glm::vec4{0.f} : glm::vec4{1.f};
-    return {transform.centre, transform.rotation, pc.has_shield, pc.has_bomb, colour,
+    return {transform.centre, transform.rotation, pc.shield_count, pc.bomb_count, colour,
             c_dark,           powerup_colour};
   };
 
@@ -212,9 +212,9 @@ struct PlayerLogic : ecs::component {
     }
 
     // Bombs.
-    if (!pc.is_predicted && pc.has_bomb && input.keys & input_frame::kBomb) {
+    if (!pc.is_predicted && pc.bomb_count && input.keys & input_frame::kBomb) {
       auto c = player_colour(pc.player_number);
-      pc.has_bomb = false;
+      pc.bomb_count = 0;
       render.clear_trails = true;
 
       auto e = sim.emit(resolve_key::local(pc.player_number));
@@ -251,8 +251,8 @@ struct PlayerLogic : ecs::component {
     // Shots.
     auto shot = fire_target - transform.centre;
     if (length(shot) > 0 && !fire_timer && input.keys & input_frame::kFire) {
-      spawn_shot(sim, transform.centre, h, shot, pc.magic_shot_count != 0);
-      pc.magic_shot_count && --pc.magic_shot_count;
+      spawn_shot(sim, transform.centre, h, shot, pc.super_charge != 0);
+      pc.super_charge && --pc.super_charge;
 
       auto& random = sim.random(random_source::kLegacyAesthetic);
       float volume = .5f * random.fixed().to_float() + .5f;
@@ -275,9 +275,9 @@ struct PlayerLogic : ecs::component {
     // TODO: this can still emit wrong deaths for _local_ players! Since enemies can be in different
     // positions... do we need to make _all_ players predicted for purposes of getting hit?
     auto e = sim.emit(resolve_key::local(pc.player_number));
-    if (pc.has_shield) {
+    if (pc.shield_count) {
       e.rumble(pc.player_number, 15, 0.f, 1.f).play(sound::kPlayerShield, transform.centre);
-      pc.has_shield = false;
+      pc.shield_count = 0;
       render.clear_trails = true;
       invulnerability_timer = kShieldTime;
       return;
@@ -288,15 +288,13 @@ struct PlayerLogic : ecs::component {
     explosion(h, std::nullopt, e, std::nullopt, 20);
     destruct_entity_lines<PlayerLogic>(h, e, transform.centre, 32);
 
-    pc.magic_shot_count = 0;
+    pc.super_charge = 0;
     pc.multiplier = 1;
     pc.multiplier_count = 0;
     pc.kill_timer = kReviveTime;
+    pc.shield_count = 0;
+    pc.bomb_count = 0;
     ++pc.death_count;
-    if (pc.has_shield || pc.has_bomb) {
-      pc.has_shield = false;
-      pc.has_bomb = false;
-    }
     sim.global_entity().get<GlobalData>()->player_kill_queue.push_back(pc.player_number);
     e.rumble(pc.player_number, 30, .5f, .5f).play(sound::kPlayerDestroy, transform.centre);
   }
@@ -333,7 +331,7 @@ struct PlayerLogic : ecs::component {
     info.colour = player_colour(pc.player_number);
     info.score = pc.score;
     info.multiplier = pc.multiplier;
-    info.timer = static_cast<float>(pc.magic_shot_count) / kMagicShotCount;
+    info.timer = static_cast<float>(pc.super_charge) / kMagicShotCount;
     return info;
   }
 

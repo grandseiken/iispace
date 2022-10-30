@@ -146,12 +146,8 @@ ecs::handle create_ship(SimInterface& sim, const vec2& position, fixed rotation 
   auto h = v0::create_ship<Logic>(sim, position, rotation);
 
   static constexpr auto collision_flags = v0::get_shape_flags<Logic, S>();
-  static constexpr bool has_constant_bw = requires {
-    Logic::kBoundingWidth;
-  };
-  static constexpr bool has_function_bw = requires {
-    &Logic::bounding_width;
-  };
+  static constexpr bool has_constant_bw = requires { Logic::kBoundingWidth; };
+  static constexpr bool has_function_bw = requires { &Logic::bounding_width; };
 
   if constexpr (+collision_flags && (has_constant_bw || has_function_bw)) {
     fixed bounding_width = 0;

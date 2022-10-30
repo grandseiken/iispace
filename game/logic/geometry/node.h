@@ -40,6 +40,10 @@ constexpr void iterate(S, I tag, const Parameters& params, const Transform auto&
 template <IterTag I, typename Parameters, ShapeNodeWithSubstitution<Parameters>... Nodes>
 constexpr void iterate(compound<Nodes...>, I tag, const Parameters& params, const Transform auto& t,
                        const IterateFunction<I> auto& f) {
+  (void)tag;
+  (void)params;
+  (void)t;
+  (void)f;
   (iterate(Nodes{}, tag, params, t, f), ...);
 }
 

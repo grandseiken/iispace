@@ -9,11 +9,11 @@ namespace ii::v0 {
 
 template <typename T>
 concept Formation = requires(const T& t, spawn_context& context) {
-  T{};
-  t(context);
-  std::uint32_t{T::power_cost};
-  std::uint32_t{T::power_min};
-};
+                      T{};
+                      t(context);
+                      std::uint32_t{T::power_cost};
+                      std::uint32_t{T::power_min};
+                    };
 
 class FormationSet {
 private:

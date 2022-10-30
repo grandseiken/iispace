@@ -90,7 +90,7 @@ GridCollisionIndex::collision_list(const vec2& point, shape_flag mask) const {
     if (max.x < point.x || max.y < point.y || min.x > point.x || min.y > point.y) {
       continue;
     }
-    if (auto hit = c.check(e.handle, point, mask); + hit) {
+    if (auto hit = c.check(e.handle, point, mask); +hit) {
       assert(r.empty() || e.handle.id() > r.back().h.id());
       r.emplace_back(SimInterface::collision_info{.h = e.handle, .hit_mask = hit});
     }
@@ -294,7 +294,7 @@ LegacyCollisionIndex::collision_list(const vec2& point, shape_flag mask) const {
     if (!(e.flags & mask)) {
       continue;
     }
-    if (auto hit = e.check(collision.handle, point, mask); + hit) {
+    if (auto hit = e.check(collision.handle, point, mask); +hit) {
       r.emplace_back(SimInterface::collision_info{.h = collision.handle, .hit_mask = hit});
     }
   }

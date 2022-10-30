@@ -29,6 +29,8 @@ build:linux-common --copt=-Wall
 build:linux-common --per_file_copt=external/.*@-w
 
 build:clang-common --copt=-Wno-deprecated-volatile
+build:clang-common --copt=-Wno-deprecated-non-prototype
+build:clang-common --cxxopt=-Wno-deprecated-enum-enum-conversion
 build:clang-common --cxxopt=-Wno-unused-command-line-argument
 
 # Windows configurations.

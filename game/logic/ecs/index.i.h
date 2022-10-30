@@ -375,9 +375,10 @@ auto EntityIndex::storage() const -> const detail::component_storage<C>* {
 }
 
 template <bool Const>
-    template <Component C, typename... Args>
-    C& handle_base<Const>::emplace(Args&&... args) const requires(!Const) &&
-    std::constructible_from<C, Args...> {
+template <Component C, typename... Args>
+C& handle_base<Const>::emplace(Args&&... args) const
+    requires(!Const) && std::constructible_from<C, Args...>
+{
   auto& storage = index_->template storage<C>();
   auto index = table_->template get<C>();
   if (index) {
@@ -399,13 +400,15 @@ template <bool Const>
 
 template <bool Const>
 template <typename C>
-C& handle_base<Const>::add(C&& data) const requires Component<std::remove_cvref_t<C>> {
+C& handle_base<Const>::add(C&& data) const requires Component<std::remove_cvref_t<C>>
+{
   return emplace<std::remove_cvref_t<C>>(std::forward<C>(data));
 }
 
 template <bool Const>
 template <Component C>
-void handle_base<Const>::remove() const requires(!Const) {
+void handle_base<Const>::remove() const requires(!Const)
+{
   if (auto index = table_->template get<C>(); index) {
     auto& c = index_->template storage<C>();
     for (const auto& f : c.remove_callbacks()) {
@@ -418,7 +421,8 @@ void handle_base<Const>::remove() const requires(!Const) {
 }
 
 template <bool Const>
-void handle_base<Const>::clear() const requires(!Const) {
+void handle_base<Const>::clear() const requires(!Const)
+{
   for (std::size_t i = 0; i < table_->v.size(); ++i) {
     if (table_->v[i]) {
       index_->components_[i]->remove_index(*this, *table_->v[i]);
@@ -440,7 +444,8 @@ bool handle_base<Const>::has(component_id cid) const {
 
 template <bool Const>
 template <Component C>
-C* handle_base<Const>::get() const requires(!Const) {
+C* handle_base<Const>::get() const requires(!Const)
+{
   if (auto index = table_->template get<C>(); index) {
     return &*index_->template storage<C>().entries[*index].data;
   }
@@ -449,7 +454,8 @@ C* handle_base<Const>::get() const requires(!Const) {
 
 template <bool Const>
 template <Component C>
-const C* handle_base<Const>::get() const requires Const {
+const C* handle_base<Const>::get() const requires Const
+{
   if (auto index = table_->template get<C>(); index) {
     return &*index_->template storage<C>()->entries[*index].data;
   }

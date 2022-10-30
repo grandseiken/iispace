@@ -33,7 +33,7 @@ public:
 
   // Add a component via in-place construction.
   template <Component C, typename... Args>
-      C& emplace(Args&&... args) const requires(!Const) && std::constructible_from<C, Args...>;
+  C& emplace(Args&&... args) const requires(!Const) && std::constructible_from<C, Args...>;
   // Add a component.
   template <typename C>
   C& add(C&& data) const requires Component<std::remove_cvref_t<C>>;

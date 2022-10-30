@@ -81,18 +81,18 @@ struct Powerup : ecs::component {
       break;
 
     case powerup_type::kMagicShots:
-      pc.magic_shot_count = kMagicShotCount;
+      pc.super_charge = kMagicShotCount;
       break;
 
     case powerup_type::kShield:
-      pc.has_shield = true;
-      pc.has_bomb = false;
+      pc.shield_count = 1;
+      pc.bomb_count = 0;
       render.clear_trails = true;
       break;
 
     case powerup_type::kBomb:
-      pc.has_bomb = true;
-      pc.has_shield = false;
+      pc.bomb_count = 1;
+      pc.shield_count = 0;
       render.clear_trails = true;
       break;
     }

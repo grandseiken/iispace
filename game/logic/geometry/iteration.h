@@ -57,12 +57,12 @@ concept IterateFunction = IterTag<I> && Implies<I, iterate_flags_t, FlagFunction
 
 template <typename T>
 concept Transform = requires(const T& x) {
-  { *x } -> std::convertible_to<vec2>;
-  { x.deref_ignore_rotation() } -> std::convertible_to<vec2>;
-  { x.rotate(0_fx) } -> std::convertible_to<T>;
-  { x.translate(vec2{0}) } -> std::convertible_to<T>;
-  x.increment_index();
-};
+                      { *x } -> std::convertible_to<vec2>;
+                      { x.deref_ignore_rotation() } -> std::convertible_to<vec2>;
+                      { x.rotate(0_fx) } -> std::convertible_to<T>;
+                      { x.translate(vec2{0}) } -> std::convertible_to<T>;
+                      x.increment_index();
+                    };
 
 struct null_transform {
   constexpr null_transform() = default;

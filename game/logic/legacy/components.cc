@@ -19,7 +19,7 @@ void GlobalData::post_update(ecs::handle h, SimInterface& sim) {
     auto e = sim.emit(resolve_key::reconcile(h.id(), resolve_tag::kUnknown));
     sim.index().iterate<Player>([&](const Player& p) {
       if (!p0_has_powerup) {
-        p0_has_powerup = p.has_bomb || p.has_shield;
+        p0_has_powerup = p.bomb_count || p.shield_count;
       }
     });
     auto explode = [&](const glm::vec2& v, const glm::vec4& c, std::uint32_t time) {

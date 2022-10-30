@@ -12,10 +12,10 @@ struct bitmask_enum : std::false_type {};
 
 template <typename E>
 concept Enum = std::is_enum_v<E> && requires(E e) {
-  static_cast<std::underlying_type_t<E>>(e);
-  e = E{std::underlying_type_t<E>{}};
-  E{std::underlying_type_t<E>{}};
-};
+                                      static_cast<std::underlying_type_t<E>>(e);
+                                      e = E{std::underlying_type_t<E>{}};
+                                      E{std::underlying_type_t<E>{}};
+                                    };
 
 template <typename E>
 concept IntegralEnum = Enum<E> && integral_enum<E>::value;

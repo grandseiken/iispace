@@ -37,8 +37,12 @@ IndentWrappedFunctionNames: false
 ConstructorInitializerIndentWidth: 0
 ConstructorInitializerAllOnOneLineOrOnePerLine: true
 AllowAllConstructorInitializersOnNextLine: true
+BreakBeforeBraces: Attach
 BreakConstructorInitializers: BeforeComma
 BreakInheritanceList: BeforeComma
+# RequiresExpressionIndentation: OuterScope
+RequiresClausePosition: WithPreceding
+IndentRequiresClause: false
 
 BinPackArguments: true
 BinPackParameters: true

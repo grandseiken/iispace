@@ -143,9 +143,11 @@ DEBUG_STRUCT_TUPLE(Health, hp, max_hp, damage_transform, on_hit, on_destroy);
 struct Player : ecs::component {
   std::uint32_t player_number = 0;
   std::uint32_t kill_timer = 0;
-  std::uint32_t magic_shot_count = 0;
-  bool has_bomb = false;
-  bool has_shield = false;
+
+  std::uint32_t super_charge = 0;
+  std::uint32_t bomb_count = 0;
+  std::uint32_t shield_count = 0;
+
   bool is_predicted = false;
   fixed speed = 0;  // Used for CSP.
 
@@ -160,7 +162,7 @@ struct Player : ecs::component {
   bool is_killed() const { return kill_timer != 0; }
   void add_score(SimInterface&, std::uint64_t s);
 };
-DEBUG_STRUCT_TUPLE(Player, player_number, kill_timer, magic_shot_count, has_bomb, has_shield, score,
+DEBUG_STRUCT_TUPLE(Player, player_number, kill_timer, super_charge, bomb_count, shield_count, score,
                    multiplier, multiplier_count, death_count);
 
 }  // namespace ii

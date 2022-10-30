@@ -25,13 +25,11 @@ inline auto make_struct_tuple_member_entry(const char* name, T&& t) {
 }
 
 #define DEBUG_STRUCT_TUPLE_MEMBER(member) ::make_struct_tuple_member_entry(#member, x.member)
-#define DEBUG_STRUCT_TUPLE(struct_name, ...)                             \
-  inline const char* to_debug_name(const struct_name*) {                 \
-    return #struct_name;                                                 \
-  }                                                                      \
-  inline auto to_debug_tuple(const struct_name& x) {                     \
-    (void)x;                                                             \
-    return std::tuple{FOR_EACH(DEBUG_STRUCT_TUPLE_MEMBER, __VA_ARGS__)}; \
+#define DEBUG_STRUCT_TUPLE(struct_name, ...)                                    \
+  inline const char* to_debug_name(const struct_name*) { return #struct_name; } \
+  inline auto to_debug_tuple(const struct_name& x) {                            \
+    (void)x;                                                                    \
+    return std::tuple{FOR_EACH(DEBUG_STRUCT_TUPLE_MEMBER, __VA_ARGS__)};        \
   }
 
 #endif

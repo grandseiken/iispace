@@ -80,9 +80,8 @@ void render_entity_shape(ecs::const_handle h, const Health* health,
 template <ecs::Component Logic, geom::ShapeNode S = typename Logic::shape>
 constexpr shape_flag get_shape_flags() {
   shape_flag result = shape_flag::kNone;
-  geom::iterate(
-      S{}, geom::iterate_flags, geom::arbitrary_parameters{},
-      geom::transform{}, [&](shape_flag f) constexpr { result |= f; });
+  geom::iterate(S{}, geom::iterate_flags, geom::arbitrary_parameters{}, geom::transform{},
+                [&](shape_flag f) constexpr { result |= f; });
   if constexpr (requires { Logic::kShapeFlags; }) {
     result |= Logic::kShapeFlags;
   }

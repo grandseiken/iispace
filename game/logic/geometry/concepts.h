@@ -36,38 +36,39 @@ constexpr arbitrary_parameter get(const arbitrary_parameters&) {
 }
 
 template <typename T>
-concept Shape = requires(T x) {
-  x.iterate(iterate_flags, null_transform{}, [](shape_flag) {});
-  x.iterate(iterate_lines, null_transform{}, [](const vec2&, const vec2&, const glm::vec4&) {});
-  x.iterate(iterate_shapes, null_transform{}, [](const render::shape&) {});
-  x.iterate(iterate_centres, null_transform{}, [](const vec2&, const glm::vec4&) {});
-  x.iterate(iterate_attachment_points, null_transform{},
-            [](std::size_t, const vec2&, const vec2&) {});
-  x.iterate(iterate_collision(shape_flag::kNone), null_transform{}, [](shape_flag) {});
-};
+concept Shape =
+    requires(T x) {
+      x.iterate(iterate_flags, null_transform{}, [](shape_flag) {});
+      x.iterate(iterate_lines, null_transform{}, [](const vec2&, const vec2&, const glm::vec4&) {});
+      x.iterate(iterate_shapes, null_transform{}, [](const render::shape&) {});
+      x.iterate(iterate_centres, null_transform{}, [](const vec2&, const glm::vec4&) {});
+      x.iterate(iterate_attachment_points, null_transform{},
+                [](std::size_t, const vec2&, const vec2&) {});
+      x.iterate(iterate_collision(shape_flag::kNone), null_transform{}, [](shape_flag) {});
+    };
 
 template <typename E, typename V, typename Parameters>
-concept ExpressionWithSubstitution = requires(Parameters params) {
-  V{evaluate(E{}, params)};
-};
+concept ExpressionWithSubstitution = requires(Parameters params) { V{evaluate(E{}, params)}; };
 
 template <typename E, typename Parameters>
 concept ShapeExpressionWithSubstitution = requires(Parameters params) {
-  { evaluate(E{}, params) } -> Shape;
-};
+                                            { evaluate(E{}, params) } -> Shape;
+                                          };
 
 template <typename Node, typename Parameters>
-concept ShapeNodeWithSubstitution = requires(Parameters params) {
-  iterate(Node{}, iterate_flags, params, null_transform{}, [](shape_flag) {});
-  iterate(Node{}, iterate_lines, params, null_transform{},
-          [](const vec2&, const vec2&, const glm::vec4&) {});
-  iterate(Node{}, iterate_shapes, params, null_transform{}, [](const render::shape&) {});
-  iterate(Node{}, iterate_centres, params, null_transform{}, [](const vec2&, const glm::vec4&) {});
-  iterate(Node{}, iterate_attachment_points, params, null_transform{},
-          [](std::size_t, const vec2&, const vec2&) {});
-  iterate(Node{}, iterate_collision(shape_flag::kNone), params, null_transform{},
-          [](shape_flag) {});
-};
+concept ShapeNodeWithSubstitution =
+    requires(Parameters params) {
+      iterate(Node{}, iterate_flags, params, null_transform{}, [](shape_flag) {});
+      iterate(Node{}, iterate_lines, params, null_transform{},
+              [](const vec2&, const vec2&, const glm::vec4&) {});
+      iterate(Node{}, iterate_shapes, params, null_transform{}, [](const render::shape&) {});
+      iterate(Node{}, iterate_centres, params, null_transform{},
+              [](const vec2&, const glm::vec4&) {});
+      iterate(Node{}, iterate_attachment_points, params, null_transform{},
+              [](std::size_t, const vec2&, const vec2&) {});
+      iterate(Node{}, iterate_collision(shape_flag::kNone), params, null_transform{},
+              [](shape_flag) {});
+    };
 
 template <typename E, typename V>
 concept Expression = ExpressionWithSubstitution<E, V, arbitrary_parameters>;

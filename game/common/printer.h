@@ -2,6 +2,7 @@
 #define II_GAME_COMMON_PRINTER_H
 #include "game/common/enum.h"
 #include "game/common/math.h"
+#include <array>
 #include <concepts>
 #include <optional>
 #include <sstream>
