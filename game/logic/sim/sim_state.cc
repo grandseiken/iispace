@@ -105,7 +105,7 @@ void SimState::copy_to(SimState& target) const {
     target.setup_ = make_sim_setup(internals_->conditions);
     target.setup_->initialise_systems(*target.interface_);
   }
-  target.kill_timer_ = kill_timer_;
+  target.close_timer_ = close_timer_;
   target.colour_cycle_ = colour_cycle_;
   target.game_over_ = game_over_;
   target.compact_counter_ = 0;
@@ -180,16 +180,16 @@ void SimState::update(std::vector<input_frame> input) {
     }
   });
 
-  if (!kill_timer_ &&
+  if (!close_timer_ &&
       ((interface_->killed_players() == interface_->player_count() && !interface_->get_lives()) ||
        (internals_->conditions.mode == game_mode::kLegacy_Boss &&
         internals_->results.boss_kill_count() >= 6))) {
-    kill_timer_ = 100;
+    close_timer_ = 100;
   }
   bool already_game_over = game_over_;
-  if (kill_timer_) {
-    kill_timer_--;
-    if (!kill_timer_) {
+  if (close_timer_) {
+    close_timer_--;
+    if (!close_timer_) {
       game_over_ = true;
     }
   }
@@ -317,11 +317,13 @@ const sim_results& SimState::results() const {
   r.lives_remaining = interface_->get_lives();
 
   r.players.clear();
-  internals_->index.iterate<Player>([&](const Player& p) {
+  internals_->index.iterate_dispatch<Player>([&](ecs::handle h, const Player& p) {
     auto& pr = r.players.emplace_back();
     pr.number = p.player_number;
-    pr.score = p.score;
     pr.deaths = p.death_count;
+    if (auto info = p.render_info(h, *interface_)) {
+      pr.score = info->score;
+    }
   });
   r.score = 0;
   if (internals_->conditions.mode == game_mode::kStandardRun ||
@@ -369,9 +371,9 @@ void SimState::update_smoothing(smoothing_data& data) {
       v = transform.centre - *it->second.position;
       d = length(v);
     }
-    if (!it->second.position || d < p.speed || p.is_killed()) {
+    if (!it->second.position || d < p.speed || p.is_killed) {
       it->second.velocity = {0, 0};
-      if (p.is_killed()) {
+      if (p.is_killed) {
         // Avoid interpolating to spawn position after death.
         it->second.position.reset();
       } else {

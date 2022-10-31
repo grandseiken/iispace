@@ -7,6 +7,14 @@
 
 namespace ii::legacy {
 
+struct PlayerScore : ecs::component {
+  std::uint64_t score = 0;
+  std::uint32_t multiplier = 1;
+  std::uint32_t multiplier_count = 0;
+  void add(SimInterface&, std::uint64_t s);
+};
+DEBUG_STRUCT_TUPLE(PlayerScore, score, multiplier, multiplier_count);
+
 struct GlobalData : ecs::component {
   static constexpr std::uint32_t kBombDamage = 50;
   static constexpr std::uint32_t kStartingLives = 2;

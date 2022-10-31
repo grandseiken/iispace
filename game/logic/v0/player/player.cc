@@ -28,7 +28,7 @@ struct PlayerLogic : ecs::component {
 
   std::tuple<vec2, fixed, glm::vec4, glm::vec4>
   shape_parameters(const Player& pc, const Transform& transform) const {
-    auto colour = pc.kill_timer     ? glm::vec4{0.f}
+    auto colour = pc.is_killed      ? glm::vec4{0.f}
         : invulnerability_timer % 2 ? glm::vec4{1.f}
                                     : player_colour(pc.player_number);
     auto c_dark = colour;
@@ -58,7 +58,7 @@ struct PlayerLogic : ecs::component {
 
     // Temporary death.
     auto dim = sim.dimensions();
-    if (pc.kill_timer) {
+    if (pc.is_killed) {
       if (!bubble_id) {
         return;
       }
@@ -104,7 +104,7 @@ struct PlayerLogic : ecs::component {
   void post_update(ecs::handle h, Player& pc, const Transform& transform, SimInterface& sim) {
     if (bubble_id && !sim.index().get(*bubble_id)) {
       bubble_id.reset();
-      pc.kill_timer = 0;
+      pc.is_killed = false;
       invulnerability_timer = kReviveTime;
       sim.emit(resolve_key::reconcile(h.id(), resolve_tag::kRespawn))
           .rumble(pc.player_number, 20, 0.f, 1.f)
@@ -113,7 +113,7 @@ struct PlayerLogic : ecs::component {
   }
 
   void damage(ecs::handle h, Player& pc, Transform& transform, SimInterface& sim) {
-    if (pc.kill_timer || invulnerability_timer) {
+    if (pc.is_killed || invulnerability_timer) {
       return;
     }
 
@@ -125,29 +125,30 @@ struct PlayerLogic : ecs::component {
     explode_entity_shapes<PlayerLogic>(h, e, std::nullopt, 20);
     destruct_entity_lines<PlayerLogic>(h, e, transform.centre, 32);
 
-    pc.kill_timer = 1u;
     ++pc.death_count;
+    pc.is_killed = true;
     e.rumble(pc.player_number, 30, .5f, .5f).play(sound::kPlayerDestroy, transform.centre);
   }
 
   void render(const Player& pc, std::vector<render::shape>& output) const {
-    if (!pc.kill_timer) {
-      auto c = player_colour(pc.player_number);
-      auto t = to_float(fire_target);
-      output.emplace_back(render::shape{
-          .origin = t,
-          .colour = c,
-          .z_index = 100.f,
-          .disable_trail = !fire_target_trail,
-          .data = render::ngon{.radius = 8, .sides = 4, .style = render::ngon_style::kPolystar},
-      });
+    if (pc.is_killed) {
+      return;
     }
+    auto c = player_colour(pc.player_number);
+    auto t = to_float(fire_target);
+    output.emplace_back(render::shape{
+        .origin = t,
+        .colour = c,
+        .z_index = 100.f,
+        .disable_trail = !fire_target_trail,
+        .data = render::ngon{.radius = 8, .sides = 4, .style = render::ngon_style::kPolystar},
+    });
   }
 
   std::optional<render::player_info> render_info(const Player& pc, const SimInterface& sim) const {
     render::player_info info;
     info.colour = player_colour(pc.player_number);
-    info.score = pc.score;
+    info.score = 0;
     return info;
   }
 };
@@ -165,7 +166,7 @@ void spawn_player(SimInterface& sim, const vec2& position, std::uint32_t player_
 
 void respawn_players(SimInterface& sim) {
   sim.index().iterate_dispatch<Player>([&](ecs::handle h, const Player& pc, PlayerLogic& logic) {
-    if (pc.kill_timer && !logic.bubble_id) {
+    if (pc.is_killed && !logic.bubble_id) {
       logic.bubble_id = spawn_player_bubble(sim, h).id();
     }
   });

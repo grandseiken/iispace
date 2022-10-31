@@ -199,7 +199,7 @@ std::uint32_t SimInterface::alive_players() const {
 std::uint32_t SimInterface::killed_players() const {
   std::uint32_t result = 0;
   internals_->index.iterate_dispatch<Player>([&](const Player& pc) {
-    if (pc.is_killed()) {
+    if (pc.is_killed) {
       ++result;
     }
   });
@@ -223,7 +223,7 @@ ecs::const_handle SimInterface::nearest_player(const vec2& point) const {
   index().iterate_dispatch<Player>(
       [&](ecs::const_handle h, const Player& p, const Transform& transform) {
         auto d = length_squared(transform.centre - point);
-        if ((d < alive_distance || !nearest_alive) && !p.is_killed()) {
+        if ((d < alive_distance || !nearest_alive) && !p.is_killed) {
           alive_distance = d;
           nearest_alive = h;
         }
@@ -243,7 +243,7 @@ ecs::handle SimInterface::nearest_player(const vec2& point) {
 
   index().iterate_dispatch<Player>([&](ecs::handle h, const Player& p, const Transform& transform) {
     auto d = length_squared(transform.centre - point);
-    if ((d < alive_distance || !nearest_alive) && !p.is_killed()) {
+    if ((d < alive_distance || !nearest_alive) && !p.is_killed) {
       alive_distance = d;
       nearest_alive = h;
     }

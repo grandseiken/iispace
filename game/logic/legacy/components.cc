@@ -3,6 +3,15 @@
 
 namespace ii::legacy {
 
+void PlayerScore::add(SimInterface& sim, std::uint64_t s) {
+  score += s * multiplier;
+  ++multiplier_count;
+  if (multiplier_count >= (1u << std::min(multiplier + 3, 23u))) {
+    multiplier_count = 0;
+    ++multiplier;
+  }
+}
+
 void GlobalData::pre_update(SimInterface& sim) {
   non_wall_enemy_count = sim.index().count<Enemy>() - sim.index().count<WallTag>();
   extra_enemy_warnings.clear();

@@ -130,7 +130,7 @@ struct TractorBoss : ecs::component {
         }
         targets.clear();
         sim.index().iterate_dispatch<Player>([&](const Player& p, Transform& p_transform) {
-          if (!p.is_killed() && length(p_transform.centre - transform.centre) <= dim_x) {
+          if (!p.is_killed && length(p_transform.centre - transform.centre) <= dim_x) {
             targets.push_back(p_transform.centre);
             p_transform.centre +=
                 normalise(transform.centre - p_transform.centre) * kTractorBeamSpeed;
@@ -185,7 +185,7 @@ struct TractorBoss : ecs::component {
           targets.clear();
 
           sim.index().iterate_dispatch<Player>([&](const Player& p, Transform& p_transform) {
-            if (!p.is_killed() && length(p_transform.centre - transform.centre) <= dim_x) {
+            if (!p.is_killed && length(p_transform.centre - transform.centre) <= dim_x) {
               targets.push_back(p_transform.centre);
               p_transform.centre +=
                   normalise(transform.centre - p_transform.centre) * kTractorBeamSpeed;

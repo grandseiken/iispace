@@ -257,7 +257,7 @@ struct Tractor : ecs::component {
     } else if (spinning) {
       transform.rotate(fixed_c::tenth * (2_fx + 1_fx / 2));
       sim.index().iterate_dispatch<Player>([&](const Player& p, Transform& p_transform) {
-        if (!p.is_killed()) {
+        if (!p.is_killed) {
           p_transform.centre += normalise(transform.centre - p_transform.centre) * kPullSpeed;
         }
       });
@@ -280,7 +280,7 @@ struct Tractor : ecs::component {
     if (spinning) {
       std::uint32_t i = 0;
       sim.index().iterate_dispatch<Player>([&](const Player& p, const Transform& p_transform) {
-        if (((timer + i++ * 4) / 4) % 2 && !p.is_killed()) {
+        if (((timer + i++ * 4) / 4) % 2 && !p.is_killed) {
           auto s = render::shape::line(to_float(transform.centre), to_float(p_transform.centre),
                                        colour_hue360(300, .5f, .6f));
           s.disable_trail = true;

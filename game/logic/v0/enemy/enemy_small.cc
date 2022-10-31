@@ -111,7 +111,7 @@ struct Follow : ecs::component {
     }
 
     auto ph = sim.index().get(*target);
-    if (!ph->get<Player>()->is_killed()) {
+    if (!ph->get<Player>()->is_killed) {
       auto d = ph->get<Transform>()->centre - transform.centre;
       transform.move(normalise(d) * move_scale * kSpeed);
     }

@@ -59,13 +59,13 @@ struct Powerup : ecs::component {
     auto ph = sim.nearest_player(transform.centre);
     auto pv = ph.get<Transform>()->centre - transform.centre;
     const auto& p = *ph.get<Player>();
-    if (length(pv) <= 40 && !p.is_killed()) {
+    if (length(pv) <= 40 && !p.is_killed) {
       dir = pv;
     }
     dir = normalise(dir);
 
     transform.move(dir * kSpeed * ((length(pv) <= 40) ? 3 : 1));
-    if (length(pv) <= 10 && !p.is_predicted && !p.is_killed()) {
+    if (length(pv) <= 10 && !p.is_predicted && !p.is_killed) {
       collect(h, transform, sim, ph);
     }
   }

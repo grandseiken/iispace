@@ -142,12 +142,12 @@ struct PlayerLogic : ecs::component {
 
   std::tuple<vec2, fixed, bool, bool, glm::vec4, glm::vec4, glm::vec4>
   shape_parameters(const Player& pc, const Transform& transform) const {
-    auto colour = !should_render(pc) ? glm::vec4{0.f}
-        : invulnerability_timer % 2  ? glm::vec4{1.f}
-                                     : player_colour(pc.player_number);
+    auto colour = !should_render()  ? glm::vec4{0.f}
+        : invulnerability_timer % 2 ? glm::vec4{1.f}
+                                    : player_colour(pc.player_number);
     auto c_dark = colour;
     c_dark.a = std::min(c_dark.a, .2f);
-    auto powerup_colour = !should_render(pc) ? glm::vec4{0.f} : glm::vec4{1.f};
+    auto powerup_colour = !should_render() ? glm::vec4{0.f} : glm::vec4{1.f};
     return {transform.centre, transform.rotation, pc.shield_count, pc.bomb_count, colour,
             c_dark,           powerup_colour};
   };
@@ -157,10 +157,12 @@ struct PlayerLogic : ecs::component {
   bool is_what_mode = false;
   std::uint32_t invulnerability_timer = kReviveTime;
   std::uint32_t fire_timer = 0;
+  std::uint32_t kill_timer = 0;
   vec2 fire_target{0};
   bool fire_target_trail = true;
 
-  void update(ecs::handle h, Player& pc, Transform& transform, Render& render, SimInterface& sim) {
+  void update(ecs::handle h, Player& pc, PlayerScore& score, Transform& transform, Render& render,
+              SimInterface& sim) {
     pc.speed = kPlayerSpeed;
     const auto& input = sim.input(pc.player_number);
     auto old_fire_target = fire_target;
@@ -176,17 +178,18 @@ struct PlayerLogic : ecs::component {
     fire_timer = (fire_timer + 1) % kShotTimer;
 
     // Temporary death.
-    if (pc.kill_timer > 1 && --pc.kill_timer) {
+    if (kill_timer > 1 && --kill_timer) {
       return;
     }
 
     auto dim = sim.dimensions();
     auto& global_data = *sim.global_entity().get<GlobalData>();
     auto& kill_queue = global_data.player_kill_queue;
-    if (pc.kill_timer) {
+    if (kill_timer) {
       if (global_data.lives && !kill_queue.empty() && kill_queue.front() == pc.player_number) {
         --global_data.lives;
-        pc.kill_timer = 0;
+        kill_timer = 0;
+        pc.is_killed = false;
         kill_queue.erase(kill_queue.begin());
         invulnerability_timer = kReviveTime;
         render.clear_trails = true;
@@ -242,7 +245,7 @@ struct PlayerLogic : ecs::component {
                             transform.centre);
             }
             if (!boss && e.score_reward) {
-              pc.add_score(sim, 0);
+              score.add(sim, 0);
             }
           },
           /* include_new */ false);
@@ -263,12 +266,13 @@ struct PlayerLogic : ecs::component {
 
     // Damage.
     if (!pc.is_predicted && sim.any_collision(transform.centre, shape_flag::kDangerous)) {
-      damage(h, pc, transform, render, sim);
+      damage(h, pc, score, transform, render, sim);
     }
   }
 
-  void damage(ecs::handle h, Player& pc, Transform& transform, Render& render, SimInterface& sim) {
-    if (pc.kill_timer || invulnerability_timer) {
+  void damage(ecs::handle h, Player& pc, PlayerScore& score, Transform& transform, Render& render,
+              SimInterface& sim) {
+    if (kill_timer || invulnerability_timer) {
       return;
     }
 
@@ -288,10 +292,11 @@ struct PlayerLogic : ecs::component {
     explosion(h, std::nullopt, e, std::nullopt, 20);
     destruct_entity_lines<PlayerLogic>(h, e, transform.centre, 32);
 
+    kill_timer = kReviveTime;
+    score.multiplier = 1;
+    score.multiplier_count = 0;
     pc.super_charge = 0;
-    pc.multiplier = 1;
-    pc.multiplier_count = 0;
-    pc.kill_timer = kReviveTime;
+    pc.is_killed = true;
     pc.shield_count = 0;
     pc.bomb_count = 0;
     ++pc.death_count;
@@ -310,34 +315,34 @@ struct PlayerLogic : ecs::component {
   }
 
   void render(const Player& pc, std::vector<render::shape>& output) const {
-    if (should_render(pc)) {
-      auto c = player_colour(pc.player_number);
-      auto t = to_float(fire_target);
-      output.emplace_back(render::shape{
-          .origin = t,
-          .colour = c,
-          .z_index = 100.f,
-          .disable_trail = !fire_target_trail,
-          .data = render::ngon{.radius = 8, .sides = 4, .style = render::ngon_style::kPolystar},
-      });
+    if (!should_render()) {
+      return;
     }
+    auto c = player_colour(pc.player_number);
+    auto t = to_float(fire_target);
+    output.emplace_back(render::shape{
+        .origin = t,
+        .colour = c,
+        .z_index = 100.f,
+        .disable_trail = !fire_target_trail,
+        .data = render::ngon{.radius = 8, .sides = 4, .style = render::ngon_style::kPolystar},
+    });
   }
 
-  std::optional<render::player_info> render_info(const Player& pc, const SimInterface& sim) const {
+  std::optional<render::player_info>
+  render_info(const Player& pc, const PlayerScore& score, const SimInterface& sim) const {
     if (sim.conditions().mode == game_mode::kLegacy_Boss) {
       return std::nullopt;
     }
     render::player_info info;
     info.colour = player_colour(pc.player_number);
-    info.score = pc.score;
-    info.multiplier = pc.multiplier;
+    info.score = score.score;
+    info.multiplier = score.multiplier;
     info.timer = static_cast<float>(pc.super_charge) / kMagicShotCount;
     return info;
   }
 
-  bool should_render(const Player& pc) const {
-    return !pc.kill_timer && (!is_what_mode || invulnerability_timer);
-  }
+  bool should_render() const { return !kill_timer && (!is_what_mode || invulnerability_timer); }
 };
 DEBUG_STRUCT_TUPLE(PlayerLogic, is_what_mode, invulnerability_timer, fire_timer, fire_target);
 
@@ -347,6 +352,7 @@ void spawn_player(SimInterface& sim, const vec2& position, std::uint32_t player_
   auto h = create_ship<PlayerLogic>(sim, position);
   h.add(
       Player{.player_number = player_number, .render_info = ecs::call<&PlayerLogic::render_info>});
+  h.add(PlayerScore{});
   h.add(PlayerLogic{sim, position + vec2{0, -48}});
 }
 

@@ -139,10 +139,10 @@ struct Health : ecs::component {
 };
 DEBUG_STRUCT_TUPLE(Health, hp, max_hp, damage_transform, on_hit, on_destroy);
 
-// TODO: split this up.
 struct Player : ecs::component {
   std::uint32_t player_number = 0;
-  std::uint32_t kill_timer = 0;
+  std::uint32_t death_count = 0;
+  bool is_killed = false;
 
   std::uint32_t super_charge = 0;
   std::uint32_t bomb_count = 0;
@@ -151,19 +151,11 @@ struct Player : ecs::component {
   bool is_predicted = false;
   fixed speed = 0;  // Used for CSP.
 
-  std::uint64_t score = 0;
-  std::uint32_t multiplier = 1;
-  std::uint32_t multiplier_count = 0;
-  std::uint32_t death_count = 0;
-
-  sfn::ptr<std::optional<render::player_info>(ecs::const_handle, const SimInterface&)> render_info =
-      nullptr;
-
-  bool is_killed() const { return kill_timer != 0; }
-  void add_score(SimInterface&, std::uint64_t s);
+  using render_info_t = std::optional<render::player_info>(ecs::const_handle, const SimInterface&);
+  sfn::ptr<render_info_t> render_info = nullptr;
 };
-DEBUG_STRUCT_TUPLE(Player, player_number, kill_timer, super_charge, bomb_count, shield_count, score,
-                   multiplier, multiplier_count, death_count);
+DEBUG_STRUCT_TUPLE(Player, player_number, death_count, is_killed, super_charge, bomb_count,
+                   shield_count, is_predicted, speed);
 
 }  // namespace ii
 

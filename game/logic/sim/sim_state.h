@@ -90,7 +90,7 @@ public:
 
 private:
   data::ReplayWriter* replay_writer_ = nullptr;
-  std::uint32_t kill_timer_ = 0;
+  std::uint32_t close_timer_ = 0;
   std::uint32_t colour_cycle_ = 0;
   std::size_t compact_counter_ = 0;
   bool game_over_ = false;

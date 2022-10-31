@@ -18,14 +18,14 @@ void LegacySimSetup::initialise_systems(SimInterface& sim) {
   sim.index().on_component_add<Destroy>([&sim](ecs::handle h, const Destroy& d) {
     auto* e = h.get<Enemy>();
     if (e && e->score_reward && d.source && d.destroy_type != damage_type::kBomb) {
-      if (auto* p = sim.index().get<Player>(*d.source); p) {
-        p->add_score(sim, e->score_reward);
+      if (auto* score = sim.index().get<PlayerScore>(*d.source); score) {
+        score->add(sim, e->score_reward);
       }
     }
     if (e && e->boss_score_reward) {
-      sim.index().iterate<Player>([&](Player& p) {
-        if (!p.is_killed()) {
-          p.add_score(sim, e->boss_score_reward / sim.alive_players());
+      sim.index().iterate_dispatch<Player>([&](Player& p, PlayerScore& score) {
+        if (!p.is_killed) {
+          score.add(sim, e->boss_score_reward / sim.alive_players());
         }
       });
     }

@@ -62,7 +62,7 @@ struct BigSquareBoss : public ecs::component {
     if (special_attack) {
       special_timer--;
       auto ph = *sim.index().get(*attack_player);
-      if (ph.get<Player>()->is_killed()) {
+      if (ph.get<Player>()->is_killed) {
         special_timer = 0;
         attack_player.reset();
       } else if (!special_timer) {
