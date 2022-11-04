@@ -103,16 +103,19 @@ void HudLayer::update_content(const ui::input_frame&, ui::output_frame&) {
     return;
   }
   for (std::size_t i = 0; i < 4; ++i) {
-    if (mode_ == game_mode::kStandardRun || i >= render_->players.size()) {
+    if (i >= render_->players.size()) {
       huds_[i]->set_player_status({});
       huds_[i]->set_debug_text({});
+      continue;
+    }
+    huds_[i]->set_debug_text(ustring::ascii(debug_text_[i]));
+    if (mode_ == game_mode::kStandardRun) {
       continue;
     }
     const auto& p = render_->players[i];
     huds_[i]->set_colour(p.colour);
     huds_[i]->set_player_status(
         ustring::ascii(std::to_string(p.score) + " (" + std::to_string(p.multiplier) + "X)"));
-    huds_[i]->set_debug_text(ustring::ascii(debug_text_[i]));
   }
 
   std::string s;

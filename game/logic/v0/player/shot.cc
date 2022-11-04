@@ -60,8 +60,8 @@ struct PlayerShot : ecs::component {
       }
       if (+(e.hit_mask & (shape_flag::kVulnerable | shape_flag::kWeakVulnerable))) {
         auto type = is_predicted ? damage_type::kPredicted
-            : penetrating        ? damage_type::kMagic
-                                 : damage_type::kNone;
+            : penetrating        ? damage_type::kPenetrating
+                                 : damage_type::kNormal;
         ecs::call_if<&Health::damage>(e.h, sim, 8u, type, player, transform.centre - 2 * velocity);
         if (!(e.hit_mask & shape_flag::kWeakVulnerable) && !penetrating) {
           destroy = true;

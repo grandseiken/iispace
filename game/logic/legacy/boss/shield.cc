@@ -131,7 +131,7 @@ struct ShieldBombBoss : ecs::component {
     if (type == damage_type::kBomb && !unshielded) {
       unshielded = kUnshieldTime;
     }
-    if (type != damage_type::kMagic) {
+    if (type != damage_type::kPenetrating) {
       return {false, 0};
     }
     shot_alternate = !shot_alternate;

@@ -40,7 +40,7 @@ struct Square : ecs::component {
     }
 
     if (!timer) {
-      health.damage(h, sim, 4, damage_type::kNone, h.id());
+      health.damage(h, sim, 4, damage_type::kNormal, h.id());
     }
 
     const vec2& v = transform.centre;
@@ -114,7 +114,7 @@ struct Wall : ecs::component {
       if (health.hp > 2) {
         sim.emit(resolve_key::predicted()).play(sound::kEnemySpawn, 1.f, 0.f);
       }
-      health.damage(h, sim, std::max(2u, health.hp) - 2, damage_type::kNone, h.id());
+      health.damage(h, sim, std::max(2u, health.hp) - 2, damage_type::kNormal, h.id());
     }
 
     if (is_rotating) {

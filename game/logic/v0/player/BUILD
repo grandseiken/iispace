@@ -7,7 +7,8 @@ cc_library(
     "//game/logic/ecs",
   ],
   implementation_deps = [
-    ":bubble",
+    ":loadout",
+    ":powerup",
     ":shot",
     "//game/logic/geometry/shapes",
     "//game/logic/sim/io:player",
@@ -18,33 +19,29 @@ cc_library(
 )
 
 cc_library(
-  name = "bubble",
-  hdrs = ["bubble.h"],
-  srcs = ["bubble.cc"],
+  name = "loadout",
+  hdrs = ["loadout.h"],
+  srcs = ["loadout.cc"],
   deps = ["//game/logic/ecs"],
-  implementation_deps = [
-    "//game/logic/geometry/shapes",
-    "//game/logic/sim:sim_interface",
-    "//game/logic/sim/io:player",
-    "//game/logic/v0:components",
-    "//game/logic/v0:ship_template",
-  ],
 )
 
 cc_library(
   name = "powerup",
   hdrs = ["powerup.h"],
   srcs = ["powerup.cc"],
-  deps = ["//game/common:math"],
-  implementation_deps = [
-    "//game/logic/sim/io:player",
+  deps = [
+    "//game/common:math",
     "//game/logic/ecs",
+  ],
+  implementation_deps = [
+    ":loadout",
     "//game/logic/geometry/shapes",
+    "//game/logic/sim:sim_interface",
+    "//game/logic/sim/io:player",
     "//game/logic/v0:components",
     "//game/logic/v0:ship_template",
-    "//game/logic/sim:sim_interface",
   ],
-  visibility = ["//game/logic/v0/enemy:__subpackages__"],
+  visibility = ["//game/logic/v0:__pkg__"],
 )
 
 cc_library(

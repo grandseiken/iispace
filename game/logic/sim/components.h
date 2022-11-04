@@ -14,10 +14,10 @@ class SimInterface;
 enum class boss_flag : std::uint32_t;
 
 enum class damage_type {
-  kNone,
-  kMagic,
-  kBomb,
+  kNormal,
   kPredicted,
+  kPenetrating,
+  kBomb,
 };
 
 enum class rumble_type {
@@ -26,13 +26,6 @@ enum class rumble_type {
   kSmall,
   kMedium,
   kLarge,
-};
-
-enum class powerup_type {
-  kExtraLife,
-  kMagicShots,
-  kShield,
-  kBomb,
 };
 
 struct Destroy : ecs::component {
@@ -83,9 +76,9 @@ DEBUG_STRUCT_TUPLE(Render, render);
 struct WallTag : ecs::component {};
 DEBUG_STRUCT_TUPLE(WallTag);
 
-// TODO: should really be in legacy (but AI needs to know powerup type to know whether to chase it).
 struct PowerupTag : ecs::component {
-  powerup_type type = powerup_type::kExtraLife;
+  using ai_requires_t = bool(ecs::const_handle, const SimInterface&, ecs::const_handle);
+  sfn::ptr<ai_requires_t> ai_requires = nullptr;
 };
 DEBUG_STRUCT_TUPLE(PowerupTag);
 

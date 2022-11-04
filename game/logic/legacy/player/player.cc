@@ -63,8 +63,8 @@ struct Shot : ecs::component {
     for (const auto& e : collision) {
       if (+(e.hit_mask & shape_flag::kVulnerable)) {
         auto type = is_predicted ? damage_type::kPredicted
-            : magic              ? damage_type::kMagic
-                                 : damage_type::kNone;
+            : magic              ? damage_type::kPenetrating
+                                 : damage_type::kNormal;
         ecs::call_if<&Health::damage>(e.h, sim, 1, type, player, transform.centre - 2 * velocity);
         if (!magic) {
           destroy = true;

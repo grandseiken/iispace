@@ -6,6 +6,14 @@
 namespace ii {
 class SimInterface;
 namespace legacy {
+
+enum class powerup_type {
+  kExtraLife,
+  kMagicShots,
+  kShield,
+  kBomb,
+};
+
 void spawn_powerup(SimInterface&, const vec2& position, powerup_type type);
 }  // namespace legacy
 }  // namespace ii

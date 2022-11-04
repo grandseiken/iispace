@@ -96,21 +96,17 @@ input_frame AiPlayer::think(ecs::const_handle h, const Transform& transform, con
   sim.index().iterate_dispatch_if<AiFocusTag>(handle_target);
 
   sim.index().iterate_dispatch_if<PowerupTag>(
-      [&](const PowerupTag& powerup, const Transform& p_transform) {
+      [&](ecs::const_handle ph, const PowerupTag& powerup, const Transform& p_transform) {
         if (!sim.is_on_screen(p_transform.centre)) {
           return;
         }
         auto offset = p_transform.centre - transform.centre;
         auto distance = length(offset);
         // Legacy powerup handling.
-        if ((powerup.type == powerup_type::kBomb || powerup.type == powerup_type::kShield) &&
-            (player.bomb_count || player.shield_count)) {
+        if (!powerup.ai_requires(ph, sim, h)) {
           if (distance < kAvoidDistance && !avoid_v) {
             avoid_v = -offset / (distance * distance);
           }
-          return;
-        }
-        if (powerup.type == powerup_type::kMagicShots && player.super_charge) {
           return;
         }
         if (!powerup_attract_v) {

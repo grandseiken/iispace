@@ -13,11 +13,21 @@ struct AiFocusTag : ecs::component {
 DEBUG_STRUCT_TUPLE(AiFocusTag, priority);
 
 struct GlobalData : ecs::component {
+  std::int32_t shield_drop_counter = 0;
+  std::int32_t bomb_drop_counter = 0;
+
   std::uint32_t non_wall_enemy_count = 0;
   std::optional<std::uint32_t> overmind_wave_count;
+
   void pre_update(SimInterface&);
 };
 DEBUG_STRUCT_TUPLE(GlobalData, non_wall_enemy_count, overmind_wave_count);
+
+struct DropTable : ecs::component {
+  std::uint32_t shield_drop_chance = 0;
+  std::uint32_t bomb_drop_chance = 0;
+};
+DEBUG_STRUCT_TUPLE(DropTable, shield_drop_chance, bomb_drop_chance);
 
 }  // namespace ii::v0
 

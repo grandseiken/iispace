@@ -113,6 +113,18 @@ struct Powerup : ecs::component {
     }
     h.emplace<Destroy>();
   }
+
+  bool ai_requires(const SimInterface& sim, ecs::const_handle ph) const {
+    const auto& pc = *ph.get<Player>();
+    if ((type == powerup_type::kBomb || type == powerup_type::kShield) &&
+        (pc.bomb_count || pc.shield_count)) {
+      return false;
+    }
+    if (type == powerup_type::kMagicShots && pc.super_charge) {
+      return false;
+    }
+    return true;
+  }
 };
 DEBUG_STRUCT_TUPLE(Powerup, type, frame, dir, rotate, first_frame);
 
@@ -121,7 +133,7 @@ DEBUG_STRUCT_TUPLE(Powerup, type, frame, dir, rotate, first_frame);
 void spawn_powerup(SimInterface& sim, const vec2& position, powerup_type type) {
   auto h = create_ship<Powerup>(sim, position);
   h.add(Powerup{type});
-  h.add(PowerupTag{.type = type});
+  h.add(PowerupTag{.ai_requires = ecs::call<&Powerup::ai_requires>});
 }
 
 }  // namespace ii::legacy

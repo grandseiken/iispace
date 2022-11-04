@@ -132,7 +132,7 @@ struct GhostMine : ecs::component {
       } else {
         spawn_follow(sim, transform.centre, /* score */ false);
       }
-      ecs::call<&Health::damage>(h, sim, 1, damage_type::kNone, h.id(), std::nullopt);
+      ecs::call<&Health::damage>(h, sim, 1, damage_type::kNormal, h.id(), std::nullopt);
     }
   }
 };
