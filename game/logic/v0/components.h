@@ -6,6 +6,10 @@
 #include "game/logic/sim/components.h"
 
 namespace ii::v0 {
+struct drop_data {
+  std::int32_t counter = 0;
+  std::int32_t compensation = 0;
+};
 
 struct AiFocusTag : ecs::component {
   std::uint32_t priority = 1;
@@ -13,8 +17,8 @@ struct AiFocusTag : ecs::component {
 DEBUG_STRUCT_TUPLE(AiFocusTag, priority);
 
 struct GlobalData : ecs::component {
-  std::int32_t shield_drop_counter = 0;
-  std::int32_t bomb_drop_counter = 0;
+  drop_data shield_drop;
+  drop_data bomb_drop;
 
   std::uint32_t non_wall_enemy_count = 0;
   std::optional<std::uint32_t> overmind_wave_count;

@@ -37,12 +37,11 @@ struct Overmind : ecs::component {
   }
 
   void spawn_wave(SimInterface& sim) {
-    auto& data = *sim.global_entity().get<GlobalData>();
-    // TODO: adjust drop chances. Make it out of 1000 or 500 or so. Even small enemies
-    // should have a small chance. Bombs should be more common than shields (since shields
-    // last forever on a perfect player).
-    data.shield_drop_counter += 15 * (1 + static_cast<std::int32_t>(sim.player_count()));
-    data.bomb_drop_counter += 10 + 15 * static_cast<std::int32_t>(sim.player_count());
+    auto& global = *sim.global_entity().get<GlobalData>();
+    auto wave = static_cast<std::int32_t>(data.wave_count);
+    auto count = static_cast<std::int32_t>(sim.player_count());
+    global.shield_drop.counter += 120 + (2 * wave / count) + 80 * count;
+    global.bomb_drop.counter += 160 + (3 * wave / count) + 60 * count;
 
     const auto& biomes = sim.conditions().biomes;
     if (biome_index >= biomes.size()) {
@@ -56,6 +55,9 @@ struct Overmind : ecs::component {
   }
 
   void spawn_wave(SimInterface& sim, const Biome& biome) {
+    if (!data.wave_count) {
+      data.power += 4 * (sim.player_count() - 1);
+    }
     biome.spawn_wave(sim, data);
     if (data.wave_count < 5) {
       data.power += 2;

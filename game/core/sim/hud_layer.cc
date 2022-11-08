@@ -10,14 +10,16 @@ inline std::string convert_to_time(std::uint64_t score) {
   if (!score) {
     return "--:--";
   }
-  std::uint64_t mins = 0;
-  while (score >= 60ull * 60ull && mins < 99u) {
-    score -= 60ull * 60ull;
-    ++mins;
-  }
-  std::uint64_t secs = score / 60u;
+  score /= 60u;
+  std::uint64_t secs = score % 60u;
+  score /= 60u;
+  std::uint64_t mins = score % 60u;
+  score /= 60u;
 
   std::string r;
+  if (score) {
+    r += std::to_string(score) + ":";
+  }
   if (mins < 10u) {
     r += '0';
   }

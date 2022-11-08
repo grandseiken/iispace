@@ -13,7 +13,7 @@
 
 namespace ii::v0 {
 namespace {
-constexpr std::uint32_t kPowerupTimer = 3600;
+constexpr std::uint32_t kPowerupTimer = 90u * 60u;
 constexpr fixed kPowerupCloseDistance = 50;
 constexpr fixed kPowerupCollectDistance = 10;
 
@@ -90,6 +90,9 @@ struct ShieldPowerup : ecs::component {
   bool rotate_anti = false;
 
   void update(ecs::handle h, Transform& transform, SimInterface& sim) {
+    if (!timer) {
+      sim.emit(resolve_key::predicted()).explosion(to_float(transform.centre), glm::vec4{1.f});
+    }
     if (++timer >= kPowerupTimer) {
       sim.emit(resolve_key::predicted()).explosion(to_float(transform.centre), glm::vec4{1.f});
       h.emplace<Destroy>();
@@ -154,6 +157,9 @@ struct BombPowerup : ecs::component {
   bool rotate_anti = false;
 
   void update(ecs::handle h, Transform& transform, SimInterface& sim) {
+    if (!timer) {
+      sim.emit(resolve_key::predicted()).explosion(to_float(transform.centre), glm::vec4{1.f});
+    }
     if (++timer >= kPowerupTimer) {
       sim.emit(resolve_key::predicted()).explosion(to_float(transform.centre), glm::vec4{1.f});
       h.emplace<Destroy>();

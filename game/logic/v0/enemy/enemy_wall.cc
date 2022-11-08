@@ -155,23 +155,26 @@ struct Wall : ecs::component {
     auto d = rotate(dir, fixed_c::pi / 2);
     auto v = transform.centre + d * 12 * 3;
     if (sim.is_on_screen(v)) {
-      spawn_square(sim, v, from_polar(transform.rotation, 1_fx));
+      spawn_square(sim, v, from_polar(transform.rotation, 1_fx), /* drop */ false);
     }
     v = transform.centre - d * 12 * 3;
     if (sim.is_on_screen(v)) {
-      spawn_square(sim, v, from_polar(transform.rotation, 1_fx));
+      spawn_square(sim, v, from_polar(transform.rotation, 1_fx), /* drop */ false);
     }
   }
 };
 DEBUG_STRUCT_TUPLE(Wall, dir, timer, is_rotating, anti);
 }  // namespace
 
-void spawn_square(SimInterface& sim, const vec2& position, const vec2& dir) {
+void spawn_square(SimInterface& sim, const vec2& position, const vec2& dir, bool drop) {
   auto h = create_ship_default<Square>(sim, position);
   add_enemy_health<Square>(h, 32);
   h.add(Square{sim, dir});
   h.add(Enemy{.threat_value = 2});
   h.add(WallTag{});
+  if (drop) {
+    h.add(DropTable{.shield_drop_chance = 2, .bomb_drop_chance = 2});
+  }
 }
 
 void spawn_wall(SimInterface& sim, const vec2& position, const vec2& dir, bool anti) {
@@ -180,6 +183,7 @@ void spawn_wall(SimInterface& sim, const vec2& position, const vec2& dir, bool a
   h.add(Wall{dir, anti});
   h.add(Enemy{.threat_value = 4});
   h.add(WallTag{});
+  h.add(DropTable{.shield_drop_chance = 3, .bomb_drop_chance = 4});
 }
 
 }  // namespace ii::v0

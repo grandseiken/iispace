@@ -52,11 +52,11 @@ struct FollowHub : ecs::component {
       ++count;
       if (sim.is_on_screen(transform.centre)) {
         if (chaser) {
-          spawn_chaser(sim, transform.centre);
+          spawn_chaser(sim, transform.centre, /* drop */ false);
         } else if (big) {
-          spawn_big_follow(sim, transform.centre);
+          spawn_big_follow(sim, transform.centre, std::nullopt, /* drop */ false);
         } else {
-          spawn_follow(sim, transform.centre);
+          spawn_follow(sim, transform.centre, std::nullopt, /* drop */ false);
         }
         sim.emit(resolve_key::predicted()).play_random(sound::kEnemySpawn, transform.centre);
       }
@@ -81,11 +81,11 @@ struct FollowHub : ecs::component {
       return;
     }
     if (chaser) {
-      spawn_big_chaser(sim, transform.centre);
+      spawn_big_chaser(sim, transform.centre, /* drop */ false);
     } else if (big) {
-      spawn_huge_follow(sim, transform.centre);
+      spawn_huge_follow(sim, transform.centre, std::nullopt, /* drop */ false);
     } else {
-      spawn_big_follow(sim, transform.centre);
+      spawn_big_follow(sim, transform.centre, std::nullopt, /* drop */ false);
     }
   }
 };
@@ -299,7 +299,7 @@ void spawn_follow_hub(SimInterface& sim, const vec2& position, bool fast) {
   add_enemy_health<FollowHub, FollowHub::hub_shape>(h, 112);
   h.add(FollowHub{false, false, fast});
   h.add(Enemy{.threat_value = 6u + 4u * fast});
-  h.add(DropTable{.shield_drop_chance = 2, .bomb_drop_chance = 1});
+  h.add(DropTable{.shield_drop_chance = 20, .bomb_drop_chance = 25});
 }
 
 void spawn_big_follow_hub(SimInterface& sim, const vec2& position, bool fast) {
@@ -307,7 +307,7 @@ void spawn_big_follow_hub(SimInterface& sim, const vec2& position, bool fast) {
   add_enemy_health<FollowHub, FollowHub::big_hub_shape>(h, 112);
   h.add(FollowHub{true, false, fast});
   h.add(Enemy{.threat_value = 12u + 8u * fast});
-  h.add(DropTable{.shield_drop_chance = 2, .bomb_drop_chance = 2});
+  h.add(DropTable{.shield_drop_chance = 35, .bomb_drop_chance = 40});
 }
 
 void spawn_chaser_hub(SimInterface& sim, const vec2& position, bool fast) {
@@ -317,7 +317,7 @@ void spawn_chaser_hub(SimInterface& sim, const vec2& position, bool fast) {
   h.add(Enemy{.threat_value = 10u + 6u * fast});
   h.add(DropTable{.shield_drop_chance = 2});
   h.add(DropTable{.bomb_drop_chance = 1});
-  h.add(DropTable{.shield_drop_chance = 2, .bomb_drop_chance = 2});
+  h.add(DropTable{.shield_drop_chance = 30, .bomb_drop_chance = 35});
 }
 
 void spawn_shielder(SimInterface& sim, const vec2& position, bool power) {
@@ -325,7 +325,7 @@ void spawn_shielder(SimInterface& sim, const vec2& position, bool power) {
   add_enemy_health<Shielder>(h, 160);
   h.add(Shielder{sim, power});
   h.add(Enemy{.threat_value = 8u + 2u * power});
-  h.add(DropTable{.shield_drop_chance = 5});
+  h.add(DropTable{.shield_drop_chance = 60});
 }
 
 void spawn_tractor(SimInterface& sim, const vec2& position, bool power) {
@@ -333,7 +333,7 @@ void spawn_tractor(SimInterface& sim, const vec2& position, bool power) {
   add_enemy_health<Tractor>(h, 336);
   h.add(Tractor{power});
   h.add(Enemy{.threat_value = 10u + 4u * power});
-  h.add(DropTable{.bomb_drop_chance = 8});
+  h.add(DropTable{.bomb_drop_chance = 100});
 }
 
 }  // namespace ii::v0
