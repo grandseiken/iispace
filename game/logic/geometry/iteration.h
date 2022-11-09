@@ -64,6 +64,11 @@ concept Transform = requires(const T& x) {
                       x.increment_index();
                     };
 
+struct shape_data_base {
+  template <IterTag I>
+  constexpr void iterate(I, const Transform auto&, const IterateFunction<I> auto&) const {}
+};
+
 struct null_transform {
   constexpr null_transform() = default;
   constexpr null_transform rotate(fixed) const { return {}; }

@@ -1,10 +1,10 @@
-#ifndef II_GAME_LOGIC_GEOMETRY_SHAPES_LINE_H
-#define II_GAME_LOGIC_GEOMETRY_SHAPES_LINE_H
+#ifndef II_GAME_LOGIC_GEOMETRY_LEGACY_LINE_H
+#define II_GAME_LOGIC_GEOMETRY_LEGACY_LINE_H
 #include "game/logic/geometry/expressions.h"
 #include "game/logic/sim/io/render.h"
 
 namespace ii::geom {
-inline namespace shapes {
+inline namespace legacy {
 
 struct line_data : shape_data_base {
   using shape_data_base::iterate;
@@ -51,7 +51,7 @@ template <fixed AX, fixed AY, fixed BX, fixed BY, std::size_t ParameterIndex>
 using line_colour_p =
     line_eval<constant_vec2<AX, AY>, constant_vec2<BX, BY>, parameter<ParameterIndex>>;
 
-}  // namespace shapes
+}  // namespace legacy
 }  // namespace ii::geom
 
 #endif

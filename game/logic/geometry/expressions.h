@@ -33,6 +33,9 @@ struct multiply {};
 template <typename E0, typename E1>
 struct equal {};
 
+template <auto V, Expression<glm::vec4>>
+struct set_colour {};
+
 template <auto V>
 constexpr auto evaluate(constant<V>, const auto&) {
   return V;
@@ -88,6 +91,13 @@ constexpr auto evaluate(equal<E0, E1>, const auto& params) {
   return evaluate(E0{}, params) == evaluate(E1{}, params);
 }
 
+template <auto V, Expression<glm::vec4> E>
+constexpr auto evaluate(set_colour<V, E>, const auto& params) {
+  auto v = V;
+  v.colour = glm::vec4{evaluate(E{}, params)};
+  return v;
+}
+
 //////////////////////////////////////////////////////////////////////////////////
 // Helper combinations.
 //////////////////////////////////////////////////////////////////////////////////
@@ -97,6 +107,9 @@ template <std::size_t ParameterIndex>
 using negate_p = negate<parameter<ParameterIndex>>;
 template <auto C, std::size_t ParameterIndex>
 using multiply_p = multiply<constant<C>, parameter<ParameterIndex>>;
+
+template <auto V, std::size_t N>
+using set_colour_p = set_colour<V, parameter<N>>;
 
 }  // namespace ii::geom
 

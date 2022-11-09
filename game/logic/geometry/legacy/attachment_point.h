@@ -1,10 +1,10 @@
-#ifndef II_GAME_LOGIC_GEOMETRY_SHAPES_ATTACHMENT_POINT_H
-#define II_GAME_LOGIC_GEOMETRY_SHAPES_ATTACHMENT_POINT_H
+#ifndef II_GAME_LOGIC_GEOMETRY_LEGACY_ATTACHMENT_POINT_H
+#define II_GAME_LOGIC_GEOMETRY_LEGACY_ATTACHMENT_POINT_H
 #include "game/logic/geometry/expressions.h"
-#include "game/logic/geometry/shapes/base.h"
 #include <cstddef>
 
 namespace ii::geom {
+inline namespace legacy {
 
 struct attachment_point_data : shape_data_base {
   using shape_data_base::iterate;
@@ -36,6 +36,7 @@ constexpr auto evaluate(attachment_point_eval<Index, Direction>, const auto& par
 template <std::size_t Index, fixed DX, fixed DY>
 using attachment_point = constant<make_attachment_point(Index, vec2{DX, DY})>;
 
+}  // namespace legacy
 }  // namespace ii::geom
 
 #endif

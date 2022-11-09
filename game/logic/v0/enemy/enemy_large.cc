@@ -1,7 +1,6 @@
 #include "game/logic/geometry/node_conditional.h"
 #include "game/logic/geometry/shapes/line.h"
 #include "game/logic/geometry/shapes/ngon.h"
-#include "game/logic/geometry/shapes/polyarc.h"
 #include "game/logic/v0/enemy/enemy.h"
 #include "game/logic/v0/enemy/enemy_template.h"
 
@@ -20,15 +19,17 @@ struct FollowHub : ecs::component {
   template <geom::ShapeNode S>
   using fh_arrange = geom::compound<geom::translate<18, 0, S>, geom::translate<-18, 0, S>,
                                     geom::translate<0, 18, S>, geom::translate<0, -18, S>>;
-  template <geom::ShapeNode S>
-  using r_pi4_ngon = geom::rotate<fixed_c::pi / 4, S>;
-  using fh_centre =
-      r_pi4_ngon<geom::polygram<18, 4, c, shape_flag::kDangerous | shape_flag::kVulnerable>>;
+  template <geom::ShapeNode... S>
+  using r_pi4_ngon = geom::rotate<fixed_c::pi / 4, S...>;
+  using fh_centre = r_pi4_ngon<
+      geom::ngon_with_collider<geom::nd(18, 4), geom::nline(geom::ngon_style::kPolygram, c),
+                               geom::nfill(), shape_flag::kDangerous | shape_flag::kVulnerable>>;
 
-  using fh_spoke = r_pi4_ngon<geom::ngon<10, 4, c>>;
-  using fh_big_spoke = r_pi4_ngon<geom::ngon<12, 4, c>>;
+  using fh_spoke = r_pi4_ngon<geom::ngon<geom::nd(10, 4), geom::nline(c)>>;
+  using fh_big_spoke =
+      geom::compound<fh_spoke, r_pi4_ngon<geom::ngon<geom::nd(8, 4), geom::nline(c)>>>;
   using fh_chaser_spoke =
-      r_pi4_ngon<geom::compound<geom::ngon<10, 4, c>, geom::polystar<10, 4, c>>>;
+      r_pi4_ngon<geom::ngon<geom::nd(10, 4), geom::nline(geom::ngon_style::kPolygram, c)>>;
 
   using hub_shape = geom::translate_p<0, fh_centre, geom::rotate_p<1, fh_arrange<fh_spoke>>>;
   using big_hub_shape =
@@ -92,7 +93,6 @@ struct FollowHub : ecs::component {
 DEBUG_STRUCT_TUPLE(FollowHub, timer, count, dir, big, chaser, fast);
 
 struct Shielder : ecs::component {
-  // TODO: try making it chase the player, with acceleration?
   static constexpr std::uint32_t kBoundingWidth = 32;
   static constexpr float kZIndex = 0.f;
   static constexpr sound kDestroySound = sound::kPlayerDestroy;
@@ -105,13 +105,16 @@ struct Shielder : ecs::component {
   static constexpr auto c1 = colour_hue360(160, .5f, .6f);
   static constexpr auto c2 = glm::vec4{0.f, 0.f, .75f, 1.f};
 
-  using centre_shape =
-      geom::compound<geom::polystar<26, 12, c0>, geom::polygon<6, 12, c0>,
-                     geom::polygon<20, 12, c1, shape_flag::kDangerous | shape_flag::kVulnerable>>;
-  using shield_shape = geom::rotate_p<2, geom::line<32, 0, 18, 0, c2>,
-                                      geom::rotate<fixed_c::pi / 4, geom::line<-32, 0, -18, 0, c2>>,
-                                      geom::polyarc<26, 16, 10, c2>,
-                                      geom::polyarc<32, 16, 10, c2, shape_flag::kWeakShield>>;
+  using centre_shape = geom::compound<
+      geom::ngon<geom::nd(26, 12), geom::nline(geom::ngon_style::kPolystar, c0)>,
+      geom::ngon<geom::nd(6, 12), geom::nline(c1)>, geom::ngon<geom::nd(20, 12), geom::nline(c1)>,
+      geom::ngon_collider<geom::nd(20, 12), shape_flag::kDangerous | shape_flag::kVulnerable>>;
+  using shield_shape =
+      geom::rotate_p<2, geom::line<32, 0, 18, 0, c2>,
+                     geom::rotate<fixed_c::pi / 4, geom::line<-32, 0, -18, 0, c2>>,
+                     geom::ngon<geom::nd(26, 16, 10), geom::nline(c2)>,
+                     geom::ngon<geom::nd(32, 16, 10), geom::nline(c2)>,
+                     geom::ngon_collider<geom::nd(32, 16, 10), shape_flag::kWeakShield>>;
   using shape = geom::translate_p<0, geom::rotate_p<1, centre_shape>, shield_shape>;
 
   std::tuple<vec2, fixed, fixed> shape_parameters(const Transform& transform) const {
@@ -203,8 +206,10 @@ struct Tractor : ecs::component {
   static constexpr fixed kPullSpeed = 2 + 1_fx / 4;
 
   static constexpr auto c = colour_hue360(300, .5f, .6f);
-  using t_orb = geom::polygram<16, 6, c, shape_flag::kDangerous | shape_flag::kVulnerable>;
-  using t_star = geom::polystar<18, 6, c>;
+  using t_orb =
+      geom::ngon_with_collider<geom::nd(16, 6), geom::nline(geom::ngon_style::kPolygram, c),
+                               geom::nfill(), shape_flag::kDangerous | shape_flag::kVulnerable>;
+  using t_star = geom::ngon<geom::nd(18, 6), geom::nline(geom::ngon_style::kPolystar, c)>;
   using shape = standard_transform<
       geom::translate<26, 0, geom::rotate_eval<geom::multiply_p<5, 2>, t_orb>>,
       geom::translate<-26, 0, geom::rotate_eval<geom::multiply_p<-5, 2>, t_orb>>,

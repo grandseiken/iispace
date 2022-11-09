@@ -53,6 +53,7 @@ public:
   friend constexpr fixed operator-(const fixed&);
   friend constexpr fixed operator+(const fixed&, const fixed&);
   friend constexpr fixed operator-(const fixed&, const fixed&);
+  friend constexpr fixed operator%(const fixed&, const fixed&);
   friend constexpr fixed operator*(const fixed&, const fixed&);
   friend constexpr fixed operator/(const fixed&, const fixed&);
   friend constexpr fixed abs(const fixed&);
@@ -104,6 +105,11 @@ inline constexpr fixed operator+(const fixed& a, const fixed& b) {
 
 inline constexpr fixed operator-(const fixed& a, const fixed& b) {
   return fixed::from_internal(a.value_ - b.value_);
+}
+
+inline constexpr fixed operator%(const fixed& a, const fixed& b) {
+  std::int64_t sign = detail::fixed_sgn(a.value_, b.value_);
+  return fixed::from_internal(sign * (detail::fixed_abs(a.value_) % detail::fixed_abs(b.value_)));
 }
 
 inline constexpr fixed operator*(const fixed& a, const fixed& b) {

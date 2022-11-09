@@ -1,10 +1,12 @@
 cc_library(
-  name = "shapes",
+  name = "legacy",
   hdrs = [
-    "ball.h",
+    "attachment_point.h",
+    "ball_collider.h",
     "box.h",
     "line.h",
     "ngon.h",
+    "polyarc.h",
   ],
   deps = [
     "//game/logic/geometry",
@@ -13,5 +15,6 @@ cc_library(
     "//game/common:math",
     "@glm",
   ],
-  visibility = ["//game/logic/v0:__subpackages__"],
+  # TODO: restrict to //game/logic/legacy.
+  visibility = ["//game/logic:__subpackages__"],
 )

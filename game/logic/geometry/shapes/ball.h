@@ -1,9 +1,9 @@
-#ifndef II_GAME_LOGIC_GEOMETRY_SHAPES_BALL_COLLIDER_H
-#define II_GAME_LOGIC_GEOMETRY_SHAPES_BALL_COLLIDER_H
+#ifndef II_GAME_LOGIC_GEOMETRY_SHAPES_BALL_H
+#define II_GAME_LOGIC_GEOMETRY_SHAPES_BALL_H
 #include "game/logic/geometry/expressions.h"
-#include "game/logic/geometry/shapes/base.h"
 
 namespace ii::geom {
+inline namespace shapes {
 
 struct ball_collider_data : shape_data_base {
   using shape_data_base::iterate;
@@ -19,11 +19,6 @@ struct ball_collider_data : shape_data_base {
 
   constexpr void iterate(iterate_flags_t, const Transform auto&, const FlagFunction auto& f) const {
     std::invoke(f, flags);
-  }
-
-  constexpr void
-  iterate(iterate_centres_t, const Transform auto& t, const PointFunction auto& f) const {
-    std::invoke(f, *t, glm::vec4{0.f});
   }
 };
 
@@ -47,6 +42,7 @@ constexpr auto evaluate(ball_collider_eval<Radius, Flags>, const auto& params) {
 template <fixed Radius, shape_flag Flags>
 using ball_collider = constant<make_ball_collider(Radius, Flags)>;
 
+}  // namespace shapes
 }  // namespace ii::geom
 
 #endif

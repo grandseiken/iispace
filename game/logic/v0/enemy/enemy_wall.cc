@@ -14,7 +14,8 @@ struct Square : ecs::component {
   static constexpr rumble_type kDestroyRumble = rumble_type::kLow;
   static constexpr fixed kSpeed = 1_fx + 3_fx / 4_fx;
   using shape = standard_transform<
-      geom::box_colour_p<12, 12, 2, shape_flag::kDangerous | shape_flag::kVulnerable>>;
+      geom::box_collider<vec2{12, 12}, shape_flag::kDangerous | shape_flag::kVulnerable>,
+      geom::box_colour_p<vec2{12, 12}, 2>>;
 
   std::tuple<vec2, fixed, glm::vec4>
   shape_parameters(const Transform& transform, const Health& health) const {
@@ -89,12 +90,12 @@ struct Wall : ecs::component {
 
   static constexpr std::uint32_t kTimer = 100;
   static constexpr fixed kSpeed = 1;
-  using shape = standard_transform<
-      geom::conditional_p<2,
-                          geom::box<12, 48, colour_hue360(120, .5f, .6f),
-                                    shape_flag::kDangerous | shape_flag::kWeakVulnerable>,
-                          geom::box<12, 48, colour_hue360(120, .5f, .6f),
-                                    shape_flag::kDangerous | shape_flag::kVulnerable>>>;
+  using shape = standard_transform<geom::conditional_p<
+      2,
+      geom::box_with_collider<vec2{12, 48}, geom::bline(colour_hue360(120, .5f, .6f)),
+                              geom::bfill(), shape_flag::kDangerous | shape_flag::kWeakVulnerable>,
+      geom::box_with_collider<vec2{12, 48}, geom::bline(colour_hue360(120, .5f, .6f)),
+                              geom::bfill(), shape_flag::kDangerous | shape_flag::kVulnerable>>>;
 
   Wall(const vec2& dir, bool anti) : dir{dir}, anti{anti} {}
   vec2 dir{0};

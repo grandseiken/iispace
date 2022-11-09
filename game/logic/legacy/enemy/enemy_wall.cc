@@ -1,4 +1,4 @@
-#include "game/logic/geometry/shapes/box.h"
+#include "game/logic/geometry/legacy/box.h"
 #include "game/logic/legacy/components.h"
 #include "game/logic/legacy/enemy/enemy.h"
 #include "game/logic/legacy/ship_template.h"

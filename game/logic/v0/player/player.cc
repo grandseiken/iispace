@@ -1,7 +1,6 @@
 #include "game/logic/v0/player/player.h"
 #include "game/logic/geometry/shapes/box.h"
 #include "game/logic/geometry/shapes/ngon.h"
-#include "game/logic/geometry/shapes/polyarc.h"
 #include "game/logic/sim/io/player.h"
 #include "game/logic/v0/components.h"
 #include "game/logic/v0/particles.h"
@@ -22,12 +21,13 @@ struct PlayerLogic : ecs::component {
   static constexpr std::uint32_t kShotTimer = 5;
 
   using box_shapes =
-      geom::translate<8, 0, geom::rotate_eval<geom::negate_p<1>, geom::box_colour_p<2, 2, 2>>,
-                      geom::rotate_eval<geom::negate_p<1>, geom::box_colour_p<1, 1, 3>>,
-                      geom::rotate_eval<geom::negate_p<1>, geom::box_colour_p<3, 3, 3>>>;
+      geom::translate<8, 0, geom::rotate_eval<geom::negate_p<1>, geom::box_colour_p<vec2{2, 2}, 2>>,
+                      geom::rotate_eval<geom::negate_p<1>, geom::box_colour_p<vec2{1, 1}, 3>>,
+                      geom::rotate_eval<geom::negate_p<1>, geom::box_colour_p<vec2{3, 3}, 3>>>;
   using shape =
-      standard_transform<geom::ngon_colour_p<18, 3, 2>,
-                         geom::rotate<fixed_c::pi, geom::ngon_colour_p<9, 3, 2>>, box_shapes>;
+      standard_transform<geom::ngon_colour_p<geom::nd(18, 3), 2>,
+                         geom::rotate<fixed_c::pi, geom::ngon_colour_p<geom::nd(9, 3), 2>>,
+                         box_shapes>;
 
   std::tuple<vec2, fixed, glm::vec4, glm::vec4>
   shape_parameters(const Player& pc, const Transform& transform) const {

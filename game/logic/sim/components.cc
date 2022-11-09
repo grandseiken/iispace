@@ -8,6 +8,7 @@ void Render::render_shapes(ecs::const_handle h, render::entity_state& state, boo
   // TODO: this is basically hard to control. clear_trails is a hack due to
   // not being able to specify which shape is which from frame to frame.
   // What we should do is having some way of outputting independent shape _groups_ per-entity.
+  // TODO: also, trails should be reset on entity creation!
   if (clear_trails) {
     state.trails.clear();
     clear_trails = false;

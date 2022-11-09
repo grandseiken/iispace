@@ -18,7 +18,7 @@ cc_library(
     "//game/logic/legacy/player:powerup",
     "//game/logic/legacy:components",
     "//game/logic/legacy:ship_template",
-    "//game/logic/geometry/shapes",
+    "//game/logic/geometry/legacy",
     "//game/logic/sim:sim_interface",
     "//game/logic/sim/io:events",
     "//game/logic/sim/io:render",

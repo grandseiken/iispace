@@ -1,5 +1,5 @@
-#include "game/logic/geometry/shapes/ball_collider.h"
-#include "game/logic/geometry/shapes/ngon.h"
+#include "game/logic/geometry/legacy/ball_collider.h"
+#include "game/logic/geometry/legacy/ngon.h"
 #include "game/logic/legacy/enemy/enemy.h"
 #include "game/logic/legacy/ship_template.h"
 #include <algorithm>

@@ -1,6 +1,5 @@
 #include "game/logic/v0/player/powerup.h"
 #include "game/logic/geometry/node_conditional.h"
-#include "game/logic/geometry/shapes/box.h"
 #include "game/logic/geometry/shapes/ngon.h"
 #include "game/logic/sim/io/player.h"
 #include "game/logic/sim/sim_interface.h"
@@ -47,9 +46,11 @@ struct PlayerBubble : ecs::component {
 
   using shape = geom::translate_p<
       0,
-      geom::rotate_eval<geom::multiply_p<-2_fx, 1>,
-                        geom::polygon_colour_p<14, 8, 3, shape_flag::kVulnerable>>,
-      geom::rotate_p<1, geom::polygon_colour_p<18, 3, 2>>>;
+      geom::rotate_eval<
+          geom::multiply_p<-2_fx, 1>,
+          geom::compound<geom::ngon_collider<geom::nd(14, 8), shape_flag::kVulnerable>,
+                         geom::ngon_colour_p<geom::nd(14, 8), 3>>>,
+      geom::rotate_p<1, geom::ngon_colour_p<geom::nd(18, 3), 2>>>;
   std::tuple<vec2, fixed, glm::vec4, glm::vec4> shape_parameters(const Transform& transform) const {
     return {transform.centre, transform.rotation, player_colour(player_number), fade(tick_count)};
   }
@@ -76,8 +77,8 @@ struct ShieldPowerup : ecs::component {
   static constexpr float kZIndex = -2.f;
   static constexpr std::uint32_t kRotateTime = 150;
 
-  using shape =
-      standard_transform<geom::polygon_colour_p<14, 6, 2>, geom::polygon<11, 6, glm::vec4{1.f}>>;
+  using shape = standard_transform<geom::ngon_colour_p<geom::nd(14, 6), 2>,
+                                   geom::ngon<geom::nd(11, 6), geom::nline(glm::vec4{1.f})>>;
 
   std::tuple<vec2, fixed, glm::vec4> shape_parameters(const Transform& transform) const {
     return {transform.centre, transform.rotation, fade(timer)};
@@ -143,8 +144,9 @@ struct BombPowerup : ecs::component {
   static constexpr float kZIndex = -2.f;
   static constexpr std::uint32_t kRotateTime = 150;
 
-  using shape = standard_transform<geom::polygon_colour_p<14, 6, 2>,
-                                   geom::rotate_p<1, geom::polygon<5, 6, glm::vec4{1.f}>>>;
+  using shape = standard_transform<
+      geom::ngon_colour_p<geom::nd(14, 6), 2>,
+      geom::rotate_p<1, geom::ngon<geom::nd(5, 6), geom::nline(glm::vec4{1.f})>>>;
 
   std::tuple<vec2, fixed, glm::vec4> shape_parameters(const Transform& transform) const {
     return {transform.centre, transform.rotation, fade(timer)};

@@ -1,6 +1,6 @@
+#include "game/logic/geometry/legacy/line.h"
+#include "game/logic/geometry/legacy/ngon.h"
 #include "game/logic/geometry/node_for_each.h"
-#include "game/logic/geometry/shapes/line.h"
-#include "game/logic/geometry/shapes/ngon.h"
 #include "game/logic/legacy/boss/boss_internal.h"
 #include "game/logic/legacy/enemy/enemy.h"
 #include "game/logic/legacy/player/powerup.h"

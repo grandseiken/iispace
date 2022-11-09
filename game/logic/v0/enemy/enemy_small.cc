@@ -23,15 +23,16 @@ struct Follow : ecs::component {
   static constexpr std::uint32_t kBigWidth = 22;
   static constexpr std::uint32_t kHugeWidth = 33;
 
-  using small_shape =
-      standard_transform<geom::polygon<11, 4, colour_hue360(270, .6f),
-                                       shape_flag::kDangerous | shape_flag::kVulnerable>>;
-  using big_shape =
-      standard_transform<geom::polygon<22, 4, colour_hue360(270, .6f),
-                                       shape_flag::kDangerous | shape_flag::kVulnerable>>;
-  using huge_shape =
-      standard_transform<geom::polygon<33, 4, colour_hue360(270, .6f),
-                                       shape_flag::kDangerous | shape_flag::kVulnerable>>;
+  static constexpr auto c = colour_hue360(270, .6f);
+  using small_shape = standard_transform<
+      geom::ngon_with_collider<geom::nd(kSmallWidth, 4), geom::nline(c), geom::nfill(),
+                               shape_flag::kDangerous | shape_flag::kVulnerable>>;
+  using big_shape = standard_transform<
+      geom::ngon_with_collider<geom::nd(kBigWidth, 4), geom::nline(c), geom::nfill(),
+                               shape_flag::kDangerous | shape_flag::kVulnerable>>;
+  using huge_shape = standard_transform<
+      geom::ngon_with_collider<geom::nd(kHugeWidth, 4), geom::nline(c), geom::nfill(),
+                               shape_flag::kDangerous | shape_flag::kVulnerable>>;
 
   Follow(std::uint32_t size, std::optional<vec2> direction, const vec2& extra_velocity)
   : size{size}
@@ -186,12 +187,13 @@ struct Chaser : ecs::component {
   static constexpr std::uint32_t kSmallWidth = 11;
   static constexpr std::uint32_t kBigWidth = 18;
 
-  using small_shape =
-      standard_transform<geom::polygram<11, 4, colour_hue360(210, .6f),
-                                        shape_flag::kDangerous | shape_flag::kVulnerable>>;
-  using big_shape =
-      standard_transform<geom::polygram<18, 4, colour_hue360(210, .6f),
-                                        shape_flag::kDangerous | shape_flag::kVulnerable>>;
+  static constexpr auto c = colour_hue360(210, .6f);
+  using small_shape = standard_transform<geom::ngon_with_collider<
+      geom::nd(kSmallWidth, 4), geom::nline(geom::ngon_style::kPolygram, c), geom::nfill(),
+      shape_flag::kDangerous | shape_flag::kVulnerable>>;
+  using big_shape = standard_transform<
+      geom::ngon_with_collider<geom::nd(kBigWidth, 4), geom::nline(geom::ngon_style::kPolygram, c),
+                               geom::nfill(), shape_flag::kDangerous | shape_flag::kVulnerable>>;
 
   Chaser(std::uint32_t size, std::uint32_t stagger) : timer{kTime - stagger}, size{size} {}
   std::uint32_t timer = 0;

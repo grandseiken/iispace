@@ -1,13 +1,13 @@
-#ifndef II_GAME_LOGIC_GEOMETRY_SHAPES_POLYARC_H
-#define II_GAME_LOGIC_GEOMETRY_SHAPES_POLYARC_H
+#ifndef II_GAME_LOGIC_GEOMETRY_LEGACY_POLYARC_H
+#define II_GAME_LOGIC_GEOMETRY_LEGACY_POLYARC_H
 #include "game/logic/geometry/expressions.h"
-#include "game/logic/geometry/shapes/base.h"
 #include "game/logic/sim/io/render.h"
 #include <glm/glm.hpp>
 #include <cstddef>
 #include <cstdint>
 
 namespace ii::geom {
+inline namespace legacy {
 
 struct polyarc_data : shape_data_base {
   using shape_data_base::iterate;
@@ -94,6 +94,7 @@ template <fixed Radius, std::uint32_t Sides, std::uint32_t Segments, std::size_t
 using polyarc_colour_p = polyarc_eval<constant<Radius>, constant<Sides>, constant<Segments>,
                                       parameter<ParameterIndex>, constant<Flags>>;
 
+}  // namespace legacy
 }  // namespace ii::geom
 
 #endif
