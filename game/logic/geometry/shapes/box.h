@@ -12,19 +12,22 @@ inline namespace shapes {
 
 struct box_line_style {
   glm::vec4 colour{0.f};
+  float z = 0.f;
   float width = 1.f;
 };
 
 struct box_fill_style {
   glm::vec4 colour{0.f};
+  float z = 0.f;
 };
 
-constexpr box_line_style bline(const glm::vec4& colour = glm::vec4{0.f}, float width = 1.f) {
-  return {.colour = colour, .width = width};
+constexpr box_line_style
+bline(const glm::vec4& colour = glm::vec4{0.f}, float z = 0.f, float width = 1.f) {
+  return {.colour = colour, .z = z, .width = width};
 }
 
-constexpr box_fill_style bfill(const glm::vec4& colour = glm::vec4{0.f}) {
-  return {colour};
+constexpr box_fill_style bfill(const glm::vec4& colour = glm::vec4{0.f}, float z = 0.f) {
+  return {.colour = colour, .z = z};
 }
 
 //////////////////////////////////////////////////////////////////////////////////
@@ -77,10 +80,10 @@ struct box_data : shape_data_base {
     auto c = *t.translate({-dimensions.x, -dimensions.y});
     auto d = *t.translate({dimensions.x, -dimensions.y});
 
-    std::invoke(f, a, b, line_style.colour);
-    std::invoke(f, b, c, line_style.colour);
-    std::invoke(f, c, d, line_style.colour);
-    std::invoke(f, d, a, line_style.colour);
+    std::invoke(f, a, b, line_style.colour, line_style.width);
+    std::invoke(f, b, c, line_style.colour, line_style.width);
+    std::invoke(f, c, d, line_style.colour, line_style.width);
+    std::invoke(f, d, a, line_style.colour, line_style.width);
   }
 
   constexpr void

@@ -41,16 +41,17 @@ void wobble_movement(SimInterface& sim, const Transform& transform, vec2& dir,
 struct PlayerBubble : ecs::component {
   static constexpr fixed kSpeed = 1;
   static constexpr fixed kBoundingWidth = 16;
-  static constexpr float kZIndex = -2.f;
   static constexpr std::uint32_t kRotateTime = 120;
 
+  static constexpr auto z = 32.f;
   using shape = geom::translate_p<
       0,
       geom::rotate_eval<
           geom::multiply_p<-2_fx, 1>,
           geom::compound<geom::ngon_collider<geom::nd(14, 8), shape_flag::kVulnerable>,
-                         geom::ngon_colour_p<geom::nd(14, 8), 3>>>,
-      geom::rotate_p<1, geom::ngon_colour_p<geom::nd(18, 3), 2>>>;
+                         geom::ngon_colour_p<geom::nd(14, 8), 3, geom::nline(glm::vec4{0.f}, z)>>>,
+      geom::rotate_p<
+          1, geom::ngon_colour_p<geom::nd(18, 3), 2, geom::nline(glm::vec4{0.f}, z, 1.5f)>>>;
   std::tuple<vec2, fixed, glm::vec4, glm::vec4> shape_parameters(const Transform& transform) const {
     return {transform.centre, transform.rotation, player_colour(player_number), fade(tick_count)};
   }
@@ -74,11 +75,12 @@ DEBUG_STRUCT_TUPLE(PlayerBubble, player_number, tick_count, dir, first_frame, ro
 
 struct ShieldPowerup : ecs::component {
   static constexpr fixed kSpeed = 3_fx / 4_fx;
-  static constexpr float kZIndex = -2.f;
   static constexpr std::uint32_t kRotateTime = 150;
 
-  using shape = standard_transform<geom::ngon_colour_p<geom::nd(14, 6), 2>,
-                                   geom::ngon<geom::nd(11, 6), geom::nline(glm::vec4{1.f})>>;
+  static constexpr auto z = -2.f;
+  using shape =
+      standard_transform<geom::ngon_colour_p<geom::nd(14, 6), 2, geom::nline(glm::vec4{0.f}, z)>,
+                         geom::ngon<geom::nd(11, 6), geom::nline(glm::vec4{1.f}, z, 1.5f)>>;
 
   std::tuple<vec2, fixed, glm::vec4> shape_parameters(const Transform& transform) const {
     return {transform.centre, transform.rotation, fade(timer)};
@@ -141,12 +143,12 @@ DEBUG_STRUCT_TUPLE(ShieldPowerup, timer, dir, first_frame, rotate_anti);
 struct BombPowerup : ecs::component {
   static constexpr fixed kSpeed = 3_fx / 4_fx;
   static constexpr fixed kEdgeDistance = 32_fx;
-  static constexpr float kZIndex = -2.f;
   static constexpr std::uint32_t kRotateTime = 150;
 
+  static constexpr auto z = -2.f;
   using shape = standard_transform<
-      geom::ngon_colour_p<geom::nd(14, 6), 2>,
-      geom::rotate_p<1, geom::ngon<geom::nd(5, 6), geom::nline(glm::vec4{1.f})>>>;
+      geom::ngon_colour_p<geom::nd(14, 6), 2, geom::nline(glm::vec4{0.f}, z)>,
+      geom::rotate_p<1, geom::ngon<geom::nd(5, 6), geom::nline(glm::vec4{1.f}, z, 1.5f)>>>;
 
   std::tuple<vec2, fixed, glm::vec4> shape_parameters(const Transform& transform) const {
     return {transform.centre, transform.rotation, fade(timer)};

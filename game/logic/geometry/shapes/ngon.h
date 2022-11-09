@@ -20,27 +20,31 @@ struct ngon_dimensions {
 struct ngon_line_style {
   ngon_style style = ngon_style::kPolygon;
   glm::vec4 colour{0.f};
+  float z = 0.f;
   float width = 1.f;
 };
 
 struct ngon_fill_style {
   glm::vec4 colour{0.f};
+  float z = 0.f;
 };
 
 constexpr ngon_dimensions nd(fixed radius, std::uint32_t sides, std::uint32_t segments = 0) {
   return {radius, sides, segments ? segments : sides};
 }
 
-constexpr ngon_line_style nline(const glm::vec4& colour = glm::vec4{0.f}, float width = 1.f) {
-  return {.colour = colour, .width = width};
+constexpr ngon_line_style
+nline(const glm::vec4& colour = glm::vec4{0.f}, float z = 0.f, float width = 1.f) {
+  return {.colour = colour, .z = z, .width = width};
 }
 
-constexpr ngon_line_style nline(ngon_style style, const glm::vec4& colour, float width = 1.f) {
-  return {.style = style, .colour = colour, .width = width};
+constexpr ngon_line_style
+nline(ngon_style style, const glm::vec4& colour, float z = 0.f, float width = 1.f) {
+  return {.style = style, .colour = colour, .z = z, .width = width};
 }
 
-constexpr ngon_fill_style nfill(const glm::vec4& colour = glm::vec4{0.f}) {
-  return {colour};
+constexpr ngon_fill_style nfill(const glm::vec4& colour = glm::vec4{0.f}, float z = 0.f) {
+  return {.colour = colour, .z = z};
 }
 
 //////////////////////////////////////////////////////////////////////////////////
@@ -105,13 +109,13 @@ struct ngon_data : shape_data_base {
     if (line_style.style != ngon_style::kPolygram) {
       for (std::uint32_t i = 0; i < dimensions.segments; ++i) {
         std::invoke(f, vertex(i), line_style.style == ngon_style::kPolygon ? vertex(i + 1) : t.v,
-                    line_style.colour);
+                    line_style.colour, line_style.width);
       }
       return;
     }
     for (std::size_t i = 0; i < dimensions.segments; ++i) {
       for (std::size_t j = i + 1; j < dimensions.segments; ++j) {
-        std::invoke(f, vertex(i), vertex(j), line_style.colour);
+        std::invoke(f, vertex(i), vertex(j), line_style.colour, line_style.width);
       }
     }
   }

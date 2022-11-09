@@ -18,9 +18,6 @@
 namespace ii::legacy {
 
 using v0::get_shape_parameters;
-using v0::render_entity_shape;
-using v0::render_entity_shape_override;
-using v0::render_shape;
 using v0::shape_check_point;
 using v0::ship_check_point;
 using v0::standard_transform;
@@ -64,7 +61,7 @@ void explode_entity_shapes(ecs::const_handle h, EmitHandle& e,
 }
 
 inline void add_line_particle(EmitHandle& e, const glm::vec2& source, const glm::vec2& a,
-                              const glm::vec2& b, const glm::vec4& c, std::uint32_t time) {
+                              const glm::vec2& b, const glm::vec4& c, float w, std::uint32_t time) {
   auto& r = e.random();
   auto position = (a + b) / 2.f;
   auto velocity = (2.f + .5f * r.fixed().to_float()) * normalise(position - source) +
@@ -84,6 +81,7 @@ inline void add_line_particle(EmitHandle& e, const glm::vec2& source, const glm:
               .radius = diameter / 2.f,
               .rotation = angle(b - a) - angular_velocity,
               .angular_velocity = angular_velocity,
+              .width = w,
           },
       .end_time = time + r.uint(time),
       .flash_time = 3,
@@ -100,8 +98,8 @@ void destruct_lines(EmitHandle& e, const auto& parameters, const vec2& source,
   // motion trails)?
   // Make destruct particles similarly velocified?
   geom::iterate(S{}, geom::iterate_lines, parameters, geom::transform{},
-                [&](const vec2& a, const vec2& b, const glm::vec4& c) {
-                  add_line_particle(e, f_source, to_float(a), to_float(b), c, time);
+                [&](const vec2& a, const vec2& b, const glm::vec4& c, float w) {
+                  add_line_particle(e, f_source, to_float(a), to_float(b), c, w, time);
                 });
 }
 
@@ -136,6 +134,51 @@ shape_flag shape_check_point_legacy(const auto& parameters, const vec2& v, shape
 template <ecs::Component Logic, geom::ShapeNode S = typename Logic::shape>
 shape_flag ship_check_point_legacy(ecs::const_handle h, const vec2& v, shape_flag mask) {
   return shape_check_point_legacy<S>(get_shape_parameters<Logic>(h), v, mask);
+}
+
+//////////////////////////////////////////////////////////////////////////////////
+// Rendering.
+//////////////////////////////////////////////////////////////////////////////////
+template <geom::ShapeNode S>
+void render_shape(std::vector<render::shape>& output, const auto& parameters,
+                  std::optional<float> z_index = std::nullopt, const geom::transform& t = {},
+                  const std::optional<glm::vec4>& c_override = std::nullopt,
+                  const std::optional<std::size_t>& c_override_max_index = std::nullopt) {
+  std::size_t i = 0;
+  geom::transform transform = t;
+  transform.index_out = &i;
+  geom::iterate(S{}, geom::iterate_shapes, parameters, transform, [&](const render::shape& shape) {
+    render::shape shape_copy = shape;
+    if (!shape.z_index) {
+      shape_copy.z_index = z_index;
+    }
+    if (c_override && (!c_override_max_index || i < *c_override_max_index)) {
+      shape_copy.colour = glm::vec4{c_override->r, c_override->g, c_override->b, shape.colour.a};
+    }
+    output.emplace_back(shape_copy);
+  });
+}
+
+template <geom::ShapeNode S>
+void render_entity_shape_override(std::vector<render::shape>& output, const Health* health,
+                                  const auto& parameters,
+                                  std::optional<float> z_index = std::nullopt,
+                                  const geom::transform& t = {},
+                                  const std::optional<glm::vec4>& colour_override = std::nullopt) {
+  std::optional<glm::vec4> c_override = colour_override;
+  std::optional<std::size_t> c_override_max_index;
+  if (!colour_override && health && health->hit_timer) {
+    c_override = glm::vec4{1.f};
+    c_override_max_index = health->hit_flash_ignore_index;
+  }
+  render_shape<S>(output, parameters, z_index, t, c_override, c_override_max_index);
+}
+
+template <ecs::Component Logic, geom::ShapeNode S = typename Logic::shape>
+void render_entity_shape(ecs::const_handle h, const Health* health,
+                         std::vector<render::shape>& output) {
+  render_entity_shape_override<S>(output, health, get_shape_parameters<Logic>(h), Logic::kZIndex,
+                                  {}, std::nullopt);
 }
 
 //////////////////////////////////////////////////////////////////////////////////

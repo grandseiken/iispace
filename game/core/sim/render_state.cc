@@ -123,7 +123,7 @@ void RenderState::update(SimInputAdapter* input) {
     if (std::holds_alternative<dot_particle>(p.data)) {
       p.position += p.velocity;
     } else if (auto* d = std::get_if<line_particle>(&p.data)) {
-      if (p.time >= p.end_time / 3 && p.time > 4 &&
+      if (p.time >= p.end_time / 3 && p.time > 4 && d->radius > 2 * d->width &&
           !engine_.uint(50u - std::min(48u, static_cast<std::uint32_t>(d->radius)))) {
         auto v = from_polar(d->rotation, d->radius);
 
@@ -261,7 +261,9 @@ void RenderState::render(render::GlRenderer& r) const {
           .trail = render::motion_trail{.prev_origin = p.position - p.velocity,
                                         .prev_rotation = d->rotation - d->angular_velocity,
                                         .prev_colour = colour},
-          .data = render::line{.radius = d->radius, .line_width = glm::mix(1.f, 2.f, t)},
+          .data = render::line{.radius = d->radius,
+                               .line_width = d->width * glm::mix(1.f, 2.f, t),
+                               .sides = 3 + static_cast<std::uint32_t>(.5f + d->width)},
       });
     }
   }

@@ -14,20 +14,20 @@ namespace {
 
 struct PlayerLogic : ecs::component {
   static constexpr fixed kPlayerSpeed = 5_fx * 15_fx / 16_fx;
-  static constexpr float kZIndex = 96.f;
 
   static constexpr std::uint32_t kReviveTime = 100;
   static constexpr std::uint32_t kShieldTime = 50;
   static constexpr std::uint32_t kShotTimer = 5;
 
-  using box_shapes =
-      geom::translate<8, 0, geom::rotate_eval<geom::negate_p<1>, geom::box_colour_p<vec2{2, 2}, 2>>,
-                      geom::rotate_eval<geom::negate_p<1>, geom::box_colour_p<vec2{1, 1}, 3>>,
-                      geom::rotate_eval<geom::negate_p<1>, geom::box_colour_p<vec2{3, 3}, 3>>>;
-  using shape =
-      standard_transform<geom::ngon_colour_p<geom::nd(18, 3), 2>,
-                         geom::rotate<fixed_c::pi, geom::ngon_colour_p<geom::nd(9, 3), 2>>,
-                         box_shapes>;
+  static constexpr auto z = 96.f;
+  static constexpr auto style = geom::bline(glm::vec4{0.f}, z);
+  using box_shapes = geom::translate<
+      8, 0, geom::rotate_eval<geom::negate_p<1>, geom::box_colour_p<vec2{2, 2}, 2, style>>,
+      geom::rotate_eval<geom::negate_p<1>, geom::box_colour_p<vec2{1, 1}, 3, style>>,
+      geom::rotate_eval<geom::negate_p<1>, geom::box_colour_p<vec2{3, 3}, 3, style>>>;
+  using shape = standard_transform<
+      geom::ngon_colour_p<geom::nd(18, 3), 2, geom::nline(glm::vec4{0.f}, z, 1.5f)>,
+      geom::rotate<fixed_c::pi, geom::ngon_colour_p<geom::nd(9, 3), 2>>, box_shapes>;
 
   std::tuple<vec2, fixed, glm::vec4, glm::vec4>
   shape_parameters(const Player& pc, const Transform& transform) const {
@@ -202,7 +202,7 @@ struct PlayerLogic : ecs::component {
             .origin = to_float(transform.centre),
             .rotation = rotation + static_cast<float>(j) * 2.f * glm::pi<float>() / 3.f,
             .colour = glm::vec4{1.f, 1.f, 1.f, .75f},
-            .z_index = 95.f,
+            .z_index = 60.f,
             .data = render::polyarc{.radius = 20.f + 1.5f * i, .sides = 18, .segments = 4},
         });
       }
@@ -215,7 +215,7 @@ struct PlayerLogic : ecs::component {
           .origin = to_float(transform.centre + rotate(v, transform.rotation)),
           .rotation = transform.rotation.to_float(),
           .colour = glm::vec4{1.f},
-          .z_index = 95.5f,
+          .z_index = 62.f,
           .data = render::ngon{.radius = 3.f, .sides = 6},
       });
     }

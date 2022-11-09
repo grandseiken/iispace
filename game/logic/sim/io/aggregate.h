@@ -93,6 +93,7 @@ struct line_particle {
   float radius = 0.f;
   float rotation = 0.f;
   float angular_velocity = 0.f;
+  float width = 1.f;
 };
 
 using particle_data = std::variant<dot_particle, line_particle>;

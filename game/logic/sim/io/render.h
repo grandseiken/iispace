@@ -64,12 +64,14 @@ struct shape {
   bool disable_trail = false;
   shape_data data;
 
-  static shape line(const glm::vec2& a, const glm::vec2& b, const glm::vec4& c) {
+  static shape line(const glm::vec2& a, const glm::vec2& b, const glm::vec4& c, float z = 0.f,
+                    float width = 1.f) {
     return shape{
         .origin = (a + b) / 2.f,
         .rotation = angle(b - a),
         .colour = c,
-        .data = render::line{.radius = distance(a, b) / 2.f},
+        .z_index = z,
+        .data = render::line{.radius = distance(a, b) / 2.f, .line_width = width},
     };
   }
 };

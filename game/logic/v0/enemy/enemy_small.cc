@@ -13,7 +13,6 @@ void spawn_chaser(SimInterface& sim, std::uint32_t size, const vec2& position, b
                   fixed rotation = 0, std::uint32_t stagger = 0);
 
 struct Follow : ecs::component {
-  static constexpr float kZIndex = 8.f;
   static constexpr sound kDestroySound = sound::kEnemyShatter;
   static constexpr rumble_type kDestroyRumble = rumble_type::kSmall;
 
@@ -23,16 +22,17 @@ struct Follow : ecs::component {
   static constexpr std::uint32_t kBigWidth = 22;
   static constexpr std::uint32_t kHugeWidth = 33;
 
+  static constexpr auto z = 8.f;
   static constexpr auto c = colour_hue360(270, .6f);
-  using small_shape = standard_transform<
-      geom::ngon_with_collider<geom::nd(kSmallWidth, 4), geom::nline(c), geom::nfill(),
-                               shape_flag::kDangerous | shape_flag::kVulnerable>>;
-  using big_shape = standard_transform<
-      geom::ngon_with_collider<geom::nd(kBigWidth, 4), geom::nline(c), geom::nfill(),
-                               shape_flag::kDangerous | shape_flag::kVulnerable>>;
-  using huge_shape = standard_transform<
-      geom::ngon_with_collider<geom::nd(kHugeWidth, 4), geom::nline(c), geom::nfill(),
-                               shape_flag::kDangerous | shape_flag::kVulnerable>>;
+  using small_shape = standard_transform<geom::ngon_with_collider<
+      geom::nd(kSmallWidth, 4), geom::nline(c, z, 1.5f), geom::nfill(glm::vec4{0.f}, z),
+      shape_flag::kDangerous | shape_flag::kVulnerable>>;
+  using big_shape = standard_transform<geom::ngon_with_collider<
+      geom::nd(kBigWidth, 4), geom::nline(c, z, 1.5f), geom::nfill(glm::vec4{0.f}, z),
+      shape_flag::kDangerous | shape_flag::kVulnerable>>;
+  using huge_shape = standard_transform<geom::ngon_with_collider<
+      geom::nd(kHugeWidth, 4), geom::nline(c, z, 1.5f), geom::nfill(glm::vec4{0.f}, z),
+      shape_flag::kDangerous | shape_flag::kVulnerable>>;
 
   Follow(std::uint32_t size, std::optional<vec2> direction, const vec2& extra_velocity)
   : size{size}
@@ -178,7 +178,6 @@ void spawn_follow(SimInterface& sim, std::uint32_t size, const vec2& position,
 }
 
 struct Chaser : ecs::component {
-  static constexpr float kZIndex = 8.f;
   static constexpr sound kDestroySound = sound::kEnemyShatter;
   static constexpr rumble_type kDestroyRumble = rumble_type::kSmall;
 
@@ -187,13 +186,14 @@ struct Chaser : ecs::component {
   static constexpr std::uint32_t kSmallWidth = 11;
   static constexpr std::uint32_t kBigWidth = 18;
 
+  static constexpr auto z = 8.f;
   static constexpr auto c = colour_hue360(210, .6f);
   using small_shape = standard_transform<geom::ngon_with_collider<
-      geom::nd(kSmallWidth, 4), geom::nline(geom::ngon_style::kPolygram, c), geom::nfill(),
-      shape_flag::kDangerous | shape_flag::kVulnerable>>;
-  using big_shape = standard_transform<
-      geom::ngon_with_collider<geom::nd(kBigWidth, 4), geom::nline(geom::ngon_style::kPolygram, c),
-                               geom::nfill(), shape_flag::kDangerous | shape_flag::kVulnerable>>;
+      geom::nd(kSmallWidth, 4), geom::nline(geom::ngon_style::kPolygram, c, z),
+      geom::nfill(glm::vec4{0.f}, z), shape_flag::kDangerous | shape_flag::kVulnerable>>;
+  using big_shape = standard_transform<geom::ngon_with_collider<
+      geom::nd(kBigWidth, 4), geom::nline(geom::ngon_style::kPolygram, c, z),
+      geom::nfill(glm::vec4{0.f}, z), shape_flag::kDangerous | shape_flag::kVulnerable>>;
 
   Chaser(std::uint32_t size, std::uint32_t stagger) : timer{kTime - stagger}, size{size} {}
   std::uint32_t timer = 0;

@@ -14,7 +14,7 @@ struct line_data : shape_data_base {
 
   constexpr void
   iterate(iterate_lines_t, const Transform auto& t, const LineFunction auto& f) const {
-    std::invoke(f, *t.translate(a), *t.translate(b), colour);
+    std::invoke(f, *t.translate(a), *t.translate(b), colour, 1.f);
   }
 
   constexpr void

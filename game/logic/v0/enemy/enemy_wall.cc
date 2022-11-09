@@ -9,13 +9,14 @@ namespace {
 
 struct Square : ecs::component {
   static constexpr std::uint32_t kBoundingWidth = 18;
-  static constexpr float kZIndex = -8.f;
   static constexpr sound kDestroySound = sound::kEnemyDestroy;
   static constexpr rumble_type kDestroyRumble = rumble_type::kLow;
   static constexpr fixed kSpeed = 1_fx + 3_fx / 4_fx;
+
+  static constexpr auto z = -8.f;
   using shape = standard_transform<
       geom::box_collider<vec2{12, 12}, shape_flag::kDangerous | shape_flag::kVulnerable>,
-      geom::box_colour_p<vec2{12, 12}, 2>>;
+      geom::box_colour_p<vec2{12, 12}, 2, geom::bline(glm::vec4{0.f}, z, 1.5f)>>;
 
   std::tuple<vec2, fixed, glm::vec4>
   shape_parameters(const Transform& transform, const Health& health) const {
@@ -84,18 +85,21 @@ DEBUG_STRUCT_TUPLE(Square, dir, timer, invisible_flash);
 
 struct Wall : ecs::component {
   static constexpr std::uint32_t kBoundingWidth = 60;
-  static constexpr float kZIndex = -8.f;
   static constexpr sound kDestroySound = sound::kEnemyDestroy;
   static constexpr rumble_type kDestroyRumble = rumble_type::kLow;
 
   static constexpr std::uint32_t kTimer = 100;
   static constexpr fixed kSpeed = 1;
+
+  static constexpr auto z = -8.f;
   using shape = standard_transform<geom::conditional_p<
       2,
-      geom::box_with_collider<vec2{12, 48}, geom::bline(colour_hue360(120, .5f, .6f)),
-                              geom::bfill(), shape_flag::kDangerous | shape_flag::kWeakVulnerable>,
-      geom::box_with_collider<vec2{12, 48}, geom::bline(colour_hue360(120, .5f, .6f)),
-                              geom::bfill(), shape_flag::kDangerous | shape_flag::kVulnerable>>>;
+      geom::box_with_collider<vec2{12, 48}, geom::bline(colour_hue360(120, .5f, .6f), z, 1.75f),
+                              geom::bfill(glm::vec4{0.f}, z),
+                              shape_flag::kDangerous | shape_flag::kWeakVulnerable>,
+      geom::box_with_collider<vec2{12, 48}, geom::bline(colour_hue360(120, .5f, .6f), z, 1.75f),
+                              geom::bfill(glm::vec4{0.f}, z),
+                              shape_flag::kDangerous | shape_flag::kVulnerable>>>;
 
   Wall(const vec2& dir, bool anti) : dir{dir}, anti{anti} {}
   vec2 dir{0};
