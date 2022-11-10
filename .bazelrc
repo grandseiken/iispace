@@ -32,6 +32,7 @@ build:clang-common --copt=-Wno-deprecated-volatile
 build:clang-common --copt=-Wno-deprecated-non-prototype
 build:clang-common --cxxopt=-Wno-deprecated-enum-enum-conversion
 build:clang-common --cxxopt=-Wno-unused-command-line-argument
+build:clang-common --cxxopt=-Wno-ambiguous-reversed-operator
 
 # Windows configurations.
 build:msvc --config=windows-common
@@ -39,6 +40,7 @@ build:msvc --copt=/Zc:preprocessor
 build:msvc --copt=/wd5105
 build:msvc --copt=/experimental:deterministic
 build:msvc --linkopt=/experimental:deterministic
+build:msvc --@//:msvc
 
 build:clang-cl --config=windows-common
 build:clang-cl --config=clang-common

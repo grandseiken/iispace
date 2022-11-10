@@ -118,6 +118,15 @@ http_archive(
   url = "https://github.com/skaslev/gl3w/archive/5f8d7fd191ba22ff2b60c1106d7135bb9a335533.zip",
 )
 
+http_archive(
+  # MIT license, attribution required?
+  name = "fastnoise2",
+  build_file = "@//deps:fastnoise2.BUILD",
+  sha256 = "78706f4548557bcadeb8cc4aaed82dba6bb3188e34a1ce07c5df1f64da89be90",
+  strip_prefix = "FastNoise2-11072bc0dbe4f41ea87839dfed369ddfe7c3864a",
+  url = "https://github.com/Auburn/FastNoise2/archive/11072bc0dbe4f41ea87839dfed369ddfe7c3864a.zip",
+)
+
 ################################################################################
 # Media format dependencies
 ################################################################################

@@ -7,9 +7,20 @@ bool_flag(
   visibility = ["//visibility:public"],
 )
 
+bool_flag(
+  name = "msvc",
+  build_setting_default = False,
+  visibility = ["//visibility:public"],
+)
+
 config_setting(
   name = "steam_build",
   flag_values = {":steam": "true"},
+)
+
+config_setting(
+  name = "msvc_build",
+  flag_values = {":msvc": "true"},
 )
 
 # See https://github.com/hedronvision/bazel-compile-commands-extractor for setup.
