@@ -20,7 +20,7 @@ struct PlayerLogic : ecs::component {
   static constexpr std::uint32_t kShotTimer = 5;
 
   static constexpr auto z = 96.f;
-  static constexpr auto style = geom::bline(glm::vec4{0.f}, z);
+  static constexpr auto style = geom::sline(glm::vec4{0.f}, z);
   using box_shapes = geom::translate<
       8, 0, geom::rotate_eval<geom::negate_p<1>, geom::box_colour_p<vec2{2, 2}, 2, style>>,
       geom::rotate_eval<geom::negate_p<1>, geom::box_colour_p<vec2{1, 1}, 3, style>>,
@@ -203,7 +203,7 @@ struct PlayerLogic : ecs::component {
             .rotation = rotation + static_cast<float>(j) * 2.f * glm::pi<float>() / 3.f,
             .colour = glm::vec4{1.f, 1.f, 1.f, .75f},
             .z_index = 60.f,
-            .data = render::polyarc{.radius = 20.f + 1.5f * i, .sides = 18, .segments = 4},
+            .data = render::ngon{.radius = 20.f + 1.5f * i, .sides = 18, .segments = 4},
         });
       }
     }

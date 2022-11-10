@@ -447,29 +447,16 @@ void GlRenderer::render_shapes(coordinate_system ctype, std::span<const shape> s
       };
       if (p->style != ngon_style::kPolygram || p->sides <= 3) {
         add_polygon(p->style == ngon_style::kPolystar ? kStyleNgonPolystar : kStyleNgonPolygon,
-                    p->sides);
+                    p->segments);
       } else if (p->sides == 4) {
-        add_polygon(kStyleNgonPolygon, p->sides);
-        add_polygon(kStyleNgonPolystar, p->sides);
+        add_polygon(kStyleNgonPolygon, p->segments);
+        add_polygon(kStyleNgonPolystar, p->segments);
       } else {
-        add_polygon(kStyleNgonPolygon, p->sides);
+        add_polygon(kStyleNgonPolygon, p->segments);
         for (std::uint32_t i = 0; i + 2 < p->sides; ++i) {
           add_polygon(kStyleNgonPolygram, i);
         }
       }
-    } else if (const auto* p = std::get_if<render::polyarc>(&shape.data)) {
-      add_shape_data(
-          vertex_data{
-              .style = kStyleNgonPolygon,
-              .params = {p->sides, p->segments},
-              .rotation = shape.rotation,
-              .line_width = p->line_width,
-              .z_index = shape.z_index.value_or(0.f),
-              .position = shape.origin,
-              .dimensions = {p->radius, 0},
-              .colour = shape.colour,
-          },
-          shape.trail);
     } else if (const auto* p = std::get_if<render::box>(&shape.data)) {
       add_shape_data(
           vertex_data{

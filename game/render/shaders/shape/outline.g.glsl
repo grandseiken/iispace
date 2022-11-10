@@ -37,7 +37,7 @@ void emit_polygon(vec2 position, shape_data data) {
 
 void emit_odd_polystar(vec2 position, shape_data data) {
   polystar_data d = convert_polystar(position, data);
-  for (uint i = 0; i < d.sides; ++i) {
+  for (uint i = 0; i < d.segments; ++i) {
     polystar_outer a = polystar_outer_v(d, i);
     polystar_inner b = polystar_inner_v(d, i);
 
@@ -99,7 +99,7 @@ void main() {
     emit_polygon(position, v_in[0].data);
     break;
   case kStyleNgonPolystar:
-    if (v_in[0].data.params.x % 2 != 0) {
+    if (v_in[0].data.params.x % 2 != 0 || v_in[0].data.params.x != v_in[0].data.params.y) {
       emit_odd_polystar(position, v_in[0].data);
     } else {
       emit_even_polystar(position, v_in[0].data);

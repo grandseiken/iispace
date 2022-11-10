@@ -25,13 +25,13 @@ struct Follow : ecs::component {
   static constexpr auto z = 8.f;
   static constexpr auto c = colour_hue360(270, .6f);
   using small_shape = standard_transform<geom::ngon_with_collider<
-      geom::nd(kSmallWidth, 4), geom::nline(c, z, 1.5f), geom::nfill(glm::vec4{0.f}, z),
+      geom::nd(kSmallWidth, 4), geom::nline(c, z, 1.5f), geom::sfill(glm::vec4{0.f}, z),
       shape_flag::kDangerous | shape_flag::kVulnerable>>;
   using big_shape = standard_transform<geom::ngon_with_collider<
-      geom::nd(kBigWidth, 4), geom::nline(c, z, 1.5f), geom::nfill(glm::vec4{0.f}, z),
+      geom::nd(kBigWidth, 4), geom::nline(c, z, 1.5f), geom::sfill(glm::vec4{0.f}, z),
       shape_flag::kDangerous | shape_flag::kVulnerable>>;
   using huge_shape = standard_transform<geom::ngon_with_collider<
-      geom::nd(kHugeWidth, 4), geom::nline(c, z, 1.5f), geom::nfill(glm::vec4{0.f}, z),
+      geom::nd(kHugeWidth, 4), geom::nline(c, z, 1.5f), geom::sfill(glm::vec4{0.f}, z),
       shape_flag::kDangerous | shape_flag::kVulnerable>>;
 
   Follow(std::uint32_t size, std::optional<vec2> direction, const vec2& extra_velocity)
@@ -190,10 +190,10 @@ struct Chaser : ecs::component {
   static constexpr auto c = colour_hue360(210, .6f);
   using small_shape = standard_transform<geom::ngon_with_collider<
       geom::nd(kSmallWidth, 4), geom::nline(geom::ngon_style::kPolygram, c, z),
-      geom::nfill(glm::vec4{0.f}, z), shape_flag::kDangerous | shape_flag::kVulnerable>>;
+      geom::sfill(glm::vec4{0.f}, z), shape_flag::kDangerous | shape_flag::kVulnerable>>;
   using big_shape = standard_transform<geom::ngon_with_collider<
       geom::nd(kBigWidth, 4), geom::nline(geom::ngon_style::kPolygram, c, z),
-      geom::nfill(glm::vec4{0.f}, z), shape_flag::kDangerous | shape_flag::kVulnerable>>;
+      geom::sfill(glm::vec4{0.f}, z), shape_flag::kDangerous | shape_flag::kVulnerable>>;
 
   Chaser(std::uint32_t size, std::uint32_t stagger) : timer{kTime - stagger}, size{size} {}
   std::uint32_t timer = 0;

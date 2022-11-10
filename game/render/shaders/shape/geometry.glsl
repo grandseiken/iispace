@@ -152,6 +152,7 @@ vec4 polygon_inner_v(polygon_data d, uint i) {
 struct polystar_data {
   vec2 position;
   uint sides;
+  uint segments;
   float radius;
   float rotation;
   float vt;
@@ -173,6 +174,7 @@ polystar_data convert_polystar(vec2 position, shape_data d) {
   polystar_data r;
   r.position = position;
   r.sides = d.params.x;
+  r.segments = d.params.y;
   r.radius = d.dimensions.x;
   r.rotation = d.rotation;
   r.vt = clamp(d.line_width * ngon_ulw_vertex_lerp(r.sides, r.radius), 0., 1.);

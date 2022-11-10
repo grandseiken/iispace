@@ -12,7 +12,7 @@ struct PlayerShot : ecs::component {
   static constexpr fixed kSpeed = 10_fx * 15_fx / 16_fx;
 
   static constexpr auto z = 64.f;
-  static constexpr auto style = geom::bline(glm::vec4{0.f}, z);
+  static constexpr auto style = geom::sline(glm::vec4{0.f}, z);
   using shape =
       standard_transform<geom::box_colour_p<vec2{2 + 1_fx / 2_fx, 2 + 1_fx / 2_fx}, 2, style>,
                          geom::box_colour_p<vec2{1 + 1_fx / 4_fx, 1 + 1_fx / 4_fx}, 3, style>,

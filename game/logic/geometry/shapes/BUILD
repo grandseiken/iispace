@@ -3,6 +3,7 @@ cc_library(
   hdrs = [
     "ball.h",
     "box.h",
+    "data.h",
     "line.h",
     "ngon.h",
   ],

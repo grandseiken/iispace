@@ -31,6 +31,7 @@ struct line {
 struct ngon {
   float radius = 0.f;
   std::uint32_t sides = 0;
+  std::uint32_t segments = sides;
   ngon_style style = ngon_style::kPolygon;
   float line_width = 1.f;
 };
@@ -40,14 +41,7 @@ struct box {
   float line_width = 1.f;
 };
 
-struct polyarc {
-  float radius = 0.f;
-  std::uint32_t sides = 0;
-  std::uint32_t segments = 0;
-  float line_width = 1.f;
-};
-
-using shape_data = std::variant<line, ngon, box, polyarc>;
+using shape_data = std::variant<line, ngon, box>;
 
 struct motion_trail {
   glm::vec2 prev_origin{0.f};

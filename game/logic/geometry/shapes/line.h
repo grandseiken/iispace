@@ -1,21 +1,11 @@
 #ifndef II_GAME_LOGIC_GEOMETRY_SHAPES_LINE_H
 #define II_GAME_LOGIC_GEOMETRY_SHAPES_LINE_H
 #include "game/logic/geometry/expressions.h"
+#include "game/logic/geometry/shapes/data.h"
 #include "game/logic/sim/io/render.h"
 
 namespace ii::geom {
 inline namespace shapes {
-
-struct line_style {
-  glm::vec4 colour{0.f};
-  float z = 0.f;
-  float width = 1.f;
-};
-
-constexpr line_style
-lline(const glm::vec4& colour = glm::vec4{0.f}, float z = 0.f, float width = 1.f) {
-  return {.colour = colour, .z = z, .width = width};
-}
 
 //////////////////////////////////////////////////////////////////////////////////
 // Render shape.
@@ -62,7 +52,7 @@ constexpr auto evaluate(line_eval<A, B, Style>, const auto& params) {
 //////////////////////////////////////////////////////////////////////////////////
 template <vec2 A, vec2 B, line_style Style>
 using line = constant<make_line(A, B, Style)>;
-template <vec2 A, vec2 B, std::size_t N, line_style Style = line_style{}>
+template <vec2 A, vec2 B, std::size_t N, line_style Style = sline()>
 using line_colour_p = line_eval<constant<A>, constant<B>, set_colour_p<Style, N>>;
 
 }  // namespace shapes

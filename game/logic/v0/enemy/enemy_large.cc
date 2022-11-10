@@ -23,7 +23,7 @@ struct FollowHub : ecs::component {
   using r_pi4_ngon = geom::rotate<fixed_c::pi / 4, S...>;
   using fh_centre = r_pi4_ngon<geom::ngon_with_collider<
       geom::nd(18, 4), geom::nline(geom::ngon_style::kPolygram, c, z),
-      geom::nfill(glm::vec4{0.f}, z), shape_flag::kDangerous | shape_flag::kVulnerable>>;
+      geom::sfill(glm::vec4{0.f}, z), shape_flag::kDangerous | shape_flag::kVulnerable>>;
 
   using fh_spoke = r_pi4_ngon<geom::ngon<geom::nd(10, 4), geom::nline(c, z)>>;
   using fh_big_spoke =
@@ -111,8 +111,8 @@ struct Shielder : ecs::component {
       geom::ngon<geom::nd(20, 12), geom::nline(c1, z)>,
       geom::ngon_collider<geom::nd(20, 12), shape_flag::kDangerous | shape_flag::kVulnerable>>;
   using shield_shape = geom::rotate_p<
-      2, geom::line<vec2{32, 0}, vec2{18, 0}, geom::lline(c2, z)>,
-      geom::rotate<fixed_c::pi / 4, geom::line<vec2{-32, 0}, vec2{-18, 0}, geom::lline(c2, z)>>,
+      2, geom::line<vec2{32, 0}, vec2{18, 0}, geom::sline(c2, z)>,
+      geom::rotate<fixed_c::pi / 4, geom::line<vec2{-32, 0}, vec2{-18, 0}, geom::sline(c2, z)>>,
       geom::ngon<geom::nd(26, 16, 10), geom::nline(c2, z)>,
       geom::ngon<geom::nd(32, 16, 10), geom::nline(c2, z)>,
       geom::ngon_collider<geom::nd(32, 16, 10), shape_flag::kWeakShield>>;
@@ -209,13 +209,13 @@ struct Tractor : ecs::component {
   static constexpr auto c = colour_hue360(300, .5f, .6f);
   using t_orb =
       geom::ngon_with_collider<geom::nd(16, 6), geom::nline(geom::ngon_style::kPolygram, c, z),
-                               geom::nfill(glm::vec4{0.f}, z),
+                               geom::sfill(glm::vec4{0.f}, z),
                                shape_flag::kDangerous | shape_flag::kVulnerable>;
   using t_star = geom::ngon<geom::nd(18, 6), geom::nline(geom::ngon_style::kPolystar, c, z)>;
   using shape = standard_transform<
       geom::translate<26, 0, geom::rotate_eval<geom::multiply_p<5, 2>, t_orb>>,
       geom::translate<-26, 0, geom::rotate_eval<geom::multiply_p<-5, 2>, t_orb>>,
-      geom::line<vec2{-26, 0}, vec2{26, 0}, geom::lline(c, z)>,
+      geom::line<vec2{-26, 0}, vec2{26, 0}, geom::sline(c, z)>,
       geom::if_p<3, geom::translate<26, 0, geom::rotate_eval<geom::multiply_p<8, 2>, t_star>>,
                  geom::translate<-26, 0, geom::rotate_eval<geom::multiply_p<-8, 2>, t_star>>>>;
 

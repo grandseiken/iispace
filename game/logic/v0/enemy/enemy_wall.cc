@@ -16,7 +16,7 @@ struct Square : ecs::component {
   static constexpr auto z = -8.f;
   using shape = standard_transform<
       geom::box_collider<vec2{12, 12}, shape_flag::kDangerous | shape_flag::kVulnerable>,
-      geom::box_colour_p<vec2{12, 12}, 2, geom::bline(glm::vec4{0.f}, z, 1.5f)>>;
+      geom::box_colour_p<vec2{12, 12}, 2, geom::sline(glm::vec4{0.f}, z, 1.5f)>>;
 
   std::tuple<vec2, fixed, glm::vec4>
   shape_parameters(const Transform& transform, const Health& health) const {
@@ -94,11 +94,11 @@ struct Wall : ecs::component {
   static constexpr auto z = -8.f;
   using shape = standard_transform<geom::conditional_p<
       2,
-      geom::box_with_collider<vec2{12, 48}, geom::bline(colour_hue360(120, .5f, .6f), z, 1.75f),
-                              geom::bfill(glm::vec4{0.f}, z),
+      geom::box_with_collider<vec2{12, 48}, geom::sline(colour_hue360(120, .5f, .6f), z, 1.75f),
+                              geom::sfill(glm::vec4{0.f}, z),
                               shape_flag::kDangerous | shape_flag::kWeakVulnerable>,
-      geom::box_with_collider<vec2{12, 48}, geom::bline(colour_hue360(120, .5f, .6f), z, 1.75f),
-                              geom::bfill(glm::vec4{0.f}, z),
+      geom::box_with_collider<vec2{12, 48}, geom::sline(colour_hue360(120, .5f, .6f), z, 1.75f),
+                              geom::sfill(glm::vec4{0.f}, z),
                               shape_flag::kDangerous | shape_flag::kVulnerable>>>;
 
   Wall(const vec2& dir, bool anti) : dir{dir}, anti{anti} {}
