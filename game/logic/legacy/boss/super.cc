@@ -1,3 +1,4 @@
+#include "game/common/colour.h"
 #include "game/logic/geometry/legacy/ngon.h"
 #include "game/logic/geometry/legacy/polyarc.h"
 #include "game/logic/legacy/boss/boss_internal.h"
@@ -142,9 +143,9 @@ struct SuperBoss : ecs::component {
     }
     vec2 move_vec{0};
     transform.rotate(6_fx / 1000);
-    auto c = colour_hue((ctimer % 128) / 128.f);
+    auto c = colour::hue((ctimer % 128) / 128.f);
     for (std::uint32_t i = 0; i < 8; ++i) {
-      colours[7 - i] = colour_hue(((i * 32 + 2 * ctimer) % 256) / 256.f);
+      colours[7 - i] = colour::hue(((i * 32 + 2 * ctimer) % 256) / 256.f);
     }
     ++ctimer;
     if (transform.centre.y < sim.dimensions().y / 2) {

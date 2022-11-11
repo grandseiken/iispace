@@ -1,3 +1,4 @@
+#include "game/common/colour.h"
 #include "game/logic/geometry/legacy/attachment_point.h"
 #include "game/logic/geometry/legacy/line.h"
 #include "game/logic/geometry/legacy/ngon.h"
@@ -21,9 +22,9 @@ struct TractorBoss : ecs::component {
   static constexpr fixed kTractorBeamSpeed = 2 + 1_fx / 2;
   static constexpr float kZIndex = -4.f;
 
-  static constexpr glm::vec4 c0 = colour_hue360(300, .5f, .6f);
-  static constexpr glm::vec4 c1 = colour_hue360(300, 1.f / 3, .6f);
-  static constexpr glm::vec4 c2 = colour_hue360(300, .4f, .5f);
+  static constexpr glm::vec4 c0 = colour::hue360(300, .5f, .6f);
+  static constexpr glm::vec4 c1 = colour::hue360(300, 1.f / 3, .6f);
+  static constexpr glm::vec4 c2 = colour::hue360(300, .4f, .5f);
 
   using attack_shape = standard_transform<geom::translate_p<2, geom::polygon<8, 6, c0>>>;
   template <std::size_t BI>

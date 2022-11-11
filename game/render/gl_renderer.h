@@ -13,6 +13,11 @@
 
 namespace ii::render {
 
+enum class shape_style {
+  kNone,
+  kStandard,
+};
+
 // TODO: procedural (simplex) noise. This is tricky.
 // - Purely procedural noise (i.e. computed entirely on GPU in fragment shader) is fairly easy and
 //   worth experimenting with, but may be too slow e.g. for full-screen fractal (fBm) noise.
@@ -69,10 +74,9 @@ public:
   // single pass, etc.
   void render_panel(const panel_data&);
 
-  // TODO: render drop shadows.
-  // TODO: render fills.
-  void
-  render_shapes(coordinate_system ctype, std::span<const shape> shapes, float trail_alpha) const;
+  void render_background(const glm::vec4& colour);
+  void render_shapes(coordinate_system ctype, std::span<const shape> shapes, shape_style style,
+                     float trail_alpha) const;
 
 private:
   render::target target_;

@@ -25,8 +25,10 @@ namespace {
 enum class shader {
   kText,
   kPanel,
+  kBackground,
   kShapeOutline,
   kShapeMotion,
+  kShapeFill,
 };
 
 enum shape_shader_style : std::uint32_t {
@@ -149,6 +151,14 @@ result<std::unique_ptr<GlRenderer>> GlRenderer::create(std::uint32_t shader_vers
     return unexpected(r.error());
   }
 
+  r = load_shader(shader::kBackground,
+                  {{"game/render/shaders/bg/background.f.glsl", gl::shader_type::kFragment},
+                   {"game/render/shaders/bg/background.g.glsl", gl::shader_type::kGeometry},
+                   {"game/render/shaders/bg/background.v.glsl", gl::shader_type::kVertex}});
+  if (!r) {
+    return unexpected(r.error());
+  }
+
   r = load_shader(shader::kShapeOutline,
                   {{"game/render/shaders/shape/colour.f.glsl", gl::shader_type::kFragment},
                    {"game/render/shaders/shape/outline.g.glsl", gl::shader_type::kGeometry},
@@ -159,6 +169,13 @@ result<std::unique_ptr<GlRenderer>> GlRenderer::create(std::uint32_t shader_vers
   r = load_shader(shader::kShapeMotion,
                   {{"game/render/shaders/shape/colour.f.glsl", gl::shader_type::kFragment},
                    {"game/render/shaders/shape/motion.g.glsl", gl::shader_type::kGeometry},
+                   {"game/render/shaders/shape/input.v.glsl", gl::shader_type::kVertex}});
+  if (!r) {
+    return unexpected(r.error());
+  }
+  r = load_shader(shader::kShapeFill,
+                  {{"game/render/shaders/shape/colour.f.glsl", gl::shader_type::kFragment},
+                   {"game/render/shaders/shape/fill.g.glsl", gl::shader_type::kGeometry},
                    {"game/render/shaders/shape/input.v.glsl", gl::shader_type::kVertex}});
   if (!r) {
     return unexpected(r.error());
@@ -368,8 +385,50 @@ void GlRenderer::render_panel(const panel_data& p) {
   gl::draw_elements(gl::draw_mode::kPoints, impl_->index_buffer(1), gl::type_of<unsigned>(), 1, 0);
 }
 
+void GlRenderer::render_background(const glm::vec4& colour) {
+  const auto& program = impl_->shader(shader::kBackground);
+  gl::use_program(program);
+  gl::enable_clip_planes(4u);
+  gl::enable_blend(false);
+  gl::enable_depth_test(false);
+
+  auto clip_rect = target().clip_rect();
+  auto result = gl::set_uniforms(program, "screen_dimensions", target().screen_dimensions,
+                                 "clip_min", target().render_to_screen_coords(clip_rect.min()),
+                                 "clip_max", target().render_to_screen_coords(clip_rect.max()),
+                                 "colour_cycle", colour_cycle_ / 256.f);
+  if (!result) {
+    impl_->status = unexpected("background shader error: " + result.error());
+    return;
+  }
+
+  auto min = target().render_to_screen_coords(clip_rect.min());
+  auto size = target().render_to_screen_coords(clip_rect.max()) - min;
+
+  std::vector<float> float_data = {colour.r, colour.g, colour.b, colour.a};
+  std::vector<std::int16_t> int_data = {static_cast<std::int16_t>(min.x),
+                                        static_cast<std::int16_t>(min.y),
+                                        static_cast<std::int16_t>(size.x),
+                                        static_cast<std::int16_t>(size.y),
+                                        static_cast<std::int16_t>(clip_rect.size.x),
+                                        static_cast<std::int16_t>(clip_rect.size.y)};
+
+  vertex_attribute_container attributes;
+  attributes.add_buffer(std::span<const float>{float_data}, 4);
+  attributes.add_buffer(std::span<const std::int16_t>{int_data}, 7);
+
+  auto vertex_array = gl::make_vertex_array();
+  gl::bind_vertex_array(vertex_array);
+
+  attributes.add_attribute<std::int16_t>(/* position */ 0, 2);
+  attributes.add_attribute<std::int16_t>(/* screen_dimensions */ 1, 2);
+  attributes.add_attribute<std::int16_t>(/* render_dimensions */ 2, 2);
+  attributes.add_attribute<float>(/* colour */ 3, 4);
+  gl::draw_elements(gl::draw_mode::kPoints, impl_->index_buffer(1), gl::type_of<unsigned>(), 1, 0);
+}
+
 void GlRenderer::render_shapes(coordinate_system ctype, std::span<const shape> shapes,
-                               float trail_alpha) const {
+                               shape_style style, float trail_alpha) const {
   struct vertex_data {
     std::uint32_t style = 0;
     glm::uvec2 params{0u, 0u};
@@ -382,10 +441,20 @@ void GlRenderer::render_shapes(coordinate_system ctype, std::span<const shape> s
   };
 
   // TODO: these vectors and gl::buffers below should probably be saved between frames?
-  std::vector<float> float_data;
-  std::vector<std::uint8_t> int_data;
-  std::vector<unsigned> trail_indices;
-  std::vector<unsigned> outline_indices;
+  static thread_local std::vector<float> float_data;
+  static thread_local std::vector<std::uint8_t> int_data;
+  static thread_local std::vector<unsigned> shadow_trail_indices;
+  static thread_local std::vector<unsigned> shadow_outline_indices;
+  static thread_local std::vector<unsigned> trail_indices;
+  static thread_local std::vector<unsigned> fill_indices;
+  static thread_local std::vector<unsigned> outline_indices;
+  float_data.clear();
+  int_data.clear();
+  shadow_trail_indices.clear();
+  shadow_outline_indices.clear();
+  trail_indices.clear();
+  fill_indices.clear();
+  outline_indices.clear();
 
   auto add_vertex_data = [&](const vertex_data& d) {
     int_data.emplace_back(static_cast<std::uint8_t>(d.style));
@@ -405,8 +474,10 @@ void GlRenderer::render_shapes(coordinate_system ctype, std::span<const shape> s
   };
 
   std::uint32_t vertex_index = 0;
-  auto add_shape_data = [&](const vertex_data& d,
-                            const std::optional<render::motion_trail>& trail) {
+  auto add_outline_data = [&](const vertex_data& d,
+                              const std::optional<render::motion_trail>& trail) {
+    static constexpr glm::vec2 kShadowOffset{4, 6};
+
     add_vertex_data(d);
     outline_indices.emplace_back(vertex_index++);
     if (trail && trail_alpha > 0.f) {
@@ -418,6 +489,28 @@ void GlRenderer::render_shapes(coordinate_system ctype, std::span<const shape> s
       trail_indices.emplace_back(vertex_index - 1);
       trail_indices.emplace_back(vertex_index++);
     }
+    if (style == shape_style::kStandard) {
+      auto ds = d;
+      ds.position += kShadowOffset;
+      ds.colour = glm::vec4{0.f, 0.f, 0.f, ds.colour.a / 2.f};
+      ds.line_width += 1.f;
+      add_vertex_data(ds);
+      shadow_outline_indices.emplace_back(vertex_index++);
+      if (trail && trail_alpha > 0.f) {
+        auto dt = ds;
+        dt.position = trail->prev_origin + kShadowOffset;
+        dt.rotation = trail->prev_rotation;
+        dt.colour = {0.f, 0.f, 0.f, trail->prev_colour.a / 2.f};
+        add_vertex_data(dt);
+        shadow_trail_indices.emplace_back(vertex_index - 1);
+        shadow_trail_indices.emplace_back(vertex_index++);
+      }
+    }
+  };
+
+  auto add_fill_data = [&](const vertex_data& d) {
+    add_vertex_data(d);
+    fill_indices.emplace_back(vertex_index++);
   };
 
   // TODO: arranging so that output is sorted by style (main switch in shader)
@@ -432,8 +525,8 @@ void GlRenderer::render_shapes(coordinate_system ctype, std::span<const shape> s
   for (const auto& shape : shapes) {
     if (const auto* p = std::get_if<render::ngon>(&shape.data)) {
       auto add_polygon = [&](std::uint32_t style, std::uint32_t param) {
-        add_shape_data(
-            vertex_data{
+        add_outline_data(
+            {
                 .style = style,
                 .params = {p->sides, param},
                 .rotation = shape.rotation,
@@ -458,8 +551,8 @@ void GlRenderer::render_shapes(coordinate_system ctype, std::span<const shape> s
         }
       }
     } else if (const auto* p = std::get_if<render::box>(&shape.data)) {
-      add_shape_data(
-          vertex_data{
+      add_outline_data(
+          {
               .style = kStyleBox,
               .params = {0, 0},
               .rotation = shape.rotation,
@@ -471,8 +564,8 @@ void GlRenderer::render_shapes(coordinate_system ctype, std::span<const shape> s
           },
           shape.trail);
     } else if (const auto* p = std::get_if<render::line>(&shape.data)) {
-      add_shape_data(
-          vertex_data{
+      add_outline_data(
+          {
               .style = kStyleLine,
               .params = {p->sides, 0},
               .rotation = shape.rotation,
@@ -483,10 +576,35 @@ void GlRenderer::render_shapes(coordinate_system ctype, std::span<const shape> s
               .colour = shape.colour,
           },
           shape.trail);
+    } else if (const auto* p = std::get_if<render::ngon_fill>(&shape.data)) {
+      add_fill_data({
+          .style = kStyleNgonPolygon,
+          .params = {p->sides, p->segments},
+          .rotation = shape.rotation,
+          .z_index = shape.z_index.value_or(0.f),
+          .position = shape.origin,
+          .dimensions = {p->radius, 0.f},
+          .colour = shape.colour,
+      });
+    } else if (const auto* p = std::get_if<render::box_fill>(&shape.data)) {
+      add_fill_data({
+          .style = kStyleBox,
+          .params = {0, 0},
+          .rotation = shape.rotation,
+          .z_index = shape.z_index.value_or(0.f),
+          .position = shape.origin,
+          .dimensions = p->dimensions,
+          .colour = shape.colour,
+      });
     }
   }
 
+  auto shadow_trail_index_buffer =
+      make_stream_draw_buffer(std::span<const unsigned>{shadow_trail_indices});
+  auto shadow_outline_index_buffer =
+      make_stream_draw_buffer(std::span<const unsigned>{shadow_outline_indices});
   auto trail_index_buffer = make_stream_draw_buffer(std::span<const unsigned>{trail_indices});
+  auto fill_index_buffer = make_stream_draw_buffer(std::span<const unsigned>{fill_indices});
   auto outline_index_buffer = make_stream_draw_buffer(std::span<const unsigned>{outline_indices});
   vertex_attribute_container attributes;
   attributes.add_buffer(std::span<const std::uint8_t>(int_data), 3);
@@ -518,6 +636,43 @@ void GlRenderer::render_shapes(coordinate_system ctype, std::span<const shape> s
   gl::enable_clip_planes(4u);
   gl::enable_blend(true);
   gl::blend_function(gl::blend_factor::kSrcAlpha, gl::blend_factor::kOneMinusSrcAlpha);
+
+  if (!shadow_trail_indices.empty()) {
+    const auto& motion_program = impl_->shader(shader::kShapeMotion);
+    gl::use_program(motion_program);
+    gl::enable_depth_test(false);
+
+    auto result =
+        gl::set_uniforms(motion_program, "aspect_scale", target().aspect_scale(),
+                         "render_dimensions", target().render_dimensions, "clip_min",
+                         clip_rect.min(), "clip_max", clip_rect.max(), "coordinate_offset", offset,
+                         "trail_alpha", trail_alpha, "colour_cycle", colour_cycle_ / 256.f);
+    if (!result) {
+      impl_->status = unexpected("motion shader error: " + result.error());
+      return;
+    }
+    gl::draw_elements(gl::draw_mode::kLines, shadow_trail_index_buffer, gl::type_of<unsigned>(),
+                      shadow_trail_indices.size(), 0);
+  }
+
+  if (!shadow_outline_indices.empty()) {
+    const auto& outline_program = impl_->shader(shader::kShapeOutline);
+    gl::use_program(outline_program);
+    gl::enable_clip_planes(4u);
+    gl::enable_depth_test(false);
+
+    auto result = gl::set_uniforms(
+        outline_program, "aspect_scale", target().aspect_scale(), "render_dimensions",
+        target().render_dimensions, "clip_min", clip_rect.min(), "clip_max", clip_rect.max(),
+        "coordinate_offset", offset, "colour_cycle", colour_cycle_ / 256.f);
+    if (!result) {
+      impl_->status = unexpected("outline shader error: " + result.error());
+      return;
+    }
+    gl::draw_elements(gl::draw_mode::kPoints, shadow_outline_index_buffer, gl::type_of<unsigned>(),
+                      shadow_outline_indices.size(), 0);
+  }
+
   if (!trail_indices.empty()) {
     const auto& motion_program = impl_->shader(shader::kShapeMotion);
     gl::use_program(motion_program);
@@ -536,22 +691,40 @@ void GlRenderer::render_shapes(coordinate_system ctype, std::span<const shape> s
                       trail_indices.size(), 0);
   }
 
-  const auto& outline_program = impl_->shader(shader::kShapeOutline);
-  gl::use_program(outline_program);
-  gl::enable_clip_planes(4u);
-  gl::enable_depth_test(true);
-  gl::depth_function(gl::comparison::kGreaterEqual);
-
-  auto result = gl::set_uniforms(outline_program, "aspect_scale", target().aspect_scale(),
-                                 "render_dimensions", target().render_dimensions, "clip_min",
-                                 clip_rect.min(), "clip_max", clip_rect.max(), "coordinate_offset",
-                                 offset, "colour_cycle", colour_cycle_ / 256.f);
-  if (!result) {
-    impl_->status = unexpected("outline shader error: " + result.error());
-    return;
+  if (!fill_indices.empty()) {
+    const auto& fill_program = impl_->shader(shader::kShapeFill);
+    gl::use_program(fill_program);
+    gl::enable_depth_test(false);
+    auto result = gl::set_uniforms(
+        fill_program, "aspect_scale", target().aspect_scale(), "render_dimensions",
+        target().render_dimensions, "clip_min", clip_rect.min(), "clip_max", clip_rect.max(),
+        "coordinate_offset", offset, "colour_cycle", colour_cycle_ / 256.f);
+    if (!result) {
+      impl_->status = unexpected("fill shader error: " + result.error());
+      return;
+    }
+    gl::draw_elements(gl::draw_mode::kPoints, fill_index_buffer, gl::type_of<unsigned>(),
+                      fill_indices.size(), 0);
   }
-  gl::draw_elements(gl::draw_mode::kPoints, outline_index_buffer, gl::type_of<unsigned>(),
-                    outline_indices.size(), 0);
+
+  if (!outline_indices.empty()) {
+    const auto& outline_program = impl_->shader(shader::kShapeOutline);
+    gl::use_program(outline_program);
+    gl::enable_clip_planes(4u);
+    gl::enable_depth_test(true);
+    gl::depth_function(gl::comparison::kGreaterEqual);
+
+    auto result = gl::set_uniforms(
+        outline_program, "aspect_scale", target().aspect_scale(), "render_dimensions",
+        target().render_dimensions, "clip_min", clip_rect.min(), "clip_max", clip_rect.max(),
+        "coordinate_offset", offset, "colour_cycle", colour_cycle_ / 256.f);
+    if (!result) {
+      impl_->status = unexpected("outline shader error: " + result.error());
+      return;
+    }
+    gl::draw_elements(gl::draw_mode::kPoints, outline_index_buffer, gl::type_of<unsigned>(),
+                      outline_indices.size(), 0);
+  }
 }
 
 }  // namespace ii::render

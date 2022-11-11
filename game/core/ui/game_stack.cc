@@ -194,7 +194,8 @@ void GameStack::render(render::GlRenderer& renderer) const {
                                  .line_width = std::min(radius * flash / 2.f, 1.5f)},
         },
     };
-    renderer.render_shapes(render::coordinate_system::kGlobal, cursor_shapes, .25f);
+    renderer.render_shapes(render::coordinate_system::kGlobal, cursor_shapes,
+                           render::shape_style::kNone, .25f);
   }
 }
 

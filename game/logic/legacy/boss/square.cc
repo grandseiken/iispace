@@ -1,3 +1,4 @@
+#include "game/common/colour.h"
 #include "game/logic/geometry/legacy/ngon.h"
 #include "game/logic/legacy/boss/boss_internal.h"
 #include "game/logic/legacy/enemy/enemy.h"
@@ -16,9 +17,9 @@ struct BigSquareBoss : public ecs::component {
   static constexpr fixed kSpecialAttackRadius = 120;
   static constexpr float kZIndex = -4.f;
 
-  static constexpr glm::vec4 c0 = colour_hue360(270, .6f);
-  static constexpr glm::vec4 c1 = colour_hue360(270, .4f);
-  static constexpr glm::vec4 c2 = colour_hue360(260, .3f);
+  static constexpr glm::vec4 c0 = colour::hue360(270, .6f);
+  static constexpr glm::vec4 c1 = colour::hue360(270, .4f);
+  static constexpr glm::vec4 c2 = colour::hue360(260, .3f);
 
   template <fixed C, geom::ShapeNode... Nodes>
   using rotate_s = geom::rotate_eval<geom::multiply_p<C, 1>, geom::pack<Nodes...>>;

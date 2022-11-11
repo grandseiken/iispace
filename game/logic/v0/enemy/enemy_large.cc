@@ -1,3 +1,4 @@
+#include "game/common/colour.h"
 #include "game/logic/geometry/node_conditional.h"
 #include "game/logic/geometry/shapes/line.h"
 #include "game/logic/geometry/shapes/ngon.h"
@@ -14,22 +15,24 @@ struct FollowHub : ecs::component {
   static constexpr std::uint32_t kTimer = 200;
   static constexpr fixed kSpeed = 15_fx / 16_fx;
 
-  static constexpr auto c = colour_hue360(240, .7f);
   static constexpr auto z = 0.f;
+  static constexpr auto c = colour::kSolarizedDarkBlue;
+  static constexpr auto cf = colour::alpha(c, .25f);
   template <geom::ShapeNode S>
   using fh_arrange = geom::compound<geom::translate<18, 0, S>, geom::translate<-18, 0, S>,
                                     geom::translate<0, 18, S>, geom::translate<0, -18, S>>;
   template <geom::ShapeNode... S>
   using r_pi4_ngon = geom::rotate<fixed_c::pi / 4, S...>;
   using fh_centre = r_pi4_ngon<geom::ngon_with_collider<
-      geom::nd(18, 4), geom::nline(geom::ngon_style::kPolygram, c, z),
-      geom::sfill(glm::vec4{0.f}, z), shape_flag::kDangerous | shape_flag::kVulnerable>>;
+      geom::nd(18, 4), geom::nline(geom::ngon_style::kPolygram, c, z), geom::sfill(cf, z),
+      shape_flag::kDangerous | shape_flag::kVulnerable>>;
 
-  using fh_spoke = r_pi4_ngon<geom::ngon<geom::nd(10, 4), geom::nline(c, z)>>;
+  using fh_spoke = r_pi4_ngon<geom::ngon<geom::nd(10, 4), geom::nline(c, z), geom::sfill(cf, z)>>;
   using fh_big_spoke =
-      geom::compound<fh_spoke, r_pi4_ngon<geom::ngon<geom::nd(8, 4), geom::nline(c, z)>>>;
+      geom::compound<fh_spoke, r_pi4_ngon<geom::ngon<geom::nd(6, 4), geom::nline(c, z, 2.f)>>>;
   using fh_chaser_spoke =
-      r_pi4_ngon<geom::ngon<geom::nd(10, 4), geom::nline(geom::ngon_style::kPolygram, c, z)>>;
+      r_pi4_ngon<geom::ngon<geom::nd(10, 4), geom::nline(geom::ngon_style::kPolygram, c, z),
+                            geom::sfill(cf, z)>>;
 
   using hub_shape = geom::translate_p<0, fh_centre, geom::rotate_p<1, fh_arrange<fh_spoke>>>;
   using big_hub_shape =
@@ -101,14 +104,15 @@ struct Shielder : ecs::component {
   static constexpr fixed kSpeed = 1_fx;
 
   static constexpr auto z = 0.f;
-  static constexpr auto c0 = colour_hue360(150, .2f);
-  static constexpr auto c1 = colour_hue360(160, .5f, .6f);
+  static constexpr auto c0 = colour::kSolarizedDarkGreen;
+  static constexpr auto c1 = colour::kSolarizedDarkGreen;
   static constexpr auto c2 = glm::vec4{0.f, 0.f, .75f, 1.f};
+  static constexpr auto cf = colour::alpha(c1, .25f);
 
   using centre_shape = geom::compound<
       geom::ngon<geom::nd(26, 12), geom::nline(geom::ngon_style::kPolystar, c0, z)>,
       geom::ngon<geom::nd(6, 12), geom::nline(c1, z)>,
-      geom::ngon<geom::nd(20, 12), geom::nline(c1, z)>,
+      geom::ngon<geom::nd(20, 12), geom::nline(c1, z), geom::sfill(cf, z)>,
       geom::ngon_collider<geom::nd(20, 12), shape_flag::kDangerous | shape_flag::kVulnerable>>;
   using shield_shape = geom::rotate_p<
       2, geom::line<vec2{32, 0}, vec2{18, 0}, geom::sline(c2, z)>,
@@ -206,10 +210,11 @@ struct Tractor : ecs::component {
   static constexpr fixed kPullSpeed = 2 + 1_fx / 4;
 
   static constexpr auto z = 0.f;
-  static constexpr auto c = colour_hue360(300, .5f, .6f);
+  static constexpr auto c = colour::kSolarizedDarkMagenta;
+  static constexpr auto cf = colour::alpha(c, .25f);
   using t_orb =
       geom::ngon_with_collider<geom::nd(16, 6), geom::nline(geom::ngon_style::kPolygram, c, z),
-                               geom::sfill(glm::vec4{0.f}, z),
+                               geom::sfill(cf, z),
                                shape_flag::kDangerous | shape_flag::kVulnerable>;
   using t_star = geom::ngon<geom::nd(18, 6), geom::nline(geom::ngon_style::kPolystar, c, z)>;
   using shape = standard_transform<
@@ -271,7 +276,7 @@ struct Tractor : ecs::component {
       if (timer % (kTimer / 2) == 0 && sim.is_on_screen(transform.centre) && power) {
         // spawn_boss_shot(sim, transform.centre, 4 *
         // sim.nearest_player_direction(transform.centre),
-        //                 colour_hue360(300, .5f, .6f));
+        //                 colour::hue360(300, .5f, .6f));
         // sim.emit(resolve_key::predicted()).play_random(sound::kBossFire, transform.centre);
       }
 
@@ -289,7 +294,7 @@ struct Tractor : ecs::component {
       sim.index().iterate_dispatch<Player>([&](const Player& p, const Transform& p_transform) {
         if (((timer + i++ * 4) / 4) % 2 && !p.is_killed) {
           auto s = render::shape::line(to_float(transform.centre), to_float(p_transform.centre),
-                                       colour_hue360(300, .5f, .6f));
+                                       colour::hue360(300, .5f, .6f));
           s.disable_trail = true;
           output.emplace_back(s);
         }

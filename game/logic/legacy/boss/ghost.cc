@@ -1,3 +1,4 @@
+#include "game/common/colour.h"
 #include "game/logic/geometry/legacy/ball_collider.h"
 #include "game/logic/geometry/legacy/box.h"
 #include "game/logic/geometry/legacy/line.h"
@@ -14,9 +15,9 @@
 
 namespace ii::legacy {
 namespace {
-constexpr glm::vec4 c0 = colour_hue360(280, .7f);
-constexpr glm::vec4 c1 = colour_hue360(280, .5f, .6f);
-constexpr glm::vec4 c2 = colour_hue360(270, .2f);
+constexpr glm::vec4 c0 = colour::hue360(280, .7f);
+constexpr glm::vec4 c1 = colour::hue360(280, .5f, .6f);
+constexpr glm::vec4 c2 = colour::hue360(270, .2f);
 
 template <geom::ShapeNode S>
 shape_flag shape_check_point_compatibility(const auto& parameters, bool is_legacy, const vec2& v,

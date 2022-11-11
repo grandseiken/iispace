@@ -1,3 +1,4 @@
+#include "game/common/colour.h"
 #include "game/logic/geometry/legacy/line.h"
 #include "game/logic/geometry/legacy/ngon.h"
 #include "game/logic/geometry/node_conditional.h"
@@ -16,7 +17,7 @@ struct FollowHub : ecs::component {
   static constexpr std::uint32_t kTimer = 170;
   static constexpr fixed kSpeed = 1;
 
-  static constexpr auto c = colour_hue360(240, .7f);
+  static constexpr auto c = colour::hue360(240, .7f);
   template <geom::ShapeNode S>
   using fh_arrange = geom::compound<geom::translate<16, 0, S>, geom::translate<-16, 0, S>,
                                     geom::translate<0, 16, S>, geom::translate<0, -16, S>>;
@@ -92,8 +93,8 @@ struct Shielder : ecs::component {
   static constexpr std::uint32_t kTimer = 80;
   static constexpr fixed kSpeed = 2;
 
-  static constexpr auto c0 = colour_hue360(150, .2f);
-  static constexpr auto c1 = colour_hue360(160, .5f, .6f);
+  static constexpr auto c0 = colour::hue360(150, .2f);
+  static constexpr auto c1 = colour::hue360(160, .5f, .6f);
   template <geom::ShapeNode S>
   using s_arrange = geom::compound<geom::translate<24, 0, S>, geom::translate<-24, 0, S>,
                                    geom::translate<0, 24, geom::rotate<fixed_c::pi / 2, S>>,
@@ -155,7 +156,7 @@ struct Shielder : ecs::component {
       }
       if (sim.is_on_screen(transform.centre) && power && timer % kTimer == kTimer / 2) {
         spawn_boss_shot(sim, transform.centre, 3 * sim.nearest_player_direction(transform.centre),
-                        colour_hue360(160, .5f, .6f));
+                        colour::hue360(160, .5f, .6f));
         sim.emit(resolve_key::predicted()).play_random(sound::kBossFire, transform.centre);
       }
       transform.move(dir * speed);
@@ -175,7 +176,7 @@ struct Tractor : ecs::component {
   static constexpr fixed kSpeed = 6 * (1_fx / 10);
   static constexpr fixed kPullSpeed = 2 + 1_fx / 2;
 
-  static constexpr auto c = colour_hue360(300, .5f, .6f);
+  static constexpr auto c = colour::hue360(300, .5f, .6f);
   using t_orb = geom::polygram<12, 6, c, shape_flag::kDangerous | shape_flag::kVulnerable>;
   using t_star = geom::polystar<16, 6, c>;
   using shape = standard_transform<
@@ -237,7 +238,7 @@ struct Tractor : ecs::component {
       });
       if (timer % (kTimer / 2) == 0 && sim.is_on_screen(transform.centre) && power) {
         spawn_boss_shot(sim, transform.centre, 4 * sim.nearest_player_direction(transform.centre),
-                        colour_hue360(300, .5f, .6f));
+                        colour::hue360(300, .5f, .6f));
         sim.emit(resolve_key::predicted()).play_random(sound::kBossFire, transform.centre);
       }
 
@@ -255,7 +256,7 @@ struct Tractor : ecs::component {
       sim.index().iterate_dispatch<Player>([&](const Player& p, const Transform& p_transform) {
         if (((timer + i++ * 4) / 4) % 2 && !p.is_killed) {
           auto s = render::shape::line(to_float(transform.centre), to_float(p_transform.centre),
-                                       colour_hue360(300, .5f, .6f));
+                                       colour::hue360(300, .5f, .6f));
           s.disable_trail = true;
           output.emplace_back(s);
         }

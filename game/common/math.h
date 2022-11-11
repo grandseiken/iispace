@@ -11,14 +11,6 @@ inline void hash_combine(std::size_t& seed, std::size_t v) {
   seed ^= v + 0x9e3779b9 + (seed << 6) + (seed >> 2);
 };
 
-inline constexpr glm::vec4 colour_hue(float h, float l = .5f, float s = 1.f) {
-  return {h, s, l, 1.f};
-}
-
-inline constexpr glm::vec4 colour_hue360(std::uint32_t h, float l = .5f, float s = 1.f) {
-  return colour_hue(h / 360.f, l, s);
-}
-
 using vec2 = glm::vec<2, fixed>;
 
 inline constexpr vec2 operator*(const vec2& a, fixed b) {

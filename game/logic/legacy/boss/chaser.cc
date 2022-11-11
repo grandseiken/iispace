@@ -1,3 +1,4 @@
+#include "game/common/colour.h"
 #include "game/logic/geometry/legacy/ngon.h"
 #include "game/logic/legacy/boss/boss_internal.h"
 #include "game/logic/legacy/ship_template.h"
@@ -60,7 +61,7 @@ struct ChaserBoss : ecs::component {
   static constexpr std::uint32_t kTimer = 60;
   static constexpr fixed kSpeed = 4;
   static constexpr float kZIndex = -4.f;
-  static constexpr glm::vec4 c = colour_hue360(210, .6f);
+  static constexpr glm::vec4 c = colour::hue360(210, .6f);
 
   template <fixed R, glm::vec4 C, shape_flag Flags = shape_flag::kNone>
   using scale_shape =

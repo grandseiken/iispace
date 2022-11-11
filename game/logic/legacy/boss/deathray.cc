@@ -1,3 +1,4 @@
+#include "game/common/colour.h"
 #include "game/logic/geometry/legacy/ball_collider.h"
 #include "game/logic/geometry/legacy/box.h"
 #include "game/logic/geometry/legacy/line.h"
@@ -12,10 +13,10 @@
 
 namespace ii::legacy {
 namespace {
-constexpr glm::vec4 c0 = colour_hue360(150, 1.f / 3, .6f);
-constexpr glm::vec4 c1 = colour_hue360(150, .6f);
-constexpr glm::vec4 c2 = colour_hue(0.f, .8f, 0.f);
-constexpr glm::vec4 c3 = colour_hue(0.f, .6f, 0.f);
+constexpr glm::vec4 c0 = colour::hue360(150, 1.f / 3, .6f);
+constexpr glm::vec4 c1 = colour::hue360(150, .6f);
+constexpr glm::vec4 c2 = colour::hue(0.f, .8f, 0.f);
+constexpr glm::vec4 c3 = colour::hue(0.f, .6f, 0.f);
 
 struct DeathRay : ecs::component {
   static constexpr fixed kBoundingWidth = 48;

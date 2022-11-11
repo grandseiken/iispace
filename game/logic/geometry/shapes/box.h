@@ -76,8 +76,19 @@ struct box_data : shape_data_base {
               .origin = to_float(*t),
               .rotation = t.rotation().to_float(),
               .colour = line.colour,
+              .z_index = line.z,
               .data = render::box{.dimensions = to_float(dimensions), .line_width = line.width},
           });
+    }
+    if (fill.colour.a) {
+      std::invoke(f,
+                  render::shape{
+                      .origin = to_float(*t),
+                      .rotation = t.rotation().to_float(),
+                      .colour = fill.colour,
+                      .z_index = fill.z,
+                      .data = render::box_fill{.dimensions = to_float(dimensions)},
+                  });
     }
   }
 
@@ -113,6 +124,10 @@ using box_with_collider = compound<box<Dimensions, Line, Fill>, box_collider<Dim
 
 template <vec2 Dimensions, std::size_t N, line_style Line = sline()>
 using box_colour_p = box_eval<constant<Dimensions>, set_colour_p<Line, N>>;
+template <vec2 Dimensions, std::size_t N0, std::size_t N1, line_style Line = sline(),
+          fill_style Fill = sfill()>
+using box_colour_p2 =
+    box_eval<constant<Dimensions>, set_colour_p<Line, N0>, set_colour_p<Fill, N1>>;
 
 }  // namespace shapes
 }  // namespace ii::geom

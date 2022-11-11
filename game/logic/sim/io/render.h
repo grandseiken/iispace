@@ -41,7 +41,17 @@ struct box {
   float line_width = 1.f;
 };
 
-using shape_data = std::variant<line, ngon, box>;
+struct ngon_fill {
+  float radius = 0.f;
+  std::uint32_t sides = 0;
+  std::uint32_t segments = sides;
+};
+
+struct box_fill {
+  glm::vec2 dimensions{0.f};
+};
+
+using shape_data = std::variant<line, ngon, box, ngon_fill, box_fill>;
 
 struct motion_trail {
   glm::vec2 prev_origin{0.f};

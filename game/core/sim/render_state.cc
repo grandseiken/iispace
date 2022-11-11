@@ -1,9 +1,9 @@
 #include "game/core/sim/render_state.h"
+#include "game/common/colour.h"
 #include "game/core/sim/input_adapter.h"
 #include "game/logic/sim/io/output.h"
 #include "game/logic/sim/sim_state.h"
 #include "game/mixer/mixer.h"
-#include "game/render/gl_renderer.h"
 #include <glm/gtc/constants.hpp>
 #include <algorithm>
 #include <unordered_map>
@@ -175,9 +175,9 @@ void RenderState::update(SimInputAdapter* input) {
     star.position.x = edge < 2 ? ratio * dimensions_.x : edge == 2 ? -16 : 16 + dimensions_.x;
     star.position.y = edge >= 2 ? ratio * dimensions_.y : edge == 0 ? -16 : 16 + dimensions_.y;
 
-    auto c0 = colour_hue(0.f, .15f, 0.f);
-    auto c1 = colour_hue(0.f, .25f, 0.f);
-    auto c2 = colour_hue(0.f, .35f, 0.f);
+    auto c0 = colour::hue(0.f, .15f, 0.f);
+    auto c1 = colour::hue(0.f, .25f, 0.f);
+    auto c2 = colour::hue(0.f, .35f, 0.f);
     star.colour = t == star_type::kDotStar ? (engine_.rbool() ? c1 : c2)
         : t == star_type::kFarStar         ? (engine_.rbool() ? c1 : c0)
         : t == star_type::kBigStar         ? (engine_.rbool() ? c0 : c1)
@@ -203,7 +203,18 @@ void RenderState::update(SimInputAdapter* input) {
   }
 }
 
-void RenderState::render(render::GlRenderer& r) const {
+void RenderState::render(render::GlRenderer& r, render::shape_style style) const {
+  switch (bgfx_type_) {
+  case background_fx_type::kNone:
+  case background_fx_type::kLegacy_Stars:
+    break;
+  case background_fx_type::kBiome0: {
+    auto c = colour::kSolarizedDarkBase03;
+    c.z /= 2.f;
+    r.render_background(c);
+  } break;
+  }
+
   std::vector<render::shape> shapes;
   auto render_box = [&](const glm::vec2& v, const glm::vec2& vv, const glm::vec2& d,
                         const glm::vec4& c, float lw, float z) {
@@ -268,12 +279,16 @@ void RenderState::render(render::GlRenderer& r) const {
     }
   }
 
-  r.render_shapes(render::coordinate_system::kGlobal, shapes, /* trail alpha */ 1.f);
+  r.render_shapes(render::coordinate_system::kGlobal, shapes, style, /* trail alpha */ 1.f);
 }
 
 void RenderState::handle_background_fx(const background_fx_change& change) {
-  switch (change.type) {
-  case background_fx_type::kStars:
+  bgfx_type_ = change.type;
+  switch (bgfx_type_) {
+  case background_fx_type::kNone:
+  case background_fx_type::kBiome0:
+    break;
+  case background_fx_type::kLegacy_Stars:
     star_direction_ =
         rotate(star_direction_, (engine_.fixed().to_float() - .5f) * glm::pi<float>());
     for (auto& star : stars_) {

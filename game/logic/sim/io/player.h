@@ -1,5 +1,6 @@
 #ifndef II_GAME_LOGIC_SIM_IO_PLAYER_H
 #define II_GAME_LOGIC_SIM_IO_PLAYER_H
+#include "game/common/colour.h"
 #include "game/common/math.h"
 #include <glm/glm.hpp>
 #include <cstddef>
@@ -12,7 +13,7 @@ namespace ii {
 static constexpr std::uint32_t kMaxPlayers = 4;
 
 inline glm::vec4 player_colour(std::size_t player_number) {
-  return colour_hue360((20 * player_number) % 360);
+  return colour::hue360((20 * player_number) % 360);
 }
 
 struct input_frame {

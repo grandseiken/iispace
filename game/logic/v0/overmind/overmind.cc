@@ -20,7 +20,13 @@ struct Overmind : ecs::component {
 
   Overmind() { data.power = kInitialPower; }
 
-  void update(SimInterface& sim) {
+  void update(ecs::handle h, SimInterface& sim) {
+    if (!sim.tick_count()) {
+      background_fx_change change;
+      change.type = background_fx_type::kBiome0;
+      sim.emit(resolve_key::reconcile(h.id(), resolve_tag::kBackgroundFx)).background_fx(change);
+    }
+
     if (spawn_timer) {
       if (!--spawn_timer) {
         respawn_players(sim);

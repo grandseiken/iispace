@@ -1,3 +1,4 @@
+#include "game/common/colour.h"
 #include "game/logic/geometry/shapes/ngon.h"
 #include "game/logic/v0/enemy/enemy.h"
 #include "game/logic/v0/enemy/enemy_template.h"
@@ -23,16 +24,17 @@ struct Follow : ecs::component {
   static constexpr std::uint32_t kHugeWidth = 33;
 
   static constexpr auto z = 8.f;
-  static constexpr auto c = colour_hue360(270, .6f);
+  static constexpr auto c = colour::kSolarizedDarkViolet;
+  static constexpr auto cf = colour::alpha(c, .25f);
   using small_shape = standard_transform<geom::ngon_with_collider<
-      geom::nd(kSmallWidth, 4), geom::nline(c, z, 1.5f), geom::sfill(glm::vec4{0.f}, z),
+      geom::nd(kSmallWidth, 4), geom::nline(c, z, 1.5f), geom::sfill(cf, z),
       shape_flag::kDangerous | shape_flag::kVulnerable>>;
-  using big_shape = standard_transform<geom::ngon_with_collider<
-      geom::nd(kBigWidth, 4), geom::nline(c, z, 1.5f), geom::sfill(glm::vec4{0.f}, z),
-      shape_flag::kDangerous | shape_flag::kVulnerable>>;
-  using huge_shape = standard_transform<geom::ngon_with_collider<
-      geom::nd(kHugeWidth, 4), geom::nline(c, z, 1.5f), geom::sfill(glm::vec4{0.f}, z),
-      shape_flag::kDangerous | shape_flag::kVulnerable>>;
+  using big_shape = standard_transform<
+      geom::ngon_with_collider<geom::nd(kBigWidth, 4), geom::nline(c, z, 1.5f), geom::sfill(cf, z),
+                               shape_flag::kDangerous | shape_flag::kVulnerable>>;
+  using huge_shape = standard_transform<
+      geom::ngon_with_collider<geom::nd(kHugeWidth, 4), geom::nline(c, z, 1.5f), geom::sfill(cf, z),
+                               shape_flag::kDangerous | shape_flag::kVulnerable>>;
 
   Follow(std::uint32_t size, std::optional<vec2> direction, const vec2& extra_velocity)
   : size{size}
@@ -187,13 +189,14 @@ struct Chaser : ecs::component {
   static constexpr std::uint32_t kBigWidth = 18;
 
   static constexpr auto z = 8.f;
-  static constexpr auto c = colour_hue360(210, .6f);
+  static constexpr auto c = colour::kSolarizedDarkCyan;
+  static constexpr auto cf = colour::alpha(c, .25f);
   using small_shape = standard_transform<geom::ngon_with_collider<
-      geom::nd(kSmallWidth, 4), geom::nline(geom::ngon_style::kPolygram, c, z),
-      geom::sfill(glm::vec4{0.f}, z), shape_flag::kDangerous | shape_flag::kVulnerable>>;
+      geom::nd(kSmallWidth, 4), geom::nline(geom::ngon_style::kPolygram, c, z), geom::sfill(cf, z),
+      shape_flag::kDangerous | shape_flag::kVulnerable>>;
   using big_shape = standard_transform<geom::ngon_with_collider<
-      geom::nd(kBigWidth, 4), geom::nline(geom::ngon_style::kPolygram, c, z),
-      geom::sfill(glm::vec4{0.f}, z), shape_flag::kDangerous | shape_flag::kVulnerable>>;
+      geom::nd(kBigWidth, 4), geom::nline(geom::ngon_style::kPolygram, c, z), geom::sfill(cf, z),
+      shape_flag::kDangerous | shape_flag::kVulnerable>>;
 
   Chaser(std::uint32_t size, std::uint32_t stagger) : timer{kTime - stagger}, size{size} {}
   std::uint32_t timer = 0;

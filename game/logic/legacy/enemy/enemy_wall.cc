@@ -1,3 +1,4 @@
+#include "game/common/colour.h"
 #include "game/logic/geometry/legacy/box.h"
 #include "game/logic/legacy/components.h"
 #include "game/logic/legacy/enemy/enemy.h"
@@ -18,7 +19,7 @@ struct Square : ecs::component {
   std::tuple<vec2, fixed, glm::vec4>
   shape_parameters(const Transform& transform, const Health& health) const {
     return {transform.centre, transform.rotation,
-            health.hp && invisible_flash ? colour_hue(0.f, .2f, 0.f) : colour_hue360(120, .6f)};
+            health.hp && invisible_flash ? colour::hue(0.f, .2f, 0.f) : colour::hue360(120, .6f)};
   }
 
   vec2 dir{0};
@@ -89,7 +90,7 @@ struct Wall : ecs::component {
 
   static constexpr std::uint32_t kTimer = 80;
   static constexpr fixed kSpeed = 1 + 1_fx / 4;
-  using shape = standard_transform<geom::box<10, 40, colour_hue360(120, .5f, .6f),
+  using shape = standard_transform<geom::box<10, 40, colour::hue360(120, .5f, .6f),
                                              shape_flag::kDangerous | shape_flag::kVulnerable>>;
 
   vec2 dir{0, 1};

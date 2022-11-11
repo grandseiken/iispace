@@ -48,6 +48,19 @@ struct initial_conditions {
 template <>
 struct bitmask_enum<initial_conditions::flag> : std::true_type {};
 
+inline bool is_legacy_mode(game_mode mode) {
+  switch (mode) {
+  case game_mode::kStandardRun:
+    return false;
+  case game_mode::kLegacy_Normal:
+  case game_mode::kLegacy_Boss:
+  case game_mode::kLegacy_Hard:
+  case game_mode::kLegacy_Fast:
+  case game_mode::kLegacy_What:
+    return true;
+  }
+}
+
 }  // namespace ii
 
 #endif

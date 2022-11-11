@@ -89,7 +89,7 @@ struct Overmind : ecs::component {
         stars_compatibility = stars_random.uint(3) + 2;
       }
       background_fx_change change;
-      change.type = background_fx_type::kStars;
+      change.type = background_fx_type::kLegacy_Stars;
       sim.emit(resolve_key::reconcile(h.id(), resolve_tag::kBackgroundFx)).background_fx(change);
     };
     if (sim.conditions().compatibility == compatibility_level::kLegacy) {

@@ -116,6 +116,7 @@ struct ngon_data : shape_data_base {
                       .origin = to_float(*t),
                       .rotation = t.rotation().to_float(),
                       .colour = line.colour,
+                      .z_index = line.z,
                       .data = render::ngon{.radius = dimensions.radius.to_float(),
                                            .sides = dimensions.sides,
                                            .segments = dimensions.segments,
@@ -123,7 +124,18 @@ struct ngon_data : shape_data_base {
                                            .line_width = line.width},
                   });
     }
-    // TODO: fill.
+    if (fill.colour.a) {
+      std::invoke(f,
+                  render::shape{
+                      .origin = to_float(*t),
+                      .rotation = t.rotation().to_float(),
+                      .colour = fill.colour,
+                      .z_index = fill.z,
+                      .data = render::ngon_fill{.radius = dimensions.radius.to_float(),
+                                                .sides = dimensions.sides,
+                                                .segments = dimensions.segments},
+                  });
+    }
   }
 
   constexpr void
@@ -161,6 +173,10 @@ using ngon_with_collider = compound<ngon<Dimensions, Line, Fill>, ngon_collider<
 
 template <ngon_dimensions Dimensions, std::size_t N, ngon_line_style Line = nline()>
 using ngon_colour_p = ngon_eval<constant<Dimensions>, set_colour_p<Line, N>>;
+template <ngon_dimensions Dimensions, std::size_t N0, std::size_t N1,
+          ngon_line_style Line = nline(), fill_style Fill = sfill()>
+using ngon_colour_p2 =
+    ngon_eval<constant<Dimensions>, set_colour_p<Line, N0>, set_colour_p<Fill, N1>>;
 
 }  // namespace shapes
 }  // namespace ii::geom

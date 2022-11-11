@@ -1,3 +1,4 @@
+#include "game/common/colour.h"
 #include "game/logic/geometry/node_conditional.h"
 #include "game/logic/geometry/shapes/box.h"
 #include "game/logic/v0/enemy/enemy.h"
@@ -16,12 +17,17 @@ struct Square : ecs::component {
   static constexpr auto z = -8.f;
   using shape = standard_transform<
       geom::box_collider<vec2{12, 12}, shape_flag::kDangerous | shape_flag::kVulnerable>,
-      geom::box_colour_p<vec2{12, 12}, 2, geom::sline(glm::vec4{0.f}, z, 1.5f)>>;
+      geom::box_colour_p2<vec2{12, 12}, 2, 3, geom::sline(glm::vec4{0.f}, z, 1.5f),
+                          geom::sfill(glm::vec4{0.f}, z)>>;
 
-  std::tuple<vec2, fixed, glm::vec4>
+  std::tuple<vec2, fixed, glm::vec4, glm::vec4>
   shape_parameters(const Transform& transform, const Health& health) const {
-    return {transform.centre, transform.rotation,
-            health.hp && invisible_flash ? colour_hue(0.f, .2f, 0.f) : colour_hue360(120, .6f)};
+    auto c = colour::kSolarizedDarkGreen;
+    if (health.hp && invisible_flash) {
+      c = colour::alpha(c, .5f);
+    }
+    auto cf = colour::alpha(c, .25f);
+    return {transform.centre, transform.rotation, c, cf};
   }
 
   vec2 dir{0};
@@ -92,13 +98,13 @@ struct Wall : ecs::component {
   static constexpr fixed kSpeed = 1;
 
   static constexpr auto z = -8.f;
+  static constexpr auto c = colour::kSolarizedDarkGreen;
+  static constexpr auto cf = colour::alpha(c, .25f);
   using shape = standard_transform<geom::conditional_p<
       2,
-      geom::box_with_collider<vec2{12, 48}, geom::sline(colour_hue360(120, .5f, .6f), z, 1.75f),
-                              geom::sfill(glm::vec4{0.f}, z),
+      geom::box_with_collider<vec2{12, 48}, geom::sline(c, z, 1.75f), geom::sfill(cf, z),
                               shape_flag::kDangerous | shape_flag::kWeakVulnerable>,
-      geom::box_with_collider<vec2{12, 48}, geom::sline(colour_hue360(120, .5f, .6f), z, 1.75f),
-                              geom::sfill(glm::vec4{0.f}, z),
+      geom::box_with_collider<vec2{12, 48}, geom::sline(c, z, 1.75f), geom::sfill(cf, z),
                               shape_flag::kDangerous | shape_flag::kVulnerable>>>;
 
   Wall(const vec2& dir, bool anti) : dir{dir}, anti{anti} {}

@@ -1,3 +1,4 @@
+#include "game/common/colour.h"
 #include "game/logic/geometry/legacy/line.h"
 #include "game/logic/geometry/legacy/ngon.h"
 #include "game/logic/geometry/node_for_each.h"
@@ -18,9 +19,9 @@ struct ShieldBombBoss : ecs::component {
   static constexpr fixed kSpeed = 1;
   static constexpr float kZIndex = -4.f;
 
-  static constexpr glm::vec4 c0 = colour_hue360(150, .4f, .5f);
-  static constexpr glm::vec4 c1 = colour_hue(0.f, .8f, 0.f);
-  static constexpr glm::vec4 c2 = colour_hue(0.f, .6f, 0.f);
+  static constexpr glm::vec4 c0 = colour::hue360(150, .4f, .5f);
+  static constexpr glm::vec4 c1 = colour::hue(0.f, .8f, 0.f);
+  static constexpr glm::vec4 c2 = colour::hue(0.f, .6f, 0.f);
 
   template <fixed I>
   using strut_shape =
@@ -45,10 +46,10 @@ struct ShieldBombBoss : ecs::component {
     return {transform.centre, transform.rotation, unshielded != 0,
             !unshielded                ? c2
                 : (unshielded / 2) % 4 ? glm::vec4{0.f}
-                                       : colour_hue(0.f, .2f, 0.f),
+                                       : colour::hue(0.f, .2f, 0.f),
             !unshielded                ? c1
                 : (unshielded / 2) % 4 ? glm::vec4{0.f}
-                                       : colour_hue(0.f, .4f, 0.f)};
+                                       : colour::hue(0.f, .4f, 0.f)};
   }
 
   static std::uint32_t bounding_width(const SimInterface& sim) {
