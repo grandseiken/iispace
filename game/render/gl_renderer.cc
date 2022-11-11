@@ -444,6 +444,7 @@ void GlRenderer::render_shapes(coordinate_system ctype, std::span<const shape> s
   static thread_local std::vector<float> float_data;
   static thread_local std::vector<std::uint8_t> int_data;
   static thread_local std::vector<unsigned> shadow_trail_indices;
+  static thread_local std::vector<unsigned> shadow_fill_indices;
   static thread_local std::vector<unsigned> shadow_outline_indices;
   static thread_local std::vector<unsigned> trail_indices;
   static thread_local std::vector<unsigned> fill_indices;
@@ -451,6 +452,7 @@ void GlRenderer::render_shapes(coordinate_system ctype, std::span<const shape> s
   float_data.clear();
   int_data.clear();
   shadow_trail_indices.clear();
+  shadow_fill_indices.clear();
   shadow_outline_indices.clear();
   trail_indices.clear();
   fill_indices.clear();
@@ -473,11 +475,10 @@ void GlRenderer::render_shapes(coordinate_system ctype, std::span<const shape> s
     float_data.emplace_back(d.colour.a);
   };
 
+  static constexpr glm::vec2 kShadowOffset{4, 6};
   std::uint32_t vertex_index = 0;
   auto add_outline_data = [&](const vertex_data& d,
                               const std::optional<render::motion_trail>& trail) {
-    static constexpr glm::vec2 kShadowOffset{4, 6};
-
     add_vertex_data(d);
     outline_indices.emplace_back(vertex_index++);
     if (trail && trail_alpha > 0.f) {
@@ -511,6 +512,13 @@ void GlRenderer::render_shapes(coordinate_system ctype, std::span<const shape> s
   auto add_fill_data = [&](const vertex_data& d) {
     add_vertex_data(d);
     fill_indices.emplace_back(vertex_index++);
+    if (style == shape_style::kStandard) {
+      auto ds = d;
+      ds.position += kShadowOffset;
+      ds.colour = {0.f, 0.f, 0.f, ds.colour.a / 2.f};
+      add_vertex_data(ds);
+      shadow_fill_indices.emplace_back(vertex_index++);
+    }
   };
 
   // TODO: arranging so that output is sorted by style (main switch in shader)
@@ -601,6 +609,8 @@ void GlRenderer::render_shapes(coordinate_system ctype, std::span<const shape> s
 
   auto shadow_trail_index_buffer =
       make_stream_draw_buffer(std::span<const unsigned>{shadow_trail_indices});
+  auto shadow_fill_index_buffer =
+      make_stream_draw_buffer(std::span<const unsigned>{shadow_fill_indices});
   auto shadow_outline_index_buffer =
       make_stream_draw_buffer(std::span<const unsigned>{shadow_outline_indices});
   auto trail_index_buffer = make_stream_draw_buffer(std::span<const unsigned>{trail_indices});
@@ -671,6 +681,22 @@ void GlRenderer::render_shapes(coordinate_system ctype, std::span<const shape> s
     }
     gl::draw_elements(gl::draw_mode::kPoints, shadow_outline_index_buffer, gl::type_of<unsigned>(),
                       shadow_outline_indices.size(), 0);
+  }
+
+  if (!shadow_fill_indices.empty()) {
+    const auto& fill_program = impl_->shader(shader::kShapeFill);
+    gl::use_program(fill_program);
+    gl::enable_depth_test(false);
+    auto result = gl::set_uniforms(
+        fill_program, "aspect_scale", target().aspect_scale(), "render_dimensions",
+        target().render_dimensions, "clip_min", clip_rect.min(), "clip_max", clip_rect.max(),
+        "coordinate_offset", offset, "colour_cycle", colour_cycle_ / 256.f);
+    if (!result) {
+      impl_->status = unexpected("fill shader error: " + result.error());
+      return;
+    }
+    gl::draw_elements(gl::draw_mode::kPoints, shadow_fill_index_buffer, gl::type_of<unsigned>(),
+                      shadow_fill_indices.size(), 0);
   }
 
   if (!trail_indices.empty()) {

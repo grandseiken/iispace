@@ -26,17 +26,24 @@ struct PlayerLogic : ecs::component {
       geom::rotate_eval<geom::negate_p<1>, geom::box_colour_p<vec2{1, 1}, 3, style>>,
       geom::rotate_eval<geom::negate_p<1>, geom::box_colour_p<vec2{3, 3}, 3, style>>>;
   using shape = standard_transform<
-      geom::ngon_colour_p<geom::nd(18, 3), 2, geom::nline(glm::vec4{0.f}, z, 1.5f)>,
+      geom::ngon_colour_p<geom::nd(21, 3), 5, geom::nline(colour::kBlack1, -32.f, 3.f)>,
+      geom::ngon_colour_p2<geom::nd(18, 3), 2, 4, geom::nline(glm::vec4{0.f}, z, 1.5f),
+                           geom::sfill(glm::vec4{0.f})>,
       geom::rotate<fixed_c::pi, geom::ngon_colour_p<geom::nd(9, 3), 2>>, box_shapes>;
 
-  std::tuple<vec2, fixed, glm::vec4, glm::vec4>
+  std::tuple<vec2, fixed, glm::vec4, glm::vec4, glm::vec4, glm::vec4>
   shape_parameters(const Player& pc, const Transform& transform) const {
     auto colour = pc.is_killed      ? glm::vec4{0.f}
         : invulnerability_timer % 2 ? glm::vec4{1.f}
                                     : player_colour(pc.player_number);
     auto c_dark = colour;
     c_dark.a = std::min(c_dark.a, .2f);
-    return {transform.centre, transform.rotation, colour, c_dark};
+    return {transform.centre,
+            transform.rotation,
+            colour,
+            c_dark,
+            colour::alpha(colour, std::min(colour.a, .25f)),
+            colour::alpha(colour::kBlack1, colour.a)};
   };
 
   PlayerLogic(const vec2& target) : fire_target{target} {}
@@ -204,6 +211,15 @@ struct PlayerLogic : ecs::component {
             .colour = glm::vec4{1.f, 1.f, 1.f, .75f},
             .z_index = 60.f,
             .data = render::ngon{.radius = 20.f + 1.5f * i, .sides = 18, .segments = 4},
+        });
+        output.emplace_back(render::shape{
+            .origin = to_float(transform.centre),
+            .rotation = rotation + static_cast<float>(j) * 2.f * glm::pi<float>() / 3.f,
+            .colour = colour::kBlack1,
+            .z_index = -32.f,
+            .data =
+                render::ngon{
+                    .radius = 22.f + 1.5f * i, .sides = 18, .segments = 4, .line_width = 2.f},
         });
       }
     }

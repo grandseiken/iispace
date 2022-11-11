@@ -50,7 +50,8 @@ inline constexpr glm::vec4 hue360(std::uint32_t h, float l = .5f, float s = 1.f)
   return hue(h / 360.f, l, s);
 }
 
-constexpr auto kBlack = glm::vec4{0.f, 0.f, 0.f, 1.f};
+constexpr auto kBlack1 = glm::vec4{0.f, 0.f, 1.f / 32, 1.f};
+constexpr auto kBlack0 = glm::vec4{0.f, 0.f, 0.f, 1.f};
 constexpr auto kWhite = glm::vec4{1.f, 1.f, 1.f, 1.f};
 
 constexpr auto kSolarizedDarkBase03 = rgb2hsl(0, 43, 54);
