@@ -33,7 +33,7 @@ public:
   virtual glm::uvec2 dimensions() const = 0;
   virtual std::uint64_t tick_count() const = 0;
   virtual std::uint32_t fps() const = 0;
-  virtual const render_output& render(transient_render_state&, bool paused) const = 0;
+  virtual render_output& render(transient_render_state&, bool paused) const = 0;
 
   virtual aggregate_output& output() = 0;
   virtual const sim_results& results() const = 0;
@@ -61,7 +61,7 @@ public:
   std::uint32_t fps() const override;
   // TODO: transient_render_state mucks up with entity IDs sometimes (e.g. shots teleporting).
   // Need to figure out how to avoid that.
-  const render_output& render(transient_render_state& state, bool paused) const override;
+  render_output& render(transient_render_state& state, bool paused) const override;
 
   aggregate_output& output() override;
   const sim_results& results() const override;

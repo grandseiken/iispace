@@ -8,8 +8,8 @@
 #include <glm/glm.hpp>
 #include <memory>
 #include <optional>
-#include <span>
 #include <string_view>
+#include <vector>
 
 namespace ii::render {
 
@@ -76,12 +76,9 @@ public:
 
   void render_background(const glm::vec4& colour);
   // TODO:
-  // - sort out z-indexes. Sort everything by Z to start with?
   // - _maybe_ render outlines automatically rather than manually?
-  // - outlines should be drawn behind motion blurs.
-  // - maybe outlines should be drawn behind fills, too. (Although it looks cool sometimes...)
   // - go over colours again...
-  void render_shapes(coordinate_system ctype, std::span<const shape> shapes, shape_style style,
+  void render_shapes(coordinate_system ctype, std::vector<render::shape>& shapes, shape_style style,
                      float trail_alpha) const;
 
 private:

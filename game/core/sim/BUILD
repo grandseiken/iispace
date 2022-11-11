@@ -89,7 +89,7 @@ cc_library(
   deps = [
     "//game/common:random",
     "//game/logic/sim/io:aggregate",
-    "//game/render",
+    "//game/logic/sim/io:render",
     "@glm",
   ],
   implementation_deps = [
@@ -97,5 +97,6 @@ cc_library(
     "//game/logic/sim",
     "//game/logic/sim/io:output",
     "//game/mixer",
+    "//game/render",
   ],
 )

@@ -15,26 +15,27 @@ struct FollowHub : ecs::component {
   static constexpr std::uint32_t kTimer = 200;
   static constexpr fixed kSpeed = 15_fx / 16_fx;
 
-  static constexpr auto z = 0.f;
+  static constexpr auto z = colour::kZEnemyLarge;
   static constexpr auto c = colour::kSolarizedDarkBlue;
   static constexpr auto cf = colour::alpha(c, .25f);
+  static constexpr auto outline = geom::nline(colour::kOutline, colour::kZOutline, 2.f);
   template <geom::ShapeNode S>
   using fh_arrange = geom::compound<geom::translate<18, 0, S>, geom::translate<-18, 0, S>,
                                     geom::translate<0, 18, S>, geom::translate<0, -18, S>>;
   template <geom::ShapeNode... S>
   using r_pi4_ngon = geom::rotate<fixed_c::pi / 4, S...>;
   using fh_centre =
-      r_pi4_ngon<geom::ngon<geom::nd(20, 4), geom::nline(colour::kBlack1, -32.f, 2.f)>,
+      r_pi4_ngon<geom::ngon<geom::nd(20, 4), outline>,
                  geom::ngon_with_collider<
                      geom::nd(18, 4), geom::nline(geom::ngon_style::kPolygram, c, z),
                      geom::sfill(cf, z), shape_flag::kDangerous | shape_flag::kVulnerable>>;
 
-  using fh_spoke = r_pi4_ngon<geom::ngon<geom::nd(12, 4), geom::nline(colour::kBlack1, -32.f, 2.f)>,
+  using fh_spoke = r_pi4_ngon<geom::ngon<geom::nd(12, 4), outline>,
                               geom::ngon<geom::nd(10, 4), geom::nline(c, z), geom::sfill(cf, z)>>;
   using fh_big_spoke =
       geom::compound<fh_spoke, r_pi4_ngon<geom::ngon<geom::nd(6, 4), geom::nline(c, z, 2.f)>>>;
   using fh_chaser_spoke =
-      r_pi4_ngon<geom::ngon<geom::nd(12, 4), geom::nline(colour::kBlack1, -32.f, 2.f)>,
+      r_pi4_ngon<geom::ngon<geom::nd(12, 4), outline>,
                  geom::ngon<geom::nd(10, 4), geom::nline(geom::ngon_style::kPolygram, c, z),
                             geom::sfill(cf, z)>>;
 
@@ -107,14 +108,15 @@ struct Shielder : ecs::component {
   static constexpr std::uint32_t kTimer = 40;
   static constexpr fixed kSpeed = 1_fx;
 
-  static constexpr auto z = 0.f;
+  static constexpr auto z = colour::kZEnemyLarge;
   static constexpr auto c0 = colour::hue360(150, .2f, .8f);
   static constexpr auto c1 = colour::hue360(160, .5f, .6f);
-  static constexpr auto c2 = glm::vec4{0.f, 0.f, .75f, 1.f};
+  static constexpr auto c2 = colour::kWhite1;
   static constexpr auto cf = colour::alpha(c1, .25f);
+  static constexpr auto outline = geom::nline(colour::kOutline, colour::kZOutline, 2.f);
 
   using centre_shape = geom::compound<
-      geom::ngon<geom::nd(22, 12), geom::nline(colour::kBlack1, -32.f, 2.f)>,
+      geom::ngon<geom::nd(22, 12), outline>,
       geom::ngon<geom::nd(26, 12), geom::nline(geom::ngon_style::kPolystar, c0, z)>,
       geom::ngon<geom::nd(6, 12), geom::nline(c1, z)>,
       geom::ngon<geom::nd(20, 12), geom::nline(c1, z), geom::sfill(cf, z)>,
@@ -122,8 +124,7 @@ struct Shielder : ecs::component {
   using shield_shape = geom::rotate_p<
       2, geom::line<vec2{32, 0}, vec2{18, 0}, geom::sline(c2, z)>,
       geom::rotate<fixed_c::pi / 4, geom::line<vec2{-32, 0}, vec2{-18, 0}, geom::sline(c2, z)>>,
-      geom::ngon<geom::nd(24, 16, 10), geom::nline(colour::kBlack1, -32.f, 2.f)>,
-      geom::ngon<geom::nd(34, 16, 10), geom::nline(colour::kBlack1, -32.f, 2.f)>,
+      geom::ngon<geom::nd(24, 16, 10), outline>, geom::ngon<geom::nd(34, 16, 10), outline>,
       geom::ngon<geom::nd(26, 16, 10), geom::nline(c2, z)>,
       geom::ngon<geom::nd(32, 16, 10), geom::nline(c2, z)>,
       geom::ngon_collider<geom::nd(32, 16, 10), shape_flag::kWeakShield>>;
@@ -216,19 +217,19 @@ struct Tractor : ecs::component {
   static constexpr fixed kSpeed = 6 * (15_fx / 160);
   static constexpr fixed kPullSpeed = 2 + 1_fx / 4;
 
-  static constexpr auto z = 0.f;
+  static constexpr auto z = colour::kZEnemyLarge;
   static constexpr auto c = colour::kSolarizedDarkMagenta;
   static constexpr auto cf = colour::alpha(c, .25f);
-  using t_orb =
-      geom::compound<geom::ngon<geom::nd(18, 6), geom::nline(colour::kBlack1, -32.f, 2.f)>,
-                     geom::ngon_with_collider<
-                         geom::nd(16, 6), geom::nline(geom::ngon_style::kPolygram, c, z),
-                         geom::sfill(cf, z), shape_flag::kDangerous | shape_flag::kVulnerable>>;
+  using t_orb = geom::compound<
+      geom::ngon<geom::nd(18, 6), geom::nline(colour::kOutline, colour::kZOutline, 2.f)>,
+      geom::ngon_with_collider<geom::nd(16, 6), geom::nline(geom::ngon_style::kPolygram, c, z),
+                               geom::sfill(cf, z),
+                               shape_flag::kDangerous | shape_flag::kVulnerable>>;
   using t_star = geom::ngon<geom::nd(18, 6), geom::nline(geom::ngon_style::kPolystar, c, z)>;
   using shape = standard_transform<
       geom::translate<26, 0, geom::rotate_eval<geom::multiply_p<5, 2>, t_orb>>,
       geom::translate<-26, 0, geom::rotate_eval<geom::multiply_p<-5, 2>, t_orb>>,
-      geom::line<vec2{-26, 0}, vec2{26, 0}, geom::sline(colour::kBlack1, -32.f, 5.f)>,
+      geom::line<vec2{-26, 0}, vec2{26, 0}, geom::sline(colour::kOutline, colour::kZOutline, 5.f)>,
       geom::line<vec2{-26, 0}, vec2{26, 0}, geom::sline(c, z)>,
       geom::if_p<3, geom::translate<26, 0, geom::rotate_eval<geom::multiply_p<8, 2>, t_star>>,
                  geom::translate<-26, 0, geom::rotate_eval<geom::multiply_p<-8, 2>, t_star>>>>;

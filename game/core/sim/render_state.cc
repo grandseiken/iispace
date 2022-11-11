@@ -4,6 +4,7 @@
 #include "game/logic/sim/io/output.h"
 #include "game/logic/sim/sim_state.h"
 #include "game/mixer/mixer.h"
+#include "game/render/gl_renderer.h"
 #include <glm/gtc/constants.hpp>
 #include <algorithm>
 #include <unordered_map>
@@ -203,7 +204,7 @@ void RenderState::update(SimInputAdapter* input) {
   }
 }
 
-void RenderState::render(render::GlRenderer& r, render::shape_style style) const {
+void RenderState::render(render::GlRenderer& r, std::vector<render::shape>& shapes) const {
   switch (bgfx_type_) {
   case background_fx_type::kNone:
   case background_fx_type::kLegacy_Stars:
@@ -215,7 +216,6 @@ void RenderState::render(render::GlRenderer& r, render::shape_style style) const
   } break;
   }
 
-  std::vector<render::shape> shapes;
   auto render_box = [&](const glm::vec2& v, const glm::vec2& vv, const glm::vec2& d,
                         const glm::vec4& c, float lw, float z) {
     shapes.emplace_back(render::shape{
@@ -232,19 +232,19 @@ void RenderState::render(render::GlRenderer& r, render::shape_style style) const
     case star_type::kDotStar:
     case star_type::kFarStar:
       render_box(star.position, star_direction_ * star.speed, glm::vec2{1, 1}, star.colour, 1.f,
-                 -96.f);
+                 colour::kZParticle);
       break;
 
     case star_type::kBigStar:
       render_box(star.position, star_direction_ * star.speed, glm::vec2{2, 2}, star.colour, 1.f,
-                 -96.f);
+                 colour::kZParticle);
       break;
 
     case star_type::kPlanet:
       shapes.emplace_back(render::shape{
           .origin = star.position,
           .colour = star.colour,
-          .z_index = 96.f,
+          .z_index = colour::kZParticle,
           .trail = render::motion_trail{.prev_origin = star.position - star_direction_ * star.speed,
                                         .prev_colour = star.colour},
           .data = render::ngon{.radius = star.size, .sides = 8},
@@ -261,14 +261,14 @@ void RenderState::render(render::GlRenderer& r, render::shape_style style) const
 
     if (const auto* d = std::get_if<dot_particle>(&p.data)) {
       render_box(p.position, p.velocity, glm::vec2{d->radius, d->radius}, colour, d->line_width,
-                 -64.f);
+                 colour::kZParticle);
     } else if (const auto* d = std::get_if<line_particle>(&p.data)) {
       float t = std::max(0.f, (17.f - p.time) / 16.f);
       shapes.emplace_back(render::shape{
           .origin = p.position,
           .rotation = d->rotation,
           .colour = colour,
-          .z_index = -64.f,
+          .z_index = colour::kZParticle,
           .trail = render::motion_trail{.prev_origin = p.position - p.velocity,
                                         .prev_rotation = d->rotation - d->angular_velocity,
                                         .prev_colour = colour},
@@ -278,8 +278,6 @@ void RenderState::render(render::GlRenderer& r, render::shape_style style) const
       });
     }
   }
-
-  r.render_shapes(render::coordinate_system::kGlobal, shapes, style, /* trail alpha */ 1.f);
 }
 
 void RenderState::handle_background_fx(const background_fx_change& change) {

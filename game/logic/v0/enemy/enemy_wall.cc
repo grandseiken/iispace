@@ -9,15 +9,17 @@ namespace ii::v0 {
 namespace {
 
 struct Square : ecs::component {
-  static constexpr std::uint32_t kBoundingWidth = 18;
+  static constexpr std::uint32_t kBoundingWidth = 14;
   static constexpr sound kDestroySound = sound::kEnemyDestroy;
   static constexpr rumble_type kDestroyRumble = rumble_type::kLow;
   static constexpr fixed kSpeed = 1_fx + 3_fx / 4_fx;
 
-  static constexpr auto z = -8.f;
+  // TODO: box outline shadows have odd overlaps? Not really sure why since it
+  // should line up exactly. Happens even when rotatated...
+  static constexpr auto z = colour::kZEnemyWall;
   using shape = standard_transform<
       geom::box_collider<vec2{12, 12}, shape_flag::kDangerous | shape_flag::kVulnerable>,
-      geom::box<vec2{14, 14}, geom::sline(colour::kBlack1, -32.f, 2.f)>,
+      geom::box<vec2{14, 14}, geom::sline(colour::kOutline, colour::kZOutline, 2.f)>,
       geom::box_colour_p2<vec2{12, 12}, 2, 3, geom::sline(glm::vec4{0.f}, z, 1.5f),
                           geom::sfill(glm::vec4{0.f}, z)>>;
 
@@ -98,11 +100,11 @@ struct Wall : ecs::component {
   static constexpr std::uint32_t kTimer = 100;
   static constexpr fixed kSpeed = 1;
 
-  static constexpr auto z = -8.f;
+  static constexpr auto z = colour::kZEnemyWall;
   static constexpr auto c = colour::kSolarizedDarkGreen;
   static constexpr auto cf = colour::alpha(c, .25f);
   using shape = standard_transform<
-      geom::box<vec2{14, 50}, geom::sline(colour::kBlack1, -32.f, 2.f)>,
+      geom::box<vec2{14, 50}, geom::sline(colour::kOutline, colour::kZOutline, 2.f)>,
       geom::conditional_p<
           2,
           geom::box_with_collider<vec2{12, 48}, geom::sline(c, z, 1.75f), geom::sfill(cf, z),
@@ -166,15 +168,16 @@ struct Wall : ecs::component {
     if (type == damage_type::kBomb) {
       return;
     }
-    // TODO: square spawn is incorrect when rotating!?
-    auto d = rotate(dir, fixed_c::pi / 2);
+
+    auto p = from_polar(transform.rotation, 1_fx);
+    auto d = rotate(p, fixed_c::pi / 2);
     auto v = transform.centre + d * 12 * 3;
     if (sim.is_on_screen(v)) {
-      spawn_square(sim, v, from_polar(transform.rotation, 1_fx), /* drop */ false);
+      spawn_square(sim, v, p, /* drop */ false);
     }
     v = transform.centre - d * 12 * 3;
     if (sim.is_on_screen(v)) {
-      spawn_square(sim, v, from_polar(transform.rotation, 1_fx), /* drop */ false);
+      spawn_square(sim, v, p, /* drop */ false);
     }
   }
 };

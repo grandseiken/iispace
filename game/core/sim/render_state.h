@@ -2,7 +2,7 @@
 #define II_GAME_CORE_SIM_RENDER_STATE_H
 #include "game/common/random.h"
 #include "game/logic/sim/io/aggregate.h"
-#include "game/render/gl_renderer.h"
+#include "game/logic/sim/io/render.h"
 #include <glm/glm.hpp>
 #include <cstdint>
 #include <vector>
@@ -24,7 +24,7 @@ public:
   // If mixer != nullptr, sounds will be handled. If input != nullptr, rumble will be handled.
   void handle_output(ISimState& state, Mixer* mixer, SimInputAdapter* input);
   void update(SimInputAdapter* input);
-  void render(render::GlRenderer& r, render::shape_style style) const;
+  void render(render::GlRenderer& r, std::vector<render::shape>&) const;
 
 private:
   void handle_background_fx(const background_fx_change& change);

@@ -209,7 +209,7 @@ std::uint32_t SimState::fps() const {
   return setup_->parameters(internals_->conditions).fps;
 }
 
-const render_output& SimState::render(transient_render_state& state, bool paused) const {
+render_output& SimState::render(transient_render_state& state, bool paused) const {
   auto& result = internals_->render;
   result.boss_hp_bar.reset();
   result.shapes.clear();

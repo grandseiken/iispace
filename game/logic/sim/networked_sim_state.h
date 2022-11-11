@@ -58,7 +58,7 @@ public:
   std::uint64_t tick_count() const override { return predicted_state_.tick_count(); }
   std::uint32_t fps() const override { return predicted_state_.fps(); }
 
-  const render_output& render(transient_render_state& state, bool paused) const override {
+  render_output& render(transient_render_state& state, bool paused) const override {
     return predicted_state_.render(state, paused);
   }
   aggregate_output& output() override { return merged_output_; }

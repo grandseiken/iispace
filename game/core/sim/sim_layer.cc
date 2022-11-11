@@ -165,10 +165,10 @@ void SimLayer::update_content(const ui::input_frame& ui_input, ui::output_frame&
 void SimLayer::render_content(render::GlRenderer& r) const {
   auto style =
       is_legacy_mode(impl_->mode) ? render::shape_style::kNone : render::shape_style::kStandard;
-  const auto& render =
+  auto& render =
       impl_->istate().render(impl_->transients, /* paused */ stack().top() != impl_->hud);
   r.set_colour_cycle(render.colour_cycle);
-  impl_->render_state.render(r, style);  // TODO: can be merged with below?
+  impl_->render_state.render(r, render.shapes);
   r.render_shapes(render::coordinate_system::kGlobal, render.shapes, style, /* trail alpha */ 1.f);
   impl_->hud->set_data(render);
 }

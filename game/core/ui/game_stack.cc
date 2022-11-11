@@ -164,7 +164,7 @@ void GameStack::render(render::GlRenderer& renderer) const {
               from_polar(glm::pi<float>() / 3.f, radius)};
     }
     auto flash = (64.f - cursor_anim_frame_ % 64) / 64.f;
-    std::array cursor_shapes = {
+    std::vector cursor_shapes = {
         render::shape{
             .origin = origin + glm::vec2{2.f, 2.f},
             .colour = {0.f, 0.f, 0.f, .5f},

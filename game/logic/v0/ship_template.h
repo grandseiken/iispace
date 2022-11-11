@@ -44,6 +44,7 @@ void render_shape(std::vector<render::shape>& output, const auto& parameters,
     render::shape shape_copy = shape;
     if (c_override && (!c_override_max_index || i < *c_override_max_index)) {
       shape_copy.colour = glm::vec4{c_override->r, c_override->g, c_override->b, shape.colour.a};
+      shape_copy.z_index = .5f + shape_copy.z_index.value_or(0.f);
     }
     output.emplace_back(shape_copy);
   });

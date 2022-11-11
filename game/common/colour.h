@@ -52,7 +52,9 @@ inline constexpr glm::vec4 hue360(std::uint32_t h, float l = .5f, float s = 1.f)
 
 constexpr auto kBlack1 = glm::vec4{0.f, 0.f, 1.f / 32, 1.f};
 constexpr auto kBlack0 = glm::vec4{0.f, 0.f, 0.f, 1.f};
-constexpr auto kWhite = glm::vec4{1.f, 1.f, 1.f, 1.f};
+constexpr auto kWhite0 = glm::vec4{0.f, 0.f, 1.f, 1.f};
+constexpr auto kWhite1 = glm::vec4{0.f, 0.f, .75f, 1.f};
+constexpr auto kOutline = kBlack1;
 
 constexpr auto kSolarizedDarkBase03 = rgb2hsl(0, 43, 54);
 constexpr auto kSolarizedDarkBase02 = rgb2hsl(7, 54, 66);
@@ -71,6 +73,18 @@ constexpr auto kSolarizedDarkViolet = rgb2hsl(108, 113, 196);
 constexpr auto kSolarizedDarkBlue = rgb2hsl(38, 139, 210);
 constexpr auto kSolarizedDarkCyan = rgb2hsl(42, 161, 152);
 constexpr auto kSolarizedDarkGreen = rgb2hsl(133, 153, 0);
+
+constexpr auto kZOutline = -96.f;
+constexpr auto kZTrails = -64.f;
+constexpr auto kZParticle = -32.f;
+constexpr auto kZPowerup = -16.f;
+constexpr auto kZEnemyWall = -8.f;
+constexpr auto kZEnemyLarge = 0.f;
+constexpr auto kZEnemySmall = 8.f;
+constexpr auto kZPlayerShot = 32.f;
+constexpr auto kZPlayerPowerup = 64.f;
+constexpr auto kZPlayerBubble = 72.f;
+constexpr auto kZPlayer = 96.f;
 }  // namespace ii::colour
 
 #endif

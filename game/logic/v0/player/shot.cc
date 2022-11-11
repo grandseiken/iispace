@@ -11,12 +11,12 @@ namespace {
 struct PlayerShot : ecs::component {
   static constexpr fixed kSpeed = 10_fx * 15_fx / 16_fx;
 
-  static constexpr auto z = 64.f;
+  static constexpr auto z = colour::kZPlayerShot;
   static constexpr auto style = geom::sline(glm::vec4{0.f}, z);
-  using shape =
-      standard_transform<geom::box_colour_p<vec2{3 + 3_fx / 4_fx, 3 + 3_fx / 4_fx}, 3, style>,
-                         geom::box_colour_p<vec2{2 + 1_fx / 2_fx, 2 + 1_fx / 2_fx}, 2, style>,
-                         geom::box_colour_p<vec2{1 + 1_fx / 4_fx, 1 + 1_fx / 4_fx}, 3, style>>;
+  using shape = standard_transform<
+      geom::box<vec2{4_fx, 4_fx}, geom::sline(colour::kOutline, colour::kZOutline)>,
+      geom::box_colour_p<vec2{2 + 1_fx / 2_fx, 2 + 1_fx / 2_fx}, 2, style>,
+      geom::box_colour_p<vec2{1 + 1_fx / 4_fx, 1 + 1_fx / 4_fx}, 3, style>>;
 
   std::tuple<vec2, fixed, glm::vec4, glm::vec4> shape_parameters(const Transform& transform) const {
     auto c_dark = colour;

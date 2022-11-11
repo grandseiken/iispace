@@ -1,5 +1,6 @@
 #include "game/render/gl_renderer.h"
 #include "assets/fonts/fonts.h"
+#include "game/common/colour.h"
 #include "game/common/math.h"
 #include "game/common/raw_ptr.h"
 #include "game/io/font/font.h"
@@ -427,8 +428,11 @@ void GlRenderer::render_background(const glm::vec4& colour) {
   gl::draw_elements(gl::draw_mode::kPoints, impl_->index_buffer(1), gl::type_of<unsigned>(), 1, 0);
 }
 
-void GlRenderer::render_shapes(coordinate_system ctype, std::span<const shape> shapes,
+void GlRenderer::render_shapes(coordinate_system ctype, std::vector<shape>& shapes,
                                shape_style style, float trail_alpha) const {
+  std::stable_sort(shapes.begin(), shapes.end(),
+                   [](const shape& a, const shape& b) { return a.z_index < b.z_index; });
+
   struct vertex_data {
     std::uint32_t style = 0;
     glm::uvec2 params{0u, 0u};
@@ -446,6 +450,7 @@ void GlRenderer::render_shapes(coordinate_system ctype, std::span<const shape> s
   static thread_local std::vector<unsigned> shadow_trail_indices;
   static thread_local std::vector<unsigned> shadow_fill_indices;
   static thread_local std::vector<unsigned> shadow_outline_indices;
+  static thread_local std::vector<unsigned> bottom_outline_indices;
   static thread_local std::vector<unsigned> trail_indices;
   static thread_local std::vector<unsigned> fill_indices;
   static thread_local std::vector<unsigned> outline_indices;
@@ -454,6 +459,7 @@ void GlRenderer::render_shapes(coordinate_system ctype, std::span<const shape> s
   shadow_trail_indices.clear();
   shadow_fill_indices.clear();
   shadow_outline_indices.clear();
+  bottom_outline_indices.clear();
   trail_indices.clear();
   fill_indices.clear();
   outline_indices.clear();
@@ -480,7 +486,11 @@ void GlRenderer::render_shapes(coordinate_system ctype, std::span<const shape> s
   auto add_outline_data = [&](const vertex_data& d,
                               const std::optional<render::motion_trail>& trail) {
     add_vertex_data(d);
-    outline_indices.emplace_back(vertex_index++);
+    if (d.z_index < colour::kZTrails) {
+      bottom_outline_indices.emplace_back(vertex_index++);
+    } else {
+      outline_indices.emplace_back(vertex_index++);
+    }
     if (trail && trail_alpha > 0.f) {
       auto dt = d;
       dt.position = trail->prev_origin;
@@ -613,6 +623,8 @@ void GlRenderer::render_shapes(coordinate_system ctype, std::span<const shape> s
       make_stream_draw_buffer(std::span<const unsigned>{shadow_fill_indices});
   auto shadow_outline_index_buffer =
       make_stream_draw_buffer(std::span<const unsigned>{shadow_outline_indices});
+  auto bottom_outline_index_buffer =
+      make_stream_draw_buffer(std::span<const unsigned>{bottom_outline_indices});
   auto trail_index_buffer = make_stream_draw_buffer(std::span<const unsigned>{trail_indices});
   auto fill_index_buffer = make_stream_draw_buffer(std::span<const unsigned>{fill_indices});
   auto outline_index_buffer = make_stream_draw_buffer(std::span<const unsigned>{outline_indices});
@@ -644,112 +656,73 @@ void GlRenderer::render_shapes(coordinate_system ctype, std::span<const shape> s
     offset = (clip_rect.min() + clip_rect.max()) / 2;
   }
   gl::enable_clip_planes(4u);
+  gl::enable_depth_test(false);
   gl::enable_blend(true);
   gl::blend_function(gl::blend_factor::kSrcAlpha, gl::blend_factor::kOneMinusSrcAlpha);
 
+  auto render_outlines = [&](const gl::buffer& index_buffer, std::size_t elements) {
+    const auto& outline_program = impl_->shader(shader::kShapeOutline);
+    gl::use_program(outline_program);
+    auto result = gl::set_uniforms(
+        outline_program, "aspect_scale", target().aspect_scale(), "render_dimensions",
+        target().render_dimensions, "clip_min", clip_rect.min(), "clip_max", clip_rect.max(),
+        "coordinate_offset", offset, "colour_cycle", colour_cycle_ / 256.f);
+    if (!result) {
+      impl_->status = unexpected("outline shader error: " + result.error());
+    } else {
+      gl::draw_elements(gl::draw_mode::kPoints, index_buffer, gl::type_of<unsigned>(), elements, 0);
+    }
+  };
+
+  auto render_trails = [&](const gl::buffer& index_buffer, std::size_t elements) {
+    const auto& motion_program = impl_->shader(shader::kShapeMotion);
+    gl::use_program(motion_program);
+    auto result =
+        gl::set_uniforms(motion_program, "aspect_scale", target().aspect_scale(),
+                         "render_dimensions", target().render_dimensions, "clip_min",
+                         clip_rect.min(), "clip_max", clip_rect.max(), "coordinate_offset", offset,
+                         "trail_alpha", trail_alpha, "colour_cycle", colour_cycle_ / 256.f);
+    if (!result) {
+      impl_->status = unexpected("motion shader error: " + result.error());
+    } else {
+      gl::draw_elements(gl::draw_mode::kLines, index_buffer, gl::type_of<unsigned>(), elements, 0);
+    }
+  };
+
+  auto render_fills = [&](const gl::buffer& index_buffer, std::size_t elements) {
+    const auto& fill_program = impl_->shader(shader::kShapeFill);
+    gl::use_program(fill_program);
+    auto result = gl::set_uniforms(
+        fill_program, "aspect_scale", target().aspect_scale(), "render_dimensions",
+        target().render_dimensions, "clip_min", clip_rect.min(), "clip_max", clip_rect.max(),
+        "coordinate_offset", offset, "colour_cycle", colour_cycle_ / 256.f);
+    if (!result) {
+      impl_->status = unexpected("fill shader error: " + result.error());
+    } else {
+      gl::draw_elements(gl::draw_mode::kPoints, index_buffer, gl::type_of<unsigned>(), elements, 0);
+    }
+  };
+
   if (!shadow_trail_indices.empty()) {
-    const auto& motion_program = impl_->shader(shader::kShapeMotion);
-    gl::use_program(motion_program);
-    gl::enable_depth_test(false);
-
-    auto result =
-        gl::set_uniforms(motion_program, "aspect_scale", target().aspect_scale(),
-                         "render_dimensions", target().render_dimensions, "clip_min",
-                         clip_rect.min(), "clip_max", clip_rect.max(), "coordinate_offset", offset,
-                         "trail_alpha", trail_alpha, "colour_cycle", colour_cycle_ / 256.f);
-    if (!result) {
-      impl_->status = unexpected("motion shader error: " + result.error());
-      return;
-    }
-    gl::draw_elements(gl::draw_mode::kLines, shadow_trail_index_buffer, gl::type_of<unsigned>(),
-                      shadow_trail_indices.size(), 0);
+    render_trails(shadow_trail_index_buffer, shadow_trail_indices.size());
   }
-
   if (!shadow_outline_indices.empty()) {
-    const auto& outline_program = impl_->shader(shader::kShapeOutline);
-    gl::use_program(outline_program);
-    gl::enable_clip_planes(4u);
-    gl::enable_depth_test(false);
-
-    auto result = gl::set_uniforms(
-        outline_program, "aspect_scale", target().aspect_scale(), "render_dimensions",
-        target().render_dimensions, "clip_min", clip_rect.min(), "clip_max", clip_rect.max(),
-        "coordinate_offset", offset, "colour_cycle", colour_cycle_ / 256.f);
-    if (!result) {
-      impl_->status = unexpected("outline shader error: " + result.error());
-      return;
-    }
-    gl::draw_elements(gl::draw_mode::kPoints, shadow_outline_index_buffer, gl::type_of<unsigned>(),
-                      shadow_outline_indices.size(), 0);
+    render_outlines(shadow_outline_index_buffer, shadow_outline_indices.size());
   }
-
   if (!shadow_fill_indices.empty()) {
-    const auto& fill_program = impl_->shader(shader::kShapeFill);
-    gl::use_program(fill_program);
-    gl::enable_depth_test(false);
-    auto result = gl::set_uniforms(
-        fill_program, "aspect_scale", target().aspect_scale(), "render_dimensions",
-        target().render_dimensions, "clip_min", clip_rect.min(), "clip_max", clip_rect.max(),
-        "coordinate_offset", offset, "colour_cycle", colour_cycle_ / 256.f);
-    if (!result) {
-      impl_->status = unexpected("fill shader error: " + result.error());
-      return;
-    }
-    gl::draw_elements(gl::draw_mode::kPoints, shadow_fill_index_buffer, gl::type_of<unsigned>(),
-                      shadow_fill_indices.size(), 0);
+    render_fills(shadow_fill_index_buffer, shadow_fill_indices.size());
   }
-
+  if (!bottom_outline_indices.empty()) {
+    render_outlines(bottom_outline_index_buffer, bottom_outline_indices.size());
+  }
   if (!trail_indices.empty()) {
-    const auto& motion_program = impl_->shader(shader::kShapeMotion);
-    gl::use_program(motion_program);
-    gl::enable_depth_test(false);
-
-    auto result =
-        gl::set_uniforms(motion_program, "aspect_scale", target().aspect_scale(),
-                         "render_dimensions", target().render_dimensions, "clip_min",
-                         clip_rect.min(), "clip_max", clip_rect.max(), "coordinate_offset", offset,
-                         "trail_alpha", trail_alpha, "colour_cycle", colour_cycle_ / 256.f);
-    if (!result) {
-      impl_->status = unexpected("motion shader error: " + result.error());
-      return;
-    }
-    gl::draw_elements(gl::draw_mode::kLines, trail_index_buffer, gl::type_of<unsigned>(),
-                      trail_indices.size(), 0);
+    render_trails(trail_index_buffer, trail_indices.size());
   }
-
   if (!fill_indices.empty()) {
-    const auto& fill_program = impl_->shader(shader::kShapeFill);
-    gl::use_program(fill_program);
-    gl::enable_depth_test(false);
-    auto result = gl::set_uniforms(
-        fill_program, "aspect_scale", target().aspect_scale(), "render_dimensions",
-        target().render_dimensions, "clip_min", clip_rect.min(), "clip_max", clip_rect.max(),
-        "coordinate_offset", offset, "colour_cycle", colour_cycle_ / 256.f);
-    if (!result) {
-      impl_->status = unexpected("fill shader error: " + result.error());
-      return;
-    }
-    gl::draw_elements(gl::draw_mode::kPoints, fill_index_buffer, gl::type_of<unsigned>(),
-                      fill_indices.size(), 0);
+    render_fills(fill_index_buffer, fill_indices.size());
   }
-
   if (!outline_indices.empty()) {
-    const auto& outline_program = impl_->shader(shader::kShapeOutline);
-    gl::use_program(outline_program);
-    gl::enable_clip_planes(4u);
-    gl::enable_depth_test(true);
-    gl::depth_function(gl::comparison::kGreaterEqual);
-
-    auto result = gl::set_uniforms(
-        outline_program, "aspect_scale", target().aspect_scale(), "render_dimensions",
-        target().render_dimensions, "clip_min", clip_rect.min(), "clip_max", clip_rect.max(),
-        "coordinate_offset", offset, "colour_cycle", colour_cycle_ / 256.f);
-    if (!result) {
-      impl_->status = unexpected("outline shader error: " + result.error());
-      return;
-    }
-    gl::draw_elements(gl::draw_mode::kPoints, outline_index_buffer, gl::type_of<unsigned>(),
-                      outline_indices.size(), 0);
+    render_outlines(outline_index_buffer, outline_indices.size());
   }
 }
 
