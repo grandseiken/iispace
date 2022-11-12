@@ -26,7 +26,7 @@ public:
         .set_alignment(ui::alignment::kCentered)
         .set_multiline(true);
 
-    auto colour = player_colour(index);
+    auto colour = colour::kWhite0;
     auto focus_colour = colour;
     focus_colour.z += .125f;
 
@@ -43,29 +43,38 @@ public:
         .set_drop_shadow(kDropShadow, .5f)
         .set_font_dimensions(kSemiLargeFont)
         .set_multiline(true);
-    auto& ready_button = standard_button(*l_bottom.add_back<ui::Button>())
-                             .set_text(ustring::ascii("Ready"))
-                             .set_text_colour(colour, focus_colour)
-                             .set_callback([this] { ready(); });
-    auto& leave_button = standard_button(*l_bottom.add_back<ui::Button>())
-                             .set_text(ustring::ascii("Leave"))
-                             .set_text_colour(colour, focus_colour)
-                             .set_callback([this] {
-                               if (!locked_) {
-                                 clear();
-                               }
-                             });
-    l_bottom.set_absolute_size(ready_button, kLargeFont.y + 2 * kPadding.y);
-    l_bottom.set_absolute_size(leave_button, kLargeFont.y + 2 * kPadding.y);
+    ready_button_ = &standard_button(*l_bottom.add_back<ui::Button>())
+                         .set_text(ustring::ascii("Ready"))
+                         .set_text_colour(colour, focus_colour)
+                         .set_callback([this] { ready(); });
+    leave_button_ = &standard_button(*l_bottom.add_back<ui::Button>())
+                         .set_text(ustring::ascii("Leave"))
+                         .set_text_colour(colour, focus_colour)
+                         .set_callback([this] {
+                           if (!locked_) {
+                             clear();
+                           }
+                         });
+    l_bottom.set_absolute_size(*ready_button_, kLargeFont.y + 2 * kPadding.y);
+    l_bottom.set_absolute_size(*leave_button_, kLargeFont.y + 2 * kPadding.y);
 
     config_tab_->add_back<ui::Panel>();
-    auto& bottom_ready = *config_tab_->add_back<ui::TextElement>();
-    bottom_ready.set_text(ustring::ascii("Ready"))
+    ready_text_ = config_tab_->add_back<ui::TextElement>();
+    ready_text_->set_text(ustring::ascii("Ready"))
         .set_alignment(ui::alignment::kCentered)
         .set_colour(colour)
         .set_font(render::font_id::kMonospaceBoldItalic)
         .set_drop_shadow(kDropShadow, .5f)
         .set_font_dimensions(kLargeFont);
+  }
+
+  void set_colour(const glm::vec4& colour) {
+    auto focus_colour = colour;
+    focus_colour.z += .125f;
+    ready_text_->set_colour(colour);
+    controller_text_->set_colour(colour);
+    ready_button_->set_text_colour(colour, focus_colour);
+    leave_button_->set_text_colour(colour, focus_colour);
   }
 
   void set_joining(bool joining) { joining_ = joining; }
@@ -165,16 +174,25 @@ private:
   std::optional<std::string> controller_name_;
 
   std::uint32_t frame_ = 0;
-  ui::TabContainer* main_;
-  ui::TabContainer* config_tab_;
-  ui::TextElement* waiting_text_;
+  ui::TabContainer* main_ = nullptr;
+  ui::TabContainer* config_tab_ = nullptr;
+  ui::TextElement* waiting_text_ = nullptr;
+  ui::TextElement* ready_text_ = nullptr;
   ui::TextElement* controller_text_ = nullptr;
+  ui::Button* ready_button_ = nullptr;
+  ui::Button* leave_button_ = nullptr;
 };
 
 LobbySlotCoordinator::LobbySlotCoordinator(ui::GameStack& stack, ui::Element& element, bool online)
 : stack_{stack}, online_{online} {
   for (std::uint32_t i = 0; i < kMaxPlayers; ++i) {
     slots_.emplace_back().panel = element.add_back<LobbySlotPanel>(i);
+  }
+}
+
+void LobbySlotCoordinator::set_mode(game_mode mode) {
+  for (std::uint32_t i = 0; i < slots_.size(); ++i) {
+    slots_[i].panel->set_colour(player_colour(mode, i));
   }
 }
 

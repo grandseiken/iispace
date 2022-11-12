@@ -4,6 +4,7 @@
 #include "game/logic/geometry/node_conditional.h"
 #include "game/logic/legacy/components.h"
 #include "game/logic/legacy/ship_template.h"
+#include "game/logic/sim/io/conditions.h"
 #include "game/logic/sim/io/player.h"
 #include <algorithm>
 #include <utility>
@@ -29,8 +30,8 @@ struct Powerup : ecs::component {
 
   std::tuple<vec2, fixed, glm::vec4, glm::vec4, powerup_type>
   shape_parameters(const Transform& transform) const {
-    auto c0 = player_colour((frame % (2 * kMaxPlayers)) / 2);
-    auto c1 = player_colour(((frame + 1) % (2 * kMaxPlayers)) / 2);
+    auto c0 = legacy_player_colour((frame % (2 * kMaxPlayers)) / 2);
+    auto c1 = legacy_player_colour(((frame + 1) % (2 * kMaxPlayers)) / 2);
     return {transform.centre, fixed_c::pi / 2, c0, c1, type};
   }
 

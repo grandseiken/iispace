@@ -46,7 +46,7 @@ struct Shot : ecs::component {
   void update(ecs::handle h, Transform& transform, SimInterface& sim) {
     colour = magic && sim.random(random_source::kLegacyAesthetic).rbool()
         ? glm::vec4{1.f}
-        : player_colour(player_number);
+        : legacy_player_colour(player_number);
     transform.move(velocity);
     bool on_screen = all(greaterThanEqual(transform.centre, vec2{-4, -4})) &&
         all(lessThan(transform.centre, vec2{4, 4} + sim.dimensions()));
@@ -144,7 +144,7 @@ struct PlayerLogic : ecs::component {
   shape_parameters(const Player& pc, const Transform& transform) const {
     auto colour = !should_render()  ? glm::vec4{0.f}
         : invulnerability_timer % 2 ? glm::vec4{1.f}
-                                    : player_colour(pc.player_number);
+                                    : legacy_player_colour(pc.player_number);
     auto c_dark = colour;
     c_dark.a = std::min(c_dark.a, .2f);
     auto powerup_colour = !should_render() ? glm::vec4{0.f} : glm::vec4{1.f};
@@ -216,7 +216,7 @@ struct PlayerLogic : ecs::component {
 
     // Bombs.
     if (!pc.is_predicted && pc.bomb_count && input.keys & input_frame::kBomb) {
-      auto c = player_colour(pc.player_number);
+      auto c = legacy_player_colour(pc.player_number);
       pc.bomb_count = 0;
       render.clear_trails = true;
 
@@ -318,7 +318,7 @@ struct PlayerLogic : ecs::component {
     if (!should_render()) {
       return;
     }
-    auto c = player_colour(pc.player_number);
+    auto c = legacy_player_colour(pc.player_number);
     auto t = to_float(fire_target);
     output.emplace_back(render::shape{
         .origin = t,
@@ -335,7 +335,7 @@ struct PlayerLogic : ecs::component {
       return std::nullopt;
     }
     render::player_info info;
-    info.colour = player_colour(pc.player_number);
+    info.colour = legacy_player_colour(pc.player_number);
     info.score = score.score;
     info.multiplier = score.multiplier;
     info.timer = static_cast<float>(pc.super_charge) / kMagicShotCount;

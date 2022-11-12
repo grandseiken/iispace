@@ -1,7 +1,11 @@
 cc_library(
   name = "conditions",
   hdrs = ["conditions.h"],
-  deps = ["//game/common:types"],
+  deps = [
+    "//game/common:types",
+    "//game/common:math",
+    "@glm",
+  ],
   visibility = ["//visibility:public"],
 )
 

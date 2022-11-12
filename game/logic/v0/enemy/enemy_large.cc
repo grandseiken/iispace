@@ -108,25 +108,25 @@ struct Shielder : ecs::component {
   static constexpr std::uint32_t kTimer = 40;
   static constexpr fixed kSpeed = 1_fx;
 
+  // TODO: fill in the shield!
   static constexpr auto z = colour::kZEnemyLarge;
-  static constexpr auto c0 = colour::hue360(150, .2f, .8f);
-  static constexpr auto c1 = colour::hue360(160, .5f, .6f);
-  static constexpr auto c2 = colour::kWhite1;
-  static constexpr auto cf = colour::alpha(c1, .25f);
+  static constexpr auto c0 = colour::hsl_mix(colour::kSolarizedDarkCyan, colour::kNewGreen0);
+  static constexpr auto c1 = colour::kWhite1;
+  static constexpr auto cf = colour::alpha(c0, .25f);
   static constexpr auto outline = geom::nline(colour::kOutline, colour::kZOutline, 2.f);
 
   using centre_shape = geom::compound<
       geom::ngon<geom::nd(22, 12), outline>,
       geom::ngon<geom::nd(26, 12), geom::nline(geom::ngon_style::kPolystar, c0, z)>,
-      geom::ngon<geom::nd(6, 12), geom::nline(c1, z)>,
-      geom::ngon<geom::nd(20, 12), geom::nline(c1, z), geom::sfill(cf, z)>,
+      geom::ngon<geom::nd(6, 12), geom::nline(c0, z)>,
+      geom::ngon<geom::nd(20, 12), geom::nline(c0, z), geom::sfill(cf, z)>,
       geom::ngon_collider<geom::nd(20, 12), shape_flag::kDangerous | shape_flag::kVulnerable>>;
   using shield_shape = geom::rotate_p<
-      2, geom::line<vec2{32, 0}, vec2{18, 0}, geom::sline(c2, z)>,
-      geom::rotate<fixed_c::pi / 4, geom::line<vec2{-32, 0}, vec2{-18, 0}, geom::sline(c2, z)>>,
+      2, geom::line<vec2{32, 0}, vec2{18, 0}, geom::sline(c1, z)>,
+      geom::rotate<fixed_c::pi / 4, geom::line<vec2{-32, 0}, vec2{-18, 0}, geom::sline(c1, z)>>,
       geom::ngon<geom::nd(24, 16, 10), outline>, geom::ngon<geom::nd(34, 16, 10), outline>,
-      geom::ngon<geom::nd(26, 16, 10), geom::nline(c2, z)>,
-      geom::ngon<geom::nd(32, 16, 10), geom::nline(c2, z)>,
+      geom::ngon<geom::nd(26, 16, 10), geom::nline(c1, z)>,
+      geom::ngon<geom::nd(32, 16, 10), geom::nline(c1, z)>,
       geom::ngon_collider<geom::nd(32, 16, 10), shape_flag::kWeakShield>>;
   using shape = geom::translate_p<0, geom::rotate_p<1, centre_shape>, shield_shape>;
 
@@ -285,8 +285,7 @@ struct Tractor : ecs::component {
       });
       if (timer % (kTimer / 2) == 0 && sim.is_on_screen(transform.centre) && power) {
         // spawn_boss_shot(sim, transform.centre, 4 *
-        // sim.nearest_player_direction(transform.centre),
-        //                 colour::hue360(300, .5f, .6f));
+        // sim.nearest_player_direction(transform.centre), c);
         // sim.emit(resolve_key::predicted()).play_random(sound::kBossFire, transform.centre);
       }
 

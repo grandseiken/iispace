@@ -2,6 +2,7 @@
 #define II_GAME_CORE_LAYERS_SLOT_COORDINATOR_H
 #include "game/core/ui/game_stack.h"
 #include "game/data/packet.h"
+#include "game/logic/sim/io/conditions.h"
 #include <cstdint>
 #include <optional>
 #include <unordered_map>
@@ -13,6 +14,7 @@ class LobbySlotPanel;
 class LobbySlotCoordinator {
 public:
   LobbySlotCoordinator(ui::GameStack& stack, ui::Element& element, bool online);
+  void set_mode(game_mode mode);
 
   void
   handle(const std::vector<data::lobby_update_packet::slot_info>& info, ui::output_frame& output);

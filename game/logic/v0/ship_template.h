@@ -1,5 +1,6 @@
 #ifndef II_GAME_LOGIC_V0_SHIP_TEMPLATE_H
 #define II_GAME_LOGIC_V0_SHIP_TEMPLATE_H
+#include "game/common/colour.h"
 #include "game/common/math.h"
 #include "game/logic/ecs/call.h"
 #include "game/logic/ecs/index.h"
@@ -57,7 +58,7 @@ void render_entity_shape_override(std::vector<render::shape>& output, const Heal
   std::optional<glm::vec4> c_override = colour_override;
   std::optional<std::size_t> c_override_max_index;
   if (!colour_override && health && health->hit_timer) {
-    c_override = glm::vec4{1.f};
+    c_override = colour::kWhite0;
     c_override_max_index = health->hit_flash_ignore_index;
   }
   render_shape<S>(output, parameters, t, c_override, c_override_max_index);

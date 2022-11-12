@@ -24,7 +24,7 @@ struct Follow : ecs::component {
   static constexpr std::uint32_t kHugeWidth = 33;
 
   static constexpr auto z = colour::kZEnemySmall;
-  static constexpr auto c = colour::hue360(270, .6f, .75f);
+  static constexpr auto c = colour::kNewPurple;
   static constexpr auto cf = colour::alpha(c, .25f);
   static constexpr auto outline = geom::nline(colour::kOutline, colour::kZOutline, 2.f);
   using small_shape =

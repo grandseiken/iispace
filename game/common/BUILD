@@ -13,7 +13,10 @@ cc_library(
     "math.h",
     "rect.h",
   ],
-  deps = ["@glm"],
+  deps = [
+    "@gcem",
+    "@glm",
+  ],
   visibility = ["//visibility:public"],
 )
 

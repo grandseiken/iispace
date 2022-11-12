@@ -20,12 +20,12 @@ struct Square : ecs::component {
   using shape = standard_transform<
       geom::box_collider<vec2{12, 12}, shape_flag::kDangerous | shape_flag::kVulnerable>,
       geom::box<vec2{14, 14}, geom::sline(colour::kOutline, colour::kZOutline, 2.f)>,
-      geom::box_colour_p2<vec2{12, 12}, 2, 3, geom::sline(glm::vec4{0.f}, z, 1.5f),
-                          geom::sfill(glm::vec4{0.f}, z)>>;
+      geom::box_colour_p2<vec2{12, 12}, 2, 3, geom::sline(colour::kZero, z, 1.5f),
+                          geom::sfill(colour::kZero, z)>>;
 
   std::tuple<vec2, fixed, glm::vec4, glm::vec4>
   shape_parameters(const Transform& transform, const Health& health) const {
-    auto c = colour::kSolarizedDarkGreen;
+    auto c = colour::kNewGreen0;
     if (health.hp && invisible_flash) {
       c = colour::alpha(c, .5f);
     }
@@ -101,7 +101,7 @@ struct Wall : ecs::component {
   static constexpr fixed kSpeed = 1;
 
   static constexpr auto z = colour::kZEnemyWall;
-  static constexpr auto c = colour::kSolarizedDarkGreen;
+  static constexpr auto c = colour::kNewGreen0;
   static constexpr auto cf = colour::alpha(c, .25f);
   using shape = standard_transform<
       geom::box<vec2{14, 50}, geom::sline(colour::kOutline, colour::kZOutline, 2.f)>,

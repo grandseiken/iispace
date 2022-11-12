@@ -405,8 +405,11 @@ void RunLobbyLayer::update_content(const ui::input_frame& input, ui::output_fram
     }
   }
 
-  if (auto index = stack().input().assignment(ui::input_device_id::kbm()); index) {
-    stack().set_cursor_hue(player_colour(*index).x);
+  if (conditions_) {
+    coordinator_->set_mode(conditions_->mode);
+  }
+  if (auto index = stack().input().assignment(ui::input_device_id::kbm()); conditions_ && index) {
+    stack().set_cursor_hue(player_colour(conditions_->mode, *index).x);
   } else {
     stack().clear_cursor_hue();
   }

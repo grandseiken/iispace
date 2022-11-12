@@ -1,6 +1,6 @@
 #include "game/logic/v0/player/shot.h"
 #include "game/logic/geometry/shapes/box.h"
-#include "game/logic/sim/io/player.h"
+#include "game/logic/sim/io/conditions.h"
 #include "game/logic/v0/components.h"
 #include "game/logic/v0/particles.h"
 #include "game/logic/v0/ship_template.h"
@@ -12,7 +12,7 @@ struct PlayerShot : ecs::component {
   static constexpr fixed kSpeed = 10_fx * 15_fx / 16_fx;
 
   static constexpr auto z = colour::kZPlayerShot;
-  static constexpr auto style = geom::sline(glm::vec4{0.f}, z);
+  static constexpr auto style = geom::sline(colour::kZero, z);
   using shape = standard_transform<
       geom::box<vec2{4_fx, 4_fx}, geom::sline(colour::kOutline, colour::kZOutline)>,
       geom::box_colour_p<vec2{2 + 1_fx / 2_fx, 2 + 1_fx / 2_fx}, 2, style>,
@@ -41,8 +41,8 @@ struct PlayerShot : ecs::component {
 
   void update(ecs::handle h, Transform& transform, SimInterface& sim) {
     colour = penetrating && sim.random(random_source::kLegacyAesthetic).rbool()
-        ? glm::vec4{1.f}
-        : player_colour(player_number);
+        ? colour::kWhite0
+        : v0_player_colour(player_number);
     transform.move(velocity);
     bool on_screen = all(greaterThanEqual(transform.centre, vec2{-4, -4})) &&
         all(lessThan(transform.centre, vec2{4, 4} + sim.dimensions()));

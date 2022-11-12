@@ -1,4 +1,4 @@
-vec3 hsl2rgb(vec3 hsl) {
+vec3 hsl2srgb(vec3 hsl) {
   float h = fract(hsl.x);
   float s = hsl.y;
   float l = hsl.z;
@@ -27,6 +27,10 @@ vec3 hsl2rgb(vec3 hsl) {
   } else {
     return vec3(v, m, mid2);
   }
+}
+
+vec3 hsl2rgb(vec3 hsl) {
+  return hsl2srgb(hsl);
 }
 
 vec4 hsl2rgba(vec4 hsla) {

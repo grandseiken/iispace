@@ -1,6 +1,7 @@
 #include "game/logic/v0/player/player.h"
 #include "game/logic/geometry/shapes/box.h"
 #include "game/logic/geometry/shapes/ngon.h"
+#include "game/logic/sim/io/conditions.h"
 #include "game/logic/sim/io/player.h"
 #include "game/logic/v0/components.h"
 #include "game/logic/v0/particles.h"
@@ -20,7 +21,7 @@ struct PlayerLogic : ecs::component {
   static constexpr std::uint32_t kShotTimer = 5;
 
   static constexpr auto z = colour::kZPlayer;
-  static constexpr auto style = geom::sline(glm::vec4{0.f}, z);
+  static constexpr auto style = geom::sline(colour::kZero, z);
   using box_shapes = geom::translate<
       8, 0, geom::rotate_eval<geom::negate_p<1>, geom::box_colour_p<vec2{2, 2}, 2, style>>,
       geom::rotate_eval<geom::negate_p<1>, geom::box_colour_p<vec2{1, 1}, 3, style>>,
@@ -28,15 +29,14 @@ struct PlayerLogic : ecs::component {
   using shape = standard_transform<
       geom::ngon_colour_p<geom::nd(21, 3), 5,
                           geom::nline(colour::kOutline, colour::kZOutline, 3.f)>,
-      geom::ngon_colour_p2<geom::nd(18, 3), 2, 4, geom::nline(glm::vec4{0.f}, z, 1.5f),
-                           geom::sfill(glm::vec4{0.f})>,
+      geom::ngon_colour_p2<geom::nd(18, 3), 2, 4, geom::nline(colour::kZero, z, 1.5f)>,
       geom::rotate<fixed_c::pi, geom::ngon_colour_p<geom::nd(9, 3), 2>>, box_shapes>;
 
   std::tuple<vec2, fixed, glm::vec4, glm::vec4, glm::vec4, glm::vec4>
   shape_parameters(const Player& pc, const Transform& transform) const {
-    auto colour = pc.is_killed      ? glm::vec4{0.f}
-        : invulnerability_timer % 2 ? glm::vec4{1.f}
-                                    : player_colour(pc.player_number);
+    auto colour = pc.is_killed      ? colour::kZero
+        : invulnerability_timer % 2 ? colour::kWhite0
+                                    : v0_player_colour(pc.player_number);
     auto c_dark = colour;
     c_dark.a = std::min(c_dark.a, .2f);
     return {transform.centre,
@@ -105,9 +105,8 @@ struct PlayerLogic : ecs::component {
 
     // Shots.
     auto shot = fire_target - transform.centre;
-    if (length(shot) > 0 && !fire_timer && input.keys & input_frame::kFire) {
-      spawn_player_shot(sim, transform.centre, h, shot,
-                        /* penetrating */ input.keys & input_frame::kBomb);
+    if (length_squared(shot) > 0 && !fire_timer && input.keys & input_frame::kFire) {
+      spawn_player_shot(sim, transform.centre, h, shot, /* penetrating */ false);
       fire_timer = kShotTimer;
 
       auto& random = sim.random(random_source::kAesthetic);
@@ -151,11 +150,12 @@ struct PlayerLogic : ecs::component {
     }
 
     explode_entity_shapes<PlayerLogic>(h, e);
-    explode_entity_shapes<PlayerLogic>(h, e, glm::vec4{1.f}, 14);
+    explode_entity_shapes<PlayerLogic>(h, e, colour::kWhite0, 14);
     explode_entity_shapes<PlayerLogic>(h, e, std::nullopt, 20);
     destruct_entity_lines<PlayerLogic>(h, e, transform.centre, 32);
 
     ++pc.death_count;
+    pc.bomb_count = 0;
     pc.is_killed = true;
     e.rumble(pc.player_number, 30, .5f, .5f).play(sound::kPlayerDestroy, transform.centre);
   }
@@ -165,17 +165,17 @@ struct PlayerLogic : ecs::component {
     static constexpr std::uint32_t kBombDamage = 400;
     static constexpr fixed kBombRadius = 190;
 
-    auto c = player_colour(pc.player_number);
+    auto c = v0_player_colour(pc.player_number);
     auto e = sim.emit(resolve_key::local(pc.player_number));
     auto& random = sim.random(random_source::kAesthetic);
-    explode_entity_shapes<PlayerLogic>(h, e, glm::vec4{1.f}, 18);
+    explode_entity_shapes<PlayerLogic>(h, e, colour::kWhite0, 18);
     explode_entity_shapes<PlayerLogic>(h, e, c, 21);
-    explode_entity_shapes<PlayerLogic>(h, e, glm::vec4{1.f}, 24);
+    explode_entity_shapes<PlayerLogic>(h, e, colour::kWhite0, 24);
 
     for (std::uint32_t i = 0; i < 64; ++i) {
       auto v = position + from_polar(2 * i * fixed_c::pi / 64, kBombRadius);
       auto parameters = shape_parameters(pc, {{}, v, 0_fx});
-      explode_shapes<shape>(e, parameters, (i % 2) ? c : glm::vec4{1.f},
+      explode_shapes<shape>(e, parameters, (i % 2) ? c : colour::kWhite0,
                             8 + random.uint(8) + random.uint(8), position);
     }
 
@@ -196,7 +196,7 @@ struct PlayerLogic : ecs::component {
     }
     output.emplace_back(render::shape{
         .origin = to_float(fire_target),
-        .colour = player_colour(pc.player_number),
+        .colour = v0_player_colour(pc.player_number),
         .z_index = 100.f,
         .disable_trail = !fire_target_trail,
         .data = render::ngon{.radius = 8, .sides = 4, .style = render::ngon_style::kPolystar},
@@ -240,7 +240,7 @@ struct PlayerLogic : ecs::component {
 
   std::optional<render::player_info> render_info(const Player& pc, const SimInterface& sim) const {
     render::player_info info;
-    info.colour = player_colour(pc.player_number);
+    info.colour = v0_player_colour(pc.player_number);
     info.score = 0;
     return info;
   }

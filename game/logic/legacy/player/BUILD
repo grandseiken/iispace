@@ -27,12 +27,13 @@ cc_library(
     "//game/logic/sim:components",
   ],
   implementation_deps = [
-    "//game/logic/sim/io:player",
     "//game/logic/ecs",
     "//game/logic/geometry/legacy",
     "//game/logic/legacy:components",
     "//game/logic/legacy:ship_template",
     "//game/logic/sim:sim_interface",
+    "//game/logic/sim/io:player",
+    "//game/logic/sim/io:conditions",
   ],
   visibility = [
     "//game/logic/legacy/boss:__pkg__",

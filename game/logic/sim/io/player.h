@@ -12,10 +12,6 @@
 namespace ii {
 static constexpr std::uint32_t kMaxPlayers = 4;
 
-inline glm::vec4 player_colour(std::size_t player_number) {
-  return colour::hue360((20 * player_number) % 360);
-}
-
 struct input_frame {
   enum key : std::uint32_t {
     kFire = 1,

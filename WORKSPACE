@@ -66,6 +66,15 @@ http_archive(
 )
 
 http_archive(
+  # Apache license, attribution required?
+  name = "gcem",
+  build_file = "@//deps:gcem.BUILD",
+  sha256 = "be312a6a3cf55e78fe7f8055c28fa14b1ea94282bd66841906388f1ef4d4698c",
+  strip_prefix = "gcem-1.16.0",
+  url = "https://github.com/kthohr/gcem/archive/refs/tags/v1.16.0.zip",
+)
+
+http_archive(
   # Boost license, no attribution required.
   name = "concurrent_queue",
   build_file = "@//deps:concurrent_queue.BUILD",

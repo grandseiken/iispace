@@ -1,7 +1,7 @@
 #include "game/logic/v0/player/powerup.h"
 #include "game/logic/geometry/node_conditional.h"
 #include "game/logic/geometry/shapes/ngon.h"
-#include "game/logic/sim/io/player.h"
+#include "game/logic/sim/io/conditions.h"
 #include "game/logic/sim/sim_interface.h"
 #include "game/logic/v0/components.h"
 #include "game/logic/v0/particles.h"
@@ -14,11 +14,11 @@ namespace ii::v0 {
 namespace {
 constexpr std::uint32_t kPowerupTimer = 90u * 60u;
 constexpr fixed kPowerupCloseDistance = 50;
-constexpr fixed kPowerupCollectDistance = 10;
+constexpr fixed kPowerupCollectDistance = 12;
 
 glm::vec4 fade(std::uint32_t tick_count) {
   auto lightness = (1.f + sin(static_cast<float>(tick_count) / 16.f)) / 2.f;
-  return {1.f, 1.f, 1.f, lightness};
+  return colour::alpha(colour::kWhite0, lightness);
 }
 
 void wobble_movement(SimInterface& sim, const Transform& transform, vec2& dir,
@@ -51,12 +51,13 @@ struct PlayerBubble : ecs::component {
           geom::compound<
               geom::ngon_collider<geom::nd(14, 8), shape_flag::kVulnerable>,
               geom::ngon<geom::nd(16, 8), geom::nline(colour::kOutline, colour::kZOutline, 2.f)>,
-              geom::ngon_colour_p<geom::nd(14, 8), 3, geom::nline(glm::vec4{0.f}, z)>>>,
+              geom::ngon_colour_p<geom::nd(14, 8), 3, geom::nline(colour::kZero, z)>>>,
       geom::rotate_p<
           1, geom::ngon<geom::nd(21, 3), geom::nline(colour::kOutline, colour::kZOutline, 3.f)>,
-          geom::ngon_colour_p<geom::nd(18, 3), 2, geom::nline(glm::vec4{0.f}, z, 1.5f)>>>;
+          geom::ngon_colour_p<geom::nd(18, 3), 2, geom::nline(colour::kZero, z, 1.5f)>>>;
   std::tuple<vec2, fixed, glm::vec4, glm::vec4> shape_parameters(const Transform& transform) const {
-    return {transform.centre, transform.rotation, player_colour(player_number), fade(tick_count)};
+    return {transform.centre, transform.rotation, v0_player_colour(player_number),
+            fade(tick_count)};
   }
 
   PlayerBubble(std::uint32_t player_number) : player_number{player_number} {}
@@ -82,8 +83,8 @@ struct ShieldPowerup : ecs::component {
 
   static constexpr auto z = colour::kZPowerup;
   using shape =
-      standard_transform<geom::ngon_colour_p<geom::nd(14, 6), 2, geom::nline(glm::vec4{0.f}, z)>,
-                         geom::ngon<geom::nd(11, 6), geom::nline(glm::vec4{1.f}, z, 1.5f)>>;
+      standard_transform<geom::ngon_colour_p<geom::nd(14, 6), 2, geom::nline(colour::kZero, z)>,
+                         geom::ngon<geom::nd(11, 6), geom::nline(colour::kWhite0, z, 1.5f)>>;
 
   std::tuple<vec2, fixed, glm::vec4> shape_parameters(const Transform& transform) const {
     return {transform.centre, transform.rotation, fade(timer)};
@@ -97,10 +98,10 @@ struct ShieldPowerup : ecs::component {
 
   void update(ecs::handle h, Transform& transform, SimInterface& sim) {
     if (!timer) {
-      sim.emit(resolve_key::predicted()).explosion(to_float(transform.centre), glm::vec4{1.f});
+      sim.emit(resolve_key::predicted()).explosion(to_float(transform.centre), colour::kWhite0);
     }
     if (++timer >= kPowerupTimer) {
-      sim.emit(resolve_key::predicted()).explosion(to_float(transform.centre), glm::vec4{1.f});
+      sim.emit(resolve_key::predicted()).explosion(to_float(transform.centre), colour::kWhite0);
       h.emplace<Destroy>();
       return;
     }
@@ -130,7 +131,7 @@ struct ShieldPowerup : ecs::component {
     auto e = sim.emit(resolve_key::local(pc.player_number));
     e.play(sound::kPowerupOther, transform.centre);
     e.rumble(source.get<Player>()->player_number, 10, .25f, .75f);
-    e.explosion(to_float(transform.centre), glm::vec4{1.f});
+    e.explosion(to_float(transform.centre), colour::kWhite0);
     h.emplace<Destroy>();
     ++pc.shield_count;
   }
@@ -150,8 +151,8 @@ struct BombPowerup : ecs::component {
 
   static constexpr auto z = colour::kZPowerup;
   using shape = standard_transform<
-      geom::ngon_colour_p<geom::nd(14, 6), 2, geom::nline(glm::vec4{0.f}, z)>,
-      geom::rotate_p<1, geom::ngon<geom::nd(5, 6), geom::nline(glm::vec4{1.f}, z, 1.5f)>>>;
+      geom::ngon_colour_p<geom::nd(14, 6), 2, geom::nline(colour::kZero, z)>,
+      geom::rotate_p<1, geom::ngon<geom::nd(5, 6), geom::nline(colour::kWhite0, z, 1.5f)>>>;
 
   std::tuple<vec2, fixed, glm::vec4> shape_parameters(const Transform& transform) const {
     return {transform.centre, transform.rotation, fade(timer)};
@@ -165,10 +166,10 @@ struct BombPowerup : ecs::component {
 
   void update(ecs::handle h, Transform& transform, SimInterface& sim) {
     if (!timer) {
-      sim.emit(resolve_key::predicted()).explosion(to_float(transform.centre), glm::vec4{1.f});
+      sim.emit(resolve_key::predicted()).explosion(to_float(transform.centre), colour::kWhite0);
     }
     if (++timer >= kPowerupTimer) {
-      sim.emit(resolve_key::predicted()).explosion(to_float(transform.centre), glm::vec4{1.f});
+      sim.emit(resolve_key::predicted()).explosion(to_float(transform.centre), colour::kWhite0);
       h.emplace<Destroy>();
       return;
     }
@@ -214,7 +215,7 @@ struct BombPowerup : ecs::component {
     auto e = sim.emit(resolve_key::local(pc.player_number));
     e.play(sound::kPowerupOther, transform.centre);
     e.rumble(source.get<Player>()->player_number, 10, .25f, .75f);
-    e.explosion(to_float(transform.centre), glm::vec4{1.f});
+    e.explosion(to_float(transform.centre), colour::kWhite0);
     h.emplace<Destroy>();
     ++pc.bomb_count;
   }
@@ -237,7 +238,7 @@ ecs::handle spawn_player_bubble(SimInterface& sim, ecs::handle player) {
 
   auto& r = sim.random(random_source::kGameSequence);
   auto side = r.uint(4u);
-  auto d = (1 + r.uint(8u)) * kDistance;
+  auto d = (1 + r.uint(12u)) * kDistance;
 
   if (side == 0) {
     position = {dim.x / 2, -d};
