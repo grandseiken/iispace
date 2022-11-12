@@ -32,8 +32,13 @@ vec3 hsl2srgb(vec3 hsl) {
   }
 }
 
+float srgb2rgb_component(float v) {
+  return v >= .04045 ? pow((v + .055) / 1.055, 2.4) : v / 12.92;
+}
+
 vec3 hsl2rgb(vec3 hsl) {
-  return pow(hsl2srgb(hsl), vec3(kGamma));
+  vec3 srgb = hsl2srgb(hsl);
+  return vec3(srgb2rgb_component(srgb.r), srgb2rgb_component(srgb.g), srgb2rgb_component(srgb.b));
 }
 
 vec4 hsl2rgba(vec4 hsla) {

@@ -5,8 +5,6 @@
 #include <algorithm>
 
 namespace ii::colour {
-static constexpr float kGammaPower = 2.2f;
-static constexpr float kInverseGammaPower = 1.f / kGammaPower;
 
 inline constexpr glm::vec4 clamp(const glm::vec4& c) {
   return {std::clamp(c.x, 0.f, 1.f), std::clamp(c.y, 0.f, 1.f), std::clamp(c.z, 0.f, 1.f),
@@ -18,13 +16,17 @@ inline constexpr glm::vec4 alpha(const glm::vec4& c, float a) {
 }
 
 inline constexpr glm::vec4 srgb2rgb(const glm::vec4& c) {
-  return {gcem::pow(c.x, kGammaPower), gcem::pow(c.y, kGammaPower), gcem::pow(c.z, kGammaPower),
-          c.w};
+  auto f = [](float v) {
+    return v >= .04045f ? gcem::pow((v + .055f) / 1.055f, 2.4f) : v / 12.92f;
+  };
+  return {f(c.x), f(c.y), f(c.z), c.w};
 }
 
 inline constexpr glm::vec4 rgb2srgb(const glm::vec4& c) {
-  return {gcem::pow(c.x, kInverseGammaPower), gcem::pow(c.y, kInverseGammaPower),
-          gcem::pow(c.z, kInverseGammaPower), c.w};
+  auto f = [](float v) {
+    return v >= .0031308f ? 1.055f * gcem::pow(v, 1.f / 2.4f) - .055f : v * 12.92f;
+  };
+  return {f(c.x), f(c.y), f(c.z), c.w};
 }
 
 inline constexpr glm::vec4 hsl2srgb(const glm::vec4& c) {
