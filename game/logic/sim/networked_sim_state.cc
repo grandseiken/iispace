@@ -75,6 +75,10 @@ const std::unordered_set<std::string>& NetworkedSimState::checksum_failed_remote
   return checksum_failed_remote_ids_;
 }
 
+void NetworkedSimState::ai_think(std::vector<input_frame>& input) const {
+  predicted().ai_think(input, ai_state_);
+}
+
 void NetworkedSimState::set_input_delay_ticks(std::uint64_t delay_ticks) {
   input_delay_ticks_ = delay_ticks;
 }

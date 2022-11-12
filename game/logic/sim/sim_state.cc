@@ -127,9 +127,14 @@ void SimState::copy_to(SimState& target) const {
 }
 
 void SimState::ai_think(std::vector<input_frame>& input) const {
+  ai_think(input, ai_state_);
+}
+
+void SimState::ai_think(std::vector<input_frame>& input, std::vector<ai_state>& state) const {
   input.resize(internals_->conditions.player_count);
+  state.resize(internals_->conditions.player_count);
   internals_->index.iterate_dispatch<Player>([&](ecs::handle h, const Player& p) {
-    if (auto f = v0::ai_think(*interface_, h); f) {
+    if (auto f = v0::ai_think(*interface_, h, state[p.player_number]); f) {
       input[p.player_number] = *f;
     }
   });
@@ -245,13 +250,14 @@ render_output& SimState::render(transient_render_state& state, bool paused) cons
   });
 
   // TODO: extract somewhere?
+  render::ngon warning_ngon{.radius = 4.f, .sides = 3};
   auto render_warning = [&](const glm::vec2& v) {
     auto render_tri = [&](const glm::vec2& position, float r, float f) {
       result.shapes.emplace_back(render::shape{
           .origin = position,
           .rotation = r,
           .colour = {0.f, 0.f, .2f + .6f * f, .4f},
-          .data = render::ngon{.radius = 4.f, .sides = 3},
+          .data = warning_ngon,
       });
     };
 

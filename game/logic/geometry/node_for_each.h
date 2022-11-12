@@ -8,9 +8,8 @@ namespace ii::geom {
 template <typename T, T Begin, T End, template <T> typename NodeMetaFunction>
 struct for_each {};
 
-template <IterTag I, typename Parameters, typename T, T Begin, T End,
-          template <T> typename NodeMetaFunction>
-constexpr void iterate(for_each<T, Begin, End, NodeMetaFunction>, I tag, const Parameters& params,
+template <IterTag I, typename T, T Begin, T End, template <T> typename NodeMetaFunction>
+constexpr void iterate(for_each<T, Begin, End, NodeMetaFunction>, I tag, const auto& params,
                        const Transform auto& t, const IterateFunction<I> auto& f) {
   if constexpr (Begin != End) {
     iterate(NodeMetaFunction<Begin>{}, tag, params, t, f);

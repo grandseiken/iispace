@@ -63,13 +63,14 @@ bool run(const options_t& options) {
     peer->thread = std::thread{[&] {
       while (!peer->sim.canonical().game_over()) {
         if (!(peer->sim.tick_count() % 1024)) {
+          // Note: can disrupt the AI a fair bit, maybe should be lower.
           std::uniform_int_distribution<std::uint64_t> d{
               0, options.network.max_tick_delivery_delay / 2};
           peer->sim.set_input_delay_ticks(d(engine));
         }
 
         std::vector<input_frame> inputs;
-        peer->sim.predicted().ai_think(inputs);
+        peer->sim.ai_think(inputs);
         std::vector<input_frame> local_inputs;
         for (auto n : peer->mapping.local.player_numbers) {
           local_inputs.emplace_back(inputs[n]);

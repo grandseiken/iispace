@@ -26,6 +26,7 @@ cc_library(
   ],
   implementation_deps = [
     ":font_cache",
+    ":noise_generator",
     "//assets/fonts",
     "//game/io/font",
     "//game/render/gl",
@@ -48,4 +49,12 @@ cc_library(
     "//game/render/gl",
     "@glm",
   ],
+)
+
+cc_library(
+  name = "noise_generator",
+  hdrs = ["noise_generator.h"],
+  srcs = ["noise_generator.cc"],
+  deps = ["//game/render/gl"],
+  implementation_deps = ["@fastnoise2"],
 )

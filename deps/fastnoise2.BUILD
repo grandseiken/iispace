@@ -16,17 +16,25 @@ FASTSIMD_COPTS = select({
 
 cc_library(
   name = "fastnoise2",
-  hdrs = glob([
-    "include/FastNoise/**/*.h",
-    "include/FastNoise/**/*.inl",
-  ]),
   srcs = glob([
     "src/FastNoise/*.cpp",
     "src/FastNoise/*.h",
   ]),
-  includes = ["include"],
-  deps = [":fastsimd"],
+  deps = [
+    ":fastnoise_include",
+    ":fastsimd",
+  ],
   visibility = ["//visibility:public"],
+)
+
+cc_library(
+  name = "fastnoise_include",
+  hdrs = glob([
+    "include/FastNoise/**/*.h",
+    "include/FastNoise/**/*.inl",
+  ]),
+  defines = ["FASTNOISE_STATIC_LIB"],
+  includes = ["include"],
 )
 
 cc_library(
@@ -123,8 +131,8 @@ cc_library(
 cc_library(
   name = "fastsimd_internal",
   hdrs = ["src/FastSIMD/FastSIMD_BuildList.inl"] + glob([
-    "src/FastSIMD/internal/*.h",
-    "src/FastSIMD/internal/*.inl",
+    "src/FastSIMD/Internal/*.h",
+    "src/FastSIMD/Internal/*.inl",
   ]),
   deps = [":fastsimd_include"],
 )
@@ -132,6 +140,7 @@ cc_library(
 cc_library(
   name = "fastsimd_include",
   hdrs = glob(["include/FastSIMD/*.h"]),
+  deps = [":fastnoise_include"],
   defines = ["FASTNOISE_STATIC_LIB"],
   includes = ["include"],
 )

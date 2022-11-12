@@ -34,6 +34,7 @@ public:
                     data::ReplayWriter* writer = nullptr, std::span<std::uint32_t> ai_players = {});
 
   const std::unordered_set<std::string>& checksum_failed_remote_ids() const;
+  void ai_think(std::vector<input_frame>& input) const override;
   // Ticks by which to delay input (increases prediction accuracy in exchange for small amounts of
   // input lag).
   void set_input_delay_ticks(std::uint64_t delay_ticks);
@@ -113,6 +114,7 @@ private:
   std::deque<partial_frame> partial_frames_;
   // Queue of delayed local inputs.
   std::deque<std::vector<input_frame>> input_delayed_frames_;
+  mutable std::vector<ai_state> ai_state_;
 };
 
 }  // namespace ii

@@ -12,6 +12,10 @@
 namespace ii {
 static constexpr std::uint32_t kMaxPlayers = 4;
 
+struct ai_state {
+  vec2 velocity{0};
+};
+
 struct input_frame {
   enum key : std::uint32_t {
     kFire = 1,

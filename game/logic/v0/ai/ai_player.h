@@ -6,8 +6,9 @@
 namespace ii {
 class SimInterface;
 namespace v0 {
+
 void add_ai(ecs::handle h);
-std::optional<input_frame> ai_think(const SimInterface& sim, ecs::handle h);
+std::optional<input_frame> ai_think(const SimInterface& sim, ecs::handle h, ai_state& state);
 }  // namespace v0
 }  // namespace ii
 

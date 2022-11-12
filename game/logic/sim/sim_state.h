@@ -33,6 +33,8 @@ public:
   virtual glm::uvec2 dimensions() const = 0;
   virtual std::uint64_t tick_count() const = 0;
   virtual std::uint32_t fps() const = 0;
+
+  virtual void ai_think(std::vector<input_frame>& input) const = 0;
   virtual render_output& render(transient_render_state&, bool paused) const = 0;
 
   virtual aggregate_output& output() = 0;
@@ -55,7 +57,8 @@ public:
   std::uint64_t tick_count() const override;
   std::uint32_t checksum() const;  // Fast checksum.
   void copy_to(SimState&) const;
-  void ai_think(std::vector<input_frame>& input) const;
+  void ai_think(std::vector<input_frame>& input) const override;
+  void ai_think(std::vector<input_frame>& input, std::vector<ai_state>& state) const;
   void update(std::vector<input_frame> input);
   bool game_over() const override;
   std::uint32_t fps() const override;
@@ -99,6 +102,7 @@ private:
   std::unique_ptr<SimSetup> setup_;
   std::unique_ptr<SimInternals> internals_;
   std::unique_ptr<SimInterface> interface_;
+  mutable std::vector<ai_state> ai_state_;
 };
 
 }  // namespace ii

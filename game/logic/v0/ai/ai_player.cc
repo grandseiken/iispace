@@ -6,14 +6,13 @@ namespace ii::v0 {
 namespace {
 
 struct AiPlayer : ecs::component {
-  vec2 velocity{0};
   input_frame think(ecs::const_handle h, const Transform& transform, const Player& player,
-                    const SimInterface& sim);
+                    const SimInterface& sim, ai_state& state);
 };
-DEBUG_STRUCT_TUPLE(AiPlayer, velocity);
+DEBUG_STRUCT_TUPLE(AiPlayer);
 
 input_frame AiPlayer::think(ecs::const_handle h, const Transform& transform, const Player& player,
-                            const SimInterface& sim) {
+                            const SimInterface& sim, ai_state& state) {
   struct target {
     fixed distance = 0;
     vec2 position{0};
@@ -184,12 +183,12 @@ input_frame AiPlayer::think(ecs::const_handle h, const Transform& transform, con
   }
 
   if (avoid_urgent) {
-    velocity = rc_smooth(velocity, target_velocity, 3_fx / 4_fx);
+    state.velocity = rc_smooth(state.velocity, target_velocity, 3_fx / 4_fx);
     frame.keys |= input_frame::key::kBomb;
   } else {
-    velocity = rc_smooth(velocity, target_velocity, 15_fx / 16_fx);
+    state.velocity = rc_smooth(state.velocity, target_velocity, 15_fx / 16_fx);
   }
-  frame.velocity = velocity;
+  frame.velocity = state.velocity;
 
   return frame;
 }
@@ -200,9 +199,9 @@ void add_ai(ecs::handle h) {
   h.emplace<AiPlayer>();
 }
 
-std::optional<input_frame> ai_think(const SimInterface& sim, ecs::handle h) {
+std::optional<input_frame> ai_think(const SimInterface& sim, ecs::handle h, ai_state& state) {
   if (auto* ai = h.get<AiPlayer>(); ai) {
-    return ecs::call<&AiPlayer::think>(h, sim);
+    return ecs::call<&AiPlayer::think>(h, sim, state);
   }
   return std::nullopt;
 }

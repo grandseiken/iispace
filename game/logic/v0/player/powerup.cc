@@ -16,9 +16,8 @@ constexpr std::uint32_t kPowerupTimer = 90u * 60u;
 constexpr fixed kPowerupCloseDistance = 50;
 constexpr fixed kPowerupCollectDistance = 12;
 
-glm::vec4 fade(std::uint32_t tick_count) {
-  auto lightness = (1.f + sin(static_cast<float>(tick_count) / 16.f)) / 2.f;
-  return colour::alpha(colour::kWhite0, lightness);
+float fade(std::uint32_t tick_count) {
+  return (1.f + sin(static_cast<float>(tick_count) / 16.f)) / 2.f;
 }
 
 void wobble_movement(SimInterface& sim, const Transform& transform, vec2& dir,
@@ -43,21 +42,29 @@ struct PlayerBubble : ecs::component {
   static constexpr fixed kBoundingWidth = 16;
   static constexpr std::uint32_t kRotateTime = 120;
 
+  // TODO: due to linear blending, outline appears to fade out faster than the white
+  // inner line. Do we really want to just do all blending in OKLab space?
   static constexpr auto z = colour::kZPlayerBubble;
   using shape = geom::translate_p<
       0,
       geom::rotate_eval<
           geom::multiply_p<-2_fx, 1>,
-          geom::compound<
-              geom::ngon_collider<geom::nd(14, 8), shape_flag::kVulnerable>,
-              geom::ngon<geom::nd(16, 8), geom::nline(colour::kOutline, colour::kZOutline, 2.f)>,
-              geom::ngon_colour_p<geom::nd(14, 8), 3, geom::nline(colour::kZero, z)>>>,
+          geom::compound<geom::ngon_collider<geom::nd(14, 8), shape_flag::kVulnerable>,
+                         geom::ngon_colour_p<geom::nd(16, 8), 5,
+                                             geom::nline(colour::kZero, colour::kZOutline, 2.f)>,
+                         geom::ngon_colour_p<geom::nd(14, 8), 4, geom::nline(colour::kZero, z)>>>,
       geom::rotate_p<
           1, geom::ngon<geom::nd(21, 3), geom::nline(colour::kOutline, colour::kZOutline, 3.f)>,
-          geom::ngon_colour_p<geom::nd(18, 3), 2, geom::nline(colour::kZero, z, 1.5f)>>>;
-  std::tuple<vec2, fixed, glm::vec4, glm::vec4> shape_parameters(const Transform& transform) const {
-    return {transform.centre, transform.rotation, v0_player_colour(player_number),
-            fade(tick_count)};
+          geom::ngon_colour_p2<geom::nd(18, 3), 2, 3, geom::nline(colour::kZero, z, 1.5f),
+                               geom::sfill(colour::kZero, z)>>>;
+  std::tuple<vec2, fixed, glm::vec4, glm::vec4, glm::vec4, glm::vec4>
+  shape_parameters(const Transform& transform) const {
+    return {transform.centre,
+            transform.rotation,
+            v0_player_colour(player_number),
+            colour::alpha(v0_player_colour(player_number), colour::kFillAlpha0),
+            colour::alpha(colour::kWhite0, fade(tick_count)),
+            colour::alpha(colour::kOutline, fade(tick_count))};
   }
 
   PlayerBubble(std::uint32_t player_number) : player_number{player_number} {}
@@ -87,7 +94,7 @@ struct ShieldPowerup : ecs::component {
                          geom::ngon<geom::nd(11, 6), geom::nline(colour::kWhite0, z, 1.5f)>>;
 
   std::tuple<vec2, fixed, glm::vec4> shape_parameters(const Transform& transform) const {
-    return {transform.centre, transform.rotation, fade(timer)};
+    return {transform.centre, transform.rotation, colour::alpha(colour::kWhite0, fade(timer))};
   }
 
   ShieldPowerup() = default;
@@ -146,7 +153,6 @@ DEBUG_STRUCT_TUPLE(ShieldPowerup, timer, dir, first_frame, rotate_anti);
 
 struct BombPowerup : ecs::component {
   static constexpr fixed kSpeed = 3_fx / 4_fx;
-  static constexpr fixed kEdgeDistance = 32_fx;
   static constexpr std::uint32_t kRotateTime = 150;
 
   static constexpr auto z = colour::kZPowerup;
@@ -155,7 +161,7 @@ struct BombPowerup : ecs::component {
       geom::rotate_p<1, geom::ngon<geom::nd(5, 6), geom::nline(colour::kWhite0, z, 1.5f)>>>;
 
   std::tuple<vec2, fixed, glm::vec4> shape_parameters(const Transform& transform) const {
-    return {transform.centre, transform.rotation, fade(timer)};
+    return {transform.centre, transform.rotation, colour::alpha(colour::kWhite0, fade(timer))};
   }
 
   BombPowerup() = default;

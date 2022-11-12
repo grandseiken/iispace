@@ -3,6 +3,7 @@
 #include "game/common/math.h"
 #include "game/logic/geometry/enums.h"
 #include <cstddef>
+#include <functional>
 #include <type_traits>
 
 namespace ii::render {

@@ -205,7 +205,13 @@ ecs::handle create_ship(SimInterface& sim, const vec2& position, fixed rotation 
                                              : &v0::ship_check_point<Logic, S>});
   }
 
-  v0::add_render<Logic, S>(h);
+  constexpr auto render = ecs::call<&render_entity_shape<Logic, S>>;
+  if constexpr (requires { &Logic::render; }) {
+    h.add(Render{.render = sfn::sequence<sfn::cast<Render::render_t, render>,
+                                         sfn::cast<Render::render_t, ecs::call<&Logic::render>>>});
+  } else {
+    h.add(Render{.render = sfn::cast<Render::render_t, render>});
+  }
   return h;
 }
 

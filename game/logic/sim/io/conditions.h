@@ -62,6 +62,7 @@ inline bool is_legacy_mode(game_mode mode) {
   case game_mode::kLegacy_What:
     return true;
   }
+  return false;
 }
 
 inline glm::vec4 legacy_player_colour(std::uint32_t player_number) {
