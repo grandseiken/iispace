@@ -1,3 +1,6 @@
+const float kGamma = 2.2;
+const float kInverseGamma = 1. / kGamma;
+
 vec3 hsl2srgb(vec3 hsl) {
   float h = fract(hsl.x);
   float s = hsl.y;
@@ -30,7 +33,7 @@ vec3 hsl2srgb(vec3 hsl) {
 }
 
 vec3 hsl2rgb(vec3 hsl) {
-  return hsl2srgb(hsl);
+  return pow(hsl2srgb(hsl), vec3(kGamma));
 }
 
 vec4 hsl2rgba(vec4 hsla) {

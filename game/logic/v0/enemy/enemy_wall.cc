@@ -16,6 +16,10 @@ struct Square : ecs::component {
 
   // TODO: box outline shadows have odd overlaps? Not really sure why since it
   // should line up exactly. Happens even when rotatated...
+  // In screenshots: outline is 3px, inner line is 2px; but shadows overlap by 2px
+  // (so really outline is 4px and inner is 2px)?
+  // Shadow overlap could be fixed by moving outlines/shadows into render::shapes (and only
+  // putting out 1 shadow), but why is it overlapping to begin with?
   static constexpr auto z = colour::kZEnemyWall;
   using shape = standard_transform<
       geom::box_collider<vec2{12, 12}, shape_flag::kDangerous | shape_flag::kVulnerable>,
@@ -27,9 +31,9 @@ struct Square : ecs::component {
   shape_parameters(const Transform& transform, const Health& health) const {
     auto c = colour::kNewGreen0;
     if (health.hp && invisible_flash) {
-      c = colour::alpha(c, .5f);
+      c = colour::alpha(c, .25f);
     }
-    auto cf = colour::alpha(c, .25f);
+    auto cf = colour::alpha(c, colour::kFillAlpha0);
     return {transform.centre, transform.rotation, c, cf};
   }
 
@@ -102,7 +106,7 @@ struct Wall : ecs::component {
 
   static constexpr auto z = colour::kZEnemyWall;
   static constexpr auto c = colour::kNewGreen0;
-  static constexpr auto cf = colour::alpha(c, .25f);
+  static constexpr auto cf = colour::alpha(c, colour::kFillAlpha0);
   using shape = standard_transform<
       geom::box<vec2{14, 50}, geom::sline(colour::kOutline, colour::kZOutline, 2.f)>,
       geom::conditional_p<

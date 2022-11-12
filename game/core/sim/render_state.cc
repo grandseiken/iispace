@@ -86,7 +86,9 @@ void RenderState::handle_output(ISimState& state, Mixer* mixer, SimInputAdapter*
     if (rumbled[i]) {
       // TODO: screen shake?
       auto r = resolve_rumble(i);
-      input->rumble(i, r.lf, r.hf, ticks_to_ms(r.time_ticks));
+      auto ms = static_cast<std::uint32_t>(
+          .5f + ticks_to_ms(r.time_ticks) * static_cast<float>(state.fps()) / 50.f);
+      input->rumble(i, r.lf, r.hf, ms);
     }
   }
 
@@ -211,7 +213,7 @@ void RenderState::render(render::GlRenderer& r, std::vector<render::shape>& shap
     break;
   case background_fx_type::kBiome0: {
     auto c = colour::kSolarizedDarkBase03;
-    c.z /= 2.f;
+    c.z /= 1.5f;
     r.render_background(c);
   } break;
   }

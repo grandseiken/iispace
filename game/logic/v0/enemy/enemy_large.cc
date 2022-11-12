@@ -17,7 +17,7 @@ struct FollowHub : ecs::component {
 
   static constexpr auto z = colour::kZEnemyLarge;
   static constexpr auto c = colour::kSolarizedDarkBlue;
-  static constexpr auto cf = colour::alpha(c, .25f);
+  static constexpr auto cf = colour::alpha(c, colour::kFillAlpha0);
   static constexpr auto outline = geom::nline(colour::kOutline, colour::kZOutline, 2.f);
   template <geom::ShapeNode S>
   using fh_arrange = geom::compound<geom::translate<18, 0, S>, geom::translate<-18, 0, S>,
@@ -112,7 +112,7 @@ struct Shielder : ecs::component {
   static constexpr auto z = colour::kZEnemyLarge;
   static constexpr auto c0 = colour::hsl_mix(colour::kSolarizedDarkCyan, colour::kNewGreen0);
   static constexpr auto c1 = colour::kWhite1;
-  static constexpr auto cf = colour::alpha(c0, .25f);
+  static constexpr auto cf = colour::alpha(c0, colour::kFillAlpha0);
   static constexpr auto outline = geom::nline(colour::kOutline, colour::kZOutline, 2.f);
 
   using centre_shape = geom::compound<
@@ -219,7 +219,7 @@ struct Tractor : ecs::component {
 
   static constexpr auto z = colour::kZEnemyLarge;
   static constexpr auto c = colour::kSolarizedDarkMagenta;
-  static constexpr auto cf = colour::alpha(c, .25f);
+  static constexpr auto cf = colour::alpha(c, colour::kFillAlpha0);
   using t_orb = geom::compound<
       geom::ngon<geom::nd(18, 6), geom::nline(colour::kOutline, colour::kZOutline, 2.f)>,
       geom::ngon_with_collider<geom::nd(16, 6), geom::nline(geom::ngon_style::kPolygram, c, z),

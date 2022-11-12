@@ -43,7 +43,7 @@ struct PlayerLogic : ecs::component {
             transform.rotation,
             colour,
             c_dark,
-            colour::alpha(colour, std::min(colour.a, .25f)),
+            colour::alpha(colour, std::min(colour.a, colour::kFillAlpha0)),
             colour::alpha(colour::kOutline, colour.a)};
   };
 

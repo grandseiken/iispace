@@ -25,7 +25,7 @@ struct Follow : ecs::component {
 
   static constexpr auto z = colour::kZEnemySmall;
   static constexpr auto c = colour::kNewPurple;
-  static constexpr auto cf = colour::alpha(c, .25f);
+  static constexpr auto cf = colour::alpha(c, colour::kFillAlpha0);
   static constexpr auto outline = geom::nline(colour::kOutline, colour::kZOutline, 2.f);
   using small_shape =
       standard_transform<geom::ngon<geom::nd(kSmallWidth + 2, 4), outline>,
@@ -195,7 +195,7 @@ struct Chaser : ecs::component {
 
   static constexpr auto z = colour::kZEnemySmall;
   static constexpr auto c = colour::kSolarizedDarkCyan;
-  static constexpr auto cf = colour::alpha(c, .25f);
+  static constexpr auto cf = colour::alpha(c, colour::kFillAlpha0);
   static constexpr auto outline = geom::nline(colour::kOutline, colour::kZOutline, 2.f);
   using small_shape = standard_transform<
       geom::ngon<geom::nd(kSmallWidth + 2, 4), outline>,

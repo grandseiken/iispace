@@ -280,6 +280,7 @@ void GlRenderer::render_text(font_id font, const glm::uvec2& font_dimensions,
 
   const auto& program = impl_->shader(shader::kText);
   gl::use_program(program);
+  gl::enable_srgb(true);
   if (clip) {
     gl::enable_clip_planes(4u);
   } else {
@@ -346,6 +347,7 @@ void GlRenderer::render_panel(const panel_data& p) {
 
   const auto& program = impl_->shader(shader::kPanel);
   gl::use_program(program);
+  gl::enable_srgb(true);
   gl::enable_clip_planes(4u);
   gl::enable_blend(true);
   gl::enable_depth_test(false);
@@ -389,6 +391,7 @@ void GlRenderer::render_panel(const panel_data& p) {
 void GlRenderer::render_background(const glm::vec4& colour) {
   const auto& program = impl_->shader(shader::kBackground);
   gl::use_program(program);
+  gl::enable_srgb(true);
   gl::enable_clip_planes(4u);
   gl::enable_blend(false);
   gl::enable_depth_test(false);
@@ -655,6 +658,7 @@ void GlRenderer::render_shapes(coordinate_system ctype, std::vector<shape>& shap
   case coordinate_system::kCentered:
     offset = (clip_rect.min() + clip_rect.max()) / 2;
   }
+  gl::enable_srgb(true);
   gl::enable_clip_planes(4u);
   gl::enable_depth_test(false);
   gl::enable_blend(true);
