@@ -65,7 +65,7 @@ struct Overmind : ecs::component {
 
   void spawn_wave(SimInterface& sim, const Biome& biome) {
     if (!data.wave_count) {
-      data.power += 4 * (sim.player_count() - 1);
+      data.power += 3 * (sim.player_count() - 1);
     }
     biome.spawn_wave(sim, data);
     if (data.wave_count < 5) {

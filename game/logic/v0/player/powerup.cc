@@ -258,7 +258,7 @@ ecs::handle spawn_player_bubble(SimInterface& sim, ecs::handle player) {
 
   auto h = create_ship_default<PlayerBubble>(sim, position);
   h.add(PlayerBubble{player.get<Player>()->player_number});
-  h.add(Health{.hp = 100,
+  h.add(Health{.hp = 96,
                .destroy_sound = sound::kPlayerDestroy,
                .destroy_rumble = rumble_type::kLarge,
                .on_destroy =

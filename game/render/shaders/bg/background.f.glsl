@@ -1,4 +1,4 @@
-#include "game/render/shaders/ui/data.glsl"
+uniform sampler2D noise_texture;
 
 flat in vec2 g_render_dimensions;
 flat in vec4 g_colour;

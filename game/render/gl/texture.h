@@ -200,6 +200,17 @@ void texture_image_2d(const texture& handle, std::uint8_t level, internal_format
   glBindTexture(GL_TEXTURE_2D, 0);
 }
 
+template <typename T>
+void texture_image_3d(const texture& handle, std::uint8_t level, internal_format iformat,
+                      const glm::uvec3& dimensions, texture_format format, type data_type,
+                      std::span<const T> data) {
+  glBindTexture(GL_TEXTURE_3D, *handle);
+  glTexImage3D(GL_TEXTURE_3D, static_cast<GLint>(level), detail::internal_format_to_gl(iformat),
+               dimensions.x, dimensions.y, dimensions.z, 0, detail::texture_format_to_gl(format),
+               detail::type_to_gl(data_type), std::as_bytes(data).data());
+  glBindTexture(GL_TEXTURE_3D, 0);
+}
+
 inline sampler
 make_sampler(filter mag_filter, filter min_filter, texture_wrap wrap_s, texture_wrap wrap_t) {
   auto filter_to_gl = [](filter f) -> GLint {

@@ -53,6 +53,7 @@ struct PlayerLogic : ecs::component {
   std::uint32_t fire_timer = 0;
   std::uint32_t bomb_timer = 0;
   std::uint32_t render_timer = 0;
+  std::uint32_t fire_target_render_timer = 0;
   vec2 fire_target{0};
   bool fire_target_trail = true;
 
@@ -64,8 +65,18 @@ struct PlayerLogic : ecs::component {
     auto old_fire_target = fire_target;
     if (input.target_absolute) {
       fire_target = *input.target_absolute;
+      fire_target_render_timer = 1;
     } else if (input.target_relative) {
-      fire_target = transform.centre + *input.target_relative;
+      if (pc.is_killed) {
+        if (input.keys & input_frame::kFire) {
+          fire_target += *input.target_relative / 8;
+          fire_target_render_timer = 50;
+        } else if (fire_target_render_timer) {
+          --fire_target_render_timer;
+        }
+      } else {
+        fire_target = transform.centre + *input.target_relative;
+      }
     }
     fire_target = glm::clamp(fire_target, vec2{0}, sim.dimensions());
     fire_target_trail = length_squared(fire_target - old_fire_target) <= 64 * 64;
@@ -80,7 +91,6 @@ struct PlayerLogic : ecs::component {
       }
       if (auto h = sim.index().get(*bubble_id); h) {
         transform = *h->get<Transform>();
-        return;
       }
       return;
     }
@@ -122,10 +132,12 @@ struct PlayerLogic : ecs::component {
     }
   }
 
-  void post_update(ecs::handle h, Player& pc, const Transform& transform, SimInterface& sim) {
+  void post_update(ecs::handle h, Player& pc, const Transform& transform, Render& render,
+                   SimInterface& sim) {
     if (bubble_id && !sim.index().get(*bubble_id)) {
       bubble_id.reset();
       pc.is_killed = false;
+      render.clear_trails = true;
       invulnerability_timer = kReviveTime;
       sim.emit(resolve_key::reconcile(h.id(), resolve_tag::kRespawn))
           .rumble(pc.player_number, 20, 0.f, 1.f)
@@ -157,6 +169,7 @@ struct PlayerLogic : ecs::component {
     ++pc.death_count;
     pc.bomb_count = 0;
     pc.is_killed = true;
+    render.clear_trails = true;
     e.rumble(pc.player_number, 30, .5f, .5f).play(sound::kPlayerDestroy, transform.centre);
   }
 
@@ -191,16 +204,18 @@ struct PlayerLogic : ecs::component {
 
   void
   render(const Player& pc, const Transform& transform, std::vector<render::shape>& output) const {
+    if (!pc.is_killed || fire_target_render_timer) {
+      output.emplace_back(render::shape{
+          .origin = to_float(fire_target),
+          .colour = v0_player_colour(pc.player_number),
+          .z_index = 100.f,
+          .disable_trail = !fire_target_trail,
+          .data = render::ngon{.radius = 8, .sides = 4, .style = render::ngon_style::kPolystar},
+      });
+    }
     if (pc.is_killed) {
       return;
     }
-    output.emplace_back(render::shape{
-        .origin = to_float(fire_target),
-        .colour = v0_player_colour(pc.player_number),
-        .z_index = 100.f,
-        .disable_trail = !fire_target_trail,
-        .data = render::ngon{.radius = 8, .sides = 4, .style = render::ngon_style::kPolystar},
-    });
 
     for (std::uint32_t i = 0; i < pc.shield_count; ++i) {
       auto rotation =

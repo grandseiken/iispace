@@ -55,6 +55,9 @@ cc_library(
   name = "noise_generator",
   hdrs = ["noise_generator.h"],
   srcs = ["noise_generator.cc"],
-  deps = ["//game/render/gl"],
+  deps = [
+    "//game/render/gl",
+    "@glm",
+  ],
   implementation_deps = ["@fastnoise2"],
 )
