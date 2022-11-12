@@ -303,8 +303,7 @@ struct Tractor : ecs::component {
       std::uint32_t i = 0;
       sim.index().iterate_dispatch<Player>([&](const Player& p, const Transform& p_transform) {
         if (((timer + i++ * 4) / 4) % 2 && !p.is_killed) {
-          auto s = render::shape::line(to_float(transform.centre), to_float(p_transform.centre),
-                                       colour::hue360(300, .5f, .6f));
+          auto s = render::shape::line(to_float(transform.centre), to_float(p_transform.centre), c);
           s.disable_trail = true;
           output.emplace_back(s);
         }

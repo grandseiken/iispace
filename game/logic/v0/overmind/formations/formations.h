@@ -219,6 +219,23 @@ struct square2_side : formation<10, 12> {
   }
 };
 
+struct square3_side : formation<12, 24> {
+  void operator()(spawn_context& context) const {
+    auto p = context.random.uint(4);
+    if (p < 2) {
+      auto side = context.random_dside();
+      for (std::uint32_t i = 0; i < 16; ++i) {
+        context.spawn(&spawn_square, side, i, 16);
+      }
+    } else {
+      auto side = context.random_dmside();
+      for (std::uint32_t i = 0; i < 8; ++i) {
+        context.spawn(&spawn_square, side, i + (p == 2 ? 8 : 0), 16);
+      }
+    }
+  }
+};
+
 // TODO: sort out horizontal wall alignment (maybe)?
 // On wall0, wall0_side, wall1_side, wall2_side.
 struct wall0 : formation<5> {
@@ -358,6 +375,24 @@ struct wall2_side : formation<10, 12> {
       auto side = context.random_mside();
       for (std::uint32_t i = 0; i < 6; ++i) {
         context.spawn(spawn_wall(!d || (d == 1 && i % 2)), side, i, 10);
+      }
+    }
+  }
+};
+
+struct wall3_side : formation<10, 22> {
+  void operator()(spawn_context& context) const {
+    auto p = context.random.uint(4);
+    auto d = context.random.uint(2);
+    if (p < 2) {
+      auto side = context.random_dside();
+      for (std::uint32_t i = 1; i < 7; ++i) {
+        context.spawn(spawn_wall(d), side, i, 8);
+      }
+    } else {
+      auto side = context.random_dmside();
+      for (std::uint32_t i = 1; i < 4; ++i) {
+        context.spawn(spawn_wall(d), side, i + (p == 2 ? 3 : 0), 8);
       }
     }
   }

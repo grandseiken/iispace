@@ -184,7 +184,6 @@ Note: many of these hard to do with laggy network.
 
 # New enemy ideas
 * Small 5-sided follow that moves slower but shoots projectiles on death
-* Diagonal walls
 * Enemy that shoots lines of bouncing little things like the tractor boss shots
 * 6-prong non-destroyable shot shooter that rotates 30 degrees each time
 * Enemy that moves slowly until you're close (or gets damaged) then speeds at you

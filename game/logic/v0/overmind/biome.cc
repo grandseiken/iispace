@@ -58,6 +58,7 @@ public:
     s.add<formations::square0_side>();
     s.add<formations::square1_side>();
     s.add<formations::square2_side>();
+    s.add<formations::square3_side>();
 
     s.add<formations::wall0>();
     s.add<formations::wall1>();
@@ -65,6 +66,7 @@ public:
     s.add<formations::wall0_side>();
     s.add<formations::wall1_side>();
     s.add<formations::wall2_side>();
+    s.add<formations::wall3_side>();
 
     s.add<formations::shielder0>();
     s.add<formations::shielder0_side>();
