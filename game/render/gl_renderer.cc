@@ -94,14 +94,16 @@ struct GlRenderer::impl_t {
   FontCache font_cache;
   std::unordered_map<render::shader, gl::program> shader_map;
   gl::sampler pixel_sampler;
+  gl::sampler linear_sampler;
 
   std::optional<gl::buffer> iota_index_buffer;
   std::uint32_t iota_index_size = 0;
 
   impl_t()
   : pixel_sampler{gl::make_sampler(gl::filter::kNearest, gl::filter::kNearest,
-                                   gl::texture_wrap::kClampToEdge,
-                                   gl::texture_wrap::kClampToEdge)} {}
+                                   gl::texture_wrap::kClampToEdge, gl::texture_wrap::kClampToEdge)}
+  , linear_sampler{gl::make_sampler(gl::filter::kLinear, gl::filter::kLinear,
+                                    gl::texture_wrap::kRepeat, gl::texture_wrap::kRepeat)} {}
 
   const gl::program& shader(render::shader s) const { return shader_map.find(s)->second; }
 
@@ -397,23 +399,11 @@ void GlRenderer::render_background(const glm::vec4& colour) {
   gl::enable_blend(false);
   gl::enable_depth_test(false);
 
-  static gl::texture noise_texture = gl::make_texture();
-  static glm::ivec3 offset{0};
-  offset += glm::ivec3{1, 1, 1};
-  generate_noise_3d(
-      noise_texture, noise_type::kBiome0,
-      glm::uvec3{target().screen_dimensions.x / 4, target().screen_dimensions.y / 4, 1}, offset);
   auto clip_rect = target().clip_rect();
   auto result = gl::set_uniforms(program, "screen_dimensions", target().screen_dimensions,
                                  "clip_min", target().render_to_screen_coords(clip_rect.min()),
                                  "clip_max", target().render_to_screen_coords(clip_rect.max()),
                                  "colour_cycle", colour_cycle_ / 256.f);
-  if (!result) {
-    impl_->status = unexpected("background shader error: " + result.error());
-    return;
-  }
-  result = gl::set_uniform_texture_3d(program, "noise_texture", /* texture unit */ 0, noise_texture,
-                                      impl_->pixel_sampler);
   if (!result) {
     impl_->status = unexpected("background shader error: " + result.error());
     return;

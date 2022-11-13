@@ -204,6 +204,32 @@ inline void generate_texture_mipmap(const texture& handle) {
   glGenerateTextureMipmap(*handle);
 }
 
+inline void texture_storage_1d(const texture& handle, std::uint32_t levels, std::uint32_t width,
+                               internal_format iformat) {
+  glBindTexture(GL_TEXTURE_1D, *handle);
+  glTexStorage1D(GL_TEXTURE_1D, static_cast<GLsizei>(levels),
+                 detail::internal_format_to_gl(iformat), static_cast<GLsizei>(width));
+  glBindTexture(GL_TEXTURE_1D, 0);
+}
+
+inline void texture_storage_2d(const texture& handle, std::uint32_t levels,
+                               const glm::uvec2& dimensions, internal_format iformat) {
+  glBindTexture(GL_TEXTURE_2D, *handle);
+  glTexStorage2D(GL_TEXTURE_2D, static_cast<GLsizei>(levels),
+                 detail::internal_format_to_gl(iformat), static_cast<GLsizei>(dimensions.x),
+                 static_cast<GLsizei>(dimensions.y));
+  glBindTexture(GL_TEXTURE_2D, 0);
+}
+
+inline void texture_storage_3d(const texture& handle, std::uint32_t levels,
+                               const glm::uvec3& dimensions, internal_format iformat) {
+  glBindTexture(GL_TEXTURE_3D, *handle);
+  glTexStorage3D(GL_TEXTURE_3D, static_cast<GLsizei>(levels),
+                 detail::internal_format_to_gl(iformat), static_cast<GLsizei>(dimensions.x),
+                 static_cast<GLsizei>(dimensions.y), static_cast<GLsizei>(dimensions.z));
+  glBindTexture(GL_TEXTURE_3D, 0);
+}
+
 template <typename T>
 void texture_image_1d(const texture& handle, std::uint8_t level, internal_format iformat,
                       std::uint32_t width, texture_format format, type data_type,
@@ -234,6 +260,42 @@ void texture_image_3d(const texture& handle, std::uint8_t level, internal_format
   glTexImage3D(GL_TEXTURE_3D, static_cast<GLint>(level), detail::internal_format_to_gl(iformat),
                dimensions.x, dimensions.y, dimensions.z, 0, detail::texture_format_to_gl(format),
                detail::type_to_gl(data_type), std::as_bytes(data).data());
+  glBindTexture(GL_TEXTURE_3D, 0);
+}
+
+template <typename T>
+void texture_subimage_1d(const texture& handle, std::uint8_t level, std::uint32_t offset,
+                         std::uint32_t width, texture_format format, type data_type,
+                         std::span<const T> data) {
+  glBindTexture(GL_TEXTURE_1D, *handle);
+  glTexSubImage1D(GL_TEXTURE_1D, static_cast<GLint>(level), static_cast<GLsizei>(offset),
+                  static_cast<GLsizei>(width), detail::texture_format_to_gl(format),
+                  detail::type_to_gl(data_type), std::as_bytes(data).data());
+  glBindTexture(GL_TEXTURE_1D, 0);
+}
+
+template <typename T>
+void texture_subimage_2d(const texture& handle, std::uint8_t level, const glm::uvec2& offset,
+                         const glm::uvec2& dimensions, texture_format format, type data_type,
+                         std::span<const T> data) {
+  glBindTexture(GL_TEXTURE_2D, *handle);
+  glTexSubImage2D(GL_TEXTURE_2D, static_cast<GLint>(level), static_cast<GLsizei>(offset.x),
+                  static_cast<GLsizei>(offset.y), static_cast<GLsizei>(dimensions.x),
+                  static_cast<GLsizei>(dimensions.y), detail::texture_format_to_gl(format),
+                  detail::type_to_gl(data_type), std::as_bytes(data).data());
+  glBindTexture(GL_TEXTURE_2D, 0);
+}
+
+template <typename T>
+void texture_subimage_3d(const texture& handle, std::uint8_t level, const glm::uvec3& offset,
+                         const glm::uvec3& dimensions, texture_format format, type data_type,
+                         std::span<const T> data) {
+  glBindTexture(GL_TEXTURE_3D, *handle);
+  glTexSubImage3D(GL_TEXTURE_3D, static_cast<GLint>(level), static_cast<GLsizei>(offset.x),
+                  static_cast<GLsizei>(offset.y), static_cast<GLsizei>(offset.z),
+                  static_cast<GLsizei>(dimensions.x), static_cast<GLsizei>(dimensions.y),
+                  static_cast<GLsizei>(dimensions.z), detail::texture_format_to_gl(format),
+                  detail::type_to_gl(data_type), std::as_bytes(data).data());
   glBindTexture(GL_TEXTURE_3D, 0);
 }
 

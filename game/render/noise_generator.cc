@@ -43,6 +43,18 @@ generator_data get_generator(noise_type type) {
 
 }  // namespace
 
+gl::texture noise_texture_2d(const glm::uvec2& dimensions) {
+  auto texture = gl::make_texture();
+  gl::texture_storage_2d(texture, 1, dimensions, gl::internal_format::kR16F);
+  return texture;
+}
+
+gl::texture noise_texture_3d(const glm::uvec3& dimensions) {
+  auto texture = gl::make_texture();
+  gl::texture_storage_3d(texture, 1, dimensions, gl::internal_format::kR16F);
+  return texture;
+}
+
 void generate_noise_2d(gl::texture& texture, noise_type type, const glm::uvec2& dimensions,
                        const glm::ivec2& offset) {
   auto generator = get_generator(type);
@@ -50,8 +62,8 @@ void generate_noise_2d(gl::texture& texture, noise_type type, const glm::uvec2& 
   generator.generator->GenUniformGrid2D(buffer.data(), offset.x, offset.y,
                                         static_cast<int>(dimensions.x),
                                         static_cast<int>(dimensions.y), 1.f, generator.seed);
-  gl::texture_image_2d(texture, 0, gl::internal_format::kR16F, dimensions, gl::texture_format::kRed,
-                       gl::type_of<float>(), std::span<const float>{buffer});
+  gl::texture_subimage_2d(texture, 0, glm::uvec2{0}, dimensions, gl::texture_format::kRed,
+                          gl::type_of<float>(), std::span<const float>{buffer});
 }
 
 void generate_noise_3d(gl::texture& texture, noise_type type, const glm::uvec3& dimensions,
@@ -61,8 +73,8 @@ void generate_noise_3d(gl::texture& texture, noise_type type, const glm::uvec3& 
   generator.generator->GenUniformGrid3D(
       buffer.data(), offset.x, offset.y, offset.z, static_cast<int>(dimensions.x),
       static_cast<int>(dimensions.y), static_cast<int>(dimensions.z), 1.f, generator.seed);
-  gl::texture_image_3d(texture, 0, gl::internal_format::kR16F, dimensions, gl::texture_format::kRed,
-                       gl::type_of<float>(), std::span<const float>{buffer});
+  gl::texture_subimage_3d(texture, 0, glm::uvec3{0}, dimensions, gl::texture_format::kRed,
+                          gl::type_of<float>(), std::span<const float>{buffer});
 }
 
 }  // namespace ii::render

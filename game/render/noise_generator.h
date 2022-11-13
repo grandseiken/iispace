@@ -10,6 +10,9 @@ enum class noise_type {
   kBiome0,
 };
 
+gl::texture noise_texture_2d(const glm::uvec2& dimensions);
+gl::texture noise_texture_3d(const glm::uvec3& dimensions);
+
 void generate_noise_2d(gl::texture&, noise_type, const glm::uvec2& dimensions,
                        const glm::ivec2& offset);
 void generate_noise_3d(gl::texture&, noise_type, const glm::uvec3& dimensions,
