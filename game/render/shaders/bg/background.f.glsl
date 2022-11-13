@@ -17,6 +17,10 @@ out vec4 out_colour;
 //   return sign(v) * (a - mod(a, d) + t * d);
 // }
 
+float scale01(float d, float t) {
+  return 1. - d / 2. + t * d;
+}
+
 void main() {
   vec3 period = vec3(0.);
   vec2 vv = g_render_dimensions * g_texture_coords - .5 * g_render_dimensions;
@@ -30,7 +34,7 @@ void main() {
                 gradient);
   v = abs(v);
   float t0 = .75 + .25 * smoothstep(.025 - fwidth(v), .025, v);
-  float t1 = smoothstep(.15 - fwidth(v), .15, v);
-  float t2 = .5 + floor(mod(g_render_dimensions.y * g_texture_coords.y, 2.));
-  out_colour = vec4(g_colour.rgb * t0 * (7. / 8. + t1 / 4.) * t2, 1.);
+  float t1 = scale01(.25, smoothstep(.15 - fwidth(v), .15, v));
+  float t2 = scale01(.5, floor(mod(g_render_dimensions.y * g_texture_coords.y, 2.)));
+  out_colour = vec4(t0 * t1 * t2 * g_colour.rgb, 1.);
 }

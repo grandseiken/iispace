@@ -188,6 +188,7 @@ Note: many of these hard to do with laggy network.
 * 6-prong non-destroyable shot shooter that rotates 30 degrees each time
 * Enemy that moves slowly until you're close (or gets damaged) then speeds at you
 * Enemy that keeps away from players and does something annoying (shoots projectiles)
+* Enemy that multiplies (by widening and splitting)
 * Enemy that swings a big swingy chain around
 * Enemy that remains shielded until opening up for powerful attack
 * Enemy that shields after being hit and can't be hit for a while

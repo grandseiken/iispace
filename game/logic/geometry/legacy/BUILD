@@ -15,6 +15,5 @@ cc_library(
     "//game/common:math",
     "@glm",
   ],
-  # TODO: restrict to //game/logic/legacy.
-  visibility = ["//game/logic:__subpackages__"],
+  visibility = ["//game/logic/legacy:__subpackages__"],
 )

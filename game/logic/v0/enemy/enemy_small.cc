@@ -107,7 +107,7 @@ struct Follow : ecs::component {
       return;
     }
 
-    // TODO: acquire new target if current is dead.
+    // TODO: acquire new target if current is dead. Stop if none. Acquire slightly faster.
     ++timer;
     if (!target || timer >= kTime) {
       (target ? next_target : target) = sim.nearest_player(transform.centre).id();

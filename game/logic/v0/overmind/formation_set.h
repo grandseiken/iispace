@@ -31,6 +31,7 @@ private:
 public:
   // TODO: somehow allow weighted entries that describe something like:
   // spend half of power budget on this set of formations, half on this other set.
+  // OR maybe don't bother and just do it manually in callsites.
   class Handle {
   public:
     template <Formation F>
