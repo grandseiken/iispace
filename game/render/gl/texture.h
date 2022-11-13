@@ -34,7 +34,15 @@ enum class internal_format {
   kRgba16,
   kSrgb8,
   kSrgb8Alpha8,
-  // TODO: rest of these.
+  kR16F,
+  kRG16F,
+  kRGB16F,
+  kRGBA16F,
+  kR32F,
+  kRG32F,
+  kRGB32F,
+  kRGBA32F,
+  kR11FG11FB10F,
 };
 
 enum class texture_format {
@@ -126,6 +134,24 @@ inline GLint internal_format_to_gl(internal_format f) {
     return GL_SRGB8;
   case internal_format::kSrgb8Alpha8:
     return GL_SRGB8_ALPHA8;
+  case internal_format::kR16F:
+    return GL_R16F;
+  case internal_format::kRG16F:
+    return GL_RG16F;
+  case internal_format::kRGB16F:
+    return GL_RGB16F;
+  case internal_format::kRGBA16F:
+    return GL_RGBA16F;
+  case internal_format::kR32F:
+    return GL_R32F;
+  case internal_format::kRG32F:
+    return GL_RG32F;
+  case internal_format::kRGB32F:
+    return GL_RGB32F;
+  case internal_format::kRGBA32F:
+    return GL_RGBA32F;
+  case internal_format::kR11FG11FB10F:
+    return GL_R11F_G11F_B10F;
   }
   return 0;
 }
