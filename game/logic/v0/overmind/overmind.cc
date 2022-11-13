@@ -45,9 +45,9 @@ struct Overmind : ecs::component {
   void spawn_wave(SimInterface& sim) {
     auto& global = *sim.global_entity().get<GlobalData>();
     auto wave = static_cast<std::int32_t>(data.wave_count);
-    auto count = static_cast<std::int32_t>(sim.player_count());
-    global.shield_drop.counter += 120 + (2 * wave / count) + 80 * count;
-    global.bomb_drop.counter += 160 + (3 * wave / count) + 60 * count;
+    auto count = 2 + static_cast<std::int32_t>(sim.player_count());
+    global.shield_drop.counter += 120 + (6 * wave / count) + 80 * count;
+    global.bomb_drop.counter += 160 + (9 * wave / count) + 60 * count;
     if (!data.wave_count) {
       global.bomb_drop.counter += 200;
     }

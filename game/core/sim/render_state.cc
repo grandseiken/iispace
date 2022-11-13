@@ -206,7 +206,8 @@ void RenderState::update(SimInputAdapter* input) {
   }
 }
 
-void RenderState::render(render::GlRenderer& r, std::vector<render::shape>& shapes) const {
+void RenderState::render(render::GlRenderer& r, std::uint64_t tick_count,
+                         std::vector<render::shape>& shapes) const {
   switch (bgfx_type_) {
   case background_fx_type::kNone:
   case background_fx_type::kLegacy_Stars:
@@ -214,7 +215,7 @@ void RenderState::render(render::GlRenderer& r, std::vector<render::shape>& shap
   case background_fx_type::kBiome0: {
     auto c = colour::kSolarizedDarkBase03;
     c.z /= 1.5f;
-    r.render_background(c);
+    r.render_background(tick_count, c);
   } break;
   }
 

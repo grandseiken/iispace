@@ -24,7 +24,7 @@ public:
   // If mixer != nullptr, sounds will be handled. If input != nullptr, rumble will be handled.
   void handle_output(ISimState& state, Mixer* mixer, SimInputAdapter* input);
   void update(SimInputAdapter* input);
-  void render(render::GlRenderer& r, std::vector<render::shape>&) const;
+  void render(render::GlRenderer& r, std::uint64_t tick_count, std::vector<render::shape>&) const;
 
 private:
   void handle_background_fx(const background_fx_change& change);

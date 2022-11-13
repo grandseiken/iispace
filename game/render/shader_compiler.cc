@@ -1,12 +1,24 @@
 #include "game/render/shader_compiler.h"
+#include "external/psrdnoise/shaders.h"
 #include "game/render/shaders/shaders.h"
+#include <unordered_map>
 #include <unordered_set>
 
 namespace ii::render {
 namespace {
 
+std::unordered_map<std::string, std::span<const std::uint8_t>> get_filemap() {
+  static const auto filemap = [] {
+    auto m = shaders::shaders_filemap();
+    m.insert(psrdnoise_shaders::shaders_filemap().begin(),
+             psrdnoise_shaders::shaders_filemap().end());
+    return m;
+  }();
+  return filemap;
+}
+
 result<std::string> preprocess(std::uint32_t version, const std::string& filename) {
-  const auto& filemap = shaders::shaders_filemap();
+  const auto& filemap = get_filemap();
   auto it = filemap.find(filename);
   if (it == filemap.end()) {
     return unexpected("Shader not found: " + filename);

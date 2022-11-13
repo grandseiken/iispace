@@ -26,7 +26,7 @@ def xxd(name, namespace, srcs, testonly = False, visibility = None):
     "#include <string>",
     "#include <unordered_map>",
     "namespace %s {" % namespace,
-    "std::unordered_map<std::string, std::span<const std::uint8_t>> %s_filemap();" % name,
+    "const std::unordered_map<std::string, std::span<const std::uint8_t>>& %s_filemap();" % name,
   ]
 
   cc_content = ["#include \"%s.h\"" % "/".join(pdir + [name])] + [
@@ -44,7 +44,7 @@ def xxd(name, namespace, srcs, testonly = False, visibility = None):
     ]
 
   cc_content += [
-    "std::unordered_map<std::string, std::span<const std::uint8_t>> %s_filemap() {" % name,
+    "const std::unordered_map<std::string, std::span<const std::uint8_t>>& %s_filemap() {" % name,
     "  static const std::unordered_map<std::string, std::span<const std::uint8_t>> kFiles = {",
   ]
   for src in srcs:
@@ -65,23 +65,6 @@ def xxd(name, namespace, srcs, testonly = False, visibility = None):
     name = name,
     hdrs = ["%s.h" % name],
     srcs = ["%s.cc" % name] + ["%s.h" % src for src in srcs],
-    testonly = testonly,
-    visibility = visibility,
-  )
-
-def xxd_legacy(name, srcs, testonly = False, visibility = None):
-  for src in srcs:
-    native.genrule(
-      name = "%s_xxd" % src,
-      srcs = [src],
-      outs = ["%s.h" % src],
-      cmd = "xxd -i \"$<\" \"$@\"",
-      testonly = testonly,
-    )
-
-  native.filegroup(
-    name = name,
-    srcs = ["%s.h" % src for src in srcs],
     testonly = testonly,
     visibility = visibility,
   )

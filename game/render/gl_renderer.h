@@ -73,7 +73,7 @@ public:
   // single pass, etc.
   void render_panel(const panel_data&);
 
-  void render_background(const glm::vec4& colour);
+  void render_background(std::uint64_t tick_count, const glm::vec4& colour);
   // TODO:
   // - _maybe_ render outlines automatically rather than manually?
   //   Or maybe output from geometry shapes?

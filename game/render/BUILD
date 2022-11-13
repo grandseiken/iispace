@@ -11,13 +11,10 @@ cc_library(
 cc_library(
   name = "render",
   hdrs = ["gl_renderer.h"],
-  srcs = [
-    "gl_renderer.cc",
-    "shader_compiler.cc",
-    "shader_compiler.h",
-  ],
+  srcs = ["gl_renderer.cc"],
   deps = [
     ":render_common",
+    ":shader_compiler",
     "//game/common:math",
     "//game/common:types",
     "//game/common:ustring",
@@ -34,6 +31,20 @@ cc_library(
     "@gl3w",
   ],
   visibility = ["//visibility:public"],
+)
+
+cc_library(
+  name = "shader_compiler",
+  hdrs = ["shader_compiler.h"],
+  srcs = ["shader_compiler.cc"],
+  deps = [
+    "//game/common:types",
+    "//game/render/gl",
+  ],
+  implementation_deps = [
+    "//game/render/shaders",
+    "@psrdnoise//:shaders",
+  ]
 )
 
 cc_library(

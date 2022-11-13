@@ -136,6 +136,14 @@ http_archive(
   url = "https://github.com/Auburn/FastNoise2/archive/11072bc0dbe4f41ea87839dfed369ddfe7c3864a.zip",
 )
 
+http_archive(
+  name = "psrdnoise",
+  build_file = "@//deps:psrdnoise.BUILD",
+  sha256 = "11a64c44d3ee24656e8d2e8e820e6161182dfe40522275abc9478e3a98c07fd8",
+  strip_prefix = "psrdnoise-4d627ffbd2801db0243b6f62a56ea1e748fa4c5d",
+  url = "https://github.com/stegu/psrdnoise/archive/4d627ffbd2801db0243b6f62a56ea1e748fa4c5d.zip",
+)
+
 ################################################################################
 # Media format dependencies
 ################################################################################
