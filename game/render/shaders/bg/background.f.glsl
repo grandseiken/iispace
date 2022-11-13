@@ -1,4 +1,4 @@
-#include "external/psrdnoise/src/psrdnoise2.glsl"
+#include "external/psrdnoise/src/psrdnoise3.glsl"
 
 const float kPi = 3.1415926538;
 
@@ -10,25 +10,27 @@ flat in uint g_style;
 in vec2 g_texture_coords;
 out vec4 out_colour;
 
-float poster(float v, float d) {
-  float a = abs(v);
-  float t = mod(a, d) / d;
-  t = smoothstep(0., 1., smoothstep(0., 1., smoothstep(0., 1., t)));
-  return sign(v) * (a - mod(a, d) + t * d);
-}
+// float poster(float v, float d) {
+//   float a = abs(v);
+//   float t = mod(a, d) / d;
+//   t = smoothstep(0., 1., smoothstep(0., 1., smoothstep(0., 1., t)));
+//   return sign(v) * (a - mod(a, d) + t * d);
+// }
 
 void main() {
-  vec2 period = vec2(0., 32.);
+  vec3 period = vec3(0.);
   vec2 vv = g_render_dimensions * g_texture_coords - .5 * g_render_dimensions;
-  vec2 xy = vec2(length(vv), 128 * period.y * (kPi + atan(vv.y, vv.x)) / (2. * kPi)) +
-      vec2(tick_count * 2, sin(tick_count / 64) * length(vv));
-  vec2 gradient;
+  vec3 xy =
+      vec3(vv.xy, 0.) + vec3(256. * cos(tick_count / 512.), -tick_count / 4., tick_count / 8.);
+  vec3 gradient;
   float v = 0.;
-  float a = tick_count / 48.;
-  v += psrdnoise(xy / 64., period, a, gradient) / 1.;
-  v += psrdnoise(.1 + xy / 128., period, a * 1.5, gradient) / 2.;
-  v += psrdnoise(.2 + xy / 64., period, a * 2., gradient) / 4.;
-  v += psrdnoise(.4 + xy / 8., period, a * 2.5, gradient) / 8.;
-  v += psrdnoise(.5 + xy / 2., period, a * 4., gradient) / 4.;
-  out_colour = vec4(g_colour.rgb * (1.25 - .5 * abs(v)), 1.);
+  v += 1. * psrdnoise(xy / 256., period, tick_count / 256., gradient);
+  v += .25 *
+      psrdnoise(vec3(.75, .75, .75) + gradient / 64. + xy / 128., period, tick_count / 128.,
+                gradient);
+  v = abs(v);
+  float t0 = .75 + .25 * smoothstep(.025 - fwidth(v), .025, v);
+  float t1 = smoothstep(.15 - fwidth(v), .15, v);
+  float t2 = .5 + floor(mod(g_render_dimensions.y * g_texture_coords.y, 2.));
+  out_colour = vec4(g_colour.rgb * t0 * (7. / 8. + t1 / 4.) * t2, 1.);
 }
