@@ -34,9 +34,14 @@ struct PlayerLogic : ecs::component {
 
   std::tuple<vec2, fixed, glm::vec4, glm::vec4, glm::vec4, glm::vec4>
   shape_parameters(const Player& pc, const Transform& transform) const {
-    auto colour = pc.is_killed      ? colour::kZero
-        : invulnerability_timer % 2 ? colour::kWhite0
-                                    : v0_player_colour(pc.player_number);
+    auto colour = colour::kZero;
+    if (!pc.is_killed) {
+      colour = v0_player_colour(pc.player_number);
+      if (invulnerability_timer) {
+        glm::vec4 c{colour.x, 0.f, 1.f, 1.f};
+        colour = glm::mix(colour, c, .5f + .125f * sin(invulnerability_timer / glm::pi<float>()));
+      }
+    }
     auto c_dark = colour;
     c_dark.a = std::min(c_dark.a, .2f);
     return {transform.centre,

@@ -40,10 +40,11 @@ void explode_entity_shapes(ecs::const_handle h, EmitHandle& e,
 }
 
 inline void add_line_particle(EmitHandle& e, const glm::vec2& source, const glm::vec2& a,
-                              const glm::vec2& b, const glm::vec4& c, float w, std::uint32_t time) {
+                              const glm::vec2& b, const glm::vec4& c, float w, float z,
+                              std::uint32_t time) {
   auto& r = e.random();
   auto position = (a + b) / 2.f;
-  auto velocity = (1.75f + .4f * r.fixed().to_float()) * normalise(position - source) +
+  auto velocity = (1.75f + .6f * r.fixed().to_float()) * normalise(position - source) +
       from_polar((2 * fixed_c::pi * r.fixed()).to_float(), (r.fixed() / 10).to_float());
   auto diameter = distance(a, b);
   auto d = distance(source, a) - distance(source, b);
@@ -63,7 +64,7 @@ inline void add_line_particle(EmitHandle& e, const glm::vec2& source, const glm:
               .width = w,
           },
       .end_time = time + r.uint(time),
-      .flash_time = 3,
+      .flash_time = z > colour::kZTrails ? 16u : 0u,
       .fade = true,
   });
 }
@@ -77,8 +78,8 @@ void destruct_lines(EmitHandle& e, const auto& parameters, const vec2& source,
   // motion trails)?
   // Make destruct particles similarly velocified?
   geom::iterate(S{}, geom::iterate_lines, parameters, geom::transform{},
-                [&](const vec2& a, const vec2& b, const glm::vec4& c, float w) {
-                  add_line_particle(e, f_source, to_float(a), to_float(b), c, w, time);
+                [&](const vec2& a, const vec2& b, const glm::vec4& c, float w, float z) {
+                  add_line_particle(e, f_source, to_float(a), to_float(b), c, w, z, time);
                 });
 }
 

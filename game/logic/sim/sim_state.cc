@@ -154,11 +154,7 @@ void SimState::update(std::vector<input_frame> input) {
       boss.show_hp_bar = true;
     }
   });
-  internals_->index.iterate<Health>([](Health& h) {
-    if (h.hit_timer) {
-      --h.hit_timer;
-    }
-  });
+  internals_->index.iterate<Health>([](Health& h) { h.hit_timer && --h.hit_timer; });
   internals_->index.iterate_dispatch<Update>([&](ecs::handle h, Update& c) {
     if (!h.has<Destroy>()) {
       c.update(h, *interface_);

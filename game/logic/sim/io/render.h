@@ -79,6 +79,20 @@ struct shape {
         .data = render::line{.radius = distance(a, b) / 2.f, .line_width = width},
     };
   }
+
+  void apply_hit_flash(float a) {
+    z_index = a + z_index.value_or(0.f);
+    auto w = std::max(0.f, 3.f * (a - .5f));
+    auto l = a / 4.f;
+    if (auto* p = std::get_if<render::ngon>(&data); p) {
+      p->line_width += w;
+    } else if (auto* p = std::get_if<render::box>(&data); p) {
+      p->line_width += w;
+    } else if (auto* p = std::get_if<render::line>(&data); p) {
+      p->line_width += w;
+    }
+    colour.z = std::min(1.f, colour.z + l);
+  }
 };
 
 struct entity_state {

@@ -40,7 +40,7 @@ struct polyarc_data : shape_data_base {
     for (std::uint32_t i = 0; sides >= 2 && i < sides && i < segments; ++i) {
       auto a = from_polar(i * 2 * fixed_c::pi / sides, radius);
       auto b = from_polar((i + 1) * 2 * fixed_c::pi / sides, radius);
-      std::invoke(f, *t.translate(a), *t.translate(b), colour, 1.f);
+      std::invoke(f, *t.translate(a), *t.translate(b), colour, 1.f, 0.f);
     }
   }
 

@@ -140,9 +140,10 @@ constexpr auto kOutline = kBlack1;
 constexpr auto kNewPurple = hue360(270, .6f, .7f);
 constexpr auto kNewGreen0 = hue360(120, .5f, .4f);
 
-constexpr auto kZOutline = -96.f;
+constexpr auto kZParticle = -96.f;
+constexpr auto kZOutline = -88.f;
 constexpr auto kZTrails = -64.f;
-constexpr auto kZParticle = -32.f;
+constexpr auto kZParticleFlash = -32.f;
 constexpr auto kZPowerup = -16.f;
 constexpr auto kZEnemyWall = -8.f;
 constexpr auto kZEnemyLarge = 0.f;

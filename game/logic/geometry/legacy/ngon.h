@@ -37,13 +37,14 @@ struct ngon_data : shape_data_base {
 
     if (style != ngon_style::kPolygram) {
       for (std::uint32_t i = 0; i < sides; ++i) {
-        std::invoke(f, vertex(i), style == ngon_style::kPolygon ? vertex(i + 1) : t.v, colour, 1.f);
+        std::invoke(f, vertex(i), style == ngon_style::kPolygon ? vertex(i + 1) : t.v, colour, 1.f,
+                    0.f);
       }
       return;
     }
     for (std::size_t i = 0; i < sides; ++i) {
       for (std::size_t j = i + 1; j < sides; ++j) {
-        std::invoke(f, vertex(i), vertex(j), colour, 1.f);
+        std::invoke(f, vertex(i), vertex(j), colour, 1.f, 0.f);
       }
     }
   }

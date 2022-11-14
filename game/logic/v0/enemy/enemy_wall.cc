@@ -31,7 +31,7 @@ struct Square : ecs::component {
   shape_parameters(const Transform& transform, const Health& health) const {
     auto c = colour::kNewGreen0;
     if (health.hp && invisible_flash) {
-      c = colour::alpha(c, .25f);
+      c = colour::alpha(c, (5.f + 3.f * std::cos(invisible_flash / glm::pi<float>())) / 8.f);
     }
     auto cf = colour::alpha(c, colour::kFillAlpha0);
     return {transform.centre, transform.rotation, c, cf};
@@ -39,7 +39,7 @@ struct Square : ecs::component {
 
   vec2 dir{0};
   std::uint32_t timer = 0;
-  bool invisible_flash = false;
+  std::uint32_t invisible_flash = 0;
 
   Square(SimInterface& sim, const vec2& dir) : dir{dir}, timer{sim.random(80) + 40} {}
 
@@ -91,7 +91,11 @@ struct Square : ecs::component {
     dir = normalise(dir);
     transform.move(dir * kSpeed);
     transform.set_rotation(angle(dir));
-    invisible_flash = no_enemies && (timer % 4 == 1 || timer % 4 == 2);
+    if (no_enemies) {
+      ++invisible_flash;
+    } else {
+      invisible_flash = 0;
+    }
   }
 };
 DEBUG_STRUCT_TUPLE(Square, dir, timer, invisible_flash);
@@ -129,7 +133,7 @@ struct Wall : ecs::component {
 
   void
   update(ecs::handle h, Transform& transform, Render& render, Health& health, SimInterface& sim) {
-    if (!sim.global_entity().get<GlobalData>()->non_wall_enemy_count && timer && timer % 8 < 2) {
+    if (!sim.global_entity().get<GlobalData>()->non_wall_enemy_count && timer && !(timer % 8)) {
       weak = true;
       if (health.hp > 2) {
         sim.emit(resolve_key::predicted()).play(sound::kEnemySpawn, 1.f, 0.f);

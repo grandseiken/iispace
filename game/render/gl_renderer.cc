@@ -392,6 +392,10 @@ void GlRenderer::render_panel(const panel_data& p) {
 }
 
 void GlRenderer::render_background(std::uint64_t tick_count, const glm::vec4& colour) {
+  auto t = static_cast<float>(tick_count);
+  glm::vec4 offset{256.f * std::cos(t / 512.f), -t / 4.f, t / 8.f, t / 256.f};
+  glm::vec2 parameters{(1.f - std::cos(t / 1024.f)) / 2.f, 0.f};
+
   const auto& program = impl_->shader(shader::kBackground);
   gl::use_program(program);
   gl::enable_srgb(true);
@@ -403,8 +407,8 @@ void GlRenderer::render_background(std::uint64_t tick_count, const glm::vec4& co
   auto result =
       gl::set_uniforms(program, "screen_dimensions", target().screen_dimensions, "clip_min",
                        target().render_to_screen_coords(clip_rect.min()), "clip_max",
-                       target().render_to_screen_coords(clip_rect.max()), "tick_count",
-                       static_cast<float>(tick_count), "colour_cycle", colour_cycle_ / 256.f);
+                       target().render_to_screen_coords(clip_rect.max()), "offset", offset,
+                       "parameters", parameters, "colour_cycle", colour_cycle_ / 256.f);
   if (!result) {
     impl_->status = unexpected("background shader error: " + result.error());
     return;

@@ -61,7 +61,8 @@ void explode_entity_shapes(ecs::const_handle h, EmitHandle& e,
 }
 
 inline void add_line_particle(EmitHandle& e, const glm::vec2& source, const glm::vec2& a,
-                              const glm::vec2& b, const glm::vec4& c, float w, std::uint32_t time) {
+                              const glm::vec2& b, const glm::vec4& c, float w, float z,
+                              std::uint32_t time) {
   auto& r = e.random();
   auto position = (a + b) / 2.f;
   auto velocity = (2.f + .5f * r.fixed().to_float()) * normalise(position - source) +
@@ -84,7 +85,7 @@ inline void add_line_particle(EmitHandle& e, const glm::vec2& source, const glm:
               .width = w,
           },
       .end_time = time + r.uint(time),
-      .flash_time = 3,
+      .flash_time = z > colour::kZTrails ? 16u : 0u,
       .fade = true,
   });
 }
@@ -98,8 +99,8 @@ void destruct_lines(EmitHandle& e, const auto& parameters, const vec2& source,
   // motion trails)?
   // Make destruct particles similarly velocified?
   geom::iterate(S{}, geom::iterate_lines, parameters, geom::transform{},
-                [&](const vec2& a, const vec2& b, const glm::vec4& c, float w) {
-                  add_line_particle(e, f_source, to_float(a), to_float(b), c, w, time);
+                [&](const vec2& a, const vec2& b, const glm::vec4& c, float w, float z) {
+                  add_line_particle(e, f_source, to_float(a), to_float(b), c, w, z, time);
                 });
 }
 
@@ -142,6 +143,7 @@ shape_flag ship_check_point_legacy(ecs::const_handle h, const vec2& v, shape_fla
 template <geom::ShapeNode S>
 void render_shape(std::vector<render::shape>& output, const auto& parameters,
                   std::optional<float> z_index = std::nullopt, const geom::transform& t = {},
+                  const std::optional<float> hit_alpha = std::nullopt,
                   const std::optional<glm::vec4>& c_override = std::nullopt,
                   const std::optional<std::size_t>& c_override_max_index = std::nullopt) {
   std::size_t i = 0;
@@ -152,8 +154,13 @@ void render_shape(std::vector<render::shape>& output, const auto& parameters,
     if (!shape.z_index) {
       shape_copy.z_index = z_index;
     }
-    if (c_override && (!c_override_max_index || i < *c_override_max_index)) {
-      shape_copy.colour = glm::vec4{c_override->r, c_override->g, c_override->b, shape.colour.a};
+    if ((c_override || hit_alpha) && (!c_override_max_index || i < *c_override_max_index)) {
+      if (c_override) {
+        shape_copy.colour = glm::vec4{c_override->r, c_override->g, c_override->b, shape.colour.a};
+      }
+      if (hit_alpha) {
+        shape_copy.apply_hit_flash(*hit_alpha);
+      }
     }
     output.emplace_back(shape_copy);
   });
@@ -165,13 +172,13 @@ void render_entity_shape_override(std::vector<render::shape>& output, const Heal
                                   std::optional<float> z_index = std::nullopt,
                                   const geom::transform& t = {},
                                   const std::optional<glm::vec4>& colour_override = std::nullopt) {
-  std::optional<glm::vec4> c_override = colour_override;
+  std::optional<float> hit_alpha;
   std::optional<std::size_t> c_override_max_index;
   if (!colour_override && health && health->hit_timer) {
-    c_override = glm::vec4{1.f};
+    hit_alpha = std::min(1.f, health->hit_timer / 10.f);
     c_override_max_index = health->hit_flash_ignore_index;
   }
-  render_shape<S>(output, parameters, z_index, t, c_override, c_override_max_index);
+  render_shape<S>(output, parameters, z_index, t, hit_alpha, colour_override, c_override_max_index);
 }
 
 template <ecs::Component Logic, geom::ShapeNode S = typename Logic::shape>

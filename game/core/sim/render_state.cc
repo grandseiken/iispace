@@ -260,7 +260,10 @@ void RenderState::render(render::GlRenderer& r, std::uint64_t tick_count,
     float a = p.time <= p.flash_time || !p.fade ? 1.f
                                                 : .5f *
             (1.f - static_cast<float>(p.time - p.flash_time - 1) / (p.end_time - p.flash_time - 1));
-    glm::vec4 colour{p.colour.x, p.colour.y, p.time <= p.flash_time ? 1.f : p.colour.z, a};
+    float l = p.flash_time && p.time <= p.flash_time
+        ? (1.f + p.flash_time - p.time) / (1.f + p.flash_time)
+        : 0.f;
+    glm::vec4 colour{p.colour.x, p.colour.y, glm::mix(p.colour.z, 1.f, l), a};
 
     if (const auto* d = std::get_if<dot_particle>(&p.data)) {
       render_box(p.position, p.velocity, glm::vec2{d->radius, d->radius}, colour, d->line_width,
@@ -271,7 +274,8 @@ void RenderState::render(render::GlRenderer& r, std::uint64_t tick_count,
           .origin = p.position,
           .rotation = d->rotation,
           .colour = colour,
-          .z_index = colour::kZParticle,
+          .z_index = p.flash_time && p.time <= p.flash_time / 2 ? colour::kZParticleFlash
+                                                                : colour::kZParticle,
           .trail = render::motion_trail{.prev_origin = p.position - p.velocity,
                                         .prev_rotation = d->rotation - d->angular_velocity,
                                         .prev_colour = colour},

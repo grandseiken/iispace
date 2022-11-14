@@ -36,16 +36,16 @@ auto get_shape_parameters(ecs::const_handle h) {
 template <geom::ShapeNode S>
 void render_shape(std::vector<render::shape>& output, const auto& parameters,
                   const geom::transform& t = {},
-                  const std::optional<glm::vec4>& c_override = std::nullopt,
+                  const std::optional<float>& hit_alpha = std::nullopt,
                   const std::optional<std::size_t>& c_override_max_index = std::nullopt) {
   std::size_t i = 0;
   geom::transform transform = t;
   transform.index_out = &i;
   geom::iterate(S{}, geom::iterate_shapes, parameters, transform, [&](const render::shape& shape) {
     render::shape shape_copy = shape;
-    if (c_override && (!c_override_max_index || i < *c_override_max_index)) {
-      shape_copy.colour = glm::vec4{c_override->r, c_override->g, c_override->b, shape.colour.a};
-      shape_copy.z_index = .5f + shape_copy.z_index.value_or(0.f);
+    if (shape.z_index > colour::kZTrails && hit_alpha &&
+        (!c_override_max_index || i < *c_override_max_index)) {
+      shape_copy.apply_hit_flash(*hit_alpha);
     }
     output.emplace_back(shape_copy);
   });
@@ -53,21 +53,20 @@ void render_shape(std::vector<render::shape>& output, const auto& parameters,
 
 template <geom::ShapeNode S>
 void render_entity_shape_override(std::vector<render::shape>& output, const Health* health,
-                                  const auto& parameters, const geom::transform& t = {},
-                                  const std::optional<glm::vec4>& colour_override = std::nullopt) {
-  std::optional<glm::vec4> c_override = colour_override;
+                                  const auto& parameters, const geom::transform& t = {}) {
+  std::optional<float> hit_alpha;
   std::optional<std::size_t> c_override_max_index;
-  if (!colour_override && health && health->hit_timer) {
-    c_override = colour::kWhite0;
+  if (health && health->hit_timer) {
+    hit_alpha = std::min(1.f, health->hit_timer / 10.f);
     c_override_max_index = health->hit_flash_ignore_index;
   }
-  render_shape<S>(output, parameters, t, c_override, c_override_max_index);
+  render_shape<S>(output, parameters, t, hit_alpha, c_override_max_index);
 }
 
 template <ecs::Component Logic, geom::ShapeNode S = typename Logic::shape>
 void render_entity_shape(ecs::const_handle h, const Health* health,
                          std::vector<render::shape>& output) {
-  render_entity_shape_override<S>(output, health, get_shape_parameters<Logic>(h), {}, std::nullopt);
+  render_entity_shape_override<S>(output, health, get_shape_parameters<Logic>(h), {});
 }
 
 //////////////////////////////////////////////////////////////////////////////////

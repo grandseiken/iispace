@@ -33,10 +33,10 @@ struct box_data : shape_data_base {
     auto c = *t.translate({-dimensions.x, -dimensions.y});
     auto d = *t.translate({dimensions.x, -dimensions.y});
 
-    std::invoke(f, a, b, colour, 1.f);
-    std::invoke(f, b, c, colour, 1.f);
-    std::invoke(f, c, d, colour, 1.f);
-    std::invoke(f, d, a, colour, 1.f);
+    std::invoke(f, a, b, colour, 1.f, 0.f);
+    std::invoke(f, b, c, colour, 1.f, 0.f);
+    std::invoke(f, c, d, colour, 1.f, 0.f);
+    std::invoke(f, d, a, colour, 1.f, 0.f);
   }
 
   constexpr void

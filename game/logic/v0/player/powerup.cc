@@ -24,7 +24,7 @@ void wobble_movement(SimInterface& sim, const Transform& transform, vec2& dir,
                      std::uint32_t rotate_time, bool& first_frame, bool& rotate_anti) {
   if (!sim.is_on_screen(transform.centre)) {
     dir = sim.dimensions() / 2_fx - transform.centre;
-    first_frame = true;
+    first_frame = false;
   } else {
     if (first_frame) {
       dir = from_polar(sim.random_fixed() * 2 * fixed_c::pi, 1_fx);

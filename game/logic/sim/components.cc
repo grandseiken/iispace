@@ -143,7 +143,9 @@ void Health::damage(ecs::handle h, SimInterface& sim, std::uint32_t damage, dama
     if (hit_sound1 && damage) {
       e.play_random(*hit_sound1, position);
     }
-    hit_timer = std::max<std::uint32_t>(hit_timer, type == damage_type::kBomb ? 25 : 1);
+    auto t =
+        type == damage_type::kBomb ? hit_timer + 40u : std::min<std::uint32_t>(10u, hit_timer + 8u);
+    hit_timer = std::max<std::uint32_t>(hit_timer, t);
   }
 }
 

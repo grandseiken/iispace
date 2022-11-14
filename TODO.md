@@ -221,6 +221,7 @@ Note: many of these hard to do with laggy network.
 * 3D skull boss
 * Spawning sliding circle boss
 * Big walls of walls that fly past with embedded bombs, or with paths through
+* Bullet hell with shield walls
 
 # Currencies / economy
 * Large enemies randomly drop bytes/boops

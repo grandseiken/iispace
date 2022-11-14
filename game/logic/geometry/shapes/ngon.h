@@ -97,12 +97,12 @@ struct ngon_data : shape_data_base {
 
     for (std::uint32_t i = 0; i < dimensions.segments; ++i) {
       std::invoke(f, vertex(i), line.style != ngon_style::kPolystar ? vertex(i + 1) : t.v,
-                  line.colour, line.width);
+                  line.colour, line.width, line.z);
     }
     if (line.style == ngon_style::kPolygram) {
       for (std::size_t i = 0; i < dimensions.sides; ++i) {
         for (std::size_t j = i + 2; j < dimensions.sides && (j + 1) % dimensions.sides != i; ++j) {
-          std::invoke(f, vertex(i), vertex(j), line.colour, line.width);
+          std::invoke(f, vertex(i), vertex(j), line.colour, line.width, line.z);
         }
       }
     }
