@@ -35,6 +35,8 @@ struct equal {};
 
 template <auto V, Expression<glm::vec4>>
 struct set_colour {};
+template <auto V, Expression<fixed>>
+struct set_radius {};
 
 template <auto V>
 constexpr auto evaluate(constant<V>, const auto&) {
@@ -98,6 +100,13 @@ constexpr auto evaluate(set_colour<V, E>, const auto& params) {
   return v;
 }
 
+template <auto V, Expression<fixed> E>
+constexpr auto evaluate(set_radius<V, E>, const auto& params) {
+  auto v = V;
+  v.radius = fixed{evaluate(E{}, params)};
+  return v;
+}
+
 //////////////////////////////////////////////////////////////////////////////////
 // Helper combinations.
 //////////////////////////////////////////////////////////////////////////////////
@@ -110,6 +119,8 @@ using multiply_p = multiply<constant<C>, parameter<ParameterIndex>>;
 
 template <auto V, std::size_t N>
 using set_colour_p = set_colour<V, parameter<N>>;
+template <auto V, std::size_t N>
+using set_radius_p = set_radius<V, parameter<N>>;
 
 }  // namespace ii::geom
 

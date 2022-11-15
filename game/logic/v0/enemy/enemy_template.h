@@ -51,19 +51,26 @@ void add_enemy_health(ecs::handle h, std::uint32_t hp,
                       std::optional<rumble_type> destroy_rumble = std::nullopt) {
   destroy_sound = destroy_sound ? *destroy_sound : Logic::kDestroySound;
   destroy_rumble = destroy_rumble ? *destroy_rumble : Logic::kDestroyRumble;
-  constexpr auto on_destroy = sfn::cast<Health::on_destroy_t, &destruct_entity_default<Logic, S>>;
+
+  sfn::ptr<Health::on_destroy_t> on_destroy = nullptr;
+  sfn::ptr<Health::on_hit_t> on_hit = nullptr;
+
+  constexpr auto default_destroy =
+      sfn::cast<Health::on_destroy_t, &destruct_entity_default<Logic, S>>;
   if constexpr (requires { &Logic::on_destroy; }) {
-    h.add(Health{.hp = hp,
-                 .destroy_sound = destroy_sound,
-                 .destroy_rumble = destroy_rumble,
-                 .on_destroy = sfn::sequence<
-                     on_destroy, sfn::cast<Health::on_destroy_t, ecs::call<&Logic::on_destroy>>>});
+    on_destroy = sfn::sequence<default_destroy,
+                               sfn::cast<Health::on_destroy_t, ecs::call<&Logic::on_destroy>>>;
   } else {
-    h.add(Health{.hp = hp,
-                 .destroy_sound = destroy_sound,
-                 .destroy_rumble = destroy_rumble,
-                 .on_destroy = on_destroy});
+    on_destroy = default_destroy;
   }
+  if constexpr (requires { &Logic::on_hit; }) {
+    on_hit = sfn::cast<Health::on_hit_t, ecs::call<&Logic::on_hit>>;
+  }
+  h.add(Health{.hp = hp,
+               .destroy_sound = destroy_sound,
+               .destroy_rumble = destroy_rumble,
+               .on_hit = on_hit,
+               .on_destroy = on_destroy});
 }
 
 }  // namespace ii::v0

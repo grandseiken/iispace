@@ -86,6 +86,10 @@ inline void spawn_follow_hub(spawn_context& context, spawn_side, const vec2& pos
   }
 }
 
+inline void spawn_follow_sponge(spawn_context& context, spawn_side, const vec2& position) {
+  v0::spawn_follow_sponge(context.sim, position);
+}
+
 inline void spawn_shielder(spawn_context& context, spawn_side, const vec2& position) {
   v0::spawn_shielder(context.sim, position);
 }
@@ -693,6 +697,20 @@ struct shielder0_side : formation<6, 22> {
   void operator()(spawn_context& context) const {
     auto side = context.random_side();
     context.spawn(&spawn_shielder, side, context.random.uint(3) + 1, 5);
+  }
+};
+
+struct sponge0 : formation<8, 26> {
+  void operator()(spawn_context& context) const {
+    auto side = context.random_mside();
+    context.spawn(&spawn_follow_sponge, side, context.random.uint(7) + 1, 9);
+  }
+};
+
+struct sponge0_side : formation<4, 22> {
+  void operator()(spawn_context& context) const {
+    auto side = context.random_side();
+    context.spawn(&spawn_follow_sponge, side, context.random.uint(7) + 1, 9);
   }
 };
 

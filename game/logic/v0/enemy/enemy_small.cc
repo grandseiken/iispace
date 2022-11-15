@@ -107,13 +107,13 @@ struct Follow : ecs::component {
       return;
     }
 
-    // TODO: acquire new target if current is dead. Stop if none. Acquire slightly faster.
+    // TODO: acquire new target if current is dead. Stop if none.
     ++timer;
     if (!target || timer >= kTime) {
       (target ? next_target : target) = sim.nearest_player(transform.centre).id();
       timer = 0;
     }
-    if (timer >= kTime / 3 && next_target) {
+    if (timer >= kTime / 5 && next_target) {
       target = next_target;
       next_target.reset();
     }
@@ -330,6 +330,115 @@ void spawn_chaser(SimInterface& sim, std::uint32_t size, const vec2& position, b
   }
 }
 
+struct FollowSponge : ecs::component {
+  static constexpr sound kDestroySound = sound::kPlayerDestroy;
+  static constexpr rumble_type kDestroyRumble = rumble_type::kLarge;
+
+  static constexpr fixed kSpeed = 7_fx / 8_fx;
+  static constexpr std::uint32_t kTime = 60;
+  static constexpr std::uint32_t kBoundingWidth = 33;
+
+  static constexpr auto z = colour::kZEnemySmall;
+  static constexpr auto c = colour::kNewPurple;
+  static constexpr auto cf = colour::alpha(c, colour::kFillAlpha0);
+  static constexpr auto outline = geom::nline(colour::kOutline, colour::kZOutline, 2.f);
+  using shape = standard_transform<
+      geom::ngon_eval<geom::set_radius_p<geom::nd(0, 6), 4>, geom::constant<outline>>,
+      geom::ngon_eval<geom::set_radius_p<geom::nd(0, 6), 2>,
+                      geom::constant<geom::nline(c, z, 2.f)>>,
+      geom::ngon_eval<geom::set_radius_p<geom::nd(0, 6), 3>, geom::constant<geom::nline(c, z, 2.f)>,
+                      geom::constant<geom::sfill(cf, z)>>,
+      geom::ngon_collider_eval<geom::set_radius_p<geom::nd(0, 6), 3>,
+                               geom::constant<shape_flag::kDangerous | shape_flag::kVulnerable>>>;
+
+  std::tuple<vec2, fixed, fixed, fixed, fixed>
+  shape_parameters(const Transform& transform, const Health& health) const {
+    auto scale = (1_fx + fixed{health.hp} / health.max_hp) / 2;
+    return {
+        transform.centre, transform.rotation,
+        4 + scale * kBoundingWidth / 2 + (scale * kBoundingWidth / 2 - 9) * sin(fixed{anim} / 32),
+        scale * kBoundingWidth, scale * kBoundingWidth + 2};
+  }
+
+  std::uint32_t timer = 0;
+  std::uint32_t anim = 0;
+  std::uint32_t spawns = 0;
+  vec2 spread_velocity{0};
+  std::optional<ecs::entity_id> target;
+  std::optional<ecs::entity_id> next_target;
+  std::vector<ecs::entity_id> closest;
+
+  void update(ecs::handle h, Transform& transform, const Health& health, SimInterface& sim) {
+    ++anim;
+    auto t = fixed{health.max_hp - health.hp} / 256;
+    transform.rotate(t / 10 + fixed_c::tenth / 2);
+
+    vec2 target_spread{0};
+    if ((+h.id() + sim.tick_count()) % 16 == 0) {
+      thread_local std::vector<SimInterface::range_info> range_output;
+      range_output.clear();
+      closest.clear();
+      sim.in_range(transform.centre, 24, ecs::id<FollowSponge>(), /* max */ 4, range_output);
+      for (const auto& e : range_output) {
+        closest.emplace_back(e.h.id());
+      }
+    }
+    for (auto id : closest) {
+      if (auto eh = sim.index().get(id); eh && !eh->has<Destroy>()) {
+        auto d = eh->get<Transform>()->centre - transform.centre;
+        auto d_sq = length_squared(d);
+        if (d != vec2{0}) {
+          target_spread -= 4 * d / (sqrt(d_sq) * std::max(4_fx, d_sq));
+        }
+      }
+    }
+    spread_velocity = rc_smooth(spread_velocity, 6 * kSpeed * target_spread, 15_fx / 16_fx);
+    transform.move(spread_velocity);
+    if (!sim.alive_players()) {
+      return;
+    }
+
+    // TODO: acquire new target if current is dead. Stop if none. Acquire slightly faster.
+    ++timer;
+    if (!target || timer >= kTime) {
+      (target ? next_target : target) = sim.nearest_player(transform.centre).id();
+      timer = 0;
+    }
+    if (timer >= kTime / 5 && next_target) {
+      target = next_target;
+      next_target.reset();
+    }
+
+    auto ph = sim.index().get(*target);
+    if (!ph->get<Player>()->is_killed) {
+      auto d = ph->get<Transform>()->centre - transform.centre;
+      bool on_screen = sim.is_on_screen(transform.centre + vec2{kBoundingWidth} / 2) ||
+          sim.is_on_screen(transform.centre - vec2{kBoundingWidth} / 2);
+      transform.move(normalise(d) * (on_screen ? 2 * t + kSpeed : t + 2 * kSpeed));
+    }
+  }
+
+  void on_hit(const Transform& transform, const Health& health, SimInterface& sim, EmitHandle& eh,
+              damage_type type, const vec2& source) {
+    if (type == damage_type::kBomb) {
+      return;
+    }
+    auto target_spawns = 1 + (health.max_hp - health.hp) / 8;
+    if (health.max_hp - health.hp >= health.max_hp / 2) {
+      target_spawns += (health.max_hp / 2 - health.hp) / 16;
+    }
+    while (spawns < target_spawns) {
+      eh.explosion(to_float(transform.centre), c, 6, std::nullopt, 2.f);
+      auto v = from_polar(angle(transform.centre - source) + sim.random_fixed() - 1_fx / 2,
+                          2_fx + 3_fx * sim.random_fixed());
+      spawn_follow(sim, 0, transform.centre, std::nullopt, /* drop */ false, transform.rotation, v);
+      ++spawns;
+    }
+  }
+};
+DEBUG_STRUCT_TUPLE(FollowSponge, timer, anim, spawns, spread_velocity, target, next_target,
+                   closest);
+
 }  // namespace
 
 void spawn_follow(SimInterface& sim, const vec2& position, std::optional<vec2> direction,
@@ -353,6 +462,14 @@ void spawn_chaser(SimInterface& sim, const vec2& position, bool drop) {
 
 void spawn_big_chaser(SimInterface& sim, const vec2& position, bool drop) {
   spawn_chaser(sim, /* size */ 1, position, drop);
+}
+
+void spawn_follow_sponge(SimInterface& sim, const vec2& position) {
+  auto h = create_ship_default<FollowSponge>(sim, position);
+  add_enemy_health<FollowSponge>(h, 256, sound::kPlayerDestroy, rumble_type::kMedium);
+  h.add(Enemy{.threat_value = 20u});
+  h.add(FollowSponge{});
+  h.add(DropTable{.shield_drop_chance = 30, .bomb_drop_chance = 40});
 }
 
 }  // namespace ii::v0

@@ -163,11 +163,11 @@ struct Shielder : ecs::component {
       timer = 0;
     }
 
-    auto max_speed =
-        !on_screen ? kSpeed * 3_fx / 2 : kSpeed * (6_fx + fixed{health.max_hp - health.hp} / 20_fx);
+    auto t = fixed{health.max_hp - health.hp} / 20_fx;
+    auto max_speed = !on_screen ? kSpeed * 3_fx / 2 : kSpeed * (6_fx + t);
     auto target_v = max_speed *
         normalise(sim.index().get(*target)->get<Transform>()->centre - transform.centre);
-    velocity = rc_smooth(velocity, target_v, 127_fx / 128);
+    velocity = rc_smooth(velocity, target_v, (127_fx - t / 12) / 128);
     transform.move(velocity);
 
     static constexpr fixed kMaxRotationSpeed = 1_fx / 16_fx;

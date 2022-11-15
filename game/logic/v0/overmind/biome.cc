@@ -70,6 +70,8 @@ public:
 
     s.add<formations::shielder0>();
     s.add<formations::shielder0_side>();
+    s.add<formations::sponge0>();
+    s.add<formations::sponge0_side>();
 
     s.add<formations::tractor0>();
     s.add<formations::tractor1>();
