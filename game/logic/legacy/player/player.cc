@@ -129,9 +129,9 @@ struct PlayerLogic : ecs::component {
   static constexpr std::uint32_t kShieldTime = 50;
   static constexpr std::uint32_t kShotTimer = 4;
 
-  using shield = geom::if_p<2, geom::ngon_colour_p<16, 10, 6>>;
+  using shield = geom::if_p<2, geom::polygon_colour_p<16, 10, 6, 's'>>;
   using bomb = geom::if_p<
-      3, geom::translate<-8, 0, geom::rotate<fixed_c::pi, geom::polystar_colour_p<6, 5, 6>>>>;
+      3, geom::translate<-8, 0, geom::rotate<fixed_c::pi, geom::polystar_colour_p<6, 5, 6, 'b'>>>>;
   using box_shapes =
       geom::translate<8, 0, geom::rotate_eval<geom::negate_p<1>, geom::box_colour_p<2, 2, 4>>,
                       geom::rotate_eval<geom::negate_p<1>, geom::box_colour_p<1, 1, 5>>,
@@ -159,7 +159,6 @@ struct PlayerLogic : ecs::component {
   std::uint32_t fire_timer = 0;
   std::uint32_t kill_timer = 0;
   vec2 fire_target{0};
-  bool fire_target_trail = true;
 
   void update(ecs::handle h, Player& pc, PlayerScore& score, Transform& transform, Render& render,
               SimInterface& sim) {
@@ -174,7 +173,6 @@ struct PlayerLogic : ecs::component {
     if (!sim.is_legacy()) {
       fire_target = glm::clamp(fire_target, vec2{0}, sim.dimensions());
     }
-    fire_target_trail = length_squared(fire_target - old_fire_target) <= 64 * 64;
     fire_timer = (fire_timer + 1) % kShotTimer;
 
     // Temporary death.
@@ -207,9 +205,6 @@ struct PlayerLogic : ecs::component {
     if (length(input.velocity) > fixed_c::hundredth) {
       auto v = length(input.velocity) > 1 ? normalise(input.velocity) : input.velocity;
       auto av = angle(v);
-      if (abs(angle_diff(av, transform.rotation)) > fixed_c::pi / 3) {
-        render.clear_trails = true;
-      }
       transform.set_rotation(angle(v));
       transform.centre = max(vec2{0}, min(dim, kPlayerSpeed * v + transform.centre));
     }
@@ -218,7 +213,6 @@ struct PlayerLogic : ecs::component {
     if (!pc.is_predicted && pc.bomb_count && input.keys & input_frame::kBomb) {
       auto c = legacy_player_colour(pc.player_number);
       pc.bomb_count = 0;
-      render.clear_trails = true;
 
       auto e = sim.emit(resolve_key::local(pc.player_number));
       explosion(h, std::nullopt, e, glm::vec4{1.f}, 16);
@@ -266,12 +260,12 @@ struct PlayerLogic : ecs::component {
 
     // Damage.
     if (!pc.is_predicted && sim.any_collision(transform.centre, shape_flag::kDangerous)) {
-      damage(h, pc, score, transform, render, sim);
+      damage(h, pc, score, transform, sim);
     }
   }
 
-  void damage(ecs::handle h, Player& pc, PlayerScore& score, Transform& transform, Render& render,
-              SimInterface& sim) {
+  void
+  damage(ecs::handle h, Player& pc, PlayerScore& score, Transform& transform, SimInterface& sim) {
     if (kill_timer || invulnerability_timer) {
       return;
     }
@@ -282,7 +276,6 @@ struct PlayerLogic : ecs::component {
     if (pc.shield_count) {
       e.rumble(pc.player_number, 15, 0.f, 1.f).play(sound::kPlayerShield, transform.centre);
       pc.shield_count = 0;
-      render.clear_trails = true;
       invulnerability_timer = kShieldTime;
       return;
     }
@@ -324,7 +317,7 @@ struct PlayerLogic : ecs::component {
         .origin = t,
         .colour = c,
         .z_index = 100.f,
-        .disable_trail = !fire_target_trail,
+        .s_index = 't',
         .data = render::ngon{.radius = 8, .sides = 4, .style = render::ngon_style::kPolystar},
     });
   }

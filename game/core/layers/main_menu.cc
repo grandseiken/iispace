@@ -69,7 +69,7 @@ public:
     add_button(layout, "W-hat mode (legacy)", [=] { start_game(game_mode::kLegacy_What); });
     add_button(layout, "Back", [this] { remove(); });
 
-    stack.set_volume(.5f);
+    stack.set_volume(1.f);
   }
 
   void update_content(const ui::input_frame& input, ui::output_frame& output) override {
@@ -111,7 +111,7 @@ MainMenuLayer::MainMenuLayer(ui::GameStack& stack) : ui::GameLayer{stack} {
       .set_colour(kTextColour)
       .set_multiline(true);
 
-  stack.set_volume(.5f);
+  stack.set_volume(1.f);
   focus();
 }
 

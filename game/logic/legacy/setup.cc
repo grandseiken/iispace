@@ -54,4 +54,6 @@ ecs::entity_id LegacySimSetup::start_game(const initial_conditions& conditions, 
   return global_entity.id();
 }
 
+void LegacySimSetup::begin_tick(SimInterface& sim) {}
+
 }  // namespace ii::legacy

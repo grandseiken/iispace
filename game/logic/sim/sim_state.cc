@@ -148,6 +148,7 @@ void SimState::update(std::vector<input_frame> input) {
   internals_->input_frames = std::move(input);
   internals_->input_frames.resize(internals_->conditions.player_count);
   internals_->collision_index->begin_tick();
+  setup_->begin_tick(*interface_);
 
   internals_->index.iterate_dispatch_if<Boss>([&](Boss& boss, Transform& transform) {
     if (interface_->is_on_screen(transform.centre)) {

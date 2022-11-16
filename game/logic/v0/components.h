@@ -33,6 +33,23 @@ struct DropTable : ecs::component {
 };
 DEBUG_STRUCT_TUPLE(DropTable, shield_drop_chance, bomb_drop_chance);
 
+struct Physics : ecs::component {
+  fixed mass = 1_fx;
+  fixed drag_coefficient = mass;
+  vec2 velocity{0};
+
+  void apply_impulse(vec2 impulse) { velocity += impulse / mass; }
+  void update(Transform& transform) {
+    static constexpr auto kBaseDragCoefficient = 1_fx / 32_fx;
+    transform.move(velocity);
+    velocity *= std::max(0_fx, 1_fx - kBaseDragCoefficient * drag_coefficient / mass);
+    if (length_squared(velocity) < 1_fx / (128_fx * 128_fx)) {
+      velocity = vec2{0};
+    }
+  }
+};
+DEBUG_STRUCT_TUPLE(Physics, mass, drag_coefficient, velocity);
+
 }  // namespace ii::v0
 
 #endif

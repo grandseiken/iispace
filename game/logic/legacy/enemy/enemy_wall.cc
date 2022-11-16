@@ -14,7 +14,7 @@ struct Square : ecs::component {
   static constexpr rumble_type kDestroyRumble = rumble_type::kLow;
   static constexpr fixed kSpeed = 2 + 1_fx / 4;
   using shape = standard_transform<
-      geom::box_colour_p<10, 10, 2, shape_flag::kDangerous | shape_flag::kVulnerable>>;
+      geom::box_colour_p<10, 10, 2, 0, shape_flag::kDangerous | shape_flag::kVulnerable>>;
 
   std::tuple<vec2, fixed, glm::vec4>
   shape_parameters(const Transform& transform, const Health& health) const {
@@ -51,28 +51,24 @@ struct Square : ecs::component {
       if (dir.x <= 0) {
         dir.x = 1;
       }
-      render.clear_trails = true;
     }
     if (v.y < 0 && dir.y <= 0) {
       dir.y = -dir.y;
       if (dir.y <= 0) {
         dir.y = 1;
       }
-      render.clear_trails = true;
     }
     if (v.x > dim.x && dir.x >= 0) {
       dir.x = -dir.x;
       if (dir.x >= 0) {
         dir.x = -1;
       }
-      render.clear_trails = true;
     }
     if (v.y > dim.y && dir.y >= 0) {
       dir.y = -dir.y;
       if (dir.y >= 0) {
         dir.y = -1;
       }
-      render.clear_trails = true;
     }
     dir = normalise(dir);
     transform.move(dir * kSpeed);
@@ -90,7 +86,7 @@ struct Wall : ecs::component {
 
   static constexpr std::uint32_t kTimer = 80;
   static constexpr fixed kSpeed = 1 + 1_fx / 4;
-  using shape = standard_transform<geom::box<10, 40, colour::hue360(120, .5f, .6f),
+  using shape = standard_transform<geom::box<10, 40, colour::hue360(120, .5f, .6f), 0,
                                              shape_flag::kDangerous | shape_flag::kVulnerable>>;
 
   vec2 dir{0, 1};
@@ -100,8 +96,7 @@ struct Wall : ecs::component {
 
   Wall(bool rdir) : rdir{rdir} {}
 
-  void
-  update(ecs::handle h, Transform& transform, Render& render, Health& health, SimInterface& sim) {
+  void update(ecs::handle h, Transform& transform, Health& health, SimInterface& sim) {
     if (!sim.global_entity().get<GlobalData>()->non_wall_enemy_count && timer % 8 < 2) {
       if (health.hp > 2) {
         sim.emit(resolve_key::predicted()).play(sound::kEnemySpawn, 1.f, 0.f);
@@ -135,7 +130,6 @@ struct Wall : ecs::component {
         (v.x > dim.x && dir.x > fixed_c::hundredth) ||
         (v.y > dim.y && dir.y > fixed_c::hundredth)) {
       dir = -normalise(dir);
-      render.clear_trails = true;
     }
 
     transform.move(dir * kSpeed);

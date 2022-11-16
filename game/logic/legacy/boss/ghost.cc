@@ -36,7 +36,7 @@ struct GhostWall : ecs::component {
 
   template <std::uint32_t length>
   using gw_box =
-      geom::compound<geom::box<length, 10, c0, shape_flag::kDangerous | shape_flag::kShield>,
+      geom::compound<geom::box<length, 10, c0, 0, shape_flag::kDangerous | shape_flag::kShield>,
                      geom::box<length, 7, c0>, geom::box<length, 4, c0>>;
   using gw_horizontal_base = geom::rotate<fixed_c::pi / 2, gw_box<240>>;
   template <fixed Y0, fixed Y1>
@@ -107,7 +107,7 @@ struct GhostMine : ecs::component {
       geom::conditional_p<
           2, geom::ngon_colour_p<24, 8, 3>,
           geom::polygon_colour_p<
-              24, 8, 3, shape_flag::kDangerous | shape_flag::kShield | shape_flag::kWeakShield>>,
+              24, 8, 3, 0, shape_flag::kDangerous | shape_flag::kShield | shape_flag::kWeakShield>>,
       geom::ngon_colour_p<20, 8, 3>>;
 
   std::tuple<vec2, fixed, bool, glm::vec4> shape_parameters(const Transform& transform) const {
@@ -154,8 +154,8 @@ struct GhostBoss : ecs::component {
   static constexpr shape_flag kShapeFlags = shape_flag::kEverything;
 
   using centre_shape =
-      geom::compound<geom::polygon<32, 8, c1, shape_flag::kShield>,
-                     geom::polygon<48, 8, c0,
+      geom::compound<geom::polygon<32, 8, c1, 0, shape_flag::kShield>,
+                     geom::polygon<48, 8, c0, 0,
                                    shape_flag::kDangerous | shape_flag::kEnemyInteraction |
                                        shape_flag::kVulnerable>>;
 
@@ -388,9 +388,9 @@ struct GhostBoss : ecs::component {
     return kLookup[n][i];
   }
 
-  using box_attack_component =
-      geom::compound<geom::box<320, 10, c0, shape_flag::kDangerous | shape_flag::kEnemyInteraction>,
-                     geom::box<320, 7, c0>, geom::box<320, 4, c0>>;
+  using box_attack_component = geom::compound<
+      geom::box<320, 10, c0, 0, shape_flag::kDangerous | shape_flag::kEnemyInteraction>,
+      geom::box<320, 7, c0>, geom::box<320, 4, c0>>;
   using box_attack_shape =
       standard_transform<geom::compound<geom::translate<320 + 32, 0, box_attack_component>,
                                         geom::translate<-320 - 32, 0, box_attack_component>>>;

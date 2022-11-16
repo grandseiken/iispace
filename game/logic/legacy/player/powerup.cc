@@ -88,13 +88,11 @@ struct Powerup : ecs::component {
     case powerup_type::kShield:
       pc.shield_count = 1;
       pc.bomb_count = 0;
-      render.clear_trails = true;
       break;
 
     case powerup_type::kBomb:
       pc.bomb_count = 1;
       pc.shield_count = 0;
-      render.clear_trails = true;
       break;
     }
     e.play(type == powerup_type::kExtraLife ? sound::kPowerupLife : sound::kPowerupOther,

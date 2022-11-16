@@ -77,6 +77,7 @@ struct box_data : shape_data_base {
               .rotation = t.rotation().to_float(),
               .colour = line.colour,
               .z_index = line.z,
+              .s_index = line.index,
               .data = render::box{.dimensions = to_float(dimensions), .line_width = line.width},
           });
     }
@@ -87,6 +88,7 @@ struct box_data : shape_data_base {
                       .rotation = t.rotation().to_float(),
                       .colour = fill.colour,
                       .z_index = fill.z,
+                      .s_index = fill.index,
                       .data = render::box_fill{.dimensions = to_float(dimensions)},
                   });
     }

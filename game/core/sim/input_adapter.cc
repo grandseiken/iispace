@@ -185,6 +185,7 @@ std::vector<input_frame> SimInputAdapter::get() {
 
 void SimInputAdapter::rumble(std::uint32_t player_index, std::uint16_t lf, std::uint16_t hf,
                              std::uint32_t duration_ms) const {
+  // TODO: rumble in single-player if they have been using a controller.
   if (player_index < input_.size() && input_[player_index].device.controller_index) {
     io_layer_.controller_rumble(*input_[player_index].device.controller_index, lf, hf, duration_ms);
   }

@@ -33,7 +33,7 @@ struct TractorBoss : ecs::component {
     using ball =
         geom::translate_eval<geom::constant<rotate_legacy(vec2{24, 0}, I* fixed_c::pi / 4)>,
                              geom::rotate_eval<geom::multiply_p<BI ? 1 : -1, 2>,
-                                               geom::polygram<12, 6, c0, kDangerousVulnerable>>>;
+                                               geom::polygram<12, 6, c0, 0, kDangerousVulnerable>>>;
     using shape = geom::for_each<fixed, 0, 8, ball>;
   };
 
@@ -43,11 +43,11 @@ struct TractorBoss : ecs::component {
       geom::rotate_eval<
           geom::multiply_p<fixed{I ? -1 : 1} / 2, 2>,
           geom::compound<geom::attachment_point<I, 0, 0>, geom::polygram<12, 6, c1>,
-                         geom::polygon<30, 12, glm::vec4{0.f}, shape_flag::kShield>,
+                         geom::polygon<30, 12, glm::vec4{0.f}, 0, shape_flag::kShield>,
                          geom::disable_iteration<
                              geom::iterate_centres_t,
                              geom::compound<geom::polygon<12, 12, c1>, geom::polygon<2, 6, c1>,
-                                            geom::polygon<36, 12, c0, kDangerousVulnerable>,
+                                            geom::polygon<36, 12, c0, 0, kDangerousVulnerable>,
                                             geom::polygon<34, 12, c0>, geom::polygon<32, 12, c0>,
                                             typename ball_inner<I>::shape>>>>>;
   using shape = standard_transform<
@@ -90,7 +90,6 @@ struct TractorBoss : ecs::component {
     }
 
     if (transform.centre.x < -150) {
-      render.clear_trails = true;
       transform.centre.x = dim_x + 150;
       will_attack = !will_attack;
       shoot_type = sim.random_bool();
@@ -271,9 +270,9 @@ struct TractorBoss : ecs::component {
         (!stopped && (move_away || !will_attack) && sim.is_on_screen(transform.centre))) {
       for (std::size_t i = 0; i < targets.size(); ++i) {
         if (((timer + i * 4) / 4) % 2) {
-          auto s = render::shape::line(to_float(transform.centre), to_float(targets[i]), c0);
-          s.disable_trail = true;
-          output.emplace_back(s);
+          output.emplace_back(render::shape::line(to_float(transform.centre), to_float(targets[i]),
+                                                  c0, 0.f, 1.f,
+                                                  static_cast<unsigned char>(1 + timer % 8)));
         }
       }
     }

@@ -25,7 +25,7 @@ struct DeathRay : ecs::component {
   static constexpr rumble_type kDestroyRumble = rumble_type::kNone;
   static constexpr fixed kSpeed = 10;
 
-  using shape = standard_transform<geom::box<10, 48, glm::vec4{0.f}, shape_flag::kDangerous>,
+  using shape = standard_transform<geom::box<10, 48, glm::vec4{0.f}, 0, shape_flag::kDangerous>,
                                    geom::line<0, 48, 0, -48, glm::vec4{1.f}>>;
 
   void update(ecs::handle h, Transform& transform, SimInterface& sim) {
@@ -56,8 +56,8 @@ struct DeathArm : ecs::component {
   using shape = standard_transform<
       geom::ngon<60, 4, c1>,
       geom::conditional_p<
-          2, geom::polygram<50, 4, c0, shape_flag::kVulnerable>,
-          geom::polygram<50, 4, c0, shape_flag::kDangerous | shape_flag::kVulnerable>>,
+          2, geom::polygram<50, 4, c0, 0, shape_flag::kVulnerable>,
+          geom::polygram<50, 4, c0, 0, shape_flag::kDangerous | shape_flag::kVulnerable>>,
       geom::ball_collider<40, shape_flag::kShield>, geom::ngon<20, 4, c1>, geom::ngon<18, 4, c0>>;
 
   std::tuple<vec2, fixed, bool> shape_parameters(const Transform& transform) const {
@@ -159,12 +159,12 @@ struct DeathRayBoss : public ecs::component {
   template <fixed I>
   using edge_shape =
       geom::rotate<I * fixed_c::pi / 6,
-                   geom::translate<130, 0, geom::box<10, 24, c1, shape_flag::kDangerous>,
-                                   geom::box<8, 22, c0, shape_flag::kDangerous>>>;
+                   geom::translate<130, 0, geom::box<10, 24, c1, 0, shape_flag::kDangerous>,
+                                   geom::box<8, 22, c0, 0, shape_flag::kDangerous>>>;
   using shape = standard_transform<
       geom::rotate<fixed_c::pi / 12, geom::polystar<110, 12, c0>, geom::polygram<70, 12, c1>,
-                   geom::polygon<120, 12, c1, shape_flag::kDangerous | shape_flag::kVulnerable>,
-                   geom::ngon<115, 12, c1>, geom::polygon<110, 12, c1, shape_flag::kShield>>,
+                   geom::polygon<120, 12, c1, 0, shape_flag::kDangerous | shape_flag::kVulnerable>,
+                   geom::ngon<115, 12, c1>, geom::polygon<110, 12, c1, 0, shape_flag::kShield>>,
       geom::box<0, 0, glm::vec4{0.f}>,
       geom::disable_iteration<geom::iterate_centres_t, geom::for_each<fixed, 1, 12, edge_shape>>>;
 

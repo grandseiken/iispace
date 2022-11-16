@@ -18,7 +18,7 @@ struct SuperBossArc : public ecs::component {
   template <fixed Radius, std::size_t I, shape_flag Flags = shape_flag::kNone>
   using polyarc =
       geom::polyarc_eval<geom::constant<Radius>, geom::constant<32u>, geom::constant<2u>,
-                         geom::parameter_i<3, I>, geom::constant<Flags>>;
+                         geom::parameter_i<3, I>, geom::constant<0>, geom::constant<Flags>>;
   using shape = standard_transform<
       geom::rotate_p<2, polyarc<140, 0>, polyarc<135, 1>, polyarc<130, 2>,
                      polyarc<125, 3,
@@ -97,7 +97,8 @@ struct SuperBoss : ecs::component {
   template <fixed Radius, std::size_t I, shape_flag Flags = shape_flag::kNone>
   using polygon =
       geom::ngon_eval<geom::constant<Radius>, geom::constant<32u>, geom::parameter_i<2, I>,
-                      geom::constant<geom::ngon_style::kPolygon>, geom::constant<Flags>>;
+                      geom::constant<geom::ngon_style::kPolygon>, geom::constant<0>,
+                      geom::constant<Flags>>;
   using shape =
       standard_transform<polygon<40, 0, shape_flag::kDangerous | shape_flag::kVulnerable>,
                          polygon<35, 1>, polygon<30, 2, shape_flag::kShield>, polygon<25, 3>,

@@ -181,25 +181,8 @@ struct Shielder : ecs::component {
     };
     smooth_rotate(shield_angle, angle(velocity));
 
-    if ((+h.id() + sim.tick_count()) % 16 == 0) {
-      thread_local std::vector<SimInterface::range_info> range_output;
-      range_output.clear();
-      closest.clear();
-      sim.in_range(transform.centre, 128, ecs::id<Shielder>(), /* max */ 4, range_output);
-      for (const auto& e : range_output) {
-        closest.emplace_back(e.h.id());
-      }
-    }
-    vec2 target_spread{0};
-    for (auto id : closest) {
-      if (auto eh = sim.index().get(id); id != h.id() && eh && !eh->has<Destroy>()) {
-        auto d = eh->get<Transform>()->centre - transform.centre;
-        auto d_sq = length_squared(d);
-        if (d != vec2{0}) {
-          target_spread -= d / std::max(1_fx, d_sq);
-        }
-      }
-    }
+    vec2 target_spread = spread_closest<Shielder>(h, transform, sim, closest, 128_fx, 4u,
+                                                  spread_linear_coefficient(4_fx));
     target_spread *= 64 * kSpeed;
     spread_velocity = rc_smooth(spread_velocity, target_spread, 15_fx / 16_fx);
     transform.move(spread_velocity);
@@ -215,7 +198,7 @@ struct Tractor : ecs::component {
 
   static constexpr std::uint32_t kTimer = 60;
   static constexpr fixed kSpeed = 6 * (15_fx / 160);
-  static constexpr fixed kPullSpeed = 2 + 1_fx / 4;
+  static constexpr fixed kPullSpeed = 2 + 3_fx / 8;
 
   static constexpr auto z = colour::kZEnemyLarge;
   static constexpr auto c = colour::kSolarizedDarkMagenta;
@@ -302,9 +285,13 @@ struct Tractor : ecs::component {
       std::uint32_t i = 0;
       sim.index().iterate_dispatch<Player>([&](const Player& p, const Transform& p_transform) {
         if (((timer + i++ * 4) / 4) % 2 && !p.is_killed) {
-          auto s = render::shape::line(to_float(transform.centre), to_float(p_transform.centre), c);
-          s.disable_trail = true;
-          output.emplace_back(s);
+          unsigned char index = 'p' + p.player_number;
+          output.emplace_back(render::shape::line(to_float(transform.centre),
+                                                  to_float(p_transform.centre), c, colour::kZEffect,
+                                                  1.f, index));
+          output.emplace_back(render::shape::line(to_float(transform.centre),
+                                                  to_float(p_transform.centre), colour::kOutline,
+                                                  colour::kZOutline, 5.f, index));
         }
       });
     }
@@ -319,6 +306,7 @@ void spawn_follow_hub(SimInterface& sim, const vec2& position, bool fast) {
   add_enemy_health<FollowHub, FollowHub::hub_shape>(h, 112);
   h.add(FollowHub{false, false, fast});
   h.add(Enemy{.threat_value = 6u + 4u * fast});
+  h.add(Physics{.mass = 1_fx + 3_fx / 4});
   h.add(DropTable{.shield_drop_chance = 20, .bomb_drop_chance = 25});
 }
 
@@ -327,6 +315,7 @@ void spawn_big_follow_hub(SimInterface& sim, const vec2& position, bool fast) {
   add_enemy_health<FollowHub, FollowHub::big_hub_shape>(h, 112);
   h.add(FollowHub{true, false, fast});
   h.add(Enemy{.threat_value = 12u + 8u * fast});
+  h.add(Physics{.mass = 1_fx + 3_fx / 4});
   h.add(DropTable{.shield_drop_chance = 35, .bomb_drop_chance = 40});
 }
 
@@ -337,6 +326,7 @@ void spawn_chaser_hub(SimInterface& sim, const vec2& position, bool fast) {
   h.add(Enemy{.threat_value = 10u + 6u * fast});
   h.add(DropTable{.shield_drop_chance = 2});
   h.add(DropTable{.bomb_drop_chance = 1});
+  h.add(Physics{.mass = 1_fx + 3_fx / 4});
   h.add(DropTable{.shield_drop_chance = 30, .bomb_drop_chance = 35});
 }
 
@@ -345,6 +335,7 @@ void spawn_shielder(SimInterface& sim, const vec2& position, bool power) {
   add_enemy_health<Shielder>(h, 160);
   h.add(Shielder{sim, power});
   h.add(Enemy{.threat_value = 8u + 2u * power});
+  h.add(Physics{.mass = 3_fx});
   h.add(DropTable{.shield_drop_chance = 60});
 }
 
@@ -353,6 +344,7 @@ void spawn_tractor(SimInterface& sim, const vec2& position, bool power) {
   add_enemy_health<Tractor>(h, 336);
   h.add(Tractor{power});
   h.add(Enemy{.threat_value = 10u + 4u * power});
+  h.add(Physics{.mass = 2_fx});
   h.add(DropTable{.bomb_drop_chance = 100});
 }
 

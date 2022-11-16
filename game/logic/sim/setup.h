@@ -24,6 +24,7 @@ public:
   virtual void initialise_systems(SimInterface& sim) = 0;
   // Returns global entity ID.
   virtual ecs::entity_id start_game(const initial_conditions&, SimInterface& sim) = 0;
+  virtual void begin_tick(SimInterface& sim) = 0;
 };
 
 }  // namespace ii

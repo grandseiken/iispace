@@ -1,36 +1,45 @@
 #include "game/logic/sim/components.h"
 #include "game/logic/sim/sim_interface.h"
+#include <array>
 
 namespace ii {
 
 void Render::render_shapes(ecs::const_handle h, render::entity_state& state, bool paused,
                            std::vector<render::shape>& output, const SimInterface& sim) {
-  // TODO: this is basically hard to control. clear_trails is a hack due to
-  // not being able to specify which shape is which from frame to frame.
-  // What we should do is having some way of outputting independent shape _groups_ per-entity.
-  // Hopefully can get rid of disable_trail also.
-  // TODO: also, trails should be reset on entity creation? Unless was created on same tick count
+  // TODO: trails should be reset on entity creation? Unless was created on same tick count
   // and with same components as we expected?
+  static constexpr float kMaxTrailDistance = 64.f;
+  static constexpr float kMaxTrailAngle = glm::pi<float>() / 3.f;
   if (clear_trails) {
     state.trails.clear();
     clear_trails = false;
   }
+
   auto start = output.size();
   render(h, output, sim);
   auto count = output.size() - start;
-  state.trails.resize(count);
+
+  std::array<std::size_t, 256> index_counts{0};
+  index_counts.fill(0);
   for (std::size_t i = 0; i < count; ++i) {
     auto& s = output[start + i];
-    if (s.disable_trail) {
-      s.trail.reset();
-      state.trails[i].reset();
-    } else if (state.trails[i]) {
-      s.trail = *state.trails[i];
+    auto& v = state.trails[s.s_index];
+    auto n = index_counts[s.s_index];
+    if (v.size() < ++index_counts[s.s_index]) {
+      v.resize(index_counts[s.s_index]);
+    }
+    if (v[n] &&
+        length_squared(s.origin - v[n]->prev_origin) < kMaxTrailDistance * kMaxTrailDistance &&
+        abs(angle_diff(s.rotation, v[n]->prev_rotation)) < kMaxTrailAngle) {
+      s.trail = v[n];
     }
     if (!paused) {
-      state.trails[i] = render::motion_trail{
+      v[n] = render::motion_trail{
           .prev_origin = s.origin, .prev_rotation = s.rotation, .prev_colour = s.colour};
     }
+  }
+  for (auto& pair : state.trails) {
+    pair.second.resize(index_counts[pair.first]);
   }
 }
 

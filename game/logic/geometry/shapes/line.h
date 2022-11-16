@@ -25,7 +25,7 @@ struct line_data : shape_data_base {
   iterate(iterate_shapes_t, const Transform auto& t, const ShapeFunction auto& f) const {
     std::invoke(f,
                 render::shape::line(to_float(*t.translate(a)), to_float(*t.translate(b)),
-                                    style.colour, style.z, style.width));
+                                    style.colour, style.z, style.width, style.index));
   }
 
   constexpr void

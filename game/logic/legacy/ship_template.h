@@ -141,8 +141,8 @@ shape_flag ship_check_point_legacy(ecs::const_handle h, const vec2& v, shape_fla
 // Rendering.
 //////////////////////////////////////////////////////////////////////////////////
 template <geom::ShapeNode S>
-void render_shape(std::vector<render::shape>& output, const auto& parameters,
-                  std::optional<float> z_index = std::nullopt, const geom::transform& t = {},
+void render_shape(std::vector<render::shape>& output, const auto& parameters, float z_index = 0.f,
+                  const geom::transform& t = {},
                   const std::optional<float> hit_alpha = std::nullopt,
                   const std::optional<glm::vec4>& c_override = std::nullopt,
                   const std::optional<std::size_t>& c_override_max_index = std::nullopt) {
@@ -151,9 +151,7 @@ void render_shape(std::vector<render::shape>& output, const auto& parameters,
   transform.index_out = &i;
   geom::iterate(S{}, geom::iterate_shapes, parameters, transform, [&](const render::shape& shape) {
     render::shape shape_copy = shape;
-    if (!shape.z_index) {
-      shape_copy.z_index = z_index;
-    }
+    shape_copy.z_index = z_index;
     if ((c_override || hit_alpha) && (!c_override_max_index || i < *c_override_max_index)) {
       if (c_override) {
         shape_copy.colour = glm::vec4{c_override->r, c_override->g, c_override->b, shape.colour.a};
@@ -168,8 +166,7 @@ void render_shape(std::vector<render::shape>& output, const auto& parameters,
 
 template <geom::ShapeNode S>
 void render_entity_shape_override(std::vector<render::shape>& output, const Health* health,
-                                  const auto& parameters,
-                                  std::optional<float> z_index = std::nullopt,
+                                  const auto& parameters, float z_index = 0.f,
                                   const geom::transform& t = {},
                                   const std::optional<glm::vec4>& colour_override = std::nullopt) {
   std::optional<float> hit_alpha;

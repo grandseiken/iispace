@@ -38,6 +38,52 @@ inline vec2 direction_to_screen(const SimInterface& sim, const vec2& position) {
   return vec2{0};
 }
 
+// TODO: put this all into a struct for easyness.
+template <typename F>
+inline auto spread_default_coefficient(fixed min_distance, F&& f) {
+  return [min_distance, f](const auto& logic, fixed d_sq) {
+    return f(logic) / (sqrt(d_sq) * std::max(min_distance * min_distance, d_sq));
+  };
+}
+inline auto spread_default_coefficient(fixed min_distance) {
+  return spread_default_coefficient(min_distance, [](const auto&) { return 1_fx; });
+}
+template <typename F>
+inline auto spread_linear_coefficient(fixed min_distance, F&& f) {
+  return [min_distance, f](const auto& logic, fixed d_sq) {
+    return f(logic) / std::max(min_distance * min_distance, d_sq);
+  };
+}
+inline auto spread_linear_coefficient(fixed min_distance) {
+  return spread_linear_coefficient(min_distance, [](const auto&) { return 1_fx; });
+}
+
+template <typename Logic, typename F>
+vec2 spread_closest(ecs::handle h, const Transform& transform, SimInterface& sim,
+                    std::vector<ecs::entity_id>& id_storage, fixed max_distance, std::size_t max_n,
+                    F&& coefficient_function, std::uint64_t tick_interval = 16) {
+  if ((static_cast<std::uint64_t>(+h.id()) + sim.tick_count()) % tick_interval == 0u) {
+    thread_local std::vector<SimInterface::range_info> range_output;
+    range_output.clear();
+    id_storage.clear();
+    sim.in_range(transform.centre, max_distance, ecs::id<Logic>(), max_n, range_output);
+    for (const auto& e : range_output) {
+      id_storage.emplace_back(e.h.id());
+    }
+  }
+  vec2 target_spread_velocity{0};
+  for (auto id : id_storage) {
+    if (auto eh = sim.index().get(id); eh && !eh->has<Destroy>()) {
+      auto d = eh->get<Transform>()->centre - transform.centre;
+      auto d_sq = length_squared(d);
+      if (d != vec2{0}) {
+        target_spread_velocity -= d * coefficient_function(*eh->get<Logic>(), d_sq);
+      }
+    }
+  }
+  return target_spread_velocity;
+}
+
 inline bool
 check_direction_to_screen(const SimInterface& sim, const vec2& position, const vec2& direction) {
   auto dim = sim.dimensions();

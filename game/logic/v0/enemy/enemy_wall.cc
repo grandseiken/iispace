@@ -65,28 +65,24 @@ struct Square : ecs::component {
       if (dir.x <= 0) {
         dir.x = 1;
       }
-      render.clear_trails = true;
     }
     if (v.y < 0 && dir.y <= 0) {
       dir.y = -dir.y;
       if (dir.y <= 0) {
         dir.y = 1;
       }
-      render.clear_trails = true;
     }
     if (v.x > dim.x && dir.x >= 0) {
       dir.x = -dir.x;
       if (dir.x >= 0) {
         dir.x = -1;
       }
-      render.clear_trails = true;
     }
     if (v.y > dim.y && dir.y >= 0) {
       dir.y = -dir.y;
       if (dir.y >= 0) {
         dir.y = -1;
       }
-      render.clear_trails = true;
     }
     dir = normalise(dir);
     transform.move(dir * kSpeed);
@@ -164,7 +160,6 @@ struct Wall : ecs::component {
         (v.x > dim.x && dir.x > fixed_c::hundredth) ||
         (v.y > dim.y && dir.y > fixed_c::hundredth)) {
       dir = -normalise(dir);
-      render.clear_trails = true;
     }
 
     transform.move(dir * kSpeed);
@@ -198,6 +193,7 @@ void spawn_square(SimInterface& sim, const vec2& position, const vec2& dir, bool
   h.add(Square{sim, dir});
   h.add(Enemy{.threat_value = 2});
   h.add(WallTag{});
+  h.add(Physics{.mass = 1_fx + 1_fx / 2});
   if (drop) {
     h.add(DropTable{.shield_drop_chance = 2, .bomb_drop_chance = 2});
   }
@@ -209,6 +205,7 @@ void spawn_wall(SimInterface& sim, const vec2& position, const vec2& dir, bool a
   h.add(Wall{dir, anti});
   h.add(Enemy{.threat_value = 4});
   h.add(WallTag{});
+  h.add(Physics{.mass = 2_fx});
   h.add(DropTable{.shield_drop_chance = 3, .bomb_drop_chance = 4});
 }
 

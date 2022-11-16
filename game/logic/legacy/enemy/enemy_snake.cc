@@ -15,7 +15,7 @@ struct SnakeTail : ecs::component {
   static constexpr rumble_type kDestroyRumble = rumble_type::kNone;
 
   using shape = standard_transform<
-      geom::polygon_colour_p<10, 4, 2, shape_flag::kDangerous | shape_flag::kWeakShield>>;
+      geom::polygon_colour_p<10, 4, 2, 0, shape_flag::kDangerous | shape_flag::kWeakShield>>;
 
   std::tuple<vec2, fixed, glm::vec4> shape_parameters(const Transform& transform) const {
     return {transform.centre, transform.rotation, colour};
@@ -67,7 +67,7 @@ struct Snake : ecs::component {
   static constexpr sound kDestroySound = sound::kPlayerDestroy;
   static constexpr rumble_type kDestroyRumble = rumble_type::kMedium;
 
-  using shape = standard_transform<geom::polygon_colour_p<14, 3, 2, shape_flag::kVulnerable>,
+  using shape = standard_transform<geom::polygon_colour_p<14, 3, 2, 0, shape_flag::kVulnerable>,
                                    geom::ball_collider<10, shape_flag::kDangerous>>;
 
   std::tuple<vec2, fixed, glm::vec4> shape_parameters(const Transform& transform) const {

@@ -10,6 +10,7 @@ public:
   game_parameters parameters(const initial_conditions&) const override;
   void initialise_systems(SimInterface& sim) override;
   ecs::entity_id start_game(const initial_conditions& conditions, SimInterface& sim) override;
+  void begin_tick(SimInterface& sim) override;
 };
 
 }  // namespace ii::v0

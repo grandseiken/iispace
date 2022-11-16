@@ -142,8 +142,9 @@ constexpr auto kNewGreen0 = hue360(120, .5f, .4f);
 
 constexpr auto kZParticle = -96.f;
 constexpr auto kZOutline = -88.f;
+constexpr auto kZEffect = -80.f;
 constexpr auto kZTrails = -64.f;
-constexpr auto kZParticleFlash = -32.f;
+constexpr auto kZParticleFlash = -48.f;
 constexpr auto kZPowerup = -16.f;
 constexpr auto kZEnemyWall = -8.f;
 constexpr auto kZEnemyLarge = 0.f;

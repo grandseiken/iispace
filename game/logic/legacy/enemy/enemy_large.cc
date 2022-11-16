@@ -24,7 +24,7 @@ struct FollowHub : ecs::component {
   template <geom::ShapeNode S>
   using r_pi4_ngon = geom::rotate<fixed_c::pi / 4, S>;
   using fh_centre =
-      r_pi4_ngon<geom::polygram<16, 4, c, shape_flag::kDangerous | shape_flag::kVulnerable>>;
+      r_pi4_ngon<geom::polygram<16, 4, c, 0, shape_flag::kDangerous | shape_flag::kVulnerable>>;
   using fh_spoke = r_pi4_ngon<geom::ngon<8, 4, c>>;
   using fh_power_spoke = r_pi4_ngon<geom::polystar<8, 4, c>>;
   using shape = geom::translate_p<
@@ -100,8 +100,8 @@ struct Shielder : ecs::component {
                                    geom::translate<0, 24, geom::rotate<fixed_c::pi / 2, S>>,
                                    geom::translate<0, -24, geom::rotate<fixed_c::pi / 2, S>>>;
   using s_centre =
-      geom::polygon_colour_p<14, 8, 2, shape_flag::kDangerous | shape_flag::kVulnerable>;
-  using s_shield0 = geom::polystar<8, 6, c0, shape_flag::kWeakShield>;
+      geom::polygon_colour_p<14, 8, 2, 0, shape_flag::kDangerous | shape_flag::kVulnerable>;
+  using s_shield0 = geom::polystar<8, 6, c0, 0, shape_flag::kWeakShield>;
   using s_shield1 = geom::ngon<8, 6, c1>;
   using s_spokes = geom::polystar<24, 4, c0>;
   using shape =
@@ -177,7 +177,7 @@ struct Tractor : ecs::component {
   static constexpr fixed kPullSpeed = 2 + 1_fx / 2;
 
   static constexpr auto c = colour::hue360(300, .5f, .6f);
-  using t_orb = geom::polygram<12, 6, c, shape_flag::kDangerous | shape_flag::kVulnerable>;
+  using t_orb = geom::polygram<12, 6, c, 0, shape_flag::kDangerous | shape_flag::kVulnerable>;
   using t_star = geom::polystar<16, 6, c>;
   using shape = standard_transform<
       geom::translate<24, 0, geom::rotate_eval<geom::multiply_p<5, 2>, t_orb>>,
@@ -255,9 +255,9 @@ struct Tractor : ecs::component {
       std::uint32_t i = 0;
       sim.index().iterate_dispatch<Player>([&](const Player& p, const Transform& p_transform) {
         if (((timer + i++ * 4) / 4) % 2 && !p.is_killed) {
-          auto s = render::shape::line(to_float(transform.centre), to_float(p_transform.centre),
-                                       colour::hue360(300, .5f, .6f));
-          s.disable_trail = true;
+          auto s =
+              render::shape::line(to_float(transform.centre), to_float(p_transform.centre),
+                                  colour::hue360(300, .5f, .6f), 0.f, 1.f, 'p' + p.player_number);
           output.emplace_back(s);
         }
       });

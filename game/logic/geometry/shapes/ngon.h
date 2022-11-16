@@ -26,14 +26,14 @@ constexpr ngon_dimensions nd(fixed radius, std::uint32_t sides, std::uint32_t se
   return {radius, sides, segments ? segments : sides};
 }
 
-constexpr ngon_line_style
-nline(const glm::vec4& colour = glm::vec4{0.f}, float z = 0.f, float width = 1.f) {
-  return {{.colour = colour, .z = z, .width = width}};
+constexpr ngon_line_style nline(const glm::vec4& colour = glm::vec4{0.f}, float z = 0.f,
+                                float width = 1.f, unsigned char index = 0) {
+  return {{.colour = colour, .z = z, .width = width, .index = index}};
 }
 
-constexpr ngon_line_style
-nline(ngon_style style, const glm::vec4& colour, float z = 0.f, float width = 1.f) {
-  return {{.colour = colour, .z = z, .width = width}, style};
+constexpr ngon_line_style nline(ngon_style style, const glm::vec4& colour, float z = 0.f,
+                                float width = 1.f, unsigned char index = 0) {
+  return {{.colour = colour, .z = z, .width = width, .index = index}, style};
 }
 
 //////////////////////////////////////////////////////////////////////////////////
@@ -117,6 +117,7 @@ struct ngon_data : shape_data_base {
                       .rotation = t.rotation().to_float(),
                       .colour = line.colour,
                       .z_index = line.z,
+                      .s_index = line.index,
                       .data = render::ngon{.radius = dimensions.radius.to_float(),
                                            .sides = dimensions.sides,
                                            .segments = dimensions.segments,
@@ -131,6 +132,7 @@ struct ngon_data : shape_data_base {
                       .rotation = t.rotation().to_float(),
                       .colour = fill.colour,
                       .z_index = fill.z,
+                      .s_index = fill.index,
                       .data = render::ngon_fill{.radius = dimensions.radius.to_float(),
                                                 .sides = dimensions.sides,
                                                 .segments = dimensions.segments},

@@ -11,6 +11,7 @@ struct line_data : shape_data_base {
   vec2 a{0};
   vec2 b{0};
   glm::vec4 colour{0.f};
+  unsigned char index = 0;
 
   constexpr void
   iterate(iterate_lines_t, const Transform auto& t, const LineFunction auto& f) const {
@@ -20,7 +21,8 @@ struct line_data : shape_data_base {
   constexpr void
   iterate(iterate_shapes_t, const Transform auto& t, const ShapeFunction auto& f) const {
     std::invoke(f,
-                render::shape::line(to_float(*t.translate(a)), to_float(*t.translate(b)), colour));
+                render::shape::line(to_float(*t.translate(a)), to_float(*t.translate(b)), colour,
+                                    0.f, 1.f, index));
   }
 
   constexpr void
@@ -29,27 +31,32 @@ struct line_data : shape_data_base {
   }
 };
 
-constexpr line_data make_line(const vec2& a, const vec2& b, const glm::vec4& colour) {
-  return {{}, a, b, colour};
+constexpr line_data
+make_line(const vec2& a, const vec2& b, const glm::vec4& colour, unsigned char index) {
+  return {{}, a, b, colour, index};
 }
 
-template <Expression<vec2> A, Expression<vec2> B, Expression<glm::vec4> Colour>
+template <Expression<vec2> A, Expression<vec2> B, Expression<glm::vec4> Colour,
+          Expression<unsigned char> Index = constant<0>>
 struct line_eval {};
 
-template <Expression<vec2> A, Expression<vec2> B, Expression<glm::vec4> Colour>
-constexpr auto evaluate(line_eval<A, B, Colour>, const auto& params) {
+template <Expression<vec2> A, Expression<vec2> B, Expression<glm::vec4> Colour,
+          Expression<unsigned char> Index>
+constexpr auto evaluate(line_eval<A, B, Colour, Index>, const auto& params) {
   return make_line(vec2{evaluate(A{}, params)}, vec2{evaluate(B{}, params)},
-                   glm::vec4{evaluate(Colour{}, params)});
+                   glm::vec4{evaluate(Colour{}, params)},
+                   static_cast<unsigned char>(evaluate(Index{}, params)));
 }
 
 //////////////////////////////////////////////////////////////////////////////////
 // Helper combinations.
 //////////////////////////////////////////////////////////////////////////////////
-template <fixed AX, fixed AY, fixed BX, fixed BY, glm::vec4 Colour>
-using line = constant<make_line(vec2{AX, AY}, vec2{BX, BY}, Colour)>;
-template <fixed AX, fixed AY, fixed BX, fixed BY, std::size_t ParameterIndex>
-using line_colour_p =
-    line_eval<constant_vec2<AX, AY>, constant_vec2<BX, BY>, parameter<ParameterIndex>>;
+template <fixed AX, fixed AY, fixed BX, fixed BY, glm::vec4 Colour, unsigned char Index = 0>
+using line = constant<make_line(vec2{AX, AY}, vec2{BX, BY}, Colour, Index)>;
+template <fixed AX, fixed AY, fixed BX, fixed BY, std::size_t ParameterIndex,
+          unsigned char Index = 0>
+using line_colour_p = line_eval<constant_vec2<AX, AY>, constant_vec2<BX, BY>,
+                                parameter<ParameterIndex>, constant<Index>>;
 
 }  // namespace legacy
 }  // namespace ii::geom

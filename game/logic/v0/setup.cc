@@ -63,4 +63,9 @@ ecs::entity_id V0SimSetup::start_game(const initial_conditions& conditions, SimI
   return global_entity.id();
 }
 
+void V0SimSetup::begin_tick(SimInterface& sim) {
+  sim.index().iterate_dispatch_if<Physics>(
+      [](Physics& physics, Transform& transform) { physics.update(transform); });
+}
+
 }  // namespace ii::v0

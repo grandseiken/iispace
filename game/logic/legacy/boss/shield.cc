@@ -28,10 +28,11 @@ struct ShieldBombBoss : ecs::component {
       geom::line_eval<geom::constant<rotate(vec2{80, 0}, I* fixed_c::pi / 8)>,
                       geom::constant<rotate(vec2{120, 0}, I* fixed_c::pi / 8)>, geom::parameter<3>>;
 
-  using centre_shape = geom::polygram<48, 8, c0, shape_flag::kDangerous | shape_flag::kVulnerable>;
+  using centre_shape =
+      geom::polygram<48, 8, c0, 0, shape_flag::kDangerous | shape_flag::kVulnerable>;
   using shield_shape = geom::ngon_eval<
       geom::constant<130u>, geom::constant<16u>, geom::parameter<4>,
-      geom::constant<geom::ngon_style::kPolygon>,
+      geom::constant<geom::ngon_style::kPolygon>, geom::constant<0>,
       geom::ternary_p<2, geom::constant<shape_flag::kNone>,
                       geom::constant<shape_flag::kWeakShield | shape_flag::kDangerous>>>;
 
@@ -39,7 +40,7 @@ struct ShieldBombBoss : ecs::component {
       geom::rotate_eval<geom::multiply_p<2, 1>, centre_shape>,
       geom::for_each<fixed, 0, 16, strut_shape>, shield_shape, geom::ngon_colour_p<125, 16, 4>,
       geom::ngon_colour_p<120, 16, 4>,
-      geom::rotate_p<1, geom::polygon<42, 16, glm::vec4{0.f}, shape_flag::kShield>>>;
+      geom::rotate_p<1, geom::polygon<42, 16, glm::vec4{0.f}, 0, shape_flag::kShield>>>;
 
   std::tuple<vec2, fixed, bool, glm::vec4, glm::vec4>
   shape_parameters(const Transform& transform) const {
