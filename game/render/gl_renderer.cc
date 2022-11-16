@@ -562,7 +562,7 @@ void GlRenderer::render_shapes(coordinate_system ctype, std::vector<shape>& shap
                 .line_width = p->line_width,
                 .z_index = shape.z_index,
                 .position = shape.origin,
-                .dimensions = {p->radius, 0.f},
+                .dimensions = {p->radius, p->inner_radius},
                 .colour = shape.colour,
             },
             shape.trail);
@@ -612,7 +612,7 @@ void GlRenderer::render_shapes(coordinate_system ctype, std::vector<shape>& shap
           .rotation = shape.rotation,
           .z_index = shape.z_index,
           .position = shape.origin,
-          .dimensions = {p->radius, 0.f},
+          .dimensions = {p->radius, p->inner_radius},
           .colour = shape.colour,
       });
     } else if (const auto* p = std::get_if<render::box_fill>(&shape.data)) {

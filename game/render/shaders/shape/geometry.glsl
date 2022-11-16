@@ -124,6 +124,7 @@ struct polygon_data {
   uint sides;
   uint segments;
   float radius;
+  float inner_radius;
   float rotation;
   float rd;
 };
@@ -134,6 +135,7 @@ polygon_data convert_polygon(vec2 position, shape_data d) {
   r.sides = d.params.x;
   r.segments = d.params.y;
   r.radius = d.dimensions.x;
+  r.inner_radius = d.dimensions.y;
   r.rotation = d.rotation;
   r.rd = d.line_width * ngon_ulw_radius_retract(r.sides);
   return r;
@@ -144,8 +146,20 @@ vec4 polygon_outer_v(polygon_data d, uint i) {
 }
 
 vec4 polygon_inner_v(polygon_data d, uint i) {
+  return render_position(
+      d.position +
+      ngon_vertex(i % d.sides, d.sides, d.rotation, max(d.inner_radius, d.radius - d.rd)));
+}
+
+vec4 polygon_inner_outer_v(polygon_data d, uint i) {
   return render_position(d.position +
-                         ngon_vertex(i % d.sides, d.sides, d.rotation, max(0, d.radius - d.rd)));
+                         ngon_vertex(i % d.sides, d.sides, d.rotation, d.inner_radius));
+}
+
+vec4 polygon_inner_inner_v(polygon_data d, uint i) {
+  return render_position(
+      d.position +
+      ngon_vertex(i % d.sides, d.sides, d.rotation, min(d.radius, d.inner_radius + d.rd)));
 }
 
 // Polystars.
@@ -154,8 +168,10 @@ struct polystar_data {
   uint sides;
   uint segments;
   float radius;
+  float inner_radius;
   float rotation;
   float vt;
+  float inner_vt;
   float cd;
 };
 
@@ -176,8 +192,10 @@ polystar_data convert_polystar(vec2 position, shape_data d) {
   r.sides = d.params.x;
   r.segments = d.params.y;
   r.radius = d.dimensions.x;
+  r.inner_radius = d.dimensions.y;
   r.rotation = d.rotation;
   r.vt = clamp(d.line_width * ngon_ulw_vertex_lerp(r.sides, r.radius), 0., 1.);
+  r.inner_vt = clamp(d.line_width * ngon_ulw_vertex_lerp(r.sides, r.inner_radius), 0., 1.);
   r.cd = clamp(d.line_width / 2., 0., r.radius);
   return r;
 }
@@ -197,5 +215,16 @@ polystar_inner polystar_inner_v(polystar_data d, uint i) {
   polystar_inner r;
   r.v0 = render_position(d.position + ngon_vertex(i, d.sides, d.rotation - kPi / 2, d.cd));
   r.v1 = render_position(d.position + ngon_vertex(i, d.sides, d.rotation + kPi / 2, d.cd));
+  return r;
+}
+
+polystar_outer polystar_inner_outer_v(polystar_data d, uint i) {
+  polystar_outer r;
+  vec2 v = ngon_vertex(i, d.sides, d.rotation, d.inner_radius);
+  vec2 v0 = ngon_vertex((i + d.sides - 1) % d.sides, d.sides, d.rotation, d.inner_radius);
+  vec2 v1 = ngon_vertex((i + 1) % d.sides, d.sides, d.rotation, d.inner_radius);
+  r.v = render_position(d.position + v);
+  r.v0 = render_position(d.position + mix(v, v0, d.inner_vt));
+  r.v1 = render_position(d.position + mix(v, v1, d.inner_vt));
   return r;
 }

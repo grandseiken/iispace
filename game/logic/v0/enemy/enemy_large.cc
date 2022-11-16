@@ -108,7 +108,6 @@ struct Shielder : ecs::component {
   static constexpr std::uint32_t kTimer = 40;
   static constexpr fixed kSpeed = 1_fx;
 
-  // TODO: fill in the shield!
   static constexpr auto z = colour::kZEnemyLarge;
   static constexpr auto c0 = colour::hsl_mix(colour::kSolarizedDarkCyan, colour::kNewGreen0);
   static constexpr auto c1 = colour::kWhite1;
@@ -117,16 +116,15 @@ struct Shielder : ecs::component {
 
   using centre_shape = geom::compound<
       geom::ngon<geom::nd(22, 12), outline>,
-      geom::ngon<geom::nd(26, 12), geom::nline(geom::ngon_style::kPolystar, c0, z)>,
+      geom::ngon<geom::nd2(26, 6, 12), geom::nline(geom::ngon_style::kPolystar, c0, z)>,
       geom::ngon<geom::nd(6, 12), geom::nline(c0, z)>,
       geom::ngon<geom::nd(20, 12), geom::nline(c0, z), geom::sfill(cf, z)>,
       geom::ngon_collider<geom::nd(20, 12), shape_flag::kDangerous | shape_flag::kVulnerable>>;
   using shield_shape = geom::rotate_p<
       2, geom::line<vec2{32, 0}, vec2{18, 0}, geom::sline(c1, z)>,
       geom::rotate<fixed_c::pi / 4, geom::line<vec2{-32, 0}, vec2{-18, 0}, geom::sline(c1, z)>>,
-      geom::ngon<geom::nd(24, 16, 10), outline>, geom::ngon<geom::nd(34, 16, 10), outline>,
-      geom::ngon<geom::nd(26, 16, 10), geom::nline(c1, z)>,
-      geom::ngon<geom::nd(32, 16, 10), geom::nline(c1, z)>,
+      geom::ngon<geom::nd2(32, 24, 16, 10), geom::nline(c1, z), geom::sfill(cf, z)>,
+      geom::ngon<geom::nd2(34, 22, 16, 10), outline>,
       geom::ngon_collider<geom::nd(32, 16, 10), shape_flag::kWeakShield>>;
   using shape = geom::translate_p<0, geom::rotate_p<1, centre_shape>, shield_shape>;
 
@@ -283,9 +281,10 @@ struct Tractor : ecs::component {
               const SimInterface& sim) const {
     if (spinning) {
       std::uint32_t i = 0;
-      sim.index().iterate_dispatch<Player>([&](const Player& p, const Transform& p_transform) {
-        if (((timer + i++ * 4) / 4) % 2 && !p.is_killed) {
-          unsigned char index = 'p' + p.player_number;
+      sim.index().iterate_dispatch<Player>([&](const Player& pc, const Transform& p_transform) {
+        // TODO: better effect.
+        if ((timer + 2 * pc.player_number) % 8 < 4 && !pc.is_killed) {
+          unsigned char index = 'p' + pc.player_number;
           output.emplace_back(render::shape::line(to_float(transform.centre),
                                                   to_float(p_transform.centre), c, colour::kZEffect,
                                                   1.f, index));

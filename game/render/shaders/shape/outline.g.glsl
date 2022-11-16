@@ -33,16 +33,30 @@ void emit_polygon(vec2 position, shape_data data) {
     emit2(polygon_inner_v(d, i), polygon_outer_v(d, i));
   }
   EndPrimitive();
+  if (d.inner_radius != 0.) {
+    for (uint i = 0; i <= d.segments; ++i) {
+      emit2(polygon_inner_inner_v(d, i), polygon_inner_outer_v(d, i));
+    }
+    EndPrimitive();
+  }
 }
 
 void emit_odd_polystar(vec2 position, shape_data data) {
   polystar_data d = convert_polystar(position, data);
-  for (uint i = 0; i < d.segments; ++i) {
+  for (uint i = 0; d.inner_radius == 0. && i < d.segments; ++i) {
     polystar_outer a = polystar_outer_v(d, i);
     polystar_inner b = polystar_inner_v(d, i);
 
     emit2(b.v0, b.v1);
     emit3(a.v0, a.v1, a.v);
+    EndPrimitive();
+  }
+  for (uint i = 0; d.inner_radius != 0. && i < d.segments; ++i) {
+    polystar_outer a = polystar_outer_v(d, i);
+    polystar_outer b = polystar_inner_outer_v(d, i);
+
+    emit3(a.v0, a.v, b.v0);
+    emit3(a.v1, b.v, b.v1);
     EndPrimitive();
   }
 }
@@ -99,7 +113,8 @@ void main() {
     emit_polygon(position, v_in[0].data);
     break;
   case kStyleNgonPolystar:
-    if (v_in[0].data.params.x % 2 != 0 || v_in[0].data.params.x != v_in[0].data.params.y) {
+    if (v_in[0].data.params.x % 2 != 0 || v_in[0].data.dimensions.y != 0. ||
+        v_in[0].data.params.x != v_in[0].data.params.y) {
       emit_odd_polystar(position, v_in[0].data);
     } else {
       emit_even_polystar(position, v_in[0].data);

@@ -148,6 +148,7 @@ constexpr auto kZParticleFlash = -48.f;
 constexpr auto kZPowerup = -16.f;
 constexpr auto kZEnemyWall = -8.f;
 constexpr auto kZEnemyLarge = 0.f;
+constexpr auto kZEnemyMedium = 4.f;
 constexpr auto kZEnemySmall = 8.f;
 constexpr auto kZPlayerShot = 32.f;
 constexpr auto kZPlayerPowerup = 64.f;

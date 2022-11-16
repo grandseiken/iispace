@@ -298,25 +298,24 @@ struct FollowSponge : ecs::component {
   static constexpr std::uint32_t kTime = 60;
   static constexpr std::uint32_t kBoundingWidth = 33;
 
-  static constexpr auto z = colour::kZEnemySmall;
+  static constexpr auto z = colour::kZEnemyMedium;
   static constexpr auto c = colour::kNewPurple;
   static constexpr auto cf = colour::alpha(c, colour::kFillAlpha0);
   static constexpr auto outline = geom::nline(colour::kOutline, colour::kZOutline, 2.f);
-  // TODO: make donut shape once we can do that?
   using shape = standard_transform<
-      geom::ngon_eval<geom::set_radius_p<geom::nd(0, 6), 4>, geom::constant<outline>>,
+      geom::ngon_eval<geom::set_radius_p<geom::nd2(0, 10, 6), 4>, geom::constant<outline>>,
       geom::ngon_eval<geom::set_radius_p<geom::nd(0, 6), 2>,
                       geom::constant<geom::nline(c, z, 1.25f)>>,
-      geom::ngon_eval<geom::set_radius_p<geom::nd(0, 6), 3>, geom::constant<geom::nline(c, z, 2.f)>,
-                      geom::constant<geom::sfill(cf, z)>>,
+      geom::ngon_eval<geom::set_radius_p<geom::nd2(0, 12, 6), 3>,
+                      geom::constant<geom::nline(c, z, 2.f)>, geom::constant<geom::sfill(cf, z)>>,
       geom::ngon_collider_eval<geom::set_radius_p<geom::nd(0, 6), 3>,
                                geom::constant<shape_flag::kDangerous | shape_flag::kVulnerable>>>;
 
   std::tuple<vec2, fixed, fixed, fixed, fixed> shape_parameters(const Transform& transform) const {
-    return {
-        transform.centre, transform.rotation,
-        4 + scale * kBoundingWidth / 2 + (scale * kBoundingWidth / 2 - 9) * sin(fixed{anim} / 32),
-        scale * kBoundingWidth, scale * kBoundingWidth + 2};
+    return {transform.centre, transform.rotation,
+            (14 + scale * kBoundingWidth) / 2 +
+                (scale * kBoundingWidth - 22) * sin(fixed{anim} / 32) / 2,
+            scale * kBoundingWidth, scale * kBoundingWidth + 2};
   }
 
   std::uint32_t timer = 0;
@@ -330,7 +329,7 @@ struct FollowSponge : ecs::component {
 
   void update(ecs::handle h, Transform& transform, const Health& health, SimInterface& sim) {
     ++anim;
-    scale = (1_fx + fixed{health.hp} / health.max_hp) / 2;
+    scale = (3_fx + fixed{health.hp} / health.max_hp) / 4;
     auto t = fixed{health.max_hp - health.hp} / health.max_hp;
     transform.rotate(t / 10 + fixed_c::tenth / 2);
 

@@ -31,6 +31,7 @@ struct line {
 
 struct ngon {
   float radius = 0.f;
+  float inner_radius = 0.f;
   std::uint32_t sides = 0;
   std::uint32_t segments = sides;
   ngon_style style = ngon_style::kPolygon;
@@ -44,6 +45,7 @@ struct box {
 
 struct ngon_fill {
   float radius = 0.f;
+  float inner_radius = 0.f;
   std::uint32_t sides = 0;
   std::uint32_t segments = sides;
 };

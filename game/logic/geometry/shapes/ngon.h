@@ -14,6 +14,7 @@ using render::ngon_style;
 
 struct ngon_dimensions {
   fixed radius = 0;
+  fixed inner_radius = 0;
   std::uint32_t sides = 0;
   std::uint32_t segments = sides;
 };
@@ -23,7 +24,12 @@ struct ngon_line_style : line_style {
 };
 
 constexpr ngon_dimensions nd(fixed radius, std::uint32_t sides, std::uint32_t segments = 0) {
-  return {radius, sides, segments ? segments : sides};
+  return {radius, 0, sides, segments ? segments : sides};
+}
+
+constexpr ngon_dimensions
+nd2(fixed radius, fixed inner_radius, std::uint32_t sides, std::uint32_t segments = 0) {
+  return {radius, inner_radius, sides, segments ? segments : sides};
 }
 
 constexpr ngon_line_style nline(const glm::vec4& colour = glm::vec4{0.f}, float z = 0.f,
@@ -56,8 +62,11 @@ struct ngon_collider_data : shape_data_base {
     }
     auto a = 2 * fixed_c::pi / dimensions.sides;
     auto at = (theta % a) / a;
-    auto d_sq = dimensions.radius * dimensions.radius * (1 + 2 * at * (at - 1) * (1 - cos(a)));
-    if (theta <= a * dimensions.segments && length_squared(v) <= d_sq) {
+    auto dt = (1 + 2 * at * (at - 1) * (1 - cos(a)));
+    auto d_sq = dt * dimensions.radius * dimensions.radius;
+    auto i_sq = dt * dimensions.inner_radius * dimensions.inner_radius;
+    if (theta <= a * dimensions.segments && length_squared(v) <= d_sq &&
+        length_squared(v) >= i_sq) {
       std::invoke(f, flags & it.mask);
     }
   }
@@ -119,6 +128,7 @@ struct ngon_data : shape_data_base {
                       .z_index = line.z,
                       .s_index = line.index,
                       .data = render::ngon{.radius = dimensions.radius.to_float(),
+                                           .inner_radius = dimensions.inner_radius.to_float(),
                                            .sides = dimensions.sides,
                                            .segments = dimensions.segments,
                                            .style = line.style,
@@ -134,6 +144,7 @@ struct ngon_data : shape_data_base {
                       .z_index = fill.z,
                       .s_index = fill.index,
                       .data = render::ngon_fill{.radius = dimensions.radius.to_float(),
+                                                .inner_radius = dimensions.inner_radius.to_float(),
                                                 .sides = dimensions.sides,
                                                 .segments = dimensions.segments},
                   });

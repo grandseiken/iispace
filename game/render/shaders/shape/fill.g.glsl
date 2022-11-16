@@ -16,10 +16,8 @@ void emit_polygon(vec2 position, shape_data data) {
   for (uint i = 0; i <= d.segments; ++i) {
     set_vertex_data(polygon_outer_v(d, i));
     EmitVertex();
-    if (i != d.segments) {
-      set_vertex_data(render_position(d.position));
-      EmitVertex();
-    }
+    set_vertex_data(polygon_inner_outer_v(d, i));
+    EmitVertex();
   }
   EndPrimitive();
 }
