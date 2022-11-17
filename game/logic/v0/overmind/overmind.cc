@@ -28,7 +28,7 @@ struct Overmind : ecs::component {
     }
 
     if (spawn_timer) {
-      // TODO: clarify how the rest timer interacts with wall despawns exactly...
+      // TODO: walls should stop despawning as soon as timer starts.
       // TODO: bosses. Legacy behaviour was 20/24/28/32 waves per boss by player count.
       // Not sure if we should preserve that or just stick with increasing wave power.
       if (!--spawn_timer) {

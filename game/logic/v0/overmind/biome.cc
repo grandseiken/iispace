@@ -28,6 +28,9 @@ class TestingBiome : public Biome {
 public:
   ~TestingBiome() override = default;
   TestingBiome() {
+    // TODO: 1 more hard wall/square pattern. Wall go faster offscreen?
+    // TODO: 1 more mixed hub/sponge pattern.
+    // TODO: enemy shielder enemy.
     auto s = set.add_set();
     s.add<formations::follow0>();
     s.add<formations::follow1>();
@@ -77,6 +80,8 @@ public:
     s.add<formations::tractor1>();
     s.add<formations::tractor0_side>();
     s.add<formations::tractor1_side>();
+    s.add<formations::shield_hub0>();
+    s.add<formations::shield_hub0_side>();
 
     s.add<formations::mixed0>();
     s.add<formations::mixed1>();

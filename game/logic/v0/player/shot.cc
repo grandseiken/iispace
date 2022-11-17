@@ -57,19 +57,23 @@ struct PlayerShot : ecs::component {
                                         shape_flag::kVulnerable | shape_flag::kWeakVulnerable |
                                             shape_flag::kShield | shape_flag::kWeakShield);
     for (const auto& e : collision) {
-      if (e.h.has<Destroy>()) {
+      if (e.h.has<Destroy>() ||
+          !(e.hit_mask & (shape_flag::kVulnerable | shape_flag::kWeakVulnerable))) {
         continue;
       }
-      if (+(e.hit_mask & (shape_flag::kVulnerable | shape_flag::kWeakVulnerable))) {
-        auto type = is_predicted ? damage_type::kPredicted
-            : penetrating        ? damage_type::kPenetrating
-                                 : damage_type::kNormal;
-        ecs::call_if<&Health::damage>(e.h, sim, 8u, type, player, transform.centre - 2 * velocity);
-        if (!(e.hit_mask & shape_flag::kWeakVulnerable) && !penetrating) {
-          destroy = true;
-          destroy_particles = true;
-          break;
-        }
+      auto type = is_predicted ? damage_type::kPredicted
+          : penetrating        ? damage_type::kPenetrating
+                               : damage_type::kNormal;
+      bool shielded = false;
+      if (const auto* status = e.h.get<EnemyStatus>(); status && status->shielded_ticks) {
+        shielded = true;
+      }
+      ecs::call_if<&Health::damage>(e.h, sim, shielded ? 0u : 8u, type, player,
+                                    transform.centre - 2 * velocity);
+      if ((shielded || !(e.hit_mask & shape_flag::kWeakVulnerable)) && !penetrating) {
+        destroy = true;
+        destroy_particles = true;
+        break;
       }
     }
     if (!destroy) {

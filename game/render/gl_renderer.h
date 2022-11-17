@@ -74,9 +74,8 @@ public:
   void render_panel(const panel_data&);
 
   void render_background(std::uint64_t tick_count, const glm::vec4& colour);
-  // TODO:
-  // - _maybe_ render outlines automatically rather than manually?
-  //   Or maybe output from geometry shapes?
+  // TODO: _maybe_ render outlines automatically somehow, or output from geometry shapes?
+  // TODO: implement balls.
   void render_shapes(coordinate_system ctype, std::vector<render::shape>& shapes, shape_style style,
                      float trail_alpha) const;
 

@@ -50,6 +50,10 @@ struct Physics : ecs::component {
 };
 DEBUG_STRUCT_TUPLE(Physics, mass, drag_coefficient, velocity);
 
+struct EnemyStatus : ecs::component {
+  std::uint32_t shielded_ticks = 0;
+};
+
 }  // namespace ii::v0
 
 #endif

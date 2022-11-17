@@ -26,6 +26,7 @@ void spawn_big_follow_hub(SimInterface& sim, const vec2& position, bool fast = f
 void spawn_chaser_hub(SimInterface& sim, const vec2& position, bool fast = false);
 void spawn_shielder(SimInterface& sim, const vec2& position, bool power = false);
 void spawn_tractor(SimInterface& sim, const vec2& position, bool power = false);
+void spawn_shield_hub(SimInterface& sim, const vec2& position);
 }  // namespace v0
 }  // namespace ii
 

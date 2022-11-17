@@ -527,7 +527,9 @@ DEBUG_STRUCT_TUPLE(GhostBoss, visible, shot_type, rdir, danger_enable, vtime, ti
 }  // namespace
 
 void spawn_ghost_boss(SimInterface& sim, std::uint32_t cycle) {
-  auto h = v0::create_ship<GhostBoss>(sim, sim.dimensions() / 2);
+  auto h = sim.index().create();
+  h.add(Update{.update = ecs::call<&GhostBoss::update>});
+  h.add(Transform{.centre = sim.dimensions() / 2});
   h.add(Collision{.flags = GhostBoss::kShapeFlags,
                   .bounding_width = GhostBoss::kBoundingWidth,
                   .check = ecs::call<&GhostBoss::check_point>});

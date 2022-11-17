@@ -18,8 +18,8 @@ void set_vertex_data(vec4 position) {
   vec4 render_min = render_position(vec2(clip_min));
   vec4 render_max = render_position(vec2(clip_max));
   gl_ClipDistance[0] = position.x - render_min.x;
-  gl_ClipDistance[1] = -(position.y - render_min.y);
-  gl_ClipDistance[2] = render_max.x - position.x;
+  gl_ClipDistance[1] = render_max.x - position.x;
+  gl_ClipDistance[2] = -(position.y - render_min.y);
   gl_ClipDistance[3] = -(render_max.y - position.y);
   gl_Position = position;
 }

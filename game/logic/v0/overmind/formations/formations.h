@@ -98,6 +98,10 @@ inline void spawn_tractor(spawn_context& context, spawn_side, const vec2& positi
   v0::spawn_tractor(context.sim, position);
 }
 
+inline void spawn_shield_hub(spawn_context& context, spawn_side, const vec2& position) {
+  v0::spawn_shield_hub(context.sim, position);
+}
+
 struct square0 : formation<4> {
   void operator()(spawn_context& context) const {
     auto side = context.random_mside();
@@ -742,6 +746,22 @@ struct tractor1_side : formation<14, 32> {
     auto side = context.random_vside();
     auto p = context.random.uint(7) + 1;
     context.spawn(&spawn_tractor, side, p, 9);
+  }
+};
+
+struct shield_hub0 : formation<14, 42> {
+  void operator()(spawn_context& context) const {
+    auto side = context.random_mside();
+    auto p = context.random.uint(7) + 1;
+    context.spawn(&spawn_shield_hub, side, p, 9);
+  }
+};
+
+struct shield_hub0_side : formation<7, 32> {
+  void operator()(spawn_context& context) const {
+    auto side = context.random_vside();
+    auto p = context.random.uint(7) + 1;
+    context.spawn(&spawn_shield_hub, side, p, 9);
   }
 };
 

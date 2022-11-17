@@ -56,6 +56,9 @@ struct box_data : shape_data_base {
 
   constexpr void
   iterate(iterate_lines_t, const Transform auto& t, const LineFunction auto& f) const {
+    if (!line.colour.a) {
+      return;
+    }
     auto a = *t.translate({dimensions.x, dimensions.y});
     auto b = *t.translate({-dimensions.x, dimensions.y});
     auto c = *t.translate({-dimensions.x, -dimensions.y});

@@ -7,9 +7,9 @@
 #include "game/logic/geometry/enums.h"
 #include "game/logic/geometry/node.h"
 #include "game/logic/geometry/node_transform.h"
-#include "game/logic/sim/components.h"
 #include "game/logic/sim/io/render.h"
 #include "game/logic/sim/sim_interface.h"
+#include "game/logic/v0/components.h"
 #include <sfn/functional.h>
 #include <cstddef>
 #include <optional>
@@ -37,36 +37,55 @@ template <geom::ShapeNode S>
 void render_shape(std::vector<render::shape>& output, const auto& parameters,
                   const geom::transform& t = {},
                   const std::optional<float>& hit_alpha = std::nullopt,
+                  const std::optional<float>& shield_alpha = std::nullopt,
                   const std::optional<std::size_t>& c_override_max_index = std::nullopt) {
   std::size_t i = 0;
   geom::transform transform = t;
   transform.index_out = &i;
   geom::iterate(S{}, geom::iterate_shapes, parameters, transform, [&](const render::shape& shape) {
     render::shape shape_copy = shape;
-    if (shape.z_index > colour::kZTrails && hit_alpha &&
-        (!c_override_max_index || i < *c_override_max_index)) {
+    bool override =
+        shape.z_index > colour::kZTrails && (!c_override_max_index || i < *c_override_max_index);
+    if (hit_alpha && override) {
       shape_copy.apply_hit_flash(*hit_alpha);
     }
     output.emplace_back(shape_copy);
+    if (shield_alpha && override) {
+      shape_copy = shape;
+      if (shape_copy.apply_shield(*shield_alpha)) {
+        output.emplace_back(shape_copy);
+      }
+      shape_copy = shape;
+      if (shape_copy.apply_shield_outline(*shield_alpha)) {
+        output.emplace_back(shape_copy);
+      }
+    }
   });
 }
 
 template <geom::ShapeNode S>
 void render_entity_shape_override(std::vector<render::shape>& output, const Health* health,
-                                  const auto& parameters, const geom::transform& t = {}) {
+                                  const EnemyStatus* status, const auto& parameters,
+                                  const geom::transform& t = {}) {
   std::optional<float> hit_alpha;
+  std::optional<float> shield_alpha;
   std::optional<std::size_t> c_override_max_index;
-  if (health && health->hit_timer) {
-    hit_alpha = std::min(1.f, health->hit_timer / 10.f);
+  if (status && status->shielded_ticks) {
+    shield_alpha = std::min(1.f, status->shielded_ticks / 16.f);
+  }
+  if (health) {
+    if (health->hit_timer) {
+      hit_alpha = std::min(1.f, health->hit_timer / 10.f);
+    }
     c_override_max_index = health->hit_flash_ignore_index;
   }
-  render_shape<S>(output, parameters, t, hit_alpha, c_override_max_index);
+  render_shape<S>(output, parameters, t, hit_alpha, shield_alpha, c_override_max_index);
 }
 
 template <ecs::Component Logic, geom::ShapeNode S = typename Logic::shape>
-void render_entity_shape(ecs::const_handle h, const Health* health,
+void render_entity_shape(ecs::const_handle h, const Health* health, const EnemyStatus* status,
                          std::vector<render::shape>& output) {
-  render_entity_shape_override<S>(output, health, get_shape_parameters<Logic>(h), {});
+  render_entity_shape_override<S>(output, health, status, get_shape_parameters<Logic>(h), {});
 }
 
 //////////////////////////////////////////////////////////////////////////////////

@@ -1,5 +1,6 @@
 #include "game/common/colour.h"
 #include "game/logic/geometry/node_conditional.h"
+#include "game/logic/geometry/shapes/box.h"
 #include "game/logic/geometry/shapes/line.h"
 #include "game/logic/geometry/shapes/ngon.h"
 #include "game/logic/v0/enemy/enemy.h"
@@ -100,6 +101,7 @@ struct FollowHub : ecs::component {
 };
 DEBUG_STRUCT_TUPLE(FollowHub, timer, count, dir, big, chaser, fast);
 
+// TODO: add hard variant that... lays bombs when going fast?
 struct Shielder : ecs::component {
   static constexpr std::uint32_t kBoundingWidth = 32;
   static constexpr sound kDestroySound = sound::kPlayerDestroy;
@@ -116,15 +118,24 @@ struct Shielder : ecs::component {
 
   using centre_shape = geom::compound<
       geom::ngon<geom::nd(22, 12), outline>,
-      geom::ngon<geom::nd2(26, 6, 12), geom::nline(geom::ngon_style::kPolystar, c0, z)>,
+      geom::ngon<geom::nd2(29, 6, 12),
+                 geom::nline(geom::ngon_style::kPolystar, colour::kOutline, colour::kZOutline,
+                             5.f)>,
+      geom::ngon<geom::nd2(27 + 1_fx / 2, 6, 12), geom::nline(geom::ngon_style::kPolystar, c0, z)>,
       geom::ngon<geom::nd(6, 12), geom::nline(c0, z)>,
       geom::ngon<geom::nd(20, 12), geom::nline(c0, z), geom::sfill(cf, z)>,
       geom::ngon_collider<geom::nd(20, 12), shape_flag::kDangerous | shape_flag::kVulnerable>>;
   using shield_shape = geom::rotate_p<
       2, geom::line<vec2{32, 0}, vec2{18, 0}, geom::sline(c1, z)>,
       geom::rotate<fixed_c::pi / 4, geom::line<vec2{-32, 0}, vec2{-18, 0}, geom::sline(c1, z)>>,
-      geom::ngon<geom::nd2(32, 24, 16, 10), geom::nline(c1, z), geom::sfill(cf, z)>,
-      geom::ngon<geom::nd2(34, 22, 16, 10), outline>,
+      geom::ngon<geom::nd2(27 + 1_fx / 2, 22, 16, 10), geom::nline(), geom::sfill(cf, z)>,
+      geom::ngon<geom::nd2(27 + 1_fx / 2, 22, 16, 10), geom::nline(),
+                 geom::sfill(colour::alpha(c1, colour::kFillAlpha1), z)>,
+      geom::ngon<geom::nd(29, 16, 10), outline>,
+      geom::ngon<geom::nd(30, 16, 10), geom::nline(c1, z, 1.25f)>,
+      geom::ngon<geom::nd(31, 16, 10), outline>,
+      geom::ngon<geom::nd(32, 16, 10), geom::nline(c1, z, 1.25f)>,
+      geom::ngon<geom::nd(34, 16, 10), outline>,
       geom::ngon_collider<geom::nd(32, 16, 10), shape_flag::kWeakShield>>;
   using shape = geom::translate_p<0, geom::rotate_p<1, centre_shape>, shield_shape>;
 
@@ -189,6 +200,7 @@ struct Shielder : ecs::component {
 DEBUG_STRUCT_TUPLE(Shielder, timer, velocity, spread_velocity, target, next_target, closest, power,
                    on_screen, shield_angle);
 
+// TODO: add hard variant that shoots... bounces?
 struct Tractor : ecs::component {
   static constexpr std::uint32_t kBoundingWidth = 45;
   static constexpr sound kDestroySound = sound::kPlayerDestroy;
@@ -243,6 +255,7 @@ struct Tractor : ecs::component {
       ++timer;
     }
 
+    static constexpr auto kSpinSpeed = fixed_c::tenth * (2_fx + 1_fx / 2);
     if (!ready && !spinning) {
       transform.move(dir * kSpeed * (sim.is_on_screen(transform.centre) ? 1 : 2 + fixed_c::half));
 
@@ -251,6 +264,8 @@ struct Tractor : ecs::component {
         timer = 0;
       }
     } else if (ready) {
+      auto r = fixed{timer} / (kTimer + 1);
+      transform.rotate(r * r * kSpinSpeed * 5_fx / 8);
       if (timer > kTimer) {
         ready = false;
         spinning = true;
@@ -258,7 +273,7 @@ struct Tractor : ecs::component {
         sim.emit(resolve_key::predicted()).play(sound::kBossFire, transform.centre);
       }
     } else if (spinning) {
-      transform.rotate(fixed_c::tenth * (2_fx + 1_fx / 2));
+      transform.rotate(kSpinSpeed);
       sim.index().iterate_dispatch<Player>([&](const Player& p, Transform& p_transform) {
         if (!p.is_killed) {
           p_transform.centre += normalise(transform.centre - p_transform.centre) * kPullSpeed;
@@ -286,8 +301,8 @@ struct Tractor : ecs::component {
         if ((timer + 2 * pc.player_number) % 8 < 4 && !pc.is_killed) {
           unsigned char index = 'p' + pc.player_number;
           output.emplace_back(render::shape::line(to_float(transform.centre),
-                                                  to_float(p_transform.centre), c, colour::kZEffect,
-                                                  1.f, index));
+                                                  to_float(p_transform.centre), c,
+                                                  colour::kZEffect0, 1.f, index));
           output.emplace_back(render::shape::line(to_float(transform.centre),
                                                   to_float(p_transform.centre), colour::kOutline,
                                                   colour::kZOutline, 5.f, index));
@@ -297,6 +312,80 @@ struct Tractor : ecs::component {
   }
 };
 DEBUG_STRUCT_TUPLE(Tractor, timer, dir, power, ready, spinning, spoke_r);
+
+struct ShieldHub : ecs::component {
+  static constexpr std::uint32_t kBoundingWidth = 24;
+  static constexpr sound kDestroySound = sound::kPlayerDestroy;
+  static constexpr rumble_type kDestroyRumble = rumble_type::kLarge;
+
+  static constexpr std::uint32_t kTimer = 320;
+  static constexpr fixed kSpeed = 3_fx / 4_fx;
+  static constexpr fixed kShieldDistance = 280;
+
+  static constexpr auto z = colour::kZEnemyLarge;
+  static constexpr auto c = colour::kSolarizedDarkViolet;
+  static constexpr auto cf = colour::alpha(c, colour::kFillAlpha0);
+  static constexpr auto outline = geom::nline(colour::kOutline, colour::kZOutline, 2.f);
+  static constexpr auto sl = geom::nline(colour::alpha(colour::kWhite0, colour::kFillAlpha1),
+                                         colour::kZBackgroundEffect, 1.f);
+  static constexpr auto sf = geom::sfill(colour::alpha(colour::kWhite0, colour::kBackgroundAlpha0),
+                                         colour::kZBackgroundEffect);
+
+  using shape = geom::compound<
+      standard_transform<geom::ngon<geom::nd(kBoundingWidth + 2, 8), outline>,
+                         geom::ngon_with_collider<
+                             geom::nd(kBoundingWidth, 8), geom::nline(c, z), geom::sfill(cf, z),
+                             shape_flag::kDangerous | shape_flag::kVulnerable>>,
+      geom::translate_p<0,
+                        geom::rotate_eval<geom::multiply_p<-1_fx / 2, 1>,
+                                          geom::box<vec2{20, 10}, geom::sline(c, z)>>,
+                        geom::rotate_eval<geom::multiply_p<1_fx / 2, 1>,
+                                          geom::box<vec2{10, 20}, geom::sline(c, z)>>,
+                        geom::ngon<geom::nd(kShieldDistance + 16, 40), sl, sf>>>;
+  std::uint32_t timer = 0;
+  std::uint32_t count = 0;
+  vec2 dir{0};
+  vec2 target_dir{0};
+  std::vector<ecs::entity_id> targets;
+
+  void update(ecs::handle h, Transform& transform, SimInterface& sim) {
+    ++timer;
+    if (!((sim.tick_count() + +h.id()) % 8u)) {
+      static thread_local std::vector<SimInterface::range_info> v;
+      v.clear();
+      sim.in_range<EnemyStatus>(transform.centre, kShieldDistance, 0, v);
+      targets.clear();
+      for (const auto& e : v) {
+        if (!e.h.get<ShieldHub>()) {
+          targets.emplace_back(e.h.id());
+        }
+      }
+    }
+    for (auto id : targets) {
+      if (auto* status = sim.index().get<EnemyStatus>(id); status) {
+        status->shielded_ticks =
+            std::max(status->shielded_ticks, std::min(20u, status->shielded_ticks + 2));
+      }
+    }
+
+    auto dim = sim.dimensions();
+    target_dir = transform.centre.x < 96  ? (timer = 0, vec2{1, 0})
+        : transform.centre.x > dim.x - 96 ? (timer = 0, vec2{-1, 0})
+        : transform.centre.y < 96         ? (timer = 0, vec2{0, 1})
+        : transform.centre.y > dim.y - 96 ? (timer = 0, vec2{0, -1})
+        : timer >= kTimer ? (timer = 0, from_polar(2 * fixed_c::pi * sim.random_fixed(), 1_fx))
+                          : target_dir;
+    if (sim.is_on_screen(transform.centre)) {
+      dir = rc_smooth(dir, target_dir, 31_fx / 32);
+    } else {
+      dir = target_dir;
+    }
+
+    transform.rotate(fixed_c::hundredth * 3);
+    transform.move(dir * kSpeed);
+  }
+};
+DEBUG_STRUCT_TUPLE(ShieldHub, timer, count, dir);
 
 }  // namespace
 
@@ -345,6 +434,15 @@ void spawn_tractor(SimInterface& sim, const vec2& position, bool power) {
   h.add(Enemy{.threat_value = 10u + 4u * power});
   h.add(Physics{.mass = 2_fx});
   h.add(DropTable{.bomb_drop_chance = 100});
+}
+
+void spawn_shield_hub(SimInterface& sim, const vec2& position) {
+  auto h = create_ship_default<ShieldHub>(sim, position);
+  add_enemy_health<ShieldHub>(h, 200);
+  h.add(ShieldHub{});
+  h.add(Enemy{.threat_value = 10u});
+  h.add(Physics{.mass = 3_fx});
+  h.add(DropTable{.shield_drop_chance = 80, .bomb_drop_chance = 20});
 }
 
 }  // namespace ii::v0

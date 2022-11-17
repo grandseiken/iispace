@@ -117,6 +117,7 @@ void add_enemy_health(ecs::handle h, std::uint32_t hp,
                .destroy_rumble = destroy_rumble,
                .on_hit = on_hit,
                .on_destroy = on_destroy});
+  h.add(EnemyStatus{});
 }
 
 }  // namespace ii::v0

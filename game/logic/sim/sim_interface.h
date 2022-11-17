@@ -102,7 +102,7 @@ public:
   bool is_on_screen(const vec2& point) const;
   vec2 rotate_compatibility(const vec2& v, fixed theta) const;
 
-  template <ecs::component C>
+  template <ecs::Component C>
   void
   in_range(const vec2& point, fixed distance, std::size_t max_n, std::vector<range_info>& output) {
     in_range(point, distance, ecs::id<C>(), max_n, output);

@@ -37,16 +37,13 @@ cc_library(
     "ship_template.h",
   ],
   deps = [
+    ":components",
     "//game/common:math",
     "//game/logic/ecs",
     "//game/logic/geometry",
-    "//game/logic/sim:components",
     "//game/logic/sim:sim_interface",
     "//game/logic/sim/io:render",
     "@static_functional",
   ],
-  visibility = [
-    "//game/logic/legacy:__subpackages__",
-    "//game/logic/v0:__subpackages__",
-  ],
+  visibility = ["//game/logic/v0:__subpackages__"],
 )

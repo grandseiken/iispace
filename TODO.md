@@ -184,8 +184,8 @@ Note: many of these hard to do with laggy network.
 
 # New enemy ideas
 * Small 5-sided follow that moves slower but shoots projectiles on death
-* Enemy that shoots lines of bouncing little things like the tractor boss shots
-* 6-prong non-destroyable shot shooter that rotates 30 degrees each time
+* Enemy that shoots lines of bouncing little things like the tractor boss shots, and maybe shotgun if player close
+* 6-prong non-destroyable shot shooter that rotates ~30 degrees each time
 * Enemy that moves slowly until you're close (or gets damaged) then speeds at you
 * Enemy that keeps away from players and does something annoying (shoots projectiles)
 * Enemy that multiplies (by widening and splitting)
@@ -201,7 +201,6 @@ Note: many of these hard to do with laggy network.
 * Hidden superwall that rotates randomly then emits cross of wall segments
 * Wall section with multiple squares that snakes around and can split
 * Many new wall types / configuration
-* Enemy that shields (or heals) other enemies until killed
 * Snakes, oh snakes!
 * Big ol snake shooter
 * Big ol enemy that spawns new ones when hit and you don't really want to shoot
@@ -213,10 +212,12 @@ Note: many of these hard to do with laggy network.
 
 ## Bosses
 * Per-player-count boss balancing with spawns etc
-* Super snake
+* Super snake (malworm)
 * Some kind of wall setup like sliding tile puzzle
 * Twin bosses (twin daemon)
-* Rhythm boss that shoots out tall lines of walls in patterns, some that fall, etc
+* Hypervisor
+* Czechsum
+* Archives - rhythm boss that shoots out tall lines of walls in patterns, some that fall, etc
 * Long thin vertical boss with armour on sides
 * 3D skull boss
 * Spawning sliding circle boss
@@ -226,3 +227,16 @@ Note: many of these hard to do with laggy network.
 # Currencies / economy
 * Large enemies randomly drop bytes/boops
 * Bosses drop something (on first kill?)
+
+# Regions
+
+* Uplink (base)
+* Edge
+* Fabric
+* Archive
+* Firewall
+* Prism (rainbow)
+* System core
+* темной сети (darknet), light zones
+* 中核 (core), neon, glow
+* -1, glitchy

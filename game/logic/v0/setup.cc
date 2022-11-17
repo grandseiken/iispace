@@ -8,12 +8,15 @@
 namespace ii::v0 {
 namespace {
 
-void run_drop(drop_data& data, std::uint32_t chance, SimInterface& sim, const vec2& position,
-              sfn::ptr<void(SimInterface&, const vec2&)> spawn) {
+void run_drop(drop_data& data, bool& dropped, std::uint32_t chance, SimInterface& sim,
+              const vec2& position, sfn::ptr<void(SimInterface&, const vec2&)> spawn) {
   static constexpr std::uint32_t kProbability = 1000;
   auto& r = sim.random(random_source::kGameSequence);
 
-  data.counter += static_cast<std::int32_t>(chance);
+  if (dropped) {
+    data.counter += static_cast<std::int32_t>(chance);
+    return;
+  }
   data.compensation += static_cast<std::int32_t>(chance);
   if (data.counter >= 0 && chance > 0 &&
       (data.counter >= kProbability || r.uint(kProbability) < chance)) {
@@ -24,6 +27,7 @@ void run_drop(drop_data& data, std::uint32_t chance, SimInterface& sim, const ve
       data.counter -= data.compensation;
     }
     data.compensation = 0;
+    dropped = true;
   }
 }
 
@@ -42,9 +46,10 @@ void V0SimSetup::initialise_systems(SimInterface& sim) {
     const auto* table = h.get<DropTable>();
     const auto* transform = h.get<Transform>();
     if (table && transform) {
-      run_drop(data.shield_drop, table->shield_drop_chance, sim, transform->centre,
+      bool dropped = false;
+      run_drop(data.shield_drop, dropped, table->shield_drop_chance, sim, transform->centre,
                &spawn_shield_powerup);
-      run_drop(data.bomb_drop, table->bomb_drop_chance, sim, transform->centre,
+      run_drop(data.bomb_drop, dropped, table->bomb_drop_chance, sim, transform->centre,
                &spawn_bomb_powerup);
     }
   });
@@ -66,6 +71,8 @@ ecs::entity_id V0SimSetup::start_game(const initial_conditions& conditions, SimI
 void V0SimSetup::begin_tick(SimInterface& sim) {
   sim.index().iterate_dispatch_if<Physics>(
       [](Physics& physics, Transform& transform) { physics.update(transform); });
+  sim.index().iterate_dispatch<EnemyStatus>(
+      [](EnemyStatus& status) { status.shielded_ticks && --status.shielded_ticks; });
 }
 
 }  // namespace ii::v0

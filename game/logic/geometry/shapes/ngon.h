@@ -100,20 +100,38 @@ struct ngon_data : shape_data_base {
 
   constexpr void
   iterate(iterate_lines_t, const Transform auto& t, const LineFunction auto& f) const {
+    if (!line.colour.a) {
+      return;
+    }
     auto vertex = [&](std::uint32_t i) {
       return *t.rotate(i * 2 * fixed_c::pi / dimensions.sides).translate({dimensions.radius, 0});
     };
+    auto ivertex = [&](std::uint32_t i) {
+      return *t.rotate(i * 2 * fixed_c::pi / dimensions.sides)
+                  .translate({dimensions.inner_radius, 0});
+    };
 
-    for (std::uint32_t i = 0; i < dimensions.segments; ++i) {
-      std::invoke(f, vertex(i), line.style != ngon_style::kPolystar ? vertex(i + 1) : t.v,
-                  line.colour, line.width, line.z);
-    }
-    if (line.style == ngon_style::kPolygram) {
+    switch (line.style) {
+    case ngon_style::kPolystar:
+      for (std::uint32_t i = 0; i < dimensions.segments; ++i) {
+        std::invoke(f, ivertex(i), vertex(i), line.colour, line.width, line.z);
+      }
+      break;
+    case ngon_style::kPolygram:
       for (std::size_t i = 0; i < dimensions.sides; ++i) {
         for (std::size_t j = i + 2; j < dimensions.sides && (j + 1) % dimensions.sides != i; ++j) {
           std::invoke(f, vertex(i), vertex(j), line.colour, line.width, line.z);
         }
       }
+      // Fallthrough.
+    case ngon_style::kPolygon:
+      for (std::uint32_t i = 0; i < dimensions.segments; ++i) {
+        std::invoke(f, vertex(i), vertex(i + 1), line.colour, line.width, line.z);
+      }
+      for (std::uint32_t i = 0; dimensions.inner_radius && i < dimensions.segments; ++i) {
+        std::invoke(f, ivertex(i), ivertex(i + 1), line.colour, line.width, line.z);
+      }
+      break;
     }
   }
 

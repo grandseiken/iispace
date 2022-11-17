@@ -357,7 +357,7 @@ struct FollowSponge : ecs::component {
       auto d = ph->get<Transform>()->centre - transform.centre;
       bool on_screen = sim.is_on_screen(transform.centre + vec2{kBoundingWidth} / 2) ||
           sim.is_on_screen(transform.centre - vec2{kBoundingWidth} / 2);
-      transform.move(normalise(d) * (on_screen ? 2 * t + kSpeed : t + 2 * kSpeed));
+      transform.move(normalise(d) * (on_screen ? 2 * t + kSpeed : (3_fx / 2) * kSpeed));
     }
   }
 
@@ -367,14 +367,11 @@ struct FollowSponge : ecs::component {
       return;
     }
     auto target_spawns = 1 + (health.max_hp - health.hp) / 8;
-    if (4u + health.max_hp - health.hp >= health.max_hp / 2) {
-      target_spawns += (4u + health.max_hp / 2 - health.hp) / 16;
-    }
     while (spawns < target_spawns) {
       eh.explosion(to_float(transform.centre), c, 6, std::nullopt, 2.f);
-      auto v = from_polar(
-          angle(transform.centre - source) + (1 + 1_fx / 2) * (sim.random_fixed() - 1_fx / 2),
-          2_fx + 3_fx * sim.random_fixed());
+      auto v =
+          from_polar(angle(transform.centre - source) + (3_fx / 2) * sim.random_fixed() - 3_fx / 4,
+                     2_fx + 3_fx * sim.random_fixed());
       spawn_follow(sim, 0, transform.centre, std::nullopt, /* drop */ false, transform.rotation, v);
       ++spawns;
     }

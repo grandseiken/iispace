@@ -1,5 +1,6 @@
 #ifndef II_GAME_LOGIC_SIM_IO_RENDER_H
 #define II_GAME_LOGIC_SIM_IO_RENDER_H
+#include "game/common/colour.h"
 #include "game/common/math.h"
 #include <glm/glm.hpp>
 #include <cstdint>
@@ -43,6 +44,12 @@ struct box {
   float line_width = 1.f;
 };
 
+struct ball {
+  float radius = 0.f;
+  float inner_radius = 0.f;
+  float line_width = 1.f;
+};
+
 struct ngon_fill {
   float radius = 0.f;
   float inner_radius = 0.f;
@@ -54,7 +61,12 @@ struct box_fill {
   glm::vec2 dimensions{0.f};
 };
 
-using shape_data = std::variant<line, ngon, box, ngon_fill, box_fill>;
+struct ball_fill {
+  float radius = 0.f;
+  float inner_radius = 0.f;
+};
+
+using shape_data = std::variant<line, ngon, box, ball, ngon_fill, box_fill, ball_fill>;
 
 struct motion_trail {
   glm::vec2 prev_origin{0.f};
@@ -95,6 +107,52 @@ struct shape {
       p->line_width += w;
     }
     colour.z = std::min(1.f, colour.z + l);
+  }
+
+  bool apply_shield(float a) {
+    s_index += 'S';
+    z_index = colour::kZEffect1;
+    colour = colour::alpha(colour::kWhite0, .5f * a);
+    if (auto* p = std::get_if<render::ngon>(&data); p) {
+      p->radius += 3;
+      p->inner_radius = 0;
+      p->line_width = 1.5f;
+      if (p->style == ngon_style::kPolystar) {
+        return false;
+      }
+      p->style = ngon_style::kPolygon;
+      return true;
+    }
+    if (auto* p = std::get_if<render::box>(&data); p) {
+      p->dimensions.x += 3;
+      p->dimensions.y += 3;
+      p->line_width = 1.5f;
+      return true;
+    }
+    return false;
+  }
+
+  bool apply_shield_outline(float a) {
+    s_index += 'S';
+    z_index = colour::kZOutline;
+    colour = colour::alpha(colour::kOutline, a);
+    if (auto* p = std::get_if<render::ngon>(&data); p) {
+      p->radius += 5.f;
+      p->inner_radius = 0;
+      p->line_width = 3.f;
+      if (p->style == ngon_style::kPolystar) {
+        return false;
+      }
+      p->style = ngon_style::kPolygon;
+      return true;
+    }
+    if (auto* p = std::get_if<render::box>(&data); p) {
+      p->dimensions.x += 5.f;
+      p->dimensions.y += 5.f;
+      p->line_width = 3.f;
+      return true;
+    }
+    return false;
   }
 };
 
