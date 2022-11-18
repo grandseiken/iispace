@@ -98,11 +98,20 @@ struct delete_texture {
 struct delete_sampler {
   void operator()(id i) const { glDeleteSamplers(1, &i); }
 };
+struct delete_framebuffer {
+  void operator()(id i) const { glDeleteFramebuffers(1, &i); }
+};
+struct delete_renderbuffer {
+  void operator()(id i) const { glDeleteRenderbuffers(1, &i); }
+};
 struct delete_vertex_array {
   void operator()(id i) const { glDeleteVertexArrays(1, &i); }
 };
 struct disable_vertex_attribute {
   void operator()(id i) const { glDisableVertexAttribArray(i); }
+};
+struct unbind_framebuffer {
+  void operator()(id i) const { glBindFramebuffer(i, 0); }
 };
 
 inline GLenum type_to_gl(type t) {
@@ -138,6 +147,9 @@ using program = detail::handle<detail::delete_program>;
 using buffer = detail::handle<detail::delete_buffer>;
 using texture = detail::handle<detail::delete_texture>;
 using sampler = detail::handle<detail::delete_sampler>;
+using framebuffer = detail::handle<detail::delete_framebuffer>;
+using renderbuffer = detail::handle<detail::delete_renderbuffer>;
+using bound_framebuffer = detail::handle<detail::unbind_framebuffer>;
 using vertex_array = detail::handle<detail::delete_vertex_array>;
 using vertex_attribute = detail::handle<detail::disable_vertex_attribute>;
 

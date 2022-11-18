@@ -4,6 +4,7 @@ const float kPi = 3.1415926538;
 
 uniform vec4 offset;
 uniform vec2 parameters;
+uniform uvec2 screen_dimensions;
 
 flat in vec2 g_render_dimensions;
 flat in vec4 g_colour;
@@ -29,7 +30,8 @@ float tonemap0(float v) {
 }
 
 float scanlines() {
-  return scale01(.5, floor(mod(g_render_dimensions.y * g_texture_coords.y, 2.)));
+  float size = max(1., round(screen_dimensions.y / 540.));
+  return scale01(.5, floor(mod(gl_FragCoord.y, 2. * size) / size));
 }
 
 void main() {

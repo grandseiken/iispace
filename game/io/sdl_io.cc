@@ -110,7 +110,7 @@ struct SdlIoLayer::impl_t {
 };
 
 result<std::unique_ptr<SdlIoLayer>>
-SdlIoLayer::create(const char* title, char gl_major, char gl_minor) {
+SdlIoLayer::create(const char* title, char gl_major, char gl_minor, bool windowed) {
   // TODO: SDL_INIT_GAMECONTROLLER can sometimes cause hangs or long delays while probing
   // misbehaving devices or buggy drivers. Apparently it's possible to run that bit asynchronously
   // on a different thread and start using gamepads once it finishes?
@@ -127,18 +127,27 @@ SdlIoLayer::create(const char* title, char gl_major, char gl_minor) {
   SDL_GL_SetAttribute(SDL_GL_BLUE_SIZE, 8);
   SDL_GL_SetAttribute(SDL_GL_ALPHA_SIZE, 8);
   SDL_GL_SetAttribute(SDL_GL_DOUBLEBUFFER, 1);
-  SDL_GL_SetAttribute(SDL_GL_MULTISAMPLEBUFFERS, 1);
-  SDL_GL_SetAttribute(SDL_GL_MULTISAMPLESAMPLES, 16);
+  SDL_GL_SetAttribute(SDL_GL_MULTISAMPLEBUFFERS, 0);
 
   auto io_layer = std::make_unique<SdlIoLayer>(access_tag{});
   io_layer->impl_ = std::make_unique<impl_t>();
 
-  auto flags =
-      SDL_WINDOW_OPENGL | SDL_WINDOW_SHOWN | SDL_WINDOW_BORDERLESS | SDL_WINDOW_FULLSCREEN_DESKTOP;
-  auto window = make_raw(SDL_CreateWindow(title, 0, 0, 0, 0, flags), &SDL_DestroyWindow);
+  auto flags = SDL_WINDOW_OPENGL | SDL_WINDOW_SHOWN;
+  int xy = 0;
+  glm::ivec2 dimensions{0};
+  if (windowed) {
+    flags |= SDL_WINDOW_RESIZABLE;
+    xy = 64;
+    dimensions = {720, 540};
+  } else {
+    flags |= SDL_WINDOW_BORDERLESS | SDL_WINDOW_FULLSCREEN_DESKTOP;
+  }
+  auto window = make_raw(SDL_CreateWindow(title, xy, xy, dimensions.x, dimensions.y, flags),
+                         &SDL_DestroyWindow);
   if (!window) {
     return unexpected(SDL_GetError());
   }
+  SDL_SetWindowMinimumSize(window.get(), 360, 270);
   SDL_ShowCursor(SDL_DISABLE);
 
   auto gl_context = make_raw(SDL_GL_CreateContext(window.get()), &SDL_GL_DeleteContext);
@@ -185,7 +194,7 @@ SdlIoLayer::~SdlIoLayer() {
 glm::uvec2 SdlIoLayer::dimensions() const {
   int w = 0;
   int h = 0;
-  SDL_GetWindowSize(impl_->window.get(), &w, &h);
+  SDL_GL_GetDrawableSize(impl_->window.get(), &w, &h);
   return {static_cast<std::uint32_t>(w), static_cast<std::uint32_t>(h)};
 }
 
@@ -205,6 +214,10 @@ std::optional<event_type> SdlIoLayer::poll() {
       if (event.window.event == SDL_WINDOWEVENT_CLOSE) {
         return event_type::kClose;
       }
+      if (event.window.event == SDL_WINDOWEVENT_RESIZED) {
+        glViewport(0, 0, event.window.data1, event.window.data2);
+      }
+      // TODO: handle focus lost (and pause).
       break;
 
     case SDL_AUDIODEVICEADDED:

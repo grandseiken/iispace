@@ -12,7 +12,7 @@ private:
 
 public:
   static result<std::unique_ptr<SdlIoLayer>>
-  create(const char* title, char gl_major, char gl_minor);
+  create(const char* title, char gl_major, char gl_minor, bool windowed);
   SdlIoLayer(access_tag);
   ~SdlIoLayer() override;
 

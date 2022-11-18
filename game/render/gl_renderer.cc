@@ -48,6 +48,37 @@ gl::buffer make_stream_draw_buffer(std::span<const T> data) {
   return buffer;
 }
 
+struct framebuffer_data {
+  glm::uvec2 dimensions;
+  gl::framebuffer fbo;
+  gl::texture colour_buffer;
+  gl::renderbuffer depth_stencil_buffer;
+};
+
+result<framebuffer_data>
+make_render_framebuffer(const glm::uvec2& dimensions, std::uint32_t samples) {
+  auto fbo = gl::make_framebuffer();
+  auto colour_buffer = gl::make_texture();
+  auto depth_stencil_buffer = gl::make_renderbuffer();
+  if (samples <= 1) {
+    gl::texture_storage_2d(colour_buffer, 1, dimensions, gl::internal_format::kSrgb8);
+    gl::renderbuffer_storage(depth_stencil_buffer, gl::internal_format::kDepth24Stencil8,
+                             dimensions);
+    gl::framebuffer_colour_texture_2d(fbo, colour_buffer);
+  } else {
+    gl::texture_storage_2d_multisample(colour_buffer, samples, dimensions,
+                                       gl::internal_format::kSrgb8);
+    gl::renderbuffer_storage_multisample(depth_stencil_buffer, samples,
+                                         gl::internal_format::kDepth24Stencil8, dimensions);
+    gl::framebuffer_colour_texture_2d_multisample(fbo, colour_buffer);
+  }
+  gl::framebuffer_renderbuffer_depth_stencil(fbo, depth_stencil_buffer);
+  if (!gl::is_framebuffer_complete(fbo)) {
+    return unexpected("framebuffer is not complete");
+  }
+  return {{dimensions, std::move(fbo), std::move(colour_buffer), std::move(depth_stencil_buffer)}};
+}
+
 struct vertex_attribute_container {
   struct type_info {
     gl::buffer buffer;
@@ -99,6 +130,8 @@ struct GlRenderer::impl_t {
   std::optional<gl::buffer> iota_index_buffer;
   std::uint32_t iota_index_size = 0;
 
+  std::optional<framebuffer_data> render_framebuffer;
+
   impl_t()
   : pixel_sampler{gl::make_sampler(gl::filter::kNearest, gl::filter::kNearest,
                                    gl::texture_wrap::kClampToEdge, gl::texture_wrap::kClampToEdge)}
@@ -121,6 +154,18 @@ struct GlRenderer::impl_t {
       iota_index_size = indices;
     }
     return *iota_index_buffer;
+  }
+
+  gl::bound_framebuffer bind_render_framebuffer(const glm::uvec2& dimensions) {
+    if (!render_framebuffer || render_framebuffer->dimensions != dimensions) {
+      auto result = make_render_framebuffer(dimensions, /* samples */ 16);
+      if (!result) {
+        status = unexpected("OpenGL error: " + result.error());
+        return gl::bound_framebuffer{GL_FRAMEBUFFER};
+      }
+      render_framebuffer = std::move(*result);
+    }
+    return gl::bind_draw_framebuffer(render_framebuffer->fbo);
   }
 };
 
@@ -224,6 +269,7 @@ result<void> GlRenderer::status() const {
 }
 
 void GlRenderer::clear_screen() const {
+  auto fbo_bind = impl_->bind_render_framebuffer(target_.screen_dimensions);
   gl::clear_colour({0.f, 0.f, 0.f, 0.f});
   gl::clear_depth(0.);
   gl::clear(gl::clear_mask::kColourBufferBit | gl::clear_mask::kDepthBufferBit |
@@ -231,6 +277,7 @@ void GlRenderer::clear_screen() const {
 }
 
 void GlRenderer::clear_depth() const {
+  auto fbo_bind = impl_->bind_render_framebuffer(target_.screen_dimensions);
   gl::clear_depth(0.);
   gl::clear(gl::clear_mask::kDepthBufferBit);
 }
@@ -281,6 +328,7 @@ void GlRenderer::render_text(font_id font, const glm::uvec2& font_dimensions,
   }
   const auto& font_entry = **font_result;
 
+  auto fbo_bind = impl_->bind_render_framebuffer(target_.screen_dimensions);
   const auto& program = impl_->shader(shader::kText);
   gl::use_program(program);
   gl::enable_srgb(true);
@@ -343,11 +391,12 @@ void GlRenderer::render_text(font_id font, const glm::uvec2& font_dimensions,
                     gl::type_of<std::uint32_t>(), vertices, 0);
 }
 
-void GlRenderer::render_panel(const panel_data& p) {
+void GlRenderer::render_panel(const panel_data& p) const {
   if (p.style == panel_style::kNone) {
     return;
   }
 
+  auto fbo_bind = impl_->bind_render_framebuffer(target_.screen_dimensions);
   const auto& program = impl_->shader(shader::kPanel);
   gl::use_program(program);
   gl::enable_srgb(true);
@@ -391,11 +440,12 @@ void GlRenderer::render_panel(const panel_data& p) {
   gl::draw_elements(gl::draw_mode::kPoints, impl_->index_buffer(1), gl::type_of<unsigned>(), 1, 0);
 }
 
-void GlRenderer::render_background(std::uint64_t tick_count, const glm::vec4& colour) {
+void GlRenderer::render_background(std::uint64_t tick_count, const glm::vec4& colour) const {
   auto t = static_cast<float>(tick_count);
   glm::vec4 offset{256.f * std::cos(t / 512.f), -t / 4.f, t / 8.f, t / 256.f};
   glm::vec2 parameters{(1.f - std::cos(t / 1024.f)) / 2.f, 0.f};
 
+  auto fbo_bind = impl_->bind_render_framebuffer(target_.screen_dimensions);
   const auto& program = impl_->shader(shader::kBackground);
   gl::use_program(program);
   gl::enable_srgb(true);
@@ -666,6 +716,8 @@ void GlRenderer::render_shapes(coordinate_system ctype, std::vector<shape>& shap
   case coordinate_system::kCentered:
     offset = (clip_rect.min() + clip_rect.max()) / 2;
   }
+
+  auto fbo_bind = impl_->bind_render_framebuffer(target_.screen_dimensions);
   gl::enable_srgb(true);
   gl::enable_clip_planes(4u);
   gl::enable_depth_test(false);
@@ -736,6 +788,14 @@ void GlRenderer::render_shapes(coordinate_system ctype, std::vector<shape>& shap
   if (!outline_indices.empty()) {
     render_outlines(outline_index_buffer, outline_indices.size());
   }
+}
+
+void GlRenderer::render_present() const {
+  if (!impl_->render_framebuffer) {
+    return;
+  }
+  auto bind_draw = gl::bind_read_framebuffer(impl_->render_framebuffer->fbo);
+  gl::blit_framebuffer_colour(target_.screen_dimensions);
 }
 
 }  // namespace ii::render

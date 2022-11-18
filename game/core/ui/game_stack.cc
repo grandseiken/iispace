@@ -139,7 +139,6 @@ void GameStack::update(bool controller_change) {
 }
 
 void GameStack::render(render::GlRenderer& renderer) const {
-  renderer.target().screen_dimensions = io_layer_.dimensions();
   auto it = get_capture_it(layers_.begin(), layers_.end(), layer_flag::kCaptureRender);
   for (; it != layers_.end(); ++it) {
     renderer.target().render_dimensions = static_cast<glm::uvec2>((*it)->bounds().size);

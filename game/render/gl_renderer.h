@@ -71,13 +71,14 @@ public:
   // TODO: in general we can maybe render UI with minimal draw calls via a breadth-first search
   // that renders everything at element depth N (collapsing elements that render nothing) in a
   // single pass, etc.
-  void render_panel(const panel_data&);
+  void render_panel(const panel_data&) const;
 
-  void render_background(std::uint64_t tick_count, const glm::vec4& colour);
+  void render_background(std::uint64_t tick_count, const glm::vec4& colour) const;
   // TODO: _maybe_ render outlines automatically somehow, or output from geometry shapes?
   // TODO: implement balls.
   void render_shapes(coordinate_system ctype, std::vector<render::shape>& shapes, shape_style style,
                      float trail_alpha) const;
+  void render_present() const;
 
 private:
   render::target target_;

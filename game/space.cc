@@ -57,7 +57,7 @@ bool run(System& system, const std::vector<std::string>& args, const game_option
   static constexpr char kGlMinor = 6;
   static constexpr std::uint32_t kGlslVersion = 460;
 
-  auto io_layer_result = io::SdlIoLayer::create(kTitle, kGlMajor, kGlMinor);
+  auto io_layer_result = io::SdlIoLayer::create(kTitle, kGlMajor, kGlMinor, options.windowed);
   if (!io_layer_result) {
     std::cerr << "Error initialising IO: " << io_layer_result.error() << std::endl;
     return false;
@@ -144,8 +144,10 @@ bool run(System& system, const std::vector<std::string>& args, const game_option
     mixer.commit();
     exit |= stack.empty();
 
+    renderer->target().screen_dimensions = io_layer->dimensions();
     renderer->clear_screen();
     stack.render(*renderer);
+    renderer->render_present();
     io_layer->swap_buffers();
 
     auto render_status = renderer->status();
@@ -220,6 +222,9 @@ result<game_options_t> parse_args(std::vector<std::string>& args) {
     return unexpected(r.error());
   }
 
+  if (auto r = flag_parse<bool>(args, "windowed", options.windowed, false); !r) {
+    return unexpected(r.error());
+  }
   return {std::move(options)};
 }
 

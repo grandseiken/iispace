@@ -43,6 +43,12 @@ enum class internal_format {
   kRGB32F,
   kRGBA32F,
   kR11FG11FB10F,
+  kDepthComponent16,
+  kDepthComponent24,
+  kDepthComponent32F,
+  kDepth24Stencil8,
+  kDepth32FStencil8,
+  kStencilIndex8,
 };
 
 enum class texture_format {
@@ -152,6 +158,18 @@ inline GLint internal_format_to_gl(internal_format f) {
     return GL_RGBA32F;
   case internal_format::kR11FG11FB10F:
     return GL_R11F_G11F_B10F;
+  case internal_format::kDepthComponent16:
+    return GL_DEPTH_COMPONENT16;
+  case internal_format::kDepthComponent24:
+    return GL_DEPTH_COMPONENT24;
+  case internal_format::kDepthComponent32F:
+    return GL_DEPTH_COMPONENT32F;
+  case internal_format::kDepth24Stencil8:
+    return GL_DEPTH24_STENCIL8;
+  case internal_format::kDepth32FStencil8:
+    return GL_DEPTH32F_STENCIL8;
+  case internal_format::kStencilIndex8:
+    return GL_STENCIL_INDEX8;
   }
   return 0;
 }
@@ -194,6 +212,30 @@ inline GLenum texture_format_to_gl(texture_format f) {
 
 }  // namespace detail
 
+inline renderbuffer make_renderbuffer() {
+  id i;
+  glGenRenderbuffers(1, &i);
+  return renderbuffer{i};
+}
+
+inline void renderbuffer_storage(const renderbuffer& rbo, internal_format iformat,
+                                 const glm::uvec2& dimensions) {
+  glBindRenderbuffer(GL_RENDERBUFFER, *rbo);
+  glRenderbufferStorage(GL_RENDERBUFFER, detail::internal_format_to_gl(iformat),
+                        static_cast<GLsizei>(dimensions.x), static_cast<GLsizei>(dimensions.y));
+  glBindRenderbuffer(GL_RENDERBUFFER, 0);
+}
+
+inline void renderbuffer_storage_multisample(const renderbuffer& rbo, std::uint32_t samples,
+                                             internal_format iformat,
+                                             const glm::uvec2& dimensions) {
+  glBindRenderbuffer(GL_RENDERBUFFER, *rbo);
+  glRenderbufferStorageMultisample(
+      GL_RENDERBUFFER, static_cast<GLsizei>(samples), detail::internal_format_to_gl(iformat),
+      static_cast<GLsizei>(dimensions.x), static_cast<GLsizei>(dimensions.y));
+  glBindRenderbuffer(GL_RENDERBUFFER, 0);
+}
+
 inline texture make_texture() {
   id i;
   glGenTextures(1, &i);
@@ -219,6 +261,16 @@ inline void texture_storage_2d(const texture& handle, std::uint32_t levels,
                  detail::internal_format_to_gl(iformat), static_cast<GLsizei>(dimensions.x),
                  static_cast<GLsizei>(dimensions.y));
   glBindTexture(GL_TEXTURE_2D, 0);
+}
+
+inline void texture_storage_2d_multisample(const texture& handle, std::uint32_t samples,
+                                           const glm::uvec2& dimensions, internal_format iformat) {
+  glBindTexture(GL_TEXTURE_2D_MULTISAMPLE, *handle);
+  glTexStorage2DMultisample(GL_TEXTURE_2D_MULTISAMPLE, static_cast<GLsizei>(samples),
+                            detail::internal_format_to_gl(iformat),
+                            static_cast<GLsizei>(dimensions.x), static_cast<GLsizei>(dimensions.y),
+                            true);
+  glBindTexture(GL_TEXTURE_2D_MULTISAMPLE, 0);
 }
 
 inline void texture_storage_3d(const texture& handle, std::uint32_t levels,

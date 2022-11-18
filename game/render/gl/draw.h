@@ -163,6 +163,66 @@ inline GLenum blend_factor_to_gl(blend_factor f) {
 
 }  // namespace detail
 
+inline framebuffer make_framebuffer() {
+  id i;
+  glGenFramebuffers(1, &i);
+  return framebuffer{i};
+}
+
+inline bound_framebuffer bind_framebuffer(const framebuffer& fbo) {
+  glBindFramebuffer(GL_FRAMEBUFFER, *fbo);
+  return bound_framebuffer{GL_FRAMEBUFFER};
+}
+
+inline bound_framebuffer bind_read_framebuffer(const framebuffer& fbo) {
+  glBindFramebuffer(GL_READ_FRAMEBUFFER, *fbo);
+  return bound_framebuffer{GL_READ_FRAMEBUFFER};
+}
+
+inline bound_framebuffer bind_draw_framebuffer(const framebuffer& fbo) {
+  glBindFramebuffer(GL_DRAW_FRAMEBUFFER, *fbo);
+  return bound_framebuffer{GL_DRAW_FRAMEBUFFER};
+}
+
+inline void framebuffer_colour_texture_2d(const framebuffer& fbo, const texture& texture) {
+  auto bind = bind_framebuffer(fbo);
+  glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, *texture, 0);
+}
+
+inline void
+framebuffer_colour_texture_2d_multisample(const framebuffer& fbo, const texture& texture) {
+  auto bind = bind_framebuffer(fbo);
+  glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D_MULTISAMPLE, *texture,
+                         0);
+}
+
+inline void framebuffer_renderbuffer_depth(const framebuffer& fbo, const renderbuffer& rbo) {
+  auto bind = bind_framebuffer(fbo);
+  glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_RENDERBUFFER, *rbo);
+}
+
+inline void framebuffer_renderbuffer_stencil(const framebuffer& fbo, const renderbuffer& rbo) {
+  auto bind = bind_framebuffer(fbo);
+  glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_STENCIL_ATTACHMENT, GL_RENDERBUFFER, *rbo);
+}
+
+inline void
+framebuffer_renderbuffer_depth_stencil(const framebuffer& fbo, const renderbuffer& rbo) {
+  auto bind = bind_framebuffer(fbo);
+  glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_DEPTH_STENCIL_ATTACHMENT, GL_RENDERBUFFER, *rbo);
+}
+
+inline bool is_framebuffer_complete(const framebuffer& fbo) {
+  auto bind = bind_framebuffer(fbo);
+  return glCheckFramebufferStatus(GL_FRAMEBUFFER) == GL_FRAMEBUFFER_COMPLETE;
+}
+
+inline void blit_framebuffer_colour(const glm::uvec2& dimensions) {
+  glBlitFramebuffer(0, 0, static_cast<GLsizei>(dimensions.x), static_cast<GLsizei>(dimensions.y), 0,
+                    0, static_cast<GLsizei>(dimensions.x), static_cast<GLsizei>(dimensions.y),
+                    GL_COLOR_BUFFER_BIT, GL_LINEAR);
+}
+
 inline void clear_colour(const glm::vec4& c) {
   glClearColor(c.r, c.g, c.b, c.a);
 }

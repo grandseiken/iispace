@@ -12,6 +12,9 @@ struct game_options_t {
   std::vector<std::uint32_t> replay_remote_players;
   std::uint64_t replay_min_tick_delivery_delay = 0;
   std::uint64_t replay_max_tick_delivery_delay = 0;
+
+  // Should probably be in-game options.
+  bool windowed = false;
 };
 
 }  // namespace ii
