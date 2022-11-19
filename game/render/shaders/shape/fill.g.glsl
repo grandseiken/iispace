@@ -2,16 +2,16 @@
 #include "game/render/shaders/shape/geometry.glsl"
 
 layout(points) in;
-layout(triangle_strip, max_vertices = 85) out;
+layout(triangle_strip, max_vertices = 113) out;
 
 in v_out_t {
-  shape_data data;
+  shape_vertex_data data;
 }
 v_in[];
 
-out vec4 g_colour;
+flat out uint g_buffer_index;
 
-void emit_polygon(vec2 position, shape_data data) {
+void emit_polygon(vec2 position, shape_vertex_data data) {
   polygon_data d = convert_polygon(position, data);
   for (uint i = 0; i <= d.segments; ++i) {
     set_vertex_data(polygon_outer_v(d, i));
@@ -22,7 +22,7 @@ void emit_polygon(vec2 position, shape_data data) {
   EndPrimitive();
 }
 
-void emit_box(vec2 position, shape_data data) {
+void emit_box(vec2 position, shape_vertex_data data) {
   box_data d = convert_box(position, data);
   set_vertex_data(d.a_outer);
   EmitVertex();
@@ -38,7 +38,7 @@ void emit_box(vec2 position, shape_data data) {
 void main() {
   vec2 position = gl_in[0].gl_Position.xy;
 
-  g_colour = v_in[0].data.colour;
+  g_buffer_index = v_in[0].data.buffer_index;
   switch (v_in[0].data.style) {
   case kStyleNgonPolygon:
     emit_polygon(position, v_in[0].data);

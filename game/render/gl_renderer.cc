@@ -16,6 +16,7 @@
 #include <GL/gl3w.h>
 #include <glm/gtc/constants.hpp>
 #include <algorithm>
+#include <array>
 #include <cmath>
 #include <span>
 #include <string>
@@ -24,6 +25,10 @@
 
 namespace ii::render {
 namespace {
+constexpr std::array<float, 12> kQuadVertexData = {
+    -1.f, -1.f, -1.f, 1.f, 1.f, -1.f, -1.f, 1.f, 1.f, -1.f, 1.f, 1.f,
+};
+
 enum class shader {
   kText,
   kPanel,
@@ -220,21 +225,21 @@ result<std::unique_ptr<GlRenderer>> GlRenderer::create(std::uint32_t shader_vers
   }
 
   r = load_shader(shader::kShapeOutline,
-                  {{"game/render/shaders/shape/colour.f.glsl", gl::shader_type::kFragment},
+                  {{"game/render/shaders/shape/colour_outline.f.glsl", gl::shader_type::kFragment},
                    {"game/render/shaders/shape/outline.g.glsl", gl::shader_type::kGeometry},
                    {"game/render/shaders/shape/input.v.glsl", gl::shader_type::kVertex}});
   if (!r) {
     return unexpected(r.error());
   }
   r = load_shader(shader::kShapeMotion,
-                  {{"game/render/shaders/shape/colour.f.glsl", gl::shader_type::kFragment},
+                  {{"game/render/shaders/shape/colour_motion.f.glsl", gl::shader_type::kFragment},
                    {"game/render/shaders/shape/motion.g.glsl", gl::shader_type::kGeometry},
                    {"game/render/shaders/shape/input.v.glsl", gl::shader_type::kVertex}});
   if (!r) {
     return unexpected(r.error());
   }
   r = load_shader(shader::kShapeFill,
-                  {{"game/render/shaders/shape/colour.f.glsl", gl::shader_type::kFragment},
+                  {{"game/render/shaders/shape/colour_fill.f.glsl", gl::shader_type::kFragment},
                    {"game/render/shaders/shape/fill.g.glsl", gl::shader_type::kGeometry},
                    {"game/render/shaders/shape/input.v.glsl", gl::shader_type::kVertex}});
   if (!r) {
@@ -461,7 +466,7 @@ void GlRenderer::render_background(std::uint64_t tick_count, const glm::vec4& co
   glm::vec4 offset{256.f * std::cos(t / 512.f), -t / 4.f, t / 8.f, t / 256.f};
   glm::vec2 parameters{(1.f - std::cos(t / 1024.f)) / 2.f, 0.f};
 
-  // TODO: background shader is way more complicated than it needs to be to draw a quad.
+  // TODO: background shader is maybe way more complicated than it needs to be to draw a quad?
   auto fbo_bind = impl_->bind_render_framebuffer(target_.screen_dimensions);
   const auto& program = impl_->shader(shader::kBackground);
   gl::use_program(program);
@@ -506,11 +511,12 @@ void GlRenderer::render_background(std::uint64_t tick_count, const glm::vec4& co
 }
 
 void GlRenderer::render_shapes(coordinate_system ctype, std::vector<shape>& shapes,
-                               shape_style style, float trail_alpha) const {
+                               shape_style style) const {
   std::stable_sort(shapes.begin(), shapes.end(),
                    [](const shape& a, const shape& b) { return a.z_index < b.z_index; });
 
-  struct vertex_data {
+  struct shape_data {
+    std::uint32_t buffer_index = 0;
     std::uint32_t style = 0;
     glm::uvec2 params{0u, 0u};
     float rotation = 0.f;
@@ -520,10 +526,14 @@ void GlRenderer::render_shapes(coordinate_system ctype, std::vector<shape>& shap
     glm::vec2 dimensions{0.f};
     glm::vec4 colour{0.f};
   };
+  struct shape_buffer_data {
+    glm::vec4 colour{0.f};
+  };
 
-  // TODO: these vectors and gl::buffers below should probably be saved between frames?
-  static thread_local std::vector<float> float_data;
-  static thread_local std::vector<std::uint8_t> int_data;
+  static thread_local std::vector<float> vertex_float_data;
+  static thread_local std::vector<std::uint32_t> vertex_int_data;
+  static thread_local std::vector<shape_buffer_data> buffer_data;
+
   static thread_local std::vector<unsigned> shadow_trail_indices;
   static thread_local std::vector<unsigned> shadow_fill_indices;
   static thread_local std::vector<unsigned> shadow_outline_indices;
@@ -531,8 +541,9 @@ void GlRenderer::render_shapes(coordinate_system ctype, std::vector<shape>& shap
   static thread_local std::vector<unsigned> trail_indices;
   static thread_local std::vector<unsigned> fill_indices;
   static thread_local std::vector<unsigned> outline_indices;
-  float_data.clear();
-  int_data.clear();
+
+  vertex_float_data.clear();
+  vertex_int_data.clear();
   shadow_trail_indices.clear();
   shadow_fill_indices.clear();
   shadow_outline_indices.clear();
@@ -540,40 +551,39 @@ void GlRenderer::render_shapes(coordinate_system ctype, std::vector<shape>& shap
   trail_indices.clear();
   fill_indices.clear();
   outline_indices.clear();
+  buffer_data.clear();
 
-  auto add_vertex_data = [&](const vertex_data& d) {
-    int_data.emplace_back(static_cast<std::uint8_t>(d.style));
-    int_data.emplace_back(static_cast<std::uint8_t>(d.params.x));
-    int_data.emplace_back(static_cast<std::uint8_t>(d.params.y));
-    float_data.emplace_back(d.rotation);
-    float_data.emplace_back(d.line_width);
-    float_data.emplace_back(d.position.x);
-    float_data.emplace_back(d.position.y);
-    float_data.emplace_back(d.z_index);
-    float_data.emplace_back(d.dimensions.x);
-    float_data.emplace_back(d.dimensions.y);
-    float_data.emplace_back(d.colour.r);
-    float_data.emplace_back(d.colour.g);
-    float_data.emplace_back(d.colour.b);
-    float_data.emplace_back(d.colour.a);
+  auto add_shape_data = [&](const shape_data& d) {
+    vertex_int_data.emplace_back(static_cast<std::uint32_t>(buffer_data.size()));
+    vertex_int_data.emplace_back(d.style);
+    vertex_int_data.emplace_back(d.params.x);
+    vertex_int_data.emplace_back(d.params.y);
+    vertex_float_data.emplace_back(d.rotation);
+    vertex_float_data.emplace_back(d.line_width);
+    vertex_float_data.emplace_back(d.position.x);
+    vertex_float_data.emplace_back(d.position.y);
+    vertex_float_data.emplace_back(d.z_index);
+    vertex_float_data.emplace_back(d.dimensions.x);
+    vertex_float_data.emplace_back(d.dimensions.y);
+    buffer_data.emplace_back(shape_buffer_data{d.colour});
   };
 
   static constexpr glm::vec2 kShadowOffset{4, 6};
   std::uint32_t vertex_index = 0;
-  auto add_outline_data = [&](const vertex_data& d,
+  auto add_outline_data = [&](const shape_data& d,
                               const std::optional<render::motion_trail>& trail) {
-    add_vertex_data(d);
+    add_shape_data(d);
     if (d.z_index < colour::kZTrails) {
       bottom_outline_indices.emplace_back(vertex_index++);
     } else {
       outline_indices.emplace_back(vertex_index++);
     }
-    if (trail && trail_alpha > 0.f) {
+    if (trail) {
       auto dt = d;
       dt.position = trail->prev_origin;
       dt.rotation = trail->prev_rotation;
       dt.colour = trail->prev_colour;
-      add_vertex_data(dt);
+      add_shape_data(dt);
       trail_indices.emplace_back(vertex_index - 1);
       trail_indices.emplace_back(vertex_index++);
     }
@@ -582,28 +592,28 @@ void GlRenderer::render_shapes(coordinate_system ctype, std::vector<shape>& shap
       ds.position += kShadowOffset;
       ds.colour = glm::vec4{0.f, 0.f, 0.f, ds.colour.a * colour::kShadowAlpha0};
       ds.line_width += 1.f;
-      add_vertex_data(ds);
+      add_shape_data(ds);
       shadow_outline_indices.emplace_back(vertex_index++);
-      if (trail && trail_alpha > 0.f) {
+      if (trail) {
         auto dt = ds;
         dt.position = trail->prev_origin + kShadowOffset;
         dt.rotation = trail->prev_rotation;
         dt.colour = {0.f, 0.f, 0.f, trail->prev_colour.a * colour::kShadowAlpha0};
-        add_vertex_data(dt);
+        add_shape_data(dt);
         shadow_trail_indices.emplace_back(vertex_index - 1);
         shadow_trail_indices.emplace_back(vertex_index++);
       }
     }
   };
 
-  auto add_fill_data = [&](const vertex_data& d) {
-    add_vertex_data(d);
+  auto add_fill_data = [&](const shape_data& d) {
+    add_shape_data(d);
     fill_indices.emplace_back(vertex_index++);
     if (style == shape_style::kStandard) {
       auto ds = d;
       ds.position += kShadowOffset;
       ds.colour = {0.f, 0.f, 0.f, ds.colour.a / 2.f};
-      add_vertex_data(ds);
+      add_shape_data(ds);
       shadow_fill_indices.emplace_back(vertex_index++);
     }
   };
@@ -694,6 +704,8 @@ void GlRenderer::render_shapes(coordinate_system ctype, std::vector<shape>& shap
     }
   }
 
+  // TODO: should all the buffers be saved between frames?
+  auto shape_buffer = make_stream_draw_buffer(std::span<const shape_buffer_data>{buffer_data});
   auto shadow_trail_index_buffer =
       make_stream_draw_buffer(std::span<const unsigned>{shadow_trail_indices});
   auto shadow_fill_index_buffer =
@@ -705,20 +717,21 @@ void GlRenderer::render_shapes(coordinate_system ctype, std::vector<shape>& shap
   auto trail_index_buffer = make_stream_draw_buffer(std::span<const unsigned>{trail_indices});
   auto fill_index_buffer = make_stream_draw_buffer(std::span<const unsigned>{fill_indices});
   auto outline_index_buffer = make_stream_draw_buffer(std::span<const unsigned>{outline_indices});
+
   vertex_attribute_container attributes;
-  attributes.add_buffer(std::span<const std::uint8_t>(int_data), 3);
-  attributes.add_buffer(std::span<const float>{float_data}, 11);
+  attributes.add_buffer(std::span<const std::uint32_t>(vertex_int_data), 4);
+  attributes.add_buffer(std::span<const float>{vertex_float_data}, 7);
 
   auto vertex_array = gl::make_vertex_array();
   gl::bind_vertex_array(vertex_array);
 
-  attributes.add_attribute<std::uint8_t>(/* style */ 0, 1);
-  attributes.add_attribute<std::uint8_t>(/* params */ 1, 2);
-  attributes.add_attribute<float>(/* rotation */ 2, 1);
-  attributes.add_attribute<float>(/* line_width */ 3, 1);
-  attributes.add_attribute<float>(/* position */ 4, 3);
-  attributes.add_attribute<float>(/* dimensions */ 5, 2);
-  attributes.add_attribute<float>(/* colour */ 6, 4);
+  attributes.add_attribute<std::uint32_t>(/* buffer_index */ 0, 1);
+  attributes.add_attribute<std::uint32_t>(/* style */ 1, 1);
+  attributes.add_attribute<std::uint32_t>(/* params */ 2, 2);
+  attributes.add_attribute<float>(/* rotation */ 3, 1);
+  attributes.add_attribute<float>(/* line_width */ 4, 1);
+  attributes.add_attribute<float>(/* position */ 5, 3);
+  attributes.add_attribute<float>(/* dimensions */ 6, 2);
 
   auto clip_rect = target().clip_rect();
   glm::vec2 offset;
@@ -738,6 +751,7 @@ void GlRenderer::render_shapes(coordinate_system ctype, std::vector<shape>& shap
   gl::enable_depth_test(false);
   gl::enable_blend(true);
   gl::blend_function(gl::blend_factor::kSrcAlpha, gl::blend_factor::kOneMinusSrcAlpha);
+  gl::bind_shader_storage_buffer(shape_buffer, 0);
 
   auto render_outlines = [&](const gl::buffer& index_buffer, std::size_t elements) {
     const auto& outline_program = impl_->shader(shader::kShapeOutline);
@@ -756,11 +770,10 @@ void GlRenderer::render_shapes(coordinate_system ctype, std::vector<shape>& shap
   auto render_trails = [&](const gl::buffer& index_buffer, std::size_t elements) {
     const auto& motion_program = impl_->shader(shader::kShapeMotion);
     gl::use_program(motion_program);
-    auto result =
-        gl::set_uniforms(motion_program, "aspect_scale", target().aspect_scale(),
-                         "render_dimensions", target().render_dimensions, "clip_min",
-                         clip_rect.min(), "clip_max", clip_rect.max(), "coordinate_offset", offset,
-                         "trail_alpha", trail_alpha, "colour_cycle", colour_cycle_ / 256.f);
+    auto result = gl::set_uniforms(
+        motion_program, "aspect_scale", target().aspect_scale(), "render_dimensions",
+        target().render_dimensions, "clip_min", clip_rect.min(), "clip_max", clip_rect.max(),
+        "coordinate_offset", offset, "colour_cycle", colour_cycle_ / 256.f);
     if (!result) {
       impl_->status = unexpected("motion shader error: " + result.error());
     } else {
@@ -828,22 +841,17 @@ void GlRenderer::render_present() const {
         gl::set_uniform_texture_2d(program, "framebuffer_texture", /* texture unit */ 0,
                                    impl_->render_framebuffer->colour_buffer, impl_->pixel_sampler);
   } else {
-    // TODO: why does this need to be texture unit 1?
-    result = gl::set_uniform_texture_2d_multisample(
-        program, "framebuffer_texture_multisample", /* texture unit */ 1,
-        impl_->render_framebuffer->colour_buffer, impl_->pixel_sampler);
+    result = gl::set_uniform_texture_2d_multisample(program, "framebuffer_texture_multisample",
+                                                    /* texture unit */ 0,
+                                                    impl_->render_framebuffer->colour_buffer);
   }
   if (!result) {
     impl_->status = unexpected("postprocess shader error: " + result.error());
     return;
   }
 
-  static const std::vector<float> vertex_data = {
-      -1.f, -1.f, -1.f, 1.f, 1.f, -1.f, -1.f, 1.f, 1.f, -1.f, 1.f, 1.f,
-  };
-
   vertex_attribute_container attributes;
-  attributes.add_buffer(std::span<const float>(vertex_data), 2);
+  attributes.add_buffer(std::span<const float>(kQuadVertexData), 2);
 
   auto vertex_array = gl::make_vertex_array();
   gl::bind_vertex_array(vertex_array);

@@ -72,6 +72,10 @@ inline void bind_vertex_array(const vertex_array& handle) {
   glBindVertexArray(*handle);
 }
 
+inline void bind_shader_storage_buffer(const buffer& handle, std::uint32_t binding) {
+  glBindBufferBase(GL_SHADER_STORAGE_BUFFER, binding, *handle);
+}
+
 inline vertex_attribute vertex_float_attribute_buffer(const buffer& handle, std::uint32_t index,
                                                       std::uint8_t count_per_vertex, type data_type,
                                                       bool normalize, std::size_t stride,

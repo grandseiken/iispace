@@ -163,7 +163,7 @@ void ReplayViewer::render_content(render::GlRenderer& r) const {
   r.set_colour_cycle(render.colour_cycle);
   impl_->render_state.render(r, impl_->istate().tick_count(), render.shapes);
   impl_->hud->set_data(render);
-  r.render_shapes(render::coordinate_system::kGlobal, render.shapes, style, /* trail alpha */ 1.f);
+  r.render_shapes(render::coordinate_system::kGlobal, render.shapes, style);
 }
 
 }  // namespace ii

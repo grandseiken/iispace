@@ -69,7 +69,7 @@ struct line_data {
   vec4 b;
 };
 
-line_data convert_line(vec2 position, shape_data d) {
+line_data convert_line(vec2 position, shape_vertex_data d) {
   uint sides = d.params.x;
   float radius = d.dimensions.x;
   float angle = kPi * (.25 - 1. / (2. * float(sides)));
@@ -102,7 +102,7 @@ struct box_data {
   vec4 d_inner;
 };
 
-box_data convert_box(vec2 position, shape_data d) {
+box_data convert_box(vec2 position, shape_vertex_data d) {
   vec2 d0 = d.dimensions;
   vec2 d1 = d0 - vec2(d.line_width);
 
@@ -129,7 +129,7 @@ struct polygon_data {
   float rd;
 };
 
-polygon_data convert_polygon(vec2 position, shape_data d) {
+polygon_data convert_polygon(vec2 position, shape_vertex_data d) {
   polygon_data r;
   r.position = position;
   r.sides = d.params.x;
@@ -186,7 +186,7 @@ struct polystar_inner {
   vec4 v1;
 };
 
-polystar_data convert_polystar(vec2 position, shape_data d) {
+polystar_data convert_polystar(vec2 position, shape_vertex_data d) {
   polystar_data r;
   r.position = position;
   r.sides = d.params.x;

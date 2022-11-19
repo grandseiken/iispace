@@ -2,14 +2,14 @@
 #include "game/render/shaders/shape/geometry.glsl"
 
 layout(points) in;
-layout(triangle_strip, max_vertices = 85) out;
+layout(triangle_strip, max_vertices = 113) out;
 
 in v_out_t {
-  shape_data data;
+  shape_vertex_data data;
 }
 v_in[];
 
-out vec4 g_colour;
+flat out uint g_buffer_index;
 
 void emit2(vec4 v0, vec4 v1) {
   set_vertex_data(v0);
@@ -27,7 +27,7 @@ void emit3(vec4 v0, vec4 v1, vec4 v2) {
   EmitVertex();
 }
 
-void emit_polygon(vec2 position, shape_data data) {
+void emit_polygon(vec2 position, shape_vertex_data data) {
   polygon_data d = convert_polygon(position, data);
   for (uint i = 0; i <= d.segments; ++i) {
     emit2(polygon_inner_v(d, i), polygon_outer_v(d, i));
@@ -41,7 +41,7 @@ void emit_polygon(vec2 position, shape_data data) {
   }
 }
 
-void emit_odd_polystar(vec2 position, shape_data data) {
+void emit_odd_polystar(vec2 position, shape_vertex_data data) {
   polystar_data d = convert_polystar(position, data);
   for (uint i = 0; d.inner_radius == 0. && i < d.segments; ++i) {
     polystar_outer a = polystar_outer_v(d, i);
@@ -61,7 +61,7 @@ void emit_odd_polystar(vec2 position, shape_data data) {
   }
 }
 
-void emit_even_polystar(vec2 position, shape_data data) {
+void emit_even_polystar(vec2 position, shape_vertex_data data) {
   polystar_data d = convert_polystar(position, data);
   for (uint i = 0; i < d.sides / 2; ++i) {
     polystar_outer a = polystar_outer_v(d, i);
@@ -73,7 +73,7 @@ void emit_even_polystar(vec2 position, shape_data data) {
   }
 }
 
-void emit_polygram(vec2 position, shape_data data) {
+void emit_polygram(vec2 position, shape_vertex_data data) {
   uint start = data.params.y;
   // TODO: reusing polystar data doesn't guarantee exact line width, probably fine for now.
   polystar_data d = convert_polystar(position, data);
@@ -87,7 +87,7 @@ void emit_polygram(vec2 position, shape_data data) {
   }
 }
 
-void emit_box(vec2 position, shape_data data) {
+void emit_box(vec2 position, shape_vertex_data data) {
   box_data d = convert_box(position, data);
   emit2(d.a_outer, d.a_inner);
   emit2(d.b_outer, d.b_inner);
@@ -97,7 +97,7 @@ void emit_box(vec2 position, shape_data data) {
   EndPrimitive();
 }
 
-void emit_line(vec2 position, shape_data data) {
+void emit_line(vec2 position, shape_vertex_data data) {
   line_data d = convert_line(position, data);
   emit3(d.a, d.a0, d.a1);
   emit3(d.b0, d.b1, d.b);
@@ -107,7 +107,7 @@ void emit_line(vec2 position, shape_data data) {
 void main() {
   vec2 position = gl_in[0].gl_Position.xy;
 
-  g_colour = v_in[0].data.colour;
+  g_buffer_index = v_in[0].data.buffer_index;
   switch (v_in[0].data.style) {
   case kStyleNgonPolygon:
     emit_polygon(position, v_in[0].data);

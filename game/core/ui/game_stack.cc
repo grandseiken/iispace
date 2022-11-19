@@ -147,7 +147,7 @@ void GameStack::render(render::GlRenderer& renderer) const {
   }
   if (cursor_ && cursor_frame_ &&
       (layers_.empty() || !(top()->layer_flags() & layer_flag::kCaptureCursor))) {
-    // TODO: probably replace this once we can render shape fills with cool effects.
+    // TODO: probably replace this once we can render shape fills with cool effects!
     auto hue = cursor_hue_.value_or(1.f / 3);
     renderer.target().render_dimensions = {640, 360};
     auto scale = static_cast<float>(cursor_frame_) / kCursorFrames;
@@ -165,10 +165,12 @@ void GameStack::render(render::GlRenderer& renderer) const {
     auto flash = (64.f - cursor_anim_frame_ % 64) / 64.f;
     std::vector cursor_shapes = {
         render::shape{
-            .origin = origin + glm::vec2{2.f, 2.f},
-            .colour = {0.f, 0.f, 0.f, .5f},
+            .origin = origin + glm::vec2{2.f, 3.f},
+            .colour = {0.f, 0.f, 0.f, .25f},
             .z_index = 127.5f,
-            .trail = trail,
+            .trail = trail
+                ? std::make_optional(render::motion_trail{trail->prev_origin + glm::vec2{2.f, 3.f}})
+                : std::nullopt,
             .data = render::ngon{.radius = radius, .sides = 3, .line_width = radius / 2},
         },
         render::shape{
@@ -194,7 +196,7 @@ void GameStack::render(render::GlRenderer& renderer) const {
         },
     };
     renderer.render_shapes(render::coordinate_system::kGlobal, cursor_shapes,
-                           render::shape_style::kNone, .25f);
+                           render::shape_style::kNone);
   }
 }
 
