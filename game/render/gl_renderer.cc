@@ -31,6 +31,7 @@ enum class shader {
   kShapeOutline,
   kShapeMotion,
   kShapeFill,
+  kPostprocess,
 };
 
 enum shape_shader_style : std::uint32_t {
@@ -52,27 +53,36 @@ struct framebuffer_data {
   glm::uvec2 dimensions;
   gl::framebuffer fbo;
   gl::texture colour_buffer;
-  gl::renderbuffer depth_stencil_buffer;
+  std::optional<gl::renderbuffer> depth_stencil_buffer;
 };
 
 result<framebuffer_data>
-make_render_framebuffer(const glm::uvec2& dimensions, std::uint32_t samples) {
+make_render_framebuffer(const glm::uvec2& dimensions, bool depth_stencil, std::uint32_t samples) {
   auto fbo = gl::make_framebuffer();
   auto colour_buffer = gl::make_texture();
-  auto depth_stencil_buffer = gl::make_renderbuffer();
+  std::optional<gl::renderbuffer> depth_stencil_buffer;
+  if (depth_stencil) {
+    depth_stencil_buffer = gl::make_renderbuffer();
+  }
+
   if (samples <= 1) {
-    gl::texture_storage_2d(colour_buffer, 1, dimensions, gl::internal_format::kSrgb8);
-    gl::renderbuffer_storage(depth_stencil_buffer, gl::internal_format::kDepth24Stencil8,
-                             dimensions);
+    gl::texture_storage_2d(colour_buffer, 1, dimensions, gl::internal_format::kRgb32F);
     gl::framebuffer_colour_texture_2d(fbo, colour_buffer);
+    if (depth_stencil) {
+      gl::renderbuffer_storage(*depth_stencil_buffer, gl::internal_format::kDepth24Stencil8,
+                               dimensions);
+      gl::framebuffer_renderbuffer_depth_stencil(fbo, *depth_stencil_buffer);
+    }
   } else {
     gl::texture_storage_2d_multisample(colour_buffer, samples, dimensions,
-                                       gl::internal_format::kSrgb8);
-    gl::renderbuffer_storage_multisample(depth_stencil_buffer, samples,
-                                         gl::internal_format::kDepth24Stencil8, dimensions);
+                                       gl::internal_format::kRgb32F);
     gl::framebuffer_colour_texture_2d_multisample(fbo, colour_buffer);
+    if (depth_stencil) {
+      gl::renderbuffer_storage_multisample(*depth_stencil_buffer, samples,
+                                           gl::internal_format::kDepth24Stencil8, dimensions);
+      gl::framebuffer_renderbuffer_depth_stencil(fbo, *depth_stencil_buffer);
+    }
   }
-  gl::framebuffer_renderbuffer_depth_stencil(fbo, depth_stencil_buffer);
   if (!gl::is_framebuffer_complete(fbo)) {
     return unexpected("framebuffer is not complete");
   }
@@ -131,6 +141,7 @@ struct GlRenderer::impl_t {
   std::uint32_t iota_index_size = 0;
 
   std::optional<framebuffer_data> render_framebuffer;
+  std::optional<framebuffer_data> postprocess_framebuffer;
 
   impl_t()
   : pixel_sampler{gl::make_sampler(gl::filter::kNearest, gl::filter::kNearest,
@@ -158,12 +169,17 @@ struct GlRenderer::impl_t {
 
   gl::bound_framebuffer bind_render_framebuffer(const glm::uvec2& dimensions) {
     if (!render_framebuffer || render_framebuffer->dimensions != dimensions) {
-      auto result = make_render_framebuffer(dimensions, /* samples */ 16);
+      auto result = make_render_framebuffer(dimensions, /* depth/stencil */ true, /* samples */ 16);
       if (!result) {
         status = unexpected("OpenGL error: " + result.error());
         return gl::bound_framebuffer{GL_FRAMEBUFFER};
       }
       render_framebuffer = std::move(*result);
+      result = make_render_framebuffer(dimensions, /* depth/stencil */ false, /* samples */ 1);
+      if (!result) {
+        status = unexpected("OpenGL error: " + result.error());
+      }
+      postprocess_framebuffer = std::move(*result);
     }
     return gl::bind_draw_framebuffer(render_framebuffer->fbo);
   }
@@ -226,6 +242,12 @@ result<std::unique_ptr<GlRenderer>> GlRenderer::create(std::uint32_t shader_vers
                   {{"game/render/shaders/shape/colour.f.glsl", gl::shader_type::kFragment},
                    {"game/render/shaders/shape/fill.g.glsl", gl::shader_type::kGeometry},
                    {"game/render/shaders/shape/input.v.glsl", gl::shader_type::kVertex}});
+  if (!r) {
+    return unexpected(r.error());
+  }
+  r = load_shader(shader::kPostprocess,
+                  {{"game/render/shaders/post/postprocess.f.glsl", gl::shader_type::kFragment},
+                   {"game/render/shaders/post/postprocess.v.glsl", gl::shader_type::kVertex}});
   if (!r) {
     return unexpected(r.error());
   }
@@ -331,7 +353,6 @@ void GlRenderer::render_text(font_id font, const glm::uvec2& font_dimensions,
   auto fbo_bind = impl_->bind_render_framebuffer(target_.screen_dimensions);
   const auto& program = impl_->shader(shader::kText);
   gl::use_program(program);
-  gl::enable_srgb(true);
   if (clip) {
     gl::enable_clip_planes(4u);
   } else {
@@ -399,7 +420,6 @@ void GlRenderer::render_panel(const panel_data& p) const {
   auto fbo_bind = impl_->bind_render_framebuffer(target_.screen_dimensions);
   const auto& program = impl_->shader(shader::kPanel);
   gl::use_program(program);
-  gl::enable_srgb(true);
   gl::enable_clip_planes(4u);
   gl::enable_blend(true);
   gl::enable_depth_test(false);
@@ -441,14 +461,15 @@ void GlRenderer::render_panel(const panel_data& p) const {
 }
 
 void GlRenderer::render_background(std::uint64_t tick_count, const glm::vec4& colour) const {
+  // TODO: move this stuff out into overmind.
   auto t = static_cast<float>(tick_count);
   glm::vec4 offset{256.f * std::cos(t / 512.f), -t / 4.f, t / 8.f, t / 256.f};
   glm::vec2 parameters{(1.f - std::cos(t / 1024.f)) / 2.f, 0.f};
 
+  // TODO: background shader is way more complicated than it needs to be to draw a quad.
   auto fbo_bind = impl_->bind_render_framebuffer(target_.screen_dimensions);
   const auto& program = impl_->shader(shader::kBackground);
   gl::use_program(program);
-  gl::enable_srgb(true);
   gl::enable_clip_planes(4u);
   gl::enable_blend(false);
   gl::enable_depth_test(false);
@@ -718,7 +739,6 @@ void GlRenderer::render_shapes(coordinate_system ctype, std::vector<shape>& shap
   }
 
   auto fbo_bind = impl_->bind_render_framebuffer(target_.screen_dimensions);
-  gl::enable_srgb(true);
   gl::enable_clip_planes(4u);
   gl::enable_depth_test(false);
   gl::enable_blend(true);
@@ -791,11 +811,43 @@ void GlRenderer::render_shapes(coordinate_system ctype, std::vector<shape>& shap
 }
 
 void GlRenderer::render_present() const {
-  if (!impl_->render_framebuffer) {
+  if (!impl_->render_framebuffer || !impl_->postprocess_framebuffer) {
     return;
   }
-  auto bind_draw = gl::bind_read_framebuffer(impl_->render_framebuffer->fbo);
-  gl::blit_framebuffer_colour(target_.screen_dimensions);
+  {
+    auto bind_read = gl::bind_read_framebuffer(impl_->render_framebuffer->fbo);
+    auto bind_draw = gl::bind_draw_framebuffer(impl_->postprocess_framebuffer->fbo);
+    gl::blit_framebuffer_colour(target_.screen_dimensions);
+  }
+
+  const auto& program = impl_->shader(shader::kPostprocess);
+  gl::use_program(program);
+  gl::enable_clip_planes(0u);
+  gl::enable_blend(false);
+  gl::enable_depth_test(false);
+  gl::enable_srgb(false);
+
+  auto result = gl::set_uniform_texture_2d(program, "framebuffer_texture", /* texture unit */ 0,
+                                           impl_->postprocess_framebuffer->colour_buffer,
+                                           impl_->pixel_sampler);
+  if (!result) {
+    impl_->status = unexpected("postprocess shader error: " + result.error());
+    return;
+  }
+
+  static const std::vector<float> vertex_data = {
+      -1.f, -1.f, -1.f, 1.f, 1.f, -1.f, -1.f, 1.f, 1.f, -1.f, 1.f, 1.f,
+  };
+
+  vertex_attribute_container attributes;
+  attributes.add_buffer(std::span<const float>(vertex_data), 2);
+
+  auto vertex_array = gl::make_vertex_array();
+  gl::bind_vertex_array(vertex_array);
+
+  attributes.add_attribute<float>(/* position */ 0, 2);
+  gl::draw_elements(gl::draw_mode::kTriangles, impl_->index_buffer(6u),
+                    gl::type_of<std::uint32_t>(), 6u, 0);
 }
 
 }  // namespace ii::render

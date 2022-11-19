@@ -1,5 +1,18 @@
-const float kGamma = 2.2;
-const float kInverseGamma = 1. / kGamma;
+float srgb2rgb_component(float v) {
+  return v >= .04045 ? pow((v + .055) / 1.055, 2.4) : v / 12.92;
+}
+
+float rgb2srgb_component(float v) {
+  return v >= .0031308 ? 1.055 * pow(v, 1. / 2.4) - .055 : v * 12.92;
+}
+
+vec3 srgb2rgb(vec3 srgb) {
+  return vec3(srgb2rgb_component(srgb.r), srgb2rgb_component(srgb.g), srgb2rgb_component(srgb.b));
+}
+
+vec3 rgb2srgb(vec3 rgb) {
+  return vec3(rgb2srgb_component(rgb.r), rgb2srgb_component(rgb.g), rgb2srgb_component(rgb.b));
+}
 
 vec3 hsl2srgb(vec3 hsl) {
   float h = fract(hsl.x);
@@ -32,13 +45,8 @@ vec3 hsl2srgb(vec3 hsl) {
   }
 }
 
-float srgb2rgb_component(float v) {
-  return v >= .04045 ? pow((v + .055) / 1.055, 2.4) : v / 12.92;
-}
-
 vec3 hsl2rgb(vec3 hsl) {
-  vec3 srgb = hsl2srgb(hsl);
-  return vec3(srgb2rgb_component(srgb.r), srgb2rgb_component(srgb.g), srgb2rgb_component(srgb.b));
+  return srgb2rgb(hsl2srgb(hsl));
 }
 
 vec4 hsl2rgba(vec4 hsla) {

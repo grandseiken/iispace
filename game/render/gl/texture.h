@@ -35,13 +35,13 @@ enum class internal_format {
   kSrgb8,
   kSrgb8Alpha8,
   kR16F,
-  kRG16F,
-  kRGB16F,
-  kRGBA16F,
+  kRg16F,
+  kRgb16F,
+  kRgba16F,
   kR32F,
-  kRG32F,
-  kRGB32F,
-  kRGBA32F,
+  kRg32F,
+  kRgb32F,
+  kRgba32F,
   kR11FG11FB10F,
   kDepthComponent16,
   kDepthComponent24,
@@ -142,19 +142,19 @@ inline GLint internal_format_to_gl(internal_format f) {
     return GL_SRGB8_ALPHA8;
   case internal_format::kR16F:
     return GL_R16F;
-  case internal_format::kRG16F:
+  case internal_format::kRg16F:
     return GL_RG16F;
-  case internal_format::kRGB16F:
+  case internal_format::kRgb16F:
     return GL_RGB16F;
-  case internal_format::kRGBA16F:
+  case internal_format::kRgba16F:
     return GL_RGBA16F;
   case internal_format::kR32F:
     return GL_R32F;
-  case internal_format::kRG32F:
+  case internal_format::kRg32F:
     return GL_RG32F;
-  case internal_format::kRGB32F:
+  case internal_format::kRgb32F:
     return GL_RGB32F;
-  case internal_format::kRGBA32F:
+  case internal_format::kRgba32F:
     return GL_RGBA32F;
   case internal_format::kR11FG11FB10F:
     return GL_R11F_G11F_B10F;
