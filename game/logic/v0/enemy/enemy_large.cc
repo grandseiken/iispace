@@ -130,7 +130,7 @@ struct Shielder : ecs::component {
       geom::rotate<fixed_c::pi / 4, geom::line<vec2{-32, 0}, vec2{-18, 0}, geom::sline(c1, z)>>,
       geom::ngon<geom::nd2(27 + 1_fx / 2, 22, 16, 10), geom::nline(), geom::sfill(cf, z)>,
       geom::ngon<geom::nd2(27 + 1_fx / 2, 22, 16, 10), geom::nline(),
-                 geom::sfill(colour::alpha(c1, colour::kFillAlpha1), z)>,
+                 geom::sfill(colour::alpha(c1, colour::kFillAlpha0), z)>,
       geom::ngon<geom::nd(29, 16, 10), outline>,
       geom::ngon<geom::nd(30, 16, 10), geom::nline(c1, z, 1.25f)>,
       geom::ngon<geom::nd(31, 16, 10), outline>,
@@ -326,7 +326,7 @@ struct ShieldHub : ecs::component {
   static constexpr auto c = colour::kSolarizedDarkViolet;
   static constexpr auto cf = colour::alpha(c, colour::kFillAlpha0);
   static constexpr auto outline = geom::nline(colour::kOutline, colour::kZOutline, 2.f);
-  static constexpr auto sl = geom::nline(colour::alpha(colour::kWhite0, colour::kFillAlpha1),
+  static constexpr auto sl = geom::nline(colour::alpha(colour::kWhite0, colour::kFillAlpha0),
                                          colour::kZBackgroundEffect, 1.f);
   static constexpr auto sf = geom::sfill(colour::alpha(colour::kWhite0, colour::kBackgroundAlpha0),
                                          colour::kZBackgroundEffect);

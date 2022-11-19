@@ -214,7 +214,7 @@ void RenderState::render(render::GlRenderer& r, std::uint64_t tick_count,
     break;
   case background_fx_type::kBiome0: {
     auto c = colour::kSolarizedDarkBase03;
-    c.z /= 1.5f;
+    c.z /= 1.25f;
     r.render_background(tick_count, c);
   } break;
   }

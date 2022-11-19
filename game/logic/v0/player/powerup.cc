@@ -42,8 +42,6 @@ struct PlayerBubble : ecs::component {
   static constexpr fixed kBoundingWidth = 16;
   static constexpr std::uint32_t kRotateTime = 120;
 
-  // TODO: due to linear blending, outline appears to fade out faster than the white
-  // inner line. Do we really want to just do all blending in OKLab space?
   static constexpr auto z = colour::kZPlayerBubble;
   using shape = geom::translate_p<
       0,

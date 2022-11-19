@@ -112,7 +112,7 @@ inline constexpr glm::vec4 hue360(std::uint32_t h, float l = .5f, float s = 1.f)
 }
 
 constexpr auto kZero = glm::vec4{0.f};
-constexpr auto kBlack1 = glm::vec4{0.f, 0.f, 1.f / 32, 1.f};
+constexpr auto kBlack1 = glm::vec4{0.f, 0.f, 1.f / 16, 1.f};
 constexpr auto kBlack0 = glm::vec4{0.f, 0.f, 0.f, 1.f};
 constexpr auto kWhite0 = glm::vec4{0.f, 0.f, 1.f, 1.f};
 constexpr auto kWhite1 = glm::vec4{0.f, 0.f, .75f, 1.f};
@@ -135,9 +135,9 @@ constexpr auto kSolarizedDarkBlue = srgb2hsl(38, 139, 210);
 constexpr auto kSolarizedDarkCyan = srgb2hsl(42, 161, 152);
 constexpr auto kSolarizedDarkGreen = srgb2hsl(133, 153, 0);
 
-constexpr auto kBackgroundAlpha0 = 1.f / (256 + 128);
-constexpr auto kFillAlpha0 = 1.f / 16;
-constexpr auto kFillAlpha1 = 1.f / 32;
+constexpr auto kBackgroundAlpha0 = 1.f / 32;
+constexpr auto kFillAlpha0 = 1.f / 3;
+constexpr auto kShadowAlpha0 = 1.f / 6;
 constexpr auto kOutline = kBlack1;
 constexpr auto kNewPurple = hue360(270, .6f, .7f);
 constexpr auto kNewGreen0 = hue360(120, .5f, .4f);

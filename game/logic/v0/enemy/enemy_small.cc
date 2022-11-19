@@ -363,7 +363,7 @@ struct FollowSponge : ecs::component {
 
   void on_hit(const Transform& transform, const Health& health, SimInterface& sim, EmitHandle& eh,
               damage_type type, const vec2& source) {
-    if (type == damage_type::kBomb) {
+    if (type == damage_type::kBomb || type == damage_type::kPredicted) {
       return;
     }
     auto target_spawns = 1 + (health.max_hp - health.hp) / 8;

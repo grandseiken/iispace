@@ -24,14 +24,14 @@ float noise0(vec3 xy, float a, float t) {
 }
 
 float tonemap0(float v) {
-  float t0 = .75 + .25 * smoothstep(.025 - fwidth(v), .025, v);
-  float t1 = scale01(.25, smoothstep(.15 - fwidth(v), .15, v));
+  float t0 = (5. + smoothstep(.025 - fwidth(v), .025, v)) / 6.;
+  float t1 = scale01(1./ 8., smoothstep(.15 - fwidth(v), .15, v));
   return t0 * t1;
 }
 
 float scanlines() {
   float size = max(1., round(screen_dimensions.y / 540.));
-  return scale01(.5, floor(mod(gl_FragCoord.y, 2. * size) / size));
+  return scale01(3. / 16., floor(mod(gl_FragCoord.y, 2. * size) / size));
 }
 
 void main() {
@@ -39,5 +39,5 @@ void main() {
   vec3 xy = vec3(vv.xy, 0.) + offset.xyz;
 
   float v = noise0(xy, offset.a, parameters.x);
-  out_colour = vec4(tonemap0(v) * scanlines() * g_colour.rgb, 1.);
+  out_colour = vec4(min(1., tonemap0(v) * scanlines() * g_colour.x), g_colour.yz, 1.);
 }

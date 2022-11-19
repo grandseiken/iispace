@@ -1,3 +1,6 @@
+#include "game/render/shaders/lib/hsl.glsl"
+#include "game/render/shaders/lib/rgb.glsl"
+
 vec3 rgb2oklab(vec3 rgb) {
   vec3 lms = vec3(.4122214708 * rgb.r + .5363325363 * rgb.g + .0514459929 * rgb.b,
                   .2119034982 * rgb.r + .6806995451 * rgb.g + .1073969566 * rgb.b,
@@ -16,4 +19,16 @@ vec3 oklab2rgb(vec3 lab) {
   return vec3(4.0767416621 * lms.x - 3.3077115913 * lms.y + .2309699292 * lms.z,
               -1.2684380046 * lms.x + 2.6097574011 * lms.y - .3413193965 * lms.z,
               -.0041960863 * lms.x - .7034186147 * lms.y + 1.7076147010 * lms.z);
+}
+
+vec4 hsla2oklab(vec4 hsl) {
+  return vec4(rgb2oklab(srgb2rgb(hsl2srgb(hsl.xyz))), hsl.a);
+}
+
+vec4 hsla2oklab_cycle(vec4 hsl, float cycle) {
+  return hsla2oklab(vec4(hsl.x + cycle, hsl.yz, hsl.a));
+}
+
+vec3 oklab2srgb(vec3 oklab) {
+  return rgb2srgb(oklab2rgb(oklab));
 }

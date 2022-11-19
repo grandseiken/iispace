@@ -1,4 +1,4 @@
-#include "game/render/shaders/lib/hsl.glsl"
+#include "game/render/shaders/lib/oklab.glsl"
 #include "game/render/shaders/ui/data.glsl"
 
 uniform vec4 text_colour;
@@ -16,6 +16,6 @@ v_out;
 void main() {
   v_out.data.texture_coords = in_texture_coords;
   v_out.data.dimensions = in_dimensions;
-  v_out.data.text_colour = hsl2rgba_cycle(text_colour, colour_cycle);
+  v_out.data.text_colour = hsla2oklab_cycle(text_colour, colour_cycle);
   gl_Position = vec4(in_position.xy, 0., 1.);
 }

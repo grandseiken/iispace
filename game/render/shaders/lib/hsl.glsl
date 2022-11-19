@@ -1,19 +1,3 @@
-float srgb2rgb_component(float v) {
-  return v >= .04045 ? pow((v + .055) / 1.055, 2.4) : v / 12.92;
-}
-
-float rgb2srgb_component(float v) {
-  return v >= .0031308 ? 1.055 * pow(v, 1. / 2.4) - .055 : v * 12.92;
-}
-
-vec3 srgb2rgb(vec3 srgb) {
-  return vec3(srgb2rgb_component(srgb.r), srgb2rgb_component(srgb.g), srgb2rgb_component(srgb.b));
-}
-
-vec3 rgb2srgb(vec3 rgb) {
-  return vec3(rgb2srgb_component(rgb.r), rgb2srgb_component(rgb.g), rgb2srgb_component(rgb.b));
-}
-
 vec3 hsl2srgb(vec3 hsl) {
   float h = fract(hsl.x);
   float s = hsl.y;
@@ -45,14 +29,31 @@ vec3 hsl2srgb(vec3 hsl) {
   }
 }
 
-vec3 hsl2rgb(vec3 hsl) {
-  return srgb2rgb(hsl2srgb(hsl));
-}
+vec3 srgb2hsl(vec3 srgb) {
+  float v = max(srgb.r, max(srgb.g, srgb.b));
+  float m = min(srgb.r, min(srgb.g, srgb.b));
+  float l = (m + v) / 2.;
+  if (l <= 0.) {
+    return vec3(0.);
+  }
+  float vm = v - m;
+  float s = vm;
+  if (s <= 0.) {
+    return vec3(0., 0., l);
+  }
+  s /= l <= .5 ? v + m : 2. - v - m;
 
-vec4 hsl2rgba(vec4 hsla) {
-  return vec4(hsl2rgb(hsla.xyz), hsla.a);
-}
-
-vec4 hsl2rgba_cycle(vec4 hsla, float cycle) {
-  return hsl2rgba(vec4(hsla.x + cycle, hsla.yz, hsla.a));
+  float r = (v - srgb.r) / vm;
+  float g = (v - srgb.g) / vm;
+  float b = (v - srgb.b) / vm;
+  float h = 0.;
+  if (srgb.r == v) {
+    h = srgb.g == m ? 5. + b : 1. - g;
+  } else if (srgb.g == v) {
+    h = srgb.b == m ? 1. + r : 3. - b;
+  } else {
+    h = srgb.r == m ? 3. + g : 5. - r;
+  }
+  h /= 6.;
+  return vec3(h, s, l);
 }

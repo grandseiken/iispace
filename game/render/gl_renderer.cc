@@ -585,7 +585,7 @@ void GlRenderer::render_shapes(coordinate_system ctype, std::vector<shape>& shap
     if (style == shape_style::kStandard) {
       auto ds = d;
       ds.position += kShadowOffset;
-      ds.colour = glm::vec4{0.f, 0.f, 0.f, ds.colour.a / 2.f};
+      ds.colour = glm::vec4{0.f, 0.f, 0.f, ds.colour.a * colour::kShadowAlpha0};
       ds.line_width += 1.f;
       add_vertex_data(ds);
       shadow_outline_indices.emplace_back(vertex_index++);
@@ -593,7 +593,7 @@ void GlRenderer::render_shapes(coordinate_system ctype, std::vector<shape>& shap
         auto dt = ds;
         dt.position = trail->prev_origin + kShadowOffset;
         dt.rotation = trail->prev_rotation;
-        dt.colour = {0.f, 0.f, 0.f, trail->prev_colour.a / 2.f};
+        dt.colour = {0.f, 0.f, 0.f, trail->prev_colour.a * colour::kShadowAlpha0};
         add_vertex_data(dt);
         shadow_trail_indices.emplace_back(vertex_index - 1);
         shadow_trail_indices.emplace_back(vertex_index++);

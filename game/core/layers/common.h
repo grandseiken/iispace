@@ -14,7 +14,7 @@ static constexpr glm::uvec2 kSpacing = {8, 8};
 static constexpr glm::uvec2 kPadding = {4, 4};
 static constexpr glm::ivec2 kDropShadow = {2, 2};
 
-static constexpr glm::vec4 kBackgroundColour = {1.f, 1.f, 1.f, 1.f / 32};
+static constexpr glm::vec4 kBackgroundColour = {1.f, 1.f, 1.f, 1.f / 4};
 static constexpr glm::vec4 kTextColour = {1.f, 0.f, .65f, 1.f};
 static constexpr glm::vec4 kErrorColour = {0.f, .65f, .5f, 1.f};
 static constexpr glm::vec4 kHighlightColour = {1.f, 1.f, 1.f, 1.f};

@@ -1,4 +1,4 @@
-#include "game/render/shaders/lib/hsl.glsl"
+#include "game/render/shaders/lib/oklab.glsl"
 #include "game/render/shaders/ui/data.glsl"
 
 uniform float colour_cycle;
@@ -18,6 +18,6 @@ void main() {
   v_out.data.screen_dimensions = in_screen_dimensions;
   v_out.data.render_dimensions = in_render_dimensions;
   v_out.data.style = in_style;
-  v_out.data.panel_colour = hsl2rgba_cycle(in_panel_colour, colour_cycle);
+  v_out.data.panel_colour = hsla2oklab_cycle(in_panel_colour, colour_cycle);
   gl_Position = vec4(in_position.xy, 0., 1.);
 }
