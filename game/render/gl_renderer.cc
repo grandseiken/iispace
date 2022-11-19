@@ -50,7 +50,8 @@ gl::buffer make_stream_draw_buffer(std::span<const T> data) {
 }
 
 struct framebuffer_data {
-  glm::uvec2 dimensions;
+  glm::uvec2 dimensions{0};
+  std::uint32_t samples = 1;
   gl::framebuffer fbo;
   gl::texture colour_buffer;
   std::optional<gl::renderbuffer> depth_stencil_buffer;
@@ -86,7 +87,8 @@ make_render_framebuffer(const glm::uvec2& dimensions, bool depth_stencil, std::u
   if (!gl::is_framebuffer_complete(fbo)) {
     return unexpected("framebuffer is not complete");
   }
-  return {{dimensions, std::move(fbo), std::move(colour_buffer), std::move(depth_stencil_buffer)}};
+  return {{dimensions, samples, std::move(fbo), std::move(colour_buffer),
+           std::move(depth_stencil_buffer)}};
 }
 
 struct vertex_attribute_container {
@@ -137,11 +139,9 @@ struct GlRenderer::impl_t {
   gl::sampler pixel_sampler;
   gl::sampler linear_sampler;
 
-  std::optional<gl::buffer> iota_index_buffer;
   std::uint32_t iota_index_size = 0;
-
+  std::optional<gl::buffer> iota_index_buffer;
   std::optional<framebuffer_data> render_framebuffer;
-  std::optional<framebuffer_data> postprocess_framebuffer;
 
   impl_t()
   : pixel_sampler{gl::make_sampler(gl::filter::kNearest, gl::filter::kNearest,
@@ -175,11 +175,6 @@ struct GlRenderer::impl_t {
         return gl::bound_framebuffer{GL_FRAMEBUFFER};
       }
       render_framebuffer = std::move(*result);
-      result = make_render_framebuffer(dimensions, /* depth/stencil */ false, /* samples */ 1);
-      if (!result) {
-        status = unexpected("OpenGL error: " + result.error());
-      }
-      postprocess_framebuffer = std::move(*result);
     }
     return gl::bind_draw_framebuffer(render_framebuffer->fbo);
   }
@@ -811,13 +806,8 @@ void GlRenderer::render_shapes(coordinate_system ctype, std::vector<shape>& shap
 }
 
 void GlRenderer::render_present() const {
-  if (!impl_->render_framebuffer || !impl_->postprocess_framebuffer) {
+  if (!impl_->render_framebuffer) {
     return;
-  }
-  {
-    auto bind_read = gl::bind_read_framebuffer(impl_->render_framebuffer->fbo);
-    auto bind_draw = gl::bind_draw_framebuffer(impl_->postprocess_framebuffer->fbo);
-    gl::blit_framebuffer_colour(target_.screen_dimensions);
   }
 
   const auto& program = impl_->shader(shader::kPostprocess);
@@ -827,9 +817,22 @@ void GlRenderer::render_present() const {
   gl::enable_depth_test(false);
   gl::enable_srgb(false);
 
-  auto result = gl::set_uniform_texture_2d(program, "framebuffer_texture", /* texture unit */ 0,
-                                           impl_->postprocess_framebuffer->colour_buffer,
-                                           impl_->pixel_sampler);
+  auto result = gl::set_uniforms(program, "screen_dimensions", target_.screen_dimensions,
+                                 "framebuffer_samples", impl_->render_framebuffer->samples);
+  if (!result) {
+    impl_->status = unexpected("postprocess shader error: " + result.error());
+    return;
+  }
+  if (impl_->render_framebuffer->samples <= 1) {
+    result =
+        gl::set_uniform_texture_2d(program, "framebuffer_texture", /* texture unit */ 0,
+                                   impl_->render_framebuffer->colour_buffer, impl_->pixel_sampler);
+  } else {
+    // TODO: why does this need to be texture unit 1?
+    result = gl::set_uniform_texture_2d_multisample(
+        program, "framebuffer_texture_multisample", /* texture unit */ 1,
+        impl_->render_framebuffer->colour_buffer, impl_->pixel_sampler);
+  }
   if (!result) {
     impl_->status = unexpected("postprocess shader error: " + result.error());
     return;

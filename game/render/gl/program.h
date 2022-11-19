@@ -196,6 +196,14 @@ inline void set_uniform_texture_2d(id location, std::uint32_t texture_unit, cons
   glBindSampler(texture_unit, *s_handle);
 }
 
+inline void set_uniform_texture_2d_multisample(id location, std::uint32_t texture_unit,
+                                               const texture& t_handle, const sampler& s_handle) {
+  glUniform1i(location, static_cast<GLint>(texture_unit));
+  glActiveTexture(GL_TEXTURE0 + texture_unit);
+  glBindTexture(GL_TEXTURE_2D_MULTISAMPLE, *t_handle);
+  glBindSampler(texture_unit, *s_handle);
+}
+
 inline void set_uniform_texture_3d(id location, std::uint32_t texture_unit, const texture& t_handle,
                                    const sampler& s_handle) {
   glUniform1i(location, static_cast<GLint>(texture_unit));
@@ -233,6 +241,18 @@ result<void> set_uniform_texture_2d(const program& handle, T&& name, std::uint32
     return unexpected(location.error());
   }
   set_uniform_texture_2d(*location, texture_unit, t_handle, s_handle);
+  return {};
+}
+
+template <typename T>
+result<void>
+set_uniform_texture_2d_multisample(const program& handle, T&& name, std::uint32_t texture_unit,
+                                   const texture& t_handle, const sampler& s_handle) {
+  auto location = uniform_location(handle, std::forward<T>(name));
+  if (!location) {
+    return unexpected(location.error());
+  }
+  set_uniform_texture_2d_multisample(*location, texture_unit, t_handle, s_handle);
   return {};
 }
 
