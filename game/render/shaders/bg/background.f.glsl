@@ -25,7 +25,7 @@ float noise0(vec3 xy, float a, float t) {
 
 float tonemap0(float v) {
   float t0 = (5. + smoothstep(.025 - fwidth(v), .025, v)) / 6.;
-  float t1 = scale01(1./ 8., smoothstep(.15 - fwidth(v), .15, v));
+  float t1 = scale01(1. / 8., smoothstep(.15 - fwidth(v), .15, v));
   return t0 * t1;
 }
 

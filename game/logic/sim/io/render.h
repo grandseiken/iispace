@@ -111,12 +111,11 @@ struct shape {
 
   bool apply_shield(float a) {
     s_index += 'S';
-    z_index = colour::kZEffect1;
-    colour = colour::alpha(colour::kWhite0, .5f * a);
+    z_index = colour::kZBackgroundEffect;
+    colour = colour::alpha(colour::kWhite1, a);
     if (auto* p = std::get_if<render::ngon>(&data); p) {
-      p->radius += 3;
       p->inner_radius = 0;
-      p->line_width = 1.5f;
+      p->line_width = -2.f;
       if (p->style == ngon_style::kPolystar) {
         return false;
       }
@@ -124,32 +123,7 @@ struct shape {
       return true;
     }
     if (auto* p = std::get_if<render::box>(&data); p) {
-      p->dimensions.x += 3;
-      p->dimensions.y += 3;
-      p->line_width = 1.5f;
-      return true;
-    }
-    return false;
-  }
-
-  bool apply_shield_outline(float a) {
-    s_index += 'S';
-    z_index = colour::kZOutline;
-    colour = colour::alpha(colour::kOutline, a);
-    if (auto* p = std::get_if<render::ngon>(&data); p) {
-      p->radius += 5.f;
-      p->inner_radius = 0;
-      p->line_width = 3.f;
-      if (p->style == ngon_style::kPolystar) {
-        return false;
-      }
-      p->style = ngon_style::kPolygon;
-      return true;
-    }
-    if (auto* p = std::get_if<render::box>(&data); p) {
-      p->dimensions.x += 5.f;
-      p->dimensions.y += 5.f;
-      p->line_width = 3.f;
+      p->line_width = -2.f;
       return true;
     }
     return false;

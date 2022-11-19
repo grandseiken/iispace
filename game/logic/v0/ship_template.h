@@ -44,19 +44,14 @@ void render_shape(std::vector<render::shape>& output, const auto& parameters,
   transform.index_out = &i;
   geom::iterate(S{}, geom::iterate_shapes, parameters, transform, [&](const render::shape& shape) {
     render::shape shape_copy = shape;
-    bool override =
-        shape.z_index > colour::kZTrails && (!c_override_max_index || i < *c_override_max_index);
-    if (hit_alpha && override) {
+    bool override = !c_override_max_index || i < *c_override_max_index;
+    if (shape.z_index > colour::kZTrails && hit_alpha && override) {
       shape_copy.apply_hit_flash(*hit_alpha);
     }
     output.emplace_back(shape_copy);
-    if (shield_alpha && override) {
+    if (shape.z_index <= colour::kZTrails && shield_alpha && override) {
       shape_copy = shape;
       if (shape_copy.apply_shield(*shield_alpha)) {
-        output.emplace_back(shape_copy);
-      }
-      shape_copy = shape;
-      if (shape_copy.apply_shield_outline(*shield_alpha)) {
         output.emplace_back(shape_copy);
       }
     }

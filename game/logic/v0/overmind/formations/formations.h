@@ -757,7 +757,7 @@ struct shield_hub0 : formation<14, 42> {
   }
 };
 
-struct shield_hub0_side : formation<7, 32> {
+struct shield_hub0_side : formation<7, 30> {
   void operator()(spawn_context& context) const {
     auto side = context.random_vside();
     auto p = context.random.uint(7) + 1;
@@ -921,6 +921,38 @@ struct mixed6_side : formation<10, 18> {
     context.spawn(&spawn_chaser_u, side, 3, 10);
     context.spawn(&spawn_chaser_u, side, 4, 10);
     context.spawn(&spawn_chaser, side, 5, 10);
+  }
+};
+
+struct mixed7_side : formation<14, 36> {
+  void operator()(spawn_context& context) const {
+    auto side = context.random_side();
+    context.spawn(&spawn_follow_hub, side, 1, 5);
+    context.spawn(&spawn_shield_hub, side, 2, 5);
+    context.spawn(&spawn_follow_hub, side, 3, 5);
+  }
+};
+
+struct mixed8_side : formation<22, 40> {
+  void operator()(spawn_context& context) const {
+    auto side = context.random_vside();
+    context.spawn(&spawn_tractor, side, 2, 6);
+    context.spawn(&spawn_shield_hub, side, 3, 6);
+  }
+};
+
+struct mixed9_side : formation<9, 22> {
+  void operator()(spawn_context& context) const {
+    auto d = context.random.uint(3);
+
+    auto side = context.random_vside();
+    for (std::uint32_t i = 0; i < 11; ++i) {
+      if (i >= 4 && i <= 6) {
+        context.spawn(&spawn_square, side, fixed{i} / 10);
+      } else {
+        context.spawn(spawn_wall(!d || (d == 1 && i % 2)), side, fixed{i} / 10);
+      }
+    }
   }
 };
 

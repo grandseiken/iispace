@@ -51,6 +51,7 @@ struct PlayerShot : ecs::component {
       return;
     }
 
+    bool shielded = false;
     bool destroy = false;
     bool destroy_particles = false;
     auto collision = sim.collision_list(transform.centre,
@@ -64,7 +65,6 @@ struct PlayerShot : ecs::component {
       auto type = is_predicted ? damage_type::kPredicted
           : penetrating        ? damage_type::kPenetrating
                                : damage_type::kNormal;
-      bool shielded = false;
       if (const auto* status = e.h.get<EnemyStatus>(); status && status->shielded_ticks) {
         shielded = true;
       }
@@ -72,7 +72,7 @@ struct PlayerShot : ecs::component {
                                     transform.centre - 2 * velocity);
       if ((shielded || !(e.hit_mask & shape_flag::kWeakVulnerable)) && !penetrating) {
         destroy = true;
-        destroy_particles = true;
+        destroy_particles = !shielded;
         break;
       }
     }
@@ -80,6 +80,7 @@ struct PlayerShot : ecs::component {
       for (const auto& e : collision) {
         if (+(e.hit_mask & shape_flag::kShield) ||
             (!penetrating && +(e.hit_mask & shape_flag::kWeakShield))) {
+          shielded = true;
           destroy = true;
         }
       }

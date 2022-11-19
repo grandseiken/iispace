@@ -438,7 +438,7 @@ void spawn_tractor(SimInterface& sim, const vec2& position, bool power) {
 
 void spawn_shield_hub(SimInterface& sim, const vec2& position) {
   auto h = create_ship_default<ShieldHub>(sim, position);
-  add_enemy_health<ShieldHub>(h, 200);
+  add_enemy_health<ShieldHub>(h, 224);
   h.add(ShieldHub{});
   h.add(Enemy{.threat_value = 10u});
   h.add(Physics{.mass = 3_fx});

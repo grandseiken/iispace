@@ -112,8 +112,8 @@ inline constexpr glm::vec4 hue360(std::uint32_t h, float l = .5f, float s = 1.f)
 }
 
 constexpr auto kZero = glm::vec4{0.f};
-constexpr auto kBlack1 = glm::vec4{0.f, 0.f, 1.f / 16, 1.f};
 constexpr auto kBlack0 = glm::vec4{0.f, 0.f, 0.f, 1.f};
+constexpr auto kBlack1 = glm::vec4{0.f, 0.f, 1.f / 32, 1.f};
 constexpr auto kWhite0 = glm::vec4{0.f, 0.f, 1.f, 1.f};
 constexpr auto kWhite1 = glm::vec4{0.f, 0.f, .75f, 1.f};
 

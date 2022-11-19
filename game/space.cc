@@ -33,6 +33,7 @@ void load_sounds(const io::Filesystem& fs, Mixer& mixer) {
       std::cerr << "Couldn't load sound " + filename + ": " << result.error() << std::endl;
     }
   };
+  load_sound(sound::kPlayerBirds, "PlayerBirds.wav");
   load_sound(sound::kPlayerFire, "PlayerFire.wav");
   load_sound(sound::kMenuClick, "MenuClick.wav");
   load_sound(sound::kMenuAccept, "MenuAccept.wav");

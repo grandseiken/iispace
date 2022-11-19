@@ -97,6 +97,9 @@ public:
     s.add<formations::mixed4_side>();
     s.add<formations::mixed5_side>();
     s.add<formations::mixed6_side>();
+    s.add<formations::mixed7_side>();
+    s.add<formations::mixed8_side>();
+    s.add<formations::mixed9_side>();
   }
 
   void spawn_wave(SimInterface& sim, const wave_data& wave) const override {

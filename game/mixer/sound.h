@@ -4,6 +4,7 @@
 namespace ii {
 
 enum class sound {
+  kPlayerBirds,
   kPlayerDestroy,
   kPlayerRespawn,
   kPlayerFire,
