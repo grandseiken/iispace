@@ -90,6 +90,17 @@ void emit_line(vec2 a, vec2 b, shape_vertex_data data_a, shape_vertex_data data_
   EndPrimitive();
 }
 
+void emit_ball(vec2 a, vec2 b, shape_vertex_data data_a, shape_vertex_data data_b) {
+  // TODO: could use smaller polygon with 6 vertices instead of quad.
+  ball_data da = convert_ball(a, data_a);
+  ball_data db = convert_ball(b, data_b);
+  vec4 v_min = vec4(min(da.v_min.xy, db.v_min.xy), da.v_min.zw);
+  vec4 v_max = vec4(max(da.v_max.xy, db.v_max.xy), da.v_max.zw);
+  emit2c(v_min, vec4(v_max.x, v_min.yzw));
+  emit2c(vec4(v_min.x, v_max.yzw), v_max);
+  EndPrimitive();
+}
+
 void main() {
   vec2 position_a = gl_in[0].gl_Position.xy;
   vec2 position_b = gl_in[1].gl_Position.xy;
@@ -115,6 +126,9 @@ void main() {
     break;
   case kStyleLine:
     emit_line(position_a, position_b, v_in[0].data, v_in[1].data);
+    break;
+  case kStyleBall:
+    emit_ball(position_a, position_b, v_in[0].data, v_in[1].data);
     break;
   }
 }

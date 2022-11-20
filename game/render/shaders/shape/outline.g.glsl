@@ -104,6 +104,14 @@ void emit_line(vec2 position, shape_vertex_data data) {
   EndPrimitive();
 }
 
+void emit_ball(vec2 position, shape_vertex_data data) {
+  // TODO: could do it like the box and avoid rendering most of the inside.
+  ball_data d = convert_ball(position, data);
+  emit2(d.v_min, vec4(d.v_max.x, d.v_min.yzw));
+  emit2(vec4(d.v_min.x, d.v_max.yzw), d.v_max);
+  EndPrimitive();
+}
+
 void main() {
   vec2 position = gl_in[0].gl_Position.xy;
 
@@ -128,6 +136,9 @@ void main() {
     break;
   case kStyleLine:
     emit_line(position, v_in[0].data);
+    break;
+  case kStyleBall:
+    emit_ball(position, v_in[0].data);
     break;
   }
 }

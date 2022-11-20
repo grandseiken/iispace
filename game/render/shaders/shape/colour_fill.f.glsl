@@ -1,5 +1,6 @@
 #include "game/render/shaders/lib/oklab.glsl"
 #include "game/render/shaders/shape/data.glsl"
+#include "game/render/shaders/shape/geometry_fragment.glsl"
 
 uniform float colour_cycle;
 
@@ -12,6 +13,23 @@ layout(std430, binding = 0) restrict readonly buffer shape_buffer_block {
 shape_buffer;
 
 void main() {
-  vec4 hsla = shape_buffer.data[g_buffer_index].colour;
-  out_colour = hsla2oklab_cycle(hsla, colour_cycle);
+  shape_buffer_data d = shape_buffer.data[g_buffer_index];
+  if (d.u_params.x != kStyleBall) {
+    out_colour = hsla2oklab_cycle(d.colour, colour_cycle);
+    return;
+  }
+
+  float dd = length(game_position(gl_FragCoord) - d.position);
+  float wd = fwidth(dd);
+
+  float r_max = d.dimensions.x;
+  float r_min = d.dimensions.y;
+  float a = smoothstep(r_min - wd, r_min + wd, dd) * (1. - smoothstep(r_max - wd, r_max + wd, dd));
+
+  if (a > 0.) {
+    vec4 oklab = hsla2oklab_cycle(d.colour, colour_cycle);
+    out_colour = vec4(oklab.xyz, a * oklab.a);
+  } else {
+    discard;
+  }
 }

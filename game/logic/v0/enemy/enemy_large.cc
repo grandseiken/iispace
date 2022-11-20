@@ -1,5 +1,6 @@
 #include "game/common/colour.h"
 #include "game/logic/geometry/node_conditional.h"
+#include "game/logic/geometry/shapes/ball.h"
 #include "game/logic/geometry/shapes/box.h"
 #include "game/logic/geometry/shapes/line.h"
 #include "game/logic/geometry/shapes/ngon.h"
@@ -325,23 +326,23 @@ struct ShieldHub : ecs::component {
   static constexpr auto z = colour::kZEnemyLarge;
   static constexpr auto c = colour::kSolarizedDarkViolet;
   static constexpr auto cf = colour::alpha(c, colour::kFillAlpha0);
-  static constexpr auto outline = geom::nline(colour::kOutline, colour::kZOutline, 2.f);
-  static constexpr auto sl = geom::nline(colour::alpha(colour::kWhite0, colour::kFillAlpha0),
+  static constexpr auto outline = geom::sline(colour::kOutline, colour::kZOutline, 2.f);
+  static constexpr auto sl = geom::sline(colour::alpha(colour::kWhite0, colour::kFillAlpha0),
                                          colour::kZBackgroundEffect, 1.f);
   static constexpr auto sf = geom::sfill(colour::alpha(colour::kWhite0, colour::kBackgroundAlpha0),
                                          colour::kZBackgroundEffect);
 
   using shape = geom::compound<
-      standard_transform<geom::ngon<geom::nd(kBoundingWidth + 2, 8), outline>,
-                         geom::ngon_with_collider<
-                             geom::nd(kBoundingWidth, 8), geom::nline(c, z), geom::sfill(cf, z),
-                             shape_flag::kDangerous | shape_flag::kVulnerable>>,
+      standard_transform<
+          geom::ball<geom::bd(kBoundingWidth + 2), outline>,
+          geom::ball_with_collider<geom::bd(kBoundingWidth), geom::sline(c, z), geom::sfill(cf, z),
+                                   shape_flag::kDangerous | shape_flag::kVulnerable>>,
       geom::translate_p<0,
                         geom::rotate_eval<geom::multiply_p<-1_fx / 2, 1>,
                                           geom::box<vec2{20, 10}, geom::sline(c, z)>>,
                         geom::rotate_eval<geom::multiply_p<1_fx / 2, 1>,
                                           geom::box<vec2{10, 20}, geom::sline(c, z)>>,
-                        geom::ngon<geom::nd(kShieldDistance + 16, 40), sl, sf>>>;
+                        geom::ball<geom::bd(kShieldDistance + 16), sl, sf>>>;
   std::uint32_t timer = 0;
   std::uint32_t count = 0;
   vec2 dir{0};

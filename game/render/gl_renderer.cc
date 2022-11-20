@@ -45,6 +45,7 @@ enum shape_shader_style : std::uint32_t {
   kStyleNgonPolygram = 2,
   kStyleBox = 3,
   kStyleLine = 4,
+  kStyleBall = 5,
 };
 
 template <typename T>
@@ -527,7 +528,11 @@ void GlRenderer::render_shapes(coordinate_system ctype, std::vector<shape>& shap
     glm::vec4 colour{0.f};
   };
   struct shape_buffer_data {
+    glm::uvec4 u_params{0u};
+    glm::vec4 f_params{0.f};
     glm::vec4 colour{0.f};
+    glm::vec2 position{0.f};
+    glm::vec2 dimensions{0.f};
   };
 
   static thread_local std::vector<float> vertex_float_data;
@@ -565,7 +570,8 @@ void GlRenderer::render_shapes(coordinate_system ctype, std::vector<shape>& shap
     vertex_float_data.emplace_back(d.z_index);
     vertex_float_data.emplace_back(d.dimensions.x);
     vertex_float_data.emplace_back(d.dimensions.y);
-    buffer_data.emplace_back(shape_buffer_data{d.colour});
+    buffer_data.emplace_back(shape_buffer_data{
+        {d.style, 0u, 0u, 0u}, {d.line_width, 0.f, 0.f, 0.f}, d.colour, d.position, d.dimensions});
   };
 
   static constexpr glm::vec2 kShadowOffset{4, 6};
@@ -659,12 +665,22 @@ void GlRenderer::render_shapes(coordinate_system ctype, std::vector<shape>& shap
       add_outline_data(
           {
               .style = kStyleBox,
-              .params = {0, 0},
               .rotation = shape.rotation,
               .line_width = p->line_width,
               .z_index = shape.z_index,
               .position = shape.origin,
               .dimensions = p->dimensions,
+              .colour = shape.colour,
+          },
+          shape.trail);
+    } else if (const auto* p = std::get_if<render::ball>(&shape.data)) {
+      add_outline_data(
+          {
+              .style = kStyleBall,
+              .line_width = p->line_width,
+              .z_index = shape.z_index,
+              .position = shape.origin,
+              .dimensions = {p->radius, p->inner_radius},
               .colour = shape.colour,
           },
           shape.trail);
@@ -694,11 +710,18 @@ void GlRenderer::render_shapes(coordinate_system ctype, std::vector<shape>& shap
     } else if (const auto* p = std::get_if<render::box_fill>(&shape.data)) {
       add_fill_data({
           .style = kStyleBox,
-          .params = {0, 0},
           .rotation = shape.rotation,
           .z_index = shape.z_index,
           .position = shape.origin,
           .dimensions = p->dimensions,
+          .colour = shape.colour,
+      });
+    } else if (const auto* p = std::get_if<render::ball_fill>(&shape.data)) {
+      add_fill_data({
+          .style = kStyleBall,
+          .z_index = shape.z_index,
+          .position = shape.origin,
+          .dimensions = {p->radius, p->inner_radius},
           .colour = shape.colour,
       });
     }
@@ -758,8 +781,9 @@ void GlRenderer::render_shapes(coordinate_system ctype, std::vector<shape>& shap
     gl::use_program(outline_program);
     auto result = gl::set_uniforms(
         outline_program, "aspect_scale", target().aspect_scale(), "render_dimensions",
-        target().render_dimensions, "clip_min", clip_rect.min(), "clip_max", clip_rect.max(),
-        "coordinate_offset", offset, "colour_cycle", colour_cycle_ / 256.f);
+        target().render_dimensions, "screen_dimensions", target().screen_dimensions, "clip_min",
+        clip_rect.min(), "clip_max", clip_rect.max(), "coordinate_offset", offset, "colour_cycle",
+        colour_cycle_ / 256.f);
     if (!result) {
       impl_->status = unexpected("outline shader error: " + result.error());
     } else {
@@ -772,8 +796,9 @@ void GlRenderer::render_shapes(coordinate_system ctype, std::vector<shape>& shap
     gl::use_program(motion_program);
     auto result = gl::set_uniforms(
         motion_program, "aspect_scale", target().aspect_scale(), "render_dimensions",
-        target().render_dimensions, "clip_min", clip_rect.min(), "clip_max", clip_rect.max(),
-        "coordinate_offset", offset, "colour_cycle", colour_cycle_ / 256.f);
+        target().render_dimensions, "screen_dimensions", target().screen_dimensions, "clip_min",
+        clip_rect.min(), "clip_max", clip_rect.max(), "coordinate_offset", offset, "colour_cycle",
+        colour_cycle_ / 256.f);
     if (!result) {
       impl_->status = unexpected("motion shader error: " + result.error());
     } else {
@@ -786,8 +811,9 @@ void GlRenderer::render_shapes(coordinate_system ctype, std::vector<shape>& shap
     gl::use_program(fill_program);
     auto result = gl::set_uniforms(
         fill_program, "aspect_scale", target().aspect_scale(), "render_dimensions",
-        target().render_dimensions, "clip_min", clip_rect.min(), "clip_max", clip_rect.max(),
-        "coordinate_offset", offset, "colour_cycle", colour_cycle_ / 256.f);
+        target().render_dimensions, "screen_dimensions", target().screen_dimensions, "clip_min",
+        clip_rect.min(), "clip_max", clip_rect.max(), "coordinate_offset", offset, "colour_cycle",
+        colour_cycle_ / 256.f);
     if (!result) {
       impl_->status = unexpected("fill shader error: " + result.error());
     } else {

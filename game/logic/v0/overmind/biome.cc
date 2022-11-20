@@ -28,9 +28,7 @@ class TestingBiome : public Biome {
 public:
   ~TestingBiome() override = default;
   TestingBiome() {
-    // TODO: 1 more hard wall/square pattern. Wall go faster offscreen?
-    // TODO: 1 more mixed hub/sponge pattern.
-    // TODO: enemy shielder enemy.
+    // TODO: 1 more mixed hub/sponge pattern?
     auto s = set.add_set();
     s.add<formations::follow0>();
     s.add<formations::follow1>();

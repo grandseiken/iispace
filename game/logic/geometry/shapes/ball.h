@@ -26,7 +26,7 @@ struct ball_collider_data : shape_data_base {
 
   constexpr void
   iterate(iterate_collision_t it, const Transform auto& t, const FlagFunction auto& f) const {
-    auto d_sq = length_square(t.deref_ignore_rotation());
+    auto d_sq = length_squared(t.deref_ignore_rotation());
     if (+(flags & it.mask) && d_sq <= dimensions.radius * dimensions.radius &&
         d_sq >= dimensions.inner_radius * dimensions.inner_radius) {
       std::invoke(f, flags & it.mask);
@@ -87,7 +87,6 @@ struct ball_data : shape_data_base {
       std::invoke(f,
                   render::shape{
                       .origin = to_float(*t),
-                      .rotation = t.rotation().to_float(),
                       .colour = line.colour,
                       .z_index = line.z,
                       .s_index = line.index,
@@ -100,7 +99,6 @@ struct ball_data : shape_data_base {
       std::invoke(f,
                   render::shape{
                       .origin = to_float(*t),
-                      .rotation = t.rotation().to_float(),
                       .colour = fill.colour,
                       .z_index = fill.z,
                       .s_index = fill.index,

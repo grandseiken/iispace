@@ -96,6 +96,7 @@ struct Square : ecs::component {
 };
 DEBUG_STRUCT_TUPLE(Square, dir, timer, invisible_flash);
 
+// TODO: should wall go faster offscreen?
 struct Wall : ecs::component {
   static constexpr std::uint32_t kBoundingWidth = 60;
   static constexpr sound kDestroySound = sound::kEnemyDestroy;

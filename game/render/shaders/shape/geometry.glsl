@@ -1,5 +1,5 @@
-uniform vec2 aspect_scale;
-uniform uvec2 render_dimensions;
+#include "game/render/shaders/shape/geometry_fragment.glsl"
+
 uniform ivec2 clip_min;
 uniform ivec2 clip_max;
 uniform vec2 coordinate_offset;
@@ -226,5 +226,17 @@ polystar_outer polystar_inner_outer_v(polystar_data d, uint i) {
   r.v = render_position(d.position + v);
   r.v0 = render_position(d.position + mix(v, v0, d.inner_vt));
   r.v1 = render_position(d.position + mix(v, v1, d.inner_vt));
+  return r;
+}
+
+struct ball_data {
+  vec4 v_min;
+  vec4 v_max;
+};
+
+ball_data convert_ball(vec2 position, shape_vertex_data d) {
+  ball_data r;
+  r.v_min = render_position(position - d.dimensions.x + min(d.line_width, 0.) - vec2(1.));
+  r.v_max = render_position(position + d.dimensions.x - min(d.line_width, 0.) + vec2(1.));
   return r;
 }

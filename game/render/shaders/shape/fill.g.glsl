@@ -35,6 +35,19 @@ void emit_box(vec2 position, shape_vertex_data data) {
   EndPrimitive();
 }
 
+void emit_ball(vec2 position, shape_vertex_data data) {
+  ball_data d = convert_ball(position, data);
+  set_vertex_data(d.v_min);
+  EmitVertex();
+  set_vertex_data(vec4(d.v_max.x, d.v_min.yzw));
+  EmitVertex();
+  set_vertex_data(vec4(d.v_min.x, d.v_max.yzw));
+  EmitVertex();
+  set_vertex_data(d.v_max);
+  EmitVertex();
+  EndPrimitive();
+}
+
 void main() {
   vec2 position = gl_in[0].gl_Position.xy;
 
@@ -45,6 +58,9 @@ void main() {
     break;
   case kStyleBox:
     emit_box(position, v_in[0].data);
+    break;
+  case kStyleBall:
+    emit_ball(position, v_in[0].data);
     break;
   }
 }

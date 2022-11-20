@@ -75,7 +75,6 @@ public:
 
   void render_background(std::uint64_t tick_count, const glm::vec4& colour) const;
   // TODO: _maybe_ render outlines automatically somehow, or output from geometry shapes?
-  // TODO: implement balls.
   void render_shapes(coordinate_system ctype, std::vector<render::shape>& shapes,
                      shape_style style) const;
   void render_present() const;
