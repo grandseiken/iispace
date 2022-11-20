@@ -15,6 +15,7 @@ struct game_options_t {
 
   // Should probably be in-game options.
   bool windowed = false;
+  bool debug = false;
 };
 
 }  // namespace ii

@@ -13,8 +13,8 @@ void run_drop(drop_data& data, bool& dropped, std::uint32_t chance, SimInterface
   static constexpr std::uint32_t kProbability = 1000;
   auto& r = sim.random(random_source::kGameSequence);
 
+  data.counter += static_cast<std::int32_t>(chance);
   if (dropped) {
-    data.counter += static_cast<std::int32_t>(chance);
     return;
   }
   data.compensation += static_cast<std::int32_t>(chance);

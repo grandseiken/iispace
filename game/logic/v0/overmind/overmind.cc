@@ -21,6 +21,11 @@ struct Overmind : ecs::component {
   Overmind() { data.power = kInitialPower; }
 
   void update(ecs::handle h, SimInterface& sim) {
+    auto& global = *sim.global_entity().get<GlobalData>();
+    global.debug_text.clear();
+    global.debug_text += "s:" + std::to_string(global.shield_drop.counter) +
+        " b:" + std::to_string(global.bomb_drop.counter);
+
     if (!sim.tick_count()) {
       background_fx_change change;
       change.type = background_fx_type::kBiome0;
@@ -38,11 +43,14 @@ struct Overmind : ecs::component {
       return;
     }
 
+    // TODO: something is off here too. 3 chasers were keeping the next wave from spawning at
+    // wave 38.
     std::uint32_t total_enemy_threat = 0;
     sim.index().iterate<Enemy>([&](const Enemy& e) { total_enemy_threat += e.threat_value; });
     if (total_enemy_threat <= data.threat_trigger) {
       spawn_timer = kSpawnTimer;
     }
+    global.debug_text += " t:" + std::to_string(total_enemy_threat);
   }
 
   void spawn_wave(SimInterface& sim) {

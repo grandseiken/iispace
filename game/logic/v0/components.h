@@ -22,10 +22,11 @@ struct GlobalData : ecs::component {
 
   std::uint32_t non_wall_enemy_count = 0;
   std::optional<std::uint32_t> overmind_wave_count;
+  std::string debug_text;
 
   void pre_update(SimInterface&);
 };
-DEBUG_STRUCT_TUPLE(GlobalData, non_wall_enemy_count, overmind_wave_count);
+DEBUG_STRUCT_TUPLE(GlobalData, non_wall_enemy_count, overmind_wave_count, debug_text);
 
 struct DropTable : ecs::component {
   std::uint32_t shield_drop_chance = 0;

@@ -138,6 +138,9 @@ void HudLayer::update_content(const ui::input_frame&, ui::output_frame&) {
   if (!status_text_.empty()) {
     s = status_text_ + "\n" + s;
   }
+  if (!render_->debug_text.empty() && stack().options().debug) {
+    s += "\n" + render_->debug_text;
+  }
   status_->set_text(ustring::ascii(s));
 }
 

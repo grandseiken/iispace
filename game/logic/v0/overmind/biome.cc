@@ -80,7 +80,6 @@ public:
     s.add<formations::tractor1>();
     s.add<formations::tractor0_side>();
     s.add<formations::tractor1_side>();
-    s.add<formations::shield_hub0>();
     s.add<formations::shield_hub0_side>();
 
     s.add<formations::mixed0>();
@@ -100,6 +99,7 @@ public:
     s.add<formations::mixed7_side>();
     s.add<formations::mixed8_side>();
     s.add<formations::mixed9_side>();
+    s.add<formations::mixed10_side>();
   }
 
   void spawn_wave(SimInterface& sim, const wave_data& wave) const override {

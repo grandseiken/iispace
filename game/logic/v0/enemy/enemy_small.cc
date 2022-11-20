@@ -128,7 +128,7 @@ ecs::handle create_follow_ship(SimInterface& sim, std::uint32_t size, std::uint3
   } else {
     add_enemy_health<Follow, S>(h, health);
   }
-  h.add(Enemy{.threat_value = health});
+  h.add(Enemy{.threat_value = health / 8});
   h.add(Follow{size, direction, /* in formation */ initial_velocity == vec2{0, 0}});
 
   auto mass = 1_fx + size / 2_fx;
@@ -267,7 +267,7 @@ create_chaser_ship(SimInterface& sim, std::uint32_t size, std::uint32_t health, 
   } else {
     add_enemy_health<Chaser, S>(h, health);
   }
-  h.add(Enemy{.threat_value = health});
+  h.add(Enemy{.threat_value = health / 8});
   h.add(Chaser{size, stagger});
   h.add(Physics{.mass = 1_fx + size / 2_fx});
   return h;

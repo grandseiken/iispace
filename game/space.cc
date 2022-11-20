@@ -226,6 +226,9 @@ result<game_options_t> parse_args(std::vector<std::string>& args) {
   if (auto r = flag_parse<bool>(args, "windowed", options.windowed, false); !r) {
     return unexpected(r.error());
   }
+  if (auto r = flag_parse<bool>(args, "debug", options.debug, false); !r) {
+    return unexpected(r.error());
+  }
   return {std::move(options)};
 }
 

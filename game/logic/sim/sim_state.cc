@@ -289,6 +289,7 @@ render_output& SimState::render(transient_render_state& state, bool paused) cons
   }
   if (const auto* data = interface_->global_entity().get<v0::GlobalData>(); data) {
     result.overmind_wave = data->overmind_wave_count;
+    result.debug_text = data->debug_text;
   }
 
   result.tick_count = internals_->tick_count;

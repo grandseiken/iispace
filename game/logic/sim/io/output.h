@@ -55,6 +55,7 @@ struct render_output {
   std::optional<std::uint32_t> overmind_wave;
   std::optional<float> boss_hp_bar;
   std::uint32_t colour_cycle = 0;
+  std::string debug_text;
 };
 
 struct transient_render_state {

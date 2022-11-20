@@ -83,6 +83,75 @@ inline spawn_side opposite_side(spawn_side side) {
   }
 }
 
+inline spawn_side reverse_side(spawn_side side) {
+  switch (side) {
+  case spawn_side::kTop:
+    return spawn_side::kReverseTop;
+  case spawn_side::kBottom:
+    return spawn_side::kReverseBottom;
+  case spawn_side::kLeft:
+    return spawn_side::kReverseLeft;
+  case spawn_side::kRight:
+    return spawn_side::kReverseRight;
+  case spawn_side::kReverseTop:
+    return spawn_side::kTop;
+  case spawn_side::kReverseBottom:
+    return spawn_side::kBottom;
+  case spawn_side::kReverseLeft:
+    return spawn_side::kLeft;
+  case spawn_side::kReverseRight:
+    return spawn_side::kRight;
+  case spawn_side::kMirrorV:
+    return spawn_side::kReverseMirrorV;
+  case spawn_side::kMirrorH:
+    return spawn_side::kReverseMirrorH;
+  case spawn_side::kReverseMirrorV:
+    return spawn_side::kMirrorV;
+  case spawn_side::kReverseMirrorH:
+    return spawn_side::kMirrorH;
+  case spawn_side::kTopLeft:
+    return spawn_side::kReverseTopLeft;
+  case spawn_side::kTopRight:
+    return spawn_side::kReverseTopRight;
+  case spawn_side::kBottomLeft:
+    return spawn_side::kReverseBottomLeft;
+  case spawn_side::kBottomRight:
+    return spawn_side::kReverseBottomRight;
+  case spawn_side::kReverseTopLeft:
+    return spawn_side::kTopLeft;
+  case spawn_side::kReverseTopRight:
+    return spawn_side::kTopRight;
+  case spawn_side::kReverseBottomLeft:
+    return spawn_side::kBottomLeft;
+  case spawn_side::kReverseBottomRight:
+    return spawn_side::kBottomRight;
+  case spawn_side::kMirrorD0:
+    return spawn_side::kReverseMirrorD0;
+  case spawn_side::kMirrorD1:
+    return spawn_side::kReverseMirrorD1;
+  case spawn_side::kReverseMirrorD0:
+    return spawn_side::kMirrorD0;
+  case spawn_side::kReverseMirrorD1:
+    return spawn_side::kMirrorD1;
+  case spawn_side::kMirrorD2:
+    return spawn_side::kReverseMirrorD2;
+  case spawn_side::kMirrorD3:
+    return spawn_side::kReverseMirrorD3;
+  case spawn_side::kMirrorD4:
+    return spawn_side::kReverseMirrorD4;
+  case spawn_side::kMirrorD5:
+    return spawn_side::kReverseMirrorD5;
+  case spawn_side::kReverseMirrorD2:
+    return spawn_side::kMirrorD2;
+  case spawn_side::kReverseMirrorD3:
+    return spawn_side::kMirrorD3;
+  case spawn_side::kReverseMirrorD4:
+    return spawn_side::kMirrorD4;
+  case spawn_side::kReverseMirrorD5:
+    return spawn_side::kMirrorD5;
+  }
+}
+
 inline bool is_vertical(spawn_side side) {
   switch (side) {
   case spawn_side::kTop:
