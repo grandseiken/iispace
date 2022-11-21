@@ -13,6 +13,11 @@ layout(std430, binding = 0) restrict readonly buffer shape_buffer_block {
 }
 shape_buffer;
 
+layout(std430, binding = 1) restrict readonly buffer ball_buffer_block {
+  ball_buffer_data data[];
+}
+ball_buffer;
+
 float ball_solve(vec2 v, vec2 d0, vec2 d1, float r) {
   vec2 v0 = v - d1;
   vec2 v1 = d1 - d0;
@@ -35,21 +40,22 @@ void main() {
   shape_buffer_data d0 = shape_buffer.data[g_buffer_index];
   shape_buffer_data d1 = shape_buffer.data[g_buffer_index + 1];
 
-  if (d0.u_params.x != kStyleBall) {
+  if (d0.style != kStyleBall) {
     vec4 oklab0 = hsla2oklab_cycle(d0.colour, colour_cycle);
     vec4 oklab1 = hsla2oklab_cycle(d1.colour, colour_cycle);
     out_colour = mix(vec4(oklab0.xyz, .75 * oklab0.a), vec4(oklab1.xyz, 0.), g_interpolate);
     return;
   }
 
+  ball_buffer_data bd0 = ball_buffer.data[d0.ball_index];
+  ball_buffer_data bd1 = ball_buffer.data[d1.ball_index];
   // TODO: maybe need to antialias with fwidth, but actually looks OK.
   vec2 v = game_position(gl_FragCoord);
-  float a = ball_solve(v, d0.position, d1.position, d0.dimensions.x);
-  if (d0.dimensions.y > 0.) {
-    a += ball_solve(v, d0.position, d1.position, d0.dimensions.y);
+  float a = ball_solve(v, bd0.position, bd1.position, bd0.dimensions.x);
+  if (bd0.dimensions.y > 0.) {
+    a += ball_solve(v, bd0.position, bd1.position, bd0.dimensions.y);
   }
   if (a > 0.) {
-    // TODO: why does it cut off at top and bottom!?
     // TODO: doesn't do colour transition correctly (or even attempt to). Tricky without
     // extra passes.
     vec4 oklab0 = hsla2oklab_cycle(d0.colour, colour_cycle);

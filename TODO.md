@@ -15,7 +15,7 @@
 * Refills after boss
 * More powerups
 * More upgrade choices
-* Upgrade rerolls
+* Upgrade rerolls (spend bomb)
 * Score multiplier capacity
 
 ## Route upgrades
@@ -223,6 +223,8 @@ Note: many of these hard to do with laggy network.
 * Spawning sliding circle boss
 * Big walls of walls that fly past with embedded bombs, or with paths through
 * Bullet hell with shield walls
+* Fight a fractal that zooms in (circles on circles?)
+* Boss that is like 12 triangles that rearrange into different things depending how many are left
 
 # Currencies / economy
 * Large enemies randomly drop bytes/boops

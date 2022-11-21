@@ -12,18 +12,24 @@ layout(std430, binding = 0) restrict readonly buffer shape_buffer_block {
 }
 shape_buffer;
 
+layout(std430, binding = 1) restrict readonly buffer ball_buffer_block {
+  ball_buffer_data data[];
+}
+ball_buffer;
+
 void main() {
   shape_buffer_data d = shape_buffer.data[g_buffer_index];
-  if (d.u_params.x != kStyleBall) {
+  if (d.style != kStyleBall) {
     out_colour = hsla2oklab_cycle(d.colour, colour_cycle);
     return;
   }
 
-  float dd = length(game_position(gl_FragCoord) - d.position);
+  ball_buffer_data bd = ball_buffer.data[d.ball_index];
+  float dd = length(game_position(gl_FragCoord) - bd.position);
   float wd = fwidth(dd);
 
-  float r_max = d.dimensions.x;
-  float r_min = d.dimensions.y;
+  float r_max = bd.dimensions.x;
+  float r_min = bd.dimensions.y;
   float a = smoothstep(r_min - wd, r_min + wd, dd) * (1. - smoothstep(r_max - wd, r_max + wd, dd));
 
   if (a > 0.) {

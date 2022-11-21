@@ -527,17 +527,25 @@ void GlRenderer::render_shapes(coordinate_system ctype, std::vector<shape>& shap
     glm::vec2 dimensions{0.f};
     glm::vec4 colour{0.f};
   };
+
   struct shape_buffer_data {
-    glm::uvec4 u_params{0u};
-    glm::vec4 f_params{0.f};
     glm::vec4 colour{0.f};
+    std::uint32_t style = 0;
+    std::uint32_t ball_index = 0;
+    glm::uvec2 padding{0};
+  };
+
+  struct ball_buffer_data {
     glm::vec2 position{0.f};
     glm::vec2 dimensions{0.f};
+    float line_width = 0.f;
+    float padding = 0.f;
   };
 
   static thread_local std::vector<float> vertex_float_data;
   static thread_local std::vector<std::uint32_t> vertex_int_data;
   static thread_local std::vector<shape_buffer_data> buffer_data;
+  static thread_local std::vector<ball_buffer_data> ball_data;
 
   static thread_local std::vector<unsigned> shadow_trail_indices;
   static thread_local std::vector<unsigned> shadow_fill_indices;
@@ -549,6 +557,8 @@ void GlRenderer::render_shapes(coordinate_system ctype, std::vector<shape>& shap
 
   vertex_float_data.clear();
   vertex_int_data.clear();
+  buffer_data.clear();
+  ball_data.clear();
   shadow_trail_indices.clear();
   shadow_fill_indices.clear();
   shadow_outline_indices.clear();
@@ -556,7 +566,6 @@ void GlRenderer::render_shapes(coordinate_system ctype, std::vector<shape>& shap
   trail_indices.clear();
   fill_indices.clear();
   outline_indices.clear();
-  buffer_data.clear();
 
   auto add_shape_data = [&](const shape_data& d) {
     vertex_int_data.emplace_back(static_cast<std::uint32_t>(buffer_data.size()));
@@ -570,8 +579,13 @@ void GlRenderer::render_shapes(coordinate_system ctype, std::vector<shape>& shap
     vertex_float_data.emplace_back(d.z_index);
     vertex_float_data.emplace_back(d.dimensions.x);
     vertex_float_data.emplace_back(d.dimensions.y);
-    buffer_data.emplace_back(shape_buffer_data{
-        {d.style, 0u, 0u, 0u}, {d.line_width, 0.f, 0.f, 0.f}, d.colour, d.position, d.dimensions});
+
+    std::uint32_t ball_index = 0;
+    if (d.style == kStyleBall) {
+      ball_index = ball_data.size();
+      ball_data.emplace_back(ball_buffer_data{d.position, d.dimensions, d.line_width});
+    }
+    buffer_data.emplace_back(shape_buffer_data{d.colour, d.style, ball_index});
   };
 
   static constexpr glm::vec2 kShadowOffset{4, 6};
@@ -729,6 +743,7 @@ void GlRenderer::render_shapes(coordinate_system ctype, std::vector<shape>& shap
 
   // TODO: should all the buffers be saved between frames?
   auto shape_buffer = make_stream_draw_buffer(std::span<const shape_buffer_data>{buffer_data});
+  auto ball_buffer = make_stream_draw_buffer(std::span<const ball_buffer_data>{ball_data});
   auto shadow_trail_index_buffer =
       make_stream_draw_buffer(std::span<const unsigned>{shadow_trail_indices});
   auto shadow_fill_index_buffer =
@@ -775,6 +790,7 @@ void GlRenderer::render_shapes(coordinate_system ctype, std::vector<shape>& shap
   gl::enable_blend(true);
   gl::blend_function(gl::blend_factor::kSrcAlpha, gl::blend_factor::kOneMinusSrcAlpha);
   gl::bind_shader_storage_buffer(shape_buffer, 0);
+  gl::bind_shader_storage_buffer(ball_buffer, 1);
 
   auto render_outlines = [&](const gl::buffer& index_buffer, std::size_t elements) {
     const auto& outline_program = impl_->shader(shader::kShapeOutline);

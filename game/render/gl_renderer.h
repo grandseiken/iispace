@@ -18,22 +18,6 @@ enum class shape_style {
   kStandard,
 };
 
-// TODO: procedural (simplex) noise. This is tricky.
-// - Purely procedural noise (i.e. computed entirely on GPU in fragment shader) is fairly easy and
-//   worth experimenting with, but may be too slow e.g. for full-screen fractal (fBm) noise.
-// - Purely pregenerated noise may be suitable for small/finite effects, but otherwise texture size
-//   gets big fast and seamless scrolling is tricky.
-//
-// Likely best solution: allow allocating per-use-case noise source objects which store offsets, and
-// generate and cache noise textures on the fly. By buffering larger textures than needed, we can
-// implement infinitely scrolling noise without having to regenerate too often. For 3D noise we can
-// use 2D array textures and interpolate between layers.
-//
-// Possible libraries that could help:
-// - https://github.com/Auburn/FastNoise2
-// - https://github.com/Auburn/FastNoiseLite
-// - https://github.com/ashima/webgl-noise
-// - https://github.com/KdotJPG/OpenSimplex2
 class GlRenderer {
 private:
   struct access_tag {};

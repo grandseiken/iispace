@@ -15,12 +15,16 @@ struct shape_vertex_data {
   vec2 dimensions;
 };
 
-// TODO: most of this not needed for most shapes; should split
-// into separate buffer (with index here).
 struct shape_buffer_data {
-  uvec4 u_params;
-  vec4 f_params;
   vec4 colour;
+  uint style;
+  uint ball_index;
+  uvec2 padding;
+};
+
+struct ball_buffer_data {
   vec2 position;
   vec2 dimensions;
+  float line_width;
+  float padding;
 };
