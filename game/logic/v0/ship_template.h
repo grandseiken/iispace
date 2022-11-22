@@ -48,14 +48,13 @@ void render_shape(std::vector<render::shape>& output, const auto& parameters,
     if (shape.z_index > colour::kZTrails && hit_alpha && override) {
       shape_copy.apply_hit_flash(*hit_alpha);
     }
-    output.emplace_back(shape_copy);
-    // TODO: shields appear to have no trails; why?
     if (shape.z_index <= colour::kZTrails && shield_alpha && override) {
-      shape_copy = shape;
-      if (shape_copy.apply_shield(*shield_alpha)) {
-        output.emplace_back(shape_copy);
+      auto shield_copy = shape_copy;
+      if (shape_copy.apply_shield(shield_copy, *shield_alpha)) {
+        output.emplace_back(shield_copy);
       }
     }
+    output.emplace_back(shape_copy);
   });
 }
 

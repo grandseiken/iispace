@@ -12,7 +12,7 @@ struct ball_dimensions {
   fixed inner_radius = 0;
 };
 
-constexpr ball_dimensions bd(fixed radius, fixed inner_radius = 0) {
+constexpr ball_dimensions bd(fixed radius = 0, fixed inner_radius = 0) {
   return {radius, inner_radius};
 }
 
@@ -87,6 +87,7 @@ struct ball_data : shape_data_base {
       std::invoke(f,
                   render::shape{
                       .origin = to_float(*t),
+                      .rotation = t.rotation().to_float(),
                       .colour = line.colour,
                       .z_index = line.z,
                       .s_index = line.index,
@@ -99,6 +100,7 @@ struct ball_data : shape_data_base {
       std::invoke(f,
                   render::shape{
                       .origin = to_float(*t),
+                      .rotation = t.rotation().to_float(),
                       .colour = fill.colour,
                       .z_index = fill.z,
                       .s_index = fill.index,

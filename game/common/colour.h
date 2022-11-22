@@ -135,9 +135,11 @@ constexpr auto kSolarizedDarkBlue = srgb2hsl(38, 139, 210);
 constexpr auto kSolarizedDarkCyan = srgb2hsl(42, 161, 152);
 constexpr auto kSolarizedDarkGreen = srgb2hsl(133, 153, 0);
 
-constexpr auto kBackgroundAlpha0 = 1.f / 32;
+constexpr auto kEffectAlpha0 = 1.f / 2;
 constexpr auto kFillAlpha0 = 1.f / 3;
+constexpr auto kFillAlpha1 = 1.f / 4;
 constexpr auto kShadowAlpha0 = 1.f / 6;
+constexpr auto kBackgroundAlpha0 = 1.f / 20;
 constexpr auto kOutline = kBlack1;
 constexpr auto kNewPurple = hue360(270, .6f, .7f);
 constexpr auto kNewGreen0 = hue360(120, .5f, .4f);

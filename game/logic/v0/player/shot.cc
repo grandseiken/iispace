@@ -65,7 +65,7 @@ struct PlayerShot : ecs::component {
       auto type = is_predicted ? damage_type::kPredicted
           : penetrating        ? damage_type::kPenetrating
                                : damage_type::kNormal;
-      if (const auto* status = e.h.get<EnemyStatus>(); status && status->shielded_ticks) {
+      if (const auto* status = e.h.get<EnemyStatus>(); status && status->shielded_ticks > 4u) {
         shielded = true;
       }
       ecs::call_if<&Health::damage>(e.h, sim, shielded ? 0u : 8u, type, player,

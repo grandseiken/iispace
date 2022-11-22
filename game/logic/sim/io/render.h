@@ -96,12 +96,14 @@ struct shape {
   }
 
   void apply_hit_flash(float a) {
-    z_index = a + z_index;
+    z_index += a;
     auto w = std::max(0.f, 3.f * (a - .5f));
     auto l = a / 4.f;
     if (auto* p = std::get_if<render::ngon>(&data); p) {
       p->line_width += w;
     } else if (auto* p = std::get_if<render::box>(&data); p) {
+      p->line_width += w;
+    } else if (auto* p = std::get_if<render::ball>(&data); p) {
       p->line_width += w;
     } else if (auto* p = std::get_if<render::line>(&data); p) {
       p->line_width += w;
@@ -109,24 +111,26 @@ struct shape {
     colour.z = std::min(1.f, colour.z + l);
   }
 
-  bool apply_shield(float a) {
-    s_index += 'S';
-    z_index = colour::kZBackgroundEffect;
-    colour = colour::alpha(colour::kWhite1, a);
-    if (auto* p = std::get_if<render::ngon>(&data); p) {
-      p->inner_radius = 0;
-      p->line_width = -2.f;
+  bool apply_shield(shape& copy, float a) {
+    if (auto* p = std::get_if<render::ngon>(&copy.data); p) {
       if (p->style == ngon_style::kPolystar) {
         return false;
       }
-      p->style = ngon_style::kPolygon;
-      return true;
+      p->line_width *= -.75f;
+    } else if (auto* p = std::get_if<render::box>(&copy.data); p) {
+      p->line_width *= -.75f;
+    } else if (auto* p = std::get_if<render::ball>(&copy.data); p) {
+      p->line_width *= -.75f;
+    } else if (auto* p = std::get_if<render::line>(&copy.data); p) {
+      p->line_width *= -.75f;
+    } else {
+      return false;
     }
-    if (auto* p = std::get_if<render::box>(&data); p) {
-      p->line_width = -2.f;
-      return true;
-    }
-    return false;
+    copy.colour = colour::alpha(copy.colour, a);
+    copy.s_index += 'S';
+    z_index += a;
+    colour = colour::hsl_mix(colour, colour::kWhite1, a * a);
+    return true;
   }
 };
 

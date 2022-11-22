@@ -315,34 +315,48 @@ struct Tractor : ecs::component {
 DEBUG_STRUCT_TUPLE(Tractor, timer, dir, power, ready, spinning, spoke_r);
 
 struct ShieldHub : ecs::component {
-  static constexpr std::uint32_t kBoundingWidth = 24;
+  static constexpr std::uint32_t kBoundingWidth = 28;
   static constexpr sound kDestroySound = sound::kPlayerDestroy;
   static constexpr rumble_type kDestroyRumble = rumble_type::kLarge;
 
-  static constexpr std::uint32_t kTimer = 320;
+  static constexpr std::uint32_t kTimer = 280;
   static constexpr fixed kSpeed = 3_fx / 4_fx;
   static constexpr fixed kShieldDistance = 280;
+  static constexpr fixed kShieldDrawDistance = kShieldDistance + 10;
 
   static constexpr auto z = colour::kZEnemyLarge;
-  static constexpr auto c = colour::kSolarizedDarkViolet;
-  static constexpr auto cf = colour::alpha(c, colour::kFillAlpha0);
+  static constexpr auto c0 = colour::hsl_mix(colour::kSolarizedDarkCyan, colour::kNewGreen0);
+  static constexpr auto c1 = colour::kWhite1;
+  static constexpr auto cf0 = colour::alpha(c0, colour::kFillAlpha0);
+  static constexpr auto cf1 = colour::alpha(c1, colour::kFillAlpha1);
   static constexpr auto outline = geom::sline(colour::kOutline, colour::kZOutline, 2.f);
-  static constexpr auto sl = geom::sline(colour::alpha(colour::kWhite0, colour::kFillAlpha0),
-                                         colour::kZBackgroundEffect, 1.f);
-  static constexpr auto sf = geom::sfill(colour::alpha(colour::kWhite0, colour::kBackgroundAlpha0),
-                                         colour::kZBackgroundEffect);
 
   using shape = geom::compound<
-      standard_transform<
-          geom::ball<geom::bd(kBoundingWidth + 2), outline>,
-          geom::ball_with_collider<geom::bd(kBoundingWidth), geom::sline(c, z), geom::sfill(cf, z),
-                                   shape_flag::kDangerous | shape_flag::kVulnerable>>,
-      geom::translate_p<0,
-                        geom::rotate_eval<geom::multiply_p<-1_fx / 2, 1>,
-                                          geom::box<vec2{20, 10}, geom::sline(c, z)>>,
-                        geom::rotate_eval<geom::multiply_p<1_fx / 2, 1>,
-                                          geom::box<vec2{10, 20}, geom::sline(c, z)>>,
-                        geom::ball<geom::bd(kShieldDistance + 16), sl, sf>>>;
+      geom::translate_p<
+          0, geom::ball<geom::bd(kBoundingWidth / 3), geom::sline(c0, z)>,
+          geom::rotate_eval<
+              geom::multiply_p<-1_fx / 2, 1>,
+              geom::compound<
+                  geom::translate<-18, 0, geom::box<vec2{10, 10}, outline>,
+                                  geom::box<vec2{8, 8}, geom::sline(c1, z), geom::sfill(cf1, z)>>,
+                  geom::translate<18, 0, geom::box<vec2{10, 10}, outline>,
+                                  geom::box<vec2{8, 8}, geom::sline(c1, z), geom::sfill(cf1, z)>>,
+                  geom::box<vec2{11, 4}, geom::sline(c1, z)>>>,
+          geom::rotate_eval<
+              geom::multiply_p<1_fx / 2, 1>,
+              geom::compound<
+                  geom::translate<-18, 0, geom::box<vec2{10, 10}, outline>,
+                                  geom::box<vec2{8, 8}, geom::sline(c1, z), geom::sfill(cf1, z)>>,
+                  geom::translate<18, 0, geom::box<vec2{10, 10}, outline>,
+                                  geom::box<vec2{8, 8}, geom::sline(c1, z), geom::sfill(cf1, z)>>,
+                  geom::box<vec2{11, 4}, geom::sline(c1, z)>>>>,
+      standard_transform<geom::ball<geom::bd(kBoundingWidth + 2), outline>,
+                         geom::ball_with_collider<
+                             geom::bd(kBoundingWidth), geom::sline(c0, z), geom::sfill(cf0, z),
+                             shape_flag::kDangerous | shape_flag::kVulnerable>>>;
+
+  ShieldHub(ecs::const_handle h) : effect_id{h.id()} {}
+  ecs::entity_id effect_id;
   std::uint32_t timer = 0;
   std::uint32_t count = 0;
   vec2 dir{0};
@@ -384,7 +398,54 @@ struct ShieldHub : ecs::component {
 
     transform.rotate(fixed_c::hundredth * 3);
     transform.move(dir * kSpeed);
+    if (auto eh = sim.index().get(effect_id); eh) {
+      eh->get<Transform>()->centre = transform.centre;
+    }
   }
+
+  void on_destroy(SimInterface& sim) const {
+    if (auto eh = sim.index().get(effect_id); eh) {
+      eh->get<ShieldEffect>()->destroy = true;
+    }
+  }
+
+  struct ShieldEffect : ecs::component {
+    static constexpr std::uint32_t kFadeInTime = 90;
+    static constexpr std::uint32_t kAnimTime = 240;
+    static constexpr std::uint32_t kAnimFadeTime = 40;
+    using sl0 = geom::set_colour_p<geom::sline(colour::kZero, colour::kZBackgroundEffect, 4.f), 3>;
+    using sl1 = geom::set_colour_p<geom::sline(colour::kZero, colour::kZBackgroundEffect, 4.f), 4>;
+    using sf = geom::set_colour_p<geom::sfill(colour::kZero, colour::kZBackgroundEffect), 5>;
+    using shape =
+        standard_transform<geom::ball_eval<geom::constant<geom::bd(kShieldDrawDistance)>, sl0, sf>,
+                           geom::ball_eval<geom::set_radius_p<geom::bd(), 2>, sl1>>;
+
+    std::tuple<vec2, fixed, fixed, glm::vec4, glm::vec4, glm::vec4>
+    shape_parameters(const Transform& transform) const {
+      auto a = static_cast<float>(fade_in) / kFadeInTime;
+      auto t = anim % (kAnimTime + kAnimFadeTime);
+      auto ta = t < kAnimTime ? 1.f : 1.f - static_cast<float>(t - kAnimTime) / kAnimFadeTime;
+      return {transform.centre,
+              transform.rotation,
+              kShieldDrawDistance * (std::min(t, kAnimTime) / fixed{kAnimTime}),
+              colour::alpha(colour::kWhite1, a * colour::kFillAlpha0),
+              colour::alpha(colour::kWhite1, a * ta * colour::kFillAlpha0),
+              colour::alpha(colour::kWhite1, a * colour::kBackgroundAlpha0)};
+    }
+
+    std::uint32_t anim = 0;
+    std::uint32_t fade_in = 0;
+    bool destroy = false;
+
+    void update(ecs::handle h, SimInterface&) {
+      ++anim;
+      destroy&& fade_in && (fade_in -= std::min(fade_in, 3u));
+      !destroy&& fade_in < kFadeInTime && ++fade_in;
+      if (destroy && !fade_in) {
+        h.add(Destroy{});
+      }
+    }
+  };
 };
 DEBUG_STRUCT_TUPLE(ShieldHub, timer, count, dir);
 
@@ -438,9 +499,12 @@ void spawn_tractor(SimInterface& sim, const vec2& position, bool power) {
 }
 
 void spawn_shield_hub(SimInterface& sim, const vec2& position) {
+  auto eh = create_ship_default<ShieldHub::ShieldEffect>(sim, position);
+  eh.add(ShieldHub::ShieldEffect{});
+
   auto h = create_ship_default<ShieldHub>(sim, position);
   add_enemy_health<ShieldHub>(h, 224);
-  h.add(ShieldHub{});
+  h.add(ShieldHub{eh});
   h.add(Enemy{.threat_value = 10u});
   h.add(Physics{.mass = 3_fx});
   h.add(DropTable{.shield_drop_chance = 80, .bomb_drop_chance = 20});

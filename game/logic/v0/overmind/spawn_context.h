@@ -150,6 +150,7 @@ inline spawn_side reverse_side(spawn_side side) {
   case spawn_side::kReverseMirrorD5:
     return spawn_side::kMirrorD5;
   }
+  return side;
 }
 
 inline bool is_vertical(spawn_side side) {

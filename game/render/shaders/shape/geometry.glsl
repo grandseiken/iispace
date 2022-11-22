@@ -5,7 +5,7 @@ uniform ivec2 clip_max;
 uniform vec2 coordinate_offset;
 
 float render_depth() {
-  // Vertex z-range is [128, 128].
+  // Vertex z-range is [-128, 128].
   return (128. + clamp(gl_in[0].gl_Position.z, -128., 128.)) / 256.;
 }
 
@@ -103,8 +103,8 @@ struct box_data {
 };
 
 box_data convert_box(vec2 position, shape_vertex_data d) {
-  vec2 d0 = d.dimensions;
-  vec2 d1 = d0 - vec2(d.line_width);
+  vec2 d0 = max(d.dimensions, d.dimensions - vec2(d.line_width));
+  vec2 d1 = min(d.dimensions, d.dimensions - vec2(d.line_width));
 
   box_data r;
   r.a_outer = render_position(position + rotate(d0, d.rotation));
@@ -134,10 +134,12 @@ polygon_data convert_polygon(vec2 position, shape_vertex_data d) {
   r.position = position;
   r.sides = d.params.x;
   r.segments = d.params.y;
-  r.radius = d.dimensions.x;
-  r.inner_radius = d.dimensions.y;
+
+  float line_width = d.line_width * ngon_ulw_radius_retract(r.sides);
+  r.radius = d.dimensions.x - min(line_width, 0.);
+  r.inner_radius = max(0., d.dimensions.y + min(line_width, 0.));
   r.rotation = d.rotation;
-  r.rd = d.line_width * ngon_ulw_radius_retract(r.sides);
+  r.rd = abs(line_width);
   return r;
 }
 

@@ -91,13 +91,22 @@ void emit_line(vec2 a, vec2 b, shape_vertex_data data_a, shape_vertex_data data_
 }
 
 void emit_ball(vec2 a, vec2 b, shape_vertex_data data_a, shape_vertex_data data_b) {
-  // TODO: could use smaller polygon with 6 vertices instead of quad.
   ball_data da = convert_ball(a, data_a);
   ball_data db = convert_ball(b, data_b);
-  vec4 v_min = vec4(min(da.v_min.x, db.v_min.x), max(da.v_min.y, db.v_min.y), da.v_min.zw);
-  vec4 v_max = vec4(max(da.v_max.x, db.v_max.x), min(da.v_max.y, db.v_max.y), da.v_max.zw);
-  emit2c(v_min, vec4(v_max.x, v_min.yzw));
-  emit2c(vec4(v_min.x, v_max.yzw), v_max);
+  vec2 dv = vec2(greaterThan(a, b));
+
+  set_vertex_data(mix(da.v_min, da.v_max, vec4(dv.xy, 1., 1.)));
+  EmitVertex();
+  set_vertex_data(mix(da.v_min, da.v_max, vec4(dv.x, 1. - dv.y, 1., 0.)));
+  EmitVertex();
+  set_vertex_data(mix(da.v_min, da.v_max, vec4(1. - dv.x, dv.y, 0., 1.)));
+  EmitVertex();
+  set_vertex_data(mix(db.v_min, db.v_max, vec4(dv.x, 1. - dv.y, 1., 0.)));
+  EmitVertex();
+  set_vertex_data(mix(db.v_min, db.v_max, vec4(1. - dv.x, dv.y, 0., 1.)));
+  EmitVertex();
+  set_vertex_data(mix(db.v_min, db.v_max, vec4(1. - dv.x, 1. - dv.y, 0., 0.)));
+  EmitVertex();
   EndPrimitive();
 }
 

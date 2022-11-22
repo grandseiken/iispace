@@ -691,6 +691,7 @@ void GlRenderer::render_shapes(coordinate_system ctype, std::vector<shape>& shap
       add_outline_data(
           {
               .style = kStyleBall,
+              .rotation = shape.rotation,
               .line_width = p->line_width,
               .z_index = shape.z_index,
               .position = shape.origin,
@@ -733,6 +734,7 @@ void GlRenderer::render_shapes(coordinate_system ctype, std::vector<shape>& shap
     } else if (const auto* p = std::get_if<render::ball_fill>(&shape.data)) {
       add_fill_data({
           .style = kStyleBall,
+          .rotation = shape.rotation,
           .z_index = shape.z_index,
           .position = shape.origin,
           .dimensions = {p->radius, p->inner_radius},
@@ -846,12 +848,17 @@ void GlRenderer::render_shapes(coordinate_system ctype, std::vector<shape>& shap
   if (!shadow_fill_indices.empty()) {
     render_fills(shadow_fill_index_buffer, shadow_fill_indices.size());
   }
+  gl::clear_depth(0.f);
+  gl::enable_depth_test(true);
+  gl::depth_function(gl::comparison::kAlways);
   if (!bottom_outline_indices.empty()) {
     render_outlines(bottom_outline_index_buffer, bottom_outline_indices.size());
   }
+  gl::depth_function(gl::comparison::kGreaterEqual);
   if (!trail_indices.empty()) {
     render_trails(trail_index_buffer, trail_indices.size());
   }
+  gl::enable_depth_test(false);
   if (!fill_indices.empty()) {
     render_fills(fill_index_buffer, fill_indices.size());
   }

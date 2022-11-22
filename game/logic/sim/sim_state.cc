@@ -61,9 +61,9 @@ SimState::SimState(const initial_conditions& conditions, data::ReplayWriter* rep
     internals_->collision_index = std::make_unique<LegacyCollisionIndex>();
   } else {
     internals_->collision_index = std::make_unique<GridCollisionIndex>(
-        glm::uvec2{64, 64}, glm::ivec2{-32, -32},
+        glm::uvec2{64, 64}, glm::ivec2{-128, -128},
         glm::ivec2{internals_->dimensions.x.to_int(), internals_->dimensions.y.to_int()} +
-            glm::ivec2{32, 32});
+            glm::ivec2{128, 128});
   }
 
   internals_->global_entity_id = setup_->start_game(conditions, *interface_);

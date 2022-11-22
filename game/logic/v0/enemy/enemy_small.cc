@@ -366,7 +366,7 @@ struct FollowSponge : ecs::component {
     if (type == damage_type::kBomb || type == damage_type::kPredicted) {
       return;
     }
-    auto target_spawns = 1 + (health.max_hp - health.hp) / 8;
+    auto target_spawns = (health.max_hp - health.hp) / 8;
     while (spawns < target_spawns) {
       eh.explosion(to_float(transform.centre), c, 6, std::nullopt, 2.f);
       auto v =

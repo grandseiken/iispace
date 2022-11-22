@@ -51,13 +51,13 @@ void main() {
   ball_buffer_data bd1 = ball_buffer.data[d1.ball_index];
   // TODO: maybe need to antialias with fwidth, but actually looks OK.
   vec2 v = game_position(gl_FragCoord);
-  float a = ball_solve(v, bd0.position, bd1.position, bd0.dimensions.x);
+  float a = ball_solve(v, bd0.position, bd1.position, bd0.dimensions.x - min(bd0.line_width, 0.));
   if (bd0.dimensions.y > 0.) {
-    a += ball_solve(v, bd0.position, bd1.position, bd0.dimensions.y);
+    a += ball_solve(v, bd0.position, bd1.position, bd0.dimensions.y + min(bd0.line_width, 0.));
   }
   if (a > 0.) {
-    // TODO: doesn't do colour transition correctly (or even attempt to). Tricky without
-    // extra passes.
+    // TODO: doesn't do colour transition correctly (or even attempt to) - tricky without
+    // extra passes?
     vec4 oklab0 = hsla2oklab_cycle(d0.colour, colour_cycle);
     out_colour = vec4(oklab0.xyz, min(1., .75 * a) * oklab0.a);
   } else {
