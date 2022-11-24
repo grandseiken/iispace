@@ -168,7 +168,8 @@ void SimLayer::render_content(render::GlRenderer& r) const {
   auto& render =
       impl_->istate().render(impl_->transients, /* paused */ stack().top() != impl_->hud);
   r.set_colour_cycle(render.colour_cycle);
-  impl_->render_state.render(r, impl_->istate().tick_count(), render.shapes);
+  r.render_background(render.background);
+  impl_->render_state.render(render.shapes);
   r.render_shapes(render::coordinate_system::kGlobal, render.shapes, style);
   impl_->hud->set_data(render);
 }

@@ -45,8 +45,8 @@ struct Square : ecs::component {
 
   void
   update(ecs::handle h, Transform& transform, Render& render, Health& health, SimInterface& sim) {
-    bool no_enemies = !sim.global_entity().get<GlobalData>()->non_wall_enemy_count;
-    if (sim.is_on_screen(transform.centre) && no_enemies) {
+    bool vulnerable = sim.global_entity().get<GlobalData>()->walls_vulnerable;
+    if (sim.is_on_screen(transform.centre) && vulnerable) {
       if (timer) {
         --timer;
       }
@@ -87,7 +87,7 @@ struct Square : ecs::component {
     dir = normalise(dir);
     transform.move(dir * kSpeed);
     transform.set_rotation(angle(dir));
-    if (no_enemies) {
+    if (vulnerable) {
       ++invisible_flash;
     } else {
       invisible_flash = 0;
@@ -130,7 +130,7 @@ struct Wall : ecs::component {
 
   void
   update(ecs::handle h, Transform& transform, Render& render, Health& health, SimInterface& sim) {
-    if (!sim.global_entity().get<GlobalData>()->non_wall_enemy_count && timer && !(timer % 8)) {
+    if (sim.global_entity().get<GlobalData>()->walls_vulnerable && timer && !(timer % 8)) {
       weak = true;
       if (health.hp > 2) {
         sim.emit(resolve_key::predicted()).play(sound::kEnemySpawn, 1.f, 0.f);

@@ -10,7 +10,9 @@ namespace v0 {
 class Biome {
 public:
   virtual ~Biome() = default;
-  virtual void spawn_wave(SimInterface&, const wave_data& wave) const = 0;
+
+  virtual wave_data get_wave_data(const initial_conditions&, const wave_id&) const = 0;
+  virtual void spawn_wave(SimInterface&, const wave_data&) const = 0;
 };
 
 const Biome* get_biome(run_biome biome);

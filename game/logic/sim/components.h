@@ -150,6 +150,11 @@ struct Player : ecs::component {
 DEBUG_STRUCT_TUPLE(Player, player_number, death_count, is_killed, super_charge, bomb_count,
                    shield_count, is_predicted, speed);
 
+struct Background : ecs::component {
+  render::background background;
+};
+DEBUG_STRUCT_TUPLE(Background);
+
 }  // namespace ii
 
 #endif

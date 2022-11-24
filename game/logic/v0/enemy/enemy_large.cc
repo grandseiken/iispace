@@ -321,7 +321,7 @@ struct ShieldHub : ecs::component {
 
   static constexpr std::uint32_t kTimer = 280;
   static constexpr fixed kSpeed = 3_fx / 4_fx;
-  static constexpr fixed kShieldDistance = 280;
+  static constexpr fixed kShieldDistance = 260;
   static constexpr fixed kShieldDrawDistance = kShieldDistance + 10;
 
   static constexpr auto z = colour::kZEnemyLarge;
@@ -413,9 +413,9 @@ struct ShieldHub : ecs::component {
     static constexpr std::uint32_t kFadeInTime = 90;
     static constexpr std::uint32_t kAnimTime = 240;
     static constexpr std::uint32_t kAnimFadeTime = 40;
-    using sl0 = geom::set_colour_p<geom::sline(colour::kZero, colour::kZBackgroundEffect, 4.f), 3>;
-    using sl1 = geom::set_colour_p<geom::sline(colour::kZero, colour::kZBackgroundEffect, 4.f), 4>;
-    using sf = geom::set_colour_p<geom::sfill(colour::kZero, colour::kZBackgroundEffect), 5>;
+    using sl0 = geom::set_colour_p<geom::sline(colour::kZero, colour::kZBackgroundEffect1, 4.f), 3>;
+    using sl1 = geom::set_colour_p<geom::sline(colour::kZero, colour::kZBackgroundEffect1, 4.f), 4>;
+    using sf = geom::set_colour_p<geom::sfill(colour::kZero, colour::kZBackgroundEffect0), 5>;
     using shape =
         standard_transform<geom::ball_eval<geom::constant<geom::bd(kShieldDrawDistance)>, sl0, sf>,
                            geom::ball_eval<geom::set_radius_p<geom::bd(), 2>, sl1>>;
@@ -430,7 +430,7 @@ struct ShieldHub : ecs::component {
               kShieldDrawDistance * (std::min(t, kAnimTime) / fixed{kAnimTime}),
               colour::alpha(colour::kWhite1, a * colour::kFillAlpha0),
               colour::alpha(colour::kWhite1, a * ta * colour::kFillAlpha0),
-              colour::alpha(colour::kWhite1, a * colour::kBackgroundAlpha0)};
+              colour::alpha(colour::kBlack0, a * colour::kBackgroundAlpha0)};
     }
 
     std::uint32_t anim = 0;

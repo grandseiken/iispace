@@ -9,6 +9,7 @@
 * Increase invulnerability window after hit
 * Decrease collision size
 * Weapon damage?
+* Using bomb ~20 frames after getting hit will undo the hit
 
 ## Misc upgrades
 * Refills before boss

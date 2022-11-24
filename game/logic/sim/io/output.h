@@ -47,6 +47,7 @@ struct aggregate_output {
 };
 
 struct render_output {
+  render::background background;
   std::vector<render::player_info> players;
   std::vector<render::shape> shapes;
   std::uint64_t tick_count = 0;

@@ -144,7 +144,8 @@ constexpr auto kOutline = kBlack1;
 constexpr auto kNewPurple = hue360(270, .6f, .7f);
 constexpr auto kNewGreen0 = hue360(120, .5f, .4f);
 
-constexpr auto kZBackgroundEffect = -100.f;
+constexpr auto kZBackgroundEffect0 = -104.f;
+constexpr auto kZBackgroundEffect1 = -100.f;
 constexpr auto kZParticle = -96.f;
 constexpr auto kZOutline = -88.f;
 constexpr auto kZEffect0 = -80.f;

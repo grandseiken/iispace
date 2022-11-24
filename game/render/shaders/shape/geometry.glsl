@@ -1,3 +1,4 @@
+#include "game/render/shaders/lib/math.glsl"
 #include "game/render/shaders/shape/geometry_fragment.glsl"
 
 uniform ivec2 clip_min;
@@ -28,16 +29,6 @@ float game_distance(vec4 render_a, vec4 render_b) {
   vec2 a = (render_a.xy * vec2(render_dimensions) / 2. + 1.) / aspect_scale;
   vec2 b = (render_b.xy * vec2(render_dimensions) / 2. + 1.) / aspect_scale;
   return distance(a, b);
-}
-
-vec2 from_polar(float a, float r) {
-  return vec2(r * cos(a), r * sin(a));
-}
-
-vec2 rotate(vec2 v, float a) {
-  float c = cos(a);
-  float s = sin(a);
-  return vec2(v.x * c - v.y * s, v.x * s + v.y * c);
 }
 
 vec2 ngon_vertex(uint i, uint n, float rotation, float radius) {

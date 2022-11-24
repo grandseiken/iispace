@@ -57,8 +57,9 @@ public:
   // single pass, etc.
   void render_panel(const panel_data&) const;
 
-  void render_background(std::uint64_t tick_count, const glm::vec4& colour) const;
+  void render_background(const render::background& data) const;
   // TODO: _maybe_ render outlines automatically somehow, or output from geometry shapes?
+  // TODO: 3D shadows; lighting explosion effects.
   void render_shapes(coordinate_system ctype, std::vector<render::shape>& shapes,
                      shape_style style) const;
   void render_present() const;

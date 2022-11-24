@@ -111,12 +111,11 @@ struct particle {
 
 enum class background_fx_type {
   kNone,
-  kBiome0,
   kLegacy_Stars,
 };
 
 struct background_fx_change {
-  background_fx_type type = background_fx_type::kBiome0;
+  background_fx_type type = background_fx_type::kNone;
 };
 
 }  // namespace ii

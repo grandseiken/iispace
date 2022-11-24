@@ -253,6 +253,11 @@ inline void enable_srgb(bool enable) {
   }
 }
 
+inline void colour_mask(const glm::bvec4& mask) {
+  glColorMask(mask.r ? GL_TRUE : GL_FALSE, mask.g ? GL_TRUE : GL_FALSE, mask.b ? GL_TRUE : GL_FALSE,
+              mask.a ? GL_TRUE : GL_FALSE);
+}
+
 inline void enable_depth_test(bool enable) {
   if (enable) {
     glEnable(GL_DEPTH_TEST);

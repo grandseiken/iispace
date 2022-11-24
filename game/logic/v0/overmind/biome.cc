@@ -6,6 +6,19 @@
 
 namespace ii::v0 {
 namespace {
+
+wave_data get_wave_data(const initial_conditions& conditions, const wave_id& wave) {
+  static constexpr std::uint32_t kInitialPower = 16u;
+
+  wave_data data;
+  data.power = (wave.biome_index + 1) * kInitialPower + 2u * (conditions.player_count - 1u);
+  data.power += wave.wave_number;
+  data.power += std::min(8u, wave.wave_number);
+  data.upgrade_budget = data.power / 2;
+  data.threat_trigger = wave.wave_number;
+  return data;
+}
+
 spawn_context make_context(SimInterface& sim, const wave_data& wave) {
   return {sim, sim.random(random_source::kGameSequence), wave, 0};
 }
@@ -97,7 +110,11 @@ public:
     s.add<formations::mixed7_side>();
     s.add<formations::mixed8_side>();
     s.add<formations::mixed9_side>();
-    s.add<formations::mixed10_side>();
+  }
+
+  wave_data
+  get_wave_data(const initial_conditions& conditions, const wave_id& wave) const override {
+    return v0::get_wave_data(conditions, wave);
   }
 
   void spawn_wave(SimInterface& sim, const wave_data& wave) const override {
