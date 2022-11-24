@@ -112,6 +112,31 @@ public:
     s.add<formations::mixed9_side>();
   }
 
+  bool update_background(RandomEngine& random, const background_input& input,
+                         background_update& data) const override {
+    if (input.initialise) {
+      data.position_delta = {0.f, 0.f, 1.f / 8, 1.f / 256};
+      data.rotation_delta = 0.f;
+
+      data.type = render::background::type::kBiome0;
+      data.colour = colour::kSolarizedDarkBase03;
+      data.colour.z /= 1.25f;
+      data.parameters = {0.f, 0.f};
+    }
+
+    if (input.wave_number) {
+      if (*input.wave_number % 2) {
+        data.parameters.x = 1.f - data.parameters.x;
+      } else {
+        auto v = from_polar(2 * fixed_c::pi * random.fixed(), 1_fx / 2);
+        data.position_delta.x = v.x.to_float();
+        data.position_delta.y = v.y.to_float();
+      }
+      return true;
+    }
+    return false;
+  }
+
   wave_data
   get_wave_data(const initial_conditions& conditions, const wave_id& wave) const override {
     return v0::get_wave_data(conditions, wave);

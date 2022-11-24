@@ -41,7 +41,7 @@ RunLobbyLayer::~RunLobbyLayer() = default;
 RunLobbyLayer::RunLobbyLayer(ui::GameStack& stack, std::optional<initial_conditions> conditions,
                              bool online)
 : ui::GameLayer{stack, ui::layer_flag::kBaseLayer | ui::layer_flag::kNoAutoFocus}
-, conditions_{conditions}
+, conditions_{std::move(conditions)}
 , online_{online} {
   set_bounds(rect{kUiDimensions});
 

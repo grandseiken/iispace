@@ -12,29 +12,26 @@ namespace {
 
 struct Overmind : ecs::component {
   static constexpr std::uint32_t kSpawnTimer = 60;
+  static constexpr std::uint32_t kBackgroundInterpolateTime = 120;
 
   wave_id wave;
   std::uint32_t threat_trigger = 0;
   std::uint32_t spawn_timer = 0;
 
+  std::uint32_t background_interpolate = 0;
+  std::vector<background_update> background_data;
+
   void update(ecs::handle h, SimInterface& sim) {
     auto& global = *sim.global_entity().get<GlobalData>();
     global.walls_vulnerable = !(sim.index().count<Enemy>() - sim.index().count<WallTag>());
-    global.debug_text.clear();
-    global.debug_text += "s:" + std::to_string(global.shield_drop.counter) +
-        " b:" + std::to_string(global.bomb_drop.counter);
 
-    auto& background = sim.global_entity().get<Background>()->background;
-    // TODO: delegate to biome somehow.
-    auto t = static_cast<float>(sim.tick_count());
-    background.interpolate = 0.f;
-    background.position = {256.f * std::cos(t / 512.f), -t / 4.f, t / 8.f, t / 256.f};
-    background.rotation = 0.f;
-    background.data0.type = render::background::type::kBiome0;
-    background.data0.colour = colour::kSolarizedDarkBase03;
-    background.data0.colour.z /= 1.25f;
-    background.data0.parameters = {(1.f - std::cos(t / 1024.f)) / 2.f, 0.f};
+    background_input input;
+    input.initialise = !sim.tick_count();
+    input.tick_count = sim.tick_count();
+    input.biome_index = wave.biome_index;
 
+    std::uint32_t total_enemy_threat = 0;
+    sim.index().iterate<Enemy>([&](const Enemy& e) { total_enemy_threat += e.threat_value; });
     if (spawn_timer) {
       global.walls_vulnerable = false;
       // TODO: bosses. Legacy behaviour was 20/24/28/32 waves per boss by player count.
@@ -43,14 +40,18 @@ struct Overmind : ecs::component {
         respawn_players(sim);
         spawn_wave(sim);
       }
-      return;
+    } else if (!input.initialise && total_enemy_threat <= threat_trigger) {
+      spawn_timer = kSpawnTimer;
+      input.wave_number = wave.wave_number;
     }
 
-    std::uint32_t total_enemy_threat = 0;
-    sim.index().iterate<Enemy>([&](const Enemy& e) { total_enemy_threat += e.threat_value; });
-    if (total_enemy_threat <= threat_trigger) {
-      spawn_timer = kSpawnTimer;
+    if (const auto* biome = get_biome(sim); biome) {
+      update_background(sim, *biome, input, sim.global_entity().get<Background>()->background);
     }
+
+    global.debug_text.clear();
+    global.debug_text += "s:" + std::to_string(global.shield_drop.counter) +
+        " b:" + std::to_string(global.bomb_drop.counter);
     global.debug_text += " t:" + std::to_string(total_enemy_threat);
   }
 
@@ -77,12 +78,59 @@ struct Overmind : ecs::component {
     sim.global_entity().get<GlobalData>()->overmind_wave_count = wave.wave_number;
   }
 
+  void update_background(SimInterface& sim, const Biome& biome, const background_input& input,
+                         render::background& background) {
+    bool transition = true;
+    if (background_data.empty()) {
+      background.position.x = sim.random_fixed().to_float() * 1024.f - 512.f;
+      background.position.y = sim.random_fixed().to_float() * 1024.f - 512.f;
+      background_data.emplace_back();
+      transition = false;
+    }
+    auto update_copy = background_data.back();
+    if (!biome.update_background(sim.random(random_source::kAesthetic), input, update_copy)) {
+      transition = false;
+    }
+    if (transition) {
+      background_data.emplace_back(update_copy);
+    } else {
+      background_data.back() = update_copy;
+    }
+
+    if (background_data.size() > 1 && ++background_interpolate == kBackgroundInterpolateTime) {
+      background_data.erase(background_data.begin());
+      background_interpolate = 0;
+    }
+
+    auto set_data = [](render::background::data& data, const background_update& update) {
+      data.type = update.type;
+      data.colour = update.colour;
+      data.parameters = update.parameters;
+    };
+
+    background.interpolate =
+        static_cast<float>(background_interpolate) / kBackgroundInterpolateTime;
+    set_data(background.data0, background_data[0]);
+    if (background_data.size() > 1) {
+      set_data(background.data1, background_data[1]);
+      background.position += glm::mix(background_data[0].position_delta,
+                                      background_data[1].position_delta, background.interpolate);
+      background.rotation += glm::mix(background_data[0].rotation_delta,
+                                      background_data[1].rotation_delta, background.interpolate);
+    } else {
+      background.position += background_data[0].position_delta;
+      background.rotation += background_data[1].rotation_delta;
+    }
+    background.rotation = normalise_angle(background.rotation);
+  }
+
   const Biome* get_biome(const SimInterface& sim) const {
     const auto& biomes = sim.conditions().biomes;
     return wave.biome_index >= biomes.size() ? nullptr : v0::get_biome(biomes[wave.biome_index]);
   }
 };
-DEBUG_STRUCT_TUPLE(Overmind, wave.biome_index, wave.wave_number, threat_trigger, spawn_timer);
+DEBUG_STRUCT_TUPLE(Overmind, wave.biome_index, wave.wave_number, threat_trigger, spawn_timer,
+                   background_interpolate);
 
 }  // namespace
 
