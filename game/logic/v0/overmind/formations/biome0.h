@@ -1,10 +1,10 @@
-#ifndef II_GAME_LOGIC_V0_OVERMIND_FORMATIONS_H
-#define II_GAME_LOGIC_V0_OVERMIND_FORMATIONS_H
+#ifndef II_GAME_LOGIC_V0_OVERMIND_FORMATIONS_BIOME0_H
+#define II_GAME_LOGIC_V0_OVERMIND_FORMATIONS_BIOME0_H
 #include "game/logic/v0/enemy/enemy.h"
 #include "game/logic/v0/overmind/spawn_context.h"
 #include <cstdint>
 
-namespace ii::v0::formations {
+namespace ii::v0::formations::biome0 {
 
 template <std::uint32_t Cost, std::uint32_t Min = 0>
 struct formation {
@@ -755,7 +755,7 @@ struct tractor1_side : formation<13, 32> {
   }
 };
 
-struct shield_hub0_side : formation<8, 30> {
+struct shield_hub0_side : formation<7, 30> {
   void operator()(spawn_context& context) const {
     auto side = context.random_side();
     auto p = context.random.uint(7) + 1;
@@ -837,6 +837,19 @@ struct mixed6 : formation<20, 26> {
     context.spawn(&spawn_chaser_u, side, 3, 10);
     context.spawn(&spawn_chaser_u, side, 4, 10);
     context.spawn(&spawn_chaser, side, 5, 10);
+  }
+};
+
+struct mixed7 : formation<20, 38> {
+  void operator()(spawn_context& context) const {
+    auto side0 = context.random_vside();
+    auto side1 = opposite_side(side0);
+    auto side2 = context.random.rbool() ? side0 : side1;
+    context.spawn(&spawn_follow_hub, side0, 1, 7);
+    context.spawn(&spawn_follow_hub, side1, 2, 7);
+    context.spawn(&spawn_shield_hub, side2, 3, 7);
+    context.spawn(&spawn_follow_hub, side1, 4, 7);
+    context.spawn(&spawn_follow_hub, side0, 5, 7);
   }
 };
 
@@ -922,7 +935,7 @@ struct mixed6_side : formation<10, 18> {
   }
 };
 
-struct mixed7_side : formation<15, 34> {
+struct mixed7_side : formation<14, 34> {
   void operator()(spawn_context& context) const {
     auto side = context.random_side();
     context.spawn(&spawn_follow_hub, side, 1, 5);
@@ -949,7 +962,7 @@ struct mixed8_side : formation<9, 22> {
   }
 };
 
-struct mixed9_side : formation<16, 36> {
+struct mixed9_side : formation<15, 36> {
   void operator()(spawn_context& context) const {
     auto d = context.random.uint(3);
     auto p = context.random.uint(3);
@@ -966,6 +979,15 @@ struct mixed9_side : formation<16, 36> {
   }
 };
 
-}  // namespace ii::v0::formations
+struct mixed10_side : formation<10, 32> {
+  void operator()(spawn_context& context) const {
+    auto side = context.random_side();
+    context.spawn(&spawn_follow_hub, side, 1, 7);
+    context.spawn(&spawn_follow_sponge, side, 3, 7);
+    context.spawn(&spawn_follow_hub, side, 5, 7);
+  }
+};
+
+}  // namespace ii::v0::formations::biome0
 
 #endif

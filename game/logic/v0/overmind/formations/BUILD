@@ -1,6 +1,6 @@
 cc_library(
   name = "formations",
-  hdrs = ["formations.h"],
+  hdrs = ["biome0.h"],
   deps = [
     "//game/logic/v0/enemy",
     "//game/logic/v0/overmind:internal",
