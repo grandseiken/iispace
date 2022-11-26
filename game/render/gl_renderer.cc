@@ -175,7 +175,8 @@ struct GlRenderer::impl_t {
 
   gl::bound_framebuffer bind_render_framebuffer(const glm::uvec2& dimensions) {
     if (!render_framebuffer || render_framebuffer->dimensions != dimensions) {
-      auto result = make_render_framebuffer(dimensions, /* depth/stencil */ true, /* samples */ 16);
+      auto result =
+          make_render_framebuffer(dimensions, /* depth/stencil */ true, gl::max_samples());
       if (!result) {
         status = unexpected("OpenGL error: " + result.error());
         return gl::bound_framebuffer{GL_FRAMEBUFFER};
@@ -860,7 +861,7 @@ void GlRenderer::render_present() const {
   gl::enable_srgb(false);
 
   auto result = gl::set_uniforms(program, "screen_dimensions", target_.screen_dimensions,
-                                 "framebuffer_samples", impl_->render_framebuffer->samples);
+                                 "is_multisample", impl_->render_framebuffer->samples > 1);
   if (!result) {
     impl_->status = unexpected("postprocess shader error: " + result.error());
     return;

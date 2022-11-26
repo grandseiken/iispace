@@ -3,6 +3,7 @@ Checks: >
   bugprone-*,
   -bugprone-branch-clone,
   -bugprone-easily-swappable-parameters,
+  -bugprone-unchecked-optional-access,
   cert-*,
   -cert-dcl21-cpp
   concurrency-*,

@@ -10,7 +10,7 @@ in v_out_t {
 v_in[];
 
 flat out uint g_buffer_index;
-out float g_interpolate;
+centroid out float g_interpolate;
 
 void emit2c(vec4 v0, vec4 v1) {
   set_vertex_data(v0);

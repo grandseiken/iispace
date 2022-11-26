@@ -242,6 +242,12 @@ inline texture make_texture() {
   return texture{i};
 }
 
+inline std::uint32_t max_samples() {
+  GLint v = 1;
+  glGetIntegerv(GL_MAX_SAMPLES, &v);
+  return static_cast<std::uint32_t>(std::max(v, 1));
+}
+
 inline void generate_texture_mipmap(const texture& handle) {
   glGenerateTextureMipmap(*handle);
 }
@@ -269,7 +275,7 @@ inline void texture_storage_2d_multisample(const texture& handle, std::uint32_t 
   glTexStorage2DMultisample(GL_TEXTURE_2D_MULTISAMPLE, static_cast<GLsizei>(samples),
                             detail::internal_format_to_gl(iformat),
                             static_cast<GLsizei>(dimensions.x), static_cast<GLsizei>(dimensions.y),
-                            true);
+                            /* fixed locations */ GL_TRUE);
   glBindTexture(GL_TEXTURE_2D_MULTISAMPLE, 0);
 }
 

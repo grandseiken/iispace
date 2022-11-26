@@ -5,7 +5,7 @@
 uniform float colour_cycle;
 
 flat in uint g_buffer_index;
-in float g_interpolate;
+centroid in float g_interpolate;
 out vec4 out_colour;
 
 layout(std430, binding = 0) restrict readonly buffer shape_buffer_block {
