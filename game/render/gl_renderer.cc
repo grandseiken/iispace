@@ -175,8 +175,8 @@ struct GlRenderer::impl_t {
 
   gl::bound_framebuffer bind_render_framebuffer(const glm::uvec2& dimensions) {
     if (!render_framebuffer || render_framebuffer->dimensions != dimensions) {
-      auto result =
-          make_render_framebuffer(dimensions, /* depth/stencil */ true, gl::max_samples());
+      auto result = make_render_framebuffer(dimensions, /* depth/stencil */ true,
+                                            std::min(16u, gl::max_samples()));
       if (!result) {
         status = unexpected("OpenGL error: " + result.error());
         return gl::bound_framebuffer{GL_FRAMEBUFFER};
