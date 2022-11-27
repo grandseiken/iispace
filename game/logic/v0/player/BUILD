@@ -21,9 +21,22 @@ cc_library(
 
 cc_library(
   name = "loadout",
-  hdrs = ["loadout.h"],
-  srcs = ["loadout.cc"],
-  deps = ["//game/logic/ecs"],
+  hdrs = [
+    "loadout.h",
+    "loadout_mods.h",
+  ],
+  srcs = [
+    "loadout.cc",
+    "loadout_mods.cc",
+  ],
+  deps = [
+    "//game/common:ustring",
+    "//game/logic/ecs",
+  ],
+  implementation_deps = [
+    "//game/common:random",
+    "//game/logic/sim/io:conditions",
+  ],
 )
 
 cc_library(
