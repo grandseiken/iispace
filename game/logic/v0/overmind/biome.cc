@@ -62,6 +62,7 @@ public:
 
     s.add<formations::biome0::hub0>();
     s.add<formations::biome0::hub1>();
+    s.add<formations::biome0::hub2>();
     s.add<formations::biome0::hub0_side>();
     s.add<formations::biome0::hub1_side>();
 
@@ -86,11 +87,11 @@ public:
     s.add<formations::biome0::sponge0>();
     s.add<formations::biome0::sponge0_side>();
 
-    s.add<formations::biome0::tractor0>();
+    s.add<formations::biome0::tractor0>(2);
     s.add<formations::biome0::tractor1>();
     s.add<formations::biome0::tractor0_side>();
     s.add<formations::biome0::tractor1_side>();
-    s.add<formations::biome0::shield_hub0_side>();
+    s.add<formations::biome0::shield_hub0_side>(2);
 
     s.add<formations::biome0::mixed0>();
     s.add<formations::biome0::mixed1>();
@@ -100,6 +101,7 @@ public:
     s.add<formations::biome0::mixed5>();
     s.add<formations::biome0::mixed6>();
     s.add<formations::biome0::mixed7>();
+    s.add<formations::biome0::mixed8>();
     s.add<formations::biome0::mixed0_side>();
     s.add<formations::biome0::mixed1_side>();
     s.add<formations::biome0::mixed2_side>();
