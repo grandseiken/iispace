@@ -3,6 +3,7 @@
 #include "game/common/random.h"
 #include "game/logic/sim/io/conditions.h"
 #include "game/logic/v0/overmind/wave_data.h"
+#include <vector>
 
 namespace ii {
 class SimInterface;
@@ -14,7 +15,8 @@ public:
 
   virtual bool
   update_background(RandomEngine&, const background_input&, background_update&) const = 0;
-  virtual wave_data get_wave_data(const initial_conditions&, const wave_id&) const = 0;
+  virtual std::vector<wave_data>
+  get_wave_list(const initial_conditions&, std::uint32_t biome_index) const = 0;
   virtual void spawn_wave(SimInterface&, const wave_data&) const = 0;
 };
 

@@ -7,16 +7,35 @@
 namespace ii::v0 {
 namespace {
 
-wave_data get_wave_data(const initial_conditions& conditions, const wave_id& wave) {
+wave_data get_enemy_wave_data(const initial_conditions& conditions, std::uint32_t biome_index,
+                              std::uint32_t wave_number) {
   static constexpr std::uint32_t kInitialPower = 16u;
 
   wave_data data;
-  data.power = (wave.biome_index + 1) * kInitialPower + 2u * (conditions.player_count - 1u);
-  data.power += wave.wave_number;
-  data.power += std::min(10u, wave.wave_number);
+  data.type = wave_type::kEnemy;
+  data.biome_index = biome_index;
+  data.power = (biome_index + 1) * kInitialPower + 2u * (conditions.player_count - 1u);
+  data.power += wave_number;
+  data.power += std::min(10u, wave_number);
   data.upgrade_budget = data.power / 2;
-  data.threat_trigger = wave.wave_number;
+  data.threat_trigger = wave_number;
   return data;
+}
+
+std::vector<wave_data>
+get_wave_list(const initial_conditions& conditions, std::uint32_t biome_index) {
+  std::vector<wave_data> result;
+  std::uint32_t enemy_wave_number = 0;
+  for (std::uint32_t i = 0u; i < 10u + conditions.player_count; ++i) {
+    result.emplace_back(get_enemy_wave_data(conditions, biome_index, enemy_wave_number++));
+  }
+  result.emplace_back(wave_data{wave_type::kUpgrade});
+  for (std::uint32_t i = 0u; i < 10u + conditions.player_count; ++i) {
+    result.emplace_back(get_enemy_wave_data(conditions, biome_index, enemy_wave_number++));
+  }
+  result.emplace_back(wave_data{wave_type::kBoss});
+  result.emplace_back(wave_data{wave_type::kUpgrade});
+  return result;
 }
 
 spawn_context make_context(SimInterface& sim, const wave_data& wave) {
@@ -140,9 +159,9 @@ public:
     return false;
   }
 
-  wave_data
-  get_wave_data(const initial_conditions& conditions, const wave_id& wave) const override {
-    return v0::get_wave_data(conditions, wave);
+  std::vector<wave_data>
+  get_wave_list(const initial_conditions& conditions, std::uint32_t biome_index) const override {
+    return v0::get_wave_list(conditions, biome_index);
   }
 
   void spawn_wave(SimInterface& sim, const wave_data& wave) const override {

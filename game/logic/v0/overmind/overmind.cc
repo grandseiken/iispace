@@ -14,21 +14,19 @@ struct Overmind : ecs::component {
   static constexpr std::uint32_t kSpawnTimer = 60;
   static constexpr std::uint32_t kBackgroundInterpolateTime = 120;
 
-  wave_id wave;
-  std::uint32_t threat_trigger = 0;
+  wave_id next_wave;
   std::uint32_t spawn_timer = 0;
-
-  std::uint32_t background_interpolate = 0;
+  std::optional<wave_data> current_wave;
+  std::vector<wave_data> wave_list;
   std::vector<background_update> background_data;
+  std::uint32_t background_interpolate = 0;
 
   void update(ecs::handle h, SimInterface& sim) {
     auto& global = *sim.global_entity().get<GlobalData>();
     global.walls_vulnerable = !(sim.index().count<Enemy>() - sim.index().count<WallTag>());
 
     background_input input;
-    input.initialise = !sim.tick_count();
     input.tick_count = sim.tick_count();
-    input.biome_index = wave.biome_index;
 
     std::uint32_t total_enemy_threat = 0;
     sim.index().iterate<Enemy>([&](const Enemy& e) { total_enemy_threat += e.threat_value; });
@@ -40,12 +38,14 @@ struct Overmind : ecs::component {
         respawn_players(sim);
         spawn_wave(sim);
       }
-    } else if (!input.initialise && total_enemy_threat <= threat_trigger) {
+    } else if (init_spawn_wave(sim, total_enemy_threat)) {
+      input.initialise = !next_wave.wave_number;
+      input.wave_number = next_wave.wave_number;
       spawn_timer = kSpawnTimer;
-      input.wave_number = wave.wave_number;
     }
+    input.biome_index = current_wave->biome_index;
 
-    if (const auto* biome = get_biome(sim); biome) {
+    if (const auto* biome = get_biome(sim, current_wave->biome_index); biome) {
       update_background(sim, *biome, input, sim.global_entity().get<Background>()->background);
     }
 
@@ -53,29 +53,48 @@ struct Overmind : ecs::component {
     global.debug_text += "s:" + std::to_string(global.shield_drop.counter) +
         " b:" + std::to_string(global.bomb_drop.counter);
     global.debug_text += " t:" + std::to_string(total_enemy_threat);
+    global.overmind_wave_count = next_wave.wave_number;
+  }
+
+  bool init_spawn_wave(const SimInterface& sim, std::uint32_t total_enemy_threat) {
+    if (next_wave.wave_number >= wave_list.size()) {
+      current_wave && ++next_wave.biome_index;
+      next_wave.wave_number = 0;
+      if (const auto* biome = get_biome(sim, next_wave.biome_index); biome) {
+        wave_list = biome->get_wave_list(sim.conditions(), next_wave.biome_index);
+      }
+    }
+    if (next_wave.wave_number >= wave_list.size()) {
+      return false;
+    }
+
+    auto next_data = wave_list[next_wave.wave_number];
+    bool next_condition = next_data.type == wave_type::kEnemy || !total_enemy_threat;
+    bool prev_condition = !current_wave || total_enemy_threat <= current_wave->threat_trigger;
+    if (prev_condition && next_condition) {
+      current_wave = next_data;
+      return true;
+    }
+    return false;
   }
 
   void spawn_wave(SimInterface& sim) {
     auto& global = *sim.global_entity().get<GlobalData>();
-    auto n = static_cast<std::int32_t>(wave.wave_number);
+    auto n = static_cast<std::int32_t>(next_wave.wave_number);
     auto c = static_cast<std::int32_t>(sim.player_count());
     global.shield_drop.counter += 120 + (6 * n / (2 + c)) + 80 * c;
     global.bomb_drop.counter += 160 + (9 * n / (2 + c)) + 60 * c;
-    if (!wave.wave_number) {
+    if (!next_wave.wave_number) {
       global.bomb_drop.counter += 200;
     }
 
-    if (const auto* biome = get_biome(sim); biome) {
-      spawn_wave(sim, *biome);
+    if (const auto* biome = get_biome(sim, next_wave.biome_index); biome) {
+      const auto& data = wave_list[next_wave.wave_number];
+      if (data.type == wave_type::kEnemy) {
+        biome->spawn_wave(sim, data);
+      }
     }
-  }
-
-  void spawn_wave(SimInterface& sim, const Biome& biome) {
-    auto data = biome.get_wave_data(sim.conditions(), wave);
-    biome.spawn_wave(sim, data);
-    threat_trigger = data.threat_trigger;
-    ++wave.wave_number;
-    sim.global_entity().get<GlobalData>()->overmind_wave_count = wave.wave_number;
+    ++next_wave.wave_number;
   }
 
   void update_background(SimInterface& sim, const Biome& biome, const background_input& input,
@@ -124,12 +143,12 @@ struct Overmind : ecs::component {
     background.rotation = normalise_angle(background.rotation);
   }
 
-  const Biome* get_biome(const SimInterface& sim) const {
+  const Biome* get_biome(const SimInterface& sim, std::uint32_t index) const {
     const auto& biomes = sim.conditions().biomes;
-    return wave.biome_index >= biomes.size() ? nullptr : v0::get_biome(biomes[wave.biome_index]);
+    return biomes.empty() ? nullptr : v0::get_biome(biomes[index % biomes.size()]);
   }
 };
-DEBUG_STRUCT_TUPLE(Overmind, wave.biome_index, wave.wave_number, threat_trigger, spawn_timer,
+DEBUG_STRUCT_TUPLE(Overmind, next_wave.biome_index, next_wave.wave_number, spawn_timer,
                    background_interpolate);
 
 }  // namespace

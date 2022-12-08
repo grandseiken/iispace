@@ -7,6 +7,12 @@
 
 namespace ii::v0 {
 
+enum class wave_type {
+  kEnemy,
+  kBoss,
+  kUpgrade,
+};
+
 struct background_input {
   bool initialise = false;
   std::uint64_t tick_count = 0;
@@ -28,9 +34,11 @@ struct wave_id {
 };
 
 struct wave_data {
-  std::uint32_t threat_trigger = 0;
+  wave_type type = wave_type::kEnemy;
+  std::uint32_t biome_index = 0;
   std::uint32_t power = 0;
   std::uint32_t upgrade_budget = 0;
+  std::uint32_t threat_trigger = 0;
 };
 
 }  // namespace ii::v0
