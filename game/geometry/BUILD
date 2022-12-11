@@ -16,5 +16,5 @@ cc_library(
     "//game/common:math",
     "@glm",
   ],
-  visibility = ["//game/logic:__subpackages__"],
+  visibility = ["//game:__subpackages__"],
 )

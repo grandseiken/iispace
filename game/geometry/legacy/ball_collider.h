@@ -1,6 +1,6 @@
 #ifndef II_GAME_LOGIC_GEOMETRY_LEGACY_BALL_COLLIDER_H
 #define II_GAME_LOGIC_GEOMETRY_LEGACY_BALL_COLLIDER_H
-#include "game/logic/geometry/expressions.h"
+#include "game/geometry/expressions.h"
 
 namespace ii::geom {
 inline namespace legacy {

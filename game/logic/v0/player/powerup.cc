@@ -1,6 +1,6 @@
 #include "game/logic/v0/player/powerup.h"
-#include "game/logic/geometry/node_conditional.h"
-#include "game/logic/geometry/shapes/ngon.h"
+#include "game/geometry/node_conditional.h"
+#include "game/geometry/shapes/ngon.h"
 #include "game/logic/sim/io/conditions.h"
 #include "game/logic/sim/sim_interface.h"
 #include "game/logic/v0/components.h"

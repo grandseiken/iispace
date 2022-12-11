@@ -7,7 +7,7 @@ cc_library(
     "//game/logic/ecs",
   ],
   implementation_deps = [
-    "//game/logic/geometry/legacy",
+    "//game/geometry/legacy",
     "//game/logic/legacy:components",
     "//game/logic/legacy:ship_template",
     "//game/logic/sim:sim_interface",
@@ -27,8 +27,8 @@ cc_library(
     "//game/logic/sim:components",
   ],
   implementation_deps = [
+    "//game/geometry/legacy",
     "//game/logic/ecs",
-    "//game/logic/geometry/legacy",
     "//game/logic/legacy:components",
     "//game/logic/legacy:ship_template",
     "//game/logic/sim:sim_interface",

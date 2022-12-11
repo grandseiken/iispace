@@ -1,6 +1,6 @@
 #include "game/logic/v0/player/player.h"
-#include "game/logic/geometry/shapes/box.h"
-#include "game/logic/geometry/shapes/ngon.h"
+#include "game/geometry/shapes/box.h"
+#include "game/geometry/shapes/ngon.h"
 #include "game/logic/sim/io/conditions.h"
 #include "game/logic/sim/io/player.h"
 #include "game/logic/v0/components.h"

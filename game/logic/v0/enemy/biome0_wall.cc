@@ -1,6 +1,6 @@
 #include "game/common/colour.h"
-#include "game/logic/geometry/node_conditional.h"
-#include "game/logic/geometry/shapes/box.h"
+#include "game/geometry/node_conditional.h"
+#include "game/geometry/shapes/box.h"
 #include "game/logic/v0/enemy/enemy.h"
 #include "game/logic/v0/enemy/enemy_template.h"
 #include <algorithm>

@@ -8,11 +8,11 @@ cc_library(
     "ngon.h",
   ],
   deps = [
-    "//game/logic/geometry",
+    "//game/geometry",
     "//game/logic/sim/io:render",
     "//game/common:types",
     "//game/common:math",
     "@glm",
   ],
-  visibility = ["//game/logic/v0:__subpackages__"],
+  visibility = ["//game:__subpackages__"],
 )

@@ -1,6 +1,6 @@
 #include "game/common/colour.h"
-#include "game/logic/geometry/legacy/ngon.h"
-#include "game/logic/geometry/legacy/polyarc.h"
+#include "game/geometry/legacy/ngon.h"
+#include "game/geometry/legacy/polyarc.h"
 #include "game/logic/legacy/boss/boss_internal.h"
 #include "game/logic/legacy/enemy/enemy.h"
 #include "game/logic/legacy/player/powerup.h"

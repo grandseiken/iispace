@@ -1,8 +1,8 @@
 #ifndef II_GAME_LOGIC_GEOMETRY_SHAPES_NGON_H
 #define II_GAME_LOGIC_GEOMETRY_SHAPES_NGON_H
-#include "game/logic/geometry/expressions.h"
-#include "game/logic/geometry/node.h"
-#include "game/logic/geometry/shapes/data.h"
+#include "game/geometry/expressions.h"
+#include "game/geometry/node.h"
+#include "game/geometry/shapes/data.h"
 #include "game/logic/sim/io/render.h"
 #include <glm/glm.hpp>
 #include <cstddef>

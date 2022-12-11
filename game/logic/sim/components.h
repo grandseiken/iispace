@@ -2,8 +2,8 @@
 #define II_GAME_LOGIC_SIM_COMPONENTS_H
 #include "game/common/math.h"
 #include "game/common/struct_tuple.h"
+#include "game/geometry/enums.h"
 #include "game/logic/ecs/index.h"
-#include "game/logic/geometry/enums.h"
 #include "game/logic/sim/io/render.h"
 #include "game/mixer/sound.h"
 #include <sfn/functional.h>

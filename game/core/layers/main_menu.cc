@@ -95,12 +95,13 @@ MainMenuLayer::MainMenuLayer(ui::GameStack& stack) : ui::GameLayer{stack} {
                [this] { this->stack().add<CreateGameLayer>(/* online */ false); });
     add_button(layout, "Host online game",
                [this] { this->stack().add<CreateGameLayer>(/* online */ true); });
-    add_button(layout, "Join online game (NYI)", [] { /* TODO */ });
+    add_button(layout, "Join online game (not implemented, join via Steam UI instead)",
+               [] { /* TODO */ });
   } else {
     add_button(layout, "Start game",
                [this] { this->stack().add<CreateGameLayer>(/* online */ false); });
   }
-  add_button(layout, "View replay (NYI)", [] { /* TODO */ });
+  add_button(layout, "View replay (not implemented)", [] { /* TODO */ });
   add_button(layout, "Exit", [this] { exit_timer_ = 8; });
 
   auto& top = add_main_layout(this, false);

@@ -9,7 +9,7 @@ cc_library(
     "polyarc.h",
   ],
   deps = [
-    "//game/logic/geometry",
+    "//game/geometry",
     "//game/logic/sim/io:render",
     "//game/common:types",
     "//game/common:math",

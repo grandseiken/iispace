@@ -14,11 +14,11 @@ cc_library(
   ],
   implementation_deps = [
     "//game/common:math",
+    "//game/geometry/legacy",
     "//game/logic/legacy/enemy",
     "//game/logic/legacy/player:powerup",
     "//game/logic/legacy:components",
     "//game/logic/legacy:ship_template",
-    "//game/logic/geometry/legacy",
     "//game/logic/sim:sim_interface",
     "//game/logic/sim/io:events",
     "//game/logic/sim/io:render",

@@ -1,7 +1,7 @@
 #ifndef II_GAME_LOGIC_GEOMETRY_CONCEPTS_H
 #define II_GAME_LOGIC_GEOMETRY_CONCEPTS_H
 #include "game/common/math.h"
-#include "game/logic/geometry/iteration.h"
+#include "game/geometry/iteration.h"
 #include <concepts>
 #include <cstddef>
 #include <type_traits>

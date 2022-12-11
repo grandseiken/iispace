@@ -1,7 +1,7 @@
 #ifndef II_GAME_LOGIC_GEOMETRY_NODE_FOR_EACH_H
 #define II_GAME_LOGIC_GEOMETRY_NODE_FOR_EACH_H
-#include "game/logic/geometry/concepts.h"
-#include "game/logic/geometry/iteration.h"
+#include "game/geometry/concepts.h"
+#include "game/geometry/iteration.h"
 
 namespace ii::geom {
 

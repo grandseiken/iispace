@@ -1,5 +1,5 @@
 #include "game/logic/v0/player/shot.h"
-#include "game/logic/geometry/shapes/box.h"
+#include "game/geometry/shapes/box.h"
 #include "game/logic/sim/io/conditions.h"
 #include "game/logic/v0/components.h"
 #include "game/logic/v0/particles.h"

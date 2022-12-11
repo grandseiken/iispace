@@ -1,10 +1,10 @@
 #ifndef II_GAME_LOGIC_GEOMETRY_NODE_TRANSFORM_H
 #define II_GAME_LOGIC_GEOMETRY_NODE_TRANSFORM_H
 #include "game/common/math.h"
-#include "game/logic/geometry/concepts.h"
-#include "game/logic/geometry/expressions.h"
-#include "game/logic/geometry/iteration.h"
-#include "game/logic/geometry/node.h"
+#include "game/geometry/concepts.h"
+#include "game/geometry/expressions.h"
+#include "game/geometry/iteration.h"
+#include "game/geometry/node.h"
 #include <cstddef>
 
 namespace ii::geom {

@@ -9,8 +9,8 @@ cc_library(
   deps = ["//game/common:math"],
   implementation_deps = [
     ":enemy_internal",
+    "//game/geometry/shapes",
     "//game/logic/ecs",
-    "//game/logic/geometry/shapes",
     "//game/logic/sim:sim_interface",
     "//game/logic/sim/io:render",
     "//game/logic/v0:ship_template",

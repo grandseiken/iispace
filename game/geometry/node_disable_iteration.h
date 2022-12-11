@@ -1,8 +1,8 @@
 #ifndef II_GAME_LOGIC_GEOMETRY_NODE_DISABLE_ITERATION_H
 #define II_GAME_LOGIC_GEOMETRY_NODE_DISABLE_ITERATION_H
 #include "game/common/math.h"
-#include "game/logic/geometry/concepts.h"
-#include "game/logic/geometry/iteration.h"
+#include "game/geometry/concepts.h"
+#include "game/geometry/iteration.h"
 #include <type_traits>
 
 namespace ii::geom {

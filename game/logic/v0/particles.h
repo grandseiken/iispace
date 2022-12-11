@@ -1,9 +1,9 @@
 #ifndef II_GAME_LOGIC_V0_PARTICLES_H
 #define II_GAME_LOGIC_V0_PARTICLES_H
 #include "game/common/math.h"
+#include "game/geometry/node.h"
 #include "game/logic/ecs/call.h"
 #include "game/logic/ecs/id.h"
-#include "game/logic/geometry/node.h"
 #include "game/logic/sim/components.h"
 #include "game/logic/sim/io/render.h"
 #include "game/logic/v0/ship_template.h"

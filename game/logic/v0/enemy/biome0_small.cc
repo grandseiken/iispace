@@ -1,5 +1,5 @@
 #include "game/common/colour.h"
-#include "game/logic/geometry/shapes/ngon.h"
+#include "game/geometry/shapes/ngon.h"
 #include "game/logic/v0/enemy/enemy.h"
 #include "game/logic/v0/enemy/enemy_template.h"
 #include <algorithm>

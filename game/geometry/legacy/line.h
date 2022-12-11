@@ -1,6 +1,6 @@
 #ifndef II_GAME_LOGIC_GEOMETRY_LEGACY_LINE_H
 #define II_GAME_LOGIC_GEOMETRY_LEGACY_LINE_H
-#include "game/logic/geometry/expressions.h"
+#include "game/geometry/expressions.h"
 #include "game/logic/sim/io/render.h"
 
 namespace ii::geom {

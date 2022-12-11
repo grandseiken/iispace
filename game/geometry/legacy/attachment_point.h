@@ -1,6 +1,6 @@
 #ifndef II_GAME_LOGIC_GEOMETRY_LEGACY_ATTACHMENT_POINT_H
 #define II_GAME_LOGIC_GEOMETRY_LEGACY_ATTACHMENT_POINT_H
-#include "game/logic/geometry/expressions.h"
+#include "game/geometry/expressions.h"
 #include <cstddef>
 
 namespace ii::geom {

@@ -5,8 +5,8 @@ cc_library(
   deps = [
     "//game/common:math",
     "//game/common:types",
+    "//game/geometry",
     "//game/logic/ecs",
-    "//game/logic/geometry",
     "//game/logic/sim/io:render",
     "//game/mixer:sound",
     "@static_functional",
