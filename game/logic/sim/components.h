@@ -6,6 +6,7 @@
 #include "game/logic/ecs/index.h"
 #include "game/logic/sim/io/render.h"
 #include "game/mixer/sound.h"
+#include "game/render/data/background.h"
 #include <sfn/functional.h>
 
 namespace ii {

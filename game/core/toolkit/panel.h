@@ -1,7 +1,7 @@
 #ifndef II_GAME_CORE_TOOLKIT_PANEL_H
 #define II_GAME_CORE_TOOLKIT_PANEL_H
 #include "game/core/ui/element.h"
-#include "game/render/render_common.h"
+#include "game/render/data/panel.h"
 #include <glm/glm.hpp>
 
 namespace ii::ui {

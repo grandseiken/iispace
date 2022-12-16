@@ -1,5 +1,5 @@
-#ifndef II_GAME_RENDER_RENDER_COMMON_H
-#define II_GAME_RENDER_RENDER_COMMON_H
+#ifndef II_GAME_RENDER_TARGET_H
+#define II_GAME_RENDER_TARGET_H
 #include "game/common/math.h"
 #include "game/common/rect.h"
 #include <glm/glm.hpp>
@@ -11,25 +11,6 @@ enum class coordinate_system {
   kGlobal,
   kLocal,
   kCentered,
-};
-
-enum class panel_style : std::uint32_t {
-  kNone = 0,
-  kFlatColour = 1,
-};
-
-enum class font_id : std::uint32_t {
-  kDefault,
-  kMonospace = kDefault,
-  kMonospaceBold,
-  kMonospaceItalic,
-  kMonospaceBoldItalic,
-};
-
-struct panel_data {
-  panel_style style = panel_style::kNone;
-  glm::vec4 colour{1.f};
-  rect bounds;
 };
 
 struct target {

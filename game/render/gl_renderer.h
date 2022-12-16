@@ -3,8 +3,11 @@
 #include "game/common/rect.h"
 #include "game/common/result.h"
 #include "game/common/ustring.h"
-#include "game/logic/sim/io/render.h"
-#include "game/render/render_common.h"
+#include "game/render/data/background.h"
+#include "game/render/data/panel.h"
+#include "game/render/data/shapes.h"
+#include "game/render/data/text.h"
+#include "game/render/target.h"
 #include <glm/glm.hpp>
 #include <memory>
 #include <optional>
@@ -12,11 +15,6 @@
 #include <vector>
 
 namespace ii::render {
-
-enum class shape_style {
-  kNone,
-  kStandard,
-};
 
 class GlRenderer {
 private:

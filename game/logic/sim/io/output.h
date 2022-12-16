@@ -3,6 +3,7 @@
 #include "game/logic/sim/io/aggregate.h"
 #include "game/logic/sim/io/events.h"
 #include "game/logic/sim/io/render.h"
+#include "game/render/data/background.h"
 #include <bit>
 #include <cstdint>
 #include <deque>

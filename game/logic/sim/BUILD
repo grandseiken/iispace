@@ -8,6 +8,7 @@ cc_library(
     "//game/geometry",
     "//game/logic/ecs",
     "//game/logic/sim/io:render",
+    "//game/render/data",
     "//game/mixer:sound",
     "@static_functional",
   ],

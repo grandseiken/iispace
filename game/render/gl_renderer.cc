@@ -11,7 +11,6 @@
 #include "game/render/gl/texture.h"
 #include "game/render/gl/types.h"
 #include "game/render/noise_generator.h"
-#include "game/render/render_common.h"
 #include "game/render/shader_compiler.h"
 #include <GL/gl3w.h>
 #include <glm/gtc/constants.hpp>

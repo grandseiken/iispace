@@ -1,6 +1,6 @@
 #ifndef II_GAME_LOGIC_V0_OVERMIND_WAVE_DATA_H
 #define II_GAME_LOGIC_V0_OVERMIND_WAVE_DATA_H
-#include "game/logic/sim/io/render.h"
+#include "game/render/data/background.h"
 #include <glm/glm.hpp>
 #include <cstdint>
 #include <optional>

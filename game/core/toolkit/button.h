@@ -2,7 +2,8 @@
 #define II_GAME_CORE_TOOLKIT_BUTTON_H
 #include "game/common/ustring.h"
 #include "game/core/ui/element.h"
-#include "game/render/render_common.h"
+#include "game/render/data/panel.h"
+#include "game/render/data/text.h"
 #include <glm/glm.hpp>
 #include <functional>
 

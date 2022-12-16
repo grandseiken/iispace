@@ -4,8 +4,9 @@
 #include "game/common/result.h"
 #include "game/common/ustring.h"
 #include "game/io/font/font.h"
+#include "game/render/data/text.h"
 #include "game/render/gl/types.h"
-#include "game/render/render_common.h"
+#include "game/render/target.h"
 #include <glm/glm.hpp>
 #include <cstdint>
 #include <span>

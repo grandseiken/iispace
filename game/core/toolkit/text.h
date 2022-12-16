@@ -3,7 +3,7 @@
 #include "game/common/enum.h"
 #include "game/common/ustring.h"
 #include "game/core/ui/element.h"
-#include "game/render/render_common.h"
+#include "game/render/data/text.h"
 #include <glm/glm.hpp>
 #include <cstdint>
 #include <optional>

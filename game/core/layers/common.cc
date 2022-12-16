@@ -2,7 +2,7 @@
 #include "game/core/toolkit/button.h"
 #include "game/core/toolkit/layout.h"
 #include "game/core/toolkit/panel.h"
-#include "game/render/render_common.h"
+#include "game/render/data/panel.h"
 
 namespace ii {
 

@@ -39,7 +39,7 @@ cc_library(
     "//game/common:math",
     "//game/logic/sim:sim_interface",
     "//game/logic/sim/io:conditions",
-    "//game/logic/sim/io:render",
+    "//game/render/data",
     "@static_functional",
   ],
   visibility = ["//game/logic/v0/overmind:__subpackages__"]

@@ -1,6 +1,6 @@
 cc_library(
-  name = "render_common",
-  hdrs = ["render_common.h"],
+  name = "target",
+  hdrs = ["target.h"],
   deps = [
     "//game/common:math",
     "@glm",
@@ -13,17 +13,17 @@ cc_library(
   hdrs = ["gl_renderer.h"],
   srcs = ["gl_renderer.cc"],
   deps = [
-    ":render_common",
-    ":shader_compiler",
+    ":target",
     "//game/common:math",
     "//game/common:types",
     "//game/common:ustring",
-    "//game/logic/sim/io:render",
+    "//game/render/data",
     "@glm",
   ],
   implementation_deps = [
     ":font_cache",
     ":noise_generator",
+    ":shader_compiler",
     "//assets/fonts",
     "//game/io/font",
     "//game/render/gl",
@@ -52,11 +52,12 @@ cc_library(
   hdrs = ["font_cache.h"],
   srcs = ["font_cache.cc"],
   deps = [
-    ":render_common",
+    ":target",
     "//game/common:math",
     "//game/common:types",
     "//game/common:ustring",
     "//game/io/font",
+    "//game/render/data",
     "//game/render/gl",
     "@glm",
   ],

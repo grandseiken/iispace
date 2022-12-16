@@ -16,7 +16,7 @@ cc_library(
     "//game/core/ui:element",
     "//game/common:types",
     "//game/common:ustring",
-    "//game/render:render_common",
+    "//game/render/data",
   ],
   implementation_deps = [
     "//game/core/ui:input",
