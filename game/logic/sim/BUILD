@@ -7,7 +7,7 @@ cc_library(
     "//game/common:types",
     "//game/geometry",
     "//game/logic/ecs",
-    "//game/logic/sim/io:render",
+    "//game/logic/sim/io:output",
     "//game/render/data",
     "//game/mixer:sound",
     "@static_functional",
@@ -45,7 +45,6 @@ cc_library(
     "//game/logic/sim/io:conditions",
     "//game/logic/sim/io:output",
     "//game/logic/sim/io:player",
-    "//game/logic/sim/io:render",
   ]
 )
 

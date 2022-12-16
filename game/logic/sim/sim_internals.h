@@ -6,7 +6,6 @@
 #include "game/logic/sim/io/conditions.h"
 #include "game/logic/sim/io/output.h"
 #include "game/logic/sim/io/player.h"
-#include "game/logic/sim/io/render.h"
 #include <cstdint>
 #include <memory>
 #include <optional>

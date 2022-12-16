@@ -40,7 +40,6 @@ cc_library(
     "//game/geometry",
     "//game/logic/ecs",
     "//game/logic/sim:sim_interface",
-    "//game/logic/sim/io:render",
     "@static_functional",
   ],
   visibility = ["//game/logic/v0:__subpackages__"],

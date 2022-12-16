@@ -12,7 +12,6 @@ cc_library(
     "//game/logic/legacy:ship_template",
     "//game/logic/sim:sim_interface",
     "//game/logic/sim/io:conditions",
-    "//game/logic/sim/io:render",
     "//game/logic/sim/io:player",
   ],
   visibility = ["//game/logic/legacy:__pkg__"],

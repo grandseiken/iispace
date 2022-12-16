@@ -3,7 +3,6 @@
 #include "game/logic/ecs/call.h"
 #include "game/logic/legacy/components.h"
 #include "game/logic/legacy/setup.h"
-#include "game/logic/sim/io/render.h"
 #include "game/logic/sim/sim_interface.h"
 #include "game/logic/sim/sim_internals.h"
 #include "game/logic/v0/ai/ai_player.h"

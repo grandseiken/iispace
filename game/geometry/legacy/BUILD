@@ -10,9 +10,9 @@ cc_library(
   ],
   deps = [
     "//game/geometry",
-    "//game/logic/sim/io:render",
     "//game/common:types",
     "//game/common:math",
+    "//game/render/data",
     "@glm",
   ],
   visibility = ["//game/logic/legacy:__subpackages__"],

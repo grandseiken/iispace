@@ -4,7 +4,7 @@
 #include "game/common/struct_tuple.h"
 #include "game/geometry/enums.h"
 #include "game/logic/ecs/index.h"
-#include "game/logic/sim/io/render.h"
+#include "game/logic/sim/io/output.h"
 #include "game/mixer/sound.h"
 #include "game/render/data/background.h"
 #include <sfn/functional.h>
@@ -69,7 +69,7 @@ struct Render : ecs::component {
   sfn::ptr<render_t> render = nullptr;
   bool clear_trails = false;
 
-  void render_shapes(ecs::const_handle, render::entity_state& state, bool paused,
+  void render_shapes(ecs::const_handle, transient_render_state::entity_state& state, bool paused,
                      std::vector<render::shape>&, const SimInterface&);
 };
 DEBUG_STRUCT_TUPLE(Render, render);
@@ -145,7 +145,7 @@ struct Player : ecs::component {
   bool is_predicted = false;
   fixed speed = 0;  // Used for CSP.
 
-  using render_info_t = std::optional<render::player_info>(ecs::const_handle, const SimInterface&);
+  using render_info_t = std::optional<player_info>(ecs::const_handle, const SimInterface&);
   sfn::ptr<render_info_t> render_info = nullptr;
 };
 DEBUG_STRUCT_TUPLE(Player, player_number, death_count, is_killed, super_charge, bomb_count,

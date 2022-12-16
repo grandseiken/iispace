@@ -6,8 +6,8 @@
 #include "game/logic/legacy/components.h"
 #include "game/logic/legacy/ship_template.h"
 #include "game/logic/sim/io/conditions.h"
+#include "game/logic/sim/io/output.h"
 #include "game/logic/sim/io/player.h"
-#include "game/logic/sim/io/render.h"
 #include <algorithm>
 #include <utility>
 
@@ -322,12 +322,12 @@ struct PlayerLogic : ecs::component {
     });
   }
 
-  std::optional<render::player_info>
+  std::optional<player_info>
   render_info(const Player& pc, const PlayerScore& score, const SimInterface& sim) const {
     if (sim.conditions().mode == game_mode::kLegacy_Boss) {
       return std::nullopt;
     }
-    render::player_info info;
+    player_info info;
     info.colour = legacy_player_colour(pc.player_number);
     info.score = score.score;
     info.multiplier = score.multiplier;

@@ -7,7 +7,6 @@
 #include "game/geometry/node_transform.h"
 #include "game/logic/ecs/call.h"
 #include "game/logic/ecs/index.h"
-#include "game/logic/sim/io/render.h"
 #include "game/logic/sim/sim_interface.h"
 #include "game/logic/v0/components.h"
 #include <sfn/functional.h>

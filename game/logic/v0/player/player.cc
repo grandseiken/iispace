@@ -2,6 +2,7 @@
 #include "game/geometry/shapes/box.h"
 #include "game/geometry/shapes/ngon.h"
 #include "game/logic/sim/io/conditions.h"
+#include "game/logic/sim/io/output.h"
 #include "game/logic/sim/io/player.h"
 #include "game/logic/v0/components.h"
 #include "game/logic/v0/particles.h"
@@ -254,8 +255,8 @@ struct PlayerLogic : ecs::component {
     }
   }
 
-  std::optional<render::player_info> render_info(const Player& pc, const SimInterface& sim) const {
-    render::player_info info;
+  std::optional<player_info> render_info(const Player& pc, const SimInterface& sim) const {
+    player_info info;
     info.colour = v0_player_colour(pc.player_number);
     info.score = 0;
     return info;

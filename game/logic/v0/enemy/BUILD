@@ -12,7 +12,6 @@ cc_library(
     "//game/geometry/shapes",
     "//game/logic/ecs",
     "//game/logic/sim:sim_interface",
-    "//game/logic/sim/io:render",
     "//game/logic/v0:ship_template",
   ],
   visibility = ["//game/logic/v0/overmind:__subpackages__"],

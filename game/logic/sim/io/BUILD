@@ -30,16 +30,6 @@ cc_library(
 )
 
 cc_library(
-  name = "render",
-  hdrs = ["render.h"],
-  deps = [
-    "//game/render/data",
-    "@glm",
-  ],
-  visibility = ["//visibility:public"],
-)
-
-cc_library(
   name = "events",
   hdrs = ["events.h"],
   deps = ["//game/common:types"],
@@ -52,7 +42,6 @@ cc_library(
   deps = [
     ":aggregate",
     ":events",
-    ":render",
     "//game/common:types",
     "//game/render/data",
   ],

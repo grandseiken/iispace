@@ -21,7 +21,6 @@ cc_library(
     "//game/logic/legacy:ship_template",
     "//game/logic/sim:sim_interface",
     "//game/logic/sim/io:events",
-    "//game/logic/sim/io:render",
     "//game/mixer:sound",
     "@glm",
   ],

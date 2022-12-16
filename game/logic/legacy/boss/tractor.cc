@@ -8,7 +8,6 @@
 #include "game/logic/legacy/enemy/enemy.h"
 #include "game/logic/legacy/ship_template.h"
 #include "game/logic/sim/io/events.h"
-#include "game/logic/sim/io/render.h"
 
 namespace ii::legacy {
 namespace {

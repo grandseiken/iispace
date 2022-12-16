@@ -4,8 +4,9 @@
 
 namespace ii {
 
-void Render::render_shapes(ecs::const_handle h, render::entity_state& state, bool paused,
-                           std::vector<render::shape>& output, const SimInterface& sim) {
+void Render::render_shapes(ecs::const_handle h, transient_render_state::entity_state& state,
+                           bool paused, std::vector<render::shape>& output,
+                           const SimInterface& sim) {
   // TODO: trails should be reset on entity creation? Unless was created on same tick count
   // and with same components as we expected?
   static constexpr float kMaxTrailDistance = 64.f;

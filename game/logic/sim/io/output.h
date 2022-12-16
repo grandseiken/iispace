@@ -2,8 +2,8 @@
 #define II_GAME_LOGIC_SIM_IO_OUTPUT_H
 #include "game/logic/sim/io/aggregate.h"
 #include "game/logic/sim/io/events.h"
-#include "game/logic/sim/io/render.h"
 #include "game/render/data/background.h"
+#include "game/render/data/shapes.h"
 #include <bit>
 #include <cstdint>
 #include <deque>
@@ -47,9 +47,16 @@ struct aggregate_output {
   std::deque<entry> entries;
 };
 
+struct player_info {
+  glm::vec4 colour{0.f};
+  std::uint64_t score = 0;
+  std::uint32_t multiplier = 0;
+  float timer = 0.f;
+};
+
 struct render_output {
   render::background background;
-  std::vector<render::player_info> players;
+  std::vector<player_info> players;
   std::vector<render::shape> shapes;
   std::uint64_t tick_count = 0;
   std::uint32_t lives_remaining = 0;
@@ -61,7 +68,11 @@ struct render_output {
 };
 
 struct transient_render_state {
-  std::unordered_map<std::uint32_t, render::entity_state> entity_map;
+  using index_value = std::vector<std::optional<render::motion_trail>>;
+  struct entity_state {
+    std::unordered_map<unsigned char, index_value> trails;
+  };
+  std::unordered_map<std::uint32_t, entity_state> entity_map;
 };
 
 struct sim_results {

@@ -2,7 +2,7 @@
 #define II_GAME_CORE_SIM_RENDER_STATE_H
 #include "game/common/random.h"
 #include "game/logic/sim/io/aggregate.h"
-#include "game/logic/sim/io/render.h"
+#include "game/render/data/shapes.h"
 #include <glm/glm.hpp>
 #include <cstdint>
 #include <vector>

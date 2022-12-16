@@ -15,7 +15,6 @@ cc_library(
     "//game/logic/legacy:components",
     "//game/logic/legacy:ship_template",
     "//game/logic/sim:sim_interface",
-    "//game/logic/sim/io:render",
   ],
   visibility = [
     "//game/logic/legacy/boss:__pkg__",
