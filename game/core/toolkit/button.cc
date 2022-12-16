@@ -11,17 +11,12 @@ Button::Button(Element* parent)
   add_flags(element_flags::kCanFocus);
 }
 
-Button& Button::set_font_dimensions(const glm::uvec2& dimensions) {
-  text_element_->set_font_dimensions(dimensions);
-  return *this;
-}
-
 Button& Button::set_drop_shadow(const glm::ivec2& offset, float opacity) {
   text_element_->set_drop_shadow(offset, opacity);
   return *this;
 }
 
-Button& Button::set_alignment(alignment align) {
+Button& Button::set_alignment(render::alignment align) {
   text_element_->set_alignment(align);
   return *this;
 }

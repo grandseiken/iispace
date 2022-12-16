@@ -106,9 +106,8 @@ MainMenuLayer::MainMenuLayer(ui::GameStack& stack) : ui::GameLayer{stack} {
 
   auto& top = add_main_layout(this, false);
   top_text_ = top.add_back<ui::TextElement>();
-  top_text_->set_font(render::font_id::kMonospace)
-      .set_font_dimensions(kMediumFont)
-      .set_alignment(ui::alignment::kTop | ui::alignment::kLeft)
+  top_text_->set_font({render::font_id::kMonospace, kMediumFont})
+      .set_alignment(render::alignment::kTop | render::alignment::kLeft)
       .set_colour(kTextColour)
       .set_multiline(true);
 

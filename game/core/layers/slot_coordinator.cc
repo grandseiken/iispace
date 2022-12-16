@@ -19,11 +19,10 @@ public:
   : ui::Panel{parent}, index_{index}, main_{add_back<ui::TabContainer>()} {
     waiting_text_ = main_->add_back<ui::TextElement>();
     auto& active = *main_->add_back<ui::Panel>();
-    waiting_text_->set_font(render::font_id::kMonospaceItalic)
+    waiting_text_->set_font({render::font_id::kMonospaceItalic, kSemiLargeFont})
         .set_colour(kTextColour)
-        .set_font_dimensions(kSemiLargeFont)
         .set_drop_shadow(kDropShadow, .5f)
-        .set_alignment(ui::alignment::kCentered)
+        .set_alignment(render::alignment::kCentered)
         .set_multiline(true);
 
     auto colour = colour::kWhite0;
@@ -37,11 +36,10 @@ public:
     auto& l_bottom = *config_tab_->add_back<ui::LinearLayout>();
     l_bottom.set_wrap_focus(true).set_align_end(true).set_spacing(kPadding.y);
     controller_text_ = l_top.add_back<ui::TextElement>();
-    controller_text_->set_alignment(ui::alignment::kCentered)
+    controller_text_->set_alignment(render::alignment::kCentered)
         .set_colour(colour)
-        .set_font(render::font_id::kMonospaceItalic)
+        .set_font({render::font_id::kMonospaceItalic, kSemiLargeFont})
         .set_drop_shadow(kDropShadow, .5f)
-        .set_font_dimensions(kSemiLargeFont)
         .set_multiline(true);
     ready_button_ = &standard_button(*l_bottom.add_back<ui::Button>())
                          .set_text(ustring::ascii("Ready"))
@@ -61,11 +59,10 @@ public:
     config_tab_->add_back<ui::Panel>();
     ready_text_ = config_tab_->add_back<ui::TextElement>();
     ready_text_->set_text(ustring::ascii("Ready"))
-        .set_alignment(ui::alignment::kCentered)
+        .set_alignment(render::alignment::kCentered)
         .set_colour(colour)
-        .set_font(render::font_id::kMonospaceBoldItalic)
-        .set_drop_shadow(kDropShadow, .5f)
-        .set_font_dimensions(kLargeFont);
+        .set_font({render::font_id::kMonospaceBoldItalic, kLargeFont})
+        .set_drop_shadow(kDropShadow, .5f);
   }
 
   void set_colour(const glm::vec4& colour) {

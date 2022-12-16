@@ -11,36 +11,13 @@
 #include <vector>
 
 namespace ii::ui {
-enum class alignment : std::uint32_t {
-  kCentered = 0b0000,
-  kLeft = 0b0001,
-  kRight = 0b0010,
-  kTop = 0b0100,
-  kBottom = 0b1000,
-};
-}  // namespace ii::ui
-
-namespace ii {
-template <>
-struct bitmask_enum<ui::alignment> : std::true_type {};
-}  // namespace ii
-
-namespace ii::ui {
 class TextElement : public Element {
 public:
   using Element::Element;
 
-  TextElement& set_font(render::font_id font) {
-    if (font_ != font) {
+  TextElement& set_font(const render::font_data& font) {
+    if (font_.id != font.id || font_.dimensions != font.dimensions) {
       font_ = font;
-      dirty_ = true;
-    }
-    return *this;
-  }
-
-  TextElement& set_font_dimensions(const glm::uvec2& dimensions) {
-    if (font_dimensions_ != dimensions) {
-      font_dimensions_ = dimensions;
       dirty_ = true;
     }
     return *this;
@@ -64,7 +41,7 @@ public:
     return *this;
   }
 
-  TextElement& set_alignment(alignment align) {
+  TextElement& set_alignment(render::alignment align) {
     align_ = align;
     return *this;
   }
@@ -84,12 +61,11 @@ private:
     float opacity = 0.f;
   };
 
-  render::font_id font_ = render::font_id::kDefault;
-  glm::uvec2 font_dimensions_{0};
+  render::font_data font_;
   glm::vec4 colour_{1.f};
   std::optional<drop_shadow> drop_shadow_;
   bool multiline_ = false;
-  alignment align_ = alignment::kLeft | alignment::kTop;
+  render::alignment align_ = render::alignment::kLeft | render::alignment::kTop;
   ustring text_ = ustring::ascii("");
 
   mutable rect cached_bounds_;

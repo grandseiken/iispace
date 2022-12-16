@@ -8,6 +8,8 @@ cc_library(
   ],
   deps = [
     "//game/common:math",
+    "//game/common:types",
+    "//game/common:ustring",
     "@glm",
   ],
   visibility = ["//visibility:public"],

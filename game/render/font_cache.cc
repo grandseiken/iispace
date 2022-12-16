@@ -13,24 +13,25 @@ void FontCache::clear() {
   }
 }
 
-result<void> FontCache::assign(font_id font, std::span<const std::uint8_t> bytes) {
+result<void> FontCache::assign(font_id id, std::span<const std::uint8_t> bytes) {
   auto font_result = Font::create(bytes);
   if (!font_result) {
     return unexpected(font_result.error());
   }
-  fonts_.emplace(font, font_entry{std::move(*font_result), {}});
+  fonts_.emplace(id, font_entry{std::move(*font_result), {}});
   return {};
 }
 
-auto FontCache::get(const target& t, font_id font, const glm::uvec2& dimensions, ustring_view text)
+auto FontCache::get(const target& t, const font_data& font, ustring_view text)
     -> result<const entry*> {
-  auto it = fonts_.find(font);
+  auto it = fonts_.find(font.id);
   if (it == fonts_.end()) {
     return unexpected("invalid font ID");
   }
   auto scale = t.scale_factor();
-  glm::uvec2 pixel_dimensions{static_cast<std::uint32_t>(scale * static_cast<float>(dimensions.x)),
-                              static_cast<std::uint32_t>(scale * static_cast<float>(dimensions.y))};
+  glm::uvec2 pixel_dimensions{
+      static_cast<std::uint32_t>(scale * static_cast<float>(font.dimensions.x)),
+      static_cast<std::uint32_t>(scale * static_cast<float>(font.dimensions.y))};
   bool is_lcd = pixel_dimensions.x <= kMaxLcdDimensions || pixel_dimensions.y <= kMaxLcdDimensions;
 
   auto jt = it->second.sizes.find(pixel_dimensions);

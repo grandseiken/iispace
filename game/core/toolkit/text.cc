@@ -6,13 +6,12 @@
 namespace ii::ui {
 namespace {
 
-std::vector<std::u32string> split_lines(ustring_view s, render::GlRenderer& r, render::font_id font,
-                                        const glm::uvec2& font_dimensions,
-                                        std::int32_t bounds_width) {
+std::vector<std::u32string> split_lines(ustring_view s, render::GlRenderer& r,
+                                        const render::font_data& font, std::int32_t bounds_width) {
   auto u32 = to_utf32(s);
 
   auto text_width = [&](std::size_t start, std::size_t end) {
-    return r.text_width(font, font_dimensions,
+    return r.text_width(font,
                         ustring_view::utf32(std::u32string_view{u32}.substr(start, end - start)));
   };
   auto is_whitespace = [&](std::size_t i) {
@@ -100,30 +99,29 @@ void TextElement::render_content(render::GlRenderer& r) const {
   if (dirty_) {
     if (!multiline_) {
       lines_.clear();
-      lines_.emplace_back(
-          to_utf32(r.trim_for_width(font_, font_dimensions_, bounds().size.x, text_)));
+      lines_.emplace_back(to_utf32(r.trim_for_width(font_, bounds().size.x, text_)));
     } else {
-      lines_ = split_lines(text_, r, font_, font_dimensions_, bounds().size.x);
+      lines_ = split_lines(text_, r, font_, bounds().size.x);
     }
     dirty_ = false;
   }
-  auto line_height = r.line_height(font_, font_dimensions_);
+  auto line_height = r.line_height(font_);
 
   auto align_x = [&](std::u32string s) -> std::int32_t {
-    if (+(align_ & alignment::kLeft)) {
+    if (+(align_ & render::alignment::kLeft)) {
       return 0;
     }
-    if (+(align_ & alignment::kRight)) {
-      return bounds().size.x - r.text_width(font_, font_dimensions_, ustring_view::utf32(s));
+    if (+(align_ & render::alignment::kRight)) {
+      return bounds().size.x - r.text_width(font_, ustring_view::utf32(s));
     }
-    return (bounds().size.x - r.text_width(font_, font_dimensions_, ustring_view::utf32(s))) / 2;
+    return (bounds().size.x - r.text_width(font_, ustring_view::utf32(s))) / 2;
   };
 
   auto align_y = [&]() -> std::int32_t {
-    if (+(align_ & alignment::kTop)) {
+    if (+(align_ & render::alignment::kTop)) {
       return 0;
     }
-    if (+(align_ & alignment::kBottom)) {
+    if (+(align_ & render::alignment::kBottom)) {
       return bounds().size.y - line_height * static_cast<std::int32_t>(lines_.size());
     }
     return (bounds().size.y - line_height * static_cast<std::int32_t>(lines_.size())) / 2;
@@ -134,7 +132,7 @@ void TextElement::render_content(render::GlRenderer& r) const {
   if (drop_shadow_) {
     for (const auto& s : lines_) {
       position.x = align_x(s);
-      r.render_text(font_, font_dimensions_, position + drop_shadow_->offset,
+      r.render_text(font_, position + drop_shadow_->offset,
                     glm::vec4{0.f, 0.f, 0.f, drop_shadow_->opacity}, /* clip */ false,
                     ustring_view::utf32(s));
       position.y += line_height;
@@ -143,8 +141,7 @@ void TextElement::render_content(render::GlRenderer& r) const {
   position = glm::ivec2{0, align_y()};
   for (const auto& s : lines_) {
     position.x = align_x(s);
-    r.render_text(font_, font_dimensions_, position, colour_, /* clip */ false,
-                  ustring_view::utf32(s));
+    r.render_text(font_, position, colour_, /* clip */ false, ustring_view::utf32(s));
     position.y += line_height;
   }
 }

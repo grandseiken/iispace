@@ -46,8 +46,7 @@ public:
     auto& title = *layout.add_back<ui::TextElement>();
     title.set_text(std::move(message))
         .set_colour(kTextColour)
-        .set_font(render::font_id::kMonospaceItalic)
-        .set_font_dimensions(kLargeFont);
+        .set_font({render::font_id::kMonospaceItalic, kLargeFont});
   }
 
   void update_content(const ui::input_frame& input, ui::output_frame& output) override {

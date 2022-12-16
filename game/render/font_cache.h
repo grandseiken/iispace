@@ -23,9 +23,8 @@ public:
   };
 
   void clear();
-  result<void> assign(font_id font, std::span<const std::uint8_t> bytes);
-  result<const entry*>
-  get(const target& t, font_id font, const glm::uvec2& dimensions, ustring_view text);
+  result<void> assign(font_id id, std::span<const std::uint8_t> bytes);
+  result<const entry*> get(const target& t, const font_data& font, ustring_view text);
 
 private:
   struct size_entry {

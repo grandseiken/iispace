@@ -71,33 +71,30 @@ RunLobbyLayer::RunLobbyLayer(ui::GameStack& stack, std::optional<initial_conditi
 
   subtitle_ = subbox.add_back<ui::TextElement>();
   if (online_) {
-    subtitle_->set_alignment(ui::alignment::kLeft);
+    subtitle_->set_alignment(render::alignment::kLeft);
     auto& invite_button = *subtop.add_back<ui::Button>();
     standard_button(invite_button)
-        .set_alignment(ui::alignment::kCentered)
+        .set_alignment(render::alignment::kCentered)
         .set_text(ustring::ascii("Invite"))
         .set_callback([this] { this->stack().system().show_invite_dialog(); });
     subtop.set_relative_weight(invite_button, 1.f / 4);
   } else {
-    subtitle_->set_alignment(ui::alignment::kCentered);
+    subtitle_->set_alignment(render::alignment::kCentered);
   }
-  subtitle_->set_font(render::font_id::kMonospace)
+  subtitle_->set_font({render::font_id::kMonospace, kMediumFont})
       .set_colour(kTextColour)
-      .set_font_dimensions(kMediumFont)
       .set_drop_shadow(kDropShadow, .5f);
 
   title_ = top.add_back<ui::TextElement>();
-  title_->set_font(render::font_id::kMonospaceBoldItalic)
+  title_->set_font({render::font_id::kMonospaceBoldItalic, kLargeFont})
       .set_colour(kHighlightColour)
-      .set_font_dimensions(kLargeFont)
       .set_drop_shadow(kDropShadow, .5f)
-      .set_alignment(ui::alignment::kCentered);
+      .set_alignment(render::alignment::kCentered);
 
-  all_ready_text_->set_font(render::font_id::kMonospaceBoldItalic)
+  all_ready_text_->set_font({render::font_id::kMonospaceBoldItalic, kLargeFont})
       .set_colour(kHighlightColour)
-      .set_font_dimensions(kLargeFont)
       .set_drop_shadow(kDropShadow, .5f)
-      .set_alignment(ui::alignment::kCentered);
+      .set_alignment(render::alignment::kCentered);
 
   back_button_ = bottom.add_back<ui::Button>();
   const auto* back_text = online_ ? "Leave lobby" : "Back";

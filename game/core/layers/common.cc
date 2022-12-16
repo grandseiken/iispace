@@ -7,9 +7,10 @@
 namespace ii {
 
 ui::Button& standard_button(ui::Button& button) {
-  return button.set_font(render::font_id::kMonospace, render::font_id::kMonospaceBold)
+  return button
+      .set_font({render::font_id::kMonospace, kLargeFont},
+                {render::font_id::kMonospaceBold, kLargeFont})
       .set_text_colour(kTextColour, kHighlightColour)
-      .set_font_dimensions(kLargeFont)
       .set_style(render::panel_style::kFlatColour)
       .set_padding(kPadding)
       .set_colour(kBackgroundColour)

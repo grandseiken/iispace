@@ -305,8 +305,8 @@ void GlRenderer::clear_depth() const {
   gl::clear(gl::clear_mask::kDepthBufferBit);
 }
 
-std::int32_t GlRenderer::line_height(font_id font, const glm::uvec2& font_dimensions) const {
-  auto font_result = impl_->font_cache.get(target(), font, font_dimensions, ustring::ascii(""));
+std::int32_t GlRenderer::line_height(const font_data& font) const {
+  auto font_result = impl_->font_cache.get(target(), font, ustring::ascii(""));
   if (!font_result) {
     impl_->status = unexpected(font_result.error());
     return 0;
@@ -316,9 +316,8 @@ std::int32_t GlRenderer::line_height(font_id font, const glm::uvec2& font_dimens
   return static_cast<std::int32_t>(std::ceil(static_cast<float>(height) / target().scale_factor()));
 }
 
-std::int32_t
-GlRenderer::text_width(font_id font, const glm::uvec2& font_dimensions, ustring_view s) const {
-  auto font_result = impl_->font_cache.get(target(), font, font_dimensions, s);
+std::int32_t GlRenderer::text_width(const font_data& font, ustring_view s) const {
+  auto font_result = impl_->font_cache.get(target(), font, s);
   if (!font_result) {
     impl_->status = unexpected(font_result.error());
     return 0;
@@ -328,9 +327,9 @@ GlRenderer::text_width(font_id font, const glm::uvec2& font_dimensions, ustring_
   return static_cast<std::int32_t>(std::ceil(static_cast<float>(width) / target().scale_factor()));
 }
 
-ustring GlRenderer::trim_for_width(font_id font, const glm::uvec2& font_dimensions,
-                                   std::int32_t width, ustring_view s) const {
-  auto font_result = impl_->font_cache.get(target(), font, font_dimensions, s);
+ustring
+GlRenderer::trim_for_width(const font_data& font, std::int32_t width, ustring_view s) const {
+  auto font_result = impl_->font_cache.get(target(), font, s);
   if (!font_result) {
     impl_->status = unexpected(font_result.error());
     return ustring::ascii("");
@@ -341,10 +340,9 @@ ustring GlRenderer::trim_for_width(font_id font, const glm::uvec2& font_dimensio
   return font_entry.font.trim_for_width(s, screen_width);
 }
 
-void GlRenderer::render_text(font_id font, const glm::uvec2& font_dimensions,
-                             const glm::ivec2& position, const glm::vec4& colour, bool clip,
-                             ustring_view s) const {
-  auto font_result = impl_->font_cache.get(target(), font, font_dimensions, s);
+void GlRenderer::render_text(const font_data& font, const glm::ivec2& position,
+                             const glm::vec4& colour, bool clip, ustring_view s) const {
+  auto font_result = impl_->font_cache.get(target(), font, s);
   if (!font_result) {
     impl_->status = unexpected(font_result.error());
     return;

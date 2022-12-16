@@ -42,12 +42,11 @@ public:
   // - support rendering with multiple fonts, so we can do multilingual text with e.g. Noto Sans.
   // - allow rendering multiple texts (with same font?), for example for multiline TextElement.
   // - below methods should be extracted from renderer somehow, maybe moved into FontCache.
-  std::int32_t line_height(font_id font, const glm::uvec2& font_dimensions) const;
-  std::int32_t text_width(font_id font, const glm::uvec2& font_dimensions, ustring_view s) const;
-  ustring trim_for_width(font_id font, const glm::uvec2& font_dimensions, std::int32_t width,
-                         ustring_view s) const;
-  void render_text(font_id font, const glm::uvec2& font_dimensions, const glm::ivec2& position,
-                   const glm::vec4& colour, bool clip, ustring_view s) const;
+  std::int32_t line_height(const font_data& font) const;
+  std::int32_t text_width(const font_data& font, ustring_view s) const;
+  ustring trim_for_width(const font_data& font, std::int32_t width, ustring_view s) const;
+  void render_text(const font_data& font, const glm::ivec2& position, const glm::vec4& colour,
+                   bool clip, ustring_view s) const;
 
   // TODO: render multiple panels?
   // TODO: in general we can maybe render UI with minimal draw calls via a breadth-first search

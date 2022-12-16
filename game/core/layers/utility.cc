@@ -16,15 +16,13 @@ ErrorLayer::ErrorLayer(ui::GameStack& stack, ustring message, std::function<void
   auto& title = *layout.add_back<ui::TextElement>();
   title.set_text(ustring::ascii("Error"))
       .set_colour(kErrorColour)
-      .set_font(render::font_id::kMonospaceBold)
-      .set_font_dimensions(kLargeFont);
+      .set_font({render::font_id::kMonospaceBold, kLargeFont});
   layout.set_absolute_size(title, kLargeFont.y);
 
   auto& message_text = *layout.add_back<ui::TextElement>();
   message_text.set_text(std::move(message))
       .set_colour(kTextColour)
-      .set_font(render::font_id::kMonospace)
-      .set_font_dimensions(kMediumFont)
+      .set_font({render::font_id::kMonospace, kMediumFont})
       .set_multiline(true);
 
   add_button("Ok", [this] {

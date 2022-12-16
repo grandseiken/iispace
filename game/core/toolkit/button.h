@@ -1,5 +1,6 @@
 #ifndef II_GAME_CORE_TOOLKIT_BUTTON_H
 #define II_GAME_CORE_TOOLKIT_BUTTON_H
+#include "game/common/colour.h"
 #include "game/common/ustring.h"
 #include "game/core/ui/element.h"
 #include "game/render/data/panel.h"
@@ -10,7 +11,6 @@
 namespace ii::ui {
 class Panel;
 class TextElement;
-enum class alignment : std::uint32_t;
 
 class Button : public Element {
 public:
@@ -27,7 +27,7 @@ public:
     return *this;
   }
 
-  Button& set_font(render::font_id font, render::font_id focus_font) {
+  Button& set_font(const render::font_data& font, const render::font_data& focus_font) {
     font_ = font;
     focus_font_ = focus_font;
     return *this;
@@ -46,13 +46,12 @@ public:
   }
 
   Button& set_style(render::panel_style style) { return set_style(style, style); }
-  Button& set_font(render::font_id font) { return set_font(font, font); }
+  Button& set_font(const render::font_data& font) { return set_font(font, font); }
   Button& set_colour(const glm::vec4& colour) { return set_colour(colour, colour); }
   Button& set_text_colour(const glm::vec4& colour) { return set_text_colour(colour, colour); }
 
-  Button& set_font_dimensions(const glm::uvec2& dimensions);
   Button& set_drop_shadow(const glm::ivec2& offset, float opacity);
-  Button& set_alignment(alignment align);
+  Button& set_alignment(render::alignment align);
   Button& set_text(ustring&& text);
   Button& set_padding(const glm::ivec2& padding);
   Button& set_margin(const glm::ivec2& margin);
@@ -69,12 +68,12 @@ private:
 
   render::panel_style style_ = render::panel_style::kNone;
   render::panel_style focus_style_ = render::panel_style::kNone;
-  render::font_id font_ = render::font_id::kDefault;
-  render::font_id focus_font_ = render::font_id::kDefault;
-  glm::vec4 colour_{1.f};
-  glm::vec4 focus_colour_{1.f};
-  glm::vec4 text_colour_{1.f};
-  glm::vec4 focus_text_colour_{1.f};
+  render::font_data font_;
+  render::font_data focus_font_;
+  glm::vec4 colour_ = colour::kWhite0;
+  glm::vec4 focus_colour_ = colour::kWhite0;
+  glm::vec4 text_colour_ = colour::kWhite0;
+  glm::vec4 focus_text_colour_ = colour::kWhite0;
 };
 
 }  // namespace ii::ui
