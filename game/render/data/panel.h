@@ -32,6 +32,7 @@ struct combo_panel {
     font_data font;
     alignment align = alignment::kTop | alignment::kLeft;
     glm::vec4 colour = colour::kWhite0;
+    bool drop_shadow = true;
     ustring text;
   };
 

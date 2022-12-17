@@ -71,6 +71,7 @@ struct PlayerBubble : ecs::component {
   vec2 dir{0};
   bool first_frame = true;
   bool rotate_anti = false;
+  bool on_screen = false;
 
   void update(Transform& transform, SimInterface& sim) {
     tick_count = sim.tick_count();
@@ -78,11 +79,12 @@ struct PlayerBubble : ecs::component {
 
     transform.rotate(fixed_c::pi / 100);
     transform.move(normalise(dir) * kSpeed);
+    on_screen = on_screen || sim.is_on_screen(transform.centre);
   }
 
   void render_panel(const Transform& transform, std::vector<render::combo_panel>& output,
                     const SimInterface& sim) const {
-    if (sim.is_on_screen(transform.centre)) {
+    if (on_screen) {
       render_player_name_panel(player_number, transform, output, sim);
     }
   }
@@ -286,6 +288,7 @@ void spawn_bomb_powerup(SimInterface& sim, const vec2& position) {
 
 void render_player_name_panel(std::uint32_t player_number, const Transform& transform,
                               std::vector<render::combo_panel>& output, const SimInterface& sim) {
+  // TODO: snapping position to integer makes it jerky.
   rect bounds{
       glm::ivec2{transform.centre.x.to_int(), transform.centre.y.to_int()} + glm::ivec2{-40, 32},
       glm::ivec2{80, 20}};
@@ -298,7 +301,7 @@ void render_player_name_panel(std::uint32_t player_number, const Transform& tran
           .bounds = {glm::vec2{0}, glm::vec2{72, 12}},
           .e =
               render::combo_panel::text{
-                  .font = {render::font_id::kDefault, glm::uvec2{12, 12}},
+                  .font = {render::font_id::kMonospaceBold, glm::uvec2{12, 12}},
                   .align = render::alignment::kCentered,
                   .colour = player_colour(game_mode::kStandardRun, player_number),
                   .text = sim.conditions().players[player_number].player_name,

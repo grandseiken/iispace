@@ -24,6 +24,7 @@ vec4 hsla2oklab(vec4 hsl) {
 }
 
 vec4 hsla2oklab_cycle(vec4 hsl, float cycle) {
+  // TODO: do cycle in oklab LCh.
   return hsla2oklab(vec4(hsl.x + cycle, hsl.yz, hsl.a));
 }
 

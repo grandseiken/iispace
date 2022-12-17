@@ -245,6 +245,10 @@ inline void clear(std::uint8_t mask) {
   glClear(m);
 }
 
+inline void texture_barrier() {
+  glTextureBarrier();
+}
+
 inline void enable_srgb(bool enable) {
   if (enable) {
     glEnable(GL_FRAMEBUFFER_SRGB);

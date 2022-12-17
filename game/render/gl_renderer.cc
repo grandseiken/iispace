@@ -350,6 +350,7 @@ void GlRenderer::render_text(const font_data& font, const glm::ivec2& position,
   const auto& font_entry = **font_result;
 
   auto fbo_bind = impl_->bind_render_framebuffer(target_.screen_dimensions);
+  gl::texture_barrier();  // TODO: only need to do once for multiline text?
   const auto& program = impl_->shader(shader::kText);
   gl::use_program(program);
   if (clip) {
@@ -357,17 +358,13 @@ void GlRenderer::render_text(const font_data& font, const glm::ivec2& position,
   } else {
     gl::enable_clip_planes(0u);
   }
-  gl::enable_blend(true);
+  gl::enable_blend(false);
   gl::enable_depth_test(false);
-  if (font_entry.font.is_lcd()) {
-    gl::blend_function(gl::blend_factor::kSrc1Colour, gl::blend_factor::kOneMinusSrc1Colour);
-  } else {
-    gl::blend_function(gl::blend_factor::kSrcAlpha, gl::blend_factor::kOneMinusSrcAlpha);
-  }
 
   auto clip_rect = target().clip_rect();
   auto text_origin = target().render_to_screen_coords(position + clip_rect.min());
   auto result = gl::set_uniforms(program, "screen_dimensions", target().screen_dimensions,
+                                 "is_multisample", impl_->render_framebuffer->samples > 1,
                                  "texture_dimensions", font_entry.font.bitmap_dimensions(),
                                  "clip_min", target().render_to_screen_coords(clip_rect.min()),
                                  "clip_max", target().render_to_screen_coords(clip_rect.max()),
@@ -376,7 +373,20 @@ void GlRenderer::render_text(const font_data& font, const glm::ivec2& position,
   if (!result) {
     impl_->status = unexpected(result.error());
   }
-  result = gl::set_uniform_texture_2d(program, "font_texture", /* texture unit */ 0,
+  if (impl_->render_framebuffer->samples <= 1) {
+    result =
+        gl::set_uniform_texture_2d(program, "framebuffer_texture", /* texture unit */ 0,
+                                   impl_->render_framebuffer->colour_buffer, impl_->pixel_sampler);
+  } else {
+    result = gl::set_uniform_texture_2d_multisample(program, "framebuffer_texture_multisample",
+                                                    /* texture unit */ 0,
+                                                    impl_->render_framebuffer->colour_buffer);
+  }
+  if (!result) {
+    impl_->status = unexpected("text shader error: " + result.error());
+    return;
+  }
+  result = gl::set_uniform_texture_2d(program, "font_texture", /* texture unit */ 1,
                                       font_entry.texture, impl_->pixel_sampler);
   if (!result) {
     impl_->status = unexpected("text shader error: " + result.error());
@@ -508,6 +518,10 @@ void GlRenderer::render_panel(const combo_panel& data) const {
     } else if (const auto* text = std::get_if<combo_panel::text>(&e.e)) {
       auto lines =
           prepare_text(*this, text->font, /* multiline */ false, e.bounds.size.x, text->text);
+      if (text->drop_shadow) {
+        render_text(text->font, e.bounds + glm::ivec2{2, 2}, text->align,
+                    glm::vec4{0.f, 0.f, 0.f, .5f}, /* clip */ true, lines);
+      }
       render_text(text->font, e.bounds, text->align, text->colour, /* clip */ true, lines);
     }
   }

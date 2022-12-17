@@ -5,7 +5,7 @@
 namespace ii::render {
 namespace {
 constexpr std::uint32_t kMaxLcdDimensions = 32;
-}
+}  // namespace
 
 void FontCache::clear() {
   for (auto& pair : fonts_) {

@@ -45,7 +45,6 @@ public:
   std::int32_t line_height(const font_data& font) const;
   std::int32_t text_width(const font_data& font, ustring_view s) const;
   ustring trim_for_width(const font_data& font, std::int32_t width, ustring_view s) const;
-  // TODO: oklab rendering has certainly fucked lcd text-blending, need to fix.
   void render_text(const font_data& font, const glm::ivec2& position, const glm::vec4& colour,
                    bool clip, ustring_view s) const;
   void render_text(const font_data& font, const rect& bounds, alignment align,

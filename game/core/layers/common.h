@@ -5,6 +5,7 @@
 #include <cstdint>
 
 namespace ii {
+// TODO: move out to common/colour or similar?
 static constexpr glm::ivec2 kUiDimensions = {640, 360};
 static constexpr glm::uvec2 kLargeFont = {14, 14};
 static constexpr glm::uvec2 kSemiLargeFont = {12, 12};
