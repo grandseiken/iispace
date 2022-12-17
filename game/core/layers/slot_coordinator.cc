@@ -76,6 +76,12 @@ public:
 
   void set_joining(bool joining) { joining_ = joining; }
   void set_locked(bool locked) { locked_ = locked; }
+  void set_last_ready(bool is_last_ready) {
+    if (is_last_ready_ != is_last_ready) {
+      is_last_ready_ = is_last_ready;
+      ready_button_->set_text(ustring::ascii(is_last_ready_ ? "Start game" : "Ready"));
+    }
+  }
 
   void set_username(ustring s) {
     owner_username_ = std::move(s);
@@ -119,15 +125,14 @@ public:
   bool is_assigned() const { return assigned_id_.has_value(); }
   bool is_ready() const { return config_tab_->active_index() == 2u; }
   ui::input_device_id assigned_input_device() const { return *assigned_id_; }
+  ustring username() const {
+    return owner_username_ ? *owner_username_
+                           : ustring::ascii("Player " + std::to_string(index_ + 1));
+  }
 
 protected:
   void refresh_controller_text() {
-    ustring s;
-    if (owner_username_) {
-      s = *owner_username_;
-    } else {
-      s = ustring::ascii("Player " + std::to_string(index_ + 1));
-    }
+    auto s = username();
     if (!assigned_id_) {
     } else if (assigned_id_->controller_index) {
       s += ustring::ascii(std::string{"\n"} + controller_name_.value_or("Controller"));
@@ -166,6 +171,7 @@ private:
   std::size_t index_ = 0;
   bool joining_ = false;
   bool locked_ = false;
+  bool is_last_ready_ = false;
   std::optional<ui::input_device_id> assigned_id_;
   std::optional<ustring> owner_username_;
   std::optional<std::string> controller_name_;
@@ -331,6 +337,13 @@ bool LobbySlotCoordinator::update(const std::vector<ui::input_device_id>& joins)
     host_slot_info_dirty_ = true;
     joined = true;
   };
+  return joined;
+}
+
+void LobbySlotCoordinator::update_finish() {
+  auto owned = [this](const slot_data& slot) {
+    return !online_ || slot.owner == stack_.system().local_user().id;
+  };
 
   std::size_t joining_index = 0;
   for (std::uint32_t i = 0; i < slots_.size(); ++i) {
@@ -366,12 +379,23 @@ bool LobbySlotCoordinator::update(const std::vector<ui::input_device_id>& joins)
     }
   }
 
-  if (std::all_of(slots_.begin(), slots_.end(),
-                  [&](const auto& slot) { return slot.owner || slot.assignment; })) {
+  std::uint32_t assigned_count = 0;
+  std::uint32_t ready_count = 0;
+  for (const auto& slot : slots_) {
+    if (slot.assignment || slot.owner) {
+      ++assigned_count;
+      if (slot.is_ready) {
+        ++ready_count;
+      }
+    }
+  }
+  if (assigned_count == slots_.size()) {
     queued_devices_.clear();
     client_slot_info_dirty_ = true;
   }
-  return joined;
+  for (const auto& slot : slots_) {
+    slot.panel->set_last_ready(assigned_count && ready_count + 1u >= assigned_count);
+  }
 }
 
 bool LobbySlotCoordinator::game_ready() const {
@@ -398,10 +422,16 @@ std::vector<ui::input_device_id> LobbySlotCoordinator::input_devices() const {
   return input_devices;
 }
 
-std::uint32_t LobbySlotCoordinator::player_count() const {
-  return static_cast<std::uint32_t>(
-      std::count_if(slots_.begin(), slots_.end(),
-                    [](const auto& slot) { return slot.assignment || slot.owner; }));
+std::vector<player_conditions> LobbySlotCoordinator::player_configuration() const {
+  std::vector<player_conditions> result;
+  for (const auto& slot : slots_) {
+    if (!slot.assignment && !slot.owner) {
+      continue;
+    }
+    auto& player = result.emplace_back();
+    player.player_name = slot.panel->username();
+  }
+  return result;
 }
 
 void LobbySlotCoordinator::lock() {

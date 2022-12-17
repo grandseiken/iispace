@@ -27,7 +27,7 @@ PauseLayer::PauseLayer(ui::GameStack& stack, std::function<void()> on_quit)
 
   auto& title = *layout.add_back<ui::TextElement>();
   title.set_text(ustring::ascii("Paused"))
-      .set_colour({1.f, 0.f, .5f, 1.f})
+      .set_colour(kTextColour)
       .set_font({render::font_id::kMonospaceItalic, kLargeFont});
 
   // TODO: reinstate volume control / settings menu. Allow explicit controller rebind?

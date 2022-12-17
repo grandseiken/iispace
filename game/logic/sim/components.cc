@@ -4,9 +4,9 @@
 
 namespace ii {
 
-void Render::render_shapes(ecs::const_handle h, transient_render_state::entity_state& state,
-                           bool paused, std::vector<render::shape>& output,
-                           const SimInterface& sim) {
+void Render::render_all(ecs::const_handle h, transient_render_state::entity_state& state,
+                        bool paused, std::vector<render::shape>& shapes_out,
+                        std::vector<render::combo_panel>& panels_out, const SimInterface& sim) {
   // TODO: trails should be reset on entity creation? Unless was created on same tick count
   // and with same components as we expected?
   static constexpr float kMaxTrailDistance = 64.f;
@@ -16,19 +16,12 @@ void Render::render_shapes(ecs::const_handle h, transient_render_state::entity_s
     clear_trails = false;
   }
 
-  auto start = output.size();
-  render(h, output, sim);
-  auto count = output.size() - start;
-
   std::array<std::size_t, 256> index_counts{0};
   index_counts.fill(0);
-  for (std::size_t i = 0; i < count; ++i) {
-    auto& s = output[start + i];
+  auto handle = [&](render::shape& s) {
     auto& v = state.trails[s.s_index];
-    auto n = index_counts[s.s_index];
-    if (v.size() < ++index_counts[s.s_index]) {
-      v.resize(index_counts[s.s_index]);
-    }
+    auto n = index_counts[s.s_index]++;
+    v.resize(std::max(v.size(), n + 1));
     if (v[n] &&
         length_squared(s.origin - v[n]->prev_origin) < kMaxTrailDistance * kMaxTrailDistance &&
         abs(angle_diff(s.rotation, v[n]->prev_rotation)) < kMaxTrailAngle) {
@@ -38,7 +31,32 @@ void Render::render_shapes(ecs::const_handle h, transient_render_state::entity_s
       v[n] = render::motion_trail{
           .prev_origin = s.origin, .prev_rotation = s.rotation, .prev_colour = s.colour};
     }
+  };
+
+  if (render) {
+    auto start = shapes_out.size();
+    render(h, shapes_out, sim);
+    auto count = shapes_out.size() - start;
+    for (std::size_t i = 0; i < count; ++i) {
+      handle(shapes_out[start + i]);
+    }
   }
+
+  if (render_panel) {
+    auto start = panels_out.size();
+    render_panel(h, panels_out, sim);
+    auto count = panels_out.size() - start;
+    for (std::size_t i = 0; i < count; ++i) {
+      for (auto& element : panels_out[start + i].elements) {
+        if (auto* icon = std::get_if<render::combo_panel::icon>(&element.e); icon) {
+          for (auto& s : icon->shapes) {
+            handle(s);
+          }
+        }
+      }
+    }
+  }
+
   for (auto& pair : state.trails) {
     pair.second.resize(index_counts[pair.first]);
   }

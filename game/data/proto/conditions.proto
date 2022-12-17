@@ -25,6 +25,10 @@ message GameMode {
 message RunModifiers {}
 message GameTechTree {}
 
+message PlayerConditions {
+  string player_name = 1;
+}
+
 message RunBiome {
   enum Enum {
     kNone = 0;
@@ -42,6 +46,7 @@ message InitialConditions {
   CompatibilityLevel.Enum compatibility = 1;
   uint32 seed = 2;
   uint32 player_count = 3;
+  repeated PlayerConditions player = 9;
 
   GameMode.Enum game_mode = 4;
   RunModifiers modifiers = 6;

@@ -1,6 +1,7 @@
 #ifndef II_GAME_DATA_CONDITIONS_H
 #define II_GAME_DATA_CONDITIONS_H
 #include "game/common/result.h"
+#include "game/common/ustring_convert.h"
 #include "game/data/proto/conditions.pb.h"
 #include "game/logic/sim/io/conditions.h"
 
@@ -64,9 +65,21 @@ inline proto::GameMode::Enum write_game_mode(game_mode value) {
   return proto::GameMode::kStandardRun;
 }
 
+inline player_conditions read_player_conditions(const proto::PlayerConditions& proto) {
+  player_conditions data;
+  data.player_name = ustring::utf8(proto.player_name());
+  return data;
+}
+
+inline proto::PlayerConditions write_player_conditions(const player_conditions& data) {
+  proto::PlayerConditions proto;
+  proto.set_player_name(to_utf8(data.player_name));
+  return proto;
+}
+
 inline run_modifiers read_run_modifiers(const proto::RunModifiers&) {
-  run_modifiers modifiers;
-  return modifiers;
+  run_modifiers data;
+  return data;
 }
 
 inline proto::RunModifiers write_run_modifiers(const run_modifiers&) {
@@ -75,8 +88,8 @@ inline proto::RunModifiers write_run_modifiers(const run_modifiers&) {
 }
 
 inline game_tech_tree read_game_tech_tree(const proto::GameTechTree&) {
-  game_tech_tree tech_tree;
-  return tech_tree;
+  game_tech_tree data;
+  return data;
 }
 
 inline proto::GameTechTree write_game_tech_tree(const game_tech_tree&) {
@@ -114,8 +127,11 @@ inline result<initial_conditions> read_initial_conditions(const proto::InitialCo
 
   initial_conditions data;
   data.compatibility = *compatibility;
-  data.player_count = proto.player_count();
   data.seed = proto.seed();
+  data.player_count = proto.player_count();
+  for (const auto& player : proto.player()) {
+    data.players.emplace_back(read_player_conditions(player));
+  }
 
   data.mode = *mode;
   data.modifiers = read_run_modifiers(proto.modifiers());
@@ -139,6 +155,9 @@ inline proto::InitialConditions write_initial_conditions(const initial_condition
   proto.set_compatibility(write_compatibility_level(data.compatibility));
   proto.set_seed(data.seed);
   proto.set_player_count(data.player_count);
+  for (const auto& player : data.players) {
+    *proto.add_player() = write_player_conditions(player);
+  }
 
   proto.set_game_mode(write_game_mode(data.mode));
   *proto.mutable_modifiers() = write_run_modifiers(data.modifiers);

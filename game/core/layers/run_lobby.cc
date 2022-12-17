@@ -417,6 +417,10 @@ void RunLobbyLayer::update_content(const ui::input_frame& input, ui::output_fram
   }
 }
 
+void RunLobbyLayer::update_finish() {
+  coordinator_->update_finish();
+}
+
 void RunLobbyLayer::disconnect_and_remove() {
   if (online_) {
     stack().system().leave_lobby();
@@ -433,7 +437,8 @@ void RunLobbyLayer::clear_and_remove() {
 void RunLobbyLayer::start_game(std::optional<network_input_mapping> network) {
   auto input_devices = coordinator_->input_devices();
   auto start_conditions = *conditions_;
-  start_conditions.player_count = coordinator_->player_count();
+  start_conditions.players = coordinator_->player_configuration();
+  start_conditions.player_count = static_cast<std::uint32_t>(start_conditions.players.size());
   stack().add<SimLayer>(start_conditions, input_devices, std::move(network));
   clear_and_remove();
 }

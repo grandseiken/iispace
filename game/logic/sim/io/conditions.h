@@ -2,6 +2,7 @@
 #define II_GAME_LOGIC_SIM_IO_CONDITIONS_H
 #include "game/common/colour.h"
 #include "game/common/enum.h"
+#include "game/common/ustring.h"
 #include <glm/glm.hpp>
 #include <array>
 #include <cstdint>
@@ -31,6 +32,9 @@ enum class run_biome : std::uint32_t {
 
 struct run_modifiers {};
 struct game_tech_tree {};
+struct player_conditions {
+  ustring player_name;
+};
 
 struct initial_conditions {
   enum class flag : std::uint32_t {
@@ -40,6 +44,7 @@ struct initial_conditions {
   compatibility_level compatibility = compatibility_level::kIispaceV0;
   std::uint32_t seed = 0;
   std::uint32_t player_count = 0;
+  std::vector<player_conditions> players;
 
   game_mode mode = game_mode::kStandardRun;
   game_tech_tree tech_tree;

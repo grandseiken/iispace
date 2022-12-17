@@ -255,6 +255,13 @@ struct PlayerLogic : ecs::component {
     }
   }
 
+  void render_panel(const Player& pc, const Transform& transform,
+                    std::vector<render::combo_panel>& output, const SimInterface& sim) const {
+    if (invulnerability_timer) {
+      render_player_name_panel(pc.player_number, transform, output, sim);
+    }
+  }
+
   std::optional<player_info> render_info(const Player& pc, const SimInterface& sim) const {
     player_info info;
     info.colour = v0_player_colour(pc.player_number);

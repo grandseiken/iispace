@@ -411,6 +411,40 @@ void GlRenderer::render_text(const font_data& font, const glm::ivec2& position,
                     gl::type_of<std::uint32_t>(), vertices, 0);
 }
 
+void GlRenderer::render_text(const font_data& font, const rect& bounds, alignment align,
+                             const glm::vec4& colour, bool clip,
+                             const std::vector<ustring>& lines) const {
+  auto height = line_height(font);
+
+  auto align_x = [&](const ustring& s) -> std::int32_t {
+    if (+(align & render::alignment::kLeft)) {
+      return 0;
+    }
+    if (+(align & render::alignment::kRight)) {
+      return bounds.size.x - text_width(font, s);
+    }
+    return (bounds.size.x - text_width(font, s)) / 2;
+  };
+
+  auto align_y = [&]() -> std::int32_t {
+    if (+(align & render::alignment::kTop)) {
+      return 0;
+    }
+    if (+(align & render::alignment::kBottom)) {
+      return bounds.size.y - height * static_cast<std::int32_t>(lines.size());
+    }
+    return (bounds.size.y - height * static_cast<std::int32_t>(lines.size())) / 2;
+  };
+
+  glm::ivec2 position{0, bounds.position.y + align_y()};
+  // TODO: render all in one?
+  for (const auto& s : lines) {
+    position.x = bounds.position.x + align_x(s);
+    render_text(font, position, colour, clip, s);
+    position.y += height;
+  }
+}
+
 void GlRenderer::render_panel(const panel_data& p) const {
   if (p.style == panel_style::kNone) {
     return;
@@ -457,6 +491,26 @@ void GlRenderer::render_panel(const panel_data& p) const {
   attributes.add_attribute<float>(/* colour */ 3, 4);
   attributes.add_attribute<std::int16_t>(/* style */ 4, 1);
   gl::draw_elements(gl::draw_mode::kPoints, impl_->index_buffer(1), gl::type_of<unsigned>(), 1, 0);
+}
+
+void GlRenderer::render_panel(const combo_panel& data) const {
+  auto panel_copy = data.panel;
+  panel_copy.bounds.position =
+      glm::min(target().clip_rect().size - panel_copy.bounds.size, panel_copy.bounds.position);
+  panel_copy.bounds.position = glm::max(glm::ivec2{0}, panel_copy.bounds.position);
+  render_panel(panel_copy);
+
+  auto& t = const_cast<render::target&>(target_);
+  render::clip_handle clip{t, panel_copy.bounds.contract(data.padding)};
+  for (const auto& e : data.elements) {
+    if (const auto* icon = std::get_if<combo_panel::icon>(&e.e)) {
+      // TODO
+    } else if (const auto* text = std::get_if<combo_panel::text>(&e.e)) {
+      auto lines =
+          prepare_text(*this, text->font, /* multiline */ false, e.bounds.size.x, text->text);
+      render_text(text->font, e.bounds, text->align, text->colour, /* clip */ true, lines);
+    }
+  }
 }
 
 void GlRenderer::render_background(const render::background& data) const {

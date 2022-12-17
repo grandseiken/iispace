@@ -94,6 +94,7 @@ void Element::update(const multi_input_frame& input, output_frame& output) {
   for (auto& e : children_) {
     e->update(element_input, output);
   }
+  update_finish();
 }
 
 void Element::update_focus(const multi_input_frame& input, output_frame& output) {

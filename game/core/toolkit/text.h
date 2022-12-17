@@ -70,7 +70,7 @@ private:
 
   mutable rect cached_bounds_;
   mutable glm::uvec2 render_dimensions_{0};
-  mutable std::vector<std::u32string> lines_;
+  mutable std::vector<ustring> lines_;
   mutable bool dirty_ = false;
 };
 

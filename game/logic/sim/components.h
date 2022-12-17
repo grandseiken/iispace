@@ -7,6 +7,8 @@
 #include "game/logic/sim/io/output.h"
 #include "game/mixer/sound.h"
 #include "game/render/data/background.h"
+#include "game/render/data/panel.h"
+#include "game/render/data/shapes.h"
 #include <sfn/functional.h>
 
 namespace ii {
@@ -66,11 +68,15 @@ DEBUG_STRUCT_TUPLE(PostUpdate, post_update);
 
 struct Render : ecs::component {
   using render_t = void(ecs::const_handle, std::vector<render::shape>&, const SimInterface&);
+  using render_panel_t = void(ecs::const_handle, std::vector<render::combo_panel>&,
+                              const SimInterface&);
   sfn::ptr<render_t> render = nullptr;
+  sfn::ptr<render_panel_t> render_panel = nullptr;
   bool clear_trails = false;
 
-  void render_shapes(ecs::const_handle, transient_render_state::entity_state& state, bool paused,
-                     std::vector<render::shape>&, const SimInterface&);
+  void render_all(ecs::const_handle, transient_render_state::entity_state& state, bool paused,
+                  std::vector<render::shape>&, std::vector<render::combo_panel>&,
+                  const SimInterface&);
 };
 DEBUG_STRUCT_TUPLE(Render, render);
 

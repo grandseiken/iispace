@@ -112,6 +112,7 @@ public:
 
 protected:
   virtual void update_content(const input_frame&, output_frame&) {}
+  virtual void update_finish() {}
   virtual bool handle_focus(const input_frame&, output_frame&) { return false; }
   virtual void render_content(render::GlRenderer&) const {}
   virtual void on_focus_change() {}

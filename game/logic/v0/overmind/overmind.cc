@@ -80,11 +80,11 @@ struct Overmind : ecs::component {
 
   void spawn_wave(SimInterface& sim) {
     auto& global = *sim.global_entity().get<GlobalData>();
-    auto n = static_cast<std::int32_t>(next_wave.wave_number);
+    auto n = static_cast<std::int32_t>(8u * next_wave.biome_index + next_wave.wave_number);
     auto c = static_cast<std::int32_t>(sim.player_count());
     global.shield_drop.counter += 120 + (6 * n / (2 + c)) + 80 * c;
     global.bomb_drop.counter += 160 + (9 * n / (2 + c)) + 60 * c;
-    if (!next_wave.wave_number) {
+    if (!next_wave.biome_index && !next_wave.wave_number) {
       global.bomb_drop.counter += 200;
     }
 

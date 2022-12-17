@@ -21,6 +21,7 @@ public:
   ~RunLobbyLayer() override;
   RunLobbyLayer(ui::GameStack& stack, std::optional<initial_conditions> conditions, bool online);
   void update_content(const ui::input_frame&, ui::output_frame&) override;
+  void update_finish() override;
 
 private:
   void disconnect_and_remove();

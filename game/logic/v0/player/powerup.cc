@@ -79,6 +79,13 @@ struct PlayerBubble : ecs::component {
     transform.rotate(fixed_c::pi / 100);
     transform.move(normalise(dir) * kSpeed);
   }
+
+  void render_panel(const Transform& transform, std::vector<render::combo_panel>& output,
+                    const SimInterface& sim) const {
+    if (sim.is_on_screen(transform.centre)) {
+      render_player_name_panel(player_number, transform, output, sim);
+    }
+  }
 };
 DEBUG_STRUCT_TUPLE(PlayerBubble, player_number, tick_count, dir, first_frame, rotate_anti);
 
@@ -275,6 +282,29 @@ void spawn_bomb_powerup(SimInterface& sim, const vec2& position) {
   auto h = create_ship_default<BombPowerup>(sim, position);
   h.add(BombPowerup{});
   h.add(PowerupTag{.ai_requires = ecs::call<&BombPowerup::is_required>});
+}
+
+void render_player_name_panel(std::uint32_t player_number, const Transform& transform,
+                              std::vector<render::combo_panel>& output, const SimInterface& sim) {
+  rect bounds{
+      glm::ivec2{transform.centre.x.to_int(), transform.centre.y.to_int()} + glm::ivec2{-40, 32},
+      glm::ivec2{80, 20}};
+  output.emplace_back(render::combo_panel{
+      .panel = {.style = render::panel_style::kFlatColour,
+                .colour = colour::kBlackOverlay0,
+                .bounds = bounds},
+      .padding = glm::ivec2{4, 4},
+      .elements = {{
+          .bounds = {glm::vec2{0}, glm::vec2{72, 12}},
+          .e =
+              render::combo_panel::text{
+                  .font = {render::font_id::kDefault, glm::uvec2{12, 12}},
+                  .align = render::alignment::kCentered,
+                  .colour = player_colour(game_mode::kStandardRun, player_number),
+                  .text = sim.conditions().players[player_number].player_name,
+              },
+      }},
+  });
 }
 
 }  // namespace ii::v0

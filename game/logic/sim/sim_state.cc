@@ -55,6 +55,11 @@ SimState::SimState(const initial_conditions& conditions, data::ReplayWriter* rep
   setup_ = make_sim_setup(conditions);
   internals_->conditions = conditions;
   internals_->dimensions = setup_->parameters(internals_->conditions).dimensions;
+  for (std::uint32_t i = internals_->conditions.players.size();
+       i < internals_->conditions.player_count; ++i) {
+    auto& player = internals_->conditions.players.emplace_back();
+    player.player_name = ustring::ascii("Player " + std::to_string(i + 1));
+  }
 
   if (conditions.compatibility == compatibility_level::kLegacy) {
     internals_->collision_index = std::make_unique<LegacyCollisionIndex>();
@@ -214,33 +219,34 @@ render_output& SimState::render(transient_render_state& state, bool paused) cons
   auto& result = internals_->render;
   result.boss_hp_bar.reset();
   result.shapes.clear();
+  result.panels.clear();
   result.players.clear();
 
   internals_->index.iterate_dispatch<Render>([&](ecs::handle h, Render& r) {
     if (!h.get<Player>()) {
-      r.render_shapes(h, state.entity_map[+h.id()], paused, result.shapes, *interface_);
+      r.render_all(h, state.entity_map[+h.id()], paused, result.shapes, result.panels, *interface_);
       return;
     }
   });
-  internals_->index.iterate_dispatch<Player>(
-      [&](ecs::handle h, const Player& p, Render& r, Transform& transform) {
-        if (auto info = p.render_info(h, *interface_)) {
-          result.players.resize(
-              std::max(result.players.size(), static_cast<std::size_t>(p.player_number + 1)));
-          result.players[p.player_number] = *info;
-        }
+  internals_->index.iterate_dispatch<Player>([&](ecs::handle h, const Player& p, Render& r,
+                                                 Transform& transform) {
+    if (auto info = p.render_info(h, *interface_)) {
+      result.players.resize(
+          std::max(result.players.size(), static_cast<std::size_t>(p.player_number + 1)));
+      result.players[p.player_number] = *info;
+    }
 
-        auto it = smoothing_data_.players.find(p.player_number);
-        if (it == smoothing_data_.players.end() || !it->second.position) {
-          r.render_shapes(h, state.entity_map[+h.id()], paused, result.shapes, *interface_);
-          return;
-        }
-        auto transform_copy = transform;
-        transform.centre = *it->second.position;
-        transform.rotation = it->second.rotation;
-        r.render_shapes(h, state.entity_map[+h.id()], paused, result.shapes, *interface_);
-        transform = transform_copy;
-      });
+    auto it = smoothing_data_.players.find(p.player_number);
+    if (it == smoothing_data_.players.end() || !it->second.position) {
+      r.render_all(h, state.entity_map[+h.id()], paused, result.shapes, result.panels, *interface_);
+      return;
+    }
+    auto transform_copy = transform;
+    transform.centre = *it->second.position;
+    transform.rotation = it->second.rotation;
+    r.render_all(h, state.entity_map[+h.id()], paused, result.shapes, result.panels, *interface_);
+    transform = transform_copy;
+  });
   std::erase_if(state.entity_map, [&](const auto& pair) {
     return !internals_->index.contains(ecs::entity_id{pair.first});
   });

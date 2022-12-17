@@ -45,14 +45,18 @@ public:
   std::int32_t line_height(const font_data& font) const;
   std::int32_t text_width(const font_data& font, ustring_view s) const;
   ustring trim_for_width(const font_data& font, std::int32_t width, ustring_view s) const;
+  // TODO: oklab rendering has certainly fucked lcd text-blending, need to fix.
   void render_text(const font_data& font, const glm::ivec2& position, const glm::vec4& colour,
                    bool clip, ustring_view s) const;
+  void render_text(const font_data& font, const rect& bounds, alignment align,
+                   const glm::vec4& colour, bool clip, const std::vector<ustring>& lines) const;
 
   // TODO: render multiple panels?
   // TODO: in general we can maybe render UI with minimal draw calls via a breadth-first search
   // that renders everything at element depth N (collapsing elements that render nothing) in a
   // single pass, etc.
   void render_panel(const panel_data&) const;
+  void render_panel(const combo_panel&) const;
 
   void render_background(const render::background& data) const;
   // TODO: _maybe_ render outlines automatically somehow, or output from geometry shapes?
@@ -67,6 +71,9 @@ private:
   struct impl_t;
   std::unique_ptr<impl_t> impl_;
 };
+
+std::vector<ustring> prepare_text(const render::GlRenderer& r, const render::font_data& font,
+                                  bool multiline, std::int32_t bounds_width, ustring_view s);
 
 }  // namespace ii::render
 

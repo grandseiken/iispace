@@ -3,6 +3,7 @@
 #include "game/logic/sim/io/aggregate.h"
 #include "game/logic/sim/io/events.h"
 #include "game/render/data/background.h"
+#include "game/render/data/panel.h"
 #include "game/render/data/shapes.h"
 #include <bit>
 #include <cstdint>
@@ -56,8 +57,11 @@ struct player_info {
 
 struct render_output {
   render::background background;
-  std::vector<player_info> players;
   std::vector<render::shape> shapes;
+  std::vector<render::combo_panel> panels;
+  std::vector<player_info> players;
+
+  // TODO: cleanup?
   std::uint64_t tick_count = 0;
   std::uint32_t lives_remaining = 0;
   std::optional<std::uint32_t> overmind_timer;

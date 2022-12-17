@@ -11,7 +11,10 @@ cc_library(
 cc_library(
   name = "render",
   hdrs = ["gl_renderer.h"],
-  srcs = ["gl_renderer.cc"],
+  srcs = [
+    "gl_renderer.cc",
+    "prepare_text.cc",
+  ],
   deps = [
     ":target",
     "//game/common:math",

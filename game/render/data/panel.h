@@ -23,7 +23,7 @@ struct panel_data {
   rect bounds;
 };
 
-struct sim_panel {
+struct combo_panel {
   struct icon {
     std::vector<shape> shapes;
   };
@@ -37,11 +37,13 @@ struct sim_panel {
 
   struct element {
     using variant = std::variant<icon, text>;
-    variant e;
     rect bounds;
+    variant e;
   };
 
   panel_data panel;
+  glm::ivec2 padding{0};
+  std::optional<glm::vec4> target;
   std::vector<element> elements;
 };
 

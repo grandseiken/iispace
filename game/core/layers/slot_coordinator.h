@@ -21,10 +21,11 @@ public:
   void handle(std::uint64_t client_user_id, const data::lobby_request_packet& request,
               ui::output_frame& output);
   bool update(const std::vector<ui::input_device_id>& joins);
+  void update_finish();
 
   bool game_ready() const;
   std::vector<ui::input_device_id> input_devices() const;
-  std::uint32_t player_count() const;
+  std::vector<player_conditions> player_configuration() const;
 
   void lock();
   void unlock();

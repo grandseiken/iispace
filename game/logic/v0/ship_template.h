@@ -133,13 +133,19 @@ ecs::handle add_collision(ecs::handle h) {
 
 template <ecs::Component Logic, geom::ShapeNode S = typename Logic::shape>
 ecs::handle add_render(ecs::handle h) {
-  constexpr auto render = ecs::call<&render_entity_shape<Logic, S>>;
+  constexpr auto render_shape =
+      sfn::cast<Render::render_t, ecs::call<&render_entity_shape<Logic, S>>>;
+
+  sfn::ptr<Render::render_t> render_ptr = render_shape;
+  sfn::ptr<Render::render_panel_t> render_panel_ptr = nullptr;
   if constexpr (requires { &Logic::render; }) {
-    h.add(Render{.render = sfn::sequence<sfn::cast<Render::render_t, render>,
-                                         sfn::cast<Render::render_t, ecs::call<&Logic::render>>>});
-  } else {
-    h.add(Render{.render = sfn::cast<Render::render_t, render>});
+    constexpr auto render_custom = sfn::cast<Render::render_t, ecs::call<&Logic::render>>;
+    render_ptr = sfn::sequence<render_shape, render_custom>;
   }
+  if constexpr (requires { &Logic::render_panel; }) {
+    render_panel_ptr = sfn::cast<Render::render_panel_t, ecs::call<&Logic::render_panel>>;
+  }
+  h.add(Render{.render = render_ptr, .render_panel = render_panel_ptr});
   return h;
 }
 

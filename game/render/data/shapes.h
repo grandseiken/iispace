@@ -79,6 +79,7 @@ struct shape {
   std::optional<motion_trail> trail;
   shape_data data;
 
+  // TODO: move all these functions somewhere else?
   static shape line(const glm::vec2& a, const glm::vec2& b, const glm::vec4& c, float z = 0.f,
                     float width = 1.f, unsigned char index = 0) {
     return shape{

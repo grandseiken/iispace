@@ -171,6 +171,9 @@ void SimLayer::render_content(render::GlRenderer& r) const {
   r.render_background(render.background);
   impl_->render_state.render(render.shapes);
   r.render_shapes(render::coordinate_system::kGlobal, render.shapes, style);
+  for (const auto& panel : render.panels) {
+    r.render_panel(panel);
+  }
   impl_->hud->set_data(render);
 }
 
