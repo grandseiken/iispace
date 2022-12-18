@@ -420,7 +420,7 @@ struct ShieldHub : ecs::component {
         standard_transform<geom::ball_eval<geom::constant<geom::bd(kShieldDrawDistance)>, sl0, sf>,
                            geom::ball_eval<geom::set_radius_p<geom::bd(), 2>, sl1>>;
 
-    std::tuple<vec2, fixed, fixed, glm::vec4, glm::vec4, glm::vec4>
+    std::tuple<vec2, fixed, fixed, cvec4, cvec4, cvec4>
     shape_parameters(const Transform& transform) const {
       auto a = static_cast<float>(fade_in) / kFadeInTime;
       auto t = anim % (kAnimTime + kAnimFadeTime);

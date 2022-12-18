@@ -2,8 +2,6 @@
 #define II_GAME_LOGIC_SIM_IO_PLAYER_H
 #include "game/common/colour.h"
 #include "game/common/math.h"
-#include <glm/glm.hpp>
-#include <cstddef>
 #include <cstdint>
 #include <optional>
 #include <unordered_map>

@@ -2,7 +2,6 @@
 #define II_GAME_LOGIC_SIM_IO_AGGREGATE_H
 #include "game/common/math.h"
 #include "game/mixer/sound.h"
-#include <glm/glm.hpp>
 #include <cstddef>
 #include <cstdint>
 #include <optional>
@@ -99,9 +98,9 @@ struct line_particle {
 using particle_data = std::variant<dot_particle, line_particle>;
 
 struct particle {
-  glm::vec2 position{0.f};
-  glm::vec2 velocity{0.f};
-  glm::vec4 colour{0.f};
+  fvec2 position{0.f};
+  fvec2 velocity{0.f};
+  cvec4 colour{0.f};
   particle_data data;
   std::uint32_t time = 0;
   std::uint32_t end_time = 0;

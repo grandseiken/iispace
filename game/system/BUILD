@@ -18,9 +18,9 @@ cc_library(
   hdrs = ["system.h"],
   deps = [
     "//game/common:async",
+    "//game/common:math",
     "//game/common:types",
     "//game/common:ustring",
-    "@glm",
   ],
   visibility = ["//visibility:public"],
 )

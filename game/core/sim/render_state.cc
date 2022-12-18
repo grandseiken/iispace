@@ -207,8 +207,8 @@ void RenderState::update(SimInputAdapter* input) {
 }
 
 void RenderState::render(std::vector<render::shape>& shapes) const {
-  auto render_box = [&](const glm::vec2& v, const glm::vec2& vv, const glm::vec2& d,
-                        const glm::vec4& c, float lw, float z) {
+  auto render_box = [&](const fvec2& v, const fvec2& vv, const fvec2& d, const cvec4& c, float lw,
+                        float z) {
     shapes.emplace_back(render::shape{
         .origin = v,
         .colour = c,
@@ -222,12 +222,12 @@ void RenderState::render(std::vector<render::shape>& shapes) const {
     switch (star.type) {
     case star_type::kDotStar:
     case star_type::kFarStar:
-      render_box(star.position, star_direction_ * star.speed, glm::vec2{1, 1}, star.colour, 1.f,
+      render_box(star.position, star_direction_ * star.speed, fvec2{1, 1}, star.colour, 1.f,
                  colour::kZParticle);
       break;
 
     case star_type::kBigStar:
-      render_box(star.position, star_direction_ * star.speed, glm::vec2{2, 2}, star.colour, 1.f,
+      render_box(star.position, star_direction_ * star.speed, fvec2{2, 2}, star.colour, 1.f,
                  colour::kZParticle);
       break;
 
@@ -251,10 +251,10 @@ void RenderState::render(std::vector<render::shape>& shapes) const {
     float l = p.flash_time && p.time <= p.flash_time
         ? (1.f + p.flash_time - p.time) / (1.f + p.flash_time)
         : 0.f;
-    glm::vec4 colour{p.colour.x, p.colour.y, glm::mix(p.colour.z, 1.f, l), a};
+    cvec4 colour{p.colour.x, p.colour.y, glm::mix(p.colour.z, 1.f, l), a};
 
     if (const auto* d = std::get_if<dot_particle>(&p.data)) {
-      render_box(p.position, p.velocity, glm::vec2{d->radius, d->radius}, colour, d->line_width,
+      render_box(p.position, p.velocity, fvec2{d->radius, d->radius}, colour, d->line_width,
                  colour::kZParticle);
     } else if (const auto* d = std::get_if<line_particle>(&p.data)) {
       float t = std::max(0.f, (17.f - p.time) / 16.f);

@@ -65,7 +65,7 @@ public:
         .set_drop_shadow(kDropShadow, .5f);
   }
 
-  void set_colour(const glm::vec4& colour) {
+  void set_colour(const cvec4& colour) {
     auto focus_colour = colour;
     focus_colour.z += .125f;
     ready_text_->set_colour(colour);

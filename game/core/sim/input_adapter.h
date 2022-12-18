@@ -1,8 +1,8 @@
 #ifndef II_GAME_CORE_SIM_INPUT_ADAPTER_H
 #define II_GAME_CORE_SIM_INPUT_ADAPTER_H
+#include "game/common/math.h"
 #include "game/core/ui/input.h"
 #include "game/logic/sim/io/player.h"
-#include <glm/glm.hpp>
 #include <cstddef>
 #include <cstdint>
 #include <span>
@@ -23,7 +23,7 @@ public:
   SimInputAdapter(const io::IoLayer& io_layer, std::span<const ui::input_device_id> input_devices);
 
   std::uint32_t player_count() const { return input_.size(); }
-  void set_game_dimensions(const glm::uvec2& dimensions);
+  void set_game_dimensions(const uvec2& dimensions);
   std::vector<input_frame> get();
   void rumble(std::uint32_t player_index, std::uint16_t lf, std::uint16_t hf,
               std::uint32_t duration_ms) const;
@@ -37,7 +37,7 @@ private:
   };
 
   std::vector<player_input> input_;
-  glm::uvec2 game_dimensions_ = {0, 0};
+  uvec2 game_dimensions_ = {0, 0};
   bool mouse_moving_ = false;
 };
 

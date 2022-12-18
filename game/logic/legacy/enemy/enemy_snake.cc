@@ -6,7 +6,7 @@
 namespace ii::legacy {
 namespace {
 
-ecs::handle spawn_snake_tail(SimInterface& sim, const vec2& position, const glm::vec4& colour);
+ecs::handle spawn_snake_tail(SimInterface& sim, const vec2& position, const cvec4& colour);
 
 struct SnakeTail : ecs::component {
   static constexpr std::uint32_t kBoundingWidth = 22;
@@ -17,16 +17,16 @@ struct SnakeTail : ecs::component {
   using shape = standard_transform<
       geom::polygon_colour_p<10, 4, 2, 0, shape_flag::kDangerous | shape_flag::kWeakShield>>;
 
-  std::tuple<vec2, fixed, glm::vec4> shape_parameters(const Transform& transform) const {
+  std::tuple<vec2, fixed, cvec4> shape_parameters(const Transform& transform) const {
     return {transform.centre, transform.rotation, colour};
   }
 
-  SnakeTail(const glm::vec4& colour) : colour{colour} {}
+  SnakeTail(const cvec4& colour) : colour{colour} {}
   std::optional<ecs::entity_id> tail;
   std::optional<ecs::entity_id> head;
   std::uint32_t timer = 150;
   std::uint32_t d_timer = 0;
-  glm::vec4 colour{0.f};
+  cvec4 colour{0.f};
 
   void update(ecs::handle h, Transform& transform, SimInterface& sim) {
     static constexpr fixed z15 = fixed_c::hundredth * 15;
@@ -70,7 +70,7 @@ struct Snake : ecs::component {
   using shape = standard_transform<geom::polygon_colour_p<14, 3, 2, 0, shape_flag::kVulnerable>,
                                    geom::ball_collider<10, shape_flag::kDangerous>>;
 
-  std::tuple<vec2, fixed, glm::vec4> shape_parameters(const Transform& transform) const {
+  std::tuple<vec2, fixed, cvec4> shape_parameters(const Transform& transform) const {
     return {transform.centre, transform.rotation, colour};
   }
 
@@ -79,11 +79,11 @@ struct Snake : ecs::component {
   vec2 dir{0};
   std::uint32_t count = 0;
   bool is_projectile = false;
-  glm::vec4 start_colour{0.f};
-  glm::vec4 colour{0.f};
+  cvec4 start_colour{0.f};
+  cvec4 colour{0.f};
   fixed projectile_rotation = 0;
 
-  Snake(SimInterface& sim, const glm::vec4& colour, const vec2& direction, fixed rotation)
+  Snake(SimInterface& sim, const cvec4& colour, const vec2& direction, fixed rotation)
   : start_colour{colour}, colour{colour}, projectile_rotation{rotation} {
     if (direction == vec2{0}) {
       auto r = sim.random(4);
@@ -136,7 +136,7 @@ struct Snake : ecs::component {
 };
 DEBUG_STRUCT_TUPLE(Snake, tail, timer, dir, count, is_projectile, projectile_rotation);
 
-ecs::handle spawn_snake_tail(SimInterface& sim, const vec2& position, const glm::vec4& colour) {
+ecs::handle spawn_snake_tail(SimInterface& sim, const vec2& position, const cvec4& colour) {
   auto h = create_ship<SnakeTail>(sim, position);
   add_enemy_health<SnakeTail>(h, 0);
   h.add(SnakeTail{colour});
@@ -146,7 +146,7 @@ ecs::handle spawn_snake_tail(SimInterface& sim, const vec2& position, const glm:
 
 }  // namespace
 
-void spawn_snake(SimInterface& sim, const vec2& position, const glm::vec4& colour,
+void spawn_snake(SimInterface& sim, const vec2& position, const cvec4& colour,
                  const vec2& direction, fixed rotation) {
   auto h = create_ship<Snake>(sim, position);
   add_enemy_health<Snake>(h, 5);

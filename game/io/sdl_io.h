@@ -16,7 +16,7 @@ public:
   SdlIoLayer(access_tag);
   ~SdlIoLayer() override;
 
-  glm::uvec2 dimensions() const override;
+  uvec2 dimensions() const override;
   void swap_buffers() override;
   void capture_mouse(bool capture) override;
   std::optional<event_type> poll() override;

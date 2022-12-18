@@ -1,5 +1,6 @@
 #ifndef II_GAME_RENDER_GL_RENDERER_H
 #define II_GAME_RENDER_GL_RENDERER_H
+#include "game/common/math.h"
 #include "game/common/rect.h"
 #include "game/common/result.h"
 #include "game/common/ustring.h"
@@ -8,7 +9,6 @@
 #include "game/render/data/shapes.h"
 #include "game/render/data/text.h"
 #include "game/render/target.h"
-#include <glm/glm.hpp>
 #include <memory>
 #include <optional>
 #include <string_view>
@@ -45,10 +45,10 @@ public:
   std::int32_t line_height(const font_data& font) const;
   std::int32_t text_width(const font_data& font, ustring_view s) const;
   ustring trim_for_width(const font_data& font, std::int32_t width, ustring_view s) const;
-  void render_text(const font_data& font, const glm::ivec2& position, const glm::vec4& colour,
-                   bool clip, ustring_view s) const;
-  void render_text(const font_data& font, const rect& bounds, alignment align,
-                   const glm::vec4& colour, bool clip, const std::vector<ustring>& lines) const;
+  void render_text(const font_data& font, const ivec2& position, const cvec4& colour, bool clip,
+                   ustring_view s) const;
+  void render_text(const font_data& font, const irect& bounds, alignment align, const cvec4& colour,
+                   bool clip, const std::vector<ustring>& lines) const;
 
   // TODO: render multiple panels?
   // TODO: in general we can maybe render UI with minimal draw calls via a breadth-first search

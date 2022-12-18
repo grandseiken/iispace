@@ -9,10 +9,9 @@ cc_library(
   ],
   deps = [
     "//game/geometry",
-    "//game/common:types",
     "//game/common:math",
+    "//game/common:types",
     "//game/render/data",
-    "@glm",
   ],
   visibility = ["//game:__subpackages__"],
 )

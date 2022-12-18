@@ -1,35 +1,36 @@
 #ifndef II_GAME_COMMON_COLOURS_H
 #define II_GAME_COMMON_COLOURS_H
+#include "game/common/math.h"
 #include <gcem.hpp>
 #include <glm/glm.hpp>
 #include <algorithm>
 
 namespace ii::colour {
 
-inline constexpr glm::vec4 clamp(const glm::vec4& c) {
+inline constexpr cvec4 clamp(const cvec4& c) {
   return {std::clamp(c.x, 0.f, 1.f), std::clamp(c.y, 0.f, 1.f), std::clamp(c.z, 0.f, 1.f),
           std::clamp(c.w, 0.f, 1.f)};
 }
 
-inline constexpr glm::vec4 alpha(const glm::vec4& c, float a) {
+inline constexpr cvec4 alpha(const cvec4& c, float a) {
   return clamp({c.x, c.y, c.z, c.w * a});
 }
 
-inline constexpr glm::vec4 srgb2rgb(const glm::vec4& c) {
+inline constexpr cvec4 srgb2rgb(const cvec4& c) {
   auto f = [](float v) {
     return v >= .04045f ? gcem::pow((v + .055f) / 1.055f, 2.4f) : v / 12.92f;
   };
   return {f(c.x), f(c.y), f(c.z), c.w};
 }
 
-inline constexpr glm::vec4 rgb2srgb(const glm::vec4& c) {
+inline constexpr cvec4 rgb2srgb(const cvec4& c) {
   auto f = [](float v) {
     return v >= .0031308f ? 1.055f * gcem::pow(v, 1.f / 2.4f) - .055f : v * 12.92f;
   };
   return {f(c.x), f(c.y), f(c.z), c.w};
 }
 
-inline constexpr glm::vec4 hsl2srgb(const glm::vec4& c) {
+inline constexpr cvec4 hsl2srgb(const cvec4& c) {
   float h = gcem::fmod(c.x, 1.f);
   float s = c.y;
   float l = c.z;
@@ -63,17 +64,17 @@ inline constexpr glm::vec4 hsl2srgb(const glm::vec4& c) {
   return {v, m, mid2, c.w};
 }
 
-inline constexpr glm::vec4 srgb2hsl(const glm::vec4& c) {
+inline constexpr cvec4 srgb2hsl(const cvec4& c) {
   auto v = std::max(c.x, std::max(c.y, c.z));
   auto m = std::min(c.x, std::min(c.y, c.z));
   auto l = (m + v) / 2.f;
   if (l <= 0.f) {
-    return glm::vec4{0.f, 0.f, 0.f, c.w};
+    return cvec4{0.f, 0.f, 0.f, c.w};
   }
   auto vm = v - m;
   auto s = vm;
   if (s <= 0.f) {
-    return glm::vec4{0.f, 0.f, l, c.w};
+    return cvec4{0.f, 0.f, l, c.w};
   }
   s /= l <= .5f ? v + m : 2.f - v - m;
 
@@ -92,33 +93,33 @@ inline constexpr glm::vec4 srgb2hsl(const glm::vec4& c) {
   return {h, s, l, c.w};
 }
 
-inline constexpr glm::vec4 srgb2hsl(std::uint8_t r, std::uint8_t g, std::uint8_t b) {
+inline constexpr cvec4 srgb2hsl(std::uint8_t r, std::uint8_t g, std::uint8_t b) {
   return srgb2hsl({static_cast<float>(r) / 255.f, static_cast<float>(g) / 255.f,
                    static_cast<float>(b) / 255.f, 1.f});
 }
 
-inline constexpr glm::vec4 hsl_mix(const glm::vec4& a, const glm::vec4& b, float t = .5f) {
+inline constexpr cvec4 hsl_mix(const cvec4& a, const cvec4& b, float t = .5f) {
   auto rgb_a = srgb2rgb(hsl2srgb(a));
   auto rgb_b = srgb2rgb(hsl2srgb(b));
   return srgb2hsl(rgb2srgb((1.f - t) * rgb_a + t * rgb_b));
 }
 
-inline constexpr glm::vec4 hue(float h, float l = .5f, float s = 1.f) {
+inline constexpr cvec4 hue(float h, float l = .5f, float s = 1.f) {
   return {h, s, l, 1.f};
 }
 
-inline constexpr glm::vec4 hue360(std::uint32_t h, float l = .5f, float s = 1.f) {
+inline constexpr cvec4 hue360(std::uint32_t h, float l = .5f, float s = 1.f) {
   return hue(h / 360.f, l, s);
 }
 
-constexpr auto kZero = glm::vec4{0.f};
-constexpr auto kBlack0 = glm::vec4{0.f, 0.f, 0.f, 1.f};
-constexpr auto kBlack1 = glm::vec4{0.f, 0.f, 1.f / 32, 1.f};
-constexpr auto kWhite0 = glm::vec4{0.f, 0.f, 1.f, 1.f};
-constexpr auto kWhite1 = glm::vec4{0.f, 0.f, .75f, 1.f};
+constexpr auto kZero = cvec4{0.f};
+constexpr auto kBlack0 = cvec4{0.f, 0.f, 0.f, 1.f};
+constexpr auto kBlack1 = cvec4{0.f, 0.f, 1.f / 32, 1.f};
+constexpr auto kWhite0 = cvec4{0.f, 0.f, 1.f, 1.f};
+constexpr auto kWhite1 = cvec4{0.f, 0.f, .75f, 1.f};
 
-constexpr auto kBlackOverlay0 = glm::vec4{0.f, 0.f, 0.f, 1.f / 4};
-constexpr auto kBlackOverlay1 = glm::vec4{0.f, 0.f, 0.f, 3.f / 8};
+constexpr auto kBlackOverlay0 = cvec4{0.f, 0.f, 0.f, 1.f / 4};
+constexpr auto kBlackOverlay1 = cvec4{0.f, 0.f, 0.f, 3.f / 8};
 
 constexpr auto kSolarizedDarkBase03 = srgb2hsl(0, 43, 54);
 constexpr auto kSolarizedDarkBase02 = srgb2hsl(7, 54, 66);

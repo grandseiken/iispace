@@ -27,7 +27,7 @@ struct Square : ecs::component {
       geom::box_colour_p2<vec2{12, 12}, 2, 3, geom::sline(colour::kZero, z, 1.5f),
                           geom::sfill(colour::kZero, z)>>;
 
-  std::tuple<vec2, fixed, glm::vec4, glm::vec4>
+  std::tuple<vec2, fixed, cvec4, cvec4>
   shape_parameters(const Transform& transform, const Health& health) const {
     auto c = colour::kNewGreen0;
     if (health.hp && invisible_flash) {

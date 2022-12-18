@@ -49,8 +49,8 @@ public:
   RandomEngine& random();
   EmitHandle& background_fx(background_fx_change);
   EmitHandle& add(particle particle);
-  EmitHandle& explosion(const glm::vec2& v, const glm::vec4& c, std::uint32_t time = 8,
-                        const std::optional<glm::vec2>& towards = std::nullopt,
+  EmitHandle& explosion(const fvec2& v, const cvec4& c, std::uint32_t time = 8,
+                        const std::optional<fvec2>& towards = std::nullopt,
                         std::optional<float> speed = std::nullopt);
   EmitHandle& rumble(std::uint32_t player, std::uint32_t time_ticks, float lf, float hf);
   EmitHandle& rumble_all(std::uint32_t time_ticks, float lf, float hf);

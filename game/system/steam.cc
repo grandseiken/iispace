@@ -278,7 +278,7 @@ struct SteamSystem::impl_t {
   callback<&impl_t::session_failed> session_failed_cb{this};
 
   struct avatar_data {
-    glm::uvec2 dimensions{0, 0};
+    uvec2 dimensions{0, 0};
     std::vector<std::uint8_t> rgba_buffer;
   };
 

@@ -1,9 +1,9 @@
 #ifndef II_GAME_SYSTEM_SYSTEM_H
 #define II_GAME_SYSTEM_SYSTEM_H
 #include "game/common/async.h"
+#include "game/common/math.h"
 #include "game/common/result.h"
 #include "game/common/ustring.h"
-#include <glm/glm.hpp>
 #include <cstdint>
 #include <memory>
 #include <optional>
@@ -35,7 +35,7 @@ public:
   };
 
   struct avatar_info {
-    glm::uvec2 dimensions{0};
+    uvec2 dimensions{0};
     std::span<const std::uint8_t> rgba_buffer;
   };
 

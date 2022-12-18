@@ -4,7 +4,7 @@ namespace ii {
 
 ErrorLayer::ErrorLayer(ui::GameStack& stack, ustring message, std::function<void()> on_close)
 : ui::GameLayer{stack, ui::layer_flag::kCaptureUpdate}, on_close_{std::move(on_close)} {
-  set_bounds(rect{kUiDimensions});
+  set_bounds(irect{kUiDimensions});
 
   auto& layout = add_dialog_layout(*this);
   auto add_button = [&](const char* text, std::function<void()> callback) {

@@ -55,7 +55,7 @@ gl::buffer make_stream_draw_buffer(std::span<const T> data) {
 }
 
 struct framebuffer_data {
-  glm::uvec2 dimensions{0};
+  uvec2 dimensions{0};
   std::uint32_t samples = 1;
   gl::framebuffer fbo;
   gl::texture colour_buffer;
@@ -63,7 +63,7 @@ struct framebuffer_data {
 };
 
 result<framebuffer_data>
-make_render_framebuffer(const glm::uvec2& dimensions, bool depth_stencil, std::uint32_t samples) {
+make_render_framebuffer(const uvec2& dimensions, bool depth_stencil, std::uint32_t samples) {
   auto fbo = gl::make_framebuffer();
   auto colour_buffer = gl::make_texture();
   std::optional<gl::renderbuffer> depth_stencil_buffer;
@@ -172,7 +172,7 @@ struct GlRenderer::impl_t {
     return *iota_index_buffer;
   }
 
-  gl::bound_framebuffer bind_render_framebuffer(const glm::uvec2& dimensions) {
+  gl::bound_framebuffer bind_render_framebuffer(const uvec2& dimensions) {
     if (!render_framebuffer || render_framebuffer->dimensions != dimensions) {
       auto result = make_render_framebuffer(dimensions, /* depth/stencil */ true,
                                             std::min(16u, gl::max_samples()));
@@ -340,8 +340,8 @@ GlRenderer::trim_for_width(const font_data& font, std::int32_t width, ustring_vi
   return font_entry.font.trim_for_width(s, screen_width);
 }
 
-void GlRenderer::render_text(const font_data& font, const glm::ivec2& position,
-                             const glm::vec4& colour, bool clip, ustring_view s) const {
+void GlRenderer::render_text(const font_data& font, const ivec2& position, const cvec4& colour,
+                             bool clip, ustring_view s) const {
   auto font_result = impl_->font_cache.get(target(), font, s);
   if (!font_result) {
     impl_->status = unexpected(font_result.error());
@@ -397,8 +397,7 @@ void GlRenderer::render_text(const font_data& font, const glm::ivec2& position,
   std::uint32_t vertices = 0;
   font_entry.font.iterate_glyph_data(
       s, text_origin,
-      [&](const glm::ivec2& position, const glm::ivec2& texture_coords,
-          const glm::ivec2& dimensions) {
+      [&](const ivec2& position, const ivec2& texture_coords, const ivec2& dimensions) {
         vertex_data.emplace_back(static_cast<std::int16_t>(position.x));
         vertex_data.emplace_back(static_cast<std::int16_t>(position.y));
         vertex_data.emplace_back(static_cast<std::int16_t>(dimensions.x));
@@ -421,8 +420,8 @@ void GlRenderer::render_text(const font_data& font, const glm::ivec2& position,
                     gl::type_of<std::uint32_t>(), vertices, 0);
 }
 
-void GlRenderer::render_text(const font_data& font, const rect& bounds, alignment align,
-                             const glm::vec4& colour, bool clip,
+void GlRenderer::render_text(const font_data& font, const irect& bounds, alignment align,
+                             const cvec4& colour, bool clip,
                              const std::vector<ustring>& lines) const {
   auto height = line_height(font);
 
@@ -446,7 +445,7 @@ void GlRenderer::render_text(const font_data& font, const rect& bounds, alignmen
     return (bounds.size.y - height * static_cast<std::int32_t>(lines.size())) / 2;
   };
 
-  glm::ivec2 position{0, bounds.position.y + align_y()};
+  ivec2 position{0, bounds.position.y + align_y()};
   // TODO: render all in one?
   for (const auto& s : lines) {
     position.x = bounds.position.x + align_x(s);
@@ -507,7 +506,7 @@ void GlRenderer::render_panel(const combo_panel& data) const {
   auto panel_copy = data.panel;
   panel_copy.bounds.position =
       glm::min(target().clip_rect().size - panel_copy.bounds.size, panel_copy.bounds.position);
-  panel_copy.bounds.position = glm::max(glm::ivec2{0}, panel_copy.bounds.position);
+  panel_copy.bounds.position = glm::max(ivec2{0}, panel_copy.bounds.position);
   render_panel(panel_copy);
 
   auto& t = const_cast<render::target&>(target_);
@@ -519,8 +518,8 @@ void GlRenderer::render_panel(const combo_panel& data) const {
       auto lines =
           prepare_text(*this, text->font, /* multiline */ false, e.bounds.size.x, text->text);
       if (text->drop_shadow) {
-        render_text(text->font, e.bounds + glm::ivec2{2, 2}, text->align,
-                    glm::vec4{0.f, 0.f, 0.f, .5f}, /* clip */ true, lines);
+        render_text(text->font, e.bounds + ivec2{2, 2}, text->align, cvec4{0.f, 0.f, 0.f, .5f},
+                    /* clip */ true, lines);
       }
       render_text(text->font, e.bounds, text->align, text->colour, /* clip */ true, lines);
     }
@@ -585,25 +584,25 @@ void GlRenderer::render_shapes(coordinate_system ctype, std::vector<shape>& shap
   struct shape_data {
     std::uint32_t buffer_index = 0;
     std::uint32_t style = 0;
-    glm::uvec2 params{0u, 0u};
+    uvec2 params{0u, 0u};
     float rotation = 0.f;
     float line_width = 0.f;
     float z_index = 0.f;
-    glm::vec2 position{0.f};
-    glm::vec2 dimensions{0.f};
-    glm::vec4 colour{0.f};
+    fvec2 position{0.f};
+    fvec2 dimensions{0.f};
+    cvec4 colour{0.f};
   };
 
   struct shape_buffer_data {
-    glm::vec4 colour{0.f};
+    cvec4 colour{0.f};
     std::uint32_t style = 0;
     std::uint32_t ball_index = 0;
-    glm::uvec2 padding{0};
+    uvec2 padding{0};
   };
 
   struct ball_buffer_data {
-    glm::vec2 position{0.f};
-    glm::vec2 dimensions{0.f};
+    fvec2 position{0.f};
+    fvec2 dimensions{0.f};
     float line_width = 0.f;
     float padding = 0.f;
   };
@@ -654,7 +653,7 @@ void GlRenderer::render_shapes(coordinate_system ctype, std::vector<shape>& shap
     buffer_data.emplace_back(shape_buffer_data{d.colour, d.style, ball_index});
   };
 
-  static constexpr glm::vec2 kShadowOffset{4, 6};
+  static constexpr fvec2 kShadowOffset{4, 6};
   std::uint32_t vertex_index = 0;
   auto add_outline_data = [&](const shape_data& d,
                               const std::optional<render::motion_trail>& trail) {
@@ -676,7 +675,7 @@ void GlRenderer::render_shapes(coordinate_system ctype, std::vector<shape>& shap
     if (style == shape_style::kStandard) {
       auto ds = d;
       ds.position += kShadowOffset;
-      ds.colour = glm::vec4{0.f, 0.f, 0.f, ds.colour.a * colour::kShadowAlpha0};
+      ds.colour = cvec4{0.f, 0.f, 0.f, ds.colour.a * colour::kShadowAlpha0};
       ds.line_width += 1.f;
       add_shape_data(ds);
       shadow_outline_indices.emplace_back(vertex_index++);
@@ -840,10 +839,10 @@ void GlRenderer::render_shapes(coordinate_system ctype, std::vector<shape>& shap
   attributes.add_attribute<float>(/* dimensions */ 6, 2);
 
   auto clip_rect = target().clip_rect();
-  glm::vec2 offset;
+  fvec2 offset;
   switch (ctype) {
   case coordinate_system::kGlobal:
-    offset = glm::vec2{0, 0};
+    offset = fvec2{0, 0};
     break;
   case coordinate_system::kLocal:
     offset = clip_rect.min();

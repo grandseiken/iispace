@@ -40,7 +40,7 @@ public:
   : ui::GameLayer{stack, ui::layer_flag::kCaptureUpdate}
   , async_{std::move(async)}
   , on_success_{std::move(on_success)} {
-    set_bounds(rect{kUiDimensions});
+    set_bounds(irect{kUiDimensions});
 
     ui::LinearLayout& layout = add_dialog_layout(*this);
     auto& title = *layout.add_back<ui::TextElement>();

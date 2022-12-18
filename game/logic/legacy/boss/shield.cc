@@ -19,9 +19,9 @@ struct ShieldBombBoss : ecs::component {
   static constexpr fixed kSpeed = 1;
   static constexpr float kZIndex = -4.f;
 
-  static constexpr glm::vec4 c0 = colour::hue360(150, .4f, .5f);
-  static constexpr glm::vec4 c1 = colour::hue(0.f, .8f, 0.f);
-  static constexpr glm::vec4 c2 = colour::hue(0.f, .6f, 0.f);
+  static constexpr cvec4 c0 = colour::hue360(150, .4f, .5f);
+  static constexpr cvec4 c1 = colour::hue(0.f, .8f, 0.f);
+  static constexpr cvec4 c2 = colour::hue(0.f, .6f, 0.f);
 
   template <fixed I>
   using strut_shape =
@@ -40,16 +40,15 @@ struct ShieldBombBoss : ecs::component {
       geom::rotate_eval<geom::multiply_p<2, 1>, centre_shape>,
       geom::for_each<fixed, 0, 16, strut_shape>, shield_shape, geom::ngon_colour_p<125, 16, 4>,
       geom::ngon_colour_p<120, 16, 4>,
-      geom::rotate_p<1, geom::polygon<42, 16, glm::vec4{0.f}, 0, shape_flag::kShield>>>;
+      geom::rotate_p<1, geom::polygon<42, 16, cvec4{0.f}, 0, shape_flag::kShield>>>;
 
-  std::tuple<vec2, fixed, bool, glm::vec4, glm::vec4>
-  shape_parameters(const Transform& transform) const {
+  std::tuple<vec2, fixed, bool, cvec4, cvec4> shape_parameters(const Transform& transform) const {
     return {transform.centre, transform.rotation, unshielded != 0,
             !unshielded                ? c2
-                : (unshielded / 2) % 4 ? glm::vec4{0.f}
+                : (unshielded / 2) % 4 ? cvec4{0.f}
                                        : colour::hue(0.f, .2f, 0.f),
             !unshielded                ? c1
-                : (unshielded / 2) % 4 ? glm::vec4{0.f}
+                : (unshielded / 2) % 4 ? cvec4{0.f}
                                        : colour::hue(0.f, .4f, 0.f)};
   }
 

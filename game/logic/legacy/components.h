@@ -28,7 +28,7 @@ struct GlobalData : ecs::component {
   struct fireworks_entry {
     std::uint32_t time = 0;
     vec2 position{0};
-    glm::vec4 colour{0.f};
+    cvec4 colour{0.f};
   };
   std::vector<fireworks_entry> fireworks;
   std::vector<vec2> extra_enemy_warnings;

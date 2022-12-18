@@ -1,7 +1,7 @@
 #ifndef II_GAME_CORE_UI_INPUT_H
 #define II_GAME_CORE_UI_INPUT_H
+#include "game/common/math.h"
 #include "game/mixer/sound.h"
-#include <glm/glm.hpp>
 #include <array>
 #include <cstddef>
 #include <optional>
@@ -42,10 +42,10 @@ struct input_frame {
   bool mouse_active = false;
   std::array<bool, static_cast<std::size_t>(key::kMax)> key_pressed = {false};
   std::array<bool, static_cast<std::size_t>(key::kMax)> key_held = {false};
-  std::optional<glm::ivec2> mouse_delta;
-  std::optional<glm::ivec2> mouse_cursor;
-  std::optional<glm::ivec2> mouse_scroll;
-  std::optional<glm::ivec2> controller_scroll;
+  std::optional<ivec2> mouse_delta;
+  std::optional<ivec2> mouse_cursor;
+  std::optional<ivec2> mouse_scroll;
+  std::optional<ivec2> controller_scroll;
   std::vector<input_device_id> join_game_inputs;
 
   bool pressed(key k) const { return key_pressed[static_cast<std::size_t>(k)]; }

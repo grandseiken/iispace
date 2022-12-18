@@ -12,9 +12,8 @@ cc_library(
     "node_transform.h",
   ],
   deps = [
-    "//game/common:types",
     "//game/common:math",
-    "@glm",
+    "//game/common:types",
   ],
   visibility = ["//game:__subpackages__"],
 )

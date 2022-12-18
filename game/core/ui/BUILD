@@ -2,8 +2,8 @@ cc_library(
   name = "input",
   hdrs = ["input.h"],
   deps = [
+    "//game/common:math",
     "//game/mixer:sound",
-    "@glm",
   ],
   visibility = ["//visibility:public"],
 )
@@ -15,7 +15,6 @@ cc_library(
   deps = [
     "//game/common:math",
     "//game/common:types",
-    "@glm",
   ],
   implementation_deps = [
     ":input",
@@ -30,7 +29,7 @@ cc_library(
   srcs = ["input_adapter.cc"],
   deps = [
     ":input",
-    "@glm",
+    "//game/common:math",
   ],
   implementation_deps = ["//game/io"],
   visibility = ["//visibility:public"],

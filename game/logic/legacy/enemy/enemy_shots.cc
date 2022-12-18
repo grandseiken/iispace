@@ -15,15 +15,15 @@ struct BossShot : ecs::component {
   using shape = standard_transform<geom::polystar_colour_p<16, 8, 2>, geom::ngon_colour_p<10, 8, 2>,
                                    geom::ball_collider<12, shape_flag::kDangerous>>;
 
-  std::tuple<vec2, fixed, glm::vec4> shape_parameters(const Transform& transform) const {
+  std::tuple<vec2, fixed, cvec4> shape_parameters(const Transform& transform) const {
     return {transform.centre, transform.rotation, colour};
   }
 
-  BossShot(const vec2& velocity, const glm::vec4& colour, fixed rotate_speed)
+  BossShot(const vec2& velocity, const cvec4& colour, fixed rotate_speed)
   : velocity{velocity}, colour{colour}, rotate_speed{rotate_speed} {}
   std::uint32_t timer = 0;
   vec2 velocity{0};
-  glm::vec4 colour{0.f};
+  cvec4 colour{0.f};
   fixed rotate_speed = 0;
 
   void update(ecs::handle h, Transform& transform, SimInterface& sim) {
@@ -50,7 +50,7 @@ DEBUG_STRUCT_TUPLE(BossShot, timer, velocity, rotate_speed);
 }  // namespace
 
 void spawn_boss_shot(SimInterface& sim, const vec2& position, const vec2& velocity,
-                     const glm::vec4& colour, fixed rotate_speed) {
+                     const cvec4& colour, fixed rotate_speed) {
   auto h = create_ship<BossShot>(sim, position);
   add_enemy_health<BossShot>(h, 0);
   h.add(BossShot{velocity, colour, rotate_speed});

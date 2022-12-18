@@ -10,7 +10,7 @@ struct line_data : shape_data_base {
   using shape_data_base::iterate;
   vec2 a{0};
   vec2 b{0};
-  glm::vec4 colour{0.f};
+  cvec4 colour{0.f};
   unsigned char index = 0;
 
   constexpr void
@@ -32,26 +32,26 @@ struct line_data : shape_data_base {
 };
 
 constexpr line_data
-make_line(const vec2& a, const vec2& b, const glm::vec4& colour, unsigned char index) {
+make_line(const vec2& a, const vec2& b, const cvec4& colour, unsigned char index) {
   return {{}, a, b, colour, index};
 }
 
-template <Expression<vec2> A, Expression<vec2> B, Expression<glm::vec4> Colour,
+template <Expression<vec2> A, Expression<vec2> B, Expression<cvec4> Colour,
           Expression<unsigned char> Index = constant<0>>
 struct line_eval {};
 
-template <Expression<vec2> A, Expression<vec2> B, Expression<glm::vec4> Colour,
+template <Expression<vec2> A, Expression<vec2> B, Expression<cvec4> Colour,
           Expression<unsigned char> Index>
 constexpr auto evaluate(line_eval<A, B, Colour, Index>, const auto& params) {
   return make_line(vec2{evaluate(A{}, params)}, vec2{evaluate(B{}, params)},
-                   glm::vec4{evaluate(Colour{}, params)},
+                   cvec4{evaluate(Colour{}, params)},
                    static_cast<unsigned char>(evaluate(Index{}, params)));
 }
 
 //////////////////////////////////////////////////////////////////////////////////
 // Helper combinations.
 //////////////////////////////////////////////////////////////////////////////////
-template <fixed AX, fixed AY, fixed BX, fixed BY, glm::vec4 Colour, unsigned char Index = 0>
+template <fixed AX, fixed AY, fixed BX, fixed BY, cvec4 Colour, unsigned char Index = 0>
 using line = constant<make_line(vec2{AX, AY}, vec2{BX, BY}, Colour, Index)>;
 template <fixed AX, fixed AY, fixed BX, fixed BY, std::size_t ParameterIndex,
           unsigned char Index = 0>

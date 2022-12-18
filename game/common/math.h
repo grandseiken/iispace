@@ -7,11 +7,16 @@
 #include <cstddef>
 #include <cstdint>
 
+using vec2 = glm::vec<2, fixed>;
+using ivec2 = glm::ivec2;
+using uvec2 = glm::uvec2;
+using fvec2 = glm::vec2;
+using fvec4 = glm::vec4;
+using cvec4 = glm::vec4;
+
 inline void hash_combine(std::size_t& seed, std::size_t v) {
   seed ^= v + 0x9e3779b9 + (seed << 6) + (seed >> 2);
 };
-
-using vec2 = glm::vec<2, fixed>;
 
 inline constexpr vec2 operator*(const vec2& a, fixed b) {
   return glm::operator*(a, b);
@@ -88,7 +93,7 @@ inline constexpr glm::vec<2, T> rotate_legacy(const glm::vec<2, T>& v, T theta) 
   return theta ? from_polar(angle(v) + theta, sqrt(length_squared(v))) : v;
 }
 
-inline constexpr glm::vec2 to_float(const vec2& a) {
+inline constexpr fvec2 to_float(const vec2& a) {
   return {a.x.to_float(), a.y.to_float()};
 }
 

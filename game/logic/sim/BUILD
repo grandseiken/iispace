@@ -70,11 +70,13 @@ cc_library(
     "sim_interface.cc",
     "sim_state.cc",
   ],
-  deps = ["//game/logic/sim/io:player"],
+  deps = [
+    "//game/common:math",
+    "//game/logic/sim/io:player",
+  ],
   implementation_deps = [
     ":sim_interface",
     ":sim_internals",
-    "//game/common:math",
     "//game/data:replay",
     "//game/logic/legacy:components",
     "//game/logic/legacy:setup",

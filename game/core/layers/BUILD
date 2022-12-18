@@ -2,10 +2,7 @@ cc_library(
   name = "common",
   hdrs = ["common.h"],
   srcs = ["common.cc"],
-  deps = [
-    "//game/common:math",
-    "@glm",
-  ],
+  deps = ["//game/common:math"],
   implementation_deps = ["//game/core/toolkit"],
   visibility = ["//visibility:public"],
 )

@@ -10,7 +10,6 @@ cc_library(
     "//game/common:math",
     "//game/common:types",
     "//game/common:ustring",
-    "@glm",
   ],
   visibility = ["//visibility:public"],
 )

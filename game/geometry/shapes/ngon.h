@@ -4,7 +4,6 @@
 #include "game/geometry/node.h"
 #include "game/geometry/shapes/data.h"
 #include "game/render/data/shapes.h"
-#include <glm/glm.hpp>
 #include <cstddef>
 #include <cstdint>
 
@@ -32,12 +31,12 @@ nd2(fixed radius, fixed inner_radius, std::uint32_t sides, std::uint32_t segment
   return {radius, inner_radius, sides, segments ? segments : sides};
 }
 
-constexpr ngon_line_style nline(const glm::vec4& colour = glm::vec4{0.f}, float z = 0.f,
-                                float width = 1.f, unsigned char index = 0) {
+constexpr ngon_line_style
+nline(const cvec4& colour = cvec4{0.f}, float z = 0.f, float width = 1.f, unsigned char index = 0) {
   return {{.colour = colour, .z = z, .width = width, .index = index}};
 }
 
-constexpr ngon_line_style nline(ngon_style style, const glm::vec4& colour, float z = 0.f,
+constexpr ngon_line_style nline(ngon_style style, const cvec4& colour, float z = 0.f,
                                 float width = 1.f, unsigned char index = 0) {
   return {{.colour = colour, .z = z, .width = width, .index = index}, style};
 }

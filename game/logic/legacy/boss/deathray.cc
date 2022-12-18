@@ -13,10 +13,10 @@
 
 namespace ii::legacy {
 namespace {
-constexpr glm::vec4 c0 = colour::hue360(150, 1.f / 3, .6f);
-constexpr glm::vec4 c1 = colour::hue360(150, .6f);
-constexpr glm::vec4 c2 = colour::hue(0.f, .8f, 0.f);
-constexpr glm::vec4 c3 = colour::hue(0.f, .6f, 0.f);
+constexpr cvec4 c0 = colour::hue360(150, 1.f / 3, .6f);
+constexpr cvec4 c1 = colour::hue360(150, .6f);
+constexpr cvec4 c2 = colour::hue(0.f, .8f, 0.f);
+constexpr cvec4 c3 = colour::hue(0.f, .6f, 0.f);
 
 struct DeathRay : ecs::component {
   static constexpr fixed kBoundingWidth = 48;
@@ -25,8 +25,8 @@ struct DeathRay : ecs::component {
   static constexpr rumble_type kDestroyRumble = rumble_type::kNone;
   static constexpr fixed kSpeed = 10;
 
-  using shape = standard_transform<geom::box<10, 48, glm::vec4{0.f}, 0, shape_flag::kDangerous>,
-                                   geom::line<0, 48, 0, -48, glm::vec4{1.f}>>;
+  using shape = standard_transform<geom::box<10, 48, cvec4{0.f}, 0, shape_flag::kDangerous>,
+                                   geom::line<0, 48, 0, -48, cvec4{1.f}>>;
 
   void update(ecs::handle h, Transform& transform, SimInterface& sim) {
     transform.move(vec2{1, 0} * kSpeed);
@@ -129,7 +129,7 @@ struct DeathArm : ecs::component {
       if (start == 30) {
         auto e = sim.emit(resolve_key::reconcile(h.id(), resolve_tag::kRespawn));
         explode_entity_shapes<DeathArm>(h, e);
-        explode_entity_shapes<DeathArm>(h, e, glm::vec4{1.f});
+        explode_entity_shapes<DeathArm>(h, e, cvec4{1.f});
       }
       start--;
     }
@@ -165,7 +165,7 @@ struct DeathRayBoss : public ecs::component {
       geom::rotate<fixed_c::pi / 12, geom::polystar<110, 12, c0>, geom::polygram<70, 12, c1>,
                    geom::polygon<120, 12, c1, 0, shape_flag::kDangerous | shape_flag::kVulnerable>,
                    geom::ngon<115, 12, c1>, geom::polygon<110, 12, c1, 0, shape_flag::kShield>>,
-      geom::box<0, 0, glm::vec4{0.f}>,
+      geom::box<0, 0, cvec4{0.f}>,
       geom::disable_iteration<geom::iterate_centres_t, geom::for_each<fixed, 1, 12, edge_shape>>>;
 
   static std::uint32_t bounding_width(const SimInterface& sim) {
@@ -356,7 +356,7 @@ DEBUG_STRUCT_TUPLE(DeathRayBoss, arms, timer, laser, dir, pos, arm_timer, shot_t
 
 void DeathArm::on_destroy(ecs::const_handle h, SimInterface& sim, EmitHandle& e) const {
   explode_entity_shapes<DeathArm>(h, e);
-  explode_entity_shapes<DeathArm>(h, e, glm::vec4{1.f}, 12);
+  explode_entity_shapes<DeathArm>(h, e, cvec4{1.f}, 12);
   explode_entity_shapes<DeathArm>(h, e, c1, 24);
   if (auto boss_h = sim.index().get(death_boss); boss_h) {
     std::erase(boss_h->get<DeathRayBoss>()->arms, h.id());

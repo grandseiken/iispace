@@ -49,7 +49,7 @@ struct aggregate_output {
 };
 
 struct player_info {
-  glm::vec4 colour{0.f};
+  cvec4 colour{0.f};
   std::uint64_t score = 0;
   std::uint32_t multiplier = 0;
   float timer = 0.f;

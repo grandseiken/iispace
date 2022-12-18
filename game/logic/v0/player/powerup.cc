@@ -55,7 +55,7 @@ struct PlayerBubble : ecs::component {
           1, geom::ngon<geom::nd(21, 3), geom::nline(colour::kOutline, colour::kZOutline, 3.f)>,
           geom::ngon_colour_p2<geom::nd(18, 3), 2, 3, geom::nline(colour::kZero, z, 1.5f),
                                geom::sfill(colour::kZero, z)>>>;
-  std::tuple<vec2, fixed, glm::vec4, glm::vec4, glm::vec4, glm::vec4>
+  std::tuple<vec2, fixed, cvec4, cvec4, cvec4, cvec4>
   shape_parameters(const Transform& transform) const {
     return {transform.centre,
             transform.rotation,
@@ -100,7 +100,7 @@ struct ShieldPowerup : ecs::component {
       standard_transform<geom::ngon_colour_p<geom::nd(14, 6), 2, geom::nline(colour::kZero, z)>,
                          geom::ngon<geom::nd(11, 6), geom::nline(colour::kWhite0, z, 1.5f)>>;
 
-  std::tuple<vec2, fixed, glm::vec4> shape_parameters(const Transform& transform) const {
+  std::tuple<vec2, fixed, cvec4> shape_parameters(const Transform& transform) const {
     return {transform.centre, transform.rotation, colour::alpha(colour::kWhite0, fade(timer))};
   }
 
@@ -167,7 +167,7 @@ struct BombPowerup : ecs::component {
       geom::ngon_colour_p<geom::nd(14, 6), 2, geom::nline(colour::kZero, z)>,
       geom::rotate_p<1, geom::ngon<geom::nd(5, 6), geom::nline(colour::kWhite0, z, 1.5f)>>>;
 
-  std::tuple<vec2, fixed, glm::vec4> shape_parameters(const Transform& transform) const {
+  std::tuple<vec2, fixed, cvec4> shape_parameters(const Transform& transform) const {
     return {transform.centre, transform.rotation, colour::alpha(colour::kWhite0, fade(timer))};
   }
 
@@ -289,19 +289,18 @@ void spawn_bomb_powerup(SimInterface& sim, const vec2& position) {
 void render_player_name_panel(std::uint32_t player_number, const Transform& transform,
                               std::vector<render::combo_panel>& output, const SimInterface& sim) {
   // TODO: snapping position to integer makes it jerky.
-  rect bounds{
-      glm::ivec2{transform.centre.x.to_int(), transform.centre.y.to_int()} + glm::ivec2{-40, 32},
-      glm::ivec2{80, 20}};
+  irect bounds{ivec2{transform.centre.x.to_int(), transform.centre.y.to_int()} + ivec2{-40, 32},
+               ivec2{80, 20}};
   output.emplace_back(render::combo_panel{
       .panel = {.style = render::panel_style::kFlatColour,
                 .colour = colour::kBlackOverlay0,
                 .bounds = bounds},
-      .padding = glm::ivec2{4, 4},
+      .padding = ivec2{4, 4},
       .elements = {{
-          .bounds = {glm::vec2{0}, glm::vec2{72, 12}},
+          .bounds = {fvec2{0}, fvec2{72, 12}},
           .e =
               render::combo_panel::text{
-                  .font = {render::font_id::kMonospaceBold, glm::uvec2{12, 12}},
+                  .font = {render::font_id::kMonospaceBold, uvec2{12, 12}},
                   .align = render::alignment::kCentered,
                   .colour = player_colour(game_mode::kStandardRun, player_number),
                   .text = sim.conditions().players[player_number].player_name,

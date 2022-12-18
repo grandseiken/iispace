@@ -32,18 +32,18 @@ vec2 kbm_move_velocity(const io::keyboard::frame& frame) {
       vec2{1, 0} * fixed{r};
 }
 
-vec2 kbm_fire_target(const io::mouse::frame& frame, const glm::uvec2& game_dimensions,
-                     const glm::uvec2& screen_dimensions) {
-  auto screen = static_cast<glm::vec2>(screen_dimensions);
-  auto game = static_cast<glm::vec2>(game_dimensions);
+vec2 kbm_fire_target(const io::mouse::frame& frame, const uvec2& game_dimensions,
+                     const uvec2& screen_dimensions) {
+  auto screen = static_cast<fvec2>(screen_dimensions);
+  auto game = static_cast<fvec2>(game_dimensions);
   auto screen_aspect = screen.x / screen.y;
   auto game_aspect = game.x / game.y;
-  auto scale = screen_aspect > game_aspect ? glm::vec2{game_aspect / screen_aspect, 1.f}
-                                           : glm::vec2{1.f, screen_aspect / game_aspect};
+  auto scale = screen_aspect > game_aspect ? fvec2{game_aspect / screen_aspect, 1.f}
+                                           : fvec2{1.f, screen_aspect / game_aspect};
 
-  auto screen_cursor = static_cast<glm::vec2>(
-      frame.cursor.value_or(glm::ivec2{screen_dimensions.x / 2, screen_dimensions.y / 2}));
-  auto cursor = screen_cursor / screen - (glm::vec2{1.f, 1.f} - scale) / 2.f;
+  auto screen_cursor = static_cast<fvec2>(
+      frame.cursor.value_or(ivec2{screen_dimensions.x / 2, screen_dimensions.y / 2}));
+  auto cursor = screen_cursor / screen - (fvec2{1.f, 1.f} - scale) / 2.f;
   cursor *= game / scale;
   cursor.x = std::max(0.f, std::min(game.x, cursor.x));
   cursor.y = std::max(0.f, std::min(game.y, cursor.y));
@@ -108,7 +108,7 @@ SimInputAdapter::SimInputAdapter(const io::IoLayer& io_layer,
   }
 }
 
-void SimInputAdapter::set_game_dimensions(const glm::uvec2& dimensions) {
+void SimInputAdapter::set_game_dimensions(const uvec2& dimensions) {
   game_dimensions_ = dimensions;
 }
 
@@ -158,7 +158,7 @@ std::vector<input_frame> SimInputAdapter::get() {
       }
     });
     if (kbm && !frame.target_relative) {
-      if (mouse_frame.cursor_delta != glm::ivec2{0, 0}) {
+      if (mouse_frame.cursor_delta != ivec2{0, 0}) {
         mouse_moving_ = true;
       }
       if (mouse_moving_) {

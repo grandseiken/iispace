@@ -118,7 +118,7 @@ SimLayer::SimLayer(ui::GameStack& stack, const initial_conditions& conditions,
                                  stack.options())} {}
 
 void SimLayer::update_content(const ui::input_frame& ui_input, ui::output_frame&) {
-  set_bounds(rect{impl_->istate().dimensions()});
+  set_bounds(irect{impl_->istate().dimensions()});
   stack().set_fps(impl_->istate().fps());
   if (!impl_->hud) {
     impl_->hud = stack().add<HudLayer>(impl_->mode);

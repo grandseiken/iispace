@@ -2,7 +2,6 @@
 #define II_GAME_LOGIC_GEOMETRY_LEGACY_NGON_H
 #include "game/geometry/expressions.h"
 #include "game/render/data/shapes.h"
-#include <glm/glm.hpp>
 #include <cstddef>
 #include <cstdint>
 
@@ -14,7 +13,7 @@ struct ngon_data : shape_data_base {
   using shape_data_base::iterate;
   fixed radius = 0;
   std::uint32_t sides = 0;
-  glm::vec4 colour{0.f};
+  cvec4 colour{0.f};
   unsigned char index = 0;
   ngon_style style = ngon_style::kPolygon;
   shape_flag flags = shape_flag::kNone;
@@ -69,24 +68,24 @@ struct ngon_data : shape_data_base {
   }
 };
 
-constexpr ngon_data make_ngon(fixed radius, std::uint32_t sides, const glm::vec4& colour,
+constexpr ngon_data make_ngon(fixed radius, std::uint32_t sides, const cvec4& colour,
                               ngon_style style = ngon_style::kPolygon, unsigned char index = 0,
                               shape_flag flags = shape_flag::kNone) {
   return {{}, radius, sides, colour, index, style, flags};
 }
 
-template <Expression<fixed> Radius, Expression<std::uint32_t> Sides, Expression<glm::vec4> Colour,
+template <Expression<fixed> Radius, Expression<std::uint32_t> Sides, Expression<cvec4> Colour,
           Expression<ngon_style> Style = constant<ngon_style::kPolygon>,
           Expression<unsigned char> Index = constant<0>,
           Expression<shape_flag> Flags = constant<shape_flag::kNone>>
 struct ngon_eval {};
 
-template <Expression<fixed> Radius, Expression<std::uint32_t> Sides, Expression<glm::vec4> Colour,
+template <Expression<fixed> Radius, Expression<std::uint32_t> Sides, Expression<cvec4> Colour,
           Expression<ngon_style> Style, Expression<unsigned char> Index,
           Expression<shape_flag> Flags>
 constexpr auto evaluate(ngon_eval<Radius, Sides, Colour, Style, Index, Flags>, const auto& params) {
   return make_ngon(fixed{evaluate(Radius{}, params)}, std::uint32_t{evaluate(Sides{}, params)},
-                   glm::vec4{evaluate(Colour{}, params)}, ngon_style{evaluate(Style{}, params)},
+                   cvec4{evaluate(Colour{}, params)}, ngon_style{evaluate(Style{}, params)},
                    static_cast<unsigned char>(evaluate(Index{}, params)),
                    shape_flag{evaluate(Flags{}, params)});
 }
@@ -94,18 +93,17 @@ constexpr auto evaluate(ngon_eval<Radius, Sides, Colour, Style, Index, Flags>, c
 //////////////////////////////////////////////////////////////////////////////////
 // Helper combinations.
 //////////////////////////////////////////////////////////////////////////////////
-template <fixed Radius, std::uint32_t Sides, glm::vec4 Colour,
-          ngon_style Style = ngon_style::kPolygon, unsigned char Index = 0,
-          shape_flag Flags = shape_flag::kNone>
+template <fixed Radius, std::uint32_t Sides, cvec4 Colour, ngon_style Style = ngon_style::kPolygon,
+          unsigned char Index = 0, shape_flag Flags = shape_flag::kNone>
 using ngon = constant<make_ngon(Radius, Sides, Colour, Style, Index, Flags)>;
 
-template <fixed Radius, std::uint32_t Sides, glm::vec4 Colour, unsigned char Index = 0,
+template <fixed Radius, std::uint32_t Sides, cvec4 Colour, unsigned char Index = 0,
           shape_flag Flags = shape_flag::kNone>
 using polygon = ngon<Radius, Sides, Colour, ngon_style::kPolygon, Index, Flags>;
-template <fixed Radius, std::uint32_t Sides, glm::vec4 Colour, unsigned char Index = 0,
+template <fixed Radius, std::uint32_t Sides, cvec4 Colour, unsigned char Index = 0,
           shape_flag Flags = shape_flag::kNone>
 using polystar = ngon<Radius, Sides, Colour, ngon_style::kPolystar, Index, Flags>;
-template <fixed Radius, std::uint32_t Sides, glm::vec4 Colour, unsigned char Index = 0,
+template <fixed Radius, std::uint32_t Sides, cvec4 Colour, unsigned char Index = 0,
           shape_flag Flags = shape_flag::kNone>
 using polygram = ngon<Radius, Sides, Colour, ngon_style::kPolygram, Index, Flags>;
 

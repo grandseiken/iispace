@@ -35,16 +35,15 @@ EmitHandle& EmitHandle::add(particle particle) {
   return *this;
 }
 
-EmitHandle& EmitHandle::explosion(const glm::vec2& v, const glm::vec4& c, std::uint32_t time,
-                                  const std::optional<glm::vec2>& towards,
-                                  std::optional<float> speed) {
+EmitHandle& EmitHandle::explosion(const fvec2& v, const cvec4& c, std::uint32_t time,
+                                  const std::optional<fvec2>& towards, std::optional<float> speed) {
   auto& r = sim->random(random_source::kLegacyAesthetic);
   auto& ra = sim->random(random_source::kAesthetic);
   auto n = towards ? r.rbool() + 1 : r.uint(8) + 8;
   for (std::uint32_t i = 0; i < n; ++i) {
     float rspeed = speed ? *speed * (1.f + ra.fixed().to_float()) : 6.f;
     auto dir = from_polar(r.fixed().to_float() * 2 * glm::pi<float>(), rspeed);
-    if (towards && *towards - v != glm::vec2{0.f}) {
+    if (towards && *towards - v != fvec2{0.f}) {
       dir = glm::normalize(*towards - v);
       float angle = std::atan2(dir.y, dir.x) + (r.fixed().to_float() - 0.5f) * glm::pi<float>() / 4;
       dir = from_polar(angle, rspeed);

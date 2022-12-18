@@ -23,7 +23,7 @@ struct ball_collider_data : shape_data_base {
 
   constexpr void
   iterate(iterate_centres_t, const Transform auto& t, const PointFunction auto& f) const {
-    std::invoke(f, *t, glm::vec4{0.f});
+    std::invoke(f, *t, cvec4{0.f});
   }
 };
 

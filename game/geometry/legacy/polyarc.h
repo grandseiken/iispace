@@ -2,7 +2,6 @@
 #define II_GAME_LOGIC_GEOMETRY_LEGACY_POLYARC_H
 #include "game/geometry/expressions.h"
 #include "game/render/data/shapes.h"
-#include <glm/glm.hpp>
 #include <cstddef>
 #include <cstdint>
 
@@ -14,7 +13,7 @@ struct polyarc_data : shape_data_base {
   fixed radius = 0;
   std::uint32_t sides = 0;
   std::uint32_t segments = 0;
-  glm::vec4 colour{0.f};
+  cvec4 colour{0.f};
   unsigned char index = 0;
   shape_flag flags = shape_flag::kNone;
 
@@ -65,32 +64,32 @@ struct polyarc_data : shape_data_base {
 };
 
 constexpr polyarc_data make_polyarc(fixed radius, std::uint32_t sides, std::uint32_t segments,
-                                    const glm::vec4& colour, unsigned char index = 0,
+                                    const cvec4& colour, unsigned char index = 0,
                                     shape_flag flags = shape_flag::kNone) {
   return {{}, radius, sides, segments, colour, index, flags};
 }
 
 template <Expression<fixed> Radius, Expression<std::uint32_t> Sides,
-          Expression<std::uint32_t> Segments, Expression<glm::vec4> Colour,
+          Expression<std::uint32_t> Segments, Expression<cvec4> Colour,
           Expression<unsigned char> Index = constant<0>,
           Expression<shape_flag> Flags = constant<shape_flag::kNone>>
 struct polyarc_eval {};
 
 template <Expression<fixed> Radius, Expression<std::uint32_t> Sides,
-          Expression<std::uint32_t> Segments, Expression<glm::vec4> Colour,
+          Expression<std::uint32_t> Segments, Expression<cvec4> Colour,
           Expression<unsigned char> Index, Expression<shape_flag> Flags>
 constexpr auto
 evaluate(polyarc_eval<Radius, Sides, Segments, Colour, Index, Flags>, const auto& params) {
   return make_polyarc(
       fixed{evaluate(Radius{}, params)}, std::uint32_t{evaluate(Sides{}, params)},
-      std::uint32_t{evaluate(Segments{}, params)}, glm::vec4{evaluate(Colour{}, params)},
+      std::uint32_t{evaluate(Segments{}, params)}, cvec4{evaluate(Colour{}, params)},
       static_cast<unsigned char>(evaluate(Index{}, params)), shape_flag{evaluate(Flags{}, params)});
 }
 
 //////////////////////////////////////////////////////////////////////////////////
 // Helper combinations.
 //////////////////////////////////////////////////////////////////////////////////
-template <fixed Radius, std::uint32_t Sides, std::uint32_t Segments, glm::vec4 Colour,
+template <fixed Radius, std::uint32_t Sides, std::uint32_t Segments, cvec4 Colour,
           unsigned char Index = 0, shape_flag Flags = shape_flag::kNone>
 using polyarc = constant<make_polyarc(Radius, Sides, Segments, Colour, Index, Flags)>;
 

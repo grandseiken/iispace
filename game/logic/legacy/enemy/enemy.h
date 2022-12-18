@@ -20,9 +20,9 @@ void spawn_shielder(SimInterface&, const vec2& position, bool power = false);
 void spawn_tractor(SimInterface&, const vec2& position, bool power = false);
 
 void spawn_boss_shot(SimInterface&, const vec2& position, const vec2& velocity,
-                     const glm::vec4& c = {0.f, 0.f, .6f, 1.f}, fixed rotate_speed = 0);
+                     const cvec4& c = {0.f, 0.f, .6f, 1.f}, fixed rotate_speed = 0);
 
-void spawn_snake(SimInterface& sim, const vec2& position, const glm::vec4& colour,
+void spawn_snake(SimInterface& sim, const vec2& position, const cvec4& colour,
                  const vec2& direction = vec2{0}, fixed rotation = 0);
 }  // namespace legacy
 }  // namespace ii

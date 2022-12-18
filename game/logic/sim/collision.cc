@@ -4,12 +4,12 @@
 
 namespace ii {
 
-GridCollisionIndex::GridCollisionIndex(const glm::uvec2& cell_dimensions,
-                                       const glm::ivec2& min_point, const glm::ivec2& max_point)
+GridCollisionIndex::GridCollisionIndex(const uvec2& cell_dimensions, const ivec2& min_point,
+                                       const ivec2& max_point)
 : cell_power_{std::bit_width(std::bit_ceil(cell_dimensions.x)),
               std::bit_width(std::bit_ceil(cell_dimensions.y))}
 , cell_offset_{cell_coords(min_point)}
-, cell_count_{glm::ivec2{1, 1} + cell_coords(max_point) - cell_offset_} {
+, cell_count_{ivec2{1, 1} + cell_coords(max_point) - cell_offset_} {
   cells_.resize(static_cast<std::size_t>(cell_count_.x) * cell_count_.y);
 }
 
@@ -110,7 +110,7 @@ void GridCollisionIndex::in_range(const vec2& point, fixed distance, ecs::compon
   // too great (or output full).
   for (std::int32_t y = min.y; y <= max.y; ++y) {
     for (std::int32_t x = min.x; x <= max.x; ++x) {
-      for (auto id : cell(glm::ivec2{x, y}).centres) {
+      for (auto id : cell(ivec2{x, y}).centres) {
         const auto& e = entities_.find(id)->second;
         if (!e.handle.has(cid)) {
           continue;
@@ -142,35 +142,34 @@ void GridCollisionIndex::in_range(const vec2& point, fixed distance, ecs::compon
   }
 }
 
-glm::ivec2 GridCollisionIndex::cell_coords(const glm::ivec2& v) const {
+ivec2 GridCollisionIndex::cell_coords(const ivec2& v) const {
   return {v.x >> cell_power_.x, v.y >> cell_power_.y};
 }
 
-glm::ivec2 GridCollisionIndex::cell_coords(const vec2& v) const {
-  return cell_coords(glm::ivec2{v.x.to_int(), v.y.to_int()});
+ivec2 GridCollisionIndex::cell_coords(const vec2& v) const {
+  return cell_coords(ivec2{v.x.to_int(), v.y.to_int()});
 }
 
-glm::ivec2 GridCollisionIndex::min_coords(const vec2& v) const {
+ivec2 GridCollisionIndex::min_coords(const vec2& v) const {
   return glm::max(cell_coords(v), cell_offset_);
 }
 
-glm::ivec2 GridCollisionIndex::max_coords(const vec2& v) const {
-  return glm::min(cell_coords(v), cell_offset_ + cell_count_ - glm::ivec2{1, 1});
+ivec2 GridCollisionIndex::max_coords(const vec2& v) const {
+  return glm::min(cell_coords(v), cell_offset_ + cell_count_ - ivec2{1, 1});
 }
 
-bool GridCollisionIndex::is_cell_valid(const glm::ivec2& cell_coords) const {
+bool GridCollisionIndex::is_cell_valid(const ivec2& cell_coords) const {
   auto c = cell_coords - cell_offset_;
-  return glm::all(glm::greaterThanEqual(c, glm::ivec2{0, 0})) &&
-      glm::all(glm::lessThan(c, cell_count_));
+  return glm::all(glm::greaterThanEqual(c, ivec2{0, 0})) && glm::all(glm::lessThan(c, cell_count_));
 }
 
-auto GridCollisionIndex::cell(const glm::ivec2& cell_coords) const -> const cell_t& {
+auto GridCollisionIndex::cell(const ivec2& cell_coords) const -> const cell_t& {
   auto c = cell_coords - cell_offset_;
   assert(c.y * cell_count_.x + c.x < cells_.size());
   return cells_[c.y * cell_count_.x + c.x];
 }
 
-auto GridCollisionIndex::cell(const glm::ivec2& cell_coords) -> cell_t& {
+auto GridCollisionIndex::cell(const ivec2& cell_coords) -> cell_t& {
   auto c = cell_coords - cell_offset_;
   assert(c.y * cell_count_.x + c.x < cells_.size());
   return cells_[c.y * cell_count_.x + c.x];
@@ -179,7 +178,7 @@ auto GridCollisionIndex::cell(const glm::ivec2& cell_coords) -> cell_t& {
 void GridCollisionIndex::clear_cells(ecs::entity_id id, entry_t& e) {
   for (std::int32_t y = e.min.y; y <= e.max.y; ++y) {
     for (std::int32_t x = e.min.x; x <= e.max.x; ++x) {
-      cell(glm::ivec2{x, y}).clear(id);
+      cell(ivec2{x, y}).clear(id);
     }
   }
   if (is_cell_valid(e.centre)) {
@@ -194,7 +193,7 @@ void GridCollisionIndex::insert_cells(ecs::entity_id id, entry_t& e) {
   e.centre = cell_coords(e.transform->centre);
   for (std::int32_t y = e.min.y; y <= e.max.y; ++y) {
     for (std::int32_t x = e.min.x; x <= e.max.x; ++x) {
-      cell(glm::ivec2{x, y}).insert(id);
+      cell(ivec2{x, y}).insert(id);
     }
   }
   if (is_cell_valid(e.centre)) {

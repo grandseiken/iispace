@@ -26,6 +26,5 @@ cc_library(
     "//game/common:math",
     "//game/logic/sim:sim_interface",
     "//game/logic/legacy/enemy",
-    "@glm",
   ],
 )

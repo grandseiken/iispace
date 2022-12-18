@@ -1,63 +1,73 @@
 #ifndef II_GAME_COMMON_RECT_H
 #define II_GAME_COMMON_RECT_H
+#include "game/common/fix32.h"
 #include <glm/glm.hpp>
+#include <cstdint>
 
 namespace ii {
 
-struct rect {
-  rect() : position{0, 0}, size{0, 0} {}
-  rect(const glm::ivec2& position, const glm::ivec2& size)
-  : position{position}, size{glm::max(glm::ivec2{0, 0}, size)} {}
-  explicit rect(const glm::ivec2& size) : rect({0, 0}, size) {}
+template <typename T>
+struct basic_rect {
+  using value_type = T;
+  using vec_type = glm::vec<2, T>;
 
-  glm::ivec2 position;
-  glm::ivec2 size;
+  basic_rect() : position{0, 0}, size{0, 0} {}
+  basic_rect(const vec_type& position, const vec_type& size)
+  : position{position}, size{glm::max(vec_type{0, 0}, size)} {}
+  explicit basic_rect(const vec_type& size) : basic_rect({0, 0}, size) {}
+
+  vec_type position;
+  vec_type size;
 
   bool empty() const { return !size.x && !size.y; }
-  bool operator==(const rect&) const = default;
-  bool operator!=(const rect&) const = default;
+  bool operator==(const basic_rect&) const = default;
+  bool operator!=(const basic_rect&) const = default;
 
-  bool contains(const glm::ivec2& p) const {
+  bool contains(const vec_type& p) const {
     return glm::all(glm::greaterThanEqual(p, min())) && glm::all(glm::lessThan(p, max()));
   }
 
-  glm::ivec2 min() const { return position; }
-  glm::ivec2 max() const { return position + size; }
-  rect size_rect() const { return rect{size}; }
+  vec_type min() const { return position; }
+  vec_type max() const { return position + size; }
+  basic_rect size_rect() const { return basic_rect{size}; }
 
-  glm::ivec2 relative(const glm::ivec2& p) const { return p - position; }
-  rect relative(const rect& r) const { return r - position; }
+  vec_type relative(const vec_type& p) const { return p - position; }
+  basic_rect relative(const basic_rect& r) const { return r - position; }
 
-  rect intersect(const rect& r) const {
+  basic_rect intersect(const basic_rect& r) const {
     auto p = glm::max(min(), r.min());
     return {p, glm::min(max(), r.max()) - p};
   }
 
-  rect extend(const glm::ivec2& border) const { return {position - border, size + 2 * border}; }
-  rect extend_min(const glm::ivec2& v) const { return {{position - v}, {size + v}}; }
-  rect extend_max(const glm::ivec2& v) const { return {position, {size + v}}; }
+  basic_rect extend(const vec_type& border) const { return {position - border, size + 2 * border}; }
+  basic_rect extend_min(const vec_type& v) const { return {{position - v}, {size + v}}; }
+  basic_rect extend_max(const vec_type& v) const { return {position, {size + v}}; }
 
-  rect contract(const glm::ivec2& border) const {
+  basic_rect contract(const vec_type& border) const {
     auto b = glm::min(border, size / 2);
     return {position + b, size - 2 * b};
   }
 
-  rect contract_min(const glm::ivec2& v) const { return intersect(*this + v); }
-  rect contract_max(const glm::ivec2& v) const { return intersect(*this - v); }
+  basic_rect contract_min(const vec_type& v) const { return intersect(*this + v); }
+  basic_rect contract_max(const vec_type& v) const { return intersect(*this - v); }
 
-  rect operator+(const glm::ivec2& v) const { return rect{position + v, size}; }
-  rect operator-(const glm::ivec2& v) const { return rect{position - v, size}; }
+  basic_rect operator+(const vec_type& v) const { return basic_rect{position + v, size}; }
+  basic_rect operator-(const vec_type& v) const { return basic_rect{position - v, size}; }
 
-  rect& operator+=(const glm::ivec2& v) {
+  basic_rect& operator+=(const vec_type& v) {
     position += v;
     return *this;
   }
 
-  rect& operator-=(const glm::ivec2& v) {
+  basic_rect& operator-=(const vec_type& v) {
     position -= v;
     return *this;
   }
 };
+
+using rect = basic_rect<fixed>;
+using irect = basic_rect<std::int32_t>;
+using frect = basic_rect<float>;
 
 }  // namespace ii
 

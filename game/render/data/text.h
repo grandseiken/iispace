@@ -1,7 +1,7 @@
 #ifndef II_GAME_RENDER_DATA_TEXT_H
 #define II_GAME_RENDER_DATA_TEXT_H
 #include "game/common/enum.h"
-#include <glm/glm.hpp>
+#include "game/common/math.h"
 #include <cstdint>
 
 namespace ii::render {
@@ -23,7 +23,7 @@ enum class font_id : std::uint32_t {
 
 struct font_data {
   font_id id = font_id::kDefault;
-  glm::uvec2 dimensions{0u};
+  uvec2 dimensions{0u};
 };
 
 }  // namespace ii::render

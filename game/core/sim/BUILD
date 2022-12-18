@@ -75,9 +75,9 @@ cc_library(
   hdrs = ["input_adapter.h"],
   srcs = ["input_adapter.cc"],
   deps = [
+    "//game/common:math",
     "//game/core/ui:input",
     "//game/logic/sim/io:player",
-    "@glm",
   ],
   implementation_deps = ["//game/io"],
 )
@@ -87,10 +87,10 @@ cc_library(
   hdrs = ["render_state.h"],
   srcs = ["render_state.cc"],
   deps = [
+    "//game/common:math",
     "//game/common:random",
     "//game/logic/sim/io:aggregate",
     "//game/render/data",
-    "@glm",
   ],
   implementation_deps = [
     ":input_adapter",

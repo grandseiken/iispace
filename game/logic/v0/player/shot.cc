@@ -18,7 +18,7 @@ struct PlayerShot : ecs::component {
       geom::box_colour_p<vec2{2 + 1_fx / 2_fx, 2 + 1_fx / 2_fx}, 2, style>,
       geom::box_colour_p<vec2{1 + 1_fx / 4_fx, 1 + 1_fx / 4_fx}, 3, style>>;
 
-  std::tuple<vec2, fixed, glm::vec4, glm::vec4> shape_parameters(const Transform& transform) const {
+  std::tuple<vec2, fixed, cvec4, cvec4> shape_parameters(const Transform& transform) const {
     auto c_dark = colour;
     c_dark.a = .2f;
     return {transform.centre, transform.rotation, colour, c_dark};
@@ -29,7 +29,7 @@ struct PlayerShot : ecs::component {
   bool is_predicted = false;
   vec2 velocity{0};
   bool penetrating = false;
-  glm::vec4 colour{0.f};
+  cvec4 colour{0.f};
 
   PlayerShot(ecs::entity_id player, std::uint32_t player_number, bool is_predicted,
              const vec2& direction, bool penetrating)

@@ -1,6 +1,6 @@
 #ifndef II_GAME_RENDER_DATA_BACKGROUND_H
 #define II_GAME_RENDER_DATA_BACKGROUND_H
-#include <glm/glm.hpp>
+#include "game/common/math.h"
 #include <cstdint>
 
 namespace ii::render {
@@ -13,11 +13,11 @@ struct background {
 
   struct data {
     background::type type = background::type::kNone;
-    glm::vec4 colour{0.f};
-    glm::vec2 parameters{0.f};
+    cvec4 colour{0.f};
+    fvec2 parameters{0.f};
   };
 
-  glm::vec4 position{0.f};
+  fvec4 position{0.f};
   float rotation = 0.f;
 
   background::data data0;

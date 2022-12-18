@@ -21,7 +21,7 @@ void TextElement::render_content(render::GlRenderer& r) const {
   }
   if (drop_shadow_) {
     r.render_text(font_, bounds().size_rect() + drop_shadow_->offset, align_,
-                  glm::vec4{0.f, 0.f, 0.f, drop_shadow_->opacity}, /* clip */ false, lines_);
+                  cvec4{0.f, 0.f, 0.f, drop_shadow_->opacity}, /* clip */ false, lines_);
   }
   r.render_text(font_, bounds().size_rect(), align_, colour_, /* clip */ false, lines_);
 }

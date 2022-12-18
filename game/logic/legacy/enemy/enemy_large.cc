@@ -108,7 +108,7 @@ struct Shielder : ecs::component {
                          s_arrange<geom::rotate_eval<geom::multiply_p<-1, 1>, s_shield1>>,
                          geom::rotate_eval<geom::negate_p<1>, s_centre>>;
 
-  std::tuple<vec2, fixed, glm::vec4> shape_parameters(const Transform& transform) const {
+  std::tuple<vec2, fixed, cvec4> shape_parameters(const Transform& transform) const {
     return {transform.centre, transform.rotation, power ? c1 : c0};
   }
 

@@ -2,7 +2,6 @@
 #define II_GAME_RENDER_DATA_SHAPES_H
 #include "game/common/colour.h"
 #include "game/common/math.h"
-#include <glm/glm.hpp>
 #include <cstdint>
 #include <optional>
 #include <variant>
@@ -36,7 +35,7 @@ struct ngon {
 };
 
 struct box {
-  glm::vec2 dimensions{0.f};
+  fvec2 dimensions{0.f};
   float line_width = 1.f;
 };
 
@@ -54,7 +53,7 @@ struct ngon_fill {
 };
 
 struct box_fill {
-  glm::vec2 dimensions{0.f};
+  fvec2 dimensions{0.f};
 };
 
 struct ball_fill {
@@ -65,22 +64,22 @@ struct ball_fill {
 using shape_data = std::variant<line, ngon, box, ball, ngon_fill, box_fill, ball_fill>;
 
 struct motion_trail {
-  glm::vec2 prev_origin{0.f};
+  fvec2 prev_origin{0.f};
   float prev_rotation = 0.f;
-  glm::vec4 prev_colour{0.f};
+  cvec4 prev_colour{0.f};
 };
 
 struct shape {
-  glm::vec2 origin{0.f};
+  fvec2 origin{0.f};
   float rotation = 0.f;
-  glm::vec4 colour{0.f};
+  cvec4 colour{0.f};
   float z_index = 0.f;
   unsigned char s_index = 0;
   std::optional<motion_trail> trail;
   shape_data data;
 
   // TODO: move all these functions somewhere else?
-  static shape line(const glm::vec2& a, const glm::vec2& b, const glm::vec4& c, float z = 0.f,
+  static shape line(const fvec2& a, const fvec2& b, const cvec4& c, float z = 0.f,
                     float width = 1.f, unsigned char index = 0) {
     return shape{
         .origin = (a + b) / 2.f,

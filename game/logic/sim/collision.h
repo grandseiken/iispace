@@ -4,7 +4,6 @@
 #include "game/logic/ecs/index.h"
 #include "game/logic/sim/components.h"
 #include "game/logic/sim/sim_interface.h"
-#include <glm/glm.hpp>
 #include <cstddef>
 #include <memory>
 #include <optional>
@@ -34,8 +33,7 @@ public:
 // TODO: probably needs optimizing.
 class GridCollisionIndex : public CollisionIndex {
 public:
-  GridCollisionIndex(const glm::uvec2& cell_dimensions, const glm::ivec2& min_point,
-                     const glm::ivec2& max_point);
+  GridCollisionIndex(const uvec2& cell_dimensions, const ivec2& min_point, const ivec2& max_point);
 
   ~GridCollisionIndex() override = default;
   std::unique_ptr<CollisionIndex> clone() override {
@@ -58,13 +56,13 @@ private:
   struct cell_t;
   struct entry_t;
 
-  glm::ivec2 cell_coords(const glm::ivec2& v) const;
-  glm::ivec2 cell_coords(const vec2& v) const;
-  glm::ivec2 max_coords(const vec2& v) const;
-  glm::ivec2 min_coords(const vec2& v) const;
-  bool is_cell_valid(const glm::ivec2& cell_coords) const;
-  const cell_t& cell(const glm::ivec2& cell_coords) const;
-  cell_t& cell(const glm::ivec2& cell_coords);
+  ivec2 cell_coords(const ivec2& v) const;
+  ivec2 cell_coords(const vec2& v) const;
+  ivec2 max_coords(const vec2& v) const;
+  ivec2 min_coords(const vec2& v) const;
+  bool is_cell_valid(const ivec2& cell_coords) const;
+  const cell_t& cell(const ivec2& cell_coords) const;
+  cell_t& cell(const ivec2& cell_coords);
 
   void clear_cells(ecs::entity_id id, entry_t& e);
   void insert_cells(ecs::entity_id id, entry_t& e);
@@ -81,14 +79,14 @@ private:
     ecs::handle handle;
     const Transform* transform = nullptr;
     const Collision* collision = nullptr;
-    glm::ivec2 min{0, 0};
-    glm::ivec2 max{0, 0};
-    glm::ivec2 centre{0, 0};
+    ivec2 min{0, 0};
+    ivec2 max{0, 0};
+    ivec2 centre{0, 0};
   };
 
-  glm::ivec2 cell_power_{0, 0};
-  glm::ivec2 cell_offset_{0, 0};
-  glm::ivec2 cell_count_{0, 0};
+  ivec2 cell_power_{0, 0};
+  ivec2 cell_offset_{0, 0};
+  ivec2 cell_count_{0, 0};
   std::vector<cell_t> cells_;
   std::unordered_map<ecs::entity_id, entry_t> entities_;
 };

@@ -11,7 +11,7 @@ Button::Button(Element* parent)
   add_flags(element_flags::kCanFocus);
 }
 
-Button& Button::set_drop_shadow(const glm::ivec2& offset, float opacity) {
+Button& Button::set_drop_shadow(const ivec2& offset, float opacity) {
   text_element_->set_drop_shadow(offset, opacity);
   return *this;
 }
@@ -26,19 +26,19 @@ Button& Button::set_text(ustring&& text) {
   return *this;
 }
 
-Button& Button::set_padding(const glm::ivec2& padding) {
+Button& Button::set_padding(const ivec2& padding) {
   panel_->set_padding(padding);
   return *this;
 }
 
-Button& Button::set_margin(const glm::ivec2& margin) {
+Button& Button::set_margin(const ivec2& margin) {
   panel_->set_margin(margin);
   return *this;
 }
 
 void Button::update_content(const input_frame& input, output_frame& output) {
   bool mouse_hover = input.mouse_cursor && bounds().size_rect().contains(*input.mouse_cursor);
-  bool mouse_moved = input.mouse_delta && *input.mouse_delta != glm::ivec2{0};
+  bool mouse_moved = input.mouse_delta && *input.mouse_delta != ivec2{0};
   bool f = has_focus();
   if (mouse_hover) {
     focus();

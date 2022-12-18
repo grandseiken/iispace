@@ -55,7 +55,7 @@ public:
         .set_multiline(true);
   }
 
-  void set_colour(const glm::vec4& colour) { status_->set_colour(colour); }
+  void set_colour(const cvec4& colour) { status_->set_colour(colour); }
 
   void set_player_status(ustring&& s) { status_->set_text(std::move(s)); }
 
@@ -68,10 +68,10 @@ private:
 
 HudLayer::HudLayer(ui::GameStack& stack, game_mode mode)
 : ui::GameLayer{stack, ui::layer_flag::kCaptureCursor}, mode_{mode} {
-  set_bounds(rect{kUiDimensions});
+  set_bounds(irect{kUiDimensions});
 
   static constexpr auto padding = 2u * kPadding;
-  auto add = [&](const rect& r, render::alignment align) {
+  auto add = [&](const irect& r, render::alignment align) {
     auto& p = *add_back<PlayerHud>(align);
     p.set_margin(padding);
     p.set_bounds(r);
@@ -79,13 +79,12 @@ HudLayer::HudLayer(ui::GameStack& stack, game_mode mode)
   };
 
   huds_ = {
-      add(rect{glm::ivec2{0}, kUiDimensions / 2},
-          render::alignment::kLeft | render::alignment::kTop),
-      add(rect{glm::ivec2{kUiDimensions.x / 2, 0}, kUiDimensions / 2},
+      add(irect{ivec2{0}, kUiDimensions / 2}, render::alignment::kLeft | render::alignment::kTop),
+      add(irect{ivec2{kUiDimensions.x / 2, 0}, kUiDimensions / 2},
           render::alignment::kRight | render::alignment::kTop),
-      add(rect{glm::ivec2{0, kUiDimensions.y / 2}, kUiDimensions / 2},
+      add(irect{ivec2{0, kUiDimensions.y / 2}, kUiDimensions / 2},
           render::alignment::kLeft | render::alignment::kBottom),
-      add(rect{kUiDimensions / 2, kUiDimensions / 2},
+      add(irect{kUiDimensions / 2, kUiDimensions / 2},
           render::alignment::kRight | render::alignment::kBottom),
   };
 

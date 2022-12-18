@@ -16,7 +16,7 @@ bool sim_should_pause(ui::GameStack& stack) {
 
 PauseLayer::PauseLayer(ui::GameStack& stack, std::function<void()> on_quit)
 : ui::GameLayer{stack, ui::layer_flag::kCaptureUpdate}, on_quit_{std::move(on_quit)} {
-  set_bounds(rect{kUiDimensions});
+  set_bounds(irect{kUiDimensions});
 
   auto& layout = add_dialog_layout(*this);
   auto add_button = [&](const char* text, std::function<void()> callback) {

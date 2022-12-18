@@ -2,7 +2,6 @@
 #define II_GAME_LOGIC_GEOMETRY_EXPRESSIONS_H
 #include "game/common/math.h"
 #include "game/geometry/concepts.h"
-#include <glm/glm.hpp>
 #include <cstddef>
 #include <cstdint>
 
@@ -33,7 +32,7 @@ struct multiply {};
 template <typename E0, typename E1>
 struct equal {};
 
-template <auto V, Expression<glm::vec4>>
+template <auto V, Expression<cvec4>>
 struct set_colour {};
 template <auto V, Expression<fixed>>
 struct set_radius {};
@@ -50,12 +49,12 @@ constexpr auto evaluate(constant_vec2<X, Y>, const auto&) {
 
 template <std::uint32_t X, std::uint32_t Y>
 constexpr auto evaluate(constant_uvec2<X, Y>, const auto&) {
-  return glm::uvec2{X, Y};
+  return uvec2{X, Y};
 }
 
 template <std::int32_t X, std::int32_t Y>
 constexpr auto evaluate(constant_ivec2<X, Y>, const auto&) {
-  return glm::ivec2{X, Y};
+  return ivec2{X, Y};
 }
 
 template <std::size_t N>
@@ -93,10 +92,10 @@ constexpr auto evaluate(equal<E0, E1>, const auto& params) {
   return evaluate(E0{}, params) == evaluate(E1{}, params);
 }
 
-template <auto V, Expression<glm::vec4> E>
+template <auto V, Expression<cvec4> E>
 constexpr auto evaluate(set_colour<V, E>, const auto& params) {
   auto v = V;
-  v.colour = glm::vec4{evaluate(E{}, params)};
+  v.colour = cvec4{evaluate(E{}, params)};
   return v;
 }
 

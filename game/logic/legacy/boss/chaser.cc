@@ -61,16 +61,16 @@ struct ChaserBoss : ecs::component {
   static constexpr std::uint32_t kTimer = 60;
   static constexpr fixed kSpeed = 4;
   static constexpr float kZIndex = -4.f;
-  static constexpr glm::vec4 c = colour::hue360(210, .6f);
+  static constexpr cvec4 c = colour::hue360(210, .6f);
 
-  template <fixed R, glm::vec4 C, shape_flag Flags = shape_flag::kNone>
+  template <fixed R, cvec4 C, shape_flag Flags = shape_flag::kNone>
   using scale_shape = geom::ngon_eval<geom::multiply_p<R, 2>, geom::constant<5u>, geom::constant<C>,
                                       geom::constant<geom::ngon_style::kPolygram>,
                                       geom::constant<0>, geom::constant<Flags>>;
-  using shape = standard_transform<
-      scale_shape<10, c>, scale_shape<9, c>,
-      scale_shape<8, glm::vec4{0}, shape_flag::kDangerous | shape_flag::kVulnerable>,
-      scale_shape<7, glm::vec4{0}, shape_flag::kShield>>;
+  using shape =
+      standard_transform<scale_shape<10, c>, scale_shape<9, c>,
+                         scale_shape<8, cvec4{0}, shape_flag::kDangerous | shape_flag::kVulnerable>,
+                         scale_shape<7, cvec4{0}, shape_flag::kShield>>;
 
   std::tuple<vec2, fixed, fixed> shape_parameters(const Transform& transform) const {
     return {transform.centre, transform.rotation, kSplitLookup[kMaxSplit - split].pow_1_5};
@@ -281,12 +281,12 @@ struct ChaserBoss : ecs::component {
     }
 
     explode_entity_shapes<ChaserBoss>(h, e);
-    explode_entity_shapes<ChaserBoss>(h, e, glm::vec4{1.f}, 12);
+    explode_entity_shapes<ChaserBoss>(h, e, cvec4{1.f}, 12);
     if (split < 3 || last) {
       explode_entity_shapes<ChaserBoss>(h, e, c, 24);
     }
     if (split < 2 || last) {
-      explode_entity_shapes<ChaserBoss>(h, e, glm::vec4{1.f}, 36);
+      explode_entity_shapes<ChaserBoss>(h, e, cvec4{1.f}, 36);
     }
     if (split < 1 || last) {
       explode_entity_shapes<ChaserBoss>(h, e, c, 48);

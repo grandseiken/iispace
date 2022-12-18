@@ -7,7 +7,7 @@ namespace ii::ui {
 namespace {
 
 multi_input_frame map_input(const multi_input_frame& input,
-                            std::optional<std::size_t> input_assignment, const rect& bounds) {
+                            std::optional<std::size_t> input_assignment, const irect& bounds) {
   auto result = input;
   if (input_assignment) {
     if (*input_assignment < result.assignments.size()) {

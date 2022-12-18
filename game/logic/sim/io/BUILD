@@ -5,7 +5,6 @@ cc_library(
     "//game/common:types",
     "//game/common:math",
     "//game/common:ustring",
-    "@glm",
   ],
   visibility = ["//visibility:public"],
 )
@@ -13,10 +12,7 @@ cc_library(
 cc_library(
   name = "player",
   hdrs = ["player.h"],
-  deps = [
-    "//game/common:math",
-    "@glm",
-  ],
+  deps = ["//game/common:math"],
   visibility = ["//visibility:public"],
 )
 
@@ -24,8 +20,8 @@ cc_library(
   name = "aggregate",
   hdrs = ["aggregate.h"],
   deps = [
+    "//game/common:math",
     "//game/mixer:sound",
-    "@glm",
   ],
   visibility = ["//visibility:public"],
 )

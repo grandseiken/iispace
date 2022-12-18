@@ -134,7 +134,7 @@ SdlIoLayer::create(const char* title, char gl_major, char gl_minor, bool windowe
 
   auto flags = SDL_WINDOW_OPENGL | SDL_WINDOW_SHOWN;
   int xy = 0;
-  glm::ivec2 dimensions{0};
+  ivec2 dimensions{0};
   if (windowed) {
     flags |= SDL_WINDOW_RESIZABLE;
     xy = 64;
@@ -191,7 +191,7 @@ SdlIoLayer::~SdlIoLayer() {
   }
 }
 
-glm::uvec2 SdlIoLayer::dimensions() const {
+uvec2 SdlIoLayer::dimensions() const {
   int w = 0;
   int h = 0;
   SDL_GL_GetDrawableSize(impl_->window.get(), &w, &h);
@@ -270,14 +270,14 @@ std::optional<event_type> SdlIoLayer::poll() {
 
     case SDL_MOUSEMOTION:
       impl_->mouse_frame.cursor = {event.motion.x, event.motion.y};
-      impl_->mouse_frame.cursor_delta += glm::ivec2{event.motion.xrel, event.motion.yrel};
+      impl_->mouse_frame.cursor_delta += ivec2{event.motion.xrel, event.motion.yrel};
       break;
 
     case SDL_MOUSEWHEEL:
       if (event.wheel.direction == SDL_MOUSEWHEEL_FLIPPED) {
-        impl_->mouse_frame.wheel_delta -= glm::ivec2{event.wheel.x, event.wheel.y};
+        impl_->mouse_frame.wheel_delta -= ivec2{event.wheel.x, event.wheel.y};
       } else {
-        impl_->mouse_frame.wheel_delta += glm::ivec2{event.wheel.x, event.wheel.y};
+        impl_->mouse_frame.wheel_delta += ivec2{event.wheel.x, event.wheel.y};
       }
       break;
     }

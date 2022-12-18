@@ -65,9 +65,9 @@ SimState::SimState(const initial_conditions& conditions, data::ReplayWriter* rep
     internals_->collision_index = std::make_unique<LegacyCollisionIndex>();
   } else {
     internals_->collision_index = std::make_unique<GridCollisionIndex>(
-        glm::uvec2{64, 64}, glm::ivec2{-128, -128},
-        glm::ivec2{internals_->dimensions.x.to_int(), internals_->dimensions.y.to_int()} +
-            glm::ivec2{128, 128});
+        uvec2{64, 64}, ivec2{-128, -128},
+        ivec2{internals_->dimensions.x.to_int(), internals_->dimensions.y.to_int()} +
+            ivec2{128, 128});
   }
 
   internals_->global_entity_id = setup_->start_game(conditions, *interface_);
@@ -81,7 +81,7 @@ SimState::SimState(const initial_conditions& conditions, data::ReplayWriter* rep
   refresh_handles(*internals_);
 }
 
-glm::uvec2 SimState::dimensions() const {
+uvec2 SimState::dimensions() const {
   return {static_cast<std::uint32_t>(interface_->dimensions().x.to_int()),
           static_cast<std::uint32_t>(interface_->dimensions().y.to_int())};
 }
@@ -253,8 +253,8 @@ render_output& SimState::render(transient_render_state& state, bool paused) cons
 
   // TODO: extract somewhere?
   render::ngon warning_ngon{.radius = 4.f, .sides = 3};
-  auto render_warning = [&](const glm::vec2& v) {
-    auto render_tri = [&](const glm::vec2& position, float r, float f) {
+  auto render_warning = [&](const fvec2& v) {
+    auto render_tri = [&](const fvec2& position, float r, float f) {
       result.shapes.emplace_back(render::shape{
           .origin = position,
           .rotation = r,

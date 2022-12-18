@@ -2,7 +2,6 @@
 #define II_GAME_LOGIC_SIM_SIM_STATE_H
 #include "game/common/math.h"
 #include "game/logic/sim/io/player.h"
-#include <glm/glm.hpp>
 #include <cstdint>
 #include <memory>
 #include <optional>
@@ -30,7 +29,7 @@ public:
   virtual ~ISimState() = default;
 
   virtual bool game_over() const = 0;
-  virtual glm::uvec2 dimensions() const = 0;
+  virtual uvec2 dimensions() const = 0;
   virtual std::uint64_t tick_count() const = 0;
   virtual std::uint32_t fps() const = 0;
 
@@ -53,7 +52,7 @@ public:
   SimState(const initial_conditions& conditions, data::ReplayWriter* replay_writer = nullptr,
            std::span<const std::uint32_t> ai_players = {});
 
-  glm::uvec2 dimensions() const override;
+  uvec2 dimensions() const override;
   std::uint64_t tick_count() const override;
   std::uint32_t checksum() const;  // Fast checksum.
   void copy_to(SimState&) const;

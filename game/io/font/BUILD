@@ -3,9 +3,9 @@ cc_library(
   hdrs = ["font.h"],
   srcs = ["font.cc"],
   deps = [
+    "//game/common:math",
     "//game/common:types",
     "//game/common:ustring",
-    "@glm",
   ],
   implementation_deps = ["@freetype"],
   visibility = ["//visibility:public"],

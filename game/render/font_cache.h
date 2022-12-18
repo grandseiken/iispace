@@ -7,7 +7,6 @@
 #include "game/render/data/text.h"
 #include "game/render/gl/types.h"
 #include "game/render/target.h"
-#include <glm/glm.hpp>
 #include <cstdint>
 #include <span>
 #include <unordered_map>
@@ -34,7 +33,7 @@ private:
 
   struct font_entry {
     ii::Font font;
-    std::unordered_map<glm::uvec2, size_entry, vec_hash<2, unsigned>> sizes;
+    std::unordered_map<uvec2, size_entry, vec_hash<2, unsigned>> sizes;
   };
 
   std::unordered_map<font_id, font_entry> fonts_;

@@ -37,8 +37,8 @@ public:
   element_flags flags() const { return flags_; }
   void add_flags(element_flags flags) { flags_ |= flags; }
 
-  rect bounds() const { return bounds_; }
-  void set_bounds(const rect& bounds) { bounds_ = bounds; }
+  irect bounds() const { return bounds_; }
+  void set_bounds(const irect& bounds) { bounds_ = bounds; }
 
   void remove() { remove_ = true; }
   bool is_removed() const { return remove_; }
@@ -119,7 +119,7 @@ protected:
 
 private:
   element_flags flags_ = element_flags::kNone;
-  rect bounds_;
+  irect bounds_;
   bool remove_ = false;
   bool hide_ = false;
   bool focus_ = false;

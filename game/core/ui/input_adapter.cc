@@ -138,7 +138,7 @@ void handle(input_frame& result, const io::keyboard::frame& frame) {
 }
 
 void handle(input_frame& result, const io::controller::frame& frame, std::size_t index,
-            glm::ivec2& previous) {
+            ivec2& previous) {
   for (std::size_t i = 0; i < static_cast<std::size_t>(key::kMax); ++i) {
     auto k = static_cast<key>(i);
     auto buttons = controller_buttons_for(k);
@@ -211,7 +211,7 @@ multi_input_frame InputAdapter::ui_frame(bool controller_change) {
   if (controller_change) {
     prev_controller_.clear();
     for (std::size_t i = 0; i < io_layer_.controllers(); ++i) {
-      prev_controller_.emplace_back(glm::ivec2{0});
+      prev_controller_.emplace_back(ivec2{0});
     }
   }
   if (kbm_assignment_) {
@@ -250,7 +250,7 @@ multi_input_frame InputAdapter::ui_frame(bool controller_change) {
   }
 
   auto mouse_moved = [](const input_frame& frame) {
-    return frame.mouse_delta && *frame.mouse_delta != glm::ivec2{0};
+    return frame.mouse_delta && *frame.mouse_delta != ivec2{0};
   };
   if ((!kbm_assignment_ && mouse_moved(input.global)) ||
       (kbm_assignment_ && mouse_moved(input.assignments[*kbm_assignment_]))) {

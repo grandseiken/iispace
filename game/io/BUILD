@@ -6,8 +6,8 @@ cc_library(
   ],
   srcs = ["input.cc"],
   deps = [
+    "//game/common:math",
     "//game/common:types",
-    "@glm",
   ],
   visibility = ["//visibility:public"],
 )

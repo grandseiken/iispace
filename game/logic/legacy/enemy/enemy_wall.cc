@@ -16,7 +16,7 @@ struct Square : ecs::component {
   using shape = standard_transform<
       geom::box_colour_p<10, 10, 2, 0, shape_flag::kDangerous | shape_flag::kVulnerable>>;
 
-  std::tuple<vec2, fixed, glm::vec4>
+  std::tuple<vec2, fixed, cvec4>
   shape_parameters(const Transform& transform, const Health& health) const {
     return {transform.centre, transform.rotation,
             health.hp && invisible_flash ? colour::hue(0.f, .2f, 0.f) : colour::hue360(120, .6f)};

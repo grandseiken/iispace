@@ -27,7 +27,7 @@ struct SuperBossArc : public ecs::component {
                      polyarc<120, 4>, polyarc<115, 5>, polyarc<110, 6>,
                      polyarc<105, 7, shape_flag::kShield | shape_flag::kSafeShield>>>;
 
-  std::tuple<vec2, fixed, fixed, std::array<glm::vec4, 8>>
+  std::tuple<vec2, fixed, fixed, std::array<cvec4, 8>>
   shape_parameters(const Transform& transform) const {
     return {transform.centre, transform.rotation, i * 2 * fixed_c::pi / 16, colours};
   }
@@ -42,7 +42,7 @@ struct SuperBossArc : public ecs::component {
   std::uint32_t i = 0;
   std::uint32_t timer = 0;
   std::uint32_t s_timer = 0;
-  std::array<glm::vec4, 8> colours{glm::vec4{0.f}};
+  std::array<cvec4, 8> colours{cvec4{0.f}};
 
   void update(Transform& transform, const Health& health, SimInterface&) {
     transform.rotate(6_fx / 1000);
@@ -59,9 +59,9 @@ struct SuperBossArc : public ecs::component {
     destruct_lines<shape>(e, parameters, source, 64);
     std::get<0>(parameters) += from_polar(i * 2 * fixed_c::pi / 16 + transform.rotation, 120_fx);
     explode_shapes<shape>(e, parameters);
-    explode_shapes<shape>(e, parameters, glm::vec4{1.f}, 12);
+    explode_shapes<shape>(e, parameters, cvec4{1.f}, 12);
     explode_shapes<shape>(e, parameters, std::nullopt, 24);
-    explode_shapes<shape>(e, parameters, glm::vec4{1.f}, 36);
+    explode_shapes<shape>(e, parameters, cvec4{1.f}, 36);
     explode_shapes<shape>(e, parameters, std::nullopt, 48);
     e.play_random(sound::kExplosion, std::get<0>(parameters));
   }
@@ -104,8 +104,7 @@ struct SuperBoss : ecs::component {
                          polygon<35, 1>, polygon<30, 2, shape_flag::kShield>, polygon<25, 3>,
                          polygon<20, 4>, polygon<15, 5>, polygon<10, 6>, polygon<5, 7>>;
 
-  std::tuple<vec2, fixed, std::array<glm::vec4, 8>>
-  shape_parameters(const Transform& transform) const {
+  std::tuple<vec2, fixed, std::array<cvec4, 8>> shape_parameters(const Transform& transform) const {
     return {transform.centre, transform.rotation, colours};
   }
 
@@ -120,7 +119,7 @@ struct SuperBoss : ecs::component {
   std::uint32_t timer = 0;
   std::uint32_t snakes = 0;
   std::vector<ecs::entity_id> arcs;
-  std::array<glm::vec4, 8> colours{glm::vec4{0.f}};
+  std::array<cvec4, 8> colours{cvec4{0.f}};
 
   void update(ecs::handle h, Transform& transform, SimInterface& sim) {
     auto e = sim.emit(resolve_key::predicted());
@@ -223,8 +222,8 @@ struct SuperBoss : ecs::component {
     if (state == state::kIdle && timer % 72 == 0) {
       for (std::uint32_t i = 0; i < 128; ++i) {
         vec2 d = from_polar(i * pi2d128, 1_fx);
-        spawn_boss_shot(sim, transform.centre + d * 42, move_vec + d * 3,
-                        glm::vec4{0.f, 0.f, .6f, 1.f}, /* rotate speed */ 6_fx / 1000);
+        spawn_boss_shot(sim, transform.centre + d * 42, move_vec + d * 3, cvec4{0.f, 0.f, .6f, 1.f},
+                        /* rotate speed */ 6_fx / 1000);
         e.play_random(sound::kBossFire, transform.centre);
       }
     }
@@ -250,9 +249,9 @@ struct SuperBoss : ecs::component {
     });
     auto parameters = shape_parameters(transform);
     explode_shapes<shape>(e, parameters);
-    explode_shapes<shape>(e, parameters, glm::vec4{1.f}, 12);
+    explode_shapes<shape>(e, parameters, cvec4{1.f}, 12);
     explode_shapes<shape>(e, parameters, std::nullopt, 24);
-    explode_shapes<shape>(e, parameters, glm::vec4{1.f}, 36);
+    explode_shapes<shape>(e, parameters, cvec4{1.f}, 36);
     explode_shapes<shape>(e, parameters, std::nullopt, 48);
     destruct_lines<shape>(e, parameters, source, 128);
 

@@ -4,7 +4,6 @@
 #include "game/geometry/node.h"
 #include "game/geometry/shapes/data.h"
 #include "game/render/data/shapes.h"
-#include <glm/glm.hpp>
 #include <cstddef>
 #include <cstdint>
 

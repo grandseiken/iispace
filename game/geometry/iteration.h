@@ -38,9 +38,9 @@ concept IterTag = OneOf<T, iterate_flags_t, iterate_lines_t, iterate_shapes_t, i
 template <typename T>
 concept FlagFunction = std::invocable<T, shape_flag>;
 template <typename T>
-concept PointFunction = std::invocable<T, const vec2&, const glm::vec4&>;
+concept PointFunction = std::invocable<T, const vec2&, const cvec4&>;
 template <typename T>
-concept LineFunction = std::invocable<T, const vec2&, const vec2&, const glm::vec4&, float, float>;
+concept LineFunction = std::invocable<T, const vec2&, const vec2&, const cvec4&, float, float>;
 template <typename T>
 concept ShapeFunction = std::invocable<T, const render::shape&>;
 template <typename T>

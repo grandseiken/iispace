@@ -124,8 +124,8 @@ private:
   std::uint32_t cursor_anim_frame_ = 0;
   std::uint32_t cursor_frame_ = 0;
   std::optional<float> cursor_hue_;
-  std::optional<glm::ivec2> prev_cursor_;
-  std::optional<glm::ivec2> cursor_;
+  std::optional<ivec2> prev_cursor_;
+  std::optional<ivec2> cursor_;
   std::deque<std::unique_ptr<GameLayer>> layers_;
 };
 

@@ -29,9 +29,8 @@ auto FontCache::get(const target& t, const font_data& font, ustring_view text)
     return unexpected("invalid font ID");
   }
   auto scale = t.scale_factor();
-  glm::uvec2 pixel_dimensions{
-      static_cast<std::uint32_t>(scale * static_cast<float>(font.dimensions.x)),
-      static_cast<std::uint32_t>(scale * static_cast<float>(font.dimensions.y))};
+  uvec2 pixel_dimensions{static_cast<std::uint32_t>(scale * static_cast<float>(font.dimensions.x)),
+                         static_cast<std::uint32_t>(scale * static_cast<float>(font.dimensions.y))};
   bool is_lcd = pixel_dimensions.x <= kMaxLcdDimensions || pixel_dimensions.y <= kMaxLcdDimensions;
 
   auto jt = it->second.sizes.find(pixel_dimensions);

@@ -43,7 +43,7 @@ RunLobbyLayer::RunLobbyLayer(ui::GameStack& stack, std::optional<initial_conditi
 : ui::GameLayer{stack, ui::layer_flag::kBaseLayer | ui::layer_flag::kNoAutoFocus}
 , conditions_{std::move(conditions)}
 , online_{online} {
-  set_bounds(rect{kUiDimensions});
+  set_bounds(irect{kUiDimensions});
 
   auto& panel = *add_back<ui::Panel>();
   panel.set_padding(kSpacing);

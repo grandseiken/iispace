@@ -38,7 +38,7 @@ public:
   CreateGameLayer(ui::GameStack& stack, bool host_online)
   : ui::GameLayer{stack, ui::layer_flag::kCaptureInput | ui::layer_flag::kCaptureRender}
   , host_online_{host_online} {
-    set_bounds(rect{kUiDimensions});
+    set_bounds(irect{kUiDimensions});
 
     auto start_game = [this](game_mode mode) {
       initial_conditions conditions;
@@ -87,7 +87,7 @@ private:
 }  // namespace
 
 MainMenuLayer::MainMenuLayer(ui::GameStack& stack) : ui::GameLayer{stack} {
-  set_bounds(rect{kUiDimensions});
+  set_bounds(irect{kUiDimensions});
 
   auto& layout = add_main_layout(this);
   if (stack.system().supports_networked_multiplayer()) {

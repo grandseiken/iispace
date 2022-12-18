@@ -2,8 +2,8 @@
 #define II_GAME_LOGIC_SIM_IO_CONDITIONS_H
 #include "game/common/colour.h"
 #include "game/common/enum.h"
+#include "game/common/math.h"
 #include "game/common/ustring.h"
-#include <glm/glm.hpp>
 #include <array>
 #include <cstdint>
 #include <vector>
@@ -70,17 +70,17 @@ inline bool is_legacy_mode(game_mode mode) {
   return false;
 }
 
-inline glm::vec4 legacy_player_colour(std::uint32_t player_number) {
+inline cvec4 legacy_player_colour(std::uint32_t player_number) {
   return colour::hue360((20 * player_number) % 360);
 }
 
-inline glm::vec4 v0_player_colour(std::uint32_t player_number) {
+inline cvec4 v0_player_colour(std::uint32_t player_number) {
   static constexpr auto kNewPlayer0 =
-      colour::clamp(colour::kSolarizedDarkRed + glm::vec4{0.f, .15f, 0.f, 0.f});
+      colour::clamp(colour::kSolarizedDarkRed + cvec4{0.f, .15f, 0.f, 0.f});
   static constexpr auto kNewPlayer1 =
-      colour::clamp(colour::kSolarizedDarkOrange + glm::vec4{0.f, .2f, 0.f, 0.f});
+      colour::clamp(colour::kSolarizedDarkOrange + cvec4{0.f, .2f, 0.f, 0.f});
   static constexpr auto kNewPlayer2 =
-      colour::clamp(colour::kSolarizedDarkYellow + glm::vec4{0.f, .25f, 0.f, 0.f});
+      colour::clamp(colour::kSolarizedDarkYellow + cvec4{0.f, .25f, 0.f, 0.f});
   static constexpr std::array colours = {
       kNewPlayer0,
       colour::hsl_mix(kNewPlayer0, kNewPlayer1, 2.f / 3.f),
@@ -90,7 +90,7 @@ inline glm::vec4 v0_player_colour(std::uint32_t player_number) {
   return colours[player_number % colours.size()];
 }
 
-inline glm::vec4 player_colour(game_mode mode, std::uint32_t player_number) {
+inline cvec4 player_colour(game_mode mode, std::uint32_t player_number) {
   return is_legacy_mode(mode) ? legacy_player_colour(player_number)
                               : v0_player_colour(player_number);
 }

@@ -141,7 +141,7 @@ void GameStack::update(bool controller_change) {
 void GameStack::render(render::GlRenderer& renderer) const {
   auto it = get_capture_it(layers_.begin(), layers_.end(), layer_flag::kCaptureRender);
   for (; it != layers_.end(); ++it) {
-    renderer.target().render_dimensions = static_cast<glm::uvec2>((*it)->bounds().size);
+    renderer.target().render_dimensions = static_cast<uvec2>((*it)->bounds().size);
     (*it)->render(renderer);
     renderer.clear_depth();
   }
@@ -153,23 +153,23 @@ void GameStack::render(render::GlRenderer& renderer) const {
     auto scale = static_cast<float>(cursor_frame_) / kCursorFrames;
     scale = 1.f / 16 + (15.f / 16) * (1.f - (1.f - scale * scale));
     auto radius = scale * 8.f;
-    auto origin = static_cast<glm::vec2>(renderer.target().screen_to_render_coords(*cursor_)) +
+    auto origin = static_cast<fvec2>(renderer.target().screen_to_render_coords(*cursor_)) +
         from_polar(glm::pi<float>() / 3.f, radius);
     std::optional<render::motion_trail> trail;
     if (prev_cursor_) {
       trail = render::motion_trail{
           .prev_origin =
-              static_cast<glm::vec2>(renderer.target().screen_to_render_coords(*prev_cursor_)) +
+              static_cast<fvec2>(renderer.target().screen_to_render_coords(*prev_cursor_)) +
               from_polar(glm::pi<float>() / 3.f, radius)};
     }
     auto flash = (64.f - cursor_anim_frame_ % 64) / 64.f;
     std::vector cursor_shapes = {
         render::shape{
-            .origin = origin + glm::vec2{2.f, 3.f},
+            .origin = origin + fvec2{2.f, 3.f},
             .colour = {0.f, 0.f, 0.f, .25f},
             .z_index = 127.5f,
             .trail = trail
-                ? std::make_optional(render::motion_trail{trail->prev_origin + glm::vec2{2.f, 3.f}})
+                ? std::make_optional(render::motion_trail{trail->prev_origin + fvec2{2.f, 3.f}})
                 : std::nullopt,
             .data = render::ngon{.radius = radius, .sides = 3, .line_width = radius / 2},
         },

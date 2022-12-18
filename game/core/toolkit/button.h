@@ -1,11 +1,11 @@
 #ifndef II_GAME_CORE_TOOLKIT_BUTTON_H
 #define II_GAME_CORE_TOOLKIT_BUTTON_H
 #include "game/common/colour.h"
+#include "game/common/math.h"
 #include "game/common/ustring.h"
 #include "game/core/ui/element.h"
 #include "game/render/data/panel.h"
 #include "game/render/data/text.h"
-#include <glm/glm.hpp>
 #include <functional>
 
 namespace ii::ui {
@@ -33,13 +33,13 @@ public:
     return *this;
   }
 
-  Button& set_colour(const glm::vec4& colour, const glm::vec4& focus_colour) {
+  Button& set_colour(const cvec4& colour, const cvec4& focus_colour) {
     colour_ = colour;
     focus_colour_ = focus_colour;
     return *this;
   }
 
-  Button& set_text_colour(const glm::vec4& colour, const glm::vec4& focus_colour) {
+  Button& set_text_colour(const cvec4& colour, const cvec4& focus_colour) {
     text_colour_ = colour;
     focus_text_colour_ = focus_colour;
     return *this;
@@ -47,14 +47,14 @@ public:
 
   Button& set_style(render::panel_style style) { return set_style(style, style); }
   Button& set_font(const render::font_data& font) { return set_font(font, font); }
-  Button& set_colour(const glm::vec4& colour) { return set_colour(colour, colour); }
-  Button& set_text_colour(const glm::vec4& colour) { return set_text_colour(colour, colour); }
+  Button& set_colour(const cvec4& colour) { return set_colour(colour, colour); }
+  Button& set_text_colour(const cvec4& colour) { return set_text_colour(colour, colour); }
 
-  Button& set_drop_shadow(const glm::ivec2& offset, float opacity);
+  Button& set_drop_shadow(const ivec2& offset, float opacity);
   Button& set_alignment(render::alignment align);
   Button& set_text(ustring&& text);
-  Button& set_padding(const glm::ivec2& padding);
-  Button& set_margin(const glm::ivec2& margin);
+  Button& set_padding(const ivec2& padding);
+  Button& set_margin(const ivec2& margin);
 
 protected:
   void update_content(const input_frame&, output_frame&) override;
@@ -70,10 +70,10 @@ private:
   render::panel_style focus_style_ = render::panel_style::kNone;
   render::font_data font_;
   render::font_data focus_font_;
-  glm::vec4 colour_ = colour::kWhite0;
-  glm::vec4 focus_colour_ = colour::kWhite0;
-  glm::vec4 text_colour_ = colour::kWhite0;
-  glm::vec4 focus_text_colour_ = colour::kWhite0;
+  cvec4 colour_ = colour::kWhite0;
+  cvec4 focus_colour_ = colour::kWhite0;
+  cvec4 text_colour_ = colour::kWhite0;
+  cvec4 focus_text_colour_ = colour::kWhite0;
 };
 
 }  // namespace ii::ui

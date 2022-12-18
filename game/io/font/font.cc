@@ -75,15 +75,15 @@ ustring RenderedFont::trim_for_width(ustring_view s, std::int32_t width) const {
   }
 }
 
-std::pair<glm::ivec2, glm::ivec2> RenderedFont::calculate_bounding_box(ustring_view s) const {
+std::pair<ivec2, ivec2> RenderedFont::calculate_bounding_box(ustring_view s) const {
   bool first = true;
-  glm::ivec2 min;
-  glm::ivec2 max;
-  glm::ivec2 origin{0, max_ascent_};
+  ivec2 min;
+  ivec2 max;
+  ivec2 origin{0, max_ascent_};
   iterate_as_utf32(s, [&](std::size_t, std::uint32_t code) {
     const auto& info = (*this)[code];
-    auto top_left = origin + glm::ivec2{info.bearing.x, -info.bearing.y};
-    auto bottom_right = top_left + static_cast<glm::ivec2>(info.bitmap_dimensions);
+    auto top_left = origin + ivec2{info.bearing.x, -info.bearing.y};
+    auto bottom_right = top_left + static_cast<ivec2>(info.bitmap_dimensions);
     if (first) {
       min = max = top_left;
       first = false;
@@ -96,35 +96,34 @@ std::pair<glm::ivec2, glm::ivec2> RenderedFont::calculate_bounding_box(ustring_v
 }
 
 std::vector<std::int32_t>
-RenderedFont::generate_vertex_data(ustring_view s, const glm::ivec2& origin) const {
+RenderedFont::generate_vertex_data(ustring_view s, const ivec2& origin) const {
   std::vector<std::int32_t> result;
-  iterate_glyph_data(s, origin,
-                     [&](const glm::ivec2& position, const glm::ivec2& texture_coords,
-                         const glm::ivec2& dimensions) {
-                       // Top-left.
-                       result.emplace_back(position.x);
-                       result.emplace_back(position.y);
-                       result.emplace_back(texture_coords.x);
-                       result.emplace_back(texture_coords.y);
+  iterate_glyph_data(
+      s, origin, [&](const ivec2& position, const ivec2& texture_coords, const ivec2& dimensions) {
+        // Top-left.
+        result.emplace_back(position.x);
+        result.emplace_back(position.y);
+        result.emplace_back(texture_coords.x);
+        result.emplace_back(texture_coords.y);
 
-                       // Bottom-left.
-                       result.emplace_back(position.x);
-                       result.emplace_back(position.y + dimensions.y);
-                       result.emplace_back(texture_coords.x);
-                       result.emplace_back(texture_coords.y + dimensions.y);
+        // Bottom-left.
+        result.emplace_back(position.x);
+        result.emplace_back(position.y + dimensions.y);
+        result.emplace_back(texture_coords.x);
+        result.emplace_back(texture_coords.y + dimensions.y);
 
-                       // Bottom-right.
-                       result.emplace_back(position.x + dimensions.x);
-                       result.emplace_back(position.y + dimensions.y);
-                       result.emplace_back(texture_coords.x + dimensions.x);
-                       result.emplace_back(texture_coords.y + dimensions.y);
+        // Bottom-right.
+        result.emplace_back(position.x + dimensions.x);
+        result.emplace_back(position.y + dimensions.y);
+        result.emplace_back(texture_coords.x + dimensions.x);
+        result.emplace_back(texture_coords.y + dimensions.y);
 
-                       // Top-right.
-                       result.emplace_back(position.x + dimensions.x);
-                       result.emplace_back(position.y);
-                       result.emplace_back(texture_coords.x + dimensions.x);
-                       result.emplace_back(texture_coords.y);
-                     });
+        // Top-right.
+        result.emplace_back(position.x + dimensions.x);
+        result.emplace_back(position.y);
+        result.emplace_back(texture_coords.x + dimensions.x);
+        result.emplace_back(texture_coords.y);
+      });
   return result;
 }
 
@@ -212,9 +211,9 @@ Font::Font(Font&&) = default;
 
 Font& Font::operator=(Font&&) = default;
 
-result<void> Font::render_code(std::uint32_t code, bool lcd, const glm::uvec2& base_dimensions,
-                               const glm::uvec2& bitmap_dimensions, std::size_t bitmap_stride,
-                               std::uint8_t* bitmap, const glm::uvec2& bitmap_position) {
+result<void> Font::render_code(std::uint32_t code, bool lcd, const uvec2& base_dimensions,
+                               const uvec2& bitmap_dimensions, std::size_t bitmap_stride,
+                               std::uint8_t* bitmap, const uvec2& bitmap_position) {
   using namespace std::string_literals;
   auto error = FT_Set_Pixel_Sizes(data_->face, base_dimensions.x, base_dimensions.y);
   if (error) {
@@ -247,11 +246,11 @@ result<void> Font::render_code(std::uint32_t code, bool lcd, const glm::uvec2& b
   }
 
   auto bpp = lcd ? 3 : 1;
-  auto offset = static_cast<glm::ivec2>(bitmap_position) +
-      (static_cast<glm::ivec2>(d) - glm::ivec2{glyph->bitmap.width / bpp, glyph->bitmap.rows}) / 2;
+  auto offset = static_cast<ivec2>(bitmap_position) +
+      (static_cast<ivec2>(d) - ivec2{glyph->bitmap.width / bpp, glyph->bitmap.rows}) / 2;
   for (std::uint32_t y = 0; y < glyph->bitmap.rows; ++y) {
     for (std::uint32_t x = 0; x < glyph->bitmap.width / bpp; ++x) {
-      auto target = glm::ivec2{x, y} + offset;
+      auto target = ivec2{x, y} + offset;
       if (target.x < 0 || target.x >= static_cast<std::int32_t>(bitmap_dimensions.x) ||
           target.y < 0 || target.y >= static_cast<std::int32_t>(bitmap_dimensions.y)) {
         continue;
@@ -276,7 +275,7 @@ result<void> Font::render_code(std::uint32_t code, bool lcd, const glm::uvec2& b
 }
 
 result<RenderedFont> Font::render(std::span<const std::uint32_t> utf32_codes, bool lcd,
-                                  const glm::uvec2& base_dimensions) const {
+                                  const uvec2& base_dimensions) const {
   using namespace std::string_literals;
   auto error = FT_Set_Pixel_Sizes(data_->face, base_dimensions.x, base_dimensions.y);
   if (error) {

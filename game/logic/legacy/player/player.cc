@@ -22,7 +22,7 @@ struct Shot : ecs::component {
   using shape = standard_transform<geom::box_colour_p<2, 2, 2>, geom::box_colour_p<1, 1, 3>,
                                    geom::box_colour_p<3, 3, 3>>;
 
-  std::tuple<vec2, fixed, glm::vec4, glm::vec4> shape_parameters(const Transform& transform) const {
+  std::tuple<vec2, fixed, cvec4, cvec4> shape_parameters(const Transform& transform) const {
     auto c_dark = colour;
     c_dark.a = .2f;
     return {transform.centre, transform.rotation, colour, c_dark};
@@ -33,7 +33,7 @@ struct Shot : ecs::component {
   bool is_predicted = false;
   vec2 velocity{0};
   bool magic = false;
-  glm::vec4 colour{0.f};
+  cvec4 colour{0.f};
 
   Shot(ecs::entity_id player, std::uint32_t player_number, bool is_predicted, const vec2& direction,
        bool magic)
@@ -45,7 +45,7 @@ struct Shot : ecs::component {
 
   void update(ecs::handle h, Transform& transform, SimInterface& sim) {
     colour = magic && sim.random(random_source::kLegacyAesthetic).rbool()
-        ? glm::vec4{1.f}
+        ? cvec4{1.f}
         : legacy_player_colour(player_number);
     transform.move(velocity);
     bool on_screen = all(greaterThanEqual(transform.centre, vec2{-4, -4})) &&
@@ -140,14 +140,14 @@ struct PlayerLogic : ecs::component {
                                    geom::rotate<fixed_c::pi, geom::ngon_colour_p<8, 3, 4>>,
                                    box_shapes, shield, bomb>;
 
-  std::tuple<vec2, fixed, bool, bool, glm::vec4, glm::vec4, glm::vec4>
+  std::tuple<vec2, fixed, bool, bool, cvec4, cvec4, cvec4>
   shape_parameters(const Player& pc, const Transform& transform) const {
-    auto colour = !should_render()  ? glm::vec4{0.f}
-        : invulnerability_timer % 2 ? glm::vec4{1.f}
+    auto colour = !should_render()  ? cvec4{0.f}
+        : invulnerability_timer % 2 ? cvec4{1.f}
                                     : legacy_player_colour(pc.player_number);
     auto c_dark = colour;
     c_dark.a = std::min(c_dark.a, .2f);
-    auto powerup_colour = !should_render() ? glm::vec4{0.f} : glm::vec4{1.f};
+    auto powerup_colour = !should_render() ? cvec4{0.f} : cvec4{1.f};
     return {transform.centre, transform.rotation, pc.shield_count, pc.bomb_count, colour,
             c_dark,           powerup_colour};
   };
@@ -215,14 +215,14 @@ struct PlayerLogic : ecs::component {
       pc.bomb_count = 0;
 
       auto e = sim.emit(resolve_key::local(pc.player_number));
-      explosion(h, std::nullopt, e, glm::vec4{1.f}, 16);
+      explosion(h, std::nullopt, e, cvec4{1.f}, 16);
       explosion(h, std::nullopt, e, c, 32);
-      explosion(h, std::nullopt, e, glm::vec4{1.f}, 48);
+      explosion(h, std::nullopt, e, cvec4{1.f}, 48);
 
       for (std::uint32_t i = 0; i < 64; ++i) {
         auto v = transform.centre + from_polar(2 * i * fixed_c::pi / 64, kBombRadius);
         auto& random = sim.random(random_source::kLegacyAesthetic);
-        explosion(h, v, e, (i % 2) ? c : glm::vec4{1.f}, 8 + random.uint(8) + random.uint(8),
+        explosion(h, v, e, (i % 2) ? c : cvec4{1.f}, 8 + random.uint(8) + random.uint(8),
                   transform.centre);
       }
 
@@ -281,7 +281,7 @@ struct PlayerLogic : ecs::component {
     }
 
     explosion(h, std::nullopt, e);
-    explosion(h, std::nullopt, e, glm::vec4{1.f}, 14);
+    explosion(h, std::nullopt, e, cvec4{1.f}, 14);
     explosion(h, std::nullopt, e, std::nullopt, 20);
     destruct_entity_lines<PlayerLogic>(h, e, transform.centre, 32);
 
@@ -298,7 +298,7 @@ struct PlayerLogic : ecs::component {
   }
 
   void explosion(ecs::handle h, const std::optional<vec2>& position_override, EmitHandle& e,
-                 const std::optional<glm::vec4>& colour = std::nullopt, std::uint32_t time = 8,
+                 const std::optional<cvec4>& colour = std::nullopt, std::uint32_t time = 8,
                  const std::optional<vec2>& towards = std::nullopt) const {
     auto parameters = get_shape_parameters<PlayerLogic>(h);
     if (position_override) {

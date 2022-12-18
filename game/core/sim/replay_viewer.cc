@@ -72,7 +72,7 @@ ReplayViewer::ReplayViewer(ui::GameStack& stack, data::ReplayReader&& replay)
 }
 
 void ReplayViewer::update_content(const ui::input_frame& input, ui::output_frame&) {
-  set_bounds(rect{impl_->istate().dimensions()});
+  set_bounds(irect{impl_->istate().dimensions()});
   stack().set_fps(impl_->istate().fps());
   if (!impl_->hud) {
     impl_->hud = stack().add<HudLayer>(impl_->mode);

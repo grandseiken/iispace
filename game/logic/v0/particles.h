@@ -16,31 +16,30 @@ namespace ii::v0 {
 //////////////////////////////////////////////////////////////////////////////////
 template <geom::ShapeNode S>
 void explode_shapes(EmitHandle& e, const auto& parameters,
-                    const std::optional<glm::vec4> colour_override = std::nullopt,
+                    const std::optional<cvec4> colour_override = std::nullopt,
                     std::uint32_t time = 10, const std::optional<vec2>& towards = std::nullopt,
                     std::optional<float> speed = std::nullopt) {
-  std::optional<glm::vec2> towards_float;
+  std::optional<fvec2> towards_float;
   if (towards) {
     towards_float = to_float(*towards);
   }
   geom::iterate(S{}, geom::iterate_centres, parameters, geom::transform{},
-                [&](const vec2& v, const glm::vec4& c) {
+                [&](const vec2& v, const cvec4& c) {
                   e.explosion(to_float(v), colour_override.value_or(c), time, towards_float, speed);
                 });
 }
 
 template <ecs::Component Logic, geom::ShapeNode S = typename Logic::shape>
 void explode_entity_shapes(ecs::const_handle h, EmitHandle& e,
-                           const std::optional<glm::vec4> colour_override = std::nullopt,
+                           const std::optional<cvec4> colour_override = std::nullopt,
                            std::uint32_t time = 10,
                            const std::optional<vec2>& towards = std::nullopt,
                            std::optional<float> speed = std::nullopt) {
   explode_shapes<S>(e, get_shape_parameters<Logic>(h), colour_override, time, towards, speed);
 }
 
-inline void add_line_particle(EmitHandle& e, const glm::vec2& source, const glm::vec2& a,
-                              const glm::vec2& b, const glm::vec4& c, float w, float z,
-                              std::uint32_t time) {
+inline void add_line_particle(EmitHandle& e, const fvec2& source, const fvec2& a, const fvec2& b,
+                              const cvec4& c, float w, float z, std::uint32_t time) {
   auto& r = e.random();
   auto position = (a + b) / 2.f;
   auto velocity = (1.75f + .6f * r.fixed().to_float()) * normalise(position - source) +
@@ -77,7 +76,7 @@ void destruct_lines(EmitHandle& e, const auto& parameters, const vec2& source,
   // motion trails)?
   // Make destruct particles similarly velocified?
   geom::iterate(S{}, geom::iterate_lines, parameters, geom::transform{},
-                [&](const vec2& a, const vec2& b, const glm::vec4& c, float w, float z) {
+                [&](const vec2& a, const vec2& b, const cvec4& c, float w, float z) {
                   add_line_particle(e, f_source, to_float(a), to_float(b), c, w, z, time);
                 });
 }

@@ -156,7 +156,7 @@ void GridLayout::update_content(const input_frame&, output_frame&) {
 }
 
 bool GridLayout::handle_focus(const input_frame& input, output_frame& output) {
-  glm::ivec2 offset{0};
+  ivec2 offset{0};
   if (input.pressed(key::kRight)) {
     ++offset.x;
   }
@@ -169,7 +169,7 @@ bool GridLayout::handle_focus(const input_frame& input, output_frame& output) {
   if (input.pressed(key::kUp)) {
     --offset.y;
   }
-  if (!size() || offset == glm::ivec2{0}) {
+  if (!size() || offset == ivec2{0}) {
     return false;
   }
 

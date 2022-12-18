@@ -1,10 +1,7 @@
 cc_library(
   name = "target",
   hdrs = ["target.h"],
-  deps = [
-    "//game/common:math",
-    "@glm",
-  ],
+  deps = ["//game/common:math"],
   visibility = ["//visibility:public"],
 )
 
@@ -21,7 +18,6 @@ cc_library(
     "//game/common:types",
     "//game/common:ustring",
     "//game/render/data",
-    "@glm",
   ],
   implementation_deps = [
     ":font_cache",
@@ -62,7 +58,6 @@ cc_library(
     "//game/io/font",
     "//game/render/data",
     "//game/render/gl",
-    "@glm",
   ],
 )
 

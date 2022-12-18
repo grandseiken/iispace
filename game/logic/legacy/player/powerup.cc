@@ -17,7 +17,7 @@ struct Powerup : ecs::component {
   static constexpr fixed kSpeed = 1;
   static constexpr float kZIndex = -2.f;
   static constexpr std::uint32_t kRotateTime = 100;
-  static constexpr glm::vec4 cw{1.f};
+  static constexpr cvec4 cw{1.f};
 
   using out0 = geom::ngon_colour_p<13, 5, 2>;
   using out1 = geom::ngon_colour_p<9, 5, 3>;
@@ -28,7 +28,7 @@ struct Powerup : ecs::component {
   using shape =
       standard_transform<out0, out1, geom::switch_p<4, extra_life, magic_shots, shield, bomb>>;
 
-  std::tuple<vec2, fixed, glm::vec4, glm::vec4, powerup_type>
+  std::tuple<vec2, fixed, cvec4, cvec4, powerup_type>
   shape_parameters(const Transform& transform) const {
     auto c0 = legacy_player_colour((frame % (2 * kMaxPlayers)) / 2);
     auto c1 = legacy_player_colour(((frame + 1) % (2 * kMaxPlayers)) / 2);
@@ -105,7 +105,7 @@ struct Powerup : ecs::component {
       e.add(particle{
           .position = to_float(transform.centre),
           .velocity = from_polar(random.fixed().to_float() * 2.f * glm::pi<float>(), 6.f),
-          .colour = glm::vec4{1.f},
+          .colour = cvec4{1.f},
           .data = dot_particle{},
           .end_time = 4 + random.uint(8),
       });

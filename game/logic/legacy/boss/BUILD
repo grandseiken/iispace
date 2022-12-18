@@ -22,7 +22,6 @@ cc_library(
     "//game/logic/sim:sim_interface",
     "//game/logic/sim/io:events",
     "//game/mixer:sound",
-    "@glm",
   ],
   visibility = ["//game/logic/legacy/overmind:__pkg__"],
 )

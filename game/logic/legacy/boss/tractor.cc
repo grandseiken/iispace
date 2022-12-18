@@ -21,9 +21,9 @@ struct TractorBoss : ecs::component {
   static constexpr fixed kTractorBeamSpeed = 2 + 1_fx / 2;
   static constexpr float kZIndex = -4.f;
 
-  static constexpr glm::vec4 c0 = colour::hue360(300, .5f, .6f);
-  static constexpr glm::vec4 c1 = colour::hue360(300, 1.f / 3, .6f);
-  static constexpr glm::vec4 c2 = colour::hue360(300, .4f, .5f);
+  static constexpr cvec4 c0 = colour::hue360(300, .5f, .6f);
+  static constexpr cvec4 c1 = colour::hue360(300, 1.f / 3, .6f);
+  static constexpr cvec4 c2 = colour::hue360(300, .4f, .5f);
 
   using attack_shape = standard_transform<geom::translate_p<2, geom::polygon<8, 6, c0>>>;
   template <std::size_t BI>
@@ -42,7 +42,7 @@ struct TractorBoss : ecs::component {
       geom::rotate_eval<
           geom::multiply_p<fixed{I ? -1 : 1} / 2, 2>,
           geom::compound<geom::attachment_point<I, 0, 0>, geom::polygram<12, 6, c1>,
-                         geom::polygon<30, 12, glm::vec4{0.f}, 0, shape_flag::kShield>,
+                         geom::polygon<30, 12, cvec4{0.f}, 0, shape_flag::kShield>,
                          geom::disable_iteration<
                              geom::iterate_centres_t,
                              geom::compound<geom::polygon<12, 12, c1>, geom::polygon<2, 6, c1>,
@@ -257,7 +257,7 @@ struct TractorBoss : ecs::component {
       for (const auto& v : attack_shapes) {
         std::tuple parameters{transform.centre, transform.rotation, v};
         explode_shapes<attack_shape>(e, parameters);
-        explode_shapes<attack_shape>(e, parameters, glm::vec4{1.f}, 12);
+        explode_shapes<attack_shape>(e, parameters, cvec4{1.f}, 12);
         explode_shapes<attack_shape>(e, parameters, std::nullopt, 24);
       }
     }

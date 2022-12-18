@@ -15,9 +15,9 @@
 
 namespace ii::legacy {
 namespace {
-constexpr glm::vec4 c0 = colour::hue360(280, .7f);
-constexpr glm::vec4 c1 = colour::hue360(280, .5f, .6f);
-constexpr glm::vec4 c2 = colour::hue360(270, .2f);
+constexpr cvec4 c0 = colour::hue360(280, .7f);
+constexpr cvec4 c1 = colour::hue360(280, .5f, .6f);
+constexpr cvec4 c2 = colour::hue360(270, .2f);
 
 template <geom::ShapeNode S>
 shape_flag shape_check_point_compatibility(const auto& parameters, bool is_legacy, const vec2& v,
@@ -110,8 +110,8 @@ struct GhostMine : ecs::component {
               24, 8, 3, 0, shape_flag::kDangerous | shape_flag::kShield | shape_flag::kWeakShield>>,
       geom::ngon_colour_p<20, 8, 3>>;
 
-  std::tuple<vec2, fixed, bool, glm::vec4> shape_parameters(const Transform& transform) const {
-    return {transform.centre, transform.rotation, timer > 0, (timer / 4) % 2 ? glm::vec4{0.f} : c1};
+  std::tuple<vec2, fixed, bool, cvec4> shape_parameters(const Transform& transform) const {
+    return {transform.centre, transform.rotation, timer > 0, (timer / 4) % 2 ? cvec4{0.f} : c1};
   }
 
   std::uint32_t timer = 80;
@@ -454,13 +454,13 @@ struct GhostBoss : ecs::component {
   }
 
   void explode_shapes(const Transform& transform, EmitHandle& e,
-                      const std::optional<glm::vec4> colour_override = std::nullopt,
+                      const std::optional<cvec4> colour_override = std::nullopt,
                       std::uint32_t time = 8, const std::optional<vec2>& towards = std::nullopt,
                       std::optional<float> speed = std::nullopt) const {
     legacy::explode_shapes<explode_shape>(e, shape_parameters(transform), colour_override, time,
                                           towards, speed);
     for (std::uint32_t i = 0; i < 10; ++i) {
-      e.explosion(to_float(transform.centre), glm::vec4{0.f});  // Compatibility.
+      e.explosion(to_float(transform.centre), cvec4{0.f});  // Compatibility.
     }
     for (std::uint32_t i = 0; i < 8; ++i) {
       legacy::explode_shapes<spark_shape>(e, spark_shape_parameters(transform, i), colour_override,
@@ -485,7 +485,7 @@ struct GhostBoss : ecs::component {
 
   void render_override(const Transform& transform, const Health& health,
                        std::vector<render::shape>& output) const {
-    std::optional<glm::vec4> colour_override;
+    std::optional<cvec4> colour_override;
     if ((start_time / 4) % 2 == 1) {
       colour_override = {0.f, 0.f, 0.f, 1.f / 255};
     } else if ((visible && ((vtime / 4) % 2 == 0)) || (!visible && ((vtime / 4) % 2 == 1))) {

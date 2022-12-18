@@ -1,6 +1,6 @@
 #ifndef II_GAME_IO_INPUT_H
 #define II_GAME_IO_INPUT_H
-#include <glm/glm.hpp>
+#include "game/common/math.h"
 #include <array>
 #include <cstddef>
 #include <cstdint>
@@ -281,9 +281,9 @@ struct frame {
 
   std::vector<button_event> button_events;
   std::array<bool, static_cast<std::size_t>(mouse::button::kMax)> button_state = {false};
-  std::optional<glm::ivec2> cursor = std::nullopt;
-  glm::ivec2 cursor_delta = {0, 0};
-  glm::ivec2 wheel_delta = {0, 0};
+  std::optional<ivec2> cursor = std::nullopt;
+  ivec2 cursor_delta = {0, 0};
+  ivec2 wheel_delta = {0, 0};
 
   bool button(mouse::button k) const { return button_state[static_cast<std::size_t>(k)]; }
   bool& button(mouse::button k) { return button_state[static_cast<std::size_t>(k)]; }

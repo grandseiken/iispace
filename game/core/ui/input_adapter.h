@@ -1,7 +1,7 @@
 #ifndef II_GAME_CORE_UI_INPUT_ADAPTER_H
 #define II_GAME_CORE_UI_INPUT_ADAPTER_H
+#include "game/common/math.h"
 #include "game/core/ui/input.h"
-#include <glm/glm.hpp>
 #include <cstdint>
 #include <optional>
 #include <unordered_map>
@@ -35,7 +35,7 @@ private:
   using key_repeat_data = std::array<std::uint32_t, static_cast<std::size_t>(key::kMax)>;
   key_repeat_data global_repeat_data = {0u};
   std::vector<key_repeat_data> assignment_repeat_data_;
-  std::vector<glm::ivec2> prev_controller_;
+  std::vector<ivec2> prev_controller_;
   bool show_cursor_ = true;
 };
 
