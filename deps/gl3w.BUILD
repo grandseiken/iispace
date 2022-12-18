@@ -6,7 +6,7 @@ py_binary(
 genrule(
   name = "gl3w_srcs",
   tools = [":gl3w_gen"],
-  cmd = "./$(location :gl3w_gen) --root \"$(RULEDIR)\"",
+  cmd = "./$(location :gl3w_gen) --root \"$(RULEDIR)\" > /dev/null",
   outs = [
     "include/GL/gl3w.h",
     "include/GL/glcorearb.h",

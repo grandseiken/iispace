@@ -1,5 +1,5 @@
-#ifndef II_GAME_LOGIC_GEOMETRY_SHAPES_LINE_H
-#define II_GAME_LOGIC_GEOMETRY_SHAPES_LINE_H
+#ifndef II_GAME_GEOMETRY_SHAPES_LINE_H
+#define II_GAME_GEOMETRY_SHAPES_LINE_H
 #include "game/geometry/expressions.h"
 #include "game/geometry/shapes/data.h"
 #include "game/render/data/shapes.h"

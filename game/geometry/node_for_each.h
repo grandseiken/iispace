@@ -1,5 +1,5 @@
-#ifndef II_GAME_LOGIC_GEOMETRY_NODE_FOR_EACH_H
-#define II_GAME_LOGIC_GEOMETRY_NODE_FOR_EACH_H
+#ifndef II_GAME_GEOMETRY_NODE_FOR_EACH_H
+#define II_GAME_GEOMETRY_NODE_FOR_EACH_H
 #include "game/geometry/concepts.h"
 #include "game/geometry/iteration.h"
 

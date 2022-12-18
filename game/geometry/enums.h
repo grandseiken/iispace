@@ -1,5 +1,5 @@
-#ifndef II_GAME_LOGIC_GEOMETRY_ENUMS_H
-#define II_GAME_LOGIC_GEOMETRY_ENUMS_H
+#ifndef II_LOGIC_GEOMETRY_ENUMS_H
+#define II_LOGIC_GEOMETRY_ENUMS_H
 #include "game/common/enum.h"
 #include <cstdint>
 

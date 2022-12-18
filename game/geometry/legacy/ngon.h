@@ -1,5 +1,5 @@
-#ifndef II_GAME_LOGIC_GEOMETRY_LEGACY_NGON_H
-#define II_GAME_LOGIC_GEOMETRY_LEGACY_NGON_H
+#ifndef II_GAME_GEOMETRY_LEGACY_NGON_H
+#define II_GAME_GEOMETRY_LEGACY_NGON_H
 #include "game/geometry/expressions.h"
 #include "game/render/data/shapes.h"
 #include <cstddef>

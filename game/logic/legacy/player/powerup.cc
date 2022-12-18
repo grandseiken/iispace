@@ -74,7 +74,6 @@ struct Powerup : ecs::component {
   void
   collect(ecs::handle h, const Transform& transform, SimInterface& sim, ecs::handle source) const {
     auto& pc = *source.get<Player>();
-    auto& render = *source.get<Render>();
     auto e = sim.emit(resolve_key::local(pc.player_number));
     switch (type) {
     case powerup_type::kExtraLife:

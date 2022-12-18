@@ -971,8 +971,6 @@ struct mixed7_side : formation<14, 34> {
 struct mixed8_side : formation<9, 22> {
   void operator()(spawn_context& context) const {
     auto d = context.random.uint(3);
-    auto b = context.random.rbool();
-
     auto side0 = context.random_vside();
     auto side1 = context.random.rbool() ? reverse_side(opposite_side(side0)) : side0;
     auto n = 1u + context.random.uint(1);

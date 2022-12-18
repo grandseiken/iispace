@@ -164,7 +164,6 @@ struct PlayerLogic : ecs::component {
               SimInterface& sim) {
     pc.speed = kPlayerSpeed;
     const auto& input = sim.input(pc.player_number);
-    auto old_fire_target = fire_target;
     if (input.target_absolute) {
       fire_target = *input.target_absolute;
     } else if (input.target_relative) {
@@ -204,7 +203,6 @@ struct PlayerLogic : ecs::component {
     // Movement.
     if (length(input.velocity) > fixed_c::hundredth) {
       auto v = length(input.velocity) > 1 ? normalise(input.velocity) : input.velocity;
-      auto av = angle(v);
       transform.set_rotation(angle(v));
       transform.centre = max(vec2{0}, min(dim, kPlayerSpeed * v + transform.centre));
     }

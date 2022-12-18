@@ -1,5 +1,5 @@
-#ifndef II_GAME_LOGIC_GEOMETRY_SHAPES_DATA_H
-#define II_GAME_LOGIC_GEOMETRY_SHAPES_DATA_H
+#ifndef II_GAME_GEOMETRY_SHAPES_DATA_H
+#define II_GAME_GEOMETRY_SHAPES_DATA_H
 #include "game/common/math.h"
 
 namespace ii::geom {

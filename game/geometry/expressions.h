@@ -1,5 +1,5 @@
-#ifndef II_GAME_LOGIC_GEOMETRY_EXPRESSIONS_H
-#define II_GAME_LOGIC_GEOMETRY_EXPRESSIONS_H
+#ifndef II_GAME_GEOMETRY_EXPRESSIONS_H
+#define II_GAME_GEOMETRY_EXPRESSIONS_H
 #include "game/common/math.h"
 #include "game/geometry/concepts.h"
 #include <cstddef>

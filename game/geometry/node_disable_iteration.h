@@ -1,5 +1,5 @@
-#ifndef II_GAME_LOGIC_GEOMETRY_NODE_DISABLE_ITERATION_H
-#define II_GAME_LOGIC_GEOMETRY_NODE_DISABLE_ITERATION_H
+#ifndef II_GAME_GEOMETRY_NODE_DISABLE_ITERATION_H
+#define II_GAME_GEOMETRY_NODE_DISABLE_ITERATION_H
 #include "game/common/math.h"
 #include "game/geometry/concepts.h"
 #include "game/geometry/iteration.h"

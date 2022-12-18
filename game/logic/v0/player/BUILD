@@ -59,6 +59,19 @@ cc_library(
 )
 
 cc_library(
+  name = "upgrade",
+  hdrs = ["upgrade.h"],
+  srcs = ["upgrade.cc"],
+  implementation_deps = [
+    ":loadout",
+    "//game/core/icons",
+    "//game/logic/sim:sim_interface",
+    "//game/logic/v0:components",
+  ],
+  visibility = ["//game/logic/v0:__pkg__"],
+)
+
+cc_library(
   name = "shot",
   hdrs = ["shot.h"],
   srcs = ["shot.cc"],

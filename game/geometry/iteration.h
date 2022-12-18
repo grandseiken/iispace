@@ -1,5 +1,5 @@
-#ifndef II_GAME_LOGIC_GEOMETRY_ITERATION_H
-#define II_GAME_LOGIC_GEOMETRY_ITERATION_H
+#ifndef II_GAME_GEOMETRY_ITERATION_H
+#define II_GAME_GEOMETRY_ITERATION_H
 #include "game/common/math.h"
 #include "game/geometry/enums.h"
 #include <cstddef>

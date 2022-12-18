@@ -296,7 +296,6 @@ struct Tractor : ecs::component {
   void render(const Transform& transform, std::vector<render::shape>& output,
               const SimInterface& sim) const {
     if (spinning) {
-      std::uint32_t i = 0;
       sim.index().iterate_dispatch<Player>([&](const Player& pc, const Transform& p_transform) {
         // TODO: better effect.
         if ((timer + 2 * pc.player_number) % 8 < 4 && !pc.is_killed) {

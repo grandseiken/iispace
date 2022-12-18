@@ -1,6 +1,7 @@
 #include "game/logic/sim/components.h"
 #include "game/logic/sim/sim_interface.h"
 #include <array>
+#include <cmath>
 
 namespace ii {
 
@@ -24,7 +25,7 @@ void Render::render_all(ecs::const_handle h, transient_render_state::entity_stat
     v.resize(std::max(v.size(), n + 1));
     if (v[n] &&
         length_squared(s.origin - v[n]->prev_origin) < kMaxTrailDistance * kMaxTrailDistance &&
-        abs(angle_diff(s.rotation, v[n]->prev_rotation)) < kMaxTrailAngle) {
+        std::abs(angle_diff(s.rotation, v[n]->prev_rotation)) < kMaxTrailAngle) {
       s.trail = v[n];
     }
     if (!paused) {
