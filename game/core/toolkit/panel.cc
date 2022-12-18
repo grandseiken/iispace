@@ -14,7 +14,7 @@ void Panel::render_content(render::GlRenderer& r) const {
   r.render_panel({
       .style = style_,
       .colour = colour_,
-      .bounds = bounds().size_rect().contract(margin_),
+      .bounds = frect{bounds().size_rect().contract(margin_)},
   });
 }
 

@@ -288,9 +288,7 @@ void spawn_bomb_powerup(SimInterface& sim, const vec2& position) {
 
 void render_player_name_panel(std::uint32_t player_number, const Transform& transform,
                               std::vector<render::combo_panel>& output, const SimInterface& sim) {
-  // TODO: snapping position to integer makes it jerky.
-  irect bounds{ivec2{transform.centre.x.to_int(), transform.centre.y.to_int()} + ivec2{-40, 32},
-               ivec2{80, 20}};
+  frect bounds{to_float(transform.centre) + fvec2{-40, 32}, fvec2{80, 20}};
   output.emplace_back(render::combo_panel{
       .panel = {.style = render::panel_style::kFlatColour,
                 .colour = colour::kBlackOverlay0,
@@ -303,6 +301,7 @@ void render_player_name_panel(std::uint32_t player_number, const Transform& tran
                   .font = {render::font_id::kMonospaceBold, uvec2{12, 12}},
                   .align = render::alignment::kCentered,
                   .colour = player_colour(game_mode::kStandardRun, player_number),
+                  .drop_shadow = {{}},
                   .text = sim.conditions().players[player_number].player_name,
               },
       }},

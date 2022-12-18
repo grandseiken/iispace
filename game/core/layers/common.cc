@@ -14,7 +14,7 @@ ui::Button& standard_button(ui::Button& button) {
       .set_style(render::panel_style::kFlatColour)
       .set_padding(kPadding)
       .set_colour(kBackgroundColour)
-      .set_drop_shadow(kDropShadow, .5f);
+      .set_drop_shadow({});
 }
 
 ui::LinearLayout& add_dialog_layout(ui::Element& element) {

@@ -28,8 +28,8 @@ public:
     return *this;
   }
 
-  TextElement& set_drop_shadow(const ivec2& offset, float opacity) {
-    drop_shadow_ = drop_shadow{offset, opacity};
+  TextElement& set_drop_shadow(const render::drop_shadow& shadow) {
+    drop_shadow_ = shadow;
     return *this;
   }
 
@@ -63,7 +63,7 @@ private:
 
   render::font_data font_;
   cvec4 colour_{1.f};
-  std::optional<drop_shadow> drop_shadow_;
+  std::optional<render::drop_shadow> drop_shadow_;
   bool multiline_ = false;
   render::alignment align_ = render::alignment::kLeft | render::alignment::kTop;
   ustring text_ = ustring::ascii("");

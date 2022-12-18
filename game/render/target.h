@@ -15,18 +15,34 @@ enum class coordinate_system {
 struct target {
   uvec2 screen_dimensions{0};
   uvec2 render_dimensions{0};
-  std::vector<irect> clip_stack;
+  std::vector<frect> clip_stack;
 
-  ivec2 render_to_screen_coords(const ivec2& v) const {
-    auto r =
-        scale_factor() * fvec2{v} + fvec2{screen_dimensions} * (fvec2{1.f} - aspect_scale()) / 2.f;
-    return ivec2{glm::round(r)};
+  fvec2 render_to_fscreen_coords(const fvec2& v) const {
+    return scale_factor() * v + fvec2{screen_dimensions} * (fvec2{1.f} - aspect_scale()) / 2.f;
   }
-
-  ivec2 screen_to_render_coords(const ivec2& v) const {
-    auto r = (fvec2{v} - fvec2{screen_dimensions} * (fvec2{1.f} - aspect_scale()) / 2.f) /
-        scale_factor();
-    return ivec2{glm::round(r)};
+  fvec2 screen_to_frender_coords(const fvec2& v) const {
+    return (v - fvec2{screen_dimensions} * (fvec2{1.f} - aspect_scale()) / 2.f) / scale_factor();
+  }
+  ivec2 render_to_iscreen_coords(const fvec2& v) const {
+    return ivec2{glm::round(render_to_fscreen_coords(v))};
+  }
+  ivec2 screen_to_irender_coords(const fvec2& v) const {
+    return ivec2{glm::round(screen_to_frender_coords(v))};
+  }
+  fvec2 render_to_fscreen_coords(const ivec2& v) const {
+    return render_to_fscreen_coords(fvec2{v});
+  }
+  fvec2 screen_to_frender_coords(const ivec2& v) const {
+    return screen_to_frender_coords(fvec2{v});
+  }
+  ivec2 render_to_iscreen_coords(const ivec2& v) const {
+    return render_to_iscreen_coords(fvec2{v});
+  }
+  ivec2 screen_to_irender_coords(const ivec2& v) const {
+    return screen_to_irender_coords(fvec2{v});
+  }
+  fvec2 snap_render_to_screen_coords(const fvec2& v) const {
+    return screen_to_frender_coords(render_to_iscreen_coords(v));
   }
 
   fvec2 aspect_scale() const {
@@ -44,20 +60,12 @@ struct target {
     return std::min(scale_v.x, scale_v.y);
   }
 
-  irect clip_rect() const {
-    irect result{render_dimensions};
+  frect clip_rect() const {
+    frect result{render_dimensions};
     for (const auto& r : clip_stack) {
       result = result.intersect({result.position + r.position, r.size});
     }
     return result;
-  }
-
-  ivec2 clip_origin() const {
-    ivec2 origin{0, 0};
-    for (const auto& r : clip_stack) {
-      origin += r.position;
-    }
-    return origin;
   }
 };
 
@@ -66,6 +74,7 @@ public:
   clip_handle(clip_handle&&) = delete;
   clip_handle& operator=(clip_handle&&) = delete;
 
+  clip_handle(target& t, const frect& r) : target_{t} { target_.clip_stack.emplace_back(r); }
   clip_handle(target& t, const irect& r) : target_{t} { target_.clip_stack.emplace_back(r); }
   ~clip_handle() { target_.clip_stack.pop_back(); }
 

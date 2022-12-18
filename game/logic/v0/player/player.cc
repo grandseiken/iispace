@@ -128,8 +128,16 @@ struct PlayerLogic : ecs::component {
     }
 
     // Damage.
-    if (!pc.is_predicted && sim.any_collision(transform.centre, shape_flag::kDangerous)) {
-      damage(h, pc, transform, sim);
+    auto collision = sim.collision_list(transform.centre, shape_flag::kDangerous);
+    if (!pc.is_predicted && !collision.empty()) {
+      std::optional<vec2> source;
+      for (const auto& c : collision) {
+        if (auto* t = c.h.get<Transform>(); t) {
+          source = t->centre;
+          break;
+        }
+      }
+      damage(h, pc, transform, source.value_or(transform.centre), sim);
     }
   }
 
@@ -146,7 +154,8 @@ struct PlayerLogic : ecs::component {
     }
   }
 
-  void damage(ecs::handle h, Player& pc, Transform& transform, SimInterface& sim) {
+  void
+  damage(ecs::handle h, Player& pc, Transform& transform, const vec2& source, SimInterface& sim) {
     if (pc.is_killed || invulnerability_timer) {
       return;
     }
@@ -164,7 +173,7 @@ struct PlayerLogic : ecs::component {
     explode_entity_shapes<PlayerLogic>(h, e);
     explode_entity_shapes<PlayerLogic>(h, e, colour::kWhite0, 14);
     explode_entity_shapes<PlayerLogic>(h, e, std::nullopt, 20);
-    destruct_entity_lines<PlayerLogic>(h, e, transform.centre, 32);
+    destruct_entity_lines<PlayerLogic>(h, e, source, 32);
 
     ++pc.death_count;
     pc.bomb_count = 0;

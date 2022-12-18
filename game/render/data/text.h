@@ -26,6 +26,11 @@ struct font_data {
   uvec2 dimensions{0u};
 };
 
+struct drop_shadow {
+  ivec2 offset{2u};
+  float alpha = .5f;
+};
+
 }  // namespace ii::render
 
 namespace ii {

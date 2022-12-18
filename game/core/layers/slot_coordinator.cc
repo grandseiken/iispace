@@ -21,7 +21,7 @@ public:
     auto& active = *main_->add_back<ui::Panel>();
     waiting_text_->set_font({render::font_id::kMonospaceItalic, kSemiLargeFont})
         .set_colour(kTextColour)
-        .set_drop_shadow(kDropShadow, .5f)
+        .set_drop_shadow({})
         .set_alignment(render::alignment::kCentered)
         .set_multiline(true);
 
@@ -39,7 +39,7 @@ public:
     controller_text_->set_alignment(render::alignment::kCentered)
         .set_colour(colour)
         .set_font({render::font_id::kMonospaceItalic, kSemiLargeFont})
-        .set_drop_shadow(kDropShadow, .5f)
+        .set_drop_shadow({})
         .set_multiline(true);
     ready_button_ = &standard_button(*l_bottom.add_back<ui::Button>())
                          .set_text(ustring::ascii("Ready"))
@@ -62,7 +62,7 @@ public:
         .set_alignment(render::alignment::kCentered)
         .set_colour(colour)
         .set_font({render::font_id::kMonospaceBoldItalic, kLargeFont})
-        .set_drop_shadow(kDropShadow, .5f);
+        .set_drop_shadow({});
   }
 
   void set_colour(const cvec4& colour) {
@@ -164,7 +164,7 @@ protected:
     auto t = frame_++ % 256;
     float a = t < 128 ? t / 128.f : (256 - t) / 128.f;
     colour.a = a;
-    waiting_text_->set_colour(colour).set_drop_shadow(kDropShadow, a);
+    waiting_text_->set_colour(colour).set_drop_shadow({.alpha = a});
   }
 
 private:

@@ -11,8 +11,8 @@ Button::Button(Element* parent)
   add_flags(element_flags::kCanFocus);
 }
 
-Button& Button::set_drop_shadow(const ivec2& offset, float opacity) {
-  text_element_->set_drop_shadow(offset, opacity);
+Button& Button::set_drop_shadow(const render::drop_shadow& shadow) {
+  text_element_->set_drop_shadow(shadow);
   return *this;
 }
 

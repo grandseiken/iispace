@@ -340,7 +340,7 @@ GlRenderer::trim_for_width(const font_data& font, std::int32_t width, ustring_vi
   return font_entry.font.trim_for_width(s, screen_width);
 }
 
-void GlRenderer::render_text(const font_data& font, const ivec2& position, const cvec4& colour,
+void GlRenderer::render_text(const font_data& font, const fvec2& position, const cvec4& colour,
                              bool clip, ustring_view s) const {
   auto font_result = impl_->font_cache.get(target(), font, s);
   if (!font_result) {
@@ -362,12 +362,12 @@ void GlRenderer::render_text(const font_data& font, const ivec2& position, const
   gl::enable_depth_test(false);
 
   auto clip_rect = target().clip_rect();
-  auto text_origin = target().render_to_screen_coords(position + clip_rect.min());
+  auto text_origin = target().render_to_iscreen_coords(position + clip_rect.min());
   auto result = gl::set_uniforms(program, "screen_dimensions", target().screen_dimensions,
                                  "is_multisample", impl_->render_framebuffer->samples > 1,
                                  "texture_dimensions", font_entry.font.bitmap_dimensions(),
-                                 "clip_min", target().render_to_screen_coords(clip_rect.min()),
-                                 "clip_max", target().render_to_screen_coords(clip_rect.max()),
+                                 "clip_min", target().render_to_iscreen_coords(clip_rect.min()),
+                                 "clip_max", target().render_to_iscreen_coords(clip_rect.max()),
                                  "is_font_lcd", font_entry.font.is_lcd() ? 1u : 0u, "text_colour",
                                  colour, "colour_cycle", colour_cycle_ / 256.f);
   if (!result) {
@@ -420,32 +420,32 @@ void GlRenderer::render_text(const font_data& font, const ivec2& position, const
                     gl::type_of<std::uint32_t>(), vertices, 0);
 }
 
-void GlRenderer::render_text(const font_data& font, const irect& bounds, alignment align,
+void GlRenderer::render_text(const font_data& font, const frect& bounds, alignment align,
                              const cvec4& colour, bool clip,
                              const std::vector<ustring>& lines) const {
-  auto height = line_height(font);
+  auto height = static_cast<float>(line_height(font));
 
-  auto align_x = [&](const ustring& s) -> std::int32_t {
+  auto align_x = [&](const ustring& s) -> float {
     if (+(align & render::alignment::kLeft)) {
       return 0;
     }
     if (+(align & render::alignment::kRight)) {
-      return bounds.size.x - text_width(font, s);
+      return bounds.size.x - static_cast<float>(text_width(font, s));
     }
-    return (bounds.size.x - text_width(font, s)) / 2;
+    return (bounds.size.x - static_cast<float>(text_width(font, s))) / 2.f;
   };
 
-  auto align_y = [&]() -> std::int32_t {
+  auto align_y = [&]() -> float {
     if (+(align & render::alignment::kTop)) {
       return 0;
     }
     if (+(align & render::alignment::kBottom)) {
-      return bounds.size.y - height * static_cast<std::int32_t>(lines.size());
+      return bounds.size.y - height * static_cast<float>(lines.size());
     }
-    return (bounds.size.y - height * static_cast<std::int32_t>(lines.size())) / 2;
+    return (bounds.size.y - height * static_cast<float>(lines.size())) / 2;
   };
 
-  ivec2 position{0, bounds.position.y + align_y()};
+  fvec2 position{0, bounds.position.y + align_y()};
   // TODO: render all in one?
   for (const auto& s : lines) {
     position.x = bounds.position.x + align_x(s);
@@ -469,16 +469,16 @@ void GlRenderer::render_panel(const panel_data& p) const {
 
   auto clip_rect = target().clip_rect();
   auto result = gl::set_uniforms(program, "screen_dimensions", target().screen_dimensions,
-                                 "clip_min", target().render_to_screen_coords(clip_rect.min()),
-                                 "clip_max", target().render_to_screen_coords(clip_rect.max()),
+                                 "clip_min", target().render_to_iscreen_coords(clip_rect.min()),
+                                 "clip_max", target().render_to_iscreen_coords(clip_rect.max()),
                                  "colour_cycle", colour_cycle_ / 256.f);
   if (!result) {
     impl_->status = unexpected("panel shader error: " + result.error());
     return;
   }
 
-  auto min = target().render_to_screen_coords(clip_rect.min() + p.bounds.min());
-  auto size = target().render_to_screen_coords(clip_rect.min() + p.bounds.max()) - min;
+  auto min = target().render_to_iscreen_coords(clip_rect.min() + p.bounds.min());
+  auto size = target().render_to_iscreen_coords(clip_rect.min() + p.bounds.max()) - min;
 
   std::vector<float> float_data = {p.colour.r, p.colour.g, p.colour.b, p.colour.a};
   std::vector<std::int16_t> int_data = {
@@ -506,22 +506,25 @@ void GlRenderer::render_panel(const combo_panel& data) const {
   auto panel_copy = data.panel;
   panel_copy.bounds.position =
       glm::min(target().clip_rect().size - panel_copy.bounds.size, panel_copy.bounds.position);
-  panel_copy.bounds.position = glm::max(ivec2{0}, panel_copy.bounds.position);
+  panel_copy.bounds.position = glm::max(fvec2{0}, panel_copy.bounds.position);
+  panel_copy.bounds.position = target().snap_render_to_screen_coords(panel_copy.bounds.position);
   render_panel(panel_copy);
 
   auto& t = const_cast<render::target&>(target_);
-  render::clip_handle clip{t, panel_copy.bounds.contract(data.padding)};
+  render::clip_handle clip{t, panel_copy.bounds};
   for (const auto& e : data.elements) {
     if (const auto* icon = std::get_if<combo_panel::icon>(&e.e)) {
       // TODO
     } else if (const auto* text = std::get_if<combo_panel::text>(&e.e)) {
-      auto lines =
-          prepare_text(*this, text->font, /* multiline */ false, e.bounds.size.x, text->text);
+      auto lines = prepare_text(*this, text->font, /* multiline */ false,
+                                static_cast<std::int32_t>(e.bounds.size.x), text->text);
       if (text->drop_shadow) {
-        render_text(text->font, e.bounds + ivec2{2, 2}, text->align, cvec4{0.f, 0.f, 0.f, .5f},
+        render_text(text->font, e.bounds + fvec2{data.padding} + fvec2{text->drop_shadow->offset},
+                    text->align, cvec4{0.f, 0.f, 0.f, text->drop_shadow->alpha},
                     /* clip */ true, lines);
       }
-      render_text(text->font, e.bounds, text->align, text->colour, /* clip */ true, lines);
+      render_text(text->font, e.bounds + fvec2{data.padding}, text->align, text->colour,
+                  /* clip */ true, lines);
     }
   }
 }
@@ -540,22 +543,22 @@ void GlRenderer::render_background(const render::background& data) const {
   gl::enable_depth_test(false);
 
   auto clip_rect = target().clip_rect();
-  auto result = gl::set_uniforms(
-      program, "screen_dimensions", target().screen_dimensions, "clip_min",
-      target().render_to_screen_coords(clip_rect.min()), "clip_max",
-      target().render_to_screen_coords(clip_rect.max()), "position", data.position, "rotation",
-      data.rotation, "interpolate", std::clamp(data.interpolate, 0.f, 1.f), "type0",
-      static_cast<std::uint32_t>(data.data0.type), "type1",
-      static_cast<std::uint32_t>(data.data1.type), "colour0", data.data0.colour, "colour1",
-      data.data1.colour, "parameters0", data.data0.parameters, "parameters1", data.data1.parameters,
-      "colour_cycle", colour_cycle_ / 256.f);
+  auto result = gl::set_uniforms(program, "screen_dimensions", target().screen_dimensions,
+                                 "clip_min", target().render_to_iscreen_coords(clip_rect.min()),
+                                 "clip_max", target().render_to_iscreen_coords(clip_rect.max()),
+                                 "position", data.position, "rotation", data.rotation,
+                                 "interpolate", std::clamp(data.interpolate, 0.f, 1.f), "type0",
+                                 static_cast<std::uint32_t>(data.data0.type), "type1",
+                                 static_cast<std::uint32_t>(data.data1.type), "colour0",
+                                 data.data0.colour, "colour1", data.data1.colour, "parameters0",
+                                 data.data0.parameters, "parameters1", data.data1.parameters);
   if (!result) {
     impl_->status = unexpected("background shader error: " + result.error());
     return;
   }
 
-  auto min = target().render_to_screen_coords(clip_rect.min());
-  auto size = target().render_to_screen_coords(clip_rect.max()) - min;
+  auto min = target().render_to_iscreen_coords(clip_rect.min());
+  auto size = target().render_to_iscreen_coords(clip_rect.max()) - min;
 
   std::vector<std::int16_t> int_data = {static_cast<std::int16_t>(min.x),
                                         static_cast<std::int16_t>(min.y),
@@ -848,7 +851,7 @@ void GlRenderer::render_shapes(coordinate_system ctype, std::vector<shape>& shap
     offset = clip_rect.min();
     break;
   case coordinate_system::kCentered:
-    offset = (clip_rect.min() + clip_rect.max()) / 2;
+    offset = (clip_rect.min() + clip_rect.max()) / 2.f;
   }
 
   auto fbo_bind = impl_->bind_render_framebuffer(target_.screen_dimensions);
@@ -859,12 +862,13 @@ void GlRenderer::render_shapes(coordinate_system ctype, std::vector<shape>& shap
   gl::bind_shader_storage_buffer(shape_buffer, 0);
   gl::bind_shader_storage_buffer(ball_buffer, 1);
 
+  auto clip_min = target().snap_render_to_screen_coords(clip_rect.min());
+  auto clip_max = target().snap_render_to_screen_coords(clip_rect.max());
   auto set_uniforms = [&](const gl::program& program) {
     return gl::set_uniforms(program, "aspect_scale", target().aspect_scale(), "render_dimensions",
                             target().render_dimensions, "screen_dimensions",
-                            target().screen_dimensions, "clip_min", clip_rect.min(), "clip_max",
-                            clip_rect.max(), "coordinate_offset", offset, "colour_cycle",
-                            colour_cycle_ / 256.f);
+                            target().screen_dimensions, "clip_min", clip_min, "clip_max", clip_max,
+                            "coordinate_offset", offset, "colour_cycle", colour_cycle_ / 256.f);
   };
 
   auto render_pass = [&](shader s, gl::draw_mode mode, const gl::buffer& index_buffer,

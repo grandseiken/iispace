@@ -1,8 +1,8 @@
 #include "game/render/shaders/lib/math.glsl"
 #include "game/render/shaders/shape/geometry_fragment.glsl"
 
-uniform ivec2 clip_min;
-uniform ivec2 clip_max;
+uniform vec2 clip_min;
+uniform vec2 clip_max;
 uniform vec2 coordinate_offset;
 
 float render_depth() {
@@ -16,8 +16,8 @@ vec4 render_position(vec2 position) {
 }
 
 void set_vertex_data(vec4 position) {
-  vec4 render_min = render_position(vec2(clip_min));
-  vec4 render_max = render_position(vec2(clip_max));
+  vec4 render_min = render_position(clip_min);
+  vec4 render_max = render_position(clip_max);
   gl_ClipDistance[0] = position.x - render_min.x;
   gl_ClipDistance[1] = render_max.x - position.x;
   gl_ClipDistance[2] = -(position.y - render_min.y);

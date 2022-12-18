@@ -83,17 +83,17 @@ RunLobbyLayer::RunLobbyLayer(ui::GameStack& stack, std::optional<initial_conditi
   }
   subtitle_->set_font({render::font_id::kMonospace, kMediumFont})
       .set_colour(kTextColour)
-      .set_drop_shadow(kDropShadow, .5f);
+      .set_drop_shadow({});
 
   title_ = top.add_back<ui::TextElement>();
   title_->set_font({render::font_id::kMonospaceBoldItalic, kLargeFont})
       .set_colour(kHighlightColour)
-      .set_drop_shadow(kDropShadow, .5f)
+      .set_drop_shadow({})
       .set_alignment(render::alignment::kCentered);
 
   all_ready_text_->set_font({render::font_id::kMonospaceBoldItalic, kLargeFont})
       .set_colour(kHighlightColour)
-      .set_drop_shadow(kDropShadow, .5f)
+      .set_drop_shadow({})
       .set_alignment(render::alignment::kCentered);
 
   back_button_ = bottom.add_back<ui::Button>();

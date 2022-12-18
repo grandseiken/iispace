@@ -50,7 +50,7 @@ public:
   Button& set_colour(const cvec4& colour) { return set_colour(colour, colour); }
   Button& set_text_colour(const cvec4& colour) { return set_text_colour(colour, colour); }
 
-  Button& set_drop_shadow(const ivec2& offset, float opacity);
+  Button& set_drop_shadow(const render::drop_shadow& shadow);
   Button& set_alignment(render::alignment align);
   Button& set_text(ustring&& text);
   Button& set_padding(const ivec2& padding);

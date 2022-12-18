@@ -96,7 +96,7 @@ HudLayer::HudLayer(ui::GameStack& stack, game_mode mode)
       .set_font({render::font_id::kMonospace, kMediumFont})
       .set_multiline(true);
   if (!is_legacy_mode(mode)) {
-    status_->set_drop_shadow(kDropShadow, .5f);
+    status_->set_drop_shadow({});
   }
 }
 

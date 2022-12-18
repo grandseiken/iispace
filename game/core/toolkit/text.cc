@@ -20,10 +20,10 @@ void TextElement::render_content(render::GlRenderer& r) const {
     dirty_ = false;
   }
   if (drop_shadow_) {
-    r.render_text(font_, bounds().size_rect() + drop_shadow_->offset, align_,
-                  cvec4{0.f, 0.f, 0.f, drop_shadow_->opacity}, /* clip */ false, lines_);
+    r.render_text(font_, frect{bounds().size_rect() + drop_shadow_->offset}, align_,
+                  cvec4{0.f, 0.f, 0.f, drop_shadow_->alpha}, /* clip */ false, lines_);
   }
-  r.render_text(font_, bounds().size_rect(), align_, colour_, /* clip */ false, lines_);
+  r.render_text(font_, frect{bounds().size_rect()}, align_, colour_, /* clip */ false, lines_);
 }
 
 }  // namespace ii::ui

@@ -45,9 +45,9 @@ public:
   std::int32_t line_height(const font_data& font) const;
   std::int32_t text_width(const font_data& font, ustring_view s) const;
   ustring trim_for_width(const font_data& font, std::int32_t width, ustring_view s) const;
-  void render_text(const font_data& font, const ivec2& position, const cvec4& colour, bool clip,
+  void render_text(const font_data& font, const fvec2& position, const cvec4& colour, bool clip,
                    ustring_view s) const;
-  void render_text(const font_data& font, const irect& bounds, alignment align, const cvec4& colour,
+  void render_text(const font_data& font, const frect& bounds, alignment align, const cvec4& colour,
                    bool clip, const std::vector<ustring>& lines) const;
 
   // TODO: render multiple panels?

@@ -1,4 +1,5 @@
 #include "game/render/shaders/lib/hsl.glsl"
+#include "game/render/shaders/lib/math.glsl"
 #include "game/render/shaders/lib/rgb.glsl"
 
 const mat3 kRgb2Lms = mat3(.4122214708, .5363325363, .0514459929, .2119034982, .6806995451,
@@ -32,8 +33,10 @@ vec4 hsla2oklab(vec4 hsl) {
 }
 
 vec4 hsla2oklab_cycle(vec4 hsl, float cycle) {
-  // TODO: do cycle in oklab LCh.
-  return hsla2oklab(vec4(hsl.x + cycle, hsl.yz, hsl.a));
+  vec4 lab = hsla2oklab(hsl);
+  float c = sqrt(lab.y * lab.y + lab.z * lab.z);
+  float h = atan(lab.z, lab.y) + 2. * kPi * cycle;
+  return vec4(lab.x, c * cos(h), c * sin(h), lab.a);
 }
 
 vec3 oklab2srgb(vec3 oklab) {

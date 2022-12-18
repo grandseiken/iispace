@@ -15,6 +15,8 @@ struct basic_rect {
   basic_rect(const vec_type& position, const vec_type& size)
   : position{position}, size{glm::max(vec_type{0, 0}, size)} {}
   explicit basic_rect(const vec_type& size) : basic_rect({0, 0}, size) {}
+  template <typename U>
+  explicit basic_rect(const basic_rect<U>& rect) : position{rect.position}, size{rect.size} {}
 
   vec_type position;
   vec_type size;
@@ -39,13 +41,15 @@ struct basic_rect {
     return {p, glm::min(max(), r.max()) - p};
   }
 
-  basic_rect extend(const vec_type& border) const { return {position - border, size + 2 * border}; }
+  basic_rect extend(const vec_type& border) const {
+    return {position - border, size + T{2} * border};
+  }
   basic_rect extend_min(const vec_type& v) const { return {{position - v}, {size + v}}; }
   basic_rect extend_max(const vec_type& v) const { return {position, {size + v}}; }
 
   basic_rect contract(const vec_type& border) const {
-    auto b = glm::min(border, size / 2);
-    return {position + b, size - 2 * b};
+    auto b = glm::min(border, size / T{2});
+    return {position + b, size - T{2} * b};
   }
 
   basic_rect contract_min(const vec_type& v) const { return intersect(*this + v); }

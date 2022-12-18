@@ -7,6 +7,7 @@
 #include "game/render/data/shapes.h"
 #include "game/render/data/text.h"
 #include <cstdint>
+#include <optional>
 #include <variant>
 #include <vector>
 
@@ -20,7 +21,7 @@ enum class panel_style : std::uint32_t {
 struct panel_data {
   panel_style style = panel_style::kNone;
   cvec4 colour = colour::kWhite0;
-  irect bounds;
+  frect bounds;
 };
 
 struct combo_panel {
@@ -32,13 +33,13 @@ struct combo_panel {
     font_data font;
     alignment align = alignment::kTop | alignment::kLeft;
     cvec4 colour = colour::kWhite0;
-    bool drop_shadow = true;
+    std::optional<render::drop_shadow> drop_shadow;
     ustring text;
   };
 
   struct element {
     using variant = std::variant<icon, text>;
-    irect bounds;
+    frect bounds;
     variant e;
   };
 

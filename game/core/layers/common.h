@@ -13,7 +13,6 @@ static constexpr uvec2 kMediumFont = {10, 10};
 static constexpr uvec2 kSmallFont = {8, 8};
 static constexpr uvec2 kSpacing = {8, 8};
 static constexpr uvec2 kPadding = {4, 4};
-static constexpr ivec2 kDropShadow = {2, 2};
 
 static constexpr cvec4 kBackgroundColour = {1.f, 1.f, 1.f, 1.f / 4};
 static constexpr cvec4 kTextColour = {1.f, 0.f, .65f, 1.f};

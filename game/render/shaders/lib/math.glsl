@@ -1,3 +1,5 @@
+const float kPi = 3.1415926538;
+
 vec2 from_polar(float a, float r) {
   return vec2(r * cos(a), r * sin(a));
 }

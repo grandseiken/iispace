@@ -1,4 +1,3 @@
-const float kPi = 3.1415926538;
 const uint kStyleNgonPolygon = 0;
 const uint kStyleNgonPolystar = 1;
 const uint kStyleNgonPolygram = 2;

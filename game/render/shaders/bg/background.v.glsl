@@ -18,7 +18,6 @@ v_out;
 void main() {
   v_out.data.screen_dimensions = in_screen_dimensions;
   v_out.data.render_dimensions = in_render_dimensions;
-  v_out.data.colour = mix(hsla2oklab_cycle(colour0, colour_cycle),
-                          hsla2oklab_cycle(colour1, colour_cycle), interpolate);
+  v_out.data.colour = mix(hsla2oklab(colour0), hsla2oklab(colour1), interpolate);
   gl_Position = vec4(in_position.xy, 0., 1.);
 }

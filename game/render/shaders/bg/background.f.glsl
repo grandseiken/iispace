@@ -2,8 +2,6 @@
 #include "game/render/shaders/lib/math.glsl"
 #include "game/render/shaders/lib/noise/simplex.glsl"
 
-const float kPi = 3.1415926538;
-
 uniform uvec2 screen_dimensions;
 
 uniform vec4 position;
