@@ -53,7 +53,7 @@ float tone_value(uint type, float v) {
 }
 
 float scanlines() {
-  float size = max(1., round(screen_dimensions.y / 540.));
+  float size = max(1., round(float(screen_dimensions.y) / 540.));
   return scale01(3. / 16., floor(mod(gl_FragCoord.y, 2. * size) / size));
 }
 
