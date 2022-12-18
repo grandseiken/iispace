@@ -19,6 +19,14 @@ vec3 oklab2rgb(vec3 lab) {
   return (lms0 * lms0 * lms0) * kLms2Rgb;
 }
 
+vec4 rgba2oklab(vec4 rgba) {
+  return vec4(rgb2oklab(rgba.rgb), rgba.a);
+}
+
+vec4 oklaba2rgb(vec4 laba) {
+  return vec4(oklab2rgb(laba.xyz), laba.a);
+}
+
 vec4 hsla2oklab(vec4 hsl) {
   return vec4(rgb2oklab(srgb2rgb(hsl2srgb(hsl.xyz))), hsl.a);
 }

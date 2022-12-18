@@ -429,7 +429,7 @@ struct ShieldHub : ecs::component {
               transform.rotation,
               kShieldDrawDistance * (std::min(t, kAnimTime) / fixed{kAnimTime}),
               colour::alpha(colour::kWhite1, a * colour::kFillAlpha0),
-              colour::alpha(colour::kWhite1, a * ta * colour::kFillAlpha0),
+              colour::alpha(colour::kWhite1, a * ta * colour::kFillAlpha0 / 2),
               colour::alpha(colour::kBlack0, a * colour::kBackgroundAlpha0)};
     }
 

@@ -1,3 +1,4 @@
+#include "game/render/shaders/lib/oklab.glsl"
 #include "game/render/shaders/ui/common.glsl"
 #include "game/render/shaders/ui/data.glsl"
 
@@ -11,6 +12,7 @@ in v_out_t {
 }
 v_in[];
 
+flat out vec4 g_text_colour_rgb;
 flat out vec4 g_text_colour;
 out vec2 g_texture_coords;
 
@@ -21,6 +23,7 @@ void emit(vec2 position, vec2 texture_coords, vec2 offset) {
 }
 
 void main() {
+  g_text_colour_rgb = oklaba2rgb(v_in[0].data.text_colour);
   g_text_colour = v_in[0].data.text_colour;
 
   vec2 position = gl_in[0].gl_Position.xy;
