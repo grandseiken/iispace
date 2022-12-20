@@ -1,9 +1,23 @@
 #ifndef II_GAME_LOGIC_V0_PLAYER_LOADOUT_MODS_H
 #define II_GAME_LOGIC_V0_PLAYER_LOADOUT_MODS_H
+#include "game/common/math.h"
 #include "game/common/ustring.h"
 #include <optional>
 
 namespace ii::v0 {
+
+enum class mod_slot {
+  kWeapon,
+  kSuper,
+  kBomb,
+  kShield,
+  kBonus,
+  kWeaponCombo,
+  kSuperCombo,
+  kBombCombo,
+  kShieldCombo,
+  kBonusCombo,
+};
 
 enum class mod_category {
   kGeneral,
@@ -19,19 +33,6 @@ enum class mod_category {
   kUnknown1,
   kDefender,
   kCluster,
-};
-
-enum class mod_slot {
-  kWeapon,
-  kSuper,
-  kBomb,
-  kShield,
-  kBonus,
-  kWeaponCombo,
-  kSuperCombo,
-  kBombCombo,
-  kShieldCombo,
-  kBonusCombo,
 };
 
 enum class mod_id : std::uint32_t {
@@ -101,6 +102,9 @@ struct mod_data {
 };
 
 const mod_data& mod_lookup(mod_id);
+ustring_view mod_slot_name(mod_slot);
+ustring_view mod_category_name(mod_category);
+cvec4 mod_category_colour(mod_category);
 
 }  // namespace ii::v0
 

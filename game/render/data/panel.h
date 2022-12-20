@@ -21,6 +21,7 @@ enum class panel_style : std::uint32_t {
 struct panel_data {
   panel_style style = panel_style::kNone;
   cvec4 colour = colour::kWhite0;
+  cvec4 border = colour::kZero;
   frect bounds;
 };
 
@@ -35,6 +36,7 @@ struct combo_panel {
     cvec4 colour = colour::kWhite0;
     std::optional<render::drop_shadow> drop_shadow;
     ustring text;
+    bool multiline = false;
   };
 
   struct element {

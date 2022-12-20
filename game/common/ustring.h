@@ -13,8 +13,17 @@ enum ustring_encoding {
   kUtf32,
 };
 
+class ustring_view;
+
 class ustring {
 public:
+  ustring() : e_{ustring_encoding::kUtf32}, s_{std::u32string{}} {}
+  ustring(ustring&&) = default;
+  ustring(const ustring&) = default;
+  ustring& operator=(ustring&&) = default;
+  ustring& operator=(const ustring&) = default;
+  explicit ustring(ustring_view);
+
   static ustring ascii(const std::string& s) { return {ustring_encoding::kAscii, s}; }
   static ustring ascii(std::string&& s) { return {ustring_encoding::kAscii, std::move(s)}; }
 
@@ -30,7 +39,6 @@ public:
   static ustring utf32(const std::u32string& s) { return {ustring_encoding::kUtf32, s}; }
   static ustring utf32(std::u32string&& s) { return {ustring_encoding::kUtf32, std::move(s)}; }
 
-  ustring() : e_{ustring_encoding::kUtf32}, s_{std::u32string{}} {}
   ustring_encoding encoding() const { return e_; }
   const std::string& ascii() const { return std::get<std::string>(s_); }
   const std::string& utf8() const { return std::get<std::string>(s_); }
@@ -41,7 +49,9 @@ public:
   std::size_t size() const;
   ustring substr(std::size_t offset, std::size_t count = std::string::npos) const;
 
+  ustring operator+(ustring_view) const;
   ustring operator+(const ustring&) const;
+  ustring& operator+=(ustring_view);
   ustring& operator+=(const ustring&);
 
 private:
@@ -54,6 +64,11 @@ private:
 
 class ustring_view {
 public:
+  ustring_view() : e_{ustring_encoding::kUtf32}, s_{std::u32string_view{}} {}
+  ustring_view(ustring_view&&) = default;
+  ustring_view(const ustring_view&) = default;
+  ustring_view& operator=(ustring_view&&) = default;
+  ustring_view& operator=(const ustring_view&) = default;
   ustring_view(const ustring& s) : e_{s.encoding()} {
     switch (s.encoding()) {
     case ustring_encoding::kAscii:
@@ -76,7 +91,6 @@ public:
   static ustring_view utf16(std::u16string_view s) { return {ustring_encoding::kUtf16, s}; }
   static ustring_view utf32(std::u32string_view s) { return {ustring_encoding::kUtf32, s}; }
 
-  ustring_view() : e_{ustring_encoding::kUtf32}, s_{std::u32string_view{}} {}
   ustring_encoding encoding() const { return e_; }
   std::string_view ascii() const { return std::get<std::string_view>(s_); }
   std::string_view utf8() const { return std::get<std::string_view>(s_); }

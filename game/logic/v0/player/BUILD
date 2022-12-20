@@ -34,9 +34,11 @@ cc_library(
     "//game/logic/ecs",
   ],
   implementation_deps = [
+    "//game/common:math",
     "//game/common:random",
     "//game/logic/sim/io:conditions",
   ],
+  visibility = ["//game/logic/v0/overmind:__pkg__"],
 )
 
 cc_library(
@@ -67,8 +69,9 @@ cc_library(
     "//game/core/icons",
     "//game/logic/sim:sim_interface",
     "//game/logic/v0:components",
+    "//game/logic/v0:ship_template",
   ],
-  visibility = ["//game/logic/v0:__pkg__"],
+  visibility = ["//game/logic/v0/overmind:__pkg__"],
 )
 
 cc_library(

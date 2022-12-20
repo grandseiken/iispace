@@ -4,6 +4,23 @@
 
 namespace ii {
 
+ustring::ustring(ustring_view s) : e_{s.encoding()} {
+  switch (s.encoding()) {
+  case ustring_encoding::kAscii:
+    s_ = std::string{s.ascii()};
+    break;
+  case ustring_encoding::kUtf8:
+    s_ = std::string{s.utf8()};
+    break;
+  case ustring_encoding::kUtf16:
+    s_ = std::u16string{s.utf16()};
+    break;
+  case ustring_encoding::kUtf32:
+    s_ = std::u32string{s.utf32()};
+    break;
+  }
+}
+
 bool ustring::empty() const {
   switch (e_) {
   case ustring_encoding::kAscii:
@@ -69,17 +86,29 @@ ustring ustring::substr(std::size_t offset, std::size_t count) const {
   return {};
 }
 
-ustring ustring::operator+(const ustring& s) const {
-  if (e_ == s.e_) {
+ustring ustring::operator+(ustring_view s) const {
+  if (e_ == s.encoding()) {
     switch (e_) {
-    case ustring_encoding::kAscii:
-      return ustring::ascii(std::get<std::string>(s_) + std::get<std::string>(s.s_));
-    case ustring_encoding::kUtf8:
-      return ustring::utf8(std::get<std::string>(s_) + std::get<std::string>(s.s_));
-    case ustring_encoding::kUtf16:
-      return ustring::utf16(std::get<std::u16string>(s_) + std::get<std::u16string>(s.s_));
-    case ustring_encoding::kUtf32:
-      return ustring::utf32(std::get<std::u32string>(s_) + std::get<std::u32string>(s.s_));
+    case ustring_encoding::kAscii: {
+      auto r = ascii();
+      r += s.ascii();
+      return ustring::ascii(std::move(r));
+    }
+    case ustring_encoding::kUtf8: {
+      auto r = utf8();
+      r += s.utf8();
+      return ustring::utf8(std::move(r));
+    }
+    case ustring_encoding::kUtf16: {
+      auto r = utf16();
+      r += s.utf16();
+      return ustring::utf16(std::move(r));
+    }
+    case ustring_encoding::kUtf32: {
+      auto r = utf32();
+      r += s.utf32();
+      return ustring::utf32(std::move(r));
+    }
     }
   }
   auto s32 = to_utf32(*this);
@@ -87,18 +116,24 @@ ustring ustring::operator+(const ustring& s) const {
   return ustring::utf32(std::move(s32));
 }
 
-ustring& ustring::operator+=(const ustring& s) {
-  if (e_ == s.e_) {
+ustring ustring::operator+(const ustring& s) const {
+  return operator+(ustring_view{s});
+}
+
+ustring& ustring::operator+=(ustring_view s) {
+  if (e_ == s.encoding()) {
     switch (e_) {
     case ustring_encoding::kAscii:
+      std::get<std::string>(s_) += s.ascii();
+      return *this;
     case ustring_encoding::kUtf8:
-      std::get<std::string>(s_) += std::get<std::string>(s.s_);
+      std::get<std::string>(s_) += s.utf8();
       return *this;
     case ustring_encoding::kUtf16:
-      std::get<std::u16string>(s_) += std::get<std::u16string>(s.s_);
+      std::get<std::u16string>(s_) += s.utf16();
       return *this;
     case ustring_encoding::kUtf32:
-      std::get<std::u32string>(s_) += std::get<std::u32string>(s.s_);
+      std::get<std::u32string>(s_) += s.utf32();
       return *this;
     }
   }
@@ -116,6 +151,10 @@ ustring& ustring::operator+=(const ustring& s) {
   auto s32 = to_utf32(*this);
   iterate_as_utf32(s, [&](std::size_t, std::uint32_t c) { s32 += static_cast<char32_t>(c); });
   return *this = ustring::utf32(std::move(s32));
+}
+
+ustring& ustring::operator+=(const ustring& s) {
+  return operator+=(ustring_view{s});
 }
 
 bool ustring_view::empty() const {

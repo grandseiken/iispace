@@ -5,7 +5,9 @@
 #include "game/logic/v0/components.h"
 #include "game/logic/v0/overmind/biome.h"
 #include "game/logic/v0/overmind/wave_data.h"
+#include "game/logic/v0/player/loadout.h"
 #include "game/logic/v0/player/player.h"
+#include "game/logic/v0/player/upgrade.h"
 
 namespace ii::v0 {
 namespace {
@@ -42,6 +44,7 @@ struct Overmind : ecs::component {
       input.initialise = !next_wave.wave_number;
       input.wave_number = next_wave.wave_number;
       spawn_timer = kSpawnTimer;
+      cleanup_mod_upgrades(sim);
     }
     input.biome_index = current_wave->biome_index;
 
@@ -70,7 +73,24 @@ struct Overmind : ecs::component {
 
     auto next_data = wave_list[next_wave.wave_number];
     bool next_condition = next_data.type == wave_type::kEnemy || !total_enemy_threat;
-    bool prev_condition = !current_wave || total_enemy_threat <= current_wave->threat_trigger;
+    bool prev_condition = false;
+    if (!current_wave) {
+      prev_condition = true;
+    } else {
+      switch (current_wave->type) {
+      case wave_type::kEnemy:
+        prev_condition = total_enemy_threat <= current_wave->threat_trigger;
+        break;
+
+      case wave_type::kBoss:
+        prev_condition = !total_enemy_threat;
+        break;
+
+      case wave_type::kUpgrade:
+        prev_condition = is_mod_upgrade_choice_done(sim);
+        break;
+      }
+    }
     if (prev_condition && next_condition) {
       current_wave = next_data;
       return true;
@@ -90,15 +110,35 @@ struct Overmind : ecs::component {
 
     if (const auto* biome = get_biome(sim, next_wave.biome_index); biome) {
       const auto& data = wave_list[next_wave.wave_number];
-      if (data.type == wave_type::kEnemy) {
+      switch (data.type) {
+      case wave_type::kEnemy:
         biome->spawn_wave(sim, data);
+        break;
+
+      case wave_type::kBoss:
+        break;
+
+      case wave_type::kUpgrade:
+        spawn_upgrades(sim);
+        break;
       }
     }
     ++next_wave.wave_number;
   }
 
+  void spawn_upgrades(SimInterface& sim) const {
+    std::vector<std::span<const mod_id>> current_loadouts;
+    sim.index().iterate<PlayerLoadout>(
+        [&](const PlayerLoadout& loadout) { current_loadouts.emplace_back(loadout.loadout); });
+    auto mods =
+        mod_selection(sim.conditions(), sim.random(random_source::kGameSequence), current_loadouts);
+    spawn_mod_upgrades(sim, mods);
+  }
+
   void update_background(SimInterface& sim, const Biome& biome, const background_input& input,
                          render::background& background) {
+    // TODO: sometimes background goes mental and starts doing weird stuff. Seems like undefined
+    // behaviour somewhere?
     bool transition = true;
     if (background_data.empty()) {
       background.position.x = sim.random_fixed().to_float() * 1024.f - 512.f;

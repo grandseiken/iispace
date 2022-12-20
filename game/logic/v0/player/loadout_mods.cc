@@ -1,4 +1,5 @@
 #include "game/logic/v0/player/loadout_mods.h"
+#include "game/common/colour.h"
 #include <unordered_map>
 
 namespace ii::v0 {
@@ -145,6 +146,91 @@ const mod_data& mod_lookup(mod_id id) {
   }
   static const mod_data kNone;
   return kNone;
+}
+
+ustring_view mod_slot_name(mod_slot slot) {
+  switch (slot) {
+  case mod_slot::kWeapon:
+    return ustring_view::ascii("Weapon");
+  case mod_slot::kSuper:
+    return ustring_view::ascii("Mega-weapon");
+  case mod_slot::kBomb:
+    return ustring_view::ascii("Bomb");
+  case mod_slot::kShield:
+    return ustring_view::ascii("Shield");
+  case mod_slot::kBonus:
+    return ustring_view::ascii("Bonus");
+  case mod_slot::kWeaponCombo:
+  case mod_slot::kSuperCombo:
+  case mod_slot::kBombCombo:
+  case mod_slot::kShieldCombo:
+  case mod_slot::kBonusCombo:
+    return {};
+  }
+  return {};
+}
+
+ustring_view mod_category_name(mod_category category) {
+  switch (category) {
+  case mod_category::kGeneral:
+    return ustring_view::ascii("General");
+  case mod_category::kCorruption:
+    return ustring_view::ascii("Corruption");
+  case mod_category::kCloseCombat:
+    return ustring_view::ascii("Proximity");
+  case mod_category::kLightning:
+    return ustring_view::ascii("Lightning");
+  case mod_category::kSniper:
+    return ustring_view::ascii("Sniper");
+  case mod_category::kGravity:
+    return ustring_view::ascii("Gravity");
+  case mod_category::kLaser:
+    return ustring_view::ascii("Laser");
+  case mod_category::kPummel:
+    return ustring_view::ascii("Punisher");
+  case mod_category::kRemote:
+    return ustring_view::ascii("Remote");
+  case mod_category::kUnknown0:
+    return ustring_view::ascii("Unknown");
+  case mod_category::kUnknown1:
+    return ustring_view::ascii("Unknown");
+  case mod_category::kDefender:
+    return ustring_view::ascii("Defender");
+  case mod_category::kCluster:
+    return ustring_view::ascii("Cluster");
+  }
+  return {};
+}
+
+cvec4 mod_category_colour(mod_category category) {
+  switch (category) {
+  case mod_category::kGeneral:
+    return colour::kSolarizedDarkBase1;
+  case mod_category::kCorruption:
+    return colour::kNewPurple;
+  case mod_category::kCloseCombat:
+    return colour::kSolarizedDarkRed;
+  case mod_category::kLightning:
+    return colour::kSolarizedDarkCyan;
+  case mod_category::kSniper:
+    return colour::kNewGreen0;
+  case mod_category::kGravity:
+    return colour::kSolarizedDarkViolet;
+  case mod_category::kLaser:
+    return colour::kSolarizedDarkBlue;
+  case mod_category::kPummel:
+    return colour::kSolarizedDarkYellow;
+  case mod_category::kRemote:
+    return colour::kSolarizedDarkBase2;
+  case mod_category::kUnknown0:
+  case mod_category::kUnknown1:
+    return colour::kWhite0;
+  case mod_category::kDefender:
+    return colour::kSolarizedDarkBase01;
+  case mod_category::kCluster:
+    return colour::kSolarizedDarkOrange;
+  }
+  return colour::kWhite0;
 }
 
 }  // namespace ii::v0

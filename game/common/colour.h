@@ -120,6 +120,7 @@ constexpr auto kWhite1 = cvec4{0.f, 0.f, .75f, 1.f};
 
 constexpr auto kBlackOverlay0 = cvec4{0.f, 0.f, 0.f, 1.f / 4};
 constexpr auto kBlackOverlay1 = cvec4{0.f, 0.f, 0.f, 3.f / 8};
+constexpr auto kPanelBorder0 = cvec4{0.f, 0.f, 1.f, 1.f / 2};
 
 constexpr auto kSolarizedDarkBase03 = srgb2hsl(0, 43, 54);
 constexpr auto kSolarizedDarkBase02 = srgb2hsl(7, 54, 66);

@@ -10,6 +10,8 @@ cc_library(
     "//game/logic/sim/io:conditions",
     "//game/logic/v0:components",
     "//game/logic/v0/player",
+    "//game/logic/v0/player:loadout",
+    "//game/logic/v0/player:upgrade",
   ],
   visibility = ["//game/logic/v0:__pkg__"],
 )

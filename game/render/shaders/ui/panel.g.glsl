@@ -10,8 +10,11 @@ in v_out_t {
 v_in[];
 
 flat out vec2 g_render_dimensions;
+flat out vec2 g_screen_dimensions;
 flat out vec4 g_panel_colour;
+flat out vec4 g_panel_border;
 flat out uint g_style;
+flat out uint g_border_size;
 out vec2 g_texture_coords;
 
 void emit(vec2 position, vec2 dimensions, vec2 coords) {
@@ -22,8 +25,11 @@ void emit(vec2 position, vec2 dimensions, vec2 coords) {
 
 void main() {
   g_render_dimensions = vec2(v_in[0].data.render_dimensions);
+  g_screen_dimensions = vec2(v_in[0].data.screen_dimensions);
   g_panel_colour = v_in[0].data.panel_colour;
+  g_panel_border = v_in[0].data.panel_border;
   g_style = v_in[0].data.style;
+  g_border_size = v_in[0].data.border_size;
 
   vec2 position = gl_in[0].gl_Position.xy;
   vec2 screen_dimensions = vec2(v_in[0].data.screen_dimensions);

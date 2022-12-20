@@ -480,16 +480,21 @@ void GlRenderer::render_panel(const panel_data& p) const {
   auto min = target().render_to_iscreen_coords(clip_rect.min() + p.bounds.min());
   auto size = target().render_to_iscreen_coords(clip_rect.min() + p.bounds.max()) - min;
 
-  std::vector<float> float_data = {p.colour.r, p.colour.g, p.colour.b, p.colour.a};
+  auto border_size = static_cast<std::int16_t>(std::round(
+      std::min(static_cast<float>(target().screen_dimensions.x) / target().render_dimensions.x,
+               static_cast<float>(target().screen_dimensions.y) / target().render_dimensions.y)));
+  std::vector<float> float_data = {p.colour.r, p.colour.g, p.colour.b, p.colour.a,
+                                   p.border.r, p.border.g, p.border.b, p.border.a};
   std::vector<std::int16_t> int_data = {
-      static_cast<std::int16_t>(min.x),           static_cast<std::int16_t>(min.y),
-      static_cast<std::int16_t>(size.x),          static_cast<std::int16_t>(size.y),
+      static_cast<std::int16_t>(min.x), static_cast<std::int16_t>(min.y),
+      static_cast<std::int16_t>(size.x), static_cast<std::int16_t>(size.y),
+      // TODO: render dimensions shouldn't really be integer any more!
       static_cast<std::int16_t>(p.bounds.size.x), static_cast<std::int16_t>(p.bounds.size.y),
-      static_cast<std::int16_t>(p.style)};
+      static_cast<std::int16_t>(p.style), border_size};
 
   vertex_attribute_container attributes;
-  attributes.add_buffer(std::span<const float>{float_data}, 4);
-  attributes.add_buffer(std::span<const std::int16_t>{int_data}, 7);
+  attributes.add_buffer(std::span<const float>{float_data}, 8);
+  attributes.add_buffer(std::span<const std::int16_t>{int_data}, 8);
 
   auto vertex_array = gl::make_vertex_array();
   gl::bind_vertex_array(vertex_array);
@@ -498,7 +503,9 @@ void GlRenderer::render_panel(const panel_data& p) const {
   attributes.add_attribute<std::int16_t>(/* screen_dimensions */ 1, 2);
   attributes.add_attribute<std::int16_t>(/* render_dimensions */ 2, 2);
   attributes.add_attribute<float>(/* colour */ 3, 4);
-  attributes.add_attribute<std::int16_t>(/* style */ 4, 1);
+  attributes.add_attribute<float>(/* border */ 4, 4);
+  attributes.add_attribute<std::int16_t>(/* style */ 5, 1);
+  attributes.add_attribute<std::int16_t>(/* border_size */ 6, 1);
   gl::draw_elements(gl::draw_mode::kPoints, impl_->index_buffer(1), gl::type_of<unsigned>(), 1, 0);
 }
 
@@ -516,7 +523,7 @@ void GlRenderer::render_panel(const combo_panel& data) const {
     if (const auto* icon = std::get_if<combo_panel::icon>(&e.e)) {
       // TODO
     } else if (const auto* text = std::get_if<combo_panel::text>(&e.e)) {
-      auto lines = prepare_text(*this, text->font, /* multiline */ false,
+      auto lines = prepare_text(*this, text->font, text->multiline,
                                 static_cast<std::int32_t>(e.bounds.size.x), text->text);
       if (text->drop_shadow) {
         render_text(text->font, e.bounds + fvec2{data.padding} + fvec2{text->drop_shadow->offset},
