@@ -7,8 +7,9 @@ namespace ii::render {
 
 struct background {
   enum class type : std::uint32_t {
-    kNone,
-    kBiome0,
+    kNone = 0,
+    kBiome0 = 1,
+    kBiome0_Polar = 2,
   };
 
   struct data {

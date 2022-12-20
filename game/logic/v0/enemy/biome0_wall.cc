@@ -129,10 +129,10 @@ struct Wall : ecs::component {
   }
 
   void
-  update(ecs::handle h, Transform& transform, Render& render, Health& health, SimInterface& sim) {
+  update(ecs::handle h, Transform& transform, Health& health, SimInterface& sim) {
     if (sim.global_entity().get<GlobalData>()->walls_vulnerable && timer && !(timer % 8)) {
       weak = true;
-      if (health.hp > 2) {
+      if (health.hp > 2 && sim.is_on_screen(transform.centre)) {
         sim.emit(resolve_key::predicted()).play(sound::kEnemySpawn, 1.f, 0.f);
       }
       health.damage(h, sim, std::max(2u, health.hp) - 2, damage_type::kNormal, h.id());

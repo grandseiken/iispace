@@ -147,7 +147,11 @@ public:
     }
 
     if (input.wave_number) {
-      if (*input.wave_number % 2) {
+      if (*input.wave_number % 4 == 3) {
+        data.type = data.type == render::background::type::kBiome0
+            ? render::background::type::kBiome0_Polar
+            : render::background::type::kBiome0;
+      } else if (*input.wave_number % 4 == 1) {
         data.parameters.x = 1.f - data.parameters.x;
       } else {
         auto v = from_polar(2 * pi<fixed> * random.fixed(), 1_fx / 2);

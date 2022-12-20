@@ -502,7 +502,7 @@ void spawn_shield_hub(SimInterface& sim, const vec2& position) {
   eh.add(ShieldHub::ShieldEffect{});
 
   auto h = create_ship_default<ShieldHub>(sim, position);
-  add_enemy_health<ShieldHub>(h, 224);
+  add_enemy_health<ShieldHub>(h, 280);
   h.add(ShieldHub{eh});
   h.add(Enemy{.threat_value = 10u});
   h.add(Physics{.mass = 3_fx});
