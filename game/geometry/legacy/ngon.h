@@ -32,7 +32,7 @@ struct ngon_data : shape_data_base {
   constexpr void
   iterate(iterate_lines_t, const Transform auto& t, const LineFunction auto& f) const {
     auto vertex = [&](std::uint32_t i) {
-      return *t.rotate(i * 2 * fixed_c::pi / sides).translate({radius, 0});
+      return *t.rotate(i * 2 * pi<fixed> / sides).translate({radius, 0});
     };
 
     if (style != ngon_style::kPolygram) {

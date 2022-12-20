@@ -25,8 +25,8 @@ struct ShieldBombBoss : ecs::component {
 
   template <fixed I>
   using strut_shape =
-      geom::line_eval<geom::constant<rotate(vec2{80, 0}, I* fixed_c::pi / 8)>,
-                      geom::constant<rotate(vec2{120, 0}, I* fixed_c::pi / 8)>, geom::parameter<3>>;
+      geom::line_eval<geom::constant<rotate(vec2{80, 0}, I* pi<fixed> / 8)>,
+                      geom::constant<rotate(vec2{120, 0}, I* pi<fixed> / 8)>, geom::parameter<3>>;
 
   using centre_shape =
       geom::polygram<48, 8, c0, 0, shape_flag::kDangerous | shape_flag::kVulnerable>;
@@ -87,7 +87,7 @@ struct ShieldBombBoss : ecs::component {
 
     if (attack) {
       auto d = sim.rotate_compatibility(
-          attack_dir, (kAttackTime - attack) * fixed_c::half * fixed_c::pi / kAttackTime);
+          attack_dir, (kAttackTime - attack) * fixed_c::half * pi<fixed> / kAttackTime);
       spawn_boss_shot(sim, transform.centre, d);
       attack--;
       sim.emit(resolve_key::predicted()).play_random(sound::kBossFire, transform.centre);
@@ -115,12 +115,12 @@ struct ShieldBombBoss : ecs::component {
         auto d = sim.rotate_compatibility(vec2{5, 0}, transform.rotation);
         for (std::uint32_t i = 0; i < 12; ++i) {
           spawn_boss_shot(sim, transform.centre, d);
-          d = sim.rotate_compatibility(d, 2 * fixed_c::pi / 12);
+          d = sim.rotate_compatibility(d, 2 * pi<fixed> / 12);
         }
         sim.emit(resolve_key::predicted()).play(sound::kBossAttack, transform.centre);
       } else {
         attack = kAttackTime;
-        attack_dir = from_polar(sim.random_fixed() * (2 * fixed_c::pi), 5_fx);
+        attack_dir = from_polar(sim.random_fixed() * (2 * pi<fixed>), 5_fx);
       }
     }
   }

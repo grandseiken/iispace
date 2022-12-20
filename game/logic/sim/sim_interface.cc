@@ -5,7 +5,6 @@
 #include "game/logic/sim/io/conditions.h"
 #include "game/logic/sim/io/player.h"
 #include "game/logic/sim/sim_internals.h"
-#include <glm/gtc/constants.hpp>
 
 namespace ii {
 namespace {
@@ -42,10 +41,10 @@ EmitHandle& EmitHandle::explosion(const fvec2& v, const cvec4& c, std::uint32_t 
   auto n = towards ? r.rbool() + 1 : r.uint(8) + 8;
   for (std::uint32_t i = 0; i < n; ++i) {
     float rspeed = speed ? *speed * (1.f + ra.fixed().to_float()) : 6.f;
-    auto dir = from_polar(r.fixed().to_float() * 2 * glm::pi<float>(), rspeed);
+    auto dir = from_polar(r.fixed().to_float() * 2 * pi<float>, rspeed);
     if (towards && *towards - v != fvec2{0.f}) {
       dir = glm::normalize(*towards - v);
-      float angle = std::atan2(dir.y, dir.x) + (r.fixed().to_float() - 0.5f) * glm::pi<float>() / 4;
+      float angle = std::atan2(dir.y, dir.x) + (r.fixed().to_float() - 0.5f) * pi<float> / 4;
       dir = from_polar(angle, rspeed);
     }
     dot_particle dot;

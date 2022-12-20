@@ -150,7 +150,7 @@ public:
       if (*input.wave_number % 2) {
         data.parameters.x = 1.f - data.parameters.x;
       } else {
-        auto v = from_polar(2 * fixed_c::pi * random.fixed(), 1_fx / 2);
+        auto v = from_polar(2 * pi<fixed> * random.fixed(), 1_fx / 2);
         data.position_delta.x = v.x.to_float();
         data.position_delta.y = v.y.to_float();
       }

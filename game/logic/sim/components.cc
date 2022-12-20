@@ -11,7 +11,7 @@ void Render::render_all(ecs::const_handle h, transient_render_state::entity_stat
   // TODO: trails should be reset on entity creation? Unless was created on same tick count
   // and with same components as we expected?
   static constexpr float kMaxTrailDistance = 64.f;
-  static constexpr float kMaxTrailAngle = glm::pi<float>() / 3.f;
+  static constexpr float kMaxTrailAngle = pi<float> / 3.f;
   if (clear_trails) {
     state.trails.clear();
     clear_trails = false;

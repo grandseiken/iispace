@@ -72,7 +72,7 @@ inline void add_line_particle(EmitHandle& e, const fvec2& source, const fvec2& a
   auto& r = e.random();
   auto position = (a + b) / 2.f;
   auto velocity = (2.f + .5f * r.fixed().to_float()) * normalise(position - source) +
-      from_polar((2 * fixed_c::pi * r.fixed()).to_float(), (r.fixed() / 8).to_float());
+      from_polar((2 * pi<fixed> * r.fixed()).to_float(), (r.fixed() / 8).to_float());
   auto diameter = distance(a, b);
   auto d = distance(source, a) - distance(source, b);
   if (angle_diff(angle(a - source), angle(b - source)) > 0) {

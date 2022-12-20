@@ -4,8 +4,8 @@ cc_library(
   srcs = ["mixer.cc"],
   deps = ["//game/common:types"],
   implementation_deps = [
+    "//game/common:math",
     "@dr_libs//:dr_wav",
-    "@glm",
     "@libsamplerate",
   ],
   visibility = ["//visibility:public"],

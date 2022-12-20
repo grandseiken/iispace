@@ -38,7 +38,7 @@ struct GhostWall : ecs::component {
   using gw_box =
       geom::compound<geom::box<length, 10, c0, 0, shape_flag::kDangerous | shape_flag::kShield>,
                      geom::box<length, 7, c0>, geom::box<length, 4, c0>>;
-  using gw_horizontal_base = geom::rotate<fixed_c::pi / 2, gw_box<240>>;
+  using gw_horizontal_base = geom::rotate<pi<fixed> / 2, gw_box<240>>;
   template <fixed Y0, fixed Y1>
   using gw_horizontal_align = geom::compound<geom::translate<0, Y0, gw_horizontal_base>,
                                              geom::translate<0, Y1, gw_horizontal_base>>;
@@ -122,7 +122,7 @@ struct GhostMine : ecs::component {
     if (timer == 80) {
       auto e = sim.emit(resolve_key::reconcile(h.id(), resolve_tag::kRespawn));
       explode_entity_shapes<GhostMine>(h, e);
-      transform.set_rotation(sim.random_fixed() * 2 * fixed_c::pi);
+      transform.set_rotation(sim.random_fixed() * 2 * pi<fixed>);
     }
     timer && --timer;
     if (sim.any_collision(transform.centre, shape_flag::kEnemyInteraction)) {
@@ -255,7 +255,7 @@ struct GhostBoss : ecs::component {
           (timer >= kTimer / 10 && timer < 9 * kTimer / 10 - 16 &&
            ((!(timer % 16) && attack == 2) || (!(timer % 32) && shot_type)))) {
         for (std::uint32_t i = 0; i < 8; ++i) {
-          auto d = from_polar(i * fixed_c::pi / 4 + transform.rotation, 5_fx);
+          auto d = from_polar(i * pi<fixed> / 4 + transform.rotation, 5_fx);
           spawn_boss_shot(sim, transform.centre, d, c0);
         }
         e.play_random(sound::kBossFire, transform.centre);
@@ -289,7 +289,7 @@ struct GhostBoss : ecs::component {
           if (attack_time == kAttackTime * 3 - 1) {
             e.play(sound::kBossAttack, transform.centre);
           }
-          transform.rotate((rdir ? 1 : -1) * 2 * fixed_c::pi / (kAttackTime * 6));
+          transform.rotate((rdir ? 1 : -1) * 2 * pi<fixed> / (kAttackTime * 6));
           if (!attack_time) {
             box_attack_shape_enabled = false;
           }
@@ -380,7 +380,7 @@ struct GhostBoss : ecs::component {
       for (std::uint32_t n = 0; n < 5; ++n) {
         v.emplace_back();
         for (std::uint32_t i = 0; i < 16 + n * 6; ++i) {
-          v.back().push_back(from_polar(i * 2 * fixed_c::pi / (16 + n * 6), 100_fx + n * 60));
+          v.back().push_back(from_polar(i * 2 * pi<fixed> / (16 + n * 6), 100_fx + n * 60));
         }
       }
       return v;
@@ -439,9 +439,9 @@ struct GhostBoss : ecs::component {
   }
 
   template <fixed I>
-  using spark_line = geom::line_eval<geom::constant<10 * from_polar(I* fixed_c::pi / 4, 1_fx)>,
-                                     geom::constant<20 * from_polar(I* fixed_c::pi / 4, 1_fx)>,
-                                     geom::constant<c1>>;
+  using spark_line =
+      geom::line_eval<geom::constant<10 * from_polar(I* pi<fixed> / 4, 1_fx)>,
+                      geom::constant<20 * from_polar(I* pi<fixed> / 4, 1_fx)>, geom::constant<c1>>;
   using spark_shape = standard_transform<geom::translate_p<
       2,
       geom::rotate_p<3, spark_line<0>,
@@ -449,7 +449,7 @@ struct GhostBoss : ecs::component {
                                              geom::for_each<fixed, 1, 8, spark_line>>>>>;
   std::tuple<vec2, fixed, vec2, fixed>
   spark_shape_parameters(const Transform& transform, std::uint32_t i) const {
-    return {transform.centre, transform.rotation, from_polar(i * fixed_c::pi / 4, 48_fx),
+    return {transform.centre, transform.rotation, from_polar(i * pi<fixed> / 4, 48_fx),
             2 * inner_ring_rotation};
   }
 

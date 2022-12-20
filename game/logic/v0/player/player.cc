@@ -31,7 +31,7 @@ struct PlayerLogic : ecs::component {
       geom::ngon_colour_p<geom::nd(21, 3), 5,
                           geom::nline(colour::kOutline, colour::kZOutline, 3.f)>,
       geom::ngon_colour_p2<geom::nd(18, 3), 2, 4, geom::nline(colour::kZero, z, 1.5f)>,
-      geom::rotate<fixed_c::pi, geom::ngon_colour_p<geom::nd(9, 3), 2>>, box_shapes>;
+      geom::rotate<pi<fixed>, geom::ngon_colour_p<geom::nd(9, 3), 2>>, box_shapes>;
 
   std::tuple<vec2, fixed, cvec4, cvec4, cvec4, cvec4>
   shape_parameters(const Player& pc, const Transform& transform) const {
@@ -40,7 +40,7 @@ struct PlayerLogic : ecs::component {
       colour = v0_player_colour(pc.player_number);
       if (invulnerability_timer) {
         cvec4 c{colour.x, 0.f, 1.f, 1.f};
-        colour = glm::mix(colour, c, .5f + .125f * sin(invulnerability_timer / glm::pi<float>()));
+        colour = glm::mix(colour, c, .5f + .125f * sin(invulnerability_timer / pi<float>));
       }
     }
     auto c_dark = colour;
@@ -192,7 +192,7 @@ struct PlayerLogic : ecs::component {
     explode_entity_shapes<PlayerLogic>(h, e, colour::kWhite0, 24);
 
     for (std::uint32_t i = 0; i < 64; ++i) {
-      auto v = position + from_polar(2 * i * fixed_c::pi / 64, kBombRadius);
+      auto v = position + from_polar(2 * i * pi<fixed> / 64, kBombRadius);
       auto parameters = shape_parameters(pc, {{}, v, 0_fx});
       explode_shapes<shape>(e, parameters, (i % 2) ? c : colour::kWhite0,
                             8 + random.uint(8) + random.uint(8), position);
@@ -225,11 +225,11 @@ struct PlayerLogic : ecs::component {
 
     for (std::uint32_t i = 0; i < pc.shield_count; ++i) {
       auto rotation =
-          static_cast<float>(glm::pi<float>() * static_cast<float>(render_timer % 240) / 120.f);
+          static_cast<float>(pi<float> * static_cast<float>(render_timer % 240) / 120.f);
       for (std::uint32_t j = 0; j < 3; ++j) {
         output.emplace_back(render::shape{
             .origin = to_float(transform.centre),
-            .rotation = rotation + static_cast<float>(j) * 2.f * glm::pi<float>() / 3.f,
+            .rotation = rotation + static_cast<float>(j) * 2.f * pi<float> / 3.f,
             .colour = colour::kWhite1,
             .z_index = colour::kZPlayerPowerup,
             .s_index = 's',
@@ -237,7 +237,7 @@ struct PlayerLogic : ecs::component {
         });
         output.emplace_back(render::shape{
             .origin = to_float(transform.centre),
-            .rotation = rotation + static_cast<float>(j) * 2.f * glm::pi<float>() / 3.f,
+            .rotation = rotation + static_cast<float>(j) * 2.f * pi<float> / 3.f,
             .colour = colour::kOutline,
             .z_index = colour::kZOutline,
             .s_index = 's',

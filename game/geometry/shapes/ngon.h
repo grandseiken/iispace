@@ -57,9 +57,9 @@ struct ngon_collider_data : shape_data_base {
     auto v = *t;
     auto theta = angle(v);
     if (theta < 0) {
-      theta += 2 * fixed_c::pi;
+      theta += 2 * pi<fixed>;
     }
-    auto a = 2 * fixed_c::pi / dimensions.sides;
+    auto a = 2 * pi<fixed> / dimensions.sides;
     auto at = (theta % a) / a;
     auto dt = (1 + 2 * at * (at - 1) * (1 - cos(a)));
     auto d_sq = dt * dimensions.radius * dimensions.radius;
@@ -103,10 +103,10 @@ struct ngon_data : shape_data_base {
       return;
     }
     auto vertex = [&](std::uint32_t i) {
-      return *t.rotate(i * 2 * fixed_c::pi / dimensions.sides).translate({dimensions.radius, 0});
+      return *t.rotate(i * 2 * pi<fixed> / dimensions.sides).translate({dimensions.radius, 0});
     };
     auto ivertex = [&](std::uint32_t i) {
-      return *t.rotate(i * 2 * fixed_c::pi / dimensions.sides)
+      return *t.rotate(i * 2 * pi<fixed> / dimensions.sides)
                   .translate({dimensions.inner_radius, 0});
     };
 

@@ -68,7 +68,7 @@ struct ball_data : shape_data_base {
     std::uint32_t n = dimensions.radius.to_int();
     std::uint32_t in = dimensions.inner_radius.to_int();
     auto vertex = [&](fixed r, std::uint32_t i, std::uint32_t n) {
-      return *t.rotate(i * 2 * fixed_c::pi / n).translate({r, 0});
+      return *t.rotate(i * 2 * pi<fixed> / n).translate({r, 0});
     };
 
     for (std::uint32_t i = 0; i < n; ++i) {

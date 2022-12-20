@@ -21,11 +21,11 @@ std::unordered_map<mod_id, mod_data> make_mod_map() {
   };
 
   add_data(mod_id::kBackShots, mod_slot::kWeaponCombo, mod_category::kGeneral, "Reversi",
-           "You shoot forwards and backwards simultaneously.");
+           "You shoot both forwards and backwards simultaneously.");
   add_data(mod_id::kFrontShots, mod_slot::kWeaponCombo, mod_category::kGeneral, "Twin barrel",
            "You fire two shots instead of one, at a slightly reduced rate.");
   add_data(mod_id::kBounceShots, mod_slot::kWeaponCombo, mod_category::kGeneral, "Ricochet",
-           "Your shots bounce on impact and may strike a second target.");
+           "Your shots bounce on impact, and may strike a second target.");
   add_data(mod_id::kHomingShots, mod_slot::kWeaponCombo, mod_category::kGeneral, "Threatseeker",
            "Your shots are guided towards targets.");
 
@@ -37,7 +37,8 @@ std::unordered_map<mod_id, mod_data> make_mod_map() {
            {.slot_dependency = mod_slot::kSuper});
 
   add_data(mod_id::kBombCapacity, mod_slot::kBombCombo, mod_category::kGeneral, "Boombox",
-           "You can carry an additional bomb.", {.allow_multiple_per_player = true});
+           "You can carry an additional bomb. You gain a bomb now.",
+           {.allow_multiple_per_player = true});
   add_data(mod_id::kBombRadius, mod_slot::kBombCombo, mod_category::kGeneral, "Blastwave",
            "Your bombs have a larger area-of-effect radius.");
   add_data(mod_id::kBombSpeedClearCharge, mod_slot::kBombCombo, mod_category::kGeneral,
@@ -46,10 +47,11 @@ std::unordered_map<mod_id, mod_data> make_mod_map() {
            "Your bombs explode twice, triggering a second time after a short delay.");
 
   add_data(mod_id::kShieldCapacity, mod_slot::kShieldCombo, mod_category::kGeneral,
-           "Shell extension", "Your maximum number of shields is increased by one.",
+           "Shell extension",
+           "Your maximum number of shields is increased by one. You gain a shield now.",
            {.allow_multiple_per_player = true});
   add_data(mod_id::kShieldRefill, mod_slot::kShieldCombo, mod_category::kGeneral, "Recombinator",
-           "Your shield regenerates automatically after a short time, but you can only have one.");
+           "Your shield regenerates automatically after a time, but you can only have one.");
   add_data(mod_id::kShieldRespawn, mod_slot::kShieldCombo, mod_category::kGeneral, "Safe boot",
            "You respawn with full shields.", {.multiplayer_only = true});
 

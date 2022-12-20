@@ -10,13 +10,21 @@ namespace {
 
 std::vector<mod_id> make_mod_list() {
   std::vector<mod_id> v = {
-      mod_id::kBackShots,         mod_id::kFrontShots,       mod_id::kBombCapacity,
-      mod_id::kBombRadius,        mod_id::kShieldCapacity,   mod_id::kShieldRefill,
-      mod_id::kCloseCombatWeapon, mod_id::kCloseCombatSuper, mod_id::kCloseCombatBomb,
-      mod_id::kCloseCombatShield, mod_id::kCloseCombatBonus, mod_id::kSniperWeapon,
-      mod_id::kSniperSuper,       mod_id::kSniperBomb,       mod_id::kSniperShield,
-      mod_id::kSniperBonus,       mod_id::kClusterWeapon,    mod_id::kClusterSuper,
-      mod_id::kClusterBomb,       mod_id::kClusterShield,    mod_id::kClusterBonus};
+      mod_id::kBackShots,         mod_id::kFrontShots,      mod_id::kBounceShots,
+      mod_id::kHomingShots,       mod_id::kSuperCapacity,   mod_id::kSuperRefill,
+      mod_id::kBombCapacity,      mod_id::kBombRadius,      mod_id::kBombSpeedClearCharge,
+      mod_id::kBombDoubleTrigger, mod_id::kShieldCapacity,  mod_id::kShieldRefill,
+      mod_id::kShieldRespawn,     mod_id::kPowerupDrops,    mod_id::kCurrencyDrops,
+      mod_id::kCorruptionWeapon,  mod_id::kCorruptionSuper, mod_id::kCorruptionBomb,
+      mod_id::kCorruptionShield,  mod_id::kCorruptionBonus, mod_id::kCloseCombatWeapon,
+      mod_id::kCloseCombatSuper,  mod_id::kCloseCombatBomb, mod_id::kCloseCombatShield,
+      mod_id::kCloseCombatBonus,  mod_id::kLightningWeapon, mod_id::kLightningSuper,
+      mod_id::kLightningBomb,     mod_id::kLightningShield, mod_id::kLightningBonus,
+      mod_id::kSniperWeapon,      mod_id::kSniperSuper,     mod_id::kSniperBomb,
+      mod_id::kSniperShield,      mod_id::kSniperBonus,     mod_id::kLaserWeapon,
+      mod_id::kLaserSuper,        mod_id::kLaserBomb,       mod_id::kLaserShield,
+      mod_id::kLaserBonus,        mod_id::kClusterWeapon,   mod_id::kClusterSuper,
+      mod_id::kClusterBomb,       mod_id::kClusterShield,   mod_id::kClusterBonus};
   return v;
 };
 

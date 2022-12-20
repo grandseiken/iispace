@@ -79,7 +79,7 @@ struct Follow : ecs::component {
     vec2 d = sim.rotate_compatibility(vec2{10, 0}, transform.rotation);
     for (std::uint32_t i = 0; i < 3; ++i) {
       spawn_follow(sim, transform.centre + d, enemy.score_reward != 0);
-      d = sim.rotate_compatibility(d, 2 * fixed_c::pi / 3);
+      d = sim.rotate_compatibility(d, 2 * pi<fixed> / 3);
     }
   }
 };

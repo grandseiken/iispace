@@ -13,7 +13,6 @@
 #include "game/render/noise_generator.h"
 #include "game/render/shader_compiler.h"
 #include <GL/gl3w.h>
-#include <glm/gtc/constants.hpp>
 #include <algorithm>
 #include <array>
 #include <cmath>

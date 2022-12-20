@@ -9,6 +9,7 @@ cc_library(
   name = "math",
   hdrs = [
     "colour.h",
+    "easing.h",
     "fix32.h",
     "math.h",
     "rect.h",

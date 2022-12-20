@@ -29,7 +29,7 @@ struct SuperBossArc : public ecs::component {
 
   std::tuple<vec2, fixed, fixed, std::array<cvec4, 8>>
   shape_parameters(const Transform& transform) const {
-    return {transform.centre, transform.rotation, i * 2 * fixed_c::pi / 16, colours};
+    return {transform.centre, transform.rotation, i * 2 * pi<fixed> / 16, colours};
   }
 
   static std::uint32_t bounding_width(const SimInterface& sim) {
@@ -57,7 +57,7 @@ struct SuperBossArc : public ecs::component {
                   const vec2& source) const {
     auto parameters = shape_parameters(transform);
     destruct_lines<shape>(e, parameters, source, 64);
-    std::get<0>(parameters) += from_polar(i * 2 * fixed_c::pi / 16 + transform.rotation, 120_fx);
+    std::get<0>(parameters) += from_polar(i * 2 * pi<fixed> / 16 + transform.rotation, 120_fx);
     explode_shapes<shape>(e, parameters);
     explode_shapes<shape>(e, parameters, cvec4{1.f}, 12);
     explode_shapes<shape>(e, parameters, std::nullopt, 24);
@@ -161,8 +161,8 @@ struct SuperBoss : ecs::component {
     }
 
     static constexpr fixed d5d1000 = 5_fx / 1000;
-    static constexpr fixed pi2d64 = 2 * fixed_c::pi / 64;
-    static constexpr fixed pi2d32 = 2 * fixed_c::pi / 32;
+    static constexpr fixed pi2d64 = 2 * pi<fixed> / 64;
+    static constexpr fixed pi2d32 = 2 * pi<fixed> / 32;
 
     if (state == state::kIdle && sim.is_on_screen(transform.centre) && timer && timer % 300 == 0) {
       auto r = sim.random(6);
@@ -171,7 +171,7 @@ struct SuperBoss : ecs::component {
       } else if (r == 2 || r == 3) {
         state = state::kAttack;
         timer = 0;
-        fixed f = sim.random_fixed() * (2 * fixed_c::pi);
+        fixed f = sim.random_fixed() * (2 * pi<fixed>);
         fixed rf = d5d1000 * (1 + sim.random_bool());
         for (std::uint32_t i = 0; i < 32; ++i) {
           vec2 d = from_polar(f + i * pi2d32, 1_fx);
@@ -184,7 +184,7 @@ struct SuperBoss : ecs::component {
       } else if (r == 5) {
         state = state::kAttack;
         timer = 0;
-        fixed f = sim.random_fixed() * (2 * fixed_c::pi);
+        fixed f = sim.random_fixed() * (2 * pi<fixed>);
         for (std::uint32_t i = 0; i < 64; ++i) {
           vec2 d = from_polar(f + i * pi2d64, 1_fx);
           spawn_snake(sim, transform.centre + d * 16, c, d);
@@ -218,7 +218,7 @@ struct SuperBoss : ecs::component {
         e.play(sound::kEnemySpawn, transform.centre);
       }
     }
-    static const fixed pi2d128 = 2 * fixed_c::pi / 128;
+    static const fixed pi2d128 = 2 * pi<fixed> / 128;
     if (state == state::kIdle && timer % 72 == 0) {
       for (std::uint32_t i = 0; i < 128; ++i) {
         vec2 d = from_polar(i * pi2d128, 1_fx);
@@ -233,7 +233,7 @@ struct SuperBoss : ecs::component {
       auto r0 = sim.random(32);
       auto r1 = sim.random(16);
       fixed length{r0 + r1};
-      vec2 d = from_polar(sim.random_fixed() * (2 * fixed_c::pi), length);
+      vec2 d = from_polar(sim.random_fixed() * (2 * pi<fixed>), length);
       spawn_snake(sim, d + transform.centre, c);
       e.play_random(sound::kEnemySpawn, transform.centre);
     }
@@ -257,7 +257,7 @@ struct SuperBoss : ecs::component {
 
     std::uint32_t n = 1;
     for (std::uint32_t i = 0; i < 16; ++i) {
-      vec2 v = from_polar(sim.random_fixed() * (2 * fixed_c::pi),
+      vec2 v = from_polar(sim.random_fixed() * (2 * pi<fixed>),
                           fixed{8 + sim.random(64) + sim.random(64)});
       sim.global_entity().get<GlobalData>()->fireworks.push_back(GlobalData::fireworks_entry{
           .time = n, .position = transform.centre + v, .colour = colours[i % 8]});

@@ -1,4 +1,5 @@
 #include "game/logic/v0/player/upgrade.h"
+#include "game/common/easing.h"
 #include "game/core/icons/mod_icons.h"
 #include "game/logic/sim/sim_interface.h"
 #include "game/logic/v0/player/loadout_mods.h"
@@ -19,16 +20,27 @@ struct ModUpgrade : ecs::component {
   static constexpr std::uint32_t kTitleFontSize = 14;
   static constexpr std::uint32_t kSlotFontSize = 12;
   static constexpr std::uint32_t kDescriptionFontSize = 10;
+  static constexpr std::uint32_t kAnimFrames = 40;
   static constexpr float kPanelHeight = 80.f;
   static constexpr float kPanelBorder = 48.f;
   static constexpr float kIconWidth = kPanelHeight - 3 * kPanelPadding - kTitleFontSize;
 
   ModUpgrade(v0::mod_id id, upgrade_position position) : mod_id{id}, position{position} {}
-  v0::mod_id mod_id = v0::mod_id::kNone;
   upgrade_position position = upgrade_position::kL0;
+  v0::mod_id mod_id = v0::mod_id::kNone;
+  std::uint32_t timer = 0;
+  bool destroy = false;
 
-  void update(ecs::handle h, SimInterface& sim) {
-    // TODO
+  void update(ecs::handle h, SimInterface&) {
+    if (destroy) {
+      timer = std::min(kAnimFrames, timer);
+      timer && --timer;
+      if (!timer) {
+        h.emplace<Destroy>();
+      }
+    } else {
+      ++timer;
+    }
   }
 
   void render(ecs::const_handle h, std::vector<render::shape>& output) const {
@@ -52,22 +64,26 @@ struct ModUpgrade : ecs::component {
     const auto& data = mod_lookup(mod_id);
     auto slot_category = ustring{mod_category_name(data.category)};
     auto slot_name = mod_slot_name(data.slot);
-    if (slot_category.size() && slot_name.size()) {
+    if (!slot_category.empty() && !slot_name.empty()) {
       slot_category += ustring::ascii(" ");
     }
     slot_category += slot_name;
+
+    auto anim_size = panel_size;
+    anim_size.x *= ease_in_out_quart(static_cast<float>(timer) / kAnimFrames);
+    anim_size.y = std::min(anim_size.x, anim_size.y);
 
     render::combo_panel panel;
     panel.panel = {.style = render::panel_style::kFlatColour,
                    .colour = colour::kBlackOverlay0,
                    .border = colour::kPanelBorder0,
-                   .bounds = {panel_position, panel_size}};
+                   .bounds = {panel_position, anim_size}};
     panel.padding = ivec2{kPanelPadding};
     panel.elements.emplace_back(render::combo_panel::element{
         .bounds = {fvec2{0}, fvec2{panel_size.x - 2 * kPanelPadding, kTitleFontSize}},
         .e =
             render::combo_panel::text{
-                .font = {render::font_id::kMonospaceBold, uvec2{kTitleFontSize}},
+                .font = {render::font_id::kMonospaceBoldItalic, uvec2{kTitleFontSize}},
                 .align = render::alignment::kLeft | render::alignment::kBottom,
                 .colour = mod_category_colour(data.category),
                 .drop_shadow = {{}},
@@ -117,11 +133,11 @@ void spawn_mod_upgrades(SimInterface& sim, std::span<mod_id> ids) {
 }
 
 void cleanup_mod_upgrades(SimInterface& sim) {
-  sim.index().iterate_dispatch<ModUpgrade>([&](ecs::handle h) { h.emplace<Destroy>(); });
+  sim.index().iterate<ModUpgrade>([&](ModUpgrade& upgrade) { upgrade.destroy = true; });
 }
 
 bool is_mod_upgrade_choice_done(const SimInterface& sim) {
-  return !sim.index().count<ModUpgrade>() || /* TODO */ sim.tick_count() % 1024 == 0;
+  return !sim.index().count<ModUpgrade>() || /* TODO */ sim.tick_count() % 4096 == 0;
 }
 
 }  // namespace ii::v0

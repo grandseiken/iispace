@@ -25,7 +25,7 @@ struct FollowHub : ecs::component {
   using fh_arrange = geom::compound<geom::translate<18, 0, S>, geom::translate<-18, 0, S>,
                                     geom::translate<0, 18, S>, geom::translate<0, -18, S>>;
   template <geom::ShapeNode... S>
-  using r_pi4_ngon = geom::rotate<fixed_c::pi / 4, S...>;
+  using r_pi4_ngon = geom::rotate<pi<fixed> / 4, S...>;
   using fh_centre =
       r_pi4_ngon<geom::ngon<geom::nd(20, 4), outline>,
                  geom::ngon_with_collider<
@@ -78,7 +78,7 @@ struct FollowHub : ecs::component {
         : transform.centre.x > dim.x - 24 ? vec2{-1, 0}
         : transform.centre.y < 24         ? vec2{0, 1}
         : transform.centre.y > dim.y - 24 ? vec2{0, -1}
-        : count > 3 ? (count = 0, sim.rotate_compatibility(dir, -fixed_c::pi / 2))
+        : count > 3 ? (count = 0, sim.rotate_compatibility(dir, -pi<fixed> / 2))
                     : dir;
 
     auto s = fast ? fixed_c::hundredth * 4 + fixed_c::tenth / 2 : fixed_c::hundredth * 4;
@@ -128,7 +128,7 @@ struct Shielder : ecs::component {
       geom::ngon_collider<geom::nd(20, 12), shape_flag::kDangerous | shape_flag::kVulnerable>>;
   using shield_shape = geom::rotate_p<
       2, geom::line<vec2{32, 0}, vec2{18, 0}, geom::sline(c1, z)>,
-      geom::rotate<fixed_c::pi / 4, geom::line<vec2{-32, 0}, vec2{-18, 0}, geom::sline(c1, z)>>,
+      geom::rotate<pi<fixed> / 4, geom::line<vec2{-32, 0}, vec2{-18, 0}, geom::sline(c1, z)>>,
       geom::ngon<geom::nd2(27 + 1_fx / 2, 22, 16, 10), geom::nline(), geom::sfill(cf, z)>,
       geom::ngon<geom::nd2(27 + 1_fx / 2, 22, 16, 10), geom::nline(),
                  geom::sfill(colour::alpha(c1, colour::kFillAlpha0), z)>,
@@ -141,7 +141,7 @@ struct Shielder : ecs::component {
   using shape = geom::translate_p<0, geom::rotate_p<1, centre_shape>, shield_shape>;
 
   std::tuple<vec2, fixed, fixed> shape_parameters(const Transform& transform) const {
-    return {transform.centre, transform.rotation, shield_angle + fixed_c::pi / 2 - fixed_c::pi / 8};
+    return {transform.centre, transform.rotation, shield_angle + pi<fixed> / 2 - pi<fixed> / 8};
   }
 
   Shielder(SimInterface& sim, bool power)
@@ -387,7 +387,7 @@ struct ShieldHub : ecs::component {
         : transform.centre.x > dim.x - 96 ? (timer = 0, vec2{-1, 0})
         : transform.centre.y < 96         ? (timer = 0, vec2{0, 1})
         : transform.centre.y > dim.y - 96 ? (timer = 0, vec2{0, -1})
-        : timer >= kTimer ? (timer = 0, from_polar(2 * fixed_c::pi * sim.random_fixed(), 1_fx))
+        : timer >= kTimer ? (timer = 0, from_polar(2 * pi<fixed> * sim.random_fixed(), 1_fx))
                           : target_dir;
     if (sim.is_on_screen(transform.centre)) {
       dir = rc_smooth(dir, target_dir, 31_fx / 32);

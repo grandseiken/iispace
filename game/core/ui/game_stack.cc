@@ -153,13 +153,13 @@ void GameStack::render(render::GlRenderer& renderer) const {
     auto scale = static_cast<float>(cursor_frame_) / kCursorFrames;
     scale = 1.f / 16 + (15.f / 16) * (1.f - (1.f - scale * scale));
     auto radius = scale * 8.f;
-    auto origin = renderer.target().screen_to_frender_coords(*cursor_) +
-        from_polar(glm::pi<float>() / 3.f, radius);
+    auto origin =
+        renderer.target().screen_to_frender_coords(*cursor_) + from_polar(pi<float> / 3.f, radius);
     std::optional<render::motion_trail> trail;
     if (prev_cursor_) {
       trail = render::motion_trail{.prev_origin =
                                        renderer.target().screen_to_frender_coords(*prev_cursor_) +
-                                       from_polar(glm::pi<float>() / 3.f, radius)};
+                                       from_polar(pi<float> / 3.f, radius)};
     }
     auto flash = (64.f - cursor_anim_frame_ % 64) / 64.f;
     std::vector cursor_shapes = {

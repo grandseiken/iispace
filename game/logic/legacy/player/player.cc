@@ -131,13 +131,13 @@ struct PlayerLogic : ecs::component {
 
   using shield = geom::if_p<2, geom::polygon_colour_p<16, 10, 6, 's'>>;
   using bomb = geom::if_p<
-      3, geom::translate<-8, 0, geom::rotate<fixed_c::pi, geom::polystar_colour_p<6, 5, 6, 'b'>>>>;
+      3, geom::translate<-8, 0, geom::rotate<pi<fixed>, geom::polystar_colour_p<6, 5, 6, 'b'>>>>;
   using box_shapes =
       geom::translate<8, 0, geom::rotate_eval<geom::negate_p<1>, geom::box_colour_p<2, 2, 4>>,
                       geom::rotate_eval<geom::negate_p<1>, geom::box_colour_p<1, 1, 5>>,
                       geom::rotate_eval<geom::negate_p<1>, geom::box_colour_p<3, 3, 5>>>;
   using shape = standard_transform<geom::ngon_colour_p<16, 3, 4>,
-                                   geom::rotate<fixed_c::pi, geom::ngon_colour_p<8, 3, 4>>,
+                                   geom::rotate<pi<fixed>, geom::ngon_colour_p<8, 3, 4>>,
                                    box_shapes, shield, bomb>;
 
   std::tuple<vec2, fixed, bool, bool, cvec4, cvec4, cvec4>
@@ -218,7 +218,7 @@ struct PlayerLogic : ecs::component {
       explosion(h, std::nullopt, e, cvec4{1.f}, 48);
 
       for (std::uint32_t i = 0; i < 64; ++i) {
-        auto v = transform.centre + from_polar(2 * i * fixed_c::pi / 64, kBombRadius);
+        auto v = transform.centre + from_polar(2 * i * pi<fixed> / 64, kBombRadius);
         auto& random = sim.random(random_source::kLegacyAesthetic);
         explosion(h, v, e, (i % 2) ? c : cvec4{1.f}, 8 + random.uint(8) + random.uint(8),
                   transform.centre);

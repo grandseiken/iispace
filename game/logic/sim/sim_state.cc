@@ -8,7 +8,6 @@
 #include "game/logic/v0/ai/ai_player.h"
 #include "game/logic/v0/components.h"
 #include "game/logic/v0/setup.h"
-#include <glm/gtc/constants.hpp>
 #include <algorithm>
 #include <unordered_set>
 
@@ -266,7 +265,7 @@ render_output& SimState::render(transient_render_state& state, bool paused) cons
     auto d = to_float(interface_->dimensions());
     if (v.x < -4) {
       auto f = std::max(v.x + d.x, 0.f) / d.x;
-      render_tri({4, v.y}, glm::pi<float>(), f);
+      render_tri({4, v.y}, pi<float>, f);
     }
     if (v.x >= d.x + 4) {
       auto f = std::max(2 * d.x - v.x, 0.f) / d.x;
@@ -274,11 +273,11 @@ render_output& SimState::render(transient_render_state& state, bool paused) cons
     }
     if (v.y < -4) {
       auto f = std::max(v.y + d.y, 0.f) / d.y;
-      render_tri({v.x, 4}, 3.f * glm::pi<float>() / 2.f, f);
+      render_tri({v.x, 4}, 3.f * pi<float> / 2.f, f);
     }
     if (v.y >= d.y + 4) {
       auto f = std::max(2 * d.y - v.y, 0.f) / d.y;
-      render_tri({v.x, d.y - 4}, glm::pi<float>() / 2.f, f);
+      render_tri({v.x, d.y - 4}, pi<float> / 2.f, f);
     }
   };
 
@@ -357,7 +356,7 @@ void SimState::set_predicted_players(std::span<const std::uint32_t> player_ids) 
 }
 
 void SimState::update_smoothing(smoothing_data& data) {
-  static constexpr fixed kMaxRotationSpeed = fixed_c::pi / 16;
+  static constexpr fixed kMaxRotationSpeed = pi<fixed> / 16;
   auto smooth_rotate = [&](fixed& x, fixed target) {
     auto d = angle_diff(x, target);
     if (abs(d) < kMaxRotationSpeed) {

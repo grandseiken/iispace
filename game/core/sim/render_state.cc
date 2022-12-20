@@ -5,7 +5,6 @@
 #include "game/logic/sim/sim_state.h"
 #include "game/mixer/mixer.h"
 #include "game/render/gl_renderer.h"
-#include <glm/gtc/constants.hpp>
 #include <algorithm>
 #include <unordered_map>
 
@@ -132,8 +131,8 @@ void RenderState::update(SimInputAdapter* input) {
 
         d->radius /= 2.f;
         line_particle d0 = *d;
-        d->angular_velocity -= glm::pi<float>() / 64.f;
-        d0.angular_velocity += glm::pi<float>() / 64.f;
+        d->angular_velocity -= pi<float> / 64.f;
+        d0.angular_velocity += pi<float> / 64.f;
         d0.rotation = d->rotation + d0.angular_velocity;
 
         p.time = std::max(4u, p.time - 4u);
@@ -281,8 +280,7 @@ void RenderState::handle_background_fx(const background_fx_change& change) {
   case background_fx_type::kNone:
     break;
   case background_fx_type::kLegacy_Stars:
-    star_direction_ =
-        rotate(star_direction_, (engine_.fixed().to_float() - .5f) * glm::pi<float>());
+    star_direction_ = rotate(star_direction_, (engine_.fixed().to_float() - .5f) * pi<float>);
     for (auto& star : stars_) {
       star.timer = kStarTimer;
     }

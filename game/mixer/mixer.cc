@@ -1,7 +1,7 @@
 #include "game/mixer/mixer.h"
+#include "game/common/math.h"
 #include "game/common/raw_ptr.h"
 #include <dr_wav.h>
-#include <glm/gtc/constants.hpp>
 #include <samplerate.h>
 #include <algorithm>
 #include <atomic>
@@ -131,7 +131,7 @@ void Mixer::play(audio_handle_t handle, float volume, float pan, float pitch) {
   const auto& clip = *it->second.clip;
 
   volume = std::clamp(volume, 0.f, 1.f);
-  pan = std::clamp(glm::pi<float>() / 4.f * (pan + 1.f), 0.f, glm::pi<float>() / 2.f);
+  pan = std::clamp(pi<float> / 4.f * (pan + 1.f), 0.f, pi<float> / 2.f);
   pitch = std::clamp(pitch, 1.f / 64, 64.f);
 
   int error = 0;

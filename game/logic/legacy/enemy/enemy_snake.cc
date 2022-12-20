@@ -118,7 +118,7 @@ struct Snake : ecs::component {
       sim.emit(resolve_key::predicted()).play_random(sound::kBossFire, transform.centre, .5f);
     }
     if (!is_projectile && timer % 48 == 0 && !sim.random(3)) {
-      dir = sim.rotate_compatibility(dir, (sim.random_bool() ? 1 : -1) * fixed_c::pi / 2);
+      dir = sim.rotate_compatibility(dir, (sim.random_bool() ? 1 : -1) * pi<fixed> / 2);
       transform.set_rotation(angle(dir));
     }
     transform.move(dir * (is_projectile ? 4 : 2));

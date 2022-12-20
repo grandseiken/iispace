@@ -158,11 +158,11 @@ struct DeathRayBoss : public ecs::component {
 
   template <fixed I>
   using edge_shape =
-      geom::rotate<I * fixed_c::pi / 6,
+      geom::rotate<I * pi<fixed> / 6,
                    geom::translate<130, 0, geom::box<10, 24, c1, 0, shape_flag::kDangerous>,
                                    geom::box<8, 22, c0, 0, shape_flag::kDangerous>>>;
   using shape = standard_transform<
-      geom::rotate<fixed_c::pi / 12, geom::polystar<110, 12, c0>, geom::polygram<70, 12, c1>,
+      geom::rotate<pi<fixed> / 12, geom::polystar<110, 12, c0>, geom::polygram<70, 12, c1>,
                    geom::polygon<120, 12, c1, 0, shape_flag::kDangerous | shape_flag::kVulnerable>,
                    geom::ngon<115, 12, c1>, geom::polygon<110, 12, c1, 0, shape_flag::kShield>>,
       geom::box<0, 0, cvec4{0.f}>,
@@ -239,7 +239,7 @@ struct DeathRayBoss : public ecs::component {
           timer = kTimer * 2;
         }
 
-        if (r < fixed_c::tenth || r > 2 * fixed_c::pi - fixed_c::tenth) {
+        if (r < fixed_c::tenth || r > 2 * pi<fixed> - fixed_c::tenth) {
           transform.rotation = 0;
         } else {
           going_fast = true;
@@ -295,8 +295,8 @@ struct DeathRayBoss : public ecs::component {
       }
       if (shot_timer % 128 == 0) {
         ray_attack_timer = kRayTimer;
-        vec2 d1 = from_polar(sim.random_fixed() * 2 * fixed_c::pi, 110_fx);
-        vec2 d2 = from_polar(sim.random_fixed() * 2 * fixed_c::pi, 110_fx);
+        vec2 d1 = from_polar(sim.random_fixed() * 2 * pi<fixed>, 110_fx);
+        vec2 d2 = from_polar(sim.random_fixed() * 2 * pi<fixed>, 110_fx);
         ray_src1 = transform.centre + d1;
         ray_src2 = transform.centre + d2;
         e.play(sound::kEnemySpawn, transform.centre);
@@ -320,7 +320,7 @@ struct DeathRayBoss : public ecs::component {
     for (std::size_t i = 0; i < shot_queue.size(); ++i) {
       if (!going_fast || shot_timer % 2) {
         auto n = shot_queue[i].first;
-        vec2 d = sim.rotate_compatibility(vec2{1, 0}, transform.rotation + n * fixed_c::pi / 6);
+        vec2 d = sim.rotate_compatibility(vec2{1, 0}, transform.rotation + n * pi<fixed> / 6);
         spawn_boss_shot(sim, transform.centre + d * 120, d * 5, c1);
       }
       shot_queue[i].second--;
@@ -389,6 +389,6 @@ void spawn_death_ray_boss(SimInterface& sim, std::uint32_t cycle) {
   });
   h.add(Boss{.boss = boss_flag::kBoss2C});
   h.add(DeathRayBoss{});
-  h.get<Transform>()->rotate(2 * fixed_c::pi * sim.random_fixed());
+  h.get<Transform>()->rotate(2 * pi<fixed> * sim.random_fixed());
 }
 }  // namespace ii::legacy

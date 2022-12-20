@@ -69,11 +69,11 @@ struct BigSquareBoss : public ecs::component {
       } else if (!special_timer) {
         vec2 d(kSpecialAttackRadius, 0);
         if (special_attack_rotate) {
-          d = sim.rotate_compatibility(d, fixed_c::pi / 2);
+          d = sim.rotate_compatibility(d, pi<fixed> / 2);
         }
         for (std::uint32_t i = 0; i < 6; ++i) {
-          spawn_follow(sim, ph.get<Transform>()->centre + d, /* score */ false, fixed_c::pi / 4);
-          d = sim.rotate_compatibility(d, 2 * fixed_c::pi / 6);
+          spawn_follow(sim, ph.get<Transform>()->centre + d, /* score */ false, pi<fixed> / 4);
+          d = sim.rotate_compatibility(d, 2 * pi<fixed> / 6);
         }
         attack_player.reset();
         sim.emit(resolve_key::predicted()).play(sound::kEnemySpawn, ph.get<Transform>()->centre);
@@ -116,16 +116,16 @@ struct BigSquareBoss : public ecs::component {
   }
 
   void render(std::vector<render::shape>& output, const SimInterface& sim) const {
-    using follow_shape = geom::translate_p<0, geom::rotate<fixed_c::pi / 4, geom::ngon<10, 4, c0>>>;
+    using follow_shape = geom::translate_p<0, geom::rotate<pi<fixed> / 4, geom::ngon<10, 4, c0>>>;
     if ((special_timer / 4) % 2 && attack_player) {
       vec2 d{kSpecialAttackRadius, 0};
       if (special_attack_rotate) {
-        d = rotate(d, fixed_c::pi / 2);
+        d = rotate(d, pi<fixed> / 2);
       }
       for (std::uint32_t i = 0; i < 6; ++i) {
         auto v = sim.index().get(*attack_player)->get<Transform>()->centre + d;
         render_shape<follow_shape>(output, std::tuple{v});
-        d = rotate(d, 2 * fixed_c::pi / 6);
+        d = rotate(d, 2 * pi<fixed> / 6);
       }
     }
   }

@@ -25,7 +25,7 @@ struct polyarc_data : shape_data_base {
     auto v = *t;
     auto theta = angle(v);
     auto r = length(v);
-    if (0 <= theta && theta <= (2 * fixed_c::pi * segments) / sides && r >= radius - 10 &&
+    if (0 <= theta && theta <= (2 * pi<fixed> * segments) / sides && r >= radius - 10 &&
         r < radius) {
       std::invoke(f, flags & it.mask);
     }
@@ -38,8 +38,8 @@ struct polyarc_data : shape_data_base {
   constexpr void
   iterate(iterate_lines_t, const Transform auto& t, const LineFunction auto& f) const {
     for (std::uint32_t i = 0; sides >= 2 && i < sides && i < segments; ++i) {
-      auto a = from_polar(i * 2 * fixed_c::pi / sides, radius);
-      auto b = from_polar((i + 1) * 2 * fixed_c::pi / sides, radius);
+      auto a = from_polar(i * 2 * pi<fixed> / sides, radius);
+      auto b = from_polar((i + 1) * 2 * pi<fixed> / sides, radius);
       std::invoke(f, *t.translate(a), *t.translate(b), colour, 1.f, 0.f);
     }
   }

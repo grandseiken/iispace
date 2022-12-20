@@ -107,7 +107,7 @@ struct Follow : ecs::component {
     for (std::uint32_t i = 0; i < 5; ++i) {
       spawn_follow(sim, size - 1, transform.centre + size * d, std::nullopt, /* drop */ false,
                    transform.rotation, d / 6);
-      d = rotate(d, 2 * fixed_c::pi / 5);
+      d = rotate(d, 2 * pi<fixed> / 5);
     }
   }
 };
@@ -246,7 +246,7 @@ struct Chaser : ecs::component {
     for (std::uint32_t i = 0; i < 3; ++i) {
       spawn_chaser(sim, size - 1, transform.centre + size * d, /* drop */ false, transform.rotation,
                    is_moving ? 10 * i : kTime - 10 * (1 + i));
-      d = rotate(d, 2 * fixed_c::pi / 3);
+      d = rotate(d, 2 * pi<fixed> / 3);
     }
   }
 };

@@ -14,6 +14,20 @@ using fvec2 = glm::vec2;
 using fvec4 = glm::vec4;
 using cvec4 = glm::vec4;
 
+namespace detail {
+template <typename T>
+struct pi_helper {
+  inline static constexpr T value = glm::pi<T>();
+};
+template <>
+struct pi_helper<fixed> {
+  inline static constexpr fixed value = fixed_c::pi;
+};
+}  // namespace detail
+
+template <typename T>
+inline constexpr T pi = detail::pi_helper<T>::value;
+
 inline void hash_combine(std::size_t& seed, std::size_t v) {
   seed ^= v + 0x9e3779b9 + (seed << 6) + (seed >> 2);
 };
@@ -98,13 +112,11 @@ inline constexpr fvec2 to_float(const vec2& a) {
 }
 
 inline constexpr fixed normalise_angle(fixed a) {
-  return a > 2 * fixed_c::pi ? a - 2 * fixed_c::pi : a < 0 ? a + 2 * fixed_c::pi : a;
+  return a > 2 * pi<fixed> ? a - 2 * pi<fixed> : a < 0 ? a + 2 * pi<fixed> : a;
 }
 
 inline constexpr float normalise_angle(float a) {
-  return a > 2.f * glm::pi<float>() ? a - 2.f * glm::pi<float>()
-      : a < 0.f                     ? a + 2.f * glm::pi<float>()
-                                    : a;
+  return a > 2.f * pi<float> ? a - 2.f * pi<float> : a < 0.f ? a + 2.f * pi<float> : a;
 }
 
 inline constexpr fixed angle_diff(fixed from, fixed to) {
@@ -112,9 +124,9 @@ inline constexpr fixed angle_diff(fixed from, fixed to) {
     return 0_fx;
   }
   if (to > from) {
-    return to - from <= fixed_c::pi ? to - from : to - (2 * fixed_c::pi + from);
+    return to - from <= pi<fixed> ? to - from : to - (2 * pi<fixed> + from);
   }
-  return from - to <= fixed_c::pi ? to - from : 2 * fixed_c::pi + to - from;
+  return from - to <= pi<fixed> ? to - from : 2 * pi<fixed> + to - from;
 }
 
 inline constexpr float angle_diff(float from, float to) {
@@ -122,9 +134,9 @@ inline constexpr float angle_diff(float from, float to) {
     return 0.f;
   }
   if (to > from) {
-    return to - from <= glm::pi<float>() ? to - from : to - (2.f * glm::pi<float>() + from);
+    return to - from <= pi<float> ? to - from : to - (2.f * pi<float> + from);
   }
-  return from - to <= glm::pi<float>() ? to - from : 2.f * glm::pi<float>() + to - from;
+  return from - to <= pi<float> ? to - from : 2.f * pi<float> + to - from;
 }
 
 template <std::size_t N, typename T>

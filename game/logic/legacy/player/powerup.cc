@@ -32,7 +32,7 @@ struct Powerup : ecs::component {
   shape_parameters(const Transform& transform) const {
     auto c0 = legacy_player_colour((frame % (2 * kMaxPlayers)) / 2);
     auto c1 = legacy_player_colour(((frame + 1) % (2 * kMaxPlayers)) / 2);
-    return {transform.centre, fixed_c::pi / 2, c0, c1, type};
+    return {transform.centre, pi<fixed> / 2, c0, c1, type};
   }
 
   Powerup(powerup_type type) : type{type} {}
@@ -49,7 +49,7 @@ struct Powerup : ecs::component {
       dir = sim.dimensions() / 2_fx - transform.centre;
     } else {
       if (first_frame) {
-        dir = from_polar(sim.random_fixed() * 2 * fixed_c::pi, 1_fx);
+        dir = from_polar(sim.random_fixed() * 2 * pi<fixed>, 1_fx);
       }
 
       dir = sim.rotate_compatibility(dir, 2 * fixed_c::hundredth * (rotate ? 1 : -1));
@@ -103,7 +103,7 @@ struct Powerup : ecs::component {
     for (std::uint32_t i = 0; i < r; ++i) {
       e.add(particle{
           .position = to_float(transform.centre),
-          .velocity = from_polar(random.fixed().to_float() * 2.f * glm::pi<float>(), 6.f),
+          .velocity = from_polar(random.fixed().to_float() * 2.f * pi<float>, 6.f),
           .colour = cvec4{1.f},
           .data = dot_particle{},
           .end_time = 4 + random.uint(8),

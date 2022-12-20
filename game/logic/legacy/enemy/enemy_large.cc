@@ -21,7 +21,7 @@ struct FollowHub : ecs::component {
   using fh_arrange = geom::compound<geom::translate<16, 0, S>, geom::translate<-16, 0, S>,
                                     geom::translate<0, 16, S>, geom::translate<0, -16, S>>;
   template <geom::ShapeNode S>
-  using r_pi4_ngon = geom::rotate<fixed_c::pi / 4, S>;
+  using r_pi4_ngon = geom::rotate<pi<fixed> / 4, S>;
   using fh_centre =
       r_pi4_ngon<geom::polygram<16, 4, c, 0, shape_flag::kDangerous | shape_flag::kVulnerable>>;
   using fh_spoke = r_pi4_ngon<geom::ngon<8, 4, c>>;
@@ -62,7 +62,7 @@ struct FollowHub : ecs::component {
         : transform.centre.x > d.x ? vec2{-1, 0}
         : transform.centre.y < 0   ? vec2{0, 1}
         : transform.centre.y > d.y ? vec2{0, -1}
-        : count > 3                ? (count = 0, sim.rotate_compatibility(dir, -fixed_c::pi / 2))
+        : count > 3                ? (count = 0, sim.rotate_compatibility(dir, -pi<fixed> / 2))
                                    : dir;
 
     auto s = power_a ? fixed_c::hundredth * 5 + fixed_c::tenth : fixed_c::hundredth * 5;
@@ -96,8 +96,8 @@ struct Shielder : ecs::component {
   static constexpr auto c1 = colour::hue360(160, .5f, .6f);
   template <geom::ShapeNode S>
   using s_arrange = geom::compound<geom::translate<24, 0, S>, geom::translate<-24, 0, S>,
-                                   geom::translate<0, 24, geom::rotate<fixed_c::pi / 2, S>>,
-                                   geom::translate<0, -24, geom::rotate<fixed_c::pi / 2, S>>>;
+                                   geom::translate<0, 24, geom::rotate<pi<fixed> / 2, S>>,
+                                   geom::translate<0, -24, geom::rotate<pi<fixed> / 2, S>>>;
   using s_centre =
       geom::polygon_colour_p<14, 8, 2, 0, shape_flag::kDangerous | shape_flag::kVulnerable>;
   using s_shield0 = geom::polystar<8, 6, c0, 0, shape_flag::kWeakShield>;
@@ -140,10 +140,10 @@ struct Shielder : ecs::component {
     fixed speed = kSpeed + (power ? fixed_c::tenth * 3 : fixed_c::tenth * 2) * (16 - health.hp);
     if (rotate) {
       auto d = sim.rotate_compatibility(
-          dir, (rdir ? 1 : -1) * (kTimer - timer) * fixed_c::pi / (2 * kTimer));
+          dir, (rdir ? 1 : -1) * (kTimer - timer) * pi<fixed> / (2 * kTimer));
       if (!--timer) {
         rotate = false;
-        dir = sim.rotate_compatibility(dir, (rdir ? 1 : -1) * fixed_c::pi / 2);
+        dir = sim.rotate_compatibility(dir, (rdir ? 1 : -1) * pi<fixed> / 2);
       }
       transform.move(d * speed);
     } else {

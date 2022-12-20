@@ -27,7 +27,7 @@ void wobble_movement(SimInterface& sim, const Transform& transform, vec2& dir,
     first_frame = false;
   } else {
     if (first_frame) {
-      dir = from_polar(sim.random_fixed() * 2 * fixed_c::pi, 1_fx);
+      dir = from_polar(sim.random_fixed() * 2 * pi<fixed>, 1_fx);
       rotate_anti = sim.random_bool();
     }
 
@@ -77,7 +77,7 @@ struct PlayerBubble : ecs::component {
     tick_count = sim.tick_count();
     wobble_movement(sim, transform, dir, kRotateTime, first_frame, rotate_anti);
 
-    transform.rotate(fixed_c::pi / 100);
+    transform.rotate(pi<fixed> / 100);
     transform.move(normalise(dir) * kSpeed);
     on_screen = on_screen || sim.is_on_screen(transform.centre);
   }
@@ -131,7 +131,7 @@ struct ShieldPowerup : ecs::component {
     }
     dir = normalise(dir);
 
-    transform.rotate(fixed_c::pi / 120);
+    transform.rotate(pi<fixed> / 120);
     transform.move(dir * kSpeed * (required ? 3 : 1));
     if (required && !p.is_predicted &&
         length_squared(pv) <= kPowerupCollectDistance * kPowerupCollectDistance) {
@@ -214,7 +214,7 @@ struct BombPowerup : ecs::component {
     }
     dir = normalise(dir);
 
-    transform.rotate(fixed_c::pi / 120);
+    transform.rotate(pi<fixed> / 120);
     transform.move(dir * kSpeed * (required ? 3 : 1));
     if (required && !p.is_predicted &&
         length_squared(pv) <= kPowerupCollectDistance * kPowerupCollectDistance) {

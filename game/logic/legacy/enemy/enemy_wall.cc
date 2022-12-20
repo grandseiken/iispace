@@ -106,12 +106,12 @@ struct Wall : ecs::component {
 
     if (is_rotating) {
       auto d = sim.rotate_compatibility(
-          dir, (rdir ? -1 : 1) * (kTimer - timer) * fixed_c::pi / (4 * kTimer));
+          dir, (rdir ? -1 : 1) * (kTimer - timer) * pi<fixed> / (4 * kTimer));
 
       transform.set_rotation(angle(d));
       if (!--timer) {
         is_rotating = false;
-        dir = sim.rotate_compatibility(dir, rdir ? -fixed_c::pi / 4 : fixed_c::pi / 4);
+        dir = sim.rotate_compatibility(dir, rdir ? -pi<fixed> / 4 : pi<fixed> / 4);
       }
       return;
     }
@@ -141,7 +141,7 @@ struct Wall : ecs::component {
     if (type == damage_type::kBomb) {
       return;
     }
-    auto d = sim.rotate_compatibility(dir, fixed_c::pi / 2);
+    auto d = sim.rotate_compatibility(dir, pi<fixed> / 2);
     auto v = transform.centre + d * 10 * 3;
     if (sim.is_on_screen(v)) {
       spawn_square(sim, v, transform.rotation);

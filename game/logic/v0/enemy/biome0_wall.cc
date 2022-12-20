@@ -31,7 +31,7 @@ struct Square : ecs::component {
   shape_parameters(const Transform& transform, const Health& health) const {
     auto c = colour::kNewGreen0;
     if (health.hp && invisible_flash) {
-      c = colour::alpha(c, (5.f + 3.f * std::cos(invisible_flash / glm::pi<float>())) / 8.f);
+      c = colour::alpha(c, (5.f + 3.f * std::cos(invisible_flash / pi<float>)) / 8.f);
     }
     auto cf = colour::alpha(c, colour::kFillAlpha0);
     return {transform.centre, transform.rotation, c, cf};
@@ -139,12 +139,12 @@ struct Wall : ecs::component {
     }
 
     if (is_rotating) {
-      auto d = rotate(dir, (anti ? -1 : 1) * (kTimer - timer) * fixed_c::pi / (4 * kTimer));
+      auto d = rotate(dir, (anti ? -1 : 1) * (kTimer - timer) * pi<fixed> / (4 * kTimer));
 
       transform.set_rotation(angle(d));
       if (!--timer) {
         is_rotating = false;
-        dir = rotate(dir, anti ? -fixed_c::pi / 4 : fixed_c::pi / 4);
+        dir = rotate(dir, anti ? -pi<fixed> / 4 : pi<fixed> / 4);
       }
       return;
     }
@@ -174,7 +174,7 @@ struct Wall : ecs::component {
     }
 
     auto p = from_polar(transform.rotation, 1_fx);
-    auto d = rotate(p, fixed_c::pi / 2);
+    auto d = rotate(p, pi<fixed> / 2);
     auto v = transform.centre + d * 12 * 3;
     if (sim.is_on_screen(v)) {
       spawn_square(sim, v, p, /* drop */ false);

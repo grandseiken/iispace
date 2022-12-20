@@ -30,7 +30,7 @@ struct TractorBoss : ecs::component {
   struct ball_inner {
     template <fixed I>
     using ball =
-        geom::translate_eval<geom::constant<rotate_legacy(vec2{24, 0}, I* fixed_c::pi / 4)>,
+        geom::translate_eval<geom::constant<rotate_legacy(vec2{24, 0}, I* pi<fixed> / 4)>,
                              geom::rotate_eval<geom::multiply_p<BI ? 1 : -1, 2>,
                                                geom::polygram<12, 6, c0, 0, kDangerousVulnerable>>>;
     using shape = geom::for_each<fixed, 0, 8, ball>;
@@ -97,7 +97,7 @@ struct TractorBoss : ecs::component {
       }
       move_away = false;
       sound = !will_attack;
-      transform.rotate(sim.random_fixed() * 2 * fixed_c::pi);
+      transform.rotate(sim.random_fixed() * 2 * pi<fixed>);
     }
 
     ++timer;
@@ -149,7 +149,7 @@ struct TractorBoss : ecs::component {
         if (timer < kTimer * 4 && !(timer % (10 - 2 * sim.alive_players()))) {
           auto f = [&](std::size_t index, const vec2& v, const vec2&) {
             spawn_bounce(sim, v,
-                         !index == gen_dir ? transform.rotation + fixed_c::pi : transform.rotation);
+                         !index == gen_dir ? transform.rotation + pi<fixed> : transform.rotation);
           };
           iterate_attachment_points_compatibility(h, sim, f);
           e.play_random(sound::kEnemySpawn, transform.centre);
@@ -169,13 +169,13 @@ struct TractorBoss : ecs::component {
           }
           if (timer % (kTimer / (1 + fixed_c::half)).to_int() == kTimer / 8) {
             auto f = [&](std::size_t, const vec2& v, const vec2&) {
-              auto d = from_polar(sim.random_fixed() * (2 * fixed_c::pi), 5_fx);
+              auto d = from_polar(sim.random_fixed() * (2 * pi<fixed>), 5_fx);
               spawn_boss_shot(sim, v, d, c0);
-              d = sim.rotate_compatibility(d, fixed_c::pi / 2);
+              d = sim.rotate_compatibility(d, pi<fixed> / 2);
               spawn_boss_shot(sim, v, d, c0);
-              d = sim.rotate_compatibility(d, fixed_c::pi / 2);
+              d = sim.rotate_compatibility(d, pi<fixed> / 2);
               spawn_boss_shot(sim, v, d, c0);
-              d = sim.rotate_compatibility(d, fixed_c::pi / 2);
+              d = sim.rotate_compatibility(d, pi<fixed> / 2);
               spawn_boss_shot(sim, v, d, c0);
             };
             iterate_attachment_points_compatibility(h, sim, f);
@@ -210,7 +210,7 @@ struct TractorBoss : ecs::component {
           move_away = true;
           for (std::uint32_t i = 0; i < attack_shapes.size(); ++i) {
             vec2 d = from_polar(
-                i * (2 * fixed_c::pi) / static_cast<std::uint32_t>(attack_shapes.size()), 5_fx);
+                i * (2 * pi<fixed>) / static_cast<std::uint32_t>(attack_shapes.size()), 5_fx);
             spawn_boss_shot(sim, transform.centre, d, c0);
           }
           e.play(sound::kBossFire, transform.centre);
@@ -221,7 +221,7 @@ struct TractorBoss : ecs::component {
     }
 
     for (auto& v : attack_shapes) {
-      v = from_polar(sim.random_fixed() * (2 * fixed_c::pi),
+      v = from_polar(sim.random_fixed() * (2 * pi<fixed>),
                      2 * (sim.random_fixed() - fixed_c::half) *
                          fixed{static_cast<std::uint32_t>(attack_shapes.size())} /
                          (1 + fixed_c::half));
