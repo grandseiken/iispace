@@ -126,6 +126,7 @@ std::vector<render::shape> render_mod_icon(mod_id id, std::uint32_t animation) {
 // TODO: render warnings:
 // - if an upgrade will replace another.
 // - if an upgrade would have no effect? (e.g. bonus in multiplayer)
+// TODO: needs a better effect on pickup.
 struct ModUpgrade : ecs::component {
   static constexpr std::int32_t kPanelPadding = 8;
   static constexpr std::uint32_t kTitleFontSize = 14;
@@ -142,12 +143,11 @@ struct ModUpgrade : ecs::component {
   std::uint32_t timer = 0;
   std::uint32_t icon_animation = 0;
   std::optional<std::uint32_t> highlight_animation;
-  bool chosen = false;
   bool destroy = false;
 
   void update(ecs::handle h, SimInterface& sim) {
     auto r = panel_rect(sim);
-    bool highlight = chosen;
+    bool highlight = false;
     ++icon_animation;
 
     if (destroy) {
@@ -161,22 +161,19 @@ struct ModUpgrade : ecs::component {
           [&](Player& pc, PlayerLoadout& loadout, const Transform& transform) {
             bool valid = !pc.mod_upgrade_chosen && r.contains(transform.centre);
             highlight |= valid;
-            if (!chosen && valid && pc.is_clicking) {
+            if (!h.has<Destroy>() && valid && pc.is_clicking) {
               const auto& data = mod_lookup(mod_id);
-              destroy = chosen = pc.mod_upgrade_chosen = true;
+              pc.mod_upgrade_chosen = true;
               timer = 2 * kAnimFrames;
               loadout.add_mod(mod_id);
               auto c = mod_category_colour(data.category);
               auto e = sim.emit(resolve_key::local(pc.player_number));
               e.play(sound::kPowerupLife, transform.centre)
                   .rumble(pc.player_number, 16, .25f, .75f)
-                  .explosion(to_float(transform.centre), colour::kWhite0, 8, std::nullopt, 2.f)
-                  .explosion(to_float(transform.centre), c, 8, std::nullopt, 3.f)
-                  .explosion(to_float(transform.centre), colour::kWhite0, 8, std::nullopt, 4.f);
-              for (std::uint32_t i = 0; i < 16; ++i) {
-                e.explosion(to_float(transform.centre) + from_polar(2 * i * pi<float> / 16, 64.f),
-                            c, 8, to_float(transform.centre), 2.f);
-              }
+                  .explosion(to_float(transform.centre), colour::kWhite0, 24, std::nullopt, 1.f)
+                  .explosion(to_float(transform.centre), c, 16, std::nullopt, 1.5f)
+                  .explosion(to_float(transform.centre), colour::kWhite0, 8, std::nullopt, 2.f);
+              h.emplace<Destroy>();
             }
           });
     }
@@ -210,9 +207,7 @@ struct ModUpgrade : ecs::component {
 
     auto c = mod_category_colour(data.category);
     cvec4 ch{c.x, 0.f, 1.f, 1.f};
-    auto t = chosen           ? 1.f
-        : highlight_animation ? .5f + .5f * sin(*highlight_animation / (3.f * pi<float>))
-                              : 0.f;
+    auto t = highlight_animation ? .5f + .5f * sin(*highlight_animation / (3.f * pi<float>)) : 0.f;
 
     render::combo_panel panel;
     panel.panel = {.style = render::panel_style::kFlatColour,
@@ -298,20 +293,15 @@ void spawn_mod_upgrades(SimInterface& sim, std::span<mod_id> ids) {
 
 void cleanup_mod_upgrades(SimInterface& sim) {
   sim.index().iterate<ModUpgrade>([&](ModUpgrade& upgrade) {
-    if (!upgrade.chosen) {
-      upgrade.timer = std::min(upgrade.timer, ModUpgrade::kAnimFrames);
-      upgrade.destroy = true;
-    }
+    upgrade.timer = std::min(upgrade.timer, ModUpgrade::kAnimFrames);
+    upgrade.destroy = true;
   });
 }
 
 bool is_mod_upgrade_choice_done(const SimInterface& sim) {
   bool all_chosen = true;
-  bool upgrade_remaining = false;
   sim.index().iterate<Player>([&](const Player& pc) { all_chosen &= pc.mod_upgrade_chosen; });
-  sim.index().iterate<ModUpgrade>(
-      [&](const ModUpgrade& upgrade) { upgrade_remaining |= !upgrade.chosen; });
-  return all_chosen || !upgrade_remaining;
+  return all_chosen || !sim.index().count<ModUpgrade>();
 }
 
 }  // namespace ii::v0
