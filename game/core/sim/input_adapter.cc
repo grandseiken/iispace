@@ -64,8 +64,8 @@ kbm_keys(const io::keyboard::frame& keyboard_frame, const io::mouse::frame& mous
   if (mouse_frame.button(io::mouse::button::kR)) {
     result |= input_frame::key::kBomb;
   }
-  if (keyboard_frame.key(io::keyboard::key::kSpacebar) ||
-      mouse_frame.button(io::mouse::button::kM)) {
+  if (mouse_frame.button(io::mouse::button::kM) || keyboard_frame.key(io::keyboard::key::kLCtrl) ||
+      keyboard_frame.key(io::keyboard::key::kRCtrl)) {
     result |= input_frame::key::kSuper;
   }
   if (keyboard_frame.key(io::keyboard::key::kReturn) ||

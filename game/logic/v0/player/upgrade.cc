@@ -142,15 +142,15 @@ struct ModUpgrade : ecs::component {
   std::uint32_t timer = 0;
   std::uint32_t icon_animation = 0;
   std::optional<std::uint32_t> highlight_animation;
+  bool chosen = false;
   bool destroy = false;
 
   void update(ecs::handle h, SimInterface& sim) {
     auto r = panel_rect(sim);
-    bool highlight = false;
+    bool highlight = chosen;
     ++icon_animation;
 
     if (destroy) {
-      timer = std::min(kAnimFrames, timer);
       timer && --timer;
       if (!timer) {
         h.emplace<Destroy>();
@@ -161,9 +161,10 @@ struct ModUpgrade : ecs::component {
           [&](Player& pc, PlayerLoadout& loadout, const Transform& transform) {
             bool valid = !pc.mod_upgrade_chosen && r.contains(transform.centre);
             highlight |= valid;
-            if (valid && pc.is_clicking) {
+            if (!chosen && valid && pc.is_clicking) {
               const auto& data = mod_lookup(mod_id);
-              pc.mod_upgrade_chosen = true;
+              destroy = chosen = pc.mod_upgrade_chosen = true;
+              timer = 2 * kAnimFrames;
               loadout.add_mod(mod_id);
               auto c = mod_category_colour(data.category);
               auto e = sim.emit(resolve_key::local(pc.player_number));
@@ -176,7 +177,6 @@ struct ModUpgrade : ecs::component {
                 e.explosion(to_float(transform.centre) + from_polar(2 * i * pi<float> / 16, 64.f),
                             c, 8, to_float(transform.centre), 2.f);
               }
-              h.emplace<Destroy>();
             }
           });
     }
@@ -210,7 +210,9 @@ struct ModUpgrade : ecs::component {
 
     auto c = mod_category_colour(data.category);
     cvec4 ch{c.x, 0.f, 1.f, 1.f};
-    auto t = highlight_animation ? .5f + .5f * sin(*highlight_animation / (3.f * pi<float>)) : 0.f;
+    auto t = chosen           ? 1.f
+        : highlight_animation ? .5f + .5f * sin(*highlight_animation / (3.f * pi<float>))
+                              : 0.f;
 
     render::combo_panel panel;
     panel.panel = {.style = render::panel_style::kFlatColour,
@@ -295,13 +297,21 @@ void spawn_mod_upgrades(SimInterface& sim, std::span<mod_id> ids) {
 }
 
 void cleanup_mod_upgrades(SimInterface& sim) {
-  sim.index().iterate<ModUpgrade>([&](ModUpgrade& upgrade) { upgrade.destroy = true; });
+  sim.index().iterate<ModUpgrade>([&](ModUpgrade& upgrade) {
+    if (!upgrade.chosen) {
+      upgrade.timer = std::min(upgrade.timer, ModUpgrade::kAnimFrames);
+      upgrade.destroy = true;
+    }
+  });
 }
 
 bool is_mod_upgrade_choice_done(const SimInterface& sim) {
   bool all_chosen = true;
+  bool upgrade_remaining = false;
   sim.index().iterate<Player>([&](const Player& pc) { all_chosen &= pc.mod_upgrade_chosen; });
-  return all_chosen || !sim.index().count<ModUpgrade>();
+  sim.index().iterate<ModUpgrade>(
+      [&](const ModUpgrade& upgrade) { upgrade_remaining |= !upgrade.chosen; });
+  return all_chosen || !upgrade_remaining;
 }
 
 }  // namespace ii::v0

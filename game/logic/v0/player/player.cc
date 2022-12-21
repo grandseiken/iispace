@@ -62,6 +62,7 @@ struct PlayerLogic : ecs::component {
   std::uint32_t bomb_timer = 0;
   std::uint32_t click_timer = 0;
   std::uint32_t render_timer = 0;
+  std::uint32_t nametag_timer = invulnerability_timer;
   std::uint32_t fire_target_render_timer = 0;
   vec2 fire_target{0};
   bool mod_upgrade_chosen = false;
@@ -107,6 +108,7 @@ struct PlayerLogic : ecs::component {
       }
       return;
     }
+    nametag_timer && --nametag_timer;
     invulnerability_timer && --invulnerability_timer;
 
     // Movement.
@@ -162,7 +164,7 @@ struct PlayerLogic : ecs::component {
       bubble_id.reset();
       pc.is_killed = false;
       render.clear_trails = true;
-      invulnerability_timer = kReviveTime;
+      invulnerability_timer = nametag_timer = kReviveTime;
       sim.emit(resolve_key::reconcile(h.id(), resolve_tag::kRespawn))
           .rumble(pc.player_number, 20, 0.f, 1.f)
           .play(sound::kPlayerRespawn, transform.centre);
@@ -281,7 +283,7 @@ struct PlayerLogic : ecs::component {
 
   void render_panel(const Player& pc, const Transform& transform,
                     std::vector<render::combo_panel>& output, const SimInterface& sim) const {
-    if (invulnerability_timer) {
+    if (nametag_timer) {
       render_player_name_panel(pc.player_number, transform, output, sim);
     }
   }
