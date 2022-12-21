@@ -216,6 +216,7 @@ Note: many of these hard to do with laggy network.
 * Super snake (malworm)
 * Some kind of wall setup like sliding tile puzzle
 * Twin bosses (twin daemon)
+* Twin square boss
 * Hypervisor
 * Czechsum
 * Archives - rhythm boss that shoots out tall lines of walls in patterns, some that fall, etc

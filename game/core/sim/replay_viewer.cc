@@ -166,6 +166,7 @@ void ReplayViewer::render_content(render::GlRenderer& r) const {
   for (const auto& panel : render.panels) {
     r.render_panel(panel);
   }
+  r.clear_depth();
   r.render_shapes(render::coordinate_system::kGlobal, render.shapes, style);
   impl_->hud->set_data(render);
 }

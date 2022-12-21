@@ -10,14 +10,18 @@ float render_depth() {
   return (128. + clamp(gl_in[0].gl_Position.z, -128., 128.)) / 256.;
 }
 
-vec4 render_position(vec2 position) {
-  vec2 v = aspect_scale * (2. * (position + coordinate_offset) / vec2(render_dimensions) - 1.);
+vec4 render_coords(vec2 position) {
+  vec2 v = aspect_scale * (2. * position / vec2(render_dimensions) - 1.);
   return vec4(v.x, -v.y, render_depth(), 1.);
 }
 
+vec4 render_position(vec2 position) {
+  return render_coords(position + coordinate_offset);
+}
+
 void set_vertex_data(vec4 position) {
-  vec4 render_min = render_position(clip_min);
-  vec4 render_max = render_position(clip_max);
+  vec4 render_min = render_coords(clip_min);
+  vec4 render_max = render_coords(clip_max);
   gl_ClipDistance[0] = position.x - render_min.x;
   gl_ClipDistance[1] = render_max.x - position.x;
   gl_ClipDistance[2] = -(position.y - render_min.y);

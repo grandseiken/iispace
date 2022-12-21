@@ -52,6 +52,8 @@ EmitHandle& EmitHandle::explosion(const fvec2& v, const cvec4& c, std::uint32_t 
       dot.line_width = 2.f;
       dot.radius = 1.f;
     }
+    dot.rotation = ra.fixed().to_float() * pi<float>;
+    dot.angular_velocity = ra.fixed().to_float() - .5f;
     add(particle{
         .position = v,
         .velocity = dir,

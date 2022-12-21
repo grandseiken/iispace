@@ -10,6 +10,7 @@ namespace ii::render {
 
 enum class shape_style {
   kNone,
+  kIcon,
   kStandard,
 };
 

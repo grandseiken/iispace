@@ -128,8 +128,7 @@ struct Wall : ecs::component {
     return {transform.centre, transform.rotation, weak};
   }
 
-  void
-  update(ecs::handle h, Transform& transform, Health& health, SimInterface& sim) {
+  void update(ecs::handle h, Transform& transform, Health& health, SimInterface& sim) {
     if (sim.global_entity().get<GlobalData>()->walls_vulnerable && timer && !(timer % 8)) {
       weak = true;
       if (health.hp > 2 && sim.is_on_screen(transform.centre)) {

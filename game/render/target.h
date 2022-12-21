@@ -67,6 +67,22 @@ struct target {
     }
     return result;
   }
+
+  frect top_clip_rect() const {
+    frect result{render_dimensions};
+    for (const auto& r : clip_stack) {
+      result.position += r.position;
+      result.size = r.size;
+    }
+    return result;
+  }
+
+  std::int32_t border_size(std::uint32_t x) const {
+    return static_cast<std::int32_t>(
+        std::round(static_cast<float>(x) *
+                   std::min(static_cast<float>(screen_dimensions.x) / render_dimensions.x,
+                            static_cast<float>(screen_dimensions.y) / render_dimensions.y)));
+  }
 };
 
 class clip_handle {

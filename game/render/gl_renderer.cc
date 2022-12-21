@@ -479,9 +479,7 @@ void GlRenderer::render_panel(const panel_data& p) const {
   auto min = target().render_to_iscreen_coords(clip_rect.min() + p.bounds.min());
   auto size = target().render_to_iscreen_coords(clip_rect.min() + p.bounds.max()) - min;
 
-  auto border_size = static_cast<std::int16_t>(std::round(
-      std::min(static_cast<float>(target().screen_dimensions.x) / target().render_dimensions.x,
-               static_cast<float>(target().screen_dimensions.y) / target().render_dimensions.y)));
+  auto border_size = static_cast<std::int16_t>(target().border_size(1));
   std::vector<float> float_data = {p.colour.r, p.colour.g, p.colour.b, p.colour.a,
                                    p.border.r, p.border.g, p.border.b, p.border.a};
   std::vector<std::int16_t> int_data = {
@@ -516,20 +514,24 @@ void GlRenderer::render_panel(const combo_panel& data) const {
   panel_copy.bounds.position = target().snap_render_to_screen_coords(panel_copy.bounds.position);
   render_panel(panel_copy);
 
+  auto border_size = target().border_size(1);
+  auto inner_padding = fvec2{data.padding - border_size};
   auto& t = const_cast<render::target&>(target_);
-  render::clip_handle clip{t, panel_copy.bounds};
+  render::clip_handle clip{t, panel_copy.bounds.contract(glm::ivec2{border_size})};
   for (const auto& e : data.elements) {
     if (const auto* icon = std::get_if<combo_panel::icon>(&e.e)) {
-      // TODO
+      render::clip_handle icon_clip{t, e.bounds + inner_padding};
+      auto shapes = icon->shapes;
+      render_shapes(coordinate_system::kCentered, shapes, shape_style::kIcon);
     } else if (const auto* text = std::get_if<combo_panel::text>(&e.e)) {
       auto lines = prepare_text(*this, text->font, text->multiline,
                                 static_cast<std::int32_t>(e.bounds.size.x), text->text);
       if (text->drop_shadow) {
-        render_text(text->font, e.bounds + fvec2{data.padding} + fvec2{text->drop_shadow->offset},
+        render_text(text->font, e.bounds + inner_padding + fvec2{text->drop_shadow->offset},
                     text->align, cvec4{0.f, 0.f, 0.f, text->drop_shadow->alpha},
                     /* clip */ true, lines);
       }
-      render_text(text->font, e.bounds + fvec2{data.padding}, text->align, text->colour,
+      render_text(text->font, e.bounds + inner_padding, text->align, text->colour,
                   /* clip */ true, lines);
     }
   }
@@ -662,7 +664,13 @@ void GlRenderer::render_shapes(coordinate_system ctype, std::vector<shape>& shap
     buffer_data.emplace_back(shape_buffer_data{d.colour, d.style, ball_index});
   };
 
-  static constexpr fvec2 kShadowOffset{4, 6};
+  std::optional<fvec2> shadow_offset;
+  if (style == shape_style::kStandard) {
+    shadow_offset = {4, 6};
+  } else if (style == shape_style::kIcon) {
+    shadow_offset = {3, 3};
+  }
+
   std::uint32_t vertex_index = 0;
   auto add_outline_data = [&](const shape_data& d,
                               const std::optional<render::motion_trail>& trail) {
@@ -681,16 +689,16 @@ void GlRenderer::render_shapes(coordinate_system ctype, std::vector<shape>& shap
       trail_indices.emplace_back(vertex_index - 1);
       trail_indices.emplace_back(vertex_index++);
     }
-    if (style == shape_style::kStandard) {
+    if (shadow_offset) {
       auto ds = d;
-      ds.position += kShadowOffset;
+      ds.position += *shadow_offset;
       ds.colour = cvec4{0.f, 0.f, 0.f, ds.colour.a * colour::kShadowAlpha0};
       ds.line_width += 1.f;
       add_shape_data(ds);
       shadow_outline_indices.emplace_back(vertex_index++);
       if (trail) {
         auto dt = ds;
-        dt.position = trail->prev_origin + kShadowOffset;
+        dt.position = trail->prev_origin + *shadow_offset;
         dt.rotation = trail->prev_rotation;
         dt.colour = {0.f, 0.f, 0.f, trail->prev_colour.a * colour::kShadowAlpha0};
         add_shape_data(dt);
@@ -705,7 +713,7 @@ void GlRenderer::render_shapes(coordinate_system ctype, std::vector<shape>& shap
     fill_indices.emplace_back(vertex_index++);
     if (style == shape_style::kStandard) {
       auto ds = d;
-      ds.position += kShadowOffset;
+      ds.position += *shadow_offset;
       ds.colour = {0.f, 0.f, 0.f, ds.colour.a / 2.f};
       add_shape_data(ds);
       shadow_fill_indices.emplace_back(vertex_index++);
@@ -848,16 +856,17 @@ void GlRenderer::render_shapes(coordinate_system ctype, std::vector<shape>& shap
   attributes.add_attribute<float>(/* dimensions */ 6, 2);
 
   auto clip_rect = target().clip_rect();
+  auto top_rect = target().top_clip_rect();
   fvec2 offset;
   switch (ctype) {
   case coordinate_system::kGlobal:
     offset = fvec2{0, 0};
     break;
   case coordinate_system::kLocal:
-    offset = clip_rect.min();
+    offset = top_rect.min();
     break;
   case coordinate_system::kCentered:
-    offset = (clip_rect.min() + clip_rect.max()) / 2.f;
+    offset = (top_rect.min() + top_rect.max()) / 2.f;
   }
 
   auto fbo_bind = impl_->bind_render_framebuffer(target_.screen_dimensions);

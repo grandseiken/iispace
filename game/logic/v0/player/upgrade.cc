@@ -1,6 +1,7 @@
 #include "game/logic/v0/player/upgrade.h"
 #include "game/common/easing.h"
 #include "game/core/icons/mod_icons.h"
+#include "game/geometry/iteration.h"
 #include "game/logic/sim/sim_interface.h"
 #include "game/logic/v0/player/loadout_mods.h"
 #include "game/logic/v0/ship_template.h"
@@ -14,6 +15,112 @@ enum class upgrade_position : std::uint32_t {
   kL1 = 2,
   kR1 = 3,
 };
+
+std::vector<render::shape> render_mod_icon(mod_id id, std::uint32_t animation) {
+  auto render = [&]<typename S>(S) {
+    std::vector<render::shape> shapes;
+    auto t = static_cast<fixed>(animation) / 24;
+    geom::iterate(S{}, geom::iterate_shapes, std::tuple{t}, geom::transform{},
+                  [&](const render::shape& shape) { shapes.emplace_back(shape); });
+    return shapes;
+  };
+
+  switch (id) {
+  case mod_id::kNone:
+    break;
+  case mod_id::kBackShots:
+    return render(icons::generic_weapon<colour::kCategoryGeneral>{});
+  case mod_id::kFrontShots:
+    return render(icons::generic_weapon<colour::kCategoryGeneral>{});
+  case mod_id::kBounceShots:
+    return render(icons::generic_weapon<colour::kCategoryGeneral>{});
+  case mod_id::kHomingShots:
+    return render(icons::generic_weapon<colour::kCategoryGeneral>{});
+  case mod_id::kSuperCapacity:
+    return render(icons::generic_super<colour::kCategoryGeneral>{});
+  case mod_id::kSuperRefill:
+    return render(icons::generic_super<colour::kCategoryGeneral>{});
+  case mod_id::kBombCapacity:
+    return render(icons::generic_bomb<colour::kCategoryGeneral>{});
+  case mod_id::kBombRadius:
+    return render(icons::generic_bomb<colour::kCategoryGeneral>{});
+  case mod_id::kBombSpeedClearCharge:
+    return render(icons::generic_bomb<colour::kCategoryGeneral>{});
+  case mod_id::kBombDoubleTrigger:
+    return render(icons::generic_bomb<colour::kCategoryGeneral>{});
+  case mod_id::kShieldCapacity:
+    return render(icons::generic_shield<colour::kCategoryGeneral>{});
+  case mod_id::kShieldRefill:
+    return render(icons::generic_shield<colour::kCategoryGeneral>{});
+  case mod_id::kShieldRespawn:
+    return render(icons::generic_shield<colour::kCategoryGeneral>{});
+  case mod_id::kPowerupDrops:
+    return render(icons::generic_bonus<colour::kCategoryGeneral>{});
+  case mod_id::kCurrencyDrops:
+    return render(icons::generic_bonus<colour::kCategoryGeneral>{});
+  case mod_id::kCorruptionWeapon:
+    return render(icons::generic_weapon<colour::kCategoryCorruption>{});
+  case mod_id::kCorruptionSuper:
+    return render(icons::generic_super<colour::kCategoryCorruption>{});
+  case mod_id::kCorruptionBomb:
+    return render(icons::generic_bomb<colour::kCategoryCorruption>{});
+  case mod_id::kCorruptionShield:
+    return render(icons::generic_shield<colour::kCategoryCorruption>{});
+  case mod_id::kCorruptionBonus:
+    return render(icons::generic_bonus<colour::kCategoryCorruption>{});
+  case mod_id::kCloseCombatWeapon:
+    return render(icons::generic_weapon<colour::kCategoryCloseCombat>{});
+  case mod_id::kCloseCombatSuper:
+    return render(icons::generic_super<colour::kCategoryCloseCombat>{});
+  case mod_id::kCloseCombatBomb:
+    return render(icons::generic_bomb<colour::kCategoryCloseCombat>{});
+  case mod_id::kCloseCombatShield:
+    return render(icons::generic_shield<colour::kCategoryCloseCombat>{});
+  case mod_id::kCloseCombatBonus:
+    return render(icons::generic_bonus<colour::kCategoryCloseCombat>{});
+  case mod_id::kLightningWeapon:
+    return render(icons::generic_weapon<colour::kCategoryLightning>{});
+  case mod_id::kLightningSuper:
+    return render(icons::generic_super<colour::kCategoryLightning>{});
+  case mod_id::kLightningBomb:
+    return render(icons::generic_bomb<colour::kCategoryLightning>{});
+  case mod_id::kLightningShield:
+    return render(icons::generic_shield<colour::kCategoryLightning>{});
+  case mod_id::kLightningBonus:
+    return render(icons::generic_bonus<colour::kCategoryLightning>{});
+  case mod_id::kSniperWeapon:
+    return render(icons::generic_weapon<colour::kCategorySniper>{});
+  case mod_id::kSniperSuper:
+    return render(icons::generic_super<colour::kCategorySniper>{});
+  case mod_id::kSniperBomb:
+    return render(icons::generic_bomb<colour::kCategorySniper>{});
+  case mod_id::kSniperShield:
+    return render(icons::generic_shield<colour::kCategorySniper>{});
+  case mod_id::kSniperBonus:
+    return render(icons::generic_bonus<colour::kCategorySniper>{});
+  case mod_id::kLaserWeapon:
+    return render(icons::generic_weapon<colour::kCategoryLaser>{});
+  case mod_id::kLaserSuper:
+    return render(icons::generic_super<colour::kCategoryLaser>{});
+  case mod_id::kLaserBomb:
+    return render(icons::generic_bomb<colour::kCategoryLaser>{});
+  case mod_id::kLaserShield:
+    return render(icons::generic_shield<colour::kCategoryLaser>{});
+  case mod_id::kLaserBonus:
+    return render(icons::generic_bonus<colour::kCategoryLaser>{});
+  case mod_id::kClusterWeapon:
+    return render(icons::generic_weapon<colour::kCategoryCluster>{});
+  case mod_id::kClusterSuper:
+    return render(icons::generic_super<colour::kCategoryCluster>{});
+  case mod_id::kClusterBomb:
+    return render(icons::generic_bomb<colour::kCategoryCluster>{});
+  case mod_id::kClusterShield:
+    return render(icons::generic_shield<colour::kCategoryCluster>{});
+  case mod_id::kClusterBonus:
+    return render(icons::generic_bonus<colour::kCategoryCluster>{});
+  }
+  return render(icons::mod_unknown{});
+}
 
 struct ModUpgrade : ecs::component {
   static constexpr std::int32_t kPanelPadding = 8;
@@ -29,9 +136,11 @@ struct ModUpgrade : ecs::component {
   upgrade_position position = upgrade_position::kL0;
   v0::mod_id mod_id = v0::mod_id::kNone;
   std::uint32_t timer = 0;
+  std::uint32_t icon_animation = 0;
   bool destroy = false;
 
   void update(ecs::handle h, SimInterface&) {
+    ++icon_animation;
     if (destroy) {
       timer = std::min(kAnimFrames, timer);
       timer && --timer;
@@ -80,7 +189,7 @@ struct ModUpgrade : ecs::component {
                    .bounds = {panel_position, anim_size}};
     panel.padding = ivec2{kPanelPadding};
     panel.elements.emplace_back(render::combo_panel::element{
-        .bounds = {fvec2{0}, fvec2{panel_size.x - 2 * kPanelPadding, kTitleFontSize}},
+        .bounds = {fvec2{0}, {panel_size.x - 2 * kPanelPadding, kTitleFontSize}},
         .e =
             render::combo_panel::text{
                 .font = {render::font_id::kMonospaceBoldItalic, uvec2{kTitleFontSize}},
@@ -91,7 +200,7 @@ struct ModUpgrade : ecs::component {
             },
     });
     panel.elements.emplace_back(render::combo_panel::element{
-        .bounds = {fvec2{0}, fvec2{panel_size.x - 2 * kPanelPadding, kTitleFontSize}},
+        .bounds = {fvec2{0}, {panel_size.x - 2 * kPanelPadding, kTitleFontSize}},
         .e =
             render::combo_panel::text{
                 .font = {render::font_id::kMonospaceBold, uvec2{kSlotFontSize}},
@@ -102,9 +211,9 @@ struct ModUpgrade : ecs::component {
             },
     });
     panel.elements.emplace_back(render::combo_panel::element{
-        .bounds = {fvec2{kIconWidth + kPanelPadding, kTitleFontSize + kPanelPadding},
-                   fvec2{panel_size.x - 3 * kPanelPadding - kIconWidth,
-                         panel_size.y - 2 * kPanelPadding - kTitleFontSize}},
+        .bounds = {{kIconWidth + kPanelPadding, kTitleFontSize + kPanelPadding},
+                   {panel_size.x - 3 * kPanelPadding - kIconWidth,
+                    panel_size.y - 3 * kPanelPadding - kTitleFontSize}},
         .e =
             render::combo_panel::text{
                 .font = {render::font_id::kMonospace, uvec2{kDescriptionFontSize}},
@@ -114,6 +223,12 @@ struct ModUpgrade : ecs::component {
                 .text = ustring{data.description},
                 .multiline = true,
             },
+    });
+    panel.elements.emplace_back(render::combo_panel::element{
+        .bounds = {{0, kTitleFontSize + kPanelPadding},
+                   {kIconWidth,
+                    std::min(kIconWidth, panel_size.y - 3 * kPanelPadding - kTitleFontSize)}},
+        .e = render::combo_panel::icon{.shapes = render_mod_icon(mod_id, icon_animation)},
     });
     output.emplace_back(std::move(panel));
   }
@@ -137,7 +252,7 @@ void cleanup_mod_upgrades(SimInterface& sim) {
 }
 
 bool is_mod_upgrade_choice_done(const SimInterface& sim) {
-  return !sim.index().count<ModUpgrade>() || /* TODO */ sim.tick_count() % 4096 == 0;
+  return !sim.index().count<ModUpgrade>() || /* TODO */ sim.tick_count() % 2048 == 0;
 }
 
 }  // namespace ii::v0

@@ -85,6 +85,8 @@ struct resolve_key {
 
 struct dot_particle {
   float radius = 1.5f;
+  float rotation = 0.f;
+  float angular_velocity = 0.f;
   float line_width = 1.f;
 };
 

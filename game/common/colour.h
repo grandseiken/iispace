@@ -149,6 +149,20 @@ constexpr auto kOutline = kBlack1;
 constexpr auto kNewPurple = hue360(270, .6f, .7f);
 constexpr auto kNewGreen0 = hue360(120, .5f, .4f);
 
+constexpr auto kCategoryGeneral = kSolarizedDarkBase1;
+constexpr auto kCategoryCorruption = kNewPurple;
+constexpr auto kCategoryCloseCombat = kSolarizedDarkRed;
+constexpr auto kCategoryLightning = kSolarizedDarkCyan;
+constexpr auto kCategorySniper = kNewGreen0;
+constexpr auto kCategoryGravity = kSolarizedDarkViolet;
+constexpr auto kCategoryLaser = kSolarizedDarkBlue;
+constexpr auto kCategoryPummel = kSolarizedDarkYellow;
+constexpr auto kCategoryRemote = kSolarizedDarkBase2;
+constexpr auto kCategoryUnknown0 = kWhite1;  // TODO
+constexpr auto kCategoryUnknown1 = kWhite1;  // TODO
+constexpr auto kCategoryDefender = kSolarizedDarkBase01;
+constexpr auto kCategoryCluster = kSolarizedDarkOrange;
+
 constexpr auto kZBackgroundEffect0 = -104.f;
 constexpr auto kZBackgroundEffect1 = -100.f;
 constexpr auto kZParticle = -96.f;

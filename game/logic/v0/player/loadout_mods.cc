@@ -207,30 +207,31 @@ ustring_view mod_category_name(mod_category category) {
 cvec4 mod_category_colour(mod_category category) {
   switch (category) {
   case mod_category::kGeneral:
-    return colour::kSolarizedDarkBase1;
+    return colour::kCategoryGeneral;
   case mod_category::kCorruption:
-    return colour::kNewPurple;
+    return colour::kCategoryCorruption;
   case mod_category::kCloseCombat:
-    return colour::kSolarizedDarkRed;
+    return colour::kCategoryCloseCombat;
   case mod_category::kLightning:
-    return colour::kSolarizedDarkCyan;
+    return colour::kCategoryLightning;
   case mod_category::kSniper:
-    return colour::kNewGreen0;
+    return colour::kCategorySniper;
   case mod_category::kGravity:
-    return colour::kSolarizedDarkViolet;
+    return colour::kCategoryGravity;
   case mod_category::kLaser:
-    return colour::kSolarizedDarkBlue;
+    return colour::kCategoryLaser;
   case mod_category::kPummel:
-    return colour::kSolarizedDarkYellow;
+    return colour::kCategoryPummel;
   case mod_category::kRemote:
-    return colour::kSolarizedDarkBase2;
+    return colour::kCategoryRemote;
   case mod_category::kUnknown0:
+    return colour::kCategoryUnknown0;
   case mod_category::kUnknown1:
-    return colour::kWhite0;
+    return colour::kCategoryUnknown1;
   case mod_category::kDefender:
-    return colour::kSolarizedDarkBase01;
+    return colour::kCategoryDefender;
   case mod_category::kCluster:
-    return colour::kSolarizedDarkOrange;
+    return colour::kCategoryCluster;
   }
   return colour::kWhite0;
 }

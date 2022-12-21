@@ -122,8 +122,9 @@ void RenderState::update(SimInputAdapter* input) {
       continue;
     }
     ++p.time;
-    if (std::holds_alternative<dot_particle>(p.data)) {
+    if (auto* d = std::get_if<dot_particle>(&p.data)) {
       p.position += p.velocity;
+      d->rotation += d->angular_velocity;
     } else if (auto* d = std::get_if<line_particle>(&p.data)) {
       if (p.time >= p.end_time / 3 && p.time > 4 && d->radius > 2 * d->width &&
           !engine_.uint(50u - std::min(48u, static_cast<std::uint32_t>(d->radius)))) {
@@ -206,10 +207,11 @@ void RenderState::update(SimInputAdapter* input) {
 }
 
 void RenderState::render(std::vector<render::shape>& shapes) const {
-  auto render_box = [&](const fvec2& v, const fvec2& vv, const fvec2& d, const cvec4& c, float lw,
-                        float z) {
+  auto render_box = [&](const fvec2& v, const fvec2& vv, const fvec2& d, const cvec4& c, float r,
+                        float lw, float z) {
     shapes.emplace_back(render::shape{
         .origin = v,
+        .rotation = r,
         .colour = c,
         .z_index = z,
         .trail = render::motion_trail{.prev_origin = v - vv, .prev_colour = c},
@@ -221,12 +223,12 @@ void RenderState::render(std::vector<render::shape>& shapes) const {
     switch (star.type) {
     case star_type::kDotStar:
     case star_type::kFarStar:
-      render_box(star.position, star_direction_ * star.speed, fvec2{1, 1}, star.colour, 1.f,
+      render_box(star.position, star_direction_ * star.speed, fvec2{1, 1}, star.colour, 0.f, 1.f,
                  colour::kZParticle);
       break;
 
     case star_type::kBigStar:
-      render_box(star.position, star_direction_ * star.speed, fvec2{2, 2}, star.colour, 1.f,
+      render_box(star.position, star_direction_ * star.speed, fvec2{2, 2}, star.colour, 0.f, 1.f,
                  colour::kZParticle);
       break;
 
@@ -253,8 +255,8 @@ void RenderState::render(std::vector<render::shape>& shapes) const {
     cvec4 colour{p.colour.x, p.colour.y, glm::mix(p.colour.z, 1.f, l), a};
 
     if (const auto* d = std::get_if<dot_particle>(&p.data)) {
-      render_box(p.position, p.velocity, fvec2{d->radius, d->radius}, colour, d->line_width,
-                 colour::kZParticle);
+      render_box(p.position, p.velocity, fvec2{d->radius, d->radius}, colour, d->rotation,
+                 d->line_width, colour::kZParticle);
     } else if (const auto* d = std::get_if<line_particle>(&p.data)) {
       float t = std::max(0.f, (17.f - p.time) / 16.f);
       shapes.emplace_back(render::shape{
