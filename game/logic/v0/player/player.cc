@@ -19,6 +19,7 @@ struct PlayerLogic : ecs::component {
 
   static constexpr std::uint32_t kReviveTime = 100;
   static constexpr std::uint32_t kShieldTime = 50;
+  static constexpr std::uint32_t kInputTimer = 30;
   static constexpr std::uint32_t kShotTimer = 5;
 
   static constexpr auto z = colour::kZPlayer;
@@ -40,7 +41,8 @@ struct PlayerLogic : ecs::component {
       colour = v0_player_colour(pc.player_number);
       if (invulnerability_timer) {
         cvec4 c{colour.x, 0.f, 1.f, 1.f};
-        colour = glm::mix(colour, c, .5f + .125f * sin(invulnerability_timer / pi<float>));
+        colour =
+            glm::mix(colour, c, .375f + .125f * sin(invulnerability_timer / (2.f * pi<float>)));
       }
     }
     auto c_dark = colour;
@@ -58,13 +60,20 @@ struct PlayerLogic : ecs::component {
   std::uint32_t invulnerability_timer = kReviveTime;
   std::uint32_t fire_timer = 0;
   std::uint32_t bomb_timer = 0;
+  std::uint32_t click_timer = 0;
   std::uint32_t render_timer = 0;
   std::uint32_t fire_target_render_timer = 0;
   vec2 fire_target{0};
+  bool mod_upgrade_chosen = false;
 
   void update(ecs::handle h, Player& pc, Transform& transform, SimInterface& sim) {
+    pc.is_clicking = false;
     pc.speed = kPlayerSpeed;
     ++render_timer;
+    if (!mod_upgrade_chosen && pc.mod_upgrade_chosen) {
+      invulnerability_timer = kReviveTime;
+    }
+    mod_upgrade_chosen = pc.mod_upgrade_chosen;
 
     const auto& input = sim.input(pc.player_number);
     if (input.target_absolute) {
@@ -85,6 +94,7 @@ struct PlayerLogic : ecs::component {
     fire_target = glm::clamp(fire_target, vec2{0}, sim.dimensions());
     fire_timer && --fire_timer;
     bomb_timer && --bomb_timer;
+    click_timer && --click_timer;
 
     // Temporary death.
     auto dim = sim.dimensions();
@@ -106,10 +116,17 @@ struct PlayerLogic : ecs::component {
       transform.centre = max(vec2{0}, min(dim, kPlayerSpeed * v + transform.centre));
     }
 
+    // Click.
+    if (!pc.is_predicted && !click_timer && input.keys & input_frame::kClick) {
+      pc.is_clicking = true;
+      click_timer = kInputTimer;
+    }
+
+    // Bomb.
     if (!pc.is_predicted && pc.bomb_count && !bomb_timer && input.keys & input_frame::kBomb) {
       trigger_bomb(h, pc, transform.centre, sim);
       --pc.bomb_count;
-      bomb_timer = 30;
+      bomb_timer = kInputTimer;
     }
 
     // Shots.

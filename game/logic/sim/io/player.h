@@ -16,8 +16,12 @@ struct ai_state {
 
 struct input_frame {
   enum key : std::uint32_t {
-    kFire = 1,
-    kBomb = 2,
+    kNone = 0b000000,
+    kFire = 0b000001,
+    kBomb = 0b000010,
+    kSuper = 0b000100,
+    kPower = 0b001000,
+    kClick = 0b010000,
   };
   vec2 velocity{0};
   std::optional<vec2> target_absolute;

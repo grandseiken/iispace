@@ -143,6 +143,8 @@ struct Player : ecs::component {
   std::uint32_t player_number = 0;
   std::uint32_t death_count = 0;
   bool is_killed = false;
+  bool is_clicking = false;
+  bool mod_upgrade_chosen = false;
 
   std::uint32_t super_charge = 0;
   std::uint32_t bomb_count = 0;

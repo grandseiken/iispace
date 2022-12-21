@@ -112,7 +112,7 @@ struct Shielder : ecs::component {
   static constexpr fixed kSpeed = 1_fx;
 
   static constexpr auto z = colour::kZEnemyLarge;
-  static constexpr auto c0 = colour::hsl_mix(colour::kSolarizedDarkCyan, colour::kNewGreen0);
+  static constexpr auto c0 = colour::linear_mix(colour::kSolarizedDarkCyan, colour::kNewGreen0);
   static constexpr auto c1 = colour::kWhite1;
   static constexpr auto cf = colour::alpha(c0, colour::kFillAlpha0);
   static constexpr auto outline = geom::nline(colour::kOutline, colour::kZOutline, 2.f);
@@ -324,7 +324,7 @@ struct ShieldHub : ecs::component {
   static constexpr fixed kShieldDrawDistance = kShieldDistance + 10;
 
   static constexpr auto z = colour::kZEnemyLarge;
-  static constexpr auto c0 = colour::hsl_mix(colour::kSolarizedDarkCyan, colour::kNewGreen0);
+  static constexpr auto c0 = colour::linear_mix(colour::kSolarizedDarkCyan, colour::kNewGreen0);
   static constexpr auto c1 = colour::kWhite1;
   static constexpr auto cf0 = colour::alpha(c0, colour::kFillAlpha0);
   static constexpr auto cf1 = colour::alpha(c1, colour::kFillAlpha1);

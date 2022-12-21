@@ -83,8 +83,8 @@ inline cvec4 v0_player_colour(std::uint32_t player_number) {
       colour::clamp(colour::kSolarizedDarkYellow + cvec4{0.f, .25f, 0.f, 0.f});
   static constexpr std::array colours = {
       kNewPlayer0,
-      colour::hsl_mix(kNewPlayer0, kNewPlayer1, 2.f / 3.f),
-      colour::hsl_mix(kNewPlayer1, kNewPlayer2, 1.f / 3.f),
+      colour::linear_mix(kNewPlayer0, kNewPlayer1, 2.f / 3.f),
+      colour::linear_mix(kNewPlayer1, kNewPlayer2, 1.f / 3.f),
       kNewPlayer2,
   };
   return colours[player_number % colours.size()];

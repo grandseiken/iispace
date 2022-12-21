@@ -1,6 +1,7 @@
 #include "game/core/sim/input_adapter.h"
 #include "game/core/ui/input.h"
 #include "game/io/io.h"
+#include <limits>
 #include <optional>
 
 namespace ii {
@@ -28,8 +29,12 @@ vec2 kbm_move_velocity(const io::keyboard::frame& frame) {
   bool d = frame.key(io::keyboard::key::kDArrow) || frame.key(io::keyboard::key::kS);
   bool l = frame.key(io::keyboard::key::kLArrow) || frame.key(io::keyboard::key::kA);
   bool r = frame.key(io::keyboard::key::kRArrow) || frame.key(io::keyboard::key::kD);
-  return vec2{0, -1} * fixed{u} + vec2{0, 1} * fixed{d} + vec2{-1, 0} * fixed{l} +
+  auto v = vec2{0, -1} * fixed{u} + vec2{0, 1} * fixed{d} + vec2{-1, 0} * fixed{l} +
       vec2{1, 0} * fixed{r};
+  if (frame.key(io::keyboard::key::kLShift) || frame.key(io::keyboard::key::kRShift)) {
+    v = normalise(v) / 2;
+  }
+  return v;
 }
 
 vec2 kbm_fire_target(const io::mouse::frame& frame, const uvec2& game_dimensions,
@@ -53,14 +58,19 @@ vec2 kbm_fire_target(const io::mouse::frame& frame, const uvec2& game_dimensions
 std::uint32_t
 kbm_keys(const io::keyboard::frame& keyboard_frame, const io::mouse::frame& mouse_frame) {
   std::uint32_t result = 0;
-  if (keyboard_frame.key(io::keyboard::key::kZ) || keyboard_frame.key(io::keyboard::key::kLCtrl) ||
-      keyboard_frame.key(io::keyboard::key::kRCtrl) || mouse_frame.button(io::mouse::button::kL)) {
+  if (mouse_frame.button(io::mouse::button::kL)) {
     result |= input_frame::key::kFire;
   }
-  if (keyboard_frame.key(io::keyboard::key::kX) ||
-      keyboard_frame.key(io::keyboard::key::kSpacebar) ||
-      mouse_frame.button(io::mouse::button::kR)) {
+  if (mouse_frame.button(io::mouse::button::kR)) {
     result |= input_frame::key::kBomb;
+  }
+  if (keyboard_frame.key(io::keyboard::key::kSpacebar) ||
+      mouse_frame.button(io::mouse::button::kM)) {
+    result |= input_frame::key::kSuper;
+  }
+  if (keyboard_frame.key(io::keyboard::key::kReturn) ||
+      mouse_frame.button(io::mouse::button::kX1)) {
+    result |= input_frame::key::kClick;
   }
   return result;
 }
@@ -85,14 +95,20 @@ vec2 controller_fire_target(const io::controller::frame& frame) {
 }
 
 std::uint32_t controller_keys(const io::controller::frame& frame) {
+  static constexpr auto kTriggerThreshold = std::numeric_limits<std::int16_t>::max() / 2;
   std::uint32_t result = 0;
-  if (frame.button(io::controller::button::kA) ||
-      frame.button(io::controller::button::kRShoulder)) {
+  if (frame.button(io::controller::button::kRShoulder)) {
     result |= input_frame::key::kFire;
   }
-  if (frame.button(io::controller::button::kB) ||
+  if (frame.axis(io::controller::axis::kLT) >= kTriggerThreshold ||
       frame.button(io::controller::button::kLShoulder)) {
     result |= input_frame::key::kBomb;
+  }
+  if (frame.axis(io::controller::axis::kRT) >= kTriggerThreshold) {
+    result |= input_frame::key::kSuper;
+  }
+  if (frame.button(io::controller::button::kA)) {
+    result |= input_frame::key::kClick;
   }
   return result;
 }
@@ -128,26 +144,38 @@ std::vector<input_frame> SimInputAdapter::get() {
         ? &controller_frames[*input.device.controller_index]
         : nullptr;
     bool kbm = !controller || single_player;
+    auto set_single_player_device = [&](ui::input_device_id id) {
+      if (single_player) {
+        input.device = id;
+      }
+    };
+
     auto for_controllers = [&](auto&& f) {
       if (single_player) {
-        for (const auto& controller_frame : controller_frames) {
-          f(controller_frame);
+        for (std::size_t i = 0; i < controller_frames.size(); ++i) {
+          f(i, controller_frames[i]);
         }
       } else if (controller) {
-        f(*controller);
+        f(*input.device.controller_index, *controller);
       }
     };
 
     if (kbm) {
       frame.velocity = kbm_move_velocity(keyboard_frame);
+      if (frame.velocity != vec2{0}) {
+        set_single_player_device(ui::input_device_id::kbm());
+      }
     }
-    for_controllers([&](const auto& controller_frame) {
+    for_controllers([&](std::size_t index, const auto& controller_frame) {
       if (frame.velocity == vec2{0}) {
         frame.velocity = controller_move_velocity(controller_frame);
+        if (frame.velocity != vec2{0}) {
+          set_single_player_device(ui::input_device_id::controller(index));
+        }
       }
     });
 
-    for_controllers([&](const auto& controller_frame) {
+    for_controllers([&](std::size_t index, const auto& controller_frame) {
       auto v = controller_fire_target(controller_frame);
       if (!frame.target_relative && v != vec2{0}) {
         if (kbm) {
@@ -155,11 +183,13 @@ std::vector<input_frame> SimInputAdapter::get() {
         }
         frame.target_relative = input.last_aim = normalise(v) * 48;
         frame.keys |= input_frame::key::kFire;
+        set_single_player_device(ui::input_device_id::controller(index));
       }
     });
     if (kbm && !frame.target_relative) {
       if (mouse_frame.cursor_delta != ivec2{0, 0}) {
         mouse_moving_ = true;
+        set_single_player_device(ui::input_device_id::kbm());
       }
       if (mouse_moving_) {
         frame.target_absolute =
@@ -175,17 +205,25 @@ std::vector<input_frame> SimInputAdapter::get() {
     }
 
     if (kbm) {
-      frame.keys |= kbm_keys(keyboard_frame, mouse_frame);
+      auto keys = kbm_keys(keyboard_frame, mouse_frame);
+      frame.keys |= keys;
+      if (keys) {
+        set_single_player_device(ui::input_device_id::kbm());
+      }
     }
-    for_controllers(
-        [&](const auto& controller_frame) { frame.keys |= controller_keys(controller_frame); });
+    for_controllers([&](std::size_t index, const auto& controller_frame) {
+      auto keys = controller_keys(controller_frame);
+      frame.keys |= keys;
+      if (keys) {
+        set_single_player_device(ui::input_device_id::controller(index));
+      }
+    });
   }
   return frames;
 }
 
 void SimInputAdapter::rumble(std::uint32_t player_index, std::uint16_t lf, std::uint16_t hf,
                              std::uint32_t duration_ms) const {
-  // TODO: rumble in single-player if they have been using a controller.
   if (player_index < input_.size() && input_[player_index].device.controller_index) {
     io_layer_.controller_rumble(*input_[player_index].device.controller_index, lf, hf, duration_ms);
   }

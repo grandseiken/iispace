@@ -32,11 +32,11 @@ cc_library(
   deps = [
     "//game/common:ustring",
     "//game/logic/ecs",
+    "//game/logic/sim/io:conditions",
   ],
   implementation_deps = [
     "//game/common:math",
     "//game/common:random",
-    "//game/logic/sim/io:conditions",
   ],
   visibility = ["//game/logic/v0/overmind:__pkg__"],
 )

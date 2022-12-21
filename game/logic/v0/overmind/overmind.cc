@@ -15,8 +15,8 @@ namespace {
 
 struct Overmind : ecs::component {
   static constexpr std::uint32_t kSpawnTimer = 60;
-  static constexpr std::uint32_t kSpawnTimerBoss = 180;
-  static constexpr std::uint32_t kSpawnTimerUpgrade = 120;
+  static constexpr std::uint32_t kSpawnTimerBoss = 120;
+  static constexpr std::uint32_t kSpawnTimerUpgrade = 180;
   static constexpr std::uint32_t kBackgroundInterpolateTime = 180;
 
   wave_id next_wave;

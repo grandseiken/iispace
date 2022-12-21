@@ -188,6 +188,11 @@ std::vector<mod_id> mod_selection(const initial_conditions& conditions, RandomEn
     }
     add_result(*mod_data);
   }
+
+  for (std::uint32_t i = 0; i + 1 < result.size(); ++i) {
+    auto j = i + random.uint(result.size() - i);
+    std::swap(result[i], result[j]);
+  }
   return result;
 }
 

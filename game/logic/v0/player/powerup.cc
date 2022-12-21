@@ -227,7 +227,7 @@ struct BombPowerup : ecs::component {
     auto& pc = *source.get<Player>();
     auto e = sim.emit(resolve_key::local(pc.player_number));
     e.play(sound::kPowerupOther, transform.centre);
-    e.rumble(source.get<Player>()->player_number, 10, .25f, .75f);
+    e.rumble(pc.player_number, 10, .25f, .75f);
     e.explosion(to_float(transform.centre), colour::kWhite0);
     h.emplace<Destroy>();
     ++pc.bomb_count;

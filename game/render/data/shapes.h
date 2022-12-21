@@ -126,7 +126,7 @@ struct shape {
     copy.colour = colour::alpha(copy.colour, a);
     copy.s_index += 'S';
     z_index += a;
-    colour = colour::hsl_mix(colour, colour::kWhite1, a * a);
+    colour = colour::linear_mix(colour, colour::kWhite1, a * a);
     return true;
   }
 };

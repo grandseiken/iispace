@@ -98,7 +98,7 @@ inline constexpr cvec4 srgb2hsl(std::uint8_t r, std::uint8_t g, std::uint8_t b) 
                    static_cast<float>(b) / 255.f, 1.f});
 }
 
-inline constexpr cvec4 hsl_mix(const cvec4& a, const cvec4& b, float t = .5f) {
+inline constexpr cvec4 linear_mix(const cvec4& a, const cvec4& b, float t = .5f) {
   auto rgb_a = srgb2rgb(hsl2srgb(a));
   auto rgb_b = srgb2rgb(hsl2srgb(b));
   return srgb2hsl(rgb2srgb((1.f - t) * rgb_a + t * rgb_b));
