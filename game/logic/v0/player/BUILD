@@ -33,6 +33,7 @@ cc_library(
     "//game/common:ustring",
     "//game/logic/ecs",
     "//game/logic/sim/io:conditions",
+    "//game/logic/v0:components",
   ],
   implementation_deps = [
     "//game/common:math",

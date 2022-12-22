@@ -150,6 +150,7 @@ void SimLayer::update_content(const ui::input_frame& ui_input, ui::output_frame&
   impl_->render_state.update(&impl_->input);
 
   // TODO: handle pausing in multiplayer.
+  // TODO: spacebar shouldn't pause on keyboard; but start should still pause on gamepad.
   bool should_pause = (ui_input.pressed(ui::key::kStart) || ui_input.pressed(ui::key::kEscape) ||
                        sim_should_pause(stack()));
   if (!impl_->network && should_pause) {

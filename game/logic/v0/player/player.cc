@@ -21,6 +21,7 @@ struct PlayerLogic : ecs::component {
   static constexpr std::uint32_t kShieldTime = 50;
   static constexpr std::uint32_t kInputTimer = 30;
   static constexpr std::uint32_t kShotTimer = 5;
+  static constexpr std::uint32_t kShieldRefillTimer = 60 * 25;
 
   static constexpr auto z = colour::kZPlayer;
   static constexpr auto style = geom::sline(colour::kZero, z);
@@ -62,12 +63,14 @@ struct PlayerLogic : ecs::component {
   std::uint32_t bomb_timer = 0;
   std::uint32_t click_timer = 0;
   std::uint32_t render_timer = 0;
+  std::uint32_t shield_refill_timer = 0;
   std::uint32_t nametag_timer = invulnerability_timer;
   std::uint32_t fire_target_render_timer = 0;
   vec2 fire_target{0};
   bool mod_upgrade_chosen = false;
 
-  void update(ecs::handle h, Player& pc, Transform& transform, SimInterface& sim) {
+  void update(ecs::handle h, Player& pc, Transform& transform, const PlayerLoadout& loadout,
+              SimInterface& sim) {
     pc.is_clicking = false;
     pc.speed = kPlayerSpeed;
     ++render_timer;
@@ -108,8 +111,15 @@ struct PlayerLogic : ecs::component {
       }
       return;
     }
+
     nametag_timer && --nametag_timer;
     invulnerability_timer && --invulnerability_timer;
+    if (loadout.has(mod_id::kShieldRefill)) {
+      if (++shield_refill_timer >= kShieldRefillTimer) {
+        pc.shield_count = 1u;
+        shield_refill_timer = 0u;
+      }
+    }
 
     // Movement.
     if (length(input.velocity) > fixed_c::hundredth) {
@@ -158,13 +168,17 @@ struct PlayerLogic : ecs::component {
     }
   }
 
-  void post_update(ecs::handle h, Player& pc, const Transform& transform, Render& render,
-                   SimInterface& sim) {
+  void post_update(ecs::handle h, Player& pc, const PlayerLoadout& loadout,
+                   const Transform& transform, Render& render, SimInterface& sim) {
     if (bubble_id && !sim.index().get(*bubble_id)) {
       bubble_id.reset();
       pc.is_killed = false;
       render.clear_trails = true;
+      shield_refill_timer = 0;
       invulnerability_timer = nametag_timer = kReviveTime;
+      if (loadout.has(mod_id::kShieldRespawn)) {
+        pc.shield_count = loadout.max_shield_capacity(sim);
+      }
       sim.emit(resolve_key::reconcile(h.id(), resolve_tag::kRespawn))
           .rumble(pc.player_number, 20, 0.f, 1.f)
           .play(sound::kPlayerRespawn, transform.centre);
@@ -183,6 +197,7 @@ struct PlayerLogic : ecs::component {
     if (pc.shield_count) {
       e.rumble(pc.player_number, 15, 0.f, 1.f).play(sound::kPlayerShield, transform.centre);
       --pc.shield_count;
+      shield_refill_timer = 0;
       invulnerability_timer = kShieldTime;
       return;
     }
@@ -195,6 +210,7 @@ struct PlayerLogic : ecs::component {
     ++pc.death_count;
     pc.bomb_count = 0;
     pc.is_killed = true;
+    shield_refill_timer = 0;
     e.rumble(pc.player_number, 30, .5f, .5f).play(sound::kPlayerDestroy, transform.centre);
   }
 

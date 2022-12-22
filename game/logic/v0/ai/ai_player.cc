@@ -11,6 +11,7 @@ struct AiPlayer : ecs::component {
 };
 DEBUG_STRUCT_TUPLE(AiPlayer);
 
+// TODO: AI players can't get past upgrade selection screen.
 input_frame AiPlayer::think(ecs::const_handle h, const Transform& transform, const Player& player,
                             const SimInterface& sim, ai_state& state) {
   struct target {

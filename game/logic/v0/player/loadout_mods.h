@@ -105,6 +105,7 @@ const mod_data& mod_lookup(mod_id);
 ustring_view mod_slot_name(mod_slot);
 ustring_view mod_category_name(mod_category);
 cvec4 mod_category_colour(mod_category);
+bool is_mod_slot_single_limit(mod_slot);
 
 }  // namespace ii::v0
 

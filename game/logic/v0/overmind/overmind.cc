@@ -135,11 +135,14 @@ struct Overmind : ecs::component {
   }
 
   void spawn_upgrades(SimInterface& sim) const {
-    std::vector<std::span<const mod_id>> current_loadouts;
-    sim.index().iterate<PlayerLoadout>(
-        [&](const PlayerLoadout& loadout) { current_loadouts.emplace_back(loadout.loadout); });
+    player_loadout combined_loadout;
+    sim.index().iterate<PlayerLoadout>([&](const PlayerLoadout& loadout) {
+      for (const auto& pair : loadout.loadout) {
+        combined_loadout[pair.first] += pair.second;
+      }
+    });
     auto mods =
-        mod_selection(sim.conditions(), sim.random(random_source::kGameSequence), current_loadouts);
+        mod_selection(sim.conditions(), sim.random(random_source::kGameSequence), combined_loadout);
     spawn_mod_upgrades(sim, mods);
   }
 

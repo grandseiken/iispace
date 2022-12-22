@@ -236,4 +236,22 @@ cvec4 mod_category_colour(mod_category category) {
   return colour::kWhite0;
 }
 
+bool is_mod_slot_single_limit(mod_slot slot) {
+  switch (slot) {
+  case mod_slot::kWeapon:
+  case mod_slot::kSuper:
+  case mod_slot::kBomb:
+  case mod_slot::kShield:
+  case mod_slot::kBonus:
+    return true;
+  case mod_slot::kWeaponCombo:
+  case mod_slot::kSuperCombo:
+  case mod_slot::kBombCombo:
+  case mod_slot::kShieldCombo:
+  case mod_slot::kBonusCombo:
+    return false;
+  }
+  return false;
+}
+
 }  // namespace ii::v0

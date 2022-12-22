@@ -158,14 +158,14 @@ struct ModUpgrade : ecs::component {
     } else {
       ++timer;
       sim.index().iterate_dispatch<Player>(
-          [&](Player& pc, PlayerLoadout& loadout, const Transform& transform) {
+          [&](ecs::handle ph, Player& pc, PlayerLoadout& loadout, const Transform& transform) {
             bool valid = !pc.mod_upgrade_chosen && r.contains(transform.centre);
             highlight |= valid;
             if (!h.has<Destroy>() && valid && pc.is_clicking) {
               const auto& data = mod_lookup(mod_id);
               pc.mod_upgrade_chosen = true;
               timer = 2 * kAnimFrames;
-              loadout.add_mod(mod_id);
+              loadout.add(ph, mod_id);
               auto c = mod_category_colour(data.category);
               auto e = sim.emit(resolve_key::local(pc.player_number));
               e.play(sound::kPowerupLife, transform.centre)

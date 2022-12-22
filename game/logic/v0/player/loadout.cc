@@ -1,5 +1,6 @@
 #include "game/logic/v0/player/loadout.h"
 #include "game/common/random.h"
+#include "game/logic/sim/components.h"
 #include "game/logic/sim/io/conditions.h"
 #include <algorithm>
 #include <unordered_map>
@@ -10,45 +11,48 @@ namespace {
 
 std::vector<mod_id> make_mod_list() {
   std::vector<mod_id> v = {
-      mod_id::kBackShots,         mod_id::kFrontShots,      mod_id::kBounceShots,
-      mod_id::kHomingShots,       mod_id::kSuperCapacity,   mod_id::kSuperRefill,
-      mod_id::kBombCapacity,      mod_id::kBombRadius,      mod_id::kBombSpeedClearCharge,
-      mod_id::kBombDoubleTrigger, mod_id::kShieldCapacity,  mod_id::kShieldRefill,
-      mod_id::kShieldRespawn,     mod_id::kPowerupDrops,    mod_id::kCurrencyDrops,
-      mod_id::kCorruptionWeapon,  mod_id::kCorruptionSuper, mod_id::kCorruptionBomb,
-      mod_id::kCorruptionShield,  mod_id::kCorruptionBonus, mod_id::kCloseCombatWeapon,
-      mod_id::kCloseCombatSuper,  mod_id::kCloseCombatBomb, mod_id::kCloseCombatShield,
-      mod_id::kCloseCombatBonus,  mod_id::kLightningWeapon, mod_id::kLightningSuper,
-      mod_id::kLightningBomb,     mod_id::kLightningShield, mod_id::kLightningBonus,
-      mod_id::kSniperWeapon,      mod_id::kSniperSuper,     mod_id::kSniperBomb,
-      mod_id::kSniperShield,      mod_id::kSniperBonus,     mod_id::kLaserWeapon,
-      mod_id::kLaserSuper,        mod_id::kLaserBomb,       mod_id::kLaserShield,
-      mod_id::kLaserBonus,        mod_id::kClusterWeapon,   mod_id::kClusterSuper,
-      mod_id::kClusterBomb,       mod_id::kClusterShield,   mod_id::kClusterBonus};
+      // mod_id::kBackShots, mod_id::kFrontShots, mod_id::kBounceShots,
+      // mod_id::kHomingShots, mod_id::kSuperCapacity, mod_id::kSuperRefill,
+      mod_id::kBombCapacity,
+      // mod_id::kBombRadius, mod_id::kBombSpeedClearCharge, mod_id::kBombDoubleTrigger,
+      mod_id::kShieldCapacity, mod_id::kShieldRefill, mod_id::kShieldRespawn,
+      // mod_id::kPowerupDrops, mod_id::kCurrencyDrops,
+      // mod_id::kCorruptionWeapon, mod_id::kCorruptionSuper, mod_id::kCorruptionBomb,
+      // mod_id::kCorruptionShield, mod_id::kCorruptionBonus,
+      // mod_id::kCloseCombatWeapon, mod_id::kCloseCombatSuper, mod_id::kCloseCombatBomb,
+      // mod_id::kCloseCombatShield, mod_id::kCloseCombatBonus,
+      // mod_id::kLightningWeapon, mod_id::kLightningSuper, mod_id::kLightningBomb,
+      // mod_id::kLightningShield, mod_id::kLightningBonus,
+      // mod_id::kSniperWeapon, mod_id::kSniperSuper, mod_id::kSniperBomb,
+      // mod_id::kSniperShield, mod_id::kSniperBonus,
+      // mod_id::kLaserWeapon, mod_id::kLaserSuper, mod_id::kLaserBomb,
+      // mod_id::kLaserShield, mod_id::kLaserBonus,
+      // mod_id::kClusterWeapon, mod_id::kClusterSuper, mod_id::kClusterBomb,
+      // mod_id::kClusterShield, mod_id::kClusterBonus
+  };
   return v;
 };
 
 }  // namespace
 
 std::vector<mod_id> mod_selection(const initial_conditions& conditions, RandomEngine& random,
-                                  std::span<const player_loadout> loadouts) {
+                                  const player_loadout& combined_loadout) {
   std::unordered_map<mod_category, std::uint32_t> loadout_category_counts;
   std::unordered_map<mod_slot, std::uint32_t> loadout_slot_counts;
   std::unordered_map<mod_id, std::uint32_t> loadout_mod_counts;
-  for (const auto& loadout : loadouts) {
-    for (auto id : loadout) {
-      const auto& data = mod_lookup(id);
-      ++loadout_category_counts[data.category];
-      ++loadout_slot_counts[data.slot];
-      ++loadout_mod_counts[id];
-    }
+  for (const auto& pair : combined_loadout) {
+    const auto& data = mod_lookup(pair.first);
+    ++loadout_category_counts[data.category];
+    ++loadout_slot_counts[data.slot];
+    ++loadout_mod_counts[pair.first];
   }
 
   auto is_mod_allowed = [&](const mod_data& data) {
     return (data.options.allow_multiple || data.options.allow_multiple_per_player ||
             !loadout_mod_counts[data.id]) &&
-        (data.options.allow_multiple_per_player || loadout_mod_counts[data.id] < loadouts.size()) &&
-        (!data.options.multiplayer_only || loadouts.size() > 1u) &&
+        (data.options.allow_multiple_per_player ||
+         loadout_mod_counts[data.id] < conditions.player_count) &&
+        (!data.options.multiplayer_only || conditions.player_count > 1u) &&
         (!data.options.category_dependency ||
          loadout_category_counts[*data.options.category_dependency]) &&
         (!data.options.slot_dependency || loadout_slot_counts[*data.options.slot_dependency]);
@@ -196,16 +200,48 @@ std::vector<mod_id> mod_selection(const initial_conditions& conditions, RandomEn
   return result;
 }
 
-void PlayerLoadout::add_mod(mod_id id) {
-  loadout.emplace_back(id);
+void PlayerLoadout::add(ecs::handle h, mod_id id, const SimInterface& sim) {
+  const auto& data = mod_lookup(id);
+  if (is_mod_slot_single_limit(data.slot)) {
+    for (auto it = loadout.begin(); it != loadout.end();) {
+      if (mod_lookup(it->first).slot == data.slot) {
+        it = loadout.erase(it);
+      } else {
+        ++it;
+      }
+    }
+  }
+  if (data.options.allow_multiple_per_player) {
+    ++loadout[id];
+  } else {
+    loadout[id] = 1u;
+  }
+
+  auto& pc = *h.get<Player>();
+  if (id == mod_id::kBombCapacity) {
+    ++pc.bomb_count;
+  } else if (id == mod_id::kShieldCapacity) {
+    ++pc.shield_count;
+  }
+  pc.bomb_count = std::min(pc.bomb_count, max_bomb_capacity(sim));
+  pc.shield_count = std::min(pc.shield_count, max_shield_capacity(sim));
+}
+
+bool PlayerLoadout::has(mod_id id) const {
+  return count(id);
+}
+
+std::uint32_t PlayerLoadout::count(mod_id id) const {
+  auto it = loadout.find(id);
+  return it == loadout.end() ? 0u : it->second;
 }
 
 std::uint32_t PlayerLoadout::max_shield_capacity(const SimInterface&) const {
-  return 3u;  // TODO
+  return has(mod_id::kShieldRefill) ? 1u : 2u + count(mod_id::kShieldCapacity);
 }
 
 std::uint32_t PlayerLoadout::max_bomb_capacity(const SimInterface&) const {
-  return 3u;  // TODO
+  return 2u + count(mod_id::kBombCapacity);
 }
 
 }  // namespace ii::v0
