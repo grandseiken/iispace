@@ -1,9 +1,11 @@
 #ifndef II_GAME_GEOMETRY_SHAPES_NGON_H
 #define II_GAME_GEOMETRY_SHAPES_NGON_H
+#include "game/common/collision.h"
 #include "game/geometry/expressions.h"
 #include "game/geometry/node.h"
 #include "game/geometry/shapes/data.h"
 #include "game/render/data/shapes.h"
+#include <array>
 #include <cstddef>
 #include <cstdint>
 
@@ -50,7 +52,7 @@ struct ngon_collider_data : shape_data_base {
   shape_flag flags = shape_flag::kNone;
 
   constexpr void
-  iterate(iterate_collision_t it, const Transform auto& t, const FlagFunction auto& f) const {
+  iterate(iterate_check_point_t it, const Transform auto& t, const FlagFunction auto& f) const {
     if (!(flags & it.mask)) {
       return;
     }
@@ -70,8 +72,57 @@ struct ngon_collider_data : shape_data_base {
     }
   }
 
+  constexpr void
+  iterate(iterate_check_line_t it, const Transform auto& t, const FlagFunction auto& f) const {
+    if (!(flags & it.mask)) {
+      return;
+    }
+    std::array<vec2, 4> va{};
+    auto line_a = t.get_a();
+    auto line_b = t.get_b();
+    for (std::uint32_t i = 0; i < dimensions.segments; ++i) {
+      auto convex = convex_segment(va, i);
+      if (intersect_convex_line(convex, line_a, line_b)) {
+        std::invoke(f, flags & it.mask);
+        break;
+      }
+    }
+  }
+
+  constexpr void
+  iterate(iterate_check_ball_t it, const Transform auto& t, const FlagFunction auto& f) const {
+    if (!(flags & it.mask)) {
+      return;
+    }
+    std::array<vec2, 4> va{};
+    auto c = *t;
+    for (std::uint32_t i = 0; i < dimensions.segments; ++i) {
+      auto convex = convex_segment(va, i);
+      if (intersect_convex_ball(convex, c, t.r)) {
+        std::invoke(f, flags & it.mask);
+        break;
+      }
+    }
+  }
+
   constexpr void iterate(iterate_flags_t, const Transform auto&, const FlagFunction auto& f) const {
     std::invoke(f, flags);
+  }
+
+  constexpr std::span<const vec2> convex_segment(std::array<vec2, 4>& va, std::uint32_t i) const {
+    if (dimensions.inner_radius) {
+      vec2 a = ::rotate(vec2{1, 0}, 2 * i * pi<fixed> / dimensions.sides);
+      vec2 b = ::rotate(vec2{1, 0}, 2 * (i + 1) * pi<fixed> / dimensions.sides);
+      va[0] = dimensions.inner_radius * a;
+      va[1] = dimensions.inner_radius * b;
+      va[2] = dimensions.radius * b;
+      va[3] = dimensions.radius * a;
+      return {va.begin(), va.begin() + 4};
+    }
+    va[0] = vec2{0};
+    va[1] = ::rotate(vec2{dimensions.radius, 0}, 2 * i * pi<fixed> / dimensions.sides);
+    va[2] = ::rotate(vec2{dimensions.radius, 0}, 2 * (i + 1) * pi<fixed> / dimensions.sides);
+    return {va.begin(), va.begin() + 3};
   }
 };
 

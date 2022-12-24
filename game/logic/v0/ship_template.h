@@ -99,14 +99,40 @@ constexpr shape_flag get_shape_flags() {
 template <geom::ShapeNode S>
 shape_flag shape_check_point(const auto& parameters, const vec2& v, shape_flag mask) {
   shape_flag result = shape_flag::kNone;
-  geom::iterate(S{}, geom::iterate_collision(mask), parameters, geom::convert_local_transform{v},
+  geom::iterate(S{}, geom::iterate_check_point(mask), parameters, geom::convert_local_transform{v},
                 [&](shape_flag f) { result |= f; });
+  return result;
+}
+
+template <geom::ShapeNode S>
+shape_flag shape_check_line(const auto& parameters, const vec2& a, const vec2& b, shape_flag mask) {
+  shape_flag result = shape_flag::kNone;
+  geom::iterate(S{}, geom::iterate_check_line(mask), parameters,
+                geom::convert_local_line_transform{a, b}, [&](shape_flag f) { result |= f; });
+  return result;
+}
+
+template <geom::ShapeNode S>
+shape_flag
+shape_check_ball(const auto& parameters, const vec2& centre, fixed radius, shape_flag mask) {
+  shape_flag result = shape_flag::kNone;
+  geom::iterate(S{}, geom::iterate_check_ball(mask), parameters,
+                geom::convert_local_transform{centre, radius}, [&](shape_flag f) { result |= f; });
   return result;
 }
 
 template <ecs::Component Logic, geom::ShapeNode S = typename Logic::shape>
 shape_flag ship_check_point(ecs::const_handle h, const vec2& v, shape_flag mask) {
   return shape_check_point<S>(get_shape_parameters<Logic>(h), v, mask);
+}
+
+template <ecs::Component Logic, geom::ShapeNode S = typename Logic::shape>
+shape_flag ship_check_line(ecs::const_handle h, const vec2& a, const vec2& b, shape_flag mask) {
+  return shape_check_line<S>(get_shape_parameters<Logic>(h), a, b, mask);
+}
+template <ecs::Component Logic, geom::ShapeNode S = typename Logic::shape>
+shape_flag ship_check_ball(ecs::const_handle h, const vec2& centre, fixed radius, shape_flag mask) {
+  return shape_check_ball<S>(get_shape_parameters<Logic>(h), centre, radius, mask);
 }
 
 //////////////////////////////////////////////////////////////////////////////////
@@ -121,13 +147,21 @@ ecs::handle create_ship(SimInterface& sim, const vec2& position, fixed rotation 
 }
 
 template <ecs::Component Logic, geom::ShapeNode S = typename Logic::shape>
-ecs::handle add_collision(ecs::handle h) {
+ecs::handle add_collision(ecs::handle h, fixed bounding_width) {
   static constexpr auto collision_flags = get_shape_flags<Logic, S>();
   static_assert(+collision_flags);
-  static_assert(requires { Logic::kBoundingWidth; });
   h.add(Collision{.flags = collision_flags,
-                  .bounding_width = Logic::kBoundingWidth,
-                  .check = &ship_check_point<Logic, S>});
+                  .bounding_width = bounding_width,
+                  .check_point = &ship_check_point<Logic, S>,
+                  .check_line = &ship_check_line<Logic, S>,
+                  .check_ball = &ship_check_ball<Logic, S>});
+  return h;
+}
+
+template <ecs::Component Logic, geom::ShapeNode S = typename Logic::shape>
+ecs::handle add_collision(ecs::handle h) {
+  static_assert(requires { Logic::kBoundingWidth; });
+  add_collision<Logic, S>(h, Logic::kBoundingWidth);
   return h;
 }
 

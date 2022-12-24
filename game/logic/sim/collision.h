@@ -24,8 +24,14 @@ public:
   virtual void begin_tick() = 0;
 
   virtual bool any_collision(const vec2& point, shape_flag mask) const = 0;
+  virtual bool any_collision(const vec2& a, const vec2& b, shape_flag mask) const = 0;
+  virtual bool any_collision(const vec2& centre, fixed radius, shape_flag mask) const = 0;
   virtual std::vector<SimInterface::collision_info>
   collision_list(const vec2& point, shape_flag mask) const = 0;
+  virtual std::vector<SimInterface::collision_info>
+  collision_list(const vec2& a, const vec2& b, shape_flag mask) const = 0;
+  virtual std::vector<SimInterface::collision_info>
+  collision_list(const vec2& centre, fixed radius, shape_flag mask) const = 0;
   virtual void in_range(const vec2& point, fixed distance, ecs::component_id, std::size_t max_n,
                         std::vector<SimInterface::range_info>& output) const = 0;
 };
@@ -47,8 +53,14 @@ public:
   void begin_tick() override;
 
   bool any_collision(const vec2& point, shape_flag mask) const override;
+  bool any_collision(const vec2& a, const vec2& b, shape_flag mask) const override;
+  bool any_collision(const vec2& centre, fixed radius, shape_flag mask) const override;
   std::vector<SimInterface::collision_info>
   collision_list(const vec2& point, shape_flag mask) const override;
+  std::vector<SimInterface::collision_info>
+  collision_list(const vec2& a, const vec2& b, shape_flag mask) const override;
+  std::vector<SimInterface::collision_info>
+  collision_list(const vec2& centre, fixed radius, shape_flag mask) const override;
   void in_range(const vec2& point, fixed distance, ecs::component_id, std::size_t max_n,
                 std::vector<SimInterface::range_info>& output) const override;
 
@@ -56,6 +68,7 @@ private:
   struct cell_t;
   struct entry_t;
 
+  ivec2 cell_position(const ivec2& c) const;
   ivec2 cell_coords(const ivec2& v) const;
   ivec2 cell_coords(const vec2& v) const;
   ivec2 max_coords(const vec2& v) const;
@@ -106,8 +119,14 @@ public:
   void begin_tick() override;
 
   bool any_collision(const vec2& point, shape_flag mask) const override;
+  bool any_collision(const vec2& a, const vec2& b, shape_flag mask) const override;
+  bool any_collision(const vec2& centre, fixed radius, shape_flag mask) const override;
   std::vector<SimInterface::collision_info>
   collision_list(const vec2& point, shape_flag mask) const override;
+  std::vector<SimInterface::collision_info>
+  collision_list(const vec2& a, const vec2& b, shape_flag mask) const override;
+  std::vector<SimInterface::collision_info>
+  collision_list(const vec2& centre, fixed radius, shape_flag mask) const override;
 
   void in_range(const vec2& point, fixed distance, ecs::component_id, std::size_t max_n,
                 std::vector<SimInterface::range_info>& output) const override;

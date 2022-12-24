@@ -165,7 +165,7 @@ struct ModUpgrade : ecs::component {
               const auto& data = mod_lookup(mod_id);
               pc.mod_upgrade_chosen = true;
               timer = 2 * kAnimFrames;
-              loadout.add(ph, mod_id);
+              loadout.add(ph, mod_id, sim);
               auto c = mod_category_colour(data.category);
               auto e = sim.emit(resolve_key::local(pc.player_number));
               e.play(sound::kPowerupLife, transform.centre)

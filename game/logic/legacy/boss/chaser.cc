@@ -307,7 +307,7 @@ struct ChaserBoss : ecs::component {
         sim, !split ? vec2{sim.dimensions().x / 2, -sim.dimensions().y / 2} : position);
     h.add(Collision{.flags = shape_flag::kDangerous | shape_flag::kVulnerable | shape_flag::kShield,
                     .bounding_width = 10 * kSplitLookup[ChaserBoss::kMaxSplit - split].pow_1_5,
-                    .check = sim.is_legacy()
+                    .check_point = sim.is_legacy()
                         ? &ship_check_point_legacy<ChaserBoss, ChaserBoss::shape>
                         : &ship_check_point<ChaserBoss, ChaserBoss::shape>});
     h.add(Enemy{.threat_value = 100});

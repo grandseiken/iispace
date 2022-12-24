@@ -118,6 +118,10 @@ struct PlayerLogic : ecs::component {
       if (++shield_refill_timer >= kShieldRefillTimer) {
         pc.shield_count = 1u;
         shield_refill_timer = 0u;
+        auto e = sim.emit(resolve_key::predicted());
+        e.play(sound::kPowerupOther, transform.centre);
+        e.rumble(pc.player_number, 10, .25f, .75f);
+        e.explosion(to_float(transform.centre), colour::kWhite0);
       }
     }
 

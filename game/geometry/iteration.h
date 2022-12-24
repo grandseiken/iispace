@@ -16,7 +16,13 @@ struct iterate_lines_t {};
 struct iterate_shapes_t {};
 struct iterate_centres_t {};
 struct iterate_attachment_points_t {};
-struct iterate_collision_t {
+struct iterate_check_point_t {
+  shape_flag mask = shape_flag::kNone;
+};
+struct iterate_check_line_t {
+  shape_flag mask = shape_flag::kNone;
+};
+struct iterate_check_ball_t {
   shape_flag mask = shape_flag::kNone;
 };
 
@@ -25,15 +31,22 @@ inline constexpr iterate_lines_t iterate_lines;
 inline constexpr iterate_shapes_t iterate_shapes;
 inline constexpr iterate_centres_t iterate_centres;
 inline constexpr iterate_attachment_points_t iterate_attachment_points;
-inline constexpr iterate_collision_t iterate_collision(shape_flag mask) {
-  return iterate_collision_t{mask};
+inline constexpr iterate_check_point_t iterate_check_point(shape_flag mask) {
+  return iterate_check_point_t{mask};
+}
+inline constexpr iterate_check_line_t iterate_check_line(shape_flag mask) {
+  return iterate_check_line_t{mask};
+}
+inline constexpr iterate_check_ball_t iterate_check_ball(shape_flag mask) {
+  return iterate_check_ball_t{mask};
 }
 
 template <typename T, typename... Args>
 concept OneOf = (std::same_as<T, Args> || ...);
 template <typename T>
 concept IterTag = OneOf<T, iterate_flags_t, iterate_lines_t, iterate_shapes_t, iterate_centres_t,
-                        iterate_collision_t, iterate_attachment_points_t>;
+                        iterate_check_point_t, iterate_check_line_t, iterate_check_ball_t,
+                        iterate_attachment_points_t>;
 
 template <typename T>
 concept FlagFunction = std::invocable<T, shape_flag>;
@@ -53,13 +66,13 @@ concept IterateFunction = IterTag<I> && Implies<I, iterate_flags_t, FlagFunction
     Implies<I, iterate_lines_t, LineFunction<T>> &&
     Implies<I, iterate_shapes_t, ShapeFunction<T>> &&
     Implies<I, iterate_centres_t, PointFunction<T>> &&
-    Implies<I, iterate_collision_t, FlagFunction<T>> &&
+    Implies<I, iterate_check_point_t, FlagFunction<T>> &&
+    Implies<I, iterate_check_line_t, FlagFunction<T>> &&
+    Implies<I, iterate_check_ball_t, FlagFunction<T>> &&
     Implies<I, iterate_attachment_points_t, AttachmentPointFunction<T>>;
 
 template <typename T>
 concept Transform = requires(const T& x) {
-                      { *x } -> std::convertible_to<vec2>;
-                      { x.deref_ignore_rotation() } -> std::convertible_to<vec2>;
                       { x.rotate(0_fx) } -> std::convertible_to<T>;
                       { x.translate(vec2{0}) } -> std::convertible_to<T>;
                       x.increment_index();
@@ -119,7 +132,9 @@ struct legacy_transform {
 
 struct convert_local_transform {
   constexpr convert_local_transform(const vec2& v, transform t = {}) : v{v}, ct{t} {}
+  constexpr convert_local_transform(const vec2& v, fixed r, transform t = {}) : v{v}, r{r}, ct{t} {}
   vec2 v;
+  fixed r = 0;
   transform ct;
 
   constexpr vec2 operator*() const { return ::rotate(v - ct.v, -ct.r); }
@@ -127,6 +142,25 @@ struct convert_local_transform {
 
   constexpr convert_local_transform translate(const vec2& t) const { return {v, ct.translate(t)}; }
   constexpr convert_local_transform rotate(fixed a) const { return {v, ct.rotate(a)}; }
+  constexpr void increment_index() const {}
+};
+
+struct convert_local_line_transform {
+  constexpr convert_local_line_transform(const vec2& a, const vec2& b, transform t = {})
+  : a{a}, b{b}, ct{t} {}
+  vec2 a;
+  vec2 b;
+  transform ct;
+
+  constexpr vec2 get_a() const { return ::rotate(a - ct.v, -ct.r); }
+  constexpr vec2 get_b() const { return ::rotate(b - ct.v, -ct.r); }
+
+  constexpr convert_local_line_transform translate(const vec2& t) const {
+    return {a, b, ct.translate(t)};
+  }
+  constexpr convert_local_line_transform rotate(fixed a) const {
+    return {this->a, this->b, ct.rotate(a)};
+  }
   constexpr void increment_index() const {}
 };
 

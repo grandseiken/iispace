@@ -1,5 +1,6 @@
 #ifndef II_GAME_GEOMETRY_SHAPES_BALL_H
 #define II_GAME_GEOMETRY_SHAPES_BALL_H
+#include "game/common/collision.h"
 #include "game/geometry/expressions.h"
 #include "game/geometry/shapes/data.h"
 #include "game/render/data/shapes.h"
@@ -25,10 +26,40 @@ struct ball_collider_data : shape_data_base {
   shape_flag flags = shape_flag::kNone;
 
   constexpr void
-  iterate(iterate_collision_t it, const Transform auto& t, const FlagFunction auto& f) const {
+  iterate(iterate_check_point_t it, const Transform auto& t, const FlagFunction auto& f) const {
+    if (!(flags & it.mask)) {
+      return;
+    }
     auto d_sq = length_squared(t.deref_ignore_rotation());
-    if (+(flags & it.mask) && d_sq <= dimensions.radius * dimensions.radius &&
+    if (d_sq <= dimensions.radius * dimensions.radius &&
         d_sq >= dimensions.inner_radius * dimensions.inner_radius) {
+      std::invoke(f, flags & it.mask);
+    }
+  }
+
+  constexpr void
+  iterate(iterate_check_line_t it, const Transform auto& t, const FlagFunction auto& f) const {
+    if (!(flags & it.mask)) {
+      return;
+    }
+    auto a = t.get_a();
+    auto b = t.get_b();
+    auto ir_sq = dimensions.inner_radius * dimensions.inner_radius;
+    if (intersect_line_ball(a, b, vec2{0}, dimensions.radius) &&
+        (length_squared(a) >= ir_sq || length_squared(b) >= ir_sq)) {
+      std::invoke(f, flags & it.mask);
+    }
+  }
+
+  constexpr void
+  iterate(iterate_check_ball_t it, const Transform auto& t, const FlagFunction auto& f) const {
+    if (!(flags & it.mask)) {
+      return;
+    }
+    auto d_sq = length_squared(t.deref_ignore_rotation());
+    auto r = dimensions.radius + t.r;
+    if (d_sq <= r * r &&
+        (!dimensions.inner_radius || sqrt(d_sq) + t.r >= dimensions.inner_radius)) {
       std::invoke(f, flags & it.mask);
     }
   }

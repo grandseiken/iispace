@@ -97,8 +97,12 @@ public:
     fixed distance_sq = 0;
   };
 
-  std::vector<collision_info> collision_list(const vec2& point, shape_flag mask);
   bool any_collision(const vec2& point, shape_flag mask) const;
+  bool any_collision(const vec2& a, const vec2& b, shape_flag mask) const;
+  bool any_collision(const vec2& centre, fixed radius, shape_flag mask) const;
+  std::vector<collision_info> collision_list(const vec2& point, shape_flag mask);
+  std::vector<collision_info> collision_list(const vec2& a, const vec2& b, shape_flag mask);
+  std::vector<collision_info> collision_list(const vec2& centre, fixed radius, shape_flag mask);
   bool is_on_screen(const vec2& point) const;
   vec2 rotate_compatibility(const vec2& v, fixed theta) const;
 

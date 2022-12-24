@@ -30,7 +30,7 @@ inline constexpr T pi = detail::pi_helper<T>::value;
 
 inline void hash_combine(std::size_t& seed, std::size_t v) {
   seed ^= v + 0x9e3779b9 + (seed << 6) + (seed >> 2);
-};
+}
 
 inline constexpr vec2 operator*(const vec2& a, fixed b) {
   return glm::operator*(a, b);
@@ -44,15 +44,24 @@ inline constexpr vec2 operator/(const vec2& a, fixed b) {
   return glm::operator/(a, b);
 }
 
+inline constexpr vec2 perpendicular(const vec2& v) {
+  return vec2{-v.y, v.x};
+}
+
+template <typename T>
+inline constexpr T cdot(const glm::vec<2, T>& a, const glm::vec<2, T>& b) {
+  return a.x * b.x + a.y * b.y;
+}
+
 template <typename T>
 inline constexpr T length_squared(const glm::vec<2, T>& v) {
-  return v.x * v.x + v.y * v.y;
+  return cdot(v, v);
 }
 
 template <typename T>
 inline constexpr T length(const glm::vec<2, T>& v) {
   using std::sqrt;
-  return sqrt(v.x * v.x + v.y * v.y);
+  return sqrt(length_squared(v));
 }
 
 template <typename T>

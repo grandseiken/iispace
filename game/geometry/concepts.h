@@ -45,7 +45,9 @@ concept Shape =
       x.iterate(iterate_centres, null_transform{}, [](const vec2&, const cvec4&) {});
       x.iterate(iterate_attachment_points, null_transform{},
                 [](std::size_t, const vec2&, const vec2&) {});
-      x.iterate(iterate_collision(shape_flag::kNone), null_transform{}, [](shape_flag) {});
+      x.iterate(iterate_check_point(shape_flag::kNone), null_transform{}, [](shape_flag) {});
+      x.iterate(iterate_check_line(shape_flag::kNone), null_transform{}, [](shape_flag) {});
+      x.iterate(iterate_check_ball(shape_flag::kNone), null_transform{}, [](shape_flag) {});
     };
 
 template <typename E, typename V, typename Parameters>
@@ -66,7 +68,11 @@ concept ShapeNodeWithSubstitution =
       iterate(Node{}, iterate_centres, params, null_transform{}, [](const vec2&, const cvec4&) {});
       iterate(Node{}, iterate_attachment_points, params, null_transform{},
               [](std::size_t, const vec2&, const vec2&) {});
-      iterate(Node{}, iterate_collision(shape_flag::kNone), params, null_transform{},
+      iterate(Node{}, iterate_check_point(shape_flag::kNone), params, null_transform{},
+              [](shape_flag) {});
+      iterate(Node{}, iterate_check_line(shape_flag::kNone), params, null_transform{},
+              [](shape_flag) {});
+      iterate(Node{}, iterate_check_ball(shape_flag::kNone), params, null_transform{},
               [](shape_flag) {});
     };
 

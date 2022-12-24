@@ -1,5 +1,6 @@
 #ifndef II_GAME_GEOMETRY_SHAPES_BOX_H
 #define II_GAME_GEOMETRY_SHAPES_BOX_H
+#include "game/common/collision.h"
 #include "game/geometry/expressions.h"
 #include "game/geometry/node.h"
 #include "game/geometry/shapes/data.h"
@@ -19,8 +20,22 @@ struct box_collider_data : shape_data_base {
   shape_flag flags = shape_flag::kNone;
 
   constexpr void
-  iterate(iterate_collision_t it, const Transform auto& t, const FlagFunction auto& f) const {
-    if (+(flags & it.mask) && abs((*t).x) < dimensions.x && abs((*t).y) < dimensions.y) {
+  iterate(iterate_check_point_t it, const Transform auto& t, const FlagFunction auto& f) const {
+    if (+(flags & it.mask) && abs((*t).x) <= dimensions.x && abs((*t).y) <= dimensions.y) {
+      std::invoke(f, flags & it.mask);
+    }
+  }
+
+  constexpr void
+  iterate(iterate_check_line_t it, const Transform auto& t, const FlagFunction auto& f) const {
+    if (+(flags & it.mask) && intersect_aabb_line(-dimensions, dimensions, t.get_a(), t.get_b())) {
+      std::invoke(f, flags & it.mask);
+    }
+  }
+
+  constexpr void
+  iterate(iterate_check_ball_t it, const Transform auto& t, const FlagFunction auto& f) const {
+    if (+(flags & it.mask) && intersect_aabb_ball(-dimensions, dimensions, *t, t.r)) {
       std::invoke(f, flags & it.mask);
     }
   }

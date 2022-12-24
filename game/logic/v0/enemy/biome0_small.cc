@@ -120,9 +120,7 @@ ecs::handle create_follow_ship(SimInterface& sim, std::uint32_t size, std::uint3
                                fixed rotation, const vec2& initial_velocity) {
   auto h = create_ship<Follow>(sim, position, rotation);
   add_render<Follow, S>(h);
-  h.add(Collision{.flags = get_shape_flags<Follow, S>(),
-                  .bounding_width = width,
-                  .check = &ship_check_point<Follow, S>});
+  add_collision<Follow, S>(h, width);
   if (size) {
     add_enemy_health<Follow, S>(h, health, sound::kPlayerDestroy, rumble_type::kMedium);
   } else {
@@ -259,9 +257,7 @@ create_chaser_ship(SimInterface& sim, std::uint32_t size, std::uint32_t health, 
                    const vec2& position, fixed rotation, std::uint32_t stagger) {
   auto h = create_ship<Chaser>(sim, position, rotation);
   add_render<Chaser, S>(h);
-  h.add(Collision{.flags = get_shape_flags<Chaser, S>(),
-                  .bounding_width = width,
-                  .check = &ship_check_point<Chaser, S>});
+  add_collision<Chaser, S>(h, width);
   if (size) {
     add_enemy_health<Chaser, S>(h, health, sound::kPlayerDestroy, rumble_type::kMedium);
   } else {

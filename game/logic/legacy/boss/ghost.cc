@@ -532,7 +532,7 @@ void spawn_ghost_boss(SimInterface& sim, std::uint32_t cycle) {
   h.add(Transform{.centre = sim.dimensions() / 2});
   h.add(Collision{.flags = GhostBoss::kShapeFlags,
                   .bounding_width = GhostBoss::kBoundingWidth,
-                  .check = ecs::call<&GhostBoss::check_point>});
+                  .check_point = ecs::call<&GhostBoss::check_point>});
   h.add(Render{.render = sfn::cast<Render::render_t, ecs::call<&GhostBoss::render_override>>});
 
   h.add(Enemy{.threat_value = 100,

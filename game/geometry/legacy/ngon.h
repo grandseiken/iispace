@@ -19,7 +19,7 @@ struct ngon_data : shape_data_base {
   shape_flag flags = shape_flag::kNone;
 
   constexpr void
-  iterate(iterate_collision_t it, const Transform auto& t, const FlagFunction auto& f) const {
+  iterate(iterate_check_point_t it, const Transform auto& t, const FlagFunction auto& f) const {
     if (+(flags & it.mask) && length_squared(t.deref_ignore_rotation()) < radius * radius) {
       std::invoke(f, flags & it.mask);
     }

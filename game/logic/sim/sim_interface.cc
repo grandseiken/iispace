@@ -162,9 +162,27 @@ bool SimInterface::any_collision(const vec2& point, shape_flag mask) const {
   return internals_->collision_index->any_collision(point, mask);
 }
 
+bool SimInterface::any_collision(const vec2& a, const vec2& b, shape_flag mask) const {
+  return internals_->collision_index->any_collision(a, b, mask);
+}
+
+bool SimInterface::any_collision(const vec2& centre, fixed radius, shape_flag mask) const {
+  return internals_->collision_index->any_collision(centre, radius, mask);
+}
+
 auto SimInterface::collision_list(const vec2& point, shape_flag mask)
     -> std::vector<collision_info> {
   return internals_->collision_index->collision_list(point, mask);
+}
+
+auto SimInterface::collision_list(const vec2& a, const vec2& b, shape_flag mask)
+    -> std::vector<collision_info> {
+  return internals_->collision_index->collision_list(a, b, mask);
+}
+
+auto SimInterface::collision_list(const vec2& centre, fixed radius, shape_flag mask)
+    -> std::vector<collision_info> {
+  return internals_->collision_index->collision_list(centre, radius, mask);
 }
 
 bool SimInterface::is_on_screen(const vec2& point) const {
