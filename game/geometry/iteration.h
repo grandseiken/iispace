@@ -140,8 +140,10 @@ struct convert_local_transform {
   constexpr vec2 operator*() const { return ::rotate(v - ct.v, -ct.r); }
   constexpr vec2 deref_ignore_rotation() const { return v - ct.v; }
 
-  constexpr convert_local_transform translate(const vec2& t) const { return {v, ct.translate(t)}; }
-  constexpr convert_local_transform rotate(fixed a) const { return {v, ct.rotate(a)}; }
+  constexpr convert_local_transform translate(const vec2& t) const {
+    return {v, r, ct.translate(t)};
+  }
+  constexpr convert_local_transform rotate(fixed a) const { return {v, r, ct.rotate(a)}; }
   constexpr void increment_index() const {}
 };
 

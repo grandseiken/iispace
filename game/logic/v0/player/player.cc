@@ -221,7 +221,7 @@ struct PlayerLogic : ecs::component {
   void
   trigger_bomb(ecs::const_handle h, Player& pc, const vec2& position, SimInterface& sim) const {
     static constexpr std::uint32_t kBombDamage = 400;
-    static constexpr fixed kBombRadius = 190;
+    static constexpr fixed kBombRadius = 180;
 
     auto c = v0_player_colour(pc.player_number);
     auto e = sim.emit(resolve_key::local(pc.player_number));
@@ -238,13 +238,12 @@ struct PlayerLogic : ecs::component {
     }
 
     e.rumble(pc.player_number, 20, 1.f, .5f).play(sound::kExplosion, position);
-    sim.index().iterate_dispatch_if<Health>(
-        [&](ecs::handle eh, const Transform& e_transform, Health& health) {
-          if (length(e_transform.centre - position) <= kBombRadius) {
-            health.damage(eh, sim, kBombDamage, damage_type::kBomb, h.id(), position);
-          }
-        },
-        /* include_new */ false);
+    for (const auto& c : sim.collision_list(
+             position, kBombRadius, shape_flag::kVulnerable | shape_flag::kWeakVulnerable)) {
+      if (auto* health = c.h.get<Health>(); health) {
+        health->damage(c.h, sim, kBombDamage, damage_type::kBomb, h.id(), position);
+      }
+    }
   }
 
   void

@@ -320,8 +320,8 @@ struct ShieldHub : ecs::component {
 
   static constexpr std::uint32_t kTimer = 280;
   static constexpr fixed kSpeed = 3_fx / 4_fx;
-  static constexpr fixed kShieldDistance = 260;
-  static constexpr fixed kShieldDrawDistance = kShieldDistance + 10;
+  static constexpr fixed kShieldDistance = 250;
+  static constexpr fixed kShieldDrawDistance = kShieldDistance + 15;
 
   static constexpr auto z = colour::kZEnemyLarge;
   static constexpr auto c0 = colour::linear_mix(colour::kSolarizedDarkCyan, colour::kNewGreen0);
@@ -365,13 +365,12 @@ struct ShieldHub : ecs::component {
   void update(ecs::handle h, Transform& transform, SimInterface& sim) {
     ++timer;
     if (!((sim.tick_count() + +h.id()) % 8u)) {
-      static thread_local std::vector<SimInterface::range_info> v;
-      v.clear();
-      sim.in_range<EnemyStatus>(transform.centre, kShieldDistance, 0, v);
       targets.clear();
-      for (const auto& e : v) {
-        if (!e.h.get<ShieldHub>()) {
-          targets.emplace_back(e.h.id());
+      for (const auto& c :
+           sim.collision_list(transform.centre, kShieldDistance,
+                              shape_flag::kVulnerable | shape_flag::kWeakVulnerable)) {
+        if (!c.h.get<ShieldHub>()) {
+          targets.emplace_back(c.h.id());
         }
       }
     }
