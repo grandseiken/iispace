@@ -68,7 +68,7 @@ bool GridCollisionIndex::collide_point_any(const vec2& point, shape_flag mask) c
     }
     auto min = e.transform->centre - e.collision->bounding_width;
     auto max = e.transform->centre + e.collision->bounding_width;
-    if (intersect_aabb_point(min, max, point) && +c.check_point(e.handle, point, mask)) {
+    if (intersect_aabb_point(min, max, point) && +c.check_point(e.handle, point, mask).mask) {
       return true;
     }
   }
@@ -95,7 +95,7 @@ bool GridCollisionIndex::collide_line_any(const vec2& a, const vec2& b, shape_fl
         }
         auto b_min = e.transform->centre - e.collision->bounding_width;
         auto b_max = e.transform->centre + e.collision->bounding_width;
-        if (intersect_aabb_line(b_min, b_max, a, b) && +c.check_line(e.handle, a, b, mask)) {
+        if (intersect_aabb_line(b_min, b_max, a, b) && +c.check_line(e.handle, a, b, mask).mask) {
           return true;
         }
       }
@@ -137,7 +137,7 @@ bool GridCollisionIndex::collide_ball_any(const vec2& centre, fixed radius, shap
         auto b_min = e.transform->centre - e.collision->bounding_width;
         auto b_max = e.transform->centre + e.collision->bounding_width;
         if (intersect_aabb_ball(b_min, b_max, centre, radius) &&
-            +c.check_ball(e.handle, centre, radius, mask)) {
+            +c.check_ball(e.handle, centre, radius, mask).mask) {
           return true;
         }
       }
@@ -174,7 +174,7 @@ bool GridCollisionIndex::collide_convex_any(std::span<const vec2> convex, shape_
         auto b_min = e.transform->centre - e.collision->bounding_width;
         auto b_max = e.transform->centre + e.collision->bounding_width;
         if (intersect_aabb_convex(b_min, b_max, convex) &&
-            +c.check_convex(e.handle, convex, mask)) {
+            +c.check_convex(e.handle, convex, mask).mask) {
           return true;
         }
       }
@@ -201,9 +201,10 @@ GridCollisionIndex::collide_point(const vec2& point, shape_flag mask) const {
     if (!intersect_aabb_point(min, max, point)) {
       continue;
     }
-    if (auto hit = c.check_point(e.handle, point, mask); +hit) {
+    if (auto hit = c.check_point(e.handle, point, mask); +hit.mask) {
       assert(r.empty() || e.handle.id() > r.back().h.id());
-      r.emplace_back(SimInterface::collision_info{.h = e.handle, .hit_mask = hit});
+      r.emplace_back(SimInterface::collision_info{
+          .h = e.handle, .hit_mask = hit.mask, .shape_centres = std::move(hit.shape_centres)});
     }
   }
   return r;
@@ -234,8 +235,9 @@ GridCollisionIndex::collide_line(const vec2& a, const vec2& b, shape_flag mask) 
         if (!intersect_aabb_line(b_min, b_max, a, b)) {
           continue;
         }
-        if (auto hit = c.check_line(e.handle, a, b, mask); +hit) {
-          r.emplace_back(SimInterface::collision_info{.h = e.handle, .hit_mask = hit});
+        if (auto hit = c.check_line(e.handle, a, b, mask); +hit.mask) {
+          r.emplace_back(SimInterface::collision_info{
+              .h = e.handle, .hit_mask = hit.mask, .shape_centres = std::move(hit.shape_centres)});
         }
       }
     }
@@ -281,8 +283,9 @@ GridCollisionIndex::collide_ball(const vec2& centre, fixed radius, shape_flag ma
         if (!intersect_aabb_ball(b_min, b_max, centre, radius)) {
           continue;
         }
-        if (auto hit = c.check_ball(e.handle, centre, radius, mask); +hit) {
-          r.emplace_back(SimInterface::collision_info{.h = e.handle, .hit_mask = hit});
+        if (auto hit = c.check_ball(e.handle, centre, radius, mask); +hit.mask) {
+          r.emplace_back(SimInterface::collision_info{
+              .h = e.handle, .hit_mask = hit.mask, .shape_centres = std::move(hit.shape_centres)});
         }
       }
     }
@@ -322,8 +325,9 @@ GridCollisionIndex::collide_convex(std::span<const vec2> convex, shape_flag mask
         if (!intersect_aabb_convex(b_min, b_max, convex)) {
           continue;
         }
-        if (auto hit = c.check_convex(e.handle, convex, mask); +hit) {
-          r.emplace_back(SimInterface::collision_info{.h = e.handle, .hit_mask = hit});
+        if (auto hit = c.check_convex(e.handle, convex, mask); +hit.mask) {
+          r.emplace_back(SimInterface::collision_info{
+              .h = e.handle, .hit_mask = hit.mask, .shape_centres = std::move(hit.shape_centres)});
         }
       }
     }
@@ -500,7 +504,7 @@ bool LegacyCollisionIndex::collide_point_any(const vec2& point, shape_flag mask)
     if (v.x + w < x || v.y + w < y || v.y - w > y) {
       continue;
     }
-    if (+(e.flags & mask) && e.check_point && +e.check_point(collision.handle, point, mask)) {
+    if (+(e.flags & mask) && e.check_point && +e.check_point(collision.handle, point, mask).mask) {
       return true;
     }
   }
@@ -540,8 +544,10 @@ LegacyCollisionIndex::collide_point(const vec2& point, shape_flag mask) const {
     if (!(e.flags & mask) || !e.check_point) {
       continue;
     }
-    if (auto hit = e.check_point(collision.handle, point, mask); +hit) {
-      r.emplace_back(SimInterface::collision_info{.h = collision.handle, .hit_mask = hit});
+    if (auto hit = e.check_point(collision.handle, point, mask); +hit.mask) {
+      r.emplace_back(SimInterface::collision_info{.h = collision.handle,
+                                                  .hit_mask = hit.mask,
+                                                  .shape_centres = std::move(hit.shape_centres)});
     }
   }
   return r;

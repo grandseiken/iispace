@@ -19,11 +19,14 @@ struct shot_mod_data {
   static constexpr fixed kBaseSpeed = 75_fx / 8_fx;
   static constexpr fixed kCloseCombatMaxDistance = 320_fx;
   static constexpr fixed kCloseCombatSpreadAngle = pi<fixed> / 5;
+  static constexpr fixed kHomingScanRadius = 120_fx;
+  static constexpr fixed kHomingAngleChange = pi<fixed> / 60;
   static constexpr fixed kSniperSplitDistance = 320_fx;
   static constexpr fixed kSniperSplitRotation = pi<fixed> / 32;
 
   shot_mod_data(const PlayerLoadout& loadout)
-  : sniper_splits_remaining{loadout.has(mod_id::kSniperWeapon) ? 1u : 0u} {
+  : homing{loadout.has(mod_id::kHomingShots)}
+  , sniper_splits_remaining{loadout.has(mod_id::kSniperWeapon) ? 1u : 0u} {
     if (loadout.has(mod_id::kCloseCombatWeapon)) {
       max_distance = kCloseCombatMaxDistance;
       damage = kCloseCombatDamage;
@@ -31,6 +34,7 @@ struct shot_mod_data {
   }
 
   bool penetrating = false;  // TODO: unused.
+  bool homing = false;
   fixed speed = kBaseSpeed;
   fixed distance_travelled = 0u;
   std::optional<fixed> max_distance;
@@ -85,6 +89,37 @@ struct PlayerShot : ecs::component {
     if (!on_screen) {
       h.emplace<Destroy>();
       return;
+    }
+
+    if (data.homing && !data.sniper_splits_remaining) {
+      std::optional<vec2> target;
+      fixed min_d_sq = 0;
+      auto c_list = sim.collide_ball(transform.centre, shot_mod_data::kHomingScanRadius,
+                                     shape_flag::kVulnerable | shape_flag::kWeakVulnerable);
+      for (const auto& c : c_list) {
+        for (const auto& vc : c.shape_centres) {
+          auto d_sq = length_squared(vc - transform.centre);
+          auto a_diff = angle_diff(angle(direction), angle(vc - transform.centre));
+          if (abs(a_diff) < pi<fixed> / 2 && (!target || d_sq < min_d_sq)) {
+            min_d_sq = d_sq;
+            target = vc;
+          }
+        }
+      }
+
+      if (target) {
+        // TODO: upgrade to super-threatseeker mod that applies RC-smooth (e.g. 15/16) towards
+        // target direction?
+        auto a_diff = angle_diff(angle(direction), angle(*target - transform.centre));
+        auto a = abs(a_diff);
+        if (a < shot_mod_data::kHomingAngleChange) {
+          direction = normalise(*target - transform.centre);
+        } else {
+          direction =
+              rotate(direction,
+                     (a_diff > 0 ? 1_fx : -1_fx) * std::min(a, shot_mod_data::kHomingAngleChange));
+        }
+      }
     }
 
     bool shielded = false;

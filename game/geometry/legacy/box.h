@@ -16,9 +16,9 @@ struct box_data : shape_data_base {
   shape_flag flags = shape_flag::kNone;
 
   constexpr void
-  iterate(iterate_check_point_t it, const Transform auto& t, const FlagFunction auto& f) const {
+  iterate(iterate_check_point_t it, const Transform auto& t, const HitFunction auto& f) const {
     if (+(flags & it.mask) && abs((*t).x) < dimensions.x && abs((*t).y) < dimensions.y) {
-      std::invoke(f, flags & it.mask);
+      std::invoke(f, flags & it.mask, t.inverse_transform(vec2{0}));
     }
   }
 

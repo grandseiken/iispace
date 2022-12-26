@@ -8,7 +8,7 @@ namespace ii::v0 {
 namespace {
 
 wave_data get_enemy_wave_data(const initial_conditions& conditions, std::uint32_t biome_index,
-                              std::uint32_t wave_number) {
+                              bool second_half, std::uint32_t wave_number) {
   static constexpr std::uint32_t kInitialPower = 16u;
 
   wave_data data;
@@ -17,8 +17,10 @@ wave_data get_enemy_wave_data(const initial_conditions& conditions, std::uint32_
   data.power = (biome_index + 1) * kInitialPower + 2u * (conditions.player_count - 1u);
   data.power += wave_number;
   data.power += std::min(10u, wave_number);
+  data.power += second_half ? 4u : 0u;
   data.upgrade_budget = data.power / 2;
   data.threat_trigger = wave_number;
+  data.threat_trigger += second_half ? 4u : 0u;
   return data;
 }
 
@@ -26,12 +28,12 @@ std::vector<wave_data>
 get_wave_list(const initial_conditions& conditions, std::uint32_t biome_index) {
   std::vector<wave_data> result;
   std::uint32_t enemy_wave_number = 0;
-  for (std::uint32_t i = 0u; i < 10u + conditions.player_count; ++i) {
-    result.emplace_back(get_enemy_wave_data(conditions, biome_index, enemy_wave_number++));
+  for (std::uint32_t i = 0u; i < 10u; ++i) {
+    result.emplace_back(get_enemy_wave_data(conditions, biome_index, false, enemy_wave_number++));
   }
   result.emplace_back(wave_data{wave_type::kUpgrade});
-  for (std::uint32_t i = 0u; i < 10u + conditions.player_count; ++i) {
-    result.emplace_back(get_enemy_wave_data(conditions, biome_index, enemy_wave_number++));
+  for (std::uint32_t i = 0u; i < 11u + conditions.player_count; ++i) {
+    result.emplace_back(get_enemy_wave_data(conditions, biome_index, true, enemy_wave_number++));
   }
   result.emplace_back(wave_data{wave_type::kBoss});
   result.emplace_back(wave_data{wave_type::kUpgrade});

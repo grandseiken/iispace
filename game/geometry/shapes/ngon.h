@@ -52,7 +52,7 @@ struct ngon_collider_data : shape_data_base {
   shape_flag flags = shape_flag::kNone;
 
   constexpr void
-  iterate(iterate_check_point_t it, const Transform auto& t, const FlagFunction auto& f) const {
+  iterate(iterate_check_point_t it, const Transform auto& t, const HitFunction auto& f) const {
     if (!(flags & it.mask)) {
       return;
     }
@@ -68,12 +68,12 @@ struct ngon_collider_data : shape_data_base {
     auto i_sq = dt * dimensions.inner_radius * dimensions.inner_radius;
     if (theta <= a * dimensions.segments && length_squared(v) <= d_sq &&
         length_squared(v) >= i_sq) {
-      std::invoke(f, flags & it.mask);
+      std::invoke(f, flags & it.mask, t.inverse_transform(vec2{0}));
     }
   }
 
   constexpr void
-  iterate(iterate_check_line_t it, const Transform auto& t, const FlagFunction auto& f) const {
+  iterate(iterate_check_line_t it, const Transform auto& t, const HitFunction auto& f) const {
     if (!(flags & it.mask)) {
       return;
     }
@@ -83,14 +83,14 @@ struct ngon_collider_data : shape_data_base {
     for (std::uint32_t i = 0; i < dimensions.segments; ++i) {
       auto convex = convex_segment(va, i);
       if (intersect_convex_line(convex, line_a, line_b)) {
-        std::invoke(f, flags & it.mask);
+        std::invoke(f, flags & it.mask, t.inverse_transform(vec2{0}));
         break;
       }
     }
   }
 
   constexpr void
-  iterate(iterate_check_ball_t it, const Transform auto& t, const FlagFunction auto& f) const {
+  iterate(iterate_check_ball_t it, const Transform auto& t, const HitFunction auto& f) const {
     if (!(flags & it.mask)) {
       return;
     }
@@ -99,14 +99,14 @@ struct ngon_collider_data : shape_data_base {
     for (std::uint32_t i = 0; i < dimensions.segments; ++i) {
       auto convex = convex_segment(va, i);
       if (intersect_convex_ball(convex, c, t.r)) {
-        std::invoke(f, flags & it.mask);
+        std::invoke(f, flags & it.mask, t.inverse_transform(vec2{0}));
         break;
       }
     }
   }
 
   constexpr void
-  iterate(iterate_check_convex_t it, const Transform auto& t, const FlagFunction auto& f) const {
+  iterate(iterate_check_convex_t it, const Transform auto& t, const HitFunction auto& f) const {
     if (!(flags & it.mask)) {
       return;
     }
@@ -115,7 +115,7 @@ struct ngon_collider_data : shape_data_base {
     for (std::uint32_t i = 0; i < dimensions.segments; ++i) {
       auto convex = convex_segment(va1, i);
       if (intersect_convex_convex(convex, va0)) {
-        std::invoke(f, flags & it.mask);
+        std::invoke(f, flags & it.mask, t.inverse_transform(vec2{0}));
         break;
       }
     }

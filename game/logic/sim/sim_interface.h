@@ -90,7 +90,8 @@ public:
 
   struct collision_info {
     ecs::handle h;
-    shape_flag hit_mask;
+    shape_flag hit_mask{0};
+    std::vector<vec2> shape_centres;
   };
   struct range_info {
     ecs::handle h;

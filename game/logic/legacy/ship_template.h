@@ -142,28 +142,30 @@ constexpr shape_flag get_shape_flags() {
 }
 
 template <geom::ShapeNode S>
-shape_flag shape_check_point(const auto& parameters, const vec2& v, shape_flag mask) {
-  shape_flag result = shape_flag::kNone;
+Collision::hit_result shape_check_point(const auto& parameters, const vec2& v, shape_flag mask) {
+  Collision::hit_result result;
   geom::iterate(S{}, geom::iterate_check_point(mask), parameters, geom::convert_local_transform{v},
-                [&](shape_flag f) { result |= f; });
+                [&](shape_flag f, const vec2&) { result.mask |= f; });
   return result;
-}
-
-template <ecs::Component Logic, geom::ShapeNode S = typename Logic::shape>
-shape_flag ship_check_point(ecs::const_handle h, const vec2& v, shape_flag mask) {
-  return shape_check_point<S>(get_shape_parameters<Logic>(h), v, mask);
 }
 
 template <geom::ShapeNode S>
-shape_flag shape_check_point_legacy(const auto& parameters, const vec2& v, shape_flag mask) {
-  shape_flag result = shape_flag::kNone;
+Collision::hit_result
+shape_check_point_legacy(const auto& parameters, const vec2& v, shape_flag mask) {
+  Collision::hit_result result;
   geom::iterate(S{}, geom::iterate_check_point(mask), parameters,
-                geom::legacy_convert_local_transform{v}, [&](shape_flag f) { result |= f; });
+                geom::legacy_convert_local_transform{v},
+                [&](shape_flag f, const vec2&) { result.mask |= f; });
   return result;
 }
 
 template <ecs::Component Logic, geom::ShapeNode S = typename Logic::shape>
-shape_flag ship_check_point_legacy(ecs::const_handle h, const vec2& v, shape_flag mask) {
+Collision::hit_result ship_check_point(ecs::const_handle h, const vec2& v, shape_flag mask) {
+  return shape_check_point<S>(get_shape_parameters<Logic>(h), v, mask);
+}
+
+template <ecs::Component Logic, geom::ShapeNode S = typename Logic::shape>
+Collision::hit_result ship_check_point_legacy(ecs::const_handle h, const vec2& v, shape_flag mask) {
   return shape_check_point_legacy<S>(get_shape_parameters<Logic>(h), v, mask);
 }
 

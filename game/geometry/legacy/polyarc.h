@@ -18,7 +18,7 @@ struct polyarc_data : shape_data_base {
   shape_flag flags = shape_flag::kNone;
 
   constexpr void
-  iterate(iterate_check_point_t it, const Transform auto& t, const FlagFunction auto& f) const {
+  iterate(iterate_check_point_t it, const Transform auto& t, const HitFunction auto& f) const {
     if (!(flags & it.mask)) {
       return;
     }
@@ -27,7 +27,7 @@ struct polyarc_data : shape_data_base {
     auto r = length(v);
     if (0 <= theta && theta <= (2 * pi<fixed> * segments) / sides && r >= radius - 10 &&
         r < radius) {
-      std::invoke(f, flags & it.mask);
+      std::invoke(f, flags & it.mask, t.inverse_transform(vec2{0}));
     }
   }
 

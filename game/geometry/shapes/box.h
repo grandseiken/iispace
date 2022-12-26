@@ -20,34 +20,34 @@ struct box_collider_data : shape_data_base {
   shape_flag flags = shape_flag::kNone;
 
   constexpr void
-  iterate(iterate_check_point_t it, const Transform auto& t, const FlagFunction auto& f) const {
+  iterate(iterate_check_point_t it, const Transform auto& t, const HitFunction auto& f) const {
     if (+(flags & it.mask) && abs((*t).x) <= dimensions.x && abs((*t).y) <= dimensions.y) {
-      std::invoke(f, flags & it.mask);
+      std::invoke(f, flags & it.mask, t.inverse_transform(vec2{0}));
     }
   }
 
   constexpr void
-  iterate(iterate_check_line_t it, const Transform auto& t, const FlagFunction auto& f) const {
+  iterate(iterate_check_line_t it, const Transform auto& t, const HitFunction auto& f) const {
     if (+(flags & it.mask) && intersect_aabb_line(-dimensions, dimensions, t.get_a(), t.get_b())) {
-      std::invoke(f, flags & it.mask);
+      std::invoke(f, flags & it.mask, t.inverse_transform(vec2{0}));
     }
   }
 
   constexpr void
-  iterate(iterate_check_ball_t it, const Transform auto& t, const FlagFunction auto& f) const {
+  iterate(iterate_check_ball_t it, const Transform auto& t, const HitFunction auto& f) const {
     if (+(flags & it.mask) && intersect_aabb_ball(-dimensions, dimensions, *t, t.r)) {
-      std::invoke(f, flags & it.mask);
+      std::invoke(f, flags & it.mask, t.inverse_transform(vec2{0}));
     }
   }
 
   constexpr void
-  iterate(iterate_check_convex_t it, const Transform auto& t, const FlagFunction auto& f) const {
+  iterate(iterate_check_convex_t it, const Transform auto& t, const HitFunction auto& f) const {
     if (!+(flags & it.mask)) {
       return;
     }
     auto va = *t;
     if (intersect_aabb_convex(-dimensions, dimensions, va)) {
-      std::invoke(f, flags & it.mask);
+      std::invoke(f, flags & it.mask, t.inverse_transform(vec2{0}));
     }
   }
 

@@ -117,13 +117,19 @@ struct PlayerLogic : ecs::component {
 
     nametag_timer && --nametag_timer;
     invulnerability_timer && --invulnerability_timer;
-    if (loadout.has(mod_id::kShieldRefill) && ++data.shield_refill_timer >= kShieldRefillTimer) {
-      pc.shield_count = 1u;
-      data.shield_refill_timer = 0u;
-      auto e = sim.emit(resolve_key::predicted());
-      e.play(sound::kPowerupOther, transform.centre);
-      e.rumble(pc.player_number, 10, .25f, .75f);
-      e.explosion(to_float(transform.centre), colour::kWhite0);
+    if (loadout.has(mod_id::kShieldRefill)) {
+      if (pc.shield_count >= 1u) {
+        pc.shield_count = 1u;
+        data.shield_refill_timer = 0u;
+      }
+      if (!pc.shield_count && ++data.shield_refill_timer >= kShieldRefillTimer) {
+        pc.shield_count = 1u;
+        data.shield_refill_timer = 0u;
+        auto e = sim.emit(resolve_key::predicted());
+        e.play(sound::kPowerupOther, transform.centre);
+        e.rumble(pc.player_number, 10, .25f, .75f);
+        e.explosion(to_float(transform.centre), colour::kWhite0);
+      }
     }
 
     // Movement.

@@ -58,6 +58,8 @@ concept IterTag = OneOf<T, iterate_flags_t, iterate_lines_t, iterate_shapes_t, i
 template <typename T>
 concept FlagFunction = std::invocable<T, shape_flag>;
 template <typename T>
+concept HitFunction = std::invocable<T, shape_flag, const vec2&>;
+template <typename T>
 concept PointFunction = std::invocable<T, const vec2&, const cvec4&>;
 template <typename T>
 concept LineFunction = std::invocable<T, const vec2&, const vec2&, const cvec4&, float, float>;
@@ -73,10 +75,10 @@ concept IterateFunction = IterTag<I> && Implies<I, iterate_flags_t, FlagFunction
     Implies<I, iterate_lines_t, LineFunction<T>> &&
     Implies<I, iterate_shapes_t, ShapeFunction<T>> &&
     Implies<I, iterate_centres_t, PointFunction<T>> &&
-    Implies<I, iterate_check_point_t, FlagFunction<T>> &&
-    Implies<I, iterate_check_line_t, FlagFunction<T>> &&
-    Implies<I, iterate_check_ball_t, FlagFunction<T>> &&
-    Implies<I, iterate_check_convex_t, FlagFunction<T>> &&
+    Implies<I, iterate_check_point_t, HitFunction<T>> &&
+    Implies<I, iterate_check_line_t, HitFunction<T>> &&
+    Implies<I, iterate_check_ball_t, HitFunction<T>> &&
+    Implies<I, iterate_check_convex_t, HitFunction<T>> &&
     Implies<I, iterate_attachment_points_t, AttachmentPointFunction<T>>;
 
 template <typename T>
@@ -147,6 +149,7 @@ struct convert_local_transform {
 
   constexpr vec2 operator*() const { return ::rotate(v - ct.v, -ct.r); }
   constexpr vec2 deref_ignore_rotation() const { return v - ct.v; }
+  constexpr vec2 inverse_transform(const vec2& v) const { return ::rotate(v, ct.r) + ct.v; }
 
   constexpr convert_local_transform translate(const vec2& t) const {
     return {v, r, ct.translate(t)};
@@ -164,6 +167,7 @@ struct convert_local_line_transform {
 
   constexpr vec2 get_a() const { return ::rotate(a - ct.v, -ct.r); }
   constexpr vec2 get_b() const { return ::rotate(b - ct.v, -ct.r); }
+  constexpr vec2 inverse_transform(const vec2& v) const { return ::rotate(v, ct.r) + ct.v; }
 
   constexpr convert_local_line_transform translate(const vec2& t) const {
     return {a, b, ct.translate(t)};
@@ -188,6 +192,7 @@ struct convert_local_convex_transform {
     }
     return r;
   }
+  constexpr vec2 inverse_transform(const vec2& v) const { return ::rotate(v, ct.r) + ct.v; }
   constexpr convert_local_convex_transform translate(const vec2& t) const {
     return {va, ct.translate(t)};
   }
@@ -200,6 +205,7 @@ struct legacy_convert_local_transform {
 
   vec2 v;
 
+  constexpr vec2 inverse_transform(const vec2&) const { return vec2{0}; }  // Not used.
   constexpr const vec2& deref_ignore_rotation() const { return v; }
   constexpr const vec2& operator*() const { return v; }
 

@@ -98,56 +98,72 @@ constexpr shape_flag get_shape_flags() {
 }
 
 template <geom::ShapeNode S>
-shape_flag shape_check_point(const auto& parameters, const vec2& v, shape_flag mask) {
-  shape_flag result = shape_flag::kNone;
+Collision::hit_result shape_check_point(const auto& parameters, const vec2& v, shape_flag mask) {
+  Collision::hit_result result;
   geom::iterate(S{}, geom::iterate_check_point(mask), parameters, geom::convert_local_transform{v},
-                [&](shape_flag f) { result |= f; });
+                [&](shape_flag f, const vec2& c) {
+                  result.mask |= f;
+                  result.shape_centres.emplace_back(c);
+                });
   return result;
 }
 
 template <geom::ShapeNode S>
-shape_flag shape_check_line(const auto& parameters, const vec2& a, const vec2& b, shape_flag mask) {
-  shape_flag result = shape_flag::kNone;
+Collision::hit_result
+shape_check_line(const auto& parameters, const vec2& a, const vec2& b, shape_flag mask) {
+  Collision::hit_result result;
   geom::iterate(S{}, geom::iterate_check_line(mask), parameters,
-                geom::convert_local_line_transform{a, b}, [&](shape_flag f) { result |= f; });
+                geom::convert_local_line_transform{a, b}, [&](shape_flag f, const vec2& c) {
+                  result.mask |= f;
+                  result.shape_centres.emplace_back(c);
+                });
   return result;
 }
 
 template <geom::ShapeNode S>
-shape_flag
+Collision::hit_result
 shape_check_ball(const auto& parameters, const vec2& centre, fixed radius, shape_flag mask) {
-  shape_flag result = shape_flag::kNone;
+  Collision::hit_result result;
   geom::iterate(S{}, geom::iterate_check_ball(mask), parameters,
-                geom::convert_local_transform{centre, radius}, [&](shape_flag f) { result |= f; });
+                geom::convert_local_transform{centre, radius}, [&](shape_flag f, const vec2& c) {
+                  result.mask |= f;
+                  result.shape_centres.emplace_back(c);
+                });
   return result;
 }
 
 template <geom::ShapeNode S>
-shape_flag
+Collision::hit_result
 shape_check_convex(const auto& parameters, std::span<const vec2> convex, shape_flag mask) {
-  shape_flag result = shape_flag::kNone;
+  Collision::hit_result result;
   geom::iterate(S{}, geom::iterate_check_convex(mask), parameters,
-                geom::convert_local_convex_transform{convex}, [&](shape_flag f) { result |= f; });
+                geom::convert_local_convex_transform{convex}, [&](shape_flag f, const vec2& c) {
+                  result.mask |= f;
+                  result.shape_centres.emplace_back(c);
+                });
   return result;
 }
 
 template <ecs::Component Logic, geom::ShapeNode S = typename Logic::shape>
-shape_flag ship_check_point(ecs::const_handle h, const vec2& v, shape_flag mask) {
+Collision::hit_result ship_check_point(ecs::const_handle h, const vec2& v, shape_flag mask) {
   return shape_check_point<S>(get_shape_parameters<Logic>(h), v, mask);
 }
 
 template <ecs::Component Logic, geom::ShapeNode S = typename Logic::shape>
-shape_flag ship_check_line(ecs::const_handle h, const vec2& a, const vec2& b, shape_flag mask) {
+Collision::hit_result
+ship_check_line(ecs::const_handle h, const vec2& a, const vec2& b, shape_flag mask) {
   return shape_check_line<S>(get_shape_parameters<Logic>(h), a, b, mask);
 }
 
 template <ecs::Component Logic, geom::ShapeNode S = typename Logic::shape>
-shape_flag ship_check_ball(ecs::const_handle h, const vec2& centre, fixed radius, shape_flag mask) {
+Collision::hit_result
+ship_check_ball(ecs::const_handle h, const vec2& centre, fixed radius, shape_flag mask) {
   return shape_check_ball<S>(get_shape_parameters<Logic>(h), centre, radius, mask);
 }
 
 template <ecs::Component Logic, geom::ShapeNode S = typename Logic::shape>
-shape_flag ship_check_convex(ecs::const_handle h, std::span<const vec2> convex, shape_flag mask) {
+Collision::hit_result
+ship_check_convex(ecs::const_handle h, std::span<const vec2> convex, shape_flag mask) {
   return shape_check_convex<S>(get_shape_parameters<Logic>(h), convex, mask);
 }
 

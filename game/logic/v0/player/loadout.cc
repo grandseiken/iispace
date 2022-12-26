@@ -13,7 +13,8 @@ std::vector<mod_id> make_mod_list() {
   std::vector<mod_id> v = {
       mod_id::kBackShots, mod_id::kFrontShots,
       // mod_id::kBounceShots,
-      // mod_id::kHomingShots, mod_id::kSuperCapacity, mod_id::kSuperRefill,
+      mod_id::kHomingShots,
+      // mod_id::kSuperCapacity, mod_id::kSuperRefill,
       mod_id::kBombCapacity, mod_id::kBombRadius,
       // mod_id::kBombSpeedClearCharge, mod_id::kBombDoubleTrigger,
       mod_id::kShieldCapacity, mod_id::kShieldRefill, mod_id::kShieldRespawn,
@@ -152,7 +153,8 @@ std::vector<mod_id> mod_selection(const initial_conditions& conditions, RandomEn
     for (auto id : mod_list) {
       const auto& data = mod_lookup(id);
       bool selected_slot = selected_slots.contains(data.slot);
-      bool selected_category = selected_categories.contains(data.category);
+      bool selected_category =
+          data.category != mod_category::kGeneral && selected_categories.contains(data.category);
       bool already_selected = selected_slot || selected_category;
       bool is_required = required_category && data.category == required_category;
       if (is_mod_allowed(data) && (!required_category || is_required) &&
@@ -188,11 +190,13 @@ std::vector<mod_id> mod_selection(const initial_conditions& conditions, RandomEn
       }
       add_result(*mod_data);
     }
-    if (selected_slots.empty() && selected_categories.empty()) {
+    if (!selected_slots.empty()) {
+      selected_slots.clear();
+    } else if (!selected_categories.empty()) {
+      selected_categories.clear();
+    } else {
       break;
     }
-    selected_slots.clear();
-    selected_categories.clear();
   }
 
   for (std::uint32_t i = 0; i + 1 < result.size(); ++i) {
@@ -258,15 +262,13 @@ fixed PlayerLoadout::bomb_radius_multiplier() const {
   auto c = count(mod_id::kBombRadius);
   switch (c) {
   default:
-    r += (c - 4) / 20_fx;
-  case 4:
-    r += 2 / 20_fx;
+    r += (c - 3) / 20_fx;
   case 3:
-    r += 3 / 20_fx;
+    r += 2 / 20_fx;
   case 2:
-    r += 4 / 20_fx;
+    r += 3 / 20_fx;
   case 1:
-    r += 5 / 20_fx;
+    r += 4 / 20_fx;
   case 0:
     break;
   }

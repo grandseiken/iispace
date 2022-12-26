@@ -26,19 +26,19 @@ struct ball_collider_data : shape_data_base {
   shape_flag flags = shape_flag::kNone;
 
   constexpr void
-  iterate(iterate_check_point_t it, const Transform auto& t, const FlagFunction auto& f) const {
+  iterate(iterate_check_point_t it, const Transform auto& t, const HitFunction auto& f) const {
     if (!(flags & it.mask)) {
       return;
     }
     auto d_sq = length_squared(t.deref_ignore_rotation());
     if (d_sq <= dimensions.radius * dimensions.radius &&
         d_sq >= dimensions.inner_radius * dimensions.inner_radius) {
-      std::invoke(f, flags & it.mask);
+      std::invoke(f, flags & it.mask, t.inverse_transform(vec2{0}));
     }
   }
 
   constexpr void
-  iterate(iterate_check_line_t it, const Transform auto& t, const FlagFunction auto& f) const {
+  iterate(iterate_check_line_t it, const Transform auto& t, const HitFunction auto& f) const {
     if (!(flags & it.mask)) {
       return;
     }
@@ -47,12 +47,12 @@ struct ball_collider_data : shape_data_base {
     auto ir_sq = dimensions.inner_radius * dimensions.inner_radius;
     if (intersect_line_ball(a, b, vec2{0}, dimensions.radius) &&
         (length_squared(a) >= ir_sq || length_squared(b) >= ir_sq)) {
-      std::invoke(f, flags & it.mask);
+      std::invoke(f, flags & it.mask, t.inverse_transform(vec2{0}));
     }
   }
 
   constexpr void
-  iterate(iterate_check_ball_t it, const Transform auto& t, const FlagFunction auto& f) const {
+  iterate(iterate_check_ball_t it, const Transform auto& t, const HitFunction auto& f) const {
     if (!(flags & it.mask)) {
       return;
     }
@@ -60,12 +60,12 @@ struct ball_collider_data : shape_data_base {
     auto r = dimensions.radius + t.r;
     if (d_sq <= r * r &&
         (!dimensions.inner_radius || sqrt(d_sq) + t.r >= dimensions.inner_radius)) {
-      std::invoke(f, flags & it.mask);
+      std::invoke(f, flags & it.mask, t.inverse_transform(vec2{0}));
     }
   }
 
   constexpr void
-  iterate(iterate_check_convex_t it, const Transform auto& t, const FlagFunction auto& f) const {
+  iterate(iterate_check_convex_t it, const Transform auto& t, const HitFunction auto& f) const {
     if (!(flags & it.mask)) {
       return;
     }
@@ -75,7 +75,7 @@ struct ball_collider_data : shape_data_base {
         (!dimensions.inner_radius || std::any_of(va.begin(), va.end(), [&](const vec2& v) {
           return length_squared(v) >= ir_sq;
         }))) {
-      std::invoke(f, flags & it.mask);
+      std::invoke(f, flags & it.mask, t.inverse_transform(vec2{0}));
     }
   }
 

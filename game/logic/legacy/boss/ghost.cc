@@ -20,8 +20,8 @@ constexpr cvec4 c1 = colour::hue360(280, .5f, .6f);
 constexpr cvec4 c2 = colour::hue360(270, .2f);
 
 template <geom::ShapeNode S>
-shape_flag shape_check_point_compatibility(const auto& parameters, bool is_legacy, const vec2& v,
-                                           shape_flag mask) {
+Collision::hit_result shape_check_point_compatibility(const auto& parameters, bool is_legacy,
+                                                      const vec2& v, shape_flag mask) {
   return is_legacy ? shape_check_point_legacy<S>(parameters, v, mask)
                    : shape_check_point<S>(parameters, v, mask);
 }
@@ -398,16 +398,19 @@ struct GhostBoss : ecs::component {
     return {transform.centre, transform.rotation};
   }
 
-  shape_flag check_point(const Transform& transform, const vec2& v, shape_flag mask) const {
-    auto result = shape_flag::kNone;
+  Collision::hit_result
+  check_point(const Transform& transform, const vec2& v, shape_flag mask) const {
+    Collision::hit_result result;
     if (!collision_enabled) {
-      return shape_flag::kNone;
+      return result;
     }
-    result |= shape_check_point_compatibility<standard_transform<centre_shape>>(
-        shape_parameters(transform), is_legacy, v, mask);
+    result.mask |= shape_check_point_compatibility<standard_transform<centre_shape>>(
+                       shape_parameters(transform), is_legacy, v, mask)
+                       .mask;
     if (box_attack_shape_enabled) {
-      result |= shape_check_point_compatibility<box_attack_shape>(box_attack_parameters(transform),
-                                                                  is_legacy, v, mask);
+      result.mask |= shape_check_point_compatibility<box_attack_shape>(
+                         box_attack_parameters(transform), is_legacy, v, mask)
+                         .mask;
     }
 
     using ring0_ball =
@@ -418,7 +421,8 @@ struct GhostBoss : ecs::component {
       for (std::uint32_t i = 0; i < 16; ++i) {
         std::tuple parameters{transform.centre, transform.rotation, outer_rotation[0],
                               outer_shape_d(0, i), outer_ball_rotation};
-        result |= shape_check_point_compatibility<ring0_ball_t>(parameters, is_legacy, v, mask);
+        result.mask |=
+            shape_check_point_compatibility<ring0_ball_t>(parameters, is_legacy, v, mask).mask;
       }
     }
 
@@ -432,7 +436,8 @@ struct GhostBoss : ecs::component {
         }
         std::tuple parameters{transform.centre, transform.rotation, outer_rotation[n],
                               outer_shape_d(n, i), outer_ball_rotation};
-        result |= shape_check_point_compatibility<ringN_ball_t>(parameters, is_legacy, v, mask);
+        result.mask |=
+            shape_check_point_compatibility<ringN_ball_t>(parameters, is_legacy, v, mask).mask;
       }
     }
     return result;
