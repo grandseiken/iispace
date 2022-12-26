@@ -85,6 +85,7 @@ cc_library(
     "//game/logic/ecs",
   ],
   implementation_deps = [
+    ":loadout",
     "//game/geometry/shapes",
     "//game/logic/sim/io:conditions",
     "//game/logic/v0:components",

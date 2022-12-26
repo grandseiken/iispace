@@ -5,9 +5,10 @@
 
 namespace ii {
 class SimInterface;
+struct PlayerLoadout;
 namespace v0 {
 void spawn_player_shot(SimInterface& sim, const vec2& position, ecs::handle player,
-                       const vec2& direction, bool penetrating);
+                       const PlayerLoadout&, const vec2& direction);
 }  // namespace v0
 }  // namespace ii
 

@@ -3,14 +3,28 @@
 #include "game/logic/sim/io/conditions.h"
 #include "game/logic/v0/components.h"
 #include "game/logic/v0/particles.h"
+#include "game/logic/v0/player/loadout.h"
 #include "game/logic/v0/ship_template.h"
 
 namespace ii::v0 {
 namespace {
 
-struct PlayerShot : ecs::component {
-  static constexpr fixed kSpeed = 10_fx * 15_fx / 16_fx;
+struct shot_mod_data {
+  static constexpr std::uint32_t kBaseDamage = 8u;
+  static constexpr fixed kBaseSpeed = 75_fx / 8_fx;
+  static constexpr fixed kSniperSplitDistance = 425_fx;
+  static constexpr fixed kSniperSplitRotation = pi<fixed> / 24;
 
+  shot_mod_data(const PlayerLoadout& loadout)
+  : sniper_splits_remaining{loadout.has(mod_id::kSniperWeapon) ? 1u : 0u} {}
+
+  bool penetrating = false;  // TODO: unused.
+  fixed speed = kBaseSpeed;
+  fixed distance_travelled = 0u;
+  std::uint32_t sniper_splits_remaining = 0u;
+};
+
+struct PlayerShot : ecs::component {
   static constexpr auto z = colour::kZPlayerShot;
   static constexpr auto style = geom::sline(colour::kZero, z);
   using shape = standard_transform<
@@ -27,23 +41,31 @@ struct PlayerShot : ecs::component {
   ecs::entity_id player;
   std::uint32_t player_number = 0;
   bool is_predicted = false;
-  vec2 velocity{0};
-  bool penetrating = false;
+  vec2 direction{0};
   cvec4 colour{0.f};
+  shot_mod_data data;
 
   PlayerShot(ecs::entity_id player, std::uint32_t player_number, bool is_predicted,
-             const vec2& direction, bool penetrating)
+             const PlayerLoadout& loadout, const vec2& direction)
   : player{player}
   , player_number{player_number}
   , is_predicted{is_predicted}
-  , velocity{normalise(direction) * kSpeed}
-  , penetrating{penetrating} {}
+  , direction{normalise(direction)}
+  , colour{v0_player_colour(player_number)}
+  , data{loadout} {}
 
   void update(ecs::handle h, Transform& transform, SimInterface& sim) {
-    colour = penetrating && sim.random(random_source::kLegacyAesthetic).rbool()
-        ? colour::kWhite0
-        : v0_player_colour(player_number);
-    transform.move(velocity);
+    if (data.sniper_splits_remaining &&
+        data.distance_travelled >= shot_mod_data::kSniperSplitDistance) {
+      colour = colour::kWhite1;
+      --data.sniper_splits_remaining;
+      auto& s0 = *spawn_copy(transform, sim).get<PlayerShot>();
+      s0.direction = rotate(s0.direction, shot_mod_data::kSniperSplitRotation);
+      auto& s1 = *spawn_copy(transform, sim).get<PlayerShot>();
+      s1.direction = rotate(s1.direction, -shot_mod_data::kSniperSplitRotation);
+    }
+    transform.move(direction * data.speed);
+    data.distance_travelled += data.speed;
     bool on_screen = all(greaterThanEqual(transform.centre, vec2{-4, -4})) &&
         all(lessThan(transform.centre, vec2{4, 4} + sim.dimensions()));
     if (!on_screen) {
@@ -63,14 +85,14 @@ struct PlayerShot : ecs::component {
         continue;
       }
       auto type = is_predicted ? damage_type::kPredicted
-          : penetrating        ? damage_type::kPenetrating
+          : data.penetrating   ? damage_type::kPenetrating
                                : damage_type::kNormal;
       if (const auto* status = e.h.get<EnemyStatus>(); status && status->shielded_ticks > 4u) {
         shielded = true;
       }
-      ecs::call_if<&Health::damage>(e.h, sim, shielded ? 0u : 8u, type, player,
-                                    transform.centre - 2 * velocity);
-      if ((shielded || !(e.hit_mask & shape_flag::kWeakVulnerable)) && !penetrating) {
+      ecs::call_if<&Health::damage>(e.h, sim, shielded ? 0u : shot_mod_data::kBaseDamage, type,
+                                    player, transform.centre - 2 * direction * data.speed);
+      if ((shielded || !(e.hit_mask & shape_flag::kWeakVulnerable)) && !data.penetrating) {
         destroy = true;
         destroy_particles = !shielded;
         break;
@@ -79,7 +101,7 @@ struct PlayerShot : ecs::component {
     if (!destroy) {
       for (const auto& e : collision) {
         if (+(e.hit_mask & shape_flag::kShield) ||
-            (!penetrating && +(e.hit_mask & shape_flag::kWeakShield))) {
+            (!data.penetrating && +(e.hit_mask & shape_flag::kWeakShield))) {
           shielded = true;
           destroy = true;
         }
@@ -92,10 +114,10 @@ struct PlayerShot : ecs::component {
         auto& r = sim.random(random_source::kAesthetic);
         for (std::uint32_t i = 0; i < 2 + r.uint(2); ++i) {
           // TODO: position + reflect direction could be more accurate with cleverer hit info.
-          auto v = from_polar(angle(to_float(-velocity)) + 2.f * (.5f - r.fixed().to_float()),
+          auto v = from_polar(angle(to_float(-direction)) + 2.f * (.5f - r.fixed().to_float()),
                               2.f * r.fixed().to_float() + 2.f);
           e.add(particle{
-              .position = to_float(transform.centre - velocity / 2),
+              .position = to_float(transform.centre - direction * data.speed / 2),
               .velocity = v,
               .colour = colour,
               .data = dot_particle{.radius = 1.f, .line_width = 1.5f},
@@ -108,16 +130,23 @@ struct PlayerShot : ecs::component {
       h.emplace<Destroy>();
     }
   }
+
+  ecs::handle spawn_copy(const Transform& transform, SimInterface& sim) {
+    auto h = create_ship_default<PlayerShot>(sim, transform.centre);
+    h.emplace<PlayerShot>(*this);
+    return h;
+  }
 };
-DEBUG_STRUCT_TUPLE(PlayerShot, player, player_number, velocity, penetrating);
+DEBUG_STRUCT_TUPLE(PlayerShot, player, player_number, is_predicted, direction, data.penetrating,
+                   data.speed, data.distance_travelled, data.sniper_splits_remaining);
 
 }  // namespace
 
 void spawn_player_shot(SimInterface& sim, const vec2& position, ecs::handle player,
-                       const vec2& direction, bool penetrating) {
+                       const PlayerLoadout& loadout, const vec2& direction) {
   const auto& p = *player.get<Player>();
   auto h = create_ship_default<PlayerShot>(sim, position);
-  h.add(PlayerShot{player.id(), p.player_number, p.is_predicted, direction, penetrating});
+  h.add(PlayerShot{player.id(), p.player_number, p.is_predicted, loadout, direction});
 }
 
 }  // namespace ii::v0

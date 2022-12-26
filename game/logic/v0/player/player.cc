@@ -148,7 +148,7 @@ struct PlayerLogic : ecs::component {
     // Shots.
     auto shot = fire_target - transform.centre;
     if (length_squared(shot) > 0 && !fire_timer && input.keys & input_frame::kFire) {
-      spawn_player_shot(sim, transform.centre, h, shot, /* penetrating */ false);
+      spawn_player_shot(sim, transform.centre, h, loadout, shot);
       fire_timer = kShotTimer;
 
       auto& random = sim.random(random_source::kAesthetic);

@@ -4,6 +4,7 @@
 #include "game/common/struct_tuple.h"
 #include "game/logic/ecs/index.h"
 #include "game/logic/sim/components.h"
+#include <optional>
 
 namespace ii::v0 {
 struct drop_data {
@@ -15,6 +16,11 @@ struct AiFocusTag : ecs::component {
   std::uint32_t priority = 1;
 };
 DEBUG_STRUCT_TUPLE(AiFocusTag, priority);
+
+struct AiClickTag : ecs::component {
+  std::optional<vec2> position;
+};
+DEBUG_STRUCT_TUPLE(AiClickTag, position);
 
 struct GlobalData : ecs::component {
   drop_data shield_drop;

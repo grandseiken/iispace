@@ -145,8 +145,9 @@ struct ModUpgrade : ecs::component {
   std::optional<std::uint32_t> highlight_animation;
   bool destroy = false;
 
-  void update(ecs::handle h, SimInterface& sim) {
+  void update(ecs::handle h, AiClickTag& click_tag, SimInterface& sim) {
     auto r = panel_rect(sim);
+    click_tag.position = (r.min() + r.max()) / 2;
     bool highlight = false;
     ++icon_animation;
 
@@ -288,6 +289,7 @@ void spawn_mod_upgrades(SimInterface& sim, std::span<mod_id> ids) {
                  .render_panel =
                      sfn::cast<Render::render_panel_t, ecs::call<&ModUpgrade::render_panel>>});
     h.add(Update{.update = ecs::call<&ModUpgrade::update>});
+    h.add(AiClickTag{});
   }
 }
 

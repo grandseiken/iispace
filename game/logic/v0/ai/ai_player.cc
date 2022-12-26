@@ -6,13 +6,12 @@ namespace ii::v0 {
 namespace {
 
 struct AiPlayer : ecs::component {
-  input_frame think(ecs::const_handle h, const Transform& transform, const Player& player,
-                    const SimInterface& sim, ai_state& state);
+  input_frame
+  think(ecs::const_handle h, const Transform& transform, const SimInterface& sim, ai_state& state);
 };
 DEBUG_STRUCT_TUPLE(AiPlayer);
 
-// TODO: AI players can't get past upgrade selection screen.
-input_frame AiPlayer::think(ecs::const_handle h, const Transform& transform, const Player& player,
+input_frame AiPlayer::think(ecs::const_handle h, const Transform& transform,
                             const SimInterface& sim, ai_state& state) {
   struct target {
     fixed distance = 0;
@@ -115,6 +114,12 @@ input_frame AiPlayer::think(ecs::const_handle h, const Transform& transform, con
         *powerup_attract_v += offset / (distance * distance);
       });
 
+  sim.index().iterate<AiClickTag>([&](const AiClickTag& tag) {
+    if (tag.position && sim.is_on_screen(*tag.position) && !powerup_attract_v) {
+      powerup_attract_v = *tag.position - transform.centre;
+    }
+  });
+
   // Avoid other players.
   sim.index().iterate_dispatch_if<Player>([&](ecs::const_handle ph, const Transform& e_transform) {
     auto offset = e_transform.centre - transform.centre;
@@ -185,9 +190,12 @@ input_frame AiPlayer::think(ecs::const_handle h, const Transform& transform, con
 
   if (avoid_urgent) {
     state.velocity = rc_smooth(state.velocity, target_velocity, 3_fx / 4_fx);
-    frame.keys |= input_frame::key::kBomb;
+    frame.keys |= input_frame::kBomb;
   } else {
     state.velocity = rc_smooth(state.velocity, target_velocity, 15_fx / 16_fx);
+  }
+  if (sim.index().count<AiClickTag>()) {
+    frame.keys |= input_frame::kClick;
   }
   frame.velocity = state.velocity;
 
