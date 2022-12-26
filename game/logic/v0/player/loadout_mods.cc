@@ -40,7 +40,7 @@ std::unordered_map<mod_id, mod_data> make_mod_map() {
            "You can carry an additional bomb. You gain a bomb now.",
            {.allow_multiple_per_player = true});
   add_data(mod_id::kBombRadius, mod_slot::kBombCombo, mod_category::kGeneral, "Blastwave",
-           "Your bombs have a larger area-of-effect radius.");
+           "Your bombs have a larger area-of-effect radius.", {.allow_multiple_per_player = true});
   add_data(mod_id::kBombSpeedClearCharge, mod_slot::kBombCombo, mod_category::kGeneral,
            "Blast synthesis", "Whenever a wave of enemies is cleared quickly, you gain a bomb.");
   add_data(mod_id::kBombDoubleTrigger, mod_slot::kBombCombo, mod_category::kGeneral, "Aftershock",

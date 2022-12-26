@@ -140,7 +140,7 @@ struct PlayerLogic : ecs::component {
 
     // Bomb.
     if (!pc.is_predicted && pc.bomb_count && !bomb_timer && input.keys & input_frame::kBomb) {
-      trigger_bomb(h, pc, transform.centre, sim);
+      trigger_bomb(h, pc, loadout, transform.centre, sim);
       --pc.bomb_count;
       bomb_timer = kInputTimer;
     }
@@ -218,8 +218,8 @@ struct PlayerLogic : ecs::component {
     e.rumble(pc.player_number, 30, .5f, .5f).play(sound::kPlayerDestroy, transform.centre);
   }
 
-  void
-  trigger_bomb(ecs::const_handle h, Player& pc, const vec2& position, SimInterface& sim) const {
+  void trigger_bomb(ecs::const_handle h, Player& pc, const PlayerLoadout& loadout,
+                    const vec2& position, SimInterface& sim) const {
     static constexpr std::uint32_t kBombDamage = 400;
     static constexpr fixed kBombRadius = 180;
 
@@ -230,15 +230,16 @@ struct PlayerLogic : ecs::component {
     explode_entity_shapes<PlayerLogic>(h, e, c, 21);
     explode_entity_shapes<PlayerLogic>(h, e, colour::kWhite0, 24);
 
+    auto radius = kBombRadius * loadout.bomb_radius_multiplier();
     for (std::uint32_t i = 0; i < 64; ++i) {
-      auto v = position + from_polar(2 * i * pi<fixed> / 64, kBombRadius);
+      auto v = position + from_polar(2 * i * pi<fixed> / 64, radius);
       auto parameters = shape_parameters(pc, {{}, v, 0_fx});
       explode_shapes<shape>(e, parameters, (i % 2) ? c : colour::kWhite0,
                             8 + random.uint(8) + random.uint(8), position);
     }
 
     e.rumble(pc.player_number, 20, 1.f, .5f).play(sound::kExplosion, position);
-    for (const auto& c : sim.collide_ball(position, kBombRadius,
+    for (const auto& c : sim.collide_ball(position, radius,
                                           shape_flag::kVulnerable | shape_flag::kWeakVulnerable)) {
       if (auto* health = c.h.get<Health>(); health) {
         health->damage(c.h, sim, kBombDamage, damage_type::kBomb, h.id(), position);

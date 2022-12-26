@@ -13,8 +13,8 @@ std::vector<mod_id> make_mod_list() {
   std::vector<mod_id> v = {
       // mod_id::kBackShots, mod_id::kFrontShots, mod_id::kBounceShots,
       // mod_id::kHomingShots, mod_id::kSuperCapacity, mod_id::kSuperRefill,
-      mod_id::kBombCapacity,
-      // mod_id::kBombRadius, mod_id::kBombSpeedClearCharge, mod_id::kBombDoubleTrigger,
+      mod_id::kBombCapacity, mod_id::kBombRadius,
+      // mod_id::kBombSpeedClearCharge, mod_id::kBombDoubleTrigger,
       mod_id::kShieldCapacity, mod_id::kShieldRefill, mod_id::kShieldRespawn,
       // mod_id::kPowerupDrops, mod_id::kCurrencyDrops,
       // mod_id::kCorruptionWeapon, mod_id::kCorruptionSuper, mod_id::kCorruptionBomb,
@@ -242,6 +242,26 @@ std::uint32_t PlayerLoadout::max_shield_capacity(const SimInterface&) const {
 
 std::uint32_t PlayerLoadout::max_bomb_capacity(const SimInterface&) const {
   return 2u + count(mod_id::kBombCapacity);
+}
+
+fixed PlayerLoadout::bomb_radius_multiplier() const {
+  auto r = 1_fx;
+  auto c = count(mod_id::kBombRadius);
+  switch (c) {
+  default:
+    r += (c - 4) / 20_fx;
+  case 4:
+    r += 2 / 20_fx;
+  case 3:
+    r += 3 / 20_fx;
+  case 2:
+    r += 4 / 20_fx;
+  case 1:
+    r += 5 / 20_fx;
+  case 0:
+    break;
+  }
+  return r;
 }
 
 }  // namespace ii::v0
