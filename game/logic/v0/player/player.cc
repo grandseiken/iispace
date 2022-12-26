@@ -14,13 +14,16 @@
 namespace ii::v0 {
 namespace {
 
+struct player_mod_data {
+  std::uint32_t shield_refill_timer = 0;
+};
+
 struct PlayerLogic : ecs::component {
   static constexpr fixed kPlayerSpeed = 5_fx * 15_fx / 16_fx;
 
   static constexpr std::uint32_t kReviveTime = 100;
   static constexpr std::uint32_t kShieldTime = 50;
   static constexpr std::uint32_t kInputTimer = 30;
-  static constexpr std::uint32_t kShotTimer = 5;
   static constexpr std::uint32_t kShieldRefillTimer = 60 * 25;
 
   static constexpr auto z = colour::kZPlayer;
@@ -63,9 +66,9 @@ struct PlayerLogic : ecs::component {
   std::uint32_t bomb_timer = 0;
   std::uint32_t click_timer = 0;
   std::uint32_t render_timer = 0;
-  std::uint32_t shield_refill_timer = 0;
   std::uint32_t nametag_timer = invulnerability_timer;
   std::uint32_t fire_target_render_timer = 0;
+  player_mod_data data;
   vec2 fire_target{0};
   bool mod_upgrade_chosen = false;
 
@@ -114,15 +117,13 @@ struct PlayerLogic : ecs::component {
 
     nametag_timer && --nametag_timer;
     invulnerability_timer && --invulnerability_timer;
-    if (loadout.has(mod_id::kShieldRefill)) {
-      if (++shield_refill_timer >= kShieldRefillTimer) {
-        pc.shield_count = 1u;
-        shield_refill_timer = 0u;
-        auto e = sim.emit(resolve_key::predicted());
-        e.play(sound::kPowerupOther, transform.centre);
-        e.rumble(pc.player_number, 10, .25f, .75f);
-        e.explosion(to_float(transform.centre), colour::kWhite0);
-      }
+    if (loadout.has(mod_id::kShieldRefill) && ++data.shield_refill_timer >= kShieldRefillTimer) {
+      pc.shield_count = 1u;
+      data.shield_refill_timer = 0u;
+      auto e = sim.emit(resolve_key::predicted());
+      e.play(sound::kPowerupOther, transform.centre);
+      e.rumble(pc.player_number, 10, .25f, .75f);
+      e.explosion(to_float(transform.centre), colour::kWhite0);
     }
 
     // Movement.
@@ -146,16 +147,10 @@ struct PlayerLogic : ecs::component {
     }
 
     // Shots.
-    auto shot = fire_target - transform.centre;
-    if (length_squared(shot) > 0 && !fire_timer && input.keys & input_frame::kFire) {
-      spawn_player_shot(sim, transform.centre, h, loadout, shot);
-      fire_timer = kShotTimer;
-
-      auto& random = sim.random(random_source::kAesthetic);
-      float volume = .5f * random.fixed().to_float() + .5f;
-      float pitch = (random.fixed().to_float() - 1.f) / 12.f;
-      float pan = 2.f * transform.centre.x.to_float() / dim.x.to_int() - 1.f;
-      sim.emit(resolve_key::predicted()).play(sound::kPlayerFire, volume, pan, pitch);
+    auto shot_direction = fire_target - transform.centre;
+    if (length_squared(shot_direction) > 0 && !fire_timer && input.keys & input_frame::kFire) {
+      spawn_shot(h, loadout, transform.centre, shot_direction, sim);
+      fire_timer = loadout.shot_fire_timer();
     }
 
     // Damage.
@@ -178,7 +173,7 @@ struct PlayerLogic : ecs::component {
       bubble_id.reset();
       pc.is_killed = false;
       render.clear_trails = true;
-      shield_refill_timer = 0;
+      data.shield_refill_timer = 0;
       invulnerability_timer = nametag_timer = kReviveTime;
       if (loadout.has(mod_id::kShieldRespawn)) {
         pc.shield_count = loadout.max_shield_capacity(sim);
@@ -201,7 +196,7 @@ struct PlayerLogic : ecs::component {
     if (pc.shield_count) {
       e.rumble(pc.player_number, 15, 0.f, 1.f).play(sound::kPlayerShield, transform.centre);
       --pc.shield_count;
-      shield_refill_timer = 0;
+      data.shield_refill_timer = 0;
       invulnerability_timer = kShieldTime;
       return;
     }
@@ -214,8 +209,29 @@ struct PlayerLogic : ecs::component {
     ++pc.death_count;
     pc.bomb_count = 0;
     pc.is_killed = true;
-    shield_refill_timer = 0;
+    data.shield_refill_timer = 0;
     e.rumble(pc.player_number, 30, .5f, .5f).play(sound::kPlayerDestroy, transform.centre);
+  }
+
+  void spawn_shot(ecs::handle h, const PlayerLoadout& loadout, const vec2& position,
+                  const vec2& direction, SimInterface& sim) const {
+    if (loadout.has(mod_id::kBackShots)) {
+      spawn_player_shot(sim, h, position, -direction);
+    }
+    if (loadout.has(mod_id::kFrontShots)) {
+      static constexpr fixed kFrontShotSpreadDistance = 6;
+      auto p = kFrontShotSpreadDistance * normalise(perpendicular(direction)) / 2;
+      spawn_player_shot(sim, h, position + p, direction);
+      spawn_player_shot(sim, h, position - p, direction);
+    } else {
+      spawn_player_shot(sim, h, position, direction);
+    }
+
+    auto& random = sim.random(random_source::kAesthetic);
+    float volume = .5f * random.fixed().to_float() + .5f;
+    float pitch = (random.fixed().to_float() - 1.f) / 12.f;
+    float pan = 2.f * position.x.to_float() / sim.dimensions().x.to_int() - 1.f;
+    sim.emit(resolve_key::predicted()).play(sound::kPlayerFire, volume, pan, pitch);
   }
 
   void trigger_bomb(ecs::const_handle h, Player& pc, const PlayerLoadout& loadout,
@@ -315,8 +331,9 @@ struct PlayerLogic : ecs::component {
     return info;
   }
 };
-DEBUG_STRUCT_TUPLE(PlayerLogic, invulnerability_timer, fire_timer, bomb_timer, render_timer,
-                   fire_target);
+DEBUG_STRUCT_TUPLE(PlayerLogic, bubble_id, invulnerability_timer, fire_timer, bomb_timer,
+                   click_timer, render_timer, data.shield_refill_timer, nametag_timer,
+                   fire_target_render_timer, fire_target, mod_upgrade_chosen);
 
 }  // namespace
 

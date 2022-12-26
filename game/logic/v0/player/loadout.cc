@@ -11,7 +11,8 @@ namespace {
 
 std::vector<mod_id> make_mod_list() {
   std::vector<mod_id> v = {
-      // mod_id::kBackShots, mod_id::kFrontShots, mod_id::kBounceShots,
+      mod_id::kBackShots, mod_id::kFrontShots,
+      // mod_id::kBounceShots,
       // mod_id::kHomingShots, mod_id::kSuperCapacity, mod_id::kSuperRefill,
       mod_id::kBombCapacity, mod_id::kBombRadius,
       // mod_id::kBombSpeedClearCharge, mod_id::kBombDoubleTrigger,
@@ -19,7 +20,8 @@ std::vector<mod_id> make_mod_list() {
       // mod_id::kPowerupDrops, mod_id::kCurrencyDrops,
       // mod_id::kCorruptionWeapon, mod_id::kCorruptionSuper, mod_id::kCorruptionBomb,
       // mod_id::kCorruptionShield, mod_id::kCorruptionBonus,
-      // mod_id::kCloseCombatWeapon, mod_id::kCloseCombatSuper, mod_id::kCloseCombatBomb,
+      mod_id::kCloseCombatWeapon,
+      // mod_id::kCloseCombatSuper, mod_id::kCloseCombatBomb,
       // mod_id::kCloseCombatShield, mod_id::kCloseCombatBonus,
       // mod_id::kLightningWeapon, mod_id::kLightningSuper, mod_id::kLightningBomb,
       // mod_id::kLightningShield, mod_id::kLightningBonus,
@@ -145,8 +147,7 @@ std::vector<mod_id> mod_selection(const initial_conditions& conditions, RandomEn
     return nullptr;
   };
 
-  auto select_mod = [&](std::optional<mod_category> required_category,
-                        bool ignore_selected) -> const mod_data* {
+  auto select_mod = [&](std::optional<mod_category> required_category) -> const mod_data* {
     mod_slot_map slot_mods;
     for (auto id : mod_list) {
       const auto& data = mod_lookup(id);
@@ -155,7 +156,7 @@ std::vector<mod_id> mod_selection(const initial_conditions& conditions, RandomEn
       bool already_selected = selected_slot || selected_category;
       bool is_required = required_category && data.category == required_category;
       if (is_mod_allowed(data) && (!required_category || is_required) &&
-          (ignore_selected || !already_selected || (is_required && !selected_slot))) {
+          (!already_selected || (is_required && !selected_slot))) {
         slot_mods[data.slot].emplace_back(&data);
       }
     }
@@ -175,23 +176,23 @@ std::vector<mod_id> mod_selection(const initial_conditions& conditions, RandomEn
     ++it;
   }
   if (it != loadout_category_counts.end()) {
-    if (const auto* mod_data = select_mod(it->first, false); mod_data) {
+    if (const auto* mod_data = select_mod(it->first); mod_data) {
       add_result(*mod_data);
     }
   }
-  while (result.size() < 4u) {
-    const auto* mod_data = select_mod(std::nullopt, false);
-    if (!mod_data) {
+  while (true) {
+    while (result.size() < 4u) {
+      const auto* mod_data = select_mod(std::nullopt);
+      if (!mod_data) {
+        break;
+      }
+      add_result(*mod_data);
+    }
+    if (selected_slots.empty() && selected_categories.empty()) {
       break;
     }
-    add_result(*mod_data);
-  }
-  while (result.size() < 4u) {
-    const auto* mod_data = select_mod(std::nullopt, /* ignore slots + categories */ true);
-    if (!mod_data) {
-      break;
-    }
-    add_result(*mod_data);
+    selected_slots.clear();
+    selected_categories.clear();
   }
 
   for (std::uint32_t i = 0; i + 1 < result.size(); ++i) {
@@ -243,6 +244,13 @@ std::uint32_t PlayerLoadout::max_shield_capacity(const SimInterface&) const {
 
 std::uint32_t PlayerLoadout::max_bomb_capacity(const SimInterface&) const {
   return 2u + count(mod_id::kBombCapacity);
+}
+
+std::uint32_t PlayerLoadout::shot_fire_timer() const {
+  if (has(mod_id::kCloseCombatWeapon)) {
+    return has(mod_id::kFrontShots) ? 48u : 30u;
+  }
+  return has(mod_id::kFrontShots) ? 8u : 5u;
 }
 
 fixed PlayerLoadout::bomb_radius_multiplier() const {
