@@ -6,6 +6,7 @@
 #include "game/logic/sim/io/aggregate.h"
 #include "game/mixer/sound.h"
 #include <cstdint>
+#include <span>
 #include <vector>
 
 class Player;
@@ -97,12 +98,14 @@ public:
     fixed distance_sq = 0;
   };
 
-  bool any_collision(const vec2& point, shape_flag mask) const;
-  bool any_collision(const vec2& a, const vec2& b, shape_flag mask) const;
-  bool any_collision(const vec2& centre, fixed radius, shape_flag mask) const;
-  std::vector<collision_info> collision_list(const vec2& point, shape_flag mask);
-  std::vector<collision_info> collision_list(const vec2& a, const vec2& b, shape_flag mask);
-  std::vector<collision_info> collision_list(const vec2& centre, fixed radius, shape_flag mask);
+  bool collide_point_any(const vec2& point, shape_flag mask) const;
+  bool collide_line_any(const vec2& a, const vec2& b, shape_flag mask) const;
+  bool collide_ball_any(const vec2& centre, fixed radius, shape_flag mask) const;
+  bool collide_convex_any(std::span<const vec2> convex, shape_flag mask) const;
+  std::vector<collision_info> collide_point(const vec2& point, shape_flag mask) const;
+  std::vector<collision_info> collide_line(const vec2& a, const vec2& b, shape_flag mask) const;
+  std::vector<collision_info> collide_ball(const vec2& centre, fixed radius, shape_flag mask) const;
+  std::vector<collision_info> collide_convex(std::span<const vec2> convex, shape_flag mask) const;
   bool is_on_screen(const vec2& point) const;
   vec2 rotate_compatibility(const vec2& v, fixed theta) const;
 

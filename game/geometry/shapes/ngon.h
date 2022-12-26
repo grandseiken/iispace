@@ -105,6 +105,22 @@ struct ngon_collider_data : shape_data_base {
     }
   }
 
+  constexpr void
+  iterate(iterate_check_convex_t it, const Transform auto& t, const FlagFunction auto& f) const {
+    if (!(flags & it.mask)) {
+      return;
+    }
+    auto va0 = *t;
+    std::array<vec2, 4> va1{};
+    for (std::uint32_t i = 0; i < dimensions.segments; ++i) {
+      auto convex = convex_segment(va1, i);
+      if (intersect_convex_convex(convex, va0)) {
+        std::invoke(f, flags & it.mask);
+        break;
+      }
+    }
+  }
+
   constexpr void iterate(iterate_flags_t, const Transform auto&, const FlagFunction auto& f) const {
     std::invoke(f, flags);
   }

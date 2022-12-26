@@ -58,7 +58,7 @@ struct Shot : ecs::component {
     bool destroy = false;
     bool destroy_particles = false;
     auto generation = sim.index().generation();
-    auto collision = sim.collision_list(
+    auto collision = sim.collide_point(
         transform.centre, shape_flag::kVulnerable | shape_flag::kShield | shape_flag::kWeakShield);
     for (const auto& e : collision) {
       if (+(e.hit_mask & shape_flag::kVulnerable)) {
@@ -77,7 +77,7 @@ struct Shot : ecs::component {
       // Compatibility: need to rerun the collision check if new entities might have spawned.
       if (generation != sim.index().generation()) {
         collision =
-            sim.collision_list(transform.centre, shape_flag::kShield | shape_flag::kWeakShield);
+            sim.collide_point(transform.centre, shape_flag::kShield | shape_flag::kWeakShield);
       }
       for (const auto& e : collision) {
         if (!e.h.has<Destroy>() &&
@@ -257,7 +257,7 @@ struct PlayerLogic : ecs::component {
     }
 
     // Damage.
-    if (!pc.is_predicted && sim.any_collision(transform.centre, shape_flag::kDangerous)) {
+    if (!pc.is_predicted && sim.collide_point_any(transform.centre, shape_flag::kDangerous)) {
       damage(h, pc, score, transform, sim);
     }
   }

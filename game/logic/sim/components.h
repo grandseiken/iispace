@@ -10,6 +10,7 @@
 #include "game/render/data/panel.h"
 #include "game/render/data/shapes.h"
 #include <sfn/functional.h>
+#include <span>
 
 namespace ii {
 class EmitHandle;
@@ -54,10 +55,12 @@ struct Collision : ecs::component {
   using check_point_t = shape_flag(ecs::const_handle, const vec2&, shape_flag);
   using check_line_t = shape_flag(ecs::const_handle, const vec2&, const vec2&, shape_flag);
   using check_ball_t = shape_flag(ecs::const_handle, const vec2&, fixed, shape_flag);
+  using check_convex_t = shape_flag(ecs::const_handle, std::span<const vec2>, shape_flag);
 
   sfn::ptr<check_point_t> check_point = nullptr;
   sfn::ptr<check_line_t> check_line = nullptr;
   sfn::ptr<check_ball_t> check_ball = nullptr;
+  sfn::ptr<check_convex_t> check_convex = nullptr;
 };
 DEBUG_STRUCT_TUPLE(Collision, flags, bounding_width, check_point, check_line, check_ball);
 

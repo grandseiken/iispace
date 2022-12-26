@@ -2,6 +2,7 @@
 #define II_GAME_COMMON_COLLISION_H
 #include "game/common/math.h"
 #include <algorithm>
+#include <array>
 #include <optional>
 #include <span>
 
@@ -161,6 +162,13 @@ intersect_convex_convex(std::span<const vec2> convex_a, std::span<const vec2> co
     }
   }
   return true;
+}
+
+inline constexpr bool
+intersect_aabb_convex(const vec2& aabb_min, const vec2& aabb_max, std::span<const vec2> convex) {
+  std::array<vec2, 4> aabb_convex{
+      aabb_min, {aabb_min.x, aabb_max.y}, aabb_max, {aabb_max.x, aabb_min.y}};
+  return intersect_convex_convex(aabb_convex, convex);
 }
 
 }  // namespace ii

@@ -159,7 +159,7 @@ struct PlayerLogic : ecs::component {
     }
 
     // Damage.
-    auto collision = sim.collision_list(transform.centre, shape_flag::kDangerous);
+    auto collision = sim.collide_point(transform.centre, shape_flag::kDangerous);
     if (!pc.is_predicted && !collision.empty()) {
       std::optional<vec2> source;
       for (const auto& c : collision) {
@@ -238,8 +238,8 @@ struct PlayerLogic : ecs::component {
     }
 
     e.rumble(pc.player_number, 20, 1.f, .5f).play(sound::kExplosion, position);
-    for (const auto& c : sim.collision_list(
-             position, kBombRadius, shape_flag::kVulnerable | shape_flag::kWeakVulnerable)) {
+    for (const auto& c : sim.collide_ball(position, kBombRadius,
+                                          shape_flag::kVulnerable | shape_flag::kWeakVulnerable)) {
       if (auto* health = c.h.get<Health>(); health) {
         health->damage(c.h, sim, kBombDamage, damage_type::kBomb, h.id(), position);
       }

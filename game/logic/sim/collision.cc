@@ -55,7 +55,7 @@ void GridCollisionIndex::remove(ecs::handle& h) {
 
 void GridCollisionIndex::begin_tick() {}
 
-bool GridCollisionIndex::any_collision(const vec2& point, shape_flag mask) const {
+bool GridCollisionIndex::collide_point_any(const vec2& point, shape_flag mask) const {
   auto coords = cell_coords(point);
   if (!is_cell_valid(coords)) {
     return false;
@@ -75,7 +75,7 @@ bool GridCollisionIndex::any_collision(const vec2& point, shape_flag mask) const
   return false;
 }
 
-bool GridCollisionIndex::any_collision(const vec2& a, const vec2& b, shape_flag mask) const {
+bool GridCollisionIndex::collide_line_any(const vec2& a, const vec2& b, shape_flag mask) const {
   static thread_local std::unordered_set<ecs::entity_id> checked;
   checked.clear();
   auto c = cell_coords(a);
@@ -117,7 +117,7 @@ bool GridCollisionIndex::any_collision(const vec2& a, const vec2& b, shape_flag 
   return false;
 }
 
-bool GridCollisionIndex::any_collision(const vec2& centre, fixed radius, shape_flag mask) const {
+bool GridCollisionIndex::collide_ball_any(const vec2& centre, fixed radius, shape_flag mask) const {
   static thread_local std::unordered_set<ecs::entity_id> checked;
   checked.clear();
   auto min = min_coords(centre - radius);
@@ -146,8 +146,45 @@ bool GridCollisionIndex::any_collision(const vec2& centre, fixed radius, shape_f
   return false;
 }
 
+bool GridCollisionIndex::collide_convex_any(std::span<const vec2> convex, shape_flag mask) const {
+  static thread_local std::unordered_set<ecs::entity_id> checked;
+  checked.clear();
+  std::vector<SimInterface::collision_info> r;
+  if (convex.empty()) {
+    return false;
+  }
+  std::optional<ivec2> min;
+  std::optional<ivec2> max;
+  for (const auto& v : convex) {
+    min = min ? glm::min(*min, min_coords(v)) : min_coords(v);
+    max = max ? glm::max(*max, max_coords(v)) : max_coords(v);
+  }
+  for (std::int32_t y = min->y; y < max->y; ++y) {
+    for (std::int32_t x = min->x; x < max->x; ++x) {
+      for (auto id : cell({x, y}).entries) {
+        if (checked.contains(id)) {
+          continue;
+        }
+        checked.emplace(id);
+        const auto& e = entities_.find(id)->second;
+        const auto& c = *e.collision;
+        if (!(c.flags & mask) || !c.check_convex) {
+          continue;
+        }
+        auto b_min = e.transform->centre - e.collision->bounding_width;
+        auto b_max = e.transform->centre + e.collision->bounding_width;
+        if (intersect_aabb_convex(b_min, b_max, convex) &&
+            +c.check_convex(e.handle, convex, mask)) {
+          return true;
+        }
+      }
+    }
+  }
+  return false;
+}
+
 std::vector<SimInterface::collision_info>
-GridCollisionIndex::collision_list(const vec2& point, shape_flag mask) const {
+GridCollisionIndex::collide_point(const vec2& point, shape_flag mask) const {
   std::vector<SimInterface::collision_info> r;
   auto coords = cell_coords(point);
   if (!is_cell_valid(coords)) {
@@ -173,7 +210,7 @@ GridCollisionIndex::collision_list(const vec2& point, shape_flag mask) const {
 }
 
 std::vector<SimInterface::collision_info>
-GridCollisionIndex::collision_list(const vec2& a, const vec2& b, shape_flag mask) const {
+GridCollisionIndex::collide_line(const vec2& a, const vec2& b, shape_flag mask) const {
   static thread_local std::unordered_set<ecs::entity_id> checked;
   checked.clear();
   std::vector<SimInterface::collision_info> r;
@@ -221,7 +258,7 @@ GridCollisionIndex::collision_list(const vec2& a, const vec2& b, shape_flag mask
 }
 
 std::vector<SimInterface::collision_info>
-GridCollisionIndex::collision_list(const vec2& centre, fixed radius, shape_flag mask) const {
+GridCollisionIndex::collide_ball(const vec2& centre, fixed radius, shape_flag mask) const {
   static thread_local std::unordered_set<ecs::entity_id> checked;
   checked.clear();
   std::vector<SimInterface::collision_info> r;
@@ -245,6 +282,47 @@ GridCollisionIndex::collision_list(const vec2& centre, fixed radius, shape_flag 
           continue;
         }
         if (auto hit = c.check_ball(e.handle, centre, radius, mask); +hit) {
+          r.emplace_back(SimInterface::collision_info{.h = e.handle, .hit_mask = hit});
+        }
+      }
+    }
+  }
+  std::sort(r.begin(), r.end(), [](const auto& a, const auto& b) { return a.h.id() < b.h.id(); });
+  return r;
+}
+
+std::vector<SimInterface::collision_info>
+GridCollisionIndex::collide_convex(std::span<const vec2> convex, shape_flag mask) const {
+  static thread_local std::unordered_set<ecs::entity_id> checked;
+  checked.clear();
+  std::vector<SimInterface::collision_info> r;
+  if (convex.empty()) {
+    return r;
+  }
+  std::optional<ivec2> min;
+  std::optional<ivec2> max;
+  for (const auto& v : convex) {
+    min = min ? glm::min(*min, min_coords(v)) : min_coords(v);
+    max = max ? glm::max(*max, max_coords(v)) : max_coords(v);
+  }
+  for (std::int32_t y = min->y; y < max->y; ++y) {
+    for (std::int32_t x = min->x; x < max->x; ++x) {
+      for (auto id : cell({x, y}).entries) {
+        if (checked.contains(id)) {
+          continue;
+        }
+        checked.emplace(id);
+        const auto& e = entities_.find(id)->second;
+        const auto& c = *e.collision;
+        if (!(c.flags & mask) || !c.check_convex) {
+          continue;
+        }
+        auto b_min = e.transform->centre - e.collision->bounding_width;
+        auto b_max = e.transform->centre + e.collision->bounding_width;
+        if (!intersect_aabb_convex(b_min, b_max, convex)) {
+          continue;
+        }
+        if (auto hit = c.check_convex(e.handle, convex, mask); +hit) {
           r.emplace_back(SimInterface::collision_info{.h = e.handle, .hit_mask = hit});
         }
       }
@@ -403,7 +481,7 @@ void LegacyCollisionIndex::begin_tick() {
                    [](const auto& a, const auto& b) { return a.x_min < b.x_min; });
 }
 
-bool LegacyCollisionIndex::any_collision(const vec2& point, shape_flag mask) const {
+bool LegacyCollisionIndex::collide_point_any(const vec2& point, shape_flag mask) const {
   fixed x = point.x;
   fixed y = point.y;
 
@@ -429,16 +507,20 @@ bool LegacyCollisionIndex::any_collision(const vec2& point, shape_flag mask) con
   return false;
 }
 
-bool LegacyCollisionIndex::any_collision(const vec2&, const vec2&, shape_flag) const {
+bool LegacyCollisionIndex::collide_line_any(const vec2&, const vec2&, shape_flag) const {
   return false;  // Not used in legacy game.
 }
 
-bool LegacyCollisionIndex::any_collision(const vec2&, fixed, shape_flag) const {
+bool LegacyCollisionIndex::collide_ball_any(const vec2&, fixed, shape_flag) const {
+  return false;  // Not used in legacy game.
+}
+
+bool LegacyCollisionIndex::collide_convex_any(std::span<const vec2>, shape_flag) const {
   return false;  // Not used in legacy game.
 }
 
 std::vector<SimInterface::collision_info>
-LegacyCollisionIndex::collision_list(const vec2& point, shape_flag mask) const {
+LegacyCollisionIndex::collide_point(const vec2& point, shape_flag mask) const {
   std::vector<SimInterface::collision_info> r;
   fixed x = point.x;
   fixed y = point.y;
@@ -466,12 +548,17 @@ LegacyCollisionIndex::collision_list(const vec2& point, shape_flag mask) const {
 }
 
 std::vector<SimInterface::collision_info>
-LegacyCollisionIndex::collision_list(const vec2&, const vec2&, shape_flag) const {
+LegacyCollisionIndex::collide_line(const vec2&, const vec2&, shape_flag) const {
   return {};  // Not used in legacy game.
 }
 
 std::vector<SimInterface::collision_info>
-LegacyCollisionIndex::collision_list(const vec2&, fixed, shape_flag) const {
+LegacyCollisionIndex::collide_ball(const vec2&, fixed, shape_flag) const {
+  return {};  // Not used in legacy game.
+}
+
+std::vector<SimInterface::collision_info>
+LegacyCollisionIndex::collide_convex(std::span<const vec2>, shape_flag) const {
   return {};  // Not used in legacy game.
 }
 

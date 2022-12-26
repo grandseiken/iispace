@@ -12,6 +12,7 @@
 #include <sfn/functional.h>
 #include <cstddef>
 #include <optional>
+#include <span>
 #include <vector>
 
 namespace ii::v0 {
@@ -121,6 +122,15 @@ shape_check_ball(const auto& parameters, const vec2& centre, fixed radius, shape
   return result;
 }
 
+template <geom::ShapeNode S>
+shape_flag
+shape_check_convex(const auto& parameters, std::span<const vec2> convex, shape_flag mask) {
+  shape_flag result = shape_flag::kNone;
+  geom::iterate(S{}, geom::iterate_check_convex(mask), parameters,
+                geom::convert_local_convex_transform{convex}, [&](shape_flag f) { result |= f; });
+  return result;
+}
+
 template <ecs::Component Logic, geom::ShapeNode S = typename Logic::shape>
 shape_flag ship_check_point(ecs::const_handle h, const vec2& v, shape_flag mask) {
   return shape_check_point<S>(get_shape_parameters<Logic>(h), v, mask);
@@ -130,9 +140,15 @@ template <ecs::Component Logic, geom::ShapeNode S = typename Logic::shape>
 shape_flag ship_check_line(ecs::const_handle h, const vec2& a, const vec2& b, shape_flag mask) {
   return shape_check_line<S>(get_shape_parameters<Logic>(h), a, b, mask);
 }
+
 template <ecs::Component Logic, geom::ShapeNode S = typename Logic::shape>
 shape_flag ship_check_ball(ecs::const_handle h, const vec2& centre, fixed radius, shape_flag mask) {
   return shape_check_ball<S>(get_shape_parameters<Logic>(h), centre, radius, mask);
+}
+
+template <ecs::Component Logic, geom::ShapeNode S = typename Logic::shape>
+shape_flag ship_check_convex(ecs::const_handle h, std::span<const vec2> convex, shape_flag mask) {
+  return shape_check_convex<S>(get_shape_parameters<Logic>(h), convex, mask);
 }
 
 //////////////////////////////////////////////////////////////////////////////////
@@ -154,7 +170,8 @@ ecs::handle add_collision(ecs::handle h, fixed bounding_width) {
                   .bounding_width = bounding_width,
                   .check_point = &ship_check_point<Logic, S>,
                   .check_line = &ship_check_line<Logic, S>,
-                  .check_ball = &ship_check_ball<Logic, S>});
+                  .check_ball = &ship_check_ball<Logic, S>,
+                  .check_convex = &ship_check_convex<Logic, S>});
   return h;
 }
 

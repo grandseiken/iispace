@@ -54,9 +54,9 @@ struct PlayerShot : ecs::component {
     bool shielded = false;
     bool destroy = false;
     bool destroy_particles = false;
-    auto collision = sim.collision_list(transform.centre,
-                                        shape_flag::kVulnerable | shape_flag::kWeakVulnerable |
-                                            shape_flag::kShield | shape_flag::kWeakShield);
+    auto collision = sim.collide_point(transform.centre,
+                                       shape_flag::kVulnerable | shape_flag::kWeakVulnerable |
+                                           shape_flag::kShield | shape_flag::kWeakShield);
     for (const auto& e : collision) {
       if (e.h.has<Destroy>() ||
           !(e.hit_mask & (shape_flag::kVulnerable | shape_flag::kWeakVulnerable))) {

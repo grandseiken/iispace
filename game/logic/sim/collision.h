@@ -7,6 +7,7 @@
 #include <cstddef>
 #include <memory>
 #include <optional>
+#include <span>
 #include <unordered_map>
 #include <vector>
 
@@ -23,15 +24,18 @@ public:
   virtual void remove(ecs::handle& h) = 0;
   virtual void begin_tick() = 0;
 
-  virtual bool any_collision(const vec2& point, shape_flag mask) const = 0;
-  virtual bool any_collision(const vec2& a, const vec2& b, shape_flag mask) const = 0;
-  virtual bool any_collision(const vec2& centre, fixed radius, shape_flag mask) const = 0;
+  virtual bool collide_point_any(const vec2& point, shape_flag mask) const = 0;
+  virtual bool collide_line_any(const vec2& a, const vec2& b, shape_flag mask) const = 0;
+  virtual bool collide_ball_any(const vec2& centre, fixed radius, shape_flag mask) const = 0;
+  virtual bool collide_convex_any(std::span<const vec2> convex, shape_flag mask) const = 0;
   virtual std::vector<SimInterface::collision_info>
-  collision_list(const vec2& point, shape_flag mask) const = 0;
+  collide_point(const vec2& point, shape_flag mask) const = 0;
   virtual std::vector<SimInterface::collision_info>
-  collision_list(const vec2& a, const vec2& b, shape_flag mask) const = 0;
+  collide_line(const vec2& a, const vec2& b, shape_flag mask) const = 0;
   virtual std::vector<SimInterface::collision_info>
-  collision_list(const vec2& centre, fixed radius, shape_flag mask) const = 0;
+  collide_ball(const vec2& centre, fixed radius, shape_flag mask) const = 0;
+  virtual std::vector<SimInterface::collision_info>
+  collide_convex(std::span<const vec2> convex, shape_flag mask) const = 0;
   virtual void in_range(const vec2& point, fixed distance, ecs::component_id, std::size_t max_n,
                         std::vector<SimInterface::range_info>& output) const = 0;
 };
@@ -52,15 +56,18 @@ public:
   void remove(ecs::handle& h) override;
   void begin_tick() override;
 
-  bool any_collision(const vec2& point, shape_flag mask) const override;
-  bool any_collision(const vec2& a, const vec2& b, shape_flag mask) const override;
-  bool any_collision(const vec2& centre, fixed radius, shape_flag mask) const override;
+  bool collide_point_any(const vec2& point, shape_flag mask) const override;
+  bool collide_line_any(const vec2& a, const vec2& b, shape_flag mask) const override;
+  bool collide_ball_any(const vec2& centre, fixed radius, shape_flag mask) const override;
+  bool collide_convex_any(std::span<const vec2> convex, shape_flag mask) const override;
   std::vector<SimInterface::collision_info>
-  collision_list(const vec2& point, shape_flag mask) const override;
+  collide_point(const vec2& point, shape_flag mask) const override;
   std::vector<SimInterface::collision_info>
-  collision_list(const vec2& a, const vec2& b, shape_flag mask) const override;
+  collide_line(const vec2& a, const vec2& b, shape_flag mask) const override;
   std::vector<SimInterface::collision_info>
-  collision_list(const vec2& centre, fixed radius, shape_flag mask) const override;
+  collide_ball(const vec2& centre, fixed radius, shape_flag mask) const override;
+  std::vector<SimInterface::collision_info>
+  collide_convex(std::span<const vec2> convex, shape_flag mask) const override;
   void in_range(const vec2& point, fixed distance, ecs::component_id, std::size_t max_n,
                 std::vector<SimInterface::range_info>& output) const override;
 
@@ -118,16 +125,18 @@ public:
   void remove(ecs::handle& h) override;
   void begin_tick() override;
 
-  bool any_collision(const vec2& point, shape_flag mask) const override;
-  bool any_collision(const vec2& a, const vec2& b, shape_flag mask) const override;
-  bool any_collision(const vec2& centre, fixed radius, shape_flag mask) const override;
+  bool collide_point_any(const vec2& point, shape_flag mask) const override;
+  bool collide_line_any(const vec2& a, const vec2& b, shape_flag mask) const override;
+  bool collide_ball_any(const vec2& centre, fixed radius, shape_flag mask) const override;
+  bool collide_convex_any(std::span<const vec2> convex, shape_flag mask) const override;
   std::vector<SimInterface::collision_info>
-  collision_list(const vec2& point, shape_flag mask) const override;
+  collide_point(const vec2& point, shape_flag mask) const override;
   std::vector<SimInterface::collision_info>
-  collision_list(const vec2& a, const vec2& b, shape_flag mask) const override;
+  collide_line(const vec2& a, const vec2& b, shape_flag mask) const override;
   std::vector<SimInterface::collision_info>
-  collision_list(const vec2& centre, fixed radius, shape_flag mask) const override;
-
+  collide_ball(const vec2& centre, fixed radius, shape_flag mask) const override;
+  std::vector<SimInterface::collision_info>
+  collide_convex(std::span<const vec2> convex, shape_flag mask) const override;
   void in_range(const vec2& point, fixed distance, ecs::component_id, std::size_t max_n,
                 std::vector<SimInterface::range_info>& output) const override;
 

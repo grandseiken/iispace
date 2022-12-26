@@ -40,6 +40,17 @@ struct box_collider_data : shape_data_base {
     }
   }
 
+  constexpr void
+  iterate(iterate_check_convex_t it, const Transform auto& t, const FlagFunction auto& f) const {
+    if (!+(flags & it.mask)) {
+      return;
+    }
+    auto va = *t;
+    if (intersect_aabb_convex(-dimensions, dimensions, va)) {
+      std::invoke(f, flags & it.mask);
+    }
+  }
+
   constexpr void iterate(iterate_flags_t, const Transform auto&, const FlagFunction auto& f) const {
     std::invoke(f, flags);
   }

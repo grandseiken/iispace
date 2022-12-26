@@ -4,6 +4,7 @@
 #include "game/geometry/enums.h"
 #include <cstddef>
 #include <functional>
+#include <span>
 #include <type_traits>
 
 namespace ii::render {
@@ -25,6 +26,9 @@ struct iterate_check_line_t {
 struct iterate_check_ball_t {
   shape_flag mask = shape_flag::kNone;
 };
+struct iterate_check_convex_t {
+  shape_flag mask = shape_flag::kNone;
+};
 
 inline constexpr iterate_flags_t iterate_flags;
 inline constexpr iterate_lines_t iterate_lines;
@@ -40,13 +44,16 @@ inline constexpr iterate_check_line_t iterate_check_line(shape_flag mask) {
 inline constexpr iterate_check_ball_t iterate_check_ball(shape_flag mask) {
   return iterate_check_ball_t{mask};
 }
+inline constexpr iterate_check_convex_t iterate_check_convex(shape_flag mask) {
+  return iterate_check_convex_t{mask};
+}
 
 template <typename T, typename... Args>
 concept OneOf = (std::same_as<T, Args> || ...);
 template <typename T>
 concept IterTag = OneOf<T, iterate_flags_t, iterate_lines_t, iterate_shapes_t, iterate_centres_t,
                         iterate_check_point_t, iterate_check_line_t, iterate_check_ball_t,
-                        iterate_attachment_points_t>;
+                        iterate_check_convex_t, iterate_attachment_points_t>;
 
 template <typename T>
 concept FlagFunction = std::invocable<T, shape_flag>;
@@ -69,6 +76,7 @@ concept IterateFunction = IterTag<I> && Implies<I, iterate_flags_t, FlagFunction
     Implies<I, iterate_check_point_t, FlagFunction<T>> &&
     Implies<I, iterate_check_line_t, FlagFunction<T>> &&
     Implies<I, iterate_check_ball_t, FlagFunction<T>> &&
+    Implies<I, iterate_check_convex_t, FlagFunction<T>> &&
     Implies<I, iterate_attachment_points_t, AttachmentPointFunction<T>>;
 
 template <typename T>
@@ -163,6 +171,27 @@ struct convert_local_line_transform {
   constexpr convert_local_line_transform rotate(fixed a) const {
     return {this->a, this->b, ct.rotate(a)};
   }
+  constexpr void increment_index() const {}
+};
+
+struct convert_local_convex_transform {
+  constexpr convert_local_convex_transform(std::span<const vec2> va, transform t = {})
+  : va{va}, ct{t} {}
+  std::span<const vec2> va;
+  transform ct;
+
+  std::vector<vec2> operator*() const {
+    std::vector<vec2> r;
+    r.reserve(va.size());
+    for (const auto& v : va) {
+      r.emplace_back(::rotate(v - ct.v, -ct.r));
+    }
+    return r;
+  }
+  constexpr convert_local_convex_transform translate(const vec2& t) const {
+    return {va, ct.translate(t)};
+  }
+  constexpr convert_local_convex_transform rotate(fixed a) const { return {va, ct.rotate(a)}; }
   constexpr void increment_index() const {}
 };
 

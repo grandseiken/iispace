@@ -48,6 +48,7 @@ concept Shape =
       x.iterate(iterate_check_point(shape_flag::kNone), null_transform{}, [](shape_flag) {});
       x.iterate(iterate_check_line(shape_flag::kNone), null_transform{}, [](shape_flag) {});
       x.iterate(iterate_check_ball(shape_flag::kNone), null_transform{}, [](shape_flag) {});
+      x.iterate(iterate_check_convex(shape_flag::kNone), null_transform{}, [](shape_flag) {});
     };
 
 template <typename E, typename V, typename Parameters>
@@ -73,6 +74,8 @@ concept ShapeNodeWithSubstitution =
       iterate(Node{}, iterate_check_line(shape_flag::kNone), params, null_transform{},
               [](shape_flag) {});
       iterate(Node{}, iterate_check_ball(shape_flag::kNone), params, null_transform{},
+              [](shape_flag) {});
+      iterate(Node{}, iterate_check_convex(shape_flag::kNone), params, null_transform{},
               [](shape_flag) {});
     };
 

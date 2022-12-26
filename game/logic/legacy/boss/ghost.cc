@@ -125,7 +125,7 @@ struct GhostMine : ecs::component {
       transform.set_rotation(sim.random_fixed() * 2 * pi<fixed>);
     }
     timer && --timer;
-    if (sim.any_collision(transform.centre, shape_flag::kEnemyInteraction)) {
+    if (sim.collide_point_any(transform.centre, shape_flag::kEnemyInteraction)) {
       if (sim.random(6) == 0 ||
           (sim.index().contains(ghost_boss) &&
            sim.index().get(ghost_boss)->get<Health>()->is_hp_low() && sim.random(5) == 0)) {
