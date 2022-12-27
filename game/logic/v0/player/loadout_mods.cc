@@ -73,14 +73,14 @@ std::unordered_map<mod_id, mod_data> make_mod_map() {
            {.category_dependency = mod_category::kCorruption});
 
   add_data(mod_id::kCloseCombatWeapon, mod_slot::kWeapon, mod_category::kCloseCombat,
-           "Klose kombat kannon", "You fire a spread of shots in a close-range burst.");
+           "Close-combat cannon", "You fire a spread of shots in a close-range burst.");
   add_data(mod_id::kCloseCombatSuper, mod_slot::kSuper, mod_category::kCloseCombat, "Killdozer",
            "Your mega-weapon transforms you into an invulnerable bulldozer for a short time.");
   add_data(mod_id::kCloseCombatBomb, mod_slot::kBomb, mod_category::kCloseCombat, "???", "???");
   add_data(mod_id::kCloseCombatShield, mod_slot::kShield, mod_category::kCloseCombat,
-           "Kountermeasures", "Your shield triggers your bomb effect when hit.");
+           "Countermeasures", "Your shield triggers your bomb effect when hit.");
   add_data(mod_id::kCloseCombatBonus, mod_slot::kBonus, mod_category::kCloseCombat,
-           "Katalytic konverter",
+           "Catalytic converter",
            "Whenever you destroy an enemy at close range, you have a chance to gain a bomb.",
            {.category_dependency = mod_category::kCloseCombat});
 

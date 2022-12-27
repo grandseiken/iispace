@@ -1,4 +1,5 @@
 #include "game/logic/v0/player/shot.h"
+#include "game/common/enum.h"
 #include "game/geometry/shapes/box.h"
 #include "game/logic/sim/io/conditions.h"
 #include "game/logic/v0/components.h"
@@ -8,14 +9,33 @@
 
 namespace ii::v0 {
 namespace {
+enum class shot_flags : std::uint32_t {
+  kNone = 0,
+  kPenetrating = 0b0001,  // TODO: unused.
+  kInflictStun = 0b0010,
+  kHomingShots = 0b0100,
+};
+}  // namespace
+}  // namespace ii::v0
+
+namespace ii {
+template <>
+struct bitmask_enum<v0::shot_flags> : std::true_type {};
+}  // namespace ii
+
+namespace ii::v0 {
+namespace {
 
 struct PlayerShot;
 ecs::handle spawn_player_shot(SimInterface& sim, const vec2& position, const PlayerShot& shot_data);
 
 struct shot_mod_data {
   static constexpr std::uint32_t kBaseDamage = 8u;
+  static constexpr std::uint32_t kLightningDamage = 12u;
   static constexpr std::uint32_t kCloseCombatDamage = 6u;
+  static constexpr std::uint32_t kSniperSplitDamage = 6u;
   static constexpr std::uint32_t kCloseCombatShotCount = 12u;
+  static constexpr std::uint32_t kLightningStunTicks = 40u;
   static constexpr fixed kBaseSpeed = 75_fx / 8_fx;
   static constexpr fixed kCloseCombatMaxDistance = 320_fx;
   static constexpr fixed kCloseCombatSpreadAngle = pi<fixed> / 5;
@@ -25,16 +45,22 @@ struct shot_mod_data {
   static constexpr fixed kSniperSplitRotation = pi<fixed> / 32;
 
   shot_mod_data(const PlayerLoadout& loadout)
-  : homing{loadout.has(mod_id::kHomingShots)}
-  , sniper_splits_remaining{loadout.has(mod_id::kSniperWeapon) ? 1u : 0u} {
+  : sniper_splits_remaining{loadout.has(mod_id::kSniperWeapon) ? 1u : 0u} {
+    if (loadout.has(mod_id::kHomingShots)) {
+      flags |= shot_flags::kHomingShots;
+    }
     if (loadout.has(mod_id::kCloseCombatWeapon)) {
       max_distance = kCloseCombatMaxDistance;
       damage = kCloseCombatDamage;
     }
+    if (loadout.has(mod_id::kLightningWeapon)) {
+      // TODO: needs some kind of visual effect + stun status effect.
+      damage = kLightningDamage;
+      flags |= shot_flags::kInflictStun;
+    }
   }
 
-  bool penetrating = false;  // TODO: unused.
-  bool homing = false;
+  shot_flags flags = shot_flags::kNone;
   fixed speed = kBaseSpeed;
   fixed distance_travelled = 0u;
   std::optional<fixed> max_distance;
@@ -76,6 +102,7 @@ struct PlayerShot : ecs::component {
     if (data.sniper_splits_remaining &&
         data.distance_travelled >= shot_mod_data::kSniperSplitDistance) {
       colour = colour::kWhite1;
+      data.damage = shot_mod_data::kSniperSplitDamage;
       --data.sniper_splits_remaining;
       auto& s0 = *spawn_player_shot(sim, transform.centre, *this).get<PlayerShot>();
       s0.direction = rotate(s0.direction, shot_mod_data::kSniperSplitRotation);
@@ -91,7 +118,7 @@ struct PlayerShot : ecs::component {
       return;
     }
 
-    if (data.homing && !data.sniper_splits_remaining) {
+    if (+(data.flags & shot_flags::kHomingShots) && !data.sniper_splits_remaining) {
       std::optional<vec2> target;
       fixed min_d_sq = 0;
       auto c_list = sim.collide_ball(transform.centre, shot_mod_data::kHomingScanRadius,
@@ -109,7 +136,7 @@ struct PlayerShot : ecs::component {
 
       if (target) {
         // TODO: upgrade to super-threatseeker mod that applies RC-smooth (e.g. 15/16) towards
-        // target direction?
+        // target direction? Or just use that for cluster super.
         auto a_diff = angle_diff(angle(direction), angle(*target - transform.centre));
         auto a = abs(a_diff);
         if (a < shot_mod_data::kHomingAngleChange) {
@@ -137,15 +164,21 @@ struct PlayerShot : ecs::component {
           !(e.hit_mask & (shape_flag::kVulnerable | shape_flag::kWeakVulnerable))) {
         continue;
       }
-      auto type = is_predicted ? damage_type::kPredicted
-          : data.penetrating   ? damage_type::kPenetrating
-                               : damage_type::kNormal;
+      auto type = is_predicted                       ? damage_type::kPredicted
+          : +(data.flags & shot_flags::kPenetrating) ? damage_type::kPenetrating
+                                                     : damage_type::kNormal;
       if (const auto* status = e.h.get<EnemyStatus>(); status && status->shielded_ticks > 4u) {
         shielded = true;
       }
       ecs::call_if<&Health::damage>(e.h, sim, shielded ? 0u : data.damage, type, player,
                                     transform.centre - 2 * direction * data.speed);
-      if ((shielded || !(e.hit_mask & shape_flag::kWeakVulnerable)) && !data.penetrating) {
+      if (!shielded && +(data.flags & shot_flags::kInflictStun)) {
+        if (auto* status = e.h.get<EnemyStatus>(); status) {
+          status->stun_ticks = std::max(status->stun_ticks, shot_mod_data::kLightningStunTicks);
+        }
+      }
+      if ((shielded || !(e.hit_mask & shape_flag::kWeakVulnerable)) &&
+          !(data.flags & shot_flags::kPenetrating)) {
         destroy = true;
         if (!shielded) {
           destroy_particles = -direction;
@@ -156,7 +189,7 @@ struct PlayerShot : ecs::component {
     if (!destroy) {
       for (const auto& e : collision) {
         if (+(e.hit_mask & shape_flag::kShield) ||
-            (!data.penetrating && +(e.hit_mask & shape_flag::kWeakShield))) {
+            (!(data.flags & shot_flags::kPenetrating) && +(e.hit_mask & shape_flag::kWeakShield))) {
           shielded = true;
           destroy = true;
         }
@@ -187,7 +220,7 @@ struct PlayerShot : ecs::component {
     }
   }
 };
-DEBUG_STRUCT_TUPLE(PlayerShot, player, player_number, is_predicted, direction, data.penetrating,
+DEBUG_STRUCT_TUPLE(PlayerShot, player, player_number, is_predicted, direction, data.flags,
                    data.speed, data.distance_travelled, data.sniper_splits_remaining);
 
 ecs::handle

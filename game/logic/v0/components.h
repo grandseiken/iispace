@@ -57,6 +57,7 @@ DEBUG_STRUCT_TUPLE(Physics, mass, drag_coefficient, velocity);
 
 struct EnemyStatus : ecs::component {
   std::uint32_t shielded_ticks = 0;
+  std::uint32_t stun_ticks = 0;  // TODO: needs some kind of boss resistance.
 };
 
 }  // namespace ii::v0

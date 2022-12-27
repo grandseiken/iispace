@@ -169,7 +169,7 @@ struct PlayerLogic : ecs::component {
           break;
         }
       }
-      damage(h, pc, transform, source.value_or(transform.centre), sim);
+      damage(h, pc, loadout, transform, source.value_or(transform.centre), sim);
     }
   }
 
@@ -190,8 +190,8 @@ struct PlayerLogic : ecs::component {
     }
   }
 
-  void
-  damage(ecs::handle h, Player& pc, Transform& transform, const vec2& source, SimInterface& sim) {
+  void damage(ecs::handle h, Player& pc, const PlayerLoadout& loadout, Transform& transform,
+              const vec2& source, SimInterface& sim) {
     if (pc.is_killed || invulnerability_timer) {
       return;
     }
@@ -204,6 +204,9 @@ struct PlayerLogic : ecs::component {
       --pc.shield_count;
       data.shield_refill_timer = 0;
       invulnerability_timer = kShieldTime;
+      if (loadout.has(mod_id::kCloseCombatShield)) {
+        trigger_bomb(h, pc, loadout, transform.centre, sim);
+      }
       return;
     }
 
