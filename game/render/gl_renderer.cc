@@ -512,6 +512,22 @@ void GlRenderer::render_panel(const combo_panel& data) const {
       glm::min(target().clip_rect().size - panel_copy.bounds.size, panel_copy.bounds.position);
   panel_copy.bounds.position = glm::max(fvec2{0}, panel_copy.bounds.position);
   panel_copy.bounds.position = target().snap_render_to_screen_coords(panel_copy.bounds.position);
+  if (panel_copy.bounds.size.x == 0.f) {
+    // Auto-size x.
+    float max_width = 0.f;
+    for (const auto& e : data.elements) {
+      if (e.bounds.size.x != 0.f) {
+        max_width = std::max(max_width, 2.f * data.padding.x + e.bounds.max().x);
+      } else if (const auto* text = std::get_if<combo_panel::text>(&e.e);
+                 text && !text->multiline) {
+        max_width =
+            std::max(max_width,
+                     2.f * data.padding.x + e.bounds.min().x + text_width(text->font, text->text));
+      }
+    }
+    panel_copy.bounds.position.x -= max_width / 2.f;
+    panel_copy.bounds.size.x = max_width;
+  }
   render_panel(panel_copy);
 
   auto border_size = target().border_size(1);
@@ -524,14 +540,18 @@ void GlRenderer::render_panel(const combo_panel& data) const {
       auto shapes = icon->shapes;
       render_shapes(coordinate_system::kCentered, shapes, shape_style::kIcon);
     } else if (const auto* text = std::get_if<combo_panel::text>(&e.e)) {
+      auto bounds = e.bounds;
+      if (bounds.size.x == 0.f) {
+        bounds.size.x = panel_copy.bounds.size.x - 2.f * data.padding.x;
+      }
       auto lines = prepare_text(*this, text->font, text->multiline,
-                                static_cast<std::int32_t>(e.bounds.size.x), text->text);
+                                static_cast<std::int32_t>(bounds.size.x), text->text);
       if (text->drop_shadow) {
-        render_text(text->font, e.bounds + inner_padding + fvec2{text->drop_shadow->offset},
+        render_text(text->font, bounds + inner_padding + fvec2{text->drop_shadow->offset},
                     text->align, cvec4{0.f, 0.f, 0.f, text->drop_shadow->alpha},
                     /* clip */ true, lines);
       }
-      render_text(text->font, e.bounds + inner_padding, text->align, text->colour,
+      render_text(text->font, bounds + inner_padding, text->align, text->colour,
                   /* clip */ true, lines);
     }
   }

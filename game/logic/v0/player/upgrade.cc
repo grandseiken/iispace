@@ -1,4 +1,5 @@
 #include "game/logic/v0/player/upgrade.h"
+#include "game/common/colour.h"
 #include "game/common/easing.h"
 #include "game/core/icons/mod_icons.h"
 #include "game/geometry/iteration.h"
@@ -123,9 +124,6 @@ std::vector<render::shape> render_mod_icon(mod_id id, std::uint32_t animation) {
   return render(icons::mod_unknown{});
 }
 
-// TODO: render warnings:
-// - if an upgrade will replace another.
-// - if an upgrade would have no effect? (e.g. bonus in multiplayer)
 // TODO: needs a better effect on pickup.
 struct ModUpgrade : ecs::component {
   static constexpr std::int32_t kPanelPadding = 8;
@@ -259,6 +257,56 @@ struct ModUpgrade : ecs::component {
         .e = render::combo_panel::icon{.shapes = render_mod_icon(mod_id, icon_animation)},
     });
     output.emplace_back(std::move(panel));
+
+    sim.index().iterate_dispatch<Player>(
+        [&](const Player& pc, const PlayerLoadout& loadout, const Transform& transform) {
+          bool valid = !pc.mod_upgrade_chosen && r.contains(transform.centre);
+          if (!valid) {
+            return;
+          }
+          auto mod_valid = loadout.check_viability(mod_id);
+          ustring warning_text = ustring::ascii("Unknown warning");
+          switch (mod_valid.first) {
+          case PlayerLoadout::viability::kOk:
+            return;
+          case PlayerLoadout::viability::kAlreadyHave:
+            warning_text = ustring::ascii("Already present");
+            break;
+          case PlayerLoadout::viability::kNoEffectYet:
+            warning_text = ustring::ascii("No effect yet");
+            break;
+          case PlayerLoadout::viability::kReplacesMod:
+            warning_text = ustring::ascii("Replaces: ") + mod_lookup(mod_valid.second).name;
+            break;
+          }
+
+          static constexpr std::int32_t kWarningPanelOffsetY = 32;
+          fvec2 offset{0,
+                       position == upgrade_position::kL0 || position == upgrade_position::kR0
+                           ? kWarningPanelOffsetY
+                           : -static_cast<float>(kWarningPanelOffsetY + kDescriptionFontSize +
+                                                 2 * kPanelPadding)};
+          frect bounds{to_float(transform.centre) + offset,
+                       fvec2{0, kDescriptionFontSize + 2 * kPanelPadding}};
+          output.emplace_back(render::combo_panel{
+              .panel = {.style = render::panel_style::kFlatColour,
+                        .colour = colour::kBlackOverlay0,
+                        .border = colour::kPanelBorder0,
+                        .bounds = bounds},
+              .padding = ivec2{kPanelPadding},
+              .elements = {{
+                  .bounds = {fvec2{0}, fvec2{0, kDescriptionFontSize}},
+                  .e =
+                      render::combo_panel::text{
+                          .font = {render::font_id::kMonospace, uvec2{kDescriptionFontSize}},
+                          .align = render::alignment::kCentered,
+                          .colour = colour::kSolarizedDarkYellow,
+                          .drop_shadow = {{}},
+                          .text = warning_text,
+                      },
+              }},
+          });
+        });
   }
 
   rect panel_rect(const SimInterface& sim) const {
@@ -277,6 +325,8 @@ struct ModUpgrade : ecs::component {
     return {panel_position, panel_size};
   }
 };
+DEBUG_STRUCT_TUPLE(ModUpgrade, position, mod_id, timer, icon_animation, highlight_animation,
+                   destroy);
 
 }  // namespace
 

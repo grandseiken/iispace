@@ -21,13 +21,15 @@ std::unordered_map<mod_id, mod_data> make_mod_map() {
   };
 
   add_data(mod_id::kBackShots, mod_slot::kWeaponCombo, mod_category::kGeneral, "Reversi",
-           "You shoot both forwards and backwards simultaneously.");
+           "You shoot both forwards and backwards simultaneously.", {.allow_multiple = true});
   add_data(mod_id::kFrontShots, mod_slot::kWeaponCombo, mod_category::kGeneral, "Twin barrel",
-           "You fire two shots instead of one, at a slightly reduced rate.");
+           "You fire two shots instead of one, at a slightly reduced rate.",
+           {.allow_multiple = true});
   add_data(mod_id::kBounceShots, mod_slot::kWeaponCombo, mod_category::kGeneral, "Ricochet",
-           "Your shots bounce on impact, and may strike a second target.");
+           "Your shots bounce on impact, and may strike a second target.",
+           {.allow_multiple = true});
   add_data(mod_id::kHomingShots, mod_slot::kWeaponCombo, mod_category::kGeneral, "Threatseeker",
-           "Your shots are guided towards targets.");
+           "Your shots are guided towards targets.", {.allow_multiple = true});
 
   add_data(mod_id::kSuperCapacity, mod_slot::kSuperCombo, mod_category::kGeneral, "Megabuffer",
            "Your mega-weapon charge capacity is increased.",
@@ -44,7 +46,8 @@ std::unordered_map<mod_id, mod_data> make_mod_map() {
   add_data(mod_id::kBombSpeedClearCharge, mod_slot::kBombCombo, mod_category::kGeneral,
            "Blast synthesis", "Whenever a wave of enemies is cleared quickly, you gain a bomb.");
   add_data(mod_id::kBombDoubleTrigger, mod_slot::kBombCombo, mod_category::kGeneral, "Aftershock",
-           "Your bombs explode twice, triggering a second time after a short delay.");
+           "Your bombs explode twice, triggering a second time after a short delay.",
+           {.allow_multiple = true});
 
   add_data(mod_id::kShieldCapacity, mod_slot::kShieldCombo, mod_category::kGeneral,
            "Shell extension",
@@ -53,7 +56,7 @@ std::unordered_map<mod_id, mod_data> make_mod_map() {
   add_data(mod_id::kShieldRefill, mod_slot::kShieldCombo, mod_category::kGeneral, "Recombinator",
            "Your shield regenerates automatically after a time, but you can only have one.");
   add_data(mod_id::kShieldRespawn, mod_slot::kShieldCombo, mod_category::kGeneral, "Safe boot",
-           "You respawn with full shields.", {.multiplayer_only = true});
+           "You respawn with full shields.", {.multiplayer_only = true, .allow_multiple = true});
 
   add_data(mod_id::kPowerupDrops, mod_slot::kBonusCombo, mod_category::kGeneral, "Optimizer",
            "Enemies you destroy have a higher chance to drop power-ups.", {.allow_multiple = true});

@@ -288,19 +288,23 @@ void spawn_bomb_powerup(SimInterface& sim, const vec2& position) {
 
 void render_player_name_panel(std::uint32_t player_number, const Transform& transform,
                               std::vector<render::combo_panel>& output, const SimInterface& sim) {
-  frect bounds{to_float(transform.centre) + fvec2{-40, 32}, fvec2{80, 20}};
+  static constexpr std::int32_t kPadding = 4;
+  static constexpr std::int32_t kNamePanelOffsetY = 32;
+  static constexpr std::uint32_t kNamePanelFontSize = 12;
+  frect bounds{to_float(transform.centre) + fvec2{0, kNamePanelOffsetY},
+               fvec2{0, kNamePanelFontSize + kPadding * 2}};
   output.emplace_back(render::combo_panel{
       .panel = {.style = render::panel_style::kFlatColour,
                 .colour = colour::kBlackOverlay0,
                 .bounds = bounds},
-      .padding = ivec2{4, 4},
+      .padding = ivec2{kPadding},
       .elements = {{
-          .bounds = {fvec2{0}, fvec2{72, 12}},
+          .bounds = {fvec2{0}, fvec2{0, kNamePanelFontSize}},
           .e =
               render::combo_panel::text{
-                  .font = {render::font_id::kMonospaceBold, uvec2{12, 12}},
+                  .font = {render::font_id::kMonospaceBold, uvec2{kNamePanelFontSize}},
                   .align = render::alignment::kCentered,
-                  .colour = player_colour(game_mode::kStandardRun, player_number),
+                  .colour = player_colour(sim.conditions().mode, player_number),
                   .drop_shadow = {{}},
                   .text = sim.conditions().players[player_number].player_name,
               },

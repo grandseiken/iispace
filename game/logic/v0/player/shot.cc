@@ -14,6 +14,7 @@ enum class shot_flags : std::uint32_t {
   kPenetrating = 0b0001,  // TODO: unused.
   kInflictStun = 0b0010,
   kHomingShots = 0b0100,
+  kSniperSplit = 0b1000,
 };
 }  // namespace
 }  // namespace ii::v0
@@ -44,14 +45,16 @@ struct shot_mod_data {
   static constexpr fixed kSniperSplitDistance = 320_fx;
   static constexpr fixed kSniperSplitRotation = pi<fixed> / 32;
 
-  shot_mod_data(const PlayerLoadout& loadout)
-  : sniper_splits_remaining{loadout.has(mod_id::kSniperWeapon) ? 1u : 0u} {
+  shot_mod_data(const PlayerLoadout& loadout) {
     if (loadout.has(mod_id::kHomingShots)) {
       flags |= shot_flags::kHomingShots;
     }
     if (loadout.has(mod_id::kCloseCombatWeapon)) {
       max_distance = kCloseCombatMaxDistance;
       damage = kCloseCombatDamage;
+    }
+    if (loadout.has(mod_id::kSniperWeapon)) {
+      flags |= shot_flags::kSniperSplit;
     }
     if (loadout.has(mod_id::kLightningWeapon)) {
       // TODO: needs some kind of visual effect + stun status effect.
@@ -64,7 +67,6 @@ struct shot_mod_data {
   fixed speed = kBaseSpeed;
   fixed distance_travelled = 0u;
   std::optional<fixed> max_distance;
-  std::uint32_t sniper_splits_remaining = 0u;
   std::uint32_t damage = kBaseDamage;
 };
 
@@ -99,11 +101,11 @@ struct PlayerShot : ecs::component {
   , data{loadout} {}
 
   void update(ecs::handle h, Transform& transform, SimInterface& sim) {
-    if (data.sniper_splits_remaining &&
+    if (+(data.flags & shot_flags::kSniperSplit) &&
         data.distance_travelled >= shot_mod_data::kSniperSplitDistance) {
       colour = colour::kWhite1;
       data.damage = shot_mod_data::kSniperSplitDamage;
-      --data.sniper_splits_remaining;
+      data.flags &= ~shot_flags::kSniperSplit;
       auto& s0 = *spawn_player_shot(sim, transform.centre, *this).get<PlayerShot>();
       s0.direction = rotate(s0.direction, shot_mod_data::kSniperSplitRotation);
       auto& s1 = *spawn_player_shot(sim, transform.centre, *this).get<PlayerShot>();
@@ -118,7 +120,7 @@ struct PlayerShot : ecs::component {
       return;
     }
 
-    if (+(data.flags & shot_flags::kHomingShots) && !data.sniper_splits_remaining) {
+    if (+(data.flags & shot_flags::kHomingShots) && !(data.flags & shot_flags::kSniperSplit)) {
       std::optional<vec2> target;
       fixed min_d_sq = 0;
       auto c_list = sim.collide_ball(transform.centre, shot_mod_data::kHomingScanRadius,
@@ -221,7 +223,7 @@ struct PlayerShot : ecs::component {
   }
 };
 DEBUG_STRUCT_TUPLE(PlayerShot, player, player_number, is_predicted, direction, data.flags,
-                   data.speed, data.distance_travelled, data.sniper_splits_remaining);
+                   data.speed, data.distance_travelled, data.max_distance, data.damage);
 
 ecs::handle
 spawn_player_shot(SimInterface& sim, const vec2& position, const PlayerShot& shot_data) {

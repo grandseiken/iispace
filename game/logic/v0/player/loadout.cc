@@ -16,8 +16,9 @@ std::vector<mod_id> make_mod_list() {
       mod_id::kHomingShots,
       // mod_id::kSuperCapacity, mod_id::kSuperRefill,
       mod_id::kBombCapacity, mod_id::kBombRadius,
-      // mod_id::kBombSpeedClearCharge, mod_id::kBombDoubleTrigger,
-      mod_id::kShieldCapacity, mod_id::kShieldRefill, mod_id::kShieldRespawn,
+      // mod_id::kBombSpeedClearCharge,
+      mod_id::kBombDoubleTrigger, mod_id::kShieldCapacity, mod_id::kShieldRefill,
+      mod_id::kShieldRespawn,
       // mod_id::kPowerupDrops, mod_id::kCurrencyDrops,
       // mod_id::kCorruptionWeapon, mod_id::kCorruptionSuper, mod_id::kCorruptionBomb,
       // mod_id::kCorruptionShield, mod_id::kCorruptionBonus,
@@ -108,8 +109,16 @@ std::vector<mod_id> mod_selection(const initial_conditions& conditions, RandomEn
   };
 
   auto mod_weight = [&](const mod_data& data) -> std::uint32_t {
-    auto it = loadout_category_counts.find(data.category);
-    return it != loadout_category_counts.end() && it->second > 0 ? 2u : 1u;
+    auto count = data.options.allow_multiple_per_player ? conditions.player_count : 1u;
+    auto it = loadout_mod_counts.find(data.id);
+    std::uint32_t weight = it != loadout_mod_counts.end() && it->second >= count ? 1u : 2u;
+    if (data.category != mod_category::kGeneral) {
+      auto it = loadout_category_counts.find(data.category);
+      if (it != loadout_category_counts.end() && it->second > 0u) {
+        weight *= 2u;
+      }
+    }
+    return weight;
   };
 
   auto select_mod_from_map = [&](const mod_slot_map& slot_mods) -> const mod_data* {
@@ -275,6 +284,23 @@ fixed PlayerLoadout::bomb_radius_multiplier() const {
     break;
   }
   return r;
+}
+
+auto PlayerLoadout::check_viability(mod_id id) const -> std::pair<viability, mod_id> {
+  const auto& data = mod_lookup(id);
+  if (!data.options.allow_multiple_per_player && has(id)) {
+    return {viability::kAlreadyHave, mod_id::kNone};
+  }
+
+  if (is_mod_slot_single_limit(data.slot)) {
+    for (const auto& pair : loadout) {
+      if (mod_lookup(pair.first).slot == data.slot) {
+        return {viability::kReplacesMod, pair.first};
+      }
+    }
+  }
+  // TODO: implement kNoEffectYet.
+  return {viability::kOk, mod_id::kNone};
 }
 
 }  // namespace ii::v0

@@ -15,16 +15,18 @@ namespace ii::v0 {
 namespace {
 
 struct player_mod_data {
+  static constexpr std::uint32_t kShieldRefillTimer = 60 * 28;
+  static constexpr std::uint32_t kBombDoubleTriggerTimer = 45;
+
   std::uint32_t shield_refill_timer = 0;
+  std::uint32_t bomb_double_trigger_timer = 0;
 };
 
 struct PlayerLogic : ecs::component {
   static constexpr fixed kPlayerSpeed = 5_fx * 15_fx / 16_fx;
-
   static constexpr std::uint32_t kReviveTime = 100;
   static constexpr std::uint32_t kShieldTime = 50;
   static constexpr std::uint32_t kInputTimer = 30;
-  static constexpr std::uint32_t kShieldRefillTimer = 60 * 25;
 
   static constexpr auto z = colour::kZPlayer;
   static constexpr auto style = geom::sline(colour::kZero, z);
@@ -122,7 +124,7 @@ struct PlayerLogic : ecs::component {
         pc.shield_count = 1u;
         data.shield_refill_timer = 0u;
       }
-      if (!pc.shield_count && ++data.shield_refill_timer >= kShieldRefillTimer) {
+      if (!pc.shield_count && ++data.shield_refill_timer >= player_mod_data::kShieldRefillTimer) {
         pc.shield_count = 1u;
         data.shield_refill_timer = 0u;
         auto e = sim.emit(resolve_key::predicted());
@@ -146,10 +148,18 @@ struct PlayerLogic : ecs::component {
     }
 
     // Bomb.
-    if (!pc.is_predicted && pc.bomb_count && !bomb_timer && input.keys & input_frame::kBomb) {
+    if (data.bomb_double_trigger_timer && !--data.bomb_double_trigger_timer) {
+      trigger_bomb(h, pc, loadout, transform.centre, sim);
+      bomb_timer = kInputTimer;
+    }
+    if (!pc.is_predicted && pc.bomb_count && !bomb_timer && !data.bomb_double_trigger_timer &&
+        input.keys & input_frame::kBomb) {
       trigger_bomb(h, pc, loadout, transform.centre, sim);
       --pc.bomb_count;
       bomb_timer = kInputTimer;
+      if (loadout.has(mod_id::kBombDoubleTrigger)) {
+        data.bomb_double_trigger_timer = player_mod_data::kBombDoubleTriggerTimer;
+      }
     }
 
     // Shots.
@@ -179,7 +189,7 @@ struct PlayerLogic : ecs::component {
       bubble_id.reset();
       pc.is_killed = false;
       render.clear_trails = true;
-      data.shield_refill_timer = 0;
+      data = {};
       invulnerability_timer = nametag_timer = kReviveTime;
       if (loadout.has(mod_id::kShieldRespawn)) {
         pc.shield_count = loadout.max_shield_capacity(sim);
@@ -205,7 +215,11 @@ struct PlayerLogic : ecs::component {
       data.shield_refill_timer = 0;
       invulnerability_timer = kShieldTime;
       if (loadout.has(mod_id::kCloseCombatShield)) {
+        bomb_timer = kInputTimer;
         trigger_bomb(h, pc, loadout, transform.centre, sim);
+        if (loadout.has(mod_id::kBombDoubleTrigger)) {
+          data.bomb_double_trigger_timer = player_mod_data::kBombDoubleTriggerTimer;
+        }
       }
       return;
     }
@@ -218,7 +232,7 @@ struct PlayerLogic : ecs::component {
     ++pc.death_count;
     pc.bomb_count = 0;
     pc.is_killed = true;
-    data.shield_refill_timer = 0;
+    data = {};
     e.rumble(pc.player_number, 30, .5f, .5f).play(sound::kPlayerDestroy, transform.centre);
   }
 
@@ -341,8 +355,9 @@ struct PlayerLogic : ecs::component {
   }
 };
 DEBUG_STRUCT_TUPLE(PlayerLogic, bubble_id, invulnerability_timer, fire_timer, bomb_timer,
-                   click_timer, render_timer, data.shield_refill_timer, nametag_timer,
-                   fire_target_render_timer, fire_target, mod_upgrade_chosen);
+                   click_timer, render_timer, nametag_timer, fire_target_render_timer,
+                   data.shield_refill_timer, data.bomb_double_trigger_timer, fire_target,
+                   mod_upgrade_chosen);
 
 }  // namespace
 

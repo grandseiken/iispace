@@ -25,6 +25,14 @@ struct PlayerLoadout : ecs::component {
   std::uint32_t max_bomb_capacity(const SimInterface&) const;
   std::uint32_t shot_fire_timer() const;
   fixed bomb_radius_multiplier() const;
+
+  enum class viability {
+    kOk,
+    kAlreadyHave,
+    kNoEffectYet,
+    kReplacesMod,
+  };
+  std::pair<viability, mod_id> check_viability(mod_id) const;
 };
 DEBUG_STRUCT_TUPLE(PlayerLoadout);
 
