@@ -117,65 +117,65 @@ void Health::damage(ecs::handle h, SimInterface& sim, std::uint32_t damage, dama
     return;
   }
 
-  if (!hp) {
-    static constexpr std::uint64_t kRecentHitMaxTicks = 15u;
-
-    auto e_destroy = sim.emit(resolve_key::reconcile(h.id(), resolve_tag::kOnDestroy));
-    if (destroy_sound) {
-      e_destroy.play_random(*destroy_sound, position);
-    }
-    if (pc && destroy_rumble.value_or(rumble_type::kNone) != rumble_type::kNone) {
-      std::uint32_t time_ticks = 0;
-      float lf = 0.f;
-      float hf = 0.f;
-      switch (*destroy_rumble) {
-      case rumble_type::kNone:
-        break;
-      case rumble_type::kLow:
-        time_ticks = 10;
-        lf = .5f;
-        break;
-      case rumble_type::kSmall:
-        time_ticks = 6;
-        hf = .5f;
-        break;
-      case rumble_type::kMedium:
-        time_ticks = 12;
-        hf = .5f;
-        lf = .25f;
-        break;
-      case rumble_type::kLarge:
-        time_ticks = 16;
-        lf = .5f;
-        hf = .25f;
-        break;
-      }
-      for (std::uint32_t i = 0; i < hits.size(); ++i) {
-        if (tick - hits[i].tick <= kRecentHitMaxTicks) {
-          e_destroy.rumble(i, time_ticks, lf, hf);
-        }
-      }
-    }
-    if (on_destroy) {
-      vec2 average_source = source_v;
-      std::uint32_t count = 1;
-      for (const auto& hit : hits) {
-        if (tick - hit.tick <= kRecentHitMaxTicks) {
-          average_source += hit.source;
-          ++count;
-        }
-      }
-      on_destroy(h, sim, e_destroy, type, average_source / count);
-    }
-    h.add(Destroy{.source = source_id, .destroy_type = type});
-  } else {
+  if (hp) {
     if (hit_sound1 && damage) {
       e.play_random(*hit_sound1, position);
     }
     auto t =
         type == damage_type::kBomb ? hit_timer + 40u : std::min<std::uint32_t>(10u, hit_timer + 8u);
     hit_timer = std::max<std::uint32_t>(hit_timer, t);
+    return;
   }
+
+  static constexpr std::uint64_t kRecentHitMaxTicks = 15u;
+  auto e_destroy = sim.emit(resolve_key::reconcile(h.id(), resolve_tag::kOnDestroy));
+  if (destroy_sound) {
+    e_destroy.play_random(*destroy_sound, position);
+  }
+  if (pc && destroy_rumble.value_or(rumble_type::kNone) != rumble_type::kNone) {
+    std::uint32_t time_ticks = 0;
+    float lf = 0.f;
+    float hf = 0.f;
+    switch (*destroy_rumble) {
+    case rumble_type::kNone:
+      break;
+    case rumble_type::kLow:
+      time_ticks = 10;
+      lf = .5f;
+      break;
+    case rumble_type::kSmall:
+      time_ticks = 6;
+      hf = .5f;
+      break;
+    case rumble_type::kMedium:
+      time_ticks = 12;
+      hf = .5f;
+      lf = .25f;
+      break;
+    case rumble_type::kLarge:
+      time_ticks = 16;
+      lf = .5f;
+      hf = .25f;
+      break;
+    }
+    for (std::uint32_t i = 0; i < hits.size(); ++i) {
+      if (tick - hits[i].tick <= kRecentHitMaxTicks) {
+        e_destroy.rumble(i, time_ticks, lf, hf);
+      }
+    }
+  }
+  if (on_destroy) {
+    vec2 average_source = source_v;
+    std::uint32_t count = 1;
+    for (const auto& hit : hits) {
+      if (tick - hit.tick <= kRecentHitMaxTicks) {
+        average_source += hit.source;
+        ++count;
+      }
+    }
+    on_destroy(h, sim, e_destroy, type, average_source / count);
+  }
+  h.add(Destroy{.source = source_id, .destroy_type = type});
 }
 
 }  // namespace ii

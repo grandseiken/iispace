@@ -278,8 +278,9 @@ struct PlayerLogic : ecs::component {
     }
 
     e.rumble(pc.player_number, 20, 1.f, .5f).play(sound::kExplosion, position);
-    for (const auto& c : sim.collide_ball(position, radius,
-                                          shape_flag::kVulnerable | shape_flag::kWeakVulnerable)) {
+    for (const auto& c : sim.collide_ball(
+             position, radius,
+             shape_flag::kVulnerable | shape_flag::kWeakVulnerable | shape_flag::kBombVulnerable)) {
       if (auto* health = c.h.get<Health>(); health) {
         health->damage(c.h, sim, kBombDamage, damage_type::kBomb, h.id(), position);
       }

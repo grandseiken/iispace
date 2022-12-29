@@ -18,6 +18,7 @@ public:
   virtual std::vector<wave_data>
   get_wave_list(const initial_conditions&, std::uint32_t biome_index) const = 0;
   virtual void spawn_wave(SimInterface&, const wave_data&) const = 0;
+  virtual void spawn_boss(SimInterface&, std::uint32_t biome_index) const = 0;
 };
 
 const Biome* get_biome(run_biome biome);

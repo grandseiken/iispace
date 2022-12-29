@@ -124,6 +124,7 @@ struct Overmind : ecs::component {
         break;
 
       case wave_type::kBoss:
+        biome->spawn_boss(sim, data.biome_index);
         break;
 
       case wave_type::kUpgrade:

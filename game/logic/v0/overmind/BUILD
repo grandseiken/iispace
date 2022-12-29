@@ -26,6 +26,7 @@ cc_library(
   ],
   implementation_deps = [
     "//game/logic/sim:sim_interface",
+    "//game/logic/v0/boss",
     "//game/logic/v0/overmind/formations",
   ],
 )

@@ -2,12 +2,14 @@
 #define II_GAME_COMMON_PRINTER_H
 #include "game/common/enum.h"
 #include "game/common/math.h"
+#include "game/common/struct_tuple.h"
 #include <array>
 #include <concepts>
 #include <optional>
 #include <sstream>
 #include <string>
 #include <string_view>
+#include <tuple>
 #include <type_traits>
 #include <utility>
 #include <vector>
@@ -130,6 +132,31 @@ public:
     }
     return put(']');
   }
+
+  template <typename... Args>
+  Printer& put(const std::tuple<Args...>& v) {
+    put('(');
+    bool first = true;
+    auto f = [&](auto&& x) {
+      if (!first) {
+        put(", ");
+      }
+      first = false;
+      put(x);
+    };
+    auto iterate = [&]<std::size_t... I>(std::index_sequence<I...>) {
+      (f(std::get<I>(v)), ...);
+    };
+    iterate(std::make_index_sequence<sizeof...(Args)>{});
+    return put(')');
+  }
+
+  template <typename T>
+  Printer& put(const struct_tuple_member_entry<T>& v) {
+    return put(v.name).put(": ").put(v.value);
+  }
+
+  Printer& put(const DebugStructTuple auto& v) { return put(to_debug_tuple(v)); }
 
 private:
   std::uint32_t indent_ = 0;

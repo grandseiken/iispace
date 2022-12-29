@@ -1,5 +1,6 @@
 #include "game/logic/v0/overmind/biome.h"
 #include "game/logic/sim/sim_interface.h"
+#include "game/logic/v0/boss/boss.h"
 #include "game/logic/v0/overmind/formation_set.h"
 #include "game/logic/v0/overmind/formations/biome0.h"
 #include "game/logic/v0/overmind/spawn_context.h"
@@ -8,19 +9,23 @@ namespace ii::v0 {
 namespace {
 
 wave_data get_enemy_wave_data(const initial_conditions& conditions, std::uint32_t biome_index,
-                              bool second_half, std::uint32_t wave_number) {
+                              std::uint32_t phase_index, std::uint32_t wave_number) {
   static constexpr std::uint32_t kInitialPower = 16u;
+  static constexpr std::uint32_t kBiomePower = 16u;
+  static constexpr std::uint32_t kPhasePower = 2u;
+  static constexpr std::uint32_t kPhaseThreat = 4u;
 
   wave_data data;
   data.type = wave_type::kEnemy;
   data.biome_index = biome_index;
-  data.power = (biome_index + 1) * kInitialPower + 2u * (conditions.player_count - 1u);
-  data.power += wave_number;
-  data.power += std::min(10u, wave_number);
-  data.power += second_half ? 4u : 0u;
+  data.power = kInitialPower + biome_index * kBiomePower;
+  data.power += (conditions.player_count - 1u) * kPhasePower;
+  data.power += wave_number + std::min(10u, wave_number);
+  data.power += phase_index * kPhasePower;
   data.upgrade_budget = data.power / 2;
   data.threat_trigger = wave_number;
-  data.threat_trigger += second_half ? 4u : 0u;
+  data.threat_trigger += biome_index * kPhaseThreat;
+  data.threat_trigger += phase_index * kPhaseThreat;
   return data;
 }
 
@@ -28,12 +33,19 @@ std::vector<wave_data>
 get_wave_list(const initial_conditions& conditions, std::uint32_t biome_index) {
   std::vector<wave_data> result;
   std::uint32_t enemy_wave_number = 0;
-  for (std::uint32_t i = 0u; i < 10u; ++i) {
-    result.emplace_back(get_enemy_wave_data(conditions, biome_index, false, enemy_wave_number++));
+  for (std::uint32_t i = 0u; i < 8u; ++i) {
+    result.emplace_back(
+        get_enemy_wave_data(conditions, biome_index, /* phase */ 0, enemy_wave_number++));
   }
   result.emplace_back(wave_data{wave_type::kUpgrade});
-  for (std::uint32_t i = 0u; i < 11u + conditions.player_count; ++i) {
-    result.emplace_back(get_enemy_wave_data(conditions, biome_index, true, enemy_wave_number++));
+  for (std::uint32_t i = 0u; i < 8u; ++i) {
+    result.emplace_back(
+        get_enemy_wave_data(conditions, biome_index, /* phase */ 1, enemy_wave_number++));
+  }
+  result.emplace_back(wave_data{wave_type::kUpgrade});
+  for (std::uint32_t i = 0u; i < 4u + conditions.player_count; ++i) {
+    result.emplace_back(
+        get_enemy_wave_data(conditions, biome_index, /* phase */ 2, enemy_wave_number++));
   }
   result.emplace_back(wave_data{wave_type::kBoss});
   result.emplace_back(wave_data{wave_type::kUpgrade});
@@ -174,6 +186,10 @@ public:
     auto context = make_context(sim, wave);
     set.spawn_wave(context);
     spawn(context);
+  }
+
+  void spawn_boss(SimInterface& sim, std::uint32_t biome_index) const override {
+    spawn_biome0_square_boss(sim, biome_index);
   }
 
 private:

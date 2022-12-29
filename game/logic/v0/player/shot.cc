@@ -35,7 +35,7 @@ struct shot_mod_data {
   static constexpr std::uint32_t kLightningDamage = 12u;
   static constexpr std::uint32_t kCloseCombatDamage = 6u;
   static constexpr std::uint32_t kSniperSplitDamage = 6u;
-  static constexpr std::uint32_t kCloseCombatShotCount = 12u;
+  static constexpr std::uint32_t kCloseCombatShotCount = 14u;
   static constexpr std::uint32_t kLightningStunTicks = 40u;
   static constexpr fixed kBaseSpeed = 75_fx / 8_fx;
   static constexpr fixed kCloseCombatMaxDistance = 320_fx;

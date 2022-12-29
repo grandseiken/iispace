@@ -9,11 +9,12 @@ enum class shape_flag : std::uint32_t {
   kNone = 0b00000000,
   kVulnerable = 0b00000001,        // Can be hit by player (and consumes non-penetrating shots).
   kWeakVulnerable = 0b00000010,    // Can be hit by player, and shots automatically penetrate.
-  kDangerous = 0b00000100,         // Kills player.
-  kShield = 0b00001000,            // Blocks all player projectiles.
-  kWeakShield = 0b00010000,        // Blocks normal player projectiles, magic shots can penetrate.
-  kSafeShield = 0b00100000,        // Blocks enemy projectiles.
-  kEnemyInteraction = 0b01000000,  // Interactions between enemies.
+  kBombVulnerable = 0b00000100,    // Can be hit by bomb.
+  kDangerous = 0b00001000,         // Kills player.
+  kShield = 0b00010000,            // Blocks all player projectiles.
+  kWeakShield = 0b00100000,        // Blocks normal player projectiles, magic shots can penetrate.
+  kSafeShield = 0b01000000,        // Blocks enemy projectiles.
+  kEnemyInteraction = 0b10000000,  // Interactions between enemies.
   kEverything = 0b11111111,
 };
 
