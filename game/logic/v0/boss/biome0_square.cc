@@ -14,6 +14,7 @@ namespace {
 // TODO: render boss health bar.
 // TODO: only flash middle shapes on hit.
 // TODO: better bomb effect when hit.
+// TODO: fix colour gradient and middle.
 // TODO: change direction/rotation less suddenly.
 // TODO: cool spawn effects; spawn with physics velocity.
 // TODO: cooler special attack effect.
@@ -30,28 +31,33 @@ struct SquareBoss : public ecs::component {
   static constexpr float kZIndex = -4.f;
 
   static constexpr auto z = colour::kZEnemyBoss;
-  static constexpr auto c = colour::kNewPurple;
-  static constexpr auto cf = colour::alpha(c, colour::kFillAlpha2);
-  static constexpr auto outline = geom::nline(colour::kOutline, colour::kZOutline, 2.f);
-  static constexpr auto m_outline = geom::nline(colour::kOutline, colour::kZOutline, -2.f);
+  static constexpr auto c0 = colour::kSolarizedDarkCyan;
+  static constexpr auto c1 = colour::kNewPurple;
+  static constexpr auto outline = geom::nline(colour::kOutline, colour::kZOutline, 2.5f);
+  static constexpr auto m_outline = geom::nline(colour::kOutline, colour::kZOutline, -2.5f);
+  template <std::uint32_t T>
+  static constexpr auto c_mix = colour::perceptual_mix(c0, c1, T / 5.f);
 
   template <fixed C, geom::ShapeNode... Nodes>
   using rotate_s = geom::rotate_eval<geom::multiply_p<C, 1>, geom::pack<Nodes...>>;
-  template <fixed R>
-  using ngon =
-      geom::compound<geom::ngon<geom::nd2(R, 50, 4), geom::nline(c, z, 2.f), geom::sfill(cf, z)>,
-                     geom::ngon<geom::nd(R - 6, 4), geom::nline(c, z, 4.f)>,
-                     geom::ngon<geom::nd(R + 2, 4), outline>,
-                     geom::ngon<geom::nd(48, 4), m_outline>>;
-  template <fixed C, fixed R>
-  using rotate_ngon = rotate_s<C, ngon<R>>;
-  template <fixed C, fixed R, shape_flag Flags>
-  using rotate_ngon_c = rotate_s<C, ngon<R>, geom::ngon_collider<geom::nd2(R, 50, 4), Flags>>;
+  template <fixed R, std::uint32_t T>
+  using ngon = geom::compound<
+      geom::ngon<geom::nd2(50 + 25 * R, 48 + 2 * R, 4), geom::nline(c_mix<T>, z, 2.f),
+                 geom::sfill(colour::alpha(c_mix<T>, colour::kFillAlpha2), z)>,
+      geom::ngon<geom::nd(44 + 25 * R, 4), geom::nline(c_mix<T>, z, 4.f)>,
+      geom::ngon<geom::nd(52 + 25 * R, 4), outline>,
+      geom::ngon<geom::nd(46 + 2 * R, 4), m_outline>>;
+  template <fixed C, fixed R, std::uint32_t T>
+  using rotate_ngon = rotate_s<C, ngon<R, T>>;
+  template <fixed C, fixed R, std::uint32_t T, shape_flag Flags>
+  using rotate_ngon_c =
+      rotate_s<C, ngon<R, T>, geom::ngon_collider<geom::nd2(50 + 25 * R, 48 + 2 * R, 4), Flags>>;
   using shape =
-      geom::translate_p<0, rotate_ngon_c<1, 200, shape_flag::kBombVulnerable>,
-                        rotate_ngon<3_fx / 2, 175>, rotate_ngon_c<2, 150, shape_flag::kDangerous>,
-                        rotate_ngon<5_fx / 2, 125>, rotate_ngon_c<3, 100, shape_flag::kVulnerable>,
-                        rotate_ngon_c<7_fx / 2, 75, shape_flag::kShield>>;
+      geom::translate_p<0, rotate_ngon_c<1, 6, 0, shape_flag::kBombVulnerable>,
+                        rotate_ngon<3_fx / 2, 5, 1>, rotate_ngon_c<2, 4, 2, shape_flag::kDangerous>,
+                        rotate_ngon<5_fx / 2, 3, 3>,
+                        rotate_ngon_c<3, 2, 4, shape_flag::kVulnerable>,
+                        rotate_ngon_c<7_fx / 2, 1, 5, shape_flag::kShield>>;
 
   vec2 dir{0, -1};
   bool reverse = false;
@@ -132,6 +138,7 @@ struct SquareBoss : public ecs::component {
 
   void render(std::vector<render::shape>& output, const SimInterface& sim) const {
     static constexpr std::uint32_t kSmallWidth = 11;
+    static constexpr auto c = colour::kNewPurple;
     static constexpr auto cf = colour::alpha(c, colour::kFillAlpha0);
     static constexpr float z = colour::kZEnemySmall;
     using small_follow_shape = standard_transform<

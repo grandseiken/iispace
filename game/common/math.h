@@ -12,6 +12,7 @@ using ivec2 = glm::ivec2;
 using uvec2 = glm::uvec2;
 using fvec2 = glm::vec2;
 using fvec4 = glm::vec4;
+using cvec3 = glm::vec3;
 using cvec4 = glm::vec4;
 
 namespace detail {
