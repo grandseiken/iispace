@@ -35,12 +35,22 @@ nd2(fixed radius, fixed inner_radius, std::uint32_t sides, std::uint32_t segment
 
 constexpr ngon_line_style
 nline(const cvec4& colour = cvec4{0.f}, float z = 0.f, float width = 1.f, unsigned char index = 0) {
-  return {{.colour = colour, .z = z, .width = width, .index = index}};
+  return {{.colour0 = colour, .colour1 = colour, .z = z, .width = width, .index = index}};
+}
+
+constexpr ngon_line_style nline(const cvec4& colour0, const cvec4& colour1, float z = 0.f,
+                                float width = 1.f, unsigned char index = 0) {
+  return {{.colour0 = colour0, .colour1 = colour1, .z = z, .width = width, .index = index}};
 }
 
 constexpr ngon_line_style nline(ngon_style style, const cvec4& colour, float z = 0.f,
                                 float width = 1.f, unsigned char index = 0) {
-  return {{.colour = colour, .z = z, .width = width, .index = index}, style};
+  return {{.colour0 = colour, .colour1 = colour, .z = z, .width = width, .index = index}, style};
+}
+
+constexpr ngon_line_style nline(ngon_style style, const cvec4& colour0, const cvec4& colour1,
+                                float z = 0.f, float width = 1.f, unsigned char index = 0) {
+  return {{.colour0 = colour0, .colour1 = colour1, .z = z, .width = width, .index = index}, style};
 }
 
 //////////////////////////////////////////////////////////////////////////////////
@@ -166,7 +176,7 @@ struct ngon_data : shape_data_base {
 
   constexpr void
   iterate(iterate_lines_t, const Transform auto& t, const LineFunction auto& f) const {
-    if (!line.colour.a) {
+    if (!line.colour0.a) {
       return;
     }
     auto vertex = [&](std::uint32_t i) {
@@ -179,23 +189,24 @@ struct ngon_data : shape_data_base {
 
     switch (line.style) {
     case ngon_style::kPolystar:
+      // TODO: need line gradients to match rendering, if we use them.
       for (std::uint32_t i = 0; i < dimensions.segments; ++i) {
-        std::invoke(f, ivertex(i), vertex(i), line.colour, line.width, line.z);
+        std::invoke(f, ivertex(i), vertex(i), line.colour0, line.width, line.z);
       }
       break;
     case ngon_style::kPolygram:
       for (std::size_t i = 0; i < dimensions.sides; ++i) {
         for (std::size_t j = i + 2; j < dimensions.sides && (j + 1) % dimensions.sides != i; ++j) {
-          std::invoke(f, vertex(i), vertex(j), line.colour, line.width, line.z);
+          std::invoke(f, vertex(i), vertex(j), line.colour1, line.width, line.z);
         }
       }
       // Fallthrough.
     case ngon_style::kPolygon:
       for (std::uint32_t i = 0; i < dimensions.segments; ++i) {
-        std::invoke(f, vertex(i), vertex(i + 1), line.colour, line.width, line.z);
+        std::invoke(f, vertex(i), vertex(i + 1), line.colour0, line.width, line.z);
       }
       for (std::uint32_t i = 0; dimensions.inner_radius && i < dimensions.segments; ++i) {
-        std::invoke(f, ivertex(i), ivertex(i + 1), line.colour, line.width, line.z);
+        std::invoke(f, ivertex(i), ivertex(i + 1), line.colour1, line.width, line.z);
       }
       break;
     }
@@ -203,12 +214,13 @@ struct ngon_data : shape_data_base {
 
   constexpr void
   iterate(iterate_shapes_t, const Transform auto& t, const ShapeFunction auto& f) const {
-    if (line.colour.a) {
+    if (line.colour0.a || line.colour1.a) {
       std::invoke(f,
                   render::shape{
                       .origin = to_float(*t),
                       .rotation = t.rotation().to_float(),
-                      .colour = line.colour,
+                      .colour0 = line.colour0,
+                      .colour1 = line.colour1,
                       .z_index = line.z,
                       .s_index = line.index,
                       .data = render::ngon{.radius = dimensions.radius.to_float(),
@@ -219,12 +231,13 @@ struct ngon_data : shape_data_base {
                                            .line_width = line.width},
                   });
     }
-    if (fill.colour.a) {
+    if (fill.colour0.a || fill.colour1.a) {
       std::invoke(f,
                   render::shape{
                       .origin = to_float(*t),
                       .rotation = t.rotation().to_float(),
-                      .colour = fill.colour,
+                      .colour0 = fill.colour0,
+                      .colour1 = fill.colour1,
                       .z_index = fill.z,
                       .s_index = fill.index,
                       .data = render::ngon_fill{.radius = dimensions.radius.to_float(),
@@ -237,7 +250,7 @@ struct ngon_data : shape_data_base {
 
   constexpr void
   iterate(iterate_centres_t, const Transform auto& t, const PointFunction auto& f) const {
-    std::invoke(f, *t, line.colour.a ? line.colour : fill.colour);
+    std::invoke(f, *t, line.colour0.a ? line.colour0 : fill.colour1);
   }
 };
 

@@ -217,9 +217,9 @@ void RenderState::render(std::vector<render::shape>& shapes) const {
     shapes.emplace_back(render::shape{
         .origin = v,
         .rotation = r,
-        .colour = c,
+        .colour0 = c,
         .z_index = z,
-        .trail = render::motion_trail{.prev_origin = v - vv, .prev_colour = c},
+        .trail = render::motion_trail{.prev_origin = v - vv, .prev_colour0 = c},
         .data = render::box{.dimensions = d, .line_width = lw},
     });
   };
@@ -240,10 +240,10 @@ void RenderState::render(std::vector<render::shape>& shapes) const {
     case star_type::kPlanet:
       shapes.emplace_back(render::shape{
           .origin = star.position,
-          .colour = star.colour,
+          .colour0 = star.colour,
           .z_index = colour::kZParticle,
           .trail = render::motion_trail{.prev_origin = star.position - star_direction_ * star.speed,
-                                        .prev_colour = star.colour},
+                                        .prev_colour0 = star.colour},
           .data = render::ngon{.radius = star.size, .sides = 8},
       });
       break;
@@ -267,12 +267,12 @@ void RenderState::render(std::vector<render::shape>& shapes) const {
       shapes.emplace_back(render::shape{
           .origin = p.position,
           .rotation = d->rotation,
-          .colour = colour,
+          .colour0 = colour,
           .z_index = p.flash_time && p.time <= p.flash_time / 2 ? colour::kZParticleFlash
                                                                 : colour::kZParticle,
           .trail = render::motion_trail{.prev_origin = p.position - p.velocity,
                                         .prev_rotation = d->rotation - d->angular_velocity,
-                                        .prev_colour = colour},
+                                        .prev_colour0 = colour},
           .data = render::line{.radius = d->radius,
                                .line_width = d->width * glm::mix(1.f, 2.f, t),
                                .sides = 3 + static_cast<std::uint32_t>(.5f + d->width)},

@@ -29,8 +29,10 @@ void Render::render_all(ecs::const_handle h, transient_render_state::entity_stat
       s.trail = v[n];
     }
     if (!paused) {
-      v[n] = render::motion_trail{
-          .prev_origin = s.origin, .prev_rotation = s.rotation, .prev_colour = s.colour};
+      v[n] = render::motion_trail{.prev_origin = s.origin,
+                                  .prev_rotation = s.rotation,
+                                  .prev_colour0 = s.colour0,
+                                  .prev_colour1 = s.colour1};
     }
   };
 

@@ -18,21 +18,23 @@ struct line_data : shape_data_base {
 
   constexpr void
   iterate(iterate_lines_t, const Transform auto& t, const LineFunction auto& f) const {
-    if (style.colour.a) {
-      std::invoke(f, *t.translate(a), *t.translate(b), style.colour, style.width, style.z);
+    if (style.colour0.a) {
+      // TODO: need line gradients to match rendering, if we use them.
+      std::invoke(f, *t.translate(a), *t.translate(b), style.colour0, style.width, style.z);
     }
   }
 
   constexpr void
   iterate(iterate_shapes_t, const Transform auto& t, const ShapeFunction auto& f) const {
-    std::invoke(f,
-                render::shape::line(to_float(*t.translate(a)), to_float(*t.translate(b)),
-                                    style.colour, style.z, style.width, style.index));
+    std::invoke(
+        f,
+        render::shape::line(to_float(*t.translate(a)), to_float(*t.translate(b)), style.colour0,
+                            style.colour1, style.z, style.width, style.index));
   }
 
   constexpr void
   iterate(iterate_centres_t, const Transform auto& t, const PointFunction auto& f) const {
-    std::invoke(f, *t.translate((a + b) / 2), style.colour);
+    std::invoke(f, *t.translate((a + b) / 2), style.colour0);
   }
 };
 

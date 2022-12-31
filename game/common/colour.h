@@ -4,6 +4,7 @@
 #include <gcem.hpp>
 #include <glm/glm.hpp>
 #include <algorithm>
+#include <cmath>
 
 namespace ii::colour {
 
@@ -156,6 +157,18 @@ inline constexpr cvec4 perceptual_mix(const cvec4& a, const cvec4& b, float t = 
   auto oklab_a = rgb2oklab(srgb2rgb(hsl2srgb(a)));
   auto oklab_b = rgb2oklab(srgb2rgb(hsl2srgb(b)));
   return srgb2hsl(rgb2srgb(oklab2rgb((1.f - t) * oklab_a + t * oklab_b)));
+}
+
+inline constexpr cvec4 hsl2oklab_cycle(const cvec4& hsl, float cycle) {
+  auto lab = rgb2oklab(srgb2rgb(hsl2srgb(hsl)));
+  if (std::is_constant_evaluated()) {
+    auto c = gcem::sqrt(lab.y * lab.y + lab.z * lab.z);
+    float h = gcem::atan2(lab.z, lab.y) + 2.f * pi<float> * cycle;
+    return {lab.x, c * gcem::cos(h), c * gcem::sin(h), lab.a};
+  }
+  auto c = std::sqrt(lab.y * lab.y + lab.z * lab.z);
+  float h = std::atan2(lab.z, lab.y) + 2.f * pi<float> * cycle;
+  return {lab.x, c * std::cos(h), c * std::sin(h), lab.a};
 }
 
 inline constexpr cvec4 hue(float h, float l = .5f, float s = 1.f) {

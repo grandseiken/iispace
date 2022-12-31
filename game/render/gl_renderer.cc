@@ -621,11 +621,13 @@ void GlRenderer::render_shapes(coordinate_system ctype, std::vector<shape>& shap
     float z_index = 0.f;
     fvec2 position{0.f};
     fvec2 dimensions{0.f};
-    cvec4 colour{0.f};
+    cvec4 colour0{0.f};
+    cvec4 colour1{0.f};
   };
 
   struct shape_buffer_data {
-    cvec4 colour{0.f};
+    cvec4 colour0{0.f};
+    cvec4 colour1{0.f};
     std::uint32_t style = 0;
     std::uint32_t ball_index = 0;
     uvec2 padding{0};
@@ -681,7 +683,9 @@ void GlRenderer::render_shapes(coordinate_system ctype, std::vector<shape>& shap
       ball_index = ball_data.size();
       ball_data.emplace_back(ball_buffer_data{d.position, d.dimensions, d.line_width});
     }
-    buffer_data.emplace_back(shape_buffer_data{d.colour, d.style, ball_index});
+    buffer_data.emplace_back(shape_buffer_data{
+        colour::hsl2oklab_cycle(d.colour0, colour_cycle_ / 256.f),
+        colour::hsl2oklab_cycle(d.colour1, colour_cycle_ / 256.f), d.style, ball_index});
   };
 
   std::optional<fvec2> shadow_offset;
@@ -704,7 +708,8 @@ void GlRenderer::render_shapes(coordinate_system ctype, std::vector<shape>& shap
       auto dt = d;
       dt.position = trail->prev_origin;
       dt.rotation = trail->prev_rotation;
-      dt.colour = trail->prev_colour;
+      dt.colour0 = trail->prev_colour0;
+      dt.colour1 = trail->prev_colour1.value_or(trail->prev_colour0);
       add_shape_data(dt);
       trail_indices.emplace_back(vertex_index - 1);
       trail_indices.emplace_back(vertex_index++);
@@ -712,7 +717,8 @@ void GlRenderer::render_shapes(coordinate_system ctype, std::vector<shape>& shap
     if (shadow_offset) {
       auto ds = d;
       ds.position += *shadow_offset;
-      ds.colour = cvec4{0.f, 0.f, 0.f, ds.colour.a * colour::kShadowAlpha0};
+      ds.colour0 = cvec4{0.f, 0.f, 0.f, ds.colour0.a * colour::kShadowAlpha0};
+      ds.colour1 = cvec4{0.f, 0.f, 0.f, ds.colour1.a * colour::kShadowAlpha0};
       ds.line_width += 1.f;
       add_shape_data(ds);
       shadow_outline_indices.emplace_back(vertex_index++);
@@ -720,7 +726,9 @@ void GlRenderer::render_shapes(coordinate_system ctype, std::vector<shape>& shap
         auto dt = ds;
         dt.position = trail->prev_origin + *shadow_offset;
         dt.rotation = trail->prev_rotation;
-        dt.colour = {0.f, 0.f, 0.f, trail->prev_colour.a * colour::kShadowAlpha0};
+        dt.colour0 = {0.f, 0.f, 0.f, trail->prev_colour0.a * colour::kShadowAlpha0};
+        dt.colour1 = {0.f, 0.f, 0.f,
+                      trail->prev_colour1.value_or(trail->prev_colour0).a * colour::kShadowAlpha0};
         add_shape_data(dt);
         shadow_trail_indices.emplace_back(vertex_index - 1);
         shadow_trail_indices.emplace_back(vertex_index++);
@@ -734,7 +742,8 @@ void GlRenderer::render_shapes(coordinate_system ctype, std::vector<shape>& shap
     if (style == shape_style::kStandard) {
       auto ds = d;
       ds.position += *shadow_offset;
-      ds.colour = {0.f, 0.f, 0.f, ds.colour.a / 2.f};
+      ds.colour0 = {0.f, 0.f, 0.f, ds.colour0.a / 2.f};
+      ds.colour1 = {0.f, 0.f, 0.f, ds.colour1.a / 2.f};
       add_shape_data(ds);
       shadow_fill_indices.emplace_back(vertex_index++);
     }
@@ -761,7 +770,8 @@ void GlRenderer::render_shapes(coordinate_system ctype, std::vector<shape>& shap
                 .z_index = shape.z_index,
                 .position = shape.origin,
                 .dimensions = {p->radius, p->inner_radius},
-                .colour = shape.colour,
+                .colour0 = shape.colour0,
+                .colour1 = shape.colour1.value_or(shape.colour0),
             },
             shape.trail);
       };
@@ -769,13 +779,13 @@ void GlRenderer::render_shapes(coordinate_system ctype, std::vector<shape>& shap
         add_polygon(p->style == ngon_style::kPolystar ? kStyleNgonPolystar : kStyleNgonPolygon,
                     p->segments);
       } else if (p->sides == 4) {
-        add_polygon(kStyleNgonPolygon, p->segments);
         add_polygon(kStyleNgonPolystar, p->segments);
-      } else {
         add_polygon(kStyleNgonPolygon, p->segments);
+      } else {
         for (std::uint32_t i = 0; i + 2 < p->sides; ++i) {
           add_polygon(kStyleNgonPolygram, i);
         }
+        add_polygon(kStyleNgonPolygon, p->segments);
       }
     } else if (const auto* p = std::get_if<render::box>(&shape.data)) {
       add_outline_data(
@@ -786,7 +796,8 @@ void GlRenderer::render_shapes(coordinate_system ctype, std::vector<shape>& shap
               .z_index = shape.z_index,
               .position = shape.origin,
               .dimensions = p->dimensions,
-              .colour = shape.colour,
+              .colour0 = shape.colour0,
+              .colour1 = shape.colour1.value_or(shape.colour0),
           },
           shape.trail);
     } else if (const auto* p = std::get_if<render::ball>(&shape.data)) {
@@ -798,7 +809,8 @@ void GlRenderer::render_shapes(coordinate_system ctype, std::vector<shape>& shap
               .z_index = shape.z_index,
               .position = shape.origin,
               .dimensions = {p->radius, p->inner_radius},
-              .colour = shape.colour,
+              .colour0 = shape.colour0,
+              .colour1 = shape.colour1.value_or(shape.colour0),
           },
           shape.trail);
     } else if (const auto* p = std::get_if<render::line>(&shape.data)) {
@@ -811,7 +823,8 @@ void GlRenderer::render_shapes(coordinate_system ctype, std::vector<shape>& shap
               .z_index = shape.z_index,
               .position = shape.origin,
               .dimensions = {p->radius, 0},
-              .colour = shape.colour,
+              .colour0 = shape.colour0,
+              .colour1 = shape.colour1.value_or(shape.colour0),
           },
           shape.trail);
     } else if (const auto* p = std::get_if<render::ngon_fill>(&shape.data)) {
@@ -822,7 +835,8 @@ void GlRenderer::render_shapes(coordinate_system ctype, std::vector<shape>& shap
           .z_index = shape.z_index,
           .position = shape.origin,
           .dimensions = {p->radius, p->inner_radius},
-          .colour = shape.colour,
+          .colour0 = shape.colour0,
+          .colour1 = shape.colour1.value_or(shape.colour0),
       });
     } else if (const auto* p = std::get_if<render::box_fill>(&shape.data)) {
       add_fill_data({
@@ -831,7 +845,8 @@ void GlRenderer::render_shapes(coordinate_system ctype, std::vector<shape>& shap
           .z_index = shape.z_index,
           .position = shape.origin,
           .dimensions = p->dimensions,
-          .colour = shape.colour,
+          .colour0 = shape.colour0,
+          .colour1 = shape.colour1.value_or(shape.colour0),
       });
     } else if (const auto* p = std::get_if<render::ball_fill>(&shape.data)) {
       add_fill_data({
@@ -840,7 +855,8 @@ void GlRenderer::render_shapes(coordinate_system ctype, std::vector<shape>& shap
           .z_index = shape.z_index,
           .position = shape.origin,
           .dimensions = {p->radius, p->inner_radius},
-          .colour = shape.colour,
+          .colour0 = shape.colour0,
+          .colour1 = shape.colour1.value_or(shape.colour0),
       });
     }
   }
@@ -903,7 +919,7 @@ void GlRenderer::render_shapes(coordinate_system ctype, std::vector<shape>& shap
     return gl::set_uniforms(program, "aspect_scale", target().aspect_scale(), "render_dimensions",
                             target().render_dimensions, "screen_dimensions",
                             target().screen_dimensions, "clip_min", clip_min, "clip_max", clip_max,
-                            "coordinate_offset", offset, "colour_cycle", colour_cycle_ / 256.f);
+                            "coordinate_offset", offset);
   };
 
   auto render_pass = [&](shader s, gl::draw_mode mode, const gl::buffer& index_buffer,

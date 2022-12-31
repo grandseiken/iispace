@@ -186,7 +186,10 @@ void render_shape(std::vector<render::shape>& output, const auto& parameters, fl
     shape_copy.z_index = z_index;
     if ((c_override || hit_alpha) && (!c_override_max_index || i < *c_override_max_index)) {
       if (c_override) {
-        shape_copy.colour = cvec4{c_override->r, c_override->g, c_override->b, shape.colour.a};
+        shape_copy.colour0 = cvec4{c_override->r, c_override->g, c_override->b, shape.colour0.a};
+        if (shape_copy.colour1) {
+          shape_copy.colour1 = cvec4{c_override->r, c_override->g, c_override->b, shape.colour1->a};
+        }
       }
       if (hit_alpha) {
         shape_copy.apply_hit_flash(*hit_alpha);

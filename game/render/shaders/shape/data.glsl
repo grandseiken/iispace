@@ -15,7 +15,8 @@ struct shape_vertex_data {
 };
 
 struct shape_buffer_data {
-  vec4 colour;
+  vec4 colour0;
+  vec4 colour1;
   uint style;
   uint ball_index;
   uvec2 padding;

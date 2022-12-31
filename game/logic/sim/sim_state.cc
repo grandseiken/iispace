@@ -262,7 +262,7 @@ render_output& SimState::render(transient_render_state& state, bool paused) cons
       result.shapes.emplace_back(render::shape{
           .origin = position,
           .rotation = r,
-          .colour = {0.f, 0.f, .2f + .6f * f, .4f},
+          .colour0 = {0.f, 0.f, .2f + .6f * f, .4f},
           .data = warning_ngon,
       });
     };

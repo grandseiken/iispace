@@ -313,7 +313,7 @@ struct PlayerLogic : ecs::component {
     auto t = to_float(fire_target);
     output.emplace_back(render::shape{
         .origin = t,
-        .colour = c,
+        .colour0 = c,
         .z_index = 100.f,
         .s_index = 't',
         .data = render::ngon{.radius = 8, .sides = 4, .style = render::ngon_style::kPolystar},

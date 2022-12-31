@@ -95,7 +95,7 @@ constexpr auto evaluate(equal<E0, E1>, const auto& params) {
 template <auto V, Expression<cvec4> E>
 constexpr auto evaluate(set_colour<V, E>, const auto& params) {
   auto v = V;
-  v.colour = cvec4{evaluate(E{}, params)};
+  v.colour0 = v.colour1 = cvec4{evaluate(E{}, params)};
   return v;
 }
 

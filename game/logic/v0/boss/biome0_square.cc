@@ -31,8 +31,8 @@ struct SquareBoss : public ecs::component {
   static constexpr float kZIndex = -4.f;
 
   static constexpr auto z = colour::kZEnemyBoss;
-  static constexpr auto c0 = colour::kSolarizedDarkCyan;
-  static constexpr auto c1 = colour::kNewPurple;
+  static constexpr auto c1 = colour::kSolarizedDarkCyan;
+  static constexpr auto c0 = colour::kNewPurple;
   static constexpr auto outline = geom::nline(colour::kOutline, colour::kZOutline, 2.5f);
   static constexpr auto m_outline = geom::nline(colour::kOutline, colour::kZOutline, -2.5f);
   template <std::uint32_t T>
@@ -41,17 +41,18 @@ struct SquareBoss : public ecs::component {
   template <fixed C, geom::ShapeNode... Nodes>
   using rotate_s = geom::rotate_eval<geom::multiply_p<C, 1>, geom::pack<Nodes...>>;
   template <fixed R, std::uint32_t T>
-  using ngon = geom::compound<
-      geom::ngon<geom::nd2(50 + 25 * R, 48 + 2 * R, 4), geom::nline(c_mix<T>, z, 2.f),
-                 geom::sfill(colour::alpha(c_mix<T>, colour::kFillAlpha2), z)>,
-      geom::ngon<geom::nd(44 + 25 * R, 4), geom::nline(c_mix<T>, z, 4.f)>,
-      geom::ngon<geom::nd(52 + 25 * R, 4), outline>,
-      geom::ngon<geom::nd(46 + 2 * R, 4), m_outline>>;
+  using ngon =
+      geom::compound<geom::ngon<geom::nd2(50 + 25 * R, 50, 4), geom::nline(c_mix<T>, c1, z, 2.f),
+                                geom::sfill(colour::alpha(c_mix<T>, colour::kFillAlpha2),
+                                            colour::alpha(c1, colour::kFillAlpha2), z)>,
+                     geom::ngon<geom::nd(44 + 25 * R, 4), geom::nline(c_mix<T>, z, 4.f)>,
+                     geom::ngon<geom::nd(52 + 25 * R, 4), outline>,
+                     geom::ngon<geom::nd(48, 4), m_outline>>;
   template <fixed C, fixed R, std::uint32_t T>
   using rotate_ngon = rotate_s<C, ngon<R, T>>;
   template <fixed C, fixed R, std::uint32_t T, shape_flag Flags>
   using rotate_ngon_c =
-      rotate_s<C, ngon<R, T>, geom::ngon_collider<geom::nd2(50 + 25 * R, 48 + 2 * R, 4), Flags>>;
+      rotate_s<C, ngon<R, T>, geom::ngon_collider<geom::nd2(50 + 25 * R, 75 - 10 * R, 4), Flags>>;
   using shape =
       geom::translate_p<0, rotate_ngon_c<1, 6, 0, shape_flag::kBombVulnerable>,
                         rotate_ngon<3_fx / 2, 5, 1>, rotate_ngon_c<2, 4, 2, shape_flag::kDangerous>,

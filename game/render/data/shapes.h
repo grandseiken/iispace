@@ -67,13 +67,15 @@ using shape_data = std::variant<line, ngon, box, ball, ngon_fill, box_fill, ball
 struct motion_trail {
   fvec2 prev_origin{0.f};
   float prev_rotation = 0.f;
-  cvec4 prev_colour{0.f};
+  cvec4 prev_colour0{0.f};
+  std::optional<cvec4> prev_colour1;
 };
 
 struct shape {
   fvec2 origin{0.f};
   float rotation = 0.f;
-  cvec4 colour{0.f};
+  cvec4 colour0{0.f};
+  std::optional<cvec4> colour1;
   float z_index = 0.f;
   unsigned char s_index = 0;
   std::optional<motion_trail> trail;
@@ -85,7 +87,20 @@ struct shape {
     return shape{
         .origin = (a + b) / 2.f,
         .rotation = angle(b - a),
-        .colour = c,
+        .colour0 = c,
+        .z_index = z,
+        .s_index = index,
+        .data = render::line{.radius = distance(a, b) / 2.f, .line_width = width},
+    };
+  }
+
+  static shape line(const fvec2& a, const fvec2& b, const cvec4& c0, const cvec4& c1, float z = 0.f,
+                    float width = 1.f, unsigned char index = 0) {
+    return shape{
+        .origin = (a + b) / 2.f,
+        .rotation = angle(b - a),
+        .colour0 = c0,
+        .colour1 = c1,
         .z_index = z,
         .s_index = index,
         .data = render::line{.radius = distance(a, b) / 2.f, .line_width = width},
@@ -105,7 +120,10 @@ struct shape {
     } else if (auto* p = std::get_if<render::line>(&data); p) {
       p->line_width += w;
     }
-    colour.z = std::min(1.f, colour.z + l);
+    colour0.z = std::min(1.f, colour0.z + l);
+    if (colour1) {
+      colour1->z = std::min(1.f, colour1->z + l);
+    }
   }
 
   bool apply_shield(shape& copy, float a) {
@@ -123,10 +141,14 @@ struct shape {
     } else {
       return false;
     }
-    copy.colour = colour::alpha(copy.colour, a);
     copy.s_index += 'S';
     z_index += a;
-    colour = colour::linear_mix(colour, colour::kWhite1, a * a);
+    copy.colour0 = colour::alpha(copy.colour0, a);
+    colour0 = colour::linear_mix(colour0, colour::kWhite1, a * a);
+    if (copy.colour1) {
+      copy.colour1 = colour::alpha(*copy.colour1, a);
+      colour1 = colour::linear_mix(*colour1, colour::kWhite1, a * a);
+    }
     return true;
   }
 };

@@ -292,7 +292,7 @@ struct PlayerLogic : ecs::component {
     if (!pc.is_killed || fire_target_render_timer) {
       output.emplace_back(render::shape{
           .origin = to_float(fire_target),
-          .colour = v0_player_colour(pc.player_number),
+          .colour0 = v0_player_colour(pc.player_number),
           .z_index = 100.f,
           .s_index = 't',
           .data = render::ngon{.radius = 8, .sides = 4, .style = render::ngon_style::kPolystar},
@@ -309,7 +309,7 @@ struct PlayerLogic : ecs::component {
         output.emplace_back(render::shape{
             .origin = to_float(transform.centre),
             .rotation = rotation + static_cast<float>(j) * 2.f * pi<float> / 3.f,
-            .colour = colour::kWhite1,
+            .colour0 = colour::kWhite1,
             .z_index = colour::kZPlayerPowerup,
             .s_index = 's',
             .data = render::ngon{.radius = 20.f + 1.5f * i, .sides = 18, .segments = 4},
@@ -317,7 +317,7 @@ struct PlayerLogic : ecs::component {
         output.emplace_back(render::shape{
             .origin = to_float(transform.centre),
             .rotation = rotation + static_cast<float>(j) * 2.f * pi<float> / 3.f,
-            .colour = colour::kOutline,
+            .colour0 = colour::kOutline,
             .z_index = colour::kZOutline,
             .s_index = 's',
             .data =
@@ -333,7 +333,7 @@ struct PlayerLogic : ecs::component {
       output.emplace_back(render::shape{
           .origin = to_float(transform.centre + rotate(v, transform.rotation)),
           .rotation = transform.rotation.to_float(),
-          .colour = colour::kWhite0,
+          .colour0 = colour::kWhite0,
           .z_index = colour::kZPlayerPowerup,
           .s_index = 'b',
           .data = render::ngon{.radius = 3.f, .sides = 6},

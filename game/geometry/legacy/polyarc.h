@@ -51,7 +51,7 @@ struct polyarc_data : shape_data_base {
         render::shape{
             .origin = to_float(*t),
             .rotation = t.rotation().to_float(),
-            .colour = colour,
+            .colour0 = colour,
             .s_index = index,
             .data = render::ngon{.radius = radius.to_float(), .sides = sides, .segments = segments},
         });

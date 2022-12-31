@@ -81,7 +81,7 @@ struct box_data : shape_data_base {
 
   constexpr void
   iterate(iterate_lines_t, const Transform auto& t, const LineFunction auto& f) const {
-    if (!line.colour.a) {
+    if (!line.colour0.a && !line.colour1.a) {
       return;
     }
     auto a = *t.translate({dimensions.x, dimensions.y});
@@ -89,32 +89,35 @@ struct box_data : shape_data_base {
     auto c = *t.translate({-dimensions.x, -dimensions.y});
     auto d = *t.translate({dimensions.x, -dimensions.y});
 
-    std::invoke(f, a, b, line.colour, line.width, line.z);
-    std::invoke(f, b, c, line.colour, line.width, line.z);
-    std::invoke(f, c, d, line.colour, line.width, line.z);
-    std::invoke(f, d, a, line.colour, line.width, line.z);
+    // TODO: need line gradients to match rendering, if we use them.
+    std::invoke(f, a, b, line.colour0, line.width, line.z);
+    std::invoke(f, b, c, line.colour0, line.width, line.z);
+    std::invoke(f, c, d, line.colour1, line.width, line.z);
+    std::invoke(f, d, a, line.colour1, line.width, line.z);
   }
 
   constexpr void
   iterate(iterate_shapes_t, const Transform auto& t, const ShapeFunction auto& f) const {
-    if (line.colour.a) {
+    if (line.colour0.a || line.colour1.a) {
       std::invoke(
           f,
           render::shape{
               .origin = to_float(*t),
               .rotation = t.rotation().to_float(),
-              .colour = line.colour,
+              .colour0 = line.colour0,
+              .colour1 = line.colour1,
               .z_index = line.z,
               .s_index = line.index,
               .data = render::box{.dimensions = to_float(dimensions), .line_width = line.width},
           });
     }
-    if (fill.colour.a) {
+    if (fill.colour0.a || fill.colour1.a) {
       std::invoke(f,
                   render::shape{
                       .origin = to_float(*t),
                       .rotation = t.rotation().to_float(),
-                      .colour = fill.colour,
+                      .colour0 = fill.colour0,
+                      .colour1 = fill.colour1,
                       .z_index = fill.z,
                       .s_index = fill.index,
                       .data = render::box_fill{.dimensions = to_float(dimensions)},
@@ -124,7 +127,7 @@ struct box_data : shape_data_base {
 
   constexpr void
   iterate(iterate_centres_t, const Transform auto& t, const PointFunction auto& f) const {
-    std::invoke(f, *t, line.colour.a ? line.colour : fill.colour);
+    std::invoke(f, *t, line.colour0.a ? line.colour0 : fill.colour0);
   }
 };
 

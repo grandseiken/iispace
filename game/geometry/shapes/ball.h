@@ -108,7 +108,7 @@ struct ball_data : shape_data_base {
 
   constexpr void
   iterate(iterate_lines_t, const Transform auto& t, const LineFunction auto& f) const {
-    if (!line.colour.a) {
+    if (!line.colour0.a) {
       return;
     }
     std::uint32_t n = dimensions.radius.to_int();
@@ -119,22 +119,23 @@ struct ball_data : shape_data_base {
 
     for (std::uint32_t i = 0; i < n; ++i) {
       std::invoke(f, vertex(dimensions.radius, i, n), vertex(dimensions.radius, i + 1, n),
-                  line.colour, line.width, line.z);
+                  line.colour0, line.width, line.z);
     }
     for (std::uint32_t i = 0; dimensions.inner_radius && i < in; ++i) {
       std::invoke(f, vertex(dimensions.inner_radius, i, in),
-                  vertex(dimensions.inner_radius, i + 1, in), line.colour, line.width, line.z);
+                  vertex(dimensions.inner_radius, i + 1, in), line.colour0, line.width, line.z);
     }
   }
 
   constexpr void
   iterate(iterate_shapes_t, const Transform auto& t, const ShapeFunction auto& f) const {
-    if (line.colour.a) {
+    if (line.colour0.a || line.colour1.a) {
       std::invoke(f,
                   render::shape{
                       .origin = to_float(*t),
                       .rotation = t.rotation().to_float(),
-                      .colour = line.colour,
+                      .colour0 = line.colour0,
+                      .colour1 = line.colour1,
                       .z_index = line.z,
                       .s_index = line.index,
                       .data = render::ball{.radius = dimensions.radius.to_float(),
@@ -142,12 +143,13 @@ struct ball_data : shape_data_base {
                                            .line_width = line.width},
                   });
     }
-    if (fill.colour.a) {
+    if (fill.colour0.a || fill.colour1.a) {
       std::invoke(f,
                   render::shape{
                       .origin = to_float(*t),
                       .rotation = t.rotation().to_float(),
-                      .colour = fill.colour,
+                      .colour0 = fill.colour0,
+                      .colour1 = fill.colour1,
                       .z_index = fill.z,
                       .s_index = fill.index,
                       .data = render::ball_fill{.radius = dimensions.radius.to_float(),
@@ -158,7 +160,7 @@ struct ball_data : shape_data_base {
 
   constexpr void
   iterate(iterate_centres_t, const Transform auto& t, const PointFunction auto& f) const {
-    std::invoke(f, *t, line.colour.a ? line.colour : fill.colour);
+    std::invoke(f, *t, line.colour0.a ? line.colour0 : fill.colour0);
   }
 };
 
