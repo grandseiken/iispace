@@ -22,13 +22,14 @@ struct sound_out {
 };
 
 struct rumble_out {
-  std::uint32_t player_id = 0;
-  std::uint32_t time_ticks = 0;
+  std::uint32_t player_id = 0u;
+  std::uint32_t time_ticks = 0u;
   float lf = 0.f;
   float hf = 0.f;
 };
 
 struct aggregate_event {
+  std::uint32_t delay_ticks = 0u;
   std::optional<background_fx_change> background_fx;
   std::vector<particle> particles;
   std::vector<sound_out> sounds;

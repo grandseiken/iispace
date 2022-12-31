@@ -10,7 +10,6 @@ namespace ii::v0 {
 namespace {
 
 // TODO: many general boss todos.
-// TODO: implement fireworks (delayed triggers).
 // TODO: stun status on bosses.
 // TODO: render boss health bar.
 // TODO: only flash middle shapes on hit.

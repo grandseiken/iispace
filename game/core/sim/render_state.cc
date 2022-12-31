@@ -36,6 +36,11 @@ void RenderState::handle_output(ISimState& state, Mixer* mixer, SimInputAdapter*
   auto& output = state.output();
   for (auto it = output.entries.begin(); it != output.entries.end();) {
     auto& e = it->e;
+    if (e.delay_ticks) {
+      --e.delay_ticks;
+      ++it;
+      continue;
+    }
 
     if (e.background_fx) {
       handle_background_fx(*e.background_fx);

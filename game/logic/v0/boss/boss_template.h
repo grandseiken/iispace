@@ -54,15 +54,31 @@ void boss_on_destroy(ecs::const_handle h, const Transform& transform, SimInterfa
   explode_entity_shapes<Logic, S>(h, e, cvec4{1.f}, 36);
   explode_entity_shapes<Logic, S>(h, e, boss_colour, 48);
   destruct_entity_lines<Logic, S>(h, e, source, 128);
-  /*std::uint32_t n = 1;
-  auto& random = sim.random(random_source::kLegacyAesthetic);
+
+  std::uint32_t n = 1;
   for (std::uint32_t i = 0; i < 16; ++i) {
-    auto v =
-        from_polar(random.fixed() * (2 * pi<fixed>), fixed{8 + random.uint(64) + random.uint(64)});
-    sim.global_entity().get<GlobalData>()->fireworks.push_back(GlobalData::fireworks_entry{
-        .time = n, .position = transform.centre + v, .colour = boss_colour.value_or(cvec4{1.f})});
+    auto e =
+        sim.emit(resolve_key::reconcile(h.id(), resolve_tag::kOnDestroy, i + 1)).set_delay_ticks(n);
+    auto v = transform.centre +
+        from_polar(e.random().fixed() * (2 * pi<fixed>),
+                   fixed{8 + e.random().uint(64) + e.random().uint(64)});
+    auto explode = [&](const fvec2& v, const cvec4& c, std::uint32_t time) {
+      auto c_dark = c;
+      c_dark.a = .5f;
+      e.explosion(v, c, time)
+          .explosion(v + fvec2{8.f, 0.f}, c, time)
+          .explosion(v + fvec2{0.f, 8.f}, c, time)
+          .explosion(v + fvec2{8.f, 0.f}, c_dark, time)
+          .explosion(v + fvec2{0.f, 8.f}, c_dark, time);
+    };
+    explode(to_float(v), cvec4{1.f}, 16);
+    explode(to_float(v), boss_colour, 32);
+    explode(to_float(v), cvec4{1.f}, 64);
+    explode(to_float(v), boss_colour, 128);
+    e.rumble_all(15, .25f, .5f);
     n += i;
-  }*/
+  }
+
   e.rumble_all(30, 1.f, 1.f).play(sound::kExplosion, transform.centre);
 }
 

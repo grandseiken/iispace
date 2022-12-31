@@ -24,6 +24,11 @@ RandomEngine& EmitHandle::random() {
   return sim->random(random_source::kAesthetic);
 }
 
+EmitHandle& EmitHandle::set_delay_ticks(std::uint32_t ticks) {
+  e->delay_ticks = ticks;
+  return *this;
+}
+
 EmitHandle& EmitHandle::background_fx(background_fx_change change) {
   e->background_fx = change;
   return *this;
