@@ -10,18 +10,15 @@ namespace ii::v0 {
 namespace {
 
 // TODO: many general boss todos.
-// TODO: stun status on bosses.
 // TODO: render boss health bar.
-// TODO: only flash middle shapes on hit.
 // TODO: better bomb effect when hit.
-// TODO: fix colour gradient and middle.
 // TODO: change direction/rotation less suddenly.
 // TODO: cool spawn effects; spawn with physics velocity.
 // TODO: cooler special attack effect.
 // TODO: special target more players?
 struct SquareBoss : public ecs::component {
-  static constexpr std::uint32_t kBaseHp = 3200;
-  static constexpr std::uint32_t kBiomeHp = 1200;
+  static constexpr std::uint32_t kBaseHp = 4000;
+  static constexpr std::uint32_t kBiomeHp = 1500;
   static constexpr std::uint32_t kTimer = 120;
   static constexpr std::uint32_t kSpawnTimer = 100;
   static constexpr std::uint32_t kSpecialAttackTime = 110;
@@ -40,25 +37,27 @@ struct SquareBoss : public ecs::component {
 
   template <fixed C, geom::ShapeNode... Nodes>
   using rotate_s = geom::rotate_eval<geom::multiply_p<C, 1>, geom::pack<Nodes...>>;
-  template <fixed R, std::uint32_t T>
-  using ngon =
-      geom::compound<geom::ngon<geom::nd2(50 + 25 * R, 50, 4), geom::nline(c_mix<T>, c1, z, 2.f),
-                                geom::sfill(colour::alpha(c_mix<T>, colour::kFillAlpha2),
-                                            colour::alpha(c1, colour::kFillAlpha2), z)>,
-                     geom::ngon<geom::nd(44 + 25 * R, 4), geom::nline(c_mix<T>, z, 4.f)>,
-                     geom::ngon<geom::nd(52 + 25 * R, 4), outline>,
-                     geom::ngon<geom::nd(48, 4), m_outline>>;
-  template <fixed C, fixed R, std::uint32_t T>
-  using rotate_ngon = rotate_s<C, ngon<R, T>>;
-  template <fixed C, fixed R, std::uint32_t T, shape_flag Flags>
+  template <fixed R, std::uint32_t T, render::flag RFlags>
+  using ngon = geom::compound<
+      geom::ngon<geom::nd2(50 + 25 * R, 50, 4), geom::nline(c_mix<T>, c1, z, 2.f),
+                 geom::sfill(colour::alpha(c_mix<T>, colour::kFillAlpha2),
+                             colour::alpha(c1, colour::kFillAlpha2), z),
+                 RFlags>,
+      geom::ngon<geom::nd(44 + 25 * R, 4), geom::nline(c_mix<T>, z, 4.f), geom::sfill(), RFlags>,
+      geom::ngon<geom::nd(52 + 25 * R, 4), outline>, geom::ngon<geom::nd(48, 4), m_outline>>;
+  template <fixed C, fixed R, std::uint32_t T, render::flag RFlags = render::flag::kNone>
+  using rotate_ngon = rotate_s<C, ngon<R, T, RFlags>>;
+  template <fixed C, fixed R, std::uint32_t T, shape_flag Flags,
+            render::flag RFlags = render::flag::kNone>
   using rotate_ngon_c =
-      rotate_s<C, ngon<R, T>, geom::ngon_collider<geom::nd2(50 + 25 * R, 75 - 10 * R, 4), Flags>>;
-  using shape =
-      geom::translate_p<0, rotate_ngon_c<1, 6, 0, shape_flag::kBombVulnerable>,
-                        rotate_ngon<3_fx / 2, 5, 1>, rotate_ngon_c<2, 4, 2, shape_flag::kDangerous>,
-                        rotate_ngon<5_fx / 2, 3, 3>,
-                        rotate_ngon_c<3, 2, 4, shape_flag::kVulnerable>,
-                        rotate_ngon_c<7_fx / 2, 1, 5, shape_flag::kShield>>;
+      rotate_s<C, ngon<R, T, RFlags>,
+               geom::ngon_collider<geom::nd2(50 + 25 * R, 75 - 10 * R, 4), Flags>>;
+  using shape = geom::translate_p<
+      0, rotate_ngon_c<1, 6, 0, shape_flag::kBombVulnerable, render::flag::kNoFlash>,
+      rotate_ngon<3_fx / 2, 5, 1, render::flag::kNoFlash>,
+      rotate_ngon_c<2, 4, 2, shape_flag::kDangerous, render::flag::kNoFlash>,
+      rotate_ngon<5_fx / 2, 3, 3>, rotate_ngon_c<3, 2, 4, shape_flag::kVulnerable>,
+      rotate_ngon_c<7_fx / 2, 1, 5, shape_flag::kShield>>;
 
   vec2 dir{0, -1};
   bool reverse = false;

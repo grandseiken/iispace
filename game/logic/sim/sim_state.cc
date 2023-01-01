@@ -161,10 +161,7 @@ void SimState::update(std::vector<input_frame> input) {
   internals_->index.iterate<Health>([](Health& h) { h.hit_timer && --h.hit_timer; });
   internals_->index.iterate_dispatch<Update>([&](ecs::handle h, Update& c) {
     if (!h.has<Destroy>()) {
-      auto* status = h.get<v0::EnemyStatus>();
-      if (status && status->stun_ticks) {
-        --status->stun_ticks;
-      } else {
+      if (!c.skip_update) {
         c.update(h, *interface_);
       }
       // TODO: we only update after the entity itself has updated: this can still lead to minor

@@ -94,7 +94,7 @@ void add_boss_data(ecs::handle h, std::uint32_t base_hp) {
       .on_hit = &boss_on_hit<Logic, S>,
       .on_destroy = ecs::call<&boss_on_destroy<Logic, S>>,
   });
-  h.add(EnemyStatus{});
+  h.add(EnemyStatus{.stun_resist_base = 90u, .stun_resist_bonus = 60u});
   h.add(Enemy{.threat_value = kBossThreatValue});
   h.add(Boss{});
 }

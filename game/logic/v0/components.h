@@ -56,9 +56,42 @@ struct Physics : ecs::component {
 DEBUG_STRUCT_TUPLE(Physics, mass, drag_coefficient, velocity);
 
 struct EnemyStatus : ecs::component {
-  std::uint32_t shielded_ticks = 0;
-  std::uint32_t stun_ticks = 0;  // TODO: needs some kind of boss resistance.
+  static constexpr std::uint32_t kStunTicks = 40u;
+  static constexpr std::uint32_t kStunHit = 8u;
+  static constexpr std::uint32_t kStunResistDecayTime = 20u;
+
+  std::uint32_t stun_resist_base = 0u;
+  std::uint32_t stun_resist_bonus = 20u;
+  std::uint32_t stun_resist_extra = 0u;
+  std::uint32_t stun_resist_decay = 0u;
+  std::uint32_t stun_counter = 0u;
+  std::uint32_t stun_ticks = 0u;
+  std::uint32_t shielded_ticks = 0u;
+
+  void inflict_stun() {
+    stun_counter += kStunHit;
+    if (stun_counter >= stun_resist_base + stun_resist_extra) {
+      stun_ticks = std::max(stun_ticks, kStunTicks);
+      stun_counter = 0;
+      stun_resist_extra += stun_resist_bonus;
+    }
+  }
+
+  void update(Update* update) {
+    stun_counter && --stun_counter;
+    stun_ticks && --stun_ticks;
+    shielded_ticks && --shielded_ticks;
+    if (stun_resist_extra && ++stun_resist_decay == kStunResistDecayTime) {
+      stun_resist_decay = 0u;
+      --stun_resist_extra;
+    }
+    if (update) {
+      update->skip_update = stun_ticks > 0;
+    }
+  }
 };
+DEBUG_STRUCT_TUPLE(EnemyStatus, stun_resist_base, stun_resist_bonus, stun_resist_extra,
+                   stun_resist_decay, stun_counter, stun_ticks, shielded_ticks);
 
 }  // namespace ii::v0
 

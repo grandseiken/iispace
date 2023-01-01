@@ -73,6 +73,7 @@ DEBUG_STRUCT_TUPLE(Collision, flags, bounding_width, check_point, check_line, ch
                    check_convex);
 
 struct Update : ecs::component {
+  bool skip_update = false;
   sfn::ptr<void(ecs::handle, SimInterface&)> update;
 };
 DEBUG_STRUCT_TUPLE(Update, update);

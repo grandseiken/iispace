@@ -72,7 +72,7 @@ void V0SimSetup::begin_tick(SimInterface& sim) {
   sim.index().iterate_dispatch_if<Physics>(
       [](Physics& physics, Transform& transform) { physics.update(transform); });
   sim.index().iterate_dispatch<EnemyStatus>(
-      [](EnemyStatus& status) { status.shielded_ticks && --status.shielded_ticks; });
+      [](EnemyStatus& status, Update* update) { status.update(update); });
 }
 
 }  // namespace ii::v0

@@ -36,7 +36,6 @@ struct shot_mod_data {
   static constexpr std::uint32_t kCloseCombatDamage = 6u;
   static constexpr std::uint32_t kSniperSplitDamage = 6u;
   static constexpr std::uint32_t kCloseCombatShotCount = 14u;
-  static constexpr std::uint32_t kLightningStunTicks = 40u;
   static constexpr fixed kBaseSpeed = 75_fx / 8_fx;
   static constexpr fixed kCloseCombatMaxDistance = 320_fx;
   static constexpr fixed kCloseCombatSpreadAngle = pi<fixed> / 5;
@@ -176,7 +175,7 @@ struct PlayerShot : ecs::component {
                                     transform.centre - 2 * direction * data.speed);
       if (!shielded && +(data.flags & shot_flags::kInflictStun)) {
         if (auto* status = e.h.get<EnemyStatus>(); status) {
-          status->stun_ticks = std::max(status->stun_ticks, shot_mod_data::kLightningStunTicks);
+          status->inflict_stun();
         }
       }
       if ((shielded || !(e.hit_mask & shape_flag::kWeakVulnerable)) &&

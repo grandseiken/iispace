@@ -1,10 +1,24 @@
 #ifndef II_GAME_RENDER_DATA_SHAPES_H
 #define II_GAME_RENDER_DATA_SHAPES_H
 #include "game/common/colour.h"
+#include "game/common/enum.h"
 #include "game/common/math.h"
 #include <cstdint>
 #include <optional>
 #include <variant>
+
+namespace ii::render {
+enum class flag : std::uint32_t {
+  kNone = 0b00000000,
+  kNoFlash = 0b00000001,
+  kNoStatus = 0b00000010,
+};
+}  // namespace ii::render
+
+namespace ii {
+template <>
+struct bitmask_enum<render::flag> : std::true_type {};
+}  // namespace ii
 
 namespace ii::render {
 
@@ -78,6 +92,7 @@ struct shape {
   std::optional<cvec4> colour1;
   float z_index = 0.f;
   unsigned char s_index = 0;
+  flag flags = flag::kNone;
   std::optional<motion_trail> trail;
   shape_data data;
 
@@ -108,6 +123,9 @@ struct shape {
   }
 
   void apply_hit_flash(float a) {
+    if (+(flags & flag::kNoFlash)) {
+      return;
+    }
     z_index += a;
     auto w = std::max(0.f, 3.f * (a - .5f));
     auto l = a / 4.f;
@@ -127,6 +145,9 @@ struct shape {
   }
 
   bool apply_shield(shape& copy, float a) {
+    if (+(flags & flag::kNoStatus)) {
+      return false;
+    }
     if (auto* p = std::get_if<render::ngon>(&copy.data); p) {
       if (p->style == ngon_style::kPolystar) {
         return false;

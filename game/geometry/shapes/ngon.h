@@ -173,6 +173,7 @@ struct ngon_data : shape_data_base {
   ngon_dimensions dimensions;
   ngon_line_style line;
   fill_style fill;
+  render::flag flags = render::flag::kNone;
 
   constexpr void
   iterate(iterate_lines_t, const Transform auto& t, const LineFunction auto& f) const {
@@ -223,6 +224,7 @@ struct ngon_data : shape_data_base {
                       .colour1 = line.colour1,
                       .z_index = line.z,
                       .s_index = line.index,
+                      .flags = flags,
                       .data = render::ngon{.radius = dimensions.radius.to_float(),
                                            .inner_radius = dimensions.inner_radius.to_float(),
                                            .sides = dimensions.sides,
@@ -240,6 +242,7 @@ struct ngon_data : shape_data_base {
                       .colour1 = fill.colour1,
                       .z_index = fill.z,
                       .s_index = fill.index,
+                      .flags = flags,
                       .data = render::ngon_fill{.radius = dimensions.radius.to_float(),
                                                 .inner_radius = dimensions.inner_radius.to_float(),
                                                 .sides = dimensions.sides,
@@ -254,20 +257,21 @@ struct ngon_data : shape_data_base {
   }
 };
 
-constexpr ngon_data
-make_ngon(ngon_dimensions dimensions, ngon_line_style line, fill_style fill = sfill()) {
-  return {{}, dimensions, line, fill};
+constexpr ngon_data make_ngon(ngon_dimensions dimensions, ngon_line_style line,
+                              fill_style fill = sfill(), render::flag flags = render::flag::kNone) {
+  return {{}, dimensions, line, fill, flags};
 }
 
 template <Expression<ngon_dimensions>, Expression<ngon_line_style>,
-          Expression<fill_style> = constant<sfill()>>
+          Expression<fill_style> = constant<sfill()>,
+          Expression<render::flag> = constant<render::flag::kNone>>
 struct ngon_eval {};
 
 template <Expression<ngon_dimensions> Dimensions, Expression<ngon_line_style> Line,
-          Expression<fill_style> Fill>
-constexpr auto evaluate(ngon_eval<Dimensions, Line, Fill>, const auto& params) {
+          Expression<fill_style> Fill, Expression<render::flag> RFlags>
+constexpr auto evaluate(ngon_eval<Dimensions, Line, Fill, RFlags>, const auto& params) {
   return make_ngon(evaluate(Dimensions{}, params), evaluate(Line{}, params),
-                   evaluate(Fill{}, params));
+                   evaluate(Fill{}, params), render::flag{evaluate(RFlags{}, params)});
 }
 
 //////////////////////////////////////////////////////////////////////////////////
@@ -275,18 +279,23 @@ constexpr auto evaluate(ngon_eval<Dimensions, Line, Fill>, const auto& params) {
 //////////////////////////////////////////////////////////////////////////////////
 template <ngon_dimensions Dimensions, shape_flag Flags = shape_flag::kNone>
 using ngon_collider = constant<make_ngon_collider(Dimensions, Flags)>;
-template <ngon_dimensions Dimensions, ngon_line_style Line, fill_style Fill = sfill()>
-using ngon = constant<make_ngon(Dimensions, Line, Fill)>;
+template <ngon_dimensions Dimensions, ngon_line_style Line, fill_style Fill = sfill(),
+          render::flag RFlags = render::flag::kNone>
+using ngon = constant<make_ngon(Dimensions, Line, Fill, RFlags)>;
 template <ngon_dimensions Dimensions, ngon_line_style Line, fill_style Fill,
-          shape_flag Flags = shape_flag::kNone>
-using ngon_with_collider = compound<ngon<Dimensions, Line, Fill>, ngon_collider<Dimensions, Flags>>;
+          shape_flag Flags = shape_flag::kNone, render::flag RFlags = render::flag::kNone>
+using ngon_with_collider =
+    compound<ngon<Dimensions, Line, Fill, RFlags>, ngon_collider<Dimensions, Flags>>;
 
-template <ngon_dimensions Dimensions, std::size_t N, ngon_line_style Line = nline()>
-using ngon_colour_p = ngon_eval<constant<Dimensions>, set_colour_p<Line, N>>;
+template <ngon_dimensions Dimensions, std::size_t N, ngon_line_style Line = nline(),
+          render::flag RFlags = render::flag::kNone>
+using ngon_colour_p =
+    ngon_eval<constant<Dimensions>, set_colour_p<Line, N>, constant<sfill()>, constant<RFlags>>;
 template <ngon_dimensions Dimensions, std::size_t N0, std::size_t N1,
-          ngon_line_style Line = nline(), fill_style Fill = sfill()>
-using ngon_colour_p2 =
-    ngon_eval<constant<Dimensions>, set_colour_p<Line, N0>, set_colour_p<Fill, N1>>;
+          ngon_line_style Line = nline(), fill_style Fill = sfill(),
+          render::flag RFlags = render::flag::kNone>
+using ngon_colour_p2 = ngon_eval<constant<Dimensions>, set_colour_p<Line, N0>,
+                                 set_colour_p<Fill, N1>, constant<RFlags>>;
 
 }  // namespace shapes
 }  // namespace ii::geom

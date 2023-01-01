@@ -105,6 +105,7 @@ struct ball_data : shape_data_base {
   ball_dimensions dimensions;
   line_style line;
   fill_style fill;
+  render::flag flags = render::flag::kNone;
 
   constexpr void
   iterate(iterate_lines_t, const Transform auto& t, const LineFunction auto& f) const {
@@ -138,6 +139,7 @@ struct ball_data : shape_data_base {
                       .colour1 = line.colour1,
                       .z_index = line.z,
                       .s_index = line.index,
+                      .flags = flags,
                       .data = render::ball{.radius = dimensions.radius.to_float(),
                                            .inner_radius = dimensions.inner_radius.to_float(),
                                            .line_width = line.width},
@@ -152,6 +154,7 @@ struct ball_data : shape_data_base {
                       .colour1 = fill.colour1,
                       .z_index = fill.z,
                       .s_index = fill.index,
+                      .flags = flags,
                       .data = render::ball_fill{.radius = dimensions.radius.to_float(),
                                                 .inner_radius = dimensions.inner_radius.to_float()},
                   });
@@ -164,20 +167,21 @@ struct ball_data : shape_data_base {
   }
 };
 
-constexpr ball_data
-make_ball(ball_dimensions dimensions, line_style line, fill_style fill = sfill()) {
-  return {{}, dimensions, line, fill};
+constexpr ball_data make_ball(ball_dimensions dimensions, line_style line,
+                              fill_style fill = sfill(), render::flag flags = render::flag::kNone) {
+  return {{}, dimensions, line, fill, flags};
 }
 
 template <Expression<ball_dimensions>, Expression<line_style>,
-          Expression<fill_style> = constant<sfill()>>
+          Expression<fill_style> = constant<sfill()>,
+          Expression<render::flag> = constant<render::flag::kNone>>
 struct ball_eval {};
 
 template <Expression<ball_dimensions> Dimensions, Expression<line_style> Line,
-          Expression<fill_style> Fill>
-constexpr auto evaluate(ball_eval<Dimensions, Line, Fill>, const auto& params) {
+          Expression<fill_style> Fill, Expression<render::flag> RFlags>
+constexpr auto evaluate(ball_eval<Dimensions, Line, Fill, RFlags>, const auto& params) {
   return make_ball(evaluate(Dimensions{}, params), evaluate(Line{}, params),
-                   evaluate(Fill{}, params));
+                   evaluate(Fill{}, params), render::flag{evaluate(RFlags{}, params)});
 }
 
 //////////////////////////////////////////////////////////////////////////////////
@@ -185,18 +189,22 @@ constexpr auto evaluate(ball_eval<Dimensions, Line, Fill>, const auto& params) {
 //////////////////////////////////////////////////////////////////////////////////
 template <ball_dimensions Dimensions, shape_flag Flags>
 using ball_collider = constant<make_ball_collider(Dimensions, Flags)>;
-template <ball_dimensions Dimensions, line_style Line, fill_style Fill = sfill()>
-using ball = constant<make_ball(Dimensions, Line, Fill)>;
+template <ball_dimensions Dimensions, line_style Line, fill_style Fill = sfill(),
+          render::flag RFlags = render::flag::kNone>
+using ball = constant<make_ball(Dimensions, Line, Fill, RFlags)>;
 template <ball_dimensions Dimensions, line_style Line, fill_style Fill,
-          shape_flag Flags = shape_flag::kNone>
-using ball_with_collider = compound<ball<Dimensions, Line, Fill>, ball_collider<Dimensions, Flags>>;
+          shape_flag Flags = shape_flag::kNone, render::flag RFlags = render::flag::kNone>
+using ball_with_collider =
+    compound<ball<Dimensions, Line, Fill, RFlags>, ball_collider<Dimensions, Flags>>;
 
-template <ball_dimensions Dimensions, std::size_t N, line_style Line = sline()>
-using ball_colour_p = ball_eval<constant<Dimensions>, set_colour_p<Line, N>>;
+template <ball_dimensions Dimensions, std::size_t N, line_style Line = sline(),
+          render::flag RFlags = render::flag::kNone>
+using ball_colour_p =
+    ball_eval<constant<Dimensions>, set_colour_p<Line, N>, constant<sfill()>, constant<RFlags>>;
 template <ball_dimensions Dimensions, std::size_t N0, std::size_t N1, line_style Line = sline(),
-          fill_style Fill = sfill()>
-using ball_colour_p2 =
-    ball_eval<constant<Dimensions>, set_colour_p<Line, N0>, set_colour_p<Fill, N1>>;
+          fill_style Fill = sfill(), render::flag RFlags = render::flag::kNone>
+using ball_colour_p2 = ball_eval<constant<Dimensions>, set_colour_p<Line, N0>,
+                                 set_colour_p<Fill, N1>, constant<RFlags>>;
 
 }  // namespace shapes
 }  // namespace ii::geom

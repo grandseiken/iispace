@@ -78,6 +78,7 @@ struct box_data : shape_data_base {
   vec2 dimensions{0};
   line_style line;
   fill_style fill;
+  render::flag flags = render::flag::kNone;
 
   constexpr void
   iterate(iterate_lines_t, const Transform auto& t, const LineFunction auto& f) const {
@@ -108,6 +109,7 @@ struct box_data : shape_data_base {
               .colour1 = line.colour1,
               .z_index = line.z,
               .s_index = line.index,
+              .flags = flags,
               .data = render::box{.dimensions = to_float(dimensions), .line_width = line.width},
           });
     }
@@ -120,6 +122,7 @@ struct box_data : shape_data_base {
                       .colour1 = fill.colour1,
                       .z_index = fill.z,
                       .s_index = fill.index,
+                      .flags = flags,
                       .data = render::box_fill{.dimensions = to_float(dimensions)},
                   });
     }
@@ -131,18 +134,20 @@ struct box_data : shape_data_base {
   }
 };
 
-constexpr box_data make_box(const vec2& dimensions, line_style line, fill_style fill = sfill()) {
-  return {{}, dimensions, line, fill};
+constexpr box_data make_box(const vec2& dimensions, line_style line, fill_style fill = sfill(),
+                            render::flag flags = render::flag::kNone) {
+  return {{}, dimensions, line, fill, flags};
 }
 
-template <Expression<vec2> Dimensions, Expression<line_style> Line,
-          Expression<fill_style> Fill = constant<sfill()>>
+template <Expression<vec2>, Expression<line_style>, Expression<fill_style> = constant<sfill()>,
+          Expression<render::flag> = constant<render::flag::kNone>>
 struct box_eval {};
 
-template <Expression<vec2> Dimensions, Expression<line_style> Line, Expression<fill_style> Fill>
-constexpr auto evaluate(box_eval<Dimensions, Line, Fill>, const auto& params) {
+template <Expression<vec2> Dimensions, Expression<line_style> Line, Expression<fill_style> Fill,
+          Expression<render::flag> RFlags>
+constexpr auto evaluate(box_eval<Dimensions, Line, Fill, RFlags>, const auto& params) {
   return make_box(vec2{evaluate(Dimensions{}, params)}, evaluate(Line{}, params),
-                  evaluate(Fill{}, params));
+                  evaluate(Fill{}, params), render::flag{evaluate(RFlags{}, params)});
 }
 
 //////////////////////////////////////////////////////////////////////////////////
@@ -150,17 +155,22 @@ constexpr auto evaluate(box_eval<Dimensions, Line, Fill>, const auto& params) {
 //////////////////////////////////////////////////////////////////////////////////
 template <vec2 Dimensions, shape_flag Flags = shape_flag::kNone>
 using box_collider = constant<make_box_collider(Dimensions, Flags)>;
-template <vec2 Dimensions, line_style Line, fill_style Fill = sfill()>
-using box = constant<make_box(Dimensions, Line, Fill)>;
-template <vec2 Dimensions, line_style Line, fill_style Fill, shape_flag Flags = shape_flag::kNone>
-using box_with_collider = compound<box<Dimensions, Line, Fill>, box_collider<Dimensions, Flags>>;
+template <vec2 Dimensions, line_style Line, fill_style Fill = sfill(),
+          render::flag RFlags = render::flag::kNone>
+using box = constant<make_box(Dimensions, Line, Fill, RFlags)>;
+template <vec2 Dimensions, line_style Line, fill_style Fill, shape_flag Flags = shape_flag::kNone,
+          render::flag RFlags = render::flag::kNone>
+using box_with_collider =
+    compound<box<Dimensions, Line, Fill, RFlags>, box_collider<Dimensions, Flags>>;
 
-template <vec2 Dimensions, std::size_t N, line_style Line = sline()>
-using box_colour_p = box_eval<constant<Dimensions>, set_colour_p<Line, N>>;
+template <vec2 Dimensions, std::size_t N, line_style Line = sline(),
+          render::flag RFlags = render::flag::kNone>
+using box_colour_p =
+    box_eval<constant<Dimensions>, set_colour_p<Line, N>, constant<sfill()>, constant<RFlags>>;
 template <vec2 Dimensions, std::size_t N0, std::size_t N1, line_style Line = sline(),
-          fill_style Fill = sfill()>
-using box_colour_p2 =
-    box_eval<constant<Dimensions>, set_colour_p<Line, N0>, set_colour_p<Fill, N1>>;
+          fill_style Fill = sfill(), render::flag RFlags = render::flag::kNone>
+using box_colour_p2 = box_eval<constant<Dimensions>, set_colour_p<Line, N0>, set_colour_p<Fill, N1>,
+                               constant<RFlags>>;
 
 }  // namespace shapes
 }  // namespace ii::geom
