@@ -5,17 +5,19 @@
 #include "game/logic/v0/boss/boss_template.h"
 #include "game/logic/v0/enemy/enemy.h"
 #include "game/logic/v0/ship_template.h"
+#include <array>
 
 namespace ii::v0 {
 namespace {
 
 // TODO: many general boss todos.
-// TODO: render boss health bar.
 // TODO: better bomb effect when hit.
-// TODO: change direction/rotation less suddenly.
-// TODO: cool spawn effects; spawn with physics velocity.
+// TODO: render boss health bar.
+// TODO: many/different spawn effects; spawn with physics velocity.
 // TODO: cooler special attack effect.
+// TODO: special attack: zoom vertically from one side to another.
 // TODO: special target more players?
+// TODO: rc_smooth is a bit odd for movement.
 struct SquareBoss : public ecs::component {
   static constexpr std::uint32_t kBaseHp = 4000;
   static constexpr std::uint32_t kBiomeHp = 1500;
@@ -59,8 +61,13 @@ struct SquareBoss : public ecs::component {
       rotate_ngon<5_fx / 2, 3, 3>, rotate_ngon_c<3, 2, 4, shape_flag::kVulnerable>,
       rotate_ngon_c<7_fx / 2, 1, 5, shape_flag::kShield>>;
 
-  vec2 dir{0, -1};
-  bool reverse = false;
+  SquareBoss(std::uint32_t corner_index)
+  : corner_index{corner_index}, anti{corner_index % 2 == 0} {}
+  std::uint32_t corner_index = 0;
+  vec2 direction{0};
+  fixed rotation{0};
+  bool anti = false;
+
   std::uint32_t timer = kTimer * 6;
   std::uint32_t spawn_timer = 0;
   struct special_t {
@@ -72,19 +79,13 @@ struct SquareBoss : public ecs::component {
   std::optional<special_t> special_attack;
 
   void update(Transform& transform, const Health& health, SimInterface& sim) {
-    auto d = sim.dimensions();
-    if (transform.centre.y <= d.y / 4 && dir.y <= -1) {
-      dir = {reverse ? 1 : -1, 0};
-    }
-    if (transform.centre.x <= d.x / 5 && dir.x <= -1) {
-      dir = {0, reverse ? -1 : 1};
-    }
-    if (transform.centre.y >= 3 * d.y / 4 && dir.y >= 1) {
-      dir = {reverse ? -1 : 1, 0};
-    }
-    if (transform.centre.x >= 4 * d.x / 5 && dir.x >= 1) {
-      dir = {0, reverse ? 1 : -1};
-    }
+    auto dim = sim.dimensions();
+    std::array<vec2, 4> corners = {
+        vec2{dim.x / 5, dim.y / 4},
+        vec2{4 * dim.x / 5, dim.y / 4},
+        vec2{4 * dim.x / 5, 3 * dim.y / 4},
+        vec2{dim.x / 5, 3 * dim.y / 4},
+    };
 
     if (special_attack) {
       special_attack->timer && --special_attack->timer;
@@ -107,9 +108,10 @@ struct SquareBoss : public ecs::component {
       timer && --timer;
       if (!timer) {
         timer = (sim.random(6) + 1) * kTimer;
-        dir = -dir;
-        reverse = !reverse;
+        anti = !anti;
+        corner_index = (corner_index + (anti ? 3u : 1u)) % 4u;
       }
+
       ++spawn_timer;
       auto t = (kSpawnTimer - std::min(kSpawnTimer, sim.alive_players() * 10)) /
           (health.is_hp_low() ? 2 : 1);
@@ -129,11 +131,19 @@ struct SquareBoss : public ecs::component {
       }
     }
 
-    if (special_attack) {
-      return;
+    vec2 target_direction{0};
+    fixed target_rotation = 0;
+    if (length_squared(corners[corner_index] - transform.centre) <= 48 * 48) {
+      corner_index = (corner_index + (anti ? 3u : 1u)) % 4u;
     }
-    transform.move(dir * kSpeed);
-    transform.rotate(1_fx / 50);
+    if (!special_attack) {
+      target_direction = normalise(corners[corner_index] - transform.centre);
+      target_rotation = anti ? -1_fx / 50 : 1_fx / 50;
+    }
+    direction = rc_smooth(direction, target_direction, 47_fx / 48);
+    rotation = rc_smooth(rotation, target_rotation, 47_fx / 48);
+    transform.move(direction * kSpeed);
+    transform.rotate(rotation);
   }
 
   void render(std::vector<render::shape>& output, const SimInterface& sim) const {
@@ -161,15 +171,36 @@ struct SquareBoss : public ecs::component {
   }
 };
 DEBUG_STRUCT_TUPLE(SquareBoss::special_t, player, timer, rotate);
-DEBUG_STRUCT_TUPLE(SquareBoss, dir, reverse, timer, spawn_timer, special_counter, special_attack);
+DEBUG_STRUCT_TUPLE(SquareBoss, corner_index, direction, rotation, anti, timer, spawn_timer,
+                   special_counter, special_attack);
 
 }  // namespace
 
 void spawn_biome0_square_boss(SimInterface& sim, std::uint32_t biome_index) {
-  auto h =
-      create_ship_default<SquareBoss>(sim, {sim.dimensions().x * 3_fx / 4, sim.dimensions().y * 2});
+  auto& r = sim.random(random_source::kGameSequence);
+  auto dim = sim.dimensions();
+  auto corner_index = r.uint(4u);
+  vec2 position{0};
+  switch (corner_index) {
+  default:
+  case 0:
+    position = vec2{dim.x / 4, -dim.y / 2};
+    break;
+  case 1:
+    position = vec2{3 * dim.x / 4, -dim.y / 2};
+    break;
+  case 2:
+    position = vec2{3 * dim.x / 4, 3 * dim.y / 2};
+    break;
+  case 3:
+    position = vec2{dim.x / 4, 3 * dim.y / 2};
+    break;
+  }
+
+  auto h = create_ship_default<SquareBoss>(sim, position);
   add_boss_data<SquareBoss>(h, SquareBoss::kBaseHp + SquareBoss::kBiomeHp * biome_index);
-  h.add(SquareBoss{});
+  h.add(Physics{.mass = 12u});
+  h.add(SquareBoss{corner_index});
 }
 
 }  // namespace ii::v0

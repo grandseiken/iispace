@@ -32,7 +32,7 @@ ecs::handle spawn_player_shot(SimInterface& sim, const vec2& position, const Pla
 
 struct shot_mod_data {
   static constexpr std::uint32_t kBaseDamage = 8u;
-  static constexpr std::uint32_t kLightningDamage = 12u;
+  static constexpr std::uint32_t kLightningDamage = 12u;  // TODO: maybe too much. 10?
   static constexpr std::uint32_t kCloseCombatDamage = 6u;
   static constexpr std::uint32_t kSniperSplitDamage = 6u;
   static constexpr std::uint32_t kCloseCombatShotCount = 14u;
