@@ -1,11 +1,11 @@
-#ifndef II_GAME_LOGIC_V0_PARTICLES_H
-#define II_GAME_LOGIC_V0_PARTICLES_H
+#ifndef II_GAME_LOGIC_V0_LIB_PARTICLES_H
+#define II_GAME_LOGIC_V0_LIB_PARTICLES_H
 #include "game/common/math.h"
 #include "game/geometry/node.h"
 #include "game/logic/ecs/call.h"
 #include "game/logic/ecs/id.h"
 #include "game/logic/sim/components.h"
-#include "game/logic/v0/ship_template.h"
+#include "game/logic/v0/lib/ship_template.h"
 #include <sfn/functional.h>
 #include <optional>
 

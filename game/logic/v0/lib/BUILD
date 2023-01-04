@@ -44,3 +44,13 @@ cc_library(
   ],
   visibility = ["//game/logic/v0:__subpackages__"],
 )
+
+cc_library(
+  name = "waypoint",
+  hdrs = ["waypoint.h"],
+  deps = [
+    "//game/common:math",
+    "//game/common:types",
+  ],
+  visibility = ["//game/logic/v0:__subpackages__"],
+)

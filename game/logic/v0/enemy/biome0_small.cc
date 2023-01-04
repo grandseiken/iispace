@@ -42,15 +42,17 @@ struct Follow : ecs::component {
                                shape_flag::kDangerous | shape_flag::kVulnerable>>;
 
   Follow(std::uint32_t size, std::optional<vec2> direction, bool in_formation)
-  : size{size}, in_formation{in_formation}, direction{direction} {}
+  : size{size}
+  , in_formation{in_formation}
+  , direction{direction}
+  , spreader{.max_distance = 24_fx, .max_n = 6u} {}
   std::uint32_t timer = 0;
   std::uint32_t size = 0;
   bool in_formation = false;
-  vec2 spread_velocity{0};
   std::optional<vec2> direction;
   std::optional<ecs::entity_id> target;
   std::optional<ecs::entity_id> next_target;
-  std::vector<ecs::entity_id> closest;
+  Spreader spreader;
 
   void update(ecs::handle h, Transform& transform, const Physics& physics, SimInterface& sim) {
     transform.rotate(fixed_c::tenth / (1_fx + size * 1_fx / 2_fx));
@@ -66,16 +68,14 @@ struct Follow : ecs::component {
     }
 
     fixed move_scale = 1_fx;
-    vec2 target_spread{0};
-    if (physics.velocity == vec2{0}) {
-      target_spread = spread_closest<Follow>(
-          h, transform, sim, closest, 24_fx, 6u,
-          spread_default_coefficient(2_fx, [](const Follow& f) { return 1_fx + f.size; }));
-    } else {
+    fixed spread_speed = 6 * kSpeed;
+    if (physics.velocity != vec2{0}) {
+      spread_speed = 0;
       move_scale = std::max(0_fx, 1_fx - length(physics.velocity) / 2_fx);
     }
-    spread_velocity = rc_smooth(spread_velocity, 6 * kSpeed * target_spread, 15_fx / 16_fx);
-    transform.move(spread_velocity);
+    spreader.spread_closest<Follow>(
+        h, transform, sim, spread_speed,
+        Spreader::default_coefficient(2_fx, [](const Follow& f) { return 1_fx + f.size; }));
     if (!sim.alive_players()) {
       return;
     }
@@ -111,8 +111,7 @@ struct Follow : ecs::component {
     }
   }
 };
-DEBUG_STRUCT_TUPLE(Follow, timer, size, in_formation, spread_velocity, direction, target,
-                   next_target, closest);
+DEBUG_STRUCT_TUPLE(Follow, timer, size, in_formation, direction, target, next_target, spreader);
 
 template <geom::ShapeNode S>
 ecs::handle create_follow_ship(SimInterface& sim, std::uint32_t size, std::uint32_t health,
@@ -183,15 +182,15 @@ struct Chaser : ecs::component {
                              geom::nd(kBigWidth, 4), geom::nline(geom::ngon_style::kPolygram, c, z),
                              geom::sfill(cf, z), shape_flag::kDangerous | shape_flag::kVulnerable>>;
 
-  Chaser(std::uint32_t size, std::uint32_t stagger) : timer{kTime - stagger}, size{size} {}
+  Chaser(std::uint32_t size, std::uint32_t stagger)
+  : timer{kTime - stagger}, size{size}, spreader{.max_distance = 24_fx, .max_n = 6u} {}
   std::uint32_t timer = 0;
   std::uint32_t size = 0;
   ecs::entity_id next_target_id{0};
   bool on_screen = false;
   bool is_moving = false;
   vec2 direction{0};
-  vec2 spread_velocity{0};
-  std::vector<ecs::entity_id> closest;
+  Spreader spreader;
 
   void update(ecs::handle h, Transform& transform, SimInterface& sim) {
     bool was_on_screen = sim.is_on_screen(transform.centre);
@@ -225,14 +224,11 @@ struct Chaser : ecs::component {
       transform.rotate(fixed_c::tenth / (1_fx + size * 1_fx / 2_fx));
     }
 
-    vec2 target_spread =
-        spread_closest<Chaser>(h, transform, sim, closest, 24_fx, 6u,
-                               spread_default_coefficient(1_fx, [&](const Chaser& c) {
-                                 return is_moving == c.is_moving ? 1_fx + c.size : 0_fx;
-                               }));
-    target_spread *= (3_fx / 2_fx) * kSpeed * (is_moving ? fixed{kTime - timer} / kTime : 1_fx);
-    spread_velocity = rc_smooth(spread_velocity, target_spread, 15_fx / 16_fx);
-    transform.move(spread_velocity);
+    auto spread_speed = (3_fx / 2_fx) * kSpeed * (is_moving ? fixed{kTime - timer} / kTime : 1_fx);
+    spreader.spread_closest<Chaser>(h, transform, sim, spread_speed,
+                                    Spreader::default_coefficient(1_fx, [&](const Chaser& c) {
+                                      return is_moving == c.is_moving ? 1_fx + c.size : 0_fx;
+                                    }));
   }
 
   void
@@ -248,8 +244,7 @@ struct Chaser : ecs::component {
     }
   }
 };
-DEBUG_STRUCT_TUPLE(Chaser, timer, size, next_target_id, on_screen, is_moving, direction,
-                   spread_velocity, closest);
+DEBUG_STRUCT_TUPLE(Chaser, timer, size, next_target_id, on_screen, is_moving, direction, spreader);
 
 template <geom::ShapeNode S>
 ecs::handle
@@ -314,14 +309,14 @@ struct FollowSponge : ecs::component {
             scale * kBoundingWidth, scale * kBoundingWidth + 2};
   }
 
+  FollowSponge() : spreader{.max_distance = 96_fx, .max_n = 4u} {}
   std::uint32_t timer = 0;
   std::uint32_t anim = 0;
   std::uint32_t spawns = 0;
   fixed scale = 0;
-  vec2 spread_velocity{0};
   std::optional<ecs::entity_id> target;
   std::optional<ecs::entity_id> next_target;
-  std::vector<ecs::entity_id> closest;
+  Spreader spreader;
 
   void update(ecs::handle h, Transform& transform, const Health& health, SimInterface& sim) {
     ++anim;
@@ -329,10 +324,8 @@ struct FollowSponge : ecs::component {
     auto t = fixed{health.max_hp - health.hp} / health.max_hp;
     transform.rotate(t / 10 + fixed_c::tenth / 2);
 
-    vec2 target_spread = spread_closest<FollowSponge>(h, transform, sim, closest, 96_fx, 4u,
-                                                      spread_linear_coefficient(2_fx));
-    spread_velocity = rc_smooth(spread_velocity, (1 + t) * 8 * target_spread, 15_fx / 16_fx);
-    transform.move(spread_velocity);
+    spreader.spread_closest<FollowSponge>(h, transform, sim, (1 + t) * 8,
+                                          Spreader::linear_coefficient(2_fx));
     if (!sim.alive_players()) {
       return;
     }
@@ -373,8 +366,7 @@ struct FollowSponge : ecs::component {
     }
   }
 };
-DEBUG_STRUCT_TUPLE(FollowSponge, timer, anim, spawns, scale, spread_velocity, target, next_target,
-                   closest);
+DEBUG_STRUCT_TUPLE(FollowSponge, timer, anim, spawns, scale, target, next_target, spreader);
 
 }  // namespace
 

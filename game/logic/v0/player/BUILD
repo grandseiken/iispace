@@ -13,8 +13,8 @@ cc_library(
     "//game/geometry/shapes",
     "//game/logic/sim/io:conditions",
     "//game/logic/sim/io:player",
-    "//game/logic/v0:components",
-    "//game/logic/v0:ship_template",
+    "//game/logic/v0/lib:components",
+    "//game/logic/v0/lib:ship_template",
   ],
   visibility = ["//game/logic/v0:__subpackages__"],
 )
@@ -33,7 +33,7 @@ cc_library(
     "//game/common:ustring",
     "//game/logic/ecs",
     "//game/logic/sim/io:conditions",
-    "//game/logic/v0:components",
+    "//game/logic/v0/lib:components",
   ],
   implementation_deps = [
     "//game/common:math",
@@ -55,10 +55,10 @@ cc_library(
     "//game/geometry/shapes",
     "//game/logic/sim:sim_interface",
     "//game/logic/sim/io:conditions",
-    "//game/logic/v0:components",
-    "//game/logic/v0:ship_template",
+    "//game/logic/v0/lib:components",
+    "//game/logic/v0/lib:ship_template",
   ],
-  visibility = ["//game/logic/v0:__pkg__"],
+  visibility = ["//game/logic/v0/lib:__pkg__"],
 )
 
 cc_library(
@@ -70,8 +70,8 @@ cc_library(
     "//game/core/icons",
     "//game/geometry",
     "//game/logic/sim:sim_interface",
-    "//game/logic/v0:components",
-    "//game/logic/v0:ship_template",
+    "//game/logic/v0/lib:components",
+    "//game/logic/v0/lib:ship_template",
   ],
   visibility = ["//game/logic/v0/overmind:__pkg__"],
 )
@@ -88,7 +88,7 @@ cc_library(
     ":loadout",
     "//game/geometry/shapes",
     "//game/logic/sim/io:conditions",
-    "//game/logic/v0:components",
-    "//game/logic/v0:ship_template",
+    "//game/logic/v0/lib:components",
+    "//game/logic/v0/lib:ship_template",
   ],
 )

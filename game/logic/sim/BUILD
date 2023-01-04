@@ -59,7 +59,7 @@ cc_library(
   ],
   visibility = [
     "//game/logic/legacy:__pkg__",
-    "//game/logic/v0:__pkg__",
+    "//game/logic/v0/lib:__pkg__",
   ],
 )
 
@@ -80,9 +80,9 @@ cc_library(
     "//game/data:replay",
     "//game/logic/legacy:components",
     "//game/logic/legacy:setup",
-    "//game/logic/v0:components",
-    "//game/logic/v0:setup",
     "//game/logic/v0/ai",
+    "//game/logic/v0/lib:components",
+    "//game/logic/v0/lib:setup",
     "//game/logic/sim/io:conditions",
     "//game/logic/sim/io:player",
   ],

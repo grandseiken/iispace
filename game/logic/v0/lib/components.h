@@ -1,5 +1,5 @@
-#ifndef II_GAME_LOGIC_V0_COMPONENTS_H
-#define II_GAME_LOGIC_V0_COMPONENTS_H
+#ifndef II_GAME_LOGIC_V0_LIB_COMPONENTS_H
+#define II_GAME_LOGIC_V0_LIB_COMPONENTS_H
 #include "game/common/math.h"
 #include "game/common/struct_tuple.h"
 #include "game/logic/ecs/index.h"

@@ -1,5 +1,5 @@
-#ifndef II_GAME_LOGIC_V0_SHIP_TEMPLATE_H
-#define II_GAME_LOGIC_V0_SHIP_TEMPLATE_H
+#ifndef II_GAME_LOGIC_V0_LIB_SHIP_TEMPLATE_H
+#define II_GAME_LOGIC_V0_LIB_SHIP_TEMPLATE_H
 #include "game/common/colour.h"
 #include "game/common/math.h"
 #include "game/geometry/enums.h"
@@ -8,7 +8,7 @@
 #include "game/logic/ecs/call.h"
 #include "game/logic/ecs/index.h"
 #include "game/logic/sim/sim_interface.h"
-#include "game/logic/v0/components.h"
+#include "game/logic/v0/lib/components.h"
 #include <sfn/functional.h>
 #include <cstddef>
 #include <optional>

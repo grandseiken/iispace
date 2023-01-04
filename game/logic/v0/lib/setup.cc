@@ -1,6 +1,6 @@
-#include "game/logic/v0/setup.h"
+#include "game/logic/v0/lib/setup.h"
 #include "game/logic/sim/sim_interface.h"
-#include "game/logic/v0/components.h"
+#include "game/logic/v0/lib/components.h"
 #include "game/logic/v0/overmind/overmind.h"
 #include "game/logic/v0/player/player.h"
 #include "game/logic/v0/player/powerup.h"

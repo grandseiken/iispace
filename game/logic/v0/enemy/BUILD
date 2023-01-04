@@ -12,7 +12,7 @@ cc_library(
     "//game/geometry/shapes",
     "//game/logic/ecs",
     "//game/logic/sim:sim_interface",
-    "//game/logic/v0:ship_template",
+    "//game/logic/v0/lib:ship_template",
   ],
   visibility = [
     "//game/logic/v0/boss:__subpackages__",
@@ -24,9 +24,11 @@ cc_library(
   name = "enemy_internal",
   hdrs = ["enemy_template.h"],
   deps = [
+    "//game/common:math",
+    "//game/common:types",
     "//game/logic/sim:sim_interface",
-    "//game/logic/v0:components",
-    "//game/logic/v0:ship_template",
+    "//game/logic/v0/lib:components",
+    "//game/logic/v0/lib:ship_template",
     "@static_functional",
   ],
 )

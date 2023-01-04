@@ -4,7 +4,7 @@
 #include "game/logic/v0/boss/boss.h"
 #include "game/logic/v0/boss/boss_template.h"
 #include "game/logic/v0/enemy/enemy.h"
-#include "game/logic/v0/ship_template.h"
+#include "game/logic/v0/lib/ship_template.h"
 #include <array>
 
 namespace ii::v0 {
@@ -17,7 +17,9 @@ namespace {
 // TODO: cooler special attack effect.
 // TODO: special attack: zoom vertically from one side to another.
 // TODO: special target more players?
-// TODO: rc_smooth is a bit odd for movement.
+// TODO: rc_smooth is a bit odd for movement. Instead, write some
+// path follower stuff: waypoints; turning radius; stick to
+// current segment until we need to start turning for next.
 struct SquareBoss : public ecs::component {
   static constexpr std::uint32_t kBaseHp = 4000;
   static constexpr std::uint32_t kBiomeHp = 1500;

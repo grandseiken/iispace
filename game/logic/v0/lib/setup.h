@@ -1,5 +1,5 @@
-#ifndef GAME_LOGIC_V0_SETUP_H
-#define GAME_LOGIC_V0_SETUP_H
+#ifndef GAME_LOGIC_V0_LIB_SETUP_H
+#define GAME_LOGIC_V0_LIB_SETUP_H
 #include "game/logic/sim/setup.h"
 
 namespace ii::v0 {

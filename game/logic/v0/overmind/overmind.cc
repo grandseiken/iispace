@@ -3,7 +3,7 @@
 #include "game/common/math.h"
 #include "game/logic/sim/io/conditions.h"
 #include "game/logic/sim/sim_interface.h"
-#include "game/logic/v0/components.h"
+#include "game/logic/v0/lib/components.h"
 #include "game/logic/v0/overmind/biome.h"
 #include "game/logic/v0/overmind/wave_data.h"
 #include "game/logic/v0/player/loadout.h"

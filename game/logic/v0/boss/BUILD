@@ -8,7 +8,7 @@ cc_library(
     "//game/logic/ecs",
     "//game/logic/sim:sim_interface",
     "//game/logic/v0/enemy",
-    "//game/logic/v0:ship_template",
+    "//game/logic/v0/lib:ship_template",
   ],
   visibility = ["//game/logic/v0/overmind:__subpackages__"],
 )
@@ -19,7 +19,7 @@ cc_library(
   deps = [
     "//game/geometry",
     "//game/logic/ecs",
-    "//game/logic/v0:components",
-    "//game/logic/v0:ship_template",
+    "//game/logic/v0/lib:components",
+    "//game/logic/v0/lib:ship_template",
   ],
 )

@@ -2,8 +2,8 @@
 #define II_GAME_LOGIC_V0_BOSS_BOSS_TEMPLATE_H
 #include "game/geometry/concepts.h"
 #include "game/logic/ecs/index.h"
-#include "game/logic/v0/components.h"
-#include "game/logic/v0/particles.h"
+#include "game/logic/v0/lib/components.h"
+#include "game/logic/v0/lib/particles.h"
 #include "game/mixer/sound.h"
 #include <cstdint>
 #include <optional>

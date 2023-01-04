@@ -145,13 +145,14 @@ struct Shielder : ecs::component {
   }
 
   Shielder(SimInterface& sim, bool power)
-  : timer{sim.random(random_source::kGameState).uint(kTimer)}, power{power} {}
+  : timer{sim.random(random_source::kGameState).uint(kTimer)}
+  , power{power}
+  , spreader{.max_distance = 128_fx, .max_n = 4u} {}
   std::uint32_t timer = 0;
   vec2 velocity{0, 0};
-  vec2 spread_velocity{0};
   std::optional<ecs::entity_id> target;
   std::optional<ecs::entity_id> next_target;
-  std::vector<ecs::entity_id> closest;
+  Spreader spreader;
   bool power = false;
   bool on_screen = false;
   fixed shield_angle = 0;
@@ -191,15 +192,12 @@ struct Shielder : ecs::component {
     };
     smooth_rotate(shield_angle, angle(velocity));
 
-    vec2 target_spread = spread_closest<Shielder>(h, transform, sim, closest, 128_fx, 4u,
-                                                  spread_linear_coefficient(4_fx));
-    target_spread *= 64 * kSpeed;
-    spread_velocity = rc_smooth(spread_velocity, target_spread, 15_fx / 16_fx);
-    transform.move(spread_velocity);
+    spreader.spread_closest<Shielder>(h, transform, sim, 64 * kSpeed,
+                                      Spreader::linear_coefficient(4_fx));
   }
 };
-DEBUG_STRUCT_TUPLE(Shielder, timer, velocity, spread_velocity, target, next_target, closest, power,
-                   on_screen, shield_angle);
+DEBUG_STRUCT_TUPLE(Shielder, timer, velocity, target, next_target, spreader, power, on_screen,
+                   shield_angle);
 
 // TODO: add hard variant that shoots... bounces?
 struct Tractor : ecs::component {

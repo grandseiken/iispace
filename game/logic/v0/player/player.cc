@@ -4,12 +4,12 @@
 #include "game/logic/sim/io/conditions.h"
 #include "game/logic/sim/io/output.h"
 #include "game/logic/sim/io/player.h"
-#include "game/logic/v0/components.h"
-#include "game/logic/v0/particles.h"
+#include "game/logic/v0/lib/components.h"
+#include "game/logic/v0/lib/particles.h"
+#include "game/logic/v0/lib/ship_template.h"
 #include "game/logic/v0/player/loadout.h"
 #include "game/logic/v0/player/powerup.h"
 #include "game/logic/v0/player/shot.h"
-#include "game/logic/v0/ship_template.h"
 
 namespace ii::v0 {
 namespace {

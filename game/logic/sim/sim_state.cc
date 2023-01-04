@@ -6,8 +6,8 @@
 #include "game/logic/sim/sim_interface.h"
 #include "game/logic/sim/sim_internals.h"
 #include "game/logic/v0/ai/ai_player.h"
-#include "game/logic/v0/components.h"
-#include "game/logic/v0/setup.h"
+#include "game/logic/v0/lib/components.h"
+#include "game/logic/v0/lib/setup.h"
 #include <algorithm>
 #include <unordered_set>
 

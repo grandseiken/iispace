@@ -4,9 +4,9 @@
 #include "game/core/icons/mod_icons.h"
 #include "game/geometry/iteration.h"
 #include "game/logic/sim/sim_interface.h"
+#include "game/logic/v0/lib/ship_template.h"
 #include "game/logic/v0/player/loadout.h"
 #include "game/logic/v0/player/loadout_mods.h"
-#include "game/logic/v0/ship_template.h"
 
 namespace ii::v0 {
 namespace {

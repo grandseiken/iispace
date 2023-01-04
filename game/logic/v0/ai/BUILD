@@ -7,8 +7,8 @@ cc_library(
     "//game/logic/sim/io:player",
   ],
   implementation_deps = [
-    "//game/logic/v0:components",
     "//game/logic/sim:sim_interface",
+    "//game/logic/v0/lib:components",
   ],
   visibility = ["//game/logic/sim:__pkg__"],
 )

@@ -8,12 +8,12 @@ cc_library(
     "//game/common:math",
     "//game/logic/sim:sim_interface",
     "//game/logic/sim/io:conditions",
-    "//game/logic/v0:components",
+    "//game/logic/v0/lib:components",
     "//game/logic/v0/player",
     "//game/logic/v0/player:loadout",
     "//game/logic/v0/player:upgrade",
   ],
-  visibility = ["//game/logic/v0:__pkg__"],
+  visibility = ["//game/logic/v0/lib:__pkg__"],
 )
 
 cc_library(
