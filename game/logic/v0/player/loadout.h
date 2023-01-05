@@ -4,8 +4,8 @@
 #include "game/logic/ecs/index.h"
 #include "game/logic/sim/io/conditions.h"
 #include "game/logic/v0/player/loadout_mods.h"
+#include <map>
 #include <span>
-#include <unordered_map>
 
 namespace ii {
 class RandomEngine;
@@ -13,7 +13,7 @@ class SimInterface;
 struct initial_conditions;
 namespace v0 {
 
-using player_loadout = std::unordered_map<mod_id, std::uint32_t>;
+using player_loadout = std::map<mod_id, std::uint32_t>;
 
 struct PlayerLoadout : ecs::component {
   player_loadout loadout;

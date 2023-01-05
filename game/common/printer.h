@@ -5,13 +5,13 @@
 #include "game/common/struct_tuple.h"
 #include <array>
 #include <concepts>
+#include <map>
 #include <optional>
 #include <sstream>
 #include <string>
 #include <string_view>
 #include <tuple>
 #include <type_traits>
-#include <unordered_map>
 #include <utility>
 #include <vector>
 
@@ -121,7 +121,7 @@ public:
   }
 
   template <typename K, typename V>
-  Printer& put(const std::unordered_map<K, V>& v) {
+  Printer& put(const std::map<K, V>& v) {
     put('{');
     bool first = true;
     for (const auto& pair : v) {

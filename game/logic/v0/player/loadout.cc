@@ -3,7 +3,7 @@
 #include "game/logic/sim/components.h"
 #include "game/logic/sim/io/conditions.h"
 #include <algorithm>
-#include <unordered_map>
+#include <map>
 #include <unordered_set>
 
 namespace ii::v0 {
@@ -44,9 +44,9 @@ std::vector<mod_id> make_mod_list() {
 
 std::vector<mod_id> mod_selection(const initial_conditions& conditions, RandomEngine& random,
                                   const player_loadout& combined_loadout) {
-  std::unordered_map<mod_category, std::uint32_t> loadout_category_counts;
-  std::unordered_map<mod_slot, std::uint32_t> loadout_slot_counts;
-  std::unordered_map<mod_id, std::uint32_t> loadout_mod_counts;
+  std::map<mod_category, std::uint32_t> loadout_category_counts;
+  std::map<mod_slot, std::uint32_t> loadout_slot_counts;
+  std::map<mod_id, std::uint32_t> loadout_mod_counts;
   for (const auto& pair : combined_loadout) {
     const auto& data = mod_lookup(pair.first);
     ++loadout_category_counts[data.category];
@@ -69,7 +69,7 @@ std::vector<mod_id> mod_selection(const initial_conditions& conditions, RandomEn
   std::unordered_set<mod_slot> selected_slots;
   std::unordered_set<mod_category> selected_categories;
   using mod_slot_data = std::vector<const mod_data*>;
-  using mod_slot_map = std::unordered_map<mod_slot, mod_slot_data>;
+  using mod_slot_map = std::map<mod_slot, mod_slot_data>;
 
   auto slot_weight = [&](mod_slot slot, std::size_t available_count) -> std::uint32_t {
     if (available_count <= 1u) {

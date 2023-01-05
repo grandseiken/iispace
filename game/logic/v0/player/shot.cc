@@ -125,6 +125,9 @@ struct PlayerShot : ecs::component {
       fixed min_d_sq = 0;
       auto c_list = sim.collide_ball(transform.centre, shot_mod_data::kHomingScanRadius,
                                      shape_flag::kVulnerable | shape_flag::kWeakVulnerable);
+      // TODO: really want to use closest point on potential target shape to our shot, rather
+      // than target centre. Otherwise e.g. bosses less likely to be targeted since big, so far
+      // away.
       for (const auto& c : c_list) {
         for (const auto& vc : c.shape_centres) {
           auto d_sq = length_squared(vc - transform.centre);
