@@ -24,14 +24,19 @@ struct options_t {
   std::optional<std::uint32_t> seed;
 
   bool verify = false;
-  bool save_ticks_exceeded = false;
+  bool save_failures = false;
   boss_flag find_boss_kills{0};
   std::uint64_t max_ticks = 0;
   std::uint32_t thread_count = 0;
   std::optional<std::string> replay_out_path;
 };
 
-result<run_data_t>
+struct verified_run_data_t {
+  result<void> status;
+  run_data_t data;
+};
+
+result<verified_run_data_t>
 do_run(const options_t& options, std::uint32_t run_index, const initial_conditions& conditions) {
   bool print_progress = options.thread_count <= 1;
   if (print_progress) {
@@ -43,7 +48,7 @@ do_run(const options_t& options, std::uint32_t run_index, const initial_conditio
                 << "run #" << (run_index + 1) << ": seed " << conditions.seed << "\n"
                 << "================================================\n";
     }
-    std::cout << "running sim..." << std::endl;
+    std::cout << "running sim (seed " << conditions.seed << ")..." << std::endl;
   }
 
   auto run_result = synthesize_replay(conditions, options.max_ticks,
@@ -51,25 +56,27 @@ do_run(const options_t& options, std::uint32_t run_index, const initial_conditio
   if (!run_result) {
     return unexpected(run_result.error());
   }
-
   if (print_progress) {
-    if (run_result->ticks >= options.max_ticks) {
-      std::cout << "max ticks exceeded!\n";
-    }
     std::cout << "ticks:\t" << run_result->ticks << "\n"
               << "score:\t" << run_result->score << "\n"
               << "kills:\t" << +run_result->bosses_killed << std::endl;
   }
 
-  if (options.verify) {
+  verified_run_data_t verified_result;
+  verified_result.data = std::move(*run_result);
+  if (verified_result.data.ticks >= options.max_ticks) {
+    verified_result.status = unexpected("max ticks exceeded");
+  }
+
+  if (options.verify && verified_result.data.replay_bytes) {
     if (print_progress) {
       std::cout << "verifying..." << std::flush;
     }
-    auto verify = replay_results(*run_result->replay_bytes, options.max_ticks);
+    auto verify = replay_results(*verified_result.data.replay_bytes, options.max_ticks);
     if (!verify) {
-      return unexpected(verify.error());
-    }
-    if (verify->sim.tick_count == run_result->ticks && verify->sim.score == run_result->score) {
+      verified_result.status = unexpected(verify.error());
+    } else if (verify->sim.tick_count == verified_result.data.ticks &&
+               verify->sim.score == verified_result.data.score) {
       if (print_progress) {
         std::cout << " done" << std::endl;
       }
@@ -77,11 +84,16 @@ do_run(const options_t& options, std::uint32_t run_index, const initial_conditio
       if (print_progress) {
         std::cout << std::endl;
       }
-      return unexpected("verification failed: ticks " + std::to_string(verify->sim.tick_count) +
-                        " score " + std::to_string(verify->sim.score));
+      verified_result.status =
+          unexpected("verification failed: ticks " + std::to_string(verify->sim.tick_count) +
+                     " score " + std::to_string(verify->sim.score));
     }
   }
-  return {std::move(*run_result)};
+
+  if (print_progress && !verified_result.status) {
+    std::cerr << "failure: " << verified_result.status.error() << "\n";
+  }
+  return {std::move(verified_result)};
 }
 
 bool run(const options_t& options) {
@@ -132,39 +144,39 @@ bool run(const options_t& options) {
   std::optional<run_data_t> best_run;
   bool failed = false;
 
-  auto handle_run_result = [&](std::uint32_t run_index, result<run_data_t>& data) {
+  auto handle_run_result = [&](std::uint32_t run_index, result<verified_run_data_t>& data) -> bool {
     if (!data) {
-      std::cerr << data.error();
-      return failed = true;
+      std::cerr << "run #" << (run_index + 1) << " failed: " << data.error() << std::endl;
+      return false;
     }
     if (options.thread_count > 1) {
       auto p =
           static_cast<std::uint32_t>(100 * static_cast<float>(++runs_completed) / options.runs);
       std::cout << "[" << p << "%] ";
-      if (data->ticks >= options.max_ticks) {
-        std::cout << "run #" << (run_index + 1) << " max ticks exceeded!" << std::endl;
+      if (!data->status) {
+        std::cerr << "run #" << (run_index + 1) << " failed: " << data->status.error() << std::endl;
       } else {
         std::cout << "run #" << (run_index + 1) << " [seed " << run_conditions[run_index].seed
-                  << "] finished with ticks " << data->ticks << " score " << data->score
-                  << " kills " << +data->bosses_killed << std::endl;
+                  << "] finished with ticks " << data->data.ticks << " score " << data->data.score
+                  << " kills " << +data->data.bosses_killed << std::endl;
       }
     }
 
-    if (data->ticks >= options.max_ticks && data->replay_bytes && options.save_ticks_exceeded) {
-      auto path = "exceeded" + std::to_string(run_index + 1) + ".wrp";
-      auto write_result = fs.write(path, *data->replay_bytes);
-      if (!write_result) {
+    if (!data->status && data->data.replay_bytes && options.save_failures) {
+      auto path = "failure" + std::to_string(run_index + 1) + ".wrp";
+      auto write_result = fs.write(path, *data->data.replay_bytes);
+      if (write_result) {
+        std::cout << "wrote " << path << std::endl;
+      } else {
         std::cerr << "couldn't write " << path << ": " << write_result.error() << std::endl;
-        return failed = true;
       }
-      std::cout << "wrote " << path << std::endl;
     }
 
-    if (!best_run || better_than(*data, *best_run)) {
+    if (!best_run || (data->status && better_than(data->data, *best_run))) {
       best_run_index = run_index;
-      best_run = std::move(*data);
+      best_run = std::move(data->data);
     }
-    return failed;
+    return static_cast<bool>(data->status);
   };
 
   std::vector<std::thread> threads;
@@ -175,9 +187,8 @@ bool run(const options_t& options) {
         auto data = do_run(options, i, run_conditions[i]);
 
         std::lock_guard lock{mutex};
-        bool cancel = handle_run_result(i, data);
-        if (cancel) {
-          break;
+        if (!handle_run_result(i, data)) {
+          failed = true;
         }
       }
     });
@@ -186,10 +197,7 @@ bool run(const options_t& options) {
     thread.join();
   }
 
-  if (failed) {
-    return false;
-  }
-  if (options.replay_out_path) {
+  if (best_run && options.replay_out_path) {
     if (options.runs > 1) {
       std::cout << "================================================\n"
                 << "best run #" << (best_run_index + 1) << ":\n\tseed " << best_run->seed
@@ -208,7 +216,7 @@ bool run(const options_t& options) {
     }
   }
   std::cout << std::endl;
-  return true;
+  return !failed;
 }
 
 result<options_t> parse_args(std::vector<std::string>& args) {
@@ -253,8 +261,7 @@ result<options_t> parse_args(std::vector<std::string>& args) {
     return unexpected(r.error());
   }
 
-  if (auto r = flag_parse<bool>(args, "save_ticks_exceeded", options.save_ticks_exceeded, false);
-      !r) {
+  if (auto r = flag_parse<bool>(args, "save_failures", options.save_failures, false); !r) {
     return unexpected(r.error());
   }
 
