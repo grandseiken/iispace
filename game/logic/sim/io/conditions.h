@@ -28,6 +28,9 @@ enum class game_mode : std::uint32_t {
 
 enum class run_biome : std::uint32_t {
   kTesting,
+  kBiome0,
+  kBiome1,
+  kBiome2,
 };
 
 struct run_modifiers {};

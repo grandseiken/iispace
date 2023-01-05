@@ -22,6 +22,7 @@ struct aggregate_event;
 struct initial_conditions;
 struct input_frame;
 struct run_event;
+struct sim_results;
 namespace render {
 struct player_info;
 struct shape;
@@ -131,6 +132,7 @@ public:
   // Simulation output.
   EmitHandle emit(const resolve_key& key);
   void trigger(const run_event&);
+  const sim_results& results() const;
 
 private:
   SimInternals* internals_;

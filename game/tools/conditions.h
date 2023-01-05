@@ -8,7 +8,9 @@ void fill_standard_run_conditions(initial_conditions& conditions) {
   if (conditions.mode != game_mode::kStandardRun) {
     return;
   }
-  conditions.biomes.emplace_back(run_biome::kTesting);
+  conditions.biomes.emplace_back(run_biome::kBiome0);
+  conditions.biomes.emplace_back(run_biome::kBiome1);
+  conditions.biomes.emplace_back(run_biome::kBiome2);
 }
 
 }  // namespace ii

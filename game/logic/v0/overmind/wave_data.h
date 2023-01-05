@@ -11,6 +11,7 @@ enum class wave_type {
   kEnemy,
   kBoss,
   kUpgrade,
+  kRunComplete,
 };
 
 struct background_input {

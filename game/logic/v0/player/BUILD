@@ -91,4 +91,5 @@ cc_library(
     "//game/logic/v0/lib:components",
     "//game/logic/v0/lib:ship_template",
   ],
+  visibility = ["//game/logic/v0/lib:__pkg__"],
 )

@@ -23,6 +23,7 @@ struct AiClickTag : ecs::component {
 DEBUG_STRUCT_TUPLE(AiClickTag, position);
 
 struct GlobalData : ecs::component {
+  bool is_run_complete = false;
   drop_data shield_drop;
   drop_data bomb_drop;
 

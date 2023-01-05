@@ -251,4 +251,8 @@ void spawn_player_shot(SimInterface& sim, ecs::handle player, const vec2& positi
                     PlayerShot{player.id(), p.player_number, p.is_predicted, loadout, direction});
 }
 
+std::uint32_t count_player_shots(const SimInterface& sim) {
+  return sim.index().count<PlayerShot>();
+}
+
 }  // namespace ii::v0

@@ -11,6 +11,7 @@ public:
   void initialise_systems(SimInterface& sim) override;
   ecs::entity_id start_game(const initial_conditions&, SimInterface& sim) override;
   void begin_tick(SimInterface& sim) override;
+  bool is_game_over(const SimInterface& sim) const override;
 };
 
 }  // namespace ii::legacy

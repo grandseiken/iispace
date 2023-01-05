@@ -202,6 +202,9 @@ const Biome* get_biome(run_biome biome) {
   static TestingBiome testing_biome;
   switch (biome) {
   case run_biome::kTesting:
+  case run_biome::kBiome0:
+  case run_biome::kBiome1:
+  case run_biome::kBiome2:
     return &testing_biome;
   }
   return nullptr;

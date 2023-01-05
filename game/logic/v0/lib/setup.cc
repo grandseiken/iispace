@@ -4,6 +4,7 @@
 #include "game/logic/v0/overmind/overmind.h"
 #include "game/logic/v0/player/player.h"
 #include "game/logic/v0/player/powerup.h"
+#include "game/logic/v0/player/shot.h"
 
 namespace ii::v0 {
 namespace {
@@ -73,6 +74,12 @@ void V0SimSetup::begin_tick(SimInterface& sim) {
       [](Physics& physics, Transform& transform) { physics.update(transform); });
   sim.index().iterate_dispatch<EnemyStatus>(
       [](EnemyStatus& status, Update* update) { status.update(update); });
+}
+
+bool V0SimSetup::is_game_over(const SimInterface& sim) const {
+  const auto& global_data = sim.global_entity().get<GlobalData>();
+  return global_data->is_run_complete ||
+      (sim.killed_players() == sim.player_count() && !count_player_shots(sim));
 }
 
 }  // namespace ii::v0

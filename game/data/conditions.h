@@ -101,6 +101,12 @@ inline result<run_biome> read_run_biome(const proto::RunBiome& proto) {
   switch (proto.value()) {
   case proto::RunBiome::kTesting:
     return run_biome::kTesting;
+  case proto::RunBiome::kBiome0:
+    return run_biome::kBiome0;
+  case proto::RunBiome::kBiome1:
+    return run_biome::kBiome1;
+  case proto::RunBiome::kBiome2:
+    return run_biome::kBiome2;
   default:
     return unexpected("unknown run biome");
   }
@@ -111,6 +117,12 @@ inline proto::RunBiome write_run_biome(run_biome value) {
   switch (value) {
   case run_biome::kTesting:
     proto.set_value(proto::RunBiome::kTesting);
+  case run_biome::kBiome0:
+    proto.set_value(proto::RunBiome::kBiome0);
+  case run_biome::kBiome1:
+    proto.set_value(proto::RunBiome::kBiome1);
+  case run_biome::kBiome2:
+    proto.set_value(proto::RunBiome::kBiome2);
   }
   return proto;
 }

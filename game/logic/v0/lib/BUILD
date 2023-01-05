@@ -24,6 +24,7 @@ cc_library(
     "//game/logic/v0/overmind",
     "//game/logic/v0/player",
     "//game/logic/v0/player:powerup",
+    "//game/logic/v0/player:shot",
   ],
   visibility = ["//game/logic/sim:__pkg__"],
 )

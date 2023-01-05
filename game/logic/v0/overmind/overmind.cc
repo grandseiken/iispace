@@ -55,11 +55,11 @@ struct Overmind : ecs::component {
       update_background(sim, *biome, input, sim.global_entity().get<Background>()->background);
     }
 
+    global.overmind_wave_count = next_wave.wave_number;
     global.debug_text.clear();
     global.debug_text += "s:" + std::to_string(global.shield_drop.counter) +
         " b:" + std::to_string(global.bomb_drop.counter);
     global.debug_text += " t:" + std::to_string(total_enemy_threat);
-    global.overmind_wave_count = next_wave.wave_number;
   }
 
   std::optional<std::uint32_t>
@@ -69,15 +69,18 @@ struct Overmind : ecs::component {
       next_wave.wave_number = 0;
       if (const auto* biome = get_biome(sim, next_wave.biome_index); biome) {
         wave_list = biome->get_wave_list(sim.conditions(), next_wave.biome_index);
+      } else {
+        wave_list = {wave_data{.type = wave_type::kRunComplete}};
       }
     }
+
     if (next_wave.wave_number >= wave_list.size()) {
       return false;
     }
-
     auto next_data = wave_list[next_wave.wave_number];
     bool next_condition = next_data.type == wave_type::kEnemy || !total_enemy_threat;
     bool prev_condition = false;
+
     std::uint32_t prev_timer = kSpawnTimer;
     if (!current_wave) {
       prev_condition = true;
@@ -96,6 +99,10 @@ struct Overmind : ecs::component {
       case wave_type::kUpgrade:
         prev_condition = is_mod_upgrade_choice_done(sim);
         prev_timer = kSpawnTimerUpgrade;
+        break;
+
+      case wave_type::kRunComplete:
+        prev_condition = true;
         break;
       }
     }
@@ -116,21 +123,28 @@ struct Overmind : ecs::component {
       global.bomb_drop.counter += 200;
     }
 
-    if (const auto* biome = get_biome(sim, next_wave.biome_index); biome) {
-      const auto& data = wave_list[next_wave.wave_number];
-      switch (data.type) {
-      case wave_type::kEnemy:
+    const auto* biome = get_biome(sim, next_wave.biome_index);
+    const auto& data = wave_list[next_wave.wave_number];
+    switch (data.type) {
+    case wave_type::kEnemy:
+      if (biome) {
         biome->spawn_wave(sim, data);
-        break;
-
-      case wave_type::kBoss:
-        biome->spawn_boss(sim, data.biome_index);
-        break;
-
-      case wave_type::kUpgrade:
-        spawn_upgrades(sim);
-        break;
       }
+      break;
+
+    case wave_type::kBoss:
+      if (biome) {
+        biome->spawn_boss(sim, data.biome_index);
+      }
+      break;
+
+    case wave_type::kUpgrade:
+      spawn_upgrades(sim);
+      break;
+
+    case wave_type::kRunComplete:
+      global.is_run_complete = true;
+      break;
     }
     ++next_wave.wave_number;
   }
@@ -195,7 +209,7 @@ struct Overmind : ecs::component {
 
   const Biome* get_biome(const SimInterface& sim, std::uint32_t index) const {
     const auto& biomes = sim.conditions().biomes;
-    return biomes.empty() ? nullptr : v0::get_biome(biomes[index % biomes.size()]);
+    return index >= biomes.size() ? nullptr : v0::get_biome(biomes[index]);
   }
 };
 DEBUG_STRUCT_TUPLE(Overmind, next_wave.biome_index, next_wave.wave_number, spawn_timer,

@@ -56,4 +56,10 @@ ecs::entity_id LegacySimSetup::start_game(const initial_conditions& conditions, 
 
 void LegacySimSetup::begin_tick(SimInterface& sim) {}
 
+bool LegacySimSetup::is_game_over(const SimInterface& sim) const {
+  return (
+      (sim.killed_players() == sim.player_count() && !sim.get_lives()) ||
+      (sim.conditions().mode == game_mode::kLegacy_Boss && sim.results().boss_kill_count() >= 6));
+}
+
 }  // namespace ii::legacy

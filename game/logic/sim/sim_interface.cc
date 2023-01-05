@@ -297,4 +297,8 @@ void SimInterface::trigger(const run_event& event) {
   internals_->results.events.emplace_back(event);
 }
 
+const sim_results& SimInterface::results() const {
+  return internals_->results;
+}
+
 }  // namespace ii

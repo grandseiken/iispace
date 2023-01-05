@@ -33,6 +33,9 @@ message RunBiome {
   enum Enum {
     kNone = 0;
     kTesting = 1;
+    kBiome0 = 2;
+    kBiome1 = 3;
+    kBiome2 = 4;
   }
   Enum value = 1;
 }

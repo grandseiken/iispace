@@ -9,6 +9,7 @@ struct PlayerLoadout;
 namespace v0 {
 void spawn_player_shot(SimInterface& sim, ecs::handle player, const vec2& position,
                        const vec2& direction);
+std::uint32_t count_player_shots(const SimInterface& sim);
 }  // namespace v0
 }  // namespace ii
 

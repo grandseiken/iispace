@@ -187,10 +187,7 @@ void SimState::update(std::vector<input_frame> input) {
     }
   });
 
-  if (!close_timer_ &&
-      ((interface_->killed_players() == interface_->player_count() && !interface_->get_lives()) ||
-       (internals_->conditions.mode == game_mode::kLegacy_Boss &&
-        internals_->results.boss_kill_count() >= 6))) {
+  if (!close_timer_ && setup_->is_game_over(*interface_)) {
     close_timer_ = 100;
   }
   bool already_game_over = game_over_;
