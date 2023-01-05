@@ -33,6 +33,26 @@ inline void hash_combine(std::size_t& seed, std::size_t v) {
   seed ^= v + 0x9e3779b9 + (seed << 6) + (seed >> 2);
 }
 
+template <typename T>
+inline constexpr T square(const T& x) {
+  return x * x;
+}
+
+template <typename T>
+inline constexpr T cube(const T& x) {
+  return x * x * x;
+}
+
+template <typename T>
+inline constexpr T fourth_power(const T& x) {
+  return square(square(x));
+}
+
+template <typename T>
+inline constexpr T fifth_power(const T& x) {
+  return x * fourth_power(x);
+}
+
 inline constexpr vec2 operator*(const vec2& a, fixed b) {
   return glm::operator*(a, b);
 }
@@ -45,6 +65,7 @@ inline constexpr vec2 operator/(const vec2& a, fixed b) {
   return glm::operator/(a, b);
 }
 
+// (Right) perpendicular vector.
 inline constexpr vec2 perpendicular(const vec2& v) {
   return vec2{-v.y, v.x};
 }
@@ -104,6 +125,7 @@ constexpr glm::vec<2, T> from_polar(T theta, T length) {
   return length * glm::vec<2, T>{cos(theta), sin(theta)};
 }
 
+// (Right) rotation.
 template <typename T>
 constexpr glm::vec<2, T> rotate(const glm::vec<2, T>& v, T theta) {
   using std::cos;

@@ -52,6 +52,7 @@ cc_library(
   deps = [
     "//game/common:math",
     "//game/common:types",
+    "//game/logic/sim:components",
   ],
   visibility = ["//game/logic/v0:__subpackages__"],
 )

@@ -31,8 +31,7 @@ struct ball_collider_data : shape_data_base {
       return;
     }
     auto d_sq = length_squared(t.deref_ignore_rotation());
-    if (d_sq <= dimensions.radius * dimensions.radius &&
-        d_sq >= dimensions.inner_radius * dimensions.inner_radius) {
+    if (d_sq <= square(dimensions.radius) && d_sq >= square(dimensions.inner_radius)) {
       std::invoke(f, flags & it.mask, t.inverse_transform(vec2{0}));
     }
   }
@@ -44,7 +43,7 @@ struct ball_collider_data : shape_data_base {
     }
     auto a = t.get_a();
     auto b = t.get_b();
-    auto ir_sq = dimensions.inner_radius * dimensions.inner_radius;
+    auto ir_sq = square(dimensions.inner_radius);
     if (intersect_line_ball(a, b, vec2{0}, dimensions.radius) &&
         (length_squared(a) >= ir_sq || length_squared(b) >= ir_sq)) {
       std::invoke(f, flags & it.mask, t.inverse_transform(vec2{0}));
@@ -70,7 +69,7 @@ struct ball_collider_data : shape_data_base {
       return;
     }
     auto va = *t;
-    auto ir_sq = dimensions.inner_radius * dimensions.inner_radius;
+    auto ir_sq = square(dimensions.inner_radius);
     if (intersect_convex_ball(va, vec2{0}, dimensions.radius) &&
         (!dimensions.inner_radius || std::any_of(va.begin(), va.end(), [&](const vec2& v) {
           return length_squared(v) >= ir_sq;

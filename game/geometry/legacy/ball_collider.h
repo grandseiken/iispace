@@ -12,7 +12,7 @@ struct ball_collider_data : shape_data_base {
 
   constexpr void
   iterate(iterate_check_point_t it, const Transform auto& t, const HitFunction auto& f) const {
-    if (+(flags & it.mask) && length_squared(t.deref_ignore_rotation()) < radius * radius) {
+    if (+(flags & it.mask) && length_squared(t.deref_ignore_rotation()) < square(radius)) {
       std::invoke(f, flags & it.mask, t.inverse_transform(vec2{0}));
     }
   }

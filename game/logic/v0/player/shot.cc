@@ -32,7 +32,7 @@ ecs::handle spawn_player_shot(SimInterface& sim, const vec2& position, const Pla
 
 struct shot_mod_data {
   static constexpr std::uint32_t kBaseDamage = 8u;
-  static constexpr std::uint32_t kLightningDamage = 12u;  // TODO: maybe too much. 10?
+  static constexpr std::uint32_t kLightningDamage = 11u;
   static constexpr std::uint32_t kCloseCombatDamage = 6u;
   static constexpr std::uint32_t kSniperSplitDamage = 6u;
   static constexpr std::uint32_t kCloseCombatShotCount = 14u;
@@ -128,6 +128,7 @@ struct PlayerShot : ecs::component {
       // TODO: really want to use closest point on potential target shape to our shot, rather
       // than target centre. Otherwise e.g. bosses less likely to be targeted since big, so far
       // away.
+      // TODO: also, should prioritise using a mix of distance and angle. Also ignore offscreen?
       for (const auto& c : c_list) {
         for (const auto& vc : c.shape_centres) {
           auto d_sq = length_squared(vc - transform.centre);

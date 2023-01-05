@@ -61,7 +61,7 @@ DEBUG_STRUCT_TUPLE(Physics, mass, drag_coefficient, velocity);
 struct EnemyStatus : ecs::component {
   static constexpr std::uint32_t kStunTicks = 40u;
   static constexpr std::uint32_t kStunHit = 8u;
-  static constexpr std::uint32_t kStunResistDecayTime = 20u;
+  static constexpr std::uint32_t kStunResistDecayTime = 12u;
 
   std::uint32_t stun_resist_base = 0u;
   std::uint32_t stun_resist_bonus = 20u;

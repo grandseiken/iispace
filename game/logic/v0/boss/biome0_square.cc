@@ -5,6 +5,7 @@
 #include "game/logic/v0/boss/boss_template.h"
 #include "game/logic/v0/enemy/enemy.h"
 #include "game/logic/v0/lib/ship_template.h"
+#include "game/logic/v0/lib/waypoint.h"
 #include <array>
 
 namespace ii::v0 {

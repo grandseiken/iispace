@@ -9,6 +9,7 @@ cc_library(
     "//game/logic/sim:sim_interface",
     "//game/logic/v0/enemy",
     "//game/logic/v0/lib:ship_template",
+    "//game/logic/v0/lib:waypoint",
   ],
   visibility = ["//game/logic/v0/overmind:__subpackages__"],
 )

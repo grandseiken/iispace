@@ -7,6 +7,28 @@
 #include <span>
 
 namespace ii {
+// Zero if point lies on line; otherwise sign indicates which side.
+inline constexpr fixed line_point_relation(const vec2& a, const vec2& b, const vec2& v) {
+  return (v.x - a.x) * (b.y - a.y) - (v.y - a.y) * (b.x - a.x);
+}
+
+inline constexpr fixed line_point_distance_sq(const vec2& a, const vec2& b, const vec2& v) {
+  auto ab = b - a;
+  auto va = a - v;
+  auto n = ab.x * va.y - ab.y * va.x;
+  return (n * n) / length_squared(ab);
+}
+
+inline constexpr vec2 line_point_closest_point(const vec2& a, const vec2& b, const vec2& v) {
+  auto ab = b - a;
+  if (ab == vec2{0}) {
+    return a;
+  }
+  auto va = a - v;
+  auto t = cdot(ab, va) / cdot(ab, ab);
+  return a + std::clamp(t, 0_fx, 1_fx) * ab;
+}
+
 namespace detail {
 
 inline constexpr vec2
@@ -63,32 +85,21 @@ inline constexpr bool intersect_aabb_ball(const vec2& aabb_min, const vec2& aabb
   fixed d = 0;
   d += handle_dimension(aabb_min.x, aabb_max.x, ball_centre.x);
   d += handle_dimension(aabb_min.y, aabb_max.y, ball_centre.y);
-  return d <= ball_radius * ball_radius;
+  return d <= square(ball_radius);
 }
 
 inline constexpr bool intersect_line_ball(const vec2& line_a, const vec2& line_b,
                                           const vec2& ball_centre, fixed ball_radius) {
-  auto line_v = line_b - line_a;
-  auto line_c = ball_centre - line_a;
-  if (line_v == vec2{0}) {
-    return length_squared(line_c) <= ball_radius * ball_radius;
-  }
-
-  auto k = cdot(line_c, line_v) / cdot(line_v, line_v);
-  auto v = line_a + std::clamp(k, 0_fx, 1_fx) * line_v;
-  auto cv = ball_centre - v;
-  return length_squared(cv) <= ball_radius * ball_radius;
+  auto cv = ball_centre - line_point_closest_point(line_a, line_b, ball_centre);
+  return length_squared(cv) <= square(ball_radius);
 }
 
 inline constexpr bool intersect_aabb_line(const vec2& aabb_min, const vec2& aabb_max,
                                           const vec2& line_a, const vec2& line_b) {
-  constexpr auto line_f = [](const vec2& a, const vec2& b, const vec2& v) constexpr {
-    return (b.y - a.y) * v.x + (a.x - b.x) * v.y + b.x * a.y - a.x * b.y;
-  };
-  auto f0 = line_f(line_a, line_b, aabb_min);
-  auto f1 = line_f(line_a, line_b, aabb_max);
-  auto f2 = line_f(line_a, line_b, {aabb_min.x, aabb_max.y});
-  auto f3 = line_f(line_a, line_b, {aabb_max.x, aabb_min.y});
+  auto f0 = line_point_relation(line_a, line_b, aabb_min);
+  auto f1 = line_point_relation(line_a, line_b, aabb_max);
+  auto f2 = line_point_relation(line_a, line_b, {aabb_min.x, aabb_max.y});
+  auto f3 = line_point_relation(line_a, line_b, {aabb_max.x, aabb_min.y});
   return !((f0 < 0 && f1 < 0 && f2 < 0 && f3 < 0) || (f0 > 0 && f1 > 0 && f2 > 0 && f3 > 0) ||
            (line_a.x > aabb_max.x && line_b.x > aabb_max.x) ||
            (line_a.x < aabb_min.x && line_b.x < aabb_min.x) ||
@@ -128,7 +139,7 @@ intersect_convex_ball(std::span<const vec2> convex, const vec2& ball_centre, fix
       return false;
     }
     auto d = length_squared(convex[i] - ball_centre);
-    if (d <= ball_radius * ball_radius) {
+    if (d <= square(ball_radius)) {
       return true;
     }
     if (!closest_vertex || d < closest_vertex_distance) {

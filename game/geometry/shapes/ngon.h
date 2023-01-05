@@ -74,8 +74,8 @@ struct ngon_collider_data : shape_data_base {
     auto a = 2 * pi<fixed> / dimensions.sides;
     auto at = (theta % a) / a;
     auto dt = (1 + 2 * at * (at - 1) * (1 - cos(a)));
-    auto d_sq = dt * dimensions.radius * dimensions.radius;
-    auto i_sq = dt * dimensions.inner_radius * dimensions.inner_radius;
+    auto d_sq = dt * square(dimensions.radius);
+    auto i_sq = dt * square(dimensions.inner_radius);
     if (theta <= a * dimensions.segments && length_squared(v) <= d_sq &&
         length_squared(v) >= i_sq) {
       std::invoke(f, flags & it.mask, t.inverse_transform(vec2{0}));
