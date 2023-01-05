@@ -21,6 +21,7 @@ struct player_mod_data {
   std::uint32_t shield_refill_timer = 0;
   std::uint32_t bomb_double_trigger_timer = 0;
 };
+DEBUG_STRUCT_TUPLE(player_mod_data, shield_refill_timer, bomb_double_trigger_timer);
 
 struct PlayerLogic : ecs::component {
   static constexpr fixed kPlayerSpeed = 5_fx * 15_fx / 16_fx;
@@ -356,9 +357,8 @@ struct PlayerLogic : ecs::component {
   }
 };
 DEBUG_STRUCT_TUPLE(PlayerLogic, bubble_id, invulnerability_timer, fire_timer, bomb_timer,
-                   click_timer, render_timer, nametag_timer, fire_target_render_timer,
-                   data.shield_refill_timer, data.bomb_double_trigger_timer, fire_target,
-                   mod_upgrade_chosen);
+                   click_timer, render_timer, nametag_timer, fire_target_render_timer, data,
+                   fire_target, mod_upgrade_chosen);
 
 }  // namespace
 

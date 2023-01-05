@@ -68,6 +68,7 @@ struct shot_mod_data {
   std::optional<fixed> max_distance;
   std::uint32_t damage = kBaseDamage;
 };
+DEBUG_STRUCT_TUPLE(shot_mod_data, flags, speed, distance_travelled, max_distance, damage);
 
 struct PlayerShot : ecs::component {
   static constexpr auto z = colour::kZPlayerShot;
@@ -83,7 +84,7 @@ struct PlayerShot : ecs::component {
     return {transform.centre, transform.rotation, colour, c_dark};
   }
 
-  ecs::entity_id player;
+  ecs::entity_id player{0};
   std::uint32_t player_number = 0;
   bool is_predicted = false;
   vec2 direction{0};
@@ -221,8 +222,7 @@ struct PlayerShot : ecs::component {
     }
   }
 };
-DEBUG_STRUCT_TUPLE(PlayerShot, player, player_number, is_predicted, direction, data.flags,
-                   data.speed, data.distance_travelled, data.max_distance, data.damage);
+DEBUG_STRUCT_TUPLE(PlayerShot, player, player_number, is_predicted, direction, data);
 
 ecs::handle
 spawn_player_shot(SimInterface& sim, const vec2& position, const PlayerShot& shot_data) {

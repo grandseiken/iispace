@@ -212,7 +212,7 @@ struct Overmind : ecs::component {
     return index >= biomes.size() ? nullptr : v0::get_biome(biomes[index]);
   }
 };
-DEBUG_STRUCT_TUPLE(Overmind, next_wave.biome_index, next_wave.wave_number, spawn_timer,
+DEBUG_STRUCT_TUPLE(Overmind, next_wave, spawn_timer, current_wave, wave_list, background_data,
                    background_interpolate);
 
 }  // namespace

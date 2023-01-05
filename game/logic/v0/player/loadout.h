@@ -34,7 +34,7 @@ struct PlayerLoadout : ecs::component {
   };
   std::pair<viability, mod_id> check_viability(mod_id) const;
 };
-DEBUG_STRUCT_TUPLE(PlayerLoadout);
+DEBUG_STRUCT_TUPLE(PlayerLoadout, loadout);
 
 std::vector<mod_id> mod_selection(const initial_conditions& conditions, RandomEngine& random,
                                   const player_loadout& combined_loadout);

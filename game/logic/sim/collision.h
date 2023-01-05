@@ -90,6 +90,8 @@ private:
   struct cell_t {
     void insert(ecs::entity_id id);
     void clear(ecs::entity_id id);
+    void insert_centre(ecs::entity_id id);
+    void clear_centre(ecs::entity_id id);
     std::vector<ecs::entity_id> entries;
     std::vector<ecs::entity_id> centres;
   };

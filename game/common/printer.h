@@ -11,6 +11,7 @@
 #include <string_view>
 #include <tuple>
 #include <type_traits>
+#include <unordered_map>
 #include <utility>
 #include <vector>
 
@@ -117,6 +118,20 @@ public:
       put(e);
     }
     return put(']');
+  }
+
+  template <typename K, typename V>
+  Printer& put(const std::unordered_map<K, V>& v) {
+    put('{');
+    bool first = true;
+    for (const auto& pair : v) {
+      if (!first) {
+        put(", ");
+      }
+      first = false;
+      put(pair.first).put(": ").put(pair.second);
+    }
+    return put('}');
   }
 
   template <typename T, std::size_t N>

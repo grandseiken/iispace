@@ -11,6 +11,7 @@ struct drop_data {
   std::int32_t counter = 0;
   std::int32_t compensation = 0;
 };
+DEBUG_STRUCT_TUPLE(drop_data, counter, compensation);
 
 struct AiFocusTag : ecs::component {
   std::uint32_t priority = 1;
@@ -27,11 +28,12 @@ struct GlobalData : ecs::component {
   drop_data shield_drop;
   drop_data bomb_drop;
 
-  bool walls_vulnerable;
+  bool walls_vulnerable = false;
   std::optional<std::uint32_t> overmind_wave_count;
   std::string debug_text;
 };
-DEBUG_STRUCT_TUPLE(GlobalData, walls_vulnerable, overmind_wave_count, debug_text);
+DEBUG_STRUCT_TUPLE(GlobalData, is_run_complete, shield_drop, bomb_drop, walls_vulnerable,
+                   overmind_wave_count, debug_text);
 
 struct DropTable : ecs::component {
   std::uint32_t shield_drop_chance = 0;

@@ -40,6 +40,7 @@ cc_library(
   ],
   deps = [
     "//game/common:math",
+    "//game/common:types",
     "//game/logic/sim:sim_interface",
     "//game/logic/sim/io:conditions",
     "//game/render/data",

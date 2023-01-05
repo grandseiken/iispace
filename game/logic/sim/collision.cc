@@ -149,7 +149,6 @@ bool GridCollisionIndex::collide_ball_any(const vec2& centre, fixed radius, shap
 bool GridCollisionIndex::collide_convex_any(std::span<const vec2> convex, shape_flag mask) const {
   static thread_local std::unordered_set<ecs::entity_id> checked;
   checked.clear();
-  std::vector<SimInterface::collision_info> r;
   if (convex.empty()) {
     return false;
   }
@@ -378,6 +377,8 @@ void GridCollisionIndex::in_range(const vec2& point, fixed distance, ecs::compon
       }
     }
   }
+  std::sort(output.begin() + output_begin, output.end(),
+            [](const auto& a, const auto& b) { return a.h.id() < b.h.id(); });
 }
 
 ivec2 GridCollisionIndex::cell_position(const ivec2& c) const {
@@ -424,8 +425,7 @@ void GridCollisionIndex::clear_cells(ecs::entity_id id, entry_t& e) {
     }
   }
   if (is_cell_valid(e.centre)) {
-    auto& c = cell(e.centre);
-    c.centres.erase(std::find(c.centres.begin(), c.centres.end(), id));
+    cell(e.centre).clear_centre(id);
   }
 }
 
@@ -439,7 +439,7 @@ void GridCollisionIndex::insert_cells(ecs::entity_id id, entry_t& e) {
     }
   }
   if (is_cell_valid(e.centre)) {
-    cell(e.centre).centres.emplace_back(id);
+    cell(e.centre).insert_centre(id);
   }
 }
 
@@ -453,6 +453,18 @@ void GridCollisionIndex::cell_t::insert(ecs::entity_id id) {
 
 void GridCollisionIndex::cell_t::clear(ecs::entity_id id) {
   entries.erase(std::find(entries.begin(), entries.end(), id));
+}
+
+void GridCollisionIndex::cell_t::insert_centre(ecs::entity_id id) {
+  auto it = centres.begin();
+  while (it != centres.end() && *it < id) {
+    ++it;
+  }
+  centres.insert(it, id);
+}
+
+void GridCollisionIndex::cell_t::clear_centre(ecs::entity_id id) {
+  centres.erase(std::find(centres.begin(), centres.end(), id));
 }
 
 void LegacyCollisionIndex::refresh_handles(ecs::EntityIndex& index) {
