@@ -5,6 +5,12 @@ namespace ii::render {
 
 std::vector<ustring> prepare_text(const render::GlRenderer& r, const render::font_data& font,
                                   bool multiline, std::int32_t bounds_width, ustring_view s) {
+  if (!bounds_width) {
+    // TODO: bounds_width can sometimes be zero (apparently e.g. for one frame when remote player
+    // joins in lobby). Should leave in this safeguard, but maybe worth figuring out why that
+    // happened to begin with.
+    return {};
+  }
   std::vector<ustring> lines;
   if (!multiline) {
     lines = {r.trim_for_width(font, bounds_width, s)};
@@ -45,6 +51,7 @@ std::vector<ustring> prepare_text(const render::GlRenderer& r, const render::fon
         break;
       }
     }
+    line_end = std::max(line_end, line_start + 1u);
 
     bool done = false;
     for (auto i = line_start; i < line_end; ++i) {
