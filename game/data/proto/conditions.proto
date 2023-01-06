@@ -33,9 +33,16 @@ message RunBiome {
   enum Enum {
     kNone = 0;
     kTesting = 1;
-    kBiome0 = 2;
-    kBiome1 = 3;
-    kBiome2 = 4;
+    kBiome0_Uplink = 2;
+    kBiome1_Edge = 3;
+    kBiome2_Fabric = 4;
+    kBiome3_Archive = 5;
+    kBiome4_Firewall = 6;
+    kBiome5_Prism = 7;
+    kBiome6_SystemCore = 8;
+    kBiome7_DarkNet = 9;
+    kBiome8_Paradise = 10;
+    kBiome9_Minus = 11;
   }
   Enum value = 1;
 }

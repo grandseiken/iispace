@@ -31,6 +31,16 @@ inline auto make_struct_tuple_member_entry(const char* name, T&& t) {
     (void)x;                                                                    \
     return std::tuple{FOR_EACH(DEBUG_STRUCT_TUPLE_MEMBER, __VA_ARGS__)};        \
   }
+#define TEMPLATE_DEBUG_STRUCT_TUPLE(struct_name, ...)                    \
+  template <typename T>                                                  \
+  inline const char* to_debug_name(const struct_name<T>*) {              \
+    return #struct_name;                                                 \
+  }                                                                      \
+  template <typename T>                                                  \
+  inline auto to_debug_tuple(const struct_name<T>& x) {                  \
+    (void)x;                                                             \
+    return std::tuple{FOR_EACH(DEBUG_STRUCT_TUPLE_MEMBER, __VA_ARGS__)}; \
+  }
 
 template <typename T>
 concept DebugStructTuple = requires(T x) {

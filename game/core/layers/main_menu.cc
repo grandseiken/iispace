@@ -48,12 +48,12 @@ public:
       conditions.player_count = 0u;
       conditions.mode = mode;
       if (conditions.mode == game_mode::kStandardRun) {
-        conditions.biomes.emplace_back(run_biome::kBiome0);
-        conditions.biomes.emplace_back(run_biome::kBiome1);
-        conditions.biomes.emplace_back(run_biome::kBiome2);
+        conditions.biomes.emplace_back(run_biome::kBiome0_Uplink);
+        conditions.biomes.emplace_back(run_biome::kBiome1_Edge);
+        conditions.biomes.emplace_back(run_biome::kBiome2_Fabric);
       }
       if (!host_online_) {
-        this->stack().add<RunLobbyLayer>(conditions, /* online*/ false);
+        this->stack().add<RunLobbyLayer>(conditions, /* online */ false);
         return;
       }
       auto async = this->stack().system().create_lobby();

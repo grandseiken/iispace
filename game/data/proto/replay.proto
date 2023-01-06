@@ -7,5 +7,7 @@ import "game/data/proto/input_frame.proto";
 message Replay {
   string game_version = 1;
   InitialConditions conditions = 2;
+  // TODO: save results.
+  // TODO: make format streamable.
   repeated InputFrame player_frame = 3;
 }

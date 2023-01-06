@@ -16,7 +16,7 @@ inline constexpr fixed line_point_distance_sq(const vec2& a, const vec2& b, cons
   auto ab = b - a;
   auto va = a - v;
   auto n = ab.x * va.y - ab.y * va.x;
-  return (n * n) / length_squared(ab);
+  return n * (n / length_squared(ab));  // Note: n * n likely overflows.
 }
 
 inline constexpr vec2 line_point_closest_point(const vec2& a, const vec2& b, const vec2& v) {

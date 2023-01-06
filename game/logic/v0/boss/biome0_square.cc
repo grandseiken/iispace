@@ -18,9 +18,6 @@ namespace {
 // TODO: cooler special attack effect.
 // TODO: special attack: zoom vertically from one side to another.
 // TODO: special target more players?
-// TODO: rc_smooth is a bit odd for movement. Instead, write some
-// path follower stuff: waypoints; turning radius; stick to
-// current segment until we need to start turning for next.
 struct SquareBoss : public ecs::component {
   static constexpr std::uint32_t kBaseHp = 4000;
   static constexpr std::uint32_t kBiomeHp = 1500;
@@ -30,6 +27,9 @@ struct SquareBoss : public ecs::component {
   static constexpr fixed kSpeed = 2 + 1_fx / 4;
   static constexpr fixed kSpecialAttackRadius = 140;
   static constexpr fixed kBoundingWidth = 200;
+  static constexpr fixed kTurningRadius = 72;
+  static constexpr fixed kMarginX = 1_fx / 5;
+  static constexpr fixed kMarginY = 1_fx / 4;
   static constexpr float kZIndex = -4.f;
 
   static constexpr auto z = colour::kZEnemyBoss;
@@ -64,12 +64,17 @@ struct SquareBoss : public ecs::component {
       rotate_ngon<5_fx / 2, 3, 3>, rotate_ngon_c<3, 2, 4, shape_flag::kVulnerable>,
       rotate_ngon_c<7_fx / 2, 1, 5, shape_flag::kShield>>;
 
+  struct corner_tag {
+    std::uint32_t index = 0;
+    bool anti = false;
+  };
+
   SquareBoss(std::uint32_t corner_index)
-  : corner_index{corner_index}, anti{corner_index % 2 == 0} {}
-  std::uint32_t corner_index = 0;
-  vec2 direction{0};
+  : waypoints{kTurningRadius}, start{corner_index, corner_index % 2 == 0} {}
+  WaypointFollower<corner_tag> waypoints;
+  corner_tag start;
   fixed rotation{0};
-  bool anti = false;
+  fixed speed = 2 * kSpeed;
 
   std::uint32_t timer = kTimer * 6;
   std::uint32_t spawn_timer = 0;
@@ -84,11 +89,19 @@ struct SquareBoss : public ecs::component {
   void update(Transform& transform, const Health& health, SimInterface& sim) {
     auto dim = sim.dimensions();
     std::array<vec2, 4> corners = {
-        vec2{dim.x / 5, dim.y / 4},
-        vec2{4 * dim.x / 5, dim.y / 4},
-        vec2{4 * dim.x / 5, 3 * dim.y / 4},
-        vec2{dim.x / 5, 3 * dim.y / 4},
+        vec2{dim.x * kMarginX, dim.y * kMarginY},
+        vec2{dim.x * (1 - kMarginX), dim.y * kMarginY},
+        vec2{dim.x * (1 - kMarginX), dim.y * (1 - kMarginY)},
+        vec2{dim.x * kMarginX, dim.y * (1 - kMarginY)},
     };
+    if (waypoints.empty()) {
+      waypoints.add(corners[start.index], start);
+    }
+    while (waypoints.needs_add()) {
+      const auto& t = waypoints.back().tag;
+      auto index = (t.index + (t.anti ? 3u : 1u)) % 4u;
+      waypoints.add(corners[index], corner_tag{index, t.anti});
+    }
 
     if (special_attack) {
       special_attack->timer && --special_attack->timer;
@@ -106,13 +119,20 @@ struct SquareBoss : public ecs::component {
         }
         sim.emit(resolve_key::predicted()).play(sound::kEnemySpawn, ph.get<Transform>()->centre);
         special_attack.reset();
+        if (sim.random_bool()) {
+          waypoints.reverse();
+          for (auto& wp : waypoints.waypoints) {
+            wp.tag.anti = !wp.tag.anti;
+          }
+        }
       }
     } else if (sim.is_on_screen(transform.centre)) {
       timer && --timer;
-      if (!timer) {
-        timer = (sim.random(6) + 1) * kTimer;
-        anti = !anti;
-        corner_index = (corner_index + (anti ? 3u : 1u)) % 4u;
+      if (!timer && waypoints.size() <= 3u) {
+        timer = (sim.random(10) + 2) * kTimer;
+        const auto& t = waypoints.back().tag;
+        auto index = (t.index + 2u) % 4u;
+        waypoints.add(corners[index], corner_tag{index, !t.anti});
       }
 
       ++spawn_timer;
@@ -134,19 +154,12 @@ struct SquareBoss : public ecs::component {
       }
     }
 
-    vec2 target_direction{0};
-    fixed target_rotation = 0;
-    if (length_squared(corners[corner_index] - transform.centre) <= 48 * 48) {
-      corner_index = (corner_index + (anti ? 3u : 1u)) % 4u;
-    }
-    if (!special_attack) {
-      target_direction = normalise(corners[corner_index] - transform.centre);
-      target_rotation = anti ? -1_fx / 50 : 1_fx / 50;
-    }
-    direction = rc_smooth(direction, target_direction, 47_fx / 48);
+    fixed target_rotation = special_attack ? 0_fx : 1_fx / 50;
+    fixed target_speed = special_attack ? 0_fx : kSpeed;
     rotation = rc_smooth(rotation, target_rotation, 47_fx / 48);
-    transform.move(direction * kSpeed);
+    speed = rc_smooth(speed, target_speed, 47_fx / 48);
     transform.rotate(rotation);
+    waypoints.update(transform.centre, speed);
   }
 
   void render(std::vector<render::shape>& output, const SimInterface& sim) const {
@@ -174,7 +187,8 @@ struct SquareBoss : public ecs::component {
   }
 };
 DEBUG_STRUCT_TUPLE(SquareBoss::special_t, player, timer, rotate);
-DEBUG_STRUCT_TUPLE(SquareBoss, corner_index, direction, rotation, anti, timer, spawn_timer,
+DEBUG_STRUCT_TUPLE(SquareBoss::corner_tag, index, anti);
+DEBUG_STRUCT_TUPLE(SquareBoss, waypoints, start, rotation, speed, timer, spawn_timer,
                    special_counter, special_attack);
 
 }  // namespace
@@ -187,16 +201,16 @@ void spawn_biome0_square_boss(SimInterface& sim, std::uint32_t biome_index) {
   switch (corner_index) {
   default:
   case 0:
-    position = vec2{dim.x / 4, -dim.y / 2};
+    position = vec2{dim.x * SquareBoss::kMarginX, -dim.y / 2};
     break;
   case 1:
-    position = vec2{3 * dim.x / 4, -dim.y / 2};
+    position = vec2{dim.x * (1 - SquareBoss::kMarginX), -dim.y / 2};
     break;
   case 2:
-    position = vec2{3 * dim.x / 4, 3 * dim.y / 2};
+    position = vec2{dim.x * (1 - SquareBoss::kMarginX), 3 * dim.y / 2};
     break;
   case 3:
-    position = vec2{dim.x / 4, 3 * dim.y / 2};
+    position = vec2{dim.x * SquareBoss::kMarginX, 3 * dim.y / 2};
     break;
   }
 

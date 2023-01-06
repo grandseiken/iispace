@@ -97,34 +97,61 @@ inline proto::GameTechTree write_game_tech_tree(const game_tech_tree&) {
   return proto;
 }
 
-inline result<run_biome> read_run_biome(const proto::RunBiome& proto) {
-  switch (proto.value()) {
+inline result<run_biome> read_run_biome(proto::RunBiome::Enum value) {
+  switch (value) {
   case proto::RunBiome::kTesting:
     return run_biome::kTesting;
-  case proto::RunBiome::kBiome0:
-    return run_biome::kBiome0;
-  case proto::RunBiome::kBiome1:
-    return run_biome::kBiome1;
-  case proto::RunBiome::kBiome2:
-    return run_biome::kBiome2;
+  case proto::RunBiome::kBiome0_Uplink:
+    return run_biome::kBiome0_Uplink;
+  case proto::RunBiome::kBiome1_Edge:
+    return run_biome::kBiome1_Edge;
+  case proto::RunBiome::kBiome2_Fabric:
+    return run_biome::kBiome2_Fabric;
+  case proto::RunBiome::kBiome3_Archive:
+    return run_biome::kBiome3_Archive;
+  case proto::RunBiome::kBiome4_Firewall:
+    return run_biome::kBiome4_Firewall;
+  case proto::RunBiome::kBiome5_Prism:
+    return run_biome::kBiome5_Prism;
+  case proto::RunBiome::kBiome6_SystemCore:
+    return run_biome::kBiome6_SystemCore;
+  case proto::RunBiome::kBiome7_DarkNet:
+    return run_biome::kBiome7_DarkNet;
+  case proto::RunBiome::kBiome8_Paradise:
+    return run_biome::kBiome8_Paradise;
+  case proto::RunBiome::kBiome9_Minus:
+    return run_biome::kBiome9_Minus;
   default:
     return unexpected("unknown run biome");
   }
 }
 
-inline proto::RunBiome write_run_biome(run_biome value) {
-  proto::RunBiome proto;
+inline proto::RunBiome::Enum write_run_biome(run_biome value) {
   switch (value) {
   case run_biome::kTesting:
-    proto.set_value(proto::RunBiome::kTesting);
-  case run_biome::kBiome0:
-    proto.set_value(proto::RunBiome::kBiome0);
-  case run_biome::kBiome1:
-    proto.set_value(proto::RunBiome::kBiome1);
-  case run_biome::kBiome2:
-    proto.set_value(proto::RunBiome::kBiome2);
+    return proto::RunBiome::kTesting;
+  case run_biome::kBiome0_Uplink:
+    return proto::RunBiome::kBiome0_Uplink;
+  case run_biome::kBiome1_Edge:
+    return proto::RunBiome::kBiome1_Edge;
+  case run_biome::kBiome2_Fabric:
+    return proto::RunBiome::kBiome2_Fabric;
+  case run_biome::kBiome3_Archive:
+    return proto::RunBiome::kBiome3_Archive;
+  case run_biome::kBiome4_Firewall:
+    return proto::RunBiome::kBiome4_Firewall;
+  case run_biome::kBiome5_Prism:
+    return proto::RunBiome::kBiome5_Prism;
+  case run_biome::kBiome6_SystemCore:
+    return proto::RunBiome::kBiome6_SystemCore;
+  case run_biome::kBiome7_DarkNet:
+    return proto::RunBiome::kBiome7_DarkNet;
+  case run_biome::kBiome8_Paradise:
+    return proto::RunBiome::kBiome8_Paradise;
+  case run_biome::kBiome9_Minus:
+    return proto::RunBiome::kBiome9_Minus;
   }
-  return proto;
+  return proto::RunBiome::kNone;
 }
 
 inline result<initial_conditions> read_initial_conditions(const proto::InitialConditions& proto) {
@@ -149,7 +176,7 @@ inline result<initial_conditions> read_initial_conditions(const proto::InitialCo
   data.modifiers = read_run_modifiers(proto.modifiers());
   data.tech_tree = read_game_tech_tree(proto.tech_tree());
   for (const auto& biome : proto.biome()) {
-    auto result = read_run_biome(biome);
+    auto result = read_run_biome(biome.value());
     if (!result) {
       return unexpected(result.error());
     }
@@ -175,7 +202,7 @@ inline proto::InitialConditions write_initial_conditions(const initial_condition
   *proto.mutable_modifiers() = write_run_modifiers(data.modifiers);
   *proto.mutable_tech_tree() = write_game_tech_tree(data.tech_tree);
   for (auto biome : data.biomes) {
-    *proto.add_biome() = write_run_biome(biome);
+    proto.add_biome()->set_value(write_run_biome(biome));
   }
 
   std::uint32_t flags = 0;

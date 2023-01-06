@@ -53,6 +53,7 @@ cc_library(
     "//game/common:math",
     "//game/common:types",
     "//game/logic/sim:components",
+    "//game/render/data",
   ],
   visibility = ["//game/logic/v0:__subpackages__"],
 )

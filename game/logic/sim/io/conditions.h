@@ -28,9 +28,16 @@ enum class game_mode : std::uint32_t {
 
 enum class run_biome : std::uint32_t {
   kTesting,
-  kBiome0,
-  kBiome1,
-  kBiome2,
+  kBiome0_Uplink,
+  kBiome1_Edge,
+  kBiome2_Fabric,
+  kBiome3_Archive,
+  kBiome4_Firewall,
+  kBiome5_Prism,
+  kBiome6_SystemCore,
+  kBiome7_DarkNet,   // темной сети
+  kBiome8_Paradise,  // 仙境
+  kBiome9_Minus,
 };
 
 struct run_modifiers {};

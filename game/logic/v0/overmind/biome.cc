@@ -73,7 +73,56 @@ void spawn(spawn_context& context) {
 class TestingBiome : public Biome {
 public:
   ~TestingBiome() override = default;
-  TestingBiome() {
+  bool update_background(RandomEngine& random, const background_input& input,
+                         background_update& data) const override {
+    if (input.initialise) {
+      data.position_delta = {0.f, 0.f, 1.f / 8, 1.f / 256};
+      data.rotation_delta = 0.f;
+
+      data.type = render::background::type::kBiome0;
+      data.colour = colour::kSolarizedDarkBase3;
+      data.colour.y /= 5.f;
+      data.colour.z /= 6.f;
+      data.parameters = {0.f, 0.f};
+    }
+
+    if (input.wave_number) {
+      if (*input.wave_number % 4 == 3) {
+        data.type = data.type == render::background::type::kBiome0
+            ? render::background::type::kBiome0_Polar
+            : render::background::type::kBiome0;
+      } else if (*input.wave_number % 4 == 1) {
+        data.parameters.x = 1.f - data.parameters.x;
+      } else {
+        auto v = from_polar(2 * pi<fixed> * random.fixed(), 1_fx / 2);
+        data.position_delta.x = v.x.to_float();
+        data.position_delta.y = v.y.to_float();
+      }
+      return true;
+    }
+    return false;
+  }
+
+  std::vector<wave_data>
+  get_wave_list(const initial_conditions& conditions, std::uint32_t biome_index) const override {
+    std::vector<wave_data> result;
+    result.emplace_back(wave_data{wave_type::kUpgrade});
+    result.emplace_back(wave_data{wave_type::kUpgrade});
+    result.emplace_back(wave_data{wave_type::kBoss});
+    return result;
+  }
+
+  void spawn_wave(SimInterface&, const wave_data&) const override {}
+
+  void spawn_boss(SimInterface& sim, std::uint32_t biome_index) const override {
+    spawn_biome0_square_boss(sim, biome_index);
+  }
+};
+
+class Biome0_Uplink : public Biome {
+public:
+  ~Biome0_Uplink() override = default;
+  Biome0_Uplink() {
     auto s = set.add_set();
     s.add<formations::biome0::follow0>();
     s.add<formations::biome0::follow1>();
@@ -199,13 +248,22 @@ private:
 }  // namespace
 
 const Biome* get_biome(run_biome biome) {
-  static TestingBiome testing_biome;
+  static TestingBiome testing;
+  static Biome0_Uplink biome0;
   switch (biome) {
   case run_biome::kTesting:
-  case run_biome::kBiome0:
-  case run_biome::kBiome1:
-  case run_biome::kBiome2:
-    return &testing_biome;
+    return &testing;
+  case run_biome::kBiome0_Uplink:
+  case run_biome::kBiome1_Edge:
+  case run_biome::kBiome2_Fabric:
+  case run_biome::kBiome3_Archive:
+  case run_biome::kBiome4_Firewall:
+  case run_biome::kBiome5_Prism:
+  case run_biome::kBiome6_SystemCore:
+  case run_biome::kBiome7_DarkNet:
+  case run_biome::kBiome8_Paradise:
+  case run_biome::kBiome9_Minus:
+    return &biome0;
   }
   return nullptr;
 }
