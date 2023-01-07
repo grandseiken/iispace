@@ -11,9 +11,7 @@
 namespace ii::v0 {
 namespace {
 
-// TODO: many general boss todos.
-// TODO: better bomb effect when hit.
-// TODO: render boss health bar.
+// TODO: better bomb effect when hit (general boss).
 // TODO: many/different spawn effects; spawn with physics velocity.
 // TODO: cooler special attack effect.
 // TODO: special attack: zoom vertically from one side to another.
@@ -215,7 +213,8 @@ void spawn_biome0_square_boss(SimInterface& sim, std::uint32_t biome_index) {
   }
 
   auto h = create_ship_default<SquareBoss>(sim, position);
-  add_boss_data<SquareBoss>(h, SquareBoss::kBaseHp + SquareBoss::kBiomeHp * biome_index);
+  add_boss_data<SquareBoss>(h, ustring::ascii("Squall"),
+                            SquareBoss::kBaseHp + SquareBoss::kBiomeHp * biome_index);
   h.add(Physics{.mass = 12u});
   h.add(SquareBoss{corner_index});
 }

@@ -215,7 +215,7 @@ std::uint32_t SimState::fps() const {
 
 render_output& SimState::render(transient_render_state& state, bool paused) const {
   auto& result = internals_->render;
-  result.boss_hp_bar.reset();
+  result.boss.reset();
   result.shapes.clear();
   result.panels.clear();
   result.players.clear();
@@ -304,14 +304,22 @@ render_output& SimState::render(transient_render_state& state, bool paused) cons
 
   std::uint32_t boss_hp = 0;
   std::uint32_t boss_max_hp = 0;
+  std::optional<ustring> boss_name;
+  std::optional<cvec4> boss_colour;
   internals_->index.iterate_dispatch_if<Boss>([&](const Boss& boss, const Health& health) {
     if (boss.show_hp_bar) {
       boss_hp += health.hp;
       boss_max_hp += health.max_hp;
+      if (!boss_name && !boss.name.empty()) {
+        boss_name = boss.name;
+        boss_colour = boss.colour;
+      }
     }
   });
   if (boss_hp && boss_max_hp) {
-    result.boss_hp_bar = static_cast<float>(boss_hp) / static_cast<float>(boss_max_hp);
+    result.boss = {boss_name.value_or(ustring{}),
+                   static_cast<float>(boss_hp) / static_cast<float>(boss_max_hp),
+                   boss_colour.value_or(colour::kWhite0)};
   }
   return result;
 }

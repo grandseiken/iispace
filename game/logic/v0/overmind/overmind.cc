@@ -50,6 +50,7 @@ struct Overmind : ecs::component {
       cleanup_mod_upgrades(sim);
     }
     input.biome_index = current_wave->biome_index;
+    input.type = current_wave->type;
 
     if (const auto* biome = get_biome(sim, current_wave->biome_index); biome) {
       update_background(sim, *biome, input, sim.global_entity().get<Background>()->background);

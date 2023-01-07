@@ -40,6 +40,7 @@ cc_library(
     ":aggregate",
     ":events",
     "//game/common:types",
+    "//game/common:ustring",
     "//game/render/data",
   ],
   visibility = ["//visibility:public"],

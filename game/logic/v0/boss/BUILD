@@ -18,6 +18,7 @@ cc_library(
   name = "boss_internal",
   hdrs = ["boss_template.h"],
   deps = [
+    "//game/common:ustring",
     "//game/geometry",
     "//game/logic/ecs",
     "//game/logic/v0/lib:components",

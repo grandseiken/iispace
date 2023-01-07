@@ -2,6 +2,7 @@
 #define II_GAME_LOGIC_SIM_COMPONENTS_H
 #include "game/common/math.h"
 #include "game/common/struct_tuple.h"
+#include "game/common/ustring.h"
 #include "game/geometry/enums.h"
 #include "game/logic/ecs/index.h"
 #include "game/logic/sim/io/output.h"
@@ -108,9 +109,11 @@ DEBUG_STRUCT_TUPLE(PowerupTag);
 
 struct Boss : ecs::component {
   boss_flag boss = boss_flag{0};
+  ustring name;
+  cvec4 colour = colour::kWhite0;
   bool show_hp_bar = false;
 };
-DEBUG_STRUCT_TUPLE(Boss, boss);
+DEBUG_STRUCT_TUPLE(Boss, boss, show_hp_bar);
 
 struct Enemy : ecs::component {
   std::uint32_t threat_value = 1;

@@ -1,5 +1,6 @@
 #ifndef II_GAME_LOGIC_V0_BOSS_BOSS_TEMPLATE_H
 #define II_GAME_LOGIC_V0_BOSS_BOSS_TEMPLATE_H
+#include "game/common/ustring.h"
 #include "game/geometry/concepts.h"
 #include "game/logic/ecs/index.h"
 #include "game/logic/v0/lib/components.h"
@@ -83,7 +84,7 @@ void boss_on_destroy(ecs::const_handle h, const Transform& transform, SimInterfa
 }
 
 template <ecs::Component Logic, geom::ShapeNode S = typename Logic::shape>
-void add_boss_data(ecs::handle h, std::uint32_t base_hp) {
+void add_boss_data(ecs::handle h, ustring_view name, std::uint32_t base_hp) {
   h.add(Health{
       .hp = kBossHpMultiplier * base_hp,
       .hit_sound0 = std::nullopt,
@@ -96,7 +97,7 @@ void add_boss_data(ecs::handle h, std::uint32_t base_hp) {
   });
   h.add(EnemyStatus{.stun_resist_base = 100u, .stun_resist_bonus = 60u});
   h.add(Enemy{.threat_value = kBossThreatValue});
-  h.add(Boss{});
+  h.add(Boss{.name = ustring{name}, .colour = get_boss_colour<Logic, S>(h)});
 }
 
 }  // namespace ii::v0

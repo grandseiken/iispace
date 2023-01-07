@@ -13,18 +13,20 @@ wave_data get_enemy_wave_data(const initial_conditions& conditions, std::uint32_
   static constexpr std::uint32_t kInitialPower = 16u;
   static constexpr std::uint32_t kBiomePower = 24u;
   static constexpr std::uint32_t kPhasePower = 2u;
+  static constexpr std::uint32_t kBiomeThreat = 8u;
   static constexpr std::uint32_t kPhaseThreat = 4u;
+  static constexpr std::uint32_t kPlayerPower = 4u;
 
   wave_data data;
   data.type = wave_type::kEnemy;
   data.biome_index = biome_index;
   data.power = kInitialPower + biome_index * kBiomePower;
-  data.power += (conditions.player_count - 1u) * kPhasePower;
+  data.power += (conditions.player_count - 1u) * kPlayerPower;
   data.power += wave_number + std::min(10u, wave_number);
   data.power += phase_index * kPhasePower;
   data.upgrade_budget = data.power / 2;
   data.threat_trigger = wave_number;
-  data.threat_trigger += biome_index * kPhaseThreat;
+  data.threat_trigger += biome_index * kBiomeThreat;
   data.threat_trigger += phase_index * kPhaseThreat;
   return data;
 }
@@ -80,9 +82,8 @@ public:
       data.rotation_delta = 0.f;
 
       data.type = render::background::type::kBiome0;
-      data.colour = colour::kSolarizedDarkBase3;
-      data.colour.y /= 5.f;
-      data.colour.z /= 6.f;
+      data.colour = colour::kSolarizedDarkBase03;
+      data.colour.z /= 1.25f;
       data.parameters = {0.f, 0.f};
     }
 
@@ -97,6 +98,10 @@ public:
         auto v = from_polar(2 * pi<fixed> * random.fixed(), 1_fx / 2);
         data.position_delta.x = v.x.to_float();
         data.position_delta.y = v.y.to_float();
+      }
+      if (input.type == wave_type::kBoss) {
+        data.position_delta.x *= 4;
+        data.position_delta.y *= 4;
       }
       return true;
     }
@@ -220,6 +225,10 @@ public:
         auto v = from_polar(2 * pi<fixed> * random.fixed(), 1_fx / 2);
         data.position_delta.x = v.x.to_float();
         data.position_delta.y = v.y.to_float();
+      }
+      if (input.type == wave_type::kBoss) {
+        data.position_delta.x *= 4;
+        data.position_delta.y *= 4;
       }
       return true;
     }

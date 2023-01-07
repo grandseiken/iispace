@@ -5,6 +5,7 @@ cc_library(
   deps = [
     "//game/common:math",
     "//game/common:types",
+    "//game/common:ustring",
     "//game/geometry",
     "//game/logic/ecs",
     "//game/logic/sim/io:output",

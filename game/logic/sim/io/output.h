@@ -1,5 +1,6 @@
 #ifndef II_GAME_LOGIC_SIM_IO_OUTPUT_H
 #define II_GAME_LOGIC_SIM_IO_OUTPUT_H
+#include "game/common/ustring.h"
 #include "game/logic/sim/io/aggregate.h"
 #include "game/logic/sim/io/events.h"
 #include "game/render/data/background.h"
@@ -56,6 +57,12 @@ struct player_info {
   float timer = 0.f;
 };
 
+struct boss_info {
+  ustring name;
+  float hp_bar = 1.f;
+  cvec4 colour = colour::kWhite0;
+};
+
 struct render_output {
   render::background background;
   std::vector<render::shape> shapes;
@@ -67,7 +74,7 @@ struct render_output {
   std::uint32_t lives_remaining = 0;
   std::optional<std::uint32_t> overmind_timer;
   std::optional<std::uint32_t> overmind_wave;
-  std::optional<float> boss_hp_bar;
+  std::optional<boss_info> boss;
   std::uint32_t colour_cycle = 0;
   std::string debug_text;
 };

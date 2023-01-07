@@ -7,6 +7,7 @@
 namespace ii {
 // TODO: move out to common/colour or similar?
 static constexpr ivec2 kUiDimensions = {640, 360};
+static constexpr ivec2 kGameDimensions = {960, 540};
 static constexpr uvec2 kLargeFont = {14, 14};
 static constexpr uvec2 kSemiLargeFont = {12, 12};
 static constexpr uvec2 kMediumFont = {10, 10};
