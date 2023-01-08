@@ -27,7 +27,7 @@ struct Square : ecs::component {
   bool invisible_flash = false;
 
   Square(SimInterface& sim, fixed dir_angle)
-  : dir{from_polar(dir_angle, 1_fx)}, timer{sim.random(80) + 40} {}
+  : dir{from_polar_legacy(dir_angle, 1_fx)}, timer{sim.random(80) + 40} {}
 
   void
   update(ecs::handle h, Transform& transform, Render& render, Health& health, SimInterface& sim) {

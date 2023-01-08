@@ -104,14 +104,14 @@ bool GridCollisionIndex::collide_line_any(const vec2& a, const vec2& b, shape_fl
       break;
     }
     if (c.x == end.x) {
-      c += cv.y;
+      c.y += cv.y;
     } else if (c.y == end.y) {
-      c += cv.x;
+      c.x += cv.x;
     } else if (intersect_aabb_line(cell_position({c.x, c.y + cv.y}),
                                    cell_position({c.x + 1, c.y + cv.y + 1}), a, b)) {
-      c += ivec2{0, cv.y};
+      c.y += cv.y;
     } else {
-      c += ivec2{cv.x, 0};
+      c.x += cv.x;
     }
   }
   return false;
@@ -158,8 +158,8 @@ bool GridCollisionIndex::collide_convex_any(std::span<const vec2> convex, shape_
     min = min ? glm::min(*min, min_coords(v)) : min_coords(v);
     max = max ? glm::max(*max, max_coords(v)) : max_coords(v);
   }
-  for (std::int32_t y = min->y; y < max->y; ++y) {
-    for (std::int32_t x = min->x; x < max->x; ++x) {
+  for (std::int32_t y = min->y; y <= max->y; ++y) {
+    for (std::int32_t x = min->x; x <= max->x; ++x) {
       for (auto id : cell({x, y}).entries) {
         if (checked.contains(id)) {
           continue;
@@ -244,14 +244,14 @@ GridCollisionIndex::collide_line(const vec2& a, const vec2& b, shape_flag mask) 
       break;
     }
     if (c.x == end.x) {
-      c += cv.y;
+      c.y += cv.y;
     } else if (c.y == end.y) {
-      c += cv.x;
+      c.x += cv.x;
     } else if (intersect_aabb_line(cell_position({c.x, c.y + cv.y}),
                                    cell_position({c.x + 1, c.y + cv.y + 1}), a, b)) {
-      c += ivec2{0, cv.y};
+      c.y += cv.y;
     } else {
-      c += ivec2{cv.x, 0};
+      c.x += cv.x;
     }
   }
   std::sort(r.begin(), r.end(), [](const auto& a, const auto& b) { return a.h.id() < b.h.id(); });
@@ -307,8 +307,8 @@ GridCollisionIndex::collide_convex(std::span<const vec2> convex, shape_flag mask
     min = min ? glm::min(*min, min_coords(v)) : min_coords(v);
     max = max ? glm::max(*max, max_coords(v)) : max_coords(v);
   }
-  for (std::int32_t y = min->y; y < max->y; ++y) {
-    for (std::int32_t x = min->x; x < max->x; ++x) {
+  for (std::int32_t y = min->y; y <= max->y; ++y) {
+    for (std::int32_t x = min->x; x <= max->x; ++x) {
       for (auto id : cell({x, y}).entries) {
         if (checked.contains(id)) {
           continue;

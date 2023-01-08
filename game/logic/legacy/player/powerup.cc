@@ -49,7 +49,7 @@ struct Powerup : ecs::component {
       dir = sim.dimensions() / 2_fx - transform.centre;
     } else {
       if (first_frame) {
-        dir = from_polar(sim.random_fixed() * 2 * pi<fixed>, 1_fx);
+        dir = from_polar_legacy(sim.random_fixed() * 2 * pi<fixed>, 1_fx);
       }
 
       dir = sim.rotate_compatibility(dir, 2 * fixed_c::hundredth * (rotate ? 1 : -1));

@@ -57,7 +57,8 @@ struct SuperBossArc : public ecs::component {
                   const vec2& source) const {
     auto parameters = shape_parameters(transform);
     destruct_lines<shape>(e, parameters, source, 64);
-    std::get<0>(parameters) += from_polar(i * 2 * pi<fixed> / 16 + transform.rotation, 120_fx);
+    std::get<0>(parameters) +=
+        from_polar_legacy(i * 2 * pi<fixed> / 16 + transform.rotation, 120_fx);
     explode_shapes<shape>(e, parameters);
     explode_shapes<shape>(e, parameters, cvec4{1.f}, 12);
     explode_shapes<shape>(e, parameters, std::nullopt, 24);
@@ -174,7 +175,7 @@ struct SuperBoss : ecs::component {
         fixed f = sim.random_fixed() * (2 * pi<fixed>);
         fixed rf = d5d1000 * (1 + sim.random_bool());
         for (std::uint32_t i = 0; i < 32; ++i) {
-          vec2 d = from_polar(f + i * pi2d32, 1_fx);
+          vec2 d = from_polar_legacy(f + i * pi2d32, 1_fx);
           if (r == 2) {
             rf = d5d1000 * (1 + sim.random(4));
           }
@@ -186,7 +187,7 @@ struct SuperBoss : ecs::component {
         timer = 0;
         fixed f = sim.random_fixed() * (2 * pi<fixed>);
         for (std::uint32_t i = 0; i < 64; ++i) {
-          vec2 d = from_polar(f + i * pi2d64, 1_fx);
+          vec2 d = from_polar_legacy(f + i * pi2d64, 1_fx);
           spawn_snake(sim, transform.centre + d * 16, c, d);
           e.play_random(sound::kBossAttack, transform.centre);
         }
@@ -221,7 +222,7 @@ struct SuperBoss : ecs::component {
     static const fixed pi2d128 = 2 * pi<fixed> / 128;
     if (state == state::kIdle && timer % 72 == 0) {
       for (std::uint32_t i = 0; i < 128; ++i) {
-        vec2 d = from_polar(i * pi2d128, 1_fx);
+        vec2 d = from_polar_legacy(i * pi2d128, 1_fx);
         spawn_boss_shot(sim, transform.centre + d * 42, move_vec + d * 3, cvec4{0.f, 0.f, .6f, 1.f},
                         /* rotate speed */ 6_fx / 1000);
         e.play_random(sound::kBossFire, transform.centre);
@@ -233,7 +234,7 @@ struct SuperBoss : ecs::component {
       auto r0 = sim.random(32);
       auto r1 = sim.random(16);
       fixed length{r0 + r1};
-      vec2 d = from_polar(sim.random_fixed() * (2 * pi<fixed>), length);
+      vec2 d = from_polar_legacy(sim.random_fixed() * (2 * pi<fixed>), length);
       spawn_snake(sim, d + transform.centre, c);
       e.play_random(sound::kEnemySpawn, transform.centre);
     }
@@ -257,8 +258,8 @@ struct SuperBoss : ecs::component {
 
     std::uint32_t n = 1;
     for (std::uint32_t i = 0; i < 16; ++i) {
-      vec2 v = from_polar(sim.random_fixed() * (2 * pi<fixed>),
-                          fixed{8 + sim.random(64) + sim.random(64)});
+      vec2 v = from_polar_legacy(sim.random_fixed() * (2 * pi<fixed>),
+                                 fixed{8 + sim.random(64) + sim.random(64)});
       sim.global_entity().get<GlobalData>()->fireworks.push_back(GlobalData::fireworks_entry{
           .time = n, .position = transform.centre + v, .colour = colours[i % 8]});
       n += i;

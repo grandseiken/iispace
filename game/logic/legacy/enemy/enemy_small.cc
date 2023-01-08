@@ -16,7 +16,7 @@ struct Bounce : ecs::component {
   using shape = standard_transform<geom::polygon<8, 6, colour::hue360(300, .5f, .6f), 0,
                                                  shape_flag::kDangerous | shape_flag::kVulnerable>>;
 
-  Bounce(fixed angle) : dir{from_polar(angle, 3_fx)} {}
+  Bounce(fixed angle) : dir{from_polar_legacy(angle, 3_fx)} {}
   vec2 dir{0};
 
   void update(Transform& transform, SimInterface& sim) {

@@ -157,7 +157,7 @@ struct ChaserBoss : ecs::component {
             v *= pow;
             p = cb->last_dir * pow;
           } else {
-            p = from_polar(sh.get<Transform>()->rotation, 1_fx);
+            p = from_polar_legacy(sh.get<Transform>()->rotation, 1_fx);
           }
 
           if (r > attract) {
@@ -249,8 +249,8 @@ struct ChaserBoss : ecs::component {
     bool last = false;
     if (split < kMaxSplit) {
       for (std::uint32_t i = 0; i < 2; ++i) {
-        vec2 d = from_polar(i * pi<fixed> + transform.rotation,
-                            fixed{8 * kSplitLookup[kMaxSplit - 1 - split].pow_1_2});
+        vec2 d = from_polar_legacy(i * pi<fixed> + transform.rotation,
+                                   fixed{8 * kSplitLookup[kMaxSplit - 1 - split].pow_1_2});
         auto sh = spawn_internal(sim, cycle, split + 1, transform.centre + d, (i + 1) * kTimer / 2,
                                  sim.random(split + 1 == 1       ? 2
                                                 : split + 1 == 2 ? 4
@@ -271,8 +271,8 @@ struct ChaserBoss : ecs::component {
         std::uint32_t n = 1;
         auto& random = sim.random(random_source::kLegacyAesthetic);
         for (std::uint32_t i = 0; i < 16; ++i) {
-          vec2 v = from_polar(random.fixed() * (2 * pi<fixed>),
-                              fixed{8 + random.uint(64) + random.uint(64)});
+          vec2 v = from_polar_legacy(random.fixed() * (2 * pi<fixed>),
+                                     fixed{8 + random.uint(64) + random.uint(64)});
           sim.global_entity().get<GlobalData>()->fireworks.push_back(GlobalData::fireworks_entry{
               .time = n, .position = transform.centre + v, .colour = c});
           n += i;

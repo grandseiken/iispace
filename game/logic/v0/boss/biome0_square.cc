@@ -1,4 +1,5 @@
 #include "game/common/colour.h"
+#include "game/common/easing.h"
 #include "game/geometry/node.h"
 #include "game/geometry/shapes/ngon.h"
 #include "game/logic/v0/boss/boss.h"
@@ -22,8 +23,9 @@ struct SquareBoss : public ecs::component {
   static constexpr std::uint32_t kTimer = 120;
   static constexpr std::uint32_t kSpawnTimer = 100;
   static constexpr std::uint32_t kSpecialAttackTime = 110;
-  static constexpr fixed kSpeed = 2 + 1_fx / 4;
-  static constexpr fixed kSpecialAttackRadius = 140;
+  static constexpr fixed kSpeed = 2_fx + 1_fx / 4;
+  static constexpr fixed kSpecialAttackRadius = 145;
+  static constexpr fixed kSpecialAttackRadiusExtra = 35;
   static constexpr fixed kBoundingWidth = 200;
   static constexpr fixed kTurningRadius = 72;
   static constexpr fixed kMarginX = 1_fx / 5;
@@ -53,8 +55,7 @@ struct SquareBoss : public ecs::component {
   template <fixed C, fixed R, std::uint32_t T, shape_flag Flags,
             render::flag RFlags = render::flag::kNone>
   using rotate_ngon_c =
-      rotate_s<C, ngon<R, T, RFlags>,
-               geom::ngon_collider<geom::nd2(50 + 25 * R, 75 - 10 * R, 4), Flags>>;
+      rotate_s<C, ngon<R, T, RFlags>, geom::ngon_collider<geom::nd2(50 + 25 * R, 50, 4), Flags>>;
   using shape = geom::translate_p<
       0, rotate_ngon_c<1, 6, 0, shape_flag::kBombVulnerable, render::flag::kNoFlash>,
       rotate_ngon<3_fx / 2, 5, 1, render::flag::kNoFlash>,
@@ -165,21 +166,31 @@ struct SquareBoss : public ecs::component {
     static constexpr auto c = colour::kNewPurple;
     static constexpr auto cf = colour::alpha(c, colour::kFillAlpha0);
     static constexpr float z = colour::kZEnemySmall;
-    using small_follow_shape = standard_transform<
-        geom::ngon<geom::nd(kSmallWidth + 2, 4), outline>,
-        geom::ngon<geom::nd(kSmallWidth, 4), geom::nline(c, z, 1.5f), geom::sfill(cf, z)>>;
-    if (special_attack && (special_attack->timer / 4) % 2) {
-      auto ph = sim.index().get(special_attack->player);
-      if (ph && !ph->get<Player>()->is_killed) {
-        vec2 d{kSpecialAttackRadius, 0};
-        if (special_attack->rotate) {
-          d = rotate(d, pi<fixed> / 2);
-        }
-        for (std::uint32_t i = 0; i < 6; ++i) {
-          auto v = ph->get<Transform>()->centre + d;
-          render_shape<small_follow_shape>(output, std::tuple{v, pi<fixed>});
-          d = rotate(d, 2 * pi<fixed> / 6);
-        }
+    using small_follow_shape =
+        standard_transform<geom::ngon_colour_p<geom::nd(kSmallWidth + 2, 4), 2, outline>,
+                           geom::ngon_colour_p2<geom::nd(kSmallWidth, 4), 3, 4,
+                                                geom::nline(c, z, 1.5f), geom::sfill(cf, z)>>;
+
+    if (!special_attack) {
+      return;
+    }
+    auto t = fixed{special_attack->timer} / kSpecialAttackTime;
+    auto ta = ((2_fx + sin(4 * pi<fixed> * t)) / 3).to_float();
+    auto c0 = colour::alpha(colour::kOutline, ta);
+    auto c1 = colour::alpha(c, ta);
+    auto c2 = colour::alpha(cf, ta);
+
+    auto ph = sim.index().get(special_attack->player);
+    if (ph && !ph->get<Player>()->is_killed) {
+      vec2 d{kSpecialAttackRadius + ease_in_cubic(t) * kSpecialAttackRadiusExtra, 0};
+      if (special_attack->rotate) {
+        d = rotate(d, pi<fixed> / 2);
+      }
+      for (std::uint32_t i = 0; i < 6; ++i) {
+        auto v = ph->get<Transform>()->centre + d;
+        render_shape<small_follow_shape>(
+            output, std::tuple{v, 4 * pi<fixed> * ease_out_cubic(1_fx - t), c0, c1, c2});
+        d = rotate(d, 2 * pi<fixed> / 6);
       }
     }
   }

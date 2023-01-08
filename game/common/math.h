@@ -125,6 +125,10 @@ constexpr glm::vec<2, T> from_polar(T theta, T length) {
   return length * glm::vec<2, T>{cos(theta), sin(theta)};
 }
 
+inline constexpr vec2 from_polar_legacy(fixed theta, fixed length) {
+  return length * vec2{cos_legacy(theta), sin_legacy(theta)};
+}
+
 // (Right) rotation.
 template <typename T>
 constexpr glm::vec<2, T> rotate(const glm::vec<2, T>& v, T theta) {
@@ -138,10 +142,8 @@ constexpr glm::vec<2, T> rotate(const glm::vec<2, T>& v, T theta) {
   return {v.x * c - v.y * s, v.x * s + v.y * c};
 }
 
-template <typename T>
-constexpr glm::vec<2, T> rotate_legacy(const glm::vec<2, T>& v, T theta) {
-  using std::sqrt;
-  return theta ? from_polar(angle(v) + theta, sqrt(length_squared(v))) : v;
+inline constexpr vec2 rotate_legacy(const vec2& v, fixed theta) {
+  return theta ? from_polar_legacy(angle(v) + theta, sqrt(length_squared(v))) : v;
 }
 
 inline constexpr fvec2 to_float(const vec2& a) {

@@ -255,7 +255,7 @@ struct GhostBoss : ecs::component {
           (timer >= kTimer / 10 && timer < 9 * kTimer / 10 - 16 &&
            ((!(timer % 16) && attack == 2) || (!(timer % 32) && shot_type)))) {
         for (std::uint32_t i = 0; i < 8; ++i) {
-          auto d = from_polar(i * pi<fixed> / 4 + transform.rotation, 5_fx);
+          auto d = from_polar_legacy(i * pi<fixed> / 4 + transform.rotation, 5_fx);
           spawn_boss_shot(sim, transform.centre, d, c0);
         }
         e.play_random(sound::kBossFire, transform.centre);
@@ -380,7 +380,7 @@ struct GhostBoss : ecs::component {
       for (std::uint32_t n = 0; n < 5; ++n) {
         v.emplace_back();
         for (std::uint32_t i = 0; i < 16 + n * 6; ++i) {
-          v.back().push_back(from_polar(i * 2 * pi<fixed> / (16 + n * 6), 100_fx + n * 60));
+          v.back().push_back(from_polar_legacy(i * 2 * pi<fixed> / (16 + n * 6), 100_fx + n * 60));
         }
       }
       return v;
@@ -444,9 +444,9 @@ struct GhostBoss : ecs::component {
   }
 
   template <fixed I>
-  using spark_line =
-      geom::line_eval<geom::constant<10 * from_polar(I* pi<fixed> / 4, 1_fx)>,
-                      geom::constant<20 * from_polar(I* pi<fixed> / 4, 1_fx)>, geom::constant<c1>>;
+  using spark_line = geom::line_eval<geom::constant<10 * from_polar_legacy(I* pi<fixed> / 4, 1_fx)>,
+                                     geom::constant<20 * from_polar_legacy(I* pi<fixed> / 4, 1_fx)>,
+                                     geom::constant<c1>>;
   using spark_shape = standard_transform<geom::translate_p<
       2,
       geom::rotate_p<3, spark_line<0>,
@@ -454,7 +454,7 @@ struct GhostBoss : ecs::component {
                                              geom::for_each<fixed, 1, 8, spark_line>>>>>;
   std::tuple<vec2, fixed, vec2, fixed>
   spark_shape_parameters(const Transform& transform, std::uint32_t i) const {
-    return {transform.centre, transform.rotation, from_polar(i * pi<fixed> / 4, 48_fx),
+    return {transform.centre, transform.rotation, from_polar_legacy(i * pi<fixed> / 4, 48_fx),
             2 * inner_ring_rotation};
   }
 

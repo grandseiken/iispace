@@ -39,7 +39,7 @@ public:
 
   constexpr float to_float() const {
     constexpr float multiplier = 1.f / static_cast<float>(std::uint64_t{1} << 32u);
-    return static_cast<float>(value_) * multiplier;
+    return static_cast<float>(value_ >> 32) + static_cast<float>(value_ & 0xffffffff) * multiplier;
   }
 
   constexpr fixed& operator+=(const fixed& f) { return *this = *this + f; }
@@ -163,24 +163,9 @@ inline constexpr fixed operator/(const fixed& a, const fixed& b) {
 }
 
 inline std::ostream& operator<<(std::ostream& o, const fixed& f) {
-  if (f.value_ < 0) {
-    o << "-";
-  }
-
-  std::uint64_t v = detail::fixed_abs(f.value_);
-  o << (v >> 32) << ".";
-  double d = 0;
-  double val = .5;
-  for (std::size_t i = 0; i < 32; ++i) {
-    if (v & (std::int64_t{1} << (31 - i))) {
-      d += val;
-    }
-    val /= 2;
-  }
-
   std::stringstream ss;
-  ss << std::fixed << std::setprecision(2) << d;
-  o << ss.str().substr(2);
+  ss << std::fixed << std::setprecision(2) << f.to_float();
+  o << ss.str();
   return o;
 }
 
@@ -192,6 +177,7 @@ constexpr fixed half = 1_fx >> 1;
 constexpr fixed quarter = 1_fx >> 2;
 constexpr fixed eighth = 1_fx >> 4;
 constexpr fixed sixteenth = 1_fx >> 8;
+constexpr fixed epsilon = fixed::from_internal(0x1);
 }  // namespace fixed_c
 
 inline constexpr fixed abs(const fixed& f) {
@@ -221,11 +207,21 @@ inline constexpr fixed sqrt(const fixed& f) {
   return r;
 }
 
-inline constexpr fixed sin(const fixed& f) {
+namespace detail {
+inline constexpr fixed sin_internal(const fixed& f, bool legacy) {
   auto angle = fixed::from_internal(detail::fixed_abs(f.value_) % (2 * fixed_c::pi).value_);
-
   if (angle > fixed_c::pi) {
     angle -= 2 * fixed_c::pi;
+  }
+  if (!legacy) {
+    if (angle == fixed_c::pi / 2) {
+      return 1;
+    }
+    if (angle > fixed_c::pi / 2) {
+      angle = fixed_c::pi - angle;
+    } else if (angle < -fixed_c::pi / 2) {
+      angle = -fixed_c::pi - angle;
+    }
   }
 
   fixed angle2 = angle * angle;
@@ -250,9 +246,22 @@ inline constexpr fixed sin(const fixed& f) {
 
   return f.value_ < 0 ? -out : out;
 }
+}  // namespace detail
+
+inline constexpr fixed sin(const fixed& f) {
+  return detail::sin_internal(f, /* legacy */ false);
+}
+
+inline constexpr fixed sin_legacy(const fixed& f) {
+  return detail::sin_internal(f, /* legacy */ true);
+}
 
 inline constexpr fixed cos(const fixed& f) {
   return sin(f + fixed_c::pi / 2);
+}
+
+inline constexpr fixed cos_legacy(const fixed& f) {
+  return sin_legacy(f + fixed_c::pi / 2);
 }
 
 inline constexpr fixed atan2(const fixed& y, const fixed& x) {

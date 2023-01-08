@@ -218,7 +218,7 @@ struct PlayerLogic : ecs::component {
       explosion(h, std::nullopt, e, cvec4{1.f}, 48);
 
       for (std::uint32_t i = 0; i < 64; ++i) {
-        auto v = transform.centre + from_polar(2 * i * pi<fixed> / 64, kBombRadius);
+        auto v = transform.centre + from_polar_legacy(2 * i * pi<fixed> / 64, kBombRadius);
         auto& random = sim.random(random_source::kLegacyAesthetic);
         explosion(h, v, e, (i % 2) ? c : cvec4{1.f}, 8 + random.uint(8) + random.uint(8),
                   transform.centre);

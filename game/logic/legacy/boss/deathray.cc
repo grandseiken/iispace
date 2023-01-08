@@ -295,8 +295,8 @@ struct DeathRayBoss : public ecs::component {
       }
       if (shot_timer % 128 == 0) {
         ray_attack_timer = kRayTimer;
-        vec2 d1 = from_polar(sim.random_fixed() * 2 * pi<fixed>, 110_fx);
-        vec2 d2 = from_polar(sim.random_fixed() * 2 * pi<fixed>, 110_fx);
+        vec2 d1 = from_polar_legacy(sim.random_fixed() * 2 * pi<fixed>, 110_fx);
+        vec2 d2 = from_polar_legacy(sim.random_fixed() * 2 * pi<fixed>, 110_fx);
         ray_src1 = transform.centre + d1;
         ray_src2 = transform.centre + d2;
         e.play(sound::kEnemySpawn, transform.centre);

@@ -41,7 +41,7 @@ convex_axis_projection_interval(std::span<const vec2> convex, const vec2& axis) 
       continue;
     }
     r->x = std::min(r->x, p);
-    r->y = std::min(r->y, p);
+    r->y = std::max(r->y, p);
   }
   return r.value_or(vec2{0});
 }

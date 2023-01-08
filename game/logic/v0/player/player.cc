@@ -288,8 +288,8 @@ struct PlayerLogic : ecs::component {
     }
   }
 
-  void
-  render(const Player& pc, const Transform& transform, std::vector<render::shape>& output) const {
+  void render(const Player& pc, const Transform& transform, std::vector<render::shape>& output,
+              const SimInterface& sim) const {
     if (!pc.is_killed || fire_target_render_timer) {
       output.emplace_back(render::shape{
           .origin = to_float(fire_target),

@@ -169,7 +169,7 @@ struct TractorBoss : ecs::component {
           }
           if (timer % (kTimer / (1 + fixed_c::half)).to_int() == kTimer / 8) {
             auto f = [&](std::size_t, const vec2& v, const vec2&) {
-              auto d = from_polar(sim.random_fixed() * (2 * pi<fixed>), 5_fx);
+              auto d = from_polar_legacy(sim.random_fixed() * (2 * pi<fixed>), 5_fx);
               spawn_boss_shot(sim, v, d, c0);
               d = sim.rotate_compatibility(d, pi<fixed> / 2);
               spawn_boss_shot(sim, v, d, c0);
@@ -209,7 +209,7 @@ struct TractorBoss : ecs::component {
           stopped = false;
           move_away = true;
           for (std::uint32_t i = 0; i < attack_shapes.size(); ++i) {
-            vec2 d = from_polar(
+            vec2 d = from_polar_legacy(
                 i * (2 * pi<fixed>) / static_cast<std::uint32_t>(attack_shapes.size()), 5_fx);
             spawn_boss_shot(sim, transform.centre, d, c0);
           }
@@ -221,10 +221,10 @@ struct TractorBoss : ecs::component {
     }
 
     for (auto& v : attack_shapes) {
-      v = from_polar(sim.random_fixed() * (2 * pi<fixed>),
-                     2 * (sim.random_fixed() - fixed_c::half) *
-                         fixed{static_cast<std::uint32_t>(attack_shapes.size())} /
-                         (1 + fixed_c::half));
+      v = from_polar_legacy(sim.random_fixed() * (2 * pi<fixed>),
+                            2 * (sim.random_fixed() - fixed_c::half) *
+                                fixed{static_cast<std::uint32_t>(attack_shapes.size())} /
+                                (1 + fixed_c::half));
     }
 
     fixed r = 0;

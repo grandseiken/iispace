@@ -120,7 +120,7 @@ struct ShieldBombBoss : ecs::component {
         sim.emit(resolve_key::predicted()).play(sound::kBossAttack, transform.centre);
       } else {
         attack = kAttackTime;
-        attack_dir = from_polar(sim.random_fixed() * (2 * pi<fixed>), 5_fx);
+        attack_dir = from_polar_legacy(sim.random_fixed() * (2 * pi<fixed>), 5_fx);
       }
     }
   }
