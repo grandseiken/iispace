@@ -97,7 +97,10 @@ void add_boss_data(ecs::handle h, ustring_view name, std::uint32_t base_hp) {
   });
   h.add(EnemyStatus{.stun_resist_base = 100u, .stun_resist_bonus = 60u});
   h.add(Enemy{.threat_value = kBossThreatValue});
-  h.add(Boss{.name = ustring{name}, .colour = get_boss_colour<Logic, S>(h)});
+  h.add(Boss{.name = ustring{name}});
+  h.add(PostUpdate{.post_update = [](ecs::handle h, SimInterface&) {
+    h.get<Boss>()->colour = get_boss_colour<Logic, S>(h);
+  }});
 }
 
 }  // namespace ii::v0

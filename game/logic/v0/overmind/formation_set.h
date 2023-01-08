@@ -61,26 +61,10 @@ public:
   }
 
   void spawn_wave(spawn_context& context) const {
-    if (sets_.empty()) {
-      return;
-    }
-
-    std::uint32_t total_weight = 0;
-    for (const auto& set : sets_) {
-      total_weight += set.weight;
-    }
-    if (!total_weight) {
-      return;
-    }
-
-    auto r = context.random.uint(total_weight);
-    total_weight = 0;
-    for (const auto& set : sets_) {
-      total_weight += set.weight;
-      if (r < total_weight) {
-        spawn_wave(set, context);
-        break;
-      }
+    auto it = context.random.weighted_choice(sets_.begin(), sets_.end(),
+                                             [&](const auto& set) { return set.weight; });
+    if (it != sets_.end()) {
+      spawn_wave(*it, context);
     }
   }
 
@@ -89,29 +73,17 @@ private:
     std::vector<const entry_t*> chosen_entries;
     auto power_budget = context.data.power;
     while (power_budget) {
-      std::uint32_t total_weight = 0;
-      for (const auto& e : set.entries) {
-        if (context.data.power >= e.power_min && power_budget >= e.power_cost) {
-          total_weight += e.weight;
-        }
-      }
-      if (!total_weight) {
+      auto it = context.random.weighted_choice(
+          set.entries.begin(), set.entries.end(), [&](const auto& e) {
+            return context.data.power >= e.power_min && power_budget >= e.power_cost ? e.weight
+                                                                                     : 0u;
+          });
+      if (it == set.entries.end()) {
         break;
       }
-
-      auto r = context.random.uint(total_weight);
       auto i = context.random.uint(1 + chosen_entries.size());
-      total_weight = 0;
-      for (const auto& e : set.entries) {
-        if (context.data.power >= e.power_min && power_budget >= e.power_cost) {
-          total_weight += e.weight;
-          if (r < total_weight) {
-            chosen_entries.insert(chosen_entries.begin() + i, &e);
-            power_budget -= e.power_cost;
-            break;
-          }
-        }
-      }
+      chosen_entries.insert(chosen_entries.begin() + i, &*it);
+      power_budget -= it->power_cost;
     }
 
     context.row_number = 0;

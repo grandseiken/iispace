@@ -43,15 +43,14 @@ struct Square : ecs::component {
 
   Square(SimInterface& sim, const vec2& dir) : dir{dir}, timer{sim.random(80) + 40} {}
 
-  void
-  update(ecs::handle h, Transform& transform, Render& render, Health& health, SimInterface& sim) {
+  void update(ecs::handle h, Transform& transform, Health& health, SimInterface& sim) {
     bool vulnerable = sim.global_entity().get<GlobalData>()->walls_vulnerable;
     if (sim.is_on_screen(transform.centre) && vulnerable) {
       if (timer) {
         --timer;
       }
     } else {
-      timer = sim.random(80) + 40;
+      timer = sim.random(h).uint(80) + 40;
     }
 
     if (!timer) {
@@ -187,7 +186,7 @@ struct Wall : ecs::component {
 DEBUG_STRUCT_TUPLE(Wall, dir, timer, is_rotating, anti);
 }  // namespace
 
-void spawn_square(SimInterface& sim, const vec2& position, const vec2& dir, bool drop) {
+ecs::handle spawn_square(SimInterface& sim, const vec2& position, const vec2& dir, bool drop) {
   auto h = create_ship_default<Square>(sim, position);
   add_enemy_health<Square>(h, 32);
   h.add(Square{sim, dir});
@@ -197,9 +196,10 @@ void spawn_square(SimInterface& sim, const vec2& position, const vec2& dir, bool
   if (drop) {
     h.add(DropTable{.shield_drop_chance = 2, .bomb_drop_chance = 2});
   }
+  return h;
 }
 
-void spawn_wall(SimInterface& sim, const vec2& position, const vec2& dir, bool anti) {
+ecs::handle spawn_wall(SimInterface& sim, const vec2& position, const vec2& dir, bool anti) {
   auto h = create_ship_default<Wall>(sim, position);
   add_enemy_health<Wall>(h, 80);
   h.add(Wall{dir, anti});
@@ -207,6 +207,7 @@ void spawn_wall(SimInterface& sim, const vec2& position, const vec2& dir, bool a
   h.add(WallTag{});
   h.add(Physics{.mass = 2_fx});
   h.add(DropTable{.shield_drop_chance = 3, .bomb_drop_chance = 4});
+  return h;
 }
 
 }  // namespace ii::v0

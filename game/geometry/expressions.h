@@ -34,6 +34,12 @@ struct equal {};
 
 template <auto V, Expression<cvec4>>
 struct set_colour {};
+template <auto V, Expression<cvec4>, Expression<cvec4>>
+struct set_colour2 {};
+template <auto V, Expression<cvec4>, Expression<cvec4>>
+struct set_colour_alpha {};
+template <auto V, Expression<cvec4>, Expression<cvec4>, Expression<cvec4>>
+struct set_colour2_alpha {};
 template <auto V, Expression<fixed>>
 struct set_radius {};
 
@@ -96,6 +102,31 @@ template <auto V, Expression<cvec4> E>
 constexpr auto evaluate(set_colour<V, E>, const auto& params) {
   auto v = V;
   v.colour0 = v.colour1 = cvec4{evaluate(E{}, params)};
+  return v;
+}
+
+template <auto V, Expression<cvec4> E0, Expression<cvec4> E1>
+constexpr auto evaluate(set_colour2<V, E0, E1>, const auto& params) {
+  auto v = V;
+  v.colour0 = cvec4{evaluate(E0{}, params)};
+  v.colour1 = cvec4{evaluate(E1{}, params)};
+  return v;
+}
+
+template <auto V, Expression<cvec4> E0, Expression<cvec4> E1>
+constexpr auto evaluate(set_colour_alpha<V, E0, E1>, const auto& params) {
+  auto v = V;
+  v.colour0 = v.colour1 = cvec4{evaluate(E0{}, params)};
+  v.colour0.a = v.colour1.a = cvec4{evaluate(E1{}, params)}.w;
+  return v;
+}
+
+template <auto V, Expression<cvec4> E0, Expression<cvec4> E1, Expression<cvec4> E2>
+constexpr auto evaluate(set_colour2_alpha<V, E0, E1, E2>, const auto& params) {
+  auto v = V;
+  v.colour0 = cvec4{evaluate(E0{}, params)};
+  v.colour1 = cvec4{evaluate(E1{}, params)};
+  v.colour0.a = v.colour1.a = cvec4{evaluate(E2{}, params)}.w;
   return v;
 }
 

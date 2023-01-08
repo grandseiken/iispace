@@ -59,13 +59,7 @@ spawn_context make_context(SimInterface& sim, const wave_data& wave) {
 }
 
 void spawn(spawn_context& context) {
-  // Shuffle.
-  for (std::uint32_t i = 0; i + 1 < context.output.entries.size(); ++i) {
-    auto j = i + context.random.uint(context.output.entries.size() - i);
-    std::swap(context.output.entries[i], context.output.entries[j]);
-  }
-
-  // Spawn.
+  context.random.shuffle(context.output.entries.begin(), context.output.entries.end());
   context.upgrade_budget = context.data.upgrade_budget;
   for (const auto& e : context.output.entries) {
     e.function(context, e.side, e.position);
@@ -102,6 +96,9 @@ public:
       if (input.type == wave_type::kBoss) {
         data.position_delta.x *= 4;
         data.position_delta.y *= 4;
+        data.colour = colour::kSolarizedDarkBase03;
+        data.colour.y /= 2.f;
+        data.colour.z /= 1.375f;
       }
       return true;
     }
@@ -229,6 +226,9 @@ public:
       if (input.type == wave_type::kBoss) {
         data.position_delta.x *= 4;
         data.position_delta.y *= 4;
+        data.colour = colour::kSolarizedDarkBase03;
+        data.colour.y /= 2.f;
+        data.colour.z /= 1.375f;
       }
       return true;
     }

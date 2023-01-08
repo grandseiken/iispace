@@ -28,8 +28,6 @@ struct player_info;
 struct shape;
 }  // namespace render
 
-// TODO: to reduce prediction errors, allow each entity to have private sources of
-// (particularly game-state) randomness that will be less likely to diverge.
 enum class random_source {
   // For randomness which affects the game state and must be reproduced exactly for replay
   // compatibility.
@@ -84,6 +82,7 @@ public:
   ecs::const_handle global_entity() const;
   ecs::handle global_entity();
 
+  RandomEngine& random(ecs::handle);
   RandomEngine& random(random_source s = random_source::kGameState);
   std::uint32_t random_state(random_source s = random_source::kGameState) const;
   std::uint32_t random(std::uint32_t max);
@@ -119,6 +118,10 @@ public:
   }
   void in_range(const vec2& point, fixed distance, ecs::component_id, std::size_t max_n,
                 std::vector<range_info>& output);
+
+  std::vector<ecs::const_handle> alive_player_handles() const;
+  std::vector<ecs::handle> alive_player_handles();
+  std::optional<ecs::handle> random_alive_player(RandomEngine&);
 
   std::uint32_t get_lives() const;
   std::uint32_t player_count() const;

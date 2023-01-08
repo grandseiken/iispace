@@ -145,7 +145,7 @@ struct Shielder : ecs::component {
   }
 
   Shielder(SimInterface& sim, bool power)
-  : timer{sim.random(random_source::kGameState).uint(kTimer)}
+  : timer{sim.random(random_source::kGameSequence).uint(kTimer)}
   , power{power}
   , spreader{.max_distance = 128_fx, .max_n = 4u} {}
   std::uint32_t timer = 0;
@@ -447,25 +447,27 @@ DEBUG_STRUCT_TUPLE(ShieldHub, timer, count, dir);
 
 }  // namespace
 
-void spawn_follow_hub(SimInterface& sim, const vec2& position, bool fast) {
+ecs::handle spawn_follow_hub(SimInterface& sim, const vec2& position, bool fast) {
   auto h = create_ship_default<FollowHub, FollowHub::hub_shape>(sim, position);
   add_enemy_health<FollowHub, FollowHub::hub_shape>(h, 112);
   h.add(FollowHub{false, false, fast});
   h.add(Enemy{.threat_value = 6u + 4u * fast});
   h.add(Physics{.mass = 1_fx + 3_fx / 4});
   h.add(DropTable{.shield_drop_chance = 20, .bomb_drop_chance = 25});
+  return h;
 }
 
-void spawn_big_follow_hub(SimInterface& sim, const vec2& position, bool fast) {
+ecs::handle spawn_big_follow_hub(SimInterface& sim, const vec2& position, bool fast) {
   auto h = create_ship_default<FollowHub, FollowHub::big_hub_shape>(sim, position);
   add_enemy_health<FollowHub, FollowHub::big_hub_shape>(h, 112);
   h.add(FollowHub{true, false, fast});
   h.add(Enemy{.threat_value = 12u + 8u * fast});
   h.add(Physics{.mass = 1_fx + 3_fx / 4});
   h.add(DropTable{.shield_drop_chance = 35, .bomb_drop_chance = 40});
+  return h;
 }
 
-void spawn_chaser_hub(SimInterface& sim, const vec2& position, bool fast) {
+ecs::handle spawn_chaser_hub(SimInterface& sim, const vec2& position, bool fast) {
   auto h = create_ship_default<FollowHub, FollowHub::chaser_hub_shape>(sim, position);
   add_enemy_health<FollowHub, FollowHub::chaser_hub_shape>(h, 112);
   h.add(FollowHub{false, true, fast});
@@ -474,27 +476,30 @@ void spawn_chaser_hub(SimInterface& sim, const vec2& position, bool fast) {
   h.add(DropTable{.bomb_drop_chance = 1});
   h.add(Physics{.mass = 1_fx + 3_fx / 4});
   h.add(DropTable{.shield_drop_chance = 30, .bomb_drop_chance = 35});
+  return h;
 }
 
-void spawn_shielder(SimInterface& sim, const vec2& position, bool power) {
+ecs::handle spawn_shielder(SimInterface& sim, const vec2& position, bool power) {
   auto h = create_ship_default<Shielder>(sim, position);
   add_enemy_health<Shielder>(h, 160);
   h.add(Shielder{sim, power});
   h.add(Enemy{.threat_value = 8u + 2u * power});
   h.add(Physics{.mass = 3_fx});
   h.add(DropTable{.shield_drop_chance = 60});
+  return h;
 }
 
-void spawn_tractor(SimInterface& sim, const vec2& position, bool power) {
+ecs::handle spawn_tractor(SimInterface& sim, const vec2& position, bool power) {
   auto h = create_ship_default<Tractor>(sim, position);
   add_enemy_health<Tractor>(h, 336);
   h.add(Tractor{power});
   h.add(Enemy{.threat_value = 10u + 4u * power});
   h.add(Physics{.mass = 2_fx});
   h.add(DropTable{.bomb_drop_chance = 100});
+  return h;
 }
 
-void spawn_shield_hub(SimInterface& sim, const vec2& position) {
+ecs::handle spawn_shield_hub(SimInterface& sim, const vec2& position) {
   auto eh = create_ship_default<ShieldHub::ShieldEffect>(sim, position);
   eh.add(ShieldHub::ShieldEffect{});
 
@@ -504,6 +509,7 @@ void spawn_shield_hub(SimInterface& sim, const vec2& position) {
   h.add(Enemy{.threat_value = 10u});
   h.add(Physics{.mass = 3_fx});
   h.add(DropTable{.shield_drop_chance = 80, .bomb_drop_chance = 20});
+  return h;
 }
 
 }  // namespace ii::v0

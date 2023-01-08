@@ -215,7 +215,7 @@ inline constexpr fixed sin_internal(const fixed& f, bool legacy) {
   }
   if (!legacy) {
     if (angle == fixed_c::pi / 2) {
-      return 1;
+      return f.value_ < 0 ? -1 : 1;
     }
     if (angle > fixed_c::pi / 2) {
       angle = fixed_c::pi - angle;

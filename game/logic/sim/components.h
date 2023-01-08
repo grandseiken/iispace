@@ -1,6 +1,7 @@
 #ifndef II_GAME_LOGIC_SIM_COMPONENTS_H
 #define II_GAME_LOGIC_SIM_COMPONENTS_H
 #include "game/common/math.h"
+#include "game/common/random.h"
 #include "game/common/struct_tuple.h"
 #include "game/common/ustring.h"
 #include "game/geometry/enums.h"
@@ -98,6 +99,19 @@ struct Render : ecs::component {
 };
 DEBUG_STRUCT_TUPLE(Render, render);
 
+struct PrivateRandom : ecs::component {
+  PrivateRandom(std::uint32_t seed) : engine{seed} {}
+  PrivateRandom(const PrivateRandom& r) : engine{r.engine.state()} {}
+  PrivateRandom& operator=(const PrivateRandom& r) {
+    if (this != &r) {
+      engine.set_state(r.engine.state());
+    }
+    return *this;
+  }
+  RandomEngine engine;
+};
+DEBUG_STRUCT_TUPLE(PrivateRandom, engine.state());
+
 struct WallTag : ecs::component {};
 DEBUG_STRUCT_TUPLE(WallTag);
 
@@ -153,6 +167,8 @@ struct Health : ecs::component {
     // hp <= .4 * max_hp.
     return 3 * hp <= max_hp + max_hp / 5;
   }
+
+  std::uint32_t threat_level(std::uint32_t max) const { return (max * max_hp - max * hp) / max_hp; }
 
   void damage(ecs::handle h, SimInterface&, std::uint32_t damage, damage_type type,
               ecs::entity_id source_id, std::optional<vec2> source_position = std::nullopt);

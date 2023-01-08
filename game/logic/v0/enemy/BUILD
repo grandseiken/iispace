@@ -6,11 +6,13 @@ cc_library(
     "biome0_small.cc",
     "biome0_wall.cc",
   ],
-  deps = ["//game/common:math"],
+  deps = [
+    "//game/common:math",
+    "//game/logic/ecs",
+  ],
   implementation_deps = [
     ":enemy_internal",
     "//game/geometry/shapes",
-    "//game/logic/ecs",
     "//game/logic/sim:sim_interface",
     "//game/logic/v0/lib:ship_template",
   ],

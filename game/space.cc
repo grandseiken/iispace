@@ -100,6 +100,8 @@ bool run(System& system, const std::vector<std::string>& args, const game_option
     conditions.seed = std::random_device{}();
     conditions.mode = game_mode::kStandardRun;
     conditions.biomes.emplace_back(run_biome::kTesting);
+    conditions.biomes.emplace_back(run_biome::kTesting);
+    conditions.biomes.emplace_back(run_biome::kTesting);
     auto kbm = ui::input_device_id::kbm();
     stack.add<SimLayer>(conditions, std::span<const ui::input_device_id>{&kbm, 1u});
   }

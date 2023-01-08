@@ -41,6 +41,11 @@ struct DropTable : ecs::component {
 };
 DEBUG_STRUCT_TUPLE(DropTable, shield_drop_chance, bomb_drop_chance);
 
+struct ColourOverride : ecs::component {
+  cvec4 colour = colour::kWhite0;
+};
+DEBUG_STRUCT_TUPLE(ColourOverride);
+
 struct Physics : ecs::component {
   fixed mass = 1_fx;
   fixed drag_coefficient = mass;

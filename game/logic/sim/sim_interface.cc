@@ -143,6 +143,13 @@ ecs::handle SimInterface::global_entity() {
   return *internals_->global_entity_handle;
 }
 
+RandomEngine& SimInterface::random(ecs::handle h) {
+  if (auto* r = h.get<PrivateRandom>(); r) {
+    return r->engine;
+  }
+  return h.emplace<PrivateRandom>(+h.id() + internals_->conditions.seed).engine;
+}
+
 RandomEngine& SimInterface::random(random_source s) {
   return engine(*internals_, s);
 }
@@ -211,6 +218,40 @@ vec2 SimInterface::rotate_compatibility(const vec2& v, fixed theta) const {
 void SimInterface::in_range(const vec2& point, fixed distance, ecs::component_id cid,
                             std::size_t max_n, std::vector<range_info>& output) {
   internals_->collision_index->in_range(point, distance, cid, max_n, output);
+}
+
+std::vector<ecs::const_handle> SimInterface::alive_player_handles() const {
+  std::vector<ecs::const_handle> result;
+  internals_->index.iterate_dispatch<Player>([&](ecs::const_handle h, const Player& pc) {
+    if (!pc.is_killed) {
+      result.emplace_back(h);
+    }
+  });
+  return result;
+}
+
+std::vector<ecs::handle> SimInterface::alive_player_handles() {
+  std::vector<ecs::handle> result;
+  internals_->index.iterate_dispatch<Player>([&](ecs::handle h, const Player& pc) {
+    if (!pc.is_killed) {
+      result.emplace_back(h);
+    }
+  });
+  return result;
+}
+
+std::optional<ecs::handle> SimInterface::random_alive_player(RandomEngine& random) {
+  std::optional<ecs::handle> result;
+  if (auto n = alive_players(); n) {
+    auto r = random.uint(n);
+    std::uint32_t i = 0;
+    internals_->index.iterate_dispatch<Player>([&](ecs::handle h) {
+      if (i++ == r) {
+        result = h;
+      }
+    });
+  }
+  return result;
 }
 
 std::uint32_t SimInterface::get_lives() const {

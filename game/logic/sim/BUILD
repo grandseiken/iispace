@@ -4,6 +4,7 @@ cc_library(
   srcs = ["components.cc"],
   deps = [
     "//game/common:math",
+    "//game/common:random",
     "//game/common:types",
     "//game/common:ustring",
     "//game/geometry",

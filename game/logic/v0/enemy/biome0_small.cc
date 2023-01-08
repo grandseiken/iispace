@@ -7,11 +7,11 @@
 namespace ii::v0 {
 namespace {
 
-void spawn_follow(SimInterface& sim, std::uint32_t size, const vec2& position,
-                  std::optional<vec2> direction, bool drop, fixed rotation = 0,
-                  const vec2& initial_velocity = vec2{0});
-void spawn_chaser(SimInterface& sim, std::uint32_t size, const vec2& position, bool drop,
-                  fixed rotation = 0, std::uint32_t stagger = 0);
+ecs::handle spawn_follow(SimInterface& sim, std::uint32_t size, const vec2& position,
+                         std::optional<vec2> direction, bool drop, fixed rotation = 0,
+                         const vec2& initial_velocity = vec2{0});
+ecs::handle spawn_chaser(SimInterface& sim, std::uint32_t size, const vec2& position, bool drop,
+                         fixed rotation = 0, std::uint32_t stagger = 0);
 
 struct Follow : ecs::component {
   static constexpr sound kDestroySound = sound::kEnemyShatter;
@@ -27,19 +27,21 @@ struct Follow : ecs::component {
   static constexpr auto c = colour::kNewPurple;
   static constexpr auto cf = colour::alpha(c, colour::kFillAlpha0);
   static constexpr auto outline = geom::nline(colour::kOutline, colour::kZOutline, 2.f);
-  using small_shape =
-      standard_transform<geom::ngon<geom::nd(kSmallWidth + 2, 4), outline>,
-                         geom::ngon_with_collider<
-                             geom::nd(kSmallWidth, 4), geom::nline(c, z, 1.5f), geom::sfill(cf, z),
-                             shape_flag::kDangerous | shape_flag::kVulnerable>>;
-  using big_shape = standard_transform<
-      geom::ngon<geom::nd(kBigWidth + 2, 4), outline>,
-      geom::ngon_with_collider<geom::nd(kBigWidth, 4), geom::nline(c, z, 1.5f), geom::sfill(cf, z),
-                               shape_flag::kDangerous | shape_flag::kVulnerable>>;
-  using huge_shape = standard_transform<
-      geom::ngon<geom::nd(kHugeWidth + 2, 4), outline>,
-      geom::ngon_with_collider<geom::nd(kHugeWidth, 4), geom::nline(c, z, 1.5f), geom::sfill(cf, z),
-                               shape_flag::kDangerous | shape_flag::kVulnerable>>;
+  template <fixed R>
+  using generic_shape = standard_transform<
+      geom::ngon<geom::nd(R + 2, 4), outline>,
+      geom::ngon_colour_p2<geom::nd(R, 4), 2, 3, geom::nline(c, z, 1.5f), geom::sfill(cf, z)>,
+      geom::ngon_collider<geom::nd(R, 4), shape_flag::kDangerous | shape_flag::kVulnerable>>;
+  using small_shape = generic_shape<kSmallWidth>;
+  using big_shape = generic_shape<kBigWidth>;
+  using huge_shape = generic_shape<kHugeWidth>;
+
+  std::tuple<vec2, fixed, cvec4, cvec4>
+  shape_parameters(const Transform& transform, const ColourOverride* colour) const {
+    return colour ? std::tuple{transform.centre, transform.rotation, colour->colour,
+                               colour::alpha(colour->colour, colour::kFillAlpha0)}
+                  : std::tuple{transform.centre, transform.rotation, c, cf};
+  }
 
   Follow(std::uint32_t size, std::optional<vec2> direction, bool in_formation)
   : size{size}
@@ -80,33 +82,48 @@ struct Follow : ecs::component {
       return;
     }
 
-    // TODO: acquire new target if current is dead.
-    ++timer;
-    if (!target || timer >= kTime) {
-      (target ? next_target : target) = sim.nearest_player(transform.centre).id();
+    if (!target) {
+      target = sim.nearest_player(transform.centre).id();
+    }
+    if (++timer >= kTime) {
+      if (next_target) {
+        target = next_target;
+      }
+      next_target = sim.nearest_player(transform.centre).id();
+      if (next_target == target) {
+        next_target.reset();
+      }
       timer = 0;
     }
-    if (timer >= kTime / 5 && next_target) {
-      target = next_target;
-      next_target.reset();
-    }
 
-    auto ph = sim.index().get(*target);
-    if (!ph->get<Player>()->is_killed) {
-      auto d = ph->get<Transform>()->centre - transform.centre;
-      transform.move(normalise(d) * move_scale * kSpeed);
+    auto ph0 = sim.index().get(*target);
+    auto d0 = ph0->get<Transform>()->centre - transform.centre;
+    if (length_squared(d0) > square(kSpeed)) {
+      d0 = kSpeed * normalise(d0);
     }
+    if (next_target) {
+      auto ph1 = sim.index().get(*next_target);
+      auto d1 = ph1->get<Transform>()->centre - transform.centre;
+      if (length_squared(d1) > square(kSpeed)) {
+        d1 = kSpeed * normalise(d1);
+      }
+      d0 = glm::mix(d0, d1, fixed{timer} / kTime);
+    }
+    transform.move(d0 * move_scale);
   }
 
-  void
-  on_destroy(const Transform& transform, SimInterface& sim, EmitHandle&, damage_type type) const {
+  void on_destroy(ecs::const_handle h, const Transform& transform, SimInterface& sim, EmitHandle&,
+                  damage_type type) const {
     if (!size || type == damage_type::kBomb) {
       return;
     }
     vec2 d = rotate(vec2{10, 0}, transform.rotation);
     for (std::uint32_t i = 0; i < 5; ++i) {
-      spawn_follow(sim, size - 1, transform.centre + size * d, std::nullopt, /* drop */ false,
-                   transform.rotation, d / 6);
+      auto nh = spawn_follow(sim, size - 1, transform.centre + size * d, std::nullopt,
+                             /* drop */ false, transform.rotation, d / 6);
+      if (const auto* c = h.get<ColourOverride>(); c) {
+        nh.add(*c);
+      }
       d = rotate(d, 2 * pi<fixed> / 5);
     }
   }
@@ -134,28 +151,31 @@ ecs::handle create_follow_ship(SimInterface& sim, std::uint32_t size, std::uint3
   return h;
 }
 
-void spawn_follow(SimInterface& sim, std::uint32_t size, const vec2& position,
-                  std::optional<vec2> direction, bool drop, fixed rotation,
-                  const vec2& initial_velocity) {
+ecs::handle spawn_follow(SimInterface& sim, std::uint32_t size, const vec2& position,
+                         std::optional<vec2> direction, bool drop, fixed rotation,
+                         const vec2& initial_velocity) {
   if (size == 2) {
     auto h = create_follow_ship<Follow::huge_shape>(sim, 2, 40, Follow::kHugeWidth, position,
                                                     direction, rotation, initial_velocity);
     if (drop) {
       h.add(DropTable{.shield_drop_chance = 15, .bomb_drop_chance = 30});
     }
-  } else if (size == 1) {
+    return h;
+  }
+  if (size == 1) {
     auto h = create_follow_ship<Follow::big_shape>(sim, 1, 24, Follow::kBigWidth, position,
                                                    direction, rotation, initial_velocity);
     if (drop) {
       h.add(DropTable{.shield_drop_chance = 15, .bomb_drop_chance = 10});
     }
-  } else {
-    auto h = create_follow_ship<Follow::small_shape>(sim, 0, 8, Follow::kSmallWidth, position,
-                                                     direction, rotation, initial_velocity);
-    if (drop) {
-      h.add(DropTable{.shield_drop_chance = 1, .bomb_drop_chance = 1});
-    }
+    return h;
   }
+  auto h = create_follow_ship<Follow::small_shape>(sim, 0, 8, Follow::kSmallWidth, position,
+                                                   direction, rotation, initial_velocity);
+  if (drop) {
+    h.add(DropTable{.shield_drop_chance = 1, .bomb_drop_chance = 1});
+  }
+  return h;
 }
 
 struct Chaser : ecs::component {
@@ -264,21 +284,22 @@ create_chaser_ship(SimInterface& sim, std::uint32_t size, std::uint32_t health, 
   return h;
 }
 
-void spawn_chaser(SimInterface& sim, std::uint32_t size, const vec2& position, bool drop,
-                  fixed rotation, std::uint32_t stagger) {
+ecs::handle spawn_chaser(SimInterface& sim, std::uint32_t size, const vec2& position, bool drop,
+                         fixed rotation, std::uint32_t stagger) {
   if (size == 1) {
     auto h = create_chaser_ship<Chaser::big_shape>(sim, 1, 32, Chaser::kBigWidth, position,
                                                    rotation, stagger);
     if (drop) {
       h.add(DropTable{.shield_drop_chance = 10, .bomb_drop_chance = 20});
     }
-  } else {
-    auto h = create_chaser_ship<Chaser::small_shape>(sim, 0, 16, Chaser::kSmallWidth, position,
-                                                     rotation, stagger);
-    if (drop) {
-      h.add(DropTable{.shield_drop_chance = 3, .bomb_drop_chance = 4});
-    }
+    return h;
   }
+  auto h = create_chaser_ship<Chaser::small_shape>(sim, 0, 16, Chaser::kSmallWidth, position,
+                                                   rotation, stagger);
+  if (drop) {
+    h.add(DropTable{.shield_drop_chance = 3, .bomb_drop_chance = 4});
+  }
+  return h;
 }
 
 struct FollowSponge : ecs::component {
@@ -370,36 +391,37 @@ DEBUG_STRUCT_TUPLE(FollowSponge, timer, anim, spawns, scale, target, next_target
 
 }  // namespace
 
-void spawn_follow(SimInterface& sim, const vec2& position, std::optional<vec2> direction,
-                  bool drop) {
-  spawn_follow(sim, /* size */ 0, position, direction, drop);
+ecs::handle
+spawn_follow(SimInterface& sim, const vec2& position, std::optional<vec2> direction, bool drop) {
+  return spawn_follow(sim, /* size */ 0, position, direction, drop);
 }
 
-void spawn_big_follow(SimInterface& sim, const vec2& position, std::optional<vec2> direction,
-                      bool drop) {
-  spawn_follow(sim, /* size */ 1, position, direction, drop);
+ecs::handle spawn_big_follow(SimInterface& sim, const vec2& position, std::optional<vec2> direction,
+                             bool drop) {
+  return spawn_follow(sim, /* size */ 1, position, direction, drop);
 }
 
-void spawn_huge_follow(SimInterface& sim, const vec2& position, std::optional<vec2> direction,
-                       bool drop) {
-  spawn_follow(sim, /* size */ 2, position, direction, drop);
+ecs::handle spawn_huge_follow(SimInterface& sim, const vec2& position,
+                              std::optional<vec2> direction, bool drop) {
+  return spawn_follow(sim, /* size */ 2, position, direction, drop);
 }
 
-void spawn_chaser(SimInterface& sim, const vec2& position, bool drop) {
-  spawn_chaser(sim, /* size */ 0, position, drop);
+ecs::handle spawn_chaser(SimInterface& sim, const vec2& position, bool drop) {
+  return spawn_chaser(sim, /* size */ 0, position, drop);
 }
 
-void spawn_big_chaser(SimInterface& sim, const vec2& position, bool drop) {
-  spawn_chaser(sim, /* size */ 1, position, drop);
+ecs::handle spawn_big_chaser(SimInterface& sim, const vec2& position, bool drop) {
+  return spawn_chaser(sim, /* size */ 1, position, drop);
 }
 
-void spawn_follow_sponge(SimInterface& sim, const vec2& position) {
+ecs::handle spawn_follow_sponge(SimInterface& sim, const vec2& position) {
   auto h = create_ship_default<FollowSponge>(sim, position);
   add_enemy_health<FollowSponge>(h, 256, sound::kPlayerDestroy, rumble_type::kMedium);
   h.add(Enemy{.threat_value = 20u});
   h.add(FollowSponge{});
   h.add(Physics{.mass = 2_fx});
   h.add(DropTable{.shield_drop_chance = 30, .bomb_drop_chance = 40});
+  return h;
 }
 
 }  // namespace ii::v0

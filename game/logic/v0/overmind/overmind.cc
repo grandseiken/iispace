@@ -9,6 +9,7 @@
 #include "game/logic/v0/player/loadout.h"
 #include "game/logic/v0/player/player.h"
 #include "game/logic/v0/player/upgrade.h"
+#include <array>
 
 namespace ii::v0 {
 namespace {
@@ -18,6 +19,8 @@ struct Overmind : ecs::component {
   static constexpr std::uint32_t kSpawnTimerBoss = 300;
   static constexpr std::uint32_t kSpawnTimerUpgrade = 180;
   static constexpr std::uint32_t kBackgroundInterpolateTime = 180;
+  static constexpr std::array kBossProgressRespawn = {
+      75_fx / 100, 50_fx / 100, 35_fx / 100, 25_fx / 100, 175_fx / 1000, 10_fx / 100, 5_fx / 100};
 
   wave_id next_wave;
   std::uint32_t spawn_timer = 0;
@@ -25,6 +28,7 @@ struct Overmind : ecs::component {
   std::vector<wave_data> wave_list;
   std::vector<background_update> background_data;
   std::uint32_t background_interpolate = 0;
+  std::optional<fixed> boss_progress;
 
   void update(ecs::handle h, SimInterface& sim) {
     auto& global = *sim.global_entity().get<GlobalData>();
@@ -37,8 +41,6 @@ struct Overmind : ecs::component {
     sim.index().iterate<Enemy>([&](const Enemy& e) { total_enemy_threat += e.threat_value; });
     if (spawn_timer) {
       global.walls_vulnerable = false;
-      // TODO: bosses. Legacy behaviour was 20/24/28/32 waves per boss by player count.
-      // Not sure if we should preserve that or just stick with increasing wave power.
       if (!--spawn_timer) {
         respawn_players(sim);
         spawn_wave(sim);
@@ -49,8 +51,30 @@ struct Overmind : ecs::component {
       spawn_timer = *t;
       cleanup_mod_upgrades(sim);
     }
+
     input.biome_index = current_wave->biome_index;
     input.type = current_wave->type;
+    if (current_wave->type == wave_type::kBoss) {
+      if (!boss_progress) {
+        boss_progress = 1_fx;
+      }
+      std::uint32_t boss_hp = 0;
+      std::uint32_t boss_max_hp = 0;
+      sim.index().iterate_dispatch_if<Boss>([&](const Boss& boss, const Health& health) {
+        boss_hp += health.hp;
+        boss_max_hp += health.max_hp;
+      });
+      auto progress = fixed{boss_hp} / boss_max_hp;
+      for (auto t : kBossProgressRespawn) {
+        if (progress <= t && t < *boss_progress) {
+          respawn_players(sim);
+          break;
+        }
+      }
+      boss_progress = progress;
+    } else {
+      boss_progress.reset();
+    }
 
     if (const auto* biome = get_biome(sim, current_wave->biome_index); biome) {
       update_background(sim, *biome, input, sim.global_entity().get<Background>()->background);
@@ -70,6 +94,9 @@ struct Overmind : ecs::component {
       next_wave.wave_number = 0;
       if (const auto* biome = get_biome(sim, next_wave.biome_index); biome) {
         wave_list = biome->get_wave_list(sim.conditions(), next_wave.biome_index);
+        for (auto& wave : wave_list) {
+          wave.biome_index = next_wave.biome_index;
+        }
       } else {
         wave_list = {wave_data{.type = wave_type::kRunComplete}};
       }

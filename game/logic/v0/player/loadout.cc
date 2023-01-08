@@ -108,12 +108,12 @@ std::vector<mod_id> mod_selection(const initial_conditions& conditions, RandomEn
     return 0u;
   };
 
-  auto mod_weight = [&](const mod_data& data) -> std::uint32_t {
-    auto count = data.options.allow_multiple_per_player ? conditions.player_count : 1u;
-    auto it = loadout_mod_counts.find(data.id);
+  auto mod_weight = [&](const mod_data* data) -> std::uint32_t {
+    auto count = data->options.allow_multiple_per_player ? conditions.player_count : 1u;
+    auto it = loadout_mod_counts.find(data->id);
     std::uint32_t weight = it != loadout_mod_counts.end() && it->second >= count ? 1u : 2u;
-    if (data.category != mod_category::kGeneral) {
-      auto it = loadout_category_counts.find(data.category);
+    if (data->category != mod_category::kGeneral) {
+      auto it = loadout_category_counts.find(data->category);
       if (it != loadout_category_counts.end() && it->second > 0u) {
         weight *= 2u;
       }
@@ -122,41 +122,16 @@ std::vector<mod_id> mod_selection(const initial_conditions& conditions, RandomEn
   };
 
   auto select_mod_from_map = [&](const mod_slot_map& slot_mods) -> const mod_data* {
-    std::uint32_t total_weight = 0;
-    for (const auto& pair : slot_mods) {
-      total_weight += slot_weight(pair.first, pair.second.size());
-    }
-    if (!total_weight) {
+    auto it = random.weighted_choice(slot_mods.begin(), slot_mods.end(), [&](const auto& pair) {
+      return slot_weight(pair.first, pair.second.size());
+    });
+    if (it == slot_mods.end()) {
       return nullptr;
-    }
-    auto r = random.uint(total_weight);
-    auto slot = mod_slot::kBonusCombo;
-    total_weight = 0;
-    for (const auto& pair : slot_mods) {
-      total_weight += slot_weight(pair.first, pair.second.size());
-      if (r < total_weight) {
-        slot = pair.first;
-        break;
-      }
     }
 
-    const auto& mods = slot_mods.find(slot)->second;
-    total_weight = 0;
-    for (const auto* data : mods) {
-      total_weight += mod_weight(*data);
-    }
-    if (!total_weight) {
-      return nullptr;
-    }
-    r = random.uint(total_weight);
-    total_weight = 0;
-    for (const auto* data : mods) {
-      total_weight += mod_weight(*data);
-      if (r < total_weight) {
-        return data;
-      }
-    }
-    return nullptr;
+    const auto& mods = slot_mods.find(it->first)->second;
+    auto jt = random.weighted_choice(mods.begin(), mods.end(), mod_weight);
+    return jt == mods.end() ? nullptr : *jt;
   };
 
   auto select_mod = [&](std::optional<mod_category> required_category) -> const mod_data* {
@@ -209,11 +184,7 @@ std::vector<mod_id> mod_selection(const initial_conditions& conditions, RandomEn
       break;
     }
   }
-
-  for (std::uint32_t i = 0; i + 1 < result.size(); ++i) {
-    auto j = i + random.uint(result.size() - i);
-    std::swap(result[i], result[j]);
-  }
+  random.shuffle(result.begin(), result.end());
   return result;
 }
 
