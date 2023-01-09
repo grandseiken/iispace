@@ -33,9 +33,9 @@ ecs::handle spawn_player_shot(SimInterface& sim, const vec2& position, const Pla
 struct shot_mod_data {
   static constexpr std::uint32_t kBaseDamage = 8u;
   static constexpr std::uint32_t kLightningDamage = 11u;
-  static constexpr std::uint32_t kCloseCombatDamage = 6u;
+  static constexpr std::uint32_t kCloseCombatDamage = 4u;
   static constexpr std::uint32_t kSniperSplitDamage = 6u;
-  static constexpr std::uint32_t kCloseCombatShotCount = 14u;
+  static constexpr std::uint32_t kCloseCombatShotCount = 21u;
   static constexpr fixed kBaseSpeed = 75_fx / 8_fx;
   static constexpr fixed kCloseCombatMaxDistance = 320_fx;
   static constexpr fixed kCloseCombatSpreadAngle = pi<fixed> / 5;
