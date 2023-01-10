@@ -11,7 +11,7 @@ namespace {
 wave_data get_enemy_wave_data(const initial_conditions& conditions, std::uint32_t biome_index,
                               std::uint32_t phase_index, std::uint32_t wave_number) {
   static constexpr std::uint32_t kInitialPower = 16u;
-  static constexpr std::uint32_t kBiomePower = 24u;
+  static constexpr std::uint32_t kBiomePower = 20u;
   static constexpr std::uint32_t kPhasePower = 2u;
   static constexpr std::uint32_t kBiomeThreat = 8u;
   static constexpr std::uint32_t kPhaseThreat = 4u;

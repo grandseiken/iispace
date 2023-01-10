@@ -106,6 +106,7 @@ struct Overmind : ecs::component {
       return false;
     }
     auto next_data = wave_list[next_wave.wave_number];
+    auto next_timer = next_data.type == wave_type::kBoss ? kSpawnTimerBoss : 0u;
     bool next_condition = next_data.type == wave_type::kEnemy || !total_enemy_threat;
     bool prev_condition = false;
 
@@ -136,7 +137,7 @@ struct Overmind : ecs::component {
     }
     if (prev_condition && next_condition) {
       current_wave = next_data;
-      return prev_timer;
+      return std::max(prev_timer, next_timer);
     }
     return std::nullopt;
   }
@@ -145,14 +146,17 @@ struct Overmind : ecs::component {
     auto& global = *sim.global_entity().get<GlobalData>();
     auto n = static_cast<std::int32_t>(8u * next_wave.biome_index + next_wave.wave_number);
     auto c = static_cast<std::int32_t>(sim.player_count());
-    global.shield_drop.counter += 120 + (6 * n / (2 + c)) + 80 * c;
-    global.bomb_drop.counter += 160 + (9 * n / (2 + c)) + 60 * c;
-    if (!next_wave.biome_index && !next_wave.wave_number) {
-      global.bomb_drop.counter += 200;
-    }
 
     const auto* biome = get_biome(sim, next_wave.biome_index);
     const auto& data = wave_list[next_wave.wave_number];
+    if (data.type == wave_type::kEnemy) {
+      global.shield_drop.counter += 120 + (6 * n / (2 + c)) + 80 * c;
+      global.bomb_drop.counter += 160 + (9 * n / (2 + c)) + 60 * c;
+      if (!next_wave.biome_index && !next_wave.wave_number) {
+        global.bomb_drop.counter += 200;
+      }
+    }
+
     switch (data.type) {
     case wave_type::kEnemy:
       if (biome) {

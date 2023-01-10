@@ -137,8 +137,8 @@ void RenderState::update(SimInputAdapter* input) {
 
         d->radius /= 2.f;
         line_particle d0 = *d;
-        d->angular_velocity -= pi<float> / 64.f;
-        d0.angular_velocity += pi<float> / 64.f;
+        d->angular_velocity *= 9.f / 8.f;
+        d0.angular_velocity *= 7.f / 8.f;
         d0.rotation = d->rotation + d0.angular_velocity;
 
         p.time = std::max(4u, p.time - 4u);

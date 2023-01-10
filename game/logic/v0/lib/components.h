@@ -74,6 +74,12 @@ struct EnemyStatus : ecs::component {
   std::uint32_t stun_resist_decay = 0u;
   std::uint32_t stun_counter = 0u;
   std::uint32_t stun_ticks = 0u;
+
+  struct destroy_timer_t {
+    std::optional<vec2> source;
+    std::uint32_t timer = 0;
+  };
+  std::optional<destroy_timer_t> destroy_timer;
   std::uint32_t shielded_ticks = 0u;
 
   void inflict_stun() {
@@ -85,7 +91,7 @@ struct EnemyStatus : ecs::component {
     }
   }
 
-  void update(Update* update) {
+  void update(ecs::handle h, Update* update, SimInterface& sim) {
     stun_counter && --stun_counter;
     stun_ticks && --stun_ticks;
     shielded_ticks && --shielded_ticks;
@@ -96,10 +102,21 @@ struct EnemyStatus : ecs::component {
     if (update) {
       update->skip_update = stun_ticks > 0;
     }
+    destroy_timer && destroy_timer->timer && --destroy_timer->timer;
+    if (destroy_timer && !destroy_timer->timer) {
+      if (auto* health = h.get<Health>(); health) {
+        health->damage(h, sim, 12u * health->max_hp, damage_type::kBomb, h.id(),
+                       destroy_timer->source);
+      } else {
+        h.emplace<Destroy>();
+      }
+      destroy_timer.reset();
+    }
   }
 };
+DEBUG_STRUCT_TUPLE(EnemyStatus::destroy_timer_t, source, timer);
 DEBUG_STRUCT_TUPLE(EnemyStatus, stun_resist_base, stun_resist_bonus, stun_resist_extra,
-                   stun_resist_decay, stun_counter, stun_ticks, shielded_ticks);
+                   stun_resist_decay, stun_counter, stun_ticks, destroy_timer, shielded_ticks);
 
 }  // namespace ii::v0
 

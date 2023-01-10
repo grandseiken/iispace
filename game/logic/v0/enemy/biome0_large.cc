@@ -86,9 +86,9 @@ struct FollowHub : ecs::component {
     transform.move(dir * kSpeed);
   }
 
-  void
-  on_destroy(const Transform& transform, SimInterface& sim, EmitHandle&, damage_type type) const {
-    if (type == damage_type::kBomb) {
+  void on_destroy(const Transform& transform, const EnemyStatus& status, SimInterface& sim,
+                  EmitHandle&, damage_type type) const {
+    if (type == damage_type::kBomb || status.destroy_timer) {
       return;
     }
     if (chaser) {

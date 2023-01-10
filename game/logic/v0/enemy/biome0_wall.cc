@@ -165,9 +165,9 @@ struct Wall : ecs::component {
     transform.set_rotation(angle(dir));
   }
 
-  void
-  on_destroy(const Transform& transform, SimInterface& sim, EmitHandle&, damage_type type) const {
-    if (type == damage_type::kBomb) {
+  void on_destroy(const Transform& transform, const EnemyStatus& status, SimInterface& sim,
+                  EmitHandle&, damage_type type) const {
+    if (type == damage_type::kBomb || status.destroy_timer) {
       return;
     }
 

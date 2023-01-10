@@ -138,7 +138,7 @@ SdlIoLayer::create(const char* title, char gl_major, char gl_minor, bool windowe
   if (windowed) {
     flags |= SDL_WINDOW_RESIZABLE;
     xy = 64;
-    dimensions = {720, 540};
+    dimensions = {960, 540};
   } else {
     flags |= SDL_WINDOW_BORDERLESS | SDL_WINDOW_FULLSCREEN_DESKTOP;
   }
@@ -199,6 +199,7 @@ uvec2 SdlIoLayer::dimensions() const {
 }
 
 void SdlIoLayer::swap_buffers() {
+  glBindFramebuffer(GL_FRAMEBUFFER, 0);
   SDL_GL_SwapWindow(impl_->window.get());
 }
 

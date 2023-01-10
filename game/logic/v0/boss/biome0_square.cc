@@ -13,7 +13,6 @@
 namespace ii::v0 {
 namespace {
 
-// TODO: better bomb effect when hit (general boss).
 // TODO: special attack: zoom vertically from one side to another.
 struct SquareBoss : public ecs::component {
   static constexpr std::uint32_t kBaseHp = 3250;

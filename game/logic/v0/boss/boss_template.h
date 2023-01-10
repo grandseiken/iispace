@@ -14,7 +14,25 @@ constexpr std::uint32_t kBossThreatValue = 1000;
 constexpr std::uint32_t kBossHpMultiplier = 12u;
 
 inline std::uint32_t
-scale_boss_damage(ecs::handle, SimInterface& sim, damage_type, std::uint32_t damage) {
+scale_boss_damage(ecs::handle, SimInterface& sim, damage_type type, std::uint32_t damage) {
+  if (type == damage_type::kBomb) {
+    damage *= std::max(1u, kBossHpMultiplier);
+    switch (sim.alive_players()) {
+    case 0:
+    case 1:
+      return 12 * damage / 16;
+    case 2:
+      return 9 * damage / 16;
+    case 3:
+      return 7 * damage / 16;
+    case 4:
+      return 6 * damage / 16;
+    case 5:
+      return 5 * damage / 16;
+    default:
+      return 4 * damage / 16;
+    }
+  }
   return damage * std::max(1u, kBossHpMultiplier / std::max(1u, sim.alive_players()));
 }
 
@@ -31,22 +49,31 @@ inline cvec4 get_boss_colour(ecs::const_handle h) {
 }
 
 template <ecs::Component Logic, geom::ShapeNode S = typename Logic::shape>
-void boss_on_hit(ecs::handle h, SimInterface&, EmitHandle& e, damage_type type, const vec2&) {
+void boss_on_hit(ecs::handle h, SimInterface&, EmitHandle& e, damage_type type,
+                 const vec2& source) {
   if (type == damage_type::kBomb) {
     explode_entity_shapes<Logic, S>(h, e);
     explode_entity_shapes<Logic, S>(h, e, cvec4{1.f}, 12);
     explode_entity_shapes<Logic, S>(h, e, std::nullopt, 24);
+    destruct_entity_lines<Logic, S>(h, e, source);
   }
 }
 
 template <ecs::Component Logic, geom::ShapeNode S = typename Logic::shape>
 void boss_on_destroy(ecs::const_handle h, const Transform& transform, SimInterface& sim,
                      EmitHandle& e, damage_type, const vec2& source) {
-  sim.index().iterate_dispatch_if<Enemy>([&](ecs::handle eh, Health& health) {
-    if (eh.id() != h.id()) {
-      health.damage(eh, sim, health.max_hp, damage_type::kBomb, h.id());
-    }
-  });
+  sim.index().iterate_dispatch_if<EnemyStatus>(
+      [&](ecs::handle eh, EnemyStatus& status, const Transform* e_transform) {
+        if (eh.id() != h.id()) {
+          status.destroy_timer.emplace();
+          status.destroy_timer->source = transform.centre;
+          status.destroy_timer->timer = 4u;
+          if (e_transform) {
+            status.destroy_timer->timer +=
+                (length(e_transform->centre - transform.centre) / 8).to_int();
+          }
+        }
+      });
 
   auto boss_colour = get_boss_colour<Logic, S>(h);
   explode_entity_shapes<Logic, S>(h, e);

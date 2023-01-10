@@ -112,9 +112,9 @@ struct Follow : ecs::component {
     transform.move(d0 * move_scale);
   }
 
-  void on_destroy(ecs::const_handle h, const Transform& transform, SimInterface& sim, EmitHandle&,
-                  damage_type type) const {
-    if (!size || type == damage_type::kBomb) {
+  void on_destroy(ecs::const_handle h, const Transform& transform, const EnemyStatus& status,
+                  SimInterface& sim, EmitHandle&, damage_type type) const {
+    if (!size || type == damage_type::kBomb || status.destroy_timer) {
       return;
     }
     vec2 d = rotate(vec2{10, 0}, transform.rotation);
@@ -251,9 +251,9 @@ struct Chaser : ecs::component {
                                     }));
   }
 
-  void
-  on_destroy(const Transform& transform, SimInterface& sim, EmitHandle&, damage_type type) const {
-    if (!size || type == damage_type::kBomb) {
+  void on_destroy(const Transform& transform, const EnemyStatus& status, SimInterface& sim,
+                  EmitHandle&, damage_type type) const {
+    if (!size || type == damage_type::kBomb || status.destroy_timer) {
       return;
     }
     vec2 d = rotate(vec2{12, 0}, transform.rotation);

@@ -73,7 +73,7 @@ void V0SimSetup::begin_tick(SimInterface& sim) {
   sim.index().iterate_dispatch_if<Physics>(
       [](Physics& physics, Transform& transform) { physics.update(transform); });
   sim.index().iterate_dispatch<EnemyStatus>(
-      [](EnemyStatus& status, Update* update) { status.update(update); });
+      [&](ecs::handle h, EnemyStatus& status, Update* update) { status.update(h, update, sim); });
 }
 
 bool V0SimSetup::is_game_over(const SimInterface& sim) const {
