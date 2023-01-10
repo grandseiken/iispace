@@ -217,6 +217,7 @@ render_output& SimState::render(transient_render_state& state, bool paused) cons
   auto& result = internals_->render;
   result.boss.reset();
   result.shapes.clear();
+  result.fx.clear();
   result.panels.clear();
   result.players.clear();
 

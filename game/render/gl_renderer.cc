@@ -31,6 +31,7 @@ enum class shader {
   kText,
   kPanel,
   kBackground,
+  kFx,
   kShapeOutline,
   kShapeMotion,
   kShapeFill,
@@ -101,8 +102,10 @@ struct vertex_attribute_container {
     std::size_t total_count_per_vertex = 0;
     std::size_t current_offset = 0;
   };
+  gl::vertex_array vertex_array = gl::make_vertex_array();
   std::unordered_map<gl::type, type_info> buffers;
-  std::vector<gl::vertex_attribute> attributes;
+
+  void bind() const { gl::bind_vertex_array(vertex_array); }
 
   template <typename T>
   void add_buffer(std::span<const T> data, std::size_t total_count_per_vertex) {
@@ -118,14 +121,14 @@ struct vertex_attribute_container {
     assert(it != buffers.end());
     auto& info = it->second;
     if constexpr (std::is_integral_v<T>) {
-      attributes.emplace_back(gl::vertex_int_attribute_buffer(
-          info.buffer, index, count_per_vertex, gl::type_of<T>(),
-          info.total_count_per_vertex * sizeof(T), info.current_offset * sizeof(T)));
+      gl::vertex_int_attribute_buffer(info.buffer, index, count_per_vertex, gl::type_of<T>(),
+                                      info.total_count_per_vertex * sizeof(T),
+                                      info.current_offset * sizeof(T));
     } else {
-      attributes.emplace_back(gl::vertex_float_attribute_buffer(
-          info.buffer, index, count_per_vertex, gl::type_of<T>(),
-          /* normalize */ false, info.total_count_per_vertex * sizeof(T),
-          info.current_offset * sizeof(T)));
+      gl::vertex_float_attribute_buffer(info.buffer, index, count_per_vertex, gl::type_of<T>(),
+                                        /* normalize */ false,
+                                        info.total_count_per_vertex * sizeof(T),
+                                        info.current_offset * sizeof(T));
     }
     info.current_offset += count_per_vertex;
   }
@@ -220,6 +223,14 @@ result<std::unique_ptr<GlRenderer>> GlRenderer::create(std::uint32_t shader_vers
                   {{"game/render/shaders/bg/background.f.glsl", gl::shader_type::kFragment},
                    {"game/render/shaders/bg/background.g.glsl", gl::shader_type::kGeometry},
                    {"game/render/shaders/bg/background.v.glsl", gl::shader_type::kVertex}});
+  if (!r) {
+    return unexpected(r.error());
+  }
+
+  r = load_shader(shader::kFx,
+                  {{"game/render/shaders/fx/fx_fragment.f.glsl", gl::shader_type::kFragment},
+                   {"game/render/shaders/fx/fx_geometry.g.glsl", gl::shader_type::kGeometry},
+                   {"game/render/shaders/fx/fx_vertex.v.glsl", gl::shader_type::kVertex}});
   if (!r) {
     return unexpected(r.error());
   }
@@ -408,10 +419,7 @@ void GlRenderer::render_text(const font_data& font, const fvec2& position, const
 
   vertex_attribute_container attributes;
   attributes.add_buffer(std::span<const std::int16_t>(vertex_data), 6);
-
-  auto vertex_array = gl::make_vertex_array();
-  gl::bind_vertex_array(vertex_array);
-
+  attributes.bind();
   attributes.add_attribute<std::int16_t>(/* position */ 0, 2);
   attributes.add_attribute<std::int16_t>(/* dimensions */ 1, 2);
   attributes.add_attribute<std::int16_t>(/* texture_coords */ 2, 2);
@@ -492,10 +500,7 @@ void GlRenderer::render_panel(const panel_data& p) const {
   vertex_attribute_container attributes;
   attributes.add_buffer(std::span<const float>{float_data}, 8);
   attributes.add_buffer(std::span<const std::int16_t>{int_data}, 8);
-
-  auto vertex_array = gl::make_vertex_array();
-  gl::bind_vertex_array(vertex_array);
-
+  attributes.bind();
   attributes.add_attribute<std::int16_t>(/* position */ 0, 2);
   attributes.add_attribute<std::int16_t>(/* screen_dimensions */ 1, 2);
   attributes.add_attribute<std::int16_t>(/* render_dimensions */ 2, 2);
@@ -538,7 +543,8 @@ void GlRenderer::render_panel(const combo_panel& data) const {
     if (const auto* icon = std::get_if<combo_panel::icon>(&e.e)) {
       render::clip_handle icon_clip{t, e.bounds + inner_padding};
       auto shapes = icon->shapes;
-      render_shapes(coordinate_system::kCentered, shapes, shape_style::kIcon);
+      std::vector<fx> no_fx;
+      render_shapes(coordinate_system::kCentered, shapes, no_fx, shape_style::kIcon);
     } else if (const auto* text = std::get_if<combo_panel::text>(&e.e)) {
       auto bounds = e.bounds;
       if (bounds.size.x == 0.f) {
@@ -597,10 +603,7 @@ void GlRenderer::render_background(const render::background& data) const {
 
   vertex_attribute_container attributes;
   attributes.add_buffer(std::span<const std::int16_t>{int_data}, 7);
-
-  auto vertex_array = gl::make_vertex_array();
-  gl::bind_vertex_array(vertex_array);
-
+  attributes.bind();
   attributes.add_attribute<std::int16_t>(/* position */ 0, 2);
   attributes.add_attribute<std::int16_t>(/* screen_dimensions */ 1, 2);
   attributes.add_attribute<std::int16_t>(/* render_dimensions */ 2, 2);
@@ -608,7 +611,7 @@ void GlRenderer::render_background(const render::background& data) const {
 }
 
 void GlRenderer::render_shapes(coordinate_system ctype, std::vector<shape>& shapes,
-                               shape_style style) const {
+                               std::vector<fx>& fxs, shape_style style) const {
   std::stable_sort(shapes.begin(), shapes.end(),
                    [](const shape& a, const shape& b) { return a.z_index < b.z_index; });
 
@@ -876,20 +879,56 @@ void GlRenderer::render_shapes(coordinate_system ctype, std::vector<shape>& shap
   auto fill_index_buffer = make_stream_draw_buffer(std::span<const unsigned>{fill_indices});
   auto outline_index_buffer = make_stream_draw_buffer(std::span<const unsigned>{outline_indices});
 
-  vertex_attribute_container attributes;
-  attributes.add_buffer(std::span<const std::uint32_t>(vertex_int_data), 4);
-  attributes.add_buffer(std::span<const float>{vertex_float_data}, 7);
+  vertex_attribute_container shape_attributes;
+  shape_attributes.add_buffer(std::span<const std::uint32_t>(vertex_int_data), 4);
+  shape_attributes.add_buffer(std::span<const float>{vertex_float_data}, 7);
 
-  auto vertex_array = gl::make_vertex_array();
-  gl::bind_vertex_array(vertex_array);
+  shape_attributes.bind();
+  shape_attributes.add_attribute<std::uint32_t>(/* buffer_index */ 0, 1);
+  shape_attributes.add_attribute<std::uint32_t>(/* style */ 1, 1);
+  shape_attributes.add_attribute<std::uint32_t>(/* params */ 2, 2);
+  shape_attributes.add_attribute<float>(/* rotation */ 3, 1);
+  shape_attributes.add_attribute<float>(/* line_width */ 4, 1);
+  shape_attributes.add_attribute<float>(/* position */ 5, 3);
+  shape_attributes.add_attribute<float>(/* dimensions */ 6, 2);
 
-  attributes.add_attribute<std::uint32_t>(/* buffer_index */ 0, 1);
-  attributes.add_attribute<std::uint32_t>(/* style */ 1, 1);
-  attributes.add_attribute<std::uint32_t>(/* params */ 2, 2);
-  attributes.add_attribute<float>(/* rotation */ 3, 1);
-  attributes.add_attribute<float>(/* line_width */ 4, 1);
-  attributes.add_attribute<float>(/* position */ 5, 3);
-  attributes.add_attribute<float>(/* dimensions */ 6, 2);
+  vertex_attribute_container fx_attributes;
+  std::uint32_t fx_count = 0;
+  if (!fxs.empty()) {
+    vertex_int_data.clear();
+    vertex_float_data.clear();
+    auto add_fx_data = [&](const fx& d) {
+      const auto* b = std::get_if<render::ball_fx>(&d.data);
+      if (!b) {
+        return;
+      }
+      vertex_int_data.emplace_back(static_cast<std::uint32_t>(d.style));
+      vertex_float_data.emplace_back(d.colour.r);
+      vertex_float_data.emplace_back(d.colour.g);
+      vertex_float_data.emplace_back(d.colour.b);
+      vertex_float_data.emplace_back(d.colour.a);
+      vertex_float_data.emplace_back(b->position.x);
+      vertex_float_data.emplace_back(b->position.y);
+      vertex_float_data.emplace_back(b->radius);
+      vertex_float_data.emplace_back(b->inner_radius);
+      vertex_float_data.emplace_back(d.seed.x);
+      vertex_float_data.emplace_back(d.seed.y);
+      ++fx_count;
+    };
+
+    for (const auto& d : fxs) {
+      add_fx_data(d);
+    }
+    fx_attributes.add_buffer(std::span<const std::uint32_t>(vertex_int_data), 1);
+    fx_attributes.add_buffer(std::span<const float>{vertex_float_data}, 10);
+
+    fx_attributes.bind();
+    fx_attributes.add_attribute<std::uint32_t>(/* style */ 0, 1);
+    fx_attributes.add_attribute<float>(/* colour */ 1, 4);
+    fx_attributes.add_attribute<float>(/* position */ 2, 2);
+    fx_attributes.add_attribute<float>(/* dimensions */ 3, 2);
+    fx_attributes.add_attribute<float>(/* seed */ 4, 2);
+  }
 
   auto clip_rect = target().clip_rect();
   auto top_rect = target().top_clip_rect();
@@ -934,6 +973,8 @@ void GlRenderer::render_shapes(coordinate_system ctype, std::vector<shape>& shap
     }
   };
 
+  // Shadow pass.
+  shape_attributes.bind();
   if (!shadow_trail_indices.empty()) {
     render_pass(shader::kShapeMotion, gl::draw_mode::kLines, shadow_trail_index_buffer,
                 shadow_trail_indices.size());
@@ -946,9 +987,28 @@ void GlRenderer::render_shapes(coordinate_system ctype, std::vector<shape>& shap
     render_pass(shader::kShapeFill, gl::draw_mode::kPoints, shadow_fill_index_buffer,
                 shadow_fill_indices.size());
   }
-  gl::clear_depth(0.f);
+
+  // FX pass.
   gl::enable_depth_test(true);
   gl::depth_function(gl::comparison::kGreaterEqual);
+  if (!fxs.empty()) {
+    gl::clear_depth(0.f);
+    fx_attributes.bind();
+    const auto& program = impl_->shader(shader::kFx);
+    gl::use_program(program);
+    if (auto result = set_uniforms(program); !result) {
+      impl_->status =
+          unexpected("shader " + std::to_string(static_cast<std::uint32_t>(shader::kFx)) +
+                    " error: " + result.error());
+    } else {
+      gl::draw_elements(gl::draw_mode::kPoints, impl_->index_buffer(fx_count),
+                        gl::type_of<unsigned>(), fx_count, 0);
+    }
+  }
+
+  // Shape pass.
+  shape_attributes.bind();
+  gl::clear_depth(0.f);
   if (!bottom_outline_indices.empty()) {
     render_pass(shader::kShapeOutline, gl::draw_mode::kPoints, bottom_outline_index_buffer,
                 bottom_outline_indices.size());
@@ -1001,10 +1061,7 @@ void GlRenderer::render_present() const {
 
   vertex_attribute_container attributes;
   attributes.add_buffer(std::span<const float>(kQuadVertexData), 2);
-
-  auto vertex_array = gl::make_vertex_array();
-  gl::bind_vertex_array(vertex_array);
-
+  attributes.bind();
   attributes.add_attribute<float>(/* position */ 0, 2);
   gl::draw_elements(gl::draw_mode::kTriangles, impl_->index_buffer(6u),
                     gl::type_of<std::uint32_t>(), 6u, 0);

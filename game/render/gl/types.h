@@ -107,9 +107,6 @@ struct delete_renderbuffer {
 struct delete_vertex_array {
   void operator()(id i) const { glDeleteVertexArrays(1, &i); }
 };
-struct disable_vertex_attribute {
-  void operator()(id i) const { glDisableVertexAttribArray(i); }
-};
 struct unbind_framebuffer {
   void operator()(id i) const { glBindFramebuffer(i, 0); }
 };
@@ -151,7 +148,6 @@ using framebuffer = detail::handle<detail::delete_framebuffer>;
 using renderbuffer = detail::handle<detail::delete_renderbuffer>;
 using bound_framebuffer = detail::handle<detail::unbind_framebuffer>;
 using vertex_array = detail::handle<detail::delete_vertex_array>;
-using vertex_attribute = detail::handle<detail::disable_vertex_attribute>;
 
 inline result<void> check_error() {
   auto error = glGetError();

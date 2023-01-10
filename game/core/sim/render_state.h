@@ -3,6 +3,7 @@
 #include "game/common/math.h"
 #include "game/common/random.h"
 #include "game/logic/sim/io/aggregate.h"
+#include "game/render/data/fx.h"
 #include "game/render/data/shapes.h"
 #include <cstdint>
 #include <vector>
@@ -24,7 +25,7 @@ public:
   // If mixer != nullptr, sounds will be handled. If input != nullptr, rumble will be handled.
   void handle_output(ISimState& state, Mixer* mixer, SimInputAdapter* input);
   void update(SimInputAdapter* input);
-  void render(std::vector<render::shape>&) const;
+  void render(std::vector<render::shape>&, std::vector<render::fx>&) const;
 
 private:
   void handle_background_fx(const background_fx_change& change);

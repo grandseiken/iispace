@@ -128,7 +128,6 @@ void RenderState::update(SimInputAdapter* input) {
     }
     ++p.time;
     if (auto* d = std::get_if<dot_particle>(&p.data)) {
-      p.position += p.velocity;
       d->rotation += d->angular_velocity;
     } else if (auto* d = std::get_if<line_particle>(&p.data)) {
       if (p.time >= p.end_time / 3 && p.time > 4 && d->radius > 2 * d->width &&
@@ -153,9 +152,10 @@ void RenderState::update(SimInputAdapter* input) {
         p0.position += v / 2.f + p0.velocity;
         new_particles.emplace_back(p0);
       }
-      p.position += p.velocity;
       d->rotation = normalise_angle(d->rotation + d->angular_velocity);
     }
+    p.position += p.velocity;
+    p.velocity *= 31.f / 32.f;
   }
   particles_.insert(particles_.end(), new_particles.begin(), new_particles.end());
   std::erase_if(particles_, [](const particle& p) { return p.time == p.end_time; });
@@ -211,7 +211,7 @@ void RenderState::update(SimInputAdapter* input) {
   }
 }
 
-void RenderState::render(std::vector<render::shape>& shapes) const {
+void RenderState::render(std::vector<render::shape>& shapes, std::vector<render::fx>& fx) const {
   auto render_box = [&](const fvec2& v, const fvec2& vv, const fvec2& d, const cvec4& c, float r,
                         float lw, float z) {
     shapes.emplace_back(render::shape{
@@ -276,6 +276,17 @@ void RenderState::render(std::vector<render::shape>& shapes) const {
           .data = render::line{.radius = d->radius,
                                .line_width = d->width * glm::mix(1.f, 2.f, t),
                                .sides = 3 + static_cast<std::uint32_t>(.5f + d->width)},
+      });
+    } else if (const auto* d = std::get_if<ball_fx_particle>(&p.data)) {
+      auto t = static_cast<float>(p.time) / p.end_time;
+      fx.emplace_back(render::fx{
+          .style = d->style,
+          .colour = colour,
+          .seed = d->seed,
+          .data =
+              render::ball_fx{.position = p.position,
+                              .radius = glm::mix(d->radius, d->end_radius, t),
+                              .inner_radius = glm::mix(d->inner_radius, d->end_inner_radius, t)},
       });
     }
   }

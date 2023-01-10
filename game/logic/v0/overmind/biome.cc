@@ -40,12 +40,12 @@ get_wave_list(const initial_conditions& conditions, std::uint32_t biome_index) {
         get_enemy_wave_data(conditions, biome_index, /* phase */ 0, enemy_wave_number++));
   }
   result.emplace_back(wave_data{wave_type::kUpgrade});
-  for (std::uint32_t i = 0u; i < 8u; ++i) {
+  for (std::uint32_t i = 0u; i < 7u + conditions.player_count; ++i) {
     result.emplace_back(
         get_enemy_wave_data(conditions, biome_index, /* phase */ 1, enemy_wave_number++));
   }
   result.emplace_back(wave_data{wave_type::kUpgrade});
-  for (std::uint32_t i = 0u; i < 4u + conditions.player_count; ++i) {
+  for (std::uint32_t i = 0u; i < 3u + conditions.player_count; ++i) {
     result.emplace_back(
         get_enemy_wave_data(conditions, biome_index, /* phase */ 2, enemy_wave_number++));
   }
@@ -108,6 +108,7 @@ public:
   std::vector<wave_data>
   get_wave_list(const initial_conditions& conditions, std::uint32_t biome_index) const override {
     std::vector<wave_data> result;
+    result.emplace_back(wave_data{wave_type::kUpgrade});
     result.emplace_back(wave_data{wave_type::kUpgrade});
     result.emplace_back(wave_data{wave_type::kUpgrade});
     result.emplace_back(wave_data{wave_type::kBoss});

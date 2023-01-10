@@ -4,6 +4,7 @@
 #include "game/logic/sim/io/aggregate.h"
 #include "game/logic/sim/io/events.h"
 #include "game/render/data/background.h"
+#include "game/render/data/fx.h"
 #include "game/render/data/panel.h"
 #include "game/render/data/shapes.h"
 #include <bit>
@@ -66,6 +67,7 @@ struct boss_info {
 struct render_output {
   render::background background;
   std::vector<render::shape> shapes;
+  std::vector<render::fx> fx;
   std::vector<render::combo_panel> panels;
   std::vector<player_info> players;
 

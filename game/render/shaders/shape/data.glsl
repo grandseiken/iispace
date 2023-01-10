@@ -1,9 +1,9 @@
-const uint kStyleNgonPolygon = 0;
-const uint kStyleNgonPolystar = 1;
-const uint kStyleNgonPolygram = 2;
-const uint kStyleBox = 3;
-const uint kStyleLine = 4;
-const uint kStyleBall = 5;
+const uint kShapeStyleNgonPolygon = 0;
+const uint kShapeStyleNgonPolystar = 1;
+const uint kShapeStyleNgonPolygram = 2;
+const uint kShapeStyleBox = 3;
+const uint kShapeStyleLine = 4;
+const uint kShapeStyleBall = 5;
 
 struct shape_vertex_data {
   uint buffer_index;

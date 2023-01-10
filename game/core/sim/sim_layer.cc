@@ -170,12 +170,12 @@ void SimLayer::render_content(render::GlRenderer& r) const {
       impl_->istate().render(impl_->transients, /* paused */ stack().top() != impl_->hud);
   r.set_colour_cycle(render.colour_cycle);
   r.render_background(render.background);
-  impl_->render_state.render(render.shapes);
+  impl_->render_state.render(render.shapes, render.fx);
   for (const auto& panel : render.panels) {
     r.render_panel(panel);
   }
   r.clear_depth();
-  r.render_shapes(render::coordinate_system::kGlobal, render.shapes, style);
+  r.render_shapes(render::coordinate_system::kGlobal, render.shapes, render.fx, style);
   impl_->hud->set_data(render);
 }
 

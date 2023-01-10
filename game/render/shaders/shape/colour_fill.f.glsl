@@ -1,5 +1,5 @@
+#include "game/render/shaders/lib/position_fragment.glsl"
 #include "game/render/shaders/shape/data.glsl"
-#include "game/render/shaders/shape/geometry_fragment.glsl"
 
 flat in uint g_buffer_index;
 centroid in float g_colour_interpolate;
@@ -17,7 +17,7 @@ ball_buffer;
 
 void main() {
   shape_buffer_data d = shape_buffer.data[g_buffer_index];
-  if (d.style != kStyleBall) {
+  if (d.style != kShapeStyleBall) {
     out_colour = mix(d.colour0, d.colour1, g_colour_interpolate);
     return;
   }

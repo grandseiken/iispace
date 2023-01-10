@@ -59,13 +59,13 @@ void main() {
   g_buffer_index = v_in[0].data.buffer_index;
   g_colour_interpolate = 0.;
   switch (v_in[0].data.style) {
-  case kStyleNgonPolygon:
+  case kShapeStyleNgonPolygon:
     emit_polygon(position, v_in[0].data);
     break;
-  case kStyleBox:
+  case kShapeStyleBox:
     emit_box(position, v_in[0].data);
     break;
-  case kStyleBall:
+  case kShapeStyleBall:
     emit_ball(position, v_in[0].data);
     break;
   }

@@ -42,7 +42,7 @@ struct shot_mod_data {
   static constexpr fixed kHomingScanRadius = 120_fx;
   static constexpr fixed kHomingAngleChange = pi<fixed> / 60;
   static constexpr fixed kSniperSplitDistance = 320_fx;
-  static constexpr fixed kSniperSplitRotation = pi<fixed> / 32;
+  static constexpr fixed kSniperSplitRotation = pi<fixed> / 40;
 
   shot_mod_data(const PlayerLoadout& loadout) {
     if (loadout.has(mod_id::kHomingShots)) {
@@ -122,19 +122,20 @@ struct PlayerShot : ecs::component {
 
     if (+(data.flags & shot_flags::kHomingShots) && !(data.flags & shot_flags::kSniperSplit)) {
       std::optional<vec2> target;
-      fixed min_d_sq = 0;
+      fixed max_t = 0;
       auto c_list = sim.collide_ball(transform.centre, shot_mod_data::kHomingScanRadius,
                                      shape_flag::kVulnerable | shape_flag::kWeakVulnerable);
       // TODO: really want to use closest point on potential target shape to our shot, rather
       // than target centre. Otherwise e.g. bosses less likely to be targeted since big, so far
-      // away.
-      // TODO: also, should prioritise using a mix of distance and angle. Also ignore offscreen?
+      // away. Also, ignore offscreen?
       for (const auto& c : c_list) {
         for (const auto& vc : c.shape_centres) {
-          auto d_sq = length_squared(vc - transform.centre);
-          auto a_diff = angle_diff(angle(direction), angle(vc - transform.centre));
-          if (abs(a_diff) < pi<fixed> / 2 && (!target || d_sq < min_d_sq)) {
-            min_d_sq = d_sq;
+          if (vc == transform.centre) {
+            continue;
+          }
+          auto t = dot(vc - transform.centre, direction) / length_squared(vc - transform.centre);
+          if (t > max_t) {
+            max_t = t;
             target = vc;
           }
         }

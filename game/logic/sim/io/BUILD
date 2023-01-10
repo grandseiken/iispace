@@ -22,6 +22,7 @@ cc_library(
   deps = [
     "//game/common:math",
     "//game/mixer:sound",
+    "//game/render/data",
   ],
   visibility = ["//visibility:public"],
 )

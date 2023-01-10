@@ -48,9 +48,9 @@ float tonemap0(float v) {
 
 float noise_value(uint type, vec4 v, vec4 v_polar, vec2 p) {
   switch (type) {
-  case kTypeBiome0:
+  case kBgTypeBiome0:
     return noise0(v, p);
-  case kTypeBiome0_Polar:
+  case kBgTypeBiome0_Polar:
     return noise0_polar(v_polar, p);
   }
   return 0.;
@@ -58,8 +58,8 @@ float noise_value(uint type, vec4 v, vec4 v_polar, vec2 p) {
 
 float tone_value(uint type, float v) {
   switch (type) {
-  case kTypeBiome0:
-  case kTypeBiome0_Polar:
+  case kBgTypeBiome0:
+  case kBgTypeBiome0_Polar:
     return tonemap0(v);
     break;
   }

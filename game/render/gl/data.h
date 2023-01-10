@@ -76,39 +76,35 @@ inline void bind_shader_storage_buffer(const buffer& handle, std::uint32_t bindi
   glBindBufferBase(GL_SHADER_STORAGE_BUFFER, binding, *handle);
 }
 
-inline vertex_attribute vertex_float_attribute_buffer(const buffer& handle, std::uint32_t index,
-                                                      std::uint8_t count_per_vertex, type data_type,
-                                                      bool normalize, std::size_t stride,
-                                                      std::size_t offset) {
+inline void vertex_float_attribute_buffer(const buffer& handle, std::uint32_t index,
+                                          std::uint8_t count_per_vertex, type data_type,
+                                          bool normalize, std::size_t stride, std::size_t offset) {
   glEnableVertexAttribArray(index);
   glBindBuffer(GL_ARRAY_BUFFER, *handle);
   glVertexAttribPointer(index, +count_per_vertex, detail::type_to_gl(data_type),
                         normalize ? GL_TRUE : GL_FALSE, static_cast<GLsizei>(stride),
                         reinterpret_cast<const void*>(offset));
   glBindBuffer(GL_ARRAY_BUFFER, 0);
-  return vertex_attribute{index};
 }
 
-inline vertex_attribute vertex_int_attribute_buffer(const buffer& handle, std::uint32_t index,
-                                                    std::uint8_t count_per_vertex, type data_type,
-                                                    std::size_t stride, std::size_t offset) {
+inline void vertex_int_attribute_buffer(const buffer& handle, std::uint32_t index,
+                                        std::uint8_t count_per_vertex, type data_type,
+                                        std::size_t stride, std::size_t offset) {
   glEnableVertexAttribArray(index);
   glBindBuffer(GL_ARRAY_BUFFER, *handle);
   glVertexAttribIPointer(index, count_per_vertex, detail::type_to_gl(data_type),
                          static_cast<GLsizei>(stride), reinterpret_cast<const void*>(offset));
   glBindBuffer(GL_ARRAY_BUFFER, 0);
-  return vertex_attribute{index};
 }
 
-inline vertex_attribute vertex_double_attribute_buffer(const buffer& handle, std::uint32_t index,
-                                                       std::uint8_t count_per_vertex,
-                                                       std::size_t stride, std::size_t offset) {
+inline void vertex_double_attribute_buffer(const buffer& handle, std::uint32_t index,
+                                           std::uint8_t count_per_vertex, std::size_t stride,
+                                           std::size_t offset) {
   glEnableVertexAttribArray(index);
   glBindBuffer(GL_ARRAY_BUFFER, *handle);
   glVertexAttribIPointer(index, count_per_vertex, GL_DOUBLE, static_cast<GLsizei>(stride),
                          reinterpret_cast<const void*>(offset));
   glBindBuffer(GL_ARRAY_BUFFER, 0);
-  return vertex_attribute{index};
 }
 
 }  // namespace ii::gl

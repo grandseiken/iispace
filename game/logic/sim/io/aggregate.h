@@ -2,6 +2,7 @@
 #define II_GAME_LOGIC_SIM_IO_AGGREGATE_H
 #include "game/common/math.h"
 #include "game/mixer/sound.h"
+#include "game/render/data/fx.h"
 #include <cstddef>
 #include <cstdint>
 #include <optional>
@@ -97,7 +98,16 @@ struct line_particle {
   float width = 1.f;
 };
 
-using particle_data = std::variant<dot_particle, line_particle>;
+struct ball_fx_particle {
+  render::fx_style style = render::fx_style::kNone;
+  fvec2 seed{0.f};
+  float radius = 0.f;
+  float inner_radius = 0.f;
+  float end_radius = radius;
+  float end_inner_radius = inner_radius;
+};
+
+using particle_data = std::variant<dot_particle, line_particle, ball_fx_particle>;
 
 struct particle {
   fvec2 position{0.f};

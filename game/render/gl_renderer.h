@@ -5,6 +5,7 @@
 #include "game/common/result.h"
 #include "game/common/ustring.h"
 #include "game/render/data/background.h"
+#include "game/render/data/fx.h"
 #include "game/render/data/panel.h"
 #include "game/render/data/shapes.h"
 #include "game/render/data/text.h"
@@ -61,7 +62,7 @@ public:
   // TODO: _maybe_ render outlines automatically somehow, or output from geometry shapes?
   // TODO: 3D shadows; lighting explosion effects.
   void render_shapes(coordinate_system ctype, std::vector<render::shape>& shapes,
-                     shape_style style) const;
+                     std::vector<render::fx>& fx, shape_style style) const;
   void render_present() const;
 
 private:
