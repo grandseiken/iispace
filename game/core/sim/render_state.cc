@@ -126,6 +126,7 @@ void RenderState::update(SimInputAdapter* input) {
     if (p.time == p.end_time) {
       continue;
     }
+    auto t = static_cast<float>(p.time) / p.end_time;
     ++p.time;
     if (auto* d = std::get_if<dot_particle>(&p.data)) {
       d->rotation += d->angular_velocity;
@@ -136,8 +137,8 @@ void RenderState::update(SimInputAdapter* input) {
 
         d->radius /= 2.f;
         line_particle d0 = *d;
-        d->angular_velocity *= 9.f / 8.f;
-        d0.angular_velocity *= 7.f / 8.f;
+        d->angular_velocity *= 9.f / 8;
+        d0.angular_velocity *= 7.f / 8;
         d0.rotation = d->rotation + d0.angular_velocity;
 
         p.time = std::max(4u, p.time - 4u);
@@ -147,15 +148,16 @@ void RenderState::update(SimInputAdapter* input) {
         p0.data = d0;
 
         p.velocity -= normalize(v);
+        p.end_velocity -= normalize(v);
         p.position -= v / 2.f;
         p0.velocity += normalize(v);
+        p0.end_velocity += normalize(v);
         p0.position += v / 2.f + p0.velocity;
         new_particles.emplace_back(p0);
       }
       d->rotation = normalise_angle(d->rotation + d->angular_velocity);
     }
-    p.position += p.velocity;
-    p.velocity *= 31.f / 32.f;
+    p.position += glm::mix(p.velocity, p.end_velocity, t);
   }
   particles_.insert(particles_.end(), new_particles.begin(), new_particles.end());
   std::erase_if(particles_, [](const particle& p) { return p.time == p.end_time; });
@@ -260,8 +262,16 @@ void RenderState::render(std::vector<render::shape>& shapes, std::vector<render:
     cvec4 colour{p.colour.x, p.colour.y, glm::mix(p.colour.z, 1.f, l), a};
 
     if (const auto* d = std::get_if<dot_particle>(&p.data)) {
-      render_box(p.position, p.velocity, fvec2{d->radius, d->radius}, colour, d->rotation,
-                 d->line_width, colour::kZParticle);
+      shapes.emplace_back(render::shape{
+          .origin = p.position,
+          .rotation = d->rotation,
+          .colour0 = colour,
+          .z_index = colour::kZParticle,
+          .trail = render::motion_trail{.prev_origin = p.position - p.velocity,
+                                        .prev_rotation = d->rotation - d->angular_velocity,
+                                        .prev_colour0 = colour},
+          .data = render::box{.dimensions = {d->radius, d->radius}, .line_width = d->line_width},
+      });
     } else if (const auto* d = std::get_if<line_particle>(&p.data)) {
       float t = std::max(0.f, (17.f - p.time) / 16.f);
       shapes.emplace_back(render::shape{
@@ -281,7 +291,8 @@ void RenderState::render(std::vector<render::shape>& shapes, std::vector<render:
       auto t = static_cast<float>(p.time) / p.end_time;
       fx.emplace_back(render::fx{
           .style = d->style,
-          .colour = colour,
+          .time = p.time * d->anim_speed,
+          .colour = {colour.x, colour.y, colour.z, glm::mix(d->value, d->end_value, t)},
           .seed = d->seed,
           .data =
               render::ball_fx{.position = p.position,

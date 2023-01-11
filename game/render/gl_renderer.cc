@@ -903,6 +903,7 @@ void GlRenderer::render_shapes(coordinate_system ctype, std::vector<shape>& shap
         return;
       }
       vertex_int_data.emplace_back(static_cast<std::uint32_t>(d.style));
+      vertex_float_data.emplace_back(d.time);
       vertex_float_data.emplace_back(d.colour.r);
       vertex_float_data.emplace_back(d.colour.g);
       vertex_float_data.emplace_back(d.colour.b);
@@ -920,14 +921,15 @@ void GlRenderer::render_shapes(coordinate_system ctype, std::vector<shape>& shap
       add_fx_data(d);
     }
     fx_attributes.add_buffer(std::span<const std::uint32_t>(vertex_int_data), 1);
-    fx_attributes.add_buffer(std::span<const float>{vertex_float_data}, 10);
+    fx_attributes.add_buffer(std::span<const float>{vertex_float_data}, 11);
 
     fx_attributes.bind();
-    fx_attributes.add_attribute<std::uint32_t>(/* style */ 0, 1);
-    fx_attributes.add_attribute<float>(/* colour */ 1, 4);
-    fx_attributes.add_attribute<float>(/* position */ 2, 2);
-    fx_attributes.add_attribute<float>(/* dimensions */ 3, 2);
-    fx_attributes.add_attribute<float>(/* seed */ 4, 2);
+    fx_attributes.add_attribute<float>(/* time */ 0, 1);
+    fx_attributes.add_attribute<std::uint32_t>(/* style */ 1, 1);
+    fx_attributes.add_attribute<float>(/* colour */ 2, 4);
+    fx_attributes.add_attribute<float>(/* position */ 3, 2);
+    fx_attributes.add_attribute<float>(/* dimensions */ 4, 2);
+    fx_attributes.add_attribute<float>(/* seed */ 5, 2);
   }
 
   auto clip_rect = target().clip_rect();
@@ -948,6 +950,7 @@ void GlRenderer::render_shapes(coordinate_system ctype, std::vector<shape>& shap
   gl::enable_clip_planes(4u);
   gl::enable_depth_test(false);
   gl::enable_blend(true);
+  gl::clear_depth(0.f);
   gl::blend_function(gl::blend_factor::kSrcAlpha, gl::blend_factor::kOneMinusSrcAlpha);
   gl::bind_shader_storage_buffer(shape_buffer, 0);
   gl::bind_shader_storage_buffer(ball_buffer, 1);
@@ -992,23 +995,24 @@ void GlRenderer::render_shapes(coordinate_system ctype, std::vector<shape>& shap
   gl::enable_depth_test(true);
   gl::depth_function(gl::comparison::kGreaterEqual);
   if (!fxs.empty()) {
-    gl::clear_depth(0.f);
+    gl::clear(gl::clear_mask::kDepthBufferBit);
     fx_attributes.bind();
     const auto& program = impl_->shader(shader::kFx);
     gl::use_program(program);
     if (auto result = set_uniforms(program); !result) {
       impl_->status =
           unexpected("shader " + std::to_string(static_cast<std::uint32_t>(shader::kFx)) +
-                    " error: " + result.error());
+                     " error: " + result.error());
     } else {
       gl::draw_elements(gl::draw_mode::kPoints, impl_->index_buffer(fx_count),
                         gl::type_of<unsigned>(), fx_count, 0);
     }
+    gl::clear_depth(0.f);
   }
 
   // Shape pass.
+  gl::clear(gl::clear_mask::kDepthBufferBit);
   shape_attributes.bind();
-  gl::clear_depth(0.f);
   if (!bottom_outline_indices.empty()) {
     render_pass(shader::kShapeOutline, gl::draw_mode::kPoints, bottom_outline_index_buffer,
                 bottom_outline_indices.size());

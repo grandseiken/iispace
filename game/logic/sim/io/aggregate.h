@@ -101,8 +101,11 @@ struct line_particle {
 struct ball_fx_particle {
   render::fx_style style = render::fx_style::kNone;
   fvec2 seed{0.f};
+  float anim_speed = 0.f;
+  float value = 0.f;
   float radius = 0.f;
   float inner_radius = 0.f;
+  float end_value = value;
   float end_radius = radius;
   float end_inner_radius = inner_radius;
 };
@@ -112,6 +115,7 @@ using particle_data = std::variant<dot_particle, line_particle, ball_fx_particle
 struct particle {
   fvec2 position{0.f};
   fvec2 velocity{0.f};
+  fvec2 end_velocity = velocity;
   cvec4 colour{0.f};
   particle_data data;
   std::uint32_t time = 0;

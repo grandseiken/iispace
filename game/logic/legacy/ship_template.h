@@ -48,8 +48,8 @@ void explode_shapes(EmitHandle& e, const auto& parameters,
   if (towards) {
     towards_float = to_float(*towards);
   }
-  geom::iterate(S{}, geom::iterate_centres, parameters, geom::transform{},
-                [&](const vec2& v, const cvec4& c) {
+  geom::iterate(S{}, geom::iterate_volumes, parameters, geom::transform{},
+                [&](const vec2& v, fixed, const cvec4& c, const cvec4&) {
                   e.explosion(to_float(v), colour_override.value_or(c), time, towards_float, speed);
                 });
 }

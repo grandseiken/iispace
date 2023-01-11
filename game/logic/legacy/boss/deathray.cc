@@ -166,7 +166,7 @@ struct DeathRayBoss : public ecs::component {
                    geom::polygon<120, 12, c1, 0, shape_flag::kDangerous | shape_flag::kVulnerable>,
                    geom::ngon<115, 12, c1>, geom::polygon<110, 12, c1, 0, shape_flag::kShield>>,
       geom::box<0, 0, cvec4{0.f}>,
-      geom::disable_iteration<geom::iterate_centres_t, geom::for_each<fixed, 1, 12, edge_shape>>>;
+      geom::disable_iteration<geom::iterate_volumes_t, geom::for_each<fixed, 1, 12, edge_shape>>>;
 
   static std::uint32_t bounding_width(const SimInterface& sim) {
     return sim.is_legacy() ? 640 : 140;

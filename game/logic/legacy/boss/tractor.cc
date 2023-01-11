@@ -44,7 +44,7 @@ struct TractorBoss : ecs::component {
           geom::compound<geom::attachment_point<I, 0, 0>, geom::polygram<12, 6, c1>,
                          geom::polygon<30, 12, cvec4{0.f}, 0, shape_flag::kShield>,
                          geom::disable_iteration<
-                             geom::iterate_centres_t,
+                             geom::iterate_volumes_t,
                              geom::compound<geom::polygon<12, 12, c1>, geom::polygon<2, 6, c1>,
                                             geom::polygon<36, 12, c0, 0, kDangerousVulnerable>,
                                             geom::polygon<34, 12, c0>, geom::polygon<32, 12, c0>,

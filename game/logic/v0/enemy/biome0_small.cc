@@ -385,6 +385,7 @@ struct FollowSponge : ecs::component {
       spawn_follow(sim, 0, transform.centre, std::nullopt, /* drop */ false, transform.rotation, v);
       ++spawns;
     }
+    scale = (3_fx + fixed{health.hp} / health.max_hp) / 4;
   }
 };
 DEBUG_STRUCT_TUPLE(FollowSponge, timer, anim, spawns, scale, target, next_target, spreader);

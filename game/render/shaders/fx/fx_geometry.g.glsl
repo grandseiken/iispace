@@ -9,6 +9,7 @@ in v_out_t {
 }
 v_in[];
 
+flat out float g_time;
 flat out uint g_style;
 flat out vec4 g_colour;
 flat out vec2 g_position;
@@ -16,6 +17,7 @@ flat out vec2 g_dimensions;
 flat out vec2 g_seed;
 
 void main() {
+  g_time = v_in[0].data.time;
   g_style = v_in[0].data.style;
   g_colour = v_in[0].data.colour;
   g_position = gl_in[0].gl_Position.xy;

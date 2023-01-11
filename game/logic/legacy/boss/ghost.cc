@@ -450,7 +450,7 @@ struct GhostBoss : ecs::component {
   using spark_shape = standard_transform<geom::translate_p<
       2,
       geom::rotate_p<3, spark_line<0>,
-                     geom::disable_iteration<geom::iterate_centres_t,
+                     geom::disable_iteration<geom::iterate_volumes_t,
                                              geom::for_each<fixed, 1, 8, spark_line>>>>>;
   std::tuple<vec2, fixed, vec2, fixed>
   spark_shape_parameters(const Transform& transform, std::uint32_t i) const {

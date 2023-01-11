@@ -39,8 +39,8 @@ scale_boss_damage(ecs::handle, SimInterface& sim, damage_type type, std::uint32_
 template <ecs::Component Logic, geom::ShapeNode S = typename Logic::Shape>
 inline cvec4 get_boss_colour(ecs::const_handle h) {
   std::optional<cvec4> result;
-  geom::iterate(S{}, geom::iterate_centres, get_shape_parameters<Logic>(h), geom::transform{},
-                [&](const vec2&, const cvec4& c) {
+  geom::iterate(S{}, geom::iterate_volumes, get_shape_parameters<Logic>(h), geom::transform{},
+                [&](const vec2&, fixed, const cvec4& c, const cvec4&) {
                   if (!result) {
                     result = c;
                   }
@@ -82,6 +82,7 @@ void boss_on_destroy(ecs::const_handle h, const Transform& transform, SimInterfa
   explode_entity_shapes<Logic, S>(h, e, cvec4{1.f}, 36);
   explode_entity_shapes<Logic, S>(h, e, boss_colour, 48);
   destruct_entity_lines<Logic, S>(h, e, source, 128);
+  explode_entity_volumes<Logic, S>(h, e, source, 96);
 
   std::uint32_t n = 1;
   for (std::uint32_t i = 0; i < 16; ++i) {
@@ -103,6 +104,7 @@ void boss_on_destroy(ecs::const_handle h, const Transform& transform, SimInterfa
     explode(to_float(v), boss_colour, 32);
     explode(to_float(v), cvec4{1.f}, 64);
     explode(to_float(v), boss_colour, 128);
+    explode_entity_volumes<Logic, S>(h, e, source, 96);
     e.rumble_all(15, .25f, .5f);
     n += i;
   }

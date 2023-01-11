@@ -58,8 +58,8 @@ struct polyarc_data : shape_data_base {
   }
 
   constexpr void
-  iterate(iterate_centres_t, const Transform auto& t, const PointFunction auto& f) const {
-    std::invoke(f, *t, colour);
+  iterate(iterate_volumes_t, const Transform auto& t, const VolumeFunction auto& f) const {
+    std::invoke(f, *t, 0_fx, colour, colour::kZero);
   }
 };
 

@@ -32,11 +32,6 @@ struct line_data : shape_data_base {
     s.flags = flags;
     std::invoke(f, s);
   }
-
-  constexpr void
-  iterate(iterate_centres_t, const Transform auto& t, const PointFunction auto& f) const {
-    std::invoke(f, *t.translate((a + b) / 2), style.colour0);
-  }
 };
 
 constexpr line_data make_line(const vec2& a, const vec2& b, line_style style,

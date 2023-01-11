@@ -29,8 +29,8 @@ void boss_on_destroy(ecs::const_handle h, const Transform& transform, SimInterfa
     }
   });
   std::optional<cvec4> boss_colour;
-  geom::iterate(S{}, geom::iterate_centres, get_shape_parameters<Logic>(h), geom::transform{},
-                [&](const vec2&, const cvec4& c) {
+  geom::iterate(S{}, geom::iterate_volumes, get_shape_parameters<Logic>(h), geom::transform{},
+                [&](const vec2&, fixed, const cvec4& c, const cvec4&) {
                   if (!boss_colour) {
                     boss_colour = c;
                   }

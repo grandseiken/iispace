@@ -110,7 +110,6 @@ public:
     std::vector<wave_data> result;
     result.emplace_back(wave_data{wave_type::kUpgrade});
     result.emplace_back(wave_data{wave_type::kUpgrade});
-    result.emplace_back(wave_data{wave_type::kUpgrade});
     result.emplace_back(wave_data{wave_type::kBoss});
     return result;
   }

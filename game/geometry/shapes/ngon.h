@@ -252,8 +252,8 @@ struct ngon_data : shape_data_base {
   }
 
   constexpr void
-  iterate(iterate_centres_t, const Transform auto& t, const PointFunction auto& f) const {
-    std::invoke(f, *t, line.colour0.a ? line.colour0 : fill.colour1);
+  iterate(iterate_volumes_t, const Transform auto& t, const VolumeFunction auto& f) const {
+    std::invoke(f, *t, dimensions.radius, line.colour0, fill.colour1);
   }
 };
 

@@ -15,7 +15,7 @@ namespace ii::geom {
 struct iterate_flags_t {};
 struct iterate_lines_t {};
 struct iterate_shapes_t {};
-struct iterate_centres_t {};
+struct iterate_volumes_t {};
 struct iterate_attachment_points_t {};
 struct iterate_check_point_t {
   shape_flag mask = shape_flag::kNone;
@@ -33,7 +33,7 @@ struct iterate_check_convex_t {
 inline constexpr iterate_flags_t iterate_flags;
 inline constexpr iterate_lines_t iterate_lines;
 inline constexpr iterate_shapes_t iterate_shapes;
-inline constexpr iterate_centres_t iterate_centres;
+inline constexpr iterate_volumes_t iterate_volumes;
 inline constexpr iterate_attachment_points_t iterate_attachment_points;
 inline constexpr iterate_check_point_t iterate_check_point(shape_flag mask) {
   return iterate_check_point_t{mask};
@@ -51,7 +51,7 @@ inline constexpr iterate_check_convex_t iterate_check_convex(shape_flag mask) {
 template <typename T, typename... Args>
 concept OneOf = (std::same_as<T, Args> || ...);
 template <typename T>
-concept IterTag = OneOf<T, iterate_flags_t, iterate_lines_t, iterate_shapes_t, iterate_centres_t,
+concept IterTag = OneOf<T, iterate_flags_t, iterate_lines_t, iterate_shapes_t, iterate_volumes_t,
                         iterate_check_point_t, iterate_check_line_t, iterate_check_ball_t,
                         iterate_check_convex_t, iterate_attachment_points_t>;
 
@@ -60,7 +60,7 @@ concept FlagFunction = std::invocable<T, shape_flag>;
 template <typename T>
 concept HitFunction = std::invocable<T, shape_flag, const vec2&>;
 template <typename T>
-concept PointFunction = std::invocable<T, const vec2&, const cvec4&>;
+concept VolumeFunction = std::invocable<T, const vec2&, fixed, const cvec4&, const cvec4&>;
 template <typename T>
 concept LineFunction = std::invocable<T, const vec2&, const vec2&, const cvec4&, float, float>;
 template <typename T>
@@ -74,7 +74,7 @@ template <typename T, typename I>
 concept IterateFunction = IterTag<I> && Implies<I, iterate_flags_t, FlagFunction<T>> &&
     Implies<I, iterate_lines_t, LineFunction<T>> &&
     Implies<I, iterate_shapes_t, ShapeFunction<T>> &&
-    Implies<I, iterate_centres_t, PointFunction<T>> &&
+    Implies<I, iterate_volumes_t, VolumeFunction<T>> &&
     Implies<I, iterate_check_point_t, HitFunction<T>> &&
     Implies<I, iterate_check_line_t, HitFunction<T>> &&
     Implies<I, iterate_check_ball_t, HitFunction<T>> &&

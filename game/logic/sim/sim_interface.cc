@@ -58,13 +58,14 @@ EmitHandle& EmitHandle::explosion(const fvec2& v, const cvec4& c, std::uint32_t 
       dot.radius = 1.f;
     }
     dot.rotation = ra.fixed().to_float() * pi<float>;
-    dot.angular_velocity = ra.fixed().to_float() - .5f;
+    dot.angular_velocity = (ra.fixed().to_float() - .5f) / 8.f;
     add(particle{
         .position = v,
         .velocity = dir,
+        .end_velocity = dir / 2.f,
         .colour = c,
         .data = dot,
-        .end_time = time + r.uint(8),
+        .end_time = time + r.uint(10),
     });
   }
   return *this;
