@@ -22,13 +22,6 @@ float noise0(vec4 v) {
   return abs(v0 + .25 * v1);
 }
 
-// TODO:
-// float tonemap0(float v) {
-//   float t0 = (5. + smoothstep(.025 - fwidth(v), .025, v)) / 6.;
-//   float t1 = scale01(1. / 8., smoothstep(.15 - fwidth(v), .15, v));
-//   return t0 * t1;
-// }
-
 float ball_coefficient(vec2 v) {
   float d = length(v - g_position);
   float r0 = g_dimensions.y;
@@ -43,19 +36,16 @@ void main() {
   case kFxStyleExplosion: {
     float q = clamp(g_colour.a * ball_coefficient(frag_position), 0., 1.);
     q *= noise0(vec4(frag_position + g_seed - g_position, g_time, g_seed.x + g_time));
-    float n = floor(q * 16.);
-    if (n < 1.) {
-      discard;
-    } else if (n < 2.) {
-      out_colour = vec4(0., 0., 0., 1.);
-      gl_FragDepth = .25;
-    } else if (n < 3.5) {
-      out_colour = vec4(g_colour.x * .75, g_colour.yz, 1.);
-      gl_FragDepth = .5;
-    } else {
-      out_colour = vec4(g_colour.xyz, 1.);
-      gl_FragDepth = .75;
-    }
+    float v = q * 16.;
+    float a = smoothstep(1. - fwidth(v), 1., v);
+    float v0 = smoothstep(2. - fwidth(v), 2., v);
+    float v1 = smoothstep(3.5 - fwidth(v), 3.5, v);
+    float v2 = smoothstep(5. - fwidth(v), 5., v);
+    vec3 c = mix(vec3(0.), vec3(.75 * g_colour.x, g_colour.yz), v0);
+    c = mix(c, g_colour.xyz, v1);
+    c = mix(c, vec3((g_colour.x + 1.) / 2., g_colour.yz), v2);
+    out_colour = vec4(c.xyz, a);
+    gl_FragDepth = clamp(v / 5., 0., 1.);
     break;
   }
 
