@@ -82,7 +82,6 @@ void boss_on_destroy(ecs::const_handle h, const Transform& transform, SimInterfa
   explode_entity_shapes<Logic, S>(h, e, cvec4{1.f}, 36);
   explode_entity_shapes<Logic, S>(h, e, boss_colour, 48);
   destruct_entity_lines<Logic, S>(h, e, source, 128);
-  explode_entity_volumes<Logic, S>(h, e, source, 96);
 
   std::uint32_t n = 1;
   for (std::uint32_t i = 0; i < 16; ++i) {
@@ -104,7 +103,6 @@ void boss_on_destroy(ecs::const_handle h, const Transform& transform, SimInterfa
     explode(to_float(v), boss_colour, 32);
     explode(to_float(v), cvec4{1.f}, 64);
     explode(to_float(v), boss_colour, 128);
-    explode_entity_volumes<Logic, S>(h, e, source, 96);
     e.rumble_all(15, .25f, .5f);
     n += i;
   }
