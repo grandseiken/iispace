@@ -27,6 +27,12 @@ constexpr std::array<float, 12> kQuadVertexData = {
     -1.f, -1.f, -1.f, 1.f, 1.f, -1.f, -1.f, 1.f, 1.f, -1.f, 1.f, 1.f,
 };
 
+enum class framebuffer {
+  kRender,
+  kAux0,
+  kAux1,
+};
+
 enum class shader {
   kText,
   kPanel,
@@ -35,7 +41,8 @@ enum class shader {
   kShapeOutline,
   kShapeMotion,
   kShapeFill,
-  kPostprocess,
+  kOklabResolve,
+  kFullscreenBlend,
 };
 
 enum shape_shader_style : std::uint32_t {
@@ -148,7 +155,7 @@ struct GlRenderer::impl_t {
 
   std::uint32_t iota_index_size = 0;
   std::optional<gl::buffer> iota_index_buffer;
-  std::optional<framebuffer_data> render_framebuffer;
+  std::unordered_map<framebuffer, framebuffer_data> framebuffers;
 
   impl_t()
   : pixel_sampler{gl::make_sampler(gl::filter::kNearest, gl::filter::kNearest,
@@ -174,17 +181,107 @@ struct GlRenderer::impl_t {
     return *iota_index_buffer;
   }
 
-  gl::bound_framebuffer bind_render_framebuffer(const uvec2& dimensions) {
-    if (!render_framebuffer || render_framebuffer->dimensions != dimensions) {
-      auto result = make_render_framebuffer(dimensions, /* depth/stencil */ true,
-                                            std::min(16u, gl::max_samples()));
+  void refresh_framebuffers(const render::target& target) {
+    auto refresh = [&](framebuffer f, const uvec2& dimensions, std::uint32_t samples) {
+      auto it = framebuffers.find(f);
+      if (it != framebuffers.end() && it->second.dimensions == dimensions &&
+          it->second.samples == samples) {
+        return;
+      }
+      auto result = make_render_framebuffer(dimensions, /* depth/stencil */ true, samples);
       if (!result) {
         status = unexpected("OpenGL error: " + result.error());
-        return gl::bound_framebuffer{GL_FRAMEBUFFER};
+        return;
       }
-      render_framebuffer = std::move(*result);
+      framebuffers.emplace(f, std::move(*result));
+    };
+    auto samples = std::clamp(target.msaa_samples.value_or(16u), 1u, gl::max_samples());
+    refresh(framebuffer::kRender, target.screen_dimensions, samples);
+    refresh(framebuffer::kAux0, target.screen_dimensions, 1u);
+  }
+
+  gl::bound_framebuffer bind_draw_framebuffer(framebuffer f) {
+    if (const auto* data = get_framebuffer(f)) {
+      return gl::bind_draw_framebuffer(data->fbo);
     }
-    return gl::bind_draw_framebuffer(render_framebuffer->fbo);
+    return gl::bound_framebuffer{GL_FRAMEBUFFER};
+  }
+
+  gl::bound_framebuffer bind_read_framebuffer(framebuffer f) {
+    if (const auto* data = get_framebuffer(f)) {
+      return gl::bind_read_framebuffer(data->fbo);
+    }
+    return gl::bound_framebuffer{GL_FRAMEBUFFER};
+  }
+
+  const framebuffer_data* get_framebuffer(framebuffer f) {
+    auto it = framebuffers.find(f);
+    return it == framebuffers.end() ? nullptr : &it->second;
+  }
+
+  void oklab_resolve(const framebuffer_data& source, bool to_srgb) {
+    const auto& program = shader(shader::kOklabResolve);
+    gl::use_program(program);
+    gl::enable_blend(false);
+    gl::enable_depth_test(false);
+    gl::enable_srgb(false);
+    gl::enable_clip_planes(0u);
+
+    auto result = gl::set_uniforms(program, "screen_dimensions", source.dimensions,
+                                   "is_multisample", source.samples > 1, "is_output_srgb", to_srgb);
+    if (!result) {
+      status = unexpected("oklab_resolve shader error: " + result.error());
+      return;
+    }
+    if (source.samples <= 1) {
+      result = gl::set_uniform_texture_2d(program, "framebuffer_texture", /* texture unit */ 0,
+                                          source.colour_buffer, pixel_sampler);
+    } else {
+      result = gl::set_uniform_texture_2d_multisample(program, "framebuffer_texture_multisample",
+                                                      /* texture unit */ 0, source.colour_buffer);
+    }
+    if (!result) {
+      status = unexpected("oklab_resolve shader error: " + result.error());
+      return;
+    }
+
+    vertex_attribute_container attributes;
+    attributes.add_buffer(std::span<const float>(kQuadVertexData), 2);
+    attributes.bind();
+    attributes.add_attribute<float>(/* position */ 0, 2);
+    gl::draw_elements(gl::draw_mode::kTriangles, index_buffer(6u), gl::type_of<std::uint32_t>(), 6u,
+                      0);
+  }
+
+  void fullscreen_blend(const framebuffer_data& source, float blend_alpha) {
+    const auto& program = shader(shader::kFullscreenBlend);
+    gl::use_program(program);
+    gl::enable_blend(true);
+    gl::enable_depth_test(false);
+    gl::enable_srgb(false);
+    gl::enable_clip_planes(0u);
+    gl::blend_function(gl::blend_factor::kSrcAlpha, gl::blend_factor::kOneMinusSrcAlpha);
+
+    auto result = gl::set_uniforms(program, "blend_alpha", blend_alpha);
+    if (!result) {
+      status = unexpected("fullscreen_blend shader error: " + result.error());
+      return;
+    }
+    // TODO: rendering breaks if this is set to texture unit 0. No idea why! Some problem
+    // with binding multisampled and non-multisampled textures to the same unit for different calls?
+    result = gl::set_uniform_texture_2d(program, "framebuffer_texture", /* texture unit */ 1,
+                                        source.colour_buffer, pixel_sampler);
+    if (!result) {
+      status = unexpected("fullscreen_blend shader error: " + result.error());
+      return;
+    }
+
+    vertex_attribute_container attributes;
+    attributes.add_buffer(std::span<const float>(kQuadVertexData), 2);
+    attributes.bind();
+    attributes.add_attribute<float>(/* position */ 0, 2);
+    gl::draw_elements(gl::draw_mode::kTriangles, index_buffer(6u), gl::type_of<std::uint32_t>(), 6u,
+                      0);
   }
 };
 
@@ -256,9 +353,15 @@ result<std::unique_ptr<GlRenderer>> GlRenderer::create(std::uint32_t shader_vers
   if (!r) {
     return unexpected(r.error());
   }
-  r = load_shader(shader::kPostprocess,
-                  {{"game/render/shaders/post/postprocess.f.glsl", gl::shader_type::kFragment},
-                   {"game/render/shaders/post/postprocess.v.glsl", gl::shader_type::kVertex}});
+  r = load_shader(shader::kOklabResolve,
+                  {{"game/render/shaders/post/oklab_resolve.f.glsl", gl::shader_type::kFragment},
+                   {"game/render/shaders/post/fullscreen.v.glsl", gl::shader_type::kVertex}});
+  if (!r) {
+    return unexpected(r.error());
+  }
+  r = load_shader(shader::kFullscreenBlend,
+                  {{"game/render/shaders/post/fullscreen_blend.f.glsl", gl::shader_type::kFragment},
+                   {"game/render/shaders/post/fullscreen.v.glsl", gl::shader_type::kVertex}});
   if (!r) {
     return unexpected(r.error());
   }
@@ -302,7 +405,8 @@ result<void> GlRenderer::status() const {
 }
 
 void GlRenderer::clear_screen() const {
-  auto fbo_bind = impl_->bind_render_framebuffer(target_.screen_dimensions);
+  impl_->refresh_framebuffers(target_);
+  auto fbo_bind = impl_->bind_draw_framebuffer(framebuffer::kRender);
   gl::clear_colour({0.f, 0.f, 0.f, 0.f});
   gl::clear_depth(0.);
   gl::clear(gl::clear_mask::kColourBufferBit | gl::clear_mask::kDepthBufferBit |
@@ -310,7 +414,8 @@ void GlRenderer::clear_screen() const {
 }
 
 void GlRenderer::clear_depth() const {
-  auto fbo_bind = impl_->bind_render_framebuffer(target_.screen_dimensions);
+  impl_->refresh_framebuffers(target_);
+  auto fbo_bind = impl_->bind_draw_framebuffer(framebuffer::kRender);
   gl::clear_depth(0.);
   gl::clear(gl::clear_mask::kDepthBufferBit);
 }
@@ -359,7 +464,8 @@ void GlRenderer::render_text(const font_data& font, const fvec2& position, const
   }
   const auto& font_entry = **font_result;
 
-  auto fbo_bind = impl_->bind_render_framebuffer(target_.screen_dimensions);
+  impl_->refresh_framebuffers(target_);
+  auto fbo_bind = impl_->bind_draw_framebuffer(framebuffer::kRender);
   gl::texture_barrier();  // TODO: only need to do once for multiline text?
   const auto& program = impl_->shader(shader::kText);
   gl::use_program(program);
@@ -371,10 +477,14 @@ void GlRenderer::render_text(const font_data& font, const fvec2& position, const
   gl::enable_blend(false);
   gl::enable_depth_test(false);
 
+  const auto* render_framebuffer = impl_->get_framebuffer(framebuffer::kRender);
+  if (!render_framebuffer) {
+    return;
+  }
   auto clip_rect = target().clip_rect();
   auto text_origin = target().render_to_iscreen_coords(position + clip_rect.min());
   auto result = gl::set_uniforms(program, "screen_dimensions", target().screen_dimensions,
-                                 "is_multisample", impl_->render_framebuffer->samples > 1,
+                                 "is_multisample", render_framebuffer->samples > 1,
                                  "texture_dimensions", font_entry.font.bitmap_dimensions(),
                                  "clip_min", target().render_to_iscreen_coords(clip_rect.min()),
                                  "clip_max", target().render_to_iscreen_coords(clip_rect.max()),
@@ -383,14 +493,13 @@ void GlRenderer::render_text(const font_data& font, const fvec2& position, const
   if (!result) {
     impl_->status = unexpected(result.error());
   }
-  if (impl_->render_framebuffer->samples <= 1) {
-    result =
-        gl::set_uniform_texture_2d(program, "framebuffer_texture", /* texture unit */ 0,
-                                   impl_->render_framebuffer->colour_buffer, impl_->pixel_sampler);
+  if (render_framebuffer->samples <= 1) {
+    result = gl::set_uniform_texture_2d(program, "framebuffer_texture", /* texture unit */ 0,
+                                        render_framebuffer->colour_buffer, impl_->pixel_sampler);
   } else {
     result = gl::set_uniform_texture_2d_multisample(program, "framebuffer_texture_multisample",
                                                     /* texture unit */ 0,
-                                                    impl_->render_framebuffer->colour_buffer);
+                                                    render_framebuffer->colour_buffer);
   }
   if (!result) {
     impl_->status = unexpected("text shader error: " + result.error());
@@ -466,7 +575,8 @@ void GlRenderer::render_panel(const panel_data& p) const {
     return;
   }
 
-  auto fbo_bind = impl_->bind_render_framebuffer(target_.screen_dimensions);
+  impl_->refresh_framebuffers(target_);
+  auto fbo_bind = impl_->bind_draw_framebuffer(framebuffer::kRender);
   const auto& program = impl_->shader(shader::kPanel);
   gl::use_program(program);
   gl::enable_clip_planes(4u);
@@ -569,7 +679,8 @@ void GlRenderer::render_background(const render::background& data) const {
     return;
   }
 
-  auto fbo_bind = impl_->bind_render_framebuffer(target_.screen_dimensions);
+  impl_->refresh_framebuffers(target_);
+  auto fbo_bind = impl_->bind_draw_framebuffer(framebuffer::kRender);
   const auto& program = impl_->shader(shader::kBackground);
   gl::use_program(program);
   gl::enable_clip_planes(4u);
@@ -946,15 +1057,6 @@ void GlRenderer::render_shapes(coordinate_system ctype, std::vector<shape>& shap
     offset = (top_rect.min() + top_rect.max()) / 2.f;
   }
 
-  auto fbo_bind = impl_->bind_render_framebuffer(target_.screen_dimensions);
-  gl::enable_clip_planes(4u);
-  gl::enable_depth_test(false);
-  gl::enable_blend(true);
-  gl::clear_depth(0.f);
-  gl::blend_function(gl::blend_factor::kSrcAlpha, gl::blend_factor::kOneMinusSrcAlpha);
-  gl::bind_shader_storage_buffer(shape_buffer, 0);
-  gl::bind_shader_storage_buffer(ball_buffer, 1);
-
   auto clip_min = target().snap_render_to_screen_coords(clip_rect.min());
   auto clip_max = target().snap_render_to_screen_coords(clip_rect.max());
   auto set_uniforms = [&](const gl::program& program) {
@@ -976,43 +1078,74 @@ void GlRenderer::render_shapes(coordinate_system ctype, std::vector<shape>& shap
     }
   };
 
+  impl_->refresh_framebuffers(target_);
+  gl::clear_depth(0.f);
+  gl::enable_clip_planes(4u);
+  gl::enable_depth_test(false);
+  gl::enable_blend(true);
+  gl::blend_function(gl::blend_factor::kSrcAlpha, gl::blend_factor::kOneMinusSrcAlpha);
+  gl::bind_shader_storage_buffer(shape_buffer, 0);
+  gl::bind_shader_storage_buffer(ball_buffer, 1);
+
   // Shadow pass.
-  shape_attributes.bind();
-  if (!shadow_trail_indices.empty()) {
-    render_pass(shader::kShapeMotion, gl::draw_mode::kLines, shadow_trail_index_buffer,
-                shadow_trail_indices.size());
-  }
-  if (!shadow_outline_indices.empty()) {
-    render_pass(shader::kShapeOutline, gl::draw_mode::kPoints, shadow_outline_index_buffer,
-                shadow_outline_indices.size());
-  }
-  if (!shadow_fill_indices.empty()) {
-    render_pass(shader::kShapeFill, gl::draw_mode::kPoints, shadow_fill_index_buffer,
-                shadow_fill_indices.size());
+  {
+    auto fbo_bind = impl_->bind_draw_framebuffer(framebuffer::kRender);
+    shape_attributes.bind();
+    if (!shadow_trail_indices.empty()) {
+      render_pass(shader::kShapeMotion, gl::draw_mode::kLines, shadow_trail_index_buffer,
+                  shadow_trail_indices.size());
+    }
+    if (!shadow_outline_indices.empty()) {
+      render_pass(shader::kShapeOutline, gl::draw_mode::kPoints, shadow_outline_index_buffer,
+                  shadow_outline_indices.size());
+    }
+    if (!shadow_fill_indices.empty()) {
+      render_pass(shader::kShapeFill, gl::draw_mode::kPoints, shadow_fill_index_buffer,
+                  shadow_fill_indices.size());
+    }
   }
 
   // FX pass.
-  gl::enable_depth_test(true);
-  gl::depth_function(gl::comparison::kGreaterEqual);
+  // TODO: FX outlines.
   if (!fxs.empty()) {
-    gl::clear(gl::clear_mask::kDepthBufferBit);
-    fx_attributes.bind();
-    const auto& program = impl_->shader(shader::kFx);
-    gl::use_program(program);
-    if (auto result = set_uniforms(program); !result) {
-      impl_->status =
-          unexpected("shader " + std::to_string(static_cast<std::uint32_t>(shader::kFx)) +
-                     " error: " + result.error());
-    } else {
-      gl::draw_elements(gl::draw_mode::kPoints, impl_->index_buffer(fx_count),
-                        gl::type_of<unsigned>(), fx_count, 0);
+    {
+      auto fbo_bind = impl_->bind_draw_framebuffer(framebuffer::kAux0);
+      if (const auto* render_framebuffer = impl_->get_framebuffer(framebuffer::kRender)) {
+        impl_->oklab_resolve(*render_framebuffer, /* to sRGB */ false);
+      }
+      gl::enable_clip_planes(4u);
+      gl::enable_depth_test(false);
+      gl::enable_blend(true);
+      gl::blend_function(gl::blend_factor::kSrcAlpha, gl::blend_factor::kOneMinusSrcAlpha);
+
+      const auto& program = impl_->shader(shader::kFx);
+      gl::use_program(program);
+      fx_attributes.bind();
+      if (auto result = set_uniforms(program); !result) {
+        impl_->status =
+            unexpected("shader " + std::to_string(static_cast<std::uint32_t>(shader::kFx)) +
+                       " error: " + result.error());
+      } else {
+        gl::draw_elements(gl::draw_mode::kPoints, impl_->index_buffer(fx_count),
+                          gl::type_of<unsigned>(), fx_count, 0);
+      }
     }
-    gl::clear_depth(0.f);
+    auto fbo_bind = impl_->bind_draw_framebuffer(framebuffer::kRender);
+    if (const auto* aux_framebuffer = impl_->get_framebuffer(framebuffer::kAux0)) {
+      impl_->fullscreen_blend(*aux_framebuffer, colour::kFillAlpha0);
+    }
   }
 
   // Shape pass.
-  gl::clear(gl::clear_mask::kDepthBufferBit);
+  auto fbo_bind = impl_->bind_draw_framebuffer(framebuffer::kRender);
   shape_attributes.bind();
+  gl::enable_clip_planes(4u);
+  gl::enable_depth_test(true);
+  gl::depth_function(gl::comparison::kGreaterEqual);
+  gl::enable_blend(true);
+  gl::blend_function(gl::blend_factor::kSrcAlpha, gl::blend_factor::kOneMinusSrcAlpha);
+  gl::clear(gl::clear_mask::kDepthBufferBit);
+
   if (!bottom_outline_indices.empty()) {
     render_pass(shader::kShapeOutline, gl::draw_mode::kPoints, bottom_outline_index_buffer,
                 bottom_outline_indices.size());
@@ -1032,43 +1165,9 @@ void GlRenderer::render_shapes(coordinate_system ctype, std::vector<shape>& shap
 }
 
 void GlRenderer::render_present() const {
-  if (!impl_->render_framebuffer) {
-    return;
+  if (const auto* render_framebuffer = impl_->get_framebuffer(framebuffer::kRender)) {
+    impl_->oklab_resolve(*render_framebuffer, /* to sRGB */ true);
   }
-
-  const auto& program = impl_->shader(shader::kPostprocess);
-  gl::use_program(program);
-  gl::enable_clip_planes(0u);
-  gl::enable_blend(false);
-  gl::enable_depth_test(false);
-  gl::enable_srgb(false);
-
-  auto result = gl::set_uniforms(program, "screen_dimensions", target_.screen_dimensions,
-                                 "is_multisample", impl_->render_framebuffer->samples > 1);
-  if (!result) {
-    impl_->status = unexpected("postprocess shader error: " + result.error());
-    return;
-  }
-  if (impl_->render_framebuffer->samples <= 1) {
-    result =
-        gl::set_uniform_texture_2d(program, "framebuffer_texture", /* texture unit */ 0,
-                                   impl_->render_framebuffer->colour_buffer, impl_->pixel_sampler);
-  } else {
-    result = gl::set_uniform_texture_2d_multisample(program, "framebuffer_texture_multisample",
-                                                    /* texture unit */ 0,
-                                                    impl_->render_framebuffer->colour_buffer);
-  }
-  if (!result) {
-    impl_->status = unexpected("postprocess shader error: " + result.error());
-    return;
-  }
-
-  vertex_attribute_container attributes;
-  attributes.add_buffer(std::span<const float>(kQuadVertexData), 2);
-  attributes.bind();
-  attributes.add_attribute<float>(/* position */ 0, 2);
-  gl::draw_elements(gl::draw_mode::kTriangles, impl_->index_buffer(6u),
-                    gl::type_of<std::uint32_t>(), 6u, 0);
 }
 
 }  // namespace ii::render

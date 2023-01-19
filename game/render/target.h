@@ -2,6 +2,7 @@
 #define II_GAME_RENDER_TARGET_H
 #include "game/common/math.h"
 #include "game/common/rect.h"
+#include <optional>
 #include <vector>
 
 namespace ii::render {
@@ -13,8 +14,10 @@ enum class coordinate_system {
 };
 
 struct target {
+  // TODO: support different screen dimension than actual screen (i.e. resolution scaling).
   uvec2 screen_dimensions{0};
   uvec2 render_dimensions{0};
+  std::optional<std::uint32_t> msaa_samples;
   std::vector<frect> clip_stack;
 
   fvec2 render_to_fscreen_coords(const fvec2& v) const {

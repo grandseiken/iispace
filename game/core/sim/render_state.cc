@@ -1,5 +1,6 @@
 #include "game/core/sim/render_state.h"
 #include "game/common/colour.h"
+#include "game/common/easing.h"
 #include "game/core/sim/input_adapter.h"
 #include "game/logic/sim/io/output.h"
 #include "game/logic/sim/sim_state.h"
@@ -288,7 +289,7 @@ void RenderState::render(std::vector<render::shape>& shapes, std::vector<render:
                                .sides = 3 + static_cast<std::uint32_t>(.5f + d->width)},
       });
     } else if (const auto* d = std::get_if<ball_fx_particle>(&p.data)) {
-      auto t = static_cast<float>(p.time) / p.end_time;
+      auto t = ease_out_cubic(static_cast<float>(p.time) / p.end_time);
       fx.emplace_back(render::fx{
           .style = d->style,
           .time = p.time * d->anim_speed,

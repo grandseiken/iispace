@@ -2,6 +2,7 @@
 
 uniform uvec2 screen_dimensions;
 uniform bool is_multisample;
+uniform bool is_output_srgb;
 uniform sampler2D framebuffer_texture;
 uniform sampler2DMS framebuffer_texture_multisample;
 
@@ -10,8 +11,12 @@ out vec4 out_colour;
 
 void main() {
   if (!is_multisample) {
-    out_colour =
-        vec4(oklab2srgb(texture(framebuffer_texture, (1. + v_texture_coords) / 2.).xyz), 1.);
+    vec3 oklab = texture(framebuffer_texture, (1. + v_texture_coords) / 2.).xyz;
+    if (is_output_srgb) {
+      out_colour = vec4(oklab2srgb(oklab), 1.);
+    } else {
+      out_colour = vec4(oklab, 1.);
+    }
     return;
   }
 
@@ -21,5 +26,10 @@ void main() {
   for (int i = 0; i < samples; ++i) {
     v += oklab2rgb(texelFetch(framebuffer_texture_multisample, c, i).xyz);
   }
-  out_colour = vec4(rgb2srgb(v / float(samples)), 1.);
+  v /= float(samples);
+  if (is_output_srgb) {
+    out_colour = vec4(rgb2srgb(v), 1.);
+  } else {
+    out_colour = vec4(rgb2oklab(v), 1.);
+  }
 }

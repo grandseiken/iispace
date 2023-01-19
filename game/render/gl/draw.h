@@ -257,6 +257,14 @@ inline void enable_srgb(bool enable) {
   }
 }
 
+inline void enable_multisample(bool enable) {
+  if (enable) {
+    glEnable(GL_MULTISAMPLE);
+  } else {
+    glDisable(GL_MULTISAMPLE);
+  }
+}
+
 inline void colour_mask(const glm::bvec4& mask) {
   glColorMask(mask.r ? GL_TRUE : GL_FALSE, mask.g ? GL_TRUE : GL_FALSE, mask.b ? GL_TRUE : GL_FALSE,
               mask.a ? GL_TRUE : GL_FALSE);

@@ -82,6 +82,7 @@ void boss_on_destroy(ecs::const_handle h, const Transform& transform, SimInterfa
   explode_entity_shapes<Logic, S>(h, e, cvec4{1.f}, 36);
   explode_entity_shapes<Logic, S>(h, e, boss_colour, 48);
   destruct_entity_lines<Logic, S>(h, e, source, 128);
+  // TODO: some kind of FX explosion.
 
   std::uint32_t n = 1;
   for (std::uint32_t i = 0; i < 16; ++i) {

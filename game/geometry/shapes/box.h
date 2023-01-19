@@ -130,7 +130,7 @@ struct box_data : shape_data_base {
 
   constexpr void
   iterate(iterate_volumes_t, const Transform auto& t, const VolumeFunction auto& f) const {
-    std::invoke(f, *t, (dimensions.x + dimensions.y) / 2_fx, line.colour0, fill.colour0);
+    std::invoke(f, *t, std::min(dimensions.x, dimensions.y), line.colour0, fill.colour0);
   }
 };
 
