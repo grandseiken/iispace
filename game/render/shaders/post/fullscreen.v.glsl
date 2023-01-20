@@ -1,8 +1,11 @@
+uniform vec2 aspect_scale;
+
 layout(location = 0) in vec2 in_position;
 
 out vec2 v_texture_coords;
 
 void main() {
-  v_texture_coords = in_position;
-  gl_Position = vec4(in_position.xy, 0., 1.);
+  vec2 v = in_position * aspect_scale;
+  v_texture_coords = v;
+  gl_Position = vec4(v, 0., 1.);
 }

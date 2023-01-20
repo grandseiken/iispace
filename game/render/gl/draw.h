@@ -3,6 +3,7 @@
 #include "game/render/gl/types.h"
 #include <GL/gl3w.h>
 #include <glm/glm.hpp>
+#include <array>
 #include <cstddef>
 
 namespace ii::gl {
@@ -65,7 +66,7 @@ enum class blend_factor {
 
 namespace detail {
 
-inline GLenum comparison_to_gl(comparison c) {
+inline constexpr GLenum comparison_to_gl(comparison c) {
   switch (c) {
   case comparison::kAlways:
     return GL_ALWAYS;
@@ -87,7 +88,7 @@ inline GLenum comparison_to_gl(comparison c) {
   return 0;
 }
 
-inline GLenum draw_mode_to_gl(draw_mode m) {
+inline constexpr GLenum draw_mode_to_gl(draw_mode m) {
   switch (m) {
   case draw_mode::kPoints:
     return GL_POINTS;
@@ -117,7 +118,7 @@ inline GLenum draw_mode_to_gl(draw_mode m) {
   return 0;
 }
 
-inline GLenum blend_factor_to_gl(blend_factor f) {
+inline constexpr GLenum blend_factor_to_gl(blend_factor f) {
   switch (f) {
   case blend_factor::kZero:
     return GL_ZERO;
@@ -161,6 +162,28 @@ inline GLenum blend_factor_to_gl(blend_factor f) {
   return 0;
 }
 
+inline constexpr GLenum colour_attachment_to_gl(std::uint32_t i) {
+  switch (i) {
+  case 0:
+    return GL_COLOR_ATTACHMENT0;
+  case 1:
+    return GL_COLOR_ATTACHMENT1;
+  case 2:
+    return GL_COLOR_ATTACHMENT2;
+  case 3:
+    return GL_COLOR_ATTACHMENT3;
+  case 4:
+    return GL_COLOR_ATTACHMENT4;
+  case 5:
+    return GL_COLOR_ATTACHMENT5;
+  case 6:
+    return GL_COLOR_ATTACHMENT6;
+  case 7:
+    return GL_COLOR_ATTACHMENT7;
+  }
+  return 0;
+}
+
 }  // namespace detail
 
 inline framebuffer make_framebuffer() {
@@ -184,16 +207,38 @@ inline bound_framebuffer bind_draw_framebuffer(const framebuffer& fbo) {
   return bound_framebuffer{GL_DRAW_FRAMEBUFFER};
 }
 
-inline void framebuffer_colour_texture_2d(const framebuffer& fbo, const texture& texture) {
+inline void framebuffer_detach_colour_texture(const framebuffer& fbo, std::uint32_t i) {
   auto bind = bind_framebuffer(fbo);
-  glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, *texture, 0);
+  glFramebufferTexture2D(GL_FRAMEBUFFER, detail::colour_attachment_to_gl(i), 0, 0, 0);
+}
+
+inline void framebuffer_detach_depth(const framebuffer& fbo) {
+  auto bind = bind_framebuffer(fbo);
+  glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_RENDERBUFFER, 0);
+}
+
+inline void framebuffer_detach_stencil(const framebuffer& fbo) {
+  auto bind = bind_framebuffer(fbo);
+  glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_STENCIL_ATTACHMENT, GL_RENDERBUFFER, 0);
+}
+
+inline void framebuffer_detach_depth_stencil(const framebuffer& fbo) {
+  auto bind = bind_framebuffer(fbo);
+  glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_DEPTH_STENCIL_ATTACHMENT, GL_RENDERBUFFER, 0);
 }
 
 inline void
-framebuffer_colour_texture_2d_multisample(const framebuffer& fbo, const texture& texture) {
+framebuffer_colour_texture_2d(const framebuffer& fbo, std::uint32_t i, const texture& texture) {
   auto bind = bind_framebuffer(fbo);
-  glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D_MULTISAMPLE, *texture,
-                         0);
+  glFramebufferTexture2D(GL_FRAMEBUFFER, detail::colour_attachment_to_gl(i), GL_TEXTURE_2D,
+                         *texture, 0);
+}
+
+inline void framebuffer_colour_texture_2d_multisample(const framebuffer& fbo, std::uint32_t i,
+                                                      const texture& texture) {
+  auto bind = bind_framebuffer(fbo);
+  glFramebufferTexture2D(GL_FRAMEBUFFER, detail::colour_attachment_to_gl(i),
+                         GL_TEXTURE_2D_MULTISAMPLE, *texture, 0);
 }
 
 inline void framebuffer_renderbuffer_depth(const framebuffer& fbo, const renderbuffer& rbo) {
@@ -247,6 +292,16 @@ inline void clear(std::uint8_t mask) {
 
 inline void texture_barrier() {
   glTextureBarrier();
+}
+
+inline void draw_buffers(std::uint32_t i) {
+  static constexpr std::array kColourAttachments = {
+      detail::colour_attachment_to_gl(0), detail::colour_attachment_to_gl(1),
+      detail::colour_attachment_to_gl(2), detail::colour_attachment_to_gl(3),
+      detail::colour_attachment_to_gl(4), detail::colour_attachment_to_gl(5),
+      detail::colour_attachment_to_gl(6), detail::colour_attachment_to_gl(7),
+  };
+  glDrawBuffers(static_cast<GLsizei>(i), kColourAttachments.data());
 }
 
 inline void enable_srgb(bool enable) {

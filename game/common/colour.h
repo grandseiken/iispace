@@ -159,8 +159,12 @@ inline constexpr cvec4 perceptual_mix(const cvec4& a, const cvec4& b, float t = 
   return srgb2hsl(rgb2srgb(oklab2rgb((1.f - t) * oklab_a + t * oklab_b)));
 }
 
+inline constexpr cvec4 hsl2oklab(const cvec4& hsl) {
+  return rgb2oklab(srgb2rgb(hsl2srgb(hsl)));
+}
+
 inline constexpr cvec4 hsl2oklab_cycle(const cvec4& hsl, float cycle) {
-  auto lab = rgb2oklab(srgb2rgb(hsl2srgb(hsl)));
+  auto lab = hsl2oklab(hsl);
   if (std::is_constant_evaluated()) {
     auto c = gcem::sqrt(lab.y * lab.y + lab.z * lab.z);
     float h = gcem::atan2(lab.z, lab.y) + 2.f * pi<float> * cycle;

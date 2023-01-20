@@ -12,18 +12,19 @@ flat in vec2 g_dimensions;
 flat in vec2 g_seed;
 
 out vec4 out_colour;
+out vec4 out_mask;
 
 float scale01(float d, float t) {
   return 1. - d / 2. + t * d;
 }
 
 // TODO: gradient unused.
-float noise0(vec4 v, out vec2 g) {
-  vec3 g0;
-  float v0 = psrdnoise3(v.xyz / 64., vec3(0.), v.w / 64., g0);
-  vec3 g1;
-  float v1 = psrdnoise3(vec3(.75) + g0 / 4. + v.xyz / 32., vec3(0.), v.w / 32., g1);
-  g = sign(v0 + .25 * v1) * (g0.xy / 64. + .25 * g1.xy / 32.);
+float noise0(vec3 v, out vec2 g) {
+  vec2 g0;
+  float v0 = psrdnoise2(v.xy / 64., vec2(0.), v.z / 64., g0);
+  vec2 g1;
+  float v1 = psrdnoise2(vec2(.75) + g0 / 4. + v.xy / 32., vec2(0.), v.z / 32., g1);
+  g = sign(v0 + .25 * v1) * (g0 / 64. + .25 * g1 / 32.);
   return abs(v0 + .25 * v1);
 }
 
@@ -40,8 +41,7 @@ void main() {
   switch (g_style) {
   case kFxStyleExplosion: {
     vec2 gradient;
-    float n =
-        noise0(vec4(frag_position + g_seed - g_position, g_time, g_seed.x + g_time), gradient);
+    float n = noise0(vec3(frag_position + g_seed - g_position, g_seed.x + g_time), gradient);
     float q = clamp(g_colour.a * ball_coefficient(frag_position), 0., 1.);
 
     float v = n * q * 16.;
@@ -54,4 +54,5 @@ void main() {
     out_colour = g_colour;
     break;
   }
+  out_mask = vec4(1., 0., 0., out_colour.a);
 }

@@ -42,6 +42,7 @@ enum class shader {
   kShapeMotion,
   kShapeFill,
   kOklabResolve,
+  kOutlineMask,
   kFullscreenBlend,
 };
 
@@ -69,8 +70,8 @@ struct framebuffer_data {
   std::optional<gl::renderbuffer> depth_stencil_buffer;
 };
 
-result<framebuffer_data>
-make_render_framebuffer(const uvec2& dimensions, bool depth_stencil, std::uint32_t samples) {
+result<framebuffer_data> make_render_framebuffer(const uvec2& dimensions, bool alpha,
+                                                 bool depth_stencil, std::uint32_t samples) {
   auto fbo = gl::make_framebuffer();
   auto colour_buffer = gl::make_texture();
   std::optional<gl::renderbuffer> depth_stencil_buffer;
@@ -78,18 +79,18 @@ make_render_framebuffer(const uvec2& dimensions, bool depth_stencil, std::uint32
     depth_stencil_buffer = gl::make_renderbuffer();
   }
 
+  auto colour_format = alpha ? gl::internal_format::kRgba32F : gl::internal_format::kRgb32F;
   if (samples <= 1) {
-    gl::texture_storage_2d(colour_buffer, 1, dimensions, gl::internal_format::kRgb32F);
-    gl::framebuffer_colour_texture_2d(fbo, colour_buffer);
+    gl::texture_storage_2d(colour_buffer, 1, dimensions, colour_format);
+    gl::framebuffer_colour_texture_2d(fbo, 0, colour_buffer);
     if (depth_stencil) {
       gl::renderbuffer_storage(*depth_stencil_buffer, gl::internal_format::kDepth24Stencil8,
                                dimensions);
       gl::framebuffer_renderbuffer_depth_stencil(fbo, *depth_stencil_buffer);
     }
   } else {
-    gl::texture_storage_2d_multisample(colour_buffer, samples, dimensions,
-                                       gl::internal_format::kRgb32F);
-    gl::framebuffer_colour_texture_2d_multisample(fbo, colour_buffer);
+    gl::texture_storage_2d_multisample(colour_buffer, samples, dimensions, colour_format);
+    gl::framebuffer_colour_texture_2d_multisample(fbo, 0, colour_buffer);
     if (depth_stencil) {
       gl::renderbuffer_storage_multisample(*depth_stencil_buffer, samples,
                                            gl::internal_format::kDepth24Stencil8, dimensions);
@@ -182,22 +183,27 @@ struct GlRenderer::impl_t {
   }
 
   void refresh_framebuffers(const render::target& target) {
-    auto refresh = [&](framebuffer f, const uvec2& dimensions, std::uint32_t samples) {
+    auto refresh = [&](framebuffer f, const uvec2& dimensions, bool alpha, bool depth_stencil,
+                       std::uint32_t samples) {
       auto it = framebuffers.find(f);
       if (it != framebuffers.end() && it->second.dimensions == dimensions &&
           it->second.samples == samples) {
         return;
       }
-      auto result = make_render_framebuffer(dimensions, /* depth/stencil */ true, samples);
+      auto result = make_render_framebuffer(dimensions, alpha, depth_stencil, samples);
       if (!result) {
         status = unexpected("OpenGL error: " + result.error());
         return;
       }
-      framebuffers.emplace(f, std::move(*result));
+      framebuffers.insert_or_assign(f, std::move(*result));
     };
     auto samples = std::clamp(target.msaa_samples.value_or(16u), 1u, gl::max_samples());
-    refresh(framebuffer::kRender, target.screen_dimensions, samples);
-    refresh(framebuffer::kAux0, target.screen_dimensions, 1u);
+    refresh(framebuffer::kRender, target.screen_dimensions, /* alpha */ false,
+            /* depth/stencil */ true, samples);
+    refresh(framebuffer::kAux0, target.screen_dimensions, /* alpha */ true,
+            /* depth/stencil */ false, 1u);
+    refresh(framebuffer::kAux1, target.screen_dimensions, /* alpha */ true,
+            /* depth/stencil */ false, 1u);
   }
 
   gl::bound_framebuffer bind_draw_framebuffer(framebuffer f) {
@@ -219,7 +225,7 @@ struct GlRenderer::impl_t {
     return it == framebuffers.end() ? nullptr : &it->second;
   }
 
-  void oklab_resolve(const framebuffer_data& source, bool to_srgb) {
+  void oklab_resolve(const framebuffer_data& source, const fvec2& aspect_scale, bool to_srgb) {
     const auto& program = shader(shader::kOklabResolve);
     gl::use_program(program);
     gl::enable_blend(false);
@@ -227,8 +233,9 @@ struct GlRenderer::impl_t {
     gl::enable_srgb(false);
     gl::enable_clip_planes(0u);
 
-    auto result = gl::set_uniforms(program, "screen_dimensions", source.dimensions,
-                                   "is_multisample", source.samples > 1, "is_output_srgb", to_srgb);
+    auto result = gl::set_uniforms(program, "screen_dimensions", source.dimensions, "aspect_scale",
+                                   aspect_scale, "is_multisample", source.samples > 1,
+                                   "is_output_srgb", to_srgb);
     if (!result) {
       status = unexpected("oklab_resolve shader error: " + result.error());
       return;
@@ -253,7 +260,39 @@ struct GlRenderer::impl_t {
                       0);
   }
 
-  void fullscreen_blend(const framebuffer_data& source, float blend_alpha) {
+  // TODO: use a jump-flood algorithm instead?
+  void outline_mask(const framebuffer_data& source, const fvec2& aspect_scale, float pixel_radius) {
+    const auto& program = shader(shader::kOutlineMask);
+    gl::use_program(program);
+    gl::enable_blend(false);
+    gl::enable_depth_test(false);
+    gl::enable_srgb(false);
+    gl::enable_clip_planes(0u);
+
+    auto result = gl::set_uniforms(program, "screen_dimensions", source.dimensions, "aspect_scale",
+                                   aspect_scale, "pixel_radius", pixel_radius);
+    if (!result) {
+      status = unexpected("outline_mask shader error: " + result.error());
+      return;
+    }
+    // TODO: same comment about texture unit 0 vs 1?
+    result = gl::set_uniform_texture_2d(program, "framebuffer_texture", /* texture unit */ 1,
+                                        source.colour_buffer, pixel_sampler);
+    if (!result) {
+      status = unexpected("outline_mask shader error: " + result.error());
+      return;
+    }
+
+    vertex_attribute_container attributes;
+    attributes.add_buffer(std::span<const float>(kQuadVertexData), 2);
+    attributes.bind();
+    attributes.add_attribute<float>(/* position */ 0, 2);
+    gl::draw_elements(gl::draw_mode::kTriangles, index_buffer(6u), gl::type_of<std::uint32_t>(), 6u,
+                      0);
+  }
+
+  void
+  fullscreen_blend(const framebuffer_data& source, const fvec2& aspect_scale, float blend_alpha) {
     const auto& program = shader(shader::kFullscreenBlend);
     gl::use_program(program);
     gl::enable_blend(true);
@@ -262,7 +301,8 @@ struct GlRenderer::impl_t {
     gl::enable_clip_planes(0u);
     gl::blend_function(gl::blend_factor::kSrcAlpha, gl::blend_factor::kOneMinusSrcAlpha);
 
-    auto result = gl::set_uniforms(program, "blend_alpha", blend_alpha);
+    auto result =
+        gl::set_uniforms(program, "aspect_scale", aspect_scale, "blend_alpha", blend_alpha);
     if (!result) {
       status = unexpected("fullscreen_blend shader error: " + result.error());
       return;
@@ -355,6 +395,12 @@ result<std::unique_ptr<GlRenderer>> GlRenderer::create(std::uint32_t shader_vers
   }
   r = load_shader(shader::kOklabResolve,
                   {{"game/render/shaders/post/oklab_resolve.f.glsl", gl::shader_type::kFragment},
+                   {"game/render/shaders/post/fullscreen.v.glsl", gl::shader_type::kVertex}});
+  if (!r) {
+    return unexpected(r.error());
+  }
+  r = load_shader(shader::kOutlineMask,
+                  {{"game/render/shaders/post/outline_mask.f.glsl", gl::shader_type::kFragment},
                    {"game/render/shaders/post/fullscreen.v.glsl", gl::shader_type::kVertex}});
   if (!r) {
     return unexpected(r.error());
@@ -1106,17 +1152,20 @@ void GlRenderer::render_shapes(coordinate_system ctype, std::vector<shape>& shap
   }
 
   // FX pass.
-  // TODO: FX outlines.
-  if (!fxs.empty()) {
+  const auto* aux0 = impl_->get_framebuffer(framebuffer::kAux0);
+  const auto* aux1 = impl_->get_framebuffer(framebuffer::kAux1);
+  if (!fxs.empty() && aux0 && aux1) {
+    gl::framebuffer_detach_colour_texture(aux1->fbo, 0u);
+    gl::framebuffer_colour_texture_2d(aux0->fbo, 1u, aux1->colour_buffer);
+    gl::enable_clip_planes(4u);
+    gl::enable_depth_test(false);
+    gl::enable_blend(true);
+    gl::blend_function(gl::blend_factor::kSrcAlpha, gl::blend_factor::kOneMinusSrcAlpha);
     {
       auto fbo_bind = impl_->bind_draw_framebuffer(framebuffer::kAux0);
-      if (const auto* render_framebuffer = impl_->get_framebuffer(framebuffer::kRender)) {
-        impl_->oklab_resolve(*render_framebuffer, /* to sRGB */ false);
-      }
-      gl::enable_clip_planes(4u);
-      gl::enable_depth_test(false);
-      gl::enable_blend(true);
-      gl::blend_function(gl::blend_factor::kSrcAlpha, gl::blend_factor::kOneMinusSrcAlpha);
+      gl::draw_buffers(2u);
+      gl::clear_colour(colour::alpha(colour::hsl2oklab(colour::kOutline), 0.f));
+      gl::clear(gl::clear_mask::kColourBufferBit | gl::clear_mask::kDepthBufferBit);
 
       const auto& program = impl_->shader(shader::kFx);
       gl::use_program(program);
@@ -1129,11 +1178,22 @@ void GlRenderer::render_shapes(coordinate_system ctype, std::vector<shape>& shap
         gl::draw_elements(gl::draw_mode::kPoints, impl_->index_buffer(fx_count),
                           gl::type_of<unsigned>(), fx_count, 0);
       }
+      gl::draw_buffers(1u);
     }
+
+    gl::framebuffer_detach_colour_texture(aux0->fbo, 1u);
+    gl::framebuffer_colour_texture_2d(aux1->fbo, 0u, aux1->colour_buffer);
+    gl::colour_mask({false, false, false, true});
+    {
+      static constexpr float kOutlineWidth = 1.5f;
+      auto outline_pixels = kOutlineWidth * target().scale_factor();
+      auto fbo_bind = impl_->bind_draw_framebuffer(framebuffer::kAux0);
+      impl_->outline_mask(*aux1, target().aspect_scale(), outline_pixels);
+    }
+    gl::colour_mask(glm::bvec4{true});
+
     auto fbo_bind = impl_->bind_draw_framebuffer(framebuffer::kRender);
-    if (const auto* aux_framebuffer = impl_->get_framebuffer(framebuffer::kAux0)) {
-      impl_->fullscreen_blend(*aux_framebuffer, colour::kFillAlpha0);
-    }
+    impl_->fullscreen_blend(*aux0, target().aspect_scale(), colour::kEffectAlpha0);
   }
 
   // Shape pass.
@@ -1166,7 +1226,7 @@ void GlRenderer::render_shapes(coordinate_system ctype, std::vector<shape>& shap
 
 void GlRenderer::render_present() const {
   if (const auto* render_framebuffer = impl_->get_framebuffer(framebuffer::kRender)) {
-    impl_->oklab_resolve(*render_framebuffer, /* to sRGB */ true);
+    impl_->oklab_resolve(*render_framebuffer, fvec2{1.f}, /* to sRGB */ true);
   }
 }
 

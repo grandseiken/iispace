@@ -111,8 +111,8 @@ struct ball_data : shape_data_base {
     if (!line.colour0.a) {
       return;
     }
-    std::uint32_t n = dimensions.radius.to_int();
-    std::uint32_t in = dimensions.inner_radius.to_int();
+    std::uint32_t n = std::max(3, dimensions.radius.to_int() / 2);
+    std::uint32_t in = std::max(3, dimensions.inner_radius.to_int() / 2);
     auto vertex = [&](fixed r, std::uint32_t i, std::uint32_t n) {
       return *t.rotate(i * 2 * pi<fixed> / n).translate({r, 0});
     };

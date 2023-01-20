@@ -15,6 +15,9 @@
 #include <span>
 #include <vector>
 
+// TODO: basically, need to do less template instantiation. Just have a single geometry resolve
+// function with callbacks and then iterate over shape output in non-template code? Probably
+// means we need to cache the resolved shape data in a component or something.
 namespace ii::v0 {
 
 template <geom::ShapeNode... S>

@@ -86,7 +86,7 @@ enum class texture_wrap {
 
 namespace detail {
 
-inline GLint internal_format_to_gl(internal_format f) {
+inline constexpr GLint internal_format_to_gl(internal_format f) {
   switch (f) {
   case internal_format::kDepthComponent:
     return GL_DEPTH_COMPONENT;
@@ -174,7 +174,7 @@ inline GLint internal_format_to_gl(internal_format f) {
   return 0;
 }
 
-inline GLenum texture_format_to_gl(texture_format f) {
+inline constexpr GLenum texture_format_to_gl(texture_format f) {
   switch (f) {
   case texture_format::kRed:
     return GL_RED;

@@ -24,7 +24,7 @@ enum class type {
 };
 
 template <typename T>
-type type_of() {
+constexpr type type_of() {
   using t = std::remove_cv_t<std::remove_reference_t<T>>;
   if constexpr (std::is_same_v<t, std::int8_t>) {
     return type::kByte;
@@ -111,7 +111,7 @@ struct unbind_framebuffer {
   void operator()(id i) const { glBindFramebuffer(i, 0); }
 };
 
-inline GLenum type_to_gl(type t) {
+inline constexpr GLenum type_to_gl(type t) {
   switch (t) {
   case type::kByte:
     return GL_BYTE;

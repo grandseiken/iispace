@@ -105,13 +105,14 @@ inline void add_explode_particle(EmitHandle& e, const fvec2& source, const fvec2
       data.end_value = 0.f;
       cv = colour::kWhite0;
     }
+    auto tv = time + static_cast<int>(radius / 4);
     e.add(particle{
         .position = offset + position - velocity,
         .velocity = velocity,
         .end_velocity = velocity / 2.f,
         .colour = cv,
         .data = data,
-        .end_time = time + r.uint(time),
+        .end_time = tv + r.uint(tv),
     });
   }
 }
@@ -131,7 +132,7 @@ void destruct_entity_lines(ecs::const_handle h, EmitHandle& e, const vec2& sourc
 
 template <ecs::Component Logic, geom::ShapeNode S = typename Logic::shape>
 void explode_entity_volumes(ecs::const_handle h, EmitHandle& e, const vec2& source,
-                            std::uint32_t time = 24) {
+                            std::uint32_t time = 20) {
   auto source_f = to_float(source);
   geom::iterate(S{}, geom::iterate_volumes, get_shape_parameters<Logic>(h), geom::transform{},
                 [&](const vec2& v, fixed r, const cvec4&, const cvec4& c) {
