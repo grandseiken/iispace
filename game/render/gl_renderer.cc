@@ -771,6 +771,8 @@ void GlRenderer::render_shapes(coordinate_system ctype, std::vector<shape>& shap
                                std::vector<fx>& fxs, shape_style style) const {
   std::stable_sort(shapes.begin(), shapes.end(),
                    [](const shape& a, const shape& b) { return a.z_index < b.z_index; });
+  std::stable_sort(fxs.begin(), fxs.end(),
+                   [](const fx& a, const fx& b) { return a.z_index < b.z_index; });
 
   struct shape_data {
     std::uint32_t buffer_index = 0;

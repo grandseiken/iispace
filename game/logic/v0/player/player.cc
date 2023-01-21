@@ -229,6 +229,7 @@ struct PlayerLogic : ecs::component {
     explode_entity_shapes<PlayerLogic>(h, e, colour::kWhite0, 14);
     explode_entity_shapes<PlayerLogic>(h, e, std::nullopt, 20);
     destruct_entity_lines<PlayerLogic>(h, e, source, 32);
+    explode_entity_volumes<PlayerLogic>(h, e, source);
 
     ++pc.death_count;
     pc.bomb_count = 0;
@@ -262,6 +263,7 @@ struct PlayerLogic : ecs::component {
                     const vec2& position, SimInterface& sim) const {
     static constexpr std::uint32_t kBombDamage = 400;
     static constexpr fixed kBombRadius = 180;
+    auto radius = kBombRadius * loadout.bomb_radius_multiplier();
 
     auto c = v0_player_colour(pc.player_number);
     auto e = sim.emit(resolve_key::local(pc.player_number));
@@ -269,8 +271,8 @@ struct PlayerLogic : ecs::component {
     explode_entity_shapes<PlayerLogic>(h, e, colour::kWhite0, 18);
     explode_entity_shapes<PlayerLogic>(h, e, c, 21);
     explode_entity_shapes<PlayerLogic>(h, e, colour::kWhite0, 24);
+    // TODO: bomb explosion.
 
-    auto radius = kBombRadius * loadout.bomb_radius_multiplier();
     for (std::uint32_t i = 0; i < 64; ++i) {
       auto v = position + from_polar(2 * i * pi<fixed> / 64, radius);
       auto parameters = shape_parameters(pc, {{}, v, 0_fx});

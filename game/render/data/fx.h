@@ -20,6 +20,7 @@ struct ball_fx {
 struct fx {
   fx_style style = fx_style::kNone;
   float time = 0.f;
+  float z_index = 0.f;
   cvec4 colour = colour::kWhite0;
   fvec2 seed{0.f};
   std::variant<ball_fx> data;

@@ -260,8 +260,8 @@ void RenderState::render(std::vector<render::shape>& shapes, std::vector<render:
     float l = p.flash_time && p.time <= p.flash_time
         ? (1.f + p.flash_time - p.time) / (1.f + p.flash_time)
         : 0.f;
+    a = ease_in_sine(a);
     cvec4 colour{p.colour.x, p.colour.y, glm::mix(p.colour.z, 1.f, l), a};
-
     if (const auto* d = std::get_if<dot_particle>(&p.data)) {
       shapes.emplace_back(render::shape{
           .origin = p.position,
@@ -275,6 +275,18 @@ void RenderState::render(std::vector<render::shape>& shapes, std::vector<render:
       });
     } else if (const auto* d = std::get_if<line_particle>(&p.data)) {
       float t = std::max(0.f, (17.f - p.time) / 16.f);
+      shapes.emplace_back(render::shape{
+          .origin = p.position,
+          .rotation = d->rotation,
+          .colour0 = colour::alpha(colour::kOutline, a),
+          .z_index = colour::kZParticleOutline,
+          .trail = render::motion_trail{.prev_origin = p.position - p.velocity,
+                                        .prev_rotation = d->rotation - d->angular_velocity,
+                                        .prev_colour0 = colour},
+          .data = render::line{.radius = d->radius,
+                               .line_width = 3.f + d->width * glm::mix(1.f, 2.f, t),
+                               .sides = 3 + static_cast<std::uint32_t>(3.f + d->width)},
+      });
       shapes.emplace_back(render::shape{
           .origin = p.position,
           .rotation = d->rotation,
@@ -293,6 +305,7 @@ void RenderState::render(std::vector<render::shape>& shapes, std::vector<render:
       fx.emplace_back(render::fx{
           .style = d->style,
           .time = p.time * d->anim_speed,
+          .z_index = p.z_index,
           .colour = {colour.x, colour.y, colour.z, glm::mix(d->value, d->end_value, t)},
           .seed = d->seed,
           .data =

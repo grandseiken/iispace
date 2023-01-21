@@ -23,8 +23,8 @@ float noise0(vec3 v, out vec2 g) {
   vec2 g0;
   float v0 = psrdnoise2(v.xy / 64., vec2(0.), v.z / 64., g0);
   vec2 g1;
-  float v1 = psrdnoise2(vec2(.75) + g0 / 4. + v.xy / 32., vec2(0.), v.z / 32., g1);
-  g = sign(v0 + .25 * v1) * (g0 / 64. + .25 * g1 / 32.);
+  float v1 = psrdnoise2(vec2(.75) + g0 / 4. + v.xy / 24., vec2(0.), v.z / 64., g1);
+  g = sign(v0 + .25 * v1) * (g0 / 64. + .25 * g1 / 24.);
   return abs(v0 + .25 * v1);
 }
 
@@ -42,9 +42,9 @@ void main() {
   case kFxStyleExplosion: {
     vec2 gradient;
     float n = noise0(vec3(frag_position + g_seed - g_position, g_seed.x + g_time), gradient);
-    float q = clamp(g_colour.a * ball_coefficient(frag_position), 0., 1.);
+    float q = g_colour.a * clamp(ball_coefficient(frag_position), 0., 1.);
 
-    float v = n * q * 16.;
+    float v = n * q * 16. + q;
     float a = smoothstep(1. - fwidth(v), 1., v);
     out_colour = vec4(g_colour.xyz, a);
     break;

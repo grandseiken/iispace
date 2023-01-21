@@ -25,6 +25,7 @@ void explode_shapes(EmitHandle& e, const auto& parameters,
   }
   geom::iterate(S{}, geom::iterate_volumes, parameters, geom::transform{},
                 [&](const vec2& v, fixed, const cvec4& c0, const cvec4& c1) {
+                  // TODO: maybe ignore outlines?
                   e.explosion(to_float(v), colour_override.value_or(c0.a ? c0 : c1), time,
                               towards_float, speed);
                 });
@@ -72,45 +73,47 @@ inline void add_line_particle(EmitHandle& e, const fvec2& source, const fvec2& a
 inline void add_explode_particle(EmitHandle& e, const fvec2& source, const fvec2& position,
                                  float radius, const cvec4& c, std::uint32_t time) {
   auto& r = e.random();
-  auto n = static_cast<std::uint32_t>(std::clamp(100.f / radius, 2.f, 4.f));
-  auto base_velocity = (1.f + 1.f * r.fixed().to_float()) * normalise(position - source) +
+  auto base_velocity = (1.f + 1.5f * r.fixed().to_float()) * normalise(position - source) +
       from_polar((2 * pi<fixed> * r.fixed()).to_float(), r.fixed().to_float());
-  for (std::uint32_t i = 0; i < 4; ++i) {
-    auto velocity = base_velocity + (r.fixed().to_float()) * normalise(position - source) +
-        from_polar((2 * pi<fixed> * r.fixed()).to_float(), r.fixed().to_float());
+  auto seed = 1024.f * fvec2{r.fixed().to_float(), r.fixed().to_float()};
+  for (std::uint32_t i = 0; i < 3; ++i) {
+    auto velocity = base_velocity + r.fixed().to_float() * normalise(position - source) / 32.f +
+        from_polar((2 * pi<fixed> * r.fixed()).to_float(), r.fixed().to_float() / 32.f);
     auto offset =
-        from_polar((2 * pi<fixed> * r.fixed()).to_float(), radius * r.fixed().to_float() / 16.f);
-    ball_fx_particle data{.style = render::fx_style::kExplosion,
-                          .seed = {64.f * r.fixed().to_float(), 64.f * r.fixed().to_float()},
-                          .anim_speed = 1.5f / 2};
+        from_polar((2 * pi<fixed> * r.fixed()).to_float(), radius * r.fixed().to_float() / 64.f);
+    ball_fx_particle data{
+        .style = render::fx_style::kExplosion,
+        .seed = seed + 64.f * fvec2{r.fixed().to_float() - .5f, r.fixed().to_float() - .5f},
+        .anim_speed = 1.5f / 2};
     auto cv = c;
-    if (i <= 1) {
-      data.radius = radius;
-      data.inner_radius = -radius;
-      data.end_radius = 2.f * radius;
-      data.end_inner_radius = -2.f * radius;
-      data.value = 1.f;
+    if (i == 0) {
+      data.radius = radius / 2.f;
+      data.inner_radius = -radius / 2.f;
+      data.end_radius = radius;
+      data.end_inner_radius = -radius;
+      data.value = 2.f;
       data.end_value = 0.f;
-    } else if (i == 2) {
-      data.inner_radius = data.end_inner_radius = -1.25f * radius;
-      data.radius = 2.f * radius;
+    } else if (i == 1) {
+      data.inner_radius = data.end_inner_radius = -.75f * radius;
+      data.radius = radius;
       data.end_radius = 0.f;
       data.value = data.end_value = 1.f;
       cv = colour::perceptual_mix(c, colour::kWhite0, .5f);
     } else {
-      data.radius = 1.5f * radius;
-      data.inner_radius = -1.5f * radius;
-      data.end_radius = data.end_inner_radius = 1.5f * radius;
+      data.radius = .325f * radius;
+      data.inner_radius = -.75f * radius;
+      data.end_radius = data.end_inner_radius = .75f * radius;
       data.value = 1.f;
       data.end_value = 0.f;
       cv = colour::kWhite0;
     }
-    auto tv = time + static_cast<int>(radius / 4);
+    auto tv = time + static_cast<int>(radius / 4.f);
     e.add(particle{
         .position = offset + position - velocity,
         .velocity = velocity,
         .end_velocity = velocity / 2.f,
         .colour = cv,
+        .z_index = static_cast<float>(i),
         .data = data,
         .end_time = tv + r.uint(tv),
     });
@@ -126,7 +129,9 @@ void destruct_entity_lines(ecs::const_handle h, EmitHandle& e, const vec2& sourc
   auto source_f = to_float(source);
   geom::iterate(S{}, geom::iterate_lines, get_shape_parameters<Logic>(h), geom::transform{},
                 [&](const vec2& a, const vec2& b, const cvec4& c, float w, float z) {
-                  add_line_particle(e, source_f, to_float(a), to_float(b), c, w, z, time);
+                  if (z > colour::kZOutline) {
+                    add_line_particle(e, source_f, to_float(a), to_float(b), c, w, z, time);
+                  }
                 });
 }
 
@@ -137,7 +142,7 @@ void explode_entity_volumes(ecs::const_handle h, EmitHandle& e, const vec2& sour
   geom::iterate(S{}, geom::iterate_volumes, get_shape_parameters<Logic>(h), geom::transform{},
                 [&](const vec2& v, fixed r, const cvec4&, const cvec4& c) {
                   if (c.a) {
-                    add_explode_particle(e, source_f, to_float(v), r.to_float(), c, time);
+                    add_explode_particle(e, source_f, to_float(v), 2.f * r.to_float(), c, time);
                   }
                 });
 }
@@ -148,8 +153,6 @@ void destruct_entity_default(ecs::const_handle h, SimInterface&, EmitHandle& e, 
   explode_entity_shapes<Logic, S>(h, e, std::nullopt, 10, std::nullopt, 1.4f);
   destruct_entity_lines<Logic, S>(h, e, source);
   explode_entity_volumes<Logic, S>(h, e, source);  // TODO: box explode should use a box FX shape.
-  // TODO: maybe stop doing dot/line explosions for outlines; instead add outlines to all the lines?
-  // TODO: FX shape z-sorting.
 }
 
 }  // namespace ii::v0

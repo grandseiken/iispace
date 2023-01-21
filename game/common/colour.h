@@ -237,6 +237,7 @@ constexpr auto kCategoryCluster = kSolarizedDarkOrange;
 
 constexpr auto kZBackgroundEffect0 = -104.f;
 constexpr auto kZBackgroundEffect1 = -100.f;
+constexpr auto kZParticleOutline = -98.f;
 constexpr auto kZParticle = -96.f;
 constexpr auto kZOutline = -88.f;
 constexpr auto kZEffect0 = -80.f;
