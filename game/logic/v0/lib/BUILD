@@ -35,6 +35,7 @@ cc_library(
     "particles.h",
     "ship_template.h",
   ],
+  srcs = ["particles.cc"],
   deps = [
     ":components",
     "//game/common:math",

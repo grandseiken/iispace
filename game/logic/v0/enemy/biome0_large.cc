@@ -311,6 +311,9 @@ struct Tractor : ecs::component {
 };
 DEBUG_STRUCT_TUPLE(Tractor, timer, dir, power, ready, spinning, spoke_r);
 
+// TODO: is the shield darken area rendered over FX?
+// TODO: redesign look.
+// TODO: redesign shield status effect visuals.
 struct ShieldHub : ecs::component {
   static constexpr std::uint32_t kBoundingWidth = 28;
   static constexpr sound kDestroySound = sound::kPlayerDestroy;

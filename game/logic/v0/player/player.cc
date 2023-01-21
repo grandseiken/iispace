@@ -271,7 +271,7 @@ struct PlayerLogic : ecs::component {
     explode_entity_shapes<PlayerLogic>(h, e, colour::kWhite0, 18);
     explode_entity_shapes<PlayerLogic>(h, e, c, 21);
     explode_entity_shapes<PlayerLogic>(h, e, colour::kWhite0, 24);
-    // TODO: bomb explosion.
+    // TODO: bomb explosion. Work out how to do really big explosions.
 
     for (std::uint32_t i = 0; i < 64; ++i) {
       auto v = position + from_polar(2 * i * pi<fixed> / 64, radius);
