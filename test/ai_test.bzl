@@ -1,10 +1,10 @@
 load("//test:exe_test.bzl", "exe_test")
 
-def ai_test(mode, players, runs=1, extra_args=[], **kwargs):
+def ai_test(mode, players, runs=1, prefix="", extra_args=[], **kwargs):
   if runs > 1:
     extra_args = extra_args + ["--multithreaded"]
   exe_test(
-    name = "%sp_%s" % (players, mode),
+    name = "%s%sp_%s" % (prefix + "_" if prefix else "", players, mode),
     bin = "//game/tools:ai_replay_synth",
     args = [
       "--verify",
@@ -16,9 +16,9 @@ def ai_test(mode, players, runs=1, extra_args=[], **kwargs):
     **kwargs,
   )
 
-def ai_netsim_test(mode, players, topology = "", extra_args=[], **kwargs):
+def ai_netsim_test(mode, players, topology = "", prefix="", extra_args=[], **kwargs):
   exe_test(
-    name = "netsim_%sp_%s" % (players, mode),
+    name = "netsim_%s%sp_%s" % (prefix + "_" if prefix else "", players, mode),
     bin = "//game/tools:ai_network_sim",
     args = [
       "--mode", mode,

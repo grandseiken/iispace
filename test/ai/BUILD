@@ -17,5 +17,8 @@ ai_test(players = 2, mode = "standard_run")
 ai_test(players = 3, mode = "standard_run")
 ai_test(players = 4, mode = "standard_run")
 
+ai_test(players = 2, mode = "standard_run", prefix = "fixed_seed", extra_args = ["--seed", "1337"])
+ai_test(players = 4, mode = "standard_run", prefix = "fixed_seed", extra_args = ["--seed", "1337"])
+
 ai_netsim_test(players = 3, topology = "ABC", mode = "standard_run")
 ai_netsim_test(players = 4, topology = "ABAB", mode = "standard_run")
