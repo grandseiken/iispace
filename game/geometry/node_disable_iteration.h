@@ -8,10 +8,9 @@
 namespace ii::geom {
 
 template <IterTag DisableI, ShapeNode Node>
-struct disable_iteration {};
+struct disable_iteration : shape_node {};
 
-template <IterTag DisableI, IterTag I, typename Parameters,
-          ShapeNodeWithSubstitution<Parameters> Node>
+template <IterTag DisableI, IterTag I, typename Parameters, ShapeNode Node>
 constexpr void iterate(disable_iteration<DisableI, Node>, I tag, const Parameters& params,
                        const Transform auto& t, IterateFunction<I> auto&& f) {
   if constexpr (!std::is_same_v<DisableI, I>) {

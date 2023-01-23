@@ -6,7 +6,7 @@
 namespace ii::geom {
 
 template <typename T, T Begin, T End, template <T> typename NodeMetaFunction>
-struct for_each {};
+struct for_each : shape_node {};
 
 template <IterTag I, typename T, T Begin, T End, template <T> typename NodeMetaFunction>
 constexpr void iterate(for_each<T, Begin, End, NodeMetaFunction>, I tag, const auto& params,

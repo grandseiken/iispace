@@ -40,7 +40,7 @@ constexpr line_data make_line(const vec2& a, const vec2& b, line_style style,
 
 template <Expression<vec2>, Expression<vec2>, Expression<line_style>,
           Expression<render::flag> = constant<render::flag::kNone>>
-struct line_eval {};
+struct line_eval : shape_node {};
 
 template <Expression<vec2> A, Expression<vec2> B, Expression<line_style> Style,
           Expression<render::flag> RFlags>

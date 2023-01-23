@@ -10,7 +10,7 @@ namespace ii::geom {
 // Definitions.
 //////////////////////////////////////////////////////////////////////////////////
 template <ShapeNode... Nodes>
-struct compound {};
+struct compound : shape_node {};
 
 namespace detail {
 template <ShapeNode Node, ShapeNode... Rest>
@@ -37,7 +37,7 @@ iterate(S, I tag, const Parameters& params, const Transform auto& t, IterateFunc
   t.increment_index();
 }
 
-template <IterTag I, typename Parameters, ShapeNodeWithSubstitution<Parameters>... Nodes>
+template <IterTag I, typename Parameters, ShapeNode... Nodes>
 constexpr void iterate(compound<Nodes...>, I tag, const Parameters& params, const Transform auto& t,
                        IterateFunction<I> auto&& f) {
   (void)tag;

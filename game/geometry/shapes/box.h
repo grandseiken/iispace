@@ -33,7 +33,7 @@ make_box_collider(const vec2& dimensions, shape_flag flags = shape_flag::kNone) 
 }
 
 template <Expression<vec2> Dimensions, Expression<shape_flag> Flags = constant<shape_flag::kNone>>
-struct box_collider_eval {};
+struct box_collider_eval : shape_node {};
 
 template <Expression<vec2> Dimensions, Expression<shape_flag> Flags>
 constexpr auto evaluate(box_collider_eval<Dimensions, Flags>, const auto& params) {
@@ -110,7 +110,7 @@ constexpr box_data make_box(const vec2& dimensions, line_style line, fill_style 
 
 template <Expression<vec2>, Expression<line_style>, Expression<fill_style> = constant<sfill()>,
           Expression<render::flag> = constant<render::flag::kNone>>
-struct box_eval {};
+struct box_eval : shape_node {};
 
 template <Expression<vec2> Dimensions, Expression<line_style> Line, Expression<fill_style> Fill,
           Expression<render::flag> RFlags>

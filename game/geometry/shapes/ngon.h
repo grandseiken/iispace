@@ -75,7 +75,7 @@ make_ngon_collider(ngon_dimensions dimensions, shape_flag flags = shape_flag::kN
 }
 
 template <Expression<ngon_dimensions>, Expression<shape_flag> Flags = constant<shape_flag::kNone>>
-struct ngon_collider_eval {};
+struct ngon_collider_eval : shape_node {};
 
 template <Expression<ngon_dimensions> Dimensions, Expression<shape_flag> Flags>
 constexpr auto evaluate(ngon_collider_eval<Dimensions, Flags>, const auto& params) {
@@ -180,7 +180,7 @@ constexpr ngon_data make_ngon(ngon_dimensions dimensions, ngon_line_style line,
 template <Expression<ngon_dimensions>, Expression<ngon_line_style>,
           Expression<fill_style> = constant<sfill()>,
           Expression<render::flag> = constant<render::flag::kNone>>
-struct ngon_eval {};
+struct ngon_eval : shape_node {};
 
 template <Expression<ngon_dimensions> Dimensions, Expression<ngon_line_style> Line,
           Expression<fill_style> Fill, Expression<render::flag> RFlags>

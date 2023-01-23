@@ -8,6 +8,7 @@
 
 namespace ii::geom {
 
+struct shape_node {};
 struct arbitrary_parameters {};
 struct arbitrary_parameter {
   template <typename T>
@@ -57,21 +58,6 @@ concept ShapeExpressionWithSubstitution = requires(Parameters params) {
                                             { evaluate(E{}, params) } -> Shape;
                                           };
 
-template <typename Node, typename Parameters>
-concept ShapeNodeWithSubstitution =
-    requires(Parameters params, hit_result& hit) {
-      iterate(Node{}, iterate_flags, params, null_transform{}, [](shape_flag) {});
-      iterate(Node{}, iterate_lines, params, null_transform{},
-              [](const vec2&, const vec2&, const cvec4&, float, float) {});
-      iterate(Node{}, iterate_shapes, params, null_transform{}, [](const render::shape&) {});
-      iterate(Node{}, iterate_volumes, params, null_transform{},
-              [](const vec2&, fixed, const cvec4&, const cvec4&) {});
-      iterate(Node{}, iterate_attachment_points, params, null_transform{},
-              [](std::size_t, const vec2&, const vec2&) {});
-      iterate(Node{}, iterate_check_point(shape_flag::kNone, vec2{}), params,
-              convert_local_transform{}, hit);
-    };
-
 template <typename E, typename V>
 concept Expression = ExpressionWithSubstitution<E, V, arbitrary_parameters>;
 
@@ -79,7 +65,7 @@ template <typename E>
 concept ShapeExpression = ShapeExpressionWithSubstitution<E, arbitrary_parameters>;
 
 template <typename Node>
-concept ShapeNode = ShapeNodeWithSubstitution<Node, arbitrary_parameters>;
+concept ShapeNode = std::is_base_of<shape_node, Node>::value || ShapeExpression<Node>;
 
 }  // namespace ii::geom
 

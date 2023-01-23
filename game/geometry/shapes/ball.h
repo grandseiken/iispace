@@ -40,7 +40,7 @@ make_ball_collider(ball_dimensions dimensions, shape_flag flags = shape_flag::kN
 }
 
 template <Expression<ball_dimensions> Dimensions, Expression<shape_flag> Flags>
-struct ball_collider_eval {};
+struct ball_collider_eval : shape_node {};
 
 template <Expression<fixed> Dimensions, Expression<shape_flag> Flags>
 constexpr auto evaluate(ball_collider_eval<Dimensions, Flags>, const auto& params) {
@@ -123,7 +123,7 @@ constexpr ball_data make_ball(ball_dimensions dimensions, line_style line,
 template <Expression<ball_dimensions>, Expression<line_style>,
           Expression<fill_style> = constant<sfill()>,
           Expression<render::flag> = constant<render::flag::kNone>>
-struct ball_eval {};
+struct ball_eval : shape_node {};
 
 template <Expression<ball_dimensions> Dimensions, Expression<line_style> Line,
           Expression<fill_style> Fill, Expression<render::flag> RFlags>

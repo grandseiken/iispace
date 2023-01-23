@@ -15,14 +15,13 @@ namespace ii::geom {
 // Definitions.
 //////////////////////////////////////////////////////////////////////////////////
 template <Expression<bool> Condition, ShapeNode TrueNode, ShapeNode FalseNode>
-struct conditional_eval {};
+struct conditional_eval : shape_node {};
 
 //////////////////////////////////////////////////////////////////////////////////
 // Iteration functions.
 //////////////////////////////////////////////////////////////////////////////////
 template <IterTag I, typename Parameters, ExpressionWithSubstitution<bool, Parameters> Condition,
-          ShapeNodeWithSubstitution<Parameters> TrueNode,
-          ShapeNodeWithSubstitution<Parameters> FalseNode>
+          ShapeNode TrueNode, ShapeNode FalseNode>
 constexpr void
 iterate(conditional_eval<Condition, TrueNode, FalseNode>, I tag, const Parameters& params,
         const Transform auto& t, IterateFunction<I> auto&& f) {

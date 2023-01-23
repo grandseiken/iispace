@@ -13,22 +13,22 @@ namespace ii::geom {
 // Definitions.
 //////////////////////////////////////////////////////////////////////////////////
 template <Expression<vec2> V, ShapeNode Node>
-struct translate_eval {};
+struct translate_eval : shape_node {};
 template <Expression<fixed> Angle, ShapeNode Node>
-struct rotate_eval {};
+struct rotate_eval : shape_node {};
 
 //////////////////////////////////////////////////////////////////////////////////
 // Iteration functions.
 //////////////////////////////////////////////////////////////////////////////////
 template <IterTag I, typename Parameters, ExpressionWithSubstitution<vec2, Parameters> V,
-          ShapeNodeWithSubstitution<Parameters> Node>
+          ShapeNode Node>
 constexpr void iterate(translate_eval<V, Node>, I tag, const Parameters& params,
                        const Transform auto& t, IterateFunction<I> auto&& f) {
   iterate(Node{}, tag, params, t.translate(vec2{evaluate(V{}, params)}), f);
 }
 
 template <IterTag I, typename Parameters, ExpressionWithSubstitution<fixed, Parameters> Angle,
-          ShapeNodeWithSubstitution<Parameters> Node>
+          ShapeNode Node>
 constexpr void iterate(rotate_eval<Angle, Node>, I tag, const Parameters& params,
                        const Transform auto& t, IterateFunction<I> auto&& f) {
   iterate(Node{}, tag, params, t.rotate(fixed{evaluate(Angle{}, params)}), f);
