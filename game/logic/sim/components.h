@@ -5,6 +5,7 @@
 #include "game/common/struct_tuple.h"
 #include "game/common/ustring.h"
 #include "game/geometry/enums.h"
+#include "game/geometry/iteration.h"
 #include "game/logic/ecs/index.h"
 #include "game/logic/sim/io/output.h"
 #include "game/mixer/sound.h"
@@ -56,23 +57,11 @@ struct Collision : ecs::component {
   shape_flag flags = shape_flag::kNone;
   fixed bounding_width = 0;
 
-  struct hit_result {
-    shape_flag mask = shape_flag::kNone;
-    std::vector<vec2> shape_centres;
-  };
-
-  using check_point_t = hit_result(ecs::const_handle, const vec2&, shape_flag);
-  using check_line_t = hit_result(ecs::const_handle, const vec2&, const vec2&, shape_flag);
-  using check_ball_t = hit_result(ecs::const_handle, const vec2&, fixed, shape_flag);
-  using check_convex_t = hit_result(ecs::const_handle, std::span<const vec2>, shape_flag);
-
-  sfn::ptr<check_point_t> check_point = nullptr;
-  sfn::ptr<check_line_t> check_line = nullptr;
-  sfn::ptr<check_ball_t> check_ball = nullptr;
-  sfn::ptr<check_convex_t> check_convex = nullptr;
+  using check_collision_t = geom::hit_result(ecs::const_handle,
+                                             const geom::iterate_check_collision_t&);
+  sfn::ptr<check_collision_t> check_collision = nullptr;
 };
-DEBUG_STRUCT_TUPLE(Collision, flags, bounding_width, check_point, check_line, check_ball,
-                   check_convex);
+DEBUG_STRUCT_TUPLE(Collision, flags, bounding_width, check_collision);
 
 struct Update : ecs::component {
   bool skip_update = false;

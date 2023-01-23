@@ -31,15 +31,15 @@ using null_shape = compound<>;
 // Iteration functions.
 //////////////////////////////////////////////////////////////////////////////////
 template <IterTag I, typename Parameters, ShapeExpressionWithSubstitution<Parameters> S>
-constexpr void iterate(S, I tag, const Parameters& params, const Transform auto& t,
-                       const IterateFunction<I> auto& f) {
+constexpr void
+iterate(S, I tag, const Parameters& params, const Transform auto& t, IterateFunction<I> auto&& f) {
   evaluate(S{}, params).iterate(tag, t, f);
   t.increment_index();
 }
 
 template <IterTag I, typename Parameters, ShapeNodeWithSubstitution<Parameters>... Nodes>
 constexpr void iterate(compound<Nodes...>, I tag, const Parameters& params, const Transform auto& t,
-                       const IterateFunction<I> auto& f) {
+                       IterateFunction<I> auto&& f) {
   (void)tag;
   (void)params;
   (void)t;

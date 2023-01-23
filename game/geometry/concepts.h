@@ -36,24 +36,18 @@ constexpr arbitrary_parameter get(const arbitrary_parameters&) {
 }
 
 template <typename T>
-concept Shape = requires(T x) {
-                  x.iterate(iterate_flags, null_transform{}, [](shape_flag) {});
-                  x.iterate(iterate_lines, null_transform{},
-                            [](const vec2&, const vec2&, const cvec4&, float, float) {});
-                  x.iterate(iterate_shapes, null_transform{}, [](const render::shape&) {});
-                  x.iterate(iterate_volumes, null_transform{},
-                            [](const vec2&, fixed, const cvec4&, const cvec4&) {});
-                  x.iterate(iterate_attachment_points, null_transform{},
-                            [](std::size_t, const vec2&, const vec2&) {});
-                  x.iterate(iterate_check_point(shape_flag::kNone), null_transform{},
-                            [](shape_flag, const vec2&) {});
-                  x.iterate(iterate_check_line(shape_flag::kNone), null_transform{},
-                            [](shape_flag, const vec2&) {});
-                  x.iterate(iterate_check_ball(shape_flag::kNone), null_transform{},
-                            [](shape_flag, const vec2&) {});
-                  x.iterate(iterate_check_convex(shape_flag::kNone), null_transform{},
-                            [](shape_flag, const vec2&) {});
-                };
+concept Shape =
+    requires(T x, hit_result& hit) {
+      x.iterate(iterate_flags, null_transform{}, [](shape_flag) {});
+      x.iterate(iterate_lines, null_transform{},
+                [](const vec2&, const vec2&, const cvec4&, float, float) {});
+      x.iterate(iterate_shapes, null_transform{}, [](const render::shape&) {});
+      x.iterate(iterate_volumes, null_transform{},
+                [](const vec2&, fixed, const cvec4&, const cvec4&) {});
+      x.iterate(iterate_attachment_points, null_transform{},
+                [](std::size_t, const vec2&, const vec2&) {});
+      x.iterate(iterate_check_point(shape_flag::kNone, vec2{}), convert_local_transform{}, hit);
+    };
 
 template <typename E, typename V, typename Parameters>
 concept ExpressionWithSubstitution = requires(Parameters params) { V{evaluate(E{}, params)}; };
@@ -65,7 +59,7 @@ concept ShapeExpressionWithSubstitution = requires(Parameters params) {
 
 template <typename Node, typename Parameters>
 concept ShapeNodeWithSubstitution =
-    requires(Parameters params) {
+    requires(Parameters params, hit_result& hit) {
       iterate(Node{}, iterate_flags, params, null_transform{}, [](shape_flag) {});
       iterate(Node{}, iterate_lines, params, null_transform{},
               [](const vec2&, const vec2&, const cvec4&, float, float) {});
@@ -74,14 +68,8 @@ concept ShapeNodeWithSubstitution =
               [](const vec2&, fixed, const cvec4&, const cvec4&) {});
       iterate(Node{}, iterate_attachment_points, params, null_transform{},
               [](std::size_t, const vec2&, const vec2&) {});
-      iterate(Node{}, iterate_check_point(shape_flag::kNone), params, null_transform{},
-              [](shape_flag, const vec2&) {});
-      iterate(Node{}, iterate_check_line(shape_flag::kNone), params, null_transform{},
-              [](shape_flag, const vec2&) {});
-      iterate(Node{}, iterate_check_ball(shape_flag::kNone), params, null_transform{},
-              [](shape_flag, const vec2&) {});
-      iterate(Node{}, iterate_check_convex(shape_flag::kNone), params, null_transform{},
-              [](shape_flag, const vec2&) {});
+      iterate(Node{}, iterate_check_point(shape_flag::kNone, vec2{}), params,
+              convert_local_transform{}, hit);
     };
 
 template <typename E, typename V>

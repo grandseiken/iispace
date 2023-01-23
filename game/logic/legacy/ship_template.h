@@ -133,7 +133,7 @@ void destruct_entity_default(ecs::const_handle h, SimInterface&, EmitHandle& e, 
 template <ecs::Component Logic, geom::ShapeNode S = typename Logic::shape>
 constexpr shape_flag get_shape_flags() {
   shape_flag result = shape_flag::kNone;
-  geom::iterate(S{}, geom::iterate_flags, geom::arbitrary_parameters{}, geom::transform{},
+  geom::iterate(S{}, geom::iterate_flags, geom::arbitrary_parameters{}, geom::null_transform{},
                 [&](shape_flag f) constexpr { result |= f; });
   if constexpr (requires { Logic::kShapeFlags; }) {
     result |= Logic::kShapeFlags;
@@ -142,31 +142,34 @@ constexpr shape_flag get_shape_flags() {
 }
 
 template <geom::ShapeNode S>
-Collision::hit_result shape_check_point(const auto& parameters, const vec2& v, shape_flag mask) {
-  Collision::hit_result result;
-  geom::iterate(S{}, geom::iterate_check_point(mask), parameters, geom::convert_local_transform{v},
-                [&](shape_flag f, const vec2&) { result.mask |= f; });
+geom::hit_result
+shape_check_collision(const auto& parameters, const geom::iterate_check_collision_t& it) {
+  geom::hit_result result;
+  geom::iterate(S{}, it, parameters, geom::convert_local_transform{}, result);
   return result;
 }
 
 template <geom::ShapeNode S>
-Collision::hit_result
-shape_check_point_legacy(const auto& parameters, const vec2& v, shape_flag mask) {
-  Collision::hit_result result;
-  geom::iterate(S{}, geom::iterate_check_point(mask), parameters,
-                geom::legacy_convert_local_transform{v},
-                [&](shape_flag f, const vec2&) { result.mask |= f; });
+geom::hit_result
+shape_check_collision_legacy(const auto& parameters, const geom::iterate_check_collision_t& it) {
+  geom::hit_result result;
+  if (const auto* c = std::get_if<geom::check_point>(&it.check)) {
+    geom::iterate(S{}, geom::iterate_check_point(it.mask, vec2{0}), parameters,
+                  geom::legacy_convert_local_transform{c->v}, result);
+  }
   return result;
 }
 
 template <ecs::Component Logic, geom::ShapeNode S = typename Logic::shape>
-Collision::hit_result ship_check_point(ecs::const_handle h, const vec2& v, shape_flag mask) {
-  return shape_check_point<S>(get_shape_parameters<Logic>(h), v, mask);
+geom::hit_result
+ship_check_collision(ecs::const_handle h, const geom::iterate_check_collision_t& it) {
+  return shape_check_collision<S>(get_shape_parameters<Logic>(h), it);
 }
 
 template <ecs::Component Logic, geom::ShapeNode S = typename Logic::shape>
-Collision::hit_result ship_check_point_legacy(ecs::const_handle h, const vec2& v, shape_flag mask) {
-  return shape_check_point_legacy<S>(get_shape_parameters<Logic>(h), v, mask);
+geom::hit_result
+ship_check_collision_legacy(ecs::const_handle h, const geom::iterate_check_collision_t& it) {
+  return shape_check_collision_legacy<S>(get_shape_parameters<Logic>(h), it);
 }
 
 //////////////////////////////////////////////////////////////////////////////////
@@ -242,8 +245,8 @@ ecs::handle create_ship(SimInterface& sim, const vec2& position, fixed rotation 
     }
     h.add(Collision{.flags = collision_flags,
                     .bounding_width = bounding_width,
-                    .check_point = sim.is_legacy() ? &ship_check_point_legacy<Logic, S>
-                                                   : &ship_check_point<Logic, S>});
+                    .check_collision = sim.is_legacy() ? &ship_check_collision_legacy<Logic, S>
+                                                       : &ship_check_collision<Logic, S>});
   }
 
   constexpr auto render = ecs::call<&render_entity_shape<Logic, S>>;

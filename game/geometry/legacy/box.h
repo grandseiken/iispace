@@ -15,19 +15,24 @@ struct box_data : shape_data_base {
   unsigned char index = 0;
   shape_flag flags = shape_flag::kNone;
 
-  constexpr void
-  iterate(iterate_check_point_t it, const Transform auto& t, const HitFunction auto& f) const {
-    if (+(flags & it.mask) && abs((*t).x) < dimensions.x && abs((*t).y) < dimensions.y) {
-      std::invoke(f, flags & it.mask, t.inverse_transform(vec2{0}));
-    }
-  }
-
-  constexpr void iterate(iterate_flags_t, const Transform auto&, const FlagFunction auto& f) const {
+  constexpr void iterate(iterate_flags_t, const null_transform&, FlagFunction auto&& f) const {
     std::invoke(f, flags);
   }
 
   constexpr void
-  iterate(iterate_lines_t, const Transform auto& t, const LineFunction auto& f) const {
+  iterate(iterate_check_collision_t it, const Transform auto& t, hit_result& hit) const {
+    if (!(flags & it.mask)) {
+      return;
+    }
+    if (const auto* c = std::get_if<check_point>(&it.check)) {
+      auto v = t.transform(c->v);
+      if (abs(v.x) < dimensions.x && abs(v.y) < dimensions.y) {
+        hit.add(flags & it.mask);
+      }
+    }
+  }
+
+  constexpr void iterate(iterate_lines_t, const Transform auto& t, LineFunction auto&& f) const {
     auto a = *t.translate({dimensions.x, dimensions.y});
     auto b = *t.translate({-dimensions.x, dimensions.y});
     auto c = *t.translate({-dimensions.x, -dimensions.y});
@@ -39,8 +44,7 @@ struct box_data : shape_data_base {
     std::invoke(f, d, a, colour, 1.f, 0.f);
   }
 
-  constexpr void
-  iterate(iterate_shapes_t, const Transform auto& t, const ShapeFunction auto& f) const {
+  constexpr void iterate(iterate_shapes_t, const Transform auto& t, ShapeFunction auto&& f) const {
     std::invoke(f,
                 render::shape{
                     .origin = to_float(*t),
@@ -52,7 +56,7 @@ struct box_data : shape_data_base {
   }
 
   constexpr void
-  iterate(iterate_volumes_t, const Transform auto& t, const VolumeFunction auto& f) const {
+  iterate(iterate_volumes_t, const Transform auto& t, VolumeFunction auto&& f) const {
     std::invoke(f, *t, 0_fx, colour, colour::kZero);
   }
 };

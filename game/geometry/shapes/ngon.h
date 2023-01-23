@@ -61,95 +61,12 @@ struct ngon_collider_data : shape_data_base {
   ngon_dimensions dimensions;
   shape_flag flags = shape_flag::kNone;
 
-  constexpr void
-  iterate(iterate_check_point_t it, const Transform auto& t, const HitFunction auto& f) const {
-    if (!(flags & it.mask)) {
-      return;
-    }
-    auto v = *t;
-    auto theta = angle(v);
-    if (theta < 0) {
-      theta += 2 * pi<fixed>;
-    }
-    auto a = 2 * pi<fixed> / dimensions.sides;
-    auto at = (theta % a) / a;
-    auto dt = (1 + 2 * at * (at - 1) * (1 - cos(a)));
-    auto d_sq = dt * square(dimensions.radius);
-    auto i_sq = dt * square(dimensions.inner_radius);
-    if (theta <= a * dimensions.segments && length_squared(v) <= d_sq &&
-        length_squared(v) >= i_sq) {
-      std::invoke(f, flags & it.mask, t.inverse_transform(vec2{0}));
-    }
-  }
-
-  constexpr void
-  iterate(iterate_check_line_t it, const Transform auto& t, const HitFunction auto& f) const {
-    if (!(flags & it.mask)) {
-      return;
-    }
-    std::array<vec2, 4> va{};
-    auto line_a = t.get_a();
-    auto line_b = t.get_b();
-    for (std::uint32_t i = 0; i < dimensions.segments; ++i) {
-      auto convex = convex_segment(va, i);
-      if (intersect_convex_line(convex, line_a, line_b)) {
-        std::invoke(f, flags & it.mask, t.inverse_transform(vec2{0}));
-        break;
-      }
-    }
-  }
-
-  constexpr void
-  iterate(iterate_check_ball_t it, const Transform auto& t, const HitFunction auto& f) const {
-    if (!(flags & it.mask)) {
-      return;
-    }
-    std::array<vec2, 4> va{};
-    auto c = *t;
-    for (std::uint32_t i = 0; i < dimensions.segments; ++i) {
-      auto convex = convex_segment(va, i);
-      if (intersect_convex_ball(convex, c, t.r)) {
-        std::invoke(f, flags & it.mask, t.inverse_transform(vec2{0}));
-        break;
-      }
-    }
-  }
-
-  constexpr void
-  iterate(iterate_check_convex_t it, const Transform auto& t, const HitFunction auto& f) const {
-    if (!(flags & it.mask)) {
-      return;
-    }
-    auto va0 = *t;
-    std::array<vec2, 4> va1{};
-    for (std::uint32_t i = 0; i < dimensions.segments; ++i) {
-      auto convex = convex_segment(va1, i);
-      if (intersect_convex_convex(convex, va0)) {
-        std::invoke(f, flags & it.mask, t.inverse_transform(vec2{0}));
-        break;
-      }
-    }
-  }
-
-  constexpr void iterate(iterate_flags_t, const Transform auto&, const FlagFunction auto& f) const {
+  constexpr void iterate(iterate_flags_t, const null_transform&, FlagFunction auto&& f) const {
     std::invoke(f, flags);
   }
 
-  constexpr std::span<const vec2> convex_segment(std::array<vec2, 4>& va, std::uint32_t i) const {
-    if (dimensions.inner_radius) {
-      vec2 a = ::rotate(vec2{1, 0}, 2 * i * pi<fixed> / dimensions.sides);
-      vec2 b = ::rotate(vec2{1, 0}, 2 * (i + 1) * pi<fixed> / dimensions.sides);
-      va[0] = dimensions.inner_radius * a;
-      va[1] = dimensions.inner_radius * b;
-      va[2] = dimensions.radius * b;
-      va[3] = dimensions.radius * a;
-      return {va.begin(), va.begin() + 4};
-    }
-    va[0] = vec2{0};
-    va[1] = ::rotate(vec2{dimensions.radius, 0}, 2 * i * pi<fixed> / dimensions.sides);
-    va[2] = ::rotate(vec2{dimensions.radius, 0}, 2 * (i + 1) * pi<fixed> / dimensions.sides);
-    return {va.begin(), va.begin() + 3};
-  }
+  void
+  iterate(iterate_check_collision_t it, const convert_local_transform& t, hit_result& hit) const;
 };
 
 constexpr ngon_collider_data
@@ -175,8 +92,7 @@ struct ngon_data : shape_data_base {
   fill_style fill;
   render::flag flags = render::flag::kNone;
 
-  constexpr void
-  iterate(iterate_lines_t, const Transform auto& t, const LineFunction auto& f) const {
+  constexpr void iterate(iterate_lines_t, const Transform auto& t, LineFunction auto&& f) const {
     if (!line.colour0.a) {
       return;
     }
@@ -213,8 +129,7 @@ struct ngon_data : shape_data_base {
     }
   }
 
-  constexpr void
-  iterate(iterate_shapes_t, const Transform auto& t, const ShapeFunction auto& f) const {
+  constexpr void iterate(iterate_shapes_t, const Transform auto& t, ShapeFunction auto&& f) const {
     if (line.colour0.a || line.colour1.a) {
       std::invoke(f,
                   render::shape{
@@ -252,7 +167,7 @@ struct ngon_data : shape_data_base {
   }
 
   constexpr void
-  iterate(iterate_volumes_t, const Transform auto& t, const VolumeFunction auto& f) const {
+  iterate(iterate_volumes_t, const Transform auto& t, VolumeFunction auto&& f) const {
     std::invoke(f, *t, dimensions.radius, line.colour0, fill.colour1);
   }
 };

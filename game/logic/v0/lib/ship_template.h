@@ -92,7 +92,7 @@ void render_entity_shape(ecs::const_handle h, const Health* health, const EnemyS
 template <ecs::Component Logic, geom::ShapeNode S = typename Logic::shape>
 constexpr shape_flag get_shape_flags() {
   shape_flag result = shape_flag::kNone;
-  geom::iterate(S{}, geom::iterate_flags, geom::arbitrary_parameters{}, geom::transform{},
+  geom::iterate(S{}, geom::iterate_flags, geom::arbitrary_parameters{}, geom::null_transform{},
                 [&](shape_flag f) constexpr { result |= f; });
   if constexpr (requires { Logic::kShapeFlags; }) {
     result |= Logic::kShapeFlags;
@@ -101,73 +101,17 @@ constexpr shape_flag get_shape_flags() {
 }
 
 template <geom::ShapeNode S>
-Collision::hit_result shape_check_point(const auto& parameters, const vec2& v, shape_flag mask) {
-  Collision::hit_result result;
-  geom::iterate(S{}, geom::iterate_check_point(mask), parameters, geom::convert_local_transform{v},
-                [&](shape_flag f, const vec2& c) {
-                  result.mask |= f;
-                  result.shape_centres.emplace_back(c);
-                });
-  return result;
-}
-
-template <geom::ShapeNode S>
-Collision::hit_result
-shape_check_line(const auto& parameters, const vec2& a, const vec2& b, shape_flag mask) {
-  Collision::hit_result result;
-  geom::iterate(S{}, geom::iterate_check_line(mask), parameters,
-                geom::convert_local_line_transform{a, b}, [&](shape_flag f, const vec2& c) {
-                  result.mask |= f;
-                  result.shape_centres.emplace_back(c);
-                });
-  return result;
-}
-
-template <geom::ShapeNode S>
-Collision::hit_result
-shape_check_ball(const auto& parameters, const vec2& centre, fixed radius, shape_flag mask) {
-  Collision::hit_result result;
-  geom::iterate(S{}, geom::iterate_check_ball(mask), parameters,
-                geom::convert_local_transform{centre, radius}, [&](shape_flag f, const vec2& c) {
-                  result.mask |= f;
-                  result.shape_centres.emplace_back(c);
-                });
-  return result;
-}
-
-template <geom::ShapeNode S>
-Collision::hit_result
-shape_check_convex(const auto& parameters, std::span<const vec2> convex, shape_flag mask) {
-  Collision::hit_result result;
-  geom::iterate(S{}, geom::iterate_check_convex(mask), parameters,
-                geom::convert_local_convex_transform{convex}, [&](shape_flag f, const vec2& c) {
-                  result.mask |= f;
-                  result.shape_centres.emplace_back(c);
-                });
+geom::hit_result
+shape_check_collision(const auto& parameters, const geom::iterate_check_collision_t& it) {
+  geom::hit_result result;
+  geom::iterate(S{}, it, parameters, geom::convert_local_transform{}, result);
   return result;
 }
 
 template <ecs::Component Logic, geom::ShapeNode S = typename Logic::shape>
-Collision::hit_result ship_check_point(ecs::const_handle h, const vec2& v, shape_flag mask) {
-  return shape_check_point<S>(get_shape_parameters<Logic>(h), v, mask);
-}
-
-template <ecs::Component Logic, geom::ShapeNode S = typename Logic::shape>
-Collision::hit_result
-ship_check_line(ecs::const_handle h, const vec2& a, const vec2& b, shape_flag mask) {
-  return shape_check_line<S>(get_shape_parameters<Logic>(h), a, b, mask);
-}
-
-template <ecs::Component Logic, geom::ShapeNode S = typename Logic::shape>
-Collision::hit_result
-ship_check_ball(ecs::const_handle h, const vec2& centre, fixed radius, shape_flag mask) {
-  return shape_check_ball<S>(get_shape_parameters<Logic>(h), centre, radius, mask);
-}
-
-template <ecs::Component Logic, geom::ShapeNode S = typename Logic::shape>
-Collision::hit_result
-ship_check_convex(ecs::const_handle h, std::span<const vec2> convex, shape_flag mask) {
-  return shape_check_convex<S>(get_shape_parameters<Logic>(h), convex, mask);
+geom::hit_result
+ship_check_collision(ecs::const_handle h, const geom::iterate_check_collision_t& it) {
+  return shape_check_collision<S>(get_shape_parameters<Logic>(h), it);
 }
 
 //////////////////////////////////////////////////////////////////////////////////
@@ -187,10 +131,7 @@ ecs::handle add_collision(ecs::handle h, fixed bounding_width) {
   static_assert(+collision_flags);
   h.add(Collision{.flags = collision_flags,
                   .bounding_width = bounding_width,
-                  .check_point = &ship_check_point<Logic, S>,
-                  .check_line = &ship_check_line<Logic, S>,
-                  .check_ball = &ship_check_ball<Logic, S>,
-                  .check_convex = &ship_check_convex<Logic, S>});
+                  .check_collision = &ship_check_collision<Logic, S>});
   return h;
 }
 

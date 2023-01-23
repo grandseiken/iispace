@@ -17,26 +17,27 @@ struct polyarc_data : shape_data_base {
   unsigned char index = 0;
   shape_flag flags = shape_flag::kNone;
 
-  constexpr void
-  iterate(iterate_check_point_t it, const Transform auto& t, const HitFunction auto& f) const {
-    if (!(flags & it.mask)) {
-      return;
-    }
-    auto v = *t;
-    auto theta = angle(v);
-    auto r = length(v);
-    if (0 <= theta && theta <= (2 * pi<fixed> * segments) / sides && r >= radius - 10 &&
-        r < radius) {
-      std::invoke(f, flags & it.mask, t.inverse_transform(vec2{0}));
-    }
-  }
-
-  constexpr void iterate(iterate_flags_t, const Transform auto&, const FlagFunction auto& f) const {
+  constexpr void iterate(iterate_flags_t, const null_transform&, FlagFunction auto&& f) const {
     std::invoke(f, flags);
   }
 
   constexpr void
-  iterate(iterate_lines_t, const Transform auto& t, const LineFunction auto& f) const {
+  iterate(iterate_check_collision_t it, const Transform auto& t, hit_result& hit) const {
+    if (!(flags & it.mask)) {
+      return;
+    }
+    if (const auto* c = std::get_if<check_point>(&it.check)) {
+      auto v = t.transform(c->v);
+      auto theta = angle(v);
+      auto r = length(v);
+      if (0 <= theta && theta <= (2 * pi<fixed> * segments) / sides && r >= radius - 10 &&
+          r < radius) {
+        hit.add(flags & it.mask);
+      }
+    }
+  }
+
+  constexpr void iterate(iterate_lines_t, const Transform auto& t, LineFunction auto&& f) const {
     for (std::uint32_t i = 0; sides >= 2 && i < sides && i < segments; ++i) {
       auto a = from_polar(i * 2 * pi<fixed> / sides, radius);
       auto b = from_polar((i + 1) * 2 * pi<fixed> / sides, radius);
@@ -44,8 +45,7 @@ struct polyarc_data : shape_data_base {
     }
   }
 
-  constexpr void
-  iterate(iterate_shapes_t, const Transform auto& t, const ShapeFunction auto& f) const {
+  constexpr void iterate(iterate_shapes_t, const Transform auto& t, ShapeFunction auto&& f) const {
     std::invoke(
         f,
         render::shape{
@@ -58,7 +58,7 @@ struct polyarc_data : shape_data_base {
   }
 
   constexpr void
-  iterate(iterate_volumes_t, const Transform auto& t, const VolumeFunction auto& f) const {
+  iterate(iterate_volumes_t, const Transform auto& t, VolumeFunction auto&& f) const {
     std::invoke(f, *t, 0_fx, colour, colour::kZero);
   }
 };

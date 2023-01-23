@@ -1,6 +1,7 @@
 #ifndef II_GAME_GEOMETRY_SHAPES_LINE_H
 #define II_GAME_GEOMETRY_SHAPES_LINE_H
 #include "game/geometry/expressions.h"
+#include "game/geometry/node.h"
 #include "game/geometry/shapes/data.h"
 #include "game/render/data/shapes.h"
 
@@ -17,16 +18,14 @@ struct line_data : shape_data_base {
   line_style style;
   render::flag flags = render::flag::kNone;
 
-  constexpr void
-  iterate(iterate_lines_t, const Transform auto& t, const LineFunction auto& f) const {
+  constexpr void iterate(iterate_lines_t, const Transform auto& t, LineFunction auto&& f) const {
     if (style.colour0.a) {
       // TODO: need line gradients to match rendering, if we use them.
       std::invoke(f, *t.translate(a), *t.translate(b), style.colour0, style.width, style.z);
     }
   }
 
-  constexpr void
-  iterate(iterate_shapes_t, const Transform auto& t, const ShapeFunction auto& f) const {
+  constexpr void iterate(iterate_shapes_t, const Transform auto& t, ShapeFunction auto&& f) const {
     auto s = render::shape::line(to_float(*t.translate(a)), to_float(*t.translate(b)),
                                  style.colour0, style.colour1, style.z, style.width, style.index);
     s.flags = flags;

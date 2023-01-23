@@ -13,20 +13,18 @@ struct line_data : shape_data_base {
   cvec4 colour{0.f};
   unsigned char index = 0;
 
-  constexpr void
-  iterate(iterate_lines_t, const Transform auto& t, const LineFunction auto& f) const {
+  constexpr void iterate(iterate_lines_t, const Transform auto& t, LineFunction auto&& f) const {
     std::invoke(f, *t.translate(a), *t.translate(b), colour, 1.f, 0.f);
   }
 
-  constexpr void
-  iterate(iterate_shapes_t, const Transform auto& t, const ShapeFunction auto& f) const {
+  constexpr void iterate(iterate_shapes_t, const Transform auto& t, ShapeFunction auto&& f) const {
     std::invoke(f,
                 render::shape::line(to_float(*t.translate(a)), to_float(*t.translate(b)), colour,
                                     0.f, 1.f, index));
   }
 
   constexpr void
-  iterate(iterate_volumes_t, const Transform auto& t, const VolumeFunction auto& f) const {
+  iterate(iterate_volumes_t, const Transform auto& t, VolumeFunction auto&& f) const {
     std::invoke(f, *t.translate((a + b) / 2), 0_fx, colour, colour::kZero);
   }
 };

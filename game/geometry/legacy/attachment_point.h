@@ -12,7 +12,7 @@ struct attachment_point_data : shape_data_base {
   vec2 d{0};
 
   constexpr void iterate(iterate_attachment_points_t, const Transform auto& t,
-                         const AttachmentPointFunction auto& f) const {
+                         AttachmentPointFunction auto&& f) const {
     std::invoke(f, index, *t, *t.translate(d) - *t);
   }
 };

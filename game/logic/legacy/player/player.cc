@@ -58,8 +58,8 @@ struct Shot : ecs::component {
     bool destroy = false;
     bool destroy_particles = false;
     auto generation = sim.index().generation();
-    auto collision = sim.collide_point(
-        transform.centre, shape_flag::kVulnerable | shape_flag::kShield | shape_flag::kWeakShield);
+    auto collision = sim.collide(geom::iterate_check_point(
+        shape_flag::kVulnerable | shape_flag::kShield | shape_flag::kWeakShield, transform.centre));
     for (const auto& e : collision) {
       if (+(e.hit_mask & shape_flag::kVulnerable)) {
         auto type = is_predicted ? damage_type::kPredicted
@@ -76,8 +76,8 @@ struct Shot : ecs::component {
     if (!destroy) {
       // Compatibility: need to rerun the collision check if new entities might have spawned.
       if (generation != sim.index().generation()) {
-        collision =
-            sim.collide_point(transform.centre, shape_flag::kShield | shape_flag::kWeakShield);
+        collision = sim.collide(geom::iterate_check_point(
+            shape_flag::kShield | shape_flag::kWeakShield, transform.centre));
       }
       for (const auto& e : collision) {
         if (!e.h.has<Destroy>() &&
@@ -257,7 +257,8 @@ struct PlayerLogic : ecs::component {
     }
 
     // Damage.
-    if (!pc.is_predicted && sim.collide_point_any(transform.centre, shape_flag::kDangerous)) {
+    if (!pc.is_predicted &&
+        sim.collide_any(geom::iterate_check_point(shape_flag::kDangerous, transform.centre))) {
       damage(h, pc, score, transform, sim);
     }
   }

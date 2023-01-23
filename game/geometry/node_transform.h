@@ -23,14 +23,14 @@ struct rotate_eval {};
 template <IterTag I, typename Parameters, ExpressionWithSubstitution<vec2, Parameters> V,
           ShapeNodeWithSubstitution<Parameters> Node>
 constexpr void iterate(translate_eval<V, Node>, I tag, const Parameters& params,
-                       const Transform auto& t, const IterateFunction<I> auto& f) {
+                       const Transform auto& t, IterateFunction<I> auto&& f) {
   iterate(Node{}, tag, params, t.translate(vec2{evaluate(V{}, params)}), f);
 }
 
 template <IterTag I, typename Parameters, ExpressionWithSubstitution<fixed, Parameters> Angle,
           ShapeNodeWithSubstitution<Parameters> Node>
 constexpr void iterate(rotate_eval<Angle, Node>, I tag, const Parameters& params,
-                       const Transform auto& t, const IterateFunction<I> auto& f) {
+                       const Transform auto& t, IterateFunction<I> auto&& f) {
   iterate(Node{}, tag, params, t.rotate(fixed{evaluate(Angle{}, params)}), f);
 }
 

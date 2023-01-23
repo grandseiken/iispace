@@ -23,6 +23,9 @@ struct initial_conditions;
 struct input_frame;
 struct run_event;
 struct sim_results;
+namespace geom {
+struct iterate_check_collision_t;
+}  // namespace geom
 namespace render {
 struct player_info;
 struct shape;
@@ -100,14 +103,8 @@ public:
     fixed distance_sq = 0;
   };
 
-  bool collide_point_any(const vec2& point, shape_flag mask) const;
-  bool collide_line_any(const vec2& a, const vec2& b, shape_flag mask) const;
-  bool collide_ball_any(const vec2& centre, fixed radius, shape_flag mask) const;
-  bool collide_convex_any(std::span<const vec2> convex, shape_flag mask) const;
-  std::vector<collision_info> collide_point(const vec2& point, shape_flag mask) const;
-  std::vector<collision_info> collide_line(const vec2& a, const vec2& b, shape_flag mask) const;
-  std::vector<collision_info> collide_ball(const vec2& centre, fixed radius, shape_flag mask) const;
-  std::vector<collision_info> collide_convex(std::span<const vec2> convex, shape_flag mask) const;
+  bool collide_any(const geom::iterate_check_collision_t&) const;
+  std::vector<collision_info> collide(const geom::iterate_check_collision_t&) const;
   bool is_on_screen(const vec2& point) const;
   vec2 rotate_compatibility(const vec2& v, fixed theta) const;
 

@@ -6,28 +6,51 @@
 #include <functional>
 #include <span>
 #include <type_traits>
+#include <variant>
 
 namespace ii::render {
 struct shape;
 }  // namespace ii::render
 namespace ii::geom {
 
+struct check_point {
+  vec2 v{0};
+};
+
+struct check_line {
+  vec2 a{0};
+  vec2 b{0};
+};
+
+struct check_ball {
+  vec2 c{0};
+  fixed r = 0;
+};
+
+struct check_convex {
+  std::span<const vec2> vs;
+};
+
+struct hit_result {
+  shape_flag mask = shape_flag::kNone;
+  std::vector<vec2> shape_centres;
+
+  void add(shape_flag hit_mask) { mask |= hit_mask; }
+
+  void add(shape_flag hit_mask, const vec2& v) {
+    mask |= hit_mask;
+    shape_centres.emplace_back(v);
+  }
+};
+
 struct iterate_flags_t {};
 struct iterate_lines_t {};
 struct iterate_shapes_t {};
 struct iterate_volumes_t {};
 struct iterate_attachment_points_t {};
-struct iterate_check_point_t {
+struct iterate_check_collision_t {
   shape_flag mask = shape_flag::kNone;
-};
-struct iterate_check_line_t {
-  shape_flag mask = shape_flag::kNone;
-};
-struct iterate_check_ball_t {
-  shape_flag mask = shape_flag::kNone;
-};
-struct iterate_check_convex_t {
-  shape_flag mask = shape_flag::kNone;
+  std::variant<check_point, check_line, check_ball, check_convex> check;
 };
 
 inline constexpr iterate_flags_t iterate_flags;
@@ -35,30 +58,32 @@ inline constexpr iterate_lines_t iterate_lines;
 inline constexpr iterate_shapes_t iterate_shapes;
 inline constexpr iterate_volumes_t iterate_volumes;
 inline constexpr iterate_attachment_points_t iterate_attachment_points;
-inline constexpr iterate_check_point_t iterate_check_point(shape_flag mask) {
-  return iterate_check_point_t{mask};
+inline constexpr iterate_check_collision_t iterate_check_point(shape_flag mask, const vec2& v) {
+  return {mask, check_point{v}};
 }
-inline constexpr iterate_check_line_t iterate_check_line(shape_flag mask) {
-  return iterate_check_line_t{mask};
+inline constexpr iterate_check_collision_t
+iterate_check_line(shape_flag mask, const vec2& a, const vec2& b) {
+  return {mask, check_line{a, b}};
 }
-inline constexpr iterate_check_ball_t iterate_check_ball(shape_flag mask) {
-  return iterate_check_ball_t{mask};
+inline constexpr iterate_check_collision_t
+iterate_check_ball(shape_flag mask, const vec2& c, fixed r) {
+  return {mask, check_ball{c, r}};
 }
-inline constexpr iterate_check_convex_t iterate_check_convex(shape_flag mask) {
-  return iterate_check_convex_t{mask};
+inline constexpr iterate_check_collision_t
+iterate_check_convex(shape_flag mask, std::span<const vec2> vs) {
+  return {mask, check_convex{vs}};
 }
 
 template <typename T, typename... Args>
 concept OneOf = (std::same_as<T, Args> || ...);
 template <typename T>
 concept IterTag = OneOf<T, iterate_flags_t, iterate_lines_t, iterate_shapes_t, iterate_volumes_t,
-                        iterate_check_point_t, iterate_check_line_t, iterate_check_ball_t,
-                        iterate_check_convex_t, iterate_attachment_points_t>;
+                        iterate_check_collision_t, iterate_attachment_points_t>;
 
 template <typename T>
 concept FlagFunction = std::invocable<T, shape_flag>;
 template <typename T>
-concept HitFunction = std::invocable<T, shape_flag, const vec2&>;
+concept HitResult = std::is_same_v<T, hit_result&>;
 template <typename T>
 concept VolumeFunction = std::invocable<T, const vec2&, fixed, const cvec4&, const cvec4&>;
 template <typename T>
@@ -75,10 +100,7 @@ concept IterateFunction = IterTag<I> && Implies<I, iterate_flags_t, FlagFunction
     Implies<I, iterate_lines_t, LineFunction<T>> &&
     Implies<I, iterate_shapes_t, ShapeFunction<T>> &&
     Implies<I, iterate_volumes_t, VolumeFunction<T>> &&
-    Implies<I, iterate_check_point_t, HitFunction<T>> &&
-    Implies<I, iterate_check_line_t, HitFunction<T>> &&
-    Implies<I, iterate_check_ball_t, HitFunction<T>> &&
-    Implies<I, iterate_check_convex_t, HitFunction<T>> &&
+    Implies<I, iterate_check_collision_t, HitResult<T>> &&
     Implies<I, iterate_attachment_points_t, AttachmentPointFunction<T>>;
 
 template <typename T>
@@ -90,7 +112,7 @@ concept Transform = requires(const T& x) {
 
 struct shape_data_base {
   template <IterTag I>
-  constexpr void iterate(I, const Transform auto&, const IterateFunction<I> auto&) const {}
+  constexpr void iterate(I, const Transform auto&, IterateFunction<I> auto&&) const {}
 };
 
 struct null_transform {
@@ -98,7 +120,6 @@ struct null_transform {
   constexpr null_transform rotate(fixed) const { return {}; }
   constexpr null_transform translate(const vec2&) const { return {}; }
 
-  constexpr vec2 deref_ignore_rotation() const { return vec2{0}; }
   constexpr vec2 operator*() const { return vec2{0}; }
   constexpr void increment_index() const {}
 };
@@ -111,7 +132,6 @@ struct transform {
   std::size_t* index_out = nullptr;
 
   constexpr const vec2& operator*() const { return v; }
-  constexpr const vec2& deref_ignore_rotation() const { return v; }
   constexpr fixed rotation() const { return r; }
 
   constexpr transform translate(const vec2& t) const { return {v + ::rotate(t, r), r, index_out}; }
@@ -130,7 +150,6 @@ struct legacy_transform {
   fixed r;
 
   constexpr const vec2& operator*() const { return v; }
-  constexpr const vec2& deref_ignore_rotation() const { return v; }
   constexpr fixed rotation() const { return r; }
 
   constexpr legacy_transform translate(const vec2& t) const {
@@ -141,62 +160,23 @@ struct legacy_transform {
 };
 
 struct convert_local_transform {
-  constexpr convert_local_transform(const vec2& v, transform t = {}) : v{v}, ct{t} {}
-  constexpr convert_local_transform(const vec2& v, fixed r, transform t = {}) : v{v}, r{r}, ct{t} {}
-  vec2 v;
-  fixed r = 0;
+  constexpr convert_local_transform(transform t = {}) : ct{t} {}
   transform ct;
 
-  constexpr vec2 operator*() const { return ::rotate(v - ct.v, -ct.r); }
-  constexpr vec2 deref_ignore_rotation() const { return v - ct.v; }
-  constexpr vec2 inverse_transform(const vec2& v) const { return ::rotate(v, ct.r) + ct.v; }
-
-  constexpr convert_local_transform translate(const vec2& t) const {
-    return {v, r, ct.translate(t)};
-  }
-  constexpr convert_local_transform rotate(fixed a) const { return {v, r, ct.rotate(a)}; }
-  constexpr void increment_index() const {}
-};
-
-struct convert_local_line_transform {
-  constexpr convert_local_line_transform(const vec2& a, const vec2& b, transform t = {})
-  : a{a}, b{b}, ct{t} {}
-  vec2 a;
-  vec2 b;
-  transform ct;
-
-  constexpr vec2 get_a() const { return ::rotate(a - ct.v, -ct.r); }
-  constexpr vec2 get_b() const { return ::rotate(b - ct.v, -ct.r); }
-  constexpr vec2 inverse_transform(const vec2& v) const { return ::rotate(v, ct.r) + ct.v; }
-
-  constexpr convert_local_line_transform translate(const vec2& t) const {
-    return {a, b, ct.translate(t)};
-  }
-  constexpr convert_local_line_transform rotate(fixed a) const {
-    return {this->a, this->b, ct.rotate(a)};
-  }
-  constexpr void increment_index() const {}
-};
-
-struct convert_local_convex_transform {
-  constexpr convert_local_convex_transform(std::span<const vec2> va, transform t = {})
-  : va{va}, ct{t} {}
-  std::span<const vec2> va;
-  transform ct;
-
-  std::vector<vec2> operator*() const {
+  constexpr std::vector<vec2> transform(std::span<const vec2> vs) const {
     std::vector<vec2> r;
-    r.reserve(va.size());
-    for (const auto& v : va) {
-      r.emplace_back(::rotate(v - ct.v, -ct.r));
+    r.reserve(vs.size());
+    for (const auto& v : vs) {
+      r.emplace_back(transform(v));
     }
     return r;
   }
+  constexpr vec2 transform(const vec2& v) const { return ::rotate(v - ct.v, -ct.r); }
+  constexpr vec2 transform_ignore_rotation(const vec2& v) const { return v - ct.v; }
   constexpr vec2 inverse_transform(const vec2& v) const { return ::rotate(v, ct.r) + ct.v; }
-  constexpr convert_local_convex_transform translate(const vec2& t) const {
-    return {va, ct.translate(t)};
-  }
-  constexpr convert_local_convex_transform rotate(fixed a) const { return {va, ct.rotate(a)}; }
+
+  constexpr convert_local_transform translate(const vec2& t) const { return {ct.translate(t)}; }
+  constexpr convert_local_transform rotate(fixed a) const { return {ct.rotate(a)}; }
   constexpr void increment_index() const {}
 };
 
@@ -205,9 +185,9 @@ struct legacy_convert_local_transform {
 
   vec2 v;
 
-  constexpr vec2 inverse_transform(const vec2&) const { return vec2{0}; }  // Not used.
-  constexpr const vec2& deref_ignore_rotation() const { return v; }
-  constexpr const vec2& operator*() const { return v; }
+  constexpr vec2 transform(const vec2&) const { return v; }
+  constexpr vec2 transform_ignore_rotation(const vec2&) const { return v; }
+  constexpr vec2 inverse_transform(const vec2&) const { return vec2{0}; }
 
   constexpr legacy_convert_local_transform translate(const vec2& t) const { return {v - t}; }
   constexpr legacy_convert_local_transform rotate(fixed a) const { return {rotate_legacy(v, -a)}; }

@@ -47,7 +47,8 @@ cc_library(
     "//game/logic/sim/io:conditions",
     "//game/logic/sim/io:output",
     "//game/logic/sim/io:player",
-  ]
+  ],
+  implementation_deps = ["//game/geometry"],
 )
 
 cc_library(

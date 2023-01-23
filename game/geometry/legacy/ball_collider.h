@@ -10,19 +10,24 @@ struct ball_collider_data : shape_data_base {
   fixed radius = 0;
   shape_flag flags = shape_flag::kNone;
 
-  constexpr void
-  iterate(iterate_check_point_t it, const Transform auto& t, const HitFunction auto& f) const {
-    if (+(flags & it.mask) && length_squared(t.deref_ignore_rotation()) < square(radius)) {
-      std::invoke(f, flags & it.mask, t.inverse_transform(vec2{0}));
-    }
-  }
-
-  constexpr void iterate(iterate_flags_t, const Transform auto&, const FlagFunction auto& f) const {
+  constexpr void iterate(iterate_flags_t, const null_transform&, FlagFunction auto&& f) const {
     std::invoke(f, flags);
   }
 
   constexpr void
-  iterate(iterate_volumes_t, const Transform auto& t, const VolumeFunction auto& f) const {
+  iterate(iterate_check_collision_t it, const Transform auto& t, hit_result& hit) const {
+    if (!(flags & it.mask)) {
+      return;
+    }
+    if (const auto* c = std::get_if<check_point>(&it.check)) {
+      if (length_squared(t.transform_ignore_rotation(c->v)) < square(radius)) {
+        hit.add(flags & it.mask);
+      }
+    }
+  }
+
+  constexpr void
+  iterate(iterate_volumes_t, const Transform auto& t, VolumeFunction auto&& f) const {
     std::invoke(f, *t, 0_fx, cvec4{0.f}, cvec4{0.f});
   }
 };

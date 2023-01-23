@@ -2,6 +2,7 @@
 #define II_GAME_GEOMETRY_SHAPES_BALL_H
 #include "game/common/collision.h"
 #include "game/geometry/expressions.h"
+#include "game/geometry/node.h"
 #include "game/geometry/shapes/data.h"
 #include "game/render/data/shapes.h"
 
@@ -25,62 +26,12 @@ struct ball_collider_data : shape_data_base {
   ball_dimensions dimensions;
   shape_flag flags = shape_flag::kNone;
 
-  constexpr void
-  iterate(iterate_check_point_t it, const Transform auto& t, const HitFunction auto& f) const {
-    if (!(flags & it.mask)) {
-      return;
-    }
-    auto d_sq = length_squared(t.deref_ignore_rotation());
-    if (d_sq <= square(dimensions.radius) && d_sq >= square(dimensions.inner_radius)) {
-      std::invoke(f, flags & it.mask, t.inverse_transform(vec2{0}));
-    }
-  }
-
-  constexpr void
-  iterate(iterate_check_line_t it, const Transform auto& t, const HitFunction auto& f) const {
-    if (!(flags & it.mask)) {
-      return;
-    }
-    auto a = t.get_a();
-    auto b = t.get_b();
-    auto ir_sq = square(dimensions.inner_radius);
-    if (intersect_line_ball(a, b, vec2{0}, dimensions.radius) &&
-        (length_squared(a) >= ir_sq || length_squared(b) >= ir_sq)) {
-      std::invoke(f, flags & it.mask, t.inverse_transform(vec2{0}));
-    }
-  }
-
-  constexpr void
-  iterate(iterate_check_ball_t it, const Transform auto& t, const HitFunction auto& f) const {
-    if (!(flags & it.mask)) {
-      return;
-    }
-    auto d_sq = length_squared(t.deref_ignore_rotation());
-    auto r = dimensions.radius + t.r;
-    if (d_sq <= r * r &&
-        (!dimensions.inner_radius || sqrt(d_sq) + t.r >= dimensions.inner_radius)) {
-      std::invoke(f, flags & it.mask, t.inverse_transform(vec2{0}));
-    }
-  }
-
-  constexpr void
-  iterate(iterate_check_convex_t it, const Transform auto& t, const HitFunction auto& f) const {
-    if (!(flags & it.mask)) {
-      return;
-    }
-    auto va = *t;
-    auto ir_sq = square(dimensions.inner_radius);
-    if (intersect_convex_ball(va, vec2{0}, dimensions.radius) &&
-        (!dimensions.inner_radius || std::any_of(va.begin(), va.end(), [&](const vec2& v) {
-          return length_squared(v) >= ir_sq;
-        }))) {
-      std::invoke(f, flags & it.mask, t.inverse_transform(vec2{0}));
-    }
-  }
-
-  constexpr void iterate(iterate_flags_t, const Transform auto&, const FlagFunction auto& f) const {
+  constexpr void iterate(iterate_flags_t, const null_transform&, FlagFunction auto&& f) const {
     std::invoke(f, flags);
   }
+
+  void
+  iterate(iterate_check_collision_t it, const convert_local_transform& t, hit_result& hit) const;
 };
 
 constexpr ball_collider_data
@@ -106,8 +57,7 @@ struct ball_data : shape_data_base {
   fill_style fill;
   render::flag flags = render::flag::kNone;
 
-  constexpr void
-  iterate(iterate_lines_t, const Transform auto& t, const LineFunction auto& f) const {
+  constexpr void iterate(iterate_lines_t, const Transform auto& t, LineFunction auto&& f) const {
     if (!line.colour0.a) {
       return;
     }
@@ -127,8 +77,7 @@ struct ball_data : shape_data_base {
     }
   }
 
-  constexpr void
-  iterate(iterate_shapes_t, const Transform auto& t, const ShapeFunction auto& f) const {
+  constexpr void iterate(iterate_shapes_t, const Transform auto& t, ShapeFunction auto&& f) const {
     if (line.colour0.a || line.colour1.a) {
       std::invoke(f,
                   render::shape{
@@ -161,7 +110,7 @@ struct ball_data : shape_data_base {
   }
 
   constexpr void
-  iterate(iterate_volumes_t, const Transform auto& t, const VolumeFunction auto& f) const {
+  iterate(iterate_volumes_t, const Transform auto& t, VolumeFunction auto&& f) const {
     std::invoke(f, *t, dimensions.radius, line.colour0, fill.colour0);
   }
 };

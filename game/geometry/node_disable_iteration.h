@@ -13,7 +13,7 @@ struct disable_iteration {};
 template <IterTag DisableI, IterTag I, typename Parameters,
           ShapeNodeWithSubstitution<Parameters> Node>
 constexpr void iterate(disable_iteration<DisableI, Node>, I tag, const Parameters& params,
-                       const Transform auto& t, const IterateFunction<I> auto& f) {
+                       const Transform auto& t, IterateFunction<I> auto&& f) {
   if constexpr (!std::is_same_v<DisableI, I>) {
     iterate(Node{}, tag, params, t, f);
   }

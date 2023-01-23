@@ -171,40 +171,13 @@ bool SimInterface::random_bool() {
   return random(random_source::kGameState).rbool();
 }
 
-bool SimInterface::collide_point_any(const vec2& point, shape_flag mask) const {
-  return internals_->collision_index->collide_point_any(point, mask);
+bool SimInterface::collide_any(const geom::iterate_check_collision_t& it) const {
+  return internals_->collision_index->collide_any(it);
 }
 
-bool SimInterface::collide_line_any(const vec2& a, const vec2& b, shape_flag mask) const {
-  return internals_->collision_index->collide_line_any(a, b, mask);
-}
-
-bool SimInterface::collide_ball_any(const vec2& centre, fixed radius, shape_flag mask) const {
-  return internals_->collision_index->collide_ball_any(centre, radius, mask);
-}
-
-bool SimInterface::collide_convex_any(std::span<const vec2> convex, shape_flag mask) const {
-  return internals_->collision_index->collide_convex_any(convex, mask);
-}
-
-auto SimInterface::collide_point(const vec2& point, shape_flag mask) const
+auto SimInterface::collide(const geom::iterate_check_collision_t& it) const
     -> std::vector<collision_info> {
-  return internals_->collision_index->collide_point(point, mask);
-}
-
-auto SimInterface::collide_line(const vec2& a, const vec2& b, shape_flag mask) const
-    -> std::vector<collision_info> {
-  return internals_->collision_index->collide_line(a, b, mask);
-}
-
-auto SimInterface::collide_ball(const vec2& centre, fixed radius, shape_flag mask) const
-    -> std::vector<collision_info> {
-  return internals_->collision_index->collide_ball(centre, radius, mask);
-}
-
-auto SimInterface::collide_convex(std::span<const vec2> convex, shape_flag mask) const
-    -> std::vector<collision_info> {
-  return internals_->collision_index->collide_convex(convex, mask);
+  return internals_->collision_index->collide(it);
 }
 
 bool SimInterface::is_on_screen(const vec2& point) const {

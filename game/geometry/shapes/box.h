@@ -19,41 +19,12 @@ struct box_collider_data : shape_data_base {
   vec2 dimensions{0};
   shape_flag flags = shape_flag::kNone;
 
-  constexpr void
-  iterate(iterate_check_point_t it, const Transform auto& t, const HitFunction auto& f) const {
-    if (+(flags & it.mask) && abs((*t).x) <= dimensions.x && abs((*t).y) <= dimensions.y) {
-      std::invoke(f, flags & it.mask, t.inverse_transform(vec2{0}));
-    }
-  }
-
-  constexpr void
-  iterate(iterate_check_line_t it, const Transform auto& t, const HitFunction auto& f) const {
-    if (+(flags & it.mask) && intersect_aabb_line(-dimensions, dimensions, t.get_a(), t.get_b())) {
-      std::invoke(f, flags & it.mask, t.inverse_transform(vec2{0}));
-    }
-  }
-
-  constexpr void
-  iterate(iterate_check_ball_t it, const Transform auto& t, const HitFunction auto& f) const {
-    if (+(flags & it.mask) && intersect_aabb_ball(-dimensions, dimensions, *t, t.r)) {
-      std::invoke(f, flags & it.mask, t.inverse_transform(vec2{0}));
-    }
-  }
-
-  constexpr void
-  iterate(iterate_check_convex_t it, const Transform auto& t, const HitFunction auto& f) const {
-    if (!+(flags & it.mask)) {
-      return;
-    }
-    auto va = *t;
-    if (intersect_aabb_convex(-dimensions, dimensions, va)) {
-      std::invoke(f, flags & it.mask, t.inverse_transform(vec2{0}));
-    }
-  }
-
-  constexpr void iterate(iterate_flags_t, const Transform auto&, const FlagFunction auto& f) const {
+  constexpr void iterate(iterate_flags_t, const null_transform&, FlagFunction auto&& f) const {
     std::invoke(f, flags);
   }
+
+  void
+  iterate(iterate_check_collision_t it, const convert_local_transform& t, hit_result& hit) const;
 };
 
 constexpr box_collider_data
@@ -80,8 +51,7 @@ struct box_data : shape_data_base {
   fill_style fill;
   render::flag flags = render::flag::kNone;
 
-  constexpr void
-  iterate(iterate_lines_t, const Transform auto& t, const LineFunction auto& f) const {
+  constexpr void iterate(iterate_lines_t, const Transform auto& t, LineFunction auto&& f) const {
     if (!line.colour0.a && !line.colour1.a) {
       return;
     }
@@ -97,8 +67,7 @@ struct box_data : shape_data_base {
     std::invoke(f, d, a, line.colour1, line.width, line.z);
   }
 
-  constexpr void
-  iterate(iterate_shapes_t, const Transform auto& t, const ShapeFunction auto& f) const {
+  constexpr void iterate(iterate_shapes_t, const Transform auto& t, ShapeFunction auto&& f) const {
     if (line.colour0.a || line.colour1.a) {
       std::invoke(
           f,
@@ -129,7 +98,7 @@ struct box_data : shape_data_base {
   }
 
   constexpr void
-  iterate(iterate_volumes_t, const Transform auto& t, const VolumeFunction auto& f) const {
+  iterate(iterate_volumes_t, const Transform auto& t, VolumeFunction auto&& f) const {
     std::invoke(f, *t, std::min(dimensions.x, dimensions.y), line.colour0, fill.colour0);
   }
 };

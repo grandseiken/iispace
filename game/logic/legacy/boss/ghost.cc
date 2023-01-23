@@ -20,10 +20,10 @@ constexpr cvec4 c1 = colour::hue360(280, .5f, .6f);
 constexpr cvec4 c2 = colour::hue360(270, .2f);
 
 template <geom::ShapeNode S>
-Collision::hit_result shape_check_point_compatibility(const auto& parameters, bool is_legacy,
-                                                      const vec2& v, shape_flag mask) {
-  return is_legacy ? shape_check_point_legacy<S>(parameters, v, mask)
-                   : shape_check_point<S>(parameters, v, mask);
+geom::hit_result shape_check_collision_compatibility(const auto& parameters, bool is_legacy,
+                                                     const geom::iterate_check_collision_t& it) {
+  return is_legacy ? shape_check_collision_legacy<S>(parameters, it)
+                   : shape_check_collision<S>(parameters, it);
 }
 
 struct GhostWall : ecs::component {
@@ -125,7 +125,8 @@ struct GhostMine : ecs::component {
       transform.set_rotation(sim.random_fixed() * 2 * pi<fixed>);
     }
     timer && --timer;
-    if (sim.collide_point_any(transform.centre, shape_flag::kEnemyInteraction)) {
+    if (sim.collide_any(
+            geom::iterate_check_point(shape_flag::kEnemyInteraction, transform.centre))) {
       if (sim.random(6) == 0 ||
           (sim.index().contains(ghost_boss) &&
            sim.index().get(ghost_boss)->get<Health>()->is_hp_low() && sim.random(5) == 0)) {
@@ -398,18 +399,18 @@ struct GhostBoss : ecs::component {
     return {transform.centre, transform.rotation};
   }
 
-  Collision::hit_result
-  check_point(const Transform& transform, const vec2& v, shape_flag mask) const {
-    Collision::hit_result result;
+  geom::hit_result
+  check_collision(const Transform& transform, const geom::iterate_check_collision_t& it) const {
+    geom::hit_result result;
     if (!collision_enabled) {
       return result;
     }
-    result.mask |= shape_check_point_compatibility<standard_transform<centre_shape>>(
-                       shape_parameters(transform), is_legacy, v, mask)
+    result.mask |= shape_check_collision_compatibility<standard_transform<centre_shape>>(
+                       shape_parameters(transform), is_legacy, it)
                        .mask;
     if (box_attack_shape_enabled) {
-      result.mask |= shape_check_point_compatibility<box_attack_shape>(
-                         box_attack_parameters(transform), is_legacy, v, mask)
+      result.mask |= shape_check_collision_compatibility<box_attack_shape>(
+                         box_attack_parameters(transform), is_legacy, it)
                          .mask;
     }
 
@@ -417,19 +418,19 @@ struct GhostBoss : ecs::component {
         geom::ball_collider<16, shape_flag::kDangerous | shape_flag::kEnemyInteraction>;
     using ring0_ball_t =
         standard_transform<geom::rotate_p<2, geom::translate_p<3, geom::rotate_p<4, ring0_ball>>>>;
-    if (+(mask & (shape_flag::kDangerous | shape_flag::kEnemyInteraction))) {
+    if (+(it.mask & (shape_flag::kDangerous | shape_flag::kEnemyInteraction))) {
       for (std::uint32_t i = 0; i < 16; ++i) {
         std::tuple parameters{transform.centre, transform.rotation, outer_rotation[0],
                               outer_shape_d(0, i), outer_ball_rotation};
         result.mask |=
-            shape_check_point_compatibility<ring0_ball_t>(parameters, is_legacy, v, mask).mask;
+            shape_check_collision_compatibility<ring0_ball_t>(parameters, is_legacy, it).mask;
       }
     }
 
     using ringN_ball = geom::ball_collider<9, shape_flag::kDangerous>;
     using ringN_ball_t =
         standard_transform<geom::rotate_p<2, geom::translate_p<3, geom::rotate_p<4, ringN_ball>>>>;
-    for (std::uint32_t n = 1; n < 5 && +(mask & shape_flag::kDangerous); ++n) {
+    for (std::uint32_t n = 1; n < 5 && +(it.mask & shape_flag::kDangerous); ++n) {
       for (std::uint32_t i = 0; i < 16 + n * 6; ++i) {
         if (!outer_dangerous[n][i] || !danger_enable) {
           continue;
@@ -437,7 +438,7 @@ struct GhostBoss : ecs::component {
         std::tuple parameters{transform.centre, transform.rotation, outer_rotation[n],
                               outer_shape_d(n, i), outer_ball_rotation};
         result.mask |=
-            shape_check_point_compatibility<ringN_ball_t>(parameters, is_legacy, v, mask).mask;
+            shape_check_collision_compatibility<ringN_ball_t>(parameters, is_legacy, it).mask;
       }
     }
     return result;
@@ -537,7 +538,7 @@ void spawn_ghost_boss(SimInterface& sim, std::uint32_t cycle) {
   h.add(Transform{.centre = sim.dimensions() / 2});
   h.add(Collision{.flags = GhostBoss::kShapeFlags,
                   .bounding_width = GhostBoss::kBoundingWidth,
-                  .check_point = ecs::call<&GhostBoss::check_point>});
+                  .check_collision = ecs::call<&GhostBoss::check_collision>});
   h.add(Render{.render = sfn::cast<Render::render_t, ecs::call<&GhostBoss::render_override>>});
 
   h.add(Enemy{.threat_value = 100,

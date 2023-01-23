@@ -7,6 +7,7 @@ cc_library(
     "line.h",
     "ngon.h",
   ],
+  srcs = ["shapes.cc"],
   deps = [
     "//game/geometry",
     "//game/common:math",
