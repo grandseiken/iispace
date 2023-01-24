@@ -17,8 +17,8 @@ struct polyarc_data : shape_data_base {
   unsigned char index = 0;
   shape_flag flags = shape_flag::kNone;
 
-  constexpr void iterate(iterate_flags_t, const null_transform&, FlagFunction auto&& f) const {
-    std::invoke(f, flags);
+  constexpr void iterate(iterate_flags_t, const null_transform&, shape_flag& mask) const {
+    mask |= flags;
   }
 
   constexpr void

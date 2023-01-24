@@ -5,6 +5,7 @@
 #include "game/geometry/enums.h"
 #include "game/geometry/node.h"
 #include "game/geometry/node_transform.h"
+#include "game/geometry/resolve.h"
 #include "game/logic/ecs/call.h"
 #include "game/logic/ecs/index.h"
 #include "game/logic/sim/sim_interface.h"
@@ -33,57 +34,46 @@ auto get_shape_parameters(ecs::const_handle h) {
   }
 }
 
-//////////////////////////////////////////////////////////////////////////////////
-// Rendering.
-//////////////////////////////////////////////////////////////////////////////////
-template <geom::ShapeNode S>
-void render_shape(std::vector<render::shape>& output, const auto& parameters,
-                  const geom::transform& t = {},
-                  const std::optional<float>& hit_alpha = std::nullopt,
-                  const std::optional<float>& shield_alpha = std::nullopt,
-                  const std::optional<std::size_t>& c_override_max_index = std::nullopt) {
-  std::size_t i = 0;
-  geom::transform transform = t;
-  transform.index_out = &i;
-  geom::iterate(S{}, geom::iterate_shapes, parameters, transform, [&](const render::shape& shape) {
-    render::shape shape_copy = shape;
-    bool override = !c_override_max_index || i < *c_override_max_index;
-    if (shape.z_index > colour::kZTrails && hit_alpha && override) {
-      shape_copy.apply_hit_flash(*hit_alpha);
-    }
-    if (shape.z_index <= colour::kZTrails && shield_alpha && override) {
-      auto shield_copy = shape_copy;
-      if (shape_copy.apply_shield(shield_copy, *shield_alpha)) {
-        output.emplace_back(shield_copy);
-      }
-    }
-    output.emplace_back(shape_copy);
-  });
+inline geom::resolve_result& local_resolve() {
+  static thread_local geom::resolve_result r;
+  r.entries.clear();
+  return r;
 }
 
 template <geom::ShapeNode S>
-void render_entity_shape_override(std::vector<render::shape>& output, const Health* health,
-                                  const EnemyStatus* status, const auto& parameters,
-                                  const geom::transform& t = {}) {
-  std::optional<float> hit_alpha;
-  std::optional<float> shield_alpha;
-  std::optional<std::size_t> c_override_max_index;
-  if (status && status->shielded_ticks) {
-    shield_alpha = std::min(1.f, status->shielded_ticks / 16.f);
-  }
-  if (health) {
-    if (health->hit_timer) {
-      hit_alpha = std::min(1.f, health->hit_timer / 10.f);
-    }
-    c_override_max_index = health->hit_flash_ignore_index;
-  }
-  render_shape<S>(output, parameters, t, hit_alpha, shield_alpha, c_override_max_index);
+void resolve_shape(const auto& parameters, geom::resolve_result& result) {
+  geom::iterate(S{}, geom::iterate_resolve(), parameters, geom::transform{}, result);
 }
+
+template <ecs::Component Logic, geom::ShapeNode S = typename Logic::shape>
+geom::resolve_result& resolve_entity_shape(ecs::const_handle h) {
+  auto& r = local_resolve();
+  resolve_shape<S>(get_shape_parameters<Logic>(h), r);
+  return r;
+}
+
+//////////////////////////////////////////////////////////////////////////////////
+// Rendering.
+//////////////////////////////////////////////////////////////////////////////////
+std::optional<cvec4> get_shape_colour(const geom::resolve_result& r);
+
+void render_shape(std::vector<render::shape>& output, const geom::resolve_result& r,
+                  const std::optional<float>& hit_alpha = std::nullopt,
+                  const std::optional<float>& shield_alpha = std::nullopt);
 
 template <ecs::Component Logic, geom::ShapeNode S = typename Logic::shape>
 void render_entity_shape(ecs::const_handle h, const Health* health, const EnemyStatus* status,
                          std::vector<render::shape>& output) {
-  render_entity_shape_override<S>(output, health, status, get_shape_parameters<Logic>(h), {});
+  std::optional<float> hit_alpha;
+  std::optional<float> shield_alpha;
+  if (status && status->shielded_ticks) {
+    shield_alpha = std::min(1.f, status->shielded_ticks / 16.f);
+  }
+  if (health && health->hit_timer) {
+    hit_alpha = std::min(1.f, health->hit_timer / 10.f);
+  }
+  auto& r = resolve_entity_shape<Logic, S>(h);
+  render_shape(output, r, hit_alpha, shield_alpha);
 }
 
 //////////////////////////////////////////////////////////////////////////////////
@@ -93,7 +83,7 @@ template <ecs::Component Logic, geom::ShapeNode S = typename Logic::shape>
 constexpr shape_flag get_shape_flags() {
   shape_flag result = shape_flag::kNone;
   geom::iterate(S{}, geom::iterate_flags, geom::arbitrary_parameters{}, geom::null_transform{},
-                [&](shape_flag f) constexpr { result |= f; });
+                result);
   if constexpr (requires { Logic::kShapeFlags; }) {
     result |= Logic::kShapeFlags;
   }
@@ -102,7 +92,7 @@ constexpr shape_flag get_shape_flags() {
 
 template <geom::ShapeNode S>
 geom::hit_result
-shape_check_collision(const auto& parameters, const geom::iterate_check_collision_t& it) {
+check_shape_collision(const auto& parameters, const geom::iterate_check_collision_t& it) {
   geom::hit_result result;
   geom::iterate(S{}, it, parameters, geom::convert_local_transform{}, result);
   return result;
@@ -110,8 +100,8 @@ shape_check_collision(const auto& parameters, const geom::iterate_check_collisio
 
 template <ecs::Component Logic, geom::ShapeNode S = typename Logic::shape>
 geom::hit_result
-ship_check_collision(ecs::const_handle h, const geom::iterate_check_collision_t& it) {
-  return shape_check_collision<S>(get_shape_parameters<Logic>(h), it);
+check_entity_collision(ecs::const_handle h, const geom::iterate_check_collision_t& it) {
+  return check_shape_collision<S>(get_shape_parameters<Logic>(h), it);
 }
 
 //////////////////////////////////////////////////////////////////////////////////
@@ -131,7 +121,7 @@ ecs::handle add_collision(ecs::handle h, fixed bounding_width) {
   static_assert(+collision_flags);
   h.add(Collision{.flags = collision_flags,
                   .bounding_width = bounding_width,
-                  .check_collision = &ship_check_collision<Logic, S>});
+                  .check_collision = &check_entity_collision<Logic, S>});
   return h;
 }
 

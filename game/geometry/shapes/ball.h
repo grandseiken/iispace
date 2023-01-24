@@ -26,8 +26,8 @@ struct ball_collider_data : shape_data_base {
   ball_dimensions dimensions;
   shape_flag flags = shape_flag::kNone;
 
-  constexpr void iterate(iterate_flags_t, const null_transform&, FlagFunction auto&& f) const {
-    std::invoke(f, flags);
+  constexpr void iterate(iterate_flags_t, const null_transform&, shape_flag& mask) const {
+    mask |= flags;
   }
 
   void
@@ -57,62 +57,7 @@ struct ball_data : shape_data_base {
   fill_style fill;
   render::flag flags = render::flag::kNone;
 
-  constexpr void iterate(iterate_lines_t, const Transform auto& t, LineFunction auto&& f) const {
-    if (!line.colour0.a) {
-      return;
-    }
-    std::uint32_t n = std::max(3, dimensions.radius.to_int() / 2);
-    std::uint32_t in = std::max(3, dimensions.inner_radius.to_int() / 2);
-    auto vertex = [&](fixed r, std::uint32_t i, std::uint32_t n) {
-      return *t.rotate(i * 2 * pi<fixed> / n).translate({r, 0});
-    };
-
-    for (std::uint32_t i = 0; i < n; ++i) {
-      std::invoke(f, vertex(dimensions.radius, i, n), vertex(dimensions.radius, i + 1, n),
-                  line.colour0, line.width, line.z);
-    }
-    for (std::uint32_t i = 0; dimensions.inner_radius && i < in; ++i) {
-      std::invoke(f, vertex(dimensions.inner_radius, i, in),
-                  vertex(dimensions.inner_radius, i + 1, in), line.colour0, line.width, line.z);
-    }
-  }
-
-  constexpr void iterate(iterate_shapes_t, const Transform auto& t, ShapeFunction auto&& f) const {
-    if (line.colour0.a || line.colour1.a) {
-      std::invoke(f,
-                  render::shape{
-                      .origin = to_float(*t),
-                      .rotation = t.rotation().to_float(),
-                      .colour0 = line.colour0,
-                      .colour1 = line.colour1,
-                      .z_index = line.z,
-                      .s_index = line.index,
-                      .flags = flags,
-                      .data = render::ball{.radius = dimensions.radius.to_float(),
-                                           .inner_radius = dimensions.inner_radius.to_float(),
-                                           .line_width = line.width},
-                  });
-    }
-    if (fill.colour0.a || fill.colour1.a) {
-      std::invoke(f,
-                  render::shape{
-                      .origin = to_float(*t),
-                      .rotation = t.rotation().to_float(),
-                      .colour0 = fill.colour0,
-                      .colour1 = fill.colour1,
-                      .z_index = fill.z,
-                      .s_index = fill.index,
-                      .flags = flags,
-                      .data = render::ball_fill{.radius = dimensions.radius.to_float(),
-                                                .inner_radius = dimensions.inner_radius.to_float()},
-                  });
-    }
-  }
-
-  constexpr void
-  iterate(iterate_volumes_t, const Transform auto& t, VolumeFunction auto&& f) const {
-    std::invoke(f, *t, dimensions.radius, line.colour0, fill.colour0);
-  }
+  void iterate(iterate_resolve_t, const transform& t, resolve_result& r) const;
 };
 
 constexpr ball_data make_ball(ball_dimensions dimensions, line_style line,

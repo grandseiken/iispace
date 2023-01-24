@@ -30,10 +30,15 @@ auto get_shape_parameters(ecs::const_handle h) {
 }
 
 template <ecs::Component Logic, geom::ShapeNode S = typename Logic::shape>
-void iterate_entity_attachment_points(ecs::const_handle h,
+void iterate_entity_attachment_points(ecs::const_handle h, bool legacy,
                                       const geom::AttachmentPointFunction auto& f) {
-  geom::iterate(S{}, geom::iterate_attachment_points, get_shape_parameters<Logic>(h),
-                geom::transform{}, f);
+  if (legacy) {
+    geom::iterate(S{}, geom::iterate_attachment_points, get_shape_parameters<Logic>(h),
+                  geom::legacy_transform{}, f);
+  } else {
+    geom::iterate(S{}, geom::iterate_attachment_points, get_shape_parameters<Logic>(h),
+                  geom::transform{}, f);
+  }
 }
 
 //////////////////////////////////////////////////////////////////////////////////
@@ -134,7 +139,7 @@ template <ecs::Component Logic, geom::ShapeNode S = typename Logic::shape>
 constexpr shape_flag get_shape_flags() {
   shape_flag result = shape_flag::kNone;
   geom::iterate(S{}, geom::iterate_flags, geom::arbitrary_parameters{}, geom::null_transform{},
-                [&](shape_flag f) constexpr { result |= f; });
+                result);
   if constexpr (requires { Logic::kShapeFlags; }) {
     result |= Logic::kShapeFlags;
   }

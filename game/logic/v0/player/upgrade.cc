@@ -22,8 +22,9 @@ std::vector<render::shape> render_mod_icon(mod_id id, std::uint32_t animation) {
   auto render = [&]<typename S>(S) {
     std::vector<render::shape> shapes;
     auto t = static_cast<fixed>(animation) / 24;
-    geom::iterate(S{}, geom::iterate_shapes, std::tuple{t}, geom::transform{},
-                  [&](const render::shape& shape) { shapes.emplace_back(shape); });
+    auto& r = local_resolve();
+    resolve_shape<S>(std::tuple{t}, r);
+    render_shape(shapes, r);
     return shapes;
   };
 

@@ -1,6 +1,7 @@
 #include "game/logic/v0/lib/particles.h"
 
 namespace ii::v0 {
+namespace {
 
 void add_line_particle(EmitHandle& e, const fvec2& source, const fvec2& a, const fvec2& b,
                        const cvec4& c, float w, float z, std::uint32_t time) {
@@ -79,6 +80,135 @@ void add_explode_particle(EmitHandle& e, const fvec2& source, const fvec2& posit
         .data = data,
         .end_time = tv + r.uint(tv),
     });
+  }
+}
+
+}  // namespace
+
+void explode_shapes(EmitHandle& e, const geom::resolve_result& r,
+                    const std::optional<cvec4>& colour_override, std::uint32_t time,
+                    const std::optional<fvec2>& towards, std::optional<float> speed) {
+  for (const auto& entry : r.entries) {
+    std::optional<vec2> v;
+    std::optional<cvec4> c;
+    if (const auto* d = std::get_if<geom::ball_data>(&entry.data)) {
+      c = d->line.colour0.a ? d->line.colour0 : d->fill.colour0;
+    } else if (const auto* d = std::get_if<geom::box_data>(&entry.data)) {
+      c = d->line.colour0.a ? d->line.colour0 : d->fill.colour0;
+    } else if (const auto* d = std::get_if<geom::ngon_data>(&entry.data)) {
+      c = d->line.colour0.a ? d->line.colour0 : d->fill.colour1;
+    }
+    if (c) {
+      e.explosion(to_float(*entry.t), colour_override.value_or(*c), time, towards, speed);
+    }
+  }
+}
+
+void destruct_lines(EmitHandle& e, const geom::resolve_result& r, const fvec2& source,
+                    std::uint32_t time) {
+  auto handle_line = [&](const vec2& a, const vec2& b, const cvec4& c, float w, float z) {
+    if (z > colour::kZOutline) {
+      add_line_particle(e, source, to_float(a), to_float(b), c, w, z, time);
+    }
+  };
+
+  for (const auto& entry : r.entries) {
+    if (const auto* d = std::get_if<geom::ball_data>(&entry.data)) {
+      if (!d->line.colour0.a) {
+        continue;
+      }
+      std::uint32_t n = std::max(3, d->dimensions.radius.to_int() / 2);
+      std::uint32_t in = std::max(3, d->dimensions.inner_radius.to_int() / 2);
+      auto vertex = [&](fixed r, std::uint32_t i, std::uint32_t n) {
+        return *entry.t.rotate(i * 2 * pi<fixed> / n).translate({r, 0});
+      };
+
+      for (std::uint32_t i = 0; i < n; ++i) {
+        handle_line(vertex(d->dimensions.radius, i, n), vertex(d->dimensions.radius, i + 1, n),
+                    d->line.colour0, d->line.width, d->line.z);
+      }
+      for (std::uint32_t i = 0; d->dimensions.inner_radius && i < in; ++i) {
+        handle_line(vertex(d->dimensions.inner_radius, i, in),
+                    vertex(d->dimensions.inner_radius, i + 1, in), d->line.colour0, d->line.width,
+                    d->line.z);
+      }
+    } else if (const auto* d = std::get_if<geom::box_data>(&entry.data)) {
+      if (!d->line.colour0.a && !d->line.colour1.a) {
+        continue;
+      }
+      auto va = *entry.t.translate({d->dimensions.x, d->dimensions.y});
+      auto vb = *entry.t.translate({-d->dimensions.x, d->dimensions.y});
+      auto vc = *entry.t.translate({-d->dimensions.x, -d->dimensions.y});
+      auto vd = *entry.t.translate({d->dimensions.x, -d->dimensions.y});
+
+      // TODO: need line gradients to match rendering, if we use them.
+      handle_line(va, vb, d->line.colour0, d->line.width, d->line.z);
+      handle_line(vb, vc, d->line.colour0, d->line.width, d->line.z);
+      handle_line(vc, vd, d->line.colour1, d->line.width, d->line.z);
+      handle_line(vd, va, d->line.colour1, d->line.width, d->line.z);
+    } else if (const auto* d = std::get_if<geom::line_data>(&entry.data)) {
+      // TODO: need line gradients to match rendering, if we use them.
+      if (d->style.colour0.a) {
+        handle_line(*entry.t.translate(d->a), *entry.t.translate(d->b), d->style.colour0,
+                    d->style.width, d->style.z);
+      }
+    } else if (const auto* d = std::get_if<geom::ngon_data>(&entry.data)) {
+      if (!d->line.colour0.a) {
+        continue;
+      }
+      auto vertex = [&](std::uint32_t i) {
+        return *entry.t.rotate(i * 2 * pi<fixed> / d->dimensions.sides)
+                    .translate({d->dimensions.radius, 0});
+      };
+      auto ivertex = [&](std::uint32_t i) {
+        return *entry.t.rotate(i * 2 * pi<fixed> / d->dimensions.sides)
+                    .translate({d->dimensions.inner_radius, 0});
+      };
+
+      switch (d->line.style) {
+      case geom::ngon_style::kPolystar:
+        // TODO: need line gradients to match rendering, if we use them.
+        for (std::uint32_t i = 0; i < d->dimensions.segments; ++i) {
+          handle_line(ivertex(i), vertex(i), d->line.colour0, d->line.width, d->line.z);
+        }
+        break;
+      case geom::ngon_style::kPolygram:
+        for (std::size_t i = 0; i < d->dimensions.sides; ++i) {
+          for (std::size_t j = i + 2; j < d->dimensions.sides && (j + 1) % d->dimensions.sides != i;
+               ++j) {
+            handle_line(vertex(i), vertex(j), d->line.colour1, d->line.width, d->line.z);
+          }
+        }
+        // Fallthrough.
+      case geom::ngon_style::kPolygon:
+        for (std::uint32_t i = 0; i < d->dimensions.segments; ++i) {
+          handle_line(vertex(i), vertex(i + 1), d->line.colour0, d->line.width, d->line.z);
+        }
+        for (std::uint32_t i = 0; d->dimensions.inner_radius && i < d->dimensions.segments; ++i) {
+          handle_line(ivertex(i), ivertex(i + 1), d->line.colour1, d->line.width, d->line.z);
+        }
+        break;
+      }
+    }
+  }
+}
+
+void explode_volumes(EmitHandle& e, const geom::resolve_result& r, const fvec2& source,
+                     std::uint32_t time) {
+  auto handle_shape = [&](const vec2& v, fixed r, const cvec4& c) {
+    if (c.a) {
+      add_explode_particle(e, source, to_float(v), 2.f * r.to_float(), c, time);
+    }
+  };
+
+  for (const auto& entry : r.entries) {
+    if (const auto* d = std::get_if<geom::ball_data>(&entry.data)) {
+      handle_shape(*entry.t, d->dimensions.radius, d->fill.colour0);
+    } else if (const auto* d = std::get_if<geom::box_data>(&entry.data)) {
+      handle_shape(*entry.t, std::min(d->dimensions.x, d->dimensions.y), d->fill.colour0);
+    } else if (const auto* d = std::get_if<geom::ngon_data>(&entry.data)) {
+      handle_shape(*entry.t, d->dimensions.radius, d->fill.colour1);
+    }
   }
 }
 

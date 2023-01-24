@@ -1,5 +1,5 @@
 cc_library(
-  name = "shapes",
+  name = "headers",
   hdrs = [
     "ball.h",
     "box.h",
@@ -7,12 +7,21 @@ cc_library(
     "line.h",
     "ngon.h",
   ],
-  srcs = ["shapes.cc"],
   deps = [
     "//game/geometry",
     "//game/common:math",
     "//game/common:types",
     "//game/render/data",
+  ],
+  visibility = ["//game:__subpackages__"],
+)
+
+cc_library(
+  name = "shapes",
+  srcs = ["shapes.cc"],
+  deps = [
+    ":headers",
+    "//game/geometry:resolve",
   ],
   visibility = ["//game:__subpackages__"],
 )

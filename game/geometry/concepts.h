@@ -37,18 +37,7 @@ constexpr arbitrary_parameter get(const arbitrary_parameters&) {
 }
 
 template <typename T>
-concept Shape =
-    requires(T x, hit_result& hit) {
-      x.iterate(iterate_flags, null_transform{}, [](shape_flag) {});
-      x.iterate(iterate_lines, null_transform{},
-                [](const vec2&, const vec2&, const cvec4&, float, float) {});
-      x.iterate(iterate_shapes, null_transform{}, [](const render::shape&) {});
-      x.iterate(iterate_volumes, null_transform{},
-                [](const vec2&, fixed, const cvec4&, const cvec4&) {});
-      x.iterate(iterate_attachment_points, null_transform{},
-                [](std::size_t, const vec2&, const vec2&) {});
-      x.iterate(iterate_check_point(shape_flag::kNone, vec2{}), convert_local_transform{}, hit);
-    };
+concept Shape = std::is_base_of_v<shape_data_base, T>;
 
 template <typename E, typename V, typename Parameters>
 concept ExpressionWithSubstitution = requires(Parameters params) { V{evaluate(E{}, params)}; };

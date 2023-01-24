@@ -61,8 +61,8 @@ struct ngon_collider_data : shape_data_base {
   ngon_dimensions dimensions;
   shape_flag flags = shape_flag::kNone;
 
-  constexpr void iterate(iterate_flags_t, const null_transform&, FlagFunction auto&& f) const {
-    std::invoke(f, flags);
+  constexpr void iterate(iterate_flags_t, const null_transform&, shape_flag& mask) const {
+    mask |= flags;
   }
 
   void
@@ -92,84 +92,7 @@ struct ngon_data : shape_data_base {
   fill_style fill;
   render::flag flags = render::flag::kNone;
 
-  constexpr void iterate(iterate_lines_t, const Transform auto& t, LineFunction auto&& f) const {
-    if (!line.colour0.a) {
-      return;
-    }
-    auto vertex = [&](std::uint32_t i) {
-      return *t.rotate(i * 2 * pi<fixed> / dimensions.sides).translate({dimensions.radius, 0});
-    };
-    auto ivertex = [&](std::uint32_t i) {
-      return *t.rotate(i * 2 * pi<fixed> / dimensions.sides)
-                  .translate({dimensions.inner_radius, 0});
-    };
-
-    switch (line.style) {
-    case ngon_style::kPolystar:
-      // TODO: need line gradients to match rendering, if we use them.
-      for (std::uint32_t i = 0; i < dimensions.segments; ++i) {
-        std::invoke(f, ivertex(i), vertex(i), line.colour0, line.width, line.z);
-      }
-      break;
-    case ngon_style::kPolygram:
-      for (std::size_t i = 0; i < dimensions.sides; ++i) {
-        for (std::size_t j = i + 2; j < dimensions.sides && (j + 1) % dimensions.sides != i; ++j) {
-          std::invoke(f, vertex(i), vertex(j), line.colour1, line.width, line.z);
-        }
-      }
-      // Fallthrough.
-    case ngon_style::kPolygon:
-      for (std::uint32_t i = 0; i < dimensions.segments; ++i) {
-        std::invoke(f, vertex(i), vertex(i + 1), line.colour0, line.width, line.z);
-      }
-      for (std::uint32_t i = 0; dimensions.inner_radius && i < dimensions.segments; ++i) {
-        std::invoke(f, ivertex(i), ivertex(i + 1), line.colour1, line.width, line.z);
-      }
-      break;
-    }
-  }
-
-  constexpr void iterate(iterate_shapes_t, const Transform auto& t, ShapeFunction auto&& f) const {
-    if (line.colour0.a || line.colour1.a) {
-      std::invoke(f,
-                  render::shape{
-                      .origin = to_float(*t),
-                      .rotation = t.rotation().to_float(),
-                      .colour0 = line.colour0,
-                      .colour1 = line.colour1,
-                      .z_index = line.z,
-                      .s_index = line.index,
-                      .flags = flags,
-                      .data = render::ngon{.radius = dimensions.radius.to_float(),
-                                           .inner_radius = dimensions.inner_radius.to_float(),
-                                           .sides = dimensions.sides,
-                                           .segments = dimensions.segments,
-                                           .style = line.style,
-                                           .line_width = line.width},
-                  });
-    }
-    if (fill.colour0.a || fill.colour1.a) {
-      std::invoke(f,
-                  render::shape{
-                      .origin = to_float(*t),
-                      .rotation = t.rotation().to_float(),
-                      .colour0 = fill.colour0,
-                      .colour1 = fill.colour1,
-                      .z_index = fill.z,
-                      .s_index = fill.index,
-                      .flags = flags,
-                      .data = render::ngon_fill{.radius = dimensions.radius.to_float(),
-                                                .inner_radius = dimensions.inner_radius.to_float(),
-                                                .sides = dimensions.sides,
-                                                .segments = dimensions.segments},
-                  });
-    }
-  }
-
-  constexpr void
-  iterate(iterate_volumes_t, const Transform auto& t, VolumeFunction auto&& f) const {
-    std::invoke(f, *t, dimensions.radius, line.colour0, fill.colour1);
-  }
+  void iterate(iterate_resolve_t, const transform& t, resolve_result& r) const;
 };
 
 constexpr ngon_data make_ngon(ngon_dimensions dimensions, ngon_line_style line,

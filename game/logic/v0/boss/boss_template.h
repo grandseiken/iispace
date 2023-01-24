@@ -38,24 +38,19 @@ scale_boss_damage(ecs::handle, SimInterface& sim, damage_type type, std::uint32_
 
 template <ecs::Component Logic, geom::ShapeNode S = typename Logic::Shape>
 inline cvec4 get_boss_colour(ecs::const_handle h) {
-  std::optional<cvec4> result;
-  geom::iterate(S{}, geom::iterate_volumes, get_shape_parameters<Logic>(h), geom::transform{},
-                [&](const vec2&, fixed, const cvec4& c, const cvec4&) {
-                  if (!result) {
-                    result = c;
-                  }
-                });
-  return result.value_or(colour::kWhite0);
+  auto& r = resolve_entity_shape<Logic, S>(h);
+  return get_shape_colour(r).value_or(colour::kWhite0);
 }
 
 template <ecs::Component Logic, geom::ShapeNode S = typename Logic::shape>
 void boss_on_hit(ecs::handle h, SimInterface&, EmitHandle& e, damage_type type,
                  const vec2& source) {
   if (type == damage_type::kBomb) {
-    explode_entity_shapes<Logic, S>(h, e);
-    explode_entity_shapes<Logic, S>(h, e, cvec4{1.f}, 12);
-    explode_entity_shapes<Logic, S>(h, e, std::nullopt, 24);
-    destruct_entity_lines<Logic, S>(h, e, source);
+    auto& r = resolve_entity_shape<Logic, S>(h);
+    explode_shapes(e, r);
+    explode_shapes(e, r, cvec4{1.f}, 12);
+    explode_shapes(e, r, std::nullopt, 24);
+    destruct_lines(e, r, to_float(source));
   }
 }
 
@@ -76,12 +71,13 @@ void boss_on_destroy(ecs::const_handle h, const Transform& transform, SimInterfa
       });
 
   auto boss_colour = get_boss_colour<Logic, S>(h);
-  explode_entity_shapes<Logic, S>(h, e);
-  explode_entity_shapes<Logic, S>(h, e, cvec4{1.f}, 12);
-  explode_entity_shapes<Logic, S>(h, e, boss_colour, 24);
-  explode_entity_shapes<Logic, S>(h, e, cvec4{1.f}, 36);
-  explode_entity_shapes<Logic, S>(h, e, boss_colour, 48);
-  destruct_entity_lines<Logic, S>(h, e, source, 128);
+  auto& r = resolve_entity_shape<Logic, S>(h);
+  explode_shapes(e, r);
+  explode_shapes(e, r, cvec4{1.f}, 12);
+  explode_shapes(e, r, boss_colour, 24);
+  explode_shapes(e, r, cvec4{1.f}, 36);
+  explode_shapes(e, r, boss_colour, 48);
+  destruct_lines(e, r, to_float(source), 128);
   // TODO: some kind of FX explosion.
 
   std::uint32_t n = 1;

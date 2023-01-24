@@ -43,11 +43,14 @@ struct hit_result {
   }
 };
 
+struct resolve_result;
+
 struct iterate_flags_t {};
 struct iterate_lines_t {};
 struct iterate_shapes_t {};
 struct iterate_volumes_t {};
 struct iterate_attachment_points_t {};
+struct iterate_resolve_t {};
 struct iterate_check_collision_t {
   shape_flag mask = shape_flag::kNone;
   std::variant<check_point, check_line, check_ball, check_convex> check;
@@ -58,6 +61,9 @@ inline constexpr iterate_lines_t iterate_lines;
 inline constexpr iterate_shapes_t iterate_shapes;
 inline constexpr iterate_volumes_t iterate_volumes;
 inline constexpr iterate_attachment_points_t iterate_attachment_points;
+inline constexpr iterate_resolve_t iterate_resolve() {
+  return {};
+}
 inline constexpr iterate_check_collision_t iterate_check_point(shape_flag mask, const vec2& v) {
   return {mask, check_point{v}};
 }
@@ -78,12 +84,14 @@ template <typename T, typename... Args>
 concept OneOf = (std::same_as<T, Args> || ...);
 template <typename T>
 concept IterTag = OneOf<T, iterate_flags_t, iterate_lines_t, iterate_shapes_t, iterate_volumes_t,
-                        iterate_check_collision_t, iterate_attachment_points_t>;
+                        iterate_resolve_t, iterate_check_collision_t, iterate_attachment_points_t>;
 
 template <typename T>
-concept FlagFunction = std::invocable<T, shape_flag>;
+concept FlagResult = std::is_same_v<T, shape_flag&>;
 template <typename T>
 concept HitResult = std::is_same_v<T, hit_result&>;
+template <typename T>
+concept ResolveResult = std::is_same_v<T, resolve_result&>;
 template <typename T>
 concept VolumeFunction = std::invocable<T, const vec2&, fixed, const cvec4&, const cvec4&>;
 template <typename T>
@@ -96,10 +104,11 @@ concept AttachmentPointFunction = std::invocable<T, std::size_t, const vec2&, co
 template <typename T, typename U, bool B>
 concept Implies = (!std::same_as<T, U> || B);
 template <typename T, typename I>
-concept IterateFunction = IterTag<I> && Implies<I, iterate_flags_t, FlagFunction<T>> &&
+concept IterateFunction = IterTag<I> && Implies<I, iterate_flags_t, FlagResult<T>> &&
     Implies<I, iterate_lines_t, LineFunction<T>> &&
     Implies<I, iterate_shapes_t, ShapeFunction<T>> &&
     Implies<I, iterate_volumes_t, VolumeFunction<T>> &&
+    Implies<I, iterate_resolve_t, ResolveResult<T>> &&
     Implies<I, iterate_check_collision_t, HitResult<T>> &&
     Implies<I, iterate_attachment_points_t, AttachmentPointFunction<T>>;
 
@@ -137,6 +146,7 @@ struct transform {
   constexpr transform translate(const vec2& t) const { return {v + ::rotate(t, r), r, index_out}; }
   constexpr transform rotate(fixed a) const { return {v, r + a, index_out}; }
 
+  // TODO: remove and replace with shape_index feature somehow?
   constexpr void increment_index() const {
     if (index_out) {
       ++*index_out;

@@ -53,6 +53,7 @@ public:
   EmitHandle& set_delay_ticks(std::uint32_t ticks);
   EmitHandle& background_fx(background_fx_change);
   EmitHandle& add(particle particle);
+  // TODO: remove this.
   EmitHandle& explosion(const fvec2& v, const cvec4& c, std::uint32_t time = 8,
                         const std::optional<fvec2>& towards = std::nullopt,
                         std::optional<float> speed = std::nullopt);

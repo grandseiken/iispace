@@ -316,8 +316,10 @@ struct SquareBoss : public ecs::component {
       }
       for (std::uint32_t i = 0; i < 6; ++i) {
         auto v = p_transform.centre + d;
-        render_shape<small_follow_shape>(
-            output, std::tuple{v, 4 * pi<fixed> * ease_out_cubic(1_fx - t), c0, c1, c2});
+        auto& r = local_resolve();
+        resolve_shape<small_follow_shape>(
+            std::tuple{v, 4 * pi<fixed> * ease_out_cubic(1_fx - t), c0, c1, c2}, r);
+        render_shape(output, r);
         d = rotate(d, 2 * pi<fixed> / 6);
       }
     }

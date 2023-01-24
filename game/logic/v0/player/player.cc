@@ -226,11 +226,12 @@ struct PlayerLogic : ecs::component {
       return;
     }
 
-    explode_entity_shapes<PlayerLogic>(h, e);
-    explode_entity_shapes<PlayerLogic>(h, e, colour::kWhite0, 14);
-    explode_entity_shapes<PlayerLogic>(h, e, std::nullopt, 20);
-    destruct_entity_lines<PlayerLogic>(h, e, source, 32);
-    explode_entity_volumes<PlayerLogic>(h, e, source);
+    auto& r = resolve_entity_shape<PlayerLogic>(h);
+    explode_shapes(e, r);
+    explode_shapes(e, r, colour::kWhite0, 14);
+    explode_shapes(e, r, std::nullopt, 20);
+    destruct_lines(e, r, to_float(source), 32);
+    explode_volumes(e, r, to_float(source));
 
     ++pc.death_count;
     pc.bomb_count = 0;
@@ -269,16 +270,18 @@ struct PlayerLogic : ecs::component {
     auto c = v0_player_colour(pc.player_number);
     auto e = sim.emit(resolve_key::local(pc.player_number));
     auto& random = sim.random(random_source::kAesthetic);
-    explode_entity_shapes<PlayerLogic>(h, e, colour::kWhite0, 18);
-    explode_entity_shapes<PlayerLogic>(h, e, c, 21);
-    explode_entity_shapes<PlayerLogic>(h, e, colour::kWhite0, 24);
+    auto& r = resolve_entity_shape<PlayerLogic>(h);
+    explode_shapes(e, r, colour::kWhite0, 18);
+    explode_shapes(e, r, c, 21);
+    explode_shapes(e, r, colour::kWhite0, 24);
     // TODO: bomb explosion. Work out how to do really big explosions.
 
     for (std::uint32_t i = 0; i < 64; ++i) {
       auto v = position + from_polar(2 * i * pi<fixed> / 64, radius);
-      auto parameters = shape_parameters(pc, {{}, v, 0_fx});
-      explode_shapes<shape>(e, parameters, (i % 2) ? c : colour::kWhite0,
-                            8 + random.uint(8) + random.uint(8), position);
+      auto& r = local_resolve();
+      resolve_shape<shape>(shape_parameters(pc, {{}, v, 0_fx}), r);
+      explode_shapes(e, r, (i % 2) ? c : colour::kWhite0, 8 + random.uint(8) + random.uint(8),
+                     to_float(position));
     }
 
     e.rumble(pc.player_number, 20, 1.f, .5f).play(sound::kExplosion, position);
