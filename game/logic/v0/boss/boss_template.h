@@ -43,13 +43,10 @@ inline cvec4 get_boss_colour(ecs::const_handle h) {
 }
 
 template <ecs::Component Logic, geom::ShapeNode S = typename Logic::shape>
-void boss_on_hit(ecs::handle h, SimInterface&, EmitHandle& e, damage_type type,
+void boss_on_hit(ecs::handle h, Health* health, SimInterface&, EmitHandle& e, damage_type type,
                  const vec2& source) {
-  if (type == damage_type::kBomb) {
+  if (type == damage_type::kBomb && health && health->hp) {
     auto& r = resolve_entity_shape<Logic, S>(h);
-    explode_shapes(e, r);
-    explode_shapes(e, r, cvec4{1.f}, 12);
-    explode_shapes(e, r, std::nullopt, 24);
     destruct_lines(e, r, to_float(source));
   }
 }
@@ -116,7 +113,7 @@ void add_boss_data(ecs::handle h, ustring_view name, std::uint32_t base_hp) {
       .destroy_sound = std::nullopt,
       .destroy_rumble = std::nullopt,
       .damage_transform = &scale_boss_damage,
-      .on_hit = &boss_on_hit<Logic, S>,
+      .on_hit = ecs::call<&boss_on_hit<Logic, S>>,
       .on_destroy = ecs::call<&boss_on_destroy<Logic, S>>,
   });
   h.add(EnemyStatus{.stun_resist_base = 100u, .stun_resist_bonus = 60u});

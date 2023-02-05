@@ -10,20 +10,21 @@ namespace {
 
 wave_data get_enemy_wave_data(const initial_conditions& conditions, std::uint32_t biome_index,
                               std::uint32_t phase_index, std::uint32_t wave_number) {
-  static constexpr std::uint32_t kInitialPower = 16u;
-  static constexpr std::uint32_t kBiomePower = 20u;
+  static constexpr std::uint32_t kBiomePower = 16u;
   static constexpr std::uint32_t kPhasePower = 2u;
+  static constexpr std::uint32_t kPlayerPower = 4u;
+  static constexpr std::uint32_t kPlayerBiomePower = 2u;
   static constexpr std::uint32_t kBiomeThreat = 8u;
   static constexpr std::uint32_t kPhaseThreat = 4u;
-  static constexpr std::uint32_t kPlayerPower = 4u;
 
   wave_data data;
   data.type = wave_type::kEnemy;
   data.biome_index = biome_index;
-  data.power = kInitialPower + biome_index * kBiomePower;
+  data.power = (biome_index + 1u) * kBiomePower;
   data.power += (conditions.player_count - 1u) * kPlayerPower;
+  data.power += biome_index * conditions.player_count * kPlayerBiomePower;
   data.power += wave_number + std::min(10u, wave_number);
-  data.power += phase_index * kPhasePower;
+  data.power += phase_index * phase_index * kPhasePower;
   data.upgrade_budget = data.power / 2;
   data.threat_trigger = wave_number;
   data.threat_trigger += biome_index * kBiomeThreat;
@@ -40,12 +41,12 @@ get_wave_list(const initial_conditions& conditions, std::uint32_t biome_index) {
         get_enemy_wave_data(conditions, biome_index, /* phase */ 0, enemy_wave_number++));
   }
   result.emplace_back(wave_data{wave_type::kUpgrade});
-  for (std::uint32_t i = 0u; i < 7u + conditions.player_count; ++i) {
+  for (std::uint32_t i = 0u; i < 7u + (conditions.player_count - 1u) / 2u; ++i) {
     result.emplace_back(
         get_enemy_wave_data(conditions, biome_index, /* phase */ 1, enemy_wave_number++));
   }
   result.emplace_back(wave_data{wave_type::kUpgrade});
-  for (std::uint32_t i = 0u; i < 3u + conditions.player_count; ++i) {
+  for (std::uint32_t i = 0u; i < 3u + conditions.player_count / 2u; ++i) {
     result.emplace_back(
         get_enemy_wave_data(conditions, biome_index, /* phase */ 2, enemy_wave_number++));
   }

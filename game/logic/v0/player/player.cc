@@ -15,7 +15,7 @@ namespace ii::v0 {
 namespace {
 
 struct player_mod_data {
-  static constexpr std::uint32_t kShieldRefillTimer = 60 * 28;
+  static constexpr std::uint32_t kShieldRefillTimer = 60 * 24;
   static constexpr std::uint32_t kBombDoubleTriggerTimer = 45;
 
   std::uint32_t shield_refill_timer = 0;
@@ -25,7 +25,7 @@ DEBUG_STRUCT_TUPLE(player_mod_data, shield_refill_timer, bomb_double_trigger_tim
 
 struct PlayerLogic : ecs::component {
   static constexpr fixed kPlayerSpeed = 5_fx * 15_fx / 16_fx;
-  static constexpr std::uint32_t kReviveTime = 100;
+  static constexpr std::uint32_t kReviveTime = 150;
   static constexpr std::uint32_t kShieldTime = 50;
   static constexpr std::uint32_t kInputTimer = 30;
 
@@ -188,6 +188,7 @@ struct PlayerLogic : ecs::component {
   void post_update(ecs::handle h, Player& pc, const PlayerLoadout& loadout,
                    const Transform& transform, Render& render, SimInterface& sim) {
     if (bubble_id && !sim.index().get(*bubble_id)) {
+      // TODO: small bomb on respawn.
       bubble_id.reset();
       pc.is_killed = false;
       render.clear_trails = true;

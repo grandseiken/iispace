@@ -150,8 +150,8 @@ struct Overmind : ecs::component {
     const auto* biome = get_biome(sim, next_wave.biome_index);
     const auto& data = wave_list[next_wave.wave_number];
     if (data.type == wave_type::kEnemy) {
-      global.shield_drop.counter += 120 + (6 * n / (2 + c)) + 80 * c;
-      global.bomb_drop.counter += 160 + (9 * n / (2 + c)) + 60 * c;
+      global.shield_drop.counter += 120 + (6 * n) / (2 + c) + 90 * c;
+      global.bomb_drop.counter += 160 + (9 * n) / (2 + c) + 80 * c;
       if (!next_wave.biome_index && !next_wave.wave_number) {
         global.bomb_drop.counter += 200;
       }

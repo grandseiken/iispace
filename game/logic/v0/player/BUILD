@@ -55,6 +55,7 @@ cc_library(
     "//game/geometry/shapes",
     "//game/logic/sim:sim_interface",
     "//game/logic/sim/io:conditions",
+    "//game/logic/sim/io:player",
     "//game/logic/v0/lib:components",
     "//game/logic/v0/lib:ship_template",
   ],

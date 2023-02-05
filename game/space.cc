@@ -106,16 +106,8 @@ bool run(System& system, const std::vector<std::string>& args, const game_option
     stack.add<SimLayer>(conditions, std::span<const ui::input_device_id>{&kbm, 1u});
   }
 
-  using counter_t = std::chrono::duration<double>;
-  auto start_time = std::chrono::steady_clock::now();
-  auto target_time = counter_t{0.};
-  auto elapsed_time = [&] {
-    auto now = std::chrono::steady_clock::now();
-    return std::chrono::duration_cast<counter_t>(now - start_time);
-  };
-
   bool exit = false;
-  while (!exit) {
+  auto tick = [&] {
     io_layer->input_frame_clear();
     bool audio_change = false;
     bool controller_change = false;
@@ -146,25 +138,43 @@ bool run(System& system, const std::vector<std::string>& args, const game_option
     stack.update(controller_change);
     mixer.commit();
     exit |= stack.empty();
+  };
 
+  auto render = [&] {
     renderer->target().screen_dimensions = io_layer->dimensions();
     renderer->clear_screen();
     stack.render(*renderer);
     renderer->render_present();
     io_layer->swap_buffers();
-
     auto render_status = renderer->status();
     if (!render_status) {
       std::cerr << render_status.error() << std::endl;
     }
+  };
 
-    counter_t time_per_frame{1. / stack.fps()};
-    target_time += time_per_frame;
-    auto actual_time = elapsed_time();
-    if (actual_time >= target_time) {
-      target_time = actual_time;
+  using counter_t = std::chrono::duration<double>;
+  auto last_time = std::chrono::steady_clock::now();
+  counter_t tick_accumulator{0.};
+  while (!exit) {
+    auto now = std::chrono::steady_clock::now();
+    tick_accumulator += std::chrono::duration_cast<counter_t>(now - last_time);
+    tick_accumulator = std::min(tick_accumulator, counter_t{1.});
+    last_time = now;
+    std::uint32_t tick_count = 0;
+    counter_t time_per_frame{0.};
+    while (true) {
+      time_per_frame = counter_t{1. / stack.fps()};
+      if (tick_accumulator < time_per_frame) {
+        break;
+      }
+      tick();
+      tick_accumulator -= time_per_frame;
+      ++tick_count;
+    }
+    if (tick_count) {
+      render();
     } else {
-      std::this_thread::sleep_for(target_time - actual_time);
+      std::this_thread::sleep_for(time_per_frame - tick_accumulator);
     }
   }
   return true;

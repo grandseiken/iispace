@@ -2,6 +2,7 @@
 #include "game/geometry/node_conditional.h"
 #include "game/geometry/shapes/ngon.h"
 #include "game/logic/sim/io/conditions.h"
+#include "game/logic/sim/io/player.h"
 #include "game/logic/sim/sim_interface.h"
 #include "game/logic/v0/lib/components.h"
 #include "game/logic/v0/lib/particles.h"
@@ -77,8 +78,14 @@ struct PlayerBubble : ecs::component {
     tick_count = sim.tick_count();
     wobble_movement(sim, transform, dir, kRotateTime, first_frame, rotate_anti);
 
+    auto move = normalise(dir);
+    const auto& input = sim.input(player_number);
+    if (on_screen && length(input.velocity) > fixed_c::hundredth) {
+      auto v = length(input.velocity) > 1 ? normalise(input.velocity) : input.velocity;
+      move += 2 * v;
+    }
     transform.rotate(pi<fixed> / 100);
-    transform.move(normalise(dir) * kSpeed);
+    transform.move(normalise(move) * kSpeed);
     on_screen = on_screen || sim.is_on_screen(transform.centre);
   }
 

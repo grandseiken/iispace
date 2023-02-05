@@ -101,13 +101,13 @@ struct Follow : ecs::component {
     if (length_squared(d0) > square(kSpeed)) {
       d0 = kSpeed * normalise(d0);
     }
-    if (next_target) {
+    if (next_target && timer >= kTime / 2) {
       auto ph1 = sim.index().get(*next_target);
       auto d1 = ph1->get<Transform>()->centre - transform.centre;
       if (length_squared(d1) > square(kSpeed)) {
         d1 = kSpeed * normalise(d1);
       }
-      d0 = glm::mix(d0, d1, fixed{timer} / kTime);
+      d0 = glm::mix(d0, d1, (2 * fixed{timer} - kTime) / kTime);
     }
     transform.move(d0 * move_scale);
   }

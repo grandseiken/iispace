@@ -99,13 +99,12 @@ void Health::damage(ecs::handle h, SimInterface& sim, std::uint32_t damage, dama
     hit.tick = tick;
   }
 
+  if (type != damage_type::kPredicted) {
+    hp = hp < damage ? 0 : hp - damage;
+  }
   auto e = sim.emit(resolve_key::reconcile(h.id(), resolve_tag::kOnHit, hp));
   if (on_hit) {
     on_hit(h, sim, e, type, source_v);
-  }
-
-  if (type != damage_type::kPredicted) {
-    hp = hp < damage ? 0 : hp - damage;
   }
   auto position = sim.dimensions() / 2;
   if (auto* c = h.get<Transform>()) {

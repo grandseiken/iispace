@@ -16,6 +16,7 @@
 namespace ii {
 namespace {
 constexpr std::array kSpeedFrames = {1u, 2u, 4u, 8u, 16u, 32u, 64u};
+constexpr std::array kSpeedParticleFrames = {1u, 1u, 1u, 1u, 2u, 4u, 8u};
 constexpr std::array kSpeedPreRenderFrames = {0u, 1u, 3u, 6u, 14u, 30u, 61u};
 }  // namespace
 
@@ -136,7 +137,9 @@ void ReplayViewer::update_content(const ui::input_frame& input, ui::output_frame
   impl_->render_state.set_dimensions(impl_->istate().dimensions());
   impl_->render_state.handle_output(impl_->istate(), handle_audio ? &stack().mixer() : nullptr,
                                     nullptr);
-  impl_->render_state.update(nullptr);
+  for (std::uint32_t i = 0u; i < kSpeedParticleFrames[impl_->speed]; ++i) {
+    impl_->render_state.update(nullptr);
+  }
 
   if (input.pressed(ui::key::kUp)) {
     impl_->speed = std::min(6u, impl_->speed + 1);
