@@ -1,7 +1,7 @@
 #include "game/common/colour.h"
-#include "game/geometry/legacy/line.h"
 #include "game/geometry/legacy/ngon.h"
 #include "game/geometry/node_conditional.h"
+#include "game/geometry/shapes/line.h"
 #include "game/logic/legacy/enemy/enemy.h"
 #include "game/logic/legacy/ship_template.h"
 
@@ -182,7 +182,7 @@ struct Tractor : ecs::component {
   using shape = standard_transform<
       geom::translate<24, 0, geom::rotate_eval<geom::multiply_p<5, 2>, t_orb>>,
       geom::translate<-24, 0, geom::rotate_eval<geom::multiply_p<-5, 2>, t_orb>>,
-      geom::legacy::line<-24, 0, 24, 0, c>,
+      geom::line<vec2{-24, 0}, vec2{24, 0}, geom::sline(c)>,
       geom::if_p<3, geom::translate<24, 0, geom::rotate_eval<geom::multiply_p<8, 2>, t_star>>,
                  geom::translate<-24, 0, geom::rotate_eval<geom::multiply_p<-8, 2>, t_star>>>>;
 

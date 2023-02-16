@@ -1,7 +1,7 @@
 #include "game/common/colour.h"
-#include "game/geometry/legacy/line.h"
 #include "game/geometry/legacy/ngon.h"
 #include "game/geometry/node_for_each.h"
+#include "game/geometry/shapes/line.h"
 #include "game/logic/legacy/boss/boss_internal.h"
 #include "game/logic/legacy/enemy/enemy.h"
 #include "game/logic/legacy/ship_template.h"
@@ -56,8 +56,9 @@ struct TractorBoss : ecs::component {
   using shape = standard_transform<
       geom::for_each<std::size_t, 0, 2, ball_shape>,
       geom::legacy::ngon_eval<geom::parameter<3>, geom::constant<16u>, geom::constant<c2>>,
-      geom::legacy::line<-2, -96, -2, 96, c0>, geom::legacy::line<0, -96, 0, 96, c1>,
-      geom::legacy::line<2, -96, 2, 96, c0>>;
+      geom::line<vec2{-2, -96}, vec2{-2, 96}, geom::sline(c0)>,
+      geom::line<vec2{0, -96}, vec2{0, 96}, geom::sline(c1)>,
+      geom::line<vec2{2, -96}, vec2{2, 96}, geom::sline(c0)>>;
   std::tuple<vec2, fixed, fixed, fixed> shape_parameters(const Transform& transform) const {
     return {transform.centre, transform.rotation, sub_rotation,
             static_cast<std::uint32_t>(attack_shapes.size()) / (1 + fixed_c::half)};

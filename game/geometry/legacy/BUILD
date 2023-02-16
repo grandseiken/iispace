@@ -3,7 +3,6 @@ cc_library(
   hdrs = [
     "ball_collider.h",
     "box.h",
-    "line.h",
     "ngon.h",
     "polyarc.h",
   ],

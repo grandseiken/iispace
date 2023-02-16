@@ -1,10 +1,10 @@
 #include "game/common/colour.h"
 #include "game/geometry/legacy/ball_collider.h"
 #include "game/geometry/legacy/box.h"
-#include "game/geometry/legacy/line.h"
 #include "game/geometry/legacy/ngon.h"
 #include "game/geometry/node_conditional.h"
 #include "game/geometry/node_for_each.h"
+#include "game/geometry/shapes/line.h"
 #include "game/logic/legacy/boss/boss_internal.h"
 #include "game/logic/legacy/enemy/enemy.h"
 #include "game/logic/legacy/ship_template.h"
@@ -25,7 +25,7 @@ struct DeathRay : ecs::component {
   static constexpr fixed kSpeed = 10;
 
   using shape = standard_transform<geom::legacy::box<10, 48, cvec4{0.f}, 0, shape_flag::kDangerous>,
-                                   geom::legacy::line<0, 48, 0, -48, cvec4{1.f}>>;
+                                   geom::line<vec2{0, 48}, vec2{0, -48}, geom::sline(cvec4{1.f})>>;
 
   void update(ecs::handle h, Transform& transform, SimInterface& sim) {
     transform.move(vec2{1, 0} * kSpeed);

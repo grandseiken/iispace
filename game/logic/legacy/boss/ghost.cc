@@ -1,10 +1,10 @@
 #include "game/common/colour.h"
 #include "game/geometry/legacy/ball_collider.h"
 #include "game/geometry/legacy/box.h"
-#include "game/geometry/legacy/line.h"
 #include "game/geometry/legacy/ngon.h"
 #include "game/geometry/node_conditional.h"
 #include "game/geometry/node_for_each.h"
+#include "game/geometry/shapes/line.h"
 #include "game/logic/legacy/boss/boss_internal.h"
 #include "game/logic/legacy/enemy/enemy.h"
 #include "game/logic/legacy/player/powerup.h"
@@ -442,12 +442,9 @@ struct GhostBoss : ecs::component {
   }
 
   template <fixed I>
-  using spark_line = geom::legacy::line_eval<
-      geom::constant<10 * from_polar_legacy(I* pi<fixed> / 4, 1_fx)>,
-      geom::constant<20 * from_polar_legacy(I* pi<fixed> / 4, 1_fx)>, geom::constant<c1>,
-      geom::constant<0>,
-      geom::ternary<geom::constant<I>, geom::constant<render::flag::kLegacy_NoExplode>,
-                    geom::constant<render::flag::kNone>>>;
+  using spark_line = geom::line<10 * from_polar_legacy(I* pi<fixed> / 4, 1_fx),
+                                20 * from_polar_legacy(I* pi<fixed> / 4, 1_fx), geom::sline(c1),
+                                I ? render::flag::kLegacy_NoExplode : render::flag::kNone>;
   using spark_shape = standard_transform<geom::translate_p<
       2, geom::rotate_p<3, spark_line<0>, geom::for_each<fixed, 1, 8, spark_line>>>>;
   std::tuple<vec2, fixed, vec2, fixed>

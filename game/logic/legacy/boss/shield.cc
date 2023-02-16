@@ -1,7 +1,7 @@
 #include "game/common/colour.h"
-#include "game/geometry/legacy/line.h"
 #include "game/geometry/legacy/ngon.h"
 #include "game/geometry/node_for_each.h"
+#include "game/geometry/shapes/line.h"
 #include "game/logic/legacy/boss/boss_internal.h"
 #include "game/logic/legacy/enemy/enemy.h"
 #include "game/logic/legacy/player/powerup.h"
@@ -24,10 +24,8 @@ struct ShieldBombBoss : ecs::component {
   static constexpr cvec4 c2 = colour::hue(0.f, .6f, 0.f);
 
   template <fixed I>
-  using strut_shape =
-      geom::legacy::line_eval<geom::constant<rotate(vec2{80, 0}, I* pi<fixed> / 8)>,
-                              geom::constant<rotate(vec2{120, 0}, I* pi<fixed> / 8)>,
-                              geom::parameter<3>>;
+  using strut_shape = geom::line_colour_p<rotate(vec2{80, 0}, I* pi<fixed> / 8),
+                                          rotate(vec2{120, 0}, I* pi<fixed> / 8), 3>;
 
   using centre_shape =
       geom::legacy::polygram<48, 8, c0, 0, shape_flag::kDangerous | shape_flag::kVulnerable>;

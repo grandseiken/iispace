@@ -1,6 +1,5 @@
 #include "game/geometry/legacy/ball_collider.h"
 #include "game/geometry/legacy/box.h"
-#include "game/geometry/legacy/line.h"
 #include "game/geometry/legacy/ngon.h"
 #include "game/geometry/legacy/polyarc.h"
 #include "game/geometry/resolve.h"
@@ -19,12 +18,6 @@ void box_data::iterate(iterate_resolve_t, const transform& t, resolve_result& r)
       t,
       geom::box_data{
           .dimensions = dimensions, .line = {.colour0 = colour, .index = index}, .flags = r_flags});
-}
-
-void line_data::iterate(iterate_resolve_t, const transform& t, resolve_result& r) const {
-  r.add(t,
-        geom::line_data{
-            .a = a, .b = b, .style = {.colour0 = colour, .index = index}, .flags = r_flags});
 }
 
 void ngon_data::iterate(iterate_resolve_t, const transform& t, resolve_result& r) const {
