@@ -13,6 +13,7 @@
 
 namespace ii::v0 {
 namespace {
+using namespace geom;
 
 struct player_mod_data {
   static constexpr std::uint32_t kShieldRefillTimer = 60 * 24;
@@ -30,16 +31,14 @@ struct PlayerLogic : ecs::component {
   static constexpr std::uint32_t kInputTimer = 30;
 
   static constexpr auto z = colour::kZPlayer;
-  static constexpr auto style = geom::sline(colour::kZero, z);
-  using box_shapes = geom::translate<
-      8, 0, geom::rotate_eval<geom::negate_p<1>, geom::box_colour_p<vec2{2, 2}, 2, style>>,
-      geom::rotate_eval<geom::negate_p<1>, geom::box_colour_p<vec2{1, 1}, 3, style>>,
-      geom::rotate_eval<geom::negate_p<1>, geom::box_colour_p<vec2{3, 3}, 3, style>>>;
+  static constexpr auto style = sline(colour::kZero, z);
+  using box_shapes = translate<8, 0, rotate_eval<negate_p<1>, box_colour_p<vec2{2, 2}, 2, style>>,
+                               rotate_eval<negate_p<1>, box_colour_p<vec2{1, 1}, 3, style>>,
+                               rotate_eval<negate_p<1>, box_colour_p<vec2{3, 3}, 3, style>>>;
   using shape = standard_transform<
-      geom::ngon_colour_p<geom::nd(21, 3), 5,
-                          geom::nline(colour::kOutline, colour::kZOutline, 3.f)>,
-      geom::ngon_colour_p2<geom::nd(18, 3), 2, 4, geom::nline(colour::kZero, z, 1.5f)>,
-      geom::rotate<pi<fixed>, geom::ngon_colour_p<geom::nd(9, 3), 2>>, box_shapes>;
+      ngon_colour_p<nd(21, 3), 5, nline(colour::kOutline, colour::kZOutline, 3.f)>,
+      ngon_colour_p2<nd(18, 3), 2, 4, nline(colour::kZero, z, 1.5f)>,
+      rotate<pi<fixed>, ngon_colour_p<nd(9, 3), 2>>, box_shapes>;
 
   std::tuple<vec2, fixed, cvec4, cvec4, cvec4, cvec4>
   shape_parameters(const Player& pc, const Transform& transform) const {
@@ -171,8 +170,7 @@ struct PlayerLogic : ecs::component {
     }
 
     // Damage.
-    auto collision =
-        sim.collide(geom::iterate_check_point(shape_flag::kDangerous, transform.centre));
+    auto collision = sim.collide(iterate_check_point(shape_flag::kDangerous, transform.centre));
     if (!pc.is_predicted && !collision.empty()) {
       std::optional<vec2> source;
       for (const auto& c : collision) {
@@ -286,7 +284,7 @@ struct PlayerLogic : ecs::component {
     }
 
     e.rumble(pc.player_number, 20, 1.f, .5f).play(sound::kExplosion, position);
-    for (const auto& c : sim.collide(geom::iterate_check_ball(
+    for (const auto& c : sim.collide(iterate_check_ball(
              shape_flag::kVulnerable | shape_flag::kWeakVulnerable | shape_flag::kBombVulnerable,
              position, radius))) {
       if (auto* health = c.h.get<Health>(); health) {
@@ -339,7 +337,7 @@ struct PlayerLogic : ecs::component {
       auto t = 6_fx - (std::min(4u, (std::max(pc.bomb_count, 2u) - 2u)) / 2_fx);
       vec2 v{-14, (pc.bomb_count - 1) * (t / 2) - t * i};
       output.emplace_back(render::shape{
-          .origin = to_float(transform.centre + rotate(v, transform.rotation)),
+          .origin = to_float(transform.centre + ::rotate(v, transform.rotation)),
           .rotation = transform.rotation.to_float(),
           .colour0 = colour::kWhite0,
           .z_index = colour::kZPlayerPowerup,

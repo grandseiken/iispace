@@ -7,6 +7,7 @@
 
 namespace ii::v0 {
 namespace {
+using namespace geom;
 
 struct Square : ecs::component {
   static constexpr std::uint32_t kBoundingWidth = 14;
@@ -22,10 +23,9 @@ struct Square : ecs::component {
   // putting out 1 shadow), but why is it overlapping to begin with?
   static constexpr auto z = colour::kZEnemyWall;
   using shape = standard_transform<
-      geom::box_collider<vec2{12, 12}, shape_flag::kDangerous | shape_flag::kVulnerable>,
-      geom::box<vec2{14, 14}, geom::sline(colour::kOutline, colour::kZOutline, 2.f)>,
-      geom::box_colour_p2<vec2{12, 12}, 2, 3, geom::sline(colour::kZero, z, 1.5f),
-                          geom::sfill(colour::kZero, z)>>;
+      box_collider<vec2{12, 12}, shape_flag::kDangerous | shape_flag::kVulnerable>,
+      box<vec2{14, 14}, sline(colour::kOutline, colour::kZOutline, 2.f)>,
+      box_colour_p2<vec2{12, 12}, 2, 3, sline(colour::kZero, z, 1.5f), sfill(colour::kZero, z)>>;
 
   std::tuple<vec2, fixed, cvec4, cvec4>
   shape_parameters(const Transform& transform, const Health& health) const {
@@ -108,13 +108,12 @@ struct Wall : ecs::component {
   static constexpr auto c = colour::kNewGreen0;
   static constexpr auto cf = colour::alpha(c, colour::kFillAlpha0);
   using shape = standard_transform<
-      geom::box<vec2{14, 50}, geom::sline(colour::kOutline, colour::kZOutline, 2.f)>,
-      geom::conditional_p<
-          2,
-          geom::box_with_collider<vec2{12, 48}, geom::sline(c, z, 1.75f), geom::sfill(cf, z),
-                                  shape_flag::kDangerous | shape_flag::kWeakVulnerable>,
-          geom::box_with_collider<vec2{12, 48}, geom::sline(c, z, 1.75f), geom::sfill(cf, z),
-                                  shape_flag::kDangerous | shape_flag::kVulnerable>>>;
+      box<vec2{14, 50}, sline(colour::kOutline, colour::kZOutline, 2.f)>,
+      conditional_p<2,
+                    box_with_collider<vec2{12, 48}, sline(c, z, 1.75f), sfill(cf, z),
+                                      shape_flag::kDangerous | shape_flag::kWeakVulnerable>,
+                    box_with_collider<vec2{12, 48}, sline(c, z, 1.75f), sfill(cf, z),
+                                      shape_flag::kDangerous | shape_flag::kVulnerable>>>;
 
   Wall(const vec2& dir, bool anti) : dir{dir}, anti{anti} {}
   vec2 dir{0};
@@ -137,12 +136,12 @@ struct Wall : ecs::component {
     }
 
     if (is_rotating) {
-      auto d = rotate(dir, (anti ? -1 : 1) * (kTimer - timer) * pi<fixed> / (4 * kTimer));
+      auto d = ::rotate(dir, (anti ? -1 : 1) * (kTimer - timer) * pi<fixed> / (4 * kTimer));
 
       transform.set_rotation(angle(d));
       if (!--timer) {
         is_rotating = false;
-        dir = rotate(dir, anti ? -pi<fixed> / 4 : pi<fixed> / 4);
+        dir = ::rotate(dir, anti ? -pi<fixed> / 4 : pi<fixed> / 4);
       }
       return;
     }
@@ -172,7 +171,7 @@ struct Wall : ecs::component {
     }
 
     auto p = from_polar(transform.rotation, 1_fx);
-    auto d = rotate(p, pi<fixed> / 2);
+    auto d = ::rotate(p, pi<fixed> / 2);
     auto v = transform.centre + d * 12 * 3;
     if (sim.is_on_screen(v)) {
       spawn_square(sim, v, p, /* drop */ false);

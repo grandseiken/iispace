@@ -92,14 +92,14 @@ concept IterateFunction = IterTag<I> && Implies<I, iterate_flags_t, FlagResult<T
     Implies<I, iterate_check_collision_t, HitResult<T>>;
 
 template <typename T>
-concept Transform = requires(const T& x) {
-                      { x.rotate(0_fx) } -> std::convertible_to<T>;
-                      { x.translate(vec2{0}) } -> std::convertible_to<T>;
-                    };
+concept Transformer = requires(const T& x) {
+                        { x.rotate(0_fx) } -> std::convertible_to<T>;
+                        { x.translate(vec2{0}) } -> std::convertible_to<T>;
+                      };
 
 struct shape_data_base {
   template <IterTag I>
-  constexpr void iterate(I, const Transform auto&, IterateFunction<I> auto&&) const {}
+  constexpr void iterate(I, const Transformer auto&, IterateFunction<I> auto&&) const {}
 };
 
 struct null_transform {
@@ -128,7 +128,7 @@ struct convert_local_transform {
   constexpr convert_local_transform(transform t = {}) : ct{t} {}
   transform ct;
 
-  constexpr std::vector<vec2> transform(std::span<const vec2> vs) const {
+  std::vector<vec2> transform(std::span<const vec2> vs) const {
     std::vector<vec2> r;
     r.reserve(vs.size());
     for (const auto& v : vs) {

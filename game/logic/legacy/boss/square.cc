@@ -1,5 +1,5 @@
 #include "game/common/colour.h"
-#include "game/geometry/legacy/ngon.h"
+#include "game/geometry/shapes/legacy.h"
 #include "game/logic/legacy/boss/boss_internal.h"
 #include "game/logic/legacy/enemy/enemy.h"
 #include "game/logic/legacy/ship_template.h"
@@ -7,6 +7,7 @@
 
 namespace ii::legacy {
 namespace {
+using namespace geom;
 
 struct BigSquareBoss : public ecs::component {
   static constexpr std::uint32_t kBaseHp = 400;
@@ -21,19 +22,18 @@ struct BigSquareBoss : public ecs::component {
   static constexpr cvec4 c1 = colour::hue360(270, .4f);
   static constexpr cvec4 c2 = colour::hue360(260, .3f);
 
-  template <fixed C, geom::ShapeNode... Nodes>
-  using rotate_s = geom::rotate_eval<geom::multiply_p<C, 1>, geom::pack<Nodes...>>;
+  template <fixed C, ShapeNode... Nodes>
+  using rotate_s = rotate_eval<multiply_p<C, 1>, pack<Nodes...>>;
   using shape =
-      geom::translate_p<0,
-                        rotate_s<1, geom::legacy::ngon<160, 4, c0>, geom::legacy::ngon<155, 4, c0>>,
-                        rotate_s<-2, geom::legacy::polygon<140, 4, c0, 0, shape_flag::kDangerous>,
-                                 geom::legacy::ngon<135, 4, c0>>,
-                        rotate_s<3, geom::legacy::polygon<120, 4, c0, 0, shape_flag::kDangerous>,
-                                 geom::legacy::ngon<115, 4, c0>>,
-                        rotate_s<-4, geom::legacy::ngon<100, 4, c0>, geom::legacy::ngon<95, 4, c1>>,
-                        rotate_s<5, geom::legacy::ngon<80, 4, c0>, geom::legacy::ngon<75, 4, c1>>,
-                        rotate_s<-6, geom::legacy::polygon<60, 4, c0, 0, shape_flag::kVulnerable>,
-                                 geom::legacy::polygon<55, 4, c2, 0, shape_flag::kShield>>>;
+      translate_p<0, rotate_s<1, ngon<nd(160, 4), nline(c0)>, ngon<nd(155, 4), nline(c0)>>,
+                  rotate_s<-2, legacy_ngon<nd(140, 4), nline(c0), shape_flag::kDangerous>,
+                           ngon<nd(135, 4), nline(c0)>>,
+                  rotate_s<3, legacy_ngon<nd(120, 4), nline(c0), shape_flag::kDangerous>,
+                           ngon<nd(115, 4), nline(c0)>>,
+                  rotate_s<-4, ngon<nd(100, 4), nline(c0)>, ngon<nd(95, 4), nline(c1)>>,
+                  rotate_s<5, ngon<nd(80, 4), nline(c0)>, ngon<nd(75, 4), nline(c1)>>,
+                  rotate_s<-6, legacy_ngon<nd(60, 4), nline(c0), shape_flag::kVulnerable>,
+                           legacy_ngon<nd(55, 4), nline(c2), shape_flag::kShield>>>;
 
   static std::uint32_t bounding_width(const SimInterface& sim) {
     return sim.is_legacy() ? 640 : 150;
@@ -119,17 +119,16 @@ struct BigSquareBoss : public ecs::component {
   }
 
   void render(std::vector<render::shape>& output, const SimInterface& sim) const {
-    using follow_shape =
-        geom::translate_p<0, geom::rotate<pi<fixed> / 4, geom::legacy::ngon<10, 4, c0>>>;
+    using follow_shape = translate_p<0, rotate<pi<fixed> / 4, ngon<nd(10, 4), nline(c0)>>>;
     if ((special_timer / 4) % 2 && attack_player) {
       vec2 d{kSpecialAttackRadius, 0};
       if (special_attack_rotate) {
-        d = rotate(d, pi<fixed> / 2);
+        d = ::rotate(d, pi<fixed> / 2);
       }
       for (std::uint32_t i = 0; i < 6; ++i) {
         auto v = sim.index().get(*attack_player)->get<Transform>()->centre + d;
         render_shape<follow_shape>(output, std::tuple{v});
-        d = rotate(d, 2 * pi<fixed> / 6);
+        d = ::rotate(d, 2 * pi<fixed> / 6);
       }
     }
   }

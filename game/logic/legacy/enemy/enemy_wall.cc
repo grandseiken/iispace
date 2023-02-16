@@ -1,5 +1,6 @@
 #include "game/common/colour.h"
-#include "game/geometry/legacy/box.h"
+#include "game/geometry/shapes/box.h"
+#include "game/geometry/shapes/legacy.h"
 #include "game/logic/legacy/components.h"
 #include "game/logic/legacy/enemy/enemy.h"
 #include "game/logic/legacy/ship_template.h"
@@ -7,6 +8,8 @@
 
 namespace ii::legacy {
 namespace {
+using namespace geom;
+
 struct Square : ecs::component {
   static constexpr std::uint32_t kBoundingWidth = 15;
   static constexpr float kZIndex = -8.f;
@@ -14,7 +17,8 @@ struct Square : ecs::component {
   static constexpr rumble_type kDestroyRumble = rumble_type::kLow;
   static constexpr fixed kSpeed = 2 + 1_fx / 4;
   using shape = standard_transform<
-      geom::legacy::box_colour_p<10, 10, 2, 0, shape_flag::kDangerous | shape_flag::kVulnerable>>;
+      box_colour_p<vec2{10, 10}, 2>,
+      legacy_box_collider<vec2{10, 10}, shape_flag::kDangerous | shape_flag::kVulnerable>>;
 
   std::tuple<vec2, fixed, cvec4>
   shape_parameters(const Transform& transform, const Health& health) const {
@@ -86,9 +90,9 @@ struct Wall : ecs::component {
 
   static constexpr std::uint32_t kTimer = 80;
   static constexpr fixed kSpeed = 1 + 1_fx / 4;
-  using shape =
-      standard_transform<geom::legacy::box<10, 40, colour::hue360(120, .5f, .6f), 0,
-                                           shape_flag::kDangerous | shape_flag::kVulnerable>>;
+  using shape = standard_transform<
+      box<vec2{10, 40}, sline(colour::hue360(120, .5f, .6f))>,
+      legacy_box_collider<vec2{10, 40}, shape_flag::kDangerous | shape_flag::kVulnerable>>;
 
   vec2 dir{0, 1};
   std::uint32_t timer = 0;

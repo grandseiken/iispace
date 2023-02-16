@@ -1,10 +1,10 @@
 #include "game/common/colour.h"
-#include "game/geometry/legacy/ball_collider.h"
-#include "game/geometry/legacy/box.h"
-#include "game/geometry/legacy/ngon.h"
 #include "game/geometry/node_conditional.h"
 #include "game/geometry/node_for_each.h"
+#include "game/geometry/shapes/box.h"
+#include "game/geometry/shapes/legacy.h"
 #include "game/geometry/shapes/line.h"
+#include "game/geometry/shapes/ngon.h"
 #include "game/logic/legacy/boss/boss_internal.h"
 #include "game/logic/legacy/enemy/enemy.h"
 #include "game/logic/legacy/player/powerup.h"
@@ -17,10 +17,11 @@ namespace {
 constexpr cvec4 c0 = colour::hue360(280, .7f);
 constexpr cvec4 c1 = colour::hue360(280, .5f, .6f);
 constexpr cvec4 c2 = colour::hue360(270, .2f);
+using namespace geom;
 
-template <geom::ShapeNode S>
-geom::hit_result shape_check_collision_compatibility(const auto& parameters, bool is_legacy,
-                                                     const geom::iterate_check_collision_t& it) {
+template <ShapeNode S>
+hit_result shape_check_collision_compatibility(const auto& parameters, bool is_legacy,
+                                               const iterate_check_collision_t& it) {
   return is_legacy ? shape_check_collision_legacy<S>(parameters, it)
                    : shape_check_collision<S>(parameters, it);
 }
@@ -33,20 +34,23 @@ struct GhostWall : ecs::component {
   static constexpr fixed kOffsetH = 260;
   static constexpr float kZIndex = 0.f;
 
-  template <std::uint32_t length>
-  using gw_box = geom::compound<
-      geom::legacy::box<length, 10, c0, 0, shape_flag::kDangerous | shape_flag::kShield>,
-      geom::legacy::box<length, 7, c0>, geom::legacy::box<length, 4, c0>>;
-  using gw_horizontal_base = geom::rotate<pi<fixed> / 2, gw_box<240>>;
+  using gw_wide_box =
+      compound<legacy_box_collider<vec2{640, 10}, shape_flag::kDangerous | shape_flag::kShield>,
+               box<vec2{640, 10}, sline(c0)>, box<vec2{640, 7}, sline(c0)>,
+               box<vec2{640, 4}, sline(c0)>>;
+  using gw_narrow_box =
+      compound<legacy_box_collider<vec2{240, 10}, shape_flag::kDangerous | shape_flag::kShield>,
+               box<vec2{240, 10}, sline(c0)>, box<vec2{240, 7}, sline(c0)>,
+               box<vec2{240, 4}, sline(c0)>>;
+  using gw_horizontal_base = rotate<pi<fixed> / 2, gw_narrow_box>;
   template <fixed Y0, fixed Y1>
-  using gw_horizontal_align = geom::compound<geom::translate<0, Y0, gw_horizontal_base>,
-                                             geom::translate<0, Y1, gw_horizontal_base>>;
-  using shape = geom::translate_p<
+  using gw_horizontal_align =
+      compound<translate<0, Y0, gw_horizontal_base>, translate<0, Y1, gw_horizontal_base>>;
+  using shape = translate_p<
       0,
-      geom::conditional_p<
-          1, geom::conditional_p<2, gw_box<640>, gw_box<240>>,
-          geom::conditional_p<2, gw_horizontal_align<-100 - kOffsetH, -100 + kOffsetH>,
-                              gw_horizontal_align<100 - kOffsetH, 100 + kOffsetH>>>>;
+      conditional_p<1, conditional_p<2, gw_wide_box, gw_narrow_box>,
+                    conditional_p<2, gw_horizontal_align<-100 - kOffsetH, -100 + kOffsetH>,
+                                  gw_horizontal_align<100 - kOffsetH, 100 + kOffsetH>>>>;
 
   std::tuple<vec2, bool, bool> shape_parameters(const Transform& transform) const {
     return {transform.centre, vertical, gap_swap};
@@ -103,14 +107,14 @@ struct GhostMine : ecs::component {
   static constexpr float kZIndex = 0.f;
 
   using shape = standard_transform<
-      geom::conditional_p<
-          2, geom::legacy::ngon_colour_p<24, 8, 3>,
-          geom::legacy::polygon_colour_p<
-              24, 8, 3, 0, shape_flag::kDangerous | shape_flag::kShield | shape_flag::kWeakShield>>,
-      geom::legacy::ngon_colour_p<20, 8, 3>>;
+      ngon_colour_p<nd(24, 8), 3>,
+      if_p<2,
+           legacy_ball_collider<
+               24, shape_flag::kDangerous | shape_flag::kShield | shape_flag::kWeakShield>>,
+      ngon_colour_p<nd(20, 8), 3>>;
 
   std::tuple<vec2, fixed, bool, cvec4> shape_parameters(const Transform& transform) const {
-    return {transform.centre, transform.rotation, timer > 0, (timer / 4) % 2 ? cvec4{0.f} : c1};
+    return {transform.centre, transform.rotation, !timer, (timer / 4) % 2 ? colour::kZero : c1};
   }
 
   std::uint32_t timer = 80;
@@ -124,8 +128,7 @@ struct GhostMine : ecs::component {
       transform.set_rotation(sim.random_fixed() * 2 * pi<fixed>);
     }
     timer && --timer;
-    if (sim.collide_any(
-            geom::iterate_check_point(shape_flag::kEnemyInteraction, transform.centre))) {
+    if (sim.collide_any(iterate_check_point(shape_flag::kEnemyInteraction, transform.centre))) {
       if (sim.random(6) == 0 ||
           (sim.index().contains(ghost_boss) &&
            sim.index().get(ghost_boss)->get<Health>()->is_hp_low() && sim.random(5) == 0)) {
@@ -153,18 +156,19 @@ struct GhostBoss : ecs::component {
   static constexpr std::uint32_t kAttackTime = 100;
   static constexpr shape_flag kShapeFlags = shape_flag::kEverything;
 
-  using centre_shape =
-      geom::compound<geom::legacy::polygon<32, 8, c1, 0, shape_flag::kShield>,
-                     geom::legacy::polygon<48, 8, c0, 0,
-                                           shape_flag::kDangerous | shape_flag::kEnemyInteraction |
-                                               shape_flag::kVulnerable>>;
+  using centre_shape = compound<legacy_ngon<nd(32, 8), nline(c1), shape_flag::kShield>,
+                                legacy_ngon<nd(48, 8), nline(c0),
+                                            shape_flag::kDangerous | shape_flag::kEnemyInteraction |
+                                                shape_flag::kVulnerable>>;
 
   using render_shape = standard_transform<
-      centre_shape, geom::rotate_eval<geom::multiply_p<3, 2>, geom::legacy::polygram<24, 8, c0>>>;
+      centre_shape,
+      rotate_eval<multiply_p<3, 2>, ngon<nd(24, 8), nline(ngon_style::kPolygram, c0)>>>;
 
   using explode_shape = standard_transform<
-      centre_shape, geom::rotate_eval<geom::multiply_p<3, 2>, geom::legacy::polygram<24, 8, c0>>>;
-  using shape = geom::legacy::ngon<0, 2, c1>;  // Just for fireworks.
+      centre_shape,
+      rotate_eval<multiply_p<3, 2>, ngon<nd(24, 8), nline(ngon_style::kPolygram, c0)>>>;
+  using shape = ngon<nd(0, 2), nline(c1)>;  // Just for fireworks.
 
   std::tuple<vec2, fixed, fixed> shape_parameters(const Transform& transform) const {
     return {transform.centre, transform.rotation, inner_ring_rotation};
@@ -221,7 +225,7 @@ struct GhostBoss : ecs::component {
       }
     }
     danger_enable = !vtime;
-    if (!(attack == 2 && attack_time < kAttackTime * 4 && attack_time)) {
+    if (attack != 2 || attack_time >= kAttackTime * 4 || !attack_time) {
       transform.rotate(-fixed_c::hundredth * 4);
     }
 
@@ -386,19 +390,19 @@ struct GhostBoss : ecs::component {
     return kLookup[n][i];
   }
 
-  using box_attack_component = geom::compound<
-      geom::legacy::box<320, 10, c0, 0, shape_flag::kDangerous | shape_flag::kEnemyInteraction>,
-      geom::legacy::box<320, 7, c0>, geom::legacy::box<320, 4, c0>>;
+  using box_attack_component = compound<
+      legacy_box_collider<vec2{320, 10}, shape_flag::kDangerous | shape_flag::kEnemyInteraction>,
+      box<vec2{320, 10}, sline(c0)>, box<vec2{320, 7}, sline(c0)>, box<vec2{320, 4}, sline(c0)>>;
   using box_attack_shape =
-      standard_transform<geom::compound<geom::translate<320 + 32, 0, box_attack_component>,
-                                        geom::translate<-320 - 32, 0, box_attack_component>>>;
+      standard_transform<compound<translate<320 + 32, 0, box_attack_component>,
+                                  translate<-320 - 32, 0, box_attack_component>>>;
   std::tuple<vec2, fixed> box_attack_parameters(const Transform& transform) const {
     return {transform.centre, transform.rotation};
   }
 
-  geom::hit_result
-  check_collision(const Transform& transform, const geom::iterate_check_collision_t& it) const {
-    geom::hit_result result;
+  hit_result
+  check_collision(const Transform& transform, const iterate_check_collision_t& it) const {
+    hit_result result;
     if (!collision_enabled) {
       return result;
     }
@@ -412,9 +416,8 @@ struct GhostBoss : ecs::component {
     }
 
     using ring0_ball =
-        geom::legacy::ball_collider<16, shape_flag::kDangerous | shape_flag::kEnemyInteraction>;
-    using ring0_ball_t =
-        standard_transform<geom::rotate_p<2, geom::translate_p<3, geom::rotate_p<4, ring0_ball>>>>;
+        legacy_ball_collider<16, shape_flag::kDangerous | shape_flag::kEnemyInteraction>;
+    using ring0_ball_t = standard_transform<rotate_p<2, translate_p<3, rotate_p<4, ring0_ball>>>>;
     if (+(it.mask & (shape_flag::kDangerous | shape_flag::kEnemyInteraction))) {
       for (std::uint32_t i = 0; i < 16; ++i) {
         std::tuple parameters{transform.centre, transform.rotation, outer_rotation[0],
@@ -424,9 +427,8 @@ struct GhostBoss : ecs::component {
       }
     }
 
-    using ringN_ball = geom::legacy::ball_collider<9, shape_flag::kDangerous>;
-    using ringN_ball_t =
-        standard_transform<geom::rotate_p<2, geom::translate_p<3, geom::rotate_p<4, ringN_ball>>>>;
+    using ringN_ball = legacy_ball_collider<9, shape_flag::kDangerous>;
+    using ringN_ball_t = standard_transform<rotate_p<2, translate_p<3, rotate_p<4, ringN_ball>>>>;
     for (std::uint32_t n = 1; n < 5 && +(it.mask & shape_flag::kDangerous); ++n) {
       for (std::uint32_t i = 0; i < 16 + n * 6; ++i) {
         if (!outer_dangerous[n][i] || !danger_enable) {
@@ -442,11 +444,11 @@ struct GhostBoss : ecs::component {
   }
 
   template <fixed I>
-  using spark_line = geom::line<10 * from_polar_legacy(I* pi<fixed> / 4, 1_fx),
-                                20 * from_polar_legacy(I* pi<fixed> / 4, 1_fx), geom::sline(c1),
-                                I ? render::flag::kLegacy_NoExplode : render::flag::kNone>;
-  using spark_shape = standard_transform<geom::translate_p<
-      2, geom::rotate_p<3, spark_line<0>, geom::for_each<fixed, 1, 8, spark_line>>>>;
+  using spark_line = line<10 * from_polar_legacy(I* pi<fixed> / 4, 1_fx),
+                          20 * from_polar_legacy(I* pi<fixed> / 4, 1_fx), sline(c1),
+                          I ? render::flag::kLegacy_NoExplode : render::flag::kNone>;
+  using spark_shape = standard_transform<
+      translate_p<2, rotate_p<3, spark_line<0>, for_each<fixed, 1, 8, spark_line>>>>;
   std::tuple<vec2, fixed, vec2, fixed>
   spark_shape_parameters(const Transform& transform, std::uint32_t i) const {
     return {transform.centre, transform.rotation, from_polar_legacy(i * pi<fixed> / 4, 48_fx),
@@ -460,7 +462,7 @@ struct GhostBoss : ecs::component {
     legacy::explode_shapes<explode_shape>(e, shape_parameters(transform), colour_override, time,
                                           towards, speed);
     for (std::uint32_t i = 0; i < 10; ++i) {
-      e.explosion(to_float(transform.centre), cvec4{0.f});  // Compatibility.
+      e.explosion(to_float(transform.centre), colour::kZero);  // Compatibility.
     }
     for (std::uint32_t i = 0; i < 8; ++i) {
       legacy::explode_shapes<spark_shape>(e, spark_shape_parameters(transform, i), colour_override,
@@ -504,11 +506,11 @@ struct GhostBoss : ecs::component {
           output, nullptr, box_attack_parameters(transform), 0.f, colour_override);
     }
 
-    using outer_star_shape = standard_transform<geom::translate_p<
+    using outer_star_shape = standard_transform<translate_p<
         2,
-        geom::rotate_p<3,
-                       geom::compound<geom::legacy::polystar_colour_p<16, 8, 4>,
-                                      geom::legacy::polygon_colour_p<12, 8, 4>>>>>;
+        rotate_p<3,
+                 compound<ngon_colour_p<nd(16, 8), 4, nline(ngon_style::kPolystar, cvec4{0.})>,
+                          ngon_colour_p<nd(12, 8), 4>>>>>;
     for (std::uint32_t n = 0; n < 5; ++n) {
       for (std::uint32_t i = 0; i < 16 + n * 6; ++i) {
         auto colour = outer_dangerous[n][i] ? c0 : n ? c2 : c1;

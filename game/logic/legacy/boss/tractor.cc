@@ -1,6 +1,6 @@
 #include "game/common/colour.h"
-#include "game/geometry/legacy/ngon.h"
 #include "game/geometry/node_for_each.h"
+#include "game/geometry/shapes/legacy.h"
 #include "game/geometry/shapes/line.h"
 #include "game/logic/legacy/boss/boss_internal.h"
 #include "game/logic/legacy/enemy/enemy.h"
@@ -9,6 +9,7 @@
 
 namespace ii::legacy {
 namespace {
+using namespace geom;
 
 struct TractorBoss : ecs::component {
   static constexpr std::uint32_t kBaseHp = 900;
@@ -23,42 +24,37 @@ struct TractorBoss : ecs::component {
   static constexpr cvec4 c1 = colour::hue360(300, 1.f / 3, .6f);
   static constexpr cvec4 c2 = colour::hue360(300, .4f, .5f);
 
-  using attack_shape = standard_transform<geom::translate_p<2, geom::legacy::polygon<8, 6, c0>>>;
+  using attack_shape = standard_transform<translate_p<2, ngon<nd(8, 6), nline(c0)>>>;
   template <std::size_t BI>
   struct ball_inner {
     template <fixed I>
-    using ball = geom::translate_eval<
-        geom::constant<rotate_legacy(vec2{24, 0}, I* pi<fixed> / 4)>,
-        geom::rotate_eval<geom::multiply_p<BI ? 1 : -1, 2>,
-                          geom::legacy::polygram<12, 6, c0, 0, kDangerousVulnerable,
-                                                 render::flag::kLegacy_NoExplode>>>;
-    using shape = geom::for_each<fixed, 0, 8, ball>;
+    using ball =
+        translate_eval<constant<rotate_legacy(vec2{24, 0}, I* pi<fixed> / 4)>,
+                       rotate_eval<multiply_p<BI ? 1 : -1, 2>,
+                                   compound<ngon<nd(12, 6), nline(ngon_style::kPolygram, c0),
+                                                 sfill(), render::flag::kLegacy_NoExplode>,
+                                            legacy_ball_collider<12, kDangerousVulnerable>>>>;
+    using shape = for_each<fixed, 0, 8, ball>;
   };
 
   template <std::size_t I>
-  using ball_shape = geom::translate<
+  using ball_shape = translate<
       0, I ? 96 : -96,
-      geom::rotate_eval<
-          geom::multiply_p<fixed{I ? -1 : 1} / 2, 2>,
-          geom::compound<geom::legacy::polygram<12, 6, c1>,
-                         geom::legacy::polygon<30, 12, cvec4{0.f}, 0, shape_flag::kShield>,
-                         geom::compound<geom::legacy::polygon<12, 12, c1, 0, shape_flag::kNone,
-                                                              render::flag::kLegacy_NoExplode>,
-                                        geom::legacy::polygon<2, 6, c1, 0, shape_flag::kNone,
-                                                              render::flag::kLegacy_NoExplode>,
-                                        geom::legacy::polygon<36, 12, c0, 0, kDangerousVulnerable,
-                                                              render::flag::kLegacy_NoExplode>,
-                                        geom::legacy::polygon<34, 12, c0, 0, shape_flag::kNone,
-                                                              render::flag::kLegacy_NoExplode>,
-                                        geom::legacy::polygon<32, 12, c0, 0, shape_flag::kNone,
-                                                              render::flag::kLegacy_NoExplode>,
-                                        typename ball_inner<I>::shape>>>>;
-  using shape = standard_transform<
-      geom::for_each<std::size_t, 0, 2, ball_shape>,
-      geom::legacy::ngon_eval<geom::parameter<3>, geom::constant<16u>, geom::constant<c2>>,
-      geom::line<vec2{-2, -96}, vec2{-2, 96}, geom::sline(c0)>,
-      geom::line<vec2{0, -96}, vec2{0, 96}, geom::sline(c1)>,
-      geom::line<vec2{2, -96}, vec2{2, 96}, geom::sline(c0)>>;
+      rotate_eval<multiply_p<fixed{I ? -1 : 1} / 2, 2>,
+                  compound<ngon<nd(12, 6), nline(ngon_style::kPolygram, c1)>, legacy_dummy,
+                           legacy_ball_collider<30, shape_flag::kShield>,
+                           ngon<nd(12, 12), nline(c1), sfill(), render::flag::kLegacy_NoExplode>,
+                           ngon<nd(2, 6), nline(c1), sfill(), render::flag::kLegacy_NoExplode>,
+                           ngon<nd(36, 12), nline(c0), sfill(), render::flag::kLegacy_NoExplode>,
+                           legacy_ball_collider<36, kDangerousVulnerable>,
+                           ngon<nd(34, 12), nline(c0), sfill(), render::flag::kLegacy_NoExplode>,
+                           ngon<nd(32, 12), nline(c0), sfill(), render::flag::kLegacy_NoExplode>,
+                           typename ball_inner<I>::shape>>>;
+  using shape = standard_transform<for_each<std::size_t, 0, 2, ball_shape>,
+                                   ngon_eval<set_radius_p<nd(0, 16), 3>, constant<nline(c2)>>,
+                                   line<vec2{-2, -96}, vec2{-2, 96}, sline(c0)>,
+                                   line<vec2{0, -96}, vec2{0, 96}, sline(c1)>,
+                                   line<vec2{2, -96}, vec2{2, 96}, sline(c0)>>;
   std::tuple<vec2, fixed, fixed, fixed> shape_parameters(const Transform& transform) const {
     return {transform.centre, transform.rotation, sub_rotation,
             static_cast<std::uint32_t>(attack_shapes.size()) / (1 + fixed_c::half)};
@@ -281,8 +277,8 @@ struct TractorBoss : ecs::component {
       f(0, transform.centre + rotate_legacy({0, -96}, transform.rotation));
       f(1, transform.centre + rotate_legacy({0, 96}, transform.rotation));
     } else {
-      f(0, transform.centre + rotate({0, -96}, transform.rotation));
-      f(1, transform.centre + rotate({0, 96}, transform.rotation));
+      f(0, transform.centre + ::rotate({0, -96}, transform.rotation));
+      f(1, transform.centre + ::rotate({0, 96}, transform.rotation));
     }
   }
 };

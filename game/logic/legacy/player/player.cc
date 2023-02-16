@@ -1,8 +1,8 @@
 #include "game/logic/legacy/player/player.h"
 #include "game/geometry/enums.h"
-#include "game/geometry/legacy/box.h"
-#include "game/geometry/legacy/ngon.h"
 #include "game/geometry/node_conditional.h"
+#include "game/geometry/shapes/box.h"
+#include "game/geometry/shapes/ngon.h"
 #include "game/logic/legacy/components.h"
 #include "game/logic/legacy/ship_template.h"
 #include "game/logic/sim/io/conditions.h"
@@ -13,15 +13,15 @@
 
 namespace ii::legacy {
 namespace {
+using namespace geom;
 constexpr std::uint32_t kMagicShotCount = 120;
 
 struct Shot : ecs::component {
   static constexpr fixed kSpeed = 10;
   static constexpr float kZIndex = 64.f;
 
-  using shape =
-      standard_transform<geom::legacy::box_colour_p<2, 2, 2>, geom::legacy::box_colour_p<1, 1, 3>,
-                         geom::legacy::box_colour_p<3, 3, 3>>;
+  using shape = standard_transform<box_colour_p<vec2{2, 2}, 2>, box_colour_p<vec2{1, 1}, 3>,
+                                   box_colour_p<vec2{3, 3}, 3>>;
 
   std::tuple<vec2, fixed, cvec4, cvec4> shape_parameters(const Transform& transform) const {
     auto c_dark = colour;
@@ -59,7 +59,7 @@ struct Shot : ecs::component {
     bool destroy = false;
     bool destroy_particles = false;
     auto generation = sim.index().generation();
-    auto collision = sim.collide(geom::iterate_check_point(
+    auto collision = sim.collide(iterate_check_point(
         shape_flag::kVulnerable | shape_flag::kShield | shape_flag::kWeakShield, transform.centre));
     for (const auto& e : collision) {
       if (+(e.hit_mask & shape_flag::kVulnerable)) {
@@ -77,8 +77,8 @@ struct Shot : ecs::component {
     if (!destroy) {
       // Compatibility: need to rerun the collision check if new entities might have spawned.
       if (generation != sim.index().generation()) {
-        collision = sim.collide(geom::iterate_check_point(
-            shape_flag::kShield | shape_flag::kWeakShield, transform.centre));
+        collision = sim.collide(
+            iterate_check_point(shape_flag::kShield | shape_flag::kWeakShield, transform.centre));
       }
       for (const auto& e : collision) {
         if (!e.h.has<Destroy>() &&
@@ -130,28 +130,28 @@ struct PlayerLogic : ecs::component {
   static constexpr std::uint32_t kShieldTime = 50;
   static constexpr std::uint32_t kShotTimer = 4;
 
-  using shield = geom::if_p<2, geom::legacy::polygon_colour_p<16, 10, 6, 's'>>;
-  using bomb = geom::if_p<
+  using shield = if_p<2, ngon_colour_p<nd(16, 10), 6, nline(colour::kZero, 0.f, 1.f, 's')>>;
+  using bomb = if_p<
       3,
-      geom::translate<-8, 0,
-                      geom::rotate<pi<fixed>, geom::legacy::polystar_colour_p<6, 5, 6, 'b'>>>>;
-  using box_shapes =
-      geom::translate<8, 0,
-                      geom::rotate_eval<geom::negate_p<1>, geom::legacy::box_colour_p<2, 2, 4>>,
-                      geom::rotate_eval<geom::negate_p<1>, geom::legacy::box_colour_p<1, 1, 5>>,
-                      geom::rotate_eval<geom::negate_p<1>, geom::legacy::box_colour_p<3, 3, 5>>>;
-  using shape = standard_transform<geom::legacy::ngon_colour_p<16, 3, 4>,
-                                   geom::rotate<pi<fixed>, geom::legacy::ngon_colour_p<8, 3, 4>>,
-                                   box_shapes, shield, bomb>;
+      translate<-8, 0,
+                rotate<pi<fixed>,
+                       ngon_colour_p<nd(6, 5), 6,
+                                     nline(ngon_style::kPolystar, colour::kZero, 0.f, 1.f, 'b')>>>>;
+  using box_shapes = translate<8, 0, rotate_eval<negate_p<1>, box_colour_p<vec2{2, 2}, 4>>,
+                               rotate_eval<negate_p<1>, box_colour_p<vec2{1, 1}, 5>>,
+                               rotate_eval<negate_p<1>, box_colour_p<vec2{3, 3}, 5>>>;
+  using shape =
+      standard_transform<ngon_colour_p<nd(16, 3), 4>, rotate<pi<fixed>, ngon_colour_p<nd(8, 3), 4>>,
+                         box_shapes, shield, bomb>;
 
   std::tuple<vec2, fixed, bool, bool, cvec4, cvec4, cvec4>
   shape_parameters(const Player& pc, const Transform& transform) const {
-    auto colour = !should_render()  ? cvec4{0.f}
+    auto colour = !should_render()  ? colour::kZero
         : invulnerability_timer % 2 ? cvec4{1.f}
                                     : legacy_player_colour(pc.player_number);
     auto c_dark = colour;
     c_dark.a = std::min(c_dark.a, .2f);
-    auto powerup_colour = !should_render() ? cvec4{0.f} : cvec4{1.f};
+    auto powerup_colour = !should_render() ? colour::kZero : cvec4{1.f};
     return {transform.centre, transform.rotation, pc.shield_count, pc.bomb_count, colour,
             c_dark,           powerup_colour};
   };
@@ -262,7 +262,7 @@ struct PlayerLogic : ecs::component {
 
     // Damage.
     if (!pc.is_predicted &&
-        sim.collide_any(geom::iterate_check_point(shape_flag::kDangerous, transform.centre))) {
+        sim.collide_any(iterate_check_point(shape_flag::kDangerous, transform.centre))) {
       damage(h, pc, score, transform, sim);
     }
   }

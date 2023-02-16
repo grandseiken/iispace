@@ -24,7 +24,7 @@ template <IterTag I, typename Parameters, ExpressionWithSubstitution<bool, Param
           ShapeNode TrueNode, ShapeNode FalseNode>
 constexpr void
 iterate(conditional_eval<Condition, TrueNode, FalseNode>, I tag, const Parameters& params,
-        const Transform auto& t, IterateFunction<I> auto&& f) {
+        const Transformer auto& t, IterateFunction<I> auto&& f) {
   if constexpr (std::is_same_v<std::remove_cvref_t<Parameters>, arbitrary_parameters>) {
     iterate(TrueNode{}, tag, params, t, f);
     iterate(FalseNode{}, tag, params, t, f);

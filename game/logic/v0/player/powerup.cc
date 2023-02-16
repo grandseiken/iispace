@@ -16,6 +16,7 @@ namespace {
 constexpr std::uint32_t kPowerupTimer = 90u * 60u;
 constexpr fixed kPowerupCloseDistance = 50;
 constexpr fixed kPowerupCollectDistance = 14;
+using namespace geom;
 
 float fade(std::uint32_t tick_count) {
   return (1.f + sin(static_cast<float>(tick_count) / 16.f)) / 2.f;
@@ -32,7 +33,7 @@ void wobble_movement(SimInterface& sim, const Transform& transform, vec2& dir,
       rotate_anti = sim.random_bool();
     }
 
-    dir = rotate(dir, 2 * fixed_c::hundredth * (rotate_anti ? 1 : -1));
+    dir = ::rotate(dir, 2 * fixed_c::hundredth * (rotate_anti ? 1 : -1));
     rotate_anti = sim.random(rotate_time) ? rotate_anti : !rotate_anti;
     first_frame = false;
   }
@@ -44,18 +45,16 @@ struct PlayerBubble : ecs::component {
   static constexpr std::uint32_t kRotateTime = 120;
 
   static constexpr auto z = colour::kZPlayerBubble;
-  using shape = geom::translate_p<
+  using shape = translate_p<
       0,
-      geom::rotate_eval<
-          geom::multiply_p<-2_fx, 1>,
-          geom::compound<geom::ngon_collider<geom::nd(14, 8), shape_flag::kVulnerable>,
-                         geom::ngon_colour_p<geom::nd(16, 8), 5,
-                                             geom::nline(colour::kZero, colour::kZOutline, 2.f)>,
-                         geom::ngon_colour_p<geom::nd(14, 8), 4, geom::nline(colour::kZero, z)>>>,
-      geom::rotate_p<
-          1, geom::ngon<geom::nd(21, 3), geom::nline(colour::kOutline, colour::kZOutline, 3.f)>,
-          geom::ngon_colour_p2<geom::nd(18, 3), 2, 3, geom::nline(colour::kZero, z, 1.5f),
-                               geom::sfill(colour::kZero, z)>>>;
+      rotate_eval<
+          multiply_p<-2_fx, 1>,
+          compound<ngon_collider<nd(14, 8), shape_flag::kVulnerable>,
+                   ngon_colour_p<nd(16, 8), 5, nline(colour::kZero, colour::kZOutline, 2.f)>,
+                   ngon_colour_p<nd(14, 8), 4, nline(colour::kZero, z)>>>,
+      rotate_p<
+          1, ngon<nd(21, 3), nline(colour::kOutline, colour::kZOutline, 3.f)>,
+          ngon_colour_p2<nd(18, 3), 2, 3, nline(colour::kZero, z, 1.5f), sfill(colour::kZero, z)>>>;
   std::tuple<vec2, fixed, cvec4, cvec4, cvec4, cvec4>
   shape_parameters(const Transform& transform) const {
     return {transform.centre,
@@ -103,9 +102,8 @@ struct ShieldPowerup : ecs::component {
   static constexpr std::uint32_t kRotateTime = 150;
 
   static constexpr auto z = colour::kZPowerup;
-  using shape =
-      standard_transform<geom::ngon_colour_p<geom::nd(14, 6), 2, geom::nline(colour::kZero, z)>,
-                         geom::ngon<geom::nd(11, 6), geom::nline(colour::kWhite0, z, 1.5f)>>;
+  using shape = standard_transform<ngon_colour_p<nd(14, 6), 2, nline(colour::kZero, z)>,
+                                   ngon<nd(11, 6), nline(colour::kWhite0, z, 1.5f)>>;
 
   std::tuple<vec2, fixed, cvec4> shape_parameters(const Transform& transform) const {
     return {transform.centre, transform.rotation, colour::alpha(colour::kWhite0, fade(timer))};
@@ -170,9 +168,8 @@ struct BombPowerup : ecs::component {
   static constexpr std::uint32_t kRotateTime = 150;
 
   static constexpr auto z = colour::kZPowerup;
-  using shape = standard_transform<
-      geom::ngon_colour_p<geom::nd(14, 6), 2, geom::nline(colour::kZero, z)>,
-      geom::rotate_p<1, geom::ngon<geom::nd(5, 6), geom::nline(colour::kWhite0, z, 1.5f)>>>;
+  using shape = standard_transform<ngon_colour_p<nd(14, 6), 2, nline(colour::kZero, z)>,
+                                   rotate_p<1, ngon<nd(5, 6), nline(colour::kWhite0, z, 1.5f)>>>;
 
   std::tuple<vec2, fixed, cvec4> shape_parameters(const Transform& transform) const {
     return {transform.centre, transform.rotation, colour::alpha(colour::kWhite0, fade(timer))};
@@ -313,7 +310,7 @@ void render_player_name_panel(std::uint32_t player_number, const Transform& tran
                   .align = render::alignment::kCentered,
                   .colour = player_colour(sim.conditions().mode, player_number),
                   .drop_shadow = {{}},
-                  .text = sim.conditions().players[player_number].player_name,
+                  .content = sim.conditions().players[player_number].player_name,
               },
       }},
   });

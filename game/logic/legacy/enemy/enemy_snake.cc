@@ -1,10 +1,11 @@
-#include "game/geometry/legacy/ball_collider.h"
-#include "game/geometry/legacy/ngon.h"
+#include "game/geometry/shapes/legacy.h"
+#include "game/geometry/shapes/ngon.h"
 #include "game/logic/legacy/enemy/enemy.h"
 #include "game/logic/legacy/ship_template.h"
 
 namespace ii::legacy {
 namespace {
+using namespace geom;
 
 ecs::handle spawn_snake_tail(SimInterface& sim, const vec2& position, const cvec4& colour);
 
@@ -14,8 +15,9 @@ struct SnakeTail : ecs::component {
   static constexpr sound kDestroySound = sound::kPlayerDestroy;
   static constexpr rumble_type kDestroyRumble = rumble_type::kNone;
 
-  using shape = standard_transform<geom::legacy::polygon_colour_p<
-      10, 4, 2, 0, shape_flag::kDangerous | shape_flag::kWeakShield>>;
+  using shape = standard_transform<
+      ngon_colour_p<nd(10, 4), 2>,
+      legacy_ball_collider<10, shape_flag::kDangerous | shape_flag::kWeakShield>>;
 
   std::tuple<vec2, fixed, cvec4> shape_parameters(const Transform& transform) const {
     return {transform.centre, transform.rotation, colour};
@@ -67,9 +69,9 @@ struct Snake : ecs::component {
   static constexpr sound kDestroySound = sound::kPlayerDestroy;
   static constexpr rumble_type kDestroyRumble = rumble_type::kMedium;
 
-  using shape =
-      standard_transform<geom::legacy::polygon_colour_p<14, 3, 2, 0, shape_flag::kVulnerable>,
-                         geom::legacy::ball_collider<10, shape_flag::kDangerous>>;
+  using shape = standard_transform<ngon_colour_p<nd(14, 3), 2>,
+                                   legacy_ball_collider<14, shape_flag::kVulnerable>,
+                                   legacy_ball_collider_dummy<10, shape_flag::kDangerous>>;
 
   std::tuple<vec2, fixed, cvec4> shape_parameters(const Transform& transform) const {
     return {transform.centre, transform.rotation, colour};

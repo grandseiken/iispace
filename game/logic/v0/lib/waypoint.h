@@ -125,7 +125,7 @@ struct WaypointFollower {
       }
       best_distance = total_distance;
       if (speed < arc_distance) {
-        auto pn0 = rotate(pn, (b ? speed : -speed) / r);
+        auto pn0 = ::rotate(pn, (b ? speed : -speed) / r);
         new_direction = normalise((b ? 1_fx : -1_fx) * perpendicular(pn0));
         new_position = c + r * pn0;
       } else {

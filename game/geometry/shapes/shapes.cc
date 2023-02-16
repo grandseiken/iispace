@@ -1,6 +1,7 @@
 #include "game/geometry/resolve.h"
 #include "game/geometry/shapes/ball.h"
 #include "game/geometry/shapes/box.h"
+#include "game/geometry/shapes/legacy.h"
 #include "game/geometry/shapes/line.h"
 #include "game/geometry/shapes/ngon.h"
 
@@ -139,6 +140,10 @@ void ngon_collider_data::iterate(iterate_check_collision_t it, const convert_loc
       }
     }
   }
+}
+
+void legacy_dummy_data::iterate(iterate_resolve_t, const transform& t, resolve_result& r) const {
+  r.add(t, geom::ball_data{});
 }
 
 void ball_data::iterate(iterate_resolve_t, const transform& t, resolve_result& r) const {

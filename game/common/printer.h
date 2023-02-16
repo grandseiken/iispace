@@ -171,7 +171,10 @@ public:
     return put(v.name).put(": ").put(v.value);
   }
 
-  Printer& put(const DebugStructTuple auto& v) { return put(to_debug_tuple(v)); }
+  Printer& put(const DebugStructTuple auto& v) {
+    put(to_debug_name(&v));
+    return put(to_debug_tuple(v));
+  }
 
 private:
   std::uint32_t indent_ = 0;

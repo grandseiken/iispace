@@ -4,6 +4,7 @@ cc_library(
     "ball.h",
     "box.h",
     "data.h",
+    "legacy.h",
     "line.h",
     "ngon.h",
   ],

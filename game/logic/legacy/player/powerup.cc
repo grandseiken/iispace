@@ -1,7 +1,7 @@
 #include "game/logic/legacy/player/powerup.h"
-#include "game/geometry/legacy/box.h"
-#include "game/geometry/legacy/ngon.h"
 #include "game/geometry/node_conditional.h"
+#include "game/geometry/shapes/box.h"
+#include "game/geometry/shapes/ngon.h"
 #include "game/logic/legacy/components.h"
 #include "game/logic/legacy/ship_template.h"
 #include "game/logic/sim/io/conditions.h"
@@ -11,6 +11,7 @@
 
 namespace ii::legacy {
 namespace {
+using namespace geom;
 constexpr std::uint32_t kMagicShotCount = 120;
 
 struct Powerup : ecs::component {
@@ -19,14 +20,14 @@ struct Powerup : ecs::component {
   static constexpr std::uint32_t kRotateTime = 100;
   static constexpr cvec4 cw{1.f};
 
-  using out0 = geom::legacy::ngon_colour_p<13, 5, 2>;
-  using out1 = geom::legacy::ngon_colour_p<9, 5, 3>;
-  using extra_life = geom::switch_entry<powerup_type::kExtraLife, geom::legacy::ngon<8, 3, cw>>;
-  using magic_shots = geom::switch_entry<powerup_type::kMagicShots, geom::legacy::box<3, 3, cw>>;
-  using shield = geom::switch_entry<powerup_type::kShield, geom::legacy::ngon<11, 5, cw>>;
-  using bomb = geom::switch_entry<powerup_type::kBomb, geom::legacy::polystar<11, 10, cw>>;
-  using shape =
-      standard_transform<out0, out1, geom::switch_p<4, extra_life, magic_shots, shield, bomb>>;
+  using out0 = ngon_colour_p<nd(13, 5), 2>;
+  using out1 = ngon_colour_p<nd(9, 5), 3>;
+  using extra_life = switch_entry<powerup_type::kExtraLife, ngon<nd(8, 3), nline(cw)>>;
+  using magic_shots = switch_entry<powerup_type::kMagicShots, box<vec2{3, 3}, sline(cw)>>;
+  using shield = switch_entry<powerup_type::kShield, ngon<nd(11, 5), nline(cw)>>;
+  using bomb =
+      switch_entry<powerup_type::kBomb, ngon<nd(11, 10), nline(ngon_style::kPolystar, cw)>>;
+  using shape = standard_transform<out0, out1, switch_p<4, extra_life, magic_shots, shield, bomb>>;
 
   std::tuple<vec2, fixed, cvec4, cvec4, powerup_type>
   shape_parameters(const Transform& transform) const {

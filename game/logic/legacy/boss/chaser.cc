@@ -1,5 +1,6 @@
 #include "game/common/colour.h"
-#include "game/geometry/legacy/ngon.h"
+#include "game/geometry/shapes/legacy.h"
+#include "game/geometry/shapes/ngon.h"
 #include "game/logic/legacy/boss/boss_internal.h"
 #include "game/logic/legacy/ship_template.h"
 #include "game/logic/sim/io/events.h"
@@ -7,6 +8,7 @@
 
 namespace ii::legacy {
 namespace {
+using namespace geom;
 
 struct ChaserBossSharedState : ecs::component {
   bool has_counted = false;
@@ -64,10 +66,9 @@ struct ChaserBoss : ecs::component {
   static constexpr cvec4 c = colour::hue360(210, .6f);
 
   template <fixed R, cvec4 C, shape_flag Flags = shape_flag::kNone>
-  using scale_shape =
-      geom::legacy::ngon_eval<geom::multiply_p<R, 2>, geom::constant<5u>, geom::constant<C>,
-                              geom::constant<geom::ngon_style::kPolygram>, geom::constant<0>,
-                              geom::constant<Flags>>;
+  using scale_shape = compound<
+      legacy_ball_collider_eval<multiply_p<R, 2>, constant<Flags>>,
+      ngon_eval<set_radius<nd(0, 5), multiply_p<R, 2>>, constant<nline(ngon_style::kPolygram, C)>>>;
   using shape =
       standard_transform<scale_shape<10, c>, scale_shape<9, c>,
                          scale_shape<8, cvec4{0}, shape_flag::kDangerous | shape_flag::kVulnerable>,

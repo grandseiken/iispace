@@ -137,8 +137,8 @@ struct ModUpgrade : ecs::component {
   static constexpr float kIconWidth = kPanelHeight.to_float() - 3 * kPanelPadding - kTitleFontSize;
 
   ModUpgrade(v0::mod_id id, upgrade_position position) : mod_id{id}, position{position} {}
-  upgrade_position position = upgrade_position::kL0;
   v0::mod_id mod_id = v0::mod_id::kNone;
+  upgrade_position position = upgrade_position::kL0;
   std::uint32_t timer = 0;
   std::uint32_t icon_animation = 0;
   std::optional<std::uint32_t> highlight_animation;
@@ -223,7 +223,7 @@ struct ModUpgrade : ecs::component {
                 .align = render::alignment::kLeft | render::alignment::kBottom,
                 .colour = glm::mix(c, ch, t),
                 .drop_shadow = {{}},
-                .text = ustring{data.name},
+                .content = ustring{data.name},
             },
     });
     panel.elements.emplace_back(render::combo_panel::element{
@@ -234,7 +234,7 @@ struct ModUpgrade : ecs::component {
                 .align = render::alignment::kRight | render::alignment::kBottom,
                 .colour = c,
                 .drop_shadow = {{}},
-                .text = slot_category,
+                .content = slot_category,
             },
     });
     panel.elements.emplace_back(render::combo_panel::element{
@@ -247,7 +247,7 @@ struct ModUpgrade : ecs::component {
                 .align = render::alignment::kTop | render::alignment::kLeft,
                 .colour = colour::kWhite0,
                 .drop_shadow = {{}},
-                .text = ustring{data.description},
+                .content = ustring{data.description},
                 .multiline = true,
             },
     });
@@ -303,7 +303,7 @@ struct ModUpgrade : ecs::component {
                           .align = render::alignment::kCentered,
                           .colour = colour::kSolarizedDarkYellow,
                           .drop_shadow = {{}},
-                          .text = warning_text,
+                          .content = warning_text,
                       },
               }},
           });

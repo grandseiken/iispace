@@ -40,7 +40,7 @@ void GlobalData::post_update(ecs::handle h, SimInterface& sim) {
       e.explosion(v + fvec2{8.f, 0.f}, c_dark, time);
       e.explosion(v + fvec2{0.f, 8.f}, c_dark, time);
       if (p0_has_powerup && *p0_has_powerup) {
-        e.explosion(v, cvec4{0.f}, 8);
+        e.explosion(v, colour::kZero, 8);
       }
     };
 

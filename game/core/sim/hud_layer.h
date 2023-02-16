@@ -45,6 +45,7 @@ private:
   const render_output* render_ = nullptr;
 
   struct boss_bar_data {
+    boss_bar_data() {}
     render::panel_style style = render::panel_style::kNone;
     ustring name;
     cvec4 colour{1.f};

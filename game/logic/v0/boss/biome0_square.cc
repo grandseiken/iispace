@@ -12,6 +12,7 @@
 
 namespace ii::v0 {
 namespace {
+using namespace geom;
 
 // TODO: special attack: zoom vertically from one side to another.
 struct SquareBoss : public ecs::component {
@@ -27,43 +28,40 @@ struct SquareBoss : public ecs::component {
   static constexpr fixed kTurningRadius = 72;
   static constexpr fixed kMarginX = 1_fx / 5;
   static constexpr fixed kMarginY = 1_fx / 4;
-  static constexpr float kZIndex = -4.f;
 
   static constexpr auto z = colour::kZEnemyBoss;
   static constexpr auto c0 = colour::kNewPurple;
   static constexpr auto c1 = colour::kSolarizedDarkCyan;
   static constexpr auto c2 = colour::kSolarizedDarkViolet;
   static constexpr auto c3 = colour::kSolarizedDarkMagenta;
-  static constexpr auto outline = geom::nline(colour::kOutline, colour::kZOutline, 2.5f);
-  static constexpr auto m_outline = geom::nline(colour::kOutline, colour::kZOutline, -2.5f);
+  static constexpr auto outline = nline(colour::kOutline, colour::kZOutline, 2.5f);
+  static constexpr auto m_outline = nline(colour::kOutline, colour::kZOutline, -2.5f);
 
-  template <fixed C, geom::ShapeNode... Nodes>
-  using rotate_s = geom::rotate_eval<geom::multiply_p<C, 1>, geom::pack<Nodes...>>;
+  template <fixed C, ShapeNode... Nodes>
+  using rotate_s = rotate_eval<multiply_p<C, 1>, pack<Nodes...>>;
   template <fixed R, std::uint32_t T, render::flag RFlags>
-  using ngon = geom::compound<
-      geom::ngon_eval<geom::constant<geom::nd2(50 + 25 * R, 50, 4)>,
-                      geom::set_colour2<geom::nline(colour::kZero, z, 2.f), geom::parameter_i<2, T>,
-                                        geom::parameter_i<2, 5>>,
-                      geom::set_colour2_alpha<geom::sfill(colour::kZero, z),
-                                              geom::parameter_i<2, T>, geom::parameter_i<2, 5>,
-                                              geom::constant<cvec4{colour::kFillAlpha2}>>,
-                      geom::constant<RFlags>>,
-      geom::ngon_eval<geom::constant<geom::nd(44 + 25 * R, 4)>,
-                      geom::set_colour<geom::nline(colour::kZero, z, 4.f), geom::parameter_i<2, T>>,
-                      geom::constant<geom::sfill()>, geom::constant<RFlags>>,
-      geom::ngon<geom::nd(52 + 25 * R, 4), outline>, geom::ngon<geom::nd(48, 4), m_outline>>;
+  using ngon = compound<
+      ngon_eval<constant<nd2(50 + 25 * R, 50, 4)>,
+                set_colour2<nline(colour::kZero, z, 2.f), parameter_i<2, T>, parameter_i<2, 5>>,
+                set_colour2_alpha<sfill(colour::kZero, z), parameter_i<2, T>, parameter_i<2, 5>,
+                                  constant<cvec4{colour::kFillAlpha2}>>,
+                constant<RFlags>>,
+      ngon_eval<constant<nd(44 + 25 * R, 4)>,
+                set_colour<nline(colour::kZero, z, 4.f), parameter_i<2, T>>, constant<sfill()>,
+                constant<RFlags>>,
+      ngon<nd(52 + 25 * R, 4), outline>, ngon<nd(48, 4), m_outline>>;
   template <fixed C, fixed R, std::uint32_t T, render::flag RFlags = render::flag::kNone>
   using rotate_ngon = rotate_s<C, ngon<R, T, RFlags>>;
   template <fixed C, fixed R, std::uint32_t T, shape_flag Flags,
             render::flag RFlags = render::flag::kNone>
   using rotate_ngon_c =
-      rotate_s<C, ngon<R, T, RFlags>, geom::ngon_collider<geom::nd2(50 + 25 * R, 50, 4), Flags>>;
-  using shape = geom::translate_p<
-      0, rotate_ngon_c<1, 6, 0, shape_flag::kBombVulnerable, render::flag::kNoFlash>,
-      rotate_ngon<3_fx / 2, 5, 1, render::flag::kNoFlash>,
-      rotate_ngon_c<2, 4, 2, shape_flag::kDangerous, render::flag::kNoFlash>,
-      rotate_ngon<5_fx / 2, 3, 3>, rotate_ngon_c<3, 2, 4, shape_flag::kVulnerable>,
-      rotate_ngon_c<7_fx / 2, 1, 5, shape_flag::kShield>>;
+      rotate_s<C, ngon<R, T, RFlags>, ngon_collider<nd2(50 + 25 * R, 50, 4), Flags>>;
+  using shape =
+      translate_p<0, rotate_ngon_c<1, 6, 0, shape_flag::kBombVulnerable, render::flag::kNoFlash>,
+                  rotate_ngon<3_fx / 2, 5, 1, render::flag::kNoFlash>,
+                  rotate_ngon_c<2, 4, 2, shape_flag::kDangerous, render::flag::kNoFlash>,
+                  rotate_ngon<5_fx / 2, 3, 3>, rotate_ngon_c<3, 2, 4, shape_flag::kVulnerable>,
+                  rotate_ngon_c<7_fx / 2, 1, 5, shape_flag::kShield>>;
 
   cvec4 c_mix(float t) const { return colour::perceptual_mix(c0, c1, t); }
 
@@ -82,16 +80,18 @@ struct SquareBoss : public ecs::component {
   : biome_index{biome_index}
   , waypoints{kTurningRadius}
   , start{corner_index, corner_index % 2 == 0} {}
-  WaypointFollower<corner_tag> waypoints;
-  corner_tag start;
-  fixed rotation{0};
-  fixed speed = 2 * kSpeed;
 
   std::uint32_t biome_index = 0;
   std::uint32_t attack_colour = 0;
   std::uint32_t timer = kTimer * 6;
   std::uint32_t spawn_timer = 0;
   std::uint32_t spawn_timer_extra = 0;
+
+  WaypointFollower<corner_tag> waypoints;
+  corner_tag start;
+  fixed rotation = 0;
+  fixed speed = 2 * kSpeed;
+
   struct special_t {
     std::vector<ecs::entity_id> players;
     std::uint32_t timer = 0;
@@ -276,12 +276,12 @@ struct SquareBoss : public ecs::component {
       const auto& p_transform = *sim.index().get(id)->get<Transform>();
       vec2 d{kSpecialAttackRadius, 0};
       if (special_attack->rotate) {
-        d = rotate(d, pi<fixed> / 2);
+        d = ::rotate(d, pi<fixed> / 2);
       }
       for (std::uint32_t i = 0; i < 6; ++i) {
         spawn_follow(sim, p_transform.centre + d, std::nullopt, /* drop */ false)
             .add(ColourOverride{.colour = c3});
-        d = rotate(d, 2 * pi<fixed> / 6);
+        d = ::rotate(d, 2 * pi<fixed> / 6);
       }
       e.play(sound::kEnemySpawn, p_transform.centre);
     }
@@ -291,10 +291,9 @@ struct SquareBoss : public ecs::component {
     static constexpr std::uint32_t kSmallWidth = 11;
     static constexpr auto cf = colour::alpha(c3, colour::kFillAlpha0);
     static constexpr float z = colour::kZEnemySmall;
-    using small_follow_shape =
-        standard_transform<geom::ngon_colour_p<geom::nd(kSmallWidth + 2, 4), 2, outline>,
-                           geom::ngon_colour_p2<geom::nd(kSmallWidth, 4), 3, 4,
-                                                geom::nline(c3, z, 1.5f), geom::sfill(cf, z)>>;
+    using small_follow_shape = standard_transform<
+        ngon_colour_p<nd(kSmallWidth + 2, 4), 2, outline>,
+        ngon_colour_p2<nd(kSmallWidth, 4), 3, 4, nline(c3, z, 1.5f), sfill(cf, z)>>;
     if (!special_attack) {
       return;
     }
@@ -312,7 +311,7 @@ struct SquareBoss : public ecs::component {
       const auto& p_transform = *ph->get<Transform>();
       vec2 d{kSpecialAttackRadius + ease_in_cubic(t) * kSpecialAttackRadiusExtra, 0};
       if (special_attack->rotate) {
-        d = rotate(d, pi<fixed> / 2);
+        d = ::rotate(d, pi<fixed> / 2);
       }
       for (std::uint32_t i = 0; i < 6; ++i) {
         auto v = p_transform.centre + d;
@@ -320,7 +319,7 @@ struct SquareBoss : public ecs::component {
         resolve_shape<small_follow_shape>(
             std::tuple{v, 4 * pi<fixed> * ease_out_cubic(1_fx - t), c0, c1, c2}, r);
         render_shape(output, r);
-        d = rotate(d, 2 * pi<fixed> / 6);
+        d = ::rotate(d, 2 * pi<fixed> / 6);
       }
     }
   }

@@ -681,9 +681,9 @@ void GlRenderer::render_panel(const combo_panel& data) const {
         max_width = std::max(max_width, 2.f * data.padding.x + e.bounds.max().x);
       } else if (const auto* text = std::get_if<combo_panel::text>(&e.e);
                  text && !text->multiline) {
-        max_width =
-            std::max(max_width,
-                     2.f * data.padding.x + e.bounds.min().x + text_width(text->font, text->text));
+        max_width = std::max(
+            max_width,
+            2.f * data.padding.x + e.bounds.min().x + text_width(text->font, text->content));
       }
     }
     panel_copy.bounds.position.x -= max_width / 2.f;
@@ -707,7 +707,7 @@ void GlRenderer::render_panel(const combo_panel& data) const {
         bounds.size.x = panel_copy.bounds.size.x - 2.f * data.padding.x;
       }
       auto lines = prepare_text(*this, text->font, text->multiline,
-                                static_cast<std::int32_t>(bounds.size.x), text->text);
+                                static_cast<std::int32_t>(bounds.size.x), text->content);
       if (text->drop_shadow) {
         render_text(text->font, bounds + inner_padding + fvec2{text->drop_shadow->offset},
                     text->align, cvec4{0.f, 0.f, 0.f, text->drop_shadow->alpha},

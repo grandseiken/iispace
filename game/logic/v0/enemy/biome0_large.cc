@@ -9,6 +9,8 @@
 
 namespace ii::v0 {
 namespace {
+using namespace geom;
+
 struct FollowHub : ecs::component {
   static constexpr std::uint32_t kBoundingWidth = 18;
   static constexpr sound kDestroySound = sound::kPlayerDestroy;
@@ -20,32 +22,26 @@ struct FollowHub : ecs::component {
   static constexpr auto z = colour::kZEnemyLarge;
   static constexpr auto c = colour::kSolarizedDarkBlue;
   static constexpr auto cf = colour::alpha(c, colour::kFillAlpha0);
-  static constexpr auto outline = geom::nline(colour::kOutline, colour::kZOutline, 2.f);
-  template <geom::ShapeNode S>
-  using fh_arrange = geom::compound<geom::translate<18, 0, S>, geom::translate<-18, 0, S>,
-                                    geom::translate<0, 18, S>, geom::translate<0, -18, S>>;
-  template <geom::ShapeNode... S>
-  using r_pi4_ngon = geom::rotate<pi<fixed> / 4, S...>;
+  static constexpr auto outline = nline(colour::kOutline, colour::kZOutline, 2.f);
+  template <ShapeNode S>
+  using fh_arrange = compound<translate<18, 0, S>, translate<-18, 0, S>, translate<0, 18, S>,
+                              translate<0, -18, S>>;
+  template <ShapeNode... S>
+  using r_pi4_ngon = rotate<pi<fixed> / 4, S...>;
   using fh_centre =
-      r_pi4_ngon<geom::ngon<geom::nd(20, 4), outline>,
-                 geom::ngon_with_collider<
-                     geom::nd(18, 4), geom::nline(geom::ngon_style::kPolygram, c, z),
-                     geom::sfill(cf, z), shape_flag::kDangerous | shape_flag::kVulnerable>>;
+      r_pi4_ngon<ngon<nd(20, 4), outline>,
+                 ngon_with_collider<nd(18, 4), nline(ngon_style::kPolygram, c, z), sfill(cf, z),
+                                    shape_flag::kDangerous | shape_flag::kVulnerable>>;
 
-  using fh_spoke = r_pi4_ngon<geom::ngon<geom::nd(12, 4), outline>,
-                              geom::ngon<geom::nd(10, 4), geom::nline(c, z), geom::sfill(cf, z)>>;
-  using fh_big_spoke =
-      geom::compound<fh_spoke, r_pi4_ngon<geom::ngon<geom::nd(6, 4), geom::nline(c, z, 2.f)>>>;
+  using fh_spoke = r_pi4_ngon<ngon<nd(12, 4), outline>, ngon<nd(10, 4), nline(c, z), sfill(cf, z)>>;
+  using fh_big_spoke = compound<fh_spoke, r_pi4_ngon<ngon<nd(6, 4), nline(c, z, 2.f)>>>;
   using fh_chaser_spoke =
-      r_pi4_ngon<geom::ngon<geom::nd(12, 4), outline>,
-                 geom::ngon<geom::nd(10, 4), geom::nline(geom::ngon_style::kPolygram, c, z),
-                            geom::sfill(cf, z)>>;
+      r_pi4_ngon<ngon<nd(12, 4), outline>,
+                 ngon<nd(10, 4), nline(ngon_style::kPolygram, c, z), sfill(cf, z)>>;
 
-  using hub_shape = geom::translate_p<0, fh_centre, geom::rotate_p<1, fh_arrange<fh_spoke>>>;
-  using big_hub_shape =
-      geom::translate_p<0, fh_centre, geom::rotate_p<1, fh_arrange<fh_big_spoke>>>;
-  using chaser_hub_shape =
-      geom::translate_p<0, fh_centre, geom::rotate_p<1, fh_arrange<fh_chaser_spoke>>>;
+  using hub_shape = translate_p<0, fh_centre, rotate_p<1, fh_arrange<fh_spoke>>>;
+  using big_hub_shape = translate_p<0, fh_centre, rotate_p<1, fh_arrange<fh_big_spoke>>>;
+  using chaser_hub_shape = translate_p<0, fh_centre, rotate_p<1, fh_arrange<fh_chaser_spoke>>>;
 
   std::uint32_t timer = 0;
   std::uint32_t count = 0;
@@ -115,30 +111,25 @@ struct Shielder : ecs::component {
   static constexpr auto c0 = colour::linear_mix(colour::kSolarizedDarkCyan, colour::kNewGreen0);
   static constexpr auto c1 = colour::kWhite1;
   static constexpr auto cf = colour::alpha(c0, colour::kFillAlpha0);
-  static constexpr auto outline = geom::nline(colour::kOutline, colour::kZOutline, 2.f);
+  static constexpr auto outline = nline(colour::kOutline, colour::kZOutline, 2.f);
 
-  using centre_shape = geom::compound<
-      geom::ngon<geom::nd(22, 12), outline>,
-      geom::ngon<geom::nd2(29, 6, 12),
-                 geom::nline(geom::ngon_style::kPolystar, colour::kOutline, colour::kZOutline,
-                             5.f)>,
-      geom::ngon<geom::nd2(27 + 1_fx / 2, 6, 12), geom::nline(geom::ngon_style::kPolystar, c0, z)>,
-      geom::ngon<geom::nd(6, 12), geom::nline(c0, z)>,
-      geom::ngon<geom::nd(20, 12), geom::nline(c0, z), geom::sfill(cf, z)>,
-      geom::ngon_collider<geom::nd(20, 12), shape_flag::kDangerous | shape_flag::kVulnerable>>;
-  using shield_shape = geom::rotate_p<
-      2, geom::line<vec2{32, 0}, vec2{18, 0}, geom::sline(c1, z)>,
-      geom::rotate<pi<fixed> / 4, geom::line<vec2{-32, 0}, vec2{-18, 0}, geom::sline(c1, z)>>,
-      geom::ngon<geom::nd2(27 + 1_fx / 2, 22, 16, 10), geom::nline(), geom::sfill(cf, z)>,
-      geom::ngon<geom::nd2(27 + 1_fx / 2, 22, 16, 10), geom::nline(),
-                 geom::sfill(colour::alpha(c1, colour::kFillAlpha0), z)>,
-      geom::ngon<geom::nd(29, 16, 10), outline>,
-      geom::ngon<geom::nd(30, 16, 10), geom::nline(c1, z, 1.25f)>,
-      geom::ngon<geom::nd(31, 16, 10), outline>,
-      geom::ngon<geom::nd(32, 16, 10), geom::nline(c1, z, 1.25f)>,
-      geom::ngon<geom::nd(34, 16, 10), outline>,
-      geom::ngon_collider<geom::nd(32, 16, 10), shape_flag::kWeakShield>>;
-  using shape = geom::translate_p<0, geom::rotate_p<1, centre_shape>, shield_shape>;
+  using centre_shape = compound<
+      ngon<nd(22, 12), outline>,
+      ngon<nd2(29, 6, 12), nline(ngon_style::kPolystar, colour::kOutline, colour::kZOutline, 5.f)>,
+      ngon<nd2(27 + 1_fx / 2, 6, 12), nline(ngon_style::kPolystar, c0, z)>,
+      ngon<nd(6, 12), nline(c0, z)>, ngon<nd(20, 12), nline(c0, z), sfill(cf, z)>,
+      ngon_collider<nd(20, 12), shape_flag::kDangerous | shape_flag::kVulnerable>>;
+  using shield_shape =
+      rotate_p<2, line<vec2{32, 0}, vec2{18, 0}, sline(c1, z)>,
+               rotate<pi<fixed> / 4, line<vec2{-32, 0}, vec2{-18, 0}, sline(c1, z)>>,
+               ngon<nd2(27 + 1_fx / 2, 22, 16, 10), nline(), sfill(cf, z)>,
+               ngon<nd2(27 + 1_fx / 2, 22, 16, 10), nline(),
+                    sfill(colour::alpha(c1, colour::kFillAlpha0), z)>,
+               ngon<nd(29, 16, 10), outline>, ngon<nd(30, 16, 10), nline(c1, z, 1.25f)>,
+               ngon<nd(31, 16, 10), outline>, ngon<nd(32, 16, 10), nline(c1, z, 1.25f)>,
+               ngon<nd(34, 16, 10), outline>,
+               ngon_collider<nd(32, 16, 10), shape_flag::kWeakShield>>;
+  using shape = translate_p<0, rotate_p<1, centre_shape>, shield_shape>;
 
   std::tuple<vec2, fixed, fixed> shape_parameters(const Transform& transform) const {
     return {transform.centre, transform.rotation, shield_angle + pi<fixed> / 2 - pi<fixed> / 8};
@@ -152,10 +143,10 @@ struct Shielder : ecs::component {
   vec2 velocity{0, 0};
   std::optional<ecs::entity_id> target;
   std::optional<ecs::entity_id> next_target;
-  Spreader spreader;
   bool power = false;
   bool on_screen = false;
   fixed shield_angle = 0;
+  Spreader spreader;
 
   void update(ecs::handle h, Transform& transform, const Health& health, SimInterface& sim) {
     transform.rotate(power ? fixed_c::hundredth * 8 : fixed_c::hundredth * 4);
@@ -212,19 +203,18 @@ struct Tractor : ecs::component {
   static constexpr auto z = colour::kZEnemyLarge;
   static constexpr auto c = colour::kSolarizedDarkMagenta;
   static constexpr auto cf = colour::alpha(c, colour::kFillAlpha0);
-  using t_orb = geom::compound<
-      geom::ngon<geom::nd(18, 6), geom::nline(colour::kOutline, colour::kZOutline, 2.f)>,
-      geom::ngon_with_collider<geom::nd(16, 6), geom::nline(geom::ngon_style::kPolygram, c, z),
-                               geom::sfill(cf, z),
-                               shape_flag::kDangerous | shape_flag::kVulnerable>>;
-  using t_star = geom::ngon<geom::nd(18, 6), geom::nline(geom::ngon_style::kPolystar, c, z)>;
+  using t_orb =
+      compound<ngon<nd(18, 6), nline(colour::kOutline, colour::kZOutline, 2.f)>,
+               ngon_with_collider<nd(16, 6), nline(ngon_style::kPolygram, c, z), sfill(cf, z),
+                                  shape_flag::kDangerous | shape_flag::kVulnerable>>;
+  using t_star = ngon<nd(18, 6), nline(ngon_style::kPolystar, c, z)>;
   using shape = standard_transform<
-      geom::translate<26, 0, geom::rotate_eval<geom::multiply_p<5, 2>, t_orb>>,
-      geom::translate<-26, 0, geom::rotate_eval<geom::multiply_p<-5, 2>, t_orb>>,
-      geom::line<vec2{-26, 0}, vec2{26, 0}, geom::sline(colour::kOutline, colour::kZOutline, 5.f)>,
-      geom::line<vec2{-26, 0}, vec2{26, 0}, geom::sline(c, z)>,
-      geom::if_p<3, geom::translate<26, 0, geom::rotate_eval<geom::multiply_p<8, 2>, t_star>>,
-                 geom::translate<-26, 0, geom::rotate_eval<geom::multiply_p<-8, 2>, t_star>>>>;
+      translate<26, 0, rotate_eval<multiply_p<5, 2>, t_orb>>,
+      translate<-26, 0, rotate_eval<multiply_p<-5, 2>, t_orb>>,
+      line<vec2{-26, 0}, vec2{26, 0}, sline(colour::kOutline, colour::kZOutline, 5.f)>,
+      line<vec2{-26, 0}, vec2{26, 0}, sline(c, z)>,
+      if_p<3, translate<26, 0, rotate_eval<multiply_p<8, 2>, t_star>>,
+           translate<-26, 0, rotate_eval<multiply_p<-8, 2>, t_star>>>>;
 
   std::tuple<vec2, fixed, fixed, bool> shape_parameters(const Transform& transform) const {
     return {transform.centre, transform.rotation, spoke_r, power};
@@ -329,31 +319,25 @@ struct ShieldHub : ecs::component {
   static constexpr auto c1 = colour::kWhite1;
   static constexpr auto cf0 = colour::alpha(c0, colour::kFillAlpha0);
   static constexpr auto cf1 = colour::alpha(c1, colour::kFillAlpha1);
-  static constexpr auto outline = geom::sline(colour::kOutline, colour::kZOutline, 2.f);
+  static constexpr auto outline = sline(colour::kOutline, colour::kZOutline, 2.f);
 
-  using shape = geom::compound<
-      geom::translate_p<
-          0, geom::ball<geom::bd(kBoundingWidth / 3), geom::sline(c0, z)>,
-          geom::rotate_eval<
-              geom::multiply_p<-1_fx / 2, 1>,
-              geom::compound<
-                  geom::translate<-18, 0, geom::box<vec2{10, 10}, outline>,
-                                  geom::box<vec2{8, 8}, geom::sline(c1, z), geom::sfill(cf1, z)>>,
-                  geom::translate<18, 0, geom::box<vec2{10, 10}, outline>,
-                                  geom::box<vec2{8, 8}, geom::sline(c1, z), geom::sfill(cf1, z)>>,
-                  geom::box<vec2{11, 4}, geom::sline(c1, z)>>>,
-          geom::rotate_eval<
-              geom::multiply_p<1_fx / 2, 1>,
-              geom::compound<
-                  geom::translate<-18, 0, geom::box<vec2{10, 10}, outline>,
-                                  geom::box<vec2{8, 8}, geom::sline(c1, z), geom::sfill(cf1, z)>>,
-                  geom::translate<18, 0, geom::box<vec2{10, 10}, outline>,
-                                  geom::box<vec2{8, 8}, geom::sline(c1, z), geom::sfill(cf1, z)>>,
-                  geom::box<vec2{11, 4}, geom::sline(c1, z)>>>>,
-      standard_transform<geom::ball<geom::bd(kBoundingWidth + 2), outline>,
-                         geom::ball_with_collider<
-                             geom::bd(kBoundingWidth), geom::sline(c0, z), geom::sfill(cf0, z),
-                             shape_flag::kDangerous | shape_flag::kVulnerable>>>;
+  using shape = compound<
+      translate_p<0, ball<bd(kBoundingWidth / 3), sline(c0, z)>,
+                  rotate_eval<multiply_p<-1_fx / 2, 1>,
+                              compound<translate<-18, 0, box<vec2{10, 10}, outline>,
+                                                 box<vec2{8, 8}, sline(c1, z), sfill(cf1, z)>>,
+                                       translate<18, 0, box<vec2{10, 10}, outline>,
+                                                 box<vec2{8, 8}, sline(c1, z), sfill(cf1, z)>>,
+                                       box<vec2{11, 4}, sline(c1, z)>>>,
+                  rotate_eval<multiply_p<1_fx / 2, 1>,
+                              compound<translate<-18, 0, box<vec2{10, 10}, outline>,
+                                                 box<vec2{8, 8}, sline(c1, z), sfill(cf1, z)>>,
+                                       translate<18, 0, box<vec2{10, 10}, outline>,
+                                                 box<vec2{8, 8}, sline(c1, z), sfill(cf1, z)>>,
+                                       box<vec2{11, 4}, sline(c1, z)>>>>,
+      standard_transform<ball<bd(kBoundingWidth + 2), outline>,
+                         ball_with_collider<bd(kBoundingWidth), sline(c0, z), sfill(cf0, z),
+                                            shape_flag::kDangerous | shape_flag::kVulnerable>>>;
 
   ShieldHub(ecs::const_handle h) : effect_id{h.id()} {}
   ecs::entity_id effect_id;
@@ -367,9 +351,9 @@ struct ShieldHub : ecs::component {
     ++timer;
     if (!((sim.tick_count() + +h.id()) % 8u)) {
       targets.clear();
-      for (const auto& c : sim.collide(
-               geom::iterate_check_ball(shape_flag::kVulnerable | shape_flag::kWeakVulnerable,
-                                        transform.centre, kShieldDistance))) {
+      for (const auto& c :
+           sim.collide(iterate_check_ball(shape_flag::kVulnerable | shape_flag::kWeakVulnerable,
+                                          transform.centre, kShieldDistance))) {
         if (!c.h.get<ShieldHub>()) {
           targets.emplace_back(c.h.id());
         }
@@ -412,12 +396,11 @@ struct ShieldHub : ecs::component {
     static constexpr std::uint32_t kFadeInTime = 90;
     static constexpr std::uint32_t kAnimTime = 240;
     static constexpr std::uint32_t kAnimFadeTime = 40;
-    using sl0 = geom::set_colour_p<geom::sline(colour::kZero, colour::kZBackgroundEffect1, 4.f), 3>;
-    using sl1 = geom::set_colour_p<geom::sline(colour::kZero, colour::kZBackgroundEffect1, 4.f), 4>;
-    using sf = geom::set_colour_p<geom::sfill(colour::kZero, colour::kZBackgroundEffect0), 5>;
-    using shape =
-        standard_transform<geom::ball_eval<geom::constant<geom::bd(kShieldDrawDistance)>, sl0, sf>,
-                           geom::ball_eval<geom::set_radius_p<geom::bd(), 2>, sl1>>;
+    using sl0 = set_colour_p<sline(colour::kZero, colour::kZBackgroundEffect1, 4.f), 3>;
+    using sl1 = set_colour_p<sline(colour::kZero, colour::kZBackgroundEffect1, 4.f), 4>;
+    using sf = set_colour_p<sfill(colour::kZero, colour::kZBackgroundEffect0), 5>;
+    using shape = standard_transform<ball_eval<constant<bd(kShieldDrawDistance)>, sl0, sf>,
+                                     ball_eval<set_radius_p<bd(), 2>, sl1>>;
 
     std::tuple<vec2, fixed, fixed, cvec4, cvec4, cvec4>
     shape_parameters(const Transform& transform) const {

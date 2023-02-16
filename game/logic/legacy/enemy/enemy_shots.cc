@@ -1,20 +1,22 @@
-#include "game/geometry/legacy/ball_collider.h"
-#include "game/geometry/legacy/ngon.h"
+#include "game/geometry/shapes/legacy.h"
 #include "game/logic/legacy/enemy/enemy.h"
 #include "game/logic/legacy/ship_template.h"
 #include <algorithm>
 
 namespace ii::legacy {
 namespace {
+using namespace geom;
+
 struct BossShot : ecs::component {
   static constexpr std::uint32_t kBoundingWidth = 12;
   static constexpr float kZIndex = 16.f;
   static constexpr sound kDestroySound = sound::kEnemyDestroy;
   static constexpr rumble_type kDestroyRumble = rumble_type::kNone;
 
-  using shape = standard_transform<geom::legacy::polystar_colour_p<16, 8, 2>,
-                                   geom::legacy::ngon_colour_p<10, 8, 2>,
-                                   geom::legacy::ball_collider<12, shape_flag::kDangerous>>;
+  using shape =
+      standard_transform<ngon_colour_p<nd(16, 8), 2>,
+                         ngon_colour_p<nd(10, 8), 2, nline(ngon_style::kPolystar, colour::kZero)>,
+                         legacy_ball_collider_dummy<12, shape_flag::kDangerous>>;
 
   std::tuple<vec2, fixed, cvec4> shape_parameters(const Transform& transform) const {
     return {transform.centre, transform.rotation, colour};
@@ -36,7 +38,7 @@ struct BossShot : ecs::component {
       h.emplace<Destroy>();
     }
     transform.set_rotation(transform.rotation + fixed_c::hundredth * 2);
-    if (sim.collide_any(geom::iterate_check_point(shape_flag::kSafeShield, transform.centre))) {
+    if (sim.collide_any(iterate_check_point(shape_flag::kSafeShield, transform.centre))) {
       auto e = sim.emit(resolve_key::reconcile(h.id(), resolve_tag::kOnDestroy));
       explode_entity_shapes<BossShot>(h, e, std::nullopt, 4, transform.centre - velocity);
       h.emplace<Destroy>();

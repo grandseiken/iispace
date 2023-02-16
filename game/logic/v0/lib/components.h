@@ -76,6 +76,7 @@ struct EnemyStatus : ecs::component {
   std::uint32_t stun_ticks = 0u;
 
   struct destroy_timer_t {
+    destroy_timer_t() {}
     std::optional<vec2> source;
     std::uint32_t timer = 0;
   };

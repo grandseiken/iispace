@@ -35,7 +35,7 @@ struct combo_panel {
     alignment align = alignment::kTop | alignment::kLeft;
     cvec4 colour = colour::kWhite0;
     std::optional<render::drop_shadow> drop_shadow;
-    ustring text;
+    ustring content;
     bool multiline = false;
   };
 

@@ -6,6 +6,7 @@
 
 namespace ii::v0 {
 namespace {
+using namespace geom;
 
 ecs::handle spawn_follow(SimInterface& sim, std::uint32_t size, const vec2& position,
                          std::optional<vec2> direction, bool drop, fixed rotation = 0,
@@ -26,12 +27,12 @@ struct Follow : ecs::component {
   static constexpr auto z = colour::kZEnemySmall;
   static constexpr auto c = colour::kNewPurple;
   static constexpr auto cf = colour::alpha(c, colour::kFillAlpha0);
-  static constexpr auto outline = geom::nline(colour::kOutline, colour::kZOutline, 2.f);
+  static constexpr auto outline = nline(colour::kOutline, colour::kZOutline, 2.f);
   template <fixed R>
-  using generic_shape = standard_transform<
-      geom::ngon<geom::nd(R + 2, 4), outline>,
-      geom::ngon_colour_p2<geom::nd(R, 4), 2, 3, geom::nline(c, z, 1.5f), geom::sfill(cf, z)>,
-      geom::ngon_collider<geom::nd(R, 4), shape_flag::kDangerous | shape_flag::kVulnerable>>;
+  using generic_shape =
+      standard_transform<ngon<nd(R + 2, 4), outline>,
+                         ngon_colour_p2<nd(R, 4), 2, 3, nline(c, z, 1.5f), sfill(cf, z)>,
+                         ngon_collider<nd(R, 4), shape_flag::kDangerous | shape_flag::kVulnerable>>;
   using small_shape = generic_shape<kSmallWidth>;
   using big_shape = generic_shape<kBigWidth>;
   using huge_shape = generic_shape<kHugeWidth>;
@@ -117,20 +118,20 @@ struct Follow : ecs::component {
     if (!size || type == damage_type::kBomb || status.destroy_timer) {
       return;
     }
-    vec2 d = rotate(vec2{10, 0}, transform.rotation);
+    vec2 d = ::rotate(vec2{10, 0}, transform.rotation);
     for (std::uint32_t i = 0; i < 5; ++i) {
       auto nh = spawn_follow(sim, size - 1, transform.centre + size * d, std::nullopt,
                              /* drop */ false, transform.rotation, d / 6);
       if (const auto* c = h.get<ColourOverride>(); c) {
         nh.add(*c);
       }
-      d = rotate(d, 2 * pi<fixed> / 5);
+      d = ::rotate(d, 2 * pi<fixed> / 5);
     }
   }
 };
 DEBUG_STRUCT_TUPLE(Follow, timer, size, in_formation, direction, target, next_target, spreader);
 
-template <geom::ShapeNode S>
+template <ShapeNode S>
 ecs::handle create_follow_ship(SimInterface& sim, std::uint32_t size, std::uint32_t health,
                                fixed width, const vec2& position, std::optional<vec2> direction,
                                fixed rotation, const vec2& initial_velocity) {
@@ -190,17 +191,15 @@ struct Chaser : ecs::component {
   static constexpr auto z = colour::kZEnemySmall;
   static constexpr auto c = colour::kSolarizedDarkCyan;
   static constexpr auto cf = colour::alpha(c, colour::kFillAlpha0);
-  static constexpr auto outline = geom::nline(colour::kOutline, colour::kZOutline, 2.f);
+  static constexpr auto outline = nline(colour::kOutline, colour::kZOutline, 2.f);
   using small_shape = standard_transform<
-      geom::ngon<geom::nd(kSmallWidth + 2, 4), outline>,
-      geom::ngon_with_collider<geom::nd(kSmallWidth, 4),
-                               geom::nline(geom::ngon_style::kPolygram, c, z), geom::sfill(cf, z),
-                               shape_flag::kDangerous | shape_flag::kVulnerable>>;
-  using big_shape =
-      standard_transform<geom::ngon<geom::nd(kBigWidth + 2, 4), outline>,
-                         geom::ngon_with_collider<
-                             geom::nd(kBigWidth, 4), geom::nline(geom::ngon_style::kPolygram, c, z),
-                             geom::sfill(cf, z), shape_flag::kDangerous | shape_flag::kVulnerable>>;
+      ngon<nd(kSmallWidth + 2, 4), outline>,
+      ngon_with_collider<nd(kSmallWidth, 4), nline(ngon_style::kPolygram, c, z), sfill(cf, z),
+                         shape_flag::kDangerous | shape_flag::kVulnerable>>;
+  using big_shape = standard_transform<
+      ngon<nd(kBigWidth + 2, 4), outline>,
+      ngon_with_collider<nd(kBigWidth, 4), nline(ngon_style::kPolygram, c, z), sfill(cf, z),
+                         shape_flag::kDangerous | shape_flag::kVulnerable>>;
 
   Chaser(std::uint32_t size, std::uint32_t stagger)
   : timer{kTime - stagger}, size{size}, spreader{.max_distance = 24_fx, .max_n = 6u} {}
@@ -256,17 +255,17 @@ struct Chaser : ecs::component {
     if (!size || type == damage_type::kBomb || status.destroy_timer) {
       return;
     }
-    vec2 d = rotate(vec2{12, 0}, transform.rotation);
+    vec2 d = ::rotate(vec2{12, 0}, transform.rotation);
     for (std::uint32_t i = 0; i < 3; ++i) {
       spawn_chaser(sim, size - 1, transform.centre + size * d, /* drop */ false, transform.rotation,
                    is_moving ? 10 * i : kTime - 10 * (1 + i));
-      d = rotate(d, 2 * pi<fixed> / 3);
+      d = ::rotate(d, 2 * pi<fixed> / 3);
     }
   }
 };
 DEBUG_STRUCT_TUPLE(Chaser, timer, size, next_target_id, on_screen, is_moving, direction, spreader);
 
-template <geom::ShapeNode S>
+template <ShapeNode S>
 ecs::handle
 create_chaser_ship(SimInterface& sim, std::uint32_t size, std::uint32_t health, fixed width,
                    const vec2& position, fixed rotation, std::uint32_t stagger) {
@@ -313,15 +312,13 @@ struct FollowSponge : ecs::component {
   static constexpr auto z = colour::kZEnemyMedium;
   static constexpr auto c = colour::kNewPurple;
   static constexpr auto cf = colour::alpha(c, colour::kFillAlpha0);
-  static constexpr auto outline = geom::nline(colour::kOutline, colour::kZOutline, 2.f);
+  static constexpr auto outline = nline(colour::kOutline, colour::kZOutline, 2.f);
   using shape = standard_transform<
-      geom::ngon_eval<geom::set_radius_p<geom::nd2(0, 10, 6), 4>, geom::constant<outline>>,
-      geom::ngon_eval<geom::set_radius_p<geom::nd(0, 6), 2>,
-                      geom::constant<geom::nline(c, z, 1.25f)>>,
-      geom::ngon_eval<geom::set_radius_p<geom::nd2(0, 12, 6), 3>,
-                      geom::constant<geom::nline(c, z, 2.f)>, geom::constant<geom::sfill(cf, z)>>,
-      geom::ngon_collider_eval<geom::set_radius_p<geom::nd(0, 6), 3>,
-                               geom::constant<shape_flag::kDangerous | shape_flag::kVulnerable>>>;
+      ngon_eval<set_radius_p<nd2(0, 10, 6), 4>, constant<outline>>,
+      ngon_eval<set_radius_p<nd(0, 6), 2>, constant<nline(c, z, 1.25f)>>,
+      ngon_eval<set_radius_p<nd2(0, 12, 6), 3>, constant<nline(c, z, 2.f)>, constant<sfill(cf, z)>>,
+      ngon_collider_eval<set_radius_p<nd(0, 6), 3>,
+                         constant<shape_flag::kDangerous | shape_flag::kVulnerable>>>;
 
   std::tuple<vec2, fixed, fixed, fixed, fixed> shape_parameters(const Transform& transform) const {
     return {transform.centre, transform.rotation,

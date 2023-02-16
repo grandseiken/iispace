@@ -1,6 +1,6 @@
 #include "game/common/colour.h"
-#include "game/geometry/legacy/ngon.h"
-#include "game/geometry/legacy/polyarc.h"
+#include "game/geometry/shapes/legacy.h"
+#include "game/geometry/shapes/ngon.h"
 #include "game/logic/legacy/boss/boss_internal.h"
 #include "game/logic/legacy/enemy/enemy.h"
 #include "game/logic/legacy/player/powerup.h"
@@ -10,6 +10,7 @@
 
 namespace ii::legacy {
 namespace {
+using namespace geom;
 
 struct SuperBossArc : public ecs::component {
   static constexpr std::uint32_t kBaseHp = 75;
@@ -17,15 +18,15 @@ struct SuperBossArc : public ecs::component {
 
   template <fixed Radius, std::size_t I, shape_flag Flags = shape_flag::kNone>
   using polyarc =
-      geom::legacy::polyarc_eval<geom::constant<Radius>, geom::constant<32u>, geom::constant<2u>,
-                                 geom::parameter_i<3, I>, geom::constant<0>, geom::constant<Flags>>;
-  using shape = standard_transform<
-      geom::rotate_p<2, polyarc<140, 0>, polyarc<135, 1>, polyarc<130, 2>,
-                     polyarc<125, 3,
-                             shape_flag::kShield | shape_flag::kSafeShield |
-                                 shape_flag::kDangerous | shape_flag::kVulnerable>,
-                     polyarc<120, 4>, polyarc<115, 5>, polyarc<110, 6>,
-                     polyarc<105, 7, shape_flag::kShield | shape_flag::kSafeShield>>>;
+      compound<legacy_arc_collider<nd(Radius, 32u, 2u), Flags>,
+               ngon_eval<constant<nd(Radius, 32u, 2u)>, set_colour<nline(), parameter_i<3, I>>>>;
+  using shape =
+      standard_transform<rotate_p<2, polyarc<140, 0>, polyarc<135, 1>, polyarc<130, 2>,
+                                  polyarc<125, 3,
+                                          shape_flag::kShield | shape_flag::kSafeShield |
+                                              shape_flag::kDangerous | shape_flag::kVulnerable>,
+                                  polyarc<120, 4>, polyarc<115, 5>, polyarc<110, 6>,
+                                  polyarc<105, 7, shape_flag::kShield | shape_flag::kSafeShield>>>;
 
   std::tuple<vec2, fixed, fixed, std::array<cvec4, 8>>
   shape_parameters(const Transform& transform) const {
@@ -42,7 +43,7 @@ struct SuperBossArc : public ecs::component {
   std::uint32_t i = 0;
   std::uint32_t timer = 0;
   std::uint32_t s_timer = 0;
-  std::array<cvec4, 8> colours{cvec4{0.f}};
+  std::array<cvec4, 8> colours{colour::kZero};
 
   void update(Transform& transform, const Health& health, SimInterface&) {
     transform.rotate(6_fx / 1000);
@@ -96,10 +97,9 @@ struct SuperBoss : ecs::component {
   static constexpr float kZIndex = -4.f;
 
   template <fixed Radius, std::size_t I, shape_flag Flags = shape_flag::kNone>
-  using polygon =
-      geom::legacy::ngon_eval<geom::constant<Radius>, geom::constant<32u>, geom::parameter_i<2, I>,
-                              geom::constant<geom::ngon_style::kPolygon>, geom::constant<0>,
-                              geom::constant<Flags>>;
+  using polygon = compound<
+      ngon_eval<constant<nd(Radius, 32)>, set_colour<nline(colour::kZero), parameter_i<2, I>>>,
+      legacy_ball_collider<Radius, Flags>>;
   using shape =
       standard_transform<polygon<40, 0, shape_flag::kDangerous | shape_flag::kVulnerable>,
                          polygon<35, 1>, polygon<30, 2, shape_flag::kShield>, polygon<25, 3>,
@@ -120,7 +120,7 @@ struct SuperBoss : ecs::component {
   std::uint32_t timer = 0;
   std::uint32_t snakes = 0;
   std::vector<ecs::entity_id> arcs;
-  std::array<cvec4, 8> colours{cvec4{0.f}};
+  std::array<cvec4, 8> colours{colour::kZero};
 
   void update(ecs::handle h, Transform& transform, SimInterface& sim) {
     auto e = sim.emit(resolve_key::predicted());

@@ -26,6 +26,7 @@ struct bitmask_enum<v0::shot_flags> : std::true_type {};
 
 namespace ii::v0 {
 namespace {
+using namespace geom;
 
 struct PlayerShot;
 ecs::handle spawn_player_shot(SimInterface& sim, const vec2& position, const PlayerShot& shot_data);
@@ -72,11 +73,11 @@ DEBUG_STRUCT_TUPLE(shot_mod_data, flags, speed, distance_travelled, max_distance
 
 struct PlayerShot : ecs::component {
   static constexpr auto z = colour::kZPlayerShot;
-  static constexpr auto style = geom::sline(colour::kZero, z);
-  using shape = standard_transform<
-      geom::box<vec2{4_fx, 4_fx}, geom::sline(colour::kOutline, colour::kZOutline)>,
-      geom::box_colour_p<vec2{2 + 1_fx / 2_fx, 2 + 1_fx / 2_fx}, 2, style>,
-      geom::box_colour_p<vec2{1 + 1_fx / 4_fx, 1 + 1_fx / 4_fx}, 3, style>>;
+  static constexpr auto style = sline(colour::kZero, z);
+  using shape =
+      standard_transform<box<vec2{4_fx, 4_fx}, sline(colour::kOutline, colour::kZOutline)>,
+                         box_colour_p<vec2{2 + 1_fx / 2_fx, 2 + 1_fx / 2_fx}, 2, style>,
+                         box_colour_p<vec2{1 + 1_fx / 4_fx, 1 + 1_fx / 4_fx}, 3, style>>;
 
   std::tuple<vec2, fixed, cvec4, cvec4> shape_parameters(const Transform& transform) const {
     auto c_dark = colour;
@@ -107,9 +108,9 @@ struct PlayerShot : ecs::component {
       data.damage = shot_mod_data::kSniperSplitDamage;
       data.flags &= ~shot_flags::kSniperSplit;
       auto& s0 = *spawn_player_shot(sim, transform.centre, *this).get<PlayerShot>();
-      s0.direction = rotate(s0.direction, shot_mod_data::kSniperSplitRotation);
+      s0.direction = ::rotate(s0.direction, shot_mod_data::kSniperSplitRotation);
       auto& s1 = *spawn_player_shot(sim, transform.centre, *this).get<PlayerShot>();
-      s1.direction = rotate(s1.direction, -shot_mod_data::kSniperSplitRotation);
+      s1.direction = ::rotate(s1.direction, -shot_mod_data::kSniperSplitRotation);
     }
     transform.move(direction * data.speed);
     data.distance_travelled += data.speed;
@@ -123,9 +124,9 @@ struct PlayerShot : ecs::component {
     if (+(data.flags & shot_flags::kHomingShots) && !(data.flags & shot_flags::kSniperSplit)) {
       std::optional<vec2> target;
       fixed max_t = 0;
-      auto c_list = sim.collide(
-          geom::iterate_check_ball(shape_flag::kVulnerable | shape_flag::kWeakVulnerable,
-                                   transform.centre, shot_mod_data::kHomingScanRadius));
+      auto c_list =
+          sim.collide(iterate_check_ball(shape_flag::kVulnerable | shape_flag::kWeakVulnerable,
+                                         transform.centre, shot_mod_data::kHomingScanRadius));
       // TODO: really want to use closest point on potential target shape to our shot, rather
       // than target centre. Otherwise e.g. bosses less likely to be targeted since big, so far
       // away. Also, ignore offscreen?
@@ -150,9 +151,9 @@ struct PlayerShot : ecs::component {
         if (a < shot_mod_data::kHomingAngleChange) {
           direction = normalise(*target - transform.centre);
         } else {
-          direction =
-              rotate(direction,
-                     (a_diff > 0 ? 1_fx : -1_fx) * std::min(a, shot_mod_data::kHomingAngleChange));
+          direction = ::rotate(
+              direction,
+              (a_diff > 0 ? 1_fx : -1_fx) * std::min(a, shot_mod_data::kHomingAngleChange));
         }
       }
     }
@@ -164,10 +165,10 @@ struct PlayerShot : ecs::component {
       destroy = true;
       destroy_particles = direction;
     }
-    auto collision = sim.collide(
-        geom::iterate_check_point(shape_flag::kVulnerable | shape_flag::kWeakVulnerable |
-                                      shape_flag::kShield | shape_flag::kWeakShield,
-                                  transform.centre));
+    auto collision =
+        sim.collide(iterate_check_point(shape_flag::kVulnerable | shape_flag::kWeakVulnerable |
+                                            shape_flag::kShield | shape_flag::kWeakShield,
+                                        transform.centre));
     for (const auto& e : collision) {
       if (e.h.has<Destroy>() ||
           !(e.hit_mask & (shape_flag::kVulnerable | shape_flag::kWeakVulnerable))) {
@@ -247,8 +248,8 @@ void spawn_player_shot(SimInterface& sim, ecs::handle player, const vec2& positi
 
   if (loadout.has(mod_id::kCloseCombatWeapon)) {
     for (std::uint32_t i = 0; i < shot_mod_data::kCloseCombatShotCount; ++i) {
-      auto d = rotate(direction,
-                      (sim.random_fixed() - 1_fx / 2) * shot_mod_data::kCloseCombatSpreadAngle);
+      auto d = ::rotate(direction,
+                        (sim.random_fixed() - 1_fx / 2) * shot_mod_data::kCloseCombatSpreadAngle);
       spawn_player_shot(sim, position,
                         PlayerShot{player.id(), p.player_number, p.is_predicted, loadout, d});
     }

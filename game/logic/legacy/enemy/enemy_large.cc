@@ -1,12 +1,14 @@
 #include "game/common/colour.h"
-#include "game/geometry/legacy/ngon.h"
 #include "game/geometry/node_conditional.h"
+#include "game/geometry/shapes/legacy.h"
 #include "game/geometry/shapes/line.h"
 #include "game/logic/legacy/enemy/enemy.h"
 #include "game/logic/legacy/ship_template.h"
 
 namespace ii::legacy {
 namespace {
+using namespace geom;
+
 struct FollowHub : ecs::component {
   static constexpr std::uint32_t kBoundingWidth = 16;
   static constexpr float kZIndex = 0.f;
@@ -17,18 +19,17 @@ struct FollowHub : ecs::component {
   static constexpr fixed kSpeed = 1;
 
   static constexpr auto c = colour::hue360(240, .7f);
-  template <geom::ShapeNode S>
-  using fh_arrange = geom::compound<geom::translate<16, 0, S>, geom::translate<-16, 0, S>,
-                                    geom::translate<0, 16, S>, geom::translate<0, -16, S>>;
-  template <geom::ShapeNode S>
-  using r_pi4_ngon = geom::rotate<pi<fixed> / 4, S>;
-  using fh_centre = r_pi4_ngon<
-      geom::legacy::polygram<16, 4, c, 0, shape_flag::kDangerous | shape_flag::kVulnerable>>;
-  using fh_spoke = r_pi4_ngon<geom::legacy::ngon<8, 4, c>>;
-  using fh_power_spoke = r_pi4_ngon<geom::legacy::polystar<8, 4, c>>;
-  using shape = geom::translate_p<
-      0, fh_centre,
-      geom::rotate_p<1, fh_arrange<fh_spoke>, geom::if_p<2, fh_arrange<fh_power_spoke>>>>;
+  template <ShapeNode S>
+  using fh_arrange = compound<translate<16, 0, S>, translate<-16, 0, S>, translate<0, 16, S>,
+                              translate<0, -16, S>>;
+  template <ShapeNode S>
+  using r_pi4_ngon = rotate<pi<fixed> / 4, S>;
+  using fh_centre = r_pi4_ngon<legacy_ngon<nd(16, 4), nline(ngon_style::kPolygram, c),
+                                           shape_flag::kDangerous | shape_flag::kVulnerable>>;
+  using fh_spoke = r_pi4_ngon<ngon<nd(8, 4), nline(c)>>;
+  using fh_power_spoke = r_pi4_ngon<ngon<nd(8, 4), nline(ngon_style::kPolystar, c)>>;
+  using shape = translate_p<0, fh_centre,
+                            rotate_p<1, fh_arrange<fh_spoke>, if_p<2, fh_arrange<fh_power_spoke>>>>;
 
   std::tuple<vec2, fixed, bool> shape_parameters(const Transform& transform) const {
     return {transform.centre, transform.rotation, power_b};
@@ -94,19 +95,20 @@ struct Shielder : ecs::component {
 
   static constexpr auto c0 = colour::hue360(150, .2f);
   static constexpr auto c1 = colour::hue360(160, .5f, .6f);
-  template <geom::ShapeNode S>
-  using s_arrange = geom::compound<geom::translate<24, 0, S>, geom::translate<-24, 0, S>,
-                                   geom::translate<0, 24, geom::rotate<pi<fixed> / 2, S>>,
-                                   geom::translate<0, -24, geom::rotate<pi<fixed> / 2, S>>>;
+  template <ShapeNode S>
+  using s_arrange = compound<translate<24, 0, S>, translate<-24, 0, S>,
+                             translate<0, 24, rotate<pi<fixed> / 2, S>>,
+                             translate<0, -24, rotate<pi<fixed> / 2, S>>>;
   using s_centre =
-      geom::legacy::polygon_colour_p<14, 8, 2, 0, shape_flag::kDangerous | shape_flag::kVulnerable>;
-  using s_shield0 = geom::legacy::polystar<8, 6, c0, 0, shape_flag::kWeakShield>;
-  using s_shield1 = geom::legacy::ngon<8, 6, c1>;
-  using s_spokes = geom::legacy::polystar<24, 4, c0>;
-  using shape =
-      standard_transform<s_spokes, s_arrange<geom::rotate_eval<geom::multiply_p<-1, 1>, s_shield0>>,
-                         s_arrange<geom::rotate_eval<geom::multiply_p<-1, 1>, s_shield1>>,
-                         geom::rotate_eval<geom::negate_p<1>, s_centre>>;
+      compound<ngon_colour_p<nd(14, 8), 2>,
+               legacy_ball_collider<14, shape_flag::kDangerous | shape_flag::kVulnerable>>;
+  using s_shield0 =
+      legacy_ngon<nd(8, 6), nline(ngon_style::kPolystar, c0), shape_flag::kWeakShield>;
+  using s_shield1 = ngon<nd(8, 6), nline(c1)>;
+  using s_spokes = ngon<nd(24, 4), nline(ngon_style::kPolystar, c0)>;
+  using shape = standard_transform<s_spokes, s_arrange<rotate_eval<multiply_p<-1, 1>, s_shield0>>,
+                                   s_arrange<rotate_eval<multiply_p<-1, 1>, s_shield1>>,
+                                   rotate_eval<negate_p<1>, s_centre>>;
 
   std::tuple<vec2, fixed, cvec4> shape_parameters(const Transform& transform) const {
     return {transform.centre, transform.rotation, power ? c1 : c0};
@@ -176,15 +178,14 @@ struct Tractor : ecs::component {
   static constexpr fixed kPullSpeed = 2 + 1_fx / 2;
 
   static constexpr auto c = colour::hue360(300, .5f, .6f);
-  using t_orb =
-      geom::legacy::polygram<12, 6, c, 0, shape_flag::kDangerous | shape_flag::kVulnerable>;
-  using t_star = geom::legacy::polystar<16, 6, c>;
-  using shape = standard_transform<
-      geom::translate<24, 0, geom::rotate_eval<geom::multiply_p<5, 2>, t_orb>>,
-      geom::translate<-24, 0, geom::rotate_eval<geom::multiply_p<-5, 2>, t_orb>>,
-      geom::line<vec2{-24, 0}, vec2{24, 0}, geom::sline(c)>,
-      geom::if_p<3, geom::translate<24, 0, geom::rotate_eval<geom::multiply_p<8, 2>, t_star>>,
-                 geom::translate<-24, 0, geom::rotate_eval<geom::multiply_p<-8, 2>, t_star>>>>;
+  using t_orb = legacy_ngon<nd(12, 6), nline(ngon_style::kPolygram, c),
+                            shape_flag::kDangerous | shape_flag::kVulnerable>;
+  using t_star = ngon<nd(16, 6), nline(ngon_style::kPolystar, c)>;
+  using shape = standard_transform<translate<24, 0, rotate_eval<multiply_p<5, 2>, t_orb>>,
+                                   translate<-24, 0, rotate_eval<multiply_p<-5, 2>, t_orb>>,
+                                   line<vec2{-24, 0}, vec2{24, 0}, sline(c)>,
+                                   if_p<3, translate<24, 0, rotate_eval<multiply_p<8, 2>, t_star>>,
+                                        translate<-24, 0, rotate_eval<multiply_p<-8, 2>, t_star>>>>;
 
   std::tuple<vec2, fixed, fixed, bool> shape_parameters(const Transform& transform) const {
     return {transform.centre, transform.rotation, spoke_r, power};
