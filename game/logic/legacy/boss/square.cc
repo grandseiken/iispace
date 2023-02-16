@@ -23,14 +23,17 @@ struct BigSquareBoss : public ecs::component {
 
   template <fixed C, geom::ShapeNode... Nodes>
   using rotate_s = geom::rotate_eval<geom::multiply_p<C, 1>, geom::pack<Nodes...>>;
-  using shape = geom::translate_p<
-      0, rotate_s<1, geom::ngon<160, 4, c0>, geom::ngon<155, 4, c0>>,
-      rotate_s<-2, geom::polygon<140, 4, c0, 0, shape_flag::kDangerous>, geom::ngon<135, 4, c0>>,
-      rotate_s<3, geom::polygon<120, 4, c0, 0, shape_flag::kDangerous>, geom::ngon<115, 4, c0>>,
-      rotate_s<-4, geom::ngon<100, 4, c0>, geom::ngon<95, 4, c1>>,
-      rotate_s<5, geom::ngon<80, 4, c0>, geom::ngon<75, 4, c1>>,
-      rotate_s<-6, geom::polygon<60, 4, c0, 0, shape_flag::kVulnerable>,
-               geom::polygon<55, 4, c2, 0, shape_flag::kShield>>>;
+  using shape =
+      geom::translate_p<0,
+                        rotate_s<1, geom::legacy::ngon<160, 4, c0>, geom::legacy::ngon<155, 4, c0>>,
+                        rotate_s<-2, geom::legacy::polygon<140, 4, c0, 0, shape_flag::kDangerous>,
+                                 geom::legacy::ngon<135, 4, c0>>,
+                        rotate_s<3, geom::legacy::polygon<120, 4, c0, 0, shape_flag::kDangerous>,
+                                 geom::legacy::ngon<115, 4, c0>>,
+                        rotate_s<-4, geom::legacy::ngon<100, 4, c0>, geom::legacy::ngon<95, 4, c1>>,
+                        rotate_s<5, geom::legacy::ngon<80, 4, c0>, geom::legacy::ngon<75, 4, c1>>,
+                        rotate_s<-6, geom::legacy::polygon<60, 4, c0, 0, shape_flag::kVulnerable>,
+                                 geom::legacy::polygon<55, 4, c2, 0, shape_flag::kShield>>>;
 
   static std::uint32_t bounding_width(const SimInterface& sim) {
     return sim.is_legacy() ? 640 : 150;
@@ -116,7 +119,8 @@ struct BigSquareBoss : public ecs::component {
   }
 
   void render(std::vector<render::shape>& output, const SimInterface& sim) const {
-    using follow_shape = geom::translate_p<0, geom::rotate<pi<fixed> / 4, geom::ngon<10, 4, c0>>>;
+    using follow_shape =
+        geom::translate_p<0, geom::rotate<pi<fixed> / 4, geom::legacy::ngon<10, 4, c0>>>;
     if ((special_timer / 4) % 2 && attack_player) {
       vec2 d{kSpecialAttackRadius, 0};
       if (special_attack_rotate) {

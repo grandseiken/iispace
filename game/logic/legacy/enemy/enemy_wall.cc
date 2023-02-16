@@ -14,7 +14,7 @@ struct Square : ecs::component {
   static constexpr rumble_type kDestroyRumble = rumble_type::kLow;
   static constexpr fixed kSpeed = 2 + 1_fx / 4;
   using shape = standard_transform<
-      geom::box_colour_p<10, 10, 2, 0, shape_flag::kDangerous | shape_flag::kVulnerable>>;
+      geom::legacy::box_colour_p<10, 10, 2, 0, shape_flag::kDangerous | shape_flag::kVulnerable>>;
 
   std::tuple<vec2, fixed, cvec4>
   shape_parameters(const Transform& transform, const Health& health) const {
@@ -86,8 +86,9 @@ struct Wall : ecs::component {
 
   static constexpr std::uint32_t kTimer = 80;
   static constexpr fixed kSpeed = 1 + 1_fx / 4;
-  using shape = standard_transform<geom::box<10, 40, colour::hue360(120, .5f, .6f), 0,
-                                             shape_flag::kDangerous | shape_flag::kVulnerable>>;
+  using shape =
+      standard_transform<geom::legacy::box<10, 40, colour::hue360(120, .5f, .6f), 0,
+                                           shape_flag::kDangerous | shape_flag::kVulnerable>>;
 
   vec2 dir{0, 1};
   std::uint32_t timer = 0;

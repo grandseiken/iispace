@@ -33,10 +33,12 @@ cc_library(
 cc_library(
   name = "ship_template",
   hdrs = ["ship_template.h"],
+  srcs = ["ship_template.cc"],
   deps = [
     ":components",
     "//game/common:math",
     "//game/geometry",
+    "//game/geometry:resolve",
     "//game/logic/ecs",
     "//game/logic/sim:sim_interface",
     "@static_functional",

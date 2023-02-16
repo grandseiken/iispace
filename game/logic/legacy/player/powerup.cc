@@ -19,12 +19,12 @@ struct Powerup : ecs::component {
   static constexpr std::uint32_t kRotateTime = 100;
   static constexpr cvec4 cw{1.f};
 
-  using out0 = geom::ngon_colour_p<13, 5, 2>;
-  using out1 = geom::ngon_colour_p<9, 5, 3>;
-  using extra_life = geom::switch_entry<powerup_type::kExtraLife, geom::ngon<8, 3, cw>>;
-  using magic_shots = geom::switch_entry<powerup_type::kMagicShots, geom::box<3, 3, cw>>;
-  using shield = geom::switch_entry<powerup_type::kShield, geom::ngon<11, 5, cw>>;
-  using bomb = geom::switch_entry<powerup_type::kBomb, geom::polystar<11, 10, cw>>;
+  using out0 = geom::legacy::ngon_colour_p<13, 5, 2>;
+  using out1 = geom::legacy::ngon_colour_p<9, 5, 3>;
+  using extra_life = geom::switch_entry<powerup_type::kExtraLife, geom::legacy::ngon<8, 3, cw>>;
+  using magic_shots = geom::switch_entry<powerup_type::kMagicShots, geom::legacy::box<3, 3, cw>>;
+  using shield = geom::switch_entry<powerup_type::kShield, geom::legacy::ngon<11, 5, cw>>;
+  using bomb = geom::switch_entry<powerup_type::kBomb, geom::legacy::polystar<11, 10, cw>>;
   using shape =
       standard_transform<out0, out1, geom::switch_p<4, extra_life, magic_shots, shield, bomb>>;
 

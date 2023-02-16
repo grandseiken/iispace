@@ -89,7 +89,6 @@ void explode_shapes(EmitHandle& e, const geom::resolve_result& r,
                     const std::optional<cvec4>& colour_override, std::uint32_t time,
                     const std::optional<fvec2>& towards, std::optional<float> speed) {
   for (const auto& entry : r.entries) {
-    std::optional<vec2> v;
     std::optional<cvec4> c;
     if (const auto* d = std::get_if<geom::ball_data>(&entry.data)) {
       c = d->line.colour0.a ? d->line.colour0 : d->fill.colour0;

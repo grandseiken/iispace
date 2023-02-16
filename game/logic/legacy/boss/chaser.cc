@@ -64,9 +64,10 @@ struct ChaserBoss : ecs::component {
   static constexpr cvec4 c = colour::hue360(210, .6f);
 
   template <fixed R, cvec4 C, shape_flag Flags = shape_flag::kNone>
-  using scale_shape = geom::ngon_eval<geom::multiply_p<R, 2>, geom::constant<5u>, geom::constant<C>,
-                                      geom::constant<geom::ngon_style::kPolygram>,
-                                      geom::constant<0>, geom::constant<Flags>>;
+  using scale_shape =
+      geom::legacy::ngon_eval<geom::multiply_p<R, 2>, geom::constant<5u>, geom::constant<C>,
+                              geom::constant<geom::ngon_style::kPolygram>, geom::constant<0>,
+                              geom::constant<Flags>>;
   using shape =
       standard_transform<scale_shape<10, c>, scale_shape<9, c>,
                          scale_shape<8, cvec4{0}, shape_flag::kDangerous | shape_flag::kVulnerable>,

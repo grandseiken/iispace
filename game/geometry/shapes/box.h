@@ -9,7 +9,6 @@
 #include <cstdint>
 
 namespace ii::geom {
-inline namespace shapes {
 
 //////////////////////////////////////////////////////////////////////////////////
 // Collider.
@@ -92,7 +91,6 @@ template <vec2 Dimensions, std::size_t N0, std::size_t N1, line_style Line = sli
 using box_colour_p2 = box_eval<constant<Dimensions>, set_colour_p<Line, N0>, set_colour_p<Fill, N1>,
                                constant<RFlags>>;
 
-}  // namespace shapes
 }  // namespace ii::geom
 
 #endif

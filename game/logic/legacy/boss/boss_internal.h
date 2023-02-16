@@ -28,13 +28,23 @@ void boss_on_destroy(ecs::const_handle h, const Transform& transform, SimInterfa
       health.damage(eh, sim, GlobalData::kBombDamage, damage_type::kBomb, h.id());
     }
   });
+
+  auto& r = resolve_entity_shape<Logic, S>(h);
   std::optional<cvec4> boss_colour;
-  geom::iterate(S{}, geom::iterate_volumes, get_shape_parameters<Logic>(h), geom::transform{},
-                [&](const vec2&, fixed, const cvec4& c, const cvec4&) {
-                  if (!boss_colour) {
-                    boss_colour = c;
-                  }
-                });
+  for (const auto& e : r.entries) {
+    if (const auto* d = std::get_if<geom::ball_data>(&e.data); d && d->line.colour0.a) {
+      boss_colour = d->line.colour0;
+      break;
+    }
+    if (const auto* d = std::get_if<geom::box_data>(&e.data); d && d->line.colour0.a) {
+      boss_colour = d->line.colour0;
+      break;
+    }
+    if (const auto* d = std::get_if<geom::ngon_data>(&e.data); d && d->line.colour0.a) {
+      boss_colour = d->line.colour0;
+      break;
+    }
+  }
 
   explode_entity_shapes<Logic, S>(h, e);
   explode_entity_shapes<Logic, S>(h, e, cvec4{1.f}, 12);

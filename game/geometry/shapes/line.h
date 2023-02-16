@@ -6,7 +6,6 @@
 #include "game/render/data/shapes.h"
 
 namespace ii::geom {
-inline namespace shapes {
 
 //////////////////////////////////////////////////////////////////////////////////
 // Render shape.
@@ -46,7 +45,6 @@ template <vec2 A, vec2 B, std::size_t N, line_style Style = sline(),
           render::flag RFlags = render::flag::kNone>
 using line_colour_p = line_eval<constant<A>, constant<B>, set_colour_p<Style, N>, constant<RFlags>>;
 
-}  // namespace shapes
 }  // namespace ii::geom
 
 #endif

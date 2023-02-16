@@ -5,8 +5,7 @@
 #include <cstddef>
 #include <cstdint>
 
-namespace ii::geom {
-inline namespace legacy {
+namespace ii::geom::legacy {
 
 struct polyarc_data : shape_data_base {
   using shape_data_base::iterate;
@@ -37,30 +36,7 @@ struct polyarc_data : shape_data_base {
     }
   }
 
-  constexpr void iterate(iterate_lines_t, const Transform auto& t, LineFunction auto&& f) const {
-    for (std::uint32_t i = 0; sides >= 2 && i < sides && i < segments; ++i) {
-      auto a = from_polar(i * 2 * pi<fixed> / sides, radius);
-      auto b = from_polar((i + 1) * 2 * pi<fixed> / sides, radius);
-      std::invoke(f, *t.translate(a), *t.translate(b), colour, 1.f, 0.f);
-    }
-  }
-
-  constexpr void iterate(iterate_shapes_t, const Transform auto& t, ShapeFunction auto&& f) const {
-    std::invoke(
-        f,
-        render::shape{
-            .origin = to_float(*t),
-            .rotation = t.rotation().to_float(),
-            .colour0 = colour,
-            .s_index = index,
-            .data = render::ngon{.radius = radius.to_float(), .sides = sides, .segments = segments},
-        });
-  }
-
-  constexpr void
-  iterate(iterate_volumes_t, const Transform auto& t, VolumeFunction auto&& f) const {
-    std::invoke(f, *t, 0_fx, colour, colour::kZero);
-  }
+  void iterate(iterate_resolve_t, const transform& t, resolve_result& r) const;
 };
 
 constexpr polyarc_data make_polyarc(fixed radius, std::uint32_t sides, std::uint32_t segments,
@@ -98,7 +74,6 @@ template <fixed Radius, std::uint32_t Sides, std::uint32_t Segments, std::size_t
 using polyarc_colour_p = polyarc_eval<constant<Radius>, constant<Sides>, constant<Segments>,
                                       parameter<ParameterIndex>, constant<Index>, constant<Flags>>;
 
-}  // namespace legacy
-}  // namespace ii::geom
+}  // namespace ii::geom::legacy
 
 #endif

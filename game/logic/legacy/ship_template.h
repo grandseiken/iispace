@@ -5,6 +5,7 @@
 #include "game/geometry/enums.h"
 #include "game/geometry/node.h"
 #include "game/geometry/node_transform.h"
+#include "game/geometry/resolve.h"
 #include "game/logic/ecs/call.h"
 #include "game/logic/ecs/index.h"
 #include "game/logic/legacy/components.h"
@@ -29,22 +30,44 @@ auto get_shape_parameters(ecs::const_handle h) {
   }
 }
 
+inline geom::resolve_result& local_resolve() {
+  static thread_local geom::resolve_result r;
+  r.entries.clear();
+  return r;
+}
+
+template <geom::ShapeNode S>
+void resolve_shape(const auto& parameters, geom::resolve_result& result) {
+  geom::iterate(S{}, geom::iterate_resolve(), parameters, geom::transform{}, result);
+}
+
+template <ecs::Component Logic, geom::ShapeNode S = typename Logic::shape>
+geom::resolve_result& resolve_entity_shape(ecs::const_handle h) {
+  auto& r = local_resolve();
+  resolve_shape<S>(get_shape_parameters<Logic>(h), r);
+  return r;
+}
+
 //////////////////////////////////////////////////////////////////////////////////
 // Particles.
 //////////////////////////////////////////////////////////////////////////////////
+void explode_shapes(EmitHandle& e, const geom::resolve_result& r,
+                    const std::optional<cvec4>& colour_override = std::nullopt,
+                    std::uint32_t time = 8, const std::optional<fvec2>& towards = std::nullopt,
+                    std::optional<float> speed = std::nullopt);
+
 template <geom::ShapeNode S>
 void explode_shapes(EmitHandle& e, const auto& parameters,
                     const std::optional<cvec4> colour_override = std::nullopt,
                     std::uint32_t time = 8, const std::optional<vec2>& towards = std::nullopt,
                     std::optional<float> speed = std::nullopt) {
+  auto& r = local_resolve();
+  resolve_shape<S>(parameters, r);
   std::optional<fvec2> towards_float;
   if (towards) {
     towards_float = to_float(*towards);
   }
-  geom::iterate(S{}, geom::iterate_volumes, parameters, geom::transform{},
-                [&](const vec2& v, fixed, const cvec4& c, const cvec4&) {
-                  e.explosion(to_float(v), colour_override.value_or(c), time, towards_float, speed);
-                });
+  explode_shapes(e, r, colour_override, time, towards_float, speed);
 }
 
 template <ecs::Component Logic, geom::ShapeNode S = typename Logic::shape>
@@ -60,47 +83,19 @@ void explode_entity_shapes(ecs::const_handle h, EmitHandle& e,
   }
 }
 
-inline void add_line_particle(EmitHandle& e, const fvec2& source, const fvec2& a, const fvec2& b,
-                              const cvec4& c, float w, float z, std::uint32_t time) {
-  auto& r = e.random();
-  auto position = (a + b) / 2.f;
-  auto velocity = (2.f + .5f * r.fixed().to_float()) * normalise(position - source) +
-      from_polar((2 * pi<fixed> * r.fixed()).to_float(), (r.fixed() / 8).to_float());
-  auto diameter = distance(a, b);
-  auto d = distance(source, a) - distance(source, b);
-  if (angle_diff(angle(a - source), angle(b - source)) > 0) {
-    d = -d;
-  }
-  auto angular_velocity = (d / (32.f * diameter)) + r.fixed().to_float() / 64.f;
-  e.add(particle{
-      .position = position - velocity,
-      .velocity = velocity,
-      .colour = c,
-      .data =
-          line_particle{
-              .radius = diameter / 2.f,
-              .rotation = angle(b - a) - angular_velocity,
-              .angular_velocity = angular_velocity,
-              .width = w,
-          },
-      .end_time = time + r.uint(time),
-      .flash_time = z > colour::kZTrails ? 16u : 0u,
-      .fade = true,
-  });
-}
+void destruct_lines(EmitHandle& e, const geom::resolve_result& r, const fvec2& source,
+                    std::uint32_t time = 20);
 
 template <geom::ShapeNode S>
 void destruct_lines(EmitHandle& e, const auto& parameters, const vec2& source,
                     std::uint32_t time = 20) {
-  auto f_source = to_float(source);
   // TODO: something a bit cleverer here? Take velocity of shot into account?
   // Take velocity of destructed shape into account (maybe using same system as will handle
   // motion trails)?
   // Make destruct particles similarly velocified?
-  geom::iterate(S{}, geom::iterate_lines, parameters, geom::transform{},
-                [&](const vec2& a, const vec2& b, const cvec4& c, float w, float z) {
-                  add_line_particle(e, f_source, to_float(a), to_float(b), c, w, z, time);
-                });
+  auto& r = local_resolve();
+  resolve_shape<S>(parameters, r);
+  destruct_lines(e, r, to_float(source), time);
 }
 
 template <ecs::Component Logic, geom::ShapeNode S = typename Logic::shape>
@@ -168,37 +163,24 @@ ship_check_collision_legacy(ecs::const_handle h, const geom::iterate_check_colli
 //////////////////////////////////////////////////////////////////////////////////
 // Rendering.
 //////////////////////////////////////////////////////////////////////////////////
+void render_shape(std::vector<render::shape>& output, const geom::resolve_result& r,
+                  float z_index = 0.f, const std::optional<float>& hit_alpha = std::nullopt,
+                  const std::optional<cvec4>& c_override = std::nullopt,
+                  const std::optional<std::size_t>& c_override_max_index = std::nullopt);
+
 template <geom::ShapeNode S>
 void render_shape(std::vector<render::shape>& output, const auto& parameters, float z_index = 0.f,
-                  const geom::transform& t = {},
-                  const std::optional<float> hit_alpha = std::nullopt,
+                  const std::optional<float>& hit_alpha = std::nullopt,
                   const std::optional<cvec4>& c_override = std::nullopt,
                   const std::optional<std::size_t>& c_override_max_index = std::nullopt) {
-  std::size_t i = 0;
-  geom::transform transform = t;
-  transform.index_out = &i;
-  geom::iterate(S{}, geom::iterate_shapes, parameters, transform, [&](const render::shape& shape) {
-    render::shape shape_copy = shape;
-    shape_copy.z_index = z_index;
-    if ((c_override || hit_alpha) && (!c_override_max_index || i < *c_override_max_index)) {
-      if (c_override) {
-        shape_copy.colour0 = cvec4{c_override->r, c_override->g, c_override->b, shape.colour0.a};
-        if (shape_copy.colour1) {
-          shape_copy.colour1 = cvec4{c_override->r, c_override->g, c_override->b, shape.colour1->a};
-        }
-      }
-      if (hit_alpha) {
-        shape_copy.apply_hit_flash(*hit_alpha);
-      }
-    }
-    output.emplace_back(shape_copy);
-  });
+  auto& r = local_resolve();
+  resolve_shape<S>(parameters, r);
+  render_shape(output, r, z_index, hit_alpha, c_override, c_override_max_index);
 }
 
 template <geom::ShapeNode S>
 void render_entity_shape_override(std::vector<render::shape>& output, const Health* health,
                                   const auto& parameters, float z_index = 0.f,
-                                  const geom::transform& t = {},
                                   const std::optional<cvec4>& colour_override = std::nullopt) {
   std::optional<float> hit_alpha;
   std::optional<std::size_t> c_override_max_index;
@@ -206,14 +188,14 @@ void render_entity_shape_override(std::vector<render::shape>& output, const Heal
     hit_alpha = std::min(1.f, health->hit_timer / 10.f);
     c_override_max_index = health->hit_flash_ignore_index;
   }
-  render_shape<S>(output, parameters, z_index, t, hit_alpha, colour_override, c_override_max_index);
+  render_shape<S>(output, parameters, z_index, hit_alpha, colour_override, c_override_max_index);
 }
 
 template <ecs::Component Logic, geom::ShapeNode S = typename Logic::shape>
 void render_entity_shape(ecs::const_handle h, const Health* health,
                          std::vector<render::shape>& output) {
   render_entity_shape_override<S>(output, health, get_shape_parameters<Logic>(h), Logic::kZIndex,
-                                  {}, std::nullopt);
+                                  std::nullopt);
 }
 
 //////////////////////////////////////////////////////////////////////////////////

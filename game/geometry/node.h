@@ -34,7 +34,6 @@ template <IterTag I, typename Parameters, ShapeExpressionWithSubstitution<Parame
 constexpr void
 iterate(S, I tag, const Parameters& params, const Transform auto& t, IterateFunction<I> auto&& f) {
   evaluate(S{}, params).iterate(tag, t, f);
-  t.increment_index();
 }
 
 template <IterTag I, typename Parameters, ShapeNode... Nodes>

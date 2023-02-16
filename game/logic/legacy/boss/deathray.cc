@@ -4,7 +4,6 @@
 #include "game/geometry/legacy/line.h"
 #include "game/geometry/legacy/ngon.h"
 #include "game/geometry/node_conditional.h"
-#include "game/geometry/node_disable_iteration.h"
 #include "game/geometry/node_for_each.h"
 #include "game/logic/legacy/boss/boss_internal.h"
 #include "game/logic/legacy/enemy/enemy.h"
@@ -25,8 +24,8 @@ struct DeathRay : ecs::component {
   static constexpr rumble_type kDestroyRumble = rumble_type::kNone;
   static constexpr fixed kSpeed = 10;
 
-  using shape = standard_transform<geom::box<10, 48, cvec4{0.f}, 0, shape_flag::kDangerous>,
-                                   geom::line<0, 48, 0, -48, cvec4{1.f}>>;
+  using shape = standard_transform<geom::legacy::box<10, 48, cvec4{0.f}, 0, shape_flag::kDangerous>,
+                                   geom::legacy::line<0, 48, 0, -48, cvec4{1.f}>>;
 
   void update(ecs::handle h, Transform& transform, SimInterface& sim) {
     transform.move(vec2{1, 0} * kSpeed);
@@ -54,11 +53,12 @@ struct DeathArm : ecs::component {
   static constexpr fixed kSpeed = 4;
 
   using shape = standard_transform<
-      geom::ngon<60, 4, c1>,
+      geom::legacy::ngon<60, 4, c1>,
       geom::conditional_p<
-          2, geom::polygram<50, 4, c0, 0, shape_flag::kVulnerable>,
-          geom::polygram<50, 4, c0, 0, shape_flag::kDangerous | shape_flag::kVulnerable>>,
-      geom::ball_collider<40, shape_flag::kShield>, geom::ngon<20, 4, c1>, geom::ngon<18, 4, c0>>;
+          2, geom::legacy::polygram<50, 4, c0, 0, shape_flag::kVulnerable>,
+          geom::legacy::polygram<50, 4, c0, 0, shape_flag::kDangerous | shape_flag::kVulnerable>>,
+      geom::legacy::ball_collider<40, shape_flag::kShield>, geom::legacy::ngon<20, 4, c1>,
+      geom::legacy::ngon<18, 4, c0>>;
 
   std::tuple<vec2, fixed, bool> shape_parameters(const Transform& transform) const {
     return {transform.centre, transform.rotation, start > 0};
@@ -159,14 +159,18 @@ struct DeathRayBoss : public ecs::component {
   template <fixed I>
   using edge_shape =
       geom::rotate<I * pi<fixed> / 6,
-                   geom::translate<130, 0, geom::box<10, 24, c1, 0, shape_flag::kDangerous>,
-                                   geom::box<8, 22, c0, 0, shape_flag::kDangerous>>>;
+                   geom::translate<130, 0,
+                                   geom::legacy::box<10, 24, c1, 0, shape_flag::kDangerous,
+                                                     render::flag::kLegacy_NoExplode>,
+                                   geom::legacy::box<8, 22, c0, 0, shape_flag::kDangerous,
+                                                     render::flag::kLegacy_NoExplode>>>;
   using shape = standard_transform<
-      geom::rotate<pi<fixed> / 12, geom::polystar<110, 12, c0>, geom::polygram<70, 12, c1>,
-                   geom::polygon<120, 12, c1, 0, shape_flag::kDangerous | shape_flag::kVulnerable>,
-                   geom::ngon<115, 12, c1>, geom::polygon<110, 12, c1, 0, shape_flag::kShield>>,
-      geom::box<0, 0, cvec4{0.f}>,
-      geom::disable_iteration<geom::iterate_volumes_t, geom::for_each<fixed, 1, 12, edge_shape>>>;
+      geom::rotate<
+          pi<fixed> / 12, geom::legacy::polystar<110, 12, c0>, geom::legacy::polygram<70, 12, c1>,
+          geom::legacy::polygon<120, 12, c1, 0, shape_flag::kDangerous | shape_flag::kVulnerable>,
+          geom::legacy::ngon<115, 12, c1>,
+          geom::legacy::polygon<110, 12, c1, 0, shape_flag::kShield>>,
+      geom::legacy::box<0, 0, cvec4{0.f}>, geom::for_each<fixed, 1, 12, edge_shape>>;
 
   static std::uint32_t bounding_width(const SimInterface& sim) {
     return sim.is_legacy() ? 640 : 140;
@@ -332,7 +336,7 @@ struct DeathRayBoss : public ecs::component {
   }
 
   void render(const Transform& transform, std::vector<render::shape>& output) const {
-    using ray_shape = geom::translate_p<0, geom::polystar<10, 6, c3>>;
+    using ray_shape = geom::translate_p<0, geom::legacy::polystar<10, 6, c3>>;
     for (std::uint32_t i = ray_attack_timer; i <= ray_attack_timer + 16; ++i) {
       auto k = i < 8 ? 0 : i - 8;
       if (k < 40 || k > kRayTimer) {

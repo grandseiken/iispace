@@ -12,6 +12,7 @@ enum class flag : std::uint32_t {
   kNone = 0b00000000,
   kNoFlash = 0b00000001,
   kNoStatus = 0b00000010,
+  kLegacy_NoExplode = 0b00000100,
 };
 }  // namespace ii::render
 

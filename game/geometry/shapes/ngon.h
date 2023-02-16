@@ -10,7 +10,6 @@
 #include <cstdint>
 
 namespace ii::geom {
-inline namespace shapes {
 using render::ngon_style;
 
 struct ngon_dimensions {
@@ -135,7 +134,6 @@ template <ngon_dimensions Dimensions, std::size_t N0, std::size_t N1,
 using ngon_colour_p2 = ngon_eval<constant<Dimensions>, set_colour_p<Line, N0>,
                                  set_colour_p<Fill, N1>, constant<RFlags>>;
 
-}  // namespace shapes
 }  // namespace ii::geom
 
 #endif

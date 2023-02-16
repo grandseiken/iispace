@@ -6,9 +6,11 @@ std::optional<cvec4> get_shape_colour(const geom::resolve_result& r) {
   for (const auto& e : r.entries) {
     if (const auto* d = std::get_if<geom::ball_data>(&e.data); d && d->line.colour0.a) {
       return d->line.colour0;
-    } else if (const auto* d = std::get_if<geom::box_data>(&e.data); d && d->line.colour0.a) {
+    }
+    if (const auto* d = std::get_if<geom::box_data>(&e.data); d && d->line.colour0.a) {
       return d->line.colour0;
-    } else if (const auto* d = std::get_if<geom::ngon_data>(&e.data); d && d->line.colour0.a) {
+    }
+    if (const auto* d = std::get_if<geom::ngon_data>(&e.data); d && d->line.colour0.a) {
       return d->line.colour0;
     }
   }

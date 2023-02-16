@@ -2,8 +2,7 @@
 #define II_GAME_GEOMETRY_LEGACY_BALL_COLLIDER_H
 #include "game/geometry/expressions.h"
 
-namespace ii::geom {
-inline namespace legacy {
+namespace ii::geom::legacy {
 
 struct ball_collider_data : shape_data_base {
   using shape_data_base::iterate;
@@ -26,10 +25,7 @@ struct ball_collider_data : shape_data_base {
     }
   }
 
-  constexpr void
-  iterate(iterate_volumes_t, const Transform auto& t, VolumeFunction auto&& f) const {
-    std::invoke(f, *t, 0_fx, cvec4{0.f}, cvec4{0.f});
-  }
+  void iterate(iterate_resolve_t, const transform& t, resolve_result& r) const;
 };
 
 constexpr ball_collider_data
@@ -52,7 +48,6 @@ constexpr auto evaluate(ball_collider_eval<Radius, Flags>, const auto& params) {
 template <fixed Radius, shape_flag Flags>
 using ball_collider = constant<make_ball_collider(Radius, Flags)>;
 
-}  // namespace legacy
-}  // namespace ii::geom
+}  // namespace ii::geom::legacy
 
 #endif

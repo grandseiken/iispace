@@ -6,13 +6,14 @@ cc_library(
     "line.h",
     "ngon.h",
     "polyarc.h",
-    "shapes.cc",
   ],
+  srcs = ["shapes.cc"],
   deps = [
     "//game/geometry",
     "//game/common:math",
     "//game/common:types",
     "//game/render/data",
   ],
+  implementation_deps = ["//game/geometry/shapes"],
   visibility = ["//game/logic/legacy:__subpackages__"],
 )

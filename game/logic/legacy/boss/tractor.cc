@@ -1,7 +1,6 @@
 #include "game/common/colour.h"
 #include "game/geometry/legacy/line.h"
 #include "game/geometry/legacy/ngon.h"
-#include "game/geometry/node_disable_iteration.h"
 #include "game/geometry/node_for_each.h"
 #include "game/logic/legacy/boss/boss_internal.h"
 #include "game/logic/legacy/enemy/enemy.h"
@@ -24,14 +23,15 @@ struct TractorBoss : ecs::component {
   static constexpr cvec4 c1 = colour::hue360(300, 1.f / 3, .6f);
   static constexpr cvec4 c2 = colour::hue360(300, .4f, .5f);
 
-  using attack_shape = standard_transform<geom::translate_p<2, geom::polygon<8, 6, c0>>>;
+  using attack_shape = standard_transform<geom::translate_p<2, geom::legacy::polygon<8, 6, c0>>>;
   template <std::size_t BI>
   struct ball_inner {
     template <fixed I>
-    using ball =
-        geom::translate_eval<geom::constant<rotate_legacy(vec2{24, 0}, I* pi<fixed> / 4)>,
-                             geom::rotate_eval<geom::multiply_p<BI ? 1 : -1, 2>,
-                                               geom::polygram<12, 6, c0, 0, kDangerousVulnerable>>>;
+    using ball = geom::translate_eval<
+        geom::constant<rotate_legacy(vec2{24, 0}, I* pi<fixed> / 4)>,
+        geom::rotate_eval<geom::multiply_p<BI ? 1 : -1, 2>,
+                          geom::legacy::polygram<12, 6, c0, 0, kDangerousVulnerable,
+                                                 render::flag::kLegacy_NoExplode>>>;
     using shape = geom::for_each<fixed, 0, 8, ball>;
   };
 
@@ -40,19 +40,24 @@ struct TractorBoss : ecs::component {
       0, I ? 96 : -96,
       geom::rotate_eval<
           geom::multiply_p<fixed{I ? -1 : 1} / 2, 2>,
-          geom::compound<geom::polygram<12, 6, c1>,
-                         geom::polygon<30, 12, cvec4{0.f}, 0, shape_flag::kShield>,
-                         geom::disable_iteration<
-                             geom::iterate_volumes_t,
-                             geom::compound<geom::polygon<12, 12, c1>, geom::polygon<2, 6, c1>,
-                                            geom::polygon<36, 12, c0, 0, kDangerousVulnerable>,
-                                            geom::polygon<34, 12, c0>, geom::polygon<32, 12, c0>,
-                                            typename ball_inner<I>::shape>>>>>;
+          geom::compound<geom::legacy::polygram<12, 6, c1>,
+                         geom::legacy::polygon<30, 12, cvec4{0.f}, 0, shape_flag::kShield>,
+                         geom::compound<geom::legacy::polygon<12, 12, c1, 0, shape_flag::kNone,
+                                                              render::flag::kLegacy_NoExplode>,
+                                        geom::legacy::polygon<2, 6, c1, 0, shape_flag::kNone,
+                                                              render::flag::kLegacy_NoExplode>,
+                                        geom::legacy::polygon<36, 12, c0, 0, kDangerousVulnerable,
+                                                              render::flag::kLegacy_NoExplode>,
+                                        geom::legacy::polygon<34, 12, c0, 0, shape_flag::kNone,
+                                                              render::flag::kLegacy_NoExplode>,
+                                        geom::legacy::polygon<32, 12, c0, 0, shape_flag::kNone,
+                                                              render::flag::kLegacy_NoExplode>,
+                                        typename ball_inner<I>::shape>>>>;
   using shape = standard_transform<
       geom::for_each<std::size_t, 0, 2, ball_shape>,
-      geom::ngon_eval<geom::parameter<3>, geom::constant<16u>, geom::constant<c2>>,
-      geom::line<-2, -96, -2, 96, c0>, geom::line<0, -96, 0, 96, c1>,
-      geom::line<2, -96, 2, 96, c0>>;
+      geom::legacy::ngon_eval<geom::parameter<3>, geom::constant<16u>, geom::constant<c2>>,
+      geom::legacy::line<-2, -96, -2, 96, c0>, geom::legacy::line<0, -96, 0, 96, c1>,
+      geom::legacy::line<2, -96, 2, 96, c0>>;
   std::tuple<vec2, fixed, fixed, fixed> shape_parameters(const Transform& transform) const {
     return {transform.centre, transform.rotation, sub_rotation,
             static_cast<std::uint32_t>(attack_shapes.size()) / (1 + fixed_c::half)};

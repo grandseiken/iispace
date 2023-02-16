@@ -19,8 +19,9 @@ struct Shot : ecs::component {
   static constexpr fixed kSpeed = 10;
   static constexpr float kZIndex = 64.f;
 
-  using shape = standard_transform<geom::box_colour_p<2, 2, 2>, geom::box_colour_p<1, 1, 3>,
-                                   geom::box_colour_p<3, 3, 3>>;
+  using shape =
+      standard_transform<geom::legacy::box_colour_p<2, 2, 2>, geom::legacy::box_colour_p<1, 1, 3>,
+                         geom::legacy::box_colour_p<3, 3, 3>>;
 
   std::tuple<vec2, fixed, cvec4, cvec4> shape_parameters(const Transform& transform) const {
     auto c_dark = colour;
@@ -129,15 +130,18 @@ struct PlayerLogic : ecs::component {
   static constexpr std::uint32_t kShieldTime = 50;
   static constexpr std::uint32_t kShotTimer = 4;
 
-  using shield = geom::if_p<2, geom::polygon_colour_p<16, 10, 6, 's'>>;
+  using shield = geom::if_p<2, geom::legacy::polygon_colour_p<16, 10, 6, 's'>>;
   using bomb = geom::if_p<
-      3, geom::translate<-8, 0, geom::rotate<pi<fixed>, geom::polystar_colour_p<6, 5, 6, 'b'>>>>;
+      3,
+      geom::translate<-8, 0,
+                      geom::rotate<pi<fixed>, geom::legacy::polystar_colour_p<6, 5, 6, 'b'>>>>;
   using box_shapes =
-      geom::translate<8, 0, geom::rotate_eval<geom::negate_p<1>, geom::box_colour_p<2, 2, 4>>,
-                      geom::rotate_eval<geom::negate_p<1>, geom::box_colour_p<1, 1, 5>>,
-                      geom::rotate_eval<geom::negate_p<1>, geom::box_colour_p<3, 3, 5>>>;
-  using shape = standard_transform<geom::ngon_colour_p<16, 3, 4>,
-                                   geom::rotate<pi<fixed>, geom::ngon_colour_p<8, 3, 4>>,
+      geom::translate<8, 0,
+                      geom::rotate_eval<geom::negate_p<1>, geom::legacy::box_colour_p<2, 2, 4>>,
+                      geom::rotate_eval<geom::negate_p<1>, geom::legacy::box_colour_p<1, 1, 5>>,
+                      geom::rotate_eval<geom::negate_p<1>, geom::legacy::box_colour_p<3, 3, 5>>>;
+  using shape = standard_transform<geom::legacy::ngon_colour_p<16, 3, 4>,
+                                   geom::rotate<pi<fixed>, geom::legacy::ngon_colour_p<8, 3, 4>>,
                                    box_shapes, shield, bomb>;
 
   std::tuple<vec2, fixed, bool, bool, cvec4, cvec4, cvec4>

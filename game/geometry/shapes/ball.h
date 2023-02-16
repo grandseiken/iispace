@@ -7,7 +7,6 @@
 #include "game/render/data/shapes.h"
 
 namespace ii::geom {
-inline namespace shapes {
 
 struct ball_dimensions {
   fixed radius = 0;
@@ -99,7 +98,6 @@ template <ball_dimensions Dimensions, std::size_t N0, std::size_t N1, line_style
 using ball_colour_p2 = ball_eval<constant<Dimensions>, set_colour_p<Line, N0>,
                                  set_colour_p<Fill, N1>, constant<RFlags>>;
 
-}  // namespace shapes
 }  // namespace ii::geom
 
 #endif

@@ -4,7 +4,6 @@
 #include "game/geometry/legacy/line.h"
 #include "game/geometry/legacy/ngon.h"
 #include "game/geometry/node_conditional.h"
-#include "game/geometry/node_disable_iteration.h"
 #include "game/geometry/node_for_each.h"
 #include "game/logic/legacy/boss/boss_internal.h"
 #include "game/logic/legacy/enemy/enemy.h"
@@ -35,9 +34,9 @@ struct GhostWall : ecs::component {
   static constexpr float kZIndex = 0.f;
 
   template <std::uint32_t length>
-  using gw_box =
-      geom::compound<geom::box<length, 10, c0, 0, shape_flag::kDangerous | shape_flag::kShield>,
-                     geom::box<length, 7, c0>, geom::box<length, 4, c0>>;
+  using gw_box = geom::compound<
+      geom::legacy::box<length, 10, c0, 0, shape_flag::kDangerous | shape_flag::kShield>,
+      geom::legacy::box<length, 7, c0>, geom::legacy::box<length, 4, c0>>;
   using gw_horizontal_base = geom::rotate<pi<fixed> / 2, gw_box<240>>;
   template <fixed Y0, fixed Y1>
   using gw_horizontal_align = geom::compound<geom::translate<0, Y0, gw_horizontal_base>,
@@ -105,10 +104,10 @@ struct GhostMine : ecs::component {
 
   using shape = standard_transform<
       geom::conditional_p<
-          2, geom::ngon_colour_p<24, 8, 3>,
-          geom::polygon_colour_p<
+          2, geom::legacy::ngon_colour_p<24, 8, 3>,
+          geom::legacy::polygon_colour_p<
               24, 8, 3, 0, shape_flag::kDangerous | shape_flag::kShield | shape_flag::kWeakShield>>,
-      geom::ngon_colour_p<20, 8, 3>>;
+      geom::legacy::ngon_colour_p<20, 8, 3>>;
 
   std::tuple<vec2, fixed, bool, cvec4> shape_parameters(const Transform& transform) const {
     return {transform.centre, transform.rotation, timer > 0, (timer / 4) % 2 ? cvec4{0.f} : c1};
@@ -155,19 +154,17 @@ struct GhostBoss : ecs::component {
   static constexpr shape_flag kShapeFlags = shape_flag::kEverything;
 
   using centre_shape =
-      geom::compound<geom::polygon<32, 8, c1, 0, shape_flag::kShield>,
-                     geom::polygon<48, 8, c0, 0,
-                                   shape_flag::kDangerous | shape_flag::kEnemyInteraction |
-                                       shape_flag::kVulnerable>>;
+      geom::compound<geom::legacy::polygon<32, 8, c1, 0, shape_flag::kShield>,
+                     geom::legacy::polygon<48, 8, c0, 0,
+                                           shape_flag::kDangerous | shape_flag::kEnemyInteraction |
+                                               shape_flag::kVulnerable>>;
 
-  using render_shape =
-      standard_transform<centre_shape,
-                         geom::rotate_eval<geom::multiply_p<3, 2>, geom::polygram<24, 8, c0>>>;
+  using render_shape = standard_transform<
+      centre_shape, geom::rotate_eval<geom::multiply_p<3, 2>, geom::legacy::polygram<24, 8, c0>>>;
 
-  using explode_shape =
-      standard_transform<centre_shape,
-                         geom::rotate_eval<geom::multiply_p<3, 2>, geom::polygram<24, 8, c0>>>;
-  using shape = geom::ngon<0, 2, c1>;  // Just for fireworks.
+  using explode_shape = standard_transform<
+      centre_shape, geom::rotate_eval<geom::multiply_p<3, 2>, geom::legacy::polygram<24, 8, c0>>>;
+  using shape = geom::legacy::ngon<0, 2, c1>;  // Just for fireworks.
 
   std::tuple<vec2, fixed, fixed> shape_parameters(const Transform& transform) const {
     return {transform.centre, transform.rotation, inner_ring_rotation};
@@ -390,8 +387,8 @@ struct GhostBoss : ecs::component {
   }
 
   using box_attack_component = geom::compound<
-      geom::box<320, 10, c0, 0, shape_flag::kDangerous | shape_flag::kEnemyInteraction>,
-      geom::box<320, 7, c0>, geom::box<320, 4, c0>>;
+      geom::legacy::box<320, 10, c0, 0, shape_flag::kDangerous | shape_flag::kEnemyInteraction>,
+      geom::legacy::box<320, 7, c0>, geom::legacy::box<320, 4, c0>>;
   using box_attack_shape =
       standard_transform<geom::compound<geom::translate<320 + 32, 0, box_attack_component>,
                                         geom::translate<-320 - 32, 0, box_attack_component>>>;
@@ -415,7 +412,7 @@ struct GhostBoss : ecs::component {
     }
 
     using ring0_ball =
-        geom::ball_collider<16, shape_flag::kDangerous | shape_flag::kEnemyInteraction>;
+        geom::legacy::ball_collider<16, shape_flag::kDangerous | shape_flag::kEnemyInteraction>;
     using ring0_ball_t =
         standard_transform<geom::rotate_p<2, geom::translate_p<3, geom::rotate_p<4, ring0_ball>>>>;
     if (+(it.mask & (shape_flag::kDangerous | shape_flag::kEnemyInteraction))) {
@@ -427,7 +424,7 @@ struct GhostBoss : ecs::component {
       }
     }
 
-    using ringN_ball = geom::ball_collider<9, shape_flag::kDangerous>;
+    using ringN_ball = geom::legacy::ball_collider<9, shape_flag::kDangerous>;
     using ringN_ball_t =
         standard_transform<geom::rotate_p<2, geom::translate_p<3, geom::rotate_p<4, ringN_ball>>>>;
     for (std::uint32_t n = 1; n < 5 && +(it.mask & shape_flag::kDangerous); ++n) {
@@ -445,14 +442,14 @@ struct GhostBoss : ecs::component {
   }
 
   template <fixed I>
-  using spark_line = geom::line_eval<geom::constant<10 * from_polar_legacy(I* pi<fixed> / 4, 1_fx)>,
-                                     geom::constant<20 * from_polar_legacy(I* pi<fixed> / 4, 1_fx)>,
-                                     geom::constant<c1>>;
+  using spark_line = geom::legacy::line_eval<
+      geom::constant<10 * from_polar_legacy(I* pi<fixed> / 4, 1_fx)>,
+      geom::constant<20 * from_polar_legacy(I* pi<fixed> / 4, 1_fx)>, geom::constant<c1>,
+      geom::constant<0>,
+      geom::ternary<geom::constant<I>, geom::constant<render::flag::kLegacy_NoExplode>,
+                    geom::constant<render::flag::kNone>>>;
   using spark_shape = standard_transform<geom::translate_p<
-      2,
-      geom::rotate_p<3, spark_line<0>,
-                     geom::disable_iteration<geom::iterate_volumes_t,
-                                             geom::for_each<fixed, 1, 8, spark_line>>>>>;
+      2, geom::rotate_p<3, spark_line<0>, geom::for_each<fixed, 1, 8, spark_line>>>>;
   std::tuple<vec2, fixed, vec2, fixed>
   spark_shape_parameters(const Transform& transform, std::uint32_t i) const {
     return {transform.centre, transform.rotation, from_polar_legacy(i * pi<fixed> / 4, 48_fx),
@@ -500,27 +497,27 @@ struct GhostBoss : ecs::component {
       colour_override = c2;
     }
     render_entity_shape_override<render_shape>(output, &health, shape_parameters(transform), -4.f,
-                                               {}, colour_override);
+                                               colour_override);
     for (std::uint32_t i = 0; i < 8; ++i) {
       render_entity_shape_override<spark_shape>(
-          output, &health, spark_shape_parameters(transform, i), -2.f, {}, colour_override);
+          output, &health, spark_shape_parameters(transform, i), -2.f, colour_override);
     }
     if (box_attack_shape_enabled) {
       render_entity_shape_override<box_attack_shape>(
-          output, nullptr, box_attack_parameters(transform), 0.f, {}, colour_override);
+          output, nullptr, box_attack_parameters(transform), 0.f, colour_override);
     }
 
-    using outer_star_shape = standard_transform<
-        geom::translate_p<2,
-                          geom::rotate_p<3,
-                                         geom::compound<geom::polystar_colour_p<16, 8, 4>,
-                                                        geom::polygon_colour_p<12, 8, 4>>>>>;
+    using outer_star_shape = standard_transform<geom::translate_p<
+        2,
+        geom::rotate_p<3,
+                       geom::compound<geom::legacy::polystar_colour_p<16, 8, 4>,
+                                      geom::legacy::polygon_colour_p<12, 8, 4>>>>>;
     for (std::uint32_t n = 0; n < 5; ++n) {
       for (std::uint32_t i = 0; i < 16 + n * 6; ++i) {
         auto colour = outer_dangerous[n][i] ? c0 : n ? c2 : c1;
         std::tuple parameters{transform.centre, transform.rotation + outer_rotation[n],
                               outer_shape_d(n, i), outer_ball_rotation, colour};
-        render_entity_shape_override<outer_star_shape>(output, nullptr, parameters, -16.f, {},
+        render_entity_shape_override<outer_star_shape>(output, nullptr, parameters, -16.f,
                                                        colour_override);
       }
     }

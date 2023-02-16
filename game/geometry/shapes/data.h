@@ -4,7 +4,6 @@
 #include <optional>
 
 namespace ii::geom {
-inline namespace shapes {
 
 struct line_style {
   cvec4 colour0{0.f};
@@ -41,7 +40,6 @@ sfill(const cvec4& colour0, const cvec4& colour1, float z = 0.f, unsigned char i
   return {.colour0 = colour0, .colour1 = colour1, .z = z, .index = index};
 }
 
-}  // namespace shapes
 }  // namespace ii::geom
 
 #endif

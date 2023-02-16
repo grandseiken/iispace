@@ -46,9 +46,6 @@ struct hit_result {
 struct resolve_result;
 
 struct iterate_flags_t {};
-struct iterate_lines_t {};
-struct iterate_shapes_t {};
-struct iterate_volumes_t {};
 struct iterate_resolve_t {};
 struct iterate_check_collision_t {
   shape_flag mask = shape_flag::kNone;
@@ -56,9 +53,6 @@ struct iterate_check_collision_t {
 };
 
 inline constexpr iterate_flags_t iterate_flags;
-inline constexpr iterate_lines_t iterate_lines;
-inline constexpr iterate_shapes_t iterate_shapes;
-inline constexpr iterate_volumes_t iterate_volumes;
 inline constexpr iterate_resolve_t iterate_resolve() {
   return {};
 }
@@ -81,8 +75,7 @@ iterate_check_convex(shape_flag mask, std::span<const vec2> vs) {
 template <typename T, typename... Args>
 concept OneOf = (std::same_as<T, Args> || ...);
 template <typename T>
-concept IterTag = OneOf<T, iterate_flags_t, iterate_lines_t, iterate_shapes_t, iterate_volumes_t,
-                        iterate_resolve_t, iterate_check_collision_t>;
+concept IterTag = OneOf<T, iterate_flags_t, iterate_resolve_t, iterate_check_collision_t>;
 
 template <typename T>
 concept FlagResult = std::is_same_v<T, shape_flag&>;
@@ -90,20 +83,11 @@ template <typename T>
 concept HitResult = std::is_same_v<T, hit_result&>;
 template <typename T>
 concept ResolveResult = std::is_same_v<T, resolve_result&>;
-template <typename T>
-concept VolumeFunction = std::invocable<T, const vec2&, fixed, const cvec4&, const cvec4&>;
-template <typename T>
-concept LineFunction = std::invocable<T, const vec2&, const vec2&, const cvec4&, float, float>;
-template <typename T>
-concept ShapeFunction = std::invocable<T, const render::shape&>;
 
 template <typename T, typename U, bool B>
 concept Implies = (!std::same_as<T, U> || B);
 template <typename T, typename I>
 concept IterateFunction = IterTag<I> && Implies<I, iterate_flags_t, FlagResult<T>> &&
-    Implies<I, iterate_lines_t, LineFunction<T>> &&
-    Implies<I, iterate_shapes_t, ShapeFunction<T>> &&
-    Implies<I, iterate_volumes_t, VolumeFunction<T>> &&
     Implies<I, iterate_resolve_t, ResolveResult<T>> &&
     Implies<I, iterate_check_collision_t, HitResult<T>>;
 
@@ -111,7 +95,6 @@ template <typename T>
 concept Transform = requires(const T& x) {
                       { x.rotate(0_fx) } -> std::convertible_to<T>;
                       { x.translate(vec2{0}) } -> std::convertible_to<T>;
-                      x.increment_index();
                     };
 
 struct shape_data_base {
@@ -125,7 +108,6 @@ struct null_transform {
   constexpr null_transform translate(const vec2&) const { return {}; }
 
   constexpr vec2 operator*() const { return vec2{0}; }
-  constexpr void increment_index() const {}
 };
 
 struct transform {
@@ -140,13 +122,6 @@ struct transform {
 
   constexpr transform translate(const vec2& t) const { return {v + ::rotate(t, r), r, index_out}; }
   constexpr transform rotate(fixed a) const { return {v, r + a, index_out}; }
-
-  // TODO: remove and replace with shape_index feature somehow?
-  constexpr void increment_index() const {
-    if (index_out) {
-      ++*index_out;
-    }
-  }
 };
 
 struct convert_local_transform {
@@ -167,7 +142,6 @@ struct convert_local_transform {
 
   constexpr convert_local_transform translate(const vec2& t) const { return {ct.translate(t)}; }
   constexpr convert_local_transform rotate(fixed a) const { return {ct.rotate(a)}; }
-  constexpr void increment_index() const {}
 };
 
 struct legacy_convert_local_transform {
@@ -181,7 +155,6 @@ struct legacy_convert_local_transform {
 
   constexpr legacy_convert_local_transform translate(const vec2& t) const { return {v - t}; }
   constexpr legacy_convert_local_transform rotate(fixed a) const { return {rotate_legacy(v, -a)}; }
-  constexpr void increment_index() const {}
 };
 
 }  // namespace ii::geom

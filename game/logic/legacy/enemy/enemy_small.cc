@@ -13,8 +13,9 @@ struct Bounce : ecs::component {
   static constexpr sound kDestroySound = sound::kEnemyShatter;
   static constexpr rumble_type kDestroyRumble = rumble_type::kSmall;
 
-  using shape = standard_transform<geom::polygon<8, 6, colour::hue360(300, .5f, .6f), 0,
-                                                 shape_flag::kDangerous | shape_flag::kVulnerable>>;
+  using shape =
+      standard_transform<geom::legacy::polygon<8, 6, colour::hue360(300, .5f, .6f), 0,
+                                               shape_flag::kDangerous | shape_flag::kVulnerable>>;
 
   Bounce(fixed angle) : dir{from_polar_legacy(angle, 3_fx)} {}
   vec2 dir{0};
@@ -41,10 +42,10 @@ struct Follow : ecs::component {
   static constexpr std::uint32_t kTime = 90;
   static constexpr fixed kSpeed = 2;
 
-  using small_shape = geom::polygon<10, 4, colour::hue360(270, .6f), 0,
-                                    shape_flag::kDangerous | shape_flag::kVulnerable>;
-  using big_shape = geom::polygon<20, 4, colour::hue360(270, .6f), 0,
-                                  shape_flag::kDangerous | shape_flag::kVulnerable>;
+  using small_shape = geom::legacy::polygon<10, 4, colour::hue360(270, .6f), 0,
+                                            shape_flag::kDangerous | shape_flag::kVulnerable>;
+  using big_shape = geom::legacy::polygon<20, 4, colour::hue360(270, .6f), 0,
+                                          shape_flag::kDangerous | shape_flag::kVulnerable>;
   using shape = standard_transform<geom::conditional_p<2, big_shape, small_shape>>;
 
   std::tuple<vec2, fixed, bool> shape_parameters(const Transform& transform) const {
@@ -94,8 +95,8 @@ struct Chaser : ecs::component {
   static constexpr std::uint32_t kTime = 60;
   static constexpr fixed kSpeed = 4;
   using shape =
-      standard_transform<geom::polygram<10, 4, colour::hue360(210, .6f), 0,
-                                        shape_flag::kDangerous | shape_flag::kVulnerable>>;
+      standard_transform<geom::legacy::polygram<10, 4, colour::hue360(210, .6f), 0,
+                                                shape_flag::kDangerous | shape_flag::kVulnerable>>;
 
   bool move = false;
   std::uint32_t timer = kTime;

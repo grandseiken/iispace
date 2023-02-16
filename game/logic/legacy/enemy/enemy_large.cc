@@ -22,10 +22,10 @@ struct FollowHub : ecs::component {
                                     geom::translate<0, 16, S>, geom::translate<0, -16, S>>;
   template <geom::ShapeNode S>
   using r_pi4_ngon = geom::rotate<pi<fixed> / 4, S>;
-  using fh_centre =
-      r_pi4_ngon<geom::polygram<16, 4, c, 0, shape_flag::kDangerous | shape_flag::kVulnerable>>;
-  using fh_spoke = r_pi4_ngon<geom::ngon<8, 4, c>>;
-  using fh_power_spoke = r_pi4_ngon<geom::polystar<8, 4, c>>;
+  using fh_centre = r_pi4_ngon<
+      geom::legacy::polygram<16, 4, c, 0, shape_flag::kDangerous | shape_flag::kVulnerable>>;
+  using fh_spoke = r_pi4_ngon<geom::legacy::ngon<8, 4, c>>;
+  using fh_power_spoke = r_pi4_ngon<geom::legacy::polystar<8, 4, c>>;
   using shape = geom::translate_p<
       0, fh_centre,
       geom::rotate_p<1, fh_arrange<fh_spoke>, geom::if_p<2, fh_arrange<fh_power_spoke>>>>;
@@ -99,10 +99,10 @@ struct Shielder : ecs::component {
                                    geom::translate<0, 24, geom::rotate<pi<fixed> / 2, S>>,
                                    geom::translate<0, -24, geom::rotate<pi<fixed> / 2, S>>>;
   using s_centre =
-      geom::polygon_colour_p<14, 8, 2, 0, shape_flag::kDangerous | shape_flag::kVulnerable>;
-  using s_shield0 = geom::polystar<8, 6, c0, 0, shape_flag::kWeakShield>;
-  using s_shield1 = geom::ngon<8, 6, c1>;
-  using s_spokes = geom::polystar<24, 4, c0>;
+      geom::legacy::polygon_colour_p<14, 8, 2, 0, shape_flag::kDangerous | shape_flag::kVulnerable>;
+  using s_shield0 = geom::legacy::polystar<8, 6, c0, 0, shape_flag::kWeakShield>;
+  using s_shield1 = geom::legacy::ngon<8, 6, c1>;
+  using s_spokes = geom::legacy::polystar<24, 4, c0>;
   using shape =
       standard_transform<s_spokes, s_arrange<geom::rotate_eval<geom::multiply_p<-1, 1>, s_shield0>>,
                          s_arrange<geom::rotate_eval<geom::multiply_p<-1, 1>, s_shield1>>,
@@ -176,12 +176,13 @@ struct Tractor : ecs::component {
   static constexpr fixed kPullSpeed = 2 + 1_fx / 2;
 
   static constexpr auto c = colour::hue360(300, .5f, .6f);
-  using t_orb = geom::polygram<12, 6, c, 0, shape_flag::kDangerous | shape_flag::kVulnerable>;
-  using t_star = geom::polystar<16, 6, c>;
+  using t_orb =
+      geom::legacy::polygram<12, 6, c, 0, shape_flag::kDangerous | shape_flag::kVulnerable>;
+  using t_star = geom::legacy::polystar<16, 6, c>;
   using shape = standard_transform<
       geom::translate<24, 0, geom::rotate_eval<geom::multiply_p<5, 2>, t_orb>>,
       geom::translate<-24, 0, geom::rotate_eval<geom::multiply_p<-5, 2>, t_orb>>,
-      geom::line<-24, 0, 24, 0, c>,
+      geom::legacy::line<-24, 0, 24, 0, c>,
       geom::if_p<3, geom::translate<24, 0, geom::rotate_eval<geom::multiply_p<8, 2>, t_star>>,
                  geom::translate<-24, 0, geom::rotate_eval<geom::multiply_p<-8, 2>, t_star>>>>;
 
