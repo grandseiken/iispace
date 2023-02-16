@@ -29,18 +29,6 @@ auto get_shape_parameters(ecs::const_handle h) {
   }
 }
 
-template <ecs::Component Logic, geom::ShapeNode S = typename Logic::shape>
-void iterate_entity_attachment_points(ecs::const_handle h, bool legacy,
-                                      const geom::AttachmentPointFunction auto& f) {
-  if (legacy) {
-    geom::iterate(S{}, geom::iterate_attachment_points, get_shape_parameters<Logic>(h),
-                  geom::legacy_transform{}, f);
-  } else {
-    geom::iterate(S{}, geom::iterate_attachment_points, get_shape_parameters<Logic>(h),
-                  geom::transform{}, f);
-  }
-}
-
 //////////////////////////////////////////////////////////////////////////////////
 // Particles.
 //////////////////////////////////////////////////////////////////////////////////

@@ -1,6 +1,7 @@
 #include "game/geometry/resolve.h"
 #include "game/geometry/shapes/ball.h"
 #include "game/geometry/shapes/box.h"
+#include "game/geometry/shapes/line.h"
 #include "game/geometry/shapes/ngon.h"
 
 namespace ii::geom {

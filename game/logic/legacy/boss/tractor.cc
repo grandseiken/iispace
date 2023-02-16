@@ -1,5 +1,4 @@
 #include "game/common/colour.h"
-#include "game/geometry/legacy/attachment_point.h"
 #include "game/geometry/legacy/line.h"
 #include "game/geometry/legacy/ngon.h"
 #include "game/geometry/node_disable_iteration.h"
@@ -41,7 +40,7 @@ struct TractorBoss : ecs::component {
       0, I ? 96 : -96,
       geom::rotate_eval<
           geom::multiply_p<fixed{I ? -1 : 1} / 2, 2>,
-          geom::compound<geom::attachment_point<I, 0, 0>, geom::polygram<12, 6, c1>,
+          geom::compound<geom::polygram<12, 6, c1>,
                          geom::polygon<30, 12, cvec4{0.f}, 0, shape_flag::kShield>,
                          geom::disable_iteration<
                              geom::iterate_volumes_t,
@@ -77,8 +76,7 @@ struct TractorBoss : ecs::component {
   std::vector<vec2> targets;
   fixed sub_rotation = 0;
 
-  void update(ecs::handle h, Transform& transform, Render& render, const Health& health,
-              SimInterface& sim) {
+  void update(ecs::handle h, Transform& transform, const Health& health, SimInterface& sim) {
     auto e = sim.emit(resolve_key::predicted());
     auto dim_x = sim.dimensions().x;
     if (transform.centre.x <= dim_x / 2 && will_attack && !stopped && !move_away) {
@@ -107,12 +105,12 @@ struct TractorBoss : ecs::component {
           !(timer % (16 - sim.alive_players() * 2))) {
         if (!shoot_type || (health.is_hp_low() && shoot_type == 1)) {
           auto p = sim.nearest_player_position(transform.centre);
-          auto f = [&](std::size_t, const vec2& v, const vec2&) {
+          auto f = [&](std::size_t, const vec2& v) {
             auto d = normalise(p - v);
             spawn_boss_shot(sim, v, d * 5, c0);
             spawn_boss_shot(sim, v, d * -5, c0);
           };
-          iterate_entity_attachment_points<TractorBoss>(h, sim.is_legacy(), f);
+          iterate_attachments(transform, sim.is_legacy(), f);
           e.play_random(sound::kBossFire, transform.centre);
         }
         if (shoot_type == 1 || health.is_hp_low()) {
@@ -147,11 +145,11 @@ struct TractorBoss : ecs::component {
         }
 
         if (timer < kTimer * 4 && !(timer % (10 - 2 * sim.alive_players()))) {
-          auto f = [&](std::size_t index, const vec2& v, const vec2&) {
+          auto f = [&](std::size_t index, const vec2& v) {
             spawn_bounce(sim, v,
                          !index == gen_dir ? transform.rotation + pi<fixed> : transform.rotation);
           };
-          iterate_entity_attachment_points<TractorBoss>(h, sim.is_legacy(), f);
+          iterate_attachments(transform, sim.is_legacy(), f);
           e.play_random(sound::kEnemySpawn, transform.centre);
         }
 
@@ -168,7 +166,7 @@ struct TractorBoss : ecs::component {
             attacking = true;
           }
           if (timer % (kTimer / (1 + fixed_c::half)).to_int() == kTimer / 8) {
-            auto f = [&](std::size_t, const vec2& v, const vec2&) {
+            auto f = [&](std::size_t, const vec2& v) {
               auto d = from_polar_legacy(sim.random_fixed() * (2 * pi<fixed>), 5_fx);
               spawn_boss_shot(sim, v, d, c0);
               d = sim.rotate_compatibility(d, pi<fixed> / 2);
@@ -178,7 +176,7 @@ struct TractorBoss : ecs::component {
               d = sim.rotate_compatibility(d, pi<fixed> / 2);
               spawn_boss_shot(sim, v, d, c0);
             };
-            iterate_entity_attachment_points<TractorBoss>(h, sim.is_legacy(), f);
+            iterate_attachments(transform, sim.is_legacy(), f);
             e.play_random(sound::kBossFire, transform.centre);
           }
           targets.clear();
@@ -268,6 +266,17 @@ struct TractorBoss : ecs::component {
     for (const auto& v : attack_shapes) {
       std::tuple parameters{transform.centre, transform.rotation, v};
       render_shape<attack_shape>(output, parameters);
+    }
+  }
+
+  template <typename F>
+  void iterate_attachments(const Transform& transform, bool is_legacy, F&& f) {
+    if (is_legacy) {
+      f(0, transform.centre + rotate_legacy({0, -96}, transform.rotation));
+      f(1, transform.centre + rotate_legacy({0, 96}, transform.rotation));
+    } else {
+      f(0, transform.centre + rotate({0, -96}, transform.rotation));
+      f(1, transform.centre + rotate({0, 96}, transform.rotation));
     }
   }
 };

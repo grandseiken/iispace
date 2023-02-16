@@ -1,12 +1,12 @@
 cc_library(
   name = "legacy",
   hdrs = [
-    "attachment_point.h",
     "ball_collider.h",
     "box.h",
     "line.h",
     "ngon.h",
     "polyarc.h",
+    "shapes.cc",
   ],
   deps = [
     "//game/geometry",
