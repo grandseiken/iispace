@@ -1,5 +1,5 @@
 #include "game/logic/legacy/player/player.h"
-#include "game/geometry/enums.h"
+#include "game/geom2/enums.h"
 #include "game/geometry/node_conditional.h"
 #include "game/geometry/shapes/box.h"
 #include "game/geometry/shapes/ngon.h"

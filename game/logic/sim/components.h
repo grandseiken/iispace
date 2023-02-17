@@ -4,7 +4,7 @@
 #include "game/common/random.h"
 #include "game/common/struct_tuple.h"
 #include "game/common/ustring.h"
-#include "game/geometry/enums.h"
+#include "game/geom2/enums.h"
 #include "game/geometry/iteration.h"
 #include "game/logic/ecs/index.h"
 #include "game/logic/sim/io/output.h"

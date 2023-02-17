@@ -2,7 +2,7 @@
 #define II_GAME_LOGIC_V0_LIB_SHIP_TEMPLATE_H
 #include "game/common/colour.h"
 #include "game/common/math.h"
-#include "game/geometry/enums.h"
+#include "game/geom2/enums.h"
 #include "game/geometry/node.h"
 #include "game/geometry/node_transform.h"
 #include "game/geometry/resolve.h"

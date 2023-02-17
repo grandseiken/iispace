@@ -1,6 +1,7 @@
-#ifndef II_LOGIC_GEOMETRY_ENUMS_H
-#define II_LOGIC_GEOMETRY_ENUMS_H
+#ifndef II_GAME_GEOM2_ENUMS_H
+#define II_GAME_GEOM2_ENUMS_H
 #include "game/common/enum.h"
+#include "game/render/data/shapes.h"
 #include <cstdint>
 
 namespace ii {
@@ -22,5 +23,10 @@ template <>
 struct bitmask_enum<shape_flag> : std::true_type {};
 
 }  // namespace ii
+
+namespace ii::geom2 {
+using render::ngon_style;
+enum class tag_t : unsigned char {};
+}  // namespace ii::geom2
 
 #endif

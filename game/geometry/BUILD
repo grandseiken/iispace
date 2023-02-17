@@ -2,7 +2,6 @@ cc_library(
   name = "geometry",
   hdrs = [
     "concepts.h",
-    "enums.h",
     "expressions.h",
     "iteration.h",
     "node.h",
@@ -13,6 +12,7 @@ cc_library(
   deps = [
     "//game/common:math",
     "//game/common:types",
+    "//game/geom2",
   ],
   visibility = ["//game:__subpackages__"],
 )

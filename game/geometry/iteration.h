@@ -1,7 +1,8 @@
 #ifndef II_GAME_GEOMETRY_ITERATION_H
 #define II_GAME_GEOMETRY_ITERATION_H
 #include "game/common/math.h"
-#include "game/geometry/enums.h"
+#include "game/geom2/enums.h"
+#include "game/geom2/transform.h"
 #include <cstddef>
 #include <functional>
 #include <span>
@@ -110,19 +111,7 @@ struct null_transform {
   constexpr vec2 operator*() const { return vec2{0}; }
 };
 
-struct transform {
-  constexpr transform(const vec2& v = vec2{0}, fixed r = 0, std::size_t* index_out = nullptr)
-  : v{v}, r{r}, index_out{index_out} {}
-  vec2 v;
-  fixed r;
-  std::size_t* index_out = nullptr;
-
-  constexpr const vec2& operator*() const { return v; }
-  constexpr fixed rotation() const { return r; }
-
-  constexpr transform translate(const vec2& t) const { return {v + ::rotate(t, r), r, index_out}; }
-  constexpr transform rotate(fixed a) const { return {v, r + a, index_out}; }
-};
+using geom2::transform;
 
 struct convert_local_transform {
   constexpr convert_local_transform(transform t = {}) : ct{t} {}
