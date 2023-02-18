@@ -18,7 +18,7 @@ public:
   virtual ~CollisionIndex() = default;
 
   virtual std::unique_ptr<CollisionIndex> clone() = 0;
-  virtual void refresh_handles(ecs::EntityIndex& index) = 0;
+  virtual void refresh_handles(const SimInterface&, ecs::EntityIndex&) = 0;
   virtual void add(ecs::handle& h, const Collision& c) = 0;
   virtual void update(ecs::handle& h) = 0;
   virtual void remove(ecs::handle& h) = 0;
@@ -40,7 +40,7 @@ public:
     return std::make_unique<GridCollisionIndex>(*this);
   }
 
-  void refresh_handles(ecs::EntityIndex& index) override;
+  void refresh_handles(const SimInterface&, ecs::EntityIndex&) override;
   void add(ecs::handle& h, const Collision& c) override;
   void update(ecs::handle& h) override;
   void remove(ecs::handle& h) override;
@@ -91,6 +91,7 @@ private:
     ivec2 centre{0, 0};
   };
 
+  const SimInterface* interface_ = nullptr;
   ivec2 cell_power_{0, 0};
   ivec2 cell_offset_{0, 0};
   ivec2 cell_count_{0, 0};
@@ -106,7 +107,7 @@ public:
     return std::make_unique<LegacyCollisionIndex>(*this);
   }
 
-  void refresh_handles(ecs::EntityIndex& index) override;
+  void refresh_handles(const SimInterface&, ecs::EntityIndex&) override;
   void add(ecs::handle& h, const Collision& c) override;
   void update(ecs::handle& h) override;
   void remove(ecs::handle& h) override;
@@ -118,6 +119,7 @@ public:
                 std::vector<SimInterface::range_info>& output) const override;
 
 private:
+  const SimInterface* interface_ = nullptr;
   struct entry {
     ecs::entity_id id;
     ecs::handle handle;
@@ -125,7 +127,7 @@ private:
     const Collision* collision = nullptr;
     fixed x_min = 0;
   };
-  std::vector<entry> entries;
+  std::vector<entry> entries_;
 };
 
 }  // namespace ii

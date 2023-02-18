@@ -1,12 +1,11 @@
 #include "game/common/colour.h"
-#include "game/geometry/shapes/ngon.h"
 #include "game/logic/v0/enemy/enemy.h"
 #include "game/logic/v0/enemy/enemy_template.h"
 #include <algorithm>
 
 namespace ii::v0 {
 namespace {
-using namespace geom;
+using namespace geom2;
 
 ecs::handle spawn_follow(SimInterface& sim, std::uint32_t size, const vec2& position,
                          std::optional<vec2> direction, bool drop, fixed rotation = 0,
@@ -23,25 +22,36 @@ struct Follow : ecs::component {
   static constexpr std::uint32_t kSmallWidth = 11;
   static constexpr std::uint32_t kBigWidth = 22;
   static constexpr std::uint32_t kHugeWidth = 33;
+  static constexpr auto kFlags = shape_flag::kDangerous | shape_flag::kVulnerable;
 
   static constexpr auto z = colour::kZEnemySmall;
   static constexpr auto c = colour::kNewPurple;
   static constexpr auto cf = colour::alpha(c, colour::kFillAlpha0);
-  static constexpr auto outline = nline(colour::kOutline, colour::kZOutline, 2.f);
-  template <fixed R>
-  using generic_shape =
-      standard_transform<ngon<nd(R + 2, 4), outline>,
-                         ngon_colour_p2<nd(R, 4), 2, 3, nline(c, z, 1.5f), sfill(cf, z)>,
-                         ngon_collider<nd(R, 4), shape_flag::kDangerous | shape_flag::kVulnerable>>;
-  using small_shape = generic_shape<kSmallWidth>;
-  using big_shape = generic_shape<kBigWidth>;
-  using huge_shape = generic_shape<kHugeWidth>;
 
-  std::tuple<vec2, fixed, cvec4, cvec4>
-  shape_parameters(const Transform& transform, const ColourOverride* colour) const {
-    return colour ? std::tuple{transform.centre, transform.rotation, colour->colour,
-                               colour::alpha(colour->colour, colour::kFillAlpha0)}
-                  : std::tuple{transform.centre, transform.rotation, c, cf};
+  template <fixed Width>
+  static void construct_shape(node& root) {
+    auto& n = root.add(translate{key{'v'}}).add(rotate{key{'r'}});
+    n.add(ngon{
+        .dimensions = {.radius = Width + 2, .sides = 4},
+        .line = {.colour0 = colour::kOutline, .z = colour::kZOutline, .width = 2.f},
+    });
+    n.add(ngon{
+        .dimensions = {.radius = Width, .sides = 4},
+        .line = {.colour0 = geom2::key{'c'}, .z = z, .width = 1.5f},
+        .fill = {.colour0 = geom2::key{'f'}, .z = z},
+    });
+    n.add(ngon_collider{
+        .dimensions = {.radius = Width, .sides = 4},
+        .flags = kFlags,
+    });
+  }
+
+  void set_parameters(const Transform& transform, const ColourOverride* colour,
+                      geom2::parameter_set& parameters) const {
+    parameters.add(key{'v'}, transform.centre);
+    parameters.add(key{'r'}, transform.rotation);
+    parameters.add(key{'c'}, colour ? colour->colour : c);
+    parameters.add(key{'f'}, colour ? colour::alpha(colour->colour, colour::kFillAlpha0) : cf);
   }
 
   Follow(std::uint32_t size, std::optional<vec2> direction, bool in_formation)
@@ -131,17 +141,20 @@ struct Follow : ecs::component {
 };
 DEBUG_STRUCT_TUPLE(Follow, timer, size, in_formation, direction, target, next_target, spreader);
 
-template <ShapeNode S>
+template <fixed Width>
 ecs::handle create_follow_ship(SimInterface& sim, std::uint32_t size, std::uint32_t health,
-                               fixed width, const vec2& position, std::optional<vec2> direction,
-                               fixed rotation, const vec2& initial_velocity) {
+                               const vec2& position, std::optional<vec2> direction, fixed rotation,
+                               const vec2& initial_velocity) {
+  using shape = shape_definition<&Follow::construct_shape<Width>,
+                                 ecs::call<&Follow::set_parameters>, Width, Follow::kFlags>;
+
   auto h = create_ship<Follow>(sim, position, rotation);
-  add_render<Follow, S>(h);
-  add_collision<Follow, S>(h, width);
+  add_render2<Follow, shape>(h);
+  add_collision2<Follow, shape>(h);
   if (size) {
-    add_enemy_health<Follow, S>(h, health, sound::kPlayerDestroy, rumble_type::kMedium);
+    add_enemy_health2<Follow, shape>(h, health, sound::kPlayerDestroy, rumble_type::kMedium);
   } else {
-    add_enemy_health<Follow, S>(h, health);
+    add_enemy_health2<Follow, shape>(h, health);
   }
   h.add(Enemy{.threat_value = health / 8});
   h.add(Follow{size, direction, /* in formation */ initial_velocity == vec2{0, 0}});
@@ -156,23 +169,23 @@ ecs::handle spawn_follow(SimInterface& sim, std::uint32_t size, const vec2& posi
                          std::optional<vec2> direction, bool drop, fixed rotation,
                          const vec2& initial_velocity) {
   if (size == 2) {
-    auto h = create_follow_ship<Follow::huge_shape>(sim, 2, 40, Follow::kHugeWidth, position,
-                                                    direction, rotation, initial_velocity);
+    auto h = create_follow_ship<Follow::kHugeWidth>(sim, 2, 40, position, direction, rotation,
+                                                    initial_velocity);
     if (drop) {
       h.add(DropTable{.shield_drop_chance = 15, .bomb_drop_chance = 30});
     }
     return h;
   }
   if (size == 1) {
-    auto h = create_follow_ship<Follow::big_shape>(sim, 1, 24, Follow::kBigWidth, position,
-                                                   direction, rotation, initial_velocity);
+    auto h = create_follow_ship<Follow::kBigWidth>(sim, 1, 24, position, direction, rotation,
+                                                   initial_velocity);
     if (drop) {
       h.add(DropTable{.shield_drop_chance = 15, .bomb_drop_chance = 10});
     }
     return h;
   }
-  auto h = create_follow_ship<Follow::small_shape>(sim, 0, 8, Follow::kSmallWidth, position,
-                                                   direction, rotation, initial_velocity);
+  auto h = create_follow_ship<Follow::kSmallWidth>(sim, 0, 8, position, direction, rotation,
+                                                   initial_velocity);
   if (drop) {
     h.add(DropTable{.shield_drop_chance = 1, .bomb_drop_chance = 1});
   }
@@ -187,19 +200,35 @@ struct Chaser : ecs::component {
   static constexpr std::uint32_t kTime = 80;
   static constexpr std::uint32_t kSmallWidth = 11;
   static constexpr std::uint32_t kBigWidth = 18;
+  static constexpr auto kFlags = shape_flag::kDangerous | shape_flag::kVulnerable;
 
   static constexpr auto z = colour::kZEnemySmall;
   static constexpr auto c = colour::kSolarizedDarkCyan;
   static constexpr auto cf = colour::alpha(c, colour::kFillAlpha0);
-  static constexpr auto outline = nline(colour::kOutline, colour::kZOutline, 2.f);
-  using small_shape = standard_transform<
-      ngon<nd(kSmallWidth + 2, 4), outline>,
-      ngon_with_collider<nd(kSmallWidth, 4), nline(ngon_style::kPolygram, c, z), sfill(cf, z),
-                         shape_flag::kDangerous | shape_flag::kVulnerable>>;
-  using big_shape = standard_transform<
-      ngon<nd(kBigWidth + 2, 4), outline>,
-      ngon_with_collider<nd(kBigWidth, 4), nline(ngon_style::kPolygram, c, z), sfill(cf, z),
-                         shape_flag::kDangerous | shape_flag::kVulnerable>>;
+
+  template <fixed Width>
+  static void construct_shape(node& root) {
+    auto& n = root.add(translate{key{'v'}}).add(rotate{key{'r'}});
+    n.add(ngon{
+        .dimensions = {.radius = Width + 2, .sides = 4},
+        .line = {.colour0 = colour::kOutline, .z = colour::kZOutline, .width = 2.f},
+    });
+    n.add(ngon{
+        .dimensions = {.radius = Width, .sides = 4},
+        .style = ngon_style::kPolygram,
+        .line = {.colour0 = c, .z = z},
+        .fill = {.colour0 = cf, .z = z},
+    });
+    n.add(ngon_collider{
+        .dimensions = {.radius = Width, .sides = 4},
+        .flags = kFlags,
+    });
+  }
+
+  void set_parameters(const Transform& transform, parameter_set& parameters) const {
+    parameters.add(key{'v'}, transform.centre);
+    parameters.add(key{'r'}, transform.rotation);
+  }
 
   Chaser(std::uint32_t size, std::uint32_t stagger)
   : timer{kTime - stagger}, size{size}, spreader{.max_distance = 24_fx, .max_n = 6u} {}
@@ -265,17 +294,19 @@ struct Chaser : ecs::component {
 };
 DEBUG_STRUCT_TUPLE(Chaser, timer, size, next_target_id, on_screen, is_moving, direction, spreader);
 
-template <ShapeNode S>
-ecs::handle
-create_chaser_ship(SimInterface& sim, std::uint32_t size, std::uint32_t health, fixed width,
-                   const vec2& position, fixed rotation, std::uint32_t stagger) {
+template <fixed Width>
+ecs::handle create_chaser_ship(SimInterface& sim, std::uint32_t size, std::uint32_t health,
+                               const vec2& position, fixed rotation, std::uint32_t stagger) {
+  using shape = shape_definition<&Chaser::construct_shape<Width>,
+                                 ecs::call<&Chaser::set_parameters>, Width, Chaser::kFlags>;
+
   auto h = create_ship<Chaser>(sim, position, rotation);
-  add_render<Chaser, S>(h);
-  add_collision<Chaser, S>(h, width);
+  add_render2<Chaser, shape>(h);
+  add_collision2<Chaser, shape>(h);
   if (size) {
-    add_enemy_health<Chaser, S>(h, health, sound::kPlayerDestroy, rumble_type::kMedium);
+    add_enemy_health2<Chaser, shape>(h, health, sound::kPlayerDestroy, rumble_type::kMedium);
   } else {
-    add_enemy_health<Chaser, S>(h, health);
+    add_enemy_health2<Chaser, shape>(h, health);
   }
   h.add(Enemy{.threat_value = health / 8});
   h.add(Chaser{size, stagger});
@@ -286,15 +317,13 @@ create_chaser_ship(SimInterface& sim, std::uint32_t size, std::uint32_t health, 
 ecs::handle spawn_chaser(SimInterface& sim, std::uint32_t size, const vec2& position, bool drop,
                          fixed rotation, std::uint32_t stagger) {
   if (size == 1) {
-    auto h = create_chaser_ship<Chaser::big_shape>(sim, 1, 32, Chaser::kBigWidth, position,
-                                                   rotation, stagger);
+    auto h = create_chaser_ship<Chaser::kBigWidth>(sim, 1, 32, position, rotation, stagger);
     if (drop) {
       h.add(DropTable{.shield_drop_chance = 10, .bomb_drop_chance = 20});
     }
     return h;
   }
-  auto h = create_chaser_ship<Chaser::small_shape>(sim, 0, 16, Chaser::kSmallWidth, position,
-                                                   rotation, stagger);
+  auto h = create_chaser_ship<Chaser::kSmallWidth>(sim, 0, 16, position, rotation, stagger);
   if (drop) {
     h.add(DropTable{.shield_drop_chance = 3, .bomb_drop_chance = 4});
   }
@@ -305,26 +334,44 @@ struct FollowSponge : ecs::component {
   static constexpr sound kDestroySound = sound::kPlayerDestroy;
   static constexpr rumble_type kDestroyRumble = rumble_type::kLarge;
 
-  static constexpr fixed kSpeed = 7_fx / 8_fx;
   static constexpr std::uint32_t kTime = 60;
-  static constexpr std::uint32_t kBoundingWidth = 33;
+  static constexpr fixed kSpeed = 7_fx / 8_fx;
+  static constexpr fixed kBoundingWidth = 33;
+  static constexpr auto kFlags = shape_flag::kDangerous | shape_flag::kVulnerable;
 
   static constexpr auto z = colour::kZEnemyMedium;
   static constexpr auto c = colour::kNewPurple;
   static constexpr auto cf = colour::alpha(c, colour::kFillAlpha0);
-  static constexpr auto outline = nline(colour::kOutline, colour::kZOutline, 2.f);
-  using shape = standard_transform<
-      ngon_eval<set_radius_p<nd2(0, 10, 6), 4>, constant<outline>>,
-      ngon_eval<set_radius_p<nd(0, 6), 2>, constant<nline(c, z, 1.25f)>>,
-      ngon_eval<set_radius_p<nd2(0, 12, 6), 3>, constant<nline(c, z, 2.f)>, constant<sfill(cf, z)>>,
-      ngon_collider_eval<set_radius_p<nd(0, 6), 3>,
-                         constant<shape_flag::kDangerous | shape_flag::kVulnerable>>>;
 
-  std::tuple<vec2, fixed, fixed, fixed, fixed> shape_parameters(const Transform& transform) const {
-    return {transform.centre, transform.rotation,
-            (14 + scale * kBoundingWidth) / 2 +
-                (scale * kBoundingWidth - 22) * sin(fixed{anim} / 32) / 2,
-            scale * kBoundingWidth, scale * kBoundingWidth + 2};
+  static void construct_shape(node& root) {
+    auto& n = root.add(translate{key{'v'}}).add(rotate{key{'r'}});
+    n.add(ngon{
+        .dimensions = {.radius = key{'2'}, .inner_radius = 10_fx, .sides = 6},
+        .line = {.colour0 = colour::kOutline, .z = colour::kZOutline, .width = 2.f},
+    });
+    n.add(ngon{
+        .dimensions = {.radius = key{'0'}, .sides = 6},
+        .line = {.colour0 = c, .z = z, .width = 1.25f},
+    });
+    n.add(ngon{
+        .dimensions = {.radius = key{'1'}, .inner_radius = 12_fx, .sides = 6},
+        .line = {.colour0 = c, .z = z, .width = 2.f},
+        .fill = {.colour0 = cf, .z = z},
+    });
+    n.add(ngon_collider{
+        .dimensions = {.radius = key{'1'}, .sides = 6},
+        .flags = kFlags,
+    });
+  }
+
+  void set_parameters(const Transform& transform, parameter_set& parameters) const {
+    auto anim_r = (14 + scale * kBoundingWidth) / 2 +
+        (scale * kBoundingWidth - 22) * sin(fixed{anim} / 32) / 2;
+    parameters.add(key{'v'}, transform.centre);
+    parameters.add(key{'r'}, transform.rotation);
+    parameters.add(key{'0'}, anim_r);
+    parameters.add(key{'1'}, scale * kBoundingWidth);
+    parameters.add(key{'2'}, scale * kBoundingWidth + 2);
   }
 
   FollowSponge() : spreader{.max_distance = 96_fx, .max_n = 4u} {}
@@ -413,8 +460,8 @@ ecs::handle spawn_big_chaser(SimInterface& sim, const vec2& position, bool drop)
 }
 
 ecs::handle spawn_follow_sponge(SimInterface& sim, const vec2& position) {
-  auto h = create_ship_default<FollowSponge>(sim, position);
-  add_enemy_health<FollowSponge>(h, 256, sound::kPlayerDestroy, rumble_type::kMedium);
+  auto h = create_ship_default2<FollowSponge>(sim, position);
+  add_enemy_health2<FollowSponge>(h, 256, sound::kPlayerDestroy, rumble_type::kMedium);
   h.add(Enemy{.threat_value = 20u});
   h.add(FollowSponge{});
   h.add(Physics{.mass = 2_fx});

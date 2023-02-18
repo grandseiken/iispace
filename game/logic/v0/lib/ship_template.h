@@ -3,6 +3,7 @@
 #include "game/common/colour.h"
 #include "game/common/math.h"
 #include "game/geom2/resolve.h"
+#include "game/geom2/shape_bank.h"
 #include "game/geom2/types.h"
 #include "game/geometry/node.h"
 #include "game/geometry/node_transform.h"
@@ -23,6 +24,21 @@ namespace ii::v0 {
 
 template <geom::ShapeNode... S>
 using standard_transform = geom::translate_p<0, geom::rotate_p<1, S...>>;
+
+template <sfn::ptr<void(geom2::node&)> ConstructShape,
+          sfn::ptr<void(ecs::const_handle, geom2::parameter_set&)> SetParameters,
+          fixed BoundingWidth, shape_flag Flags>
+struct shape_definition {
+  inline static constexpr auto construct_shape = ConstructShape;
+  inline static constexpr auto set_parameters = SetParameters;
+  inline static constexpr auto bounding_width = BoundingWidth;
+  inline static constexpr auto flags = Flags;
+};
+
+template <ecs::Component Logic>
+using default_shape_definition =
+    shape_definition<&Logic::construct_shape, ecs::call<&Logic::set_parameters>,
+                     Logic::kBoundingWidth, Logic::kFlags>;
 
 template <ecs::Component Logic>
 auto get_shape_parameters(ecs::const_handle h) {
@@ -52,6 +68,18 @@ geom::resolve_result& resolve_entity_shape(ecs::const_handle h) {
   return r;
 }
 
+template <typename ShapeDefinition>
+geom::resolve_result& resolve_entity_shape2(ecs::const_handle h, const SimInterface& sim) {
+  auto& r = local_resolve();
+  auto& shape_bank = sim.shape_bank();
+  auto set_parameters = [&h](geom2::parameter_set& parameters) {
+    ShapeDefinition::set_parameters(h, parameters);
+  };
+  geom2::resolve(r, shape_bank[ShapeDefinition::construct_shape],
+                 shape_bank.parameters(set_parameters));
+  return r;
+}
+
 //////////////////////////////////////////////////////////////////////////////////
 // Rendering.
 //////////////////////////////////////////////////////////////////////////////////
@@ -73,6 +101,21 @@ void render_entity_shape(ecs::const_handle h, const Health* health, const EnemyS
     hit_alpha = std::min(1.f, health->hit_timer / 10.f);
   }
   auto& r = resolve_entity_shape<Logic, S>(h);
+  render_shape(output, r, hit_alpha, shield_alpha);
+}
+
+template <typename ShapeDefinition>
+void render_entity_shape2(ecs::const_handle h, const Health* health, const EnemyStatus* status,
+                          std::vector<render::shape>& output, const SimInterface& sim) {
+  std::optional<float> hit_alpha;
+  std::optional<float> shield_alpha;
+  if (status && status->shielded_ticks) {
+    shield_alpha = std::min(1.f, status->shielded_ticks / 16.f);
+  }
+  if (health && health->hit_timer) {
+    hit_alpha = std::min(1.f, health->hit_timer / 10.f);
+  }
+  auto& r = resolve_entity_shape2<ShapeDefinition>(h, sim);
   render_shape(output, r, hit_alpha, shield_alpha);
 }
 
@@ -98,8 +141,22 @@ geom::hit_result check_shape_collision(const auto& parameters, const geom::check
 }
 
 template <ecs::Component Logic, geom::ShapeNode S = typename Logic::shape>
-geom::hit_result check_entity_collision(ecs::const_handle h, const geom::check_t& it) {
+geom::hit_result
+check_entity_collision(ecs::const_handle h, const geom::check_t& it, const SimInterface&) {
   return check_shape_collision<S>(get_shape_parameters<Logic>(h), it);
+}
+
+template <typename ShapeDefinition>
+geom2::hit_result
+check_entity_collision2(ecs::const_handle h, const geom::check_t& check, const SimInterface& sim) {
+  geom2::hit_result result;
+  auto& shape_bank = sim.shape_bank();
+  auto set_parameters = [&h](geom2::parameter_set& parameters) {
+    ShapeDefinition::set_parameters(h, parameters);
+  };
+  geom2::check_collision(result, shape_bank[ShapeDefinition::construct_shape],
+                         shape_bank.parameters(set_parameters), check);
+  return result;
 }
 
 //////////////////////////////////////////////////////////////////////////////////
@@ -130,10 +187,35 @@ ecs::handle add_collision(ecs::handle h) {
   return h;
 }
 
+template <typename Logic, typename ShapeDefinition = default_shape_definition<Logic>>
+ecs::handle add_collision2(ecs::handle h) {
+  h.add(Collision{.flags = ShapeDefinition::flags,
+                  .bounding_width = ShapeDefinition::bounding_width,
+                  .check_collision = &check_entity_collision2<ShapeDefinition>});
+  return h;
+}
+
 template <ecs::Component Logic, geom::ShapeNode S = typename Logic::shape>
 ecs::handle add_render(ecs::handle h) {
   constexpr auto render_shape =
       sfn::cast<Render::render_t, ecs::call<&render_entity_shape<Logic, S>>>;
+
+  sfn::ptr<Render::render_t> render_ptr = render_shape;
+  sfn::ptr<Render::render_panel_t> render_panel_ptr = nullptr;
+  if constexpr (requires { &Logic::render; }) {
+    constexpr auto render_custom = sfn::cast<Render::render_t, ecs::call<&Logic::render>>;
+    render_ptr = sfn::sequence<render_shape, render_custom>;
+  }
+  if constexpr (requires { &Logic::render_panel; }) {
+    render_panel_ptr = sfn::cast<Render::render_panel_t, ecs::call<&Logic::render_panel>>;
+  }
+  h.add(Render{.render = render_ptr, .render_panel = render_panel_ptr});
+  return h;
+}
+
+template <ecs::Component Logic, typename ShapeDefinition = default_shape_definition<Logic>>
+ecs::handle add_render2(ecs::handle h) {
+  constexpr auto render_shape = ecs::call<&render_entity_shape2<ShapeDefinition>>;
 
   sfn::ptr<Render::render_t> render_ptr = render_shape;
   sfn::ptr<Render::render_panel_t> render_panel_ptr = nullptr;
@@ -155,6 +237,15 @@ ecs::handle create_ship_default(SimInterface& sim, const vec2& position, fixed r
     add_collision<Logic, S>(h);
   }
   return add_render<Logic, S>(h);
+}
+
+template <ecs::Component Logic, typename ShapeDefinition = default_shape_definition<Logic>>
+ecs::handle create_ship_default2(SimInterface& sim, const vec2& position, fixed rotation = 0) {
+  auto h = create_ship<Logic>(sim, position, rotation);
+  if constexpr (+ShapeDefinition::flags) {
+    add_collision2<Logic, ShapeDefinition>(h);
+  }
+  return add_render2<Logic, ShapeDefinition>(h);
 }
 
 }  // namespace ii::v0

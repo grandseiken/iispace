@@ -16,6 +16,9 @@ namespace ii {
 namespace ecs {
 class EntityIndex;
 }  // namespace ecs
+namespace geom2 {
+class ShapeBank;
+};
 enum class shape_flag : std::uint32_t;
 class SimInterface;
 struct SimInternals;
@@ -102,6 +105,7 @@ public:
     fixed distance_sq = 0;
   };
 
+  geom2::ShapeBank& shape_bank() const;
   bool collide_any(const geom2::check_t&) const;
   std::vector<collision_info> collide(const geom2::check_t&) const;
   bool is_on_screen(const vec2& point) const;

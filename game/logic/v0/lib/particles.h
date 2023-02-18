@@ -33,6 +33,19 @@ void destruct_entity_default(ecs::const_handle h, SimInterface&, EmitHandle& e, 
   explode_volumes(e, r, to_float(source), 20);
 }
 
+template <ecs::Component Logic, typename ShapeDefinition = default_shape_definition<Logic>>
+void destruct_entity_default2(ecs::const_handle h, SimInterface& sim, EmitHandle& e, damage_type,
+                              const vec2& source) {
+  // TODO: something a bit cleverer here? Take velocity of shot into account?
+  // Take velocity of destructed shape into account (maybe using same system as motion trails)?
+  // Make destruct particles similarly velocified?
+  // TODO: box explode should use a box FX shape.
+  auto& r = resolve_entity_shape2<ShapeDefinition>(h, sim);
+  explode_shapes(e, r, std::nullopt, /* time */ 10, std::nullopt, 1.4f);
+  destruct_lines(e, r, to_float(source), 20);
+  explode_volumes(e, r, to_float(source), 20);
+}
+
 }  // namespace ii::v0
 
 #endif

@@ -400,7 +400,8 @@ struct GhostBoss : ecs::component {
     return {transform.centre, transform.rotation};
   }
 
-  hit_result check_collision(const Transform& transform, const check_t& it) const {
+  hit_result
+  check_collision(const Transform& transform, const check_t& it, const SimInterface&) const {
     hit_result result;
     if (!collision_enabled) {
       return result;

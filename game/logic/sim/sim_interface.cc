@@ -171,6 +171,10 @@ bool SimInterface::random_bool() {
   return random(random_source::kGameState).rbool();
 }
 
+geom2::ShapeBank& SimInterface::shape_bank() const {
+  return internals_->shape_bank;
+}
+
 bool SimInterface::collide_any(const geom::check_t& it) const {
   return internals_->collision_index->collide_any(it);
 }

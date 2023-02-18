@@ -147,12 +147,14 @@ geom::hit_result shape_check_collision_legacy(const auto& parameters, const geom
 }
 
 template <ecs::Component Logic, geom::ShapeNode S = typename Logic::shape>
-geom::hit_result ship_check_collision(ecs::const_handle h, const geom::check_t& it) {
+geom::hit_result
+ship_check_collision(ecs::const_handle h, const geom::check_t& it, const SimInterface&) {
   return shape_check_collision<S>(get_shape_parameters<Logic>(h), it);
 }
 
 template <ecs::Component Logic, geom::ShapeNode S = typename Logic::shape>
-geom::hit_result ship_check_collision_legacy(ecs::const_handle h, const geom::check_t& it) {
+geom::hit_result
+ship_check_collision_legacy(ecs::const_handle h, const geom::check_t& it, const SimInterface&) {
   return shape_check_collision_legacy<S>(get_shape_parameters<Logic>(h), it);
 }
 

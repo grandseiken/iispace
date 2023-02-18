@@ -29,8 +29,8 @@ void initialise_systems(SimInternals& internals) {
       [&internals](ecs::handle h, const Destroy&) { internals.collision_index->remove(h); });
 }
 
-void refresh_handles(SimInternals& internals) {
-  internals.collision_index->refresh_handles(internals.index);
+void refresh_handles(const SimInterface& interface, SimInternals& internals) {
+  internals.collision_index->refresh_handles(interface, internals.index);
   internals.global_entity_handle = internals.index.get(internals.global_entity_id);
 }
 
@@ -77,7 +77,7 @@ SimState::SimState(const initial_conditions& conditions, data::ReplayWriter* rep
   });
   setup_->initialise_systems(*interface_);
   initialise_systems(*internals_);
-  refresh_handles(*internals_);
+  refresh_handles(*interface_, *internals_);
 }
 
 uvec2 SimState::dimensions() const {
@@ -126,7 +126,7 @@ void SimState::copy_to(SimState& target) const {
   target.internals_->collision_index = internals_->collision_index->clone();
   target.internals_->results = internals_->results;
   target.internals_->output.clear();
-  refresh_handles(*target.internals_);
+  refresh_handles(*target.interface_, *target.internals_);
 }
 
 void SimState::ai_think(std::vector<input_frame>& input) const {
@@ -177,7 +177,7 @@ void SimState::update(std::vector<input_frame> input) {
 
   if (compact_counter_ >= internals_->index.size()) {
     internals_->index.compact();
-    refresh_handles(*internals_);
+    refresh_handles(*interface_, *internals_);
     compact_counter_ = 0;
   }
 

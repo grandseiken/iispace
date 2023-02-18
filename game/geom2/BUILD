@@ -12,6 +12,7 @@ cc_library(
     "//game/common:math",
     "//game/common:types",
     "//game/render/data",
+    "@static_functional",
   ],
   visibility = ["//game:__subpackages__"],
 )

@@ -256,93 +256,102 @@ void check_collision(hit_result& hit, const convert_local_transform& t, const ng
   }
 }
 
-void resolve_internal(resolve_result& result, const transform& t, const ShapeBank::node& node,
+void resolve_internal(resolve_result& result, const transform& t, const node& n,
                       const parameter_set& parameters) {
   auto recurse = [&](const transform& st) {
-    for (std::size_t i = 0; i < node.size(); ++i) {
-      resolve_internal(result, st, node[i], parameters);
+    for (std::size_t i = 0; i < n.size(); ++i) {
+      resolve_internal(result, st, n[i], parameters);
     }
   };
 
-  switch (node->index()) {
-    VARIANT_CASE(ball, *node, x) {
+  switch (n->index()) {
+    VARIANT_CASE(ball, *n, x) {
       result.add(t, resolve(x, parameters));
       break;
     }
 
-    VARIANT_CASE(box, *node, x) {
+    VARIANT_CASE(box, *n, x) {
       result.add(t, resolve(x, parameters));
       break;
     }
 
-    VARIANT_CASE(line, *node, x) {
+    VARIANT_CASE(line, *n, x) {
       result.add(t, resolve(x, parameters));
       break;
     }
 
-    VARIANT_CASE(ngon, *node, x) {
+    VARIANT_CASE(ngon, *n, x) {
       result.add(t, resolve(x, parameters));
       break;
     }
 
-    VARIANT_CASE(translate, *node, x) {
+    VARIANT_CASE(compound, *n, x) {
+      recurse(t);
+      break;
+    }
+
+    VARIANT_CASE(enable, *n, x) {
+      if (x.x(parameters)) {
+        recurse(t);
+      }
+      break;
+    }
+
+    VARIANT_CASE(translate, *n, x) {
       recurse(t.translate(x.x(parameters)));
       break;
     }
 
-    VARIANT_CASE(rotate, *node, x) {
+    VARIANT_CASE(rotate, *n, x) {
       recurse(t.rotate(x.x(parameters)));
-      break;
-    }
-
-    VARIANT_CASE(enable, *node, x) {
-      if (x.x(parameters)) {
-        recurse(t);
-      }
       break;
     }
   }
 }
 
-void check_collision_internal(hit_result& result, const convert_local_transform& t,
-                              const ShapeBank::node& node, const parameter_set& parameters,
-                              const check_t& check) {
+void check_collision_internal(hit_result& result, const convert_local_transform& t, const node& n,
+                              const parameter_set& parameters, const check_t& check) {
   auto recurse = [&](const convert_local_transform& st) {
-    for (std::size_t i = 0; i < node.size(); ++i) {
-      check_collision_internal(result, st, node[i], parameters, check);
+    for (std::size_t i = 0; i < n.size(); ++i) {
+      check_collision_internal(result, st, n[i], parameters, check);
     }
   };
 
-  switch (node->index()) {
-    VARIANT_CASE(ball_collider, *node, x) {
+  switch (n->index()) {
+    VARIANT_CASE(ball_collider, *n, x) {
       check_collision(result, t, x, parameters, check);
       break;
     }
 
-    VARIANT_CASE(box_collider, *node, x) {
+    VARIANT_CASE(box_collider, *n, x) {
       check_collision(result, t, x, parameters, check);
       break;
     }
 
-    VARIANT_CASE(ngon_collider, *node, x) {
+    VARIANT_CASE(ngon_collider, *n, x) {
       check_collision(result, t, x, parameters, check);
       break;
     }
 
-    VARIANT_CASE(translate, *node, x) {
+    VARIANT_CASE(compound, *n, x) {
+      recurse(t);
+      break;
+    }
+
+    VARIANT_CASE(enable, *n, x) {
+      if (x.x(parameters)) {
+        recurse(t);
+      }
+      break;
+    }
+
+    VARIANT_CASE(translate, *n, x) {
       recurse(t.translate(x.x(parameters)));
       break;
     }
 
-    VARIANT_CASE(rotate, *node, x) {
+    VARIANT_CASE(rotate, *n, x) {
       recurse(t.rotate(x.x(parameters)));
-      break;
-    }
-
-    VARIANT_CASE(enable, *node, x) {
-      if (x.x(parameters)) {
-        recurse(t);
-      }
       break;
     }
   }
@@ -350,13 +359,13 @@ void check_collision_internal(hit_result& result, const convert_local_transform&
 
 }  // namespace
 
-void resolve(resolve_result& result, const ShapeBank::node& node, const parameter_set& parameters) {
-  resolve_internal(result, {}, node, parameters);
+void resolve(resolve_result& result, const node& n, const parameter_set& parameters) {
+  resolve_internal(result, {}, n, parameters);
 }
 
-void check_collision(hit_result& result, const ShapeBank::node& node,
-                     const parameter_set& parameters, const check_t& check) {
-  check_collision_internal(result, {}, node, parameters, check);
+void check_collision(hit_result& result, const node& n, const parameter_set& parameters,
+                     const check_t& check) {
+  check_collision_internal(result, {}, n, parameters, check);
 }
 
 }  // namespace ii::geom2

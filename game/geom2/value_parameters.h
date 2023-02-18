@@ -8,18 +8,22 @@
 
 namespace ii::geom2 {
 
-enum class parameter_key : unsigned char {};
+enum class key : unsigned char {};
 using parameter_value = std::variant<bool, std::uint32_t, fixed, vec2, float, cvec4>;
 
 struct parameter_set {
-  std::unordered_map<parameter_key, parameter_value> map;
+  std::unordered_map<key, parameter_value> map;
+
+  void clear() { map.clear(); }
 
   template <typename T>
-  void add(parameter_key k, const T& value) {
+  void add(key k, const T& value) {
     if constexpr (std::is_enum_v<T>) {
-      map.emplace(k, static_cast<std::uint32_t>(value));
+      map.emplace(k,
+                  parameter_value{std::in_place_type_t<std::uint32_t>{},
+                                  static_cast<std::uint32_t>(value)});
     } else {
-      map.emplace(k, value);
+      map.emplace(k, parameter_value{std::in_place_type_t<T>{}, value});
     }
   }
 };
@@ -27,14 +31,14 @@ struct parameter_set {
 template <typename T>
 struct value {
   value(const T& x) : v{x} {}
-  value(parameter_key k) : v{k} {}
-  std::variant<T, parameter_key> v;
+  value(key k) : v{k} {}
+  std::variant<T, key> v;
 
   T operator()(const parameter_set& parameters) const {
     if (const auto* x = std::get_if<T>(&v)) {
       return *x;
     }
-    auto* k = std::get_if<parameter_key>(&v);
+    auto* k = std::get_if<key>(&v);
     if (auto it = parameters.map.find(*k); it != parameters.map.end()) {
       if constexpr (std::is_enum_v<T>) {
         if (const auto* x = std::get_if<std::uint32_t>(&it->second)) {

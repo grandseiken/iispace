@@ -12,14 +12,14 @@ namespace ii::geom2 {
 //////////////////////////////////////////////////////////////////////////////////
 struct line_style {
   value<cvec4> colour0 = cvec4{0.f};
-  value<cvec4> colour1 = cvec4{0.f};
+  value<cvec4> colour1 = colour0;
   value<float> z = 0.f;
   value<float> width = 1.f;
 };
 
 struct fill_style {
   value<cvec4> colour0 = cvec4{0.f};
-  value<cvec4> colour1 = cvec4{0.f};
+  value<cvec4> colour1 = colour0;
   value<float> z = 0.f;
 };
 
@@ -89,6 +89,8 @@ struct ngon {
 //////////////////////////////////////////////////////////////////////////////////
 // Compound nodes.
 //////////////////////////////////////////////////////////////////////////////////
+struct compound {};
+
 struct translate {
   value<vec2> x = vec2{0};
 };

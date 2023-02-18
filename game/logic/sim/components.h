@@ -57,7 +57,8 @@ struct Collision : ecs::component {
   shape_flag flags = shape_flag::kNone;
   fixed bounding_width = 0;
 
-  using check_collision_t = geom::hit_result(ecs::const_handle, const geom::check_t&);
+  using check_collision_t = geom::hit_result(ecs::const_handle, const geom::check_t&,
+                                             const SimInterface&);
   sfn::ptr<check_collision_t> check_collision = nullptr;
 };
 DEBUG_STRUCT_TUPLE(Collision, flags, bounding_width, check_collision);

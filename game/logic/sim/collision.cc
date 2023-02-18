@@ -17,7 +17,8 @@ GridCollisionIndex::GridCollisionIndex(const uvec2& cell_dimensions, const ivec2
   cells_.resize(static_cast<std::size_t>(cell_count_.x) * cell_count_.y);
 }
 
-void GridCollisionIndex::refresh_handles(ecs::EntityIndex& index) {
+void GridCollisionIndex::refresh_handles(const SimInterface& interface, ecs::EntityIndex& index) {
+  interface_ = &interface;
   for (auto& pair : entities_) {
     auto& e = pair.second;
     e.handle = *index.get(e.id);
@@ -74,7 +75,7 @@ void GridCollisionIndex::iterate_collision_cells(const geom::check_t& it, const 
     if (!check_bounds(min, max)) {
       return false;
     }
-    if (auto hit = c.check_collision(e.handle, it); +hit.mask) {
+    if (auto hit = c.check_collision(e.handle, it, *interface_); +hit.mask) {
       return f(e.handle, hit);
     }
     return false;
@@ -328,8 +329,9 @@ void GridCollisionIndex::cell_t::clear_centre(ecs::entity_id id) {
   centres.erase(std::find(centres.begin(), centres.end(), id));
 }
 
-void LegacyCollisionIndex::refresh_handles(ecs::EntityIndex& index) {
-  for (auto& e : entries) {
+void LegacyCollisionIndex::refresh_handles(const SimInterface& interface, ecs::EntityIndex& index) {
+  interface_ = &interface;
+  for (auto& e : entries_) {
     e.handle = *index.get(e.id);
     e.collision = e.handle.get<Collision>();
     e.transform = e.handle.get<Transform>();
@@ -338,25 +340,25 @@ void LegacyCollisionIndex::refresh_handles(ecs::EntityIndex& index) {
 
 void LegacyCollisionIndex::add(ecs::handle& h, const Collision& c) {
   if (c.check_collision) {
-    entries.emplace_back(entry{h.id(), h, h.get<Transform>(), &c, 0});
+    entries_.emplace_back(entry{h.id(), h, h.get<Transform>(), &c, 0});
   }
 }
 
 void LegacyCollisionIndex::update(ecs::handle&) {}
 
 void LegacyCollisionIndex::remove(ecs::handle& h) {
-  if (auto it = std::find_if(entries.begin(), entries.end(),
+  if (auto it = std::find_if(entries_.begin(), entries_.end(),
                              [&](const auto& e) { return e.handle.id() == h.id(); });
-      it != entries.end()) {
-    entries.erase(it);
+      it != entries_.end()) {
+    entries_.erase(it);
   }
 }
 
 void LegacyCollisionIndex::begin_tick() {
-  for (auto& e : entries) {
+  for (auto& e : entries_) {
     e.x_min = e.transform->centre.x - e.collision->bounding_width;
   }
-  std::stable_sort(entries.begin(), entries.end(),
+  std::stable_sort(entries_.begin(), entries_.end(),
                    [](const auto& a, const auto& b) { return a.x_min < b.x_min; });
 }
 
@@ -368,7 +370,7 @@ bool LegacyCollisionIndex::collide_any(const geom::check_t& it) const {
   fixed x = c->v.x;
   fixed y = c->v.y;
 
-  for (const auto& collision : entries) {
+  for (const auto& collision : entries_) {
     const auto& e = *collision.collision;
     auto v = collision.transform->centre;
     fixed w = e.bounding_width;
@@ -383,7 +385,7 @@ bool LegacyCollisionIndex::collide_any(const geom::check_t& it) const {
     if (v.x + w < x || v.y + w < y || v.y - w > y) {
       continue;
     }
-    if (+(e.flags & it.mask) && +e.check_collision(collision.handle, it).mask) {
+    if (+(e.flags & it.mask) && +e.check_collision(collision.handle, it, *interface_).mask) {
       return true;
     }
   }
@@ -400,7 +402,7 @@ LegacyCollisionIndex::collide(const geom::check_t& it) const {
   fixed x = c->v.x;
   fixed y = c->v.y;
 
-  for (const auto& collision : entries) {
+  for (const auto& collision : entries_) {
     const auto& e = *collision.collision;
     auto v = collision.transform->centre;
     fixed w = e.bounding_width;
@@ -415,7 +417,7 @@ LegacyCollisionIndex::collide(const geom::check_t& it) const {
     if (!(e.flags & it.mask)) {
       continue;
     }
-    if (auto hit = e.check_collision(collision.handle, it); +hit.mask) {
+    if (auto hit = e.check_collision(collision.handle, it, *interface_); +hit.mask) {
       r.emplace_back(SimInterface::collision_info{.h = collision.handle,
                                                   .hit_mask = hit.mask,
                                                   .shape_centres = std::move(hit.shape_centres)});

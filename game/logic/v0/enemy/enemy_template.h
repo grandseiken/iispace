@@ -133,6 +133,35 @@ void add_enemy_health(ecs::handle h, std::uint32_t hp,
   h.add(EnemyStatus{});
 }
 
+template <ecs::Component Logic, typename ShapeDefinition = default_shape_definition<Logic>>
+void add_enemy_health2(ecs::handle h, std::uint32_t hp,
+                       std::optional<sound> destroy_sound = std::nullopt,
+                       std::optional<rumble_type> destroy_rumble = std::nullopt) {
+  destroy_sound = destroy_sound ? *destroy_sound : Logic::kDestroySound;
+  destroy_rumble = destroy_rumble ? *destroy_rumble : Logic::kDestroyRumble;
+
+  sfn::ptr<Health::on_destroy_t> on_destroy = nullptr;
+  sfn::ptr<Health::on_hit_t> on_hit = nullptr;
+
+  constexpr auto default_destroy =
+      sfn::cast<Health::on_destroy_t, &destruct_entity_default2<Logic, ShapeDefinition>>;
+  if constexpr (requires { &Logic::on_destroy; }) {
+    on_destroy = sfn::sequence<default_destroy,
+                               sfn::cast<Health::on_destroy_t, ecs::call<&Logic::on_destroy>>>;
+  } else {
+    on_destroy = default_destroy;
+  }
+  if constexpr (requires { &Logic::on_hit; }) {
+    on_hit = sfn::cast<Health::on_hit_t, ecs::call<&Logic::on_hit>>;
+  }
+  h.add(Health{.hp = hp,
+               .destroy_sound = destroy_sound,
+               .destroy_rumble = destroy_rumble,
+               .on_hit = on_hit,
+               .on_destroy = on_destroy});
+  h.add(EnemyStatus{});
+}
+
 }  // namespace ii::v0
 
 #endif
