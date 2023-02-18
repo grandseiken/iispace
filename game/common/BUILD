@@ -36,8 +36,12 @@ cc_library(
     "raw_ptr.h",
     "result.h",
     "struct_tuple.h",
+    "variant_switch.h",
   ],
-  deps = ["@expected"],
+  deps = [
+    "@expected",
+    "@static_functional",
+  ],
   visibility = ["//visibility:public"],
 )
 

@@ -352,8 +352,8 @@ struct ShieldHub : ecs::component {
     if (!((sim.tick_count() + +h.id()) % 8u)) {
       targets.clear();
       for (const auto& c :
-           sim.collide(iterate_check_ball(shape_flag::kVulnerable | shape_flag::kWeakVulnerable,
-                                          transform.centre, kShieldDistance))) {
+           sim.collide(check_ball(shape_flag::kVulnerable | shape_flag::kWeakVulnerable,
+                                  transform.centre, kShieldDistance))) {
         if (!c.h.get<ShieldHub>()) {
           targets.emplace_back(c.h.id());
         }

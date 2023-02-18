@@ -38,7 +38,7 @@ struct BossShot : ecs::component {
       h.emplace<Destroy>();
     }
     transform.set_rotation(transform.rotation + fixed_c::hundredth * 2);
-    if (sim.collide_any(iterate_check_point(shape_flag::kSafeShield, transform.centre))) {
+    if (sim.collide_any(check_point(shape_flag::kSafeShield, transform.centre))) {
       auto e = sim.emit(resolve_key::reconcile(h.id(), resolve_tag::kOnDestroy));
       explode_entity_shapes<BossShot>(h, e, std::nullopt, 4, transform.centre - velocity);
       h.emplace<Destroy>();

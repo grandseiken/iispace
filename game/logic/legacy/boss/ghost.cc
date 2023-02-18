@@ -20,8 +20,8 @@ constexpr cvec4 c2 = colour::hue360(270, .2f);
 using namespace geom;
 
 template <ShapeNode S>
-hit_result shape_check_collision_compatibility(const auto& parameters, bool is_legacy,
-                                               const iterate_check_collision_t& it) {
+hit_result
+shape_check_collision_compatibility(const auto& parameters, bool is_legacy, const check_t& it) {
   return is_legacy ? shape_check_collision_legacy<S>(parameters, it)
                    : shape_check_collision<S>(parameters, it);
 }
@@ -128,7 +128,7 @@ struct GhostMine : ecs::component {
       transform.set_rotation(sim.random_fixed() * 2 * pi<fixed>);
     }
     timer && --timer;
-    if (sim.collide_any(iterate_check_point(shape_flag::kEnemyInteraction, transform.centre))) {
+    if (sim.collide_any(check_point(shape_flag::kEnemyInteraction, transform.centre))) {
       if (sim.random(6) == 0 ||
           (sim.index().contains(ghost_boss) &&
            sim.index().get(ghost_boss)->get<Health>()->is_hp_low() && sim.random(5) == 0)) {
@@ -400,8 +400,7 @@ struct GhostBoss : ecs::component {
     return {transform.centre, transform.rotation};
   }
 
-  hit_result
-  check_collision(const Transform& transform, const iterate_check_collision_t& it) const {
+  hit_result check_collision(const Transform& transform, const check_t& it) const {
     hit_result result;
     if (!collision_enabled) {
       return result;

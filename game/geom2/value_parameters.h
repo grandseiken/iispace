@@ -30,18 +30,18 @@ struct value {
   value(parameter_key k) : v{k} {}
   std::variant<T, parameter_key> v;
 
-  T get(const parameter_set& parameters) const {
-    if (auto* x = std::get_if<T>(&v)) {
+  T operator()(const parameter_set& parameters) const {
+    if (const auto* x = std::get_if<T>(&v)) {
       return *x;
     }
-    auto* k = std::get<parameter_key>(&v);
+    auto* k = std::get_if<parameter_key>(&v);
     if (auto it = parameters.map.find(*k); it != parameters.map.end()) {
       if constexpr (std::is_enum_v<T>) {
-        if (auto* x = std::get_if<std::uint32_t>(&it->second)) {
-          return T{*x};
+        if (const auto* x = std::get_if<std::uint32_t>(&it->second)) {
+          return static_cast<T>(*x);
         }
       } else {
-        if (auto* x = std::get_if<T>(&it->second)) {
+        if (const auto* x = std::get_if<T>(&it->second)) {
           return *x;
         }
       }

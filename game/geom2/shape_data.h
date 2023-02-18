@@ -1,7 +1,7 @@
 #ifndef II_GAME_GEOM2_SHAPE_DATA_H
 #define II_GAME_GEOM2_SHAPE_DATA_H
 #include "game/common/math.h"
-#include "game/geom2/enums.h"
+#include "game/geom2/types.h"
 #include "game/geom2/value_parameters.h"
 #include <cstdint>
 

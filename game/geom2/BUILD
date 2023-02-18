@@ -1,11 +1,10 @@
 cc_library(
   name = "geom2",
   hdrs = [
-    "enums.h",
     "resolve.h",
     "shape_bank.h",
     "shape_data.h",
-    "transform.h",
+    "types.h",
     "value_parameters.h",
   ],
   srcs = ["shape_bank.cc"],

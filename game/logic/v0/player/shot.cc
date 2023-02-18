@@ -124,9 +124,8 @@ struct PlayerShot : ecs::component {
     if (+(data.flags & shot_flags::kHomingShots) && !(data.flags & shot_flags::kSniperSplit)) {
       std::optional<vec2> target;
       fixed max_t = 0;
-      auto c_list =
-          sim.collide(iterate_check_ball(shape_flag::kVulnerable | shape_flag::kWeakVulnerable,
-                                         transform.centre, shot_mod_data::kHomingScanRadius));
+      auto c_list = sim.collide(check_ball(shape_flag::kVulnerable | shape_flag::kWeakVulnerable,
+                                           transform.centre, shot_mod_data::kHomingScanRadius));
       // TODO: really want to use closest point on potential target shape to our shot, rather
       // than target centre. Otherwise e.g. bosses less likely to be targeted since big, so far
       // away. Also, ignore offscreen?
@@ -165,10 +164,9 @@ struct PlayerShot : ecs::component {
       destroy = true;
       destroy_particles = direction;
     }
-    auto collision =
-        sim.collide(iterate_check_point(shape_flag::kVulnerable | shape_flag::kWeakVulnerable |
-                                            shape_flag::kShield | shape_flag::kWeakShield,
-                                        transform.centre));
+    auto collision = sim.collide(check_point(shape_flag::kVulnerable | shape_flag::kWeakVulnerable |
+                                                 shape_flag::kShield | shape_flag::kWeakShield,
+                                             transform.centre));
     for (const auto& e : collision) {
       if (e.h.has<Destroy>() ||
           !(e.hit_mask & (shape_flag::kVulnerable | shape_flag::kWeakVulnerable))) {

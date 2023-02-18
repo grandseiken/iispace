@@ -2,6 +2,7 @@
 #define II_GAME_LOGIC_SIM_SIM_INTERFACE_H
 #include "game/common/math.h"
 #include "game/common/random.h"
+#include "game/geom2/types.h"
 #include "game/logic/ecs/index.h"
 #include "game/logic/sim/io/aggregate.h"
 #include "game/mixer/sound.h"
@@ -23,9 +24,6 @@ struct initial_conditions;
 struct input_frame;
 struct run_event;
 struct sim_results;
-namespace geom {
-struct iterate_check_collision_t;
-}  // namespace geom
 namespace render {
 struct player_info;
 struct shape;
@@ -104,8 +102,8 @@ public:
     fixed distance_sq = 0;
   };
 
-  bool collide_any(const geom::iterate_check_collision_t&) const;
-  std::vector<collision_info> collide(const geom::iterate_check_collision_t&) const;
+  bool collide_any(const geom2::check_t&) const;
+  std::vector<collision_info> collide(const geom2::check_t&) const;
   bool is_on_screen(const vec2& point) const;
   vec2 rotate_compatibility(const vec2& v, fixed theta) const;
 

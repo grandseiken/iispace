@@ -1,7 +1,6 @@
 #ifndef II_GAME_GEOM2_RESOLVE_H
 #define II_GAME_GEOM2_RESOLVE_H
-#include "game/geom2/enums.h"
-#include "game/geom2/transform.h"
+#include "game/geom2/types.h"
 #include <variant>
 #include <vector>
 

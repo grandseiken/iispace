@@ -2,8 +2,8 @@
 #define II_GAME_LOGIC_LEGACY_SHIP_TEMPLATE_H
 #include "game/common/colour.h"
 #include "game/common/math.h"
-#include "game/geom2/enums.h"
 #include "game/geom2/resolve.h"
+#include "game/geom2/types.h"
 #include "game/geometry/node.h"
 #include "game/geometry/node_transform.h"
 #include "game/logic/ecs/call.h"
@@ -130,33 +130,29 @@ constexpr shape_flag get_shape_flags() {
 }
 
 template <geom::ShapeNode S>
-geom::hit_result
-shape_check_collision(const auto& parameters, const geom::iterate_check_collision_t& it) {
+geom::hit_result shape_check_collision(const auto& parameters, const geom::check_t& it) {
   geom::hit_result result;
   geom::iterate(S{}, it, parameters, geom::convert_local_transform{}, result);
   return result;
 }
 
 template <geom::ShapeNode S>
-geom::hit_result
-shape_check_collision_legacy(const auto& parameters, const geom::iterate_check_collision_t& it) {
+geom::hit_result shape_check_collision_legacy(const auto& parameters, const geom::check_t& it) {
   geom::hit_result result;
-  if (const auto* c = std::get_if<geom::check_point>(&it.check)) {
-    geom::iterate(S{}, geom::iterate_check_point(it.mask, vec2{0}), parameters,
+  if (const auto* c = std::get_if<geom::check_point_t>(&it.extent)) {
+    geom::iterate(S{}, geom::check_point(it.mask, vec2{0}), parameters,
                   geom::legacy_convert_local_transform{c->v}, result);
   }
   return result;
 }
 
 template <ecs::Component Logic, geom::ShapeNode S = typename Logic::shape>
-geom::hit_result
-ship_check_collision(ecs::const_handle h, const geom::iterate_check_collision_t& it) {
+geom::hit_result ship_check_collision(ecs::const_handle h, const geom::check_t& it) {
   return shape_check_collision<S>(get_shape_parameters<Logic>(h), it);
 }
 
 template <ecs::Component Logic, geom::ShapeNode S = typename Logic::shape>
-geom::hit_result
-ship_check_collision_legacy(ecs::const_handle h, const geom::iterate_check_collision_t& it) {
+geom::hit_result ship_check_collision_legacy(ecs::const_handle h, const geom::check_t& it) {
   return shape_check_collision_legacy<S>(get_shape_parameters<Logic>(h), it);
 }
 

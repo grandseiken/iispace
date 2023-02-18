@@ -2,8 +2,8 @@
 #define II_GAME_LOGIC_V0_LIB_SHIP_TEMPLATE_H
 #include "game/common/colour.h"
 #include "game/common/math.h"
-#include "game/geom2/enums.h"
 #include "game/geom2/resolve.h"
+#include "game/geom2/types.h"
 #include "game/geometry/node.h"
 #include "game/geometry/node_transform.h"
 #include "game/logic/ecs/call.h"
@@ -91,16 +91,14 @@ constexpr shape_flag get_shape_flags() {
 }
 
 template <geom::ShapeNode S>
-geom::hit_result
-check_shape_collision(const auto& parameters, const geom::iterate_check_collision_t& it) {
+geom::hit_result check_shape_collision(const auto& parameters, const geom::check_t& it) {
   geom::hit_result result;
   geom::iterate(S{}, it, parameters, geom::convert_local_transform{}, result);
   return result;
 }
 
 template <ecs::Component Logic, geom::ShapeNode S = typename Logic::shape>
-geom::hit_result
-check_entity_collision(ecs::const_handle h, const geom::iterate_check_collision_t& it) {
+geom::hit_result check_entity_collision(ecs::const_handle h, const geom::check_t& it) {
   return check_shape_collision<S>(get_shape_parameters<Logic>(h), it);
 }
 

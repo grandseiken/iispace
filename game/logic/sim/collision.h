@@ -12,9 +12,6 @@
 #include <vector>
 
 namespace ii {
-namespace geom {
-struct iterate_check_collision_t;
-}  // namespace geom
 
 class CollisionIndex {
 public:
@@ -27,9 +24,8 @@ public:
   virtual void remove(ecs::handle& h) = 0;
   virtual void begin_tick() = 0;
 
-  virtual bool collide_any(const geom::iterate_check_collision_t&) const = 0;
-  virtual std::vector<SimInterface::collision_info>
-  collide(const geom::iterate_check_collision_t&) const = 0;
+  virtual bool collide_any(const geom::check_t&) const = 0;
+  virtual std::vector<SimInterface::collision_info> collide(const geom::check_t&) const = 0;
   virtual void in_range(const vec2& point, fixed distance, ecs::component_id, std::size_t max_n,
                         std::vector<SimInterface::range_info>& output) const = 0;
 };
@@ -52,12 +48,11 @@ public:
 
 private:
   template <typename F>
-  void iterate_collision_cells(const geom::iterate_check_collision_t&, const F&) const;
+  void iterate_collision_cells(const geom::check_t&, const F&) const;
 
 public:
-  bool collide_any(const geom::iterate_check_collision_t&) const override;
-  std::vector<SimInterface::collision_info>
-  collide(const geom::iterate_check_collision_t&) const override;
+  bool collide_any(const geom::check_t&) const override;
+  std::vector<SimInterface::collision_info> collide(const geom::check_t&) const override;
   void in_range(const vec2& point, fixed distance, ecs::component_id, std::size_t max_n,
                 std::vector<SimInterface::range_info>& output) const override;
 
@@ -117,9 +112,8 @@ public:
   void remove(ecs::handle& h) override;
   void begin_tick() override;
 
-  bool collide_any(const geom::iterate_check_collision_t&) const override;
-  std::vector<SimInterface::collision_info>
-  collide(const geom::iterate_check_collision_t&) const override;
+  bool collide_any(const geom::check_t&) const override;
+  std::vector<SimInterface::collision_info> collide(const geom::check_t&) const override;
   void in_range(const vec2& point, fixed distance, ecs::component_id, std::size_t max_n,
                 std::vector<SimInterface::range_info>& output) const override;
 

@@ -30,7 +30,7 @@ struct legacy_ball_collider_data : shape_data_base {
     if (!(flags & it.mask)) {
       return;
     }
-    if (const auto* c = std::get_if<check_point>(&it.check)) {
+    if (const auto* c = std::get_if<check_point_t>(&it.extent)) {
       if (length_squared(t.transform_ignore_rotation(c->v)) < square(radius)) {
         hit.add(flags & it.mask);
       }
@@ -69,7 +69,7 @@ struct legacy_box_collider_data : shape_data_base {
     if (!(flags & it.mask)) {
       return;
     }
-    if (const auto* c = std::get_if<check_point>(&it.check)) {
+    if (const auto* c = std::get_if<check_point_t>(&it.extent)) {
       auto v = t.transform(c->v);
       if (abs(v.x) < dimensions.x && abs(v.y) < dimensions.y) {
         hit.add(flags & it.mask);
@@ -109,7 +109,7 @@ struct legacy_arc_collider_data : shape_data_base {
     if (!(flags & it.mask)) {
       return;
     }
-    if (const auto* c = std::get_if<check_point>(&it.check)) {
+    if (const auto* c = std::get_if<check_point_t>(&it.extent)) {
       auto v = t.transform(c->v);
       auto theta = angle(v);
       auto r = length(v);

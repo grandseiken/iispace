@@ -171,12 +171,11 @@ bool SimInterface::random_bool() {
   return random(random_source::kGameState).rbool();
 }
 
-bool SimInterface::collide_any(const geom::iterate_check_collision_t& it) const {
+bool SimInterface::collide_any(const geom::check_t& it) const {
   return internals_->collision_index->collide_any(it);
 }
 
-auto SimInterface::collide(const geom::iterate_check_collision_t& it) const
-    -> std::vector<collision_info> {
+auto SimInterface::collide(const geom::check_t& it) const -> std::vector<collision_info> {
   return internals_->collision_index->collide(it);
 }
 

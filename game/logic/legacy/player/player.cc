@@ -1,5 +1,5 @@
 #include "game/logic/legacy/player/player.h"
-#include "game/geom2/enums.h"
+#include "game/geom2/types.h"
 #include "game/geometry/node_conditional.h"
 #include "game/geometry/shapes/box.h"
 #include "game/geometry/shapes/ngon.h"
@@ -59,7 +59,7 @@ struct Shot : ecs::component {
     bool destroy = false;
     bool destroy_particles = false;
     auto generation = sim.index().generation();
-    auto collision = sim.collide(iterate_check_point(
+    auto collision = sim.collide(check_point(
         shape_flag::kVulnerable | shape_flag::kShield | shape_flag::kWeakShield, transform.centre));
     for (const auto& e : collision) {
       if (+(e.hit_mask & shape_flag::kVulnerable)) {
@@ -78,7 +78,7 @@ struct Shot : ecs::component {
       // Compatibility: need to rerun the collision check if new entities might have spawned.
       if (generation != sim.index().generation()) {
         collision = sim.collide(
-            iterate_check_point(shape_flag::kShield | shape_flag::kWeakShield, transform.centre));
+            check_point(shape_flag::kShield | shape_flag::kWeakShield, transform.centre));
       }
       for (const auto& e : collision) {
         if (!e.h.has<Destroy>() &&
@@ -265,7 +265,7 @@ struct PlayerLogic : ecs::component {
 
     // Damage.
     if (!pc.is_predicted &&
-        sim.collide_any(iterate_check_point(shape_flag::kDangerous, transform.centre))) {
+        sim.collide_any(check_point(shape_flag::kDangerous, transform.centre))) {
       damage(h, pc, score, transform, sim);
     }
   }

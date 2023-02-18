@@ -24,6 +24,7 @@ cc_library(
   deps = [
     "//game/common:math",
     "//game/common:random",
+    "//game/geom2",
     "//game/logic/ecs",
     "//game/logic/sim/io:aggregate",
     "//game/mixer:sound",

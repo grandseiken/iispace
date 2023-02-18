@@ -32,12 +32,12 @@ void ball_collider_data::iterate(iterate_check_collision_t it, const convert_loc
   if (!(flags & it.mask)) {
     return;
   }
-  if (const auto* c = std::get_if<check_point>(&it.check)) {
+  if (const auto* c = std::get_if<check_point_t>(&it.extent)) {
     auto d_sq = length_squared(t.transform_ignore_rotation(c->v));
     if (d_sq <= square(dimensions.radius) && d_sq >= square(dimensions.inner_radius)) {
       hit.add(flags & it.mask, t.inverse_transform(vec2{0}));
     }
-  } else if (const auto* c = std::get_if<check_line>(&it.check)) {
+  } else if (const auto* c = std::get_if<check_line_t>(&it.extent)) {
     auto a = t.transform(c->a);
     auto b = t.transform(c->b);
     auto ir_sq = square(dimensions.inner_radius);
@@ -45,14 +45,14 @@ void ball_collider_data::iterate(iterate_check_collision_t it, const convert_loc
         (length_squared(a) >= ir_sq || length_squared(b) >= ir_sq)) {
       hit.add(flags & it.mask, t.inverse_transform(vec2{0}));
     }
-  } else if (const auto* c = std::get_if<check_ball>(&it.check)) {
+  } else if (const auto* c = std::get_if<check_ball_t>(&it.extent)) {
     auto d_sq = length_squared(t.transform_ignore_rotation(c->c));
     auto r = dimensions.radius + c->r;
     if (d_sq <= r * r &&
         (!dimensions.inner_radius || sqrt(d_sq) + c->r >= dimensions.inner_radius)) {
       hit.add(flags & it.mask, t.inverse_transform(vec2{0}));
     }
-  } else if (const auto* c = std::get_if<check_convex>(&it.check)) {
+  } else if (const auto* c = std::get_if<check_convex_t>(&it.extent)) {
     auto va = t.transform(c->vs);
     auto ir_sq = square(dimensions.inner_radius);
     if (intersect_convex_ball(va, vec2{0}, dimensions.radius) &&
@@ -69,20 +69,20 @@ void box_collider_data::iterate(iterate_check_collision_t it, const convert_loca
   if (!(flags & it.mask)) {
     return;
   }
-  if (const auto* c = std::get_if<check_point>(&it.check)) {
+  if (const auto* c = std::get_if<check_point_t>(&it.extent)) {
     auto v = t.transform(c->v);
     if (abs(v.x) <= dimensions.x && abs(v.y) <= dimensions.y) {
       hit.add(flags & it.mask, t.inverse_transform(vec2{0}));
     }
-  } else if (const auto* c = std::get_if<check_line>(&it.check)) {
+  } else if (const auto* c = std::get_if<check_line_t>(&it.extent)) {
     if (intersect_aabb_line(-dimensions, dimensions, t.transform(c->a), t.transform(c->b))) {
       hit.add(flags & it.mask, t.inverse_transform(vec2{0}));
     }
-  } else if (const auto* c = std::get_if<check_ball>(&it.check)) {
+  } else if (const auto* c = std::get_if<check_ball_t>(&it.extent)) {
     if (intersect_aabb_ball(-dimensions, dimensions, t.transform(c->c), c->r)) {
       hit.add(flags & it.mask, t.inverse_transform(vec2{0}));
     }
-  } else if (const auto* c = std::get_if<check_convex>(&it.check)) {
+  } else if (const auto* c = std::get_if<check_convex_t>(&it.extent)) {
     auto va = t.transform(c->vs);
     if (intersect_aabb_convex(-dimensions, dimensions, va)) {
       hit.add(flags & it.mask, t.inverse_transform(vec2{0}));
@@ -96,7 +96,7 @@ void ngon_collider_data::iterate(iterate_check_collision_t it, const convert_loc
     return;
   }
   std::array<vec2, 4> va{};
-  if (const auto* c = std::get_if<check_point>(&it.check)) {
+  if (const auto* c = std::get_if<check_point_t>(&it.extent)) {
     auto v = t.transform(c->v);
     auto theta = angle(v);
     if (theta < 0) {
@@ -111,7 +111,7 @@ void ngon_collider_data::iterate(iterate_check_collision_t it, const convert_loc
         length_squared(v) >= i_sq) {
       hit.add(flags & it.mask, t.inverse_transform(vec2{0}));
     }
-  } else if (const auto* c = std::get_if<check_line>(&it.check)) {
+  } else if (const auto* c = std::get_if<check_line_t>(&it.extent)) {
     auto line_a = t.transform(c->a);
     auto line_b = t.transform(c->b);
     for (std::uint32_t i = 0; i < dimensions.segments; ++i) {
@@ -121,7 +121,7 @@ void ngon_collider_data::iterate(iterate_check_collision_t it, const convert_loc
         break;
       }
     }
-  } else if (const auto* c = std::get_if<check_ball>(&it.check)) {
+  } else if (const auto* c = std::get_if<check_ball_t>(&it.extent)) {
     auto v = t.transform(c->c);
     for (std::uint32_t i = 0; i < dimensions.segments; ++i) {
       auto convex = ngon_convex_segment(dimensions, va, i);
@@ -130,7 +130,7 @@ void ngon_collider_data::iterate(iterate_check_collision_t it, const convert_loc
         break;
       }
     }
-  } else if (const auto* c = std::get_if<check_convex>(&it.check)) {
+  } else if (const auto* c = std::get_if<check_convex_t>(&it.extent)) {
     auto va0 = t.transform(c->vs);
     for (std::uint32_t i = 0; i < dimensions.segments; ++i) {
       auto convex = ngon_convex_segment(dimensions, va, i);
