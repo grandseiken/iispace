@@ -770,9 +770,8 @@ void GlRenderer::render_background(const render::background& data) const {
 void GlRenderer::render_shapes(coordinate_system ctype, std::vector<shape>& shapes,
                                std::vector<fx>& fxs, shape_style style) const {
   std::stable_sort(shapes.begin(), shapes.end(),
-                   [](const shape& a, const shape& b) { return a.z_index < b.z_index; });
-  std::stable_sort(fxs.begin(), fxs.end(),
-                   [](const fx& a, const fx& b) { return a.z_index < b.z_index; });
+                   [](const shape& a, const shape& b) { return a.z < b.z; });
+  std::stable_sort(fxs.begin(), fxs.end(), [](const fx& a, const fx& b) { return a.z < b.z; });
 
   struct shape_data {
     std::uint32_t buffer_index = 0;
@@ -780,7 +779,7 @@ void GlRenderer::render_shapes(coordinate_system ctype, std::vector<shape>& shap
     uvec2 params{0u, 0u};
     float rotation = 0.f;
     float line_width = 0.f;
-    float z_index = 0.f;
+    float z = 0.f;
     fvec2 position{0.f};
     fvec2 dimensions{0.f};
     cvec4 colour0{0.f};
@@ -836,7 +835,7 @@ void GlRenderer::render_shapes(coordinate_system ctype, std::vector<shape>& shap
     vertex_float_data.emplace_back(d.line_width);
     vertex_float_data.emplace_back(d.position.x);
     vertex_float_data.emplace_back(d.position.y);
-    vertex_float_data.emplace_back(d.z_index);
+    vertex_float_data.emplace_back(d.z);
     vertex_float_data.emplace_back(d.dimensions.x);
     vertex_float_data.emplace_back(d.dimensions.y);
 
@@ -861,7 +860,7 @@ void GlRenderer::render_shapes(coordinate_system ctype, std::vector<shape>& shap
   auto add_outline_data = [&](const shape_data& d,
                               const std::optional<render::motion_trail>& trail) {
     add_shape_data(d);
-    if (d.z_index < colour::kZTrails) {
+    if (d.z < colour::kZTrails) {
       bottom_outline_indices.emplace_back(vertex_index++);
     } else {
       outline_indices.emplace_back(vertex_index++);
@@ -929,7 +928,7 @@ void GlRenderer::render_shapes(coordinate_system ctype, std::vector<shape>& shap
                 .params = {p->sides, param},
                 .rotation = shape.rotation,
                 .line_width = p->line_width,
-                .z_index = shape.z_index,
+                .z = shape.z,
                 .position = shape.origin,
                 .dimensions = {p->radius, p->inner_radius},
                 .colour0 = shape.colour0,
@@ -955,7 +954,7 @@ void GlRenderer::render_shapes(coordinate_system ctype, std::vector<shape>& shap
               .style = kStyleBox,
               .rotation = shape.rotation,
               .line_width = p->line_width,
-              .z_index = shape.z_index,
+              .z = shape.z,
               .position = shape.origin,
               .dimensions = p->dimensions,
               .colour0 = shape.colour0,
@@ -968,7 +967,7 @@ void GlRenderer::render_shapes(coordinate_system ctype, std::vector<shape>& shap
               .style = kStyleBall,
               .rotation = shape.rotation,
               .line_width = p->line_width,
-              .z_index = shape.z_index,
+              .z = shape.z,
               .position = shape.origin,
               .dimensions = {p->radius, p->inner_radius},
               .colour0 = shape.colour0,
@@ -982,7 +981,7 @@ void GlRenderer::render_shapes(coordinate_system ctype, std::vector<shape>& shap
               .params = {p->sides, 0},
               .rotation = shape.rotation,
               .line_width = p->line_width,
-              .z_index = shape.z_index,
+              .z = shape.z,
               .position = shape.origin,
               .dimensions = {p->radius, 0},
               .colour0 = shape.colour0,
@@ -994,7 +993,7 @@ void GlRenderer::render_shapes(coordinate_system ctype, std::vector<shape>& shap
           .style = kStyleNgonPolygon,
           .params = {p->sides, p->segments},
           .rotation = shape.rotation,
-          .z_index = shape.z_index,
+          .z = shape.z,
           .position = shape.origin,
           .dimensions = {p->radius, p->inner_radius},
           .colour0 = shape.colour0,
@@ -1004,7 +1003,7 @@ void GlRenderer::render_shapes(coordinate_system ctype, std::vector<shape>& shap
       add_fill_data({
           .style = kStyleBox,
           .rotation = shape.rotation,
-          .z_index = shape.z_index,
+          .z = shape.z,
           .position = shape.origin,
           .dimensions = p->dimensions,
           .colour0 = shape.colour0,
@@ -1014,7 +1013,7 @@ void GlRenderer::render_shapes(coordinate_system ctype, std::vector<shape>& shap
       add_fill_data({
           .style = kStyleBall,
           .rotation = shape.rotation,
-          .z_index = shape.z_index,
+          .z = shape.z,
           .position = shape.origin,
           .dimensions = {p->radius, p->inner_radius},
           .colour0 = shape.colour0,

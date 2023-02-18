@@ -22,7 +22,6 @@ cc_library(
   srcs = ["shapes.cc"],
   deps = [
     ":headers",
-    "//game/geometry:resolve",
   ],
   visibility = ["//game:__subpackages__"],
 )

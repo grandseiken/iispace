@@ -45,10 +45,10 @@ struct SquareBoss : public ecs::component {
                 set_colour2<nline(colour::kZero, z, 2.f), parameter_i<2, T>, parameter_i<2, 5>>,
                 set_colour2_alpha<sfill(colour::kZero, z), parameter_i<2, T>, parameter_i<2, 5>,
                                   constant<cvec4{colour::kFillAlpha2}>>,
-                constant<RFlags>>,
+                constant<render::tag_t{0}>, constant<RFlags>>,
       ngon_eval<constant<nd(44 + 25 * R, 4)>,
                 set_colour<nline(colour::kZero, z, 4.f), parameter_i<2, T>>, constant<sfill()>,
-                constant<RFlags>>,
+                constant<render::tag_t{0}>, constant<RFlags>>,
       ngon<nd(52 + 25 * R, 4), outline>, ngon<nd(48, 4), m_outline>>;
   template <fixed C, fixed R, std::uint32_t T, render::flag RFlags = render::flag::kNone>
   using rotate_ngon = rotate_s<C, ngon<R, T, RFlags>>;

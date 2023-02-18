@@ -117,7 +117,7 @@ struct particle {
   fvec2 velocity{0.f};
   fvec2 end_velocity = velocity;
   cvec4 colour{0.f};
-  float z_index = 0.f;
+  float z = 0.f;
   particle_data data;
   std::uint32_t time = 0;
   std::uint32_t end_time = 0;

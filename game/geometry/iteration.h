@@ -2,6 +2,7 @@
 #define II_GAME_GEOMETRY_ITERATION_H
 #include "game/common/math.h"
 #include "game/geom2/enums.h"
+#include "game/geom2/resolve.h"
 #include "game/geom2/transform.h"
 #include <cstddef>
 #include <functional>
@@ -13,6 +14,8 @@ namespace ii::render {
 struct shape;
 }  // namespace ii::render
 namespace ii::geom {
+
+using geom2::resolve_result;
 
 struct check_point {
   vec2 v{0};
@@ -43,8 +46,6 @@ struct hit_result {
     shape_centres.emplace_back(v);
   }
 };
-
-struct resolve_result;
 
 struct iterate_flags_t {};
 struct iterate_resolve_t {};

@@ -76,7 +76,7 @@ void add_explode_particle(EmitHandle& e, const fvec2& source, const fvec2& posit
         .velocity = velocity,
         .end_velocity = velocity / 2.f,
         .colour = cv,
-        .z_index = static_cast<float>(i),
+        .z = static_cast<float>(i),
         .data = data,
         .end_time = tv + r.uint(tv),
     });
@@ -90,11 +90,11 @@ void explode_shapes(EmitHandle& e, const geom::resolve_result& r,
                     const std::optional<fvec2>& towards, std::optional<float> speed) {
   for (const auto& entry : r.entries) {
     std::optional<cvec4> c;
-    if (const auto* d = std::get_if<geom::ball_data>(&entry.data)) {
+    if (const auto* d = std::get_if<geom::resolve_result::ball>(&entry.data)) {
       c = d->line.colour0.a ? d->line.colour0 : d->fill.colour0;
-    } else if (const auto* d = std::get_if<geom::box_data>(&entry.data)) {
+    } else if (const auto* d = std::get_if<geom::resolve_result::box>(&entry.data)) {
       c = d->line.colour0.a ? d->line.colour0 : d->fill.colour0;
-    } else if (const auto* d = std::get_if<geom::ngon_data>(&entry.data)) {
+    } else if (const auto* d = std::get_if<geom::resolve_result::ngon>(&entry.data)) {
       c = d->line.colour0.a ? d->line.colour0 : d->fill.colour1;
     }
     if (c) {
@@ -112,7 +112,7 @@ void destruct_lines(EmitHandle& e, const geom::resolve_result& r, const fvec2& s
   };
 
   for (const auto& entry : r.entries) {
-    if (const auto* d = std::get_if<geom::ball_data>(&entry.data)) {
+    if (const auto* d = std::get_if<geom::resolve_result::ball>(&entry.data)) {
       if (!d->line.colour0.a) {
         continue;
       }
@@ -131,7 +131,7 @@ void destruct_lines(EmitHandle& e, const geom::resolve_result& r, const fvec2& s
                     vertex(d->dimensions.inner_radius, i + 1, in), d->line.colour0, d->line.width,
                     d->line.z);
       }
-    } else if (const auto* d = std::get_if<geom::box_data>(&entry.data)) {
+    } else if (const auto* d = std::get_if<geom::resolve_result::box>(&entry.data)) {
       if (!d->line.colour0.a && !d->line.colour1.a) {
         continue;
       }
@@ -145,13 +145,13 @@ void destruct_lines(EmitHandle& e, const geom::resolve_result& r, const fvec2& s
       handle_line(vb, vc, d->line.colour0, d->line.width, d->line.z);
       handle_line(vc, vd, d->line.colour1, d->line.width, d->line.z);
       handle_line(vd, va, d->line.colour1, d->line.width, d->line.z);
-    } else if (const auto* d = std::get_if<geom::line_data>(&entry.data)) {
+    } else if (const auto* d = std::get_if<geom::resolve_result::line>(&entry.data)) {
       // TODO: need line gradients to match rendering, if we use them.
       if (d->style.colour0.a) {
         handle_line(*entry.t.translate(d->a), *entry.t.translate(d->b), d->style.colour0,
                     d->style.width, d->style.z);
       }
-    } else if (const auto* d = std::get_if<geom::ngon_data>(&entry.data)) {
+    } else if (const auto* d = std::get_if<geom::resolve_result::ngon>(&entry.data)) {
       if (!d->line.colour0.a) {
         continue;
       }
@@ -164,14 +164,14 @@ void destruct_lines(EmitHandle& e, const geom::resolve_result& r, const fvec2& s
                     .translate({d->dimensions.inner_radius, 0});
       };
 
-      switch (d->line.style) {
-      case geom::ngon_style::kPolystar:
+      switch (d->style) {
+      case render::ngon_style::kPolystar:
         // TODO: need line gradients to match rendering, if we use them.
         for (std::uint32_t i = 0; i < d->dimensions.segments; ++i) {
           handle_line(ivertex(i), vertex(i), d->line.colour0, d->line.width, d->line.z);
         }
         break;
-      case geom::ngon_style::kPolygram:
+      case render::ngon_style::kPolygram:
         for (std::size_t i = 0; i < d->dimensions.sides; ++i) {
           for (std::size_t j = i + 2; j < d->dimensions.sides && (j + 1) % d->dimensions.sides != i;
                ++j) {
@@ -179,7 +179,7 @@ void destruct_lines(EmitHandle& e, const geom::resolve_result& r, const fvec2& s
           }
         }
         // Fallthrough.
-      case geom::ngon_style::kPolygon:
+      case render::ngon_style::kPolygon:
         for (std::uint32_t i = 0; i < d->dimensions.segments; ++i) {
           handle_line(vertex(i), vertex(i + 1), d->line.colour0, d->line.width, d->line.z);
         }
@@ -201,11 +201,11 @@ void explode_volumes(EmitHandle& e, const geom::resolve_result& r, const fvec2& 
   };
 
   for (const auto& entry : r.entries) {
-    if (const auto* d = std::get_if<geom::ball_data>(&entry.data)) {
+    if (const auto* d = std::get_if<geom::resolve_result::ball>(&entry.data)) {
       handle_shape(*entry.t, d->dimensions.radius, d->fill.colour0);
-    } else if (const auto* d = std::get_if<geom::box_data>(&entry.data)) {
+    } else if (const auto* d = std::get_if<geom::resolve_result::box>(&entry.data)) {
       handle_shape(*entry.t, std::min(d->dimensions.x, d->dimensions.y), d->fill.colour0);
-    } else if (const auto* d = std::get_if<geom::ngon_data>(&entry.data)) {
+    } else if (const auto* d = std::get_if<geom::resolve_result::ngon>(&entry.data)) {
       handle_shape(*entry.t, d->dimensions.radius, d->fill.colour1);
     }
   }

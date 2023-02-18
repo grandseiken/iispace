@@ -38,7 +38,7 @@ struct resolve_result {
     line_style line;
     fill_style fill;
     tag_t tag{'0'};
-    render::flag flags = render::flag::kNone;
+    render_flag flags = render_flag::kNone;
   };
 
   struct box {
@@ -46,7 +46,7 @@ struct resolve_result {
     line_style line;
     fill_style fill;
     tag_t tag{'0'};
-    render::flag flags = render::flag::kNone;
+    render_flag flags = render_flag::kNone;
   };
 
   struct line {
@@ -54,7 +54,7 @@ struct resolve_result {
     vec2 b{0};
     line_style style;
     tag_t tag{'0'};
-    render::flag flags = render::flag::kNone;
+    render_flag flags = render_flag::kNone;
   };
 
   struct ngon {
@@ -63,7 +63,7 @@ struct resolve_result {
     line_style line;
     fill_style fill;
     tag_t tag{'0'};
-    render::flag flags = render::flag::kNone;
+    render_flag flags = render_flag::kNone;
   };
 
   using shape_data = std::variant<ball, box, line, ngon>;

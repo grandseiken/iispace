@@ -17,11 +17,10 @@ void Render::render_all(ecs::const_handle h, transient_render_state::entity_stat
     clear_trails = false;
   }
 
-  std::array<std::size_t, 256> index_counts{0};
-  index_counts.fill(0);
+  std::unordered_map<render::tag_t, std::size_t> index_counts;
   auto handle = [&](render::shape& s) {
-    auto& v = state.trails[s.s_index];
-    auto n = index_counts[s.s_index]++;
+    auto& v = state.trails[s.tag];
+    auto n = index_counts[s.tag]++;
     v.resize(std::max(v.size(), n + 1));
     if (v[n] &&
         length_squared(s.origin - v[n]->prev_origin) < kMaxTrailDistance * kMaxTrailDistance &&

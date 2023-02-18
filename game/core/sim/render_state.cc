@@ -221,7 +221,7 @@ void RenderState::render(std::vector<render::shape>& shapes, std::vector<render:
         .origin = v,
         .rotation = r,
         .colour0 = c,
-        .z_index = z,
+        .z = z,
         .trail = render::motion_trail{.prev_origin = v - vv, .prev_colour0 = c},
         .data = render::box{.dimensions = d, .line_width = lw},
     });
@@ -244,7 +244,7 @@ void RenderState::render(std::vector<render::shape>& shapes, std::vector<render:
       shapes.emplace_back(render::shape{
           .origin = star.position,
           .colour0 = star.colour,
-          .z_index = colour::kZParticle,
+          .z = colour::kZParticle,
           .trail = render::motion_trail{.prev_origin = star.position - star_direction_ * star.speed,
                                         .prev_colour0 = star.colour},
           .data = render::ngon{.radius = star.size, .sides = 8},
@@ -267,7 +267,7 @@ void RenderState::render(std::vector<render::shape>& shapes, std::vector<render:
           .origin = p.position,
           .rotation = d->rotation,
           .colour0 = colour,
-          .z_index = colour::kZParticle,
+          .z = colour::kZParticle,
           .trail = render::motion_trail{.prev_origin = p.position - p.velocity,
                                         .prev_rotation = d->rotation - d->angular_velocity,
                                         .prev_colour0 = colour},
@@ -279,7 +279,7 @@ void RenderState::render(std::vector<render::shape>& shapes, std::vector<render:
           .origin = p.position,
           .rotation = d->rotation,
           .colour0 = colour::alpha(colour::kOutline, a),
-          .z_index = colour::kZParticleOutline,
+          .z = colour::kZParticleOutline,
           .trail = render::motion_trail{.prev_origin = p.position - p.velocity,
                                         .prev_rotation = d->rotation - d->angular_velocity,
                                         .prev_colour0 = colour},
@@ -291,8 +291,8 @@ void RenderState::render(std::vector<render::shape>& shapes, std::vector<render:
           .origin = p.position,
           .rotation = d->rotation,
           .colour0 = colour,
-          .z_index = p.flash_time && p.time <= p.flash_time / 2 ? colour::kZParticleFlash
-                                                                : colour::kZParticle,
+          .z = p.flash_time && p.time <= p.flash_time / 2 ? colour::kZParticleFlash
+                                                          : colour::kZParticle,
           .trail = render::motion_trail{.prev_origin = p.position - p.velocity,
                                         .prev_rotation = d->rotation - d->angular_velocity,
                                         .prev_colour0 = colour},
@@ -305,7 +305,7 @@ void RenderState::render(std::vector<render::shape>& shapes, std::vector<render:
       fx.emplace_back(render::fx{
           .style = d->style,
           .time = p.time * d->anim_speed,
-          .z_index = p.z_index,
+          .z = p.z,
           .colour = {colour.x, colour.y, colour.z, glm::mix(d->value, d->end_value, t)},
           .seed = d->seed,
           .data =

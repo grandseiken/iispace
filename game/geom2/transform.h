@@ -6,8 +6,7 @@
 namespace ii::geom2 {
 
 struct transform {
-  constexpr transform(const vec2& v = vec2{0}, fixed r = 0)
-  : v{v}, r{r} {}
+  constexpr transform(const vec2& v = vec2{0}, fixed r = 0) : v{v}, r{r} {}
   vec2 v;
   fixed r;
 

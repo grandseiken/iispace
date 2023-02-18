@@ -8,6 +8,7 @@
 #include <variant>
 
 namespace ii::render {
+enum class tag_t : std::uint32_t {};
 enum class flag : std::uint32_t {
   kNone = 0b00000000,
   kNoFlash = 0b00000001,
@@ -19,6 +20,8 @@ enum class flag : std::uint32_t {
 namespace ii {
 template <>
 struct bitmask_enum<render::flag> : std::true_type {};
+template <>
+struct integral_enum<render::tag_t> : std::true_type {};
 }  // namespace ii
 
 namespace ii::render {
@@ -91,34 +94,34 @@ struct shape {
   float rotation = 0.f;
   cvec4 colour0{0.f};
   std::optional<cvec4> colour1;
-  float z_index = 0.f;
-  unsigned char s_index = 0;
+  float z = 0.f;
+  tag_t tag = tag_t{0};
   flag flags = flag::kNone;
   std::optional<motion_trail> trail;
   shape_data data;
 
   // TODO: move all these functions somewhere else?
   static shape line(const fvec2& a, const fvec2& b, const cvec4& c, float z = 0.f,
-                    float width = 1.f, unsigned char index = 0) {
+                    float width = 1.f, tag_t tag = tag_t{0}) {
     return shape{
         .origin = (a + b) / 2.f,
         .rotation = angle(b - a),
         .colour0 = c,
-        .z_index = z,
-        .s_index = index,
+        .z = z,
+        .tag = tag,
         .data = render::line{.radius = distance(a, b) / 2.f, .line_width = width},
     };
   }
 
   static shape line(const fvec2& a, const fvec2& b, const cvec4& c0, const cvec4& c1, float z = 0.f,
-                    float width = 1.f, unsigned char index = 0) {
+                    float width = 1.f, tag_t tag = tag_t{0}) {
     return shape{
         .origin = (a + b) / 2.f,
         .rotation = angle(b - a),
         .colour0 = c0,
         .colour1 = c1,
-        .z_index = z,
-        .s_index = index,
+        .z = z,
+        .tag = tag,
         .data = render::line{.radius = distance(a, b) / 2.f, .line_width = width},
     };
   }
@@ -127,7 +130,7 @@ struct shape {
     if (+(flags & flag::kNoFlash)) {
       return;
     }
-    z_index += a;
+    z += a;
     auto w = std::max(0.f, 3.f * (a - .5f));
     auto l = a / 4.f;
     if (auto* p = std::get_if<render::ngon>(&data); p) {
@@ -163,8 +166,8 @@ struct shape {
     } else {
       return false;
     }
-    copy.s_index += 'S';
-    z_index += a;
+    copy.tag += tag_t{'S'};
+    z += a;
     copy.colour0 = colour::alpha(copy.colour0, a);
     colour0 = colour::linear_mix(colour0, colour::kWhite1, a * a);
     if (copy.colour1) {

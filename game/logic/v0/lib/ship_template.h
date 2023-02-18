@@ -3,9 +3,9 @@
 #include "game/common/colour.h"
 #include "game/common/math.h"
 #include "game/geom2/enums.h"
+#include "game/geom2/resolve.h"
 #include "game/geometry/node.h"
 #include "game/geometry/node_transform.h"
-#include "game/geometry/resolve.h"
 #include "game/logic/ecs/call.h"
 #include "game/logic/ecs/index.h"
 #include "game/logic/sim/sim_interface.h"
@@ -35,7 +35,7 @@ auto get_shape_parameters(ecs::const_handle h) {
 }
 
 inline geom::resolve_result& local_resolve() {
-  static thread_local geom::resolve_result r;
+  static thread_local geom2::resolve_result r;
   r.entries.clear();
   return r;
 }

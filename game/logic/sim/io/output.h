@@ -84,7 +84,7 @@ struct render_output {
 struct transient_render_state {
   using index_value = std::vector<std::optional<render::motion_trail>>;
   struct entity_state {
-    std::unordered_map<unsigned char, index_value> trails;
+    std::unordered_map<render::tag_t, index_value> trails;
   };
   std::unordered_map<std::uint32_t, entity_state> entity_map;
 };

@@ -287,7 +287,7 @@ struct Tractor : ecs::component {
       sim.index().iterate_dispatch<Player>([&](const Player& pc, const Transform& p_transform) {
         // TODO: better effect.
         if ((timer + 2 * pc.player_number) % 8 < 4 && !pc.is_killed) {
-          unsigned char index = 'p' + pc.player_number;
+          auto index = render::tag_t{'p' + pc.player_number};
           output.emplace_back(render::shape::line(to_float(transform.centre),
                                                   to_float(p_transform.centre), c,
                                                   colour::kZEffect0, 1.f, index));

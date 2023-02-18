@@ -259,9 +259,9 @@ struct TractorBoss : ecs::component {
         (!stopped && (move_away || !will_attack) && sim.is_on_screen(transform.centre))) {
       for (std::size_t i = 0; i < targets.size(); ++i) {
         if (((timer + i * 4) / 4) % 2) {
-          output.emplace_back(render::shape::line(to_float(transform.centre), to_float(targets[i]),
-                                                  c0, 0.f, 1.f,
-                                                  static_cast<unsigned char>(1 + timer % 8)));
+          output.emplace_back(
+              render::shape::line(to_float(transform.centre), to_float(targets[i]), c0, 0.f, 1.f,
+                                  render::tag_t{static_cast<unsigned char>(1 + timer % 8)}));
         }
       }
     }

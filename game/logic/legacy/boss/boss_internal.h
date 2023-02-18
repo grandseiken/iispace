@@ -32,15 +32,15 @@ void boss_on_destroy(ecs::const_handle h, const Transform& transform, SimInterfa
   auto& r = resolve_entity_shape<Logic, S>(h);
   std::optional<cvec4> boss_colour;
   for (const auto& e : r.entries) {
-    if (const auto* d = std::get_if<geom::ball_data>(&e.data); d && d->line.colour0.a) {
+    if (const auto* d = std::get_if<geom::resolve_result::ball>(&e.data); d && d->line.colour0.a) {
       boss_colour = d->line.colour0;
       break;
     }
-    if (const auto* d = std::get_if<geom::box_data>(&e.data); d && d->line.colour0.a) {
+    if (const auto* d = std::get_if<geom::resolve_result::box>(&e.data); d && d->line.colour0.a) {
       boss_colour = d->line.colour0;
       break;
     }
-    if (const auto* d = std::get_if<geom::ngon_data>(&e.data); d && d->line.colour0.a) {
+    if (const auto* d = std::get_if<geom::resolve_result::ngon>(&e.data); d && d->line.colour0.a) {
       boss_colour = d->line.colour0;
       break;
     }

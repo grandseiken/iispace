@@ -3,9 +3,9 @@
 #include "game/common/colour.h"
 #include "game/common/math.h"
 #include "game/geom2/enums.h"
+#include "game/geom2/resolve.h"
 #include "game/geometry/node.h"
 #include "game/geometry/node_transform.h"
-#include "game/geometry/resolve.h"
 #include "game/logic/ecs/call.h"
 #include "game/logic/ecs/index.h"
 #include "game/logic/legacy/components.h"
@@ -31,7 +31,7 @@ auto get_shape_parameters(ecs::const_handle h) {
 }
 
 inline geom::resolve_result& local_resolve() {
-  static thread_local geom::resolve_result r;
+  static thread_local geom2::resolve_result r;
   r.entries.clear();
   return r;
 }
@@ -163,24 +163,24 @@ ship_check_collision_legacy(ecs::const_handle h, const geom::iterate_check_colli
 //////////////////////////////////////////////////////////////////////////////////
 // Rendering.
 //////////////////////////////////////////////////////////////////////////////////
-void render_shape(std::vector<render::shape>& output, const geom::resolve_result& r,
-                  float z_index = 0.f, const std::optional<float>& hit_alpha = std::nullopt,
+void render_shape(std::vector<render::shape>& output, const geom::resolve_result& r, float z = 0.f,
+                  const std::optional<float>& hit_alpha = std::nullopt,
                   const std::optional<cvec4>& c_override = std::nullopt,
                   const std::optional<std::size_t>& c_override_max_index = std::nullopt);
 
 template <geom::ShapeNode S>
-void render_shape(std::vector<render::shape>& output, const auto& parameters, float z_index = 0.f,
+void render_shape(std::vector<render::shape>& output, const auto& parameters, float z = 0.f,
                   const std::optional<float>& hit_alpha = std::nullopt,
                   const std::optional<cvec4>& c_override = std::nullopt,
                   const std::optional<std::size_t>& c_override_max_index = std::nullopt) {
   auto& r = local_resolve();
   resolve_shape<S>(parameters, r);
-  render_shape(output, r, z_index, hit_alpha, c_override, c_override_max_index);
+  render_shape(output, r, z, hit_alpha, c_override, c_override_max_index);
 }
 
 template <geom::ShapeNode S>
 void render_entity_shape_override(std::vector<render::shape>& output, const Health* health,
-                                  const auto& parameters, float z_index = 0.f,
+                                  const auto& parameters, float z = 0.f,
                                   const std::optional<cvec4>& colour_override = std::nullopt) {
   std::optional<float> hit_alpha;
   std::optional<std::size_t> c_override_max_index;
@@ -188,7 +188,7 @@ void render_entity_shape_override(std::vector<render::shape>& output, const Heal
     hit_alpha = std::min(1.f, health->hit_timer / 10.f);
     c_override_max_index = health->hit_flash_ignore_index;
   }
-  render_shape<S>(output, parameters, z_index, hit_alpha, colour_override, c_override_max_index);
+  render_shape<S>(output, parameters, z, hit_alpha, colour_override, c_override_max_index);
 }
 
 template <ecs::Component Logic, geom::ShapeNode S = typename Logic::shape>

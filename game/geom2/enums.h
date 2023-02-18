@@ -26,7 +26,8 @@ struct bitmask_enum<shape_flag> : std::true_type {};
 
 namespace ii::geom2 {
 using render::ngon_style;
-enum class tag_t : unsigned char {};
+using render::tag_t;
+using render_flag = render::flag;
 }  // namespace ii::geom2
 
 #endif

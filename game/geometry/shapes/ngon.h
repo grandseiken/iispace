@@ -12,12 +12,7 @@
 namespace ii::geom {
 using render::ngon_style;
 
-struct ngon_dimensions {
-  fixed radius = 0;
-  fixed inner_radius = 0;
-  std::uint32_t sides = 0;
-  std::uint32_t segments = sides;
-};
+using ngon_dimensions = geom2::resolve_result::ngon_dimensions;
 
 struct ngon_line_style : line_style {
   ngon_style style = ngon_style::kPolygon;
@@ -33,23 +28,23 @@ nd2(fixed radius, fixed inner_radius, std::uint32_t sides, std::uint32_t segment
 }
 
 constexpr ngon_line_style
-nline(const cvec4& colour = cvec4{0.f}, float z = 0.f, float width = 1.f, unsigned char index = 0) {
-  return {{.colour0 = colour, .colour1 = colour, .z = z, .width = width, .index = index}};
+nline(const cvec4& colour = cvec4{0.f}, float z = 0.f, float width = 1.f) {
+  return {{.colour0 = colour, .colour1 = colour, .z = z, .width = width}};
 }
 
-constexpr ngon_line_style nline(const cvec4& colour0, const cvec4& colour1, float z = 0.f,
-                                float width = 1.f, unsigned char index = 0) {
-  return {{.colour0 = colour0, .colour1 = colour1, .z = z, .width = width, .index = index}};
+constexpr ngon_line_style
+nline(const cvec4& colour0, const cvec4& colour1, float z = 0.f, float width = 1.f) {
+  return {{.colour0 = colour0, .colour1 = colour1, .z = z, .width = width}};
 }
 
-constexpr ngon_line_style nline(ngon_style style, const cvec4& colour, float z = 0.f,
-                                float width = 1.f, unsigned char index = 0) {
-  return {{.colour0 = colour, .colour1 = colour, .z = z, .width = width, .index = index}, style};
+constexpr ngon_line_style
+nline(ngon_style style, const cvec4& colour, float z = 0.f, float width = 1.f) {
+  return {{.colour0 = colour, .colour1 = colour, .z = z, .width = width}, style};
 }
 
 constexpr ngon_line_style nline(ngon_style style, const cvec4& colour0, const cvec4& colour1,
-                                float z = 0.f, float width = 1.f, unsigned char index = 0) {
-  return {{.colour0 = colour0, .colour1 = colour1, .z = z, .width = width, .index = index}, style};
+                                float z = 0.f, float width = 1.f) {
+  return {{.colour0 = colour0, .colour1 = colour1, .z = z, .width = width}, style};
 }
 
 //////////////////////////////////////////////////////////////////////////////////
@@ -89,26 +84,31 @@ struct ngon_data : shape_data_base {
   ngon_dimensions dimensions;
   ngon_line_style line;
   fill_style fill;
+  render::tag_t tag = render::tag_t{0};
   render::flag flags = render::flag::kNone;
 
   void iterate(iterate_resolve_t, const transform& t, resolve_result& r) const;
 };
 
 constexpr ngon_data make_ngon(ngon_dimensions dimensions, ngon_line_style line,
-                              fill_style fill = sfill(), render::flag flags = render::flag::kNone) {
-  return {{}, dimensions, line, fill, flags};
+                              fill_style fill = sfill(), render::tag_t tag = render::tag_t{0},
+                              render::flag flags = render::flag::kNone) {
+  return {{}, dimensions, line, fill, tag, flags};
 }
 
 template <Expression<ngon_dimensions>, Expression<ngon_line_style>,
           Expression<fill_style> = constant<sfill()>,
+          Expression<render::tag_t> = constant<render::tag_t{0}>,
           Expression<render::flag> = constant<render::flag::kNone>>
 struct ngon_eval : shape_node {};
 
 template <Expression<ngon_dimensions> Dimensions, Expression<ngon_line_style> Line,
-          Expression<fill_style> Fill, Expression<render::flag> RFlags>
-constexpr auto evaluate(ngon_eval<Dimensions, Line, Fill, RFlags>, const auto& params) {
+          Expression<fill_style> Fill, Expression<render::tag_t> Tag,
+          Expression<render::flag> RFlags>
+constexpr auto evaluate(ngon_eval<Dimensions, Line, Fill, Tag, RFlags>, const auto& params) {
   return make_ngon(evaluate(Dimensions{}, params), evaluate(Line{}, params),
-                   evaluate(Fill{}, params), render::flag{evaluate(RFlags{}, params)});
+                   evaluate(Fill{}, params), render::tag_t{evaluate(Tag{}, params)},
+                   render::flag{evaluate(RFlags{}, params)});
 }
 
 //////////////////////////////////////////////////////////////////////////////////
@@ -118,7 +118,7 @@ template <ngon_dimensions Dimensions, shape_flag Flags = shape_flag::kNone>
 using ngon_collider = constant<make_ngon_collider(Dimensions, Flags)>;
 template <ngon_dimensions Dimensions, ngon_line_style Line, fill_style Fill = sfill(),
           render::flag RFlags = render::flag::kNone>
-using ngon = constant<make_ngon(Dimensions, Line, Fill, RFlags)>;
+using ngon = constant<make_ngon(Dimensions, Line, Fill, render::tag_t{0}, RFlags)>;
 template <ngon_dimensions Dimensions, ngon_line_style Line, fill_style Fill,
           shape_flag Flags = shape_flag::kNone, render::flag RFlags = render::flag::kNone>
 using ngon_with_collider =
@@ -126,13 +126,14 @@ using ngon_with_collider =
 
 template <ngon_dimensions Dimensions, std::size_t N, ngon_line_style Line = nline(),
           render::flag RFlags = render::flag::kNone>
-using ngon_colour_p =
-    ngon_eval<constant<Dimensions>, set_colour_p<Line, N>, constant<sfill()>, constant<RFlags>>;
+using ngon_colour_p = ngon_eval<constant<Dimensions>, set_colour_p<Line, N>, constant<sfill()>,
+                                constant<render::tag_t{0}>, constant<RFlags>>;
 template <ngon_dimensions Dimensions, std::size_t N0, std::size_t N1,
           ngon_line_style Line = nline(), fill_style Fill = sfill(),
           render::flag RFlags = render::flag::kNone>
-using ngon_colour_p2 = ngon_eval<constant<Dimensions>, set_colour_p<Line, N0>,
-                                 set_colour_p<Fill, N1>, constant<RFlags>>;
+using ngon_colour_p2 =
+    ngon_eval<constant<Dimensions>, set_colour_p<Line, N0>, set_colour_p<Fill, N1>,
+              constant<render::tag_t{0}>, constant<RFlags>>;
 
 }  // namespace ii::geom
 

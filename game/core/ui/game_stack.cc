@@ -166,7 +166,7 @@ void GameStack::render(render::GlRenderer& renderer) const {
         render::shape{
             .origin = origin + fvec2{2.f, 3.f},
             .colour0 = {0.f, 0.f, 0.f, .25f},
-            .z_index = 127.5f,
+            .z = 127.5f,
             .trail = trail
                 ? std::make_optional(render::motion_trail{trail->prev_origin + fvec2{2.f, 3.f}})
                 : std::nullopt,
@@ -175,20 +175,20 @@ void GameStack::render(render::GlRenderer& renderer) const {
         render::shape{
             .origin = origin,
             .colour0 = {hue, .5f, .5f, 1.f},
-            .z_index = 127.6f,
+            .z = 127.6f,
             .data = render::ngon{.radius = radius, .sides = 3, .line_width = radius / 2},
         },
         render::shape{
             .origin = origin,
             .colour0 = {0.f, 0.f, 0.f, 1.f},
-            .z_index = 128.f,
+            .z = 128.f,
             .trail = trail,
             .data = render::ngon{.radius = radius, .sides = 3, .line_width = 1.5f},
         },
         render::shape{
             .origin = origin,
             .colour0 = {hue, .5f, .85f, 1.f},
-            .z_index = 127.8f,
+            .z = 127.8f,
             .data = render::ngon{.radius = radius * flash,
                                  .sides = 3,
                                  .line_width = std::min(radius * flash / 2.f, 1.5f)},

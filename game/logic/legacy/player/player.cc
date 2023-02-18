@@ -130,13 +130,16 @@ struct PlayerLogic : ecs::component {
   static constexpr std::uint32_t kShieldTime = 50;
   static constexpr std::uint32_t kShotTimer = 4;
 
-  using shield = if_p<2, ngon_colour_p<nd(16, 10), 6, nline(colour::kZero, 0.f, 1.f, 's')>>;
-  using bomb = if_p<
-      3,
-      translate<-8, 0,
-                rotate<pi<fixed>,
-                       ngon_colour_p<nd(6, 5), 6,
-                                     nline(ngon_style::kPolystar, colour::kZero, 0.f, 1.f, 'b')>>>>;
+  using shield = if_p<2,
+                      ngon_eval<constant<nd(16, 10)>, set_colour_p<nline(colour::kZero), 6>,
+                                constant<sfill()>, constant<render::tag_t{'s'}>>>;
+  using bomb =
+      if_p<3,
+           translate<-8, 0,
+                     rotate<pi<fixed>,
+                            ngon_eval<constant<nd(6, 5)>,
+                                      set_colour_p<nline(ngon_style::kPolystar, colour::kZero), 6>,
+                                      constant<sfill()>, constant<render::tag_t{'b'}>>>>>;
   using box_shapes = translate<8, 0, rotate_eval<negate_p<1>, box_colour_p<vec2{2, 2}, 4>>,
                                rotate_eval<negate_p<1>, box_colour_p<vec2{1, 1}, 5>>,
                                rotate_eval<negate_p<1>, box_colour_p<vec2{3, 3}, 5>>>;
@@ -319,8 +322,8 @@ struct PlayerLogic : ecs::component {
     output.emplace_back(render::shape{
         .origin = t,
         .colour0 = c,
-        .z_index = 100.f,
-        .s_index = 't',
+        .z = 100.f,
+        .tag = render::tag_t{'t'},
         .data = render::ngon{.radius = 8, .sides = 4, .style = render::ngon_style::kPolystar},
     });
   }

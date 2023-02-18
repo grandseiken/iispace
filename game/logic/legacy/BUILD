@@ -38,7 +38,6 @@ cc_library(
     ":components",
     "//game/common:math",
     "//game/geometry",
-    "//game/geometry:resolve",
     "//game/logic/ecs",
     "//game/logic/sim:sim_interface",
     "@static_functional",

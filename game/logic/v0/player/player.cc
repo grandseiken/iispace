@@ -299,8 +299,8 @@ struct PlayerLogic : ecs::component {
       output.emplace_back(render::shape{
           .origin = to_float(fire_target),
           .colour0 = v0_player_colour(pc.player_number),
-          .z_index = 100.f,
-          .s_index = 't',
+          .z = 100.f,
+          .tag = render::tag_t{'t'},
           .data = render::ngon{.radius = 8, .sides = 4, .style = render::ngon_style::kPolystar},
       });
     }
@@ -316,16 +316,16 @@ struct PlayerLogic : ecs::component {
             .origin = to_float(transform.centre),
             .rotation = rotation + static_cast<float>(j) * 2.f * pi<float> / 3.f,
             .colour0 = colour::kWhite1,
-            .z_index = colour::kZPlayerPowerup,
-            .s_index = 's',
+            .z = colour::kZPlayerPowerup,
+            .tag = render::tag_t{'s'},
             .data = render::ngon{.radius = 20.f + 1.5f * i, .sides = 18, .segments = 4},
         });
         output.emplace_back(render::shape{
             .origin = to_float(transform.centre),
             .rotation = rotation + static_cast<float>(j) * 2.f * pi<float> / 3.f,
             .colour0 = colour::kOutline,
-            .z_index = colour::kZOutline,
-            .s_index = 's',
+            .z = colour::kZOutline,
+            .tag = render::tag_t{'s'},
             .data =
                 render::ngon{
                     .radius = 21.5f + 1.5f * i, .sides = 18, .segments = 4, .line_width = 1.5f},
@@ -340,8 +340,8 @@ struct PlayerLogic : ecs::component {
           .origin = to_float(transform.centre + ::rotate(v, transform.rotation)),
           .rotation = transform.rotation.to_float(),
           .colour0 = colour::kWhite0,
-          .z_index = colour::kZPlayerPowerup,
-          .s_index = 'b',
+          .z = colour::kZPlayerPowerup,
+          .tag = render::tag_t{'b'},
           .data = render::ngon{.radius = 3.f, .sides = 6},
       });
     }

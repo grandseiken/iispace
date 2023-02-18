@@ -8,10 +8,7 @@
 
 namespace ii::geom {
 
-struct ball_dimensions {
-  fixed radius = 0;
-  fixed inner_radius = 0;
-};
+using ball_dimensions = geom2::resolve_result::ball_dimensions;
 
 constexpr ball_dimensions bd(fixed radius = 0, fixed inner_radius = 0) {
   return {radius, inner_radius};

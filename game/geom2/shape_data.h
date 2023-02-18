@@ -57,24 +57,24 @@ struct ball {
   ball_dimensions dimensions;
   line_style line;
   fill_style fill;
-  value<tag_t> tag = tag_t{'0'};
-  value<render::flag> flags = render::flag::kNone;
+  value<tag_t> tag = tag_t{0};
+  value<render_flag> flags = render_flag::kNone;
 };
 
 struct box {
   value<vec2> dimensions = vec2{0};
   line_style line;
   fill_style fill;
-  value<tag_t> tag = tag_t{'0'};
-  value<render::flag> flags = render::flag::kNone;
+  value<tag_t> tag = tag_t{0};
+  value<render_flag> flags = render_flag::kNone;
 };
 
 struct line {
   value<vec2> a = vec2{0};
   value<vec2> b = vec2{0};
   line_style style;
-  value<tag_t> tag = tag_t{'0'};
-  value<render::flag> flags = render::flag::kNone;
+  value<tag_t> tag = tag_t{0};
+  value<render_flag> flags = render_flag::kNone;
 };
 
 struct ngon {
@@ -82,8 +82,8 @@ struct ngon {
   value<ngon_style> style = ngon_style::kPolygon;
   line_style line;
   fill_style fill;
-  value<tag_t> tag = tag_t{'0'};
-  value<render::flag> flags = render::flag::kNone;
+  value<tag_t> tag = tag_t{0};
+  value<render_flag> flags = render_flag::kNone;
 };
 
 //////////////////////////////////////////////////////////////////////////////////
