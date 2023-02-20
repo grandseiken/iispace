@@ -12,6 +12,21 @@
 
 namespace ii::geom2 {
 
+enum class node_type : std::uint32_t {
+  kNone = 0x0,
+  kCollision = 0x1,
+  kResolve = 0x2,
+};
+
+}  // namespace ii::geom2
+
+namespace ii {
+template <>
+struct bitmask_enum<geom2::node_type> : std::true_type {};
+}  // namespace ii
+
+namespace ii::geom2 {
+
 class ShapeBank {
 public:
   ShapeBank() = default;
@@ -21,7 +36,7 @@ public:
   ShapeBank& operator=(const ShapeBank&) = delete;
 
   using node_data = std::variant<ball_collider, box_collider, ngon_collider, ball, box, line, ngon,
-                                 compound, enable, translate, rotate>;
+                                 compound, enable, translate, rotate, translate_rotate>;
 
   class node {
   private:
@@ -35,14 +50,16 @@ public:
     node(access_tag, ShapeBank* bank, const node_data& data) : bank_{bank}, data_{data} {}
 
     std::size_t size() const { return children_.size(); }
+    node_type type() const { return type_; }
     node& operator[](std::size_t i) { return *children_[i]; }
     const node& operator[](std::size_t i) const { return *children_[i]; }
     const node_data& operator*() const { return data_; }
     const node_data* operator->() const { return &data_; }
+    node& create(const node_data& data) { return bank_->add(data); }
     void add(node& child) { children_.emplace_back(&child); }
 
     node& add(const node_data& data) {
-      auto& child = bank_->add(data);
+      auto& child = create(data);
       add(child);
       return child;
     }
@@ -51,6 +68,7 @@ public:
     friend class ShapeBank;
     ShapeBank* bank_ = nullptr;
     node_data data_;
+    node_type type_ = node_type::kNone;
     std::vector<node*> children_;
   };
 
@@ -61,20 +79,21 @@ public:
     }
     auto& node = add(compound{});
     construct(node);
+    optimize(node);
     map_[construct] = &node;
     return node;
   }
 
   template <typename F>
   parameter_set& parameters(F&& set_function) {
-    parameters_.clear();
     set_function(parameters_);
     return parameters_;
   }
 
+private:
+  static node_type optimize(node&);
   node& add(const node_data& data) { return {data_.emplace_back(node::access_tag{}, this, data)}; }
 
-private:
   parameter_set parameters_;
   std::deque<node> data_;
   std::unordered_map<node_construct_t, node*> map_;

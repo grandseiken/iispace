@@ -35,6 +35,30 @@ struct ngon_dimensions {
   value<std::uint32_t> segments = sides;
 };
 
+inline constexpr line_style sline(const cvec4& colour, float z, float width = 1.f) {
+  return {.colour0 = colour, .z = z, .width = width};
+}
+
+inline constexpr fill_style sfill(const cvec4& colour, float z) {
+  return {.colour0 = colour, .z = z};
+}
+
+inline constexpr ball_dimensions bd(fixed radius, fixed inner_radius = 0) {
+  return {.radius = radius, .inner_radius = inner_radius};
+}
+
+inline constexpr ngon_dimensions nd(fixed radius, std::uint32_t sides, std::uint32_t segments = 0) {
+  return {.radius = radius, .sides = sides, .segments = segments ? segments : sides};
+}
+
+inline constexpr ngon_dimensions
+nd2(fixed radius, fixed inner_radius, std::uint32_t sides, std::uint32_t segments = 0) {
+  return {.radius = radius,
+          .inner_radius = inner_radius,
+          .sides = sides,
+          .segments = segments ? segments : sides};
+}
+
 //////////////////////////////////////////////////////////////////////////////////
 // Shape definitions.
 //////////////////////////////////////////////////////////////////////////////////
@@ -97,6 +121,11 @@ struct translate {
 
 struct rotate {
   value<fixed> x = 0_fx;
+};
+
+struct translate_rotate {
+  value<vec2> v = vec2{0};
+  value<fixed> r = 0_fx;
 };
 
 struct enable {

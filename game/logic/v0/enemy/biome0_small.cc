@@ -30,28 +30,21 @@ struct Follow : ecs::component {
 
   template <fixed Width>
   static void construct_shape(node& root) {
-    auto& n = root.add(translate{key{'v'}}).add(rotate{key{'r'}});
-    n.add(ngon{
-        .dimensions = {.radius = Width + 2, .sides = 4},
-        .line = {.colour0 = colour::kOutline, .z = colour::kZOutline, .width = 2.f},
-    });
-    n.add(ngon{
-        .dimensions = {.radius = Width, .sides = 4},
-        .line = {.colour0 = geom2::key{'c'}, .z = z, .width = 1.5f},
-        .fill = {.colour0 = geom2::key{'f'}, .z = z},
-    });
-    n.add(ngon_collider{
-        .dimensions = {.radius = Width, .sides = 4},
-        .flags = kFlags,
-    });
+    auto& n = root.add(translate_rotate{.v = key{'v'}, .r = key{'r'}});
+    n.add(ngon{.dimensions = nd(Width + 2, 4),
+               .line = sline(colour::kOutline, colour::kZOutline, 2.f)});
+    n.add(ngon{.dimensions = nd(Width, 4),
+               .line = {.colour0 = key{'c'}, .z = z, .width = 1.5f},
+               .fill = {.colour0 = key{'f'}, .z = z}});
+    n.add(ngon_collider{.dimensions = nd(Width, 4), .flags = kFlags});
   }
 
   void set_parameters(const Transform& transform, const ColourOverride* colour,
-                      geom2::parameter_set& parameters) const {
-    parameters.add(key{'v'}, transform.centre);
-    parameters.add(key{'r'}, transform.rotation);
-    parameters.add(key{'c'}, colour ? colour->colour : c);
-    parameters.add(key{'f'}, colour ? colour::alpha(colour->colour, colour::kFillAlpha0) : cf);
+                      parameter_set& parameters) const {
+    parameters.add(key{'v'}, transform.centre)
+        .add(key{'r'}, transform.rotation)
+        .add(key{'c'}, colour ? colour->colour : c)
+        .add(key{'f'}, colour ? colour::alpha(colour->colour, colour::kFillAlpha0) : cf);
   }
 
   Follow(std::uint32_t size, std::optional<vec2> direction, bool in_formation)
@@ -208,26 +201,18 @@ struct Chaser : ecs::component {
 
   template <fixed Width>
   static void construct_shape(node& root) {
-    auto& n = root.add(translate{key{'v'}}).add(rotate{key{'r'}});
-    n.add(ngon{
-        .dimensions = {.radius = Width + 2, .sides = 4},
-        .line = {.colour0 = colour::kOutline, .z = colour::kZOutline, .width = 2.f},
-    });
-    n.add(ngon{
-        .dimensions = {.radius = Width, .sides = 4},
-        .style = ngon_style::kPolygram,
-        .line = {.colour0 = c, .z = z},
-        .fill = {.colour0 = cf, .z = z},
-    });
-    n.add(ngon_collider{
-        .dimensions = {.radius = Width, .sides = 4},
-        .flags = kFlags,
-    });
+    auto& n = root.add(translate_rotate{.v = key{'v'}, .r = key{'r'}});
+    n.add(ngon{.dimensions = nd(Width + 2, 4),
+               .line = sline(colour::kOutline, colour::kZOutline, 2.f)});
+    n.add(ngon{.dimensions = nd(Width, 4),
+               .style = ngon_style::kPolygram,
+               .line = sline(c, z),
+               .fill = sfill(cf, z)});
+    n.add(ngon_collider{.dimensions = nd(Width, 4), .flags = kFlags});
   }
 
   void set_parameters(const Transform& transform, parameter_set& parameters) const {
-    parameters.add(key{'v'}, transform.centre);
-    parameters.add(key{'r'}, transform.rotation);
+    parameters.add(key{'v'}, transform.centre).add(key{'r'}, transform.rotation);
   }
 
   Chaser(std::uint32_t size, std::uint32_t stagger)
@@ -344,34 +329,24 @@ struct FollowSponge : ecs::component {
   static constexpr auto cf = colour::alpha(c, colour::kFillAlpha0);
 
   static void construct_shape(node& root) {
-    auto& n = root.add(translate{key{'v'}}).add(rotate{key{'r'}});
-    n.add(ngon{
-        .dimensions = {.radius = key{'2'}, .inner_radius = 10_fx, .sides = 6},
-        .line = {.colour0 = colour::kOutline, .z = colour::kZOutline, .width = 2.f},
-    });
-    n.add(ngon{
-        .dimensions = {.radius = key{'0'}, .sides = 6},
-        .line = {.colour0 = c, .z = z, .width = 1.25f},
-    });
-    n.add(ngon{
-        .dimensions = {.radius = key{'1'}, .inner_radius = 12_fx, .sides = 6},
-        .line = {.colour0 = c, .z = z, .width = 2.f},
-        .fill = {.colour0 = cf, .z = z},
-    });
-    n.add(ngon_collider{
-        .dimensions = {.radius = key{'1'}, .sides = 6},
-        .flags = kFlags,
-    });
+    auto& n = root.add(translate_rotate{.v = key{'v'}, .r = key{'r'}});
+    n.add(ngon{.dimensions = {.radius = key{'2'}, .inner_radius = 10_fx, .sides = 6},
+               .line = sline(colour::kOutline, colour::kZOutline, 2.f)});
+    n.add(ngon{.dimensions = {.radius = key{'0'}, .sides = 6}, .line = sline(c, z, 1.25f)});
+    n.add(ngon{.dimensions = {.radius = key{'1'}, .inner_radius = 12_fx, .sides = 6},
+               .line = sline(c, z, 2.f),
+               .fill = sfill(cf, z)});
+    n.add(ngon_collider{.dimensions = {.radius = key{'1'}, .sides = 6}, .flags = kFlags});
   }
 
   void set_parameters(const Transform& transform, parameter_set& parameters) const {
     auto anim_r = (14 + scale * kBoundingWidth) / 2 +
         (scale * kBoundingWidth - 22) * sin(fixed{anim} / 32) / 2;
-    parameters.add(key{'v'}, transform.centre);
-    parameters.add(key{'r'}, transform.rotation);
-    parameters.add(key{'0'}, anim_r);
-    parameters.add(key{'1'}, scale * kBoundingWidth);
-    parameters.add(key{'2'}, scale * kBoundingWidth + 2);
+    parameters.add(key{'v'}, transform.centre)
+        .add(key{'r'}, transform.rotation)
+        .add(key{'0'}, anim_r)
+        .add(key{'1'}, scale * kBoundingWidth)
+        .add(key{'2'}, scale * kBoundingWidth + 2);
   }
 
   FollowSponge() : spreader{.max_distance = 96_fx, .max_n = 4u} {}

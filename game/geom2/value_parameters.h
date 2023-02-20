@@ -1,6 +1,8 @@
 #ifndef II_GAME_GEOM2_VALUE_PARAMETERS_H
 #define II_GAME_GEOM2_VALUE_PARAMETERS_H
 #include "game/common/math.h"
+#include "game/common/variant_switch.h"
+#include <array>
 #include <cstdint>
 #include <type_traits>
 #include <unordered_map>
@@ -12,42 +14,39 @@ enum class key : unsigned char {};
 using parameter_value = std::variant<bool, std::uint32_t, fixed, vec2, float, cvec4>;
 
 struct parameter_set {
-  std::unordered_map<key, parameter_value> map;
-
-  void clear() { map.clear(); }
+  std::array<parameter_value, 256> map;
 
   template <typename T>
-  void add(key k, const T& value) {
+  parameter_set& add(key k, const T& value) {
     if constexpr (std::is_enum_v<T>) {
-      map.emplace(k,
-                  parameter_value{std::in_place_type_t<std::uint32_t>{},
-                                  static_cast<std::uint32_t>(value)});
+      map[static_cast<std::uint32_t>(k)] =
+          parameter_value{std::in_place_type_t<std::uint32_t>{}, static_cast<std::uint32_t>(value)};
     } else {
-      map.emplace(k, parameter_value{std::in_place_type_t<T>{}, value});
+      map[static_cast<std::uint32_t>(k)] = parameter_value{std::in_place_type_t<T>{}, value};
     }
+    return *this;
   }
 };
 
 template <typename T>
 struct value {
-  value(const T& x) : v{x} {}
-  value(key k) : v{k} {}
+  constexpr value(const T& x) : v{x} {}
+  constexpr value(key k) : v{k} {}
   std::variant<T, key> v;
 
-  T operator()(const parameter_set& parameters) const {
+  constexpr T operator()(const parameter_set& parameters) const {
     if (const auto* x = std::get_if<T>(&v)) {
       return *x;
     }
-    auto* k = std::get_if<key>(&v);
-    if (auto it = parameters.map.find(*k); it != parameters.map.end()) {
-      if constexpr (std::is_enum_v<T>) {
-        if (const auto* x = std::get_if<std::uint32_t>(&it->second)) {
-          return static_cast<T>(*x);
-        }
-      } else {
-        if (const auto* x = std::get_if<T>(&it->second)) {
-          return *x;
-        }
+    auto k = *std::get_if<key>(&v);
+    const auto& v = parameters.map[static_cast<std::uint32_t>(k)];
+    if constexpr (std::is_enum_v<T>) {
+      if (v.index() == variant_index<parameter_value, std::uint32_t>) {
+        return static_cast<T>(*std::get_if<std::uint32_t>(&v));
+      }
+    } else {
+      if (v.index() == variant_index<parameter_value, T>) {
+        return *std::get_if<T>(&v);
       }
     }
     return T{0};

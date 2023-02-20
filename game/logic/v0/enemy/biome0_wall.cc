@@ -1,19 +1,19 @@
 #include "game/common/colour.h"
-#include "game/geometry/node_conditional.h"
-#include "game/geometry/shapes/box.h"
 #include "game/logic/v0/enemy/enemy.h"
 #include "game/logic/v0/enemy/enemy_template.h"
 #include <algorithm>
 
 namespace ii::v0 {
 namespace {
-using namespace geom;
+using namespace geom2;
 
 struct Square : ecs::component {
-  static constexpr std::uint32_t kBoundingWidth = 14;
   static constexpr sound kDestroySound = sound::kEnemyDestroy;
   static constexpr rumble_type kDestroyRumble = rumble_type::kLow;
   static constexpr fixed kSpeed = 1_fx + 3_fx / 4_fx;
+  static constexpr fixed kBoundingWidth = 14;
+  static constexpr auto kFlags = shape_flag::kDangerous | shape_flag::kVulnerable;
+  static constexpr auto z = colour::kZEnemyWall;
 
   // TODO: box outline shadows have odd overlaps? Not really sure why since it
   // should line up exactly. Happens even when rotatated...
@@ -21,27 +21,38 @@ struct Square : ecs::component {
   // (so really outline is 4px and inner is 2px)?
   // Shadow overlap could be fixed by moving outlines/shadows into render::shapes (and only
   // putting out 1 shadow), but why is it overlapping to begin with?
-  static constexpr auto z = colour::kZEnemyWall;
-  using shape = standard_transform<
-      box_collider<vec2{12, 12}, shape_flag::kDangerous | shape_flag::kVulnerable>,
-      box<vec2{14, 14}, sline(colour::kOutline, colour::kZOutline, 2.f)>,
-      box_colour_p2<vec2{12, 12}, 2, 3, sline(colour::kZero, z, 1.5f), sfill(colour::kZero, z)>>;
+  static void construct_shape(node& root) {
+    auto& n = root.add(translate_rotate{.v = key{'v'}, .r = key{'r'}});
+    n.add(box_collider{.dimensions = vec2{12, 12}, .flags = kFlags});
+    n.add(box{
+        .dimensions = vec2{14, 14},
+        .line = {.colour0 = colour::kOutline, .z = colour::kZOutline, .width = 2.f},
+    });
+    n.add(box{
+        .dimensions = vec2{12, 12},
+        .line = {.colour0 = key{'c'}, .z = z, .width = 1.5f},
+        .fill = {.colour0 = key{'f'}, .z = z},
+    });
+  }
 
-  std::tuple<vec2, fixed, cvec4, cvec4>
-  shape_parameters(const Transform& transform, const Health& health) const {
+  void set_parameters(const Transform& transform, const Health& health,
+                      parameter_set& parameters) const {
     auto c = colour::kNewGreen0;
     if (health.hp && invisible_flash) {
       c = colour::alpha(c, (5.f + 3.f * std::cos(invisible_flash / pi<float>)) / 8.f);
     }
     auto cf = colour::alpha(c, colour::kFillAlpha0);
-    return {transform.centre, transform.rotation, c, cf};
+
+    parameters.add(key{'v'}, transform.centre)
+        .add(key{'r'}, transform.rotation)
+        .add(key{'c'}, c)
+        .add(key{'f'}, cf);
   }
 
+  Square(SimInterface& sim, const vec2& dir) : dir{dir}, timer{sim.random(80) + 40} {}
   vec2 dir{0};
   std::uint32_t timer = 0;
   std::uint32_t invisible_flash = 0;
-
-  Square(SimInterface& sim, const vec2& dir) : dir{dir}, timer{sim.random(80) + 40} {}
 
   void update(ecs::handle h, Transform& transform, Health& health, SimInterface& sim) {
     bool vulnerable = sim.global_entity().get<GlobalData>()->walls_vulnerable;
@@ -97,23 +108,40 @@ DEBUG_STRUCT_TUPLE(Square, dir, timer, invisible_flash);
 
 // TODO: should wall go faster offscreen?
 struct Wall : ecs::component {
-  static constexpr std::uint32_t kBoundingWidth = 60;
   static constexpr sound kDestroySound = sound::kEnemyDestroy;
   static constexpr rumble_type kDestroyRumble = rumble_type::kLow;
 
   static constexpr std::uint32_t kTimer = 100;
   static constexpr fixed kSpeed = 1;
+  static constexpr fixed kBoundingWidth = 60;
+  static constexpr auto kFlags =
+      shape_flag::kDangerous | shape_flag::kVulnerable | shape_flag::kWeakVulnerable;
 
   static constexpr auto z = colour::kZEnemyWall;
   static constexpr auto c = colour::kNewGreen0;
   static constexpr auto cf = colour::alpha(c, colour::kFillAlpha0);
-  using shape = standard_transform<
-      box<vec2{14, 50}, sline(colour::kOutline, colour::kZOutline, 2.f)>,
-      conditional_p<2,
-                    box_with_collider<vec2{12, 48}, sline(c, z, 1.75f), sfill(cf, z),
-                                      shape_flag::kDangerous | shape_flag::kWeakVulnerable>,
-                    box_with_collider<vec2{12, 48}, sline(c, z, 1.75f), sfill(cf, z),
-                                      shape_flag::kDangerous | shape_flag::kVulnerable>>>;
+
+  static void construct_shape(node& root) {
+    auto& n = root.add(translate_rotate{.v = key{'v'}, .r = key{'r'}});
+    n.add(box_collider{.dimensions = vec2{12, 48}, .flags = key{'C'}});
+    n.add(box{
+        .dimensions = vec2{14, 50},
+        .line = {.colour0 = colour::kOutline, .z = colour::kZOutline, .width = 2.f},
+    });
+    n.add(box{
+        .dimensions = vec2{12, 48},
+        .line = {.colour0 = c, .z = z, .width = 1.75f},
+        .fill = {.colour0 = cf, .z = z},
+    });
+  }
+
+  void set_parameters(const Transform& transform, parameter_set& parameters) const {
+    parameters.add(key{'v'}, transform.centre)
+        .add(key{'r'}, transform.rotation)
+        .add(key{'C'},
+             shape_flag::kDangerous |
+                 (weak ? shape_flag::kWeakVulnerable : shape_flag::kVulnerable));
+  }
 
   Wall(const vec2& dir, bool anti) : dir{dir}, anti{anti} {}
   vec2 dir{0};
@@ -121,10 +149,6 @@ struct Wall : ecs::component {
   bool is_rotating = false;
   bool anti = false;
   bool weak = false;
-
-  std::tuple<vec2, fixed, bool> shape_parameters(const Transform& transform) const {
-    return {transform.centre, transform.rotation, weak};
-  }
 
   void update(ecs::handle h, Transform& transform, Health& health, SimInterface& sim) {
     if (sim.global_entity().get<GlobalData>()->walls_vulnerable && timer && !(timer % 8)) {
@@ -186,8 +210,8 @@ DEBUG_STRUCT_TUPLE(Wall, dir, timer, is_rotating, anti);
 }  // namespace
 
 ecs::handle spawn_square(SimInterface& sim, const vec2& position, const vec2& dir, bool drop) {
-  auto h = create_ship_default<Square>(sim, position);
-  add_enemy_health<Square>(h, 32);
+  auto h = create_ship_default2<Square>(sim, position);
+  add_enemy_health2<Square>(h, 32);
   h.add(Square{sim, dir});
   h.add(Enemy{.threat_value = 2});
   h.add(WallTag{});
@@ -199,8 +223,8 @@ ecs::handle spawn_square(SimInterface& sim, const vec2& position, const vec2& di
 }
 
 ecs::handle spawn_wall(SimInterface& sim, const vec2& position, const vec2& dir, bool anti) {
-  auto h = create_ship_default<Wall>(sim, position);
-  add_enemy_health<Wall>(h, 80);
+  auto h = create_ship_default2<Wall>(sim, position);
+  add_enemy_health2<Wall>(h, 80);
   h.add(Wall{dir, anti});
   h.add(Enemy{.threat_value = 4});
   h.add(WallTag{});

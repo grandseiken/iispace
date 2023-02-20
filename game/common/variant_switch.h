@@ -21,8 +21,8 @@ inline constexpr std::size_t variant_index = sfn::find<variant_to_type_list<Vari
 
 }  // namespace ii
 
-#define VARIANT_CASE(T, variant, x)                              \
-  case variant_index<std::remove_cvref_t<decltype(variant)>, T>: \
-    if (auto& x = *std::get_if<T>(&(variant)); true)
+#define VARIANT_CASE(T, variant) case variant_index<std::remove_cvref_t<decltype(variant)>, T>:
+#define VARIANT_CASE_GET(T, variant, x) \
+  VARIANT_CASE(T, variant) if (auto& x = *std::get_if<T>(&(variant)); true)
 
 #endif

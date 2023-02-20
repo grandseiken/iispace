@@ -1,56 +1,69 @@
 #include "game/common/colour.h"
-#include "game/geometry/node_conditional.h"
-#include "game/geometry/shapes/ball.h"
-#include "game/geometry/shapes/box.h"
-#include "game/geometry/shapes/line.h"
-#include "game/geometry/shapes/ngon.h"
 #include "game/logic/v0/enemy/enemy.h"
 #include "game/logic/v0/enemy/enemy_template.h"
 
 namespace ii::v0 {
 namespace {
-using namespace geom;
+using namespace geom2;
 
 struct FollowHub : ecs::component {
-  static constexpr std::uint32_t kBoundingWidth = 18;
   static constexpr sound kDestroySound = sound::kPlayerDestroy;
   static constexpr rumble_type kDestroyRumble = rumble_type::kLarge;
 
   static constexpr std::uint32_t kTimer = 200;
   static constexpr fixed kSpeed = 15_fx / 16_fx;
-
+  static constexpr fixed kBoundingWidth = 18;
+  static constexpr auto kFlags = shape_flag::kDangerous | shape_flag::kVulnerable;
   static constexpr auto z = colour::kZEnemyLarge;
   static constexpr auto c = colour::kSolarizedDarkBlue;
   static constexpr auto cf = colour::alpha(c, colour::kFillAlpha0);
-  static constexpr auto outline = nline(colour::kOutline, colour::kZOutline, 2.f);
-  template <ShapeNode S>
-  using fh_arrange = compound<translate<18, 0, S>, translate<-18, 0, S>, translate<0, 18, S>,
-                              translate<0, -18, S>>;
-  template <ShapeNode... S>
-  using r_pi4_ngon = rotate<pi<fixed> / 4, S...>;
-  using fh_centre =
-      r_pi4_ngon<ngon<nd(20, 4), outline>,
-                 ngon_with_collider<nd(18, 4), nline(ngon_style::kPolygram, c, z), sfill(cf, z),
-                                    shape_flag::kDangerous | shape_flag::kVulnerable>>;
 
-  using fh_spoke = r_pi4_ngon<ngon<nd(12, 4), outline>, ngon<nd(10, 4), nline(c, z), sfill(cf, z)>>;
-  using fh_big_spoke = compound<fh_spoke, r_pi4_ngon<ngon<nd(6, 4), nline(c, z, 2.f)>>>;
-  using fh_chaser_spoke =
-      r_pi4_ngon<ngon<nd(12, 4), outline>,
-                 ngon<nd(10, 4), nline(ngon_style::kPolygram, c, z), sfill(cf, z)>>;
+  static void construct_shape(node& root, std::uint32_t type) {
+    static constexpr auto outline = sline(colour::kOutline, colour::kZOutline, 2.f);
 
-  using hub_shape = translate_p<0, fh_centre, rotate_p<1, fh_arrange<fh_spoke>>>;
-  using big_hub_shape = translate_p<0, fh_centre, rotate_p<1, fh_arrange<fh_big_spoke>>>;
-  using chaser_hub_shape = translate_p<0, fh_centre, rotate_p<1, fh_arrange<fh_chaser_spoke>>>;
+    auto& n = root.add(translate{key{'v'}});
+    auto& centre = n.add(rotate{pi<fixed> / 4});
+    auto& r = n.add(rotate{key{'r'}});
 
+    centre.add(ngon{.dimensions = nd(20, 4), .line = outline});
+    centre.add(ngon{.dimensions = nd(18, 4),
+                    .style = ngon_style::kPolygram,
+                    .line = sline(c, z),
+                    .fill = sfill(cf, z)});
+    centre.add(ngon_collider{.dimensions = nd(18, 4), .flags = kFlags});
+
+    auto& spoke = root.create(compound{});
+    r.add(translate{vec2{18, 0}}).add(spoke);
+    r.add(translate{vec2{-18, 0}}).add(spoke);
+    r.add(translate{vec2{0, 18}}).add(spoke);
+    r.add(translate{vec2{0, -18}}).add(spoke);
+    auto& spoke_r = spoke.add(rotate{pi<fixed> / 4});
+
+    spoke_r.add(ngon{.dimensions = nd(12, 4), .line = outline});
+    spoke_r.add(ngon{.dimensions = nd(10, 4),
+                     .style = type == 2 ? ngon_style::kPolygram : ngon_style::kPolygon,
+                     .line = sline(c, z),
+                     .fill = sfill(cf, z)});
+    if (type == 1) {
+      spoke_r.add(ngon{.dimensions = nd(6, 4), .line = sline(c, z, 2.f)});
+    }
+  }
+
+  static void construct_hub_shape(node& root) { construct_shape(root, 0); }
+  static void construct_big_hub_shape(node& root) { construct_shape(root, 1); }
+  static void construct_chaser_hub_shape(node& root) { construct_shape(root, 2); }
+
+  void set_parameters(const Transform& transform, parameter_set& parameters) const {
+    parameters.add(key{'v'}, transform.centre).add(key{'r'}, transform.rotation);
+  }
+
+  FollowHub(bool big, bool chaser, bool fast) : big{big}, chaser{chaser}, fast{fast} {}
   std::uint32_t timer = 0;
   std::uint32_t count = 0;
   vec2 dir{0};
   bool big = false;
   bool chaser = false;
   bool fast = false;
-
-  FollowHub(bool big, bool chaser, bool fast) : big{big}, chaser{chaser}, fast{fast} {}
 
   void update(Transform& transform, SimInterface& sim) {
     ++timer;
@@ -100,39 +113,62 @@ DEBUG_STRUCT_TUPLE(FollowHub, timer, count, dir, big, chaser, fast);
 
 // TODO: add hard variant that... lays bombs when going fast?
 struct Shielder : ecs::component {
-  static constexpr std::uint32_t kBoundingWidth = 32;
   static constexpr sound kDestroySound = sound::kPlayerDestroy;
   static constexpr rumble_type kDestroyRumble = rumble_type::kLarge;
 
   static constexpr std::uint32_t kTimer = 40;
   static constexpr fixed kSpeed = 1_fx;
+  static constexpr fixed kBoundingWidth = 32;
+  static constexpr auto kFlags =
+      shape_flag::kDangerous | shape_flag::kVulnerable | shape_flag::kWeakShield;
 
   static constexpr auto z = colour::kZEnemyLarge;
   static constexpr auto c0 = colour::linear_mix(colour::kSolarizedDarkCyan, colour::kNewGreen0);
   static constexpr auto c1 = colour::kWhite1;
   static constexpr auto cf = colour::alpha(c0, colour::kFillAlpha0);
-  static constexpr auto outline = nline(colour::kOutline, colour::kZOutline, 2.f);
 
-  using centre_shape = compound<
-      ngon<nd(22, 12), outline>,
-      ngon<nd2(29, 6, 12), nline(ngon_style::kPolystar, colour::kOutline, colour::kZOutline, 5.f)>,
-      ngon<nd2(27 + 1_fx / 2, 6, 12), nline(ngon_style::kPolystar, c0, z)>,
-      ngon<nd(6, 12), nline(c0, z)>, ngon<nd(20, 12), nline(c0, z), sfill(cf, z)>,
-      ngon_collider<nd(20, 12), shape_flag::kDangerous | shape_flag::kVulnerable>>;
-  using shield_shape =
-      rotate_p<2, line<vec2{32, 0}, vec2{18, 0}, sline(c1, z)>,
-               rotate<pi<fixed> / 4, line<vec2{-32, 0}, vec2{-18, 0}, sline(c1, z)>>,
-               ngon<nd2(27 + 1_fx / 2, 22, 16, 10), nline(), sfill(cf, z)>,
-               ngon<nd2(27 + 1_fx / 2, 22, 16, 10), nline(),
-                    sfill(colour::alpha(c1, colour::kFillAlpha0), z)>,
-               ngon<nd(29, 16, 10), outline>, ngon<nd(30, 16, 10), nline(c1, z, 1.25f)>,
-               ngon<nd(31, 16, 10), outline>, ngon<nd(32, 16, 10), nline(c1, z, 1.25f)>,
-               ngon<nd(34, 16, 10), outline>,
-               ngon_collider<nd(32, 16, 10), shape_flag::kWeakShield>>;
-  using shape = translate_p<0, rotate_p<1, centre_shape>, shield_shape>;
+  static void construct_shape(node& root) {
+    static constexpr auto outline = sline(colour::kOutline, colour::kZOutline, 2.f);
 
-  std::tuple<vec2, fixed, fixed> shape_parameters(const Transform& transform) const {
-    return {transform.centre, transform.rotation, shield_angle + pi<fixed> / 2 - pi<fixed> / 8};
+    auto& n = root.add(translate{key{'v'}});
+    auto& centre = n.add(rotate{key{'r'}});
+    auto& shield = n.add(rotate{key{'R'}});
+
+    centre.add(ngon{.dimensions = nd(22, 12), .line = outline});
+    centre.add(ngon{.dimensions = nd2(29, 6, 12),
+                    .style = ngon_style::kPolystar,
+                    .line = sline(colour::kOutline, colour::kZOutline, 5.f)});
+    centre.add(ngon{
+        .dimensions = nd2(27 + 1_fx / 2, 6, 12),
+        .style = ngon_style::kPolystar,
+        .line = sline(c0, z),
+    });
+    centre.add(ngon{.dimensions = nd(6, 12), .line = sline(c0, z)});
+    centre.add(ngon{.dimensions = nd(20, 12), .line = sline(c0, z), .fill = sfill(cf, z)});
+    centre.add(ngon_collider{.dimensions = nd(20, 12),
+                             .flags = shape_flag::kDangerous | shape_flag::kVulnerable});
+
+    shield.add(line{.a = vec2{32, 0}, .b = vec2{18, 0}, .style = sline(c1, z)});
+    shield.add(rotate{pi<fixed> / 4})
+        .add(line{.a = vec2{-32, 0}, .b = vec2{-18, 0}, .style = sline(c1, z)});
+
+    shield.add(ngon{.dimensions = nd2(27 + 1_fx / 2, 22, 16, 10), .fill = sfill(cf, z)});
+    shield.add(ngon{.dimensions = nd2(27 + 1_fx / 2, 22, 16, 10),
+                    .fill = sfill(colour::alpha(c1, colour::kFillAlpha0), z)});
+    shield.add(ngon{.dimensions = nd(29, 16, 10), .line = outline});
+
+    shield.add(ngon{.dimensions = nd(30, 16, 10), .line = sline(c1, z, 1.25f)});
+    shield.add(ngon{.dimensions = nd(31, 16, 10), .line = outline});
+    shield.add(ngon{.dimensions = nd(32, 16, 10), .line = sline(c1, z, 1.25f)});
+    shield.add(ngon{.dimensions = nd(34, 16, 10), .line = outline});
+
+    shield.add(ngon_collider{.dimensions = nd(32, 16, 10), .flags = shape_flag::kWeakShield});
+  }
+
+  void set_parameters(const Transform& transform, parameter_set& parameters) const {
+    parameters.add(key{'v'}, transform.centre)
+        .add(key{'r'}, transform.rotation)
+        .add(key{'R'}, shield_angle + pi<fixed> / 2 - pi<fixed> / 8);
   }
 
   Shielder(SimInterface& sim, bool power)
@@ -192,32 +228,58 @@ DEBUG_STRUCT_TUPLE(Shielder, timer, velocity, target, next_target, spreader, pow
 
 // TODO: add hard variant that shoots... bounces?
 struct Tractor : ecs::component {
-  static constexpr std::uint32_t kBoundingWidth = 45;
   static constexpr sound kDestroySound = sound::kPlayerDestroy;
   static constexpr rumble_type kDestroyRumble = rumble_type::kLarge;
 
   static constexpr std::uint32_t kTimer = 60;
   static constexpr fixed kSpeed = 6 * (15_fx / 160);
   static constexpr fixed kPullSpeed = 2 + 3_fx / 8;
+  static constexpr fixed kBoundingWidth = 45;
+  static constexpr auto kFlags = shape_flag::kDangerous | shape_flag::kVulnerable;
 
   static constexpr auto z = colour::kZEnemyLarge;
   static constexpr auto c = colour::kSolarizedDarkMagenta;
   static constexpr auto cf = colour::alpha(c, colour::kFillAlpha0);
-  using t_orb =
-      compound<ngon<nd(18, 6), nline(colour::kOutline, colour::kZOutline, 2.f)>,
-               ngon_with_collider<nd(16, 6), nline(ngon_style::kPolygram, c, z), sfill(cf, z),
-                                  shape_flag::kDangerous | shape_flag::kVulnerable>>;
-  using t_star = ngon<nd(18, 6), nline(ngon_style::kPolystar, c, z)>;
-  using shape = standard_transform<
-      translate<26, 0, rotate_eval<multiply_p<5, 2>, t_orb>>,
-      translate<-26, 0, rotate_eval<multiply_p<-5, 2>, t_orb>>,
-      line<vec2{-26, 0}, vec2{26, 0}, sline(colour::kOutline, colour::kZOutline, 5.f)>,
-      line<vec2{-26, 0}, vec2{26, 0}, sline(c, z)>,
-      if_p<3, translate<26, 0, rotate_eval<multiply_p<8, 2>, t_star>>,
-           translate<-26, 0, rotate_eval<multiply_p<-8, 2>, t_star>>>>;
 
-  std::tuple<vec2, fixed, fixed, bool> shape_parameters(const Transform& transform) const {
-    return {transform.centre, transform.rotation, spoke_r, power};
+  static void construct_shape(node& root) {
+    static constexpr auto outline = sline(colour::kOutline, colour::kZOutline, 2.f);
+
+    auto& n = root.add(translate_rotate{key{'v'}, key{'r'}});
+    auto& orb = root.create(compound{});
+    auto& star = root.create(compound{});
+
+    n.add(translate_rotate{vec2{26, 0}, key{'S'}}).add(orb);
+    n.add(translate_rotate{vec2{-26, 0}, key{'s'}}).add(orb);
+    n.add(line{.a = vec2{-26, 0},
+               .b = vec2{26, 0},
+               .style = sline(colour::kOutline, colour::kZOutline, 5.f)});
+    n.add(line{.a = vec2{-26, 0}, .b = vec2{26, 0}, .style = sline(c, z)});
+
+    auto& star_if = n.add(enable{key{'P'}});
+    star_if.add(translate_rotate{vec2{26, 0}, key{'T'}}).add(star);
+    star_if.add(translate_rotate{vec2{-26, 0}, key{'t'}}).add(star);
+
+    orb.add(ngon{.dimensions = nd(18, 6), .line = outline});
+    orb.add(ngon{.dimensions = nd(16, 6),
+                 .style = ngon_style::kPolygram,
+                 .line = sline(c, z),
+                 .fill = sfill(cf, z)});
+    orb.add(ngon_collider{.dimensions = nd(16, 6), .flags = kFlags});
+
+    star.add(ngon{.dimensions = nd(18, 6),
+                  .style = ngon_style::kPolystar,
+                  .line = sline(colour::kOutline, colour::kZOutline, 5.f)});
+    star.add(ngon{.dimensions = nd(18, 6), .style = ngon_style::kPolystar, .line = sline(c, z)});
+  }
+
+  void set_parameters(const Transform& transform, parameter_set& parameters) const {
+    parameters.add(key{'v'}, transform.centre)
+        .add(key{'r'}, transform.rotation)
+        .add(key{'s'}, -5 * spoke_r)
+        .add(key{'S'}, 5 * spoke_r)
+        .add(key{'t'}, -8 * spoke_r)
+        .add(key{'T'}, 8 * spoke_r)
+        .add(key{'P'}, power);
   }
 
   Tractor(bool power) : power{power} {}
@@ -305,7 +367,6 @@ DEBUG_STRUCT_TUPLE(Tractor, timer, dir, power, ready, spinning, spoke_r);
 // TODO: redesign look.
 // TODO: redesign shield status effect visuals.
 struct ShieldHub : ecs::component {
-  static constexpr std::uint32_t kBoundingWidth = 28;
   static constexpr sound kDestroySound = sound::kPlayerDestroy;
   static constexpr rumble_type kDestroyRumble = rumble_type::kLarge;
 
@@ -313,31 +374,44 @@ struct ShieldHub : ecs::component {
   static constexpr fixed kSpeed = 3_fx / 4_fx;
   static constexpr fixed kShieldDistance = 250;
   static constexpr fixed kShieldDrawDistance = kShieldDistance + 15;
+  static constexpr fixed kBoundingWidth = 28;
+  static constexpr auto kFlags = shape_flag::kDangerous | shape_flag::kVulnerable;
 
   static constexpr auto z = colour::kZEnemyLarge;
   static constexpr auto c0 = colour::linear_mix(colour::kSolarizedDarkCyan, colour::kNewGreen0);
   static constexpr auto c1 = colour::kWhite1;
   static constexpr auto cf0 = colour::alpha(c0, colour::kFillAlpha0);
   static constexpr auto cf1 = colour::alpha(c1, colour::kFillAlpha1);
-  static constexpr auto outline = sline(colour::kOutline, colour::kZOutline, 2.f);
 
-  using shape = compound<
-      translate_p<0, ball<bd(kBoundingWidth / 3), sline(c0, z)>,
-                  rotate_eval<multiply_p<-1_fx / 2, 1>,
-                              compound<translate<-18, 0, box<vec2{10, 10}, outline>,
-                                                 box<vec2{8, 8}, sline(c1, z), sfill(cf1, z)>>,
-                                       translate<18, 0, box<vec2{10, 10}, outline>,
-                                                 box<vec2{8, 8}, sline(c1, z), sfill(cf1, z)>>,
-                                       box<vec2{11, 4}, sline(c1, z)>>>,
-                  rotate_eval<multiply_p<1_fx / 2, 1>,
-                              compound<translate<-18, 0, box<vec2{10, 10}, outline>,
-                                                 box<vec2{8, 8}, sline(c1, z), sfill(cf1, z)>>,
-                                       translate<18, 0, box<vec2{10, 10}, outline>,
-                                                 box<vec2{8, 8}, sline(c1, z), sfill(cf1, z)>>,
-                                       box<vec2{11, 4}, sline(c1, z)>>>>,
-      standard_transform<ball<bd(kBoundingWidth + 2), outline>,
-                         ball_with_collider<bd(kBoundingWidth), sline(c0, z), sfill(cf0, z),
-                                            shape_flag::kDangerous | shape_flag::kVulnerable>>>;
+  static void construct_shape(node& root) {
+    static constexpr auto outline = sline(colour::kOutline, colour::kZOutline, 2.f);
+
+    auto& n = root.add(translate_rotate{key{'v'}, key{'r'}});
+    auto& t = root.add(translate{key{'v'}});
+    auto& inner = root.create(compound{});
+    auto& inner_box = root.create(compound{});
+
+    n.add(ball{.dimensions = bd(kBoundingWidth + 2), .line = outline});
+    n.add(ball{.dimensions = bd(kBoundingWidth), .line = sline(c0, z), .fill = sfill(cf0, z)});
+    n.add(ball_collider{.dimensions = bd(kBoundingWidth), .flags = kFlags});
+
+    t.add(ball{.dimensions = bd(kBoundingWidth / 3), .line = sline(c0, z)});
+    t.add(rotate{key{'s'}}).add(inner);
+    t.add(rotate{key{'S'}}).add(inner);
+
+    inner.add(translate{vec2{-18, 0}}).add(inner_box);
+    inner.add(translate{vec2{18, 0}}).add(inner_box);
+    inner.add(box{.dimensions = vec2{11, 4}, .line = sline(c1, z)});
+    inner_box.add(box{.dimensions = vec2{10, 10}, .line = outline});
+    inner_box.add(box{.dimensions = vec2{8, 8}, .line = sline(c1, z), .fill = sfill(cf1, z)});
+  }
+
+  void set_parameters(const Transform& transform, parameter_set& parameters) const {
+    parameters.add(key{'v'}, transform.centre)
+        .add(key{'r'}, transform.rotation)
+        .add(key{'s'}, -transform.rotation / 2)
+        .add(key{'S'}, transform.rotation / 2);
+  }
 
   ShieldHub(ecs::const_handle h) : effect_id{h.id()} {}
   ecs::entity_id effect_id;
@@ -396,23 +470,29 @@ struct ShieldHub : ecs::component {
     static constexpr std::uint32_t kFadeInTime = 90;
     static constexpr std::uint32_t kAnimTime = 240;
     static constexpr std::uint32_t kAnimFadeTime = 40;
-    using sl0 = set_colour_p<sline(colour::kZero, colour::kZBackgroundEffect1, 4.f), 3>;
-    using sl1 = set_colour_p<sline(colour::kZero, colour::kZBackgroundEffect1, 4.f), 4>;
-    using sf = set_colour_p<sfill(colour::kZero, colour::kZBackgroundEffect0), 5>;
-    using shape = standard_transform<ball_eval<constant<bd(kShieldDrawDistance)>, sl0, sf>,
-                                     ball_eval<set_radius_p<bd(), 2>, sl1>>;
+    static constexpr auto kBoundingWidth = 0_fx;
+    static constexpr auto kFlags = shape_flag::kNone;
 
-    std::tuple<vec2, fixed, fixed, cvec4, cvec4, cvec4>
-    shape_parameters(const Transform& transform) const {
+    static void construct_shape(node& root) {
+      auto& n = root.add(translate_rotate{key{'v'}, key{'r'}});
+      n.add(ball{.dimensions = bd(kShieldDrawDistance),
+                 .line = {.colour0 = key{'0'}, .z = colour::kZBackgroundEffect1, .width = 4.f},
+                 .fill = {.colour0 = key{'2'}, .z = colour::kZBackgroundEffect1}});
+      n.add(ball{.dimensions = {.radius = key{'R'}},
+                 .line = {.colour0 = key{'1'}, .z = colour::kZBackgroundEffect1, .width = 4.f}});
+    }
+
+    void set_parameters(const Transform& transform, parameter_set& parameters) const {
       auto a = static_cast<float>(fade_in) / kFadeInTime;
       auto t = anim % (kAnimTime + kAnimFadeTime);
       auto ta = t < kAnimTime ? 1.f : 1.f - static_cast<float>(t - kAnimTime) / kAnimFadeTime;
-      return {transform.centre,
-              transform.rotation,
-              kShieldDrawDistance * (std::min(t, kAnimTime) / fixed{kAnimTime}),
-              colour::alpha(colour::kWhite1, a * colour::kFillAlpha0),
-              colour::alpha(colour::kWhite1, a * ta * colour::kFillAlpha0 / 2),
-              colour::alpha(colour::kBlack0, a * colour::kBackgroundAlpha0)};
+
+      parameters.add(key{'v'}, transform.centre)
+          .add(key{'r'}, transform.rotation)
+          .add(key{'R'}, kShieldDrawDistance * (std::min(t, kAnimTime) / fixed{kAnimTime}))
+          .add(key{'0'}, colour::alpha(colour::kWhite1, a * colour::kFillAlpha0))
+          .add(key{'1'}, colour::alpha(colour::kWhite1, a * ta * colour::kFillAlpha0 / 2))
+          .add(key{'2'}, colour::alpha(colour::kBlack0, a * colour::kBackgroundAlpha0));
     }
 
     std::uint32_t anim = 0;
@@ -434,8 +514,12 @@ DEBUG_STRUCT_TUPLE(ShieldHub, timer, count, dir);
 }  // namespace
 
 ecs::handle spawn_follow_hub(SimInterface& sim, const vec2& position, bool fast) {
-  auto h = create_ship_default<FollowHub, FollowHub::hub_shape>(sim, position);
-  add_enemy_health<FollowHub, FollowHub::hub_shape>(h, 112);
+  using shape =
+      shape_definition<&FollowHub::construct_hub_shape, ecs::call<&FollowHub::set_parameters>,
+                       FollowHub::kBoundingWidth, FollowHub::kFlags>;
+
+  auto h = create_ship_default2<FollowHub, shape>(sim, position);
+  add_enemy_health2<FollowHub, shape>(h, 112);
   h.add(FollowHub{false, false, fast});
   h.add(Enemy{.threat_value = 6u + 4u * fast});
   h.add(Physics{.mass = 1_fx + 3_fx / 4});
@@ -444,8 +528,12 @@ ecs::handle spawn_follow_hub(SimInterface& sim, const vec2& position, bool fast)
 }
 
 ecs::handle spawn_big_follow_hub(SimInterface& sim, const vec2& position, bool fast) {
-  auto h = create_ship_default<FollowHub, FollowHub::big_hub_shape>(sim, position);
-  add_enemy_health<FollowHub, FollowHub::big_hub_shape>(h, 112);
+  using shape =
+      shape_definition<&FollowHub::construct_big_hub_shape, ecs::call<&FollowHub::set_parameters>,
+                       FollowHub::kBoundingWidth, FollowHub::kFlags>;
+
+  auto h = create_ship_default2<FollowHub, shape>(sim, position);
+  add_enemy_health2<FollowHub, shape>(h, 112);
   h.add(FollowHub{true, false, fast});
   h.add(Enemy{.threat_value = 12u + 8u * fast});
   h.add(Physics{.mass = 1_fx + 3_fx / 4});
@@ -454,8 +542,12 @@ ecs::handle spawn_big_follow_hub(SimInterface& sim, const vec2& position, bool f
 }
 
 ecs::handle spawn_chaser_hub(SimInterface& sim, const vec2& position, bool fast) {
-  auto h = create_ship_default<FollowHub, FollowHub::chaser_hub_shape>(sim, position);
-  add_enemy_health<FollowHub, FollowHub::chaser_hub_shape>(h, 112);
+  using shape = shape_definition<&FollowHub::construct_chaser_hub_shape,
+                                 ecs::call<&FollowHub::set_parameters>, FollowHub::kBoundingWidth,
+                                 FollowHub::kFlags>;
+
+  auto h = create_ship_default2<FollowHub, shape>(sim, position);
+  add_enemy_health2<FollowHub, shape>(h, 112);
   h.add(FollowHub{false, true, fast});
   h.add(Enemy{.threat_value = 10u + 6u * fast});
   h.add(DropTable{.shield_drop_chance = 2});
@@ -466,8 +558,8 @@ ecs::handle spawn_chaser_hub(SimInterface& sim, const vec2& position, bool fast)
 }
 
 ecs::handle spawn_shielder(SimInterface& sim, const vec2& position, bool power) {
-  auto h = create_ship_default<Shielder>(sim, position);
-  add_enemy_health<Shielder>(h, 160);
+  auto h = create_ship_default2<Shielder>(sim, position);
+  add_enemy_health2<Shielder>(h, 160);
   h.add(Shielder{sim, power});
   h.add(Enemy{.threat_value = 8u + 2u * power});
   h.add(Physics{.mass = 3_fx});
@@ -476,8 +568,8 @@ ecs::handle spawn_shielder(SimInterface& sim, const vec2& position, bool power) 
 }
 
 ecs::handle spawn_tractor(SimInterface& sim, const vec2& position, bool power) {
-  auto h = create_ship_default<Tractor>(sim, position);
-  add_enemy_health<Tractor>(h, 336);
+  auto h = create_ship_default2<Tractor>(sim, position);
+  add_enemy_health2<Tractor>(h, 336);
   h.add(Tractor{power});
   h.add(Enemy{.threat_value = 10u + 4u * power});
   h.add(Physics{.mass = 2_fx});
@@ -486,11 +578,11 @@ ecs::handle spawn_tractor(SimInterface& sim, const vec2& position, bool power) {
 }
 
 ecs::handle spawn_shield_hub(SimInterface& sim, const vec2& position) {
-  auto eh = create_ship_default<ShieldHub::ShieldEffect>(sim, position);
+  auto eh = create_ship_default2<ShieldHub::ShieldEffect>(sim, position);
   eh.add(ShieldHub::ShieldEffect{});
 
-  auto h = create_ship_default<ShieldHub>(sim, position);
-  add_enemy_health<ShieldHub>(h, 280);
+  auto h = create_ship_default2<ShieldHub>(sim, position);
+  add_enemy_health2<ShieldHub>(h, 280);
   h.add(ShieldHub{eh});
   h.add(Enemy{.threat_value = 10u});
   h.add(Physics{.mass = 3_fx});

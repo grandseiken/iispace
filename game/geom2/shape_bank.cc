@@ -105,7 +105,7 @@ void check_collision(hit_result& hit, const convert_local_transform& t, const ba
   auto dimensions = resolve(c.dimensions, parameters);
 
   switch (check.extent.index()) {
-    VARIANT_CASE(check_point_t, check.extent, cx) {
+    VARIANT_CASE_GET(check_point_t, check.extent, cx) {
       auto d_sq = length_squared(t.transform_ignore_rotation(cx.v));
       if (d_sq <= square(dimensions.radius) && d_sq >= square(dimensions.inner_radius)) {
         hit.add(flags, t.inverse_transform(vec2{0}));
@@ -113,7 +113,7 @@ void check_collision(hit_result& hit, const convert_local_transform& t, const ba
       break;
     }
 
-    VARIANT_CASE(check_line_t, check.extent, cx) {
+    VARIANT_CASE_GET(check_line_t, check.extent, cx) {
       auto a = t.transform(cx.a);
       auto b = t.transform(cx.b);
       auto ir_sq = square(dimensions.inner_radius);
@@ -124,7 +124,7 @@ void check_collision(hit_result& hit, const convert_local_transform& t, const ba
       break;
     }
 
-    VARIANT_CASE(check_ball_t, check.extent, cx) {
+    VARIANT_CASE_GET(check_ball_t, check.extent, cx) {
       auto d_sq = length_squared(t.transform_ignore_rotation(cx.c));
       auto r = dimensions.radius + cx.r;
       if (d_sq <= r * r &&
@@ -134,7 +134,7 @@ void check_collision(hit_result& hit, const convert_local_transform& t, const ba
       break;
     }
 
-    VARIANT_CASE(check_convex_t, check.extent, cx) {
+    VARIANT_CASE_GET(check_convex_t, check.extent, cx) {
       auto va = t.transform(cx.vs);
       auto ir_sq = square(dimensions.inner_radius);
       if (intersect_convex_ball(va, vec2{0}, dimensions.radius) &&
@@ -157,7 +157,7 @@ void check_collision(hit_result& hit, const convert_local_transform& t, const bo
   auto dimensions = c.dimensions(parameters);
 
   switch (check.extent.index()) {
-    VARIANT_CASE(check_point_t, check.extent, cx) {
+    VARIANT_CASE_GET(check_point_t, check.extent, cx) {
       auto v = t.transform(cx.v);
       if (abs(v.x) <= dimensions.x && abs(v.y) <= dimensions.y) {
         hit.add(flags, t.inverse_transform(vec2{0}));
@@ -165,21 +165,21 @@ void check_collision(hit_result& hit, const convert_local_transform& t, const bo
       break;
     }
 
-    VARIANT_CASE(check_line_t, check.extent, cx) {
+    VARIANT_CASE_GET(check_line_t, check.extent, cx) {
       if (intersect_aabb_line(-dimensions, dimensions, t.transform(cx.a), t.transform(cx.b))) {
         hit.add(flags, t.inverse_transform(vec2{0}));
       }
       break;
     }
 
-    VARIANT_CASE(check_ball_t, check.extent, cx) {
+    VARIANT_CASE_GET(check_ball_t, check.extent, cx) {
       if (intersect_aabb_ball(-dimensions, dimensions, t.transform(cx.c), cx.r)) {
         hit.add(flags, t.inverse_transform(vec2{0}));
       }
       break;
     }
 
-    VARIANT_CASE(check_convex_t, check.extent, cx) {
+    VARIANT_CASE_GET(check_convex_t, check.extent, cx) {
       auto va = t.transform(cx.vs);
       if (intersect_aabb_convex(-dimensions, dimensions, va)) {
         hit.add(flags, t.inverse_transform(vec2{0}));
@@ -199,7 +199,7 @@ void check_collision(hit_result& hit, const convert_local_transform& t, const ng
 
   std::array<vec2, 4> va{};
   switch (check.extent.index()) {
-    VARIANT_CASE(check_point_t, check.extent, cx) {
+    VARIANT_CASE_GET(check_point_t, check.extent, cx) {
       auto v = t.transform(cx.v);
       auto theta = angle(v);
       if (theta < 0) {
@@ -217,7 +217,7 @@ void check_collision(hit_result& hit, const convert_local_transform& t, const ng
       break;
     }
 
-    VARIANT_CASE(check_line_t, check.extent, cx) {
+    VARIANT_CASE_GET(check_line_t, check.extent, cx) {
       auto line_a = t.transform(cx.a);
       auto line_b = t.transform(cx.b);
       for (std::uint32_t i = 0; i < dimensions.segments; ++i) {
@@ -230,7 +230,7 @@ void check_collision(hit_result& hit, const convert_local_transform& t, const ng
       break;
     }
 
-    VARIANT_CASE(check_ball_t, check.extent, cx) {
+    VARIANT_CASE_GET(check_ball_t, check.extent, cx) {
       auto v = t.transform(cx.c);
       for (std::uint32_t i = 0; i < dimensions.segments; ++i) {
         auto convex = ngon_convex_segment(dimensions, va, i);
@@ -242,7 +242,7 @@ void check_collision(hit_result& hit, const convert_local_transform& t, const ng
       break;
     }
 
-    VARIANT_CASE(check_convex_t, check.extent, cx) {
+    VARIANT_CASE_GET(check_convex_t, check.extent, cx) {
       auto va0 = t.transform(cx.vs);
       for (std::uint32_t i = 0; i < dimensions.segments; ++i) {
         auto convex = ngon_convex_segment(dimensions, va, i);
@@ -260,50 +260,57 @@ void resolve_internal(resolve_result& result, const transform& t, const node& n,
                       const parameter_set& parameters) {
   auto recurse = [&](const transform& st) {
     for (std::size_t i = 0; i < n.size(); ++i) {
-      resolve_internal(result, st, n[i], parameters);
+      if (+(n[i].type() & node_type::kResolve)) {
+        resolve_internal(result, st, n[i], parameters);
+      }
     }
   };
 
   switch (n->index()) {
-    VARIANT_CASE(ball, *n, x) {
+    VARIANT_CASE_GET(ball, *n, x) {
       result.add(t, resolve(x, parameters));
       break;
     }
 
-    VARIANT_CASE(box, *n, x) {
+    VARIANT_CASE_GET(box, *n, x) {
       result.add(t, resolve(x, parameters));
       break;
     }
 
-    VARIANT_CASE(line, *n, x) {
+    VARIANT_CASE_GET(line, *n, x) {
       result.add(t, resolve(x, parameters));
       break;
     }
 
-    VARIANT_CASE(ngon, *n, x) {
+    VARIANT_CASE_GET(ngon, *n, x) {
       result.add(t, resolve(x, parameters));
       break;
     }
 
-    VARIANT_CASE(compound, *n, x) {
+    VARIANT_CASE_GET(compound, *n, x) {
       recurse(t);
       break;
     }
 
-    VARIANT_CASE(enable, *n, x) {
+    VARIANT_CASE_GET(enable, *n, x) {
       if (x.x(parameters)) {
         recurse(t);
       }
       break;
     }
 
-    VARIANT_CASE(translate, *n, x) {
+    VARIANT_CASE_GET(translate, *n, x) {
       recurse(t.translate(x.x(parameters)));
       break;
     }
 
-    VARIANT_CASE(rotate, *n, x) {
+    VARIANT_CASE_GET(rotate, *n, x) {
       recurse(t.rotate(x.x(parameters)));
+      break;
+    }
+
+    VARIANT_CASE_GET(translate_rotate, *n, x) {
+      recurse(t.translate(x.v(parameters)).rotate(x.r(parameters)));
       break;
     }
   }
@@ -313,51 +320,90 @@ void check_collision_internal(hit_result& result, const convert_local_transform&
                               const parameter_set& parameters, const check_t& check) {
   auto recurse = [&](const convert_local_transform& st) {
     for (std::size_t i = 0; i < n.size(); ++i) {
-      check_collision_internal(result, st, n[i], parameters, check);
+      if (+(n[i].type() & node_type::kCollision)) {
+        check_collision_internal(result, st, n[i], parameters, check);
+      }
     }
   };
 
   switch (n->index()) {
-    VARIANT_CASE(ball_collider, *n, x) {
+    VARIANT_CASE_GET(ball_collider, *n, x) {
       check_collision(result, t, x, parameters, check);
       break;
     }
 
-    VARIANT_CASE(box_collider, *n, x) {
+    VARIANT_CASE_GET(box_collider, *n, x) {
       check_collision(result, t, x, parameters, check);
       break;
     }
 
-    VARIANT_CASE(ngon_collider, *n, x) {
+    VARIANT_CASE_GET(ngon_collider, *n, x) {
       check_collision(result, t, x, parameters, check);
       break;
     }
 
-    VARIANT_CASE(compound, *n, x) {
+    VARIANT_CASE_GET(compound, *n, x) {
       recurse(t);
       break;
     }
 
-    VARIANT_CASE(enable, *n, x) {
+    VARIANT_CASE_GET(enable, *n, x) {
       if (x.x(parameters)) {
         recurse(t);
       }
       break;
     }
 
-    VARIANT_CASE(translate, *n, x) {
+    VARIANT_CASE_GET(translate, *n, x) {
       recurse(t.translate(x.x(parameters)));
       break;
     }
 
-    VARIANT_CASE(rotate, *n, x) {
+    VARIANT_CASE_GET(rotate, *n, x) {
       recurse(t.rotate(x.x(parameters)));
+      break;
+    }
+
+    VARIANT_CASE_GET(translate_rotate, *n, x) {
+      recurse(t.translate(x.v(parameters)).rotate(x.r(parameters)));
       break;
     }
   }
 }
 
 }  // namespace
+
+// TODO: optimize further. For example, can also inline any compound node into its parent.
+node_type ShapeBank::optimize(node& n) {
+  if (std::holds_alternative<compound>(n.data_) && n.size() == 1u) {
+    const auto& c = *n.children_.front();
+    n.data_ = c.data_;
+    n.bank_ = c.bank_;
+    n.children_ = c.children_;
+  }
+  node_type type = node_type::kNone;
+  for (auto* c : n.children_) {
+    type |= optimize(*c);
+  }
+
+  switch (n->index()) {
+    VARIANT_CASE(ball_collider, *n)
+    VARIANT_CASE(box_collider, *n)
+    VARIANT_CASE(ngon_collider, *n) {
+      type |= node_type::kCollision;
+      break;
+    }
+
+    VARIANT_CASE(ball, *n)
+    VARIANT_CASE(box, *n)
+    VARIANT_CASE(line, *n)
+    VARIANT_CASE(ngon, *n) {
+      type |= node_type::kResolve;
+      break;
+    }
+  }
+  return n.type_ = type;
+}
 
 void resolve(resolve_result& result, const node& n, const parameter_set& parameters) {
   resolve_internal(result, {}, n, parameters);
