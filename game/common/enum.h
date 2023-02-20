@@ -43,19 +43,19 @@ constexpr std::underlying_type_t<E> operator+(E e) {
 
 template <IntegralEnum E>
 constexpr E operator-(E e) {
-  return E{-to_underlying(e)};
+  return E{static_cast<std::underlying_type_t<E>>(-to_underlying(e))};
 }
 
 template <IntegralEnum E>
 constexpr E operator++(E& e) {
   auto v = to_underlying(e);
-  return e = E{++v};
+  return e = E{static_cast<std::underlying_type_t<E>>(++v)};
 }
 
 template <IntegralEnum E>
 constexpr E operator--(E& e) {
   auto v = to_underlying(e);
-  return e = E{--v};
+  return e = E{static_cast<std::underlying_type_t<E>>(--v)};
 }
 
 template <IntegralEnum E>
@@ -74,37 +74,37 @@ constexpr E operator--(E& e, int) {
 
 template <IntegralEnum E>
 constexpr E operator+(E a, E b) {
-  return E{to_underlying(a) + to_underlying(b)};
+  return E{static_cast<std::underlying_type_t<E>>(to_underlying(a) + to_underlying(b))};
 }
 
 template <IntegralEnum E>
 constexpr E operator-(E a, E b) {
-  return E{to_underlying(a) - to_underlying(b)};
+  return E{static_cast<std::underlying_type_t<E>>(to_underlying(a) - to_underlying(b))};
 }
 
 template <IntegralEnum E>
 constexpr E operator*(E a, E b) {
-  return E{to_underlying(a) * to_underlying(b)};
+  return E{static_cast<std::underlying_type_t<E>>(to_underlying(a) * to_underlying(b))};
 }
 
 template <IntegralEnum E>
 constexpr E operator/(E a, E b) {
-  return E{to_underlying(a) / to_underlying(b)};
+  return E{static_cast<std::underlying_type_t<E>>(to_underlying(a) / to_underlying(b))};
 }
 
 template <IntegralEnum E>
 constexpr E operator%(E a, E b) {
-  return E{to_underlying(a) % to_underlying(b)};
+  return E{static_cast<std::underlying_type_t<E>>(to_underlying(a) % to_underlying(b))};
 }
 
 template <IntegralEnum E>
 constexpr E operator<<(E a, E b) {
-  return E{to_underlying(a) << to_underlying(b)};
+  return E{static_cast<std::underlying_type_t<E>>(to_underlying(a) << to_underlying(b))};
 }
 
 template <IntegralEnum E>
 constexpr E operator>>(E a, E b) {
-  return E{to_underlying(a) >> to_underlying(b)};
+  return E{static_cast<std::underlying_type_t<E>>(to_underlying(a) >> to_underlying(b))};
 }
 
 template <IntegralEnum E>
@@ -144,22 +144,22 @@ constexpr E& operator>>=(E& a, E b) {
 
 template <BitmaskEnum E>
 constexpr E operator~(E e) {
-  return E{~to_underlying(e)};
+  return E{static_cast<std::underlying_type_t<E>>(~to_underlying(e))};
 }
 
 template <BitmaskEnum E>
 constexpr E operator&(E a, E b) {
-  return E{to_underlying(a) & to_underlying(b)};
+  return E{static_cast<std::underlying_type_t<E>>(to_underlying(a) & to_underlying(b))};
 }
 
 template <BitmaskEnum E>
 constexpr E operator|(E a, E b) {
-  return E{to_underlying(a) | to_underlying(b)};
+  return E{static_cast<std::underlying_type_t<E>>(to_underlying(a) | to_underlying(b))};
 }
 
 template <BitmaskEnum E>
 constexpr E operator^(E a, E b) {
-  return E{to_underlying(a) ^ to_underlying(b)};
+  return E{static_cast<std::underlying_type_t<E>>(to_underlying(a) ^ to_underlying(b))};
 }
 
 template <BitmaskEnum E>

@@ -1,5 +1,6 @@
 #ifndef II_GAME_GEOM2_VALUE_PARAMETERS_H
 #define II_GAME_GEOM2_VALUE_PARAMETERS_H
+#include "game/common/enum.h"
 #include "game/common/math.h"
 #include "game/common/variant_switch.h"
 #include <array>
@@ -12,6 +13,15 @@ namespace ii::geom2 {
 
 enum class key : unsigned char {};
 using parameter_value = std::variant<bool, std::uint32_t, fixed, vec2, float, cvec4>;
+
+}  // namespace ii::geom2
+
+namespace ii {
+template <>
+struct integral_enum<geom2::key> : std::true_type {};
+}  // namespace ii
+
+namespace ii::geom2 {
 
 struct parameter_set {
   std::array<parameter_value, 256> map;

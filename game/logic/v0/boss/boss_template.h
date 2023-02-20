@@ -36,22 +36,16 @@ scale_boss_damage(ecs::handle, SimInterface& sim, damage_type type, std::uint32_
   return damage * std::max(1u, kBossHpMultiplier / std::max(1u, sim.alive_players()));
 }
 
-template <ecs::Component Logic, geom::ShapeNode S = typename Logic::Shape>
-inline cvec4 get_boss_colour(ecs::const_handle h) {
-  auto& r = resolve_entity_shape<Logic, S>(h);
-  return get_shape_colour(r).value_or(colour::kWhite0);
-}
-
-template <ecs::Component Logic, geom::ShapeNode S = typename Logic::shape>
-void boss_on_hit(ecs::handle h, Health* health, SimInterface&, EmitHandle& e, damage_type type,
+template <typename ShapeDefinition>
+void boss_on_hit(ecs::handle h, Health* health, SimInterface& sim, EmitHandle& e, damage_type type,
                  const vec2& source) {
   if (type == damage_type::kBomb && health && health->hp) {
-    auto& r = resolve_entity_shape<Logic, S>(h);
+    auto& r = resolve_entity_shape2<ShapeDefinition>(h, sim);
     destruct_lines(e, r, to_float(source));
   }
 }
 
-template <ecs::Component Logic, geom::ShapeNode S = typename Logic::shape>
+template <typename ShapeDefinition>
 void boss_on_destroy(ecs::const_handle h, const Transform& transform, SimInterface& sim,
                      EmitHandle& e, damage_type, const vec2& source) {
   sim.index().iterate_dispatch_if<EnemyStatus>(
@@ -67,8 +61,8 @@ void boss_on_destroy(ecs::const_handle h, const Transform& transform, SimInterfa
         }
       });
 
-  auto boss_colour = get_boss_colour<Logic, S>(h);
-  auto& r = resolve_entity_shape<Logic, S>(h);
+  auto& r = resolve_entity_shape2<ShapeDefinition>(h, sim);
+  auto boss_colour = get_shape_colour(r).value_or(colour::kWhite0);
   explode_shapes(e, r);
   explode_shapes(e, r, cvec4{1.f}, 12);
   explode_shapes(e, r, boss_colour, 24);
@@ -104,7 +98,7 @@ void boss_on_destroy(ecs::const_handle h, const Transform& transform, SimInterfa
   e.rumble_all(30, 1.f, 1.f).play(sound::kExplosion, transform.centre);
 }
 
-template <ecs::Component Logic, geom::ShapeNode S = typename Logic::shape>
+template <ecs::Component Logic, typename ShapeDefinition = default_shape_definition<Logic>>
 void add_boss_data(ecs::handle h, ustring_view name, std::uint32_t base_hp) {
   h.add(Health{
       .hp = kBossHpMultiplier * base_hp,
@@ -113,14 +107,15 @@ void add_boss_data(ecs::handle h, ustring_view name, std::uint32_t base_hp) {
       .destroy_sound = std::nullopt,
       .destroy_rumble = std::nullopt,
       .damage_transform = &scale_boss_damage,
-      .on_hit = ecs::call<&boss_on_hit<Logic, S>>,
-      .on_destroy = ecs::call<&boss_on_destroy<Logic, S>>,
+      .on_hit = ecs::call<&boss_on_hit<ShapeDefinition>>,
+      .on_destroy = ecs::call<&boss_on_destroy<ShapeDefinition>>,
   });
   h.add(EnemyStatus{.stun_resist_base = 100u, .stun_resist_bonus = 60u});
   h.add(Enemy{.threat_value = kBossThreatValue});
   h.add(Boss{.name = ustring{name}});
-  h.add(PostUpdate{.post_update = [](ecs::handle h, SimInterface&) {
-    h.get<Boss>()->colour = get_boss_colour<Logic, S>(h);
+  h.add(PostUpdate{.post_update = [](ecs::handle h, SimInterface& sim) {
+    auto& r = resolve_entity_shape2<ShapeDefinition>(h, sim);
+    h.get<Boss>()->colour = get_shape_colour(r).value_or(colour::kWhite0);
   }});
 }
 

@@ -6,6 +6,7 @@ namespace ii::v0 {
 namespace {
 using namespace geom2;
 
+
 struct FollowHub : ecs::component {
   static constexpr sound kDestroySound = sound::kPlayerDestroy;
   static constexpr rumble_type kDestroyRumble = rumble_type::kLarge;

@@ -1,7 +1,5 @@
 #include "game/common/colour.h"
 #include "game/common/easing.h"
-#include "game/geometry/node.h"
-#include "game/geometry/shapes/ngon.h"
 #include "game/logic/v0/boss/boss.h"
 #include "game/logic/v0/boss/boss_template.h"
 #include "game/logic/v0/enemy/enemy.h"
@@ -12,9 +10,8 @@
 
 namespace ii::v0 {
 namespace {
-using namespace geom;
+using namespace geom2;
 
-// TODO: special attack: zoom vertically from one side to another.
 struct SquareBoss : public ecs::component {
   static constexpr std::uint32_t kBaseHp = 3250;
   static constexpr std::uint32_t kBiomeHp = 750;
@@ -28,47 +25,66 @@ struct SquareBoss : public ecs::component {
   static constexpr fixed kTurningRadius = 72;
   static constexpr fixed kMarginX = 1_fx / 5;
   static constexpr fixed kMarginY = 1_fx / 4;
+  static constexpr auto kFlags = shape_flag::kDangerous | shape_flag::kShield |
+      shape_flag::kVulnerable | shape_flag::kBombVulnerable;
 
   static constexpr auto z = colour::kZEnemyBoss;
   static constexpr auto c0 = colour::kNewPurple;
   static constexpr auto c1 = colour::kSolarizedDarkCyan;
   static constexpr auto c2 = colour::kSolarizedDarkViolet;
   static constexpr auto c3 = colour::kSolarizedDarkMagenta;
-  static constexpr auto outline = nline(colour::kOutline, colour::kZOutline, 2.5f);
-  static constexpr auto m_outline = nline(colour::kOutline, colour::kZOutline, -2.5f);
 
-  template <fixed C, ShapeNode... Nodes>
-  using rotate_s = rotate_eval<multiply_p<C, 1>, pack<Nodes...>>;
-  template <fixed R, std::uint32_t T, render::flag RFlags>
-  using ngon = compound<
-      ngon_eval<constant<nd2(50 + 25 * R, 50, 4)>,
-                set_colour2<nline(colour::kZero, z, 2.f), parameter_i<2, T>, parameter_i<2, 5>>,
-                set_colour2_alpha<sfill(colour::kZero, z), parameter_i<2, T>, parameter_i<2, 5>,
-                                  constant<cvec4{colour::kFillAlpha2}>>,
-                constant<render::tag_t{0}>, constant<RFlags>>,
-      ngon_eval<constant<nd(44 + 25 * R, 4)>,
-                set_colour<nline(colour::kZero, z, 4.f), parameter_i<2, T>>, constant<sfill()>,
-                constant<render::tag_t{0}>, constant<RFlags>>,
-      ngon<nd(52 + 25 * R, 4), outline>, ngon<nd(48, 4), m_outline>>;
-  template <fixed C, fixed R, std::uint32_t T, render::flag RFlags = render::flag::kNone>
-  using rotate_ngon = rotate_s<C, ngon<R, T, RFlags>>;
-  template <fixed C, fixed R, std::uint32_t T, shape_flag Flags,
-            render::flag RFlags = render::flag::kNone>
-  using rotate_ngon_c =
-      rotate_s<C, ngon<R, T, RFlags>, ngon_collider<nd2(50 + 25 * R, 50, 4), Flags>>;
-  using shape =
-      translate_p<0, rotate_ngon_c<1, 6, 0, shape_flag::kBombVulnerable, render::flag::kNoFlash>,
-                  rotate_ngon<3_fx / 2, 5, 1, render::flag::kNoFlash>,
-                  rotate_ngon_c<2, 4, 2, shape_flag::kDangerous, render::flag::kNoFlash>,
-                  rotate_ngon<5_fx / 2, 3, 3>, rotate_ngon_c<3, 2, 4, shape_flag::kVulnerable>,
-                  rotate_ngon_c<7_fx / 2, 1, 5, shape_flag::kShield>>;
+  static void construct_follow_attack_shape(node& root) {
+    static constexpr std::uint32_t kWidth = 11;
+    static constexpr float z = colour::kZEnemySmall;
+    auto& n = root.add(translate_rotate{.v = key{'v'}, .r = key{'r'}});
+    n.add(ngon{.dimensions = nd(kWidth + 2, 4),
+               .line = {.colour0 = key{'o'}, .z = colour::kZOutline, .width = 2.f}});
+    n.add(ngon{.dimensions = nd(kWidth, 4),
+               .line = {.colour0 = key{'c'}, .z = z, .width = 1.5f},
+               .fill = {.colour0 = key{'f'}, .z = z}});
+  }
 
-  cvec4 c_mix(float t) const { return colour::perceptual_mix(c0, c1, t); }
+  static void construct_shape(node& root) {
+    static constexpr auto outline = sline(colour::kOutline, colour::kZOutline, 2.5f);
+    static constexpr auto m_outline = sline(colour::kOutline, colour::kZOutline, -2.5f);
+    auto c_mix = [](float t) { return colour::perceptual_mix(c0, c1, t); };
 
-  std::tuple<vec2, fixed, std::array<cvec4, 6>> shape_parameters(const Transform& transform) const {
-    std::array<cvec4, 6> colours = {c_mix(0.f),     c_mix(1.f / 5), c_mix(2.f / 5),
-                                    c_mix(3.f / 5), c_mix(4.f / 5), c_mix(1.f)};
-    return {transform.centre, transform.rotation, colours};
+    auto& n = root.add(translate{key{'v'}});
+    for (unsigned char i = 0; i < 6; ++i) {
+      auto& t = n.add(rotate{key{'0'} + key{i}});
+      fixed r = 6 - i;
+      auto c = c_mix(i / 5.f);
+      auto r_flags = i < 3 ? render::flag::kNoFlash : render::flag::kNone;
+
+      t.add(ngon{.dimensions = nd2(50 + 25 * r, 50, 4),
+                 .line = {.colour0 = c, .colour1 = c1, .z = z, .width = 2.f},
+                 .fill = {.colour0 = colour::alpha(c, colour::kFillAlpha2),
+                          .colour1 = colour::alpha(c1, colour::kFillAlpha2),
+                          .z = z},
+                 .flags = r_flags});
+      t.add(ngon{.dimensions = nd(44 + 25 * r, 4),
+                 .line = {.colour0 = c, .z = z, .width = 4.f},
+                 .flags = r_flags});
+      t.add(ngon{.dimensions = nd(52 + 25 * r, 4), .line = outline});
+      t.add(ngon{.dimensions = nd(48, 4), .line = m_outline});
+
+      auto flag = i == 0 ? shape_flag::kBombVulnerable
+          : i == 2       ? shape_flag::kDangerous
+          : i == 4       ? shape_flag::kVulnerable
+          : i == 5       ? shape_flag::kShield
+                         : shape_flag::kNone;
+      if (flag != shape_flag::kNone) {
+        t.add(ngon_collider{.dimensions = nd2(50 + 25 * r, 50, 4), .flags = flag});
+      }
+    }
+  }
+
+  void set_parameters(const Transform& transform, parameter_set& parameters) const {
+    parameters.add(key{'v'}, transform.centre).add(key{'r'}, transform.rotation);
+    for (unsigned char i = 0; i < 6; ++i) {
+      parameters.add(key{'0'} + key{i}, transform.rotation * (1 + i / 2_fx));
+    }
   }
 
   struct corner_tag {
@@ -291,9 +307,6 @@ struct SquareBoss : public ecs::component {
     static constexpr std::uint32_t kSmallWidth = 11;
     static constexpr auto cf = colour::alpha(c3, colour::kFillAlpha0);
     static constexpr float z = colour::kZEnemySmall;
-    using small_follow_shape = standard_transform<
-        ngon_colour_p<nd(kSmallWidth + 2, 4), 2, outline>,
-        ngon_colour_p2<nd(kSmallWidth, 4), 3, 4, nline(c3, z, 1.5f), sfill(cf, z)>>;
     if (!special_attack) {
       return;
     }
@@ -302,6 +315,9 @@ struct SquareBoss : public ecs::component {
     auto c0 = colour::alpha(colour::kOutline, ta);
     auto c1 = colour::alpha(c3, ta);
     auto c2 = colour::alpha(cf, ta);
+
+    auto& shape_bank = sim.shape_bank();
+    const auto& follow_attack_shape = shape_bank[&construct_follow_attack_shape];
 
     for (const auto& id : special_attack->players) {
       auto ph = sim.index().get(id);
@@ -316,8 +332,14 @@ struct SquareBoss : public ecs::component {
       for (std::uint32_t i = 0; i < 6; ++i) {
         auto v = p_transform.centre + d;
         auto& r = local_resolve();
-        resolve_shape<small_follow_shape>(
-            std::tuple{v, 4 * pi<fixed> * ease_out_cubic(1_fx - t), c0, c1, c2}, r);
+        geom2::resolve(r, follow_attack_shape,
+                       shape_bank.parameters([&](parameter_set& parameters) {
+                         parameters.add(key{'v'}, v)
+                             .add(key{'r'}, 4 * pi<fixed> * ease_out_cubic(1_fx - t))
+                             .add(key{'o'}, c0)
+                             .add(key{'c'}, c1)
+                             .add(key{'f'}, cf);
+                       }));
         render_shape(output, r);
         d = ::rotate(d, 2 * pi<fixed> / 6);
       }
@@ -352,7 +374,7 @@ void spawn_biome0_square_boss(SimInterface& sim, std::uint32_t biome_index) {
     break;
   }
 
-  auto h = create_ship_default<SquareBoss>(sim, position);
+  auto h = create_ship_default2<SquareBoss>(sim, position);
   add_boss_data<SquareBoss>(h, ustring::ascii("Squall"),
                             SquareBoss::kBaseHp + SquareBoss::kBiomeHp * biome_index);
   h.add(Physics{.mass = 12u});

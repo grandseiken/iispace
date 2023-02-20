@@ -373,7 +373,10 @@ void check_collision_internal(hit_result& result, const convert_local_transform&
 
 }  // namespace
 
-// TODO: optimize further. For example, can also inline any compound node into its parent.
+// TODO: optimize further. For example:
+// - can also inline any compound node into its parent.
+// - instead of flagging nodes with kCollision or kResolve, stable_partion or duplicate
+//   the whole thing?
 node_type ShapeBank::optimize(node& n) {
   if (std::holds_alternative<compound>(n.data_) && n.size() == 1u) {
     const auto& c = *n.children_.front();
