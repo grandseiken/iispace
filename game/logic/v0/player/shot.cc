@@ -1,6 +1,5 @@
 #include "game/logic/v0/player/shot.h"
 #include "game/common/enum.h"
-#include "game/geometry/shapes/box.h"
 #include "game/logic/sim/io/conditions.h"
 #include "game/logic/v0/lib/components.h"
 #include "game/logic/v0/lib/particles.h"
@@ -26,7 +25,7 @@ struct bitmask_enum<v0::shot_flags> : std::true_type {};
 
 namespace ii::v0 {
 namespace {
-using namespace geom;
+using namespace geom2;
 
 struct PlayerShot;
 ecs::handle spawn_player_shot(SimInterface& sim, const vec2& position, const PlayerShot& shot_data);
@@ -72,17 +71,22 @@ struct shot_mod_data {
 DEBUG_STRUCT_TUPLE(shot_mod_data, flags, speed, distance_travelled, max_distance, damage);
 
 struct PlayerShot : ecs::component {
+  static constexpr fixed kBoundingWidth = 0;
+  static constexpr auto kFlags = shape_flag::kNone;
   static constexpr auto z = colour::kZPlayerShot;
-  static constexpr auto style = sline(colour::kZero, z);
-  using shape =
-      standard_transform<box<vec2{4_fx, 4_fx}, sline(colour::kOutline, colour::kZOutline)>,
-                         box_colour_p<vec2{2 + 1_fx / 2_fx, 2 + 1_fx / 2_fx}, 2, style>,
-                         box_colour_p<vec2{1 + 1_fx / 4_fx, 1 + 1_fx / 4_fx}, 3, style>>;
 
-  std::tuple<vec2, fixed, cvec4, cvec4> shape_parameters(const Transform& transform) const {
-    auto c_dark = colour;
-    c_dark.a = .2f;
-    return {transform.centre, transform.rotation, colour, c_dark};
+  static void construct_shape(node& root) {
+    auto& n = root.add(translate_rotate{key{'v'}, key{'r'}});
+    n.add(box{.dimensions = vec2{4}, .line = sline(colour::kOutline, colour::kZOutline)});
+    n.add(box{.dimensions = vec2{2 + 1_fx / 2}, .line = {.colour0 = key{'c'}, .z = z}});
+    n.add(box{.dimensions = vec2{1 + 1_fx / 4}, .line = {.colour0 = key{'d'}, .z = z}});
+  }
+
+  void set_parameters(const Transform& transform, parameter_set& parameters) const {
+    parameters.add(key{'v'}, transform.centre)
+        .add(key{'r'}, transform.rotation)
+        .add(key{'c'}, colour)
+        .add(key{'d'}, colour::alpha(colour, .2f));
   }
 
   ecs::entity_id player{0};
@@ -232,7 +236,7 @@ DEBUG_STRUCT_TUPLE(PlayerShot, player, player_number, is_predicted, direction, d
 
 ecs::handle
 spawn_player_shot(SimInterface& sim, const vec2& position, const PlayerShot& shot_data) {
-  auto h = create_ship_default<PlayerShot>(sim, position);
+  auto h = create_ship_default2<PlayerShot>(sim, position);
   h.add(shot_data);
   return h;
 }

@@ -68,16 +68,18 @@ geom::resolve_result& resolve_entity_shape(ecs::const_handle h) {
   return r;
 }
 
+template <sfn::ptr<void(geom2::node&)> ConstructShape, typename F>
+geom::resolve_result& resolve_shape2(const SimInterface& sim, F&& set_function) {
+  auto& r = local_resolve();
+  geom2::resolve(r, sim.shape_bank(), ConstructShape, set_function);
+  return r;
+}
+
 template <typename ShapeDefinition>
 geom::resolve_result& resolve_entity_shape2(ecs::const_handle h, const SimInterface& sim) {
-  auto& r = local_resolve();
-  auto& shape_bank = sim.shape_bank();
-  auto set_parameters = [&h](geom2::parameter_set& parameters) {
-    ShapeDefinition::set_parameters(h, parameters);
-  };
-  geom2::resolve(r, shape_bank[ShapeDefinition::construct_shape],
-                 shape_bank.parameters(set_parameters));
-  return r;
+  return resolve_shape2<ShapeDefinition::construct_shape>(
+      sim,
+      [&h](geom2::parameter_set& parameters) { ShapeDefinition::set_parameters(h, parameters); });
 }
 
 //////////////////////////////////////////////////////////////////////////////////

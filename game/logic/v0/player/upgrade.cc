@@ -18,111 +18,91 @@ enum class upgrade_position : std::uint32_t {
   kR1 = 3,
 };
 
-std::vector<render::shape> render_mod_icon(mod_id id, std::uint32_t animation) {
-  auto render = [&]<typename S>(S) {
-    std::vector<render::shape> shapes;
-    auto t = static_cast<fixed>(animation) / 24;
+std::vector<render::shape>
+render_mod_icon(const SimInterface& sim, const mod_data& data, std::uint32_t animation) {
+  auto render = [&](geom2::ShapeBank::node_construct_t construct) {
+    auto c = mod_category_colour(data.category);
     auto& r = local_resolve();
-    resolve_shape<S>(std::tuple{t}, r);
+    geom2::resolve(r, sim.shape_bank(), construct, [&](geom2::parameter_set& parameters) {
+      parameters.add(geom2::key{'r'}, static_cast<fixed>(animation) / 24)
+          .add(geom2::key{'c'}, c)
+          .add(geom2::key{'f'}, colour::alpha(c, colour::kFillAlpha0));
+    });
+
+    std::vector<render::shape> shapes;
     render_shape(shapes, r);
     return shapes;
   };
 
-  switch (id) {
+  switch (data.id) {
   case mod_id::kNone:
     break;
   case mod_id::kBackShots:
-    return render(icons::generic_weapon<colour::kCategoryGeneral>{});
   case mod_id::kFrontShots:
-    return render(icons::generic_weapon<colour::kCategoryGeneral>{});
   case mod_id::kBounceShots:
-    return render(icons::generic_weapon<colour::kCategoryGeneral>{});
   case mod_id::kHomingShots:
-    return render(icons::generic_weapon<colour::kCategoryGeneral>{});
+    return render(&icons::generic_weapon);
+
   case mod_id::kSuperCapacity:
-    return render(icons::generic_super<colour::kCategoryGeneral>{});
   case mod_id::kSuperRefill:
-    return render(icons::generic_super<colour::kCategoryGeneral>{});
+    return render(&icons::generic_super);
+
   case mod_id::kBombCapacity:
-    return render(icons::generic_bomb<colour::kCategoryGeneral>{});
   case mod_id::kBombRadius:
-    return render(icons::generic_bomb<colour::kCategoryGeneral>{});
   case mod_id::kBombSpeedClearCharge:
-    return render(icons::generic_bomb<colour::kCategoryGeneral>{});
   case mod_id::kBombDoubleTrigger:
-    return render(icons::generic_bomb<colour::kCategoryGeneral>{});
+    return render(&icons::generic_bomb);
+
   case mod_id::kShieldCapacity:
-    return render(icons::generic_shield<colour::kCategoryGeneral>{});
   case mod_id::kShieldRefill:
-    return render(icons::generic_shield<colour::kCategoryGeneral>{});
   case mod_id::kShieldRespawn:
-    return render(icons::generic_shield<colour::kCategoryGeneral>{});
+    return render(&icons::generic_shield);
+
   case mod_id::kPowerupDrops:
-    return render(icons::generic_bonus<colour::kCategoryGeneral>{});
   case mod_id::kCurrencyDrops:
-    return render(icons::generic_bonus<colour::kCategoryGeneral>{});
+    return render(&icons::generic_bonus);
+
   case mod_id::kCorruptionWeapon:
-    return render(icons::generic_weapon<colour::kCategoryCorruption>{});
-  case mod_id::kCorruptionSuper:
-    return render(icons::generic_super<colour::kCategoryCorruption>{});
-  case mod_id::kCorruptionBomb:
-    return render(icons::generic_bomb<colour::kCategoryCorruption>{});
-  case mod_id::kCorruptionShield:
-    return render(icons::generic_shield<colour::kCategoryCorruption>{});
-  case mod_id::kCorruptionBonus:
-    return render(icons::generic_bonus<colour::kCategoryCorruption>{});
   case mod_id::kCloseCombatWeapon:
-    return render(icons::generic_weapon<colour::kCategoryCloseCombat>{});
-  case mod_id::kCloseCombatSuper:
-    return render(icons::generic_super<colour::kCategoryCloseCombat>{});
-  case mod_id::kCloseCombatBomb:
-    return render(icons::generic_bomb<colour::kCategoryCloseCombat>{});
-  case mod_id::kCloseCombatShield:
-    return render(icons::generic_shield<colour::kCategoryCloseCombat>{});
-  case mod_id::kCloseCombatBonus:
-    return render(icons::generic_bonus<colour::kCategoryCloseCombat>{});
   case mod_id::kLightningWeapon:
-    return render(icons::generic_weapon<colour::kCategoryLightning>{});
-  case mod_id::kLightningSuper:
-    return render(icons::generic_super<colour::kCategoryLightning>{});
-  case mod_id::kLightningBomb:
-    return render(icons::generic_bomb<colour::kCategoryLightning>{});
-  case mod_id::kLightningShield:
-    return render(icons::generic_shield<colour::kCategoryLightning>{});
-  case mod_id::kLightningBonus:
-    return render(icons::generic_bonus<colour::kCategoryLightning>{});
   case mod_id::kSniperWeapon:
-    return render(icons::generic_weapon<colour::kCategorySniper>{});
-  case mod_id::kSniperSuper:
-    return render(icons::generic_super<colour::kCategorySniper>{});
-  case mod_id::kSniperBomb:
-    return render(icons::generic_bomb<colour::kCategorySniper>{});
-  case mod_id::kSniperShield:
-    return render(icons::generic_shield<colour::kCategorySniper>{});
-  case mod_id::kSniperBonus:
-    return render(icons::generic_bonus<colour::kCategorySniper>{});
   case mod_id::kLaserWeapon:
-    return render(icons::generic_weapon<colour::kCategoryLaser>{});
-  case mod_id::kLaserSuper:
-    return render(icons::generic_super<colour::kCategoryLaser>{});
-  case mod_id::kLaserBomb:
-    return render(icons::generic_bomb<colour::kCategoryLaser>{});
-  case mod_id::kLaserShield:
-    return render(icons::generic_shield<colour::kCategoryLaser>{});
-  case mod_id::kLaserBonus:
-    return render(icons::generic_bonus<colour::kCategoryLaser>{});
   case mod_id::kClusterWeapon:
-    return render(icons::generic_weapon<colour::kCategoryCluster>{});
+    return render(&icons::generic_weapon);
+
+  case mod_id::kCorruptionSuper:
+  case mod_id::kCloseCombatSuper:
+  case mod_id::kLightningSuper:
+  case mod_id::kSniperSuper:
+  case mod_id::kLaserSuper:
   case mod_id::kClusterSuper:
-    return render(icons::generic_super<colour::kCategoryCluster>{});
+    return render(&icons::generic_super);
+
+  case mod_id::kCorruptionBomb:
+  case mod_id::kCloseCombatBomb:
+  case mod_id::kLightningBomb:
+  case mod_id::kSniperBomb:
+  case mod_id::kLaserBomb:
   case mod_id::kClusterBomb:
-    return render(icons::generic_bomb<colour::kCategoryCluster>{});
+    return render(&icons::generic_bomb);
+
+  case mod_id::kCorruptionShield:
+  case mod_id::kCloseCombatShield:
+  case mod_id::kLightningShield:
+  case mod_id::kSniperShield:
+  case mod_id::kLaserShield:
   case mod_id::kClusterShield:
-    return render(icons::generic_shield<colour::kCategoryCluster>{});
+    return render(&icons::generic_shield);
+
+  case mod_id::kCorruptionBonus:
+  case mod_id::kCloseCombatBonus:
+  case mod_id::kLightningBonus:
+  case mod_id::kSniperBonus:
+  case mod_id::kLaserBonus:
   case mod_id::kClusterBonus:
-    return render(icons::generic_bonus<colour::kCategoryCluster>{});
+    return render(&icons::generic_bonus);
   }
-  return render(icons::mod_unknown{});
+  return render(&icons::mod_unknown);
 }
 
 // TODO: needs a better effect on pickup.
@@ -255,7 +235,7 @@ struct ModUpgrade : ecs::component {
         .bounds = {{0, kTitleFontSize + kPanelPadding},
                    {kIconWidth,
                     std::min(kIconWidth, panel_size.y - 3 * kPanelPadding - kTitleFontSize)}},
-        .e = render::combo_panel::icon{.shapes = render_mod_icon(mod_id, icon_animation)},
+        .e = render::combo_panel::icon{.shapes = render_mod_icon(sim, data, icon_animation)},
     });
     output.emplace_back(std::move(panel));
 

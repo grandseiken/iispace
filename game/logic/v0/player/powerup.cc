@@ -1,6 +1,4 @@
 #include "game/logic/v0/player/powerup.h"
-#include "game/geometry/node_conditional.h"
-#include "game/geometry/shapes/ngon.h"
 #include "game/logic/sim/io/conditions.h"
 #include "game/logic/sim/io/player.h"
 #include "game/logic/sim/sim_interface.h"
@@ -16,7 +14,7 @@ namespace {
 constexpr std::uint32_t kPowerupTimer = 90u * 60u;
 constexpr fixed kPowerupCloseDistance = 50;
 constexpr fixed kPowerupCollectDistance = 14;
-using namespace geom;
+using namespace geom2;
 
 float fade(std::uint32_t tick_count) {
   return (1.f + sin(static_cast<float>(tick_count) / 16.f)) / 2.f;
@@ -40,29 +38,37 @@ void wobble_movement(SimInterface& sim, const Transform& transform, vec2& dir,
 }
 
 struct PlayerBubble : ecs::component {
-  static constexpr fixed kSpeed = 1;
-  static constexpr fixed kBoundingWidth = 16;
   static constexpr std::uint32_t kRotateTime = 120;
-
+  static constexpr fixed kBoundingWidth = 16;
+  static constexpr fixed kSpeed = 1;
+  static constexpr auto kFlags = shape_flag::kVulnerable;
   static constexpr auto z = colour::kZPlayerBubble;
-  using shape = translate_p<
-      0,
-      rotate_eval<
-          multiply_p<-2_fx, 1>,
-          compound<ngon_collider<nd(14, 8), shape_flag::kVulnerable>,
-                   ngon_colour_p<nd(16, 8), 5, nline(colour::kZero, colour::kZOutline, 2.f)>,
-                   ngon_colour_p<nd(14, 8), 4, nline(colour::kZero, z)>>>,
-      rotate_p<
-          1, ngon<nd(21, 3), nline(colour::kOutline, colour::kZOutline, 3.f)>,
-          ngon_colour_p2<nd(18, 3), 2, 3, nline(colour::kZero, z, 1.5f), sfill(colour::kZero, z)>>>;
-  std::tuple<vec2, fixed, cvec4, cvec4, cvec4, cvec4>
-  shape_parameters(const Transform& transform) const {
-    return {transform.centre,
-            transform.rotation,
-            v0_player_colour(player_number),
-            colour::alpha(v0_player_colour(player_number), colour::kFillAlpha0),
-            colour::alpha(colour::kWhite0, fade(tick_count)),
-            colour::alpha(colour::kOutline, fade(tick_count))};
+
+  static void construct_shape(node& root) {
+    auto& n = root.add(translate{key{'v'}});
+    auto& r0 = n.add(rotate{key{'R'}});
+    auto& r1 = n.add(rotate{key{'r'}});
+
+    r0.add(ngon_collider{.dimensions = nd(14, 8), .flags = shape_flag::kVulnerable});
+    r0.add(ngon{.dimensions = nd(16, 8),
+                .line = {.colour0 = key{'O'}, .z = colour::kZOutline, .width = 2.f}});
+    r0.add(ngon{.dimensions = nd(14, 8), .line = {.colour0 = key{'C'}, .z = z}});
+
+    r1.add(ngon{.dimensions = nd(21, 3), .line = sline(colour::kOutline, colour::kZOutline, 3.f)});
+    r1.add(ngon{.dimensions = nd(18, 3),
+                .line = {.colour0 = key{'c'}, .z = z, .width = 1.5f},
+                .fill = {.colour0 = key{'f'}, .z = z}});
+  }
+
+  void set_parameters(const Transform& transform, parameter_set& parameters) const {
+    auto c = v0_player_colour(player_number);
+    parameters.add(key{'v'}, transform.centre)
+        .add(key{'r'}, transform.rotation)
+        .add(key{'R'}, -2 * transform.rotation)
+        .add(key{'c'}, c)
+        .add(key{'f'}, colour::alpha(c, colour::kFillAlpha0))
+        .add(key{'C'}, colour::alpha(colour::kWhite0, fade(tick_count)))
+        .add(key{'O'}, colour::alpha(colour::kOutline, fade(tick_count)));
   }
 
   PlayerBubble(std::uint32_t player_number) : player_number{player_number} {}
@@ -98,15 +104,22 @@ struct PlayerBubble : ecs::component {
 DEBUG_STRUCT_TUPLE(PlayerBubble, player_number, tick_count, dir, first_frame, rotate_anti);
 
 struct ShieldPowerup : ecs::component {
-  static constexpr fixed kSpeed = 3_fx / 4_fx;
   static constexpr std::uint32_t kRotateTime = 150;
-
+  static constexpr fixed kSpeed = 3_fx / 4_fx;
+  static constexpr fixed kBoundingWidth = 0;
+  static constexpr auto kFlags = shape_flag::kNone;
   static constexpr auto z = colour::kZPowerup;
-  using shape = standard_transform<ngon_colour_p<nd(14, 6), 2, nline(colour::kZero, z)>,
-                                   ngon<nd(11, 6), nline(colour::kWhite0, z, 1.5f)>>;
 
-  std::tuple<vec2, fixed, cvec4> shape_parameters(const Transform& transform) const {
-    return {transform.centre, transform.rotation, colour::alpha(colour::kWhite0, fade(timer))};
+  static void construct_shape(node& root) {
+    auto& n = root.add(translate_rotate{key{'v'}, key{'r'}});
+    n.add(ngon{.dimensions = nd(14, 6), .line = {.colour0 = key{'c'}, .z = z}});
+    n.add(ngon{.dimensions = nd(11, 6), .line = sline(colour::kWhite0, z, 1.5f)});
+  }
+
+  void set_parameters(const Transform& transform, parameter_set& parameters) const {
+    parameters.add(key{'v'}, transform.centre)
+        .add(key{'r'}, transform.rotation)
+        .add(key{'c'}, colour::alpha(colour::kWhite0, fade(timer)));
   }
 
   ShieldPowerup() = default;
@@ -164,15 +177,22 @@ struct ShieldPowerup : ecs::component {
 DEBUG_STRUCT_TUPLE(ShieldPowerup, timer, dir, first_frame, rotate_anti);
 
 struct BombPowerup : ecs::component {
-  static constexpr fixed kSpeed = 3_fx / 4_fx;
   static constexpr std::uint32_t kRotateTime = 150;
-
+  static constexpr fixed kSpeed = 3_fx / 4_fx;
+  static constexpr fixed kBoundingWidth = 0;
+  static constexpr auto kFlags = shape_flag::kNone;
   static constexpr auto z = colour::kZPowerup;
-  using shape = standard_transform<ngon_colour_p<nd(14, 6), 2, nline(colour::kZero, z)>,
-                                   rotate_p<1, ngon<nd(5, 6), nline(colour::kWhite0, z, 1.5f)>>>;
 
-  std::tuple<vec2, fixed, cvec4> shape_parameters(const Transform& transform) const {
-    return {transform.centre, transform.rotation, colour::alpha(colour::kWhite0, fade(timer))};
+  static void construct_shape(node& root) {
+    auto& n = root.add(translate_rotate{key{'v'}, key{'r'}});
+    n.add(ngon{.dimensions = nd(14, 6), .line = {.colour0 = key{'c'}, .z = z}});
+    n.add(ngon{.dimensions = nd(5, 6), .line = sline(colour::kWhite0, z, 1.5f)});
+  }
+
+  void set_parameters(const Transform& transform, parameter_set& parameters) const {
+    parameters.add(key{'v'}, transform.centre)
+        .add(key{'r'}, transform.rotation)
+        .add(key{'c'}, colour::alpha(colour::kWhite0, fade(timer)));
   }
 
   BombPowerup() = default;
@@ -267,25 +287,25 @@ ecs::handle spawn_player_bubble(SimInterface& sim, ecs::handle player) {
     position = {dim.x + d, dim.y / 2};
   }
 
-  auto h = create_ship_default<PlayerBubble>(sim, position);
+  auto h = create_ship_default2<PlayerBubble>(sim, position);
   h.add(PlayerBubble{player.get<Player>()->player_number});
   h.add(Health{.hp = 96,
                .destroy_sound = sound::kPlayerDestroy,
                .destroy_rumble = rumble_type::kLarge,
                .on_destroy =
-                   sfn::cast<Health::on_destroy_t, &destruct_entity_default<PlayerBubble>>});
+                   sfn::cast<Health::on_destroy_t, &destruct_entity_default2<PlayerBubble>>});
   h.add(AiFocusTag{.priority = 24});
   return h;
 }
 
 void spawn_shield_powerup(SimInterface& sim, const vec2& position) {
-  auto h = create_ship_default<ShieldPowerup>(sim, position);
+  auto h = create_ship_default2<ShieldPowerup>(sim, position);
   h.add(ShieldPowerup{});
   h.add(PowerupTag{.ai_requires = ecs::call<&ShieldPowerup::is_required>});
 }
 
 void spawn_bomb_powerup(SimInterface& sim, const vec2& position) {
-  auto h = create_ship_default<BombPowerup>(sim, position);
+  auto h = create_ship_default2<BombPowerup>(sim, position);
   h.add(BombPowerup{});
   h.add(PowerupTag{.ai_requires = ecs::call<&BombPowerup::is_required>});
 }

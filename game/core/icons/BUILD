@@ -3,7 +3,7 @@ cc_library(
   hdrs = ["mod_icons.h"],
   deps = [
     "//game/common:math",
-    "//game/geometry/shapes",
+    "//game/geom2",
   ],
   visibility = ["//visibility:public"],
 )

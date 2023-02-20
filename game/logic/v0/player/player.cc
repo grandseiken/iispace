@@ -1,6 +1,4 @@
 #include "game/logic/v0/player/player.h"
-#include "game/geometry/shapes/box.h"
-#include "game/geometry/shapes/ngon.h"
 #include "game/logic/sim/io/conditions.h"
 #include "game/logic/sim/io/output.h"
 #include "game/logic/sim/io/player.h"
@@ -13,7 +11,7 @@
 
 namespace ii::v0 {
 namespace {
-using namespace geom;
+using namespace geom2;
 
 struct player_mod_data {
   static constexpr std::uint32_t kShieldRefillTimer = 60 * 24;
@@ -25,23 +23,32 @@ struct player_mod_data {
 DEBUG_STRUCT_TUPLE(player_mod_data, shield_refill_timer, bomb_double_trigger_timer);
 
 struct PlayerLogic : ecs::component {
-  static constexpr fixed kPlayerSpeed = 5_fx * 15_fx / 16_fx;
   static constexpr std::uint32_t kReviveTime = 150;
   static constexpr std::uint32_t kShieldTime = 50;
   static constexpr std::uint32_t kInputTimer = 30;
-
+  static constexpr fixed kPlayerSpeed = 5_fx * 15_fx / 16_fx;
+  static constexpr fixed kBoundingWidth = 0;
+  static constexpr auto kFlags = shape_flag::kNone;
   static constexpr auto z = colour::kZPlayer;
-  static constexpr auto style = sline(colour::kZero, z);
-  using box_shapes = translate<8, 0, rotate_eval<negate_p<1>, box_colour_p<vec2{2, 2}, 2, style>>,
-                               rotate_eval<negate_p<1>, box_colour_p<vec2{1, 1}, 3, style>>,
-                               rotate_eval<negate_p<1>, box_colour_p<vec2{3, 3}, 3, style>>>;
-  using shape = standard_transform<
-      ngon_colour_p<nd(21, 3), 5, nline(colour::kOutline, colour::kZOutline, 3.f)>,
-      ngon_colour_p2<nd(18, 3), 2, 4, nline(colour::kZero, z, 1.5f)>,
-      rotate<pi<fixed>, ngon_colour_p<nd(9, 3), 2>>, box_shapes>;
 
-  std::tuple<vec2, fixed, cvec4, cvec4, cvec4, cvec4>
-  shape_parameters(const Player& pc, const Transform& transform) const {
+  static void construct_shape(node& root) {
+    auto& n = root.add(translate_rotate{key{'v'}, key{'r'}});
+    n.add(ngon{.dimensions = nd(21, 3),
+               .line = {.colour0 = key{'o'}, .z = colour::kZOutline, .width = 3.f}});
+    n.add(ngon{.dimensions = nd(18, 3),
+               .line = {.colour0 = key{'c'}, .z = z, .width = 1.5f},
+               .fill = {.colour0 = key{'f'}, .z = z}});
+
+    n.add(rotate{pi<fixed>})
+        .add(ngon{.dimensions = nd(9, 3), .line = {.colour0 = key{'c'}, .z = z}});
+    auto& t = n.add(translate{vec2{8, 0}}).add(rotate{key{'R'}});
+    t.add(box{.dimensions = vec2{2}, .line = {.colour0 = key{'c'}, .z = z}});
+    t.add(box{.dimensions = vec2{1}, .line = {.colour0 = key{'d'}, .z = z}});
+    t.add(box{.dimensions = vec2{3}, .line = {.colour0 = key{'d'}, .z = z}});
+  }
+
+  void
+  set_parameters(const Player& pc, const Transform& transform, parameter_set& parameters) const {
     auto colour = colour::kZero;
     if (!pc.is_killed) {
       colour = v0_player_colour(pc.player_number);
@@ -51,15 +58,14 @@ struct PlayerLogic : ecs::component {
             glm::mix(colour, c, .375f + .125f * sin(invulnerability_timer / (2.f * pi<float>)));
       }
     }
-    auto c_dark = colour;
-    c_dark.a = std::min(c_dark.a, .2f);
-    return {transform.centre,
-            transform.rotation,
-            colour,
-            c_dark,
-            colour::alpha(colour, std::min(colour.a, colour::kFillAlpha0)),
-            colour::alpha(colour::kOutline, colour.a)};
-  };
+    parameters.add(key{'v'}, transform.centre)
+        .add(key{'r'}, transform.rotation)
+        .add(key{'R'}, -transform.rotation)
+        .add(key{'c'}, colour)
+        .add(key{'d'}, colour::alpha(colour, .2f))
+        .add(key{'f'}, colour::alpha(colour, colour::kFillAlpha0))
+        .add(key{'o'}, colour::alpha(colour::kOutline, colour.a));
+  }
 
   PlayerLogic(const vec2& target) : fire_target{target} {}
   std::optional<ecs::entity_id> bubble_id;
@@ -225,7 +231,7 @@ struct PlayerLogic : ecs::component {
       return;
     }
 
-    auto& r = resolve_entity_shape<PlayerLogic>(h);
+    auto& r = resolve_entity_shape2<default_shape_definition<PlayerLogic>>(h, sim);
     explode_shapes(e, r);
     explode_shapes(e, r, colour::kWhite0, 14);
     explode_shapes(e, r, std::nullopt, 20);
@@ -269,16 +275,17 @@ struct PlayerLogic : ecs::component {
     auto c = v0_player_colour(pc.player_number);
     auto e = sim.emit(resolve_key::local(pc.player_number));
     auto& random = sim.random(random_source::kAesthetic);
-    auto& r = resolve_entity_shape<PlayerLogic>(h);
+    auto& r = resolve_entity_shape2<default_shape_definition<PlayerLogic>>(h, sim);
+
+    // TODO: fx bomb explosion. Work out how to do really big explosions.
     explode_shapes(e, r, colour::kWhite0, 18);
     explode_shapes(e, r, c, 21);
     explode_shapes(e, r, colour::kWhite0, 24);
-    // TODO: bomb explosion. Work out how to do really big explosions.
-
     for (std::uint32_t i = 0; i < 64; ++i) {
       auto v = position + from_polar(2 * i * pi<fixed> / 64, radius);
-      auto& r = local_resolve();
-      resolve_shape<shape>(shape_parameters(pc, {{}, v, 0_fx}), r);
+      auto& r = resolve_shape2<&construct_shape>(sim, [&](parameter_set& parameters) {
+        set_parameters(pc, {{}, v, 0_fx}, parameters);
+      });
       explode_shapes(e, r, (i % 2) ? c : colour::kWhite0, 8 + random.uint(8) + random.uint(8),
                      to_float(position));
     }
@@ -293,57 +300,74 @@ struct PlayerLogic : ecs::component {
     }
   }
 
+  static void construct_fire_target(node& root) {
+    root.add(translate{key{'v'}})
+        .add(ngon{.dimensions = nd(8, 4),
+                  .style = ngon_style::kPolystar,
+                  .line = {.colour0 = key{'c'}, .z = colour::kZPlayerCursor},
+                  .tag = render::tag_t{'t'}});
+  }
+
+  static void construct_shield_shape(node& root) {
+    auto& n = root.add(translate_rotate{key{'v'}, key{'r'}});
+    for (std::uint32_t i = 0; i < 3; ++i) {
+      auto& r = n.add(rotate{i * 2_fx * pi<fixed> / 3});
+      r.add(ngon{
+          .dimensions = {.radius = key{'d'}, .sides = 18, .segments = 4},
+          .line = sline(colour::kWhite1, colour::kZPlayerPowerup),
+          .tag = render::tag_t{'s'},
+      });
+      r.add(ngon{
+          .dimensions = {.radius = key{'D'}, .sides = 18, .segments = 4},
+          .line = sline(colour::kOutline, colour::kZOutline, 2.f),
+          .tag = render::tag_t{'s'},
+      });
+    }
+  }
+
+  static void construct_bomb_shape(node& root) {
+    root.add(translate_rotate{key{'v'}, key{'r'}})
+        .add(translate{key{'V'}})
+        .add(ngon{
+            .dimensions = nd(3, 6),
+            .line = sline(colour::kWhite0, colour::kZPlayerPowerup),
+            .tag = render::tag_t{'b'},
+        });
+  }
+
   void render(const Player& pc, const Transform& transform, std::vector<render::shape>& output,
               const SimInterface& sim) const {
     if (!pc.is_killed || fire_target_render_timer) {
-      output.emplace_back(render::shape{
-          .origin = to_float(fire_target),
-          .colour0 = v0_player_colour(pc.player_number),
-          .z = 100.f,
-          .tag = render::tag_t{'t'},
-          .data = render::ngon{.radius = 8, .sides = 4, .style = render::ngon_style::kPolystar},
+      auto& r = resolve_shape2<&construct_fire_target>(sim, [&](parameter_set& parameters) {
+        parameters.add(key{'v'}, fire_target).add(key{'c'}, v0_player_colour(pc.player_number));
       });
+      render_shape(output, r);
     }
     if (pc.is_killed) {
       return;
     }
 
     for (std::uint32_t i = 0; i < pc.shield_count; ++i) {
-      auto rotation =
-          static_cast<float>(pi<float> * static_cast<float>(render_timer % 240) / 120.f);
-      for (std::uint32_t j = 0; j < 3; ++j) {
-        output.emplace_back(render::shape{
-            .origin = to_float(transform.centre),
-            .rotation = rotation + static_cast<float>(j) * 2.f * pi<float> / 3.f,
-            .colour0 = colour::kWhite1,
-            .z = colour::kZPlayerPowerup,
-            .tag = render::tag_t{'s'},
-            .data = render::ngon{.radius = 20.f + 1.5f * i, .sides = 18, .segments = 4},
-        });
-        output.emplace_back(render::shape{
-            .origin = to_float(transform.centre),
-            .rotation = rotation + static_cast<float>(j) * 2.f * pi<float> / 3.f,
-            .colour0 = colour::kOutline,
-            .z = colour::kZOutline,
-            .tag = render::tag_t{'s'},
-            .data =
-                render::ngon{
-                    .radius = 21.5f + 1.5f * i, .sides = 18, .segments = 4, .line_width = 1.5f},
-        });
-      }
+      auto rotation = pi<fixed> * (render_timer % 240) / 120_fx;
+      auto& r = resolve_shape2<&construct_shield_shape>(sim, [&](parameter_set& parameters) {
+        parameters.add(key{'v'}, transform.centre)
+            .add(key{'r'}, rotation)
+            .add(key{'d'}, 20 + 3_fx * i / 2_fx)
+            .add(key{'D'}, 20 + 3_fx * (i + 1) / 2_fx);
+      });
+      render_shape(output, r);
     }
 
     for (std::uint32_t i = 0; i < pc.bomb_count; ++i) {
       auto t = 6_fx - (std::min(4u, (std::max(pc.bomb_count, 2u) - 2u)) / 2_fx);
       vec2 v{-14, (pc.bomb_count - 1) * (t / 2) - t * i};
-      output.emplace_back(render::shape{
-          .origin = to_float(transform.centre + ::rotate(v, transform.rotation)),
-          .rotation = transform.rotation.to_float(),
-          .colour0 = colour::kWhite0,
-          .z = colour::kZPlayerPowerup,
-          .tag = render::tag_t{'b'},
-          .data = render::ngon{.radius = 3.f, .sides = 6},
+
+      auto& r = resolve_shape2<&construct_bomb_shape>(sim, [&](parameter_set& parameters) {
+        parameters.add(key{'v'}, transform.centre)
+            .add(key{'r'}, transform.rotation)
+            .add(key{'V'}, v);
       });
+      render_shape(output, r);
     }
   }
 
@@ -368,7 +392,7 @@ DEBUG_STRUCT_TUPLE(PlayerLogic, bubble_id, invulnerability_timer, fire_timer, bo
 }  // namespace
 
 void spawn_player(SimInterface& sim, const vec2& position, std::uint32_t player_number) {
-  auto h = create_ship_default<PlayerLogic>(sim, position);
+  auto h = create_ship_default2<PlayerLogic>(sim, position);
   h.add(
       Player{.player_number = player_number, .render_info = ecs::call<&PlayerLogic::render_info>});
   h.add(PlayerLogic{position + vec2{0, -48}});

@@ -254,6 +254,7 @@ constexpr auto kZPlayerShot = 32.f;
 constexpr auto kZPlayerPowerup = 64.f;
 constexpr auto kZPlayerBubble = 72.f;
 constexpr auto kZPlayer = 96.f;
+constexpr auto kZPlayerCursor = 100.f;
 }  // namespace ii::colour
 
 #endif

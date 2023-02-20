@@ -316,9 +316,6 @@ struct SquareBoss : public ecs::component {
     auto c1 = colour::alpha(c3, ta);
     auto c2 = colour::alpha(cf, ta);
 
-    auto& shape_bank = sim.shape_bank();
-    const auto& follow_attack_shape = shape_bank[&construct_follow_attack_shape];
-
     for (const auto& id : special_attack->players) {
       auto ph = sim.index().get(id);
       if (!ph || ph->get<Player>()->is_killed) {
@@ -331,15 +328,14 @@ struct SquareBoss : public ecs::component {
       }
       for (std::uint32_t i = 0; i < 6; ++i) {
         auto v = p_transform.centre + d;
-        auto& r = local_resolve();
-        geom2::resolve(r, follow_attack_shape,
-                       shape_bank.parameters([&](parameter_set& parameters) {
-                         parameters.add(key{'v'}, v)
-                             .add(key{'r'}, 4 * pi<fixed> * ease_out_cubic(1_fx - t))
-                             .add(key{'o'}, c0)
-                             .add(key{'c'}, c1)
-                             .add(key{'f'}, cf);
-                       }));
+        auto& r =
+            resolve_shape2<&construct_follow_attack_shape>(sim, [&](parameter_set& parameters) {
+              parameters.add(key{'v'}, v)
+                  .add(key{'r'}, 4 * pi<fixed> * ease_out_cubic(1_fx - t))
+                  .add(key{'o'}, c0)
+                  .add(key{'c'}, c1)
+                  .add(key{'f'}, cf);
+            });
         render_shape(output, r);
         d = ::rotate(d, 2 * pi<fixed> / 6);
       }

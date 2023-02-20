@@ -103,6 +103,12 @@ using node = ShapeBank::node;
 void resolve(resolve_result&, const node&, const parameter_set&);
 void check_collision(hit_result&, const node&, const parameter_set&, const check_t&);
 
+template <typename F>
+inline void resolve(resolve_result& result, ShapeBank& shape_bank,
+                    ShapeBank::node_construct_t construct, F&& set_function) {
+  resolve(result, shape_bank[construct], shape_bank.parameters(set_function));
+}
+
 }  // namespace ii::geom2
 
 #endif
