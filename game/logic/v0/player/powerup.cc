@@ -287,25 +287,25 @@ ecs::handle spawn_player_bubble(SimInterface& sim, ecs::handle player) {
     position = {dim.x + d, dim.y / 2};
   }
 
-  auto h = create_ship_default2<PlayerBubble>(sim, position);
+  auto h = create_ship_default<PlayerBubble>(sim, position);
   h.add(PlayerBubble{player.get<Player>()->player_number});
   h.add(Health{.hp = 96,
                .destroy_sound = sound::kPlayerDestroy,
                .destroy_rumble = rumble_type::kLarge,
                .on_destroy =
-                   sfn::cast<Health::on_destroy_t, &destruct_entity_default2<PlayerBubble>>});
+                   sfn::cast<Health::on_destroy_t, &destruct_entity_default<PlayerBubble>>});
   h.add(AiFocusTag{.priority = 24});
   return h;
 }
 
 void spawn_shield_powerup(SimInterface& sim, const vec2& position) {
-  auto h = create_ship_default2<ShieldPowerup>(sim, position);
+  auto h = create_ship_default<ShieldPowerup>(sim, position);
   h.add(ShieldPowerup{});
   h.add(PowerupTag{.ai_requires = ecs::call<&ShieldPowerup::is_required>});
 }
 
 void spawn_bomb_powerup(SimInterface& sim, const vec2& position) {
-  auto h = create_ship_default2<BombPowerup>(sim, position);
+  auto h = create_ship_default<BombPowerup>(sim, position);
   h.add(BombPowerup{});
   h.add(PowerupTag{.ai_requires = ecs::call<&BombPowerup::is_required>});
 }

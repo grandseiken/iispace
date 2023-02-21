@@ -231,7 +231,7 @@ struct PlayerLogic : ecs::component {
       return;
     }
 
-    auto& r = resolve_entity_shape2<default_shape_definition<PlayerLogic>>(h, sim);
+    auto& r = resolve_entity_shape<default_shape_definition<PlayerLogic>>(h, sim);
     explode_shapes(e, r);
     explode_shapes(e, r, colour::kWhite0, 14);
     explode_shapes(e, r, std::nullopt, 20);
@@ -275,7 +275,7 @@ struct PlayerLogic : ecs::component {
     auto c = v0_player_colour(pc.player_number);
     auto e = sim.emit(resolve_key::local(pc.player_number));
     auto& random = sim.random(random_source::kAesthetic);
-    auto& r = resolve_entity_shape2<default_shape_definition<PlayerLogic>>(h, sim);
+    auto& r = resolve_entity_shape<default_shape_definition<PlayerLogic>>(h, sim);
 
     // TODO: fx bomb explosion. Work out how to do really big explosions.
     explode_shapes(e, r, colour::kWhite0, 18);
@@ -283,7 +283,7 @@ struct PlayerLogic : ecs::component {
     explode_shapes(e, r, colour::kWhite0, 24);
     for (std::uint32_t i = 0; i < 64; ++i) {
       auto v = position + from_polar(2 * i * pi<fixed> / 64, radius);
-      auto& r = resolve_shape2<&construct_shape>(sim, [&](parameter_set& parameters) {
+      auto& r = resolve_shape<&construct_shape>(sim, [&](parameter_set& parameters) {
         set_parameters(pc, {{}, v, 0_fx}, parameters);
       });
       explode_shapes(e, r, (i % 2) ? c : colour::kWhite0, 8 + random.uint(8) + random.uint(8),
@@ -338,7 +338,7 @@ struct PlayerLogic : ecs::component {
   void render(const Player& pc, const Transform& transform, std::vector<render::shape>& output,
               const SimInterface& sim) const {
     if (!pc.is_killed || fire_target_render_timer) {
-      auto& r = resolve_shape2<&construct_fire_target>(sim, [&](parameter_set& parameters) {
+      auto& r = resolve_shape<&construct_fire_target>(sim, [&](parameter_set& parameters) {
         parameters.add(key{'v'}, fire_target).add(key{'c'}, v0_player_colour(pc.player_number));
       });
       render_shape(output, r);
@@ -349,7 +349,7 @@ struct PlayerLogic : ecs::component {
 
     for (std::uint32_t i = 0; i < pc.shield_count; ++i) {
       auto rotation = pi<fixed> * (render_timer % 240) / 120_fx;
-      auto& r = resolve_shape2<&construct_shield_shape>(sim, [&](parameter_set& parameters) {
+      auto& r = resolve_shape<&construct_shield_shape>(sim, [&](parameter_set& parameters) {
         parameters.add(key{'v'}, transform.centre)
             .add(key{'r'}, rotation)
             .add(key{'d'}, 20 + 3_fx * i / 2_fx)
@@ -362,7 +362,7 @@ struct PlayerLogic : ecs::component {
       auto t = 6_fx - (std::min(4u, (std::max(pc.bomb_count, 2u) - 2u)) / 2_fx);
       vec2 v{-14, (pc.bomb_count - 1) * (t / 2) - t * i};
 
-      auto& r = resolve_shape2<&construct_bomb_shape>(sim, [&](parameter_set& parameters) {
+      auto& r = resolve_shape<&construct_bomb_shape>(sim, [&](parameter_set& parameters) {
         parameters.add(key{'v'}, transform.centre)
             .add(key{'r'}, transform.rotation)
             .add(key{'V'}, v);
@@ -392,7 +392,7 @@ DEBUG_STRUCT_TUPLE(PlayerLogic, bubble_id, invulnerability_timer, fire_timer, bo
 }  // namespace
 
 void spawn_player(SimInterface& sim, const vec2& position, std::uint32_t player_number) {
-  auto h = create_ship_default2<PlayerLogic>(sim, position);
+  auto h = create_ship_default<PlayerLogic>(sim, position);
   h.add(
       Player{.player_number = player_number, .render_info = ecs::call<&PlayerLogic::render_info>});
   h.add(PlayerLogic{position + vec2{0, -48}});

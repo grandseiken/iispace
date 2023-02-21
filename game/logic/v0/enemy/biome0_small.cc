@@ -142,12 +142,12 @@ ecs::handle create_follow_ship(SimInterface& sim, std::uint32_t size, std::uint3
                                  ecs::call<&Follow::set_parameters>, Width, Follow::kFlags>;
 
   auto h = create_ship<Follow>(sim, position, rotation);
-  add_render2<Follow, shape>(h);
-  add_collision2<Follow, shape>(h);
+  add_render<Follow, shape>(h);
+  add_collision<Follow, shape>(h);
   if (size) {
-    add_enemy_health2<Follow, shape>(h, health, sound::kPlayerDestroy, rumble_type::kMedium);
+    add_enemy_health<Follow, shape>(h, health, sound::kPlayerDestroy, rumble_type::kMedium);
   } else {
-    add_enemy_health2<Follow, shape>(h, health);
+    add_enemy_health<Follow, shape>(h, health);
   }
   h.add(Enemy{.threat_value = health / 8});
   h.add(Follow{size, direction, /* in formation */ initial_velocity == vec2{0, 0}});
@@ -286,12 +286,12 @@ ecs::handle create_chaser_ship(SimInterface& sim, std::uint32_t size, std::uint3
                                  ecs::call<&Chaser::set_parameters>, Width, Chaser::kFlags>;
 
   auto h = create_ship<Chaser>(sim, position, rotation);
-  add_render2<Chaser, shape>(h);
-  add_collision2<Chaser, shape>(h);
+  add_render<Chaser, shape>(h);
+  add_collision<Chaser, shape>(h);
   if (size) {
-    add_enemy_health2<Chaser, shape>(h, health, sound::kPlayerDestroy, rumble_type::kMedium);
+    add_enemy_health<Chaser, shape>(h, health, sound::kPlayerDestroy, rumble_type::kMedium);
   } else {
-    add_enemy_health2<Chaser, shape>(h, health);
+    add_enemy_health<Chaser, shape>(h, health);
   }
   h.add(Enemy{.threat_value = health / 8});
   h.add(Chaser{size, stagger});
@@ -435,8 +435,8 @@ ecs::handle spawn_big_chaser(SimInterface& sim, const vec2& position, bool drop)
 }
 
 ecs::handle spawn_follow_sponge(SimInterface& sim, const vec2& position) {
-  auto h = create_ship_default2<FollowSponge>(sim, position);
-  add_enemy_health2<FollowSponge>(h, 256, sound::kPlayerDestroy, rumble_type::kMedium);
+  auto h = create_ship_default<FollowSponge>(sim, position);
+  add_enemy_health<FollowSponge>(h, 256, sound::kPlayerDestroy, rumble_type::kMedium);
   h.add(Enemy{.threat_value = 20u});
   h.add(FollowSponge{});
   h.add(Physics{.mass = 2_fx});

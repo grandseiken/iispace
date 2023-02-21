@@ -175,12 +175,12 @@ geom2::ShapeBank& SimInterface::shape_bank() const {
   return internals_->shape_bank;
 }
 
-bool SimInterface::collide_any(const geom::check_t& it) const {
-  return internals_->collision_index->collide_any(it);
+bool SimInterface::collide_any(const geom2::check_t& check) const {
+  return internals_->collision_index->collide_any(check);
 }
 
-auto SimInterface::collide(const geom::check_t& it) const -> std::vector<collision_info> {
-  return internals_->collision_index->collide(it);
+auto SimInterface::collide(const geom2::check_t& check) const -> std::vector<collision_info> {
+  return internals_->collision_index->collide(check);
 }
 
 bool SimInterface::is_on_screen(const vec2& point) const {

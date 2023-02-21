@@ -2,22 +2,22 @@
 
 namespace ii::v0 {
 
-std::optional<cvec4> get_shape_colour(const geom::resolve_result& r) {
+std::optional<cvec4> get_shape_colour(const geom2::resolve_result& r) {
   for (const auto& e : r.entries) {
-    if (const auto* d = std::get_if<geom::resolve_result::ball>(&e.data); d && d->line.colour0.a) {
+    if (const auto* d = std::get_if<geom2::resolve_result::ball>(&e.data); d && d->line.colour0.a) {
       return d->line.colour0;
     }
-    if (const auto* d = std::get_if<geom::resolve_result::box>(&e.data); d && d->line.colour0.a) {
+    if (const auto* d = std::get_if<geom2::resolve_result::box>(&e.data); d && d->line.colour0.a) {
       return d->line.colour0;
     }
-    if (const auto* d = std::get_if<geom::resolve_result::ngon>(&e.data); d && d->line.colour0.a) {
+    if (const auto* d = std::get_if<geom2::resolve_result::ngon>(&e.data); d && d->line.colour0.a) {
       return d->line.colour0;
     }
   }
   return std::nullopt;
 }
 
-void render_shape(std::vector<render::shape>& output, const geom::resolve_result& r,
+void render_shape(std::vector<render::shape>& output, const geom2::resolve_result& r,
                   const std::optional<float>& hit_alpha, const std::optional<float>& shield_alpha) {
   auto handle_shape = [&](const render::shape& shape) {
     render::shape shape_copy = shape;
@@ -34,7 +34,7 @@ void render_shape(std::vector<render::shape>& output, const geom::resolve_result
   };
 
   for (const auto& e : r.entries) {
-    if (const auto* d = std::get_if<geom::resolve_result::ball>(&e.data)) {
+    if (const auto* d = std::get_if<geom2::resolve_result::ball>(&e.data)) {
       if (d->line.colour0.a || d->line.colour1.a) {
         handle_shape({
             .origin = to_float(*e.t),
@@ -62,7 +62,7 @@ void render_shape(std::vector<render::shape>& output, const geom::resolve_result
                                       .inner_radius = d->dimensions.inner_radius.to_float()},
         });
       }
-    } else if (const auto* d = std::get_if<geom::resolve_result::box>(&e.data)) {
+    } else if (const auto* d = std::get_if<geom2::resolve_result::box>(&e.data)) {
       if (d->line.colour0.a || d->line.colour1.a) {
         handle_shape({
             .origin = to_float(*e.t),
@@ -87,7 +87,7 @@ void render_shape(std::vector<render::shape>& output, const geom::resolve_result
             .data = render::box_fill{.dimensions = to_float(d->dimensions)},
         });
       }
-    } else if (const auto* d = std::get_if<geom::resolve_result::line>(&e.data)) {
+    } else if (const auto* d = std::get_if<geom2::resolve_result::line>(&e.data)) {
       if (d->style.colour0.a || d->style.colour1.a) {
         auto s = render::shape::line(to_float(*e.t.translate(d->a)), to_float(*e.t.translate(d->b)),
                                      d->style.colour0, d->style.colour1, d->style.z, d->style.width,
@@ -95,7 +95,7 @@ void render_shape(std::vector<render::shape>& output, const geom::resolve_result
         s.flags = d->flags;
         handle_shape(s);
       }
-    } else if (const auto* d = std::get_if<geom::resolve_result::ngon>(&e.data)) {
+    } else if (const auto* d = std::get_if<geom2::resolve_result::ngon>(&e.data)) {
       if (d->line.colour0.a || d->line.colour1.a) {
         handle_shape({
             .origin = to_float(*e.t),

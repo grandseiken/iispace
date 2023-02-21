@@ -210,8 +210,8 @@ DEBUG_STRUCT_TUPLE(Wall, dir, timer, is_rotating, anti);
 }  // namespace
 
 ecs::handle spawn_square(SimInterface& sim, const vec2& position, const vec2& dir, bool drop) {
-  auto h = create_ship_default2<Square>(sim, position);
-  add_enemy_health2<Square>(h, 32);
+  auto h = create_ship_default<Square>(sim, position);
+  add_enemy_health<Square>(h, 32);
   h.add(Square{sim, dir});
   h.add(Enemy{.threat_value = 2});
   h.add(WallTag{});
@@ -223,8 +223,8 @@ ecs::handle spawn_square(SimInterface& sim, const vec2& position, const vec2& di
 }
 
 ecs::handle spawn_wall(SimInterface& sim, const vec2& position, const vec2& dir, bool anti) {
-  auto h = create_ship_default2<Wall>(sim, position);
-  add_enemy_health2<Wall>(h, 80);
+  auto h = create_ship_default<Wall>(sim, position);
+  add_enemy_health<Wall>(h, 80);
   h.add(Wall{dir, anti});
   h.add(Enemy{.threat_value = 4});
   h.add(WallTag{});

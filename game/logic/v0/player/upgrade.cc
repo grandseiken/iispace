@@ -2,7 +2,6 @@
 #include "game/common/colour.h"
 #include "game/common/easing.h"
 #include "game/core/icons/mod_icons.h"
-#include "game/geometry/iteration.h"
 #include "game/logic/sim/sim_interface.h"
 #include "game/logic/v0/lib/ship_template.h"
 #include "game/logic/v0/player/loadout.h"

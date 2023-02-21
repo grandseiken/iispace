@@ -236,7 +236,7 @@ DEBUG_STRUCT_TUPLE(PlayerShot, player, player_number, is_predicted, direction, d
 
 ecs::handle
 spawn_player_shot(SimInterface& sim, const vec2& position, const PlayerShot& shot_data) {
-  auto h = create_ship_default2<PlayerShot>(sim, position);
+  auto h = create_ship_default<PlayerShot>(sim, position);
   h.add(shot_data);
   return h;
 }

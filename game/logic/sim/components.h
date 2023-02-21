@@ -5,7 +5,6 @@
 #include "game/common/struct_tuple.h"
 #include "game/common/ustring.h"
 #include "game/geom2/types.h"
-#include "game/geometry/iteration.h"
 #include "game/logic/ecs/index.h"
 #include "game/logic/sim/io/output.h"
 #include "game/mixer/sound.h"
@@ -57,8 +56,8 @@ struct Collision : ecs::component {
   shape_flag flags = shape_flag::kNone;
   fixed bounding_width = 0;
 
-  using check_collision_t = geom::hit_result(ecs::const_handle, const geom::check_t&,
-                                             const SimInterface&);
+  using check_collision_t = geom2::hit_result(ecs::const_handle, const geom2::check_t&,
+                                              const SimInterface&);
   sfn::ptr<check_collision_t> check_collision = nullptr;
 };
 DEBUG_STRUCT_TUPLE(Collision, flags, bounding_width, check_collision);

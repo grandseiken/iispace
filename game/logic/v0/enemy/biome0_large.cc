@@ -518,8 +518,8 @@ ecs::handle spawn_follow_hub(SimInterface& sim, const vec2& position, bool fast)
       shape_definition<&FollowHub::construct_hub_shape, ecs::call<&FollowHub::set_parameters>,
                        FollowHub::kBoundingWidth, FollowHub::kFlags>;
 
-  auto h = create_ship_default2<FollowHub, shape>(sim, position);
-  add_enemy_health2<FollowHub, shape>(h, 112);
+  auto h = create_ship_default<FollowHub, shape>(sim, position);
+  add_enemy_health<FollowHub, shape>(h, 112);
   h.add(FollowHub{false, false, fast});
   h.add(Enemy{.threat_value = 6u + 4u * fast});
   h.add(Physics{.mass = 1_fx + 3_fx / 4});
@@ -532,8 +532,8 @@ ecs::handle spawn_big_follow_hub(SimInterface& sim, const vec2& position, bool f
       shape_definition<&FollowHub::construct_big_hub_shape, ecs::call<&FollowHub::set_parameters>,
                        FollowHub::kBoundingWidth, FollowHub::kFlags>;
 
-  auto h = create_ship_default2<FollowHub, shape>(sim, position);
-  add_enemy_health2<FollowHub, shape>(h, 112);
+  auto h = create_ship_default<FollowHub, shape>(sim, position);
+  add_enemy_health<FollowHub, shape>(h, 112);
   h.add(FollowHub{true, false, fast});
   h.add(Enemy{.threat_value = 12u + 8u * fast});
   h.add(Physics{.mass = 1_fx + 3_fx / 4});
@@ -546,8 +546,8 @@ ecs::handle spawn_chaser_hub(SimInterface& sim, const vec2& position, bool fast)
                                  ecs::call<&FollowHub::set_parameters>, FollowHub::kBoundingWidth,
                                  FollowHub::kFlags>;
 
-  auto h = create_ship_default2<FollowHub, shape>(sim, position);
-  add_enemy_health2<FollowHub, shape>(h, 112);
+  auto h = create_ship_default<FollowHub, shape>(sim, position);
+  add_enemy_health<FollowHub, shape>(h, 112);
   h.add(FollowHub{false, true, fast});
   h.add(Enemy{.threat_value = 10u + 6u * fast});
   h.add(DropTable{.shield_drop_chance = 2});
@@ -558,8 +558,8 @@ ecs::handle spawn_chaser_hub(SimInterface& sim, const vec2& position, bool fast)
 }
 
 ecs::handle spawn_shielder(SimInterface& sim, const vec2& position, bool power) {
-  auto h = create_ship_default2<Shielder>(sim, position);
-  add_enemy_health2<Shielder>(h, 160);
+  auto h = create_ship_default<Shielder>(sim, position);
+  add_enemy_health<Shielder>(h, 160);
   h.add(Shielder{sim, power});
   h.add(Enemy{.threat_value = 8u + 2u * power});
   h.add(Physics{.mass = 3_fx});
@@ -568,8 +568,8 @@ ecs::handle spawn_shielder(SimInterface& sim, const vec2& position, bool power) 
 }
 
 ecs::handle spawn_tractor(SimInterface& sim, const vec2& position, bool power) {
-  auto h = create_ship_default2<Tractor>(sim, position);
-  add_enemy_health2<Tractor>(h, 336);
+  auto h = create_ship_default<Tractor>(sim, position);
+  add_enemy_health<Tractor>(h, 336);
   h.add(Tractor{power});
   h.add(Enemy{.threat_value = 10u + 4u * power});
   h.add(Physics{.mass = 2_fx});
@@ -578,11 +578,11 @@ ecs::handle spawn_tractor(SimInterface& sim, const vec2& position, bool power) {
 }
 
 ecs::handle spawn_shield_hub(SimInterface& sim, const vec2& position) {
-  auto eh = create_ship_default2<ShieldHub::ShieldEffect>(sim, position);
+  auto eh = create_ship_default<ShieldHub::ShieldEffect>(sim, position);
   eh.add(ShieldHub::ShieldEffect{});
 
-  auto h = create_ship_default2<ShieldHub>(sim, position);
-  add_enemy_health2<ShieldHub>(h, 280);
+  auto h = create_ship_default<ShieldHub>(sim, position);
+  add_enemy_health<ShieldHub>(h, 280);
   h.add(ShieldHub{eh});
   h.add(Enemy{.threat_value = 10u});
   h.add(Physics{.mass = 3_fx});

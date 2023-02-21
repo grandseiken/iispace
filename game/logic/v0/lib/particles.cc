@@ -85,16 +85,16 @@ void add_explode_particle(EmitHandle& e, const fvec2& source, const fvec2& posit
 
 }  // namespace
 
-void explode_shapes(EmitHandle& e, const geom::resolve_result& r,
+void explode_shapes(EmitHandle& e, const geom2::resolve_result& r,
                     const std::optional<cvec4>& colour_override, std::uint32_t time,
                     const std::optional<fvec2>& towards, std::optional<float> speed) {
   for (const auto& entry : r.entries) {
     std::optional<cvec4> c;
-    if (const auto* d = std::get_if<geom::resolve_result::ball>(&entry.data)) {
+    if (const auto* d = std::get_if<geom2::resolve_result::ball>(&entry.data)) {
       c = d->line.colour0.a ? d->line.colour0 : d->fill.colour0;
-    } else if (const auto* d = std::get_if<geom::resolve_result::box>(&entry.data)) {
+    } else if (const auto* d = std::get_if<geom2::resolve_result::box>(&entry.data)) {
       c = d->line.colour0.a ? d->line.colour0 : d->fill.colour0;
-    } else if (const auto* d = std::get_if<geom::resolve_result::ngon>(&entry.data)) {
+    } else if (const auto* d = std::get_if<geom2::resolve_result::ngon>(&entry.data)) {
       c = d->line.colour0.a ? d->line.colour0 : d->fill.colour1;
     }
     if (c) {
@@ -103,7 +103,7 @@ void explode_shapes(EmitHandle& e, const geom::resolve_result& r,
   }
 }
 
-void destruct_lines(EmitHandle& e, const geom::resolve_result& r, const fvec2& source,
+void destruct_lines(EmitHandle& e, const geom2::resolve_result& r, const fvec2& source,
                     std::uint32_t time) {
   auto handle_line = [&](const vec2& a, const vec2& b, const cvec4& c, float w, float z) {
     if (z > colour::kZOutline) {
@@ -112,7 +112,7 @@ void destruct_lines(EmitHandle& e, const geom::resolve_result& r, const fvec2& s
   };
 
   for (const auto& entry : r.entries) {
-    if (const auto* d = std::get_if<geom::resolve_result::ball>(&entry.data)) {
+    if (const auto* d = std::get_if<geom2::resolve_result::ball>(&entry.data)) {
       if (!d->line.colour0.a) {
         continue;
       }
@@ -131,7 +131,7 @@ void destruct_lines(EmitHandle& e, const geom::resolve_result& r, const fvec2& s
                     vertex(d->dimensions.inner_radius, i + 1, in), d->line.colour0, d->line.width,
                     d->line.z);
       }
-    } else if (const auto* d = std::get_if<geom::resolve_result::box>(&entry.data)) {
+    } else if (const auto* d = std::get_if<geom2::resolve_result::box>(&entry.data)) {
       if (!d->line.colour0.a && !d->line.colour1.a) {
         continue;
       }
@@ -145,13 +145,13 @@ void destruct_lines(EmitHandle& e, const geom::resolve_result& r, const fvec2& s
       handle_line(vb, vc, d->line.colour0, d->line.width, d->line.z);
       handle_line(vc, vd, d->line.colour1, d->line.width, d->line.z);
       handle_line(vd, va, d->line.colour1, d->line.width, d->line.z);
-    } else if (const auto* d = std::get_if<geom::resolve_result::line>(&entry.data)) {
+    } else if (const auto* d = std::get_if<geom2::resolve_result::line>(&entry.data)) {
       // TODO: need line gradients to match rendering, if we use them.
       if (d->style.colour0.a) {
         handle_line(*entry.t.translate(d->a), *entry.t.translate(d->b), d->style.colour0,
                     d->style.width, d->style.z);
       }
-    } else if (const auto* d = std::get_if<geom::resolve_result::ngon>(&entry.data)) {
+    } else if (const auto* d = std::get_if<geom2::resolve_result::ngon>(&entry.data)) {
       if (!d->line.colour0.a) {
         continue;
       }
@@ -192,7 +192,7 @@ void destruct_lines(EmitHandle& e, const geom::resolve_result& r, const fvec2& s
   }
 }
 
-void explode_volumes(EmitHandle& e, const geom::resolve_result& r, const fvec2& source,
+void explode_volumes(EmitHandle& e, const geom2::resolve_result& r, const fvec2& source,
                      std::uint32_t time) {
   auto handle_shape = [&](const vec2& v, fixed r, const cvec4& c) {
     if (c.a) {
@@ -201,11 +201,11 @@ void explode_volumes(EmitHandle& e, const geom::resolve_result& r, const fvec2& 
   };
 
   for (const auto& entry : r.entries) {
-    if (const auto* d = std::get_if<geom::resolve_result::ball>(&entry.data)) {
+    if (const auto* d = std::get_if<geom2::resolve_result::ball>(&entry.data)) {
       handle_shape(*entry.t, d->dimensions.radius, d->fill.colour0);
-    } else if (const auto* d = std::get_if<geom::resolve_result::box>(&entry.data)) {
+    } else if (const auto* d = std::get_if<geom2::resolve_result::box>(&entry.data)) {
       handle_shape(*entry.t, std::min(d->dimensions.x, d->dimensions.y), d->fill.colour0);
-    } else if (const auto* d = std::get_if<geom::resolve_result::ngon>(&entry.data)) {
+    } else if (const auto* d = std::get_if<geom2::resolve_result::ngon>(&entry.data)) {
       handle_shape(*entry.t, d->dimensions.radius, d->fill.colour1);
     }
   }

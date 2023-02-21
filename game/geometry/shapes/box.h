@@ -11,36 +11,6 @@
 namespace ii::geom {
 
 //////////////////////////////////////////////////////////////////////////////////
-// Collider.
-//////////////////////////////////////////////////////////////////////////////////
-struct box_collider_data : shape_data_base {
-  using shape_data_base::iterate;
-  vec2 dimensions{0};
-  shape_flag flags = shape_flag::kNone;
-
-  constexpr void iterate(iterate_flags_t, const null_transform&, shape_flag& mask) const {
-    mask |= flags;
-  }
-
-  void
-  iterate(iterate_check_collision_t it, const convert_local_transform& t, hit_result& hit) const;
-};
-
-constexpr box_collider_data
-make_box_collider(const vec2& dimensions, shape_flag flags = shape_flag::kNone) {
-  return {{}, dimensions, flags};
-}
-
-template <Expression<vec2> Dimensions, Expression<shape_flag> Flags = constant<shape_flag::kNone>>
-struct box_collider_eval : shape_node {};
-
-template <Expression<vec2> Dimensions, Expression<shape_flag> Flags>
-constexpr auto evaluate(box_collider_eval<Dimensions, Flags>, const auto& params) {
-  return make_box_collider(vec2{evaluate(Dimensions{}, params)},
-                           shape_flag{evaluate(Flags{}, params)});
-}
-
-//////////////////////////////////////////////////////////////////////////////////
 // Render shape.
 //////////////////////////////////////////////////////////////////////////////////
 struct box_data : shape_data_base {
@@ -72,15 +42,9 @@ constexpr auto evaluate(box_eval<Dimensions, Line, Fill, RFlags>, const auto& pa
 //////////////////////////////////////////////////////////////////////////////////
 // Helper combinations.
 //////////////////////////////////////////////////////////////////////////////////
-template <vec2 Dimensions, shape_flag Flags = shape_flag::kNone>
-using box_collider = constant<make_box_collider(Dimensions, Flags)>;
 template <vec2 Dimensions, line_style Line, fill_style Fill = sfill(),
           render::flag RFlags = render::flag::kNone>
 using box = constant<make_box(Dimensions, Line, Fill, RFlags)>;
-template <vec2 Dimensions, line_style Line, fill_style Fill, shape_flag Flags = shape_flag::kNone,
-          render::flag RFlags = render::flag::kNone>
-using box_with_collider =
-    compound<box<Dimensions, Line, Fill, RFlags>, box_collider<Dimensions, Flags>>;
 
 template <vec2 Dimensions, std::size_t N, line_style Line = sline(),
           render::flag RFlags = render::flag::kNone>

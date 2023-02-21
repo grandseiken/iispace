@@ -1,6 +1,5 @@
 #include "game/logic/sim/collision.h"
 #include "game/common/collision.h"
-#include "game/geometry/iteration.h"
 #include <algorithm>
 #include <bit>
 #include <cmath>
@@ -60,7 +59,7 @@ void GridCollisionIndex::remove(ecs::handle& h) {
 void GridCollisionIndex::begin_tick() {}
 
 template <typename F>
-void GridCollisionIndex::iterate_collision_cells(const geom::check_t& it, const F& f) const {
+void GridCollisionIndex::iterate_collision_cells(const geom2::check_t& it, const F& f) const {
   static thread_local std::unordered_set<ecs::entity_id> checked;
   checked.clear();
 
@@ -81,7 +80,7 @@ void GridCollisionIndex::iterate_collision_cells(const geom::check_t& it, const 
     return false;
   };
 
-  if (const auto* ic = std::get_if<geom::check_point_t>(&it.extent)) {
+  if (const auto* ic = std::get_if<geom2::check_point_t>(&it.extent)) {
     auto coords = cell_coords(ic->v);
     if (!is_cell_valid(coords)) {
       return;
@@ -93,7 +92,7 @@ void GridCollisionIndex::iterate_collision_cells(const geom::check_t& it, const 
         break;
       }
     }
-  } else if (const auto* ic = std::get_if<geom::check_line_t>(&it.extent)) {
+  } else if (const auto* ic = std::get_if<geom2::check_line_t>(&it.extent)) {
     auto c = cell_coords(ic->a);
     auto end = cell_coords(ic->b);
     ivec2 cv{end.x > c.x ? 1 : end.x == c.x ? 0 : -1, end.y > c.y ? 1 : end.y == c.y ? 0 : -1};
@@ -127,7 +126,7 @@ void GridCollisionIndex::iterate_collision_cells(const geom::check_t& it, const 
         c.x += cv.x;
       }
     }
-  } else if (const auto* ic = std::get_if<geom::check_ball_t>(&it.extent)) {
+  } else if (const auto* ic = std::get_if<geom2::check_ball_t>(&it.extent)) {
     auto min = min_coords(ic->c - ic->r);
     auto max = max_coords(ic->c + ic->r);
     bool done = false;
@@ -147,7 +146,7 @@ void GridCollisionIndex::iterate_collision_cells(const geom::check_t& it, const 
         }
       }
     }
-  } else if (const auto* ic = std::get_if<geom::check_convex_t>(&it.extent)) {
+  } else if (const auto* ic = std::get_if<geom2::check_convex_t>(&it.extent)) {
     if (ic->vs.empty()) {
       return;
     }
@@ -177,21 +176,21 @@ void GridCollisionIndex::iterate_collision_cells(const geom::check_t& it, const 
   }
 }
 
-bool GridCollisionIndex::collide_any(const geom::check_t& it) const {
+bool GridCollisionIndex::collide_any(const geom2::check_t& it) const {
   bool result = false;
-  iterate_collision_cells(it, [&](ecs::handle, const geom::hit_result&) { return result = true; });
+  iterate_collision_cells(it, [&](ecs::handle, const geom2::hit_result&) { return result = true; });
   return result;
 }
 
 std::vector<SimInterface::collision_info>
-GridCollisionIndex::collide(const geom::check_t& it) const {
+GridCollisionIndex::collide(const geom2::check_t& it) const {
   std::vector<SimInterface::collision_info> r;
-  iterate_collision_cells(it, [&](ecs::handle h, geom::hit_result& hit) {
+  iterate_collision_cells(it, [&](ecs::handle h, geom2::hit_result& hit) {
     r.emplace_back(SimInterface::collision_info{
         .h = h, .hit_mask = hit.mask, .shape_centres = std::move(hit.shape_centres)});
     return false;
   });
-  if (!std::holds_alternative<geom::check_point_t>(it.extent)) {
+  if (!std::holds_alternative<geom2::check_point_t>(it.extent)) {
     std::sort(r.begin(), r.end(), [](const auto& a, const auto& b) { return a.h.id() < b.h.id(); });
   }
   return r;
@@ -362,8 +361,8 @@ void LegacyCollisionIndex::begin_tick() {
                    [](const auto& a, const auto& b) { return a.x_min < b.x_min; });
 }
 
-bool LegacyCollisionIndex::collide_any(const geom::check_t& it) const {
-  const auto* c = std::get_if<geom::check_point_t>(&it.extent);
+bool LegacyCollisionIndex::collide_any(const geom2::check_t& it) const {
+  const auto* c = std::get_if<geom2::check_point_t>(&it.extent);
   if (!c) {
     return false;
   }
@@ -393,9 +392,9 @@ bool LegacyCollisionIndex::collide_any(const geom::check_t& it) const {
 }
 
 std::vector<SimInterface::collision_info>
-LegacyCollisionIndex::collide(const geom::check_t& it) const {
+LegacyCollisionIndex::collide(const geom2::check_t& it) const {
   std::vector<SimInterface::collision_info> r;
-  const auto* c = std::get_if<geom::check_point_t>(&it.extent);
+  const auto* c = std::get_if<geom2::check_point_t>(&it.extent);
   if (!c) {
     return r;
   }

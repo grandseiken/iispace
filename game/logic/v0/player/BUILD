@@ -69,7 +69,7 @@ cc_library(
   implementation_deps = [
     ":loadout",
     "//game/core/icons",
-    "//game/geometry",
+    "//game/geom2",
     "//game/logic/sim:sim_interface",
     "//game/logic/v0/lib:components",
     "//game/logic/v0/lib:ship_template",

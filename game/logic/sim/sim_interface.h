@@ -19,7 +19,6 @@ class EntityIndex;
 namespace geom2 {
 class ShapeBank;
 };
-enum class shape_flag : std::uint32_t;
 class SimInterface;
 struct SimInternals;
 struct aggregate_event;

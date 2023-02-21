@@ -48,35 +48,6 @@ constexpr ngon_line_style nline(ngon_style style, const cvec4& colour0, const cv
 }
 
 //////////////////////////////////////////////////////////////////////////////////
-// Collider.
-//////////////////////////////////////////////////////////////////////////////////
-struct ngon_collider_data : shape_data_base {
-  using shape_data_base::iterate;
-  ngon_dimensions dimensions;
-  shape_flag flags = shape_flag::kNone;
-
-  constexpr void iterate(iterate_flags_t, const null_transform&, shape_flag& mask) const {
-    mask |= flags;
-  }
-
-  void
-  iterate(iterate_check_collision_t it, const convert_local_transform& t, hit_result& hit) const;
-};
-
-constexpr ngon_collider_data
-make_ngon_collider(ngon_dimensions dimensions, shape_flag flags = shape_flag::kNone) {
-  return {{}, dimensions, flags};
-}
-
-template <Expression<ngon_dimensions>, Expression<shape_flag> Flags = constant<shape_flag::kNone>>
-struct ngon_collider_eval : shape_node {};
-
-template <Expression<ngon_dimensions> Dimensions, Expression<shape_flag> Flags>
-constexpr auto evaluate(ngon_collider_eval<Dimensions, Flags>, const auto& params) {
-  return make_ngon_collider(evaluate(Dimensions{}, params), shape_flag{evaluate(Flags{}, params)});
-}
-
-//////////////////////////////////////////////////////////////////////////////////
 // Render shape.
 //////////////////////////////////////////////////////////////////////////////////
 struct ngon_data : shape_data_base {
@@ -114,15 +85,9 @@ constexpr auto evaluate(ngon_eval<Dimensions, Line, Fill, Tag, RFlags>, const au
 //////////////////////////////////////////////////////////////////////////////////
 // Helper combinations.
 //////////////////////////////////////////////////////////////////////////////////
-template <ngon_dimensions Dimensions, shape_flag Flags = shape_flag::kNone>
-using ngon_collider = constant<make_ngon_collider(Dimensions, Flags)>;
 template <ngon_dimensions Dimensions, ngon_line_style Line, fill_style Fill = sfill(),
           render::flag RFlags = render::flag::kNone>
 using ngon = constant<make_ngon(Dimensions, Line, Fill, render::tag_t{0}, RFlags)>;
-template <ngon_dimensions Dimensions, ngon_line_style Line, fill_style Fill,
-          shape_flag Flags = shape_flag::kNone, render::flag RFlags = render::flag::kNone>
-using ngon_with_collider =
-    compound<ngon<Dimensions, Line, Fill, RFlags>, ngon_collider<Dimensions, Flags>>;
 
 template <ngon_dimensions Dimensions, std::size_t N, ngon_line_style Line = nline(),
           render::flag RFlags = render::flag::kNone>

@@ -329,7 +329,7 @@ struct SquareBoss : public ecs::component {
       for (std::uint32_t i = 0; i < 6; ++i) {
         auto v = p_transform.centre + d;
         auto& r =
-            resolve_shape2<&construct_follow_attack_shape>(sim, [&](parameter_set& parameters) {
+            resolve_shape<&construct_follow_attack_shape>(sim, [&](parameter_set& parameters) {
               parameters.add(key{'v'}, v)
                   .add(key{'r'}, 4 * pi<fixed> * ease_out_cubic(1_fx - t))
                   .add(key{'o'}, c0)
@@ -370,7 +370,7 @@ void spawn_biome0_square_boss(SimInterface& sim, std::uint32_t biome_index) {
     break;
   }
 
-  auto h = create_ship_default2<SquareBoss>(sim, position);
+  auto h = create_ship_default<SquareBoss>(sim, position);
   add_boss_data<SquareBoss>(h, ustring::ascii("Squall"),
                             SquareBoss::kBaseHp + SquareBoss::kBiomeHp * biome_index);
   h.add(Physics{.mass = 12u});

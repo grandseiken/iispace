@@ -1,7 +1,6 @@
 #ifndef II_GAME_LOGIC_V0_BOSS_BOSS_TEMPLATE_H
 #define II_GAME_LOGIC_V0_BOSS_BOSS_TEMPLATE_H
 #include "game/common/ustring.h"
-#include "game/geometry/concepts.h"
 #include "game/logic/ecs/index.h"
 #include "game/logic/v0/lib/components.h"
 #include "game/logic/v0/lib/particles.h"
@@ -40,7 +39,7 @@ template <typename ShapeDefinition>
 void boss_on_hit(ecs::handle h, Health* health, SimInterface& sim, EmitHandle& e, damage_type type,
                  const vec2& source) {
   if (type == damage_type::kBomb && health && health->hp) {
-    auto& r = resolve_entity_shape2<ShapeDefinition>(h, sim);
+    auto& r = resolve_entity_shape<ShapeDefinition>(h, sim);
     destruct_lines(e, r, to_float(source));
   }
 }
@@ -61,7 +60,7 @@ void boss_on_destroy(ecs::const_handle h, const Transform& transform, SimInterfa
         }
       });
 
-  auto& r = resolve_entity_shape2<ShapeDefinition>(h, sim);
+  auto& r = resolve_entity_shape<ShapeDefinition>(h, sim);
   auto boss_colour = get_shape_colour(r).value_or(colour::kWhite0);
   explode_shapes(e, r);
   explode_shapes(e, r, cvec4{1.f}, 12);
@@ -114,7 +113,7 @@ void add_boss_data(ecs::handle h, ustring_view name, std::uint32_t base_hp) {
   h.add(Enemy{.threat_value = kBossThreatValue});
   h.add(Boss{.name = ustring{name}});
   h.add(PostUpdate{.post_update = [](ecs::handle h, SimInterface& sim) {
-    auto& r = resolve_entity_shape2<ShapeDefinition>(h, sim);
+    auto& r = resolve_entity_shape<ShapeDefinition>(h, sim);
     h.get<Boss>()->colour = get_shape_colour(r).value_or(colour::kWhite0);
   }});
 }
