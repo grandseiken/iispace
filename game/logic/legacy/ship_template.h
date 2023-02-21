@@ -44,6 +44,11 @@ using default_shape_definition =
     shape_definition<&Logic::construct_shape, ecs::call<&Logic::set_parameters>,
                      Logic::kBoundingWidth, Logic::kFlags>;
 
+template <ecs::Component Logic, fixed Width>
+using shape_definition_with_width =
+    shape_definition<&Logic::construct_shape, ecs::call<&Logic::set_parameters>, Width,
+                     Logic::kFlags>;
+
 inline geom2::resolve_result& local_resolve() {
   static thread_local geom2::resolve_result r;
   r.entries.clear();
@@ -101,13 +106,13 @@ void explode_shapes(EmitHandle& e, const auto& parameters,
 }
 
 template <ecs::Component Logic, geom::ShapeNode S = typename Logic::shape>
-void explode_entity_shapes(ecs::const_handle h, EmitHandle& e,
+void explode_entity_shapes(ecs::const_handle h, SimInterface& sim, EmitHandle& e,
                            const std::optional<cvec4> colour_override = std::nullopt,
                            std::uint32_t time = 8,
                            const std::optional<vec2>& towards = std::nullopt,
                            std::optional<float> speed = std::nullopt) {
   if constexpr (requires { &Logic::explode_shapes; }) {
-    ecs::call<&Logic::explode_shapes>(h, e, colour_override, time, towards, speed);
+    ecs::call<&Logic::explode_shapes>(h, sim, e, colour_override, time, towards, speed);
   } else {
     explode_shapes<S>(e, get_shape_parameters<Logic>(h), colour_override, time, towards, speed);
   }
@@ -125,20 +130,20 @@ void destruct_lines(EmitHandle& e, const auto& parameters, const vec2& source,
 }
 
 template <ecs::Component Logic, geom::ShapeNode S = typename Logic::shape>
-void destruct_entity_lines(ecs::const_handle h, EmitHandle& e, const vec2& source,
-                           std::uint32_t time = 20) {
+void destruct_entity_lines(ecs::const_handle h, SimInterface& sim, EmitHandle& e,
+                           const vec2& source, std::uint32_t time = 20) {
   if constexpr (requires { &Logic::destruct_lines; }) {
-    ecs::call<&Logic::destruct_lines>(h, e, source, time);
+    ecs::call<&Logic::destruct_lines>(h, sim, e, source, time);
   } else {
     destruct_lines<S>(e, get_shape_parameters<Logic>(h), source, time);
   }
 }
 
 template <ecs::Component Logic, geom::ShapeNode S = typename Logic::shape>
-void destruct_entity_default(ecs::const_handle h, SimInterface&, EmitHandle& e, damage_type,
+void destruct_entity_default(ecs::const_handle h, SimInterface& sim, EmitHandle& e, damage_type,
                              const vec2& source) {
-  explode_entity_shapes<Logic, S>(h, e, std::nullopt, 10, std::nullopt, 1.5f);
-  destruct_entity_lines<Logic, S>(h, e, source);
+  explode_entity_shapes<Logic, S>(h, sim, e, std::nullopt, 10, std::nullopt, 1.5f);
+  destruct_entity_lines<Logic, S>(h, sim, e, source);
 }
 
 template <ecs::Component Logic, typename ShapeDefinition = default_shape_definition<Logic>>

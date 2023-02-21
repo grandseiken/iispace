@@ -259,6 +259,30 @@ void check_collision(hit_result& hit, const check_t& check, const Transform& t,
   }
 }
 
+template <typename Transform>
+void check_collision(hit_result& hit, const check_t& check, const Transform& t,
+                     const arc_collider& c, const parameter_set& parameters) {
+  auto flags = c.flags(parameters) & check.mask;
+  if (!flags) {
+    return;
+  }
+  auto dimensions = resolve(c.dimensions, parameters);
+  auto arc_angle = c.arc_angle(parameters);
+
+  switch (check.extent.index()) {
+    // TODO: only used in legacy game, other cases unsupported.
+    VARIANT_CASE_GET(check_point_t, check.extent, cx) {
+      auto v = t.transform(cx.v);
+      auto a = angle(v);
+      auto r = length(v);
+      if (0 <= a && a <= arc_angle && r >= dimensions.inner_radius && r < dimensions.radius) {
+        hit.add(flags, t.inverse_transform(vec2{0}));
+      }
+      break;
+    }
+  }
+}
+
 void resolve_internal(resolve_result& result, const transform& t, const node& n,
                       const parameter_set& parameters) {
   auto recurse = [&](const transform& st) {
@@ -346,6 +370,11 @@ void check_collision_internal(hit_result& result, const check_t& check, const Tr
       break;
     }
 
+    VARIANT_CASE_GET(arc_collider, *n, x) {
+      check_collision(result, check, t, x, parameters);
+      break;
+    }
+
     VARIANT_CASE(compound, *n) {
       recurse(t);
       break;
@@ -378,9 +407,8 @@ void check_collision_internal(hit_result& result, const check_t& check, const Tr
 }  // namespace
 
 // TODO: optimize further. For example:
-// - can also inline any compound node into its parent.
-// - instead of flagging nodes with kCollision or kResolve, stable_partion or duplicate
-//   the whole thing?
+// - can also inline any compound node into its parent. Also, rotate into transform.
+// - instead of flagging nodes with kCollision or kResolve, copy to separate vectors?
 node_type ShapeBank::optimize(node& n) {
   if (std::holds_alternative<compound>(n.data_) && n.size() == 1u) {
     const auto& c = *n.children_.front();
@@ -396,7 +424,8 @@ node_type ShapeBank::optimize(node& n) {
   switch (n->index()) {
     VARIANT_CASE(ball_collider, *n)
     VARIANT_CASE(box_collider, *n)
-    VARIANT_CASE(ngon_collider, *n) {
+    VARIANT_CASE(ngon_collider, *n)
+    VARIANT_CASE(arc_collider, *n) {
       type |= node_type::kCollision;
       break;
     }

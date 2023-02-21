@@ -114,7 +114,7 @@ struct Shielder : ecs::component {
     centre.add(ball_collider{.dimensions = bd(14),
                              .flags = shape_flag::kDangerous | shape_flag::kVulnerable});
 
-    auto& spoke = root.create(rotate{key{'R'}});
+    auto& spoke = root.create(rotate{multiply(-1_fx, key{'r'})});
     n.add(translate{vec2{24, 0}}).add(spoke);
     n.add(translate{vec2{-24, 0}}).add(spoke);
     n.add(translate_rotate{vec2{0, 24}, pi<fixed> / 2}).add(spoke);
@@ -129,7 +129,6 @@ struct Shielder : ecs::component {
   void set_parameters(const Transform& transform, parameter_set& parameters) const {
     parameters.add(key{'v'}, transform.centre)
         .add(key{'r'}, transform.rotation)
-        .add(key{'R'}, -transform.rotation)
         .add(key{'c'}, power ? c1 : c0);
   }
 
@@ -202,13 +201,13 @@ struct Tractor : ecs::component {
     auto& orb = root.create(compound{});
     auto& star = root.create(compound{});
 
-    n.add(translate_rotate{vec2{24, 0}, key{'S'}}).add(orb);
-    n.add(translate_rotate{vec2{-24, 0}, key{'s'}}).add(orb);
+    n.add(translate_rotate{vec2{24, 0}, multiply(5_fx, key{'s'})}).add(orb);
+    n.add(translate_rotate{vec2{-24, 0}, multiply(-5_fx, key{'s'})}).add(orb);
     n.add(line{.a = vec2{-24, 0}, .b = vec2{24, 0}, .style = {.colour0 = c}});
 
     auto& star_if = n.add(enable{key{'p'}});
-    star_if.add(translate_rotate{vec2{24, 0}, key{'T'}}).add(star);
-    star_if.add(translate_rotate{vec2{-24, 0}, key{'t'}}).add(star);
+    star_if.add(translate_rotate{vec2{24, 0}, multiply(8_fx, key{'s'})}).add(star);
+    star_if.add(translate_rotate{vec2{-24, 0}, multiply(-8_fx, key{'s'})}).add(star);
 
     orb.add(ngon{.dimensions = nd(12, 6), .style = ngon_style::kPolygram, .line = {.colour0 = c}});
     orb.add(ball_collider{.dimensions = bd(12), .flags = kFlags});
@@ -218,10 +217,7 @@ struct Tractor : ecs::component {
   void set_parameters(const Transform& transform, parameter_set& parameters) const {
     parameters.add(key{'v'}, transform.centre)
         .add(key{'r'}, transform.rotation)
-        .add(key{'s'}, -5 * spoke_r)
-        .add(key{'S'}, 5 * spoke_r)
-        .add(key{'t'}, -8 * spoke_r)
-        .add(key{'T'}, 8 * spoke_r)
+        .add(key{'s'}, spoke_r)
         .add(key{'p'}, power);
   }
 

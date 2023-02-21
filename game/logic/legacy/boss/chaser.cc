@@ -1,6 +1,4 @@
 #include "game/common/colour.h"
-#include "game/geometry/shapes/legacy.h"
-#include "game/geometry/shapes/ngon.h"
 #include "game/logic/legacy/boss/boss_internal.h"
 #include "game/logic/legacy/ship_template.h"
 #include "game/logic/sim/io/events.h"
@@ -8,7 +6,7 @@
 
 namespace ii::legacy {
 namespace {
-using namespace geom;
+using namespace geom2;
 
 struct ChaserBossSharedState : ecs::component {
   bool has_counted = false;
@@ -64,18 +62,33 @@ struct ChaserBoss : ecs::component {
   static constexpr fixed kSpeed = 4;
   static constexpr float kZIndex = -4.f;
   static constexpr cvec4 c = colour::hue360(210, .6f);
+  // Computed elsewhere.
+  static constexpr fixed kBoundingWidth = 0;
+  static constexpr auto kFlags = shape_flag::kNone;
 
-  template <fixed R, cvec4 C, shape_flag Flags = shape_flag::kNone>
-  using scale_shape = compound<
-      legacy_ball_collider_eval<multiply_p<R, 2>, constant<Flags>>,
-      ngon_eval<set_radius<nd(0, 5), multiply_p<R, 2>>, constant<nline(ngon_style::kPolygram, C)>>>;
-  using shape =
-      standard_transform<scale_shape<10, c>, scale_shape<9, c>,
-                         scale_shape<8, cvec4{0}, shape_flag::kDangerous | shape_flag::kVulnerable>,
-                         scale_shape<7, cvec4{0}, shape_flag::kShield>>;
+  static void construct_shape(node& root) {
+    auto& n = root.add(translate_rotate{.v = key{'v'}, .r = key{'r'}});
+    for (unsigned char i = 0; i < 4; ++i) {
+      auto flags = i == 2 ? shape_flag::kDangerous | shape_flag::kVulnerable
+          : i == 3        ? shape_flag::kShield
+                          : shape_flag::kNone;
+      auto k = key{'0'} + key{i};
+      if (+flags) {
+        n.add(ball_collider{.dimensions = {.radius = k}, .flags = flags});
+        n.add(ngon{.dimensions = nd(0, 5), .line = {.colour0 = c}});
+      } else {
+        n.add(ngon{.dimensions = {.radius = k, .sides = 5},
+                   .style = ngon_style::kPolygram,
+                   .line = {.colour0 = c}});
+      }
+    }
+  }
 
-  std::tuple<vec2, fixed, fixed> shape_parameters(const Transform& transform) const {
-    return {transform.centre, transform.rotation, kSplitLookup[kMaxSplit - split].pow_1_5};
+  void set_parameters(const Transform& transform, parameter_set& parameters) const {
+    parameters.add(key{'v'}, transform.centre).add(key{'r'}, transform.rotation);
+    for (unsigned char i = 0; i < 4; ++i) {
+      parameters.add(key{'0'} + key{i}, kSplitLookup[kMaxSplit - split].pow_1_5 * (10_fx - i));
+    }
   }
 
   ChaserBoss(SimInterface& sim, std::uint32_t cycle, std::uint32_t split, std::uint32_t time,
@@ -282,18 +295,19 @@ struct ChaserBoss : ecs::component {
       }
     }
 
-    explode_entity_shapes<ChaserBoss>(h, e);
-    explode_entity_shapes<ChaserBoss>(h, e, cvec4{1.f}, 12);
+    auto& r = resolve_entity_shape2<default_shape_definition<ChaserBoss>>(h, sim);
+    explode_shapes(e, r);
+    explode_shapes(e, r, cvec4{1.f}, 12);
     if (split < 3 || last) {
-      explode_entity_shapes<ChaserBoss>(h, e, c, 24);
+      explode_shapes(e, r, c, 24);
     }
     if (split < 2 || last) {
-      explode_entity_shapes<ChaserBoss>(h, e, cvec4{1.f}, 36);
+      explode_shapes(e, r, cvec4{1.f}, 36);
     }
     if (split < 1 || last) {
-      explode_entity_shapes<ChaserBoss>(h, e, c, 48);
+      explode_shapes(e, r, c, 48);
     }
-    destruct_entity_lines<ChaserBoss>(h, e, source);
+    destruct_lines(e, r, to_float(source));
 
     if (split < 3 || last) {
       e.play(sound::kExplosion, transform.centre);
@@ -305,13 +319,14 @@ struct ChaserBoss : ecs::component {
   static ecs::handle spawn_internal(SimInterface& sim, std::uint32_t cycle, std::uint32_t split = 0,
                                     const vec2& position = vec2{0}, std::uint32_t time = kTimer,
                                     std::uint32_t stagger = 0) {
-    auto h = create_ship<ChaserBoss>(
+    auto h = create_ship2<ChaserBoss>(
         sim, !split ? vec2{sim.dimensions().x / 2, -sim.dimensions().y / 2} : position);
+
+    using shape = default_shape_definition<ChaserBoss>;
     h.add(Collision{.flags = shape_flag::kDangerous | shape_flag::kVulnerable | shape_flag::kShield,
                     .bounding_width = 10 * kSplitLookup[ChaserBoss::kMaxSplit - split].pow_1_5,
-                    .check_collision = sim.is_legacy()
-                        ? &ship_check_collision_legacy<ChaserBoss, ChaserBoss::shape>
-                        : &ship_check_collision<ChaserBoss, ChaserBoss::shape>});
+                    .check_collision = sim.is_legacy() ? &ship_check_collision_legacy2<shape>
+                                                       : &ship_check_collision2<shape>});
     h.add(Enemy{.threat_value = 100});
 
     auto rumble = split < 3 ? rumble_type::kLarge
@@ -329,7 +344,7 @@ struct ChaserBoss : ecs::component {
         .destroy_sound = std::nullopt,
         .destroy_rumble = rumble,
         .damage_transform = &scale_boss_damage,
-        .on_hit = split <= 1 ? &boss_on_hit<true, ChaserBoss> : &boss_on_hit<false, ChaserBoss>,
+        .on_hit = split <= 1 ? &boss_on_hit2<true, ChaserBoss> : &boss_on_hit2<false, ChaserBoss>,
         .on_destroy = ecs::call<&ChaserBoss::on_destroy>,
     });
     h.add(Boss{});

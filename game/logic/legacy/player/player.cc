@@ -140,7 +140,7 @@ struct PlayerLogic : ecs::component {
     n.add(ngon{.dimensions = nd(16, 3), .line = {.colour0 = key{'c'}}});
     n.add(rotate{pi<fixed>}).add(ngon{.dimensions = nd(8, 3), .line = {.colour0 = key{'c'}}});
 
-    auto& t = n.add(translate_rotate{vec2{8, 0}, key{'R'}});
+    auto& t = n.add(translate_rotate{vec2{8, 0}, multiply(-1_fx, key{'r'})});
     t.add(box{.dimensions = vec2{2}, .line = {.colour0 = key{'c'}}});
     t.add(box{.dimensions = vec2{1}, .line = {.colour0 = key{'d'}}});
     t.add(box{.dimensions = vec2{3}, .line = {.colour0 = key{'d'}}});
@@ -165,7 +165,6 @@ struct PlayerLogic : ecs::component {
 
     parameters.add(key{'v'}, transform.centre)
         .add(key{'r'}, transform.rotation)
-        .add(key{'R'}, -transform.rotation)
         .add(key{'c'}, colour)
         .add(key{'p'}, powerup_colour)
         .add(key{'d'}, colour::alpha(colour, .2f))

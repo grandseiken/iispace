@@ -1,9 +1,4 @@
 #include "game/common/colour.h"
-#include "game/geometry/node_conditional.h"
-#include "game/geometry/node_for_each.h"
-#include "game/geometry/shapes/legacy.h"
-#include "game/geometry/shapes/line.h"
-#include "game/geometry/shapes/ngon.h"
 #include "game/logic/legacy/boss/boss_internal.h"
 #include "game/logic/legacy/enemy/enemy.h"
 #include "game/logic/legacy/player/powerup.h"
@@ -12,7 +7,7 @@
 
 namespace ii::legacy {
 namespace {
-using namespace geom;
+using namespace geom2;
 
 struct ShieldBombBoss : ecs::component {
   static constexpr std::uint32_t kBaseHp = 320;
@@ -25,36 +20,48 @@ struct ShieldBombBoss : ecs::component {
   static constexpr cvec4 c0 = colour::hue360(150, .4f, .5f);
   static constexpr cvec4 c1 = colour::hue(0.f, .8f, 0.f);
   static constexpr cvec4 c2 = colour::hue(0.f, .6f, 0.f);
+  static constexpr auto kFlags = shape_flag::kDangerous | shape_flag::kVulnerable |
+      shape_flag::kWeakShield | shape_flag::kShield;
 
-  template <fixed I>
-  using strut_shape = line_colour_p<::rotate(vec2{80, 0}, I* pi<fixed> / 8),
-                                    ::rotate(vec2{120, 0}, I* pi<fixed> / 8), 3>;
+  static void construct_shape(node& root) {
+    auto& n = root.add(translate_rotate{key{'v'}, key{'r'}});
+    auto& centre = n.add(rotate{multiply(2_fx, key{'r'})});
+    centre.add(
+        ngon{.dimensions = nd(48, 8), .style = ngon_style::kPolygram, .line = {.colour0 = c0}});
+    centre.add(ball_collider{.dimensions = bd(48),
+                             .flags = shape_flag::kDangerous | shape_flag::kVulnerable});
 
-  using centre_shape = legacy_ngon<nd(48, 8), nline(ngon_style::kPolygram, c0),
-                                   shape_flag::kDangerous | shape_flag::kVulnerable>;
-  using shield_shape = compound<
-      ngon_colour_p<nd(130, 16), 4>,
-      if_p<2, legacy_ball_collider<130, shape_flag::kWeakShield | shape_flag::kDangerous>>>;
+    n.add(ngon{.dimensions = nd(130, 16), .line = {.colour0 = key{'c'}}});
+    n.add(enable{key{'s'}})
+        .add(ball_collider{.dimensions = bd(130),
+                           .flags = shape_flag::kWeakShield | shape_flag::kDangerous});
+    for (std::uint32_t i = 0; i < 16; ++i) {
+      n.add(line{.a = ::rotate(vec2{80, 0}, i * pi<fixed> / 8),
+                 .b = ::rotate(vec2{120, 0}, i * pi<fixed> / 8),
+                 .style = {.colour0 = key{'C'}}});
+    }
 
-  using shape =
-      standard_transform<rotate_eval<multiply_p<2, 1>, centre_shape>,
-                         for_each<fixed, 0, 16, strut_shape>, shield_shape,
-                         ngon_colour_p<nd(125, 16), 4>, ngon_colour_p<nd(120, 16), 4>,
-                         rotate_p<1, legacy_dummy, legacy_ball_collider<42, shape_flag::kShield>>>;
-
-  std::tuple<vec2, fixed, bool, cvec4, cvec4> shape_parameters(const Transform& transform) const {
-    return {transform.centre, transform.rotation, !unshielded,
-            !unshielded                ? c2
-                : (unshielded / 2) % 4 ? colour::kZero
-                                       : colour::hue(0.f, .2f, 0.f),
-            !unshielded                ? c1
-                : (unshielded / 2) % 4 ? colour::kZero
-                                       : colour::hue(0.f, .4f, 0.f)};
+    n.add(ngon{.dimensions = nd(125, 16), .line = {.colour0 = key{'c'}}});
+    n.add(ngon{.dimensions = nd(120, 16), .line = {.colour0 = key{'c'}}});
+    auto& r = n.add(rotate{key{'r'}});
+    r.add(ball{.line = {.colour0 = key{'c'}}});
+    r.add(ball_collider{.dimensions = bd(42), .flags = shape_flag::kShield});
   }
 
-  static std::uint32_t bounding_width(const SimInterface& sim) {
-    return sim.is_legacy() ? 640 : 140;
+  void set_parameters(const Transform& transform, parameter_set& parameters) const {
+    auto c = !unshielded ? c2 : (unshielded / 2) % 4 ? colour::kZero : colour::hue(0.f, .2f, 0.f);
+    auto c_strut = !unshielded ? c1
+        : (unshielded / 2) % 4 ? colour::kZero
+                               : colour::hue(0.f, .4f, 0.f);
+
+    parameters.add(key{'v'}, transform.centre)
+        .add(key{'r'}, transform.rotation)
+        .add(key{'c'}, c)
+        .add(key{'C'}, c_strut)
+        .add(key{'s'}, !unshielded);
   }
+
+  static constexpr fixed bounding_width(bool is_legacy) { return is_legacy ? 640 : 140; }
 
   std::uint32_t timer = 0;
   std::uint32_t count = 0;
@@ -155,7 +162,13 @@ std::uint32_t transform_shield_bomb_boss_damage(ecs::handle h, SimInterface& sim
 }  // namespace
 
 void spawn_shield_bomb_boss(SimInterface& sim, std::uint32_t cycle) {
-  auto h = create_ship<ShieldBombBoss>(sim, {-sim.dimensions().x / 2, sim.dimensions().y / 2});
+  using legacy_shape =
+      shape_definition_with_width<ShieldBombBoss, ShieldBombBoss::bounding_width(true)>;
+  using shape = shape_definition_with_width<ShieldBombBoss, ShieldBombBoss::bounding_width(false)>;
+
+  vec2 position{-sim.dimensions().x / 2, sim.dimensions().y / 2};
+  auto h = sim.is_legacy() ? create_ship2<ShieldBombBoss, legacy_shape>(sim, position)
+                           : create_ship2<ShieldBombBoss, shape>(sim, position);
   h.add(Enemy{.threat_value = 100,
               .boss_score_reward =
                   calculate_boss_score(boss_flag::kBoss1B, sim.player_count(), cycle)});
@@ -166,8 +179,8 @@ void spawn_shield_bomb_boss(SimInterface& sim, std::uint32_t cycle) {
       .hit_sound1 = sound::kEnemyShatter,
       .destroy_sound = std::nullopt,
       .damage_transform = &transform_shield_bomb_boss_damage,
-      .on_hit = &boss_on_hit<true, ShieldBombBoss>,
-      .on_destroy = ecs::call<&boss_on_destroy<ShieldBombBoss>>,
+      .on_hit = &boss_on_hit2<true, ShieldBombBoss, shape>,
+      .on_destroy = ecs::call<&boss_on_destroy2<ShieldBombBoss, shape>>,
   });
   h.add(Boss{.boss = boss_flag::kBoss1B});
   h.add(ShieldBombBoss{});

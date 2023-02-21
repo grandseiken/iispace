@@ -1,7 +1,4 @@
 #include "game/common/colour.h"
-#include "game/geometry/node_for_each.h"
-#include "game/geometry/shapes/legacy.h"
-#include "game/geometry/shapes/line.h"
 #include "game/logic/legacy/boss/boss_internal.h"
 #include "game/logic/legacy/enemy/enemy.h"
 #include "game/logic/legacy/ship_template.h"
@@ -9,13 +6,11 @@
 
 namespace ii::legacy {
 namespace {
-using namespace geom;
+using namespace geom2;
 
 struct TractorBoss : ecs::component {
   static constexpr std::uint32_t kBaseHp = 900;
   static constexpr std::uint32_t kTimer = 100;
-  static constexpr shape_flag kDangerousVulnerable =
-      shape_flag::kDangerous | shape_flag::kVulnerable;
   static constexpr fixed kSpeed = 2;
   static constexpr fixed kTractorBeamSpeed = 2 + 1_fx / 2;
   static constexpr float kZIndex = -4.f;
@@ -23,46 +18,69 @@ struct TractorBoss : ecs::component {
   static constexpr cvec4 c0 = colour::hue360(300, .5f, .6f);
   static constexpr cvec4 c1 = colour::hue360(300, 1.f / 3, .6f);
   static constexpr cvec4 c2 = colour::hue360(300, .4f, .5f);
+  static constexpr auto kFlags =
+      shape_flag::kDangerous | shape_flag::kVulnerable | shape_flag::kShield;
 
-  using attack_shape = standard_transform<translate_p<2, ngon<nd(8, 6), nline(c0)>>>;
-  template <std::size_t BI>
-  struct ball_inner {
-    template <fixed I>
-    using ball =
-        translate_eval<constant<rotate_legacy(vec2{24, 0}, I* pi<fixed> / 4)>,
-                       rotate_eval<multiply_p<BI ? 1 : -1, 2>,
-                                   compound<ngon<nd(12, 6), nline(ngon_style::kPolygram, c0),
-                                                 sfill(), render::flag::kLegacy_NoExplode>,
-                                            legacy_ball_collider<12, kDangerousVulnerable>>>>;
-    using shape = for_each<fixed, 0, 8, ball>;
-  };
+  static void construct_shape(node& root) {
+    auto& n = root.add(translate_rotate{key{'v'}, key{'r'}});
+    n.add(ngon{.dimensions = {.radius = key{'s'}, .sides = 16}, .line = {.colour0 = c2}});
+    n.add(line{.a = vec2{-2, -96}, .b = vec2{-2, 96}, .style = {.colour0 = c0}});
+    n.add(line{.a = vec2{0, -96}, .b = vec2{0, 96}, .style = {.colour0 = c1}});
+    n.add(line{.a = vec2{2, -96}, .b = vec2{2, 96}, .style = {.colour0 = c0}});
 
-  template <std::size_t I>
-  using ball_shape = translate<
-      0, I ? 96 : -96,
-      rotate_eval<multiply_p<fixed{I ? -1 : 1} / 2, 2>,
-                  compound<ngon<nd(12, 6), nline(ngon_style::kPolygram, c1)>, legacy_dummy,
-                           legacy_ball_collider<30, shape_flag::kShield>,
-                           ngon<nd(12, 12), nline(c1), sfill(), render::flag::kLegacy_NoExplode>,
-                           ngon<nd(2, 6), nline(c1), sfill(), render::flag::kLegacy_NoExplode>,
-                           ngon<nd(36, 12), nline(c0), sfill(), render::flag::kLegacy_NoExplode>,
-                           legacy_ball_collider<36, kDangerousVulnerable>,
-                           ngon<nd(34, 12), nline(c0), sfill(), render::flag::kLegacy_NoExplode>,
-                           ngon<nd(32, 12), nline(c0), sfill(), render::flag::kLegacy_NoExplode>,
-                           typename ball_inner<I>::shape>>>;
-  using shape = standard_transform<for_each<std::size_t, 0, 2, ball_shape>,
-                                   ngon_eval<set_radius_p<nd(0, 16), 3>, constant<nline(c2)>>,
-                                   line<vec2{-2, -96}, vec2{-2, 96}, sline(c0)>,
-                                   line<vec2{0, -96}, vec2{0, 96}, sline(c1)>,
-                                   line<vec2{2, -96}, vec2{2, 96}, sline(c0)>>;
+    auto& b = root.create(compound{});
+    auto& bi = root.create(compound{});
+    for (std::uint32_t i = 0; i < 2; ++i) {
+      auto& t = n.add(
+          translate_rotate{vec2{0, i ? 96 : -96}, multiply(i ? -1_fx / 2 : 1_fx / 2, key{'R'})});
+      t.add(b);
+      for (std::uint32_t j = 0; j < 8; ++j) {
+        t.add(translate_rotate{rotate_legacy(vec2{24, 0}, j * pi<fixed> / 4),
+                               i ? key{'R'} : multiply(-1_fx, key{'R'})})
+            .add(bi);
+      }
+    }
+    b.add(ngon{.dimensions = nd(12, 6), .style = ngon_style::kPolygram, .line = {.colour0 = c1}});
+    b.add(/* dummy */ ball{.line = {.colour0 = c1}});
+    b.add(ball_collider{.dimensions = bd(30), .flags = shape_flag::kShield});
+    b.add(ngon{.dimensions = nd(12, 12),
+               .line = {.colour0 = c1},
+               .flags = render::flag::kLegacy_NoExplode});
+    b.add(ngon{
+        .dimensions = nd(2, 6), .line = {.colour0 = c1}, .flags = render::flag::kLegacy_NoExplode});
+    b.add(ngon{.dimensions = nd(36, 12),
+               .line = {.colour0 = c0},
+               .flags = render::flag::kLegacy_NoExplode});
+    b.add(ngon{.dimensions = nd(34, 12),
+               .line = {.colour0 = c0},
+               .flags = render::flag::kLegacy_NoExplode});
+    b.add(ngon{.dimensions = nd(32, 12),
+               .line = {.colour0 = c0},
+               .flags = render::flag::kLegacy_NoExplode});
+    b.add(ball_collider{.dimensions = bd(36),
+                        .flags = shape_flag::kDangerous | shape_flag::kVulnerable});
+
+    bi.add(ngon{.dimensions = nd(12, 6),
+                .style = ngon_style::kPolygram,
+                .line = {.colour0 = c0},
+                .flags = render::flag::kLegacy_NoExplode});
+    bi.add(ball_collider{.dimensions = bd(12),
+                         .flags = shape_flag::kDangerous | shape_flag::kVulnerable});
+  }
+
+  void set_parameters(const Transform& transform, parameter_set& parameters) const {
+    parameters.add(key{'v'}, transform.centre)
+        .add(key{'r'}, transform.rotation)
+        .add(key{'R'}, sub_rotation)
+        .add(key{'s'}, static_cast<std::uint32_t>(attack_shapes.size()) / (1 + fixed_c::half));
+  }
+
   std::tuple<vec2, fixed, fixed, fixed> shape_parameters(const Transform& transform) const {
     return {transform.centre, transform.rotation, sub_rotation,
             static_cast<std::uint32_t>(attack_shapes.size()) / (1 + fixed_c::half)};
   }
 
-  static std::uint32_t bounding_width(const SimInterface& sim) {
-    return sim.is_legacy() ? 640 : 140;
-  }
+  static constexpr fixed bounding_width(bool is_legacy) { return is_legacy ? 640 : 140; }
 
   TractorBoss(SimInterface& sim) : shoot_type{sim.random_bool()} {}
   bool will_attack = false;
@@ -239,16 +257,27 @@ struct TractorBoss : ecs::component {
     sub_rotation += fixed_c::tenth;
   }
 
+  static void construct_attack_shape(node& root) {
+    root.add(translate_rotate{key{'v'}, key{'r'}})
+        .add(translate{key{'t'}})
+        .add(ngon{.dimensions = nd(8, 6), .line = {.colour0 = c0}});
+  }
+
   void on_hit(ecs::handle h, const Transform& transform, SimInterface& sim, EmitHandle& e,
               damage_type type, const vec2& source_position) const {
-    boss_on_hit<true, TractorBoss>(h, sim, e, type, source_position);
+    boss_on_hit2<true, TractorBoss, shape_definition_with_width<TractorBoss, 0>>(h, sim, e, type,
+                                                                                 source_position);
     // Compatiblity with old attack shapes actually being part of the shape.
     if (type == damage_type::kBomb) {
       for (const auto& v : attack_shapes) {
-        std::tuple parameters{transform.centre, transform.rotation, v};
-        explode_shapes<attack_shape>(e, parameters);
-        explode_shapes<attack_shape>(e, parameters, cvec4{1.f}, 12);
-        explode_shapes<attack_shape>(e, parameters, std::nullopt, 24);
+        auto& r = resolve_shape2<&construct_attack_shape>(sim, [&](parameter_set& parameters) {
+          parameters.add(key{'v'}, transform.centre)
+              .add(key{'r'}, transform.rotation)
+              .add(key{'t'}, v);
+        });
+        explode_shapes(e, r);
+        explode_shapes(e, r, cvec4{1.f}, 12);
+        explode_shapes(e, r, std::nullopt, 24);
       }
     }
   }
@@ -266,8 +295,12 @@ struct TractorBoss : ecs::component {
       }
     }
     for (const auto& v : attack_shapes) {
-      std::tuple parameters{transform.centre, transform.rotation, v};
-      render_shape<attack_shape>(output, parameters);
+      auto& r = resolve_shape2<&construct_attack_shape>(sim, [&](parameter_set& parameters) {
+        parameters.add(key{'v'}, transform.centre)
+            .add(key{'r'}, transform.rotation)
+            .add(key{'t'}, v);
+      });
+      render_shape(output, r);
     }
   }
 
@@ -288,8 +321,12 @@ DEBUG_STRUCT_TUPLE(TractorBoss, will_attack, stopped, generating, attacking, mov
 }  // namespace
 
 void spawn_tractor_boss(SimInterface& sim, std::uint32_t cycle) {
-  auto h = create_ship<TractorBoss>(
-      sim, {sim.dimensions().x * (1 + fixed_c::half), sim.dimensions().y / 2});
+  using legacy_shape = shape_definition_with_width<TractorBoss, TractorBoss::bounding_width(true)>;
+  using shape = shape_definition_with_width<TractorBoss, TractorBoss::bounding_width(false)>;
+
+  vec2 position{sim.dimensions().x * (1 + fixed_c::half), sim.dimensions().y / 2};
+  auto h = sim.is_legacy() ? create_ship2<TractorBoss, legacy_shape>(sim, position)
+                           : create_ship2<TractorBoss, shape>(sim, position);
   h.add(Enemy{.threat_value = 100,
               .boss_score_reward =
                   calculate_boss_score(boss_flag::kBoss2A, sim.player_count(), cycle)});
@@ -300,7 +337,7 @@ void spawn_tractor_boss(SimInterface& sim, std::uint32_t cycle) {
       .destroy_sound = std::nullopt,
       .damage_transform = &scale_boss_damage,
       .on_hit = ecs::call<&TractorBoss::on_hit>,
-      .on_destroy = ecs::call<&boss_on_destroy<TractorBoss>>,
+      .on_destroy = ecs::call<&boss_on_destroy2<TractorBoss, shape>>,
   });
   h.add(Boss{.boss = boss_flag::kBoss2A});
   h.add(TractorBoss{sim});

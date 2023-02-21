@@ -155,15 +155,18 @@ void render_shape(std::vector<render::shape>& output, const geom::resolve_result
             .rotation = entry.t.rotation().to_float(),
             .colour0 = d.line.colour0,
             .tag = d.tag,
+            .flags = d.flags,
             .data = render::box{.dimensions = to_float(d.dimensions)},
         });
         break;
       }
 
       VARIANT_CASE_GET(geom::resolve_result::line, entry.data, d) {
-        handle_shape(render::shape::line(to_float(*entry.t.translate(d.a)),
-                                         to_float(*entry.t.translate(d.b)), d.style.colour0, 0.f,
-                                         1.f, d.tag));
+        auto s = render::shape::line(to_float(*entry.t.translate(d.a)),
+                                     to_float(*entry.t.translate(d.b)), d.style.colour0, 0.f, 1.f,
+                                     d.tag);
+        s.flags = d.flags;
+        handle_shape(s);
         break;
       }
 
@@ -173,6 +176,7 @@ void render_shape(std::vector<render::shape>& output, const geom::resolve_result
             .rotation = entry.t.rotation().to_float(),
             .colour0 = d.line.colour0,
             .tag = d.tag,
+            .flags = d.flags,
             .data = render::ngon{.radius = d.dimensions.radius.to_float(),
                                  .sides = d.dimensions.sides,
                                  .segments = d.dimensions.segments,

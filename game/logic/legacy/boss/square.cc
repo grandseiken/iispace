@@ -1,5 +1,4 @@
 #include "game/common/colour.h"
-#include "game/geometry/shapes/legacy.h"
 #include "game/logic/legacy/boss/boss_internal.h"
 #include "game/logic/legacy/enemy/enemy.h"
 #include "game/logic/legacy/ship_template.h"
@@ -7,7 +6,7 @@
 
 namespace ii::legacy {
 namespace {
-using namespace geom;
+using namespace geom2;
 
 struct BigSquareBoss : public ecs::component {
   static constexpr std::uint32_t kBaseHp = 400;
@@ -21,23 +20,32 @@ struct BigSquareBoss : public ecs::component {
   static constexpr cvec4 c0 = colour::hue360(270, .6f);
   static constexpr cvec4 c1 = colour::hue360(270, .4f);
   static constexpr cvec4 c2 = colour::hue360(260, .3f);
+  static constexpr auto kFlags =
+      shape_flag::kDangerous | shape_flag::kVulnerable | shape_flag::kShield;
 
-  template <fixed C, ShapeNode... Nodes>
-  using rotate_s = rotate_eval<multiply_p<C, 1>, pack<Nodes...>>;
-  using shape =
-      translate_p<0, rotate_s<1, ngon<nd(160, 4), nline(c0)>, ngon<nd(155, 4), nline(c0)>>,
-                  rotate_s<-2, legacy_ngon<nd(140, 4), nline(c0), shape_flag::kDangerous>,
-                           ngon<nd(135, 4), nline(c0)>>,
-                  rotate_s<3, legacy_ngon<nd(120, 4), nline(c0), shape_flag::kDangerous>,
-                           ngon<nd(115, 4), nline(c0)>>,
-                  rotate_s<-4, ngon<nd(100, 4), nline(c0)>, ngon<nd(95, 4), nline(c1)>>,
-                  rotate_s<5, ngon<nd(80, 4), nline(c0)>, ngon<nd(75, 4), nline(c1)>>,
-                  rotate_s<-6, legacy_ngon<nd(60, 4), nline(c0), shape_flag::kVulnerable>,
-                           legacy_ngon<nd(55, 4), nline(c2), shape_flag::kShield>>>;
+  static void construct_shape(node& root) {
+    auto& n = root.add(translate{key{'v'}});
+    for (std::uint32_t i = 0; i < 6; ++i) {
+      auto& r = n.add(rotate{multiply(fixed{i + 1} * (i % 2 ? -1_fx : 1_fx), key{'r'})});
+      auto d = 160 - 20_fx * i;
+      r.add(ngon{.dimensions = nd(d, 4), .line = {.colour0 = c0}});
+      r.add(ngon{.dimensions = nd(d - 5, 4), .line = {.colour0 = i < 3 ? c0 : i < 5 ? c1 : c2}});
 
-  static std::uint32_t bounding_width(const SimInterface& sim) {
-    return sim.is_legacy() ? 640 : 150;
+      if (i == 1 || i == 2) {
+        r.add(ball_collider{.dimensions = bd(d), .flags = shape_flag::kDangerous});
+      }
+      if (i == 5) {
+        r.add(ball_collider{.dimensions = bd(d), .flags = shape_flag::kVulnerable});
+        r.add(ball_collider{.dimensions = bd(d - 5), .flags = shape_flag::kShield});
+      }
+    }
   }
+
+  void set_parameters(const Transform& transform, parameter_set& parameters) const {
+    parameters.add(key{'v'}, transform.centre).add(key{'r'}, transform.rotation);
+  }
+
+  static constexpr fixed bounding_width(bool is_legacy) { return is_legacy ? 640 : 150; }
 
   vec2 dir{0, -1};
   bool reverse = false;
@@ -118,8 +126,12 @@ struct BigSquareBoss : public ecs::component {
     transform.rotate(5 * fixed_c::hundredth);
   }
 
+  static void construct_follow_attack_shape(node& root) {
+    root.add(translate_rotate{key{'v'}, pi<fixed> / 4})
+        .add(ngon{.dimensions = nd(10, 4), .line = {.colour0 = c0}});
+  }
+
   void render(std::vector<render::shape>& output, const SimInterface& sim) const {
-    using follow_shape = translate_p<0, rotate<pi<fixed> / 4, ngon<nd(10, 4), nline(c0)>>>;
     if ((special_timer / 4) % 2 && attack_player) {
       vec2 d{kSpecialAttackRadius, 0};
       if (special_attack_rotate) {
@@ -127,7 +139,9 @@ struct BigSquareBoss : public ecs::component {
       }
       for (std::uint32_t i = 0; i < 6; ++i) {
         auto v = sim.index().get(*attack_player)->get<Transform>()->centre + d;
-        render_shape<follow_shape>(output, std::tuple{v});
+        auto& r = resolve_shape2<&construct_follow_attack_shape>(
+            sim, [&](parameter_set& parameters) { parameters.add(key{'v'}, v); });
+        render_shape(output, r);
         d = ::rotate(d, 2 * pi<fixed> / 6);
       }
     }
@@ -139,8 +153,13 @@ DEBUG_STRUCT_TUPLE(BigSquareBoss, dir, reverse, timer, spawn_timer, special_time
 }  // namespace
 
 void spawn_big_square_boss(SimInterface& sim, std::uint32_t cycle) {
-  auto h = create_ship<BigSquareBoss>(
-      sim, {sim.dimensions().x * fixed_c::hundredth * 75, sim.dimensions().y * 2});
+  using legacy_shape =
+      shape_definition_with_width<BigSquareBoss, BigSquareBoss::bounding_width(true)>;
+  using shape = shape_definition_with_width<BigSquareBoss, BigSquareBoss::bounding_width(false)>;
+
+  vec2 position{sim.dimensions().x * fixed_c::hundredth * 75, sim.dimensions().y * 2};
+  auto h = sim.is_legacy() ? create_ship2<BigSquareBoss, legacy_shape>(sim, position)
+                           : create_ship2<BigSquareBoss, shape>(sim, position);
   h.add(Enemy{.threat_value = 100,
               .boss_score_reward =
                   calculate_boss_score(boss_flag::kBoss1A, sim.player_count(), cycle)});
@@ -150,8 +169,8 @@ void spawn_big_square_boss(SimInterface& sim, std::uint32_t cycle) {
       .hit_sound1 = sound::kEnemyShatter,
       .destroy_sound = std::nullopt,
       .damage_transform = &scale_boss_damage,
-      .on_hit = &boss_on_hit<true, BigSquareBoss>,
-      .on_destroy = ecs::call<&boss_on_destroy<BigSquareBoss>>,
+      .on_hit = &boss_on_hit2<true, BigSquareBoss, shape>,
+      .on_destroy = ecs::call<&boss_on_destroy2<BigSquareBoss, shape>>,
   });
   h.add(Boss{.boss = boss_flag::kBoss1A});
   h.add(BigSquareBoss{});

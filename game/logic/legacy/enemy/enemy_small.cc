@@ -51,7 +51,7 @@ struct Follow : ecs::component {
 
   static void construct_shape(node& root) {
     auto& n = root.add(translate_rotate{.v = key{'v'}, .r = key{'r'}});
-    auto& s = n.add(enable{key{'s'}});
+    auto& s = n.add(enable{compare(false, key{'b'})});
     auto& b = n.add(enable{key{'b'}});
     s.add(ngon{.dimensions = nd(10, 4), .line = {.colour0 = colour::hue360(270, .6f)}});
     s.add(ball_collider{.dimensions = bd(10), .flags = kFlags});
@@ -62,7 +62,6 @@ struct Follow : ecs::component {
   void set_parameters(const Transform& transform, parameter_set& parameters) const {
     parameters.add(key{'v'}, transform.centre)
         .add(key{'r'}, transform.rotation)
-        .add(key{'s'}, !is_big_follow)
         .add(key{'b'}, is_big_follow);
   }
 

@@ -41,7 +41,7 @@ struct PlayerLogic : ecs::component {
 
     n.add(rotate{pi<fixed>})
         .add(ngon{.dimensions = nd(9, 3), .line = {.colour0 = key{'c'}, .z = z}});
-    auto& t = n.add(translate{vec2{8, 0}}).add(rotate{key{'R'}});
+    auto& t = n.add(translate{vec2{8, 0}}).add(rotate{multiply(-1_fx, key{'r'})});
     t.add(box{.dimensions = vec2{2}, .line = {.colour0 = key{'c'}, .z = z}});
     t.add(box{.dimensions = vec2{1}, .line = {.colour0 = key{'d'}, .z = z}});
     t.add(box{.dimensions = vec2{3}, .line = {.colour0 = key{'d'}, .z = z}});
@@ -60,7 +60,6 @@ struct PlayerLogic : ecs::component {
     }
     parameters.add(key{'v'}, transform.centre)
         .add(key{'r'}, transform.rotation)
-        .add(key{'R'}, -transform.rotation)
         .add(key{'c'}, colour)
         .add(key{'d'}, colour::alpha(colour, .2f))
         .add(key{'f'}, colour::alpha(colour, colour::kFillAlpha0))

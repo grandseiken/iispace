@@ -248,16 +248,16 @@ struct Tractor : ecs::component {
     auto& orb = root.create(compound{});
     auto& star = root.create(compound{});
 
-    n.add(translate_rotate{vec2{26, 0}, key{'S'}}).add(orb);
-    n.add(translate_rotate{vec2{-26, 0}, key{'s'}}).add(orb);
+    n.add(translate_rotate{vec2{26, 0}, multiply(5_fx, key{'s'})}).add(orb);
+    n.add(translate_rotate{vec2{-26, 0}, multiply(-5_fx, key{'s'})}).add(orb);
     n.add(line{.a = vec2{-26, 0},
                .b = vec2{26, 0},
                .style = sline(colour::kOutline, colour::kZOutline, 5.f)});
     n.add(line{.a = vec2{-26, 0}, .b = vec2{26, 0}, .style = sline(c, z)});
 
     auto& star_if = n.add(enable{key{'P'}});
-    star_if.add(translate_rotate{vec2{26, 0}, key{'T'}}).add(star);
-    star_if.add(translate_rotate{vec2{-26, 0}, key{'t'}}).add(star);
+    star_if.add(translate_rotate{vec2{26, 0}, multiply(8_fx, key{'s'})}).add(star);
+    star_if.add(translate_rotate{vec2{-26, 0}, multiply(-8_fx, key{'s'})}).add(star);
 
     orb.add(ngon{.dimensions = nd(18, 6), .line = outline});
     orb.add(ngon{.dimensions = nd(16, 6),
@@ -275,10 +275,7 @@ struct Tractor : ecs::component {
   void set_parameters(const Transform& transform, parameter_set& parameters) const {
     parameters.add(key{'v'}, transform.centre)
         .add(key{'r'}, transform.rotation)
-        .add(key{'s'}, -5 * spoke_r)
-        .add(key{'S'}, 5 * spoke_r)
-        .add(key{'t'}, -8 * spoke_r)
-        .add(key{'T'}, 8 * spoke_r)
+        .add(key{'s'}, spoke_r)
         .add(key{'P'}, power);
   }
 
@@ -396,8 +393,8 @@ struct ShieldHub : ecs::component {
     n.add(ball_collider{.dimensions = bd(kBoundingWidth), .flags = kFlags});
 
     t.add(ball{.dimensions = bd(kBoundingWidth / 3), .line = sline(c0, z)});
-    t.add(rotate{key{'s'}}).add(inner);
-    t.add(rotate{key{'S'}}).add(inner);
+    t.add(rotate{multiply(-1_fx / 2, key{'r'})}).add(inner);
+    t.add(rotate{multiply(1_fx / 2, key{'r'})}).add(inner);
 
     inner.add(translate{vec2{-18, 0}}).add(inner_box);
     inner.add(translate{vec2{18, 0}}).add(inner_box);
@@ -407,10 +404,7 @@ struct ShieldHub : ecs::component {
   }
 
   void set_parameters(const Transform& transform, parameter_set& parameters) const {
-    parameters.add(key{'v'}, transform.centre)
-        .add(key{'r'}, transform.rotation)
-        .add(key{'s'}, -transform.rotation / 2)
-        .add(key{'S'}, transform.rotation / 2);
+    parameters.add(key{'v'}, transform.centre).add(key{'r'}, transform.rotation);
   }
 
   ShieldHub(ecs::const_handle h) : effect_id{h.id()} {}

@@ -35,8 +35,9 @@ public:
   ShapeBank& operator=(ShapeBank&&) = delete;
   ShapeBank& operator=(const ShapeBank&) = delete;
 
-  using node_data = std::variant<ball_collider, box_collider, ngon_collider, ball, box, line, ngon,
-                                 compound, enable, translate, rotate, translate_rotate>;
+  using node_data =
+      std::variant<ball_collider, box_collider, ngon_collider, arc_collider, ball, box, line, ngon,
+                   compound, enable, translate, rotate, translate_rotate>;
 
   class node {
   private:

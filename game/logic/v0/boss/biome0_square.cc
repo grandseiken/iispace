@@ -51,8 +51,8 @@ struct SquareBoss : public ecs::component {
     auto c_mix = [](float t) { return colour::perceptual_mix(c0, c1, t); };
 
     auto& n = root.add(translate{key{'v'}});
-    for (unsigned char i = 0; i < 6; ++i) {
-      auto& t = n.add(rotate{key{'0'} + key{i}});
+    for (std::uint32_t i = 0; i < 6; ++i) {
+      auto& t = n.add(rotate{multiply(1 + i / 2_fx, key{'r'})});
       fixed r = 6 - i;
       auto c = c_mix(i / 5.f);
       auto r_flags = i < 3 ? render::flag::kNoFlash : render::flag::kNone;
@@ -82,9 +82,6 @@ struct SquareBoss : public ecs::component {
 
   void set_parameters(const Transform& transform, parameter_set& parameters) const {
     parameters.add(key{'v'}, transform.centre).add(key{'r'}, transform.rotation);
-    for (unsigned char i = 0; i < 6; ++i) {
-      parameters.add(key{'0'} + key{i}, transform.rotation * (1 + i / 2_fx));
-    }
   }
 
   struct corner_tag {

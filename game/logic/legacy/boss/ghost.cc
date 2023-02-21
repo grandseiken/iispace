@@ -1,10 +1,4 @@
 #include "game/common/colour.h"
-#include "game/geometry/node_conditional.h"
-#include "game/geometry/node_for_each.h"
-#include "game/geometry/shapes/box.h"
-#include "game/geometry/shapes/legacy.h"
-#include "game/geometry/shapes/line.h"
-#include "game/geometry/shapes/ngon.h"
 #include "game/logic/legacy/boss/boss_internal.h"
 #include "game/logic/legacy/enemy/enemy.h"
 #include "game/logic/legacy/player/powerup.h"
@@ -17,48 +11,49 @@ namespace {
 constexpr cvec4 c0 = colour::hue360(280, .7f);
 constexpr cvec4 c1 = colour::hue360(280, .5f, .6f);
 constexpr cvec4 c2 = colour::hue360(270, .2f);
-using namespace geom;
-
-template <ShapeNode S>
-hit_result
-shape_check_collision_compatibility(const auto& parameters, bool is_legacy, const check_t& it) {
-  return is_legacy ? shape_check_collision_legacy<S>(parameters, it)
-                   : shape_check_collision<S>(parameters, it);
-}
+using namespace geom2;
 
 struct GhostWall : ecs::component {
-  static constexpr fixed kBoundingWidth = 640;
   static constexpr sound kDestroySound = sound::kEnemyDestroy;
   static constexpr rumble_type kDestroyRumble = rumble_type::kNone;
   static constexpr fixed kSpeed = 3 + 1_fx / 2;
   static constexpr fixed kOffsetH = 260;
   static constexpr float kZIndex = 0.f;
+  static constexpr fixed kBoundingWidth = 640;
+  static constexpr auto kFlags = shape_flag::kDangerous | shape_flag::kShield;
 
-  using gw_wide_box =
-      compound<legacy_box_collider<vec2{640, 10}, shape_flag::kDangerous | shape_flag::kShield>,
-               box<vec2{640, 10}, sline(c0)>, box<vec2{640, 7}, sline(c0)>,
-               box<vec2{640, 4}, sline(c0)>>;
-  using gw_narrow_box =
-      compound<legacy_box_collider<vec2{240, 10}, shape_flag::kDangerous | shape_flag::kShield>,
-               box<vec2{240, 10}, sline(c0)>, box<vec2{240, 7}, sline(c0)>,
-               box<vec2{240, 4}, sline(c0)>>;
-  using gw_horizontal_base = rotate<pi<fixed> / 2, gw_narrow_box>;
-  template <fixed Y0, fixed Y1>
-  using gw_horizontal_align =
-      compound<translate<0, Y0, gw_horizontal_base>, translate<0, Y1, gw_horizontal_base>>;
-  using shape = translate_p<
-      0,
-      conditional_p<1, conditional_p<2, gw_wide_box, gw_narrow_box>,
-                    conditional_p<2, gw_horizontal_align<-100 - kOffsetH, -100 + kOffsetH>,
-                                  gw_horizontal_align<100 - kOffsetH, 100 + kOffsetH>>>>;
+  static void construct_shape(node& root) {
+    auto& n = root.add(translate{key{'v'}});
+    auto& v = n.add(enable{key{'V'}});
+    auto& h = n.add(enable{compare(false, key{'V'})});
 
-  std::tuple<vec2, bool, bool> shape_parameters(const Transform& transform) const {
-    return {transform.centre, vertical, gap_swap};
+    auto add_vertical = [](fixed w, node& t) {
+      t.add(box_collider{.dimensions = vec2{w, 10}, .flags = kFlags});
+      t.add(box{.dimensions = vec2{w, 10}, .line = {.colour0 = c0}});
+      t.add(box{.dimensions = vec2{w, 7}, .line = {.colour0 = c0}});
+      t.add(box{.dimensions = vec2{w, 4}, .line = {.colour0 = c0}});
+    };
+    auto& vb = root.create(compound{});
+    add_vertical(240, vb);
+    v.add(enable{compare(false, key{'G'})}).add(vb);
+    add_vertical(640, v.add(enable{key{'G'}}));
+
+    auto& hb = root.create(rotate{pi<fixed> / 2});
+    hb.add(vb);
+    auto add_horizontal = [&hb](fixed d, node& t) {
+      t.add(translate{vec2{0, d - kOffsetH}}).add(hb);
+      t.add(translate{vec2{0, d + kOffsetH}}).add(hb);
+    };
+    add_horizontal(100, h.add(enable{compare(false, key{'G'})}));
+    add_horizontal(-100, h.add(enable{key{'G'}}));
+  }
+
+  void set_parameters(const Transform& transform, parameter_set& parameters) const {
+    parameters.add(key{'v'}, transform.centre).add(key{'V'}, vertical).add(key{'G'}, gap_swap);
   }
 
   GhostWall(const vec2& dir, bool vertical, bool gap_swap)
   : dir{dir}, vertical{vertical}, gap_swap{gap_swap} {}
-
   vec2 dir{0};
   bool vertical = false;
   bool gap_swap = false;
@@ -85,8 +80,8 @@ DEBUG_STRUCT_TUPLE(GhostWall, dir, vertical, gap_swap);
 void spawn_ghost_wall_vertical(SimInterface& sim, bool swap, bool no_gap) {
   vec2 position{sim.dimensions().x / 2, swap ? -10 : 10 + sim.dimensions().y};
   vec2 dir{0, swap ? 1 : -1};
-  auto h = create_ship<GhostWall>(sim, position);
-  add_enemy_health<GhostWall>(h, 0);
+  auto h = create_ship2<GhostWall>(sim, position);
+  add_enemy_health2<GhostWall>(h, 0);
   h.add(GhostWall{dir, true, no_gap});
   h.add(Enemy{.threat_value = 1});
 }
@@ -94,37 +89,43 @@ void spawn_ghost_wall_vertical(SimInterface& sim, bool swap, bool no_gap) {
 void spawn_ghost_wall_horizontal(SimInterface& sim, bool swap, bool swap_gap) {
   vec2 position{swap ? -10 : 10 + sim.dimensions().x, sim.dimensions().y / 2};
   vec2 dir{swap ? 1 : -1, 0};
-  auto h = create_ship<GhostWall>(sim, position);
-  add_enemy_health<GhostWall>(h, 0);
+  auto h = create_ship2<GhostWall>(sim, position);
+  add_enemy_health2<GhostWall>(h, 0);
   h.add(GhostWall{dir, false, swap_gap});
   h.add(Enemy{.threat_value = 1});
 }
 
 struct GhostMine : ecs::component {
-  static constexpr fixed kBoundingWidth = 24;
   static constexpr sound kDestroySound = sound::kEnemyDestroy;
   static constexpr rumble_type kDestroyRumble = rumble_type::kNone;
   static constexpr float kZIndex = 0.f;
+  static constexpr fixed kBoundingWidth = 24;
+  static constexpr auto kFlags =
+      shape_flag::kDangerous | shape_flag::kShield | shape_flag::kWeakShield;
 
-  using shape = standard_transform<
-      ngon_colour_p<nd(24, 8), 3>,
-      if_p<2,
-           legacy_ball_collider<
-               24, shape_flag::kDangerous | shape_flag::kShield | shape_flag::kWeakShield>>,
-      ngon_colour_p<nd(20, 8), 3>>;
-
-  std::tuple<vec2, fixed, bool, cvec4> shape_parameters(const Transform& transform) const {
-    return {transform.centre, transform.rotation, !timer, (timer / 4) % 2 ? colour::kZero : c1};
+  static void construct_shape(node& root) {
+    auto& n = root.add(translate_rotate{key{'v'}, key{'r'}});
+    n.add(ngon{.dimensions = nd(24, 8), .line = {.colour0 = key{'c'}}});
+    n.add(enable{key{'C'}}).add(ball_collider{.dimensions = bd(24), .flags = kFlags});
+    n.add(ngon{.dimensions = nd(20, 8), .line = {.colour0 = key{'c'}}});
   }
 
+  void set_parameters(const Transform& transform, parameter_set& parameters) const {
+    parameters.add(key{'v'}, transform.centre)
+        .add(key{'r'}, transform.rotation)
+        .add(key{'c'}, (timer / 4) % 2 ? colour::kZero : c1)
+        .add(key{'C'}, !timer);
+  }
+
+  GhostMine(ecs::entity_id ghost_boss) : ghost_boss{ghost_boss} {}
   std::uint32_t timer = 80;
   ecs::entity_id ghost_boss{0};
-  GhostMine(ecs::entity_id ghost_boss) : ghost_boss{ghost_boss} {}
 
   void update(ecs::handle h, Transform& transform, SimInterface& sim) {
     if (timer == 80) {
       auto e = sim.emit(resolve_key::reconcile(h.id(), resolve_tag::kRespawn));
-      explode_entity_shapes<GhostMine>(h, e);
+      auto& r = resolve_entity_shape2<default_shape_definition<GhostMine>>(h, sim);
+      explode_shapes(e, r);
       transform.set_rotation(sim.random_fixed() * 2 * pi<fixed>);
     }
     timer && --timer;
@@ -143,32 +144,120 @@ struct GhostMine : ecs::component {
 DEBUG_STRUCT_TUPLE(GhostMine, timer, ghost_boss);
 
 void spawn_ghost_mine(SimInterface& sim, const vec2& position, ecs::const_handle ghost) {
-  auto h = create_ship<GhostMine>(sim, position);
-  add_enemy_health<GhostMine>(h, 0);
+  auto h = create_ship2<GhostMine>(sim, position);
+  add_enemy_health2<GhostMine>(h, 0);
   h.add(GhostMine{ghost.id()});
   h.add(Enemy{.threat_value = 1});
 }
 
 struct GhostBoss : ecs::component {
-  static constexpr std::uint32_t kBoundingWidth = 640;
   static constexpr std::uint32_t kBaseHp = 700;
   static constexpr std::uint32_t kTimer = 250;
   static constexpr std::uint32_t kAttackTime = 100;
-  static constexpr shape_flag kShapeFlags = shape_flag::kEverything;
 
-  using centre_shape = compound<legacy_ngon<nd(32, 8), nline(c1), shape_flag::kShield>,
-                                legacy_ngon<nd(48, 8), nline(c0),
-                                            shape_flag::kDangerous | shape_flag::kEnemyInteraction |
-                                                shape_flag::kVulnerable>>;
+  static constexpr fixed kBoundingWidth = 640;
+  static constexpr auto kFlags = shape_flag::kDangerous | shape_flag::kVulnerable |
+      shape_flag::kEnemyInteraction | shape_flag::kShield;
 
-  using render_shape = standard_transform<
-      centre_shape,
-      rotate_eval<multiply_p<3, 2>, ngon<nd(24, 8), nline(ngon_style::kPolygram, c0)>>>;
+  static vec2 outer_shape_d(std::uint32_t i, std::uint32_t j) {
+    return from_polar_legacy(j * 2 * pi<fixed> / (16 + i * 6), 100_fx + i * 60);
+  }
 
-  using explode_shape = standard_transform<
-      centre_shape,
-      rotate_eval<multiply_p<3, 2>, ngon<nd(24, 8), nline(ngon_style::kPolygram, c0)>>>;
-  using shape = ngon<nd(0, 2), nline(c1)>;  // Just for fireworks.
+  static void construct_shape(node& root) {
+    auto& n = root.add(translate_rotate{key{'v'}, key{'r'}});
+
+    // Outer stars.
+    key k{128};
+    auto& sc = n.add(enable{key{'C'}});
+    auto& sd = n.add(enable{key{'D'}});
+    for (unsigned char i = 0; i < 5; ++i) {
+      auto& r = n.add(rotate{key{'0'} + key{i}});
+      auto& rc = (i ? sd : sc).add(rotate{key{'0'} + key{i}});
+      for (std::uint32_t j = 0; j < 16 + i * 6; ++j) {
+        auto& t = r.add(translate_rotate{outer_shape_d(i, j), key{'o'}});
+        auto& tc = rc.add(translate_rotate{outer_shape_d(i, j), key{'o'}});
+
+        line_style line{.colour0 = c1};
+        if (i) {
+          line.colour0 = compare(true, k, c0, c2);
+          tc.add(enable{compare(true, k)})
+              .add(ball_collider{.dimensions = bd(9), .flags = shape_flag::kDangerous});
+          ++k;
+        } else {
+          tc.add(ball_collider{.dimensions = bd(16),
+                              .flags = shape_flag::kDangerous | shape_flag::kEnemyInteraction});
+        }
+        t.add(ngon{.dimensions = nd(16, 8),
+                   .style = ngon_style::kPolystar,
+                   .line = line,
+                   .flags = render::flag::kLegacy_NoExplode | render::flag::kNoFlash});
+        t.add(ngon{.dimensions = nd(12, 8),
+                   .line = line,
+                   .flags = render::flag::kLegacy_NoExplode | render::flag::kNoFlash});
+      }
+    }
+
+    // Main centre.
+    n.add(ngon{.dimensions = nd(32, 8), .line = {.colour0 = c1}});
+    n.add(ngon{.dimensions = nd(48, 8), .line = {.colour0 = c0}});
+    sc.add(ball_collider{.dimensions = bd(32), .flags = shape_flag::kShield});
+    sc.add(ball_collider{
+        .dimensions = bd(48),
+        .flags = shape_flag::kDangerous | shape_flag::kEnemyInteraction | shape_flag::kVulnerable});
+
+    n.add(rotate{multiply(3_fx, key{'R'})})
+        .add(
+            ngon{.dimensions = nd(24, 8), .style = ngon_style::kPolygram, .line = {.colour0 = c0}});
+    for (std::uint32_t i = 0; i < 10; ++i) {
+      n.add(/* dummy */ ball{.line = {.colour0 = c0}});
+    }
+
+    // Sparks.
+    auto& spark = root.create(compound{});
+    for (std::uint32_t i = 0; i < 8; ++i) {
+      n.add(translate_rotate{from_polar_legacy(i * pi<fixed> / 4, 48_fx), multiply(2_fx, key{'R'})})
+          .add(spark);
+      spark.add(line{.a = from_polar_legacy(i * pi<fixed> / 4, 10_fx),
+                     .b = from_polar_legacy(i * pi<fixed> / 4, 20_fx),
+                     .style = {.colour0 = c1},
+                     .flags = i ? render::flag::kLegacy_NoExplode : render::flag::kNone});
+    }
+
+    // Box attack.
+    auto& box_b = root.create(compound{});
+    auto& b = n.add(enable{key{'B'}});
+    b.add(translate{vec2{320 + 32, 0}}).add(box_b);
+    b.add(translate{vec2{-320 - 32, 0}}).add(box_b);
+    box_b.add(enable{key{'C'}})
+        .add(box_collider{.dimensions = vec2{320, 10},
+                          .flags = shape_flag::kDangerous | shape_flag::kEnemyInteraction});
+    box_b.add(
+        box{.dimensions = vec2{320, 10}, .line = {.colour0 = c0}, .flags = render::flag::kNoFlash});
+    box_b.add(
+        box{.dimensions = vec2{320, 7}, .line = {.colour0 = c0}, .flags = render::flag::kNoFlash});
+    box_b.add(
+        box{.dimensions = vec2{320, 4}, .line = {.colour0 = c0}, .flags = render::flag::kNoFlash});
+  }
+
+  void set_parameters(const Transform& transform, parameter_set& parameters) const {
+    parameters.add(key{'v'}, transform.centre)
+        .add(key{'r'}, transform.rotation)
+        .add(key{'R'}, inner_ring_rotation)
+        .add(key{'o'}, outer_ball_rotation)
+        .add(key{'C'}, collision_enabled)
+        .add(key{'D'}, collision_enabled && danger_enable)
+        .add(key{'B'}, box_attack_shape_enabled);
+    for (unsigned char i = 0; i < 5; ++i) {
+      parameters.add(key{'0'} + key{i}, outer_rotation[i]);
+    }
+    auto k = key{128};
+    for (std::uint32_t i = 1; i < 5; ++i) {
+      for (std::uint32_t j = 0; j < 16 + i * 6; ++j) {
+        parameters.add(k, outer_dangerous[i][j]);
+        ++k;
+      }
+    }
+  }
 
   std::tuple<vec2, fixed, fixed> shape_parameters(const Transform& transform) const {
     return {transform.centre, transform.rotation, inner_ring_rotation};
@@ -376,117 +465,8 @@ struct GhostBoss : ecs::component {
     }
   }
 
-  const vec2& outer_shape_d(std::uint32_t n, std::uint32_t i) const {
-    static const std::vector<std::vector<vec2>> kLookup = [] {
-      std::vector<std::vector<vec2>> v;
-      for (std::uint32_t n = 0; n < 5; ++n) {
-        v.emplace_back();
-        for (std::uint32_t i = 0; i < 16 + n * 6; ++i) {
-          v.back().push_back(from_polar_legacy(i * 2 * pi<fixed> / (16 + n * 6), 100_fx + n * 60));
-        }
-      }
-      return v;
-    }();
-    return kLookup[n][i];
-  }
-
-  using box_attack_component = compound<
-      legacy_box_collider<vec2{320, 10}, shape_flag::kDangerous | shape_flag::kEnemyInteraction>,
-      box<vec2{320, 10}, sline(c0)>, box<vec2{320, 7}, sline(c0)>, box<vec2{320, 4}, sline(c0)>>;
-  using box_attack_shape =
-      standard_transform<compound<translate<320 + 32, 0, box_attack_component>,
-                                  translate<-320 - 32, 0, box_attack_component>>>;
-  std::tuple<vec2, fixed> box_attack_parameters(const Transform& transform) const {
-    return {transform.centre, transform.rotation};
-  }
-
-  hit_result
-  check_collision(const Transform& transform, const check_t& it, const SimInterface&) const {
-    hit_result result;
-    if (!collision_enabled) {
-      return result;
-    }
-    result.mask |= shape_check_collision_compatibility<standard_transform<centre_shape>>(
-                       shape_parameters(transform), is_legacy, it)
-                       .mask;
-    if (box_attack_shape_enabled) {
-      result.mask |= shape_check_collision_compatibility<box_attack_shape>(
-                         box_attack_parameters(transform), is_legacy, it)
-                         .mask;
-    }
-
-    using ring0_ball =
-        legacy_ball_collider<16, shape_flag::kDangerous | shape_flag::kEnemyInteraction>;
-    using ring0_ball_t = standard_transform<rotate_p<2, translate_p<3, rotate_p<4, ring0_ball>>>>;
-    if (+(it.mask & (shape_flag::kDangerous | shape_flag::kEnemyInteraction))) {
-      for (std::uint32_t i = 0; i < 16; ++i) {
-        std::tuple parameters{transform.centre, transform.rotation, outer_rotation[0],
-                              outer_shape_d(0, i), outer_ball_rotation};
-        result.mask |=
-            shape_check_collision_compatibility<ring0_ball_t>(parameters, is_legacy, it).mask;
-      }
-    }
-
-    using ringN_ball = legacy_ball_collider<9, shape_flag::kDangerous>;
-    using ringN_ball_t = standard_transform<rotate_p<2, translate_p<3, rotate_p<4, ringN_ball>>>>;
-    for (std::uint32_t n = 1; n < 5 && +(it.mask & shape_flag::kDangerous); ++n) {
-      for (std::uint32_t i = 0; i < 16 + n * 6; ++i) {
-        if (!outer_dangerous[n][i] || !danger_enable) {
-          continue;
-        }
-        std::tuple parameters{transform.centre, transform.rotation, outer_rotation[n],
-                              outer_shape_d(n, i), outer_ball_rotation};
-        result.mask |=
-            shape_check_collision_compatibility<ringN_ball_t>(parameters, is_legacy, it).mask;
-      }
-    }
-    return result;
-  }
-
-  template <fixed I>
-  using spark_line = line<10 * from_polar_legacy(I* pi<fixed> / 4, 1_fx),
-                          20 * from_polar_legacy(I* pi<fixed> / 4, 1_fx), sline(c1),
-                          I ? render::flag::kLegacy_NoExplode : render::flag::kNone>;
-  using spark_shape = standard_transform<
-      translate_p<2, rotate_p<3, spark_line<0>, for_each<fixed, 1, 8, spark_line>>>>;
-  std::tuple<vec2, fixed, vec2, fixed>
-  spark_shape_parameters(const Transform& transform, std::uint32_t i) const {
-    return {transform.centre, transform.rotation, from_polar_legacy(i * pi<fixed> / 4, 48_fx),
-            2 * inner_ring_rotation};
-  }
-
-  void explode_shapes(const Transform& transform, EmitHandle& e,
-                      const std::optional<cvec4> colour_override = std::nullopt,
-                      std::uint32_t time = 8, const std::optional<vec2>& towards = std::nullopt,
-                      std::optional<float> speed = std::nullopt) const {
-    legacy::explode_shapes<explode_shape>(e, shape_parameters(transform), colour_override, time,
-                                          towards, speed);
-    for (std::uint32_t i = 0; i < 10; ++i) {
-      e.explosion(to_float(transform.centre), colour::kZero);  // Compatibility.
-    }
-    for (std::uint32_t i = 0; i < 8; ++i) {
-      legacy::explode_shapes<spark_shape>(e, spark_shape_parameters(transform, i), colour_override,
-                                          time, towards, speed);
-    }
-    if (box_attack_shape_enabled) {
-      legacy::explode_shapes<box_attack_shape>(e, box_attack_parameters(transform), colour_override,
-                                               time, towards, speed);
-    }
-  }
-
-  void destruct_lines(const Transform& transform, EmitHandle& e, const vec2& source,
-                      std::uint32_t time) const {
-    legacy::destruct_lines<explode_shape>(e, shape_parameters(transform), source);
-    for (std::uint32_t i = 0; i < 8; ++i) {
-      legacy::destruct_lines<spark_shape>(e, spark_shape_parameters(transform, i), source, time);
-    }
-    if (box_attack_shape_enabled) {
-      legacy::destruct_lines<box_attack_shape>(e, box_attack_parameters(transform), source, time);
-    }
-  }
-
-  void render_override(const Transform& transform, const Health& health,
-                       std::vector<render::shape>& output) const {
+  void render_override(ecs::const_handle h, const Health& health,
+                       std::vector<render::shape>& output, const SimInterface& sim) const {
     std::optional<cvec4> colour_override;
     if ((start_time / 4) % 2 == 1) {
       colour_override = {0.f, 0.f, 0.f, 1.f / 255};
@@ -495,31 +475,8 @@ struct GhostBoss : ecs::component {
     } else {
       colour_override = c2;
     }
-    render_entity_shape_override<render_shape>(output, &health, shape_parameters(transform), -4.f,
-                                               colour_override);
-    for (std::uint32_t i = 0; i < 8; ++i) {
-      render_entity_shape_override<spark_shape>(
-          output, &health, spark_shape_parameters(transform, i), -2.f, colour_override);
-    }
-    if (box_attack_shape_enabled) {
-      render_entity_shape_override<box_attack_shape>(
-          output, nullptr, box_attack_parameters(transform), 0.f, colour_override);
-    }
-
-    using outer_star_shape = standard_transform<translate_p<
-        2,
-        rotate_p<3,
-                 compound<ngon_colour_p<nd(16, 8), 4, nline(ngon_style::kPolystar, cvec4{0.})>,
-                          ngon_colour_p<nd(12, 8), 4>>>>>;
-    for (std::uint32_t n = 0; n < 5; ++n) {
-      for (std::uint32_t i = 0; i < 16 + n * 6; ++i) {
-        auto colour = outer_dangerous[n][i] ? c0 : n ? c2 : c1;
-        std::tuple parameters{transform.centre, transform.rotation + outer_rotation[n],
-                              outer_shape_d(n, i), outer_ball_rotation, colour};
-        render_entity_shape_override<outer_star_shape>(output, nullptr, parameters, -16.f,
-                                                       colour_override);
-      }
-    }
+    render_entity_shape_override2<default_shape_definition<GhostBoss>>(output, h, &health, sim,
+                                                                       -16.f, colour_override);
   }
 };
 DEBUG_STRUCT_TUPLE(GhostBoss, visible, shot_type, rdir, danger_enable, vtime, timer, attack,
@@ -532,9 +489,11 @@ void spawn_ghost_boss(SimInterface& sim, std::uint32_t cycle) {
   auto h = sim.index().create();
   h.add(Update{.update = ecs::call<&GhostBoss::update>});
   h.add(Transform{.centre = sim.dimensions() / 2});
-  h.add(Collision{.flags = GhostBoss::kShapeFlags,
+  h.add(Collision{.flags = GhostBoss::kFlags,
                   .bounding_width = GhostBoss::kBoundingWidth,
-                  .check_collision = ecs::call<&GhostBoss::check_collision>});
+                  .check_collision = sim.is_legacy()
+                      ? &ship_check_collision_legacy2<default_shape_definition<GhostBoss>>
+                      : &ship_check_collision2<default_shape_definition<GhostBoss>>});
   h.add(Render{.render = sfn::cast<Render::render_t, ecs::call<&GhostBoss::render_override>>});
 
   h.add(Enemy{.threat_value = 100,
@@ -546,8 +505,8 @@ void spawn_ghost_boss(SimInterface& sim, std::uint32_t cycle) {
       .hit_sound1 = sound::kEnemyShatter,
       .destroy_sound = std::nullopt,
       .damage_transform = &scale_boss_damage,
-      .on_hit = &boss_on_hit<true, GhostBoss>,
-      .on_destroy = ecs::call<&boss_on_destroy<GhostBoss>>,
+      .on_hit = &boss_on_hit2<true, GhostBoss>,
+      .on_destroy = ecs::call<&boss_on_destroy2<GhostBoss>>,
   });
   h.add(Boss{.boss = boss_flag::kBoss2B});
   h.add(GhostBoss{.is_legacy = sim.is_legacy()});

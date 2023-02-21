@@ -22,11 +22,13 @@ struct Powerup : ecs::component {
     auto& n = root.add(translate_rotate{.v = key{'v'}, .r = pi<fixed> / 2});
     n.add(ngon{.dimensions = nd(13, 5), .line = {.colour0 = key{'c'}}});
     n.add(ngon{.dimensions = nd(9, 5), .line = {.colour0 = key{'C'}}});
-    n.add(enable{key{'0'}}).add(ngon{.dimensions = nd(8, 3), .line = {.colour0 = colour::kWhite0}});
-    n.add(enable{key{'1'}}).add(box{.dimensions = vec2{3}, .line = {.colour0 = colour::kWhite0}});
-    n.add(enable{key{'2'}})
+    n.add(enable{compare(static_cast<std::uint32_t>(powerup_type::kExtraLife), key{'t'})})
+        .add(ngon{.dimensions = nd(8, 3), .line = {.colour0 = colour::kWhite0}});
+    n.add(enable{compare(static_cast<std::uint32_t>(powerup_type::kMagicShots), key{'t'})})
+        .add(box{.dimensions = vec2{3}, .line = {.colour0 = colour::kWhite0}});
+    n.add(enable{compare(static_cast<std::uint32_t>(powerup_type::kShield), key{'t'})})
         .add(ngon{.dimensions = nd(11, 5), .line = {.colour0 = colour::kWhite0}});
-    n.add(enable{key{'3'}})
+    n.add(enable{compare(static_cast<std::uint32_t>(powerup_type::kBomb), key{'t'})})
         .add(ngon{.dimensions = nd(11, 10),
                   .style = ngon_style::kPolystar,
                   .line = {.colour0 = colour::kWhite0}});
@@ -38,10 +40,7 @@ struct Powerup : ecs::component {
     parameters.add(key{'v'}, transform.centre)
         .add(key{'c'}, c0)
         .add(key{'C'}, c1)
-        .add(key{'0'}, type == powerup_type::kExtraLife)
-        .add(key{'1'}, type == powerup_type::kMagicShots)
-        .add(key{'2'}, type == powerup_type::kShield)
-        .add(key{'3'}, type == powerup_type::kBomb);
+        .add(key{'t'}, type);
   }
 
   Powerup(powerup_type type) : type{type} {}

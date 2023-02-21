@@ -1,10 +1,4 @@
 #include "game/common/colour.h"
-#include "game/geometry/node_conditional.h"
-#include "game/geometry/node_for_each.h"
-#include "game/geometry/shapes/box.h"
-#include "game/geometry/shapes/legacy.h"
-#include "game/geometry/shapes/line.h"
-#include "game/geometry/shapes/ngon.h"
 #include "game/logic/legacy/boss/boss_internal.h"
 #include "game/logic/legacy/enemy/enemy.h"
 #include "game/logic/legacy/ship_template.h"
@@ -16,18 +10,26 @@ constexpr cvec4 c0 = colour::hue360(150, 1.f / 3, .6f);
 constexpr cvec4 c1 = colour::hue360(150, .6f);
 constexpr cvec4 c2 = colour::hue(0.f, .8f, 0.f);
 constexpr cvec4 c3 = colour::hue(0.f, .6f, 0.f);
-using namespace geom;
+using namespace geom2;
 
 struct DeathRay : ecs::component {
-  static constexpr fixed kBoundingWidth = 48;
   static constexpr float kZIndex = 0.f;
   static constexpr sound kDestroySound = sound::kEnemyDestroy;
   static constexpr rumble_type kDestroyRumble = rumble_type::kNone;
   static constexpr fixed kSpeed = 10;
+  static constexpr fixed kBoundingWidth = 48;
+  static constexpr auto kFlags = shape_flag::kDangerous;
 
-  using shape =
-      standard_transform<legacy_box_collider<vec2{10, 48}, shape_flag::kDangerous>, legacy_dummy,
-                         line<vec2{0, 48}, vec2{0, -48}, sline(cvec4{1.f})>>;
+  static void construct_shape(node& root) {
+    auto& n = root.add(translate_rotate{key{'v'}, key{'r'}});
+    n.add(box_collider{.dimensions = vec2{10, 48}, .flags = kFlags});
+    n.add(/* dummy */ ball{.line = {.colour0 = colour::kWhite0}});
+    n.add(line{.a = vec2{0, 48}, .b = vec2{0, -48}, .style = {.colour0 = colour::kWhite0}});
+  }
+
+  void set_parameters(const Transform& transform, parameter_set& parameters) const {
+    parameters.add(key{'v'}, transform.centre).add(key{'r'}, transform.rotation);
+  }
 
   void update(ecs::handle h, Transform& transform, SimInterface& sim) {
     transform.move(vec2{1, 0} * kSpeed);
@@ -39,34 +41,44 @@ struct DeathRay : ecs::component {
 DEBUG_STRUCT_TUPLE(DeathRay);
 
 void spawn_death_ray(SimInterface& sim, const vec2& position) {
-  auto h = create_ship<DeathRay>(sim, position);
-  add_enemy_health<DeathRay>(h, 0);
+  auto h = create_ship2<DeathRay>(sim, position);
+  add_enemy_health2<DeathRay>(h, 0);
   h.add(DeathRay{});
   h.add(Enemy{.threat_value = 1});
 }
 
 struct DeathArm : ecs::component {
-  static constexpr fixed kBoundingWidth = 60;
   static constexpr float kZIndex = 4.f;
   static constexpr sound kDestroySound = sound::kPlayerDestroy;
   static constexpr rumble_type kDestroyRumble = rumble_type::kLarge;
 
   static constexpr std::uint32_t kTimer = 300;
   static constexpr fixed kSpeed = 4;
+  static constexpr fixed kBoundingWidth = 60;
+  static constexpr auto kFlags =
+      shape_flag::kDangerous | shape_flag::kVulnerable | shape_flag::kShield;
 
-  using shape = standard_transform<
-      ngon<nd(60, 4), nline(c1)>,
-      conditional_p<
-          2, legacy_ngon<nd(50, 4), nline(ngon_style::kPolygram, c0), shape_flag::kVulnerable>,
-          legacy_ngon<nd(50, 4), nline(ngon_style::kPolygram, c0),
-                      shape_flag::kDangerous | shape_flag::kVulnerable>>,
-      legacy_ball_collider_dummy<40, shape_flag::kShield>, ngon<nd(20, 4), nline(c1)>,
-      ngon<nd(18, 4), nline(c0)>>;
-
-  std::tuple<vec2, fixed, bool> shape_parameters(const Transform& transform) const {
-    return {transform.centre, transform.rotation, start > 0};
+  static void construct_shape(node& root) {
+    auto& n = root.add(translate_rotate{key{'v'}, key{'r'}});
+    n.add(ngon{.dimensions = nd(60, 4), .line = {.colour0 = c1}});
+    n.add(ngon{.dimensions = nd(50, 4), .style = ngon_style::kPolygram, .line = {.colour0 = c0}});
+    n.add(ball_collider{.dimensions = bd(50), .flags = key{'C'}});
+    n.add(ball_collider{.dimensions = bd(40), .flags = shape_flag::kShield});
+    n.add(/* dummy */ ball{.line = {.colour0 = c0}});
+    n.add(ngon{.dimensions = nd(20, 4), .line = {.colour0 = c1}});
+    n.add(ngon{.dimensions = nd(18, 4), .line = {.colour0 = c0}});
   }
 
+  void set_parameters(const Transform& transform, parameter_set& parameters) const {
+    parameters.add(key{'v'}, transform.centre)
+        .add(key{'r'}, transform.rotation)
+        .add(
+            key{'C'},
+            start > 0 ? shape_flag::kVulnerable : shape_flag::kDangerous | shape_flag::kVulnerable);
+  }
+
+  DeathArm(ecs::entity_id death_boss, bool is_top)
+  : death_boss{death_boss}, is_top{is_top}, timer{is_top ? 2 * kTimer / 3 : 0} {}
   ecs::entity_id death_boss{0};
   bool is_top = false;
   bool attacking = false;
@@ -75,9 +87,6 @@ struct DeathArm : ecs::component {
   std::uint32_t shots = 0;
   vec2 dir{0};
   vec2 target{0};
-
-  DeathArm(ecs::entity_id death_boss, bool is_top)
-  : death_boss{death_boss}, is_top{is_top}, timer{is_top ? 2 * kTimer / 3 : 0} {}
 
   void update(ecs::handle h, Transform& transform, SimInterface& sim) {
     auto e = sim.emit(resolve_key::predicted());
@@ -131,8 +140,9 @@ struct DeathArm : ecs::component {
     if (start) {
       if (start == 30) {
         auto e = sim.emit(resolve_key::reconcile(h.id(), resolve_tag::kRespawn));
-        explode_entity_shapes<DeathArm>(h, e);
-        explode_entity_shapes<DeathArm>(h, e, cvec4{1.f});
+        auto& r = resolve_entity_shape2<default_shape_definition<DeathArm>>(h, sim);
+        explode_shapes(e, r);
+        explode_shapes(e, r, cvec4{1.f});
       }
       start--;
     }
@@ -143,8 +153,8 @@ struct DeathArm : ecs::component {
 DEBUG_STRUCT_TUPLE(DeathArm, death_boss, is_top, attacking, start, timer, shots, dir, target);
 
 ecs::handle spawn_death_arm(SimInterface& sim, ecs::handle boss, bool is_top, std::uint32_t hp) {
-  auto h = create_ship<DeathArm>(sim, vec2{0});
-  add_enemy_health<DeathArm>(h, hp);
+  auto h = create_ship2<DeathArm>(sim, vec2{0});
+  add_enemy_health2<DeathArm>(h, hp);
   h.add(DeathArm{boss.id(), is_top});
   h.add(Enemy{.threat_value = 10});
   return h;
@@ -158,24 +168,40 @@ struct DeathRayBoss : public ecs::component {
   static constexpr std::uint32_t kArmRTimer = 400;
   static constexpr fixed kSpeed = 5;
   static constexpr float kZIndex = -4.f;
+  static constexpr auto kFlags =
+      shape_flag::kDangerous | shape_flag::kVulnerable | shape_flag::kShield;
 
-  template <fixed I>
-  using edge_shape = rotate<
-      I * pi<fixed> / 6,
-      translate<130, 0, box<vec2{10, 24}, sline(c1), sfill(), render::flag::kLegacy_NoExplode>,
-                box<vec2{8, 22}, sline(c0), sfill(), render::flag::kLegacy_NoExplode>,
-                legacy_box_collider<vec2{10, 24}, shape_flag::kDangerous>>>;
-  using shape = standard_transform<
-      rotate<pi<fixed> / 12, ngon<nd(110, 12), nline(ngon_style::kPolystar, c0)>,
-             ngon<nd(70, 12), nline(ngon_style::kPolygram, c1)>,
-             legacy_ngon<nd(120, 12), nline(c1), shape_flag::kDangerous | shape_flag::kVulnerable>,
-             ngon<nd(115, 12), nline(c1)>,
-             legacy_ngon<nd(110, 12), nline(c1), shape_flag::kShield>>,
-      legacy_dummy, for_each<fixed, 1, 12, edge_shape>>;
+  static void construct_shape(node& root) {
+    auto& n = root.add(translate_rotate{key{'v'}, key{'r'}});
+    n.add(/* dummy */ ball{.line = {.colour0 = c0}});
 
-  static std::uint32_t bounding_width(const SimInterface& sim) {
-    return sim.is_legacy() ? 640 : 140;
+    auto& r = n.add(rotate{pi<fixed> / 12});
+    r.add(ngon{.dimensions = nd(110, 12), .style = ngon_style::kPolystar, .line = {.colour0 = c0}});
+    r.add(ngon{.dimensions = nd(70, 12), .style = ngon_style::kPolygram, .line = {.colour0 = c1}});
+    r.add(ngon{.dimensions = nd(120, 12), .line = {.colour0 = c1}});
+    r.add(ball_collider{.dimensions = bd(120),
+                        .flags = shape_flag::kDangerous | shape_flag::kVulnerable});
+    r.add(ngon{.dimensions = nd(115, 12), .line = {.colour0 = c1}});
+    r.add(ngon{.dimensions = nd(110, 12), .line = {.colour0 = c1}});
+    r.add(ball_collider{.dimensions = bd(110), .flags = shape_flag::kShield});
+
+    for (std::uint32_t i = 1; i < 12; ++i) {
+      auto& t = n.add(rotate{i * pi<fixed> / 6}).add(translate{vec2{130, 0}});
+      t.add(box{.dimensions = vec2{10, 24},
+                .line = {.colour0 = c1},
+                .flags = render::flag::kLegacy_NoExplode});
+      t.add(box{.dimensions = vec2{8, 22},
+                .line = {.colour0 = c0},
+                .flags = render::flag::kLegacy_NoExplode});
+      t.add(box_collider{.dimensions = vec2{10, 24}, .flags = shape_flag::kDangerous});
+    }
   }
+
+  void set_parameters(const Transform& transform, parameter_set& parameters) const {
+    parameters.add(key{'v'}, transform.centre).add(key{'r'}, transform.rotation);
+  }
+
+  static constexpr fixed bounding_width(bool is_legacy) { return is_legacy ? 640 : 140; }
 
   std::vector<ecs::entity_id> arms;
   std::uint32_t timer = kTimer * 2;
@@ -219,7 +245,8 @@ struct DeathRayBoss : public ecs::component {
         spawn_boss_shot(sim, transform.centre, d * 10, c2);
         e.play_random(sound::kBossAttack, transform.centre);
         auto e = sim.emit(resolve_key::predicted());
-        explode_entity_shapes<DeathRayBoss>(h, e);
+        auto& r = resolve_entity_shape2<shape_definition_with_width<DeathRayBoss, 0>>(h, sim);
+        explode_shapes(e, r);
       }
     }
 
@@ -336,8 +363,14 @@ struct DeathRayBoss : public ecs::component {
     }
   }
 
-  void render(const Transform& transform, std::vector<render::shape>& output) const {
-    using ray_shape = translate_p<0, ngon<nd(10, 6), nline(ngon_style::kPolystar, c3)>>;
+  static void construct_ray_shape(node& root) {
+    root.add(translate{key{'v'}})
+        .add(
+            ngon{.dimensions = nd(10, 6), .style = ngon_style::kPolystar, .line = {.colour0 = c3}});
+  }
+
+  void render(const Transform& transform, std::vector<render::shape>& output,
+              const SimInterface& sim) const {
     for (std::uint32_t i = ray_attack_timer; i <= ray_attack_timer + 16; ++i) {
       auto k = i < 8 ? 0 : i - 8;
       if (k < 40 || k > kRayTimer) {
@@ -346,11 +379,14 @@ struct DeathRayBoss : public ecs::component {
 
       auto v = ray_src1 - transform.centre;
       v *= static_cast<fixed>(k - 40) / (kRayTimer - 40);
-      render_shape<ray_shape>(output, std::tuple{transform.centre + v});
+      auto set_parameters = [&](parameter_set& parameters) {
+        parameters.add(key{'v'}, transform.centre + v);
+      };
+      render_shape(output, resolve_shape2<&construct_ray_shape>(sim, set_parameters));
 
       v = ray_src2 - transform.centre;
       v *= static_cast<fixed>(k - 40) / (kRayTimer - 40);
-      render_shape<ray_shape>(output, std::tuple{transform.centre + v});
+      render_shape(output, resolve_shape2<&construct_ray_shape>(sim, set_parameters));
     }
   }
 
@@ -360,9 +396,10 @@ DEBUG_STRUCT_TUPLE(DeathRayBoss, arms, timer, laser, dir, pos, arm_timer, shot_t
                    ray_attack_timer, ray_src1, ray_src2, ray_dest);
 
 void DeathArm::on_destroy(ecs::const_handle h, SimInterface& sim, EmitHandle& e) const {
-  explode_entity_shapes<DeathArm>(h, e);
-  explode_entity_shapes<DeathArm>(h, e, cvec4{1.f}, 12);
-  explode_entity_shapes<DeathArm>(h, e, c1, 24);
+  auto& r = resolve_entity_shape2<default_shape_definition<DeathArm>>(h, sim);
+  explode_shapes(e, r);
+  explode_shapes(e, r, cvec4{1.f}, 12);
+  explode_shapes(e, r, c1, 24);
   if (auto boss_h = sim.index().get(death_boss); boss_h) {
     std::erase(boss_h->get<DeathRayBoss>()->arms, h.id());
   }
@@ -378,7 +415,14 @@ std::uint32_t transform_death_ray_boss_damage(ecs::handle h, SimInterface& sim, 
 }  // namespace
 
 void spawn_death_ray_boss(SimInterface& sim, std::uint32_t cycle) {
-  auto h = create_ship<DeathRayBoss>(sim, {sim.dimensions().x * (3_fx / 20), -sim.dimensions().y});
+  using legacy_shape =
+      shape_definition_with_width<DeathRayBoss, DeathRayBoss::bounding_width(true)>;
+  using shape = shape_definition_with_width<DeathRayBoss, DeathRayBoss::bounding_width(false)>;
+
+  vec2 position{sim.dimensions().x * (3_fx / 20), -sim.dimensions().y};
+  auto h = sim.is_legacy() ? create_ship2<DeathRayBoss, legacy_shape>(sim, position)
+                           : create_ship2<DeathRayBoss, shape>(sim, position);
+
   h.add(Enemy{.threat_value = 100,
               .boss_score_reward =
                   calculate_boss_score(boss_flag::kBoss2C, sim.player_count(), cycle)});
@@ -389,8 +433,8 @@ void spawn_death_ray_boss(SimInterface& sim, std::uint32_t cycle) {
       .hit_sound1 = sound::kEnemyShatter,
       .destroy_sound = std::nullopt,
       .damage_transform = &transform_death_ray_boss_damage,
-      .on_hit = &boss_on_hit<true, DeathRayBoss>,
-      .on_destroy = ecs::call<&boss_on_destroy<DeathRayBoss>>,
+      .on_hit = &boss_on_hit2<true, DeathRayBoss, shape>,
+      .on_destroy = ecs::call<&boss_on_destroy2<DeathRayBoss, shape>>,
   });
   h.add(Boss{.boss = boss_flag::kBoss2C});
   h.add(DeathRayBoss{});

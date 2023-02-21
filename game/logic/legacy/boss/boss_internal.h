@@ -14,9 +14,20 @@ scale_boss_damage(ecs::handle h, SimInterface&, damage_type type, std::uint32_t 
 template <bool ExplodeOnBombDamage, ecs::Component Logic, geom::ShapeNode S = typename Logic::shape>
 void boss_on_hit(ecs::handle h, SimInterface& sim, EmitHandle& e, damage_type type, const vec2&) {
   if (type == damage_type::kBomb && ExplodeOnBombDamage) {
-    explode_entity_shapes<Logic, S>(h, e);
-    explode_entity_shapes<Logic, S>(h, e, cvec4{1.f}, 12);
-    explode_entity_shapes<Logic, S>(h, e, std::nullopt, 24);
+    explode_entity_shapes<Logic, S>(h, sim, e);
+    explode_entity_shapes<Logic, S>(h, sim, e, cvec4{1.f}, 12);
+    explode_entity_shapes<Logic, S>(h, sim, e, std::nullopt, 24);
+  }
+}
+
+template <bool ExplodeOnBombDamage, ecs::Component Logic,
+          typename ShapeDefinition = default_shape_definition<Logic>>
+void boss_on_hit2(ecs::handle h, SimInterface& sim, EmitHandle& e, damage_type type, const vec2&) {
+  if (type == damage_type::kBomb && ExplodeOnBombDamage) {
+    auto& r = resolve_entity_shape2<ShapeDefinition>(h, sim);
+    explode_shapes(e, r);
+    explode_shapes(e, r, cvec4{1.f}, 12);
+    explode_shapes(e, r, std::nullopt, 24);
   }
 }
 
@@ -46,12 +57,56 @@ void boss_on_destroy(ecs::const_handle h, const Transform& transform, SimInterfa
     }
   }
 
-  explode_entity_shapes<Logic, S>(h, e);
-  explode_entity_shapes<Logic, S>(h, e, cvec4{1.f}, 12);
-  explode_entity_shapes<Logic, S>(h, e, boss_colour, 24);
-  explode_entity_shapes<Logic, S>(h, e, cvec4{1.f}, 36);
-  explode_entity_shapes<Logic, S>(h, e, boss_colour, 48);
-  destruct_entity_lines<Logic, S>(h, e, source, 128);
+  explode_entity_shapes<Logic, S>(h, sim, e);
+  explode_entity_shapes<Logic, S>(h, sim, e, cvec4{1.f}, 12);
+  explode_entity_shapes<Logic, S>(h, sim, e, boss_colour, 24);
+  explode_entity_shapes<Logic, S>(h, sim, e, cvec4{1.f}, 36);
+  explode_entity_shapes<Logic, S>(h, sim, e, boss_colour, 48);
+  destruct_entity_lines<Logic, S>(h, sim, e, source, 128);
+  std::uint32_t n = 1;
+  auto& random = sim.random(random_source::kLegacyAesthetic);
+  for (std::uint32_t i = 0; i < 16; ++i) {
+    auto v = from_polar_legacy(random.fixed() * (2 * pi<fixed>),
+                               fixed{8 + random.uint(64) + random.uint(64)});
+    sim.global_entity().get<GlobalData>()->fireworks.push_back(GlobalData::fireworks_entry{
+        .time = n, .position = transform.centre + v, .colour = boss_colour.value_or(cvec4{1.f})});
+    n += i;
+  }
+  e.rumble_all(30, 1.f, 1.f).play(sound::kExplosion, transform.centre);
+}
+
+template <ecs::Component Logic, typename ShapeDefinition = default_shape_definition<Logic>>
+void boss_on_destroy2(ecs::const_handle h, const Transform& transform, SimInterface& sim,
+                      EmitHandle& e, damage_type, const vec2& source) {
+  sim.index().iterate_dispatch_if<Enemy>([&](ecs::handle eh, Health& health) {
+    if (eh.id() != h.id()) {
+      health.damage(eh, sim, GlobalData::kBombDamage, damage_type::kBomb, h.id());
+    }
+  });
+
+  auto& r = resolve_entity_shape2<ShapeDefinition>(h, sim);
+  std::optional<cvec4> boss_colour;
+  for (const auto& e : r.entries) {
+    if (const auto* d = std::get_if<geom::resolve_result::ball>(&e.data); d && d->line.colour0.a) {
+      boss_colour = d->line.colour0;
+      break;
+    }
+    if (const auto* d = std::get_if<geom::resolve_result::box>(&e.data); d && d->line.colour0.a) {
+      boss_colour = d->line.colour0;
+      break;
+    }
+    if (const auto* d = std::get_if<geom::resolve_result::ngon>(&e.data); d && d->line.colour0.a) {
+      boss_colour = d->line.colour0;
+      break;
+    }
+  }
+
+  explode_shapes(e, r);
+  explode_shapes(e, r, cvec4{1.f}, 12);
+  explode_shapes(e, r, boss_colour, 24);
+  explode_shapes(e, r, cvec4{1.f}, 36);
+  explode_shapes(e, r, boss_colour, 48);
+  destruct_lines(e, r, to_float(source), 128);
   std::uint32_t n = 1;
   auto& random = sim.random(random_source::kLegacyAesthetic);
   for (std::uint32_t i = 0; i < 16; ++i) {

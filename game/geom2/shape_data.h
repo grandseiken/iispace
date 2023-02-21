@@ -77,6 +77,12 @@ struct ngon_collider {
   value<shape_flag> flags = shape_flag::kNone;
 };
 
+struct arc_collider {
+  ball_dimensions dimensions;
+  value<fixed> arc_angle = 0_fx;
+  value<shape_flag> flags = shape_flag::kNone;
+};
+
 struct ball {
   ball_dimensions dimensions;
   line_style line;

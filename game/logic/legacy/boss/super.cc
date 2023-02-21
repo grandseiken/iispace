@@ -1,6 +1,4 @@
 #include "game/common/colour.h"
-#include "game/geometry/shapes/legacy.h"
-#include "game/geometry/shapes/ngon.h"
 #include "game/logic/legacy/boss/boss_internal.h"
 #include "game/logic/legacy/enemy/enemy.h"
 #include "game/logic/legacy/player/powerup.h"
@@ -10,32 +8,39 @@
 
 namespace ii::legacy {
 namespace {
-using namespace geom;
+using namespace geom2;
 
 struct SuperBossArc : public ecs::component {
   static constexpr std::uint32_t kBaseHp = 75;
   static constexpr float kZIndex = -4.f;
+  static constexpr auto kFlags = shape_flag::kDangerous | shape_flag::kVulnerable |
+      shape_flag::kShield | shape_flag::kSafeShield;
 
-  template <fixed Radius, std::size_t I, shape_flag Flags = shape_flag::kNone>
-  using polyarc =
-      compound<legacy_arc_collider<nd(Radius, 32u, 2u), Flags>,
-               ngon_eval<constant<nd(Radius, 32u, 2u)>, set_colour<nline(), parameter_i<3, I>>>>;
-  using shape =
-      standard_transform<rotate_p<2, polyarc<140, 0>, polyarc<135, 1>, polyarc<130, 2>,
-                                  polyarc<125, 3,
-                                          shape_flag::kShield | shape_flag::kSafeShield |
-                                              shape_flag::kDangerous | shape_flag::kVulnerable>,
-                                  polyarc<120, 4>, polyarc<115, 5>, polyarc<110, 6>,
-                                  polyarc<105, 7, shape_flag::kShield | shape_flag::kSafeShield>>>;
-
-  std::tuple<vec2, fixed, fixed, std::array<cvec4, 8>>
-  shape_parameters(const Transform& transform) const {
-    return {transform.centre, transform.rotation, i * 2 * pi<fixed> / 16, colours};
+  static void construct_shape(node& root) {
+    auto& n = root.add(translate_rotate{key{'v'}, key{'r'}}).add(rotate{key{'R'}});
+    for (unsigned char j = 0; j < 8; ++j) {
+      auto r = 140 - 5_fx * j;
+      n.add(ngon{.dimensions = nd(r, 32, 2), .line = {.colour0 = key{'0'} + key{j}}});
+      auto flags = j == 3 ? kFlags
+          : j == 7        ? shape_flag::kShield | shape_flag::kSafeShield
+                          : shape_flag::kNone;
+      if (+flags) {
+        n.add(
+            arc_collider{.dimensions = bd(r, r - 10), .arc_angle = pi<fixed> / 8, .flags = flags});
+      }
+    }
   }
 
-  static std::uint32_t bounding_width(const SimInterface& sim) {
-    return sim.is_legacy() ? 640 : 130;
+  void set_parameters(const Transform& transform, parameter_set& parameters) const {
+    parameters.add(key{'v'}, transform.centre)
+        .add(key{'r'}, transform.rotation)
+        .add(key{'R'}, i * 2 * pi<fixed> / 16);
+    for (unsigned char j = 0; j < 8; ++j) {
+      parameters.add(key{'0'} + key{j}, colours[j]);
+    }
   }
+
+  static constexpr fixed bounding_width(bool is_legacy) { return is_legacy ? 640 : 130; }
 
   SuperBossArc(ecs::entity_id boss, std::uint32_t i, std::uint32_t timer)
   : boss{boss}, i{i}, timer{timer} {}
@@ -54,25 +59,36 @@ struct SuperBossArc : public ecs::component {
     ++timer;
   }
 
-  void on_destroy(const Transform& transform, SimInterface&, EmitHandle& e, damage_type,
-                  const vec2& source) const {
-    auto parameters = shape_parameters(transform);
-    destruct_lines<shape>(e, parameters, source, 64);
-    std::get<0>(parameters) +=
-        from_polar_legacy(i * 2 * pi<fixed> / 16 + transform.rotation, 120_fx);
-    explode_shapes<shape>(e, parameters);
-    explode_shapes<shape>(e, parameters, cvec4{1.f}, 12);
-    explode_shapes<shape>(e, parameters, std::nullopt, 24);
-    explode_shapes<shape>(e, parameters, cvec4{1.f}, 36);
-    explode_shapes<shape>(e, parameters, std::nullopt, 48);
-    e.play_random(sound::kExplosion, std::get<0>(parameters));
+  void on_destroy(ecs::const_handle h, const Transform& transform, SimInterface& sim, EmitHandle& e,
+                  damage_type, const vec2& source) const {
+    {
+      auto& r = resolve_entity_shape2<shape_definition_with_width<SuperBossArc, 0>>(h, sim);
+      destruct_lines(e, r, to_float(source), 64);
+    }
+    auto v =
+        transform.centre + from_polar_legacy(i * 2 * pi<fixed> / 16 + transform.rotation, 120_fx);
+    auto& r = resolve_shape2<&construct_shape>(sim, [&](parameter_set& parameters) {
+      set_parameters(transform, parameters);
+      parameters.add(key{'v'}, v);
+    });
+    explode_shapes(e, r);
+    explode_shapes(e, r, cvec4{1.f}, 12);
+    explode_shapes(e, r, std::nullopt, 24);
+    explode_shapes(e, r, cvec4{1.f}, 36);
+    explode_shapes(e, r, std::nullopt, 48);
+    e.play_random(sound::kExplosion, v);
   }
 };
 DEBUG_STRUCT_TUPLE(SuperBossArc, boss, i, timer, s_timer);
 
 ecs::handle spawn_super_boss_arc(SimInterface& sim, const vec2& position, std::uint32_t cycle,
                                  std::uint32_t i, ecs::handle boss, std::uint32_t timer = 0) {
-  auto h = create_ship<SuperBossArc>(sim, position);
+  using legacy_shape =
+      shape_definition_with_width<SuperBossArc, SuperBossArc::bounding_width(true)>;
+  using shape = shape_definition_with_width<SuperBossArc, SuperBossArc::bounding_width(false)>;
+
+  auto h = sim.is_legacy() ? create_ship2<SuperBossArc, legacy_shape>(sim, position)
+                           : create_ship2<SuperBossArc, shape>(sim, position);
   h.add(Enemy{.threat_value = 10});
   h.add(Health{
       .hp = calculate_boss_hp(SuperBossArc::kBaseHp, sim.player_count(), cycle),
@@ -84,7 +100,7 @@ ecs::handle spawn_super_boss_arc(SimInterface& sim, const vec2& position, std::u
             return scale_boss_damage(h, sim, type,
                                      type == damage_type::kBomb ? damage / 2 : damage);
           },
-      .on_hit = &boss_on_hit<true, SuperBossArc>,
+      .on_hit = &boss_on_hit2<true, SuperBossArc, shape>,
       .on_destroy = ecs::call<&SuperBossArc::on_destroy>,
   });
   h.add(SuperBossArc{boss.id(), i, timer});
@@ -95,23 +111,31 @@ struct SuperBoss : ecs::component {
   enum class state { kArrive, kIdle, kAttack };
   static constexpr std::uint32_t kBaseHp = 520;
   static constexpr float kZIndex = -4.f;
+  static constexpr auto kFlags =
+      shape_flag::kDangerous | shape_flag::kVulnerable | shape_flag::kShield;
 
-  template <fixed Radius, std::size_t I, shape_flag Flags = shape_flag::kNone>
-  using polygon = compound<
-      ngon_eval<constant<nd(Radius, 32)>, set_colour<nline(colour::kZero), parameter_i<2, I>>>,
-      legacy_ball_collider<Radius, Flags>>;
-  using shape =
-      standard_transform<polygon<40, 0, shape_flag::kDangerous | shape_flag::kVulnerable>,
-                         polygon<35, 1>, polygon<30, 2, shape_flag::kShield>, polygon<25, 3>,
-                         polygon<20, 4>, polygon<15, 5>, polygon<10, 6>, polygon<5, 7>>;
-
-  std::tuple<vec2, fixed, std::array<cvec4, 8>> shape_parameters(const Transform& transform) const {
-    return {transform.centre, transform.rotation, colours};
+  static void construct_shape(node& root) {
+    auto& n = root.add(translate_rotate{key{'v'}, key{'r'}});
+    for (unsigned char j = 0; j < 8; ++j) {
+      auto r = 40 - 5_fx * j;
+      n.add(ngon{.dimensions = nd(r, 32), .line = {.colour0 = key{'0'} + key{j}}});
+      auto flags = j == 0 ? shape_flag::kDangerous | shape_flag::kVulnerable
+          : j == 2        ? shape_flag::kShield
+                          : shape_flag::kNone;
+      if (+flags) {
+        n.add(ball_collider{.dimensions = bd(r), .flags = flags});
+      }
+    }
   }
 
-  static std::uint32_t bounding_width(const SimInterface& sim) {
-    return sim.is_legacy() ? 640 : 50;
+  void set_parameters(const Transform& transform, parameter_set& parameters) const {
+    parameters.add(key{'v'}, transform.centre).add(key{'r'}, transform.rotation);
+    for (unsigned char j = 0; j < 8; ++j) {
+      parameters.add(key{'0'} + key{j}, colours[j]);
+    }
   }
+
+  static constexpr fixed bounding_width(bool is_legacy) { return is_legacy ? 640 : 50; }
 
   SuperBoss(std::uint32_t cycle) : cycle{cycle} {}
   state state = state::kArrive;
@@ -248,13 +272,14 @@ struct SuperBoss : ecs::component {
         health.damage(eh, sim, 100 * GlobalData::kBombDamage, damage_type::kBomb, h.id());
       }
     });
-    auto parameters = shape_parameters(transform);
-    explode_shapes<shape>(e, parameters);
-    explode_shapes<shape>(e, parameters, cvec4{1.f}, 12);
-    explode_shapes<shape>(e, parameters, std::nullopt, 24);
-    explode_shapes<shape>(e, parameters, cvec4{1.f}, 36);
-    explode_shapes<shape>(e, parameters, std::nullopt, 48);
-    destruct_lines<shape>(e, parameters, source, 128);
+
+    auto& r = resolve_entity_shape2<shape_definition_with_width<SuperBoss, 0>>(h, sim);
+    explode_shapes(e, r);
+    explode_shapes(e, r, cvec4{1.f}, 12);
+    explode_shapes(e, r, std::nullopt, 24);
+    explode_shapes(e, r, cvec4{1.f}, 36);
+    explode_shapes(e, r, std::nullopt, 48);
+    destruct_lines(e, r, to_float(source), 128);
 
     std::uint32_t n = 1;
     for (std::uint32_t i = 0; i < 16; ++i) {
@@ -276,8 +301,13 @@ DEBUG_STRUCT_TUPLE(SuperBoss, state, cycle, ctimer, timer, snakes, arcs);
 }  // namespace
 
 void spawn_super_boss(SimInterface& sim, std::uint32_t cycle) {
-  auto h = create_ship<SuperBoss>(
-      sim, {sim.dimensions().x / 2, -sim.dimensions().y / (2 + fixed_c::half)});
+  using legacy_shape = shape_definition_with_width<SuperBoss, SuperBoss::bounding_width(true)>;
+  using shape = shape_definition_with_width<SuperBoss, SuperBoss::bounding_width(false)>;
+
+  vec2 position{sim.dimensions().x / 2, -sim.dimensions().y / (2 + fixed_c::half)};
+  auto h = sim.is_legacy() ? create_ship2<SuperBoss, legacy_shape>(sim, position)
+                           : create_ship2<SuperBoss, shape>(sim, position);
+
   h.add(Enemy{.threat_value = 100,
               .boss_score_reward =
                   calculate_boss_score(boss_flag::kBoss3A, sim.player_count(), cycle)});
@@ -288,7 +318,7 @@ void spawn_super_boss(SimInterface& sim, std::uint32_t cycle) {
       .hit_sound1 = sound::kEnemyShatter,
       .destroy_sound = std::nullopt,
       .damage_transform = &scale_boss_damage,
-      .on_hit = &boss_on_hit<true, SuperBoss>,
+      .on_hit = &boss_on_hit2<true, SuperBoss, shape>,
       .on_destroy = ecs::call<&SuperBoss::on_destroy>,
   });
   h.add(Boss{.boss = boss_flag::kBoss3A});
