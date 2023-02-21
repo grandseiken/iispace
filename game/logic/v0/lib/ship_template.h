@@ -13,9 +13,6 @@
 #include <span>
 #include <vector>
 
-// TODO: basically, need to do less template instantiation. Just have a single geometry resolve
-// function with callbacks and then iterate over shape output in non-template code? Probably
-// means we need to cache the resolved shape data in a component or something.
 namespace ii::v0 {
 
 template <sfn::ptr<void(geom2::node&)> ConstructShape,
@@ -84,12 +81,9 @@ template <typename ShapeDefinition>
 geom2::hit_result
 check_entity_collision(ecs::const_handle h, const geom2::check_t& check, const SimInterface& sim) {
   geom2::hit_result result;
-  auto& shape_bank = sim.shape_bank();
-  auto set_parameters = [&h](geom2::parameter_set& parameters) {
-    ShapeDefinition::set_parameters(h, parameters);
-  };
-  geom2::check_collision(result, shape_bank[ShapeDefinition::construct_shape],
-                         shape_bank.parameters(set_parameters), check);
+  geom2::check_collision(
+      result, check, sim.shape_bank(), ShapeDefinition::construct_shape,
+      [&h](geom2::parameter_set& parameters) { ShapeDefinition::set_parameters(h, parameters); });
   return result;
 }
 

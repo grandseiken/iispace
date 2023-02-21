@@ -1,47 +1,54 @@
 #include "game/common/colour.h"
-#include "game/geometry/node_conditional.h"
-#include "game/geometry/shapes/legacy.h"
-#include "game/geometry/shapes/line.h"
 #include "game/logic/legacy/enemy/enemy.h"
 #include "game/logic/legacy/ship_template.h"
 
 namespace ii::legacy {
 namespace {
-using namespace geom;
+using namespace geom2;
 
 struct FollowHub : ecs::component {
-  static constexpr std::uint32_t kBoundingWidth = 16;
   static constexpr float kZIndex = 0.f;
   static constexpr sound kDestroySound = sound::kPlayerDestroy;
   static constexpr rumble_type kDestroyRumble = rumble_type::kLarge;
 
   static constexpr std::uint32_t kTimer = 170;
   static constexpr fixed kSpeed = 1;
-
+  static constexpr fixed kBoundingWidth = 16;
+  static constexpr auto kFlags = shape_flag::kDangerous | shape_flag::kVulnerable;
   static constexpr auto c = colour::hue360(240, .7f);
-  template <ShapeNode S>
-  using fh_arrange = compound<translate<16, 0, S>, translate<-16, 0, S>, translate<0, 16, S>,
-                              translate<0, -16, S>>;
-  template <ShapeNode S>
-  using r_pi4_ngon = rotate<pi<fixed> / 4, S>;
-  using fh_centre = r_pi4_ngon<legacy_ngon<nd(16, 4), nline(ngon_style::kPolygram, c),
-                                           shape_flag::kDangerous | shape_flag::kVulnerable>>;
-  using fh_spoke = r_pi4_ngon<ngon<nd(8, 4), nline(c)>>;
-  using fh_power_spoke = r_pi4_ngon<ngon<nd(8, 4), nline(ngon_style::kPolystar, c)>>;
-  using shape = translate_p<0, fh_centre,
-                            rotate_p<1, fh_arrange<fh_spoke>, if_p<2, fh_arrange<fh_power_spoke>>>>;
 
-  std::tuple<vec2, fixed, bool> shape_parameters(const Transform& transform) const {
-    return {transform.centre, transform.rotation, power_b};
+  static void construct_shape(node& root) {
+    auto& n = root.add(translate{key{'v'}});
+    auto& centre = n.add(rotate{pi<fixed> / 4});
+    auto& r = n.add(rotate{key{'r'}});
+
+    centre.add(
+        ngon{.dimensions = nd(16, 4), .style = ngon_style::kPolygram, .line = {.colour0 = c}});
+    centre.add(ball_collider{.dimensions = bd(16), .flags = kFlags});
+
+    auto& spoke = root.create(compound{});
+    r.add(translate{vec2{16, 0}}).add(spoke);
+    r.add(translate{vec2{-16, 0}}).add(spoke);
+    r.add(translate{vec2{0, 16}}).add(spoke);
+    r.add(translate{vec2{0, -16}}).add(spoke);
+    auto& spoke_r = spoke.add(rotate{pi<fixed> / 4});
+    spoke_r.add(ngon{.dimensions = nd(8, 4), .line = {.colour0 = c}});
+    spoke_r.add(enable{key{'p'}})
+        .add(ngon{.dimensions = nd(8, 4), .style = ngon_style::kPolystar, .line = {.colour0 = c}});
   }
 
+  void set_parameters(const Transform& transform, parameter_set& parameters) const {
+    parameters.add(key{'v'}, transform.centre)
+        .add(key{'r'}, transform.rotation)
+        .add(key{'p'}, power_b);
+  }
+
+  FollowHub(bool power_a, bool power_b) : power_a{power_a}, power_b{power_b} {}
   std::uint32_t timer = 0;
   vec2 dir{0};
   std::uint32_t count = 0;
   bool power_a = false;
   bool power_b = false;
-
-  FollowHub(bool power_a, bool power_b) : power_a{power_a}, power_b{power_b} {}
 
   void update(Transform& transform, SimInterface& sim) {
     ++timer;
@@ -85,42 +92,53 @@ struct FollowHub : ecs::component {
 DEBUG_STRUCT_TUPLE(FollowHub, timer, dir, count, power_a, power_b);
 
 struct Shielder : ecs::component {
-  static constexpr std::uint32_t kBoundingWidth = 36;
   static constexpr float kZIndex = 0.f;
   static constexpr sound kDestroySound = sound::kPlayerDestroy;
   static constexpr rumble_type kDestroyRumble = rumble_type::kLarge;
 
   static constexpr std::uint32_t kTimer = 80;
   static constexpr fixed kSpeed = 2;
+  static constexpr fixed kBoundingWidth = 36;
+  static constexpr auto kFlags =
+      shape_flag::kDangerous | shape_flag::kVulnerable | shape_flag::kWeakShield;
 
   static constexpr auto c0 = colour::hue360(150, .2f);
   static constexpr auto c1 = colour::hue360(160, .5f, .6f);
-  template <ShapeNode S>
-  using s_arrange = compound<translate<24, 0, S>, translate<-24, 0, S>,
-                             translate<0, 24, rotate<pi<fixed> / 2, S>>,
-                             translate<0, -24, rotate<pi<fixed> / 2, S>>>;
-  using s_centre =
-      compound<ngon_colour_p<nd(14, 8), 2>,
-               legacy_ball_collider<14, shape_flag::kDangerous | shape_flag::kVulnerable>>;
-  using s_shield0 =
-      legacy_ngon<nd(8, 6), nline(ngon_style::kPolystar, c0), shape_flag::kWeakShield>;
-  using s_shield1 = ngon<nd(8, 6), nline(c1)>;
-  using s_spokes = ngon<nd(24, 4), nline(ngon_style::kPolystar, c0)>;
-  using shape = standard_transform<s_spokes, s_arrange<rotate_eval<multiply_p<-1, 1>, s_shield0>>,
-                                   s_arrange<rotate_eval<multiply_p<-1, 1>, s_shield1>>,
-                                   rotate_eval<negate_p<1>, s_centre>>;
 
-  std::tuple<vec2, fixed, cvec4> shape_parameters(const Transform& transform) const {
-    return {transform.centre, transform.rotation, power ? c1 : c0};
+  static void construct_shape(node& root) {
+    auto& n = root.add(translate_rotate{key{'v'}, key{'r'}});
+    n.add(ngon{.dimensions = nd(24, 4), .style = ngon_style::kPolystar, .line = {.colour0 = c0}});
+
+    auto& centre = n.add(rotate{key{'R'}});
+    centre.add(ngon{.dimensions = nd(14, 8), .line = {.colour0 = key{'c'}}});
+    centre.add(ball_collider{.dimensions = bd(14),
+                             .flags = shape_flag::kDangerous | shape_flag::kVulnerable});
+
+    auto& spoke = root.create(rotate{key{'R'}});
+    n.add(translate{vec2{24, 0}}).add(spoke);
+    n.add(translate{vec2{-24, 0}}).add(spoke);
+    n.add(translate_rotate{vec2{0, 24}, pi<fixed> / 2}).add(spoke);
+    n.add(translate_rotate{vec2{0, -24}, pi<fixed> / 2}).add(spoke);
+
+    spoke.add(
+        ngon{.dimensions = nd(8, 6), .style = ngon_style::kPolystar, .line = {.colour0 = c0}});
+    spoke.add(ngon{.dimensions = nd(8, 6), .line = {.colour0 = c1}});
+    spoke.add(ball_collider{.dimensions = bd(8), .flags = shape_flag::kWeakShield});
   }
 
-  vec2 dir{0, 1};
-  std::uint32_t timer = 0;
-  bool rotate = false;
-  bool rdir = false;
-  bool power = false;
+  void set_parameters(const Transform& transform, parameter_set& parameters) const {
+    parameters.add(key{'v'}, transform.centre)
+        .add(key{'r'}, transform.rotation)
+        .add(key{'R'}, -transform.rotation)
+        .add(key{'c'}, power ? c1 : c0);
+  }
 
   Shielder(bool power) : power{power} {}
+  vec2 dir{0, 1};
+  std::uint32_t timer = 0;
+  bool is_rotating = false;
+  bool anti = false;
+  bool power = false;
 
   void update(Transform& transform, const Health& health, SimInterface& sim) {
     fixed s = power ? fixed_c::hundredth * 12 : fixed_c::hundredth * 4;
@@ -134,26 +152,26 @@ struct Shielder : ecs::component {
         : transform.centre.y > dim.y ? vec2{0, -1}
                                      : (on_screen = true, dir);
 
-    if (!on_screen && rotate) {
+    if (!on_screen && is_rotating) {
       timer = 0;
-      rotate = false;
+      is_rotating = false;
     }
 
     fixed speed = kSpeed + (power ? fixed_c::tenth * 3 : fixed_c::tenth * 2) * (16 - health.hp);
-    if (rotate) {
+    if (is_rotating) {
       auto d = sim.rotate_compatibility(
-          dir, (rdir ? 1 : -1) * (kTimer - timer) * pi<fixed> / (2 * kTimer));
+          dir, (anti ? 1 : -1) * (kTimer - timer) * pi<fixed> / (2 * kTimer));
       if (!--timer) {
-        rotate = false;
-        dir = sim.rotate_compatibility(dir, (rdir ? 1 : -1) * pi<fixed> / 2);
+        is_rotating = false;
+        dir = sim.rotate_compatibility(dir, (anti ? 1 : -1) * pi<fixed> / 2);
       }
       transform.move(d * speed);
     } else {
       ++timer;
       if (timer > kTimer * 2) {
         timer = kTimer;
-        rotate = true;
-        rdir = sim.random_bool();
+        is_rotating = true;
+        anti = sim.random_bool();
       }
       if (sim.is_on_screen(transform.centre) && power && timer % kTimer == kTimer / 2) {
         spawn_boss_shot(sim, transform.centre, 3 * sim.nearest_player_direction(transform.centre),
@@ -165,10 +183,9 @@ struct Shielder : ecs::component {
     dir = normalise(dir);
   }
 };
-DEBUG_STRUCT_TUPLE(Shielder, dir, timer, rotate, rdir, power);
+DEBUG_STRUCT_TUPLE(Shielder, dir, timer, is_rotating, anti, power);
 
 struct Tractor : ecs::component {
-  static constexpr std::uint32_t kBoundingWidth = 36;
   static constexpr float kZIndex = 0.f;
   static constexpr sound kDestroySound = sound::kPlayerDestroy;
   static constexpr rumble_type kDestroyRumble = rumble_type::kLarge;
@@ -176,19 +193,36 @@ struct Tractor : ecs::component {
   static constexpr std::uint32_t kTimer = 50;
   static constexpr fixed kSpeed = 6 * (1_fx / 10);
   static constexpr fixed kPullSpeed = 2 + 1_fx / 2;
-
+  static constexpr fixed kBoundingWidth = 36;
+  static constexpr auto kFlags = shape_flag::kDangerous | shape_flag::kVulnerable;
   static constexpr auto c = colour::hue360(300, .5f, .6f);
-  using t_orb = legacy_ngon<nd(12, 6), nline(ngon_style::kPolygram, c),
-                            shape_flag::kDangerous | shape_flag::kVulnerable>;
-  using t_star = ngon<nd(16, 6), nline(ngon_style::kPolystar, c)>;
-  using shape = standard_transform<translate<24, 0, rotate_eval<multiply_p<5, 2>, t_orb>>,
-                                   translate<-24, 0, rotate_eval<multiply_p<-5, 2>, t_orb>>,
-                                   line<vec2{-24, 0}, vec2{24, 0}, sline(c)>,
-                                   if_p<3, translate<24, 0, rotate_eval<multiply_p<8, 2>, t_star>>,
-                                        translate<-24, 0, rotate_eval<multiply_p<-8, 2>, t_star>>>>;
 
-  std::tuple<vec2, fixed, fixed, bool> shape_parameters(const Transform& transform) const {
-    return {transform.centre, transform.rotation, spoke_r, power};
+  static void construct_shape(node& root) {
+    auto& n = root.add(translate_rotate{key{'v'}, key{'r'}});
+    auto& orb = root.create(compound{});
+    auto& star = root.create(compound{});
+
+    n.add(translate_rotate{vec2{24, 0}, key{'S'}}).add(orb);
+    n.add(translate_rotate{vec2{-24, 0}, key{'s'}}).add(orb);
+    n.add(line{.a = vec2{-24, 0}, .b = vec2{24, 0}, .style = {.colour0 = c}});
+
+    auto& star_if = n.add(enable{key{'p'}});
+    star_if.add(translate_rotate{vec2{24, 0}, key{'T'}}).add(star);
+    star_if.add(translate_rotate{vec2{-24, 0}, key{'t'}}).add(star);
+
+    orb.add(ngon{.dimensions = nd(12, 6), .style = ngon_style::kPolygram, .line = {.colour0 = c}});
+    orb.add(ball_collider{.dimensions = bd(12), .flags = kFlags});
+    star.add(ngon{.dimensions = nd(16, 6), .style = ngon_style::kPolystar, .line = {.colour0 = c}});
+  }
+
+  void set_parameters(const Transform& transform, parameter_set& parameters) const {
+    parameters.add(key{'v'}, transform.centre)
+        .add(key{'r'}, transform.rotation)
+        .add(key{'s'}, -5 * spoke_r)
+        .add(key{'S'}, 5 * spoke_r)
+        .add(key{'t'}, -8 * spoke_r)
+        .add(key{'T'}, 8 * spoke_r)
+        .add(key{'p'}, power);
   }
 
   std::uint32_t timer = kTimer * 4;
@@ -270,23 +304,23 @@ DEBUG_STRUCT_TUPLE(Tractor, timer, dir, power, ready, spinning, spoke_r);
 }  // namespace
 
 void spawn_follow_hub(SimInterface& sim, const vec2& position, bool power_a, bool power_b) {
-  auto h = create_ship<FollowHub>(sim, position);
-  add_enemy_health<FollowHub>(h, 14);
+  auto h = create_ship2<FollowHub>(sim, position);
+  add_enemy_health2<FollowHub>(h, 14);
   h.add(FollowHub{power_a, power_b});
   h.add(Enemy{.threat_value = 6u + 2 * power_a + 2 * power_b,
               .score_reward = 50u + power_a * 10 + power_b * 10});
 }
 
 void spawn_shielder(SimInterface& sim, const vec2& position, bool power) {
-  auto h = create_ship<Shielder>(sim, position);
-  add_enemy_health<Shielder>(h, 16);
+  auto h = create_ship2<Shielder>(sim, position);
+  add_enemy_health2<Shielder>(h, 16);
   h.add(Shielder{power});
   h.add(Enemy{.threat_value = 8u + 2 * power, .score_reward = 60u + power * 40});
 }
 
 void spawn_tractor(SimInterface& sim, const vec2& position, bool power) {
-  auto h = create_ship<Tractor>(sim, position);
-  add_enemy_health<Tractor>(h, 50);
+  auto h = create_ship2<Tractor>(sim, position);
+  add_enemy_health2<Tractor>(h, 50);
   h.add(Tractor{power});
   h.add(Enemy{.threat_value = 10u + 2 * power, .score_reward = 85u + 40 * power});
 }

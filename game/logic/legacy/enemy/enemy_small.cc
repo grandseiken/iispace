@@ -1,21 +1,27 @@
 #include "game/common/colour.h"
-#include "game/geometry/node_conditional.h"
-#include "game/geometry/shapes/legacy.h"
 #include "game/logic/legacy/enemy/enemy.h"
 #include "game/logic/legacy/ship_template.h"
 
 namespace ii::legacy {
 namespace {
-using namespace geom;
+using namespace geom2;
 
 struct Bounce : ecs::component {
-  static constexpr std::uint32_t kBoundingWidth = 8;
   static constexpr float kZIndex = 8.f;
   static constexpr sound kDestroySound = sound::kEnemyShatter;
   static constexpr rumble_type kDestroyRumble = rumble_type::kSmall;
+  static constexpr fixed kBoundingWidth = 8;
+  static constexpr auto kFlags = shape_flag::kDangerous | shape_flag::kVulnerable;
 
-  using shape = standard_transform<legacy_ngon<nd(8, 6), nline(colour::hue360(300, .5f, .6f)),
-                                               shape_flag::kDangerous | shape_flag::kVulnerable>>;
+  static void construct_shape(node& root) {
+    auto& n = root.add(translate_rotate{.v = key{'v'}, .r = key{'r'}});
+    n.add(ngon{.dimensions = nd(8, 6), .line = {.colour0 = colour::hue360(300, .5f, .6f)}});
+    n.add(ball_collider{.dimensions = bd(8), .flags = kFlags});
+  }
+
+  void set_parameters(const Transform& transform, parameter_set& parameters) const {
+    parameters.add(key{'v'}, transform.centre).add(key{'r'}, transform.rotation);
+  }
 
   Bounce(fixed angle) : dir{from_polar_legacy(angle, 3_fx)} {}
   vec2 dir{0};
@@ -34,22 +40,30 @@ struct Bounce : ecs::component {
 DEBUG_STRUCT_TUPLE(Bounce, dir);
 
 struct Follow : ecs::component {
-  static constexpr std::uint32_t kBoundingWidth = 10;
   static constexpr float kZIndex = 8.f;
   static constexpr sound kDestroySound = sound::kEnemyShatter;
   static constexpr rumble_type kDestroyRumble = rumble_type::kSmall;
 
   static constexpr std::uint32_t kTime = 90;
   static constexpr fixed kSpeed = 2;
+  static constexpr fixed kBoundingWidth = 10;
+  static constexpr auto kFlags = shape_flag::kDangerous | shape_flag::kVulnerable;
 
-  using small_shape = legacy_ngon<nd(10, 4), nline(colour::hue360(270, .6f)),
-                                  shape_flag::kDangerous | shape_flag::kVulnerable>;
-  using big_shape = legacy_ngon<nd(20, 4), nline(colour::hue360(270, .6f)),
-                                shape_flag::kDangerous | shape_flag::kVulnerable>;
-  using shape = standard_transform<conditional_p<2, big_shape, small_shape>>;
+  static void construct_shape(node& root) {
+    auto& n = root.add(translate_rotate{.v = key{'v'}, .r = key{'r'}});
+    auto& s = n.add(enable{key{'s'}});
+    auto& b = n.add(enable{key{'b'}});
+    s.add(ngon{.dimensions = nd(10, 4), .line = {.colour0 = colour::hue360(270, .6f)}});
+    s.add(ball_collider{.dimensions = bd(10), .flags = kFlags});
+    b.add(ngon{.dimensions = nd(20, 4), .line = {.colour0 = colour::hue360(270, .6f)}});
+    b.add(ball_collider{.dimensions = bd(20), .flags = kFlags});
+  }
 
-  std::tuple<vec2, fixed, bool> shape_parameters(const Transform& transform) const {
-    return {transform.centre, transform.rotation, is_big_follow};
+  void set_parameters(const Transform& transform, parameter_set& parameters) const {
+    parameters.add(key{'v'}, transform.centre)
+        .add(key{'r'}, transform.rotation)
+        .add(key{'s'}, !is_big_follow)
+        .add(key{'b'}, is_big_follow);
   }
 
   Follow(bool is_big_follow) : is_big_follow{is_big_follow} {}
@@ -87,16 +101,26 @@ struct Follow : ecs::component {
 DEBUG_STRUCT_TUPLE(Follow, timer, target, is_big_follow);
 
 struct Chaser : ecs::component {
-  static constexpr std::uint32_t kBoundingWidth = 10;
   static constexpr float kZIndex = 8.f;
   static constexpr sound kDestroySound = sound::kEnemyShatter;
   static constexpr rumble_type kDestroyRumble = rumble_type::kSmall;
 
   static constexpr std::uint32_t kTime = 60;
   static constexpr fixed kSpeed = 4;
-  using shape = standard_transform<
-      legacy_ngon<nd(10, 4), nline(ngon_style::kPolygram, colour::hue360(210, .6f)),
-                  shape_flag::kDangerous | shape_flag::kVulnerable>>;
+  static constexpr fixed kBoundingWidth = 10;
+  static constexpr auto kFlags = shape_flag::kDangerous | shape_flag::kVulnerable;
+
+  static void construct_shape(node& root) {
+    auto& n = root.add(translate_rotate{.v = key{'v'}, .r = key{'r'}});
+    n.add(ngon{.dimensions = nd(10, 4),
+               .style = ngon_style::kPolygram,
+               .line = {.colour0 = colour::hue360(210, .6f)}});
+    n.add(ball_collider{.dimensions = bd(10), .flags = kFlags});
+  }
+
+  void set_parameters(const Transform& transform, parameter_set& parameters) const {
+    parameters.add(key{'v'}, transform.centre).add(key{'r'}, transform.rotation);
+  }
 
   bool move = false;
   std::uint32_t timer = kTime;
@@ -129,29 +153,29 @@ DEBUG_STRUCT_TUPLE(Chaser, move, timer, dir);
 }  // namespace
 
 void spawn_bounce(SimInterface& sim, const vec2& position, fixed angle) {
-  auto h = create_ship<Bounce>(sim, position);
-  add_enemy_health<Bounce>(h, 1);
+  auto h = create_ship2<Bounce>(sim, position);
+  add_enemy_health2<Bounce>(h, 1);
   h.add(Bounce{angle});
   h.add(Enemy{.threat_value = 1});
 }
 
 void spawn_follow(SimInterface& sim, const vec2& position, bool has_score, fixed rotation) {
-  auto h = create_ship<Follow>(sim, position, rotation);
-  add_enemy_health<Follow>(h, 1);
+  auto h = create_ship2<Follow>(sim, position, rotation);
+  add_enemy_health2<Follow>(h, 1);
   h.add(Follow{false});
   h.add(Enemy{.threat_value = 1, .score_reward = has_score ? 15u : 0});
 }
 
 void spawn_big_follow(SimInterface& sim, const vec2& position, bool has_score) {
-  auto h = create_ship<Follow>(sim, position);
-  add_enemy_health<Follow>(h, 3, sound::kPlayerDestroy, rumble_type::kMedium);
+  auto h = create_ship2<Follow>(sim, position);
+  add_enemy_health2<Follow>(h, 3, sound::kPlayerDestroy, rumble_type::kMedium);
   h.add(Follow{true});
   h.add(Enemy{.threat_value = 3, .score_reward = has_score ? 20u : 0});
 }
 
 void spawn_chaser(SimInterface& sim, const vec2& position) {
-  auto h = create_ship<Chaser>(sim, position);
-  add_enemy_health<Chaser>(h, 2);
+  auto h = create_ship2<Chaser>(sim, position);
+  add_enemy_health2<Chaser>(h, 2);
   h.add(Chaser{});
   h.add(Enemy{.threat_value = 2, .score_reward = 30});
 }

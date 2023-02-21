@@ -1,8 +1,4 @@
 #include "game/logic/legacy/player/player.h"
-#include "game/geom2/types.h"
-#include "game/geometry/node_conditional.h"
-#include "game/geometry/shapes/box.h"
-#include "game/geometry/shapes/ngon.h"
 #include "game/logic/legacy/components.h"
 #include "game/logic/legacy/ship_template.h"
 #include "game/logic/sim/io/conditions.h"
@@ -13,28 +9,28 @@
 
 namespace ii::legacy {
 namespace {
-using namespace geom;
+using namespace geom2;
 constexpr std::uint32_t kMagicShotCount = 120;
 
 struct Shot : ecs::component {
   static constexpr fixed kSpeed = 10;
   static constexpr float kZIndex = 64.f;
+  static constexpr fixed kBoundingWidth = 0;
+  static constexpr auto kFlags = shape_flag::kNone;
 
-  using shape = standard_transform<box_colour_p<vec2{2, 2}, 2>, box_colour_p<vec2{1, 1}, 3>,
-                                   box_colour_p<vec2{3, 3}, 3>>;
-
-  std::tuple<vec2, fixed, cvec4, cvec4> shape_parameters(const Transform& transform) const {
-    auto c_dark = colour;
-    c_dark.a = .2f;
-    return {transform.centre, transform.rotation, colour, c_dark};
+  static void construct_shape(node& root) {
+    auto& n = root.add(translate_rotate{.v = key{'v'}, .r = key{'r'}});
+    n.add(box{.dimensions = vec2{2}, .line = {.colour0 = key{'c'}}});
+    n.add(box{.dimensions = vec2{1}, .line = {.colour0 = key{'d'}}});
+    n.add(box{.dimensions = vec2{3}, .line = {.colour0 = key{'d'}}});
   }
 
-  ecs::entity_id player;
-  std::uint32_t player_number = 0;
-  bool is_predicted = false;
-  vec2 velocity{0};
-  bool magic = false;
-  cvec4 colour{0.f};
+  void set_parameters(const Transform& transform, parameter_set& parameters) const {
+    parameters.add(key{'v'}, transform.centre)
+        .add(key{'r'}, transform.rotation)
+        .add(key{'c'}, colour)
+        .add(key{'d'}, colour::alpha(colour, .2f));
+  }
 
   Shot(ecs::entity_id player, std::uint32_t player_number, bool is_predicted, const vec2& direction,
        bool magic)
@@ -43,6 +39,13 @@ struct Shot : ecs::component {
   , is_predicted{is_predicted}
   , velocity{normalise(direction) * kSpeed}
   , magic{magic} {}
+
+  ecs::entity_id player;
+  std::uint32_t player_number = 0;
+  bool is_predicted = false;
+  vec2 velocity{0};
+  bool magic = false;
+  cvec4 colour{0.f};
 
   void update(ecs::handle h, Transform& transform, SimInterface& sim) {
     colour = magic && sim.random(random_source::kLegacyAesthetic).rbool()
@@ -116,48 +119,59 @@ DEBUG_STRUCT_TUPLE(Shot, player, player_number, velocity, magic);
 void spawn_shot(SimInterface& sim, const vec2& position, ecs::handle player, const vec2& direction,
                 bool magic) {
   const auto& p = *player.get<Player>();
-  create_ship<Shot>(sim, position)
+  create_ship2<Shot>(sim, position)
       .add(Shot{player.id(), p.player_number, p.is_predicted, direction, magic});
 }
 
 struct PlayerLogic : ecs::component {
-  static constexpr fixed kPlayerSpeed = 5;
-  static constexpr fixed kBombRadius = 180;
-  static constexpr fixed kBombBossRadius = 280;
-  static constexpr float kZIndex = 96.f;
-
   static constexpr std::uint32_t kReviveTime = 100;
   static constexpr std::uint32_t kShieldTime = 50;
   static constexpr std::uint32_t kShotTimer = 4;
+  static constexpr float kZIndex = 96.f;
 
-  using shield = if_p<2,
-                      ngon_eval<constant<nd(16, 10)>, set_colour_p<nline(colour::kZero), 6>,
-                                constant<sfill()>, constant<render::tag_t{'s'}>>>;
-  using bomb =
-      if_p<3,
-           translate<-8, 0,
-                     rotate<pi<fixed>,
-                            ngon_eval<constant<nd(6, 5)>,
-                                      set_colour_p<nline(ngon_style::kPolystar, colour::kZero), 6>,
-                                      constant<sfill()>, constant<render::tag_t{'b'}>>>>>;
-  using box_shapes = translate<8, 0, rotate_eval<negate_p<1>, box_colour_p<vec2{2, 2}, 4>>,
-                               rotate_eval<negate_p<1>, box_colour_p<vec2{1, 1}, 5>>,
-                               rotate_eval<negate_p<1>, box_colour_p<vec2{3, 3}, 5>>>;
-  using shape =
-      standard_transform<ngon_colour_p<nd(16, 3), 4>, rotate<pi<fixed>, ngon_colour_p<nd(8, 3), 4>>,
-                         box_shapes, shield, bomb>;
+  static constexpr fixed kPlayerSpeed = 5;
+  static constexpr fixed kBombRadius = 180;
+  static constexpr fixed kBombBossRadius = 280;
+  static constexpr fixed kBoundingWidth = 0;
+  static constexpr auto kFlags = shape_flag::kNone;
 
-  std::tuple<vec2, fixed, bool, bool, cvec4, cvec4, cvec4>
-  shape_parameters(const Player& pc, const Transform& transform) const {
+  static void construct_shape(node& root) {
+    auto& n = root.add(translate_rotate{.v = key{'v'}, .r = key{'r'}});
+    n.add(ngon{.dimensions = nd(16, 3), .line = {.colour0 = key{'c'}}});
+    n.add(rotate{pi<fixed>}).add(ngon{.dimensions = nd(8, 3), .line = {.colour0 = key{'c'}}});
+
+    auto& t = n.add(translate_rotate{vec2{8, 0}, key{'R'}});
+    t.add(box{.dimensions = vec2{2}, .line = {.colour0 = key{'c'}}});
+    t.add(box{.dimensions = vec2{1}, .line = {.colour0 = key{'d'}}});
+    t.add(box{.dimensions = vec2{3}, .line = {.colour0 = key{'d'}}});
+
+    n.add(enable{key{'s'}})
+        .add(ngon{
+            .dimensions = nd(16, 10), .line = {.colour0 = key{'p'}}, .tag = render::tag_t{'s'}});
+    n.add(enable{key{'b'}})
+        .add(translate_rotate{vec2{-8, 0}, pi<fixed>})
+        .add(ngon{.dimensions = nd(6, 5),
+                  .style = ngon_style::kPolystar,
+                  .line = {.colour0 = key{'p'}},
+                  .tag = render::tag_t{'b'}});
+  }
+
+  void
+  set_parameters(const Player& pc, const Transform& transform, parameter_set& parameters) const {
     auto colour = !should_render()  ? colour::kZero
         : invulnerability_timer % 2 ? cvec4{1.f}
                                     : legacy_player_colour(pc.player_number);
-    auto c_dark = colour;
-    c_dark.a = std::min(c_dark.a, .2f);
     auto powerup_colour = !should_render() ? colour::kZero : cvec4{1.f};
-    return {transform.centre, transform.rotation, pc.shield_count, pc.bomb_count, colour,
-            c_dark,           powerup_colour};
-  };
+
+    parameters.add(key{'v'}, transform.centre)
+        .add(key{'r'}, transform.rotation)
+        .add(key{'R'}, -transform.rotation)
+        .add(key{'c'}, colour)
+        .add(key{'p'}, powerup_colour)
+        .add(key{'d'}, colour::alpha(colour, .2f))
+        .add(key{'s'}, static_cast<bool>(pc.shield_count))
+        .add(key{'b'}, static_cast<bool>(pc.bomb_count));
+  }
 
   PlayerLogic(const SimInterface& sim, const vec2& target)
   : is_what_mode{sim.conditions().mode == game_mode::kLegacy_What}, fire_target{target} {}
@@ -220,14 +234,14 @@ struct PlayerLogic : ecs::component {
       pc.bomb_count = 0;
 
       auto e = sim.emit(resolve_key::local(pc.player_number));
-      explosion(h, std::nullopt, e, cvec4{1.f}, 16);
-      explosion(h, std::nullopt, e, c, 32);
-      explosion(h, std::nullopt, e, cvec4{1.f}, 48);
+      explosion(h, sim, std::nullopt, e, cvec4{1.f}, 16);
+      explosion(h, sim, std::nullopt, e, c, 32);
+      explosion(h, sim, std::nullopt, e, cvec4{1.f}, 48);
 
       for (std::uint32_t i = 0; i < 64; ++i) {
         auto v = transform.centre + from_polar_legacy(2 * i * pi<fixed> / 64, kBombRadius);
         auto& random = sim.random(random_source::kLegacyAesthetic);
-        explosion(h, v, e, (i % 2) ? c : cvec4{1.f}, 8 + random.uint(8) + random.uint(8),
+        explosion(h, sim, v, e, (i % 2) ? c : cvec4{1.f}, 8 + random.uint(8) + random.uint(8),
                   transform.centre);
       }
 
@@ -286,10 +300,11 @@ struct PlayerLogic : ecs::component {
       return;
     }
 
-    explosion(h, std::nullopt, e);
-    explosion(h, std::nullopt, e, cvec4{1.f}, 14);
-    explosion(h, std::nullopt, e, std::nullopt, 20);
-    destruct_entity_lines<PlayerLogic>(h, e, transform.centre, 32);
+    explosion(h, sim, std::nullopt, e);
+    explosion(h, sim, std::nullopt, e, cvec4{1.f}, 14);
+    explosion(h, sim, std::nullopt, e, std::nullopt, 20);
+    auto& r = resolve_entity_shape2<default_shape_definition<PlayerLogic>>(h, sim);
+    destruct_lines(e, r, to_float(transform.centre), 32);
 
     kill_timer = kReviveTime;
     score.multiplier = 1;
@@ -303,14 +318,21 @@ struct PlayerLogic : ecs::component {
     e.rumble(pc.player_number, 30, .5f, .5f).play(sound::kPlayerDestroy, transform.centre);
   }
 
-  void explosion(ecs::handle h, const std::optional<vec2>& position_override, EmitHandle& e,
+  void explosion(ecs::handle h, const SimInterface& sim,
+                 const std::optional<vec2>& position_override, EmitHandle& e,
                  const std::optional<cvec4>& colour = std::nullopt, std::uint32_t time = 8,
                  const std::optional<vec2>& towards = std::nullopt) const {
-    auto parameters = get_shape_parameters<PlayerLogic>(h);
-    if (position_override) {
-      std::get<0>(parameters) = *position_override;
+    auto& r = resolve_shape2<&construct_shape>(sim, [&](parameter_set& parameters) {
+      ecs::call<&PlayerLogic::set_parameters>(h, parameters);
+      if (position_override) {
+        parameters.add(key{'v'}, *position_override);
+      }
+    });
+    std::optional<fvec2> f_towards;
+    if (towards) {
+      f_towards = to_float(*towards);
     }
-    explode_shapes<shape>(e, parameters, colour, time, towards);
+    explode_shapes(e, r, colour, time, f_towards);
   }
 
   void render(const Player& pc, std::vector<render::shape>& output) const {
@@ -348,7 +370,7 @@ DEBUG_STRUCT_TUPLE(PlayerLogic, is_what_mode, invulnerability_timer, fire_timer,
 }  // namespace
 
 void spawn_player(SimInterface& sim, const vec2& position, std::uint32_t player_number) {
-  auto h = create_ship<PlayerLogic>(sim, position);
+  auto h = create_ship2<PlayerLogic>(sim, position);
   h.add(
       Player{.player_number = player_number, .render_info = ecs::call<&PlayerLogic::render_info>});
   h.add(PlayerScore{});

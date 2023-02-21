@@ -55,6 +55,7 @@ using check_extent_t = std::variant<check_point_t, check_line_t, check_ball_t, c
 struct check_t {
   shape_flag mask = shape_flag::kNone;
   check_extent_t extent;
+  bool legacy_algorithm = false;
 };
 
 inline constexpr check_t check_point(shape_flag mask, const vec2& v) {
@@ -116,9 +117,16 @@ struct convert_local_transform {
 
 struct legacy_convert_local_transform {
   constexpr legacy_convert_local_transform(const vec2& v) : v{v} {}
-
   vec2 v;
 
+  std::vector<vec2> transform(std::span<const vec2> vs) const {
+    std::vector<vec2> r;
+    r.reserve(vs.size());
+    for (const auto& v : vs) {
+      r.emplace_back(transform(v));
+    }
+    return r;
+  }
   constexpr vec2 transform(const vec2&) const { return v; }
   constexpr vec2 transform_ignore_rotation(const vec2&) const { return v; }
   constexpr vec2 inverse_transform(const vec2&) const { return vec2{0}; }

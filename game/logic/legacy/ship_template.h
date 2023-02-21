@@ -2,8 +2,7 @@
 #define II_GAME_LOGIC_LEGACY_SHIP_TEMPLATE_H
 #include "game/common/colour.h"
 #include "game/common/math.h"
-#include "game/geom2/resolve.h"
-#include "game/geom2/types.h"
+#include "game/geom2/shape_bank.h"
 #include "game/geometry/node.h"
 #include "game/geometry/node_transform.h"
 #include "game/logic/ecs/call.h"
@@ -30,7 +29,22 @@ auto get_shape_parameters(ecs::const_handle h) {
   }
 }
 
-inline geom::resolve_result& local_resolve() {
+template <sfn::ptr<void(geom2::node&)> ConstructShape,
+          sfn::ptr<void(ecs::const_handle, geom2::parameter_set&)> SetParameters,
+          fixed BoundingWidth, shape_flag Flags>
+struct shape_definition {
+  inline static constexpr auto construct_shape = ConstructShape;
+  inline static constexpr auto set_parameters = SetParameters;
+  inline static constexpr auto bounding_width = BoundingWidth;
+  inline static constexpr auto flags = Flags;
+};
+
+template <ecs::Component Logic>
+using default_shape_definition =
+    shape_definition<&Logic::construct_shape, ecs::call<&Logic::set_parameters>,
+                     Logic::kBoundingWidth, Logic::kFlags>;
+
+inline geom2::resolve_result& local_resolve() {
   static thread_local geom2::resolve_result r;
   r.entries.clear();
   return r;
@@ -48,6 +62,20 @@ geom::resolve_result& resolve_entity_shape(ecs::const_handle h) {
   return r;
 }
 
+template <sfn::ptr<void(geom2::node&)> ConstructShape, typename F>
+geom2::resolve_result& resolve_shape2(const SimInterface& sim, F&& set_function) {
+  auto& r = local_resolve();
+  geom2::resolve(r, sim.shape_bank(), ConstructShape, set_function);
+  return r;
+}
+
+template <typename ShapeDefinition>
+geom2::resolve_result& resolve_entity_shape2(ecs::const_handle h, const SimInterface& sim) {
+  return resolve_shape2<ShapeDefinition::construct_shape>(
+      sim,
+      [&h](geom2::parameter_set& parameters) { ShapeDefinition::set_parameters(h, parameters); });
+}
+
 //////////////////////////////////////////////////////////////////////////////////
 // Particles.
 //////////////////////////////////////////////////////////////////////////////////
@@ -55,6 +83,8 @@ void explode_shapes(EmitHandle& e, const geom::resolve_result& r,
                     const std::optional<cvec4>& colour_override = std::nullopt,
                     std::uint32_t time = 8, const std::optional<fvec2>& towards = std::nullopt,
                     std::optional<float> speed = std::nullopt);
+void destruct_lines(EmitHandle& e, const geom::resolve_result& r, const fvec2& source,
+                    std::uint32_t time = 20);
 
 template <geom::ShapeNode S>
 void explode_shapes(EmitHandle& e, const auto& parameters,
@@ -83,16 +113,12 @@ void explode_entity_shapes(ecs::const_handle h, EmitHandle& e,
   }
 }
 
-void destruct_lines(EmitHandle& e, const geom::resolve_result& r, const fvec2& source,
-                    std::uint32_t time = 20);
-
 template <geom::ShapeNode S>
 void destruct_lines(EmitHandle& e, const auto& parameters, const vec2& source,
                     std::uint32_t time = 20) {
   // TODO: something a bit cleverer here? Take velocity of shot into account?
   // Take velocity of destructed shape into account (maybe using same system as will handle
-  // motion trails)?
-  // Make destruct particles similarly velocified?
+  // motion trails)? Make destruct particles similarly velocified?
   auto& r = local_resolve();
   resolve_shape<S>(parameters, r);
   destruct_lines(e, r, to_float(source), time);
@@ -115,6 +141,17 @@ void destruct_entity_default(ecs::const_handle h, SimInterface&, EmitHandle& e, 
   destruct_entity_lines<Logic, S>(h, e, source);
 }
 
+template <ecs::Component Logic, typename ShapeDefinition = default_shape_definition<Logic>>
+void destruct_entity_default2(ecs::const_handle h, SimInterface& sim, EmitHandle& e, damage_type,
+                              const vec2& source) {
+  // TODO: something a bit cleverer here? Take velocity of shot into account?
+  // Take velocity of destructed shape into account (maybe using same system as will handle
+  // motion trails)? Make destruct particles similarly velocified?
+  auto& r = resolve_entity_shape2<ShapeDefinition>(h, sim);
+  explode_shapes(e, r, std::nullopt, 10, std::nullopt, 1.5f);
+  destruct_lines(e, r, to_float(source));
+}
+
 //////////////////////////////////////////////////////////////////////////////////
 // Collision.
 //////////////////////////////////////////////////////////////////////////////////
@@ -130,17 +167,17 @@ constexpr shape_flag get_shape_flags() {
 }
 
 template <geom::ShapeNode S>
-geom::hit_result shape_check_collision(const auto& parameters, const geom::check_t& it) {
+geom::hit_result shape_check_collision(const auto& parameters, const geom::check_t& check) {
   geom::hit_result result;
-  geom::iterate(S{}, it, parameters, geom::convert_local_transform{}, result);
+  geom::iterate(S{}, check, parameters, geom::convert_local_transform{}, result);
   return result;
 }
 
 template <geom::ShapeNode S>
-geom::hit_result shape_check_collision_legacy(const auto& parameters, const geom::check_t& it) {
+geom::hit_result shape_check_collision_legacy(const auto& parameters, const geom::check_t& check) {
   geom::hit_result result;
-  if (const auto* c = std::get_if<geom::check_point_t>(&it.extent)) {
-    geom::iterate(S{}, geom::check_point(it.mask, vec2{0}), parameters,
+  if (const auto* c = std::get_if<geom::check_point_t>(&check.extent)) {
+    geom::iterate(S{}, geom::check_point(check.mask, vec2{0}), parameters,
                   geom::legacy_convert_local_transform{c->v}, result);
   }
   return result;
@@ -148,14 +185,36 @@ geom::hit_result shape_check_collision_legacy(const auto& parameters, const geom
 
 template <ecs::Component Logic, geom::ShapeNode S = typename Logic::shape>
 geom::hit_result
-ship_check_collision(ecs::const_handle h, const geom::check_t& it, const SimInterface&) {
-  return shape_check_collision<S>(get_shape_parameters<Logic>(h), it);
+ship_check_collision(ecs::const_handle h, const geom::check_t& check, const SimInterface&) {
+  return shape_check_collision<S>(get_shape_parameters<Logic>(h), check);
 }
 
 template <ecs::Component Logic, geom::ShapeNode S = typename Logic::shape>
 geom::hit_result
-ship_check_collision_legacy(ecs::const_handle h, const geom::check_t& it, const SimInterface&) {
-  return shape_check_collision_legacy<S>(get_shape_parameters<Logic>(h), it);
+ship_check_collision_legacy(ecs::const_handle h, const geom::check_t& check, const SimInterface&) {
+  return shape_check_collision_legacy<S>(get_shape_parameters<Logic>(h), check);
+}
+
+template <typename ShapeDefinition>
+geom2::hit_result
+ship_check_collision2(ecs::const_handle h, const geom2::check_t& check, const SimInterface& sim) {
+  geom2::hit_result result;
+  geom2::check_collision(
+      result, check, sim.shape_bank(), ShapeDefinition::construct_shape,
+      [&h](geom2::parameter_set& parameters) { ShapeDefinition::set_parameters(h, parameters); });
+  return result;
+}
+
+template <typename ShapeDefinition>
+geom2::hit_result ship_check_collision_legacy2(ecs::const_handle h, const geom2::check_t& check,
+                                               const SimInterface& sim) {
+  geom2::hit_result result;
+  auto legacy_check = check;
+  legacy_check.legacy_algorithm = true;
+  geom2::check_collision(
+      result, legacy_check, sim.shape_bank(), ShapeDefinition::construct_shape,
+      [&h](geom2::parameter_set& parameters) { ShapeDefinition::set_parameters(h, parameters); });
+  return result;
 }
 
 //////////////////////////////////////////////////////////////////////////////////
@@ -196,6 +255,27 @@ void render_entity_shape(ecs::const_handle h, const Health* health,
                                   std::nullopt);
 }
 
+template <typename ShapeDefinition>
+void render_entity_shape_override2(std::vector<render::shape>& output, ecs::const_handle h,
+                                   const Health* health, const SimInterface& sim, float z = 0.f,
+                                   const std::optional<cvec4>& colour_override = std::nullopt) {
+  std::optional<float> hit_alpha;
+  std::optional<std::size_t> c_override_max_index;
+  if (!colour_override && health && health->hit_timer) {
+    hit_alpha = std::min(1.f, health->hit_timer / 10.f);
+    c_override_max_index = health->hit_flash_ignore_index;
+  }
+  auto& r = resolve_entity_shape2<ShapeDefinition>(h, sim);
+  render_shape(output, r, z, hit_alpha, colour_override, c_override_max_index);
+}
+
+template <typename Logic, typename ShapeDefinition = default_shape_definition<Logic>>
+void render_entity_shape2(ecs::const_handle h, const Health* health,
+                          std::vector<render::shape>& output, const SimInterface& sim) {
+  render_entity_shape_override2<ShapeDefinition>(output, h, health, sim, Logic::kZIndex,
+                                                 std::nullopt);
+}
+
 //////////////////////////////////////////////////////////////////////////////////
 // Creation templates.
 //////////////////////////////////////////////////////////////////////////////////
@@ -232,6 +312,30 @@ ecs::handle create_ship(SimInterface& sim, const vec2& position, fixed rotation 
   return h;
 }
 
+template <ecs::Component Logic, typename ShapeDefinition = default_shape_definition<Logic>>
+ecs::handle create_ship2(SimInterface& sim, const vec2& position, fixed rotation = 0) {
+  auto h = sim.index().create();
+  h.add(Update{.update = ecs::call<&Logic::update>});
+  h.add(Transform{.centre = position, .rotation = rotation});
+
+  if constexpr (+ShapeDefinition::flags) {
+    h.add(Collision{.flags = ShapeDefinition::flags,
+                    .bounding_width = ShapeDefinition::bounding_width,
+                    .check_collision = sim.is_legacy()
+                        ? &ship_check_collision_legacy2<ShapeDefinition>
+                        : &ship_check_collision2<ShapeDefinition>});
+  }
+
+  constexpr auto render = ecs::call<&render_entity_shape2<Logic, ShapeDefinition>>;
+  if constexpr (requires { &Logic::render; }) {
+    h.add(Render{.render = sfn::sequence<sfn::cast<Render::render_t, render>,
+                                         sfn::cast<Render::render_t, ecs::call<&Logic::render>>>});
+  } else {
+    h.add(Render{.render = sfn::cast<Render::render_t, render>});
+  }
+  return h;
+}
+
 template <ecs::Component Logic, geom::ShapeNode S = typename Logic::shape>
 void add_enemy_health(ecs::handle h, std::uint32_t hp,
                       std::optional<sound> destroy_sound = std::nullopt,
@@ -241,6 +345,31 @@ void add_enemy_health(ecs::handle h, std::uint32_t hp,
   using on_destroy_t =
       void(ecs::const_handle, SimInterface&, EmitHandle&, damage_type, const vec2&);
   constexpr auto on_destroy = sfn::cast<on_destroy_t, &destruct_entity_default<Logic, S>>;
+  if constexpr (requires { &Logic::on_destroy; }) {
+    h.add(Health{
+        .hp = hp,
+        .destroy_sound = destroy_sound,
+        .destroy_rumble = destroy_rumble,
+        .on_destroy =
+            sfn::sequence<on_destroy, sfn::cast<on_destroy_t, ecs::call<&Logic::on_destroy>>>});
+  } else {
+    h.add(Health{.hp = hp,
+                 .destroy_sound = destroy_sound,
+                 .destroy_rumble = destroy_rumble,
+                 .on_destroy = on_destroy});
+  }
+}
+
+template <ecs::Component Logic, typename ShapeDefinition = default_shape_definition<Logic>>
+void add_enemy_health2(ecs::handle h, std::uint32_t hp,
+                       std::optional<sound> destroy_sound = std::nullopt,
+                       std::optional<rumble_type> destroy_rumble = std::nullopt) {
+  destroy_sound = destroy_sound ? *destroy_sound : Logic::kDestroySound;
+  destroy_rumble = destroy_rumble ? *destroy_rumble : Logic::kDestroyRumble;
+  using on_destroy_t =
+      void(ecs::const_handle, SimInterface&, EmitHandle&, damage_type, const vec2&);
+  constexpr auto on_destroy =
+      sfn::cast<on_destroy_t, &destruct_entity_default2<Logic, ShapeDefinition>>;
   if constexpr (requires { &Logic::on_destroy; }) {
     h.add(Health{
         .hp = hp,

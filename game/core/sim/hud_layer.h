@@ -31,7 +31,6 @@ public:
 
 protected:
   void update_content(const ui::input_frame&, ui::output_frame&) override;
-  void render_content(render::GlRenderer&) const override;
 
 private:
   game_mode mode_ = game_mode::kStandardRun;

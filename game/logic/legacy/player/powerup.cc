@@ -1,7 +1,4 @@
 #include "game/logic/legacy/player/powerup.h"
-#include "game/geometry/node_conditional.h"
-#include "game/geometry/shapes/box.h"
-#include "game/geometry/shapes/ngon.h"
 #include "game/logic/legacy/components.h"
 #include "game/logic/legacy/ship_template.h"
 #include "game/logic/sim/io/conditions.h"
@@ -11,29 +8,40 @@
 
 namespace ii::legacy {
 namespace {
-using namespace geom;
+using namespace geom2;
 constexpr std::uint32_t kMagicShotCount = 120;
 
 struct Powerup : ecs::component {
-  static constexpr fixed kSpeed = 1;
   static constexpr float kZIndex = -2.f;
   static constexpr std::uint32_t kRotateTime = 100;
-  static constexpr cvec4 cw{1.f};
+  static constexpr fixed kSpeed = 1;
+  static constexpr fixed kBoundingWidth = 0;
+  static constexpr auto kFlags = shape_flag::kNone;
 
-  using out0 = ngon_colour_p<nd(13, 5), 2>;
-  using out1 = ngon_colour_p<nd(9, 5), 3>;
-  using extra_life = switch_entry<powerup_type::kExtraLife, ngon<nd(8, 3), nline(cw)>>;
-  using magic_shots = switch_entry<powerup_type::kMagicShots, box<vec2{3, 3}, sline(cw)>>;
-  using shield = switch_entry<powerup_type::kShield, ngon<nd(11, 5), nline(cw)>>;
-  using bomb =
-      switch_entry<powerup_type::kBomb, ngon<nd(11, 10), nline(ngon_style::kPolystar, cw)>>;
-  using shape = standard_transform<out0, out1, switch_p<4, extra_life, magic_shots, shield, bomb>>;
+  static void construct_shape(node& root) {
+    auto& n = root.add(translate_rotate{.v = key{'v'}, .r = pi<fixed> / 2});
+    n.add(ngon{.dimensions = nd(13, 5), .line = {.colour0 = key{'c'}}});
+    n.add(ngon{.dimensions = nd(9, 5), .line = {.colour0 = key{'C'}}});
+    n.add(enable{key{'0'}}).add(ngon{.dimensions = nd(8, 3), .line = {.colour0 = colour::kWhite0}});
+    n.add(enable{key{'1'}}).add(box{.dimensions = vec2{3}, .line = {.colour0 = colour::kWhite0}});
+    n.add(enable{key{'2'}})
+        .add(ngon{.dimensions = nd(11, 5), .line = {.colour0 = colour::kWhite0}});
+    n.add(enable{key{'3'}})
+        .add(ngon{.dimensions = nd(11, 10),
+                  .style = ngon_style::kPolystar,
+                  .line = {.colour0 = colour::kWhite0}});
+  }
 
-  std::tuple<vec2, fixed, cvec4, cvec4, powerup_type>
-  shape_parameters(const Transform& transform) const {
+  void set_parameters(const Transform& transform, parameter_set& parameters) const {
     auto c0 = legacy_player_colour((frame % (2 * kMaxPlayers)) / 2);
     auto c1 = legacy_player_colour(((frame + 1) % (2 * kMaxPlayers)) / 2);
-    return {transform.centre, pi<fixed> / 2, c0, c1, type};
+    parameters.add(key{'v'}, transform.centre)
+        .add(key{'c'}, c0)
+        .add(key{'C'}, c1)
+        .add(key{'0'}, type == powerup_type::kExtraLife)
+        .add(key{'1'}, type == powerup_type::kMagicShots)
+        .add(key{'2'}, type == powerup_type::kShield)
+        .add(key{'3'}, type == powerup_type::kBomb);
   }
 
   Powerup(powerup_type type) : type{type} {}
@@ -130,7 +138,7 @@ DEBUG_STRUCT_TUPLE(Powerup, type, frame, dir, rotate, first_frame);
 }  // namespace
 
 void spawn_powerup(SimInterface& sim, const vec2& position, powerup_type type) {
-  auto h = create_ship<Powerup>(sim, position);
+  auto h = create_ship2<Powerup>(sim, position);
   h.add(Powerup{type});
   h.add(PowerupTag{.ai_requires = ecs::call<&Powerup::ai_requires>});
 }

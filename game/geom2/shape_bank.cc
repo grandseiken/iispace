@@ -96,8 +96,9 @@ std::span<const vec2> ngon_convex_segment(const resolve_result::ngon_dimensions 
   return {va.begin(), va.begin() + 3};
 }
 
-void check_collision(hit_result& hit, const convert_local_transform& t, const ball_collider& c,
-                     const parameter_set& parameters, const check_t& check) {
+template <typename Transform>
+void check_collision(hit_result& hit, const check_t& check, const Transform& t,
+                     const ball_collider& c, const parameter_set& parameters) {
   auto flags = c.flags(parameters) & check.mask;
   if (!flags) {
     return;
@@ -148,8 +149,9 @@ void check_collision(hit_result& hit, const convert_local_transform& t, const ba
   }
 }
 
-void check_collision(hit_result& hit, const convert_local_transform& t, const box_collider& c,
-                     const parameter_set& parameters, const check_t& check) {
+template <typename Transform>
+void check_collision(hit_result& hit, const check_t& check, const Transform& t,
+                     const box_collider& c, const parameter_set& parameters) {
   auto flags = c.flags(parameters) & check.mask;
   if (!flags) {
     return;
@@ -189,8 +191,9 @@ void check_collision(hit_result& hit, const convert_local_transform& t, const bo
   }
 }
 
-void check_collision(hit_result& hit, const convert_local_transform& t, const ngon_collider& c,
-                     const parameter_set& parameters, const check_t& check) {
+template <typename Transform>
+void check_collision(hit_result& hit, const check_t& check, const Transform& t,
+                     const ngon_collider& c, const parameter_set& parameters) {
   auto flags = c.flags(parameters) & check.mask;
   if (!flags) {
     return;
@@ -316,29 +319,30 @@ void resolve_internal(resolve_result& result, const transform& t, const node& n,
   }
 }
 
-void check_collision_internal(hit_result& result, const convert_local_transform& t, const node& n,
-                              const parameter_set& parameters, const check_t& check) {
-  auto recurse = [&](const convert_local_transform& st) {
+template <typename Transform>
+void check_collision_internal(hit_result& result, const check_t& check, const Transform& t,
+                              const node& n, const parameter_set& parameters) {
+  auto recurse = [&](const Transform& st) {
     for (std::size_t i = 0; i < n.size(); ++i) {
       if (+(n[i].type() & node_type::kCollision)) {
-        check_collision_internal(result, st, n[i], parameters, check);
+        check_collision_internal(result, check, st, n[i], parameters);
       }
     }
   };
 
   switch (n->index()) {
     VARIANT_CASE_GET(ball_collider, *n, x) {
-      check_collision(result, t, x, parameters, check);
+      check_collision(result, check, t, x, parameters);
       break;
     }
 
     VARIANT_CASE_GET(box_collider, *n, x) {
-      check_collision(result, t, x, parameters, check);
+      check_collision(result, check, t, x, parameters);
       break;
     }
 
     VARIANT_CASE_GET(ngon_collider, *n, x) {
-      check_collision(result, t, x, parameters, check);
+      check_collision(result, check, t, x, parameters);
       break;
     }
 
@@ -412,9 +416,15 @@ void resolve(resolve_result& result, const node& n, const parameter_set& paramet
   resolve_internal(result, {}, n, parameters);
 }
 
-void check_collision(hit_result& result, const node& n, const parameter_set& parameters,
-                     const check_t& check) {
-  check_collision_internal(result, {}, n, parameters, check);
+void check_collision(hit_result& result, const check_t& check, const node& n,
+                     const parameter_set& parameters) {
+  if (check.legacy_algorithm) {
+    if (const auto* cx = std::get_if<check_point_t>(&check.extent); cx) {
+      check_collision_internal(result, check, legacy_convert_local_transform{cx->v}, n, parameters);
+    }
+  } else {
+    check_collision_internal(result, check, convert_local_transform{}, n, parameters);
+  }
 }
 
 }  // namespace ii::geom2

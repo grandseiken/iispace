@@ -129,6 +129,7 @@ struct Health : ecs::component {
   std::uint32_t max_hp = hp;
 
   std::uint32_t hit_timer = 0;
+  // TODO: remove, along with c_override_max_index etc; replace with render tag.
   std::optional<std::size_t> hit_flash_ignore_index;
 
   std::optional<sound> hit_sound0 = sound::kEnemyHit;

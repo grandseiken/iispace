@@ -1,25 +1,31 @@
-#include "game/geometry/shapes/legacy.h"
 #include "game/logic/legacy/enemy/enemy.h"
 #include "game/logic/legacy/ship_template.h"
 #include <algorithm>
 
 namespace ii::legacy {
 namespace {
-using namespace geom;
+using namespace geom2;
 
 struct BossShot : ecs::component {
-  static constexpr std::uint32_t kBoundingWidth = 12;
   static constexpr float kZIndex = 16.f;
   static constexpr sound kDestroySound = sound::kEnemyDestroy;
   static constexpr rumble_type kDestroyRumble = rumble_type::kNone;
+  static constexpr fixed kBoundingWidth = 12;
+  static constexpr auto kFlags = shape_flag::kDangerous;
 
-  using shape =
-      standard_transform<ngon_colour_p<nd(16, 8), 2>,
-                         ngon_colour_p<nd(10, 8), 2, nline(ngon_style::kPolystar, colour::kZero)>,
-                         legacy_ball_collider_dummy<12, shape_flag::kDangerous>>;
+  static void construct_shape(node& root) {
+    auto& n = root.add(translate_rotate{.v = key{'v'}, .r = key{'r'}});
+    n.add(ngon{.dimensions = nd(10, 8), .line = {.colour0 = key{'c'}}});
+    n.add(ngon{
+        .dimensions = nd(16, 8), .style = ngon_style::kPolystar, .line = {.colour0 = key{'c'}}});
+    n.add(ball_collider{.dimensions = bd(12), .flags = kFlags});
+    n.add(/* dummy */ ball{.line = {.colour0 = key{'c'}}});
+  }
 
-  std::tuple<vec2, fixed, cvec4> shape_parameters(const Transform& transform) const {
-    return {transform.centre, transform.rotation, colour};
+  void set_parameters(const Transform& transform, parameter_set& parameters) const {
+    parameters.add(key{'v'}, transform.centre)
+        .add(key{'r'}, transform.rotation)
+        .add(key{'c'}, colour);
   }
 
   BossShot(const vec2& velocity, const cvec4& colour, fixed rotate_speed)
@@ -40,7 +46,8 @@ struct BossShot : ecs::component {
     transform.set_rotation(transform.rotation + fixed_c::hundredth * 2);
     if (sim.collide_any(check_point(shape_flag::kSafeShield, transform.centre))) {
       auto e = sim.emit(resolve_key::reconcile(h.id(), resolve_tag::kOnDestroy));
-      explode_entity_shapes<BossShot>(h, e, std::nullopt, 4, transform.centre - velocity);
+      auto& r = resolve_entity_shape2<default_shape_definition<BossShot>>(h, sim);
+      explode_shapes(e, r, std::nullopt, 4, to_float(transform.centre - velocity));
       h.emplace<Destroy>();
       return;
     }
@@ -54,8 +61,8 @@ DEBUG_STRUCT_TUPLE(BossShot, timer, velocity, rotate_speed);
 
 void spawn_boss_shot(SimInterface& sim, const vec2& position, const vec2& velocity,
                      const cvec4& colour, fixed rotate_speed) {
-  auto h = create_ship<BossShot>(sim, position);
-  add_enemy_health<BossShot>(h, 0);
+  auto h = create_ship2<BossShot>(sim, position);
+  add_enemy_health2<BossShot>(h, 0);
   h.add(BossShot{velocity, colour, rotate_speed});
   h.add(Enemy{.threat_value = 1});
   h.add(WallTag{});

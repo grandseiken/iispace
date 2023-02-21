@@ -1,6 +1,4 @@
 #include "game/common/colour.h"
-#include "game/geometry/shapes/box.h"
-#include "game/geometry/shapes/legacy.h"
 #include "game/logic/legacy/components.h"
 #include "game/logic/legacy/enemy/enemy.h"
 #include "game/logic/legacy/ship_template.h"
@@ -8,22 +6,28 @@
 
 namespace ii::legacy {
 namespace {
-using namespace geom;
+using namespace geom2;
 
 struct Square : ecs::component {
-  static constexpr std::uint32_t kBoundingWidth = 15;
   static constexpr float kZIndex = -8.f;
   static constexpr sound kDestroySound = sound::kEnemyDestroy;
   static constexpr rumble_type kDestroyRumble = rumble_type::kLow;
   static constexpr fixed kSpeed = 2 + 1_fx / 4;
-  using shape = standard_transform<
-      box_colour_p<vec2{10, 10}, 2>,
-      legacy_box_collider<vec2{10, 10}, shape_flag::kDangerous | shape_flag::kVulnerable>>;
+  static constexpr fixed kBoundingWidth = 15;
+  static constexpr auto kFlags = shape_flag::kDangerous | shape_flag::kVulnerable;
 
-  std::tuple<vec2, fixed, cvec4>
-  shape_parameters(const Transform& transform, const Health& health) const {
-    return {transform.centre, transform.rotation,
-            health.hp && invisible_flash ? colour::hue(0.f, .2f, 0.f) : colour::hue360(120, .6f)};
+  static void construct_shape(node& root) {
+    auto& n = root.add(translate_rotate{.v = key{'v'}, .r = key{'r'}});
+    n.add(box{.dimensions = vec2{10}, .line = {.colour0 = key{'c'}}});
+    n.add(box_collider{.dimensions = vec2{10}, .flags = kFlags});
+  }
+
+  void set_parameters(const Transform& transform, const Health& health,
+                      parameter_set& parameters) const {
+    parameters.add(key{'v'}, transform.centre)
+        .add(key{'r'}, transform.rotation)
+        .add(key{'c'},
+             health.hp && invisible_flash ? colour::hue(0.f, .2f, 0.f) : colour::hue360(120, .6f));
   }
 
   vec2 dir{0};
@@ -33,8 +37,7 @@ struct Square : ecs::component {
   Square(SimInterface& sim, fixed dir_angle)
   : dir{from_polar_legacy(dir_angle, 1_fx)}, timer{sim.random(80) + 40} {}
 
-  void
-  update(ecs::handle h, Transform& transform, Render& render, Health& health, SimInterface& sim) {
+  void update(ecs::handle h, Transform& transform, Health& health, SimInterface& sim) {
     bool no_enemies = !sim.global_entity().get<GlobalData>()->non_wall_enemy_count;
     if (sim.is_on_screen(transform.centre) && no_enemies) {
       if (timer) {
@@ -83,23 +86,30 @@ struct Square : ecs::component {
 DEBUG_STRUCT_TUPLE(Square, dir, timer, invisible_flash);
 
 struct Wall : ecs::component {
-  static constexpr std::uint32_t kBoundingWidth = 50;
   static constexpr float kZIndex = -8.f;
   static constexpr sound kDestroySound = sound::kEnemyDestroy;
   static constexpr rumble_type kDestroyRumble = rumble_type::kLow;
 
   static constexpr std::uint32_t kTimer = 80;
   static constexpr fixed kSpeed = 1 + 1_fx / 4;
-  using shape = standard_transform<
-      box<vec2{10, 40}, sline(colour::hue360(120, .5f, .6f))>,
-      legacy_box_collider<vec2{10, 40}, shape_flag::kDangerous | shape_flag::kVulnerable>>;
+  static constexpr fixed kBoundingWidth = 50;
+  static constexpr auto kFlags = shape_flag::kDangerous | shape_flag::kVulnerable;
 
+  static void construct_shape(node& root) {
+    auto& n = root.add(translate_rotate{.v = key{'v'}, .r = key{'r'}});
+    n.add(box{.dimensions = vec2{10, 40}, .line = {.colour0 = colour::hue360(120, .5f, .6f)}});
+    n.add(box_collider{.dimensions = vec2{10, 40}, .flags = kFlags});
+  }
+
+  void set_parameters(const Transform& transform, parameter_set& parameters) const {
+    parameters.add(key{'v'}, transform.centre).add(key{'r'}, transform.rotation);
+  }
+
+  Wall(bool rdir) : rdir{rdir} {}
   vec2 dir{0, 1};
   std::uint32_t timer = 0;
   bool is_rotating = false;
   bool rdir = false;
-
-  Wall(bool rdir) : rdir{rdir} {}
 
   void update(ecs::handle h, Transform& transform, Health& health, SimInterface& sim) {
     if (!sim.global_entity().get<GlobalData>()->non_wall_enemy_count && timer % 8 < 2) {
@@ -161,16 +171,16 @@ DEBUG_STRUCT_TUPLE(Wall, dir, timer, is_rotating, rdir);
 }  // namespace
 
 void spawn_square(SimInterface& sim, const vec2& position, fixed dir_angle) {
-  auto h = create_ship<Square>(sim, position);
-  add_enemy_health<Square>(h, 4);
+  auto h = create_ship2<Square>(sim, position);
+  add_enemy_health2<Square>(h, 4);
   h.add(Square{sim, dir_angle});
   h.add(Enemy{.threat_value = 2, .score_reward = 25});
   h.add(WallTag{});
 }
 
 void spawn_wall(SimInterface& sim, const vec2& position, bool rdir) {
-  auto h = create_ship<Wall>(sim, position);
-  add_enemy_health<Wall>(h, 10);
+  auto h = create_ship2<Wall>(sim, position);
+  add_enemy_health2<Wall>(h, 10);
   h.add(Wall{rdir});
   h.add(Enemy{.threat_value = 4, .score_reward = 20});
   h.add(WallTag{});

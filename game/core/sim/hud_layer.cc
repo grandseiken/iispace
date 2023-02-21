@@ -109,12 +109,12 @@ HudLayer::HudLayer(ui::GameStack& stack, game_mode mode)
   };
 
   huds_ = {
-      add(irect{ivec2{0}, kUiDimensions / 2}, render::alignment::kLeft | render::alignment::kTop),
-      add(irect{ivec2{kUiDimensions.x / 2, 0}, kUiDimensions / 2},
+      add(irect{ivec2{0}, kGameDimensions / 2}, render::alignment::kLeft | render::alignment::kTop),
+      add(irect{ivec2{kGameDimensions.x / 2, 0}, kGameDimensions / 2},
           render::alignment::kRight | render::alignment::kTop),
-      add(irect{ivec2{0, kUiDimensions.y / 2}, kUiDimensions / 2},
+      add(irect{ivec2{0, kGameDimensions.y / 2}, kGameDimensions / 2},
           render::alignment::kLeft | render::alignment::kBottom),
-      add(irect{kUiDimensions / 2, kUiDimensions / 2},
+      add(irect{kGameDimensions / 2, kGameDimensions / 2},
           render::alignment::kRight | render::alignment::kBottom),
   };
 
@@ -237,6 +237,7 @@ void HudLayer::update_content(const ui::input_frame&, ui::output_frame&) {
     bar_inner_->smooth_value = boss_bar_->smooth_value;
     bar_inner_->style = boss_bar_->style;
     bar_inner_->colour = boss_bar_->colour;
+    // TODO: nice animated boss bar fill.
     bar_outer_->set_style(render::panel_style::kFlatColour)
         .set_colour(colour::kBlackOverlay0)
         .set_border(colour::kWhite0);
@@ -246,10 +247,6 @@ void HudLayer::update_content(const ui::input_frame&, ui::output_frame&) {
     bar_inner_->style = render::panel_style::kNone;
     bar_text_->set_text({});
   }
-}
-
-void HudLayer::render_content(render::GlRenderer&) const {
-  // TODO: hp bar.
 }
 
 }  // namespace ii
