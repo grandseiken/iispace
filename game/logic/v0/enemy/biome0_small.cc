@@ -398,9 +398,8 @@ struct FollowSponge : ecs::component {
     auto target_spawns = (health.max_hp - health.hp) / 8;
     while (spawns < target_spawns) {
       eh.explosion(to_float(transform.centre), c, 6, std::nullopt, 2.f);
-      auto v =
-          from_polar(angle(transform.centre - source) + (3_fx / 2) * sim.random_fixed() - 3_fx / 4,
-                     2_fx + 3_fx * sim.random_fixed());
+      auto a = angle(transform.centre - source) + (3_fx / 2) * sim.random_fixed() - 3_fx / 4;
+      auto v = from_polar(a, 2_fx + 3_fx * sim.random_fixed());
       spawn_follow(sim, 0, transform.centre, std::nullopt, /* drop */ false, transform.rotation, v);
       ++spawns;
     }

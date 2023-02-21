@@ -331,7 +331,8 @@ struct wall0_side : formation<3> {
         context.spawn(f, side, 8_fx / 10);
       }
     } else {
-      context.spawn(f, context.random_mside(), 2_fx * (1 + context.random.uint(2)) / 10);
+      auto side = context.random_mside();
+      context.spawn(f, side, 2_fx * (1 + context.random.uint(2)) / 10);
     }
   }
 };

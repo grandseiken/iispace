@@ -17,6 +17,8 @@ ai_test(players = 2, mode = "standard_run")
 ai_test(players = 3, mode = "standard_run")
 ai_test(players = 4, mode = "standard_run")
 
+# TODO: add score verification (that'll need to be updated when logic changes) in order to catch
+# discrepancies across platforms/compilers.
 ai_test(players = 2, mode = "standard_run", prefix = "fixed_seed", extra_args = ["--seed", "1337"])
 ai_test(players = 4, mode = "standard_run", prefix = "fixed_seed", extra_args = ["--seed", "1337"])
 

@@ -332,9 +332,13 @@ struct spawn_context {
   }
 
   spawn_side random_side() { return spawn_side{random.uint(8u)}; }
-  spawn_side random_vside() { return spawn_side{(random.rbool() ? 4u : 0u) + random.uint(2u)}; }
+  spawn_side random_vside() {
+    auto b = random.rbool();
+    return spawn_side{(b ? 4u : 0u) + random.uint(2u)};
+  }
   spawn_side random_hside() {
-    return spawn_side{2u + (random.rbool() ? 4u : 0u) + random.uint(2u)};
+    auto b = random.rbool();
+    return spawn_side{2u + (b ? 4u : 0u) + random.uint(2u)};
   }
   spawn_side random_mside() { return spawn_side{8u + random.uint(4u)}; }
   spawn_side random_dside() { return spawn_side{12u + random.uint(8u)}; }
