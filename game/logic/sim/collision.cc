@@ -1,5 +1,6 @@
 #include "game/logic/sim/collision.h"
 #include "game/common/collision.h"
+#include "game/common/variant_switch.h"
 #include <algorithm>
 #include <bit>
 #include <cmath>
@@ -59,14 +60,14 @@ void GridCollisionIndex::remove(ecs::handle& h) {
 void GridCollisionIndex::begin_tick() {}
 
 template <typename F>
-void GridCollisionIndex::iterate_collision_cells(const geom2::check_t& it, const F& f) const {
+void GridCollisionIndex::iterate_collision_cells(const geom2::check_t& check, const F& f) const {
   static thread_local std::unordered_set<ecs::entity_id> checked;
   checked.clear();
 
   auto handle_id = [&](ecs::entity_id id, auto&& check_bounds) {
     const auto& e = entities_.find(id)->second;
     const auto& c = *e.collision;
-    if (!(c.flags & it.mask)) {
+    if (!(c.flags & check.mask)) {
       return false;
     }
     auto min = e.transform->centre - e.collision->bounding_width;
@@ -74,104 +75,116 @@ void GridCollisionIndex::iterate_collision_cells(const geom2::check_t& it, const
     if (!check_bounds(min, max)) {
       return false;
     }
-    if (auto hit = c.check_collision(e.handle, it, *interface_); +hit.mask) {
+    if (auto hit = c.check_collision(e.handle, check, *interface_); +hit.mask) {
       return f(e.handle, hit);
     }
     return false;
   };
 
-  if (const auto* ic = std::get_if<geom2::check_point_t>(&it.extent)) {
-    auto coords = cell_coords(ic->v);
-    if (!is_cell_valid(coords)) {
-      return;
-    }
-    for (auto id : cell(coords).entries) {
-      if (handle_id(id, [&](const vec2& min, const vec2& max) {
-            return intersect_aabb_point(min, max, ic->v);
-          })) {
-        break;
+  switch (check.extent.index()) {
+    VARIANT_CASE_GET(geom2::check_point_t, check.extent, ic) {
+      auto coords = cell_coords(ic.v);
+      if (!is_cell_valid(coords)) {
+        return;
       }
+      for (auto id : cell(coords).entries) {
+        if (handle_id(id, [&](const vec2& min, const vec2& max) {
+              return intersect_aabb_point(min, max, ic.v);
+            })) {
+          break;
+        }
+      }
+      break;
     }
-  } else if (const auto* ic = std::get_if<geom2::check_line_t>(&it.extent)) {
-    auto c = cell_coords(ic->a);
-    auto end = cell_coords(ic->b);
-    ivec2 cv{end.x > c.x ? 1 : end.x == c.x ? 0 : -1, end.y > c.y ? 1 : end.y == c.y ? 0 : -1};
-    bool done = false;
-    while (!done) {
-      if (is_cell_valid(c)) {
-        for (auto id : cell(c).entries) {
-          if (checked.contains(id)) {
-            continue;
+
+    VARIANT_CASE_GET(geom2::check_line_t, check.extent, ic) {
+      auto c = cell_coords(ic.a);
+      auto end = cell_coords(ic.b);
+      ivec2 cv{end.x > c.x ? 1 : end.x == c.x ? 0 : -1, end.y > c.y ? 1 : end.y == c.y ? 0 : -1};
+      bool done = false;
+      while (!done) {
+        if (is_cell_valid(c)) {
+          for (auto id : cell(c).entries) {
+            if (checked.contains(id)) {
+              continue;
+            }
+            checked.emplace(id);
+            if (handle_id(id, [&](const vec2& min, const vec2& max) {
+                  return intersect_aabb_line(min, max, ic.a, ic.b);
+                })) {
+              done = true;
+              break;
+            }
           }
-          checked.emplace(id);
-          if (handle_id(id, [&](const vec2& min, const vec2& max) {
-                return intersect_aabb_line(min, max, ic->a, ic->b);
-              })) {
-            done = true;
-            break;
+        }
+        if (done || c == end) {
+          break;
+        }
+        if (c.x == end.x) {
+          c.y += cv.y;
+        } else if (c.y == end.y) {
+          c.x += cv.x;
+        } else if (intersect_aabb_line(cell_position({c.x, c.y + cv.y}),
+                                       cell_position({c.x + 1, c.y + cv.y + 1}), ic.a, ic.b)) {
+          c.y += cv.y;
+        } else {
+          c.x += cv.x;
+        }
+      }
+      break;
+    }
+
+    VARIANT_CASE_GET(geom2::check_ball_t, check.extent, ic) {
+      auto min = min_coords(ic.c - ic.r);
+      auto max = max_coords(ic.c + ic.r);
+      bool done = false;
+      for (std::int32_t y = min.y; !done && y <= max.y; ++y) {
+        for (std::int32_t x = min.x; !done && x <= max.x; ++x) {
+          for (auto id : cell({x, y}).entries) {
+            if (checked.contains(id)) {
+              continue;
+            }
+            checked.emplace(id);
+            if (handle_id(id, [&](const vec2& b_min, const vec2& b_max) {
+                  return intersect_aabb_ball(b_min, b_max, ic.c, ic.r);
+                })) {
+              done = true;
+              break;
+            }
           }
         }
       }
-      if (done || c == end) {
-        break;
-      }
-      if (c.x == end.x) {
-        c.y += cv.y;
-      } else if (c.y == end.y) {
-        c.x += cv.x;
-      } else if (intersect_aabb_line(cell_position({c.x, c.y + cv.y}),
-                                     cell_position({c.x + 1, c.y + cv.y + 1}), ic->a, ic->b)) {
-        c.y += cv.y;
-      } else {
-        c.x += cv.x;
-      }
+      break;
     }
-  } else if (const auto* ic = std::get_if<geom2::check_ball_t>(&it.extent)) {
-    auto min = min_coords(ic->c - ic->r);
-    auto max = max_coords(ic->c + ic->r);
-    bool done = false;
-    for (std::int32_t y = min.y; !done && y <= max.y; ++y) {
-      for (std::int32_t x = min.x; !done && x <= max.x; ++x) {
-        for (auto id : cell({x, y}).entries) {
-          if (checked.contains(id)) {
-            continue;
-          }
-          checked.emplace(id);
-          if (handle_id(id, [&](const vec2& b_min, const vec2& b_max) {
-                return intersect_aabb_ball(b_min, b_max, ic->c, ic->r);
-              })) {
-            done = true;
-            break;
+
+    VARIANT_CASE_GET(geom2::check_convex_t, check.extent, ic) {
+      if (ic.vs.empty()) {
+        return;
+      }
+      std::optional<ivec2> min;
+      std::optional<ivec2> max;
+      for (const auto& v : ic.vs) {
+        min = min ? glm::min(*min, min_coords(v)) : min_coords(v);
+        max = max ? glm::max(*max, max_coords(v)) : max_coords(v);
+      }
+      bool done = false;
+      for (std::int32_t y = min->y; !done && y <= max->y; ++y) {
+        for (std::int32_t x = min->x; !done && x <= max->x; ++x) {
+          for (auto id : cell({x, y}).entries) {
+            if (checked.contains(id)) {
+              continue;
+            }
+            checked.emplace(id);
+            if (handle_id(id, [&](const vec2& b_min, const vec2& b_max) {
+                  return intersect_aabb_convex(b_min, b_max, ic.vs);
+                })) {
+              done = true;
+              break;
+            }
           }
         }
       }
-    }
-  } else if (const auto* ic = std::get_if<geom2::check_convex_t>(&it.extent)) {
-    if (ic->vs.empty()) {
-      return;
-    }
-    std::optional<ivec2> min;
-    std::optional<ivec2> max;
-    for (const auto& v : ic->vs) {
-      min = min ? glm::min(*min, min_coords(v)) : min_coords(v);
-      max = max ? glm::max(*max, max_coords(v)) : max_coords(v);
-    }
-    bool done = false;
-    for (std::int32_t y = min->y; !done && y <= max->y; ++y) {
-      for (std::int32_t x = min->x; !done && x <= max->x; ++x) {
-        for (auto id : cell({x, y}).entries) {
-          if (checked.contains(id)) {
-            continue;
-          }
-          checked.emplace(id);
-          if (handle_id(id, [&](const vec2& b_min, const vec2& b_max) {
-                return intersect_aabb_convex(b_min, b_max, ic->vs);
-              })) {
-            done = true;
-            break;
-          }
-        }
-      }
+      break;
     }
   }
 }
@@ -183,14 +196,14 @@ bool GridCollisionIndex::collide_any(const geom2::check_t& it) const {
 }
 
 std::vector<SimInterface::collision_info>
-GridCollisionIndex::collide(const geom2::check_t& it) const {
+GridCollisionIndex::collide(const geom2::check_t& check) const {
   std::vector<SimInterface::collision_info> r;
-  iterate_collision_cells(it, [&](ecs::handle h, geom2::hit_result& hit) {
+  iterate_collision_cells(check, [&](ecs::handle h, geom2::hit_result& hit) {
     r.emplace_back(SimInterface::collision_info{
         .h = h, .hit_mask = hit.mask, .shape_centres = std::move(hit.shape_centres)});
     return false;
   });
-  if (!std::holds_alternative<geom2::check_point_t>(it.extent)) {
+  if (!std::holds_alternative<geom2::check_point_t>(check.extent)) {
     std::sort(r.begin(), r.end(), [](const auto& a, const auto& b) { return a.h.id() < b.h.id(); });
   }
   return r;
@@ -361,8 +374,8 @@ void LegacyCollisionIndex::begin_tick() {
                    [](const auto& a, const auto& b) { return a.x_min < b.x_min; });
 }
 
-bool LegacyCollisionIndex::collide_any(const geom2::check_t& it) const {
-  const auto* c = std::get_if<geom2::check_point_t>(&it.extent);
+bool LegacyCollisionIndex::collide_any(const geom2::check_t& check) const {
+  const auto* c = std::get_if<geom2::check_point_t>(&check.extent);
   if (!c) {
     return false;
   }
@@ -384,7 +397,7 @@ bool LegacyCollisionIndex::collide_any(const geom2::check_t& it) const {
     if (v.x + w < x || v.y + w < y || v.y - w > y) {
       continue;
     }
-    if (+(e.flags & it.mask) && +e.check_collision(collision.handle, it, *interface_).mask) {
+    if (+(e.flags & check.mask) && +e.check_collision(collision.handle, check, *interface_).mask) {
       return true;
     }
   }
@@ -392,9 +405,9 @@ bool LegacyCollisionIndex::collide_any(const geom2::check_t& it) const {
 }
 
 std::vector<SimInterface::collision_info>
-LegacyCollisionIndex::collide(const geom2::check_t& it) const {
+LegacyCollisionIndex::collide(const geom2::check_t& check) const {
   std::vector<SimInterface::collision_info> r;
-  const auto* c = std::get_if<geom2::check_point_t>(&it.extent);
+  const auto* c = std::get_if<geom2::check_point_t>(&check.extent);
   if (!c) {
     return r;
   }
@@ -413,10 +426,10 @@ LegacyCollisionIndex::collide(const geom2::check_t& it) const {
     if (v.x + w < x || v.y + w < y || v.y - w > y) {
       continue;
     }
-    if (!(e.flags & it.mask)) {
+    if (!(e.flags & check.mask)) {
       continue;
     }
-    if (auto hit = e.check_collision(collision.handle, it, *interface_); +hit.mask) {
+    if (auto hit = e.check_collision(collision.handle, check, *interface_); +hit.mask) {
       r.emplace_back(SimInterface::collision_info{.h = collision.handle,
                                                   .hit_mask = hit.mask,
                                                   .shape_centres = std::move(hit.shape_centres)});

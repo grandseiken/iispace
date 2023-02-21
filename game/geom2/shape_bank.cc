@@ -287,7 +287,7 @@ void resolve_internal(resolve_result& result, const transform& t, const node& n,
       break;
     }
 
-    VARIANT_CASE_GET(compound, *n, x) {
+    VARIANT_CASE(compound, *n) {
       recurse(t);
       break;
     }
@@ -342,7 +342,7 @@ void check_collision_internal(hit_result& result, const convert_local_transform&
       break;
     }
 
-    VARIANT_CASE_GET(compound, *n, x) {
+    VARIANT_CASE(compound, *n) {
       recurse(t);
       break;
     }

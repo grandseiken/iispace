@@ -3,6 +3,7 @@
 #include "game/common/colour.h"
 #include "game/common/math.h"
 #include "game/common/raw_ptr.h"
+#include "game/common/variant_switch.h"
 #include "game/io/font/font.h"
 #include "game/render/font_cache.h"
 #include "game/render/gl/data.h"
@@ -920,105 +921,126 @@ void GlRenderer::render_shapes(coordinate_system ctype, std::vector<shape>& shap
   // Limits could be raised by avoiding clipping in geometry shader, or by sending
   // more input vertices.
   for (const auto& shape : shapes) {
-    if (const auto* p = std::get_if<render::ngon>(&shape.data)) {
-      auto add_polygon = [&](std::uint32_t style, std::uint32_t param) {
+    switch (shape.data.index()) {
+      VARIANT_CASE_GET(render::ngon, shape.data, p) {
+        auto add_polygon = [&](std::uint32_t style, std::uint32_t param) {
+          add_outline_data(
+              {
+                  .style = style,
+                  .params = {p.sides, param},
+                  .rotation = shape.rotation,
+                  .line_width = p.line_width,
+                  .z = shape.z,
+                  .position = shape.origin,
+                  .dimensions = {p.radius, p.inner_radius},
+                  .colour0 = shape.colour0,
+                  .colour1 = shape.colour1.value_or(shape.colour0),
+              },
+              shape.trail);
+        };
+        if (p.style != ngon_style::kPolygram || p.sides <= 3) {
+          add_polygon(p.style == ngon_style::kPolystar ? kStyleNgonPolystar : kStyleNgonPolygon,
+                      p.segments);
+        } else if (p.sides == 4) {
+          add_polygon(kStyleNgonPolystar, p.segments);
+          add_polygon(kStyleNgonPolygon, p.segments);
+        } else {
+          for (std::uint32_t i = 0; i + 2 < p.sides; ++i) {
+            add_polygon(kStyleNgonPolygram, i);
+          }
+          add_polygon(kStyleNgonPolygon, p.segments);
+        }
+        break;
+      }
+
+      VARIANT_CASE_GET(render::box, shape.data, p) {
         add_outline_data(
             {
-                .style = style,
-                .params = {p->sides, param},
+                .style = kStyleBox,
                 .rotation = shape.rotation,
-                .line_width = p->line_width,
+                .line_width = p.line_width,
                 .z = shape.z,
                 .position = shape.origin,
-                .dimensions = {p->radius, p->inner_radius},
+                .dimensions = p.dimensions,
                 .colour0 = shape.colour0,
                 .colour1 = shape.colour1.value_or(shape.colour0),
             },
             shape.trail);
-      };
-      if (p->style != ngon_style::kPolygram || p->sides <= 3) {
-        add_polygon(p->style == ngon_style::kPolystar ? kStyleNgonPolystar : kStyleNgonPolygon,
-                    p->segments);
-      } else if (p->sides == 4) {
-        add_polygon(kStyleNgonPolystar, p->segments);
-        add_polygon(kStyleNgonPolygon, p->segments);
-      } else {
-        for (std::uint32_t i = 0; i + 2 < p->sides; ++i) {
-          add_polygon(kStyleNgonPolygram, i);
-        }
-        add_polygon(kStyleNgonPolygon, p->segments);
+        break;
       }
-    } else if (const auto* p = std::get_if<render::box>(&shape.data)) {
-      add_outline_data(
-          {
-              .style = kStyleBox,
-              .rotation = shape.rotation,
-              .line_width = p->line_width,
-              .z = shape.z,
-              .position = shape.origin,
-              .dimensions = p->dimensions,
-              .colour0 = shape.colour0,
-              .colour1 = shape.colour1.value_or(shape.colour0),
-          },
-          shape.trail);
-    } else if (const auto* p = std::get_if<render::ball>(&shape.data)) {
-      add_outline_data(
-          {
-              .style = kStyleBall,
-              .rotation = shape.rotation,
-              .line_width = p->line_width,
-              .z = shape.z,
-              .position = shape.origin,
-              .dimensions = {p->radius, p->inner_radius},
-              .colour0 = shape.colour0,
-              .colour1 = shape.colour1.value_or(shape.colour0),
-          },
-          shape.trail);
-    } else if (const auto* p = std::get_if<render::line>(&shape.data)) {
-      add_outline_data(
-          {
-              .style = kStyleLine,
-              .params = {p->sides, 0},
-              .rotation = shape.rotation,
-              .line_width = p->line_width,
-              .z = shape.z,
-              .position = shape.origin,
-              .dimensions = {p->radius, 0},
-              .colour0 = shape.colour0,
-              .colour1 = shape.colour1.value_or(shape.colour0),
-          },
-          shape.trail);
-    } else if (const auto* p = std::get_if<render::ngon_fill>(&shape.data)) {
-      add_fill_data({
-          .style = kStyleNgonPolygon,
-          .params = {p->sides, p->segments},
-          .rotation = shape.rotation,
-          .z = shape.z,
-          .position = shape.origin,
-          .dimensions = {p->radius, p->inner_radius},
-          .colour0 = shape.colour0,
-          .colour1 = shape.colour1.value_or(shape.colour0),
-      });
-    } else if (const auto* p = std::get_if<render::box_fill>(&shape.data)) {
-      add_fill_data({
-          .style = kStyleBox,
-          .rotation = shape.rotation,
-          .z = shape.z,
-          .position = shape.origin,
-          .dimensions = p->dimensions,
-          .colour0 = shape.colour0,
-          .colour1 = shape.colour1.value_or(shape.colour0),
-      });
-    } else if (const auto* p = std::get_if<render::ball_fill>(&shape.data)) {
-      add_fill_data({
-          .style = kStyleBall,
-          .rotation = shape.rotation,
-          .z = shape.z,
-          .position = shape.origin,
-          .dimensions = {p->radius, p->inner_radius},
-          .colour0 = shape.colour0,
-          .colour1 = shape.colour1.value_or(shape.colour0),
-      });
+
+      VARIANT_CASE_GET(render::ball, shape.data, p) {
+        add_outline_data(
+            {
+                .style = kStyleBall,
+                .rotation = shape.rotation,
+                .line_width = p.line_width,
+                .z = shape.z,
+                .position = shape.origin,
+                .dimensions = {p.radius, p.inner_radius},
+                .colour0 = shape.colour0,
+                .colour1 = shape.colour1.value_or(shape.colour0),
+            },
+            shape.trail);
+        break;
+      }
+
+      VARIANT_CASE_GET(render::line, shape.data, p) {
+        add_outline_data(
+            {
+                .style = kStyleLine,
+                .params = {p.sides, 0},
+                .rotation = shape.rotation,
+                .line_width = p.line_width,
+                .z = shape.z,
+                .position = shape.origin,
+                .dimensions = {p.radius, 0},
+                .colour0 = shape.colour0,
+                .colour1 = shape.colour1.value_or(shape.colour0),
+            },
+            shape.trail);
+        break;
+      }
+
+      VARIANT_CASE_GET(render::ngon_fill, shape.data, p) {
+        add_fill_data({
+            .style = kStyleNgonPolygon,
+            .params = {p.sides, p.segments},
+            .rotation = shape.rotation,
+            .z = shape.z,
+            .position = shape.origin,
+            .dimensions = {p.radius, p.inner_radius},
+            .colour0 = shape.colour0,
+            .colour1 = shape.colour1.value_or(shape.colour0),
+        });
+        break;
+      }
+
+      VARIANT_CASE_GET(render::box_fill, shape.data, p) {
+        add_fill_data({
+            .style = kStyleBox,
+            .rotation = shape.rotation,
+            .z = shape.z,
+            .position = shape.origin,
+            .dimensions = p.dimensions,
+            .colour0 = shape.colour0,
+            .colour1 = shape.colour1.value_or(shape.colour0),
+        });
+        break;
+      }
+
+      VARIANT_CASE_GET(render::ball_fill, shape.data, p) {
+        add_fill_data({
+            .style = kStyleBall,
+            .rotation = shape.rotation,
+            .z = shape.z,
+            .position = shape.origin,
+            .dimensions = {p.radius, p.inner_radius},
+            .colour0 = shape.colour0,
+            .colour1 = shape.colour1.value_or(shape.colour0),
+        });
+        break;
+      }
     }
   }
 

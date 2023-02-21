@@ -36,7 +36,7 @@ struct resolve_result {
     ball_dimensions dimensions;
     line_style line;
     fill_style fill;
-    tag_t tag{'0'};
+    tag_t tag = tag_t{'0'};
     render_flag flags = render_flag::kNone;
   };
 
@@ -44,7 +44,7 @@ struct resolve_result {
     vec2 dimensions{0};
     line_style line;
     fill_style fill;
-    tag_t tag{'0'};
+    tag_t tag = tag_t{'0'};
     render_flag flags = render_flag::kNone;
   };
 
@@ -52,7 +52,7 @@ struct resolve_result {
     vec2 a{0};
     vec2 b{0};
     line_style style;
-    tag_t tag{'0'};
+    tag_t tag = tag_t{'0'};
     render_flag flags = render_flag::kNone;
   };
 
@@ -61,7 +61,7 @@ struct resolve_result {
     ngon_style style = ngon_style::kPolygon;
     line_style line;
     fill_style fill;
-    tag_t tag{'0'};
+    tag_t tag = tag_t{'0'};
     render_flag flags = render_flag::kNone;
   };
 

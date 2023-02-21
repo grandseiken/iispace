@@ -1,4 +1,5 @@
 #include "game/logic/v0/lib/particles.h"
+#include "game/common/variant_switch.h"
 
 namespace ii::v0 {
 namespace {
@@ -90,12 +91,21 @@ void explode_shapes(EmitHandle& e, const geom2::resolve_result& r,
                     const std::optional<fvec2>& towards, std::optional<float> speed) {
   for (const auto& entry : r.entries) {
     std::optional<cvec4> c;
-    if (const auto* d = std::get_if<geom2::resolve_result::ball>(&entry.data)) {
-      c = d->line.colour0.a ? d->line.colour0 : d->fill.colour0;
-    } else if (const auto* d = std::get_if<geom2::resolve_result::box>(&entry.data)) {
-      c = d->line.colour0.a ? d->line.colour0 : d->fill.colour0;
-    } else if (const auto* d = std::get_if<geom2::resolve_result::ngon>(&entry.data)) {
-      c = d->line.colour0.a ? d->line.colour0 : d->fill.colour1;
+    switch (entry.data.index()) {
+      VARIANT_CASE_GET(geom2::resolve_result::ball, entry.data, d) {
+        c = d.line.colour0.a ? d.line.colour0 : d.fill.colour0;
+        break;
+      }
+
+      VARIANT_CASE_GET(geom2::resolve_result::box, entry.data, d) {
+        c = d.line.colour0.a ? d.line.colour0 : d.fill.colour0;
+        break;
+      }
+
+      VARIANT_CASE_GET(geom2::resolve_result::ngon, entry.data, d) {
+        c = d.line.colour0.a ? d.line.colour0 : d.fill.colour0;
+        break;
+      }
     }
     if (c) {
       e.explosion(to_float(*entry.t), colour_override.value_or(*c), time, towards, speed);
@@ -112,79 +122,91 @@ void destruct_lines(EmitHandle& e, const geom2::resolve_result& r, const fvec2& 
   };
 
   for (const auto& entry : r.entries) {
-    if (const auto* d = std::get_if<geom2::resolve_result::ball>(&entry.data)) {
-      if (!d->line.colour0.a) {
-        continue;
-      }
-      std::uint32_t n = std::max(3, d->dimensions.radius.to_int() / 2);
-      std::uint32_t in = std::max(3, d->dimensions.inner_radius.to_int() / 2);
-      auto vertex = [&](fixed r, std::uint32_t i, std::uint32_t n) {
-        return *entry.t.rotate(i * 2 * pi<fixed> / n).translate({r, 0});
-      };
+    switch (entry.data.index()) {
+      VARIANT_CASE_GET(geom2::resolve_result::ball, entry.data, d) {
+        if (!d.line.colour0.a) {
+          continue;
+        }
+        std::uint32_t n = std::max(3, d.dimensions.radius.to_int() / 2);
+        std::uint32_t in = std::max(3, d.dimensions.inner_radius.to_int() / 2);
+        auto vertex = [&](fixed r, std::uint32_t i, std::uint32_t n) {
+          return *entry.t.rotate(i * 2 * pi<fixed> / n).translate({r, 0});
+        };
 
-      for (std::uint32_t i = 0; i < n; ++i) {
-        handle_line(vertex(d->dimensions.radius, i, n), vertex(d->dimensions.radius, i + 1, n),
-                    d->line.colour0, d->line.width, d->line.z);
-      }
-      for (std::uint32_t i = 0; d->dimensions.inner_radius && i < in; ++i) {
-        handle_line(vertex(d->dimensions.inner_radius, i, in),
-                    vertex(d->dimensions.inner_radius, i + 1, in), d->line.colour0, d->line.width,
-                    d->line.z);
-      }
-    } else if (const auto* d = std::get_if<geom2::resolve_result::box>(&entry.data)) {
-      if (!d->line.colour0.a && !d->line.colour1.a) {
-        continue;
-      }
-      auto va = *entry.t.translate({d->dimensions.x, d->dimensions.y});
-      auto vb = *entry.t.translate({-d->dimensions.x, d->dimensions.y});
-      auto vc = *entry.t.translate({-d->dimensions.x, -d->dimensions.y});
-      auto vd = *entry.t.translate({d->dimensions.x, -d->dimensions.y});
-
-      // TODO: need line gradients to match rendering, if we use them.
-      handle_line(va, vb, d->line.colour0, d->line.width, d->line.z);
-      handle_line(vb, vc, d->line.colour0, d->line.width, d->line.z);
-      handle_line(vc, vd, d->line.colour1, d->line.width, d->line.z);
-      handle_line(vd, va, d->line.colour1, d->line.width, d->line.z);
-    } else if (const auto* d = std::get_if<geom2::resolve_result::line>(&entry.data)) {
-      // TODO: need line gradients to match rendering, if we use them.
-      if (d->style.colour0.a) {
-        handle_line(*entry.t.translate(d->a), *entry.t.translate(d->b), d->style.colour0,
-                    d->style.width, d->style.z);
-      }
-    } else if (const auto* d = std::get_if<geom2::resolve_result::ngon>(&entry.data)) {
-      if (!d->line.colour0.a) {
-        continue;
-      }
-      auto vertex = [&](std::uint32_t i) {
-        return *entry.t.rotate(i * 2 * pi<fixed> / d->dimensions.sides)
-                    .translate({d->dimensions.radius, 0});
-      };
-      auto ivertex = [&](std::uint32_t i) {
-        return *entry.t.rotate(i * 2 * pi<fixed> / d->dimensions.sides)
-                    .translate({d->dimensions.inner_radius, 0});
-      };
-
-      switch (d->style) {
-      case render::ngon_style::kPolystar:
-        // TODO: need line gradients to match rendering, if we use them.
-        for (std::uint32_t i = 0; i < d->dimensions.segments; ++i) {
-          handle_line(ivertex(i), vertex(i), d->line.colour0, d->line.width, d->line.z);
+        for (std::uint32_t i = 0; i < n; ++i) {
+          handle_line(vertex(d.dimensions.radius, i, n), vertex(d.dimensions.radius, i + 1, n),
+                      d.line.colour0, d.line.width, d.line.z);
+        }
+        for (std::uint32_t i = 0; d.dimensions.inner_radius && i < in; ++i) {
+          handle_line(vertex(d.dimensions.inner_radius, i, in),
+                      vertex(d.dimensions.inner_radius, i + 1, in), d.line.colour0, d.line.width,
+                      d.line.z);
         }
         break;
-      case render::ngon_style::kPolygram:
-        for (std::size_t i = 0; i < d->dimensions.sides; ++i) {
-          for (std::size_t j = i + 2; j < d->dimensions.sides && (j + 1) % d->dimensions.sides != i;
-               ++j) {
-            handle_line(vertex(i), vertex(j), d->line.colour1, d->line.width, d->line.z);
+      }
+
+      VARIANT_CASE_GET(geom2::resolve_result::box, entry.data, d) {
+        if (!d.line.colour0.a && !d.line.colour1.a) {
+          continue;
+        }
+        auto va = *entry.t.translate({d.dimensions.x, d.dimensions.y});
+        auto vb = *entry.t.translate({-d.dimensions.x, d.dimensions.y});
+        auto vc = *entry.t.translate({-d.dimensions.x, -d.dimensions.y});
+        auto vd = *entry.t.translate({d.dimensions.x, -d.dimensions.y});
+
+        // TODO: need line gradients to match rendering, if we use them.
+        handle_line(va, vb, d.line.colour0, d.line.width, d.line.z);
+        handle_line(vb, vc, d.line.colour0, d.line.width, d.line.z);
+        handle_line(vc, vd, d.line.colour1, d.line.width, d.line.z);
+        handle_line(vd, va, d.line.colour1, d.line.width, d.line.z);
+        break;
+      }
+
+      VARIANT_CASE_GET(geom2::resolve_result::line, entry.data, d) {
+        // TODO: need line gradients to match rendering, if we use them.
+        if (d.style.colour0.a) {
+          handle_line(*entry.t.translate(d.a), *entry.t.translate(d.b), d.style.colour0,
+                      d.style.width, d.style.z);
+        }
+        break;
+      }
+
+      VARIANT_CASE_GET(geom2::resolve_result::ngon, entry.data, d) {
+        if (!d.line.colour0.a) {
+          continue;
+        }
+        auto vertex = [&](std::uint32_t i) {
+          return *entry.t.rotate(i * 2 * pi<fixed> / d.dimensions.sides)
+                      .translate({d.dimensions.radius, 0});
+        };
+        auto ivertex = [&](std::uint32_t i) {
+          return *entry.t.rotate(i * 2 * pi<fixed> / d.dimensions.sides)
+                      .translate({d.dimensions.inner_radius, 0});
+        };
+
+        switch (d.style) {
+        case render::ngon_style::kPolystar:
+          // TODO: need line gradients to match rendering, if we use them.
+          for (std::uint32_t i = 0; i < d.dimensions.segments; ++i) {
+            handle_line(ivertex(i), vertex(i), d.line.colour0, d.line.width, d.line.z);
           }
-        }
-        // Fallthrough.
-      case render::ngon_style::kPolygon:
-        for (std::uint32_t i = 0; i < d->dimensions.segments; ++i) {
-          handle_line(vertex(i), vertex(i + 1), d->line.colour0, d->line.width, d->line.z);
-        }
-        for (std::uint32_t i = 0; d->dimensions.inner_radius && i < d->dimensions.segments; ++i) {
-          handle_line(ivertex(i), ivertex(i + 1), d->line.colour1, d->line.width, d->line.z);
+          break;
+        case render::ngon_style::kPolygram:
+          for (std::size_t i = 0; i < d.dimensions.sides; ++i) {
+            for (std::size_t j = i + 2; j < d.dimensions.sides && (j + 1) % d.dimensions.sides != i;
+                 ++j) {
+              handle_line(vertex(i), vertex(j), d.line.colour1, d.line.width, d.line.z);
+            }
+          }
+          // Fallthrough.
+        case render::ngon_style::kPolygon:
+          for (std::uint32_t i = 0; i < d.dimensions.segments; ++i) {
+            handle_line(vertex(i), vertex(i + 1), d.line.colour0, d.line.width, d.line.z);
+          }
+          for (std::uint32_t i = 0; d.dimensions.inner_radius && i < d.dimensions.segments; ++i) {
+            handle_line(ivertex(i), ivertex(i + 1), d.line.colour1, d.line.width, d.line.z);
+          }
+          break;
         }
         break;
       }
@@ -201,12 +223,21 @@ void explode_volumes(EmitHandle& e, const geom2::resolve_result& r, const fvec2&
   };
 
   for (const auto& entry : r.entries) {
-    if (const auto* d = std::get_if<geom2::resolve_result::ball>(&entry.data)) {
-      handle_shape(*entry.t, d->dimensions.radius, d->fill.colour0);
-    } else if (const auto* d = std::get_if<geom2::resolve_result::box>(&entry.data)) {
-      handle_shape(*entry.t, std::min(d->dimensions.x, d->dimensions.y), d->fill.colour0);
-    } else if (const auto* d = std::get_if<geom2::resolve_result::ngon>(&entry.data)) {
-      handle_shape(*entry.t, d->dimensions.radius, d->fill.colour1);
+    switch (entry.data.index()) {
+      VARIANT_CASE_GET(geom2::resolve_result::ball, entry.data, d) {
+        handle_shape(*entry.t, d.dimensions.radius, d.fill.colour0);
+        break;
+      }
+
+      VARIANT_CASE_GET(geom2::resolve_result::box, entry.data, d) {
+        handle_shape(*entry.t, std::min(d.dimensions.x, d.dimensions.y), d.fill.colour0);
+        break;
+      }
+
+      VARIANT_CASE_GET(geom2::resolve_result::ngon, entry.data, d) {
+        handle_shape(*entry.t, d.dimensions.radius, d.fill.colour1);
+        break;
+      }
     }
   }
 }

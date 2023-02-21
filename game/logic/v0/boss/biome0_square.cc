@@ -46,8 +46,8 @@ struct SquareBoss : public ecs::component {
   }
 
   static void construct_shape(node& root) {
-    static constexpr auto outline = sline(colour::kOutline, colour::kZOutline, 2.5f);
-    static constexpr auto m_outline = sline(colour::kOutline, colour::kZOutline, -2.5f);
+    auto outline = sline(colour::kOutline, colour::kZOutline, 2.5f);
+    auto m_outline = sline(colour::kOutline, colour::kZOutline, -2.5f);
     auto c_mix = [](float t) { return colour::perceptual_mix(c0, c1, t); };
 
     auto& n = root.add(translate{key{'v'}});
@@ -304,9 +304,7 @@ struct SquareBoss : public ecs::component {
   }
 
   void render(std::vector<render::shape>& output, const SimInterface& sim) const {
-    static constexpr std::uint32_t kSmallWidth = 11;
     static constexpr auto cf = colour::alpha(c3, colour::kFillAlpha0);
-    static constexpr float z = colour::kZEnemySmall;
     if (!special_attack) {
       return;
     }
@@ -334,7 +332,7 @@ struct SquareBoss : public ecs::component {
                   .add(key{'r'}, 4 * pi<fixed> * ease_out_cubic(1_fx - t))
                   .add(key{'o'}, c0)
                   .add(key{'c'}, c1)
-                  .add(key{'f'}, cf);
+                  .add(key{'f'}, c2);
             });
         render_shape(output, r);
         d = ::rotate(d, 2 * pi<fixed> / 6);

@@ -1,4 +1,5 @@
 #include "game/logic/legacy/ship_template.h"
+#include "game/common/variant_switch.h"
 
 namespace ii::legacy {
 namespace {
@@ -40,18 +41,31 @@ void explode_shapes(EmitHandle& e, const geom::resolve_result& r,
   for (const auto& entry : r.entries) {
     std::optional<cvec4> c;
     render::flag flags = render::flag::kNone;
-    if (const auto* d = std::get_if<geom::resolve_result::ball>(&entry.data)) {
-      c = d->line.colour0;
-      flags = d->flags;
-    } else if (const auto* d = std::get_if<geom::resolve_result::box>(&entry.data)) {
-      c = d->line.colour0;
-      flags = d->flags;
-    } else if (const auto* d = std::get_if<geom::resolve_result::line>(&entry.data)) {
-      c = d->style.colour0;
-      flags = d->flags;
-    } else if (const auto* d = std::get_if<geom::resolve_result::ngon>(&entry.data)) {
-      c = d->line.colour0;
-      flags = d->flags;
+
+    switch (entry.data.index()) {
+      VARIANT_CASE_GET(geom::resolve_result::ball, entry.data, d) {
+        c = d.line.colour0;
+        flags = d.flags;
+        break;
+      }
+
+      VARIANT_CASE_GET(geom::resolve_result::box, entry.data, d) {
+        c = d.line.colour0;
+        flags = d.flags;
+        break;
+      }
+
+      VARIANT_CASE_GET(geom::resolve_result::line, entry.data, d) {
+        c = d.style.colour0;
+        flags = d.flags;
+        break;
+      }
+
+      VARIANT_CASE_GET(geom::resolve_result::ngon, entry.data, d) {
+        c = d.line.colour0;
+        flags = d.flags;
+        break;
+      }
     }
     if (c && !(flags & render::flag::kLegacy_NoExplode)) {
       e.explosion(to_float(*entry.t), colour_override.value_or(*c), time, towards, speed);
@@ -66,38 +80,47 @@ void destruct_lines(EmitHandle& e, const geom::resolve_result& r, const fvec2& s
   };
 
   for (const auto& entry : r.entries) {
-    if (const auto* d = std::get_if<geom::resolve_result::box>(&entry.data)) {
-      auto va = *entry.t.translate({d->dimensions.x, d->dimensions.y});
-      auto vb = *entry.t.translate({-d->dimensions.x, d->dimensions.y});
-      auto vc = *entry.t.translate({-d->dimensions.x, -d->dimensions.y});
-      auto vd = *entry.t.translate({d->dimensions.x, -d->dimensions.y});
+    switch (entry.data.index()) {
+      VARIANT_CASE_GET(geom::resolve_result::box, entry.data, d) {
+        auto va = *entry.t.translate({d.dimensions.x, d.dimensions.y});
+        auto vb = *entry.t.translate({-d.dimensions.x, d.dimensions.y});
+        auto vc = *entry.t.translate({-d.dimensions.x, -d.dimensions.y});
+        auto vd = *entry.t.translate({d.dimensions.x, -d.dimensions.y});
 
-      handle_line(va, vb, d->line.colour0);
-      handle_line(vb, vc, d->line.colour0);
-      handle_line(vc, vd, d->line.colour0);
-      handle_line(vd, va, d->line.colour0);
-    } else if (const auto* d = std::get_if<geom::resolve_result::line>(&entry.data)) {
-      handle_line(*entry.t.translate(d->a), *entry.t.translate(d->b), d->style.colour0);
-    } else if (const auto* d = std::get_if<geom::resolve_result::ngon>(&entry.data)) {
-      auto vertex = [&](std::uint32_t i) {
-        return *entry.t.rotate(i * 2 * pi<fixed> / d->dimensions.sides)
-                    .translate({d->dimensions.radius, 0});
-      };
+        handle_line(va, vb, d.line.colour0);
+        handle_line(vb, vc, d.line.colour0);
+        handle_line(vc, vd, d.line.colour0);
+        handle_line(vd, va, d.line.colour0);
+        break;
+      }
 
-      if (d->style != render::ngon_style::kPolygram) {
-        for (std::uint32_t i = 0;
-             d->dimensions.sides >= 2 && i < d->dimensions.sides && i < d->dimensions.segments;
-             ++i) {
-          handle_line(vertex(i),
-                      d->style == render::ngon_style::kPolygon ? vertex(i + 1) : entry.t.v,
-                      d->line.colour0);
-        }
-      } else {
-        for (std::size_t i = 0; i < d->dimensions.sides; ++i) {
-          for (std::size_t j = i + 1; j < d->dimensions.sides; ++j) {
-            handle_line(vertex(i), vertex(j), d->line.colour0);
+      VARIANT_CASE_GET(geom::resolve_result::line, entry.data, d) {
+        handle_line(*entry.t.translate(d.a), *entry.t.translate(d.b), d.style.colour0);
+        break;
+      }
+
+      VARIANT_CASE_GET(geom::resolve_result::ngon, entry.data, d) {
+        auto vertex = [&](std::uint32_t i) {
+          return *entry.t.rotate(i * 2 * pi<fixed> / d.dimensions.sides)
+                      .translate({d.dimensions.radius, 0});
+        };
+
+        if (d.style != render::ngon_style::kPolygram) {
+          for (std::uint32_t i = 0;
+               d.dimensions.sides >= 2 && i < d.dimensions.sides && i < d.dimensions.segments;
+               ++i) {
+            handle_line(vertex(i),
+                        d.style == render::ngon_style::kPolygon ? vertex(i + 1) : entry.t.v,
+                        d.line.colour0);
+          }
+        } else {
+          for (std::size_t i = 0; i < d.dimensions.sides; ++i) {
+            for (std::size_t j = i + 1; j < d.dimensions.sides; ++j) {
+              handle_line(vertex(i), vertex(j), d.line.colour0);
+            }
           }
         }
+        break;
       }
     }
   }
@@ -125,29 +148,38 @@ void render_shape(std::vector<render::shape>& output, const geom::resolve_result
   };
 
   for (const auto& entry : r.entries) {
-    if (const auto* d = std::get_if<geom::resolve_result::box>(&entry.data)) {
-      handle_shape(render::shape{
-          .origin = to_float(*entry.t),
-          .rotation = entry.t.rotation().to_float(),
-          .colour0 = d->line.colour0,
-          .tag = d->tag,
-          .data = render::box{.dimensions = to_float(d->dimensions)},
-      });
-    } else if (const auto* d = std::get_if<geom::resolve_result::line>(&entry.data)) {
-      handle_shape(render::shape::line(to_float(*entry.t.translate(d->a)),
-                                       to_float(*entry.t.translate(d->b)), d->style.colour0, 0.f,
-                                       1.f, d->tag));
-    } else if (const auto* d = std::get_if<geom::resolve_result::ngon>(&entry.data)) {
-      handle_shape(render::shape{
-          .origin = to_float(*entry.t),
-          .rotation = entry.t.rotation().to_float(),
-          .colour0 = d->line.colour0,
-          .tag = d->tag,
-          .data = render::ngon{.radius = d->dimensions.radius.to_float(),
-                               .sides = d->dimensions.sides,
-                               .segments = d->dimensions.segments,
-                               .style = d->style},
-      });
+    switch (entry.data.index()) {
+      VARIANT_CASE_GET(geom::resolve_result::box, entry.data, d) {
+        handle_shape(render::shape{
+            .origin = to_float(*entry.t),
+            .rotation = entry.t.rotation().to_float(),
+            .colour0 = d.line.colour0,
+            .tag = d.tag,
+            .data = render::box{.dimensions = to_float(d.dimensions)},
+        });
+        break;
+      }
+
+      VARIANT_CASE_GET(geom::resolve_result::line, entry.data, d) {
+        handle_shape(render::shape::line(to_float(*entry.t.translate(d.a)),
+                                         to_float(*entry.t.translate(d.b)), d.style.colour0, 0.f,
+                                         1.f, d.tag));
+        break;
+      }
+
+      VARIANT_CASE_GET(geom::resolve_result::ngon, entry.data, d) {
+        handle_shape(render::shape{
+            .origin = to_float(*entry.t),
+            .rotation = entry.t.rotation().to_float(),
+            .colour0 = d.line.colour0,
+            .tag = d.tag,
+            .data = render::ngon{.radius = d.dimensions.radius.to_float(),
+                                 .sides = d.dimensions.sides,
+                                 .segments = d.dimensions.segments,
+                                 .style = d.style},
+        });
+        break;
+      }
     }
     ++i;
   }

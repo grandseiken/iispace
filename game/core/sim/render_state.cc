@@ -1,6 +1,7 @@
 #include "game/core/sim/render_state.h"
 #include "game/common/colour.h"
 #include "game/common/easing.h"
+#include "game/common/variant_switch.h"
 #include "game/core/sim/input_adapter.h"
 #include "game/logic/sim/io/output.h"
 #include "game/logic/sim/sim_state.h"
@@ -262,57 +263,67 @@ void RenderState::render(std::vector<render::shape>& shapes, std::vector<render:
         : 0.f;
     a = ease_in_sine(a);
     cvec4 colour{p.colour.x, p.colour.y, glm::mix(p.colour.z, 1.f, l), a};
-    if (const auto* d = std::get_if<dot_particle>(&p.data)) {
-      shapes.emplace_back(render::shape{
-          .origin = p.position,
-          .rotation = d->rotation,
-          .colour0 = colour,
-          .z = colour::kZParticle,
-          .trail = render::motion_trail{.prev_origin = p.position - p.velocity,
-                                        .prev_rotation = d->rotation - d->angular_velocity,
-                                        .prev_colour0 = colour},
-          .data = render::box{.dimensions = {d->radius, d->radius}, .line_width = d->line_width},
-      });
-    } else if (const auto* d = std::get_if<line_particle>(&p.data)) {
-      float t = std::max(0.f, (17.f - p.time) / 16.f);
-      shapes.emplace_back(render::shape{
-          .origin = p.position,
-          .rotation = d->rotation,
-          .colour0 = colour::alpha(colour::kOutline, a),
-          .z = colour::kZParticleOutline,
-          .trail = render::motion_trail{.prev_origin = p.position - p.velocity,
-                                        .prev_rotation = d->rotation - d->angular_velocity,
-                                        .prev_colour0 = colour},
-          .data = render::line{.radius = d->radius,
-                               .line_width = 3.f + d->width * glm::mix(1.f, 2.f, t),
-                               .sides = 3 + static_cast<std::uint32_t>(3.f + d->width)},
-      });
-      shapes.emplace_back(render::shape{
-          .origin = p.position,
-          .rotation = d->rotation,
-          .colour0 = colour,
-          .z = p.flash_time && p.time <= p.flash_time / 2 ? colour::kZParticleFlash
-                                                          : colour::kZParticle,
-          .trail = render::motion_trail{.prev_origin = p.position - p.velocity,
-                                        .prev_rotation = d->rotation - d->angular_velocity,
-                                        .prev_colour0 = colour},
-          .data = render::line{.radius = d->radius,
-                               .line_width = d->width * glm::mix(1.f, 2.f, t),
-                               .sides = 3 + static_cast<std::uint32_t>(.5f + d->width)},
-      });
-    } else if (const auto* d = std::get_if<ball_fx_particle>(&p.data)) {
-      auto t = ease_out_cubic(static_cast<float>(p.time) / p.end_time);
-      fx.emplace_back(render::fx{
-          .style = d->style,
-          .time = p.time * d->anim_speed,
-          .z = p.z,
-          .colour = {colour.x, colour.y, colour.z, glm::mix(d->value, d->end_value, t)},
-          .seed = d->seed,
-          .data =
-              render::ball_fx{.position = p.position,
-                              .radius = glm::mix(d->radius, d->end_radius, t),
-                              .inner_radius = glm::mix(d->inner_radius, d->end_inner_radius, t)},
-      });
+
+    switch (p.data.index()) {
+      VARIANT_CASE_GET(dot_particle, p.data, d) {
+        shapes.emplace_back(render::shape{
+            .origin = p.position,
+            .rotation = d.rotation,
+            .colour0 = colour,
+            .z = colour::kZParticle,
+            .trail = render::motion_trail{.prev_origin = p.position - p.velocity,
+                                          .prev_rotation = d.rotation - d.angular_velocity,
+                                          .prev_colour0 = colour},
+            .data = render::box{.dimensions = {d.radius, d.radius}, .line_width = d.line_width},
+        });
+        break;
+      }
+
+      VARIANT_CASE_GET(line_particle, p.data, d) {
+        float t = std::max(0.f, (17.f - p.time) / 16.f);
+        shapes.emplace_back(render::shape{
+            .origin = p.position,
+            .rotation = d.rotation,
+            .colour0 = colour::alpha(colour::kOutline, a),
+            .z = colour::kZParticleOutline,
+            .trail = render::motion_trail{.prev_origin = p.position - p.velocity,
+                                          .prev_rotation = d.rotation - d.angular_velocity,
+                                          .prev_colour0 = colour},
+            .data = render::line{.radius = d.radius,
+                                 .line_width = 3.f + d.width * glm::mix(1.f, 2.f, t),
+                                 .sides = 3 + static_cast<std::uint32_t>(3.f + d.width)},
+        });
+        shapes.emplace_back(render::shape{
+            .origin = p.position,
+            .rotation = d.rotation,
+            .colour0 = colour,
+            .z = p.flash_time && p.time <= p.flash_time / 2 ? colour::kZParticleFlash
+                                                            : colour::kZParticle,
+            .trail = render::motion_trail{.prev_origin = p.position - p.velocity,
+                                          .prev_rotation = d.rotation - d.angular_velocity,
+                                          .prev_colour0 = colour},
+            .data = render::line{.radius = d.radius,
+                                 .line_width = d.width * glm::mix(1.f, 2.f, t),
+                                 .sides = 3 + static_cast<std::uint32_t>(.5f + d.width)},
+        });
+        break;
+      }
+
+      VARIANT_CASE_GET(ball_fx_particle, p.data, d) {
+        auto t = ease_out_cubic(static_cast<float>(p.time) / p.end_time);
+        fx.emplace_back(render::fx{
+            .style = d.style,
+            .time = p.time * d.anim_speed,
+            .z = p.z,
+            .colour = {colour.x, colour.y, colour.z, glm::mix(d.value, d.end_value, t)},
+            .seed = d.seed,
+            .data =
+                render::ball_fx{.position = p.position,
+                                .radius = glm::mix(d.radius, d.end_radius, t),
+                                .inner_radius = glm::mix(d.inner_radius, d.end_inner_radius, t)},
+        });
+        break;
+      }
     }
   }
 }

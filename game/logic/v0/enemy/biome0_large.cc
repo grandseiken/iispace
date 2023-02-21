@@ -19,7 +19,7 @@ struct FollowHub : ecs::component {
   static constexpr auto cf = colour::alpha(c, colour::kFillAlpha0);
 
   static void construct_shape(node& root, std::uint32_t type) {
-    static constexpr auto outline = sline(colour::kOutline, colour::kZOutline, 2.f);
+    auto outline = sline(colour::kOutline, colour::kZOutline, 2.f);
 
     auto& n = root.add(translate{key{'v'}});
     auto& centre = n.add(rotate{pi<fixed> / 4});
@@ -128,7 +128,7 @@ struct Shielder : ecs::component {
   static constexpr auto cf = colour::alpha(c0, colour::kFillAlpha0);
 
   static void construct_shape(node& root) {
-    static constexpr auto outline = sline(colour::kOutline, colour::kZOutline, 2.f);
+    auto outline = sline(colour::kOutline, colour::kZOutline, 2.f);
 
     auto& n = root.add(translate{key{'v'}});
     auto& centre = n.add(rotate{key{'r'}});
@@ -242,7 +242,7 @@ struct Tractor : ecs::component {
   static constexpr auto cf = colour::alpha(c, colour::kFillAlpha0);
 
   static void construct_shape(node& root) {
-    static constexpr auto outline = sline(colour::kOutline, colour::kZOutline, 2.f);
+    auto outline = sline(colour::kOutline, colour::kZOutline, 2.f);
 
     auto& n = root.add(translate_rotate{key{'v'}, key{'r'}});
     auto& orb = root.create(compound{});
@@ -384,7 +384,7 @@ struct ShieldHub : ecs::component {
   static constexpr auto cf1 = colour::alpha(c1, colour::kFillAlpha1);
 
   static void construct_shape(node& root) {
-    static constexpr auto outline = sline(colour::kOutline, colour::kZOutline, 2.f);
+    auto outline = sline(colour::kOutline, colour::kZOutline, 2.f);
 
     auto& n = root.add(translate_rotate{key{'v'}, key{'r'}});
     auto& t = root.add(translate{key{'v'}});
