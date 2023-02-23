@@ -31,12 +31,12 @@ struct TractorBoss : ecs::component {
     auto& b = root.create(compound{});
     auto& bi = root.create(compound{});
     for (std::uint32_t i = 0; i < 2; ++i) {
-      auto& t = n.add(
-          translate_rotate{vec2{0, i ? 96 : -96}, multiply(i ? -1_fx / 2 : 1_fx / 2, key{'R'})});
+      auto& t = n.add(translate_rotate{vec2{0, i ? 96 : -96},
+                                       multiply(root, i ? -1_fx / 2 : 1_fx / 2, key{'R'})});
       t.add(b);
       for (std::uint32_t j = 0; j < 8; ++j) {
         t.add(translate_rotate{rotate_legacy(vec2{24, 0}, j * pi<fixed> / 4),
-                               i ? key{'R'} : multiply(-1_fx, key{'R'})})
+                               multiply(root, i ? 1_fx : -1_fx, key{'R'})})
             .add(bi);
       }
     }

@@ -52,7 +52,7 @@ struct SquareBoss : public ecs::component {
 
     auto& n = root.add(translate{key{'v'}});
     for (std::uint32_t i = 0; i < 6; ++i) {
-      auto& t = n.add(rotate{multiply(1 + i / 2_fx, key{'r'})});
+      auto& t = n.add(rotate{multiply(root, 1 + i / 2_fx, key{'r'})});
       fixed r = 6 - i;
       auto c = c_mix(i / 5.f);
       auto r_flags = i < 3 ? render::flag::kNoFlash : render::flag::kNone;

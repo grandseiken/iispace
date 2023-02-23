@@ -6,6 +6,7 @@
 #include <sfn/functional.h>
 #include <cstdint>
 #include <deque>
+#include <memory>
 #include <unordered_map>
 #include <variant>
 #include <vector>
@@ -69,6 +70,11 @@ public:
       return child;
     }
 
+    template <typename T, typename... Args>
+    const T& add(Args&&... args) {
+      return bank_->add_expression<T>(std::forward<Args>(args)...);
+    }
+
   private:
     friend class ShapeBank;
     ShapeBank* bank_ = nullptr;
@@ -95,16 +101,43 @@ public:
     return parameters_;
   }
 
+  template <typename T, typename... Args>
+  const T& add_expression(Args&&... args) {
+    auto e = std::make_unique<T>(std::forward<Args>(args)...);
+    const auto& r = *e;
+    expressions_.emplace_back(std::move(e));
+    return r;
+  }
+
 private:
   static node_type optimize(node&);
   node& add(const node_data& data) { return {data_.emplace_back(node::access_tag{}, this, data)}; }
 
+  // TODO: allocate nodes, expressions etc in some big shared buffer thing?
   parameter_set parameters_;
   std::deque<node> data_;
   std::unordered_map<node_construct_t, node*> map_;
+  std::vector<std::unique_ptr<expression_base>> expressions_;
 };
 
 using node = ShapeBank::node;
+
+template <typename T>
+const expression<T>& multiply(node& n, const T& x, key k) {
+  return n.add<e_multiply<T>>(n.add<e_constant<T>>(x), n.add<e_parameter<T>>(k));
+}
+
+template <typename T, typename U>
+const expression<U>& compare(node& n, const T& x, key k, const U& a, const U& b) {
+  return n.add<e_ternary<U>>(n.add<e_cmp_eq<T>>(n.add<e_constant<T>>(x), n.add<e_parameter<T>>(k)),
+                             n.add<e_constant<U>>(a), n.add<e_constant<U>>(b));
+}
+
+template <typename T>
+const expression<bool>& compare(node& n, const T& x, key k) {
+  return n.add<e_cmp_eq<T>>(n.add<e_constant<T>>(x), n.add<e_parameter<T>>(k));
+}
+
 void resolve(resolve_result&, const node&, const parameter_set&);
 void check_collision(hit_result&, const check_t&, const node&, const parameter_set&);
 

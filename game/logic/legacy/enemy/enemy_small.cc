@@ -51,7 +51,7 @@ struct Follow : ecs::component {
 
   static void construct_shape(node& root) {
     auto& n = root.add(translate_rotate{.v = key{'v'}, .r = key{'r'}});
-    auto& s = n.add(enable{compare(false, key{'b'})});
+    auto& s = n.add(enable{compare(root, false, key{'b'})});
     auto& b = n.add(enable{key{'b'}});
     s.add(ngon{.dimensions = nd(10, 4), .line = {.colour0 = colour::hue360(270, .6f)}});
     s.add(ball_collider{.dimensions = bd(10), .flags = kFlags});

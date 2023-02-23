@@ -25,7 +25,7 @@ struct ShieldBombBoss : ecs::component {
 
   static void construct_shape(node& root) {
     auto& n = root.add(translate_rotate{key{'v'}, key{'r'}});
-    auto& centre = n.add(rotate{multiply(2_fx, key{'r'})});
+    auto& centre = n.add(rotate{multiply(root, 2_fx, key{'r'})});
     centre.add(
         ngon{.dimensions = nd(48, 8), .style = ngon_style::kPolygram, .line = {.colour0 = c0}});
     centre.add(ball_collider{.dimensions = bd(48),

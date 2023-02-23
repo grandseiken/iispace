@@ -128,7 +128,6 @@ void destruct_lines(EmitHandle& e, const geom::resolve_result& r, const fvec2& s
 
 void render_shape(std::vector<render::shape>& output, const geom::resolve_result& r, float z,
                   const std::optional<float>& hit_alpha, const std::optional<cvec4>& c_override) {
-  std::size_t i = 0;
   auto handle_shape = [&](const render::shape& shape) {
     render::shape shape_copy = shape;
     shape_copy.z = z;
@@ -182,7 +181,6 @@ void render_shape(std::vector<render::shape>& output, const geom::resolve_result
         break;
       }
     }
-    ++i;
   }
 }
 

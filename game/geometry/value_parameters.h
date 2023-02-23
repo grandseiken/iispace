@@ -39,93 +39,109 @@ struct parameter_set {
     }
     return *this;
   }
+
+  template <typename T>
+  T get(key k) const {
+    const auto& v = map[static_cast<std::uint32_t>(k)];
+    if constexpr (std::is_enum_v<T>) {
+      if (v.index() == variant_index<parameter_value, std::uint32_t>) {
+        return static_cast<T>(*std::get_if<std::uint32_t>(&v));
+      }
+    } else {
+      if (v.index() == variant_index<parameter_value, T>) {
+        return *std::get_if<T>(&v);
+      }
+    }
+    return T{0};
+  }
 };
 
-// TODO: allow more arbitrary expressions? Also note, expressions kind of slow. Optimize somehow?
+struct expression_base {
+  virtual ~expression_base() = default;
+};
+
+template <typename T>
+struct expression : expression_base {
+  ~expression() override = default;
+  virtual T operator()(const parameter_set& parameters) const = 0;
+};
+
+template <typename T>
+struct e_constant : expression<T> {
+  ~e_constant() override = default;
+  e_constant(const T& x) : x{x} {}
+  T operator()(const parameter_set&) const override { return x; }
+  T x;
+};
+
+template <typename T>
+struct e_parameter : expression<T> {
+  ~e_parameter() override = default;
+  e_parameter(key k) : k{k} {}
+  T operator()(const parameter_set& parameters) const override { return parameters.get<T>(k); }
+  key k;
+};
+
+template <typename T>
+struct e_multiply : expression<T> {
+  ~e_multiply() override = default;
+  e_multiply(const expression<T>& a, const expression<T>& b) : a{&a}, b{&b} {}
+  T operator()(const parameter_set& parameters) const override {
+    return (*a)(parameters) * (*b)(parameters);
+  }
+  const expression<T>* a = nullptr;
+  const expression<T>* b = nullptr;
+};
+
+template <typename T>
+struct e_cmp_eq : expression<bool> {
+  ~e_cmp_eq() override = default;
+  e_cmp_eq(const expression<T>& a, const expression<T>& b) : a{&a}, b{&b} {}
+  bool operator()(const parameter_set& parameters) const override {
+    return (*a)(parameters) == (*b)(parameters);
+  }
+  const expression<T>* a = nullptr;
+  const expression<T>* b = nullptr;
+};
+
+template <typename T>
+struct e_ternary : expression<T> {
+  ~e_ternary() override = default;
+  e_ternary(const expression<bool>& t, const expression<T>& a, const expression<T>& b)
+  : t{&t}, a{&a}, b{&b} {}
+  T operator()(const parameter_set& parameters) const override {
+    return (*t)(parameters) ? (*a)(parameters) : (*b)(parameters);
+  }
+  const expression<bool>* t = nullptr;
+  const expression<T>* a = nullptr;
+  const expression<T>* b = nullptr;
+};
+
 template <typename T>
 struct value {
-  constexpr value() : v{T{0}} {}
+  constexpr value(const expression<T>& e) : v{&e} {}
   constexpr value(const T& x) : v{x} {}
   constexpr value(key k) : v{k} {}
 
-  static value multiply(const T& x, key k) {
-    value v;
-    v.v = multiply_t{x, k};
-    return v;
-  }
-
-  static value compare(parameter_value x, key k, const T& true_value, const T& false_value) {
-    value v;
-    v.v = compare_t{x, k, true_value, false_value};
-    return v;
-  }
-
-  struct multiply_t {
-    T x;
-    key k;
-  };
-
-  struct compare_t {
-    parameter_value x;
-    key k;
-    T true_value;
-    T false_value;
-  };
-
-  std::variant<T, key, multiply_t, compare_t> v;
+  std::variant<T, key, const expression<T>*> v;
 
   constexpr T operator()(const parameter_set& parameters) const {
-    auto get_key = [&](key k) -> T {
-      const auto& v = parameters.map[static_cast<std::uint32_t>(k)];
-      if constexpr (std::is_enum_v<T>) {
-        if (v.index() == variant_index<parameter_value, std::uint32_t>) {
-          return static_cast<T>(*std::get_if<std::uint32_t>(&v));
-        }
-      } else {
-        if (v.index() == variant_index<parameter_value, T>) {
-          return *std::get_if<T>(&v);
-        }
-      }
-      return T{0};
-    };
-
     switch (v.index()) {
       VARIANT_CASE_GET(T, v, x) {
         return x;
       }
 
-      VARIANT_CASE_GET(key, v, x) {
-        return get_key(x);
+      VARIANT_CASE_GET(key, v, k) {
+        return parameters.get<T>(k);
       }
 
-      VARIANT_CASE_GET(multiply_t, v, x) {
-        if constexpr (!std::is_enum_v<T>) {
-          return x.x * get_key(x.k);
-        } else {
-          break;
-        }
-      }
-
-      VARIANT_CASE_GET(compare_t, v, x) {
-        return x.x == parameters.map[static_cast<std::uint32_t>(x.k)] ? x.true_value
-                                                                      : x.false_value;
+      VARIANT_CASE_GET(const expression<T>*, v, e) {
+        return (*e)(parameters);
       }
     }
     return T{0};
   };
 };
-
-template <typename T>
-inline value<T> compare(parameter_value x, key k, const T& true_value, const T& false_value) {
-  return value<T>::compare(x, k, true_value, false_value);
-}
-inline value<bool> compare(parameter_value x, key k) {
-  return value<bool>::compare(x, k, true, false);
-}
-template <typename T>
-inline value<T> multiply(const T& x, key k) {
-  return value<T>::multiply(x, k);
-}
 
 }  // namespace ii::geom
 

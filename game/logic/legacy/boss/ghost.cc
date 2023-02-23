@@ -25,18 +25,19 @@ struct GhostWall : ecs::component {
   static void construct_shape(node& root) {
     auto& n = root.add(translate{key{'v'}});
     auto& v = n.add(enable{key{'V'}});
-    auto& h = n.add(enable{compare(false, key{'V'})});
+    auto& h = n.add(enable{compare(root, false, key{'V'})});
 
-    auto add_vertical = [](fixed w, node& t) {
-      t.add(box_collider{.dimensions = vec2{w, 10}, .flags = kFlags});
-      t.add(box{.dimensions = vec2{w, 10}, .line = {.colour0 = c0}});
-      t.add(box{.dimensions = vec2{w, 7}, .line = {.colour0 = c0}});
-      t.add(box{.dimensions = vec2{w, 4}, .line = {.colour0 = c0}});
-    };
     auto& vb = root.create(compound{});
-    add_vertical(240, vb);
-    v.add(enable{compare(false, key{'G'})}).add(vb);
-    add_vertical(640, v.add(enable{key{'G'}}));
+    vb.add(box_collider{.dimensions = vec2{240, 10}, .flags = kFlags});
+    vb.add(box{.dimensions = vec2{240, 10}, .line = {.colour0 = c0}});
+    vb.add(box{.dimensions = vec2{240, 7}, .line = {.colour0 = c0}});
+    vb.add(box{.dimensions = vec2{240, 4}, .line = {.colour0 = c0}});
+    v.add(enable{compare(root, false, key{'G'})}).add(vb);
+    auto& vg = v.add(enable{key{'G'}});
+    vg.add(box_collider{.dimensions = vec2{640, 10}, .flags = kFlags});
+    vg.add(box{.dimensions = vec2{640, 10}, .line = {.colour0 = c0}});
+    vg.add(box{.dimensions = vec2{640, 7}, .line = {.colour0 = c0}});
+    vg.add(box{.dimensions = vec2{640, 4}, .line = {.colour0 = c0}});
 
     auto& hb = root.create(rotate{pi<fixed> / 2});
     hb.add(vb);
@@ -44,7 +45,7 @@ struct GhostWall : ecs::component {
       t.add(translate{vec2{0, d - kOffsetH}}).add(hb);
       t.add(translate{vec2{0, d + kOffsetH}}).add(hb);
     };
-    add_horizontal(100, h.add(enable{compare(false, key{'G'})}));
+    add_horizontal(100, h.add(enable{compare(root, false, key{'G'})}));
     add_horizontal(-100, h.add(enable{key{'G'}}));
   }
 
@@ -174,7 +175,7 @@ struct GhostBoss : ecs::component {
         auto& t = r.add(translate_rotate{outer_shape_d(i, j), key{'o'}});
         line_style line{.colour0 = c1};
         if (i) {
-          line.colour0 = compare(true, k, c0, c2);
+          line.colour0 = compare(root, true, k, c0, c2);
           ++k;
         }
         t.add(ngon{.dimensions = nd(16, 8),
@@ -196,7 +197,7 @@ struct GhostBoss : ecs::component {
         .dimensions = bd(48),
         .flags = shape_flag::kDangerous | shape_flag::kEnemyInteraction | shape_flag::kVulnerable});
 
-    n.add(rotate{multiply(3_fx, key{'R'})})
+    n.add(rotate{multiply(root, 3_fx, key{'R'})})
         .add(
             ngon{.dimensions = nd(24, 8), .style = ngon_style::kPolygram, .line = {.colour0 = c0}});
     for (std::uint32_t i = 0; i < 10; ++i) {
@@ -206,7 +207,8 @@ struct GhostBoss : ecs::component {
     // Sparks.
     auto& spark = root.create(compound{});
     for (std::uint32_t i = 0; i < 8; ++i) {
-      n.add(translate_rotate{from_polar_legacy(i * pi<fixed> / 4, 48_fx), multiply(2_fx, key{'R'})})
+      n.add(translate_rotate{from_polar_legacy(i * pi<fixed> / 4, 48_fx),
+                             multiply(root, 3_fx, key{'R'})})
           .add(spark);
       spark.add(line{.a = from_polar_legacy(i * pi<fixed> / 4, 10_fx),
                      .b = from_polar_legacy(i * pi<fixed> / 4, 20_fx),

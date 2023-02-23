@@ -26,7 +26,7 @@ struct BigSquareBoss : public ecs::component {
   static void construct_shape(node& root) {
     auto& n = root.add(translate{key{'v'}});
     for (std::uint32_t i = 0; i < 6; ++i) {
-      auto& r = n.add(rotate{multiply(fixed{i + 1} * (i % 2 ? -1_fx : 1_fx), key{'r'})});
+      auto& r = n.add(rotate{multiply(root, fixed{i + 1} * (i % 2 ? -1_fx : 1_fx), key{'r'})});
       auto d = 160 - 20_fx * i;
       r.add(ngon{.dimensions = nd(d, 4), .line = {.colour0 = c0}});
       r.add(ngon{.dimensions = nd(d - 5, 4), .line = {.colour0 = i < 3 ? c0 : i < 5 ? c1 : c2}});

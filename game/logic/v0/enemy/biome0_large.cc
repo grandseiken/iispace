@@ -248,16 +248,16 @@ struct Tractor : ecs::component {
     auto& orb = root.create(compound{});
     auto& star = root.create(compound{});
 
-    n.add(translate_rotate{vec2{26, 0}, multiply(5_fx, key{'s'})}).add(orb);
-    n.add(translate_rotate{vec2{-26, 0}, multiply(-5_fx, key{'s'})}).add(orb);
+    n.add(translate_rotate{vec2{26, 0}, multiply(root, 5_fx, key{'s'})}).add(orb);
+    n.add(translate_rotate{vec2{-26, 0}, multiply(root, -5_fx, key{'s'})}).add(orb);
     n.add(line{.a = vec2{-26, 0},
                .b = vec2{26, 0},
                .style = sline(colour::kOutline, colour::kZOutline, 5.f)});
     n.add(line{.a = vec2{-26, 0}, .b = vec2{26, 0}, .style = sline(c, z)});
 
     auto& star_if = n.add(enable{key{'P'}});
-    star_if.add(translate_rotate{vec2{26, 0}, multiply(8_fx, key{'s'})}).add(star);
-    star_if.add(translate_rotate{vec2{-26, 0}, multiply(-8_fx, key{'s'})}).add(star);
+    star_if.add(translate_rotate{vec2{26, 0}, multiply(root, 8_fx, key{'s'})}).add(star);
+    star_if.add(translate_rotate{vec2{-26, 0}, multiply(root, -8_fx, key{'s'})}).add(star);
 
     orb.add(ngon{.dimensions = nd(18, 6), .line = outline});
     orb.add(ngon{.dimensions = nd(16, 6),
@@ -393,8 +393,8 @@ struct ShieldHub : ecs::component {
     n.add(ball_collider{.dimensions = bd(kBoundingWidth), .flags = kFlags});
 
     t.add(ball{.dimensions = bd(kBoundingWidth / 3), .line = sline(c0, z)});
-    t.add(rotate{multiply(-1_fx / 2, key{'r'})}).add(inner);
-    t.add(rotate{multiply(1_fx / 2, key{'r'})}).add(inner);
+    t.add(rotate{multiply(root, -1_fx / 2, key{'r'})}).add(inner);
+    t.add(rotate{multiply(root, 1_fx / 2, key{'r'})}).add(inner);
 
     inner.add(translate{vec2{-18, 0}}).add(inner_box);
     inner.add(translate{vec2{18, 0}}).add(inner_box);

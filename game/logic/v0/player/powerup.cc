@@ -46,7 +46,7 @@ struct PlayerBubble : ecs::component {
 
   static void construct_shape(node& root) {
     auto& n = root.add(translate{key{'v'}});
-    auto& r0 = n.add(rotate{multiply(-2_fx, key{'R'})});
+    auto& r0 = n.add(rotate{multiply(root, -2_fx, key{'R'})});
     auto& r1 = n.add(rotate{key{'r'}});
 
     r0.add(ngon_collider{.dimensions = nd(14, 8), .flags = shape_flag::kVulnerable});
