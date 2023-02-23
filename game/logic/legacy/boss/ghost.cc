@@ -474,13 +474,16 @@ struct GhostBoss : ecs::component {
 
   geom::hit_result check_collision(ecs::const_handle h, const Transform& transform,
                                    const geom::check_t& check, const SimInterface& sim) const {
+    geom::hit_result result;
     auto c = check;
     c.legacy_algorithm = sim.is_legacy();
-    auto result = sim.is_legacy()
-        ? ship_check_collision_legacy<default_shape_definition<GhostBoss>>(h, c, sim)
-        : ship_check_collision<default_shape_definition<GhostBoss>>(h, c, sim);
+
+    auto& bank = sim.shape_bank();
+    geom::check_collision(result, c, bank, &construct_shape, [&](geom::parameter_set& parameters) {
+      set_parameters(transform, parameters);
+    });
+
     if (collision_enabled) {
-      auto& bank = sim.shape_bank();
       auto& parameters = bank.parameters([&](parameter_set& parameters) {
         parameters.add(key{'v'}, transform.centre).add(key{'r'}, transform.rotation);
       });

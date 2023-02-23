@@ -42,6 +42,9 @@ build:msvc --copt=/experimental:deterministic
 build:msvc --linkopt=/experimental:deterministic
 build:msvc --@//:msvc
 
+build:msvc_reldbg --copt=/Z7
+build:msvc_reldbg --linkopt=/DEBUG:FULL
+
 build:clang-cl --config=windows-common
 build:clang-cl --config=clang-common
 build:clang-cl --compiler=clang-cl
