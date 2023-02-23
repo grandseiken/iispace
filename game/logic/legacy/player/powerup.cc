@@ -8,7 +8,7 @@
 
 namespace ii::legacy {
 namespace {
-using namespace geom2;
+using namespace geom;
 constexpr std::uint32_t kMagicShotCount = 120;
 
 struct Powerup : ecs::component {
@@ -137,7 +137,7 @@ DEBUG_STRUCT_TUPLE(Powerup, type, frame, dir, rotate, first_frame);
 }  // namespace
 
 void spawn_powerup(SimInterface& sim, const vec2& position, powerup_type type) {
-  auto h = create_ship2<Powerup>(sim, position);
+  auto h = create_ship<Powerup>(sim, position);
   h.add(Powerup{type});
   h.add(PowerupTag{.ai_requires = ecs::call<&Powerup::ai_requires>});
 }

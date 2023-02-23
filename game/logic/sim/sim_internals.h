@@ -1,7 +1,7 @@
 #ifndef II_GAME_LOGIC_SIM_SIM_INTERNALS_H
 #define II_GAME_LOGIC_SIM_SIM_INTERNALS_H
 #include "game/common/random.h"
-#include "game/geom2/shape_bank.h"
+#include "game/geometry/shape_bank.h"
 #include "game/logic/ecs/index.h"
 #include "game/logic/sim/collision.h"
 #include "game/logic/sim/io/conditions.h"
@@ -33,7 +33,7 @@ struct SimInternals {
   std::optional<ecs::handle> global_entity_handle;
   std::uint64_t tick_count = 0;
   std::unique_ptr<CollisionIndex> collision_index;
-  geom2::ShapeBank shape_bank;
+  geom::ShapeBank shape_bank;
 
   // Per-frame output.
   aggregate_output output;

@@ -14,7 +14,7 @@ namespace {
 constexpr std::uint32_t kPowerupTimer = 90u * 60u;
 constexpr fixed kPowerupCloseDistance = 50;
 constexpr fixed kPowerupCollectDistance = 14;
-using namespace geom2;
+using namespace geom;
 
 float fade(std::uint32_t tick_count) {
   return (1.f + sin(static_cast<float>(tick_count) / 16.f)) / 2.f;

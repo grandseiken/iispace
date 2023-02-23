@@ -11,7 +11,7 @@
 
 namespace ii::v0 {
 namespace {
-using namespace geom2;
+using namespace geom;
 
 struct player_mod_data {
   static constexpr std::uint32_t kShieldRefillTimer = 60 * 24;

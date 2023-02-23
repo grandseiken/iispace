@@ -10,13 +10,13 @@
 
 namespace ii::v0 {
 
-void explode_shapes(EmitHandle& e, const geom2::resolve_result& r,
+void explode_shapes(EmitHandle& e, const geom::resolve_result& r,
                     const std::optional<cvec4>& colour_override = std::nullopt,
                     std::uint32_t time = 10, const std::optional<fvec2>& towards = std::nullopt,
                     std::optional<float> speed = std::nullopt);
-void destruct_lines(EmitHandle& e, const geom2::resolve_result& r, const fvec2& source,
+void destruct_lines(EmitHandle& e, const geom::resolve_result& r, const fvec2& source,
                     std::uint32_t time = 20);
-void explode_volumes(EmitHandle& e, const geom2::resolve_result& r, const fvec2& source,
+void explode_volumes(EmitHandle& e, const geom::resolve_result& r, const fvec2& source,
                      std::uint32_t time = 20);
 
 template <ecs::Component Logic, typename ShapeDefinition = default_shape_definition<Logic>>

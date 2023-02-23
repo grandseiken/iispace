@@ -10,7 +10,7 @@ cc_library(
     ":loadout",
     ":powerup",
     ":shot",
-    "//game/geom2",
+    "//game/geometry",
     "//game/logic/sim/io:conditions",
     "//game/logic/sim/io:player",
     "//game/logic/v0/lib:components",
@@ -52,7 +52,7 @@ cc_library(
   ],
   implementation_deps = [
     ":loadout",
-    "//game/geom2",
+    "//game/geometry",
     "//game/logic/sim:sim_interface",
     "//game/logic/sim/io:conditions",
     "//game/logic/sim/io:player",
@@ -69,7 +69,7 @@ cc_library(
   implementation_deps = [
     ":loadout",
     "//game/core/icons",
-    "//game/geom2",
+    "//game/geometry",
     "//game/logic/sim:sim_interface",
     "//game/logic/v0/lib:components",
     "//game/logic/v0/lib:ship_template",
@@ -87,7 +87,7 @@ cc_library(
   ],
   implementation_deps = [
     ":loadout",
-    "//game/geom2",
+    "//game/geometry",
     "//game/logic/sim/io:conditions",
     "//game/logic/v0/lib:components",
     "//game/logic/v0/lib:ship_template",

@@ -1,8 +1,8 @@
-#ifndef II_GAME_GEOM2_SHAPE_BANK_H
-#define II_GAME_GEOM2_SHAPE_BANK_H
-#include "game/geom2/resolve.h"
-#include "game/geom2/shape_data.h"
-#include "game/geom2/value_parameters.h"
+#ifndef II_GAME_GEOMETRY_SHAPE_BANK_H
+#define II_GAME_GEOMETRY_SHAPE_BANK_H
+#include "game/geometry/resolve.h"
+#include "game/geometry/shape_data.h"
+#include "game/geometry/value_parameters.h"
 #include <sfn/functional.h>
 #include <cstdint>
 #include <deque>
@@ -10,7 +10,7 @@
 #include <variant>
 #include <vector>
 
-namespace ii::geom2 {
+namespace ii::geom {
 
 enum class node_type : std::uint32_t {
   kNone = 0x0,
@@ -18,14 +18,14 @@ enum class node_type : std::uint32_t {
   kResolve = 0x2,
 };
 
-}  // namespace ii::geom2
+}  // namespace ii::geom
 
 namespace ii {
 template <>
-struct bitmask_enum<geom2::node_type> : std::true_type {};
+struct bitmask_enum<geom::node_type> : std::true_type {};
 }  // namespace ii
 
-namespace ii::geom2 {
+namespace ii::geom {
 
 class ShapeBank {
 public:
@@ -116,6 +116,6 @@ inline void check_collision(hit_result& result, const check_t& check, ShapeBank&
   check_collision(result, check, shape_bank[construct], shape_bank.parameters(set_function));
 }
 
-}  // namespace ii::geom2
+}  // namespace ii::geom
 
 #endif

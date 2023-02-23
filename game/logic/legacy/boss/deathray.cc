@@ -10,7 +10,7 @@ constexpr cvec4 c0 = colour::hue360(150, 1.f / 3, .6f);
 constexpr cvec4 c1 = colour::hue360(150, .6f);
 constexpr cvec4 c2 = colour::hue(0.f, .8f, 0.f);
 constexpr cvec4 c3 = colour::hue(0.f, .6f, 0.f);
-using namespace geom2;
+using namespace geom;
 
 struct DeathRay : ecs::component {
   static constexpr float kZIndex = 0.f;
@@ -41,8 +41,8 @@ struct DeathRay : ecs::component {
 DEBUG_STRUCT_TUPLE(DeathRay);
 
 void spawn_death_ray(SimInterface& sim, const vec2& position) {
-  auto h = create_ship2<DeathRay>(sim, position);
-  add_enemy_health2<DeathRay>(h, 0);
+  auto h = create_ship<DeathRay>(sim, position);
+  add_enemy_health<DeathRay>(h, 0);
   h.add(DeathRay{});
   h.add(Enemy{.threat_value = 1});
 }
@@ -140,7 +140,7 @@ struct DeathArm : ecs::component {
     if (start) {
       if (start == 30) {
         auto e = sim.emit(resolve_key::reconcile(h.id(), resolve_tag::kRespawn));
-        auto& r = resolve_entity_shape2<default_shape_definition<DeathArm>>(h, sim);
+        auto& r = resolve_entity_shape<default_shape_definition<DeathArm>>(h, sim);
         explode_shapes(e, r);
         explode_shapes(e, r, cvec4{1.f});
       }
@@ -153,8 +153,8 @@ struct DeathArm : ecs::component {
 DEBUG_STRUCT_TUPLE(DeathArm, death_boss, is_top, attacking, start, timer, shots, dir, target);
 
 ecs::handle spawn_death_arm(SimInterface& sim, ecs::handle boss, bool is_top, std::uint32_t hp) {
-  auto h = create_ship2<DeathArm>(sim, vec2{0});
-  add_enemy_health2<DeathArm>(h, hp);
+  auto h = create_ship<DeathArm>(sim, vec2{0});
+  add_enemy_health<DeathArm>(h, hp);
   h.add(DeathArm{boss.id(), is_top});
   h.add(Enemy{.threat_value = 10});
   return h;
@@ -189,10 +189,10 @@ struct DeathRayBoss : public ecs::component {
       auto& t = n.add(rotate{i * pi<fixed> / 6}).add(translate{vec2{130, 0}});
       t.add(box{.dimensions = vec2{10, 24},
                 .line = {.colour0 = c1},
-                .flags = render::flag::kLegacy_NoExplode});
+                .flags = render::flag::kLegacy_NoExplode | render::flag::kNoFlash});
       t.add(box{.dimensions = vec2{8, 22},
                 .line = {.colour0 = c0},
-                .flags = render::flag::kLegacy_NoExplode});
+                .flags = render::flag::kLegacy_NoExplode | render::flag::kNoFlash});
       t.add(box_collider{.dimensions = vec2{10, 24}, .flags = shape_flag::kDangerous});
     }
   }
@@ -245,7 +245,7 @@ struct DeathRayBoss : public ecs::component {
         spawn_boss_shot(sim, transform.centre, d * 10, c2);
         e.play_random(sound::kBossAttack, transform.centre);
         auto e = sim.emit(resolve_key::predicted());
-        auto& r = resolve_entity_shape2<shape_definition_with_width<DeathRayBoss, 0>>(h, sim);
+        auto& r = resolve_entity_shape<shape_definition_with_width<DeathRayBoss, 0>>(h, sim);
         explode_shapes(e, r);
       }
     }
@@ -382,11 +382,11 @@ struct DeathRayBoss : public ecs::component {
       auto set_parameters = [&](parameter_set& parameters) {
         parameters.add(key{'v'}, transform.centre + v);
       };
-      render_shape(output, resolve_shape2<&construct_ray_shape>(sim, set_parameters));
+      render_shape(output, resolve_shape<&construct_ray_shape>(sim, set_parameters));
 
       v = ray_src2 - transform.centre;
       v *= static_cast<fixed>(k - 40) / (kRayTimer - 40);
-      render_shape(output, resolve_shape2<&construct_ray_shape>(sim, set_parameters));
+      render_shape(output, resolve_shape<&construct_ray_shape>(sim, set_parameters));
     }
   }
 
@@ -396,7 +396,7 @@ DEBUG_STRUCT_TUPLE(DeathRayBoss, arms, timer, laser, dir, pos, arm_timer, shot_t
                    ray_attack_timer, ray_src1, ray_src2, ray_dest);
 
 void DeathArm::on_destroy(ecs::const_handle h, SimInterface& sim, EmitHandle& e) const {
-  auto& r = resolve_entity_shape2<default_shape_definition<DeathArm>>(h, sim);
+  auto& r = resolve_entity_shape<default_shape_definition<DeathArm>>(h, sim);
   explode_shapes(e, r);
   explode_shapes(e, r, cvec4{1.f}, 12);
   explode_shapes(e, r, c1, 24);
@@ -420,21 +420,20 @@ void spawn_death_ray_boss(SimInterface& sim, std::uint32_t cycle) {
   using shape = shape_definition_with_width<DeathRayBoss, DeathRayBoss::bounding_width(false)>;
 
   vec2 position{sim.dimensions().x * (3_fx / 20), -sim.dimensions().y};
-  auto h = sim.is_legacy() ? create_ship2<DeathRayBoss, legacy_shape>(sim, position)
-                           : create_ship2<DeathRayBoss, shape>(sim, position);
+  auto h = sim.is_legacy() ? create_ship<DeathRayBoss, legacy_shape>(sim, position)
+                           : create_ship<DeathRayBoss, shape>(sim, position);
 
   h.add(Enemy{.threat_value = 100,
               .boss_score_reward =
                   calculate_boss_score(boss_flag::kBoss2C, sim.player_count(), cycle)});
   h.add(Health{
       .hp = calculate_boss_hp(DeathRayBoss::kBaseHp, sim.player_count(), cycle),
-      .hit_flash_ignore_index = 5,
       .hit_sound0 = std::nullopt,
       .hit_sound1 = sound::kEnemyShatter,
       .destroy_sound = std::nullopt,
       .damage_transform = &transform_death_ray_boss_damage,
-      .on_hit = &boss_on_hit2<true, DeathRayBoss, shape>,
-      .on_destroy = ecs::call<&boss_on_destroy2<DeathRayBoss, shape>>,
+      .on_hit = &boss_on_hit<true, DeathRayBoss, shape>,
+      .on_destroy = ecs::call<&boss_on_destroy<DeathRayBoss, shape>>,
   });
   h.add(Boss{.boss = boss_flag::kBoss2C});
   h.add(DeathRayBoss{});

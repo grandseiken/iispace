@@ -7,7 +7,7 @@
 
 namespace ii::legacy {
 namespace {
-using namespace geom2;
+using namespace geom;
 
 struct ShieldBombBoss : ecs::component {
   static constexpr std::uint32_t kBaseHp = 320;
@@ -31,20 +31,24 @@ struct ShieldBombBoss : ecs::component {
     centre.add(ball_collider{.dimensions = bd(48),
                              .flags = shape_flag::kDangerous | shape_flag::kVulnerable});
 
-    n.add(ngon{.dimensions = nd(130, 16), .line = {.colour0 = key{'c'}}});
+    n.add(ngon{
+        .dimensions = nd(130, 16), .line = {.colour0 = key{'c'}}, .flags = render::flag::kNoFlash});
     n.add(enable{key{'s'}})
         .add(ball_collider{.dimensions = bd(130),
                            .flags = shape_flag::kWeakShield | shape_flag::kDangerous});
     for (std::uint32_t i = 0; i < 16; ++i) {
       n.add(line{.a = ::rotate(vec2{80, 0}, i * pi<fixed> / 8),
                  .b = ::rotate(vec2{120, 0}, i * pi<fixed> / 8),
-                 .style = {.colour0 = key{'C'}}});
+                 .style = {.colour0 = key{'C'}},
+                 .flags = render::flag::kNoFlash});
     }
 
-    n.add(ngon{.dimensions = nd(125, 16), .line = {.colour0 = key{'c'}}});
-    n.add(ngon{.dimensions = nd(120, 16), .line = {.colour0 = key{'c'}}});
+    n.add(ngon{
+        .dimensions = nd(125, 16), .line = {.colour0 = key{'c'}}, .flags = render::flag::kNoFlash});
+    n.add(ngon{
+        .dimensions = nd(120, 16), .line = {.colour0 = key{'c'}}, .flags = render::flag::kNoFlash});
     auto& r = n.add(rotate{key{'r'}});
-    r.add(ball{.line = {.colour0 = key{'c'}}});
+    r.add(ball{.line = {.colour0 = key{'c'}}, .flags = render::flag::kNoFlash});
     r.add(ball_collider{.dimensions = bd(42), .flags = shape_flag::kShield});
   }
 
@@ -167,20 +171,19 @@ void spawn_shield_bomb_boss(SimInterface& sim, std::uint32_t cycle) {
   using shape = shape_definition_with_width<ShieldBombBoss, ShieldBombBoss::bounding_width(false)>;
 
   vec2 position{-sim.dimensions().x / 2, sim.dimensions().y / 2};
-  auto h = sim.is_legacy() ? create_ship2<ShieldBombBoss, legacy_shape>(sim, position)
-                           : create_ship2<ShieldBombBoss, shape>(sim, position);
+  auto h = sim.is_legacy() ? create_ship<ShieldBombBoss, legacy_shape>(sim, position)
+                           : create_ship<ShieldBombBoss, shape>(sim, position);
   h.add(Enemy{.threat_value = 100,
               .boss_score_reward =
                   calculate_boss_score(boss_flag::kBoss1B, sim.player_count(), cycle)});
   h.add(Health{
       .hp = calculate_boss_hp(ShieldBombBoss::kBaseHp, sim.player_count(), cycle),
-      .hit_flash_ignore_index = 1,
       .hit_sound0 = std::nullopt,
       .hit_sound1 = sound::kEnemyShatter,
       .destroy_sound = std::nullopt,
       .damage_transform = &transform_shield_bomb_boss_damage,
-      .on_hit = &boss_on_hit2<true, ShieldBombBoss, shape>,
-      .on_destroy = ecs::call<&boss_on_destroy2<ShieldBombBoss, shape>>,
+      .on_hit = &boss_on_hit<true, ShieldBombBoss, shape>,
+      .on_destroy = ecs::call<&boss_on_destroy<ShieldBombBoss, shape>>,
   });
   h.add(Boss{.boss = boss_flag::kBoss1B});
   h.add(ShieldBombBoss{});

@@ -4,7 +4,7 @@ cc_library(
   srcs = ["biome0_square.cc"],
   implementation_deps = [
     ":boss_internal",
-    "//game/geom2",
+    "//game/geometry",
     "//game/logic/ecs",
     "//game/logic/sim:sim_interface",
     "//game/logic/v0/enemy",
@@ -19,7 +19,7 @@ cc_library(
   hdrs = ["boss_template.h"],
   deps = [
     "//game/common:ustring",
-    "//game/geom2",
+    "//game/geometry",
     "//game/logic/ecs",
     "//game/logic/v0/lib:components",
     "//game/logic/v0/lib:ship_template",

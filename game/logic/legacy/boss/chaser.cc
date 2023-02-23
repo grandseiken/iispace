@@ -6,7 +6,7 @@
 
 namespace ii::legacy {
 namespace {
-using namespace geom2;
+using namespace geom;
 
 struct ChaserBossSharedState : ecs::component {
   bool has_counted = false;
@@ -72,14 +72,16 @@ struct ChaserBoss : ecs::component {
       auto flags = i == 2 ? shape_flag::kDangerous | shape_flag::kVulnerable
           : i == 3        ? shape_flag::kShield
                           : shape_flag::kNone;
+      auto r_flags = i < 2 ? render::flag::kNone : render::flag::kNoFlash;
       auto k = key{'0'} + key{i};
       if (+flags) {
         n.add(ball_collider{.dimensions = {.radius = k}, .flags = flags});
-        n.add(ngon{.dimensions = nd(0, 5), .line = {.colour0 = c}});
+        n.add(ngon{.dimensions = nd(0, 5), .line = {.colour0 = c}, .flags = r_flags});
       } else {
         n.add(ngon{.dimensions = {.radius = k, .sides = 5},
                    .style = ngon_style::kPolygram,
-                   .line = {.colour0 = c}});
+                   .line = {.colour0 = c},
+                   .flags = r_flags});
       }
     }
   }
@@ -295,7 +297,7 @@ struct ChaserBoss : ecs::component {
       }
     }
 
-    auto& r = resolve_entity_shape2<default_shape_definition<ChaserBoss>>(h, sim);
+    auto& r = resolve_entity_shape<default_shape_definition<ChaserBoss>>(h, sim);
     explode_shapes(e, r);
     explode_shapes(e, r, cvec4{1.f}, 12);
     if (split < 3 || last) {
@@ -319,14 +321,14 @@ struct ChaserBoss : ecs::component {
   static ecs::handle spawn_internal(SimInterface& sim, std::uint32_t cycle, std::uint32_t split = 0,
                                     const vec2& position = vec2{0}, std::uint32_t time = kTimer,
                                     std::uint32_t stagger = 0) {
-    auto h = create_ship2<ChaserBoss>(
+    auto h = create_ship<ChaserBoss>(
         sim, !split ? vec2{sim.dimensions().x / 2, -sim.dimensions().y / 2} : position);
 
     using shape = default_shape_definition<ChaserBoss>;
     h.add(Collision{.flags = shape_flag::kDangerous | shape_flag::kVulnerable | shape_flag::kShield,
                     .bounding_width = 10 * kSplitLookup[ChaserBoss::kMaxSplit - split].pow_1_5,
-                    .check_collision = sim.is_legacy() ? &ship_check_collision_legacy2<shape>
-                                                       : &ship_check_collision2<shape>});
+                    .check_collision = sim.is_legacy() ? &ship_check_collision_legacy<shape>
+                                                       : &ship_check_collision<shape>});
     h.add(Enemy{.threat_value = 100});
 
     auto rumble = split < 3 ? rumble_type::kLarge
@@ -338,13 +340,12 @@ struct ChaserBoss : ecs::component {
                 ChaserBoss::kBaseHp /
                     (fixed_c::half + kSplitLookup[split].hp_reduce_power).to_int(),
             sim.player_count(), cycle),
-        .hit_flash_ignore_index = 2,
         .hit_sound0 = std::nullopt,
         .hit_sound1 = sound::kEnemyShatter,
         .destroy_sound = std::nullopt,
         .destroy_rumble = rumble,
         .damage_transform = &scale_boss_damage,
-        .on_hit = split <= 1 ? &boss_on_hit2<true, ChaserBoss> : &boss_on_hit2<false, ChaserBoss>,
+        .on_hit = split <= 1 ? &boss_on_hit<true, ChaserBoss> : &boss_on_hit<false, ChaserBoss>,
         .on_destroy = ecs::call<&ChaserBoss::on_destroy>,
     });
     h.add(Boss{});

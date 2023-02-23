@@ -5,7 +5,7 @@
 
 namespace ii::v0 {
 namespace {
-using namespace geom2;
+using namespace geom;
 
 struct Square : ecs::component {
   static constexpr sound kDestroySound = sound::kEnemyDestroy;

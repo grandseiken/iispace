@@ -127,22 +127,19 @@ void destruct_lines(EmitHandle& e, const geom::resolve_result& r, const fvec2& s
 }
 
 void render_shape(std::vector<render::shape>& output, const geom::resolve_result& r, float z,
-                  const std::optional<float>& hit_alpha, const std::optional<cvec4>& c_override,
-                  const std::optional<std::size_t>& c_override_max_index) {
+                  const std::optional<float>& hit_alpha, const std::optional<cvec4>& c_override) {
   std::size_t i = 0;
   auto handle_shape = [&](const render::shape& shape) {
     render::shape shape_copy = shape;
     shape_copy.z = z;
-    if ((c_override || hit_alpha) && (!c_override_max_index || i < *c_override_max_index)) {
-      if (c_override) {
-        shape_copy.colour0 = cvec4{c_override->r, c_override->g, c_override->b, shape.colour0.a};
-        if (shape_copy.colour1) {
-          shape_copy.colour1 = cvec4{c_override->r, c_override->g, c_override->b, shape.colour1->a};
-        }
+    if (c_override) {
+      shape_copy.colour0 = cvec4{c_override->r, c_override->g, c_override->b, shape.colour0.a};
+      if (shape_copy.colour1) {
+        shape_copy.colour1 = cvec4{c_override->r, c_override->g, c_override->b, shape.colour1->a};
       }
-      if (hit_alpha) {
-        shape_copy.apply_hit_flash(*hit_alpha);
-      }
+    }
+    if (hit_alpha) {
+      shape_copy.apply_hit_flash(*hit_alpha);
     }
     output.emplace_back(shape_copy);
   };

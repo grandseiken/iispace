@@ -86,23 +86,23 @@ void add_explode_particle(EmitHandle& e, const fvec2& source, const fvec2& posit
 
 }  // namespace
 
-void explode_shapes(EmitHandle& e, const geom2::resolve_result& r,
+void explode_shapes(EmitHandle& e, const geom::resolve_result& r,
                     const std::optional<cvec4>& colour_override, std::uint32_t time,
                     const std::optional<fvec2>& towards, std::optional<float> speed) {
   for (const auto& entry : r.entries) {
     std::optional<cvec4> c;
     switch (entry.data.index()) {
-      VARIANT_CASE_GET(geom2::resolve_result::ball, entry.data, d) {
+      VARIANT_CASE_GET(geom::resolve_result::ball, entry.data, d) {
         c = d.line.colour0.a ? d.line.colour0 : d.fill.colour0;
         break;
       }
 
-      VARIANT_CASE_GET(geom2::resolve_result::box, entry.data, d) {
+      VARIANT_CASE_GET(geom::resolve_result::box, entry.data, d) {
         c = d.line.colour0.a ? d.line.colour0 : d.fill.colour0;
         break;
       }
 
-      VARIANT_CASE_GET(geom2::resolve_result::ngon, entry.data, d) {
+      VARIANT_CASE_GET(geom::resolve_result::ngon, entry.data, d) {
         c = d.line.colour0.a ? d.line.colour0 : d.fill.colour0;
         break;
       }
@@ -113,7 +113,7 @@ void explode_shapes(EmitHandle& e, const geom2::resolve_result& r,
   }
 }
 
-void destruct_lines(EmitHandle& e, const geom2::resolve_result& r, const fvec2& source,
+void destruct_lines(EmitHandle& e, const geom::resolve_result& r, const fvec2& source,
                     std::uint32_t time) {
   auto handle_line = [&](const vec2& a, const vec2& b, const cvec4& c, float w, float z) {
     if (z > colour::kZOutline) {
@@ -123,7 +123,7 @@ void destruct_lines(EmitHandle& e, const geom2::resolve_result& r, const fvec2& 
 
   for (const auto& entry : r.entries) {
     switch (entry.data.index()) {
-      VARIANT_CASE_GET(geom2::resolve_result::ball, entry.data, d) {
+      VARIANT_CASE_GET(geom::resolve_result::ball, entry.data, d) {
         if (!d.line.colour0.a) {
           continue;
         }
@@ -145,7 +145,7 @@ void destruct_lines(EmitHandle& e, const geom2::resolve_result& r, const fvec2& 
         break;
       }
 
-      VARIANT_CASE_GET(geom2::resolve_result::box, entry.data, d) {
+      VARIANT_CASE_GET(geom::resolve_result::box, entry.data, d) {
         if (!d.line.colour0.a && !d.line.colour1.a) {
           continue;
         }
@@ -162,7 +162,7 @@ void destruct_lines(EmitHandle& e, const geom2::resolve_result& r, const fvec2& 
         break;
       }
 
-      VARIANT_CASE_GET(geom2::resolve_result::line, entry.data, d) {
+      VARIANT_CASE_GET(geom::resolve_result::line, entry.data, d) {
         // TODO: need line gradients to match rendering, if we use them.
         if (d.style.colour0.a) {
           handle_line(*entry.t.translate(d.a), *entry.t.translate(d.b), d.style.colour0,
@@ -171,7 +171,7 @@ void destruct_lines(EmitHandle& e, const geom2::resolve_result& r, const fvec2& 
         break;
       }
 
-      VARIANT_CASE_GET(geom2::resolve_result::ngon, entry.data, d) {
+      VARIANT_CASE_GET(geom::resolve_result::ngon, entry.data, d) {
         if (!d.line.colour0.a) {
           continue;
         }
@@ -214,7 +214,7 @@ void destruct_lines(EmitHandle& e, const geom2::resolve_result& r, const fvec2& 
   }
 }
 
-void explode_volumes(EmitHandle& e, const geom2::resolve_result& r, const fvec2& source,
+void explode_volumes(EmitHandle& e, const geom::resolve_result& r, const fvec2& source,
                      std::uint32_t time) {
   auto handle_shape = [&](const vec2& v, fixed r, const cvec4& c) {
     if (c.a) {
@@ -224,17 +224,17 @@ void explode_volumes(EmitHandle& e, const geom2::resolve_result& r, const fvec2&
 
   for (const auto& entry : r.entries) {
     switch (entry.data.index()) {
-      VARIANT_CASE_GET(geom2::resolve_result::ball, entry.data, d) {
+      VARIANT_CASE_GET(geom::resolve_result::ball, entry.data, d) {
         handle_shape(*entry.t, d.dimensions.radius, d.fill.colour0);
         break;
       }
 
-      VARIANT_CASE_GET(geom2::resolve_result::box, entry.data, d) {
+      VARIANT_CASE_GET(geom::resolve_result::box, entry.data, d) {
         handle_shape(*entry.t, std::min(d.dimensions.x, d.dimensions.y), d.fill.colour0);
         break;
       }
 
-      VARIANT_CASE_GET(geom2::resolve_result::ngon, entry.data, d) {
+      VARIANT_CASE_GET(geom::resolve_result::ngon, entry.data, d) {
         handle_shape(*entry.t, d.dimensions.radius, d.fill.colour1);
         break;
       }

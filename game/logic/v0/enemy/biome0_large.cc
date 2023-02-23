@@ -4,7 +4,7 @@
 
 namespace ii::v0 {
 namespace {
-using namespace geom2;
+using namespace geom;
 
 struct FollowHub : ecs::component {
   static constexpr sound kDestroySound = sound::kPlayerDestroy;

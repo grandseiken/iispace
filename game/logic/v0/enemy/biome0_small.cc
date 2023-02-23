@@ -5,7 +5,7 @@
 
 namespace ii::v0 {
 namespace {
-using namespace geom2;
+using namespace geom;
 
 ecs::handle spawn_follow(SimInterface& sim, std::uint32_t size, const vec2& position,
                          std::optional<vec2> direction, bool drop, fixed rotation = 0,

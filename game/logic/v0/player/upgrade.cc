@@ -19,13 +19,13 @@ enum class upgrade_position : std::uint32_t {
 
 std::vector<render::shape>
 render_mod_icon(const SimInterface& sim, const mod_data& data, std::uint32_t animation) {
-  auto render = [&](geom2::ShapeBank::node_construct_t construct) {
+  auto render = [&](geom::ShapeBank::node_construct_t construct) {
     auto c = mod_category_colour(data.category);
     auto& r = local_resolve();
-    geom2::resolve(r, sim.shape_bank(), construct, [&](geom2::parameter_set& parameters) {
-      parameters.add(geom2::key{'r'}, static_cast<fixed>(animation) / 24)
-          .add(geom2::key{'c'}, c)
-          .add(geom2::key{'f'}, colour::alpha(c, colour::kFillAlpha0));
+    geom::resolve(r, sim.shape_bank(), construct, [&](geom::parameter_set& parameters) {
+      parameters.add(geom::key{'r'}, static_cast<fixed>(animation) / 24)
+          .add(geom::key{'c'}, c)
+          .add(geom::key{'f'}, colour::alpha(c, colour::kFillAlpha0));
     });
 
     std::vector<render::shape> shapes;

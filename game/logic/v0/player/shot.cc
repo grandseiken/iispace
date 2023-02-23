@@ -25,7 +25,7 @@ struct bitmask_enum<v0::shot_flags> : std::true_type {};
 
 namespace ii::v0 {
 namespace {
-using namespace geom2;
+using namespace geom;
 
 struct PlayerShot;
 ecs::handle spawn_player_shot(SimInterface& sim, const vec2& position, const PlayerShot& shot_data);

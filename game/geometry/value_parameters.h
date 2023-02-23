@@ -1,5 +1,5 @@
-#ifndef II_GAME_GEOM2_VALUE_PARAMETERS_H
-#define II_GAME_GEOM2_VALUE_PARAMETERS_H
+#ifndef II_GAME_GEOMETRY_VALUE_PARAMETERS_H
+#define II_GAME_GEOMETRY_VALUE_PARAMETERS_H
 #include "game/common/enum.h"
 #include "game/common/math.h"
 #include "game/common/variant_switch.h"
@@ -9,19 +9,19 @@
 #include <unordered_map>
 #include <variant>
 
-namespace ii::geom2 {
+namespace ii::geom {
 
 enum class key : unsigned char {};
 using parameter_value = std::variant<bool, std::uint32_t, fixed, vec2, float, cvec4>;
 
-}  // namespace ii::geom2
+}  // namespace ii::geom
 
 namespace ii {
 template <>
-struct integral_enum<geom2::key> : std::true_type {};
+struct integral_enum<geom::key> : std::true_type {};
 }  // namespace ii
 
-namespace ii::geom2 {
+namespace ii::geom {
 
 // TODO: allow transformation matrices of some kind?
 // TODO: possibly allow indexed parameters?
@@ -127,6 +127,6 @@ inline value<T> multiply(const T& x, key k) {
   return value<T>::multiply(x, k);
 }
 
-}  // namespace ii::geom2
+}  // namespace ii::geom
 
 #endif

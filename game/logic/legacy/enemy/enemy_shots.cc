@@ -4,7 +4,7 @@
 
 namespace ii::legacy {
 namespace {
-using namespace geom2;
+using namespace geom;
 
 struct BossShot : ecs::component {
   static constexpr float kZIndex = 16.f;
@@ -46,7 +46,7 @@ struct BossShot : ecs::component {
     transform.set_rotation(transform.rotation + fixed_c::hundredth * 2);
     if (sim.collide_any(check_point(shape_flag::kSafeShield, transform.centre))) {
       auto e = sim.emit(resolve_key::reconcile(h.id(), resolve_tag::kOnDestroy));
-      auto& r = resolve_entity_shape2<default_shape_definition<BossShot>>(h, sim);
+      auto& r = resolve_entity_shape<default_shape_definition<BossShot>>(h, sim);
       explode_shapes(e, r, std::nullopt, 4, to_float(transform.centre - velocity));
       h.emplace<Destroy>();
       return;
@@ -61,8 +61,8 @@ DEBUG_STRUCT_TUPLE(BossShot, timer, velocity, rotate_speed);
 
 void spawn_boss_shot(SimInterface& sim, const vec2& position, const vec2& velocity,
                      const cvec4& colour, fixed rotate_speed) {
-  auto h = create_ship2<BossShot>(sim, position);
-  add_enemy_health2<BossShot>(h, 0);
+  auto h = create_ship<BossShot>(sim, position);
+  add_enemy_health<BossShot>(h, 0);
   h.add(BossShot{velocity, colour, rotate_speed});
   h.add(Enemy{.threat_value = 1});
   h.add(WallTag{});

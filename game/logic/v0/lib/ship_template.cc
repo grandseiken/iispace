@@ -2,18 +2,18 @@
 
 namespace ii::v0 {
 
-std::optional<cvec4> get_shape_colour(const geom2::resolve_result& r) {
+std::optional<cvec4> get_shape_colour(const geom::resolve_result& r) {
   for (const auto& e : r.entries) {
     switch (e.data.index()) {
-      VARIANT_CASE_GET(geom2::resolve_result::ball, e.data, d) {
+      VARIANT_CASE_GET(geom::resolve_result::ball, e.data, d) {
         return d.line.colour0;
       }
 
-      VARIANT_CASE_GET(geom2::resolve_result::box, e.data, d) {
+      VARIANT_CASE_GET(geom::resolve_result::box, e.data, d) {
         return d.line.colour0;
       }
 
-      VARIANT_CASE_GET(geom2::resolve_result::ngon, e.data, d) {
+      VARIANT_CASE_GET(geom::resolve_result::ngon, e.data, d) {
         return d.line.colour0;
       }
     }
@@ -21,7 +21,7 @@ std::optional<cvec4> get_shape_colour(const geom2::resolve_result& r) {
   return std::nullopt;
 }
 
-void render_shape(std::vector<render::shape>& output, const geom2::resolve_result& r,
+void render_shape(std::vector<render::shape>& output, const geom::resolve_result& r,
                   const std::optional<float>& hit_alpha, const std::optional<float>& shield_alpha) {
   auto handle_shape = [&](const render::shape& shape) {
     render::shape shape_copy = shape;
@@ -39,7 +39,7 @@ void render_shape(std::vector<render::shape>& output, const geom2::resolve_resul
 
   for (const auto& e : r.entries) {
     switch (e.data.index()) {
-      VARIANT_CASE_GET(geom2::resolve_result::ball, e.data, d) {
+      VARIANT_CASE_GET(geom::resolve_result::ball, e.data, d) {
         if (d.line.colour0.a || d.line.colour1.a) {
           handle_shape({
               .origin = to_float(*e.t),
@@ -70,7 +70,7 @@ void render_shape(std::vector<render::shape>& output, const geom2::resolve_resul
         break;
       }
 
-      VARIANT_CASE_GET(geom2::resolve_result::box, e.data, d) {
+      VARIANT_CASE_GET(geom::resolve_result::box, e.data, d) {
         if (d.line.colour0.a || d.line.colour1.a) {
           handle_shape({
               .origin = to_float(*e.t),
@@ -98,7 +98,7 @@ void render_shape(std::vector<render::shape>& output, const geom2::resolve_resul
         break;
       }
 
-      VARIANT_CASE_GET(geom2::resolve_result::line, e.data, d) {
+      VARIANT_CASE_GET(geom::resolve_result::line, e.data, d) {
         if (d.style.colour0.a || d.style.colour1.a) {
           auto s = render::shape::line(to_float(*e.t.translate(d.a)), to_float(*e.t.translate(d.b)),
                                        d.style.colour0, d.style.colour1, d.style.z, d.style.width,
@@ -109,7 +109,7 @@ void render_shape(std::vector<render::shape>& output, const geom2::resolve_resul
         break;
       }
 
-      VARIANT_CASE_GET(geom2::resolve_result::ngon, e.data, d) {
+      VARIANT_CASE_GET(geom::resolve_result::ngon, e.data, d) {
         if (d.line.colour0.a || d.line.colour1.a) {
           handle_shape({
               .origin = to_float(*e.t),

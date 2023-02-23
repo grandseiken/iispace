@@ -1,18 +1,18 @@
 cc_library(
   name = "geometry",
   hdrs = [
-    "concepts.h",
-    "expressions.h",
-    "iteration.h",
-    "node.h",
-    "node_conditional.h",
-    "node_for_each.h",
-    "node_transform.h",
+    "resolve.h",
+    "shape_bank.h",
+    "shape_data.h",
+    "types.h",
+    "value_parameters.h",
   ],
+  srcs = ["shape_bank.cc"],
   deps = [
     "//game/common:math",
     "//game/common:types",
-    "//game/geom2",
+    "//game/render/data",
+    "@static_functional",
   ],
   visibility = ["//game:__subpackages__"],
 )

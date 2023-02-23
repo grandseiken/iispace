@@ -6,7 +6,7 @@
 
 namespace ii::legacy {
 namespace {
-using namespace geom2;
+using namespace geom;
 
 struct BigSquareBoss : public ecs::component {
   static constexpr std::uint32_t kBaseHp = 400;
@@ -139,7 +139,7 @@ struct BigSquareBoss : public ecs::component {
       }
       for (std::uint32_t i = 0; i < 6; ++i) {
         auto v = sim.index().get(*attack_player)->get<Transform>()->centre + d;
-        auto& r = resolve_shape2<&construct_follow_attack_shape>(
+        auto& r = resolve_shape<&construct_follow_attack_shape>(
             sim, [&](parameter_set& parameters) { parameters.add(key{'v'}, v); });
         render_shape(output, r);
         d = ::rotate(d, 2 * pi<fixed> / 6);
@@ -158,8 +158,8 @@ void spawn_big_square_boss(SimInterface& sim, std::uint32_t cycle) {
   using shape = shape_definition_with_width<BigSquareBoss, BigSquareBoss::bounding_width(false)>;
 
   vec2 position{sim.dimensions().x * fixed_c::hundredth * 75, sim.dimensions().y * 2};
-  auto h = sim.is_legacy() ? create_ship2<BigSquareBoss, legacy_shape>(sim, position)
-                           : create_ship2<BigSquareBoss, shape>(sim, position);
+  auto h = sim.is_legacy() ? create_ship<BigSquareBoss, legacy_shape>(sim, position)
+                           : create_ship<BigSquareBoss, shape>(sim, position);
   h.add(Enemy{.threat_value = 100,
               .boss_score_reward =
                   calculate_boss_score(boss_flag::kBoss1A, sim.player_count(), cycle)});
@@ -169,8 +169,8 @@ void spawn_big_square_boss(SimInterface& sim, std::uint32_t cycle) {
       .hit_sound1 = sound::kEnemyShatter,
       .destroy_sound = std::nullopt,
       .damage_transform = &scale_boss_damage,
-      .on_hit = &boss_on_hit2<true, BigSquareBoss, shape>,
-      .on_destroy = ecs::call<&boss_on_destroy2<BigSquareBoss, shape>>,
+      .on_hit = &boss_on_hit<true, BigSquareBoss, shape>,
+      .on_destroy = ecs::call<&boss_on_destroy<BigSquareBoss, shape>>,
   });
   h.add(Boss{.boss = boss_flag::kBoss1A});
   h.add(BigSquareBoss{});

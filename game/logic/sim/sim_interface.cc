@@ -171,15 +171,15 @@ bool SimInterface::random_bool() {
   return random(random_source::kGameState).rbool();
 }
 
-geom2::ShapeBank& SimInterface::shape_bank() const {
+geom::ShapeBank& SimInterface::shape_bank() const {
   return internals_->shape_bank;
 }
 
-bool SimInterface::collide_any(const geom2::check_t& check) const {
+bool SimInterface::collide_any(const geom::check_t& check) const {
   return internals_->collision_index->collide_any(check);
 }
 
-auto SimInterface::collide(const geom2::check_t& check) const -> std::vector<collision_info> {
+auto SimInterface::collide(const geom::check_t& check) const -> std::vector<collision_info> {
   return internals_->collision_index->collide(check);
 }
 

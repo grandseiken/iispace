@@ -3,7 +3,7 @@
 
 namespace ii::legacy {
 namespace {
-using namespace geom2;
+using namespace geom;
 
 ecs::handle spawn_snake_tail(SimInterface& sim, const vec2& position, const cvec4& colour);
 
@@ -40,7 +40,7 @@ struct SnakeTail : ecs::component {
       on_destroy(sim);
       h.emplace<Destroy>();
       auto e = sim.emit(resolve_key::reconcile(h.id(), resolve_tag::kOnDestroy));
-      auto& r = resolve_entity_shape2<default_shape_definition<SnakeTail>>(h, sim);
+      auto& r = resolve_entity_shape<default_shape_definition<SnakeTail>>(h, sim);
       explode_shapes(e, r, std::nullopt, 10, std::nullopt, 1.5f);
     }
     if (d_timer && !--d_timer) {
@@ -50,7 +50,7 @@ struct SnakeTail : ecs::component {
       on_destroy(sim);
       h.emplace<Destroy>();
       auto e = sim.emit(resolve_key::reconcile(h.id(), resolve_tag::kOnDestroy));
-      auto& r = resolve_entity_shape2<default_shape_definition<SnakeTail>>(h, sim);
+      auto& r = resolve_entity_shape<default_shape_definition<SnakeTail>>(h, sim);
       explode_shapes(e, r, std::nullopt, 10, std::nullopt, 1.5f);
       destruct_lines(e, r, to_float(transform.centre));
       e.play_random(sound::kEnemyDestroy, transform.centre);
@@ -152,8 +152,8 @@ struct Snake : ecs::component {
 DEBUG_STRUCT_TUPLE(Snake, tail, timer, dir, count, is_projectile, projectile_rotation);
 
 ecs::handle spawn_snake_tail(SimInterface& sim, const vec2& position, const cvec4& colour) {
-  auto h = create_ship2<SnakeTail>(sim, position);
-  add_enemy_health2<SnakeTail>(h, 0);
+  auto h = create_ship<SnakeTail>(sim, position);
+  add_enemy_health<SnakeTail>(h, 0);
   h.add(SnakeTail{colour});
   h.add(Enemy{.threat_value = 1});
   return h;
@@ -163,8 +163,8 @@ ecs::handle spawn_snake_tail(SimInterface& sim, const vec2& position, const cvec
 
 void spawn_snake(SimInterface& sim, const vec2& position, const cvec4& colour,
                  const vec2& direction, fixed rotation) {
-  auto h = create_ship2<Snake>(sim, position);
-  add_enemy_health2<Snake>(h, 5);
+  auto h = create_ship<Snake>(sim, position);
+  add_enemy_health<Snake>(h, 5);
   h.add(Snake{sim, colour, direction, rotation});
   h.add(Enemy{.threat_value = 5});
   h.get<Transform>()->set_rotation(angle(direction));

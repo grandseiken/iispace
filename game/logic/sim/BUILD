@@ -7,7 +7,7 @@ cc_library(
     "//game/common:random",
     "//game/common:types",
     "//game/common:ustring",
-    "//game/geom2",
+    "//game/geometry",
     "//game/logic/ecs",
     "//game/logic/sim/io:output",
     "//game/render/data",
@@ -24,7 +24,7 @@ cc_library(
   deps = [
     "//game/common:math",
     "//game/common:random",
-    "//game/geom2",
+    "//game/geometry",
     "//game/logic/ecs",
     "//game/logic/sim/io:aggregate",
     "//game/mixer:sound",
@@ -49,6 +49,7 @@ cc_library(
     "//game/logic/sim/io:output",
     "//game/logic/sim/io:player",
   ],
+  implementation_deps = ["//game/geometry"],
 )
 
 cc_library(

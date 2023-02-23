@@ -2,7 +2,7 @@
 #define II_GAME_LOGIC_SIM_SIM_INTERFACE_H
 #include "game/common/math.h"
 #include "game/common/random.h"
-#include "game/geom2/types.h"
+#include "game/geometry/types.h"
 #include "game/logic/ecs/index.h"
 #include "game/logic/sim/io/aggregate.h"
 #include "game/mixer/sound.h"
@@ -16,7 +16,7 @@ namespace ii {
 namespace ecs {
 class EntityIndex;
 }  // namespace ecs
-namespace geom2 {
+namespace geom {
 class ShapeBank;
 };
 class SimInterface;
@@ -104,9 +104,9 @@ public:
     fixed distance_sq = 0;
   };
 
-  geom2::ShapeBank& shape_bank() const;
-  bool collide_any(const geom2::check_t&) const;
-  std::vector<collision_info> collide(const geom2::check_t&) const;
+  geom::ShapeBank& shape_bank() const;
+  bool collide_any(const geom::check_t&) const;
+  std::vector<collision_info> collide(const geom::check_t&) const;
   bool is_on_screen(const vec2& point) const;
   vec2 rotate_compatibility(const vec2& v, fixed theta) const;
 

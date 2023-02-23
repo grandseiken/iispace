@@ -12,7 +12,7 @@ cc_library(
   ],
   implementation_deps = [
     ":enemy_internal",
-    "//game/geom2",
+    "//game/geometry",
     "//game/logic/sim:sim_interface",
     "//game/logic/v0/lib:ship_template",
   ],

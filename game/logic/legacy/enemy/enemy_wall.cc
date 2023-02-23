@@ -6,7 +6,7 @@
 
 namespace ii::legacy {
 namespace {
-using namespace geom2;
+using namespace geom;
 
 struct Square : ecs::component {
   static constexpr float kZIndex = -8.f;
@@ -171,16 +171,16 @@ DEBUG_STRUCT_TUPLE(Wall, dir, timer, is_rotating, rdir);
 }  // namespace
 
 void spawn_square(SimInterface& sim, const vec2& position, fixed dir_angle) {
-  auto h = create_ship2<Square>(sim, position);
-  add_enemy_health2<Square>(h, 4);
+  auto h = create_ship<Square>(sim, position);
+  add_enemy_health<Square>(h, 4);
   h.add(Square{sim, dir_angle});
   h.add(Enemy{.threat_value = 2, .score_reward = 25});
   h.add(WallTag{});
 }
 
 void spawn_wall(SimInterface& sim, const vec2& position, bool rdir) {
-  auto h = create_ship2<Wall>(sim, position);
-  add_enemy_health2<Wall>(h, 10);
+  auto h = create_ship<Wall>(sim, position);
+  add_enemy_health<Wall>(h, 10);
   h.add(Wall{rdir});
   h.add(Enemy{.threat_value = 4, .score_reward = 20});
   h.add(WallTag{});

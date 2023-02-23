@@ -11,7 +11,7 @@ namespace {
 constexpr cvec4 c0 = colour::hue360(280, .7f);
 constexpr cvec4 c1 = colour::hue360(280, .5f, .6f);
 constexpr cvec4 c2 = colour::hue360(270, .2f);
-using namespace geom2;
+using namespace geom;
 
 struct GhostWall : ecs::component {
   static constexpr sound kDestroySound = sound::kEnemyDestroy;
@@ -80,8 +80,8 @@ DEBUG_STRUCT_TUPLE(GhostWall, dir, vertical, gap_swap);
 void spawn_ghost_wall_vertical(SimInterface& sim, bool swap, bool no_gap) {
   vec2 position{sim.dimensions().x / 2, swap ? -10 : 10 + sim.dimensions().y};
   vec2 dir{0, swap ? 1 : -1};
-  auto h = create_ship2<GhostWall>(sim, position);
-  add_enemy_health2<GhostWall>(h, 0);
+  auto h = create_ship<GhostWall>(sim, position);
+  add_enemy_health<GhostWall>(h, 0);
   h.add(GhostWall{dir, true, no_gap});
   h.add(Enemy{.threat_value = 1});
 }
@@ -89,8 +89,8 @@ void spawn_ghost_wall_vertical(SimInterface& sim, bool swap, bool no_gap) {
 void spawn_ghost_wall_horizontal(SimInterface& sim, bool swap, bool swap_gap) {
   vec2 position{swap ? -10 : 10 + sim.dimensions().x, sim.dimensions().y / 2};
   vec2 dir{swap ? 1 : -1, 0};
-  auto h = create_ship2<GhostWall>(sim, position);
-  add_enemy_health2<GhostWall>(h, 0);
+  auto h = create_ship<GhostWall>(sim, position);
+  add_enemy_health<GhostWall>(h, 0);
   h.add(GhostWall{dir, false, swap_gap});
   h.add(Enemy{.threat_value = 1});
 }
@@ -124,7 +124,7 @@ struct GhostMine : ecs::component {
   void update(ecs::handle h, Transform& transform, SimInterface& sim) {
     if (timer == 80) {
       auto e = sim.emit(resolve_key::reconcile(h.id(), resolve_tag::kRespawn));
-      auto& r = resolve_entity_shape2<default_shape_definition<GhostMine>>(h, sim);
+      auto& r = resolve_entity_shape<default_shape_definition<GhostMine>>(h, sim);
       explode_shapes(e, r);
       transform.set_rotation(sim.random_fixed() * 2 * pi<fixed>);
     }
@@ -144,8 +144,8 @@ struct GhostMine : ecs::component {
 DEBUG_STRUCT_TUPLE(GhostMine, timer, ghost_boss);
 
 void spawn_ghost_mine(SimInterface& sim, const vec2& position, ecs::const_handle ghost) {
-  auto h = create_ship2<GhostMine>(sim, position);
-  add_enemy_health2<GhostMine>(h, 0);
+  auto h = create_ship<GhostMine>(sim, position);
+  add_enemy_health<GhostMine>(h, 0);
   h.add(GhostMine{ghost.id()});
   h.add(Enemy{.threat_value = 1});
 }
@@ -185,7 +185,7 @@ struct GhostBoss : ecs::component {
           ++k;
         } else {
           tc.add(ball_collider{.dimensions = bd(16),
-                              .flags = shape_flag::kDangerous | shape_flag::kEnemyInteraction});
+                               .flags = shape_flag::kDangerous | shape_flag::kEnemyInteraction});
         }
         t.add(ngon{.dimensions = nd(16, 8),
                    .style = ngon_style::kPolystar,
@@ -475,8 +475,8 @@ struct GhostBoss : ecs::component {
     } else {
       colour_override = c2;
     }
-    render_entity_shape_override2<default_shape_definition<GhostBoss>>(output, h, &health, sim,
-                                                                       -16.f, colour_override);
+    render_entity_shape_override<default_shape_definition<GhostBoss>>(output, h, &health, sim,
+                                                                      -16.f, colour_override);
   }
 };
 DEBUG_STRUCT_TUPLE(GhostBoss, visible, shot_type, rdir, danger_enable, vtime, timer, attack,
@@ -492,8 +492,8 @@ void spawn_ghost_boss(SimInterface& sim, std::uint32_t cycle) {
   h.add(Collision{.flags = GhostBoss::kFlags,
                   .bounding_width = GhostBoss::kBoundingWidth,
                   .check_collision = sim.is_legacy()
-                      ? &ship_check_collision_legacy2<default_shape_definition<GhostBoss>>
-                      : &ship_check_collision2<default_shape_definition<GhostBoss>>});
+                      ? &ship_check_collision_legacy<default_shape_definition<GhostBoss>>
+                      : &ship_check_collision<default_shape_definition<GhostBoss>>});
   h.add(Render{.render = sfn::cast<Render::render_t, ecs::call<&GhostBoss::render_override>>});
 
   h.add(Enemy{.threat_value = 100,
@@ -505,8 +505,8 @@ void spawn_ghost_boss(SimInterface& sim, std::uint32_t cycle) {
       .hit_sound1 = sound::kEnemyShatter,
       .destroy_sound = std::nullopt,
       .damage_transform = &scale_boss_damage,
-      .on_hit = &boss_on_hit2<true, GhostBoss>,
-      .on_destroy = ecs::call<&boss_on_destroy2<GhostBoss>>,
+      .on_hit = &boss_on_hit<true, GhostBoss>,
+      .on_destroy = ecs::call<&boss_on_destroy<GhostBoss>>,
   });
   h.add(Boss{.boss = boss_flag::kBoss2B});
   h.add(GhostBoss{.is_legacy = sim.is_legacy()});

@@ -2,7 +2,7 @@
 #define II_GAME_LOGIC_V0_LIB_SHIP_TEMPLATE_H
 #include "game/common/colour.h"
 #include "game/common/math.h"
-#include "game/geom2/shape_bank.h"
+#include "game/geometry/shape_bank.h"
 #include "game/logic/ecs/call.h"
 #include "game/logic/ecs/index.h"
 #include "game/logic/sim/sim_interface.h"
@@ -15,8 +15,8 @@
 
 namespace ii::v0 {
 
-template <sfn::ptr<void(geom2::node&)> ConstructShape,
-          sfn::ptr<void(ecs::const_handle, geom2::parameter_set&)> SetParameters,
+template <sfn::ptr<void(geom::node&)> ConstructShape,
+          sfn::ptr<void(ecs::const_handle, geom::parameter_set&)> SetParameters,
           fixed BoundingWidth, shape_flag Flags>
 struct shape_definition {
   inline static constexpr auto construct_shape = ConstructShape;
@@ -30,32 +30,32 @@ using default_shape_definition =
     shape_definition<&Logic::construct_shape, ecs::call<&Logic::set_parameters>,
                      Logic::kBoundingWidth, Logic::kFlags>;
 
-inline geom2::resolve_result& local_resolve() {
-  static thread_local geom2::resolve_result r;
+inline geom::resolve_result& local_resolve() {
+  static thread_local geom::resolve_result r;
   r.entries.clear();
   return r;
 }
 
-template <sfn::ptr<void(geom2::node&)> ConstructShape, typename F>
-geom2::resolve_result& resolve_shape(const SimInterface& sim, F&& set_function) {
+template <sfn::ptr<void(geom::node&)> ConstructShape, typename F>
+geom::resolve_result& resolve_shape(const SimInterface& sim, F&& set_function) {
   auto& r = local_resolve();
-  geom2::resolve(r, sim.shape_bank(), ConstructShape, set_function);
+  geom::resolve(r, sim.shape_bank(), ConstructShape, set_function);
   return r;
 }
 
 template <typename ShapeDefinition>
-geom2::resolve_result& resolve_entity_shape(ecs::const_handle h, const SimInterface& sim) {
+geom::resolve_result& resolve_entity_shape(ecs::const_handle h, const SimInterface& sim) {
   return resolve_shape<ShapeDefinition::construct_shape>(
       sim,
-      [&h](geom2::parameter_set& parameters) { ShapeDefinition::set_parameters(h, parameters); });
+      [&h](geom::parameter_set& parameters) { ShapeDefinition::set_parameters(h, parameters); });
 }
 
 //////////////////////////////////////////////////////////////////////////////////
 // Rendering.
 //////////////////////////////////////////////////////////////////////////////////
-std::optional<cvec4> get_shape_colour(const geom2::resolve_result& r);
+std::optional<cvec4> get_shape_colour(const geom::resolve_result& r);
 
-void render_shape(std::vector<render::shape>& output, const geom2::resolve_result& r,
+void render_shape(std::vector<render::shape>& output, const geom::resolve_result& r,
                   const std::optional<float>& hit_alpha = std::nullopt,
                   const std::optional<float>& shield_alpha = std::nullopt);
 
@@ -78,12 +78,12 @@ void render_entity_shape(ecs::const_handle h, const Health* health, const EnemyS
 // Collision.
 //////////////////////////////////////////////////////////////////////////////////
 template <typename ShapeDefinition>
-geom2::hit_result
-check_entity_collision(ecs::const_handle h, const geom2::check_t& check, const SimInterface& sim) {
-  geom2::hit_result result;
-  geom2::check_collision(
+geom::hit_result
+check_entity_collision(ecs::const_handle h, const geom::check_t& check, const SimInterface& sim) {
+  geom::hit_result result;
+  geom::check_collision(
       result, check, sim.shape_bank(), ShapeDefinition::construct_shape,
-      [&h](geom2::parameter_set& parameters) { ShapeDefinition::set_parameters(h, parameters); });
+      [&h](geom::parameter_set& parameters) { ShapeDefinition::set_parameters(h, parameters); });
   return result;
 }
 

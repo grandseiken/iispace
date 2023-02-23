@@ -4,7 +4,7 @@
 #include "game/common/random.h"
 #include "game/common/struct_tuple.h"
 #include "game/common/ustring.h"
-#include "game/geom2/types.h"
+#include "game/geometry/types.h"
 #include "game/logic/ecs/index.h"
 #include "game/logic/sim/io/output.h"
 #include "game/mixer/sound.h"
@@ -56,8 +56,8 @@ struct Collision : ecs::component {
   shape_flag flags = shape_flag::kNone;
   fixed bounding_width = 0;
 
-  using check_collision_t = geom2::hit_result(ecs::const_handle, const geom2::check_t&,
-                                              const SimInterface&);
+  using check_collision_t = geom::hit_result(ecs::const_handle, const geom::check_t&,
+                                             const SimInterface&);
   sfn::ptr<check_collision_t> check_collision = nullptr;
 };
 DEBUG_STRUCT_TUPLE(Collision, flags, bounding_width, check_collision);
@@ -127,10 +127,7 @@ DEBUG_STRUCT_TUPLE(Enemy, threat_value, score_reward, boss_score_reward);
 struct Health : ecs::component {
   std::uint32_t hp = 0;
   std::uint32_t max_hp = hp;
-
   std::uint32_t hit_timer = 0;
-  // TODO: remove, along with c_override_max_index etc; replace with render tag.
-  std::optional<std::size_t> hit_flash_ignore_index;
 
   std::optional<sound> hit_sound0 = sound::kEnemyHit;
   std::optional<sound> hit_sound1 = sound::kEnemyHit;

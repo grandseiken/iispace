@@ -8,7 +8,7 @@
 
 namespace ii::legacy {
 namespace {
-using namespace geom2;
+using namespace geom;
 
 struct SuperBossArc : public ecs::component {
   static constexpr std::uint32_t kBaseHp = 75;
@@ -62,12 +62,12 @@ struct SuperBossArc : public ecs::component {
   void on_destroy(ecs::const_handle h, const Transform& transform, SimInterface& sim, EmitHandle& e,
                   damage_type, const vec2& source) const {
     {
-      auto& r = resolve_entity_shape2<shape_definition_with_width<SuperBossArc, 0>>(h, sim);
+      auto& r = resolve_entity_shape<shape_definition_with_width<SuperBossArc, 0>>(h, sim);
       destruct_lines(e, r, to_float(source), 64);
     }
     auto v =
         transform.centre + from_polar_legacy(i * 2 * pi<fixed> / 16 + transform.rotation, 120_fx);
-    auto& r = resolve_shape2<&construct_shape>(sim, [&](parameter_set& parameters) {
+    auto& r = resolve_shape<&construct_shape>(sim, [&](parameter_set& parameters) {
       set_parameters(transform, parameters);
       parameters.add(key{'v'}, v);
     });
@@ -87,8 +87,8 @@ ecs::handle spawn_super_boss_arc(SimInterface& sim, const vec2& position, std::u
       shape_definition_with_width<SuperBossArc, SuperBossArc::bounding_width(true)>;
   using shape = shape_definition_with_width<SuperBossArc, SuperBossArc::bounding_width(false)>;
 
-  auto h = sim.is_legacy() ? create_ship2<SuperBossArc, legacy_shape>(sim, position)
-                           : create_ship2<SuperBossArc, shape>(sim, position);
+  auto h = sim.is_legacy() ? create_ship<SuperBossArc, legacy_shape>(sim, position)
+                           : create_ship<SuperBossArc, shape>(sim, position);
   h.add(Enemy{.threat_value = 10});
   h.add(Health{
       .hp = calculate_boss_hp(SuperBossArc::kBaseHp, sim.player_count(), cycle),
@@ -100,7 +100,7 @@ ecs::handle spawn_super_boss_arc(SimInterface& sim, const vec2& position, std::u
             return scale_boss_damage(h, sim, type,
                                      type == damage_type::kBomb ? damage / 2 : damage);
           },
-      .on_hit = &boss_on_hit2<true, SuperBossArc, shape>,
+      .on_hit = &boss_on_hit<true, SuperBossArc, shape>,
       .on_destroy = ecs::call<&SuperBossArc::on_destroy>,
   });
   h.add(SuperBossArc{boss.id(), i, timer});
@@ -273,7 +273,7 @@ struct SuperBoss : ecs::component {
       }
     });
 
-    auto& r = resolve_entity_shape2<shape_definition_with_width<SuperBoss, 0>>(h, sim);
+    auto& r = resolve_entity_shape<shape_definition_with_width<SuperBoss, 0>>(h, sim);
     explode_shapes(e, r);
     explode_shapes(e, r, cvec4{1.f}, 12);
     explode_shapes(e, r, std::nullopt, 24);
@@ -305,20 +305,19 @@ void spawn_super_boss(SimInterface& sim, std::uint32_t cycle) {
   using shape = shape_definition_with_width<SuperBoss, SuperBoss::bounding_width(false)>;
 
   vec2 position{sim.dimensions().x / 2, -sim.dimensions().y / (2 + fixed_c::half)};
-  auto h = sim.is_legacy() ? create_ship2<SuperBoss, legacy_shape>(sim, position)
-                           : create_ship2<SuperBoss, shape>(sim, position);
+  auto h = sim.is_legacy() ? create_ship<SuperBoss, legacy_shape>(sim, position)
+                           : create_ship<SuperBoss, shape>(sim, position);
 
   h.add(Enemy{.threat_value = 100,
               .boss_score_reward =
                   calculate_boss_score(boss_flag::kBoss3A, sim.player_count(), cycle)});
   h.add(Health{
       .hp = calculate_boss_hp(SuperBoss::kBaseHp, sim.player_count(), cycle),
-      .hit_flash_ignore_index = 8,
       .hit_sound0 = std::nullopt,
       .hit_sound1 = sound::kEnemyShatter,
       .destroy_sound = std::nullopt,
       .damage_transform = &scale_boss_damage,
-      .on_hit = &boss_on_hit2<true, SuperBoss, shape>,
+      .on_hit = &boss_on_hit<true, SuperBoss, shape>,
       .on_destroy = ecs::call<&SuperBoss::on_destroy>,
   });
   h.add(Boss{.boss = boss_flag::kBoss3A});

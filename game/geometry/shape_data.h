@@ -1,11 +1,11 @@
-#ifndef II_GAME_GEOM2_SHAPE_DATA_H
-#define II_GAME_GEOM2_SHAPE_DATA_H
+#ifndef II_GAME_GEOMETRY_SHAPE_DATA_H
+#define II_GAME_GEOMETRY_SHAPE_DATA_H
 #include "game/common/math.h"
-#include "game/geom2/types.h"
-#include "game/geom2/value_parameters.h"
+#include "game/geometry/types.h"
+#include "game/geometry/value_parameters.h"
 #include <cstdint>
 
-namespace ii::geom2 {
+namespace ii::geom {
 
 //////////////////////////////////////////////////////////////////////////////////
 // Basic definitions.
@@ -138,6 +138,6 @@ struct enable {
   value<bool> x = true;
 };
 
-}  // namespace ii::geom2
+}  // namespace ii::geom
 
 #endif

@@ -6,7 +6,7 @@
 
 namespace ii::legacy {
 namespace {
-using namespace geom2;
+using namespace geom;
 
 struct TractorBoss : ecs::component {
   static constexpr std::uint32_t kBaseHp = 900;
@@ -265,12 +265,12 @@ struct TractorBoss : ecs::component {
 
   void on_hit(ecs::handle h, const Transform& transform, SimInterface& sim, EmitHandle& e,
               damage_type type, const vec2& source_position) const {
-    boss_on_hit2<true, TractorBoss, shape_definition_with_width<TractorBoss, 0>>(h, sim, e, type,
-                                                                                 source_position);
+    boss_on_hit<true, TractorBoss, shape_definition_with_width<TractorBoss, 0>>(h, sim, e, type,
+                                                                                source_position);
     // Compatiblity with old attack shapes actually being part of the shape.
     if (type == damage_type::kBomb) {
       for (const auto& v : attack_shapes) {
-        auto& r = resolve_shape2<&construct_attack_shape>(sim, [&](parameter_set& parameters) {
+        auto& r = resolve_shape<&construct_attack_shape>(sim, [&](parameter_set& parameters) {
           parameters.add(key{'v'}, transform.centre)
               .add(key{'r'}, transform.rotation)
               .add(key{'t'}, v);
@@ -295,7 +295,7 @@ struct TractorBoss : ecs::component {
       }
     }
     for (const auto& v : attack_shapes) {
-      auto& r = resolve_shape2<&construct_attack_shape>(sim, [&](parameter_set& parameters) {
+      auto& r = resolve_shape<&construct_attack_shape>(sim, [&](parameter_set& parameters) {
         parameters.add(key{'v'}, transform.centre)
             .add(key{'r'}, transform.rotation)
             .add(key{'t'}, v);
@@ -325,8 +325,8 @@ void spawn_tractor_boss(SimInterface& sim, std::uint32_t cycle) {
   using shape = shape_definition_with_width<TractorBoss, TractorBoss::bounding_width(false)>;
 
   vec2 position{sim.dimensions().x * (1 + fixed_c::half), sim.dimensions().y / 2};
-  auto h = sim.is_legacy() ? create_ship2<TractorBoss, legacy_shape>(sim, position)
-                           : create_ship2<TractorBoss, shape>(sim, position);
+  auto h = sim.is_legacy() ? create_ship<TractorBoss, legacy_shape>(sim, position)
+                           : create_ship<TractorBoss, shape>(sim, position);
   h.add(Enemy{.threat_value = 100,
               .boss_score_reward =
                   calculate_boss_score(boss_flag::kBoss2A, sim.player_count(), cycle)});
@@ -337,7 +337,7 @@ void spawn_tractor_boss(SimInterface& sim, std::uint32_t cycle) {
       .destroy_sound = std::nullopt,
       .damage_transform = &scale_boss_damage,
       .on_hit = ecs::call<&TractorBoss::on_hit>,
-      .on_destroy = ecs::call<&boss_on_destroy2<TractorBoss, shape>>,
+      .on_destroy = ecs::call<&boss_on_destroy<TractorBoss, shape>>,
   });
   h.add(Boss{.boss = boss_flag::kBoss2A});
   h.add(TractorBoss{sim});

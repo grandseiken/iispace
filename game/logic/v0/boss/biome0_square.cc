@@ -10,7 +10,7 @@
 
 namespace ii::v0 {
 namespace {
-using namespace geom2;
+using namespace geom;
 
 struct SquareBoss : public ecs::component {
   static constexpr std::uint32_t kBaseHp = 3250;

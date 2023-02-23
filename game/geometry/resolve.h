@@ -1,10 +1,10 @@
-#ifndef II_GAME_GEOM2_RESOLVE_H
-#define II_GAME_GEOM2_RESOLVE_H
-#include "game/geom2/types.h"
+#ifndef II_GAME_GEOMETRY_RESOLVE_H
+#define II_GAME_GEOMETRY_RESOLVE_H
+#include "game/geometry/types.h"
 #include <variant>
 #include <vector>
 
-namespace ii::geom2 {
+namespace ii::geom {
 
 struct resolve_result {
   struct line_style {
@@ -78,6 +78,6 @@ struct resolve_result {
   }
 };
 
-}  // namespace ii::geom2
+}  // namespace ii::geom
 
 #endif

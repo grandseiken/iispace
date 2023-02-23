@@ -9,7 +9,7 @@
 
 namespace ii::legacy {
 namespace {
-using namespace geom2;
+using namespace geom;
 constexpr std::uint32_t kMagicShotCount = 120;
 
 struct Shot : ecs::component {
@@ -119,7 +119,7 @@ DEBUG_STRUCT_TUPLE(Shot, player, player_number, velocity, magic);
 void spawn_shot(SimInterface& sim, const vec2& position, ecs::handle player, const vec2& direction,
                 bool magic) {
   const auto& p = *player.get<Player>();
-  create_ship2<Shot>(sim, position)
+  create_ship<Shot>(sim, position)
       .add(Shot{player.id(), p.player_number, p.is_predicted, direction, magic});
 }
 
@@ -302,7 +302,7 @@ struct PlayerLogic : ecs::component {
     explosion(h, sim, std::nullopt, e);
     explosion(h, sim, std::nullopt, e, cvec4{1.f}, 14);
     explosion(h, sim, std::nullopt, e, std::nullopt, 20);
-    auto& r = resolve_entity_shape2<default_shape_definition<PlayerLogic>>(h, sim);
+    auto& r = resolve_entity_shape<default_shape_definition < PlayerLogic >> (h, sim);
     destruct_lines(e, r, to_float(transform.centre), 32);
 
     kill_timer = kReviveTime;
@@ -321,7 +321,7 @@ struct PlayerLogic : ecs::component {
                  const std::optional<vec2>& position_override, EmitHandle& e,
                  const std::optional<cvec4>& colour = std::nullopt, std::uint32_t time = 8,
                  const std::optional<vec2>& towards = std::nullopt) const {
-    auto& r = resolve_shape2<&construct_shape>(sim, [&](parameter_set& parameters) {
+    auto& r = resolve_shape<&construct_shape>(sim, [&](parameter_set& parameters) {
       ecs::call<&PlayerLogic::set_parameters>(h, parameters);
       if (position_override) {
         parameters.add(key{'v'}, *position_override);
@@ -369,7 +369,7 @@ DEBUG_STRUCT_TUPLE(PlayerLogic, is_what_mode, invulnerability_timer, fire_timer,
 }  // namespace
 
 void spawn_player(SimInterface& sim, const vec2& position, std::uint32_t player_number) {
-  auto h = create_ship2<PlayerLogic>(sim, position);
+  auto h = create_ship<PlayerLogic>(sim, position);
   h.add(
       Player{.player_number = player_number, .render_info = ecs::call<&PlayerLogic::render_info>});
   h.add(PlayerScore{});

@@ -1,5 +1,5 @@
-#ifndef II_GAME_GEOM2_TYPES_H
-#define II_GAME_GEOM2_TYPES_H
+#ifndef II_GAME_GEOMETRY_TYPES_H
+#define II_GAME_GEOMETRY_TYPES_H
 #include "game/common/enum.h"
 #include "game/common/math.h"
 #include "game/render/data/shapes.h"
@@ -27,7 +27,7 @@ struct bitmask_enum<shape_flag> : std::true_type {};
 
 }  // namespace ii
 
-namespace ii::geom2 {
+namespace ii::geom {
 using render::ngon_style;
 using render::tag_t;
 using render_flag = render::flag;
@@ -95,46 +95,6 @@ struct transform {
   constexpr transform rotate(fixed a) const { return {v, r + a}; }
 };
 
-struct convert_local_transform {
-  constexpr convert_local_transform(transform t = {}) : ct{t} {}
-  transform ct;
-
-  std::vector<vec2> transform(std::span<const vec2> vs) const {
-    std::vector<vec2> r;
-    r.reserve(vs.size());
-    for (const auto& v : vs) {
-      r.emplace_back(transform(v));
-    }
-    return r;
-  }
-  constexpr vec2 transform(const vec2& v) const { return ::rotate(v - ct.v, -ct.r); }
-  constexpr vec2 transform_ignore_rotation(const vec2& v) const { return v - ct.v; }
-  constexpr vec2 inverse_transform(const vec2& v) const { return ::rotate(v, ct.r) + ct.v; }
-
-  constexpr convert_local_transform translate(const vec2& t) const { return {ct.translate(t)}; }
-  constexpr convert_local_transform rotate(fixed a) const { return {ct.rotate(a)}; }
-};
-
-struct legacy_convert_local_transform {
-  constexpr legacy_convert_local_transform(const vec2& v) : v{v} {}
-  vec2 v;
-
-  std::vector<vec2> transform(std::span<const vec2> vs) const {
-    std::vector<vec2> r;
-    r.reserve(vs.size());
-    for (const auto& v : vs) {
-      r.emplace_back(transform(v));
-    }
-    return r;
-  }
-  constexpr vec2 transform(const vec2&) const { return v; }
-  constexpr vec2 transform_ignore_rotation(const vec2&) const { return v; }
-  constexpr vec2 inverse_transform(const vec2&) const { return vec2{0}; }
-
-  constexpr legacy_convert_local_transform translate(const vec2& t) const { return {v - t}; }
-  constexpr legacy_convert_local_transform rotate(fixed a) const { return {rotate_legacy(v, -a)}; }
-};
-
-}  // namespace ii::geom2
+}  // namespace ii::geom
 
 #endif

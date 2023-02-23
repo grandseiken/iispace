@@ -14,7 +14,7 @@ cc_library(
   ],
   implementation_deps = [
     "//game/common:math",
-    "//game/geom2",
+    "//game/geometry",
     "//game/logic/legacy/enemy",
     "//game/logic/legacy/player:powerup",
     "//game/logic/legacy:components",

@@ -10,7 +10,7 @@ cc_library(
   ],
   deps = ["//game/common:math"],
   implementation_deps = [
-    "//game/geom2",
+    "//game/geometry",
     "//game/logic/ecs",
     "//game/logic/legacy:components",
     "//game/logic/legacy:ship_template",

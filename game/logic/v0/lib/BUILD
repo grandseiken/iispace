@@ -42,7 +42,7 @@ cc_library(
   deps = [
     ":components",
     "//game/common:math",
-    "//game/geom2",
+    "//game/geometry",
     "//game/logic/ecs",
     "//game/logic/sim:sim_interface",
     "@static_functional",
