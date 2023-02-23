@@ -171,7 +171,7 @@ struct GhostBoss : ecs::component {
     key k{128};
     for (unsigned char i = 0; i < 5; ++i) {
       auto& r = n.add(rotate{key{'0'} + key{i}});
-      for (std::uint32_t j = 0; j < 16 + i * 6; ++j) {
+      for (std::uint32_t j = 0; j < 16u + i * 6u; ++j) {
         auto& t = r.add(translate_rotate{outer_shape_d(i, j), key{'o'}});
         line_style line{.colour0 = c1};
         if (i) {
@@ -239,12 +239,12 @@ struct GhostBoss : ecs::component {
         .add(key{'o'}, outer_ball_rotation)
         .add(key{'C'}, collision_enabled)
         .add(key{'B'}, box_attack_shape_enabled);
-    for (unsigned char i = 0; i < 5; ++i) {
+    for (unsigned char i = 0; i < 5u; ++i) {
       parameters.add(key{'0'} + key{i}, outer_rotation[i]);
     }
     auto k = key{128};
-    for (std::uint32_t i = 1; i < 5; ++i) {
-      for (std::uint32_t j = 0; j < 16 + i * 6; ++j) {
+    for (std::uint32_t i = 1; i < 5u; ++i) {
+      for (std::uint32_t j = 0; j < 16u + i * 6u; ++j) {
         parameters.add(k, outer_dangerous[i][j]);
         ++k;
       }
@@ -282,11 +282,11 @@ struct GhostBoss : ecs::component {
   update(ecs::handle h, Transform& transform, Boss& boss, const Health& health, SimInterface& sim) {
     auto e = sim.emit(resolve_key::predicted());
     outer_dangerous[0].fill(false);
-    for (std::uint32_t n = 1; n < 5; ++n) {
+    for (std::uint32_t n = 1; n < 5u; ++n) {
       auto t_n = geom::transform{}
                      .translate(transform.centre)
                      .rotate(transform.rotation + outer_rotation[n]);
-      for (std::uint32_t i = 0; i < 16 + n * 6; ++i) {
+      for (std::uint32_t i = 0; i < 16u + n * 6u; ++i) {
         auto t = n == 1 ? (i + danger_offset1) % 11
             : n == 2    ? (i + danger_offset2) % 7
             : n == 3    ? (i + danger_offset3) % 17
@@ -312,7 +312,7 @@ struct GhostBoss : ecs::component {
 
     inner_ring_rotation = normalise_angle(inner_ring_rotation + 2 * fixed_c::hundredth);
     outer_ball_rotation = normalise_angle(outer_ball_rotation - fixed_c::tenth);
-    for (std::uint32_t n = 0; n < 5; ++n) {
+    for (std::uint32_t n = 0; n < 5u; ++n) {
       std::uint32_t m = 0;
       // Compatibility with legacy bug that incorrectly positioned collision shapes.
       // Now looks correct (but less cool than supposed to) in legacy mode.
@@ -484,10 +484,10 @@ struct GhostBoss : ecs::component {
       auto& parameters = bank.parameters([&](parameter_set& parameters) {
         parameters.add(key{'v'}, transform.centre).add(key{'r'}, transform.rotation);
       });
-      for (std::uint32_t i = 0; i < (danger_enable ? 5 : 1); ++i) {
+      for (std::uint32_t i = 0; i < (danger_enable ? 5u : 1u); ++i) {
         const auto& node = bank[i ? &construct_danger_shape : construct_inner_shape];
         parameters.add(key{'R'}, outer_rotation[i]);
-        for (std::uint32_t j = 0; j < 16 + 6 * i; ++j) {
+        for (std::uint32_t j = 0; j < 16u + 6u * i; ++j) {
           if (!i || outer_dangerous[i][j]) {
             parameters.add(key{'V'}, outer_shape_d(i, j)).add(key{'o'}, outer_ball_rotation);
             geom::check_collision(result, c, node, parameters);

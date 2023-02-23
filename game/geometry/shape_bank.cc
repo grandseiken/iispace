@@ -6,8 +6,8 @@ namespace ii::geom {
 namespace {
 
 struct convert_local_transform {
-  constexpr convert_local_transform(transform t = {}) : ct{t} {}
-  transform ct;
+  constexpr convert_local_transform(geom::transform t = {}) : ct{t} {}
+  geom::transform ct;
 
   std::vector<vec2> transform(std::span<const vec2> vs) const {
     std::vector<vec2> r;

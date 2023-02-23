@@ -12,18 +12,20 @@ namespace {
 void run_drop(drop_data& data, bool& dropped, std::uint32_t chance, SimInterface& sim,
               const vec2& position, sfn::ptr<void(SimInterface&, const vec2&)> spawn) {
   static constexpr std::uint32_t kProbability = 1000;
+  static constexpr auto kIProbability = static_cast<std::int32_t>(kProbability);
   auto& r = sim.random(random_source::kGameSequence);
+  auto i_chance = static_cast<std::int32_t>(chance);
 
-  data.counter += static_cast<std::int32_t>(chance);
+  data.counter += i_chance;
   if (dropped) {
     return;
   }
-  data.compensation += static_cast<std::int32_t>(chance);
+  data.compensation += i_chance;
   if (data.counter >= 0 && chance > 0 &&
-      (data.counter >= kProbability || r.uint(kProbability) < chance)) {
+      (data.counter >= kIProbability || r.uint(kProbability) < chance)) {
     spawn(sim, position);
-    if (data.counter >= kProbability) {
-      data.counter -= static_cast<std::int32_t>(kProbability) + data.compensation;
+    if (data.counter >= kIProbability) {
+      data.counter -= kIProbability + data.compensation;
     } else {
       data.counter -= data.compensation;
     }

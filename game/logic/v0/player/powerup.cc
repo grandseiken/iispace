@@ -222,7 +222,7 @@ struct BombPowerup : ecs::component {
     if (evade_count > 1) {
       evade_dir /= evade_count;
     }
-    if (angle_diff(angle(dir), angle(evade_dir)) > 0 == rotate_anti &&
+    if ((angle_diff(angle(dir), angle(evade_dir)) > 0) == rotate_anti &&
         !sim.random(kRotateTime / 2)) {
       rotate_anti = !rotate_anti;
     }
