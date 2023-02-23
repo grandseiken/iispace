@@ -51,9 +51,13 @@ public:
     node(access_tag, ShapeBank* bank, const node_data& data) : bank_{bank}, data_{data} {}
 
     std::size_t size() const { return children_.size(); }
-    node_type type() const { return type_; }
     node& operator[](std::size_t i) { return *children_[i]; }
     const node& operator[](std::size_t i) const { return *children_[i]; }
+
+    std::size_t collision_size() const { return collision_.size(); }
+    node& collision(std::size_t i) { return *collision_[i]; }
+    const node& collision(std::size_t i) const { return *collision_[i]; }
+
     const node_data& operator*() const { return data_; }
     const node_data* operator->() const { return &data_; }
     node& create(const node_data& data) { return bank_->add(data); }
@@ -69,8 +73,8 @@ public:
     friend class ShapeBank;
     ShapeBank* bank_ = nullptr;
     node_data data_;
-    node_type type_ = node_type::kNone;
     std::vector<node*> children_;
+    std::vector<node*> collision_;
   };
 
   using node_construct_t = sfn::ptr<void(node&)>;

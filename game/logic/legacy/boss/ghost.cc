@@ -168,24 +168,14 @@ struct GhostBoss : ecs::component {
 
     // Outer stars.
     key k{128};
-    auto& sc = n.add(enable{key{'C'}});
-    auto& sd = n.add(enable{key{'D'}});
     for (unsigned char i = 0; i < 5; ++i) {
       auto& r = n.add(rotate{key{'0'} + key{i}});
-      auto& rc = (i ? sd : sc).add(rotate{key{'0'} + key{i}});
       for (std::uint32_t j = 0; j < 16 + i * 6; ++j) {
         auto& t = r.add(translate_rotate{outer_shape_d(i, j), key{'o'}});
-        auto& tc = rc.add(translate_rotate{outer_shape_d(i, j), key{'o'}});
-
         line_style line{.colour0 = c1};
         if (i) {
           line.colour0 = compare(true, k, c0, c2);
-          tc.add(enable{compare(true, k)})
-              .add(ball_collider{.dimensions = bd(9), .flags = shape_flag::kDangerous});
           ++k;
-        } else {
-          tc.add(ball_collider{.dimensions = bd(16),
-                               .flags = shape_flag::kDangerous | shape_flag::kEnemyInteraction});
         }
         t.add(ngon{.dimensions = nd(16, 8),
                    .style = ngon_style::kPolystar,
@@ -200,8 +190,9 @@ struct GhostBoss : ecs::component {
     // Main centre.
     n.add(ngon{.dimensions = nd(32, 8), .line = {.colour0 = c1}});
     n.add(ngon{.dimensions = nd(48, 8), .line = {.colour0 = c0}});
-    sc.add(ball_collider{.dimensions = bd(32), .flags = shape_flag::kShield});
-    sc.add(ball_collider{
+    auto& c = n.add(enable{key{'C'}});
+    c.add(ball_collider{.dimensions = bd(32), .flags = shape_flag::kShield});
+    c.add(ball_collider{
         .dimensions = bd(48),
         .flags = shape_flag::kDangerous | shape_flag::kEnemyInteraction | shape_flag::kVulnerable});
 
@@ -245,7 +236,6 @@ struct GhostBoss : ecs::component {
         .add(key{'R'}, inner_ring_rotation)
         .add(key{'o'}, outer_ball_rotation)
         .add(key{'C'}, collision_enabled)
-        .add(key{'D'}, collision_enabled && danger_enable)
         .add(key{'B'}, box_attack_shape_enabled);
     for (unsigned char i = 0; i < 5; ++i) {
       parameters.add(key{'0'} + key{i}, outer_rotation[i]);
@@ -465,6 +455,47 @@ struct GhostBoss : ecs::component {
     }
   }
 
+  static void construct_danger_shape(node& root) {
+    root.add(translate_rotate{key{'v'}, key{'r'}})
+        .add(rotate{key{'R'}})
+        .add(translate{key{'V'}})
+        .add(ball_collider{.dimensions = bd(9), .flags = shape_flag::kDangerous});
+  }
+
+  static void construct_inner_shape(node& root) {
+    root.add(translate_rotate{key{'v'}, key{'r'}})
+        .add(rotate{key{'R'}})
+        .add(translate{key{'V'}})
+        .add(ball_collider{.dimensions = bd(16),
+                           .flags = shape_flag::kDangerous | shape_flag::kEnemyInteraction});
+  }
+
+  geom::hit_result check_collision(ecs::const_handle h, const Transform& transform,
+                                   const geom::check_t& check, const SimInterface& sim) const {
+    auto c = check;
+    c.legacy_algorithm = sim.is_legacy();
+    auto result = sim.is_legacy()
+        ? ship_check_collision_legacy<default_shape_definition<GhostBoss>>(h, c, sim)
+        : ship_check_collision<default_shape_definition<GhostBoss>>(h, c, sim);
+    if (collision_enabled) {
+      auto& bank = sim.shape_bank();
+      auto& parameters = bank.parameters([&](parameter_set& parameters) {
+        parameters.add(key{'v'}, transform.centre).add(key{'r'}, transform.rotation);
+      });
+      for (std::uint32_t i = 0; i < (danger_enable ? 5 : 1); ++i) {
+        const auto& node = bank[i ? &construct_danger_shape : construct_inner_shape];
+        parameters.add(key{'R'}, outer_rotation[i]);
+        for (std::uint32_t j = 0; j < 16 + 6 * i; ++j) {
+          if (!i || outer_dangerous[i][j]) {
+            parameters.add(key{'V'}, outer_shape_d(i, j)).add(key{'o'}, outer_ball_rotation);
+            geom::check_collision(result, c, node, parameters);
+          }
+        }
+      }
+    }
+    return result;
+  }
+
   void render_override(ecs::const_handle h, const Health& health,
                        std::vector<render::shape>& output, const SimInterface& sim) const {
     std::optional<cvec4> colour_override;
@@ -491,9 +522,7 @@ void spawn_ghost_boss(SimInterface& sim, std::uint32_t cycle) {
   h.add(Transform{.centre = sim.dimensions() / 2});
   h.add(Collision{.flags = GhostBoss::kFlags,
                   .bounding_width = GhostBoss::kBoundingWidth,
-                  .check_collision = sim.is_legacy()
-                      ? &ship_check_collision_legacy<default_shape_definition<GhostBoss>>
-                      : &ship_check_collision<default_shape_definition<GhostBoss>>});
+                  .check_collision = ecs::call<&GhostBoss::check_collision>});
   h.add(Render{.render = sfn::cast<Render::render_t, ecs::call<&GhostBoss::render_override>>});
 
   h.add(Enemy{.threat_value = 100,

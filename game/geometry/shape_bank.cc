@@ -327,9 +327,7 @@ void resolve_internal(resolve_result& result, const transform& t, const node& n,
                       const parameter_set& parameters) {
   auto recurse = [&](const transform& st) {
     for (std::size_t i = 0; i < n.size(); ++i) {
-      if (+(n[i].type() & node_type::kResolve)) {
-        resolve_internal(result, st, n[i], parameters);
-      }
+      resolve_internal(result, st, n[i], parameters);
     }
   };
 
@@ -387,10 +385,8 @@ template <typename Transform>
 void check_collision_internal(hit_result& result, const check_t& check, const Transform& t,
                               const node& n, const parameter_set& parameters) {
   auto recurse = [&](const Transform& st) {
-    for (std::size_t i = 0; i < n.size(); ++i) {
-      if (+(n[i].type() & node_type::kCollision)) {
-        check_collision_internal(result, check, st, n[i], parameters);
-      }
+    for (std::size_t i = 0; i < n.collision_size(); ++i) {
+      check_collision_internal(result, check, st, n.collision(i), parameters);
     }
   };
 
@@ -447,18 +443,42 @@ void check_collision_internal(hit_result& result, const check_t& check, const Tr
 }  // namespace
 
 // TODO: optimize further. For example:
-// - can also inline any compound node into its parent. Also, rotate into transform.
 // - instead of flagging nodes with kCollision or kResolve, copy to separate vectors?
 node_type ShapeBank::optimize(node& n) {
-  if (std::holds_alternative<compound>(n.data_) && n.size() == 1u) {
+  if (n.size() == 1u) {
     const auto& c = *n.children_.front();
-    n.data_ = c.data_;
-    n.bank_ = c.bank_;
-    n.children_ = c.children_;
+    if (std::holds_alternative<compound>(n.data_)) {
+      n.data_ = c.data_;
+      n.bank_ = c.bank_;
+      n.children_ = c.children_;
+    }
+    if (const auto* t = std::get_if<translate>(&n.data_)) {
+      if (const auto* r = std::get_if<rotate>(&c.data_)) {
+        n.data_ = translate_rotate{t->x, r->x};
+        n.bank_ = c.bank_;
+        n.children_ = c.children_;
+      }
+    }
   }
+  for (auto it = n.children_.begin(); it != n.children_.end();) {
+    auto& c = **it;
+    if (std::holds_alternative<compound>(c.data_)) {
+      it = n.children_.erase(it);
+      it = n.children_.insert(it, c.children_.begin(), c.children_.end());
+    } else {
+      ++it;
+    }
+  }
+
   node_type type = node_type::kNone;
-  for (auto* c : n.children_) {
-    type |= optimize(*c);
+  for (auto it = n.children_.begin(); it != n.children_.end(); ++it) {
+    auto t = optimize(**it);
+    if (+(t & node_type::kCollision)) {
+      n.collision_.emplace_back(*it);
+    }
+    // TODO: should also be able to filter children_ for node_type::kResolve, but that
+    // somehow inexplicably breaks everything.
+    type |= t;
   }
 
   switch (n->index()) {
@@ -478,7 +498,7 @@ node_type ShapeBank::optimize(node& n) {
       break;
     }
   }
-  return n.type_ = type;
+  return type;
 }
 
 void resolve(resolve_result& result, const node& n, const parameter_set& parameters) {

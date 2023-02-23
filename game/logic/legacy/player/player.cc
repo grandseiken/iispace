@@ -302,7 +302,7 @@ struct PlayerLogic : ecs::component {
     explosion(h, sim, std::nullopt, e);
     explosion(h, sim, std::nullopt, e, cvec4{1.f}, 14);
     explosion(h, sim, std::nullopt, e, std::nullopt, 20);
-    auto& r = resolve_entity_shape<default_shape_definition < PlayerLogic >> (h, sim);
+    auto& r = resolve_entity_shape<default_shape_definition<PlayerLogic>>(h, sim);
     destruct_lines(e, r, to_float(transform.centre), 32);
 
     kill_timer = kReviveTime;
