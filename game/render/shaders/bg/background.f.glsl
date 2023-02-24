@@ -1,4 +1,5 @@
 #include "game/render/shaders/bg/data.glsl"
+#include "game/render/shaders/lib/frag_math.glsl"
 #include "game/render/shaders/lib/math.glsl"
 #include "game/render/shaders/lib/noise/simplex.glsl"
 

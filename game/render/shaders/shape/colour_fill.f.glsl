@@ -1,4 +1,4 @@
-#include "game/render/shaders/lib/math.glsl"
+#include "game/render/shaders/lib/frag_math.glsl"
 #include "game/render/shaders/lib/position_fragment.glsl"
 #include "game/render/shaders/shape/data.glsl"
 
