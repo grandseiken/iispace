@@ -18,8 +18,7 @@ void add_line_particle(EmitHandle& e, const fvec2& source, const fvec2& a, const
   auto angular_velocity = (d / (30.f * diameter)) + r.fixed().to_float() / 60.f;
   e.add(particle{
       .position = position - velocity,
-      .velocity = velocity,
-      .end_velocity = velocity / 2.f,
+      .velocity = {velocity, velocity / 2.f},
       .colour = c,
       .data =
           line_particle{
@@ -34,8 +33,8 @@ void add_line_particle(EmitHandle& e, const fvec2& source, const fvec2& a, const
   });
 }
 
-void add_explode_particle(EmitHandle& e, const fvec2& source, const fvec2& position, float radius,
-                          const cvec4& c, std::uint32_t time) {
+void add_ball_explode_particle(EmitHandle& e, const fvec2& source, const fvec2& position,
+                               float radius, const cvec4& c, std::uint32_t time) {
   auto& r = e.random();
   auto base_velocity = (1.f + 1.5f * r.fixed().to_float()) * normalise(position - source) +
       from_polar((2 * pi<fixed> * r.fixed()).to_float(), r.fixed().to_float());
@@ -51,31 +50,62 @@ void add_explode_particle(EmitHandle& e, const fvec2& source, const fvec2& posit
         .anim_speed = 1.5f / 2};
     auto cv = c;
     if (i == 0) {
-      data.radius = radius / 2.f;
-      data.inner_radius = -radius / 2.f;
-      data.end_radius = radius;
-      data.end_inner_radius = -radius;
-      data.value = 2.f;
-      data.end_value = 0.f;
+      data.radius = {radius / 2.f, radius};
+      data.inner_radius = {-radius / 2.f, -radius};
+      data.value = {2.f, 0.f};
     } else if (i == 1) {
-      data.inner_radius = data.end_inner_radius = -.75f * radius;
-      data.radius = radius;
-      data.end_radius = 0.f;
-      data.value = data.end_value = 1.f;
+      data.inner_radius = -.75f * radius;
+      data.radius = {radius, 0.f};
+      data.value = 1.f;
       cv = colour::perceptual_mix(c, colour::kWhite0, .5f);
     } else {
-      data.radius = .325f * radius;
-      data.inner_radius = -.75f * radius;
-      data.end_radius = data.end_inner_radius = .75f * radius;
-      data.value = 1.f;
-      data.end_value = 0.f;
+      data.radius = {.325f * radius, .75f * radius};
+      data.inner_radius = {-.75f * radius, .75f * radius};
+      data.value = {1.f, 0.f};
       cv = colour::kWhite0;
     }
     auto tv = time + static_cast<int>(radius / 4.f);
     e.add(particle{
         .position = offset + position - velocity,
-        .velocity = velocity,
-        .end_velocity = velocity / 2.f,
+        .velocity = {velocity, velocity / 2.f},
+        .colour = cv,
+        .z = static_cast<float>(i),
+        .data = data,
+        .end_time = tv + r.uint(tv),
+    });
+  }
+}
+
+void add_box_explode_particle(EmitHandle& e, const fvec2& source, const fvec2& position,
+                              const fvec2& dimensions, float rotation, const cvec4& c,
+                              std::uint32_t time) {
+  auto& r = e.random();
+  auto base_velocity = (1.f + .75f * r.fixed().to_float()) * normalise(position - source) +
+      from_polar((2 * pi<fixed> * r.fixed()).to_float(), .5f * r.fixed().to_float());
+  auto seed = 1024.f * fvec2{r.fixed().to_float(), r.fixed().to_float()};
+  for (std::uint32_t i = 0; i < 2; ++i) {
+    auto velocity = base_velocity + r.fixed().to_float() * normalise(position - source) / 32.f +
+        from_polar((2 * pi<fixed> * r.fixed()).to_float(), r.fixed().to_float() / 32.f);
+    auto offset = from_polar((2 * pi<fixed> * r.fixed()).to_float(),
+                             std::min(dimensions.x, dimensions.y) * r.fixed().to_float() / 64.f);
+    box_fx_particle data{
+        .style = render::fx_style::kExplosion,
+        .seed = seed + 64.f * fvec2{r.fixed().to_float() - .5f, r.fixed().to_float() - .5f},
+        .anim_speed = 1.5f / 2,
+        .rotation = rotation};
+    auto cv = c;
+    if (i == 0) {
+      data.dimensions = {dimensions / 2.f, dimensions};
+      data.value = {2.f, 0.f};
+    } else {
+      data.dimensions = {dimensions, fvec2{0.f}};
+      data.value = 1.f;
+      cv = colour::perceptual_mix(c, colour::kWhite0, .5f);
+    }
+    auto tv = time + static_cast<int>((dimensions.x + dimensions.y) / 8.f);
+    e.add(particle{
+        .position = offset + position - velocity,
+        .velocity = {velocity, velocity / 2.f},
         .colour = cv,
         .z = static_cast<float>(i),
         .data = data,
@@ -216,26 +246,33 @@ void destruct_lines(EmitHandle& e, const geom::resolve_result& r, const fvec2& s
 
 void explode_volumes(EmitHandle& e, const geom::resolve_result& r, const fvec2& source,
                      std::uint32_t time) {
-  auto handle_shape = [&](const vec2& v, fixed r, const cvec4& c) {
+  auto handle_ball = [&](const vec2& v, fixed r, const cvec4& c) {
     if (c.a) {
-      add_explode_particle(e, source, to_float(v), 2.f * r.to_float(), c, time);
+      add_ball_explode_particle(e, source, to_float(v), 2.f * r.to_float(), c, time);
+    }
+  };
+
+  auto handle_box = [&](const vec2& v, const vec2& d, fixed r, const cvec4& c) {
+    if (c.a) {
+      add_box_explode_particle(e, source, to_float(v), to_float(d + std::min(d.x, d.y) / 2),
+                               r.to_float(), c, time);
     }
   };
 
   for (const auto& entry : r.entries) {
     switch (entry.data.index()) {
       VARIANT_CASE_GET(geom::resolve_result::ball, entry.data, d) {
-        handle_shape(*entry.t, d.dimensions.radius, d.fill.colour0);
+        handle_ball(*entry.t, d.dimensions.radius, d.fill.colour0);
         break;
       }
 
       VARIANT_CASE_GET(geom::resolve_result::box, entry.data, d) {
-        handle_shape(*entry.t, std::min(d.dimensions.x, d.dimensions.y), d.fill.colour0);
+        handle_box(*entry.t, d.dimensions, entry.t.rotation(), d.fill.colour0);
         break;
       }
 
       VARIANT_CASE_GET(geom::resolve_result::ngon, entry.data, d) {
-        handle_shape(*entry.t, d.dimensions.radius, d.fill.colour1);
+        handle_ball(*entry.t, d.dimensions.radius, d.fill.colour1);
         break;
       }
     }

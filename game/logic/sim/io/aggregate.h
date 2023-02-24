@@ -84,6 +84,15 @@ struct resolve_key {
   }
 };
 
+template <typename T>
+struct interpolate {
+  constexpr interpolate(const T& x) : begin{x}, end{x} {}
+  constexpr interpolate(const T& begin, const T& end) : begin{begin}, end{end} {}
+  constexpr T operator()(float t) const { return t * end + (1.f - t) * begin; }
+  T begin = T{0};
+  T end = begin;
+};
+
 struct dot_particle {
   float radius = 1.5f;
   float rotation = 0.f;
@@ -102,20 +111,27 @@ struct ball_fx_particle {
   render::fx_style style = render::fx_style::kNone;
   fvec2 seed{0.f};
   float anim_speed = 0.f;
-  float value = 0.f;
-  float radius = 0.f;
-  float inner_radius = 0.f;
-  float end_value = value;
-  float end_radius = radius;
-  float end_inner_radius = inner_radius;
+  interpolate<float> value = 0.f;
+  interpolate<float> radius = 0.f;
+  interpolate<float> inner_radius = 0.f;
 };
 
-using particle_data = std::variant<dot_particle, line_particle, ball_fx_particle>;
+struct box_fx_particle {
+  render::fx_style style = render::fx_style::kNone;
+  fvec2 seed{0.f};
+  float anim_speed = 0.f;
+  interpolate<float> value = 0.f;
+  interpolate<fvec2> dimensions = fvec2{0.f};
+  float rotation = 0.f;
+  interpolate<float> angular_velocity = 0.f;
+};
 
+using particle_data = std::variant<dot_particle, line_particle, ball_fx_particle, box_fx_particle>;
+
+// TODO: clean this one up a bit.
 struct particle {
   fvec2 position{0.f};
-  fvec2 velocity{0.f};
-  fvec2 end_velocity = velocity;
+  interpolate<fvec2> velocity = fvec2{0.f};
   cvec4 colour{0.f};
   float z = 0.f;
   particle_data data;

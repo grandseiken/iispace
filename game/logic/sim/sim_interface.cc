@@ -61,8 +61,7 @@ EmitHandle& EmitHandle::explosion(const fvec2& v, const cvec4& c, std::uint32_t 
     dot.angular_velocity = (ra.fixed().to_float() - .5f) / 8.f;
     add(particle{
         .position = v,
-        .velocity = dir,
-        .end_velocity = dir / 2.f,
+        .velocity = {dir, dir / 2.f},
         .colour = c,
         .data = dot,
         .end_time = time + r.uint(10),

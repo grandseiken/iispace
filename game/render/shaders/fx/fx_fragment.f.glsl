@@ -1,10 +1,13 @@
 #include "game/render/shaders/fx/data.glsl"
+#include "game/render/shaders/lib/math.glsl"
 #include "game/render/shaders/lib/noise/simplex.glsl"
 #include "game/render/shaders/lib/position_fragment.glsl"
 
 const float kInverseSqrt2 = .70710678118;
 
 flat in float g_time;
+flat in float g_rotation;
+flat in uint g_shape;
 flat in uint g_style;
 flat in vec4 g_colour;
 flat in vec2 g_position;
@@ -35,14 +38,31 @@ float ball_coefficient(vec2 v) {
   return -4. * (d - r0) * (d - r1) / ((r1 - r0) * (r1 - r0));
 }
 
+float box_coefficient(vec2 v) {
+  vec2 d = abs(rotate(v - g_position, -g_rotation));
+  float t = min(g_dimensions.x, g_dimensions.y);
+  return min(1., min((g_dimensions.x - d.x) / t, (g_dimensions.y - d.y) / t));
+}
+
+float shape_coefficient(vec2 v) {
+  switch (g_shape) {
+  case kFxShapeBall:
+    return ball_coefficient(v);
+  case kFxShapeBox:
+    return box_coefficient(v);
+  }
+  return 0.;
+}
+
 void main() {
   vec2 frag_position = game_position(gl_FragCoord);
 
   switch (g_style) {
   case kFxStyleExplosion: {
     vec2 gradient;
+    // TODO: position below maybe needs to be rotated for box case.
     float n = noise0(vec3(frag_position + g_seed - g_position, g_seed.x + g_time), gradient);
-    float q = g_colour.a * clamp(ball_coefficient(frag_position), 0., 1.);
+    float q = g_colour.a * clamp(shape_coefficient(frag_position), 0., 1.);
 
     float v = n * q * 16. + q;
     float a = smoothstep(1. - fwidth(v), 1., v);

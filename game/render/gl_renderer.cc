@@ -56,6 +56,11 @@ enum shape_shader_style : std::uint32_t {
   kStyleBall = 5,
 };
 
+enum fx_shape : std::uint32_t {
+  kFxShapeBall = 0,
+  kFxShapeBox = 1,
+};
+
 template <typename T>
 gl::buffer make_stream_draw_buffer(std::span<const T> data) {
   auto buffer = gl::make_buffer();
@@ -1077,39 +1082,82 @@ void GlRenderer::render_shapes(coordinate_system ctype, std::vector<shape>& shap
   if (!fxs.empty()) {
     vertex_int_data.clear();
     vertex_float_data.clear();
-    auto add_fx_data = [&](const fx& d) {
-      const auto* b = std::get_if<render::ball_fx>(&d.data);
-      if (!b) {
+
+    struct fx_data {
+      fx_shape shape = fx_shape::kFxShapeBall;
+      fx_style style = fx_style::kNone;
+      float time = 0.f;
+      float rotation = 0.f;
+      fvec4 colour{0.f};
+      fvec2 position{0.f};
+      fvec2 dimensions{0.f};
+      fvec2 seed{0.f};
+    };
+
+    auto add_fx_data = [&](const fx_data& d) {
+      if (d.style == fx_style::kNone) {
         return;
       }
+      vertex_int_data.emplace_back(static_cast<std::uint32_t>(d.shape));
       vertex_int_data.emplace_back(static_cast<std::uint32_t>(d.style));
       vertex_float_data.emplace_back(d.time);
+      vertex_float_data.emplace_back(d.rotation);
       vertex_float_data.emplace_back(d.colour.r);
       vertex_float_data.emplace_back(d.colour.g);
       vertex_float_data.emplace_back(d.colour.b);
       vertex_float_data.emplace_back(d.colour.a);
-      vertex_float_data.emplace_back(b->position.x);
-      vertex_float_data.emplace_back(b->position.y);
-      vertex_float_data.emplace_back(b->radius);
-      vertex_float_data.emplace_back(b->inner_radius);
+      vertex_float_data.emplace_back(d.position.x);
+      vertex_float_data.emplace_back(d.position.y);
+      vertex_float_data.emplace_back(d.dimensions.x);
+      vertex_float_data.emplace_back(d.dimensions.y);
       vertex_float_data.emplace_back(d.seed.x);
       vertex_float_data.emplace_back(d.seed.y);
       ++fx_count;
     };
 
     for (const auto& d : fxs) {
-      add_fx_data(d);
+      switch (d.data.index()) {
+        VARIANT_CASE_GET(ball_fx, d.data, v) {
+          add_fx_data({
+              .shape = kFxShapeBall,
+              .style = d.style,
+              .time = d.time,
+              .rotation = 0.f,
+              .colour = d.colour,
+              .position = v.position,
+              .dimensions = {v.radius, v.inner_radius},
+              .seed = d.seed,
+          });
+          break;
+        }
+
+        VARIANT_CASE_GET(box_fx, d.data, v) {
+          add_fx_data({
+              .shape = kFxShapeBox,
+              .style = d.style,
+              .time = d.time,
+              .rotation = v.rotation,
+              .colour = d.colour,
+              .position = v.position,
+              .dimensions = v.dimensions,
+              .seed = d.seed,
+          });
+          break;
+        }
+      }
     }
-    fx_attributes.add_buffer(std::span<const std::uint32_t>(vertex_int_data), 1);
-    fx_attributes.add_buffer(std::span<const float>{vertex_float_data}, 11);
+    fx_attributes.add_buffer(std::span<const std::uint32_t>(vertex_int_data), 2);
+    fx_attributes.add_buffer(std::span<const float>{vertex_float_data}, 12);
 
     fx_attributes.bind();
     fx_attributes.add_attribute<float>(/* time */ 0, 1);
-    fx_attributes.add_attribute<std::uint32_t>(/* style */ 1, 1);
-    fx_attributes.add_attribute<float>(/* colour */ 2, 4);
-    fx_attributes.add_attribute<float>(/* position */ 3, 2);
-    fx_attributes.add_attribute<float>(/* dimensions */ 4, 2);
-    fx_attributes.add_attribute<float>(/* seed */ 5, 2);
+    fx_attributes.add_attribute<float>(/* rotation */ 1, 1);
+    fx_attributes.add_attribute<std::uint32_t>(/* shape */ 2, 1);
+    fx_attributes.add_attribute<std::uint32_t>(/* style */ 3, 1);
+    fx_attributes.add_attribute<float>(/* colour */ 4, 4);
+    fx_attributes.add_attribute<float>(/* position */ 5, 2);
+    fx_attributes.add_attribute<float>(/* dimensions */ 6, 2);
+    fx_attributes.add_attribute<float>(/* seed */ 7, 2);
   }
 
   auto clip_rect = target().clip_rect();

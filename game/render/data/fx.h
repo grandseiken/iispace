@@ -17,13 +17,19 @@ struct ball_fx {
   float inner_radius = 0.f;
 };
 
+struct box_fx {
+  fvec2 position{0.f};
+  fvec2 dimensions{0.f};
+  float rotation{0.f};
+};
+
 struct fx {
   fx_style style = fx_style::kNone;
   float time = 0.f;
   float z = 0.f;
   cvec4 colour = colour::kWhite0;
   fvec2 seed{0.f};
-  std::variant<ball_fx> data;
+  std::variant<ball_fx, box_fx> data;
 };
 
 }  // namespace ii::render
