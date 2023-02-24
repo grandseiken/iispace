@@ -14,7 +14,7 @@ DEBUG_STRUCT_TUPLE(AiPlayer);
 input_frame AiPlayer::think(ecs::const_handle h, const Transform& transform,
                             const SimInterface& sim, ai_state& state) {
   struct target {
-    fixed distance = 0;
+    fixed distance_sq = 0;
     vec2 position{0};
     ecs::entity_id id{0};
   };
@@ -50,43 +50,43 @@ input_frame AiPlayer::think(ecs::const_handle h, const Transform& transform,
     }
 
     auto offset = e_transform.centre - transform.centre;
-    auto distance = length(offset);
+    auto distance_sq = length_squared(offset);
     if (on_screen && health && health->hp > 0) {
-      if ((!wall || distance < kAvoidDistance + size) &&
-          (!closest_enemy || distance < closest_enemy->distance)) {
-        closest_enemy = target{distance, e_transform.centre, eh.id()};
+      if ((!wall || distance_sq < square(kAvoidDistance + size)) &&
+          (!closest_enemy || distance_sq < closest_enemy->distance_sq)) {
+        closest_enemy = target{distance_sq, e_transform.centre, eh.id()};
       }
-      if (wall && (!closest_wall || distance < closest_wall->distance)) {
-        closest_wall = target{distance, e_transform.centre, eh.id()};
+      if (wall && (!closest_wall || distance_sq < closest_wall->distance_sq)) {
+        closest_wall = target{distance_sq, e_transform.centre, eh.id()};
       }
     }
 
-    if (!distance) {
+    if (!distance_sq) {
       return;
     }
     auto threat_c =
         enemy ? enemy->threat_value * enemy->threat_value : ai_focus->priority * ai_focus->priority;
-    if (enemy && distance < kAvoidDistance + size) {
+    if (enemy && distance_sq < square(kAvoidDistance + size)) {
       if (!avoid_v) {
         avoid_v = vec2{0};
       }
-      *avoid_v -= offset / (distance * distance);
-      if (distance < kAvoidDistance / 2 + size / 2) {
+      *avoid_v -= offset / distance_sq;
+      if (distance_sq < square(kAvoidDistance / 2 + size / 2)) {
         avoid_urgent = true;
       }
     } else if (((on_screen && !wall && !boss) || (!on_screen && boss)) &&
-               distance > kAttractDistance + size) {
+               distance_sq > square(kAttractDistance + size)) {
       if (!attract_v) {
         attract_v = vec2{0};
       }
-      *attract_v += threat_c * offset / (distance * distance);
-    } else if (on_screen && wall && distance > kAttractDistance + size) {
+      *attract_v += threat_c * offset / distance_sq;
+    } else if (on_screen && wall && distance_sq > square(kAttractDistance + size)) {
       if (!wall_attract_v) {
         wall_attract_v = vec2{0};
       }
-      *wall_attract_v += threat_c * offset / (distance * distance);
+      *wall_attract_v += threat_c * offset / distance_sq;
     }
-    if (on_screen && boss && distance < kAttractDistance + size) {
+    if (on_screen && boss && distance_sq < square(kAttractDistance + size)) {
       frame.keys |= input_frame::key::kBomb;
     }
   };
@@ -100,18 +100,18 @@ input_frame AiPlayer::think(ecs::const_handle h, const Transform& transform,
           return;
         }
         auto offset = p_transform.centre - transform.centre;
-        auto distance = length(offset);
+        auto distance_sq = length_squared(offset);
         // Legacy powerup handling.
         if (!powerup.ai_requires(ph, sim, h)) {
-          if (distance < kAvoidDistance && !avoid_v) {
-            avoid_v = -offset / (distance * distance);
+          if (distance_sq < square(kAvoidDistance) && !avoid_v) {
+            avoid_v = -offset / distance_sq;
           }
           return;
         }
         if (!powerup_attract_v) {
           powerup_attract_v = vec2{0};
         }
-        *powerup_attract_v += offset / (distance * distance);
+        *powerup_attract_v += offset / distance_sq;
       });
 
   sim.index().iterate<AiClickTag>([&](const AiClickTag& tag) {
@@ -123,9 +123,9 @@ input_frame AiPlayer::think(ecs::const_handle h, const Transform& transform,
   // Avoid other players.
   sim.index().iterate_dispatch_if<Player>([&](ecs::const_handle ph, const Transform& e_transform) {
     auto offset = e_transform.centre - transform.centre;
-    auto distance = length(offset);
-    if (ph.id() != h.id() && distance < kAvoidDistance && !avoid_v) {
-      avoid_v = -offset / (distance * distance);
+    auto distance_sq = length_squared(offset);
+    if (ph.id() != h.id() && distance_sq < square(kAvoidDistance) && !avoid_v) {
+      avoid_v = -offset / distance_sq;
     }
   });
 

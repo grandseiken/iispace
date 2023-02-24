@@ -185,26 +185,23 @@ inline constexpr fixed abs(const fixed& f) {
 }
 
 inline constexpr fixed sqrt(const fixed& f) {
-  if (f.value_ <= 0) {
-    return 0;
-  }
-  if (f < 1) {
-    return 1 / sqrt(1 / f);
-  }
+  auto c = [](const fixed& x) constexpr {
+    constexpr fixed half = 1_fx >> 1;
+    constexpr fixed bound = 1_fx >> 10;
 
-  const fixed a = f / 2;
-  constexpr fixed half = 1_fx >> 1;
-  constexpr fixed bound = 1_fx >> 10;
-
-  auto r = fixed::from_internal(
-      f.value_ >> ((32 - std::countl_zero(static_cast<std::uint64_t>(f.value_))) / 2));
-  for (std::size_t n = 0; r && n < 8; ++n) {
-    r = r * half + a / r;
-    if (fixed::from_internal(detail::fixed_abs((r * r).value_) - f.value_) < bound) {
-      break;
+    const fixed a = x / 2;
+    auto r = fixed::from_internal(
+        x.value_ >> ((32 - std::countl_zero(static_cast<std::uint64_t>(x.value_))) / 2));
+    for (std::size_t n = 0; r && n < 8; ++n) {
+      r = r * half + a / r;
+      if (fixed::from_internal(detail::fixed_abs((r * r).value_) - x.value_) < bound) {
+        break;
+      }
     }
-  }
-  return r;
+    return r;
+  };
+
+  return f.value_ <= 0 ? 0 : f < 1 ? 1 / c(1 / f) : c(f);
 }
 
 namespace detail {
