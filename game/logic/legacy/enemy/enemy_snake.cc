@@ -38,7 +38,7 @@ struct SnakeTail : ecs::component {
     transform.rotate(z15);
     if (!--timer) {
       on_destroy(sim);
-      h.emplace<Destroy>();
+      add(h, Destroy{});
       auto e = sim.emit(resolve_key::reconcile(h.id(), resolve_tag::kOnDestroy));
       auto& r = resolve_entity_shape<default_shape_definition<SnakeTail>>(h, sim);
       explode_shapes(e, r, std::nullopt, 10, std::nullopt, 1.5f);
@@ -48,7 +48,7 @@ struct SnakeTail : ecs::component {
         sim.index().get(*tail)->get<SnakeTail>()->d_timer = 4;
       }
       on_destroy(sim);
-      h.emplace<Destroy>();
+      add(h, Destroy{});
       auto e = sim.emit(resolve_key::reconcile(h.id(), resolve_tag::kOnDestroy));
       auto& r = resolve_entity_shape<default_shape_definition<SnakeTail>>(h, sim);
       explode_shapes(e, r, std::nullopt, 10, std::nullopt, 1.5f);
@@ -114,7 +114,7 @@ struct Snake : ecs::component {
     if (transform.centre.x < -8 || transform.centre.x > d.x + 8 || transform.centre.y < -8 ||
         transform.centre.y > d.y + 8) {
       tail.reset();
-      h.emplace<Destroy>();
+      add(h, Destroy{});
       return;
     }
 
@@ -155,7 +155,7 @@ ecs::handle spawn_snake_tail(SimInterface& sim, const vec2& position, const cvec
   auto h = create_ship<SnakeTail>(sim, position);
   add_enemy_health<SnakeTail>(h, 0);
   h.add(SnakeTail{colour});
-  h.add(Enemy{.threat_value = 1});
+  add(h, Enemy{.threat_value = 1});
   return h;
 }
 
@@ -166,7 +166,7 @@ void spawn_snake(SimInterface& sim, const vec2& position, const cvec4& colour,
   auto h = create_ship<Snake>(sim, position);
   add_enemy_health<Snake>(h, 5);
   h.add(Snake{sim, colour, direction, rotation});
-  h.add(Enemy{.threat_value = 5});
+  add(h, Enemy{.threat_value = 5});
   h.get<Transform>()->set_rotation(angle(direction));
 }
 

@@ -303,22 +303,23 @@ void spawn_follow_hub(SimInterface& sim, const vec2& position, bool power_a, boo
   auto h = create_ship<FollowHub>(sim, position);
   add_enemy_health<FollowHub>(h, 14);
   h.add(FollowHub{power_a, power_b});
-  h.add(Enemy{.threat_value = 6u + 2 * power_a + 2 * power_b,
-              .score_reward = 50u + power_a * 10 + power_b * 10});
+  add(h,
+      Enemy{.threat_value = 6u + 2 * power_a + 2 * power_b,
+            .score_reward = 50u + power_a * 10 + power_b * 10});
 }
 
 void spawn_shielder(SimInterface& sim, const vec2& position, bool power) {
   auto h = create_ship<Shielder>(sim, position);
   add_enemy_health<Shielder>(h, 16);
   h.add(Shielder{power});
-  h.add(Enemy{.threat_value = 8u + 2 * power, .score_reward = 60u + power * 40});
+  add(h, Enemy{.threat_value = 8u + 2 * power, .score_reward = 60u + power * 40});
 }
 
 void spawn_tractor(SimInterface& sim, const vec2& position, bool power) {
   auto h = create_ship<Tractor>(sim, position);
   add_enemy_health<Tractor>(h, 50);
   h.add(Tractor{power});
-  h.add(Enemy{.threat_value = 10u + 2 * power, .score_reward = 85u + 40 * power});
+  add(h, Enemy{.threat_value = 10u + 2 * power, .score_reward = 85u + 40 * power});
 }
 
 }  // namespace ii::legacy

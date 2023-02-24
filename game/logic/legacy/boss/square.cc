@@ -160,19 +160,21 @@ void spawn_big_square_boss(SimInterface& sim, std::uint32_t cycle) {
   vec2 position{sim.dimensions().x * fixed_c::hundredth * 75, sim.dimensions().y * 2};
   auto h = sim.is_legacy() ? create_ship<BigSquareBoss, legacy_shape>(sim, position)
                            : create_ship<BigSquareBoss, shape>(sim, position);
-  h.add(Enemy{.threat_value = 100,
-              .boss_score_reward =
-                  calculate_boss_score(boss_flag::kBoss1A, sim.player_count(), cycle)});
-  h.add(Health{
-      .hp = calculate_boss_hp(BigSquareBoss::kBaseHp, sim.player_count(), cycle),
-      .hit_sound0 = std::nullopt,
-      .hit_sound1 = sound::kEnemyShatter,
-      .destroy_sound = std::nullopt,
-      .damage_transform = &scale_boss_damage,
-      .on_hit = &boss_on_hit<true, BigSquareBoss, shape>,
-      .on_destroy = ecs::call<&boss_on_destroy<BigSquareBoss, shape>>,
-  });
-  h.add(Boss{.boss = boss_flag::kBoss1A});
+  add(h,
+      Enemy{.threat_value = 100,
+            .boss_score_reward =
+                calculate_boss_score(boss_flag::kBoss1A, sim.player_count(), cycle)});
+  add(h,
+      Health{
+          .hp = calculate_boss_hp(BigSquareBoss::kBaseHp, sim.player_count(), cycle),
+          .hit_sound0 = std::nullopt,
+          .hit_sound1 = sound::kEnemyShatter,
+          .destroy_sound = std::nullopt,
+          .damage_transform = &scale_boss_damage,
+          .on_hit = &boss_on_hit<true, BigSquareBoss, shape>,
+          .on_destroy = ecs::call<&boss_on_destroy<BigSquareBoss, shape>>,
+      });
+  add(h, Boss{.boss = boss_flag::kBoss1A});
   h.add(BigSquareBoss{});
 }
 

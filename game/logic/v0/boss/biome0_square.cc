@@ -266,7 +266,7 @@ struct SquareBoss : public ecs::component {
         physics->apply_impulse(speed * *waypoints.direction * physics->mass / 2);
       }
     }
-    h->add(ColourOverride{.colour = colour});
+    add(*h, ColourOverride{.colour = colour});
   }
 
   void assign_special_targets(SimInterface& sim, RandomEngine& random, std::uint32_t threat,
@@ -368,7 +368,7 @@ void spawn_biome0_square_boss(SimInterface& sim, std::uint32_t biome_index) {
   auto h = create_ship_default<SquareBoss>(sim, position);
   add_boss_data<SquareBoss>(h, ustring::ascii("Squall"),
                             SquareBoss::kBaseHp + SquareBoss::kBiomeHp * biome_index);
-  h.add(Physics{.mass = 12u});
+  add(h, Physics{.mass = 12u});
   h.add(SquareBoss{biome_index, corner_index});
 }
 

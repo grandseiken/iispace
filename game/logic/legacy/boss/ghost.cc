@@ -72,7 +72,7 @@ struct GhostWall : ecs::component {
     if ((dir.x > 0 && transform.centre.x > d.x + 10) ||
         (dir.y > 0 && transform.centre.y > d.y + 10) || (dir.x < 0 && transform.centre.x < -10) ||
         (dir.y < 0 && transform.centre.y < -10)) {
-      h.emplace<Destroy>();
+      add(h, Destroy{});
     }
   }
 };
@@ -84,7 +84,7 @@ void spawn_ghost_wall_vertical(SimInterface& sim, bool swap, bool no_gap) {
   auto h = create_ship<GhostWall>(sim, position);
   add_enemy_health<GhostWall>(h, 0);
   h.add(GhostWall{dir, true, no_gap});
-  h.add(Enemy{.threat_value = 1});
+  add(h, Enemy{.threat_value = 1});
 }
 
 void spawn_ghost_wall_horizontal(SimInterface& sim, bool swap, bool swap_gap) {
@@ -93,7 +93,7 @@ void spawn_ghost_wall_horizontal(SimInterface& sim, bool swap, bool swap_gap) {
   auto h = create_ship<GhostWall>(sim, position);
   add_enemy_health<GhostWall>(h, 0);
   h.add(GhostWall{dir, false, swap_gap});
-  h.add(Enemy{.threat_value = 1});
+  add(h, Enemy{.threat_value = 1});
 }
 
 struct GhostMine : ecs::component {
@@ -148,7 +148,7 @@ void spawn_ghost_mine(SimInterface& sim, const vec2& position, ecs::const_handle
   auto h = create_ship<GhostMine>(sim, position);
   add_enemy_health<GhostMine>(h, 0);
   h.add(GhostMine{ghost.id()});
-  h.add(Enemy{.threat_value = 1});
+  add(h, Enemy{.threat_value = 1});
 }
 
 struct GhostBoss : ecs::component {
@@ -523,26 +523,29 @@ DEBUG_STRUCT_TUPLE(GhostBoss, visible, shot_type, rdir, danger_enable, vtime, ti
 
 void spawn_ghost_boss(SimInterface& sim, std::uint32_t cycle) {
   auto h = sim.index().create();
-  h.add(Update{.update = ecs::call<&GhostBoss::update>});
-  h.add(Transform{.centre = sim.dimensions() / 2});
-  h.add(Collision{.flags = GhostBoss::kFlags,
-                  .bounding_width = GhostBoss::kBoundingWidth,
-                  .check_collision = ecs::call<&GhostBoss::check_collision>});
-  h.add(Render{.render = sfn::cast<Render::render_t, ecs::call<&GhostBoss::render_override>>});
+  add(h, Update{.update = ecs::call<&GhostBoss::update>});
+  add(h, Transform{.centre = sim.dimensions() / 2});
+  add(h,
+      Collision{.flags = GhostBoss::kFlags,
+                .bounding_width = GhostBoss::kBoundingWidth,
+                .check_collision = ecs::call<&GhostBoss::check_collision>});
+  add(h, Render{.render = sfn::cast<Render::render_t, ecs::call<&GhostBoss::render_override>>});
 
-  h.add(Enemy{.threat_value = 100,
-              .boss_score_reward =
-                  calculate_boss_score(boss_flag::kBoss2B, sim.player_count(), cycle)});
-  h.add(Health{
-      .hp = calculate_boss_hp(GhostBoss::kBaseHp, sim.player_count(), cycle),
-      .hit_sound0 = std::nullopt,
-      .hit_sound1 = sound::kEnemyShatter,
-      .destroy_sound = std::nullopt,
-      .damage_transform = &scale_boss_damage,
-      .on_hit = &boss_on_hit<true, GhostBoss>,
-      .on_destroy = ecs::call<&boss_on_destroy<GhostBoss>>,
-  });
-  h.add(Boss{.boss = boss_flag::kBoss2B});
+  add(h,
+      Enemy{.threat_value = 100,
+            .boss_score_reward =
+                calculate_boss_score(boss_flag::kBoss2B, sim.player_count(), cycle)});
+  add(h,
+      Health{
+          .hp = calculate_boss_hp(GhostBoss::kBaseHp, sim.player_count(), cycle),
+          .hit_sound0 = std::nullopt,
+          .hit_sound1 = sound::kEnemyShatter,
+          .destroy_sound = std::nullopt,
+          .damage_transform = &scale_boss_damage,
+          .on_hit = &boss_on_hit<true, GhostBoss>,
+          .on_destroy = ecs::call<&boss_on_destroy<GhostBoss>>,
+      });
+  add(h, Boss{.boss = boss_flag::kBoss2B});
   h.add(GhostBoss{.is_legacy = sim.is_legacy()});
 }
 

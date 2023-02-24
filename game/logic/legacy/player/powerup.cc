@@ -117,7 +117,7 @@ struct Powerup : ecs::component {
           .end_time = 4 + random.uint(8),
       });
     }
-    h.emplace<Destroy>();
+    add(h, Destroy{});
   }
 
   bool ai_requires(const SimInterface& sim, ecs::const_handle ph) const {
@@ -139,7 +139,7 @@ DEBUG_STRUCT_TUPLE(Powerup, type, frame, dir, rotate, first_frame);
 void spawn_powerup(SimInterface& sim, const vec2& position, powerup_type type) {
   auto h = create_ship<Powerup>(sim, position);
   h.add(Powerup{type});
-  h.add(PowerupTag{.ai_requires = ecs::call<&Powerup::ai_requires>});
+  add(h, PowerupTag{.ai_requires = ecs::call<&Powerup::ai_requires>});
 }
 
 }  // namespace ii::legacy

@@ -1,6 +1,7 @@
 cc_library(
   name = "components",
   hdrs = ["components.h"],
+  srcs = ["components.cc"],
   deps = [
     "//game/common:math",
     "//game/common:types",

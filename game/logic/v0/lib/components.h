@@ -109,7 +109,7 @@ struct EnemyStatus : ecs::component {
         health->damage(h, sim, 12u * health->max_hp, damage_type::kBomb, h.id(),
                        destroy_timer->source);
       } else {
-        h.emplace<Destroy>();
+        add(h, Destroy{});
       }
       destroy_timer.reset();
     }
@@ -118,6 +118,14 @@ struct EnemyStatus : ecs::component {
 DEBUG_STRUCT_TUPLE(EnemyStatus::destroy_timer_t, source, timer);
 DEBUG_STRUCT_TUPLE(EnemyStatus, stun_resist_base, stun_resist_bonus, stun_resist_extra,
                    stun_resist_decay, stun_counter, stun_ticks, destroy_timer, shielded_ticks);
+
+void add(ecs::handle, const AiFocusTag&);
+void add(ecs::handle, const AiClickTag&);
+void add(ecs::handle, const GlobalData&);
+void add(ecs::handle, const DropTable&);
+void add(ecs::handle, const ColourOverride&);
+void add(ecs::handle, const Physics&);
+void add(ecs::handle, const EnemyStatus&);
 
 }  // namespace ii::v0
 

@@ -93,16 +93,17 @@ check_entity_collision(ecs::const_handle h, const geom::check_t& check, const Si
 template <ecs::Component Logic>
 ecs::handle create_ship(SimInterface& sim, const vec2& position, fixed rotation = 0) {
   auto h = sim.index().create();
-  h.add(Update{.update = ecs::call<&Logic::update>});
-  h.add(Transform{.centre = position, .rotation = rotation});
+  add(h, Update{.update = ecs::call<&Logic::update>});
+  add(h, Transform{.centre = position, .rotation = rotation});
   return h;
 }
 
 template <typename Logic, typename ShapeDefinition = default_shape_definition<Logic>>
 ecs::handle add_collision(ecs::handle h) {
-  h.add(Collision{.flags = ShapeDefinition::flags,
-                  .bounding_width = ShapeDefinition::bounding_width,
-                  .check_collision = &check_entity_collision<ShapeDefinition>});
+  add(h,
+      Collision{.flags = ShapeDefinition::flags,
+                .bounding_width = ShapeDefinition::bounding_width,
+                .check_collision = &check_entity_collision<ShapeDefinition>});
   return h;
 }
 
@@ -119,7 +120,7 @@ ecs::handle add_render(ecs::handle h) {
   if constexpr (requires { &Logic::render_panel; }) {
     render_panel_ptr = sfn::cast<Render::render_panel_t, ecs::call<&Logic::render_panel>>;
   }
-  h.add(Render{.render = render_ptr, .render_panel = render_panel_ptr});
+  add(h, Render{.render = render_ptr, .render_panel = render_panel_ptr});
   return h;
 }
 

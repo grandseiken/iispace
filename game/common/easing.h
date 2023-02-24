@@ -1,14 +1,13 @@
 #ifndef II_GAME_COMMON_EASING_H
 #define II_GAME_COMMON_EASING_H
 #include "game/common/math.h"
-#include <algorithm>
 #include <cmath>
 
 namespace ii {
 
 template <typename T>
 T ease_clamp(T x) {
-  return std::clamp(x, T{0}, T{1});
+  return x < T{0} ? T{0} : x > T{1} ? T{1} : x;
 }
 
 template <typename T>

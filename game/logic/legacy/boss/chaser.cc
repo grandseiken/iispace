@@ -325,30 +325,32 @@ struct ChaserBoss : ecs::component {
         sim, !split ? vec2{sim.dimensions().x / 2, -sim.dimensions().y / 2} : position);
 
     using shape = default_shape_definition<ChaserBoss>;
-    h.add(Collision{.flags = shape_flag::kDangerous | shape_flag::kVulnerable | shape_flag::kShield,
-                    .bounding_width = 10 * kSplitLookup[ChaserBoss::kMaxSplit - split].pow_1_5,
-                    .check_collision = sim.is_legacy() ? &ship_check_collision_legacy<shape>
-                                                       : &ship_check_collision<shape>});
-    h.add(Enemy{.threat_value = 100});
+    add(h,
+        Collision{.flags = shape_flag::kDangerous | shape_flag::kVulnerable | shape_flag::kShield,
+                  .bounding_width = 10 * kSplitLookup[ChaserBoss::kMaxSplit - split].pow_1_5,
+                  .check_collision = sim.is_legacy() ? &ship_check_collision_legacy<shape>
+                                                     : &ship_check_collision<shape>});
+    add(h, Enemy{.threat_value = 100});
 
     auto rumble = split < 3 ? rumble_type::kLarge
         : split < 6         ? rumble_type::kMedium
                             : rumble_type::kSmall;
-    h.add(Health{
-        .hp = calculate_boss_hp(
-            1 +
-                ChaserBoss::kBaseHp /
-                    (fixed_c::half + kSplitLookup[split].hp_reduce_power).to_int(),
-            sim.player_count(), cycle),
-        .hit_sound0 = std::nullopt,
-        .hit_sound1 = sound::kEnemyShatter,
-        .destroy_sound = std::nullopt,
-        .destroy_rumble = rumble,
-        .damage_transform = &scale_boss_damage,
-        .on_hit = split <= 1 ? &boss_on_hit<true, ChaserBoss> : &boss_on_hit<false, ChaserBoss>,
-        .on_destroy = ecs::call<&ChaserBoss::on_destroy>,
-    });
-    h.add(Boss{});
+    add(h,
+        Health{
+            .hp = calculate_boss_hp(
+                1 +
+                    ChaserBoss::kBaseHp /
+                        (fixed_c::half + kSplitLookup[split].hp_reduce_power).to_int(),
+                sim.player_count(), cycle),
+            .hit_sound0 = std::nullopt,
+            .hit_sound1 = sound::kEnemyShatter,
+            .destroy_sound = std::nullopt,
+            .destroy_rumble = rumble,
+            .damage_transform = &scale_boss_damage,
+            .on_hit = split <= 1 ? &boss_on_hit<true, ChaserBoss> : &boss_on_hit<false, ChaserBoss>,
+            .on_destroy = ecs::call<&ChaserBoss::on_destroy>,
+        });
+    add(h, Boss{});
     h.add(ChaserBoss{sim, cycle, split, time, stagger});
     return h;
   }
@@ -372,32 +374,33 @@ DEBUG_STRUCT_TUPLE(ChaserBoss, on_screen, move, dir, last_dir, timer, cycle, spl
 
 void spawn_chaser_boss(SimInterface& sim, std::uint32_t cycle) {
   auto h = sim.index().create();
-  h.add(Enemy{.threat_value = 0,
-              .boss_score_reward =
-                  calculate_boss_score(boss_flag::kBoss1C, sim.player_count(), cycle)});
+  add(h,
+      Enemy{.threat_value = 0,
+            .boss_score_reward =
+                calculate_boss_score(boss_flag::kBoss1C, sim.player_count(), cycle)});
 
   h.add(ChaserBossSharedState{.cycle = cycle});
-  h.add(Health{});
-  h.add(Boss{.boss = boss_flag::kBoss1C});
+  add(h, Health{});
+  add(h, Boss{.boss = boss_flag::kBoss1C});
 
-  h.add(Update{.update = [](ecs::handle h, SimInterface& sim) {
-    auto& health = *h.get<Health>();
-    auto& state = *h.get<ChaserBossSharedState>();
-    state.has_counted = false;
-    auto hp_lookup = ChaserBoss::get_hp_lookup(sim.player_count(), state.cycle);
-    health.hp = 0;
-    health.max_hp = hp_lookup[ChaserBoss::kMaxSplit];
-    sim.index().iterate_dispatch<ChaserBoss>(
-        [&](const ChaserBoss& cb, const Transform& transform, const Health& sub_health) {
-          if (sim.is_on_screen(transform.centre)) {
-            h.get<Boss>()->show_hp_bar = true;
-          }
-          health.hp += (cb.split == 7 ? 0 : 2 * hp_lookup[6 - cb.split]) + sub_health.hp;
-        });
-    if (!health.hp) {
-      h.emplace<Destroy>();
-    }
-  }});
+  add(h, Update{.update = [](ecs::handle h, SimInterface& sim) {
+        auto& health = *h.get<Health>();
+        auto& state = *h.get<ChaserBossSharedState>();
+        state.has_counted = false;
+        auto hp_lookup = ChaserBoss::get_hp_lookup(sim.player_count(), state.cycle);
+        health.hp = 0;
+        health.max_hp = hp_lookup[ChaserBoss::kMaxSplit];
+        sim.index().iterate_dispatch<ChaserBoss>(
+            [&](const ChaserBoss& cb, const Transform& transform, const Health& sub_health) {
+              if (sim.is_on_screen(transform.centre)) {
+                h.get<Boss>()->show_hp_bar = true;
+              }
+              health.hp += (cb.split == 7 ? 0 : 2 * hp_lookup[6 - cb.split]) + sub_health.hp;
+            });
+        if (!health.hp) {
+          add(h, Destroy{});
+        }
+      }});
 
   ChaserBoss::spawn_internal(sim, cycle);
 }

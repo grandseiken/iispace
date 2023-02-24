@@ -155,28 +155,28 @@ void spawn_bounce(SimInterface& sim, const vec2& position, fixed angle) {
   auto h = create_ship<Bounce>(sim, position);
   add_enemy_health<Bounce>(h, 1);
   h.add(Bounce{angle});
-  h.add(Enemy{.threat_value = 1});
+  add(h, Enemy{.threat_value = 1});
 }
 
 void spawn_follow(SimInterface& sim, const vec2& position, bool has_score, fixed rotation) {
   auto h = create_ship<Follow>(sim, position, rotation);
   add_enemy_health<Follow>(h, 1);
   h.add(Follow{false});
-  h.add(Enemy{.threat_value = 1, .score_reward = has_score ? 15u : 0});
+  add(h, Enemy{.threat_value = 1, .score_reward = has_score ? 15u : 0});
 }
 
 void spawn_big_follow(SimInterface& sim, const vec2& position, bool has_score) {
   auto h = create_ship<Follow>(sim, position);
   add_enemy_health<Follow>(h, 3, sound::kPlayerDestroy, rumble_type::kMedium);
   h.add(Follow{true});
-  h.add(Enemy{.threat_value = 3, .score_reward = has_score ? 20u : 0});
+  add(h, Enemy{.threat_value = 3, .score_reward = has_score ? 20u : 0});
 }
 
 void spawn_chaser(SimInterface& sim, const vec2& position) {
   auto h = create_ship<Chaser>(sim, position);
   add_enemy_health<Chaser>(h, 2);
   h.add(Chaser{});
-  h.add(Enemy{.threat_value = 2, .score_reward = 30});
+  add(h, Enemy{.threat_value = 2, .score_reward = 30});
 }
 
 }  // namespace ii::legacy

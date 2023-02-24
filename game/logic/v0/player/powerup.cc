@@ -133,7 +133,7 @@ struct ShieldPowerup : ecs::component {
     }
     if (++timer >= kPowerupTimer) {
       sim.emit(resolve_key::predicted()).explosion(to_float(transform.centre), colour::kWhite0);
-      h.emplace<Destroy>();
+      add(h, Destroy{});
       return;
     }
     wobble_movement(sim, transform, dir, kRotateTime, first_frame, rotate_anti);
@@ -163,7 +163,7 @@ struct ShieldPowerup : ecs::component {
     e.play(sound::kPowerupOther, transform.centre);
     e.rumble(source.get<Player>()->player_number, 10, .25f, .75f);
     e.explosion(to_float(transform.centre), colour::kWhite0);
-    h.emplace<Destroy>();
+    add(h, Destroy{});
     ++pc.shield_count;
   }
 
@@ -206,7 +206,7 @@ struct BombPowerup : ecs::component {
     }
     if (++timer >= kPowerupTimer) {
       sim.emit(resolve_key::predicted()).explosion(to_float(transform.centre), colour::kWhite0);
-      h.emplace<Destroy>();
+      add(h, Destroy{});
       return;
     }
     wobble_movement(sim, transform, dir, kRotateTime, first_frame, rotate_anti);
@@ -252,7 +252,7 @@ struct BombPowerup : ecs::component {
     e.play(sound::kPowerupOther, transform.centre);
     e.rumble(pc.player_number, 10, .25f, .75f);
     e.explosion(to_float(transform.centre), colour::kWhite0);
-    h.emplace<Destroy>();
+    add(h, Destroy{});
     ++pc.bomb_count;
   }
 
@@ -288,25 +288,26 @@ ecs::handle spawn_player_bubble(SimInterface& sim, ecs::handle player) {
 
   auto h = create_ship_default<PlayerBubble>(sim, position);
   h.add(PlayerBubble{player.get<Player>()->player_number});
-  h.add(Health{.hp = 96,
-               .destroy_sound = sound::kPlayerDestroy,
-               .destroy_rumble = rumble_type::kLarge,
-               .on_destroy =
-                   sfn::cast<Health::on_destroy_t, &destruct_entity_default<PlayerBubble>>});
-  h.add(AiFocusTag{.priority = 24});
+  add(h,
+      Health{.hp = 96,
+             .destroy_sound = sound::kPlayerDestroy,
+             .destroy_rumble = rumble_type::kLarge,
+             .on_destroy =
+                 sfn::cast<Health::on_destroy_t, &destruct_entity_default<PlayerBubble>>});
+  add(h, AiFocusTag{.priority = 24});
   return h;
 }
 
 void spawn_shield_powerup(SimInterface& sim, const vec2& position) {
   auto h = create_ship_default<ShieldPowerup>(sim, position);
   h.add(ShieldPowerup{});
-  h.add(PowerupTag{.ai_requires = ecs::call<&ShieldPowerup::is_required>});
+  add(h, PowerupTag{.ai_requires = ecs::call<&ShieldPowerup::is_required>});
 }
 
 void spawn_bomb_powerup(SimInterface& sim, const vec2& position) {
   auto h = create_ship_default<BombPowerup>(sim, position);
   h.add(BombPowerup{});
-  h.add(PowerupTag{.ai_requires = ecs::call<&BombPowerup::is_required>});
+  add(h, PowerupTag{.ai_requires = ecs::call<&BombPowerup::is_required>});
 }
 
 void render_player_name_panel(std::uint32_t player_number, const Transform& transform,

@@ -459,7 +459,7 @@ DEBUG_STRUCT_TUPLE(Overmind, power, timer, levels_mod, groups_mod, boss_mod_boss
 void spawn_overmind(SimInterface& sim) {
   auto h = sim.index().create();
   h.emplace<Overmind>(sim);
-  h.emplace<PostUpdate>().post_update = ecs::call<&Overmind::update>;
+  add(h, PostUpdate{.post_update = ecs::call<&Overmind::update>});
 }
 
 }  // namespace ii::legacy

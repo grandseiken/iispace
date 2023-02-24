@@ -89,20 +89,21 @@ ecs::handle spawn_super_boss_arc(SimInterface& sim, const vec2& position, std::u
 
   auto h = sim.is_legacy() ? create_ship<SuperBossArc, legacy_shape>(sim, position)
                            : create_ship<SuperBossArc, shape>(sim, position);
-  h.add(Enemy{.threat_value = 10});
-  h.add(Health{
-      .hp = calculate_boss_hp(SuperBossArc::kBaseHp, sim.player_count(), cycle),
-      .hit_sound0 = std::nullopt,
-      .hit_sound1 = sound::kEnemyShatter,
-      .destroy_sound = std::nullopt,
-      .damage_transform =
-          +[](ecs::handle h, SimInterface& sim, damage_type type, std::uint32_t damage) {
-            return scale_boss_damage(h, sim, type,
-                                     type == damage_type::kBomb ? damage / 2 : damage);
-          },
-      .on_hit = &boss_on_hit<true, SuperBossArc, shape>,
-      .on_destroy = ecs::call<&SuperBossArc::on_destroy>,
-  });
+  add(h, Enemy{.threat_value = 10});
+  add(h,
+      Health{
+          .hp = calculate_boss_hp(SuperBossArc::kBaseHp, sim.player_count(), cycle),
+          .hit_sound0 = std::nullopt,
+          .hit_sound1 = sound::kEnemyShatter,
+          .destroy_sound = std::nullopt,
+          .damage_transform =
+              +[](ecs::handle h, SimInterface& sim, damage_type type, std::uint32_t damage) {
+                return scale_boss_damage(h, sim, type,
+                                         type == damage_type::kBomb ? damage / 2 : damage);
+              },
+          .on_hit = &boss_on_hit<true, SuperBossArc, shape>,
+          .on_destroy = ecs::call<&SuperBossArc::on_destroy>,
+      });
   h.add(SuperBossArc{boss.id(), i, timer});
   return h;
 }
@@ -308,19 +309,21 @@ void spawn_super_boss(SimInterface& sim, std::uint32_t cycle) {
   auto h = sim.is_legacy() ? create_ship<SuperBoss, legacy_shape>(sim, position)
                            : create_ship<SuperBoss, shape>(sim, position);
 
-  h.add(Enemy{.threat_value = 100,
-              .boss_score_reward =
-                  calculate_boss_score(boss_flag::kBoss3A, sim.player_count(), cycle)});
-  h.add(Health{
-      .hp = calculate_boss_hp(SuperBoss::kBaseHp, sim.player_count(), cycle),
-      .hit_sound0 = std::nullopt,
-      .hit_sound1 = sound::kEnemyShatter,
-      .destroy_sound = std::nullopt,
-      .damage_transform = &scale_boss_damage,
-      .on_hit = &boss_on_hit<true, SuperBoss, shape>,
-      .on_destroy = ecs::call<&SuperBoss::on_destroy>,
-  });
-  h.add(Boss{.boss = boss_flag::kBoss3A});
+  add(h,
+      Enemy{.threat_value = 100,
+            .boss_score_reward =
+                calculate_boss_score(boss_flag::kBoss3A, sim.player_count(), cycle)});
+  add(h,
+      Health{
+          .hp = calculate_boss_hp(SuperBoss::kBaseHp, sim.player_count(), cycle),
+          .hit_sound0 = std::nullopt,
+          .hit_sound1 = sound::kEnemyShatter,
+          .destroy_sound = std::nullopt,
+          .damage_transform = &scale_boss_damage,
+          .on_hit = &boss_on_hit<true, SuperBoss, shape>,
+          .on_destroy = ecs::call<&SuperBoss::on_destroy>,
+      });
+  add(h, Boss{.boss = boss_flag::kBoss3A});
   h.add(SuperBoss{cycle});
 }
 

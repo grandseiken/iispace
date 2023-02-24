@@ -99,23 +99,24 @@ void boss_on_destroy(ecs::const_handle h, const Transform& transform, SimInterfa
 
 template <ecs::Component Logic, typename ShapeDefinition = default_shape_definition<Logic>>
 void add_boss_data(ecs::handle h, ustring_view name, std::uint32_t base_hp) {
-  h.add(Health{
-      .hp = kBossHpMultiplier * base_hp,
-      .hit_sound0 = std::nullopt,
-      .hit_sound1 = sound::kEnemyShatter,
-      .destroy_sound = std::nullopt,
-      .destroy_rumble = std::nullopt,
-      .damage_transform = &scale_boss_damage,
-      .on_hit = ecs::call<&boss_on_hit<ShapeDefinition>>,
-      .on_destroy = ecs::call<&boss_on_destroy<ShapeDefinition>>,
-  });
-  h.add(EnemyStatus{.stun_resist_base = 100u, .stun_resist_bonus = 60u});
-  h.add(Enemy{.threat_value = kBossThreatValue});
-  h.add(Boss{.name = ustring{name}});
-  h.add(PostUpdate{.post_update = [](ecs::handle h, SimInterface& sim) {
-    auto& r = resolve_entity_shape<ShapeDefinition>(h, sim);
-    h.get<Boss>()->colour = get_shape_colour(r).value_or(colour::kWhite0);
-  }});
+  add(h,
+      Health{
+          .hp = kBossHpMultiplier * base_hp,
+          .hit_sound0 = std::nullopt,
+          .hit_sound1 = sound::kEnemyShatter,
+          .destroy_sound = std::nullopt,
+          .destroy_rumble = std::nullopt,
+          .damage_transform = &scale_boss_damage,
+          .on_hit = ecs::call<&boss_on_hit<ShapeDefinition>>,
+          .on_destroy = ecs::call<&boss_on_destroy<ShapeDefinition>>,
+      });
+  add(h, EnemyStatus{.stun_resist_base = 100u, .stun_resist_bonus = 60u});
+  add(h, Enemy{.threat_value = kBossThreatValue});
+  add(h, Boss{.name = ustring{name}});
+  add(h, PostUpdate{.post_update = [](ecs::handle h, SimInterface& sim) {
+        auto& r = resolve_entity_shape<ShapeDefinition>(h, sim);
+        h.get<Boss>()->colour = get_shape_colour(r).value_or(colour::kWhite0);
+      }});
 }
 
 }  // namespace ii::v0

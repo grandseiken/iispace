@@ -6,6 +6,7 @@
 #include <algorithm>
 #include <array>
 #include <cmath>
+#include <sstream>
 
 namespace ii::ui {
 namespace {

@@ -41,14 +41,14 @@ struct BossShot : ecs::component {
     auto d = sim.dimensions();
     if ((p.x < -10 && velocity.x < 0) || (p.x > d.x + 10 && velocity.x > 0) ||
         (p.y < -10 && velocity.y < 0) || (p.y > d.y + 10 && velocity.y > 0)) {
-      h.emplace<Destroy>();
+      add(h, Destroy{});
     }
     transform.set_rotation(transform.rotation + fixed_c::hundredth * 2);
     if (sim.collide_any(check_point(shape_flag::kSafeShield, transform.centre))) {
       auto e = sim.emit(resolve_key::reconcile(h.id(), resolve_tag::kOnDestroy));
       auto& r = resolve_entity_shape<default_shape_definition<BossShot>>(h, sim);
       explode_shapes(e, r, std::nullopt, 4, to_float(transform.centre - velocity));
-      h.emplace<Destroy>();
+      add(h, Destroy{});
       return;
     }
     if (rotate_speed && ++timer % 8 == 0) {
@@ -64,8 +64,8 @@ void spawn_boss_shot(SimInterface& sim, const vec2& position, const vec2& veloci
   auto h = create_ship<BossShot>(sim, position);
   add_enemy_health<BossShot>(h, 0);
   h.add(BossShot{velocity, colour, rotate_speed});
-  h.add(Enemy{.threat_value = 1});
-  h.add(WallTag{});
+  add(h, Enemy{.threat_value = 1});
+  add(h, WallTag{});
 }
 
 }  // namespace ii::legacy

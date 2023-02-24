@@ -132,7 +132,7 @@ struct ModUpgrade : ecs::component {
     if (destroy) {
       timer && --timer;
       if (!timer) {
-        h.emplace<Destroy>();
+        add(h, Destroy{});
       }
     } else {
       ++timer;
@@ -152,7 +152,7 @@ struct ModUpgrade : ecs::component {
                   .explosion(to_float(transform.centre), colour::kWhite0, 24, std::nullopt, 1.f)
                   .explosion(to_float(transform.centre), c, 16, std::nullopt, 1.5f)
                   .explosion(to_float(transform.centre), colour::kWhite0, 8, std::nullopt, 2.f);
-              h.emplace<Destroy>();
+              add(h, Destroy{});
             }
           });
     }
@@ -315,11 +315,12 @@ void spawn_mod_upgrades(SimInterface& sim, std::span<mod_id> ids) {
   for (std::uint32_t i = 0; i < ids.size(); ++i) {
     auto h = sim.index().create();
     h.add(ModUpgrade{ids[i], upgrade_position{i}});
-    h.add(Render{.render = sfn::cast<Render::render_t, ecs::call<&ModUpgrade::render>>,
-                 .render_panel =
-                     sfn::cast<Render::render_panel_t, ecs::call<&ModUpgrade::render_panel>>});
-    h.add(Update{.update = ecs::call<&ModUpgrade::update>});
-    h.add(AiClickTag{});
+    add(h,
+        Render{.render = sfn::cast<Render::render_t, ecs::call<&ModUpgrade::render>>,
+               .render_panel =
+                   sfn::cast<Render::render_panel_t, ecs::call<&ModUpgrade::render_panel>>});
+    add(h, Update{.update = ecs::call<&ModUpgrade::update>});
+    add(h, AiClickTag{});
   }
 }
 

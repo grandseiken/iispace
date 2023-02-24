@@ -3,6 +3,7 @@
 #include <freetype/freetype.h>
 #include <freetype/ftglyph.h>
 #include <ft2build.h>
+#include <glm/gtx/extended_min_max.hpp>
 #include <algorithm>
 #include <cmath>
 #include <memory>

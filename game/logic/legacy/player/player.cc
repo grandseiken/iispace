@@ -55,7 +55,7 @@ struct Shot : ecs::component {
     bool on_screen = all(greaterThanEqual(transform.centre, vec2{-4, -4})) &&
         all(lessThan(transform.centre, vec2{4, 4} + sim.dimensions()));
     if (!on_screen) {
-      h.emplace<Destroy>();
+      add(h, Destroy{});
       return;
     }
 
@@ -110,7 +110,7 @@ struct Shot : ecs::component {
           });
         }
       }
-      h.emplace<Destroy>();
+      add(h, Destroy{});
     }
   }
 };

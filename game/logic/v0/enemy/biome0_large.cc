@@ -498,7 +498,7 @@ struct ShieldHub : ecs::component {
       destroy&& fade_in && (fade_in -= std::min(fade_in, 3u));
       !destroy&& fade_in < kFadeInTime && ++fade_in;
       if (destroy && !fade_in) {
-        h.add(Destroy{});
+        add(h, Destroy{});
       }
     }
   };
@@ -515,9 +515,9 @@ ecs::handle spawn_follow_hub(SimInterface& sim, const vec2& position, bool fast)
   auto h = create_ship_default<FollowHub, shape>(sim, position);
   add_enemy_health<FollowHub, shape>(h, 112);
   h.add(FollowHub{false, false, fast});
-  h.add(Enemy{.threat_value = 6u + 4u * fast});
-  h.add(Physics{.mass = 1_fx + 3_fx / 4});
-  h.add(DropTable{.shield_drop_chance = 20, .bomb_drop_chance = 25});
+  add(h, Enemy{.threat_value = 6u + 4u * fast});
+  add(h, Physics{.mass = 1_fx + 3_fx / 4});
+  add(h, DropTable{.shield_drop_chance = 20, .bomb_drop_chance = 25});
   return h;
 }
 
@@ -529,9 +529,9 @@ ecs::handle spawn_big_follow_hub(SimInterface& sim, const vec2& position, bool f
   auto h = create_ship_default<FollowHub, shape>(sim, position);
   add_enemy_health<FollowHub, shape>(h, 112);
   h.add(FollowHub{true, false, fast});
-  h.add(Enemy{.threat_value = 12u + 8u * fast});
-  h.add(Physics{.mass = 1_fx + 3_fx / 4});
-  h.add(DropTable{.shield_drop_chance = 35, .bomb_drop_chance = 40});
+  add(h, Enemy{.threat_value = 12u + 8u * fast});
+  add(h, Physics{.mass = 1_fx + 3_fx / 4});
+  add(h, DropTable{.shield_drop_chance = 35, .bomb_drop_chance = 40});
   return h;
 }
 
@@ -543,11 +543,9 @@ ecs::handle spawn_chaser_hub(SimInterface& sim, const vec2& position, bool fast)
   auto h = create_ship_default<FollowHub, shape>(sim, position);
   add_enemy_health<FollowHub, shape>(h, 112);
   h.add(FollowHub{false, true, fast});
-  h.add(Enemy{.threat_value = 10u + 6u * fast});
-  h.add(DropTable{.shield_drop_chance = 2});
-  h.add(DropTable{.bomb_drop_chance = 1});
-  h.add(Physics{.mass = 1_fx + 3_fx / 4});
-  h.add(DropTable{.shield_drop_chance = 30, .bomb_drop_chance = 35});
+  add(h, Enemy{.threat_value = 10u + 6u * fast});
+  add(h, Physics{.mass = 1_fx + 3_fx / 4});
+  add(h, DropTable{.shield_drop_chance = 30, .bomb_drop_chance = 35});
   return h;
 }
 
@@ -555,9 +553,9 @@ ecs::handle spawn_shielder(SimInterface& sim, const vec2& position, bool power) 
   auto h = create_ship_default<Shielder>(sim, position);
   add_enemy_health<Shielder>(h, 160);
   h.add(Shielder{sim, power});
-  h.add(Enemy{.threat_value = 8u + 2u * power});
-  h.add(Physics{.mass = 3_fx});
-  h.add(DropTable{.shield_drop_chance = 60});
+  add(h, Enemy{.threat_value = 8u + 2u * power});
+  add(h, Physics{.mass = 3_fx});
+  add(h, DropTable{.shield_drop_chance = 60});
   return h;
 }
 
@@ -565,9 +563,9 @@ ecs::handle spawn_tractor(SimInterface& sim, const vec2& position, bool power) {
   auto h = create_ship_default<Tractor>(sim, position);
   add_enemy_health<Tractor>(h, 336);
   h.add(Tractor{power});
-  h.add(Enemy{.threat_value = 10u + 4u * power});
-  h.add(Physics{.mass = 2_fx});
-  h.add(DropTable{.bomb_drop_chance = 100});
+  add(h, Enemy{.threat_value = 10u + 4u * power});
+  add(h, Physics{.mass = 2_fx});
+  add(h, DropTable{.bomb_drop_chance = 100});
   return h;
 }
 
@@ -578,9 +576,9 @@ ecs::handle spawn_shield_hub(SimInterface& sim, const vec2& position) {
   auto h = create_ship_default<ShieldHub>(sim, position);
   add_enemy_health<ShieldHub>(h, 280);
   h.add(ShieldHub{eh});
-  h.add(Enemy{.threat_value = 10u});
-  h.add(Physics{.mass = 3_fx});
-  h.add(DropTable{.shield_drop_chance = 80, .bomb_drop_chance = 20});
+  add(h, Enemy{.threat_value = 10u});
+  add(h, Physics{.mass = 3_fx});
+  add(h, DropTable{.shield_drop_chance = 80, .bomb_drop_chance = 20});
   return h;
 }
 

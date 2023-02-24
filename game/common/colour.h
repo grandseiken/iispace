@@ -2,15 +2,14 @@
 #define II_GAME_COMMON_COLOURS_H
 #include "game/common/math.h"
 #include <gcem.hpp>
-#include <glm/glm.hpp>
-#include <algorithm>
+#include <glm/mat3x3.hpp>
 #include <cmath>
 
 namespace ii::colour {
 
 inline constexpr cvec4 clamp(const cvec4& c) {
-  return {std::clamp(c.x, 0.f, 1.f), std::clamp(c.y, 0.f, 1.f), std::clamp(c.z, 0.f, 1.f),
-          std::clamp(c.w, 0.f, 1.f)};
+  auto f = [](float x) { return x < 0.f ? 0.f : x > 1.f ? 1.f : x; };
+  return {f(c.x), f(c.y), f(c.z), f(c.w)};
 }
 
 inline constexpr cvec4 alpha(const cvec4& c, float a) {

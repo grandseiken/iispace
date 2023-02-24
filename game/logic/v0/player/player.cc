@@ -396,7 +396,7 @@ void spawn_player(SimInterface& sim, const vec2& position, std::uint32_t player_
       Player{.player_number = player_number, .render_info = ecs::call<&PlayerLogic::render_info>});
   h.add(PlayerLogic{position + vec2{0, -48}});
   h.add(PlayerLoadout{});
-  h.add(PostUpdate{.post_update = ecs::call<&PlayerLogic::post_update>});
+  add(h, PostUpdate{.post_update = ecs::call<&PlayerLogic::post_update>});
 }
 
 void respawn_players(SimInterface& sim) {

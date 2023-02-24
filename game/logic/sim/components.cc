@@ -175,7 +175,50 @@ void Health::damage(ecs::handle h, SimInterface& sim, std::uint32_t damage, dama
     }
     on_destroy(h, sim, e_destroy, type, average_source / count);
   }
-  h.add(Destroy{.source = source_id, .destroy_type = type});
+  add(h, Destroy{.source = source_id, .destroy_type = type});
+}
+
+void add(ecs::handle h, const Destroy& v) {
+  h.add(v);
+}
+void add(ecs::handle h, const Transform& v) {
+  h.add(v);
+}
+void add(ecs::handle h, const Collision& v) {
+  h.add(v);
+}
+void add(ecs::handle h, const Update& v) {
+  h.add(v);
+}
+void add(ecs::handle h, const PostUpdate& v) {
+  h.add(v);
+}
+void add(ecs::handle h, const Render& v) {
+  h.add(v);
+}
+void add(ecs::handle h, const PrivateRandom& v) {
+  h.add(v);
+}
+void add(ecs::handle h, const WallTag& v) {
+  h.add(v);
+}
+void add(ecs::handle h, const PowerupTag& v) {
+  h.add(v);
+}
+void add(ecs::handle h, const Boss& v) {
+  h.add(v);
+}
+void add(ecs::handle h, const Enemy& v) {
+  h.add(v);
+}
+void add(ecs::handle h, const Health& v) {
+  h.add(v);
+}
+void add(ecs::handle h, const Player& v) {
+  h.add(v);
+}
+void add(ecs::handle h, const Background& v) {
+  h.add(v);
 }
 
 }  // namespace ii

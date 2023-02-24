@@ -252,7 +252,7 @@ DEBUG_STRUCT_TUPLE(Overmind, next_wave, spawn_timer, current_wave, wave_list, ba
 void spawn_overmind(SimInterface& sim) {
   auto h = sim.index().create();
   h.emplace<Overmind>();
-  h.emplace<Update>().update = ecs::call<&Overmind::update>;
+  add(h, Update{.update = ecs::call<&Overmind::update>});
 }
 
 }  // namespace ii::v0

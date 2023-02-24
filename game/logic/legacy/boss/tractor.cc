@@ -218,7 +218,7 @@ struct TractorBoss : ecs::component {
             e_transform.centre +=
                 normalise(transform.centre - e_transform.centre) * (4 + fixed_c::half);
             if (!(eh.has<WallTag>()) && length(e_transform.centre - transform.centre) <= 40) {
-              eh.emplace<Destroy>();
+              add(eh, Destroy{});
               attack_shapes.emplace_back(0);
             }
           });
@@ -327,19 +327,21 @@ void spawn_tractor_boss(SimInterface& sim, std::uint32_t cycle) {
   vec2 position{sim.dimensions().x * (1 + fixed_c::half), sim.dimensions().y / 2};
   auto h = sim.is_legacy() ? create_ship<TractorBoss, legacy_shape>(sim, position)
                            : create_ship<TractorBoss, shape>(sim, position);
-  h.add(Enemy{.threat_value = 100,
-              .boss_score_reward =
-                  calculate_boss_score(boss_flag::kBoss2A, sim.player_count(), cycle)});
-  h.add(Health{
-      .hp = calculate_boss_hp(TractorBoss::kBaseHp, sim.player_count(), cycle),
-      .hit_sound0 = std::nullopt,
-      .hit_sound1 = sound::kEnemyShatter,
-      .destroy_sound = std::nullopt,
-      .damage_transform = &scale_boss_damage,
-      .on_hit = ecs::call<&TractorBoss::on_hit>,
-      .on_destroy = ecs::call<&boss_on_destroy<TractorBoss, shape>>,
-  });
-  h.add(Boss{.boss = boss_flag::kBoss2A});
+  add(h,
+      Enemy{.threat_value = 100,
+            .boss_score_reward =
+                calculate_boss_score(boss_flag::kBoss2A, sim.player_count(), cycle)});
+  add(h,
+      Health{
+          .hp = calculate_boss_hp(TractorBoss::kBaseHp, sim.player_count(), cycle),
+          .hit_sound0 = std::nullopt,
+          .hit_sound1 = sound::kEnemyShatter,
+          .destroy_sound = std::nullopt,
+          .damage_transform = &scale_boss_damage,
+          .on_hit = ecs::call<&TractorBoss::on_hit>,
+          .on_destroy = ecs::call<&boss_on_destroy<TractorBoss, shape>>,
+      });
+  add(h, Boss{.boss = boss_flag::kBoss2A});
   h.add(TractorBoss{sim});
 }
 

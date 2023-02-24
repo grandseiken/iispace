@@ -1,7 +1,8 @@
 #ifndef II_GAME_COMMON_RECT_H
 #define II_GAME_COMMON_RECT_H
 #include "game/common/fix32.h"
-#include <glm/glm.hpp>
+#include <glm/gtx/extended_min_max.hpp>
+#include <glm/vec2.hpp>
 #include <cstdint>
 
 namespace ii {

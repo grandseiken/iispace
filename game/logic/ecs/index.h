@@ -158,6 +158,10 @@ private:
   detail::component_storage<C>& storage();
   template <Component C>
   const detail::component_storage<C>* storage() const;
+  template <Component C>
+  detail::component_storage_get<C>* storage_get();
+  template <Component C>
+  const detail::component_storage_get<C>* storage_get() const;
 
   entity_id next_id_{0};
   std::size_t next_entity_table_index_ = 0;

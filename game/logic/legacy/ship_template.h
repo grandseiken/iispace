@@ -132,23 +132,24 @@ void render_entity_shape(ecs::const_handle h, const Health* health,
 template <ecs::Component Logic, typename ShapeDefinition = default_shape_definition<Logic>>
 ecs::handle create_ship(SimInterface& sim, const vec2& position, fixed rotation = 0) {
   auto h = sim.index().create();
-  h.add(Update{.update = ecs::call<&Logic::update>});
-  h.add(Transform{.centre = position, .rotation = rotation});
+  add(h, Update{.update = ecs::call<&Logic::update>});
+  add(h, Transform{.centre = position, .rotation = rotation});
 
   if constexpr (+ShapeDefinition::flags) {
-    h.add(Collision{.flags = ShapeDefinition::flags,
-                    .bounding_width = ShapeDefinition::bounding_width,
-                    .check_collision = sim.is_legacy()
-                        ? &ship_check_collision_legacy<ShapeDefinition>
-                        : &ship_check_collision<ShapeDefinition>});
+    add(h,
+        Collision{.flags = ShapeDefinition::flags,
+                  .bounding_width = ShapeDefinition::bounding_width,
+                  .check_collision = sim.is_legacy() ? &ship_check_collision_legacy<ShapeDefinition>
+                                                     : &ship_check_collision<ShapeDefinition>});
   }
 
   constexpr auto render = ecs::call<&render_entity_shape<Logic, ShapeDefinition>>;
   if constexpr (requires { &Logic::render; }) {
-    h.add(Render{.render = sfn::sequence<sfn::cast<Render::render_t, render>,
-                                         sfn::cast<Render::render_t, ecs::call<&Logic::render>>>});
+    add(h,
+        Render{.render = sfn::sequence<sfn::cast<Render::render_t, render>,
+                                       sfn::cast<Render::render_t, ecs::call<&Logic::render>>>});
   } else {
-    h.add(Render{.render = sfn::cast<Render::render_t, render>});
+    add(h, Render{.render = sfn::cast<Render::render_t, render>});
   }
   return h;
 }
@@ -164,17 +165,19 @@ void add_enemy_health(ecs::handle h, std::uint32_t hp,
   constexpr auto on_destroy =
       sfn::cast<on_destroy_t, &destruct_entity_default<Logic, ShapeDefinition>>;
   if constexpr (requires { &Logic::on_destroy; }) {
-    h.add(Health{
-        .hp = hp,
-        .destroy_sound = destroy_sound,
-        .destroy_rumble = destroy_rumble,
-        .on_destroy =
-            sfn::sequence<on_destroy, sfn::cast<on_destroy_t, ecs::call<&Logic::on_destroy>>>});
+    add(h,
+        Health{
+            .hp = hp,
+            .destroy_sound = destroy_sound,
+            .destroy_rumble = destroy_rumble,
+            .on_destroy =
+                sfn::sequence<on_destroy, sfn::cast<on_destroy_t, ecs::call<&Logic::on_destroy>>>});
   } else {
-    h.add(Health{.hp = hp,
-                 .destroy_sound = destroy_sound,
-                 .destroy_rumble = destroy_rumble,
-                 .on_destroy = on_destroy});
+    add(h,
+        Health{.hp = hp,
+               .destroy_sound = destroy_sound,
+               .destroy_rumble = destroy_rumble,
+               .on_destroy = on_destroy});
   }
 }
 

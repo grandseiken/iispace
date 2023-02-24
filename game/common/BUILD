@@ -15,6 +15,7 @@ cc_library(
     "math.h",
     "rect.h",
   ],
+  srcs = ["fix32.cc"],
   deps = [
     "@gcem",
     "@glm",

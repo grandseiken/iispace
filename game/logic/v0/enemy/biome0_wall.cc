@@ -213,11 +213,11 @@ ecs::handle spawn_square(SimInterface& sim, const vec2& position, const vec2& di
   auto h = create_ship_default<Square>(sim, position);
   add_enemy_health<Square>(h, 32);
   h.add(Square{sim, dir});
-  h.add(Enemy{.threat_value = 2});
-  h.add(WallTag{});
-  h.add(Physics{.mass = 1_fx + 1_fx / 2});
+  add(h, Enemy{.threat_value = 2});
+  add(h, WallTag{});
+  add(h, Physics{.mass = 1_fx + 1_fx / 2});
   if (drop) {
-    h.add(DropTable{.shield_drop_chance = 2, .bomb_drop_chance = 2});
+    add(h, DropTable{.shield_drop_chance = 2, .bomb_drop_chance = 2});
   }
   return h;
 }
@@ -226,10 +226,10 @@ ecs::handle spawn_wall(SimInterface& sim, const vec2& position, const vec2& dir,
   auto h = create_ship_default<Wall>(sim, position);
   add_enemy_health<Wall>(h, 80);
   h.add(Wall{dir, anti});
-  h.add(Enemy{.threat_value = 4});
-  h.add(WallTag{});
-  h.add(Physics{.mass = 2_fx});
-  h.add(DropTable{.shield_drop_chance = 3, .bomb_drop_chance = 4});
+  add(h, Enemy{.threat_value = 4});
+  add(h, WallTag{});
+  add(h, Physics{.mass = 2_fx});
+  add(h, DropTable{.shield_drop_chance = 3, .bomb_drop_chance = 4});
   return h;
 }
 

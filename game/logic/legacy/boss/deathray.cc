@@ -34,7 +34,7 @@ struct DeathRay : ecs::component {
   void update(ecs::handle h, Transform& transform, SimInterface& sim) {
     transform.move(vec2{1, 0} * kSpeed);
     if (transform.centre.x > sim.dimensions().x + 20) {
-      h.emplace<Destroy>();
+      add(h, Destroy{});
     }
   }
 };
@@ -44,7 +44,7 @@ void spawn_death_ray(SimInterface& sim, const vec2& position) {
   auto h = create_ship<DeathRay>(sim, position);
   add_enemy_health<DeathRay>(h, 0);
   h.add(DeathRay{});
-  h.add(Enemy{.threat_value = 1});
+  add(h, Enemy{.threat_value = 1});
 }
 
 struct DeathArm : ecs::component {
@@ -156,7 +156,7 @@ ecs::handle spawn_death_arm(SimInterface& sim, ecs::handle boss, bool is_top, st
   auto h = create_ship<DeathArm>(sim, vec2{0});
   add_enemy_health<DeathArm>(h, hp);
   h.add(DeathArm{boss.id(), is_top});
-  h.add(Enemy{.threat_value = 10});
+  add(h, Enemy{.threat_value = 10});
   return h;
 }
 
@@ -423,19 +423,21 @@ void spawn_death_ray_boss(SimInterface& sim, std::uint32_t cycle) {
   auto h = sim.is_legacy() ? create_ship<DeathRayBoss, legacy_shape>(sim, position)
                            : create_ship<DeathRayBoss, shape>(sim, position);
 
-  h.add(Enemy{.threat_value = 100,
-              .boss_score_reward =
-                  calculate_boss_score(boss_flag::kBoss2C, sim.player_count(), cycle)});
-  h.add(Health{
-      .hp = calculate_boss_hp(DeathRayBoss::kBaseHp, sim.player_count(), cycle),
-      .hit_sound0 = std::nullopt,
-      .hit_sound1 = sound::kEnemyShatter,
-      .destroy_sound = std::nullopt,
-      .damage_transform = &transform_death_ray_boss_damage,
-      .on_hit = &boss_on_hit<true, DeathRayBoss, shape>,
-      .on_destroy = ecs::call<&boss_on_destroy<DeathRayBoss, shape>>,
-  });
-  h.add(Boss{.boss = boss_flag::kBoss2C});
+  add(h,
+      Enemy{.threat_value = 100,
+            .boss_score_reward =
+                calculate_boss_score(boss_flag::kBoss2C, sim.player_count(), cycle)});
+  add(h,
+      Health{
+          .hp = calculate_boss_hp(DeathRayBoss::kBaseHp, sim.player_count(), cycle),
+          .hit_sound0 = std::nullopt,
+          .hit_sound1 = sound::kEnemyShatter,
+          .destroy_sound = std::nullopt,
+          .damage_transform = &transform_death_ray_boss_damage,
+          .on_hit = &boss_on_hit<true, DeathRayBoss, shape>,
+          .on_destroy = ecs::call<&boss_on_destroy<DeathRayBoss, shape>>,
+      });
+  add(h, Boss{.boss = boss_flag::kBoss2C});
   h.add(DeathRayBoss{});
   h.get<Transform>()->rotate(2 * pi<fixed> * sim.random_fixed());
 }

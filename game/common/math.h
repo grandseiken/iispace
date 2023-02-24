@@ -1,8 +1,10 @@
 #ifndef II_GAME_COMMON_MATH_H
 #define II_GAME_COMMON_MATH_H
 #include "game/common/fix32.h"
-#include <glm/glm.hpp>
 #include <glm/gtc/constants.hpp>
+#include <glm/vec2.hpp>
+#include <glm/vec3.hpp>
+#include <glm/vec4.hpp>
 #include <cmath>
 #include <cstddef>
 #include <cstdint>

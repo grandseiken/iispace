@@ -149,12 +149,11 @@ ecs::handle create_follow_ship(SimInterface& sim, std::uint32_t size, std::uint3
   } else {
     add_enemy_health<Follow, shape>(h, health);
   }
-  h.add(Enemy{.threat_value = health / 8});
+  add(h, Enemy{.threat_value = health / 8});
   h.add(Follow{size, direction, /* in formation */ initial_velocity == vec2{0, 0}});
 
   auto mass = 1_fx + size / 2_fx;
-  auto& physics = h.add(Physics{.mass = mass});
-  physics.apply_impulse(physics.mass * initial_velocity);
+  add(h, Physics{.mass = mass, .velocity = initial_velocity});
   return h;
 }
 
@@ -165,7 +164,7 @@ ecs::handle spawn_follow(SimInterface& sim, std::uint32_t size, const vec2& posi
     auto h = create_follow_ship<Follow::kHugeWidth>(sim, 2, 40, position, direction, rotation,
                                                     initial_velocity);
     if (drop) {
-      h.add(DropTable{.shield_drop_chance = 15, .bomb_drop_chance = 30});
+      add(h, DropTable{.shield_drop_chance = 15, .bomb_drop_chance = 30});
     }
     return h;
   }
@@ -173,14 +172,14 @@ ecs::handle spawn_follow(SimInterface& sim, std::uint32_t size, const vec2& posi
     auto h = create_follow_ship<Follow::kBigWidth>(sim, 1, 24, position, direction, rotation,
                                                    initial_velocity);
     if (drop) {
-      h.add(DropTable{.shield_drop_chance = 15, .bomb_drop_chance = 10});
+      add(h, DropTable{.shield_drop_chance = 15, .bomb_drop_chance = 10});
     }
     return h;
   }
   auto h = create_follow_ship<Follow::kSmallWidth>(sim, 0, 8, position, direction, rotation,
                                                    initial_velocity);
   if (drop) {
-    h.add(DropTable{.shield_drop_chance = 1, .bomb_drop_chance = 1});
+    add(h, DropTable{.shield_drop_chance = 1, .bomb_drop_chance = 1});
   }
   return h;
 }
@@ -293,9 +292,9 @@ ecs::handle create_chaser_ship(SimInterface& sim, std::uint32_t size, std::uint3
   } else {
     add_enemy_health<Chaser, shape>(h, health);
   }
-  h.add(Enemy{.threat_value = health / 8});
+  add(h, Enemy{.threat_value = health / 8});
   h.add(Chaser{size, stagger});
-  h.add(Physics{.mass = 1_fx + size / 2_fx});
+  add(h, Physics{.mass = 1_fx + size / 2_fx});
   return h;
 }
 
@@ -304,13 +303,13 @@ ecs::handle spawn_chaser(SimInterface& sim, std::uint32_t size, const vec2& posi
   if (size == 1) {
     auto h = create_chaser_ship<Chaser::kBigWidth>(sim, 1, 32, position, rotation, stagger);
     if (drop) {
-      h.add(DropTable{.shield_drop_chance = 10, .bomb_drop_chance = 20});
+      add(h, DropTable{.shield_drop_chance = 10, .bomb_drop_chance = 20});
     }
     return h;
   }
   auto h = create_chaser_ship<Chaser::kSmallWidth>(sim, 0, 16, position, rotation, stagger);
   if (drop) {
-    h.add(DropTable{.shield_drop_chance = 3, .bomb_drop_chance = 4});
+    add(h, DropTable{.shield_drop_chance = 3, .bomb_drop_chance = 4});
   }
   return h;
 }
@@ -436,10 +435,10 @@ ecs::handle spawn_big_chaser(SimInterface& sim, const vec2& position, bool drop)
 ecs::handle spawn_follow_sponge(SimInterface& sim, const vec2& position) {
   auto h = create_ship_default<FollowSponge>(sim, position);
   add_enemy_health<FollowSponge>(h, 256, sound::kPlayerDestroy, rumble_type::kMedium);
-  h.add(Enemy{.threat_value = 20u});
+  add(h, Enemy{.threat_value = 20u});
   h.add(FollowSponge{});
-  h.add(Physics{.mass = 2_fx});
-  h.add(DropTable{.shield_drop_chance = 30, .bomb_drop_chance = 40});
+  add(h, Physics{.mass = 2_fx});
+  add(h, DropTable{.shield_drop_chance = 30, .bomb_drop_chance = 40});
   return h;
 }
 

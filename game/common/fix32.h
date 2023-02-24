@@ -2,10 +2,8 @@
 #define II_GAME_COMMON_FIX32_H
 #include <bit>
 #include <cstdint>
-#include <iomanip>
 #include <limits>
 #include <ostream>
-#include <sstream>
 #include <type_traits>
 
 namespace detail {
@@ -162,12 +160,7 @@ inline constexpr fixed operator/(const fixed& a, const fixed& b) {
   return fixed::from_internal(sign * static_cast<std::int64_t>(q >> 1));
 }
 
-inline std::ostream& operator<<(std::ostream& o, const fixed& f) {
-  std::stringstream ss;
-  ss << std::fixed << std::setprecision(2) << f.to_float();
-  o << ss.str();
-  return o;
-}
+std::ostream& operator<<(std::ostream& o, const fixed& f);
 
 namespace fixed_c {
 constexpr fixed pi = fixed::from_internal(0x3243f6a88);
@@ -192,7 +185,7 @@ inline constexpr fixed sqrt(const fixed& f) {
     const fixed a = x / 2;
     auto r = fixed::from_internal(
         x.value_ >> ((32 - std::countl_zero(static_cast<std::uint64_t>(x.value_))) / 2));
-    for (std::size_t n = 0; r && n < 8; ++n) {
+    for (std::uint32_t n = 0; r && n < 8; ++n) {
       r = r * half + a / r;
       if (fixed::from_internal(detail::fixed_abs((r * r).value_) - x.value_) < bound) {
         break;

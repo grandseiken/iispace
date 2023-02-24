@@ -7,6 +7,8 @@
 namespace ii::ecs::detail {
 template <Component>
 struct component_storage;
+template <Component>
+struct component_storage_get;
 struct component_storage_base;
 
 struct component_table {

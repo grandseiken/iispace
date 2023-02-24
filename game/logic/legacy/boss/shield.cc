@@ -173,19 +173,21 @@ void spawn_shield_bomb_boss(SimInterface& sim, std::uint32_t cycle) {
   vec2 position{-sim.dimensions().x / 2, sim.dimensions().y / 2};
   auto h = sim.is_legacy() ? create_ship<ShieldBombBoss, legacy_shape>(sim, position)
                            : create_ship<ShieldBombBoss, shape>(sim, position);
-  h.add(Enemy{.threat_value = 100,
-              .boss_score_reward =
-                  calculate_boss_score(boss_flag::kBoss1B, sim.player_count(), cycle)});
-  h.add(Health{
-      .hp = calculate_boss_hp(ShieldBombBoss::kBaseHp, sim.player_count(), cycle),
-      .hit_sound0 = std::nullopt,
-      .hit_sound1 = sound::kEnemyShatter,
-      .destroy_sound = std::nullopt,
-      .damage_transform = &transform_shield_bomb_boss_damage,
-      .on_hit = &boss_on_hit<true, ShieldBombBoss, shape>,
-      .on_destroy = ecs::call<&boss_on_destroy<ShieldBombBoss, shape>>,
-  });
-  h.add(Boss{.boss = boss_flag::kBoss1B});
+  add(h,
+      Enemy{.threat_value = 100,
+            .boss_score_reward =
+                calculate_boss_score(boss_flag::kBoss1B, sim.player_count(), cycle)});
+  add(h,
+      Health{
+          .hp = calculate_boss_hp(ShieldBombBoss::kBaseHp, sim.player_count(), cycle),
+          .hit_sound0 = std::nullopt,
+          .hit_sound1 = sound::kEnemyShatter,
+          .destroy_sound = std::nullopt,
+          .damage_transform = &transform_shield_bomb_boss_damage,
+          .on_hit = &boss_on_hit<true, ShieldBombBoss, shape>,
+          .on_destroy = ecs::call<&boss_on_destroy<ShieldBombBoss, shape>>,
+      });
+  add(h, Boss{.boss = boss_flag::kBoss1B});
   h.add(ShieldBombBoss{});
 }
 

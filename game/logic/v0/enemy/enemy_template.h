@@ -125,12 +125,13 @@ void add_enemy_health(ecs::handle h, std::uint32_t hp,
   if constexpr (requires { &Logic::on_hit; }) {
     on_hit = sfn::cast<Health::on_hit_t, ecs::call<&Logic::on_hit>>;
   }
-  h.add(Health{.hp = hp,
-               .destroy_sound = destroy_sound,
-               .destroy_rumble = destroy_rumble,
-               .on_hit = on_hit,
-               .on_destroy = on_destroy});
-  h.add(EnemyStatus{});
+  add(h,
+      Health{.hp = hp,
+             .destroy_sound = destroy_sound,
+             .destroy_rumble = destroy_rumble,
+             .on_hit = on_hit,
+             .on_destroy = on_destroy});
+  add(h, EnemyStatus{});
 }
 
 }  // namespace ii::v0

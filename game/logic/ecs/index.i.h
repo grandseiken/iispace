@@ -21,40 +21,46 @@ struct component_storage_base {
 };
 
 template <Component C>
-struct component_storage : component_storage_base {
+struct component_storage_get : component_storage_base {
   struct entry {
     entity_id id;
     std::optional<C> data;
   };
   index_type size = 0;
   std::deque<entry> entries;
+};
+
+template <Component C>
+struct component_storage : component_storage_get<C> {
+  using base = component_storage_get<C>;
+  using entry = typename base::entry;
   std::vector<EntityIndex::component_add_callback<C>> add_callbacks;
   std::vector<EntityIndex::component_remove_callback<C>> remove_callbacks;
 
   void compact(EntityIndex& index) override {
     auto has_value = [](const entry& e) { return e.data.has_value(); };
-    auto it = std::find_if_not(entries.begin(), entries.end(), has_value);
-    if (it == entries.end()) {
+    auto it = std::find_if_not(base::entries.begin(), base::entries.end(), has_value);
+    if (it == base::entries.end()) {
       return;
     }
-    auto pivot = std::stable_partition(it, entries.end(), has_value);
-    for (index_type c_index = std::distance(entries.begin(), it); it != pivot; ++it) {
+    auto pivot = std::stable_partition(it, base::entries.end(), has_value);
+    for (index_type c_index = std::distance(base::entries.begin(), it); it != pivot; ++it) {
       (*index.entities_.find(it->id)->second)[ecs::id<C>()] = c_index++;
     }
-    entries.erase(pivot, entries.end());
+    base::entries.erase(pivot, base::entries.end());
   }
 
   void remove_index(handle h, std::size_t index) override {
     for (auto& f : remove_callbacks) {
-      f(h, *entries[index].data);
+      f(h, *base::entries[index].data);
     }
-    entries[index].data.reset();
-    --size;
+    base::entries[index].data.reset();
+    --base::size;
   }
 
   void copy_clear() override {
-    size = 0;
-    entries.clear();
+    base::size = 0;
+    base::entries.clear();
   }
 
   void
@@ -63,9 +69,9 @@ struct component_storage : component_storage_base {
       target_ptr = std::make_unique<component_storage>();
     }
     auto& target = static_cast<component_storage&>(*target_ptr);
-    target.size = size;
-    target.entries.resize(size);
-    for (index_type i = 0; const auto& e : entries) {
+    target.size = base::size;
+    target.entries.resize(base::size);
+    for (index_type i = 0; const auto& e : base::entries) {
       if (e.data) {
         auto& e_copy = target.entries[i];
         e_copy.id = e.id;
@@ -76,7 +82,7 @@ struct component_storage : component_storage_base {
   }
 
   void dump(std::size_t index, bool portable, Printer& printer) const override {
-    const auto& data = *entries[index].data;
+    const auto& data = *base::entries[index].data;
     printer.begin().put('[');
     if (!portable) {
       printer.put(+ecs::id<C>()).put(" / ");
@@ -279,7 +285,7 @@ inline auto EntityIndex::get(entity_id id) const -> std::optional<const_handle> 
 
 template <Component C>
 index_type EntityIndex::count() const {
-  if (auto* c = storage<C>(); c) {
+  if (auto* c = storage_get<C>(); c) {
     return c->size;
   }
   return 0;
@@ -320,36 +326,42 @@ void EntityIndex::on_component_remove(const component_remove_callback<C>& f) {
 
 template <Component C>
 void EntityIndex::iterate(std::invocable<C&> auto&& f, bool include_new) {
-  detail::iterate(storage<C>(), include_new, [&](auto& e) { f(*e.data); });
+  if (auto* c = storage_get<C>()) {
+    detail::iterate(*c, include_new, [&](auto& e) { f(*e.data); });
+  }
 }
 
 template <Component C>
 void EntityIndex::iterate(std::invocable<const C&> auto&& f, bool include_new) const {
-  if (auto* c = storage<C>(); c) {
+  if (auto* c = storage_get<C>(); c) {
     detail::iterate(*c, include_new, [&](const auto& e) { f(*e.data); });
   }
 }
 
 template <Component C>
 void EntityIndex::iterate_dispatch(auto&& f, bool include_new) {
-  detail::iterate(storage<C>(), include_new, [&](auto& e) { dispatch(*get(e.id), f); });
+  if (auto* c = storage_get<C>(); c) {
+    detail::iterate(*c, include_new, [&](auto& e) { dispatch(*get(e.id), f); });
+  }
 }
 
 template <Component C>
 void EntityIndex::iterate_dispatch(auto&& f, bool include_new) const {
-  if (auto* c = storage<C>(); c) {
+  if (auto* c = storage_get<C>(); c) {
     detail::iterate(*c, include_new, [&](const auto& e) { dispatch(*get(e.id), f); });
   }
 }
 
 template <Component C>
 void EntityIndex::iterate_dispatch_if(auto&& f, bool include_new) {
-  detail::iterate(storage<C>(), include_new, [&](auto& e) { dispatch_if(*get(e.id), f); });
+  if (auto* c = storage_get<C>(); c) {
+    detail::iterate(*c, include_new, [&](auto& e) { dispatch_if(*get(e.id), f); });
+  }
 }
 
 template <Component C>
 void EntityIndex::iterate_dispatch_if(auto&& f, bool include_new) const {
-  if (auto* c = storage<C>(); c) {
+  if (auto* c = storage_get<C>(); c) {
     detail::iterate(*c, include_new, [&](const auto& e) { dispatch_if(*get(e.id), f); });
   }
 }
@@ -371,6 +383,22 @@ auto EntityIndex::storage() const -> const detail::component_storage<C>* {
   auto c_id = static_cast<std::size_t>(ecs::id<C>());
   return c_id < components_.size() && components_[c_id]
       ? static_cast<detail::component_storage<C>*>(components_[c_id].get())
+      : nullptr;
+}
+
+template <Component C>
+auto EntityIndex::storage_get() -> detail::component_storage_get<C>* {
+  auto c_id = static_cast<std::size_t>(ecs::id<C>());
+  return c_id < components_.size() && components_[c_id]
+      ? static_cast<detail::component_storage_get<C>*>(components_[c_id].get())
+      : nullptr;
+}
+
+template <Component C>
+auto EntityIndex::storage_get() const -> const detail::component_storage_get<C>* {
+  auto c_id = static_cast<std::size_t>(ecs::id<C>());
+  return c_id < components_.size() && components_[c_id]
+      ? static_cast<detail::component_storage_get<C>*>(components_[c_id].get())
       : nullptr;
 }
 
@@ -447,7 +475,7 @@ template <Component C>
 C* handle_base<Const>::get() const requires(!Const)
 {
   if (auto index = table_->template get<C>(); index) {
-    return &*index_->template storage<C>().entries[*index].data;
+    return &*index_->template storage_get<C>()->entries[*index].data;
   }
   return nullptr;
 }
@@ -457,7 +485,7 @@ template <Component C>
 const C* handle_base<Const>::get() const requires Const
 {
   if (auto index = table_->template get<C>(); index) {
-    return &*index_->template storage<C>()->entries[*index].data;
+    return &*index_->template storage_get<C>()->entries[*index].data;
   }
   return nullptr;
 }
