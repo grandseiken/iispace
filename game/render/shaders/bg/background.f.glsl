@@ -5,6 +5,7 @@
 const float kRenderHeight = 540.;
 const float kPolarPeriod = 256.;
 
+uniform bool is_multisample;
 uniform uvec2 screen_dimensions;
 
 uniform vec4 position;
@@ -41,8 +42,8 @@ float noise0_polar(vec4 v, vec2 p) {
 }
 
 float tonemap0(float v) {
-  float t0 = (5. + smoothstep(.025 - fwidth(v), .025, v)) / 6.;
-  float t1 = scale01(1. / 8., smoothstep(.15 - fwidth(v), .15, v));
+  float t0 = (5. + aa_step(is_multisample, .025, v)) / 6.;
+  float t1 = scale01(1. / 8., aa_step(is_multisample, .15, v));
   return t0 * t1;
 }
 

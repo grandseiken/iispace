@@ -203,7 +203,7 @@ struct GlRenderer::impl_t {
       }
       framebuffers.insert_or_assign(f, std::move(*result));
     };
-    auto samples = std::clamp(target.msaa_samples.value_or(16u), 1u, gl::max_samples());
+    auto samples = std::clamp(target.msaa(), 1u, gl::max_samples());
     refresh(framebuffer::kRender, target.screen_dimensions, /* alpha */ false,
             /* depth/stencil */ true, samples);
     refresh(framebuffer::kAux0, target.screen_dimensions, /* alpha */ true,
@@ -740,15 +740,15 @@ void GlRenderer::render_background(const render::background& data) const {
   gl::enable_depth_test(false);
 
   auto clip_rect = target().clip_rect();
-  auto result = gl::set_uniforms(program, "screen_dimensions", target().screen_dimensions,
-                                 "clip_min", target().render_to_iscreen_coords(clip_rect.min()),
-                                 "clip_max", target().render_to_iscreen_coords(clip_rect.max()),
-                                 "position", data.position, "rotation", data.rotation,
-                                 "interpolate", std::clamp(data.interpolate, 0.f, 1.f), "type0",
-                                 static_cast<std::uint32_t>(data.data0.type), "type1",
-                                 static_cast<std::uint32_t>(data.data1.type), "colour0",
-                                 data.data0.colour, "colour1", data.data1.colour, "parameters0",
-                                 data.data0.parameters, "parameters1", data.data1.parameters);
+  auto result = gl::set_uniforms(
+      program, "is_multisample", target().msaa() > 1u, "screen_dimensions",
+      target().screen_dimensions, "clip_min", target().render_to_iscreen_coords(clip_rect.min()),
+      "clip_max", target().render_to_iscreen_coords(clip_rect.max()), "position", data.position,
+      "rotation", data.rotation, "interpolate", std::clamp(data.interpolate, 0.f, 1.f), "type0",
+      static_cast<std::uint32_t>(data.data0.type), "type1",
+      static_cast<std::uint32_t>(data.data1.type), "colour0", data.data0.colour, "colour1",
+      data.data1.colour, "parameters0", data.data0.parameters, "parameters1",
+      data.data1.parameters);
   if (!result) {
     impl_->status = unexpected("background shader error: " + result.error());
     return;
@@ -1176,7 +1176,13 @@ void GlRenderer::render_shapes(coordinate_system ctype, std::vector<shape>& shap
 
   auto clip_min = target().snap_render_to_screen_coords(clip_rect.min());
   auto clip_max = target().snap_render_to_screen_coords(clip_rect.max());
-  auto set_uniforms = [&](const gl::program& program) {
+  auto set_uniforms = [&](const gl::program& program, bool needs_multisample) {
+    if (needs_multisample) {
+      auto r = gl::set_uniforms(program, "is_multisample", target().msaa() > 1u);
+      if (!r) {
+        return r;
+      }
+    }
     return gl::set_uniforms(program, "aspect_scale", target().aspect_scale(), "render_dimensions",
                             target().render_dimensions, "screen_dimensions",
                             target().screen_dimensions, "clip_min", clip_min, "clip_max", clip_max,
@@ -1187,7 +1193,8 @@ void GlRenderer::render_shapes(coordinate_system ctype, std::vector<shape>& shap
                          std::size_t count) {
     const auto& program = impl_->shader(s);
     gl::use_program(program);
-    if (auto result = set_uniforms(program); !result) {
+    bool needs_multisample = s == shader::kShapeFill || s == shader::kShapeOutline;
+    if (auto result = set_uniforms(program, needs_multisample); !result) {
       impl_->status = unexpected("shader " + std::to_string(static_cast<std::uint32_t>(s)) +
                                  " error: " + result.error());
     } else {
@@ -1241,7 +1248,7 @@ void GlRenderer::render_shapes(coordinate_system ctype, std::vector<shape>& shap
       const auto& program = impl_->shader(shader::kFx);
       gl::use_program(program);
       fx_attributes.bind();
-      if (auto result = set_uniforms(program); !result) {
+      if (auto result = set_uniforms(program, true); !result) {
         impl_->status =
             unexpected("shader " + std::to_string(static_cast<std::uint32_t>(shader::kFx)) +
                        " error: " + result.error());

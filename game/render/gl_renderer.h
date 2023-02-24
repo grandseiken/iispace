@@ -58,7 +58,6 @@ public:
   void render_panel(const panel_data&) const;
   void render_panel(const combo_panel&) const;
 
-  // TODO: respect MSAA value in target; dynamically disable fwidth-based antialiasing.
   // TODO: maybe disable gl::enable_multisample as and if appropriate?
   void render_background(const render::background& data) const;
   // TODO: _maybe_ render outlines automatically somehow, or output from geometry shapes?

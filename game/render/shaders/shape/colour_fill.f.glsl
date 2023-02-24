@@ -1,5 +1,8 @@
+#include "game/render/shaders/lib/math.glsl"
 #include "game/render/shaders/lib/position_fragment.glsl"
 #include "game/render/shaders/shape/data.glsl"
+
+uniform bool is_multisample;
 
 flat in uint g_buffer_index;
 centroid in float g_colour_interpolate;
@@ -24,11 +27,10 @@ void main() {
 
   ball_buffer_data bd = ball_buffer.data[d.ball_index];
   float dd = length(game_position(gl_FragCoord) - bd.position);
-  float wd = fwidth(dd);
 
   float r_max = bd.dimensions.x;
   float r_min = bd.dimensions.y;
-  float a = smoothstep(r_min - wd, r_min + wd, dd) * (1. - smoothstep(r_max - wd, r_max + wd, dd));
+  float a = aa_step2(is_multisample, r_min, dd) * (1. - aa_step2(is_multisample, r_max, dd));
 
   if (a > 0.) {
     vec4 oklab = mix(d.colour0, d.colour1, clamp((r_max - dd) / (r_max - r_min), 0., 1.));

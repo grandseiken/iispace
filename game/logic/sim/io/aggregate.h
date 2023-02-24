@@ -129,6 +129,7 @@ struct box_fx_particle {
 using particle_data = std::variant<dot_particle, line_particle, ball_fx_particle, box_fx_particle>;
 
 // TODO: clean this one up a bit.
+// TODO: new particle type: metaballs.
 struct particle {
   fvec2 position{0.f};
   interpolate<fvec2> velocity = fvec2{0.f};

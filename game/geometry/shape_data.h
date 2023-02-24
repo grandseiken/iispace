@@ -62,6 +62,7 @@ nd2(fixed radius, fixed inner_radius, std::uint32_t sides, std::uint32_t segment
 //////////////////////////////////////////////////////////////////////////////////
 // Shape definitions.
 //////////////////////////////////////////////////////////////////////////////////
+// TODO: arbitrary polygons (with polygon triangulation and uniform-stroke outline rendering).
 struct ball_collider {
   ball_dimensions dimensions;
   value<shape_flag> flags = shape_flag::kNone;

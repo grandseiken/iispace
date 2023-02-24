@@ -48,6 +48,8 @@ struct target {
     return screen_to_frender_coords(render_to_iscreen_coords(v));
   }
 
+  std::uint32_t msaa() const { return msaa_samples.value_or(16u); }
+
   fvec2 aspect_scale() const {
     auto screen = static_cast<fvec2>(screen_dimensions);
     auto render = static_cast<fvec2>(render_dimensions);

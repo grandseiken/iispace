@@ -7,17 +7,17 @@
 * Unlock special ability
 * Weapon / superweapon / bomb upgrade capacity
 * Increase invulnerability window after hit
-* Decrease collision size
+* Decrease collision size?
 * Weapon damage?
 * Using bomb ~20 frames after getting hit will undo the hit
 
 ## Misc upgrades
+* Start run with shield / bomb
 * Refills before boss
 * Refills after boss
 * More powerups
 * More upgrade choices
 * Upgrade rerolls (spend bomb)
-* Score multiplier capacity
 
 ## Route upgrades
 * Unlock different paths through the route planner
@@ -31,23 +31,23 @@
 * Unlock various difficulty modifiers that can be enabled
 * Difficulty modifiers increase earned XP
 * Enough difficulty modifiers unlocks new route possibilities?
-* Harder / faster / higher-hp enemy variants
 * Projectile hell
-* Higher enemy density per wave
-* No powerups, disable ship functions etc
+* Fewer powerups, disable ship functions etc
 * Game speed modifier
-* Better enemy tracking
 * Harder boss variants
-* More enemies persist after each wave
+* Enemy factors:
+  * Higher enemy density per wave
+  * Enemy formations spawn closer together
+  * More enemies persist after each wave
+  * Harder / faster / higher-hp enemy variants
+  * Better enemy tracking?
 
 # Random route/ship conditions
 * Drawback but increase earned XP
 * Rainbow mode
 * Monochrome / silhouette mode
 * Mirror mode
-* Shield disabled
-* Bomb disabled
-* Superweapon disabled
+* Shield / bomb/ superweapon disabled?
 * Enemies explode
 * Ship can't stop moving
 * Limited vision radius

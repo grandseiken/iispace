@@ -1,5 +1,8 @@
+#include "game/render/shaders/lib/math.glsl"
 #include "game/render/shaders/lib/position_fragment.glsl"
 #include "game/render/shaders/shape/data.glsl"
+
+uniform bool is_multisample;
 
 flat in uint g_buffer_index;
 centroid in float g_colour_interpolate;
@@ -24,16 +27,15 @@ void main() {
 
   ball_buffer_data bd = ball_buffer.data[d.ball_index];
   float dd = length(game_position(gl_FragCoord) - bd.position);
-  float wd = fwidth(dd);
 
   float r_max = max(bd.dimensions.x, bd.dimensions.x - bd.line_width);
   float r_min = min(bd.dimensions.x, bd.dimensions.x - bd.line_width);
   float i_max = max(bd.dimensions.y, bd.dimensions.y + bd.line_width);
   float i_min = min(bd.dimensions.y, bd.dimensions.y + bd.line_width);
 
-  float v0 = smoothstep(r_min - wd, r_min + wd, dd) * (1. - smoothstep(r_max - wd, r_max + wd, dd));
+  float v0 = aa_step2(is_multisample, r_min, dd) * (1. - aa_step2(is_multisample, r_max, dd));
   float v1 = bd.dimensions.y > 0.
-      ? smoothstep(i_min - wd, i_min + wd, dd) * (1. - smoothstep(i_max - wd, i_max + wd, dd))
+      ? aa_step2(is_multisample, i_min, dd) * (1. - aa_step2(is_multisample, i_max, dd))
       : 0.;
   float a = max(v0, v1);
   if (a > 0.) {
