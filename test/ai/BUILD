@@ -19,6 +19,8 @@ ai_test(players = 4, mode = "standard_run")
 
 # TODO: add score verification (that'll need to be updated when logic changes) in order to catch
 # discrepancies across platforms/compilers.
+# TODO: 2-player seed 720683064 currently fails verification due to something with upgrade choices
+# when one player is dead.
 ai_test(players = 2, mode = "standard_run", prefix = "fixed_seed", extra_args = ["--seed", "1337"])
 ai_test(players = 4, mode = "standard_run", prefix = "fixed_seed", extra_args = ["--seed", "1337"])
 
