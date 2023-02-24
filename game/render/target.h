@@ -14,7 +14,8 @@ enum class coordinate_system {
 };
 
 struct target {
-  // TODO: support different screen dimension than actual screen (i.e. resolution scaling).
+  // TODO: text is still AA when MSAA disabled; and still LCD'd when screen_dimensions is
+  // downscaled.
   uvec2 screen_dimensions{0};
   uvec2 render_dimensions{0};
   std::optional<std::uint32_t> msaa_samples;

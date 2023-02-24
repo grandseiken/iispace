@@ -268,6 +268,11 @@ inline void blit_framebuffer_colour(const glm::uvec2& dimensions) {
                     GL_COLOR_BUFFER_BIT, GL_LINEAR);
 }
 
+inline void viewport(const glm::uvec2& position, const glm::uvec2& size) {
+  glViewport(static_cast<GLint>(position.x), static_cast<GLint>(position.y),
+             static_cast<GLsizei>(size.x), static_cast<GLsizei>(size.y));
+}
+
 inline void clear_colour(const glm::vec4& c) {
   glClearColor(c.r, c.g, c.b, c.a);
 }

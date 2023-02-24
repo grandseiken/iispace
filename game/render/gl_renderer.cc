@@ -214,6 +214,7 @@ struct GlRenderer::impl_t {
 
   gl::bound_framebuffer bind_draw_framebuffer(framebuffer f) {
     if (const auto* data = get_framebuffer(f)) {
+      gl::viewport(glm::uvec2{0}, data->dimensions);
       return gl::bind_draw_framebuffer(data->fbo);
     }
     return gl::bound_framebuffer{GL_FRAMEBUFFER};
@@ -1302,7 +1303,8 @@ void GlRenderer::render_shapes(coordinate_system ctype, std::vector<shape>& shap
   }
 }
 
-void GlRenderer::render_present() const {
+void GlRenderer::render_present(const glm::uvec2& dimensions) const {
+  gl::viewport(glm::uvec2{0}, dimensions);
   if (const auto* render_framebuffer = impl_->get_framebuffer(framebuffer::kRender)) {
     impl_->oklab_resolve(*render_framebuffer, fvec2{1.f}, /* to sRGB */ true);
   }

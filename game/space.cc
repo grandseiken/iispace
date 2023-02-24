@@ -144,7 +144,7 @@ bool run(System& system, const std::vector<std::string>& args, const game_option
     renderer->target().screen_dimensions = io_layer->dimensions();
     renderer->clear_screen();
     stack.render(*renderer);
-    renderer->render_present();
+    renderer->render_present(io_layer->dimensions());
     io_layer->swap_buffers();
     auto render_status = renderer->status();
     if (!render_status) {

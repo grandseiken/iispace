@@ -64,7 +64,7 @@ public:
   // TODO: 3D shadows; lighting explosion effects.
   void render_shapes(coordinate_system ctype, std::vector<render::shape>& shapes,
                      std::vector<render::fx>& fx, shape_style style) const;
-  void render_present() const;
+  void render_present(const glm::uvec2& dimensions) const;
 
 private:
   render::target target_;
