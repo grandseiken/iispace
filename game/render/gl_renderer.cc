@@ -248,11 +248,11 @@ struct GlRenderer::impl_t {
       return;
     }
     if (source.samples <= 1) {
-      result = gl::set_uniform_texture_2d(program, "framebuffer_texture", /* texture unit */ 0,
+      result = gl::set_uniform_texture_2d(program, "framebuffer_texture", /* texture unit */ 1,
                                           source.colour_buffer, pixel_sampler);
     } else {
       result = gl::set_uniform_texture_2d_multisample(program, "framebuffer_texture_multisample",
-                                                      /* texture unit */ 0, source.colour_buffer);
+                                                      /* texture unit */ 1, source.colour_buffer);
     }
     if (!result) {
       status = unexpected("oklab_resolve shader error: " + result.error());
@@ -282,7 +282,6 @@ struct GlRenderer::impl_t {
       status = unexpected("outline_mask shader error: " + result.error());
       return;
     }
-    // TODO: same comment about texture unit 0 vs 1?
     result = gl::set_uniform_texture_2d(program, "framebuffer_texture", /* texture unit */ 1,
                                         source.colour_buffer, pixel_sampler);
     if (!result) {
@@ -314,8 +313,9 @@ struct GlRenderer::impl_t {
       status = unexpected("fullscreen_blend shader error: " + result.error());
       return;
     }
-    // TODO: rendering breaks if this is set to texture unit 0. No idea why! Some problem
-    // with binding multisampled and non-multisampled textures to the same unit for different calls?
+    // TODO: rendering generally breaks when attempting to use texture unit, sometimes anywhere
+    // depending on platform. Not sure why, maybe sampler state is getting mixed up or something?
+    // Same throughout.
     result = gl::set_uniform_texture_2d(program, "framebuffer_texture", /* texture unit */ 1,
                                         source.colour_buffer, pixel_sampler);
     if (!result) {
@@ -547,18 +547,18 @@ void GlRenderer::render_text(const font_data& font, const fvec2& position, const
     impl_->status = unexpected(result.error());
   }
   if (render_framebuffer->samples <= 1) {
-    result = gl::set_uniform_texture_2d(program, "framebuffer_texture", /* texture unit */ 0,
+    result = gl::set_uniform_texture_2d(program, "framebuffer_texture", /* texture unit */ 1,
                                         render_framebuffer->colour_buffer, impl_->pixel_sampler);
   } else {
     result = gl::set_uniform_texture_2d_multisample(program, "framebuffer_texture_multisample",
-                                                    /* texture unit */ 0,
+                                                    /* texture unit */ 1,
                                                     render_framebuffer->colour_buffer);
   }
   if (!result) {
     impl_->status = unexpected("text shader error: " + result.error());
     return;
   }
-  result = gl::set_uniform_texture_2d(program, "font_texture", /* texture unit */ 1,
+  result = gl::set_uniform_texture_2d(program, "font_texture", /* texture unit */ 2,
                                       font_entry.texture, impl_->pixel_sampler);
   if (!result) {
     impl_->status = unexpected("text shader error: " + result.error());
