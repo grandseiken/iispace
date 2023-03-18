@@ -90,9 +90,9 @@ http_archive(
   # zlib license, no attribution required.
   name = "sdl_windows",
   build_file = "@//deps/sdl:sdl_windows.BUILD",
-  sha256 = "32adc96d8b25e5671189f1f38a4fc7deb105fbb1b3ed78ffcb23f5b8f36b3922",
-  strip_prefix = "SDL2-2.0.22",
-  url = "https://www.libsdl.org/release/SDL2-devel-2.0.22-VC.zip"
+  sha256 = "f657026c51eda688b694b165ccfeebf031266c46a7a609d837e94cad3877ec26",
+  strip_prefix = "SDL2-2.26.4",
+  url = "https://github.com/libsdl-org/SDL/releases/download/release-2.26.4/SDL2-devel-2.26.4-VC.zip"
 )
 
 http_archive(
