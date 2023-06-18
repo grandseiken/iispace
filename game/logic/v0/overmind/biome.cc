@@ -22,7 +22,7 @@ wave_data get_enemy_wave_data(const initial_conditions& conditions, std::uint32_
   data.biome_index = biome_index;
   data.power = (biome_index + 1u) * kBiomePower;
   data.power += (conditions.player_count - 1u) * kPlayerPower;
-  data.power += biome_index * conditions.player_count * kPlayerBiomePower;
+  data.power += biome_index * (2u * conditions.player_count - 1u) * kPlayerBiomePower;
   data.power += wave_number + std::min(10u, wave_number);
   data.power += phase_index * phase_index * kPhasePower;
   data.upgrade_budget = data.power / 2;
