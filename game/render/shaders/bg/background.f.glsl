@@ -23,7 +23,7 @@ flat in uint g_style;
 in vec2 g_texture_coords;
 out vec4 out_colour;
 
-float scale01(float d, float t) {
+float centred_interval(float d, float t) {
   return 1. - d / 2. + t * d;
 }
 
@@ -43,8 +43,8 @@ float noise0_polar(vec4 v, vec2 p) {
 }
 
 float tonemap0(float v) {
-  float t0 = (5. + aa_step(is_multisample, .025, v)) / 6.;
-  float t1 = scale01(1. / 8., aa_step(is_multisample, .15, v));
+  float t0 = (5. + aa_step_upper(is_multisample, .025, v)) / 6.;
+  float t1 = centred_interval(1. / 8., aa_step_upper(is_multisample, .15, v));
   return t0 * t1;
 }
 
@@ -70,7 +70,7 @@ float tone_value(uint type, float v) {
 
 float scanlines() {
   float size = max(1., round(float(screen_dimensions.y) / kRenderHeight));
-  return scale01(3. / 16., floor(mod(gl_FragCoord.y, 2. * size) / size));
+  return centred_interval(3. / 16., floor(mod(gl_FragCoord.y, 2. * size) / size));
 }
 
 void main() {

@@ -30,7 +30,8 @@ void main() {
 
   float r_max = bd.dimensions.x;
   float r_min = bd.dimensions.y;
-  float a = aa_step2(is_multisample, r_min, dd) * (1. - aa_step2(is_multisample, r_max, dd));
+  float a = aa_step_centred(is_multisample, r_min, dd) *
+      (1. - aa_step_centred(is_multisample, r_max, dd));
 
   if (a > 0.) {
     vec4 oklab = mix(d.colour0, d.colour1, clamp((r_max - dd) / (r_max - r_min), 0., 1.));

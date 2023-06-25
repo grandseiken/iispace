@@ -111,6 +111,8 @@ struct SdlIoLayer::impl_t {
 
 result<std::unique_ptr<SdlIoLayer>>
 SdlIoLayer::create(const char* title, char gl_major, char gl_minor, bool windowed) {
+  // Needed to render correctly with display scaling on windows. May be unnecessary with SDL3.
+  SDL_SetHint(SDL_HINT_WINDOWS_DPI_AWARENESS, "permonitorv2");
   // TODO: SDL_INIT_GAMECONTROLLER can sometimes cause hangs or long delays while probing
   // misbehaving devices or buggy drivers. Apparently it's possible to run that bit asynchronously
   // on a different thread and start using gamepads once it finishes?
@@ -132,7 +134,7 @@ SdlIoLayer::create(const char* title, char gl_major, char gl_minor, bool windowe
   auto io_layer = std::make_unique<SdlIoLayer>(access_tag{});
   io_layer->impl_ = std::make_unique<impl_t>();
 
-  auto flags = SDL_WINDOW_OPENGL | SDL_WINDOW_SHOWN;
+  auto flags = SDL_WINDOW_OPENGL | SDL_WINDOW_SHOWN | SDL_WINDOW_ALLOW_HIGHDPI;
   int xy = 0;
   ivec2 dimensions{0};
   if (windowed) {
@@ -192,8 +194,8 @@ SdlIoLayer::~SdlIoLayer() {
 }
 
 uvec2 SdlIoLayer::dimensions() const {
-  int w = 0;
-  int h = 0;
+  int w = 1920;
+  int h = 1080;
   SDL_GL_GetDrawableSize(impl_->window.get(), &w, &h);
   return {static_cast<std::uint32_t>(w), static_cast<std::uint32_t>(h)};
 }

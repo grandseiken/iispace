@@ -33,10 +33,11 @@ void main() {
   float i_max = max(bd.dimensions.y, bd.dimensions.y + bd.line_width);
   float i_min = min(bd.dimensions.y, bd.dimensions.y + bd.line_width);
 
-  float v0 = aa_step2(is_multisample, r_min, dd) * (1. - aa_step2(is_multisample, r_max, dd));
-  float v1 = bd.dimensions.y > 0.
-      ? aa_step2(is_multisample, i_min, dd) * (1. - aa_step2(is_multisample, i_max, dd))
-      : 0.;
+  float v0 = aa_step_centred(is_multisample, r_min, dd) *
+      (1. - aa_step_centred(is_multisample, r_max, dd));
+  float v1 = bd.dimensions.y > 0. ? aa_step_centred(is_multisample, i_min, dd) *
+          (1. - aa_step_centred(is_multisample, i_max, dd))
+                                  : 0.;
   float a = max(v0, v1);
   if (a > 0.) {
     vec4 oklab = mix(d.colour0, d.colour1, v1 / (v0 + v1));

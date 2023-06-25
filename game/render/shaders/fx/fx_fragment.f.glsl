@@ -68,7 +68,7 @@ void main() {
     float q = g_colour.a * clamp(shape_coefficient(frag_position), 0., 1.);
 
     float v = n * q * 16. + q;
-    float a = aa_step(is_multisample, 1., v);
+    float a = aa_step_upper(is_multisample, 1., v);
     out_colour = vec4(g_colour.xyz, a);
     break;
   }
