@@ -23,15 +23,6 @@ struct background_input {
   std::optional<std::uint32_t> wave_number;
 };
 
-struct background_update {
-  render::background::type type = render::background::type::kNone;
-  cvec4 colour{0.f};
-  fvec2 parameters{0.f};
-  fvec4 position_delta{0.f};
-  float rotation_delta{0.f};
-};
-DEBUG_STRUCT_TUPLE(background_update, type);
-
 struct wave_id {
   std::uint32_t biome_index = 0;
   std::uint32_t wave_number = 0;

@@ -18,6 +18,13 @@ struct background {
     fvec2 parameters{0.f};
   };
 
+  struct update {
+    background::data data;
+    fvec4 position_delta{0.f};
+    float rotation_delta{0.f};
+    bool begin_transition = false;
+  };
+
   fvec4 position{0.f};
   float rotation = 0.f;
 

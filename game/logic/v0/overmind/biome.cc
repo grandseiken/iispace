@@ -70,40 +70,42 @@ void spawn(spawn_context& context) {
 class TestingBiome : public Biome {
 public:
   ~TestingBiome() override = default;
-  bool update_background(RandomEngine& random, const background_input& input,
-                         background_update& data) const override {
+  void update_background(RandomEngine& random, const background_input& input,
+                         render::background::update& update) const override {
     if (input.initialise) {
-      data.position_delta = {0.f, 0.f, 1.f / 8, 1.f / 256};
-      data.rotation_delta = 0.f;
+      update.position_delta = {0.f, 0.f, 1.f / 8, 1.f / 256};
+      update.rotation_delta = 0.f;
 
-      data.type = render::background::type::kBiome0;
-      data.colour = colour::kSolarizedDarkBase03;
-      data.colour.z /= 1.25f;
-      data.parameters = {0.f, 0.f};
+      update.data.type = render::background::type::kBiome0;
+      update.data.colour = colour::kSolarizedDarkBase03;
+      update.data.colour.z /= 1.25f;
+      update.data.parameters = {0.f, 0.f};
     }
 
-    if (input.wave_number) {
-      if (*input.wave_number % 4 == 3) {
-        data.type = data.type == render::background::type::kBiome0
-            ? render::background::type::kBiome0_Polar
-            : render::background::type::kBiome0;
-      } else if (*input.wave_number % 4 == 1) {
-        data.parameters.x = 1.f - data.parameters.x;
-      } else {
-        auto v = from_polar(2 * pi<fixed> * random.fixed(), 1_fx / 2);
-        data.position_delta.x = v.x.to_float();
-        data.position_delta.y = v.y.to_float();
-      }
-      if (input.type == wave_type::kBoss) {
-        data.position_delta.x *= 4;
-        data.position_delta.y *= 4;
-        data.colour = colour::kSolarizedDarkBase03;
-        data.colour.y /= 2.f;
-        data.colour.z /= 1.375f;
-      }
-      return true;
+    if (!input.wave_number) {
+      update.begin_transition = false;
+      return;
     }
-    return false;
+    update.begin_transition = true;
+
+    if (*input.wave_number % 4 == 3) {
+      update.data.type = update.data.type == render::background::type::kBiome0
+          ? render::background::type::kBiome0_Polar
+          : render::background::type::kBiome0;
+    } else if (*input.wave_number % 4 == 1) {
+      update.data.parameters.x = 1.f - update.data.parameters.x;
+    } else {
+      auto v = from_polar(2 * pi<fixed> * random.fixed(), 1_fx / 2);
+      update.position_delta.x = v.x.to_float();
+      update.position_delta.y = v.y.to_float();
+    }
+    if (input.type == wave_type::kBoss) {
+      update.position_delta.x *= 4;
+      update.position_delta.y *= 4;
+      update.data.colour = colour::kSolarizedDarkBase03;
+      update.data.colour.y /= 2.f;
+      update.data.colour.z /= 1.375f;
+    }
   }
 
   std::vector<wave_data>
@@ -200,40 +202,42 @@ public:
     s.add<formations::biome0::mixed10_side>();
   }
 
-  bool update_background(RandomEngine& random, const background_input& input,
-                         background_update& data) const override {
+  void update_background(RandomEngine& random, const background_input& input,
+                         render::background::update& update) const override {
     if (input.initialise) {
-      data.position_delta = {0.f, 0.f, 1.f / 8, 1.f / 256};
-      data.rotation_delta = 0.f;
+      update.position_delta = {0.f, 0.f, 1.f / 8, 1.f / 256};
+      update.rotation_delta = 0.f;
 
-      data.type = render::background::type::kBiome0;
-      data.colour = colour::kSolarizedDarkBase03;
-      data.colour.z /= 1.25f;
-      data.parameters = {0.f, 0.f};
+      update.data.type = render::background::type::kBiome0;
+      update.data.colour = colour::kSolarizedDarkBase03;
+      update.data.colour.z /= 1.25f;
+      update.data.parameters = {0.f, 0.f};
     }
 
-    if (input.wave_number) {
-      if (*input.wave_number % 4 == 3) {
-        data.type = data.type == render::background::type::kBiome0
-            ? render::background::type::kBiome0_Polar
-            : render::background::type::kBiome0;
-      } else if (*input.wave_number % 4 == 1) {
-        data.parameters.x = 1.f - data.parameters.x;
-      } else {
-        auto v = from_polar(2 * pi<fixed> * random.fixed(), 1_fx / 2);
-        data.position_delta.x = v.x.to_float();
-        data.position_delta.y = v.y.to_float();
-      }
-      if (input.type == wave_type::kBoss) {
-        data.position_delta.x *= 4;
-        data.position_delta.y *= 4;
-        data.colour = colour::kSolarizedDarkBase03;
-        data.colour.y /= 2.f;
-        data.colour.z /= 1.375f;
-      }
-      return true;
+    if (!input.wave_number) {
+      update.begin_transition = false;
+      return;
     }
-    return false;
+    update.begin_transition = true;
+
+    if (*input.wave_number % 4 == 3) {
+      update.data.type = update.data.type == render::background::type::kBiome0
+          ? render::background::type::kBiome0_Polar
+          : render::background::type::kBiome0;
+    } else if (*input.wave_number % 4 == 1) {
+      update.data.parameters.x = 1.f - update.data.parameters.x;
+    } else {
+      auto v = from_polar(2 * pi<fixed> * random.fixed(), 1_fx / 2);
+      update.position_delta.x = v.x.to_float();
+      update.position_delta.y = v.y.to_float();
+    }
+    if (input.type == wave_type::kBoss) {
+      update.position_delta.x *= 4;
+      update.position_delta.y *= 4;
+      update.data.colour = colour::kSolarizedDarkBase03;
+      update.data.colour.y /= 2.f;
+      update.data.colour.z /= 1.375f;
+    }
   }
 
   std::vector<wave_data>

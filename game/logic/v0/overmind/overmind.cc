@@ -26,7 +26,7 @@ struct Overmind : ecs::component {
   std::uint32_t spawn_timer = 0;
   std::optional<wave_data> current_wave;
   std::vector<wave_data> wave_list;
-  std::vector<background_update> background_data;
+  std::vector<render::background::update> background_updates;
   std::uint32_t background_interpolate = 0;
   std::optional<fixed> boss_progress;
 
@@ -195,46 +195,42 @@ struct Overmind : ecs::component {
 
   void update_background(SimInterface& sim, const Biome& biome, const background_input& input,
                          render::background& background) {
+    // TODO: finish moving all this out to reuse seamless background transitions in menus.
     bool transition = true;
-    if (background_data.empty()) {
+    if (background_updates.empty()) {
       background.position.x = sim.random_fixed().to_float() * 1024.f - 512.f;
       background.position.y = sim.random_fixed().to_float() * 1024.f - 512.f;
-      background_data.emplace_back();
+      background_updates.emplace_back();
       transition = false;
     }
-    auto update_copy = background_data.back();
-    if (!biome.update_background(sim.random(random_source::kAesthetic), input, update_copy)) {
+    auto update_copy = background_updates.back();
+    biome.update_background(sim.random(random_source::kAesthetic), input, update_copy);
+    if (!update_copy.begin_transition) {
       transition = false;
     }
     if (transition) {
-      background_data.emplace_back(update_copy);
+      background_updates.emplace_back(update_copy);
     } else {
-      background_data.back() = update_copy;
+      background_updates.back() = update_copy;
     }
 
-    if (background_data.size() > 1 && ++background_interpolate == kBackgroundInterpolateTime) {
-      background_data.erase(background_data.begin());
+    if (background_updates.size() > 1 && ++background_interpolate == kBackgroundInterpolateTime) {
+      background_updates.erase(background_updates.begin());
       background_interpolate = 0;
     }
 
-    auto set_data = [](render::background::data& data, const background_update& update) {
-      data.type = update.type;
-      data.colour = update.colour;
-      data.parameters = update.parameters;
-    };
-
     background.interpolate =
         ease_in_out_cubic(static_cast<float>(background_interpolate) / kBackgroundInterpolateTime);
-    set_data(background.data0, background_data[0]);
-    if (background_data.size() > 1) {
-      set_data(background.data1, background_data[1]);
-      background.position += glm::mix(background_data[0].position_delta,
-                                      background_data[1].position_delta, background.interpolate);
-      background.rotation += glm::mix(background_data[0].rotation_delta,
-                                      background_data[1].rotation_delta, background.interpolate);
+    background.data0 = background_updates[0].data;
+    if (background_updates.size() > 1) {
+      background.data1 = background_updates[1].data;
+      background.position += glm::mix(background_updates[0].position_delta,
+                                      background_updates[1].position_delta, background.interpolate);
+      background.rotation += glm::mix(background_updates[0].rotation_delta,
+                                      background_updates[1].rotation_delta, background.interpolate);
     } else {
-      background.position += background_data[0].position_delta;
-      background.rotation += background_data[0].rotation_delta;
+      background.position += background_updates[0].position_delta;
+      background.rotation += background_updates[0].rotation_delta;
     }
     background.rotation = normalise_angle(background.rotation);
   }
@@ -244,7 +240,7 @@ struct Overmind : ecs::component {
     return index >= biomes.size() ? nullptr : v0::get_biome(biomes[index]);
   }
 };
-DEBUG_STRUCT_TUPLE(Overmind, next_wave, spawn_timer, current_wave, wave_list, background_data,
+DEBUG_STRUCT_TUPLE(Overmind, next_wave, spawn_timer, current_wave, wave_list,
                    background_interpolate);
 
 }  // namespace
