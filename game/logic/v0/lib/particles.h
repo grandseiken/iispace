@@ -25,6 +25,7 @@ void destruct_entity_default(ecs::const_handle h, SimInterface& sim, EmitHandle&
   // TODO: something a bit cleverer here? Take velocity of shot into account?
   // Take velocity of destructed shape into account (maybe using same system as motion trails)?
   // Make destruct particles similarly velocified?
+  // TODO: different explode effects for different enemy types.
   auto& r = resolve_entity_shape<ShapeDefinition>(h, sim);
   explode_shapes(e, r, std::nullopt, /* time */ 10, std::nullopt, 1.4f);
   destruct_lines(e, r, to_float(source), 20);

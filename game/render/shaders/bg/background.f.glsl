@@ -23,37 +23,44 @@ flat in uint g_style;
 in vec2 g_texture_coords;
 out vec4 out_colour;
 
-float centred_interval(float d, float t) {
+float offset_centred(float d, float t) {
   return 1. - d / 2. + t * d;
 }
 
-float noise0(vec4 v, vec2 p) {
+// TODO: factor things out a bit for reuse. Introduce a struct for each BG setting with various
+// parameters (e.g. polar, multiplier m, tonemap setting, noise function, etc).
+float noise0(vec4 v, vec2 p, float m) {
   vec3 gradient;
-  float v0 = psrdnoise3(v.xyz / 256., vec3(0.), v.w, gradient);
-  float v1 = psrdnoise3(vec3(.75) + gradient / 64. + v.xyz / 128., vec3(0.), v.w * 2., gradient);
+  float v0 = psrdnoise3(v.xyz / (m * 2.), vec3(0.), v.w, gradient);
+  float v1 = psrdnoise3(vec3(.75) + 2. * gradient / m + v.xyz / m, vec3(0.), v.w * 2., gradient);
   return mix(abs(v0 + .25 * v1), abs(v0 * v1), p.x);
 }
 
-float noise0_polar(vec4 v, vec2 p) {
+float noise0_polar(vec4 v, vec2 p, float m) {
   vec3 gradient;
-  float v0 = psrdnoise3(v.xyz / vec3(256., 64., 256.), vec3(0., 4., 0.), v.w, gradient);
-  float v1 = psrdnoise3(vec3(.75) + gradient / 64. + v.xyz / vec3(128., 32., 128.),
-                        vec3(0., 8., 0.), v.w * 2., gradient);
+  float v0 = psrdnoise3(v.xyz / vec3(m * 2., m / 2., m * 2.), vec3(0., 2. * kPolarPeriod / m, 0.),
+                        v.w, gradient);
+  float v1 = psrdnoise3(vec3(.75) + 2. * gradient / m + v.xyz / vec3(m, m / 4., m),
+                        vec3(0., 4. * kPolarPeriod / m, 0.), v.w * 2., gradient);
   return mix(abs(v0 + .25 * v1), abs(v0 * v1), p.x);
 }
 
 float tonemap0(float v) {
   float t0 = (5. + aa_step_upper(is_multisample, .025, v)) / 6.;
-  float t1 = centred_interval(1. / 8., aa_step_upper(is_multisample, .15, v));
+  float t1 = offset_centred(1. / 8., aa_step_upper(is_multisample, .15, v));
   return t0 * t1;
+}
+
+float tonemap1(float v) {
+  return (7. + aa_step_centred(is_multisample, 0., sin(64. * v))) / 8.;
 }
 
 float noise_value(uint type, vec4 v, vec4 v_polar, vec2 p) {
   switch (type) {
   case kBgTypeBiome0:
-    return noise0(v, p);
+    return noise0(v, p, 256.);
   case kBgTypeBiome0_Polar:
-    return noise0_polar(v_polar, p);
+    return noise0_polar(v_polar, p, 128.);
   }
   return 0.;
 }
@@ -61,16 +68,16 @@ float noise_value(uint type, vec4 v, vec4 v_polar, vec2 p) {
 float tone_value(uint type, float v) {
   switch (type) {
   case kBgTypeBiome0:
+    return tonemap1(v);  // Previously: tonemap0 amd noise0 with m = 128.
   case kBgTypeBiome0_Polar:
     return tonemap0(v);
-    break;
   }
   return 0.;
 }
 
 float scanlines() {
   float size = max(1., round(float(screen_dimensions.y) / kRenderHeight));
-  return centred_interval(3. / 16., floor(mod(gl_FragCoord.y, 2. * size) / size));
+  return offset_centred(3. / 16., floor(mod(gl_FragCoord.y, 2. * size) / size));
 }
 
 void main() {

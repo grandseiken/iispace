@@ -132,7 +132,8 @@ struct PlayerShot : ecs::component {
                                            transform.centre, shot_mod_data::kHomingScanRadius));
       // TODO: really want to use closest point on potential target shape to our shot, rather
       // than target centre. Otherwise e.g. bosses less likely to be targeted since big, so far
-      // away. Also, ignore offscreen?
+      // away.
+      // TODO: also, ignore offscreen enemies, and shielded ones.
       for (const auto& c : c_list) {
         for (const auto& vc : c.shape_centres) {
           if (vc == transform.centre) {
