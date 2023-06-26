@@ -2,6 +2,7 @@
 #define II_GAME_LOGIC_SIM_IO_AGGREGATE_H
 #include "game/common/math.h"
 #include "game/mixer/sound.h"
+#include "game/render/data/background.h"
 #include "game/render/data/fx.h"
 #include <cstddef>
 #include <cstdint>
@@ -31,7 +32,6 @@ enum class resolve_tag : std::uint32_t {
   kOnHit,
   kOnDestroy,
   kRespawn,
-  kBackgroundFx,
 };
 
 struct resolve_key {
@@ -142,14 +142,7 @@ struct particle {
   bool fade = false;
 };
 
-enum class background_fx_type {
-  kNone,
-  kLegacy_Stars,
-};
-
-struct background_fx_change {
-  background_fx_type type = background_fx_type::kNone;
-};
+using background_update = render::background::update;
 
 }  // namespace ii
 

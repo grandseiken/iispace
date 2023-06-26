@@ -88,9 +88,9 @@ struct Overmind : ecs::component {
         stars_random.fixed();
         stars_compatibility = stars_random.uint(3) + 2;
       }
-      background_fx_change change;
-      change.type = background_fx_type::kLegacy_Stars;
-      sim.emit(resolve_key::reconcile(h.id(), resolve_tag::kBackgroundFx)).background_fx(change);
+      render::background::update update;
+      update.type = render::background::type::kLegacy_Stars;
+      sim.emit(resolve_key::canonical()).background(update);
     };
     if (sim.conditions().compatibility == compatibility_level::kLegacy) {
       auto rc = stars_compatibility > 1 ? stars_random.uint(stars_compatibility) : 0u;

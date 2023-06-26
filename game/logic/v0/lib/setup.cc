@@ -60,7 +60,6 @@ void V0SimSetup::initialise_systems(SimInterface& sim) {
 
 ecs::entity_id V0SimSetup::start_game(const initial_conditions& conditions, SimInterface& sim) {
   auto global_entity = sim.index().create(GlobalData{});
-  global_entity.add(Background{});
 
   v0::spawn_overmind(sim);
   auto dim = sim.dimensions();

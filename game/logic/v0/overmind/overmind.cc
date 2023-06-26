@@ -19,7 +19,6 @@ struct Overmind : ecs::component {
   static constexpr std::uint32_t kSpawnTimer = 60;
   static constexpr std::uint32_t kSpawnTimerBoss = 300;
   static constexpr std::uint32_t kSpawnTimerUpgrade = 180;
-  static constexpr std::uint32_t kBackgroundInterpolateTime = 180;
   static constexpr std::array kBossProgressRespawn = {
       75_fx / 100, 50_fx / 100, 35_fx / 100, 25_fx / 100, 175_fx / 1000, 10_fx / 100, 5_fx / 100};
 
@@ -27,8 +26,6 @@ struct Overmind : ecs::component {
   std::uint32_t spawn_timer = 0;
   std::optional<wave_data> current_wave;
   std::vector<wave_data> wave_list;
-  std::vector<render::background::update> background_updates;
-  std::uint32_t background_interpolate = 0;
   std::optional<fixed> boss_progress;
 
   void update(ecs::handle h, SimInterface& sim) {
@@ -76,8 +73,9 @@ struct Overmind : ecs::component {
       boss_progress.reset();
     }
 
-    if (const auto* biome = get_biome(sim, current_wave->biome_index); biome) {
-      update_background(sim, *biome, input, sim.global_entity().get<Background>()->background);
+    if (const auto* biome = get_biome(sim, current_wave->biome_index); biome && input) {
+      sim.emit(resolve_key::canonical())
+          .background(biome->update_background(sim.random(random_source::kAesthetic), *input));
     }
 
     global.overmind_wave_count = next_wave.wave_number;
@@ -193,65 +191,12 @@ struct Overmind : ecs::component {
     spawn_mod_upgrades(sim, mods);
   }
 
-  void update_background(SimInterface& sim, const Biome& biome,
-                         const std::optional<background_input>& input,
-                         render::background& background) {
-    // TODO: finish moving all this out to reuse seamless background transitions in menus.
-    if (background_updates.empty()) {
-      background.position.x = sim.random_fixed().to_float() * 1024.f - 512.f;
-      background.position.y = sim.random_fixed().to_float() * 1024.f - 512.f;
-    }
-    if (input) {
-      background_updates.emplace_back(
-          biome.update_background(sim.random(random_source::kAesthetic), *input));
-      if (background_updates.size() == 1u) {
-        background_updates.back().fill_defaults();
-      } else {
-        background_updates.back().fill_from(*(background_updates.rbegin() + 1));
-      }
-    }
-
-    if (background_updates.size() > 1 && ++background_interpolate == kBackgroundInterpolateTime) {
-      background_updates.erase(background_updates.begin());
-      background_interpolate = 0;
-    }
-
-    auto set_data = [&](render::background::data& data, const render::background::update& update) {
-      data.type = *update.type;
-      data.parameters = *update.parameters;
-      data.colour = *update.colour;
-    };
-
-    render::background::update u0;
-    if (background_updates.empty()) {
-      u0.fill_defaults();
-    } else {
-      u0 = background_updates[0];
-    }
-    set_data(background.data0, background_updates[0]);
-
-    background.interpolate =
-        ease_in_out_cubic(static_cast<float>(background_interpolate) / kBackgroundInterpolateTime);
-    if (background_updates.size() > 1) {
-      set_data(background.data1, background_updates[1]);
-      background.position +=
-          glm::mix(*u0.velocity, *background_updates[1].velocity, background.interpolate);
-      background.rotation += glm::mix(*u0.angular_velocity, *background_updates[1].angular_velocity,
-                                      background.interpolate);
-    } else {
-      background.position += *u0.velocity;
-      background.rotation += *u0.angular_velocity;
-    }
-    background.rotation = normalise_angle(background.rotation);
-  }
-
   const Biome* get_biome(const SimInterface& sim, std::uint32_t index) const {
     const auto& biomes = sim.conditions().biomes;
     return index >= biomes.size() ? nullptr : v0::get_biome(biomes[index]);
   }
 };
-DEBUG_STRUCT_TUPLE(Overmind, next_wave, spawn_timer, current_wave, wave_list,
-                   background_interpolate);
+DEBUG_STRUCT_TUPLE(Overmind, next_wave, spawn_timer, current_wave, wave_list);
 
 }  // namespace
 

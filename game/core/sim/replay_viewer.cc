@@ -164,8 +164,9 @@ void ReplayViewer::render_content(render::GlRenderer& r) const {
   auto& render =
       impl_->istate().render(impl_->transients, /* paused */ stack().top() != impl_->hud);
   r.set_colour_cycle(render.colour_cycle);
-  r.render_background(render.background);
-  impl_->render_state.render(render.shapes, render.fx);
+  render::background background;
+  impl_->render_state.render(background, render.shapes, render.fx);
+  r.render_background(background);
   for (const auto& panel : render.panels) {
     r.render_panel(panel);
   }

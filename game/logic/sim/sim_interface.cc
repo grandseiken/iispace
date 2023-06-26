@@ -29,8 +29,8 @@ EmitHandle& EmitHandle::set_delay_ticks(std::uint32_t ticks) {
   return *this;
 }
 
-EmitHandle& EmitHandle::background_fx(background_fx_change change) {
-  e->background_fx = change;
+EmitHandle& EmitHandle::background(render::background::update background) {
+  e->background = background;
   return *this;
 }
 

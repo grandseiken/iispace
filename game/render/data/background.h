@@ -11,6 +11,7 @@ struct background {
     kNone = 0,
     kBiome0 = 1,
     kBiome0_Polar = 2,
+    kLegacy_Stars = 9,
   };
 
   struct data {

@@ -51,7 +51,7 @@ class EmitHandle {
 public:
   RandomEngine& random();
   EmitHandle& set_delay_ticks(std::uint32_t ticks);
-  EmitHandle& background_fx(background_fx_change);
+  EmitHandle& background(render::background::update);
   EmitHandle& add(particle particle);
   // TODO: remove this.
   EmitHandle& explosion(const fvec2& v, const cvec4& c, std::uint32_t time = 8,

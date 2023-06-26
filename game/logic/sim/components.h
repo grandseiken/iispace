@@ -65,13 +65,13 @@ DEBUG_STRUCT_TUPLE(Collision, flags, bounding_width, check_collision);
 struct Update : ecs::component {
   bool skip_update = false;
   using update_t = void(ecs::handle, SimInterface&);
-  sfn::ptr<update_t> update;
+  sfn::ptr<update_t> update = nullptr;
 };
 DEBUG_STRUCT_TUPLE(Update, update);
 
 struct PostUpdate : ecs::component {
   using update_t = void(ecs::handle, SimInterface&);
-  sfn::ptr<update_t> post_update;
+  sfn::ptr<update_t> post_update = nullptr;
 };
 DEBUG_STRUCT_TUPLE(PostUpdate, post_update);
 
@@ -183,11 +183,6 @@ struct Player : ecs::component {
 DEBUG_STRUCT_TUPLE(Player, player_number, death_count, is_killed, super_charge, bomb_count,
                    shield_count, is_predicted, speed);
 
-struct Background : ecs::component {
-  render::background background;
-};
-DEBUG_STRUCT_TUPLE(Background);
-
 void add(ecs::handle, const Destroy&);
 void add(ecs::handle, const Transform&);
 void add(ecs::handle, const Collision&);
@@ -201,7 +196,6 @@ void add(ecs::handle, const Boss&);
 void add(ecs::handle, const Enemy&);
 void add(ecs::handle, const Health&);
 void add(ecs::handle, const Player&);
-void add(ecs::handle, const Background&);
 
 }  // namespace ii
 

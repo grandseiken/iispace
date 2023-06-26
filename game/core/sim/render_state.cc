@@ -12,13 +12,17 @@
 
 namespace ii {
 namespace {
-const std::uint32_t kStarTimer = 500;
+constexpr std::uint32_t kBackgroundInterpolateTime = 180;
+constexpr std::uint32_t kLegacyStarTimer = 500;
 
 std::uint32_t ticks_to_ms(std::uint32_t ticks) {
   // Rumble currently defined in ticks, slight overestimate is fine.
   return ticks * 17u;
 }
+
 }  // namespace
+
+RenderState::RenderState(std::uint32_t seed) : engine_{seed}, background_{engine_} {}
 
 void RenderState::handle_output(ISimState& state, Mixer* mixer, SimInputAdapter* input) {
   struct sound_average {
@@ -44,9 +48,13 @@ void RenderState::handle_output(ISimState& state, Mixer* mixer, SimInputAdapter*
       continue;
     }
 
-    if (e.background_fx) {
-      handle_background_fx(*e.background_fx);
-      e.background_fx.reset();
+    if (e.background) {
+      if (e.background->type == render::background::type::kLegacy_Stars) {
+        handle_legacy_stars_change();
+      } else {
+        background_.handle(*e.background);
+      }
+      e.background.reset();
     }
 
     // Particles.
@@ -80,7 +88,7 @@ void RenderState::handle_output(ISimState& state, Mixer* mixer, SimInputAdapter*
       e.sounds.clear();
     }
 
-    if (!e.background_fx && e.particles.empty() && e.sounds.empty() && e.rumble.empty()) {
+    if (!e.background && e.particles.empty() && e.sounds.empty() && e.rumble.empty()) {
       it = output.entries.erase(it);
     } else {
       ++it;
@@ -108,6 +116,7 @@ void RenderState::handle_output(ISimState& state, Mixer* mixer, SimInputAdapter*
 }
 
 void RenderState::update(SimInputAdapter* input) {
+  background_.update();
   if (input) {
     for (std::uint32_t i = 0; i < rumble_.size(); ++i) {
       bool rumbled = false;
@@ -179,7 +188,7 @@ void RenderState::update(SimInputAdapter* input) {
     float speed = t == star_type::kDotStar ? 18.f : t == star_type::kBigStar ? 14.f : 10.f;
 
     star_data star;
-    star.timer = kStarTimer;
+    star.timer = kLegacyStarTimer;
     star.type = t;
     star.speed = speed;
 
@@ -217,7 +226,9 @@ void RenderState::update(SimInputAdapter* input) {
   }
 }
 
-void RenderState::render(std::vector<render::shape>& shapes, std::vector<render::fx>& fx) const {
+void RenderState::render(render::background& background, std::vector<render::shape>& shapes,
+                         std::vector<render::fx>& fx) const {
+  background = background_.output();
   auto render_box = [&](const fvec2& v, const fvec2& vv, const fvec2& d, const cvec4& c, float r,
                         float lw, float z) {
     shapes.emplace_back(render::shape{
@@ -346,19 +357,61 @@ void RenderState::render(std::vector<render::shape>& shapes, std::vector<render:
   }
 }
 
-void RenderState::handle_background_fx(const background_fx_change& change) {
-  bgfx_type_ = change.type;
-  switch (bgfx_type_) {
-  case background_fx_type::kNone:
-    break;
-  case background_fx_type::kLegacy_Stars:
-    star_direction_ = rotate(star_direction_, (engine_.fixed().to_float() - .5f) * pi<float>);
-    for (auto& star : stars_) {
-      star.timer = kStarTimer;
-    }
-    star_rate_ = engine_.uint(3) + 2;
-    break;
+RenderState::BackgroundState::BackgroundState(RandomEngine& engine) {
+  auto v = [&engine] { return engine.fixed().to_float() * 1024.f - 512.f; };
+  output_.position.x = v();
+  output_.position.y = v();
+}
+
+void RenderState::BackgroundState::handle(const render::background::update& update) {
+  update_queue_.emplace_back(update);
+  if (update_queue_.size() == 1u) {
+    update_queue_.back().fill_defaults();
+  } else {
+    update_queue_.back().fill_from(*(update_queue_.rbegin() + 1));
   }
+}
+
+void RenderState::BackgroundState::update() {
+  if (update_queue_.size() > 1 && ++interpolate_ == kBackgroundInterpolateTime) {
+    update_queue_.erase(update_queue_.begin());
+    interpolate_ = 0;
+  }
+
+  auto set_data = [&](render::background::data& data, const render::background::update& update) {
+    data.type = *update.type;
+    data.parameters = *update.parameters;
+    data.colour = *update.colour;
+  };
+
+  render::background::update u0;
+  if (update_queue_.empty()) {
+    u0.fill_defaults();
+  } else {
+    u0 = update_queue_[0];
+  }
+  set_data(output_.data0, u0);
+
+  output_.interpolate =
+      ease_in_out_cubic(static_cast<float>(interpolate_) / kBackgroundInterpolateTime);
+  if (update_queue_.size() > 1) {
+    set_data(output_.data1, update_queue_[1]);
+    output_.position += glm::mix(*u0.velocity, *update_queue_[1].velocity, output_.interpolate);
+    output_.rotation +=
+        glm::mix(*u0.angular_velocity, *update_queue_[1].angular_velocity, output_.interpolate);
+  } else {
+    output_.position += *u0.velocity;
+    output_.rotation += *u0.angular_velocity;
+  }
+  output_.rotation = normalise_angle(output_.rotation);
+}
+
+void RenderState::handle_legacy_stars_change() {
+  star_direction_ = rotate(star_direction_, (engine_.fixed().to_float() - .5f) * pi<float>);
+  for (auto& star : stars_) {
+    star.timer = kLegacyStarTimer;
+  }
+  star_rate_ = engine_.uint(3) + 2;
 }
 
 auto RenderState::resolve_rumble(std::uint32_t player) const -> rumble_t {

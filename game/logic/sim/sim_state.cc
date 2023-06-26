@@ -165,7 +165,7 @@ void SimState::update(std::vector<input_frame> input) {
         c.update(h, *interface_);
       }
       // TODO: we only update after the entity itself has updated: this can still lead to minor
-      // inconsistencies if the entity is moved by some external force.
+      // inconsistencies if the entity is moved externally.
       internals_->collision_index->update(h);
     }
   });
@@ -294,9 +294,6 @@ render_output& SimState::render(transient_render_state& state, bool paused) cons
   if (const auto* data = interface_->global_entity().get<v0::GlobalData>(); data) {
     result.overmind_wave = data->overmind_wave_count;
     result.debug_text = data->debug_text;
-  }
-  if (const auto* background = interface_->global_entity().get<Background>(); background) {
-    result.background = background->background;
   }
 
   result.tick_count = internals_->tick_count;

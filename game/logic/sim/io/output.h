@@ -32,7 +32,7 @@ struct rumble_out {
 
 struct aggregate_event {
   std::uint32_t delay_ticks = 0u;
-  std::optional<background_fx_change> background_fx;
+  std::optional<render::background::update> background;
   std::vector<particle> particles;
   std::vector<sound_out> sounds;
   std::vector<rumble_out> rumble;
@@ -65,7 +65,6 @@ struct boss_info {
 };
 
 struct render_output {
-  render::background background;
   std::vector<render::shape> shapes;
   std::vector<render::fx> fx;
   std::vector<render::combo_panel> panels;

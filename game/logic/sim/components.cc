@@ -217,8 +217,5 @@ void add(ecs::handle h, const Health& v) {
 void add(ecs::handle h, const Player& v) {
   h.add(v);
 }
-void add(ecs::handle h, const Background& v) {
-  h.add(v);
-}
 
 }  // namespace ii
