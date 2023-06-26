@@ -13,8 +13,8 @@ class Biome {
 public:
   virtual ~Biome() = default;
 
-  virtual void
-  update_background(RandomEngine&, const background_input&, render::background::update&) const = 0;
+  virtual render::background::update
+  update_background(RandomEngine&, const background_input&) const = 0;
   virtual std::vector<wave_data>
   get_wave_list(const initial_conditions&, std::uint32_t biome_index) const = 0;
   virtual void spawn_wave(SimInterface&, const wave_data&) const = 0;

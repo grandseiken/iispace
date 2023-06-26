@@ -9,6 +9,7 @@
 #include "game/logic/v0/player/loadout.h"
 #include "game/logic/v0/player/player.h"
 #include "game/logic/v0/player/upgrade.h"
+#include "game/render/data/background.h"
 #include <array>
 
 namespace ii::v0 {
@@ -34,8 +35,7 @@ struct Overmind : ecs::component {
     auto& global = *sim.global_entity().get<GlobalData>();
     global.walls_vulnerable = !(sim.index().count<Enemy>() - sim.index().count<WallTag>());
 
-    background_input input;
-    input.tick_count = sim.tick_count();
+    std::optional<background_input> input;
 
     std::uint32_t total_enemy_threat = 0;
     sim.index().iterate<Enemy>([&](const Enemy& e) { total_enemy_threat += e.threat_value; });
@@ -46,14 +46,14 @@ struct Overmind : ecs::component {
         spawn_wave(sim);
       }
     } else if (auto t = init_spawn_wave(sim, total_enemy_threat); t) {
-      input.initialise = !next_wave.wave_number;
-      input.wave_number = next_wave.wave_number;
+      input.emplace();
+      input->biome_index = current_wave->biome_index;
+      input->type = current_wave->type;
+      input->wave_number = next_wave.wave_number;
       spawn_timer = *t;
       cleanup_mod_upgrades(sim);
     }
 
-    input.biome_index = current_wave->biome_index;
-    input.type = current_wave->type;
     if (current_wave->type == wave_type::kBoss) {
       if (!boss_progress) {
         boss_progress = 1_fx;
@@ -193,25 +193,22 @@ struct Overmind : ecs::component {
     spawn_mod_upgrades(sim, mods);
   }
 
-  void update_background(SimInterface& sim, const Biome& biome, const background_input& input,
+  void update_background(SimInterface& sim, const Biome& biome,
+                         const std::optional<background_input>& input,
                          render::background& background) {
     // TODO: finish moving all this out to reuse seamless background transitions in menus.
-    bool transition = true;
     if (background_updates.empty()) {
       background.position.x = sim.random_fixed().to_float() * 1024.f - 512.f;
       background.position.y = sim.random_fixed().to_float() * 1024.f - 512.f;
-      background_updates.emplace_back();
-      transition = false;
     }
-    auto update_copy = background_updates.back();
-    biome.update_background(sim.random(random_source::kAesthetic), input, update_copy);
-    if (!update_copy.begin_transition) {
-      transition = false;
-    }
-    if (transition) {
-      background_updates.emplace_back(update_copy);
-    } else {
-      background_updates.back() = update_copy;
+    if (input) {
+      background_updates.emplace_back(
+          biome.update_background(sim.random(random_source::kAesthetic), *input));
+      if (background_updates.size() == 1u) {
+        background_updates.back().fill_defaults();
+      } else {
+        background_updates.back().fill_from(*(background_updates.rbegin() + 1));
+      }
     }
 
     if (background_updates.size() > 1 && ++background_interpolate == kBackgroundInterpolateTime) {
@@ -219,18 +216,31 @@ struct Overmind : ecs::component {
       background_interpolate = 0;
     }
 
+    auto set_data = [&](render::background::data& data, const render::background::update& update) {
+      data.type = *update.type;
+      data.parameters = *update.parameters;
+      data.colour = *update.colour;
+    };
+
+    render::background::update u0;
+    if (background_updates.empty()) {
+      u0.fill_defaults();
+    } else {
+      u0 = background_updates[0];
+    }
+    set_data(background.data0, background_updates[0]);
+
     background.interpolate =
         ease_in_out_cubic(static_cast<float>(background_interpolate) / kBackgroundInterpolateTime);
-    background.data0 = background_updates[0].data;
     if (background_updates.size() > 1) {
-      background.data1 = background_updates[1].data;
-      background.position += glm::mix(background_updates[0].position_delta,
-                                      background_updates[1].position_delta, background.interpolate);
-      background.rotation += glm::mix(background_updates[0].rotation_delta,
-                                      background_updates[1].rotation_delta, background.interpolate);
+      set_data(background.data1, background_updates[1]);
+      background.position +=
+          glm::mix(*u0.velocity, *background_updates[1].velocity, background.interpolate);
+      background.rotation += glm::mix(*u0.angular_velocity, *background_updates[1].angular_velocity,
+                                      background.interpolate);
     } else {
-      background.position += background_updates[0].position_delta;
-      background.rotation += background_updates[0].rotation_delta;
+      background.position += *u0.velocity;
+      background.rotation += *u0.angular_velocity;
     }
     background.rotation = normalise_angle(background.rotation);
   }

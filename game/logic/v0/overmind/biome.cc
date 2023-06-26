@@ -70,42 +70,33 @@ void spawn(spawn_context& context) {
 class TestingBiome : public Biome {
 public:
   ~TestingBiome() override = default;
-  void update_background(RandomEngine& random, const background_input& input,
-                         render::background::update& update) const override {
-    if (input.initialise) {
-      update.position_delta = {0.f, 0.f, 1.f / 8, 1.f / 256};
-      update.rotation_delta = 0.f;
 
-      update.data.type = render::background::type::kBiome0;
-      update.data.colour = colour::kSolarizedDarkBase03;
-      update.data.colour.z /= 1.25f;
-      update.data.parameters = {0.f, 0.f};
-    }
+  render::background::update
+  update_background(RandomEngine& random, const background_input& input) const override {
+    render::background::update update;
+    update.type = render::background::type::kBiome0;
+    update.colour = colour::kSolarizedDarkBase03;
+    update.colour->z /= 1.25f;
+    update.parameters = {0.f, 0.f};
 
-    if (!input.wave_number) {
-      update.begin_transition = false;
-      return;
-    }
-    update.begin_transition = true;
-
-    if (*input.wave_number % 4 == 3) {
-      update.data.type = update.data.type == render::background::type::kBiome0
-          ? render::background::type::kBiome0_Polar
-          : render::background::type::kBiome0;
-    } else if (*input.wave_number % 4 == 1) {
-      update.data.parameters.x = 1.f - update.data.parameters.x;
-    } else {
+    auto c = input.wave_number % 8;
+    update.type =
+        c < 4 ? render::background::type::kBiome0 : render::background::type::kBiome0_Polar;
+    update.parameters->x = c >= 2 && c < 6 ? 1.f : 0.f;
+    if (!input.wave_number || c % 2) {
       auto v = from_polar(2 * pi<fixed> * random.fixed(), 1_fx / 2);
-      update.position_delta.x = v.x.to_float();
-      update.position_delta.y = v.y.to_float();
+      update.velocity = {v.x.to_float(), v.y.to_float(), 1.f / 8, 1.f / 256};
+      update.angular_velocity = 0.f;
     }
+
     if (input.type == wave_type::kBoss) {
-      update.position_delta.x *= 4;
-      update.position_delta.y *= 4;
-      update.data.colour = colour::kSolarizedDarkBase03;
-      update.data.colour.y /= 2.f;
-      update.data.colour.z /= 1.375f;
+      auto v = from_polar(2 * pi<fixed> * random.fixed(), 2_fx);
+      update.velocity = {v.x.to_float(), v.y.to_float(), 1.f / 8, 1.f / 256};
+      update.colour = colour::kSolarizedDarkBase03;
+      update.colour->y /= 2.f;
+      update.colour->z /= 1.375f;
     }
+    return update;
   }
 
   std::vector<wave_data>
@@ -202,42 +193,32 @@ public:
     s.add<formations::biome0::mixed10_side>();
   }
 
-  void update_background(RandomEngine& random, const background_input& input,
-                         render::background::update& update) const override {
-    if (input.initialise) {
-      update.position_delta = {0.f, 0.f, 1.f / 8, 1.f / 256};
-      update.rotation_delta = 0.f;
+  render::background::update
+  update_background(RandomEngine& random, const background_input& input) const override {
+    render::background::update update;
+    update.type = render::background::type::kBiome0;
+    update.colour = colour::kSolarizedDarkBase03;
+    update.colour->z /= 1.25f;
+    update.parameters = {0.f, 0.f};
 
-      update.data.type = render::background::type::kBiome0;
-      update.data.colour = colour::kSolarizedDarkBase03;
-      update.data.colour.z /= 1.25f;
-      update.data.parameters = {0.f, 0.f};
-    }
-
-    if (!input.wave_number) {
-      update.begin_transition = false;
-      return;
-    }
-    update.begin_transition = true;
-
-    if (*input.wave_number % 4 == 3) {
-      update.data.type = update.data.type == render::background::type::kBiome0
-          ? render::background::type::kBiome0_Polar
-          : render::background::type::kBiome0;
-    } else if (*input.wave_number % 4 == 1) {
-      update.data.parameters.x = 1.f - update.data.parameters.x;
-    } else {
+    auto c = input.wave_number % 8;
+    update.type =
+        c < 4 ? render::background::type::kBiome0 : render::background::type::kBiome0_Polar;
+    update.parameters->x = c >= 2 && c < 6 ? 1.f : 0.f;
+    if (!input.wave_number || c % 2) {
       auto v = from_polar(2 * pi<fixed> * random.fixed(), 1_fx / 2);
-      update.position_delta.x = v.x.to_float();
-      update.position_delta.y = v.y.to_float();
+      update.velocity = {v.x.to_float(), v.y.to_float(), 1.f / 8, 1.f / 256};
+      update.angular_velocity = 0.f;
     }
+
     if (input.type == wave_type::kBoss) {
-      update.position_delta.x *= 4;
-      update.position_delta.y *= 4;
-      update.data.colour = colour::kSolarizedDarkBase03;
-      update.data.colour.y /= 2.f;
-      update.data.colour.z /= 1.375f;
+      auto v = from_polar(2 * pi<fixed> * random.fixed(), 2_fx);
+      update.velocity = {v.x.to_float(), v.y.to_float(), 1.f / 8, 1.f / 256};
+      update.colour = colour::kSolarizedDarkBase03;
+      update.colour->y /= 2.f;
+      update.colour->z /= 1.375f;
     }
+    return update;
   }
 
   std::vector<wave_data>

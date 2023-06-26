@@ -16,11 +16,9 @@ enum class wave_type {
 };
 
 struct background_input {
-  bool initialise = false;
   wave_type type = wave_type::kEnemy;
-  std::uint64_t tick_count = 0;
   std::uint32_t biome_index = 0;
-  std::optional<std::uint32_t> wave_number;
+  std::uint32_t wave_number = 0;
 };
 
 struct wave_id {
