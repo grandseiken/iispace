@@ -12,6 +12,7 @@
 
 namespace ii {
 namespace {
+constexpr float kAngularVelocityMultiplier = 1.f / 128;
 constexpr std::uint32_t kBackgroundInterpolateTime = 180;
 constexpr std::uint32_t kLegacyStarTimer = 500;
 
@@ -394,15 +395,19 @@ void RenderState::BackgroundState::update() {
 
   output_.interpolate =
       ease_in_out_cubic(static_cast<float>(interpolate_) / kBackgroundInterpolateTime);
+  fvec4 delta{0.f};
+  float rotation_delta = 0.f;
   if (update_queue_.size() > 1) {
     set_data(output_.data1, update_queue_[1]);
-    output_.position += glm::mix(*u0.velocity, *update_queue_[1].velocity, output_.interpolate);
-    output_.rotation +=
+    delta = glm::mix(*u0.velocity, *update_queue_[1].velocity, output_.interpolate);
+    rotation_delta =
         glm::mix(*u0.angular_velocity, *update_queue_[1].angular_velocity, output_.interpolate);
   } else {
-    output_.position += *u0.velocity;
-    output_.rotation += *u0.angular_velocity;
+    delta = *u0.velocity;
+    rotation_delta = *u0.angular_velocity;
   }
+  output_.position += fvec4{1.f, 1.f, 1.f, kAngularVelocityMultiplier} * delta;
+  output_.rotation += kAngularVelocityMultiplier * rotation_delta;
   output_.rotation = normalise_angle(output_.rotation);
 }
 

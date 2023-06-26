@@ -207,13 +207,13 @@ public:
     update.parameters->x = c >= 2 && c < 6 ? 1.f : 0.f;
     if (!input.wave_number || c % 2) {
       auto v = from_polar(2 * pi<fixed> * random.fixed(), 1_fx / 2);
-      update.velocity = {v.x.to_float(), v.y.to_float(), 1.f / 8, 1.f / 256};
+      update.velocity = {v.x.to_float(), v.y.to_float(), 1.f / 8, 1.f / 2};
       update.angular_velocity = 0.f;
     }
 
     if (input.type == wave_type::kBoss) {
       auto v = from_polar(2 * pi<fixed> * random.fixed(), 2_fx);
-      update.velocity = {v.x.to_float(), v.y.to_float(), 1.f / 8, 1.f / 256};
+      update.velocity = {v.x.to_float(), v.y.to_float(), 1.f / 8, 1.f / 2};
       update.colour = colour::kSolarizedDarkBase03;
       update.colour->y /= 2.f;
       update.colour->z /= 1.375f;
