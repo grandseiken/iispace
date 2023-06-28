@@ -15,7 +15,7 @@ void main() {
       screen_coords.x > g_screen_dimensions.x - g_border_size || screen_coords.y < g_border_size ||
       screen_coords.y > g_screen_dimensions.y - g_border_size;
   switch (g_style) {
-  case kPanelStyleFlatColour:
+  case kPanelStyle_FlatColour:
     if (is_border && g_panel_border.a > 0) {
       out_colour = g_panel_border;
     } else {

@@ -30,7 +30,7 @@ void main() {
   g_seed = v_in[0].data.seed;
 
   switch (v_in[0].data.shape) {
-  case kFxShapeBall:
+  case kFxShape_Ball:
     set_vertex_data(render_position(g_position + vec2(g_dimensions.x)));
     EmitVertex();
     set_vertex_data(render_position(g_position + vec2(-g_dimensions.x, g_dimensions.x)));
@@ -42,7 +42,7 @@ void main() {
     EndPrimitive();
     break;
 
-  case kFxShapeBox:
+  case kFxShape_Box:
     set_vertex_data(render_position(g_position + rotate(g_dimensions, g_rotation)));
     EmitVertex();
     set_vertex_data(

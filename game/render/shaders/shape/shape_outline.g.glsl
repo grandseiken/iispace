@@ -133,10 +133,10 @@ void main() {
   g_buffer_index = v_in[0].data.buffer_index;
   g_colour_interpolate = 0.;
   switch (v_in[0].data.style) {
-  case kShapeStyleNgonPolygon:
+  case kShapeStyle_NgonPolygon:
     emit_polygon(position, v_in[0].data);
     break;
-  case kShapeStyleNgonPolystar:
+  case kShapeStyle_NgonPolystar:
     if (v_in[0].data.params.x % 2 != 0 || v_in[0].data.dimensions.y != 0. ||
         v_in[0].data.params.x != v_in[0].data.params.y ||
         shape_buffer.data[g_buffer_index].colour0 != shape_buffer.data[g_buffer_index].colour1) {
@@ -145,16 +145,16 @@ void main() {
       emit_even_polystar(position, v_in[0].data);
     }
     break;
-  case kShapeStyleNgonPolygram:
+  case kShapeStyle_NgonPolygram:
     emit_polygram(position, v_in[0].data);
     break;
-  case kShapeStyleBox:
+  case kShapeStyle_Box:
     emit_box(position, v_in[0].data);
     break;
-  case kShapeStyleLine:
+  case kShapeStyle_Line:
     emit_line(position, v_in[0].data);
     break;
-  case kShapeStyleBall:
+  case kShapeStyle_Ball:
     emit_ball(position, v_in[0].data);
     break;
   }

@@ -20,7 +20,7 @@ ball_buffer;
 
 void main() {
   shape_buffer_data d = shape_buffer.data[g_buffer_index];
-  if (d.style != kShapeStyleBall) {
+  if (d.style != kShapeStyle_Ball) {
     out_colour = mix(d.colour0, d.colour1, g_colour_interpolate);
     return;
   }

@@ -1,4 +1,4 @@
-const uint kPanelStyleFlatColour = 1;
+const uint kPanelStyle_FlatColour = 1;
 
 struct glyph_data {
   ivec2 texture_coords;

@@ -38,7 +38,7 @@ void main() {
   shape_buffer_data d0 = shape_buffer.data[g_buffer_index];
   shape_buffer_data d1 = shape_buffer.data[g_buffer_index + 1];
 
-  if (d0.style != kShapeStyleBall) {
+  if (d0.style != kShapeStyle_Ball) {
     vec4 oklab0 = mix(d0.colour0, d0.colour1, g_colour_interpolate);
     vec4 oklab1 = mix(d1.colour0, d1.colour1, g_colour_interpolate);
     out_colour = mix(vec4(oklab0.xyz, .75 * oklab0.a), vec4(oklab1.xyz, 0.), g_interpolate);

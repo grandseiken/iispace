@@ -49,9 +49,9 @@ float box_coefficient(vec2 v) {
 
 float shape_coefficient(vec2 v) {
   switch (g_shape) {
-  case kFxShapeBall:
+  case kFxShape_Ball:
     return ball_coefficient(v);
-  case kFxShapeBox:
+  case kFxShape_Box:
     return box_coefficient(v);
   }
   return 0.;
@@ -61,7 +61,7 @@ void main() {
   vec2 frag_position = game_position(gl_FragCoord);
 
   switch (g_style) {
-  case kFxStyleExplosion: {
+  case kFxStyle_Explosion: {
     vec2 gradient;
     // TODO: position below maybe needs to be rotated for box case.
     float n = noise0(vec3(frag_position + g_seed - g_position, g_seed.x + g_time), gradient);

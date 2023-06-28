@@ -15,7 +15,7 @@ void main() {
   float mask_value = 0.;
   for (int y = -ir; y <= ir; ++y) {
     for (int x = -ir; x <= ir; ++x) {
-      vec2 ov = vec2(float(x), float(y));
+      vec2 ov = {float(x), float(y)};
       float q = 1. - smoothstep(min_sq, max_sq, dot(ov, ov));
       if (q > 0.) {
         vec2 tv = clamp(v + ov * px, vec2(0.), vec2(1.));
