@@ -233,7 +233,7 @@ struct Tractor : ecs::component {
 
   static constexpr std::uint32_t kTimer = 60;
   static constexpr fixed kSpeed = 6 * (15_fx / 160);
-  static constexpr fixed kPullSpeed = 2 + 3_fx / 8;
+  static constexpr fixed kPullSpeed = 2 + 1_fx / 2;
   static constexpr fixed kBoundingWidth = 45;
   static constexpr auto kFlags = shape_flag::kDangerous | shape_flag::kVulnerable;
 
