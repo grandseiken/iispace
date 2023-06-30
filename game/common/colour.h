@@ -174,6 +174,11 @@ inline constexpr cvec4 hsl2oklab_cycle(const cvec4& hsl, float cycle) {
   return {lab.x, c * std::cos(h), c * std::sin(h), lab.a};
 }
 
+inline constexpr cvec4 hex2hsl(std::uint32_t hex) {
+  auto f = [](std::uint32_t x) { return static_cast<float>(x & 0xff) / 255.f; };
+  return srgb2hsl({f(hex >> 16), f(hex >> 8), f(hex), 1.f});
+}
+
 inline constexpr cvec4 hue(float h, float l = .5f, float s = 1.f) {
   return {h, s, l, 1.f};
 }
@@ -219,6 +224,34 @@ constexpr auto kDarkBlue = srgb2hsl(38, 139, 210);
 constexpr auto kDarkCyan = srgb2hsl(42, 161, 152);
 constexpr auto kDarkGreen = srgb2hsl(133, 153, 0);
 }  // namespace solarized
+
+namespace p01 {
+constexpr auto kDarkPurple = hex2hsl(0x6527be);
+constexpr auto kLightPurple = hex2hsl(0x9681eb);
+constexpr auto kDarkCyan = hex2hsl(0x45cfdd);
+constexpr auto kLightCyan = hex2hsl(0xa7ede7);
+}  // namespace p01
+
+namespace p02 {
+constexpr auto kCyan0 = hex2hsl(0x001c30);
+constexpr auto kCyan1 = hex2hsl(0x176b87);
+constexpr auto kCyan2 = hex2hsl(0x64ccc5);
+constexpr auto kCyan3 = hex2hsl(0xdafffb);
+}  // namespace p01
+
+namespace p03 {
+constexpr auto kBlue0 = hex2hsl(0x164b60);
+constexpr auto kBlue1 = hex2hsl(0x1b6b93);
+constexpr auto kBlue2 = hex2hsl(0x4fc0d0);
+constexpr auto kLimeGreen = hex2hsl(0xa2ff86);
+}  // namespace p01
+
+namespace p04 {
+constexpr auto kPink = hex2hsl(0xe966a0);
+constexpr auto kDark = hex2hsl(0x2b2730);
+constexpr auto kPurple0 = hex2hsl(0x6554af);
+constexpr auto kPurple1 = hex2hsl(0x9575de);
+}  // namespace p01
 
 namespace category {
 constexpr auto kGeneral = solarized::kDarkBase1;

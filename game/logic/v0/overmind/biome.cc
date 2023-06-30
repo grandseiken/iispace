@@ -1,4 +1,5 @@
 #include "game/logic/v0/overmind/biome.h"
+#include "game/common/colour.h"
 #include "game/logic/sim/sim_interface.h"
 #include "game/logic/v0/boss/boss.h"
 #include "game/logic/v0/overmind/formation_set.h"
@@ -75,8 +76,7 @@ public:
   update_background(RandomEngine& random, const background_input& input) const override {
     render::background::update update;
     update.type = render::background::type::kBiome0;
-    update.colour = colour::solarized::kDarkBase03;
-    update.colour->z /= 1.25f;
+    update.colour = colour::p02::kCyan0;
     update.parameters = {0.f, 0.f};
 
     auto c = input.wave_number % 8;
@@ -92,9 +92,7 @@ public:
     if (input.type == wave_type::kBoss) {
       auto v = from_polar(2 * pi<fixed> * random.fixed(), 2_fx);
       update.velocity = {v.x.to_float(), v.y.to_float(), 1.f / 8, 1.f / 2};
-      update.colour = colour::solarized::kDarkBase03;
-      update.colour->y /= 2.f;
-      update.colour->z /= 1.375f;
+      update.colour = colour::p04::kDark;
     }
     return update;
   }
