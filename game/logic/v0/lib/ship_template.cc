@@ -25,10 +25,10 @@ void render_shape(std::vector<render::shape>& output, const geom::resolve_result
                   const std::optional<float>& hit_alpha, const std::optional<float>& shield_alpha) {
   auto handle_shape = [&](const render::shape& shape) {
     render::shape shape_copy = shape;
-    if (shape.z > colour::kZTrails && hit_alpha) {
+    if (shape.z > colour::z::kTrails && hit_alpha) {
       shape_copy.apply_hit_flash(*hit_alpha);
     }
-    if (shape.z <= colour::kZTrails && shield_alpha) {
+    if (shape.z <= colour::z::kTrails && shield_alpha) {
       auto shield_copy = shape_copy;
       if (shape_copy.apply_shield(shield_copy, *shield_alpha)) {
         output.emplace_back(shield_copy);

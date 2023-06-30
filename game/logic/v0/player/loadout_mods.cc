@@ -210,31 +210,31 @@ ustring_view mod_category_name(mod_category category) {
 cvec4 mod_category_colour(mod_category category) {
   switch (category) {
   case mod_category::kGeneral:
-    return colour::kCategoryGeneral;
+    return colour::category::kGeneral;
   case mod_category::kCorruption:
-    return colour::kCategoryCorruption;
+    return colour::category::kCorruption;
   case mod_category::kCloseCombat:
-    return colour::kCategoryCloseCombat;
+    return colour::category::kCloseCombat;
   case mod_category::kLightning:
-    return colour::kCategoryLightning;
+    return colour::category::kLightning;
   case mod_category::kSniper:
-    return colour::kCategorySniper;
+    return colour::category::kSniper;
   case mod_category::kGravity:
-    return colour::kCategoryGravity;
+    return colour::category::kGravity;
   case mod_category::kLaser:
-    return colour::kCategoryLaser;
+    return colour::category::kLaser;
   case mod_category::kPummel:
-    return colour::kCategoryPummel;
+    return colour::category::kPummel;
   case mod_category::kRemote:
-    return colour::kCategoryRemote;
+    return colour::category::kRemote;
   case mod_category::kUnknown0:
-    return colour::kCategoryUnknown0;
+    return colour::category::kUnknown0;
   case mod_category::kUnknown1:
-    return colour::kCategoryUnknown1;
+    return colour::category::kUnknown1;
   case mod_category::kDefender:
-    return colour::kCategoryDefender;
+    return colour::category::kDefender;
   case mod_category::kCluster:
-    return colour::kCategoryCluster;
+    return colour::category::kCluster;
   }
   return colour::kWhite0;
 }

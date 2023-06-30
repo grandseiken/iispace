@@ -247,19 +247,19 @@ void RenderState::render(render::background& background, std::vector<render::sha
     case star_type::kDotStar:
     case star_type::kFarStar:
       render_box(star.position, star_direction_ * star.speed, fvec2{1, 1}, star.colour, 0.f, 1.f,
-                 colour::kZParticle);
+                 colour::z::kParticle);
       break;
 
     case star_type::kBigStar:
       render_box(star.position, star_direction_ * star.speed, fvec2{2, 2}, star.colour, 0.f, 1.f,
-                 colour::kZParticle);
+                 colour::z::kParticle);
       break;
 
     case star_type::kPlanet:
       shapes.emplace_back(render::shape{
           .origin = star.position,
           .colour0 = star.colour,
-          .z = colour::kZParticle,
+          .z = colour::z::kParticle,
           .trail = render::motion_trail{.prev_origin = star.position - star_direction_ * star.speed,
                                         .prev_colour0 = star.colour},
           .data = render::ngon{.radius = star.size, .sides = 8},
@@ -285,7 +285,7 @@ void RenderState::render(render::background& background, std::vector<render::sha
             .origin = p.position,
             .rotation = d.rotation,
             .colour0 = colour,
-            .z = colour::kZParticle,
+            .z = colour::z::kParticle,
             .trail = render::motion_trail{.prev_origin = p.position - p.velocity(t),
                                           .prev_rotation = d.rotation - d.angular_velocity,
                                           .prev_colour0 = colour},
@@ -301,7 +301,7 @@ void RenderState::render(render::background& background, std::vector<render::sha
             .origin = p.position,
             .rotation = d.rotation,
             .colour0 = colour::alpha(colour::kOutline, a),
-            .z = colour::kZParticleOutline,
+            .z = colour::z::kParticleOutline,
             .trail = render::motion_trail{.prev_origin = p.position - p.velocity(t),
                                           .prev_rotation = d.rotation - d.angular_velocity,
                                           .prev_colour0 = colour},
@@ -313,8 +313,8 @@ void RenderState::render(render::background& background, std::vector<render::sha
             .origin = p.position,
             .rotation = d.rotation,
             .colour0 = colour,
-            .z = p.flash_time && p.time <= p.flash_time / 2 ? colour::kZParticleFlash
-                                                            : colour::kZParticle,
+            .z = p.flash_time && p.time <= p.flash_time / 2 ? colour::z::kParticleFlash
+                                                            : colour::z::kParticle,
             .trail = render::motion_trail{.prev_origin = p.position - p.velocity(t),
                                           .prev_rotation = d.rotation - d.angular_velocity,
                                           .prev_colour0 = colour},

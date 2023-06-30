@@ -149,21 +149,21 @@ struct WaypointFollower {
       output.emplace_back(render::shape{
           .origin = to_float(waypoints[i].v),
           .colour0 = colour::kWhite0,
-          .z_index = colour::kZBackgroundEffect0,
+          .z_index = colour::z::kBackgroundEffect0,
           .data = render::ngon{.radius = 8, .sides = 8},
       });
       if (i + 1 < waypoints.size()) {
         output.emplace_back(render::shape::line(to_float(waypoints[i].v),
                                                 to_float(waypoints[i + 1].v), colour::kWhite0,
-                                                colour::kZBackgroundEffect0));
+                                                colour::z::kBackgroundEffect0));
       }
     }
     if (direction) {
       auto c = waypoints.size() >= 2u && in_range(position, speed, waypoints[0].v, waypoints[1].v)
-          ? colour::kNewGreen0
-          : colour::kSolarizedDarkYellow;
+          ? colour::misc::kNewGreen0
+          : colour::solarized::kDarkYellow;
       output.emplace_back(render::shape::line(
-          to_float(position), to_float(position + 16 * *direction), c, colour::kZPlayer, 2.f));
+          to_float(position), to_float(position + 16 * *direction), c, colour::z::kPlayer, 2.f));
     }
   }
 };

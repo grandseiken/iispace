@@ -25,7 +25,7 @@ render_mod_icon(const SimInterface& sim, const mod_data& data, std::uint32_t ani
     geom::resolve(r, sim.shape_bank(), construct, [&](geom::parameter_set& parameters) {
       parameters.add(geom::key{'r'}, static_cast<fixed>(animation) / 24)
           .add(geom::key{'c'}, c)
-          .add(geom::key{'f'}, colour::alpha(c, colour::kFillAlpha0));
+          .add(geom::key{'f'}, colour::alpha(c, colour::a::kFill0));
     });
 
     std::vector<render::shape> shapes;
@@ -190,8 +190,8 @@ struct ModUpgrade : ecs::component {
 
     render::combo_panel panel;
     panel.panel = {.style = render::panel_style::kFlatColour,
-                   .colour = colour::kBlackOverlay0,
-                   .border = glm::mix(colour::kPanelBorder0, colour::kWhite0, t),
+                   .colour = colour::ui::kBlackOverlay0,
+                   .border = glm::mix(colour::ui::kPanelBorder0, colour::kWhite0, t),
                    .bounds = {panel_position, anim_size}};
     panel.padding = ivec2{kPanelPadding};
     panel.elements.emplace_back(render::combo_panel::element{
@@ -270,8 +270,8 @@ struct ModUpgrade : ecs::component {
                        fvec2{0, kDescriptionFontSize + 2 * kPanelPadding}};
           output.emplace_back(render::combo_panel{
               .panel = {.style = render::panel_style::kFlatColour,
-                        .colour = colour::kBlackOverlay0,
-                        .border = colour::kPanelBorder0,
+                        .colour = colour::ui::kBlackOverlay0,
+                        .border = colour::ui::kPanelBorder0,
                         .bounds = bounds},
               .padding = ivec2{kPanelPadding},
               .elements = {{
@@ -280,7 +280,7 @@ struct ModUpgrade : ecs::component {
                       render::combo_panel::text{
                           .font = {render::font_id::kMonospace, uvec2{kDescriptionFontSize}},
                           .align = render::alignment::kCentered,
-                          .colour = colour::kSolarizedDarkYellow,
+                          .colour = colour::solarized::kDarkYellow,
                           .drop_shadow = {{}},
                           .content = warning_text,
                       },

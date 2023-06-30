@@ -13,7 +13,7 @@ struct Square : ecs::component {
   static constexpr fixed kSpeed = 1_fx + 3_fx / 4_fx;
   static constexpr fixed kBoundingWidth = 14;
   static constexpr auto kFlags = shape_flag::kDangerous | shape_flag::kVulnerable;
-  static constexpr auto z = colour::kZEnemyWall;
+  static constexpr auto z = colour::z::kEnemyWall;
 
   // TODO: box outline shadows have odd overlaps? Not really sure why since it
   // should line up exactly. Happens even when rotatated...
@@ -26,7 +26,7 @@ struct Square : ecs::component {
     n.add(box_collider{.dimensions = vec2{12, 12}, .flags = kFlags});
     n.add(box{
         .dimensions = vec2{14, 14},
-        .line = {.colour0 = colour::kOutline, .z = colour::kZOutline, .width = 2.f},
+        .line = {.colour0 = colour::kOutline, .z = colour::z::kOutline, .width = 2.f},
     });
     n.add(box{
         .dimensions = vec2{12, 12},
@@ -37,11 +37,11 @@ struct Square : ecs::component {
 
   void set_parameters(const Transform& transform, const Health& health,
                       parameter_set& parameters) const {
-    auto c = colour::kNewGreen0;
+    auto c = colour::misc::kNewGreen0;
     if (health.hp && invisible_flash) {
       c = colour::alpha(c, (5.f + 3.f * std::cos(invisible_flash / pi<float>)) / 8.f);
     }
-    auto cf = colour::alpha(c, colour::kFillAlpha0);
+    auto cf = colour::alpha(c, colour::a::kFill0);
 
     parameters.add(key{'v'}, transform.centre)
         .add(key{'r'}, transform.rotation)
@@ -117,16 +117,16 @@ struct Wall : ecs::component {
   static constexpr auto kFlags =
       shape_flag::kDangerous | shape_flag::kVulnerable | shape_flag::kWeakVulnerable;
 
-  static constexpr auto z = colour::kZEnemyWall;
-  static constexpr auto c = colour::kNewGreen0;
-  static constexpr auto cf = colour::alpha(c, colour::kFillAlpha0);
+  static constexpr auto z = colour::z::kEnemyWall;
+  static constexpr auto c = colour::misc::kNewGreen0;
+  static constexpr auto cf = colour::alpha(c, colour::a::kFill0);
 
   static void construct_shape(node& root) {
     auto& n = root.add(translate_rotate{.v = key{'v'}, .r = key{'r'}});
     n.add(box_collider{.dimensions = vec2{12, 48}, .flags = key{'C'}});
     n.add(box{
         .dimensions = vec2{14, 50},
-        .line = {.colour0 = colour::kOutline, .z = colour::kZOutline, .width = 2.f},
+        .line = {.colour0 = colour::kOutline, .z = colour::z::kOutline, .width = 2.f},
     });
     n.add(box{
         .dimensions = vec2{12, 48},

@@ -75,7 +75,7 @@ public:
   update_background(RandomEngine& random, const background_input& input) const override {
     render::background::update update;
     update.type = render::background::type::kBiome0;
-    update.colour = colour::kSolarizedDarkBase03;
+    update.colour = colour::solarized::kDarkBase03;
     update.colour->z /= 1.25f;
     update.parameters = {0.f, 0.f};
 
@@ -92,7 +92,7 @@ public:
     if (input.type == wave_type::kBoss) {
       auto v = from_polar(2 * pi<fixed> * random.fixed(), 2_fx);
       update.velocity = {v.x.to_float(), v.y.to_float(), 1.f / 8, 1.f / 2};
-      update.colour = colour::kSolarizedDarkBase03;
+      update.colour = colour::solarized::kDarkBase03;
       update.colour->y /= 2.f;
       update.colour->z /= 1.375f;
     }
@@ -197,7 +197,7 @@ public:
   update_background(RandomEngine& random, const background_input& input) const override {
     render::background::update update;
     update.type = render::background::type::kBiome0;
-    update.colour = colour::kSolarizedDarkBase03;
+    update.colour = colour::solarized::kDarkBase03;
     update.colour->z /= 1.25f;
     update.parameters = {0.f, 0.f};
 
@@ -214,7 +214,7 @@ public:
     if (input.type == wave_type::kBoss) {
       auto v = from_polar(2 * pi<fixed> * random.fixed(), 2_fx);
       update.velocity = {v.x.to_float(), v.y.to_float(), 1.f / 8, 1.f / 2};
-      update.colour = colour::kSolarizedDarkBase03;
+      update.colour = colour::solarized::kDarkBase03;
       update.colour->y /= 2.f;
       update.colour->z /= 1.375f;
     }

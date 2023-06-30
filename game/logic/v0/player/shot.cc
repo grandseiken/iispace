@@ -73,11 +73,11 @@ DEBUG_STRUCT_TUPLE(shot_mod_data, flags, speed, distance_travelled, max_distance
 struct PlayerShot : ecs::component {
   static constexpr fixed kBoundingWidth = 0;
   static constexpr auto kFlags = shape_flag::kNone;
-  static constexpr auto z = colour::kZPlayerShot;
+  static constexpr auto z = colour::z::kPlayerShot;
 
   static void construct_shape(node& root) {
     auto& n = root.add(translate_rotate{key{'v'}, key{'r'}});
-    n.add(box{.dimensions = vec2{4}, .line = sline(colour::kOutline, colour::kZOutline)});
+    n.add(box{.dimensions = vec2{4}, .line = sline(colour::kOutline, colour::z::kOutline)});
     n.add(box{.dimensions = vec2{2 + 1_fx / 2}, .line = {.colour0 = key{'c'}, .z = z}});
     n.add(box{.dimensions = vec2{1 + 1_fx / 4}, .line = {.colour0 = key{'d'}, .z = z}});
   }

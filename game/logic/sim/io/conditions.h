@@ -86,11 +86,11 @@ inline cvec4 legacy_player_colour(std::uint32_t player_number) {
 
 inline cvec4 v0_player_colour(std::uint32_t player_number) {
   static constexpr auto kNewPlayer0 =
-      colour::clamp(colour::kSolarizedDarkRed + cvec4{0.f, .15f, 0.f, 0.f});
+      colour::clamp(colour::solarized::kDarkRed + cvec4{0.f, .15f, 0.f, 0.f});
   static constexpr auto kNewPlayer1 =
-      colour::clamp(colour::kSolarizedDarkOrange + cvec4{0.f, .2f, 0.f, 0.f});
+      colour::clamp(colour::solarized::kDarkOrange + cvec4{0.f, .2f, 0.f, 0.f});
   static constexpr auto kNewPlayer2 =
-      colour::clamp(colour::kSolarizedDarkYellow + cvec4{0.f, .25f, 0.f, 0.f});
+      colour::clamp(colour::solarized::kDarkYellow + cvec4{0.f, .25f, 0.f, 0.f});
   static constexpr std::array colours = {
       kNewPlayer0,
       colour::linear_mix(kNewPlayer0, kNewPlayer1, 2.f / 3.f),

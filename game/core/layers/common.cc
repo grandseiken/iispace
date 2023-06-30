@@ -19,11 +19,11 @@ ui::Button& standard_button(ui::Button& button) {
 
 ui::LinearLayout& add_dialog_layout(ui::Element& element) {
   auto& panel = *element.add_back<ui::Panel>();
-  panel.set_colour(colour::kBlackOverlay0)
+  panel.set_colour(colour::ui::kBlackOverlay0)
       .set_padding({kUiDimensions.x / 4, 3 * kUiDimensions.y / 8})
       .set_style(render::panel_style::kFlatColour);
   auto& inner = *panel.add_back<ui::Panel>();
-  inner.set_colour(colour::kBlackOverlay1)
+  inner.set_colour(colour::ui::kBlackOverlay1)
       .set_padding(kPadding)
       .set_style(render::panel_style::kFlatColour);
   auto& layout = *inner.add_back<ui::LinearLayout>();

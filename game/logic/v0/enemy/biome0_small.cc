@@ -24,15 +24,15 @@ struct Follow : ecs::component {
   static constexpr std::uint32_t kHugeWidth = 33;
   static constexpr auto kFlags = shape_flag::kDangerous | shape_flag::kVulnerable;
 
-  static constexpr auto z = colour::kZEnemySmall;
-  static constexpr auto c = colour::kNewPurple;
-  static constexpr auto cf = colour::alpha(c, colour::kFillAlpha0);
+  static constexpr auto z = colour::z::kEnemySmall;
+  static constexpr auto c = colour::misc::kNewPurple;
+  static constexpr auto cf = colour::alpha(c, colour::a::kFill0);
 
   template <fixed Width>
   static void construct_shape(node& root) {
     auto& n = root.add(translate_rotate{.v = key{'v'}, .r = key{'r'}});
     n.add(ngon{.dimensions = nd(Width + 2, 4),
-               .line = sline(colour::kOutline, colour::kZOutline, 2.f)});
+               .line = sline(colour::kOutline, colour::z::kOutline, 2.f)});
     n.add(ngon{.dimensions = nd(Width, 4),
                .line = {.colour0 = key{'c'}, .z = z, .width = 1.5f},
                .fill = {.colour0 = key{'f'}, .z = z}});
@@ -44,7 +44,7 @@ struct Follow : ecs::component {
     parameters.add(key{'v'}, transform.centre)
         .add(key{'r'}, transform.rotation)
         .add(key{'c'}, colour ? colour->colour : c)
-        .add(key{'f'}, colour ? colour::alpha(colour->colour, colour::kFillAlpha0) : cf);
+        .add(key{'f'}, colour ? colour::alpha(colour->colour, colour::a::kFill0) : cf);
   }
 
   Follow(std::uint32_t size, std::optional<vec2> direction, bool in_formation)
@@ -194,15 +194,15 @@ struct Chaser : ecs::component {
   static constexpr std::uint32_t kBigWidth = 18;
   static constexpr auto kFlags = shape_flag::kDangerous | shape_flag::kVulnerable;
 
-  static constexpr auto z = colour::kZEnemySmall;
-  static constexpr auto c = colour::kSolarizedDarkCyan;
-  static constexpr auto cf = colour::alpha(c, colour::kFillAlpha0);
+  static constexpr auto z = colour::z::kEnemySmall;
+  static constexpr auto c = colour::solarized::kDarkCyan;
+  static constexpr auto cf = colour::alpha(c, colour::a::kFill0);
 
   template <fixed Width>
   static void construct_shape(node& root) {
     auto& n = root.add(translate_rotate{.v = key{'v'}, .r = key{'r'}});
     n.add(ngon{.dimensions = nd(Width + 2, 4),
-               .line = sline(colour::kOutline, colour::kZOutline, 2.f)});
+               .line = sline(colour::kOutline, colour::z::kOutline, 2.f)});
     n.add(ngon{.dimensions = nd(Width, 4),
                .style = ngon_style::kPolygram,
                .line = sline(c, z),
@@ -323,14 +323,14 @@ struct FollowSponge : ecs::component {
   static constexpr fixed kBoundingWidth = 33;
   static constexpr auto kFlags = shape_flag::kDangerous | shape_flag::kVulnerable;
 
-  static constexpr auto z = colour::kZEnemyMedium;
-  static constexpr auto c = colour::kNewPurple;
-  static constexpr auto cf = colour::alpha(c, colour::kFillAlpha0);
+  static constexpr auto z = colour::z::kEnemyMedium;
+  static constexpr auto c = colour::misc::kNewPurple;
+  static constexpr auto cf = colour::alpha(c, colour::a::kFill0);
 
   static void construct_shape(node& root) {
     auto& n = root.add(translate_rotate{.v = key{'v'}, .r = key{'r'}});
     n.add(ngon{.dimensions = {.radius = key{'2'}, .inner_radius = 10_fx, .sides = 6},
-               .line = sline(colour::kOutline, colour::kZOutline, 2.f)});
+               .line = sline(colour::kOutline, colour::z::kOutline, 2.f)});
     n.add(ngon{.dimensions = {.radius = key{'0'}, .sides = 6}, .line = sline(c, z, 1.25f)});
     n.add(ngon{.dimensions = {.radius = key{'1'}, .inner_radius = 12_fx, .sides = 6},
                .line = sline(c, z, 2.f),

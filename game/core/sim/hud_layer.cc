@@ -239,7 +239,7 @@ void HudLayer::update_content(const ui::input_frame&, ui::output_frame&) {
     bar_inner_->colour = boss_bar_->colour;
     // TODO: nice animated boss bar fill.
     bar_outer_->set_style(render::panel_style::kFlatColour)
-        .set_colour(colour::kBlackOverlay0)
+        .set_colour(colour::ui::kBlackOverlay0)
         .set_border(colour::kWhite0);
     bar_text_->set_text(ustring{boss_bar_->name});
   } else {

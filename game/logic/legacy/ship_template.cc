@@ -28,7 +28,7 @@ void add_line_particle(EmitHandle& e, const fvec2& source, const fvec2& a, const
               .width = w,
           },
       .end_time = time + r.uint(time),
-      .flash_time = z > colour::kZTrails ? 16u : 0u,
+      .flash_time = z > colour::z::kTrails ? 16u : 0u,
       .fade = true,
   });
 }

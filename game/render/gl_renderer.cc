@@ -867,7 +867,7 @@ void GlRenderer::render_shapes(coordinate_system ctype, std::vector<shape>& shap
   auto add_outline_data = [&](const shape_data& d,
                               const std::optional<render::motion_trail>& trail) {
     add_shape_data(d);
-    if (d.z < colour::kZTrails) {
+    if (d.z < colour::z::kTrails) {
       bottom_outline_indices.emplace_back(vertex_index++);
     } else {
       outline_indices.emplace_back(vertex_index++);
@@ -885,8 +885,8 @@ void GlRenderer::render_shapes(coordinate_system ctype, std::vector<shape>& shap
     if (shadow_offset) {
       auto ds = d;
       ds.position += *shadow_offset;
-      ds.colour0 = cvec4{0.f, 0.f, 0.f, ds.colour0.a * colour::kShadowAlpha0};
-      ds.colour1 = cvec4{0.f, 0.f, 0.f, ds.colour1.a * colour::kShadowAlpha0};
+      ds.colour0 = cvec4{0.f, 0.f, 0.f, ds.colour0.a * colour::a::kShadow0};
+      ds.colour1 = cvec4{0.f, 0.f, 0.f, ds.colour1.a * colour::a::kShadow0};
       ds.line_width += 1.f;
       add_shape_data(ds);
       shadow_outline_indices.emplace_back(vertex_index++);
@@ -894,9 +894,9 @@ void GlRenderer::render_shapes(coordinate_system ctype, std::vector<shape>& shap
         auto dt = ds;
         dt.position = trail->prev_origin + *shadow_offset;
         dt.rotation = trail->prev_rotation;
-        dt.colour0 = {0.f, 0.f, 0.f, trail->prev_colour0.a * colour::kShadowAlpha0};
+        dt.colour0 = {0.f, 0.f, 0.f, trail->prev_colour0.a * colour::a::kShadow0};
         dt.colour1 = {0.f, 0.f, 0.f,
-                      trail->prev_colour1.value_or(trail->prev_colour0).a * colour::kShadowAlpha0};
+                      trail->prev_colour1.value_or(trail->prev_colour0).a * colour::a::kShadow0};
         add_shape_data(dt);
         shadow_trail_indices.emplace_back(vertex_index - 1);
         shadow_trail_indices.emplace_back(vertex_index++);
@@ -1272,7 +1272,7 @@ void GlRenderer::render_shapes(coordinate_system ctype, std::vector<shape>& shap
     gl::colour_mask(glm::bvec4{true});
 
     auto fbo_bind = impl_->bind_draw_framebuffer(framebuffer::kRender);
-    impl_->fullscreen_blend(*aux0, target().aspect_scale(), colour::kEffectAlpha0);
+    impl_->fullscreen_blend(*aux0, target().aspect_scale(), colour::a::kEffect0);
   }
 
   // Shape pass.

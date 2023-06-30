@@ -29,12 +29,12 @@ struct PlayerLogic : ecs::component {
   static constexpr fixed kPlayerSpeed = 5_fx * 15_fx / 16_fx;
   static constexpr fixed kBoundingWidth = 0;
   static constexpr auto kFlags = shape_flag::kNone;
-  static constexpr auto z = colour::kZPlayer;
+  static constexpr auto z = colour::z::kPlayer;
 
   static void construct_shape(node& root) {
     auto& n = root.add(translate_rotate{key{'v'}, key{'r'}});
     n.add(ngon{.dimensions = nd(21, 3),
-               .line = {.colour0 = key{'o'}, .z = colour::kZOutline, .width = 3.f}});
+               .line = {.colour0 = key{'o'}, .z = colour::z::kOutline, .width = 3.f}});
     n.add(ngon{.dimensions = nd(18, 3),
                .line = {.colour0 = key{'c'}, .z = z, .width = 1.5f},
                .fill = {.colour0 = key{'f'}, .z = z}});
@@ -62,7 +62,7 @@ struct PlayerLogic : ecs::component {
         .add(key{'r'}, transform.rotation)
         .add(key{'c'}, colour)
         .add(key{'d'}, colour::alpha(colour, .2f))
-        .add(key{'f'}, colour::alpha(colour, colour::kFillAlpha0))
+        .add(key{'f'}, colour::alpha(colour, colour::a::kFill0))
         .add(key{'o'}, colour::alpha(colour::kOutline, colour.a));
   }
 
@@ -303,7 +303,7 @@ struct PlayerLogic : ecs::component {
     root.add(translate{key{'v'}})
         .add(ngon{.dimensions = nd(8, 4),
                   .style = ngon_style::kPolystar,
-                  .line = {.colour0 = key{'c'}, .z = colour::kZPlayerCursor},
+                  .line = {.colour0 = key{'c'}, .z = colour::z::kPlayerCursor},
                   .tag = render::tag_t{'t'}});
   }
 
@@ -313,12 +313,12 @@ struct PlayerLogic : ecs::component {
       auto& r = n.add(rotate{i * 2_fx * pi<fixed> / 3});
       r.add(ngon{
           .dimensions = {.radius = key{'d'}, .sides = 18, .segments = 4},
-          .line = sline(colour::kWhite1, colour::kZPlayerPowerup),
+          .line = sline(colour::kWhite1, colour::z::kPlayerPowerup),
           .tag = render::tag_t{'s'},
       });
       r.add(ngon{
           .dimensions = {.radius = key{'D'}, .sides = 18, .segments = 4},
-          .line = sline(colour::kOutline, colour::kZOutline, 2.f),
+          .line = sline(colour::kOutline, colour::z::kOutline, 2.f),
           .tag = render::tag_t{'s'},
       });
     }
@@ -329,7 +329,7 @@ struct PlayerLogic : ecs::component {
         .add(translate{key{'V'}})
         .add(ngon{
             .dimensions = nd(3, 6),
-            .line = sline(colour::kWhite0, colour::kZPlayerPowerup),
+            .line = sline(colour::kWhite0, colour::z::kPlayerPowerup),
             .tag = render::tag_t{'b'},
         });
   }

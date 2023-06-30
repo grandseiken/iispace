@@ -28,7 +28,7 @@ void add_line_particle(EmitHandle& e, const fvec2& source, const fvec2& a, const
               .width = w,
           },
       .end_time = time + r.uint(time),
-      .flash_time = z > colour::kZTrails ? 16u : 0u,
+      .flash_time = z > colour::z::kTrails ? 16u : 0u,
       .fade = true,
   });
 }
@@ -146,7 +146,7 @@ void explode_shapes(EmitHandle& e, const geom::resolve_result& r,
 void destruct_lines(EmitHandle& e, const geom::resolve_result& r, const fvec2& source,
                     std::uint32_t time) {
   auto handle_line = [&](const vec2& a, const vec2& b, const cvec4& c, float w, float z) {
-    if (z > colour::kZOutline) {
+    if (z > colour::z::kOutline) {
       add_line_particle(e, source, to_float(a), to_float(b), c, w, z, time);
     }
   };

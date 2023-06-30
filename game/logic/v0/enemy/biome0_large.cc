@@ -14,12 +14,12 @@ struct FollowHub : ecs::component {
   static constexpr fixed kSpeed = 15_fx / 16_fx;
   static constexpr fixed kBoundingWidth = 18;
   static constexpr auto kFlags = shape_flag::kDangerous | shape_flag::kVulnerable;
-  static constexpr auto z = colour::kZEnemyLarge;
-  static constexpr auto c = colour::kSolarizedDarkBlue;
-  static constexpr auto cf = colour::alpha(c, colour::kFillAlpha0);
+  static constexpr auto z = colour::z::kEnemyLarge;
+  static constexpr auto c = colour::solarized::kDarkBlue;
+  static constexpr auto cf = colour::alpha(c, colour::a::kFill0);
 
   static void construct_shape(node& root, std::uint32_t type) {
-    auto outline = sline(colour::kOutline, colour::kZOutline, 2.f);
+    auto outline = sline(colour::kOutline, colour::z::kOutline, 2.f);
 
     auto& n = root.add(translate{key{'v'}});
     auto& centre = n.add(rotate{pi<fixed> / 4});
@@ -122,13 +122,14 @@ struct Shielder : ecs::component {
   static constexpr auto kFlags =
       shape_flag::kDangerous | shape_flag::kVulnerable | shape_flag::kWeakShield;
 
-  static constexpr auto z = colour::kZEnemyLarge;
-  static constexpr auto c0 = colour::linear_mix(colour::kSolarizedDarkCyan, colour::kNewGreen0);
+  static constexpr auto z = colour::z::kEnemyLarge;
+  static constexpr auto c0 =
+      colour::linear_mix(colour::solarized::kDarkCyan, colour::misc::kNewGreen0);
   static constexpr auto c1 = colour::kWhite1;
-  static constexpr auto cf = colour::alpha(c0, colour::kFillAlpha0);
+  static constexpr auto cf = colour::alpha(c0, colour::a::kFill0);
 
   static void construct_shape(node& root) {
-    auto outline = sline(colour::kOutline, colour::kZOutline, 2.f);
+    auto outline = sline(colour::kOutline, colour::z::kOutline, 2.f);
 
     auto& n = root.add(translate{key{'v'}});
     auto& centre = n.add(rotate{key{'r'}});
@@ -137,7 +138,7 @@ struct Shielder : ecs::component {
     centre.add(ngon{.dimensions = nd(22, 12), .line = outline});
     centre.add(ngon{.dimensions = nd2(29, 6, 12),
                     .style = ngon_style::kPolystar,
-                    .line = sline(colour::kOutline, colour::kZOutline, 5.f)});
+                    .line = sline(colour::kOutline, colour::z::kOutline, 5.f)});
     centre.add(ngon{
         .dimensions = nd2(27 + 1_fx / 2, 6, 12),
         .style = ngon_style::kPolystar,
@@ -154,7 +155,7 @@ struct Shielder : ecs::component {
 
     shield.add(ngon{.dimensions = nd2(27 + 1_fx / 2, 22, 16, 10), .fill = sfill(cf, z)});
     shield.add(ngon{.dimensions = nd2(27 + 1_fx / 2, 22, 16, 10),
-                    .fill = sfill(colour::alpha(c1, colour::kFillAlpha0), z)});
+                    .fill = sfill(colour::alpha(c1, colour::a::kFill0), z)});
     shield.add(ngon{.dimensions = nd(29, 16, 10), .line = outline});
 
     shield.add(ngon{.dimensions = nd(30, 16, 10), .line = sline(c1, z, 1.25f)});
@@ -237,12 +238,12 @@ struct Tractor : ecs::component {
   static constexpr fixed kBoundingWidth = 45;
   static constexpr auto kFlags = shape_flag::kDangerous | shape_flag::kVulnerable;
 
-  static constexpr auto z = colour::kZEnemyLarge;
-  static constexpr auto c = colour::kSolarizedDarkMagenta;
-  static constexpr auto cf = colour::alpha(c, colour::kFillAlpha0);
+  static constexpr auto z = colour::z::kEnemyLarge;
+  static constexpr auto c = colour::solarized::kDarkMagenta;
+  static constexpr auto cf = colour::alpha(c, colour::a::kFill0);
 
   static void construct_shape(node& root) {
-    auto outline = sline(colour::kOutline, colour::kZOutline, 2.f);
+    auto outline = sline(colour::kOutline, colour::z::kOutline, 2.f);
 
     auto& n = root.add(translate_rotate{key{'v'}, key{'r'}});
     auto& orb = root.create(compound{});
@@ -252,7 +253,7 @@ struct Tractor : ecs::component {
     n.add(translate_rotate{vec2{-26, 0}, multiply(root, -5_fx, key{'s'})}).add(orb);
     n.add(line{.a = vec2{-26, 0},
                .b = vec2{26, 0},
-               .style = sline(colour::kOutline, colour::kZOutline, 5.f)});
+               .style = sline(colour::kOutline, colour::z::kOutline, 5.f)});
     n.add(line{.a = vec2{-26, 0}, .b = vec2{26, 0}, .style = sline(c, z)});
 
     auto& star_if = n.add(enable{key{'P'}});
@@ -268,7 +269,7 @@ struct Tractor : ecs::component {
 
     star.add(ngon{.dimensions = nd(18, 6),
                   .style = ngon_style::kPolystar,
-                  .line = sline(colour::kOutline, colour::kZOutline, 5.f)});
+                  .line = sline(colour::kOutline, colour::z::kOutline, 5.f)});
     star.add(ngon{.dimensions = nd(18, 6), .style = ngon_style::kPolystar, .line = sline(c, z)});
   }
 
@@ -349,10 +350,10 @@ struct Tractor : ecs::component {
           auto index = render::tag_t{'p' + pc.player_number};
           output.emplace_back(render::shape::line(to_float(transform.centre),
                                                   to_float(p_transform.centre), c,
-                                                  colour::kZEffect0, 1.f, index));
+                                                  colour::z::kEffect0, 1.f, index));
           output.emplace_back(render::shape::line(to_float(transform.centre),
                                                   to_float(p_transform.centre), colour::kOutline,
-                                                  colour::kZOutline, 5.f, index));
+                                                  colour::z::kOutline, 5.f, index));
         }
       });
     }
@@ -374,14 +375,15 @@ struct ShieldHub : ecs::component {
   static constexpr fixed kBoundingWidth = 28;
   static constexpr auto kFlags = shape_flag::kDangerous | shape_flag::kVulnerable;
 
-  static constexpr auto z = colour::kZEnemyLarge;
-  static constexpr auto c0 = colour::linear_mix(colour::kSolarizedDarkCyan, colour::kNewGreen0);
+  static constexpr auto z = colour::z::kEnemyLarge;
+  static constexpr auto c0 =
+      colour::linear_mix(colour::solarized::kDarkCyan, colour::misc::kNewGreen0);
   static constexpr auto c1 = colour::kWhite1;
-  static constexpr auto cf0 = colour::alpha(c0, colour::kFillAlpha0);
-  static constexpr auto cf1 = colour::alpha(c1, colour::kFillAlpha1);
+  static constexpr auto cf0 = colour::alpha(c0, colour::a::kFill0);
+  static constexpr auto cf1 = colour::alpha(c1, colour::a::kFill1);
 
   static void construct_shape(node& root) {
-    auto outline = sline(colour::kOutline, colour::kZOutline, 2.f);
+    auto outline = sline(colour::kOutline, colour::z::kOutline, 2.f);
 
     auto& n = root.add(translate_rotate{key{'v'}, key{'r'}});
     auto& t = root.add(translate{key{'v'}});
@@ -470,10 +472,10 @@ struct ShieldHub : ecs::component {
     static void construct_shape(node& root) {
       auto& n = root.add(translate_rotate{key{'v'}, key{'r'}});
       n.add(ball{.dimensions = bd(kShieldDrawDistance),
-                 .line = {.colour0 = key{'0'}, .z = colour::kZBackgroundEffect1, .width = 4.f},
-                 .fill = {.colour0 = key{'2'}, .z = colour::kZBackgroundEffect1}});
+                 .line = {.colour0 = key{'0'}, .z = colour::z::kBackgroundEffect1, .width = 4.f},
+                 .fill = {.colour0 = key{'2'}, .z = colour::z::kBackgroundEffect1}});
       n.add(ball{.dimensions = {.radius = key{'R'}},
-                 .line = {.colour0 = key{'1'}, .z = colour::kZBackgroundEffect1, .width = 4.f}});
+                 .line = {.colour0 = key{'1'}, .z = colour::z::kBackgroundEffect1, .width = 4.f}});
     }
 
     void set_parameters(const Transform& transform, parameter_set& parameters) const {
@@ -484,9 +486,9 @@ struct ShieldHub : ecs::component {
       parameters.add(key{'v'}, transform.centre)
           .add(key{'r'}, transform.rotation)
           .add(key{'R'}, kShieldDrawDistance * (std::min(t, kAnimTime) / fixed{kAnimTime}))
-          .add(key{'0'}, colour::alpha(colour::kWhite1, a * colour::kFillAlpha0))
-          .add(key{'1'}, colour::alpha(colour::kWhite1, a * ta * colour::kFillAlpha0 / 2))
-          .add(key{'2'}, colour::alpha(colour::kBlack0, a * colour::kBackgroundAlpha0));
+          .add(key{'0'}, colour::alpha(colour::kWhite1, a * colour::a::kFill0))
+          .add(key{'1'}, colour::alpha(colour::kWhite1, a * ta * colour::a::kFill0 / 2))
+          .add(key{'2'}, colour::alpha(colour::kBlack0, a * colour::a::kBackground0));
     }
 
     std::uint32_t anim = 0;

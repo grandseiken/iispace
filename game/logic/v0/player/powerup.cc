@@ -42,7 +42,7 @@ struct PlayerBubble : ecs::component {
   static constexpr fixed kBoundingWidth = 16;
   static constexpr fixed kSpeed = 1;
   static constexpr auto kFlags = shape_flag::kVulnerable;
-  static constexpr auto z = colour::kZPlayerBubble;
+  static constexpr auto z = colour::z::kPlayerBubble;
 
   static void construct_shape(node& root) {
     auto& n = root.add(translate{key{'v'}});
@@ -51,10 +51,11 @@ struct PlayerBubble : ecs::component {
 
     r0.add(ngon_collider{.dimensions = nd(14, 8), .flags = shape_flag::kVulnerable});
     r0.add(ngon{.dimensions = nd(16, 8),
-                .line = {.colour0 = key{'O'}, .z = colour::kZOutline, .width = 2.f}});
+                .line = {.colour0 = key{'O'}, .z = colour::z::kOutline, .width = 2.f}});
     r0.add(ngon{.dimensions = nd(14, 8), .line = {.colour0 = key{'C'}, .z = z}});
 
-    r1.add(ngon{.dimensions = nd(21, 3), .line = sline(colour::kOutline, colour::kZOutline, 3.f)});
+    r1.add(
+        ngon{.dimensions = nd(21, 3), .line = sline(colour::kOutline, colour::z::kOutline, 3.f)});
     r1.add(ngon{.dimensions = nd(18, 3),
                 .line = {.colour0 = key{'c'}, .z = z, .width = 1.5f},
                 .fill = {.colour0 = key{'f'}, .z = z}});
@@ -65,7 +66,7 @@ struct PlayerBubble : ecs::component {
     parameters.add(key{'v'}, transform.centre)
         .add(key{'r'}, transform.rotation)
         .add(key{'c'}, c)
-        .add(key{'f'}, colour::alpha(c, colour::kFillAlpha0))
+        .add(key{'f'}, colour::alpha(c, colour::a::kFill0))
         .add(key{'C'}, colour::alpha(colour::kWhite0, fade(tick_count)))
         .add(key{'O'}, colour::alpha(colour::kOutline, fade(tick_count)));
   }
@@ -107,7 +108,7 @@ struct ShieldPowerup : ecs::component {
   static constexpr fixed kSpeed = 3_fx / 4_fx;
   static constexpr fixed kBoundingWidth = 0;
   static constexpr auto kFlags = shape_flag::kNone;
-  static constexpr auto z = colour::kZPowerup;
+  static constexpr auto z = colour::z::kPowerup;
 
   static void construct_shape(node& root) {
     auto& n = root.add(translate_rotate{key{'v'}, key{'r'}});
@@ -180,7 +181,7 @@ struct BombPowerup : ecs::component {
   static constexpr fixed kSpeed = 3_fx / 4_fx;
   static constexpr fixed kBoundingWidth = 0;
   static constexpr auto kFlags = shape_flag::kNone;
-  static constexpr auto z = colour::kZPowerup;
+  static constexpr auto z = colour::z::kPowerup;
 
   static void construct_shape(node& root) {
     auto& n = root.add(translate_rotate{key{'v'}, key{'r'}});
@@ -319,7 +320,7 @@ void render_player_name_panel(std::uint32_t player_number, const Transform& tran
                fvec2{0, kNamePanelFontSize + kPadding * 2}};
   output.emplace_back(render::combo_panel{
       .panel = {.style = render::panel_style::kFlatColour,
-                .colour = colour::kBlackOverlay0,
+                .colour = colour::ui::kBlackOverlay0,
                 .bounds = bounds},
       .padding = ivec2{kPadding},
       .elements = {{

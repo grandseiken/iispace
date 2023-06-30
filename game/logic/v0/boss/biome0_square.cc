@@ -28,26 +28,26 @@ struct SquareBoss : public ecs::component {
   static constexpr auto kFlags = shape_flag::kDangerous | shape_flag::kShield |
       shape_flag::kVulnerable | shape_flag::kBombVulnerable;
 
-  static constexpr auto z = colour::kZEnemyBoss;
-  static constexpr auto c0 = colour::kNewPurple;
-  static constexpr auto c1 = colour::kSolarizedDarkCyan;
-  static constexpr auto c2 = colour::kSolarizedDarkViolet;
-  static constexpr auto c3 = colour::kSolarizedDarkMagenta;
+  static constexpr auto z = colour::z::kEnemyBoss;
+  static constexpr auto c0 = colour::misc::kNewPurple;
+  static constexpr auto c1 = colour::solarized::kDarkCyan;
+  static constexpr auto c2 = colour::solarized::kDarkViolet;
+  static constexpr auto c3 = colour::solarized::kDarkMagenta;
 
   static void construct_follow_attack_shape(node& root) {
     static constexpr std::uint32_t kWidth = 11;
-    static constexpr float z = colour::kZEnemySmall;
+    static constexpr float z = colour::z::kEnemySmall;
     auto& n = root.add(translate_rotate{.v = key{'v'}, .r = key{'r'}});
     n.add(ngon{.dimensions = nd(kWidth + 2, 4),
-               .line = {.colour0 = key{'o'}, .z = colour::kZOutline, .width = 2.f}});
+               .line = {.colour0 = key{'o'}, .z = colour::z::kOutline, .width = 2.f}});
     n.add(ngon{.dimensions = nd(kWidth, 4),
                .line = {.colour0 = key{'c'}, .z = z, .width = 1.5f},
                .fill = {.colour0 = key{'f'}, .z = z}});
   }
 
   static void construct_shape(node& root) {
-    auto outline = sline(colour::kOutline, colour::kZOutline, 2.5f);
-    auto m_outline = sline(colour::kOutline, colour::kZOutline, -2.5f);
+    auto outline = sline(colour::kOutline, colour::z::kOutline, 2.5f);
+    auto m_outline = sline(colour::kOutline, colour::z::kOutline, -2.5f);
     auto c_mix = [](float t) { return colour::perceptual_mix(c0, c1, t); };
 
     auto& n = root.add(translate{key{'v'}});
@@ -59,8 +59,8 @@ struct SquareBoss : public ecs::component {
 
       t.add(ngon{.dimensions = nd2(50 + 25 * r, 50, 4),
                  .line = {.colour0 = c, .colour1 = c1, .z = z, .width = 2.f},
-                 .fill = {.colour0 = colour::alpha(c, colour::kFillAlpha2),
-                          .colour1 = colour::alpha(c1, colour::kFillAlpha2),
+                 .fill = {.colour0 = colour::alpha(c, colour::a::kFill2),
+                          .colour1 = colour::alpha(c1, colour::a::kFill2),
                           .z = z},
                  .flags = r_flags});
       t.add(ngon{.dimensions = nd(44 + 25 * r, 4),
@@ -301,7 +301,7 @@ struct SquareBoss : public ecs::component {
   }
 
   void render(std::vector<render::shape>& output, const SimInterface& sim) const {
-    static constexpr auto cf = colour::alpha(c3, colour::kFillAlpha0);
+    static constexpr auto cf = colour::alpha(c3, colour::a::kFill0);
     if (!special_attack) {
       return;
     }

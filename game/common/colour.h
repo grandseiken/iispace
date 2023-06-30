@@ -187,73 +187,87 @@ constexpr auto kBlack0 = cvec4{0.f, 0.f, 0.f, 1.f};
 constexpr auto kBlack1 = cvec4{0.f, 0.f, 1.f / 32, 1.f};
 constexpr auto kWhite0 = cvec4{0.f, 0.f, 1.f, 1.f};
 constexpr auto kWhite1 = cvec4{0.f, 0.f, .75f, 1.f};
+constexpr auto kOutline = kBlack1;
 
+namespace misc {
+constexpr auto kNewPurple = hue360(270, .6f, .7f);
+constexpr auto kNewGreen0 = hue360(120, .5f, .4f);
+}  // namespace misc
+
+namespace ui {
 constexpr auto kBlackOverlay0 = cvec4{0.f, 0.f, 0.f, 1.f / 4};
 constexpr auto kBlackOverlay1 = cvec4{0.f, 0.f, 0.f, 3.f / 8};
 constexpr auto kPanelBorder0 = cvec4{0.f, 0.f, 1.f, 1.f / 2};
+}  // namespace ui
 
-constexpr auto kSolarizedDarkBase03 = srgb2hsl(0, 43, 54);
-constexpr auto kSolarizedDarkBase02 = srgb2hsl(7, 54, 66);
-constexpr auto kSolarizedDarkBase01 = srgb2hsl(88, 110, 117);
-constexpr auto kSolarizedDarkBase00 = srgb2hsl(101, 123, 131);
-constexpr auto kSolarizedDarkBase0 = srgb2hsl(131, 148, 150);
-constexpr auto kSolarizedDarkBase1 = srgb2hsl(147, 161, 161);
-constexpr auto kSolarizedDarkBase2 = srgb2hsl(238, 232, 213);
-constexpr auto kSolarizedDarkBase3 = srgb2hsl(253, 246, 227);
+namespace solarized {
+constexpr auto kDarkBase03 = srgb2hsl(0, 43, 54);
+constexpr auto kDarkBase02 = srgb2hsl(7, 54, 66);
+constexpr auto kDarkBase01 = srgb2hsl(88, 110, 117);
+constexpr auto kDarkBase00 = srgb2hsl(101, 123, 131);
+constexpr auto kDarkBase0 = srgb2hsl(131, 148, 150);
+constexpr auto kDarkBase1 = srgb2hsl(147, 161, 161);
+constexpr auto kDarkBase2 = srgb2hsl(238, 232, 213);
+constexpr auto kDarkBase3 = srgb2hsl(253, 246, 227);
 
-constexpr auto kSolarizedDarkYellow = srgb2hsl(181, 137, 0);
-constexpr auto kSolarizedDarkOrange = srgb2hsl(203, 75, 22);
-constexpr auto kSolarizedDarkRed = srgb2hsl(220, 50, 47);
-constexpr auto kSolarizedDarkMagenta = srgb2hsl(211, 54, 130);
-constexpr auto kSolarizedDarkViolet = srgb2hsl(108, 113, 196);
-constexpr auto kSolarizedDarkBlue = srgb2hsl(38, 139, 210);
-constexpr auto kSolarizedDarkCyan = srgb2hsl(42, 161, 152);
-constexpr auto kSolarizedDarkGreen = srgb2hsl(133, 153, 0);
+constexpr auto kDarkYellow = srgb2hsl(181, 137, 0);
+constexpr auto kDarkOrange = srgb2hsl(203, 75, 22);
+constexpr auto kDarkRed = srgb2hsl(220, 50, 47);
+constexpr auto kDarkMagenta = srgb2hsl(211, 54, 130);
+constexpr auto kDarkViolet = srgb2hsl(108, 113, 196);
+constexpr auto kDarkBlue = srgb2hsl(38, 139, 210);
+constexpr auto kDarkCyan = srgb2hsl(42, 161, 152);
+constexpr auto kDarkGreen = srgb2hsl(133, 153, 0);
+}  // namespace solarized
 
-constexpr auto kEffectAlpha0 = 1.f / 2;
-constexpr auto kFillAlpha0 = 1.f / 3;
-constexpr auto kFillAlpha1 = 1.f / 4;
-constexpr auto kFillAlpha2 = 1.f / 6;
-constexpr auto kShadowAlpha0 = 1.f / 6;
-constexpr auto kBackgroundAlpha0 = 1.f / 20;
-constexpr auto kOutline = kBlack1;
-constexpr auto kNewPurple = hue360(270, .6f, .7f);
-constexpr auto kNewGreen0 = hue360(120, .5f, .4f);
+namespace category {
+constexpr auto kGeneral = solarized::kDarkBase1;
+constexpr auto kCorruption = misc::kNewPurple;
+constexpr auto kCloseCombat = solarized::kDarkRed;
+constexpr auto kLightning = solarized::kDarkCyan;
+constexpr auto kSniper = misc::kNewGreen0;
+constexpr auto kGravity = solarized::kDarkViolet;
+constexpr auto kLaser = solarized::kDarkBlue;
+constexpr auto kPummel = solarized::kDarkYellow;
+constexpr auto kRemote = solarized::kDarkBase2;
+constexpr auto kUnknown0 = kWhite1;  // TODO
+constexpr auto kUnknown1 = kWhite1;  // TODO
+constexpr auto kDefender = solarized::kDarkBase01;
+constexpr auto kCluster = solarized::kDarkOrange;
+}  // namespace category
 
-constexpr auto kCategoryGeneral = kSolarizedDarkBase1;
-constexpr auto kCategoryCorruption = kNewPurple;
-constexpr auto kCategoryCloseCombat = kSolarizedDarkRed;
-constexpr auto kCategoryLightning = kSolarizedDarkCyan;
-constexpr auto kCategorySniper = kNewGreen0;
-constexpr auto kCategoryGravity = kSolarizedDarkViolet;
-constexpr auto kCategoryLaser = kSolarizedDarkBlue;
-constexpr auto kCategoryPummel = kSolarizedDarkYellow;
-constexpr auto kCategoryRemote = kSolarizedDarkBase2;
-constexpr auto kCategoryUnknown0 = kWhite1;  // TODO
-constexpr auto kCategoryUnknown1 = kWhite1;  // TODO
-constexpr auto kCategoryDefender = kSolarizedDarkBase01;
-constexpr auto kCategoryCluster = kSolarizedDarkOrange;
+namespace a {
+constexpr auto kEffect0 = 1.f / 2;
+constexpr auto kFill0 = 1.f / 3;
+constexpr auto kFill1 = 1.f / 4;
+constexpr auto kFill2 = 1.f / 6;
+constexpr auto kShadow0 = 1.f / 6;
+constexpr auto kBackground0 = 1.f / 20;
+}  // namespace a
 
-constexpr auto kZBackgroundEffect0 = -104.f;
-constexpr auto kZBackgroundEffect1 = -100.f;
-constexpr auto kZParticleOutline = -98.f;
-constexpr auto kZParticle = -96.f;
-constexpr auto kZOutline = -88.f;
-constexpr auto kZEffect0 = -80.f;
-constexpr auto kZEffect1 = -72.f;
-constexpr auto kZTrails = -64.f;
-constexpr auto kZParticleFlash = -48.f;
-constexpr auto kZPowerup = -16.f;
-constexpr auto kZEnemyBoss = -12.f;
-constexpr auto kZEnemyWall = -8.f;
-constexpr auto kZEnemyLarge = 0.f;
-constexpr auto kZEnemyMedium = 4.f;
-constexpr auto kZEnemySmall = 8.f;
-constexpr auto kZPlayerShot = 32.f;
-constexpr auto kZPlayerPowerup = 64.f;
-constexpr auto kZPlayerBubble = 72.f;
-constexpr auto kZPlayer = 96.f;
-constexpr auto kZPlayerCursor = 100.f;
+namespace z {
+constexpr auto kBackgroundEffect0 = -104.f;
+constexpr auto kBackgroundEffect1 = -100.f;
+constexpr auto kParticleOutline = -98.f;
+constexpr auto kParticle = -96.f;
+constexpr auto kOutline = -88.f;
+constexpr auto kEffect0 = -80.f;
+constexpr auto kEffect1 = -72.f;
+constexpr auto kTrails = -64.f;
+constexpr auto kParticleFlash = -48.f;
+constexpr auto kPowerup = -16.f;
+constexpr auto kEnemyBoss = -12.f;
+constexpr auto kEnemyWall = -8.f;
+constexpr auto kEnemyLarge = 0.f;
+constexpr auto kEnemyMedium = 4.f;
+constexpr auto kEnemySmall = 8.f;
+constexpr auto kPlayerShot = 32.f;
+constexpr auto kPlayerPowerup = 64.f;
+constexpr auto kPlayerBubble = 72.f;
+constexpr auto kPlayer = 96.f;
+constexpr auto kPlayerCursor = 100.f;
+}  // namespace z
+
 }  // namespace ii::colour
 
 #endif
