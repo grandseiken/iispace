@@ -1,4 +1,5 @@
 #include "game/core/layers/common.h"
+#include "game/common/colour.h"
 #include "game/core/toolkit/button.h"
 #include "game/core/toolkit/layout.h"
 #include "game/core/toolkit/panel.h"
@@ -13,7 +14,7 @@ ui::Button& standard_button(ui::Button& button) {
       .set_text_colour(kTextColour, kHighlightColour)
       .set_style(render::panel_style::kFlatColour)
       .set_padding(kPadding)
-      .set_colour(kBackgroundColour)
+      .set_colour(colour::ui::kBlackOverlay0)
       .set_drop_shadow({});
 }
 

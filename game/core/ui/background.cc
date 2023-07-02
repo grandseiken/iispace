@@ -30,7 +30,13 @@ void BackgroundState::update() {
   }
 
   auto set_data = [&](render::background::data& data, const render::background::update& update) {
-    data.type = *update.type;
+    data.height_function = *update.height_function;
+    data.combinator = *update.combinator;
+    data.tonemap = *update.tonemap;
+
+    data.polar_period = *update.polar_period;
+    data.scale = *update.scale;
+    data.persistence = *update.persistence;
     data.parameters = *update.parameters;
     data.colour = *update.colour;
   };

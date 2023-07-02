@@ -1,7 +1,7 @@
 #ifndef II_GAME_CORE_UI_BACKGROUND_H
 #define II_GAME_CORE_UI_BACKGROUND_H
-#include "game/render/data/background.h"
 #include "game/common/random.h"
+#include "game/render/data/background.h"
 #include <vector>
 
 namespace ii::ui {

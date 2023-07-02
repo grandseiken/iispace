@@ -225,33 +225,63 @@ constexpr auto kDarkCyan = srgb2hsl(42, 161, 152);
 constexpr auto kDarkGreen = srgb2hsl(133, 153, 0);
 }  // namespace solarized
 
-namespace p01 {
+namespace p01_purples {
 constexpr auto kDarkPurple = hex2hsl(0x6527be);
 constexpr auto kLightPurple = hex2hsl(0x9681eb);
 constexpr auto kDarkCyan = hex2hsl(0x45cfdd);
 constexpr auto kLightCyan = hex2hsl(0xa7ede7);
-}  // namespace p01
+}  // namespace p01_purples
 
-namespace p02 {
+namespace p02_cyans {
 constexpr auto kCyan0 = hex2hsl(0x001c30);
 constexpr auto kCyan1 = hex2hsl(0x176b87);
 constexpr auto kCyan2 = hex2hsl(0x64ccc5);
 constexpr auto kCyan3 = hex2hsl(0xdafffb);
-}  // namespace p02
+}  // namespace p02_cyans
 
-namespace p03 {
+namespace p03_lime {
 constexpr auto kBlue0 = hex2hsl(0x164b60);
 constexpr auto kBlue1 = hex2hsl(0x1b6b93);
 constexpr auto kBlue2 = hex2hsl(0x4fc0d0);
 constexpr auto kLimeGreen = hex2hsl(0xa2ff86);
-}  // namespace p03
+}  // namespace p03_lime
 
-namespace p04 {
+namespace p04_synth {
 constexpr auto kPink = hex2hsl(0xe966a0);
 constexpr auto kDark = hex2hsl(0x2b2730);
 constexpr auto kPurple0 = hex2hsl(0x6554af);
 constexpr auto kPurple1 = hex2hsl(0x9575de);
-}  // namespace p04
+}  // namespace p04_synth
+
+namespace p05_candy {
+constexpr auto kPink = hex2hsl(0xff78c4);
+constexpr auto kViolet = hex2hsl(0xe1aeff);
+constexpr auto kPinkViolet = hex2hsl(0xffbdf7);
+constexpr auto kCream = hex2hsl(0xffecec);
+}  // namespace p05_candy
+
+namespace p06_pale {
+constexpr auto kBlue0 = hex2hsl(0x9ac5f4);
+constexpr auto kBlue1 = hex2hsl(0x99dbf5);
+constexpr auto kBlue2 = hex2hsl(0xa7ecee);
+constexpr auto kPaleYellow = hex2hsl(0xffeebb);
+}  // namespace p06_pale
+
+namespace background {
+constexpr auto kNeutral01 = hex2hsl(0x353a34);
+constexpr auto kNeutral02 = hex2hsl(0x616260);
+constexpr auto kNeutral03 = hex2hsl(0x515051);
+constexpr auto kNeutral04 = hex2hsl(0x473e37);
+constexpr auto kNeutral05 = hex2hsl(0x555d57);
+constexpr auto kNeutral06 = hex2hsl(0x717262);
+
+constexpr auto kClassic01 = hex2hsl(0x989e9c);
+constexpr auto kClassic02 = hex2hsl(0xdfd3bb);
+constexpr auto kClassic03 = hex2hsl(0xb9b49e);
+constexpr auto kClassic04 = hex2hsl(0x72858c);
+constexpr auto kClassic05 = hex2hsl(0xb1a189);
+constexpr auto kClassic06 = hex2hsl(0x30414b);
+}  // namespace background
 
 namespace category {
 constexpr auto kGeneral = solarized::kDarkBase1;

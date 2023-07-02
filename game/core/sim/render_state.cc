@@ -12,8 +12,6 @@
 
 namespace ii {
 namespace {
-constexpr float kAngularVelocityMultiplier = 1.f / 128;
-constexpr std::uint32_t kBackgroundInterpolateTime = 180;
 constexpr std::uint32_t kLegacyStarTimer = 500;
 
 std::uint32_t ticks_to_ms(std::uint32_t ticks) {
@@ -52,11 +50,10 @@ void RenderState::handle_output(ISimState& state,
     }
 
     if (e.background) {
-      if (e.background->type == render::background::type::kLegacy_Stars) {
+      if (e.background->parallax == render::background::parallax::kLegacy_Stars) {
         handle_legacy_stars_change();
-      } else {
-        background_updates.emplace_back(*e.background);
       }
+      background_updates.emplace_back(*e.background);
       e.background.reset();
     }
 

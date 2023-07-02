@@ -1,4 +1,5 @@
 #include "game/logic/legacy/overmind/overmind.h"
+#include "game/common/colour.h"
 #include "game/common/math.h"
 #include "game/logic/ecs/index.h"
 #include "game/logic/legacy/boss/boss.h"
@@ -89,7 +90,9 @@ struct Overmind : ecs::component {
         stars_compatibility = stars_random.uint(3) + 2;
       }
       render::background::update update;
-      update.type = render::background::type::kLegacy_Stars;
+      update.parallax = render::background::parallax::kLegacy_Stars;
+      update.height_function = render::background::height_function::kZero;
+      update.colour = colour::kBlack0;
       sim.emit(resolve_key::canonical()).background(update);
     };
     if (sim.conditions().compatibility == compatibility_level::kLegacy) {

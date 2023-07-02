@@ -58,6 +58,8 @@ public:
   GameStack& stack() { return stack_; }
   layer_flag layer_flags() const { return flags_; }
 
+  virtual void on_activate_layer() {}
+
 protected:
   void update_content(const input_frame&, output_frame&) override;
 
@@ -134,6 +136,7 @@ private:
   std::optional<ivec2> cursor_;
   std::unique_ptr<BackgroundState> background_;
   std::deque<std::unique_ptr<GameLayer>> layers_;
+  const GameLayer* top_layer_ = nullptr;
 };
 
 }  // namespace ii::ui

@@ -59,7 +59,7 @@ RunLobbyLayer::RunLobbyLayer(ui::GameStack& stack, std::optional<initial_conditi
 
   top.set_style(render::panel_style::kFlatColour)
       .set_padding(kPadding)
-      .set_colour(kBackgroundColour);
+      .set_colour(colour::ui::kBlackOverlay0);
   layout.set_absolute_size(top, kLargeFont.y + 2 * kPadding.y)
       .set_absolute_size(subtop, kLargeFont.y + 2 * kPadding.y)
       .set_absolute_size(*bottom_tabs_, kLargeFont.y + 2 * kPadding.y);

@@ -727,8 +727,8 @@ void GlRenderer::render_panel(const combo_panel& data) const {
 }
 
 void GlRenderer::render_background(const render::background& data) const {
-  if (data.data0.type == render::background::type::kNone &&
-      data.data1.type == render::background::type::kNone) {
+  if (data.data0.height_function == render::background::height_function::kZero &&
+      data.data1.height_function == render::background::height_function::kZero) {
     return;
   }
 
@@ -741,15 +741,28 @@ void GlRenderer::render_background(const render::background& data) const {
   gl::enable_depth_test(false);
 
   auto clip_rect = target().clip_rect();
+  auto result0 = gl::set_uniforms(program, "spec0.height_function",
+                                  static_cast<std::uint32_t>(data.data0.height_function));
+  if (!result0) {
+    impl_->status = unexpected("background shader error: " + result0.error());
+    return;
+  }
   auto result = gl::set_uniforms(
       program, "is_multisample", target().msaa() > 1u, "screen_dimensions",
       target().screen_dimensions, "clip_min", target().render_to_iscreen_coords(clip_rect.min()),
       "clip_max", target().render_to_iscreen_coords(clip_rect.max()), "position", data.position,
-      "rotation", data.rotation, "interpolate", std::clamp(data.interpolate, 0.f, 1.f), "type0",
-      static_cast<std::uint32_t>(data.data0.type), "type1",
-      static_cast<std::uint32_t>(data.data1.type), "colour0", data.data0.colour, "colour1",
-      data.data1.colour, "parameters0", data.data0.parameters, "parameters1",
-      data.data1.parameters);
+      "rotation", data.rotation, "interpolate", std::clamp(data.interpolate, 0.f, 1.f),
+      "spec0.height_function", static_cast<std::uint32_t>(data.data0.height_function),
+      "spec1.height_function", static_cast<std::uint32_t>(data.data1.height_function),
+      "spec0.combinator", static_cast<std::uint32_t>(data.data0.combinator), "spec1.combinator",
+      static_cast<std::uint32_t>(data.data1.combinator), "spec0.tonemap",
+      static_cast<std::uint32_t>(data.data0.tonemap), "spec1.tonemap",
+      static_cast<std::uint32_t>(data.data1.tonemap), "spec0.polar_period",
+      data.data0.polar_period.value_or(0.f), "spec1.polar_period",
+      data.data1.polar_period.value_or(0.f), "spec0.scale", data.data0.scale, "spec1.scale",
+      data.data1.scale, "spec0.persistence", data.data0.persistence, "spec1.persistence",
+      data.data1.persistence, "spec0.parameters", data.data0.parameters, "spec1.parameters",
+      data.data1.parameters, "colour0", data.data0.colour, "colour1", data.data1.colour);
   if (!result) {
     impl_->status = unexpected("background shader error: " + result.error());
     return;

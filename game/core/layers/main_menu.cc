@@ -1,4 +1,5 @@
 #include "game/core/layers/main_menu.h"
+#include "game/common/colour.h"
 #include "game/common/ustring_convert.h"
 #include "game/core/game_options.h"
 #include "game/core/layers/common.h"
@@ -31,7 +32,7 @@ void add_button(ui::LinearLayout& layout, const char* text, std::function<void()
   layout.set_absolute_size(button, kLargeFont.y + 2 * kPadding.y);
 };
 
-// TODO: maybe this should not be a separate layer, but currently a lot of UI edge-cases
+// TODO: this should not be a separate layer, but currently a lot of UI edge-cases
 // for UI switching is only handled for layers by the GameStack.
 class CreateGameLayer : public ui::GameLayer {
 public:
@@ -115,6 +116,21 @@ MainMenuLayer::MainMenuLayer(ui::GameStack& stack) : ui::GameLayer{stack} {
 
   stack.set_volume(1.f);
   focus();
+}
+
+void MainMenuLayer::on_activate_layer() {
+  render::background::update update;
+  update.height_function = render::background::height_function::kTurbulent0;
+  update.combinator = render::background::combinator::kAbs0;
+  update.tonemap = render::background::tonemap::kSinCombo;
+  update.colour = colour::p02_cyans::kCyan0;
+  update.scale = 512.f;
+  update.persistence = .25f;
+  update.parameters = {0.f, 0.f};
+  update.colour = colour::p04_synth::kDark;
+  update.velocity = fvec4{1.f, 0.f, 1.f / 8, 1.f / 2};
+  update.angular_velocity = {1.f / 4};
+  stack().update_background(update);
 }
 
 void MainMenuLayer::update_content(const ui::input_frame& input, ui::output_frame& output) {

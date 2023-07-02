@@ -12,6 +12,7 @@ class TextElement;
 class MainMenuLayer : public ui::GameLayer {
 public:
   MainMenuLayer(ui::GameStack& stack);
+  void on_activate_layer() override;
   void update_content(const ui::input_frame&, ui::output_frame&) override;
 
 private:

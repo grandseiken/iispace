@@ -5,6 +5,7 @@
 #include "game/logic/v0/overmind/formation_set.h"
 #include "game/logic/v0/overmind/formations/biome0.h"
 #include "game/logic/v0/overmind/spawn_context.h"
+#include "game/render/data/background.h"
 
 namespace ii::v0 {
 namespace {
@@ -75,13 +76,20 @@ public:
   render::background::update
   update_background(RandomEngine& random, const background_input& input) const override {
     render::background::update update;
-    update.type = render::background::type::kBiome0;
-    update.colour = colour::p02::kCyan0;
+    update.height_function = render::background::height_function::kTurbulent0;
+    update.combinator = render::background::combinator::kAbs0;
+    update.tonemap = render::background::tonemap::kSinCombo;
+    update.colour = colour::p02_cyans::kCyan0;
+    update.scale = 512.f;
+    update.persistence = .25f;
     update.parameters = {0.f, 0.f};
 
     auto c = input.wave_number % 8;
-    update.type =
-        c < 4 ? render::background::type::kBiome0 : render::background::type::kBiome0_Polar;
+    if (c < 4) {
+      update.polar_period = std::optional<float>{};
+    } else {
+      update.polar_period = 2.f;
+    }
     update.parameters->x = c >= 2 && c < 6 ? 1.f : 0.f;
     if (!input.wave_number || c % 2) {
       auto v = from_polar(2 * pi<fixed> * random.fixed(), 1_fx / 2);
@@ -92,7 +100,7 @@ public:
     if (input.type == wave_type::kBoss) {
       auto v = from_polar(2 * pi<fixed> * random.fixed(), 2_fx);
       update.velocity = {v.x.to_float(), v.y.to_float(), 1.f / 8, 1.f / 2};
-      update.colour = colour::p04::kDark;
+      update.colour = colour::p04_synth::kDark;
     }
     return update;
   }
@@ -194,14 +202,21 @@ public:
   render::background::update
   update_background(RandomEngine& random, const background_input& input) const override {
     render::background::update update;
-    update.type = render::background::type::kBiome0;
+    // Previously: tendrils with scale = 256. Might look better without abs?
+    update.height_function = render::background::height_function::kTurbulent0;
+    update.combinator = render::background::combinator::kAbs0;
+    update.tonemap = render::background::tonemap::kSinCombo;
     update.colour = colour::solarized::kDarkBase03;
-    update.colour->z /= 1.25f;
+    update.scale = 512.f;
+    update.persistence = .25f;
     update.parameters = {0.f, 0.f};
 
     auto c = input.wave_number % 8;
-    update.type =
-        c < 4 ? render::background::type::kBiome0 : render::background::type::kBiome0_Polar;
+    if (c < 4) {
+      update.polar_period = std::optional<float>{};
+    } else {
+      update.polar_period = 2.f;
+    }
     update.parameters->x = c >= 2 && c < 6 ? 1.f : 0.f;
     if (!input.wave_number || c % 2) {
       auto v = from_polar(2 * pi<fixed> * random.fixed(), 1_fx / 2);

@@ -141,10 +141,14 @@ void GameStack::update(bool controller_change) {
     }
   }
 
-  // Auto-focus new menus for non-mouse inputs.
-  if (size != layers_.size() && !empty() && !top()->has_focus() && !input.show_cursor &&
-      !(top()->layer_flags() & layer_flag::kNoAutoFocus)) {
-    top()->focus(/* last */ false);
+  if (top_layer_ != top() && !empty()) {
+    auto& t = *top();
+    top_layer_ = &t;
+    t.on_activate_layer();
+    // Auto-focus new menus for non-mouse inputs.
+    if (!t.has_focus() && !input.show_cursor && !(t.layer_flags() & layer_flag::kNoAutoFocus)) {
+      t.focus(/* last */ false);
+    }
   }
   ++cursor_anim_frame_;
 }

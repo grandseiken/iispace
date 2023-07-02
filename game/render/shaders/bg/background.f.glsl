@@ -1,5 +1,4 @@
 #include "game/render/shaders/bg/data.glsl"
-#include "game/render/shaders/bg/spec.glsl"
 #include "game/render/shaders/lib/frag_math.glsl"
 #include "game/render/shaders/lib/math.glsl"
 #include "game/render/shaders/lib/noise/simplex.glsl"
@@ -13,10 +12,9 @@ uniform uvec2 screen_dimensions;
 uniform vec4 position;
 uniform float rotation;
 uniform float interpolate;
-uniform uint type0;
-uniform uint type1;
-uniform vec2 parameters0;
-uniform vec2 parameters1;
+
+uniform bg_spec spec0;
+uniform bg_spec spec1;
 
 flat in vec2 g_render_dimensions;
 flat in vec4 g_colour;
@@ -28,7 +26,7 @@ float offset_centred(float d, float t) {
   return 1. - d / 2. + t * d;
 }
 
-vec2 height_turbulent0(bg_spec spec, vec2 parameters, float polar_period, vec4 v) {
+vec2 height_turbulent0(bg_spec spec, float polar_period, vec4 v) {
   vec3 gradient;
   vec3 period = {0., polar_period, 0.};
   float v0 = psrdnoise3(v.xyz / spec.scale, period, v.w, gradient);
@@ -48,28 +46,32 @@ float tonemap_sin_combo(float v, float t) {
   return t0 * (1. - aa_step_centred(is_multisample, 0., sin(t + 11. * v)) / 6.);
 }
 
-vec2 height_values(bg_spec spec, vec2 parameters, vec4 v, vec4 v_polar) {
+vec2 height_values(bg_spec spec, vec4 v, vec4 v_polar) {
   v_polar *= vec4(1., spec.polar_period * spec.scale, 1., 1.);
   switch (spec.height_function) {
+  case kHeightFunction_Zero:
+    return vec2(0.);
   case kHeightFunction_Turbulent0:
-    return spec.is_polar ? height_turbulent0(spec, parameters, spec.polar_period, v_polar)
-                         : height_turbulent0(spec, parameters, 0., v);
+    return spec.polar_period != 0. ? height_turbulent0(spec, spec.polar_period, v_polar)
+                                   : height_turbulent0(spec, 0., v);
   }
   return vec2(0.);
 }
 
-float combinator(bg_spec spec, vec2 parameters, vec2 v) {
+float combinator(bg_spec spec, vec2 v) {
   switch (spec.combinator) {
   case kCombinator_Octave0:
-    return mix(v.x + spec.persistence * v.y, v.x * v.y, parameters.x);
+    return mix(v.x + spec.persistence * v.y, v.x * v.y, spec.parameters.x);
   case kCombinator_Abs0:
-    return mix(abs(v.x + spec.persistence * v.y), abs(v.x * v.y), parameters.x);
+    return mix(abs(v.x + spec.persistence * v.y), abs(v.x * v.y), spec.parameters.x);
   }
   return 0.;
 }
 
-float tone_value(bg_spec spec, vec2 parameters, float v, float t) {
+float tone_value(bg_spec spec, float v, float t) {
   switch (spec.tonemap) {
+  case kTonemap_Passthrough:
+    return clamp(v, 0., 1.);
   case kTonemap_Tendrils:
     return tonemap_tendrils(v, t);
   case kTonemap_SinCombo:
@@ -90,16 +92,13 @@ void main() {
   vec4 f_polar = position * vec4(1., kPolarVelocityMultiplier, 1., 1.) +
       vec4(length(f_xy), atan(f_xy.y, f_xy.x) / (2. * kPi), 0., 0.);
 
-  bg_spec spec0 = get_bg_spec(type0);
-  bg_spec spec1 = get_bg_spec(type1);
-
   float value0 = 0.;
   float value1 = 0.;
   if (interpolate < 1.) {
-    value0 = combinator(spec0, parameters0, height_values(spec0, parameters0, f_position, f_polar));
+    value0 = combinator(spec0, height_values(spec0, f_position, f_polar));
   }
   if (interpolate > 0.) {
-    value1 = combinator(spec1, parameters1, height_values(spec1, parameters1, f_position, f_polar));
+    value1 = combinator(spec1, height_values(spec1, f_position, f_polar));
   }
   // TODO: potentially alternate interpolation modes, e.g.:
   // const float kRadialTransition = .125;
@@ -111,10 +110,10 @@ void main() {
   float tone0 = 0.;
   float tone1 = 0.;
   if (interpolate < 1.) {
-    tone0 = tone_value(spec0, parameters0, value, position.w);
+    tone0 = tone_value(spec0, value, position.w);
   }
   if (interpolate > 0.) {
-    tone1 = tone_value(spec0, parameters1, value, position.w);
+    tone1 = tone_value(spec1, value, position.w);
   }
   float tone = mix(tone0, tone1, interpolate);
   out_colour = vec4(min(1., tone * scanlines() * g_colour.x), g_colour.yz, 1.);
