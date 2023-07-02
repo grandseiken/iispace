@@ -24,32 +24,17 @@ public:
   void set_dimensions(const uvec2& dimensions) { dimensions_ = dimensions; }
 
   // If mixer != nullptr, sounds will be handled. If input != nullptr, rumble will be handled.
-  void handle_output(ISimState& state, Mixer* mixer, SimInputAdapter* input);
+  void handle_output(ISimState& state, std::vector<render::background::update>&, Mixer* mixer,
+                     SimInputAdapter* input);
   void update(SimInputAdapter* input);
-  void render(render::background& background, std::vector<render::shape>&,
-              std::vector<render::fx>&) const;
+  void render(std::vector<render::shape>&, std::vector<render::fx>&) const;
 
 private:
-  // TODO: finish moving out to reuse with menus etc.
-  class BackgroundState {
-  public:
-    BackgroundState(RandomEngine&);
-    void handle(const render::background::update&);
-    void update();
-    const render::background& output() const { return output_; }
-
-  private:
-    std::vector<render::background::update> update_queue_;
-    std::uint32_t interpolate_ = 0;
-    render::background output_;
-  };
-
   void handle_legacy_stars_change();
 
   RandomEngine engine_;
   ivec2 dimensions_{0, 0};
   std::vector<particle> particles_;
-  BackgroundState background_;
 
   struct rumble_t {
     std::uint32_t time_ticks = 0;

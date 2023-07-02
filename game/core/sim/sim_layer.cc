@@ -145,9 +145,13 @@ void SimLayer::update_content(const ui::input_frame& ui_input, ui::output_frame&
 
   bool handle_audio = !(impl_->audio_tick++ % (stack().fps() >= 60 ? 5 : 4));
   impl_->render_state.set_dimensions(impl_->istate().dimensions());
-  impl_->render_state.handle_output(impl_->istate(), handle_audio ? &stack().mixer() : nullptr,
-                                    &impl_->input);
+  std::vector<render::background::update> background_updates;
+  impl_->render_state.handle_output(impl_->istate(), background_updates,
+                                    handle_audio ? &stack().mixer() : nullptr, &impl_->input);
   impl_->render_state.update(&impl_->input);
+  for (const auto& update : background_updates) {
+    stack().update_background(update);
+  }
 
   // TODO: handle pausing in multiplayer.
   // TODO: spacebar shouldn't pause on keyboard; but start should still pause on gamepad.
@@ -169,9 +173,7 @@ void SimLayer::render_content(render::GlRenderer& r) const {
   auto& render =
       impl_->istate().render(impl_->transients, /* paused */ stack().top() != impl_->hud);
   r.set_colour_cycle(render.colour_cycle);
-  render::background background;
-  impl_->render_state.render(background, render.shapes, render.fx);
-  r.render_background(background);
+  impl_->render_state.render(render.shapes, render.fx);
   for (const auto& panel : render.panels) {
     r.render_panel(panel);
   }

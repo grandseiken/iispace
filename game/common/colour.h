@@ -237,21 +237,21 @@ constexpr auto kCyan0 = hex2hsl(0x001c30);
 constexpr auto kCyan1 = hex2hsl(0x176b87);
 constexpr auto kCyan2 = hex2hsl(0x64ccc5);
 constexpr auto kCyan3 = hex2hsl(0xdafffb);
-}  // namespace p01
+}  // namespace p02
 
 namespace p03 {
 constexpr auto kBlue0 = hex2hsl(0x164b60);
 constexpr auto kBlue1 = hex2hsl(0x1b6b93);
 constexpr auto kBlue2 = hex2hsl(0x4fc0d0);
 constexpr auto kLimeGreen = hex2hsl(0xa2ff86);
-}  // namespace p01
+}  // namespace p03
 
 namespace p04 {
 constexpr auto kPink = hex2hsl(0xe966a0);
 constexpr auto kDark = hex2hsl(0x2b2730);
 constexpr auto kPurple0 = hex2hsl(0x6554af);
 constexpr auto kPurple1 = hex2hsl(0x9575de);
-}  // namespace p01
+}  // namespace p04
 
 namespace category {
 constexpr auto kGeneral = solarized::kDarkBase1;

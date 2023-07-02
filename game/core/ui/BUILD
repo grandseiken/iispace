@@ -36,6 +36,17 @@ cc_library(
 )
 
 cc_library(
+  name = "background",
+  hdrs = ["background.h"],
+  srcs = ["background.cc"],
+  deps = [
+    "//game/common:math",
+    "//game/common:random",
+    "//game/render/data",
+  ],
+)
+
+cc_library(
   name = "ui",
   hdrs = ["game_stack.h"],
   srcs = ["game_stack.cc"],
@@ -43,17 +54,20 @@ cc_library(
     ":input",
     ":input_adapter",
     ":element",
+    "//game/common:random",
     "//game/core:game_options",
     "//game/data:config",
     "//game/data:replay",
     "//game/data:save",
     "//game/mixer:sound",
-    "//game/render"
+    "//game/render/data",
   ],
   implementation_deps = [
+    ":background",
     "//game/io",
     "//game/io/file:filesystem",
     "//game/mixer",
+    "//game/render",
   ],
   visibility = ["//visibility:public"],
 )

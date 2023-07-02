@@ -135,10 +135,15 @@ void ReplayViewer::update_content(const ui::input_frame& input, ui::output_frame
 
   bool handle_audio = !(impl_->audio_tick++ % (4 * (1 + impl_->speed / 2)));
   impl_->render_state.set_dimensions(impl_->istate().dimensions());
-  impl_->render_state.handle_output(impl_->istate(), handle_audio ? &stack().mixer() : nullptr,
-                                    nullptr);
+
+  std::vector<render::background::update> background_updates;
+  impl_->render_state.handle_output(impl_->istate(), background_updates,
+                                    handle_audio ? &stack().mixer() : nullptr, nullptr);
   for (std::uint32_t i = 0u; i < kSpeedParticleFrames[impl_->speed]; ++i) {
     impl_->render_state.update(nullptr);
+  }
+  for (const auto& update : background_updates) {
+    stack().update_background(update);
   }
 
   if (input.pressed(ui::key::kUp)) {
@@ -164,9 +169,7 @@ void ReplayViewer::render_content(render::GlRenderer& r) const {
   auto& render =
       impl_->istate().render(impl_->transients, /* paused */ stack().top() != impl_->hud);
   r.set_colour_cycle(render.colour_cycle);
-  render::background background;
-  impl_->render_state.render(background, render.shapes, render.fx);
-  r.render_background(background);
+  impl_->render_state.render(render.shapes, render.fx);
   for (const auto& panel : render.panels) {
     r.render_panel(panel);
   }

@@ -1,6 +1,7 @@
 #ifndef II_GAME_CORE_UI_GAME_STACK_H
 #define II_GAME_CORE_UI_GAME_STACK_H
 #include "game/common/enum.h"
+#include "game/common/random.h"
 #include "game/core/game_options.h"
 #include "game/core/ui/element.h"
 #include "game/core/ui/input.h"
@@ -9,6 +10,7 @@
 #include "game/data/replay.h"
 #include "game/data/save.h"
 #include "game/mixer/sound.h"
+#include "game/render/data/background.h"
 #include <cstdint>
 #include <deque>
 #include <memory>
@@ -44,6 +46,7 @@ struct bitmask_enum<ui::layer_flag> : std::true_type {};
 
 namespace ii::ui {
 
+class BackgroundState;
 class GameStack;
 class GameLayer : public Element {
 public:
@@ -65,6 +68,7 @@ private:
 
 class GameStack {
 public:
+  ~GameStack();
   GameStack(io::Filesystem& fs, io::IoLayer& io_layer, System& system, Mixer& mixer,
             const game_options_t& game_options);
 
@@ -85,6 +89,7 @@ public:
   void set_fps(std::uint32_t fps) { fps_ = fps; }
   void set_cursor_hue(float hue) { cursor_hue_ = hue; }
   void clear_cursor_hue() { cursor_hue_.reset(); }
+  void update_background(const render::background::update&);
 
   template <typename T, typename... Args>
   T* add(Args&&... args) {
@@ -115,6 +120,7 @@ private:
   System& system_;
   Mixer& mixer_;
   InputAdapter adapter_;
+  RandomEngine engine_;
 
   game_options_t options_;
   data::config config_;
@@ -126,6 +132,7 @@ private:
   std::optional<float> cursor_hue_;
   std::optional<ivec2> prev_cursor_;
   std::optional<ivec2> cursor_;
+  std::unique_ptr<BackgroundState> background_;
   std::deque<std::unique_ptr<GameLayer>> layers_;
 };
 

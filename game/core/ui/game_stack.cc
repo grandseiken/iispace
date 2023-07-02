@@ -1,4 +1,5 @@
 #include "game/core/ui/game_stack.h"
+#include "game/core/ui/background.h"
 #include "game/io/file/filesystem.h"
 #include "game/io/io.h"
 #include "game/mixer/mixer.h"
@@ -33,6 +34,8 @@ void GameLayer::update_content(const input_frame&, output_frame&) {
   }
 }
 
+GameStack::~GameStack() = default;
+
 GameStack::GameStack(io::Filesystem& fs, io::IoLayer& io_layer, System& system, Mixer& mixer,
                      const game_options_t& options)
 : fs_{fs}
@@ -40,7 +43,9 @@ GameStack::GameStack(io::Filesystem& fs, io::IoLayer& io_layer, System& system, 
 , system_{system}
 , mixer_{mixer}
 , adapter_{io_layer}
-, options_{options} {
+, engine_{static_cast<std::uint32_t>(time(nullptr))}
+, options_{options}
+, background_{std::make_unique<BackgroundState>(engine_)} {
   auto data = fs.read_config();
   if (data) {
     auto config = data::read_config(*data);
@@ -58,7 +63,12 @@ GameStack::GameStack(io::Filesystem& fs, io::IoLayer& io_layer, System& system, 
   set_volume(config_.volume);
 }
 
+void GameStack::update_background(const render::background::update& update) {
+  background_->handle(update);
+}
+
 void GameStack::update(bool controller_change) {
+  background_->update();
   // Compute input frame.
   auto input = adapter_.ui_frame(controller_change);
 
@@ -141,6 +151,8 @@ void GameStack::update(bool controller_change) {
 
 void GameStack::render(render::GlRenderer& renderer) const {
   auto it = get_capture_it(layers_.begin(), layers_.end(), layer_flag::kCaptureRender);
+  renderer.target().render_dimensions = {960, 540};
+  renderer.render_background(background_->output());
   for (; it != layers_.end(); ++it) {
     renderer.target().render_dimensions = static_cast<uvec2>((*it)->bounds().size);
     (*it)->render(renderer);
