@@ -39,10 +39,7 @@ cc_library(
     "struct_tuple.h",
     "variant_switch.h",
   ],
-  deps = [
-    "@expected",
-    "@static_functional",
-  ],
+  deps = ["@static_functional"],
   visibility = ["//visibility:public"],
 )
 

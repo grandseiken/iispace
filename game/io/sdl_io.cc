@@ -10,6 +10,14 @@
 #include <unordered_map>
 
 namespace ii::io {
+namespace {
+void set_platform_hints() {
+#ifdef SDL_HINT_WINDOWS_DPI_AWARENESS
+  // Needed to render correctly with display scaling on windows. May be unnecessary with SDL3.
+  SDL_SetHint(SDL_HINT_WINDOWS_DPI_AWARENESS, "permonitorv2");
+#endif
+}
+}  // namespace
 
 struct SdlIoLayer::impl_t {
   raw_ptr<SDL_Window> window;
@@ -111,8 +119,7 @@ struct SdlIoLayer::impl_t {
 
 result<std::unique_ptr<SdlIoLayer>>
 SdlIoLayer::create(const char* title, char gl_major, char gl_minor, bool windowed) {
-  // Needed to render correctly with display scaling on windows. May be unnecessary with SDL3.
-  SDL_SetHint(SDL_HINT_WINDOWS_DPI_AWARENESS, "permonitorv2");
+  set_platform_hints();
   // TODO: SDL_INIT_GAMECONTROLLER can sometimes cause hangs or long delays while probing
   // misbehaving devices or buggy drivers. Apparently it's possible to run that bit asynchronously
   // on a different thread and start using gamepads once it finishes?

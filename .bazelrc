@@ -20,10 +20,10 @@ test --test_output=errors
 build:ci --curses=no
 build:ci --keep_going
 
-build:windows-common --cxxopt=/std:c++20
+build:windows-common --cxxopt=/std:c++latest
 build:windows-common --copt=/WX
 
-build:linux-common --cxxopt=-std=c++20
+build:linux-common --cxxopt=-std=c++23
 build:linux-common --copt=-Werror
 build:linux-common --copt=-Wall
 build:linux-common --per_file_copt=external/.*@-w
@@ -47,10 +47,12 @@ build:msvc_reldbg --linkopt=/DEBUG:FULL
 
 build:clang-cl --config=windows-common
 build:clang-cl --config=clang-common
-build:clang-cl --compiler=clang-cl
+build:clang-cl --extra_toolchains=@local_config_cc//:cc-toolchain-x64_windows-clang-cl
+build:clang-cl --extra_execution_platforms=//:x64_windows-clang-cl
 build:clang-cl --cc_output_directory_tag=clang
 
-build:ubsan-cl --config=clang-cl
+build:ubsan-cl --extra_toolchains=@local_config_cc//:cc-toolchain-x64_windows-clang-cl
+build:ubsan-cl --extra_execution_platforms=//:x64_windows-clang-cl
 build:ubsan-cl --cc_output_directory_tag=ubsan
 build:ubsan-cl --copt=-fsanitize=undefined
 build:ubsan-cl --copt=/MT
@@ -64,9 +66,9 @@ build:gcc --copt=-Wno-uninitialized
 build:clang --config=linux-common
 build:clang --config=clang-common
 build:clang --repo_env=CC=clang
-build:clang --linkopt=-lstdc++
-build:clang --cxxopt=-lstdc++
-build:clang --cxxopt=-stdlib=libstdc++
+build:clang --linkopt=-lc++
+build:clang --cxxopt=-lc++
+build:clang --cxxopt=-stdlib=libc++
 build:clang --cc_output_directory_tag=clang
 
 # MacOS configuration.

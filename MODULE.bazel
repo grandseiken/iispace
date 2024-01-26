@@ -1,0 +1,74 @@
+http_archive = use_repo_rule("@bazel_tools//tools/build_defs/repo:http.bzl", "http_archive")
+
+################################################################################
+# Bzlmod
+################################################################################
+bazel_dep(name = "bazel_skylib", version = "1.5.0")
+bazel_dep(name = "rules_pkg", version = "0.9.1")
+bazel_dep(name = "rules_proto", version = "6.0.0-rc1")
+bazel_dep(name = "protobuf", version = "3.19.6")
+bazel_dep(name = "zlib", version = "1.3")
+
+################################################################################
+# Language features
+################################################################################
+http_archive(
+  name = "static_functional",
+  sha256 = "d79740eb82f25e9728ee07f7344ac89e621125057e960b238b46976ebf8673d7",
+  strip_prefix = "static-functional-df5154af7c66e8518494d16d88cdbd71698c1f29",
+  url = "https://github.com/grandseiken/static-functional/archive/df5154af7c66e8518494d16d88cdbd71698c1f29.zip",
+)
+
+http_archive(
+  name = "gcem",
+  build_file = "@//deps:gcem.BUILD",
+  sha256 = "be312a6a3cf55e78fe7f8055c28fa14b1ea94282bd66841906388f1ef4d4698c",
+  strip_prefix = "gcem-1.16.0",
+  url = "https://github.com/kthohr/gcem/archive/refs/tags/v1.16.0.zip",
+)
+
+http_archive(
+  name = "concurrent_queue",
+  build_file = "@//deps:concurrent_queue.BUILD",
+  sha256 = "5e9e229a1791e8299dcd4bd73ac1be1953424a903818feb7afd929eb16094ef5",
+  strip_prefix = "concurrentqueue-1.0.3",
+  url = "https://github.com/cameron314/concurrentqueue/archive/refs/tags/v1.0.3.zip",
+)
+
+################################################################################
+# Media format dependencies
+################################################################################
+http_archive(
+  name = "dr_libs",
+  build_file = "@//deps:dr_libs.BUILD",
+  sha256 = "39ea8c1f9b60a945735dfe4a2e0a2a6bd3bc921619fa7d2612dbc284b68c2419",
+  strip_prefix = "dr_libs-15f37e3ab01654c1a3bc98cff2a9ca64e8296fa9",
+  url = "https://github.com/mackron/dr_libs/archive/15f37e3ab01654c1a3bc98cff2a9ca64e8296fa9.zip",
+)
+
+http_archive(
+  name = "libsamplerate",
+  build_file = "@//deps:libsamplerate.BUILD",
+  sha256 = "7bd06fabd57027e9c0fa22e6bd873e4916ab96ea132d6cb1b76e7fdd2ade1d20",
+  strip_prefix = "libsamplerate-0.2.2",
+  url = "https://github.com/libsndfile/libsamplerate/archive/refs/tags/0.2.2.zip",
+)
+
+http_archive(
+  name = "freetype",
+  build_file = "@//deps:freetype.BUILD",
+  sha256 = "5dac723f3889d451fb0b50a1cde94373a99609a650684a595f334437189a601c",
+  strip_prefix = "freetype-f9f6adb625c48ef15b5d61a3ac1709a068ea95a3",
+  url = "https://github.com/freetype/freetype/archive/f9f6adb625c48ef15b5d61a3ac1709a068ea95a3.zip",
+)
+
+################################################################################
+# Test utilities
+################################################################################
+http_archive(
+  name = "flamegraph",
+  build_file = "@//deps:flamegraph.BUILD",
+  sha256 = "2ad11f0a446aab6089d1f2f0d8cd3b8cbde9d348e91c2c22716fc6a7650eac17",
+  strip_prefix = "FlameGraph-810687f180f3c4929b5d965f54817a5218c9d89b",
+  url = "https://github.com/brendangregg/FlameGraph/archive/810687f180f3c4929b5d965f54817a5218c9d89b.zip",
+)

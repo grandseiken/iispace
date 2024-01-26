@@ -1,6 +1,15 @@
 # Build config.
 load("@bazel_skylib//rules:common_settings.bzl", "bool_flag")
 
+platform(
+  name = "x64_windows-clang-cl",
+  constraint_values = [
+    "@platforms//cpu:x86_64",
+    "@platforms//os:windows",
+    "@bazel_tools//tools/cpp:clang-cl",
+  ],
+)
+
 bool_flag(
   name = "steam",
   build_setting_default = False,

@@ -25,7 +25,7 @@ cc_library(
   ],
   includes = ["include"],
   copts = [
-    "-Iexternal/libsamplerate/src",
+    "-Iexternal/_main~_repo_rules~libsamplerate/src",
     "-DHAVE_STDBOOL_H",
     "-DENABLE_SINC_FAST_CONVERTER",
     "-DENABLE_SINC_MEDIUM_CONVERTER",
