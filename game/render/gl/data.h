@@ -22,7 +22,7 @@ enum class buffer_usage {
 
 inline buffer make_buffer() {
   id i;
-  glCreateBuffers(1, &i);
+  glGenBuffers(1, &i);
   return buffer{i};
 }
 
@@ -59,12 +59,14 @@ void buffer_data(const buffer& handle, buffer_usage usage, std::span<const T> da
     break;
   }
   auto byte_data = std::as_bytes(data);
-  glNamedBufferData(*handle, byte_data.size(), byte_data.data(), u);
+
+  glBindBuffer(GL_ARRAY_BUFFER, *handle);
+  glBufferData(GL_ARRAY_BUFFER, byte_data.size(), byte_data.data(), u);
 }
 
 inline vertex_array make_vertex_array() {
   id i;
-  glCreateVertexArrays(1, &i);
+  glGenVertexArrays(1, &i);
   return vertex_array{i};
 }
 
